@@ -37,8 +37,7 @@
 
 // Class path entry (directory or zip file)
 
-class ImageFileReader;
-class ImageModuleData;
+class JImageFile;
 
 class ClassPathEntry: public CHeapObj<mtClass> {
  private:
@@ -52,7 +51,7 @@ class ClassPathEntry: public CHeapObj<mtClass> {
   }
   virtual bool is_jar_file() = 0;
   virtual const char* name() = 0;
-  virtual ImageFileReader* image() = 0;
+  virtual JImageFile* jimage() = 0;
   // Constructor
   ClassPathEntry();
   // Attempt to locate file_name through this class path entry.
@@ -70,7 +69,7 @@ class ClassPathDirEntry: public ClassPathEntry {
  public:
   bool is_jar_file()       { return false;  }
   const char* name()       { return _dir; }
-  ImageFileReader* image() { return NULL; }
+  JImageFile* jimage()     { return NULL; }
   ClassPathDirEntry(const char* dir);
   ClassFileStream* open_stream(const char* name, TRAPS);
   // Debugging
@@ -100,7 +99,7 @@ class ClassPathZipEntry: public ClassPathEntry {
  public:
   bool is_jar_file()       { return true;  }
   const char* name()       { return _zip_name; }
-  ImageFileReader* image() { return NULL; }
+  JImageFile* jimage()     { return NULL; }
   ClassPathZipEntry(jzfile* zip, const char* zip_name);
   ~ClassPathZipEntry();
   u1* open_entry(const char* name, jint* filesize, bool nul_terminate, TRAPS);
@@ -115,16 +114,16 @@ class ClassPathZipEntry: public ClassPathEntry {
 // For java image files
 class ClassPathImageEntry: public ClassPathEntry {
 private:
-  ImageFileReader* _image;
-  ImageModuleData* _module_data;
+  JImageFile* _jimage;
+  const char* _name;
 public:
   bool is_jar_file()  { return false;  }
-  bool is_open()  { return _image != NULL; }
-  const char* name();
-  ImageFileReader* image() { return _image; }
-  ImageModuleData* module_data() { return _module_data; }
-  ClassPathImageEntry(ImageFileReader* image);
+  bool is_open()  { return _jimage != NULL; }
+  const char* name() { return _name == NULL ? "" : _name; }
+  JImageFile* jimage() { return _jimage; }
+  ClassPathImageEntry(JImageFile* jimage, const char* name);
   ~ClassPathImageEntry();
+  static void name_to_package(const char* name, char* buffer, int length);
   ClassFileStream* open_stream(const char* name, TRAPS);
 
   // Debugging
@@ -206,6 +205,7 @@ class ClassLoader: AllStatic {
   static void setup_search_path(const char *class_path);
 
   static void load_zip_library();
+  static void load_jimage_library();
   static ClassPathEntry* create_class_path_entry(const char *path, const struct stat* st,
                                                  bool throw_exception, TRAPS);
 

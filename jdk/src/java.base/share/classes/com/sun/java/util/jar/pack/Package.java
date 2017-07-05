@@ -990,7 +990,7 @@ class Package {
     }
 
     // Helper for building InnerClasses attributes.
-    static private
+    private static
     void visitInnerClassRefs(Collection<InnerClass> innerClasses, int mode, Collection<Entry> refs) {
         if (innerClasses == null) {
             return;  // no attribute; nothing to do

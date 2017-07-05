@@ -29,7 +29,6 @@ import java.util.ArrayList;
 import java.util.List;
 import jdk.nashorn.internal.ir.CompileUnitHolder;
 import jdk.nashorn.internal.ir.FunctionNode;
-import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
 import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.LiteralNode;
 import jdk.nashorn.internal.ir.LiteralNode.ArrayLiteralNode;
@@ -64,7 +63,7 @@ abstract class ReplaceCompileUnits extends NodeVisitor<LexicalContext> {
 
     @Override
     public Node leaveFunctionNode(final FunctionNode node) {
-        return node.setCompileUnit(lc, getExistingReplacement(node)).setState(lc, CompilationState.COMPILE_UNITS_REUSED);
+        return node.setCompileUnit(lc, getExistingReplacement(node));
     }
 
     @Override

@@ -91,46 +91,6 @@ mapLookup(char* map[], const char* key, char** value) {
     return 0;
 }
 
-/* This function sets an environment variable using envstring.
- * The format of envstring is "name=value".
- * If the name has already existed, it will append value to the name.
- */
-static void
-setPathEnvironment(char *envstring)
-{
-    char name[20], *value, *current;
-
-    value = strchr(envstring, '='); /* locate name and value separator */
-
-    if (! value)
-        return; /* not a valid environment setting */
-
-    /* copy first part as environment name */
-    strncpy(name, envstring, value - envstring);
-    name[value-envstring] = '\0';
-
-    value++; /* set value point to value of the envstring */
-
-    current = getenv(name);
-    if (current) {
-        if (! strstr(current, value)) {
-            /* value is not found in current environment, append it */
-            char *temp = malloc(strlen(envstring) + strlen(current) + 2);
-        strcpy(temp, name);
-        strcat(temp, "=");
-        strcat(temp, current);
-        strcat(temp, ":");
-        strcat(temp, value);
-        putenv(temp);
-        }
-        /* else the value has already been set, do nothing */
-    }
-    else {
-        /* environment variable is not found */
-        putenv(envstring);
-    }
-}
-
 #ifndef P_tmpdir
 #define P_tmpdir "/var/tmp"
 #endif
@@ -627,16 +587,6 @@ GetJavaProperties(JNIEnv *env)
     sprops.file_separator = "/";
     sprops.path_separator = ":";
     sprops.line_separator = "\n";
-
-#if !defined(_ALLBSD_SOURCE)
-    /* Append CDE message and resource search path to NLSPATH and
-     * XFILESEARCHPATH, in order to pick localized message for
-     * FileSelectionDialog window (Bug 4173641).
-     */
-    setPathEnvironment("NLSPATH=/usr/dt/lib/nls/msg/%L/%N.cat");
-    setPathEnvironment("XFILESEARCHPATH=/usr/dt/app-defaults/%L/Dt");
-#endif
-
 
 #ifdef MACOSX
     setProxyProperties(&sprops);

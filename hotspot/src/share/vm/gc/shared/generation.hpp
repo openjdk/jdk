@@ -80,7 +80,6 @@ struct ScratchBlock {
                               // first two fields are word-sized.)
 };
 
-
 class Generation: public CHeapObj<mtGC> {
   friend class VMStructs;
  private:
@@ -299,8 +298,7 @@ class Generation: public CHeapObj<mtGC> {
   // word of "obj" may have been overwritten with a forwarding pointer, and
   // also taking care to copy the klass pointer *last*.  Returns the new
   // object if successful, or else NULL.
-  virtual oop par_promote(int thread_num,
-                          oop obj, markOop m, size_t word_sz);
+  virtual oop par_promote(int thread_num, oop obj, markOop m, size_t word_sz);
 
   // Informs the current generation that all par_promote_alloc's in the
   // collection have been completed; any supporting data structures can be
@@ -315,7 +313,7 @@ class Generation: public CHeapObj<mtGC> {
 
   // This generation will collect all younger generations
   // during a full collection.
-  virtual bool full_collects_younger_generations() const { return false; }
+  virtual bool full_collects_young_generation() const { return false; }
 
   // This generation does in-place marking, meaning that mark words
   // are mutated during the marking phase and presumably reinitialized
@@ -370,18 +368,18 @@ class Generation: public CHeapObj<mtGC> {
 
   // Some generations may require some cleanup or preparation actions before
   // allowing a collection.  The default is to do nothing.
-  virtual void gc_prologue(bool full) {};
+  virtual void gc_prologue(bool full) {}
 
   // Some generations may require some cleanup actions after a collection.
   // The default is to do nothing.
-  virtual void gc_epilogue(bool full) {};
+  virtual void gc_epilogue(bool full) {}
 
   // Save the high water marks for the used space in a generation.
-  virtual void record_spaces_top() {};
+  virtual void record_spaces_top() {}
 
   // Some generations may need to be "fixed-up" after some allocation
   // activity to make them parsable again. The default is to do nothing.
-  virtual void ensure_parsability() {};
+  virtual void ensure_parsability() {}
 
   // Time (in ms) when we were last collected or now if a collection is
   // in progress.
@@ -417,7 +415,7 @@ class Generation: public CHeapObj<mtGC> {
   virtual void adjust_pointers();
   // Mark sweep support phase4
   virtual void compact();
-  virtual void post_compact() {ShouldNotReachHere();}
+  virtual void post_compact() { ShouldNotReachHere(); }
 
   // Support for CMS's rescan. In this general form we return a pointer
   // to an abstract object that can be used, based on specific previously
@@ -432,7 +430,7 @@ class Generation: public CHeapObj<mtGC> {
 
   // Some generations may require some cleanup actions before allowing
   // a verification.
-  virtual void prepare_for_verify() {};
+  virtual void prepare_for_verify() {}
 
   // Accessing "marks".
 
@@ -483,7 +481,7 @@ class Generation: public CHeapObj<mtGC> {
 
   // Give each generation an opportunity to do clean up for any
   // contributed scratch.
-  virtual void reset_scratch() {};
+  virtual void reset_scratch() {}
 
   // When an older generation has been collected, and perhaps resized,
   // this method will be invoked on all younger generations (from older to

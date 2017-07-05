@@ -456,42 +456,42 @@ public class SimpleDateFormat extends DateFormat {
      * Saved numberFormat and pattern.
      * @see SimpleDateFormat#checkNegativeNumberExpression
      */
-    transient private NumberFormat originalNumberFormat;
-    transient private String originalNumberPattern;
+    private transient NumberFormat originalNumberFormat;
+    private transient String originalNumberPattern;
 
     /**
      * The minus sign to be used with format and parse.
      */
-    transient private char minusSign = '-';
+    private transient char minusSign = '-';
 
     /**
      * True when a negative sign follows a number.
      * (True as default in Arabic.)
      */
-    transient private boolean hasFollowingMinusSign = false;
+    private transient boolean hasFollowingMinusSign = false;
 
     /**
      * True if standalone form needs to be used.
      */
-    transient private boolean forceStandaloneForm = false;
+    private transient boolean forceStandaloneForm = false;
 
     /**
      * The compiled pattern.
      */
-    transient private char[] compiledPattern;
+    private transient char[] compiledPattern;
 
     /**
      * Tags for the compiled pattern.
      */
-    private final static int TAG_QUOTE_ASCII_CHAR       = 100;
-    private final static int TAG_QUOTE_CHARS            = 101;
+    private static final int TAG_QUOTE_ASCII_CHAR       = 100;
+    private static final int TAG_QUOTE_CHARS            = 101;
 
     /**
      * Locale dependent digit zero.
      * @see #zeroPaddingNumber
      * @see java.text.DecimalFormatSymbols#getZeroDigit
      */
-    transient private char zeroDigit;
+    private transient char zeroDigit;
 
     /**
      * The symbols used by this formatter for week names, month names,
@@ -510,7 +510,7 @@ public class SimpleDateFormat extends DateFormat {
      */
     private Date defaultCenturyStart;
 
-    transient private int defaultCenturyStartYear;
+    private transient int defaultCenturyStartYear;
 
     private static final int MILLIS_PER_MINUTE = 60 * 1000;
 

@@ -32,13 +32,13 @@ public class ImmutableLocal
     /**
      * {@link ThreadLocal} guaranteed to always return the same reference.
      */
-    abstract public static class ImmutableThreadLocal extends ThreadLocal {
+    public abstract static class ImmutableThreadLocal extends ThreadLocal {
         public void set(final Object value) {
             throw new RuntimeException("ImmutableThreadLocal set called");
         }
 
         // force override
-        abstract protected Object initialValue();
+        protected abstract Object initialValue();
     }
 
     private static final ThreadLocal cache = new ImmutableThreadLocal() {

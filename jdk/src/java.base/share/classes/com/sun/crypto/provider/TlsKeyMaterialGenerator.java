@@ -43,7 +43,7 @@ import static com.sun.crypto.provider.TlsPrfGenerator.*;
  */
 public final class TlsKeyMaterialGenerator extends KeyGeneratorSpi {
 
-    private final static String MSG = "TlsKeyMaterialGenerator must be "
+    private static final String MSG = "TlsKeyMaterialGenerator must be "
         + "initialized using a TlsKeyMaterialParameterSpec";
 
     @SuppressWarnings("deprecation")

@@ -362,7 +362,7 @@ public class CookieManager extends CookieHandler
     }
 
 
-    static private boolean isInPortList(String lst, int port) {
+    private static boolean isInPortList(String lst, int port) {
         int i = lst.indexOf(',');
         int val = -1;
         while (i > 0) {

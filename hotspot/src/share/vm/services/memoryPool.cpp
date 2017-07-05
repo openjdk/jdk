@@ -204,21 +204,21 @@ MemoryUsage ContiguousSpacePool::get_memory_usage() {
   return MemoryUsage(initial_size(), used, committed, maxSize);
 }
 
-SurvivorContiguousSpacePool::SurvivorContiguousSpacePool(DefNewGeneration* gen,
+SurvivorContiguousSpacePool::SurvivorContiguousSpacePool(DefNewGeneration* young_gen,
                                                          const char* name,
                                                          PoolType type,
                                                          size_t max_size,
                                                          bool support_usage_threshold) :
-  CollectedMemoryPool(name, type, gen->from()->capacity(), max_size,
-                      support_usage_threshold), _gen(gen) {
+  CollectedMemoryPool(name, type, young_gen->from()->capacity(), max_size,
+                      support_usage_threshold), _young_gen(young_gen) {
 }
 
 size_t SurvivorContiguousSpacePool::used_in_bytes() {
-  return _gen->from()->used();
+  return _young_gen->from()->used();
 }
 
 size_t SurvivorContiguousSpacePool::committed_in_bytes() {
-  return _gen->from()->capacity();
+  return _young_gen->from()->capacity();
 }
 
 MemoryUsage SurvivorContiguousSpacePool::get_memory_usage() {

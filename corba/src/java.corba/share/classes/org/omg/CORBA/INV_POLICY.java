@@ -28,7 +28,7 @@ package org.omg.CORBA;
 /**
  * Standard exception  thrown
  * when an invocation cannot be made because of an incompatibility between
- * <tt>Policy</tt> overrides that apply to the particular invocation.
+ * {@code Policy} overrides that apply to the particular invocation.
  * It contains a minor code, which gives more detailed information about
  * what caused the exception, and a completion status. It may also contain
  * a string describing the exception.
@@ -39,7 +39,7 @@ package org.omg.CORBA;
 
 public final class INV_POLICY extends SystemException {
     /**
-     * Constructs a <code>INV_POLICY</code> exception with a default minor code
+     * Constructs a {@code INV_POLICY} exception with a default minor code
      * of 0, a completion state of CompletionStatus.COMPLETED_NO,
      * and a null description.
      */
@@ -48,7 +48,7 @@ public final class INV_POLICY extends SystemException {
     }
 
     /**
-     * Constructs a <code>INV_POLICY</code> exception with the
+     * Constructs a {@code INV_POLICY} exception with the
      * specified description message,
      * a minor code of 0, and a completion state of COMPLETED_NO.
      * @param s the String containing a detail message
@@ -58,7 +58,7 @@ public final class INV_POLICY extends SystemException {
     }
 
     /**
-     * Constructs a <code>INV_POLICY</code> exception with the specified
+     * Constructs a {@code INV_POLICY} exception with the specified
      * minor code and completion status.
      * @param minor the minor code
      * @param completed the completion status
@@ -68,7 +68,7 @@ public final class INV_POLICY extends SystemException {
     }
 
     /**
-     * Constructs a <code>INV_POLICY</code> exception with the
+     * Constructs a {@code INV_POLICY} exception with the
      * specified description message, minor code, and completion status.
      * @param s the String containing a description message
      * @param minor the minor code

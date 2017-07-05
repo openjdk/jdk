@@ -367,7 +367,7 @@ bool G1ArchiveAllocator::alloc_new_region() {
   _max = _bottom + HeapRegion::min_region_size_in_words();
 
   // Tell mark-sweep that objects in this region are not to be marked.
-  G1MarkSweep::mark_range_archive(MemRegion(_bottom, HeapRegion::GrainWords));
+  G1MarkSweep::set_range_archive(MemRegion(_bottom, HeapRegion::GrainWords), true);
 
   // Since we've modified the old set, call update_sizes.
   _g1h->g1mm()->update_sizes();

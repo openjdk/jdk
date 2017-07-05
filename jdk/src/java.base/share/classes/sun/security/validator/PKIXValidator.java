@@ -56,7 +56,7 @@ public final class PKIXValidator extends Validator {
      * manager. Typically, this will only work if the PKIX implementation
      * supports CRL distribution points as we do not manually setup CertStores.
      */
-    private final static boolean checkTLSRevocation =
+    private static final boolean checkTLSRevocation =
         AccessController.doPrivileged
             (new GetBooleanAction("com.sun.net.ssl.checkRevocation"));
 

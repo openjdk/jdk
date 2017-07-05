@@ -26,48 +26,48 @@
 package org.omg.CORBA;
 
 /**
- * The Holder for <tt>ServiceInformation</tt>.  For more information on
+ * The Holder for {@code ServiceInformation}. For more information on
  * Holder files, see <a href="doc-files/generatedfiles.html#holder">
  * "Generated Files: Holder Files"</a>.<P>
- * A Holder class for a <code>ServiceInformation</code> object
+ * A Holder class for a {@code ServiceInformation} object
  * that is used to store "out" and "inout" parameters in IDL methods.
- * If an IDL method signature has an IDL <code>xxx</code> as an "out"
+ * If an IDL method signature has an IDL {@code xxx} as an "out"
  * or "inout" parameter, the programmer must pass an instance of
- * <code>ServiceInformationHolder</code> as the corresponding
+ * {@code ServiceInformationHolder} as the corresponding
  * parameter in the method invocation; for "inout" parameters, the programmer
  * must also fill the "in" value to be sent to the server.
  * Before the method invocation returns, the ORB will fill in the
  * value corresponding to the "out" value returned from the server.
  * <P>
- * If <code>myServiceInformationHolder</code> is an instance of <code>ServiceInformationHolder</code>,
- * the value stored in its <code>value</code> field can be accessed with
- * <code>myServiceInformationHolder.value</code>.
+ * If {@code myServiceInformationHolder} is an instance of {@code ServiceInformationHolder},
+ * the value stored in its {@code value} field can be accessed with
+ * {@code myServiceInformationHolder.value}.
  */
 public final class ServiceInformationHolder
     implements org.omg.CORBA.portable.Streamable {
 
     /**
-     * The <code>ServiceInformation</code> value held by this
-     * <code>ServiceInformationHolder</code> object in its <code>value</code> field.
+     * The {@code ServiceInformation} value held by this
+     * {@code ServiceInformationHolder} object in its {@code value} field.
      */
     public ServiceInformation value;
 
     /**
-     * Constructs a new <code>ServiceInformationHolder</code> object with its
-     * <code>value</code> field initialized to null.
+     * Constructs a new {@code ServiceInformationHolder} object with its
+     * {@code value} field initialized to null.
      */
     public ServiceInformationHolder() {
         this(null);
     }
 
     /**
-     * Constructs a new <code>ServiceInformationHolder</code> object with its
-     * <code>value</code> field initialized to the given
-     * <code>ServiceInformation</code> object.
+     * Constructs a new {@code ServiceInformationHolder} object with its
+     * {@code value} field initialized to the given
+     * {@code ServiceInformation} object.
      *
-     * @param arg the <code>ServiceInformation</code> object with which to initialize
-     *                the <code>value</code> field of the newly-created
-     *                <code>ServiceInformationHolder</code> object
+     * @param arg the {@code ServiceInformation} object with which to initialize
+     *                the {@code value} field of the newly-created
+     *                {@code ServiceInformationHolder} object
      */
     public ServiceInformationHolder(org.omg.CORBA.ServiceInformation arg) {
         value = arg;
@@ -75,10 +75,10 @@ public final class ServiceInformationHolder
 
 
     /**
-     * Marshals the value in this <code>ServiceInformationHolder</code> object's
-     * <code>value</code> field to the output stream <code>out</code>.
+     * Marshals the value in this {@code ServiceInformationHolder} object's
+     * {@code value} field to the output stream {@code out}.
      *
-     * @param out the <code>OutputStream</code> object that will contain
+     * @param out the {@code OutputStream} object that will contain
      *               the CDR formatted data
      */
     public void _write(org.omg.CORBA.portable.OutputStream out) {
@@ -86,10 +86,10 @@ public final class ServiceInformationHolder
     }
 
     /**
-     * Reads unmarshalled data from the input stream <code>in</code> and assigns it to
-     * the <code>value</code> field in this <code>ServiceInformationHolder</code> object.
+     * Reads unmarshalled data from the input stream {@code in} and assigns it to
+     * the {@code value} field in this {@code ServiceInformationHolder} object.
      *
-     * @param in the <code>InputStream</code> object containing CDR
+     * @param in the {@code InputStream} object containing CDR
      *              formatted data from the wire
      */
     public void _read(org.omg.CORBA.portable.InputStream in) {
@@ -97,11 +97,11 @@ public final class ServiceInformationHolder
     }
 
     /**
-     * Retrieves the <code>TypeCode</code> object that corresponds
-     * to the value held in this <code>ServiceInformationHolder</code> object's
-     * <code>value</code> field.
+     * Retrieves the {@code TypeCode} object that corresponds
+     * to the value held in this {@code ServiceInformationHolder} object's
+     * {@code value} field.
      *
-     * @return    the type code for the value held in this <code>ServiceInformationHolder</code>
+     * @return    the type code for the value held in this {@code ServiceInformationHolder}
      *            object
      */
     public org.omg.CORBA.TypeCode _type() {

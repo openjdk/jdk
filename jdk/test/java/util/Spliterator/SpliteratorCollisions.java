@@ -165,7 +165,7 @@ public class SpliteratorCollisions {
         return spliteratorDataProviderWithNull = data.toArray(new Object[0][]);
     }
 
-    final static class HashableInteger implements Comparable<HashableInteger> {
+    static final class HashableInteger implements Comparable<HashableInteger> {
 
         final int value;
         final int hashmask; //yes duplication

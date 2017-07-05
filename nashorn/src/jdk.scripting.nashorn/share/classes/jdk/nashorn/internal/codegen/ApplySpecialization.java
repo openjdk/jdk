@@ -40,7 +40,6 @@ import jdk.nashorn.internal.ir.AccessNode;
 import jdk.nashorn.internal.ir.CallNode;
 import jdk.nashorn.internal.ir.Expression;
 import jdk.nashorn.internal.ir.FunctionNode;
-import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
 import jdk.nashorn.internal.ir.IdentNode;
 import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.Node;
@@ -384,7 +383,7 @@ public final class ApplySpecialization extends NodeVisitor<LexicalContext> imple
         callSiteTypes.pop();
         explodedArguments.pop();
 
-        return newFunctionNode.setState(lc, CompilationState.BUILTINS_TRANSFORMED);
+        return newFunctionNode;
     }
 
     private static boolean isApply(final CallNode callNode) {

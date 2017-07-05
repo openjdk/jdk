@@ -299,7 +299,7 @@ public class CertPathBuilder {
      * by the {@code certpathbuilder.type} security property, or the string
      * {@literal "PKIX"} if no such property exists.
      */
-    public final static String getDefaultType() {
+    public static final String getDefaultType() {
         String cpbtype =
             AccessController.doPrivileged(new PrivilegedAction<>() {
                 public String run() {

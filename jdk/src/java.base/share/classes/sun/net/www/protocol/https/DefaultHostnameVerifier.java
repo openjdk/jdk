@@ -38,7 +38,7 @@ import javax.net.ssl.SSLSession;
  *
  * @author Xuelei Fan
  */
-final public class DefaultHostnameVerifier implements HostnameVerifier {
+public final class DefaultHostnameVerifier implements HostnameVerifier {
     public boolean verify(String hostname, SSLSession session) {
         return false;
     }

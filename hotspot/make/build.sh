@@ -49,7 +49,7 @@ fi
 # Just in case:
 JAVA_HOME=`( cd $JAVA_HOME; pwd )`
 
-if [ "${ALT_BOOTDIR-}" = ""  -o  ! -d "${ALT_BOOTDIR-}" -o ! -d ${ALT_BOOTDIR-}/jre/lib/ ]; then
+if [ "${ALT_BOOTDIR-}" = ""  -o  ! -d "${ALT_BOOTDIR-}" -o ! -d ${ALT_BOOTDIR-}/lib/ ]; then
     ALT_BOOTDIR=${JAVA_HOME}
 fi
 

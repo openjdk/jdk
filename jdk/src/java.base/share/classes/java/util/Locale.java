@@ -483,91 +483,91 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  */
 public final class Locale implements Cloneable, Serializable {
 
-    static private final  Cache LOCALECACHE = new Cache();
+    private static final  Cache LOCALECACHE = new Cache();
 
     /** Useful constant for language.
      */
-    static public final Locale ENGLISH = createConstant("en", "");
+    public static final Locale ENGLISH = createConstant("en", "");
 
     /** Useful constant for language.
      */
-    static public final Locale FRENCH = createConstant("fr", "");
+    public static final Locale FRENCH = createConstant("fr", "");
 
     /** Useful constant for language.
      */
-    static public final Locale GERMAN = createConstant("de", "");
+    public static final Locale GERMAN = createConstant("de", "");
 
     /** Useful constant for language.
      */
-    static public final Locale ITALIAN = createConstant("it", "");
+    public static final Locale ITALIAN = createConstant("it", "");
 
     /** Useful constant for language.
      */
-    static public final Locale JAPANESE = createConstant("ja", "");
+    public static final Locale JAPANESE = createConstant("ja", "");
 
     /** Useful constant for language.
      */
-    static public final Locale KOREAN = createConstant("ko", "");
+    public static final Locale KOREAN = createConstant("ko", "");
 
     /** Useful constant for language.
      */
-    static public final Locale CHINESE = createConstant("zh", "");
+    public static final Locale CHINESE = createConstant("zh", "");
 
     /** Useful constant for language.
      */
-    static public final Locale SIMPLIFIED_CHINESE = createConstant("zh", "CN");
+    public static final Locale SIMPLIFIED_CHINESE = createConstant("zh", "CN");
 
     /** Useful constant for language.
      */
-    static public final Locale TRADITIONAL_CHINESE = createConstant("zh", "TW");
+    public static final Locale TRADITIONAL_CHINESE = createConstant("zh", "TW");
 
     /** Useful constant for country.
      */
-    static public final Locale FRANCE = createConstant("fr", "FR");
+    public static final Locale FRANCE = createConstant("fr", "FR");
 
     /** Useful constant for country.
      */
-    static public final Locale GERMANY = createConstant("de", "DE");
+    public static final Locale GERMANY = createConstant("de", "DE");
 
     /** Useful constant for country.
      */
-    static public final Locale ITALY = createConstant("it", "IT");
+    public static final Locale ITALY = createConstant("it", "IT");
 
     /** Useful constant for country.
      */
-    static public final Locale JAPAN = createConstant("ja", "JP");
+    public static final Locale JAPAN = createConstant("ja", "JP");
 
     /** Useful constant for country.
      */
-    static public final Locale KOREA = createConstant("ko", "KR");
+    public static final Locale KOREA = createConstant("ko", "KR");
 
     /** Useful constant for country.
      */
-    static public final Locale CHINA = SIMPLIFIED_CHINESE;
+    public static final Locale CHINA = SIMPLIFIED_CHINESE;
 
     /** Useful constant for country.
      */
-    static public final Locale PRC = SIMPLIFIED_CHINESE;
+    public static final Locale PRC = SIMPLIFIED_CHINESE;
 
     /** Useful constant for country.
      */
-    static public final Locale TAIWAN = TRADITIONAL_CHINESE;
+    public static final Locale TAIWAN = TRADITIONAL_CHINESE;
 
     /** Useful constant for country.
      */
-    static public final Locale UK = createConstant("en", "GB");
+    public static final Locale UK = createConstant("en", "GB");
 
     /** Useful constant for country.
      */
-    static public final Locale US = createConstant("en", "US");
+    public static final Locale US = createConstant("en", "US");
 
     /** Useful constant for country.
      */
-    static public final Locale CANADA = createConstant("en", "CA");
+    public static final Locale CANADA = createConstant("en", "CA");
 
     /** Useful constant for country.
      */
-    static public final Locale CANADA_FRENCH = createConstant("fr", "CA");
+    public static final Locale CANADA_FRENCH = createConstant("fr", "CA");
 
     /**
      * Useful constant for the root locale.  The root locale is the locale whose
@@ -577,7 +577,7 @@ public final class Locale implements Cloneable, Serializable {
      *
      * @since 1.6
      */
-    static public final Locale ROOT = createConstant("", "");
+    public static final Locale ROOT = createConstant("", "");
 
     /**
      * The key for the private use extension ('x').
@@ -586,7 +586,7 @@ public final class Locale implements Cloneable, Serializable {
      * @see Builder#setExtension(char, String)
      * @since 1.7
      */
-    static public final char PRIVATE_USE_EXTENSION = 'x';
+    public static final char PRIVATE_USE_EXTENSION = 'x';
 
     /**
      * The key for Unicode locale extension ('u').
@@ -595,7 +595,7 @@ public final class Locale implements Cloneable, Serializable {
      * @see Builder#setExtension(char, String)
      * @since 1.7
      */
-    static public final char UNICODE_LOCALE_EXTENSION = 'u';
+    public static final char UNICODE_LOCALE_EXTENSION = 'u';
 
     /** serialization ID
      */
@@ -2018,9 +2018,9 @@ public final class Locale implements Cloneable, Serializable {
      */
     private transient volatile int hashCodeValue = 0;
 
-    private volatile static Locale defaultLocale = initDefault();
-    private volatile static Locale defaultDisplayLocale = null;
-    private volatile static Locale defaultFormatLocale = null;
+    private static volatile Locale defaultLocale = initDefault();
+    private static volatile Locale defaultDisplayLocale = null;
+    private static volatile Locale defaultFormatLocale = null;
 
     private transient volatile String languageTag;
 

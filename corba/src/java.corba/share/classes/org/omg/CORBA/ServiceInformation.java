@@ -26,9 +26,10 @@
 package org.omg.CORBA;
 
 
-/** An IDL struct in the CORBA module that
+/**
+ *  An IDL struct in the CORBA module that
  *  stores information about a CORBA service available in the
- *  ORB implementation and is obtained from the <tt>ORB.get_service_information</tt>
+ *  ORB implementation and is obtained from the {@code ORB.get_service_information}
  *  method.
  */
 public final class ServiceInformation implements org.omg.CORBA.portable.IDLEntity

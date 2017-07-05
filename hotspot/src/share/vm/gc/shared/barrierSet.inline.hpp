@@ -32,8 +32,18 @@
 // performance-critical calls when the barrier is the most common
 // card-table kind.
 
+inline bool BarrierSet::devirtualize_reference_writes() const {
+  switch (kind()) {
+  case CardTableForRS:
+  case CardTableExtension:
+    return true;
+  default:
+    return false;
+  }
+}
+
 template <class T> void BarrierSet::write_ref_field_pre(T* field, oop new_val) {
-  if (kind() == CardTableModRef) {
+  if (devirtualize_reference_writes()) {
     barrier_set_cast<CardTableModRefBS>(this)->inline_write_ref_field_pre(field, new_val);
   } else {
     write_ref_field_pre_work(field, new_val);
@@ -41,7 +51,7 @@ template <class T> void BarrierSet::write_ref_field_pre(T* field, oop new_val) {
 }
 
 void BarrierSet::write_ref_field(void* field, oop new_val, bool release) {
-  if (kind() == CardTableModRef) {
+  if (devirtualize_reference_writes()) {
     barrier_set_cast<CardTableModRefBS>(this)->inline_write_ref_field(field, new_val, release);
   } else {
     write_ref_field_work(field, new_val, release);
@@ -77,7 +87,7 @@ void BarrierSet::write_ref_array(HeapWord* start, size_t count) {
 
 
 inline void BarrierSet::write_region(MemRegion mr) {
-  if (kind() == CardTableModRef) {
+  if (devirtualize_reference_writes()) {
     barrier_set_cast<CardTableModRefBS>(this)->inline_write_region(mr);
   } else {
     write_region_work(mr);

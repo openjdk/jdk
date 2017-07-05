@@ -49,7 +49,7 @@ import java.io.*;
  */
 class B implements Serializable {
     public int publicIntField;
-    static public int numWriteObjectCalled = 0;
+    public static int numWriteObjectCalled = 0;
     B(int v) {
         publicIntField = v;
     }
@@ -73,7 +73,7 @@ class B implements Serializable {
 class C implements Serializable {
     public int xx1;
     public int xx2;
-    final static ObjectStreamField[] serialPersistentFields = {
+    static final ObjectStreamField[] serialPersistentFields = {
         new ObjectStreamField("x1", Integer.TYPE),
         new ObjectStreamField("x2", Integer.TYPE),
         new ObjectStreamField("x3", Integer.TYPE),
@@ -112,7 +112,7 @@ class A implements Serializable {
 };
 
 public class Test {
-    static public void main(String argv[])
+    public static void main(String argv[])
         throws IOException, ClassNotFoundException
     {
         boolean expectSecurityException = false;

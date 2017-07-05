@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@ PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
 PerfDataList*   PerfDataManager::_all = NULL;
 PerfDataList*   PerfDataManager::_sampled = NULL;
 PerfDataList*   PerfDataManager::_constants = NULL;
+volatile bool   PerfDataManager::_has_PerfData = 0;
 
 /*
  * The jvmstat global and subsystem jvmstat counter name spaces. The top
@@ -272,15 +273,21 @@ PerfStringConstant::PerfStringConstant(CounterNS ns, const char* namep,
 }
 
 
-
-
-
-
 void PerfDataManager::destroy() {
 
   if (_all == NULL)
     // destroy already called, or initialization never happened
     return;
+
+  // Clear the flag before we free the PerfData counters. Thus begins
+  // the race between this thread and another thread that has just
+  // queried PerfDataManager::has_PerfData() and gotten back 'true'.
+  // The hope is that the other thread will finish its PerfData
+  // manipulation before we free the memory. The two alternatives are
+  // 1) leak the PerfData memory or 2) do some form of synchronized
+  // access or check before every PerfData operation.
+  _has_PerfData = false;
+  os::naked_short_sleep(1);  // 1ms sleep to let other thread(s) run
 
   for (int index = 0; index < _all->length(); index++) {
     PerfData* p = _all->at(index);
@@ -302,6 +309,7 @@ void PerfDataManager::add_item(PerfData* p, bool sampled) {
 
   if (_all == NULL) {
     _all = new PerfDataList(100);
+    _has_PerfData = true;
   }
 
   assert(!_all->contains(p->name()), "duplicate name added");

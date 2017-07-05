@@ -63,7 +63,7 @@ public class LogManagerAppContextDeadlock {
     // Emulate AppContext
     static class FakeAppContext {
 
-        final static AtomicInteger numAppContexts = new AtomicInteger(0);
+        static final AtomicInteger numAppContexts = new AtomicInteger(0);
         static final class FakeAppContextLock {}
         static final FakeAppContextLock lock = new FakeAppContextLock();
         static volatile FakeAppContext appContext;
@@ -220,7 +220,7 @@ public class LogManagerAppContextDeadlock {
     }
 
     // A thread that detect deadlocks.
-    final static class DeadlockDetector extends Thread {
+    static final class DeadlockDetector extends Thread {
 
         public DeadlockDetector() {
             this.setDaemon(true);
@@ -302,7 +302,7 @@ public class LogManagerAppContextDeadlock {
     }
 
     // A Helper class to build a set of permissions.
-    final static class PermissionsBuilder {
+    static final class PermissionsBuilder {
         final Permissions perms;
         public PermissionsBuilder() {
             this(new Permissions());

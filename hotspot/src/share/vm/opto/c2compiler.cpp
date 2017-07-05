@@ -419,6 +419,8 @@ bool C2Compiler::is_intrinsic_supported(methodHandle method, bool is_virtual) {
   case vmIntrinsics::_updateByteBufferCRC32:
   case vmIntrinsics::_updateBytesCRC32C:
   case vmIntrinsics::_updateDirectByteBufferCRC32C:
+  case vmIntrinsics::_updateBytesAdler32:
+  case vmIntrinsics::_updateByteBufferAdler32:
   case vmIntrinsics::_profileBoolean:
   case vmIntrinsics::_isCompileConstant:
     break;

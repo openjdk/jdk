@@ -429,7 +429,7 @@ public class TestConfigurationListeners {
     }
 
 
-    final static class PermissionsBuilder {
+    static final class PermissionsBuilder {
         final Permissions perms;
         public PermissionsBuilder() {
             this(new Permissions());

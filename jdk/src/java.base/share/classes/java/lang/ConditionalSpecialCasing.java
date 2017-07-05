@@ -47,14 +47,14 @@ import sun.text.Normalizer;
 final class ConditionalSpecialCasing {
 
     // context conditions.
-    final static int FINAL_CASED =              1;
-    final static int AFTER_SOFT_DOTTED =        2;
-    final static int MORE_ABOVE =               3;
-    final static int AFTER_I =                  4;
-    final static int NOT_BEFORE_DOT =           5;
+    static final int FINAL_CASED =              1;
+    static final int AFTER_SOFT_DOTTED =        2;
+    static final int MORE_ABOVE =               3;
+    static final int AFTER_I =                  4;
+    static final int NOT_BEFORE_DOT =           5;
 
     // combining class definitions
-    final static int COMBINING_CLASS_ABOVE = 230;
+    static final int COMBINING_CLASS_ABOVE = 230;
 
     // Special case mapping entries
     static Entry[] entry = {

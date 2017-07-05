@@ -28,7 +28,7 @@
  */
 public class StringContentEqualsBug {
 
-    static abstract class Task extends Thread {
+    abstract static class Task extends Thread {
         volatile StringBuffer sb;
         volatile Exception exception;
 
