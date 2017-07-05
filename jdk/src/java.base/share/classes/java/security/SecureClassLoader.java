@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@ public class SecureClassLoader extends ClassLoader {
      * <p>If there is a security manager, this method first
      * calls the security manager's {@code checkCreateClassLoader}
      * method  to ensure creation of a class loader is allowed.
-     * <p>
+     *
      * @param parent the parent ClassLoader
      * @exception  SecurityException  if a security manager exists and its
      *             {@code checkCreateClassLoader} method doesn't allow
@@ -112,7 +112,7 @@ public class SecureClassLoader extends ClassLoader {
      * <p>
      * If a non-null CodeSource is supplied a ProtectionDomain is
      * constructed and associated with the class being defined.
-     * <p>
+     *
      * @param      name the expected name of the class, or {@code null}
      *                  if not known, using '.' and not '/' as the separator
      *                  and without a trailing ".class" suffix.
@@ -149,7 +149,7 @@ public class SecureClassLoader extends ClassLoader {
      * <p>
      * If a non-null CodeSource is supplied a ProtectionDomain is
      * constructed and associated with the class being defined.
-     * <p>
+     *
      * @param      name the expected name of the class, or {@code null}
      *                  if not known, using '.' and not '/' as the separator
      *                  and without a trailing ".class" suffix.
@@ -180,7 +180,7 @@ public class SecureClassLoader extends ClassLoader {
      * This method is invoked by the defineClass method which takes
      * a CodeSource as an argument when it is constructing the
      * ProtectionDomain for the class being defined.
-     * <p>
+     *
      * @param codesource the codesource.
      *
      * @return the permissions granted to the codesource.

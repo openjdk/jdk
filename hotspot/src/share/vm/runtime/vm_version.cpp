@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -187,18 +187,18 @@ const char* Abstract_VM_Version::jre_release_version() {
                  AIX_ONLY("aix")                 \
                  BSD_ONLY("bsd")
 
+#ifndef CPU
 #ifdef ZERO
 #define CPU      ZERO_LIBARCH
 #else
 #define CPU      IA32_ONLY("x86")                \
                  IA64_ONLY("ia64")               \
                  AMD64_ONLY("amd64")             \
-                 ARM_ONLY("arm")                 \
-                 PPC32_ONLY("ppc")               \
                  PPC64_ONLY("ppc64")             \
                  AARCH64_ONLY("aarch64")         \
                  SPARC_ONLY("sparc")
 #endif // ZERO
+#endif
 
 const char *Abstract_VM_Version::vm_platform_string() {
   return OS "-" CPU;
@@ -251,12 +251,6 @@ const char* Abstract_VM_Version::internal_vm_info_string() {
   #ifndef FLOAT_ARCH
     #if defined(__SOFTFP__)
       #define FLOAT_ARCH_STR "-sflt"
-    #elif defined(E500V2)
-      #define FLOAT_ARCH_STR "-e500v2"
-    #elif defined(ARM)
-      #define FLOAT_ARCH_STR "-vfp"
-    #elif defined(PPC32)
-      #define FLOAT_ARCH_STR "-hflt"
     #else
       #define FLOAT_ARCH_STR ""
     #endif

@@ -1,0 +1,166 @@
+[
+  {
+    "condition": {
+      "endPosition": "9",
+      "kind": "BOOLEAN_LITERAL",
+      "value": "true",
+      "startPosition": "5"
+    },
+    "elseStatement": "null",
+    "endPosition": "13",
+    "kind": "IF",
+    "startPosition": "1",
+    "thenStatement": {
+      "endPosition": "13",
+      "kind": "BLOCK",
+      "statements": [],
+      "startPosition": "11"
+    }
+  },
+  {
+    "condition": {
+      "endPosition": "23",
+      "kind": "BOOLEAN_LITERAL",
+      "value": "false",
+      "startPosition": "18"
+    },
+    "elseStatement": "null",
+    "endPosition": "27",
+    "kind": "IF",
+    "startPosition": "14",
+    "thenStatement": {
+      "endPosition": "27",
+      "kind": "BLOCK",
+      "statements": [],
+      "startPosition": "25"
+    }
+  },
+  {
+    "condition": {
+      "endPosition": "33",
+      "kind": "IDENTIFIER",
+      "name": "a",
+      "startPosition": "32"
+    },
+    "elseStatement": "null",
+    "endPosition": "43",
+    "kind": "IF",
+    "startPosition": "28",
+    "thenStatement": {
+      "expression": {
+        "endPosition": "43",
+        "kind": "FUNCTION_INVOCATION",
+        "functionSelect": {
+          "endPosition": "40",
+          "kind": "IDENTIFIER",
+          "name": "print",
+          "startPosition": "35"
+        },
+        "arguments": [
+          {
+            "endPosition": "42",
+            "kind": "IDENTIFIER",
+            "name": "a",
+            "startPosition": "41"
+          }
+        ],
+        "startPosition": "35"
+      },
+      "endPosition": "43",
+      "kind": "EXPRESSION_STATEMENT",
+      "startPosition": "35"
+    }
+  },
+  {
+    "condition": {
+      "endPosition": "52",
+      "kind": "STRING_LITERAL",
+      "value": "STR",
+      "startPosition": "49"
+    },
+    "elseStatement": "null",
+    "endPosition": "57",
+    "kind": "IF",
+    "startPosition": "44",
+    "thenStatement": {
+      "endPosition": "57",
+      "kind": "BLOCK",
+      "statements": [],
+      "startPosition": "55"
+    }
+  },
+  {
+    "condition": {
+      "leftOperand": {
+        "endPosition": "64",
+        "kind": "IDENTIFIER",
+        "name": "a",
+        "startPosition": "63"
+      },
+      "endPosition": "69",
+      "kind": "GREATER_THAN",
+      "rightOperand": {
+        "endPosition": "69",
+        "kind": "NUMBER_LITERAL",
+        "value": "10",
+        "startPosition": "67"
+      },
+      "startPosition": "63"
+    },
+    "elseStatement": {
+      "endPosition": "81",
+      "kind": "BLOCK",
+      "statements": [],
+      "startPosition": "79"
+    },
+    "endPosition": "81",
+    "kind": "IF",
+    "startPosition": "58",
+    "thenStatement": {
+      "endPosition": "73",
+      "kind": "BLOCK",
+      "statements": [],
+      "startPosition": "71"
+    }
+  },
+  {
+    "condition": {
+      "endPosition": "87",
+      "kind": "IDENTIFIER",
+      "name": "a",
+      "startPosition": "86"
+    },
+    "elseStatement": {
+      "condition": {
+        "endPosition": "102",
+        "kind": "IDENTIFIER",
+        "name": "b",
+        "startPosition": "101"
+      },
+      "elseStatement": {
+        "endPosition": "114",
+        "kind": "BLOCK",
+        "statements": [],
+        "startPosition": "112"
+      },
+      "endPosition": "114",
+      "kind": "IF",
+      "startPosition": "97",
+      "thenStatement": {
+        "endPosition": "106",
+        "kind": "BLOCK",
+        "statements": [],
+        "startPosition": "104"
+      }
+    },
+    "endPosition": "114",
+    "kind": "IF",
+    "startPosition": "82",
+    "thenStatement": {
+      "endPosition": "91",
+      "kind": "BLOCK",
+      "statements": [],
+      "startPosition": "89"
+    }
+  }
+]

@@ -20,6 +20,31 @@
 #  questions.
 #
 
+###############################################################################
+#
+# Tiered testing definitions
+#
+
+tier1 = \
+    :jdk_lang \
+    :jdk_util \
+    :jdk_math
+
+tier2 = \
+    :jdk_io \
+    :jdk_nio \
+    :jdk_net \
+    :jdk_rmi \
+    :jdk_time \
+    :jdk_security \
+    :jdk_text \
+    :core_tools
+
+###############################################################################
+#
+# Other test definitions; generally smaller granularity than tiers
+#
+
 # java.lang package and VM runtime support
 jdk_lang = \
     java/lang \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,8 +112,6 @@ public class KeyRep implements Serializable {
     /**
      * Construct the alternate Key class.
      *
-     * <p>
-     *
      * @param type either one of Type.SECRET, Type.PUBLIC, or Type.PRIVATE
      * @param algorithm the algorithm returned from
      *          {@code Key.getAlgorithm()}
@@ -156,8 +154,6 @@ public class KeyRep implements Serializable {
      * the key algorithm, constructs a PKCS8EncodedKeySpec with the
      * encoded key bytes, and generates a private key from the spec
      * </ul>
-     *
-     * <p>
      *
      * @return the resolved Key object
      *

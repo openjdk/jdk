@@ -1,0 +1,12 @@
+[
+  {
+    "endPosition": "2",
+    "kind": "EMPTY_STATEMENT",
+    "startPosition": "1"
+  },
+  {
+    "endPosition": "14",
+    "kind": "EMPTY_STATEMENT",
+    "startPosition": "13"
+  }
+]

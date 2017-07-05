@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,8 +87,6 @@ public interface DomainCombiner {
      * Individual ProtectionDomains may be modified (with a new
      * set of Permissions, for example).
      *
-     * <p>
-     *
      * @param currentDomains the ProtectionDomains associated with the
      *          current execution Thread, up to the most recent
      *          privileged {@code ProtectionDomain}.
@@ -96,7 +94,7 @@ public interface DomainCombiner {
      *          with the most recently executing {@code ProtectionDomain}
      *          residing at the beginning of the array. This parameter may
      *          be {@code null} if the current execution Thread
-     *          has no associated ProtectionDomains.<p>
+     *          has no associated ProtectionDomains.
      *
      * @param assignedDomains an array of inherited ProtectionDomains.
      *          ProtectionDomains may be inherited from a parent Thread,

@@ -70,6 +70,7 @@ import java.security.Security;
  *        -DCLIENT_PROTOCOL=DEFAULT -Djdk.tls.client.protocols=TLSv1.2
  *        -DCIPHER=SSL_RSA_WITH_RC4_128_MD5
  *        TestJSSE javax.net.ssl.SSLHandshakeException
+ * @key intermittent
  *
  */
 

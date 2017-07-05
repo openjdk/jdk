@@ -24,12 +24,12 @@
 #
 
 # @test
-# @bug 4673940
-# @bug 4930794
+# @bug 4673940 4930794
 # @summary Unit tests for inetd feature
 #
 # @build StateTest StateTestService EchoTest EchoService CloseTest Launcher Util
 # @run shell run_tests.sh
+# @key intermittent
 
 os=`uname -s`
 
