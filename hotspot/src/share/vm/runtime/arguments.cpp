@@ -422,6 +422,8 @@ static SpecialFlag const special_jvm_flags[] = {
   { "UseAltSigs",                    JDK_Version::undefined(), JDK_Version::jdk(9), JDK_Version::jdk(10) },
   { "SegmentedHeapDumpThreshold",    JDK_Version::undefined(), JDK_Version::jdk(9), JDK_Version::jdk(10) },
   { "PrintOopAddress",               JDK_Version::undefined(), JDK_Version::jdk(9), JDK_Version::jdk(10) },
+  { "PermSize",                      JDK_Version::undefined(), JDK_Version::jdk(8), JDK_Version::jdk(10) },
+  { "MaxPermSize",                   JDK_Version::undefined(), JDK_Version::jdk(8), JDK_Version::jdk(10) },
 
 #ifdef TEST_VERIFY_SPECIAL_JVM_FLAGS
   { "dep > obs",                    JDK_Version::jdk(9), JDK_Version::jdk(8), JDK_Version::undefined() },
