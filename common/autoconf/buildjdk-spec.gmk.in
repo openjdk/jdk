@@ -33,6 +33,7 @@ include @SPEC@
 CC := @BUILD_CC@
 CXX := @BUILD_CXX@
 LD := @BUILD_LD@
+LDCXX := @BUILD_LDCXX@
 AS := @BUILD_AS@
 NM := @BUILD_NM@
 AR := @BUILD_AR@
