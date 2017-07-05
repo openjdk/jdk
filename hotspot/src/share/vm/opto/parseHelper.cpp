@@ -43,7 +43,7 @@ void GraphKit::make_dtrace_method_entry_exit(ciMethod* method, bool is_entry) {
   const char     *call_name    = is_entry ? "dtrace_method_entry" : "dtrace_method_exit";
 
   // Get base of thread-local storage area
-  Node* thread = _gvn.transform( new (C) ThreadLocalNode() );
+  Node* thread = _gvn.transform( new ThreadLocalNode() );
 
   // Get method
   const TypePtr* method_type = TypeMetadataPtr::make(method);
@@ -175,8 +175,8 @@ void Parse::array_store_check() {
     // Make a constant out of the inexact array klass
     const TypeKlassPtr *extak = tak->cast_to_exactness(true)->is_klassptr();
     Node* con = makecon(extak);
-    Node* cmp = _gvn.transform(new (C) CmpPNode( array_klass, con ));
-    Node* bol = _gvn.transform(new (C) BoolNode( cmp, BoolTest::eq ));
+    Node* cmp = _gvn.transform(new CmpPNode( array_klass, con ));
+    Node* bol = _gvn.transform(new BoolNode( cmp, BoolTest::eq ));
     Node* ctrl= control();
     { BuildCutout unless(this, bol, PROB_MAX);
       uncommon_trap(Deoptimization::Reason_array_check,
@@ -215,8 +215,8 @@ void Parse::emit_guard_for_new(ciInstanceKlass* klass) {
   //   if (klass->_init_thread != current_thread ||
   //       klass->_init_state != being_initialized)
   //      uncommon_trap
-  Node* cur_thread = _gvn.transform( new (C) ThreadLocalNode() );
-  Node* merge = new (C) RegionNode(3);
+  Node* cur_thread = _gvn.transform( new ThreadLocalNode() );
+  Node* merge = new RegionNode(3);
   _gvn.set_type(merge, Type::CONTROL);
   Node* kls = makecon(TypeKlassPtr::make(klass));
 
@@ -327,9 +327,9 @@ void Parse::test_counter_against_threshold(Node* cnt, int limit) {
 
   // Test invocation count vs threshold
   Node *threshold = makecon(TypeInt::make(limit));
-  Node *chk   = _gvn.transform( new (C) CmpUNode( cnt, threshold) );
+  Node *chk   = _gvn.transform( new CmpUNode( cnt, threshold) );
   BoolTest::mask btest = BoolTest::lt;
-  Node *tst   = _gvn.transform( new (C) BoolNode( chk, btest) );
+  Node *tst   = _gvn.transform( new BoolNode( chk, btest) );
   // Branch to failure if threshold exceeded
   { BuildCutout unless(this, tst, PROB_ALWAYS);
     uncommon_trap(Deoptimization::Reason_age,
@@ -359,7 +359,7 @@ void Parse::increment_and_test_invocation_counter(int limit) {
   test_counter_against_threshold(cnt, limit);
 
   // Add one to the counter and store
-  Node* incr = _gvn.transform(new (C) AddINode(cnt, _gvn.intcon(1)));
+  Node* incr = _gvn.transform(new AddINode(cnt, _gvn.intcon(1)));
   store_to_memory(ctrl, adr_iic_node, incr, T_INT, adr_type, MemNode::unordered);
 }
 
@@ -380,8 +380,8 @@ Node* Parse::method_data_addressing(ciMethodData* md, ciProfileData* data, ByteS
 
   if (stride != 0) {
     Node* str = _gvn.MakeConX(stride);
-    Node* scale = _gvn.transform( new (C) MulXNode( idx, str ) );
-    ptr   = _gvn.transform( new (C) AddPNode( mdo, ptr, scale ) );
+    Node* scale = _gvn.transform( new MulXNode( idx, str ) );
+    ptr   = _gvn.transform( new AddPNode( mdo, ptr, scale ) );
   }
 
   return ptr;
@@ -393,7 +393,7 @@ void Parse::increment_md_counter_at(ciMethodData* md, ciProfileData* data, ByteS
 
   const TypePtr* adr_type = _gvn.type(adr_node)->is_ptr();
   Node* cnt  = make_load(NULL, adr_node, TypeInt::INT, T_INT, adr_type, MemNode::unordered);
-  Node* incr = _gvn.transform(new (C) AddINode(cnt, _gvn.intcon(DataLayout::counter_increment)));
+  Node* incr = _gvn.transform(new AddINode(cnt, _gvn.intcon(DataLayout::counter_increment)));
   store_to_memory(NULL, adr_node, incr, T_INT, adr_type, MemNode::unordered);
 }
 
@@ -413,7 +413,7 @@ void Parse::set_md_flag_at(ciMethodData* md, ciProfileData* data, int flag_const
 
   const TypePtr* adr_type = _gvn.type(adr_node)->is_ptr();
   Node* flags = make_load(NULL, adr_node, TypeInt::BYTE, T_BYTE, adr_type, MemNode::unordered);
-  Node* incr = _gvn.transform(new (C) OrINode(flags, _gvn.intcon(flag_constant)));
+  Node* incr = _gvn.transform(new OrINode(flags, _gvn.intcon(flag_constant)));
   store_to_memory(NULL, adr_node, incr, T_BYTE, adr_type, MemNode::unordered);
 }
 

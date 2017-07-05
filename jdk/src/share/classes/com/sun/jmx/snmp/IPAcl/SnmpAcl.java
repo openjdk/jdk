@@ -186,8 +186,8 @@ public class SnmpAcl implements InetAddressAcl, Serializable {
     public static String getDefaultAclFileName() {
         final String fileSeparator =
             System.getProperty("file.separator");
-        final StringBuffer defaultAclName =
-            new StringBuffer(System.getProperty("java.home")).
+        final StringBuilder defaultAclName =
+            new StringBuilder(System.getProperty("java.home")).
             append(fileSeparator).append("lib").append(fileSeparator).
             append("snmp.acl");
         return defaultAclName.toString();

@@ -95,12 +95,12 @@ public class FieldImpl extends TypeComponentImpl
     }
 
     public String toString() {
-        StringBuffer buf = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
 
-        buf.append(declaringType().name());
-        buf.append('.');
-        buf.append(name());
+        sb.append(declaringType().name());
+        sb.append('.');
+        sb.append(name());
 
-        return buf.toString();
+        return sb.toString();
     }
 }

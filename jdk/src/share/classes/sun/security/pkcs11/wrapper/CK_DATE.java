@@ -122,16 +122,16 @@ public class CK_DATE implements Cloneable {
      * @return the string representation of CK_DATE
      */
     public String toString() {
-        StringBuffer buffer = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
 
-        buffer.append(new String(day));
-        buffer.append('.');
-        buffer.append(new String(month));
-        buffer.append('.');
-        buffer.append(new String(year));
-        buffer.append(" (DD.MM.YYYY)");
+        sb.append(new String(day));
+        sb.append('.');
+        sb.append(new String(month));
+        sb.append('.');
+        sb.append(new String(year));
+        sb.append(" (DD.MM.YYYY)");
 
-        return buffer.toString();
+        return sb.toString();
     }
 
 }

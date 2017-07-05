@@ -408,7 +408,7 @@ public class FtpClient extends sun.net.ftp.FtpClient {
      * number. Returns -1 on failure.
      */
     private int readServerResponse() throws IOException {
-        StringBuffer replyBuf = new StringBuffer(32);
+        StringBuilder replyBuf = new StringBuilder(32);
         int c;
         int continuingCode = -1;
         int code;
@@ -1050,7 +1050,7 @@ public class FtpClient extends sun.net.ftp.FtpClient {
         // keep the welcome message around so we can
         // put it in the resulting HTML page.
         String l;
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         for (int i = 0; i < serverResponse.size(); i++) {
             l = serverResponse.elementAt(i);
             if (l != null) {
@@ -1095,7 +1095,7 @@ public class FtpClient extends sun.net.ftp.FtpClient {
 
         // keep the welcome message around so we can
         // put it in the resulting HTML page.
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         if (serverResponse != null) {
             for (String l : serverResponse) {
                 if (l != null) {
@@ -1493,7 +1493,7 @@ public class FtpClient extends sun.net.ftp.FtpClient {
          * So we need to remove the 1st and last line
          */
         Vector<String> resp = getResponseStrings();
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         for (int i = 1; i < resp.size() - 1; i++) {
             sb.append(resp.get(i));
         }
@@ -1985,7 +1985,7 @@ public class FtpClient extends sun.net.ftp.FtpClient {
      *         by the server.
      */
     public String getLastResponseString() {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         if (serverResponse != null) {
             for (String l : serverResponse) {
                 if (l != null) {
@@ -2188,7 +2188,7 @@ public class FtpClient extends sun.net.ftp.FtpClient {
         }
         // on multiple lines answers, like the ones above, remove 1st and last
         // line, concat the the others.
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         for (int i = 1; i < resp.size() - 1; i++) {
             sb.append(resp.get(i).substring(3));
         }

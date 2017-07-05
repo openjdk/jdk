@@ -236,7 +236,7 @@ public class SourceModel extends AbstractListModel {
     private String expandTabs(String s) {
         int col = 0;
         int len = s.length();
-        StringBuffer sb = new StringBuffer(132);
+        StringBuilder sb = new StringBuilder(132);
         for (int i = 0; i < len; i++) {
             char c = s.charAt(i);
             sb.append(c);

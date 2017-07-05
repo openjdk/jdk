@@ -91,17 +91,17 @@ class MethodType extends Type {
     }
 
     public String typeString(String id, boolean abbrev, boolean ret) {
-        StringBuffer buf = new StringBuffer();
-        buf.append(id);
-        buf.append('(');
+        StringBuilder sb = new StringBuilder();
+        sb.append(id);
+        sb.append('(');
         for (int i = 0 ; i < argTypes.length ; i++) {
             if (i > 0) {
-                buf.append(", ");
+                sb.append(", ");
             }
-            buf.append(argTypes[i].typeString("", abbrev, ret));
+            sb.append(argTypes[i].typeString("", abbrev, ret));
         }
-        buf.append(')');
+        sb.append(')');
 
-        return ret ? getReturnType().typeString(buf.toString(), abbrev, ret) : buf.toString();
+        return ret ? getReturnType().typeString(sb.toString(), abbrev, ret) : sb.toString();
     }
 }

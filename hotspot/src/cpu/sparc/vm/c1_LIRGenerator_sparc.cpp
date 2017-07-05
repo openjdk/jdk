@@ -872,21 +872,19 @@ void LIRGenerator::do_Convert(Convert* x) {
 
 
 void LIRGenerator::do_NewInstance(NewInstance* x) {
+  print_if_not_loaded(x);
+
   // This instruction can be deoptimized in the slow path : use
   // O0 as result register.
   const LIR_Opr reg = result_register_for(x->type());
-#ifndef PRODUCT
-  if (PrintNotLoaded && !x->klass()->is_loaded()) {
-    tty->print_cr("   ###class not loaded at new bci %d", x->printable_bci());
-  }
-#endif
+
   CodeEmitInfo* info = state_for(x, x->state());
   LIR_Opr tmp1 = FrameMap::G1_oop_opr;
   LIR_Opr tmp2 = FrameMap::G3_oop_opr;
   LIR_Opr tmp3 = FrameMap::G4_oop_opr;
   LIR_Opr tmp4 = FrameMap::O1_oop_opr;
   LIR_Opr klass_reg = FrameMap::G5_metadata_opr;
-  new_instance(reg, x->klass(), tmp1, tmp2, tmp3, tmp4, klass_reg, info);
+  new_instance(reg, x->klass(), x->is_unresolved(), tmp1, tmp2, tmp3, tmp4, klass_reg, info);
   LIR_Opr result = rlock_result(x);
   __ move(reg, result);
 }

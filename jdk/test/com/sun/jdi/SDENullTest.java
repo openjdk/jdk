@@ -30,7 +30,7 @@
  *
  *  @run build  TestScaffold VMConnection TargetListener TargetAdapter
  *  @run compile -g SDENullTest.java
- *  @run main SDENullTest
+ *  @run driver SDENullTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

@@ -95,24 +95,24 @@ public class CK_RSA_PKCS_PSS_PARAMS {
      * @return the string representation of CK_PKCS5_PBKD2_PARAMS
      */
     public String toString() {
-        StringBuffer buffer = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
 
-        buffer.append(Constants.INDENT);
-        buffer.append("hashAlg: 0x");
-        buffer.append(Functions.toFullHexString(hashAlg));
-        buffer.append(Constants.NEWLINE);
+        sb.append(Constants.INDENT);
+        sb.append("hashAlg: 0x");
+        sb.append(Functions.toFullHexString(hashAlg));
+        sb.append(Constants.NEWLINE);
 
-        buffer.append(Constants.INDENT);
-        buffer.append("mgf: 0x");
-        buffer.append(Functions.toFullHexString(mgf));
-        buffer.append(Constants.NEWLINE);
+        sb.append(Constants.INDENT);
+        sb.append("mgf: 0x");
+        sb.append(Functions.toFullHexString(mgf));
+        sb.append(Constants.NEWLINE);
 
-        buffer.append(Constants.INDENT);
-        buffer.append("sLen: ");
-        buffer.append(sLen);
+        sb.append(Constants.INDENT);
+        sb.append("sLen: ");
+        sb.append(sLen);
         //buffer.append(Constants.NEWLINE);
 
-        return buffer.toString();
+        return sb.toString();
     }
 
 }

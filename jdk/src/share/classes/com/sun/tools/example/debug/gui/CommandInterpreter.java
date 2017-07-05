@@ -267,7 +267,7 @@ public class CommandInterpreter {
                 buf[j] = ' ';
             }
             buf[79] = '\0';
-            StringBuffer sbOut = new StringBuffer();
+            StringBuilder sbOut = new StringBuilder();
             sbOut.append(buf);
 
             // Right-justify the thread number at start of output string
@@ -381,16 +381,16 @@ public class CommandInterpreter {
             }
         } else {
             clname = t.nextToken();
-            StringBuffer sbuf = new StringBuffer();
+            StringBuilder str = new StringBuilder();
             // Allow VM arguments to be specified here?
             while (t.hasMoreTokens()) {
                 String tok = t.nextToken();
-                sbuf.append(tok);
+                str.append(tok);
                 if (t.hasMoreTokens()) {
-                    sbuf.append(' ');
+                    str.append(' ');
                 }
             }
-            String args = sbuf.toString();
+            String args = str.toString();
             try {
                 String vmArgs = context.getVmArguments();
                 runtime.run(suspended, vmArgs, clname, args);

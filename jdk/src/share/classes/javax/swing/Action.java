@@ -337,6 +337,9 @@ public interface Action extends ActionListener {
     /**
      * Gets one of this object's properties
      * using the associated key.
+     *
+     * @param key a {@code String} containing the key
+     * @return the {@code Object} value
      * @see #putValue
      */
     public Object getValue(String key);

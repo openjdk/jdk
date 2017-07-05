@@ -31,7 +31,7 @@
  *  @library scaffold
  *  @run build JDIScaffold VMConnection
  *  @compile -XDignore.symbol.file NativeInstanceFilterTarg.java
- *  @run main/othervm NativeInstanceFilter
+ *  @run driver NativeInstanceFilter
  */
 
 /*

@@ -31,7 +31,7 @@
  *
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter
  *  @run compile -g PopAndInvokeTest.java
- *  @run main PopAndInvokeTest
+ *  @run driver PopAndInvokeTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

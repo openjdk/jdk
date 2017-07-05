@@ -540,7 +540,7 @@ public abstract class SetOfIntegerSyntax implements Serializable, Cloneable {
      * <CODE>"<I>i</I>-<I>j</I>"</CODE> otherwise.
      */
     public String toString() {
-        StringBuffer result = new StringBuffer();
+        StringBuilder result = new StringBuilder();
         int n = members.length;
         for (int i = 0; i < n; i++) {
             if (i > 0) {

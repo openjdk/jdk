@@ -169,23 +169,23 @@ class GTKFileChooserUI extends SynthFileChooserUI {
             result.add(typedInName);
         }
 
-        StringBuffer buf = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         len = result.size();
 
         // construct the resulting string
         for (int i=0; i<len; i++) {
             if (i > 0) {
-                buf.append(" ");
+                sb.append(" ");
             }
             if (len > 1) {
-                buf.append("\"");
+                sb.append("\"");
             }
-            buf.append(result.get(i));
+            sb.append(result.get(i));
             if (len > 1) {
-                buf.append("\"");
+                sb.append("\"");
             }
         }
-        return buf.toString();
+        return sb.toString();
     }
 
     public void setFileName(String fileName) {

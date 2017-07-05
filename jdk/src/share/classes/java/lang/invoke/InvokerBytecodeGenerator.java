@@ -40,6 +40,7 @@ import static java.lang.invoke.MethodHandleStatics.*;
 import static java.lang.invoke.MethodHandleNatives.Constants.*;
 import static java.lang.invoke.LambdaForm.BasicType.*;
 import sun.invoke.util.VerifyType;
+import sun.reflect.misc.ReflectUtil;
 
 /**
  * Code generation backend for LambdaForm.
@@ -594,6 +595,8 @@ class InvokerBytecodeGenerator {
             return false;  // inner class of some sort
         if (cls.getClassLoader() != MethodHandle.class.getClassLoader())
             return false;  // not on BCP
+        if (ReflectUtil.isVMAnonymousClass(cls)) // FIXME: switch to supported API once it is added
+            return false;
         MethodType mtype = member.getMethodOrFieldType();
         if (!isStaticallyNameable(mtype.returnType()))
             return false;
@@ -612,6 +615,8 @@ class InvokerBytecodeGenerator {
             cls = cls.getComponentType();
         if (cls.isPrimitive())
             return true;  // int[].class, for example
+        if (ReflectUtil.isVMAnonymousClass(cls)) // FIXME: switch to supported API once it is added
+            return false;
         // could use VerifyAccess.isClassAccessible but the following is a safe approximation
         if (cls.getClassLoader() != Object.class.getClassLoader())
             return false;

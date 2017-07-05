@@ -216,7 +216,7 @@ public abstract class GSSToken {
     }
 
     public static final String getHexBytes(byte[] bytes, int pos, int len) {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         for (int i = pos; i < (pos+len); i++) {
             int b1 = (bytes[i]>>4) & 0x0f;
             int b2 = bytes[i] & 0x0f;

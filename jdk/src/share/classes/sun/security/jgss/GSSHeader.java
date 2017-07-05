@@ -327,7 +327,7 @@ public class GSSHeader {
     private  String getHexBytes(byte[] bytes, int len)
         throws IOException {
 
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         for (int i = 0; i < len; i++) {
 
             int b1 = (bytes[i]>>4) & 0x0f;

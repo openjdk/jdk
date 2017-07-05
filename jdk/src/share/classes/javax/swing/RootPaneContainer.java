@@ -132,6 +132,7 @@ public interface RootPaneContainer
      * Generally implemented with<pre>
      *    getRootPane().setLayeredPane(layeredPane);</pre>
      *
+     * @param layeredPane the layered pane
      * @exception java.awt.IllegalComponentStateException (a runtime
      *            exception) if the layered pane parameter is null
      * @see #getLayeredPane
@@ -162,6 +163,7 @@ public interface RootPaneContainer
      * Generally implemented with
      * <code>getRootPane().setGlassPane(glassPane);</code>
      *
+     * @param glassPane the glass pane
      * @see #getGlassPane
      * @see JRootPane#setGlassPane
      */

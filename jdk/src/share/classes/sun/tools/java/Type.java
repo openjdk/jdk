@@ -274,15 +274,15 @@ class Type implements Constants {
      * Create a method type with arguments.
      */
     public static synchronized Type tMethod(Type returnType, Type argTypes[]) {
-        StringBuffer buf = new StringBuffer();
-        buf.append(SIG_METHOD);
+        StringBuilder sb = new StringBuilder();
+        sb.append(SIG_METHOD);
         for (int i = 0 ; i < argTypes.length ; i++) {
-            buf.append(argTypes[i].getTypeSignature());
+            sb.append(argTypes[i].getTypeSignature());
         }
-        buf.append(SIG_ENDMETHOD);
-        buf.append(returnType.getTypeSignature());
+        sb.append(SIG_ENDMETHOD);
+        sb.append(returnType.getTypeSignature());
 
-        String sig = buf.toString();
+        String sig = sb.toString();
         Type t = (Type)typeHash.get(sig);
         if (t == null) {
             t = new MethodType(sig, returnType, argTypes);
