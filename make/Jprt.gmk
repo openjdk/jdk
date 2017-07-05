@@ -71,11 +71,11 @@ ifeq ($(JPRT_TARGET), $(DEFAULT_MAKE_TARGET))
   # This target must be called in the context of a SPEC file
   $(JPRT_ARCHIVE_BUNDLE): product-images
 	$(call MakeDir, $(@D))
-	$(CD) $(SRC_JDK_IMAGE_DIR) && $(ZIP) -y -q -r $@ .
+	$(CD) $(SRC_JDK_IMAGE_DIR) && $(ZIPEXE) -y -q -r $@ .
 
   $(JPRT_ARCHIVE_TEST_BUNDLE): test-image
 	$(call MakeDir, $(@D))
-	$(CD) $(SRC_TEST_IMAGE_DIR) && $(ZIP) -y -q -r $@ .
+	$(CD) $(SRC_TEST_IMAGE_DIR) && $(ZIPEXE) -y -q -r $@ .
 
   ##############################################################################
   # Optional symbols bundle
@@ -85,7 +85,7 @@ ifeq ($(JPRT_TARGET), $(DEFAULT_MAKE_TARGET))
 
     $(JPRT_ARCHIVE_SYMBOLS_BUNDLE): product-images
 	$(call MakeDir, $(@D))
-	$(CD) $(SYMBOLS_IMAGE_DIR) && $(ZIP) -y -q -r $@ .
+	$(CD) $(SYMBOLS_IMAGE_DIR) && $(ZIPEXE) -y -q -r $@ .
 
   endif
 
