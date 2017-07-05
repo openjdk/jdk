@@ -129,7 +129,7 @@ AC_DEFUN([BASIC_REMOVE_SYMBOLIC_LINKS],
         if test "x$READLINK_TESTED" != yes; then
             # On MacOSX there is a readlink tool with a different
             # purpose than the GNU readlink tool. Check the found readlink.
-            ISGNU=`$READLINK --help 2>&1 | $GREP GNU`
+            ISGNU=`$READLINK --version 2>&1 | $GREP GNU`
             if test "x$ISGNU" = x; then
                  # A readlink that we do not know how to use.
                  # Are there other non-GNU readlinks out there?
@@ -141,20 +141,24 @@ AC_DEFUN([BASIC_REMOVE_SYMBOLIC_LINKS],
         if test "x$READLINK" != x; then
             $1=`$READLINK -f [$]$1`
         else
+            # Save the current directory for restoring afterwards
             STARTDIR=$PWD
             COUNTER=0
             sym_link_dir=`$DIRNAME [$]$1`
             sym_link_file=`$BASENAME [$]$1`
+            # Use the system pwd and not the shell builtin to resolve directory symlinks
+            cd $sym_link_dir
+            cd `$THEPWDCMD`
+            sym_link_dir=`$THEPWDCMD`
+            # Resolve file symlinks
             while test $COUNTER -lt 20; do
                 ISLINK=`$LS -l $sym_link_dir/$sym_link_file | $GREP '\->' | $SED -e 's/.*-> \(.*\)/\1/'`
                 if test "x$ISLINK" == x; then
                     # This is not a symbolic link! We are done!
                     break
                 fi
-                # The link might be relative! We have to use cd to travel safely.
-                cd $sym_link_dir
-                # ... and we must get the to the absolute path, not one using symbolic links.             
-                cd `pwd -P`
+                # Again resolve directory symlinks since the target of the just found
+                # link could be in a different directory
                 cd `$DIRNAME $ISLINK`
                 sym_link_dir=`$THEPWDCMD`
                 sym_link_file=`$BASENAME $ISLINK`
@@ -286,7 +290,7 @@ AUTOCONF_DIR=`cd \`$DIRNAME $SCRIPT\`; $THEPWDCMD`
 # Where is the source? It is located two levels above the configure script.
 CURDIR="$PWD"
 cd "$AUTOCONF_DIR/../.."
-SRC_ROOT="`pwd`"
+SRC_ROOT="`$THEPWDCMD`"
 
 if test "x$OPENJDK_TARGET_OS" = "xwindows"; then
   PATH_SEP=";"

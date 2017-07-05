@@ -65,8 +65,7 @@ typedef BinaryTreeDictionary<FreeChunk, AdaptiveFreeList> AFLBinaryTreeDictionar
   declare_toplevel_type(AFLBinaryTreeDictionary*)                         \
   declare_toplevel_type(LinearAllocBlock)                                 \
   declare_toplevel_type(FreeBlockDictionary<FreeChunk>)                   \
-  declare_type(AFLBinaryTreeDictionary, FreeBlockDictionary<FreeChunk>)   \
-            declare_type(AFLBinaryTreeDictionary, FreeBlockDictionary<FreeChunk>) \
+           declare_type(AFLBinaryTreeDictionary, FreeBlockDictionary<FreeChunk>)
 
 #define VM_INT_CONSTANTS_CMS(declare_constant)                            \
   declare_constant(Generation::ConcurrentMarkSweep)                       \
