@@ -366,18 +366,9 @@ intptr_t* os::Linux::ucontext_get_fp(ucontext_t *uc) {
 
 // Utility functions
 
-extern "C" void Fetch32PFI();
-extern "C" void Fetch32Resume();
-extern "C" void FetchNPFI();
-extern "C" void FetchNResume();
-
 inline static bool checkPrefetch(sigcontext* uc, address pc) {
-  if (pc == (address) Fetch32PFI) {
-    set_cont_address(uc, address(Fetch32Resume));
-    return true;
-  }
-  if (pc == (address) FetchNPFI) {
-    set_cont_address(uc, address(FetchNResume));
+  if (StubRoutines::is_safefetch_fault(pc)) {
+    set_cont_address(uc, address(StubRoutines::continuation_for_safefetch_fault(pc)));
     return true;
   }
   return false;
