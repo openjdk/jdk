@@ -63,6 +63,10 @@ public class ReadCertificates extends PKCS11Test {
             System.out.println("Provider does not support ECDSA, skipping...");
             return;
         }
+
+        /*
+         * PKCS11Test.main will remove this provider if needed
+         */
         Providers.setAt(p, 1);
 
         random = new SecureRandom();
@@ -132,7 +136,6 @@ public class ReadCertificates extends PKCS11Test {
             }
         }
 
-        Security.removeProvider(p.getName());
         System.out.println("OK");
     }
 

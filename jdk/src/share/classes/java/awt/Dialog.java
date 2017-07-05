@@ -924,7 +924,7 @@ public class Dialog extends Window {
                     isEnabled() && !isModalBlocked()) {
                     // keep the KeyEvents from being dispatched
                     // until the focus has been transfered
-                    time.set(Toolkit.getEventQueue().getMostRecentEventTimeEx());
+                    time.set(Toolkit.getEventQueue().getMostRecentKeyEventTime());
                     KeyboardFocusManager.getCurrentKeyboardFocusManager().
                         enqueueKeyEvents(time.get(), toFocus);
                 }

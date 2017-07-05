@@ -50,9 +50,6 @@
 // same value as defined in Sun's own code
 #define XOR_ALPHA_CUTOFF 128
 
-// private Quartz routines needed here
-CG_EXTERN void CGContextSetCTM(CGContextRef ref, CGAffineTransform tx);
-
 
 static CGFloat gRoundRectCtrlpts[10][12] =
 {
@@ -536,7 +533,7 @@ QUARTZ_RENDERER_INLINE void doImageCG(JNIEnv *env, CGContextRef cgRef, jobject i
 
     makeSureImageIsCreated(isdo);
 
-    CGAffineTransform ctm = CGContextGetCTM(cgRef);
+    CGContextSaveGState(cgRef);
     CGContextConcatCTM(cgRef, CGAffineTransformMake(a, b, c, d, tx, ty));
     jint alphaInfo = isdo->contextInfo.alphaInfo & kCGBitmapAlphaInfoMask;
 
@@ -551,7 +548,7 @@ QUARTZ_RENDERER_INLINE void doImageCG(JNIEnv *env, CGContextRef cgRef, jobject i
         CGImageRelease(subImg);
     }
 
-    CGContextSetCTM(cgRef, ctm);
+    CGContextRestoreGState(cgRef);
     UnlockImage(env, isdo);
 }
 
