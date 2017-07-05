@@ -650,7 +650,7 @@ UINT AwtDesktopProperties::GetIntegerParameter(UINT spi) {
 }
 
 void AwtDesktopProperties::SetStringProperty(LPCTSTR propName, LPTSTR value) {
-    jstring key = JNU_NewStringPlatform(GetEnv(), const_cast<LPTSTR>(propName));
+    jstring key = JNU_NewStringPlatform(GetEnv(), propName);
     GetEnv()->CallVoidMethod(self,
                              AwtDesktopProperties::setStringPropertyID,
                              key, JNU_NewStringPlatform(GetEnv(), value));
@@ -658,7 +658,7 @@ void AwtDesktopProperties::SetStringProperty(LPCTSTR propName, LPTSTR value) {
 }
 
 void AwtDesktopProperties::SetIntegerProperty(LPCTSTR propName, int value) {
-    jstring key = JNU_NewStringPlatform(GetEnv(), const_cast<LPTSTR>(propName));
+    jstring key = JNU_NewStringPlatform(GetEnv(), propName);
     GetEnv()->CallVoidMethod(self,
                              AwtDesktopProperties::setIntegerPropertyID,
                              key, (jint)value);
@@ -666,7 +666,7 @@ void AwtDesktopProperties::SetIntegerProperty(LPCTSTR propName, int value) {
 }
 
 void AwtDesktopProperties::SetBooleanProperty(LPCTSTR propName, BOOL value) {
-    jstring key = JNU_NewStringPlatform(GetEnv(), const_cast<LPTSTR>(propName));
+    jstring key = JNU_NewStringPlatform(GetEnv(), propName);
     GetEnv()->CallVoidMethod(self,
                              AwtDesktopProperties::setBooleanPropertyID,
                              key, value ? JNI_TRUE : JNI_FALSE);
@@ -674,7 +674,7 @@ void AwtDesktopProperties::SetBooleanProperty(LPCTSTR propName, BOOL value) {
 }
 
 void AwtDesktopProperties::SetColorProperty(LPCTSTR propName, DWORD value) {
-    jstring key = JNU_NewStringPlatform(GetEnv(), const_cast<LPTSTR>(propName));
+    jstring key = JNU_NewStringPlatform(GetEnv(), propName);
     GetEnv()->CallVoidMethod(self,
                              AwtDesktopProperties::setColorPropertyID,
                              key, GetRValue(value), GetGValue(value),
@@ -726,7 +726,7 @@ void AwtDesktopProperties::SetFontProperty(HDC dc, int fontID,
                         style |= java_awt_Font_ITALIC;
                     }
 
-                    jstring key = JNU_NewStringPlatform(GetEnv(), const_cast<LPTSTR>(propName));
+                    jstring key = JNU_NewStringPlatform(GetEnv(), propName);
                     GetEnv()->CallVoidMethod(self,
                               AwtDesktopProperties::setFontPropertyID,
                               key, fontName, style, pointSize);
@@ -744,7 +744,7 @@ void AwtDesktopProperties::SetFontProperty(LPCTSTR propName, const LOGFONT & fon
     jint pointSize;
     jint style;
 
-    fontName = JNU_NewStringPlatform(GetEnv(), const_cast<LPWSTR>(font.lfFaceName));
+    fontName = JNU_NewStringPlatform(GetEnv(), font.lfFaceName);
 
 #if 0
     HDC         hdc;
@@ -767,7 +767,7 @@ void AwtDesktopProperties::SetFontProperty(LPCTSTR propName, const LOGFONT & fon
         style |= java_awt_Font_ITALIC;
     }
 
-    jstring key = JNU_NewStringPlatform(GetEnv(), const_cast<LPTSTR>(propName));
+    jstring key = JNU_NewStringPlatform(GetEnv(), propName);
     GetEnv()->CallVoidMethod(self, AwtDesktopProperties::setFontPropertyID,
                              key, fontName, style, pointSize);
 
@@ -776,8 +776,8 @@ void AwtDesktopProperties::SetFontProperty(LPCTSTR propName, const LOGFONT & fon
 }
 
 void AwtDesktopProperties::SetSoundProperty(LPCTSTR propName, LPCTSTR winEventName) {
-    jstring key = JNU_NewStringPlatform(GetEnv(), const_cast<LPTSTR>(propName));
-    jstring event = JNU_NewStringPlatform(GetEnv(), const_cast<LPTSTR>(winEventName));
+    jstring key = JNU_NewStringPlatform(GetEnv(), propName);
+    jstring event = JNU_NewStringPlatform(GetEnv(), winEventName);
     GetEnv()->CallVoidMethod(self,
                              AwtDesktopProperties::setSoundPropertyID,
                              key, event);

@@ -625,7 +625,7 @@ public class IndexColorModel extends ColorModel {
             }
             nBits[0] = nBits[1] = nBits[2] = 8;
         }
-        return nBits;
+        return nBits.clone();
     }
 
     /**

@@ -732,14 +732,14 @@ public abstract class Pack200 {
     private synchronized static Object newInstance(String prop) {
         String implName = "(unknown)";
         try {
-            Class impl = (prop == PACK_PROVIDER)? packerImpl: unpackerImpl;
+            Class impl = (PACK_PROVIDER.equals(prop))? packerImpl: unpackerImpl;
             if (impl == null) {
                 // The first time, we must decide which class to use.
                 implName = java.security.AccessController.doPrivileged(
                     new sun.security.action.GetPropertyAction(prop,""));
                 if (implName != null && !implName.equals(""))
                     impl = Class.forName(implName);
-                else if (prop == PACK_PROVIDER)
+                else if (PACK_PROVIDER.equals(prop))
                     impl = com.sun.java.util.jar.pack.PackerImpl.class;
                 else
                     impl = com.sun.java.util.jar.pack.UnpackerImpl.class;
