@@ -42,5 +42,5 @@ public interface ToIntFunction<T> {
      * @param t the input object
      * @return the function result value
      */
-    public int applyAsInt(T t);
+    int applyAsInt(T t);
 }

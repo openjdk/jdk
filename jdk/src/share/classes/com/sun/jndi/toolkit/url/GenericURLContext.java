@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,8 @@ abstract public class GenericURLContext implements Context {
     @SuppressWarnings("unchecked") // Expect Hashtable<String, Object>
     public GenericURLContext(Hashtable<?,?> env) {
         // context that is not tied to any specific URL
-        myEnv = (Hashtable<String, Object>)env;  // copied on write
+        myEnv =
+            (Hashtable<String, Object>)(env == null ? null : env.clone());
     }
 
     public void close() throws NamingException {
@@ -488,22 +489,19 @@ abstract public class GenericURLContext implements Context {
         return result;
     }
 
-    @SuppressWarnings("unchecked") // clone()
     public Object removeFromEnvironment(String propName)
         throws NamingException {
             if (myEnv == null) {
                 return null;
             }
-            myEnv = (Hashtable<String, Object>)myEnv.clone();
             return myEnv.remove(propName);
     }
 
-    @SuppressWarnings("unchecked") // clone()
     public Object addToEnvironment(String propName, Object propVal)
         throws NamingException {
-            myEnv = (myEnv == null)
-                    ? new Hashtable<String, Object>(11, 0.75f)
-                    : (Hashtable<String, Object>)myEnv.clone();
+            if (myEnv == null) {
+                myEnv = new Hashtable<String, Object>(11, 0.75f);
+            }
             return myEnv.put(propName, propVal);
     }
 

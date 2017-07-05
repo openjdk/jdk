@@ -552,7 +552,7 @@ public final class OCSPResponse {
 
         try {
             Signature respSignature = Signature.getInstance(sigAlgId.getName());
-            respSignature.initVerify(cert);
+            respSignature.initVerify(cert.getPublicKey());
             respSignature.update(tbsResponseData);
 
             if (respSignature.verify(signature)) {

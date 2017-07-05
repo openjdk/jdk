@@ -128,7 +128,9 @@ static char* next_arg(char* cmdline, char* arg, jboolean* wildcard) {
                 *wildcard = JNI_TRUE;
             }
             if (prev == '\\') {
-                *dest++ = prev;
+                for (i = 0 ; i < slashes ; i++) {
+                    *dest++ = prev;
+                }
             }
             *dest++ = ch;
             break;
@@ -184,7 +186,7 @@ void JLI_CmdToArgs(char* cmdline) {
         argv = (StdArg*) JLI_MemRealloc(argv, (nargs+1) * sizeof(StdArg));
         argv[nargs].arg = JLI_StringDup(arg);
         argv[nargs].has_wildcard = wildcard;
-
+        *arg = NULL;
         nargs++;
     } while (src != NULL);
 
@@ -600,6 +602,14 @@ int main(int argc, char* argv[]) {
     v->add("a", FALSE);
     v->add("b\\\\", FALSE);
     v->add("d", FALSE);
+    vectors[i++] = v;
+
+    v= new Vector(argv[0], "\\\\?");
+    v->add("\\\\?", TRUE);
+    vectors[i++] = v;
+
+    v= new Vector(argv[0], "\\\\*");
+    v->add("\\\\*", TRUE);
     vectors[i++] = v;
 
     dotest(vectors);

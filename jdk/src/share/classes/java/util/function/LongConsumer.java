@@ -24,6 +24,8 @@
  */
 package java.util.function;
 
+import java.util.Objects;
+
 /**
  * An operation which accepts a single long argument and returns no result.
  * This is the {@code long}-consuming primitive type specialization of
@@ -41,5 +43,26 @@ public interface LongConsumer {
      *
      * @param value the input value
      */
-    public void accept(long value);
+    void accept(long value);
+
+    /**
+     * Returns a {@code LongConsumer} which performs, in sequence, the operation
+     * represented by this object followed by the operation represented by
+     * another {@code LongConsumer}.
+     *
+     * <p>Any exceptions thrown by either {@code accept} method are relayed
+     * to the caller; if performing this operation throws an exception, the
+     * other operation will not be performed.
+     *
+     * @param other a LongConsumer which will be chained after this
+     * LongConsumer
+     * @return a LongConsumer which performs in sequence the {@code accept} method
+     * of this LongConsumer and the {@code accept} method of the specified LongConsumer
+     * operation
+     * @throws NullPointerException if other is null
+     */
+    default LongConsumer chain(LongConsumer other) {
+        Objects.requireNonNull(other);
+        return (long t) -> { accept(t); other.accept(t); };
+    }
 }

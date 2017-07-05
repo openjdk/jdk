@@ -34,6 +34,7 @@ import java.nio.BufferOverflowException;
 import java.nio.BufferUnderflowException;
 import java.lang.ref.WeakReference;
 import java.nio.charset.CoderMalfunctionError;                  // javadoc
+import java.util.Arrays;
 
 
 /**
@@ -244,7 +245,12 @@ public abstract class Charset$Coder$ {
      *          which is never <tt>null</tt> and is never empty
      */
     public final $replType$ replacement() {
+#if[decoder]
         return replacement;
+#end[decoder]
+#if[encoder]
+        return Arrays.copyOf(replacement, replacement.$replLength$);
+#end[encoder]
     }
 
     /**
@@ -280,12 +286,15 @@ public abstract class Charset$Coder$ {
             throw new IllegalArgumentException("Empty replacement");
         if (len > max$ItypesPerOtype$)
             throw new IllegalArgumentException("Replacement too long");
+#if[decoder]
+        this.replacement = newReplacement;
+#end[decoder]
 #if[encoder]
         if (!isLegalReplacement(newReplacement))
             throw new IllegalArgumentException("Illegal replacement");
+        this.replacement = Arrays.copyOf(newReplacement, newReplacement.$replLength$);
 #end[encoder]
-        this.replacement = newReplacement;
-        implReplaceWith(newReplacement);
+        implReplaceWith(this.replacement);
         return this;
     }
 

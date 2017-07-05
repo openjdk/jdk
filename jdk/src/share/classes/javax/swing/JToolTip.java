@@ -31,6 +31,7 @@ import javax.accessibility.*;
 import java.io.ObjectOutputStream;
 import java.io.ObjectInputStream;
 import java.io.IOException;
+import java.util.Objects;
 
 
 /**
@@ -128,6 +129,11 @@ public class JToolTip extends JComponent implements Accessible {
         String oldValue = this.tipText;
         this.tipText = tipText;
         firePropertyChange("tiptext", oldValue, tipText);
+
+        if (!Objects.equals(oldValue, tipText)) {
+            revalidate();
+            repaint();
+        }
     }
 
     /**
