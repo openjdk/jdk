@@ -4339,6 +4339,7 @@ text: .text%__1cSComputeAdapterInfoIdo_float6M_v_;
 text: .text%__1cFParseLarray_store6MnJBasicType__v_;
 text: .text%__1cOmangle_name_on6FpnMoutputStream_pnNsymbolOopDesc_ii_v_: nativeLookup.o;
 text: .text%JVM_FindClassFromClassLoader;
+text: .text%JVM_FindClassFromBootLoader;
 text: .text%__1cZCallInterpreterDirectNodeSalignment_required6kM_i_;
 text: .text%__1cZCallInterpreterDirectNodePoper_input_base6kM_I_;
 text: .text%__1cZCallInterpreterDirectNodeEemit6kMrnKCodeBuffer_pnNPhaseRegAlloc__v_;

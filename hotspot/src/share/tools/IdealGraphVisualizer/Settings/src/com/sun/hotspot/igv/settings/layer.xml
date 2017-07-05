@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE filesystem PUBLIC "-//NetBeans//DTD Filesystem 1.1//EN" "http://www.netbeans.org/dtds/filesystem-1_1.dtd">
+<filesystem>
+    <folder name="OptionsDialog">
+        <file name="Advanced.instance_hidden"/>
+        <file name="General.instance_hidden"/>
+        <file name="com-sun-hotspot-igv-settings-ViewOptionsCategory.instance"/>
+    </folder>
+</filesystem>

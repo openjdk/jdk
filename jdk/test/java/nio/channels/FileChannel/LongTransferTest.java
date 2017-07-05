@@ -22,7 +22,7 @@
  */
 
 /* @test
-   @bug 5105464 6269047
+   @bug 5105464 6269047 6541631
  * @summary Test to transfer bytes with a size bigger than Integer.MAX_VALUE
  */
 
@@ -81,8 +81,10 @@ public class LongTransferTest {
         System.out.println("LongTransferTest-main: OK!");
 
         socket.close();
-
         server.close();
+
+        inChannel.close();
+        outChannel.close();
 
         inFile.delete();
         outFile.delete();
