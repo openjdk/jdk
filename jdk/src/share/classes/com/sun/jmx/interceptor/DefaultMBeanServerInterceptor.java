@@ -453,11 +453,12 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
         final ResourceContext context =
                 unregisterFromRepository(resource, instance, name);
 
-
-        if (instance instanceof MBeanRegistration)
-            postDeregisterInvoke((MBeanRegistration) instance);
-
-        context.done();
+        try {
+            if (instance instanceof MBeanRegistration)
+                postDeregisterInvoke(name,(MBeanRegistration) instance);
+        } finally {
+            context.done();
+        }
     }
 
     public ObjectInstance getObjectInstance(ObjectName name)
@@ -989,10 +990,12 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
             registerFailed = false;
             registered = true;
         } finally {
-            postRegister(mbean, registered, registerFailed);
+            try {
+                postRegister(logicalName, mbean, registered, registerFailed);
+            } finally {
+                if (registered) context.done();
+            }
         }
-
-        context.done();
         return new ObjectInstance(logicalName, classname);
     }
 
@@ -1051,7 +1054,8 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
     }
 
     private static void postRegister(
-            DynamicMBean mbean, boolean registrationDone, boolean registerFailed) {
+            ObjectName logicalName, DynamicMBean mbean,
+            boolean registrationDone, boolean registerFailed) {
 
         if (registerFailed && mbean instanceof DynamicMBean2)
             ((DynamicMBean2) mbean).registerFailed();
@@ -1059,11 +1063,19 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
             if (mbean instanceof MBeanRegistration)
                 ((MBeanRegistration) mbean).postRegister(registrationDone);
         } catch (RuntimeException e) {
+            MBEANSERVER_LOGGER.fine("While registering MBean ["+logicalName+
+                    "]: " + "Exception thrown by postRegister: " +
+                    "rethrowing <"+e+">, but keeping the MBean registered");
             throw new RuntimeMBeanException(e,
-                      "RuntimeException thrown in postRegister method");
+                      "RuntimeException thrown in postRegister method: "+
+                      "rethrowing <"+e+">, but keeping the MBean registered");
         } catch (Error er) {
+            MBEANSERVER_LOGGER.fine("While registering MBean ["+logicalName+
+                    "]: " + "Error thrown by postRegister: " +
+                    "rethrowing <"+er+">, but keeping the MBean registered");
             throw new RuntimeErrorException(er,
-                      "Error thrown in postRegister method");
+                      "Error thrown in postRegister method: "+
+                      "rethrowing <"+er+">, but keeping the MBean registered");
         }
     }
 
@@ -1076,15 +1088,28 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
         }
     }
 
-    private static void postDeregisterInvoke(MBeanRegistration moi) {
+    private static void postDeregisterInvoke(ObjectName mbean,
+            MBeanRegistration moi) {
         try {
             moi.postDeregister();
         } catch (RuntimeException e) {
+            MBEANSERVER_LOGGER.fine("While unregistering MBean ["+mbean+
+                    "]: " + "Exception thrown by postDeregister: " +
+                    "rethrowing <"+e+">, although the MBean is succesfully " +
+                    "unregistered");
             throw new RuntimeMBeanException(e,
-                         "RuntimeException thrown in postDeregister method");
+                      "RuntimeException thrown in postDeregister method: "+
+                      "rethrowing <"+e+
+                      ">, although the MBean is sucessfully unregistered");
         } catch (Error er) {
+            MBEANSERVER_LOGGER.fine("While unregistering MBean ["+mbean+
+                    "]: " + "Error thrown by postDeregister: " +
+                    "rethrowing <"+er+">, although the MBean is succesfully " +
+                    "unregistered");
             throw new RuntimeErrorException(er,
-                         "Error thrown in postDeregister method");
+                      "Error thrown in postDeregister method: "+
+                      "rethrowing <"+er+
+                      ">, although the MBean is sucessfully unregistered");
         }
     }
 

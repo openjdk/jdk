@@ -30,9 +30,9 @@
 -->
 
 <project name="jconsole" default="build" basedir=".">
-    
+
     <import file="../common/shared.xml"/>
-    
+
     <target name="-pre-compile">
         <copy
             file="${root}/src/share/classes/sun/tools/jconsole/Version-template.java"
@@ -42,7 +42,7 @@
             token="@@jconsole_version@@"
             value="${jconsole.version}"/>
     </target>
-    
+
     <target name="-post-compile">
         <mkdir dir="${dist.dir}/lib"/>
         <jar destfile="${dist.dir}/lib/jconsole.jar"
@@ -55,18 +55,19 @@
             </fileset>
         </jar>
     </target>
-    
+
     <target name="run" depends="-init,build">
         <property name="jvm.args" value=""/>
         <java classname="sun.tools.jconsole.JConsole"
               fork="true"
               classpath="${classes.dir}:${bootstrap.jdk}/lib/tools.jar">
             <jvmarg line="${jvm.args}"/>
+            <arg line="${jconsole.args}"/>
         </java>
     </target>
-    
+
     <target name="clean" depends="-init,shared.clean">
         <delete file="${dist.dir}/lib/jconsole.jar"/>
     </target>
-    
+
 </project>

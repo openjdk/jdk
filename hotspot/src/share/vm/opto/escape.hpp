@@ -178,23 +178,33 @@ public:
 
   // count of outgoing edges
   uint edge_count() const { return (_edges == NULL) ? 0 : _edges->length(); }
+
   // node index of target of outgoing edge "e"
-  uint edge_target(uint e)  const;
+  uint edge_target(uint e) const {
+    assert(_edges != NULL, "valid edge index");
+    return (_edges->at(e) >> EdgeShift);
+  }
   // type of outgoing edge "e"
-  EdgeType edge_type(uint e)  const;
+  EdgeType edge_type(uint e) const {
+    assert(_edges != NULL, "valid edge index");
+    return (EdgeType) (_edges->at(e) & EdgeMask);
+  }
+
   // add a edge of the specified type pointing to the specified target
   void add_edge(uint targIdx, EdgeType et);
+
   // remove an edge of the specified type pointing to the specified target
   void remove_edge(uint targIdx, EdgeType et);
+
 #ifndef PRODUCT
-  void dump() const;
+  void dump(bool print_state=true) const;
 #endif
 
 };
 
 class ConnectionGraph: public ResourceObj {
 private:
-  GrowableArray<PointsToNode>* _nodes; // Connection graph nodes indexed
+  GrowableArray<PointsToNode>  _nodes; // Connection graph nodes indexed
                                        // by ideal node index.
 
   Unique_Node_List  _delayed_worklist; // Nodes to be processed before
@@ -207,24 +217,22 @@ private:
                                        // is still being collected. If false,
                                        // no new nodes will be processed.
 
-  bool               _has_allocations; // Indicates whether method has any
-                                       // non-escaping allocations.
-
   uint                _phantom_object; // Index of globally escaping object
                                        // that pointer values loaded from
                                        // a field which has not been set
                                        // are assumed to point to.
+  uint                      _oop_null; // ConP(#NULL)
+  uint                     _noop_null; // ConN(#NULL)
 
   Compile *                  _compile; // Compile object for current compilation
 
-  // address of an element in _nodes.  Used when the element is to be modified
-  PointsToNode *ptnode_adr(uint idx) {
-    if ((uint)_nodes->length() <= idx) {
-      // expand _nodes array
-      PointsToNode dummy = _nodes->at_grow(idx);
-    }
-    return _nodes->adr_at(idx);
+  // Address of an element in _nodes.  Used when the element is to be modified
+  PointsToNode *ptnode_adr(uint idx) const {
+    // There should be no new ideal nodes during ConnectionGraph build,
+    // growableArray::adr_at() will throw assert otherwise.
+    return _nodes.adr_at(idx);
   }
+  uint nodes_size() const { return _nodes.length(); }
 
   // Add node to ConnectionGraph.
   void add_node(Node *n, PointsToNode::NodeType nt, PointsToNode::EscapeState es, bool done);
@@ -307,30 +315,30 @@ private:
   // Set the escape state of a node
   void set_escape_state(uint ni, PointsToNode::EscapeState es);
 
-  // Get Compile object for current compilation.
-  Compile *C() const        { return _compile; }
-
 public:
   ConnectionGraph(Compile *C);
 
+  // Check for non-escaping candidates
+  static bool has_candidates(Compile *C);
+
   // Compute the escape information
-  void compute_escape();
+  bool compute_escape();
 
   // escape state of a node
   PointsToNode::EscapeState escape_state(Node *n, PhaseTransform *phase);
   // other information we have collected
   bool is_scalar_replaceable(Node *n) {
-    if (_collecting)
+    if (_collecting || (n->_idx >= nodes_size()))
       return false;
-    PointsToNode  ptn = _nodes->at_grow(n->_idx);
-    return ptn.escape_state() == PointsToNode::NoEscape && ptn._scalar_replaceable;
+    PointsToNode* ptn = ptnode_adr(n->_idx);
+    return ptn->escape_state() == PointsToNode::NoEscape && ptn->_scalar_replaceable;
   }
 
   bool hidden_alias(Node *n) {
-    if (_collecting)
+    if (_collecting || (n->_idx >= nodes_size()))
       return true;
-    PointsToNode  ptn = _nodes->at_grow(n->_idx);
-    return (ptn.escape_state() != PointsToNode::NoEscape) || ptn._hidden_alias;
+    PointsToNode* ptn = ptnode_adr(n->_idx);
+    return (ptn->escape_state() != PointsToNode::NoEscape) || ptn->_hidden_alias;
   }
 
 #ifndef PRODUCT

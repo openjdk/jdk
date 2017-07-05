@@ -22,36 +22,53 @@
  */
 
 /*
- * @test RMINotifTest.java
+ * @test
  * @bug 7654321
- * @summary Tests to receive notifications for opened and closed connect
-ions
+ * @summary Tests to receive notifications for opened and closed connections
  * @author sjiang
  * @run clean RMINotifTest
  * @run build RMINotifTest
- * @run main RMINotifTest
+ * @run main RMINotifTest classic
+ * @run main RMINotifTest event
  */
 
 // java imports
 //
-import java.io.IOException;
-import java.net.UnknownHostException;
 
-import java.rmi.*;
-import java.rmi.registry.*;
+import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
+import java.util.Collections;
+import java.util.Map;
 import java.util.Random;
-
-// JMX imports
-//
-import javax.management.* ;
-
-import javax.management.remote.*;
-import javax.management.remote.rmi.*;
+import javax.management.MBeanNotificationInfo;
+import javax.management.MBeanServer;
+import javax.management.MBeanServerConnection;
+import javax.management.MBeanServerFactory;
+import javax.management.Notification;
+import javax.management.NotificationBroadcasterSupport;
+import javax.management.NotificationFilterSupport;
+import javax.management.NotificationListener;
+import javax.management.ObjectInstance;
+import javax.management.ObjectName;
+import javax.management.remote.JMXConnector;
+import javax.management.remote.JMXConnectorFactory;
+import javax.management.remote.JMXConnectorServer;
+import javax.management.remote.JMXConnectorServerFactory;
 import javax.management.remote.JMXServiceURL;
+import javax.management.remote.rmi.RMIConnectorServer;
 
 public class RMINotifTest {
 
     public static void main(String[] args) {
+        String eventService;
+        if (args[0].equals("classic"))
+            eventService = "false";
+        else if (args[0].equals("event"))
+            eventService = "true";
+        else
+            throw new IllegalArgumentException(args[0]);
+
         try {
             // create a rmi registry
             Registry reg = null;
@@ -88,9 +105,10 @@ public class RMINotifTest {
                                   "/jndi/rmi://:" + port + "/server" + port);
             System.out.println("RMIConnectorServer address " + url);
 
+            Map<String, String> env = Collections.singletonMap(
+                    RMIConnectorServer.DELEGATE_TO_EVENT_SERVICE, eventService);
             JMXConnectorServer sServer =
-                JMXConnectorServerFactory.newJMXConnectorServer(url, null,
-                                                                null);
+                JMXConnectorServerFactory.newJMXConnectorServer(url, env, null);
 
             ObjectInstance ss = server.registerMBean(sServer, new ObjectName("Default:name=RmiConnectorServer"));
 

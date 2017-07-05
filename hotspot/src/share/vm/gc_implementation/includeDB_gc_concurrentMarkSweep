@@ -28,6 +28,7 @@ binaryTreeDictionary.cpp                allocationStats.hpp
 binaryTreeDictionary.cpp                binaryTreeDictionary.hpp
 binaryTreeDictionary.cpp                globals.hpp
 binaryTreeDictionary.cpp                ostream.hpp
+binaryTreeDictionary.cpp                spaceDecorator.hpp
 
 binaryTreeDictionary.hpp                freeBlockDictionary.hpp
 binaryTreeDictionary.hpp                freeList.hpp
@@ -114,6 +115,7 @@ compactibleFreeListSpace.cpp            java.hpp
 compactibleFreeListSpace.cpp            liveRange.hpp
 compactibleFreeListSpace.cpp            oop.inline.hpp
 compactibleFreeListSpace.cpp            resourceArea.hpp
+compactibleFreeListSpace.cpp            spaceDecorator.hpp
 compactibleFreeListSpace.cpp            universe.inline.hpp
 compactibleFreeListSpace.cpp            vmThread.hpp
 
