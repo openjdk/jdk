@@ -28,6 +28,7 @@
  * @summary JLabel containing a ToolTipText does no longer show ToolTip after browser refresh
  * @author Pavel Porvatov
  * @modules java.desktop/sun.awt
+ * @modules java.desktop/javax.swing:open
  */
 
 import sun.awt.SunToolkit;

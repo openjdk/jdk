@@ -24,7 +24,7 @@
  */
 
 module jdk.accessibility {
-    requires public java.desktop;
+    requires transitive java.desktop;
     exports com.sun.java.accessibility.util;
 }
 

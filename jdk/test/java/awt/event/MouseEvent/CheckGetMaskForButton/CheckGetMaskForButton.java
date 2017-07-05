@@ -25,6 +25,7 @@
   @test %I% %E%
   @key headful
   @bug 6315717
+  @modules java.desktop/java.awt.event:open
   @summary verifies that InputEvent.getMaskForButton() returns the same values as in InputEvent.BUTTON_DOWN_MASK
   @author Andrei Dmitriev : area=awt.event
   @run main CheckGetMaskForButton

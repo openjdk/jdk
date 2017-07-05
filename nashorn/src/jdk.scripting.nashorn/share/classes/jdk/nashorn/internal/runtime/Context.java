@@ -320,7 +320,7 @@ public final class Context {
     private final WeakValueCache<CodeSource, Class<?>> anonymousHostClasses = new WeakValueCache<>();
 
     private static final class AnonymousContextCodeInstaller extends ContextCodeInstaller {
-        private static final Unsafe UNSAFE = getUnsafe();
+        private static final Unsafe UNSAFE = Unsafe.getUnsafe();
         private static final String ANONYMOUS_HOST_CLASS_NAME = Compiler.SCRIPTS_PACKAGE.replace('/', '.') + ".AnonymousHost";
         private static final byte[] ANONYMOUS_HOST_CLASS_BYTES = getAnonymousHostClassBytes();
 
@@ -356,21 +356,6 @@ public final class Context {
             cw.visit(V1_7, Opcodes.ACC_INTERFACE | Opcodes.ACC_ABSTRACT, ANONYMOUS_HOST_CLASS_NAME.replace('.', '/'), null, "java/lang/Object", null);
             cw.visitEnd();
             return cw.toByteArray();
-        }
-
-        private static Unsafe getUnsafe() {
-            return AccessController.doPrivileged(new PrivilegedAction<Unsafe>() {
-                @Override
-                public Unsafe run() {
-                    try {
-                        final Field theUnsafeField = Unsafe.class.getDeclaredField("theUnsafe");
-                        theUnsafeField.setAccessible(true);
-                        return (Unsafe)theUnsafeField.get(null);
-                    } catch (final ReflectiveOperationException e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-            });
         }
     }
 

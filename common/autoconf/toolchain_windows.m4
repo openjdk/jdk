@@ -566,7 +566,7 @@ AC_DEFUN([TOOLCHAIN_SETUP_VS_RUNTIME_DLLS],
       [path to microsoft C runtime dll (msvcr*.dll) (Windows only) @<:@probed@:>@])])
 
   if test "x$with_msvcr_dll" != x; then
-    # If given explicitely by user, do not probe. If not present, fail directly.
+    # If given explicitly by user, do not probe. If not present, fail directly.
     TOOLCHAIN_CHECK_POSSIBLE_MSVC_DLL($MSVCR_NAME, [$with_msvcr_dll], [--with-msvcr-dll])
     if test "x$MSVC_DLL" = x; then
       AC_MSG_ERROR([Could not find a proper $MSVCR_NAME as specified by --with-msvcr-dll])
@@ -589,7 +589,7 @@ AC_DEFUN([TOOLCHAIN_SETUP_VS_RUNTIME_DLLS],
 
   if test "x$MSVCP_NAME" != "x"; then
     if test "x$with_msvcp_dll" != x; then
-      # If given explicitely by user, do not probe. If not present, fail directly.
+      # If given explicitly by user, do not probe. If not present, fail directly.
       TOOLCHAIN_CHECK_POSSIBLE_MSVC_DLL($MSVCP_NAME, [$with_msvcp_dll], [--with-msvcp-dll])
       if test "x$MSVC_DLL" = x; then
         AC_MSG_ERROR([Could not find a proper $MSVCP_NAME as specified by --with-msvcp-dll])

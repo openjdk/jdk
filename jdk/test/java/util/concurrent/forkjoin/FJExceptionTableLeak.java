@@ -35,6 +35,7 @@
 /*
  * @test
  * @bug 8004138
+ * @modules java.base/java.util.concurrent:open
  * @summary Checks that ForkJoinTask thrown exceptions are not leaked.
  * This whitebox test is sensitive to forkjoin implementation details.
  */

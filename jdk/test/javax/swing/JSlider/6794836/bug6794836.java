@@ -27,6 +27,7 @@
  * @bug 6794836
  * @summary BasicSliderUI throws NullPointerExc when JSlider maximum is Integer.MAX_VALUE
  * @author Pavel Porvatov
+ * @modules java.desktop/javax.swing.plaf.basic:open
  * @run main bug6794836
  */
 

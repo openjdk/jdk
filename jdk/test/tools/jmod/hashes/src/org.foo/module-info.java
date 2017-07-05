@@ -22,5 +22,5 @@
  */
 
 module org.foo {
-    requires public org.bar;
+    requires transitive org.bar;
 }

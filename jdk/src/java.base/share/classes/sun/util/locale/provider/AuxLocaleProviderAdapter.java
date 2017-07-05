@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@ import java.util.spi.CurrencyNameProvider;
 import java.util.spi.LocaleNameProvider;
 import java.util.spi.LocaleServiceProvider;
 import java.util.spi.TimeZoneNameProvider;
+import sun.text.spi.JavaTimeDateTimePatternProvider;
 import sun.util.spi.CalendarProvider;
 
 /**
@@ -154,6 +155,11 @@ public abstract class AuxLocaleProviderAdapter extends LocaleProviderAdapter {
     @Override
     public LocaleResources getLocaleResources(Locale locale) {
         return null;
+    }
+
+    @Override
+    public JavaTimeDateTimePatternProvider getJavaTimeDateTimePatternProvider() {
+        return getLocaleServiceProvider(JavaTimeDateTimePatternProvider.class);
     }
 
     private static Locale[] availableLocales = null;

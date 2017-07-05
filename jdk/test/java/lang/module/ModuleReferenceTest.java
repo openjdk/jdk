@@ -45,10 +45,10 @@ public class ModuleReferenceTest {
 
     public void testBasic() throws Exception {
         ModuleDescriptor descriptor
-            = new ModuleDescriptor.Builder("m")
+            = ModuleDescriptor.module("m")
                 .exports("p")
                 .exports("q")
-                .conceals("p.internal")
+                .contains("p.internal")
                 .build();
 
         URI uri = URI.create("module:/m");
@@ -76,7 +76,7 @@ public class ModuleReferenceTest {
 
     public void testNullLocation() {
         ModuleDescriptor descriptor
-            = new ModuleDescriptor.Builder("m")
+            = ModuleDescriptor.module("m")
                 .exports("p")
                 .build();
         Supplier<ModuleReader> supplier = makeSupplier();
@@ -86,7 +86,7 @@ public class ModuleReferenceTest {
 
     @Test(expectedExceptions = { NullPointerException.class })
     public void testNullSupplier() throws Exception {
-        ModuleDescriptor descriptor = new ModuleDescriptor.Builder("m").build();
+        ModuleDescriptor descriptor = ModuleDescriptor.module("m").build();
         URI location = URI.create("module:/m");
         new ModuleReference(descriptor, location, null);
     }
@@ -94,11 +94,11 @@ public class ModuleReferenceTest {
 
     public void testEqualsAndHashCode() {
         ModuleDescriptor descriptor1
-            = new ModuleDescriptor.Builder("m1")
+            = ModuleDescriptor.module("m1")
                 .exports("p")
                 .build();
         ModuleDescriptor descriptor2
-            = new ModuleDescriptor.Builder("m1")
+            = ModuleDescriptor.module("m1")
                 .exports("p")
                 .build();
 
@@ -121,7 +121,7 @@ public class ModuleReferenceTest {
 
 
     public void testToString() {
-        ModuleDescriptor descriptor = new ModuleDescriptor.Builder("m1").build();
+        ModuleDescriptor descriptor = ModuleDescriptor.module("m1").build();
         URI uri = URI.create("module:/m1");
         Supplier<ModuleReader> supplier = makeSupplier();
         ModuleReference mref = new ModuleReference(descriptor, uri, supplier);

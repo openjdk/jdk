@@ -26,6 +26,7 @@
 package jdk.nashorn.test.models;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Module;
@@ -41,6 +42,22 @@ import jdk.nashorn.internal.runtime.Context;
 public final class Reflector {
     private Reflector() {}
     private static final Module NASHORN_MOD = Context.class.getModule();
+
+    public static void setAccessible(Executable e) {
+        if (e.getDeclaringClass().getModule() != NASHORN_MOD) {
+            throw new RuntimeException(e + " is not from Nashorn module");
+        }
+
+        e.setAccessible(true);
+    }
+
+    public static void setAccessible(Field f) {
+        if (f.getDeclaringClass().getModule() != NASHORN_MOD) {
+            throw new RuntimeException(f + " is not from Nashorn module");
+        }
+
+        f.setAccessible(true);
+    }
 
     public static Object invoke(final Method m, final Object self, final Object...args) {
         if (m.getDeclaringClass().getModule() != NASHORN_MOD) {

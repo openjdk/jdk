@@ -151,7 +151,7 @@ import java.util.Set;
  * Each chronology must define a chronology ID that is unique within the system.
  * If the chronology represents a calendar system defined by the
  * CLDR specification then the calendar type is the concatenation of the
- * CLDR type and, if applicable, the CLDR variant,
+ * CLDR type and, if applicable, the CLDR variant.
  *
  * @implSpec
  * This interface must be implemented with care to ensure other classes operate correctly.
@@ -177,7 +177,7 @@ public interface Chronology extends Comparable<Chronology> {
      *
      * @param temporal  the temporal to convert, not null
      * @return the chronology, not null
-     * @throws DateTimeException if unable to convert to an {@code Chronology}
+     * @throws DateTimeException if unable to convert to a {@code Chronology}
      */
     static Chronology from(TemporalAccessor temporal) {
         Objects.requireNonNull(temporal, "temporal");
@@ -203,7 +203,7 @@ public interface Chronology extends Comparable<Chronology> {
      * For example, the locale "en-JP-u-ca-japanese" represents the English
      * language as used in Japan with the Japanese calendar system.
      * <p>
-     * This method finds the desired calendar system by in a manner equivalent
+     * This method finds the desired calendar system in a manner equivalent
      * to passing "ca" to {@link Locale#getUnicodeLocaleType(String)}.
      * If the "ca" key is not present, then {@code IsoChronology} is returned.
      * <p>
@@ -286,7 +286,7 @@ public interface Chronology extends Comparable<Chronology> {
      * <p>
      * The calendar type is an identifier defined by the CLDR and
      * <em>Unicode Locale Data Markup Language (LDML)</em> specifications
-     * to uniquely identification a calendar.
+     * to uniquely identify a calendar.
      * The {@code getCalendarType} is the concatenation of the CLDR calendar type
      * and the variant, if applicable, is appended separated by "-".
      * The calendar type is used to lookup the {@code Chronology} using {@link #of(String)}.

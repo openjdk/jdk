@@ -152,6 +152,10 @@ final class CompiledFunction {
         return null;
     }
 
+    boolean convertsNumericArgs() {
+        return isSpecialization() && specialization.convertsNumericArgs();
+    }
+
     int getFlags() {
         return flags;
     }
@@ -388,10 +392,18 @@ final class CompiledFunction {
             int narrowWeightDelta = 0;
             int widenWeightDelta = 0;
             final int minParamsCount = Math.min(Math.min(thisParamCount, otherParamCount), callSiteParamCount);
+            final boolean convertsNumericArgs = cf.convertsNumericArgs();
             for(int i = 0; i < minParamsCount; ++i) {
-                final int callSiteParamWeight = getParamType(i, callSiteType, csVarArg).getWeight();
+                final Type callSiteParamType = getParamType(i, callSiteType, csVarArg);
+                final Type thisParamType = getParamType(i, thisType, thisVarArg);
+                if (!convertsNumericArgs && callSiteParamType.isBoolean() && thisParamType.isNumeric()) {
+                    // When an argument is converted to number by a function it is safe to "widen" booleans to numeric types.
+                    // However, we must avoid this conversion for generic functions such as Array.prototype.push.
+                    return false;
+                }
+                final int callSiteParamWeight = callSiteParamType.getWeight();
                 // Delta is negative for narrowing, positive for widening
-                final int thisParamWeightDelta = getParamType(i, thisType, thisVarArg).getWeight() - callSiteParamWeight;
+                final int thisParamWeightDelta = thisParamType.getWeight() - callSiteParamWeight;
                 final int otherParamWeightDelta = getParamType(i, otherType, otherVarArg).getWeight() - callSiteParamWeight;
                 // Only count absolute values of narrowings
                 narrowWeightDelta += Math.max(-thisParamWeightDelta, 0) - Math.max(-otherParamWeightDelta, 0);

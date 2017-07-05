@@ -28,15 +28,3 @@ Java_GetModule_callGetModule(JNIEnv *env, jclass unused, jclass clazz) {
     jobject res = (jobject)((*env)->GetModule(env, clazz));
     return res;
 }
-
-JNIEXPORT void JNICALL
-Java_GetModule_callAddModuleReads(JNIEnv *env, jclass unused, jobject from_module, jobject source_module) {
-    (*env)->AddModuleReads(env, from_module, source_module);
-}
-
-JNIEXPORT jboolean JNICALL
-Java_GetModule_callCanReadModule(JNIEnv *env, jclass unused, jobject asking_module, jobject source_module) {
-   jboolean res = (*env)->CanReadModule(env, asking_module, source_module);
-   return res;
-}
-

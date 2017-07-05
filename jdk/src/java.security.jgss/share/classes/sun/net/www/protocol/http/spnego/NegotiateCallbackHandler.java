@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,6 +63,7 @@ public class NegotiateCallbackHandler implements CallbackHandler {
             answered = true;
             PasswordAuthentication passAuth =
                     Authenticator.requestPasswordAuthentication(
+                    hci.authenticator,
                     hci.host, hci.addr, hci.port, hci.protocol,
                     hci.prompt, hci.scheme, hci.url, hci.authType);
             /**

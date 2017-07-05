@@ -108,3 +108,19 @@ ifeq ($(OPENJDK_TARGET_OS), solaris)
 endif
 
 ################################################################################
+# Create the javax/crypto/JceSecurity.class, using the build default.
+#
+ifeq ($(UNLIMITED_CRYPTO), true)
+    JCE_DEFAULT_POLICY = unlimited
+else
+    JCE_DEFAULT_POLICY = limited
+endif
+
+$(eval $(call SetupTextFileProcessing, BUILD_JCESECURITY_JAVA, \
+    SOURCE_FILES := $(JDK_TOPDIR)/src/java.base/share/classes/javax/crypto/JceSecurity.java.template, \
+    OUTPUT_FILE := $(SUPPORT_OUTPUTDIR)/gensrc/java.base/javax/crypto/JceSecurity.java, \
+    REPLACEMENTS := \
+        @@JCE_DEFAULT_POLICY@@ => $(JCE_DEFAULT_POLICY), \
+))
+
+GENSRC_JAVA_BASE += $(BUILD_JCESECURITY_JAVA)

@@ -164,7 +164,7 @@ public abstract class ModularTest {
         final Builder builder;
         if (moduleType == MODULE_TYPE.EXPLICIT) {
             System.out.format(" %nGenerating ModuleDescriptor object");
-            builder = new Builder(moduleName).exports(pkg);
+            builder = ModuleDescriptor.module(moduleName).exports(pkg);
             if (isService && serviceInterface != null && serviceImpl != null) {
                 builder.provides(serviceInterface, serviceImpl);
             } else {
