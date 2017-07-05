@@ -194,7 +194,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
         final Class<?> innerClass = spinInnerClass();
         if (invokedType.parameterCount() == 0) {
             final Constructor<?>[] ctrs = AccessController.doPrivileged(
-                    new PrivilegedAction<Constructor<?>[]>() {
+                    new PrivilegedAction<>() {
                 @Override
                 public Constructor<?>[] run() {
                     Constructor<?>[] ctrs = innerClass.getDeclaredConstructors();
@@ -311,7 +311,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
 
         // If requested, dump out to a file for debugging purposes
         if (dumper != null) {
-            AccessController.doPrivileged(new PrivilegedAction<Void>() {
+            AccessController.doPrivileged(new PrivilegedAction<>() {
                 @Override
                 public Void run() {
                     dumper.dumpClass(lambdaClassName, classBytes);

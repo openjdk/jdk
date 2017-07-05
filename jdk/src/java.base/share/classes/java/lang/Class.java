@@ -437,7 +437,7 @@ public final class Class<T> implements java.io.Serializable,
                 // (the stack depth is wrong for the Constructor's
                 // security check to work)
                 java.security.AccessController.doPrivileged(
-                    new java.security.PrivilegedAction<Void>() {
+                    new java.security.PrivilegedAction<>() {
                         public Void run() {
                                 c.setAccessible(true);
                                 return null;
@@ -1068,7 +1068,7 @@ public final class Class<T> implements java.io.Serializable,
                                                  Reflection.getCallerClass(), true);
             // Client is ok to access declared methods but j.l.Class might not be.
             Method[] candidates = AccessController.doPrivileged(
-                    new PrivilegedAction<Method[]>() {
+                    new PrivilegedAction<>() {
                         @Override
                         public Method[] run() {
                             return enclosingCandidate.getDeclaredMethods();
@@ -1228,7 +1228,7 @@ public final class Class<T> implements java.io.Serializable,
                                                  Reflection.getCallerClass(), true);
             // Client is ok to access declared methods but j.l.Class might not be.
             Constructor<?>[] candidates = AccessController.doPrivileged(
-                    new PrivilegedAction<Constructor<?>[]>() {
+                    new PrivilegedAction<>() {
                         @Override
                         public Constructor<?>[] run() {
                             return enclosingCandidate.getDeclaredConstructors();
@@ -1542,7 +1542,7 @@ public final class Class<T> implements java.io.Serializable,
         // has already been ok'd by the SecurityManager.
 
         return java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction<Class<?>[]>() {
+            new java.security.PrivilegedAction<>() {
                 public Class<?>[] run() {
                     List<Class<?>> list = new ArrayList<>();
                     Class<?> currentClass = Class.this;
@@ -3293,7 +3293,7 @@ public final class Class<T> implements java.io.Serializable,
     private static boolean initted = false;
     private static void checkInitted() {
         if (initted) return;
-        AccessController.doPrivileged(new PrivilegedAction<Void>() {
+        AccessController.doPrivileged(new PrivilegedAction<>() {
                 public Void run() {
                     // Tests to ensure the system properties table is fully
                     // initialized. This is needed because reflection code is
@@ -3349,7 +3349,7 @@ public final class Class<T> implements java.io.Serializable,
             try {
                 final Method values = getMethod("values");
                 java.security.AccessController.doPrivileged(
-                    new java.security.PrivilegedAction<Void>() {
+                    new java.security.PrivilegedAction<>() {
                         public Void run() {
                                 values.setAccessible(true);
                                 return null;

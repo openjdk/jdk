@@ -135,7 +135,7 @@ public class CharsetMapping {
 
     // init the CharsetMapping object from the .dat binary file
     public static CharsetMapping get(final InputStream is) {
-        return AccessController.doPrivileged(new PrivilegedAction<CharsetMapping>() {
+        return AccessController.doPrivileged(new PrivilegedAction<>() {
             public CharsetMapping run() {
                 return new CharsetMapping().load(is);
             }

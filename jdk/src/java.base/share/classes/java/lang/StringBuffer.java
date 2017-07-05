@@ -206,6 +206,7 @@ import java.util.Arrays;
     }
 
     /**
+     * @throws IndexOutOfBoundsException {@inheritDoc}
      * @since      1.5
      */
     @Override
@@ -214,6 +215,7 @@ import java.util.Arrays;
     }
 
     /**
+     * @throws IndexOutOfBoundsException {@inheritDoc}
      * @since     1.5
      */
     @Override
@@ -222,6 +224,7 @@ import java.util.Arrays;
     }
 
     /**
+     * @throws IndexOutOfBoundsException {@inheritDoc}
      * @since     1.5
      */
     @Override
@@ -230,6 +233,7 @@ import java.util.Arrays;
     }
 
     /**
+     * @throws IndexOutOfBoundsException {@inheritDoc}
      * @since     1.5
      */
     @Override

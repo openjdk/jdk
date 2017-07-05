@@ -167,7 +167,7 @@ class InvokerBytecodeGenerator {
     static void maybeDump(final String className, final byte[] classFile) {
         if (DUMP_CLASS_FILES) {
             java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction<Void>() {
+            new java.security.PrivilegedAction<>() {
                 public Void run() {
                     try {
                         String dumpName = className;

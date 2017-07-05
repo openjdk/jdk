@@ -52,8 +52,8 @@ public abstract class SelectorImpl
 
     protected SelectorImpl(SelectorProvider sp) {
         super(sp);
-        keys = new HashSet<SelectionKey>();
-        selectedKeys = new HashSet<SelectionKey>();
+        keys = new HashSet<>();
+        selectedKeys = new HashSet<>();
         if (Util.atBugLevel("1.4")) {
             publicKeys = keys;
             publicSelectedKeys = selectedKeys;

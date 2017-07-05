@@ -166,14 +166,14 @@ public abstract class PreHashedMap<V>
     }
 
     public Set<String> keySet() {
-        return new AbstractSet<String> () {
+        return new AbstractSet<> () {
 
             public int size() {
                 return size;
             }
 
             public Iterator<String> iterator() {
-                return new Iterator<String>() {
+                return new Iterator<>() {
                     private int i = -1;
                     Object[] a = null;
                     String cur = null;

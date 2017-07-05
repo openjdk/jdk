@@ -213,7 +213,7 @@ public abstract class ParallelListResourceBundle extends ResourceBundle {
             if (parent == null) {
                 return set.iterator();
             }
-            return new Iterator<String>() {
+            return new Iterator<>() {
                 private Iterator<String> itr = set.iterator();
                 private boolean usingParent;
 

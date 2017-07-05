@@ -2655,7 +2655,7 @@ public abstract class ResourceBundle {
                 InputStream stream = null;
                 try {
                     stream = AccessController.doPrivileged(
-                        new PrivilegedExceptionAction<InputStream>() {
+                        new PrivilegedExceptionAction<>() {
                             public InputStream run() throws IOException {
                                 InputStream is = null;
                                 if (reloadFlag) {
