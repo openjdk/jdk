@@ -76,4 +76,3 @@ public class SchemaValidationTest {
         return spf.newSAXParser();
     }
 }
-

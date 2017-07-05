@@ -93,4 +93,3 @@ public class Bug8003147Test {
         }, new FilePermission(getSystemProperty("test.classes") + "/-", "read,write"));
     }
 }
-

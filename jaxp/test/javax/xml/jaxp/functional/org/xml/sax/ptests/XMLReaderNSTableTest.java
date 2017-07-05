@@ -131,5 +131,3 @@ public class XMLReaderNSTableTest {
         assertTrue(compareWithGold(goldFile, outputFile));
     }
 }
-
-

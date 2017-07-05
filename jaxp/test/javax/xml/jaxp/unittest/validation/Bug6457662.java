@@ -86,4 +86,3 @@ public class Bug6457662 {
         return rtn;
     }
 }
-

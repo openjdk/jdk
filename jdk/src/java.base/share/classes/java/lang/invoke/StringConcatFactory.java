@@ -563,9 +563,8 @@ public final class StringConcatFactory {
         }
 
         if ((lookup.lookupModes() & MethodHandles.Lookup.PRIVATE) == 0) {
-            throw new StringConcatException(String.format(
-                    "Invalid caller: %s",
-                    lookup.lookupClass().getName()));
+            throw new StringConcatException("Invalid caller: " +
+                    lookup.lookupClass().getName());
         }
 
         int cCount = 0;
@@ -1494,51 +1493,41 @@ public final class StringConcatFactory {
             // Drop all remaining parameter types, leave only helper arguments:
             MethodHandle mh;
 
-            mh = MethodHandles.dropArguments(NEW_STRING, 2, ptypes);
-            mh = MethodHandles.dropArguments(mh, 0, int.class);
+            mh = MethodHandles.dropArguments(NEW_STRING, 3, ptypes);
 
-            // Safety: check that remaining index is zero -- that would mean the storage is completely
-            // overwritten, and no leakage of uninitialized data occurred.
-            mh = MethodHandles.filterArgument(mh, 0, CHECK_INDEX);
-
-            // Mix in prependers. This happens when (int, byte[], byte) = (index, storage, coder) is already
+            // Mix in prependers. This happens when (byte[], int, byte) = (storage, index, coder) is already
             // known from the combinators below. We are assembling the string backwards, so "index" is the
             // *ending* index.
             for (RecipeElement el : recipe.getElements()) {
-                MethodHandle prepender;
+                // Do the prepend, and put "new" index at index 1
+                mh = MethodHandles.dropArguments(mh, 2, int.class);
                 switch (el.getTag()) {
-                    case TAG_CONST:
+                    case TAG_CONST: {
                         Object cnst = el.getValue();
-                        prepender = MethodHandles.insertArguments(prepender(cnst.getClass()), 3, cnst);
+                        MethodHandle prepender = MethodHandles.insertArguments(prepender(cnst.getClass()), 3, cnst);
+                        mh = MethodHandles.foldArguments(mh, 1, prepender,
+                                2, 0, 3 // index, storage, coder
+                        );
                         break;
-                    case TAG_ARG:
+                    }
+                    case TAG_ARG: {
                         int pos = el.getArgPos();
-                        prepender = selectArgument(prepender(ptypes[pos]), 3, ptypes, pos);
+                        MethodHandle prepender = prepender(ptypes[pos]);
+                        mh = MethodHandles.foldArguments(mh, 1, prepender,
+                                2, 0, 3, // index, storage, coder
+                                4 + pos  // selected argument
+                        );
                         break;
+                    }
                     default:
                         throw new StringConcatException("Unhandled tag: " + el.getTag());
                 }
-
-                // Remove "old" index from arguments
-                mh = MethodHandles.dropArguments(mh, 1, int.class);
-
-                // Do the prepend, and put "new" index at index 0
-                mh = MethodHandles.foldArguments(mh, prepender);
             }
 
-            // Prepare the argument list for prepending. The tree below would instantiate
-            // the storage byte[] into argument 0, so we need to swap "storage" and "index".
-            // The index at this point equals to "size", and resides at argument 1.
-            {
-                MethodType nmt = mh.type()
-                        .changeParameterType(0, byte[].class)
-                        .changeParameterType(1, int.class);
-                mh = MethodHandles.permuteArguments(mh, nmt, swap10(nmt.parameterCount()));
-            }
-
-            // Fold in byte[] instantiation at argument 0.
-            MethodHandle combiner = MethodHandles.dropArguments(NEW_ARRAY, 2, ptypes);
-            mh = MethodHandles.foldArguments(mh, combiner);
+            // Fold in byte[] instantiation at argument 0
+            mh = MethodHandles.foldArguments(mh, 0, NEW_ARRAY,
+                    1, 2 // index, coder
+            );
 
             // Start combining length and coder mixers.
             //
@@ -1567,12 +1556,8 @@ public final class StringConcatFactory {
                         int ac = el.getArgPos();
 
                         Class<?> argClass = ptypes[ac];
-                        MethodHandle lm = selectArgument(lengthMixer(argClass), 1, ptypes, ac);
-                        lm = MethodHandles.dropArguments(lm, 0, byte.class); // (*)
-                        lm = MethodHandles.dropArguments(lm, 2, byte.class);
-
-                        MethodHandle cm = selectArgument(coderMixer(argClass),  1, ptypes, ac);
-                        cm = MethodHandles.dropArguments(cm, 0, int.class);  // (**)
+                        MethodHandle lm = lengthMixer(argClass);
+                        MethodHandle cm = coderMixer(argClass);
 
                         // Read this bottom up:
 
@@ -1580,12 +1565,18 @@ public final class StringConcatFactory {
                         mh = MethodHandles.dropArguments(mh, 2, int.class, byte.class);
 
                         // 3. Compute "new-index", producing ("new-index", "new-coder", "old-index", "old-coder", <args>)
-                        //    Length mixer ignores both "new-coder" and "old-coder" due to dropArguments above (*)
-                        mh = MethodHandles.foldArguments(mh, lm);
+                        //    Length mixer needs old index, plus the appropriate argument
+                        mh = MethodHandles.foldArguments(mh, 0, lm,
+                                2, // old-index
+                                4 + ac // selected argument
+                        );
 
                         // 2. Compute "new-coder", producing ("new-coder", "old-index", "old-coder", <args>)
-                        //    Coder mixer ignores the "old-index" arg due to dropArguments above (**)
-                        mh = MethodHandles.foldArguments(mh, cm);
+                        //    Coder mixer needs old coder, plus the appropriate argument.
+                        mh = MethodHandles.foldArguments(mh, 0, cm,
+                                2, // old-coder
+                                3 + ac // selected argument
+                        );
 
                         // 1. The mh shape here is ("old-index", "old-coder", <args>)
                         break;
@@ -1606,39 +1597,9 @@ public final class StringConcatFactory {
             return mh;
         }
 
-        private static int[] swap10(int count) {
-            int[] perm = new int[count];
-            perm[0] = 1;
-            perm[1] = 0;
-            for (int i = 2; i < count; i++) {
-                perm[i] = i;
-            }
-            return perm;
-        }
-
-        // Adapts: (...prefix..., parameter[pos])R -> (...prefix..., ...parameters...)R
-        private static MethodHandle selectArgument(MethodHandle mh, int prefix, Class<?>[] ptypes, int pos) {
-            if (pos == 0) {
-                return MethodHandles.dropArguments(mh, prefix + 1, Arrays.copyOfRange(ptypes, 1, ptypes.length));
-            } else if (pos == ptypes.length - 1) {
-                return MethodHandles.dropArguments(mh, prefix, Arrays.copyOf(ptypes, ptypes.length - 1));
-            } else { // 0 < pos < ptypes.size() - 1
-                MethodHandle t = MethodHandles.dropArguments(mh, prefix, Arrays.copyOf(ptypes, pos));
-                return MethodHandles.dropArguments(t, prefix + 1 + pos, Arrays.copyOfRange(ptypes, pos + 1, ptypes.length));
-            }
-        }
-
         @ForceInline
         private static byte[] newArray(int length, byte coder) {
             return (byte[]) UNSAFE.allocateUninitializedArray(byte.class, length << coder);
-        }
-
-        @ForceInline
-        private static int checkIndex(int index) {
-            if (index != 0) {
-                throw new IllegalStateException("Storage is not completely initialized, " + index + " bytes left");
-            }
-            return index;
         }
 
         private static MethodHandle prepender(Class<?> cl) {
@@ -1678,7 +1639,6 @@ public final class StringConcatFactory {
         };
 
         private static final MethodHandle NEW_STRING;
-        private static final MethodHandle CHECK_INDEX;
         private static final MethodHandle NEW_ARRAY;
         private static final ConcurrentMap<Class<?>, MethodHandle> PREPENDERS;
         private static final ConcurrentMap<Class<?>, MethodHandle> LENGTH_MIXERS;
@@ -1699,9 +1659,8 @@ public final class StringConcatFactory {
             LENGTH_MIXERS = new ConcurrentHashMap<>();
             CODER_MIXERS = new ConcurrentHashMap<>();
 
-            NEW_STRING = lookupStatic(Lookup.IMPL_LOOKUP, STRING_HELPER, "newString", String.class, byte[].class, byte.class);
+            NEW_STRING = lookupStatic(Lookup.IMPL_LOOKUP, STRING_HELPER, "newString", String.class, byte[].class, int.class, byte.class);
             NEW_ARRAY  = lookupStatic(Lookup.IMPL_LOOKUP, MethodHandleInlineCopyStrategy.class, "newArray", byte[].class, int.class, byte.class);
-            CHECK_INDEX = lookupStatic(Lookup.IMPL_LOOKUP, MethodHandleInlineCopyStrategy.class, "checkIndex", int.class, int.class);
         }
     }
 

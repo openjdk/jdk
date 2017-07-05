@@ -31,6 +31,10 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
+import java.util.function.BiFunction;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.function.UnaryOperator;
 
 /**
  * Container class for immutable collections. Not part of the public API.
@@ -61,9 +65,25 @@ class ImmutableCollections {
      */
     static final double EXPAND_FACTOR = 2.0;
 
+    static UnsupportedOperationException uoe() { return new UnsupportedOperationException(); }
+
     // ---------- List Implementations ----------
 
-    static final class List0<E> extends AbstractList<E> implements RandomAccess, Serializable {
+    abstract static class AbstractImmutableList<E> extends AbstractList<E>
+                                                implements RandomAccess, Serializable {
+        @Override public boolean add(E e) { throw uoe(); }
+        @Override public boolean addAll(Collection<? extends E> c) { throw uoe(); }
+        @Override public boolean addAll(int index, Collection<? extends E> c) { throw uoe(); }
+        @Override public void    clear() { throw uoe(); }
+        @Override public boolean remove(Object o) { throw uoe(); }
+        @Override public boolean removeAll(Collection<?> c) { throw uoe(); }
+        @Override public boolean removeIf(Predicate<? super E> filter) { throw uoe(); }
+        @Override public void    replaceAll(UnaryOperator<E> operator) { throw uoe(); }
+        @Override public boolean retainAll(Collection<?> c) { throw uoe(); }
+        @Override public void    sort(Comparator<? super E> c) { throw uoe(); }
+    }
+
+    static final class List0<E> extends AbstractImmutableList<E> {
         List0() { }
 
         @Override
@@ -86,7 +106,7 @@ class ImmutableCollections {
         }
     }
 
-    static final class List1<E> extends AbstractList<E> implements RandomAccess, Serializable {
+    static final class List1<E> extends AbstractImmutableList<E> {
         private final E e0;
 
         List1(E e0) {
@@ -114,7 +134,7 @@ class ImmutableCollections {
         }
     }
 
-    static final class List2<E> extends AbstractList<E> implements RandomAccess, Serializable {
+    static final class List2<E> extends AbstractImmutableList<E> {
         private final E e0;
         private final E e1;
 
@@ -147,7 +167,7 @@ class ImmutableCollections {
         }
     }
 
-    static final class ListN<E> extends AbstractList<E> implements RandomAccess, Serializable {
+    static final class ListN<E> extends AbstractImmutableList<E> {
         private final E[] elements;
 
         @SafeVarargs
@@ -183,7 +203,17 @@ class ImmutableCollections {
 
     // ---------- Set Implementations ----------
 
-    static final class Set0<E> extends AbstractSet<E> implements Serializable {
+    abstract static class AbstractImmutableSet<E> extends AbstractSet<E> implements Serializable {
+        @Override public boolean add(E e) { throw uoe(); }
+        @Override public boolean addAll(Collection<? extends E> c) { throw uoe(); }
+        @Override public void    clear() { throw uoe(); }
+        @Override public boolean remove(Object o) { throw uoe(); }
+        @Override public boolean removeAll(Collection<?> c) { throw uoe(); }
+        @Override public boolean removeIf(Predicate<? super E> filter) { throw uoe(); }
+        @Override public boolean retainAll(Collection<?> c) { throw uoe(); }
+    }
+
+    static final class Set0<E> extends AbstractImmutableSet<E> {
         Set0() { }
 
         @Override
@@ -210,7 +240,7 @@ class ImmutableCollections {
         }
     }
 
-    static final class Set1<E> extends AbstractSet<E> implements Serializable {
+    static final class Set1<E> extends AbstractImmutableSet<E> {
         private final E e0;
 
         Set1(E e0) {
@@ -241,7 +271,7 @@ class ImmutableCollections {
         }
     }
 
-    static final class Set2<E> extends AbstractSet<E> implements Serializable {
+    static final class Set2<E> extends AbstractImmutableSet<E> {
         private final E e0;
         private final E e1;
 
@@ -312,7 +342,7 @@ class ImmutableCollections {
      * least one null is always present.
      * @param <E> the element type
      */
-    static final class SetN<E> extends AbstractSet<E> implements Serializable {
+    static final class SetN<E> extends AbstractImmutableSet<E> {
         private final E[] elements;
         private final int size;
 
@@ -403,7 +433,23 @@ class ImmutableCollections {
 
     // ---------- Map Implementations ----------
 
-    static final class Map0<K,V> extends AbstractMap<K,V> implements Serializable {
+    abstract static class AbstractImmutableMap<K,V> extends AbstractMap<K,V> implements Serializable {
+        @Override public void clear() { throw uoe(); }
+        @Override public V compute(K key, BiFunction<? super K,? super V,? extends V> rf) { throw uoe(); }
+        @Override public V computeIfAbsent(K key, Function<? super K,? extends V> mf) { throw uoe(); }
+        @Override public V computeIfPresent(K key, BiFunction<? super K,? super V,? extends V> rf) { throw uoe(); }
+        @Override public V merge(K key, V value, BiFunction<? super V,? super V,? extends V> rf) { throw uoe(); }
+        @Override public V put(K key, V value) { throw uoe(); }
+        @Override public void putAll(Map<? extends K,? extends V> m) { throw uoe(); }
+        @Override public V putIfAbsent(K key, V value) { throw uoe(); }
+        @Override public V remove(Object key) { throw uoe(); }
+        @Override public boolean remove(Object key, Object value) { throw uoe(); }
+        @Override public V replace(K key, V value) { throw uoe(); }
+        @Override public boolean replace(K key, V oldValue, V newValue) { throw uoe(); }
+        @Override public void replaceAll(BiFunction<? super K,? super V,? extends V> f) { throw uoe(); }
+    }
+
+    static final class Map0<K,V> extends AbstractImmutableMap<K,V> {
         Map0() { }
 
         @Override
@@ -430,7 +476,7 @@ class ImmutableCollections {
         }
     }
 
-    static final class Map1<K,V> extends AbstractMap<K,V> implements Serializable {
+    static final class Map1<K,V> extends AbstractImmutableMap<K,V> {
         private final K k0;
         private final V v0;
 
@@ -472,7 +518,7 @@ class ImmutableCollections {
      * @param <K> the key type
      * @param <V> the value type
      */
-    static final class MapN<K,V> extends AbstractMap<K,V> implements Serializable {
+    static final class MapN<K,V> extends AbstractImmutableMap<K,V> {
         private final Object[] table; // pairs of key, value
         private final int size; // number of pairs
 

@@ -83,4 +83,3 @@ public class DuplicateNSDeclarationTest {
         Assert.assertEquals(EXPECTED_OUTPUT, buffer.toString());
     }
 }
-

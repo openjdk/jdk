@@ -141,5 +141,3 @@ public class TransformerFactoryTest {
         assertTrue(compareWithGold(goldFile, outputFile));
     }
 }
-
-

@@ -153,4 +153,3 @@ public class Attributes2ImplTest {
         Assert.assertTrue(impl1.getQName(2).equals(impl3.getQName(2)));
     }
 }
-

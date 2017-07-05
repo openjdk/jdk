@@ -66,4 +66,3 @@ public class Bug4971605 {
         Assert.assertNotNull(schema, "Failed: newSchema returned null.");
     }
 }
-

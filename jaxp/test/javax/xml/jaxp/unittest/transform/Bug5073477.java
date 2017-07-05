@@ -55,4 +55,3 @@ public class Bug5073477 {
         r.setNextSibling(r.getNode().getFirstChild());
     }
 }
-

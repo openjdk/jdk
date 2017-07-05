@@ -554,8 +554,9 @@ public class SubmissionPublisher<T> implements Flow.Publisher<T>,
                 while (r != null) {
                     BufferedSubscription<T> nextRetry = r.nextRetry;
                     r.nextRetry = null;
-                    int stat = (nanos > 0L) ? r.timedOffer(item, nanos) :
-                        r.offer(item);
+                    int stat = (nanos > 0L)
+                        ? r.timedOffer(item, nanos)
+                        : r.offer(item);
                     if (stat == 0 && onDrop != null &&
                         onDrop.test(r.subscriber, item))
                         stat = r.offer(item);

@@ -262,5 +262,3 @@ public class URIResolverTest implements URIResolver {
         }
     }
 }
-
-

@@ -54,4 +54,3 @@ public class XML11Test {
         }
     }
 }
-

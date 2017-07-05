@@ -69,4 +69,3 @@ public class Jsr173MR1Req8Test {
     }
 
 }
-

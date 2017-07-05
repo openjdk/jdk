@@ -132,10 +132,10 @@ import java.util.concurrent.locks.ReentrantLock;
  * <i>happen-before</i> actions following a successful return from the
  * corresponding {@code await()} in other threads.
  *
- * @since 1.5
  * @see CountDownLatch
  *
  * @author Doug Lea
+ * @since 1.5
  */
 public class CyclicBarrier {
     /**

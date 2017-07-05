@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 8135055
+ * @modules java.sql
  * @summary Test java.sql.TimeStamp instance should come after java.util.Date
  * if Nanos component of TimeStamp is not equal to 0 milliseconds.
 */
