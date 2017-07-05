@@ -362,7 +362,8 @@ needs_jdk = \
   sun/reflect/CallerSensitive/CallerSensitiveFinder.java \
   sun/reflect/CallerSensitive/MissingCallerSensitive.java \
   sun/security/util/Resources/NewNamesFormat.java \
-  vm/verifier/defaultMethods/DefaultMethodRegressionTestsRun.java
+  vm/verifier/defaultMethods/DefaultMethodRegressionTestsRun.java \
+  javax/xml/ws/clientjar/TestWsImport.java 
 
 # JRE adds further tests to compact3
 #
@@ -388,6 +389,7 @@ needs_jre = \
   java/security/Security/ClassLoaderDeadlock/Deadlock.sh \
   java/util/jar/Manifest/CreateManifest.java \
   java/util/logging/TestMainAppContext.java \
+  java/util/logging/TestLoggingWithMainAppContext.java \
   java/util/ResourceBundle/Control/Bug6530694.java \
   java/text/Bidi/BidiConformance.java \
   java/text/Bidi/BidiEmbeddingTest.java \

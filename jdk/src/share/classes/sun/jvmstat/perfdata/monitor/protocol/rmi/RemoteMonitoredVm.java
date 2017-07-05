@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -198,16 +198,17 @@ public class RemoteMonitoredVm extends AbstractMonitoredVm {
      * @param inserted List of Monitor objects inserted.
      * @param removed List of Monitor objects removed.
      */
-    void fireMonitorStatusChangedEvents(List inserted, List removed) {
-        ArrayList registered = null;
+    @SuppressWarnings("unchecked") // Cast of result of clone
+    void fireMonitorStatusChangedEvents(List<Monitor> inserted, List<Monitor> removed) {
+        ArrayList<VmListener> registered = null;
         MonitorStatusChangeEvent ev = null;
 
         synchronized(listeners) {
             registered = (ArrayList)listeners.clone();
         }
 
-        for (Iterator i = registered.iterator(); i.hasNext(); /* empty */) {
-            VmListener l = (VmListener)i.next();
+        for (Iterator<VmListener> i = registered.iterator(); i.hasNext(); /* empty */) {
+            VmListener l = i.next();
             if (ev == null) {
                 ev = new MonitorStatusChangeEvent(this, inserted, removed);
             }
@@ -218,16 +219,17 @@ public class RemoteMonitoredVm extends AbstractMonitoredVm {
     /**
      * Fire MonitoredVmStructureChanged events.
      */
+    @SuppressWarnings("unchecked") // Cast of result of clone
     void fireMonitorsUpdatedEvents() {
-        ArrayList registered = null;
+        ArrayList<VmListener> registered = null;
         VmEvent ev = null;
 
         synchronized(listeners) {
             registered = (ArrayList)listeners.clone();
         }
 
-        for (Iterator i = registered.iterator(); i.hasNext(); /* empty */) {
-            VmListener l = (VmListener)i.next();
+        for (Iterator<VmListener> i = registered.iterator(); i.hasNext(); /* empty */) {
+            VmListener l = i.next();
             if (ev == null) {
                 ev = new VmEvent(this);
             }
@@ -256,8 +258,8 @@ public class RemoteMonitoredVm extends AbstractMonitoredVm {
             try {
                 MonitorStatus status = getMonitorStatus();
 
-                List inserted = status.getInserted();
-                List removed = status.getRemoved();
+                List<Monitor> inserted = status.getInserted();
+                List<Monitor> removed = status.getRemoved();
 
                 if (!inserted.isEmpty() || !removed.isEmpty()) {
                     fireMonitorStatusChangedEvents(inserted, removed);

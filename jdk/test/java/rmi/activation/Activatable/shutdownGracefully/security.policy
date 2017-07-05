@@ -2,10 +2,6 @@
  * security policy used by the test process
  */
 
-grant codeBase "file:${java.home}/lib/ext/*" {
-    permission java.security.AllPermission;
-};
-
 grant {
   // standard activation permissions
   permission java.io.FilePermission "..${/}..${/}test.props", "read";

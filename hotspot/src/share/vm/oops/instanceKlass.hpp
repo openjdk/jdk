@@ -32,7 +32,6 @@
 #include "oops/fieldInfo.hpp"
 #include "oops/instanceOop.hpp"
 #include "oops/klassVtable.hpp"
-#include "runtime/atomic.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/os.hpp"
 #include "utilities/accessFlags.hpp"

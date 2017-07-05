@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -547,9 +547,10 @@ public abstract class Spring {
 
 
     /**
-     * Returns <code>-s</code>: a spring running in the opposite direction to <code>s</code>.
+     * Returns {@code -s}: a spring running in the opposite direction to {@code s}.
      *
-     * @return <code>-s</code>: a spring running in the opposite direction to <code>s</code>
+     * @param s a {@code Spring} object
+     * @return {@code -s}: a spring running in the opposite direction to {@code s}
      *
      * @see Spring
      */
@@ -582,6 +583,8 @@ public abstract class Spring {
      * the <em>value</em>s of <code>s1</code> and <code>s2</code> is exactly equal to
      * the <em>value</em> of <code>s3</code>.
      *
+     * @param s1 a {@code Spring} object
+     * @param s2 a {@code Spring} object
      * @return <code>s1+s2</code>: a spring representing <code>s1</code> and <code>s2</code> in series
      *
      * @see Spring
@@ -591,11 +594,13 @@ public abstract class Spring {
      }
 
     /**
-     * Returns <code>max(s1, s2)</code>: a spring whose value is always greater than (or equal to)
-     *         the values of both <code>s1</code> and <code>s2</code>.
+     * Returns {@code max(s1, s2)}: a spring whose value is always greater than (or equal to)
+     *         the values of both {@code s1} and {@code s2}.
      *
-     * @return <code>max(s1, s2)</code>: a spring whose value is always greater than (or equal to)
-     *         the values of both <code>s1</code> and <code>s2</code>
+     * @param s1 a {@code Spring} object
+     * @param s2 a {@code Spring} object
+     * @return {@code max(s1, s2)}: a spring whose value is always greater than (or equal to)
+     *         the values of both {@code s1} and {@code s2}
      * @see Spring
      */
     public static Spring max(Spring s1, Spring s2) {

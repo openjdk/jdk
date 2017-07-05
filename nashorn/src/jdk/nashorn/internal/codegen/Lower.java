@@ -27,7 +27,6 @@ package jdk.nashorn.internal.codegen;
 
 import static jdk.nashorn.internal.codegen.CompilerConstants.EVAL;
 import static jdk.nashorn.internal.codegen.CompilerConstants.RETURN;
-import static jdk.nashorn.internal.codegen.CompilerConstants.THIS;
 import static jdk.nashorn.internal.ir.Expression.isAlwaysTrue;
 
 import java.util.ArrayList;
@@ -603,13 +602,11 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> implements Lo
 
             // 'eval' call with at least one argument
             if (args.size() >= 1 && EVAL.symbolName().equals(callee.getName())) {
-                final FunctionNode currentFunction = lc.getCurrentFunction();
-                return callNode.setEvalArgs(
-                    new CallNode.EvalArgs(
-                        (Expression)ensureUniqueNamesIn(args.get(0)).accept(this),
-                        compilerConstant(THIS),
-                        evalLocation(callee),
-                        currentFunction.isStrict()));
+                final List<Expression> evalArgs = new ArrayList<>(args.size());
+                for(final Expression arg: args) {
+                    evalArgs.add((Expression)ensureUniqueNamesIn(arg).accept(this));
+                }
+                return callNode.setEvalArgs(new CallNode.EvalArgs(evalArgs, evalLocation(callee)));
             }
         }
 

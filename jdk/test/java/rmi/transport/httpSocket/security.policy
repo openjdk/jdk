@@ -1,6 +1,3 @@
-grant codeBase "file:${java.home}/lib/ext/*" {
-    permission java.security.AllPermission;
-};
 
 grant {
     permission java.net.SocketPermission "*:1024-", "accept,connect,listen";

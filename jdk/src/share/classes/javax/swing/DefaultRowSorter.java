@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -712,6 +712,8 @@ public abstract class DefaultRowSorter<M, I> extends RowSorter<M> {
      *
      * @param column the index of the column to test, in terms of the
      *        underlying model
+     * @return true if values are to be converted to strings before doing
+     *              comparisons when sorting
      * @throws IndexOutOfBoundsException if <code>column</code> is not valid
      */
     protected boolean useToString(int column) {

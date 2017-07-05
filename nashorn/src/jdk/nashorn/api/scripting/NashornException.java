@@ -53,9 +53,6 @@ public abstract class NashornException extends RuntimeException {
     // underlying ECMA error object - lazily initialized
     private Object ecmaError;
 
-    /** script source name used for "engine.js" */
-    public static final String ENGINE_SCRIPT_SOURCE_NAME = "nashorn:engine/resources/engine.js";
-
     /**
      * Constructor
      *

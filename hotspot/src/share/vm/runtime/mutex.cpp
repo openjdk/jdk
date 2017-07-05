@@ -24,6 +24,7 @@
  */
 
 #include "precompiled.hpp"
+#include "runtime/atomic.inline.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/orderAccess.inline.hpp"
 #include "runtime/osThread.hpp"

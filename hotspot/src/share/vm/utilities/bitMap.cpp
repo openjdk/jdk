@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
+#include "runtime/atomic.inline.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/copy.hpp"
 #ifdef TARGET_OS_FAMILY_linux

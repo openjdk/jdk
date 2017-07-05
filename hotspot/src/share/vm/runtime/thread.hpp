@@ -343,42 +343,16 @@ class Thread: public ThreadShadow {
 
   bool has_async_exception() const { return (_suspend_flags & _has_async_exception) != 0; }
 
-  void set_suspend_flag(SuspendFlags f) {
-    assert(sizeof(jint) == sizeof(_suspend_flags), "size mismatch");
-    uint32_t flags;
-    do {
-      flags = _suspend_flags;
-    }
-    while (Atomic::cmpxchg((jint)(flags | f),
-                           (volatile jint*)&_suspend_flags,
-                           (jint)flags) != (jint)flags);
-  }
-  void clear_suspend_flag(SuspendFlags f) {
-    assert(sizeof(jint) == sizeof(_suspend_flags), "size mismatch");
-    uint32_t flags;
-    do {
-      flags = _suspend_flags;
-    }
-    while (Atomic::cmpxchg((jint)(flags & ~f),
-                           (volatile jint*)&_suspend_flags,
-                           (jint)flags) != (jint)flags);
-  }
+  inline void set_suspend_flag(SuspendFlags f);
+  inline void clear_suspend_flag(SuspendFlags f);
 
-  void set_has_async_exception() {
-    set_suspend_flag(_has_async_exception);
-  }
-  void clear_has_async_exception() {
-    clear_suspend_flag(_has_async_exception);
-  }
+  inline void set_has_async_exception();
+  inline void clear_has_async_exception();
 
   bool do_critical_native_unlock() const { return (_suspend_flags & _critical_native_unlock) != 0; }
 
-  void set_critical_native_unlock() {
-    set_suspend_flag(_critical_native_unlock);
-  }
-  void clear_critical_native_unlock() {
-    clear_suspend_flag(_critical_native_unlock);
-  }
+  inline void set_critical_native_unlock();
+  inline void clear_critical_native_unlock();
 
   // Support for Unhandled Oop detection
 #ifdef CHECK_UNHANDLED_OOPS
@@ -1074,8 +1048,8 @@ class JavaThread: public Thread {
 
   // Suspend/resume support for JavaThread
  private:
-  void set_ext_suspended()       { set_suspend_flag (_ext_suspended);  }
-  void clear_ext_suspended()     { clear_suspend_flag(_ext_suspended); }
+  inline void set_ext_suspended();
+  inline void clear_ext_suspended();
 
  public:
   void java_suspend();
@@ -1123,11 +1097,11 @@ class JavaThread: public Thread {
   // via the appropriate -XX options.
   bool wait_for_ext_suspend_completion(int count, int delay, uint32_t *bits);
 
-  void set_external_suspend()     { set_suspend_flag  (_external_suspend); }
-  void clear_external_suspend()   { clear_suspend_flag(_external_suspend); }
+  inline void set_external_suspend();
+  inline void clear_external_suspend();
 
-  void set_deopt_suspend()        { set_suspend_flag  (_deopt_suspend); }
-  void clear_deopt_suspend()      { clear_suspend_flag(_deopt_suspend); }
+  inline void set_deopt_suspend();
+  inline void clear_deopt_suspend();
   bool is_deopt_suspend()         { return (_suspend_flags & _deopt_suspend) != 0; }
 
   bool is_external_suspend() const {
@@ -1215,11 +1189,7 @@ class JavaThread: public Thread {
 
   void set_pending_unsafe_access_error()          { _special_runtime_exit_condition = _async_unsafe_access_error; }
 
-  void set_pending_async_exception(oop e) {
-    _pending_async_exception = e;
-    _special_runtime_exit_condition = _async_exception;
-    set_has_async_exception();
-  }
+  inline void set_pending_async_exception(oop e);
 
   // Fast-locking support
   bool is_lock_owned(address adr) const;

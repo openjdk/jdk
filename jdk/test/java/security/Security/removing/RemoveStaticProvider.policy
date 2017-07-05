@@ -1,10 +1,15 @@
+
+grant codeBase "file:${java.home}/lib/ext/sunjce_provider.jar" {
+        permission java.lang.RuntimePermission "accessClassInPackage.sun.misc";
+        permission java.lang.RuntimePermission "accessClassInPackage.sun.security.*";
+        permission java.util.PropertyPermission "*", "read";
+        permission java.security.SecurityPermission "putProviderProperty.SunJCE";
+        permission java.security.SecurityPermission "clearProviderProperties.SunJCE";
+        permission java.security.SecurityPermission "removeProviderProperty.SunJCE";
+};
+
 grant {
     permission java.security.SecurityPermission "removeProvider.SunJCE";
     permission java.security.SecurityPermission "insertProvider.SunJCE";
-};
-
-// Standard extensions get all permissions
-grant codeBase "file:${java.home}/lib/ext/*" {
-        permission java.security.AllPermission;
 };
 

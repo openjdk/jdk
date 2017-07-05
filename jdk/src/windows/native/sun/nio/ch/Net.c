@@ -295,9 +295,9 @@ Java_sun_nio_ch_Net_getIntOption0(JNIEnv *env, jclass clazz, jobject fdo,
     /**
      * HACK: IP_TOS is deprecated on Windows and querying the option
      * returns a protocol error. NET_GetSockOpt handles this and uses
-     * a fallback mechanism.
+     * a fallback mechanism. Same applies to IPV6_TCLASS
      */
-    if (level == IPPROTO_IP && opt == IP_TOS) {
+    if ((level == IPPROTO_IP && opt == IP_TOS) || (level == IPPROTO_IPV6 && opt == IPV6_TCLASS)) {
         mayNeedConversion = JNI_TRUE;
     }
 
@@ -338,6 +338,11 @@ Java_sun_nio_ch_Net_setIntOption0(JNIEnv *env, jclass clazz, jobject fdo,
     } else {
         parg = (char *)&arg;
         arglen = sizeof(arg);
+    }
+
+    if (level == IPPROTO_IPV6 && opt == IPV6_TCLASS) {
+        /* No op */
+        return;
     }
 
     if (mayNeedConversion) {

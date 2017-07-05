@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,16 +22,26 @@
  *
  */
 
-#ifndef CPU_SPARC_VM_BYTECODES_SPARC_HPP
-#define CPU_SPARC_VM_BYTECODES_SPARC_HPP
+#ifndef SHARE_VM_MEMORY_ITERATOR_INLINE_HPP
+#define SHARE_VM_MEMORY_ITERATOR_INLINE_HPP
 
-#ifdef SPARC
-#define NLOCALS_IN_REGS 6
-#endif
+#include "classfile/classLoaderData.hpp"
+#include "memory/iterator.hpp"
+#include "oops/klass.hpp"
+#include "utilities/debug.hpp"
 
+inline void MetadataAwareOopClosure::do_class_loader_data(ClassLoaderData* cld) {
+  assert(_klass_closure._oop_closure == this, "Must be");
 
-// Sparc specific bytecodes
+  bool claim = true;  // Must claim the class loader data before processing.
+  cld->oops_do(_klass_closure._oop_closure, &_klass_closure, claim);
+}
 
-// (none)
+inline void MetadataAwareOopClosure::do_klass_nv(Klass* k) {
+  ClassLoaderData* cld = k->class_loader_data();
+  do_class_loader_data(cld);
+}
 
-#endif // CPU_SPARC_VM_BYTECODES_SPARC_HPP
+inline void MetadataAwareOopClosure::do_klass(Klass* k)       { do_klass_nv(k); }
+
+#endif // SHARE_VM_MEMORY_ITERATOR_INLINE_HPP

@@ -1317,20 +1317,14 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
                         // Load up self (scope).
                         method.loadCompilerConstant(SCOPE);
-                        final CallNode.EvalArgs evalArgs = callNode.getEvalArgs();
+                        final List<Expression> evalArgs = callNode.getEvalArgs().getArgs();
                         // load evaluated code
-                        loadExpressionAsObject(evalArgs.getCode());
+                        loadExpressionAsObject(evalArgs.get(0));
                         // load second and subsequent args for side-effect
-                        final List<Expression> callArgs = callNode.getArgs();
-                        final int numArgs = callArgs.size();
+                        final int numArgs = evalArgs.size();
                         for (int i = 1; i < numArgs; i++) {
-                            loadExpressionUnbounded(callArgs.get(i)).pop();
+                            loadAndDiscard(evalArgs.get(i));
                         }
-                        // special/extra 'eval' arguments
-                        loadExpressionUnbounded(evalArgs.getThis());
-                        method.load(evalArgs.getLocation());
-                        method.load(evalArgs.getStrictMode());
-                        method.convert(Type.OBJECT);
                         method._goto(invoke_direct_eval);
 
                         method.label(is_not_eval);
@@ -1339,7 +1333,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                         // This is some scope 'eval' or global eval replaced by user
                         // but not the built-in ECMAScript 'eval' function call
                         method.loadNull();
-                        argsCount = loadArgs(callArgs);
+                        argsCount = loadArgs(callNode.getArgs());
                     }
 
                     @Override
@@ -1349,6 +1343,11 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                         method._goto(eval_done);
 
                         method.label(invoke_direct_eval);
+                        // Special/extra 'eval' arguments. These can be loaded late (in consumeStack) as we know none of
+                        // them can ever be optimistic.
+                        method.loadCompilerConstant(THIS);
+                        method.load(callNode.getEvalArgs().getLocation());
+                        method.load(CodeGenerator.this.lc.getCurrentFunction().isStrict());
                         // direct call to Global.directEval
                         globalDirectEval();
                         convertOptimisticReturnValue();
@@ -4438,7 +4437,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
     private MethodEmitter globalDirectEval() {
         return method.invokestatic(GLOBAL_OBJECT, "directEval",
-                methodDescriptor(Object.class, Object.class, Object.class, Object.class, Object.class, Object.class));
+                methodDescriptor(Object.class, Object.class, Object.class, Object.class, Object.class, boolean.class));
     }
 
     private abstract class OptimisticOperation {
