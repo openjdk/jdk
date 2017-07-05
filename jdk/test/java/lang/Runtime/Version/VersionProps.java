@@ -25,6 +25,7 @@
  * @test
  * @bug 8160564
  * @summary check the implementation of VersionProps.versionNumbers()
+ * @modules java.base/java.lang:open
  * @run main VersionProps
  * @author Volker Simonis
  */

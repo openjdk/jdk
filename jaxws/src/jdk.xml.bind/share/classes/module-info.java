@@ -56,18 +56,19 @@ module jdk.xml.bind {
         jdk.xml.ws;
 
     // XML document content needs to be exported
-    exports com.sun.tools.internal.xjc.reader.xmlschema.bindinfo to
+    opens com.sun.tools.internal.xjc.reader.xmlschema.bindinfo to
         java.xml.bind;
 
     // com.sun.tools.internal.xjc.reader.xmlschema.bindinfo.BindInfo uses JAXBContext
     exports com.sun.tools.internal.xjc.generator.bean to java.xml.bind;
 
     uses com.sun.tools.internal.xjc.Plugin;
-    provides com.sun.tools.internal.xjc.Plugin with com.sun.tools.internal.xjc.addon.accessors.PluginImpl;
-    provides com.sun.tools.internal.xjc.Plugin with com.sun.tools.internal.xjc.addon.at_generated.PluginImpl;
-    provides com.sun.tools.internal.xjc.Plugin with com.sun.tools.internal.xjc.addon.code_injector.PluginImpl;
-    provides com.sun.tools.internal.xjc.Plugin with com.sun.tools.internal.xjc.addon.episode.PluginImpl;
-    provides com.sun.tools.internal.xjc.Plugin with com.sun.tools.internal.xjc.addon.locator.SourceLocationAddOn;
-    provides com.sun.tools.internal.xjc.Plugin with com.sun.tools.internal.xjc.addon.sync.SynchronizedMethodAddOn;
+    provides com.sun.tools.internal.xjc.Plugin with
+        com.sun.tools.internal.xjc.addon.accessors.PluginImpl,
+        com.sun.tools.internal.xjc.addon.at_generated.PluginImpl,
+        com.sun.tools.internal.xjc.addon.code_injector.PluginImpl,
+        com.sun.tools.internal.xjc.addon.episode.PluginImpl,
+        com.sun.tools.internal.xjc.addon.locator.SourceLocationAddOn,
+        com.sun.tools.internal.xjc.addon.sync.SynchronizedMethodAddOn;
 }
 

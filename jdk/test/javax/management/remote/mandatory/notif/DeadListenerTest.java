@@ -25,7 +25,8 @@
  * @test
  * @bug 6957378
  * @summary Test that a listener can be removed remotely from an MBean that no longer exists.
- * @modules java.management/com.sun.jmx.remote.internal
+ * @modules java.management/javax.management.remote.rmi:open
+ *          java.management/com.sun.jmx.remote.internal:+open
  * @author Eamonn McManus
  * @run main/othervm -XX:+UsePerfData DeadListenerTest
  */

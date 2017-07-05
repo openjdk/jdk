@@ -26,7 +26,10 @@ package jdk.test.foo;
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleDescriptor.Exports;
 import java.lang.module.ModuleDescriptor.Requires;
+import java.lang.module.ModuleDescriptor.Provides;
 import java.util.StringJoiner;
+import java.util.HashSet;
+import java.util.Set;
 
 import jdk.test.foo.internal.Message;
 
@@ -53,13 +56,15 @@ public class Foo {
             System.out.println("uses:" + sj.toString());
 
         sj = new StringJoiner(",");
-        md.provides().keySet().stream().sorted().forEach(sj::add);
+        md.provides().stream().map(Provides::service).sorted().forEach(sj::add);
         if (!sj.toString().equals(""))
             System.out.println("provides:" + sj.toString());
 
         sj = new StringJoiner(",");
-        md.conceals().forEach(sj::add);
+        Set<String> concealed = new HashSet<>(md.packages());
+        md.exports().stream().map(Exports::source).forEach(concealed::remove);
+        concealed.forEach(sj::add);
         if (!sj.toString().equals(""))
-            System.out.println("conceals:" + sj.toString());
+            System.out.println("contains:" + sj.toString());
     }
 }

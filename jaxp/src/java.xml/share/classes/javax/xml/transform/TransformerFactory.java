@@ -25,6 +25,8 @@
 
 package javax.xml.transform;
 
+import com.sun.org.apache.xalan.internal.xsltc.trax.TransformerFactoryImpl;
+
 /**
  * <p>A TransformerFactory instance can be used to create
  * {@link javax.xml.transform.Transformer} and
@@ -49,6 +51,19 @@ public abstract class TransformerFactory {
     protected TransformerFactory() { }
 
 
+
+    /**
+     * Creates a new instance of the {@code TransformerFactory} builtin
+     * system-default implementation.
+     *
+     * @return A new instance of the {@code TransformerFactory} builtin
+     *         system-default implementation.
+     *
+     * @since 9
+     */
+    public static TransformerFactory newDefaultInstance() {
+        return TransformerFactoryImpl.newTransformerFactoryNoServiceLoader();
+    }
 
     /**
      * Obtain a new instance of a {@code TransformerFactory}.
@@ -89,7 +104,8 @@ public abstract class TransformerFactory {
      * </li>
      * <li>
      * <p>
-     *   Otherwise, the system-default implementation is returned.
+     *   Otherwise, the {@linkplain #newDefaultInstance() system-default}
+     *   implementation is returned.
      * </li>
      * </ul>
      *

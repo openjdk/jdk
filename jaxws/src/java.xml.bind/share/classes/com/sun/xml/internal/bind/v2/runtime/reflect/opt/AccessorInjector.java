@@ -39,7 +39,7 @@ class AccessorInjector {
 
     private static final Logger logger = Util.getClassLogger();
 
-    protected static final boolean noOptimize =
+    protected static final boolean noOptimize = Runtime.version().major() >= 9 ||
         Util.getSystemProperty(ClassTailor.class.getName()+".noOptimize")!=null;
 
     static {

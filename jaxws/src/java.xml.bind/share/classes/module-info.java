@@ -27,8 +27,8 @@
  * Defines the Java Architecture for XML Binding (JAXB) API.
  */
 module java.xml.bind {
-    requires public java.activation;
-    requires public java.xml;
+    requires transitive java.activation;
+    requires transitive java.xml;
     requires java.compiler;
     requires java.desktop;
     requires java.logging;
@@ -88,6 +88,10 @@ module java.xml.bind {
     exports com.sun.xml.internal.bind.v2.model.impl to
         jdk.xml.bind;
     exports com.sun.xml.internal.bind.v2.model.nav to
+        java.xml.ws,
+        jdk.xml.bind,
+        jdk.xml.ws;
+    opens com.sun.xml.internal.bind.v2.model.nav to
         java.xml.ws,
         jdk.xml.bind,
         jdk.xml.ws;

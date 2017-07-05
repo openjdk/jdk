@@ -25,7 +25,9 @@
  * @test
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
- * @build jdk.test.lib.JDKToolFinder jdk.test.lib.Platform
+ *          jdk.compiler
+ *          jdk.jartool
+ * @build jdk.test.lib.JDKToolFinder jdk.test.lib.Utils
  * @run testng Basic
  */
 
@@ -39,11 +41,13 @@ import java.nio.file.attribute.*;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.jar.*;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.*;
 
 import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.Utils;
+
 
 import static java.lang.String.format;
 import static java.lang.System.out;
@@ -292,7 +296,7 @@ public class Basic {
                 "--release", "9", "-C", classes.resolve("v9").toString(), ".")
                 .assertSuccess()
                 .resultChecker(r ->
-                        assertTrue(r.output.contains("contains a class that is identical"), r.output)
+                        assertTrue(r.outputContains("contains a class that is identical"), r.output)
                 );
 
         delete(jarfile);
@@ -450,7 +454,7 @@ public class Basic {
                 "--release", "9", "-C", classes.resolve("v9").toString(), ".")
                 .assertFailure()
                 .resultChecker(r ->
-                        assertTrue(r.output.contains("an isolated nested class"), r.output)
+                        assertTrue(r.outputContains("an isolated nested class"), r.output)
                 );
 
         delete(jarfile);
@@ -605,6 +609,13 @@ public class Basic {
             this.ec = ec;
             this.output = output;
         }
+
+        boolean outputContains(String msg) {
+            return Arrays.stream(output.split("\\R"))
+                         .collect(Collectors.joining(" "))
+                         .contains(msg);
+        }
+
         Result assertSuccess() {
             assertTrue(ec == 0, format("ec: %d, output: %s", ec, output));
             return this;

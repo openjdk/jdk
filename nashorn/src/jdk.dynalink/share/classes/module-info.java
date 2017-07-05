@@ -23,6 +23,9 @@
  * questions.
  */
 
+/**
+ * Dynalink
+ */
 module jdk.dynalink {
     requires java.logging;
 

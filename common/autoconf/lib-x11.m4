@@ -42,7 +42,7 @@ AC_DEFUN_ONCE([LIB_SETUP_X11],
 
     if test "x${with_x}" != x &&  test "x${with_x}" != xyes; then
       # The user has specified a X11 base directory. Use it for includes and
-      # libraries, unless explicitely overridden.
+      # libraries, unless explicitly overridden.
       if test "x$x_includes" = xNONE; then
         x_includes="${with_x}/include"
       fi

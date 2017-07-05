@@ -27,8 +27,8 @@
  * Defines the JDBC API.
  */
 module java.sql {
-    requires public java.logging;
-    requires public java.xml;
+    requires transitive java.logging;
+    requires transitive java.xml;
 
     exports java.sql;
     exports javax.sql;

@@ -61,8 +61,8 @@ final class ModuleGraphManipulator {
             throw new IllegalStateException(myClass + " loaded by wrong loader!");
         }
 
-        // From this module add a qualified export to nashorn module
-        MY_MODULE.addExports(MY_PKG_NAME, nashornModule);
+        // open package to nashorn module
+        MY_MODULE.addOpens(MY_PKG_NAME, nashornModule);
     }
 
     // The following method is reflectively invoked from Nashorn

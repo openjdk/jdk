@@ -28,6 +28,10 @@
   <import file="code_coverage.xml"/>
 
   <target name="load-properties">
+    <!-- set default values to run.test.jvmargs.external property -->
+    <condition property="run.test.jvmargs.external" value="">
+     <not><isset property="run.test.jvmargs.external"/></not>
+    </condition>     
     <!-- loading locally defined resources and properties. NB they owerwrite default ones defined later -->
     <property file="${user.home}/.nashorn.project.local.properties"/>
 

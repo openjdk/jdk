@@ -115,7 +115,7 @@ public class ListModsTest {
                 .outputTo(System.out)
                 .errorTo(System.out);
         output.shouldNotContain("java.base");
-        output.shouldNotContain("java.rhubarb");
+        output.shouldContain("java.rhubarb not observable");
         assertTrue(output.getExitValue() == 0);
     }
 

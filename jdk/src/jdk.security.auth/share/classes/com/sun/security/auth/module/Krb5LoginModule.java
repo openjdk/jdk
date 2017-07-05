@@ -419,15 +419,8 @@ public class Krb5LoginModule implements LoginModule {
 
     private static final String NAME = "javax.security.auth.login.name";
     private static final String PWD = "javax.security.auth.login.password";
-    private static final ResourceBundle rb = AccessController.doPrivileged(
-            new PrivilegedAction<ResourceBundle>() {
-                public ResourceBundle run() {
-                    return ResourceBundle.getBundle(
-                            "sun.security.util.AuthResources",
-                            sun.security.util.ResourcesMgr.class.getModule());
-                }
-            }
-    );
+    private static final ResourceBundle rb =
+        ResourceBundle.getBundle("sun.security.util.AuthResources");
 
     /**
      * Initialize this {@code LoginModule}.

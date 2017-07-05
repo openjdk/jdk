@@ -10,11 +10,10 @@ The JCE architecture allows flexible cryptographic strength to be
 configured via the jurisdiction policy files contained within these
 directories.
 
-Due to import control restrictions of some countries, the default
-JCE policy files bundled in this Java Runtime Environment allow
-for strong but "limited" cryptographic strengths.  For convenience,
-this build also contains the "unlimited strength" policy files which
-contain no restrictions on cryptographic strengths, but they must be
+The default JCE policy files bundled in this Java Runtime Environment
+allow for "unlimited" cryptographic strengths.  For convenience,
+this build also contains the historic "limited" strength policy files
+which contain restrictions on cryptographic strengths, but they must be
 specifically activated by updating the "crypto.policy" Security property
 (e.g. <java-home>/conf/security/java.security) to point to the appropriate
 directory.

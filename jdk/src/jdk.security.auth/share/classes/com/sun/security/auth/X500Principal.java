@@ -56,14 +56,7 @@ public class X500Principal implements Principal, java.io.Serializable {
     private static final long serialVersionUID = -8222422609431628648L;
 
     private static final java.util.ResourceBundle rb =
-        java.security.AccessController.doPrivileged
-        (new java.security.PrivilegedAction<java.util.ResourceBundle>() {
-              public java.util.ResourceBundle run() {
-                  return (java.util.ResourceBundle.getBundle
-                                ("sun.security.util.AuthResources",
-                                 sun.security.util.ResourcesMgr.class.getModule()));
-              }
-        });
+        java.util.ResourceBundle.getBundle("sun.security.util.AuthResources");
 
     /**
      * @serial

@@ -32,6 +32,7 @@ import java.awt.image.BufferedImage;
  *          checks if all listeners are triggered when AWTEventListeners
  *          and MouseListeners are added.
  * @author Dmitriy Ermashov (dmitriy.ermashov@oracle.com)
+ * @modules java.desktop/java.awt:open
  * @library /java/awt/patchlib
  * @library ../../../../lib/testlibrary ../
  * @build java.desktop/java.awt.Helper

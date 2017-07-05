@@ -244,7 +244,7 @@ public abstract class NashornException extends RuntimeException {
      * @param global the global
      * @return initialized exception
      */
-    protected NashornException initEcmaError(final ScriptObject global) {
+    NashornException initEcmaError(final ScriptObject global) {
         if (ecmaError != null) {
             return this; // initialized already!
         }

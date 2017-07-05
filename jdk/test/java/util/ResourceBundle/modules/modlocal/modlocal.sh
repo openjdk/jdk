@@ -71,7 +71,8 @@ STATUS=0
 echo 'jdk.test.Main should load bundles local to named module "test".'
 $JAVA -p mods -m test/jdk.test.Main de fr ja zh-tw en de || STATUS=1
 
-echo "jdk.test.Main should NOT load bundles from the jar file specified by the class-path."
-$JAVA -cp extra.jar -p mods -m test/jdk.test.Main vi && STATUS=1
+echo "jdk.test.Main should load bundles from the jar file specified by the class-path."
+$JAVA -cp extra.jar -p mods -m test/jdk.test.Main vi || STATUS=1
+
 
 exit $STATUS

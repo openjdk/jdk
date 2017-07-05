@@ -29,6 +29,7 @@ import java.lang.module.ModuleDescriptor;
 import java.lang.reflect.Layer;
 import java.lang.reflect.Module;
 import java.net.URI;
+import java.util.stream.Stream;
 
 import jdk.internal.module.ServicesCatalog;
 
@@ -71,14 +72,35 @@ public interface JavaLangReflectModuleAccess {
     void addExports(Module m1, String pkg, Module m2);
 
     /**
+     * Updates module m1 to open a package to module m2. Opening the
+     * package does not result in a strong reference to m2 (m2 can be GC'ed).
+     */
+    void addOpens(Module m1, String pkg, Module m2);
+
+    /**
      * Updates a module m to export a package to all modules.
      */
     void addExportsToAll(Module m, String pkg);
 
     /**
+     * Updates a module m to open a package to all modules.
+     */
+    void addOpensToAll(Module m, String pkg);
+
+    /**
      * Updates a module m to export a package to all unnamed modules.
      */
     void addExportsToAllUnnamed(Module m, String pkg);
+
+    /**
+     * Updates a module m to open a package to all unnamed modules.
+     */
+    void addOpensToAllUnnamed(Module m, String pkg);
+
+    /**
+     * Updates a module m to use a service.
+     */
+    void addUses(Module m, Class<?> service);
 
     /**
      * Add a package to the given module.
@@ -90,4 +112,15 @@ public interface JavaLangReflectModuleAccess {
      */
     ServicesCatalog getServicesCatalog(Layer layer);
 
+    /**
+     * Returns an ordered stream of layers. The first element is is the
+     * given layer, the remaining elements are its parents, in DFS order.
+     */
+    Stream<Layer> layers(Layer layer);
+
+    /**
+     * Returns a stream of the layers that have modules defined to the
+     * given class loader.
+     */
+    Stream<Layer> layers(ClassLoader loader);
 }

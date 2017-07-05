@@ -25,7 +25,7 @@
  * @test
  * @bug 7184246
  * @summary Simplify Config.get() of krb5
- * @modules java.security.jgss/sun.security.krb5
+ * @modules java.security.jgss/sun.security.krb5:+open
  */
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;

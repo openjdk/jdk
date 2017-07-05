@@ -1008,8 +1008,8 @@ JVM_END
 
 // Module support //////////////////////////////////////////////////////////////////////////////
 
-JVM_ENTRY(void, JVM_DefineModule(JNIEnv *env, jobject module, jstring version, jstring location,
-                                 jobjectArray packages))
+JVM_ENTRY(void, JVM_DefineModule(JNIEnv *env, jobject module, jboolean is_open, jstring version,
+                                 jstring location, jobjectArray packages))
   JVMWrapper("JVM_DefineModule");
   Modules::define_module(module, version, location, packages, CHECK);
 JVM_END
@@ -1037,16 +1037,6 @@ JVM_END
 JVM_ENTRY (void, JVM_AddReadsModule(JNIEnv *env, jobject from_module, jobject source_module))
   JVMWrapper("JVM_AddReadsModule");
   Modules::add_reads_module(from_module, source_module, CHECK);
-JVM_END
-
-JVM_ENTRY(jboolean, JVM_CanReadModule(JNIEnv *env, jobject asking_module, jobject source_module))
-  JVMWrapper("JVM_CanReadModule");
-  return Modules::can_read_module(asking_module, source_module, THREAD);
-JVM_END
-
-JVM_ENTRY(jboolean, JVM_IsExportedToModule(JNIEnv *env, jobject from_module, jstring package, jobject to_module))
-  JVMWrapper("JVM_IsExportedToModule");
-  return Modules::is_exported_to_module(from_module, package, to_module, THREAD);
 JVM_END
 
 JVM_ENTRY (void, JVM_AddModulePackage(JNIEnv *env, jobject module, jstring package))
