@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,7 +81,9 @@ class ParkEvent ;
 // *in that order*.  If their implementations change such that these
 // assumptions are violated, a whole lot of code will break.
 
-// The default length of monitor name is chosen to be 64 to avoid false sharing.
+// The default length of monitor name was originally chosen to be 64 to avoid
+// false sharing. Now, PaddedMonitor is available for this purpose.
+// TODO: Check if _name[MONITOR_NAME_LEN] should better get replaced by const char*.
 static const int MONITOR_NAME_LEN = 64;
 
 class Monitor : public CHeapObj<mtInternal> {
@@ -254,6 +256,18 @@ class Monitor : public CHeapObj<mtInternal> {
 
 };
 
+class PaddedMonitor : public Monitor {
+  enum {
+    CACHE_LINE_PADDING = (int)DEFAULT_CACHE_LINE_SIZE - (int)sizeof(Monitor),
+    PADDING_LEN = CACHE_LINE_PADDING > 0 ? CACHE_LINE_PADDING : 1
+  };
+  char _padding[PADDING_LEN];
+ public:
+  PaddedMonitor(int rank, const char *name, bool allow_vm_block = false,
+               SafepointCheckRequired safepoint_check_required = _safepoint_check_always) :
+    Monitor(rank, name, allow_vm_block, safepoint_check_required) {};
+};
+
 // Normally we'd expect Monitor to extend Mutex in the sense that a monitor
 // constructed from pthreads primitives might extend a mutex by adding
 // a condvar and some extra metadata.  In fact this was the case until J2SE7.
@@ -292,5 +306,16 @@ class Mutex : public Monitor {      // degenerate Monitor
    }
 };
 
+class PaddedMutex : public Mutex {
+  enum {
+    CACHE_LINE_PADDING = (int)DEFAULT_CACHE_LINE_SIZE - (int)sizeof(Mutex),
+    PADDING_LEN = CACHE_LINE_PADDING > 0 ? CACHE_LINE_PADDING : 1
+  };
+  char _padding[PADDING_LEN];
+public:
+  PaddedMutex(int rank, const char *name, bool allow_vm_block = false,
+              SafepointCheckRequired safepoint_check_required = _safepoint_check_always) :
+    Mutex(rank, name, allow_vm_block, safepoint_check_required) {};
+};
 
 #endif // SHARE_VM_RUNTIME_MUTEX_HPP

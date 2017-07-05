@@ -1404,12 +1404,14 @@ static HANDLE open_sharedmem_object(const char* objectname, DWORD ofm_access, TR
                objectname);      /* name for object */
 
   if (fmh == NULL) {
+    DWORD lasterror = GetLastError();
     if (PrintMiscellaneous && Verbose) {
       warning("OpenFileMapping failed for shared memory object %s:"
-              " lasterror = %d\n", objectname, GetLastError());
+              " lasterror = %d\n", objectname, lasterror);
     }
-    THROW_MSG_(vmSymbols::java_lang_Exception(),
-               "Could not open PerfMemory", INVALID_HANDLE_VALUE);
+    THROW_MSG_(vmSymbols::java_lang_IllegalArgumentException(),
+               err_msg("Could not open PerfMemory, error %d", lasterror),
+               INVALID_HANDLE_VALUE);
   }
 
   return fmh;;

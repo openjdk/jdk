@@ -457,6 +457,9 @@ public:
   static bool narrow_oop_use_complex_address();
   static bool narrow_klass_use_complex_address();
 
+  static bool const_oop_prefer_decode();
+  static bool const_klass_prefer_decode();
+
   // Generate implicit null check for narrow oops if it can fold
   // into address expression (x64).
   //
