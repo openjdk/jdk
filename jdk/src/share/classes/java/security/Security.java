@@ -814,7 +814,7 @@ public final class Security {
                 public Void run() {
                     try {
                         /* Get the class via the bootstrap class loader. */
-                        Class cl = Class.forName(
+                        Class<?> cl = Class.forName(
                             "java.lang.SecurityManager", false, null);
                         Field f = null;
                         boolean accessible = false;
