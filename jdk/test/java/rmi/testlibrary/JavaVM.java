@@ -59,9 +59,6 @@ public class JavaVM {
         }
     }
 
-    public JavaVM(String classname) {
-        this.classname = classname;
-    }
     public JavaVM(String classname,
                   String options, String args) {
         this.classname = classname;
@@ -108,15 +105,6 @@ public class JavaVM {
      */
     protected static String getCodeCoverageOptions() {
         return TestLibrary.getExtraProperty("jcov.options","");
-    }
-
-    public void start(Runnable runnable) throws IOException {
-        if (runnable == null) {
-            throw new NullPointerException("Runnable cannot be null.");
-        }
-
-        start();
-        new JavaVMCallbackHandler(runnable).start();
     }
 
     /**
@@ -176,7 +164,7 @@ public class JavaVM {
      */
     public int waitFor() throws InterruptedException {
         if (vm == null)
-            throw new IllegalStateException("can't wait for JavaVM that hasn't started");
+            throw new IllegalStateException("can't wait for JavaVM that isn't running");
 
         int status = vm.waitFor();
         outPipe.join();
@@ -190,36 +178,5 @@ public class JavaVM {
     public int execute() throws IOException, InterruptedException {
         start();
         return waitFor();
-    }
-
-    /**
-     * Handles calling the callback.
-     */
-    private class JavaVMCallbackHandler extends Thread {
-        Runnable runnable;
-
-        JavaVMCallbackHandler(Runnable runnable) {
-            this.runnable = runnable;
-        }
-
-
-        /**
-         * Wait for the Process to terminate and notify the callback.
-         */
-        @Override
-        public void run() {
-            if (vm != null) {
-                try {
-                    vm.waitFor();
-                } catch(InterruptedException ie) {
-                    // Restore the interrupted status
-                    Thread.currentThread().interrupt();
-                }
-            }
-
-            if (runnable != null) {
-                runnable.run();
-            }
-        }
     }
 }

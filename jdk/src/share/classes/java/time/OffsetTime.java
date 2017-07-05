@@ -73,6 +73,7 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.io.InvalidObjectException;
+import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -101,6 +102,13 @@ import java.util.Objects;
  * as well as a zone offset.
  * For example, the value "13:45.30.123456789+02:00" can be stored
  * in an {@code OffsetTime}.
+ *
+ * <p>
+ * This is a <a href="{@docRoot}/java/lang/doc-files/ValueBased.html">value-based</a>
+ * class; use of identity-sensitive operations (including reference equality
+ * ({@code ==}), identity hash code, or synchronization) on instances of
+ * {@code OffsetTime} may have unpredictable results and should be avoided.
+ * The {@code equals} method should be used for comparisons.
  *
  * @implSpec
  * This class is immutable and thread-safe.
@@ -1387,10 +1395,10 @@ public final class OffsetTime
 
     /**
      * Defend against malicious streams.
-     * @return never
+     *
      * @throws InvalidObjectException always
      */
-    private Object readResolve() throws InvalidObjectException {
+    private void readObject(ObjectInputStream s) throws InvalidObjectException {
         throw new InvalidObjectException("Deserialization via serialization delegate");
     }
 

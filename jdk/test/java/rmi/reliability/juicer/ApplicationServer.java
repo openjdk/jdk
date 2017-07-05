@@ -21,6 +21,7 @@
  * questions.
  */
 
+import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.Registry;
 import java.rmi.registry.LocateRegistry;
@@ -60,27 +61,29 @@ public class ApplicationServer implements Runnable {
      * On initialization, export remote objects and register
      * them with server.
      */
+    @Override
     public void run() {
         try {
             int i = 0;
 
             /*
-             * Locate apple user object in registry.  The lookup will
-             * occur until it is successful or fails LOOKUP_ATTEMPTS times.
+             * Locate apple user object in registry.  The lookup will occur
+             * every 5 seconds until it is successful or timeout 50 seconds.
              * These repeated attempts allow the ApplicationServer
              * to be started before the AppleUserImpl.
              */
             Exception exc = null;
-            for (i = 0; i < LOOKUP_ATTEMPTS; i++) {
+            long stopTime = System.currentTimeMillis() + LOOKUP_ATTEMPTS * 10000;
+            while (System.currentTimeMillis() < stopTime) {
                 try {
                     Registry registry = LocateRegistry.getRegistry(
-                           registryHost, registryPort);
+                            registryHost, registryPort);
                     user = (AppleUser) registry.lookup("AppleUser");
                     user.startTest();
                     break; //successfully obtained AppleUser
-                } catch (Exception e) {
+                } catch (RemoteException | NotBoundException e) {
                     exc = e;
-                    Thread.sleep(10000); //sleep 10 seconds and try again
+                    Thread.sleep(5000); //sleep 5 seconds and try again
                 }
             }
             if (user == null) {
@@ -113,9 +116,8 @@ public class ApplicationServer implements Runnable {
                 logger.log(Level.SEVERE,
                     "Failed to register callbacks for " + apples[i] + ":", e);
                 user.reportException(e);
-                return;
             }
-        } catch (Exception e) {
+        } catch (InterruptedException | RemoteException e) {
             logger.log(Level.SEVERE, "Unexpected exception:", e);
         }
     }
@@ -143,17 +145,22 @@ public class ApplicationServer implements Runnable {
         try {
             for (int i = 0; i < args.length ; i++ ) {
                 String arg = args[i];
-                if (arg.equals("-numApples")) {
-                    i++;
-                    num = Integer.parseInt(args[i]);
-                } else if (arg.equals("-registryHost")) {
-                    i++;
-                    host = args[i];
-                } else if (arg.equals("-registryPort")) {
-                    i++;
-                    port = Integer.parseInt(args[i]);
-                } else {
-                    usage();
+                switch (arg) {
+                    case "-numApples":
+                        i++;
+                        num = Integer.parseInt(args[i]);
+                        break;
+                    case "-registryHost":
+                        i++;
+                        host = args[i];
+                        break;
+                    case "-registryPort":
+                        i++;
+                        port = Integer.parseInt(args[i]);
+                        break;
+                    default:
+                        usage();
+                        break;
                 }
             }
 

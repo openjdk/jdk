@@ -139,4 +139,9 @@ public class TCKZonedDateTimeSerialization extends AbstractTCKTest {
         assertSerializedBySer(zdt, bytes);
     }
 
+    @Test
+    public void test_invalid_serialform() throws Exception {
+        assertNotSerializable(ZonedDateTime.class);
+    }
+
 }

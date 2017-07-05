@@ -34,11 +34,11 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import javax.accessibility.*;
 import sun.awt.AppContext;
+import sun.awt.AWTPermissions;
 import sun.awt.SunToolkit;
 import sun.awt.PeerEvent;
 import sun.awt.util.IdentityArrayList;
 import sun.awt.util.IdentityLinkedList;
-import sun.security.util.SecurityConstants;
 import java.security.AccessControlException;
 
 /**
@@ -1611,9 +1611,7 @@ public class Dialog extends Window {
         if (mt == ModalityType.TOOLKIT_MODAL) {
             SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
-                sm.checkPermission(
-                    SecurityConstants.AWT.TOOLKIT_MODALITY_PERMISSION
-                );
+                sm.checkPermission(AWTPermissions.TOOLKIT_MODALITY_PERMISSION);
             }
         }
     }

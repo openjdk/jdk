@@ -38,6 +38,10 @@
 #include <strings.h>
 #endif
 
+#ifndef CHECK_NULL_RETURN
+#define CHECK_NULL_RETURN(x, y) if ((x) == NULL) return y;
+#endif
+
 /**
  * These functions are used by the sun.net.spi.DefaultProxySelector class
  * to access some platform specific settings.
@@ -114,18 +118,36 @@ static jclass isaddr_class;
 static jclass ptype_class;
 static jmethodID isaddr_createUnresolvedID;
 static jmethodID proxy_ctrID;
-static jfieldID pr_no_proxyID;
 static jfieldID ptype_httpID;
 static jfieldID ptype_socksID;
 
 
 static void* gconf_client = NULL;
-
 static int use_gproxyResolver = 0;
 static int use_gconf = 0;
 
-#define CHECK_NULL(X) { if ((X) == NULL) fprintf (stderr,"JNI errror at line %d\n", __LINE__); }
 
+static jobject createProxy(JNIEnv *env, jfieldID ptype_ID,
+                           const char* phost, unsigned short pport)
+{
+    jobject jProxy = NULL;
+    jobject type_proxy = NULL;
+    type_proxy = (*env)->GetStaticObjectField(env, ptype_class, ptype_ID);
+    if (type_proxy) {
+        jstring jhost = NULL;
+        jhost = (*env)->NewStringUTF(env, phost);
+        if (jhost) {
+            jobject isa = NULL;
+            isa = (*env)->CallStaticObjectMethod(env, isaddr_class,
+                    isaddr_createUnresolvedID, jhost, pport);
+            if (isa) {
+                jProxy = (*env)->NewObject(env, proxy_class, proxy_ctrID,
+                                          type_proxy, isa);
+            }
+        }
+    }
+    return jProxy;
+}
 
 static int initGConf() {
     /**
@@ -182,9 +204,8 @@ static jobject getProxyByGConf(JNIEnv *env, const char* cproto,
     int pport = 0;
     int use_proxy = 0;
     int use_same_proxy = 0;
-    jobject isa = NULL;
     jobject proxy = NULL;
-    jobject type_proxy = NULL;
+    jfieldID ptype_ID = ptype_httpID;
 
     // We only check manual proxy configurations
     mode =  (*my_get_string_func)(gconf_client, "/system/proxy/mode", NULL);
@@ -199,8 +220,6 @@ static jobject getProxyByGConf(JNIEnv *env, const char* cproto,
             phost = (*my_get_string_func)(gconf_client, "/system/http_proxy/host", NULL);
             pport = (*my_get_int_func)(gconf_client, "/system/http_proxy/port", NULL);
             use_proxy = (phost != NULL && pport != 0);
-            if (use_proxy)
-                type_proxy = (*env)->GetStaticObjectField(env, ptype_class, ptype_httpID);
         }
 
         if (!use_proxy) {
@@ -214,8 +233,6 @@ static jobject getProxyByGConf(JNIEnv *env, const char* cproto,
                 phost = (*my_get_string_func)(gconf_client, "/system/http_proxy/host", NULL);
                 pport = (*my_get_int_func)(gconf_client, "/system/http_proxy/port", NULL);
                 use_proxy = (phost != NULL && pport != 0);
-                if (use_proxy)
-                    type_proxy = (*env)->GetStaticObjectField(env, ptype_class, ptype_httpID);
             }
 
             /**
@@ -228,8 +245,6 @@ static jobject getProxyByGConf(JNIEnv *env, const char* cproto,
                 phost = (*my_get_string_func)(gconf_client, "/system/proxy/secure_host", NULL);
                 pport = (*my_get_int_func)(gconf_client, "/system/proxy/secure_port", NULL);
                 use_proxy = (phost != NULL && pport != 0);
-                if (use_proxy)
-                    type_proxy = (*env)->GetStaticObjectField(env, ptype_class, ptype_httpID);
             }
 
             /**
@@ -242,8 +257,6 @@ static jobject getProxyByGConf(JNIEnv *env, const char* cproto,
                 phost = (*my_get_string_func)(gconf_client, "/system/proxy/ftp_host", NULL);
                 pport = (*my_get_int_func)(gconf_client, "/system/proxy/ftp_port", NULL);
                 use_proxy = (phost != NULL && pport != 0);
-                if (use_proxy)
-                    type_proxy = (*env)->GetStaticObjectField(env, ptype_class, ptype_httpID);
             }
 
             /**
@@ -256,8 +269,6 @@ static jobject getProxyByGConf(JNIEnv *env, const char* cproto,
                 phost = (*my_get_string_func)(gconf_client, "/system/proxy/gopher_host", NULL);
                 pport = (*my_get_int_func)(gconf_client, "/system/proxy/gopher_port", NULL);
                 use_proxy = (phost != NULL && pport != 0);
-                if (use_proxy)
-                    type_proxy = (*env)->GetStaticObjectField(env, ptype_class, ptype_httpID);
             }
 
             /**
@@ -271,7 +282,7 @@ static jobject getProxyByGConf(JNIEnv *env, const char* cproto,
                 pport = (*my_get_int_func)(gconf_client, "/system/proxy/socks_port", NULL);
                 use_proxy = (phost != NULL && pport != 0);
                 if (use_proxy)
-                    type_proxy = (*env)->GetStaticObjectField(env, ptype_class, ptype_socksID);
+                    ptype_ID = ptype_socksID;
             }
         }
     }
@@ -302,12 +313,8 @@ static jobject getProxyByGConf(JNIEnv *env, const char* cproto,
                 s = strtok_r(NULL, ", ", tmpbuf);
             }
         }
-        if (use_proxy) {
-            CHECK_NULL(type_proxy);
-            jhost = (*env)->NewStringUTF(env, phost);
-            isa = (*env)->CallStaticObjectMethod(env, isaddr_class, isaddr_createUnresolvedID, jhost, pport);
-            proxy = (*env)->NewObject(env, proxy_class, proxy_ctrID, type_proxy, isa);
-        }
+        if (use_proxy)
+            proxy = createProxy(env, ptype_ID, phost, pport);
     }
 
     return proxy;
@@ -375,7 +382,7 @@ static jobject getProxyByGProxyResolver(JNIEnv *env, const char* cproto,
     size_t hostLen = 0;
     char* uri = NULL;
 
-    jobject objProxy = NULL;
+    jobject jProxy = NULL;
 
     resolver = (*g_proxy_resolver_get_default)();
     if (resolver == NULL) {
@@ -407,7 +414,7 @@ static jobject getProxyByGProxyResolver(JNIEnv *env, const char* cproto,
     if (proxies) {
         if (!error) {
             int i;
-            for(i = 0; proxies[i] && !objProxy; i++) {
+            for(i = 0; proxies[i] && !jProxy; i++) {
                 if (strcmp(proxies[i], "direct://")) {
                     GSocketConnectable* conn =
                             (*g_network_address_parse_uri)(proxies[i], 0,
@@ -418,25 +425,11 @@ static jobject getProxyByGProxyResolver(JNIEnv *env, const char* cproto,
                         phost = (*g_network_address_get_hostname)(conn);
                         pport = (*g_network_address_get_port)(conn);
                         if (phost && pport > 0) {
-                            jobject type_proxy = NULL;
-                            jstring jhost = NULL;
-                            jobject isa = NULL;
                             jfieldID ptype_ID = ptype_httpID;
-                            if (!strncmp(proxies[i], "socks", 5)) {
+                            if (!strncmp(proxies[i], "socks", 5))
                                 ptype_ID = ptype_socksID;
-                            }
 
-                            type_proxy = (*env)->GetStaticObjectField(env,
-                                    ptype_class, ptype_ID);
-                            CHECK_NULL(type_proxy);
-                            jhost = (*env)->NewStringUTF(env, phost);
-                            CHECK_NULL(jhost);
-                            isa = (*env)->CallStaticObjectMethod(env,
-                                    isaddr_class, isaddr_createUnresolvedID,
-                                    jhost, pport);
-                            CHECK_NULL(isa);
-                            objProxy = (*env)->NewObject(env, proxy_class,
-                                    proxy_ctrID, type_proxy, isa);
+                            jProxy = createProxy(env, ptype_ID, phost, pport);
                         }
                     }
                 }
@@ -445,33 +438,45 @@ static jobject getProxyByGProxyResolver(JNIEnv *env, const char* cproto,
         (*g_strfreev)(proxies);
     }
 
-    return objProxy;
+    return jProxy;
 }
 
-static void initJavaClass(JNIEnv *env) {
-    jclass cls = NULL;
-    CHECK_NULL(cls = (*env)->FindClass(env,"java/net/Proxy"));
-    proxy_class = (*env)->NewGlobalRef(env, cls);
-    CHECK_NULL(cls = (*env)->FindClass(env,"java/net/Proxy$Type"));
-    ptype_class = (*env)->NewGlobalRef(env, cls);
-    CHECK_NULL(cls = (*env)->FindClass(env, "java/net/InetSocketAddress"));
-    isaddr_class = (*env)->NewGlobalRef(env, cls);
+static int initJavaClass(JNIEnv *env) {
+    jclass proxy_cls = NULL;
+    jclass ptype_cls = NULL;
+    jclass isaddr_cls = NULL;
+
+    // Proxy initialization
+    proxy_cls = (*env)->FindClass(env,"java/net/Proxy");
+    CHECK_NULL_RETURN(proxy_cls, 0);
+    proxy_class = (*env)->NewGlobalRef(env, proxy_cls);
+    CHECK_NULL_RETURN(proxy_class, 0);
     proxy_ctrID = (*env)->GetMethodID(env, proxy_class, "<init>",
             "(Ljava/net/Proxy$Type;Ljava/net/SocketAddress;)V");
-    CHECK_NULL(proxy_ctrID);
-    pr_no_proxyID = (*env)->GetStaticFieldID(env, proxy_class, "NO_PROXY",
-            "Ljava/net/Proxy;");
-    CHECK_NULL(pr_no_proxyID);
+    CHECK_NULL_RETURN(proxy_ctrID, 0);
+
+    // Proxy$Type initialization
+    ptype_cls = (*env)->FindClass(env,"java/net/Proxy$Type");
+    CHECK_NULL_RETURN(ptype_cls, 0);
+    ptype_class = (*env)->NewGlobalRef(env, ptype_cls);
+    CHECK_NULL_RETURN(ptype_class, 0);
     ptype_httpID = (*env)->GetStaticFieldID(env, ptype_class, "HTTP",
-            "Ljava/net/Proxy$Type;");
-    CHECK_NULL(ptype_httpID);
+                                            "Ljava/net/Proxy$Type;");
+    CHECK_NULL_RETURN(ptype_httpID, 0);
     ptype_socksID = (*env)->GetStaticFieldID(env, ptype_class, "SOCKS",
-            "Ljava/net/Proxy$Type;");
-    CHECK_NULL(ptype_socksID);
+                                             "Ljava/net/Proxy$Type;");
+    CHECK_NULL_RETURN(ptype_socksID, 0);
+
+    // InetSocketAddress initialization
+    isaddr_cls = (*env)->FindClass(env, "java/net/InetSocketAddress");
+    CHECK_NULL_RETURN(isaddr_cls, 0);
+    isaddr_class = (*env)->NewGlobalRef(env, isaddr_cls);
+    CHECK_NULL_RETURN(isaddr_class, 0);
     isaddr_createUnresolvedID = (*env)->GetStaticMethodID(env, isaddr_class,
             "createUnresolved",
             "(Ljava/lang/String;I)Ljava/net/InetSocketAddress;");
-    CHECK_NULL(isaddr_createUnresolvedID);
+
+    return isaddr_createUnresolvedID != NULL ? 1 : 0;
 }
 
 
@@ -487,10 +492,10 @@ Java_sun_net_spi_DefaultProxySelector_init(JNIEnv *env, jclass clazz) {
         use_gconf = initGConf();
 
     if (use_gproxyResolver || use_gconf) {
-        initJavaClass(env);
-        return JNI_TRUE;
-    } else
-        return JNI_FALSE;
+        if (initJavaClass(env))
+            return JNI_TRUE;
+    }
+    return JNI_FALSE;
 }
 
 /*
@@ -527,11 +532,6 @@ Java_sun_net_spi_DefaultProxySelector_getSystemProxy(JNIEnv *env,
         }
         if (isProtoCopy == JNI_TRUE)
             (*env)->ReleaseStringUTFChars(env, proto, cproto);
-    }
-
-    if (proxy == NULL) {
-        CHECK_NULL(proxy = (*env)->GetStaticObjectField(env, proxy_class,
-                                                        pr_no_proxyID));
     }
     return proxy;
 }

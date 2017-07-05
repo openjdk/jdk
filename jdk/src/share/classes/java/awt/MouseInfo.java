@@ -25,7 +25,8 @@
 
 package java.awt;
 
-import sun.security.util.SecurityConstants;
+import sun.awt.AWTPermissions;
+
 /**
  * <code>MouseInfo</code>  provides methods for getting information about the mouse,
  * such as mouse pointer location and the number of mouse buttons.
@@ -76,7 +77,7 @@ public class MouseInfo {
 
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
-            security.checkPermission(SecurityConstants.AWT.WATCH_MOUSE_PERMISSION);
+            security.checkPermission(AWTPermissions.WATCH_MOUSE_PERMISSION);
         }
 
         Point point = new Point(0, 0);

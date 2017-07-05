@@ -507,16 +507,20 @@ public final class Collectors {
     summingDouble(ToDoubleFunction<? super T> mapper) {
         /*
          * In the arrays allocated for the collect operation, index 0
-         * holds the high-order bits of the running sum and index 1
-         * holds the low-order bits of the sum computed via
-         * compensated summation.
+         * holds the high-order bits of the running sum, index 1 holds
+         * the low-order bits of the sum computed via compensated
+         * summation, and index 2 holds the simple sum used to compute
+         * the proper result if the stream contains infinite values of
+         * the same sign.
          */
         return new CollectorImpl<>(
-                () -> new double[2],
-                (a, t) -> { sumWithCompensation(a, mapper.applyAsDouble(t)); },
-                (a, b) -> { sumWithCompensation(a, b[0]); return sumWithCompensation(a, b[1]); },
-                // Better error bounds to add both terms as the final sum
-                a -> a[0] + a[1],
+                () -> new double[3],
+                (a, t) -> { sumWithCompensation(a, mapper.applyAsDouble(t));
+                            a[2] += mapper.applyAsDouble(t);},
+                (a, b) -> { sumWithCompensation(a, b[0]);
+                            a[2] += b[2];
+                            return sumWithCompensation(a, b[1]); },
+                a -> computeFinalSum(a),
                 CH_NOID);
     }
 
@@ -540,6 +544,20 @@ public final class Collectors {
         return intermediateSum;
     }
 
+    /**
+     * If the compensated sum is spuriously NaN from accumulating one
+     * or more same-signed infinite values, return the
+     * correctly-signed infinity stored in the simple sum.
+     */
+    static double computeFinalSum(double[] summands) {
+        // Better error bounds to add both terms as the final sum
+        double tmp = summands[0] + summands[1];
+        double simpleSum = summands[summands.length - 1];
+        if (Double.isNaN(tmp) && Double.isInfinite(simpleSum))
+            return simpleSum;
+        else
+            return tmp;
+    }
 
     /**
      * Returns a {@code Collector} that produces the arithmetic mean of an integer-valued
@@ -608,11 +626,10 @@ public final class Collectors {
          * summation, and index 2 holds the number of values seen.
          */
         return new CollectorImpl<>(
-                () -> new double[3],
-                (a, t) -> { sumWithCompensation(a, mapper.applyAsDouble(t)); a[2]++; },
-                (a, b) -> { sumWithCompensation(a, b[0]); sumWithCompensation(a, b[1]); a[2] += b[2]; return a; },
-                // Better error bounds to add both terms as the final sum to compute average
-                a -> (a[2] == 0) ? 0.0d : ((a[0] + a[1]) / a[2]),
+                () -> new double[4],
+                (a, t) -> { sumWithCompensation(a, mapper.applyAsDouble(t)); a[2]++; a[3]+= mapper.applyAsDouble(t);},
+                (a, b) -> { sumWithCompensation(a, b[0]); sumWithCompensation(a, b[1]); a[2] += b[2]; a[3] += b[3]; return a; },
+                a -> (a[2] == 0) ? 0.0d : (computeFinalSum(a) / a[2]),
                 CH_NOID);
     }
 

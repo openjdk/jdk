@@ -61,14 +61,13 @@
 
 package com.sun.org.apache.xerces.internal.impl;
 
-import java.io.IOException;
-
 import com.sun.org.apache.xerces.internal.impl.msg.XMLMessageFormatter;
-import com.sun.org.apache.xerces.internal.util.XMLChar;
 import com.sun.org.apache.xerces.internal.util.XML11Char;
+import com.sun.org.apache.xerces.internal.util.XMLChar;
 import com.sun.org.apache.xerces.internal.util.XMLStringBuffer;
 import com.sun.org.apache.xerces.internal.xni.QName;
 import com.sun.org.apache.xerces.internal.xni.XMLString;
+import java.io.IOException;
 
 /**
  * Implements the entity scanner methods in
@@ -78,6 +77,7 @@ import com.sun.org.apache.xerces.internal.xni.XMLString;
  *
  * @author Michael Glavassevich, IBM
  * @author Neil Graham, IBM
+ * @version $Id: XML11EntityScanner.java,v 1.5 2010-11-01 04:39:40 joehw Exp $
  */
 
 public class XML11EntityScanner
@@ -108,7 +108,7 @@ public class XML11EntityScanner
 
         // load more characters, if needed
         if (fCurrentEntity.position == fCurrentEntity.count) {
-            load(0, true);
+            load(0, true, true);
         }
 
         // peek at character
@@ -136,7 +136,7 @@ public class XML11EntityScanner
 
         // load more characters, if needed
         if (fCurrentEntity.position == fCurrentEntity.count) {
-            load(0, true);
+            load(0, true, true);
         }
 
         // scan character
@@ -148,7 +148,7 @@ public class XML11EntityScanner
             fCurrentEntity.columnNumber = 1;
             if (fCurrentEntity.position == fCurrentEntity.count) {
                 fCurrentEntity.ch[0] = (char)c;
-                load(1, false);
+                load(1, false, true);
             }
             if (c == '\r' && external) {
                 int cc = fCurrentEntity.ch[fCurrentEntity.position++];
@@ -183,7 +183,7 @@ public class XML11EntityScanner
     public String scanNmtoken() throws IOException {
         // load more characters, if needed
         if (fCurrentEntity.position == fCurrentEntity.count) {
-            load(0, true);
+            load(0, true, true);
         }
 
         // scan nmtoken
@@ -194,6 +194,7 @@ public class XML11EntityScanner
             if (XML11Char.isXML11Name(ch)) {
                 if (++fCurrentEntity.position == fCurrentEntity.count) {
                     int length = fCurrentEntity.position - offset;
+                    invokeListeners(length);
                     if (length == fCurrentEntity.ch.length) {
                         // bad luck we have to resize our buffer
                         char[] tmp = new char[fCurrentEntity.ch.length << 1];
@@ -206,7 +207,7 @@ public class XML11EntityScanner
                                          fCurrentEntity.ch, 0, length);
                     }
                     offset = 0;
-                    if (load(length, false)) {
+                    if (load(length, false, false)) {
                         break;
                     }
                 }
@@ -214,6 +215,7 @@ public class XML11EntityScanner
             else if (XML11Char.isXML11NameHighSurrogate(ch)) {
                 if (++fCurrentEntity.position == fCurrentEntity.count) {
                     int length = fCurrentEntity.position - offset;
+                    invokeListeners(length);
                     if (length == fCurrentEntity.ch.length) {
                         // bad luck we have to resize our buffer
                         char[] tmp = new char[fCurrentEntity.ch.length << 1];
@@ -226,7 +228,7 @@ public class XML11EntityScanner
                                          fCurrentEntity.ch, 0, length);
                     }
                     offset = 0;
-                    if (load(length, false)) {
+                    if (load(length, false, false)) {
                         --fCurrentEntity.startPosition;
                         --fCurrentEntity.position;
                         break;
@@ -240,6 +242,7 @@ public class XML11EntityScanner
                 }
                 if (++fCurrentEntity.position == fCurrentEntity.count) {
                     int length = fCurrentEntity.position - offset;
+                    invokeListeners(length);
                     if (length == fCurrentEntity.ch.length) {
                         // bad luck we have to resize our buffer
                         char[] tmp = new char[fCurrentEntity.ch.length << 1];
@@ -252,7 +255,7 @@ public class XML11EntityScanner
                                          fCurrentEntity.ch, 0, length);
                     }
                     offset = 0;
-                    if (load(length, false)) {
+                    if (load(length, false, false)) {
                         break;
                     }
                 }
@@ -294,7 +297,7 @@ public class XML11EntityScanner
     public String scanName() throws IOException {
         // load more characters, if needed
         if (fCurrentEntity.position == fCurrentEntity.count) {
-            load(0, true);
+            load(0, true, true);
         }
 
         // scan name
@@ -305,7 +308,7 @@ public class XML11EntityScanner
             if (++fCurrentEntity.position == fCurrentEntity.count) {
                 fCurrentEntity.ch[0] = ch;
                 offset = 0;
-                if (load(1, false)) {
+                if (load(1, false, true)) {
                     fCurrentEntity.columnNumber++;
                     String symbol = fSymbolTable.addSymbol(fCurrentEntity.ch, 0, 1);
                     return symbol;
@@ -316,7 +319,7 @@ public class XML11EntityScanner
             if (++fCurrentEntity.position == fCurrentEntity.count) {
                 fCurrentEntity.ch[0] = ch;
                 offset = 0;
-                if (load(1, false)) {
+                if (load(1, false, true)) {
                     --fCurrentEntity.position;
                     --fCurrentEntity.startPosition;
                     return null;
@@ -332,7 +335,7 @@ public class XML11EntityScanner
                 fCurrentEntity.ch[0] = ch;
                 fCurrentEntity.ch[1] = ch2;
                 offset = 0;
-                if (load(2, false)) {
+                if (load(2, false, true)) {
                     fCurrentEntity.columnNumber += 2;
                     String symbol = fSymbolTable.addSymbol(fCurrentEntity.ch, 0, 2);
                     return symbol;
@@ -348,6 +351,7 @@ public class XML11EntityScanner
             if (XML11Char.isXML11Name(ch)) {
                 if (++fCurrentEntity.position == fCurrentEntity.count) {
                     int length = fCurrentEntity.position - offset;
+                    invokeListeners(length);
                     if (length == fCurrentEntity.ch.length) {
                         // bad luck we have to resize our buffer
                         char[] tmp = new char[fCurrentEntity.ch.length << 1];
@@ -360,7 +364,7 @@ public class XML11EntityScanner
                                          fCurrentEntity.ch, 0, length);
                     }
                     offset = 0;
-                    if (load(length, false)) {
+                    if (load(length, false, false)) {
                         break;
                     }
                 }
@@ -368,6 +372,7 @@ public class XML11EntityScanner
             else if (XML11Char.isXML11NameHighSurrogate(ch)) {
                 if (++fCurrentEntity.position == fCurrentEntity.count) {
                     int length = fCurrentEntity.position - offset;
+                    invokeListeners(length);
                     if (length == fCurrentEntity.ch.length) {
                         // bad luck we have to resize our buffer
                         char[] tmp = new char[fCurrentEntity.ch.length << 1];
@@ -380,7 +385,7 @@ public class XML11EntityScanner
                                          fCurrentEntity.ch, 0, length);
                     }
                     offset = 0;
-                    if (load(length, false)) {
+                    if (load(length, false, false)) {
                         --fCurrentEntity.position;
                         --fCurrentEntity.startPosition;
                         break;
@@ -394,6 +399,7 @@ public class XML11EntityScanner
                 }
                 if (++fCurrentEntity.position == fCurrentEntity.count) {
                     int length = fCurrentEntity.position - offset;
+                    invokeListeners(length);
                     if (length == fCurrentEntity.ch.length) {
                         // bad luck we have to resize our buffer
                         char[] tmp = new char[fCurrentEntity.ch.length << 1];
@@ -406,7 +412,7 @@ public class XML11EntityScanner
                                          fCurrentEntity.ch, 0, length);
                     }
                     offset = 0;
-                    if (load(length, false)) {
+                    if (load(length, false, false)) {
                         break;
                     }
                 }
@@ -449,7 +455,7 @@ public class XML11EntityScanner
 
         // load more characters, if needed
         if (fCurrentEntity.position == fCurrentEntity.count) {
-            load(0, true);
+            load(0, true, true);
         }
 
         // scan name
@@ -460,7 +466,7 @@ public class XML11EntityScanner
             if (++fCurrentEntity.position == fCurrentEntity.count) {
                 fCurrentEntity.ch[0] = ch;
                 offset = 0;
-                if (load(1, false)) {
+                if (load(1, false, true)) {
                     fCurrentEntity.columnNumber++;
                     String symbol = fSymbolTable.addSymbol(fCurrentEntity.ch, 0, 1);
                     return symbol;
@@ -471,7 +477,7 @@ public class XML11EntityScanner
             if (++fCurrentEntity.position == fCurrentEntity.count) {
                 fCurrentEntity.ch[0] = ch;
                 offset = 0;
-                if (load(1, false)) {
+                if (load(1, false, true)) {
                     --fCurrentEntity.position;
                     --fCurrentEntity.startPosition;
                     return null;
@@ -487,7 +493,7 @@ public class XML11EntityScanner
                 fCurrentEntity.ch[0] = ch;
                 fCurrentEntity.ch[1] = ch2;
                 offset = 0;
-                if (load(2, false)) {
+                if (load(2, false, true)) {
                     fCurrentEntity.columnNumber += 2;
                     String symbol = fSymbolTable.addSymbol(fCurrentEntity.ch, 0, 2);
                     return symbol;
@@ -503,6 +509,7 @@ public class XML11EntityScanner
             if (XML11Char.isXML11NCName(ch)) {
                 if (++fCurrentEntity.position == fCurrentEntity.count) {
                     int length = fCurrentEntity.position - offset;
+                    invokeListeners(length);
                     if (length == fCurrentEntity.ch.length) {
                         // bad luck we have to resize our buffer
                         char[] tmp = new char[fCurrentEntity.ch.length << 1];
@@ -515,7 +522,7 @@ public class XML11EntityScanner
                                          fCurrentEntity.ch, 0, length);
                     }
                     offset = 0;
-                    if (load(length, false)) {
+                    if (load(length, false, false)) {
                         break;
                     }
                 }
@@ -523,6 +530,7 @@ public class XML11EntityScanner
             else if (XML11Char.isXML11NameHighSurrogate(ch)) {
                 if (++fCurrentEntity.position == fCurrentEntity.count) {
                     int length = fCurrentEntity.position - offset;
+                    invokeListeners(length);
                     if (length == fCurrentEntity.ch.length) {
                         // bad luck we have to resize our buffer
                         char[] tmp = new char[fCurrentEntity.ch.length << 1];
@@ -535,7 +543,7 @@ public class XML11EntityScanner
                                          fCurrentEntity.ch, 0, length);
                     }
                     offset = 0;
-                    if (load(length, false)) {
+                    if (load(length, false, false)) {
                         --fCurrentEntity.startPosition;
                         --fCurrentEntity.position;
                         break;
@@ -549,6 +557,7 @@ public class XML11EntityScanner
                 }
                 if (++fCurrentEntity.position == fCurrentEntity.count) {
                     int length = fCurrentEntity.position - offset;
+                    invokeListeners(length);
                     if (length == fCurrentEntity.ch.length) {
                         // bad luck we have to resize our buffer
                         char[] tmp = new char[fCurrentEntity.ch.length << 1];
@@ -561,7 +570,7 @@ public class XML11EntityScanner
                                          fCurrentEntity.ch, 0, length);
                     }
                     offset = 0;
-                    if (load(length, false)) {
+                    if (load(length, false, false)) {
                         break;
                     }
                 }
@@ -610,7 +619,7 @@ public class XML11EntityScanner
 
         // load more characters, if needed
         if (fCurrentEntity.position == fCurrentEntity.count) {
-            load(0, true);
+            load(0, true, true);
         }
 
         // scan qualified name
@@ -621,7 +630,7 @@ public class XML11EntityScanner
             if (++fCurrentEntity.position == fCurrentEntity.count) {
                 fCurrentEntity.ch[0] = ch;
                 offset = 0;
-                if (load(1, false)) {
+                if (load(1, false, true)) {
                     fCurrentEntity.columnNumber++;
                     String name = fSymbolTable.addSymbol(fCurrentEntity.ch, 0, 1);
                     qname.setValues(null, name, name, null);
@@ -633,7 +642,7 @@ public class XML11EntityScanner
             if (++fCurrentEntity.position == fCurrentEntity.count) {
                 fCurrentEntity.ch[0] = ch;
                 offset = 0;
-                if (load(1, false)) {
+                if (load(1, false, true)) {
                     --fCurrentEntity.startPosition;
                     --fCurrentEntity.position;
                     return false;
@@ -649,7 +658,7 @@ public class XML11EntityScanner
                 fCurrentEntity.ch[0] = ch;
                 fCurrentEntity.ch[1] = ch2;
                 offset = 0;
-                if (load(2, false)) {
+                if (load(2, false, true)) {
                     fCurrentEntity.columnNumber += 2;
                     String name = fSymbolTable.addSymbol(fCurrentEntity.ch, 0, 2);
                     qname.setValues(null, name, name, null);
@@ -674,6 +683,7 @@ public class XML11EntityScanner
                 }
                 if (++fCurrentEntity.position == fCurrentEntity.count) {
                     int length = fCurrentEntity.position - offset;
+                    invokeListeners(length);
                     if (length == fCurrentEntity.ch.length) {
                         // bad luck we have to resize our buffer
                         char[] tmp = new char[fCurrentEntity.ch.length << 1];
@@ -689,7 +699,7 @@ public class XML11EntityScanner
                         index = index - offset;
                     }
                     offset = 0;
-                    if (load(length, false)) {
+                    if (load(length, false, false)) {
                         break;
                     }
                 }
@@ -697,6 +707,7 @@ public class XML11EntityScanner
             else if (XML11Char.isXML11NameHighSurrogate(ch)) {
                 if (++fCurrentEntity.position == fCurrentEntity.count) {
                     int length = fCurrentEntity.position - offset;
+                    invokeListeners(length);
                     if (length == fCurrentEntity.ch.length) {
                         // bad luck we have to resize our buffer
                         char[] tmp = new char[fCurrentEntity.ch.length << 1];
@@ -712,7 +723,7 @@ public class XML11EntityScanner
                         index = index - offset;
                     }
                     offset = 0;
-                    if (load(length, false)) {
+                    if (load(length, false, false)) {
                         sawIncompleteSurrogatePair = true;
                         --fCurrentEntity.startPosition;
                         --fCurrentEntity.position;
@@ -728,6 +739,7 @@ public class XML11EntityScanner
                 }
                 if (++fCurrentEntity.position == fCurrentEntity.count) {
                     int length = fCurrentEntity.position - offset;
+                    invokeListeners(length);
                     if (length == fCurrentEntity.ch.length) {
                         // bad luck we have to resize our buffer
                         char[] tmp = new char[fCurrentEntity.ch.length << 1];
@@ -743,7 +755,7 @@ public class XML11EntityScanner
                         index = index - offset;
                     }
                     offset = 0;
-                    if (load(length, false)) {
+                    if (load(length, false, false)) {
                         break;
                     }
                 }
@@ -820,11 +832,11 @@ public class XML11EntityScanner
 
         // load more characters, if needed
         if (fCurrentEntity.position == fCurrentEntity.count) {
-            load(0, true);
+            load(0, true, true);
         }
         else if (fCurrentEntity.position == fCurrentEntity.count - 1) {
             fCurrentEntity.ch[0] = fCurrentEntity.ch[fCurrentEntity.count - 1];
-            load(1, false);
+            load(1, false, true);
             fCurrentEntity.position = 0;
             fCurrentEntity.startPosition = 0;
         }
@@ -846,7 +858,7 @@ public class XML11EntityScanner
                         fCurrentEntity.baseCharOffset += (fCurrentEntity.position - fCurrentEntity.startPosition);
                         fCurrentEntity.position = newlines;
                         fCurrentEntity.startPosition = newlines;
-                        if (load(newlines, false)) {
+                        if (load(newlines, false, true)) {
                             break;
                         }
                     }
@@ -869,7 +881,7 @@ public class XML11EntityScanner
                         fCurrentEntity.baseCharOffset += (fCurrentEntity.position - fCurrentEntity.startPosition);
                         fCurrentEntity.position = newlines;
                         fCurrentEntity.startPosition = newlines;
-                        if (load(newlines, false)) {
+                        if (load(newlines, false, true)) {
                             break;
                         }
                     }
@@ -961,11 +973,11 @@ public class XML11EntityScanner
         throws IOException {
         // load more characters, if needed
         if (fCurrentEntity.position == fCurrentEntity.count) {
-            load(0, true);
+            load(0, true, true);
         }
         else if (fCurrentEntity.position == fCurrentEntity.count - 1) {
             fCurrentEntity.ch[0] = fCurrentEntity.ch[fCurrentEntity.count - 1];
-            load(1, false);
+            load(1, false, true);
             fCurrentEntity.startPosition = 0;
             fCurrentEntity.position = 0;
         }
@@ -987,7 +999,7 @@ public class XML11EntityScanner
                         fCurrentEntity.baseCharOffset += (fCurrentEntity.position - fCurrentEntity.startPosition);
                         fCurrentEntity.position = newlines;
                         fCurrentEntity.startPosition = newlines;
-                        if (load(newlines, false)) {
+                        if (load(newlines, false, true)) {
                             break;
                         }
                     }
@@ -1010,7 +1022,7 @@ public class XML11EntityScanner
                         fCurrentEntity.baseCharOffset += (fCurrentEntity.position - fCurrentEntity.startPosition);
                         fCurrentEntity.position = newlines;
                         fCurrentEntity.startPosition = newlines;
-                        if (load(newlines, false)) {
+                        if (load(newlines, false, true)) {
                             break;
                         }
                     }
@@ -1113,7 +1125,7 @@ public class XML11EntityScanner
         do {
             // load more characters, if needed
             if (fCurrentEntity.position == fCurrentEntity.count) {
-                load(0, true);
+                load(0, true, false);
             }
 
             boolean bNextEntity = false;
@@ -1127,7 +1139,7 @@ public class XML11EntityScanner
                                0,
                                fCurrentEntity.count - fCurrentEntity.position);
 
-              bNextEntity = load(fCurrentEntity.count - fCurrentEntity.position, false);
+              bNextEntity = load(fCurrentEntity.count - fCurrentEntity.position, false, false);
               fCurrentEntity.position = 0;
               fCurrentEntity.startPosition = 0;
             }
@@ -1140,7 +1152,7 @@ public class XML11EntityScanner
                 fCurrentEntity.baseCharOffset += (fCurrentEntity.position - fCurrentEntity.startPosition);
                 fCurrentEntity.position = fCurrentEntity.count;
                 fCurrentEntity.startPosition = fCurrentEntity.count;
-                load(0,true);
+                load(0,true, false);
                 return false;
             }
 
@@ -1160,7 +1172,7 @@ public class XML11EntityScanner
                             fCurrentEntity.baseCharOffset += (fCurrentEntity.position - fCurrentEntity.startPosition);
                             fCurrentEntity.position = newlines;
                             fCurrentEntity.startPosition = newlines;
-                            if (load(newlines, false)) {
+                            if (load(newlines, false, true)) {
                                 break;
                             }
                         }
@@ -1184,7 +1196,7 @@ public class XML11EntityScanner
                             fCurrentEntity.position = newlines;
                             fCurrentEntity.startPosition = newlines;
                             fCurrentEntity.count = newlines;
-                            if (load(newlines, false)) {
+                            if (load(newlines, false, true)) {
                                 break;
                             }
                         }
@@ -1309,7 +1321,7 @@ public class XML11EntityScanner
 
         // load more characters, if needed
         if (fCurrentEntity.position == fCurrentEntity.count) {
-            load(0, true);
+            load(0, true, true);
         }
 
         // skip character
@@ -1335,7 +1347,7 @@ public class XML11EntityScanner
             // handle newlines
             if (fCurrentEntity.position == fCurrentEntity.count) {
                 fCurrentEntity.ch[0] = (char)cc;
-                load(1, false);
+                load(1, false, true);
             }
             int ccc = fCurrentEntity.ch[++fCurrentEntity.position];
             if (ccc == '\n' || ccc == 0x85) {
@@ -1369,7 +1381,7 @@ public class XML11EntityScanner
 
         // load more characters, if needed
         if (fCurrentEntity.position == fCurrentEntity.count) {
-            load(0, true);
+            load(0, true, true);
         }
 
 
@@ -1397,7 +1409,7 @@ public class XML11EntityScanner
                         fCurrentEntity.columnNumber = 1;
                         if (fCurrentEntity.position == fCurrentEntity.count - 1) {
                             fCurrentEntity.ch[0] = (char)c;
-                            entityChanged = load(1, true);
+                            entityChanged = load(1, true, true);
                             if (!entityChanged) {
                                 // the load change the position to be 1,
                                 // need to restore it when entity not changed
@@ -1424,7 +1436,7 @@ public class XML11EntityScanner
                     if (!entityChanged)
                         fCurrentEntity.position++;
                     if (fCurrentEntity.position == fCurrentEntity.count) {
-                        load(0, true);
+                        load(0, true, true);
 
                         if(fCurrentEntity == null){
                         return true ;
@@ -1445,7 +1457,7 @@ public class XML11EntityScanner
                     fCurrentEntity.columnNumber = 1;
                     if (fCurrentEntity.position == fCurrentEntity.count - 1) {
                         fCurrentEntity.ch[0] = (char)c;
-                        entityChanged = load(1, true);
+                        entityChanged = load(1, true, true);
                         if (!entityChanged) {
                             // the load change the position to be 1,
                             // need to restore it when entity not changed
@@ -1463,7 +1475,7 @@ public class XML11EntityScanner
                 if (!entityChanged)
                     fCurrentEntity.position++;
                 if (fCurrentEntity.position == fCurrentEntity.count) {
-                    load(0, true);
+                    load(0, true, true);
 
                     if(fCurrentEntity == null){
                         return true ;
@@ -1496,7 +1508,7 @@ public class XML11EntityScanner
 
         // load more characters, if needed
         if (fCurrentEntity.position == fCurrentEntity.count) {
-            load(0, true);
+            load(0, true, true);
         }
 
         // skip string
@@ -1508,10 +1520,11 @@ public class XML11EntityScanner
                 return false;
             }
             if (i < length - 1 && fCurrentEntity.position == fCurrentEntity.count) {
+                invokeListeners(0);
                 System.arraycopy(fCurrentEntity.ch, fCurrentEntity.count - i - 1, fCurrentEntity.ch, 0, i + 1);
                 // REVISIT: Can a string to be skipped cross an
                 //          entity boundary? -Ac
-                if (load(i + 1, false)) {
+                if (load(i + 1, false, false)) {
                     fCurrentEntity.startPosition -= i + 1;
                     fCurrentEntity.position -= i + 1;
                     return false;

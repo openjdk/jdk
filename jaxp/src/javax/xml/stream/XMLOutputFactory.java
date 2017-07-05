@@ -241,11 +241,10 @@ public abstract class XMLOutputFactory {
    * factory class name that provides implementation of the factory.
    *
    * <p>
-   * Note that this is a new method that replaces the deprecated
+   *   Note that this is a new method that replaces the deprecated
    *   {@link #newInstance(java.lang.String, java.lang.ClassLoader)
    *   newInstance(String factoryId, ClassLoader classLoader)} method.
-   * No changes in behavior are defined by this replacement method relative
-   * to the deprecated method.
+   *   The original method was incorrectly defined to return XMLInputFactory.
    * </p>
    *
    * @param factoryId             Name of the factory to find, same as

@@ -68,6 +68,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.InvalidObjectException;
+import java.io.ObjectInputStream;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.time.DateTimeException;
@@ -171,24 +172,6 @@ public final class JapaneseEra
         this.since = since;
     }
 
-    /**
-     * Returns the singleton {@code JapaneseEra} corresponding to this object.
-     * It's possible that this version of {@code JapaneseEra} doesn't support the latest era value.
-     * In that case, this method throws an {@code ObjectStreamException}.
-     *
-     * @return the singleton {@code JapaneseEra} for this object
-     * @throws ObjectStreamException if the deserialized object has any unknown numeric era value.
-     */
-    private Object readResolve() throws ObjectStreamException {
-        try {
-            return of(eraValue);
-        } catch (DateTimeException e) {
-            InvalidObjectException ex = new InvalidObjectException("Invalid era");
-            ex.initCause(e);
-            throw ex;
-        }
-    }
-
     //-----------------------------------------------------------------------
     /**
      * Returns the Sun private Era instance corresponding to this {@code JapaneseEra}.
@@ -212,7 +195,7 @@ public final class JapaneseEra
      * @throws DateTimeException if the value is invalid
      */
     public static JapaneseEra of(int japaneseEra) {
-        if (japaneseEra < MEIJI.eraValue || japaneseEra > HEISEI.eraValue) {
+        if (japaneseEra < MEIJI.eraValue || japaneseEra + ERA_OFFSET - 1 >= KNOWN_ERAS.length) {
             throw new DateTimeException("Invalid era: " + japaneseEra);
         }
         return KNOWN_ERAS[ordinal(japaneseEra)];
@@ -368,6 +351,16 @@ public final class JapaneseEra
     @Override
     public String toString() {
         return getName();
+    }
+
+    //-----------------------------------------------------------------------
+    /**
+     * Defend against malicious streams.
+     *
+     * @throws InvalidObjectException always
+     */
+    private void readObject(ObjectInputStream s) throws InvalidObjectException {
+        throw new InvalidObjectException("Deserialization via serialization delegate");
     }
 
     //-----------------------------------------------------------------------

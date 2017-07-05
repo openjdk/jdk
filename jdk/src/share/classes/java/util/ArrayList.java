@@ -1218,8 +1218,8 @@ public class ArrayList<E> extends AbstractList<E>
 
         public Spliterator<E> spliterator() {
             checkForComodification();
-            return new ArrayListSpliterator<E>(ArrayList.this, offset,
-                                               offset + this.size, this.modCount);
+            return new ArrayListSpliterator<>(ArrayList.this, offset,
+                                              offset + this.size, this.modCount);
         }
     }
 
@@ -1322,8 +1322,8 @@ public class ArrayList<E> extends AbstractList<E>
         public ArrayListSpliterator<E> trySplit() {
             int hi = getFence(), lo = index, mid = (lo + hi) >>> 1;
             return (lo >= mid) ? null : // divide range in half unless too small
-                new ArrayListSpliterator<E>(list, lo, index = mid,
-                                            expectedModCount);
+                new ArrayListSpliterator<>(list, lo, index = mid,
+                                           expectedModCount);
         }
 
         public boolean tryAdvance(Consumer<? super E> action) {
