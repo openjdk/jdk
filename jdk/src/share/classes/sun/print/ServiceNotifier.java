@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,14 +43,14 @@ import javax.print.event.PrintServiceAttributeListener;
 class ServiceNotifier extends Thread {
 
     private PrintService service;
-    private Vector listeners;
+    private Vector<PrintServiceAttributeListener> listeners;
     private boolean stop = false;
     private PrintServiceAttributeSet lastSet;
 
     ServiceNotifier(PrintService service) {
         super(service.getName() + " notifier");
         this.service = service;
-        listeners = new Vector();
+        listeners = new Vector<>();
         try {
               setPriority(Thread.NORM_PRIORITY-1);
               setDaemon(true);
@@ -128,8 +128,7 @@ class ServiceNotifier extends Thread {
                     }
                     if (psa != null && !psa.isEmpty()) {
                         for (int i = 0; i < listeners.size() ; i++) {
-                            listener = (PrintServiceAttributeListener)
-                                listeners.elementAt(i);
+                            listener = listeners.elementAt(i);
                             attrs =
                                 new HashPrintServiceAttributeSet(psa);
                             attrEvent =

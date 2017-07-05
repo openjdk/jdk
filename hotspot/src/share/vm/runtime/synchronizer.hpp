@@ -75,7 +75,7 @@ class ObjectSynchronizer : AllStatic {
   // Special internal-use-only method for use by JVM infrastructure
   // that needs to wait() on a java-level object but that can't risk
   // throwing unexpected InterruptedExecutionExceptions.
-  static void waitUninterruptibly (Handle obj, jlong Millis, Thread * THREAD) ;
+  static void waitUninterruptibly(Handle obj, jlong Millis, Thread * THREAD);
 
   // used by classloading to free classloader object lock,
   // wait on an internal lock, and reclaim original lock
@@ -85,9 +85,9 @@ class ObjectSynchronizer : AllStatic {
 
   // thread-specific and global objectMonitor free list accessors
 //  static void verifyInUse (Thread * Self) ; too slow for general assert/debug
-  static ObjectMonitor * omAlloc (Thread * Self) ;
-  static void omRelease (Thread * Self, ObjectMonitor * m, bool FromPerThreadAlloc) ;
-  static void omFlush   (Thread * Self) ;
+  static ObjectMonitor * omAlloc(Thread * Self);
+  static void omRelease(Thread * Self, ObjectMonitor * m, bool FromPerThreadAlloc);
+  static void omFlush(Thread * Self);
 
   // Inflate light weight monitor to heavy weight monitor
   static ObjectMonitor* inflate(Thread * Self, oop obj);
@@ -97,7 +97,7 @@ class ObjectSynchronizer : AllStatic {
   // Returns the identity hash value for an oop
   // NOTE: It may cause monitor inflation
   static intptr_t identity_hash_value_for(Handle obj);
-  static intptr_t FastHashCode (Thread * Self, oop obj) ;
+  static intptr_t FastHashCode(Thread * Self, oop obj);
 
   // java.lang.Thread support
   static bool current_thread_holds_lock(JavaThread* thread, Handle h_obj);
@@ -124,7 +124,7 @@ class ObjectSynchronizer : AllStatic {
   static void verify() PRODUCT_RETURN;
   static int  verify_objmon_isinpool(ObjectMonitor *addr) PRODUCT_RETURN0;
 
-  static void RegisterSpinCallback (int (*)(intptr_t, int), intptr_t) ;
+  static void RegisterSpinCallback(int(*)(intptr_t, int), intptr_t);
 
  private:
   enum { _BLOCKSIZE = 128 };
@@ -155,7 +155,7 @@ class ObjectLocker : public StackObj {
   // Monitor behavior
   void wait      (TRAPS)      { ObjectSynchronizer::wait     (_obj, 0, CHECK); } // wait forever
   void notify_all(TRAPS)      { ObjectSynchronizer::notifyall(_obj,    CHECK); }
-  void waitUninterruptibly (TRAPS) { ObjectSynchronizer::waitUninterruptibly (_obj, 0, CHECK);}
+  void waitUninterruptibly (TRAPS) { ObjectSynchronizer::waitUninterruptibly (_obj, 0, CHECK); }
   // complete_exit gives up lock completely, returning recursion count
   // reenter reclaims lock with original recursion count
   intptr_t complete_exit(TRAPS) { return  ObjectSynchronizer::complete_exit(_obj, CHECK_0); }

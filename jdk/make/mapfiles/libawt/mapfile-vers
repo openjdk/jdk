@@ -155,6 +155,7 @@ SUNWprivate_1.1 {
 		g_CMpDataID;
 		colorValueID;
                 mul8table;
+                div8table;
                 jvm;
 
                 # ProcessPath entry points and data

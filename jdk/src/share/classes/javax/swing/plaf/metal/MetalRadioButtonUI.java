@@ -58,8 +58,19 @@ public class MetalRadioButtonUI extends BasicRadioButtonUI {
 
     private static final Object METAL_RADIO_BUTTON_UI_KEY = new Object();
 
+    /**
+     * The color of the focused radio button.
+     */
     protected Color focusColor;
+
+    /**
+     * The color of the selected radio button.
+     */
     protected Color selectColor;
+
+    /**
+     * The color of a disabled text.
+     */
     protected Color disabledTextColor;
 
     private boolean defaults_initialized = false;
@@ -67,6 +78,13 @@ public class MetalRadioButtonUI extends BasicRadioButtonUI {
     // ********************************
     //        Create PlAF
     // ********************************
+
+    /**
+     * Returns an instance of {@code MetalRadioButtonUI}.
+     *
+     * @param c a component
+     * @return an instance of {@code MetalRadioButtonUI}
+     */
     public static ComponentUI createUI(JComponent c) {
         AppContext appContext = AppContext.getAppContext();
         MetalRadioButtonUI metalRadioButtonUI =
@@ -100,14 +118,30 @@ public class MetalRadioButtonUI extends BasicRadioButtonUI {
     // ********************************
     //         Default Accessors
     // ********************************
+
+    /**
+     * Returns the color of the selected {@code JRadioButton}.
+     *
+     * @return the color of the selected {@code JRadioButton}
+     */
     protected Color getSelectColor() {
         return selectColor;
     }
 
+    /**
+     * Returns the color of the disabled text.
+     *
+     * @return the color of the disabled text
+     */
     protected Color getDisabledTextColor() {
         return disabledTextColor;
     }
 
+    /**
+     * Returns the color of the focused {@code JRadioButton}.
+     *
+     * @return the color of the focused {@code JRadioButton}
+     */
     protected Color getFocusColor() {
         return focusColor;
     }

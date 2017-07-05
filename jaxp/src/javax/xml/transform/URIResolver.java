@@ -28,6 +28,8 @@ package javax.xml.transform;
 /**
  * <p>An object that implements this interface that can be called by the processor
  * to turn a URI used in document(), xsl:import, or xsl:include into a Source object.
+ *
+ * @since 1.4
  */
 public interface URIResolver {
 

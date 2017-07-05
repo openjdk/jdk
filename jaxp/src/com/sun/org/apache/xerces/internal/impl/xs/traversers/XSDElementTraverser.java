@@ -69,7 +69,6 @@ import org.w3c.dom.Element;
  *
  * @author Sandy Gao, IBM
  *
- * @version $Id: XSDElementTraverser.java,v 1.9 2010-11-01 04:40:02 joehw Exp $
  */
 class XSDElementTraverser extends XSDAbstractTraverser {
 

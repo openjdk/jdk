@@ -35,6 +35,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.SwitchPoint;
+import java.util.Collections;
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.LinkRequest;
@@ -593,6 +594,12 @@ public abstract class ScriptFunction extends ScriptObject {
     private GuardedInvocation createApplyOrCallCall(final boolean isApply, final CallSiteDescriptor desc, final LinkRequest request, final Object[] args) {
         final MethodType descType = desc.getMethodType();
         final int paramCount = descType.parameterCount();
+        if(descType.parameterType(paramCount - 1).isArray()) {
+            // This is vararg invocation of apply or call. This can normally only happen when we do a recursive
+            // invocation of createApplyOrCallCall (because we're doing apply-of-apply). In this case, create delegate
+            // linkage by unpacking the vararg invocation and use pairArguments to introduce the necessary spreader.
+            return createVarArgApplyOrCallCall(isApply, desc, request, args);
+        }
 
         final boolean passesThis = paramCount > 2;
         final boolean passesArgs = paramCount > 3;
@@ -647,6 +654,7 @@ public abstract class ScriptFunction extends ScriptObject {
                     System.arraycopy(args, 3, tmp, 0, tmp.length);
                     appliedArgs[2] = NativeFunction.toApplyArgs(tmp);
                 } else {
+                    assert !isApply;
                     System.arraycopy(args, 3, appliedArgs, 2, args.length - 3);
                 }
             } else if (isFailedApplyToCall) {
@@ -705,8 +713,7 @@ public abstract class ScriptFunction extends ScriptObject {
         }
         final MethodType guardType = guard.type();
 
-        // Original function guard will expect the invoked function in parameter position 0, but we're passing it in
-        // position 1.
+        // We need to account for the dropped (apply|call) function argument.
         guard = MH.dropArguments(guard, 0, descType.parameterType(0));
         // Take the "isApplyFunction" guard, and bind it to this function.
         MethodHandle applyFnGuard = MH.insertArguments(IS_APPLY_FUNCTION, 2, this);
@@ -718,7 +725,72 @@ public abstract class ScriptFunction extends ScriptObject {
         return appliedInvocation.replaceMethods(inv, guard);
     }
 
-     private static MethodHandle bindImplicitThis(final Object fn, final MethodHandle mh) {
+    /*
+     * This method is used for linking nested apply. Specialized apply and call linking will create a variable arity
+     * call site for an apply call; when createApplyOrCallCall sees a linking request for apply or call with
+     * Nashorn-style variable arity call site (last argument type is Object[]) it'll delegate to this method.
+     * This method converts the link request from a vararg to a non-vararg one (unpacks the array), then delegates back
+     * to createApplyOrCallCall (with which it is thus mutually recursive), and adds appropriate argument spreaders to
+     * invocation and the guard of whatever createApplyOrCallCall returned to adapt it back into a variable arity
+     * invocation. It basically reduces the problem of vararg call site linking of apply and call back to the (already
+     * solved by createApplyOrCallCall) non-vararg call site linking.
+     */
+    private GuardedInvocation createVarArgApplyOrCallCall(final boolean isApply, final CallSiteDescriptor desc,
+            final LinkRequest request, final Object[] args) {
+        final MethodType descType = desc.getMethodType();
+        final int paramCount = descType.parameterCount();
+        final Object[] varArgs = (Object[])args[paramCount - 1];
+        // -1 'cause we're not passing the vararg array itself
+        final int copiedArgCount = args.length - 1;
+        int varArgCount = varArgs.length;
+
+        // Spread arguments for the delegate createApplyOrCallCall invocation.
+        final Object[] spreadArgs = new Object[copiedArgCount + varArgCount];
+        System.arraycopy(args, 0, spreadArgs, 0, copiedArgCount);
+        System.arraycopy(varArgs, 0, spreadArgs, copiedArgCount, varArgCount);
+
+        // Spread call site descriptor for the delegate createApplyOrCallCall invocation. We drop vararg array and
+        // replace it with a list of Object.class.
+        final MethodType spreadType = descType.dropParameterTypes(paramCount - 1, paramCount).appendParameterTypes(
+                Collections.<Class<?>>nCopies(varArgCount, Object.class));
+        final CallSiteDescriptor spreadDesc = desc.changeMethodType(spreadType);
+
+        // Delegate back to createApplyOrCallCall with the spread (that is, reverted to non-vararg) request/
+        final LinkRequest spreadRequest = request.replaceArguments(spreadDesc, spreadArgs);
+        final GuardedInvocation spreadInvocation = createApplyOrCallCall(isApply, spreadDesc, spreadRequest, spreadArgs);
+
+        // Add spreader combinators to returned invocation and guard.
+        return spreadInvocation.replaceMethods(
+                // Use standard ScriptObject.pairArguments on the invocation
+                pairArguments(spreadInvocation.getInvocation(), descType),
+                // Use our specialized spreadGuardArguments on the guard (see below).
+                spreadGuardArguments(spreadInvocation.getGuard(), descType));
+    }
+
+    private static MethodHandle spreadGuardArguments(final MethodHandle guard, final MethodType descType) {
+        final MethodType guardType = guard.type();
+        final int guardParamCount = guardType.parameterCount();
+        final int descParamCount = descType.parameterCount();
+        final int spreadCount = guardParamCount - descParamCount + 1;
+        if (spreadCount <= 0) {
+            // Guard doesn't dip into the varargs
+            return guard;
+        }
+
+        final MethodHandle arrayConvertingGuard;
+        // If the last parameter type of the guard is an array, then it is already itself a guard for a vararg apply
+        // invocation. We must filter the last argument with toApplyArgs otherwise deeper levels of nesting will fail
+        // with ClassCastException of NativeArray to Object[].
+        if(guardType.parameterType(guardParamCount - 1).isArray()) {
+            arrayConvertingGuard = MH.filterArguments(guard, guardParamCount - 1, NativeFunction.TO_APPLY_ARGS);
+        } else {
+            arrayConvertingGuard = guard;
+        }
+
+        return ScriptObject.adaptHandleToVarArgCallSite(arrayConvertingGuard, descParamCount);
+    }
+
+    private static MethodHandle bindImplicitThis(final Object fn, final MethodHandle mh) {
          final MethodHandle bound;
          if(fn instanceof ScriptFunction && ((ScriptFunction)fn).needsWrappedThis()) {
              bound = MH.filterArguments(mh, 1, SCRIPTFUNCTION_GLOBALFILTER);

@@ -43,7 +43,6 @@ import org.w3c.dom.NamedNodeMap;
  * @xerces.internal
  *
  * @author Neil Graham, IBM
- * @version $Id: XSDocumentInfo.java,v 1.5 2007/10/15 22:27:48 spericas Exp $
  */
 class XSDocumentInfo {
 

@@ -28,7 +28,6 @@ import org.w3c.dom.DocumentType;
 /**
  * @xerces.internal
  *
- * @version $Id: SchemaDOMImplementation.java,v 1.2 2010-10-26 23:01:18 joehw Exp $
  */
 final class SchemaDOMImplementation implements DOMImplementation {
 

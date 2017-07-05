@@ -30,6 +30,8 @@ package javax.xml.transform;
  * exists. This error will typically be thrown when the class of a
  * transformation factory specified in the system properties cannot be found
  * or instantiated.
+ *
+ * @since 1.4
  */
 public class TransformerFactoryConfigurationError extends Error {
     private static final long serialVersionUID = -6527718720676281516L;

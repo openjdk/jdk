@@ -156,79 +156,369 @@ public class HTML {
 
         // --- Tag Names -----------------------------------
 
+        /**
+         * Tag &lt;a&gt;
+         */
         public static final Tag A = new Tag("a");
+
+        /**
+         * Tag &lt;address&gt;
+         */
         public static final Tag ADDRESS = new Tag("address");
+        /**
+         * Tag &lt;applet&gt;
+         */
         public static final Tag APPLET = new Tag("applet");
+
+        /**
+         * Tag &lt;area&gt;
+         */
         public static final Tag AREA = new Tag("area");
+
+        /**
+         * Tag &lt;b&gt;
+         */
         public static final Tag B = new Tag("b");
+
+        /**
+         * Tag &lt;base&gt;
+         */
         public static final Tag BASE = new Tag("base");
+
+        /**
+         * Tag &lt;basefont&gt;
+         */
         public static final Tag BASEFONT = new Tag("basefont");
+
+        /**
+         * Tag &lt;big&gt;
+         */
         public static final Tag BIG = new Tag("big");
+
+        /**
+         * Tag &lt;blockquote&gt;
+         */
         public static final Tag BLOCKQUOTE = new Tag("blockquote", true, true);
+
+        /**
+         * Tag &lt;body&gt;
+         */
         public static final Tag BODY = new Tag("body", true, true);
+
+        /**
+         * Tag &lt;br&gt;
+         */
         public static final Tag BR = new Tag("br", true, false);
+
+        /**
+         * Tag &lt;caption&gt;
+         */
         public static final Tag CAPTION = new Tag("caption");
+
+        /**
+         * Tag &lt;center&gt;
+         */
         public static final Tag CENTER = new Tag("center", true, false);
+
+        /**
+         * Tag &lt;cite&gt;
+         */
         public static final Tag CITE = new Tag("cite");
+
+        /**
+         * Tag &lt;code&gt;
+         */
         public static final Tag CODE = new Tag("code");
+
+        /**
+         * Tag &lt;dd&gt;
+         */
         public static final Tag DD = new Tag("dd", true, true);
+
+        /**
+         * Tag &lt;dfn&gt;
+         */
         public static final Tag DFN = new Tag("dfn");
+
+        /**
+         * Tag &lt;dir&gt;
+         */
         public static final Tag DIR = new Tag("dir", true, true);
+
+        /**
+         * Tag &lt;div&gt;
+         */
         public static final Tag DIV = new Tag("div", true, true);
+
+        /**
+         * Tag &lt;dl&gt;
+         */
         public static final Tag DL = new Tag("dl", true, true);
+
+        /**
+         * Tag &lt;dt&gt;
+         */
         public static final Tag DT = new Tag("dt", true, true);
+
+        /**
+         * Tag &lt;em&gt;
+         */
         public static final Tag EM = new Tag("em");
+
+        /**
+         * Tag &lt;font&gt;
+         */
         public static final Tag FONT = new Tag("font");
+
+        /**
+         * Tag &lt;form&gt;
+         */
         public static final Tag FORM = new Tag("form", true, false);
+
+        /**
+         * Tag &lt;frame&gt;
+         */
         public static final Tag FRAME = new Tag("frame");
+
+        /**
+         * Tag &lt;frameset&gt;
+         */
         public static final Tag FRAMESET = new Tag("frameset");
+
+        /**
+         * Tag &lt;h1&gt;
+         */
         public static final Tag H1 = new Tag("h1", true, true);
+
+        /**
+         * Tag &lt;h2&gt;
+         */
         public static final Tag H2 = new Tag("h2", true, true);
+
+        /**
+         * Tag &lt;h3&gt;
+         */
         public static final Tag H3 = new Tag("h3", true, true);
+
+        /**
+         * Tag &lt;h4&gt;
+         */
         public static final Tag H4 = new Tag("h4", true, true);
+
+        /**
+         * Tag &lt;h5&gt;
+         */
         public static final Tag H5 = new Tag("h5", true, true);
+
+        /**
+         * Tag &lt;h6&gt;
+         */
         public static final Tag H6 = new Tag("h6", true, true);
+
+        /**
+         * Tag &lt;head&gt;
+         */
         public static final Tag HEAD = new Tag("head", true, true);
+
+        /**
+         * Tag &lt;hr&gt;
+         */
         public static final Tag HR = new Tag("hr", true, false);
+
+        /**
+         * Tag &lt;html&gt;
+         */
         public static final Tag HTML = new Tag("html", true, false);
+
+        /**
+         * Tag &lt;i&gt;
+         */
         public static final Tag I = new Tag("i");
+
+        /**
+         * Tag &lt;img&gt;
+         */
         public static final Tag IMG = new Tag("img");
+
+        /**
+         * Tag &lt;input&gt;
+         */
         public static final Tag INPUT = new Tag("input");
+
+        /**
+         * Tag &lt;isindex&gt;
+         */
         public static final Tag ISINDEX = new Tag("isindex", true, false);
+
+        /**
+         * Tag &lt;kbd&gt;
+         */
         public static final Tag KBD = new Tag("kbd");
+
+        /**
+         * Tag &lt;li&gt;
+         */
         public static final Tag LI = new Tag("li", true, true);
+
+        /**
+         * Tag &lt;link&gt;
+         */
         public static final Tag LINK = new Tag("link");
+
+        /**
+         * Tag &lt;map&gt;
+         */
         public static final Tag MAP = new Tag("map");
+
+        /**
+         * Tag &lt;menu&gt;
+         */
         public static final Tag MENU = new Tag("menu", true, true);
+
+        /**
+         * Tag &lt;meta&gt;
+         */
         public static final Tag META = new Tag("meta");
         /*public*/ static final Tag NOBR = new Tag("nobr");
+
+        /**
+         * Tag &lt;noframes&gt;
+         */
         public static final Tag NOFRAMES = new Tag("noframes", true, true);
+
+        /**
+         * Tag &lt;object&gt;
+         */
         public static final Tag OBJECT = new Tag("object");
+
+        /**
+         * Tag &lt;ol&gt;
+         */
         public static final Tag OL = new Tag("ol", true, true);
+
+        /**
+         * Tag &lt;option&gt;
+         */
         public static final Tag OPTION = new Tag("option");
+
+        /**
+         * Tag &lt;p&gt;
+         */
         public static final Tag P = new Tag("p", true, true);
+
+        /**
+         * Tag &lt;param&gt;
+         */
         public static final Tag PARAM = new Tag("param");
+
+        /**
+         * Tag &lt;pre&gt;
+         */
         public static final Tag PRE = new Tag("pre", true, true);
+
+        /**
+         * Tag &lt;samp&gt;
+         */
         public static final Tag SAMP = new Tag("samp");
+
+        /**
+         * Tag &lt;script&gt;
+         */
         public static final Tag SCRIPT = new Tag("script");
+
+        /**
+         * Tag &lt;select&gt;
+         */
         public static final Tag SELECT = new Tag("select");
+
+        /**
+         * Tag &lt;small&gt;
+         */
         public static final Tag SMALL = new Tag("small");
+
+        /**
+         * Tag &lt;span&gt;
+         */
         public static final Tag SPAN = new Tag("span");
+
+        /**
+         * Tag &lt;strike&gt;
+         */
         public static final Tag STRIKE = new Tag("strike");
+
+        /**
+         * Tag &lt;s&gt;
+         */
         public static final Tag S = new Tag("s");
+
+        /**
+         * Tag &lt;strong&gt;
+         */
         public static final Tag STRONG = new Tag("strong");
+
+        /**
+         * Tag &lt;style&gt;
+         */
         public static final Tag STYLE = new Tag("style");
+
+        /**
+         * Tag &lt;sub&gt;
+         */
         public static final Tag SUB = new Tag("sub");
+
+        /**
+         * Tag &lt;sup&gt;
+         */
         public static final Tag SUP = new Tag("sup");
+
+        /**
+         * Tag &lt;table&gt;
+         */
         public static final Tag TABLE = new Tag("table", false, true);
+
+        /**
+         * Tag &lt;td&gt;
+         */
         public static final Tag TD = new Tag("td", true, true);
+
+        /**
+         * Tag &lt;textarea&gt;
+         */
         public static final Tag TEXTAREA = new Tag("textarea");
+
+        /**
+         * Tag &lt;th&gt;
+         */
         public static final Tag TH = new Tag("th", true, true);
+
+        /**
+         * Tag &lt;title&gt;
+         */
         public static final Tag TITLE = new Tag("title", true, true);
+
+        /**
+         * Tag &lt;tr&gt;
+         */
         public static final Tag TR = new Tag("tr", false, true);
+
+        /**
+         * Tag &lt;tt&gt;
+         */
         public static final Tag TT = new Tag("tt");
+
+        /**
+         * Tag &lt;u&gt;
+         */
         public static final Tag U = new Tag("u");
+
+        /**
+         * Tag &lt;ul&gt;
+         */
         public static final Tag UL = new Tag("ul", true, true);
+
+        /**
+         * Tag &lt;var&gt;
+         */
         public static final Tag VAR = new Tag("var");
 
         /**
@@ -281,6 +571,9 @@ public class HTML {
         }
     }
 
+    /**
+     * Class represents unknown HTML tag.
+     */
     // There is no unique instance of UnknownTag, so we allow it to be
     // Serializable.
     @SuppressWarnings("serial") // Same-version serialization only
@@ -365,85 +658,405 @@ public class HTML {
 
         private String name;
 
+
+        /**
+         * Attribute "size"
+         */
         public static final Attribute SIZE = new Attribute("size");
+
+        /**
+         * Attribute "color"
+         */
         public static final Attribute COLOR = new Attribute("color");
+
+        /**
+         * Attribute "clear"
+         */
         public static final Attribute CLEAR = new Attribute("clear");
+
+        /**
+         * Attribute "background"
+         */
         public static final Attribute BACKGROUND = new Attribute("background");
+
+        /**
+         * Attribute "bgcolor"
+         */
         public static final Attribute BGCOLOR = new Attribute("bgcolor");
+
+        /**
+         * Attribute "text"
+         */
         public static final Attribute TEXT = new Attribute("text");
+
+        /**
+         * Attribute "link"
+         */
         public static final Attribute LINK = new Attribute("link");
+
+        /**
+         * Attribute "vlink"
+         */
         public static final Attribute VLINK = new Attribute("vlink");
+
+        /**
+         * Attribute "alink"
+         */
         public static final Attribute ALINK = new Attribute("alink");
+
+        /**
+         * Attribute "width"
+         */
         public static final Attribute WIDTH = new Attribute("width");
+
+        /**
+         * Attribute "height"
+         */
         public static final Attribute HEIGHT = new Attribute("height");
+
+        /**
+         * Attribute "align"
+         */
         public static final Attribute ALIGN = new Attribute("align");
+
+        /**
+         * Attribute "name"
+         */
         public static final Attribute NAME = new Attribute("name");
+
+        /**
+         * Attribute "href"
+         */
         public static final Attribute HREF = new Attribute("href");
+
+        /**
+         * Attribute "rel"
+         */
         public static final Attribute REL = new Attribute("rel");
+
+        /**
+         * Attribute "rev"
+         */
         public static final Attribute REV = new Attribute("rev");
+
+        /**
+         * Attribute "title"
+         */
         public static final Attribute TITLE = new Attribute("title");
+
+        /**
+         * Attribute "target"
+         */
         public static final Attribute TARGET = new Attribute("target");
+
+        /**
+         * Attribute "shape"
+         */
         public static final Attribute SHAPE = new Attribute("shape");
+
+        /**
+         * Attribute "coords"
+         */
         public static final Attribute COORDS = new Attribute("coords");
+
+        /**
+         * Attribute "ismap"
+         */
         public static final Attribute ISMAP = new Attribute("ismap");
+
+        /**
+         * Attribute "nohref"
+         */
         public static final Attribute NOHREF = new Attribute("nohref");
+
+        /**
+         * Attribute "alt"
+         */
         public static final Attribute ALT = new Attribute("alt");
+
+        /**
+         * Attribute "id"
+         */
         public static final Attribute ID = new Attribute("id");
+
+        /**
+         * Attribute "src"
+         */
         public static final Attribute SRC = new Attribute("src");
+
+        /**
+         * Attribute "hspace"
+         */
         public static final Attribute HSPACE = new Attribute("hspace");
+
+        /**
+         * Attribute "vspace"
+         */
         public static final Attribute VSPACE = new Attribute("vspace");
+
+        /**
+         * Attribute "usemap"
+         */
         public static final Attribute USEMAP = new Attribute("usemap");
+
+        /**
+         * Attribute "lowsrc"
+         */
         public static final Attribute LOWSRC = new Attribute("lowsrc");
+
+        /**
+         * Attribute "codebase"
+         */
         public static final Attribute CODEBASE = new Attribute("codebase");
+
+        /**
+         * Attribute "code"
+         */
         public static final Attribute CODE = new Attribute("code");
+
+        /**
+         * Attribute "archive"
+         */
         public static final Attribute ARCHIVE = new Attribute("archive");
+
+        /**
+         * Attribute "value"
+         */
         public static final Attribute VALUE = new Attribute("value");
+
+        /**
+         * Attribute "valuetype"
+         */
         public static final Attribute VALUETYPE = new Attribute("valuetype");
+
+        /**
+         * Attribute "type"
+         */
         public static final Attribute TYPE = new Attribute("type");
+
+        /**
+         * Attribute "class"
+         */
         public static final Attribute CLASS = new Attribute("class");
+
+        /**
+         * Attribute "style"
+         */
         public static final Attribute STYLE = new Attribute("style");
+
+        /**
+         * Attribute "lang"
+         */
         public static final Attribute LANG = new Attribute("lang");
+
+        /**
+         * Attribute "face"
+         */
         public static final Attribute FACE = new Attribute("face");
+
+        /**
+         * Attribute "dir"
+         */
         public static final Attribute DIR = new Attribute("dir");
+
+        /**
+         * Attribute "declare"
+         */
         public static final Attribute DECLARE = new Attribute("declare");
+
+        /**
+         * Attribute "classid"
+         */
         public static final Attribute CLASSID = new Attribute("classid");
+
+        /**
+         * Attribute "data"
+         */
         public static final Attribute DATA = new Attribute("data");
+
+        /**
+         * Attribute "codetype"
+         */
         public static final Attribute CODETYPE = new Attribute("codetype");
+
+        /**
+         * Attribute "standby"
+         */
         public static final Attribute STANDBY = new Attribute("standby");
+
+        /**
+         * Attribute "border"
+         */
         public static final Attribute BORDER = new Attribute("border");
+
+        /**
+         * Attribute "shapes"
+         */
         public static final Attribute SHAPES = new Attribute("shapes");
+
+        /**
+         * Attribute "noshade"
+         */
         public static final Attribute NOSHADE = new Attribute("noshade");
+
+        /**
+         * Attribute "compact"
+         */
         public static final Attribute COMPACT = new Attribute("compact");
+
+        /**
+         * Attribute "start"
+         */
         public static final Attribute START = new Attribute("start");
+
+        /**
+         * Attribute "action"
+         */
         public static final Attribute ACTION = new Attribute("action");
+
+        /**
+         * Attribute "method"
+         */
         public static final Attribute METHOD = new Attribute("method");
+
+        /**
+         * Attribute "enctype"
+         */
         public static final Attribute ENCTYPE = new Attribute("enctype");
+
+        /**
+         * Attribute "checked"
+         */
         public static final Attribute CHECKED = new Attribute("checked");
+
+        /**
+         * Attribute "maxlength"
+         */
         public static final Attribute MAXLENGTH = new Attribute("maxlength");
+
+        /**
+         * Attribute "multiple"
+         */
         public static final Attribute MULTIPLE = new Attribute("multiple");
+
+        /**
+         * Attribute "selected"
+         */
         public static final Attribute SELECTED = new Attribute("selected");
+
+        /**
+         * Attribute "rows"
+         */
         public static final Attribute ROWS = new Attribute("rows");
+
+        /**
+         * Attribute "cols"
+         */
         public static final Attribute COLS = new Attribute("cols");
+
+        /**
+         * Attribute "dummy"
+         */
         public static final Attribute DUMMY = new Attribute("dummy");
+
+        /**
+         * Attribute "cellspacing"
+         */
         public static final Attribute CELLSPACING = new Attribute("cellspacing");
+
+        /**
+         * Attribute "cellpadding"
+         */
         public static final Attribute CELLPADDING = new Attribute("cellpadding");
+
+        /**
+         * Attribute "valign"
+         */
         public static final Attribute VALIGN = new Attribute("valign");
+
+        /**
+         * Attribute "halign"
+         */
         public static final Attribute HALIGN = new Attribute("halign");
+
+        /**
+         * Attribute "nowrap"
+         */
         public static final Attribute NOWRAP = new Attribute("nowrap");
+
+        /**
+         * Attribute "rowspan"
+         */
         public static final Attribute ROWSPAN = new Attribute("rowspan");
+
+        /**
+         * Attribute "colspan"
+         */
         public static final Attribute COLSPAN = new Attribute("colspan");
+
+        /**
+         * Attribute "prompt"
+         */
         public static final Attribute PROMPT = new Attribute("prompt");
+
+        /**
+         * Attribute "http-equiv"
+         */
         public static final Attribute HTTPEQUIV = new Attribute("http-equiv");
+
+        /**
+         * Attribute "content"
+         */
         public static final Attribute CONTENT = new Attribute("content");
+
+        /**
+         * Attribute "language"
+         */
         public static final Attribute LANGUAGE = new Attribute("language");
+
+        /**
+         * Attribute "version"
+         */
         public static final Attribute VERSION = new Attribute("version");
+
+        /**
+         * Attribute "n"
+         */
         public static final Attribute N = new Attribute("n");
+
+        /**
+         * Attribute "frameborder"
+         */
         public static final Attribute FRAMEBORDER = new Attribute("frameborder");
+
+        /**
+         * Attribute "marginwidth"
+         */
         public static final Attribute MARGINWIDTH = new Attribute("marginwidth");
+
+        /**
+         * Attribute "marginheight"
+         */
         public static final Attribute MARGINHEIGHT = new Attribute("marginheight");
+
+        /**
+         * Attribute "scrolling"
+         */
         public static final Attribute SCROLLING = new Attribute("scrolling");
+
+        /**
+         * Attribute "noresize"
+         */
         public static final Attribute NORESIZE = new Attribute("noresize");
+
+        /**
+         * Attribute "endtag"
+         */
         public static final Attribute ENDTAG = new Attribute("endtag");
+
+        /**
+         * Attribute "comment"
+         */
         public static final Attribute COMMENT = new Attribute("comment");
         static final Attribute MEDIA = new Attribute("media");
 
@@ -645,9 +1258,10 @@ public class HTML {
         return value;
     }
 
-    //  This is used in cases where the value for the attribute has not
-    //  been specified.
-    //
+    /**
+     *  {@code NULL_ATTRIBUTE_VALUE} used in cases where the value for the attribute has not
+     *  been specified.
+     */
     public static final String NULL_ATTRIBUTE_VALUE = "#DEFAULT";
 
     // size determined similar to size of tagHashtable

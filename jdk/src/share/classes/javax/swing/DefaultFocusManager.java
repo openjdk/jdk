@@ -45,6 +45,7 @@ import java.util.Comparator;
  *
  * @author Arnaud Weber
  * @author David Mendenhall
+ * @since 1.2
  */
 @SuppressWarnings("serial") // Obsolete class
 public class DefaultFocusManager extends FocusManager {

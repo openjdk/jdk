@@ -22,7 +22,6 @@
 package com.sun.org.apache.xerces.internal.impl.xpath.regex;
 
 /**
- * @version $Id: CaseInsensitiveMap.java,v 1.1 2010/07/27 06:29:27 joehw Exp $
  */
 
 public class CaseInsensitiveMap {

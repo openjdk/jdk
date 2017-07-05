@@ -236,6 +236,12 @@ class OverloadedDynamicMethod extends DynamicMethod {
         return false;
     }
 
+    @Override
+    public boolean isConstructor() {
+        assert !methods.isEmpty();
+        return methods.getFirst().isConstructor();
+    }
+
     ClassLoader getClassLoader() {
         return classLoader;
     }
@@ -303,6 +309,11 @@ class OverloadedDynamicMethod extends DynamicMethod {
      * @param method a method to add
      */
     public void addMethod(final SingleDynamicMethod method) {
+        assert constructorFlagConsistent(method);
         methods.add(method);
+    }
+
+    private boolean constructorFlagConsistent(final SingleDynamicMethod method) {
+        return methods.isEmpty()? true : (methods.getFirst().isConstructor() == method.isConstructor());
     }
 }

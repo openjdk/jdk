@@ -92,7 +92,6 @@ import org.w3c.dom.Node;
  * of thing but in a much simpler manner.</p>
  *
  * @author Shane_Curcuru@us.ibm.com
- * @version $Id: EnvironmentCheck.java,v 1.10 2010-11-01 04:34:13 joehw Exp $
  */
 public class EnvironmentCheck
 {

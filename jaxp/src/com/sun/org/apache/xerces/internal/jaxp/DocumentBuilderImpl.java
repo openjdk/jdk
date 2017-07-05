@@ -58,7 +58,6 @@ import org.xml.sax.SAXNotSupportedException;
 /**
  * @author Rajiv Mordani
  * @author Edwin Goei
- * @version $Id: DocumentBuilderImpl.java,v 1.8 2010-11-01 04:40:06 joehw Exp $
  */
 public class DocumentBuilderImpl extends DocumentBuilder
         implements JAXPConstants

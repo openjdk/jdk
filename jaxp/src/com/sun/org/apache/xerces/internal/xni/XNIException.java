@@ -32,7 +32,6 @@ package com.sun.org.apache.xerces.internal.xni;
  *
  * @author Andy Clark, IBM
  *
- * @version $Id: XNIException.java,v 1.6 2010-11-01 04:40:19 joehw Exp $
  */
 public class XNIException
     extends RuntimeException {

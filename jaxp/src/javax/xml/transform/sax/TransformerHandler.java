@@ -36,6 +36,8 @@ import org.xml.sax.ext.LexicalHandler;
  * A TransformerHandler
  * listens for SAX ContentHandler parse events and transforms
  * them to a Result.
+ *
+ * @since 1.4
  */
 public interface TransformerHandler
     extends ContentHandler, LexicalHandler, DTDHandler {

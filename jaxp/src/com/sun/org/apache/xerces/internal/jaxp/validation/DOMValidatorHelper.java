@@ -63,7 +63,6 @@ import org.xml.sax.SAXException;
  * <p>A validator helper for <code>DOMSource</code>s.</p>
  *
  * @author Michael Glavassevich, IBM
- * @version $Id: DOMValidatorHelper.java,v 1.9 2010-11-01 04:40:08 joehw Exp $
  */
 final class DOMValidatorHelper implements ValidatorHelper, EntityState {
 

@@ -62,7 +62,7 @@ import org.xml.sax.SAXException;
  * {@link org.xml.sax.SAXNotRecognizedException SAXNotRecognizedException}
  * when you attempt to register the handler.</p>
  *
- * @since SAX 2.0 (extensions 1.0)
+ * @since 1.4, SAX 2.0 (extensions 1.0)
  * @author David Megginson
  */
 public interface LexicalHandler

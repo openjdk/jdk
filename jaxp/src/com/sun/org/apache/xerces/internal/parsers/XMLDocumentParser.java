@@ -33,7 +33,6 @@ import com.sun.org.apache.xerces.internal.xni.parser.XMLParserConfiguration;
  * @author Arnaud  Le Hors, IBM
  * @author Andy Clark, IBM
  *
- * @version $Id: XMLDocumentParser.java,v 1.6 2010-11-01 04:40:10 joehw Exp $
  */
 public class XMLDocumentParser
     extends AbstractXMLDocumentParser {

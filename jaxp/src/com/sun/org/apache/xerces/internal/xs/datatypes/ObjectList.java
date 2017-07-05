@@ -27,7 +27,6 @@ import java.util.List;
  *
  * @author Ankit Pasricha, IBM
  *
- * @version $Id: ObjectList.java,v 1.7 2010-11-01 04:40:31 joehw Exp $
  */
 public interface ObjectList extends List {
 

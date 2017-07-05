@@ -30,7 +30,6 @@ import com.sun.org.apache.xerces.internal.xni.XNIException;
  *
  * @author Andy Clark, IBM
  *
- * @version $Id: XMLConfigurationException.java,v 1.7 2010-11-01 04:40:22 joehw Exp $
  */
 public class XMLConfigurationException
     extends XNIException {

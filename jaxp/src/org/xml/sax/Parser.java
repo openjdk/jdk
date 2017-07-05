@@ -64,7 +64,7 @@ import java.util.Locale;
  * @deprecated This interface has been replaced by the SAX2
  *             {@link org.xml.sax.XMLReader XMLReader}
  *             interface, which includes Namespace support.
- * @since SAX 1.0
+ * @since 1.4, SAX 1.0
  * @author David Megginson
  * @see org.xml.sax.EntityResolver
  * @see org.xml.sax.DTDHandler

@@ -34,7 +34,6 @@ import com.sun.org.apache.xerces.internal.xs.XSObjectList;
  * @xerces.internal
  *
  * @author Rahul Srivastava, Sun Microsystems Inc.
- * @version $Id: XSNotationDecl.java,v 1.7 2010-11-01 04:39:55 joehw Exp $
  */
 public class XSNotationDecl implements XSNotationDeclaration {
 

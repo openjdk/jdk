@@ -64,6 +64,12 @@ package build.tools.tzdb;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.ObjectOutput;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.ZoneOffset;
+import java.time.zone.ZoneOffsetTransition;
+import java.time.zone.ZoneOffsetTransitionRule;
+import java.time.zone.ZoneOffsetTransitionRule.TimeDefinition;
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.List;
@@ -224,15 +230,15 @@ final class ZoneRules {
      * @throws IOException if an error occurs
      */
     static void writeRule(ZoneOffsetTransitionRule rule, DataOutput out) throws IOException {
-        int month = rule.month;
-        byte dom = rule.dom;
-        int dow = rule.dow;
-        LocalTime time = rule.time;
-        boolean timeEndOfDay = rule.timeEndOfDay;
-        TimeDefinition timeDefinition = rule.timeDefinition;
-        ZoneOffset standardOffset = rule.standardOffset;
-        ZoneOffset offsetBefore = rule.offsetBefore;
-        ZoneOffset offsetAfter = rule.offsetAfter;
+        int month = rule.getMonth().getValue();
+        byte dom = (byte)rule.getDayOfMonthIndicator();
+        int dow = rule.getDayOfWeek().getValue();
+        LocalTime time = rule.getLocalTime();
+        boolean timeEndOfDay = rule.isMidnightEndOfDay();
+        TimeDefinition timeDefinition = rule.getTimeDefinition();
+        ZoneOffset standardOffset = rule.getStandardOffset();
+        ZoneOffset offsetBefore = rule.getOffsetBefore();
+        ZoneOffset offsetAfter = rule.getOffsetAfter();
 
         int timeSecs = (timeEndOfDay ? 86400 : time.toSecondOfDay());
         int stdOffset = standardOffset.getTotalSeconds();

@@ -72,7 +72,6 @@ import org.w3c.dom.ls.LSSerializerFilter;
  * @author Gopal Sharma, Sun Microsystems
  * @author Arun Yadav, Sun Microsystems
  * @author Sunitha Reddy, Sun Microsystems
- * @version $Id: DOMSerializerImpl.java,v 1.11 2010-11-01 04:40:36 joehw Exp $
  */
 public class DOMSerializerImpl implements LSSerializer, DOMConfiguration {
 

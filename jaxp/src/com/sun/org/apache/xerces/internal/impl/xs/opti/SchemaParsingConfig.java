@@ -57,7 +57,6 @@ import com.sun.org.apache.xerces.internal.xni.parser.XMLPullParserConfiguration;
  *
  * @author Rahul Srivastava, Sun Microsystems Inc.
  *
- * @version $Id: SchemaParsingConfig.java,v 1.8 2010-11-01 04:40:01 joehw Exp $
  */
 public class SchemaParsingConfig extends BasicParserConfiguration
     implements XMLPullParserConfiguration {

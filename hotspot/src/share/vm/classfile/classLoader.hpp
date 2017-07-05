@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,11 +111,7 @@ class ClassPathZipEntry: public ClassPathEntry {
   void contents_do(void f(const char* name, void* context), void* context);
   // Debugging
   NOT_PRODUCT(void compile_the_world(Handle loader, TRAPS);)
-  NOT_PRODUCT(void compile_the_world12(Handle loader, TRAPS);) // JDK 1.2 version
-  NOT_PRODUCT(void compile_the_world13(Handle loader, TRAPS);) // JDK 1.3 version
   NOT_PRODUCT(bool is_rt_jar();)
-  NOT_PRODUCT(bool is_rt_jar12();)
-  NOT_PRODUCT(bool is_rt_jar13();)
 };
 
 

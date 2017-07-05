@@ -39,6 +39,7 @@ import javax.xml.transform.Source;
  * <code>StreamSource</code> instances may only be used once.</p>
  *
  * @author <a href="Jeff.Suttor@Sun.com">Jeff Suttor</a>
+ * @since 1.4
  */
 public class StreamSource implements Source {
 

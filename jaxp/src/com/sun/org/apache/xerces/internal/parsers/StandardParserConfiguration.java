@@ -64,7 +64,6 @@ import com.sun.org.apache.xerces.internal.xni.parser.XMLConfigurationException;
  * @author Arnaud  Le Hors, IBM
  * @author Andy Clark, IBM
  *
- * @version $Id: StandardParserConfiguration.java,v 1.7 2010-11-01 04:40:10 joehw Exp $
  */
 public class StandardParserConfiguration
     extends DTDConfiguration {

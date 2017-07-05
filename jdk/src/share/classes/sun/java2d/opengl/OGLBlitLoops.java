@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,6 +71,8 @@ class OGLBlitLoops {
             // surface->sw ops
             new OGLSurfaceToSwBlit(SurfaceType.IntArgb,
                                    OGLSurfaceData.PF_INT_ARGB),
+            new OGLSurfaceToSwBlit(SurfaceType.IntArgbPre,
+                                   OGLSurfaceData.PF_INT_ARGB_PRE),
 
             // sw->surface ops
             blitIntArgbPreToSurface,
@@ -505,16 +507,52 @@ class OGLRTTSurfaceToSurfaceTransform extends TransformBlit {
     }
 }
 
-class OGLSurfaceToSwBlit extends Blit {
+final class OGLSurfaceToSwBlit extends Blit {
 
-    private int typeval;
+    private final int typeval;
+    private WeakReference<SurfaceData> srcTmp;
 
-    // REMIND: destination will actually be opaque/premultiplied...
-    OGLSurfaceToSwBlit(SurfaceType dstType, int typeval) {
+    // destination will actually be ArgbPre or Argb
+    OGLSurfaceToSwBlit(final SurfaceType dstType,final int typeval) {
         super(OGLSurfaceData.OpenGLSurface,
               CompositeType.SrcNoEa,
               dstType);
         this.typeval = typeval;
+    }
+
+    private synchronized void complexClipBlit(SurfaceData src, SurfaceData dst,
+                                              Composite comp, Region clip,
+                                              int sx, int sy, int dx, int dy,
+                                              int w, int h) {
+        SurfaceData cachedSrc = null;
+        if (srcTmp != null) {
+            // use cached intermediate surface, if available
+            cachedSrc = srcTmp.get();
+        }
+
+        // We can convert argb_pre data from OpenGL surface in two places:
+        // - During OpenGL surface -> SW blit
+        // - During SW -> SW blit
+        // The first one is faster when we use opaque OGL surface, because in
+        // this case we simply skip conversion and use color components as is.
+        // Because of this we align intermediate buffer type with type of
+        // destination not source.
+        final int type = typeval == OGLSurfaceData.PF_INT_ARGB_PRE ?
+                         BufferedImage.TYPE_INT_ARGB_PRE :
+                         BufferedImage.TYPE_INT_ARGB;
+
+        src = convertFrom(this, src, sx, sy, w, h, cachedSrc, type);
+
+        // copy intermediate SW to destination SW using complex clip
+        final Blit performop = Blit.getFromCache(src.getSurfaceType(),
+                                                 CompositeType.SrcNoEa,
+                                                 dst.getSurfaceType());
+        performop.Blit(src, dst, comp, clip, 0, 0, dx, dy, w, h);
+
+        if (src != cachedSrc) {
+            // cache the intermediate surface
+            srcTmp = new WeakReference<>(src);
+        }
     }
 
     public void Blit(SurfaceData src, SurfaceData dst,
@@ -522,6 +560,26 @@ class OGLSurfaceToSwBlit extends Blit {
                      int sx, int sy, int dx, int dy,
                      int w, int h)
     {
+        if (clip != null) {
+            clip = clip.getIntersectionXYWH(dx, dy, w, h);
+            // At the end this method will flush the RenderQueue, we should exit
+            // from it as soon as possible.
+            if (clip.isEmpty()) {
+                return;
+            }
+            sx += clip.getLoX() - dx;
+            sy += clip.getLoY() - dy;
+            dx = clip.getLoX();
+            dy = clip.getLoY();
+            w = clip.getWidth();
+            h = clip.getHeight();
+
+            if (!clip.isRectangular()) {
+                complexClipBlit(src, dst, comp, clip, sx, sy, dx, dy, w, h);
+                return;
+            }
+        }
+
         OGLRenderQueue rq = OGLRenderQueue.getInstance();
         rq.lock();
         try {

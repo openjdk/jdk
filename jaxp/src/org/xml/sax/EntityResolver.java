@@ -85,7 +85,7 @@ import java.io.IOException;
  * identifiers to local URIs or to look up replacements in a catalog
  * (possibly by using the public identifier).</p>
  *
- * @since SAX 1.0
+ * @since 1.4, SAX 1.0
  * @author David Megginson
  * @see org.xml.sax.XMLReader#setEntityResolver
  * @see org.xml.sax.InputSource

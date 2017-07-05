@@ -63,9 +63,9 @@ public class RefsByTypeQuery extends QueryHandler {
                     }
                     Long count = referrersStat.get(cl);
                     if (count == null) {
-                        count = new Long(1);
+                        count = 1L;
                     } else {
-                        count = new Long(count.longValue() + 1);
+                        count = count + 1L;
                     }
                     referrersStat.put(cl, count);
                 }
@@ -75,9 +75,9 @@ public class RefsByTypeQuery extends QueryHandler {
                             JavaClass cl = obj.getClazz();
                             Long count = refereesStat.get(cl);
                             if (count == null) {
-                                count = new Long(1);
+                                count = 1L;
                             } else {
-                                count = new Long(count.longValue() + 1);
+                                count = count + 1L;
                             }
                             refereesStat.put(cl, count);
                         }

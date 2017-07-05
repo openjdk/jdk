@@ -26,15 +26,12 @@
  *
  * A test "application" used by unit tests -
  *   LocalManagementTest.java, CustomLauncherTest.java.
- * This application binds to some random port, prints its pid and
- * the port number to standard output, waits for somebody to connect,
- * and then shuts down.
+ * This application binds to some random port, prints the port number
+ * to standard output, waits for somebody to connect, and then shuts down.
  */
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-
-import jdk.testlibrary.ProcessTools;
 
 public class TestApplication {
     public static void main(String[] args) throws IOException {
@@ -47,16 +44,8 @@ public class TestApplication {
         ServerSocket ss = new ServerSocket(0);
         int port = ss.getLocalPort();
 
-        int pid = -1;
-        try {
-            pid = ProcessTools.getProcessId();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
         // signal test that we are started - do not remove these lines!!
         System.out.println("port:" + port);
-        System.out.println("pid:" + pid);
         System.out.println("waiting for the manager ...");
         System.out.flush();
 

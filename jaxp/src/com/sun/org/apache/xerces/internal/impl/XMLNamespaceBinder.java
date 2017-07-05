@@ -97,7 +97,6 @@ import com.sun.org.apache.xerces.internal.xni.parser.XMLDocumentSource;
  *
  * @author Andy Clark, IBM
  *
- * @version $Id: XMLNamespaceBinder.java,v 1.4 2010-11-01 04:39:41 joehw Exp $
  */
 public class XMLNamespaceBinder
     implements XMLComponent, XMLDocumentFilter {

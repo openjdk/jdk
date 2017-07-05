@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,7 @@ public interface BeanContextServiceProvider {
     *
     * @return a reference to the requested service
     */
-    Object getService(BeanContextServices bcs, Object requestor, Class serviceClass, Object serviceSelector);
+    Object getService(BeanContextServices bcs, Object requestor, Class<?> serviceClass, Object serviceSelector);
 
     /**
      * Invoked by <code>BeanContextServices</code>,
@@ -100,5 +100,5 @@ public interface BeanContextServiceProvider {
      * @param serviceClass  the specified service
      * @return   the current service selectors for the specified serviceClass
      */
-    Iterator getCurrentServiceSelectors(BeanContextServices bcs, Class serviceClass);
+    Iterator<?> getCurrentServiceSelectors(BeanContextServices bcs, Class<?> serviceClass);
 }

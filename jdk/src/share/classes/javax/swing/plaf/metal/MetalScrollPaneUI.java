@@ -56,6 +56,12 @@ public class MetalScrollPaneUI extends BasicScrollPaneUI
 
     private PropertyChangeListener scrollBarSwapListener;
 
+    /**
+     * Constructs a new {@code MetalScrollPaneUI}.
+     *
+     * @param x a component
+     * @return a new {@code MetalScrollPaneUI}
+     */
     public static ComponentUI createUI(JComponent x) {
         return new MetalScrollPaneUI();
     }
@@ -97,6 +103,7 @@ public class MetalScrollPaneUI extends BasicScrollPaneUI
     }
 
     /**
+     * @param scrollPane an instance of the {@code JScrollPane}
      * @deprecated - Replaced by {@link #uninstallListeners(JComponent)}
      */
     @Deprecated
@@ -136,6 +143,11 @@ public class MetalScrollPaneUI extends BasicScrollPaneUI
         }
     }
 
+    /**
+     * Returns a new {@code PropertyChangeListener} for scroll bar swap events.
+     *
+     * @return a new {@code PropertyChangeListener} for scroll bar swap events.
+     */
     protected PropertyChangeListener createScrollBarSwapListener() {
         return new PropertyChangeListener() {
             public void propertyChange(PropertyChangeEvent e) {

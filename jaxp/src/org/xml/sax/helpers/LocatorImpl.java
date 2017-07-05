@@ -69,7 +69,7 @@ import org.xml.sax.Locator;
  * is more efficient to provide location information only when
  * requested, rather than constantly updating a Locator object.</p>
  *
- * @since SAX 1.0
+ * @since 1.4, SAX 1.0
  * @author David Megginson
  * @see org.xml.sax.Locator Locator
  */

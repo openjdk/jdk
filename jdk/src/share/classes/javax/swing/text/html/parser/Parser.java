@@ -88,6 +88,9 @@ class Parser implements DTDConstants {
     private char str[] = new char[128];
     private int strpos = 0;
 
+    /**
+     * The dtd.
+     */
     protected DTD dtd = null;
 
     private int ch;
@@ -198,6 +201,11 @@ class Parser implements DTDConstants {
         376    // &#159;
     };
 
+    /**
+     * Creates parser with the specified {@code dtd}.
+     *
+     * @param dtd the dtd.
+     */
     public Parser(DTD dtd) {
         this.dtd = dtd;
     }
@@ -421,12 +429,32 @@ class Parser implements DTDConstants {
         handleError(ln, err + " " + arg1 + " " + arg2 + " " + arg3);
     }
 
+    /**
+     * Invokes the error handler with the 3rd error message argument "?".
+     *
+     * @param err   the error type
+     * @param arg1  the 1st error message argument
+     * @param arg2  the 2nd error message argument
+     */
     protected void error(String err, String arg1, String arg2) {
         error(err, arg1, arg2, "?");
     }
+
+    /**
+     * Invokes the error handler with the 2nd and 3rd error message argument "?".
+     *
+     * @param err   the error type
+     * @param arg1  the 1st error message argument
+     */
     protected void error(String err, String arg1) {
         error(err, arg1, "?", "?");
     }
+
+    /**
+     * Invokes the error handler with the 1st, 2nd and 3rd error message argument "?".
+     *
+     * @param err   the error type
+     */
     protected void error(String err) {
         error(err, "?", "?", "?");
     }
@@ -2407,6 +2435,11 @@ class Parser implements DTDConstants {
     }
 
 
+    /**
+     * Returns the current position.
+     *
+     * @return the current position
+     */
     protected int getCurrentPos() {
         return currentPosition;
     }

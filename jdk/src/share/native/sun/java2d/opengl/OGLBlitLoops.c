@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,10 @@
 #include "OGLRenderQueue.h"
 #include "OGLSurfaceData.h"
 #include "GraphicsPrimitiveMgr.h"
+
+#include <stdlib.h> // malloc
+#include <string.h> // memcpy
+#include "IntArgbPre.h"
 
 extern OGLPixelFormat PixelFormats[];
 
@@ -335,6 +339,9 @@ OGLBlitToSurfaceViaTexture(OGLContext *oglc, SurfaceDataRasInfo *srcInfo,
                                         0, 0, sw, sh,
                                         pf->format, pf->type,
                                         srcInfo->rasBase);
+
+                    j2d_glPixelStorei(GL_UNPACK_SKIP_PIXELS, 0);
+                    j2d_glPixelStorei(GL_UNPACK_SKIP_ROWS, 0);
                 }
 
                 // the texture image is "right side up", so we align the
@@ -697,6 +704,50 @@ OGLBlitLoops_Blit(JNIEnv *env,
 }
 
 /**
+ * This method makes vertical flip of the provided area of Surface and convert
+ * pixel's data from argbPre to argb format if requested.
+ */
+void flip(void *pDst, juint w, juint h, jint scanStride, jboolean convert) {
+    const size_t clippedStride = 4 * w;
+    void *tempRow = (h > 1 && !convert) ? malloc(clippedStride) : NULL;
+    juint i = 0;
+    juint step = 0;
+    // vertical flip and convert argbpre to argb if necessary
+    for (; i < h / 2; ++i) {
+        juint *r1 = PtrAddBytes(pDst, (i * scanStride));
+        juint *r2 = PtrAddBytes(pDst, (h - i - 1) * scanStride);
+        if (tempRow) {
+            // fast path
+            memcpy(tempRow, r1, clippedStride);
+            memcpy(r1, r2, clippedStride);
+            memcpy(r2, tempRow, clippedStride);
+        } else {
+            // slow path
+            for (step = 0; step < w; ++step) {
+                juint tmp = r1[step];
+                if (convert) {
+                    LoadIntArgbPreTo1IntArgb(r2, 0, step, r1[step]);
+                    LoadIntArgbPreTo1IntArgb(&tmp, 0, 0, r2[step]);
+                } else {
+                    r1[step] = r2[step];
+                    r2[step] = tmp;
+                }
+            }
+        }
+    }
+    // convert the middle line if necessary
+    if (convert && h % 2) {
+        juint *r1 = PtrAddBytes(pDst, (i * scanStride));
+        for (step = 0; step < w; ++step) {
+            LoadIntArgbPreTo1IntArgb(r1, 0, step, r1[step]);
+        }
+    }
+    if (tempRow) {
+        free(tempRow);
+    }
+}
+
+/**
  * Specialized blit method for copying a native OpenGL "Surface" (pbuffer,
  * window, etc.) to a system memory ("Sw") surface.
  */
@@ -758,7 +809,9 @@ OGLBlitLoops_SurfaceToSwBlit(JNIEnv *env, OGLContext *oglc,
             width = srcInfo.bounds.x2 - srcInfo.bounds.x1;
             height = srcInfo.bounds.y2 - srcInfo.bounds.y1;
 
-            j2d_glPixelStorei(GL_PACK_SKIP_PIXELS, dstx);
+            pDst = PtrAddBytes(pDst, dstx * dstInfo.pixelStride);
+            pDst = PtrAddBytes(pDst, dsty * dstInfo.scanStride);
+
             j2d_glPixelStorei(GL_PACK_ROW_LENGTH,
                               dstInfo.scanStride / dstInfo.pixelStride);
             j2d_glPixelStorei(GL_PACK_ALIGNMENT, pf.alignment);
@@ -779,27 +832,20 @@ OGLBlitLoops_SurfaceToSwBlit(JNIEnv *env, OGLContext *oglc,
 
             // this accounts for lower-left origin of the source region
             srcx = srcOps->xOffset + srcx;
-            srcy = srcOps->yOffset + srcOps->height - (srcy + 1);
+            srcy = srcOps->yOffset + srcOps->height - srcy - height;
 
-            // we must read one scanline at a time because there is no way
-            // to read starting at the top-left corner of the source region
-            while (height > 0) {
-                j2d_glPixelStorei(GL_PACK_SKIP_ROWS, dsty);
-                j2d_glReadPixels(srcx, srcy, width, 1,
-                                 pf.format, pf.type, pDst);
-                srcy--;
-                dsty++;
-                height--;
-            }
-
+            // Note that glReadPixels() is extremely slow!
+            // So we call it only once and flip the image using memcpy.
+            j2d_glReadPixels(srcx, srcy, width, height,
+                             pf.format, pf.type, pDst);
+            // It was checked above that width and height are positive.
+            flip(pDst, (juint) width, (juint) height, dstInfo.scanStride,
+                 !pf.isPremult && !srcOps->isOpaque);
 #ifdef MACOSX
             if (srcOps->isOpaque) {
                 j2d_glPixelTransferf(GL_ALPHA_BIAS, 0.0);
             }
 #endif
-
-            j2d_glPixelStorei(GL_PACK_SKIP_PIXELS, 0);
-            j2d_glPixelStorei(GL_PACK_SKIP_ROWS, 0);
             j2d_glPixelStorei(GL_PACK_ROW_LENGTH, 0);
             j2d_glPixelStorei(GL_PACK_ALIGNMENT, 4);
         }

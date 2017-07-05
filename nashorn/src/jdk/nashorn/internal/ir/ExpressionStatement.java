@@ -57,11 +57,6 @@ public final class ExpressionStatement extends Statement {
     }
 
     @Override
-    public boolean isTerminal() {
-        return expression.isTerminal();
-    }
-
-    @Override
     public Node accept(final NodeVisitor<? extends LexicalContext> visitor) {
         if (visitor.enterExpressionStatement(this)) {
             return visitor.leaveExpressionStatement(setExpression((Expression)expression.accept(visitor)));

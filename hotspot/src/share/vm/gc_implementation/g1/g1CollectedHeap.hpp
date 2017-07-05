@@ -1684,8 +1684,6 @@ public:
   void print_all_rsets() PRODUCT_RETURN;
 
 public:
-  void stop_conc_gc_threads();
-
   size_t pending_card_num();
   size_t cards_scanned();
 

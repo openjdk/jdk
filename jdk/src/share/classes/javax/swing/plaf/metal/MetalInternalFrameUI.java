@@ -47,6 +47,9 @@ public class MetalInternalFrameUI extends BasicInternalFrameUI {
 
   private static final Border handyEmptyBorder = new EmptyBorder(0,0,0,0);
 
+  /**
+   * The property {@code JInternalFrame.isPalette}.
+   */
   protected static String IS_PALETTE   = "JInternalFrame.isPalette";
   private static String IS_PALETTE_KEY = "JInternalFrame.isPalette";
   private static String FRAME_TYPE     = "JInternalFrame.frameType";
@@ -54,10 +57,22 @@ public class MetalInternalFrameUI extends BasicInternalFrameUI {
   private static String PALETTE_FRAME  = "palette";
   private static String OPTION_DIALOG  = "optionDialog";
 
+
+  /**
+   * Constructs a new {@code MetalInternalFrameUI} instance.
+   *
+   * @param b an internal frame
+   */
   public MetalInternalFrameUI(JInternalFrame b)   {
     super(b);
   }
 
+  /**
+   * Constructs a new {@code MetalInternalFrameUI} instance.
+   *
+   * @param c a component
+   * @return a new {@code MetalInternalFrameUI} instance
+   */
   public static ComponentUI createUI(JComponent c)    {
       return new MetalInternalFrameUI( (JInternalFrame) c);
   }
@@ -152,6 +167,11 @@ public class MetalInternalFrameUI extends BasicInternalFrameUI {
       }
   }
 
+  /**
+   * If {@code isPalette} is {@code true}, sets palette border and title
+   *
+   * @param isPalette if {@code true}, sets palette border and title
+   */
   // this should be deprecated - jcs
   public void setPalette(boolean isPalette) {
     if (isPalette) {

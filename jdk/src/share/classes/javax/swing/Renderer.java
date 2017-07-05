@@ -32,6 +32,7 @@ import java.awt.Component;
  * "rendering" (displaying) a value.
  *
  * @author Arnaud Weber
+ * @since 1.2
  */
 public interface Renderer {
     /**

@@ -60,7 +60,6 @@ import org.w3c.dom.TypeInfo;
  * @author Sandy Gao, IBM
  * @author Neeraj Bajaj, Sun Microsystems, inc.
  *
- * @version $Id: XSSimpleTypeDecl.java 3029 2011-04-24 17:50:18Z joehw $
  */
 public class XSSimpleTypeDecl implements XSSimpleType, TypeInfo {
 

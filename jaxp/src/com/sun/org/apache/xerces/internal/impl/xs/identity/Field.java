@@ -35,7 +35,6 @@ import com.sun.org.apache.xerces.internal.xs.XSTypeDefinition;
  * @xerces.internal
  *
  * @author Andy Clark, IBM
- * @version $Id: Field.java,v 1.6 2010-11-01 04:39:57 joehw Exp $
  */
 public class Field {
 

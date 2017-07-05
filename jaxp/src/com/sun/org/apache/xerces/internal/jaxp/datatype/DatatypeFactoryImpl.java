@@ -58,7 +58,6 @@ import javax.xml.datatype.XMLGregorianCalendar;
  *
  * @author <a href="mailto:Joseph.Fialli@Sun.COM">Joseph Fialli</a>
  * @author <a href="mailto:Jeff.Suttor@Sun.com">Jeff Suttor</a>
- * @version $Id: DatatypeFactoryImpl.java,v 1.6 2010/05/19 05:02:55 joehw Exp $
  */
 public class DatatypeFactoryImpl
         extends DatatypeFactory {

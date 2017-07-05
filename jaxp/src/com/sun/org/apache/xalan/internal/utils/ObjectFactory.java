@@ -32,7 +32,6 @@ package com.sun.org.apache.xalan.internal.utils;
  * class and modified to be used as a general utility for creating objects
  * dynamically.
  *
- * @version $Id: ObjectFactory.java,v 1.11 2010-11-01 04:34:25 joehw Exp $
  */
 public class ObjectFactory {
 

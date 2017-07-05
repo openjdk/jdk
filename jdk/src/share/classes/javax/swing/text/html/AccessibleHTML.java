@@ -2740,7 +2740,7 @@ class AccessibleHTML implements Accessible {
          * <code>child</code> isn't a valid child.
          */
         public int indexOf(ElementInfo child) {
-            ArrayList children = this.children;
+            ArrayList<ElementInfo> children = this.children;
 
             if (children != null) {
                 return children.indexOf(child);

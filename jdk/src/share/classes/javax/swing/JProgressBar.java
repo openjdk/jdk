@@ -128,6 +128,7 @@ import javax.swing.plaf.ProgressBarUI;
  *
  * @author Michael C. Albers
  * @author Kathy Walrath
+ * @since 1.2
  */
 @SuppressWarnings("serial") // Same-version serialization only
 public class JProgressBar extends JComponent implements SwingConstants, Accessible

@@ -50,6 +50,7 @@ import java.io.Serializable;
  * Please see {@link java.beans.XMLEncoder}.
  *
  * @author   Timothy Prinzing
+ * @since 1.2
  */
 @SuppressWarnings("serial") // Same-version serialization only
 public class OverlayLayout implements LayoutManager2,Serializable {

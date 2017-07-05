@@ -464,7 +464,8 @@ void AwtDialog::ModalActivateNextWindow(HWND dialogHWnd,
                                              &exc,
                                              "sun/awt/windows/WWindowPeer",
                                              "getActiveWindowHandles",
-                                             "()[J").l;
+                                             "(Ljava/awt/Component;)[J",
+                                             dialogTarget).l;
     if (exc == JNI_TRUE) {
         throw std::bad_alloc();
     }

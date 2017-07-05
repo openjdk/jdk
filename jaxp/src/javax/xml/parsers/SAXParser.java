@@ -75,6 +75,7 @@ import org.xml.sax.helpers.DefaultHandler;
  * this revised class.
  *
  * @author <a href="mailto:Jeff.Suttor@Sun.com">Jeff Suttor</a>
+ * @since 1.4
  */
 public abstract class SAXParser {
 

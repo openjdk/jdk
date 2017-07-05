@@ -58,7 +58,6 @@ import org.w3c.dom.Element;
  * @author Rahul Srivastava, Sun Microsystems Inc.
  * @author Neeraj Bajaj, Sun Microsystems Inc.
  *
- * @version $Id: XSDAbstractTraverser.java,v 1.8 2010-11-01 04:40:02 joehw Exp $
  */
 abstract class XSDAbstractTraverser {
 

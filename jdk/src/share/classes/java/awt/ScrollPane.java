@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -323,7 +323,9 @@ public class ScrollPane extends Container implements Accessible {
      * represents the state of the vertical scrollbar.
      * The declared return type of this method is
      * <code>Adjustable</code> to maintain backward compatibility.
+     *
      * @see java.awt.ScrollPaneAdjustable
+     * @return the vertical scrollbar state
      */
     public Adjustable getVAdjustable() {
         return vAdjustable;
@@ -334,7 +336,9 @@ public class ScrollPane extends Container implements Accessible {
      * represents the state of the horizontal scrollbar.
      * The declared return type of this method is
      * <code>Adjustable</code> to maintain backward compatibility.
+     *
      * @see java.awt.ScrollPaneAdjustable
+     * @return the horizontal scrollbar state
      */
     public Adjustable getHAdjustable() {
         return hAdjustable;
@@ -656,6 +660,9 @@ public class ScrollPane extends Container implements Accessible {
     /**
      * Indicates whether or not scrolling will take place in response to
      * the mouse wheel.  Wheel scrolling is enabled by default.
+     *
+     * @return {@code true} if the wheel scrolling enabled;
+     *         otherwise {@code false}
      *
      * @see #setWheelScrollingEnabled(boolean)
      * @since 1.4

@@ -30,7 +30,6 @@ import java.io.Serializable;
  *
  * @author Arnaud  Le Hors, IBM
  *
- * @version $Id: NodeListCache.java,v 1.6 2010/07/20 20:25:25 joehw Exp $
  */
 class NodeListCache implements Serializable {
 

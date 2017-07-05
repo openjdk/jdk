@@ -31,7 +31,6 @@ import java.util.NoSuchElementException;
  *
  * @author Andy Clark, IBM
  *
- * @version $Id: Constants.java,v 1.14 2010-11-01 04:39:40 joehw Exp $
  */
 public final class Constants {
 

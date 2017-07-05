@@ -55,7 +55,7 @@ import org.xml.sax.helpers.DefaultHandler;
  * <em>ContentHandler.startElement()</em> call might be passed a
  * {@link Attributes2} object.
  *
- * @since SAX 2.0 (extensions 1.1 alpha)
+ * @since 1.5, SAX 2.0 (extensions 1.1 alpha)
  * @author David Brownell
  */
 public class DefaultHandler2 extends DefaultHandler

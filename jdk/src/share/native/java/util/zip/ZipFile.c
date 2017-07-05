@@ -272,7 +272,9 @@ Java_java_util_zip_ZipFile_getEntryBytes(JNIEnv *env,
     case java_util_zip_ZipFile_JZENTRY_NAME:
         if (ze->name != 0) {
             len = (int)strlen(ze->name);
-            if (len == 0 || (jba = (*env)->NewByteArray(env, len)) == NULL)
+            // Unlike for extra and comment, we never return null for
+            // an (extremely rarely seen) empty name
+            if ((jba = (*env)->NewByteArray(env, len)) == NULL)
                 break;
             (*env)->SetByteArrayRegion(env, jba, 0, len, (jbyte *)ze->name);
         }

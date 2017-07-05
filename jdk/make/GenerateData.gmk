@@ -62,7 +62,7 @@ GENDATA += $(GENDATA_UNINAME)
 
 ##########################################################################################
 
-GENDATA_CURDATA := $(JDK_OUTPUTDIR)/lib/currency.data
+GENDATA_CURDATA := $(JDK_OUTPUTDIR)/classes/java/util/currency.data
 
 $(GENDATA_CURDATA): $(JDK_TOPDIR)/make/data/currency/CurrencyData.properties $(BUILD_TOOLS)
 	$(MKDIR) -p $(@D)

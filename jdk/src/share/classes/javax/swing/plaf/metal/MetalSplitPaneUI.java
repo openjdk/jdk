@@ -49,15 +49,20 @@ public class MetalSplitPaneUI extends BasicSplitPaneUI
 
 
     /**
-      * Creates a new MetalSplitPaneUI instance
-      */
+     * Creates a new {@code MetalSplitPaneUI} instance
+     *
+     * @param x a component
+     * @return a new {@code MetalSplitPaneUI} instance
+     */
     public static ComponentUI createUI(JComponent x) {
         return new MetalSplitPaneUI();
     }
 
     /**
-      * Creates the default divider.
-      */
+     * Creates the default divider.
+     *
+     * @return the default divider
+     */
     public BasicSplitPaneDivider createDefaultDivider() {
         return new MetalSplitPaneDivider(this);
     }
