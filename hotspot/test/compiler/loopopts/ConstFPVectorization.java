@@ -26,10 +26,11 @@
  * @test
  * @bug 8074869
  * @summary C2 code generator can replace -0.0f with +0.0f on Linux
- * @run main ConstFPVectorization 8
+ * @run main compiler.loopopts.ConstFPVectorization 8
  * @author volker.simonis@gmail.com
- *
  */
+
+package compiler.loopopts;
 
 public class ConstFPVectorization {
 

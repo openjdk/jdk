@@ -22,6 +22,7 @@
  */
 
 /* @test
+ * @key headful
  * @bug 6647340
  * @summary Checks that iconified internal frame follows
  *          the main frame borders properly.

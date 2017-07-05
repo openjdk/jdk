@@ -21,25 +21,35 @@
  * questions.
  */
 
-import jdk.test.lib.Asserts;
-import java.lang.management.MemoryPoolMXBean;
-import sun.hotspot.code.BlobType;
-
 /*
  * @test UsageThresholdNotExceededTest
- * @library /testlibrary /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
- * @build UsageThresholdNotExceededTest
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
- *     sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm -Xbootclasspath/a:. -XX:-UseCodeCacheFlushing
- *     -XX:-MethodFlushing -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *     -XX:+SegmentedCodeCache -XX:CompileCommand=compileonly,null::*
- *     UsageThresholdNotExceededTest
  * @summary verifying that usage threshold not exceeded while allocating less
  *     than usage threshold
+ * @library /testlibrary /test/lib /
+ * @modules java.base/jdk.internal.misc
+ *          java.management
+ *
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ *                                sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @build compiler.codecache.jmx.UsageThresholdNotExceededTest
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *     -XX:+WhiteBoxAPI -XX:-UseCodeCacheFlushing -XX:-MethodFlushing
+ *     -XX:CompileCommand=compileonly,null::*
+ *     -XX:+SegmentedCodeCache
+ *     compiler.codecache.jmx.UsageThresholdNotExceededTest
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *     -XX:+WhiteBoxAPI -XX:-UseCodeCacheFlushing -XX:-MethodFlushing
+ *     -XX:CompileCommand=compileonly,null::*
+ *     -XX:-SegmentedCodeCache
+ *     compiler.codecache.jmx.UsageThresholdNotExceededTest
  */
+
+package compiler.codecache.jmx;
+
+import sun.hotspot.code.BlobType;
+
+import java.lang.management.MemoryPoolMXBean;
+
 public class UsageThresholdNotExceededTest {
 
     private final BlobType btype;

@@ -44,6 +44,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/defaultStream.hpp"
+#include "utilities/macros.hpp"
 
 #if defined(_MSC_VER)
 #define strtoll _strtoi64
@@ -612,6 +613,17 @@ JRT_ENTRY(jint, JVMCIRuntime::test_deoptimize_call_int(JavaThread* thread, int v
   return value;
 JRT_END
 
+void JVMCIRuntime::force_initialization(TRAPS) {
+  JVMCIRuntime::initialize_well_known_classes(CHECK);
+
+  ResourceMark rm;
+  TempNewSymbol getCompiler = SymbolTable::new_symbol("getCompiler", CHECK);
+  TempNewSymbol sig = SymbolTable::new_symbol("()Ljdk/vm/ci/runtime/JVMCICompiler;", CHECK);
+  Handle jvmciRuntime = JVMCIRuntime::get_HotSpotJVMCIRuntime(CHECK);
+  JavaValue result(T_OBJECT);
+  JavaCalls::call_virtual(&result, jvmciRuntime, HotSpotJVMCIRuntime::klass(), getCompiler, sig, CHECK);
+}
+
 // private static JVMCIRuntime JVMCI.initializeRuntime()
 JVM_ENTRY(jobject, JVM_GetJVMCIRuntime(JNIEnv *env, jclass c))
   if (!EnableJVMCI) {
@@ -686,8 +698,21 @@ void JVMCIRuntime::initialize_JVMCI(TRAPS) {
   assert(_HotSpotJVMCIRuntime_initialized == true, "what?");
 }
 
+bool JVMCIRuntime::can_initialize_JVMCI() {
+  // Initializing JVMCI requires the module system to be initialized past phase 3.
+  // The JVMCI API itself isn't available until phase 2 and ServiceLoader (which
+  // JVMCI initialization requires) isn't usable until after phase 3. Testing
+  // whether the system loader is initialized satisfies all these invariants.
+  if (SystemDictionary::java_system_loader() == NULL) {
+    return false;
+  }
+  assert(Universe::is_module_initialized(), "must be");
+  return true;
+}
+
 void JVMCIRuntime::initialize_well_known_classes(TRAPS) {
   if (JVMCIRuntime::_well_known_classes_initialized == false) {
+    guarantee(can_initialize_JVMCI(), "VM is not yet sufficiently booted to initialize JVMCI");
     SystemDictionary::WKID scan = SystemDictionary::FIRST_JVMCI_WKID;
     SystemDictionary::initialize_wk_klasses_through(SystemDictionary::LAST_JVMCI_WKID, scan, CHECK);
     JVMCIJavaClasses::compute_offsets(CHECK);
@@ -770,14 +795,14 @@ JVM_ENTRY(void, JVM_RegisterJVMCINatives(JNIEnv *env, jclass c2vmClass))
   }
 
 #ifdef _LP64
-#ifndef TARGET_ARCH_sparc
+#ifndef SPARC
   uintptr_t heap_end = (uintptr_t) Universe::heap()->reserved_region().end();
   uintptr_t allocation_end = heap_end + ((uintptr_t)16) * 1024 * 1024 * 1024;
   guarantee(heap_end < allocation_end, "heap end too close to end of address space (might lead to erroneous TLAB allocations)");
-#endif // TARGET_ARCH_sparc
+#endif // !SPARC
 #else
   fatal("check TLAB allocation code for address space conflicts");
-#endif
+#endif // _LP64
 
   JVMCIRuntime::initialize_well_known_classes(CHECK);
 

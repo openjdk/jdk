@@ -23,6 +23,13 @@
 
 package jdk.vm.ci.hotspot.test;
 
+import jdk.vm.ci.hotspot.HotSpotConstantReflectionProvider;
+import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.MetaAccessProvider;
+import jdk.vm.ci.meta.MethodHandleAccessProvider;
+import jdk.vm.ci.runtime.JVMCI;
+import org.testng.annotations.DataProvider;
+
 import java.io.File;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -31,12 +38,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Paths;
-import jdk.vm.ci.hotspot.HotSpotConstantReflectionProvider;
-import jdk.vm.ci.meta.JavaConstant;
-import jdk.vm.ci.meta.MetaAccessProvider;
-import jdk.vm.ci.meta.MethodHandleAccessProvider;
-import jdk.vm.ci.runtime.JVMCI;
-import org.testng.annotations.DataProvider;
 
 public class MethodHandleAccessProviderData implements TestInterface {
     private static final MetaAccessProvider META_ACCESS = JVMCI.getRuntime().getHostJVMCIBackend().getMetaAccess();

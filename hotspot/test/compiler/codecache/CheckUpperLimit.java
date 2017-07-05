@@ -26,20 +26,25 @@
  * @bug 8015635
  * @summary Test ensures that the ReservedCodeCacheSize is at most MAXINT
  * @library /testlibrary
- *
  * @modules java.base/jdk.internal.misc
  *          java.management
+ *
+ * @run driver compiler.codecache.CheckUpperLimit
  */
-import jdk.test.lib.*;
+
+package compiler.codecache;
+
+import jdk.test.lib.OutputAnalyzer;
+import jdk.test.lib.ProcessTools;
 
 public class CheckUpperLimit {
-  public static void main(String[] args) throws Exception {
-    ProcessBuilder pb;
-    OutputAnalyzer out;
+    public static void main(String[] args) throws Exception {
+        ProcessBuilder pb;
+        OutputAnalyzer out;
 
-    pb = ProcessTools.createJavaProcessBuilder("-XX:ReservedCodeCacheSize=2049m", "-version");
-    out = new OutputAnalyzer(pb.start());
-    out.shouldContain("Invalid ReservedCodeCacheSize=");
-    out.shouldHaveExitValue(1);
-  }
+        pb = ProcessTools.createJavaProcessBuilder("-XX:ReservedCodeCacheSize=2049m", "-version");
+        out = new OutputAnalyzer(pb.start());
+        out.shouldContain("Invalid ReservedCodeCacheSize=");
+        out.shouldHaveExitValue(1);
+    }
 }

@@ -26,10 +26,9 @@ package compiler.compilercontrol.share.processors;
 import com.sun.management.HotSpotDiagnosticMXBean;
 import compiler.compilercontrol.share.method.MethodDescriptor;
 import compiler.compilercontrol.share.method.MethodGenerator;
+import compiler.compilercontrol.share.pool.PoolHelper;
 import compiler.compilercontrol.share.scenario.State;
 import jdk.test.lib.OutputAnalyzer;
-import jdk.test.lib.Pair;
-import pool.PoolHelper;
 
 import java.lang.management.ManagementFactory;
 import java.lang.reflect.Executable;

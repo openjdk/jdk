@@ -21,7 +21,9 @@
  * questions.
  */
 
-/* @test
+/*
+ * @test
+ * @key headful
  * @bug 7172750
  * @summary Test to check Synth ScrollBar:ScrollBarThumb[].backgroundPainter is invoked
  * @run main SynthScrollbarThumbPainterTest

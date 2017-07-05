@@ -27,6 +27,7 @@ import java.awt.image.BufferedImage;
 
 /*
  * @test
+ * @key headful
  * @summary Check if a per-pixel translucent window shows up with correct translucency
  * @author mrkam
  * @library ../../../../lib/testlibrary

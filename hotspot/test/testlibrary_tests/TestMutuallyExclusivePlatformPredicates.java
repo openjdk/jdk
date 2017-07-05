@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,8 @@ public class TestMutuallyExclusivePlatformPredicates {
         BITNESS("is32bit", "is64bit"),
         OS("isAix", "isLinux", "isOSX", "isSolaris", "isWindows"),
         VM_TYPE("isClient", "isServer", "isGraal", "isMinimal", "isZero"),
-        IGNORED("isEmbedded", "isDebugBuild", "shouldSAAttach",
+        MODE("isInt", "isMixed", "isComp"),
+        IGNORED("isDebugBuild", "shouldSAAttach",
                 "canPtraceAttachLinux", "canAttachOSX", "isTieredSupported");
 
         public final List<String> methodNames;

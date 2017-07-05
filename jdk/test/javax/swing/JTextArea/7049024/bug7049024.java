@@ -25,7 +25,9 @@
  * Portions Copyright (c) 2011 IBM Corporation
  */
 
-/* @test
+/*
+ * @test
+ * @key headful
  * @bug 7049024
  * @summary DnD fails with JTextArea and JTextField
  * @author Sean Chou

@@ -126,6 +126,11 @@ public class UnixPrintJob implements CancelablePrintJob {
             mDestination = ((IPPPrintService)service).getDest();
         }
         mDestType = UnixPrintJob.DESTPRINTER;
+        JobSheets js = (JobSheets)(service.
+                                      getDefaultAttributeValue(JobSheets.class));
+        if (js != null && js.equals(JobSheets.NONE)) {
+            mNoJobSheet = true;
+        }
     }
 
     public PrintService getPrintService() {
@@ -848,10 +853,10 @@ public class UnixPrintJob implements CancelablePrintJob {
 
     private String[] printExecCmd(String printer, String options,
                                  boolean noJobSheet,
-                                 String banner, int copies, String spoolFile) {
+                                 String jobTitle, int copies, String spoolFile) {
         int PRINTER = 0x1;
         int OPTIONS = 0x2;
-        int BANNER  = 0x4;
+        int JOBTITLE  = 0x4;
         int COPIES  = 0x8;
         int NOSHEET  = 0x10;
         int pFlags = 0;
@@ -868,8 +873,8 @@ public class UnixPrintJob implements CancelablePrintJob {
             pFlags |= OPTIONS;
             ncomps+=1;
         }
-        if (banner != null && !banner.equals("")) {
-            pFlags |= BANNER;
+        if (jobTitle != null && !jobTitle.equals("")) {
+            pFlags |= JOBTITLE;
             ncomps+=1;
         }
         if (copies > 1) {
@@ -878,6 +883,9 @@ public class UnixPrintJob implements CancelablePrintJob {
         }
         if (noJobSheet) {
             pFlags |= NOSHEET;
+            ncomps+=1;
+        } else if (getPrintService().
+                        isAttributeCategorySupported(JobSheets.class)) {
             ncomps+=1;
         }
         if (PrintServiceLookupProvider.osname.equals("SunOS")) {
@@ -888,15 +896,18 @@ public class UnixPrintJob implements CancelablePrintJob {
             if ((pFlags & PRINTER) != 0) {
                 execCmd[n++] = "-d" + printer;
             }
-            if ((pFlags & BANNER) != 0) {
+            if ((pFlags & JOBTITLE) != 0) {
                 String quoteChar = "\"";
-                execCmd[n++] = "-t "  + quoteChar+banner+quoteChar;
+                execCmd[n++] = "-t "  + quoteChar+jobTitle+quoteChar;
             }
             if ((pFlags & COPIES) != 0) {
                 execCmd[n++] = "-n " + copies;
             }
             if ((pFlags & NOSHEET) != 0) {
                 execCmd[n++] = "-o nobanner";
+            } else if (getPrintService().
+                        isAttributeCategorySupported(JobSheets.class)) {
+                execCmd[n++] = "-o job-sheets=standard";
             }
             if ((pFlags & OPTIONS) != 0) {
                 execCmd[n++] = "-o " + options;
@@ -907,14 +918,17 @@ public class UnixPrintJob implements CancelablePrintJob {
             if ((pFlags & PRINTER) != 0) {
                 execCmd[n++] = "-P" + printer;
             }
-            if ((pFlags & BANNER) != 0) {
-                execCmd[n++] = "-J "  + banner;
+            if ((pFlags & JOBTITLE) != 0) {
+                execCmd[n++] = "-J "  + jobTitle;
             }
             if ((pFlags & COPIES) != 0) {
                 execCmd[n++] = "-#" + copies;
             }
             if ((pFlags & NOSHEET) != 0) {
                 execCmd[n++] = "-h";
+            } else if (getPrintService().
+                        isAttributeCategorySupported(JobSheets.class)) {
+                execCmd[n++] = "-o job-sheets=standard";
             }
             if ((pFlags & OPTIONS) != 0) {
                 execCmd[n++] = "-o" + options;

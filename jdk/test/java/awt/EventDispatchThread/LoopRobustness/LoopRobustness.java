@@ -24,7 +24,8 @@
 /**
  *
  * @bug 4023283
- * @summary Checks that an Error which propogate up to the EventDispatch
+ * @key headful
+ * @summary Checks that an Error which propogates up to the EventDispatch
  * loop does not crash AWT.
  * @author Andrei Dmitriev: area=awt.event
  * @library ../../regtesthelpers

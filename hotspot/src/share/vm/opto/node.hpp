@@ -217,9 +217,6 @@ public:
   inline void* operator new(size_t x) throw() {
     Compile* C = Compile::current();
     Node* n = (Node*)C->node_arena()->Amalloc_D(x);
-#ifdef ASSERT
-    n->_in = (Node**)n; // magic cookie for assertion check
-#endif
     return (void*)n;
   }
 

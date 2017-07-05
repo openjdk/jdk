@@ -23,6 +23,7 @@
 
 /*
   @test
+  @key headful
   @bug       8139218
   @summary   Dialog that opens and closes quickly changes focus in original
              focusowner

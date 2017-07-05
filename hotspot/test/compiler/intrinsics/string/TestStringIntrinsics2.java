@@ -28,8 +28,9 @@
  * @summary PPC64: fix string intrinsics after CompactStrings change
  * @modules java.base/jdk.internal.misc
  * @library /testlibrary /test/lib
+ *
  * @build sun.hotspot.WhiteBox
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  *
  * @run main/othervm
@@ -39,20 +40,23 @@
  *        -XX:+WhiteBoxAPI
  *        -XX:MaxInlineSize=70
  *        -XX:MinInliningThreshold=0
- *        TestStringIntrinsics2
+ *        compiler.intrinsics.string.TestStringIntrinsics2
  */
 
+package compiler.intrinsics.string;
+
+import sun.hotspot.WhiteBox;
+
 import java.lang.annotation.ElementType;
-import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
-import static jdk.test.lib.Asserts.*;
-import sun.hotspot.WhiteBox;
+import static jdk.test.lib.Asserts.assertEquals;
+import static jdk.test.lib.Asserts.assertFalse;
+import static jdk.test.lib.Asserts.assertTrue;
 
 public class TestStringIntrinsics2 {
     // ------------------------------------------------------------------------

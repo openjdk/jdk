@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug       6385277
  * @summary   Tests that override redirect window gets activated on click.
  * @author    anton.tarasov@sun.com: area=awt.focus

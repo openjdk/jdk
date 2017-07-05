@@ -25,9 +25,15 @@
  * @test
  * @bug 8029383
  * @summary stack overflow if callee is marked for deoptimization causes crash
- * @run main/othervm -XX:TieredStopAtLevel=1 -XX:-BackgroundCompilation -XX:CompileCommand=dontinline,StackOverflowGuardPagesOff::m1 -XX:CompileCommand=exclude,StackOverflowGuardPagesOff::m2 -Xss512K -XX:-UseOnStackReplacement StackOverflowGuardPagesOff
  *
+ * @run main/othervm -XX:TieredStopAtLevel=1 -XX:-BackgroundCompilation
+ *      -XX:CompileCommand=dontinline,compiler.uncommontrap.StackOverflowGuardPagesOff::m1
+ *      -XX:CompileCommand=exclude,compiler.uncommontrap.StackOverflowGuardPagesOff::m2
+ *      -Xss512K -XX:-UseOnStackReplacement
+ *      compiler.uncommontrap.StackOverflowGuardPagesOff
  */
+
+package compiler.uncommontrap;
 
 // This test calls m2 recursively until a stack overflow. Then calls
 // m3 that calls m1. m1 triggers B's class loading, as a result m1 and

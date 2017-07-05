@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2015 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 #include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "code/vtableStubs.hpp"
-#include "interp_masm_ppc_64.hpp"
+#include "interp_masm_ppc.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klassVtable.hpp"
@@ -243,7 +243,7 @@ VtableStub* VtableStubs::create_itable_stub(int vtable_index) {
 }
 
 int VtableStub::pd_code_size_limit(bool is_vtable_stub) {
-  if (TraceJumps || DebugVtables || CountCompiledCalls || VerifyOops) {
+  if (DebugVtables || CountCompiledCalls || VerifyOops) {
     return 1000;
   } else {
     int decode_klass_size = MacroAssembler::instr_size_for_decode_klass_not_null();

@@ -25,13 +25,14 @@
  * @test
  * @bug 8026844
  * @summary Test non constant subtractExact
- * @library /testlibrary
+ * @library /testlibrary /
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @compile SubExactILoadTest.java Verify.java
- * @run main SubExactILoadTest
  *
+ * @run main compiler.intrinsics.mathexact.SubExactILoadTest
  */
+
+package compiler.intrinsics.mathexact;
 
 public class SubExactILoadTest {
   public static void main(String[] args) {

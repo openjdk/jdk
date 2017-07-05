@@ -21,7 +21,9 @@
  * questions.
  */
 
-/* @test
+/*
+   @test
+  @key headful
    @bug 7107099
    @summary JScrollBar does not show up even if there are enough lebgth of textstring in textField
    @author Pavel Porvatov

@@ -23,6 +23,7 @@
 
 /*
   @test
+  @key headful
   @bug 4682039
   @summary Tests that DataTransferer.getFormatsForFlavors() does not throw
            NullPointerException if some of given as parameter data flavors

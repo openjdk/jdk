@@ -21,12 +21,14 @@
  * questions.
  */
 
-/* @test
-   @bug 6989617
-   @summary Enable JComponent to control repaintings of its children
-   @author Alexander Potochkin
-   @run main bug6989617
-*/
+/*
+ * @test
+ * @key headful
+ * @bug 6989617
+ * @summary Enable JComponent to control repaintings of its children
+ * @author Alexander Potochkin
+ * @run main bug6989617
+ */
 
 import javax.swing.*;
 import java.awt.*;

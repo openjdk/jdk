@@ -70,6 +70,7 @@ import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.ConstantPool;
 import jdk.internal.reflect.Reflection;
 import jdk.internal.reflect.ReflectionFactory;
+import jdk.internal.vm.annotation.ForceInline;
 import sun.reflect.generics.factory.CoreReflectionFactory;
 import sun.reflect.generics.factory.GenericsFactory;
 import sun.reflect.generics.repository.ClassRepository;
@@ -802,6 +803,7 @@ public final class Class<T> implements java.io.Serializable,
      * @see java.lang.RuntimePermission
      */
     @CallerSensitive
+    @ForceInline // to ensure Reflection.getCallerClass optimization
     public ClassLoader getClassLoader() {
         ClassLoader cl = getClassLoader0();
         if (cl == null)

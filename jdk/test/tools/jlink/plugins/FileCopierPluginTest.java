@@ -32,8 +32,10 @@
  */
 
 import java.io.File;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -41,6 +43,7 @@ import jdk.tools.jlink.internal.ResourcePoolManager;
 import jdk.tools.jlink.builder.DefaultImageBuilder;
 
 import jdk.tools.jlink.internal.plugins.FileCopierPlugin;
+import jdk.tools.jlink.plugin.PluginException;
 import jdk.tools.jlink.plugin.ResourcePoolEntry;
 import jdk.tools.jlink.plugin.ResourcePool;
 
@@ -86,6 +89,12 @@ public class FileCopierPluginTest {
         conf.put(FileCopierPlugin.NAME, builder.toString());
         plug.configure(conf);
         ResourcePoolManager poolMgr = new ResourcePoolManager();
+        // java.base/module-info.class is used to add "release" file
+        // We read it from jrt-fs and add a ResourcePoolEntry
+        poolMgr.add(
+            ResourcePoolEntry.create("/java.base/module-info.class",
+                ResourcePoolEntry.Type.CLASS_OR_RESOURCE, getJavaBaseModuleInfo()));
+        expected++;
         ResourcePool pool = plug.transform(
                 new ResourcePoolManager().resourcePool(),
                 poolMgr.resourcePoolBuilder());
@@ -93,7 +102,8 @@ public class FileCopierPluginTest {
             throw new AssertionError("Wrong number of added files");
         }
         pool.entries().forEach(f -> {
-            if (!f.type().equals(ResourcePoolEntry.Type.OTHER)) {
+            if (!f.type().equals(ResourcePoolEntry.Type.OTHER) &&
+                !f.type().equals(ResourcePoolEntry.Type.CLASS_OR_RESOURCE)) {
                 throw new AssertionError("Invalid type " + f.type()
                         + " for file " + f.path());
             }
@@ -144,5 +154,10 @@ public class FileCopierPluginTest {
         if (!new String(Files.readAllBytes(f.toPath())).equals(content)) {
             throw new AssertionError("Invalid Content in src2 dir");
         }
+    }
+
+    // read java.base/module-info.class from jrt-fs
+    private static Path getJavaBaseModuleInfo() {
+        return Paths.get(URI.create("jrt:/modules/java.base/module-info.class"));
     }
 }

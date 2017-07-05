@@ -22,10 +22,6 @@
  */
 package jdk.vm.ci.code.test;
 
-import java.lang.reflect.Method;
-
-import org.junit.Assert;
-
 import jdk.vm.ci.amd64.AMD64;
 import jdk.vm.ci.code.Architecture;
 import jdk.vm.ci.code.CodeCacheProvider;
@@ -41,6 +37,9 @@ import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.runtime.JVMCI;
 import jdk.vm.ci.runtime.JVMCIBackend;
 import jdk.vm.ci.sparc.SPARC;
+import org.junit.Assert;
+
+import java.lang.reflect.Method;
 
 /**
  * Base class for code installation tests.

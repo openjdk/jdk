@@ -936,7 +936,7 @@ public:
 };
 
 //------------------------------TypeOopPtr-------------------------------------
-// Some kind of oop (Java pointer), either klass or instance or array.
+// Some kind of oop (Java pointer), either instance or array.
 class TypeOopPtr : public TypePtr {
 protected:
   TypeOopPtr(TYPES t, PTR ptr, ciKlass* k, bool xk, ciObject* o, int offset, int instance_id,

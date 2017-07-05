@@ -20,8 +20,10 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package compiler.whitebox;
 
+import jdk.test.lib.Platform;
 import sun.hotspot.WhiteBox;
 import sun.hotspot.code.NMethod;
 
@@ -32,6 +34,7 @@ import java.util.function.Function;
 
 /**
  * Abstract class for WhiteBox testing of JIT.
+ * Depends on jdk.test.lib.Platform from testlibrary.
  *
  * @author igor.ignatyev@oracle.com
  */
@@ -74,8 +77,6 @@ public abstract class CompilerWhiteBoxTest {
     public static final int THRESHOLD;
     /** invocation count to trigger OSR compilation */
     protected static final long BACKEDGE_THRESHOLD;
-    /** Value of {@code java.vm.info} (interpreted|mixed|comp mode) */
-    protected static final String MODE = System.getProperty("java.vm.info");
 
     static {
         if (TIERED_COMPILATION) {
@@ -164,10 +165,8 @@ public abstract class CompilerWhiteBoxTest {
      * @see #test()
      */
     protected final void runTest() {
-        if (CompilerWhiteBoxTest.MODE.startsWith("interpreted ")) {
-            System.err.println(
-                    "Warning: test is not applicable in interpreted mode");
-            return;
+        if (Platform.isInt()) {
+            throw new Error("TESTBUG: test can not be run in interpreter");
         }
         System.out.println("at test's start:");
         printInfo();
@@ -430,11 +429,10 @@ public abstract class CompilerWhiteBoxTest {
      *          Xcomp, otherwise {@code false}
      */
     protected boolean skipXcompOSR() {
-        boolean result =  testCase.isOsr()
-                && CompilerWhiteBoxTest.MODE.startsWith("compiled ");
+        boolean result = testCase.isOsr() && Platform.isComp();
         if (result && IS_VERBOSE) {
             System.err.printf("Warning: %s is not applicable in %s%n",
-                    testCase.name(), CompilerWhiteBoxTest.MODE);
+                    testCase.name(), Platform.vmInfo);
         }
         return result;
     }

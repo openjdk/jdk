@@ -29,6 +29,7 @@ import javax.swing.JTextArea;
 
 /**
  * @test
+ * @key headful
  * @bug 8072775
  * @run main/othervm -Xmx80m TextViewOOM
  */

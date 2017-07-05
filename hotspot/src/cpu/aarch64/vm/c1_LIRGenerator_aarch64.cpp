@@ -808,7 +808,6 @@ void LIRGenerator::do_CompareAndSwap(Intrinsic* x, ValueType* type) {
   } else {
     a = new LIR_Address(obj.result(),
                         offset.result(),
-                        LIR_Address::times_1,
                         0,
                         as_BasicType(type));
   }
@@ -1002,7 +1001,6 @@ void LIRGenerator::do_update_CRC32(Intrinsic* x) {
 
       LIR_Address* a = new LIR_Address(base_op,
                                        index,
-                                       LIR_Address::times_1,
                                        offset,
                                        T_BYTE);
       BasicTypeList signature(3);

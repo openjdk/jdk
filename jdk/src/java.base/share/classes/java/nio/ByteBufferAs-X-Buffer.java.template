@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@
 
 package java.nio;
 
+import jdk.internal.misc.Unsafe;
+
 
 class ByteBufferAs$Type$Buffer$RW$$BO$                  // package-private
     extends {#if[ro]?ByteBufferAs}$Type$Buffer{#if[ro]?$BO$}
@@ -34,8 +36,10 @@ class ByteBufferAs$Type$Buffer$RW$$BO$                  // package-private
 
 #if[rw]
 
+    // Cached unsafe-access object
+    private static final Unsafe unsafe = Bits.unsafe();
+
     protected final ByteBuffer bb;
-    protected final int offset;
 
 #end[rw]
 
@@ -50,7 +54,7 @@ class ByteBufferAs$Type$Buffer$RW$$BO$                  // package-private
         this.limit(cap);
         int pos = this.position();
         assert (pos <= cap);
-        offset = pos;
+        address = bb.address;
 #else[rw]
         super(bb);
 #end[rw]
@@ -58,14 +62,15 @@ class ByteBufferAs$Type$Buffer$RW$$BO$                  // package-private
 
     ByteBufferAs$Type$Buffer$RW$$BO$(ByteBuffer bb,
                                      int mark, int pos, int lim, int cap,
-                                     int off)
+                                     long addr)
     {
 #if[rw]
         super(mark, pos, lim, cap);
         this.bb = bb;
-        offset = off;
+        address = addr;
+        assert address >= bb.address;
 #else[rw]
-        super(bb, mark, pos, lim, cap, off);
+        super(bb, mark, pos, lim, cap, addr);
 #end[rw]
     }
 
@@ -74,9 +79,8 @@ class ByteBufferAs$Type$Buffer$RW$$BO$                  // package-private
         int lim = this.limit();
         assert (pos <= lim);
         int rem = (pos <= lim ? lim - pos : 0);
-        int off = (pos << $LG_BYTES_PER_VALUE$) + offset;
-        assert (off >= 0);
-        return new ByteBufferAs$Type$Buffer$RW$$BO$(bb, -1, 0, rem, rem, off);
+        long addr = byteOffset(pos);
+        return new ByteBufferAs$Type$Buffer$RW$$BO$(bb, -1, 0, rem, rem, addr);
     }
 
     public $Type$Buffer duplicate() {
@@ -85,7 +89,7 @@ class ByteBufferAs$Type$Buffer$RW$$BO$                  // package-private
                                                     this.position(),
                                                     this.limit(),
                                                     this.capacity(),
-                                                    offset);
+                                                    address);
     }
 
     public $Type$Buffer asReadOnlyBuffer() {
@@ -95,7 +99,7 @@ class ByteBufferAs$Type$Buffer$RW$$BO$                  // package-private
                                                  this.position(),
                                                  this.limit(),
                                                  this.capacity(),
-                                                 offset);
+                                                 address);
 #else[rw]
         return duplicate();
 #end[rw]
@@ -103,21 +107,32 @@ class ByteBufferAs$Type$Buffer$RW$$BO$                  // package-private
 
 #if[rw]
 
-    protected int ix(int i) {
-        return (i << $LG_BYTES_PER_VALUE$) + offset;
+    private int ix(int i) {
+        int off = (int) (address - bb.address);
+        return (i << $LG_BYTES_PER_VALUE$) + off;
+    }
+
+    protected long byteOffset(long i) {
+        return (i << $LG_BYTES_PER_VALUE$) + address;
     }
 
     public $type$ get() {
-        return Bits.get$Type$$BO$(bb, ix(nextGetIndex()));
+        $memtype$ x = unsafe.get$Memtype$Unaligned(bb.hb, byteOffset(nextGetIndex()),
+            {#if[boB]?true:false});
+        return $fromBits$(x);
     }
 
     public $type$ get(int i) {
-        return Bits.get$Type$$BO$(bb, ix(checkIndex(i)));
+        $memtype$ x = unsafe.get$Memtype$Unaligned(bb.hb, byteOffset(checkIndex(i)),
+            {#if[boB]?true:false});
+        return $fromBits$(x);
     }
 
 #if[streamableType]
    $type$ getUnchecked(int i) {
-        return Bits.get$Type$$BO$(bb, ix(i));
+        $memtype$ x = unsafe.get$Memtype$Unaligned(bb.hb, byteOffset(i),
+            {#if[boB]?true:false});
+        return $fromBits$(x);
     }
 #end[streamableType]
 
@@ -125,7 +140,9 @@ class ByteBufferAs$Type$Buffer$RW$$BO$                  // package-private
 
     public $Type$Buffer put($type$ x) {
 #if[rw]
-        Bits.put$Type$$BO$(bb, ix(nextPutIndex()), x);
+        $memtype$ y = $toBits$(x);
+        unsafe.put$Memtype$Unaligned(bb.hb, byteOffset(nextPutIndex()), y,
+            {#if[boB]?true:false});
         return this;
 #else[rw]
         throw new ReadOnlyBufferException();
@@ -134,7 +151,9 @@ class ByteBufferAs$Type$Buffer$RW$$BO$                  // package-private
 
     public $Type$Buffer put(int i, $type$ x) {
 #if[rw]
-        Bits.put$Type$$BO$(bb, ix(checkIndex(i)), x);
+        $memtype$ y = $toBits$(x);
+        unsafe.put$Memtype$Unaligned(bb.hb, byteOffset(checkIndex(i)), y,
+            {#if[boB]?true:false});
         return this;
 #else[rw]
         throw new ReadOnlyBufferException();
@@ -207,7 +226,7 @@ class ByteBufferAs$Type$Buffer$RW$$BO$                  // package-private
                                                   pos + start,
                                                   pos + end,
                                                   capacity(),
-                                                  offset);
+                                                  address);
     }
 
 #end[char]

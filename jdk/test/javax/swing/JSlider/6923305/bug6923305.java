@@ -21,7 +21,9 @@
  * questions.
  */
 
-/* @test
+/*
+ * @test
+ * @key headful
  * @bug 6923305
  * @summary SynthSliderUI paints the slider track when the slider's "paintTrack" property is set to false
  * @author Pavel Porvatov

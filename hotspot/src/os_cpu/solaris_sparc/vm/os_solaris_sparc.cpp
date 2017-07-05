@@ -34,7 +34,6 @@
 #include "interpreter/interpreter.hpp"
 #include "jvm_solaris.h"
 #include "memory/allocation.inline.hpp"
-#include "mutex_solaris.inline.hpp"
 #include "nativeInst_sparc.hpp"
 #include "os_share_solaris.hpp"
 #include "prims/jniFastGetField.hpp"
@@ -74,7 +73,6 @@
 # include <sys/systeminfo.h>
 # include <sys/socket.h>
 # include <sys/lwp.h>
-# include <pwd.h>
 # include <poll.h>
 # include <sys/lwp.h>
 
@@ -544,10 +542,6 @@ JVM_handle_solaris_signal(int sig, siginfo_t* info, void* ucVoid,
     // simulate a branch to the stub (a "call" in the safepoint stub case)
     // factor me: setPC
     os::Solaris::ucontext_set_pc(uc, stub);
-
-#ifndef PRODUCT
-    if (TraceJumps) thread->record_jump(stub, NULL, __FILE__, __LINE__);
-#endif /* PRODUCT */
 
     return true;
   }

@@ -22,6 +22,7 @@
  */
 /*
   @test
+  @key headful
   @bug       6240202
   @summary   Tests that non-focusable List in a Window generates ActionEvent.
   @author    anton.tarasov@sun.com: area=awt-list

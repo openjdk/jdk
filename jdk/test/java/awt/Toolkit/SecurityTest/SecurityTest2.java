@@ -22,13 +22,14 @@
  */
 
 /*
-  @test
-  @bug 6599601
-  @summary tests that a simple GUI application runs without any
-exceptions thrown
-  @author Artem.Ananiev area=awt.Toolkit
-  @run main SecurityTest2
-*/
+ * @test
+ * @key headful
+ * @bug 6599601
+ * @summary tests that a simple GUI application runs without any
+ *          exceptions thrown
+ * @author Artem.Ananiev area=awt.Toolkit
+ * @run main SecurityTest2
+ */
 
 import java.awt.*;
 

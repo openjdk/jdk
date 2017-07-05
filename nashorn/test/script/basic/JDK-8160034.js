@@ -22,7 +22,7 @@
  */
 
 /**
- * JDK-8160034.js: The `this` value in the `with` is broken by the repetition of a function call
+ * JDK-8160034: The `this` value in the `with` is broken by the repetition of a function call
  *
  * @test
  * @option --unstable-relink-threshold=4

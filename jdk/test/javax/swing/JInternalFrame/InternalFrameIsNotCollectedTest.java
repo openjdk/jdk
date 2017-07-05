@@ -21,11 +21,13 @@
  * questions.
  */
 
- /* @test
-    @bug 8012004
-    @summary JINTERNALFRAME NOT BEING FINALIZED AFTER CLOSING
-    @author mcherkas
-    @run main InternalFrameIsNotCollectedTest
+/*
+ * @test
+ * @key headful
+ * @bug 8012004
+ * @summary JINTERNALFRAME NOT BEING FINALIZED AFTER CLOSING
+ * @author mcherkas
+ * @run main InternalFrameIsNotCollectedTest
  */
 import javax.swing.*;
 import java.awt.*;

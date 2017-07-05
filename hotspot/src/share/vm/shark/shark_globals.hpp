@@ -27,7 +27,8 @@
 #define SHARE_VM_SHARK_SHARK_GLOBALS_HPP
 
 #include "runtime/globals.hpp"
-#ifdef TARGET_ARCH_zero
+#include "utilities/macros.hpp"
+#ifdef ZERO
 # include "shark_globals_zero.hpp"
 #endif
 

@@ -21,12 +21,14 @@
  * questions.
  */
 
- /*
- @test
- @bug 8057574
- @summary Verify that child Dialog does not inherit parent's Properties
- @run main ChildDialogProperties
+/*
+ * @test
+ * @key headful
+ * @bug 8057574
+ * @summary Verify that child Dialog does not inherit parent's Properties
+ * @run main ChildDialogProperties
  */
+
 import java.awt.Color;
 import java.awt.Dialog;
 import java.awt.Font;

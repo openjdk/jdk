@@ -23,6 +23,7 @@
 
 /*
  @test
+ @key headful
  @bug 8056151 8131751
  @summary Switching to GTK L&F on-the-fly leads to X Window System error RenderBadPicture
  @run main/othervm -Dswing.defaultlaf=javax.swing.plaf.metal.MetalLookAndFeel -Dsun.java2d.xrender=T RenderBadPictureCrash

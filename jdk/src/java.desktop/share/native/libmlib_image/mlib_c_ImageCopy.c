@@ -182,7 +182,7 @@ mlib_status mlib_ImageCopy(mlib_image       *dst,
 #define STRIP(pd, ps, w, h, data_type) {                        \
   data_type s0, s1;                                             \
   for ( i = 0; i < h; i++ ) {                                   \
-    if (j = w & 1)                                              \
+    if ((j = (w & 1)))                                          \
       pd[i * dst_stride] = ps[i * src_stride];                  \
     for (; j < w; j += 2) {                                     \
       s0 = ps[i * src_stride + j];                              \
@@ -546,7 +546,8 @@ void mlib_c_ImageCopy_s32(const mlib_image       *src,
     mlib_u32 *psrc_row = psrc + i * src_stride, *pdst_row = pdst + i * dst_stride;
 
     if (!(((mlib_addr) psrc_row ^ (mlib_addr) pdst_row) & 7)) {
-      if (j = ((mlib_s32) ((mlib_addr) psrc_row & 4) >> 2)) {
+      j = (mlib_s32) ((mlib_addr) psrc_row & 4) >> 2;
+      if (j != 0) {
         pdst_row[0] = psrc_row[0];
       }
 
@@ -575,8 +576,10 @@ void mlib_c_ImageCopy_s32(const mlib_image       *src,
       {
         mlib_u64 *ps, src0, src1;
 
-        if (j = ((mlib_s32) ((mlib_addr) pdst_row & 4) >> 2))
+        j = (mlib_s32) ((mlib_addr) pdst_row & 4) >> 2;
+        if (j != 0) {
           pdst_row[0] = psrc_row[0];
+        }
         ps = (mlib_u64 *) (psrc_row + j - 1);
         src1 = ps[0];
 #ifdef __SUNPRO_C

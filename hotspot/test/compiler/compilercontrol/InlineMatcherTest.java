@@ -24,18 +24,23 @@
 /*
  * @test InlineMatcherTest
  * @bug 8074095
+ * @summary Testing of compiler/InlineMatcher
  * @modules java.base/jdk.internal.misc
  * @library /testlibrary /test/lib
- * @build sun.hotspot.WhiteBox
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
- *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI InlineMatcherTest
- * @summary Testing of compiler/InlineMatcher
+ *
+ * @build compiler.compilercontrol.InlineMatcherTest
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ *                                sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *      compiler.compilercontrol.InlineMatcherTest
  */
+
+package compiler.compilercontrol;
+
+import sun.hotspot.WhiteBox;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import sun.hotspot.WhiteBox;
 
 public class InlineMatcherTest {
 
@@ -70,17 +75,18 @@ public class InlineMatcherTest {
         testCases.add(helper, "--*.*", NO_MATCH); // - is a valid part of the
                                                   // class name
 
-        testCases.add(helper, "+InlineMatcherTest.*", FORCE_INLINE);
-        testCases.add(helper, "+InlineMatcherTest.helper", FORCE_INLINE);
-        testCases.add(helper, "+InlineMatcherTest.helper()", FORCE_INLINE);
-        testCases.add(helper, "+InlineMatcherTest.helper()V", FORCE_INLINE);
-        testCases.add(helper, "+InlineMatcherTest.helper(", FORCE_INLINE);
+        String className = this.getClass().getName().replace('.', '/');
+        testCases.add(helper, "+" + className + ".*", FORCE_INLINE);
+        testCases.add(helper, "+" + className + ".helper", FORCE_INLINE);
+        testCases.add(helper, "+" + className + ".helper()", FORCE_INLINE);
+        testCases.add(helper, "+" + className + ".helper()V", FORCE_INLINE);
+        testCases.add(helper, "+" + className + ".helper(", FORCE_INLINE);
 
-        testCases.add(helper, "-InlineMatcherTest.*", DONT_INLINE);
-        testCases.add(helper, "-InlineMatcherTest.helper", DONT_INLINE);
-        testCases.add(helper, "-InlineMatcherTest.helper()", DONT_INLINE);
-        testCases.add(helper, "-InlineMatcherTest.helper()V", DONT_INLINE);
-        testCases.add(helper, "-InlineMatcherTest.helper(", DONT_INLINE);
+        testCases.add(helper, "-" + className + ".*", DONT_INLINE);
+        testCases.add(helper, "-" + className + ".helper", DONT_INLINE);
+        testCases.add(helper, "-" + className + ".helper()", DONT_INLINE);
+        testCases.add(helper, "-" + className + ".helper()V", DONT_INLINE);
+        testCases.add(helper, "-" + className + ".helper(", DONT_INLINE);
 
         testCases.add(helper, "+abc.*", NO_MATCH);
         testCases.add(helper, "+*.abc", NO_MATCH);

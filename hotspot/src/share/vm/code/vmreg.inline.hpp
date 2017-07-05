@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,23 +27,6 @@
 
 #include "asm/register.hpp"
 #include "code/vmreg.hpp"
-#ifdef TARGET_ARCH_x86
-# include "vmreg_x86.inline.hpp"
-#endif
-#ifdef TARGET_ARCH_sparc
-# include "vmreg_sparc.inline.hpp"
-#endif
-#ifdef TARGET_ARCH_zero
-# include "vmreg_zero.inline.hpp"
-#endif
-#ifdef TARGET_ARCH_arm
-# include "vmreg_arm.inline.hpp"
-#endif
-#ifdef TARGET_ARCH_ppc
-# include "vmreg_ppc.inline.hpp"
-#endif
-#ifdef TARGET_ARCH_aarch64
-# include "vmreg_aarch64.inline.hpp"
-#endif
+#include CPU_HEADER_INLINE(vmreg)
 
 #endif // SHARE_VM_CODE_VMREG_INLINE_HPP

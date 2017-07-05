@@ -21,31 +21,40 @@
  * questions.
  */
 
+/*
+ * @test ThresholdNotificationsTest
+ * @summary testing of getUsageThreshold()
+ * @library /testlibrary /test/lib /
+ * @modules java.base/jdk.internal.misc
+ *          java.management
+ *
+ * @build compiler.codecache.jmx.ThresholdNotificationsTest
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ *                                sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run main/othervm -Xbootclasspath/a:. -XX:-UseCodeCacheFlushing
+ *     -XX:+WhiteBoxAPI -XX:-MethodFlushing -XX:CompileCommand=compileonly,null::*
+ *     -XX:+SegmentedCodeCache
+ *     compiler.codecache.jmx.ThresholdNotificationsTest
+ * @run main/othervm -Xbootclasspath/a:. -XX:-UseCodeCacheFlushing
+ *     -XX:+WhiteBoxAPI -XX:-MethodFlushing -XX:CompileCommand=compileonly,null::*
+ *     -XX:-SegmentedCodeCache
+ *     compiler.codecache.jmx.ThresholdNotificationsTest
+ */
+
+package compiler.codecache.jmx;
+
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Utils;
-import java.lang.management.ManagementFactory;
-import java.lang.management.MemoryNotificationInfo;
-import java.lang.management.MemoryPoolMXBean;
+import sun.hotspot.code.BlobType;
+
 import javax.management.ListenerNotFoundException;
 import javax.management.Notification;
 import javax.management.NotificationEmitter;
 import javax.management.NotificationListener;
-import sun.hotspot.code.BlobType;
+import java.lang.management.ManagementFactory;
+import java.lang.management.MemoryNotificationInfo;
+import java.lang.management.MemoryPoolMXBean;
 
-/*
- * @test ThresholdNotificationsTest
- * @library /testlibrary /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
- * @build ThresholdNotificationsTest
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
- *     sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm -Xbootclasspath/a:. -XX:-UseCodeCacheFlushing
- *     -XX:-MethodFlushing -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *     -XX:+SegmentedCodeCache -XX:CompileCommand=compileonly,null::*
- *     ThresholdNotificationsTest
- * @summary testing of getUsageThreshold()
- */
 public class ThresholdNotificationsTest implements NotificationListener {
 
     private final static long WAIT_TIME = 10000L;
@@ -80,8 +89,8 @@ public class ThresholdNotificationsTest implements NotificationListener {
     }
 
     protected void runTest() {
-        int iterationsCount =
-            Integer.getInteger("jdk.test.lib.iterations", 1);
+        int iterationsCount
+                = Integer.getInteger("jdk.test.lib.iterations", 1);
         MemoryPoolMXBean bean = btype.getMemoryPool();
         ((NotificationEmitter) ManagementFactory.getMemoryMXBean()).
                 addNotificationListener(this, null, null);

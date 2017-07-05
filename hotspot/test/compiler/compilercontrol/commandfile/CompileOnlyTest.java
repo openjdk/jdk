@@ -26,10 +26,14 @@
  * @bug 8137167
  * @summary Tests CompileCommand=compileonly
  * @modules java.base/jdk.internal.misc
- * @library /testlibrary /test/lib ../share /
+ * @library /testlibrary /test/lib /
+ *
  * @build compiler.compilercontrol.commandfile.CompileOnlyTest
- *        pool.sub.* pool.subpack.* sun.hotspot.WhiteBox
- *        compiler.testlibrary.CompilerUtils compiler.compilercontrol.share.actions.*
+ *        compiler.compilercontrol.share.pool.sub.*
+ *        compiler.compilercontrol.share.pool.subpack.*
+ *        sun.hotspot.WhiteBox
+ *        compiler.testlibrary.CompilerUtils
+ *        compiler.compilercontrol.share.actions.*
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run driver compiler.compilercontrol.commandfile.CompileOnlyTest
