@@ -221,6 +221,7 @@ freeList.cpp                            freeList.hpp
 freeList.cpp                            globals.hpp
 freeList.cpp                            mutex.hpp
 freeList.cpp                            sharedHeap.hpp
+freeList.cpp                            vmThread.hpp
 
 freeList.hpp                            allocationStats.hpp
 

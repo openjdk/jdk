@@ -562,12 +562,15 @@ protected:
   virtual uint size_of() const; // Size is bigger
 
   bool    _optimized_virtual;
+  bool    _method_handle_invoke;
   ciMethod* _method;            // Method being direct called
 public:
   const int       _bci;         // Byte Code Index of call byte code
   CallJavaNode(const TypeFunc* tf , address addr, ciMethod* method, int bci)
     : CallNode(tf, addr, TypePtr::BOTTOM),
-      _method(method), _bci(bci), _optimized_virtual(false)
+      _method(method), _bci(bci),
+      _optimized_virtual(false),
+      _method_handle_invoke(false)
   {
     init_class_id(Class_CallJava);
   }
@@ -577,6 +580,8 @@ public:
   void  set_method(ciMethod *m)           { _method = m; }
   void  set_optimized_virtual(bool f)     { _optimized_virtual = f; }
   bool  is_optimized_virtual() const      { return _optimized_virtual; }
+  void  set_method_handle_invoke(bool f)  { _method_handle_invoke = f; }
+  bool  is_method_handle_invoke() const   { return _method_handle_invoke; }
 
 #ifndef PRODUCT
   virtual void  dump_spec(outputStream *st) const;

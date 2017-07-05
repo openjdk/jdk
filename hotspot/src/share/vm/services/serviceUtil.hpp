@@ -45,7 +45,7 @@ class ServiceUtil : public AllStatic {
     // instance
     if (o->is_instance()) {
       // instance objects are visible
-      if (o->klass() != SystemDictionary::class_klass()) {
+      if (o->klass() != SystemDictionary::Class_klass()) {
         return true;
       }
       if (java_lang_Class::is_primitive(o)) {

@@ -110,7 +110,7 @@ klassOop constantPoolOopDesc::klass_at_impl(constantPoolHandle this_oop, int whi
         }
 
         if (!PENDING_EXCEPTION->
-              is_a(SystemDictionary::linkageError_klass())) {
+              is_a(SystemDictionary::LinkageError_klass())) {
           // Just throw the exception and don't prevent these classes from
           // being loaded due to virtual machine errors like StackOverflow
           // and OutOfMemoryError, etc, or if the thread was hit by stop()

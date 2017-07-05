@@ -281,6 +281,7 @@ void DebugInformationRecorder::describe_scope(int         pc_offset,
                                               ciMethod*   method,
                                               int         bci,
                                               bool        reexecute,
+                                              bool        is_method_handle_invoke,
                                               DebugToken* locals,
                                               DebugToken* expressions,
                                               DebugToken* monitors) {
@@ -292,8 +293,9 @@ void DebugInformationRecorder::describe_scope(int         pc_offset,
   int stream_offset = stream()->position();
   last_pd->set_scope_decode_offset(stream_offset);
 
-  // Record reexecute bit into pcDesc
+  // Record flags into pcDesc.
   last_pd->set_should_reexecute(reexecute);
+  last_pd->set_is_method_handle_invoke(is_method_handle_invoke);
 
   // serialize sender stream offest
   stream()->write_int(sender_stream_offset);

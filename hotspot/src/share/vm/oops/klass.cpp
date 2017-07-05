@@ -217,8 +217,8 @@ void Klass::initialize_supers(klassOop k, TRAPS) {
     set_super(NULL);
     oop_store_without_check((oop*) &_primary_supers[0], (oop) this->as_klassOop());
     assert(super_depth() == 0, "Object must already be initialized properly");
-  } else if (k != super() || k == SystemDictionary::object_klass()) {
-    assert(super() == NULL || super() == SystemDictionary::object_klass(),
+  } else if (k != super() || k == SystemDictionary::Object_klass()) {
+    assert(super() == NULL || super() == SystemDictionary::Object_klass(),
            "initialize this only once to a non-trivial value");
     set_super(k);
     Klass* sup = k->klass_part();
@@ -370,7 +370,7 @@ void Klass::append_to_sibling_list() {
 void Klass::remove_from_sibling_list() {
   // remove receiver from sibling list
   instanceKlass* super = superklass();
-  assert(super != NULL || as_klassOop() == SystemDictionary::object_klass(), "should have super");
+  assert(super != NULL || as_klassOop() == SystemDictionary::Object_klass(), "should have super");
   if (super == NULL) return;        // special case: class Object
   if (super->subklass() == this) {
     // first subklass
@@ -541,6 +541,7 @@ void Klass::oop_print_on(oop obj, outputStream* st) {
   st->cr();
 }
 
+#endif //PRODUCT
 
 void Klass::oop_print_value_on(oop obj, outputStream* st) {
   // print title
@@ -548,8 +549,6 @@ void Klass::oop_print_value_on(oop obj, outputStream* st) {
   st->print("%s", internal_name());
   obj->print_address_on(st);
 }
-
-#endif
 
 // Verification
 
