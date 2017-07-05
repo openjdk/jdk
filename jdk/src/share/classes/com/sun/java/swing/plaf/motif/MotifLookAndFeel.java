@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1222,9 +1222,7 @@ public class MotifLookAndFeel extends BasicLookAndFeel
             "FileChooser.enterFileNameLabelMnemonic", new Integer (KeyEvent.VK_N), // 'n'
             "FileChooser.ancestorInputMap",
                new UIDefaults.LazyInputMap(new Object[] {
-                     "ESCAPE", "cancelSelection",
-                     "ENTER", "approveSelection",
-                "ctrl ENTER", "approveSelection"
+                     "ESCAPE", "cancelSelection"
                  }),
 
 
