@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,21 +52,21 @@ import org.omg.CORBA.portable.IDLEntity;
  * </OL>
  *
  * <P>
- * <a name="anyOps"</a>
+ * <a name="anyOps"></a>
  * A large part of the <code>Any</code> class consists of pairs of methods
  * for inserting values into and extracting values from an
  * <code>Any</code> object.
  * <P>
  * For a given primitive type X, these methods are:
  *  <dl>
- *      <dt><code><bold> void insert_X(X x)</bold></code>
+ *      <dt><code><b>void insert_X(X x)</b></code>
  *      <dd> This method allows the insertion of
  *        an instance <code>x</code> of primitive type <code>X</code>
  *    into the <code>value</code> field of the <code>Any</code> object.
  *    Note that the method
  *    <code>insert_X</code> also resets the <code>Any</code> object's
  *    <code>type</code> field if necessary.
- *      <dt> <code><bold>X extract_X()</bold></code>
+ *      <dt> <code><b>X extract_X()</b></code>
  *      <dd> This method allows the extraction of an instance of
  *        type <code>X</code> from the <code>Any</code> object.
  *    <BR>

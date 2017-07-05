@@ -25,8 +25,6 @@
 
 package jdk.nashorn.internal.codegen;
 
-import static jdk.nashorn.internal.codegen.ObjectClassGenerator.OBJECT_FIELDS_ONLY;
-
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.Symbol;
 
@@ -52,11 +50,11 @@ class MapTuple<T> {
     }
 
     public Class<?> getValueType() {
-        return OBJECT_FIELDS_ONLY ? Object.class : null; //until proven otherwise we are undefined, see NASHORN-592 int.class;
+        return null; //until proven otherwise we are undefined, see NASHORN-592 int.class;
     }
 
     boolean isPrimitive() {
-        return !OBJECT_FIELDS_ONLY && getValueType().isPrimitive() && getValueType() != boolean.class;
+        return getValueType() != null && getValueType().isPrimitive() && getValueType() != boolean.class;
     }
 
     @Override

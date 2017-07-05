@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ package org.omg.CORBA;
  * the client, for access control
  * and other purposes. It contains a single attribute, the name of the
  * <code>Principal</code>, encoded as a sequence of bytes.
- * <P>
+ *
  * @deprecated Deprecated by CORBA 2.2.
  */
 @Deprecated

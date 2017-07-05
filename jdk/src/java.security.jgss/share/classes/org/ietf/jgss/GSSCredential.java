@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,7 @@ package org.ietf.jgss;
  *
  * This example code demonstrates the creation of a GSSCredential
  * implementation for a specific entity, querying of its fields, and its
- * release when it is no longer needed:<p>
+ * release when it is no longer needed:
  * <pre>
  *    GSSManager manager = GSSManager.getInstance();
  *

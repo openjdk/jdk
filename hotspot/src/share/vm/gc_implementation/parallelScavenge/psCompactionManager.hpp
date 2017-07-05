@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -196,6 +196,10 @@ private:
   // Process tasks remaining on any stack
   void drain_region_stacks();
 
+  void follow_contents(oop obj);
+  void follow_contents(objArrayOop array, int index);
+
+  void update_contents(oop obj);
 };
 
 inline ParCompactionManager* ParCompactionManager::manager_array(int index) {
