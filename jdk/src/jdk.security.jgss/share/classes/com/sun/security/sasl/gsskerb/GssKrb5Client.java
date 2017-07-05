@@ -298,7 +298,11 @@ final class GssKrb5Client extends GssKrb5Base implements SaslClient {
                                  Boolean.valueOf(integrity)});
             }
 
-            intToNetworkByteOrder(recvMaxBufSize, gssInToken, 1, 3);
+            if (privacy || integrity) {
+                // Last paragraph of RFC 4752 3.1: size ... MUST be 0 if the
+                // client does not support any security layer
+                intToNetworkByteOrder(recvMaxBufSize, gssInToken, 1, 3);
+            }
             if (authzID != null) {
                 // copy authorization id
                 System.arraycopy(authzID, 0, gssInToken, 4, authzID.length);

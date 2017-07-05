@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -197,14 +197,17 @@ Java_sun_nio_ch_FileDispatcherImpl_allocate0(JNIEnv *env, jobject this,
      * any blocks which can cause a SIGBUS error if the file is subsequently
      * memory-mapped.
      */
-    return handle(env,
-                  fallocate64(fdval(env, fdo), 0, 0, size),
-                  "Allocation failed");
-#else
+    // Return on success or if errno is neither EOPNOTSUPP nor ENOSYS
+    int result = fallocate64(fdval(env, fdo), 0, 0, size);
+    if (result == 0) {
+        return 0;
+    } else if (errno != EOPNOTSUPP && errno != ENOSYS) {
+        return handle(env, result, "Allocation failed");
+    }
+#endif
     return handle(env,
                   ftruncate64(fdval(env, fdo), size),
                   "Truncation failed");
-#endif
 }
 
 JNIEXPORT jlong JNICALL
