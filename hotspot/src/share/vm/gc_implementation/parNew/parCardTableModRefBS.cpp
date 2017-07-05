@@ -373,6 +373,8 @@ process_chunk_boundaries(Space* sp,
                          " does not exceed used.end() = " PTR_FORMAT ","
                          " yet last_chunk_index_to_check " INTPTR_FORMAT
                          " exceeds last_chunk_index " INTPTR_FORMAT,
+                         last_block, last_block + last_block_size,
+                         used.end(),
                          last_chunk_index_to_check, last_chunk_index));
           assert(sp->used_region().end() > used.end(),
                  err_msg("Expansion did not happen: "

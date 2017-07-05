@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -151,36 +151,25 @@ class Bsd {
   // for BsdThreads are no longer needed.
   class SuspendResume {
   private:
-    volatile int _suspend_action;
-    // values for suspend_action:
-    #define SR_NONE               (0x00)
-    #define SR_SUSPEND            (0x01)  // suspend request
-    #define SR_CONTINUE           (0x02)  // resume request
-
+    volatile int  _suspend_action;
     volatile jint _state;
-    // values for _state: + SR_NONE
-    #define SR_SUSPENDED          (0x20)
   public:
+    // values for suspend_action:
+    enum {
+      SR_NONE              = 0x00,
+      SR_SUSPEND           = 0x01,  // suspend request
+      SR_CONTINUE          = 0x02,  // resume request
+      SR_SUSPENDED         = 0x20   // values for _state: + SR_NONE
+    };
+
     SuspendResume() { _suspend_action = SR_NONE; _state = SR_NONE; }
 
     int suspend_action() const     { return _suspend_action; }
     void set_suspend_action(int x) { _suspend_action = x;    }
 
     // atomic updates for _state
-    void set_suspended()           {
-      jint temp, temp2;
-      do {
-        temp = _state;
-        temp2 = Atomic::cmpxchg(temp | SR_SUSPENDED, &_state, temp);
-      } while (temp2 != temp);
-    }
-    void clear_suspended()        {
-      jint temp, temp2;
-      do {
-        temp = _state;
-        temp2 = Atomic::cmpxchg(temp & ~SR_SUSPENDED, &_state, temp);
-      } while (temp2 != temp);
-    }
+    inline void set_suspended();
+    inline void clear_suspended();
     bool is_suspended()            { return _state & SR_SUSPENDED;       }
 
     #undef SR_SUSPENDED
