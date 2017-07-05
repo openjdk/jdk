@@ -166,12 +166,12 @@ void compiledICHolderKlass::oop_print_on(oop obj, outputStream* st) {
   st->print(" - klass:  "); c->holder_klass()->print_value_on(st); st->cr();
 }
 
+#endif //PRODUCT
 
 void compiledICHolderKlass::oop_print_value_on(oop obj, outputStream* st) {
   assert(obj->is_compiledICHolder(), "must be compiledICHolder");
   Klass::oop_print_value_on(obj, st);
 }
-#endif
 
 const char* compiledICHolderKlass::internal_name() const {
   return "{compiledICHolder}";

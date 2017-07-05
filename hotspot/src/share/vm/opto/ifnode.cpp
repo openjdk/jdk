@@ -531,6 +531,9 @@ Node* IfNode::up_one_dom(Node *curr, bool linear_only) {
   if (linear_only)
     return NULL;
 
+  if( dom->is_Root() )
+    return NULL;
+
   // Else hit a Region.  Check for a loop header
   if( dom->is_Loop() )
     return dom->in(1);          // Skip up thru loops

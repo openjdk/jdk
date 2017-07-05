@@ -662,9 +662,13 @@ public:
   ciMethod* _method;             // Method being direct called
   int        _bci;               // Byte Code index of call byte code
   bool       _optimized_virtual; // Tells if node is a static call or an optimized virtual
+  bool       _method_handle_invoke;   // Tells if the call has to preserve SP
   MachCallJavaNode() : MachCallNode() {
     init_class_id(Class_MachCallJava);
   }
+
+  virtual const RegMask &in_RegMask(uint) const;
+
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
 #endif

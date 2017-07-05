@@ -32,7 +32,9 @@
 // threads. The second argument is in support of an extra locking
 // check for CFL spaces' free list locks.
 #ifndef PRODUCT
-void CMSLockVerifier::assert_locked(const Mutex* lock, const Mutex* p_lock) {
+void CMSLockVerifier::assert_locked(const Mutex* lock,
+                                    const Mutex* p_lock1,
+                                    const Mutex* p_lock2) {
   if (!Universe::is_fully_initialized()) {
     return;
   }
@@ -40,7 +42,7 @@ void CMSLockVerifier::assert_locked(const Mutex* lock, const Mutex* p_lock) {
   Thread* myThread = Thread::current();
 
   if (lock == NULL) { // a "lock-free" structure, e.g. MUT, protected by CMS token
-    assert(p_lock == NULL, "Unexpected state");
+    assert(p_lock1 == NULL && p_lock2 == NULL, "Unexpected caller error");
     if (myThread->is_ConcurrentGC_thread()) {
       // This test might have to change in the future, if there can be
       // multiple peer CMS threads.  But for now, if we're testing the CMS
@@ -60,36 +62,39 @@ void CMSLockVerifier::assert_locked(const Mutex* lock, const Mutex* p_lock) {
     return;
   }
 
-  if (ParallelGCThreads == 0) {
+  if (myThread->is_VM_thread()
+      || myThread->is_ConcurrentGC_thread()
+      || myThread->is_Java_thread()) {
+    // Make sure that we are holding the associated lock.
     assert_lock_strong(lock);
-  } else {
-    if (myThread->is_VM_thread()
-        || myThread->is_ConcurrentGC_thread()
-        || myThread->is_Java_thread()) {
-      // Make sure that we are holding the associated lock.
-      assert_lock_strong(lock);
-      // The checking of p_lock is a spl case for CFLS' free list
-      // locks: we make sure that none of the parallel GC work gang
-      // threads are holding "sub-locks" of freeListLock(). We check only
-      // the parDictionaryAllocLock because the others are too numerous.
-      // This spl case code is somewhat ugly and any improvements
-      // are welcome XXX FIX ME!!
-      if (p_lock != NULL) {
-        assert(!p_lock->is_locked() || p_lock->owned_by_self(),
-               "Possible race between this and parallel GC threads");
-      }
-    } else if (myThread->is_GC_task_thread()) {
-      // Make sure that the VM or CMS thread holds lock on our behalf
-      // XXX If there were a concept of a gang_master for a (set of)
-      // gang_workers, we could have used the identity of that thread
-      // for checking ownership here; for now we just disjunct.
-      assert(lock->owner() == VMThread::vm_thread() ||
-             lock->owner() == ConcurrentMarkSweepThread::cmst(),
-             "Should be locked by VM thread or CMS thread on my behalf");
-    } else {
-      // Make sure we didn't miss some obscure corner case
-      ShouldNotReachHere();
+    // The checking of p_lock is a spl case for CFLS' free list
+    // locks: we make sure that none of the parallel GC work gang
+    // threads are holding "sub-locks" of freeListLock(). We check only
+    // the parDictionaryAllocLock because the others are too numerous.
+    // This spl case code is somewhat ugly and any improvements
+    // are welcome.
+    assert(p_lock1 == NULL || !p_lock1->is_locked() || p_lock1->owned_by_self(),
+           "Possible race between this and parallel GC threads");
+    assert(p_lock2 == NULL || !p_lock2->is_locked() || p_lock2->owned_by_self(),
+           "Possible race between this and parallel GC threads");
+  } else if (myThread->is_GC_task_thread()) {
+    // Make sure that the VM or CMS thread holds lock on our behalf
+    // XXX If there were a concept of a gang_master for a (set of)
+    // gang_workers, we could have used the identity of that thread
+    // for checking ownership here; for now we just disjunct.
+    assert(lock->owner() == VMThread::vm_thread() ||
+           lock->owner() == ConcurrentMarkSweepThread::cmst(),
+           "Should be locked by VM thread or CMS thread on my behalf");
+    if (p_lock1 != NULL) {
+      assert_lock_strong(p_lock1);
     }
+    if (p_lock2 != NULL) {
+      assert_lock_strong(p_lock2);
+    }
+  } else {
+    // Make sure we didn't miss some other thread type calling into here;
+    // perhaps as a result of future VM evolution.
+    ShouldNotReachHere();
   }
 }
 #endif

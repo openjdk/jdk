@@ -925,6 +925,8 @@ bool GenCollectedHeap::is_in(const void* p) const {
   guarantee(VerifyBeforeGC   ||
             VerifyDuringGC   ||
             VerifyBeforeExit ||
+            PrintAssembly    ||
+            tty->count() != 0 ||   // already printing
             VerifyAfterGC, "too expensive");
   #endif
   // This might be sped up with a cache of the last generation that

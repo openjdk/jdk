@@ -981,14 +981,19 @@ bool GraphKit::compute_stack_effects(int& inputs, int& depth) {
   case Bytecodes::_invokedynamic:
   case Bytecodes::_invokeinterface:
     {
-      bool is_static = (depth == 0);
       bool ignore;
       ciBytecodeStream iter(method());
       iter.reset_to_bci(bci());
       iter.next();
       ciMethod* method = iter.get_method(ignore);
       inputs = method->arg_size_no_receiver();
-      if (!is_static)  inputs += 1;
+      // Add a receiver argument, maybe:
+      if (code != Bytecodes::_invokestatic &&
+          code != Bytecodes::_invokedynamic)
+        inputs += 1;
+      // (Do not use ciMethod::arg_size(), because
+      // it might be an unloaded method, which doesn't
+      // know whether it is static or not.)
       int size = method->return_type()->size();
       depth = size - inputs;
     }

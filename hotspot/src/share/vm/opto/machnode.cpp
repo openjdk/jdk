@@ -636,13 +636,29 @@ uint MachCallJavaNode::cmp( const Node &n ) const {
 }
 #ifndef PRODUCT
 void MachCallJavaNode::dump_spec(outputStream *st) const {
-  if( _method ) {
+  if (_method_handle_invoke)
+    st->print("MethodHandle ");
+  if (_method) {
     _method->print_short_name(st);
     st->print(" ");
   }
   MachCallNode::dump_spec(st);
 }
 #endif
+
+//------------------------------Registers--------------------------------------
+const RegMask &MachCallJavaNode::in_RegMask(uint idx) const {
+  // Values in the domain use the users calling convention, embodied in the
+  // _in_rms array of RegMasks.
+  if (idx < tf()->domain()->cnt())  return _in_rms[idx];
+  // Values outside the domain represent debug info
+  Matcher* m = Compile::current()->matcher();
+  // If this call is a MethodHandle invoke we have to use a different
+  // debugmask which does not include the register we use to save the
+  // SP over MH invokes.
+  RegMask** debugmask = _method_handle_invoke ? m->idealreg2mhdebugmask : m->idealreg2debugmask;
+  return *debugmask[in(idx)->ideal_reg()];
+}
 
 //=============================================================================
 uint MachCallStaticJavaNode::size_of() const { return sizeof(*this); }

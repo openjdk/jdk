@@ -1820,9 +1820,11 @@ void CompileBroker::print_times() {
                 CompileBroker::_t_standard_compilation.seconds(),
                 CompileBroker::_t_standard_compilation.seconds() / CompileBroker::_total_standard_compile_count);
   tty->print_cr("    On stack replacement   : %6.3f s, Average : %2.3f", CompileBroker::_t_osr_compilation.seconds(), CompileBroker::_t_osr_compilation.seconds() / CompileBroker::_total_osr_compile_count);
-  compiler(CompLevel_fast_compile)->print_timers();
-  if (compiler(CompLevel_fast_compile) != compiler(CompLevel_highest_tier)) {
-    compiler(CompLevel_highest_tier)->print_timers();
+
+  if (compiler(CompLevel_fast_compile)) {
+    compiler(CompLevel_fast_compile)->print_timers();
+    if (compiler(CompLevel_fast_compile) != compiler(CompLevel_highest_tier))
+      compiler(CompLevel_highest_tier)->print_timers();
   }
 
   tty->cr();
