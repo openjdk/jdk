@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
  * @bug 8139564
  * @summary defaultmethods=debug should have logging from each of the statements in the code
  * @library /testlibrary
- * @ignore 8146435
  * @modules java.base/sun.misc
  *          java.management
  * @build jdk.test.lib.OutputAnalyzer jdk.test.lib.ProcessTools
@@ -38,8 +37,8 @@ import jdk.test.lib.ProcessTools;
 
 public class DefaultMethodsTest {
     public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-            "-Xlog:defaultmethods=debug", "-version");
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:defaultmethods=debug",
+                                                                  InnerClass.class.getName());
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain("Slots that need filling:");
         output.shouldContain("requires default method processing");
@@ -50,6 +49,12 @@ public class DefaultMethodsTest {
         output.shouldContain("overpass methods");
         output.shouldContain("default methods");
         output.shouldHaveExitValue(0);
+    }
+
+    public static class InnerClass {
+        public static void main(String[] args) throws Exception {
+            System.out.println("Inner Class");
+        }
     }
 }
 

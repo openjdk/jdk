@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "interpreter/bytecodeStream.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jvmtifiles/jvmtiEnv.hpp"
+#include "logging/log.hpp"
 #include "logging/logConfiguration.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.inline.hpp"
@@ -473,9 +474,7 @@ JvmtiEnv::AddToBootstrapClassLoaderSearch(const char* segment) {
     ObjectLocker ol(loader_lock, thread);
 
     // add the jar file to the bootclasspath
-    if (TraceClassLoading) {
-      tty->print_cr("[Opened %s]", zip_entry->name());
-    }
+    log_info(classload)("opened: %s", zip_entry->name());
     ClassLoaderExt::append_boot_classpath(zip_entry);
     return JVMTI_ERROR_NONE;
   } else {
@@ -625,8 +624,13 @@ JvmtiEnv::SetVerboseFlag(jvmtiVerboseFlag flag, jboolean value) {
     // ignore
     break;
   case JVMTI_VERBOSE_CLASS:
-    TraceClassLoading = value != 0;
-    TraceClassUnloading = value != 0;
+    if (value == 0) {
+      LogConfiguration::parse_log_arguments("stdout", "classunload=off", NULL, NULL, NULL);
+      LogConfiguration::parse_log_arguments("stdout", "classload=off", NULL, NULL, NULL);
+    } else {
+      LogConfiguration::parse_log_arguments("stdout", "classload=info", NULL, NULL, NULL);
+      LogConfiguration::parse_log_arguments("stdout", "classunload=info", NULL, NULL, NULL);
+    }
     break;
   case JVMTI_VERBOSE_GC:
     if (value == 0) {

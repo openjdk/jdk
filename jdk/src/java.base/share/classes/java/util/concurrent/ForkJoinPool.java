@@ -818,8 +818,9 @@ public class ForkJoinPool extends AbstractExecutorService {
         final ForkJoinPool pool;   // the containing pool (may be null)
         final ForkJoinWorkerThread owner; // owning thread or null if shared
         volatile Thread parker;    // == owner during call to park; else null
-        volatile ForkJoinTask<?> currentJoin;  // task being joined in awaitJoin
-        @jdk.internal.vm.annotation.Contended("group2") // separate from other fields
+        volatile ForkJoinTask<?> currentJoin; // task being joined in awaitJoin
+
+        @jdk.internal.vm.annotation.Contended("group2") // segregate
         volatile ForkJoinTask<?> currentSteal; // nonnull when running some task
 
         WorkQueue(ForkJoinPool pool, ForkJoinWorkerThread owner) {

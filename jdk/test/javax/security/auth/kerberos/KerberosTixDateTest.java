@@ -23,18 +23,21 @@
 
 /*
  * @test
- * @bug 6659990
- * @summary test the immutability of the Date fields in KerberosTicket class.
+ * @bug 6659990 8147772
+ * @summary test the immutability of the Date fields in KerberosTicket class,
+ *          serialization, and behavior after being destroyed.
  */
 
 /*
  * Must setup KDC and Kerberos configuration file
  */
 
-import java.net.InetAddress;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.Date;
 import java.io.*;
-import javax.security.auth.kerberos.KerberosKey;
+import javax.security.auth.RefreshFailedException;
 import javax.security.auth.kerberos.KerberosPrincipal;
 import javax.security.auth.kerberos.KerberosTicket;
 import java.util.Base64;
@@ -78,6 +81,7 @@ public class KerberosTixDateTest {
 
         testDateImmutability(t, originalTime);
         testS11nCompatibility(t); // S11n: Serialization
+        testDestroy(t);
     }
 
     private static void checkTime(KerberosTicket kt, long timeValue) {
@@ -139,5 +143,31 @@ public class KerberosTixDateTest {
         checkEqualsAndHashCode(baos.toByteArray(), t);
 
         System.out.println("S11nCompatibility Test Passed");
+    }
+
+    private static void testDestroy(KerberosTicket t) throws Exception {
+        t.destroy();
+        if (!t.isDestroyed()) {
+            throw new RuntimeException("ticket should have been destroyed");
+        }
+        // Although these methods are meaningless, they can be called
+        for (Method m: KerberosTicket.class.getDeclaredMethods()) {
+            if (Modifier.isPublic(m.getModifiers())
+                    && m.getParameterCount() == 0) {
+                System.out.println("Testing " + m.getName() + "...");
+                try {
+                    m.invoke(t);
+                } catch (InvocationTargetException e) {
+                    Throwable cause = e.getCause();
+                    if (cause instanceof RefreshFailedException ||
+                            cause instanceof IllegalStateException) {
+                        // this is OK
+                    } else {
+                        throw e;
+                    }
+                }
+            }
+        }
+        System.out.println("Destroy Test Passed");
     }
 }

@@ -83,6 +83,7 @@ char** Arguments::_jvm_args_array               = NULL;
 int    Arguments::_num_jvm_args                 = 0;
 char*  Arguments::_java_command                 = NULL;
 SystemProperty* Arguments::_system_properties   = NULL;
+const char*  Arguments::_gc_log_filename        = NULL;
 bool   Arguments::_has_profile                  = false;
 size_t Arguments::_conservative_max_heap_alignment = 0;
 size_t Arguments::_min_heap_size                = 0;
@@ -401,10 +402,12 @@ static AliasedFlag const aliased_jvm_flags[] = {
 };
 
 static AliasedLoggingFlag const aliased_logging_flags[] = {
-  { "TraceClassResolution", LogLevel::Info, true, LogTag::_classresolve },
-  { "TraceExceptions", LogLevel::Info, true, LogTag::_exceptions },
-  { "TraceMonitorInflation", LogLevel::Debug, true, LogTag::_monitorinflation },
-  { NULL, LogLevel::Off, false, LogTag::__NO_TAG }
+  { "TraceClassLoading",         LogLevel::Info,  true,  LogTag::_classload },
+  { "TraceClassUnloading",       LogLevel::Info,  true,  LogTag::_classunload },
+  { "TraceClassResolution",      LogLevel::Info,  true,  LogTag::_classresolve },
+  { "TraceExceptions",           LogLevel::Info,  true,  LogTag::_exceptions },
+  { "TraceMonitorInflation",     LogLevel::Debug, true,  LogTag::_monitorinflation },
+  { NULL,                        LogLevel::Off,   false, LogTag::__NO_TAG }
 };
 
 // Return true if "v" is less than "other", where "other" may be "undefined".
@@ -2652,12 +2655,8 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
     // -verbose:[class/gc/jni]
     if (match_option(option, "-verbose", &tail)) {
       if (!strcmp(tail, ":class") || !strcmp(tail, "")) {
-        if (FLAG_SET_CMDLINE(bool, TraceClassLoading, true) != Flag::SUCCESS) {
-          return JNI_EINVAL;
-        }
-        if (FLAG_SET_CMDLINE(bool, TraceClassUnloading, true) != Flag::SUCCESS) {
-          return JNI_EINVAL;
-        }
+        LogConfiguration::configure_stdout(LogLevel::Info, true, LOG_TAGS(classload));
+        LogConfiguration::configure_stdout(LogLevel::Info, true, LOG_TAGS(classunload));
       } else if (!strcmp(tail, ":gc")) {
         LogConfiguration::configure_stdout(LogLevel::Info, true, LOG_TAGS(gc));
       } else if (!strcmp(tail, ":jni")) {
@@ -3090,6 +3089,10 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
     // -Xnoagent
     } else if (match_option(option, "-Xnoagent")) {
       // For compatibility with classic. HotSpot refuses to load the old style agent.dll.
+    } else if (match_option(option, "-Xloggc:", &tail)) {
+      // Deprecated flag to redirect GC output to a file. -Xloggc:<filename>
+      log_warning(gc)("-Xloggc is deprecated. Will use -Xlog:gc:%s instead.", tail);
+      _gc_log_filename = os::strdup_check_oom(tail);
     } else if (match_option(option, "-Xlog", &tail)) {
       bool ret = false;
       if (strcmp(tail, ":help") == 0) {
@@ -3999,6 +4002,24 @@ static void print_options(const JavaVMInitArgs *args) {
   }
 }
 
+bool Arguments::handle_deprecated_print_gc_flags() {
+  if (PrintGC) {
+    log_warning(gc)("-XX:+PrintGC is deprecated. Will use -Xlog:gc instead.");
+  }
+  if (PrintGCDetails) {
+    log_warning(gc)("-XX:+PrintGCDetails is deprecated. Will use -Xlog:gc* instead.");
+  }
+
+  if (_gc_log_filename != NULL) {
+    // -Xloggc was used to specify a filename
+    const char* gc_conf = PrintGCDetails ? "gc*" : "gc";
+    return  LogConfiguration::parse_log_arguments(_gc_log_filename, gc_conf, NULL, NULL, NULL);
+  } else if (PrintGC || PrintGCDetails) {
+    LogConfiguration::configure_stdout(LogLevel::Info, !PrintGCDetails, LOG_TAGS(gc));
+  }
+  return true;
+}
+
 // Parse entry point called from JNI_CreateJavaVM
 
 jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
@@ -4145,6 +4166,10 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
       warning("Forcing ScavengeRootsInCode non-zero");
     }
     ScavengeRootsInCode = 1;
+  }
+
+  if (!handle_deprecated_print_gc_flags()) {
+    return JNI_EINVAL;
   }
 
   // Set object alignment values.

@@ -66,10 +66,14 @@ public class TestInvalidDebugInfo extends CodeInstallerTest {
     }
 
     private void test(VirtualObject[] vobj, JavaValue[] values, JavaKind[] slotKinds, int locals, int stack, int locks) {
+        test(vobj, values, slotKinds, locals, stack, locks, StackSlot.get(null, 0, true));
+    }
+
+    private void test(VirtualObject[] vobj, JavaValue[] values, JavaKind[] slotKinds, int locals, int stack, int locks, StackSlot deoptRescueSlot) {
         BytecodeFrame frame = new BytecodeFrame(null, dummyMethod, 0, false, false, values, slotKinds, locals, stack, locks);
         DebugInfo info = new DebugInfo(frame, vobj);
         info.setReferenceMap(new HotSpotReferenceMap(new Location[0], new Location[0], new int[0], 8));
-        installEmptyCode(new Site[]{new Infopoint(0, info, InfopointReason.SAFEPOINT)}, new Assumption[0], new Comment[0], 16, new DataPatch[0]);
+        installEmptyCode(new Site[]{new Infopoint(0, info, InfopointReason.SAFEPOINT)}, new Assumption[0], new Comment[0], 16, new DataPatch[0], deoptRescueSlot);
     }
 
     @Test(expected = NullPointerException.class)
@@ -80,6 +84,11 @@ public class TestInvalidDebugInfo extends CodeInstallerTest {
     @Test(expected = NullPointerException.class)
     public void testNullSlotKinds() {
         test(new JavaValue[0], null, 0, 0, 0);
+    }
+
+    @Test(expected = JVMCIError.class)
+    public void testMissingDeoptRescueSlot() {
+        test(null, new JavaValue[0], new JavaKind[0], 0, 0, 0, null);
     }
 
     @Test(expected = JVMCIError.class)

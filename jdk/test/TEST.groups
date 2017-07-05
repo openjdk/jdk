@@ -54,8 +54,7 @@ tier2 = \
     -com/sun/crypto/provider/Cipher \
     :jdk_text \
     :core_tools \
-    :jdk_other \
-    :jdk_svc
+    :jdk_other
 
 tier3 = \
     :jdk_rmi \

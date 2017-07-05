@@ -85,6 +85,7 @@ class Disassembler {
 
  public:
   static bool can_decode() {
+    ttyLocker tl;
     return (_decode_instructions_virtual != NULL) ||
            (_decode_instructions != NULL) ||
            load_library();

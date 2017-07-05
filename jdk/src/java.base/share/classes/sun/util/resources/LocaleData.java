@@ -251,19 +251,20 @@ public class LocaleData {
         private static final String DOTCLDR      = ".cldr";
 
         /**
-         * Changes baseName to its per-language/country package name and
+         * Changes baseName to its module dependent package name and
          * calls the super class implementation. For example,
          * if the baseName is "sun.text.resources.FormatData" and locale is ja_JP,
-         * the baseName is changed to "sun.text.resources.ja.JP.FormatData". If
+         * the baseName is changed to "sun.text.resources.ext.FormatData". If
          * baseName contains "cldr", such as "sun.text.resources.cldr.FormatData",
-         * the name is changed to "sun.text.resources.cldr.ja.JP.FormatData".
+         * the name is changed to "sun.text.resources.cldr.ext.FormatData".
          */
         @Override
         public String toBundleName(String baseName, Locale locale) {
             String newBaseName = baseName;
             String lang = locale.getLanguage();
             String ctry = locale.getCountry();
-            if (lang.length() > 0) {
+            if (lang.length() > 0 &&
+                (lang != "en" || (ctry.length() > 0 && ctry != "US"))) {
                 if (baseName.startsWith(JRE.getUtilResourcesPackage())
                         || baseName.startsWith(JRE.getTextResourcesPackage())) {
                     // Assume the lengths are the same.
@@ -273,9 +274,8 @@ public class LocaleData {
                     if (baseName.indexOf(DOTCLDR, index) > 0) {
                         index += DOTCLDR.length();
                     }
-                    ctry = (ctry.length() == 2) ? ("." + ctry) : "";
-                    newBaseName = baseName.substring(0, index + 1) + lang + ctry
-                                      + baseName.substring(index);
+                    newBaseName = baseName.substring(0, index + 1) + "ext" +
+                                      baseName.substring(index);
                 }
             }
             return super.toBundleName(newBaseName, locale);

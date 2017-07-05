@@ -96,7 +96,7 @@ public class TestRemsetLoggingTools {
     public static void expectPerRegionRSetSummaries(String result, int expectedCumulative, int expectedPeriodic) throws Exception {
         expectRSetSummaries(result, expectedCumulative, expectedPeriodic);
         int actualYoung = result.split("Young regions").length - 1;
-        int actualHumonguous = result.split("Humonguous regions").length - 1;
+        int actualHumongous = result.split("Humongous regions").length - 1;
         int actualFree = result.split("Free regions").length - 1;
         int actualOther = result.split("Old regions").length - 1;
 
@@ -104,7 +104,7 @@ public class TestRemsetLoggingTools {
         int expectedPerRegionTypeInfo = (expectedCumulative + expectedPeriodic) * 4;
 
         checkCounts(expectedPerRegionTypeInfo, actualYoung, "Young");
-        checkCounts(expectedPerRegionTypeInfo, actualHumonguous, "Humonguous");
+        checkCounts(expectedPerRegionTypeInfo, actualHumongous, "Humongous");
         checkCounts(expectedPerRegionTypeInfo, actualFree, "Free");
         checkCounts(expectedPerRegionTypeInfo, actualOther, "Old");
     }

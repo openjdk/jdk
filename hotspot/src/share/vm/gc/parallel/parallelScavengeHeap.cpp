@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,10 +28,11 @@
 #include "gc/parallel/cardTableExtension.hpp"
 #include "gc/parallel/gcTaskManager.hpp"
 #include "gc/parallel/generationSizer.hpp"
+#include "gc/parallel/objectStartArray.inline.hpp"
 #include "gc/parallel/parallelScavengeHeap.inline.hpp"
 #include "gc/parallel/psAdaptiveSizePolicy.hpp"
 #include "gc/parallel/psMarkSweep.hpp"
-#include "gc/parallel/psParallelCompact.hpp"
+#include "gc/parallel/psParallelCompact.inline.hpp"
 #include "gc/parallel/psPromotionManager.hpp"
 #include "gc/parallel/psScavenge.hpp"
 #include "gc/parallel/vmPSOperations.hpp"

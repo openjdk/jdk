@@ -130,7 +130,7 @@ static const char* const pm_stats_hdr[] = {
 
 void
 PSPromotionManager::print_taskqueue_stats() {
-  if (!develop_log_is_enabled(Trace, gc, task, stats)) {
+  if (!log_develop_is_enabled(Trace, gc, task, stats)) {
     return;
   }
   LogHandle(gc, task, stats) log;
