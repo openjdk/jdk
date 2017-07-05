@@ -270,13 +270,17 @@ public abstract class AuthenticationInfo extends AuthCacheValue implements Clone
      * In this case we do not use the path because the protection space
      * is identified by the host:port:realm only
      */
-    static AuthenticationInfo getServerAuth(URL url, String realm, AuthScheme scheme) {
+    static String getServerAuthKey(URL url, String realm, AuthScheme scheme) {
         int port = url.getPort();
         if (port == -1) {
             port = url.getDefaultPort();
         }
         String key = SERVER_AUTHENTICATION + ":" + scheme + ":" + url.getProtocol().toLowerCase()
                      + ":" + url.getHost().toLowerCase() + ":" + port + ":" + realm;
+        return key;
+    }
+
+    static AuthenticationInfo getServerAuth(String key) {
         AuthenticationInfo cached = getAuth(key, null);
         if ((cached == null) && requestIsInProgress (key)) {
             /* check the cache again, it might contain an entry */
@@ -314,9 +318,13 @@ public abstract class AuthenticationInfo extends AuthCacheValue implements Clone
      * Used in response to a challenge. Note, the protocol field is always
      * blank for proxies.
      */
-    static AuthenticationInfo getProxyAuth(String host, int port, String realm, AuthScheme scheme) {
+    static String getProxyAuthKey(String host, int port, String realm, AuthScheme scheme) {
         String key = PROXY_AUTHENTICATION + ":" + scheme + "::" + host.toLowerCase()
                         + ":" + port + ":" + realm;
+        return key;
+    }
+
+    static AuthenticationInfo getProxyAuth(String key) {
         AuthenticationInfo cached = (AuthenticationInfo) cache.get(key, null);
         if ((cached == null) && requestIsInProgress (key)) {
             /* check the cache again, it might contain an entry */
@@ -330,19 +338,20 @@ public abstract class AuthenticationInfo extends AuthCacheValue implements Clone
      * Add this authentication to the cache
      */
     void addToCache() {
-        cache.put (cacheKey(true), this);
+        String key = cacheKey(true);
+        cache.put(key, this);
         if (supportsPreemptiveAuthorization()) {
-            cache.put (cacheKey(false), this);
+            cache.put(cacheKey(false), this);
         }
-        endAuthRequest();
+        endAuthRequest(key);
     }
 
-    void endAuthRequest () {
+    static void endAuthRequest (String key) {
         if (!serializeAuth) {
             return;
         }
         synchronized (requests) {
-            requestCompleted (cacheKey(true));
+            requestCompleted(key);
         }
     }
 

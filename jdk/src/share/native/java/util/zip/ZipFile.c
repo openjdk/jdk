@@ -81,7 +81,8 @@ ThrowZipException(JNIEnv *env, const char *msg)
 
 JNIEXPORT jlong JNICALL
 Java_java_util_zip_ZipFile_open(JNIEnv *env, jclass cls, jstring name,
-                                        jint mode, jlong lastModified)
+                                        jint mode, jlong lastModified,
+                                        jboolean usemmap)
 {
     const char *path = JNU_GetStringPlatformChars(env, name, 0);
     char *msg = 0;
@@ -109,7 +110,7 @@ Java_java_util_zip_ZipFile_open(JNIEnv *env, jclass cls, jstring name,
                 goto finally;
             }
 #endif
-            zip = ZIP_Put_In_Cache(path, zfd, &msg, lastModified);
+            zip = ZIP_Put_In_Cache0(path, zfd, &msg, lastModified, usemmap);
         }
 
         if (zip != 0) {

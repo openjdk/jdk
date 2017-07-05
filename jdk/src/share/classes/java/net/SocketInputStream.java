@@ -118,6 +118,10 @@ class SocketInputStream extends FileInputStream
      * @exception IOException If an I/O error has occurred.
      */
     public int read(byte b[], int off, int length) throws IOException {
+        return read(b, off, length, impl.getTimeout());
+    }
+
+    int read(byte b[], int off, int length, int timeout) throws IOException {
         int n;
 
         // EOF already encountered
@@ -143,7 +147,7 @@ class SocketInputStream extends FileInputStream
         // acquire file descriptor and do the read
         FileDescriptor fd = impl.acquireFD();
         try {
-            n = socketRead0(fd, b, off, length, impl.getTimeout());
+            n = socketRead0(fd, b, off, length, timeout);
             if (n > 0) {
                 return n;
             }
@@ -161,7 +165,7 @@ class SocketInputStream extends FileInputStream
             impl.setConnectionResetPending();
             impl.acquireFD();
             try {
-                n = socketRead0(fd, b, off, length, impl.getTimeout());
+                n = socketRead0(fd, b, off, length, timeout);
                 if (n > 0) {
                     return n;
                 }

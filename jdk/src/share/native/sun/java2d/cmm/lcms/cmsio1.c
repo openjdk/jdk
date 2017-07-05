@@ -1433,6 +1433,9 @@ LPLUT LCMSEXPORT cmsReadICCLut(cmsHPROFILE hProfile, icTagSignature sig)
 
     // If is in memory, the LUT is already there, so throw a copy
     if (Icc -> TagPtrs[n]) {
+        if (!_cmsValidateLUT((LPLUT) Icc ->TagPtrs[n])) {
+            return NULL;
+        }
 
         return cmsDupLUT((LPLUT) Icc ->TagPtrs[n]);
     }

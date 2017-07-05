@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3707,8 +3707,7 @@ void AwtComponent::SetCompositionWindow(RECT& r)
     if (hIMC == NULL) {
         return;
     }
-    COMPOSITIONFORM cf = {CFS_POINT, {0, r.bottom}, NULL};
-    // Place the composition window right below the client Window
+    COMPOSITIONFORM cf = {CFS_DEFAULT, {0, 0}, {0, 0, 0, 0}};
     ImmSetCompositionWindow(hIMC, &cf);
 }
 
