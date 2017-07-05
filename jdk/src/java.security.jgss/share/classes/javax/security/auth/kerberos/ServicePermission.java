@@ -25,13 +25,14 @@
 
 package javax.security.auth.kerberos;
 
-import java.util.*;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.ObjectStreamField;
 import java.security.Permission;
 import java.security.PermissionCollection;
-import java.io.ObjectStreamField;
-import java.io.ObjectOutputStream;
-import java.io.ObjectInputStream;
-import java.io.IOException;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * This class is used to protect Kerberos services and the
@@ -149,6 +150,15 @@ public final class ServicePermission extends Permission
         init(servicePrincipal, getMask(action));
     }
 
+    /**
+     * Creates a ServicePermission object with the specified servicePrincipal
+     * and a pre-calculated mask. Avoids the overhead of re-computing the mask.
+     * Called by ServicePermissionCollection.
+     */
+    ServicePermission(String servicePrincipal, int mask) {
+        super(servicePrincipal);
+        init(servicePrincipal, mask);
+    }
 
     /**
      * Initialize the ServicePermission object.
@@ -175,6 +185,7 @@ public final class ServicePermission extends Permission
      * @return true if the specified permission is implied by this object,
      * false if not.
      */
+    @Override
     public boolean implies(Permission p) {
         if (!(p instanceof ServicePermission))
             return false;
@@ -200,6 +211,7 @@ public final class ServicePermission extends Permission
      *  same service principal, and actions as this
      * ServicePermission object.
      */
+    @Override
     public boolean equals(Object obj) {
         if (obj == this)
             return true;
@@ -219,7 +231,7 @@ public final class ServicePermission extends Permission
      *
      * @return a hash code value for this object.
      */
-
+    @Override
     public int hashCode() {
         return (getName().hashCode() ^ mask);
     }
@@ -234,7 +246,7 @@ public final class ServicePermission extends Permission
      * @param mask a specific integer action mask to translate into a string
      * @return the canonical string representation of the actions
      */
-    private static String getActions(int mask)
+    static String getActions(int mask)
     {
         StringBuilder sb = new StringBuilder();
         boolean comma = false;
@@ -259,6 +271,7 @@ public final class ServicePermission extends Permission
      * Always returns present actions in the following order:
      * initiate, accept.
      */
+    @Override
     public String getActions() {
         if (actions == null)
             actions = getActions(this.mask);
@@ -279,6 +292,7 @@ public final class ServicePermission extends Permission
      * @return a new PermissionCollection object suitable for storing
      * ServicePermissions.
      */
+    @Override
     public PermissionCollection newPermissionCollection() {
         return new KrbServicePermissionCollection();
     }
@@ -453,11 +467,12 @@ public final class ServicePermission extends Permission
 final class KrbServicePermissionCollection extends PermissionCollection
     implements java.io.Serializable {
 
+    // Key is the service principal, value is the ServicePermission.
     // Not serialized; see serialization section at end of class
-    private transient List<Permission> perms;
+    private transient ConcurrentHashMap<String, Permission> perms;
 
     public KrbServicePermissionCollection() {
-        perms = new ArrayList<Permission>();
+        perms = new ConcurrentHashMap<>();
     }
 
     /**
@@ -469,32 +484,28 @@ final class KrbServicePermissionCollection extends PermissionCollection
      * @return true if "permission" is a proper subset of a permission in
      * the collection, false if not.
      */
+    @Override
     public boolean implies(Permission permission) {
         if (! (permission instanceof ServicePermission))
-                return false;
+            return false;
 
         ServicePermission np = (ServicePermission) permission;
         int desired = np.getMask();
-        int effective = 0;
-        int needed = desired;
 
-        synchronized (this) {
-            int len = perms.size();
+        // first, check for wildcard principal
+        ServicePermission x = (ServicePermission)perms.get("*");
+        if (x != null) {
+            if ((x.getMask() & desired) == desired) {
+                return true;
+            }
+        }
 
-            // need to deal with the case where the needed permission has
-            // more than one action and the collection has individual permissions
-            // that sum up to the needed.
-
-            for (int i = 0; i < len; i++) {
-                ServicePermission x = (ServicePermission) perms.get(i);
-
-                //System.out.println("  trying "+x);
-                if (((needed & x.getMask()) != 0) && x.impliesIgnoreMask(np)) {
-                    effective |=  x.getMask();
-                    if ((effective & desired) == desired)
-                        return true;
-                    needed = (desired ^ effective);
-                }
+        // otherwise, check for match on principal
+        x = (ServicePermission)perms.get(np.getName());
+        if (x != null) {
+            //System.out.println("  trying "+x);
+            if ((x.getMask() & desired) == desired) {
+                return true;
             }
         }
         return false;
@@ -512,6 +523,7 @@ final class KrbServicePermissionCollection extends PermissionCollection
      * @exception SecurityException - if this PermissionCollection object
      *                                has been marked readonly
      */
+    @Override
     public void add(Permission permission) {
         if (! (permission instanceof ServicePermission))
             throw new IllegalArgumentException("invalid permission: "+
@@ -519,9 +531,32 @@ final class KrbServicePermissionCollection extends PermissionCollection
         if (isReadOnly())
             throw new SecurityException("attempt to add a Permission to a readonly PermissionCollection");
 
-        synchronized (this) {
-            perms.add(0, permission);
-        }
+        ServicePermission sp = (ServicePermission)permission;
+        String princName = sp.getName();
+
+        // Add permission to map if it is absent, or replace with new
+        // permission if applicable. NOTE: cannot use lambda for
+        // remappingFunction parameter until JDK-8076596 is fixed.
+        perms.merge(princName, sp,
+            new java.util.function.BiFunction<>() {
+                @Override
+                public Permission apply(Permission existingVal,
+                                        Permission newVal) {
+                    int oldMask = ((ServicePermission)existingVal).getMask();
+                    int newMask = ((ServicePermission)newVal).getMask();
+                    if (oldMask != newMask) {
+                        int effective = oldMask | newMask;
+                        if (effective == newMask) {
+                            return newVal;
+                        }
+                        if (effective != oldMask) {
+                            return new ServicePermission(princName, effective);
+                        }
+                    }
+                    return existingVal;
+                }
+            }
+        );
     }
 
     /**
@@ -530,12 +565,9 @@ final class KrbServicePermissionCollection extends PermissionCollection
      *
      * @return an enumeration of all the ServicePermission objects.
      */
-
+    @Override
     public Enumeration<Permission> elements() {
-        // Convert Iterator into Enumeration
-        synchronized (this) {
-            return Collections.enumeration(perms);
-        }
+        return perms.elements();
     }
 
     private static final long serialVersionUID = -4118834211490102011L;
@@ -563,11 +595,7 @@ final class KrbServicePermissionCollection extends PermissionCollection
         // Don't call out.defaultWriteObject()
 
         // Write out Vector
-        Vector<Permission> permissions = new Vector<>(perms.size());
-
-        synchronized (this) {
-            permissions.addAll(perms);
-        }
+        Vector<Permission> permissions = new Vector<>(perms.values());
 
         ObjectOutputStream.PutField pfields = out.putFields();
         pfields.put("permissions", permissions);
@@ -589,7 +617,9 @@ final class KrbServicePermissionCollection extends PermissionCollection
         // Get the one we want
         Vector<Permission> permissions =
                 (Vector<Permission>)gfields.get("permissions", null);
-        perms = new ArrayList<Permission>(permissions.size());
-        perms.addAll(permissions);
+        perms = new ConcurrentHashMap<>(permissions.size());
+        for (Permission perm : permissions) {
+            perms.put(perm.getName(), perm);
+        }
     }
 }
