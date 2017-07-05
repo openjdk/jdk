@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,11 @@
  * @summary NPE IN RMIConnector.connect
  * @bug 6984520
  * @library /java/rmi/testlibrary
+ * @modules java.management
+ *          java.rmi/sun.rmi.registry
+ *          java.rmi/sun.rmi.server
+ *          java.rmi/sun.rmi.transport
+ *          java.rmi/sun.rmi.transport.tcp
  * @run clean RMIConnector_NPETest
  * @run build TestLibrary RMID
  * @run build RMIConnector_NPETest

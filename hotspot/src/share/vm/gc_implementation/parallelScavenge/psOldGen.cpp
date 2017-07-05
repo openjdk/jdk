@@ -107,20 +107,22 @@ void PSOldGen::initialize_work(const char* perf_data_name, int level) {
     SpaceMangler::mangle_region(cmr);
   }
 
-  Universe::heap()->barrier_set()->resize_covered_region(cmr);
+  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
+  BarrierSet* bs = heap->barrier_set();
 
-  CardTableModRefBS* _ct =
-    barrier_set_cast<CardTableModRefBS>(Universe::heap()->barrier_set());
+  bs->resize_covered_region(cmr);
+
+  CardTableModRefBS* ct = barrier_set_cast<CardTableModRefBS>(bs);
 
   // Verify that the start and end of this generation is the start of a card.
   // If this wasn't true, a single card could span more than one generation,
   // which would cause problems when we commit/uncommit memory, and when we
   // clear and dirty cards.
-  guarantee(_ct->is_card_aligned(_reserved.start()), "generation must be card aligned");
-  if (_reserved.end() != Universe::heap()->reserved_region().end()) {
+  guarantee(ct->is_card_aligned(_reserved.start()), "generation must be card aligned");
+  if (_reserved.end() != heap->reserved_region().end()) {
     // Don't check at the very end of the heap as we'll assert that we're probing off
     // the end if we try.
-    guarantee(_ct->is_card_aligned(_reserved.end()), "generation must be card aligned");
+    guarantee(ct->is_card_aligned(_reserved.end()), "generation must be card aligned");
   }
 
   //
@@ -161,8 +163,7 @@ bool  PSOldGen::is_allocated() {
 }
 
 void PSOldGen::precompact() {
-  ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
-  assert(heap->kind() == CollectedHeap::ParallelScavengeHeap, "Sanity");
+  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
 
   // Reset start array first.
   start_array()->reset();
@@ -197,7 +198,7 @@ HeapWord* PSOldGen::allocate(size_t word_size) {
 
   // Allocations in the old generation need to be reported
   if (res != NULL) {
-    ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
+    ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
     heap->size_policy()->tenured_allocation(word_size);
   }
 
@@ -376,8 +377,7 @@ void PSOldGen::resize(size_t desired_free_space) {
   }
 
   if (PrintAdaptiveSizePolicy) {
-    ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
-    assert(heap->kind() == CollectedHeap::ParallelScavengeHeap, "Sanity");
+    ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
     gclog_or_tty->print_cr("AdaptiveSizePolicy::old generation size: "
                   "collection: %d "
                   "(" SIZE_FORMAT ") -> (" SIZE_FORMAT ") ",
@@ -397,7 +397,7 @@ void PSOldGen::post_resize() {
   size_t new_word_size = new_memregion.word_size();
 
   start_array()->set_covered_region(new_memregion);
-  Universe::heap()->barrier_set()->resize_covered_region(new_memregion);
+  ParallelScavengeHeap::heap()->barrier_set()->resize_covered_region(new_memregion);
 
   // ALWAYS do this last!!
   object_space()->initialize(new_memregion,

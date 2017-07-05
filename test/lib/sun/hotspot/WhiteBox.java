@@ -32,6 +32,7 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import java.security.BasicPermission;
+import java.util.Objects;
 
 import sun.hotspot.parser.DiagnosticCommand;
 
@@ -74,11 +75,27 @@ public class WhiteBox {
   public native void printHeapSizes();
 
   // Memory
-  public native long getObjectAddress(Object o);
+  private native long getObjectAddress0(Object o);
+  public           long getObjectAddress(Object o) {
+    Objects.requireNonNull(o);
+    return getObjectAddress0(o);
+  }
+
   public native int  getHeapOopSize();
   public native int  getVMPageSize();
-  public native boolean isObjectInOldGen(Object o);
-  public native long getObjectSize(Object o);
+  public native long getVMLargePageSize();
+
+  private native boolean isObjectInOldGen0(Object o);
+  public         boolean isObjectInOldGen(Object o) {
+    Objects.requireNonNull(o);
+    return isObjectInOldGen0(o);
+  }
+
+  private native long getObjectSize0(Object o);
+  public         long getObjectSize(Object o) {
+    Objects.requireNonNull(o);
+    return getObjectSize0(o);
+  }
 
   // Runtime
   // Make sure class name is in the correct format
@@ -86,21 +103,45 @@ public class WhiteBox {
     return isClassAlive0(name.replace('.', '/'));
   }
   private native boolean isClassAlive0(String name);
-  public native boolean isMonitorInflated(Object obj);
+
+  private native boolean isMonitorInflated0(Object obj);
+  public         boolean isMonitorInflated(Object obj) {
+    Objects.requireNonNull(obj);
+    return isMonitorInflated0(obj);
+  }
+
   public native void forceSafepoint();
 
   // JVMTI
-  public native void addToBootstrapClassLoaderSearch(String segment);
-  public native void addToSystemClassLoaderSearch(String segment);
+  private native void addToBootstrapClassLoaderSearch0(String segment);
+  public         void addToBootstrapClassLoaderSearch(String segment){
+    Objects.requireNonNull(segment);
+    addToBootstrapClassLoaderSearch0(segment);
+  }
+
+  private native void addToSystemClassLoaderSearch0(String segment);
+  public         void addToSystemClassLoaderSearch(String segment) {
+    Objects.requireNonNull(segment);
+    addToSystemClassLoaderSearch0(segment);
+  }
 
   // G1
   public native boolean g1InConcurrentMark();
-  public native boolean g1IsHumongous(Object o);
+  private native boolean g1IsHumongous0(Object o);
+  public         boolean g1IsHumongous(Object o) {
+    Objects.requireNonNull(o);
+    return g1IsHumongous0(o);
+  }
+
   public native long    g1NumMaxRegions();
   public native long    g1NumFreeRegions();
   public native int     g1RegionSize();
   public native MemoryUsage g1AuxiliaryMemoryUsage();
-  public native Object[]    parseCommandLine(String commandline, char delim, DiagnosticCommand[] args);
+  private  native Object[]    parseCommandLine0(String commandline, char delim, DiagnosticCommand[] args);
+  public          Object[]    parseCommandLine(String commandline, char delim, DiagnosticCommand[] args) {
+    Objects.requireNonNull(args);
+    return parseCommandLine0(commandline, delim, args);
+  }
 
   // NMT
   public native long NMTMalloc(long size);
@@ -119,45 +160,93 @@ public class WhiteBox {
   public        boolean isMethodCompiled(Executable method) {
     return isMethodCompiled(method, false /*not osr*/);
   }
-  public native boolean isMethodCompiled(Executable method, boolean isOsr);
+  private native boolean isMethodCompiled0(Executable method, boolean isOsr);
+  public         boolean isMethodCompiled(Executable method, boolean isOsr){
+    Objects.requireNonNull(method);
+    return isMethodCompiled0(method, isOsr);
+  }
   public        boolean isMethodCompilable(Executable method) {
     return isMethodCompilable(method, -1 /*any*/);
   }
   public        boolean isMethodCompilable(Executable method, int compLevel) {
     return isMethodCompilable(method, compLevel, false /*not osr*/);
   }
-  public native boolean isMethodCompilable(Executable method, int compLevel, boolean isOsr);
-  public native boolean isMethodQueuedForCompilation(Executable method);
+  private native boolean isMethodCompilable0(Executable method, int compLevel, boolean isOsr);
+  public         boolean isMethodCompilable(Executable method, int compLevel, boolean isOsr) {
+    Objects.requireNonNull(method);
+    return isMethodCompilable0(method, compLevel, isOsr);
+  }
+  private native boolean isMethodQueuedForCompilation0(Executable method);
+  public         boolean isMethodQueuedForCompilation(Executable method) {
+    Objects.requireNonNull(method);
+    return isMethodQueuedForCompilation0(method);
+  }
   public        int     deoptimizeMethod(Executable method) {
     return deoptimizeMethod(method, false /*not osr*/);
   }
-  public native int     deoptimizeMethod(Executable method, boolean isOsr);
+  private native int     deoptimizeMethod0(Executable method, boolean isOsr);
+  public         int     deoptimizeMethod(Executable method, boolean isOsr) {
+    Objects.requireNonNull(method);
+    return deoptimizeMethod0(method, isOsr);
+  }
   public        void    makeMethodNotCompilable(Executable method) {
     makeMethodNotCompilable(method, -1 /*any*/);
   }
   public        void    makeMethodNotCompilable(Executable method, int compLevel) {
     makeMethodNotCompilable(method, compLevel, false /*not osr*/);
   }
-  public native void    makeMethodNotCompilable(Executable method, int compLevel, boolean isOsr);
+  private native void    makeMethodNotCompilable0(Executable method, int compLevel, boolean isOsr);
+  public         void    makeMethodNotCompilable(Executable method, int compLevel, boolean isOsr) {
+    Objects.requireNonNull(method);
+    makeMethodNotCompilable0(method, compLevel, isOsr);
+  }
   public        int     getMethodCompilationLevel(Executable method) {
     return getMethodCompilationLevel(method, false /*not ost*/);
   }
-  public native int     getMethodCompilationLevel(Executable method, boolean isOsr);
-  public native boolean testSetDontInlineMethod(Executable method, boolean value);
+  private native int     getMethodCompilationLevel0(Executable method, boolean isOsr);
+  public         int     getMethodCompilationLevel(Executable method, boolean isOsr) {
+    Objects.requireNonNull(method);
+    return getMethodCompilationLevel0(method, isOsr);
+  }
+  private native boolean testSetDontInlineMethod0(Executable method, boolean value);
+  public         boolean testSetDontInlineMethod(Executable method, boolean value) {
+    Objects.requireNonNull(method);
+    return testSetDontInlineMethod0(method, value);
+  }
   public        int     getCompileQueuesSize() {
     return getCompileQueueSize(-1 /*any*/);
   }
   public native int     getCompileQueueSize(int compLevel);
-  public native boolean testSetForceInlineMethod(Executable method, boolean value);
+  private native boolean testSetForceInlineMethod0(Executable method, boolean value);
+  public         boolean testSetForceInlineMethod(Executable method, boolean value) {
+    Objects.requireNonNull(method);
+    return testSetForceInlineMethod0(method, value);
+  }
   public        boolean enqueueMethodForCompilation(Executable method, int compLevel) {
     return enqueueMethodForCompilation(method, compLevel, -1 /*InvocationEntryBci*/);
   }
-  public native boolean enqueueMethodForCompilation(Executable method, int compLevel, int entry_bci);
-  public native void    clearMethodState(Executable method);
+  private native boolean enqueueMethodForCompilation0(Executable method, int compLevel, int entry_bci);
+  public  boolean enqueueMethodForCompilation(Executable method, int compLevel, int entry_bci) {
+    Objects.requireNonNull(method);
+    return enqueueMethodForCompilation0(method, compLevel, entry_bci);
+  }
+  private native void    clearMethodState0(Executable method);
+  public         void    clearMethodState(Executable method) {
+    Objects.requireNonNull(method);
+    clearMethodState0(method);
+  }
   public native void    lockCompilation();
   public native void    unlockCompilation();
-  public native int     getMethodEntryBci(Executable method);
-  public native Object[] getNMethod(Executable method, boolean isOsr);
+  private native int     getMethodEntryBci0(Executable method);
+  public         int     getMethodEntryBci(Executable method) {
+    Objects.requireNonNull(method);
+    return getMethodEntryBci0(method);
+  }
+  private native Object[] getNMethod0(Executable method, boolean isOsr);
+  public         Object[] getNMethod(Executable method, boolean isOsr) {
+    Objects.requireNonNull(method);
+    return getNMethod0(method, isOsr);
+  }
   public native long    allocateCodeBlob(int size, int type);
   public        long    allocateCodeBlob(long size, int type) {
       int intSize = (int) size;
@@ -168,14 +257,7 @@ public class WhiteBox {
       return allocateCodeBlob( intSize, type);
   }
   public native void    freeCodeBlob(long addr);
-  public        void    forceNMethodSweep() {
-    try {
-        forceNMethodSweep0().join();
-    } catch (InterruptedException e) {
-        Thread.currentThread().interrupt();
-    }
-  }
-  public native Thread  forceNMethodSweep0();
+  public native void    forceNMethodSweep();
   public native Object[] getCodeHeapEntries(int type);
   public native int     getCompilationActivityMode();
   public native Object[] getCodeBlob(long addr);
@@ -213,7 +295,11 @@ public class WhiteBox {
   // Native extensions
   public native long getHeapUsageForContext(int context);
   public native long getHeapRegionCountForContext(int context);
-  public native int getContextForObject(Object obj);
+  private native int getContextForObject0(Object obj);
+  public         int getContextForObject(Object obj) {
+    Objects.requireNonNull(obj);
+    return getContextForObject0(obj);
+  }
   public native void printRegionInfo(int context);
 
   // VM flags

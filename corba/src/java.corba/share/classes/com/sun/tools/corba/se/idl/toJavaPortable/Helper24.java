@@ -70,7 +70,7 @@ public class Helper24 extends Helper
   /**
    * Generate the heading, including package, imports, class statements,
    * and open curly.
-   * <d62023> - don't implement ValueHelper, make non-boxed helpers abstract
+   * d62023 - don't implement ValueHelper, make non-boxed helpers abstract
    **/
   protected void writeHeading ()
   {
@@ -92,8 +92,10 @@ public class Helper24 extends Helper
 
   /**
    * Generate the instance variables.
-   * <d62023> - no helper instance except for boxed valuetypes.
-   *          - move truncatable_ids to mapped class.
+   * <pre>
+   * d62023 - no helper instance except for boxed valuetypes;
+   *        - move truncatable_ids to mapped class.
+   * </pre>
    **/
   protected void writeInstVars ()
   {
@@ -110,9 +112,9 @@ public class Helper24 extends Helper
   } // writeInstVars
 
   /**
-   * <d62023> generate members of BoxedValueHelper interface if boxed
+   * d62023 - generate members of BoxedValueHelper interface if boxed
    *
-   * <d62023> Hook in here to write factory methods for non-boxed ValueTypes
+   * d62023 - hook in here to write factory methods for non-boxed ValueTypes
    *          into Helper.
    **/
   protected void writeValueHelperInterface ()
@@ -143,8 +145,8 @@ public class Helper24 extends Helper
   } // writeHelperFactories
 
   /**
-   * <d62023> Generate constructors only for boxed valuetype helpers
-   *            All other helpers are abstract.
+   * d62023 - generate constructors only for boxed valuetype helpers.
+   *          All other helpers are abstract.
    **/
   protected void writeCtors ()
   {

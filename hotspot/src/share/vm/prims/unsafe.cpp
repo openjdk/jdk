@@ -172,18 +172,6 @@ jint Unsafe_invocation_key_to_method_slot(jint key) {
   oop p = JNIHandles::resolve(obj); \
   OrderAccess::release_store_fence((volatile type_name*)index_oop_from_field_offset_long(p, offset), x);
 
-// Macros for oops that check UseCompressedOops
-
-#define GET_OOP_FIELD(obj, offset, v) \
-  oop p = JNIHandles::resolve(obj);   \
-  oop v;                              \
-  if (UseCompressedOops) {            \
-    narrowOop n = *(narrowOop*)index_oop_from_field_offset_long(p, offset); \
-    v = oopDesc::decode_heap_oop(n);                                \
-  } else {                            \
-    v = *(oop*)index_oop_from_field_offset_long(p, offset);                 \
-  }
-
 
 // Get/SetObject must be special-cased, since it works with handles.
 
@@ -192,7 +180,14 @@ jint Unsafe_invocation_key_to_method_slot(jint key) {
 // That is, it should be in the range [0, MAX_OBJECT_SIZE].
 UNSAFE_ENTRY(jobject, Unsafe_GetObject(JNIEnv *env, jobject unsafe, jobject obj, jlong offset))
   UnsafeWrapper("Unsafe_GetObject");
-  GET_OOP_FIELD(obj, offset, v)
+  oop p = JNIHandles::resolve(obj);
+  oop v;
+  if (UseCompressedOops) {
+    narrowOop n = *(narrowOop*)index_oop_from_field_offset_long(p, offset);
+    v = oopDesc::decode_heap_oop(n);
+  } else {
+    v = *(oop*)index_oop_from_field_offset_long(p, offset);
+  }
   jobject ret = JNIHandles::make_local(env, v);
 #if INCLUDE_ALL_GCS
   // We could be accessing the referent field in a reference
@@ -261,6 +256,25 @@ UNSAFE_ENTRY(void, Unsafe_SetObjectVolatile(JNIEnv *env, jobject unsafe, jobject
   OrderAccess::fence();
 UNSAFE_END
 
+UNSAFE_ENTRY(jobject, Unsafe_GetUncompressedObject(JNIEnv *env, jobject unsafe, jlong addr))
+  UnsafeWrapper("Unsafe_GetUncompressedObject");
+  oop v = *(oop*) (address) addr;
+  return JNIHandles::make_local(env, v);
+UNSAFE_END
+
+UNSAFE_ENTRY(jclass, Unsafe_GetJavaMirror(JNIEnv *env, jobject unsafe, jlong metaspace_klass))
+  UnsafeWrapper("Unsafe_GetJavaMirror");
+  Klass* klass = (Klass*) (address) metaspace_klass;
+  return (jclass) JNIHandles::make_local(klass->java_mirror());
+UNSAFE_END
+
+UNSAFE_ENTRY(jlong, Unsafe_GetKlassPointer(JNIEnv *env, jobject unsafe, jobject obj))
+  UnsafeWrapper("Unsafe_GetKlassPointer");
+  oop o = JNIHandles::resolve(obj);
+  jlong klass = (jlong) (address) o->klass();
+  return klass;
+UNSAFE_END
+
 #ifndef SUPPORTS_NATIVE_CX8
 
 // VM_Version::supports_cx8() is a surrogate for 'supports atomic long memory ops'.
@@ -323,6 +337,24 @@ UNSAFE_ENTRY(void, Unsafe_SetLongVolatile(JNIEnv *env, jobject unsafe, jobject o
 UNSAFE_END
 
 #endif // not SUPPORTS_NATIVE_CX8
+
+UNSAFE_ENTRY(jboolean, Unsafe_isBigEndian0(JNIEnv *env, jobject unsafe))
+  UnsafeWrapper("Unsafe_IsBigEndian0");
+  {
+#ifdef VM_LITTLE_ENDIAN
+    return false;
+#else
+    return true;
+#endif
+  }
+UNSAFE_END
+
+UNSAFE_ENTRY(jint, Unsafe_unalignedAccess0(JNIEnv *env, jobject unsafe))
+  UnsafeWrapper("Unsafe_UnalignedAccess0");
+  {
+    return UseUnalignedAccesses;
+  }
+UNSAFE_END
 
 #define DEFINE_GETSETOOP(jboolean, Boolean) \
  \
@@ -1204,6 +1236,10 @@ static JNINativeMethod methods[] = {
     {CC"getObjectVolatile",CC"("OBJ"J)"OBJ"",   FN_PTR(Unsafe_GetObjectVolatile)},
     {CC"putObjectVolatile",CC"("OBJ"J"OBJ")V",  FN_PTR(Unsafe_SetObjectVolatile)},
 
+    {CC"getUncompressedObject", CC"("ADR")"OBJ, FN_PTR(Unsafe_GetUncompressedObject)},
+    {CC"getJavaMirror",         CC"("ADR")"CLS, FN_PTR(Unsafe_GetJavaMirror)},
+    {CC"getKlassPointer",       CC"("OBJ")"ADR, FN_PTR(Unsafe_GetKlassPointer)},
+
     DECLARE_GETPUTOOP(Boolean, Z),
     DECLARE_GETPUTOOP(Byte, B),
     DECLARE_GETPUTOOP(Short, S),
@@ -1261,6 +1297,9 @@ static JNINativeMethod methods[] = {
     {CC"loadFence",          CC"()V",                    FN_PTR(Unsafe_LoadFence)},
     {CC"storeFence",         CC"()V",                    FN_PTR(Unsafe_StoreFence)},
     {CC"fullFence",          CC"()V",                    FN_PTR(Unsafe_FullFence)},
+
+    {CC"isBigEndian0",       CC"()Z",                    FN_PTR(Unsafe_isBigEndian0)},
+    {CC"unalignedAccess0",   CC"()Z",                    FN_PTR(Unsafe_unalignedAccess0)}
 };
 
 #undef CC

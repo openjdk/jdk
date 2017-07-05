@@ -222,11 +222,13 @@
       <name>jdk.internal.org.objectweb.asm</name>
       <to>jdk.jfr</to>
       <to>jdk.scripting.nashorn</to>
+      <to>java.instrument</to>
     </export>
     <export>
       <name>jdk.internal.org.objectweb.asm.commons</name>
       <to>jdk.jfr</to>
       <to>jdk.scripting.nashorn</to>
+      <to>java.instrument</to>
     </export>
     <export>
       <name>jdk.internal.org.objectweb.asm.signature</name>
@@ -235,11 +237,13 @@
     <export>
       <name>jdk.internal.org.objectweb.asm.tree</name>
       <to>jdk.jfr</to>
+      <to>java.instrument</to>
     </export>
     <export>
       <name>jdk.internal.org.objectweb.asm.util</name>
       <to>jdk.jfr</to>
       <to>jdk.scripting.nashorn</to>
+      <to>java.instrument</to>
     </export>
     <export>
       <name>sun.misc</name>
@@ -266,6 +270,7 @@
       <to>jdk.security.auth</to>
       <to>jdk.security.jgss</to>
       <to>jdk.snmp</to>
+      <to>java.instrument</to>
     </export>
     <export>
       <name>sun.net.dns</name>
@@ -310,6 +315,7 @@
       <to>java.sql</to>
       <to>java.sql.rowset</to>
       <to>jdk.scripting.nashorn</to>
+      <to>java.instrument</to>
     </export>
     <export>
       <name>sun.reflect.annotation</name>
@@ -766,6 +772,10 @@
     <export>
       <name>java.lang.instrument</name>
     </export>
+    <export>
+      <name>jdk.internal.instrumentation</name>
+      <to>jdk.jfr</to>
+    </export>
   </module>
   <module>
     <name>java.logging</name>
@@ -780,9 +790,6 @@
     <depend>java.logging</depend>
     <depend>java.naming</depend>
     <depend re-exports="true">java.rmi</depend>
-    <export>
-      <name>com.sun.management</name>
-    </export>
     <export>
       <name>java.lang.management</name>
     </export>
@@ -816,9 +823,11 @@
     <export>
       <name>sun.management</name>
       <to>jdk.jconsole</to>
+      <to>jdk.management</to>
     </export>
     <export>
       <name>sun.management.spi</name>
+      <to>jdk.management</to>
       <to>jdk.management.cmm</to>
     </export>
   </module>
@@ -1664,6 +1673,7 @@
     <depend>java.rmi</depend>
     <depend>jdk.attach</depend>
     <depend>jdk.jvmstat</depend>
+    <depend>jdk.management</depend>
     <export>
       <name>com.sun.tools.jconsole</name>
     </export>
@@ -1714,6 +1724,14 @@
   <module>
     <name>jdk.localedata</name>
     <depend>java.base</depend>
+  </module>
+  <module>
+    <name>jdk.management</name>
+    <depend>java.base</depend>
+    <depend re-exports="true">java.management</depend>
+    <export>
+      <name>com.sun.management</name>
+    </export>
   </module>
   <module>
     <name>jdk.naming.dns</name>

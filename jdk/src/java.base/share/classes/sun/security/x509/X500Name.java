@@ -84,14 +84,14 @@ import javax.security.auth.x500.X500Principal;
  * <li>attribute values encoded in different types (e.g.,
  *    PrintableString and BMPString) may be assumed to represent
  *    different strings;
- * <p>
+ *
  * <li>attribute values in types other than PrintableString are case
  *    sensitive (this permits matching of attribute values as binary
  *    objects);
- * <p>
+ *
  * <li>attribute values in PrintableString are not case sensitive
  *    (e.g., "Marianne Swanson" is the same as "MARIANNE SWANSON"); and
- * <p>
+ *
  * <li>attribute values in PrintableString are compared after
  *    removing leading and trailing white space and converting internal
  *    substrings of one or more consecutive white space characters to a
@@ -1242,12 +1242,13 @@ public class X500Name implements GeneralNameInterface, Principal {
      *   <li>NAME_NARROWS = 1: input name narrows this name
      *   <li>NAME_WIDENS = 2: input name widens this name
      *   <li>NAME_SAME_TYPE = 3: input name does not match or narrow this name,
-     &       but is same type
-     * </ul>.  These results are used in checking NameConstraints during
+     *       but is same type.
+     * </ul>
+     * These results are used in checking NameConstraints during
      * certification path verification.
      *
      * @param inputName to be checked for being constrained
-     * @returns constraint type above
+     * @return constraint type above
      * @throws UnsupportedOperationException if name is not exact match, but
      *         narrowing and widening are not supported for this name type.
      */
@@ -1313,7 +1314,7 @@ public class X500Name implements GeneralNameInterface, Principal {
      * NameConstraints minimum and maximum bounds and for calculating
      * path lengths in name subtrees.
      *
-     * @returns distance of name from root
+     * @return distance of name from root
      * @throws UnsupportedOperationException if not supported for this name type
      */
     public int subtreeDepth() throws UnsupportedOperationException {

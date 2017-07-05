@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@
 
 int VM_Version::_features = VM_Version::unknown_m;
 const char* VM_Version::_features_str = "";
-unsigned int VM_Version::_L2_cache_line_size = 0;
+unsigned int VM_Version::_L2_data_cache_line_size = 0;
 
 void VM_Version::initialize() {
   _features = determine_features();
@@ -356,10 +356,17 @@ void VM_Version::initialize() {
     (cache_line_size > ContendedPaddingWidth))
     ContendedPaddingWidth = cache_line_size;
 
+  // This machine does not allow unaligned memory accesses
+  if (UseUnalignedAccesses) {
+    if (!FLAG_IS_DEFAULT(UseUnalignedAccesses))
+      warning("Unaligned memory access is not available on this CPU");
+    FLAG_SET_DEFAULT(UseUnalignedAccesses, false);
+  }
+
 #ifndef PRODUCT
   if (PrintMiscellaneous && Verbose) {
     tty->print_cr("L1 data cache line size: %u", L1_data_cache_line_size());
-    tty->print_cr("L2 cache line size: %u", L2_cache_line_size());
+    tty->print_cr("L2 data cache line size: %u", L2_data_cache_line_size());
     tty->print("Allocation");
     if (AllocatePrefetchStyle <= 0) {
       tty->print_cr(": no prefetching");

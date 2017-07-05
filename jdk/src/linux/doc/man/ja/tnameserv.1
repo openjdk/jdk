@@ -2,10 +2,10 @@
 .\" Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
 .\" Title: tnameserv
 .\" Language: English
-.\" Date: 2013ǯ11��21��
-.\" SectDesc: Java IDL�����RMI-IIOP�ġ���
+.\" Date: 2013年11月21日
+.\" SectDesc: Java IDLおよびRMI-IIOPツール
 .\" Software: JDK 8
-.\" Arch: ����
+.\" Arch: 汎用
 .\"
 .\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 .\"
@@ -28,7 +28,7 @@
 .\" questions.
 .\"
 .pl 99999
-.TH "tnameserv" "1" "2013ǯ11��21��" "JDK 8" "Java IDL�����RMI-IIOP�ġ���"
+.TH "tnameserv" "1" "2013年11月21日" "JDK 8" "Java IDLおよびRMI-IIOPツール"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -49,8 +49,8 @@
 .\" * MAIN CONTENT STARTS HERE *
 .\" -----------------------------------------------------------------
 .SH "NAME"
-tnameserv \- ���󥿥ե������������(IDL)��
-.SH "����"
+tnameserv \- インタフェース定義言語(IDL)。
+.SH "概要"
 .sp
 .if n \{\
 .RS 4
@@ -64,27 +64,27 @@ tnameserv \- ���󥿥ե������������(IDL)��
 .PP
 \-ORBInitialPort \fInameserverport\fR
 .RS 4
-�͡��ߥ󥰡������ӥ���ORB��\fIresolve_initial_references\fR�᥽�åɤ�\fIlist_initial_references\fR�᥽�åɤμ����˻��Ѥ���֡��ȥ��ȥ�åס��ץ��ȥ����ꥹ�˥󥰤������ݡ��ȤǤ���
+ネーミング・サービスがORBの\fIresolve_initial_references\fRメソッドと\fIlist_initial_references\fRメソッドの実装に使用するブートストラップ・プロトコルをリスニングする初期ポートです。
 .RE
-.SH "����"
+.SH "説明"
 .PP
-Java IDL�ˤϡ�Object Request Broker Daemon (ORBD)���ޤޤ�ޤ���ORBD�ϡ��֡��ȥ��ȥ�åס������ӥ�������͡��ߥ󥰡������ӥ�����³�͡��ߥ󥰡������ӥ�����ӥ����С����ޥ͡������ޤ�ǡ���󡦥ץ������Ǥ���Java IDL�Τ��٤ƤΥ��塼�ȥꥢ��Ǥ�ORBD����Ѥ��Ƥ��ޤ���������͡��ߥ󥰡������ӥ�����Ѥ�����Ǥϡ�\fIorbd\fR�Τ�����\fItnameserv\fR����ѤǤ��ޤ���
+Java IDLには、Object Request Broker Daemon (ORBD)が含まれます。ORBDは、ブートストラップ・サービス、一時ネーミング・サービス、永続ネーミング・サービスおよびサーバー・マネージャを含むデーモン・プロセスです。Java IDLのすべてのチュートリアルではORBDを使用していますが、一時ネーミング・サービスを使用する例では、\fIorbd\fRのかわりに\fItnameserv\fRを使用できます。
 .PP
-http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/idl/jidlNaming\&.html�ˤ���
-orbd(1)�ޤ��ϡ�Naming Service�פ򻲾Ȥ��Ƥ���������
+http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/idl/jidlNaming\&.htmlにある
+orbd(1)または「Naming Service」を参照してください。
 .PP
-CORBA��COS (Common Object Services)�͡��ߥ󥰡������ӥ��ϡ��ե����롦�����ƥब�ե�������Ф��ƥǥ��쥯�ȥ깽¤���󶡤��Ƥ���Τ�Ʊ���褦�ˡ����֥������Ȼ��Ȥ��Ф��ƥĥ꡼��¤�Υǥ��쥯�ȥ���󶡤��ޤ���Java IDL�ΰ���͡��ࡦ�����ӥ��Ǥ���\fItnameserv\fR�ϡ�COS�͡��ࡦ�����ӥ��λ��ͤ�ñ��ʷ��Ǽ���������ΤǤ���
+CORBAのCOS (Common Object Services)ネーミング・サービスは、ファイル・システムがファイルに対してディレクトリ構造を提供しているのと同じように、オブジェクト参照に対してツリー構造のディレクトリを提供します。Java IDLの一時ネーム・サービスである\fItnameserv\fRは、COSネーム・サービスの仕様を単純な形で実装したものです。
 .PP
-���֥������Ȼ��Ȥϥ͡��ॹ�ڡ�����̾���ǳ�Ǽ���졢���֥������Ȼ��Ȥ�̾���Υڥ��ϡ����줾��͡��ࡦ�Х���ǥ��󥰤ȸƤФ�ޤ����͡��ࡦ�Х���ǥ��󥰤ϥ͡��ߥ󥰡�����ƥ����Ȥ��Ȥ߹��ळ�Ȥ��Ǥ��ޤ����͡��ߥ󥰡�����ƥ����Ȥϥ͡��ࡦ�Х���ǥ��󥰤Ǥ��ꡢ�ե����롦�����ƥ�Υ��֥ǥ��쥯�ȥ��Ʊ��������ǽ������ޤ������٤ƤΥХ���ǥ��󥰤Ͻ���͡��ߥ󥰡�����ƥ����Ȥβ��˳�Ǽ����ޤ�������͡��ߥ󥰡�����ƥ����Ȥϡ��͡��ॹ�ڡ�����ͣ��α�³�Х���ǥ��󥰤Ǥ���Java IDL�͡��ߥ󥰡������ӥ����ץ���������ߤ��ƺƵ�ư����ȡ��Ĥ�Υ͡��ॹ�ڡ����ϼ����ޤ���
+オブジェクト参照はネームスペースに名前で格納され、オブジェクト参照と名前のペアは、それぞれネーム・バインディングと呼ばれます。ネーム・バインディングはネーミング・コンテキストに組み込むことができます。ネーミング・コンテキストはネーム・バインディングであり、ファイル・システムのサブディレクトリと同じ編成機能を持ちます。すべてのバインディングは初期ネーミング・コンテキストの下に格納されます。初期ネーミング・コンテキストは、ネームスペースの唯一の永続バインディングです。Java IDLネーミング・サービス・プロセスを停止して再起動すると、残りのネームスペースは失われます。
 .PP
-���ץ�åȤޤ��ϥ��ץꥱ������󤫤�COS�͡��ߥ󥰡������ӥ�����Ѥ��뤿��ˤϡ�����ORB���͡��ߥ󥰡������ӥ���ư��Ƥ���ۥ��ȤΥݡ��Ȥ��ΤäƤ��뤫�����Υ͡��ߥ󥰡������ӥ��ν���͡��ߥ󥰡�����ƥ�����ʸ����˥��������Ǥ���ɬ�פ�����ޤ����͡��ࡦ�����ӥ��ϡ�Java IDL�Υ͡��ࡦ�����ӥ��Ǥ⤽��¾��COS���Υ͡��ࡦ�����ӥ��Ǥ⤫�ޤ��ޤ���
-.SS "�͡��ߥ󥰡������ӥ��ε�ư"
+アプレットまたはアプリケーションからCOSネーミング・サービスを使用するためには、そのORBがネーミング・サービスが動作しているホストのポートを知っているか、そのネーミング・サービスの初期ネーミング・コンテキスト文字列にアクセスできる必要があります。ネーム・サービスは、Java IDLのネーム・サービスでもその他のCOS準拠のネーム・サービスでもかまいません。
+.SS "ネーミング・サービスの起動"
 .PP
-Java IDL�͡��ࡦ�����ӥ��ϡ��͡��ࡦ�����ӥ�����Ѥ��륢�ץꥱ�������ޤ��ϥ��ץ�åȤ�����˵�ư���Ƥ���ɬ�פ�����ޤ���Java IDL���ʤ򥤥󥹥ȡ��뤹��ȡ�Java IDL�͡��ߥ󥰡������ӥ���ư���륹����ץ�(Oracle Solaris:
-\fItnameserv\fR)�ޤ��ϼ¹Բ�ǽ�ե�����(Windows:
-\fItnameserv\&.exe\fR)����������ޤ����Хå����饦��ɤ�ư���褦�ˡ��͡��ࡦ�����ӥ���ư���Ƥ���������
+Java IDLネーム・サービスは、ネーム・サービスを使用するアプリケーションまたはアプレットより前に起動しておく必要があります。Java IDL製品をインストールすると、Java IDLネーミング・サービスを起動するスクリプト(Oracle Solaris:
+\fItnameserv\fR)または実行可能ファイル(Windows:
+\fItnameserv\&.exe\fR)が作成されます。バックグラウンドで動作するように、ネーム・サービスを起動してください。
 .PP
-�ä˻��ꤷ�ʤ���硢Java IDL�͡��ߥ󥰡������ӥ��ϡ�ORB��\fIresolve_initial_references\fR�᥽�åɤ�\fIlist_initial_references methods\fR�᥽�åɤμ����˻��Ѥ���֡��ȥ��ȥ�åס��ץ��ȥ�����Ф��ƥݡ���900�ǥꥹ�˥󥰤��ޤ���
+特に指定しない場合、Java IDLネーミング・サービスは、ORBの\fIresolve_initial_references\fRメソッドと\fIlist_initial_references methods\fRメソッドの実装に使用するブートストラップ・プロトコルに対してポート900でリスニングします。
 .sp
 .if n \{\
 .RS 4
@@ -96,7 +96,7 @@ tnameserv \-ORBInitialPort nameserverport&
 .RE
 .\}
 .PP
-�͡��ࡦ�����С����ݡ��Ȥ���ꤷ�ʤ���硢�ǥե���Ȥǥݡ���900�����Ѥ���ޤ���Oracle Solaris���եȥ������μ¹Ի���1024��꾮�����ݡ��Ȥǥץ������򳫻Ϥ�����ϡ�root�桼�����ˤʤ�ɬ�פ�����ޤ������Τ��ᡢ1024�ʾ�Υݡ����ֹ����Ѥ��뤳�Ȥ����ᤷ�ޤ���1050�Τ褦���̤Υݡ��Ȥ���ꤷ���͡��ࡦ�����ӥ���Хå����饦��ɤǼ¹Ԥ���ˤϡ�UNIX���ޥ�ɡ�������Ǽ��Τ褦�����Ϥ��ޤ���
+ネーム・サーバー・ポートを指定しない場合、デフォルトでポート900が使用されます。Oracle Solarisソフトウェアの実行時、1024より小さいポートでプロセスを開始する場合は、rootユーザーになる必要があります。このため、1024以上のポート番号を使用することをお薦めします。1050のように別のポートを指定し、ネーム・サービスをバックグラウンドで実行するには、UNIXコマンド・シェルで次のように入力します。
 .sp
 .if n \{\
 .RS 4
@@ -108,7 +108,7 @@ tnameserv \-ORBInitialPort 1050&
 .RE
 .\}
 .PP
-Windows��MS\-DOS�����ƥࡦ�ץ���ץȤǤϡ����Τ褦�����Ϥ��ޤ���
+WindowsのMS\-DOSシステム・プロンプトでは、次のように入力します。
 .sp
 .if n \{\
 .RS 4
@@ -120,20 +120,20 @@ start tnameserv \-ORBInitialPort 1050
 .RE
 .\}
 .PP
-�͡��ࡦ�����С��Υ��饤����Ȥˤϡ��������ݡ����ֹ���Τ餻��ɬ�פ�����ޤ��������Ԥ��ˤϡ�ORB���֥������Ȥκ�������\fIorg\&.omg\&.CORBA\&.ORBInitialPort\fR�ץ��ѥƥ��˿������ݡ����ֹ�����ꤷ�ޤ���
-.SS "�ۤʤ�ۥ��Ⱦ�ǤΥ����С��ȥ��饤����Ȥμ¹�"
+ネーム・サーバーのクライアントには、新しいポート番号を知らせる必要があります。これを行うには、ORBオブジェクトの作成時に\fIorg\&.omg\&.CORBA\&.ORBInitialPort\fRプロパティに新しいポート番号を設定します。
+.SS "異なるホスト上でのサーバーとクライアントの実行"
 .PP
-Java IDL��RMI\-IIOP�ΤۤȤ�ɤΥ��塼�ȥꥢ��Ǥϡ��͡��ߥ󥰡������ӥ��������С�����ӥ��饤����ȤϤ��٤Ƴ�ȯ�ѤΥޥ����Ǽ¹Ԥ���ޤ����ºݤ˥ǥץ������Ȥ�����ˤϡ����饤����Ȥȥ����С��򡢥͡��ߥ󥰡������ӥ��Ȥϰۤʤ�ۥ��ȡ��ޥ����Ǽ¹Ԥ��뤳�Ȥ�¿���ʤ�ޤ���
+Java IDLとRMI\-IIOPのほとんどのチュートリアルでは、ネーミング・サービス、サーバーおよびクライアントはすべて開発用のマシン上で実行されます。実際にデプロイメントする場合には、クライアントとサーバーを、ネーミング・サービスとは異なるホスト・マシン上で実行することが多くなります。
 .PP
-���饤����Ȥȥ����С����͡��ࡦ�����ӥ��򸫤Ĥ���ˤϡ����饤����Ȥȥ����С������͡��ࡦ�����ӥ����¹Ԥ���Ƥ���ݡ��Ȥ��ֹ�ȥۥ��Ȥ�ǧ�����Ƥ���ɬ�פ�����ޤ������Τ���ˤϡ����饤����Ȥȥ����С��Υե��������\fIorg\&.omg\&.CORBA\&.ORBInitialPort\fR�ץ��ѥƥ���\fIorg\&.omg\&.CORBA\&.ORBInitialHost\fR�ץ��ѥƥ���͡��ࡦ�����ӥ����¹Ԥ���Ƥ���ݡ��Ȥ��ֹ�ȥޥ����̾�������ꤷ�ޤ���������ϡ���Getting Started Using RMI\-IIOP��
-(http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/rmi\-iiop/rmiiiopexample\&.html)�˼�����Ƥ��ޤ�
+クライアントとサーバーがネーム・サービスを見つけるには、クライアントとサーバーが、ネーム・サービスが実行されているポートの番号とホストを認識している必要があります。そのためには、クライアントとサーバーのファイル内の\fIorg\&.omg\&.CORBA\&.ORBInitialPort\fRプロパティと\fIorg\&.omg\&.CORBA\&.ORBInitialHost\fRプロパティをネーム・サービスが実行されているポートの番号とマシンの名前に設定します。この例は、「Getting Started Using RMI\-IIOP」
+(http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/rmi\-iiop/rmiiiopexample\&.html)に示されています
 .PP
-���ޥ�ɥ饤�󡦥��ץ����\fI\-ORBInitialPort nameserverport#\fR��\fI\-ORBInitialHost nameserverhostname\fR����Ѥ��ơ����饤����Ȥȥ����С����Ф��ƥ͡��ߥ󥰡������ӥ���õ��������ꤹ�뤳�Ȥ�Ǥ��ޤ������ޥ�ɥ饤�󡦥��ץ�������Ѥ��Ƥ����Ԥ���ˡ��1�Ĥ���ϡ�http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/idl/tutorial/jidl2machines\&.html�Ρ�Java IDL: The Hello World Example on Two Machines��
-�򻲾Ȥ��Ƥ�������
+コマンドライン・オプション\fI\-ORBInitialPort nameserverport#\fRと\fI\-ORBInitialHost nameserverhostname\fRを使用して、クライアントとサーバーに対してネーミング・サービスを探す場所を指定することもできます。コマンドライン・オプションを使用してこれを行う方法の1つの例は、http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/idl/tutorial/jidl2machines\&.htmlの「Java IDL: The Hello World Example on Two Machines」
+を参照してください
 .PP
-���Ȥ��С�����͡��ࡦ�����ӥ�\fItnameserv\fR�����ۥ���\fInameserverhost\fR�Υݡ���1050��Ǽ¹Ԥ���Ƥ���Ȥ��ޤ�������ˡ����饤����Ȥ��ۥ���\fIclienthost\fR��Ǽ¹Ԥ��졢�����С��ϥۥ���\fIserverhost\fR��Ǽ¹Ԥ���Ƥ���Ȥ��ޤ���
+たとえば、一時ネーム・サービス\fItnameserv\fRが、ホスト\fInameserverhost\fRのポート1050上で実行されているとします。さらに、クライアントがホスト\fIclienthost\fR上で実行され、サーバーはホスト\fIserverhost\fR上で実行されているとします。
 .PP
-�ۥ���\fInameserverhost\fR���\fItnameserv\fR��ư���ޤ���
+ホスト\fInameserverhost\fR上で\fItnameserv\fRを起動します。
 .sp
 .if n \{\
 .RS 4
@@ -145,7 +145,7 @@ tnameserv \-ORBInitialPort 1050
 .RE
 .\}
 .PP
-\fIserverhost\fR��ǥ����С���ư���ޤ���
+\fIserverhost\fR上でサーバーを起動します。
 .sp
 .if n \{\
 .RS 4
@@ -158,7 +158,7 @@ java Server \-ORBInitialPort 1050 \-ORBInitialHost nameserverhost
 .\}
 .PP
 
-\fIclienthost\fR��ǥ��饤����Ȥ�ư���ޤ���
+\fIclienthost\fR上でクライアントを起動します。
 .sp
 .if n \{\
 .RS 4
@@ -169,19 +169,19 @@ java Client \-ORBInitialPort 1050 \-ORBInitialHost nameserverhost
 .if n \{\
 .RE
 .\}
-.SS "�͡��ߥ󥰡������ӥ������"
+.SS "ネーミング・サービスの停止"
 .PP
-Java IDL�͡��ߥ󥰡������ӥ�����ߤ���ˤϡ�Unix�ξ��ϡ�\fIkill\fR�ʤɤΥ��ڥ졼�ƥ��󥰡������ƥ�Υ��ޥ�ɤ���Ѥ���Windows�ξ��ϡ�\fI[Ctrl]+[C]\fR��������Ѥ��ޤ����͡��ߥ󥰡������ӥ�������Ū����ߤ���ޤǤϡ��ƽФ��Ե����֤�³���ޤ��������ӥ���λ������ȡ�Java IDL�͡��ࡦ�����ӥ�����Ͽ����Ƥ���̾���ϼ����ޤ���
-.SH "���ץ����"
+Java IDLネーミング・サービスを停止するには、Unixの場合は、\fIkill\fRなどのオペレーティング・システムのコマンドを使用し、Windowsの場合は、\fI[Ctrl]+[C]\fRキーを使用します。ネーミング・サービスを明示的に停止するまでは、呼出し待機状態が続きます。サービスを終了させると、Java IDLネーム・サービスに登録されている名前は失われます。
+.SH "オプション"
 .PP
 \-J\fIoption\fR
 .RS 4
-Java���ۥޥ����\fIoption\fR���Ϥ��ޤ���\fIoption\fR�ˤϡ�Java���ץꥱ�������ư�ġ���Υ�ե���󥹡��ڡ����˵��ܤ���Ƥ��륪�ץ�����1�Ļ��ꤷ�ޤ������Ȥ��С�\fI\-J\-Xms48m\fR�Ȼ��ꤹ��ȡ��������ȥ��åס����꡼��48MB�����ꤵ��ޤ���java(1)�򻲾Ȥ��Ƥ���������
+Java仮想マシンに\fIoption\fRを渡します。\fIoption\fRには、Javaアプリケーション起動ツールのリファレンス・ページに記載されているオプションを1つ指定します。たとえば、\fI\-J\-Xms48m\fRと指定すると、スタートアップ・メモリーは48MBに設定されます。java(1)を参照してください。
 .RE
-.SH "��"
-.SS "�͡��ॹ�ڡ����ؤΥ��֥������Ȥ��ɲ�"
+.SH "例"
+.SS "ネームスペースへのオブジェクトの追加"
 .PP
-������Ǥϡ��͡��ॹ�ڡ�����̾�����ɲä�����ˡ�򼨤��ޤ������Υ���ץ롦�ץ������ϡ����Τޤޤξ��֤Ǵ�����ư������͡��ࡦ�����ӥ������饤����Ȥǡ����Τ褦��ñ��ʥĥ꡼����������ΤǤ���
+次の例では、ネームスペースに名前を追加する方法を示します。このサンプル・プログラムは、このままの状態で完全に動作する一時ネーム・サービス・クライアントで、次のような単純なツリーを作成するものです。
 .sp
 .if n \{\
 .RS 4
@@ -197,7 +197,7 @@ Initial Naming Context
 .RE
 .\}
 .PP
-������ǡ�\fIplans\fR�ϥ��֥������Ȼ��ȡ�\fIPersonal\fR��\fIcalendar\fR��\fIschedule\fR��2�ĤΥ��֥������Ȼ��Ȥ�ޤ�͡��ߥ󥰡�����ƥ����ȤǤ���
+この例で、\fIplans\fRはオブジェクト参照、\fIPersonal\fRは\fIcalendar\fRと\fIschedule\fRの2つのオブジェクト参照を含むネーミング・コンテキストです。
 .sp
 .if n \{\
 .RS 4
@@ -217,7 +217,7 @@ public class NameClient {
 .RE
 .\}
 .PP
-�͡��ߥ󥰡������ӥ��ε�ư�ǡ�\fInameserver\fR�ϥݡ���1050�ǵ�ư����ޤ��������Υ����ɤǡ����Υݡ����ֹ�򥯥饤����ȡ������ƥ���Τ餻�ޤ���
+ネーミング・サービスの起動で、\fInameserver\fRはポート1050で起動されました。次のコードで、このポート番号をクライアント・システムに知らせます。
 .sp
 .if n \{\
 .RS 4
@@ -231,7 +231,7 @@ public class NameClient {
 .RE
 .\}
 .PP
-���Υ����ɤǤϡ�����͡��ߥ󥰡�����ƥ����Ȥ�������������\fIctx\fR���������ޤ���2���ܤǤϡ�\fIctx\fR����ߡ��Υ��֥������Ȼ���\fIobjref\fR�˥��ԡ����ޤ�������objref�ˤϡ����Ȥ��͡���̾���������Ƥƥ͡��ॹ�ڡ������ɲä��ޤ���
+次のコードでは、初期ネーミング・コンテキストを取得し、それを\fIctx\fRに代入します。2行目では、\fIctx\fRをダミーのオブジェクト参照\fIobjref\fRにコピーします。このobjrefには、あとで様々な名前を割り当ててネームスペースに追加します。
 .sp
 .if n \{\
 .RS 4
@@ -246,7 +246,7 @@ public class NameClient {
 .RE
 .\}
 .PP
-���Υ����ɤǤϡ�\fItext\fR�����פ�̾��\fIplans\fR����������������ߡ��Υ��֥������Ȼ��Ȥ˥Х���ɤ��ޤ������θ塢\fIrebind\fR�᥽�åɤ���Ѥ��ƽ���͡��ߥ󥰡�����ƥ����Ȥβ���\fIplans\fR���ɲä��Ƥ��ޤ���\fIrebind\fR�᥽�åɤ���Ѥ���С�\fIbind\fR�᥽�åɤ���Ѥ�������ȯ�������㳰��ȯ���������ˡ����Υץ��������٤ⷫ�֤��¹ԤǤ��ޤ���
+次のコードでは、\fItext\fRタイプの名前\fIplans\fRを作成し、それをダミーのオブジェクト参照にバインドします。その後、\fIrebind\fRメソッドを使用して初期ネーミング・コンテキストの下に\fIplans\fRを追加しています。\fIrebind\fRメソッドを使用すれば、\fIbind\fRメソッドを使用した場合に発生する例外を発生させずに、このプログラムを何度も繰返し実行できます。
 .sp
 .if n \{\
 .RS 4
@@ -261,7 +261,7 @@ public class NameClient {
 .RE
 .\}
 .PP
-���Υ����ɤǤϡ�\fIdirectory\fR�����פ�\fIPersonal\fR�Ȥ����͡��ߥ󥰡�����ƥ����Ȥ�������ޤ������η�������륪�֥������Ȼ���\fIctx2\fR��\fIname\fR�˥Х���ɤ�������͡��ߥ󥰡�����ƥ����Ȥ��ɲä��ޤ���
+次のコードでは、\fIdirectory\fRタイプの\fIPersonal\fRというネーミング・コンテキストを作成します。その結果得られるオブジェクト参照\fIctx2\fRを\fIname\fRにバインドし、初期ネーミング・コンテキストに追加します。
 .sp
 .if n \{\
 .RS 4
@@ -276,7 +276,7 @@ public class NameClient {
 .RE
 .\}
 .PP
-�Ĥ�Υ����ɤǤϡ����ߡ��Υ��֥������Ȼ��Ȥ�\fIschedule\fR��\fIcalendar\fR�Ȥ���̾���ǥ͡��ߥ󥰡�����ƥ�����\fIPersonal\fR(\fIctx2\fR)�˥Х���ɤ��ޤ���
+残りのコードでは、ダミーのオブジェクト参照を\fIschedule\fRと\fIcalendar\fRという名前でネーミング・コンテキスト\fIPersonal\fR(\fIctx2\fR)にバインドします。
 .sp
 .if n \{\
 .RS 4
@@ -300,9 +300,9 @@ public class NameClient {
 .if n \{\
 .RE
 .\}
-.SS "�͡��ॹ�ڡ����λ���"
+.SS "ネームスペースの参照"
 .PP
-���Υ���ץ롦�ץ������Ǥϡ��͡��ॹ�ڡ�����֥饦��������ˡ�򼨤��ޤ���
+次のサンプル・プログラムでは、ネームスペースをブラウズする方法を示します。
 .sp
 .if n \{\
 .RS 4
@@ -322,7 +322,7 @@ public class NameClientList {
 .RE
 .\}
 .PP
-�͡��ߥ󥰡������ӥ��ε�ư�ǡ�\fInameserver\fR�ϥݡ���1050�ǵ�ư����ޤ��������Υ����ɤǡ����Υݡ����ֹ�򥯥饤����ȡ������ƥ���Τ餻�ޤ���
+ネーミング・サービスの起動で、\fInameserver\fRはポート1050で起動されました。次のコードで、このポート番号をクライアント・システムに知らせます。
 .sp
 .if n \{\
 .RS 4
@@ -336,7 +336,7 @@ public class NameClientList {
 .RE
 .\}
 .PP
-���Υ����ɤǤϡ�����͡��ߥ󥰡�����ƥ����Ȥ�������Ƥ��ޤ���
+次のコードでは、初期ネーミング・コンテキストを取得しています。
 .sp
 .if n \{\
 .RS 4
@@ -350,7 +350,7 @@ public class NameClientList {
 .RE
 .\}
 .PP
-\fIlist\fR�᥽�åɤϡ��͡��ߥ󥰡�����ƥ����ȤΥХ���ǥ��󥰤�ꥹ�Ȥ��ޤ������ξ�硢����1000�ĤޤǤΥХ���ǥ��󥰤�����͡��ߥ󥰡�����ƥ����Ȥ���\fIBindingListHolder\fR���֤���ޤ����Ĥ�ΥХ���ǥ��󥰤ϡ�\fIBindingIteratorHolder\fR���֤���ޤ���
+\fIlist\fRメソッドは、ネーミング・コンテキストのバインディングをリストします。この場合、最大1000個までのバインディングが初期ネーミング・コンテキストから\fIBindingListHolder\fRに返されます。残りのバインディングは、\fIBindingIteratorHolder\fRに返されます。
 .sp
 .if n \{\
 .RS 4
@@ -364,7 +364,7 @@ public class NameClientList {
 .RE
 .\}
 .PP
-���Υ����ɤǤϡ��֤��줿\fIBindingListHolder\fR����Х���ǥ��󥰤������������ޤ����Х���ǥ��󥰤��ʤ����ϡ��ץ�����ब��λ���ޤ���
+次のコードでは、返された\fIBindingListHolder\fRからバインディングの配列を取得します。バインディングがない場合は、プログラムが終了します。
 .sp
 .if n \{\
 .RS 4
@@ -377,7 +377,7 @@ public class NameClientList {
 .RE
 .\}
 .PP
-�Ĥ�Υ����ɤǤϡ��Х���ǥ��󥰤��Ф��ƥ롼�׽�����Ԥ���̾������Ϥ��ޤ���
+残りのコードでは、バインディングに対してループ処理を行い、名前を出力します。
 .sp
 .if n \{\
 .RS 4
@@ -408,7 +408,7 @@ public class NameClientList {
 .if n \{\
 .RE
 .\}
-.SH "��Ϣ����"
+.SH "関連項目"
 .sp
 .RS 4
 .ie n \{\

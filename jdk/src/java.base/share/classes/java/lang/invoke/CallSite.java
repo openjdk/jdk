@@ -25,9 +25,10 @@
 
 package java.lang.invoke;
 
-import sun.invoke.empty.Empty;
 import static java.lang.invoke.MethodHandleStatics.*;
 import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
+import java.lang.reflect.Field;
+import sun.misc.Cleaner;
 
 /**
  * A {@code CallSite} is a holder for a variable {@link MethodHandle},
@@ -133,6 +134,50 @@ public class CallSite {
         MethodHandle boundTarget = (MethodHandle) createTargetHook.invokeWithArguments(selfCCS);
         checkTargetChange(this.target, boundTarget);
         this.target = boundTarget;
+    }
+
+    /**
+     * {@code CallSite} dependency context.
+     * VM uses context class to store nmethod dependencies on the call site target.
+     * Can be in 2 states: (a) null; or (b) {@code Cleaner} instance pointing to some Class instance.
+     * Lazily initialized when CallSite instance is linked to some indy call site or VM needs
+     * it to store dependencies. As a corollary, "null" context means there are no dependencies
+     * registered yet. {@code Cleaner} is used in 2 roles:
+     *   (a) context class access for VM;
+     *   (b) stale context class cleanup.
+     * {@code Cleaner} holds the context class until cleanup action is finished (see {@code PhantomReference}).
+     * Though it's impossible to get the context class using {@code Reference.get()}, VM extracts it directly
+     * from {@code Reference.referent} field.
+     */
+    private volatile Cleaner context = null;
+
+    /**
+     * Default context.
+     * VM uses it to initialize non-linked CallSite context.
+     */
+    private static class DefaultContext {}
+    private static final Cleaner DEFAULT_CONTEXT = makeContext(DefaultContext.class, null);
+
+    private static Cleaner makeContext(Class<?> referent, final CallSite holder) {
+        return Cleaner.create(referent,
+                new Runnable() {
+                    @Override public void run() {
+                        MethodHandleNatives.invalidateDependentNMethods(holder);
+                    }
+                });
+    }
+
+    /** Initialize context class used for nmethod dependency tracking */
+    /*package-private*/
+    void initContext(Class<?> newContext) {
+        // If there are concurrent actions, exactly one succeeds.
+        if (context == null) {
+            UNSAFE.compareAndSwapObject(this, CONTEXT_OFFSET, /*expected=*/null, makeContext(newContext, this));
+            // No need to care about failed CAS attempt.
+            // Since initContext is called from indy call site linkage in newContext class, there's no risk
+            // that the context class becomes dead while corresponding context cleaner is alive (causing cleanup
+            // action in the wrong context).
+        }
     }
 
     /**
@@ -246,11 +291,13 @@ public class CallSite {
     }
 
     // unsafe stuff:
-    private static final long TARGET_OFFSET;
+    private static final long  TARGET_OFFSET;
+    private static final long CONTEXT_OFFSET;
     static {
         try {
-            TARGET_OFFSET = UNSAFE.objectFieldOffset(CallSite.class.getDeclaredField("target"));
-        } catch (Exception ex) { throw new Error(ex); }
+            TARGET_OFFSET  = UNSAFE.objectFieldOffset(CallSite.class.getDeclaredField("target"));
+            CONTEXT_OFFSET = UNSAFE.objectFieldOffset(CallSite.class.getDeclaredField("context"));
+        } catch (Exception ex) { throw newInternalError(ex); }
     }
 
     /*package-private*/

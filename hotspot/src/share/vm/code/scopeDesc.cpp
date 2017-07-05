@@ -157,14 +157,18 @@ ScopeDesc* ScopeDesc::sender() const {
 #ifndef PRODUCT
 
 void ScopeDesc::print_value_on(outputStream* st) const {
-  tty->print("   ");
+  st->print("  ");
   method()->print_short_name(st);
   int lineno = method()->line_number_from_bci(bci());
   if (lineno != -1) {
-    st->print_cr("@%d (line %d)", bci(), lineno);
+    st->print("@%d (line %d)", bci(), lineno);
   } else {
-    st->print_cr("@%d", bci());
+    st->print("@%d", bci());
   }
+  if (should_reexecute()) {
+    st->print("  reexecute=true");
+  }
+  st->cr();
 }
 
 void ScopeDesc::print_on(outputStream* st) const {
@@ -174,7 +178,7 @@ void ScopeDesc::print_on(outputStream* st) const {
 void ScopeDesc::print_on(outputStream* st, PcDesc* pd) const {
   // header
   if (pd != NULL) {
-    tty->print_cr("ScopeDesc(pc=" PTR_FORMAT " offset=%x):", pd->real_pc(_code), pd->pc_offset());
+    st->print_cr("ScopeDesc(pc=" PTR_FORMAT " offset=%x):", pd->real_pc(_code), pd->pc_offset());
   }
 
   print_value_on(st);
@@ -192,7 +196,7 @@ void ScopeDesc::print_on(outputStream* st, PcDesc* pd) const {
   // locals
   { GrowableArray<ScopeValue*>* l = ((ScopeDesc*) this)->locals();
     if (l != NULL) {
-      tty->print_cr("   Locals");
+      st->print_cr("   Locals");
       for (int index = 0; index < l->length(); index++) {
         st->print("    - l%d: ", index);
         l->at(index)->print_on(st);
@@ -205,7 +209,7 @@ void ScopeDesc::print_on(outputStream* st, PcDesc* pd) const {
     if (l != NULL) {
       st->print_cr("   Expression stack");
       for (int index = 0; index < l->length(); index++) {
-        st->print("   - @%d: ", index);
+        st->print("    - @%d: ", index);
         l->at(index)->print_on(st);
         st->cr();
       }
@@ -225,12 +229,12 @@ void ScopeDesc::print_on(outputStream* st, PcDesc* pd) const {
 
 #ifdef COMPILER2
   if (DoEscapeAnalysis && is_top() && _objects != NULL) {
-    tty->print_cr("Objects");
+    st->print_cr("   Objects");
     for (int i = 0; i < _objects->length(); i++) {
       ObjectValue* sv = (ObjectValue*) _objects->at(i);
-      tty->print(" - %d: ", sv->id());
-      sv->print_fields_on(tty);
-      tty->cr();
+      st->print("    - %d: ", sv->id());
+      sv->print_fields_on(st);
+      st->cr();
     }
   }
 #endif // COMPILER2

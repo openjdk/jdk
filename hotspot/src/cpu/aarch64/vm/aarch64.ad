@@ -2614,6 +2614,8 @@ typedef void (MacroAssembler::* mem_float_insn)(FloatRegister Rt, const Address 
     case INDINDEXSCALEDI2L:
     case INDINDEXSCALEDOFFSETI2LN:
     case INDINDEXSCALEDI2LN:
+    case INDINDEXOFFSETI2L:
+    case INDINDEXOFFSETI2LN:
       scale = Address::sxtw(size);
       break;
     default:
@@ -5060,6 +5062,20 @@ operand indIndexScaledOffsetL(iRegP reg, iRegL lreg, immIScale scale, immLU12 of
   %}
 %}
 
+operand indIndexOffsetI2L(iRegP reg, iRegI ireg, immLU12 off)
+%{
+  constraint(ALLOC_IN_RC(ptr_reg));
+  match(AddP (AddP reg (ConvI2L ireg)) off);
+  op_cost(INSN_COST);
+  format %{ "$reg, $ireg, $off I2L" %}
+  interface(MEMORY_INTER) %{
+    base($reg);
+    index($ireg);
+    scale(0x0);
+    disp($off);
+  %}
+%}
+
 operand indIndexScaledOffsetI2L(iRegP reg, iRegI ireg, immIScale scale, immLU12 off)
 %{
   constraint(ALLOC_IN_RC(ptr_reg));
@@ -5120,7 +5136,7 @@ operand indOffI(iRegP reg, immIOffset off)
 %{
   constraint(ALLOC_IN_RC(ptr_reg));
   match(AddP reg off);
-  op_cost(INSN_COST);
+  op_cost(0);
   format %{ "[$reg, $off]" %}
   interface(MEMORY_INTER) %{
     base($reg);
@@ -5186,6 +5202,21 @@ operand indIndexScaledOffsetLN(iRegN reg, iRegL lreg, immIScale scale, immLU12 o
     base($reg);
     index($lreg);
     scale($scale);
+    disp($off);
+  %}
+%}
+
+operand indIndexOffsetI2LN(iRegN reg, iRegI ireg, immLU12 off)
+%{
+  predicate(Universe::narrow_oop_shift() == 0);
+  constraint(ALLOC_IN_RC(ptr_reg));
+  match(AddP (AddP (DecodeN reg) (ConvI2L ireg)) off);
+  op_cost(INSN_COST);
+  format %{ "$reg, $ireg, $off I2L\t# narrow" %}
+  interface(MEMORY_INTER) %{
+    base($reg);
+    index($ireg);
+    scale(0x0);
     disp($off);
   %}
 %}
@@ -5452,8 +5483,8 @@ operand iRegL2I(iRegL reg) %{
 // memory is used to define read/write location for load/store
 // instruction defs. we can turn a memory op into an Address
 
-opclass memory(indirect, indIndexScaledOffsetI,  indIndexScaledOffsetL, indIndexScaledOffsetI2L, indIndexScaled, indIndexScaledI2L, indIndex, indOffI, indOffL,
-               indirectN, indIndexScaledOffsetIN,  indIndexScaledOffsetLN, indIndexScaledOffsetI2LN, indIndexScaledN, indIndexScaledI2LN, indIndexN, indOffIN, indOffLN);
+opclass memory(indirect, indIndexScaledOffsetI, indIndexScaledOffsetL, indIndexOffsetI2L, indIndexScaledOffsetI2L, indIndexScaled, indIndexScaledI2L, indIndex, indOffI, indOffL,
+               indirectN, indIndexScaledOffsetIN, indIndexScaledOffsetLN, indIndexOffsetI2LN, indIndexScaledOffsetI2LN, indIndexScaledN, indIndexScaledI2LN, indIndexN, indOffIN, indOffLN);
 
 
 // iRegIorL2I is used for src inputs in rules for 32 bit int (I)
@@ -8346,7 +8377,7 @@ instruct addP_reg_reg(iRegPNoSp dst, iRegP src1, iRegL src2) %{
 instruct addP_reg_reg_ext(iRegPNoSp dst, iRegP src1, iRegIorL2I src2) %{
   match(Set dst (AddP src1 (ConvI2L src2)));
 
-  ins_cost(INSN_COST);
+  ins_cost(1.9 * INSN_COST);
   format %{ "add $dst, $src1, $src2, sxtw\t# ptr" %}
 
   ins_encode %{

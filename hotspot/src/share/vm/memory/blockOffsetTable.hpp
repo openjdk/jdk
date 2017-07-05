@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 #define SHARE_VM_MEMORY_BLOCKOFFSETTABLE_HPP
 
 #include "memory/memRegion.hpp"
-#include "runtime/virtualspace.hpp"
+#include "memory/virtualspace.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 // The CollectedHeap type requires subtypes to implement a method

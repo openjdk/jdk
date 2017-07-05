@@ -33,7 +33,6 @@ import org.omg.CORBA_2_3.portable.OutputStream;
 import com.sun.corba.se.spi.ior.Identifiable ;
 
 /**
- * @author
  * This is used for unknown components and profiles.  A TAG_MULTICOMPONENT_PROFILE will be represented this way.
  */
 public abstract class GenericIdentifiable implements Identifiable

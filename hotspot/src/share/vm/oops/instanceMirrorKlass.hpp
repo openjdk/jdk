@@ -88,19 +88,66 @@ class InstanceMirrorKlass: public InstanceKlass {
   // allocation
   instanceOop allocate_instance(KlassHandle k, TRAPS);
 
-  // Garbage collection
-  int  oop_adjust_pointers(oop obj);
-  void oop_follow_contents(oop obj);
+  // GC specific object visitors
+  //
+  // Mark Sweep
+  void oop_ms_follow_contents(oop obj);
+  int  oop_ms_adjust_pointers(oop obj);
+#if INCLUDE_ALL_GCS
+  // Parallel Scavenge
+  void oop_ps_push_contents(  oop obj, PSPromotionManager* pm);
+  // Parallel Compact
+  void oop_pc_follow_contents(oop obj, ParCompactionManager* cm);
+  void oop_pc_update_pointers(oop obj);
+#endif
 
-  // Parallel Scavenge and Parallel Old
-  PARALLEL_GC_DECLS
+  // Oop fields (and metadata) iterators
+  //  [nv = true]  Use non-virtual calls to do_oop_nv.
+  //  [nv = false] Use virtual calls to do_oop.
+  //
+  // The InstanceMirrorKlass iterators also visit the hidden Klass pointer.
 
-  int oop_oop_iterate(oop obj, ExtendedOopClosure* blk) {
-    return oop_oop_iterate_v(obj, blk);
-  }
-  int oop_oop_iterate_m(oop obj, ExtendedOopClosure* blk, MemRegion mr) {
-    return oop_oop_iterate_v_m(obj, blk, mr);
-  }
+ public:
+  // Iterate over the static fields.
+  template <bool nv, class OopClosureType>
+  inline void oop_oop_iterate_statics(oop obj, OopClosureType* closure);
+
+ private:
+  // Iterate over the static fields.
+  // Specialized for [T = oop] or [T = narrowOop].
+  template <bool nv, typename T, class OopClosureType>
+  inline void oop_oop_iterate_statics_specialized(oop obj, OopClosureType* closure);
+
+  // Forward iteration
+  // Iterate over the oop fields and metadata.
+  template <bool nv, class OopClosureType>
+  inline int oop_oop_iterate(oop obj, OopClosureType* closure);
+
+
+  // Reverse iteration
+#if INCLUDE_ALL_GCS
+  // Iterate over the oop fields and metadata.
+  template <bool nv, class OopClosureType>
+  inline int oop_oop_iterate_reverse(oop obj, OopClosureType* closure);
+#endif
+
+
+  // Bounded range iteration
+  // Iterate over the oop fields and metadata.
+  template <bool nv, class OopClosureType>
+  inline int oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr);
+
+  // Iterate over the static fields.
+  template <bool nv, class OopClosureType>
+  inline void oop_oop_iterate_statics_bounded(oop obj, OopClosureType* closure, MemRegion mr);
+
+  // Iterate over the static fields.
+  // Specialized for [T = oop] or [T = narrowOop].
+  template <bool nv, typename T, class OopClosureType>
+  inline void oop_oop_iterate_statics_specialized_bounded(oop obj, OopClosureType* closure, MemRegion mr);
+
+
+ public:
 
 #define InstanceMirrorKlass_OOP_OOP_ITERATE_DECL(OopClosureType, nv_suffix)           \
   int oop_oop_iterate##nv_suffix(oop obj, OopClosureType* blk);                       \

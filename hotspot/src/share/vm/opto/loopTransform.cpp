@@ -38,6 +38,7 @@
 #include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
 #include "opto/subnode.hpp"
+#include "opto/vectornode.hpp"
 
 //------------------------------is_loop_exit-----------------------------------
 // Given an IfNode, return the loop-exiting projection or NULL if both
@@ -1524,6 +1525,44 @@ void PhaseIdealLoop::do_maximally_unroll( IdealLoopTree *loop, Node_List &old_ne
   }
 }
 
+void PhaseIdealLoop::mark_reductions(IdealLoopTree *loop) {
+  if (SuperWordReductions == false) return;
+
+  CountedLoopNode* loop_head = loop->_head->as_CountedLoop();
+  if (loop_head->unrolled_count() > 1) {
+    return;
+  }
+
+  Node* trip_phi = loop_head->phi();
+  for (DUIterator_Fast imax, i = loop_head->fast_outs(imax); i < imax; i++) {
+    Node* phi = loop_head->fast_out(i);
+    if (phi->is_Phi() && phi->outcnt() > 0 && phi != trip_phi) {
+      // For definitions which are loop inclusive and not tripcounts.
+      Node* def_node = phi->in(LoopNode::LoopBackControl);
+
+      if (def_node != NULL) {
+        Node* n_ctrl = get_ctrl(def_node);
+        if (n_ctrl != NULL && loop->is_member(get_loop(n_ctrl))) {
+          // Now test it to see if it fits the standard pattern for a reduction operator.
+          int opc = def_node->Opcode();
+          if (opc != ReductionNode::opcode(opc, def_node->bottom_type()->basic_type())) {
+            if (!def_node->is_reduction()) { // Not marked yet
+              // To be a reduction, the arithmetic node must have the phi as input and provide a def to it
+              for (unsigned j = 1; j < def_node->req(); j++) {
+                Node* in = def_node->in(j);
+                if (in == phi) {
+                  def_node->add_flag(Node::Flag_is_reduction);
+                  break;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
 //------------------------------dominates_backedge---------------------------------
 // Returns true if ctrl is executed on every complete iteration
 bool IdealLoopTree::dominates_backedge(Node* ctrl) {
@@ -2361,8 +2400,10 @@ bool IdealLoopTree::iteration_split_impl( PhaseIdealLoop *phase, Node_List &old_
     // an even number of trips).  If we are peeling, we might enable some RCE
     // and we'd rather unroll the post-RCE'd loop SO... do not unroll if
     // peeling.
-    if (should_unroll && !should_peel)
-      phase->do_unroll(this,old_new, true);
+    if (should_unroll && !should_peel) {
+      phase->mark_reductions(this);
+      phase->do_unroll(this, old_new, true);
+    }
 
     // Adjust the pre-loop limits to align the main body
     // iterations.

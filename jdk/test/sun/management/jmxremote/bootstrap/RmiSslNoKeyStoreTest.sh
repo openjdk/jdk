@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2003, 2004, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
 # @summary Test RMI Bootstrap with SSL and no keystore.
 #
 # @bug 4932854
+# @modules java.management/sun.management
+#          java.management/sun.management.jmxremote
 # @build TestLogger RmiSslNoKeyStoreTest
 # @run shell/timeout=300  RmiSslNoKeyStoreTest.sh
 

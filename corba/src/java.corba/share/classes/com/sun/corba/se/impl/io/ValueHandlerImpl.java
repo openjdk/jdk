@@ -171,9 +171,9 @@ public final class ValueHandlerImpl implements javax.rmi.CORBA.ValueHandlerMulti
      * @param out The stream to write the value to
      * @param value The value to be written to the stream
      **/
-    public void writeValue(org.omg.CORBA.portable.OutputStream _out,
+    public void writeValue(org.omg.CORBA.portable.OutputStream out,
                            java.io.Serializable value) {
-        writeValueWithVersion(_out, value, STREAM_FORMAT_VERSION_1);
+        writeValueWithVersion(out, value, STREAM_FORMAT_VERSION_1);
     }
 
     private void writeValueWithVersion(org.omg.CORBA.portable.OutputStream _out,
@@ -240,25 +240,25 @@ public final class ValueHandlerImpl implements javax.rmi.CORBA.ValueHandlerMulti
      * Reads a value from the stream using java semantics.
      * @param in The stream to read the value from
      * @param clazz The type of the value to be read in
-     * @param sender The sending context runtime
+     * @param rt The sending context runtime
      **/
-    public java.io.Serializable readValue(org.omg.CORBA.portable.InputStream _in,
+    public java.io.Serializable readValue(org.omg.CORBA.portable.InputStream in,
                                           int offset,
                                           java.lang.Class clazz,
                                           String repositoryID,
-                                          org.omg.SendingContext.RunTime _sender)
+                                          org.omg.SendingContext.RunTime rt)
     {
         // Must use narrow rather than a direct cast to a com.sun
         // class.  Fix for bug 4379539.
-        CodeBase sender = CodeBaseHelper.narrow(_sender);
+        CodeBase sender = CodeBaseHelper.narrow(rt);
 
-        org.omg.CORBA_2_3.portable.InputStream in =
-            (org.omg.CORBA_2_3.portable.InputStream) _in;
+        org.omg.CORBA_2_3.portable.InputStream inStream =
+            (org.omg.CORBA_2_3.portable.InputStream) in;
 
         if (!useHashtables) {
             if (inputStreamBridge == null) {
                 inputStreamBridge = createInputStream();
-                inputStreamBridge.setOrbStream(in);
+                inputStreamBridge.setOrbStream(inStream);
                 inputStreamBridge.setSender(sender); //d11638
                 // backward compatability 4365188
                 inputStreamBridge.setValueHandler(this);
@@ -269,7 +269,7 @@ public final class ValueHandlerImpl implements javax.rmi.CORBA.ValueHandlerMulti
             try {
 
                 inputStreamBridge.increaseRecursionDepth();
-                result = (java.io.Serializable) readValueInternal(inputStreamBridge, in, offset, clazz, repositoryID, sender);
+                result = (java.io.Serializable) readValueInternal(inputStreamBridge, inStream, offset, clazz, repositoryID, sender);
 
             } finally {
 
@@ -287,16 +287,16 @@ public final class ValueHandlerImpl implements javax.rmi.CORBA.ValueHandlerMulti
         if (inputStreamPairs == null)
             inputStreamPairs = new Hashtable();
 
-        jdkToOrbInputStreamBridge = (IIOPInputStream)inputStreamPairs.get(_in);
+        jdkToOrbInputStreamBridge = (IIOPInputStream)inputStreamPairs.get(in);
 
         if (jdkToOrbInputStreamBridge == null) {
 
             jdkToOrbInputStreamBridge = createInputStream();
-            jdkToOrbInputStreamBridge.setOrbStream(in);
+            jdkToOrbInputStreamBridge.setOrbStream(inStream);
             jdkToOrbInputStreamBridge.setSender(sender); //d11638
             // backward compatability 4365188
             jdkToOrbInputStreamBridge.setValueHandler(this);
-            inputStreamPairs.put(_in, jdkToOrbInputStreamBridge);
+            inputStreamPairs.put(in, jdkToOrbInputStreamBridge);
         }
 
         java.io.Serializable result = null;
@@ -304,12 +304,12 @@ public final class ValueHandlerImpl implements javax.rmi.CORBA.ValueHandlerMulti
         try {
 
             jdkToOrbInputStreamBridge.increaseRecursionDepth();
-            result = (java.io.Serializable) readValueInternal(jdkToOrbInputStreamBridge, in, offset, clazz, repositoryID, sender);
+            result = (java.io.Serializable) readValueInternal(jdkToOrbInputStreamBridge, inStream, offset, clazz, repositoryID, sender);
 
         } finally {
 
             if (jdkToOrbInputStreamBridge.decreaseRecursionDepth() == 0) {
-                inputStreamPairs.remove(_in);
+                inputStreamPairs.remove(in);
             }
         }
 

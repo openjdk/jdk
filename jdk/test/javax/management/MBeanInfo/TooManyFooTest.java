@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  * @summary Test that a method inherited from two different interfaces
  *          appears only once in MBeanInfo.
  * @author dfuchs
+ * @modules java.management
  * @run clean TooManyFooTest
  * @run build TooManyFooTest
  * @run main TooManyFooTest

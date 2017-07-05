@@ -328,7 +328,7 @@ implements CertAttrSet<String>, Cloneable {
      * (k)  If excludedSubtrees is present in the certificate, set the
      * excluded subtrees state variable to the union of its previous
      * value and the value indicated in the extension field.
-     * <p>
+     *
      * @param newConstraints additional NameConstraints to be applied
      * @throws IOException on error
      */
@@ -406,7 +406,7 @@ implements CertAttrSet<String>, Cloneable {
      * the excluded subtrees state variables.
      *
      * @param cert X509Certificate to be verified
-     * @returns true if certificate verifies successfully
+     * @return true if certificate verifies successfully
      * @throws IOException on error
      */
     public boolean verify(X509Certificate cert) throws IOException {
@@ -484,7 +484,7 @@ implements CertAttrSet<String>, Cloneable {
      * permitted and excluded subtrees variables.
      *
      * @param name GeneralNameInterface name to be verified
-     * @returns true if certificate verifies successfully
+     * @return true if certificate verifies successfully
      * @throws IOException on error
      */
     public boolean verify(GeneralNameInterface name) throws IOException {
@@ -566,7 +566,7 @@ implements CertAttrSet<String>, Cloneable {
      * NameConstraints.
      *
      * @param subject the certificate's subject name
-     * @returns true if certificate verifies successfully
+     * @return true if certificate verifies successfully
      * @throws IOException on error
      */
     public boolean verifyRFC822SpecialCase(X500Name subject) throws IOException {

@@ -75,7 +75,7 @@ public class IPAddressName implements GeneralNameInterface {
     /**
      * Create the IPAddressName object from the passed encoded Der value.
      *
-     * @params derValue the encoded DER IPAddressName.
+     * @param derValue the encoded DER IPAddressName.
      * @exception IOException on error.
      */
     public IPAddressName(DerValue derValue) throws IOException {
@@ -85,7 +85,7 @@ public class IPAddressName implements GeneralNameInterface {
     /**
      * Create the IPAddressName object with the specified octets.
      *
-     * @params address the IP address
+     * @param address the IP address
      * @throws IOException if address is not a valid IPv4 or IPv6 address
      */
     public IPAddressName(byte[] address) throws IOException {
@@ -106,7 +106,7 @@ public class IPAddressName implements GeneralNameInterface {
 
     /**
      * Create an IPAddressName from a String.
-     * [IETF RFC1338 Supernetting & IETF RFC1519 Classless Inter-Domain
+     * [IETF RFC1338 Supernetting {@literal &} IETF RFC1519 Classless Inter-Domain
      * Routing (CIDR)] For IPv4 addresses, the forms are
      * "b1.b2.b3.b4" or "b1.b2.b3.b4/m1.m2.m3.m4", where b1 - b4 are decimal
      * byte values 0-255 and m1 - m4 are decimal mask values
@@ -118,7 +118,7 @@ public class IPAddressName implements GeneralNameInterface {
      * of the address. If /n is used, n is a decimal number indicating how many
      * of the leftmost contiguous bits of the address comprise the prefix for
      * this subnet. Internally, a mask value is created using the prefix length.
-     * <p>
+     *
      * @param name String form of IPAddressName
      * @throws IOException if name can not be converted to a valid IPv4 or IPv6
      *     address
@@ -224,7 +224,7 @@ public class IPAddressName implements GeneralNameInterface {
     /**
      * Encode the IPAddress name into the DerOutputStream.
      *
-     * @params out the DER stream to encode the IPAddressName to.
+     * @param out the DER stream to encode the IPAddressName to.
      * @exception IOException on encoding errors.
      */
     public void encode(DerOutputStream out) throws IOException {
@@ -384,9 +384,9 @@ public class IPAddressName implements GeneralNameInterface {
      * constraint for "class C" subnet 10.9.8.0 shall be represented as the
      * octets 0A 09 08 00 FF FF FF 00, representing the CIDR notation
      * 10.9.8.0/255.255.255.0.
-     * <p>
+     *
      * @param inputName to be checked for being constrained
-     * @returns constraint type above
+     * @return constraint type above
      * @throws UnsupportedOperationException if name is not exact match, but
      * narrowing and widening are not supported for this name type.
      */
@@ -479,7 +479,7 @@ public class IPAddressName implements GeneralNameInterface {
      * NameConstraints minimum and maximum bounds and for calculating
      * path lengths in name subtrees.
      *
-     * @returns distance of name from root
+     * @return distance of name from root
      * @throws UnsupportedOperationException if not supported for this name type
      */
     public int subtreeDepth() throws UnsupportedOperationException {

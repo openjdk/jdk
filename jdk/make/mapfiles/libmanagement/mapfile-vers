@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -27,37 +27,10 @@
 
 SUNWprivate_1.1 {
 	global:
-	    Java_sun_management_OperatingSystemImpl_getCommittedVirtualMemorySize0;
-	    Java_sun_management_OperatingSystemImpl_getFreePhysicalMemorySize0;
-	    Java_sun_management_OperatingSystemImpl_getFreeSwapSpaceSize0;
-	    Java_sun_management_OperatingSystemImpl_getMaxFileDescriptorCount0;
-	    Java_sun_management_OperatingSystemImpl_getOpenFileDescriptorCount0;
-	    Java_sun_management_OperatingSystemImpl_getProcessCpuLoad0;
-	    Java_sun_management_OperatingSystemImpl_getProcessCpuTime0;
-	    Java_sun_management_OperatingSystemImpl_getSystemCpuLoad0;
-	    Java_sun_management_OperatingSystemImpl_getTotalPhysicalMemorySize0;
-	    Java_sun_management_OperatingSystemImpl_getTotalSwapSpaceSize0;
-	    Java_sun_management_OperatingSystemImpl_initialize0;
 	    Java_sun_management_ClassLoadingImpl_setVerboseClass;
-            Java_sun_management_DiagnosticCommandImpl_executeDiagnosticCommand;
-            Java_sun_management_DiagnosticCommandImpl_getDiagnosticCommands;
-            Java_sun_management_DiagnosticCommandImpl_getDiagnosticCommandInfo;
-            Java_sun_management_DiagnosticCommandImpl_setNotificationEnabled;
-	    Java_sun_management_FileSystemImpl_isAccessUserOnly0;
-	    Java_sun_management_Flag_getAllFlagNames;
-	    Java_sun_management_Flag_getFlags;
-	    Java_sun_management_Flag_getInternalFlagCount;
-	    Java_sun_management_Flag_initialize;
-	    Java_sun_management_Flag_setLongValue;
-	    Java_sun_management_Flag_setBooleanValue;
-	    Java_sun_management_Flag_setStringValue;
-	    Java_sun_management_GarbageCollectorImpl_getCollectionCount;
+            Java_sun_management_FileSystemImpl_isAccessUserOnly0;
+            Java_sun_management_GarbageCollectorImpl_getCollectionCount;
 	    Java_sun_management_GarbageCollectorImpl_getCollectionTime;
-	    Java_sun_management_GarbageCollectorImpl_setNotificationEnabled;
-	    Java_sun_management_GcInfoBuilder_fillGcAttributeInfo;
-	    Java_sun_management_GcInfoBuilder_getLastGcInfo0;
-	    Java_sun_management_GcInfoBuilder_getNumGcExtAttributes;
-	    Java_sun_management_HotSpotDiagnostic_dumpHeap0;
 	    Java_sun_management_HotspotThread_getInternalThreadCount;
 	    Java_sun_management_HotspotThread_getInternalThreadTimes0;
 	    Java_sun_management_MemoryImpl_getMemoryManagers0;

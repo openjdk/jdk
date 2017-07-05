@@ -86,6 +86,9 @@ final class NashornBottomLinker implements GuardingDynamicLinker, GuardingTypeCo
         final String operator = desc.getFirstOperator();
         switch (operator) {
         case "new":
+            if(BeansLinker.isDynamicConstructor(self)) {
+                throw typeError("no.constructor.matches.args", ScriptRuntime.safeToString(self));
+            }
             if(BeansLinker.isDynamicMethod(self)) {
                 throw typeError("method.not.constructor", ScriptRuntime.safeToString(self));
             }

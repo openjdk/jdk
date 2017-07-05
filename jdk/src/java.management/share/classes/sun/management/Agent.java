@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import java.lang.management.ManagementFactory;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.InetAddress;
+import java.net.MalformedURLException;
 import java.net.UnknownHostException;
 import java.text.MessageFormat;
 import java.util.MissingResourceException;
@@ -55,6 +56,125 @@ import sun.misc.VMSupport;
  * system class loader. Also jmx framework could be started by jcmd
  */
 public class Agent {
+    /**
+     * Agent status collector strategy class
+     */
+    private static abstract class StatusCollector {
+        final protected StringBuilder sb = new StringBuilder();
+        final public String collect() {
+            Properties agentProps = VMSupport.getAgentProperties();
+            String localConnAddr = (String)agentProps.get(LOCAL_CONNECTOR_ADDRESS_PROP);
+            if (localConnAddr != null || jmxServer != null) {
+                addAgentStatus(true);
+                appendConnections(localConnAddr);
+            } else {
+                addAgentStatus(false);
+            }
+            return sb.toString();
+        }
+
+        private void appendConnections(String localConnAddr) {
+            appendConnectionsHeader();
+            if (localConnAddr != null) {
+                try {
+                    JMXServiceURL u = new JMXServiceURL(localConnAddr);
+                    addConnection(false, u);
+                } catch (MalformedURLException e) {
+                    // will never happen
+                }
+
+            }
+            if (jmxServer != null) {
+                addConnection(true, jmxServer.getAddress());
+            }
+            appendConnectionsFooter();
+        }
+
+        private void addConnection(boolean remote, JMXServiceURL u) {
+            appendConnectionHeader(remote);
+            addConnectionDetails(u);
+            if (remote) {
+                addConfigProperties();
+            }
+            appendConnectionFooter(remote);
+        }
+
+        private void addConfigProperties() {
+            appendConfigPropsHeader();
+            boolean[] first = new boolean[] {true};
+            configProps.entrySet().stream().forEach((e) -> {
+                String key = (String)e.getKey();
+                if (key.startsWith("com.sun.management.")) {
+                    addConfigProp(key, e.getValue(), first[0]);
+                    first[0] = false;
+                }
+            });
+            appendConfigPropsFooter();
+        }
+
+        abstract protected void addAgentStatus(boolean enabled);
+        abstract protected void appendConnectionsHeader();
+        abstract protected void appendConnectionsFooter();
+        abstract protected void addConnectionDetails(JMXServiceURL u);
+        abstract protected void appendConnectionHeader(boolean remote);
+        abstract protected void appendConnectionFooter(boolean remote);
+        abstract protected void appendConfigPropsHeader();
+        abstract protected void appendConfigPropsFooter();
+        abstract protected void addConfigProp(String key, Object value, boolean first);
+    }
+
+    /**
+     * Free-text status collector strategy implementation
+     */
+    final private static class TextStatusCollector extends StatusCollector {
+
+        @Override
+        protected void addAgentStatus(boolean enabled) {
+            sb.append("Agent: ").append(enabled ? "enabled" : "disabled").append('\n');
+        }
+
+        @Override
+        protected void appendConnectionsHeader() {
+            sb.append('\n');
+        }
+
+        @Override
+        protected void addConnectionDetails(JMXServiceURL u) {
+            sb.append("Protocol       : ").append(u.getProtocol()).append('\n')
+              .append("Host           : ").append(u.getHost()).append('\n')
+              .append("URL            : ").append(u).append('\n');
+        }
+
+        @Override
+        protected void appendConnectionHeader(boolean remote) {
+            sb.append("Connection Type: ").append(remote ? "remote" : "local").append('\n');
+        }
+
+        @Override
+        protected void appendConfigPropsHeader() {
+            sb.append("Properties     :\n");
+        }
+
+        @Override
+        protected void addConfigProp(String key, Object value, boolean first) {
+            if (!first) {
+                sb.append('\n');
+            }
+            sb.append("  ").append(key).append(" = ").append(value);
+        }
+
+        @Override
+        protected void appendConnectionsFooter() {}
+
+        @Override
+        protected void appendConnectionFooter(boolean remote) {
+            sb.append('\n');
+        }
+
+        @Override
+        protected void appendConfigPropsFooter() {}
+    }
+
     // management properties
 
     private static Properties mgmtProps;
@@ -81,6 +201,8 @@ public class Agent {
 
     // The only active agent allowed
     private static JMXConnectorServer jmxServer = null;
+    // The properties used to configure the server
+    private static Properties configProps = null;
 
     // Parse string com.sun.management.prop=xxx,com.sun.management.prop=yyyy
     // and return property set if args is null or empty
@@ -161,7 +283,7 @@ public class Agent {
 
         try {
             Properties argProps = parseString(args);
-            Properties configProps = new Properties();
+            configProps = new Properties();
 
             // Load the management properties from the config file
             // if config file is not specified readConfiguration implicitly
@@ -228,7 +350,12 @@ public class Agent {
             // Don't cause any errors.
             jmxServer.stop();
             jmxServer = null;
+            configProps = null;
         }
+    }
+
+    private static synchronized String getManagementAgentStatus() throws Exception {
+        return new TextStatusCollector().collect();
     }
 
     private static void startAgent(Properties props) throws Exception {

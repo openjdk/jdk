@@ -3462,6 +3462,24 @@ bool GraphBuilder::try_inline_intrinsics(ciMethod* callee) {
     case vmIntrinsics::_putFloat  : return append_unsafe_put_obj(callee, T_FLOAT,   false);
     case vmIntrinsics::_putDouble : return append_unsafe_put_obj(callee, T_DOUBLE,  false);
 
+    case vmIntrinsics::_getShortUnaligned  :
+      return UseUnalignedAccesses ? append_unsafe_get_obj(callee, T_SHORT,   false) : false;
+    case vmIntrinsics::_getCharUnaligned   :
+      return UseUnalignedAccesses ? append_unsafe_get_obj(callee, T_CHAR,    false) : false;
+    case vmIntrinsics::_getIntUnaligned    :
+      return UseUnalignedAccesses ? append_unsafe_get_obj(callee, T_INT,     false) : false;
+    case vmIntrinsics::_getLongUnaligned   :
+      return UseUnalignedAccesses ? append_unsafe_get_obj(callee, T_LONG,    false) : false;
+
+    case vmIntrinsics::_putShortUnaligned  :
+      return UseUnalignedAccesses ? append_unsafe_put_obj(callee, T_SHORT,   false) : false;
+    case vmIntrinsics::_putCharUnaligned   :
+      return UseUnalignedAccesses ? append_unsafe_put_obj(callee, T_CHAR,    false) : false;
+    case vmIntrinsics::_putIntUnaligned    :
+      return UseUnalignedAccesses ? append_unsafe_put_obj(callee, T_INT,     false) : false;
+    case vmIntrinsics::_putLongUnaligned   :
+      return UseUnalignedAccesses ? append_unsafe_put_obj(callee, T_LONG,    false) : false;
+
     case vmIntrinsics::_getObjectVolatile : return append_unsafe_get_obj(callee, T_OBJECT,  true);
     case vmIntrinsics::_getBooleanVolatile: return append_unsafe_get_obj(callee, T_BOOLEAN, true);
     case vmIntrinsics::_getByteVolatile   : return append_unsafe_get_obj(callee, T_BYTE,    true);
@@ -4065,7 +4083,7 @@ bool GraphBuilder::try_method_handle_inline(ciMethod* callee) {
       ValueType* type = apop()->type();
       if (type->is_constant()) {
         ciMethod* target = type->as_ObjectType()->constant_value()->as_member_name()->get_vmtarget();
-        // If the target is another method handle invoke try recursivly to get
+        // If the target is another method handle invoke, try to recursively get
         // a better target.
         if (target->is_method_handle_intrinsic()) {
           if (try_method_handle_inline(target)) {
