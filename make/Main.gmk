@@ -342,7 +342,7 @@ jre-image:
 symbols-image:
 	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f Images.gmk symbols)
 
-profiles:
+profiles-image:
 	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f Images.gmk profiles)
 
 mac-bundles-jdk:
@@ -356,7 +356,7 @@ exploded-image-optimize:
 
 ALL_TARGETS += store-source-revision create-source-revision-tracker bootcycle-images zip-security \
     zip-source jrtfs-jar jdk-image jre-image \
-    symbols-image profiles mac-bundles-jdk \
+    symbols-image profiles-image mac-bundles-jdk \
     release-file exploded-image-optimize
 
 ################################################################################
@@ -510,13 +510,16 @@ ALL_TARGETS += test test-hotspot-jtreg test-hotspot-jtreg-native \
 product-bundles:
 	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f Bundles.gmk product-bundles)
 
+profiles-bundles:
+	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f Bundles.gmk profiles-bundles)
+
 test-bundles:
 	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f Bundles.gmk test-bundles)
 
 docs-bundles:
 	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f Bundles.gmk docs-bundles)
 
-ALL_TARGETS += product-bundles test-bundles docs-bundles
+ALL_TARGETS += product-bundles profiles-bundles test-bundles docs-bundles
 
 ################################################################################
 # Install targets
@@ -734,7 +737,7 @@ else
   jre-image: jmods release-file
   symbols-image: $(LIBS_TARGETS) $(LAUNCHER_TARGETS)
 
-  profiles: jmods release-file
+  profiles-image: jmods release-file
 
   mac-bundles-jdk: jdk-image jre-image
 
@@ -792,6 +795,8 @@ else
   install: product-images
 
   product-bundles: product-images
+
+  profiles-bundles: profiles-images
 
   test-bundles: test-image
 
@@ -878,6 +883,9 @@ product-images: jdk-image jre-image symbols-image exploded-image
 # an image until this can be cleaned up properly.
 product-images: zip-security
 
+# Declare these for backwards compatiblity and convenience.
+profiles profiles-images: profiles-image
+
 # The module summary cannot be run when:
 # * Cross compiling and building a partial BUILDJDK for the build host
 # * An external buildjdk has been supplied since it may not match the
@@ -909,7 +917,9 @@ ALL_TARGETS += buildtools hotspot hotspot-libs hotspot-gensrc gensrc gendata \
     copy java rmic libs launchers jmods \
     jdk.jdwp.agent-gensrc $(ALL_MODULES) demos samples \
     exploded-image-base exploded-image \
-    create-buildjdk mac-bundles product-images docs-image test-image all-images \
+    create-buildjdk mac-bundles product-images \
+    profiles profiles-images \
+    docs-image test-image all-images \
     all-bundles
 
 ################################################################################

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,7 +81,7 @@ public class SpecifyCatalogTest {
     @Test
     public void specifyCatalogViaSysProps() {
         setSystemProperty(FEATURE_FILES,
-                getCatalogPath("specifyCatalog-sysProps.xml"));
+                getCatalogPath("specifyCatalog-sysProps.xml").toASCIIString());
 
         checkResolutionOnEntityResolver(catalogResolver((String[]) null),
                 "http://local/base/dtd/docSysPropsSys.dtd");
@@ -107,6 +107,6 @@ public class SpecifyCatalogTest {
     }
 
     private static CatalogFeatures createFeature(String catalogName) {
-        return builder().with(FILES, getCatalogPath(catalogName)).build();
+        return builder().with(FILES, getCatalogPath(catalogName).toASCIIString()).build();
     }
 }

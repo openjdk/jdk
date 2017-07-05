@@ -30,8 +30,10 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.PrivilegedAction;
 import java.util.Hashtable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
@@ -231,7 +233,7 @@ public abstract class URLConnection {
      */
     protected boolean allowUserInteraction = defaultAllowUserInteraction;
 
-    private static boolean defaultUseCaches = true;
+    private static volatile boolean defaultUseCaches = true;
 
    /**
      * If {@code true}, the protocol is allowed to use caching
@@ -243,12 +245,18 @@ public abstract class URLConnection {
      * <p>
      * Its default value is the value given in the last invocation of the
      * {@code setDefaultUseCaches} method.
+     * <p>
+     * The default setting may be overridden per protocol with
+     * {@link #setDefaultUseCaches(String,boolean)}.
      *
      * @see     java.net.URLConnection#setUseCaches(boolean)
      * @see     java.net.URLConnection#getUseCaches()
      * @see     java.net.URLConnection#setDefaultUseCaches(boolean)
      */
-    protected boolean useCaches = defaultUseCaches;
+    protected boolean useCaches;
+
+    private static final ConcurrentHashMap<String,Boolean> defaultCaching =
+        new ConcurrentHashMap<>();
 
    /**
      * Some protocols support skipping the fetching of the object unless
@@ -460,6 +468,11 @@ public abstract class URLConnection {
      */
     protected URLConnection(URL url) {
         this.url = url;
+        if (url == null) {
+            this.useCaches = defaultUseCaches;
+        } else {
+            this.useCaches = getDefaultUseCaches(url.getProtocol());
+        }
     }
 
     /**
@@ -981,7 +994,8 @@ public abstract class URLConnection {
      * is true, the connection is allowed to use whatever caches it can.
      *  If false, caches are to be ignored.
      *  The default value comes from DefaultUseCaches, which defaults to
-     * true.
+     * true. A default value can also be set per-protocol using
+     * {@link #setDefaultUseCaches(String,boolean)}.
      *
      * @param usecaches a {@code boolean} indicating whether
      * or not to allow caching
@@ -1032,9 +1046,10 @@ public abstract class URLConnection {
      * Returns the default value of a {@code URLConnection}'s
      * {@code useCaches} flag.
      * <p>
-     * Ths default is "sticky", being a part of the static state of all
+     * This default is "sticky", being a part of the static state of all
      * URLConnections.  This flag applies to the next, and all following
-     * URLConnections that are created.
+     * URLConnections that are created. This default value can be over-ridden
+     * per protocol using {@link #setDefaultUseCaches(String,boolean)}
      *
      * @return  the default value of a {@code URLConnection}'s
      *          {@code useCaches} flag.
@@ -1046,13 +1061,51 @@ public abstract class URLConnection {
 
    /**
      * Sets the default value of the {@code useCaches} field to the
-     * specified value.
+     * specified value. This default value can be over-ridden
+     * per protocol using {@link #setDefaultUseCaches(String,boolean)}
      *
      * @param   defaultusecaches   the new value.
      * @see     #getDefaultUseCaches()
      */
     public void setDefaultUseCaches(boolean defaultusecaches) {
         defaultUseCaches = defaultusecaches;
+    }
+
+   /**
+     * Sets the default value of the {@code useCaches} field for the named
+     * protocol to the given value. This value overrides any default setting
+     * set by {@link #setDefaultUseCaches(boolean)} for the given protocol.
+     * Successive calls to this method change the setting and affect the
+     * default value for all future connections of that protocol. The protocol
+     * name is case insensitive.
+     *
+     * @param   protocol the protocol to set the default for
+     * @param   defaultVal whether caching is enabled by default for the given protocol
+     * @since 9
+     */
+    public static void setDefaultUseCaches(String protocol, boolean defaultVal) {
+        protocol = protocol.toLowerCase(Locale.US);
+        defaultCaching.put(protocol, defaultVal);
+    }
+
+   /**
+     * Returns the default value of the {@code useCaches} flag for the given protocol. If
+     * {@link #setDefaultUseCaches(String,boolean)} was called for the given protocol,
+     * then that value is returned. Otherwise, if {@link #setDefaultUseCaches(boolean)}
+     * was called, then that value is returned. If neither method was called,
+     * the return value is {@code true}. The protocol name is case insensitive.
+     *
+     * @param protocol the protocol whose defaultUseCaches setting is required
+     * @return  the default value of the {@code useCaches} flag for the given protocol.
+     * @since 9
+     */
+    public static boolean getDefaultUseCaches(String protocol) {
+        Boolean protoDefault = defaultCaching.get(protocol.toLowerCase(Locale.US));
+        if (protoDefault != null) {
+            return protoDefault.booleanValue();
+        } else {
+            return defaultUseCaches;
+        }
     }
 
     /**

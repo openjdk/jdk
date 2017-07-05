@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,6 @@
 package javax.xml.catalog;
 
 import java.io.StringReader;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import javax.xml.catalog.BaseEntry.CatalogEntryType;
 import javax.xml.parsers.SAXParser;
 import javax.xml.transform.Source;
@@ -92,25 +88,6 @@ class CatalogReader extends DefaultHandler implements EntityResolver, URIResolve
     public CatalogReader(Catalog catalog, SAXParser parser) {
         this.catalog = (CatalogImpl) catalog;
         this.parser = parser;
-    }
-
-    /**
-     * Returns when the specified path is valid.
-     * @param path a path
-     * @return true if the path is valid, false otherwise
-     */
-    boolean isValidPath(String path) {
-        boolean valid = true;
-        try {
-            Path p = Paths.get(new URI(path));
-            if (!p.toFile().exists()) {
-                valid = false;
-            }
-        } catch (URISyntaxException ex) {
-            valid = false;
-        }
-
-        return valid;
     }
 
     @Override

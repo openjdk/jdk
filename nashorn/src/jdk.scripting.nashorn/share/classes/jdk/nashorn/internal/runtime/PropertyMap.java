@@ -1032,7 +1032,7 @@ public class PropertyMap implements Iterable<Object>, Serializable {
             }
 
             final Object key = property.getKey();
-            property = iter.next();
+            property = iter.hasNext() ? iter.next() : null;
             skipNotEnumerable();
 
             return key;

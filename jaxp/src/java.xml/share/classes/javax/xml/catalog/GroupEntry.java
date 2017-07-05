@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,6 @@
 package javax.xml.catalog;
 
 import java.net.URI;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -217,7 +215,7 @@ class GroupEntry extends BaseEntry {
      * @param systemId The system identifier of the external entity being
      * referenced.
      *
-     * @return An URI string if a mapping is found, or null otherwise.
+     * @return a URI string if a mapping is found, or null otherwise.
      */
     public String matchSystem(String systemId) {
         systemEntrySearched = true;
@@ -285,7 +283,7 @@ class GroupEntry extends BaseEntry {
      * @param publicId The public identifier of the external entity being
      * referenced.
      *
-     * @return An URI string if a mapping is found, or null otherwise.
+     * @return a URI string if a mapping is found, or null otherwise.
      */
     public String matchPublic(String publicId) {
         /*
@@ -329,7 +327,7 @@ class GroupEntry extends BaseEntry {
      *
      * @param uri The URI reference of a resource.
      *
-     * @return An URI string if a mapping is found, or null otherwise.
+     * @return a URI string if a mapping is found, or null otherwise.
      */
     public String matchURI(String uri) {
         String match = null;
@@ -455,7 +453,7 @@ class GroupEntry extends BaseEntry {
             delegateCatalog = getLoadedCatalog(catalogId);
             if (delegateCatalog == null) {
                 if (verifyCatalogFile(catalogURI)) {
-                    delegateCatalog = new CatalogImpl(catalog, features, catalogId);
+                    delegateCatalog = new CatalogImpl(catalog, features, catalogURI);
                     delegateCatalog.load();
                     delegateCatalogs.put(catalogId, delegateCatalog);
                 }
@@ -504,7 +502,8 @@ class GroupEntry extends BaseEntry {
         }
 
         //Ignore it if it doesn't exist
-        if (!Files.exists(Paths.get(catalogURI))) {
+        if (Util.isFileUri(catalogURI) &&
+                !Util.isFileUriExist(catalogURI, false)) {
             return false;
         }
 
