@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,10 @@
 
 #include <string.h>
 #include <dlfcn.h>
+
+#ifndef __APPLE__
 #include <link.h>
+#endif
 
 #endif
 
@@ -109,9 +112,7 @@ JNIEXPORT jlong JNICALL Java_sun_jvm_hotspot_asm_Disassembler_load_1library(JNIE
                                                                            jstring libname_s) {
   uintptr_t func = 0;
   const char* error_message = NULL;
-  const char* java_home;
   jboolean isCopy;
-  uintptr_t *handle = NULL;
 
   const char * jrepath = (*env)->GetStringUTFChars(env, jrepath_s, &isCopy); // like $JAVA_HOME/jre/lib/sparc/
   const char * libname = (*env)->GetStringUTFChars(env, libname_s, &isCopy);
@@ -167,7 +168,8 @@ typedef void* (*decode_func)(uintptr_t start_va, uintptr_t end_va,
                              void* event_stream,
                              int (*printf_callback)(void*, const char*, ...),
                              void* printf_stream,
-                             const char* options);
+                             const char* options,
+                             int newline);
 
 /* container for call back state when decoding instructions */
 typedef struct {
@@ -281,7 +283,7 @@ JNIEXPORT void JNICALL Java_sun_jvm_hotspot_asm_Disassembler_decode(JNIEnv * env
                                                          end - start,
                                                          &event_to_env,  (void*) &denv,
                                                          &printf_to_env, (void*) &denv,
-                                                         options);
+                                                         options, 0 /* newline */);
 
   /* cleanup */
   (*env)->ReleaseByteArrayElements(env, code, start, JNI_ABORT);

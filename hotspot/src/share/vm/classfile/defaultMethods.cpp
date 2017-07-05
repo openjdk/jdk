@@ -348,7 +348,7 @@ class MethodFamily : public ResourceObj {
 
   void disqualify_method(Method* method) {
     int* index = _member_index.get(method);
-    assert(index != NULL && *index >= 0 && *index < _members.length(), "bad index");
+    guarantee(index != NULL && *index >= 0 && *index < _members.length(), "bad index");
     _members.at(*index).second = DISQUALIFIED;
   }
 

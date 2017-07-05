@@ -65,9 +65,8 @@ HS_DTRACE_PROBE_DECL8(hotspot, method__compile__begin,
 HS_DTRACE_PROBE_DECL9(hotspot, method__compile__end,
   char*, intptr_t, char*, intptr_t, char*, intptr_t, char*, intptr_t, bool);
 
-#define DTRACE_METHOD_COMPILE_BEGIN_PROBE(compiler, method)              \
+#define DTRACE_METHOD_COMPILE_BEGIN_PROBE(compiler, method, comp_name)   \
   {                                                                      \
-    char* comp_name = (char*)(compiler)->name();                         \
     Symbol* klass_name = (method)->klass_name();                         \
     Symbol* name = (method)->name();                                     \
     Symbol* signature = (method)->signature();                           \
@@ -78,9 +77,9 @@ HS_DTRACE_PROBE_DECL9(hotspot, method__compile__end,
       signature->bytes(), signature->utf8_length());                     \
   }
 
-#define DTRACE_METHOD_COMPILE_END_PROBE(compiler, method, success)       \
+#define DTRACE_METHOD_COMPILE_END_PROBE(compiler, method,                \
+                                        comp_name, success)              \
   {                                                                      \
-    char* comp_name = (char*)(compiler)->name();                         \
     Symbol* klass_name = (method)->klass_name();                         \
     Symbol* name = (method)->name();                                     \
     Symbol* signature = (method)->signature();                           \
@@ -93,22 +92,21 @@ HS_DTRACE_PROBE_DECL9(hotspot, method__compile__end,
 
 #else /* USDT2 */
 
-#define DTRACE_METHOD_COMPILE_BEGIN_PROBE(compiler, method)              \
+#define DTRACE_METHOD_COMPILE_BEGIN_PROBE(compiler, method, comp_name)   \
   {                                                                      \
-    char* comp_name = (char*)(compiler)->name();                         \
     Symbol* klass_name = (method)->klass_name();                         \
     Symbol* name = (method)->name();                                     \
     Symbol* signature = (method)->signature();                           \
-    HOTSPOT_METHOD_COMPILE_BEGIN(                                       \
+    HOTSPOT_METHOD_COMPILE_BEGIN(                                        \
       comp_name, strlen(comp_name),                                      \
-      (char *) klass_name->bytes(), klass_name->utf8_length(),          \
+      (char *) klass_name->bytes(), klass_name->utf8_length(),           \
       (char *) name->bytes(), name->utf8_length(),                       \
       (char *) signature->bytes(), signature->utf8_length());            \
   }
 
-#define DTRACE_METHOD_COMPILE_END_PROBE(compiler, method, success)       \
+#define DTRACE_METHOD_COMPILE_END_PROBE(compiler, method,                \
+                                        comp_name, success)              \
   {                                                                      \
-    char* comp_name = (char*)(compiler)->name();                         \
     Symbol* klass_name = (method)->klass_name();                         \
     Symbol* name = (method)->name();                                     \
     Symbol* signature = (method)->signature();                           \
@@ -122,8 +120,8 @@ HS_DTRACE_PROBE_DECL9(hotspot, method__compile__end,
 
 #else //  ndef DTRACE_ENABLED
 
-#define DTRACE_METHOD_COMPILE_BEGIN_PROBE(compiler, method)
-#define DTRACE_METHOD_COMPILE_END_PROBE(compiler, method, success)
+#define DTRACE_METHOD_COMPILE_BEGIN_PROBE(compiler, method, comp_name)
+#define DTRACE_METHOD_COMPILE_END_PROBE(compiler, method, comp_name, success)
 
 #endif // ndef DTRACE_ENABLED
 
@@ -359,7 +357,7 @@ void CompileTask::print() {
 //
 void CompileTask::print_line_on_error(outputStream* st, char* buf, int buflen) {
   // print compiler name
-  st->print("%s:", CompileBroker::compiler(comp_level())->name());
+  st->print("%s:", CompileBroker::compiler_name(comp_level()));
   print_compilation(st);
 }
 
@@ -368,7 +366,7 @@ void CompileTask::print_line_on_error(outputStream* st, char* buf, int buflen) {
 void CompileTask::print_line() {
   ttyLocker ttyl;  // keep the following output all in one block
   // print compiler name if requested
-  if (CIPrintCompilerName) tty->print("%s:", CompileBroker::compiler(comp_level())->name());
+  if (CIPrintCompilerName) tty->print("%s:", CompileBroker::compiler_name(comp_level()));
   print_compilation();
 }
 
@@ -1217,8 +1215,9 @@ nmethod* CompileBroker::compile_method(methodHandle method, int osr_bci,
 
   // lock, make sure that the compilation
   // isn't prohibited in a straightforward way.
-
-  if (compiler(comp_level) == NULL || !compiler(comp_level)->can_compile_method(method) || compilation_is_prohibited(method, osr_bci, comp_level)) {
+  AbstractCompiler *comp = CompileBroker::compiler(comp_level);
+  if (comp == NULL || !comp->can_compile_method(method) ||
+      compilation_is_prohibited(method, osr_bci, comp_level)) {
     return NULL;
   }
 
@@ -1255,7 +1254,7 @@ nmethod* CompileBroker::compile_method(methodHandle method, int osr_bci,
 
   assert(!HAS_PENDING_EXCEPTION, "No exception should be present");
   // some prerequisites that are compiler specific
-  if (compiler(comp_level)->is_c2() || compiler(comp_level)->is_shark()) {
+  if (comp->is_c2() || comp->is_shark()) {
     method->constants()->resolve_string_constants(CHECK_AND_CLEAR_NULL);
     // Resolve all classes seen in the signature of the method
     // we are compiling.
@@ -1372,8 +1371,9 @@ bool CompileBroker::compilation_is_in_queue(methodHandle method,
 bool CompileBroker::compilation_is_prohibited(methodHandle method, int osr_bci, int comp_level) {
   bool is_native = method->is_native();
   // Some compilers may not support the compilation of natives.
+  AbstractCompiler *comp = compiler(comp_level);
   if (is_native &&
-      (!CICompileNatives || !compiler(comp_level)->supports_native())) {
+      (!CICompileNatives || comp == NULL || !comp->supports_native())) {
     method->set_not_compilable_quietly(comp_level);
     return true;
   }
@@ -1381,7 +1381,7 @@ bool CompileBroker::compilation_is_prohibited(methodHandle method, int osr_bci, 
   bool is_osr = (osr_bci != standard_entry_bci);
   // Some compilers may not support on stack replacement.
   if (is_osr &&
-      (!CICompileOSR || !compiler(comp_level)->supports_osr())) {
+      (!CICompileOSR || comp == NULL || !comp->supports_osr())) {
     method->set_not_osr_compilable(comp_level);
     return true;
   }
@@ -1753,6 +1753,7 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
   bool is_osr = (osr_bci != standard_entry_bci);
   bool should_log = (thread->log() != NULL);
   bool should_break = false;
+  int task_level = task->comp_level();
   {
     // create the handle inside it's own block so it can't
     // accidentally be referenced once the thread transitions to
@@ -1766,9 +1767,10 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
     assert(!method->is_native(), "no longer compile natives");
 
     // Save information about this method in case of failure.
-    set_last_compile(thread, method, is_osr, task->comp_level());
+    set_last_compile(thread, method, is_osr, task_level);
 
-    DTRACE_METHOD_COMPILE_BEGIN_PROBE(compiler(task->comp_level()), method);
+    DTRACE_METHOD_COMPILE_BEGIN_PROBE(compiler(task_level), method,
+                                      compiler_name(task_level));
   }
 
   // Allocate a new set of JNI handles.
@@ -1805,7 +1807,12 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
 
     TraceTime t1("compilation", &time);
 
-    compiler(task->comp_level())->compile_method(&ci_env, target, osr_bci);
+    AbstractCompiler *comp = compiler(task_level);
+    if (comp == NULL) {
+      ci_env.record_method_not_compilable("no compiler", !TieredCompilation);
+    } else {
+      comp->compile_method(&ci_env, target, osr_bci);
+    }
 
     if (!ci_env.failing() && task->code() == NULL) {
       //assert(false, "compiler should always document failure");
@@ -1843,7 +1850,8 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
 
   methodHandle method(thread, task->method());
 
-  DTRACE_METHOD_COMPILE_END_PROBE(compiler(task->comp_level()), method, task->is_success());
+  DTRACE_METHOD_COMPILE_END_PROBE(compiler(task_level), method,
+                                  compiler_name(task_level), task->is_success());
 
   collect_statistics(thread, time, task);
 
@@ -1868,9 +1876,9 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
     break;
   case ciEnv::MethodCompilable_not_at_tier:
     if (is_osr)
-      method->set_not_osr_compilable_quietly(task->comp_level());
+      method->set_not_osr_compilable_quietly(task_level);
     else
-      method->set_not_compilable_quietly(task->comp_level());
+      method->set_not_compilable_quietly(task_level);
     break;
   }
 
@@ -2128,7 +2136,14 @@ void CompileBroker::collect_statistics(CompilerThread* thread, elapsedTimer time
   if (UsePerfData) counters->set_current_method("");
 }
 
-
+const char* CompileBroker::compiler_name(int comp_level) {
+  AbstractCompiler *comp = CompileBroker::compiler(comp_level);
+  if (comp == NULL) {
+    return "no compiler";
+  } else {
+    return (comp->name());
+  }
+}
 
 void CompileBroker::print_times() {
   tty->cr();
@@ -2142,11 +2157,13 @@ void CompileBroker::print_times() {
                 CompileBroker::_t_standard_compilation.seconds() / CompileBroker::_total_standard_compile_count);
   tty->print_cr("    On stack replacement   : %6.3f s, Average : %2.3f", CompileBroker::_t_osr_compilation.seconds(), CompileBroker::_t_osr_compilation.seconds() / CompileBroker::_total_osr_compile_count);
 
-  if (compiler(CompLevel_simple) != NULL) {
-    compiler(CompLevel_simple)->print_timers();
+  AbstractCompiler *comp = compiler(CompLevel_simple);
+  if (comp != NULL) {
+    comp->print_timers();
   }
-  if (compiler(CompLevel_full_optimization) != NULL) {
-    compiler(CompLevel_full_optimization)->print_timers();
+  comp = compiler(CompLevel_full_optimization);
+  if (comp != NULL) {
+    comp->print_timers();
   }
   tty->cr();
   int tcb = CompileBroker::_sum_osr_bytes_compiled + CompileBroker::_sum_standard_bytes_compiled;
