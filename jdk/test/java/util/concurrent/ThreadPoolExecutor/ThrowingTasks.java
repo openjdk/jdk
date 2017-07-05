@@ -33,6 +33,7 @@ import java.security.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class ThrowingTasks {
     static final Random rnd = new Random();
@@ -156,6 +157,7 @@ public class ThrowingTasks {
     }
 
     static class CheckingExecutor extends ThreadPoolExecutor {
+        private final ReentrantLock lock = new ReentrantLock();
         CheckingExecutor() {
             super(10, 10,
                   1L, TimeUnit.HOURS,
@@ -163,10 +165,20 @@ public class ThrowingTasks {
                   tf);
         }
         @Override protected void beforeExecute(Thread t, Runnable r) {
-            allStarted.countDown();
-            if (allStarted.getCount() < getCorePoolSize())
+            final boolean lessThanCorePoolSize;
+            // Add a lock to sync allStarted.countDown() and
+            // allStarted.getCount() < getCorePoolSize()
+            lock.lock();
+            try {
+                allStarted.countDown();
+                lessThanCorePoolSize = allStarted.getCount() < getCorePoolSize();
+            } finally {
+                lock.unlock();
+            }
+            if (lessThanCorePoolSize) {
                 try { allContinue.await(); }
                 catch (InterruptedException x) { unexpected(x); }
+            }
             beforeExecuteCount.getAndIncrement();
             check(! isTerminated());
             ((Flaky)r).beforeExecute.run();

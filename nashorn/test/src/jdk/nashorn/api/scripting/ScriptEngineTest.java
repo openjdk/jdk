@@ -523,6 +523,18 @@ public class ScriptEngineTest {
         assertEquals(sw.toString(), println("34 true hello"));
     }
 
+    @Test
+    public void scriptObjectAutoConversionTest() throws ScriptException {
+        final ScriptEngineManager m = new ScriptEngineManager();
+        final ScriptEngine e = m.getEngineByName("nashorn");
+        e.eval("obj = { foo: 'hello' }");
+        e.put("Window", e.eval("Packages.jdk.nashorn.api.scripting.Window"));
+        assertEquals(e.eval("Window.funcJSObject(obj)"), "hello");
+        assertEquals(e.eval("Window.funcScriptObjectMirror(obj)"), "hello");
+        assertEquals(e.eval("Window.funcMap(obj)"), "hello");
+        assertEquals(e.eval("Window.funcJSObject(obj)"), "hello");
+    }
+
     private static final String LINE_SEPARATOR = System.getProperty("line.separator");
 
     // Returns String that would be the result of calling PrintWriter.println

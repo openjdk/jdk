@@ -44,12 +44,12 @@ class BooleanValueExp extends QueryEval implements ValueExp {
     private boolean val = false;
 
 
-    /** Creates a new BooleanValueExp representing the boolean literal <val>.*/
+    /** Creates a new BooleanValueExp representing the boolean literal {@code val}.*/
     BooleanValueExp(boolean val) {
         this.val = val;
     }
 
-    /**Creates a new BooleanValueExp representing the Boolean object <val>.*/
+    /**Creates a new BooleanValueExp representing the Boolean object {@code val}.*/
     BooleanValueExp(Boolean val) {
         this.val = val.booleanValue();
     }

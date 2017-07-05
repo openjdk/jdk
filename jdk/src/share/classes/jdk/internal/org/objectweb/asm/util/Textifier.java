@@ -172,9 +172,15 @@ public class Textifier extends Printer {
      * Constructs a new {@link Textifier}. <i>Subclasses must not use this
      * constructor</i>. Instead, they must use the {@link #Textifier(int)}
      * version.
+     *
+     * @throws IllegalStateException
+     *             If a subclass calls this constructor.
      */
     public Textifier() {
         this(Opcodes.ASM5);
+        if (getClass() != Textifier.class) {
+            throw new IllegalStateException();
+        }
     }
 
     /**
@@ -821,14 +827,36 @@ public class Textifier extends Printer {
         text.add(buf.toString());
     }
 
+    @Deprecated
     @Override
     public void visitMethodInsn(final int opcode, final String owner,
             final String name, final String desc) {
+        if (api >= Opcodes.ASM5) {
+            super.visitMethodInsn(opcode, owner, name, desc);
+            return;
+        }
+        doVisitMethodInsn(opcode, owner, name, desc,
+                opcode == Opcodes.INVOKEINTERFACE);
+    }
+
+    @Override
+    public void visitMethodInsn(final int opcode, final String owner,
+            final String name, final String desc, final boolean itf) {
+        if (api < Opcodes.ASM5) {
+            super.visitMethodInsn(opcode, owner, name, desc, itf);
+            return;
+        }
+        doVisitMethodInsn(opcode, owner, name, desc, itf);
+    }
+
+    private void doVisitMethodInsn(final int opcode, final String owner,
+            final String name, final String desc, final boolean itf) {
         buf.setLength(0);
         buf.append(tab2).append(OPCODES[opcode]).append(' ');
         appendDescriptor(INTERNAL_NAME, owner);
         buf.append('.').append(name).append(' ');
         appendDescriptor(METHOD_DESCRIPTOR, desc);
+        buf.append(' ').append(itf ? "itf" : "");
         buf.append('\n');
         text.add(buf.toString());
     }

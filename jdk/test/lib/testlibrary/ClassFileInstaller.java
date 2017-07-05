@@ -45,7 +45,10 @@ public class ClassFileInstaller {
 
             // Create the class file's package directory
             Path p = Paths.get(pathName);
-            Files.createDirectories(p.getParent());
+            Path parent = p.getParent();
+            if (parent != null) {
+                Files.createDirectories(parent);
+            }
             // Create the class file
             Files.copy(is, p, StandardCopyOption.REPLACE_EXISTING);
         }

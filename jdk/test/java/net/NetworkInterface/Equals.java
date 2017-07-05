@@ -38,6 +38,8 @@ import java.util.HashMap;
 
 public class Equals {
 
+    static final boolean isWindows = System.getProperty("os.name").startsWith("Windows");
+
     public static void main(String args[]) throws Exception {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         PrintStream bufferedOut = new PrintStream(baos);
@@ -59,6 +61,11 @@ public class Equals {
         Enumeration<NetworkInterface> nifs2 = NetworkInterface.getNetworkInterfaces();
         while (nifs2.hasMoreElements()) {
             NetworkInterface ni = nifs2.nextElement();
+
+            // JDK-8022963, Skip (Windows)Teredo Tunneling seudo-Interface
+            if (isWindows && ni.getDisplayName().contains("Teredo"))
+                continue;
+
             NetworkInterface niOrig = nicMap.get(ni.getName());
 
             int h = ni.hashCode();

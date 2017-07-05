@@ -381,12 +381,12 @@ public class Ktab {
                 }
             }
         } catch (KrbException e) {
-            System.err.println("Error occured while deleting the entry. "+
+            System.err.println("Error occurred while deleting the entry. "+
                                "Deletion failed.");
             e.printStackTrace();
             System.exit(-1);
         } catch (IOException e) {
-            System.err.println("Error occured while deleting the entry. "+
+            System.err.println("Error occurred while deleting the entry. "+
                                " Deletion failed.");
             e.printStackTrace();
             System.exit(-1);
