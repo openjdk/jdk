@@ -23,7 +23,6 @@
 
 /* @test
  * @bug 5004077
- * @key intermittent
  * @summary Check blocking of select and close
  */
 

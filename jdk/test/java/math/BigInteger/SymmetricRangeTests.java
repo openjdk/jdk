@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,7 @@
 /*
  * @test
  * @ignore This test has huge memory requirements
- * @library /lib/testlibrary/
- * @build jdk.testlibrary.*
+ * @library /test/lib
  * @run main/timeout=180/othervm -Xmx8g SymmetricRangeTests
  * @bug 6910473 8021204 8021203 9005933 8074460 8078672
  * @summary Test range of BigInteger values (use -Dseed=X to set PRNG seed)
@@ -40,7 +39,7 @@ import java.io.ObjectOutputStream;
 import java.util.Arrays;
 import java.math.BigInteger;
 import java.util.Random;
-import jdk.testlibrary.RandomFactory;
+import jdk.test.lib.RandomFactory;
 
 public class SymmetricRangeTests {
 
