@@ -29,6 +29,7 @@
  *          Beans.setGuiAvailable
  *          Introspector.setBeanInfoSearchPath
  *          PropertyEditorManager.setEditorSearchPath
+ * @run main/othervm Test4080522
  * @author Graham Hamilton
  */
 

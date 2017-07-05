@@ -42,6 +42,7 @@ import org.ietf.jgss.Oid;
 import com.sun.security.jgss.ExtendedGSSContext;
 import com.sun.security.jgss.InquireType;
 import com.sun.security.jgss.AuthorizationDataEntry;
+import java.io.File;
 
 /**
  * Context of a JGSS subject, encapsulating Subject and GSSContext.
@@ -107,7 +108,8 @@ public class Context {
      * Logins with a username and a password, using Krb5LoginModule directly
      * @param storeKey true if key should be saved, used on acceptor side
      */
-    public static Context fromUserPass(String user, char[] pass, boolean storeKey) throws Exception {
+    public static Context fromUserPass(String user, char[] pass, boolean storeKey)
+            throws Exception {
         Context out = new Context();
         out.name = user;
         out.s = new Subject();
@@ -131,6 +133,33 @@ public class Context {
         }
 
         krb5.initialize(out.s, null, shared, map);
+        krb5.login();
+        krb5.commit();
+        return out;
+    }
+
+    /**
+     * Logins with a username and a keytab, using Krb5LoginModule directly
+     * @param storeKey true if key should be saved, used on acceptor side
+     */
+    public static Context fromUserKtab(String user, String ktab, boolean storeKey)
+            throws Exception {
+        Context out = new Context();
+        out.name = user;
+        out.s = new Subject();
+        Krb5LoginModule krb5 = new Krb5LoginModule();
+        Map<String, String> map = new HashMap<String, String>();
+
+        map.put("doNotPrompt", "true");
+        map.put("useTicketCache", "false");
+        map.put("useKeyTab", "true");
+        map.put("keyTab", ktab);
+        map.put("principal", user);
+        if (storeKey) {
+            map.put("storeKey", "true");
+        }
+
+        krb5.initialize(out.s, null, null, map);
         krb5.login();
         krb5.commit();
         return out;

@@ -37,11 +37,23 @@ import java.util.*;
 public class ThresholdTest {
     public static void main(String args[]) throws Exception {
         List<MemoryPoolMXBean> pools = ManagementFactory.getMemoryPoolMXBeans();
-        for (MemoryPoolMXBean p : pools) {
-            // verify if isUsageThresholdExceeded() returns correct value
-            checkUsageThreshold(p);
-            // verify if isCollectionUsageThresholdExceeded() returns correct value
-            checkCollectionUsageThreshold(p);
+        try {
+            for (MemoryPoolMXBean p : pools) {
+                // verify if isUsageThresholdExceeded() returns correct value
+                checkUsageThreshold(p);
+                // verify if isCollectionUsageThresholdExceeded() returns correct value
+                checkCollectionUsageThreshold(p);
+            }
+        } finally {
+            // restore the default
+            for (MemoryPoolMXBean p : pools) {
+                if (p.isUsageThresholdSupported()) {
+                    p.setUsageThreshold(0);
+                }
+                if (p.isCollectionUsageThresholdSupported()) {
+                    p.setCollectionUsageThreshold(0);
+                }
+            }
         }
 
         System.out.println("Test passed.");

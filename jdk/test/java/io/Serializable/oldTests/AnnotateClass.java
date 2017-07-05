@@ -37,36 +37,43 @@ public class AnnotateClass {
                            "methods \n");
         try {
             FileOutputStream ostream = new FileOutputStream("subtest1.tmp");
-            TestOutputStream p = new TestOutputStream(ostream);
-
-            p.writeObject(System.out);
-            p.writeObject(System.err);
-            p.writeObject(new PrintStream(ostream));
-            p.flush();
-            ostream.close();
+            try {
+                TestOutputStream p = new TestOutputStream(ostream);
+                p.writeObject(System.out);
+                p.writeObject(System.err);
+                p.writeObject(new PrintStream(ostream));
+                p.flush();
+            } finally {
+                ostream.close();
+            }
 
             FileInputStream istream = new FileInputStream("subtest1.tmp");
-            TestInputStream q = new TestInputStream(istream);
+            try {
+                TestInputStream q = new TestInputStream(istream);
 
-            PrintStream out = (PrintStream)q.readObject();
-            PrintStream err = (PrintStream)q.readObject();
-            Object other = q.readObject();
-            if (out != System.out) {
-                System.err.println(
-                    "\nTEST FAILED: System.out not read correctly");
-                throw new Error();
+                PrintStream out = (PrintStream)q.readObject();
+                PrintStream err = (PrintStream)q.readObject();
+                Object other = q.readObject();
+                if (out != System.out) {
+                    System.err.println(
+                        "\nTEST FAILED: System.out not read correctly");
+                    throw new Error();
+                }
+                if (err != System.err) {
+                    System.err.println(
+                        "\nTEST FAILED: System.err not read correctly");
+                    throw new Error();
+                }
+                if (other != null) {
+                    System.err.println(
+                        "\nTEST FAILED: Non-system PrintStream should have " +
+                        "been written/read as null");
+                    throw new Error();
+                }
+            } finally {
+                istream.close();
             }
-            if (err != System.err) {
-                System.err.println(
-                    "\nTEST FAILED: System.err not read correctly");
-                throw new Error();
-            }
-            if (other != null) {
-                System.err.println(
-                    "\nTEST FAILED: Non-system PrintStream should have " +
-                    "been written/read as null");
-                throw new Error();
-            }
+
             System.err.println("\nTEST PASSED");
         } catch (Exception e) {
             System.err.print("TEST FAILED: ");

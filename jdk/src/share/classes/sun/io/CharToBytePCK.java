@@ -66,7 +66,7 @@ public class CharToBytePCK extends CharToByteSJIS {
 
          switch (ch) {
             case '\u2015':
-                return (int)0x815C;
+                return 0x815C;
             case '\u2014':
                 return 0;
             default:

@@ -38,14 +38,17 @@ import java.io.*;
 public class DefineClassByteBuffer {
 
     static void test(ClassLoader cl) throws Exception {
-        Class c = Class.forName("TestClass", true, cl);
+        Class<?> c = Class.forName("TestClass", true, cl);
         if (!"TestClass".equals(c.getName())) {
             throw new RuntimeException("Got wrong class: " + c);
+        }
+        if (c.getClassLoader() != cl) {
+            throw new RuntimeException("TestClass defined by wrong classloader: " + c.getClassLoader());
         }
     }
 
     public static void main(String arg[]) throws Exception {
-        ClassLoader[] cls = new ClassLoader[DummyClassLoader.MAX_TYPE];
+        DummyClassLoader[] cls = new DummyClassLoader[DummyClassLoader.MAX_TYPE];
         for (int i = 0; i < cls.length; i++) {
             cls[i] = new DummyClassLoader(i);
         }
@@ -53,7 +56,7 @@ public class DefineClassByteBuffer {
         /* Create several instances of the class using different classloaders,
            which are using different types of ByteBuffer. */
         for (int i = 0; i < cls.length; i++) {
-          test(cls[i]);
+            test(cls[i]);
         }
     }
 
@@ -100,12 +103,13 @@ public class DefineClassByteBuffer {
                buffers. */
             buffers[MAPPED_BUFFER] = readClassFile(CLASS_NAME + ".class");
             byte[] array = new byte[buffers[MAPPED_BUFFER].limit()];
+            buffers[MAPPED_BUFFER].get(array).flip();
 
             buffers[DIRECT_BUFFER] = ByteBuffer.allocateDirect(array.length);
-            buffers[DIRECT_BUFFER].put(array);
+            buffers[DIRECT_BUFFER].put(array).flip();
 
             buffers[ARRAY_BUFFER] = ByteBuffer.allocate(array.length);
-            buffers[ARRAY_BUFFER].put(array);
+            buffers[ARRAY_BUFFER].put(array).flip();
 
             buffers[WRAPPED_BUFFER] = ByteBuffer.wrap(array);
 
@@ -118,9 +122,30 @@ public class DefineClassByteBuffer {
             buffers[DUP_DIRECT_BUFFER] = buffers[DIRECT_BUFFER].duplicate();
         }
 
-         public Class findClass(String name) {
-             return defineClass(name, buffers[loaderType], null);
-         }
+        protected Class<?> loadClass(String name, boolean resolve)
+            throws ClassNotFoundException
+        {
+            Class<?> c;
+            if (!"TestClass".equals(name)) {
+                c = super.loadClass(name, resolve);
+            } else {
+                // should not delegate to the system class loader
+                c = findClass(name);
+                if (resolve) {
+                    resolveClass(c);
+                }
+            }
+            return c;
+        }
+
+        protected Class<?> findClass(String name)
+            throws ClassNotFoundException
+        {
+            if (!"TestClass".equals(name)) {
+                throw new ClassNotFoundException("Unexpected class: " + name);
+            }
+            return defineClass(name, buffers[loaderType], null);
+        }
     } /* DummyClassLoader */
 
 } /* DefineClassByteBuffer */

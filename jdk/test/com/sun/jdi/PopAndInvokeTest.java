@@ -24,6 +24,7 @@
 /**
  *  @test
  *  @bug 6517249
+ *  @ignore 6951287
  *  @summary JDWP: Cannot do an invokeMethod after a popFrames operation
  *
  *  @author jjh

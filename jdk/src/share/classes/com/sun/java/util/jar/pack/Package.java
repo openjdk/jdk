@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,8 +57,8 @@ class Package implements Constants {
     // These fields can be adjusted by driver properties.
     short min_class_majver = JAVA_MIN_CLASS_MAJOR_VERSION;
     short min_class_minver = JAVA_MIN_CLASS_MINOR_VERSION;
-    short max_class_majver = JAVA6_MAX_CLASS_MAJOR_VERSION;
-    short max_class_minver = JAVA6_MAX_CLASS_MINOR_VERSION;
+    short max_class_majver = JAVA7_MAX_CLASS_MAJOR_VERSION;
+    short max_class_minver = JAVA7_MAX_CLASS_MINOR_VERSION;
 
     short observed_max_class_majver = min_class_majver;
     short observed_max_class_minver = min_class_minver;
@@ -122,13 +122,16 @@ class Package implements Constants {
     void choosePackageVersion() {
         assert(package_majver <= 0);  // do not call this twice
         int classver = getHighestClassVersion();
-        if (classver != 0 &&
-            (classver >>> 16) < JAVA6_MAX_CLASS_MAJOR_VERSION) {
-            // There are only old classfiles in this segment.
+        if (classver == 0 || (classver >>> 16) < JAVA6_MAX_CLASS_MAJOR_VERSION) {
+            // There are only old classfiles in this segment or resources
             package_majver = JAVA5_PACKAGE_MAJOR_VERSION;
             package_minver = JAVA5_PACKAGE_MINOR_VERSION;
+        } else if ((classver >>> 16) == JAVA6_MAX_CLASS_MAJOR_VERSION) {
+            package_majver = JAVA6_PACKAGE_MAJOR_VERSION;
+            package_minver = JAVA6_PACKAGE_MINOR_VERSION;
         } else {
-            // Normal case.  Use the newest archive format.
+            // Normal case.  Use the newest archive format, when available
+            // TODO: replace the following with JAVA7* when the need arises
             package_majver = JAVA6_PACKAGE_MAJOR_VERSION;
             package_minver = JAVA6_PACKAGE_MINOR_VERSION;
         }

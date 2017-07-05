@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 6537506
+ * @ignore 6962535
  * @summary Basic unit test for tracing framework
  */
 

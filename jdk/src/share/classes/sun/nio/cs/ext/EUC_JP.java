@@ -79,8 +79,10 @@ public class EUC_JP
         JIS_X_0201.Decoder decoderJ0201;
         JIS_X_0212_Decoder decoderJ0212;
 
-        short[] j0208Index1;
-        String[] j0208Index2;
+        private static final short[] j0208Index1 =
+          JIS_X_0208_Decoder.getIndex1();
+        private static final String[] j0208Index2 =
+          JIS_X_0208_Decoder.getIndex2();
 
         protected Decoder(Charset cs) {
             super(cs);
@@ -88,8 +90,6 @@ public class EUC_JP
             decoderJ0212 = new JIS_X_0212_Decoder(cs);
             start = 0xa1;
             end = 0xfe;
-            j0208Index1 = super.getIndex1();
-            j0208Index2 = super.getIndex2();
         }
         protected char decode0212(int byte1, int byte2) {
              return decoderJ0212.decodeDouble(byte1, byte2);
@@ -238,8 +238,10 @@ public class EUC_JP
         JIS_X_0201.Encoder encoderJ0201;
         JIS_X_0212_Encoder encoderJ0212;
 
-        short[] j0208Index1;
-        String[] j0208Index2;
+        private static final short[] j0208Index1 =
+          JIS_X_0208_Encoder.getIndex1();
+        private static final String[] j0208Index2 =
+          JIS_X_0208_Encoder.getIndex2();
 
         private final Surrogate.Parser sgp = new Surrogate.Parser();
 
@@ -247,8 +249,6 @@ public class EUC_JP
             super(cs, 3.0f, 3.0f);
             encoderJ0201 = new JIS_X_0201.Encoder(cs);
             encoderJ0212 = new JIS_X_0212_Encoder(cs);
-            j0208Index1 = super.getIndex1();
-            j0208Index2 = super.getIndex2();
         }
 
         public boolean canEncode(char c) {

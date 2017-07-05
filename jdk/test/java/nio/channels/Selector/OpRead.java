@@ -24,59 +24,63 @@
 /* @test
  * @bug 4755720
  * @summary Test if OP_READ is detected with OP_WRITE in interestOps
- * @library ..
  */
 
 import java.net.*;
-import java.io.*;
 import java.nio.*;
 import java.nio.channels.*;
-import java.nio.channels.spi.SelectorProvider;
 import java.util.*;
 
 public class OpRead {
 
-    static final int DAYTIME_PORT = 13;
-    static final String DAYTIME_HOST = TestUtil.HOST;
-
     static void test() throws Exception {
-        InetSocketAddress isa
-            = new InetSocketAddress(InetAddress.getByName(DAYTIME_HOST),
-                                    DAYTIME_PORT);
-        SocketChannel sc = SocketChannel.open();
+        ServerSocketChannel ssc = null;
+        SocketChannel sc = null;
+        SocketChannel peer = null;
+        try {
+            ssc = ServerSocketChannel.open().bind(new InetSocketAddress(0));
 
-        sc.connect(isa);
+            // loopback connection
+            InetAddress lh = InetAddress.getLocalHost();
+            sc = SocketChannel.open(new InetSocketAddress(lh, ssc.socket().getLocalPort()));
+            peer = ssc.accept();
 
-        sc.configureBlocking(false);
+            // peer sends message so that "sc" will be readable
+            int n = peer.write(ByteBuffer.wrap("Hello".getBytes()));
+            assert n > 0;
 
-        Selector selector = SelectorProvider.provider().openSelector();
-        SelectionKey key = sc.register(selector, SelectionKey.OP_READ |
-            SelectionKey.OP_WRITE);
+            sc.configureBlocking(false);
 
-        boolean done = false;
-        int failCount = 0;
-        while (!done) {
-            if (selector.select() > 0) {
-                Set keys = selector.selectedKeys();
-                Iterator iterator = keys.iterator();
-                while (iterator.hasNext()) {
-                    key = (SelectionKey)iterator.next();
-                    iterator.remove();
-                    if (key.isWritable()) {
-                        failCount++;
-                        if (failCount > 10)
-                            throw new RuntimeException("Test failed");
-                        Thread.sleep(100);
-                    }
-                    if (key.isReadable()) {
-                        done = true;
+            Selector selector = Selector.open();
+            SelectionKey key = sc.register(selector, SelectionKey.OP_READ |
+                SelectionKey.OP_WRITE);
+
+            boolean done = false;
+            int failCount = 0;
+            while (!done) {
+                if (selector.select() > 0) {
+                    Set<SelectionKey> keys = selector.selectedKeys();
+                    Iterator<SelectionKey> iterator = keys.iterator();
+                    while (iterator.hasNext()) {
+                        key = iterator.next();
+                        iterator.remove();
+                        if (key.isWritable()) {
+                            failCount++;
+                            if (failCount > 10)
+                                throw new RuntimeException("Test failed");
+                            Thread.sleep(250);
+                        }
+                        if (key.isReadable()) {
+                            done = true;
+                        }
                     }
                 }
             }
+        } finally {
+            if (peer != null) peer.close();
+            if (sc != null) sc.close();
+            if (ssc != null) ssc.close();
         }
-
-
-        sc.close();
     }
 
     public static void main(String[] args) throws Exception {

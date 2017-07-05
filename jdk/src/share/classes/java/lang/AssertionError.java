@@ -66,7 +66,7 @@ public class AssertionError extends Error {
      * defined in <i>The Java Language Specification, Second
      * Edition</i>, Section 15.18.1.1.
      *<p>
-     * If the specified object is an instance of <tt>Throwable</tt>, it
+     * If the specified object is an instance of {@code Throwable}, it
      * becomes the <i>cause</i> of the newly constructed assertion error.
      *
      * @param detailMessage value to be used in constructing detail message
@@ -148,5 +148,22 @@ public class AssertionError extends Error {
      */
     public AssertionError(double detailMessage) {
         this("" +  detailMessage);
+    }
+
+    /**
+     * Constructs a new {@code AssertionError} with the specified
+     * detail message and cause.
+     *
+     * <p>Note that the detail message associated with
+     * {@code cause} is <i>not</i> automatically incorporated in
+     * this error's detail message.
+     *
+     * @param  message the detail message, may be {@code null}
+     * @param  cause the cause, may be {@code null}
+     *
+     * @since 1.7
+     */
+    public AssertionError(String message, Throwable cause) {
+        super(message, cause);
     }
 }

@@ -25,6 +25,7 @@
  * @test
  * @bug 6277266
  * @summary Tests access control issue in EventHandler
+ * @run main/othervm Test6277266
  * @author Jeff Nisewanger
  */
 
