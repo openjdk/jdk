@@ -465,29 +465,6 @@ Node *CheckCastPPNode::Identity( PhaseTransform *phase ) {
   return (phase->type(in(1)) == phase->type(this)) ? in(1) : this;
 }
 
-// Determine whether "n" is a node which can cause an alias of one of its inputs.  Node types
-// which can create aliases are: CheckCastPP, Phi, and any store (if there is also a load from
-// the location.)
-// Note:  this checks for aliases created in this compilation, not ones which may
-//        be potentially created at call sites.
-static bool can_cause_alias(Node *n, PhaseTransform *phase) {
-  bool possible_alias = false;
-
-  if (n->is_Store()) {
-    possible_alias = !n->as_Store()->value_never_loaded(phase);
-  } else {
-    int opc = n->Opcode();
-    possible_alias = n->is_Phi() ||
-        opc == Op_CheckCastPP ||
-        opc == Op_StorePConditional ||
-        opc == Op_CompareAndSwapP ||
-        opc == Op_CompareAndSwapN ||
-        opc == Op_GetAndSetP ||
-        opc == Op_GetAndSetN;
-  }
-  return possible_alias;
-}
-
 //------------------------------Value------------------------------------------
 // Take 'join' of input and cast-up type, unless working with an Interface
 const Type *CheckCastPPNode::Value( PhaseTransform *phase ) const {

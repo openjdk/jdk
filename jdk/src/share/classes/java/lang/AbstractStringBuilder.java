@@ -236,7 +236,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
         if ((index < 0) || (index >= count)) {
             throw new StringIndexOutOfBoundsException(index);
         }
-        return Character.codePointAt(value, index);
+        return Character.codePointAtImpl(value, index, count);
     }
 
     /**
@@ -265,7 +265,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
         if ((i < 0) || (i >= count)) {
             throw new StringIndexOutOfBoundsException(index);
         }
-        return Character.codePointBefore(value, index);
+        return Character.codePointBeforeImpl(value, index, 0);
     }
 
     /**
@@ -415,7 +415,8 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
      * @return  a reference to this object.
      */
     public AbstractStringBuilder append(String str) {
-        if (str == null) str = "null";
+        if (str == null)
+            return appendNull();
         int len = str.length();
         ensureCapacityInternal(count + len);
         str.getChars(0, len, value, count);
@@ -426,7 +427,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
     // Documentation in subclasses because of synchro difference
     public AbstractStringBuilder append(StringBuffer sb) {
         if (sb == null)
-            return append("null");
+            return appendNull();
         int len = sb.length();
         ensureCapacityInternal(count + len);
         sb.getChars(0, len, value, count);
@@ -439,7 +440,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
      */
     AbstractStringBuilder append(AbstractStringBuilder asb) {
         if (asb == null)
-            return append("null");
+            return appendNull();
         int len = asb.length();
         ensureCapacityInternal(count + len);
         asb.getChars(0, len, value, count);
@@ -451,13 +452,25 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
     @Override
     public AbstractStringBuilder append(CharSequence s) {
         if (s == null)
-            s = "null";
+            return appendNull();
         if (s instanceof String)
             return this.append((String)s);
         if (s instanceof AbstractStringBuilder)
             return this.append((AbstractStringBuilder)s);
 
         return this.append(s, 0, s.length());
+    }
+
+    private AbstractStringBuilder appendNull() {
+        int c = count;
+        ensureCapacityInternal(c + 4);
+        final char[] value = this.value;
+        value[c++] = 'n';
+        value[c++] = 'u';
+        value[c++] = 'l';
+        value[c++] = 'l';
+        count = c;
+        return this;
     }
 
     /**
@@ -1370,32 +1383,37 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
      * @return  a reference to this object.
      */
     public AbstractStringBuilder reverse() {
-        boolean hasSurrogate = false;
+        boolean hasSurrogates = false;
         int n = count - 1;
-        for (int j = (n-1) >> 1; j >= 0; --j) {
-            char temp = value[j];
-            char temp2 = value[n - j];
-            if (!hasSurrogate) {
-                hasSurrogate = (temp >= Character.MIN_SURROGATE && temp <= Character.MAX_SURROGATE)
-                    || (temp2 >= Character.MIN_SURROGATE && temp2 <= Character.MAX_SURROGATE);
+        for (int j = (n-1) >> 1; j >= 0; j--) {
+            int k = n - j;
+            char cj = value[j];
+            char ck = value[k];
+            value[j] = ck;
+            value[k] = cj;
+            if (Character.isSurrogate(cj) ||
+                Character.isSurrogate(ck)) {
+                hasSurrogates = true;
             }
-            value[j] = temp2;
-            value[n - j] = temp;
         }
-        if (hasSurrogate) {
-            // Reverse back all valid surrogate pairs
-            for (int i = 0; i < count - 1; i++) {
-                char c2 = value[i];
-                if (Character.isLowSurrogate(c2)) {
-                    char c1 = value[i + 1];
-                    if (Character.isHighSurrogate(c1)) {
-                        value[i++] = c1;
-                        value[i] = c2;
-                    }
+        if (hasSurrogates) {
+            reverseAllValidSurrogatePairs();
+        }
+        return this;
+    }
+
+    /** Outlined helper method for reverse() */
+    private void reverseAllValidSurrogatePairs() {
+        for (int i = 0; i < count - 1; i++) {
+            char c2 = value[i];
+            if (Character.isLowSurrogate(c2)) {
+                char c1 = value[i + 1];
+                if (Character.isHighSurrogate(c1)) {
+                    value[i++] = c1;
+                    value[i] = c2;
                 }
             }
         }
-        return this;
     }
 
     /**

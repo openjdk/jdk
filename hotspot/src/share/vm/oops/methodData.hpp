@@ -1284,8 +1284,8 @@ public:
     return bytecode_cell_count(code) != no_profile_data;
   }
 
-  // Perform initialization of a new MethodData*
-  void initialize(methodHandle method);
+  // reset into original state
+  void init();
 
   // My size
   int size_in_bytes() const { return _size; }
@@ -1365,6 +1365,7 @@ public:
   intx arg_stack()                               { return _arg_stack; }
   intx arg_returned()                            { return _arg_returned; }
   uint arg_modified(int a)                       { ArgInfoData *aid = arg_info();
+                                                   assert(aid != NULL, "arg_info must be not null");
                                                    assert(a >= 0 && a < aid->number_of_args(), "valid argument number");
                                                    return aid->arg_modified(a); }
 
@@ -1373,8 +1374,8 @@ public:
   void set_arg_stack(intx v)                     { _arg_stack = v; }
   void set_arg_returned(intx v)                  { _arg_returned = v; }
   void set_arg_modified(int a, uint v)           { ArgInfoData *aid = arg_info();
+                                                   assert(aid != NULL, "arg_info must be not null");
                                                    assert(a >= 0 && a < aid->number_of_args(), "valid argument number");
-
                                                    aid->set_arg_modified(a, v); }
 
   void clear_escape_info()                       { _eflags = _arg_local = _arg_stack = _arg_returned = 0; }

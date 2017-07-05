@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package java.awt;
 import java.awt.peer.PopupMenuPeer;
 import javax.accessibility.*;
 
-import javax.tools.annotation.GenerateNativeHeader;
 
 import sun.awt.AWTAccessor;
 
@@ -44,8 +43,6 @@ import sun.awt.AWTAccessor;
  *
  * @author      Amy Fowler
  */
-/* No native methods here, but the constants are needed in the supporting JNI code */
-@GenerateNativeHeader
 public class PopupMenu extends Menu {
 
     private static final String base = "popup";

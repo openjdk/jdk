@@ -124,6 +124,7 @@ public class DefaultProxySelector extends ProxySelector {
         final String defaultVal;
         static NonProxyInfo ftpNonProxyInfo = new NonProxyInfo("ftp.nonProxyHosts", null, null, defStringVal);
         static NonProxyInfo httpNonProxyInfo = new NonProxyInfo("http.nonProxyHosts", null, null, defStringVal);
+        static NonProxyInfo socksNonProxyInfo = new NonProxyInfo("socksNonProxyHosts", null, null, defStringVal);
 
         NonProxyInfo(String p, String s, RegexpPool pool, String d) {
             property = p;
@@ -186,6 +187,8 @@ public class DefaultProxySelector extends ProxySelector {
             pinfo = NonProxyInfo.httpNonProxyInfo;
         } else if ("ftp".equalsIgnoreCase(protocol)) {
             pinfo = NonProxyInfo.ftpNonProxyInfo;
+        } else if ("socket".equalsIgnoreCase(protocol)) {
+            pinfo = NonProxyInfo.socksNonProxyInfo;
         }
 
         /**

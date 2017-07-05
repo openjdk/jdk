@@ -214,14 +214,6 @@ static int encode(Register r) {
   return enc;
 }
 
-static int encode(XMMRegister r) {
-  int enc = r->encoding();
-  if (enc >= 8) {
-    enc -= 8;
-  }
-  return enc;
-}
-
 void Assembler::emit_arith_b(int op1, int op2, Register dst, int imm8) {
   assert(dst->has_byte_register(), "must have byte register");
   assert(isByte(op1) && isByte(op2), "wrong opcode");

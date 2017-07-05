@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@ package java.awt;
 
 import java.awt.event.*;
 
-import javax.tools.annotation.GenerateNativeHeader;
+import java.lang.annotation.Native;
 
 /**
  * The interface for objects which have an adjustable numeric value
@@ -36,24 +36,22 @@ import javax.tools.annotation.GenerateNativeHeader;
  * @author Amy Fowler
  * @author Tim Prinzing
  */
-/* No native methods here, but the constants are needed in the supporting JNI code */
-@GenerateNativeHeader
 public interface Adjustable {
 
     /**
      * Indicates that the <code>Adjustable</code> has horizontal orientation.
      */
-    public static final int HORIZONTAL = 0;
+    @Native public static final int HORIZONTAL = 0;
 
     /**
      * Indicates that the <code>Adjustable</code> has vertical orientation.
      */
-    public static final int VERTICAL = 1;
+    @Native public static final int VERTICAL = 1;
 
     /**
      * Indicates that the <code>Adjustable</code> has no orientation.
      */
-    public static final int NO_ORIENTATION = 2;
+    @Native public static final int NO_ORIENTATION = 2;
 
     /**
      * Gets the orientation of the adjustable object.
