@@ -295,6 +295,7 @@ endif
 $(PRECOMPILED_HEADER):
 	$(QUIETLY) echo Generating precompiled header $@
 	$(QUIETLY) mkdir -p $(PRECOMPILED_HEADER_DIR)
+	$(QUIETLY) rm -f $@
 	$(QUIETLY) $(COMPILE.CXX) $(DEPFLAGS) -x c++-header $(PRECOMPILED_HEADER_SRC) -o $@ $(COMPILE_DONE)
 
 # making the library:

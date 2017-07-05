@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,44 +19,29 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#include "precompiled.hpp"
-#include "runtime/os.hpp"
-#include "vm_version_sparc.hpp"
+/*
+ * @test
+ * @bug 8044738
+ * @library /testlibrary
+ * @summary Check attribute_length of EnclosingMethod attribute
+ * @run main EnclMethodAttr
+ */
 
-static bool detect_niagara() {
-  char cpu[128];
-  bool rv = false;
+import java.io.File;
+import com.oracle.java.testlibrary.*;
 
-  FILE* fp = fopen("/proc/cpuinfo", "r");
-  if (fp == NULL) {
-    return rv;
-  }
+public class EnclMethodAttr {
 
-  while (!feof(fp)) {
-    if (fscanf(fp, "cpu\t\t: %100[^\n]", cpu) == 1) {
-      if (strstr(cpu, "Niagara") != NULL) {
-        rv = true;
-      }
-      break;
+    static final String testsrc = System.getProperty("test.src");
+
+    public static void main(String args[]) throws Throwable {
+        System.out.println("Regression test for bug 8044738");
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+            "-jar", testsrc + File.separator + "enclMethodAttr.jar");
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        output.shouldContain("java.lang.ClassFormatError: Wrong EnclosingMethod");
     }
-  }
-
-  fclose(fp);
-
-  return rv;
 }
 
-int VM_Version::platform_features(int features) {
-  // Default to generic v9
-  features = generic_v9_m;
-
-  if (detect_niagara()) {
-    NOT_PRODUCT(if (PrintMiscellaneous && Verbose) tty->print_cr("Detected Linux on Niagara");)
-    features = niagara1_m | T_family_m;
-  }
-
-  return features;
-}
