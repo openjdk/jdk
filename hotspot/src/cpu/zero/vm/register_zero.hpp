@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -22,6 +22,12 @@
  * questions.
  *
  */
+
+#ifndef CPU_ZERO_VM_REGISTER_ZERO_HPP
+#define CPU_ZERO_VM_REGISTER_ZERO_HPP
+
+#include "asm/register.hpp"
+#include "vm_version_zero.hpp"
 
 class VMRegImpl;
 typedef VMRegImpl* VMReg;
@@ -108,3 +114,5 @@ class ConcreteRegisterImpl : public AbstractRegisterImpl {
 };
 
 CONSTANT_REGISTER_DECLARATION(Register, noreg, (-1));
+
+#endif // CPU_ZERO_VM_REGISTER_ZERO_HPP

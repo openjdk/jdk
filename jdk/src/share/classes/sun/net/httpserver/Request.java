@@ -129,9 +129,22 @@ class Request {
         hdrs = new Headers();
 
         char s[] = new char[10];
+        int len = 0;
+
         int firstc = is.read();
+
+        // check for empty headers
+        if (firstc == CR || firstc == LF) {
+            int c = is.read();
+            if (c == CR || c == LF) {
+                return hdrs;
+            }
+            s[0] = (char)firstc;
+            len = 1;
+            firstc = c;
+        }
+
         while (firstc != LF && firstc != CR && firstc >= 0) {
-            int len = 0;
             int keyend = -1;
             int c;
             boolean inKey = firstc > ' ';
@@ -191,6 +204,7 @@ class Request {
             else
                 v = String.copyValueOf(s, keyend, len - keyend);
             hdrs.add (k,v);
+            len = 0;
         }
         return hdrs;
     }

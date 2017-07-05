@@ -22,6 +22,11 @@
  *
  */
 
+#ifndef SHARE_VM_PRIMS_METHODHANDLEWALK_HPP
+#define SHARE_VM_PRIMS_METHODHANDLEWALK_HPP
+
+#include "prims/methodHandles.hpp"
+
 // Low-level parser for method handle chains.
 class MethodHandleChain : StackObj {
 public:
@@ -407,7 +412,8 @@ public:
 
   // Tests if the given class is a MH adapter holder.
   static bool klass_is_method_handle_adapter_holder(klassOop klass) {
-    return (klass == SystemDictionary::MethodHandle_klass() ||
-            klass == SystemDictionary::InvokeDynamic_klass());
+    return (klass == SystemDictionary::MethodHandle_klass());
   }
 };
+
+#endif // SHARE_VM_PRIMS_METHODHANDLEWALK_HPP

@@ -22,6 +22,32 @@
  *
  */
 
+#ifndef SHARE_VM_UTILITIES_TASKQUEUE_HPP
+#define SHARE_VM_UTILITIES_TASKQUEUE_HPP
+
+#include "memory/allocation.hpp"
+#include "memory/allocation.inline.hpp"
+#include "runtime/mutex.hpp"
+#include "utilities/stack.hpp"
+#ifdef TARGET_OS_ARCH_linux_x86
+# include "orderAccess_linux_x86.inline.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_linux_sparc
+# include "orderAccess_linux_sparc.inline.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_linux_zero
+# include "orderAccess_linux_zero.inline.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_solaris_x86
+# include "orderAccess_solaris_x86.inline.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_solaris_sparc
+# include "orderAccess_solaris_sparc.inline.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_windows_x86
+# include "orderAccess_windows_x86.inline.hpp"
+#endif
+
 // Simple TaskQueue stats that are collected by default in debug builds.
 
 #if !defined(TASKQUEUE_STATS) && defined(ASSERT)
@@ -764,3 +790,5 @@ typedef GenericTaskQueueSet<OopStarTaskQueue> OopStarTaskQueueSet;
 typedef OverflowTaskQueue<size_t>             RegionTaskQueue;
 typedef GenericTaskQueueSet<RegionTaskQueue>  RegionTaskQueueSet;
 
+
+#endif // SHARE_VM_UTILITIES_TASKQUEUE_HPP

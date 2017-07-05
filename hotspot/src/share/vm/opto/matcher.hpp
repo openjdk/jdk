@@ -22,6 +22,15 @@
  *
  */
 
+#ifndef SHARE_VM_OPTO_MATCHER_HPP
+#define SHARE_VM_OPTO_MATCHER_HPP
+
+#include "libadt/vectset.hpp"
+#include "memory/resourceArea.hpp"
+#include "opto/node.hpp"
+#include "opto/phaseX.hpp"
+#include "opto/regmask.hpp"
+
 class Compile;
 class Node;
 class MachNode;
@@ -356,6 +365,10 @@ public:
   // registers?  True for Intel but false for most RISCs
   static const bool clone_shift_expressions;
 
+  // Should constant table entries be accessed with loads using
+  // absolute addressing?  True for x86 but false for most RISCs.
+  static const bool constant_table_absolute_addressing;
+
   static bool narrow_oop_use_complex_address();
 
   // Generate implicit null check for narrow oops if it can fold
@@ -447,3 +460,5 @@ public:
   }
 #endif
 };
+
+#endif // SHARE_VM_OPTO_MATCHER_HPP

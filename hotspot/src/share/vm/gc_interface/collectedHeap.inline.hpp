@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,28 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_GC_INTERFACE_COLLECTEDHEAP_INLINE_HPP
+#define SHARE_VM_GC_INTERFACE_COLLECTEDHEAP_INLINE_HPP
+
+#include "gc_interface/collectedHeap.hpp"
+#include "memory/threadLocalAllocBuffer.inline.hpp"
+#include "memory/universe.hpp"
+#include "oops/arrayOop.hpp"
+#include "prims/jvmtiExport.hpp"
+#include "runtime/sharedRuntime.hpp"
+#include "runtime/thread.hpp"
+#include "services/lowMemoryDetector.hpp"
+#include "utilities/copy.hpp"
+#ifdef TARGET_OS_FAMILY_linux
+# include "thread_linux.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_solaris
+# include "thread_solaris.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_windows
+# include "thread_windows.inline.hpp"
+#endif
 
 // Inline allocation implementations.
 
@@ -368,3 +390,5 @@ inline void CollectedHeap::reset_promotion_should_fail() {
   reset_promotion_should_fail(&_promotion_failure_alot_count);
 }
 #endif  // #ifndef PRODUCT
+
+#endif // SHARE_VM_GC_INTERFACE_COLLECTEDHEAP_INLINE_HPP

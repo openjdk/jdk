@@ -22,6 +22,13 @@
  *
  */
 
+#ifndef SHARE_VM_MEMORY_BLOCKOFFSETTABLE_HPP
+#define SHARE_VM_MEMORY_BLOCKOFFSETTABLE_HPP
+
+#include "memory/memRegion.hpp"
+#include "runtime/virtualspace.hpp"
+#include "utilities/globalDefinitions.hpp"
+
 // The CollectedHeap type requires subtypes to implement a method
 // "block_start".  For some subtypes, notably generational
 // systems using card-table-based write barriers, the efficiency of this
@@ -561,3 +568,5 @@ class BlockOffsetArrayContigSpace: public BlockOffsetArray {
   // Debugging support
   virtual size_t last_active_index() const;
 };
+
+#endif // SHARE_VM_MEMORY_BLOCKOFFSETTABLE_HPP

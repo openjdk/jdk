@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,11 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_MEMORY_GENREMSET_HPP
+#define SHARE_VM_MEMORY_GENREMSET_HPP
+
+#include "oops/oop.hpp"
 
 // A GenRemSet provides ways of iterating over pointers accross generations.
 // (This is especially useful for older-to-younger.)
@@ -133,3 +138,5 @@ public:
   // perm gen as well.
   virtual void invalidate_or_clear(Generation* gen, bool younger, bool perm) = 0;
 };
+
+#endif // SHARE_VM_MEMORY_GENREMSET_HPP

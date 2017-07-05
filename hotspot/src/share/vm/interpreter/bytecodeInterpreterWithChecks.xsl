@@ -1,6 +1,6 @@
 <?xml version="1.0"?> 
 <!-- 
-     Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+     Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
      DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
      This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
 <xsl:template match="processcode">
 <xsl:text>
 #define VM_JVMTI
-#include "bytecodeInterpreter.cpp"
+#include "interpreter/bytecodeInterpreter.cpp"
 </xsl:text>
 <xsl:text disable-output-escaping = "yes">
 

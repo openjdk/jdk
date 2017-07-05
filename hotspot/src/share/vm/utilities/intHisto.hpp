@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,12 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_UTILITIES_INTHISTO_HPP
+#define SHARE_VM_UTILITIES_INTHISTO_HPP
+
+#include "memory/allocation.hpp"
+#include "utilities/growableArray.hpp"
 
 // This class implements a simple histogram.
 
@@ -68,3 +74,5 @@ public:
   // Print the histogram on the given output stream.
   void print_on(outputStream* st) const;
 };
+
+#endif // SHARE_VM_UTILITIES_INTHISTO_HPP

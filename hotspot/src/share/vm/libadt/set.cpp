@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,11 @@
  *
  */
 
-// Sets - An Abstract Data Type
+#include "precompiled.hpp"
+#include "libadt/set.hpp"
+#include "memory/allocation.inline.hpp"
 
-#include "incls/_precompiled.incl"
-#include "incls/_set.cpp.incl"
+// Sets - An Abstract Data Type
 
 // %%%%% includes not needed with AVM framework - Ungar
 // #include "port.hpp"

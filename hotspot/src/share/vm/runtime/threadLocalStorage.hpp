@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,13 @@
  *
  */
 
+#ifndef SHARE_VM_RUNTIME_THREADLOCALSTORAGE_HPP
+#define SHARE_VM_RUNTIME_THREADLOCALSTORAGE_HPP
+
+#include "gc_implementation/shared/gcUtil.hpp"
+#include "runtime/os.hpp"
+#include "utilities/top.hpp"
+
 // Interface for thread local storage
 
 // Fast variant of ThreadLocalStorage::get_thread_slow
@@ -37,7 +44,25 @@ class ThreadLocalStorage : AllStatic {
   static void    invalidate_all() { pd_invalidate_all(); }
 
   // Machine dependent stuff
-  #include "incls/_threadLS_pd.hpp.incl"
+#ifdef TARGET_OS_ARCH_linux_x86
+# include "threadLS_linux_x86.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_linux_sparc
+# include "threadLS_linux_sparc.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_linux_zero
+# include "threadLS_linux_zero.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_solaris_x86
+# include "threadLS_solaris_x86.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_solaris_sparc
+# include "threadLS_solaris_sparc.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_windows_x86
+# include "threadLS_windows_x86.hpp"
+#endif
+
 
  public:
   // Accessor
@@ -61,3 +86,5 @@ class ThreadLocalStorage : AllStatic {
   static void pd_invalidate_all();
 
 };
+
+#endif // SHARE_VM_RUNTIME_THREADLOCALSTORAGE_HPP

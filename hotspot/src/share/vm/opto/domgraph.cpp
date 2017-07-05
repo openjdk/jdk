@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,17 @@
  *
  */
 
+#include "precompiled.hpp"
+#include "libadt/vectset.hpp"
+#include "memory/allocation.hpp"
+#include "opto/block.hpp"
+#include "opto/machnode.hpp"
+#include "opto/phaseX.hpp"
+#include "opto/rootnode.hpp"
+
 // Portions of code courtesy of Clifford Click
 
 // Optimization - Graph Style
-
-#include "incls/_precompiled.incl"
-#include "incls/_domgraph.cpp.incl"
 
 //------------------------------Tarjan-----------------------------------------
 // A data structure that holds all the information needed to find dominators.

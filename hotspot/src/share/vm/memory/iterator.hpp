@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,14 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_MEMORY_ITERATOR_HPP
+#define SHARE_VM_MEMORY_ITERATOR_HPP
+
+#include "memory/allocation.hpp"
+#include "memory/memRegion.hpp"
+#include "runtime/prefetch.hpp"
+#include "utilities/top.hpp"
 
 // The following classes are C++ `closures` for iterating over objects, roots and spaces
 
@@ -325,3 +333,5 @@ class RememberKlassesChecker: StackObj {
   }
 };
 #endif  // ASSERT
+
+#endif // SHARE_VM_MEMORY_ITERATOR_HPP

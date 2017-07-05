@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,14 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_jvmtiThreadState.cpp.incl"
+#include "precompiled.hpp"
+#include "jvmtifiles/jvmtiEnv.hpp"
+#include "memory/gcLocker.hpp"
+#include "memory/resourceArea.hpp"
+#include "prims/jvmtiEventController.inline.hpp"
+#include "prims/jvmtiImpl.hpp"
+#include "prims/jvmtiThreadState.inline.hpp"
+#include "runtime/vframe.hpp"
 
 // marker for when the stack depth has been reset and is now unknown.
 // any negative number would work but small ones might obscure an

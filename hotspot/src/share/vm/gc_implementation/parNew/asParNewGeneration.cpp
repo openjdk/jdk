@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,17 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_asParNewGeneration.cpp.incl"
+#include "precompiled.hpp"
+#include "gc_implementation/concurrentMarkSweep/cmsAdaptiveSizePolicy.hpp"
+#include "gc_implementation/concurrentMarkSweep/cmsGCAdaptivePolicyCounters.hpp"
+#include "gc_implementation/parNew/asParNewGeneration.hpp"
+#include "gc_implementation/parNew/parNewGeneration.hpp"
+#include "gc_implementation/shared/markSweep.inline.hpp"
+#include "gc_implementation/shared/spaceDecorator.hpp"
+#include "memory/defNewGeneration.inline.hpp"
+#include "memory/referencePolicy.hpp"
+#include "oops/markOop.inline.hpp"
+#include "oops/oop.pcgc.inline.hpp"
 
 ASParNewGeneration::ASParNewGeneration(ReservedSpace rs,
                                        size_t initial_byte_size,

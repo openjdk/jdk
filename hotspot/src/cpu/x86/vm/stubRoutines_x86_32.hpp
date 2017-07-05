@@ -22,6 +22,9 @@
  *
  */
 
+#ifndef CPU_X86_VM_STUBROUTINES_X86_32_HPP
+#define CPU_X86_VM_STUBROUTINES_X86_32_HPP
+
 // This file holds the platform specific parts of the StubRoutines
 // definition. See stubRoutines.hpp for a description on how to
 // extend it.
@@ -60,3 +63,5 @@ class x86 {
 
   static bool    returns_to_call_stub(address return_pc)     { return (return_pc == _call_stub_return_address) ||
                                                                        return_pc == x86::get_call_stub_compiled_return(); }
+
+#endif // CPU_X86_VM_STUBROUTINES_X86_32_HPP

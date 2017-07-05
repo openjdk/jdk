@@ -34,7 +34,7 @@
 /*
  * @test
  * @bug 4486658
- * @compile CancelledLockLoops.java
+ * @compile -source 1.5 CancelledLockLoops.java
  * @run main/timeout=2800 CancelledLockLoops
  * @summary tests lockInterruptibly.
  * Checks for responsiveness of locks to interrupts. Runs under that
@@ -64,7 +64,7 @@ public final class CancelledLockLoops {
             try {
                 new ReentrantLockLoop(i).test();
             }
-            catch(BrokenBarrierException bb) {
+            catch (BrokenBarrierException bb) {
                 // OK, ignore
             }
             Thread.sleep(TIMEOUT);

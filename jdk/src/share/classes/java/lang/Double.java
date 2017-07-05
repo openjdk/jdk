@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -973,7 +973,8 @@ public final class Double extends Number implements Comparable<Double> {
         if (d1 > d2)
             return 1;            // Neither val is NaN, thisVal is larger
 
-        long thisBits = Double.doubleToLongBits(d1);
+        // Cannot use doubleToRawLongBits because of possibility of NaNs.
+        long thisBits    = Double.doubleToLongBits(d1);
         long anotherBits = Double.doubleToLongBits(d2);
 
         return (thisBits == anotherBits ?  0 : // Values are equal

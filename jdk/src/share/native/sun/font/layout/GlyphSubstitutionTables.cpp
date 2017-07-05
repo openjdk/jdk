@@ -42,13 +42,23 @@
 
 U_NAMESPACE_BEGIN
 
-le_int32 GlyphSubstitutionTableHeader::process(LEGlyphStorage &glyphStorage, le_bool rightToLeft, LETag scriptTag, LETag languageTag,
+le_int32 GlyphSubstitutionTableHeader::process(LEGlyphStorage &glyphStorage,
+                                               le_bool rightToLeft,
+                                               LETag scriptTag,
+                                               LETag languageTag,
                                            const GlyphDefinitionTableHeader *glyphDefinitionTableHeader,
-                                           const LEGlyphFilter *filter, const FeatureMap *featureMap, le_int32 featureMapCount, le_bool featureOrder) const
+                                               const LEGlyphFilter *filter,
+                                               const FeatureMap *featureMap,
+                                               le_int32 featureMapCount,
+                                               le_bool featureOrder,
+                                               LEErrorCode &success) const
 {
-    GlyphSubstitutionLookupProcessor processor(this, scriptTag, languageTag, filter, featureMap, featureMapCount, featureOrder);
+    if (LE_FAILURE(success)) {
+        return 0;
+    }
 
-    return processor.process(glyphStorage, NULL, rightToLeft, glyphDefinitionTableHeader, NULL);
+    GlyphSubstitutionLookupProcessor processor(this, scriptTag, languageTag, filter, featureMap, featureMapCount, featureOrder, success);
+    return processor.process(glyphStorage, NULL, rightToLeft, glyphDefinitionTableHeader, NULL, success);
 }
 
 U_NAMESPACE_END

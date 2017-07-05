@@ -22,8 +22,20 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_stubCodeGenerator.cpp.incl"
+#include "precompiled.hpp"
+#include "compiler/disassembler.hpp"
+#include "oops/oop.inline.hpp"
+#include "prims/forte.hpp"
+#include "runtime/stubCodeGenerator.hpp"
+#ifdef TARGET_ARCH_x86
+# include "assembler_x86.inline.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "assembler_sparc.inline.hpp"
+#endif
+#ifdef TARGET_ARCH_zero
+# include "assembler_zero.inline.hpp"
+#endif
 
 
 // Implementation of StubCodeDesc

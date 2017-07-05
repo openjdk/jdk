@@ -22,6 +22,20 @@
  *
  */
 
+#ifndef SHARE_VM_OOPS_INSTANCEKLASS_HPP
+#define SHARE_VM_OOPS_INSTANCEKLASS_HPP
+
+#include "oops/constMethodOop.hpp"
+#include "oops/constantPoolOop.hpp"
+#include "oops/instanceOop.hpp"
+#include "oops/klassOop.hpp"
+#include "oops/klassVtable.hpp"
+#include "oops/objArrayOop.hpp"
+#include "runtime/handles.hpp"
+#include "runtime/os.hpp"
+#include "utilities/accessFlags.hpp"
+#include "utilities/bitMap.inline.hpp"
+
 // An instanceKlass is the VM level representation of a Java class.
 // It contains all information needed for at class at execution runtime.
 
@@ -1017,3 +1031,5 @@ class PreviousVersionWalker : public StackObj {
   // of the klass. Returns NULL if there are no more previous versions.
   PreviousVersionInfo* next_previous_version();
 };
+
+#endif // SHARE_VM_OOPS_INSTANCEKLASS_HPP

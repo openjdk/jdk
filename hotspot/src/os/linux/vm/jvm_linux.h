@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,9 @@
  * questions.
  *
  */
+
+#ifndef OS_LINUX_VM_JVM_LINUX_H
+#define OS_LINUX_VM_JVM_LINUX_H
 
 /*
 // HotSpot integration note:
@@ -95,3 +98,5 @@
 // Reconciliation History
 // jvm_solaris.h        1.6 99/06/22 16:38:47
 // End
+
+#endif // OS_LINUX_VM_JVM_LINUX_H

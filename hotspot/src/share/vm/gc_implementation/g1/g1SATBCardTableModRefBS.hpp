@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,13 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_GC_IMPLEMENTATION_G1_G1SATBCARDTABLEMODREFBS_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_G1_G1SATBCARDTABLEMODREFBS_HPP
+
+#include "memory/cardTableModRefBS.hpp"
+#include "memory/memRegion.hpp"
+#include "oops/oop.inline.hpp"
 
 #ifndef SERIALGC
 
@@ -115,3 +122,5 @@ class G1SATBCardTableLoggingModRefBS: public G1SATBCardTableModRefBS {
 
 
 #endif // SERIALGC
+
+#endif // SHARE_VM_GC_IMPLEMENTATION_G1_G1SATBCARDTABLEMODREFBS_HPP

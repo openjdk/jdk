@@ -22,6 +22,8 @@
  *
  */
 
+#ifndef SHARE_VM_RUNTIME_SIMPLETHRESHOLDPOLICY_INLINE_HPP
+#define SHARE_VM_RUNTIME_SIMPLETHRESHOLDPOLICY_INLINE_HPP
 
 template<CompLevel level>
 bool SimpleThresholdPolicy::call_predicate_helper(int i, int b, double scale) {
@@ -62,3 +64,5 @@ bool SimpleThresholdPolicy::is_trivial(methodOop method) {
   }
   return false;
 }
+
+#endif // SHARE_VM_RUNTIME_SIMPLETHRESHOLDPOLICY_INLINE_HPP

@@ -22,6 +22,9 @@
  *
  */
 
+#ifndef CPU_SPARC_VM_STUBROUTINES_SPARC_HPP
+#define CPU_SPARC_VM_STUBROUTINES_SPARC_HPP
+
 // This file holds the platform specific parts of the StubRoutines
 // definition. See stubRoutines.hpp for a description on how to
 // extend it.
@@ -100,3 +103,5 @@ class Sparc {
 
   static address partial_subtype_check()                  { return _partial_subtype_check; }
 };
+
+#endif // CPU_SPARC_VM_STUBROUTINES_SPARC_HPP

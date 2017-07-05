@@ -22,6 +22,14 @@
  *
  */
 
+#ifndef SHARE_VM_GC_IMPLEMENTATION_G1_CONCURRENTG1REFINE_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_G1_CONCURRENTG1REFINE_HPP
+
+#include "memory/allocation.hpp"
+#include "memory/cardTableModRefBS.hpp"
+#include "runtime/thread.hpp"
+#include "utilities/globalDefinitions.hpp"
+
 // Forward decl
 class ConcurrentG1RefineThread;
 class G1RemSet;
@@ -223,3 +231,5 @@ class ConcurrentG1Refine: public CHeapObj {
 
   int thread_threshold_step() const { return _thread_threshold_step; }
 };
+
+#endif // SHARE_VM_GC_IMPLEMENTATION_G1_CONCURRENTG1REFINE_HPP

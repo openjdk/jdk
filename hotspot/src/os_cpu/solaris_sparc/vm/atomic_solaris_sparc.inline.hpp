@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,14 @@
  * questions.
  *
  */
+
+#ifndef OS_CPU_SOLARIS_SPARC_VM_ATOMIC_SOLARIS_SPARC_INLINE_HPP
+#define OS_CPU_SOLARIS_SPARC_VM_ATOMIC_SOLARIS_SPARC_INLINE_HPP
+
+#include "orderAccess_solaris_sparc.inline.hpp"
+#include "runtime/atomic.hpp"
+#include "runtime/os.hpp"
+#include "vm_version_sparc.hpp"
 
 // Implementation of class atomic
 
@@ -342,3 +350,5 @@ inline void*    Atomic::cmpxchg_ptr(void*    exchange_value, volatile void*     
 #endif // _LP64 || COMPILER2
 
 #endif // _GNU_SOURCE
+
+#endif // OS_CPU_SOLARIS_SPARC_VM_ATOMIC_SOLARIS_SPARC_INLINE_HPP

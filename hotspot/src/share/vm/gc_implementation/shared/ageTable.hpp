@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,13 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_GC_IMPLEMENTATION_SHARED_AGETABLE_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_SHARED_AGETABLE_HPP
+
+#include "oops/markOop.hpp"
+#include "oops/oop.hpp"
+#include "runtime/perfData.hpp"
 
 /* Copyright (c) 1992-2009 Oracle and/or its affiliates, and Stanford University.
    See the LICENSE file for license information. */
@@ -64,3 +71,5 @@ class ageTable VALUE_OBJ_CLASS_SPEC {
  private:
   PerfVariable* _perf_sizes[table_size];
 };
+
+#endif // SHARE_VM_GC_IMPLEMENTATION_SHARED_AGETABLE_HPP

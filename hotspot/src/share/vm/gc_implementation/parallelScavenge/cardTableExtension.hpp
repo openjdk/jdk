@@ -22,6 +22,11 @@
  *
  */
 
+#ifndef SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_CARDTABLEEXTENSION_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_CARDTABLEEXTENSION_HPP
+
+#include "memory/cardTableModRefBS.hpp"
+
 class MutableSpace;
 class ObjectStartArray;
 class PSPromotionManager;
@@ -108,3 +113,5 @@ class CardTableExtension : public CardTableModRefBS {
 
 #endif // ASSERT
 };
+
+#endif // SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_CARDTABLEEXTENSION_HPP

@@ -22,8 +22,12 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_pcDesc.cpp.incl"
+#include "precompiled.hpp"
+#include "code/debugInfoRec.hpp"
+#include "code/nmethod.hpp"
+#include "code/pcDesc.hpp"
+#include "code/scopeDesc.hpp"
+#include "memory/resourceArea.hpp"
 
 PcDesc::PcDesc(int pc_offset, int scope_decode_offset, int obj_decode_offset) {
   assert(sizeof(PcDescFlags) <= 4, "occupies more than a word");

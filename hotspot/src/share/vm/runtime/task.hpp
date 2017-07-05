@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,11 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_RUNTIME_TASK_HPP
+#define SHARE_VM_RUNTIME_TASK_HPP
+
+#include "utilities/top.hpp"
 
 // A PeriodicTask has the sole purpose of executing its task
 // function with regular intervals.
@@ -113,3 +118,5 @@ class PeriodicTask: public CHeapObj {
   // The task to perform at each period
   virtual void task() = 0;
 };
+
+#endif // SHARE_VM_RUNTIME_TASK_HPP

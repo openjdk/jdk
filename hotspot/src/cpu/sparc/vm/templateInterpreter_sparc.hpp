@@ -22,6 +22,9 @@
  *
  */
 
+#ifndef CPU_SPARC_VM_TEMPLATEINTERPRETER_SPARC_HPP
+#define CPU_SPARC_VM_TEMPLATEINTERPRETER_SPARC_HPP
+
 
   protected:
 
@@ -38,3 +41,5 @@
 #else
   const static int InterpreterCodeSize = 180 * K;
 #endif
+
+#endif // CPU_SPARC_VM_TEMPLATEINTERPRETER_SPARC_HPP

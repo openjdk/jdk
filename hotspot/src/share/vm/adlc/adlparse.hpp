@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,9 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_ADLC_ADLPARSE_HPP
+#define SHARE_VM_ADLC_ADLPARSE_HPP
 
 // ADLPARSE.HPP - Definitions for Architecture Description Language Parser
 // Authors: Chris Vick and Mike Paleczny
@@ -153,8 +156,13 @@ protected:
 
   Attribute     *attr_parse(char *ident);// Parse instr/operand attribute rule
   // Parse instruction encode rule
-  InsEncode     *ins_encode_parse(InstructForm &inst);
-  InsEncode     *ins_encode_parse_block(InstructForm &inst);
+  void           ins_encode_parse(InstructForm &inst);
+  void           ins_encode_parse_block(InstructForm &inst);
+  void           ins_encode_parse_block_impl(InstructForm& inst, EncClass* encoding, char* ec_name);
+
+  void           constant_parse(InstructForm& inst);
+  void           constant_parse_expression(EncClass* encoding, char* ec_name);
+
   Opcode        *opcode_parse(InstructForm *insr); // Parse instruction opcode
   char          *size_parse(InstructForm *insr); // Parse instruction size
   Interface     *interface_parse();      // Parse operand interface rule
@@ -277,3 +285,5 @@ public:
   static bool equivalent_expressions(const char* str1, const char* str2);
   static void trim(char* &token);  // trim leading & trailing spaces
 };
+
+#endif // SHARE_VM_ADLC_ADLPARSE_HPP

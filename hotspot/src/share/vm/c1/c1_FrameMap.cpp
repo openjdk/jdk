@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,19 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_c1_FrameMap.cpp.incl"
+#include "precompiled.hpp"
+#include "c1/c1_FrameMap.hpp"
+#include "c1/c1_LIR.hpp"
+#include "runtime/sharedRuntime.hpp"
+#ifdef TARGET_ARCH_x86
+# include "vmreg_x86.inline.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "vmreg_sparc.inline.hpp"
+#endif
+#ifdef TARGET_ARCH_zero
+# include "vmreg_zero.inline.hpp"
+#endif
 
 
 

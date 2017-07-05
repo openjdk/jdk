@@ -22,8 +22,37 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_compileBroker.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "classfile/vmSymbols.hpp"
+#include "code/codeCache.hpp"
+#include "compiler/compileBroker.hpp"
+#include "compiler/compileLog.hpp"
+#include "compiler/compilerOracle.hpp"
+#include "interpreter/linkResolver.hpp"
+#include "memory/allocation.inline.hpp"
+#include "oops/methodDataOop.hpp"
+#include "oops/methodOop.hpp"
+#include "oops/oop.inline.hpp"
+#include "prims/nativeLookup.hpp"
+#include "runtime/arguments.hpp"
+#include "runtime/compilationPolicy.hpp"
+#include "runtime/init.hpp"
+#include "runtime/interfaceSupport.hpp"
+#include "runtime/javaCalls.hpp"
+#include "runtime/os.hpp"
+#include "runtime/sharedRuntime.hpp"
+#include "runtime/sweeper.hpp"
+#include "utilities/dtrace.hpp"
+#ifdef COMPILER1
+#include "c1/c1_Compiler.hpp"
+#endif
+#ifdef COMPILER2
+#include "opto/c2compiler.hpp"
+#endif
+#ifdef SHARK
+#include "shark/sharkCompiler.hpp"
+#endif
 
 #ifdef DTRACE_ENABLED
 
@@ -522,6 +551,7 @@ CompilerCounters::CompilerCounters(const char* thread_name, int instance, TRAPS)
 void CompileBroker::compilation_init() {
   _last_method_compiled[0] = '\0';
 
+#ifndef SHARK
   // Set the interface to the current compiler(s).
   int c1_count = CompilationPolicy::policy()->compiler_count(CompLevel_simple);
   int c2_count = CompilationPolicy::policy()->compiler_count(CompLevel_full_optimization);
@@ -537,13 +567,12 @@ void CompileBroker::compilation_init() {
   }
 #endif // COMPILER2
 
-#ifdef SHARK
-#if defined(COMPILER1) || defined(COMPILER2)
-#error "Can't use COMPILER1 or COMPILER2 with shark"
-#endif
-  _compilers[0] = new SharkCompiler();
-  _compilers[1] = _compilers[0];
-#endif
+#else // SHARK
+  int c1_count = 0;
+  int c2_count = 1;
+
+  _compilers[1] = new SharkCompiler();
+#endif // SHARK
 
   // Initialize the CompileTask free list
   _task_free_list = NULL;
@@ -1535,7 +1564,7 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
       //assert(false, "compiler should always document failure");
       // The compiler elected, without comment, not to register a result.
       // Do not attempt further compilations of this method.
-      ci_env.record_method_not_compilable("compile failed");
+      ci_env.record_method_not_compilable("compile failed", !TieredCompilation);
     }
 
     if (ci_env.failing()) {
@@ -1544,15 +1573,8 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
       if (PrintCompilation) {
         const char* reason = ci_env.failure_reason();
         if (compilable == ciEnv::MethodCompilable_not_at_tier) {
-          if (is_highest_tier_compile(ci_env.comp_level())) {
-            // Already at highest tier, promote to not compilable.
-            compilable = ciEnv::MethodCompilable_never;
-          } else {
             tty->print_cr("%3d   COMPILE SKIPPED: %s (retry at different tier)", compile_id, reason);
-          }
-        }
-
-        if (compilable == ciEnv::MethodCompilable_never) {
+        } else if (compilable == ciEnv::MethodCompilable_never) {
           tty->print_cr("%3d   COMPILE SKIPPED: %s (not retryable)", compile_id, reason);
         } else if (compilable == ciEnv::MethodCompilable) {
           tty->print_cr("%3d   COMPILE SKIPPED: %s", compile_id, reason);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,10 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_spaceDecorator.cpp.incl"
+#include "precompiled.hpp"
+#include "gc_implementation/shared/spaceDecorator.hpp"
+#include "memory/space.inline.hpp"
+#include "utilities/copy.hpp"
 
 // Catch-all file for utility classes
 

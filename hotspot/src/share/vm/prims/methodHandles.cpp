@@ -22,12 +22,20 @@
  *
  */
 
+#include "precompiled.hpp"
+#include "classfile/symbolTable.hpp"
+#include "interpreter/interpreter.hpp"
+#include "memory/allocation.inline.hpp"
+#include "memory/oopFactory.hpp"
+#include "prims/methodHandles.hpp"
+#include "runtime/javaCalls.hpp"
+#include "runtime/reflection.hpp"
+#include "runtime/signature.hpp"
+#include "runtime/stubRoutines.hpp"
+
 /*
  * JSR 292 reference implementation: method handles
  */
-
-#include "incls/_precompiled.incl"
-#include "incls/_methodHandles.cpp.incl"
 
 bool MethodHandles::_enabled = false; // set true after successful native linkage
 
@@ -477,9 +485,8 @@ void MethodHandles::resolve_MemberName(Handle mname, TRAPS) {
   Handle polymorphic_method_type;
   bool polymorphic_signature = false;
   if ((flags & ALL_KINDS) == IS_METHOD &&
-      (defc() == SystemDictionary::InvokeDynamic_klass() ||
-       (defc() == SystemDictionary::MethodHandle_klass() &&
-        methodOopDesc::is_method_handle_invoke_name(name()))))
+      (defc() == SystemDictionary::MethodHandle_klass() &&
+       methodOopDesc::is_method_handle_invoke_name(name())))
     polymorphic_signature = true;
 
   // convert the external string or reflective type to an internal signature

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,30 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_OOPS_TYPEARRAYOOP_HPP
+#define SHARE_VM_OOPS_TYPEARRAYOOP_HPP
+
+#include "oops/arrayOop.hpp"
+#include "oops/typeArrayKlass.hpp"
+#ifdef TARGET_OS_ARCH_linux_x86
+# include "orderAccess_linux_x86.inline.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_linux_sparc
+# include "orderAccess_linux_sparc.inline.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_linux_zero
+# include "orderAccess_linux_zero.inline.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_solaris_x86
+# include "orderAccess_solaris_x86.inline.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_solaris_sparc
+# include "orderAccess_solaris_sparc.inline.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_windows_x86
+# include "orderAccess_windows_x86.inline.hpp"
+#endif
 
 // A typeArrayOop is an array containing basic types (non oop elements).
 // It is used for arrays of {characters, singles, doubles, bytes, shorts, integers, longs}
@@ -141,3 +165,5 @@ class typeArrayOopDesc : public arrayOopDesc {
     return object_size(tk->layout_helper(), length());
   }
 };
+
+#endif // SHARE_VM_OOPS_TYPEARRAYOOP_HPP

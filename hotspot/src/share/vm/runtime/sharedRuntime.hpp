@@ -22,6 +22,17 @@
  *
  */
 
+#ifndef SHARE_VM_RUNTIME_SHAREDRUNTIME_HPP
+#define SHARE_VM_RUNTIME_SHAREDRUNTIME_HPP
+
+#include "interpreter/bytecodeHistogram.hpp"
+#include "interpreter/bytecodeTracer.hpp"
+#include "interpreter/linkResolver.hpp"
+#include "memory/allocation.hpp"
+#include "memory/resourceArea.hpp"
+#include "runtime/threadLocalStorage.hpp"
+#include "utilities/hashtable.hpp"
+
 class AdapterHandlerEntry;
 class AdapterHandlerTable;
 class AdapterFingerPrint;
@@ -663,3 +674,5 @@ class AdapterHandlerLibrary: public AllStatic {
 #endif /* PRODUCT */
 
 };
+
+#endif // SHARE_VM_RUNTIME_SHAREDRUNTIME_HPP

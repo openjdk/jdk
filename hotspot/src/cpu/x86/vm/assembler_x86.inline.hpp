@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,14 @@
  * questions.
  *
  */
+
+#ifndef CPU_X86_VM_ASSEMBLER_X86_INLINE_HPP
+#define CPU_X86_VM_ASSEMBLER_X86_INLINE_HPP
+
+#include "asm/assembler.inline.hpp"
+#include "asm/codeBuffer.hpp"
+#include "code/codeCache.hpp"
+#include "runtime/handles.inline.hpp"
 
 inline void MacroAssembler::pd_patch_instruction(address branch, address target) {
   unsigned char op = branch[0];
@@ -85,3 +93,5 @@ inline void Assembler::emit_long64(jlong x) {
   code_section()->set_end(_code_pos);
 }
 #endif // _LP64
+
+#endif // CPU_X86_VM_ASSEMBLER_X86_INLINE_HPP

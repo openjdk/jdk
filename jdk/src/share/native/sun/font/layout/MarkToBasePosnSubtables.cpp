@@ -25,7 +25,7 @@
 
 /*
  *
- * (C) Copyright IBM Corp. 1998-2004 - All Rights Reserved
+ * (C) Copyright IBM Corp. 1998-2010 - All Rights Reserved
  *
  */
 
@@ -108,11 +108,27 @@ le_int32 MarkToBasePositioningSubtable::process(GlyphIterator *glyphIterator, co
     glyphIterator->setCurrGlyphBaseOffset(baseIterator.getCurrStreamPosition());
 
     if (glyphIterator->isRightToLeft()) {
+        // FIXME: need similar patch to below; also in MarkToLigature and MarkToMark
+        // (is there a better way to approach this for all the cases?)
         glyphIterator->setCurrGlyphPositionAdjustment(anchorDiffX, anchorDiffY, -markAdvance.fX, -markAdvance.fY);
     } else {
         LEPoint baseAdvance;
 
         fontInstance->getGlyphAdvance(baseGlyph, pixels);
+
+        //JK: adjustment needs to account for non-zero advance of any marks between base glyph and current mark
+        GlyphIterator gi(baseIterator, (le_uint16)0); // copy of baseIterator that won't ignore marks
+        gi.next(); // point beyond the base glyph
+        while (gi.getCurrStreamPosition() < glyphIterator->getCurrStreamPosition()) { // for all intervening glyphs (marks)...
+            LEGlyphID otherMark = gi.getCurrGlyphID();
+            LEPoint px;
+            fontInstance->getGlyphAdvance(otherMark, px); // get advance, in case it's non-zero
+            pixels.fX += px.fX; // and add that to the base glyph's advance
+            pixels.fY += px.fY;
+            gi.next();
+        }
+        // end of JK patch
+
         fontInstance->pixelsToUnits(pixels, baseAdvance);
 
         glyphIterator->setCurrGlyphPositionAdjustment(anchorDiffX - baseAdvance.fX, anchorDiffY - baseAdvance.fY, -markAdvance.fX, -markAdvance.fY);
