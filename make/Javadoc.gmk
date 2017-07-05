@@ -265,7 +265,6 @@ COMMON_JAVADOCFLAGS = \
     -quiet \
     -use \
     -keywords \
-    -Xdoclint:none \
     -Xprofilespath $(JDK_TOPDIR)/make/profile-rtjar-includes.txt \
     $(ADDITIONAL_JAVADOCFLAGS)
 
@@ -381,6 +380,7 @@ $(COREAPI_INDEX_FILE): $(COREAPI_OPTIONS_FILE) $(COREAPI_PACKAGES_FILE)
 $(COREAPI_OPTIONS_FILE): $(COREAPI_OVERVIEW)
 	$(prep-target)
 	@($(call OptionOnly,$(COMMON_JAVADOCFLAGS)) ; \
+	  $(call OptionOnly,-Xdoclint:none) ; \
 	  $(call OptionPair,-sourcepath,$(RELEASEDOCS_SOURCEPATH)) ; \
 	  $(call OptionPair,-encoding,ISO-8859-1) ; \
 	  $(call OptionPair,-tag,beaninfo:X) ; \
@@ -456,6 +456,7 @@ $(DOCLETAPI_INDEX_FILE): $(DOCLETAPI_OPTIONS_FILE) $(DOCLETAPI_PACKAGES_FILE) co
 $(DOCLETAPI_OPTIONS_FILE):
 	$(prep-target)
 	@($(call OptionOnly,$(COMMON_JAVADOCFLAGS)) ; \
+	  $(call OptionOnly,-Xdoclint:none) ; \
 	  $(call OptionPair,-sourcepath,$(RELEASEDOCS_SOURCEPATH)) ; \
 	  $(call OptionPair,-encoding,ascii) ; \
 	  $(call OptionOnly,-breakiterator) ; \
@@ -512,6 +513,7 @@ $(TAGLETAPI_INDEX_FILE): $(TAGLETAPI_OPTIONS_FILE) $(TAGLETAPI_PACKAGES_FILE) co
 $(TAGLETAPI_OPTIONS_FILE):
 	$(prep-target)
 	@($(call OptionOnly,$(COMMON_JAVADOCFLAGS)) ; \
+	  $(call OptionOnly,-Xdoclint:none) ; \
 	  $(call OptionPair,-sourcepath,$(RELEASEDOCS_SOURCEPATH)) ; \
 	  $(call OptionPair,-encoding,ascii) ; \
 	  $(call OptionOnly,-nonavbar) ; \
@@ -563,6 +565,7 @@ $(DOMAPI_INDEX_FILE): $(DOMAPI_OPTIONS_FILE) $(DOMAPI_PACKAGES_FILE) coredocs
 $(DOMAPI_OPTIONS_FILE):
 	$(prep-target)
 	@($(call OptionOnly,$(COMMON_JAVADOCFLAGS)) ; \
+	  $(call OptionOnly,-Xdoclint:none) ; \
 	  $(call OptionPair,-sourcepath,$(RELEASEDOCS_SOURCEPATH)) ; \
 	  $(call OptionPair,-encoding,ascii) ; \
 	  $(call OptionOnly,-splitIndex) ; \
@@ -625,6 +628,7 @@ $(JDI_INDEX_FILE): $(JDI_OPTIONS_FILE) $(JDI_PACKAGES_FILE) coredocs
 $(JDI_OPTIONS_FILE): $(JDI_OVERVIEW)
 	$(prep-target)
 	@($(call OptionOnly,$(COMMON_JAVADOCFLAGS)) ; \
+	  $(call OptionOnly,-Xdoclint:none) ; \
 	  $(call OptionPair,-sourcepath,$(RELEASEDOCS_SOURCEPATH)) ; \
 	  $(call OptionPair,-encoding,ascii) ; \
 	  $(call OptionPair,-overview,$(JDI_OVERVIEW)) ; \
@@ -712,6 +716,7 @@ $(JAAS_INDEX_FILE): $(JAAS_OPTIONS_FILE) $(JAAS_PACKAGES_FILE) coredocs
 $(JAAS_OPTIONS_FILE): $(JAAS_OVERVIEW)
 	$(prep-target)
 	@($(call OptionOnly,$(COMMON_JAVADOCFLAGS)) ; \
+	  $(call OptionOnly,-Xdoclint:none) ; \
 	  $(call OptionPair,-sourcepath,$(RELEASEDOCS_SOURCEPATH)) ; \
 	  $(call OptionPair,-encoding,ascii) ; \
 	  $(call OptionPair,-overview,$(JAAS_OVERVIEW)) ; \
@@ -764,6 +769,7 @@ $(JGSS_INDEX_FILE): $(JGSS_OPTIONS_FILE) $(JGSS_PACKAGES_FILE) coredocs
 $(JGSS_OPTIONS_FILE): $(JGSS_OVERVIEW)
 	$(prep-target)
 	@($(call OptionOnly,$(COMMON_JAVADOCFLAGS)) ; \
+	  $(call OptionOnly,-Xdoclint:none) ; \
 	  $(call OptionPair,-sourcepath,$(RELEASEDOCS_SOURCEPATH)) ; \
 	  $(call OptionPair,-encoding,ascii) ; \
 	  $(call OptionOnly,-nodeprecatedlist) ; \
@@ -816,6 +822,7 @@ $(SMARTCARDIO_INDEX_FILE): $(SMARTCARDIO_OPTIONS_FILE) $(SMARTCARDIO_PACKAGES_FI
 $(SMARTCARDIO_OPTIONS_FILE):
 	$(prep-target)
 	@($(call OptionOnly,$(COMMON_JAVADOCFLAGS)) ; \
+	  $(call OptionOnly,-Xdoclint:none) ; \
 	  $(call OptionPair,-sourcepath,$(RELEASEDOCS_SOURCEPATH)) ; \
 	  $(call OptionPair,-encoding,ascii) ; \
 	  $(call OptionOnly,-nodeprecatedlist) ; \
@@ -866,6 +873,7 @@ $(HTTPSERVER_INDEX_HTML): $(HTTPSERVER_OPTIONS_FILE) $(HTTPSERVER_PACKAGES_FILE)
 $(HTTPSERVER_OPTIONS_FILE):
 	$(prep-target)
 	@($(call OptionOnly,$(COMMON_JAVADOCFLAGS)) ; \
+	  $(call OptionOnly,-Xdoclint:none) ; \
 	  $(call OptionPair,-sourcepath,$(RELEASEDOCS_SOURCEPATH)) ; \
 	  $(call OptionPair,-encoding,ascii) ; \
 	  $(call OptionOnly,-nodeprecatedlist) ; \
@@ -926,6 +934,7 @@ $(MGMT_INDEX_FILE): $(MGMT_OPTIONS_FILE) $(MGMT_PACKAGES_FILE) coredocs
 $(MGMT_OPTIONS_FILE): $(MGMT_OVERVIEW)
 	$(prep-target)
 	@($(call OptionOnly,$(COMMON_JAVADOCFLAGS)) ; \
+	  $(call OptionOnly,-Xdoclint:none) ; \
 	  $(call OptionPair,-sourcepath,$(RELEASEDOCS_SOURCEPATH)) ; \
 	  $(call OptionPair,-encoding,ascii) ; \
 	  $(call OptionOnly,-nodeprecatedlist) ; \
@@ -977,6 +986,7 @@ $(ATTACH_INDEX_HTML): $(ATTACH_OPTIONS_FILE) $(ATTACH_PACKAGES_FILE) coredocs
 $(ATTACH_OPTIONS_FILE):
 	$(prep-target)
 	@($(call OptionOnly,$(COMMON_JAVADOCFLAGS)) ; \
+	  $(call OptionOnly,-Xdoclint:none) ; \
 	  $(call OptionPair,-sourcepath,$(RELEASEDOCS_SOURCEPATH)) ; \
 	  $(call OptionPair,-encoding,ascii) ; \
 	  $(call OptionOnly,-nodeprecatedlist) ; \
@@ -1027,6 +1037,7 @@ $(JCONSOLE_INDEX_HTML): $(JCONSOLE_OPTIONS_FILE) $(JCONSOLE_PACKAGES_FILE) cored
 $(JCONSOLE_OPTIONS_FILE):
 	$(prep-target)
 	@($(call OptionOnly,$(COMMON_JAVADOCFLAGS)) ; \
+	  $(call OptionOnly,-Xdoclint:none) ; \
 	  $(call OptionPair,-sourcepath,$(RELEASEDOCS_SOURCEPATH)) ; \
 	  $(call OptionPair,-encoding,ascii) ; \
 	  $(call OptionOnly,-nodeprecatedlist) ; \
@@ -1079,6 +1090,7 @@ $(TREEAPI_INDEX_HTML): $(TREEAPI_OPTIONS_FILE) $(TREEAPI_PACKAGES_FILE) coredocs
 $(TREEAPI_OPTIONS_FILE):
 	$(prep-target)
 	@($(call OptionOnly,$(COMMON_JAVADOCFLAGS)) ; \
+	  $(call OptionOnly,-Xdoclint:none) ; \
 	  $(call OptionPair,-sourcepath,$(RELEASEDOCS_SOURCEPATH)) ; \
 	  $(call OptionPair,-encoding,ascii) ; \
 	  $(call OptionPair,-doctitle,$(TREEAPI_DOCTITLE)) ; \
@@ -1130,6 +1142,7 @@ $(SCTPAPI_INDEX_HTML): $(SCTPAPI_OPTIONS_FILE) $(SCTPAPI_PACKAGES_FILE) coredocs
 $(SCTPAPI_OPTIONS_FILE):
 	$(prep-target)
 	@($(call OptionOnly,$(COMMON_JAVADOCFLAGS)) ; \
+	  $(call OptionOnly,-Xdoclint:none) ; \
 	  $(call OptionPair,-sourcepath,$(RELEASEDOCS_SOURCEPATH)) ; \
 	  $(call OptionPair,-encoding,ascii) ; \
 	  $(call OptionOnly,-nodeprecatedlist) ; \

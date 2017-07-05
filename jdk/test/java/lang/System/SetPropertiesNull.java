@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,27 +21,24 @@
  * questions.
  */
 
-/* @test
- * @summary Invoke getDeclaredMethods on Packer and Unpacker to ensure
- *    that all types referenced in the method signatures is present.
+/*
+ * This class tests to see if the system property java.version is properly
+ * reinitialized after setting System.setProperties(null).
+ *
+ * @test
+ * @bug 8030781
+ * @summary Test for System.setProperties(null).
  */
 
-import java.util.jar.Pack200;
-import java.util.jar.Pack200.Packer;
-import java.util.jar.Pack200.Unpacker;
-import java.lang.reflect.Method;
+public class SetPropertiesNull {
 
-public class Reflect {
-    static void printMethods(Class<?> c) {
-        System.out.println(c);
-        for (Method m: c.getDeclaredMethods()) {
-            System.out.println("    " + m);
+    public static void main(String args[]) {
+        final String version = System.getProperty("java.version");
+        System.setProperties(null);
+        final String newVersion = System.getProperty("java.version");
+        if (!version.equals(newVersion)) {
+            throw new RuntimeException("java.version differs: '" + version + "'  '"
+                               + newVersion + "'");
         }
-    }
-    public static void main(String[] args) {
-        printMethods(Pack200.Packer.class);
-        printMethods(Pack200.Unpacker.class);
-        printMethods(Pack200.newPacker().getClass());
-        printMethods(Pack200.newUnpacker().getClass());
     }
 }

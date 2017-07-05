@@ -196,15 +196,17 @@ public class JInfo {
         if (usageSA) {
             System.err.println("    jinfo [option] <pid>");
             System.err.println("        (to connect to running process)");
-            System.err.println("    jinfo [option] <executable <core>");
+            System.err.println("    jinfo [option] <executable> <core>");
             System.err.println("        (to connect to a core file)");
             System.err.println("    jinfo [option] [server_id@]<remote server IP or hostname>");
             System.err.println("        (to connect to remote debug server)");
             System.err.println("");
             System.err.println("where <option> is one of:");
+            System.err.println("  for running processes:");
             System.err.println("    -flag <name>         to print the value of the named VM flag");
             System.err.println("    -flag [+|-]<name>    to enable or disable the named VM flag");
             System.err.println("    -flag <name>=<value> to set the named VM flag to the given value");
+            System.err.println("  for running processes and core files:");
             System.err.println("    -flags               to print VM flags");
             System.err.println("    -sysprops            to print Java system properties");
             System.err.println("    <no option>          to print both of the above");

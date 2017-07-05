@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,20 +21,27 @@
  * questions.
  */
 
-package sun.awt;
-
-import java.awt.AWTPermission;
-import sun.security.util.PermissionFactory;
-
 /**
- * A factory object for AWTPermission objects.
+ * @test
+ * @bug 8030016
+ * @summary computeIfAbsent would generate spurious access
  */
 
-public class AWTPermissionFactory
-    implements PermissionFactory<AWTPermission>
-{
-    @Override
-    public AWTPermission newPermission(String name) {
-        return new AWTPermission(name);
+import java.util.*;
+
+public class ComputeIfAbsentAccessOrder {
+    public static void main(String args[]) throws Throwable {
+        LinkedHashMap<String,Object> map = new LinkedHashMap<>(2, 0.75f, true);
+        map.put("first", null);
+        map.put("second", null);
+
+        map.computeIfAbsent("first", l -> null); // should do nothing
+
+        String key = map.keySet().stream()
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("no value"));
+        if(!"first".equals(key)) {
+            throw new RuntimeException("not expected value " + "first" + "!=" + key);
+        }
     }
 }

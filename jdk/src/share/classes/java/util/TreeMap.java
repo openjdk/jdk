@@ -198,8 +198,7 @@ public class TreeMap<K,V>
         comparator = m.comparator();
         try {
             buildFromSorted(m.size(), m.entrySet().iterator(), null, null);
-        } catch (java.io.IOException cannotHappen) {
-        } catch (ClassNotFoundException cannotHappen) {
+        } catch (java.io.IOException | ClassNotFoundException cannotHappen) {
         }
     }
 
@@ -318,8 +317,7 @@ public class TreeMap<K,V>
                 try {
                     buildFromSorted(mapSize, map.entrySet().iterator(),
                                     null, null);
-                } catch (java.io.IOException cannotHappen) {
-                } catch (ClassNotFoundException cannotHappen) {
+                } catch (java.io.IOException | ClassNotFoundException cannotHappen) {
                 }
                 return;
             }
@@ -644,8 +642,7 @@ public class TreeMap<K,V>
         // Initialize clone with our mappings
         try {
             clone.buildFromSorted(size, entrySet().iterator(), null, null);
-        } catch (java.io.IOException cannotHappen) {
-        } catch (ClassNotFoundException cannotHappen) {
+        } catch (java.io.IOException | ClassNotFoundException cannotHappen) {
         }
 
         return clone;
@@ -1050,7 +1047,7 @@ public class TreeMap<K,V>
         }
 
         public Spliterator<V> spliterator() {
-            return new ValueSpliterator<K,V>(TreeMap.this, null, null, 0, -1, 0);
+            return new ValueSpliterator<>(TreeMap.this, null, null, 0, -1, 0);
         }
     }
 
@@ -1090,7 +1087,7 @@ public class TreeMap<K,V>
         }
 
         public Spliterator<Map.Entry<K,V>> spliterator() {
-            return new EntrySpliterator<K,V>(TreeMap.this, null, null, 0, -1, 0);
+            return new EntrySpliterator<>(TreeMap.this, null, null, 0, -1, 0);
         }
     }
 
@@ -2427,8 +2424,7 @@ public class TreeMap<K,V>
         s.writeInt(size);
 
         // Write out keys and values (alternating)
-        for (Iterator<Map.Entry<K,V>> i = entrySet().iterator(); i.hasNext(); ) {
-            Map.Entry<K,V> e = i.next();
+        for (Map.Entry<K, V> e : entrySet()) {
             s.writeObject(e.getKey());
             s.writeObject(e.getValue());
         }
@@ -2459,8 +2455,7 @@ public class TreeMap<K,V>
     void addAllForTreeSet(SortedSet<? extends K> set, V defaultVal) {
         try {
             buildFromSorted(set.size(), set.iterator(), null, defaultVal);
-        } catch (java.io.IOException cannotHappen) {
-        } catch (ClassNotFoundException cannotHappen) {
+        } catch (java.io.IOException | ClassNotFoundException cannotHappen) {
         }
     }
 
@@ -2631,11 +2626,11 @@ public class TreeMap<K,V>
     }
 
     final Spliterator<K> keySpliterator() {
-        return new KeySpliterator<K,V>(this, null, null, 0, -1, 0);
+        return new KeySpliterator<>(this, null, null, 0, -1, 0);
     }
 
     final Spliterator<K> descendingKeySpliterator() {
-        return new DescendingKeySpliterator<K,V>(this, null, null, 0, -2, 0);
+        return new DescendingKeySpliterator<>(this, null, null, 0, -2, 0);
     }
 
     /**

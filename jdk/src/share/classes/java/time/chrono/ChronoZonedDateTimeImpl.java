@@ -66,8 +66,8 @@ import static java.time.temporal.ChronoUnit.SECONDS;
 import java.io.IOException;
 import java.io.InvalidObjectException;
 import java.io.ObjectInput;
+import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
-import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -339,10 +339,10 @@ final class ChronoZonedDateTimeImpl<D extends ChronoLocalDate>
 
     /**
      * Defend against malicious streams.
-     * @return never
+     *
      * @throws InvalidObjectException always
      */
-    private Object readResolve() throws InvalidObjectException {
+    private void readObject(ObjectInputStream s) throws InvalidObjectException {
         throw new InvalidObjectException("Deserialization via serialization delegate");
     }
 
