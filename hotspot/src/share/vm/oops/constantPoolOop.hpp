@@ -41,6 +41,7 @@ class constantPoolOopDesc : public oopDesc {
   typeArrayOop         _tags; // the tag array describing the constant pool's contents
   constantPoolCacheOop _cache;         // the cache holding interpreter runtime information
   klassOop             _pool_holder;   // the corresponding class
+  typeArrayOop         _operands;      // for variable-sized (InvokeDynamic) nodes, usually empty
   int                  _flags;         // a few header bits to describe contents for GC
   int                  _length; // number of elements in the array
   volatile bool        _is_conc_safe; // if true, safe for concurrent
@@ -51,6 +52,8 @@ class constantPoolOopDesc : public oopDesc {
   void set_tags(typeArrayOop tags)             { oop_store_without_check((oop*)&_tags, tags); }
   void tag_at_put(int which, jbyte t)          { tags()->byte_at_put(which, t); }
   void release_tag_at_put(int which, jbyte t)  { tags()->release_byte_at_put(which, t); }
+
+  void set_operands(typeArrayOop operands)     { oop_store_without_check((oop*)&_operands, operands); }
 
   enum FlagBit {
     FB_has_invokedynamic = 1,
@@ -67,6 +70,7 @@ class constantPoolOopDesc : public oopDesc {
   intptr_t* base() const { return (intptr_t*) (((char*) this) + sizeof(constantPoolOopDesc)); }
   oop* tags_addr()       { return (oop*)&_tags; }
   oop* cache_addr()      { return (oop*)&_cache; }
+  oop* operands_addr()   { return (oop*)&_operands; }
 
   oop* obj_at_addr(int which) const {
     assert(is_within_bounds(which), "index out of bounds");
@@ -95,6 +99,7 @@ class constantPoolOopDesc : public oopDesc {
 
  public:
   typeArrayOop tags() const                 { return _tags; }
+  typeArrayOop operands() const             { return _operands; }
 
   bool has_pseudo_string() const            { return flag_at(FB_has_pseudo_string); }
   bool has_invokedynamic() const            { return flag_at(FB_has_invokedynamic); }
@@ -113,6 +118,7 @@ class constantPoolOopDesc : public oopDesc {
   // Assembly code support
   static int tags_offset_in_bytes()         { return offset_of(constantPoolOopDesc, _tags); }
   static int cache_offset_in_bytes()        { return offset_of(constantPoolOopDesc, _cache); }
+  static int operands_offset_in_bytes()     { return offset_of(constantPoolOopDesc, _operands); }
   static int pool_holder_offset_in_bytes()  { return offset_of(constantPoolOopDesc, _pool_holder); }
 
   // Storing constants
@@ -156,10 +162,28 @@ class constantPoolOopDesc : public oopDesc {
     *int_at_addr(which) = ref_index;
   }
 
-  void invoke_dynamic_at_put(int which, int bootstrap_method_index, int name_and_type_index) {
+  void invoke_dynamic_at_put(int which, int operand_base, int operand_count) {
     tag_at_put(which, JVM_CONSTANT_InvokeDynamic);
-    *int_at_addr(which) = ((jint) name_and_type_index<<16) | bootstrap_method_index;
+    *int_at_addr(which) = operand_base;  // this is the real information
   }
+#ifdef ASSERT
+  bool check_invoke_dynamic_at(int which,
+                               int bootstrap_method_index,
+                               int name_and_type_index,
+                               int argument_count) {
+    assert(invoke_dynamic_bootstrap_method_ref_index_at(which) == bootstrap_method_index,
+           "already stored by caller");
+    assert(invoke_dynamic_name_and_type_ref_index_at(which) == name_and_type_index,
+           "already stored by caller");
+    assert(invoke_dynamic_argument_count_at(which) == argument_count,
+           "consistent argument count");
+    if (argument_count != 0) {
+      invoke_dynamic_argument_index_at(which, 0);
+      invoke_dynamic_argument_index_at(which, argument_count - 1);
+    }
+    return true;
+  }
+#endif //ASSERT
 
   // Temporary until actual use
   void unresolved_string_at_put(int which, symbolOop s) {
@@ -401,26 +425,92 @@ class constantPoolOopDesc : public oopDesc {
     int sym = method_type_index_at(which);
     return symbol_at(sym);
   }
+
+ private:
+  // some nodes (InvokeDynamic) have a variable number of operands, each a u2 value
+  enum { _multi_operand_count_offset = -1,
+         _multi_operand_base_offset  = 0,
+         _multi_operand_buffer_fill_pointer_offset = 0  // shared at front of operands array
+  };
+  int multi_operand_buffer_length() {
+    return operands() == NULL ? 0 : operands()->length();
+  }
+  int multi_operand_buffer_fill_pointer() {
+    return operands() == NULL
+      ? _multi_operand_buffer_fill_pointer_offset + 1
+      : operands()->int_at(_multi_operand_buffer_fill_pointer_offset);
+  }
+  void multi_operand_buffer_grow(int min_length, TRAPS);
+  void set_multi_operand_buffer_fill_pointer(int fillp) {
+    assert(operands() != NULL, "");
+    operands()->int_at_put(_multi_operand_buffer_fill_pointer_offset, fillp);
+  }
+  int multi_operand_base_at(int which) {
+    assert(tag_at(which).is_invoke_dynamic(), "Corrupted constant pool");
+    int op_base = *int_at_addr(which);
+    assert(op_base > _multi_operand_buffer_fill_pointer_offset, "Corrupted operand base");
+    return op_base;
+  }
+  int multi_operand_count_at(int which) {
+    int op_base = multi_operand_base_at(which);
+    assert((uint)(op_base + _multi_operand_count_offset) < (uint)operands()->length(), "oob");
+    int count = operands()->int_at(op_base + _multi_operand_count_offset);
+    return count;
+  }
+  int multi_operand_ref_at(int which, int i) {
+    int op_base = multi_operand_base_at(which);
+    assert((uint)i < (uint)multi_operand_count_at(which), "oob");
+    assert((uint)(op_base + _multi_operand_base_offset + i) < (uint)operands()->length(), "oob");
+    return operands()->int_at(op_base + _multi_operand_base_offset + i);
+  }
+  void set_multi_operand_ref_at(int which, int i, int ref) {
+    DEBUG_ONLY(multi_operand_ref_at(which, i));  // trigger asserts
+    int op_base = multi_operand_base_at(which);
+    operands()->int_at_put(op_base + _multi_operand_base_offset + i, ref);
+  }
+
+ public:
+  // layout of InvokeDynamic:
+  enum {
+         _indy_bsm_offset  = 0,  // CONSTANT_MethodHandle bsm
+         _indy_nt_offset   = 1,  // CONSTANT_NameAndType descr
+         _indy_argc_offset = 2,  // u2 argc
+         _indy_argv_offset = 3   // u2 argv[argc]
+  };
   int invoke_dynamic_bootstrap_method_ref_index_at(int which) {
     assert(tag_at(which).is_invoke_dynamic(), "Corrupted constant pool");
-    jint ref_index = *int_at_addr(which);
-    return extract_low_short_from_int(ref_index);
+    return multi_operand_ref_at(which, _indy_bsm_offset);
   }
   int invoke_dynamic_name_and_type_ref_index_at(int which) {
     assert(tag_at(which).is_invoke_dynamic(), "Corrupted constant pool");
-    jint ref_index = *int_at_addr(which);
-    return extract_high_short_from_int(ref_index);
+    return multi_operand_ref_at(which, _indy_nt_offset);
+  }
+  int invoke_dynamic_argument_count_at(int which) {
+    assert(tag_at(which).is_invoke_dynamic(), "Corrupted constant pool");
+    int argc = multi_operand_ref_at(which, _indy_argc_offset);
+    DEBUG_ONLY(int op_count = multi_operand_count_at(which));
+    assert(_indy_argv_offset + argc == op_count, "consistent inner and outer counts");
+    return argc;
+  }
+  int invoke_dynamic_argument_index_at(int which, int j) {
+    assert((uint)j < (uint)invoke_dynamic_argument_count_at(which), "oob");
+    return multi_operand_ref_at(which, _indy_argv_offset + j);
   }
 
   // The following methods (name/signature/klass_ref_at, klass_ref_at_noresolve,
   // name_and_type_ref_index_at) all expect to be passed indices obtained
-  // directly from the bytecode, and extracted according to java byte order.
+  // directly from the bytecode.
   // If the indices are meant to refer to fields or methods, they are
-  // actually potentially byte-swapped, rewritten constant pool cache indices.
+  // actually rewritten constant pool cache indices.
   // The routine remap_instruction_operand_from_cache manages the adjustment
   // of these values back to constant pool indices.
 
   // There are also "uncached" versions which do not adjust the operand index; see below.
+
+  // FIXME: Consider renaming these with a prefix "cached_" to make the distinction clear.
+  // In a few cases (the verifier) there are uses before a cpcache has been built,
+  // which are handled by a dynamic check in remap_instruction_operand_from_cache.
+  // FIXME: Remove the dynamic check, and adjust all callers to specify the correct mode.
 
   // Lookup for entries consisting of (klass_index, name_and_type index)
   klassOop klass_ref_at(int which, TRAPS);
@@ -443,15 +533,24 @@ class constantPoolOopDesc : public oopDesc {
     resolve_string_constants_impl(h_this, CHECK);
   }
 
+ private:
+  enum { _no_index_sentinel = -1, _possible_index_sentinel = -2 };
+ public:
+
   // Resolve late bound constants.
   oop resolve_constant_at(int index, TRAPS) {
     constantPoolHandle h_this(THREAD, this);
-    return resolve_constant_at_impl(h_this, index, -1, THREAD);
+    return resolve_constant_at_impl(h_this, index, _no_index_sentinel, THREAD);
   }
 
   oop resolve_cached_constant_at(int cache_index, TRAPS) {
     constantPoolHandle h_this(THREAD, this);
-    return resolve_constant_at_impl(h_this, -1, cache_index, THREAD);
+    return resolve_constant_at_impl(h_this, _no_index_sentinel, cache_index, THREAD);
+  }
+
+  oop resolve_possibly_cached_constant_at(int pool_index, TRAPS) {
+    constantPoolHandle h_this(THREAD, this);
+    return resolve_constant_at_impl(h_this, pool_index, _possible_index_sentinel, THREAD);
   }
 
   // Klass name matches name at offset
@@ -484,7 +583,7 @@ class constantPoolOopDesc : public oopDesc {
   static klassOop klass_ref_at_if_loaded_check(constantPoolHandle this_oop, int which, TRAPS);
 
   // Routines currently used for annotations (only called by jvm.cpp) but which might be used in the
-  // future by other Java code. These take constant pool indices rather than possibly-byte-swapped
+  // future by other Java code. These take constant pool indices rather than
   // constant pool cache indices as do the peer methods above.
   symbolOop uncached_klass_ref_at_noresolve(int which);
   symbolOop uncached_name_ref_at(int which)                 { return impl_name_ref_at(which, true); }
