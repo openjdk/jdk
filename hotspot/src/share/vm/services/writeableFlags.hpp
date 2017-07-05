@@ -56,6 +56,10 @@ private:
 
   // set a boolean global flag
   static int set_bool_flag(const char* name, const char* value, Flag::Flags origin, FormatBuffer<80>& err_msg);
+  // set a int global flag
+  static int set_int_flag(const char* name, const char* value, Flag::Flags origin, FormatBuffer<80>& err_msg);
+  // set a uint global flag
+  static int set_uint_flag(const char* name, const char* value, Flag::Flags origin, FormatBuffer<80>& err_msg);
   // set a intx global flag
   static int set_intx_flag(const char* name, const char* value, Flag::Flags origin, FormatBuffer<80>& err_msg);
   // set a uintx global flag
@@ -66,6 +70,10 @@ private:
   static int set_size_t_flag(const char* name, const char* value, Flag::Flags origin, FormatBuffer<80>& err_msg);
   // set a boolean global flag
   static int set_bool_flag(const char* name, bool value, Flag::Flags origin, FormatBuffer<80>& err_msg);
+  // set a int global flag
+  static int set_int_flag(const char* name, int value, Flag::Flags origin, FormatBuffer<80>& err_msg);
+  // set a uint global flag
+  static int set_uint_flag(const char* name, uint value, Flag::Flags origin, FormatBuffer<80>& err_msg);
   // set a intx global flag
   static int set_intx_flag(const char* name, intx value, Flag::Flags origin, FormatBuffer<80>& err_msg);
   // set a uintx global flag
