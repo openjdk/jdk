@@ -1824,7 +1824,7 @@ JVM_ENTRY(jobjectArray, JVM_GetClassDeclaredFields(JNIEnv *env, jclass ofClass, 
     }
 
     if (!publicOnly || fs.access_flags().is_public()) {
-      fd.initialize(k(), fs.index());
+      fd.reinitialize(k(), fs.index());
       oop field = Reflection::new_field(&fd, UseNewReflection, CHECK_NULL);
       result->obj_at_put(out_idx, field);
       ++out_idx;

@@ -80,7 +80,7 @@ ifeq ($(SPEC),)
     HOSTCC  = $(CC)
   endif
 
-  AS   = $(CC) -c -x assembler-with-cpp
+  AS   = $(CC) -c 
 endif
 
 
@@ -346,6 +346,13 @@ ifeq ($(OS_VENDOR), Darwin)
             -mmacosx-version-min=$(MACOSX_VERSION_MIN)
   LDFLAGS += -mmacosx-version-min=$(MACOSX_VERSION_MIN)
 endif
+
+
+#------------------------------------------------------------------------
+# Assembler flags
+
+# Enforce prerpocessing of .s files
+ASFLAGS += -x assembler-with-cpp
 
 #------------------------------------------------------------------------
 # Linker flags

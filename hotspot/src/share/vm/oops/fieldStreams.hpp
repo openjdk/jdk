@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 #include "oops/instanceKlass.hpp"
 #include "oops/fieldInfo.hpp"
+#include "runtime/fieldDescriptor.hpp"
 
 // The is the base class for iteration over the fields array
 // describing the declared fields in the class.  Several subclasses
@@ -43,8 +44,10 @@ class FieldStreamBase : public StackObj {
   int                 _index;
   int                 _limit;
   int                 _generic_signature_slot;
+  fieldDescriptor     _fd_buf;
 
   FieldInfo* field() const { return FieldInfo::from_field_array(_fields, _index); }
+  InstanceKlass* field_holder() const { return _constants->pool_holder(); }
 
   int init_generic_signature_start_slot() {
     int length = _fields->length();
@@ -102,6 +105,7 @@ class FieldStreamBase : public StackObj {
     _index = 0;
     _limit = klass->java_fields_count();
     init_generic_signature_start_slot();
+    assert(klass == field_holder(), "");
   }
   FieldStreamBase(instanceKlassHandle klass) {
     _fields = klass->fields();
@@ -109,6 +113,7 @@ class FieldStreamBase : public StackObj {
     _index = 0;
     _limit = klass->java_fields_count();
     init_generic_signature_start_slot();
+    assert(klass == field_holder(), "");
   }
 
   // accessors
@@ -180,6 +185,12 @@ class FieldStreamBase : public StackObj {
     return field()->contended_group();
   }
 
+  // bridge to a heavier API:
+  fieldDescriptor& field_descriptor() const {
+    fieldDescriptor& field = const_cast<fieldDescriptor&>(_fd_buf);
+    field.reinitialize(field_holder(), _index);
+    return field;
+  }
 };
 
 // Iterate over only the internal fields

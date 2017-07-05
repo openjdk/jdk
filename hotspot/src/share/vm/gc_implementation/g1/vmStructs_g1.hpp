@@ -31,7 +31,8 @@
 
 #define VM_STRUCTS_G1(nonstatic_field, static_field)                          \
                                                                               \
-  static_field(HeapRegion, GrainBytes, size_t)                                \
+  static_field(HeapRegion, GrainBytes,        size_t)                         \
+  static_field(HeapRegion, LogOfHRGrainBytes, int)                            \
                                                                               \
   nonstatic_field(HeapRegionSeq,   _regions, HeapRegion**)                    \
   nonstatic_field(HeapRegionSeq,   _length,  uint)                            \

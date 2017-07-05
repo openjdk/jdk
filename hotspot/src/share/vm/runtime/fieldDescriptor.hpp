@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,6 +53,13 @@ class fieldDescriptor VALUE_OBJ_CLASS_SPEC {
   }
 
  public:
+  fieldDescriptor() {
+    DEBUG_ONLY(_index = badInt);
+  }
+  fieldDescriptor(InstanceKlass* ik, int index) {
+    DEBUG_ONLY(_index = badInt);
+    reinitialize(ik, index);
+  }
   Symbol* name() const {
     return field()->name(_cp);
   }
@@ -112,12 +119,13 @@ class fieldDescriptor VALUE_OBJ_CLASS_SPEC {
   }
 
   // Initialization
-  void initialize(InstanceKlass* ik, int index);
+  void reinitialize(InstanceKlass* ik, int index);
 
   // Print
   void print() { print_on(tty); }
   void print_on(outputStream* st) const         PRODUCT_RETURN;
   void print_on_for(outputStream* st, oop obj)  PRODUCT_RETURN;
+  void verify() const                           PRODUCT_RETURN;
 };
 
 #endif // SHARE_VM_RUNTIME_FIELDDESCRIPTOR_HPP

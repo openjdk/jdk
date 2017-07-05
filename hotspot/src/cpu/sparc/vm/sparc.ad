@@ -557,7 +557,7 @@ int MachCallDynamicJavaNode::ret_addr_offset() {
     int entry_offset = InstanceKlass::vtable_start_offset() + vtable_index*vtableEntry::size();
     int v_off = entry_offset*wordSize + vtableEntry::method_offset_in_bytes();
     int klass_load_size;
-    if (UseCompressedKlassPointers) {
+    if (UseCompressedClassPointers) {
       assert(Universe::heap() != NULL, "java heap should be initialized");
       klass_load_size = MacroAssembler::instr_size_for_decode_klass_not_null() + 1*BytesPerInstWord;
     } else {
@@ -1657,7 +1657,7 @@ uint BoxLockNode::size(PhaseRegAlloc *ra_) const {
 void MachUEPNode::format( PhaseRegAlloc *ra_, outputStream *st ) const {
   st->print_cr("\nUEP:");
 #ifdef    _LP64
-  if (UseCompressedKlassPointers) {
+  if (UseCompressedClassPointers) {
     assert(Universe::heap() != NULL, "java heap should be initialized");
     st->print_cr("\tLDUW   [R_O0 + oopDesc::klass_offset_in_bytes],R_G5\t! Inline cache check - compressed klass");
     st->print_cr("\tSET    Universe::narrow_klass_base,R_G6_heap_base");
@@ -1897,7 +1897,7 @@ bool Matcher::narrow_oop_use_complex_address() {
 
 bool Matcher::narrow_klass_use_complex_address() {
   NOT_LP64(ShouldNotCallThis());
-  assert(UseCompressedKlassPointers, "only for compressed klass code");
+  assert(UseCompressedClassPointers, "only for compressed klass code");
   return false;
 }
 
@@ -2561,7 +2561,7 @@ encode %{
       int off = __ offset();
       __ load_klass(O0, G3_scratch);
       int klass_load_size;
-      if (UseCompressedKlassPointers) {
+      if (UseCompressedClassPointers) {
         assert(Universe::heap() != NULL, "java heap should be initialized");
         klass_load_size = MacroAssembler::instr_size_for_decode_klass_not_null() + 1*BytesPerInstWord;
       } else {

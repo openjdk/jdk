@@ -952,7 +952,8 @@ oop Reflection::invoke(instanceKlassHandle klass, methodHandle reflected_method,
         }
       }  else {
         // if the method can be overridden, we resolve using the vtable index.
-        int index  = reflected_method->vtable_index();
+        assert(!reflected_method->has_itable_index(), "");
+        int index = reflected_method->vtable_index();
         method = reflected_method;
         if (index != Method::nonvirtual_vtable_index) {
           // target_klass might be an arrayKlassOop but all vtables start at

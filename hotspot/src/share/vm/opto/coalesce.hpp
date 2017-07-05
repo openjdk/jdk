@@ -29,7 +29,6 @@
 
 class LoopTree;
 class LRG;
-class LRG_List;
 class Matcher;
 class PhaseIFG;
 class PhaseCFG;

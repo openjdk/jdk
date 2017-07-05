@@ -1072,8 +1072,17 @@ jvmtiError VM_RedefineClasses::load_new_class_versions(TRAPS) {
     }
 
     res = merge_cp_and_rewrite(the_class, scratch_class, THREAD);
-    if (res != JVMTI_ERROR_NONE) {
-      return res;
+    if (HAS_PENDING_EXCEPTION) {
+      Symbol* ex_name = PENDING_EXCEPTION->klass()->name();
+      // RC_TRACE_WITH_THREAD macro has an embedded ResourceMark
+      RC_TRACE_WITH_THREAD(0x00000002, THREAD,
+        ("merge_cp_and_rewrite exception: '%s'", ex_name->as_C_string()));
+      CLEAR_PENDING_EXCEPTION;
+      if (ex_name == vmSymbols::java_lang_OutOfMemoryError()) {
+        return JVMTI_ERROR_OUT_OF_MEMORY;
+      } else {
+        return JVMTI_ERROR_INTERNAL;
+      }
     }
 
     if (VerifyMergedCPBytecodes) {
@@ -1105,6 +1114,9 @@ jvmtiError VM_RedefineClasses::load_new_class_versions(TRAPS) {
     }
     if (HAS_PENDING_EXCEPTION) {
       Symbol* ex_name = PENDING_EXCEPTION->klass()->name();
+      // RC_TRACE_WITH_THREAD macro has an embedded ResourceMark
+      RC_TRACE_WITH_THREAD(0x00000002, THREAD,
+        ("Rewriter::rewrite or link_methods exception: '%s'", ex_name->as_C_string()));
       CLEAR_PENDING_EXCEPTION;
       if (ex_name == vmSymbols::java_lang_OutOfMemoryError()) {
         return JVMTI_ERROR_OUT_OF_MEMORY;
@@ -1395,8 +1407,8 @@ jvmtiError VM_RedefineClasses::merge_cp_and_rewrite(
   ClassLoaderData* loader_data = the_class->class_loader_data();
   ConstantPool* merge_cp_oop =
     ConstantPool::allocate(loader_data,
-                                  merge_cp_length,
-                                  THREAD);
+                           merge_cp_length,
+                           CHECK_(JVMTI_ERROR_OUT_OF_MEMORY));
   MergeCPCleaner cp_cleaner(loader_data, merge_cp_oop);
 
   HandleMark hm(THREAD);  // make sure handles are cleared before
@@ -1472,7 +1484,8 @@ jvmtiError VM_RedefineClasses::merge_cp_and_rewrite(
 
       // Replace the new constant pool with a shrunken copy of the
       // merged constant pool
-      set_new_constant_pool(loader_data, scratch_class, merge_cp, merge_cp_length, THREAD);
+      set_new_constant_pool(loader_data, scratch_class, merge_cp, merge_cp_length,
+                            CHECK_(JVMTI_ERROR_OUT_OF_MEMORY));
       // The new constant pool replaces scratch_cp so have cleaner clean it up.
       // It can't be cleaned up while there are handles to it.
       cp_cleaner.add_scratch_cp(scratch_cp());
@@ -1502,7 +1515,8 @@ jvmtiError VM_RedefineClasses::merge_cp_and_rewrite(
     // merged constant pool so now the rewritten bytecodes have
     // valid references; the previous new constant pool will get
     // GCed.
-    set_new_constant_pool(loader_data, scratch_class, merge_cp, merge_cp_length, THREAD);
+    set_new_constant_pool(loader_data, scratch_class, merge_cp, merge_cp_length,
+                          CHECK_(JVMTI_ERROR_OUT_OF_MEMORY));
     // The new constant pool replaces scratch_cp so have cleaner clean it up.
     // It can't be cleaned up while there are handles to it.
     cp_cleaner.add_scratch_cp(scratch_cp());
@@ -1590,10 +1604,22 @@ bool VM_RedefineClasses::rewrite_cp_refs_in_methods(
   for (int i = methods->length() - 1; i >= 0; i--) {
     methodHandle method(THREAD, methods->at(i));
     methodHandle new_method;
-    rewrite_cp_refs_in_method(method, &new_method, CHECK_false);
+    rewrite_cp_refs_in_method(method, &new_method, THREAD);
     if (!new_method.is_null()) {
       // the method has been replaced so save the new method version
+      // even in the case of an exception.  original method is on the
+      // deallocation list.
       methods->at_put(i, new_method());
+    }
+    if (HAS_PENDING_EXCEPTION) {
+      Symbol* ex_name = PENDING_EXCEPTION->klass()->name();
+      // RC_TRACE_WITH_THREAD macro has an embedded ResourceMark
+      RC_TRACE_WITH_THREAD(0x00000002, THREAD,
+        ("rewrite_cp_refs_in_method exception: '%s'", ex_name->as_C_string()));
+      // Need to clear pending exception here as the super caller sets
+      // the JVMTI_ERROR_INTERNAL if the returned value is false.
+      CLEAR_PENDING_EXCEPTION;
+      return false;
     }
   }
 
@@ -1674,10 +1700,7 @@ void VM_RedefineClasses::rewrite_cp_refs_in_method(methodHandle method,
               Pause_No_Safepoint_Verifier pnsv(&nsv);
 
               // ldc is 2 bytes and ldc_w is 3 bytes
-              m = rc.insert_space_at(bci, 3, inst_buffer, THREAD);
-              if (m.is_null() || HAS_PENDING_EXCEPTION) {
-                guarantee(false, "insert_space_at() failed");
-              }
+              m = rc.insert_space_at(bci, 3, inst_buffer, CHECK);
             }
 
             // return the new method so that the caller can update
@@ -2487,8 +2510,8 @@ void VM_RedefineClasses::set_new_constant_pool(
   // scratch_cp is a merged constant pool and has enough space for a
   // worst case merge situation. We want to associate the minimum
   // sized constant pool with the klass to save space.
-  constantPoolHandle smaller_cp(THREAD,
-          ConstantPool::allocate(loader_data, scratch_cp_length, THREAD));
+  ConstantPool* cp = ConstantPool::allocate(loader_data, scratch_cp_length, CHECK);
+  constantPoolHandle smaller_cp(THREAD, cp);
 
   // preserve version() value in the smaller copy
   int version = scratch_cp->version();
@@ -2500,6 +2523,11 @@ void VM_RedefineClasses::set_new_constant_pool(
   smaller_cp->set_pool_holder(scratch_class());
 
   scratch_cp->copy_cp_to(1, scratch_cp_length - 1, smaller_cp, 1, THREAD);
+  if (HAS_PENDING_EXCEPTION) {
+    // Exception is handled in the caller
+    loader_data->add_to_deallocate_list(smaller_cp());
+    return;
+  }
   scratch_cp = smaller_cp;
 
   // attach new constant pool to klass
@@ -2930,7 +2958,7 @@ void VM_RedefineClasses::check_methods_and_mark_as_obsolete(
   for (int i = 0; i < _deleted_methods_length; ++i) {
     Method* old_method = _deleted_methods[i];
 
-    assert(old_method->vtable_index() < 0,
+    assert(!old_method->has_vtable_index(),
            "cannot delete methods with vtable entries");;
 
     // Mark all deleted methods as old and obsolete
