@@ -148,11 +148,33 @@ public class AtomicInteger extends Number implements java.io.Serializable {
      * if the current value {@code == expectedValue},
      * with memory effects as specified by {@link VarHandle#weakCompareAndSetPlain}.
      *
+     * @deprecated This method has plain memory effects but the method
+     * name implies volatile memory effects (see methods such as
+     * {@link #compareAndExchange} and {@link #compareAndSet}).  To avoid
+     * confusion over plain or volatile memory effects it is recommended that
+     * the method {@link #weakCompareAndSetPlain} be used instead.
+     *
      * @param expectedValue the expected value
      * @param newValue the new value
      * @return {@code true} if successful
+     * @see #weakCompareAndSetPlain
      */
+    @Deprecated(since="9")
     public final boolean weakCompareAndSet(int expectedValue, int newValue) {
+        return U.weakCompareAndSwapInt(this, VALUE, expectedValue, newValue);
+    }
+
+    /**
+     * Possibly atomically sets the value to {@code newValue}
+     * if the current value {@code == expectedValue},
+     * with memory effects as specified by {@link VarHandle#weakCompareAndSetPlain}.
+     *
+     * @param expectedValue the expected value
+     * @param newValue the new value
+     * @return {@code true} if successful
+     * @since 9
+     */
+    public final boolean weakCompareAndSetPlain(int expectedValue, int newValue) {
         return U.weakCompareAndSwapInt(this, VALUE, expectedValue, newValue);
     }
 

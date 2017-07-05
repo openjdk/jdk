@@ -77,6 +77,14 @@ public final class OptionTemplate implements Comparable<OptionTemplate> {
     /** is the option value specified as next argument? */
     private boolean valueNextArg;
 
+    /**
+     * Can this option be repeated in command line?
+     *
+     * For a repeatable option, multiple values will be merged as comma
+     * separated values rather than the last value overriding previous ones.
+     */
+    private boolean repeated;
+
     OptionTemplate(final String resource, final String key, final String value, final boolean isHelp, final boolean isXHelp) {
         this.resource = resource;
         this.key = key;
@@ -223,6 +231,14 @@ public final class OptionTemplate implements Comparable<OptionTemplate> {
         return valueNextArg;
     }
 
+    /**
+     * Can this option be repeated?
+     * @return boolean
+     */
+    public boolean isRepeated() {
+        return repeated;
+    }
+
     private static String strip(final String value, final char start, final char end) {
         final int len = value.length();
         if (len > 1 && value.charAt(0) == start && value.charAt(len - 1) == end) {
@@ -281,6 +297,9 @@ public final class OptionTemplate implements Comparable<OptionTemplate> {
                 case "value_next_arg":
                     this.valueNextArg = Boolean.parseBoolean(arg);
                     break;
+                case "repeated":
+                    this.repeated = true;
+                    break;
                 default:
                     throw new IllegalArgumentException(keyToken);
                 }
@@ -301,6 +320,10 @@ public final class OptionTemplate implements Comparable<OptionTemplate> {
 
         if (name == null && shortName == null) {
             throw new IllegalArgumentException(origValue);
+        }
+
+        if (this.repeated && !"string".equals(this.type)) {
+            throw new IllegalArgumentException("repeated option should be of type string: " + this.name);
         }
     }
 

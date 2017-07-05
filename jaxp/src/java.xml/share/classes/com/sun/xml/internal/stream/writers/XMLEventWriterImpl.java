@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,14 +49,14 @@ import javax.xml.stream.XMLStreamWriter;
 public class XMLEventWriterImpl implements XMLEventWriter{
 
     //delegate everything to XMLStreamWriter..
-    private XMLStreamWriter fStreamWriter ;
+    private final XMLStreamWriterBase fStreamWriter ;
     private static final boolean DEBUG = false;
     /**
      *
      * @param streamWriter
      */
     public XMLEventWriterImpl(XMLStreamWriter streamWriter){
-        fStreamWriter = streamWriter;
+        fStreamWriter = (XMLStreamWriterBase)streamWriter;
     }
 
     /**
@@ -89,7 +89,8 @@ public class XMLEventWriterImpl implements XMLEventWriter{
                 StartDocument startDocument = (StartDocument)xMLEvent ;
                 if (DEBUG)System.out.println("Adding StartDocument = " + startDocument.toString());
                 try {
-                   fStreamWriter.writeStartDocument(startDocument.getCharacterEncodingScheme(), startDocument.getVersion());
+                   fStreamWriter.writeStartDocument(startDocument.getCharacterEncodingScheme(), startDocument.getVersion(),
+                           startDocument.isStandalone(), startDocument.standaloneSet());
                 }catch(XMLStreamException e) {
                     fStreamWriter.writeStartDocument(startDocument.getVersion());
                 }

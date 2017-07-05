@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ package sun.java2d.d3d;
 
 import java.awt.AWTException;
 import java.awt.BufferCapabilities;
-import java.awt.BufferCapabilities.FlipContents;
 import java.awt.Component;
 import java.awt.Graphics;
 import java.awt.ImageCapabilities;
@@ -43,14 +42,12 @@ import sun.awt.image.SurfaceManager;
 import sun.awt.windows.WComponentPeer;
 import sun.java2d.Surface;
 import sun.java2d.SurfaceData;
-import sun.java2d.pipe.hw.AccelDeviceEventNotifier;
 import sun.java2d.pipe.hw.AccelTypedVolatileImage;
 import sun.java2d.pipe.hw.AccelGraphicsConfig;
 import sun.java2d.pipe.hw.AccelSurface;
 import sun.java2d.pipe.hw.ContextCapabilities;
 import static sun.java2d.pipe.hw.AccelSurface.*;
 import static sun.java2d.d3d.D3DContext.D3DContextCaps.*;
-import sun.java2d.pipe.hw.AccelDeviceEventListener;
 
 public class D3DGraphicsConfig
     extends Win32GraphicsConfig
@@ -314,15 +311,5 @@ public class D3DGraphicsConfig
     @Override
     public ContextCapabilities getContextCapabilities() {
         return device.getContextCapabilities();
-    }
-
-    @Override
-    public void addDeviceEventListener(AccelDeviceEventListener l) {
-        AccelDeviceEventNotifier.addListener(l, device.getScreen());
-    }
-
-    @Override
-    public void removeDeviceEventListener(AccelDeviceEventListener l) {
-        AccelDeviceEventNotifier.removeListener(l);
     }
 }

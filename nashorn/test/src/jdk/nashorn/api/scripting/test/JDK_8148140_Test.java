@@ -54,7 +54,7 @@ public class JDK_8148140_Test {
                 return true;
             }
             @Override
-            public Object call(Object thiz, Object... args) {
+            public Object call(final Object thiz, final Object... args) {
                 return Arrays.deepToString(args);
             }
         });

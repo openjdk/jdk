@@ -40,6 +40,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
 import jdk.tools.jlink.internal.Archive.Entry;
 import jdk.tools.jlink.internal.Archive.Entry.EntryType;
 import jdk.tools.jlink.internal.ResourcePoolManager.CompressedModuleData;
@@ -120,10 +121,6 @@ public final class ImageFileCreator {
             all.addAll(es.get(true));
             entriesForModule.put(mn, all);
         });
-    }
-
-    public static boolean isClassPackage(String path) {
-        return path.endsWith(".class") && !path.endsWith("module-info.class");
     }
 
     public static void recreateJimage(Path jimageFile,
@@ -265,26 +262,13 @@ public final class ImageFileCreator {
                 return writer.getString(id);
             }
         });
+
         for (Archive archive : archives) {
             String mn = archive.moduleName();
-            for (Entry entry : entriesForModule.get(mn)) {
-                String path;
-                if (entry.type() == EntryType.CLASS_OR_RESOURCE) {
-                    // Removal of "classes/" radical.
-                    path = entry.name();
-                    if (path.endsWith("module-info.class")) {
-                        path = "/" + path;
-                    } else {
-                        path = "/" + mn + "/" + path;
-                    }
-                } else {
-                    // Entry.path() contains the kind of file native, conf, bin, ...
-                    // Keep it to avoid naming conflict (eg: native/jvm.cfg and config/jvm.cfg
-                    path = "/" + mn + "/" + entry.path();
-                }
-
-                resources.add(new ArchiveEntryResourcePoolEntry(mn, path, entry));
-            }
+            entriesForModule.get(mn).stream()
+                .map(e -> new ArchiveEntryResourcePoolEntry(mn,
+                                    e.getResourcePoolEntryName(), e))
+                .forEach(resources::add);
         }
         return resources;
     }
@@ -318,6 +302,20 @@ public final class ImageFileCreator {
 
         String[] array = new String[result.size()];
         return result.toArray(array);
+    }
+
+    /**
+     * Returns the path of the resource.
+     */
+    public static String resourceName(String path) {
+        Objects.requireNonNull(path);
+        String s = path.substring(1);
+        int index = s.indexOf("/");
+        return s.substring(index + 1);
+    }
+
+    public static String toPackage(String name) {
+        return toPackage(name, false);
     }
 
     private static String toPackage(String name, boolean log) {

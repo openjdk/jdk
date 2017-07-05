@@ -41,11 +41,11 @@ class ParserContextModuleNode extends ParserContextBaseNode {
     /** Module name. */
     private final String name;
 
-    private List<String> requestedModules = new ArrayList<>();
-    private List<ImportEntry> importEntries = new ArrayList<>();
-    private List<ExportEntry> localExportEntries = new ArrayList<>();
-    private List<ExportEntry> indirectExportEntries = new ArrayList<>();
-    private List<ExportEntry> starExportEntries = new ArrayList<>();
+    private final List<String> requestedModules = new ArrayList<>();
+    private final List<ImportEntry> importEntries = new ArrayList<>();
+    private final List<ExportEntry> localExportEntries = new ArrayList<>();
+    private final List<ExportEntry> indirectExportEntries = new ArrayList<>();
+    private final List<ExportEntry> starExportEntries = new ArrayList<>();
 
     /**
      * Constructor.

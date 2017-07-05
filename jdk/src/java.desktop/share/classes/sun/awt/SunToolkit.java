@@ -46,6 +46,7 @@ import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.security.AccessController;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Locale;
@@ -887,12 +888,21 @@ public abstract class SunToolkit extends Toolkit
         if (width == 0 || height == 0) {
             return null;
         }
+        java.util.List<Image> multiResAndnormalImages = new ArrayList<>(imageList.size());
+        for (Image image : imageList) {
+            if ((image instanceof MultiResolutionImage)) {
+                Image im = ((MultiResolutionImage) image).getResolutionVariant(width, height);
+                multiResAndnormalImages.add(im);
+            } else {
+                multiResAndnormalImages.add(image);
+            }
+        }
         Image bestImage = null;
         int bestWidth = 0;
         int bestHeight = 0;
         double bestSimilarity = 3; //Impossibly high value
         double bestScaleFactor = 0;
-        for (Iterator<Image> i = imageList.iterator();i.hasNext();) {
+        for (Iterator<Image> i = multiResAndnormalImages.iterator();i.hasNext();) {
             //Iterate imageList looking for best matching image.
             //'Similarity' measure is defined as good scale factor and small insets.
             //best possible similarity is 0 (no scale, no insets).

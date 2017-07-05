@@ -39,18 +39,18 @@ class Extender extends JgssExtender {
     }
 
     public GSSCredential wrap(GSSCredential cred) {
-        if (cred instanceof ExtendedGSSCredential.ExtendedGSSCredentialImpl) {
+        if (cred instanceof ExtendedGSSCredentialImpl) {
             return cred;
         } else {
-            return new ExtendedGSSCredential.ExtendedGSSCredentialImpl((GSSCredentialImpl)cred);
+            return new ExtendedGSSCredentialImpl((GSSCredentialImpl)cred);
         }
     }
 
     public GSSContext wrap(GSSContext ctxt) {
-        if (ctxt instanceof ExtendedGSSContext.ExtendedGSSContextImpl) {
+        if (ctxt instanceof ExtendedGSSContextImpl) {
             return ctxt;
         } else {
-            return new ExtendedGSSContext.ExtendedGSSContextImpl((GSSContextImpl)ctxt);
+            return new ExtendedGSSContextImpl((GSSContextImpl)ctxt);
         }
     }
 }

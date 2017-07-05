@@ -22,17 +22,32 @@
  */
 
 /**
- * This class is launched in a sub-process by the main test,
- * SASymbolTableTest.java.
- *
- * This class does nothing in particular. It just sleeps for 120
- * seconds so SASymbolTableTestAgent can have a chance to examine its
- * SymbolTable. This process should be killed by the parent process
- * after SASymbolTableTestAgent has completed testing.
+ * @test
+ * @run main/othervm/native -agentlib:MAAClassFileLoadHook MAAClassFileLoadHook
+ * @run main/othervm/native -agentlib:MAAClassFileLoadHook=with_early_vmstart MAAClassFileLoadHook
+ * @run main/othervm/native -agentlib:MAAClassFileLoadHook=with_early_class_hook MAAClassFileLoadHook
+ * @run main/othervm/native -agentlib:MAAClassFileLoadHook=with_early_vmstart,with_early_class_hook MAAClassFileLoadHook
  */
-public class SASymbolTableTestAttachee {
-    public static void main(String args[]) throws Throwable {
-        System.out.println("SASymbolTableTestAttachee: sleeping to wait for SA tool to attach ...");
-        Thread.sleep(120 * 1000);
+
+public class MAAClassFileLoadHook {
+
+    static {
+        try {
+            System.loadLibrary("MAAClassFileLoadHook");
+        } catch (UnsatisfiedLinkError ule) {
+            System.err.println("Could not load MAAClassFileLoadHook library");
+            System.err.println("java.library.path: "
+                + System.getProperty("java.library.path"));
+            throw ule;
+        }
+    }
+
+    native static int check();
+
+    public static void main(String args[]) {
+        int status = check();
+        if (status != 0) {
+            throw new RuntimeException("Non-zero status returned from the agent: " + status);
+        }
     }
 }

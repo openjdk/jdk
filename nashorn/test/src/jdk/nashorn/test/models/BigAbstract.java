@@ -26,7 +26,7 @@
 package jdk.nashorn.test.models;
 
 public abstract class BigAbstract {
-    public static void accept(BigAbstract ba) {
+    public static void accept(final BigAbstract ba) {
     }
 
     public abstract void f0();

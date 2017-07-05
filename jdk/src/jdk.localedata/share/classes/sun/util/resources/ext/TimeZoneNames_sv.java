@@ -189,6 +189,9 @@ public final class TimeZoneNames_sv extends TimeZoneNamesBundle {
         String MHT[] = new String[] {"Marshall\u00f6arna, normaltid", "MHT",
                                      "Marshall\u00f6arna, sommartid", "MHST",
                                      "Marshall\u00F6arna-tid", "MHT"};
+        String MMT[] = new String[] {"Myanmar, normaltid", "MMT",
+                                     "Myanmar, sommartid", "MMST",
+                                     "Myanmar-tid", "MMT"};
         String MSK[] = new String[] {"Moskva, normaltid", "MSK",
                                      "Moskva, sommartid", "MSD",
                                      "Moskvas tid", "MT"};
@@ -684,9 +687,7 @@ public final class TimeZoneNames_sv extends TimeZoneNamesBundle {
             {"Asia/Qyzylorda", new String[] {"Qyzylorda, normaltid", "QYZT",
                                              "Qyzylorda, sommartid", "QYZST",
                                              "Qyzylorda-tid", "QYZT"}},
-            {"Asia/Rangoon", new String[] {"Myanmar, normaltid", "MMT",
-                                           "Myanmar, sommartid", "MMST",
-                                           "Myanmar-tid", "MMT"}},
+            {"Asia/Rangoon", MMT},
             {"Asia/Riyadh", ARAST},
             {"Asia/Saigon", ICT},
             {"Asia/Sakhalin", new String[] {"Sakhalin, normaltid", "SAKT",
@@ -719,6 +720,7 @@ public final class TimeZoneNames_sv extends TimeZoneNamesBundle {
                                                "Vladivostok, sommartid", "VLAST",
                                                "Vladivostok-tid", "VLAT"}},
             {"Asia/Yakutsk", YAKT},
+            {"Asia/Yangon", MMT},
             {"Asia/Yekaterinburg", new String[] {"Jekaterinburg, normaltid", "YEKT",
                                                  "Jekaterinburg, sommartid", "YEKST",
                                                  "Jekaterinburg-tid", "YEKT"}},

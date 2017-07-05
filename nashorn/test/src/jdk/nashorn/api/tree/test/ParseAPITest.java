@@ -53,9 +53,9 @@ public class ParseAPITest {
     private static final String TEST262_SUITE_DIR;
 
     static {
-        String testSrc = System.getProperty("test.src");
+        final String testSrc = System.getProperty("test.src");
         if (testSrc != null) {
-            String testScriptDir = testSrc + "/../../../../../../script/";
+            final String testScriptDir = testSrc + "/../../../../../../script/";
             TEST_BASIC_DIR    = testScriptDir + "basic";
             TEST_MAPTESTS_DIR = testScriptDir + "maptests";
             TEST_SANDBOX_DIR  = testScriptDir + "sandbox";
@@ -74,7 +74,7 @@ public class ParseAPITest {
         public boolean exclude(File file, String content);
     }
 
-    private void log(String msg) {
+    private void log(final String msg) {
         org.testng.Reporter.log(msg, true);
     }
 

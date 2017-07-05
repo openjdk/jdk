@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -338,6 +338,7 @@ define SetupBuildJvmtiDemoBody
       OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/demos/native/jvmti/$1, \
       OUTPUT_DIR := $(SUPPORT_OUTPUTDIR)/demos/image/jvmti/$1/lib, \
       LIBRARY := $1, \
+      STRIP_SYMBOLS := false, \
   ))
 
   $1 += $$(BUILD_DEMO_JVMTI_NATIVE_$1)
@@ -453,6 +454,7 @@ ifeq ($(OPENJDK_TARGET_OS), solaris)
       OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/demos/native/jni/Poller, \
       OUTPUT_DIR := $(SUPPORT_OUTPUTDIR)/demos/native, \
       LIBRARY := Poller, \
+      STRIP_SYMBOLS := false, \
   ))
 
   TARGETS += $(BUILD_DEMO_NATIVE_Poller)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ package sun.java2d.opengl;
 
 import java.awt.AWTException;
 import java.awt.BufferCapabilities;
-import java.awt.BufferCapabilities.FlipContents;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Graphics;
@@ -59,8 +58,6 @@ import static sun.java2d.opengl.OGLSurfaceData.*;
 import static sun.java2d.opengl.OGLContext.*;
 import static sun.java2d.opengl.OGLContext.OGLContextCaps.*;
 import sun.java2d.opengl.GLXSurfaceData.GLXVSyncOffScreenSurfaceData;
-import sun.java2d.pipe.hw.AccelDeviceEventListener;
-import sun.java2d.pipe.hw.AccelDeviceEventNotifier;
 
 public class GLXGraphicsConfig
     extends X11GraphicsConfig
@@ -425,15 +422,5 @@ public class GLXGraphicsConfig
     @Override
     public ContextCapabilities getContextCapabilities() {
         return oglCaps;
-    }
-
-    @Override
-    public void addDeviceEventListener(AccelDeviceEventListener l) {
-        AccelDeviceEventNotifier.addListener(l, screen.getScreen());
-    }
-
-    @Override
-    public void removeDeviceEventListener(AccelDeviceEventListener l) {
-        AccelDeviceEventNotifier.removeListener(l);
     }
 }

@@ -720,19 +720,13 @@ const Register& y2       = r15;
 
 enum {
   _XFER_SIZE = 2*64*4, // 2 blocks, 64 rounds, 4 bytes/round
-#ifndef _WIN64
-  _XMM_SAVE_SIZE = 0,
-#else
-  _XMM_SAVE_SIZE = 8*16,
-#endif
   _INP_END_SIZE = 8,
   _INP_SIZE = 8,
   _CTX_SIZE = 8,
   _RSP_SIZE = 8,
 
   _XFER = 0,
-  _XMM_SAVE  = _XFER     + _XFER_SIZE,
-  _INP_END   = _XMM_SAVE + _XMM_SAVE_SIZE,
+  _INP_END   = _XFER     + _XFER_SIZE,
   _INP       = _INP_END  + _INP_END_SIZE,
   _CTX       = _INP      + _INP_SIZE,
   _RSP       = _CTX      + _CTX_SIZE,

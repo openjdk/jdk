@@ -43,7 +43,7 @@ public abstract class JarArchive implements Archive {
     /**
      * An entry located in a jar file.
      */
-    private class JarEntry extends Entry {
+    public class JarEntry extends Entry {
 
         private final long size;
         private final ZipEntry entry;
@@ -70,12 +70,10 @@ public abstract class JarArchive implements Archive {
         }
     }
 
-    private static final String MODULE_INFO = "module-info.class";
-
     private final Path file;
     private final String moduleName;
     // currently processed ZipFile
-    private ZipFile zipFile;
+    protected ZipFile zipFile;
 
     protected JarArchive(String mn, Path file) {
         Objects.requireNonNull(mn);
@@ -110,21 +108,7 @@ public abstract class JarArchive implements Archive {
 
     abstract String getFileName(String entryName);
 
-    private Entry toEntry(ZipEntry ze) {
-        String name = ze.getName();
-        String fn = getFileName(name);
-
-        if (ze.isDirectory() || fn.startsWith("_")) {
-            return null;
-        }
-
-        EntryType rt = toEntryType(name);
-
-        if (fn.equals(MODULE_INFO)) {
-            fn = moduleName + "/" + MODULE_INFO;
-        }
-        return new JarEntry(ze.getName(), fn, rt, zipFile, ze);
-    }
+    abstract Entry toEntry(ZipEntry ze);
 
     @Override
     public void close() throws IOException {
