@@ -341,6 +341,26 @@ void TemplateTable::fast_aldc(bool wide) {
   resolve_cache_and_index(f1_oop, Otos_i, Rcache, Rscratch, wide ? sizeof(u2) : sizeof(u1));
 
   __ verify_oop(Otos_i);
+
+  Label L_done;
+  const Register Rcon_klass = G3_scratch;  // same as Rcache
+  const Register Rarray_klass = G4_scratch;  // same as Rscratch
+  __ load_klass(Otos_i, Rcon_klass);
+  AddressLiteral array_klass_addr((address)Universe::systemObjArrayKlassObj_addr());
+  __ load_contents(array_klass_addr, Rarray_klass);
+  __ cmp(Rarray_klass, Rcon_klass);
+  __ brx(Assembler::notEqual, false, Assembler::pt, L_done);
+  __ delayed()->nop();
+  __ ld(Address(Otos_i, arrayOopDesc::length_offset_in_bytes()), Rcon_klass);
+  __ tst(Rcon_klass);
+  __ brx(Assembler::zero, true, Assembler::pt, L_done);
+  __ delayed()->clr(Otos_i);    // executed only if branch is taken
+
+  // Load the exception from the system-array which wraps it:
+  __ load_heap_oop(Otos_i, arrayOopDesc::base_offset_in_bytes(T_OBJECT), Otos_i);
+  __ throw_if_not_x(Assembler::never, Interpreter::throw_exception_entry(), G3_scratch);
+
+  __ bind(L_done);
 }
 
 void TemplateTable::ldc2_w() {

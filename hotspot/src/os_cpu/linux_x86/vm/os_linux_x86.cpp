@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -718,11 +718,6 @@ void os::print_context(outputStream *st, void *context) {
 
   ucontext_t *uc = (ucontext_t*)context;
   st->print_cr("Registers:");
-
-  // this is horrendously verbose but the layout of the registers in the
-  // context does not match how we defined our abstract Register set, so
-  // we can't just iterate through the gregs area
-
 #ifdef AMD64
   st->print(  "RAX=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_RAX]);
   st->print(", RBX=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_RBX]);
@@ -745,68 +740,11 @@ void os::print_context(outputStream *st, void *context) {
   st->print(", R15=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_R15]);
   st->cr();
   st->print(  "RIP=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_RIP]);
-  st->print(", EFL=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_EFL]);
+  st->print(", EFLAGS=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_EFL]);
   st->print(", CSGSFS=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_CSGSFS]);
   st->print(", ERR=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_ERR]);
   st->cr();
   st->print("  TRAPNO=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_TRAPNO]);
-
-  st->cr();
-  st->cr();
-
-  st->print_cr("Register to memory mapping:");
-  st->cr();
-
-  // this is only for the "general purpose" registers
-
-  st->print_cr("RAX=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_RAX]);
-  print_location(st, uc->uc_mcontext.gregs[REG_RAX]);
-  st->cr();
-  st->print_cr("RBX=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_RBX]);
-  print_location(st, uc->uc_mcontext.gregs[REG_RBX]);
-  st->cr();
-  st->print_cr("RCX=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_RCX]);
-  print_location(st, uc->uc_mcontext.gregs[REG_RCX]);
-  st->cr();
-  st->print_cr("RDX=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_RDX]);
-  print_location(st, uc->uc_mcontext.gregs[REG_RDX]);
-  st->cr();
-  st->print_cr("RSP=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_RSP]);
-  print_location(st, uc->uc_mcontext.gregs[REG_RSP]);
-  st->cr();
-  st->print_cr("RBP=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_RBP]);
-  print_location(st, uc->uc_mcontext.gregs[REG_RBP]);
-  st->cr();
-  st->print_cr("RSI=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_RSI]);
-  print_location(st, uc->uc_mcontext.gregs[REG_RSI]);
-  st->cr();
-  st->print_cr("RDI=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_RDI]);
-  print_location(st, uc->uc_mcontext.gregs[REG_RDI]);
-  st->cr();
-  st->print_cr("R8 =" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_R8]);
-  print_location(st, uc->uc_mcontext.gregs[REG_R8]);
-  st->cr();
-  st->print_cr("R9 =" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_R9]);
-  print_location(st, uc->uc_mcontext.gregs[REG_R9]);
-  st->cr();
-  st->print_cr("R10=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_R10]);
-  print_location(st, uc->uc_mcontext.gregs[REG_R10]);
-  st->cr();
-  st->print_cr("R11=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_R11]);
-  print_location(st, uc->uc_mcontext.gregs[REG_R11]);
-  st->cr();
-  st->print_cr("R12=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_R12]);
-  print_location(st, uc->uc_mcontext.gregs[REG_R12]);
-  st->cr();
-  st->print_cr("R13=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_R13]);
-  print_location(st, uc->uc_mcontext.gregs[REG_R13]);
-  st->cr();
-  st->print_cr("R14=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_R14]);
-  print_location(st, uc->uc_mcontext.gregs[REG_R14]);
-  st->cr();
-  st->print_cr("R15=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_R15]);
-  print_location(st, uc->uc_mcontext.gregs[REG_R15]);
-
 #else
   st->print(  "EAX=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_EAX]);
   st->print(", EBX=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_EBX]);
@@ -819,41 +757,8 @@ void os::print_context(outputStream *st, void *context) {
   st->print(", EDI=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_EDI]);
   st->cr();
   st->print(  "EIP=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_EIP]);
-  st->print(", CR2=" INTPTR_FORMAT, uc->uc_mcontext.cr2);
   st->print(", EFLAGS=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_EFL]);
-
-  st->cr();
-  st->cr();
-
-  st->print_cr("Register to memory mapping:");
-  st->cr();
-
-  // this is only for the "general purpose" registers
-
-  st->print_cr("EAX=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_EAX]);
-  print_location(st, uc->uc_mcontext.gregs[REG_EAX]);
-  st->cr();
-  st->print_cr("EBX=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_EBX]);
-  print_location(st, uc->uc_mcontext.gregs[REG_EBX]);
-  st->cr();
-  st->print_cr("ECX=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_ECX]);
-  print_location(st, uc->uc_mcontext.gregs[REG_ECX]);
-  st->cr();
-  st->print_cr("EDX=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_EDX]);
-  print_location(st, uc->uc_mcontext.gregs[REG_EDX]);
-  st->cr();
-  st->print_cr("ESP=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_ESP]);
-  print_location(st, uc->uc_mcontext.gregs[REG_ESP]);
-  st->cr();
-  st->print_cr("EBP=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_EBP]);
-  print_location(st, uc->uc_mcontext.gregs[REG_EBP]);
-  st->cr();
-  st->print_cr("ESI=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_ESI]);
-  print_location(st, uc->uc_mcontext.gregs[REG_ESI]);
-  st->cr();
-  st->print_cr("EDI=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_EDI]);
-  print_location(st, uc->uc_mcontext.gregs[REG_EDI]);
-
+  st->print(", CR2=" INTPTR_FORMAT, uc->uc_mcontext.cr2);
 #endif // AMD64
   st->cr();
   st->cr();
@@ -868,7 +773,52 @@ void os::print_context(outputStream *st, void *context) {
   // this at the end, and hope for the best.
   address pc = os::Linux::ucontext_get_pc(uc);
   st->print_cr("Instructions: (pc=" PTR_FORMAT ")", pc);
-  print_hex_dump(st, pc - 16, pc + 16, sizeof(char));
+  print_hex_dump(st, pc - 32, pc + 32, sizeof(char));
+}
+
+void os::print_register_info(outputStream *st, void *context) {
+  if (context == NULL) return;
+
+  ucontext_t *uc = (ucontext_t*)context;
+
+  st->print_cr("Register to memory mapping:");
+  st->cr();
+
+  // this is horrendously verbose but the layout of the registers in the
+  // context does not match how we defined our abstract Register set, so
+  // we can't just iterate through the gregs area
+
+  // this is only for the "general purpose" registers
+
+#ifdef AMD64
+  st->print("RAX="); print_location(st, uc->uc_mcontext.gregs[REG_RAX]);
+  st->print("RBX="); print_location(st, uc->uc_mcontext.gregs[REG_RBX]);
+  st->print("RCX="); print_location(st, uc->uc_mcontext.gregs[REG_RCX]);
+  st->print("RDX="); print_location(st, uc->uc_mcontext.gregs[REG_RDX]);
+  st->print("RSP="); print_location(st, uc->uc_mcontext.gregs[REG_RSP]);
+  st->print("RBP="); print_location(st, uc->uc_mcontext.gregs[REG_RBP]);
+  st->print("RSI="); print_location(st, uc->uc_mcontext.gregs[REG_RSI]);
+  st->print("RDI="); print_location(st, uc->uc_mcontext.gregs[REG_RDI]);
+  st->print("R8 ="); print_location(st, uc->uc_mcontext.gregs[REG_R8]);
+  st->print("R9 ="); print_location(st, uc->uc_mcontext.gregs[REG_R9]);
+  st->print("R10="); print_location(st, uc->uc_mcontext.gregs[REG_R10]);
+  st->print("R11="); print_location(st, uc->uc_mcontext.gregs[REG_R11]);
+  st->print("R12="); print_location(st, uc->uc_mcontext.gregs[REG_R12]);
+  st->print("R13="); print_location(st, uc->uc_mcontext.gregs[REG_R13]);
+  st->print("R14="); print_location(st, uc->uc_mcontext.gregs[REG_R14]);
+  st->print("R15="); print_location(st, uc->uc_mcontext.gregs[REG_R15]);
+#else
+  st->print("EAX="); print_location(st, uc->uc_mcontext.gregs[REG_EAX]);
+  st->print("EBX="); print_location(st, uc->uc_mcontext.gregs[REG_EBX]);
+  st->print("ECX="); print_location(st, uc->uc_mcontext.gregs[REG_ECX]);
+  st->print("EDX="); print_location(st, uc->uc_mcontext.gregs[REG_EDX]);
+  st->print("ESP="); print_location(st, uc->uc_mcontext.gregs[REG_ESP]);
+  st->print("EBP="); print_location(st, uc->uc_mcontext.gregs[REG_EBP]);
+  st->print("ESI="); print_location(st, uc->uc_mcontext.gregs[REG_ESI]);
+  st->print("EDI="); print_location(st, uc->uc_mcontext.gregs[REG_EDI]);
+#endif // AMD64
+
+  st->cr();
 }
 
 void os::setup_fpu() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1047,7 +1047,8 @@ enum {
     JVM_CONSTANT_NameAndType,
     JVM_CONSTANT_MethodHandle           = 15,  // JSR 292
     JVM_CONSTANT_MethodType             = 16,  // JSR 292
-    JVM_CONSTANT_InvokeDynamic          = 17  // JSR 292
+    JVM_CONSTANT_InvokeDynamicTrans     = 17,  // JSR 292, only occurs in old class files
+    JVM_CONSTANT_InvokeDynamic          = 18   // JSR 292
 };
 
 /* JVM_CONSTANT_MethodHandle subtypes */

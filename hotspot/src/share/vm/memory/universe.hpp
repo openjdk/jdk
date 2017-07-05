@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -340,6 +340,7 @@ class Universe: AllStatic {
   static klassOop* longArrayKlassObj_addr()           { return &_longArrayKlassObj;   }
   static klassOop* singleArrayKlassObj_addr()         { return &_singleArrayKlassObj; }
   static klassOop* doubleArrayKlassObj_addr()         { return &_doubleArrayKlassObj; }
+  static klassOop* systemObjArrayKlassObj_addr()      { return &_systemObjArrayKlassObj; }
 
   // The particular choice of collected heap.
   static CollectedHeap* heap() { return _collectedHeap; }
