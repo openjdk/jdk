@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,6 +118,15 @@ abstract class AbstractLDMLHandler<V> extends DefaultHandler {
     void pushStringEntry(String qName, Attributes attributes, String key) {
         if (!pushIfIgnored(qName, attributes)) {
             currentContainer = new StringEntry(qName, currentContainer, key);
+        }
+    }
+
+    /**
+     * start an element that defines an alias entry, with the value provided by the element's alias.
+     */
+    void pushAliasEntry(String qName, Attributes attributes, String key) {
+        if (!pushIfIgnored(qName, attributes)) {
+            currentContainer = new AliasEntry(qName, currentContainer, key);
         }
     }
 

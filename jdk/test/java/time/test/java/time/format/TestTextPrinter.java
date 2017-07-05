@@ -235,8 +235,8 @@ public class TestTextPrinter extends AbstractTestPrinterParser {
         return new Object[][] {
             // standalone names for 2013-01-01 (Tue)
             // Locale, TemporalField, TextStyle, expected text
-            {RUSSIAN, MONTH_OF_YEAR, TextStyle.FULL_STANDALONE,  "\u042f\u043d\u0432\u0430\u0440\u044c"},
-            {RUSSIAN, MONTH_OF_YEAR, TextStyle.SHORT_STANDALONE, "\u042f\u043d\u0432."},
+            {RUSSIAN, MONTH_OF_YEAR, TextStyle.FULL_STANDALONE,  "\u044f\u043d\u0432\u0430\u0440\u044c"},
+            {RUSSIAN, MONTH_OF_YEAR, TextStyle.SHORT_STANDALONE, "\u044f\u043d\u0432."},
             {FINNISH, DAY_OF_WEEK,   TextStyle.FULL_STANDALONE,  "tiistai"},
             {FINNISH, DAY_OF_WEEK,   TextStyle.SHORT_STANDALONE, "ti"},
         };
