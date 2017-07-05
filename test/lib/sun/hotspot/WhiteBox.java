@@ -166,6 +166,8 @@ public class WhiteBox {
 
   // Compiler
   public native int     matchesMethod(Executable method, String pattern);
+  public native int     matchesInline(Executable method, String pattern);
+  public native boolean shouldPrintAssembly(Executable method);
   public native int     deoptimizeFrames(boolean makeNotEntrant);
   public native void    deoptimizeAll();
   public        boolean isMethodCompiled(Executable method) {
