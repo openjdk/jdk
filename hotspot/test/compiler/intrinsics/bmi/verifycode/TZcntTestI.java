@@ -27,6 +27,7 @@
  * @library /testlibrary /testlibrary/whitebox /compiler/whitebox ..
  * @build TZcntTestI
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                   -XX:+IgnoreUnrecognizedVMOptions -XX:+UseCountTrailingZerosInstruction TZcntTestI
  */

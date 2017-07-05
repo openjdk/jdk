@@ -1696,6 +1696,9 @@ bool add_global_entry(JNIEnv* env, Handle name, jmmVMGlobal *global, Flag *flag,
   } else if (flag->is_uint64_t()) {
     global->value.j = (jlong)flag->get_uint64_t();
     global->type = JMM_VMGLOBAL_TYPE_JLONG;
+  } else if (flag->is_size_t()) {
+    global->value.j = (jlong)flag->get_size_t();
+    global->type = JMM_VMGLOBAL_TYPE_JLONG;
   } else if (flag->is_ccstr()) {
     Handle str = java_lang_String::create_from_str(flag->get_ccstr(), CHECK_false);
     global->value.l = (jobject)JNIHandles::make_local(env, str());
@@ -1851,6 +1854,9 @@ JVM_ENTRY(void, jmm_SetVMGlobal(JNIEnv *env, jstring flag_name, jvalue new_value
   } else if (flag->is_uint64_t()) {
     uint64_t uvalue = (uint64_t)new_value.j;
     succeed = CommandLineFlags::uint64_tAtPut(name, &uvalue, Flag::MANAGEMENT);
+  } else if (flag->is_size_t()) {
+    size_t svalue = (size_t)new_value.j;
+    succeed = CommandLineFlags::size_tAtPut(name, &svalue, Flag::MANAGEMENT);
   } else if (flag->is_ccstr()) {
     oop str = JNIHandles::resolve_external_guard(new_value.l);
     if (str == NULL) {
@@ -1914,7 +1920,7 @@ void ThreadTimesClosure::do_thread(Thread* thread) {
   ResourceMark rm(THREAD); // thread->name() uses ResourceArea
 
   assert(thread->name() != NULL, "All threads should have a name");
-  _names_chars[_count] = strdup(thread->name());
+  _names_chars[_count] = os::strdup(thread->name());
   _times->long_at_put(_count, os::is_thread_cpu_time_supported() ?
                         os::thread_cpu_time(thread) : -1);
   _count++;
@@ -1932,7 +1938,7 @@ void ThreadTimesClosure::do_unlocked() {
 
 ThreadTimesClosure::~ThreadTimesClosure() {
   for (int i = 0; i < _count; i++) {
-    free(_names_chars[i]);
+    os::free(_names_chars[i]);
   }
   FREE_C_HEAP_ARRAY(char *, _names_chars, mtInternal);
 }

@@ -30,7 +30,6 @@
   address generate_normal_entry(bool synchronized);
   address generate_native_entry(bool synchronized);
   address generate_math_entry(AbstractInterpreter::MethodKind kind);
-  address generate_empty_entry(void);
 
   void lock_method(Register Rflags, Register Rscratch1, Register Rscratch2, bool flags_preloaded=false);
   void unlock_method(bool check_exceptions = true);

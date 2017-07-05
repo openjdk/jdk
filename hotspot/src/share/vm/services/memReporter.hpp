@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,262 +25,217 @@
 #ifndef SHARE_VM_SERVICES_MEM_REPORTER_HPP
 #define SHARE_VM_SERVICES_MEM_REPORTER_HPP
 
-#include "runtime/mutexLocker.hpp"
-#include "services/memBaseline.hpp"
-#include "services/memTracker.hpp"
-#include "utilities/ostream.hpp"
-#include "utilities/macros.hpp"
-
 #if INCLUDE_NMT
 
+#include "oops/instanceKlass.hpp"
+#include "services/memBaseline.hpp"
+#include "services/nmtCommon.hpp"
+#include "services/mallocTracker.hpp"
+#include "services/virtualMemoryTracker.hpp"
+
 /*
- * MemBaselineReporter reports data to this outputer class,
- * ReportOutputer is responsible for format, store and redirect
- * the data to the final destination.
- */
-class BaselineOutputer : public StackObj {
+ * Base class that provides helpers
+*/
+class MemReporterBase : public StackObj {
+ private:
+  size_t        _scale;  // report in this scale
+  outputStream* _output; // destination
+
  public:
-  // start to report memory usage in specified scale.
-  // if report_diff = true, the reporter reports baseline comparison
-  // information.
+  MemReporterBase(outputStream* out = NULL, size_t scale = K)
+    : _scale(scale) {
+    _output = (out == NULL) ? tty : out;
+  }
 
-  virtual void start(size_t scale, bool report_diff = false) = 0;
-  // Done reporting
-  virtual void done() = 0;
+ protected:
+  inline outputStream* output() const {
+    return _output;
+  }
+  // Current reporting scale
+  inline const char* current_scale() const {
+    return NMTUtil::scale_name(_scale);
+  }
+  // Convert memory amount in bytes to current reporting scale
+  inline size_t amount_in_current_scale(size_t amount) const {
+    return NMTUtil::amount_in_scale(amount, _scale);
+  }
 
-  /* report baseline summary information */
-  virtual void total_usage(size_t total_reserved,
-                           size_t total_committed) = 0;
-  virtual void num_of_classes(size_t classes) = 0;
-  virtual void num_of_threads(size_t threads) = 0;
+  // Convert diff amount in bytes to current reporting scale
+  inline long diff_in_current_scale(size_t s1, size_t s2) const {
+    long amount = (long)(s1 - s2);
+    long scale = (long)_scale;
+    amount = (amount > 0) ? (amount + scale / 2) : (amount - scale / 2);
+    return amount / scale;
+  }
 
-  virtual void thread_info(size_t stack_reserved_amt, size_t stack_committed_amt) = 0;
-
-  /* report baseline summary comparison */
-  virtual void diff_total_usage(size_t total_reserved,
-                                size_t total_committed,
-                                int reserved_diff,
-                                int committed_diff) = 0;
-  virtual void diff_num_of_classes(size_t classes, int diff) = 0;
-  virtual void diff_num_of_threads(size_t threads, int diff) = 0;
-
-  virtual void diff_thread_info(size_t stack_reserved, size_t stack_committed,
-        int stack_reserved_diff, int stack_committed_diff) = 0;
+  // Helper functions
+  // Calculate total reserved and committed amount
+  size_t reserved_total(const MallocMemory* malloc, const VirtualMemory* vm) const;
+  size_t committed_total(const MallocMemory* malloc, const VirtualMemory* vm) const;
 
 
-  /*
-   * memory summary by memory types.
-   * for each memory type, following summaries are reported:
-   *  - reserved amount, committed amount
-   *  - malloc'd amount, malloc count
-   *  - arena amount, arena count
-   */
+  // Print summary total, malloc and virtual memory
+  void print_total(size_t reserved, size_t committed) const;
+  void print_malloc(size_t amount, size_t count) const;
+  void print_virtual_memory(size_t reserved, size_t committed) const;
 
-  // start reporting memory summary by memory type
-  virtual void start_category_summary() = 0;
+  void print_malloc_line(size_t amount, size_t count) const;
+  void print_virtual_memory_line(size_t reserved, size_t committed) const;
+  void print_arena_line(size_t amount, size_t count) const;
 
-  virtual void category_summary(MEMFLAGS type, size_t reserved_amt,
-                                size_t committed_amt,
-                                size_t malloc_amt, size_t malloc_count,
-                                size_t arena_amt, size_t arena_count) = 0;
-
-  virtual void diff_category_summary(MEMFLAGS type, size_t cur_reserved_amt,
-                                size_t cur_committed_amt,
-                                size_t cur_malloc_amt, size_t cur_malloc_count,
-                                size_t cur_arena_amt, size_t cur_arena_count,
-                                int reserved_diff, int committed_diff, int malloc_diff,
-                                int malloc_count_diff, int arena_diff,
-                                int arena_count_diff) = 0;
-
-  virtual void done_category_summary() = 0;
-
-  virtual void start_virtual_memory_map() = 0;
-  virtual void reserved_memory_region(MEMFLAGS type, address base, address end, size_t size, address pc) = 0;
-  virtual void committed_memory_region(address base, address end, size_t size, address pc) = 0;
-  virtual void done_virtual_memory_map() = 0;
-
-  /*
-   *  Report callsite information
-   */
-  virtual void start_callsite() = 0;
-  virtual void malloc_callsite(address pc, size_t malloc_amt, size_t malloc_count) = 0;
-  virtual void virtual_memory_callsite(address pc, size_t reserved_amt, size_t committed_amt) = 0;
-
-  virtual void diff_malloc_callsite(address pc, size_t cur_malloc_amt, size_t cur_malloc_count,
-              int malloc_diff, int malloc_count_diff) = 0;
-  virtual void diff_virtual_memory_callsite(address pc, size_t cur_reserved_amt, size_t cur_committed_amt,
-              int reserved_diff, int committed_diff) = 0;
-
-  virtual void done_callsite() = 0;
-
-  // return current scale in "KB", "MB" or "GB"
-  static const char* memory_unit(size_t scale);
+  void print_virtual_memory_region(const char* type, address base, size_t size) const;
 };
 
 /*
- * This class reports processed data from a baseline or
- * the changes between the two baseline.
+ * The class is for generating summary tracking report.
  */
-class BaselineReporter : public StackObj {
+class MemSummaryReporter : public MemReporterBase {
  private:
-  BaselineOutputer&  _outputer;
-  size_t             _scale;
+  MallocMemorySnapshot*   _malloc_snapshot;
+  VirtualMemorySnapshot*  _vm_snapshot;
+  size_t                  _class_count;
 
  public:
-  // construct a reporter that reports memory usage
-  // in specified scale
-  BaselineReporter(BaselineOutputer& outputer, size_t scale = K):
-    _outputer(outputer) {
-    _scale = scale;
+  // Report summary tracking data from global snapshots directly.
+  // This constructor is used for final reporting and hs_err reporting.
+  MemSummaryReporter(MallocMemorySnapshot* malloc_snapshot,
+    VirtualMemorySnapshot* vm_snapshot, outputStream* output,
+    size_t class_count = 0, size_t scale = K) :
+    MemReporterBase(output, scale),
+    _malloc_snapshot(malloc_snapshot),
+    _vm_snapshot(vm_snapshot) {
+    if (class_count == 0) {
+      _class_count = InstanceKlass::number_of_instance_classes();
+    } else {
+      _class_count = class_count;
+    }
   }
-  virtual void report_baseline(const MemBaseline& baseline, bool summary_only = false);
-  virtual void diff_baselines(const MemBaseline& cur, const MemBaseline& prev,
-                              bool summary_only = false);
+  // This constructor is for normal reporting from a recent baseline.
+  MemSummaryReporter(MemBaseline& baseline, outputStream* output,
+    size_t scale = K) : MemReporterBase(output, scale),
+    _malloc_snapshot(baseline.malloc_memory_snapshot()),
+    _vm_snapshot(baseline.virtual_memory_snapshot()),
+    _class_count(baseline.class_count()) { }
 
-  void set_scale(size_t scale);
-  size_t scale() const { return _scale; }
 
+  // Generate summary report
+  virtual void report();
  private:
-  void report_summaries(const MemBaseline& baseline);
-  void report_virtual_memory_map(const MemBaseline& baseline);
-  void report_callsites(const MemBaseline& baseline);
-
-  void diff_summaries(const MemBaseline& cur, const MemBaseline& prev);
-  void diff_callsites(const MemBaseline& cur, const MemBaseline& prev);
-
-  // calculate memory size in current memory scale
-  size_t amount_in_current_scale(size_t amt) const;
-  // diff two unsigned values in current memory scale
-  int    diff_in_current_scale(size_t value1, size_t value2) const;
-  // diff two unsigned value
-  int    diff(size_t value1, size_t value2) const;
+  // Report summary for each memory type
+  void report_summary_of_type(MEMFLAGS type, MallocMemory* malloc_memory,
+    VirtualMemory* virtual_memory);
 };
 
 /*
- * tty output implementation. Native memory tracking
- * DCmd uses this outputer.
+ * The class is for generating detail tracking report.
  */
-class BaselineTTYOutputer : public BaselineOutputer {
+class MemDetailReporter : public MemSummaryReporter {
  private:
-  size_t         _scale;
-
-  size_t         _num_of_classes;
-  size_t         _num_of_threads;
-  size_t         _thread_stack_reserved;
-  size_t         _thread_stack_committed;
-
-  int            _num_of_classes_diff;
-  int            _num_of_threads_diff;
-  int            _thread_stack_reserved_diff;
-  int            _thread_stack_committed_diff;
-
-  outputStream*  _output;
+  MemBaseline&   _baseline;
 
  public:
-  BaselineTTYOutputer(outputStream* st) {
-    _scale = K;
-    _num_of_classes = 0;
-    _num_of_threads = 0;
-    _thread_stack_reserved = 0;
-    _thread_stack_committed = 0;
-    _num_of_classes_diff = 0;
-    _num_of_threads_diff = 0;
-    _thread_stack_reserved_diff = 0;
-    _thread_stack_committed_diff = 0;
-    _output = st;
+  MemDetailReporter(MemBaseline& baseline, outputStream* output, size_t scale = K) :
+    MemSummaryReporter(baseline, output, scale),
+     _baseline(baseline) { }
+
+  // Generate detail report.
+  // The report contains summary and detail sections.
+  virtual void report() {
+    MemSummaryReporter::report();
+    report_virtual_memory_map();
+    report_detail();
   }
 
-  // begin reporting memory usage in specified scale
-  void start(size_t scale, bool report_diff = false);
-  // done reporting
-  void done();
+ private:
+  // Report detail tracking data.
+  void report_detail();
+  // Report virtual memory map
+  void report_virtual_memory_map();
+  // Report malloc allocation sites
+  void report_malloc_sites();
+  // Report virtual memory reservation sites
+  void report_virtual_memory_allocation_sites();
 
-  // total memory usage
-  void total_usage(size_t total_reserved,
-                   size_t total_committed);
-  // report total loaded classes
-  void num_of_classes(size_t classes) {
-    _num_of_classes = classes;
-  }
-
-  void num_of_threads(size_t threads) {
-    _num_of_threads = threads;
-  }
-
-  void thread_info(size_t stack_reserved_amt, size_t stack_committed_amt) {
-    _thread_stack_reserved = stack_reserved_amt;
-    _thread_stack_committed = stack_committed_amt;
-  }
-
-  void diff_total_usage(size_t total_reserved,
-                        size_t total_committed,
-                        int reserved_diff,
-                        int committed_diff);
-
-  void diff_num_of_classes(size_t classes, int diff) {
-    _num_of_classes = classes;
-    _num_of_classes_diff = diff;
-  }
-
-  void diff_num_of_threads(size_t threads, int diff) {
-    _num_of_threads = threads;
-    _num_of_threads_diff = diff;
-  }
-
-  void diff_thread_info(size_t stack_reserved_amt, size_t stack_committed_amt,
-               int stack_reserved_diff, int stack_committed_diff) {
-    _thread_stack_reserved = stack_reserved_amt;
-    _thread_stack_committed = stack_committed_amt;
-    _thread_stack_reserved_diff = stack_reserved_diff;
-    _thread_stack_committed_diff = stack_committed_diff;
-  }
-
-  /*
-   * Report memory summary categoriuzed by memory types.
-   * For each memory type, following summaries are reported:
-   *  - reserved amount, committed amount
-   *  - malloc-ed amount, malloc count
-   *  - arena amount, arena count
-   */
-  // start reporting memory summary by memory type
-  void start_category_summary();
-  void category_summary(MEMFLAGS type, size_t reserved_amt, size_t committed_amt,
-                               size_t malloc_amt, size_t malloc_count,
-                               size_t arena_amt, size_t arena_count);
-
-  void diff_category_summary(MEMFLAGS type, size_t cur_reserved_amt,
-                          size_t cur_committed_amt,
-                          size_t cur_malloc_amt, size_t cur_malloc_count,
-                          size_t cur_arena_amt, size_t cur_arena_count,
-                          int reserved_diff, int committed_diff, int malloc_diff,
-                          int malloc_count_diff, int arena_diff,
-                          int arena_count_diff);
-
-  void done_category_summary();
-
-  // virtual memory map
-  void start_virtual_memory_map();
-  void reserved_memory_region(MEMFLAGS type, address base, address end, size_t size, address pc);
-  void committed_memory_region(address base, address end, size_t size, address pc);
-  void done_virtual_memory_map();
-
-
-  /*
-   *  Report callsite information
-   */
-  void start_callsite();
-  void malloc_callsite(address pc, size_t malloc_amt, size_t malloc_count);
-  void virtual_memory_callsite(address pc, size_t reserved_amt, size_t committed_amt);
-
-  void diff_malloc_callsite(address pc, size_t cur_malloc_amt, size_t cur_malloc_count,
-              int malloc_diff, int malloc_count_diff);
-  void diff_virtual_memory_callsite(address pc, size_t cur_reserved_amt, size_t cur_committed_amt,
-              int reserved_diff, int committed_diff);
-
-  void done_callsite();
+  // Report a virtual memory region
+  void report_virtual_memory_region(const ReservedMemoryRegion* rgn);
 };
 
+/*
+ * The class is for generating summary comparison report.
+ * It compares current memory baseline against an early baseline.
+ */
+class MemSummaryDiffReporter : public MemReporterBase {
+ protected:
+  MemBaseline&      _early_baseline;
+  MemBaseline&      _current_baseline;
+
+ public:
+  MemSummaryDiffReporter(MemBaseline& early_baseline, MemBaseline& current_baseline,
+    outputStream* output, size_t scale = K) : MemReporterBase(output, scale),
+    _early_baseline(early_baseline), _current_baseline(current_baseline) {
+    assert(early_baseline.baseline_type()   != MemBaseline::Not_baselined, "Not baselined");
+    assert(current_baseline.baseline_type() != MemBaseline::Not_baselined, "Not baselined");
+  }
+
+  // Generate summary comparison report
+  virtual void report_diff();
+
+ private:
+  // report the comparison of each memory type
+  void diff_summary_of_type(MEMFLAGS type,
+    const MallocMemory* early_malloc, const VirtualMemory* early_vm,
+    const MallocMemory* current_malloc, const VirtualMemory* current_vm) const;
+
+ protected:
+  void print_malloc_diff(size_t current_amount, size_t current_count,
+    size_t early_amount, size_t early_count) const;
+  void print_virtual_memory_diff(size_t current_reserved, size_t current_committed,
+    size_t early_reserved, size_t early_committed) const;
+  void print_arena_diff(size_t current_amount, size_t current_count,
+    size_t early_amount, size_t early_count) const;
+};
+
+/*
+ * The class is for generating detail comparison report.
+ * It compares current memory baseline against an early baseline,
+ * both baselines have to be detail baseline.
+ */
+class MemDetailDiffReporter : public MemSummaryDiffReporter {
+ public:
+  MemDetailDiffReporter(MemBaseline& early_baseline, MemBaseline& current_baseline,
+    outputStream* output, size_t scale = K) :
+    MemSummaryDiffReporter(early_baseline, current_baseline, output, scale) { }
+
+  // Generate detail comparison report
+  virtual void report_diff();
+
+  // Malloc allocation site comparison
+  void diff_malloc_sites() const;
+  // Virutal memory reservation site comparison
+  void diff_virtual_memory_sites() const;
+
+  // New malloc allocation site in recent baseline
+  void new_malloc_site (const MallocSite* site) const;
+  // The malloc allocation site is not in recent baseline
+  void old_malloc_site (const MallocSite* site) const;
+  // Compare malloc allocation site, it is in both baselines
+  void diff_malloc_site(const MallocSite* early, const MallocSite* current)  const;
+
+  // New virtual memory allocation site in recent baseline
+  void new_virtual_memory_site (const VirtualMemoryAllocationSite* callsite) const;
+  // The virtual memory allocation site is not in recent baseline
+  void old_virtual_memory_site (const VirtualMemoryAllocationSite* callsite) const;
+  // Compare virtual memory allocation site, it is in both baseline
+  void diff_virtual_memory_site(const VirtualMemoryAllocationSite* early,
+                                const VirtualMemoryAllocationSite* current)  const;
+
+  void diff_malloc_site(const NativeCallStack* stack, size_t current_size,
+    size_t currrent_count, size_t early_size, size_t early_count) const;
+  void diff_virtual_memory_site(const NativeCallStack* stack, size_t current_reserved,
+    size_t current_committed, size_t early_reserved, size_t early_committed) const;
+};
 
 #endif // INCLUDE_NMT
 
-#endif // SHARE_VM_SERVICES_MEM_REPORTER_HPP
+#endif
+

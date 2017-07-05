@@ -1,6 +1,6 @@
 #!/bin/sh
 # 
-# Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2009, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 # 
 # This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ cp ${TESTSRC}/Test6857159.sh .
 
 ${COMPILEJAVA}/bin/javac ${TESTJAVACOPTS} -d . Test6857159.java
 
-${TESTJAVA}/bin/java  ${TESTVMOPTS} -Xbatch -XX:+PrintCompilation -XX:CompileOnly=Test6857159\$ct.run Test6857159 > test.out 2>&1
+${TESTJAVA}/bin/java  ${TESTOPTS} -Xbatch -XX:+PrintCompilation -XX:CompileOnly=Test6857159\$ct.run Test6857159 > test.out 2>&1
 
 grep "COMPILE SKIPPED" test.out
 

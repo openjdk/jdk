@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package com.sun.media.sound;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -732,31 +733,28 @@ public final class SoftSynthesizer implements AudioSynthesizer,
                  * Save generated soundbank to disk for faster future use.
                  */
                 OutputStream out = AccessController
-                        .doPrivileged(new PrivilegedAction<OutputStream>() {
-                            public OutputStream run() {
-                                try {
-                                    File userhome = new File(System
-                                            .getProperty("user.home"),
-                                            ".gervill");
-                                    if (!userhome.exists())
-                                        userhome.mkdirs();
-                                    File emg_soundbank_file = new File(
-                                            userhome, "soundbank-emg.sf2");
-                                    if (emg_soundbank_file.exists())
-                                        return null;
-                                    return new FileOutputStream(
-                                            emg_soundbank_file);
-                                } catch (IOException e) {
-                                } catch (SecurityException e) {
+                        .doPrivileged((PrivilegedAction<OutputStream>) () -> {
+                            try {
+                                File userhome = new File(System
+                                        .getProperty("user.home"), ".gervill");
+                                if (!userhome.exists()) {
+                                    userhome.mkdirs();
                                 }
-                                return null;
+                                File emg_soundbank_file = new File(
+                                        userhome, "soundbank-emg.sf2");
+                                if (emg_soundbank_file.exists()) {
+                                    return null;
+                                }
+                                return new FileOutputStream(emg_soundbank_file);
+                            } catch (final FileNotFoundException ignored) {
                             }
+                            return null;
                         });
                 if (out != null) {
                     try {
                         ((SF2Soundbank) defaultSoundBank).save(out);
                         out.close();
-                    } catch (IOException e) {
+                    } catch (final IOException ignored) {
                     }
                 }
             }
@@ -846,26 +844,24 @@ public final class SoftSynthesizer implements AudioSynthesizer,
 
     private Properties getStoredProperties() {
         return AccessController
-                .doPrivileged(new PrivilegedAction<Properties>() {
-                    public Properties run() {
-                        Properties p = new Properties();
-                        String notePath = "/com/sun/media/sound/softsynthesizer";
-                        try {
-                            Preferences prefroot = Preferences.userRoot();
-                            if (prefroot.nodeExists(notePath)) {
-                                Preferences prefs = prefroot.node(notePath);
-                                String[] prefs_keys = prefs.keys();
-                                for (String prefs_key : prefs_keys) {
-                                    String val = prefs.get(prefs_key, null);
-                                    if (val != null)
-                                        p.setProperty(prefs_key, val);
+                .doPrivileged((PrivilegedAction<Properties>) () -> {
+                    Properties p = new Properties();
+                    String notePath = "/com/sun/media/sound/softsynthesizer";
+                    try {
+                        Preferences prefroot = Preferences.userRoot();
+                        if (prefroot.nodeExists(notePath)) {
+                            Preferences prefs = prefroot.node(notePath);
+                            String[] prefs_keys = prefs.keys();
+                            for (String prefs_key : prefs_keys) {
+                                String val = prefs.get(prefs_key, null);
+                                if (val != null) {
+                                    p.setProperty(prefs_key, val);
                                 }
                             }
-                        } catch (BackingStoreException e) {
-                        } catch (SecurityException e) {
                         }
-                        return p;
+                    } catch (final BackingStoreException ignored) {
                     }
+                    return p;
                 });
     }
 
@@ -1044,7 +1040,6 @@ public final class SoftSynthesizer implements AudioSynthesizer,
             return;
         }
         synchronized (control_mutex) {
-            Throwable causeException = null;
             try {
                 if (line != null) {
                     // can throw IllegalArgumentException
@@ -1117,24 +1112,17 @@ public final class SoftSynthesizer implements AudioSynthesizer,
                     weakstream.sourceDataLine = sourceDataLine;
                 }
 
-            } catch (LineUnavailableException e) {
-                causeException = e;
-            } catch (IllegalArgumentException e) {
-                causeException = e;
-            } catch (SecurityException e) {
-                causeException = e;
-            }
-
-            if (causeException != null) {
-                if (isOpen())
+            } catch (final LineUnavailableException | SecurityException
+                    | IllegalArgumentException e) {
+                if (isOpen()) {
                     close();
+                }
                 // am: need MidiUnavailableException(Throwable) ctor!
                 MidiUnavailableException ex = new MidiUnavailableException(
                         "Can not open line");
-                ex.initCause(causeException);
+                ex.initCause(e);
                 throw ex;
             }
-
         }
     }
 

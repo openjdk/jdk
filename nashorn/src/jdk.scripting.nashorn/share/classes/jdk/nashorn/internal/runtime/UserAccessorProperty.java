@@ -43,16 +43,6 @@ import jdk.nashorn.internal.runtime.linker.Bootstrap;
  * Property with user defined getters/setters. Actual getter and setter
  * functions are stored in underlying ScriptObject. Only the 'slot' info is
  * stored in the property.
- *
- * The slots here denote either ScriptObject embed field number or spill
- * array index. For spill array index, we use slot value of
- * (index + ScriptObject.embedSize). See also ScriptObject.getEmbedOrSpill
- * method. Negative slot value means that the corresponding getter or setter
- * is null. Note that always two slots are allocated in ScriptObject - but
- * negative (less by 1) slot number is stored for null getter or setter.
- * This is done so that when the property is redefined with a different
- * getter and setter (say, both non-null), we'll have spill slots to store
- * those. When a slot is negative, (-slot - 1) is the embed/spill index.
  */
 public final class UserAccessorProperty extends SpillProperty {
 
@@ -117,10 +107,9 @@ public final class UserAccessorProperty extends SpillProperty {
     /**
      * Constructor
      *
-     * @param key        property key
-     * @param flags      property flags
-     * @param getterSlot getter slot, starting at first embed
-     * @param setterSlot setter slot, starting at first embed
+     * @param key   property key
+     * @param flags property flags
+     * @param slot  spill slot
      */
     UserAccessorProperty(final String key, final int flags, final int slot) {
         super(key, flags, slot);
@@ -206,17 +195,17 @@ public final class UserAccessorProperty extends SpillProperty {
 
     @Override
     public void setValue(final ScriptObject self, final ScriptObject owner, final int value, final boolean strict) {
-        setValue(self, owner, value, strict);
+        setValue(self, owner, (Object) value, strict);
     }
 
     @Override
     public void setValue(final ScriptObject self, final ScriptObject owner, final long value, final boolean strict) {
-        setValue(self, owner, value, strict);
+        setValue(self, owner, (Object) value, strict);
     }
 
     @Override
     public void setValue(final ScriptObject self, final ScriptObject owner, final double value, final boolean strict) {
-        setValue(self, owner, value, strict);
+        setValue(self, owner, (Object) value, strict);
     }
 
     @Override

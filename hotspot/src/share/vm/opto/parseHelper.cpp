@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ void GraphKit::make_dtrace_method_entry_exit(ciMethod* method, bool is_entry) {
 
   // Get method
   const TypePtr* method_type = TypeMetadataPtr::make(method);
-  Node *method_node = _gvn.transform( ConNode::make(C, method_type) );
+  Node *method_node = _gvn.transform(ConNode::make(method_type));
 
   kill_dead_locals();
 

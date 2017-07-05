@@ -60,12 +60,12 @@ class StackMapTable : public StackObj {
   // specified offset. Return true if the two frames match.
   bool match_stackmap(
     StackMapFrame* current_frame, int32_t offset,
-    bool match, bool update, ErrorContext* ctx, TRAPS) const;
+    bool match, bool update, bool handler, ErrorContext* ctx, TRAPS) const;
   // Match and/or update current_frame to the frame in stackmap table with
   // specified offset and frame index. Return true if the two frames match.
   bool match_stackmap(
     StackMapFrame* current_frame, int32_t offset, int32_t frame_index,
-    bool match, bool update, ErrorContext* ctx, TRAPS) const;
+    bool match, bool update, bool handler, ErrorContext* ctx, TRAPS) const;
 
   // Check jump instructions. Make sure there are no uninitialized
   // instances on backward branch.
@@ -75,10 +75,6 @@ class StackMapTable : public StackObj {
 
   // Returns the frame array index where the frame with offset is stored.
   int get_index_from_offset(int32_t offset) const;
-
-  // Make sure that there's no uninitialized object exist on backward branch.
-  void check_new_object(
-    const StackMapFrame* frame, int32_t target, TRAPS) const;
 
   void print_on(outputStream* str) const;
 };

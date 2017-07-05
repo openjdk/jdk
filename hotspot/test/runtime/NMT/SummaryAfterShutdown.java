@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @key nmt jcmd
  * @summary Verify that jcmd correctly reports that NMT is not enabled after a shutdown
  * @library /testlibrary
+ * @ignore
  * @run main/othervm -XX:NativeMemoryTracking=detail SummaryAfterShutdown
  */
 
@@ -44,13 +45,13 @@ public class SummaryAfterShutdown {
     output = new OutputAnalyzer(pb.start());
 
     // Verify that jcmd reports that NMT is shutting down
-    output.shouldContain("Shutdown is in progress, it will take a few moments to completely shutdown");
+    output.shouldContain("Native memory tracking has been turned off");
 
     // Run 'jcmd <pid> VM.native_memory summary'
     pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.native_memory", "summary"});
     output = new OutputAnalyzer(pb.start());
 
     // Verify that jcmd reports that NMT has been shutdown
-    output.shouldContain("Native memory tracking has been shutdown by user");
+    output.shouldContain("Native memory tracking has been shutdown");
   }
 }

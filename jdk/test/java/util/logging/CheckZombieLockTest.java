@@ -51,23 +51,23 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 public class CheckZombieLockTest {
 
-    private static final String WRITABLE_DIR = "writable-dir";
+    private static final String WRITABLE_DIR = "writable-lockfile-dir";
     private static volatile boolean supportsLocking = true;
 
     static enum TestCase {
-        WRITABLE,  // just verifies that we can create a file in our 'writable-dir'
+        WRITABLE,  // just verifies that we can create a file in our 'writable-lockfile-dir'
         CLOSE, // checks that closing a FileHandler removes its lock file
-        CREATE_FIRST, // verifies that 'writable-dir' contains no lock, then creates a first FileHandler.
-        CREATE_NEXT, // verifies that 'writable-dir' contains a single lock, then creates the next FileHandler
+        CREATE_FIRST, // verifies that 'writable-lockfile-dir' contains no lock, then creates a first FileHandler.
+        CREATE_NEXT, // verifies that 'writable-lockfile-dir' contains a single lock, then creates the next FileHandler
         REUSE, // verifies that zombie lock files can be reused
-        CLEANUP // removes "writable-dir"
+        CLEANUP // removes "writable-lockfile-dir"
     };
 
     public static void main(String... args) throws IOException {
         // we'll base all file creation attempts on the system temp directory,
         // %t
         File writableDir = setup();
-        System.out.println("Writable dir is: "+writableDir.getAbsolutePath());
+        System.out.println("Writable dir is: " + writableDir.getAbsolutePath());
         // we now have one writable directory to work with:
         //    writableDir
         if (args == null || args.length == 0) {
@@ -104,7 +104,7 @@ public class CheckZombieLockTest {
                 case REUSE: testFileHandlerReuse(writableDir); break;
                 // Removes the writableDir
                 case CLEANUP: delete(writableDir); break;
-                default: throw new RuntimeException("No such test case: "+arg);
+                default: throw new RuntimeException("No such test case: " + arg);
             }
         }
     }
@@ -120,7 +120,7 @@ public class CheckZombieLockTest {
         // Test 1: make sure we can create/delete files in the writable dir.
         final File file = new File(writableDir, "test.txt");
         if (!createFile(file, false)) {
-            throw new IOException("Can't create "+file+"\n\tUnable to run test");
+            throw new IOException("Can't create " + file + "\n\tUnable to run test");
         } else {
             delete(file);
         }
@@ -159,22 +159,22 @@ public class CheckZombieLockTest {
     private static void testFileHandlerClose(File writableDir) throws IOException {
         File fakeLock = new File(writableDir, "log.log.lck");
         if (!createFile(fakeLock, false)) {
-            throw new IOException("Can't create fake lock file: "+fakeLock);
+            throw new IOException("Can't create fake lock file: " + fakeLock);
         }
         try {
             List<File> before = listLocks(writableDir, true);
-            System.out.println("before: " +before.size() + " locks found");
+            System.out.println("before: " + before.size() + " locks found");
             FileHandler handler = createFileHandler(writableDir);
-            System.out.println("handler created: "+handler);
+            System.out.println("handler created: " + handler);
             List<File> after = listLocks(writableDir, true);
             System.out.println("after creating handler: " + after.size() + " locks found");
             handler.close();
-            System.out.println("handler closed: "+handler);
+            System.out.println("handler closed: " + handler);
             List<File> afterClose = listLocks(writableDir, true);
             System.out.println("after closing handler: " + afterClose.size() + " locks found");
             afterClose.removeAll(before);
             if (!afterClose.isEmpty()) {
-                throw new RuntimeException("Zombie lock file detected: "+ afterClose);
+                throw new RuntimeException("Zombie lock file detected: " + afterClose);
             }
         } finally {
             if (fakeLock.canRead()) delete(fakeLock);
@@ -186,21 +186,22 @@ public class CheckZombieLockTest {
 
     private static void testFileHandlerReuse(File writableDir) throws IOException {
         List<File> before = listLocks(writableDir, true);
-        System.out.println("before: " +before.size() + " locks found");
+        System.out.println("before: " + before.size() + " locks found");
         try {
             if (!before.isEmpty()) {
-                throw new RuntimeException("Expected no lock file! Found: "+before);
+                throw new RuntimeException("Expected no lock file! Found: " + before);
             }
         } finally {
             before.stream().forEach(CheckZombieLockTest::delete);
         }
 
         FileHandler handler1 = createFileHandler(writableDir);
-        System.out.println("handler created: "+handler1);
+        System.out.println("handler created: " + handler1);
         List<File> after = listLocks(writableDir, true);
         System.out.println("after creating handler: " + after.size() + " locks found");
         if (after.size() != 1) {
-            throw new RuntimeException("Unexpected number of lock files found for "+handler1+": "+after);
+            throw new RuntimeException("Unexpected number of lock files found for "
+                    + handler1 + ": " + after);
         }
         final File lock = after.get(0);
         after.clear();
@@ -208,33 +209,34 @@ public class CheckZombieLockTest {
         after = listLocks(writableDir, true);
         System.out.println("after closing handler: " + after.size() + " locks found");
         if (!after.isEmpty()) {
-            throw new RuntimeException("Unexpected number of lock files found for "+handler1+": "+after);
+            throw new RuntimeException("Unexpected number of lock files found for "
+                    + handler1 + ": " + after);
         }
         if (!createFile(lock, false)) {
-            throw new IOException("Can't create fake lock file: "+lock);
+            throw new IOException("Can't create fake lock file: " + lock);
         }
         try {
             before = listLocks(writableDir, true);
-            System.out.println("before: " +before.size() + " locks found");
+            System.out.println("before: " + before.size() + " locks found");
             if (before.size() != 1) {
-                throw new RuntimeException("Unexpected number of lock files found: "+before+" expected ["
-                        +lock+"].");
+                throw new RuntimeException("Unexpected number of lock files found: "
+                        + before + " expected [" + lock + "].");
             }
             FileHandler handler2 = createFileHandler(writableDir);
-            System.out.println("handler created: "+handler2);
+            System.out.println("handler created: " + handler2);
             after = listLocks(writableDir, true);
             System.out.println("after creating handler: " + after.size() + " locks found");
             after.removeAll(before);
             if (!after.isEmpty()) {
-                throw new RuntimeException("Unexpected lock file found: "+after
+                throw new RuntimeException("Unexpected lock file found: " + after
                         + "\n\t" + lock + " should have been reused");
             }
             handler2.close();
-            System.out.println("handler closed: "+handler2);
+            System.out.println("handler closed: " + handler2);
             List<File> afterClose = listLocks(writableDir, true);
             System.out.println("after closing handler: " + afterClose.size() + " locks found");
             if (!afterClose.isEmpty()) {
-                throw new RuntimeException("Zombie lock file detected: "+ afterClose);
+                throw new RuntimeException("Zombie lock file detected: " + afterClose);
             }
 
             if (supportsLocking) {
@@ -243,18 +245,19 @@ public class CheckZombieLockTest {
                     StandardOpenOption.WRITE);
                 try {
                     if (fc.tryLock() != null) {
-                        System.out.println("locked: "+lock);
+                        System.out.println("locked: " + lock);
                         handler2 = createFileHandler(writableDir);
-                        System.out.println("handler created: "+handler2);
+                        System.out.println("handler created: " + handler2);
                         after = listLocks(writableDir, true);
-                        System.out.println("after creating handler: " + after.size() + " locks found");
+                        System.out.println("after creating handler: " + after.size()
+                                + " locks found");
                         after.removeAll(before);
                         if (after.size() != 1) {
-                            throw new RuntimeException("Unexpected lock files found: "+after
+                            throw new RuntimeException("Unexpected lock files found: " + after
                                 + "\n\t" + lock + " should not have been reused");
                         }
                     } else {
-                        throw new RuntimeException("Failed to lock: "+lock);
+                        throw new RuntimeException("Failed to lock: " + lock);
                     }
                 } finally {
                     delete(lock);
@@ -271,22 +274,23 @@ public class CheckZombieLockTest {
     private static void testFileHandlerCreate(File writableDir, boolean first)
             throws IOException {
         List<File> before = listLocks(writableDir, true);
-        System.out.println("before: " +before.size() + " locks found");
+        System.out.println("before: " + before.size() + " locks found");
         try {
             if (first && !before.isEmpty()) {
-                throw new RuntimeException("Expected no lock file! Found: "+before);
+                throw new RuntimeException("Expected no lock file! Found: " + before);
             } else if (!first && before.size() != 1) {
-                throw new RuntimeException("Expected a single lock file! Found: "+before);
+                throw new RuntimeException("Expected a single lock file! Found: " + before);
             }
         } finally {
             before.stream().forEach(CheckZombieLockTest::delete);
         }
         FileHandler handler = createFileHandler(writableDir);
-        System.out.println("handler created: "+handler);
+        System.out.println("handler created: " + handler);
         List<File> after = listLocks(writableDir, true);
         System.out.println("after creating handler: " + after.size() + " locks found");
         if (after.size() != 1) {
-            throw new RuntimeException("Unexpected number of lock files found for "+handler+": "+after);
+            throw new RuntimeException("Unexpected number of lock files found for "
+                    + handler + ": " + after);
         }
     }
 
@@ -305,7 +309,7 @@ public class CheckZombieLockTest {
             tmpDir = System.getProperty("user.home");
         }
         File tmpOrHomeDir = new File(tmpDir);
-        // Create a writable directory here (%t/writable-dir)
+        // Create a writable directory here (%t/writable-lockfile-dir)
         File writableDir = new File(tmpOrHomeDir, WRITABLE_DIR);
         if (!createFile(writableDir, true)) {
             throw new RuntimeException("Test setup failed: unable to create"
@@ -314,9 +318,10 @@ public class CheckZombieLockTest {
         }
 
         // try to determine whether file locking is supported
+        final String uniqueFileName = UUID.randomUUID().toString()+".lck";
         try {
             FileChannel fc = FileChannel.open(Paths.get(writableDir.getAbsolutePath(),
-                    UUID.randomUUID().toString()+".lck"),
+                    uniqueFileName),
                     StandardOpenOption.CREATE_NEW, StandardOpenOption.APPEND,
                     StandardOpenOption.DELETE_ON_CLOSE);
             try {
@@ -326,9 +331,11 @@ public class CheckZombieLockTest {
             } finally {
                 fc.close();
             }
-        } catch(Throwable t) {
+        } catch (IOException t) {
             // should not happen
-            t.printStackTrace();
+            System.err.println("Failed to create new file " + uniqueFileName +
+                    " in " + writableDir.getAbsolutePath());
+            throw new RuntimeException("Test setup failed: unable to run test", t);
         }
         return writableDir;
     }

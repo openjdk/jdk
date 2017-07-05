@@ -48,7 +48,7 @@ Compiler::Compiler() : AbstractCompiler(c1) {
 
 void Compiler::init_c1_runtime() {
   BufferBlob* buffer_blob = CompilerThread::current()->get_buffer_blob();
-  Arena* arena = new (mtCompiler) Arena();
+  Arena* arena = new (mtCompiler) Arena(mtCompiler);
   Runtime1::initialize(buffer_blob);
   FrameMap::initialize();
   // initialize data structures

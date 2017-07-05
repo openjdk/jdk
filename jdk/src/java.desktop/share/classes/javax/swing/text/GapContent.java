@@ -280,7 +280,7 @@ public class GapContent extends GapVector implements AbstractDocument.Content, S
          * is held by the mark, so it is adjusted according
          * to it's relationship to the gap.
          */
-        public final int getOffset() {
+        public int getOffset() {
             int g0 = getGapStart();
             int g1 = getGapEnd();
             int offs = (index < g0) ? index : index - (g1 - g0);
@@ -302,7 +302,7 @@ public class GapContent extends GapVector implements AbstractDocument.Content, S
             this.mark = mark;
         }
 
-        public final int getOffset() {
+        public int getOffset() {
             return mark.getOffset();
         }
 

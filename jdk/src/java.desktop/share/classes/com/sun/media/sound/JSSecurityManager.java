@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,33 +72,6 @@ final class JSSecurityManager {
             sm.checkPermission(new AudioPermission("record"));
         }
     }
-
-    static String getProperty(final String propertyName) {
-        String propertyValue;
-        if (hasSecurityManager()) {
-            if(Printer.debug) Printer.debug("using JDK 1.2 security to get property");
-            try{
-                PrivilegedAction<String> action = new PrivilegedAction<String>() {
-                        public String run() {
-                            try {
-                                return System.getProperty(propertyName);
-                            } catch (Throwable t) {
-                                return null;
-                            }
-                        }
-                    };
-                propertyValue = AccessController.doPrivileged(action);
-            } catch( Exception e ) {
-                if(Printer.debug) Printer.debug("not using JDK 1.2 security to get properties");
-                propertyValue = System.getProperty(propertyName);
-            }
-        } else {
-            if(Printer.debug) Printer.debug("not using JDK 1.2 security to get properties");
-            propertyValue = System.getProperty(propertyName);
-        }
-        return propertyValue;
-    }
-
 
     /** Load properties from a file.
         This method tries to load properties from the filename give into

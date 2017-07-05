@@ -454,6 +454,17 @@ public class FileFontStrike extends PhysicalStrike {
 
     /* Only look in the cache */
     long getCachedGlyphPtr(int glyphCode) {
+        try {
+            return getCachedGlyphPtrInternal(glyphCode);
+        } catch (Exception e) {
+          NullFontScaler nullScaler =
+             (NullFontScaler)FontScaler.getNullScaler();
+          long nullSC = NullFontScaler.getNullScalerContext();
+          return nullScaler.getGlyphImage(nullSC, glyphCode);
+        }
+    }
+
+    private long getCachedGlyphPtrInternal(int glyphCode) {
         switch (glyphCacheFormat) {
             case INTARRAY:
                 return intGlyphImages[glyphCode] & INTMASK;
@@ -481,6 +492,27 @@ public class FileFontStrike extends PhysicalStrike {
     }
 
     private synchronized long setCachedGlyphPtr(int glyphCode, long glyphPtr) {
+        try {
+            return setCachedGlyphPtrInternal(glyphCode, glyphPtr);
+        } catch (Exception e) {
+            switch (glyphCacheFormat) {
+                case INTARRAY:
+                case SEGINTARRAY:
+                    StrikeCache.freeIntPointer((int)glyphPtr);
+                    break;
+                case LONGARRAY:
+                case SEGLONGARRAY:
+                    StrikeCache.freeLongPointer(glyphPtr);
+                    break;
+             }
+             NullFontScaler nullScaler =
+                 (NullFontScaler)FontScaler.getNullScaler();
+             long nullSC = NullFontScaler.getNullScalerContext();
+             return nullScaler.getGlyphImage(nullSC, glyphCode);
+        }
+    }
+
+    private long setCachedGlyphPtrInternal(int glyphCode, long glyphPtr) {
         switch (glyphCacheFormat) {
             case INTARRAY:
                 if (intGlyphImages[glyphCode] == 0) {

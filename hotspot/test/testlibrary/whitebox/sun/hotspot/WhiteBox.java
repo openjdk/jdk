@@ -95,7 +95,8 @@ public class WhiteBox {
   public native void NMTCommitMemory(long addr, long size);
   public native void NMTUncommitMemory(long addr, long size);
   public native void NMTReleaseMemory(long addr, long size);
-  public native boolean NMTWaitForDataMerge();
+  public native void NMTOverflowHashBucket(long num);
+  public native long NMTMallocWithPseudoStack(long size, int index);
   public native boolean NMTIsDetailSupported();
 
   // Compiler
@@ -167,17 +168,20 @@ public class WhiteBox {
   public native void    setIntxVMFlag(String name, long value);
   public native void    setUintxVMFlag(String name, long value);
   public native void    setUint64VMFlag(String name, long value);
+  public native void    setSizeTVMFlag(String name, long value);
   public native void    setStringVMFlag(String name, String value);
   public native void    setDoubleVMFlag(String name, double value);
   public native Boolean getBooleanVMFlag(String name);
   public native Long    getIntxVMFlag(String name);
   public native Long    getUintxVMFlag(String name);
   public native Long    getUint64VMFlag(String name);
+  public native Long    getSizeTVMFlag(String name);
   public native String  getStringVMFlag(String name);
   public native Double  getDoubleVMFlag(String name);
   private final List<Function<String,Object>> flagsGetters = Arrays.asList(
     this::getBooleanVMFlag, this::getIntxVMFlag, this::getUintxVMFlag,
-    this::getUint64VMFlag, this::getStringVMFlag, this::getDoubleVMFlag);
+    this::getUint64VMFlag, this::getSizeTVMFlag, this::getStringVMFlag,
+    this::getDoubleVMFlag);
 
   public Object getVMFlag(String name) {
     return flagsGetters.stream()

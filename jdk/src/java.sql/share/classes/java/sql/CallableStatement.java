@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1145,7 +1145,7 @@ public interface CallableStatement extends PreparedStatement {
      * Java <code>Object</code> types to SQL types.  The given argument
      * will be converted to the corresponding SQL type before being
      * sent to the database.
-     * <p>Note that this method may be used to pass datatabase-
+     * <p>Note that this method may be used to pass database-
      * specific abstract data types, by using a driver-specific Java
      * type.
      *
@@ -1882,7 +1882,8 @@ public interface CallableStatement extends PreparedStatement {
        throws SQLException;
 
     /**
-     * Sets the designated parameter to a <code>InputStream</code> object.  The <code>inputstream</code> must contain  the number
+     * Sets the designated parameter to a {@code InputStream} object.
+     * The <code>Inputstream</code> must contain the number
      * of characters specified by length, otherwise a <code>SQLException</code> will be
      * generated when the <code>CallableStatement</code> is executed.
      * This method differs from the <code>setBinaryStream (int, InputStream, int)</code>
@@ -1899,8 +1900,8 @@ public interface CallableStatement extends PreparedStatement {
      * @param length the number of bytes in the parameter data.
      * @throws SQLException  if parameterName does not correspond to a named
      * parameter; if the length specified
-     * is less than zero; if the number of bytes in the inputstream does not match
-     * the specified length; if a database access error occurs or
+     * is less than zero; if the number of bytes in the {@code InputStream}
+     * does not match the specified length; if a database access error occurs or
      * this method is called on a closed <code>CallableStatement</code>
      * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method
@@ -2378,7 +2379,7 @@ public interface CallableStatement extends PreparedStatement {
        throws SQLException;
 
     /**
-     * Sets the designated parameter to a <code>InputStream</code> object.
+     * Sets the designated parameter to a {@code InputStream} object.
      * This method differs from the <code>setBinaryStream (int, InputStream)</code>
      * method because it informs the driver that the parameter value should be
      * sent to the server as a <code>BLOB</code>.  When the <code>setBinaryStream</code> method is used,
@@ -2430,7 +2431,7 @@ public interface CallableStatement extends PreparedStatement {
 
 
     /**
-     *<p>Returns an object representing the value of OUT parameter
+     * Returns an object representing the value of OUT parameter
      * {@code parameterIndex} and will convert from the
      * SQL type of the parameter to the requested Java data type, if the
      * conversion is supported. If the conversion is not
@@ -2459,7 +2460,7 @@ public interface CallableStatement extends PreparedStatement {
 
 
     /**
-     *<p>Returns an object representing the value of OUT parameter
+     * Returns an object representing the value of OUT parameter
      * {@code parameterName} and will convert from the
      * SQL type of the parameter to the requested Java data type, if the
      * conversion is supported. If the conversion is not
@@ -2490,7 +2491,7 @@ public interface CallableStatement extends PreparedStatement {
      //------------------------- JDBC 4.2 -----------------------------------
 
      /**
-     * <p>Sets the value of the designated parameter with the given object.
+     * Sets the value of the designated parameter with the given object.
      *
      * If the second argument is an {@code InputStream} then the stream
      * must contain the number of bytes specified by scaleOrLength.

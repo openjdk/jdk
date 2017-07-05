@@ -297,8 +297,7 @@ void Thread::record_stack_base_and_size() {
 #if INCLUDE_NMT
   // record thread's native stack, stack grows downward
   address stack_low_addr = stack_base() - stack_size();
-  MemTracker::record_thread_stack(stack_low_addr, stack_size(), this,
-      CURRENT_PC);
+  MemTracker::record_thread_stack(stack_low_addr, stack_size());
 #endif // INCLUDE_NMT
 }
 
@@ -316,7 +315,7 @@ Thread::~Thread() {
 #if INCLUDE_NMT
   if (_stack_base != NULL) {
     address low_stack_addr = stack_base() - stack_size();
-    MemTracker::release_thread_stack(low_stack_addr, stack_size(), this);
+    MemTracker::release_thread_stack(low_stack_addr, stack_size());
 #ifdef ASSERT
     set_stack_base(NULL);
 #endif
@@ -1425,9 +1424,6 @@ void JavaThread::initialize() {
   set_monitor_chunks(NULL);
   set_next(NULL);
   set_thread_state(_thread_new);
-#if INCLUDE_NMT
-  set_recorder(NULL);
-#endif
   _terminated = _not_terminated;
   _privileged_stack_top = NULL;
   _array_for_gc = NULL;
@@ -1503,7 +1499,6 @@ JavaThread::JavaThread(bool is_attaching_via_jni) :
     _jni_attach_state = _not_attaching_via_jni;
   }
   assert(deferred_card_mark().is_empty(), "Default MemRegion ctor");
-  _safepoint_visible = false;
 }
 
 bool JavaThread::reguard_stack(address cur_sp) {
@@ -1566,7 +1561,6 @@ JavaThread::JavaThread(ThreadFunction entry_point, size_t stack_sz) :
   thr_type = entry_point == &compiler_thread_entry ? os::compiler_thread :
                                                      os::java_thread;
   os::create_thread(this, thr_type, stack_sz);
-  _safepoint_visible = false;
   // The _osthread may be NULL here because we ran out of memory (too many threads active).
   // We need to throw and OutOfMemoryError - however we cannot do this here because the caller
   // may hold a lock and all locks must be unlocked before throwing the exception (throwing
@@ -1583,13 +1577,6 @@ JavaThread::~JavaThread() {
   if (TraceThreadEvents) {
       tty->print_cr("terminate thread %p", this);
   }
-
-  // By now, this thread should already be invisible to safepoint,
-  // and its per-thread recorder also collected.
-  assert(!is_safepoint_visible(), "wrong state");
-#if INCLUDE_NMT
-  assert(get_recorder() == NULL, "Already collected");
-#endif // INCLUDE_NMT
 
   // JSR166 -- return the parker to the free list
   Parker::Release(_parker);
@@ -3359,11 +3346,6 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // initialize TLS
   ThreadLocalStorage::init();
 
-  // Bootstrap native memory tracking, so it can start recording memory
-  // activities before worker thread is started. This is the first phase
-  // of bootstrapping, VM is currently running in single-thread mode.
-  MemTracker::bootstrap_single_thread();
-
   // Initialize output stream logging
   ostream_init_log();
 
@@ -3414,9 +3396,6 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // Initialize Java-Level synchronization subsystem
   ObjectMonitor::Initialize();
 
-  // Second phase of bootstrapping, VM is about entering multi-thread mode
-  MemTracker::bootstrap_multi_thread();
-
   // Initialize global modules
   jint status = init_globals();
   if (status != JNI_OK) {
@@ -3437,9 +3416,6 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // Any JVMTI raw monitors entered in onload will transition into
   // real raw monitor. VM is setup enough here for raw monitor enter.
   JvmtiExport::transition_pending_onload_raw_monitors();
-
-  // Fully start NMT
-  MemTracker::start();
 
   // Create the VMThread
   { TraceTime timer("Start VMThread", TraceStartupTime);
@@ -3995,8 +3971,6 @@ void Threads::add(JavaThread* p, bool force_daemon) {
     daemon = false;
   }
 
-  p->set_safepoint_visible(true);
-
   ThreadService::add_thread(p, daemon);
 
   // Possible GC point.
@@ -4042,13 +4016,6 @@ void Threads::remove(JavaThread* p) {
     // to do callbacks into the safepoint code. However, the safepoint code is not aware
     // of this thread since it is removed from the queue.
     p->set_terminated_value();
-
-    // Now, this thread is not visible to safepoint
-    p->set_safepoint_visible(false);
-    // once the thread becomes safepoint invisible, we can not use its per-thread
-    // recorder. And Threads::do_threads() no longer walks this thread, so we have
-    // to release its per-thread recorder here.
-    MemTracker::thread_exiting(p);
   } // unlock Threads_lock
 
   // Since Events::log uses a lock, we grab it outside the Threads_lock
