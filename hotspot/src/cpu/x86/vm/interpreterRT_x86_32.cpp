@@ -54,7 +54,7 @@ void InterpreterRuntime::SignatureHandlerGenerator::box(int from_offset, int to_
   __ cmpptr(Address(from(), Interpreter::local_offset_in_bytes(from_offset)), (int32_t)NULL_WORD); // do not use temp() to avoid AGI
   Label L;
   __ jcc(Assembler::notZero, L);
-  __ movptr(temp(), ((int32_t)NULL_WORD));
+  __ movptr(temp(), NULL_WORD);
   __ bind(L);
   __ movptr(Address(to(), to_offset * wordSize), temp());
 }
@@ -110,7 +110,7 @@ class SlowSignatureHandler: public NativeSignatureIterator {
   virtual void pass_object() {
     // pass address of from
     intptr_t from_addr = (intptr_t)(_from + Interpreter::local_offset_in_bytes(0));
-    *_to++ = (*(intptr_t*)from_addr == 0) ? NULL : from_addr;
+    *_to++ = (*(intptr_t*)from_addr == 0) ? NULL_WORD : from_addr;
     debug_only(verify_tag(frame::TagReference));
     _from -= Interpreter::stackElementSize();
    }

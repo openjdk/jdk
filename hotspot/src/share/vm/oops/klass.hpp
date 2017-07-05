@@ -606,7 +606,18 @@ class Klass : public Klass_vtbl {
   #undef assert_same_query
 
   // Unless overridden, oop is parsable if it has a klass pointer.
+  // Parsability of an object is object specific.
   virtual bool oop_is_parsable(oop obj) const { return true; }
+
+  // Unless overridden, oop is safe for concurrent GC processing
+  // after its allocation is complete.  The exception to
+  // this is the case where objects are changed after allocation.
+  // Class redefinition is one of the known exceptions. During
+  // class redefinition, an allocated class can changed in order
+  // order to create a merged class (the combiniation of the
+  // old class definition that has to be perserved and the new class
+  // definition which is being created.
+  virtual bool oop_is_conc_safe(oop obj) const { return true; }
 
   // Access flags
   AccessFlags access_flags() const         { return _access_flags;  }

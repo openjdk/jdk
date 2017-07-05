@@ -721,12 +721,6 @@ ReferenceProcessor::process_phase3(DiscoveredList&    refs_list,
                              iter.obj(), iter.obj()->blueprint()->internal_name());
     }
     assert(iter.obj()->is_oop(UseConcMarkSweepGC), "Adding a bad reference");
-    // If discovery is concurrent, we may have objects with null referents,
-    // being those that were concurrently cleared after they were discovered
-    // (and not subsequently precleaned).
-    assert(   (discovery_is_atomic() && iter.referent()->is_oop())
-           || (!discovery_is_atomic() && iter.referent()->is_oop_or_null(UseConcMarkSweepGC)),
-           "Adding a bad referent");
     iter.next();
   }
   // Remember to keep sentinel pointer around

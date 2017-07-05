@@ -32,11 +32,13 @@ enum G1Barrier {
   G1BarrierNone, G1BarrierRS, G1BarrierEvac
 };
 
-template<bool do_gen_barrier, G1Barrier barrier, bool do_mark_forwardee>
+template<bool do_gen_barrier, G1Barrier barrier,
+         bool do_mark_forwardee, bool skip_cset_test>
 class G1ParCopyClosure;
 class G1ParScanClosure;
 
-typedef G1ParCopyClosure<false, G1BarrierEvac, false> G1ParScanHeapEvacClosure;
+typedef G1ParCopyClosure<false, G1BarrierEvac, false, true>
+                                                      G1ParScanHeapEvacClosure;
 
 class FilterIntoCSClosure;
 class FilterOutOfRegionClosure;

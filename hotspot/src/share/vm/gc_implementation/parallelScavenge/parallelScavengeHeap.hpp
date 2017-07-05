@@ -200,6 +200,7 @@ class ParallelScavengeHeap : public CollectedHeap {
 
   void oop_iterate(OopClosure* cl);
   void object_iterate(ObjectClosure* cl);
+  void safe_object_iterate(ObjectClosure* cl) { object_iterate(cl); }
   void permanent_oop_iterate(OopClosure* cl);
   void permanent_object_iterate(ObjectClosure* cl);
 
