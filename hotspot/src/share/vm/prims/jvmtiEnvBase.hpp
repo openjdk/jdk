@@ -267,8 +267,6 @@ class JvmtiEnvBase : public CHeapObj {
   // convert to a jni jclass from a non-null klassOop
   jclass get_jni_class_non_null(klassOop k);
 
-  void update_klass_field_access_flag(fieldDescriptor *fd);
-
   jint count_locked_objects(JavaThread *java_thread, Handle hobj);
   jvmtiError get_locked_objects_in_frame(JavaThread *calling_thread,
                                    JavaThread* java_thread,

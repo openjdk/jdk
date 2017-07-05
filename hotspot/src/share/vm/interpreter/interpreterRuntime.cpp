@@ -555,7 +555,7 @@ IRT_ENTRY(void, InterpreterRuntime::resolve_get_put(JavaThread* thread, Bytecode
     assert(method_handle->is_a(SystemDictionary::MethodHandle_klass()), "must be");
 
     {
-      // Walk all nmethods depending on CallSite
+      // Walk all nmethods depending on this call site.
       MutexLocker mu(Compile_lock, thread);
       Universe::flush_dependents_on(call_site, method_handle);
     }
@@ -984,11 +984,8 @@ ConstantPoolCacheEntry *cp_entry))
   // check the access_flags for the field in the klass
 
   instanceKlass* ik = instanceKlass::cast(java_lang_Class::as_klassOop(cp_entry->f1()));
-  typeArrayOop fields = ik->fields();
   int index = cp_entry->field_index();
-  assert(index < fields->length(), "holders field index is out of range");
-  // bail out if field accesses are not watched
-  if ((fields->ushort_at(index) & JVM_ACC_FIELD_ACCESS_WATCHED) == 0) return;
+  if ((ik->field_access_flags(index) & JVM_ACC_FIELD_ACCESS_WATCHED) == 0) return;
 
   switch(cp_entry->flag_state()) {
     case btos:    // fall through
@@ -1021,11 +1018,9 @@ IRT_ENTRY(void, InterpreterRuntime::post_field_modification(JavaThread *thread,
 
   // check the access_flags for the field in the klass
   instanceKlass* ik = instanceKlass::cast(k);
-  typeArrayOop fields = ik->fields();
   int index = cp_entry->field_index();
-  assert(index < fields->length(), "holders field index is out of range");
   // bail out if field modifications are not watched
-  if ((fields->ushort_at(index) & JVM_ACC_FIELD_MODIFICATION_WATCHED) == 0) return;
+  if ((ik->field_access_flags(index) & JVM_ACC_FIELD_MODIFICATION_WATCHED) == 0) return;
 
   char sig_type = '\0';
 
@@ -1244,7 +1239,7 @@ IRT_ENTRY(void, InterpreterRuntime::prepare_native_call(JavaThread* thread, meth
   // preparing the same method will be sure to see non-null entry & mirror.
 IRT_END
 
-#if defined(IA32) || defined(AMD64)
+#if defined(IA32) || defined(AMD64) || defined(ARM)
 IRT_LEAF(void, InterpreterRuntime::popframe_move_outgoing_args(JavaThread* thread, void* src_address, void* dest_address))
   if (src_address == dest_address) {
     return;

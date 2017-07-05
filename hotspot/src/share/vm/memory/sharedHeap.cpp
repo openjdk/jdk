@@ -146,7 +146,6 @@ void SharedHeap::process_strong_roots(bool activate_scope,
   assert(_strong_roots_parity != 0, "must have called prologue code");
   if (!_process_strong_tasks->is_task_claimed(SH_PS_Universe_oops_do)) {
     Universe::oops_do(roots);
-    ReferenceProcessor::oops_do(roots);
     // Consider perm-gen discovered lists to be strong.
     perm_gen()->ref_processor()->weak_oops_do(roots);
   }

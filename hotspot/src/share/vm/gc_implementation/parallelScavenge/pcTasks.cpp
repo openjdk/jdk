@@ -80,10 +80,6 @@ void MarkFromRootsTask::do_it(GCTaskManager* manager, uint which) {
       Universe::oops_do(&mark_and_push_closure);
       break;
 
-    case reference_processing:
-      ReferenceProcessor::oops_do(&mark_and_push_closure);
-      break;
-
     case jni_handles:
       JNIHandles::oops_do(&mark_and_push_closure);
       break;

@@ -29,8 +29,6 @@
 
   Address::ScaleFactor array_element_size(BasicType type) const;
 
-  void monitorexit(LIR_Opr obj_opr, LIR_Opr lock_opr, Register new_hdr, int monitor_no, Register exception);
-
   void arith_fpu_implementation(LIR_Code code, int left_index, int right_index, int dest_index, bool pop_fpu_stack);
 
   // helper functions which checks for overflow and sets bailout if it

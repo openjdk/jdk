@@ -37,7 +37,7 @@
 // ciMethodHandle::get_adapter
 //
 // Return an adapter for this MethodHandle.
-ciMethod* ciMethodHandle::get_adapter_impl(bool is_invokedynamic) const {
+ciMethod* ciMethodHandle::get_adapter_impl(bool is_invokedynamic) {
   VM_ENTRY_MARK;
   Handle h(get_oop());
   methodHandle callee(_callee->get_methodOop());
@@ -73,7 +73,7 @@ ciMethod* ciMethodHandle::get_adapter_impl(bool is_invokedynamic) const {
 // ciMethodHandle::get_adapter
 //
 // Return an adapter for this MethodHandle.
-ciMethod* ciMethodHandle::get_adapter(bool is_invokedynamic) const {
+ciMethod* ciMethodHandle::get_adapter(bool is_invokedynamic) {
   ciMethod* result = get_adapter_impl(is_invokedynamic);
   if (result) {
     // Fake up the MDO maturity.
@@ -86,11 +86,22 @@ ciMethod* ciMethodHandle::get_adapter(bool is_invokedynamic) const {
 }
 
 
+#ifndef PRODUCT
 // ------------------------------------------------------------------
-// ciMethodHandle::print_impl
+// ciMethodHandle::print_chain_impl
 //
 // Implementation of the print method.
-void ciMethodHandle::print_impl(outputStream* st) {
-  st->print(" type=");
-  get_oop()->print();
+void ciMethodHandle::print_chain_impl(outputStream* st) {
+  ASSERT_IN_VM;
+  MethodHandleChain::print(get_oop());
 }
+
+
+// ------------------------------------------------------------------
+// ciMethodHandle::print_chain
+//
+// Implementation of the print_chain method.
+void ciMethodHandle::print_chain(outputStream* st) {
+  GUARDED_VM_ENTRY(print_chain_impl(st););
+}
+#endif

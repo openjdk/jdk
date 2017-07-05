@@ -41,6 +41,10 @@
 # include "os_windows.inline.hpp"
 # include "thread_windows.inline.hpp"
 #endif
+#ifdef TARGET_OS_FAMILY_bsd
+# include "os_bsd.inline.hpp"
+# include "thread_bsd.inline.hpp"
+#endif
 
 // The direct lock/unlock calls do not force a collection if an unlock
 // decrements the count to zero. Avoid calling these if at all possible.

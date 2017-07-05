@@ -36,7 +36,7 @@ enum G1Barrier {
 };
 
 template<bool do_gen_barrier, G1Barrier barrier,
-         bool do_mark_forwardee>
+         bool do_mark_object>
 class G1ParCopyClosure;
 class G1ParScanClosure;
 class G1ParPushHeapRSClosure;
