@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,10 +21,29 @@
  * questions.
  */
 
-module jdk.jartool {
-    exports com.sun.jarsigner;
-    exports jdk.security.jarsigner;
+/*
+ * @test
+ * @bug 8166258
+ * @summary Some corner cases for hkscs charsets
+ * @modules jdk.charsets
+ * @run main TestHKSCS
+ */
 
-    provides java.util.spi.ToolProvider with sun.tools.jar.JarToolProvider;
+import java.util.Arrays;
+
+public class TestHKSCS {
+    public static void main(String args[]) throws Exception {
+        String[] charsets = { "x-MS950-HKSCS-XP",
+                              "x-MS950-HKSCS",
+                              "Big5-HKSCS",
+                              "x-Big5-HKSCS-2001"
+        };
+        String s = "\ufffd\ud87f\udffd";
+        byte[] bytes = new byte[] { 0x3f, 0x3f };
+        for (String cs : charsets) {
+            if (!Arrays.equals(bytes, s.getBytes(cs))) {
+                throw new RuntimeException(cs + " failed to decode u+fffd");
+            }
+        }
+    }
 }
-

@@ -33,7 +33,7 @@
 . ${TESTSRC-.}/common.sh
 
 setup
-${JAVA} -cp ${TESTCLASSES} CheckEngine
+${JAVA} ${TESTVMOPTS} ${TESTJAVAOPTS} -cp ${TESTCLASSES} CheckEngine
 if [ $? -eq 2 ]; then
     echo "No js engine found and engine not required; test vacuously passes."
     exit 0
