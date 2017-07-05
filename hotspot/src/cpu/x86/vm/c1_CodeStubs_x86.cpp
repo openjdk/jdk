@@ -387,9 +387,9 @@ void PatchingStub::emit_code(LIR_Assembler* ce) {
 
 void DeoptimizeStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
-  __ call(RuntimeAddress(SharedRuntime::deopt_blob()->unpack_with_reexecution()));
+  __ call(RuntimeAddress(Runtime1::entry_for(Runtime1::deoptimize_id)));
   ce->add_call_info_here(_info);
-  debug_only(__ should_not_reach_here());
+  DEBUG_ONLY(__ should_not_reach_here());
 }
 
 

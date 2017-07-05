@@ -266,7 +266,7 @@ public class CallSite {
 
     /*package-private*/
     void setTargetNormal(MethodHandle newTarget) {
-        target = newTarget;
+        MethodHandleNatives.setCallSiteTargetNormal(this, newTarget);
     }
     /*package-private*/
     MethodHandle getTargetVolatile() {
@@ -274,7 +274,7 @@ public class CallSite {
     }
     /*package-private*/
     void setTargetVolatile(MethodHandle newTarget) {
-        unsafe.putObjectVolatile(this, TARGET_OFFSET, newTarget);
+        MethodHandleNatives.setCallSiteTargetVolatile(this, newTarget);
     }
 
     // this implements the upcall from the JVM, MethodHandleNatives.makeDynamicCallSite:

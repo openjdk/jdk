@@ -195,9 +195,6 @@ java/beans/XMLEncoder/6329581/Test6329581.java                  generic-all
 
 # jdk_lang
 
-# requires junit
-java/lang/invoke/InvokeDynamicPrintArgs.java                    generic-all
-
 # 7079093
 java/lang/instrument/ManifestTest.sh                            windows-all
 

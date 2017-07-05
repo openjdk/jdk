@@ -382,6 +382,7 @@ void MethodHandles::load_stack_move(MacroAssembler* _masm,
     __ movslq(rdi_stack_move, rdi_stack_move);
   }
 #endif //_LP64
+#ifdef ASSERT
   if (VerifyMethodHandles) {
     Label L_ok, L_bad;
     int32_t stack_move_limit = 0x4000;  // extra-large
@@ -393,6 +394,7 @@ void MethodHandles::load_stack_move(MacroAssembler* _masm,
     __ stop("load_stack_move of garbage value");
     __ BIND(L_ok);
   }
+#endif
   BLOCK_COMMENT("} load_stack_move");
 }
 

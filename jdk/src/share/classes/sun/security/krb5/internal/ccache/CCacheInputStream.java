@@ -375,7 +375,7 @@ public class CCacheInputStream extends KrbDataInputStream implements FileCCacheC
         }
         AuthorizationDataEntry[] auDataEntry = readAuth();
         AuthorizationData auData = null;
-        if (auData != null) {
+        if (auDataEntry != null) {
             auData = new AuthorizationData(auDataEntry);
         }
         byte[] ticketData = readData();

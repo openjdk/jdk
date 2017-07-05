@@ -28,6 +28,7 @@
  */
 
 import java.io.*;
+import java.util.concurrent.*;
 
 
 public class StreamsSurviveDestroy {
@@ -40,15 +41,17 @@ public class StreamsSurviveDestroy {
         boolean wantInterrupt;
         boolean acceptException;
         Exception exc = null;
+        CountDownLatch latch;
 
         Copier(String name, InputStream in, OutputStream out,
-               boolean ae, boolean wi)
+               boolean ae, boolean wi, CountDownLatch l)
         {
             this.name = name;
             this.in = in;
             this.out = out;
             this.acceptException = ae;
             this.wantInterrupt = wi;
+            this.latch = l;
             setName(name);
             start();
         }
@@ -59,6 +62,7 @@ public class StreamsSurviveDestroy {
 
         public void run() {
             byte[] buf = new byte[4242];
+            latch.countDown();
             for (;;) {
                 try {
                     int n = in.read(buf);
@@ -95,13 +99,17 @@ public class StreamsSurviveDestroy {
     }
 
     static void test() throws Exception {
+        CountDownLatch latch = new CountDownLatch(2);
+
         System.err.println("test");
         Process p = Runtime.getRuntime().exec("/bin/cat");
         Copier cp1 = new Copier("out", p.getInputStream(), System.err,
-                               false, false);
+                                false, false, latch);
         Copier cp2 = new Copier("err", p.getErrorStream(), System.err,
-                               false, false);
-        Thread.sleep(100);
+                                false, false, latch);
+        latch.await();    // Wait till both Copiers about to read
+        Thread.sleep(100);// Give both Copiers a chance to start read
+
         p.destroy();
         System.err.println("  exit: " + p.waitFor());
         cp1.join();
@@ -111,13 +119,17 @@ public class StreamsSurviveDestroy {
     }
 
     static void testCloseBeforeDestroy() throws Exception {
+        CountDownLatch latch = new CountDownLatch(2);
+
         System.err.println("testCloseBeforeDestroy");
         Process p = Runtime.getRuntime().exec("/bin/cat");
         Copier cp1 = new Copier("out", p.getInputStream(), System.err,
-                                true, false);
+                                true, false, latch);
         Copier cp2 = new Copier("err", p.getErrorStream(), System.err,
-                                true, false);
-        Thread.sleep(100);
+                                true, false, latch);
+        latch.await();    // Wait till both Copiers about to read
+        Thread.sleep(100);// Give both Copiers a chance to start read
+
         p.getInputStream().close();
         p.getErrorStream().close();
         p.destroy();
@@ -129,13 +141,17 @@ public class StreamsSurviveDestroy {
     }
 
     static void testCloseAfterDestroy() throws Exception {
+        CountDownLatch latch = new CountDownLatch(2);
         System.err.println("testCloseAfterDestroy");
         Process p = Runtime.getRuntime().exec("/bin/cat");
         Copier cp1 = new Copier("out", p.getInputStream(), System.err,
-                                true, false);
+                                true, false,latch);
         Copier cp2 = new Copier("err", p.getErrorStream(), System.err,
-                                true, false);
-        Thread.sleep(100);
+                                true, false, latch);
+
+        latch.await();    // Wait till both Copiers about to read
+        Thread.sleep(100);// Give both Copiers a chance to start read
+
         p.destroy();
         p.getInputStream().close();
         p.getErrorStream().close();
@@ -147,13 +163,16 @@ public class StreamsSurviveDestroy {
     }
 
     static void testInterrupt() throws Exception {
+        CountDownLatch latch = new CountDownLatch(2);
         System.err.println("testInterrupt");
         Process p = Runtime.getRuntime().exec("/bin/cat");
         Copier cp1 = new Copier("out", p.getInputStream(), System.err,
-                                false, true);
+                                false, true, latch);
         Copier cp2 = new Copier("err", p.getErrorStream(), System.err,
-                                false, true);
-        Thread.sleep(100);
+                                false, true, latch);
+        latch.await();    // Wait till both Copiers about to read
+        Thread.sleep(100);// Give both Copiers a chance to start read
+
         cp1.interrupt();
         cp2.interrupt();
         Thread.sleep(100);
@@ -176,7 +195,5 @@ public class StreamsSurviveDestroy {
         testCloseBeforeDestroy();
         testCloseAfterDestroy();
         testInterrupt();
-
     }
-
 }
