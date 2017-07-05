@@ -199,8 +199,8 @@ ET	+0902+03842	Africa/Addis_Ababa
 FI	+6010+02458	Europe/Helsinki
 FJ	-1808+17825	Pacific/Fiji
 FK	-5142-05751	Atlantic/Stanley
-FM	+0725+15147	Pacific/Truk	Truk (Chuuk) and Yap
-FM	+0658+15813	Pacific/Ponape	Ponape (Pohnpei)
+FM	+0725+15147	Pacific/Chuuk	Chuuk (Truk) and Yap
+FM	+0658+15813	Pacific/Pohnpei	Pohnpei (Ponape)
 FM	+0519+16259	Pacific/Kosrae	Kosrae
 FO	+6201-00646	Atlantic/Faroe
 FR	+4852+00220	Europe/Paris
@@ -310,6 +310,7 @@ MX	+2934-10425	America/Ojinaga	US Mountain Time - Chihuahua near US border
 MX	+2904-11058	America/Hermosillo	Mountain Standard Time - Sonora
 MX	+3232-11701	America/Tijuana	US Pacific Time - Baja California near US border
 MX	+3018-11452	America/Santa_Isabel	Mexican Pacific Time - Baja California away from US border
+MX	+2048-10515	America/Bahia_Banderas	Mexican Central Time - Bahia de Banderas
 MY	+0310+10142	Asia/Kuala_Lumpur	peninsular Malaysia
 MY	+0133+11020	Asia/Kuching	Sabah & Sarawak
 MZ	-2558+03235	Africa/Maputo

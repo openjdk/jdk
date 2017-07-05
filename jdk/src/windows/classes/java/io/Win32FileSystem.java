@@ -424,7 +424,6 @@ class Win32FileSystem extends FileSystem {
                     }
                 }
             }
-            assert canonicalize0(path).equalsIgnoreCase(res);
             return res;
         }
     }

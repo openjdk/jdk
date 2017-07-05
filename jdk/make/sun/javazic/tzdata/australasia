@@ -368,10 +368,10 @@ Zone Pacific/Kwajalein	11:09:20 -	LMT	1901
 
 # Micronesia
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
-Zone Pacific/Truk	10:07:08 -	LMT	1901
-			10:00	-	TRUT			# Truk Time
-Zone Pacific/Ponape	10:32:52 -	LMT	1901		# Kolonia
-			11:00	-	PONT			# Ponape Time
+Zone Pacific/Chuuk	10:07:08 -	LMT	1901
+			10:00	-	CHUT			# Chuuk Time
+Zone Pacific/Pohnpei	10:32:52 -	LMT	1901		# Kolonia
+			11:00	-	PONT			# Pohnpei Time
 Zone Pacific/Kosrae	10:51:56 -	LMT	1901
 			11:00	-	KOST	1969 Oct	# Kosrae Time
 			12:00	-	KOST	1999

@@ -1141,6 +1141,13 @@ class UnixPath
             }
             result = result.resolve(element);
         }
+
+        // check file exists (without following links)
+        try {
+            UnixFileAttributes.get(result, false);
+        } catch (UnixException x) {
+            x.rethrowAsIOException(result);
+        }
         return result;
     }
 

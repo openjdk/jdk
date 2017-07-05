@@ -154,13 +154,6 @@ int methodDataKlass::oop_adjust_pointers(oop obj) {
 
 
 #ifndef SERIALGC
-void methodDataKlass::oop_copy_contents(PSPromotionManager* pm, oop obj) {
-  assert (obj->is_methodData(), "object must be method data");
-  methodDataOop m = methodDataOop(obj);
-  // This should never point into the young gen.
-  assert(!PSScavenge::should_scavenge(m->adr_method()), "Sanity");
-}
-
 void methodDataKlass::oop_push_contents(PSPromotionManager* pm, oop obj) {
   assert (obj->is_methodData(), "object must be method data");
   methodDataOop m = methodDataOop(obj);

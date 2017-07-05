@@ -975,6 +975,19 @@ uint PhaseChaitin::Split( uint maxlrg ) {
               insidx++;  // Reset iterator to skip USE side split
               continue;
             }
+
+            if (UseFPUForSpilling && n->is_Call() && !uup && !dup ) {
+              // The use at the call can force the def down so insert
+              // a split before the use to allow the def more freedom.
+              maxlrg = split_USE(def,b,n,inpidx,maxlrg,dup,false, splits,slidx);
+              // If it wasn't split bail
+              if (!maxlrg) {
+                return 0;
+              }
+              insidx++;  // Reset iterator to skip USE side split
+              continue;
+            }
+
             // Here is the logic chart which describes USE Splitting:
             // 0 = false or DOWN, 1 = true or UP
             //

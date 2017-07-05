@@ -89,7 +89,7 @@ define FullPath
 $(shell $(CYGPATH_CMD) $1 2> $(DEV_NULL))
 endef
 define OptFullPath
-$(shell if [ "$1" != "" -a -d "$1" ]; then $(CYGPATH_CMD) "$1"; else echo "$1"; fi)
+$(shell if [ "$1" != "" -a -d "$1" ]; then $(CYGPATH_CMD) "$1" 2> $(DEV_NULL); else echo "$1"; fi)
 endef
 else
 # Temporary until we upgrade to MKS 8.7, MKS pwd returns mixed mode path

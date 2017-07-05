@@ -2110,8 +2110,7 @@ void JavaThread::check_safepoint_and_suspend_for_native_trans(JavaThread *thread
     }
     if (f.id() == thread->must_deopt_id()) {
       thread->clear_must_deopt_id();
-      // Since we know we're safe to deopt the current state is a safe state
-      f.deoptimize(thread, true);
+      f.deoptimize(thread);
     } else {
       fatal("missed deoptimization!");
     }

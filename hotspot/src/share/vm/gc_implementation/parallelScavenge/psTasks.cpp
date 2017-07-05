@@ -144,29 +144,15 @@ void StealTask::do_it(GCTaskManager* manager, uint which) {
             "stacks should be empty at this point");
 
   int random_seed = 17;
-  if (pm->depth_first()) {
-    while(true) {
-      StarTask p;
-      if (PSPromotionManager::steal_depth(which, &random_seed, p)) {
-        TASKQUEUE_STATS_ONLY(pm->record_steal(p));
-        pm->process_popped_location_depth(p);
-        pm->drain_stacks_depth(true);
-      } else {
-        if (terminator()->offer_termination()) {
-          break;
-        }
-      }
-    }
-  } else {
-    while(true) {
-      oop obj;
-      if (PSPromotionManager::steal_breadth(which, &random_seed, obj)) {
-        obj->copy_contents(pm);
-        pm->drain_stacks_breadth(true);
-      } else {
-        if (terminator()->offer_termination()) {
-          break;
-        }
+  while(true) {
+    StarTask p;
+    if (PSPromotionManager::steal_depth(which, &random_seed, p)) {
+      TASKQUEUE_STATS_ONLY(pm->record_steal(p));
+      pm->process_popped_location_depth(p);
+      pm->drain_stacks_depth(true);
+    } else {
+      if (terminator()->offer_termination()) {
+        break;
       }
     }
   }
