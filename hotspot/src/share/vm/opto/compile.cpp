@@ -42,6 +42,7 @@
 #include "opto/chaitin.hpp"
 #include "opto/compile.hpp"
 #include "opto/connode.hpp"
+#include "opto/convertnode.hpp"
 #include "opto/divnode.hpp"
 #include "opto/escape.hpp"
 #include "opto/idealGraphPrinter.hpp"
@@ -3865,6 +3866,26 @@ int Compile::static_subtype_check(ciKlass* superk, ciKlass* subk) {
   }
 
   return SSC_full_test;
+}
+
+Node* Compile::conv_I2X_index(PhaseGVN *phase, Node* idx, const TypeInt* sizetype) {
+#ifdef _LP64
+  // The scaled index operand to AddP must be a clean 64-bit value.
+  // Java allows a 32-bit int to be incremented to a negative
+  // value, which appears in a 64-bit register as a large
+  // positive number.  Using that large positive number as an
+  // operand in pointer arithmetic has bad consequences.
+  // On the other hand, 32-bit overflow is rare, and the possibility
+  // can often be excluded, if we annotate the ConvI2L node with
+  // a type assertion that its value is known to be a small positive
+  // number.  (The prior range check has ensured this.)
+  // This assertion is used by ConvI2LNode::Ideal.
+  int index_max = max_jint - 1;  // array size is max_jint, index is one less
+  if (sizetype != NULL)  index_max = sizetype->_hi - 1;
+  const TypeLong* lidxtype = TypeLong::make(CONST64(0), index_max, Type::WidenMax);
+  idx = phase->transform(new ConvI2LNode(idx, lidxtype));
+#endif
+  return idx;
 }
 
 // The message about the current inlining is accumulated in

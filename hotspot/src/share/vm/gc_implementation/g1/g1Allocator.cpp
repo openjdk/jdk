@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,7 +120,7 @@ HeapWord* G1ParGCAllocator::allocate_direct_or_new_plab(InCSetState dest,
   if (word_sz * 100 < gclab_word_size * ParallelGCBufferWastePct) {
     G1ParGCAllocBuffer* alloc_buf = alloc_buffer(dest, context);
     add_to_alloc_buffer_waste(alloc_buf->words_remaining());
-    alloc_buf->retire(false /* end_of_gc */, false /* retain */);
+    alloc_buf->retire();
 
     HeapWord* buf = _g1h->par_allocate_during_gc(dest, gclab_word_size, context);
     if (buf == NULL) {
@@ -154,9 +154,7 @@ void G1DefaultParGCAllocator::retire_alloc_buffers() {
     G1ParGCAllocBuffer* const buf = _alloc_buffers[state];
     if (buf != NULL) {
       add_to_alloc_buffer_waste(buf->words_remaining());
-      buf->flush_stats_and_retire(_g1h->alloc_buffer_stats(state),
-                                  true /* end_of_gc */,
-                                  false /* retain */);
+      buf->flush_and_retire_stats(_g1h->alloc_buffer_stats(state));
     }
   }
 }

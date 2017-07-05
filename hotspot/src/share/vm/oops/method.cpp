@@ -1450,6 +1450,7 @@ void Method::sort_methods(Array<Method*>* methods, bool idempotent, bool set_idn
       for (int i = 0; i < length; i++) {
         Method* m = methods->at(i);
         m->set_method_idnum(i);
+        m->set_orig_method_idnum(i);
       }
     }
   }

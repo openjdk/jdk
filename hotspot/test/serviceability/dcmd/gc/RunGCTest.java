@@ -39,7 +39,7 @@ import com.oracle.java.testlibrary.dcmd.JMXExecutor;
  * @library /testlibrary
  * @build com.oracle.java.testlibrary.*
  * @build com.oracle.java.testlibrary.dcmd.*
- * @run testng/othervm -XX:+PrintGCDetails -Xloggc:RunGC.gclog RunGCTest
+ * @run testng/othervm -XX:+PrintGCDetails -Xloggc:RunGC.gclog -XX:-ExplicitGCInvokesConcurrent RunGCTest
  */
 public class RunGCTest {
     public void run(CommandExecutor executor) {
