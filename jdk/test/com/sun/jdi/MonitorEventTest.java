@@ -22,16 +22,14 @@
  */
 
 /**
- *  @test
- *  @bug 4401399
- *  @summary Simple basic test of jdi Monitor request and event.
+ * @test
+ * @bug 4401399
+ * @summary Simple basic test of jdi Monitor request and event.
+ * @author Swamy Venkataramanappa
  *
- *  @author Swamy Venkataramanappa
- *
- *  @modules jdk.jdi
- *  @run build TestScaffold VMConnection TargetListener TargetAdapter
- *  @run compile -g MonitorEventTest.java
- *  @run driver MonitorEventTest
+ * @run build TestScaffold VMConnection TargetListener TargetAdapter
+ * @run compile -g MonitorEventTest.java
+ * @run driver MonitorEventTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

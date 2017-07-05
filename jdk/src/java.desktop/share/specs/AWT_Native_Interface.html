@@ -1,0 +1,776 @@
+<!--
+ Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+
+ This code is free software; you can redistribute it and/or modify it
+ under the terms of the GNU General Public License version 2 only, as
+ published by the Free Software Foundation.
+
+ This code is distributed in the hope that it will be useful, but WITHOUT
+ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ version 2 for more details (a copy is included in the LICENSE file that
+ accompanied this code).
+
+ You should have received a copy of the GNU General Public License version
+ 2 along with this work; if not, write to the Free Software Foundation,
+ Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+
+ Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ or visit www.oracle.com if you need additional information or have any
+ questions.
+-->
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html lang="en-US" xmlns="http://www.w3.org/1999/xhtml" xml:lang=
+"en-US">
+<head>
+<title>Java AWT Native Interface Specification and Guide</title>
+</head>
+<body>
+<h2>The Java AWT Native Interface Specification and Guide</h2>
+<h3>Introduction</h3>
+<p>The Java AWT Native Interface (JAWT) comprises a small set of native
+(eg C language-based) APIs that provide a standard supported way
+for interaction between Java API windows and surfaces, and
+platform native API windows and surfaces.
+Non-Java libraries may then render to a Java owned window.
+<p>
+Note: in this document the terms "Java AWT Native Interface",
+"AWT Native Interface" and "JAWT" are interchangeable and
+refer to this same specification.
+<p>
+The fundamental obstacle to native rendering without JAWT is that
+is that the rendering code cannot identify where to draw.
+The native code needs access to information about a Java
+drawing surface (such as a handle to the underlying native ID of a
+<tt>Canvas</tt>), but cannot get it.</p>
+Without that information (ie without JAWT) an application could
+use native rendering only by creating its own top-level window
+not shared at all with Java. This is unacceptable for most uses.
+Except for usage via JAWT, this is considered to be entirely
+internal to the Java platform implementation: private, unsupported
+and undocumented.
+<p>
+JAWT should be supported in all headful implementations
+where technically possible although this is not enforced by the JCK.
+There is a platform-specific and a platform
+independent portion to the API, to account for the differing
+data structures and requirements of each platform.
+This document specifies the platform independent portions and
+also documents the platform dependent portions for the Oracle JDK
+supported desktop operating environments.
+For AWT the term platform is less tied to the underlying operating
+system than it is to the desktop windowing environment.
+<p>
+Reasons for using the AWT Native Interface include
+<ul>
+<li>Use of a 3rd party native library not available in Java
+<li>A temporary porting aid before converting legacy code to Java
+<li>Rendering performance available only to native hardware accelerated APIs
+<li>Interoperation with another toolkit
+</ul>
+<p>
+Drawbacks include
+<ul>
+<li>A more complex application implementation, eg for painting
+<li>Potential for application instability if the native library does
+not interoperate properly with AWT.
+<li>Increased application delivery complexity - per platform binaries
+</ul>
+The header file <a href="#jawt.h"> "jawt.h"</a>
+in the Appendix fully specifies the APIs provided by JAWT.
+<p>
+An example illustrating how easy it is to use the AWT Native Interface
+is presented and discussed later in this document.</p>
+
+<p><b>JAWT usage depends on JNI</b></p>
+<p>The definition of Java Standard Edition includes JNI, the Java
+Native Interface. Many Java developers will never need to use it,
+but the interface is the only standard supported way for a Java
+language program to interact directly with
+application code that has been compiled to the native machine
+instructions for the host processor architecture.
+JNI is used where ever there is a need for mixed languages.
+These are by no means limited to cases like AWT. For example, you
+could use JNI to integrate with native code that communicates with
+a peripheral device, such as a scanner, connected to a system via a
+USB port.</p>
+<p>So JNI is general enough to be used to access almost any
+sort of native library.
+The rest of this document assumes a familiarity with how
+to use JNI.
+
+<p><b>How to use JAWT </b></p>
+<p>In this section we describe the most common usage of the AWT
+Native Interface &mdash; overriding the <tt>paint</tt> method to
+direct drawing operations to a native rendering library which then
+queries the Java VM to determine the information it needs in order
+to render. Note, however, that any native code may use the AWT
+Native Interface to learn about a target drawing surface, not just
+code in a <tt>paint</tt> method.</p>
+<p>The first step in hooking up a native rendering library to a
+Java <tt>Canvas</tt> is to define a new class that extends
+<tt>Canvas</tt> and overrides the <tt>paint</tt> method. The Java
+system routes all drawing operations for a <tt>Canvas</tt> object
+through the <tt>paint</tt> method, as it does for all other GUI
+objects. Canvas is a good candidate for the rendering surface as
+it does not have any content as a Button would.</p>
+<p>The new <tt>paint</tt> method, to be implemented in the native
+rendering library, must be declared as <tt>public native void</tt>
+, and the native library itself is loaded at runtime by including a
+call to <tt>System.loadLibrary( &quot;myRenderingLib&quot;)</tt>in
+the <tt>static</tt> block of the class. The <tt>myRenderingLib</tt>
+name is used for the native shared library; for Linux or the Solaris
+operating environment, the actual name for the library file on disk
+is <tt>libmyRenderingLib.so</tt> .</p>
+<p>Here is a simple example of such a class:</p>
+<pre>
+import java.awt.*;
+import java.awt.event.*;
+
+public class MyCanvas extends Canvas {
+    static {
+        System.loadLibrary("myRenderingLib");
+    }
+    public native void paint(Graphics g);
+
+    public static void main(String[] args) {
+        Frame f = new Frame();
+        f.setBounds(0, 0, 500, 110);
+        f.add(new MyCanvas());
+        f.addWindowListener( new WindowAdapter() {
+            public void windowClosing(WindowEvent ev) {
+                System.exit(0);
+            }
+        } );
+        f.show();
+    }
+}
+<br />
+</pre>
+<p>Note that this class has a <tt>main</tt> method that can be used
+to run this code as an application for testing purposes.</p>
+<p>The next step is to run the <tt>javah</tt> tool on the
+<tt>MyCanvas</tt> class file above to generate a C/C++ header file
+that describes the interface to the native <tt>paint</tt> method
+that Java expects to be used. <tt>javah</tt> is a standard tool
+included with the JDK. NB: <tt>javac -h outputdir</tt> may also be used.</p>
+
+<p>The final step &#173; and the most interesting one &#173; is to
+write the native rendering method, with an interface that conforms
+to the header file that <tt>javah</tt> generated, and build it as a
+standard shared library (called <tt>myRenderingLib</tt> in the
+above example) by linking it, against the appropriate JDK provided
+$JDK_HOME/lib/$JAWT_LIB library for the target platform.
+Where JAWT_LIB has the base name "jawt" and follows platform
+shared object naming rules. i.e.:
+<ul>
+<li>Windows: jawt.dll
+<li>MacOS: libjawt.dylib
+<li>Linux: libjawt.so
+<li>Solaris: libjawt.so
+</ul>
+
+This code will call back to the Java virtual machine to
+get the drawing surface information it needs to access the
+<tt>MyCanvas</tt> peer. Once this information is available, the
+code can draw directly to <tt>MyCanvas</tt> using standard drawing
+routines supplied by the underlying operating system.</p>
+<p>Here is sample source code for a native <tt>paint</tt> method
+designed for use in a X11-based drawing environment (Linux
+or Solaris) and a Java VM where the AWT Native Interface is present:</p>
+<pre>
+#include "MyCanvas.h"
+#include "jawt_md.h"
+
+/*
+ * Class:     MyCanvas
+ * Method:    paint
+ * Signature: (Ljava/awt/Graphics;)V
+ */
+JNIEXPORT void JNICALL Java_MyCanvas_paint
+(JNIEnv* env, jobject canvas, jobject graphics)
+{
+    JAWT awt;
+    JAWT_DrawingSurface* ds;
+    JAWT_DrawingSurfaceInfo* dsi;
+    JAWT_X11DrawingSurfaceInfo* dsi_x11;
+    jboolean result;
+    jint lock;
+    GC gc;
+
+    short       i;
+    char        *testString = "^^^ rendered from native code ^^^";
+
+    /* Get the AWT */
+    awt.version = JAWT_VERSION_9;
+    if (JAWT_GetAWT(env, &amp;awt) == JNI_FALSE) {
+        printf("AWT Not found\n");
+        return;
+    }
+
+    /* Get the drawing surface */
+    ds = awt.GetDrawingSurface(env, canvas);
+    if (ds == NULL) {
+        printf("NULL drawing surface\n");
+        return;
+    }
+
+    /* Lock the drawing surface */
+    lock = ds-&gt;Lock(ds);
+    if((lock &amp; JAWT_LOCK_ERROR) != 0) {
+        printf("Error locking surface\n");
+        awt.FreeDrawingSurface(ds);
+        return;
+    }
+
+    /* Get the drawing surface info */
+    dsi = ds-&gt;GetDrawingSurfaceInfo(ds);
+    if (dsi == NULL) {
+        printf("Error getting surface info\n");
+        ds-&gt;Unlock(ds);
+        awt.FreeDrawingSurface(ds);
+        return;
+    }
+
+    /* Get the platform-specific drawing info */
+    dsi_x11 = (JAWT_X11DrawingSurfaceInfo*)dsi-&gt;platformInfo;
+
+
+    /* Now paint */
+    gc = XCreateGC(dsi_x11-&gt;display, dsi_x11-&gt;drawable, 0, 0);
+    XSetBackground(dsi_x11-&gt;display, gc, 0);
+    for (i=0; i&lt;36;i++)
+    {
+        XSetForeground(dsi_x11-&gt;display, gc, 10*i);
+        XFillRectangle(dsi_x11-&gt;display, dsi_x11-&gt;drawable, gc,
+                        10*i, 5, 90, 90);
+    }
+    XSetForeground(dsi_x11-&gt;display, gc, 155);
+    XDrawImageString(dsi_x11-&gt;display, dsi_x11-&gt;drawable, gc,
+                        100, 110, testString, strlen(testString));
+    XFreeGC(dsi_x11-&gt;display, gc);
+
+
+    /* Free the drawing surface info */
+    ds-&gt;FreeDrawingSurfaceInfo(dsi);
+
+    /* Unlock the drawing surface */
+    ds-&gt;Unlock(ds);
+
+    /* Free the drawing surface */
+    awt.FreeDrawingSurface(ds);
+}
+</pre>
+<p>The key data structure here is <tt>JAWT</tt> , which is defined
+in <tt>jawt.h</tt> (included by <tt>jawt_md.h)</tt> ; it provides
+access to all the information the native code needs to get the job
+done. The first part of the native method is boilerplate: it
+populates the <tt>JAWT</tt> structure, gets a
+<tt>JAWT_DrawingSurface</tt> structure, locks the surface (only one
+drawing engine at a time, please!), then gets a
+<tt>JAWT_DrawingSurfaceInfo</tt> structure that contains a pointer
+(in the <tt>platformInfo</tt> field) to the necessary
+platform-specific drawing information. It also includes the
+bounding rectangle of the drawing surface and the current clipping
+region.</p>
+<p>The structure of the information pointed to by
+<tt>platformInfo</tt> is defined in a machine-dependent header file
+called <tt>jawt_md.h</tt>. For X11 drawing, it includes
+information about the X11 display and X11 drawable associated with
+<tt>MyCanvas</tt>. After the drawing operations are completed,
+there is more boilerplate code as <tt>JAWT_DrawingSurfaceInfo</tt>
+is freed and <tt>JAWT_DrawingSurface</tt> is unlocked and
+freed.</p>
+<p>The corresponding code for the GDI API on the Microsoft Windows platform would
+be structured similarly, but would include the version of
+<tt>jawt_md.h</tt> for Microsoft Windows and the structure located
+in the <tt>platformInfo</tt> field of drawing surface info would be
+cast as a <tt>JAWT_Win32DrawingSurfaceInfo*</tt> . And, of course,
+the actual drawing operations would need to be changed to those
+appropriate for the Microsoft Windows platform.
+The same also for MacOS.
+</p>
+<p><b>Summary</b></p>
+<p>The ability to draw directly into a Java <tt>Canvas</tt> from a
+native code library is extremely useful for developers planning to
+migrate a legacy software system to Java, especially one that
+includes a high-performance rendering engine. It makes it much
+easier to migrate in stages, leaving performance-sensitive
+rendering code alone, while other less-sensitive portions of code
+are converted to Java. The result can be a modern Java-centric
+application, providing the benefit of portability and development
+efficiency, but one that does not sacrifice an investment in
+performance of a key piece of native code.</p>
+<p><b>References</b></p>
+<p>The definitive reference to the Java Native Interface is <i>The
+Java Native Interface: Programmer's Guide and Specification</i> by
+Sheng Liang. This book was published in June
+1999 by Addison-Wesley. The ISBN is 0-201-32577-2.</p>
+<p><b>Appendix</b></p>
+<p><b>Header Files for jawt.h and jawt_md.h</b></p>
+<a name="jawt.h"></a>
+<p>jawt.h</p>
+<pre>
+#ifndef _JAVASOFT_JAWT_H_
+#define _JAVASOFT_JAWT_H_
+
+#include "jni.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/*
+ * AWT native interface.
+ *
+ * The AWT native interface allows a native C or C++ application a means
+ * by which to access native structures in AWT.  This is to facilitate moving
+ * legacy C and C++ applications to Java and to target the needs of the
+ * developers who need to do their own native rendering to canvases
+ * for performance or other reasons.
+ *
+ * Conversely it also provides mechanisms for an application which already
+ * has a native window to provide that to AWT for AWT rendering.
+ *
+ * Since every platform may be different in its native data structures
+ * and APIs for windowing systems the application must necessarily
+ * provided per-platform source and compile and deliver per-platform
+ * native code  to use this API.
+ *
+ * These interfaces are not part of the Java SE specification and
+ * a VM is not required to implement this API. However it is strongly
+ * recommended that all implementations which support headful AWT
+ * also support these interfaces.
+ *
+ */
+
+/*
+ * AWT Native Drawing Surface (JAWT_DrawingSurface).
+ *
+ * For each platform, there is a native drawing surface structure.  This
+ * platform-specific structure can be found in jawt_md.h.  It is recommended
+ * that additional platforms follow the same model.  It is also recommended
+ * that VMs on all platforms support the existing structures in jawt_md.h.
+ *
+ *******************
+ * EXAMPLE OF USAGE:
+ *******************
+ *
+ * On Microsoft Windows, a programmer wishes to access the HWND of a canvas
+ * to perform native rendering into it.  The programmer has declared the
+ * paint() method for their canvas subclass to be native:
+ *
+ *
+ * MyCanvas.java:
+ *
+ * import java.awt.*;
+ *
+ * public class MyCanvas extends Canvas {
+ *
+ *     static {
+ *         System.loadLibrary("mylib");
+ *     }
+ *
+ *     public native void paint(Graphics g);
+ * }
+ *
+ *
+ * myfile.c:
+ *
+ * #include "jawt_md.h"
+ * #include &lt;assert.h&gt;
+ *
+ * JNIEXPORT void JNICALL
+ * Java_MyCanvas_paint(JNIEnv* env, jobject canvas, jobject graphics)
+ * {
+ *     JAWT awt;
+ *     JAWT_DrawingSurface* ds;
+ *     JAWT_DrawingSurfaceInfo* dsi;
+ *     JAWT_Win32DrawingSurfaceInfo* dsi_win;
+ *     jboolean result;
+ *     jint lock;
+ *
+ *     // Get the AWT. Request version 9 to access features in that release.
+ *     awt.version = JAWT_VERSION_9;
+ *     result = JAWT_GetAWT(env, &amp;awt);
+ *     assert(result != JNI_FALSE);
+ *
+ *     // Get the drawing surface
+ *     ds = awt.GetDrawingSurface(env, canvas);
+ *     assert(ds != NULL);
+ *
+ *     // Lock the drawing surface
+ *     lock = ds-&gt;Lock(ds);
+ *     assert((lock &amp; JAWT_LOCK_ERROR) == 0);
+ *
+ *     // Get the drawing surface info
+ *     dsi = ds-&gt;GetDrawingSurfaceInfo(ds);
+ *
+ *     // Get the platform-specific drawing info
+ *     dsi_win = (JAWT_Win32DrawingSurfaceInfo*)dsi-&gt;platformInfo;
+ *
+ *     //////////////////////////////
+ *     // !!! DO PAINTING HERE !!! //
+ *     //////////////////////////////
+ *
+ *     // Free the drawing surface info
+ *     ds-&gt;FreeDrawingSurfaceInfo(dsi);
+ *
+ *     // Unlock the drawing surface
+ *     ds-&gt;Unlock(ds);
+ *
+ *     // Free the drawing surface
+ *     awt.FreeDrawingSurface(ds);
+ * }
+ *
+ */
+
+/*
+ * JAWT_Rectangle
+ * Structure for a native rectangle.
+ */
+typedef struct jawt_Rectangle {
+    jint x;
+    jint y;
+    jint width;
+    jint height;
+} JAWT_Rectangle;
+
+struct jawt_DrawingSurface;
+
+/*
+ * JAWT_DrawingSurfaceInfo
+ * Structure for containing the underlying drawing information of a component.
+ */
+typedef struct jawt_DrawingSurfaceInfo {
+    /*
+     * Pointer to the platform-specific information.  This can be safely
+     * cast to a JAWT_Win32DrawingSurfaceInfo on Microsoft Windows or a
+     * JAWT_X11DrawingSurfaceInfo on Linux and Solaris. On MacOS this is a
+     * pointer to a NSObject that conforms to the JAWT_SurfaceLayers protocol.
+     * See jawt_md.h for details.
+     */
+    void* platformInfo;
+    /* Cached pointer to the underlying drawing surface */
+    struct jawt_DrawingSurface* ds;
+    /* Bounding rectangle of the drawing surface */
+    JAWT_Rectangle bounds;
+    /* Number of rectangles in the clip */
+    jint clipSize;
+    /* Clip rectangle array */
+    JAWT_Rectangle* clip;
+} JAWT_DrawingSurfaceInfo;
+
+#define JAWT_LOCK_ERROR                 0x00000001
+#define JAWT_LOCK_CLIP_CHANGED          0x00000002
+#define JAWT_LOCK_BOUNDS_CHANGED        0x00000004
+#define JAWT_LOCK_SURFACE_CHANGED       0x00000008
+
+/*
+ * JAWT_DrawingSurface
+ * Structure for containing the underlying drawing information of a component.
+ * All operations on a JAWT_DrawingSurface MUST be performed from the same
+ * thread as the call to GetDrawingSurface.
+ */
+typedef struct jawt_DrawingSurface {
+    /* Cached reference to the Java environment of the calling thread.
+     * If Lock(), Unlock(), GetDrawingSurfaceInfo() or
+     * FreeDrawingSurfaceInfo() are called from a different thread,
+     * this data member should be set before calling those functions.
+     */
+    JNIEnv* env;
+    /* Cached reference to the target object */
+    jobject target;
+    /*
+     * Lock the surface of the target component for native rendering.
+     * When finished drawing, the surface must be unlocked with
+     * Unlock().  This function returns a bitmask with one or more of the
+     * following values:
+     *
+     * JAWT_LOCK_ERROR - When an error has occurred and the surface could not
+     * be locked.
+     *
+     * JAWT_LOCK_CLIP_CHANGED - When the clip region has changed.
+     *
+     * JAWT_LOCK_BOUNDS_CHANGED - When the bounds of the surface have changed.
+     *
+     * JAWT_LOCK_SURFACE_CHANGED - When the surface itself has changed
+     */
+    jint (JNICALL *Lock)
+        (struct jawt_DrawingSurface* ds);
+    /*
+     * Get the drawing surface info.
+     * The value returned may be cached, but the values may change if
+     * additional calls to Lock() or Unlock() are made.
+     * Lock() must be called before this can return a valid value.
+     * Returns NULL if an error has occurred.
+     * When finished with the returned value, FreeDrawingSurfaceInfo must be
+     * called.
+     */
+    JAWT_DrawingSurfaceInfo* (JNICALL *GetDrawingSurfaceInfo)
+        (struct jawt_DrawingSurface* ds);
+    /*
+     * Free the drawing surface info.
+     */
+    void (JNICALL *FreeDrawingSurfaceInfo)
+        (JAWT_DrawingSurfaceInfo* dsi);
+    /*
+     * Unlock the drawing surface of the target component for native rendering.
+     */
+    void (JNICALL *Unlock)
+        (struct jawt_DrawingSurface* ds);
+} JAWT_DrawingSurface;
+
+/*
+ * JAWT
+ * Structure for containing native AWT functions.
+ */
+typedef struct jawt {
+    /*
+     * Version of this structure.  This must always be set before
+     * calling JAWT_GetAWT(). It affects the functions returned.
+     * Must be one of the known pre-defined versions.
+     */
+    jint version;
+    /*
+     * Return a drawing surface from a target jobject.  This value
+     * may be cached.
+     * Returns NULL if an error has occurred.
+     * Target must be a java.awt.Component (should be a Canvas
+     * or Window for native rendering).
+     * FreeDrawingSurface() must be called when finished with the
+     * returned JAWT_DrawingSurface.
+     */
+    JAWT_DrawingSurface* (JNICALL *GetDrawingSurface)
+        (JNIEnv* env, jobject target);
+    /*
+     * Free the drawing surface allocated in GetDrawingSurface.
+     */
+    void (JNICALL *FreeDrawingSurface)
+        (JAWT_DrawingSurface* ds);
+    /*
+     * Since 1.4
+     * Locks the entire AWT for synchronization purposes
+     */
+    void (JNICALL *Lock)(JNIEnv* env);
+    /*
+     * Since 1.4
+     * Unlocks the entire AWT for synchronization purposes
+     */
+    void (JNICALL *Unlock)(JNIEnv* env);
+    /*
+     * Since 1.4
+     * Returns a reference to a java.awt.Component from a native
+     * platform handle.  On Windows, this corresponds to an HWND;
+     * on Solaris and Linux, this is a Drawable.  For other platforms,
+     * see the appropriate machine-dependent header file for a description.
+     * The reference returned by this function is a local
+     * reference that is only valid in this environment.
+     * This function returns a NULL reference if no component could be
+     * found with matching platform information.
+     */
+    jobject (JNICALL *GetComponent)(JNIEnv* env, void* platformInfo);
+
+    /**
+     * Since 9
+     * Creates a java.awt.Frame placed in a native container. Container is
+     * referenced by the native platform handle. For example on Windows this
+     * corresponds to an HWND. For other platforms, see the appropriate
+     * machine-dependent header file for a description. The reference returned
+     * by this function is a local reference that is only valid in this
+     * environment. This function returns a NULL reference if no frame could be
+     * created with matching platform information.
+     */
+    jobject (JNICALL *CreateEmbeddedFrame) (JNIEnv *env, void* platformInfo);
+
+    /**
+     * Since 9
+     * Moves and resizes the embedded frame. The new location of the top-left
+     * corner is specified by x and y parameters relative to the native parent
+     * component. The new size is specified by width and height.
+     *
+     * The embedded frame should be created by CreateEmbeddedFrame() method, or
+     * this function will not have any effect.
+     *
+     * java.awt.Component.setLocation() and java.awt.Component.setBounds() for
+     * EmbeddedFrame really don't move it within the native parent. These
+     * methods always locate the embedded frame at (0, 0) for backward
+     * compatibility. To allow moving embedded frames this method was
+     * introduced, and it works just the same way as setLocation() and
+     * setBounds() for usual, non-embedded components.
+     *
+     * Using usual get/setLocation() and get/setBounds() together with this new
+     * method is not recommended.
+     */
+    void (JNICALL *SetBounds) (JNIEnv *env, jobject embeddedFrame,
+            jint x, jint y, jint w, jint h);
+    /**
+     * Since 9
+     * Synthesize a native message to activate or deactivate an EmbeddedFrame
+     * window depending on the value of parameter doActivate, if "true"
+     * activates the window; otherwise, deactivates the window.
+     *
+     * The embedded frame should be created by CreateEmbeddedFrame() method, or
+     * this function will not have any effect.
+     */
+    void (JNICALL *SynthesizeWindowActivation) (JNIEnv *env,
+            jobject embeddedFrame, jboolean doActivate);
+} JAWT;
+
+/*
+ * Get the AWT native structure.  This function returns JNI_FALSE if
+ * an error occurs.
+ */
+_JNI_IMPORT_OR_EXPORT_
+jboolean JNICALL JAWT_GetAWT(JNIEnv* env, JAWT* awt);
+
+/*
+ * Specify one of these constants as the JAWT.version
+ * Specifying an earlier version will limit the available functions to
+ * those provided in that earlier version of JAWT.
+ * See the "Since" note on each API. Methods with no "Since"
+ * may be presumed to be present in JAWT_VERSION_1_3.
+ */
+#define JAWT_VERSION_1_3 0x00010003
+#define JAWT_VERSION_1_4 0x00010004
+#define JAWT_VERSION_1_7 0x00010007
+#define JAWT_VERSION_9 0x00090000
+
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
+
+#endif /* !_JAVASOFT_JAWT_H_ */
+
+</pre>
+<p>jawt_md.h (Linux/Solaris/X11 operating environment version)</p>
+<pre>
+#ifndef _JAVASOFT_JAWT_MD_H_
+#define _JAVASOFT_JAWT_MD_H_
+
+#include &lt;X11/Xlib.h&gt;
+#include &lt;X11/Xutil.h&gt;
+#include &lt;X11/Intrinsic.h&gt;
+#include "jawt.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/*
+ * X11-specific declarations for AWT native interface.
+ * See notes in jawt.h for an example of use.
+ */
+typedef struct jawt_X11DrawingSurfaceInfo {
+    Drawable drawable;
+    Display* display;
+    VisualID visualID;
+    Colormap colormapID;
+    int depth;
+} JAWT_X11DrawingSurfaceInfo;
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* !_JAVASOFT_JAWT_MD_H_ */
+</pre>
+<p>jawt_md.h (Microsoft Windows version)</p>
+<pre>
+#ifndef _JAVASOFT_JAWT_MD_H_
+#define _JAVASOFT_JAWT_MD_H_
+
+#include &lt;windows.h&gt;
+#include "jawt.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/*
+ * Microsoft Windows specific declarations for AWT native interface.
+ * See notes in jawt.h for an example of use.
+ */
+typedef struct jawt_Win32DrawingSurfaceInfo {
+    /* Native window, DDB, or DIB handle */
+    union {
+        HWND hwnd;
+        HBITMAP hbitmap;
+        void* pbits;
+    };
+    /*
+     * This HDC should always be used instead of the HDC returned from
+     * BeginPaint() or any calls to GetDC().
+     */
+    HDC hdc;
+    HPALETTE hpalette;
+} JAWT_Win32DrawingSurfaceInfo;
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* !_JAVASOFT_JAWT_MD_H_ */
+</pre>
+<p>jawt_md.h (MacOS version)</p>
+<pre>
+#ifndef _JAVASOFT_JAWT_MD_H_
+#define _JAVASOFT_JAWT_MD_H_
+
+#include "jawt.h"
+
+#ifdef __OBJC__
+#import <QuartzCore/CALayer.h>
+#endif
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/*
+ * MacOS specific declarations for AWT native interface.
+ * See notes in jawt.h for an example of use.
+ */
+
+/*
+ * When calling JAWT_GetAWT with a JAWT version less than 1.7, you must pass this
+ * flag or you will not be able to get a valid drawing surface and JAWT_GetAWT will
+ * return false. This is to maintain compatibility with applications that used the
+ * interface with Java 6 which had multiple rendering models. This flag is not necessary
+ * when JAWT version 1.7 or greater is used as this is the only supported rendering mode.
+ *
+ * Example:
+ *   JAWT awt;
+ *   awt.version = JAWT_VERSION_1_4 | JAWT_MACOSX_USE_CALAYER;
+ *   jboolean success = JAWT_GetAWT(env, &awt);
+ */
+#define JAWT_MACOSX_USE_CALAYER 0x80000000
+
+/*
+ * When the native Cocoa toolkit is in use, the pointer stored in
+ * JAWT_DrawingSurfaceInfo->platformInfo points to a NSObject that conforms to the
+ * JAWT_SurfaceLayers protocol. Setting the layer property of this object will cause the
+ * specified layer to be overlaid on the Components rectangle. If the window the
+ * Component belongs to has a CALayer attached to it, this layer will be accessible via
+ * the windowLayer property.
+ */
+#ifdef __OBJC__
+@protocol JAWT_SurfaceLayers
+@property (readwrite, retain) CALayer *layer;
+@property (readonly) CALayer *windowLayer;
+@end
+#endif
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* !_JAVASOFT_JAWT_MD_H_ */
+</pre>
+<!-- Body text ends here -->
+</body>
+</html>

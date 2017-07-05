@@ -35,7 +35,7 @@ import jdk.jshell.Wrap.CompoundWrap;
  * The outer wrap for a set of snippets wrapped in a generated class
  * @author Robert Field
  */
-public class OuterSnippetsClassWrap extends OuterWrap {
+class OuterSnippetsClassWrap extends OuterWrap {
 
     private final String className;
     private final LinkedHashMap<Wrap, Snippet> wrapToSnippet;

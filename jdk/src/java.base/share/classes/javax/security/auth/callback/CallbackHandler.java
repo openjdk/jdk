@@ -63,6 +63,7 @@ package javax.security.auth.callback;
  * <p> All default handler implementations must provide a public
  * zero-argument constructor.
  *
+ * @since 1.4
  * @see java.security.Security security properties
  */
 public interface CallbackHandler {

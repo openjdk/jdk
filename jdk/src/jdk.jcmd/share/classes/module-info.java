@@ -23,6 +23,13 @@
  * questions.
  */
 
+/**
+ * Defines tools for diagnostics and troubleshooting a JVM,
+ * including the jcmd, jps, jstat and other diagnostics tools.
+ *
+ * @moduleGraph
+ * @since 9
+ */
 module jdk.jcmd {
     requires jdk.attach;
     requires jdk.internal.jvmstat;
