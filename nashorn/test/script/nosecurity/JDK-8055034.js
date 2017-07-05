@@ -47,8 +47,12 @@ var nashornJarDir = nashornJar.parentFile.absolutePath;
 
 // we want to use nashorn.jar passed and not the one that comes with JRE
 var jjsCmd = javahome + "/../bin/jjs";
-jjsCmd += " -J-Djava.ext.dirs=" + nashornJarDir;
 jjsCmd = jjsCmd.toString().replaceAll(/\//g, File.separater);
+if (! new File(jjsCmd).isFile()) {
+    jjsCmd = javahome + "/bin/jjs";
+    jjsCmd = jjsCmd.toString().replaceAll(/\//g, File.separater);
+}
+jjsCmd += " -J-Xbootclasspath/a:" + nashornJarDir;
 
 $EXEC(jjsCmd, "var x = Object.create(null);\nx;\nprint('PASSED');\nexit(0)");
 

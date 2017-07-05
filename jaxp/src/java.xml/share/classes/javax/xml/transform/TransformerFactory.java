@@ -62,7 +62,7 @@ public abstract class TransformerFactory {
      * property.
      * </li>
      * <li>
-     * Use the properties file "lib/jaxp.properties" in the JRE directory.
+     * Use the properties file "conf/jaxp.properties" in the JRE directory.
      * This configuration file is in standard <code>java.util.Properties
      * </code> format and contains the fully qualified name of the
      * implementation class with the key being the system property defined

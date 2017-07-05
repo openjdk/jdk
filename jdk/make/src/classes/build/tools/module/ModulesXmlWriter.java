@@ -54,7 +54,6 @@ public final class ModulesXmlWriter {
     private static final String DEPEND    = "depend";
     private static final String EXPORT    = "export";
     private static final String TO        = "to";
-    private static final String INCLUDE   = "include";
     private static final QName  REEXPORTS = new QName("re-exports");
 
     private static void writeXML(Set<Module> modules, Path path)
@@ -143,8 +142,6 @@ public final class ModulesXmlWriter {
                        .filter(e -> !e.getValue().isEmpty())
                        .sorted(Map.Entry.comparingByKey())
                        .forEach(e -> writeExportElement(xtw, e.getKey(), e.getValue(), depth+1));
-            m.packages().stream().sorted()
-                        .forEach(p -> writeElement(xtw, INCLUDE, p, depth+1));
             writeEndElement(xtw, depth);
         } catch (XMLStreamException e) {
             throw new RuntimeException(e);

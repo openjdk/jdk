@@ -30,6 +30,7 @@ import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileReader;
+import java.io.InputStream;
 import java.io.IOException;
 import java.io.Serializable;
 import java.security.AccessController;
@@ -213,8 +214,11 @@ public final class Currency implements Serializable {
             @Override
             public Void run() {
                 try {
-                    try (DataInputStream dis = new DataInputStream(
-                             new BufferedInputStream(getClass().getResourceAsStream("/java/util/currency.data")))) {
+                    try (InputStream in = getClass().getResourceAsStream("/java/util/currency.data")) {
+                        if (in == null) {
+                            throw new InternalError("Currency data not found");
+                        }
+                        DataInputStream dis = new DataInputStream(new BufferedInputStream(in));
                         if (dis.readInt() != MAGIC_NUMBER) {
                             throw new InternalError("Currency data is possibly corrupted");
                         }

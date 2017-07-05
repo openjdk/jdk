@@ -46,7 +46,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJAAS, \
     SRC := $(JDK_TOPDIR)/src/jdk.security.auth/$(OPENJDK_TARGET_OS_API_DIR)/native/libjaas, \
     LANG := C, \
     OPTIMIZATION := LOW, \
-    CFLAGS := $(CFLAGS_JDKLIB) -I$(JDK_OUTPUTDIR)/gensrc_headers/jdk.security.auth, \
+    CFLAGS := $(CFLAGS_JDKLIB) -I$(SUPPORT_OUTPUTDIR)/headers/jdk.security.auth, \
     MAPFILE := $(LIBJAAS_MAPFILE), \
     LDFLAGS := $(filter-out -ljava, $(LDFLAGS_JDKLIB)) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
@@ -59,17 +59,11 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJAAS, \
         -D "JDK_FNAME=$(LIBJAAS_NAME).dll" \
         -D "JDK_INTERNAL_NAME=$(LIBJAAS_NAME)" \
         -D "JDK_FTYPE=0x2L", \
-    OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/libjaas, \
+    OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjaas, \
     DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
 
-$(BUILD_LIBJAAS): $(BUILD_LIBJAVA)
+$(BUILD_LIBJAAS): $(call FindLib, java.base, java)
 
-SECURITY_JAAS_LIBRARIES += $(BUILD_LIBJAAS)
+TARGETS += $(BUILD_LIBJAAS)
 
 ################################################################################
-
-jdk.security.auth: $(SECURITY_JAAS_LIBRARIES)
-
-all: jdk.security.auth
-
-.PHONY: all jdk.security.auth

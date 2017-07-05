@@ -81,7 +81,7 @@ final class JSSecurityManager {
         @param properties The properties bundle to store the values of the
         properties file.
         @param filename The filename of the properties file to load. This
-        filename is interpreted as relative to the subdirectory "lib" in
+        filename is interpreted as relative to the subdirectory "conf" in
         the JRE directory.
      */
     static void loadProperties(final Properties properties,
@@ -117,7 +117,7 @@ final class JSSecurityManager {
             if (fname == null) {
                 throw new Error("Can't find java.home ??");
             }
-            File f = new File(fname, "lib");
+            File f = new File(fname, "conf");
             f = new File(f, filename);
             fname = f.getCanonicalPath();
             InputStream in = new FileInputStream(fname);

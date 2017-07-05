@@ -32,12 +32,6 @@ HPROF_SRC := $(JDK_TOPDIR)/src/jdk.hprof.agent/share/native/libhprof/jvm.hprof.t
 $(LIB_DST_DIR)/jvm.hprof.txt: $(HPROF_SRC)
 	$(call install-file)
 
-HPROF_CONF_FILES := $(LIB_DST_DIR)/jvm.hprof.txt
+TARGETS := $(LIB_DST_DIR)/jvm.hprof.txt
 
 ################################################################################
-
-jdk.hprof.agent: $(HPROF_CONF_FILES)
-
-all: jdk.hprof.agent
-
-.PHONY: all jdk.hprof.agent

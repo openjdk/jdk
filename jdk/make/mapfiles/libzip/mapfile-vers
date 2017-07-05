@@ -72,6 +72,7 @@ SUNWprivate_1.1 {
 		ZIP_FindEntry;
 		ZIP_GetEntry;
 		ZIP_GetNextEntry;
+	        ZIP_InflateFully;
 		ZIP_Lock;
 		ZIP_Open;
 		ZIP_Read;

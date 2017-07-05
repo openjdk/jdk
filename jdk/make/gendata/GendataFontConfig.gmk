@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 # questions.
 #
 
-GENDATA_FONT_CONFIG_DST := $(JDK_OUTPUTDIR)/lib
+GENDATA_FONT_CONFIG_DST := $(SUPPORT_OUTPUTDIR)/modules_libs/$(MODULE)
 
 GENDATA_FONT_CONFIG_DATA_DIR := $(JDK_TOPDIR)/make/data/fontconfig
 ifndef OPENJDK
@@ -42,7 +42,7 @@ $(GENDATA_FONT_CONFIG_DST)/%.src: \
 
 $(GENDATA_FONT_CONFIG_DST)/%.bfc: \
     $(GENDATA_FONT_CONFIG_DATA_DIR)/$(OPENJDK_TARGET_OS).%.properties \
-    $(BUILD_TOOLS)
+    $(BUILD_TOOLS_JDK)
 	$(MKDIR) -p $(@D)
 	$(RM) $@
 	$(TOOL_COMPILEFONTCONFIG) $< $@
@@ -54,5 +54,5 @@ GENDATA_FONT_CONFIGS := $(patsubst $(GENDATA_FONT_CONFIG_DATA_DIR)/$(OPENJDK_TAR
 GENDATA_BFONT_CONFIGS := $(patsubst $(GENDATA_FONT_CONFIG_DATA_DIR)/$(OPENJDK_TARGET_OS).%.properties, \
     $(GENDATA_FONT_CONFIG_DST)/%.bfc, $(GENDATA_FONT_CONFIG_SRC_FILES))
 
-GENDATA_FONT_CONFIG := $(GENDATA_FONT_CONFIGS) $(GENDATA_BFONT_CONFIGS)
+TARGETS := $(GENDATA_FONT_CONFIGS) $(GENDATA_BFONT_CONFIGS)
 
