@@ -41,7 +41,7 @@
 #include "oops/methodOop.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/symbolOop.hpp"
+#include "oops/symbol.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/aprofiler.hpp"
 #include "runtime/arguments.hpp"
@@ -615,7 +615,7 @@ void vm_exit_during_initialization(Handle exception) {
   vm_abort(false);
 }
 
-void vm_exit_during_initialization(symbolHandle ex, const char* message) {
+void vm_exit_during_initialization(Symbol* ex, const char* message) {
   ResourceMark rm;
   vm_notify_during_shutdown(ex->as_C_string(), message);
 

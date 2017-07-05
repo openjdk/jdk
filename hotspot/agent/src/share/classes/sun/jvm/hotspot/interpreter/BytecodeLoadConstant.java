@@ -112,7 +112,7 @@ public class BytecodeLoadConstant extends BytecodeWithCPIndex {
   }
 
   // return Symbol (if unresolved) or Klass (if resolved)
-  public Oop getKlass() {
+  public Object getKlass() {
     if (Assert.ASSERTS_ENABLED) {
       Assert.that(isKlassConstant(), "not a klass literal");
     }
@@ -121,11 +121,11 @@ public class BytecodeLoadConstant extends BytecodeWithCPIndex {
     // decide based on the oop type.
     ConstantPool cpool = method().getConstants();
     int cpIndex = index();
-    Oop oop = cpool.getObjAt(cpIndex);
-    if (oop.isKlass()) {
-       return (Klass) oop;
-    } else if (oop.isSymbol()) {
-       return (Symbol) oop;
+    ConstantPool.CPSlot oop = cpool.getSlotAt(cpIndex);
+    if (oop.isOop()) {
+      return (Klass) oop.getOop();
+    } else if (oop.isMetaData()) {
+      return oop.getSymbol();
     } else {
        throw new RuntimeException("should not reach here");
     }
@@ -165,12 +165,12 @@ public class BytecodeLoadConstant extends BytecodeWithCPIndex {
        // tag change from 'unresolved' to 'string' does not happen atomically.
        // We just look at the object at the corresponding index and
        // decide based on the oop type.
-       Oop obj = cpool.getObjAt(cpIndex);
-       if (obj.isSymbol()) {
-          Symbol sym = (Symbol) obj;
-          return "<String \"" + sym.asString() + "\">";
-       } else if (obj.isInstance()) {
-          return "<String \"" + OopUtilities.stringOopToString(obj) + "\">";
+       ConstantPool.CPSlot obj = cpool.getSlotAt(cpIndex);
+       if (obj.isMetaData()) {
+         Symbol sym = obj.getSymbol();
+         return "<String \"" + sym.asString() + "\">";
+       } else if (obj.isOop()) {
+         return "<String \"" + OopUtilities.stringOopToString(obj.getOop()) + "\">";
        } else {
           throw new RuntimeException("should not reach here");
        }
@@ -178,13 +178,13 @@ public class BytecodeLoadConstant extends BytecodeWithCPIndex {
        // tag change from 'unresolved' to 'klass' does not happen atomically.
        // We just look at the object at the corresponding index and
        // decide based on the oop type.
-       Oop obj = cpool.getObjAt(cpIndex);
-       if (obj.isKlass()) {
-          Klass k = (Klass) obj;
-          return "<Class " + k.getName().asString() + "@" + k.getHandle() + ">";
-       } else if (obj.isSymbol()) {
-          Symbol sym = (Symbol) obj;
-          return "<Class " + sym.asString() + ">";
+       ConstantPool.CPSlot obj = cpool.getSlotAt(cpIndex);
+       if (obj.isOop()) {
+         Klass k = (Klass) obj.getOop();
+         return "<Class " + k.getName().asString() + "@" + k.getHandle() + ">";
+       } else if (obj.isMetaData()) {
+         Symbol sym = obj.getSymbol();
+         return "<Class " + sym.asString() + ">";
        } else {
           throw new RuntimeException("should not reach here");
        }

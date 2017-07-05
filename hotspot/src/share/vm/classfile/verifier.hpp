@@ -59,7 +59,7 @@ class Verifier : AllStatic {
 
  private:
   static bool is_eligible_for_verification(instanceKlassHandle klass, bool should_verify_class);
-  static symbolHandle inference_verify(
+  static Symbol* inference_verify(
     instanceKlassHandle klass, char* msg, size_t msg_len, TRAPS);
 };
 
@@ -69,8 +69,8 @@ class StackMapTable;
 
 // Summary of verifier's memory usage:
 // StackMapTable is stack allocated.
-// StackMapFrame are resource allocated. There is one ResourceMark
-// for each method.
+// StackMapFrame are resource allocated. There is only one ResourceMark
+// for each class verification, which is created at the top level.
 // There is one mutable StackMapFrame (current_frame) which is updated
 // by abstract bytecode interpretation. frame_in_exception_handler() returns
 // a frame that has a mutable one-item stack (ready for pushing the
@@ -80,8 +80,6 @@ class StackMapTable;
 // locals/stack arrays in StackMapFrame are resource allocated.
 // locals/stack arrays can be shared between StackMapFrame's, except
 // the mutable StackMapFrame (current_frame).
-// Care needs to be taken to make sure resource objects don't outlive
-// the lifetime of their ResourceMark.
 
 // These macros are used similarly to CHECK macros but also check
 // the status of the verifier and return if that has an error.
@@ -94,9 +92,10 @@ class StackMapTable;
 class ClassVerifier : public StackObj {
  private:
   Thread* _thread;
-  symbolHandle _exception_type;
+  Symbol* _exception_type;
   char* _message;
   size_t _message_buffer_len;
+  GrowableArray<Symbol*>* _symbols;  // keep a list of symbols created
 
   void verify_method(methodHandle method, TRAPS);
   char* generate_code_data(methodHandle m, u4 code_length, TRAPS);
@@ -110,7 +109,7 @@ class ClassVerifier : public StackObj {
 
   bool is_protected_access(
     instanceKlassHandle this_class, klassOop target_class,
-    symbolOop field_name, symbolOop field_sig, bool is_method);
+    Symbol* field_name, Symbol* field_sig, bool is_method);
 
   void verify_cp_index(constantPoolHandle cp, int index, TRAPS);
   void verify_cp_type(
@@ -165,7 +164,7 @@ class ClassVerifier : public StackObj {
   void verify_astore(u2 index, StackMapFrame* current_frame, TRAPS);
   void verify_iinc  (u2 index, StackMapFrame* current_frame, TRAPS);
 
-  bool name_in_supers(symbolOop ref_name, instanceKlassHandle current);
+  bool name_in_supers(Symbol* ref_name, instanceKlassHandle current);
 
   VerificationType object_type() const;
 
@@ -206,8 +205,8 @@ class ClassVerifier : public StackObj {
   void verify_class(TRAPS);
 
   // Return status modes
-  symbolHandle result() const { return _exception_type; }
-  bool has_error() const { return !(result().is_null()); }
+  Symbol* result() const { return _exception_type; }
+  bool has_error() const { return result() != NULL; }
 
   // Called when verify or class format errors are encountered.
   // May throw an exception based upon the mode.
@@ -216,15 +215,21 @@ class ClassVerifier : public StackObj {
   void class_format_error(const char* fmt, ...);
   void format_error_message(const char* fmt, int offset, va_list args);
 
-  klassOop load_class(symbolHandle name, TRAPS);
+  klassOop load_class(Symbol* name, TRAPS);
 
   int change_sig_to_verificationType(
     SignatureStream* sig_type, VerificationType* inference_type, TRAPS);
 
   VerificationType cp_index_to_type(int index, constantPoolHandle cp, TRAPS) {
-    return VerificationType::reference_type(
-      symbolHandle(THREAD, cp->klass_name_at(index)));
+    return VerificationType::reference_type(cp->klass_name_at(index));
   }
+
+  // Keep a list of temporary symbols created during verification because
+  // their reference counts need to be decrememented when the verifier object
+  // goes out of scope.  Since these symbols escape the scope in which they're
+  // created, we can't use a TempNewSymbol.
+  Symbol* create_temporary_symbol(const Symbol* s, int begin, int end, TRAPS);
+  Symbol* create_temporary_symbol(const char *s, int length, TRAPS);
 
   static bool _verify_verbose;  // for debugging
 };
@@ -236,9 +241,14 @@ inline int ClassVerifier::change_sig_to_verificationType(
     case T_OBJECT:
     case T_ARRAY:
       {
-        symbolOop name = sig_type->as_symbol(CHECK_0);
+        Symbol* name = sig_type->as_symbol(CHECK_0);
+        // Create another symbol to save as signature stream unreferences
+        // this symbol.
+        Symbol* name_copy =
+          create_temporary_symbol(name, 0, name->utf8_length(), CHECK_0);
+        assert(name_copy == name, "symbols don't match");
         *inference_type =
-          VerificationType::reference_type(symbolHandle(THREAD, name));
+          VerificationType::reference_type(name_copy);
         return 1;
       }
     case T_LONG:

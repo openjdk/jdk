@@ -263,6 +263,27 @@ void report_untested(const char* file, int line, const char* message) {
 #endif // PRODUCT
 }
 
+void report_out_of_shared_space(SharedSpaceType shared_space) {
+  static const char* name[] = {
+    "permanent generation",
+    "shared read only space",
+    "shared read write space",
+    "shared miscellaneous data space"
+  };
+  static const char* flag[] = {
+    "PermGen",
+    "SharedReadOnlySize",
+    "SharedReadWriteSize",
+    "SharedMiscDataSize"
+  };
+
+   warning("\nThe %s is not large enough\n"
+           "to preload requested classes. Use -XX:%s=\n"
+           "to increase the initial size of %s.\n",
+           name[shared_space], flag[shared_space], name[shared_space]);
+   exit(2);
+}
+
 void report_java_out_of_memory(const char* message) {
   static jint out_of_memory_reported = 0;
 
