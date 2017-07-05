@@ -138,6 +138,11 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
      */
     static final char WIDE_CHAR = '0';
 
+    /**
+     * The back buffer provide user with a BufferStrategy.
+     */
+    private Image backBuffer;
+
     private final class DelegateContainer extends Container {
         {
             enableEvents(0xFFFFFFFF);
@@ -389,6 +394,7 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
     }
 
     protected void disposeImpl() {
+        destroyBuffers();
         LWContainerPeer cp = getContainerPeer();
         if (cp != null) {
             cp.removeChildPeer(this);
@@ -413,6 +419,12 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
         // for windows, but this method is overridden in
         // LWWindowPeer and doesn't call super()
         return getWindowPeer().getGraphicsConfiguration();
+    }
+
+
+    // Just a helper method
+    public final LWGraphicsConfig getLWGC() {
+        return (LWGraphicsConfig) getGraphicsConfiguration();
     }
 
     /*
@@ -506,31 +518,45 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
         return getGraphicsConfiguration().getColorModel();
     }
 
+    public boolean isTranslucent() {
+        // Translucent windows of the top level are supported only
+        return false;
+    }
+
     @Override
-    public void createBuffers(int numBuffers, BufferCapabilities caps)
+    public final void createBuffers(int numBuffers, BufferCapabilities caps)
             throws AWTException {
-        throw new AWTException("Back buffers are only supported for " +
-                "Window or Canvas components.");
-    }
-
-    /*
-     * To be overridden in LWWindowPeer and LWCanvasPeer.
-     */
-    @Override
-    public Image getBackBuffer() {
-        // Return null or throw AWTException?
-        return null;
+        getLWGC().assertOperationSupported(numBuffers, caps);
+        final Image buffer = getLWGC().createBackBuffer(this);
+        synchronized (getStateLock()) {
+            backBuffer = buffer;
+        }
     }
 
     @Override
-    public void flip(int x1, int y1, int x2, int y2,
+    public final Image getBackBuffer() {
+        synchronized (getStateLock()) {
+            if (backBuffer != null) {
+                return backBuffer;
+            }
+        }
+        throw new IllegalStateException("Buffers have not been created");
+    }
+
+    @Override
+    public final void flip(int x1, int y1, int x2, int y2,
                      BufferCapabilities.FlipContents flipAction) {
-        // Skip silently or throw AWTException?
+        getLWGC().flip(this, getBackBuffer(), x1, y1, x2, y2, flipAction);
     }
 
     @Override
-    public void destroyBuffers() {
-        // Do nothing
+    public final void destroyBuffers() {
+        final Image oldBB;
+        synchronized (getStateLock()) {
+            oldBB = backBuffer;
+            backBuffer = null;
+        }
+        getLWGC().destroyBackBuffer(oldBB);
     }
 
     // Helper method
@@ -642,7 +668,7 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
         }
     }
 
-    protected final Color getBackground() {
+    public final Color getBackground() {
         synchronized (getStateLock()) {
             return background;
         }
@@ -982,19 +1008,17 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
     }
 
     @Override
-    public Image createImage(ImageProducer producer) {
+    public final Image createImage(final ImageProducer producer) {
         return new ToolkitImage(producer);
     }
 
     @Override
-    public Image createImage(int w, int h) {
-        CGraphicsConfig gc = (CGraphicsConfig)getGraphicsConfiguration();
-        return gc.createAcceleratedImage(getTarget(), w, h);
+    public final Image createImage(final int width, final int height) {
+        return getLWGC().createAcceleratedImage(getTarget(), width, height);
     }
 
     @Override
-    public VolatileImage createVolatileImage(int w, int h) {
-        // TODO: is it a right/complete implementation?
+    public final VolatileImage createVolatileImage(final int w, final int h) {
         return new SunVolatileImage(getTarget(), w, h);
     }
 
@@ -1105,8 +1129,6 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
      * of target.setLocation() or as a result of user actions (window is
      * dragged with mouse).
      *
-     * To be overridden in LWWindowPeer to update its GraphicsConfig.
-     *
      * This method could be called on the toolkit thread.
      */
     protected final void handleMove(final int x, final int y,
@@ -1122,13 +1144,19 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
      * Called when this peer's size has been changed either as a result of
      * target.setSize() or as a result of user actions (window is resized).
      *
-     * To be overridden in LWWindowPeer to update its SurfaceData and
-     * GraphicsConfig.
-     *
      * This method could be called on the toolkit thread.
      */
     protected final void handleResize(final int w, final int h,
                                       final boolean updateTarget) {
+        Image oldBB = null;
+        synchronized (getStateLock()) {
+            if (backBuffer != null) {
+                oldBB = backBuffer;
+                backBuffer = getLWGC().createBackBuffer(this);
+            }
+        }
+        getLWGC().destroyBackBuffer(oldBB);
+
         if (updateTarget) {
             AWTAccessor.getComponentAccessor().setSize(getTarget(), w, h);
         }

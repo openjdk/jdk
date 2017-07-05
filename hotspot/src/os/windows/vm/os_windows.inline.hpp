@@ -26,9 +26,10 @@
 #define OS_WINDOWS_VM_OS_WINDOWS_INLINE_HPP
 
 #include "runtime/atomic.hpp"
+#include "runtime/atomic.inline.hpp"
 #include "runtime/os.hpp"
+
 #ifdef TARGET_OS_ARCH_windows_x86
-# include "atomic_windows_x86.inline.hpp"
 # include "orderAccess_windows_x86.inline.hpp"
 #endif
 

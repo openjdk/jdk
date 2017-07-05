@@ -23,29 +23,10 @@
  */
 
 // no precompiled headers
-#include "runtime/atomic.hpp"
-#include "runtime/handles.inline.hpp"
-#include "runtime/mutexLocker.hpp"
-#include "runtime/os.hpp"
+#include "runtime/mutex.hpp"
 #include "runtime/osThread.hpp"
-#include "runtime/safepoint.hpp"
-#include "runtime/vmThread.hpp"
-#ifdef TARGET_ARCH_x86
-# include "assembler_x86.inline.hpp"
-#endif
-#ifdef TARGET_ARCH_sparc
-# include "assembler_sparc.inline.hpp"
-#endif
-#ifdef TARGET_ARCH_zero
-# include "assembler_zero.inline.hpp"
-#endif
-#ifdef TARGET_ARCH_arm
-# include "assembler_arm.inline.hpp"
-#endif
-#ifdef TARGET_ARCH_ppc
-# include "assembler_ppc.inline.hpp"
-#endif
 
+#include <signal.h>
 
 void OSThread::pd_initialize() {
   assert(this != NULL, "check");

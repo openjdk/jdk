@@ -30,7 +30,6 @@
  * @run main/othervm/timeout=15 -Djava.awt.headless=true LoggingDeadlock4
  */
 
-import java.awt.Container;
 import java.util.concurrent.CountDownLatch;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
@@ -68,7 +67,7 @@ public class LoggingDeadlock4 {
                 } catch (InterruptedException e) {
                 }
 
-                LogManager manager = LogManager.getLogManager();
+                LogManager.getLogManager();
             }
         };
         lmThread.start();
@@ -86,7 +85,7 @@ public class LoggingDeadlock4 {
                 } catch (InterruptedException e) {
                 }
 
-                Logger foo = Logger.getLogger("foo logger");
+                Logger.getLogger("foo logger");
             }
         };
         logThread.start();

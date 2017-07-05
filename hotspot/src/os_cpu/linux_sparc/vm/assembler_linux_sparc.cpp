@@ -23,8 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "asm/assembler.hpp"
-#include "assembler_sparc.inline.hpp"
+#include "asm/macroAssembler.hpp"
 #include "runtime/os.hpp"
 #include "runtime/threadLocalStorage.hpp"
 

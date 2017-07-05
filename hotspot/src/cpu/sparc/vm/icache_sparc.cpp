@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "assembler_sparc.inline.hpp"
+#include "asm/macroAssembler.inline.hpp"
 #include "runtime/icache.hpp"
 
 #define __ _masm->

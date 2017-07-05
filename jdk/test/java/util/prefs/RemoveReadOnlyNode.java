@@ -23,10 +23,11 @@
 
 
 /* @test
-   @bug 6178148
-   @summary check if wrong exception gets thrown if one of the child
-            nodes is readonly on underlying filesystem when node is
-            being removed.
+ * @bug 6178148 7197662
+ * @summary check if wrong exception gets thrown if one of the child
+ *          nodes is readonly on underlying filesystem when node is
+ *          being removed.
+ * @run main/othervm -Djava.util.prefs.userRoot=. RemoveReadOnlyNode
  */
 
 import java.io.*;

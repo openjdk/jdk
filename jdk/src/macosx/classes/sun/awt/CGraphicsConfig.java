@@ -31,13 +31,16 @@ import java.awt.image.*;
 
 import sun.java2d.SurfaceData;
 import sun.java2d.opengl.CGLLayer;
+import sun.lwawt.LWGraphicsConfig;
 import sun.lwawt.macosx.CPlatformView;
 
-public class CGraphicsConfig extends GraphicsConfiguration {
+public abstract class CGraphicsConfig extends GraphicsConfiguration
+        implements LWGraphicsConfig {
+
     private final CGraphicsDevice device;
     private ColorModel colorModel;
 
-    public CGraphicsConfig(CGraphicsDevice device) {
+    protected CGraphicsConfig(CGraphicsDevice device) {
         this.device = device;
     }
 
@@ -84,88 +87,20 @@ public class CGraphicsConfig extends GraphicsConfiguration {
         return new AffineTransform(xscale, 0.0, 0.0, yscale, 0.0, 0.0);
     }
 
-
-    /**
-     * The following methods are invoked from CToolkit.java and
-     * LWWindowPeer.java rather than having the native
-     * implementations hardcoded in those classes.  This way the appropriate
-     * actions are taken based on the peer's GraphicsConfig, whether it is
-     * an CGLGraphicsConfig or something else.
-     */
-
     /**
      * Creates a new SurfaceData that will be associated with the given
      * LWWindowPeer.
      */
-    public SurfaceData createSurfaceData(CPlatformView pView) {
-        throw new UnsupportedOperationException("not implemented");
-    }
+    public abstract SurfaceData createSurfaceData(CPlatformView pView);
 
     /**
      * Creates a new SurfaceData that will be associated with the given
      * CGLLayer.
      */
-    public SurfaceData createSurfaceData(CGLLayer layer) {
-        throw new UnsupportedOperationException("not implemented");
-    }
-
-    /**
-     * Creates a new hidden-acceleration image of the given width and height
-     * that is associated with the target Component.
-     */
-    public Image createAcceleratedImage(Component target,
-                                        int width, int height)
-    {
-        throw new UnsupportedOperationException("not implemented");
-    }
-
-    /**
-     * The following methods correspond to the multibuffering methods in
-     * LWWindowPeer.java...
-     */
-
-    /**
-     * Attempts to create a native backbuffer for the given peer.  If
-     * the requested configuration is not natively supported, an AWTException
-     * is thrown.  Otherwise, if the backbuffer creation is successful, a
-     * handle to the native backbuffer is returned.
-     */
-    public long createBackBuffer(CPlatformView pView,
-                                 int numBuffers, BufferCapabilities caps)
-        throws AWTException
-    {
-        throw new UnsupportedOperationException("not implemented");
-    }
-
-    public void destroyBackBuffer(long backBuffer)
-        throws AWTException
-    {
-        throw new UnsupportedOperationException("not implemented");
-    }
-
-    /**
-     * Creates a VolatileImage that essentially wraps the target Component's
-     * backbuffer, using the provided backbuffer handle.
-     */
-    public VolatileImage createBackBufferImage(Component target,
-                                               long backBuffer)
-    {
-        throw new UnsupportedOperationException("not implemented");
-    }
-
-    /**
-     * Performs the native flip operation for the given target Component.
-     */
-    public void flip(CPlatformView delegate,
-                     Component target, VolatileImage xBackBuffer,
-                     int x1, int y1, int x2, int y2,
-                     BufferCapabilities.FlipContents flipAction)
-    {
-        throw new UnsupportedOperationException("not implemented");
-    }
+    public abstract SurfaceData createSurfaceData(CGLLayer layer);
 
     @Override
-    public boolean isTranslucencyCapable() {
+    public final boolean isTranslucencyCapable() {
         //we know for sure we have capable config :)
         return true;
     }

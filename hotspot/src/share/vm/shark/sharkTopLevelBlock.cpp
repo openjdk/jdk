@@ -65,6 +65,7 @@ void SharkTopLevelBlock::scan_for_traps() {
     switch (bc()) {
     case Bytecodes::_ldc:
     case Bytecodes::_ldc_w:
+    case Bytecodes::_ldc2_w:
       if (!SharkConstant::for_ldc(iter())->is_loaded()) {
         set_trap(
           Deoptimization::make_trap_request(
@@ -109,7 +110,8 @@ void SharkTopLevelBlock::scan_for_traps() {
     case Bytecodes::_invokespecial:
     case Bytecodes::_invokevirtual:
     case Bytecodes::_invokeinterface:
-      method = iter()->get_method(will_link);
+      ciSignature* sig;
+      method = iter()->get_method(will_link, &sig);
       assert(will_link, "typeflow responsibility");
 
       if (!method->holder()->is_linked()) {
@@ -562,12 +564,12 @@ void SharkTopLevelBlock::marshal_exception_fast(int num_options) {
   Value *exception_klass = builder()->CreateValueOfStructEntry(
     xstack(0)->jobject_value(),
     in_ByteSize(oopDesc::klass_offset_in_bytes()),
-    SharkType::oop_type(),
+    SharkType::klass_type(),
     "exception_klass");
 
   for (int i = 0; i < num_options; i++) {
     Value *check_klass =
-      builder()->CreateInlineOop(exc_handler(i)->catch_klass());
+      builder()->CreateInlineMetadata(exc_handler(i)->catch_klass(), SharkType::klass_type());
 
     BasicBlock *not_exact   = function()->CreateBlock("not_exact");
     BasicBlock *not_subtype = function()->CreateBlock("not_subtype");
@@ -823,7 +825,7 @@ void SharkTopLevelBlock::do_aload(BasicType basic_type) {
     builder()->CreateArrayAddress(
       array->jarray_value(), basic_type, index->jint_value()));
 
-  const Type *stack_type = SharkType::to_stackType(basic_type);
+  Type *stack_type = SharkType::to_stackType(basic_type);
   if (value->getType() != stack_type)
     value = builder()->CreateIntCast(value, stack_type, basic_type != T_CHAR);
 
@@ -910,7 +912,7 @@ void SharkTopLevelBlock::do_astore(BasicType basic_type) {
     ShouldNotReachHere();
   }
 
-  const Type *array_type = SharkType::to_arrayType(basic_type);
+  Type *array_type = SharkType::to_arrayType(basic_type);
   if (value->getType() != array_type)
     value = builder()->CreateIntCast(value, array_type, basic_type != T_CHAR);
 
@@ -1102,9 +1104,9 @@ ciMethod* SharkTopLevelBlock::improve_virtual_call(ciMethod*   caller,
 
 Value *SharkTopLevelBlock::get_direct_callee(ciMethod* method) {
   return builder()->CreateBitCast(
-    builder()->CreateInlineOop(method),
-    SharkType::Method*_type(),
-    "callee");
+    builder()->CreateInlineMetadata(method, SharkType::Method_type()),
+                                    SharkType::Method_type(),
+                                    "callee");
 }
 
 Value *SharkTopLevelBlock::get_virtual_callee(SharkValue* receiver,
@@ -1118,7 +1120,7 @@ Value *SharkTopLevelBlock::get_virtual_callee(SharkValue* receiver,
   return builder()->CreateLoad(
     builder()->CreateArrayAddress(
       klass,
-      SharkType::Method*_type(),
+      SharkType::Method_type(),
       vtableEntry::size() * wordSize,
       in_ByteSize(InstanceKlass::vtable_start_offset() * wordSize),
       LLVMValue::intptr_constant(vtable_index)),
@@ -1136,7 +1138,7 @@ Value* SharkTopLevelBlock::get_interface_callee(SharkValue *receiver,
   // Locate the receiver's itable
   Value *object_klass = builder()->CreateValueOfStructEntry(
     receiver->jobject_value(), in_ByteSize(oopDesc::klass_offset_in_bytes()),
-    SharkType::oop_type(),
+    SharkType::klass_type(),
     "object_klass");
 
   Value *vtable_start = builder()->CreateAdd(
@@ -1169,12 +1171,12 @@ Value* SharkTopLevelBlock::get_interface_callee(SharkValue *receiver,
   }
 
   // Locate this interface's entry in the table
-  Value *iklass = builder()->CreateInlineOop(method->holder());
+  Value *iklass = builder()->CreateInlineMetadata(method->holder(), SharkType::klass_type());
   BasicBlock *loop_entry = builder()->GetInsertBlock();
   builder()->CreateBr(loop);
   builder()->SetInsertPoint(loop);
   PHINode *itable_entry_addr = builder()->CreatePHI(
-    SharkType::intptr_type(), "itable_entry_addr");
+    SharkType::intptr_type(), 0, "itable_entry_addr");
   itable_entry_addr->addIncoming(itable_start, loop_entry);
 
   Value *itable_entry = builder()->CreateIntToPtr(
@@ -1183,11 +1185,11 @@ Value* SharkTopLevelBlock::get_interface_callee(SharkValue *receiver,
   Value *itable_iklass = builder()->CreateValueOfStructEntry(
     itable_entry,
     in_ByteSize(itableOffsetEntry::interface_offset_in_bytes()),
-    SharkType::oop_type(),
+    SharkType::klass_type(),
     "itable_iklass");
 
   builder()->CreateCondBr(
-    builder()->CreateICmpEQ(itable_iklass, LLVMValue::null()),
+    builder()->CreateICmpEQ(itable_iklass, LLVMValue::nullKlass()),
     got_null, not_null);
 
   // A null entry means that the class doesn't implement the
@@ -1231,7 +1233,7 @@ Value* SharkTopLevelBlock::get_interface_callee(SharkValue *receiver,
             method->itable_index() * itableMethodEntry::size() * wordSize)),
         LLVMValue::intptr_constant(
           itableMethodEntry::method_offset_in_bytes())),
-      PointerType::getUnqual(SharkType::Method*_type())),
+      PointerType::getUnqual(SharkType::Method_type())),
     "callee");
 }
 
@@ -1243,7 +1245,9 @@ void SharkTopLevelBlock::do_call() {
 
   // Find the method being called
   bool will_link;
-  ciMethod *dest_method = iter()->get_method(will_link);
+  ciSignature* sig;
+  ciMethod *dest_method = iter()->get_method(will_link, &sig);
+
   assert(will_link, "typeflow responsibility");
   assert(dest_method->is_static() == is_static, "must match bc");
 
@@ -1259,9 +1263,16 @@ void SharkTopLevelBlock::do_call() {
   assert(holder_klass->is_interface() ||
          holder_klass->super() == NULL ||
          !is_interface, "must match bc");
+
+  bool is_forced_virtual = is_interface && holder_klass == java_lang_Object_klass();
+
   ciKlass *holder = iter()->get_declared_method_holder();
   ciInstanceKlass *klass =
     ciEnv::get_instance_klass_for_declared_method_holder(holder);
+
+  if (is_forced_virtual) {
+    klass = java_lang_Object_klass();
+  }
 
   // Find the receiver in the stack.  We do this before
   // trying to inline because the inliner can only use
@@ -1294,7 +1305,7 @@ void SharkTopLevelBlock::do_call() {
   // Find the method we are calling
   Value *callee;
   if (call_is_virtual) {
-    if (is_virtual) {
+    if (is_virtual || is_forced_virtual) {
       assert(klass->is_linked(), "scan_for_traps responsibility");
       int vtable_index = call_method->resolve_vtable_index(
         target()->holder(), klass);
@@ -1490,12 +1501,12 @@ void SharkTopLevelBlock::do_full_instance_check(ciKlass* klass) {
 
   // Get the class we're checking against
   builder()->SetInsertPoint(not_null);
-  Value *check_klass = builder()->CreateInlineOop(klass);
+  Value *check_klass = builder()->CreateInlineMetadata(klass, SharkType::klass_type());
 
   // Get the class of the object being tested
   Value *object_klass = builder()->CreateValueOfStructEntry(
     object, in_ByteSize(oopDesc::klass_offset_in_bytes()),
-    SharkType::oop_type(),
+    SharkType::klass_type(),
     "object_klass");
 
   // Perform the check
@@ -1520,7 +1531,7 @@ void SharkTopLevelBlock::do_full_instance_check(ciKlass* klass) {
   // First merge
   builder()->SetInsertPoint(merge1);
   PHINode *nonnull_result = builder()->CreatePHI(
-    SharkType::jint_type(), "nonnull_result");
+    SharkType::jint_type(), 0, "nonnull_result");
   nonnull_result->addIncoming(
     LLVMValue::jint_constant(IC_IS_INSTANCE), is_instance);
   nonnull_result->addIncoming(
@@ -1531,7 +1542,7 @@ void SharkTopLevelBlock::do_full_instance_check(ciKlass* klass) {
   // Second merge
   builder()->SetInsertPoint(merge2);
   PHINode *result = builder()->CreatePHI(
-    SharkType::jint_type(), "result");
+    SharkType::jint_type(), 0, "result");
   result->addIncoming(LLVMValue::jint_constant(IC_IS_NULL), null_block);
   result->addIncoming(nonnull_result, nonnull_block);
 
@@ -1698,7 +1709,7 @@ void SharkTopLevelBlock::do_new() {
     heap_object = builder()->CreateIntToPtr(
       old_top, SharkType::oop_type(), "heap_object");
 
-    Value *check = builder()->CreateCmpxchgPtr(new_top, top_addr, old_top);
+    Value *check = builder()->CreateAtomicCmpXchg(top_addr, old_top, new_top, llvm::SequentiallyConsistent);
     builder()->CreateCondBr(
       builder()->CreateICmpEQ(old_top, check),
       initialize, retry);
@@ -1707,7 +1718,7 @@ void SharkTopLevelBlock::do_new() {
     builder()->SetInsertPoint(initialize);
     if (tlab_object) {
       PHINode *phi = builder()->CreatePHI(
-        SharkType::oop_type(), "fast_object");
+        SharkType::oop_type(), 0, "fast_object");
       phi->addIncoming(tlab_object, got_tlab);
       phi->addIncoming(heap_object, got_heap);
       fast_object = phi;
@@ -1730,7 +1741,7 @@ void SharkTopLevelBlock::do_new() {
 
     Value *klass_addr = builder()->CreateAddressOfStructEntry(
       fast_object, in_ByteSize(oopDesc::klass_offset_in_bytes()),
-      PointerType::getUnqual(SharkType::oop_type()),
+      PointerType::getUnqual(SharkType::klass_type()),
       "klass_addr");
 
     // Set the mark
@@ -1744,7 +1755,7 @@ void SharkTopLevelBlock::do_new() {
     builder()->CreateStore(LLVMValue::intptr_constant(mark), mark_addr);
 
     // Set the class
-    Value *rtklass = builder()->CreateInlineOop(klass);
+    Value *rtklass = builder()->CreateInlineMetadata(klass, SharkType::klass_type());
     builder()->CreateStore(rtklass, klass_addr);
     got_fast = builder()->GetInsertBlock();
 
@@ -1767,7 +1778,7 @@ void SharkTopLevelBlock::do_new() {
     builder()->SetInsertPoint(push_object);
   }
   if (fast_object) {
-    PHINode *phi = builder()->CreatePHI(SharkType::oop_type(), "object");
+    PHINode *phi = builder()->CreatePHI(SharkType::oop_type(), 0, "object");
     phi->addIncoming(fast_object, got_fast);
     phi->addIncoming(slow_object, got_slow);
     object = phi;
@@ -1849,8 +1860,9 @@ void SharkTopLevelBlock::do_multianewarray() {
 
 void SharkTopLevelBlock::acquire_method_lock() {
   Value *lockee;
-  if (target()->is_static())
+  if (target()->is_static()) {
     lockee = builder()->CreateInlineOop(target()->holder()->java_mirror());
+  }
   else
     lockee = local(0)->jobject_value();
 
@@ -1898,7 +1910,7 @@ void SharkTopLevelBlock::acquire_lock(Value *lockee, int exception_action) {
 
   Value *lock = builder()->CreatePtrToInt(
     monitor_header_addr, SharkType::intptr_type());
-  Value *check = builder()->CreateCmpxchgPtr(lock, mark_addr, disp);
+  Value *check = builder()->CreateAtomicCmpXchg(mark_addr, disp, lock, llvm::Acquire);
   builder()->CreateCondBr(
     builder()->CreateICmpEQ(disp, check),
     acquired_fast, try_recursive);
@@ -1983,7 +1995,7 @@ void SharkTopLevelBlock::release_lock(int exception_action) {
     PointerType::getUnqual(SharkType::intptr_type()),
     "mark_addr");
 
-  Value *check = builder()->CreateCmpxchgPtr(disp, mark_addr, lock);
+  Value *check = builder()->CreateAtomicCmpXchg(mark_addr, lock, disp, llvm::Release);
   builder()->CreateCondBr(
     builder()->CreateICmpEQ(lock, check),
     released_fast, slow_path);

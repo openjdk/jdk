@@ -23,11 +23,13 @@
  */
 
 #include "precompiled.hpp"
-#include "asm/assembler.hpp"
+#include "asm/macroAssembler.hpp"
+#include "asm/macroAssembler.inline.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "code/exceptionHandlerTable.hpp"
 #include "code/nmethod.hpp"
 #include "compiler/compileLog.hpp"
+#include "compiler/disassembler.hpp"
 #include "compiler/oopMap.hpp"
 #include "opto/addnode.hpp"
 #include "opto/block.hpp"
@@ -316,7 +318,12 @@ void Compile::gvn_replace_by(Node* n, Node* nn) {
 }
 
 
-
+static inline bool not_a_node(const Node* n) {
+  if (n == NULL)                   return true;
+  if (((intptr_t)n & 1) != 0)      return true;  // uninitialized, etc.
+  if (*(address*)n == badAddress)  return true;  // kill by Node::destruct
+  return false;
+}
 
 // Identify all nodes that are reachable from below, useful.
 // Use breadth-first pass that records state in a Unique_Node_List,
@@ -337,8 +344,23 @@ void Compile::identify_useful_nodes(Unique_Node_List &useful) {
     uint max = n->len();
     for( uint i = 0; i < max; ++i ) {
       Node *m = n->in(i);
-      if( m == NULL ) continue;
+      if (not_a_node(m))  continue;
       useful.push(m);
+    }
+  }
+}
+
+// Update dead_node_list with any missing dead nodes using useful
+// list. Consider all non-useful nodes to be useless i.e., dead nodes.
+void Compile::update_dead_node_list(Unique_Node_List &useful) {
+  uint max_idx = unique();
+  VectorSet& useful_node_set = useful.member_set();
+
+  for (uint node_idx = 0; node_idx < max_idx; node_idx++) {
+    // If node with index node_idx is not in useful set,
+    // mark it as dead in dead node list.
+    if (! useful_node_set.test(node_idx) ) {
+      record_dead_node(node_idx);
     }
   }
 }
@@ -582,6 +604,8 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
                   _inner_loops(0),
                   _scratch_const_size(-1),
                   _in_scratch_emit_size(false),
+                  _dead_node_list(comp_arena()),
+                  _dead_node_count(0),
 #ifndef PRODUCT
                   _trace_opto_output(TraceOptoOutput || method()->has_option("TraceOptoOutput")),
                   _printer(IdealGraphPrinter::printer()),
@@ -873,6 +897,8 @@ Compile::Compile( ciEnv* ci_env,
     _trace_opto_output(TraceOptoOutput),
     _printer(NULL),
 #endif
+    _dead_node_list(comp_arena()),
+    _dead_node_count(0),
     _congraph(NULL) {
   C = this;
 
@@ -1068,6 +1094,72 @@ void Compile::set_cached_top_node(Node* tn) {
   if (old_top != NULL)  old_top->setup_is_top();
   assert(_top == NULL || top()->is_top(), "");
 }
+
+#ifdef ASSERT
+uint Compile::count_live_nodes_by_graph_walk() {
+  Unique_Node_List useful(comp_arena());
+  // Get useful node list by walking the graph.
+  identify_useful_nodes(useful);
+  return useful.size();
+}
+
+void Compile::print_missing_nodes() {
+
+  // Return if CompileLog is NULL and PrintIdealNodeCount is false.
+  if ((_log == NULL) && (! PrintIdealNodeCount)) {
+    return;
+  }
+
+  // This is an expensive function. It is executed only when the user
+  // specifies VerifyIdealNodeCount option or otherwise knows the
+  // additional work that needs to be done to identify reachable nodes
+  // by walking the flow graph and find the missing ones using
+  // _dead_node_list.
+
+  Unique_Node_List useful(comp_arena());
+  // Get useful node list by walking the graph.
+  identify_useful_nodes(useful);
+
+  uint l_nodes = C->live_nodes();
+  uint l_nodes_by_walk = useful.size();
+
+  if (l_nodes != l_nodes_by_walk) {
+    if (_log != NULL) {
+      _log->begin_head("mismatched_nodes count='%d'", abs((int) (l_nodes - l_nodes_by_walk)));
+      _log->stamp();
+      _log->end_head();
+    }
+    VectorSet& useful_member_set = useful.member_set();
+    int last_idx = l_nodes_by_walk;
+    for (int i = 0; i < last_idx; i++) {
+      if (useful_member_set.test(i)) {
+        if (_dead_node_list.test(i)) {
+          if (_log != NULL) {
+            _log->elem("mismatched_node_info node_idx='%d' type='both live and dead'", i);
+          }
+          if (PrintIdealNodeCount) {
+            // Print the log message to tty
+              tty->print_cr("mismatched_node idx='%d' both live and dead'", i);
+              useful.at(i)->dump();
+          }
+        }
+      }
+      else if (! _dead_node_list.test(i)) {
+        if (_log != NULL) {
+          _log->elem("mismatched_node_info node_idx='%d' type='neither live nor dead'", i);
+        }
+        if (PrintIdealNodeCount) {
+          // Print the log message to tty
+          tty->print_cr("mismatched_node idx='%d' type='neither live nor dead'", i);
+        }
+      }
+    }
+    if (_log != NULL) {
+      _log->tail("mismatched_nodes");
+    }
+  }
+}
+#endif
 
 #ifndef PRODUCT
 void Compile::verify_top(Node* tn) const {
@@ -2087,7 +2179,7 @@ static bool oop_offset_is_sane(const TypeInstPtr* tp) {
 
 // Eliminate trivially redundant StoreCMs and accumulate their
 // precedence edges.
-static void eliminate_redundant_card_marks(Node* n) {
+void Compile::eliminate_redundant_card_marks(Node* n) {
   assert(n->Opcode() == Op_StoreCM, "expected StoreCM");
   if (n->in(MemNode::Address)->outcnt() > 1) {
     // There are multiple users of the same address so it might be
@@ -2122,7 +2214,7 @@ static void eliminate_redundant_card_marks(Node* n) {
         // Eliminate the previous StoreCM
         prev->set_req(MemNode::Memory, mem->in(MemNode::Memory));
         assert(mem->outcnt() == 0, "should be dead");
-        mem->disconnect_inputs(NULL);
+        mem->disconnect_inputs(NULL, this);
       } else {
         prev = mem;
       }
@@ -2133,7 +2225,7 @@ static void eliminate_redundant_card_marks(Node* n) {
 
 //------------------------------final_graph_reshaping_impl----------------------
 // Implement items 1-5 from final_graph_reshaping below.
-static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc ) {
+void Compile::final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc) {
 
   if ( n->outcnt() == 0 ) return; // dead node
   uint nop = n->Opcode();
@@ -2163,8 +2255,7 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc ) {
 
 #ifdef ASSERT
   if( n->is_Mem() ) {
-    Compile* C = Compile::current();
-    int alias_idx = C->get_alias_index(n->as_Mem()->adr_type());
+    int alias_idx = get_alias_index(n->as_Mem()->adr_type());
     assert( n->in(0) != NULL || alias_idx != Compile::AliasIdxRaw ||
             // oop will be recorded in oop map if load crosses safepoint
             n->is_Load() && (n->as_Load()->bottom_type()->isa_oopptr() ||
@@ -2213,7 +2304,7 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc ) {
     break;
   case Op_Opaque1:              // Remove Opaque Nodes before matching
   case Op_Opaque2:              // Remove Opaque Nodes before matching
-    n->subsume_by(n->in(1));
+    n->subsume_by(n->in(1), this);
     break;
   case Op_CallStaticJava:
   case Op_CallJava:
@@ -2337,8 +2428,7 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc ) {
         int op = t->isa_oopptr() ? Op_ConN : Op_ConNKlass;
 
         // Look for existing ConN node of the same exact type.
-        Compile* C = Compile::current();
-        Node* r  = C->root();
+        Node* r  = root();
         uint cnt = r->outcnt();
         for (uint i = 0; i < cnt; i++) {
           Node* m = r->raw_out(i);
@@ -2352,14 +2442,14 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc ) {
           // Decode a narrow oop to match address
           // [R12 + narrow_oop_reg<<3 + offset]
           if (t->isa_oopptr()) {
-            nn = new (C) DecodeNNode(nn, t);
+            nn = new (this) DecodeNNode(nn, t);
           } else {
-            nn = new (C) DecodeNKlassNode(nn, t);
+            nn = new (this) DecodeNKlassNode(nn, t);
           }
           n->set_req(AddPNode::Base, nn);
           n->set_req(AddPNode::Address, nn);
           if (addp->outcnt() == 0) {
-            addp->disconnect_inputs(NULL);
+            addp->disconnect_inputs(NULL, this);
           }
         }
       }
@@ -2371,7 +2461,6 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc ) {
 #ifdef _LP64
   case Op_CastPP:
     if (n->in(1)->is_DecodeN() && Matcher::gen_narrow_oop_implicit_null_checks()) {
-      Compile* C = Compile::current();
       Node* in1 = n->in(1);
       const Type* t = n->bottom_type();
       Node* new_in1 = in1->clone();
@@ -2400,9 +2489,9 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc ) {
         new_in1->set_req(0, n->in(0));
       }
 
-      n->subsume_by(new_in1);
+      n->subsume_by(new_in1, this);
       if (in1->outcnt() == 0) {
-        in1->disconnect_inputs(NULL);
+        in1->disconnect_inputs(NULL, this);
       }
     }
     break;
@@ -2419,7 +2508,6 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc ) {
       }
       assert(in1->is_DecodeNarrowPtr(), "sanity");
 
-      Compile* C = Compile::current();
       Node* new_in2 = NULL;
       if (in2->is_DecodeNarrowPtr()) {
         assert(in2->Opcode() == in1->Opcode(), "must be same node type");
@@ -2432,7 +2520,7 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc ) {
           // oops implicit null check is not generated.
           // This will allow to generate normal oop implicit null check.
           if (Matcher::gen_narrow_oop_implicit_null_checks())
-            new_in2 = ConNode::make(C, TypeNarrowOop::NULL_PTR);
+            new_in2 = ConNode::make(this, TypeNarrowOop::NULL_PTR);
           //
           // This transformation together with CastPP transformation above
           // will generated code for implicit NULL checks for compressed oops.
@@ -2471,19 +2559,19 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc ) {
           //    NullCheck base_reg
           //
         } else if (t->isa_oopptr()) {
-          new_in2 = ConNode::make(C, t->make_narrowoop());
+          new_in2 = ConNode::make(this, t->make_narrowoop());
         } else if (t->isa_klassptr()) {
-          new_in2 = ConNode::make(C, t->make_narrowklass());
+          new_in2 = ConNode::make(this, t->make_narrowklass());
         }
       }
       if (new_in2 != NULL) {
-        Node* cmpN = new (C) CmpNNode(in1->in(1), new_in2);
-        n->subsume_by( cmpN );
+        Node* cmpN = new (this) CmpNNode(in1->in(1), new_in2);
+        n->subsume_by(cmpN, this);
         if (in1->outcnt() == 0) {
-          in1->disconnect_inputs(NULL);
+          in1->disconnect_inputs(NULL, this);
         }
         if (in2->outcnt() == 0) {
-          in2->disconnect_inputs(NULL);
+          in2->disconnect_inputs(NULL, this);
         }
       }
     }
@@ -2501,21 +2589,20 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc ) {
   case Op_EncodePKlass: {
     Node* in1 = n->in(1);
     if (in1->is_DecodeNarrowPtr()) {
-      n->subsume_by(in1->in(1));
+      n->subsume_by(in1->in(1), this);
     } else if (in1->Opcode() == Op_ConP) {
-      Compile* C = Compile::current();
       const Type* t = in1->bottom_type();
       if (t == TypePtr::NULL_PTR) {
         assert(t->isa_oopptr(), "null klass?");
-        n->subsume_by(ConNode::make(C, TypeNarrowOop::NULL_PTR));
+        n->subsume_by(ConNode::make(this, TypeNarrowOop::NULL_PTR), this);
       } else if (t->isa_oopptr()) {
-        n->subsume_by(ConNode::make(C, t->make_narrowoop()));
+        n->subsume_by(ConNode::make(this, t->make_narrowoop()), this);
       } else if (t->isa_klassptr()) {
-        n->subsume_by(ConNode::make(C, t->make_narrowklass()));
+        n->subsume_by(ConNode::make(this, t->make_narrowklass()), this);
       }
     }
     if (in1->outcnt() == 0) {
-      in1->disconnect_inputs(NULL);
+      in1->disconnect_inputs(NULL, this);
     }
     break;
   }
@@ -2538,7 +2625,7 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc ) {
           }
         }
         assert(proj != NULL, "must be found");
-        p->subsume_by(proj);
+        p->subsume_by(proj, this);
       }
     }
     break;
@@ -2558,7 +2645,7 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc ) {
           unique_in = NULL;
       }
       if (unique_in != NULL) {
-        n->subsume_by(unique_in);
+        n->subsume_by(unique_in, this);
       }
     }
     break;
@@ -2571,16 +2658,15 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc ) {
       Node* d = n->find_similar(Op_DivI);
       if (d) {
         // Replace them with a fused divmod if supported
-        Compile* C = Compile::current();
         if (Matcher::has_match_rule(Op_DivModI)) {
-          DivModINode* divmod = DivModINode::make(C, n);
-          d->subsume_by(divmod->div_proj());
-          n->subsume_by(divmod->mod_proj());
+          DivModINode* divmod = DivModINode::make(this, n);
+          d->subsume_by(divmod->div_proj(), this);
+          n->subsume_by(divmod->mod_proj(), this);
         } else {
           // replace a%b with a-((a/b)*b)
-          Node* mult = new (C) MulINode(d, d->in(2));
-          Node* sub  = new (C) SubINode(d->in(1), mult);
-          n->subsume_by( sub );
+          Node* mult = new (this) MulINode(d, d->in(2));
+          Node* sub  = new (this) SubINode(d->in(1), mult);
+          n->subsume_by(sub, this);
         }
       }
     }
@@ -2592,16 +2678,15 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc ) {
       Node* d = n->find_similar(Op_DivL);
       if (d) {
         // Replace them with a fused divmod if supported
-        Compile* C = Compile::current();
         if (Matcher::has_match_rule(Op_DivModL)) {
-          DivModLNode* divmod = DivModLNode::make(C, n);
-          d->subsume_by(divmod->div_proj());
-          n->subsume_by(divmod->mod_proj());
+          DivModLNode* divmod = DivModLNode::make(this, n);
+          d->subsume_by(divmod->div_proj(), this);
+          n->subsume_by(divmod->mod_proj(), this);
         } else {
           // replace a%b with a-((a/b)*b)
-          Node* mult = new (C) MulLNode(d, d->in(2));
-          Node* sub  = new (C) SubLNode(d->in(1), mult);
-          n->subsume_by( sub );
+          Node* mult = new (this) MulLNode(d, d->in(2));
+          Node* sub  = new (this) SubLNode(d->in(1), mult);
+          n->subsume_by(sub, this);
         }
       }
     }
@@ -2620,8 +2705,8 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc ) {
     if (n->req()-1 > 2) {
       // Replace many operand PackNodes with a binary tree for matching
       PackNode* p = (PackNode*) n;
-      Node* btp = p->binary_tree_pack(Compile::current(), 1, n->req());
-      n->subsume_by(btp);
+      Node* btp = p->binary_tree_pack(this, 1, n->req());
+      n->subsume_by(btp, this);
     }
     break;
   case Op_Loop:
@@ -2645,18 +2730,16 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc ) {
       if (t != NULL && t->is_con()) {
         juint shift = t->get_con();
         if (shift > mask) { // Unsigned cmp
-          Compile* C = Compile::current();
-          n->set_req(2, ConNode::make(C, TypeInt::make(shift & mask)));
+          n->set_req(2, ConNode::make(this, TypeInt::make(shift & mask)));
         }
       } else {
         if (t == NULL || t->_lo < 0 || t->_hi > (int)mask) {
-          Compile* C = Compile::current();
-          Node* shift = new (C) AndINode(in2, ConNode::make(C, TypeInt::make(mask)));
+          Node* shift = new (this) AndINode(in2, ConNode::make(this, TypeInt::make(mask)));
           n->set_req(2, shift);
         }
       }
       if (in2->outcnt() == 0) { // Remove dead node
-        in2->disconnect_inputs(NULL);
+        in2->disconnect_inputs(NULL, this);
       }
     }
     break;
@@ -2674,7 +2757,7 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc ) {
 //------------------------------final_graph_reshaping_walk---------------------
 // Replacing Opaque nodes with their input in final_graph_reshaping_impl(),
 // requires that the walk visits a node's inputs before visiting the node.
-static void final_graph_reshaping_walk( Node_Stack &nstack, Node *root, Final_Reshape_Counts &frc ) {
+void Compile::final_graph_reshaping_walk( Node_Stack &nstack, Node *root, Final_Reshape_Counts &frc ) {
   ResourceArea *area = Thread::current()->resource_area();
   Unique_Node_List sfpt(area);
 
@@ -2741,7 +2824,7 @@ static void final_graph_reshaping_walk( Node_Stack &nstack, Node *root, Final_Re
           n->set_req(j, in->in(1));
         }
         if (in->outcnt() == 0) {
-          in->disconnect_inputs(NULL);
+          in->disconnect_inputs(NULL, this);
         }
       }
     }
@@ -3014,7 +3097,8 @@ void Compile::record_failure(const char* reason) {
 }
 
 Compile::TracePhase::TracePhase(const char* name, elapsedTimer* accumulator, bool dolog)
-  : TraceTime(NULL, accumulator, false NOT_PRODUCT( || TimeCompiler ), false)
+  : TraceTime(NULL, accumulator, false NOT_PRODUCT( || TimeCompiler ), false),
+    _phase_name(name), _dolog(dolog)
 {
   if (dolog) {
     C = Compile::current();
@@ -3024,15 +3108,34 @@ Compile::TracePhase::TracePhase(const char* name, elapsedTimer* accumulator, boo
     _log = NULL;
   }
   if (_log != NULL) {
-    _log->begin_head("phase name='%s' nodes='%d'", name, C->unique());
+    _log->begin_head("phase name='%s' nodes='%d' live='%d'", _phase_name, C->unique(), C->live_nodes());
     _log->stamp();
     _log->end_head();
   }
 }
 
 Compile::TracePhase::~TracePhase() {
+
+  C = Compile::current();
+  if (_dolog) {
+    _log = C->log();
+  } else {
+    _log = NULL;
+  }
+
+#ifdef ASSERT
+  if (PrintIdealNodeCount) {
+    tty->print_cr("phase name='%s' nodes='%d' live='%d' live_graph_walk='%d'",
+                  _phase_name, C->unique(), C->live_nodes(), C->count_live_nodes_by_graph_walk());
+  }
+
+  if (VerifyIdealNodeCount) {
+    Compile::current()->print_missing_nodes();
+  }
+#endif
+
   if (_log != NULL) {
-    _log->done("phase nodes='%d'", C->unique());
+    _log->done("phase name='%s' nodes='%d' live='%d'", _phase_name, C->unique(), C->live_nodes());
   }
 }
 

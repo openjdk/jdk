@@ -26,8 +26,6 @@
 
 package sun.security.ssl;
 
-import java.util.Arrays;
-
 import java.security.*;
 
 /**
@@ -106,6 +104,7 @@ public final class RSASignature extends SignatureSpi {
         }
     }
 
+    @Override
     protected void engineInitVerify(PublicKey publicKey)
             throws InvalidKeyException {
         checkNull(publicKey);
@@ -113,11 +112,13 @@ public final class RSASignature extends SignatureSpi {
         rawRsa.initVerify(publicKey);
     }
 
+    @Override
     protected void engineInitSign(PrivateKey privateKey)
             throws InvalidKeyException {
         engineInitSign(privateKey, null);
     }
 
+    @Override
     protected void engineInitSign(PrivateKey privateKey, SecureRandom random)
             throws InvalidKeyException {
         checkNull(privateKey);
@@ -133,6 +134,7 @@ public final class RSASignature extends SignatureSpi {
         }
     }
 
+    @Override
     protected void engineUpdate(byte b) {
         initDigests();
         isReset = false;
@@ -140,6 +142,7 @@ public final class RSASignature extends SignatureSpi {
         sha.update(b);
     }
 
+    @Override
     protected void engineUpdate(byte[] b, int off, int len) {
         initDigests();
         isReset = false;
@@ -161,21 +164,25 @@ public final class RSASignature extends SignatureSpi {
         }
     }
 
+    @Override
     protected byte[] engineSign() throws SignatureException {
         rawRsa.update(getDigest());
         return rawRsa.sign();
     }
 
+    @Override
     protected boolean engineVerify(byte[] sigBytes) throws SignatureException {
         return engineVerify(sigBytes, 0, sigBytes.length);
     }
 
+    @Override
     protected boolean engineVerify(byte[] sigBytes, int offset, int length)
             throws SignatureException {
         rawRsa.update(getDigest());
         return rawRsa.verify(sigBytes, offset, length);
     }
 
+    @Override
     protected void engineSetParameter(String param, Object value)
             throws InvalidParameterException {
         if (param.equals("hashes") == false) {
@@ -191,6 +198,7 @@ public final class RSASignature extends SignatureSpi {
         sha = digests[1];
     }
 
+    @Override
     protected Object engineGetParameter(String param)
             throws InvalidParameterException {
         throw new InvalidParameterException("Parameters not supported");

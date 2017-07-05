@@ -47,6 +47,7 @@ public final class Krb5Helper {
 
     private static final Krb5Proxy proxy =
         AccessController.doPrivileged(new PrivilegedAction<Krb5Proxy>() {
+            @Override
             public Krb5Proxy run() {
                 try {
                     Class<?> c = Class.forName(IMPL_CLASS, true, null);
