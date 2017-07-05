@@ -33,8 +33,8 @@ import javax.xml.bind.JAXBException;
  * @bug 8150173
  * @summary Verifies that a factory which inherit its createContext method
  *          from an abstract subclass of JAXBContextFactory can be instantiated.
- * @compile -addmods java.xml.bind JAXBContextWithAbstractFactory.java
- * @run main/othervm -addmods java.xml.bind JAXBContextWithAbstractFactory
+ * @modules java.xml.bind
+ * @run main/othervm JAXBContextWithAbstractFactory
  */
 public class JAXBContextWithAbstractFactory {
     private static JAXBContext tmp;

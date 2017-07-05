@@ -93,7 +93,8 @@ public class CustomPluginTest {
         String name = "customplugin";
         Path src = Paths.get(System.getProperty("test.src")).resolve(name);
         Path classes = helper.getJmodClassesDir().resolve(name);
-        JImageGenerator.compile(src, classes, "-XaddExports:jdk.jlink/jdk.tools.jlink.internal=customplugin");
+        JImageGenerator.compile(src, classes,
+                                "--add-exports", "jdk.jlink/jdk.tools.jlink.internal=customplugin");
         return JImageGenerator.getJModTask()
                 .addClassPath(classes)
                 .jmod(helper.getJmodDir().resolve(name + ".jmod"))

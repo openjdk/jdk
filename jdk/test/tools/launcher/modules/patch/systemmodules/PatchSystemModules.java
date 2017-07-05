@@ -69,7 +69,7 @@ public class PatchSystemModules {
         for (String name : modules) {
             assertTrue(CompilerUtils.compile(src.resolve(name),
                                              MODS_DIR,
-                                             "-modulesourcepath", src.toString()));
+                                             "--module-source-path", src.toString()));
         }
 
         // compile patched source
@@ -93,16 +93,16 @@ public class PatchSystemModules {
 
         Path home = Paths.get(JAVA_HOME);
         runTest(home,
-                "-mp", MODS_DIR.toString(),
+                "--module-path", MODS_DIR.toString(),
                 "-m", "m1/p1.Main", "1");
         runTest(home,
-                "-Xpatch:java.base=" + patchedJavaBase.toString(),
-                "-mp", MODS_DIR.toString(),
+                "--patch-module", "java.base=" + patchedJavaBase,
+                "--module-path", MODS_DIR.toString(),
                 "-m", "m1/p1.Main", "1");
 
         runTest(home,
-                "-Xpatch:m2=" + patchedM2.toString(),
-                "-mp", MODS_DIR.toString(),
+                "--patch-module", "m2=" + patchedM2.toString(),
+                "--module-path", MODS_DIR.toString(),
                 "-m", "m1/p1.Main", "2");
     }
 
@@ -117,10 +117,10 @@ public class PatchSystemModules {
         runTest(IMAGE,
                 "-m", "m1/p1.Main", "1");
         runTest(IMAGE,
-                "-Xpatch:java.base=" + patchedJavaBase.toString(),
+                "--patch-module", "java.base=" + patchedJavaBase,
                 "-m", "m1/p1.Main", "1");
         runTest(IMAGE,
-                "-Xpatch:m2=" + patchedM2.toString(),
+                "--patch-module", "m2=" + patchedM2.toString(),
                 "-m", "m1/p1.Main", "2");
     }
 
@@ -138,12 +138,12 @@ public class PatchSystemModules {
 
         // Fail to upgrade m1.jar with mismatched hash
         runTestWithExitCode(getJava(IMAGE),
-                "-upgrademodulepath", m1.toString(),
+                "--upgrade-module-path", m1.toString(),
                 "-m", "m1/p1.Main");
 
         runTestWithExitCode(getJava(IMAGE),
-                "-Xpatch:java.base=" + PATCH_DIR.resolve(JAVA_BASE).toString(),
-                "-upgrademodulepath", m1.toString(),
+                "--patch-module", "java.base=" + PATCH_DIR.resolve(JAVA_BASE),
+                "--upgrade-module-path", m1.toString(),
                 "-m", "m1/p1.Main", "1");
     }
 
@@ -185,14 +185,14 @@ public class PatchSystemModules {
 
         jar("--create",
             "--file=" + m2.toString(),
-            "--modulepath", JARS_DIR.toString(),
+            "--module-path", JARS_DIR.toString(),
             "--hash-modules", "m1",
             "-C", MODS_DIR.resolve("m2").toString(), ".");
 
 
         String mpath = JARS_DIR.toString() + File.pathSeparator + JMODS.toString();
-        execTool("jlink", "--modulepath", mpath,
-                 "--addmods", "m1",
+        execTool("jlink", "--module-path", mpath,
+                 "--add-modules", "m1",
                  "--output", IMAGE.toString());
     }
 
@@ -216,7 +216,7 @@ public class PatchSystemModules {
     }
 
     static String getJava(Path image) {
-        boolean isWindows = System.getProperty("os.name").toLowerCase().startsWith("win");
+        boolean isWindows = System.getProperty("os.name").startsWith("Windows");
         Path java = image.resolve("bin").resolve(isWindows ? "java.exe" : "java");
         if (Files.notExists(java))
             throw new RuntimeException(java + " not found");

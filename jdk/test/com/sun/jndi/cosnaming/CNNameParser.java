@@ -26,6 +26,7 @@
  * @summary Tests that JNDI/COS naming parser supports the syntax
  * defined in the new INS standard.
  * @modules java.corba/com.sun.jndi.cosnaming
+ * @run main/othervm CNNameParser
  */
 
 import javax.naming.*;

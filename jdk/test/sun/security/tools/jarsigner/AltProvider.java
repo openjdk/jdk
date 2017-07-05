@@ -55,7 +55,7 @@ public class AltProvider {
         // Compile the provider
         CompilerUtils.compile(
                 MOD_SRC_DIR, MOD_DEST_DIR,
-                "-modulesourcepath",
+                "--module-source-path",
                 MOD_SRC_DIR.toString());
 
         // Create a keystore
@@ -102,22 +102,22 @@ public class AltProvider {
                 0, "loadProviderByClass: org.test.dummy.DummyProvider");
 
         // name in a module
-        testBoth("-J-mp -Jmods " +
+        testBoth("-J--module-path=mods " +
                 "-addprovider Dummy -providerArg full",
                 0, "loadProviderByName: Dummy");
 
         // -providerClass does not work
-        testBoth("-J-mp -Jmods " +
+        testBoth("-J--module-path=mods " +
                 "-providerClass org.test.dummy.DummyProvider -providerArg full",
                 1, "Provider \"org.test.dummy.DummyProvider\" not found");
 
         // -addprovider with class does not work
-        testBoth("-J-mp -Jmods " +
+        testBoth("-J--module-path=mods " +
                 "-addprovider org.test.dummy.DummyProvider -providerArg full",
                 1, "Provider named \"org.test.dummy.DummyProvider\" not found");
 
         // -addprovider without arg does not work
-        testBoth("-J-mp -Jmods " +
+        testBoth("-J--module-path=mods " +
                 "-addprovider Dummy",
                 1, "DUMMYKS not found");
     }

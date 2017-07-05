@@ -83,6 +83,6 @@ $KT -delete -alias user
 
 # 5. Build and run test
 
-EXTRAOPTS="-XaddExports:java.base/sun.security.validator=ALL-UNNAMED"
+EXTRAOPTS="--add-exports java.base/sun.security.validator=ALL-UNNAMED"
 $JAVAC ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} ${EXTRAOPTS} -d . ${TESTSRC}${FS}CertReplace.java
 $JAVA ${TESTVMOPTS} ${EXTRAOPTS} CertReplace certreplace.jks certreplace.certs

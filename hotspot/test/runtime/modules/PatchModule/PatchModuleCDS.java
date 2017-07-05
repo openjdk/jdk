@@ -25,22 +25,22 @@
  * @test
  * @library /testlibrary
  * @modules java.base/jdk.internal.misc
- * @run main XpatchCDS
+ * @run main PatchModuleCDS
  */
 
 import java.io.File;
 import jdk.test.lib.*;
 
-public class XpatchCDS {
+public class PatchModuleCDS {
 
     public static void main(String args[]) throws Throwable {
-        System.out.println("Test that -Xpatch and -Xshare:dump are incompatibable");
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xpatch:java.naming=mods/java.naming", "-Xshare:dump");
+        System.out.println("Test that --patch-module and -Xshare:dump are incompatibable");
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("--patch-module=java.naming=mods/java.naming", "-Xshare:dump");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldContain("Cannot use the following option when dumping the shared archive: -Xpatch");
+        output.shouldContain("Cannot use the following option when dumping the shared archive: --patch-module");
 
-        System.out.println("Test that -Xpatch and -Xshare:on are incompatibable");
-        String filename = "Xpatch.jsa";
+        System.out.println("Test that --patch-module and -Xshare:on are incompatibable");
+        String filename = "patch_module.jsa";
         pb = ProcessTools.createJavaProcessBuilder(
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:SharedArchiveFile=" + filename,
@@ -52,10 +52,10 @@ public class XpatchCDS {
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:SharedArchiveFile=" + filename,
             "-Xshare:on",
-            "-Xpatch:java.naming=mods/java.naming",
+            "--patch-module=java.naming=mods/java.naming",
             "-version");
         output = new OutputAnalyzer(pb.start());
-        output.shouldContain("The shared archive file cannot be used with -Xpatch");
+        output.shouldContain("The shared archive file cannot be used with --patch-module");
 
         output.shouldHaveExitValue(1);
     }

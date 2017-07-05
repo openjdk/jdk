@@ -36,7 +36,7 @@ public class OtherResources {
         // check that java.desktop is not in the set of readable modules
         try {
             Class.forName("java.awt.Component");
-            throw new RuntimeException("Need to run with -limitmods java.base");
+            throw new RuntimeException("Need to run with --limit-modules java.base");
         } catch (ClassNotFoundException expected) { }
 
         // access resource in the java.desktop module

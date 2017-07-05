@@ -27,8 +27,8 @@
  * @summary Test for the CommandAPDU class
  * @author Andreas Sterbenz
  * @key randomness
- * @compile -addmods java.smartcardio TestCommandAPDU.java
- * @run main/othervm -addmods java.smartcardio TestCommandAPDU
+ * @compile --add-modules=java.smartcardio TestCommandAPDU.java
+ * @run main/othervm --add-modules=java.smartcardio TestCommandAPDU
  */
 
 import java.util.*;

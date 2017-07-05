@@ -25,7 +25,6 @@
 package jdk.tools.jlink.internal.plugins;
 
 import java.lang.invoke.MethodType;
-import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -33,6 +32,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import jdk.internal.misc.SharedSecrets;
+import jdk.internal.misc.JavaLangInvokeAccess;
 import jdk.tools.jlink.plugin.ResourcePoolEntry;
 import jdk.tools.jlink.plugin.PluginException;
 import jdk.tools.jlink.plugin.ResourcePool;
@@ -54,9 +55,6 @@ public final class GenerateJLIClassesPlugin implements Plugin {
 
     private static final String DESCRIPTION = PluginsResourceBundle.getDescription(NAME);
 
-    private static final String BMH = "java/lang/invoke/BoundMethodHandle";
-    private static final Method BMH_FACTORY_METHOD;
-
     private static final String DMH = "java/lang/invoke/DirectMethodHandle$Holder";
     private static final String DMH_INVOKE_VIRTUAL = "invokeVirtual";
     private static final String DMH_INVOKE_STATIC = "invokeStatic";
@@ -64,7 +62,9 @@ public final class GenerateJLIClassesPlugin implements Plugin {
     private static final String DMH_NEW_INVOKE_SPECIAL = "newInvokeSpecial";
     private static final String DMH_INVOKE_INTERFACE = "invokeInterface";
     private static final String DMH_INVOKE_STATIC_INIT = "invokeStaticInit";
-    private static final Method DMH_FACTORY_METHOD;
+
+    private static final JavaLangInvokeAccess JLIA
+            = SharedSecrets.getJavaLangInvokeAccess();
 
     List<String> speciesTypes;
 
@@ -232,8 +232,8 @@ public final class GenerateJLIClassesPlugin implements Plugin {
     private void generateBMHClass(String types, ResourcePoolBuilder out) {
         try {
             // Generate class
-            Map.Entry<String, byte[]> result = (Map.Entry<String, byte[]>)
-                    BMH_FACTORY_METHOD.invoke(null, types);
+            Map.Entry<String, byte[]> result =
+                    JLIA.generateConcreteBMHClassBytes(types);
             String className = result.getKey();
             byte[] bytes = result.getValue();
 
@@ -264,11 +264,8 @@ public final class GenerateJLIClassesPlugin implements Plugin {
             }
         }
         try {
-            byte[] bytes = (byte[])DMH_FACTORY_METHOD
-                    .invoke(null,
-                            DMH,
-                            methodTypes,
-                            dmhTypes);
+            byte[] bytes =
+                    JLIA.generateDMHClassBytes(DMH, methodTypes, dmhTypes);
             ResourcePoolEntry ndata = ResourcePoolEntry.create(DMH_ENTRY, bytes);
             out.add(ndata);
         } catch (Exception ex) {
@@ -276,22 +273,6 @@ public final class GenerateJLIClassesPlugin implements Plugin {
         }
     }
     private static final String DMH_ENTRY = "/java.base/" + DMH + ".class";
-
-    static {
-        try {
-            Class<?> BMHFactory = Class.forName("java.lang.invoke.BoundMethodHandle$Factory");
-            BMH_FACTORY_METHOD = BMHFactory.getDeclaredMethod("generateConcreteBMHClassBytes",
-                    String.class);
-            BMH_FACTORY_METHOD.setAccessible(true);
-
-            Class<?> DMHFactory = Class.forName("java.lang.invoke.DirectMethodHandle");
-            DMH_FACTORY_METHOD = DMHFactory.getDeclaredMethod("generateDMHClassBytes",
-                    String.class, MethodType[].class, int[].class);
-            DMH_FACTORY_METHOD.setAccessible(true);
-        } catch (Exception e) {
-            throw new PluginException(e);
-        }
-    }
 
     // Convert LL -> LL, L3 -> LLL
     private static String expandSignature(String signature) {

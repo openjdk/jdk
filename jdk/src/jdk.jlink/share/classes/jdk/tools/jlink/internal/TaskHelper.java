@@ -196,7 +196,7 @@ public final class TaskHelper {
                         // This option is handled prior
                         // to have the options parsed.
                     },
-                    "--plugins-modulepath"));
+                    "--plugin-module-path"));
             mainOptions.add(new PlugOption(true, (task, opt, arg) -> {
                 Path path = Paths.get(arg);
                 if (!Files.exists(path) || !Files.isDirectory(path)) {
