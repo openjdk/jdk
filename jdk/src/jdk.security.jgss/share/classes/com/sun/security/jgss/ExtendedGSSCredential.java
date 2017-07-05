@@ -33,7 +33,6 @@ import sun.security.jgss.GSSCredentialImpl;
  * functionalities not defined by {@code org.ietf.jgss.GSSCredential}.
  * @since 1.8
  */
-@jdk.Exported
 public interface ExtendedGSSCredential extends GSSCredential {
 
     static class ExtendedGSSCredentialImpl extends GSSCredentialImpl

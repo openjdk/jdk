@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,23 +103,19 @@ Java_java_io_RandomAccessFile_getFilePointer(JNIEnv *env, jobject this) {
 
 JNIEXPORT jlong JNICALL
 Java_java_io_RandomAccessFile_length(JNIEnv *env, jobject this) {
+
     FD fd;
-    jlong cur = jlong_zero;
-    jlong end = jlong_zero;
+    jlong length = jlong_zero;
 
     fd = GET_FD(this, raf_fd);
     if (fd == -1) {
         JNU_ThrowIOException(env, "Stream Closed");
         return -1;
     }
-    if ((cur = IO_Lseek(fd, 0L, SEEK_CUR)) == -1) {
-        JNU_ThrowIOExceptionWithLastError(env, "Seek failed");
-    } else if ((end = IO_Lseek(fd, 0L, SEEK_END)) == -1) {
-        JNU_ThrowIOExceptionWithLastError(env, "Seek failed");
-    } else if (IO_Lseek(fd, cur, SEEK_SET) == -1) {
-        JNU_ThrowIOExceptionWithLastError(env, "Seek failed");
+    if ((length = IO_GetLength(fd)) == -1) {
+        JNU_ThrowIOExceptionWithLastError(env, "GetLength failed");
     }
-    return end;
+    return length;
 }
 
 JNIEXPORT void JNICALL

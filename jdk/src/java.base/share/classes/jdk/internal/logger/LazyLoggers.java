@@ -32,7 +32,7 @@ import java.lang.System.LoggerFinder;
 import java.lang.System.Logger;
 import java.lang.ref.WeakReference;
 import java.util.Objects;
-import sun.misc.VM;
+import jdk.internal.misc.VM;
 import sun.util.logging.PlatformLogger;
 
 /**

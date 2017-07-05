@@ -54,7 +54,6 @@ package com.sun.jdi.connect;
  *
  * @since 1.5
  */
-@jdk.Exported
 public class TransportTimeoutException extends java.io.IOException {
     private static final long serialVersionUID = 4107035242623365074L;
     /**

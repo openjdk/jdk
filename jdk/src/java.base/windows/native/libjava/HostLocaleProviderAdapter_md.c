@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,22 +31,33 @@
 
 #define BUFLEN 256
 
+// java.util.Calendar constants
+#define CALENDAR_FIELD_ERA              0           // Calendar.ERA
+#define CALENDAR_FIELD_MONTH            2           // Calendar.MONTH
+#define CALENDAR_STYLE_SHORT_MASK       0x00000001  // Calendar.SHORT
+#define CALENDAR_STYLE_STANDALONE_MASK  0x00008000  // Calendar.STANDALONE
+
 // global variables
 typedef int (WINAPI *PGLIE)(const jchar *, LCTYPE, LPWSTR, int);
 typedef int (WINAPI *PGCIE)(const jchar *, CALID, LPCWSTR, CALTYPE, LPWSTR, int, LPDWORD);
+typedef int (WINAPI *PECIEE)(CALINFO_ENUMPROCEXEX, const jchar *, CALID, LPCWSTR, CALTYPE, LPARAM);
 PGLIE pGetLocaleInfoEx;
 PGCIE pGetCalendarInfoEx;
+PECIEE pEnumCalendarInfoExEx;
 BOOL initialized = FALSE;
 
 // prototypes
 int getLocaleInfoWrapper(const jchar *langtag, LCTYPE type, LPWSTR data, int buflen);
 int getCalendarInfoWrapper(const jchar *langtag, CALID id, LPCWSTR reserved, CALTYPE type, LPWSTR data, int buflen, LPDWORD val);
 jint getCalendarID(const jchar *langtag);
-void replaceCalendarArrayElems(JNIEnv *env, jstring jlangtag, jobjectArray jarray,
-                       CALTYPE* pCalTypes, int offset, int length);
+void replaceCalendarArrayElems(JNIEnv *env, jstring jlangtag, jint calid, jobjectArray jarray,
+                       CALTYPE* pCalTypes, int offset, int length, int style);
 WCHAR * getNumberPattern(const jchar * langtag, const jint numberStyle);
 void getNumberPart(const jchar * langtag, const jint numberStyle, WCHAR * number);
 void getFixPart(const jchar * langtag, const jint numberStyle, BOOL positive, BOOL prefix, WCHAR * ret);
+int enumCalendarInfoWrapper(const jchar * langtag, CALID calid, CALTYPE type, LPWSTR buf, int buflen);
+BOOL CALLBACK EnumCalendarInfoProc(LPWSTR lpCalInfoStr, CALID calid, LPWSTR lpReserved, LPARAM lParam);
+jobjectArray getErasImpl(JNIEnv *env, jstring jlangtag, jint calid, jint style, jobjectArray eras);
 
 // from java_props_md.c
 extern __declspec(dllexport) const char * getJavaIDFromLangID(LANGID langID);
@@ -82,6 +93,8 @@ CALTYPE sMonthsType[] = {
     CAL_SABBREVMONTHNAME12,
     CAL_SABBREVMONTHNAME13,
 };
+
+#define MONTHTYPES (sizeof(monthsType) / sizeof(CALTYPE))
 
 CALTYPE wDaysType[] = {
     CAL_SDAYNAME7,
@@ -155,6 +168,11 @@ WCHAR * fixes[2][2][3][16] =
     }
 };
 
+
+// Localized region name for unknown regions (Windows 10)
+#define UNKNOWN_REGION  L"Unknown Region ("
+#define UNKNOWN_REGION_SIZE wcslen(UNKNOWN_REGION)
+
 /*
  * Class:     sun_util_locale_provider_HostLocaleProviderAdapterImpl
  * Method:    initialize
@@ -169,11 +187,15 @@ JNIEXPORT jboolean JNICALL Java_sun_util_locale_provider_HostLocaleProviderAdapt
         pGetCalendarInfoEx = (PGCIE)GetProcAddress(
             GetModuleHandle("kernel32.dll"),
             "GetCalendarInfoEx");
+        pEnumCalendarInfoExEx = (PECIEE)GetProcAddress(
+            GetModuleHandle("kernel32.dll"),
+            "EnumCalendarInfoExEx");
         initialized =TRUE;
     }
 
     return pGetLocaleInfoEx != NULL &&
-           pGetCalendarInfoEx != NULL;
+           pGetCalendarInfoEx != NULL &&
+           pEnumCalendarInfoExEx != NULL;
 }
 
 /*
@@ -300,23 +322,7 @@ JNIEXPORT jobjectArray JNICALL Java_sun_util_locale_provider_HostLocaleProviderA
  */
 JNIEXPORT jobjectArray JNICALL Java_sun_util_locale_provider_HostLocaleProviderAdapterImpl_getEras
   (JNIEnv *env, jclass cls, jstring jlangtag, jobjectArray eras) {
-    WCHAR ad[BUFLEN];
-    const jchar *langtag = (*env)->GetStringChars(env, jlangtag, JNI_FALSE);
-    jstring tmp_string;
-    CHECK_NULL_RETURN(langtag, eras);
-
-    getCalendarInfoWrapper(langtag, getCalendarID(langtag), NULL,
-                      CAL_SERASTRING, ad, BUFLEN, NULL);
-
-    // Windows does not provide B.C. era.
-    tmp_string = (*env)->NewString(env, ad, (jsize)wcslen(ad));
-    if (tmp_string != NULL) {
-        (*env)->SetObjectArrayElement(env, eras, 1, tmp_string);
-    }
-
-    (*env)->ReleaseStringChars(env, jlangtag, langtag);
-
-    return eras;
+    return getErasImpl(env, jlangtag, -1, 0, eras);
 }
 
 /*
@@ -326,8 +332,8 @@ JNIEXPORT jobjectArray JNICALL Java_sun_util_locale_provider_HostLocaleProviderA
  */
 JNIEXPORT jobjectArray JNICALL Java_sun_util_locale_provider_HostLocaleProviderAdapterImpl_getMonths
   (JNIEnv *env, jclass cls, jstring jlangtag, jobjectArray months) {
-    replaceCalendarArrayElems(env, jlangtag, months, monthsType,
-                      0, sizeof(monthsType)/sizeof(CALTYPE));
+    replaceCalendarArrayElems(env, jlangtag, -1, months, monthsType,
+                      0, MONTHTYPES, 0);
     return months;
 }
 
@@ -338,8 +344,8 @@ JNIEXPORT jobjectArray JNICALL Java_sun_util_locale_provider_HostLocaleProviderA
  */
 JNIEXPORT jobjectArray JNICALL Java_sun_util_locale_provider_HostLocaleProviderAdapterImpl_getShortMonths
   (JNIEnv *env, jclass cls, jstring jlangtag, jobjectArray smonths) {
-    replaceCalendarArrayElems(env, jlangtag, smonths, sMonthsType,
-                      0, sizeof(sMonthsType)/sizeof(CALTYPE));
+    replaceCalendarArrayElems(env, jlangtag, -1, smonths, sMonthsType,
+                      0, MONTHTYPES, 0);
     return smonths;
 }
 
@@ -350,8 +356,8 @@ JNIEXPORT jobjectArray JNICALL Java_sun_util_locale_provider_HostLocaleProviderA
  */
 JNIEXPORT jobjectArray JNICALL Java_sun_util_locale_provider_HostLocaleProviderAdapterImpl_getWeekdays
   (JNIEnv *env, jclass cls, jstring jlangtag, jobjectArray wdays) {
-    replaceCalendarArrayElems(env, jlangtag, wdays, wDaysType,
-                      1, sizeof(wDaysType)/sizeof(CALTYPE));
+    replaceCalendarArrayElems(env, jlangtag, -1, wdays, wDaysType,
+                      1, sizeof(wDaysType)/sizeof(CALTYPE), 0);
     return wdays;
 }
 
@@ -362,8 +368,8 @@ JNIEXPORT jobjectArray JNICALL Java_sun_util_locale_provider_HostLocaleProviderA
  */
 JNIEXPORT jobjectArray JNICALL Java_sun_util_locale_provider_HostLocaleProviderAdapterImpl_getShortWeekdays
   (JNIEnv *env, jclass cls, jstring jlangtag, jobjectArray swdays) {
-    replaceCalendarArrayElems(env, jlangtag, swdays, sWDaysType,
-                      1, sizeof(sWDaysType)/sizeof(CALTYPE));
+    replaceCalendarArrayElems(env, jlangtag, -1, swdays, sWDaysType,
+                      1, sizeof(sWDaysType)/sizeof(CALTYPE), 0);
     return swdays;
 }
 
@@ -676,6 +682,41 @@ JNIEXPORT jint JNICALL Java_sun_util_locale_provider_HostLocaleProviderAdapterIm
 
 /*
  * Class:     sun_util_locale_provider_HostLocaleProviderAdapterImpl
+ * Method:    getCalendarDisplayStrings
+ * Signature: (Ljava/lang/String;III)[Ljava/lang/String;
+ */
+JNIEXPORT jobjectArray JNICALL Java_sun_util_locale_provider_HostLocaleProviderAdapterImpl_getCalendarDisplayStrings
+  (JNIEnv *env, jclass cls, jstring jlangtag, jint calid, jint field, jint style) {
+    jobjectArray ret = NULL;
+    CALTYPE * pCalType = NULL;
+
+    switch (field) {
+    case CALENDAR_FIELD_ERA:
+        return getErasImpl(env, jlangtag, calid, style, NULL);
+
+    case CALENDAR_FIELD_MONTH:
+        ret = (*env)->NewObjectArray(env, MONTHTYPES,
+                (*env)->FindClass(env, "java/lang/String"), NULL);
+        if (ret != NULL) {
+            if (style & CALENDAR_STYLE_SHORT_MASK) {
+                pCalType = sMonthsType;
+            } else {
+                pCalType = monthsType;
+            }
+
+            replaceCalendarArrayElems(env, jlangtag, calid, ret, pCalType,
+                          0, MONTHTYPES, style);
+        }
+        return ret;
+
+    default:
+        // not supported
+        return NULL;
+    }
+}
+
+/*
+ * Class:     sun_util_locale_provider_HostLocaleProviderAdapterImpl
  * Method:    getDisplayString
  * Signature: (Ljava/lang/String;ILjava/lang/String;)Ljava/lang/String;
  */
@@ -714,10 +755,15 @@ JNIEXPORT jstring JNICALL Java_sun_util_locale_provider_HostLocaleProviderAdapte
     (*env)->ReleaseStringChars(env, jStr, pjChar);
 
     if (got) {
-        return (*env)->NewString(env, buf, (jsize)wcslen(buf));
-    } else {
-        return NULL;
+        // Hack: Windows 10 returns "Unknown Region (XX)" for localized XX region name.
+        // Take that as not known.
+        if (type != sun_util_locale_provider_HostLocaleProviderAdapterImpl_DN_LOCALE_REGION ||
+            wcsncmp(UNKNOWN_REGION, buf, UNKNOWN_REGION_SIZE) != 0) {
+            return (*env)->NewString(env, buf, (jsize)wcslen(buf));
+        }
     }
+
+    return NULL;
 }
 
 int getLocaleInfoWrapper(const jchar *langtag, LCTYPE type, LPWSTR data, int buflen) {
@@ -753,35 +799,62 @@ int getCalendarInfoWrapper(const jchar *langtag, CALID id, LPCWSTR reserved, CAL
 }
 
 jint getCalendarID(const jchar *langtag) {
-    DWORD type;
+    DWORD type = -1;
     int got = getLocaleInfoWrapper(langtag,
         LOCALE_ICALENDARTYPE | LOCALE_RETURN_NUMBER,
         (LPWSTR)&type, sizeof(type));
 
     if (got) {
-        return type;
-    } else {
-        return 0;
+        switch (type) {
+            case CAL_GREGORIAN:
+            case CAL_GREGORIAN_US:
+            case CAL_JAPAN:
+            case CAL_TAIWAN:
+            case CAL_HIJRI:
+            case CAL_THAI:
+            case CAL_GREGORIAN_ME_FRENCH:
+            case CAL_GREGORIAN_ARABIC:
+            case CAL_GREGORIAN_XLIT_ENGLISH:
+            case CAL_GREGORIAN_XLIT_FRENCH:
+            case CAL_UMALQURA:
+                break;
+
+            default:
+                // non-supported calendars return -1
+                type = -1;
+                break;
+        }
     }
+
+    return type;
 }
 
-void replaceCalendarArrayElems(JNIEnv *env, jstring jlangtag, jobjectArray jarray, CALTYPE* pCalTypes, int offset, int length) {
+void replaceCalendarArrayElems(JNIEnv *env, jstring jlangtag, jint calid, jobjectArray jarray, CALTYPE* pCalTypes, int offset, int length, int style) {
     WCHAR name[BUFLEN];
     const jchar *langtag = (*env)->GetStringChars(env, jlangtag, JNI_FALSE);
-    int calid;
     jstring tmp_string;
+    CALTYPE isGenitive;
 
     CHECK_NULL(langtag);
-    calid = getCalendarID(langtag);
+
+    if (calid < 0) {
+        calid = getCalendarID(langtag);
+    }
 
     if (calid != -1) {
         int i;
+
+        if (!(style & CALENDAR_STYLE_STANDALONE_MASK)) {
+            isGenitive = CAL_RETURN_GENITIVE_NAMES;
+        }
+
         for (i = 0; i < length; i++) {
-            getCalendarInfoWrapper(langtag, calid, NULL,
-                              pCalTypes[i], name, BUFLEN, NULL);
-            tmp_string = (*env)->NewString(env, name, (jsize)wcslen(name));
-            if (tmp_string != NULL) {
-                (*env)->SetObjectArrayElement(env, jarray, i + offset, tmp_string);
+            if (getCalendarInfoWrapper(langtag, calid, NULL,
+                              pCalTypes[i] | isGenitive, name, BUFLEN, NULL) != 0) {
+                tmp_string = (*env)->NewString(env, name, (jsize)wcslen(name));
+                if (tmp_string != NULL) {
+                    (*env)->SetObjectArrayElement(env, jarray, i + offset, tmp_string);
+                }
             }
         }
     }
@@ -923,4 +996,100 @@ void getFixPart(const jchar * langtag, const jint numberStyle, BOOL positive, BO
     }
 
     wcscpy(ret, fixes[!prefix][!positive][style][pattern]);
+}
+
+int enumCalendarInfoWrapper(const jchar *langtag, CALID calid, CALTYPE type, LPWSTR buf, int buflen) {
+    if (pEnumCalendarInfoExEx) {
+        if (wcscmp(L"und", (LPWSTR)langtag) == 0) {
+            // defaults to "en"
+            return pEnumCalendarInfoExEx(&EnumCalendarInfoProc, L"en",
+                calid, NULL, type, (LPARAM)buf);
+        } else {
+            return pEnumCalendarInfoExEx(&EnumCalendarInfoProc, langtag,
+                calid, NULL, type, (LPARAM)buf);
+        }
+    } else {
+        return 0;
+    }
+}
+
+BOOL CALLBACK EnumCalendarInfoProc(LPWSTR lpCalInfoStr, CALID calid, LPWSTR lpReserved, LPARAM lParam) {
+    wcscat_s((LPWSTR)lParam, BUFLEN, lpCalInfoStr);
+    wcscat_s((LPWSTR)lParam, BUFLEN, L",");
+    return TRUE;
+}
+
+jobjectArray getErasImpl(JNIEnv *env, jstring jlangtag, jint calid, jint style, jobjectArray eras) {
+    const jchar * langtag = (*env)->GetStringChars(env, jlangtag, JNI_FALSE);
+    WCHAR buf[BUFLEN];
+    jobjectArray ret = eras;
+    CALTYPE type;
+
+    CHECK_NULL_RETURN(langtag, ret);
+
+    buf[0] = '\0';
+    if (style & CALENDAR_STYLE_SHORT_MASK) {
+        type = CAL_SABBREVERASTRING;
+    } else {
+        type = CAL_SERASTRING;
+    }
+
+    if (calid < 0) {
+        calid = getCalendarID(langtag);
+    }
+
+    if (calid != -1 && enumCalendarInfoWrapper(langtag, calid, type, buf, BUFLEN)) {
+        // format in buf: "era0,era1,era2," where era0 is the current one
+        int eraCount;
+        LPWSTR current;
+        jsize array_length;
+
+        for(eraCount = 0, current = buf; *current != '\0'; current++) {
+            if (*current == L',') {
+                eraCount ++;
+            }
+        }
+
+        if (eras != NULL) {
+            array_length = (*env)->GetArrayLength(env, eras);
+        } else {
+            // +1 for the "before" era, e.g., BC, which Windows does not return.
+            array_length = (jsize)eraCount + 1;
+            ret = (*env)->NewObjectArray(env, array_length,
+                (*env)->FindClass(env, "java/lang/String"), NULL);
+        }
+
+        if (ret != NULL) {
+            int eraIndex;
+            LPWSTR era;
+
+            for(eraIndex = 0, era = current = buf; eraIndex < eraCount; era = current, eraIndex++) {
+                while (*current != L',') {
+                    current++;
+                }
+                *current++ = '\0';
+
+                if (eraCount - eraIndex < array_length &&
+                    *era != '\0') {
+                    (*env)->SetObjectArrayElement(env, ret,
+                        (jsize)(eraCount - eraIndex),
+                        (*env)->NewString(env, era, (jsize)wcslen(era)));
+                }
+            }
+
+            // Hack for the Japanese Imperial Calendar to insert Gregorian era for
+            // "Before Meiji"
+            if (calid == CAL_JAPAN) {
+                buf[0] = '\0';
+                if (enumCalendarInfoWrapper(langtag, CAL_GREGORIAN, type, buf, BUFLEN)) {
+                    jsize len = (jsize)wcslen(buf);
+                    buf[--len] = '\0'; // remove the last ','
+                    (*env)->SetObjectArrayElement(env, ret, 0, (*env)->NewString(env, buf, len));
+                }
+            }
+        }
+    }
+
+    (*env)->ReleaseStringChars(env, jlangtag, langtag);
+    return ret;
 }

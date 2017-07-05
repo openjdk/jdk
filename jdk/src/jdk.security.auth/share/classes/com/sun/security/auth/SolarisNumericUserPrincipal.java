@@ -44,7 +44,6 @@ import java.security.Principal;
  * @see java.security.Principal
  * @see javax.security.auth.Subject
  */
-@jdk.Exported(false)
 @Deprecated
 public class SolarisNumericUserPrincipal implements
                                         Principal,

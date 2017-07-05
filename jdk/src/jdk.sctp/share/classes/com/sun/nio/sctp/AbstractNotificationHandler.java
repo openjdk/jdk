@@ -39,7 +39,6 @@ package com.sun.nio.sctp;
  *
  * @since 1.7
  */
-@jdk.Exported
 public class AbstractNotificationHandler<T>
     implements NotificationHandler<T>
 {

@@ -36,7 +36,6 @@ package jdk.nashorn.api.tree;
  *
  * @since 1.9
  */
-@jdk.Exported
 public interface ParenthesizedTree extends ExpressionTree {
     /**
      * Returns the expression within the parenthesis.

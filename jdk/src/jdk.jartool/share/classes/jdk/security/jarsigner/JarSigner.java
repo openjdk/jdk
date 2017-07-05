@@ -79,7 +79,6 @@ import java.util.zip.ZipOutputStream;
  *
  * @since 1.9
  */
-@jdk.Exported
 public final class JarSigner {
 
     /**
@@ -88,7 +87,6 @@ public final class JarSigner {
      *
      * @since 1.9
      */
-    @jdk.Exported
     public static class Builder {
 
         // Signer materials:

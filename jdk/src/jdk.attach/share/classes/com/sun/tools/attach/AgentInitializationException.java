@@ -40,7 +40,6 @@ package com.sun.tools.attach;
  * the error returned by the agent's {@code Agent_OnAttach} function.
  * This error code can be obtained by invoking the {@link #returnValue() returnValue} method.
  */
-@jdk.Exported
 public class AgentInitializationException extends Exception {
 
     /** use serialVersionUID for interoperability */
