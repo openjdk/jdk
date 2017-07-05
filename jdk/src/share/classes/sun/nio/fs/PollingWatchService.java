@@ -80,16 +80,16 @@ class PollingWatchService
             new HashSet<WatchEvent.Kind<?>>(events.length);
         for (WatchEvent.Kind<?> event: events) {
             // standard events
-            if (event == StandardWatchEventKind.ENTRY_CREATE ||
-                event == StandardWatchEventKind.ENTRY_MODIFY ||
-                event == StandardWatchEventKind.ENTRY_DELETE)
+            if (event == StandardWatchEventKinds.ENTRY_CREATE ||
+                event == StandardWatchEventKinds.ENTRY_MODIFY ||
+                event == StandardWatchEventKinds.ENTRY_DELETE)
             {
                 eventSet.add(event);
                 continue;
             }
 
             // OVERFLOW is ignored
-            if (event == StandardWatchEventKind.OVERFLOW) {
+            if (event == StandardWatchEventKinds.OVERFLOW) {
                 if (events.length == 1)
                     throw new IllegalArgumentException("No events to register");
                 continue;
@@ -355,16 +355,16 @@ class PollingWatchService
                                      new CacheEntry(lastModified, tickCount));
 
                         // queue ENTRY_CREATE if event enabled
-                        if (events.contains(StandardWatchEventKind.ENTRY_CREATE)) {
-                            signalEvent(StandardWatchEventKind.ENTRY_CREATE, entry.getFileName());
+                        if (events.contains(StandardWatchEventKinds.ENTRY_CREATE)) {
+                            signalEvent(StandardWatchEventKinds.ENTRY_CREATE, entry.getFileName());
                             continue;
                         } else {
                             // if ENTRY_CREATE is not enabled and ENTRY_MODIFY is
                             // enabled then queue event to avoid missing out on
                             // modifications to the file immediately after it is
                             // created.
-                            if (events.contains(StandardWatchEventKind.ENTRY_MODIFY)) {
-                                signalEvent(StandardWatchEventKind.ENTRY_MODIFY, entry.getFileName());
+                            if (events.contains(StandardWatchEventKinds.ENTRY_MODIFY)) {
+                                signalEvent(StandardWatchEventKinds.ENTRY_MODIFY, entry.getFileName());
                             }
                         }
                         continue;
@@ -372,8 +372,8 @@ class PollingWatchService
 
                     // check if file has changed
                     if (e.lastModified != lastModified) {
-                        if (events.contains(StandardWatchEventKind.ENTRY_MODIFY)) {
-                            signalEvent(StandardWatchEventKind.ENTRY_MODIFY,
+                        if (events.contains(StandardWatchEventKinds.ENTRY_MODIFY)) {
+                            signalEvent(StandardWatchEventKinds.ENTRY_MODIFY,
                                         entry.getFileName());
                         }
                     }
@@ -403,8 +403,8 @@ class PollingWatchService
                     Path name = mapEntry.getKey();
                     // remove from map and queue delete event (if enabled)
                     i.remove();
-                    if (events.contains(StandardWatchEventKind.ENTRY_DELETE)) {
-                        signalEvent(StandardWatchEventKind.ENTRY_DELETE, name);
+                    if (events.contains(StandardWatchEventKinds.ENTRY_DELETE)) {
+                        signalEvent(StandardWatchEventKinds.ENTRY_DELETE, name);
                     }
                 }
             }

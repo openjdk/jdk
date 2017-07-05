@@ -162,7 +162,7 @@ inline bool ClearNoncleanCardWrapper::clear_card_serial(jbyte* entry) {
 }
 
 ClearNoncleanCardWrapper::ClearNoncleanCardWrapper(
-  MemRegionClosure* dirty_card_closure, CardTableRS* ct) :
+  DirtyCardToOopClosure* dirty_card_closure, CardTableRS* ct) :
     _dirty_card_closure(dirty_card_closure), _ct(ct) {
     _is_par = (SharedHeap::heap()->n_par_threads() > 0);
 }
@@ -246,10 +246,6 @@ void CardTableRS::write_ref_field_gc_par(void* field, oop new_val) {
 
 void CardTableRS::younger_refs_in_space_iterate(Space* sp,
                                                 OopsInGenClosure* cl) {
-  DirtyCardToOopClosure* dcto_cl = sp->new_dcto_cl(cl, _ct_bs->precision(),
-                                                   cl->gen_boundary());
-  ClearNoncleanCardWrapper clear_cl(dcto_cl, this);
-
   const MemRegion urasm = sp->used_region_at_save_marks();
 #ifdef ASSERT
   // Convert the assertion check to a warning if we are running
@@ -275,10 +271,10 @@ void CardTableRS::younger_refs_in_space_iterate(Space* sp,
     if (!urasm.equals(urasm2)) {
       warning("CMS+ParNew: Flickering used_region_at_save_marks()!!");
     }
+    ShouldNotReachHere();
   }
 #endif
-  _ct_bs->non_clean_card_iterate_possibly_parallel(sp, urasm,
-                                                   dcto_cl, &clear_cl);
+  _ct_bs->non_clean_card_iterate_possibly_parallel(sp, urasm, cl, this);
 }
 
 void CardTableRS::clear_into_younger(Generation* gen, bool clear_perm) {

@@ -42,6 +42,7 @@
 #include "services/classLoadingService.hpp"
 #include "services/heapDumper.hpp"
 #include "services/lowMemoryDetector.hpp"
+#include "services/gcNotifier.hpp"
 #include "services/management.hpp"
 #include "services/memoryManager.hpp"
 #include "services/memoryPool.hpp"
@@ -60,6 +61,8 @@ klassOop Management::_memoryPoolMXBean_klass = NULL;
 klassOop Management::_memoryManagerMXBean_klass = NULL;
 klassOop Management::_garbageCollectorMXBean_klass = NULL;
 klassOop Management::_managementFactory_klass = NULL;
+klassOop Management::_garbageCollectorImpl_klass = NULL;
+klassOop Management::_gcInfo_klass = NULL;
 
 jmmOptionalSupport Management::_optional_support = {0};
 TimeStamp Management::_stamp;
@@ -179,6 +182,8 @@ void Management::oops_do(OopClosure* f) {
   f->do_oop((oop*) &_memoryManagerMXBean_klass);
   f->do_oop((oop*) &_garbageCollectorMXBean_klass);
   f->do_oop((oop*) &_managementFactory_klass);
+  f->do_oop((oop*) &_garbageCollectorImpl_klass);
+  f->do_oop((oop*) &_gcInfo_klass);
 }
 
 klassOop Management::java_lang_management_ThreadInfo_klass(TRAPS) {
@@ -228,6 +233,20 @@ klassOop Management::sun_management_ManagementFactory_klass(TRAPS) {
     _managementFactory_klass = load_and_initialize_klass(vmSymbols::sun_management_ManagementFactory(), CHECK_NULL);
   }
   return _managementFactory_klass;
+}
+
+klassOop Management::sun_management_GarbageCollectorImpl_klass(TRAPS) {
+  if (_garbageCollectorImpl_klass == NULL) {
+    _garbageCollectorImpl_klass = load_and_initialize_klass(vmSymbols::sun_management_GarbageCollectorImpl(), CHECK_NULL);
+  }
+  return _garbageCollectorImpl_klass;
+}
+
+klassOop Management::com_sun_management_GcInfo_klass(TRAPS) {
+  if (_gcInfo_klass == NULL) {
+    _gcInfo_klass = load_and_initialize_klass(vmSymbols::com_sun_management_GcInfo(), CHECK_NULL);
+  }
+  return _gcInfo_klass;
 }
 
 static void initialize_ThreadInfo_constructor_arguments(JavaCallArguments* args, ThreadSnapshot* snapshot, TRAPS) {
@@ -2056,6 +2075,13 @@ JVM_ENTRY(void, jmm_GetLastGCStat(JNIEnv *env, jobject obj, jmmGCStat *gc_stat))
   }
 JVM_END
 
+JVM_ENTRY(void, jmm_SetGCNotificationEnabled(JNIEnv *env, jobject obj, jboolean enabled))
+  ResourceMark rm(THREAD);
+  // Get the GCMemoryManager
+  GCMemoryManager* mgr = get_gc_memory_manager_from_jobject(obj, CHECK);
+  mgr->set_notification_enabled(enabled?true:false);
+JVM_END
+
 // Dump heap - Returns 0 if succeeds.
 JVM_ENTRY(jint, jmm_DumpHeap0(JNIEnv *env, jstring outputfile, jboolean live))
 #ifndef SERVICES_KERNEL
@@ -2122,7 +2148,8 @@ const struct jmmInterface_1_ jmm_interface = {
   jmm_FindDeadlockedThreads,
   jmm_SetVMGlobal,
   NULL,
-  jmm_DumpThreads
+  jmm_DumpThreads,
+  jmm_SetGCNotificationEnabled
 };
 
 void* Management::get_jmm_interface(int version) {

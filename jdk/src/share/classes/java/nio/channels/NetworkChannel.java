@@ -124,7 +124,7 @@ public interface NetworkChannel
      * @throws  IOException
      *          If an I/O error occurs
      *
-     * @see java.net.StandardSocketOption
+     * @see java.net.StandardSocketOptions
      */
     <T> NetworkChannel setOption(SocketOption<T> name, T value) throws IOException;
 
@@ -144,7 +144,7 @@ public interface NetworkChannel
      * @throws  IOException
      *          If an I/O error occurs
      *
-     * @see java.net.StandardSocketOption
+     * @see java.net.StandardSocketOptions
      */
     <T> T getOption(SocketOption<T> name) throws IOException;
 

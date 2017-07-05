@@ -170,8 +170,8 @@ assert(s.equals("savvy"));
 mt = MethodType.methodType(java.util.List.class, Object[].class);
 mh = lookup.findStatic(java.util.Arrays.class, "asList", mt);
 assert(mh.isVarargsCollector());
-x = mh.invokeGeneric("one", "two");
-// invokeGeneric(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/Object;
+x = mh.invoke("one", "two");
+// invoke(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/Object;
 assert(x.equals(java.util.Arrays.asList("one","two")));
 // mt is (Object,Object,Object)Object
 mt = MethodType.genericMethodType(3);
@@ -199,12 +199,12 @@ mh.invokeExact(System.out, "Hello, world.");
 MethodHandle asList = publicLookup()
   .findStatic(Arrays.class, "asList", methodType(List.class, Object[].class))
   .asVarargsCollector(Object[].class);
-assertEquals("[]", asList.invokeGeneric().toString());
-assertEquals("[1]", asList.invokeGeneric(1).toString());
-assertEquals("[two, too]", asList.invokeGeneric("two", "too").toString());
+assertEquals("[]", asList.invoke().toString());
+assertEquals("[1]", asList.invoke(1).toString());
+assertEquals("[two, too]", asList.invoke("two", "too").toString());
 Object[] argv = { "three", "thee", "tee" };
-assertEquals("[three, thee, tee]", asList.invokeGeneric(argv).toString());
-List ls = (List) asList.invokeGeneric((Object)argv);
+assertEquals("[three, thee, tee]", asList.invoke(argv).toString());
+List ls = (List) asList.invoke((Object)argv);
 assertEquals(1, ls.size());
 assertEquals("[three, thee, tee]", Arrays.toString((Object[])ls.get(0)));
             }}
@@ -218,9 +218,9 @@ MethodHandle vamh = publicLookup()
   .asVarargsCollector(Object[].class);
 MethodHandle mh = MethodHandles.exactInvoker(vamh.type()).bindTo(vamh);
 assert(vamh.type().equals(mh.type()));
-assertEquals("[1, 2, 3]", vamh.invokeGeneric(1,2,3).toString());
+assertEquals("[1, 2, 3]", vamh.invoke(1,2,3).toString());
 boolean failed = false;
-try { mh.invokeGeneric(1,2,3); }
+try { mh.invoke(1,2,3); }
 catch (WrongMethodTypeException ex) { failed = true; }
 assert(failed);
 {}

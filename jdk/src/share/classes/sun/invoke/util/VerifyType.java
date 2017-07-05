@@ -54,9 +54,15 @@ public class VerifyType {
         if (dst == void.class)     return true;  // drop any return value
         if (isNullType(src))       return !dst.isPrimitive();
         if (!src.isPrimitive())    return dst.isAssignableFrom(src);
+        if (!dst.isPrimitive())    return false;
         // Verifier allows an int to carry byte, short, char, or even boolean:
-        if (dst == int.class)      return Wrapper.forPrimitiveType(src).isSubwordOrInt();
-        return false;
+        Wrapper sw = Wrapper.forPrimitiveType(src);
+        if (dst == int.class)      return sw.isSubwordOrInt();
+        Wrapper dw = Wrapper.forPrimitiveType(dst);
+        if (!sw.isSubwordOrInt())  return false;
+        if (!dw.isSubwordOrInt())  return false;
+        if (!dw.isSigned() && sw.isSigned())  return false;
+        return dw.bitWidth() > sw.bitWidth();
     }
 
     /**
@@ -155,6 +161,7 @@ public class VerifyType {
                     return -1;   // truncation may be required
                 if (!dw.isSigned() && sw.isSigned())
                     return -1;   // sign elimination may be required
+                return 1;
             }
             if (src == float.class || dst == float.class) {
                 if (src == double.class || dst == double.class)

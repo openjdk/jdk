@@ -29,6 +29,7 @@
 #include "memory/generation.hpp"
 #include "runtime/handles.hpp"
 #include "services/memoryUsage.hpp"
+#include "gc_interface/gcCause.hpp"
 
 // Forward declaration
 class MemoryPool;
@@ -162,7 +163,8 @@ public:
                        bool recordPreGCUsage, bool recordPeakUsage);
   static void gc_end(bool fullGC, bool recordPostGCUsage,
                      bool recordAccumulatedGCTime,
-                     bool recordGCEndTime, bool countCollection);
+                     bool recordGCEndTime, bool countCollection,
+                     GCCause::Cause cause);
 
 
   static void oops_do(OopClosure* f);
@@ -172,6 +174,14 @@ public:
 
   // Create an instance of java/lang/management/MemoryUsage
   static Handle create_MemoryUsage_obj(MemoryUsage usage, TRAPS);
+
+  static const GCMemoryManager* get_minor_gc_manager() {
+      return _minor_gc_manager;
+  }
+
+  static const GCMemoryManager* get_major_gc_manager() {
+      return _major_gc_manager;
+  }
 };
 
 class TraceMemoryManagerStats : public StackObj {
@@ -184,10 +194,11 @@ private:
   bool         _recordAccumulatedGCTime;
   bool         _recordGCEndTime;
   bool         _countCollection;
-
+  GCCause::Cause _cause;
 public:
   TraceMemoryManagerStats() {}
   TraceMemoryManagerStats(bool fullGC,
+                          GCCause::Cause cause,
                           bool recordGCBeginTime = true,
                           bool recordPreGCUsage = true,
                           bool recordPeakUsage = true,
@@ -197,6 +208,7 @@ public:
                           bool countCollection = true);
 
   void initialize(bool fullGC,
+                  GCCause::Cause cause,
                   bool recordGCBeginTime,
                   bool recordPreGCUsage,
                   bool recordPeakUsage,
@@ -205,7 +217,7 @@ public:
                   bool recordGCEndTime,
                   bool countCollection);
 
-  TraceMemoryManagerStats(Generation::Name kind);
+  TraceMemoryManagerStats(Generation::Name kind, GCCause::Cause cause);
   ~TraceMemoryManagerStats();
 };
 

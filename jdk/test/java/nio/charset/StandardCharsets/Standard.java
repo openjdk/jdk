@@ -44,25 +44,25 @@ public class Standard {
         "UTF-16BE", "UTF-16LE", "UTF-16" };
 
     public static void realMain(String[] args) {
-        check(StandardCharset.US_ASCII instanceof Charset);
-        check(StandardCharset.ISO_8859_1 instanceof Charset);
-        check(StandardCharset.UTF_8 instanceof Charset);
-        check(StandardCharset.UTF_16BE instanceof Charset);
-        check(StandardCharset.UTF_16LE instanceof Charset);
-        check(StandardCharset.UTF_16 instanceof Charset);
+        check(StandardCharsets.US_ASCII instanceof Charset);
+        check(StandardCharsets.ISO_8859_1 instanceof Charset);
+        check(StandardCharsets.UTF_8 instanceof Charset);
+        check(StandardCharsets.UTF_16BE instanceof Charset);
+        check(StandardCharsets.UTF_16LE instanceof Charset);
+        check(StandardCharsets.UTF_16 instanceof Charset);
 
-        check("US-ASCII".equals(StandardCharset.US_ASCII.name()));
-        check("ISO-8859-1".equals(StandardCharset.ISO_8859_1.name()));
-        check("UTF-8".equals(StandardCharset.UTF_8.name()));
-        check("UTF-16BE".equals(StandardCharset.UTF_16BE.name()));
-        check("UTF-16LE".equals(StandardCharset.UTF_16LE.name()));
-        check("UTF-16".equals(StandardCharset.UTF_16.name()));
+        check("US-ASCII".equals(StandardCharsets.US_ASCII.name()));
+        check("ISO-8859-1".equals(StandardCharsets.ISO_8859_1.name()));
+        check("UTF-8".equals(StandardCharsets.UTF_8.name()));
+        check("UTF-16BE".equals(StandardCharsets.UTF_16BE.name()));
+        check("UTF-16LE".equals(StandardCharsets.UTF_16LE.name()));
+        check("UTF-16".equals(StandardCharsets.UTF_16.name()));
 
         Set<String> charsets = new HashSet<>();
-        Field standardCharsetFields[] = StandardCharset.class.getFields();
+        Field standardCharsetFields[] = StandardCharsets.class.getFields();
 
         for(Field charsetField : standardCharsetFields) {
-            check(StandardCharset.class == charsetField.getDeclaringClass());
+            check(StandardCharsets.class == charsetField.getDeclaringClass());
             check(Modifier.isFinal(charsetField.getModifiers()));
             check(Modifier.isStatic(charsetField.getModifiers()));
             check(Modifier.isPublic(charsetField.getModifiers()));

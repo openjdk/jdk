@@ -27,17 +27,7 @@
  */
 
 /*
- * IBM Confidential
- * OCO Source Materials
- *
- * IBM Java(tm)2 SDK, Standard Edition, v 1.2
- *
- * (C) Copyright IBM Corp. 1999
- *
- * The source code for this program is not published or otherwise divested of
- * its trade secrets, irrespective of what has been deposited with the U.S.
- * Copyright office.
- *
+ *  (C) Copyright IBM Corp. 1999 All Rights Reserved.
  */
 
 /*

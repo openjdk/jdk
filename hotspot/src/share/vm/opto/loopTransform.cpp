@@ -1230,7 +1230,7 @@ void PhaseIdealLoop::do_unroll( IdealLoopTree *loop, Node_List &old_new, bool ad
         set_ctrl(new_limit, C->root());
       } else {
         // Limit is not constant.
-        {
+        if (loop_head->unrolled_count() == 1) { // only for first unroll
           // Separate limit by Opaque node in case it is an incremented
           // variable from previous loop to avoid using pre-incremented
           // value which could increase register pressure.

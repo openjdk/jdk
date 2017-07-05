@@ -31,8 +31,8 @@ package java.nio.file;
  * @since 1.7
  */
 
-public final class StandardWatchEventKind {
-    private StandardWatchEventKind() { }
+public final class StandardWatchEventKinds {
+    private StandardWatchEventKinds() { }
 
     /**
      * A special event to indicate that events may have been lost or
@@ -44,8 +44,8 @@ public final class StandardWatchEventKind {
      *
      * @see WatchService
      */
-    public static final WatchEvent.Kind<Void> OVERFLOW =
-        new StdWatchEventKind<Void>("OVERFLOW", Void.class);
+    public static final WatchEvent.Kind<Object> OVERFLOW =
+        new StdWatchEventKind<Object>("OVERFLOW", Object.class);
 
     /**
      * Directory entry created.
