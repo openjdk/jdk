@@ -298,8 +298,10 @@ static Node* long_by_long_mulhi(PhaseGVN* phase, Node* dividend, jlong magic_con
 
   // 6732154: Construct both w1 and w2 before transforming, so t
   // doesn't go dead prematurely.
-  w1 = phase->transform(w1);
+  // 6837011: We need to transform w2 before w1 because the
+  // transformation of w1 could return t.
   w2 = phase->transform(w2);
+  w1 = phase->transform(w1);
 
   // w1 = u0*v1 + w1;
   Node* u0v1 = phase->transform(new (phase->C, 3) MulLNode(u0, v1));

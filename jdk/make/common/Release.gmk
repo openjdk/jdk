@@ -52,6 +52,9 @@ EXCLUDE_PROPWARN_PKGS = com.sun.java.swing.plaf          \
                         com.sun.java.swing.plaf.motif    \
                         com.sun.java.swing.plaf.gtk
 
+# This is a stopgap until 6839872 is fixed.
+EXCLUDE_PROPWARN_PKGS += sun.dyn
+
 # 64-bit solaris has a few special cases. We define the variable
 # SOLARIS64 for use in this Makefile to easily test those cases
 ifeq ($(PLATFORM), solaris)

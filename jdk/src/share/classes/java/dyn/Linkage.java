@@ -37,16 +37,19 @@ public class Linkage {
     private Linkage() {}  // do not instantiate
 
     /**
-     * Register a bootstrap method for use for a given caller class.
-     * The method handle must be of a type equivalent to {@link Linkage#makeCallSite}.
+     * <em>PROVISIONAL API, WORK IN PROGRESS:</em>
+     * Register a <em>bootstrap method</em> to use when linking a given caller class.
+     * It must be a method handle of a type equivalent to {@link CallSite#CallSite}.
+     * In other words, it must act as a factory method which accepts the arguments
+     * to {@code CallSite}'s constructor (a class, a string, and a method type),
+     * and returns a {@code CallSite} object (possibly of a subclass of {@code CallSite}).
      * <p>
-     * The operation will fail with an exception if any of the following conditions hold:
+     * The registration will fail with an {@code IllegalStateException} if any of the following conditions hold:
      * <ul>
      * <li>The caller of this method is in a different package than the {@code callerClass},
      *     and there is a security manager, and its {@code checkPermission} call throws
      *     when passed {@link LinkagePermission}("registerBootstrapMethod",callerClass).
-     * <li>The given class already has a bootstrap method, either from an embedded
-     *     {@code BootstrapInvokeDynamic} classfile attribute, or from a previous
+     * <li>The given class already has a bootstrap method from a previous
      *     call to this method.
      * <li>The given class is already fully initialized.
      * <li>The given class is in the process of initialization, in another thread.
@@ -75,9 +78,10 @@ public class Linkage {
     }
 
     /**
+     * <em>PROVISIONAL API, WORK IN PROGRESS:</em>
      * Simplified version of registerBootstrapMethod for self-registration,
      * to be called from a static initializer.
-     * Finds a static method of type (CallSite, Object[]) -> Object in the
+     * Finds a static method of the required type in the
      * given class, and installs it on the caller.
      * @throws IllegalArgumentException if there is no such method
      */
@@ -92,9 +96,10 @@ public class Linkage {
     }
 
     /**
+     * <em>PROVISIONAL API, WORK IN PROGRESS:</em>
      * Simplified version of registerBootstrapMethod for self-registration,
      * to be called from a static initializer.
-     * Finds a static method of type (CallSite, Object[]) -> Object in the
+     * Finds a static method of the required type in the
      * caller's class, and installs it on the caller.
      * @throws IllegalArgumentException if there is no such method
      */
@@ -109,6 +114,7 @@ public class Linkage {
     }
 
     /**
+     * <em>PROVISIONAL API, WORK IN PROGRESS:</em>
      * Report the bootstrap method registered for a given class.
      * Returns null if the class has never yet registered a bootstrap method,
      * or if the class has explicitly registered a null bootstrap method.
@@ -125,8 +131,10 @@ public class Linkage {
         }
     }
 
-    /** The type of any bootstrap method is a three-argument method
-     * {@code (Class<?>, String, MethodType)} returning a {@code CallSite}.
+    /**
+     * <em>PROVISIONAL API, WORK IN PROGRESS:</em>
+     * The type of any bootstrap method is a three-argument method
+     * {@code (Class, String, MethodType)} returning a {@code CallSite}.
      */
     public static final MethodType BOOTSTRAP_METHOD_TYPE
             = MethodType.make(CallSite.class,
@@ -140,6 +148,7 @@ public class Linkage {
             new WeakHashMap<Class, MethodHandle>();
 
     /**
+     * <em>PROVISIONAL API, WORK IN PROGRESS:</em>
      * Invalidate all <code>invokedynamic</code> call sites everywhere.
      * <p>
      * When this method returns, every <code>invokedynamic</code> instruction
@@ -163,6 +172,7 @@ public class Linkage {
     }
 
     /**
+     * <em>PROVISIONAL API, WORK IN PROGRESS:</em>
      * Invalidate all <code>invokedynamic</code> call sites associated
      * with the given class.
      * (These are exactly those sites which report the given class
