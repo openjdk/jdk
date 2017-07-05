@@ -25,7 +25,7 @@
  * @test
  * @bug 8029383
  * @summary stack overflow if callee is marked for deoptimization causes crash
- * @run main/othervm -XX:TieredStopAtLevel=1 -XX:-BackgroundCompilation -XX:CompileCommand=dontinline,StackOverflowGuardPagesOff::m1 -XX:CompileCommand=exclude,StackOverflowGuardPagesOff::m2 -Xss256K -XX:-UseOnStackReplacement StackOverflowGuardPagesOff
+ * @run main/othervm -XX:TieredStopAtLevel=1 -XX:-BackgroundCompilation -XX:CompileCommand=dontinline,StackOverflowGuardPagesOff::m1 -XX:CompileCommand=exclude,StackOverflowGuardPagesOff::m2 -Xss392K -XX:-UseOnStackReplacement StackOverflowGuardPagesOff
  *
  */
 

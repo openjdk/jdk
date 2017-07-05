@@ -1910,7 +1910,6 @@ public:
   }
 
   void work(uint worker_id) {
-    double start = os::elapsedTime();
     FreeRegionList local_cleanup_list("Local Cleanup List");
     HRRSCleanupTask hrrs_cleanup_task;
     G1NoteEndOfConcMarkClosure g1_note_end(_g1h, &local_cleanup_list,
