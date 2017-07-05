@@ -1,3 +1,4 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
 <html>
 <head>
 <title>javax.print.attribute package</title>
@@ -30,7 +31,6 @@ questions.
 Provides classes and interfaces
 that describe the types of Java<sup><font size="-2">TM</font></sup> Print
 Service attributes and how they can be collected into attribute sets.
-<P>
 <H3>What is an Attribute?</H3>
 When setting up a print job,
 a client specifies two things:
@@ -71,7 +71,6 @@ of the results of a print job.  The print job determines the manner in
 which it achieves the results specified by the processing instructions.
 Representing processing instructions as descriptive items
 provides more flexibility for implementing print jobs.
-<P>
 <h4>Attribute Categories and Values</h4>
 Each printer has a set of capabilities, such as the ability to print on
 different paper sizes or the ability to print more than one copy.  Each of 
@@ -222,7 +221,6 @@ one concrete implementation of each of the attribute set subinterfaces:
 All of these classes extend <A HREF="HashAttributeSet.html">HashAttributeSet</A>
 and enforce the restriction that the attribute set is only allowed to contain
 the corresponding kind of attribute.
-<P>
 <H3>Attribute Class Design</H3>
 An attribute value is a small, atomic data item,
 such as an integer or an enumerated value.  The Java Print Service API 
@@ -299,8 +297,8 @@ certain contexts also implements one or more subinterfaces of
 <code>Attribute</code>.  Most attribute classes also extend the appropriate 
 abstract syntax class to get the implementation.  Consider the 
 <code>Sides</code> attribute class:
-<pre>
 <blockquote>
+<pre>
 public class Sides
   extends EnumSyntax
   implements DocAttribute, PrintRequestAttribute, PrintJobAttribute
@@ -311,8 +309,8 @@ public class Sides
     }
   ...
   }
-</blockquote>  
 </pre>
+</blockquote>  
 <p>
 Since every attribute class implements <code>Attribute</code>, every attribute
 class must provide an implementation for the 
@@ -363,9 +361,8 @@ because print-request attributes are the types of attributes that
 client usually specifies.  This example demonstrates creating an attribute
 set of print-request attributes and locating a printer that can
 print the document according to the specified attributes:
-<p>
-<pre>
 <blockquote>
+<pre>
 
 FileInputStream psStream;
 try {
@@ -392,8 +389,8 @@ if (services.length > 0) {
 	job.print(myDoc, aset);
    } catch (PrintException pe) {}
 }
-</blockquote>
 </pre>
+</blockquote>
 <P>
 Please note: In the javax.print APIs, a null reference parameter to methods 
 is incorrect unless explicitly documented on the method as having a meaningful

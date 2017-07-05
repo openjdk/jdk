@@ -68,7 +68,7 @@ public abstract class AbstractLayoutCache implements RowMapper {
 
     /**
      * Sets the renderer that is responsible for drawing nodes in the tree
-     * and which is threfore responsible for calculating the dimensions of
+     * and which is therefore responsible for calculating the dimensions of
      * individual nodes.
      *
      * @param nd a <code>NodeDimensions</code> object

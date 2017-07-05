@@ -36,7 +36,7 @@ import sun.security.pkcs11.wrapper.*;
 import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
 
 /**
- * DSA KeyFactory implemenation.
+ * DSA KeyFactory implementation.
  *
  * @author  Andreas Sterbenz
  * @since   1.5

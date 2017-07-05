@@ -1278,7 +1278,7 @@ public abstract class FontConfiguration {
     //////////////////////////////////////////////////////////////////////
     /* The binary font configuration file begins with a short[] "head", which
      * contains the offsets to the starts of the individual data table which
-     * immediately follow. Teh current implemention includes the tables shown
+     * immediately follow. The current implementation includes the tables shown
      * below.
      *
      * (00) table_scriptIDs    :stringIDs of all defined CharacterSubsetNames
@@ -2119,7 +2119,7 @@ public abstract class FontConfiguration {
         private void parseProperty(String key, String value) {
             if (key.startsWith("filename.")) {
                 //the only special case is "MingLiu_HKSCS" which has "_" in its
-                //facename, we dont want to replace the "_" with " "
+                //facename, we don't want to replace the "_" with " "
                 key = key.substring(9);
                 if (!"MingLiU_HKSCS".equals(key)) {
                     key = key.replace('_', ' ');
@@ -2224,7 +2224,7 @@ public abstract class FontConfiguration {
                 proportionals.put(getID(componentFontNameIDs, key),
                                   getID(componentFontNameIDs, value));
             } else {
-                //"name.style.script(.motif)", we dont care anything else
+                //"name.style.script(.motif)", we don't care anything else
                 int dot1, dot2;
                 boolean isMotif = false;
 

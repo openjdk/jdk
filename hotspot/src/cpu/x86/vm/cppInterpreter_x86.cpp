@@ -367,7 +367,7 @@ address CppInterpreterGenerator::generate_stack_to_native_abi_converter(BasicTyp
   return entry;
 }
 
-address CppInterpreter::return_entry(TosState state, int length) {
+address CppInterpreter::return_entry(TosState state, int length, Bytecodes::Code code) {
   // make it look good in the debugger
   return CAST_FROM_FN_PTR(address, RecursiveInterpreterActivation);
 }

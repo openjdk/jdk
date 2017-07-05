@@ -298,17 +298,15 @@ jdwpError
 outStream_writeString(PacketOutputStream *stream, char *string)
 {
     jdwpError error;
-    jint      length;
+    jint      length = string != NULL ? (int)strlen(string) : 0;
 
     /* Options utf8=y/n controls if we want Standard UTF-8 or Modified */
     if ( gdata->modifiedUtf8 ) {
-        length = (int)strlen(string);
         (void)outStream_writeInt(stream, length);
         error = writeBytes(stream, (jbyte *)string, length);
     } else {
         jint      new_length;
 
-        length = (int)strlen(string);
         new_length = (gdata->npt->utf8mToUtf8sLength)
                             (gdata->npt->utf, (jbyte*)string, length);
         if ( new_length == length ) {

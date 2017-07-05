@@ -32,7 +32,7 @@ import java.beans.XMLDecoder;
  * is evaluated in the context of the decoder itself.
  * Typically this outer context is used to retrieve the owner of the decoder,
  * which can be set before reading the archive.
- * <p>The following atributes are supported:
+ * <p>The following attributes are supported:
  * <dl>
  * <dt>version
  * <dd>the Java version (not supported)
@@ -54,7 +54,7 @@ final class JavaElementHandler extends ElementHandler {
 
     /**
      * Parses attributes of the element.
-     * The following atributes are supported:
+     * The following attributes are supported:
      * <dl>
      * <dt>version
      * <dd>the Java version (not supported)

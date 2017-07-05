@@ -579,6 +579,7 @@ class SpinedBuffer<E>
             spineIndex = 0;
         }
 
+        @SuppressWarnings("overloads")
         public void forEach(T_CONS consumer) {
             // completed chunks, if any
             for (int j = 0; j < spineIndex; j++)

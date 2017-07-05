@@ -92,7 +92,7 @@ public interface FontManager {
 
     /**
      * If usingPerAppContextComposites is true, we are in "applet"
-     * (eg browser) enviroment and at least one context has selected
+     * (eg browser) environment and at least one context has selected
      * an alternate composite font behaviour.
      */
     public boolean usingPerAppContextComposites();

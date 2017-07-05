@@ -335,7 +335,7 @@ public class PropertyDescriptor extends FeatureDescriptor {
      */
     void setClass0(Class<?> clz) {
         if (getClass0() != null && clz.isAssignableFrom(getClass0())) {
-            // dont replace a subclass with a superclass
+            // don't replace a subclass with a superclass
             return;
         }
         super.setClass0(clz);

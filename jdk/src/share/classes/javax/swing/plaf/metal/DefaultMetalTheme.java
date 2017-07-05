@@ -57,7 +57,7 @@ import sun.swing.SwingUtilities2;
  *     <code>UIManager.put("swing.boldMetal",&nbsp;Boolean.FALSE);</code>
  * </ul>
  * The defaults property <code>swing.boldMetal</code>, if set,
- * takes precendence over the system property of the same name. After
+ * takes precedence over the system property of the same name. After
  * setting this defaults property you need to re-install
  * <code>MetalLookAndFeel</code>, as well as update the UI
  * of any previously created widgets. Otherwise the results are undefined.
@@ -284,7 +284,7 @@ public class DefaultMetalTheme extends MetalTheme {
     /**
      * Returns the system text font. This returns Dialog, 12pt, plain.
      *
-     * @return the sytem text font
+     * @return the system text font
      */
     public FontUIResource getSystemTextFont() {
         return getFont(SYSTEM_TEXT_FONT);

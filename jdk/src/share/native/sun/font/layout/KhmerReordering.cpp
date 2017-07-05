@@ -40,7 +40,7 @@
 
 U_NAMESPACE_BEGIN
 
-// Characters that get refered to by name...
+// Characters that get referred to by name...
 enum
 {
     C_SIGN_ZWNJ     = 0x200C,

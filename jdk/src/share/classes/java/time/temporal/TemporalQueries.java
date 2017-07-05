@@ -341,33 +341,22 @@ public final class TemporalQueries {
     /**
      * A strict query for the {@code ZoneId}.
      */
-    static final TemporalQuery<ZoneId> ZONE_ID = (temporal) -> {
-        return temporal.query(ZONE_ID);
-    };
+    static final TemporalQuery<ZoneId> ZONE_ID = (temporal) ->
+        temporal.query(TemporalQueries.ZONE_ID);
 
     /**
      * A query for the {@code Chronology}.
      */
-    static final TemporalQuery<Chronology> CHRONO = (temporal) -> {
-        return temporal.query(CHRONO);
-    };
+    static final TemporalQuery<Chronology> CHRONO = (temporal) ->
+        temporal.query(TemporalQueries.CHRONO);
 
     /**
      * A query for the smallest supported unit.
      */
-    static final TemporalQuery<TemporalUnit> PRECISION = (temporal) -> {
-        return temporal.query(PRECISION);
-    };
+    static final TemporalQuery<TemporalUnit> PRECISION = (temporal) ->
+        temporal.query(TemporalQueries.PRECISION);
 
     //-----------------------------------------------------------------------
-    /**
-     * A lenient query for the {@code ZoneId}, falling back to the {@code ZoneOffset}.
-     */
-    static final TemporalQuery<ZoneId> ZONE = (temporal) -> {
-        ZoneId zone = temporal.query(ZONE_ID);
-        return (zone != null ? zone : temporal.query(OFFSET));
-    };
-
     /**
      * A query for {@code ZoneOffset} returning null if not found.
      */
@@ -376,6 +365,14 @@ public final class TemporalQueries {
             return ZoneOffset.ofTotalSeconds(temporal.get(OFFSET_SECONDS));
         }
         return null;
+    };
+
+    /**
+     * A lenient query for the {@code ZoneId}, falling back to the {@code ZoneOffset}.
+     */
+    static final TemporalQuery<ZoneId> ZONE = (temporal) -> {
+        ZoneId zone = temporal.query(ZONE_ID);
+        return (zone != null ? zone : temporal.query(OFFSET));
     };
 
     /**

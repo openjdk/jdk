@@ -514,7 +514,7 @@ AC_DEFUN([BASIC_CHECK_MAKE_VERSION],
     if test "x$IS_GNU_MAKE" = x; then
       AC_MSG_NOTICE([Found potential make at $MAKE_CANDIDATE, however, this is not GNU Make. Ignoring.])
     else
-      IS_MODERN_MAKE=`$ECHO $MAKE_VERSION_STRING | $GREP '\(3\.8[[12]]\)\|\(4\.\)'`
+      IS_MODERN_MAKE=`$ECHO $MAKE_VERSION_STRING | $GREP -e '3\.8[[12]]' -e '4\.'`
       if test "x$IS_MODERN_MAKE" = x; then
         AC_MSG_NOTICE([Found GNU make at $MAKE_CANDIDATE, however this is not version 3.81 or later. (it is: $MAKE_VERSION_STRING). Ignoring.])
       else

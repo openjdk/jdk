@@ -172,7 +172,7 @@ JNIEXPORT void JNICALL Java_java_net_DualStackPlainSocketImpl_waitForConnect
     }
 
     /*
-     * Socket is writable or error occured. On some Windows editions
+     * Socket is writable or error occurred. On some Windows editions
      * the socket will appear writable when the connect fails so we
      * check for error rather than writable.
      */

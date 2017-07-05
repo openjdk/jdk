@@ -263,7 +263,7 @@ public abstract class GraphicsEnvironment {
      * available in this <code>GraphicsEnvironment</code>.  Typical usage
      * would be to allow a user to select a particular font.  Then, the
      * application can size the font and set various font attributes by
-     * calling the <code>deriveFont</code> method on the choosen instance.
+     * calling the <code>deriveFont</code> method on the chosen instance.
      * <p>
      * This method provides for the application the most precise control
      * over which <code>Font</code> instance is used to render text.

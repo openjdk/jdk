@@ -2006,9 +2006,9 @@ bool LibraryCallKit::inline_math_addExactI(bool is_increment) {
   Node* arg2 = NULL;
 
   if (is_increment) {
-      arg2 = intcon(1);
+    arg2 = intcon(1);
   } else {
-      arg2 = argument(1);
+    arg2 = argument(1);
   }
 
   Node* add = _gvn.transform( new(C) AddExactINode(NULL, arg1, arg2) );
@@ -2056,7 +2056,7 @@ bool LibraryCallKit::inline_math_subtractExactL(bool is_decrement) {
   if (is_decrement) {
     arg2 = longcon(1);
   } else {
-    Node* arg2 = argument(2); // type long
+    arg2 = argument(2); // type long
     // argument(3) == TOP
   }
 

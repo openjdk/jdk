@@ -33,7 +33,7 @@ import javax.naming.NamingException;
 /**
  * Contains methods for registering/deregistering listeners to be notified of
  * events fired when objects named in a context changes.
- *<p>
+ *
  *<h1>Target</h1>
  * The name parameter in the <tt>addNamingListener()</tt> methods is referred
  * to as the <em>target</em>. The target, along with the scope, identify
@@ -58,7 +58,7 @@ import javax.naming.NamingException;
  * An application can use the method <tt>targetMustExist()</tt> to check
  * whether a <tt>EventContext</tt> supports registration
  * of nonexistent targets.
- *<p>
+ *
  *<h1>Event Source</h1>
  * The <tt>EventContext</tt> instance on which you invoke the
  * registration methods is the <em>event source</em> of the events that are

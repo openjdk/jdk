@@ -84,7 +84,7 @@ public class XRMaskBlit extends MaskBlit {
 
             int maskPict = maskBuffer.getMaskBuffer().
                          uploadMask(width, height, maskscan, maskoff, mask);
-            maskBuffer.XRComposite(x11sd.getPicture(), maskPict, x11sd.picture,
+            maskBuffer.XRComposite(x11sd.getPicture(), maskPict, x11dst.getPicture(),
                                   srcx, srcy, 0, 0, dstx, dsty, width, height);
             maskBuffer.getMaskBuffer().clearUploadMask(maskPict, width, height);
         } finally {

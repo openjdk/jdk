@@ -120,7 +120,7 @@ public abstract class PerfDataBufferImpl {
                 }
             } catch (MonitorException e) {
                 /*
-                 * just ignore this here and let the reciever of the
+                 * just ignore this here and let the receiver of the
                  * byte[] detect and handle the problem.
                  */
             }

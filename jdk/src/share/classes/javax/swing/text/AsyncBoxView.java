@@ -42,7 +42,7 @@ import javax.swing.event.DocumentEvent;
  * or a visible area) can be taken on.
  * <p>
  * While the child view is being accessed
- * a read lock is aquired on the associated document
+ * a read lock is acquired on the associated document
  * so that the model is stable while being accessed.
  *
  * @author  Timothy Prinzing
@@ -77,7 +77,7 @@ public class AsyncBoxView extends View {
     }
 
     /**
-     * Fetch the minor axis (the axis orthoginal
+     * Fetch the minor axis (the axis orthogonal
      * to the tiled axis).  This will have a value of
      * either X_AXIS or Y_AXIS.
      */
@@ -827,8 +827,12 @@ public class AsyncBoxView extends View {
      * location that one might place a caret.  Some views may not be visible,
      * they might not be in the same order found in the model, or they just
      * might not allow access to some of the locations in the model.
+     * This method enables specifying a position to convert
+     * within the range of &gt;=0.  If the value is -1, a position
+     * will be calculated automatically.  If the value &lt; -1,
+     * the {@code BadLocationException} will be thrown.
      *
-     * @param pos the position to convert &gt;= 0
+     * @param pos the position to convert
      * @param a the allocated region to render into
      * @param direction the direction from the current position that can
      *  be thought of as the arrow keys typically found on a keyboard;
@@ -842,13 +846,17 @@ public class AsyncBoxView extends View {
      * @param biasRet an array contain the bias that was checked
      * @return the location within the model that best represents the next
      *  location visual position
-     * @exception BadLocationException
+     * @exception BadLocationException the given position is not a valid
+     *                                 position within the document
      * @exception IllegalArgumentException if <code>direction</code> is invalid
      */
     public int getNextVisualPositionFrom(int pos, Position.Bias b, Shape a,
                                          int direction,
                                          Position.Bias[] biasRet)
                                                   throws BadLocationException {
+        if (pos < -1) {
+            throw new BadLocationException("invalid position", pos);
+        }
         return Utilities.getNextVisualPositionFrom(
                             this, pos, b, a, direction, biasRet);
     }
@@ -1048,7 +1056,7 @@ public class AsyncBoxView extends View {
         /**
          * Copy the currently allocated shape into the Rectangle
          * used to store the current allocation.  This would be
-         * a floating point rectangle in a Java2D-specific implmentation.
+         * a floating point rectangle in a Java2D-specific implementation.
          */
         protected void setAllocation(Shape a) {
             if (a instanceof Rectangle) {
@@ -1216,7 +1224,7 @@ public class AsyncBoxView extends View {
          * time updating the child state (intended to
          * be the layout thread).
          * <p>
-         * This aquires a read lock on the associated
+         * This acquires a read lock on the associated
          * document for the duration of the update to
          * ensure the model is not changed while it is
          * operating.  The first thing to do would be

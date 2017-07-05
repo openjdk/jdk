@@ -48,7 +48,7 @@ package javax.naming;
 public class Binding extends NameClassPair {
     /**
      * Contains this binding's object.
-     * It is initialized by the constuctor and can be updated using
+     * It is initialized by the constructor and can be updated using
      * <tt>setObject</tt>.
      * @serial
      * @see #getObject

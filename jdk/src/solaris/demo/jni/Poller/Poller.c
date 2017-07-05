@@ -73,7 +73,7 @@
  *  6> Could add simpler code for pre-Solaris 7 releases which will
  *     perform slightly better on those OSs.  But again there
  *     are only modest gains to be had from these new code paths,
- *     so they've been ommitted here.
+ *     so they've been omitted here.
  *
  * Compile "cc -G -o <dest_dir>/libpoller.so -I ${JAVA_HOME}/include " \
  * -I ${JAVA_HOME}/include/solaris Poller.c" and place the <dest_dir>

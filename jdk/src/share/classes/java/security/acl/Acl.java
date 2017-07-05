@@ -42,27 +42,27 @@ import java.security.Principal;
  * granted to the associated principal. If negative, the permissions
  * are to be denied.<p>
  *
- * The ACL Entries in each ACL observe the following rules:<p>
+ * The ACL Entries in each ACL observe the following rules:
  *
  * <ul> <li>Each principal can have at most one positive ACL entry and
  * one negative entry; that is, multiple positive or negative ACL
  * entries are not allowed for any principal.  Each entry specifies
  * the set of permissions that are to be granted (if positive) or
- * denied (if negative). <p>
+ * denied (if negative).
  *
  * <li>If there is no entry for a particular principal, then the
- * principal is considered to have a null (empty) permission set.<p>
+ * principal is considered to have a null (empty) permission set.
  *
  * <li>If there is a positive entry that grants a principal a
  * particular permission, and a negative entry that denies the
  * principal the same permission, the result is as though the
- * permission was never granted or denied. <p>
+ * permission was never granted or denied.
  *
  * <li>Individual permissions always override permissions of the
  * group(s) to which the individual belongs. That is, individual
  * negative permissions (specific denial of permissions) override the
  * groups' positive permissions. And individual positive permissions
- * override the groups' negative permissions.<p>
+ * override the groups' negative permissions.
  *
  * </ul>
  *
@@ -159,12 +159,12 @@ public interface Acl extends Owner {
      * Returns an enumeration for the set of allowed permissions for the
      * specified principal (representing an entity such as an individual or
      * a group). This set of allowed permissions is calculated as
-     * follows:<p>
+     * follows:
      *
      * <ul>
      *
      * <li>If there is no entry in this Access Control List for the
-     * specified principal, an empty permission set is returned.<p>
+     * specified principal, an empty permission set is returned.
      *
      * <li>Otherwise, the principal's group permission sets are determined.
      * (A principal can belong to one or more groups, where a group is a

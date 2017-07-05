@@ -630,7 +630,7 @@ public class TrueTypeFont extends FileFont {
      * only one of these ranges then we need to distinguish based on
      * country. So far this only seems to matter for zh.
      * REMIND: Unicode locales such as Hindi do not have a code page so
-     * this whole mechansim needs to be revised to map languages to
+     * this whole mechanism needs to be revised to map languages to
      * the Unicode ranges either when this fails, or as an additional
      * validating test. Basing it on Unicode ranges should get us away
      * from needing to map to this small and incomplete set of Windows

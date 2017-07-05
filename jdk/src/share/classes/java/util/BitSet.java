@@ -1164,10 +1164,10 @@ public class BitSet implements Cloneable, java.io.Serializable {
      * <p>Example:
      * <pre>
      * BitSet drPepper = new BitSet();</pre>
-     * Now {@code drPepper.toString()} returns "{@code {}}".<p>
+     * Now {@code drPepper.toString()} returns "{@code {}}".
      * <pre>
      * drPepper.set(2);</pre>
-     * Now {@code drPepper.toString()} returns "{@code {2}}".<p>
+     * Now {@code drPepper.toString()} returns "{@code {2}}".
      * <pre>
      * drPepper.set(4);
      * drPepper.set(10);</pre>

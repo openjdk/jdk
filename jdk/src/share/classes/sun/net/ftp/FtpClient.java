@@ -267,7 +267,7 @@ public abstract class FtpClient implements java.io.Closeable {
      * @param user The user name
      * @param password The password for that user
      * @return this FtpClient
-     * @throws IOException if an error occured during the transmission
+     * @throws IOException if an error occurred during the transmission
      * @throws FtpProtocolException if the login was refused by the server
      */
     public abstract FtpClient login(String user, char[] password) throws FtpProtocolException, IOException;
@@ -378,7 +378,7 @@ public abstract class FtpClient implements java.io.Closeable {
      *
      * @param name the name of the remote file
      * @return the {@link java.io.InputStream} from the data connection
-     * @throws IOException if an error occured during the transmission.
+     * @throws IOException if an error occurred during the transmission.
      * @throws FtpProtocolException if the command was refused by the server
      * @see #setRestartOffset(long)
      */
@@ -398,7 +398,7 @@ public abstract class FtpClient implements java.io.Closeable {
      * @param name the name of the remote file to write.
      * @return the {@link java.io.OutputStream} from the data connection or
      *         {@code null} if the command was unsuccessful.
-     * @throws IOException if an error occured during the transmission.
+     * @throws IOException if an error occurred during the transmission.
      * @throws FtpProtocolException if the command was rejected by the server
      */
     public OutputStream putFileStream(String name) throws FtpProtocolException, IOException {
@@ -427,7 +427,7 @@ public abstract class FtpClient implements java.io.Closeable {
      * @param unique {@code true} if the remote files should be unique,
      *        in which case the STOU command will be used.
      * @return the {@link java.io.OutputStream} from the data connection.
-     * @throws IOException if an error occured during the transmission.
+     * @throws IOException if an error occurred during the transmission.
      * @throws FtpProtocolException if the command was rejected by the server
      */
     public abstract OutputStream putFileStream(String name, boolean unique) throws FtpProtocolException, IOException;
@@ -456,7 +456,7 @@ public abstract class FtpClient implements java.io.Closeable {
      * @param local the {@code InputStream} that points to the data to
      *        transfer.
      * @return this FtpClient
-     * @throws IOException if an error occured during the transmission.
+     * @throws IOException if an error occurred during the transmission.
      * @throws FtpProtocolException if the command was rejected by the server
      */
     public FtpClient putFile(String name, InputStream local) throws FtpProtocolException, IOException {
@@ -481,7 +481,7 @@ public abstract class FtpClient implements java.io.Closeable {
      * @param unique {@code true} if the remote file should be unique
      *        (i.e. not already existing), {@code false} otherwise.
      * @return this FtpClient
-     * @throws IOException if an error occured during the transmission.
+     * @throws IOException if an error occurred during the transmission.
      * @throws FtpProtocolException if the command was rejected by the server
      * @see #getLastFileName()
      */
@@ -500,7 +500,7 @@ public abstract class FtpClient implements java.io.Closeable {
      * @param local The {@code InputStream} providing access to the data
      *        to be appended.
      * @return this FtpClient
-     * @throws IOException if an error occured during the transmission.
+     * @throws IOException if an error occurred during the transmission.
      * @throws FtpProtocolException if the command was rejected by the server
      */
     public abstract FtpClient appendFile(String name, InputStream local) throws FtpProtocolException, IOException;
@@ -511,7 +511,7 @@ public abstract class FtpClient implements java.io.Closeable {
      * @param from the name of the file being renamed
      * @param to the new name for the file
      * @return this FtpClient
-     * @throws IOException if an error occured during the transmission.
+     * @throws IOException if an error occurred during the transmission.
      * @throws FtpProtocolException if the command was rejected by the server
      */
     public abstract FtpClient rename(String from, String to) throws FtpProtocolException, IOException;
@@ -522,7 +522,7 @@ public abstract class FtpClient implements java.io.Closeable {
      * @param name a {@code String} containing the name of the file
      *        to delete.
      * @return this FtpClient
-     * @throws IOException if an error occured during the exchange
+     * @throws IOException if an error occurred during the exchange
      * @throws FtpProtocolException if the command was rejected by the server
      */
     public abstract FtpClient deleteFile(String name) throws FtpProtocolException, IOException;
@@ -533,7 +533,7 @@ public abstract class FtpClient implements java.io.Closeable {
      * @param name a {@code String} containing the name of the directory
      *        to create.
      * @return this FtpClient
-     * @throws IOException if an error occured during the exchange
+     * @throws IOException if an error occurred during the exchange
      * @throws FtpProtocolException if the command was rejected by the server
      */
     public abstract FtpClient makeDirectory(String name) throws FtpProtocolException, IOException;
@@ -545,7 +545,7 @@ public abstract class FtpClient implements java.io.Closeable {
      *        to remove.
      *
      * @return this FtpClient
-     * @throws IOException if an error occured during the exchange.
+     * @throws IOException if an error occurred during the exchange.
      * @throws FtpProtocolException if the command was rejected by the server
      */
     public abstract FtpClient removeDirectory(String name) throws FtpProtocolException, IOException;
@@ -555,7 +555,7 @@ public abstract class FtpClient implements java.io.Closeable {
      * status or as a <I>keep alive</I> mechanism.
      *
      * @return this FtpClient
-     * @throws IOException if an error occured during the transmission.
+     * @throws IOException if an error occurred during the transmission.
      * @throws FtpProtocolException if the command was rejected by the server
      */
     public abstract FtpClient noop() throws FtpProtocolException, IOException;
@@ -572,7 +572,7 @@ public abstract class FtpClient implements java.io.Closeable {
      * @param name an optional {@code String} containing the pathname
      *        the STAT command should apply to.
      * @return the response from the server
-     * @throws IOException if an error occured during the transmission.
+     * @throws IOException if an error occurred during the transmission.
      * @throws FtpProtocolException if the command was rejected by the server
      */
     public abstract String getStatus(String name) throws FtpProtocolException, IOException;
@@ -602,7 +602,7 @@ public abstract class FtpClient implements java.io.Closeable {
      * after an abort.</p>
      *
      * @return this FtpClient
-     * @throws IOException if an error occured during the transmission.
+     * @throws IOException if an error occurred during the transmission.
      * @throws FtpProtocolException if the command was rejected by the server
      */
     public abstract FtpClient abort() throws FtpProtocolException, IOException;
@@ -637,7 +637,7 @@ public abstract class FtpClient implements java.io.Closeable {
      * </pre>
      * <p>Since {@link #close()} will call completePending() if necessary.</p>
      * @return this FtpClient
-     * @throws IOException if an error occured during the transfer
+     * @throws IOException if an error occurred during the transfer
      * @throws FtpProtocolException if the command didn't complete successfully
      */
     public abstract FtpClient completePending() throws FtpProtocolException, IOException;
@@ -786,7 +786,7 @@ public abstract class FtpClient implements java.io.Closeable {
      *        for the current working directoty.
      * @return a {@code Iterator} of files or {@code null} if the
      *         command failed.
-     * @throws IOException if an error occured during the transmission
+     * @throws IOException if an error occurred during the transmission
      * @see #setDirParser(FtpDirParser)
      * @see #changeDirectory(String)
      * @throws FtpProtocolException if the command was rejected by the server
@@ -862,7 +862,7 @@ public abstract class FtpClient implements java.io.Closeable {
      * but before calling {@link #login(java.lang.String, char[]) }.</p>
      *
      * @return this FtpCLient
-     * @throws IOException if an error occured during the transmission.
+     * @throws IOException if an error occurred during the transmission.
      * @throws FtpProtocolException if the command was rejected by the server
      * @see #endSecureSession()
      */
@@ -874,7 +874,7 @@ public abstract class FtpClient implements java.io.Closeable {
      * back to a non encrypted transmission.
      *
      * @return this FtpClient
-     * @throws IOException if an error occured during transmission.
+     * @throws IOException if an error occurred during transmission.
      * @throws FtpProtocolException if the command was rejected by the server
      * @see #startSecureSession()
      */
@@ -886,7 +886,7 @@ public abstract class FtpClient implements java.io.Closeable {
      *
      * @param size The number of bytes to allocate.
      * @return this FtpClient
-     * @throws IOException if an error occured during the transmission.
+     * @throws IOException if an error occurred during the transmission.
      * @throws FtpProtocolException if the command was rejected by the server
      */
     public abstract FtpClient allocate(long size) throws FtpProtocolException, IOException;
@@ -899,7 +899,7 @@ public abstract class FtpClient implements java.io.Closeable {
      * @param struct a {@code String} containing the name of the
      *        structure to mount.
      * @return this FtpClient
-     * @throws IOException if an error occured during the transmission.
+     * @throws IOException if an error occurred during the transmission.
      * @throws FtpProtocolException if the command was rejected by the server
      */
     public abstract FtpClient structureMount(String struct) throws FtpProtocolException, IOException;
@@ -911,7 +911,7 @@ public abstract class FtpClient implements java.io.Closeable {
      *
      * @return a {@code String} describing the OS, or {@code null}
      *         if the operation was not successful.
-     * @throws IOException if an error occured during the transmission.
+     * @throws IOException if an error occurred during the transmission.
      * @throws FtpProtocolException if the command was rejected by the server
      */
     public abstract String getSystem() throws FtpProtocolException, IOException;
@@ -924,7 +924,7 @@ public abstract class FtpClient implements java.io.Closeable {
      *        {@code null} for the general help
      * @return a {@code String} containing the text sent back by the
      *         server, or {@code null} if the command failed.
-     * @throws IOException if an error occured during transmission
+     * @throws IOException if an error occurred during transmission
      * @throws FtpProtocolException if the command was rejected by the server
      */
     public abstract String getHelp(String cmd) throws FtpProtocolException, IOException;
@@ -936,7 +936,7 @@ public abstract class FtpClient implements java.io.Closeable {
      *
      * @param cmd the command to be sent.
      * @return this FtpClient
-     * @throws IOException if an error occured during transmission
+     * @throws IOException if an error occurred during transmission
      * @throws FtpProtocolException if the command was rejected by the server
      */
     public abstract FtpClient siteCmd(String cmd) throws FtpProtocolException, IOException;
