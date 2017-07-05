@@ -29,6 +29,7 @@ import com.sun.jmx.mbeanserver.Introspector;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.Objects;
 
 /**
  * Describes a management operation exposed by an MBean.  Instances of
@@ -309,7 +310,7 @@ public class MBeanOperationInfo extends MBeanFeatureInfo implements Cloneable {
        parameter array.  */
     @Override
     public int hashCode() {
-        return getName().hashCode() ^ getReturnType().hashCode();
+        return Objects.hash(getName(), getReturnType());
     }
 
     private static MBeanParameterInfo[] methodSignature(Method method) {

@@ -52,25 +52,25 @@ public class LocaleDataMetaInfo {
            look up locale string such as "en" could be based on if it contains " en ".
         */
         resourceNameToLocales.put("FormatData",
-                                  " #FormatData_USLocales# | #FormatData_NonUSLocales# ");
+                                  " #FormatData_ENLocales# | #FormatData_NonENLocales# ");
 
         resourceNameToLocales.put("CollationData",
-                                  " #CollationData_USLocales# | #CollationData_NonUSLocales# ");
+                                  " #CollationData_ENLocales# | #CollationData_NonENLocales# ");
 
         resourceNameToLocales.put("TimeZoneNames",
-                                  " #TimeZoneNames_USLocales# | #TimeZoneNames_NonUSLocales# ");
+                                  " #TimeZoneNames_ENLocales# | #TimeZoneNames_NonENLocales# ");
 
         resourceNameToLocales.put("LocaleNames",
-                                  " #LocaleNames_USLocales# | #LocaleNames_NonUSLocales# ");
+                                  " #LocaleNames_ENLocales# | #LocaleNames_NonENLocales# ");
 
         resourceNameToLocales.put("CurrencyNames",
-                                  " #CurrencyNames_USLocales# | #CurrencyNames_NonUSLocales# ");
+                                  " #CurrencyNames_ENLocales# | #CurrencyNames_NonENLocales# ");
 
         resourceNameToLocales.put("CalendarData",
-                                  " #CalendarData_USLocales# | #CalendarData_NonUSLocales# ");
+                                  " #CalendarData_ENLocales# | #CalendarData_NonENLocales# ");
 
         resourceNameToLocales.put("AvailableLocales",
-                                  " #AvailableLocales_USLocales# | #AvailableLocales_NonUSLocales# ");
+                                  " #AvailableLocales_ENLocales# | #AvailableLocales_NonENLocales# ");
     }
 
     /*

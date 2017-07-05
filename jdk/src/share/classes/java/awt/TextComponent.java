@@ -35,6 +35,7 @@ import java.text.BreakIterator;
 import javax.swing.text.AttributeSet;
 import javax.accessibility.*;
 import java.awt.im.InputMethodRequests;
+import sun.security.util.SecurityConstants;
 
 /**
  * The <code>TextComponent</code> class is the superclass of
@@ -728,7 +729,7 @@ public class TextComponent extends Component implements Accessible {
         SecurityManager sm = System.getSecurityManager();
         if (sm == null) return true;
         try {
-            sm.checkSystemClipboardAccess();
+            sm.checkPermission(SecurityConstants.AWT.ACCESS_CLIPBOARD_PERMISSION);
             return true;
         } catch (SecurityException e) {}
         return false;

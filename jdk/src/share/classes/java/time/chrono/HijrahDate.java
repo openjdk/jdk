@@ -65,6 +65,7 @@ import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
 import static java.time.temporal.ChronoField.YEAR;
 
 import java.io.IOException;
+import java.io.InvalidObjectException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.io.Serializable;
@@ -118,7 +119,7 @@ public final class HijrahDate
     /**
      * The Chronology of this HijrahDate.
      */
-    private final HijrahChronology chrono;
+    private final transient HijrahChronology chrono;
     /**
      * The proleptic year.
      */
@@ -600,27 +601,39 @@ public final class HijrahDate
     }
 
     //-----------------------------------------------------------------------
+    /**
+     * Defend against malicious streams.
+     * @return never
+     * @throws InvalidObjectException always
+     */
+    private Object readResolve() throws InvalidObjectException {
+        throw new InvalidObjectException("Deserialization via serialization delegate");
+    }
+
+    /**
+     * Writes the object using a
+     * <a href="../../../serialized-form.html#java.time.chrono.Ser">dedicated serialized form</a>.
+     * @serialData
+     * <pre>
+     *  out.writeByte(6);                 // identifies a HijrahDate
+     *  out.writeObject(chrono);          // the HijrahChronology variant
+     *  out.writeInt(get(YEAR));
+     *  out.writeByte(get(MONTH_OF_YEAR));
+     *  out.writeByte(get(DAY_OF_MONTH));
+     * </pre>
+     *
+     * @return the instance of {@code Ser}, not null
+     */
     private Object writeReplace() {
         return new Ser(Ser.HIJRAH_DATE_TYPE, this);
     }
 
     void writeExternal(ObjectOutput out) throws IOException {
         // HijrahChronology is implicit in the Hijrah_DATE_TYPE
-        out.writeObject(chrono);
+        out.writeObject(getChronology());
         out.writeInt(get(YEAR));
         out.writeByte(get(MONTH_OF_YEAR));
         out.writeByte(get(DAY_OF_MONTH));
-    }
-
-    /**
-     * Replaces the date instance from the stream with a valid one.
-     * ReadExternal has already read the fields and created a new instance
-     * from the data.
-     *
-     * @return the resolved date, never null
-     */
-    private Object readResolve() {
-        return this;
     }
 
     static HijrahDate readExternal(ObjectInput in) throws IOException, ClassNotFoundException {

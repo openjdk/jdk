@@ -74,9 +74,6 @@ endif
 # REQUIRED_CYGWIN_VER
 #   Windows only: If CYGWIN is used, the minimum CYGWIN version.
 #
-# REQUIRED_DXSDK_VER
-#   Windows only: The version of DirectX SDK expected.
-#
 # REQUIRED_FREETYPE_VERSION
 #   If we are using freetype, the freetype version expected.
 #
@@ -193,7 +190,6 @@ ifeq ($(PLATFORM), windows)
   REQUIRED_OS_VARIANT_VERSION = $(REQUIRED_OS_VERSION)
   REQUIRED_CYGWIN_VER         = 4.0
   REQUIRED_MKS_VER            = 6.1
-  REQUIRED_DXSDK_VER          = 0x0900
   ifeq ($(CC_VERSION),msvc)
     REQUIRED_COMPILER_NAME    = Visual Studio 10
     REQUIRED_COMPILER_VERSION = VS2010

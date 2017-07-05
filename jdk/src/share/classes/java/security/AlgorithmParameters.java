@@ -324,6 +324,7 @@ public class AlgorithmParameters {
      * parameters should be returned in an instance of the
      * {@code DSAParameterSpec} class.
      *
+     * @param <T> the type of the parameter specification to be returrned
      * @param paramSpec the specification class in which
      * the parameters should be returned.
      *

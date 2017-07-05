@@ -50,27 +50,27 @@ ifneq (,$(MISSING_RESOURCES)$(NEW_RESOURCES))
     $(shell $(RM) $(JDK_OUTPUTDIR)/gensrc/sun/util/locale/provider/LocaleDataMetaInfo.java)
 endif
 
-# The US locales
-US_LOCALES:=en en-US
+# The EN locales
+EN_LOCALES:=en%
 
 # ja-JP-JP and th-TH-TH need to be manually added, as they don't have any resource files.
-ALL_NON_US_LOCALES:=ja-JP-JP th-TH-TH
+ALL_NON_EN_LOCALES:=ja-JP-JP th-TH-TH
 
 SED_ARGS:=-e 's|$(HASH)warn This file is preprocessed before being compiled|// -- This file was mechanically generated: Do not edit! -- //|g'
 
 # This macro creates a sed expression that substitues for example:
-# #FormatData_USLocales# with: en and/or en_US.
+# #FormatData_ENLocales# with: en% locales.
 define CaptureLocale
     $1_LOCALES := $$(subst _,-,$$(filter-out $1,$$(subst $1_,,$$(filter $1_%,$(LOCALE_RESOURCES)))))
-    $1_US_LOCALES := $$(filter $(US_LOCALES),$$($1_LOCALES))
-    $1_NON_US_LOCALES := $$(filter-out $(US_LOCALES),$$($1_LOCALES))
+    $1_EN_LOCALES := $$(filter $(EN_LOCALES),$$($1_LOCALES))
+    $1_NON_EN_LOCALES := $$(filter-out $(EN_LOCALES),$$($1_LOCALES))
 
-    ALL_US_LOCALES += $$($1_US_LOCALES)
-    ALL_NON_US_LOCALES += $$($1_NON_US_LOCALES)
+    ALL_EN_LOCALES += $$($1_EN_LOCALES)
+    ALL_NON_EN_LOCALES += $$($1_NON_EN_LOCALES)
 
     # Don't sed in a space if there are no locales.
-    SED_ARGS+= -e 's/$$(HASH)$1_USLocales$$(HASH)/$$(if $$($1_US_LOCALES),$$(SPACE)$$($1_US_LOCALES),)/g'
-    SED_ARGS+= -e 's/$$(HASH)$1_NonUSLocales$$(HASH)/$$(if $$($1_NON_US_LOCALES),$$(SPACE)$$($1_NON_US_LOCALES),)/g'
+    SED_ARGS+= -e 's/$$(HASH)$1_ENLocales$$(HASH)/$$(if $$($1_EN_LOCALES),$$(SPACE)$$($1_EN_LOCALES),)/g'
+    SED_ARGS+= -e 's/$$(HASH)$1_NonENLocales$$(HASH)/$$(if $$($1_NON_EN_LOCALES),$$(SPACE)$$($1_NON_EN_LOCALES),)/g'
 endef
 
 #sun.text.resources.FormatData
@@ -91,8 +91,8 @@ $(eval $(call CaptureLocale,CurrencyNames))
 #sun.util.resources.CalendarData
 $(eval $(call CaptureLocale,CalendarData))
 
-SED_ARGS+= -e 's/$(HASH)AvailableLocales_USLocales$(HASH)/$(sort $(ALL_US_LOCALES))/g'
-SED_ARGS+= -e 's/$(HASH)AvailableLocales_NonUSLocales$(HASH)/$(sort $(ALL_NON_US_LOCALES))/g'
+SED_ARGS+= -e 's/$(HASH)AvailableLocales_ENLocales$(HASH)/$(sort $(ALL_EN_LOCALES))/g'
+SED_ARGS+= -e 's/$(HASH)AvailableLocales_NonENLocales$(HASH)/$(sort $(ALL_NON_EN_LOCALES))/g'
 
 $(JDK_OUTPUTDIR)/gensrc/sun/util/locale/provider/LocaleDataMetaInfo.java: \
 		$(JDK_TOPDIR)/src/share/classes/sun/util/locale/provider/LocaleDataMetaInfo-XLocales.java.template

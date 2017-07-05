@@ -127,6 +127,8 @@ ciConstant ciInstance::field_value(ciField* field) {
 ciConstant ciInstance::field_value_by_offset(int field_offset) {
   ciInstanceKlass* ik = klass()->as_instance_klass();
   ciField* field = ik->get_field_by_offset(field_offset, false);
+  if (field == NULL)
+    return ciConstant();  // T_ILLEGAL
   return field_value(field);
 }
 

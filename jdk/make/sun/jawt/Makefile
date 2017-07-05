@@ -69,7 +69,6 @@ OTHER_CXXFLAGS += $(GX_OPTION) -DUNICODE -D_UNICODE
 # Other extra flags needed for compiling.
 #
 CPPFLAGS += -I$(SHARE_SRC)/native/common \
-	-I$(DXSDK_INCLUDE_PATH) \
 	-I$(PLATFORM_SRC)/native/sun/windows \
 	-I$(CLASSHDRDIR)/../../awt/CClassHeaders \
         -I$(SHARE_SRC)/native/sun/awt/debug \
