@@ -661,15 +661,24 @@ SetJvmEnvironment(int argc, char **argv) {
          * arguments are for the application (i.e. the main class name, or
          * the -jar argument).
          */
-        if ((i > 0 && *arg != '-')
-                || JLI_StrCmp(arg, "-version") == 0
-                || JLI_StrCmp(arg, "-fullversion") == 0
-                || JLI_StrCmp(arg, "-help") == 0
-                || JLI_StrCmp(arg, "-?") == 0
-                || JLI_StrCmp(arg, "-jar") == 0
-                || JLI_StrCmp(arg, "-X") == 0
-                ) {
-            return;
+        if (i > 0) {
+            char *prev = argv[i - 1];
+            // skip non-dash arg preceded by class path specifiers
+            if (*arg != '-' &&
+                    ((JLI_StrCmp(prev, "-cp") == 0
+                    || JLI_StrCmp(prev, "-classpath") == 0))) {
+                continue;
+            }
+
+            if (*arg != '-'
+                    || JLI_StrCmp(arg, "-version") == 0
+                    || JLI_StrCmp(arg, "-fullversion") == 0
+                    || JLI_StrCmp(arg, "-help") == 0
+                    || JLI_StrCmp(arg, "-?") == 0
+                    || JLI_StrCmp(arg, "-jar") == 0
+                    || JLI_StrCmp(arg, "-X") == 0) {
+                return;
+            }
         }
         /*
          * The following case checks for "-XX:NativeMemoryTracking=value".

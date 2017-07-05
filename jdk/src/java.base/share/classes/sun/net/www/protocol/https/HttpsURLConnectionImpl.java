@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -204,7 +204,12 @@ public class HttpsURLConnectionImpl
      * NOTE: This method is not necessary for the version of this class
      * implementing javax.net.ssl.HttpsURLConnection, but provided for
      * compatibility with the com.sun.net.ssl.HttpsURLConnection version.
+     *
+     * @deprecated This method returns the deprecated
+     *  {@code javax.security.cert.X509Certificate} type.
+     *  Use {@code getServerCertificates()} instead.
      */
+    @Deprecated
     public javax.security.cert.X509Certificate[] getServerCertificateChain() {
         try {
             return delegate.getServerCertificateChain();

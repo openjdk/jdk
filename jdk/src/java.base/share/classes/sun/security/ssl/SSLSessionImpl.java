@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -464,8 +464,13 @@ final class SSLSessionImpl extends ExtendedSSLSession {
      *
      * @return array of peer X.509 certs, with the peer's own cert
      *  first in the chain, and with the "root" CA last.
+     *
+     * @deprecated This method returns the deprecated
+     *  {@code javax.security.cert.X509Certificate} type.
+     *  Use {@code getPeerCertificates()} instead.
      */
     @Override
+    @Deprecated
     public javax.security.cert.X509Certificate[] getPeerCertificateChain()
             throws SSLPeerUnverifiedException {
         //

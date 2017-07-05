@@ -1,6 +1,5 @@
-
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -866,9 +865,7 @@ void PSScavenge::initialize() {
                            NULL);                      // header provides liveness info
 
   // Cache the cardtable
-  BarrierSet* bs = Universe::heap()->barrier_set();
-  assert(bs->kind() == BarrierSet::CardTableModRef, "Wrong barrier set kind");
-  _card_table = (CardTableExtension*)bs;
+  _card_table = barrier_set_cast<CardTableExtension>(heap->barrier_set());
 
   _counters = new CollectorCounters("PSScavenge", 0);
 }
