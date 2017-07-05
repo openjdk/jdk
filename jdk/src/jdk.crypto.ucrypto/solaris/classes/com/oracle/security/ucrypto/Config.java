@@ -66,7 +66,7 @@ final class Config {
 
     Config(String filename) throws IOException {
         FileInputStream in = new FileInputStream(expand(filename));
-        reader = new BufferedReader(new InputStreamReader(in));
+        reader = new BufferedReader(new InputStreamReader(in, "ISO-8859-1"));
         parsedKeywords = new HashSet<String>();
         st = new StreamTokenizer(reader);
         setupTokenizer();

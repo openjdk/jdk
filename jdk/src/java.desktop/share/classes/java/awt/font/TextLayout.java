@@ -248,7 +248,6 @@ public final class TextLayout implements Cloneable {
     // all are recomputed from scratch in buildCache()
     private TextLine.TextLineMetrics lineMetrics = null;
     private float visibleAdvance;
-    private int hashCodeCache;
 
     /*
      * TextLayouts are supposedly immutable.  If you mutate a TextLayout under
@@ -721,9 +720,6 @@ public final class TextLayout implements Cloneable {
         // naturalBounds, boundsRect will be generated on demand
         naturalBounds = null;
         boundsRect = null;
-
-        // hashCode will be regenerated on demand
-        hashCodeCache = 0;
 
         cacheIsValid = true;
     }
@@ -2569,33 +2565,8 @@ public final class TextLayout implements Cloneable {
     }
 
     /**
-     * Returns the hash code of this {@code TextLayout}.
-     * @return the hash code of this {@code TextLayout}.
-     */
-    public int hashCode() {
-        if (hashCodeCache == 0) {
-            ensureCache();
-            hashCodeCache = textLine.hashCode();
-        }
-        return hashCodeCache;
-    }
-
-    /**
-     * Returns {@code true} if the specified {@code Object} is a
-     * {@code TextLayout} object and if the specified {@code Object}
-     * equals this {@code TextLayout}.
-     * @param obj an {@code Object} to test for equality
-     * @return {@code true} if the specified {@code Object}
-     *      equals this {@code TextLayout}; {@code false}
-     *      otherwise.
-     */
-    public boolean equals(Object obj) {
-        return (obj instanceof TextLayout) && equals((TextLayout)obj);
-    }
-
-    /**
      * Returns {@code true} if the two layouts are equal.
-     * Two layouts are equal if they contain equal glyphvectors in the same order.
+     * Obeys the general contract of {@link java.lang.Object equals(Object)}.
      * @param rhs the {@code TextLayout} to compare to this
      *       {@code TextLayout}
      * @return {@code true} if the specified {@code TextLayout}
@@ -2603,16 +2574,7 @@ public final class TextLayout implements Cloneable {
      *
      */
     public boolean equals(TextLayout rhs) {
-
-        if (rhs == null) {
-            return false;
-        }
-        if (rhs == this) {
-            return true;
-        }
-
-        ensureCache();
-        return textLine.equals(rhs.textLine);
+        return equals((Object)rhs);
     }
 
     /**

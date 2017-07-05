@@ -145,61 +145,179 @@ public class JdkInternalMiscUnsafeAccessTestShort {
     static void testAccess(Object base, long offset) {
         // Plain
         {
-            UNSAFE.putShort(base, offset, (short)1);
+            UNSAFE.putShort(base, offset, (short)0x0123);
             short x = UNSAFE.getShort(base, offset);
-            assertEquals(x, (short)1, "set short value");
+            assertEquals(x, (short)0x0123, "set short value");
         }
 
         // Volatile
         {
-            UNSAFE.putShortVolatile(base, offset, (short)2);
+            UNSAFE.putShortVolatile(base, offset, (short)0x4567);
             short x = UNSAFE.getShortVolatile(base, offset);
-            assertEquals(x, (short)2, "putVolatile short value");
+            assertEquals(x, (short)0x4567, "putVolatile short value");
         }
 
 
         // Lazy
         {
-            UNSAFE.putShortRelease(base, offset, (short)1);
+            UNSAFE.putShortRelease(base, offset, (short)0x0123);
             short x = UNSAFE.getShortAcquire(base, offset);
-            assertEquals(x, (short)1, "putRelease short value");
+            assertEquals(x, (short)0x0123, "putRelease short value");
         }
 
         // Opaque
         {
-            UNSAFE.putShortOpaque(base, offset, (short)2);
+            UNSAFE.putShortOpaque(base, offset, (short)0x4567);
             short x = UNSAFE.getShortOpaque(base, offset);
-            assertEquals(x, (short)2, "putOpaque short value");
+            assertEquals(x, (short)0x4567, "putOpaque short value");
         }
 
         // Unaligned
         {
-            UNSAFE.putShortUnaligned(base, offset, (short)2);
+            UNSAFE.putShortUnaligned(base, offset, (short)0x4567);
             short x = UNSAFE.getShortUnaligned(base, offset);
-            assertEquals(x, (short)2, "putUnaligned short value");
+            assertEquals(x, (short)0x4567, "putUnaligned short value");
         }
 
         {
-            UNSAFE.putShortUnaligned(base, offset, (short)1, true);
+            UNSAFE.putShortUnaligned(base, offset, (short)0x0123, true);
             short x = UNSAFE.getShortUnaligned(base, offset, true);
-            assertEquals(x, (short)1, "putUnaligned big endian short value");
+            assertEquals(x, (short)0x0123, "putUnaligned big endian short value");
         }
 
         {
-            UNSAFE.putShortUnaligned(base, offset, (short)2, false);
+            UNSAFE.putShortUnaligned(base, offset, (short)0x4567, false);
             short x = UNSAFE.getShortUnaligned(base, offset, false);
-            assertEquals(x, (short)2, "putUnaligned little endian short value");
+            assertEquals(x, (short)0x4567, "putUnaligned little endian short value");
         }
 
+        UNSAFE.putShort(base, offset, (short)0x0123);
 
+        // Compare
+        {
+            boolean r = UNSAFE.compareAndSwapShort(base, offset, (short)0x0123, (short)0x4567);
+            assertEquals(r, true, "success compareAndSwap short");
+            short x = UNSAFE.getShort(base, offset);
+            assertEquals(x, (short)0x4567, "success compareAndSwap short value");
+        }
+
+        {
+            boolean r = UNSAFE.compareAndSwapShort(base, offset, (short)0x0123, (short)0x89AB);
+            assertEquals(r, false, "failing compareAndSwap short");
+            short x = UNSAFE.getShort(base, offset);
+            assertEquals(x, (short)0x4567, "failing compareAndSwap short value");
+        }
+
+        // Advanced compare
+        {
+            short r = UNSAFE.compareAndExchangeShortVolatile(base, offset, (short)0x4567, (short)0x0123);
+            assertEquals(r, (short)0x4567, "success compareAndExchangeVolatile short");
+            short x = UNSAFE.getShort(base, offset);
+            assertEquals(x, (short)0x0123, "success compareAndExchangeVolatile short value");
+        }
+
+        {
+            short r = UNSAFE.compareAndExchangeShortVolatile(base, offset, (short)0x4567, (short)0x89AB);
+            assertEquals(r, (short)0x0123, "failing compareAndExchangeVolatile short");
+            short x = UNSAFE.getShort(base, offset);
+            assertEquals(x, (short)0x0123, "failing compareAndExchangeVolatile short value");
+        }
+
+        {
+            short r = UNSAFE.compareAndExchangeShortAcquire(base, offset, (short)0x0123, (short)0x4567);
+            assertEquals(r, (short)0x0123, "success compareAndExchangeAcquire short");
+            short x = UNSAFE.getShort(base, offset);
+            assertEquals(x, (short)0x4567, "success compareAndExchangeAcquire short value");
+        }
+
+        {
+            short r = UNSAFE.compareAndExchangeShortAcquire(base, offset, (short)0x0123, (short)0x89AB);
+            assertEquals(r, (short)0x4567, "failing compareAndExchangeAcquire short");
+            short x = UNSAFE.getShort(base, offset);
+            assertEquals(x, (short)0x4567, "failing compareAndExchangeAcquire short value");
+        }
+
+        {
+            short r = UNSAFE.compareAndExchangeShortRelease(base, offset, (short)0x4567, (short)0x0123);
+            assertEquals(r, (short)0x4567, "success compareAndExchangeRelease short");
+            short x = UNSAFE.getShort(base, offset);
+            assertEquals(x, (short)0x0123, "success compareAndExchangeRelease short value");
+        }
+
+        {
+            short r = UNSAFE.compareAndExchangeShortRelease(base, offset, (short)0x4567, (short)0x89AB);
+            assertEquals(r, (short)0x0123, "failing compareAndExchangeRelease short");
+            short x = UNSAFE.getShort(base, offset);
+            assertEquals(x, (short)0x0123, "failing compareAndExchangeRelease short value");
+        }
+
+        {
+            boolean success = false;
+            for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                success = UNSAFE.weakCompareAndSwapShort(base, offset, (short)0x0123, (short)0x4567);
+            }
+            assertEquals(success, true, "weakCompareAndSwap short");
+            short x = UNSAFE.getShort(base, offset);
+            assertEquals(x, (short)0x4567, "weakCompareAndSwap short value");
+        }
+
+        {
+            boolean success = false;
+            for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                success = UNSAFE.weakCompareAndSwapShortAcquire(base, offset, (short)0x4567, (short)0x0123);
+            }
+            assertEquals(success, true, "weakCompareAndSwapAcquire short");
+            short x = UNSAFE.getShort(base, offset);
+            assertEquals(x, (short)0x0123, "weakCompareAndSwapAcquire short");
+        }
+
+        {
+            boolean success = false;
+            for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                success = UNSAFE.weakCompareAndSwapShortRelease(base, offset, (short)0x0123, (short)0x4567);
+            }
+            assertEquals(success, true, "weakCompareAndSwapRelease short");
+            short x = UNSAFE.getShort(base, offset);
+            assertEquals(x, (short)0x4567, "weakCompareAndSwapRelease short");
+        }
+
+        {
+            boolean success = false;
+            for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                success = UNSAFE.weakCompareAndSwapShortVolatile(base, offset, (short)0x4567, (short)0x0123);
+            }
+            assertEquals(success, true, "weakCompareAndSwapVolatile short");
+            short x = UNSAFE.getShort(base, offset);
+            assertEquals(x, (short)0x0123, "weakCompareAndSwapVolatile short");
+        }
+
+        UNSAFE.putShort(base, offset, (short)0x4567);
+
+        // Compare set and get
+        {
+            short o = UNSAFE.getAndSetShort(base, offset, (short)0x0123);
+            assertEquals(o, (short)0x4567, "getAndSet short");
+            short x = UNSAFE.getShort(base, offset);
+            assertEquals(x, (short)0x0123, "getAndSet short value");
+        }
+
+        UNSAFE.putShort(base, offset, (short)0x0123);
+
+        // get and add, add and get
+        {
+            short o = UNSAFE.getAndAddShort(base, offset, (short)0x4567);
+            assertEquals(o, (short)0x0123, "getAndAdd short");
+            short x = UNSAFE.getShort(base, offset);
+            assertEquals(x, (short)((short)0x0123 + (short)0x4567), "getAndAdd short");
+        }
     }
 
     static void testAccess(long address) {
         // Plain
         {
-            UNSAFE.putShort(address, (short)1);
+            UNSAFE.putShort(address, (short)0x0123);
             short x = UNSAFE.getShort(address);
-            assertEquals(x, (short)1, "set short value");
+            assertEquals(x, (short)0x0123, "set short value");
         }
     }
 }

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -39,22 +39,6 @@ US_EXPORT_POLICY_JAR_LIMITED := \
     $(SUPPORT_OUTPUTDIR)/jce/policy/limited/US_export_policy.jar
 US_EXPORT_POLICY_JAR_UNLIMITED := \
     $(SUPPORT_OUTPUTDIR)/jce/policy/unlimited/US_export_policy.jar
-
-ifndef OPENJDK
-  #
-  # In past releases, Oracle JDK has had a separately downloadable set of
-  # policy files which has been a nightmare for deployment.
-  #
-  # Now if we're closed and limited (default for Oracle JDK), create
-  # an "unlimited_policy" directory that contains the unlimited policy
-  # files.  It will be up to the user/deployer to make an informed choice
-  # as to whether they are legally entitled to use the unlimited policy
-  # file in their environment.  Users/deployers simply need to overwrite
-  # the files.  Consult README.txt (below) for more info.
-  #
-  UNLIMITED_POLICY_DIR := \
-      $(SUPPORT_OUTPUTDIR)/modules_libs/java.base/security/unlimited_policy
-endif
 
 #
 # TODO fix so that SetupJarArchive does not write files into SRCS
@@ -98,15 +82,6 @@ ifeq ($(UNLIMITED_CRYPTO), true)
 else
   $(US_EXPORT_POLICY_JAR_DST): $(US_EXPORT_POLICY_JAR_LIMITED)
 	$(install-file)
-endif
-
-ifndef OPENJDK
-  ifneq ($(UNLIMITED_CRYPTO), true)
-    $(UNLIMITED_POLICY_DIR)/US_export_policy.jar: \
-        $(US_EXPORT_POLICY_JAR_UNLIMITED)
-		$(install-file)
-    TARGETS += $(UNLIMITED_POLICY_DIR)/US_export_policy.jar
-  endif
 endif
 
 POLICY_JARS += $(US_EXPORT_POLICY_JAR_DST)
@@ -159,31 +134,12 @@ $(eval $(call SetupJarArchive, BUILD_LOCAL_POLICY_JAR_UNLIMITED, \
 
 TARGETS += $(LOCAL_POLICY_JAR_LIMITED) $(LOCAL_POLICY_JAR_UNLIMITED)
 
-ifndef OPENJDK
-  ifneq ($(UNLIMITED_CRYPTO), true)
-    $(UNLIMITED_POLICY_DIR)/README.txt: \
-        $(JDK_TOPDIR)/make/closed/data/cryptopolicy/README.txt
-		$(install-file)
-
-    TARGETS += $(UNLIMITED_POLICY_DIR)/README.txt
-  endif
-endif
-
 ifeq ($(UNLIMITED_CRYPTO), true)
   $(LOCAL_POLICY_JAR_DST): $(LOCAL_POLICY_JAR_UNLIMITED)
 	$(install-file)
-else 
+else
   $(LOCAL_POLICY_JAR_DST): $(LOCAL_POLICY_JAR_LIMITED)
 	$(install-file)
-endif 
-
-ifndef OPENJDK
-  ifneq ($(UNLIMITED_CRYPTO), true)
-    $(UNLIMITED_POLICY_DIR)/local_policy.jar: \
-        $(LOCAL_POLICY_JAR_UNLIMITED)
-		$(install-file) 
-    TARGETS += $(UNLIMITED_POLICY_DIR)/local_policy.jar
-  endif
 endif
 
 POLICY_JARS += $(LOCAL_POLICY_JAR_DST)
@@ -191,3 +147,4 @@ TARGETS += $(POLICY_JARS)
 
 ################################################################################
 
+$(eval $(call IncludeCustomExtension, jdk, gendata/GendataPolicyJars.gmk))

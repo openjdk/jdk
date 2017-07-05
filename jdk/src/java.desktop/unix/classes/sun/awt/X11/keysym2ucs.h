@@ -1685,7 +1685,7 @@ SOFTWARE.
 0x251c #define XK_leftt                                       0x9f4
 0x2524 #define XK_rightt                                      0x9f5
 0x2534 #define XK_bott                                        0x9f6
-0x242c #define XK_topt                                        0x9f7
+0x252c #define XK_topt                                        0x9f7
 0x2502 #define XK_vertbar                                     0x9f8
 #endif /* XK_SPECIAL */
 

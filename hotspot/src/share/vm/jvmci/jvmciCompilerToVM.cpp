@@ -88,41 +88,6 @@ oop CompilerToVM::get_jvmci_type(KlassHandle klass, TRAPS) {
   return NULL;
 }
 
-extern "C" {
-extern VMStructEntry* jvmciHotSpotVMStructs;
-extern uint64_t jvmciHotSpotVMStructEntryTypeNameOffset;
-extern uint64_t jvmciHotSpotVMStructEntryFieldNameOffset;
-extern uint64_t jvmciHotSpotVMStructEntryTypeStringOffset;
-extern uint64_t jvmciHotSpotVMStructEntryIsStaticOffset;
-extern uint64_t jvmciHotSpotVMStructEntryOffsetOffset;
-extern uint64_t jvmciHotSpotVMStructEntryAddressOffset;
-extern uint64_t jvmciHotSpotVMStructEntryArrayStride;
-
-extern VMTypeEntry* jvmciHotSpotVMTypes;
-extern uint64_t jvmciHotSpotVMTypeEntryTypeNameOffset;
-extern uint64_t jvmciHotSpotVMTypeEntrySuperclassNameOffset;
-extern uint64_t jvmciHotSpotVMTypeEntryIsOopTypeOffset;
-extern uint64_t jvmciHotSpotVMTypeEntryIsIntegerTypeOffset;
-extern uint64_t jvmciHotSpotVMTypeEntryIsUnsignedOffset;
-extern uint64_t jvmciHotSpotVMTypeEntrySizeOffset;
-extern uint64_t jvmciHotSpotVMTypeEntryArrayStride;
-
-extern VMIntConstantEntry* jvmciHotSpotVMIntConstants;
-extern uint64_t jvmciHotSpotVMIntConstantEntryNameOffset;
-extern uint64_t jvmciHotSpotVMIntConstantEntryValueOffset;
-extern uint64_t jvmciHotSpotVMIntConstantEntryArrayStride;
-
-extern VMLongConstantEntry* jvmciHotSpotVMLongConstants;
-extern uint64_t jvmciHotSpotVMLongConstantEntryNameOffset;
-extern uint64_t jvmciHotSpotVMLongConstantEntryValueOffset;
-extern uint64_t jvmciHotSpotVMLongConstantEntryArrayStride;
-
-extern VMAddressEntry* jvmciHotSpotVMAddresses;
-extern uint64_t jvmciHotSpotVMAddressEntryNameOffset;
-extern uint64_t jvmciHotSpotVMAddressEntryValueOffset;
-extern uint64_t jvmciHotSpotVMAddressEntryArrayStride;
-}
-
 int CompilerToVM::Data::Klass_vtable_start_offset;
 int CompilerToVM::Data::Klass_vtable_length_offset;
 
@@ -148,6 +113,7 @@ uintptr_t CompilerToVM::Data::Universe_verify_oop_bits;
 bool       CompilerToVM::Data::_supports_inline_contig_alloc;
 HeapWord** CompilerToVM::Data::_heap_end_addr;
 HeapWord** CompilerToVM::Data::_heap_top_addr;
+int CompilerToVM::Data::_max_oop_map_stack_offset;
 
 jbyte* CompilerToVM::Data::cardtable_start_address;
 int CompilerToVM::Data::cardtable_shift;
@@ -188,6 +154,11 @@ void CompilerToVM::Data::initialize() {
   _supports_inline_contig_alloc = Universe::heap()->supports_inline_contig_alloc();
   _heap_end_addr = _supports_inline_contig_alloc ? Universe::heap()->end_addr() : (HeapWord**) -1;
   _heap_top_addr = _supports_inline_contig_alloc ? Universe::heap()->top_addr() : (HeapWord**) -1;
+
+  _max_oop_map_stack_offset = (OopMapValue::register_mask - VMRegImpl::stack2reg(0)->value()) * VMRegImpl::stack_slot_size;
+  int max_oop_map_stack_index = _max_oop_map_stack_offset / VMRegImpl::stack_slot_size;
+  assert(OopMapValue::legal_vm_reg_name(VMRegImpl::stack2reg(max_oop_map_stack_index)), "should be valid");
+  assert(!OopMapValue::legal_vm_reg_name(VMRegImpl::stack2reg(max_oop_map_stack_index + 1)), "should be invalid");
 
   BarrierSet* bs = Universe::heap()->barrier_set();
   switch (bs->kind()) {
@@ -232,48 +203,151 @@ void CompilerToVM::Data::initialize() {
 #undef SET_TRIGFUNC
 }
 
-/**
- * We put all jvmciHotSpotVM values in an array so we can read them easily from Java.
- */
-static uintptr_t ciHotSpotVMData[28];
-
-C2V_VMENTRY(jlong, initializeConfiguration, (JNIEnv *env, jobject))
-  ciHotSpotVMData[0] = (uintptr_t) jvmciHotSpotVMStructs;
-  ciHotSpotVMData[1] = jvmciHotSpotVMStructEntryTypeNameOffset;
-  ciHotSpotVMData[2] = jvmciHotSpotVMStructEntryFieldNameOffset;
-  ciHotSpotVMData[3] = jvmciHotSpotVMStructEntryTypeStringOffset;
-  ciHotSpotVMData[4] = jvmciHotSpotVMStructEntryIsStaticOffset;
-  ciHotSpotVMData[5] = jvmciHotSpotVMStructEntryOffsetOffset;
-  ciHotSpotVMData[6] = jvmciHotSpotVMStructEntryAddressOffset;
-  ciHotSpotVMData[7] = jvmciHotSpotVMStructEntryArrayStride;
-
-  ciHotSpotVMData[8] = (uintptr_t) jvmciHotSpotVMTypes;
-  ciHotSpotVMData[9] = jvmciHotSpotVMTypeEntryTypeNameOffset;
-  ciHotSpotVMData[10] = jvmciHotSpotVMTypeEntrySuperclassNameOffset;
-  ciHotSpotVMData[11] = jvmciHotSpotVMTypeEntryIsOopTypeOffset;
-  ciHotSpotVMData[12] = jvmciHotSpotVMTypeEntryIsIntegerTypeOffset;
-  ciHotSpotVMData[13] = jvmciHotSpotVMTypeEntryIsUnsignedOffset;
-  ciHotSpotVMData[14] = jvmciHotSpotVMTypeEntrySizeOffset;
-  ciHotSpotVMData[15] = jvmciHotSpotVMTypeEntryArrayStride;
-
-  ciHotSpotVMData[16] = (uintptr_t) jvmciHotSpotVMIntConstants;
-  ciHotSpotVMData[17] = jvmciHotSpotVMIntConstantEntryNameOffset;
-  ciHotSpotVMData[18] = jvmciHotSpotVMIntConstantEntryValueOffset;
-  ciHotSpotVMData[19] = jvmciHotSpotVMIntConstantEntryArrayStride;
-
-  ciHotSpotVMData[20] = (uintptr_t) jvmciHotSpotVMLongConstants;
-  ciHotSpotVMData[21] = jvmciHotSpotVMLongConstantEntryNameOffset;
-  ciHotSpotVMData[22] = jvmciHotSpotVMLongConstantEntryValueOffset;
-  ciHotSpotVMData[23] = jvmciHotSpotVMLongConstantEntryArrayStride;
-
-  ciHotSpotVMData[24] = (uintptr_t) jvmciHotSpotVMAddresses;
-  ciHotSpotVMData[25] = jvmciHotSpotVMAddressEntryNameOffset;
-  ciHotSpotVMData[26] = jvmciHotSpotVMAddressEntryValueOffset;
-  ciHotSpotVMData[27] = jvmciHotSpotVMAddressEntryArrayStride;
+C2V_VMENTRY(jobjectArray, readConfiguration, (JNIEnv *env))
+#define BOXED_LONG(name, value) oop name; do { jvalue p; p.j = (jlong) (value); name = java_lang_boxing_object::create(T_LONG, &p, CHECK_NULL);} while(0)
+#define BOXED_DOUBLE(name, value) oop name; do { jvalue p; p.d = (jdouble) (value); name = java_lang_boxing_object::create(T_DOUBLE, &p, CHECK_NULL);} while(0)
+  ResourceMark rm;
+  HandleMark hm;
 
   CompilerToVM::Data::initialize();
 
-  return (jlong) (address) &ciHotSpotVMData;
+  VMField::klass()->initialize(thread);
+  VMFlag::klass()->initialize(thread);
+
+  int len = JVMCIVMStructs::localHotSpotVMStructs_count();
+  objArrayHandle vmFields = oopFactory::new_objArray(VMField::klass(), len, CHECK_NULL);
+  for (int i = 0; i < len ; i++) {
+    VMStructEntry vmField = JVMCIVMStructs::localHotSpotVMStructs[i];
+    instanceHandle vmFieldObj = InstanceKlass::cast(VMField::klass())->allocate_instance_handle(CHECK_NULL);
+    size_t name_buf_len = strlen(vmField.typeName) + strlen(vmField.fieldName) + 2 /* "::" */;
+    char* name_buf = NEW_RESOURCE_ARRAY(char, name_buf_len + 1);
+    sprintf(name_buf, "%s::%s", vmField.typeName, vmField.fieldName);
+    Handle name = java_lang_String::create_from_str(name_buf, CHECK_NULL);
+    Handle type = java_lang_String::create_from_str(vmField.typeString, CHECK_NULL);
+    VMField::set_name(vmFieldObj, name());
+    VMField::set_type(vmFieldObj, type());
+    VMField::set_offset(vmFieldObj, vmField.offset);
+    VMField::set_address(vmFieldObj, (jlong) vmField.address);
+    if (vmField.isStatic) {
+      if (strcmp(vmField.typeString, "bool") == 0) {
+        BOXED_LONG(value, *(jbyte*) vmField.address);
+        VMField::set_value(vmFieldObj, value);
+      } else if (strcmp(vmField.typeString, "int") == 0 ||
+                 strcmp(vmField.typeString, "jint") == 0) {
+        BOXED_LONG(value, *(jint*) vmField.address);
+        VMField::set_value(vmFieldObj, value);
+      } else if (strcmp(vmField.typeString, "uint64_t") == 0) {
+        BOXED_LONG(value, *(uint64_t*) vmField.address);
+        VMField::set_value(vmFieldObj, value);
+      } else if (strcmp(vmField.typeString, "address") == 0 ||
+                 strcmp(vmField.typeString, "intptr_t") == 0 ||
+                 strcmp(vmField.typeString, "uintptr_t") == 0 ||
+                 strcmp(vmField.typeString, "size_t") == 0 ||
+                 // All foo* types are addresses.
+                 vmField.typeString[strlen(vmField.typeString) - 1] == '*') {
+        BOXED_LONG(value, *((address*) vmField.address));
+        VMField::set_value(vmFieldObj, value);
+      } else {
+        JVMCI_ERROR_NULL("VM field %s has unsupported type %s", name_buf, vmField.typeString);
+      }
+    }
+    vmFields->obj_at_put(i, vmFieldObj());
+  }
+
+  len = JVMCIVMStructs::localHotSpotVMTypes_count();
+  objArrayHandle vmTypes = oopFactory::new_objArray(SystemDictionary::Object_klass(), len * 2, CHECK_NULL);
+  for (int i = 0; i < len ; i++) {
+    VMTypeEntry vmType = JVMCIVMStructs::localHotSpotVMTypes[i];
+    Handle name = java_lang_String::create_from_str(vmType.typeName, CHECK_NULL);
+    BOXED_LONG(size, vmType.size);
+    vmTypes->obj_at_put(i * 2, name());
+    vmTypes->obj_at_put(i * 2 + 1, size);
+  }
+
+  int ints_len = JVMCIVMStructs::localHotSpotVMIntConstants_count();
+  int longs_len = JVMCIVMStructs::localHotSpotVMLongConstants_count();
+  len = ints_len + longs_len;
+  objArrayHandle vmConstants = oopFactory::new_objArray(SystemDictionary::Object_klass(), len * 2, CHECK_NULL);
+  int insert = 0;
+  for (int i = 0; i < ints_len ; i++) {
+    VMIntConstantEntry c = JVMCIVMStructs::localHotSpotVMIntConstants[i];
+    Handle name = java_lang_String::create_from_str(c.name, CHECK_NULL);
+    BOXED_LONG(value, c.value);
+    vmConstants->obj_at_put(insert++, name());
+    vmConstants->obj_at_put(insert++, value);
+  }
+  for (int i = 0; i < longs_len ; i++) {
+    VMLongConstantEntry c = JVMCIVMStructs::localHotSpotVMLongConstants[i];
+    Handle name = java_lang_String::create_from_str(c.name, CHECK_NULL);
+    BOXED_LONG(value, c.value);
+    vmConstants->obj_at_put(insert++, name());
+    vmConstants->obj_at_put(insert++, value);
+  }
+  assert(insert == len * 2, "must be");
+
+  len = JVMCIVMStructs::localHotSpotVMAddresses_count();
+  objArrayHandle vmAddresses = oopFactory::new_objArray(SystemDictionary::Object_klass(), len * 2, CHECK_NULL);
+  for (int i = 0; i < len ; i++) {
+    VMAddressEntry a = JVMCIVMStructs::localHotSpotVMAddresses[i];
+    Handle name = java_lang_String::create_from_str(a.name, CHECK_NULL);
+    BOXED_LONG(value, a.value);
+    vmAddresses->obj_at_put(i * 2, name());
+    vmAddresses->obj_at_put(i * 2 + 1, value);
+  }
+
+  // The last entry is the null entry.
+  len = (int) Flag::numFlags - 1;
+  objArrayHandle vmFlags = oopFactory::new_objArray(VMFlag::klass(), len, CHECK_NULL);
+  for (int i = 0; i < len; i++) {
+    Flag* flag = &Flag::flags[i];
+    instanceHandle vmFlagObj = InstanceKlass::cast(VMFlag::klass())->allocate_instance_handle(CHECK_NULL);
+    Handle name = java_lang_String::create_from_str(flag->_name, CHECK_NULL);
+    Handle type = java_lang_String::create_from_str(flag->_type, CHECK_NULL);
+    VMFlag::set_name(vmFlagObj, name());
+    VMFlag::set_type(vmFlagObj, type());
+    if (flag->is_bool()) {
+      BOXED_LONG(value, flag->get_bool());
+      VMFlag::set_value(vmFlagObj, value);
+    } else if (flag->is_ccstr()) {
+      Handle value = java_lang_String::create_from_str(flag->get_ccstr(), CHECK_NULL);
+      VMFlag::set_value(vmFlagObj, value());
+    } else if (flag->is_int()) {
+      BOXED_LONG(value, flag->get_int());
+      VMFlag::set_value(vmFlagObj, value);
+    } else if (flag->is_intx()) {
+      BOXED_LONG(value, flag->get_intx());
+      VMFlag::set_value(vmFlagObj, value);
+    } else if (flag->is_uint()) {
+      BOXED_LONG(value, flag->get_uint());
+      VMFlag::set_value(vmFlagObj, value);
+    } else if (flag->is_uint64_t()) {
+      BOXED_LONG(value, flag->get_uint64_t());
+      VMFlag::set_value(vmFlagObj, value);
+    } else if (flag->is_uintx()) {
+      BOXED_LONG(value, flag->get_uintx());
+      VMFlag::set_value(vmFlagObj, value);
+    } else if (flag->is_double()) {
+      BOXED_DOUBLE(value, flag->get_double());
+      VMFlag::set_value(vmFlagObj, value);
+    } else if (flag->is_size_t()) {
+      BOXED_LONG(value, flag->get_size_t());
+      VMFlag::set_value(vmFlagObj, value);
+    } else {
+      JVMCI_ERROR_NULL("VM flag %s has unsupported type %s", flag->_name, flag->_type);
+    }
+    vmFlags->obj_at_put(i, vmFlagObj());
+  }
+
+  objArrayOop data = oopFactory::new_objArray(SystemDictionary::Object_klass(), 5, CHECK_NULL);
+  data->obj_at_put(0, vmFields());
+  data->obj_at_put(1, vmTypes());
+  data->obj_at_put(2, vmConstants());
+  data->obj_at_put(3, vmAddresses());
+  data->obj_at_put(4, vmFlags());
+
+  return (jobjectArray) JNIHandles::make_local(THREAD, data);
+#undef BOXED_LONG
+#undef BOXED_DOUBLE
 C2V_END
 
 C2V_VMENTRY(jbyteArray, getBytecode, (JNIEnv *, jobject, jobject jvmci_method))
@@ -621,12 +695,12 @@ C2V_VMENTRY(jint, constantPoolRemapInstructionOperandFromCache, (JNIEnv*, jobjec
   return cp->remap_instruction_operand_from_cache(index);
 C2V_END
 
-C2V_VMENTRY(jobject, resolveFieldInPool, (JNIEnv*, jobject, jobject jvmci_constant_pool, jint index, jbyte opcode, jlongArray info_handle))
+C2V_VMENTRY(jobject, resolveFieldInPool, (JNIEnv*, jobject, jobject jvmci_constant_pool, jint index, jobject jvmci_method, jbyte opcode, jlongArray info_handle))
   ResourceMark rm;
   constantPoolHandle cp = CompilerToVM::asConstantPool(jvmci_constant_pool);
   Bytecodes::Code code = (Bytecodes::Code)(((int) opcode) & 0xFF);
   fieldDescriptor fd;
-  LinkInfo link_info(cp, index, CHECK_0);
+  LinkInfo link_info(cp, index, (jvmci_method != NULL) ? CompilerToVM::asMethod(jvmci_method) : NULL, CHECK_0);
   LinkResolver::resolve_field(fd, link_info, Bytecodes::java_code(code), false, CHECK_0);
   typeArrayOop info = (typeArrayOop) JNIHandles::resolve(info_handle);
   assert(info != NULL && info->length() == 2, "must be");
@@ -1438,7 +1512,7 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "resolveConstantInPool",                        CC "(" HS_CONSTANT_POOL "I)" OBJECT,                                                  FN_PTR(resolveConstantInPool)},
   {CC "resolvePossiblyCachedConstantInPool",          CC "(" HS_CONSTANT_POOL "I)" OBJECT,                                                  FN_PTR(resolvePossiblyCachedConstantInPool)},
   {CC "resolveTypeInPool",                            CC "(" HS_CONSTANT_POOL "I)" HS_RESOLVED_KLASS,                                       FN_PTR(resolveTypeInPool)},
-  {CC "resolveFieldInPool",                           CC "(" HS_CONSTANT_POOL "IB[J)" HS_RESOLVED_KLASS,                                    FN_PTR(resolveFieldInPool)},
+  {CC "resolveFieldInPool",                           CC "(" HS_CONSTANT_POOL "I" HS_RESOLVED_METHOD "B[J)" HS_RESOLVED_KLASS,              FN_PTR(resolveFieldInPool)},
   {CC "resolveInvokeDynamicInPool",                   CC "(" HS_CONSTANT_POOL "I)V",                                                        FN_PTR(resolveInvokeDynamicInPool)},
   {CC "resolveInvokeHandleInPool",                    CC "(" HS_CONSTANT_POOL "I)V",                                                        FN_PTR(resolveInvokeHandleInPool)},
   {CC "resolveMethod",                                CC "(" HS_RESOLVED_KLASS HS_RESOLVED_METHOD HS_RESOLVED_KLASS ")" HS_RESOLVED_METHOD, FN_PTR(resolveMethod)},
@@ -1450,7 +1524,7 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "getResolvedJavaMethod",                        CC "(Ljava/lang/Object;J)" HS_RESOLVED_METHOD,                                        FN_PTR(getResolvedJavaMethod)},
   {CC "getConstantPool",                              CC "(Ljava/lang/Object;J)" HS_CONSTANT_POOL,                                          FN_PTR(getConstantPool)},
   {CC "getResolvedJavaType",                          CC "(Ljava/lang/Object;JZ)" HS_RESOLVED_KLASS,                                        FN_PTR(getResolvedJavaType)},
-  {CC "initializeConfiguration",                      CC "(" HS_CONFIG ")J",                                                                FN_PTR(initializeConfiguration)},
+  {CC "readConfiguration",                            CC "()[" OBJECT,                                                                      FN_PTR(readConfiguration)},
   {CC "installCode",                                  CC "(" TARGET_DESCRIPTION HS_COMPILED_CODE INSTALLED_CODE HS_SPECULATION_LOG ")I",    FN_PTR(installCode)},
   {CC "getMetadata",                                  CC "(" TARGET_DESCRIPTION HS_COMPILED_CODE HS_METADATA ")I",                          FN_PTR(getMetadata)},
   {CC "resetCompilationStatistics",                   CC "()V",                                                                             FN_PTR(resetCompilationStatistics)},

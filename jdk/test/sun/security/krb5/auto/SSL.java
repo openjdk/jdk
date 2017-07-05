@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,7 +78,8 @@ public class SSL extends SecurityManager {
         ServicePermission p = (ServicePermission)perm;
         // ServicePermissions required to create GSSName are ignored
         if (!p.getActions().isEmpty()) {
-            permChecks = permChecks + p.getActions().toUpperCase().charAt(0);
+            permChecks = permChecks
+                + p.getActions().toUpperCase(Locale.US).charAt(0);
         }
     }
 
@@ -94,7 +95,7 @@ public class SSL extends SecurityManager {
         System.setSecurityManager(new SSL());
 
         KDC kdc = KDC.create(OneKDC.REALM);
-        server = "host." + OneKDC.REALM.toLowerCase(Locale.US);
+        server = "host." + OneKDC.REALM_LOWER_CASE;
 
         if (args.length > 2) {
             sniHostname = "test." + server;

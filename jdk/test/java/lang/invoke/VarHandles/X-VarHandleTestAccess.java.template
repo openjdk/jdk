@@ -101,7 +101,7 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
 
 #if[CAS]
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_SET));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_VOLATILE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_ACQUIRE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_RELEASE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET));
@@ -111,7 +111,7 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_SET));
 #else[CAS]
         assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_SET));
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_VOLATILE));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE));
         assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_ACQUIRE));
         assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_RELEASE));
         assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET));
@@ -283,7 +283,7 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
         });
 
         checkUOE(() -> {
-            $type$ r = ($type$) vh.compareAndExchangeVolatile(recv, $value1$, $value2$);
+            $type$ r = ($type$) vh.compareAndExchange(recv, $value1$, $value2$);
         });
 
         checkUOE(() -> {
@@ -377,7 +377,7 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
         });
 
         checkUOE(() -> {
-            $type$ r = ($type$) vh.compareAndExchangeVolatile($value1$, $value2$);
+            $type$ r = ($type$) vh.compareAndExchange($value1$, $value2$);
         });
 
         checkUOE(() -> {
@@ -470,17 +470,17 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
         }
 
         {
-            $type$ r = ($type$) vh.compareAndExchangeVolatile(recv, $value2$, $value1$);
-            assertEquals(r, $value2$, "success compareAndExchangeVolatile $type$");
+            $type$ r = ($type$) vh.compareAndExchange(recv, $value2$, $value1$);
+            assertEquals(r, $value2$, "success compareAndExchange $type$");
             $type$ x = ($type$) vh.get(recv);
-            assertEquals(x, $value1$, "success compareAndExchangeVolatile $type$ value");
+            assertEquals(x, $value1$, "success compareAndExchange $type$ value");
         }
 
         {
-            $type$ r = ($type$) vh.compareAndExchangeVolatile(recv, $value2$, $value3$);
-            assertEquals(r, $value1$, "failing compareAndExchangeVolatile $type$");
+            $type$ r = ($type$) vh.compareAndExchange(recv, $value2$, $value3$);
+            assertEquals(r, $value1$, "failing compareAndExchange $type$");
             $type$ x = ($type$) vh.get(recv);
-            assertEquals(x, $value1$, "failing compareAndExchangeVolatile $type$ value");
+            assertEquals(x, $value1$, "failing compareAndExchange $type$ value");
         }
 
         {
@@ -568,7 +568,7 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
             $type$ o = ($type$) vh.getAndAdd(recv, $value3$);
             assertEquals(o, $value1$, "getAndAdd $type$");
             $type$ c = ($type$) vh.addAndGet(recv, $value3$);
-            assertEquals(c, $value1$ + $value3$ + $value3$, "getAndAdd $type$ value");
+            assertEquals(c, ($type$)($value1$ + $value3$ + $value3$), "getAndAdd $type$ value");
         }
 #end[AtomicAdd]
     }
@@ -580,7 +580,7 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
         });
 
         checkUOE(() -> {
-            $type$ r = ($type$) vh.compareAndExchangeVolatile(recv, $value1$, $value2$);
+            $type$ r = ($type$) vh.compareAndExchange(recv, $value1$, $value2$);
         });
 
         checkUOE(() -> {
@@ -673,17 +673,17 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
         }
 
         {
-            $type$ r = ($type$) vh.compareAndExchangeVolatile($value2$, $value1$);
-            assertEquals(r, $value2$, "success compareAndExchangeVolatile $type$");
+            $type$ r = ($type$) vh.compareAndExchange($value2$, $value1$);
+            assertEquals(r, $value2$, "success compareAndExchange $type$");
             $type$ x = ($type$) vh.get();
-            assertEquals(x, $value1$, "success compareAndExchangeVolatile $type$ value");
+            assertEquals(x, $value1$, "success compareAndExchange $type$ value");
         }
 
         {
-            $type$ r = ($type$) vh.compareAndExchangeVolatile($value2$, $value3$);
-            assertEquals(r, $value1$, "failing compareAndExchangeVolatile $type$");
+            $type$ r = ($type$) vh.compareAndExchange($value2$, $value3$);
+            assertEquals(r, $value1$, "failing compareAndExchange $type$");
             $type$ x = ($type$) vh.get();
-            assertEquals(x, $value1$, "failing compareAndExchangeVolatile $type$ value");
+            assertEquals(x, $value1$, "failing compareAndExchange $type$ value");
         }
 
         {
@@ -771,7 +771,7 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
             $type$ o = ($type$) vh.getAndAdd( $value3$);
             assertEquals(o, $value1$, "getAndAdd $type$");
             $type$ c = ($type$) vh.addAndGet($value3$);
-            assertEquals(c, $value1$ + $value3$ + $value3$, "getAndAdd $type$ value");
+            assertEquals(c, ($type$)($value1$ + $value3$ + $value3$), "getAndAdd $type$ value");
         }
 #end[AtomicAdd]
     }
@@ -783,7 +783,7 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
         });
 
         checkUOE(() -> {
-            $type$ r = ($type$) vh.compareAndExchangeVolatile($value1$, $value2$);
+            $type$ r = ($type$) vh.compareAndExchange($value1$, $value2$);
         });
 
         checkUOE(() -> {
@@ -879,17 +879,17 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
             }
 
             {
-                $type$ r = ($type$) vh.compareAndExchangeVolatile(array, i, $value2$, $value1$);
-                assertEquals(r, $value2$, "success compareAndExchangeVolatile $type$");
+                $type$ r = ($type$) vh.compareAndExchange(array, i, $value2$, $value1$);
+                assertEquals(r, $value2$, "success compareAndExchange $type$");
                 $type$ x = ($type$) vh.get(array, i);
-                assertEquals(x, $value1$, "success compareAndExchangeVolatile $type$ value");
+                assertEquals(x, $value1$, "success compareAndExchange $type$ value");
             }
 
             {
-                $type$ r = ($type$) vh.compareAndExchangeVolatile(array, i, $value2$, $value3$);
-                assertEquals(r, $value1$, "failing compareAndExchangeVolatile $type$");
+                $type$ r = ($type$) vh.compareAndExchange(array, i, $value2$, $value3$);
+                assertEquals(r, $value1$, "failing compareAndExchange $type$");
                 $type$ x = ($type$) vh.get(array, i);
-                assertEquals(x, $value1$, "failing compareAndExchangeVolatile $type$ value");
+                assertEquals(x, $value1$, "failing compareAndExchange $type$ value");
             }
 
             {
@@ -977,7 +977,7 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
                 $type$ o = ($type$) vh.getAndAdd(array, i, $value3$);
                 assertEquals(o, $value1$, "getAndAdd $type$");
                 $type$ c = ($type$) vh.addAndGet(array, i, $value3$);
-                assertEquals(c, $value1$ + $value3$ + $value3$, "getAndAdd $type$ value");
+                assertEquals(c, ($type$)($value1$ + $value3$ + $value3$), "getAndAdd $type$ value");
             }
 #end[AtomicAdd]
         }
@@ -993,7 +993,7 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
         });
 
         checkUOE(() -> {
-            $type$ r = ($type$) vh.compareAndExchangeVolatile(array, i, $value1$, $value2$);
+            $type$ r = ($type$) vh.compareAndExchange(array, i, $value1$, $value2$);
         });
 
         checkUOE(() -> {
@@ -1080,7 +1080,7 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
             });
 
             checkIOOBE(() -> {
-                $type$ r = ($type$) vh.compareAndExchangeVolatile(array, ci, $value2$, $value1$);
+                $type$ r = ($type$) vh.compareAndExchange(array, ci, $value2$, $value1$);
             });
 
             checkIOOBE(() -> {

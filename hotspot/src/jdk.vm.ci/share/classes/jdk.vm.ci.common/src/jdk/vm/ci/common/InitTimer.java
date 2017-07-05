@@ -30,8 +30,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  * {@code "jvmci.inittimer"} system property to {@code "true"}.
  */
 public final class InitTimer implements AutoCloseable {
-    final String name;
-    final long start;
+    private final String name;
+    private final long start;
 
     private InitTimer(String name) {
         int n = nesting.getAndIncrement();
@@ -76,5 +76,5 @@ public final class InitTimer implements AutoCloseable {
     /**
      * Used to assert the invariant that all related initialization happens on the same thread.
      */
-    public static Thread initializingThread;
+    static Thread initializingThread;
 }

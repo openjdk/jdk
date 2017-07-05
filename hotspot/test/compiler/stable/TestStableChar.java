@@ -100,7 +100,7 @@ public class TestStableChar {
         public static final DefaultValue c = new DefaultValue();
         public static char get() { return c.v; }
         public static void test() throws Exception {
-            char val1 = get();
+                       char val1 = get();
             c.v = 'a'; char val2 = get();
             assertEquals(val1, 0);
             assertEquals(val2, 'a');
@@ -130,7 +130,7 @@ public class TestStableChar {
         public static final DefaultStaticValue c = new DefaultStaticValue();
         public static char get() { return c.v; }
         public static void test() throws Exception {
-            char val1 = get();
+                       char val1 = get();
             c.v = 'a'; char val2 = get();
             assertEquals(val1, 0);
             assertEquals(val2, 'a');
@@ -180,24 +180,24 @@ public class TestStableChar {
         public static void test() throws Exception {
             {
                 c.v = new char[1]; c.v[0] = 'a'; char val1 = get();
-                c.v[0] = 'b'; char val2 = get();
+                                   c.v[0] = 'b'; char val2 = get();
                 assertEquals(val1, 'a');
                 assertEquals(val2, (isStableEnabled ? 'a' : 'b'));
 
                 c.v = new char[1]; c.v[0] = 'c'; char val3 = get();
                 assertEquals(val3, (isStableEnabled ? (isStableEnabled ? 'a' : 'b')
-                        : 'c'));
+                                                    : 'c'));
             }
 
             {
                 c.v = new char[20]; c.v[10] = 'a'; char val1 = get1();
-                c.v[10] = 'b'; char val2 = get1();
+                                    c.v[10] = 'b'; char val2 = get1();
                 assertEquals(val1, 'a');
                 assertEquals(val2, (isStableEnabled ? 'a' : 'b'));
 
                 c.v = new char[20]; c.v[10] = 'c'; char val3 = get1();
                 assertEquals(val3, (isStableEnabled ? (isStableEnabled ? 'a' : 'b')
-                        : 'c'));
+                                                    : 'c'));
             }
 
             {
@@ -220,17 +220,17 @@ public class TestStableChar {
         public static void test() throws Exception {
             {
                 c.v = new char[1][1]; c.v[0][0] = 'a'; char val1 = get();
-                c.v[0][0] = 'b'; char val2 = get();
+                                      c.v[0][0] = 'b'; char val2 = get();
                 assertEquals(val1, 'a');
                 assertEquals(val2, (isStableEnabled ? 'a' : 'b'));
 
                 c.v = new char[1][1]; c.v[0][0] = 'c'; char val3 = get();
                 assertEquals(val3, (isStableEnabled ? (isStableEnabled ? 'a' : 'b')
-                        : 'c'));
+                                                    : 'c'));
 
                 c.v[0] = new char[1]; c.v[0][0] = 'd'; char val4 = get();
                 assertEquals(val4, (isStableEnabled ? (isStableEnabled ? 'a' : 'b')
-                        : 'd'));
+                                                    : 'd'));
             }
 
             {
@@ -260,21 +260,21 @@ public class TestStableChar {
         public static void test() throws Exception {
             {
                 c.v = new char[1][1][1]; c.v[0][0][0] = 'a'; char val1 = get();
-                c.v[0][0][0] = 'b'; char val2 = get();
+                                         c.v[0][0][0] = 'b'; char val2 = get();
                 assertEquals(val1, 'a');
                 assertEquals(val2, (isStableEnabled ? 'a' : 'b'));
 
                 c.v = new char[1][1][1]; c.v[0][0][0] = 'c'; char val3 = get();
                 assertEquals(val3, (isStableEnabled ? (isStableEnabled ? 'a' : 'b')
-                        : 'c'));
+                                                    : 'c'));
 
                 c.v[0] = new char[1][1]; c.v[0][0][0] = 'd'; char val4 = get();
                 assertEquals(val4, (isStableEnabled ? (isStableEnabled ? 'a' : 'b')
-                        : 'd'));
+                                                    : 'd'));
 
                 c.v[0][0] = new char[1]; c.v[0][0][0] = 'e'; char val5 = get();
                 assertEquals(val5, (isStableEnabled ? (isStableEnabled ? 'a' : 'b')
-                        : 'e'));
+                                                    : 'e'));
             }
 
             {
@@ -311,25 +311,25 @@ public class TestStableChar {
         public static void test() throws Exception {
             {
                 c.v = new char[1][1][1][1]; c.v[0][0][0][0] = 'a'; char val1 = get();
-                c.v[0][0][0][0] = 'b'; char val2 = get();
+                                            c.v[0][0][0][0] = 'b'; char val2 = get();
                 assertEquals(val1, 'a');
                 assertEquals(val2, (isStableEnabled ? 'a' : 'b'));
 
                 c.v = new char[1][1][1][1]; c.v[0][0][0][0] = 'c'; char val3 = get();
                 assertEquals(val3, (isStableEnabled ? (isStableEnabled ? 'a' : 'b')
-                        : 'c'));
+                                                    : 'c'));
 
                 c.v[0] = new char[1][1][1]; c.v[0][0][0][0] = 'd'; char val4 = get();
                 assertEquals(val4, (isStableEnabled ? (isStableEnabled ? 'a' : 'b')
-                        : 'd'));
+                                                    : 'd'));
 
                 c.v[0][0] = new char[1][1]; c.v[0][0][0][0] = 'e'; char val5 = get();
                 assertEquals(val5, (isStableEnabled ? (isStableEnabled ? 'a' : 'b')
-                        : 'e'));
+                                                    : 'e'));
 
                 c.v[0][0][0] = new char[1]; c.v[0][0][0][0] = 'f'; char val6 = get();
                 assertEquals(val6, (isStableEnabled ? (isStableEnabled ? 'a' : 'b')
-                        : 'f'));
+                                                    : 'f'));
             }
 
             {
@@ -370,7 +370,7 @@ public class TestStableChar {
         public static void test() throws Exception {
             {
                 c.v = new char[1]; ((char[])c.v)[0] = 'a'; char val1 = get();
-                ((char[])c.v)[0] = 'b'; char val2 = get();
+                                   ((char[])c.v)[0] = 'b'; char val2 = get();
 
                 assertEquals(val1, 'a');
                 assertEquals(val2, 'b');
@@ -397,7 +397,7 @@ public class TestStableChar {
         public static void test() throws Exception {
             {
                 c.v = new char[1][1]; ((char[][])c.v)[0][0] = 'a'; char val1 = get();
-                ((char[][])c.v)[0][0] = 'b'; char val2 = get();
+                                      ((char[][])c.v)[0][0] = 'b'; char val2 = get();
 
                 assertEquals(val1, 'a');
                 assertEquals(val2, 'b');
@@ -405,7 +405,7 @@ public class TestStableChar {
 
             {
                 c.v = new char[1][1]; c.v[0] = new char[0]; char[] val1 = get1();
-                c.v[0] = new char[0]; char[] val2 = get1();
+                                      c.v[0] = new char[0]; char[] val2 = get1();
 
                 assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
             }
@@ -432,8 +432,8 @@ public class TestStableChar {
 
         public static void test() throws Exception {
             {
-                c.v = new char[1][1][1]; ((char[][][])c.v)[0][0][0] = 'a';  char val1 = get();
-                ((char[][][])c.v)[0][0][0] = 'b'; char val2 = get();
+                c.v = new char[1][1][1]; ((char[][][])c.v)[0][0][0] = 'a'; char val1 = get();
+                                         ((char[][][])c.v)[0][0][0] = 'b'; char val2 = get();
 
                 assertEquals(val1, 'a');
                 assertEquals(val2, 'b');
@@ -441,14 +441,14 @@ public class TestStableChar {
 
             {
                 c.v = new char[1][1][1]; c.v[0][0] = new char[0]; char[] val1 = get1();
-                c.v[0][0] = new char[0]; char[] val2 = get1();
+                                         c.v[0][0] = new char[0]; char[] val2 = get1();
 
                 assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
             }
 
             {
                 c.v = new char[1][1][1]; c.v[0] = new char[0][0]; char[][] val1 = get2();
-                c.v[0] = new char[0][0]; char[][] val2 = get2();
+                                         c.v[0] = new char[0][0]; char[][] val2 = get2();
 
                 assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
             }
@@ -478,7 +478,7 @@ public class TestStableChar {
         public static void test() throws Exception {
             {
                 c.v = new A(); c.v.a = 'a'; A val1 = get();
-                c.v.a = 'b'; A val2 = get();
+                               c.v.a = 'b'; A val2 = get();
 
                 assertEquals(val1.a, 'b');
                 assertEquals(val2.a, 'b');
@@ -486,7 +486,7 @@ public class TestStableChar {
 
             {
                 c.v = new A(); c.v.a = 'a'; char val1 = get1();
-                c.v.a = 'b'; char val2 = get1();
+                               c.v.a = 'b'; char val2 = get1();
                 c.v = new A(); c.v.a = 'c'; char val3 = get1();
 
                 assertEquals(val1, 'a');
@@ -512,8 +512,8 @@ public class TestStableChar {
         public static void test() throws Exception {
             {
                 c.v = new A(); c.v.next = new A(); c.v.next.next  = c.v;
-                c.v.a = 'a'; c.v.next.a = 'a'; A val1 = get();
-                c.v.a = 'b'; c.v.next.a = 'b'; A val2 = get();
+                               c.v.a = 'a'; c.v.next.a = 'a'; A val1 = get();
+                               c.v.a = 'b'; c.v.next.a = 'b'; A val2 = get();
 
                 assertEquals(val1.a, 'b');
                 assertEquals(val2.a, 'b');
@@ -521,10 +521,10 @@ public class TestStableChar {
 
             {
                 c.v = new A(); c.v.next = c.v;
-                c.v.a = 'a'; char val1 = get1();
-                c.v.a = 'b'; char val2 = get1();
+                               c.v.a = 'a'; char val1 = get1();
+                               c.v.a = 'b'; char val2 = get1();
                 c.v = new A(); c.v.next = c.v;
-                c.v.a = 'c'; char val3 = get1();
+                               c.v.a = 'c'; char val3 = get1();
 
                 assertEquals(val1, 'a');
                 assertEquals(val2, (isStableEnabled ? 'a' : 'b'));
@@ -550,8 +550,8 @@ public class TestStableChar {
         public static void test() throws Exception {
             {
                 c.v = new A(); c.v.left = c.v.right = c.v;
-                c.v.a = 'a'; char val1 = get(); char val2 = get1();
-                c.v.a = 'b'; char val3 = get(); char val4 = get1();
+                               c.v.a = 'a'; char val1 = get(); char val2 = get1();
+                               c.v.a = 'b'; char val3 = get(); char val4 = get1();
 
                 assertEquals(val1, 'a');
                 assertEquals(val3, (isStableEnabled ? 'a' : 'b'));
@@ -581,8 +581,8 @@ public class TestStableChar {
             {
                 A elem = new A();
                 c.v = new A[] { elem, elem }; c.v[0].left = c.v[0].right = c.v;
-                elem.a = 'a'; char val1 = get(); char val2 = get1();
-                elem.a = 'b'; char val3 = get(); char val4 = get1();
+                               elem.a = 'a'; char val1 = get(); char val2 = get1();
+                               elem.a = 'b'; char val3 = get(); char val4 = get1();
 
                 assertEquals(val1, 'a');
                 assertEquals(val3, (isStableEnabled ? 'a' : 'b'));

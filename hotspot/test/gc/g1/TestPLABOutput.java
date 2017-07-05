@@ -25,7 +25,7 @@
  * @test TestPLABOutput
  * @bug 8140585
  * @summary Check that G1 does not report empty PLAB statistics in the first evacuation.
- * @requires vm.gc=="G1" | vm.gc=="null"
+ * @requires vm.gc.G1
  * @key gc
  * @modules java.base/jdk.internal.misc
  * @library /testlibrary /test/lib

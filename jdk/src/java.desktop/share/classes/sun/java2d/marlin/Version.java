@@ -27,10 +27,10 @@ package sun.java2d.marlin;
 
 public final class Version {
 
-    private static final String version = "marlin-0.7.3.3-Unsafe-OpenJDK";
+    private static final String VERSION = "marlin-0.7.3.4-Unsafe-OpenJDK";
 
     public static String getVersion() {
-        return version;
+        return VERSION;
     }
 
     private Version() {

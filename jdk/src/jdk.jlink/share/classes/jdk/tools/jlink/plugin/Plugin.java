@@ -107,24 +107,6 @@ public interface Plugin {
     }
 
     /**
-     * The set of plugin names that must be located, within the stack of plugins,
-     * before this plugin.
-     * @return The set of names. By default this set is empty.
-     */
-    public default Set<String> isBefore() {
-        return Collections.emptySet();
-    }
-
-    /**
-     * The set of plugin names that must be located, within the stack of plugins,
-     * after this plugin.
-     * @return The set of names. By default this set is empty.
-     */
-    public default Set<String> isAfter() {
-        return Collections.emptySet();
-    }
-
-    /**
      * The plugin name.
      * @return The name.
      */

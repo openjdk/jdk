@@ -31,7 +31,7 @@ import sun.hotspot.WhiteBox;
 /**
  * @test TestHumongousThreshold
  * @summary Checks that objects larger than half a region are allocated as humongous
- * @requires vm.gc=="G1" | vm.gc=="null"
+ * @requires vm.gc.G1
  * @library /testlibrary /test/lib /
  * @modules java.base/jdk.internal.misc
  * @modules java.management

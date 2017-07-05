@@ -25,7 +25,7 @@
  * @test TestG1ConcRefinementThreads
  * @key gc
  * @bug 8047976
- * @requires vm.gc=="G1" | vm.gc=="null"
+ * @requires vm.gc.G1
  * @summary Tests argument processing for G1ConcRefinementThreads
  * @library /testlibrary
  * @modules java.base/jdk.internal.misc

@@ -21,16 +21,14 @@
  * questions.
  */
 
-import compiler.whitebox.CompilerWhiteBoxTest;
-
 /**
  * @test TieredLevelsTest
- * @library /testlibrary /test/lib /compiler/whitebox /
+ * @library /testlibrary /test/lib /
  * @modules java.base/jdk.internal.misc
  * @modules java.management
  * @build TieredLevelsTest
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- *                              sun.hotspot.WhiteBox$WhiteBoxPermission
+ *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+TieredCompilation
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:-UseCounterDecay
  *                   -XX:CompileCommand=compileonly,compiler.whitebox.SimpleTestCaseHelper::*
@@ -38,6 +36,9 @@ import compiler.whitebox.CompilerWhiteBoxTest;
  * @summary Verify that all levels &lt; 'TieredStopAtLevel' can be used
  * @author igor.ignatyev@oracle.com
  */
+
+import compiler.whitebox.CompilerWhiteBoxTest;
+
 public class TieredLevelsTest extends CompLevelsTest {
     public static void main(String[] args) throws Exception, Throwable {
         if (CompilerWhiteBoxTest.skipOnTieredCompilation(false)) {

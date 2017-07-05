@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -172,7 +172,11 @@ public final class PKIXCertPathValidator extends CertPathValidatorSpi {
         List<PKIXCertPathChecker> certPathCheckers = new ArrayList<>();
         // add standard checkers that we will be using
         certPathCheckers.add(untrustedChecker);
-        certPathCheckers.add(new AlgorithmChecker(anchor, params.date()));
+        if (params.timestamp() == null) {
+            certPathCheckers.add(new AlgorithmChecker(anchor, params.date()));
+        } else {
+            certPathCheckers.add(new AlgorithmChecker(params.timestamp()));
+        }
         certPathCheckers.add(new KeyChecker(certPathLen,
                                             params.targetCertConstraints()));
         certPathCheckers.add(new ConstraintsChecker(certPathLen));
@@ -189,8 +193,14 @@ public final class PKIXCertPathValidator extends CertPathValidatorSpi {
                                              rootNode);
         certPathCheckers.add(pc);
         // default value for date is current time
-        BasicChecker bc = new BasicChecker(anchor, params.date(),
-                                           params.sigProvider(), false);
+        BasicChecker bc;
+        if (params.timestamp() == null) {
+            bc = new BasicChecker(anchor, params.date(), params.sigProvider(),
+                    false);
+        } else {
+            bc = new BasicChecker(anchor, params.timestamp().getTimestamp(),
+                    params.sigProvider(), false);
+        }
         certPathCheckers.add(bc);
 
         boolean revCheckerAdded = false;

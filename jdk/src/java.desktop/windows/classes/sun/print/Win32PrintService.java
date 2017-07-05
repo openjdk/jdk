@@ -759,10 +759,18 @@ public class Win32PrintService implements PrintService, AttributeUpdater,
     private boolean isSupportedMediaPrintableArea(MediaPrintableArea mpa) {
 
         getMediaPrintables(null);
+        int units = MediaPrintableArea.INCH;
 
         if (mediaPrintables != null) {
             for (int i=0; i<mediaPrintables.length; i++) {
-                if (mpa.equals(mediaPrintables[i])) {
+                if ((mpa.getX(units) >= mediaPrintables[i].getX(units)) &&
+                    (mpa.getY(units) >= mediaPrintables[i].getY(units)) &&
+                    (mpa.getX(units) + mpa.getWidth(units) <=
+                            mediaPrintables[i].getX(units) +
+                            mediaPrintables[i].getWidth(units)) &&
+                    (mpa.getY(units) + mpa.getHeight(units) <=
+                            mediaPrintables[i].getY(units) +
+                            mediaPrintables[i].getHeight(units))) {
                     return true;
                 }
             }
