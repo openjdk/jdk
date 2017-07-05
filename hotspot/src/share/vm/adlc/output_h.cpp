@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1754,7 +1754,7 @@ void ArchDesc::declareClasses(FILE *fp) {
         instr->has_temps() ||
         instr->_matrule != NULL &&
         instr->num_opnds() != instr->num_unique_opnds() ) {
-      fprintf(fp,"  virtual MachNode      *Expand(State *state, Node_List &proj_list);\n");
+      fprintf(fp,"  virtual MachNode      *Expand(State *state, Node_List &proj_list, Node* mem);\n");
     }
 
     if (instr->is_pinned(_globalNames)) {

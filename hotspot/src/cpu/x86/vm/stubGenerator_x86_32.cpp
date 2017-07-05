@@ -718,10 +718,8 @@ class StubGenerator: public StubCodeGenerator {
       case BarrierSet::G1SATBCTLogging:
         {
           __ pusha();                      // push registers
-          __ push(count);
-          __ push(start);
-          __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, BarrierSet::static_write_ref_array_pre)));
-          __ addptr(rsp, 2*wordSize);
+          __ call_VM_leaf(CAST_FROM_FN_PTR(address, BarrierSet::static_write_ref_array_pre),
+                          start, count);
           __ popa();
         }
         break;
@@ -752,10 +750,8 @@ class StubGenerator: public StubCodeGenerator {
       case BarrierSet::G1SATBCTLogging:
         {
           __ pusha();                      // push registers
-          __ push(count);
-          __ push(start);
-          __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, BarrierSet::static_write_ref_array_post)));
-          __ addptr(rsp, 2*wordSize);
+          __ call_VM_leaf(CAST_FROM_FN_PTR(address, BarrierSet::static_write_ref_array_post),
+                          start, count);
           __ popa();
         }
         break;
