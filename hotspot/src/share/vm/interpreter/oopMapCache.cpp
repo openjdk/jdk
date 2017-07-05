@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -426,7 +426,7 @@ void InterpreterOopMap::resource_copy(OopMapCacheEntry* from) {
   }
 }
 
-inline unsigned int OopMapCache::hash_value_for(methodHandle method, int bci) const {
+inline unsigned int OopMapCache::hash_value_for(const methodHandle& method, int bci) const {
   // We use method->code_size() rather than method->identity_hash() below since
   // the mark may not be present if a pointer to the method is already reversed.
   return   ((unsigned int) bci)
@@ -477,7 +477,7 @@ void OopMapCache::flush_obsolete_entries() {
     }
 }
 
-void OopMapCache::lookup(methodHandle method,
+void OopMapCache::lookup(const methodHandle& method,
                          int bci,
                          InterpreterOopMap* entry_for) const {
   MutexLocker x(&_mut);
@@ -558,7 +558,7 @@ void OopMapCache::lookup(methodHandle method,
   return;
 }
 
-void OopMapCache::compute_one_oop_map(methodHandle method, int bci, InterpreterOopMap* entry) {
+void OopMapCache::compute_one_oop_map(const methodHandle& method, int bci, InterpreterOopMap* entry) {
   // Due to the invariants above it's tricky to allocate a temporary OopMapCacheEntry on the stack
   OopMapCacheEntry* tmp = NEW_C_HEAP_ARRAY(OopMapCacheEntry, 1, mtClass);
   tmp->initialize();

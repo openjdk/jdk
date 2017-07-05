@@ -100,7 +100,7 @@ public abstract class Property implements Serializable {
     public static final int DUAL_FIELDS             = 1 << 11;
 
     /** Property key. */
-    private final String key;
+    private final Object key;
 
     /** Property flags. */
     private int flags;
@@ -127,7 +127,7 @@ public abstract class Property implements Serializable {
      * @param flags property flags
      * @param slot  property field number or spill slot
      */
-    Property(final String key, final int flags, final int slot) {
+    Property(final Object key, final int flags, final int slot) {
         assert key != null;
         this.key   = key;
         this.flags = flags;
@@ -420,7 +420,7 @@ public abstract class Property implements Serializable {
      * Get the key for this property. This key is an ordinary string. The "name".
      * @return key for property
      */
-    public String getKey() {
+    public Object getKey() {
         return key;
     }
 
@@ -627,7 +627,7 @@ public abstract class Property implements Serializable {
         final StringBuilder sb   = new StringBuilder();
         final Class<?>      t = getLocalType();
 
-        sb.append(indent(getKey(), 20)).
+        sb.append(indent(getKey().toString(), 20)).
             append(" id=").
             append(Debug.id(this)).
             append(" (0x").

@@ -50,7 +50,7 @@ class ArrayKlass: public Klass {
 
  public:
   // Testing operation
-  bool oop_is_array_slow() const { return true; }
+  DEBUG_ONLY(bool is_array_klass_slow() const { return true; })
 
   // Instance variables
   int dimension() const                 { return _dimension;      }
@@ -86,8 +86,8 @@ class ArrayKlass: public Klass {
 
   // Casting from Klass*
   static ArrayKlass* cast(Klass* k) {
-    assert(k->oop_is_array(), "cast to ArrayKlass");
-    return (ArrayKlass*) k;
+    assert(k->is_array_klass(), "cast to ArrayKlass");
+    return static_cast<ArrayKlass*>(k);
   }
 
   GrowableArray<Klass*>* compute_secondary_supers(int num_extra_slots);

@@ -73,11 +73,7 @@ void CompactibleFreeListSpace::set_cms_values() {
 }
 
 // Constructor
-CompactibleFreeListSpace::CompactibleFreeListSpace(BlockOffsetSharedArray* bs,
-  MemRegion mr, bool use_adaptive_freelists,
-  FreeBlockDictionary<FreeChunk>::DictionaryChoice dictionaryChoice) :
-  _dictionaryChoice(dictionaryChoice),
-  _adaptive_freelists(use_adaptive_freelists),
+CompactibleFreeListSpace::CompactibleFreeListSpace(BlockOffsetSharedArray* bs, MemRegion mr) :
   _bt(bs, mr),
   // free list locks are in the range of values taken by _lockRank
   // This range currently is [_leaf+2, _leaf+3]
@@ -100,48 +96,17 @@ CompactibleFreeListSpace::CompactibleFreeListSpace(BlockOffsetSharedArray* bs,
          "FreeChunk is larger than expected");
   _bt.set_space(this);
   initialize(mr, SpaceDecorator::Clear, SpaceDecorator::Mangle);
-  // We have all of "mr", all of which we place in the dictionary
-  // as one big chunk. We'll need to decide here which of several
-  // possible alternative dictionary implementations to use. For
-  // now the choice is easy, since we have only one working
-  // implementation, namely, the simple binary tree (splaying
-  // temporarily disabled).
-  switch (dictionaryChoice) {
-    case FreeBlockDictionary<FreeChunk>::dictionaryBinaryTree:
-      _dictionary = new AFLBinaryTreeDictionary(mr);
-      break;
-    case FreeBlockDictionary<FreeChunk>::dictionarySplayTree:
-    case FreeBlockDictionary<FreeChunk>::dictionarySkipList:
-    default:
-      warning("dictionaryChoice: selected option not understood; using"
-              " default BinaryTreeDictionary implementation instead.");
-  }
+
+  _dictionary = new AFLBinaryTreeDictionary(mr);
+
   assert(_dictionary != NULL, "CMS dictionary initialization");
   // The indexed free lists are initially all empty and are lazily
   // filled in on demand. Initialize the array elements to NULL.
   initializeIndexedFreeListArray();
 
-  // Not using adaptive free lists assumes that allocation is first
-  // from the linAB's.  Also a cms perm gen which can be compacted
-  // has to have the klass's klassKlass allocated at a lower
-  // address in the heap than the klass so that the klassKlass is
-  // moved to its new location before the klass is moved.
-  // Set the _refillSize for the linear allocation blocks
-  if (!use_adaptive_freelists) {
-    FreeChunk* fc = _dictionary->get_chunk(mr.word_size(),
-                                           FreeBlockDictionary<FreeChunk>::atLeast);
-    // The small linAB initially has all the space and will allocate
-    // a chunk of any size.
-    HeapWord* addr = (HeapWord*) fc;
-    _smallLinearAllocBlock.set(addr, fc->size() ,
-      1024*SmallForLinearAlloc, fc->size());
-    // Note that _unallocated_block is not updated here.
-    // Allocations from the linear allocation block should
-    // update it.
-  } else {
-    _smallLinearAllocBlock.set(0, 0, 1024*SmallForLinearAlloc,
-                               SmallForLinearAlloc);
-  }
+  _smallLinearAllocBlock.set(0, 0, 1024*SmallForLinearAlloc,
+                             SmallForLinearAlloc);
+
   // CMSIndexedFreeListReplenish should be at least 1
   CMSIndexedFreeListReplenish = MAX2((uintx)1, CMSIndexedFreeListReplenish);
   _promoInfo.setSpace(this);
@@ -297,22 +262,7 @@ void CompactibleFreeListSpace::reset_after_compaction() {
   MemRegion mr(compaction_top(), end());
   reset(mr);
   // Now refill the linear allocation block(s) if possible.
-  if (_adaptive_freelists) {
-    refillLinearAllocBlocksIfNeeded();
-  } else {
-    // Place as much of mr in the linAB as we can get,
-    // provided it was big enough to go into the dictionary.
-    FreeChunk* fc = dictionary()->find_largest_dict();
-    if (fc != NULL) {
-      assert(fc->size() == mr.word_size(),
-             "Why was the chunk broken up?");
-      removeChunkFromDictionary(fc);
-      HeapWord* addr = (HeapWord*) fc;
-      _smallLinearAllocBlock.set(addr, fc->size() ,
-        1024*SmallForLinearAlloc, fc->size());
-      // Note that _unallocated_block is not updated here.
-    }
-  }
+  refillLinearAllocBlocksIfNeeded();
 }
 
 // Walks the entire dictionary, returning a coterminal
@@ -445,8 +395,7 @@ void CompactibleFreeListSpace::print_on(outputStream* st) const {
 
   // dump_memory_block(_smallLinearAllocBlock->_ptr, 128);
 
-  st->print_cr(" _fitStrategy = %s, _adaptive_freelists = %s",
-               _fitStrategy?"true":"false", _adaptive_freelists?"true":"false");
+  st->print_cr(" _fitStrategy = %s", BOOL_TO_STR(_fitStrategy));
 }
 
 void CompactibleFreeListSpace::print_indexed_free_lists(outputStream* st)
@@ -617,23 +566,9 @@ void CompactibleFreeListSpace::set_end(HeapWord* value) {
       // Now, take this new chunk and add it to the free blocks.
       // Note that the BOT has not yet been updated for this block.
       size_t newFcSize = pointer_delta(value, prevEnd);
-      // XXX This is REALLY UGLY and should be fixed up. XXX
-      if (!_adaptive_freelists && _smallLinearAllocBlock._ptr == NULL) {
-        // Mark the boundary of the new block in BOT
-        _bt.mark_block(prevEnd, value);
-        // put it all in the linAB
-        MutexLockerEx x(parDictionaryAllocLock(),
-                        Mutex::_no_safepoint_check_flag);
-        _smallLinearAllocBlock._ptr = prevEnd;
-        _smallLinearAllocBlock._word_size = newFcSize;
-        repairLinearAllocBlock(&_smallLinearAllocBlock);
-        // Births of chunks put into a LinAB are not recorded.  Births
-        // of chunks as they are allocated out of a LinAB are.
-      } else {
-        // Add the block to the free lists, if possible coalescing it
-        // with the last free block, and update the BOT and census data.
-        addChunkToFreeListsAtEndRecordingStats(prevEnd, newFcSize);
-      }
+      // Add the block to the free lists, if possible coalescing it
+      // with the last free block, and update the BOT and census data.
+      addChunkToFreeListsAtEndRecordingStats(prevEnd, newFcSize);
     }
   }
 }
@@ -1177,11 +1112,7 @@ HeapWord* CompactibleFreeListSpace::allocate(size_t size) {
   assert(size == adjustObjectSize(size),
          "use adjustObjectSize() before calling into allocate()");
 
-  if (_adaptive_freelists) {
-    res = allocate_adaptive_freelists(size);
-  } else {  // non-adaptive free lists
-    res = allocate_non_adaptive_freelists(size);
-  }
+  res = allocate_adaptive_freelists(size);
 
   if (res != NULL) {
     // check that res does lie in this space!
@@ -1198,27 +1129,6 @@ HeapWord* CompactibleFreeListSpace::allocate(size_t size) {
     _bt.verify_not_unallocated(res, size);
     // mangle a just allocated object with a distinct pattern.
     debug_only(fc->mangleAllocated(size));
-  }
-
-  return res;
-}
-
-HeapWord* CompactibleFreeListSpace::allocate_non_adaptive_freelists(size_t size) {
-  HeapWord* res = NULL;
-  // try and use linear allocation for smaller blocks
-  if (size < _smallLinearAllocBlock._allocation_size_limit) {
-    // if successful, the following also adjusts block offset table
-    res = getChunkFromSmallLinearAllocBlock(size);
-  }
-  // Else triage to indexed lists for smaller sizes
-  if (res == NULL) {
-    if (size < SmallForDictionary) {
-      res = (HeapWord*) getChunkFromIndexedFreeList(size);
-    } else {
-      // else get it from the big dictionary; if even this doesn't
-      // work we are out of luck.
-      res = (HeapWord*)getChunkFromDictionaryExact(size);
-    }
   }
 
   return res;
@@ -1281,9 +1191,6 @@ size_t CompactibleFreeListSpace::expansionSpaceRequired(size_t obj_size) const {
   // bigLAB or a smallLAB plus refilling a PromotionInfo object.  MinChunkSize
   // is added because the dictionary may over-allocate to avoid fragmentation.
   size_t space = obj_size;
-  if (!_adaptive_freelists) {
-    space = MAX2(space, _smallLinearAllocBlock._refillSize);
-  }
   space += _promoInfo.refillSize() + 2 * MinChunkSize;
   return space;
 }
@@ -1698,11 +1605,7 @@ CompactibleFreeListSpace::returnChunkToFreeList(FreeChunk* fc) {
   size_t size = fc->size();
   _bt.verify_single_block((HeapWord*) fc, size);
   _bt.verify_not_unallocated((HeapWord*) fc, size);
-  if (_adaptive_freelists) {
-    _indexedFreeList[size].return_chunk_at_tail(fc);
-  } else {
-    _indexedFreeList[size].return_chunk_at_head(fc);
-  }
+  _indexedFreeList[size].return_chunk_at_tail(fc);
 #ifndef PRODUCT
   if (CMSCollector::abstract_state() != CMSCollector::Sweeping) {
      _indexedFreeList[size].verify_stats();
@@ -1931,10 +1834,6 @@ CompactibleFreeListSpace::gc_prologue() {
 void
 CompactibleFreeListSpace::gc_epilogue() {
   assert_locked();
-  if (PrintGCDetails && Verbose && !_adaptive_freelists) {
-    if (_smallLinearAllocBlock._word_size == 0)
-      warning("CompactibleFreeListSpace(epilogue):: Linear allocation failure");
-  }
   assert(_promoInfo.noPromotions(), "_promoInfo inconsistency");
   _promoInfo.stopTrackingPromotions();
   repairLinearAllocationBlocks();
@@ -2058,13 +1957,6 @@ CompactibleFreeListSpace::refillLinearAllocBlock(LinearAllocBlock* blk) {
     blk->_word_size = fc->size();
     fc->dontCoalesce();   // to prevent sweeper from sweeping us up
   }
-}
-
-// Support for concurrent collection policy decisions.
-bool CompactibleFreeListSpace::should_concurrent_collect() const {
-  // In the future we might want to add in fragmentation stats --
-  // including erosion of the "mountain" into this decision as well.
-  return !adaptive_freelists() && linearAllocationWouldFail();
 }
 
 // Support for compaction

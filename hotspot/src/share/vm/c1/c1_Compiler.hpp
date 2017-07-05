@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,7 @@ class Compiler: public AbstractCompiler {
   virtual void print_timers();
 
   // Check if the C1 compiler supports an intrinsic for 'method'.
-  virtual bool is_intrinsic_supported(methodHandle method);
+  virtual bool is_intrinsic_supported(const methodHandle& method);
 
   // Size of the code buffer
   static int code_buffer_size();
