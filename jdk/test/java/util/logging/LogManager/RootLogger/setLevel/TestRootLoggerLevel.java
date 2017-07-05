@@ -33,7 +33,7 @@ import java.util.logging.LoggingPermission;
 
 /**
  * @test
- * @bug 8023163
+ * @bug 8026499
  * @summary checks that Logger.getLogger("").setLevel() is working correctly.
  * @build TestRootLoggerLevel
  * @run main/othervm -Dtest.security=on TestRootLoggerLevel

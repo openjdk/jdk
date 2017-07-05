@@ -367,7 +367,7 @@ public class JTextField extends JTextComponent implements SwingConstants {
     /**
      * Returns the number of columns in this <code>TextField</code>.
      *
-     * @return the number of columns >= 0
+     * @return the number of columns &gt;= 0
      */
     public int getColumns() {
         return columns;
@@ -377,7 +377,7 @@ public class JTextField extends JTextComponent implements SwingConstants {
      * Sets the number of columns in this <code>TextField</code>,
      * and then invalidate the layout.
      *
-     * @param columns the number of columns >= 0
+     * @param columns the number of columns &gt;= 0
      * @exception IllegalArgumentException if <code>columns</code>
      *          is less than 0
      * @beaninfo
@@ -402,7 +402,7 @@ public class JTextField extends JTextComponent implements SwingConstants {
      * character <em>m</em> for the font used.  This method can be
      * redefined to be some alternative amount
      *
-     * @return the column width >= 1
+     * @return the column width &gt;= 1
      */
     protected int getColumnWidth() {
         if (columnWidth == 0) {
@@ -744,7 +744,7 @@ public class JTextField extends JTextComponent implements SwingConstants {
     /**
      * Gets the scroll offset, in pixels.
      *
-     * @return the offset >= 0
+     * @return the offset &gt;= 0
      */
     public int getScrollOffset() {
         return visibility.getValue();
@@ -753,7 +753,7 @@ public class JTextField extends JTextComponent implements SwingConstants {
     /**
      * Sets the scroll offset, in pixels.
      *
-     * @param scrollOffset the offset >= 0
+     * @param scrollOffset the offset &gt;= 0
      */
     public void setScrollOffset(int scrollOffset) {
         visibility.setValue(scrollOffset);

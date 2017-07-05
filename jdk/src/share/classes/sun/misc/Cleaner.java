@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,14 +57,14 @@ import java.security.PrivilegedAction;
  */
 
 public class Cleaner
-    extends PhantomReference
+    extends PhantomReference<Object>
 {
 
     // Dummy reference queue, needed because the PhantomReference constructor
     // insists that we pass a queue.  Nothing will ever be placed on this queue
     // since the reference handler invokes cleaners explicitly.
     //
-    private static final ReferenceQueue dummyQueue = new ReferenceQueue();
+    private static final ReferenceQueue<Object> dummyQueue = new ReferenceQueue<>();
 
     // Doubly-linked list of live cleaners, which prevents the cleaners
     // themselves from being GC'd before their referents
@@ -119,6 +119,7 @@ public class Cleaner
     /**
      * Creates a new cleaner.
      *
+     * @param  ob the referent object to be cleaned
      * @param  thunk
      *         The cleanup code to be run when the cleaner is invoked.  The
      *         cleanup code is run directly from the reference-handler thread,

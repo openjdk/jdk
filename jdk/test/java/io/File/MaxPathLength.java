@@ -28,6 +28,8 @@
 
 import java.io.*;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.DirectoryNotEmptyException;
 
 public class MaxPathLength {
     private static String sep = File.separator;
@@ -182,7 +184,18 @@ public class MaxPathLength {
         } finally {
             // Clean up
             for (int i = 0; i < max; i++) {
-                Files.deleteIfExists((new File(created[i])).toPath());
+                Path p = (new File(created[i])).toPath();
+                try {
+                    Files.deleteIfExists(p);
+                    // Test if the file is really deleted and wait for 1 second at most
+                    for (int j = 0; j < 10 && Files.exists(p); j++) {
+                        Thread.sleep(100);
+                    }
+                } catch (DirectoryNotEmptyException ex) {
+                    // Give up the clean-up, let jtreg handle it.
+                    System.err.println("Dir, " + p + ", is not empty");
+                    break;
+                }
             }
         }
     }

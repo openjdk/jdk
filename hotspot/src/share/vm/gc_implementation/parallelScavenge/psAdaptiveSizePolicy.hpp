@@ -91,7 +91,7 @@ class PSAdaptiveSizePolicy : public AdaptiveSizePolicy {
   // for making ergonomic decisions.
   double _latest_major_mutator_interval_seconds;
 
-  const size_t _intra_generation_alignment; // alignment for eden, survivors
+  const size_t _space_alignment; // alignment for eden, survivors
 
   const double _gc_minor_pause_goal_sec;    // goal for maximum minor gc pause
 
@@ -229,7 +229,7 @@ class PSAdaptiveSizePolicy : public AdaptiveSizePolicy {
   PSAdaptiveSizePolicy(size_t init_eden_size,
                        size_t init_promo_size,
                        size_t init_survivor_size,
-                       size_t intra_generation_alignment,
+                       size_t space_alignment,
                        double gc_pause_goal_sec,
                        double gc_minor_pause_goal_sec,
                        uint gc_time_ratio);
@@ -378,7 +378,7 @@ class PSAdaptiveSizePolicy : public AdaptiveSizePolicy {
     // remain almost full anyway (top() will be near end(), but there will be a
     // large filler object at the bottom).
     const size_t sz = gen_size / MinSurvivorRatio;
-    const size_t alignment = _intra_generation_alignment;
+    const size_t alignment = _space_alignment;
     return sz > alignment ? align_size_down(sz, alignment) : alignment;
   }
 

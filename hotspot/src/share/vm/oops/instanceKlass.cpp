@@ -2211,6 +2211,10 @@ void InstanceKlass::clean_method_data(BoolObjectClosure* is_alive) {
            data = mdo->next_data(data)) {
         data->clean_weak_klass_links(is_alive);
       }
+      ParametersTypeData* parameters = mdo->parameters_type_data();
+      if (parameters != NULL) {
+        parameters->clean_weak_klass_links(is_alive);
+      }
     }
   }
 }

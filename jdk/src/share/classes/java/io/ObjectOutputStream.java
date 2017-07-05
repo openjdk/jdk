@@ -1248,7 +1248,7 @@ public class ObjectOutputStream
         handles.assign(unshared ? null : desc);
 
         Class<?> cl = desc.forClass();
-        Class[] ifaces = cl.getInterfaces();
+        Class<?>[] ifaces = cl.getInterfaces();
         bout.writeInt(ifaces.length);
         for (int i = 0; i < ifaces.length; i++) {
             bout.writeUTF(ifaces[i].getName());

@@ -46,7 +46,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import com.sun.management.DiagnosticCommandMBean;
-import com.sun.management.OSMBeanFactory;
 import com.sun.management.HotSpotDiagnosticMXBean;
 
 import static java.lang.management.ManagementFactory.*;
@@ -104,8 +103,7 @@ public class ManagementFactoryHelper {
 
     public static synchronized OperatingSystemMXBean getOperatingSystemMXBean() {
         if (osMBean == null) {
-            osMBean = (OperatingSystemImpl)
-                          OSMBeanFactory.getOperatingSystemMXBean(jvm);
+            osMBean = new OperatingSystemImpl(jvm);
         }
         return osMBean;
     }

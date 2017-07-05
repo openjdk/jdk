@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ import java.lang.management.ThreadMXBean;
 import java.lang.management.ManagementFactory;
 
 public class GetInternalThreads {
-    private static HotspotThreadMBean mbean =
+    private final static HotspotThreadMBean mbean =
         ManagementFactoryHelper.getHotspotThreadMBean();
 
     // Minimum number of VM internal threads
@@ -43,7 +43,7 @@ public class GetInternalThreads {
     private static final long MIN_VALUE_FOR_PASS = 4;
     private static final long MAX_VALUE_FOR_PASS = Long.MAX_VALUE;
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         long value = mbean.getInternalThreadCount();
 
         if (value < MIN_VALUE_FOR_PASS || value > MAX_VALUE_FOR_PASS) {
@@ -62,17 +62,28 @@ public class GetInternalThreads {
             return;
         }
 
-        Map times = mbean.getInternalThreadCpuTimes();
-        Iterator iter = times.entrySet().iterator();
-        for (; iter.hasNext(); ) {
-            Map.Entry entry = (Map.Entry) iter.next();
-            System.out.println(entry.getKey() +
-                " CPU time = " + entry.getValue() + "ns");
-            if (((Long) entry.getValue()).longValue() < 0) {
-                throw new RuntimeException("Thread CPU time" +
-                    "illegal value: " + entry.getValue());
+        while(!testCPUTime()) {
+            Thread.sleep(100);
+        }
+    }
+
+    private static boolean testCPUTime() {
+        Map<String, Long> times = mbean.getInternalThreadCpuTimes();
+        for(Map.Entry<String, Long> entry : times.entrySet())  {
+            String threadName = entry.getKey();
+            long cpuTime = entry.getValue();
+            System.out.println("CPU time = " + cpuTime + " for " + threadName);
+            if (cpuTime == -1) {
+                // Can happen when there is a race between a thread being created
+                // and the request to get its CPU time. The "/proc/..." structure might
+                // not be ready at that time and the routine will return -1.
+                System.out.println("Retry, proc structure might not be ready (-1)");
+                return false;
+            }
+            if (cpuTime < 0) {
+                throw new RuntimeException("Illegal CPU time: " + cpuTime);
             }
         }
-        System.out.println("Test passed.");
+        return true;
     }
 }

@@ -155,7 +155,7 @@ public class Box extends JComponent implements Accessible {
      * in which case it takes its share of available space,
      * just like any other component that has no maximum height.
      *
-     * @param width the width of the invisible component, in pixels >= 0
+     * @param width the width of the invisible component, in pixels &gt;= 0
      * @return the component
      * @see #createVerticalStrut
      * @see #createGlue
@@ -179,7 +179,7 @@ public class Box extends JComponent implements Accessible {
      * in which case it takes its share of available space,
      * just like any other component that has no maximum width.
      *
-     * @param height the height of the invisible component, in pixels >= 0
+     * @param height the height of the invisible component, in pixels &gt;= 0
      * @return the component
      * @see #createHorizontalStrut
      * @see #createGlue

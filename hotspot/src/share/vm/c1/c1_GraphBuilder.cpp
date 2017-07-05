@@ -4338,6 +4338,11 @@ void GraphBuilder::print_stats() {
 #endif // PRODUCT
 
 void GraphBuilder::profile_call(ciMethod* callee, Value recv, ciKlass* known_holder, Values* obj_args, bool inlined) {
+  // A default method's holder is an interface
+  if (known_holder != NULL && known_holder->is_interface()) {
+    assert(known_holder->is_instance_klass() && ((ciInstanceKlass*)known_holder)->has_default_methods(), "should be default method");
+    known_holder = NULL;
+  }
   append(new ProfileCall(method(), bci(), callee, recv, known_holder, obj_args, inlined));
 }
 

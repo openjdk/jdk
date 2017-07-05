@@ -113,9 +113,15 @@ public class ASMifier extends Printer {
      * Constructs a new {@link ASMifier}. <i>Subclasses must not use this
      * constructor</i>. Instead, they must use the
      * {@link #ASMifier(int, String, int)} version.
+     *
+     * @throws IllegalStateException
+     *             If a subclass calls this constructor.
      */
     public ASMifier() {
         this(Opcodes.ASM5, "cw", 0);
+        if (getClass() != ASMifier.class) {
+            throw new IllegalStateException();
+        }
     }
 
     /**
@@ -483,8 +489,9 @@ public class ASMifier extends Printer {
     @Override
     public void visitParameter(String parameterName, int access) {
         buf.setLength(0);
-        buf.append(name).append(".visitParameter(").append(parameterName)
-                .append(", ");
+        buf.append(name).append(".visitParameter(");
+        appendString(buf, parameterName);
+        buf.append(", ");
         appendAccess(access);
         text.add(buf.append(");\n").toString());
     }
@@ -639,9 +646,30 @@ public class ASMifier extends Printer {
         text.add(buf.toString());
     }
 
+    @Deprecated
     @Override
     public void visitMethodInsn(final int opcode, final String owner,
             final String name, final String desc) {
+        if (api >= Opcodes.ASM5) {
+            super.visitMethodInsn(opcode, owner, name, desc);
+            return;
+        }
+        doVisitMethodInsn(opcode, owner, name, desc,
+                opcode == Opcodes.INVOKEINTERFACE);
+    }
+
+    @Override
+    public void visitMethodInsn(final int opcode, final String owner,
+            final String name, final String desc, final boolean itf) {
+        if (api < Opcodes.ASM5) {
+            super.visitMethodInsn(opcode, owner, name, desc, itf);
+            return;
+        }
+        doVisitMethodInsn(opcode, owner, name, desc, itf);
+    }
+
+    private void doVisitMethodInsn(final int opcode, final String owner,
+            final String name, final String desc, final boolean itf) {
         buf.setLength(0);
         buf.append(this.name).append(".visitMethodInsn(")
                 .append(OPCODES[opcode]).append(", ");
@@ -650,6 +678,8 @@ public class ASMifier extends Printer {
         appendConstant(name);
         buf.append(", ");
         appendConstant(desc);
+        buf.append(", ");
+        buf.append(itf ? "true" : "false");
         buf.append(");\n");
         text.add(buf.toString());
     }
@@ -1074,6 +1104,13 @@ public class ASMifier extends Printer {
                 buf.append(" + ");
             }
             buf.append("ACC_DEPRECATED");
+            first = false;
+        }
+        if ((access & Opcodes.ACC_MANDATED) != 0) {
+            if (!first) {
+                buf.append(" + ");
+            }
+            buf.append("ACC_MANDATED");
             first = false;
         }
         if (first) {
