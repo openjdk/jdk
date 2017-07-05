@@ -879,7 +879,7 @@ JNI_ENTRY(jint, jni_PushLocalFrame(JNIEnv *env, jint capacity))
                                    env, capacity);
 #endif /* USDT2 */
   //%note jni_11
-  if (capacity < 0 && capacity > MAX_REASONABLE_LOCAL_CAPACITY) {
+  if (capacity < 0 || capacity > MAX_REASONABLE_LOCAL_CAPACITY) {
 #ifndef USDT2
     DTRACE_PROBE1(hotspot_jni, PushLocalFrame__return, JNI_ERR);
 #else /* USDT2 */

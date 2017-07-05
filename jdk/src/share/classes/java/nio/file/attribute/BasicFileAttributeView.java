@@ -41,7 +41,7 @@ import java.io.IOException;
  * <p> Where dynamic access to file attributes is required, the attributes
  * supported by this attribute view have the following names and types:
  * <blockquote>
- *  <table border="1" cellpadding="8">
+ *  <table border="1" cellpadding="8" summary="Supported attributes">
  *   <tr>
  *     <th> Name </th>
  *     <th> Type </th>

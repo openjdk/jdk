@@ -54,7 +54,7 @@ import java.io.IOException;
  * supportsFileAttributeView} method can be used to test if a file system
  * supports ACLs.
  *
- * <a name="interop"><h4>Interoperability</h4></a>
+ * <h2>Interoperability</h2>
  *
  * RFC&nbsp;3530 allows for special user identities to be used on platforms that
  * support the POSIX defined access permissions. The special user identities
@@ -65,7 +65,7 @@ import java.io.IOException;
  * UserPrincipalLookupService} may be used to obtain a {@link UserPrincipal}
  * to represent these special identities by invoking the {@link
  * UserPrincipalLookupService#lookupPrincipalByName lookupPrincipalByName}
- * method. </p>
+ * method.
  *
  * <p> <b>Usage Example:</b>
  * Suppose we wish to add an entry to an existing ACL to grant "joe" access:
@@ -90,11 +90,11 @@ import java.io.IOException;
  *     view.setAcl(acl);
  * </pre>
  *
- * <h4> Dynamic Access </h4>
+ * <h2> Dynamic Access </h2>
  * <p> Where dynamic access to file attributes is required, the attributes
  * supported by this attribute view are as follows:
  * <blockquote>
- * <table border="1" cellpadding="8">
+ * <table border="1" cellpadding="8" summary="Supported attributes">
  *   <tr>
  *     <th> Name </th>
  *     <th> Type </th>
@@ -118,7 +118,7 @@ import java.io.IOException;
  * update the ACL or owner attributes as if by invoking the {@link #setAcl setAcl}
  * or {@link #setOwner setOwner} methods.
  *
- * <h4> Setting the ACL when creating a file </h4>
+ * <h2> Setting the ACL when creating a file </h2>
  *
  * <p> Implementations supporting this attribute view may also support setting
  * the initial ACL when creating a file or directory. The initial ACL

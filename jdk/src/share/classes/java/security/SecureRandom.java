@@ -50,7 +50,7 @@ import sun.security.jca.GetInstance.Instance;
  * <i>RFC 1750: Randomness Recommendations for Security</i></a>.
  *
  * <p>A caller obtains a SecureRandom instance via the
- * no-argument constructor or one of the <code>getInstance</code> methods:
+ * no-argument constructor or one of the {@code getInstance} methods:
  *
  * <pre>
  *      SecureRandom random = new SecureRandom();
@@ -71,15 +71,15 @@ import sun.security.jca.GetInstance.Instance;
  *      random.nextBytes(bytes);
  * </pre>
  *
- * <p> Callers may also invoke the <code>generateSeed</code> method
+ * <p> Callers may also invoke the {@code generateSeed} method
  * to generate a given number of seed bytes (to seed other random number
  * generators, for example):
  * <pre>
  *      byte seed[] = random.generateSeed(20);
  * </pre>
  *
- * Note: Depending on the implementation, the <code>generateSeed</code> and
- * <code>nextBytes</code> methods may block as entropy is being gathered,
+ * Note: Depending on the implementation, the {@code generateSeed} and
+ * {@code nextBytes} methods may block as entropy is being gathered,
  * for example, if they need to read from /dev/random on various Unix-like
  * operating systems.
  *
@@ -140,16 +140,16 @@ public class SecureRandom extends java.util.Random {
      * for information about standard RNG algorithm names.
      *
      * <p> The returned SecureRandom object has not been seeded.  To seed the
-     * returned object, call the <code>setSeed</code> method.
-     * If <code>setSeed</code> is not called, the first call to
-     * <code>nextBytes</code> will force the SecureRandom object to seed itself.
-     * This self-seeding will not occur if <code>setSeed</code> was
+     * returned object, call the {@code setSeed} method.
+     * If {@code setSeed} is not called, the first call to
+     * {@code nextBytes} will force the SecureRandom object to seed itself.
+     * This self-seeding will not occur if {@code setSeed} was
      * previously called.
      */
     public SecureRandom() {
         /*
          * This call to our superclass constructor will result in a call
-         * to our own <code>setSeed</code> method, which will return
+         * to our own {@code setSeed} method, which will return
          * immediately when it is passed zero.
          */
         super(0);
@@ -250,10 +250,10 @@ public class SecureRandom extends java.util.Random {
      * the {@link Security#getProviders() Security.getProviders()} method.
      *
      * <p> The returned SecureRandom object has not been seeded.  To seed the
-     * returned object, call the <code>setSeed</code> method.
-     * If <code>setSeed</code> is not called, the first call to
-     * <code>nextBytes</code> will force the SecureRandom object to seed itself.
-     * This self-seeding will not occur if <code>setSeed</code> was
+     * returned object, call the {@code setSeed} method.
+     * If {@code setSeed} is not called, the first call to
+     * {@code nextBytes} will force the SecureRandom object to seed itself.
+     * This self-seeding will not occur if {@code setSeed} was
      * previously called.
      *
      * @param algorithm the name of the RNG algorithm.
@@ -293,10 +293,10 @@ public class SecureRandom extends java.util.Random {
      * the {@link Security#getProviders() Security.getProviders()} method.
      *
      * <p> The returned SecureRandom object has not been seeded.  To seed the
-     * returned object, call the <code>setSeed</code> method.
-     * If <code>setSeed</code> is not called, the first call to
-     * <code>nextBytes</code> will force the SecureRandom object to seed itself.
-     * This self-seeding will not occur if <code>setSeed</code> was
+     * returned object, call the {@code setSeed} method.
+     * If {@code setSeed} is not called, the first call to
+     * {@code nextBytes} will force the SecureRandom object to seed itself.
+     * This self-seeding will not occur if {@code setSeed} was
      * previously called.
      *
      * @param algorithm the name of the RNG algorithm.
@@ -341,10 +341,10 @@ public class SecureRandom extends java.util.Random {
      * does not have to be registered in the provider list.
      *
      * <p> The returned SecureRandom object has not been seeded.  To seed the
-     * returned object, call the <code>setSeed</code> method.
-     * If <code>setSeed</code> is not called, the first call to
-     * <code>nextBytes</code> will force the SecureRandom object to seed itself.
-     * This self-seeding will not occur if <code>setSeed</code> was
+     * returned object, call the {@code setSeed} method.
+     * If {@code setSeed} is not called, the first call to
+     * {@code nextBytes} will force the SecureRandom object to seed itself.
+     * This self-seeding will not occur if {@code setSeed} was
      * previously called.
      *
      * @param algorithm the name of the RNG algorithm.
@@ -395,7 +395,7 @@ public class SecureRandom extends java.util.Random {
      * Returns the name of the algorithm implemented by this SecureRandom
      * object.
      *
-     * @return the name of the algorithm or <code>unknown</code>
+     * @return the name of the algorithm or {@code unknown}
      *          if the algorithm name cannot be determined.
      * @since 1.5
      */
@@ -418,12 +418,12 @@ public class SecureRandom extends java.util.Random {
 
     /**
      * Reseeds this random object, using the eight bytes contained
-     * in the given <code>long seed</code>. The given seed supplements,
+     * in the given {@code long seed}. The given seed supplements,
      * rather than replaces, the existing seed. Thus, repeated calls
      * are guaranteed never to reduce randomness.
      *
      * <p>This method is defined for compatibility with
-     * <code>java.util.Random</code>.
+     * {@code java.util.Random}.
      *
      * @param seed the seed.
      *
@@ -445,10 +445,10 @@ public class SecureRandom extends java.util.Random {
     /**
      * Generates a user-specified number of random bytes.
      *
-     * <p> If a call to <code>setSeed</code> had not occurred previously,
+     * <p> If a call to {@code setSeed} had not occurred previously,
      * the first call to this method forces this SecureRandom object
      * to seed itself.  This self-seeding will not occur if
-     * <code>setSeed</code> was previously called.
+     * {@code setSeed} was previously called.
      *
      * @param bytes the array to be filled in with random bytes.
      */
@@ -460,15 +460,15 @@ public class SecureRandom extends java.util.Random {
     /**
      * Generates an integer containing the user-specified number of
      * pseudo-random bits (right justified, with leading zeros).  This
-     * method overrides a <code>java.util.Random</code> method, and serves
+     * method overrides a {@code java.util.Random} method, and serves
      * to provide a source of random bits to all of the methods inherited
-     * from that class (for example, <code>nextInt</code>,
-     * <code>nextLong</code>, and <code>nextFloat</code>).
+     * from that class (for example, {@code nextInt},
+     * {@code nextLong}, and {@code nextFloat}).
      *
      * @param numBits number of pseudo-random bits to be generated, where
      * {@code 0 <= numBits <= 32}.
      *
-     * @return an <code>int</code> containing the user-specified number
+     * @return an {@code int} containing the user-specified number
      * of pseudo-random bits (right justified, with leading zeros).
      */
     @Override
@@ -492,8 +492,8 @@ public class SecureRandom extends java.util.Random {
      *
      * <p>This method is only included for backwards compatibility.
      * The caller is encouraged to use one of the alternative
-     * <code>getInstance</code> methods to obtain a SecureRandom object, and
-     * then call the <code>generateSeed</code> method to obtain seed bytes
+     * {@code getInstance} methods to obtain a SecureRandom object, and
+     * then call the {@code generateSeed} method to obtain seed bytes
      * from that object.
      *
      * @param numBytes the number of seed bytes to generate.

@@ -40,7 +40,7 @@ import java.util.List;
  * the java packer and unpacker must be called in the same java instance.
  */
 public class BandIntegrity {
-        public static void main(String... args)  throws IOException {
+    public static void main(String... args) throws IOException {
         File testFile = new File("test.jar");
         Utils.jar("cvf", testFile.getName(),
                 "-C", Utils.TEST_CLS_DIR.getAbsolutePath(),
@@ -56,6 +56,7 @@ public class BandIntegrity {
         Utils.createFile(configFile, scratch);
         File outFile = new File("out.jar");
         Utils.repack(testFile, outFile, true,
-                     "-v", "--config-file=" + configFile.getName());
+                "-v", "--config-file=" + configFile.getName());
+        Utils.cleanup();
     }
 }

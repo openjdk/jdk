@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ import java.sql.SQLException;
  * This class complements the <code>SQLWarning</code> class.
  * <P>
  * Rowset warnings may be retrieved from <code>JdbcRowSet</code>,
- * <code>CachedRowSet</code><sup><font size=-2>TM</font></sup>,
+ * <code>CachedRowSet</code>&trade;,
  * <code>WebRowSet</code>, <code>FilteredRowSet</code>, or <code>JoinRowSet</code>
  * implementations. To retrieve the first warning reported on any
  * <code>RowSet</code>

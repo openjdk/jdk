@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,10 +41,10 @@ package java.security.cert;
 public interface CertPathValidatorResult extends Cloneable {
 
     /**
-     * Makes a copy of this <code>CertPathValidatorResult</code>. Changes to the
+     * Makes a copy of this {@code CertPathValidatorResult}. Changes to the
      * copy will not affect the original and vice versa.
      *
-     * @return a copy of this <code>CertPathValidatorResult</code>
+     * @return a copy of this {@code CertPathValidatorResult}
      */
     Object clone();
 }

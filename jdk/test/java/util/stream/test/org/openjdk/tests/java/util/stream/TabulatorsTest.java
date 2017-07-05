@@ -202,26 +202,38 @@ public class TabulatorsTest extends OpTestCase {
         }
     }
 
+    private <T> ResultAsserter<T> mapTabulationAsserter(boolean ordered) {
+        return (act, exp, ord, par) -> {
+            if (par & (!ordered || !ord)) {
+                TabulatorsTest.nestedMapEqualityAssertion(act, exp);
+            }
+            else {
+                LambdaTestHelpers.assertContentsEqual(act, exp);
+            }
+        };
+    }
+
     private<T, M extends Map>
     void exerciseMapTabulation(TestData<T, Stream<T>> data,
                                Collector<T, ? extends M> collector,
                                TabulationAssertion<T, M> assertion)
             throws ReflectiveOperationException {
-        boolean ordered = data.isOrdered()
-                          && !collector.characteristics().contains(Collector.Characteristics.UNORDERED);
+        boolean ordered = !collector.characteristics().contains(Collector.Characteristics.UNORDERED);
+
         M m = withData(data)
                 .terminal(s -> s.collect(collector))
-                .parallelEqualityAsserter(ordered ? LambdaTestHelpers::assertContentsEqual : this::nestedMapEqualityAssertion)
+                .resultAsserter(mapTabulationAsserter(ordered))
                 .exercise();
         assertion.assertValue(m, () -> data.stream(), ordered);
+
         m = withData(data)
                 .terminal(s -> s.unordered().collect(collector))
-                .parallelEqualityAsserter(this::nestedMapEqualityAssertion)
+                .resultAsserter(mapTabulationAsserter(ordered))
                 .exercise();
         assertion.assertValue(m, () -> data.stream(), false);
     }
 
-    private void nestedMapEqualityAssertion(Object o1, Object o2) {
+    private static void nestedMapEqualityAssertion(Object o1, Object o2) {
         if (o1 instanceof Map) {
             Map m1 = (Map) o1;
             Map m2 = (Map) o2;

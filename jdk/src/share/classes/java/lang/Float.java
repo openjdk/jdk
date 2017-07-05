@@ -664,9 +664,9 @@ public final class Float extends Number implements Comparable<Float> {
      * Returns a hash code for a {@code float} value; compatible with
      * {@code Float.hashCode()}.
      *
-     * @since 1.8
-     *
+     * @param value the value to hash
      * @return a hash code value for a {@code float} value.
+     * @since 1.8
      */
     public static int hashCode(float value) {
         return floatToIntBits(value);

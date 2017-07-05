@@ -33,10 +33,9 @@ import java.nio.channels.spi.*;
  * A pair of channels that implements a unidirectional pipe.
  *
  * <p> A pipe consists of a pair of channels: A writable {@link
- * Pipe.SinkChannel </code>sink<code>} channel and a readable {@link
- * Pipe.SourceChannel </code>source<code>} channel.  Once some bytes are
- * written to the sink channel they can be read from source channel in exactly
- * the order in which they were written.
+ * Pipe.SinkChannel sink} channel and a readable {@link Pipe.SourceChannel source}
+ * channel.  Once some bytes are written to the sink channel they can be read
+ * from source channel in exactlyAthe order in which they were written.
  *
  * <p> Whether or not a thread writing bytes to a pipe will block until another
  * thread reads those bytes, or some previously-written bytes, from the pipe is
@@ -63,6 +62,9 @@ public abstract class Pipe {
     {
         /**
          * Constructs a new instance of this class.
+         *
+         * @param  provider
+         *         The selector provider
          */
         protected SourceChannel(SelectorProvider provider) {
             super(provider);
@@ -94,6 +96,9 @@ public abstract class Pipe {
     {
         /**
          * Initializes a new instance of this class.
+         *
+         * @param  provider
+         *         The selector provider
          */
         protected SinkChannel(SelectorProvider provider) {
             super(provider);
