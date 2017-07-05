@@ -311,7 +311,35 @@
           "as a percentage of the heap size.")                              \
                                                                             \
   experimental(ccstr, G1LogLevel, NULL,                                     \
-          "Log level for G1 logging: fine, finer, finest")
+          "Log level for G1 logging: fine, finer, finest")                  \
+                                                                            \
+  notproduct(bool, G1EvacuationFailureALot, false,                          \
+          "Force use of evacuation failure handling during certain "        \
+          "evacuation pauses")                                              \
+                                                                            \
+  develop(uintx, G1EvacuationFailureALotCount, 1000,                        \
+          "Number of successful evacuations between evacuation failures "   \
+          "occurring at object copying")                                    \
+                                                                            \
+  develop(uintx, G1EvacuationFailureALotInterval, 5,                        \
+          "Total collections between forced triggering of evacuation "      \
+          "failures")                                                       \
+                                                                            \
+  develop(bool, G1EvacuationFailureALotDuringConcMark, true,                \
+          "Force use of evacuation failure handling during evacuation "     \
+          "pauses when marking is in progress")                             \
+                                                                            \
+  develop(bool, G1EvacuationFailureALotDuringInitialMark, true,             \
+          "Force use of evacuation failure handling during initial mark "   \
+          "evacuation pauses")                                              \
+                                                                            \
+  develop(bool, G1EvacuationFailureALotDuringYoungGC, true,                 \
+          "Force use of evacuation failure handling during young "          \
+          "evacuation pauses")                                              \
+                                                                            \
+  develop(bool, G1EvacuationFailureALotDuringMixedGC, true,                 \
+          "Force use of evacuation failure handling during mixed "          \
+          "evacuation pauses")
 
 G1_FLAGS(DECLARE_DEVELOPER_FLAG, DECLARE_PD_DEVELOPER_FLAG, DECLARE_PRODUCT_FLAG, DECLARE_PD_PRODUCT_FLAG, DECLARE_DIAGNOSTIC_FLAG, DECLARE_EXPERIMENTAL_FLAG, DECLARE_NOTPRODUCT_FLAG, DECLARE_MANAGEABLE_FLAG, DECLARE_PRODUCT_RW_FLAG)
 

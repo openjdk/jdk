@@ -64,6 +64,13 @@ public class PlatformInfo {
     } else if (cpu.equals("ia64") || cpu.equals("amd64") || cpu.equals("x86_64")) {
       return cpu;
     } else {
+      try {
+        Class pic = Class.forName("sun.jvm.hotspot.utilities.PlatformInfoClosed");
+        AltPlatformInfo api = (AltPlatformInfo)pic.newInstance();
+        if (api.knownCPU(cpu)) {
+          return cpu;
+        }
+      } catch (Exception e) {}
       throw new UnsupportedPlatformException("CPU type " + cpu + " not yet supported");
     }
   }

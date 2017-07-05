@@ -92,6 +92,8 @@ public class VM {
   private boolean      usingServerCompiler;
   /** Flag indicating whether UseTLAB is turned on */
   private boolean      useTLAB;
+  /** Flag indicating whether invokedynamic support is on */
+  private boolean      enableInvokeDynamic;
   /** alignment constants */
   private boolean      isLP64;
   private int          bytesPerLong;
@@ -317,6 +319,7 @@ public class VM {
     }
 
     useTLAB = (db.lookupIntConstant("UseTLAB").intValue() != 0);
+    enableInvokeDynamic = (db.lookupIntConstant("EnableInvokeDynamic").intValue() != 0);
 
     if (debugger != null) {
       isLP64 = debugger.getMachineDescription().isLP64();
@@ -550,6 +553,10 @@ public class VM {
   /** Indicates whether Thread-Local Allocation Buffers are used */
   public boolean getUseTLAB() {
     return useTLAB;
+  }
+
+  public boolean getEnableInvokeDynamic() {
+    return enableInvokeDynamic;
   }
 
   public TypeDataBase getTypeDataBase() {

@@ -880,46 +880,6 @@ JRT_LEAF(void, OptoRuntime::profile_receiver_type_C(DataLayout* data, oopDesc* r
   }
 JRT_END
 
-//-----------------------------------------------------------------------------
-// implicit exception support.
-
-static void report_null_exception_in_code_cache(address exception_pc) {
-  ResourceMark rm;
-  CodeBlob* n = CodeCache::find_blob(exception_pc);
-  if (n != NULL) {
-    tty->print_cr("#");
-    tty->print_cr("# HotSpot Runtime Error, null exception in generated code");
-    tty->print_cr("#");
-    tty->print_cr("# pc where exception happened = " INTPTR_FORMAT, exception_pc);
-
-    if (n->is_nmethod()) {
-      methodOop method = ((nmethod*)n)->method();
-      tty->print_cr("# Method where it happened %s.%s ", Klass::cast(method->method_holder())->name()->as_C_string(), method->name()->as_C_string());
-      tty->print_cr("#");
-      if (ShowMessageBoxOnError && UpdateHotSpotCompilerFileOnError &&
-          CompilerOracle::has_command_file()) {
-        const char* title    = "HotSpot Runtime Error";
-        const char* question = "Do you want to exclude compilation of this method in future runs?";
-        if (os::message_box(title, question)) {
-          CompilerOracle::append_comment_to_file("");
-          CompilerOracle::append_comment_to_file("Null exception in compiled code resulted in the following exclude");
-          CompilerOracle::append_comment_to_file("");
-          CompilerOracle::append_exclude_to_file(method);
-          tty->print_cr("#");
-          tty->print_cr("# %s has been updated to exclude the specified method", CompileCommandFile);
-          tty->print_cr("#");
-        }
-      }
-      fatal("Implicit null exception happened in compiled method");
-    } else {
-      n->print();
-      fatal("Implicit null exception happened in generated stub");
-    }
-  }
-  fatal("Implicit null exception at wrong place");
-}
-
-
 //-------------------------------------------------------------------------------------
 // register policy
 

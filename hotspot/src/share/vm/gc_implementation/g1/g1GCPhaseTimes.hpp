@@ -28,51 +28,108 @@
 #include "memory/allocation.hpp"
 #include "gc_interface/gcCause.hpp"
 
+template <class T>
+class WorkerDataArray  : public CHeapObj<mtGC> {
+  T*          _data;
+  uint        _length;
+  const char* _print_format;
+  bool        _print_sum;
+
+  // We are caching the sum and average to only have to calculate them once.
+  // This is not done in an MT-safe way. It is intetened to allow single
+  // threaded code to call sum() and average() multiple times in any order
+  // without having to worry about the cost.
+  bool   _has_new_data;
+  T      _sum;
+  double _average;
+
+ public:
+  WorkerDataArray(uint length, const char* print_format, bool print_sum = true) :
+  _length(length), _print_format(print_format), _print_sum(print_sum), _has_new_data(true) {
+    assert(length > 0, "Must have some workers to store data for");
+    _data = NEW_C_HEAP_ARRAY(T, _length, mtGC);
+  }
+
+  ~WorkerDataArray() {
+    FREE_C_HEAP_ARRAY(T, _data, mtGC);
+  }
+
+  void set(uint worker_i, T value) {
+    assert(worker_i < _length, err_msg("Worker %d is greater than max: %d", worker_i, _length));
+    assert(_data[worker_i] == (T)-1, err_msg("Overwriting data for worker %d", worker_i));
+    _data[worker_i] = value;
+    _has_new_data = true;
+  }
+
+  T get(uint worker_i) {
+    assert(worker_i < _length, err_msg("Worker %d is greater than max: %d", worker_i, _length));
+    assert(_data[worker_i] != (T)-1, err_msg("No data to add to for worker %d", worker_i));
+    return _data[worker_i];
+  }
+
+  void add(uint worker_i, T value) {
+    assert(worker_i < _length, err_msg("Worker %d is greater than max: %d", worker_i, _length));
+    assert(_data[worker_i] != (T)-1, err_msg("No data to add to for worker %d", worker_i));
+    _data[worker_i] += value;
+    _has_new_data = true;
+  }
+
+  double average(){
+    if (_has_new_data) {
+      calculate_totals();
+    }
+    return _average;
+  }
+
+  T sum() {
+    if (_has_new_data) {
+      calculate_totals();
+    }
+    return _sum;
+  }
+
+  void print(int level, const char* title);
+
+  void reset() PRODUCT_RETURN;
+  void verify() PRODUCT_RETURN;
+
+ private:
+
+  void calculate_totals(){
+    _sum = (T)0;
+    for (uint i = 0; i < _length; ++i) {
+      _sum += _data[i];
+    }
+    _average = (double)_sum / (double)_length;
+    _has_new_data = false;
+  }
+};
+
 class G1GCPhaseTimes : public CHeapObj<mtGC> {
-  friend class G1CollectorPolicy;
-  friend class TraceGen0TimeData;
 
  private:
   uint _active_gc_threads;
   uint _max_gc_threads;
 
-  GCCause::Cause _gc_cause;
-  bool           _is_young_gc;
-  bool           _is_initial_mark_gc;
-
-  double _pause_start_time_sec;
-
-  double* _par_last_gc_worker_start_times_ms;
-  double* _par_last_ext_root_scan_times_ms;
-  double* _par_last_satb_filtering_times_ms;
-  double* _par_last_update_rs_times_ms;
-  double* _par_last_update_rs_processed_buffers;
-  double* _par_last_scan_rs_times_ms;
-  double* _par_last_obj_copy_times_ms;
-  double* _par_last_termination_times_ms;
-  double* _par_last_termination_attempts;
-  double* _par_last_gc_worker_end_times_ms;
-  double* _par_last_gc_worker_times_ms;
-  double* _par_last_gc_worker_other_times_ms;
+  WorkerDataArray<double> _last_gc_worker_start_times_ms;
+  WorkerDataArray<double> _last_ext_root_scan_times_ms;
+  WorkerDataArray<double> _last_satb_filtering_times_ms;
+  WorkerDataArray<double> _last_update_rs_times_ms;
+  WorkerDataArray<int>    _last_update_rs_processed_buffers;
+  WorkerDataArray<double> _last_scan_rs_times_ms;
+  WorkerDataArray<double> _last_obj_copy_times_ms;
+  WorkerDataArray<double> _last_termination_times_ms;
+  WorkerDataArray<size_t> _last_termination_attempts;
+  WorkerDataArray<double> _last_gc_worker_end_times_ms;
+  WorkerDataArray<double> _last_gc_worker_times_ms;
+  WorkerDataArray<double> _last_gc_worker_other_times_ms;
 
   double _cur_collection_par_time_ms;
-
   double _cur_collection_code_root_fixup_time_ms;
 
   double _cur_clear_ct_time_ms;
   double _cur_ref_proc_time_ms;
   double _cur_ref_enq_time_ms;
-
-  // Helper methods for detailed logging
-  void print_par_stats(int level, const char* str, double* data, bool showDecimals = true);
-  void print_stats(int level, const char* str, double value);
-  void print_stats(int level, const char* str, double value, int workers);
-  void print_stats(int level, const char* str, int value);
-  double avg_value(double* data);
-  double max_value(double* data);
-  double sum_of_values(double* data);
-  double max_sum(double* data1, double* data2);
-  double accounted_time_ms();
 
   // Card Table Count Cache stats
   double _min_clear_cc_time_ms;         // min
@@ -80,19 +137,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   double _cur_clear_cc_time_ms;         // clearing time during current pause
   double _cum_clear_cc_time_ms;         // cummulative clearing time
   jlong  _num_cc_clears;                // number of times the card count cache has been cleared
-
-  // The following insance variables are directly accessed by G1CollectorPolicy
-  // and TraceGen0TimeData. This is why those classes are declared friends.
-  // An alternative is to add getters and setters for all of these fields.
-  // It might also be possible to restructure the code to reduce these
-  // dependencies.
-  double _ext_root_scan_time;
-  double _satb_filtering_time;
-  double _update_rs_time;
-  double _update_rs_processed_buffers;
-  double _scan_rs_time;
-  double _obj_copy_time;
-  double _termination_time;
 
   double _cur_collection_start_sec;
   double _root_region_scan_wait_time_ms;
@@ -103,79 +147,58 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   double _recorded_young_free_cset_time_ms;
   double _recorded_non_young_free_cset_time_ms;
 
-  void print(double pause_time_ms);
+  double _cur_verify_before_time_ms;
+  double _cur_verify_after_time_ms;
+
+  // Helper methods for detailed logging
+  void print_stats(int level, const char* str, double value);
+  void print_stats(int level, const char* str, double value, int workers);
 
  public:
   G1GCPhaseTimes(uint max_gc_threads);
-  void note_gc_start(double pause_start_time_sec, uint active_gc_threads,
-    bool is_young_gc, bool is_initial_mark_gc, GCCause::Cause gc_cause);
-  void note_gc_end(double pause_end_time_sec);
-  void collapse_par_times();
+  void note_gc_start(uint active_gc_threads);
+  void note_gc_end();
+  void print(double pause_time_sec);
 
   void record_gc_worker_start_time(uint worker_i, double ms) {
-    assert(worker_i >= 0, "worker index must be > 0");
-    assert(worker_i < _active_gc_threads, "worker index out of bounds");
-    _par_last_gc_worker_start_times_ms[worker_i] = ms;
+    _last_gc_worker_start_times_ms.set(worker_i, ms);
   }
 
   void record_ext_root_scan_time(uint worker_i, double ms) {
-    assert(worker_i >= 0, "worker index must be > 0");
-    assert(worker_i < _active_gc_threads, "worker index out of bounds");
-    _par_last_ext_root_scan_times_ms[worker_i] = ms;
+    _last_ext_root_scan_times_ms.set(worker_i, ms);
   }
 
   void record_satb_filtering_time(uint worker_i, double ms) {
-    assert(worker_i >= 0, "worker index must be > 0");
-    assert(worker_i < _active_gc_threads, "worker index out of bounds");
-    _par_last_satb_filtering_times_ms[worker_i] = ms;
+    _last_satb_filtering_times_ms.set(worker_i, ms);
   }
 
   void record_update_rs_time(uint worker_i, double ms) {
-    assert(worker_i >= 0, "worker index must be > 0");
-    assert(worker_i < _active_gc_threads, "worker index out of bounds");
-    _par_last_update_rs_times_ms[worker_i] = ms;
+    _last_update_rs_times_ms.set(worker_i, ms);
   }
 
-  void record_update_rs_processed_buffers (uint worker_i,
-                                           double processed_buffers) {
-    assert(worker_i >= 0, "worker index must be > 0");
-    assert(worker_i < _active_gc_threads, "worker index out of bounds");
-    _par_last_update_rs_processed_buffers[worker_i] = processed_buffers;
+  void record_update_rs_processed_buffers(uint worker_i, int processed_buffers) {
+    _last_update_rs_processed_buffers.set(worker_i, processed_buffers);
   }
 
   void record_scan_rs_time(uint worker_i, double ms) {
-    assert(worker_i >= 0, "worker index must be > 0");
-    assert(worker_i < _active_gc_threads, "worker index out of bounds");
-    _par_last_scan_rs_times_ms[worker_i] = ms;
-  }
-
-  void reset_obj_copy_time(uint worker_i) {
-    assert(worker_i >= 0, "worker index must be > 0");
-    assert(worker_i < _active_gc_threads, "worker index out of bounds");
-    _par_last_obj_copy_times_ms[worker_i] = 0.0;
-  }
-
-  void reset_obj_copy_time() {
-    reset_obj_copy_time(0);
+    _last_scan_rs_times_ms.set(worker_i, ms);
   }
 
   void record_obj_copy_time(uint worker_i, double ms) {
-    assert(worker_i >= 0, "worker index must be > 0");
-    assert(worker_i < _active_gc_threads, "worker index out of bounds");
-    _par_last_obj_copy_times_ms[worker_i] += ms;
+    _last_obj_copy_times_ms.set(worker_i, ms);
+  }
+
+  void add_obj_copy_time(uint worker_i, double ms) {
+    _last_obj_copy_times_ms.add(worker_i, ms);
   }
 
   void record_termination(uint worker_i, double ms, size_t attempts) {
-    assert(worker_i >= 0, "worker index must be > 0");
-    assert(worker_i < _active_gc_threads, "worker index out of bounds");
-    _par_last_termination_times_ms[worker_i] = ms;
-    _par_last_termination_attempts[worker_i] = (double) attempts;
+    _last_termination_times_ms.set(worker_i, ms);
+    _last_termination_attempts.set(worker_i, attempts);
   }
 
   void record_gc_worker_end_time(uint worker_i, double ms) {
-    assert(worker_i >= 0, "worker index must be > 0");
-    assert(worker_i < _active_gc_threads, "worker index out of bounds");
-    _par_last_gc_worker_end_times_ms[worker_i] = ms;
+    _last_gc_worker_end_times_ms.set(worker_i, ms);
   }
 
   void record_clear_ct_time(double ms) {
@@ -210,6 +233,88 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
   void record_non_young_free_cset_time_ms(double time_ms) {
     _recorded_non_young_free_cset_time_ms = time_ms;
+  }
+
+  void record_young_cset_choice_time_ms(double time_ms) {
+    _recorded_young_cset_choice_time_ms = time_ms;
+  }
+
+  void record_non_young_cset_choice_time_ms(double time_ms) {
+    _recorded_non_young_cset_choice_time_ms = time_ms;
+  }
+
+  void record_cur_collection_start_sec(double time_ms) {
+    _cur_collection_start_sec = time_ms;
+  }
+
+  void record_verify_before_time_ms(double time_ms) {
+    _cur_verify_before_time_ms = time_ms;
+  }
+
+  void record_verify_after_time_ms(double time_ms) {
+    _cur_verify_after_time_ms = time_ms;
+  }
+
+  double accounted_time_ms();
+
+  double cur_collection_start_sec() {
+    return _cur_collection_start_sec;
+  }
+
+  double cur_collection_par_time_ms() {
+    return _cur_collection_par_time_ms;
+  }
+
+  double cur_clear_ct_time_ms() {
+    return _cur_clear_ct_time_ms;
+  }
+
+  double root_region_scan_wait_time_ms() {
+    return _root_region_scan_wait_time_ms;
+  }
+
+  double young_cset_choice_time_ms() {
+    return _recorded_young_cset_choice_time_ms;
+  }
+
+  double young_free_cset_time_ms() {
+    return _recorded_young_free_cset_time_ms;
+  }
+
+  double non_young_cset_choice_time_ms() {
+    return _recorded_non_young_cset_choice_time_ms;
+  }
+
+  double non_young_free_cset_time_ms() {
+    return _recorded_non_young_free_cset_time_ms;
+  }
+
+  double average_last_update_rs_time() {
+    return _last_update_rs_times_ms.average();
+  }
+
+  int sum_last_update_rs_processed_buffers() {
+    return _last_update_rs_processed_buffers.sum();
+  }
+
+  double average_last_scan_rs_time(){
+    return _last_scan_rs_times_ms.average();
+  }
+
+  double average_last_obj_copy_time() {
+    return _last_obj_copy_times_ms.average();
+  }
+
+  double average_last_termination_time() {
+    return _last_termination_times_ms.average();
+  }
+
+  double average_last_ext_root_scan_time() {
+    return _last_ext_root_scan_times_ms.average();
+  }
+
+  double average_last_satb_filtering_times_ms() {
+    return _last_satb_filtering_times_ms.average();
   }
 };
 
