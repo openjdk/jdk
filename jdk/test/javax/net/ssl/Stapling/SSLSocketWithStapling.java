@@ -510,25 +510,27 @@ public class SSLSocketWithStapling {
         sslc.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
 
         SSLServerSocketFactory sslssf = sslc.getServerSocketFactory();
-        SSLServerSocket sslServerSocket =
-            (SSLServerSocket) sslssf.createServerSocket(serverPort);
 
-        serverPort = sslServerSocket.getLocalPort();
+        try (SSLServerSocket sslServerSocket =
+                (SSLServerSocket) sslssf.createServerSocket(serverPort)) {
 
-        /*
-         * Signal Client, we're ready for his connect.
-         */
-        serverReady = true;
+            serverPort = sslServerSocket.getLocalPort();
 
-        try (SSLSocket sslSocket = (SSLSocket) sslServerSocket.accept();
-                InputStream sslIS = sslSocket.getInputStream();
-                OutputStream sslOS = sslSocket.getOutputStream()) {
-            int numberIn = sslIS.read();
-            int numberSent = 85;
-            log("Server received number: " + numberIn);
-            sslOS.write(numberSent);
-            sslOS.flush();
-            log("Server sent number: " + numberSent);
+            /*
+             * Signal Client, we're ready for his connect.
+             */
+            serverReady = true;
+
+            try (SSLSocket sslSocket = (SSLSocket) sslServerSocket.accept();
+                    InputStream sslIS = sslSocket.getInputStream();
+                    OutputStream sslOS = sslSocket.getOutputStream()) {
+                int numberIn = sslIS.read();
+                int numberSent = 85;
+                log("Server received number: " + numberIn);
+                sslOS.write(numberSent);
+                sslOS.flush();
+                log("Server sent number: " + numberSent);
+            }
         }
     }
 

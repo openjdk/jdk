@@ -435,7 +435,6 @@ class BitMap2D VALUE_OBJ_CLASS_SPEC {
   void clear_bit(idx_t slot_index, idx_t bit_within_slot_index);
   void at_put(idx_t slot_index, idx_t bit_within_slot_index, bool value);
   void at_put_grow(idx_t slot_index, idx_t bit_within_slot_index, bool value);
-  void clear();
 };
 
 // Closure for iterating over BitMaps

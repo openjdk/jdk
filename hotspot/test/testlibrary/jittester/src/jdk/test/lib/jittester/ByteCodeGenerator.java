@@ -23,54 +23,60 @@
 
 package jdk.test.lib.jittester;
 
-import jdk.test.lib.jittester.visitors.ByteCodeVisitor;
-
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
-import java.util.function.BiFunction;
+import java.util.function.Function;
+import jdk.test.lib.jittester.visitors.ByteCodeVisitor;
 
 /**
- * Generates class files from bytecode
+ * Generates class files from IRTree
  */
-class ByteCodeGenerator implements BiFunction<IRNode, IRNode, String> {
-    private final Path testbase = Paths.get(ProductionParams.testbaseDir.value(),
-            "bytecode_tests");
+class ByteCodeGenerator extends TestsGenerator {
+    private static final String DEFAULT_SUFFIX = "bytecode_tests";
 
-    public void writeJtregBytecodeRunner(String name) {
-        try (FileWriter file = new FileWriter(testbase.resolve(name + ".java").toFile())) {
-            file.write(Automatic.getJtregHeader(name, false));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    ByteCodeGenerator() {
+        super(DEFAULT_SUFFIX);
     }
 
-    public String apply(IRNode mainClass, IRNode privateClasses) {
-        Automatic.ensureExisting(testbase);
+    ByteCodeGenerator(String suffix, Function<String, String[]> preRunActions, String jtDriverOptions) {
+        super(suffix, preRunActions, jtDriverOptions);
+    }
+
+    @Override
+    public void accept(IRNode mainClass, IRNode privateClasses) {
+        generateClassFiles(mainClass, privateClasses);
+        generateSeparateJtregHeader(mainClass);
+        compilePrinter();
+        generateGoldenOut(mainClass.getName());
+    }
+
+    private void generateSeparateJtregHeader(IRNode mainClass) {
+        String mainClassName = mainClass.getName();
+        writeFile(generatorDir, mainClassName + ".java", getJtregHeader(mainClassName));
+    }
+
+    private void generateClassFiles(IRNode mainClass, IRNode privateClasses) {
+        String mainClassName = mainClass.getName();
+        ensureExisting(generatorDir);
         try {
             ByteCodeVisitor vis = new ByteCodeVisitor();
             if (privateClasses != null) {
                 privateClasses.accept(vis);
             }
             mainClass.accept(vis);
-
-            Path mainClassPath = testbase.resolve(mainClass.getName() + ".class");
-            writeToClassFile(mainClassPath, vis.getByteCode(mainClass.getName()));
+            writeFile(mainClassName + ".class", vis.getByteCode(mainClassName));
             if (privateClasses != null) {
                 privateClasses.getChildren().forEach(c -> {
                     String name = c.getName();
-                    Path classPath = testbase.resolve(name + ".class");
-                    writeToClassFile(classPath, vis.getByteCode(name));
+                    writeFile(name + ".class", vis.getByteCode(name));
                 });
             }
-            return mainClassPath.toString();
         } catch (Throwable t) {
-            Path errFile = testbase.resolve(mainClass.getName() + ".err");
+            Path errFile = generatorDir.resolve(mainClassName + ".err");
             try (PrintWriter pw = new PrintWriter(Files.newOutputStream(errFile,
                     StandardOpenOption.CREATE_NEW))) {
                 t.printStackTrace(pw);
@@ -78,16 +84,11 @@ class ByteCodeGenerator implements BiFunction<IRNode, IRNode, String> {
                 t.printStackTrace();
                 throw new Error("can't write error to error file " + errFile, e);
             }
-            return null;
         }
     }
 
-    public Path getTestbase() {
-        return testbase;
-    }
-
-    private void writeToClassFile(Path path, byte[] bytecode) {
-        try (FileOutputStream file = new FileOutputStream(path.toString())) {
+    private void writeFile(String fileName, byte[] bytecode) {
+        try (FileOutputStream file = new FileOutputStream(generatorDir.resolve(fileName).toFile())) {
             file.write(bytecode);
         } catch (IOException ex) {
             ex.printStackTrace();

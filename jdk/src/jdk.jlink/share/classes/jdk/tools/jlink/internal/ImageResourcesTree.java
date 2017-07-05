@@ -113,8 +113,7 @@ public final class ImageResourcesTree {
             private final boolean isEmpty;
 
             PackageReference(String name, boolean isEmpty) {
-                Objects.requireNonNull(name);
-                this.name = name;
+                this.name = Objects.requireNonNull(name);
                 this.isEmpty = isEmpty;
             }
 
@@ -132,12 +131,8 @@ public final class ImageResourcesTree {
 
         private void addReference(String name, boolean isEmpty) {
             PackageReference ref = references.get(name);
-            if (ref == null) {
+            if (ref == null || ref.isEmpty) {
                 references.put(name, new PackageReference(name, isEmpty));
-            } else {
-                if (ref.isEmpty) { // replace with new one incase non empty.
-                    references.put(name, new PackageReference(name, isEmpty));
-                }
             }
         }
 
@@ -267,8 +262,7 @@ public final class ImageResourcesTree {
             }
             // Validate that the packages are well formed.
             for (Node n : packages.children.values()) {
-                PackageNode pkg = (PackageNode) n;
-                pkg.validate();
+                ((PackageNode)n).validate();
             }
 
         }

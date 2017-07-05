@@ -221,8 +221,8 @@ Java_java_net_PlainDatagramSocketImpl_bind0(JNIEnv *env, jobject this,
             NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "BindException",
                             "Bind failed");
         } else {
-            NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
-                            "Bind failed");
+            JNU_ThrowByNameWithMessageAndLastError
+                (env, JNU_JAVANETPKG "SocketException", "Bind failed");
         }
         return;
     }
@@ -233,8 +233,8 @@ Java_java_net_PlainDatagramSocketImpl_bind0(JNIEnv *env, jobject this,
          * that the system chose for us and store it in the Socket object.
          */
         if (getsockname(fd, (struct sockaddr *)&him, &slen) == -1) {
-            NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
-                            "Error getting socket name");
+            JNU_ThrowByNameWithMessageAndLastError
+                (env, JNU_JAVANETPKG "SocketException", "Error getting socket name");
             return;
         }
 
@@ -469,7 +469,7 @@ Java_java_net_PlainDatagramSocketImpl_send(JNIEnv *env, jobject this,
             JNU_ThrowByName(env, JNU_JAVANETPKG "PortUnreachableException",
                             "ICMP Port Unreachable");
         } else {
-            NET_ThrowByNameWithLastError(env, "java/io/IOException", "sendto failed");
+            JNU_ThrowIOExceptionWithLastError(env, "sendto failed");
         }
     }
 
@@ -520,7 +520,8 @@ Java_java_net_PlainDatagramSocketImpl_peek(JNIEnv *env, jobject this,
             } else if (errno == ENOMEM) {
                  JNU_ThrowOutOfMemoryError(env, "NET_Timeout native heap allocation failed");
             } else {
-                 NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException", "Peek failed");
+                 JNU_ThrowByNameWithMessageAndLastError
+                     (env, JNU_JAVANETPKG "SocketException", "Peek failed");
             }
             return ret;
         }
@@ -544,7 +545,8 @@ Java_java_net_PlainDatagramSocketImpl_peek(JNIEnv *env, jobject this,
             if (errno == EBADF) {
                  JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", "Socket closed");
             } else {
-                 NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException", "Peek failed");
+                 JNU_ThrowByNameWithMessageAndLastError
+                     (env, JNU_JAVANETPKG "SocketException", "Peek failed");
             }
         }
         return 0;
@@ -616,7 +618,8 @@ Java_java_net_PlainDatagramSocketImpl_peekData(JNIEnv *env, jobject this,
             } else if (errno == EBADF) {
                 JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", "Socket closed");
             } else {
-                NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException", "Receive failed");
+                JNU_ThrowByNameWithMessageAndLastError
+                    (env, JNU_JAVANETPKG "SocketException", "Receive failed");
 #else
             } else {
                 JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", "Socket closed");
@@ -681,7 +684,8 @@ Java_java_net_PlainDatagramSocketImpl_peekData(JNIEnv *env, jobject this,
             if (errno == EBADF) {
                  JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", "Socket closed");
             } else {
-                 NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException", "Receive failed");
+                 JNU_ThrowByNameWithMessageAndLastError
+                     (env, JNU_JAVANETPKG "SocketException", "Receive failed");
             }
         }
     } else {
@@ -827,7 +831,8 @@ Java_java_net_PlainDatagramSocketImpl_receive0(JNIEnv *env, jobject this,
                     } else if (errno == EBADF) {
                          JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", "Socket closed");
                     } else {
-                        NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException", "Receive failed");
+                        JNU_ThrowByNameWithMessageAndLastError
+                            (env, JNU_JAVANETPKG "SocketException", "Receive failed");
 #else
                     } else {
                         JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", "Socket closed");
@@ -859,7 +864,8 @@ Java_java_net_PlainDatagramSocketImpl_receive0(JNIEnv *env, jobject this,
                 if (errno == EBADF) {
                      JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", "Socket closed");
                  } else {
-                     NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException", "Receive failed");
+                     JNU_ThrowByNameWithMessageAndLastError
+                         (env, JNU_JAVANETPKG "SocketException", "Receive failed");
                  }
             }
         } else {
@@ -932,8 +938,8 @@ Java_java_net_PlainDatagramSocketImpl_datagramSocketCreate(JNIEnv *env,
     }
 
     if ((fd = socket(domain, SOCK_DGRAM, 0)) == -1) {
-        NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
-                       "Error creating socket");
+        JNU_ThrowByNameWithMessageAndLastError
+            (env, JNU_JAVANETPKG "SocketException", "Error creating socket");
         return;
     }
 
@@ -1080,8 +1086,8 @@ static void mcast_set_if_by_if_v4(JNIEnv *env, jobject this, int fd, jobject val
 
     if (setsockopt(fd, IPPROTO_IP, IP_MULTICAST_IF,
                    (const char*)&in, sizeof(in)) < 0) {
-        NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
-                       "Error setting socket option");
+        JNU_ThrowByNameWithMessageAndLastError
+            (env, JNU_JAVANETPKG "SocketException", "Error setting socket option");
     }
 }
 
@@ -1109,8 +1115,8 @@ static void mcast_set_if_by_if_v6(JNIEnv *env, jobject this, int fd, jobject val
                 "IPV6_MULTICAST_IF failed (interface has IPv4 "
                 "address only?)");
         } else {
-            NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
-                           "Error setting socket option");
+            JNU_ThrowByNameWithMessageAndLastError
+                (env, JNU_JAVANETPKG "SocketException", "Error setting socket option");
         }
         return;
     }
@@ -1129,8 +1135,8 @@ static void mcast_set_if_by_addr_v4(JNIEnv *env, jobject this, int fd, jobject v
 
     if (setsockopt(fd, IPPROTO_IP, IP_MULTICAST_IF,
                    (const char*)&in, sizeof(in)) < 0) {
-        NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
-                         "Error setting socket option");
+        JNU_ThrowByNameWithMessageAndLastError
+            (env, JNU_JAVANETPKG "SocketException", "Error setting socket option");
     }
 }
 
@@ -1256,8 +1262,10 @@ static void mcast_set_loop_v4(JNIEnv *env, jobject this, int fd, jobject value) 
     on = (*env)->GetBooleanField(env, value, fid);
     loopback = (!on ? 1 : 0);
 
-    if (NET_SetSockOpt(fd, IPPROTO_IP, IP_MULTICAST_LOOP, (const void *)&loopback, sizeof(char)) < 0) {
-        NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException", "Error setting socket option");
+    if (NET_SetSockOpt(fd, IPPROTO_IP, IP_MULTICAST_LOOP,
+                       (const void *)&loopback, sizeof(char)) < 0) {
+        JNU_ThrowByNameWithMessageAndLastError
+            (env, JNU_JAVANETPKG "SocketException", "Error setting socket option");
         return;
     }
 }
@@ -1280,8 +1288,10 @@ static void mcast_set_loop_v6(JNIEnv *env, jobject this, int fd, jobject value) 
     on = (*env)->GetBooleanField(env, value, fid);
     loopback = (!on ? 1 : 0);
 
-    if (NET_SetSockOpt(fd, IPPROTO_IPV6, IPV6_MULTICAST_LOOP, (const void *)&loopback, sizeof(int)) < 0) {
-        NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException", "Error setting socket option");
+    if (NET_SetSockOpt(fd, IPPROTO_IPV6, IPV6_MULTICAST_LOOP,
+                       (const void *)&loopback, sizeof(int)) < 0) {
+        JNU_ThrowByNameWithMessageAndLastError
+            (env, JNU_JAVANETPKG "SocketException", "Error setting socket option");
         return;
     }
 
@@ -1420,7 +1430,8 @@ Java_java_net_PlainDatagramSocketImpl_socketSetOption0(JNIEnv *env,
     }
 
     if (NET_SetSockOpt(fd, level, optname, (const void *)&optval, optlen) < 0) {
-        NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException", "Error setting socket option");
+        JNU_ThrowByNameWithMessageAndLastError
+            (env, JNU_JAVANETPKG "SocketException", "Error setting socket option");
         return;
     }
 }
@@ -1483,8 +1494,8 @@ jobject getMulticastInterface(JNIEnv *env, jobject this, int fd, jint opt) {
 
         if (getsockopt(fd, IPPROTO_IP, IP_MULTICAST_IF,
                        (char *)inP, &len) < 0) {
-            NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
-                             "Error getting socket option");
+            JNU_ThrowByNameWithMessageAndLastError
+                (env, JNU_JAVANETPKG "SocketException", "Error getting socket option");
             return NULL;
         }
 
@@ -1581,8 +1592,8 @@ jobject getMulticastInterface(JNIEnv *env, jobject this, int fd, jint opt) {
 
         if (getsockopt(fd, IPPROTO_IPV6, IPV6_MULTICAST_IF,
                        (char*)&index, &len) < 0) {
-            NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
-                           "Error getting socket option");
+            JNU_ThrowByNameWithMessageAndLastError
+                (env, JNU_JAVANETPKG "SocketException", "Error getting socket option");
             return NULL;
         }
 
@@ -1726,8 +1737,8 @@ Java_java_net_PlainDatagramSocketImpl_socketGetOption(JNIEnv *env, jobject this,
         len = SOCKADDR_LEN;
 
         if (getsockname(fd, (struct sockaddr *)&him, &len) == -1) {
-            NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
-                           "Error getting socket name");
+            JNU_ThrowByNameWithMessageAndLastError
+                (env, JNU_JAVANETPKG "SocketException", "Error getting socket name");
             return NULL;
         }
         iaObj = NET_SockaddrToInetAddress(env, (struct sockaddr *)&him, &port);
@@ -1752,8 +1763,8 @@ Java_java_net_PlainDatagramSocketImpl_socketGetOption(JNIEnv *env, jobject this,
     }
 
     if (NET_GetSockOpt(fd, level, optname, (void *)&optval, &optlen) < 0) {
-        NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
-                         "Error getting socket option");
+        JNU_ThrowByNameWithMessageAndLastError
+            (env, JNU_JAVANETPKG "SocketException", "Error getting socket option");
         return NULL;
     }
 
@@ -1805,8 +1816,8 @@ static void setTTL(JNIEnv *env, int fd, jint ttl) {
     char ittl = (char)ttl;
     if (setsockopt(fd, IPPROTO_IP, IP_MULTICAST_TTL, (char*)&ittl,
                    sizeof(ittl)) < 0) {
-        NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
-                       "Error setting socket option");
+        JNU_ThrowByNameWithMessageAndLastError
+            (env, JNU_JAVANETPKG "SocketException", "Error setting socket option");
     }
 }
 
@@ -1818,8 +1829,8 @@ static void setHopLimit(JNIEnv *env, int fd, jint ttl) {
     int ittl = (int)ttl;
     if (setsockopt(fd, IPPROTO_IPV6, IPV6_MULTICAST_HOPS,
                    (char*)&ittl, sizeof(ittl)) < 0) {
-        NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
-                       "Error setting socket option");
+        JNU_ThrowByNameWithMessageAndLastError
+            (env, JNU_JAVANETPKG "SocketException", "Error setting socket option");
     }
 }
 #endif
@@ -1901,8 +1912,8 @@ Java_java_net_PlainDatagramSocketImpl_getTimeToLive(JNIEnv *env, jobject this) {
 
         if (getsockopt(fd, IPPROTO_IPV6, IPV6_MULTICAST_HOPS,
                        (char*)&ttl, &len) < 0) {
-            NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
-                                         "Error getting socket option");
+            JNU_ThrowByNameWithMessageAndLastError
+                (env, JNU_JAVANETPKG "SocketException", "Error getting socket option");
             return -1;
         }
         return (jint)ttl;
@@ -1913,8 +1924,8 @@ Java_java_net_PlainDatagramSocketImpl_getTimeToLive(JNIEnv *env, jobject this) {
             socklen_t len = sizeof(ttl);
             if (getsockopt(fd, IPPROTO_IP, IP_MULTICAST_TTL,
                            (char*)&ttl, &len) < 0) {
-                NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
-                               "Error getting socket option");
+                JNU_ThrowByNameWithMessageAndLastError
+                    (env, JNU_JAVANETPKG "SocketException", "Error getting socket option");
                 return -1;
             }
             return (jint)ttl;

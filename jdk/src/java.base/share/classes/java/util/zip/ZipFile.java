@@ -295,13 +295,13 @@ class ZipFile implements ZipConstants, Closeable {
      * @throws IllegalStateException if the zip file has been closed
      */
     public ZipEntry getEntry(String name) {
-
         Objects.requireNonNull(name, "name");
         synchronized (this) {
             ensureOpen();
-            int pos = zsrc.getEntryPos(zc.getBytes(name), true);
+            byte[] bname = zc.getBytes(name);
+            int pos = zsrc.getEntryPos(bname, true);
             if (pos != -1) {
-                return getZipEntry(name, pos);
+                return getZipEntry(name, bname, pos);
             }
         }
         return null;
@@ -492,7 +492,7 @@ class ZipFile implements ZipConstants, Closeable {
                     throw new NoSuchElementException();
                 }
                 // each "entry" has 3 ints in table entries
-                return getZipEntry(null, zsrc.getEntryPos(i++ * 3));
+                return getZipEntry(null, null, zsrc.getEntryPos(i++ * 3));
             }
         }
 
@@ -527,13 +527,17 @@ class ZipFile implements ZipConstants, Closeable {
     }
 
     /* Checks ensureOpen() before invoke this method */
-    private ZipEntry getZipEntry(String name, int pos) {
+    private ZipEntry getZipEntry(String name, byte[] bname, int pos) {
         byte[] cen = zsrc.cen;
         int nlen = CENNAM(cen, pos);
         int elen = CENEXT(cen, pos);
         int clen = CENCOM(cen, pos);
         int flag = CENFLG(cen, pos);
-        if (name == null) {
+        if (name == null || bname.length != nlen) {
+            // to use the entry name stored in cen, if the passed in name is
+            // (1) null, invoked from iterator, or
+            // (2) not equal to the name stored, a slash is appended during
+            // getEntryPos() search.
             if (!zc.isUTF8() && (flag & EFS) != 0) {
                 name = zc.toStringUTF8(cen, pos + CENHDR, nlen);
             } else {
