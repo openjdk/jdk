@@ -26,6 +26,7 @@
 /* @test
  * @bug 8139885
  * @bug 8143798
+ * @bug 8150825
  * @run testng/othervm -ea -esa test.java.lang.invoke.T8139885
  */
 
@@ -315,14 +316,17 @@ public class T8139885 {
                 {intid, MethodHandles.identity(double.class)},
                 {intid, MethodHandles.dropArguments(intid, 0, String.class)},
                 {intid, MethodHandles.dropArguments(intid, 0, Throwable.class, double.class)},
-                {errTarget, errCleanup}
+                {errTarget, errCleanup},
+                {TryFinally.MH_voidTarget, TryFinally.MH_voidCleanup}
         };
         String[] messages = {
                 "target and return types must match: double != int",
                 "cleanup first argument and Throwable must match: (String,int)int != class java.lang.Throwable",
                 "cleanup second argument and target return type must match: (Throwable,double,int)int != int",
                 "cleanup parameters after (Throwable,result) and target parameter list prefix must match: " +
-                        errCleanup.type() + " != " + errTarget.type()
+                        errCleanup.type() + " != " + errTarget.type(),
+                "cleanup parameters after (Throwable,result) and target parameter list prefix must match: " +
+                        TryFinally.MH_voidCleanup.type() + " != " + TryFinally.MH_voidTarget.type()
         };
         for (int i = 0; i < cases.length; ++i) {
             boolean caught = false;
@@ -908,6 +912,10 @@ public class T8139885 {
             return r + " (but " + first + " first)!";
         }
 
+        static void voidTarget() {}
+
+        static void voidCleanup(Throwable t, int a) {}
+
         static final Class<TryFinally> TRY_FINALLY = TryFinally.class;
 
         static final MethodType MT_greet = methodType(String.class, String.class);
@@ -916,6 +924,8 @@ public class T8139885 {
         static final MethodType MT_printMore = methodType(void.class, Throwable.class, String.class);
         static final MethodType MT_greetMore = methodType(String.class, String.class, String.class);
         static final MethodType MT_exclaimMore = methodType(String.class, Throwable.class, String.class, String.class);
+        static final MethodType MT_voidTarget = methodType(void.class);
+        static final MethodType MT_voidCleanup = methodType(void.class, Throwable.class, int.class);
 
         static final MethodHandle MH_greet;
         static final MethodHandle MH_exclaim;
@@ -923,6 +933,8 @@ public class T8139885 {
         static final MethodHandle MH_printMore;
         static final MethodHandle MH_greetMore;
         static final MethodHandle MH_exclaimMore;
+        static final MethodHandle MH_voidTarget;
+        static final MethodHandle MH_voidCleanup;
 
         static final MethodType MT_hello = methodType(String.class, String.class);
         static final MethodType MT_printHello = methodType(void.class, String.class);
@@ -936,6 +948,8 @@ public class T8139885 {
                 MH_printMore = LOOKUP.findStatic(TRY_FINALLY, "printMore", MT_printMore);
                 MH_greetMore = LOOKUP.findStatic(TRY_FINALLY, "greetMore", MT_greetMore);
                 MH_exclaimMore = LOOKUP.findStatic(TRY_FINALLY, "exclaimMore", MT_exclaimMore);
+                MH_voidTarget = LOOKUP.findStatic(TRY_FINALLY, "voidTarget", MT_voidTarget);
+                MH_voidCleanup = LOOKUP.findStatic(TRY_FINALLY, "voidCleanup", MT_voidCleanup);
             } catch (Exception e) {
                 throw new ExceptionInInitializerError(e);
             }

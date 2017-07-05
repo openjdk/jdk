@@ -81,7 +81,9 @@ public class Pack200Test {
                 System.out.println("Packing [" + in.toString() + "]");
                 // Call the packer
                 Utils.pack(jarFile, packFile);
+                System.out.println("Done Packing [" + in.toString() + "]");
                 jarFile.close();
+                System.out.println("Start leak check");
                 leakCheck();
 
                 System.out.println("  Unpacking using java unpacker");

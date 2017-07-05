@@ -43,6 +43,7 @@
 class HeapRegion;
 class CollectionSetChooser;
 class G1IHOPControl;
+class G1YoungGenSizer;
 
 // TraceYoungGenTime collects data on _both_ young and mixed evacuation pauses
 // (the latter may contain non-young regions - i.e. regions that are
@@ -88,81 +89,6 @@ class TraceOldGenTimeData : public CHeapObj<mtGC> {
  public:
   void record_full_collection(double full_gc_time_ms);
   void print() const;
-};
-
-// There are three command line options related to the young gen size:
-// NewSize, MaxNewSize and NewRatio (There is also -Xmn, but that is
-// just a short form for NewSize==MaxNewSize). G1 will use its internal
-// heuristics to calculate the actual young gen size, so these options
-// basically only limit the range within which G1 can pick a young gen
-// size. Also, these are general options taking byte sizes. G1 will
-// internally work with a number of regions instead. So, some rounding
-// will occur.
-//
-// If nothing related to the the young gen size is set on the command
-// line we should allow the young gen to be between G1NewSizePercent
-// and G1MaxNewSizePercent of the heap size. This means that every time
-// the heap size changes, the limits for the young gen size will be
-// recalculated.
-//
-// If only -XX:NewSize is set we should use the specified value as the
-// minimum size for young gen. Still using G1MaxNewSizePercent of the
-// heap as maximum.
-//
-// If only -XX:MaxNewSize is set we should use the specified value as the
-// maximum size for young gen. Still using G1NewSizePercent of the heap
-// as minimum.
-//
-// If -XX:NewSize and -XX:MaxNewSize are both specified we use these values.
-// No updates when the heap size changes. There is a special case when
-// NewSize==MaxNewSize. This is interpreted as "fixed" and will use a
-// different heuristic for calculating the collection set when we do mixed
-// collection.
-//
-// If only -XX:NewRatio is set we should use the specified ratio of the heap
-// as both min and max. This will be interpreted as "fixed" just like the
-// NewSize==MaxNewSize case above. But we will update the min and max
-// every time the heap size changes.
-//
-// NewSize and MaxNewSize override NewRatio. So, NewRatio is ignored if it is
-// combined with either NewSize or MaxNewSize. (A warning message is printed.)
-class G1YoungGenSizer : public CHeapObj<mtGC> {
-private:
-  enum SizerKind {
-    SizerDefaults,
-    SizerNewSizeOnly,
-    SizerMaxNewSizeOnly,
-    SizerMaxAndNewSize,
-    SizerNewRatio
-  };
-  SizerKind _sizer_kind;
-  uint _min_desired_young_length;
-  uint _max_desired_young_length;
-  bool _adaptive_size;
-  uint calculate_default_min_length(uint new_number_of_heap_regions);
-  uint calculate_default_max_length(uint new_number_of_heap_regions);
-
-  // Update the given values for minimum and maximum young gen length in regions
-  // given the number of heap regions depending on the kind of sizing algorithm.
-  void recalculate_min_max_young_length(uint number_of_heap_regions, uint* min_young_length, uint* max_young_length);
-
-public:
-  G1YoungGenSizer();
-  // Calculate the maximum length of the young gen given the number of regions
-  // depending on the sizing algorithm.
-  uint max_young_length(uint number_of_heap_regions);
-
-  void heap_size_changed(uint new_number_of_heap_regions);
-  uint min_desired_young_length() {
-    return _min_desired_young_length;
-  }
-  uint max_desired_young_length() {
-    return _max_desired_young_length;
-  }
-
-  bool adaptive_young_list_length() const {
-    return _adaptive_size;
-  }
 };
 
 class G1CollectorPolicy: public CollectorPolicy {
@@ -784,9 +710,7 @@ public:
     return _young_list_max_length;
   }
 
-  bool adaptive_young_list_length() const {
-    return _young_gen_sizer->adaptive_young_list_length();
-  }
+  bool adaptive_young_list_length() const;
 
   virtual bool should_process_references() const {
     return true;

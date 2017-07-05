@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,9 +50,17 @@ public class SocketOptionTests {
 
         // check supported options
         Set<SocketOption<?>> options = dc.supportedOptions();
-        List<? extends SocketOption<?>> expected = Arrays.asList(SO_SNDBUF, SO_RCVBUF,
-            SO_REUSEADDR, SO_BROADCAST, IP_TOS, IP_MULTICAST_IF, IP_MULTICAST_TTL,
-            IP_MULTICAST_LOOP);
+        boolean reuseport = options.contains(SO_REUSEPORT);
+        List<? extends SocketOption<?>> expected;
+        if (reuseport) {
+           expected = Arrays.asList(SO_SNDBUF, SO_RCVBUF,
+                      SO_REUSEADDR, SO_REUSEPORT, SO_BROADCAST, IP_TOS, IP_MULTICAST_IF,
+                      IP_MULTICAST_TTL, IP_MULTICAST_LOOP);
+        } else {
+           expected = Arrays.asList(SO_SNDBUF, SO_RCVBUF,
+                      SO_REUSEADDR, SO_BROADCAST, IP_TOS, IP_MULTICAST_IF, IP_MULTICAST_TTL,
+                      IP_MULTICAST_LOOP);
+        }
         for (SocketOption opt: expected) {
             if (!options.contains(opt))
                 throw new RuntimeException(opt.name() + " should be supported");
@@ -83,7 +91,12 @@ public class SocketOptionTests {
         checkOption(dc, SO_REUSEADDR, true);
         dc.setOption(SO_REUSEADDR, false);
         checkOption(dc, SO_REUSEADDR, false);
-
+        if (reuseport) {
+            dc.setOption(SO_REUSEPORT, true);
+            checkOption(dc, SO_REUSEPORT, true);
+            dc.setOption(SO_REUSEPORT, false);
+            checkOption(dc, SO_REUSEPORT, false);
+        }
         // bind socket
         dc.bind(new InetSocketAddress(0));
 

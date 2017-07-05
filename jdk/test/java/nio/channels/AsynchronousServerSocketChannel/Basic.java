@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,8 +141,11 @@ public class Basic {
         try {
             // check supported options
             Set<SocketOption<?>> options = ch.supportedOptions();
+            boolean reuseport = options.contains(SO_REUSEPORT);
             if (!options.contains(SO_REUSEADDR))
                 throw new RuntimeException("SO_REUSEADDR should be supported");
+            if (!options.contains(SO_REUSEPORT) && reuseport)
+                throw new RuntimeException("SO_REUSEPORT should be supported");
             if (!options.contains(SO_RCVBUF))
                 throw new RuntimeException("SO_RCVBUF should be supported");
 
@@ -156,6 +159,13 @@ public class Basic {
             checkOption(ch, SO_REUSEADDR, true);
             ch.setOption(SO_REUSEADDR, false);
             checkOption(ch, SO_REUSEADDR, false);
+
+            if (reuseport) {
+                ch.setOption(SO_REUSEPORT, true);
+                checkOption(ch, SO_REUSEPORT, true);
+                ch.setOption(SO_REUSEPORT, false);
+                checkOption(ch, SO_REUSEPORT, false);
+            }
         } finally {
             ch.close();
         }

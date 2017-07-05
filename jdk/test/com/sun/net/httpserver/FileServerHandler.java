@@ -23,6 +23,7 @@
 
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.logging.*;
 import java.io.*;
 import java.net.*;
 import java.security.*;
@@ -36,6 +37,10 @@ import com.sun.net.httpserver.*;
  * Must be given an abs pathname to the document root.
  * Directory listings together with text + html files
  * can be served.
+ *
+ * File Server created on files sub-path
+ *
+ * Echo server created on echo sub-path
  */
 public class FileServerHandler implements HttpHandler {
 
@@ -44,14 +49,24 @@ public class FileServerHandler implements HttpHandler {
                 System.out.println ("usage: java FileServerHandler rootDir port logfilename");
                 System.exit(1);
             }
+            Logger logger = Logger.getLogger("com.sun.net.httpserver");
+            ConsoleHandler ch = new ConsoleHandler();
+            logger.setLevel(Level.ALL);
+            ch.setLevel(Level.ALL);
+            logger.addHandler(ch);
+
             String rootDir = args[0];
             int port = Integer.parseInt (args[1]);
             String logfile = args[2];
-            HttpServer server = HttpServer.create (new InetSocketAddress (8000), 0);
+            HttpServer server = HttpServer.create (new InetSocketAddress (port), 0);
             HttpHandler h = new FileServerHandler (rootDir);
+            HttpHandler h1 = new EchoHandler ();
 
-            HttpContext c = server.createContext ("/", h);
+            HttpContext c = server.createContext ("/files", h);
             c.getFilters().add (new LogFilter (new File (logfile)));
+            HttpContext c1 = server.createContext ("/echo", h1);
+            c.getFilters().add (new LogFilter (new File (logfile)));
+            c1.getFilters().add (new LogFilter (new File (logfile)));
             server.setExecutor (Executors.newCachedThreadPool());
             server.start ();
         }
@@ -72,7 +87,8 @@ public class FileServerHandler implements HttpHandler {
             URI uri = t.getRequestURI();
             String path = uri.getPath();
 
-            while (is.read () != -1) ;
+            int x = 0;
+            while (is.read () != -1) x++;
             is.close();
             File f = new File (docroot, path);
             if (!f.exists()) {
@@ -164,3 +180,61 @@ public class FileServerHandler implements HttpHandler {
             t.close();
         }
     }
+
+class EchoHandler implements HttpHandler {
+
+    byte[] read(InputStream is) throws IOException {
+        byte[] buf = new byte[1024];
+        byte[] result = new byte[0];
+
+        while (true) {
+            int n = is.read(buf);
+            if (n > 0) {
+                byte[] b1 = new byte[result.length + n];
+                System.arraycopy(result, 0, b1, 0, result.length);
+                System.arraycopy(buf, 0, b1, result.length, n);
+                result = b1;
+            } else if (n == -1) {
+                return result;
+            }
+        }
+    }
+
+    public void handle (HttpExchange t)
+        throws IOException
+    {
+        InputStream is = t.getRequestBody();
+        Headers map = t.getRequestHeaders();
+        String fixedrequest = map.getFirst ("XFixed");
+
+        // return the number of bytes received (no echo)
+        String summary = map.getFirst ("XSummary");
+        if (fixedrequest != null && summary == null)  {
+            byte[] in = read(is);
+            t.sendResponseHeaders(200, in.length);
+            OutputStream os = t.getResponseBody();
+            os.write(in);
+            os.close();
+            is.close();
+        } else {
+            OutputStream os = t.getResponseBody();
+            byte[] buf = new byte[64 * 1024];
+            t.sendResponseHeaders(200, 0);
+            int n, count=0;;
+
+            while ((n = is.read(buf)) != -1) {
+                if (summary == null) {
+                    os.write(buf, 0, n);
+                }
+                count += n;
+            }
+            if (summary != null) {
+                String s = Integer.toString(count);
+                os.write(s.getBytes());
+            }
+            os.close();
+            is.close();
+        }
+    }
+}
+
