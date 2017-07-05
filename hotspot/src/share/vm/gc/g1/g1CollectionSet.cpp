@@ -32,6 +32,7 @@
 #include "gc/g1/heapRegionSet.hpp"
 #include "logging/logStream.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/quickSort.hpp"
 
 G1CollectorState* G1CollectionSet::collector_state() {
   return _g1->collector_state();
@@ -396,6 +397,16 @@ double G1CollectionSet::finalize_young_part(double target_pause_time_ms, G1Survi
   return time_remaining_ms;
 }
 
+static int compare_region_idx(const uint a, const uint b) {
+  if (a > b) {
+    return 1;
+  } else if (a == b) {
+    return 0;
+  } else {
+    return -1;
+  }
+}
+
 void G1CollectionSet::finalize_old_part(double time_remaining_ms) {
   double non_young_start_time_sec = os::elapsedTime();
   double predicted_old_time_ms = 0.0;
@@ -493,6 +504,8 @@ void G1CollectionSet::finalize_old_part(double time_remaining_ms) {
 
   double non_young_end_time_sec = os::elapsedTime();
   phase_times()->record_non_young_cset_choice_time_ms((non_young_end_time_sec - non_young_start_time_sec) * 1000.0);
+
+  QuickSort::sort<uint>(_collection_set_regions, (int)_collection_set_cur_length, compare_region_idx, true);
 }
 
 #ifdef ASSERT

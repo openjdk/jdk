@@ -489,9 +489,6 @@ class Arguments : AllStatic {
 
   static int process_patch_mod_option(const char* patch_mod_tail, bool* patch_mod_javabase);
 
-  // Miscellaneous system property setter
-  static bool append_to_addmods_property(const char* module_name);
-
   // Aggressive optimization flags.
   static jint set_aggressive_opts_flags();
 

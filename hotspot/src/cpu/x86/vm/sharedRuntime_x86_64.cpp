@@ -2589,6 +2589,11 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
       __ verify_oop(rax);
   }
 
+  if (CheckJNICalls) {
+    // clear_pending_jni_exception_check
+    __ movptr(Address(r15_thread, JavaThread::pending_jni_exception_check_fn_offset()), NULL_WORD);
+  }
+
   if (!is_critical_native) {
     // reset handle block
     __ movptr(rcx, Address(r15_thread, JavaThread::active_handles_offset()));

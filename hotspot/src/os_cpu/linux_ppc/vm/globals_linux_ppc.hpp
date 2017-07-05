@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2015 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -33,10 +33,6 @@ define_pd_global(bool, DontYieldALot,            false);
 define_pd_global(intx, ThreadStackSize,          2048); // 0 => use system default
 define_pd_global(intx, VMThreadStackSize,        2048);
 
-// if we set CompilerThreadStackSize to a value different than 0, it will
-// be used in os::create_thread(). Otherwise, due the strange logic in os::create_thread(),
-// the stack size for compiler threads will default to VMThreadStackSize, although it
-// is defined to 4M in os::Linux::default_stack_size()!
 define_pd_global(intx, CompilerThreadStackSize,  4096);
 
 // Allow extra space in DEBUG builds for asserts.

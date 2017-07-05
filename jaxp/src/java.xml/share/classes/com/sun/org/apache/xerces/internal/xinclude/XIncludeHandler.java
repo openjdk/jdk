@@ -34,6 +34,8 @@ import com.sun.org.apache.xerces.internal.impl.XMLEntityManager;
 import com.sun.org.apache.xerces.internal.impl.XMLErrorReporter;
 import com.sun.org.apache.xerces.internal.impl.io.MalformedByteSequenceException;
 import com.sun.org.apache.xerces.internal.impl.msg.XMLMessageFormatter;
+import com.sun.org.apache.xerces.internal.parsers.XIncludeParserConfiguration;
+import com.sun.org.apache.xerces.internal.parsers.XPointerParserConfiguration;
 import com.sun.org.apache.xerces.internal.util.AugmentationsImpl;
 import com.sun.org.apache.xerces.internal.util.HTTPInputSource;
 import com.sun.org.apache.xerces.internal.util.IntStack;
@@ -129,8 +131,6 @@ import org.xml.sax.InputSource;
 public class XIncludeHandler
     implements XMLComponent, XMLDocumentFilter, XMLDTDFilter {
 
-    public final static String XINCLUDE_DEFAULT_CONFIGURATION =
-        "com.sun.org.apache.xerces.internal.parsers.XIncludeParserConfiguration";
     public final static String HTTP_ACCEPT = "Accept";
     public final static String HTTP_ACCEPT_LANGUAGE = "Accept-Language";
     public final static String XPOINTER = "xpointer";
@@ -1624,12 +1624,12 @@ public class XIncludeHandler
                 includedSource =
                     fEntityResolver.resolveEntity(resourceIdentifier);
 
-                if (includedSource == null) {
+                if (includedSource == null && fUseCatalog) {
                     if (fCatalogFeatures == null) {
                         fCatalogFeatures = JdkXmlUtils.getCatalogFeatures(fDefer, fCatalogFile, fPrefer, fResolve);
                     }
                     fCatalogFile = fCatalogFeatures.get(CatalogFeatures.Feature.FILES);
-                    if (fUseCatalog && fCatalogFile != null) {
+                    if (fCatalogFile != null) {
                         /*
                            Although URI entry is preferred for resolving XInclude, system entry
                            is allowed as well.
@@ -1690,14 +1690,11 @@ public class XIncludeHandler
             if ((xpointer != null && fXPointerChildConfig == null)
                         || (xpointer == null && fXIncludeChildConfig == null) ) {
 
-                String parserName = XINCLUDE_DEFAULT_CONFIGURATION;
-                if (xpointer != null)
-                        parserName = "com.sun.org.apache.xerces.internal.parsers.XPointerParserConfiguration";
-
-                fChildConfig =
-                    (XMLParserConfiguration)ObjectFactory.newInstance(
-                        parserName,
-                        true);
+                if (xpointer == null) {
+                    fChildConfig = new XIncludeParserConfiguration();
+                } else {
+                    fChildConfig = new XPointerParserConfiguration();
+                }
 
                 // use the same symbol table, error reporter, entity resolver, security manager and buffer size.
                 if (fSymbolTable != null) fChildConfig.setProperty(SYMBOL_TABLE, fSymbolTable);

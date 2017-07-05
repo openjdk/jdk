@@ -21,11 +21,12 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 6293769 6294527
  * @summary test that the isCardPresent()/waitForX() APIs work correctly
  * @author Andreas Sterbenz
+ * @modules java.smartcardio/javax.smartcardio
  * @run main/manual TestPresent
  */
 
