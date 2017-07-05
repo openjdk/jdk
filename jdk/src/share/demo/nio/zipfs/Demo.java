@@ -75,8 +75,14 @@ public class Demo {
                          // copy an external src file into zipfile
                          // as entry dst
 
+        copyin_attrs,    // <java Demo copyin_attrs zipfile src dst>
+                         // copy an external src file into zipfile
+                         // as entry dst, with attributes (timestamp)
+
         copyout,         // <java Demo copyout zipfile src dst>
                          // copy zipfile entry src" out to file dst
+
+        copyout_attrs,   // <java Demo copyout_attrs zipfile src dst>
 
         zzmove,          // <java Demo zzmove zfsrc zfdst path>
                          // move entry path/dir from zfsrc to zfdst
@@ -93,6 +99,9 @@ public class Demo {
 
         setmtime,        // <java Demo setmtime zipfile "MM/dd/yy-HH:mm:ss" path...>
                          // set the lastModifiedTime of entry path
+
+        setatime,        // <java Demo setatime zipfile "MM/dd/yy-HH:mm:ss" path...>
+        setctime,        // <java Demo setctime zipfile "MM/dd/yy-HH:mm:ss" path...>
 
         lsdir,           // <java Demo lsdir zipfile dir>
                          // list dir's direct child files/dirs
@@ -135,12 +144,14 @@ public class Demo {
 
         attrs2,          // <java Demo attrs2 zipfile file [...]>
                          // test different ways to print attrs
+
+        prof,
     }
 
     public static void main(String[] args) throws Throwable {
 
-        Action action = Action.valueOf(args[0]);;
-        Map<String, Object> env = env = new HashMap<String, Object>();
+        Action action = Action.valueOf(args[0]);
+        Map<String, Object> env = env = new HashMap<>();
         if (action == Action.create)
             env.put("createNew", true);
         if (action == Action.tlist || action == Action.twalk)
@@ -185,6 +196,16 @@ public class Demo {
                 dst = fs.getPath(args[3]);
                 src.copyTo(dst);
                 break;
+            case copyin_attrs:
+                src = Paths.get(args[2]);
+                dst = fs.getPath(args[3]);
+                src.copyTo(dst, COPY_ATTRIBUTES);
+                break;
+            case copyout_attrs:
+                src = fs.getPath(args[2]);
+                dst = Paths.get(args[3]);
+                src.copyTo(dst, COPY_ATTRIBUTES);
+                break;
             case zzmove:
                 fs2 = FileSystems.newFileSystem(
                     URI.create("zip" + Paths.get(args[2]).toUri().toString().substring(4)),
@@ -206,6 +227,7 @@ public class Demo {
             case attrs:
                 for (int i = 2; i < args.length; i++) {
                     path = fs.getPath(args[i]);
+                    System.out.println(path);
                     System.out.println(
                         Attributes.readBasicFileAttributes(path).toString());
                 }
@@ -216,6 +238,28 @@ public class Demo {
                 for (int i = 3; i < args.length; i++) {
                     path = fs.getPath(args[i]);
                     path.setAttribute("lastModifiedTime",
+                                      FileTime.fromMillis(newDatetime.getTime()));
+                    System.out.println(
+                        Attributes.readBasicFileAttributes(path).toString());
+                }
+                break;
+            case setctime:
+                df = new SimpleDateFormat("MM/dd/yyyy-HH:mm:ss");
+                newDatetime = df.parse(args[2]);
+                for (int i = 3; i < args.length; i++) {
+                    path = fs.getPath(args[i]);
+                    path.setAttribute("creationTime",
+                                      FileTime.fromMillis(newDatetime.getTime()));
+                    System.out.println(
+                        Attributes.readBasicFileAttributes(path).toString());
+                }
+                break;
+            case setatime:
+                df = new SimpleDateFormat("MM/dd/yyyy-HH:mm:ss");
+                newDatetime = df.parse(args[2]);
+                for (int i = 3; i < args.length; i++) {
+                    path = fs.getPath(args[i]);
+                    path.setAttribute("lastAccessTime",
                                       FileTime.fromMillis(newDatetime.getTime()));
                     System.out.println(
                         Attributes.readBasicFileAttributes(path).toString());
@@ -293,6 +337,7 @@ public class Demo {
             case attrs2:
                 for (int i = 2; i < args.length; i++) {
                     path = fs.getPath(args[i]);
+                    System.out.printf("%n%s%n", path);
                     System.out.println("-------(1)---------");
                     System.out.println(
                         Attributes.readBasicFileAttributes(path).toString());
@@ -308,6 +353,13 @@ public class Demo {
                     }
                 }
                 break;
+            case prof:
+                list(fs.getPath("/"), false);
+                while (true) {
+                    Thread.sleep(10000);
+                    //list(fs.getPath("/"), true);
+                    System.out.println("sleeping...");
+                }
             }
         } catch (Exception x) {
             x.printStackTrace();
@@ -501,10 +553,11 @@ public class Demo {
     }
 
     private static void list(Path path, boolean verbose ) throws IOException {
-        if (verbose)
-            System.out.println(Attributes.readBasicFileAttributes(path).toString());
-        else
-            System.out.printf("  %s%n", path.toString());
+        if (!"/".equals(path.toString())) {
+           System.out.printf("  %s%n", path.toString());
+           if (verbose)
+                System.out.println(Attributes.readBasicFileAttributes(path).toString());
+        }
         if (path.notExists())
             return;
         if (Attributes.readBasicFileAttributes(path).isDirectory()) {

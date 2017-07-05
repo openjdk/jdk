@@ -31,7 +31,6 @@
 
 package com.sun.nio.zipfs;
 
-import java.nio.ByteBuffer;
 
 /**
  *
@@ -48,6 +47,7 @@ class ZipConstants {
     static final int METHOD_BZIP2      = 12;
     static final int METHOD_LZMA       = 14;
     static final int METHOD_LZ77       = 19;
+    static final int METHOD_AES        = 99;
 
     /*
      * General purpose big flag
@@ -168,7 +168,8 @@ class ZipConstants {
     static final int  EXTID_ZIP64 = 0x0001;      // ZIP64
     static final int  EXTID_NTFS  = 0x000a;      // NTFS
     static final int  EXTID_UNIX  = 0x000d;      // UNIX
-
+    static final int  EXTID_EFS   = 0x0017;      // Strong Encryption
+    static final int  EXTID_EXTT  = 0x5455;      // Info-ZIP Extended Timestamp
 
     /*
      * fields access methods
@@ -226,34 +227,23 @@ class ZipConstants {
     static final long ZIP64_ENDOFF(byte[] b) { return LL(b, 48);}  // central directory offset
     static final long ZIP64_LOCOFF(byte[] b) { return LL(b, 8);}   // zip64 end offset
 
-    //////////////////////////////////////////
-    static final int CH(ByteBuffer b, int pos) {
-       return b.get(pos) & 0xff;
-    }
-    static final int SH(ByteBuffer b, int pos) {
-        return b.getShort(pos) & 0xffff;
-    }
-    static final long LG(ByteBuffer b, int pos) {
-        return b.getInt(pos) & 0xffffffffL;
-    }
-
-    // central directory header (END) fields
-    static final long CENSIG(ByteBuffer b, int pos) { return LG(b, pos + 0); }
-    static final int  CENVEM(ByteBuffer b, int pos) { return SH(b, pos + 4); }
-    static final int  CENVER(ByteBuffer b, int pos) { return SH(b, pos + 6); }
-    static final int  CENFLG(ByteBuffer b, int pos) { return SH(b, pos + 8); }
-    static final int  CENHOW(ByteBuffer b, int pos) { return SH(b, pos + 10);}
-    static final long CENTIM(ByteBuffer b, int pos) { return LG(b, pos + 12);}
-    static final long CENCRC(ByteBuffer b, int pos) { return LG(b, pos + 16);}
-    static final long CENSIZ(ByteBuffer b, int pos) { return LG(b, pos + 20);}
-    static final long CENLEN(ByteBuffer b, int pos) { return LG(b, pos + 24);}
-    static final int  CENNAM(ByteBuffer b, int pos) { return SH(b, pos + 28);}
-    static final int  CENEXT(ByteBuffer b, int pos) { return SH(b, pos + 30);}
-    static final int  CENCOM(ByteBuffer b, int pos) { return SH(b, pos + 32);}
-    static final int  CENDSK(ByteBuffer b, int pos) { return SH(b, pos + 34);}
-    static final int  CENATT(ByteBuffer b, int pos) { return SH(b, pos + 36);}
-    static final long CENATX(ByteBuffer b, int pos) { return LG(b, pos + 38);}
-    static final long CENOFF(ByteBuffer b, int pos) { return LG(b, pos + 42);}
+    // central directory header (CEN) fields
+    static final long CENSIG(byte[] b, int pos) { return LG(b, pos + 0); }
+    static final int  CENVEM(byte[] b, int pos) { return SH(b, pos + 4); }
+    static final int  CENVER(byte[] b, int pos) { return SH(b, pos + 6); }
+    static final int  CENFLG(byte[] b, int pos) { return SH(b, pos + 8); }
+    static final int  CENHOW(byte[] b, int pos) { return SH(b, pos + 10);}
+    static final long CENTIM(byte[] b, int pos) { return LG(b, pos + 12);}
+    static final long CENCRC(byte[] b, int pos) { return LG(b, pos + 16);}
+    static final long CENSIZ(byte[] b, int pos) { return LG(b, pos + 20);}
+    static final long CENLEN(byte[] b, int pos) { return LG(b, pos + 24);}
+    static final int  CENNAM(byte[] b, int pos) { return SH(b, pos + 28);}
+    static final int  CENEXT(byte[] b, int pos) { return SH(b, pos + 30);}
+    static final int  CENCOM(byte[] b, int pos) { return SH(b, pos + 32);}
+    static final int  CENDSK(byte[] b, int pos) { return SH(b, pos + 34);}
+    static final int  CENATT(byte[] b, int pos) { return SH(b, pos + 36);}
+    static final long CENATX(byte[] b, int pos) { return LG(b, pos + 38);}
+    static final long CENOFF(byte[] b, int pos) { return LG(b, pos + 42);}
 
     /* The END header is followed by a variable length comment of size < 64k. */
     static final long END_MAXLEN = 0xFFFF + ENDHDR;

@@ -377,6 +377,7 @@ public class ScrollPane extends Container implements Accessible {
      * This is a convenience method which interfaces with the Adjustable
      * objects which represent the state of the scrollbars.
      * @param p the Point representing the position to scroll to
+     * @throws NullPointerException if {@code p} is {@code null}
      */
     public void setScrollPosition(Point p) {
         setScrollPosition(p.x, p.y);

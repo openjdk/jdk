@@ -205,7 +205,7 @@ public class JarSigner {
 
                     if (!(obj instanceof Provider)) {
                         MessageFormat form = new MessageFormat(rb.getString
-                            ("provName not a provider"));
+                            ("provName.not.a.provider"));
                         Object[] source = {provName};
                         throw new Exception(form.format(source));
                     }
@@ -218,7 +218,7 @@ public class JarSigner {
                     loadKeyStore(keystore, false);
                 } catch (Exception e) {
                     if ((keystore != null) || (storepass != null)) {
-                        System.out.println(rb.getString("jarsigner error: ") +
+                        System.out.println(rb.getString("jarsigner.error.") +
                                         e.getMessage());
                         System.exit(1);
                     }
@@ -264,7 +264,7 @@ public class JarSigner {
                 signJar(jarfile, alias, args);
             }
         } catch (Exception e) {
-            System.out.println(rb.getString("jarsigner error: ") + e);
+            System.out.println(rb.getString("jarsigner.error.") + e);
             if (debug) {
                 e.printStackTrace();
             }
@@ -420,7 +420,7 @@ public class JarSigner {
                     }
                 } else {
                     System.err.println(
-                            rb.getString("Illegal option: ") + flags);
+                            rb.getString("Illegal.option.") + flags);
                     usage();
                 }
             }
@@ -430,15 +430,15 @@ public class JarSigner {
         if (verbose == null) showcerts = false;
 
         if (jarfile == null) {
-            System.err.println(rb.getString("Please specify jarfile name"));
+            System.err.println(rb.getString("Please.specify.jarfile.name"));
             usage();
         }
         if (!verify && alias == null) {
-            System.err.println(rb.getString("Please specify alias name"));
+            System.err.println(rb.getString("Please.specify.alias.name"));
             usage();
         }
         if (!verify && ckaliases.size() > 1) {
-            System.err.println(rb.getString("Only one alias can be specified"));
+            System.err.println(rb.getString("Only.one.alias.can.be.specified"));
             usage();
         }
 
@@ -471,30 +471,27 @@ public class JarSigner {
 
         if (token && !nullStream) {
             System.err.println(MessageFormat.format(rb.getString
-                ("-keystore must be NONE if -storetype is {0}"), storetype));
+                (".keystore.must.be.NONE.if.storetype.is.{0}"), storetype));
             usage();
         }
 
         if (token && keypass != null) {
             System.err.println(MessageFormat.format(rb.getString
-                ("-keypass can not be specified " +
-                "if -storetype is {0}"), storetype));
+                (".keypass.can.not.be.specified.if.storetype.is.{0}"), storetype));
             usage();
         }
 
         if (protectedPath) {
             if (storepass != null || keypass != null) {
                 System.err.println(rb.getString
-                        ("If -protected is specified, " +
-                        "then -storepass and -keypass must not be specified"));
+                        ("If.protected.is.specified.then.storepass.and.keypass.must.not.be.specified"));
                 usage();
             }
         }
         if (KeyStoreUtil.isWindowsKeyStore(storetype)) {
             if (storepass != null || keypass != null) {
                 System.err.println(rb.getString
-                        ("If keystore is not password protected, " +
-                        "then -storepass and -keypass must not be specified"));
+                        ("If.keystore.is.not.password.protected.then.storepass.and.keypass.must.not.be.specified"));
                 usage();
             }
         }
@@ -508,94 +505,94 @@ public class JarSigner {
     }
 
     static void usageNoArg() {
-        System.out.println(rb.getString("Option lacks argument"));
+        System.out.println(rb.getString("Option.lacks.argument"));
         usage();
     }
 
     static void usage() {
         System.out.println();
-        System.out.println(rb.getString("Please type jarsigner -help for usage"));
+        System.out.println(rb.getString("Please.type.jarsigner.help.for.usage"));
         System.exit(1);
     }
 
     static void fullusage() {
         System.out.println(rb.getString
-                ("Usage: jarsigner [options] jar-file alias"));
+                ("Usage.jarsigner.options.jar.file.alias"));
         System.out.println(rb.getString
-                ("       jarsigner -verify [options] jar-file [alias...]"));
+                (".jarsigner.verify.options.jar.file.alias."));
         System.out.println();
         System.out.println(rb.getString
-                ("[-keystore <url>]           keystore location"));
+                (".keystore.url.keystore.location"));
         System.out.println();
         System.out.println(rb.getString
-                ("[-storepass <password>]     password for keystore integrity"));
+                (".storepass.password.password.for.keystore.integrity"));
         System.out.println();
         System.out.println(rb.getString
-                ("[-storetype <type>]         keystore type"));
+                (".storetype.type.keystore.type"));
         System.out.println();
         System.out.println(rb.getString
-                ("[-keypass <password>]       password for private key (if different)"));
+                (".keypass.password.password.for.private.key.if.different."));
         System.out.println();
         System.out.println(rb.getString
-                ("[-certchain <file>]         name of alternative certchain file"));
+                (".certchain.file.name.of.alternative.certchain.file"));
         System.out.println();
         System.out.println(rb.getString
-                ("[-sigfile <file>]           name of .SF/.DSA file"));
+                (".sigfile.file.name.of.SF.DSA.file"));
         System.out.println();
         System.out.println(rb.getString
-                ("[-signedjar <file>]         name of signed JAR file"));
+                (".signedjar.file.name.of.signed.JAR.file"));
         System.out.println();
         System.out.println(rb.getString
-                ("[-digestalg <algorithm>]    name of digest algorithm"));
+                (".digestalg.algorithm.name.of.digest.algorithm"));
         System.out.println();
         System.out.println(rb.getString
-                ("[-sigalg <algorithm>]       name of signature algorithm"));
+                (".sigalg.algorithm.name.of.signature.algorithm"));
         System.out.println();
         System.out.println(rb.getString
-                ("[-crl[:auto| <file>]        include CRL in signed jar"));
+                (".crl.auto.file.include.CRL.in.signed.jar"));
         System.out.println();
         System.out.println(rb.getString
-                ("[-verify]                   verify a signed JAR file"));
+                (".verify.verify.a.signed.JAR.file"));
         System.out.println();
         System.out.println(rb.getString
-                ("[-verbose[:suboptions]]     verbose output when signing/verifying."));
+                (".verbose.suboptions.verbose.output.when.signing.verifying."));
         System.out.println(rb.getString
-                ("                            suboptions can be all, grouped or summary"));
+                (".suboptions.can.be.all.grouped.or.summary"));
         System.out.println();
         System.out.println(rb.getString
-                ("[-certs]                    display certificates when verbose and verifying"));
+                (".certs.display.certificates.when.verbose.and.verifying"));
         System.out.println();
         System.out.println(rb.getString
-                ("[-tsa <url>]                location of the Timestamping Authority"));
+                (".tsa.url.location.of.the.Timestamping.Authority"));
         System.out.println();
         System.out.println(rb.getString
-                ("[-tsacert <alias>]          public key certificate for Timestamping Authority"));
+                (".tsacert.alias.public.key.certificate.for.Timestamping.Authority"));
         System.out.println();
         System.out.println(rb.getString
-                ("[-altsigner <class>]        class name of an alternative signing mechanism"));
+                (".altsigner.class.class.name.of.an.alternative.signing.mechanism"));
         System.out.println();
         System.out.println(rb.getString
-                ("[-altsignerpath <pathlist>] location of an alternative signing mechanism"));
+                (".altsignerpath.pathlist.location.of.an.alternative.signing.mechanism"));
         System.out.println();
         System.out.println(rb.getString
-                ("[-internalsf]               include the .SF file inside the signature block"));
+                (".internalsf.include.the.SF.file.inside.the.signature.block"));
         System.out.println();
         System.out.println(rb.getString
-                ("[-sectionsonly]             don't compute hash of entire manifest"));
+                (".sectionsonly.don.t.compute.hash.of.entire.manifest"));
         System.out.println();
         System.out.println(rb.getString
-                ("[-protected]                keystore has protected authentication path"));
+                (".protected.keystore.has.protected.authentication.path"));
         System.out.println();
         System.out.println(rb.getString
-                ("[-providerName <name>]      provider name"));
+                (".providerName.name.provider.name"));
         System.out.println();
         System.out.println(rb.getString
-                ("[-providerClass <class>     name of cryptographic service provider's"));
+                (".providerClass.class.name.of.cryptographic.service.provider.s"));
         System.out.println(rb.getString
-                ("  [-providerArg <arg>]] ... master class file and constructor argument"));
+                (".providerArg.arg.master.class.file.and.constructor.argument"));
         System.out.println();
         System.out.println(rb.getString
-                ("[-strict]                   treat warnings as errors"));
+                (".strict.treat.warnings.as.errors"));
         System.out.println();
 
         System.exit(0);
@@ -644,7 +641,7 @@ public class JarSigner {
                 Enumeration<JarEntry> e = entriesVec.elements();
 
                 long now = System.currentTimeMillis();
-                String tab = rb.getString("      ");
+                String tab = rb.getString("6SPACE");
 
                 while (e.hasMoreElements()) {
                     JarEntry je = e.nextElement();
@@ -672,12 +669,12 @@ public class JarSigner {
                              (man.getAttributes("./"+name) != null) ||
                              (man.getAttributes("/"+name) != null));
                         sb.append(
-                          (isSigned ? rb.getString("s") : rb.getString(" ")) +
-                          (inManifest ? rb.getString("m") : rb.getString(" ")) +
-                          (inStore ? rb.getString("k") : rb.getString(" ")) +
-                          (inScope ? rb.getString("i") : rb.getString(" ")) +
+                          (isSigned ? rb.getString("s") : rb.getString("SPACE")) +
+                          (inManifest ? rb.getString("m") : rb.getString("SPACE")) +
+                          (inStore ? rb.getString("k") : rb.getString("SPACE")) +
+                          (inScope ? rb.getString("i") : rb.getString("SPACE")) +
                           ((inStoreOrScope & NOT_ALIAS) != 0 ?"X":" ") +
-                          rb.getString(" "));
+                          rb.getString("SPACE"));
                         sb.append("|");
                     }
 
@@ -701,7 +698,7 @@ public class JarSigner {
                                         if (crl instanceof X509CRLImpl) {
                                             sb.append(tab).append("[");
                                             sb.append(String.format(
-                                                    rb.getString("with a CRL including %d entries"),
+                                                    rb.getString("with.a.CRL.including.d.entries"),
                                                     ((X509CRLImpl)crl).getRevokedCertificates().size()))
                                                 .append("]\n");
                                         }
@@ -714,10 +711,10 @@ public class JarSigner {
                         // to be consistent with old behavior.
                         if (signatureRelated(name)) {
                             sb.append("\n" + tab + rb.getString(
-                                    "(Signature related entries)") + "\n\n");
+                                    ".Signature.related.entries.") + "\n\n");
                         } else {
                             sb.append("\n" + tab + rb.getString(
-                                    "(Unsigned entries)") + "\n\n");
+                                    ".Unsigned.entries.") + "\n\n");
                         }
                     }
 
@@ -773,7 +770,7 @@ public class JarSigner {
                             if (files.size() > 1) {
                                 System.out.println(files.get(0) + " " +
                                         String.format(rb.getString(
-                                        "(and %d more)"), files.size()-1));
+                                        ".and.d.more."), files.size()-1));
                             } else {
                                 System.out.println(files.get(0));
                             }
@@ -783,89 +780,89 @@ public class JarSigner {
                 }
                 System.out.println();
                 System.out.println(rb.getString(
-                    "  s = signature was verified "));
+                    ".s.signature.was.verified."));
                 System.out.println(rb.getString(
-                    "  m = entry is listed in manifest"));
+                    ".m.entry.is.listed.in.manifest"));
                 System.out.println(rb.getString(
-                    "  k = at least one certificate was found in keystore"));
+                    ".k.at.least.one.certificate.was.found.in.keystore"));
                 System.out.println(rb.getString(
-                    "  i = at least one certificate was found in identity scope"));
+                    ".i.at.least.one.certificate.was.found.in.identity.scope"));
                 if (ckaliases.size() > 0) {
-                    System.out.println((
-                        "  X = not signed by specified alias(es)"));
+                    System.out.println(rb.getString(
+                        ".X.not.signed.by.specified.alias.es."));
                 }
                 System.out.println();
             }
             if (man == null)
-                System.out.println(rb.getString("no manifest."));
+                System.out.println(rb.getString("no.manifest."));
 
             if (!anySigned) {
                 System.out.println(rb.getString(
-                      "jar is unsigned. (signatures missing or not parsable)"));
+                      "jar.is.unsigned.signatures.missing.or.not.parsable."));
             } else {
-                System.out.println(rb.getString("jar verified."));
+                System.out.println(rb.getString("jar.verified."));
                 if (hasUnsignedEntry || hasExpiredCert || hasExpiringCert ||
                     badKeyUsage || badExtendedKeyUsage || badNetscapeCertType ||
                     notYetValidCert || chainNotValidated ||
                     aliasNotInStore || notSignedByAlias) {
 
                     System.out.println();
-                    System.out.println(rb.getString("Warning: "));
+                    System.out.println(rb.getString("Warning."));
                     if (badKeyUsage) {
                         System.out.println(
-                            rb.getString("This jar contains entries whose signer certificate's KeyUsage extension doesn't allow code signing."));
+                            rb.getString("This.jar.contains.entries.whose.signer.certificate.s.KeyUsage.extension.doesn.t.allow.code.signing."));
                     }
 
                     if (badExtendedKeyUsage) {
                         System.out.println(
-                            rb.getString("This jar contains entries whose signer certificate's ExtendedKeyUsage extension doesn't allow code signing."));
+                            rb.getString("This.jar.contains.entries.whose.signer.certificate.s.ExtendedKeyUsage.extension.doesn.t.allow.code.signing."));
                     }
 
                     if (badNetscapeCertType) {
                         System.out.println(
-                            rb.getString("This jar contains entries whose signer certificate's NetscapeCertType extension doesn't allow code signing."));
+                            rb.getString("This.jar.contains.entries.whose.signer.certificate.s.NetscapeCertType.extension.doesn.t.allow.code.signing."));
                     }
 
                     if (hasUnsignedEntry) {
                         System.out.println(rb.getString(
-                            "This jar contains unsigned entries which have not been integrity-checked. "));
+                            "This.jar.contains.unsigned.entries.which.have.not.been.integrity.checked."));
                     }
                     if (hasExpiredCert) {
                         System.out.println(rb.getString(
-                            "This jar contains entries whose signer certificate has expired. "));
+                            "This.jar.contains.entries.whose.signer.certificate.has.expired."));
                     }
                     if (hasExpiringCert) {
                         System.out.println(rb.getString(
-                            "This jar contains entries whose signer certificate will expire within six months. "));
+                            "This.jar.contains.entries.whose.signer.certificate.will.expire.within.six.months."));
                     }
                     if (notYetValidCert) {
                         System.out.println(rb.getString(
-                            "This jar contains entries whose signer certificate is not yet valid. "));
+                            "This.jar.contains.entries.whose.signer.certificate.is.not.yet.valid."));
                     }
 
                     if (chainNotValidated) {
                         System.out.println(
-                                rb.getString("This jar contains entries whose certificate chain is not validated."));
+                                rb.getString("This.jar.contains.entries.whose.certificate.chain.is.not.validated."));
                     }
 
                     if (notSignedByAlias) {
                         System.out.println(
-                                rb.getString("This jar contains signed entries which is not signed by the specified alias(es)."));
+                                rb.getString("This.jar.contains.signed.entries.which.is.not.signed.by.the.specified.alias.es."));
                     }
 
                     if (aliasNotInStore) {
-                        System.out.println(rb.getString("This jar contains signed entries that's not signed by alias in this keystore."));
+                        System.out.println(rb.getString("This.jar.contains.signed.entries.that.s.not.signed.by.alias.in.this.keystore."));
                     }
                     if (! (verbose != null && showcerts)) {
                         System.out.println();
                         System.out.println(rb.getString(
-                            "Re-run with the -verbose and -certs options for more details."));
+                            "Re.run.with.the.verbose.and.certs.options.for.more.details."));
                     }
                 }
             }
             return;
         } catch (Exception e) {
-            System.out.println(rb.getString("jarsigner: ") + e);
+            System.out.println(rb.getString("jarsigner.") + e);
             if (debug) {
                 e.printStackTrace();
             }
@@ -895,13 +892,13 @@ public class JarSigner {
         long now) {
 
         StringBuilder certStr = new StringBuilder();
-        String space = rb.getString(" ");
+        String space = rb.getString("SPACE");
         X509Certificate x509Cert = null;
 
         if (c instanceof X509Certificate) {
             x509Cert = (X509Certificate) c;
             certStr.append(tab).append(x509Cert.getType())
-                .append(rb.getString(", "))
+                .append(rb.getString("COMMA"))
                 .append(x509Cert.getSubjectDN().getName());
         } else {
             certStr.append(tab).append(c.getType());
@@ -927,7 +924,7 @@ public class JarSigner {
 
                     if (expiringTimeForm == null) {
                         expiringTimeForm = new MessageFormat(
-                            rb.getString("certificate will expire on"));
+                            rb.getString("certificate.will.expire.on"));
                     }
                     Object[] source = { notAfter };
                     certStr.append(expiringTimeForm.format(source));
@@ -935,7 +932,7 @@ public class JarSigner {
                 } else {
                     if (validityTimeForm == null) {
                         validityTimeForm = new MessageFormat(
-                            rb.getString("certificate is valid from"));
+                            rb.getString("certificate.is.valid.from"));
                     }
                     Object[] source = { x509Cert.getNotBefore(), notAfter };
                     certStr.append(validityTimeForm.format(source));
@@ -945,7 +942,7 @@ public class JarSigner {
 
                 if (expiredTimeForm == null) {
                     expiredTimeForm = new MessageFormat(
-                        rb.getString("certificate expired on"));
+                        rb.getString("certificate.expired.on"));
                 }
                 Object[] source = { notAfter };
                 certStr.append(expiredTimeForm.format(source));
@@ -955,7 +952,7 @@ public class JarSigner {
 
                 if (notYetTimeForm == null) {
                     notYetTimeForm = new MessageFormat(
-                        rb.getString("certificate is not valid until"));
+                        rb.getString("certificate.is.not.valid.until"));
                 }
                 Object[] source = { x509Cert.getNotBefore() };
                 certStr.append(notYetTimeForm.format(source));
@@ -979,7 +976,7 @@ public class JarSigner {
                 }
                 certStr.append("\n").append(tab)
                         .append(MessageFormat.format(rb.getString(
-                        "[{0} extension does not support code signing]"), x));
+                        ".{0}.extension.does.not.support.code.signing."), x));
             }
         }
         return certStr.toString();
@@ -991,7 +988,7 @@ public class JarSigner {
 
         if (signTimeForm == null) {
             signTimeForm =
-                new MessageFormat(rb.getString("entry was signed on"));
+                new MessageFormat(rb.getString("entry.was.signed.on"));
         }
         Object[] source = { timestamp.getTimestamp() };
 
@@ -1093,7 +1090,7 @@ public class JarSigner {
                 } else {
                  throw new
                    RuntimeException(rb.getString
-                        ("signature filename must consist of the following characters: A-Z, 0-9, _ or -"));
+                        ("signature.filename.must.consist.of.the.following.characters.A.Z.0.9.or."));
                 }
             }
             tmpSigFile.append(c);
@@ -1112,14 +1109,14 @@ public class JarSigner {
         try {
             zipFile = new ZipFile(jarName);
         } catch (IOException ioe) {
-            error(rb.getString("unable to open jar file: ")+jarName, ioe);
+            error(rb.getString("unable.to.open.jar.file.")+jarName, ioe);
         }
 
         FileOutputStream fos = null;
         try {
             fos = new FileOutputStream(signedJarFile);
         } catch (IOException ioe) {
-            error(rb.getString("unable to create: ")+tmpJarName, ioe);
+            error(rb.getString("unable.to.create.")+tmpJarName, ioe);
         }
 
         PrintStream ps = new PrintStream(fos);
@@ -1263,10 +1260,10 @@ public class JarSigner {
             }
             if (verbose != null) {
                 if (mfCreated) {
-                    System.out.println(rb.getString("   adding: ") +
+                    System.out.println(rb.getString(".adding.") +
                                         mfFile.getName());
                 } else if (mfModified) {
-                    System.out.println(rb.getString(" updating: ") +
+                    System.out.println(rb.getString(".updating.") +
                                         mfFile.getName());
                 }
             }
@@ -1291,10 +1288,10 @@ public class JarSigner {
                         zipFile);
             } catch (SocketTimeoutException e) {
                 // Provide a helpful message when TSA is beyond a firewall
-                error(rb.getString("unable to sign jar: ") +
-                rb.getString("no response from the Timestamping Authority. ") +
-                rb.getString("When connecting from behind a firewall then an HTTP proxy may need to be specified. ") +
-                rb.getString("Supply the following options to jarsigner: ") +
+                error(rb.getString("unable.to.sign.jar.") +
+                rb.getString("no.response.from.the.Timestamping.Authority.") +
+                rb.getString("When.connecting.from.behind.a.firewall.then.an.HTTP.proxy.may.need.to.be.specified.") +
+                rb.getString("Supply.the.following.options.to.jarsigner.") +
                 "\n  -J-Dhttp.proxyHost=<hostname> " +
                 "\n  -J-Dhttp.proxyPort=<portnumber> ", e);
             }
@@ -1314,10 +1311,10 @@ public class JarSigner {
             sf.write(zos);
             if (verbose != null) {
                 if (zipFile.getEntry(sfFilename) != null) {
-                    System.out.println(rb.getString(" updating: ") +
+                    System.out.println(rb.getString(".updating.") +
                                 sfFilename);
                 } else {
-                    System.out.println(rb.getString("   adding: ") +
+                    System.out.println(rb.getString(".adding.") +
                                 sfFilename);
                 }
             }
@@ -1325,24 +1322,24 @@ public class JarSigner {
             if (verbose != null) {
                 if (tsaUrl != null || tsaCert != null) {
                     System.out.println(
-                        rb.getString("requesting a signature timestamp"));
+                        rb.getString("requesting.a.signature.timestamp"));
                 }
                 if (tsaUrl != null) {
-                    System.out.println(rb.getString("TSA location: ") + tsaUrl);
+                    System.out.println(rb.getString("TSA.location.") + tsaUrl);
                 }
                 if (tsaCert != null) {
                     String certUrl =
                         TimestampedSigner.getTimestampingUrl(tsaCert);
                     if (certUrl != null) {
-                        System.out.println(rb.getString("TSA location: ") +
+                        System.out.println(rb.getString("TSA.location.") +
                             certUrl);
                     }
-                    System.out.println(rb.getString("TSA certificate: ") +
+                    System.out.println(rb.getString("TSA.certificate.") +
                         printCert("", tsaCert, false, 0));
                 }
                 if (signingMechanism != null) {
                     System.out.println(
-                        rb.getString("using an alternative signing mechanism"));
+                        rb.getString("using.an.alternative.signing.mechanism"));
                 }
             }
 
@@ -1351,10 +1348,10 @@ public class JarSigner {
             block.write(zos);
             if (verbose != null) {
                 if (zipFile.getEntry(bkFilename) != null) {
-                    System.out.println(rb.getString(" updating: ") +
+                    System.out.println(rb.getString(".updating.") +
                         bkFilename);
                 } else {
-                    System.out.println(rb.getString("   adding: ") +
+                    System.out.println(rb.getString(".adding.") +
                         bkFilename);
                 }
             }
@@ -1378,17 +1375,17 @@ public class JarSigner {
                 if (!ze.getName().startsWith(META_INF)) {
                     if (verbose != null) {
                         if (manifest.getAttributes(ze.getName()) != null)
-                          System.out.println(rb.getString("  signing: ") +
+                          System.out.println(rb.getString(".signing.") +
                                 ze.getName());
                         else
-                          System.out.println(rb.getString("   adding: ") +
+                          System.out.println(rb.getString(".adding.") +
                                 ze.getName());
                     }
                     writeEntry(zipFile, zos, ze);
                 }
             }
         } catch(IOException ioe) {
-            error(rb.getString("unable to sign jar: ")+ioe, ioe);
+            error(rb.getString("unable.to.sign.jar.")+ioe, ioe);
         } finally {
             // close the resouces
             if (zipFile != null) {
@@ -1416,13 +1413,13 @@ public class JarSigner {
                             origJar.delete();
                         } else {
                             MessageFormat form = new MessageFormat(rb.getString
-                        ("attempt to rename signedJarFile to jarFile failed"));
+                        ("attempt.to.rename.signedJarFile.to.jarFile.failed"));
                             Object[] source = {signedJarFile, jarFile};
                             error(form.format(source));
                         }
                     } else {
                         MessageFormat form = new MessageFormat(rb.getString
-                            ("attempt to rename jarFile to origJar failed"));
+                            ("attempt.to.rename.jarFile.to.origJar.failed"));
                         Object[] source = {jarFile, origJar};
                         error(form.format(source));
                     }
@@ -1434,43 +1431,43 @@ public class JarSigner {
                     || badNetscapeCertType || chainNotValidated) {
                 System.out.println();
 
-                System.out.println(rb.getString("Warning: "));
+                System.out.println(rb.getString("Warning."));
                 if (badKeyUsage) {
                     System.out.println(
-                        rb.getString("The signer certificate's KeyUsage extension doesn't allow code signing."));
+                        rb.getString("The.signer.certificate.s.KeyUsage.extension.doesn.t.allow.code.signing."));
                 }
 
                 if (badExtendedKeyUsage) {
                     System.out.println(
-                        rb.getString("The signer certificate's ExtendedKeyUsage extension doesn't allow code signing."));
+                        rb.getString("The.signer.certificate.s.ExtendedKeyUsage.extension.doesn.t.allow.code.signing."));
                 }
 
                 if (badNetscapeCertType) {
                     System.out.println(
-                        rb.getString("The signer certificate's NetscapeCertType extension doesn't allow code signing."));
+                        rb.getString("The.signer.certificate.s.NetscapeCertType.extension.doesn.t.allow.code.signing."));
                 }
 
                 if (hasExpiredCert) {
                     System.out.println(
-                        rb.getString("The signer certificate has expired."));
+                        rb.getString("The.signer.certificate.has.expired."));
                 } else if (hasExpiringCert) {
                     System.out.println(
-                        rb.getString("The signer certificate will expire within six months."));
+                        rb.getString("The.signer.certificate.will.expire.within.six.months."));
                 } else if (notYetValidCert) {
                     System.out.println(
-                        rb.getString("The signer certificate is not yet valid."));
+                        rb.getString("The.signer.certificate.is.not.yet.valid."));
                 }
 
                 if (chainNotValidated) {
                     System.out.println(
-                            rb.getString("The signer's certificate chain is not validated."));
+                            rb.getString("The.signer.s.certificate.chain.is.not.validated."));
                 }
             }
 
         // no IOException thrown in the above try clause, so disable
         // the catch clause.
         // } catch(IOException ioe) {
-        //     error(rb.getString("unable to sign jar: ")+ioe, ioe);
+        //     error(rb.getString("unable.to.sign.jar.")+ioe, ioe);
         // }
     }
 
@@ -1557,7 +1554,7 @@ public class JarSigner {
             validator.validate(cp, pkixParameters);
         } catch (Exception e) {
             chainNotValidated = true;
-            s.append(tab + rb.getString("[CertPath not validated: ") +
+            s.append(tab + rb.getString(".CertPath.not.validated.") +
                     e.getLocalizedMessage() + "]\n");   // TODO
         }
         String result = s.toString();
@@ -1624,10 +1621,10 @@ public class JarSigner {
             if (token && storepass == null && !protectedPath
                     && !KeyStoreUtil.isWindowsKeyStore(storetype)) {
                 storepass = getPass
-                        (rb.getString("Enter Passphrase for keystore: "));
+                        (rb.getString("Enter.Passphrase.for.keystore."));
             } else if (!token && storepass == null && prompt) {
                 storepass = getPass
-                        (rb.getString("Enter Passphrase for keystore: "));
+                        (rb.getString("Enter.Passphrase.for.keystore."));
             }
 
             if (nullStream) {
@@ -1694,20 +1691,20 @@ public class JarSigner {
                 // Only if tas is empty
             }
         } catch (IOException ioe) {
-            throw new RuntimeException(rb.getString("keystore load: ") +
+            throw new RuntimeException(rb.getString("keystore.load.") +
                                         ioe.getMessage());
         } catch (java.security.cert.CertificateException ce) {
-            throw new RuntimeException(rb.getString("certificate exception: ") +
+            throw new RuntimeException(rb.getString("certificate.exception.") +
                                         ce.getMessage());
         } catch (NoSuchProviderException pe) {
-            throw new RuntimeException(rb.getString("keystore load: ") +
+            throw new RuntimeException(rb.getString("keystore.load.") +
                                         pe.getMessage());
         } catch (NoSuchAlgorithmException nsae) {
-            throw new RuntimeException(rb.getString("keystore load: ") +
+            throw new RuntimeException(rb.getString("keystore.load.") +
                                         nsae.getMessage());
         } catch (KeyStoreException kse) {
             throw new RuntimeException
-                (rb.getString("unable to instantiate keystore class: ") +
+                (rb.getString("unable.to.instantiate.keystore.class.") +
                 kse.getMessage());
         }
     }
@@ -1723,7 +1720,7 @@ public class JarSigner {
         }
         if (cs == null || (!(cs instanceof X509Certificate))) {
             MessageFormat form = new MessageFormat(rb.getString
-                ("Certificate not found for: alias.  alias must reference a valid KeyStore entry containing an X.509 public key certificate for the Timestamping Authority."));
+                ("Certificate.not.found.for.alias.alias.must.reference.a.valid.KeyStore.entry.containing.an.X.509.public.key.certificate.for.the"));
             Object[] source = {alias, alias};
             error(form.format(source));
         }
@@ -1816,9 +1813,9 @@ public class JarSigner {
                             generateCertificates(new FileInputStream(altCertChain)).
                             toArray(new Certificate[0]);
                 } catch (CertificateException ex) {
-                    error(rb.getString("Cannot restore certchain from file specified"));
+                    error(rb.getString("Cannot.restore.certchain.from.file.specified"));
                 } catch (FileNotFoundException ex) {
-                    error(rb.getString("File specified by -certchain does not exist"));
+                    error(rb.getString("File.specified.by.certchain.does.not.exist"));
                 }
             } else {
                 try {
@@ -1830,12 +1827,10 @@ public class JarSigner {
             if (cs == null || cs.length == 0) {
                 if (altCertChain != null) {
                     error(rb.getString
-                            ("Certificate chain not found in the file specified."));
+                            ("Certificate.chain.not.found.in.the.file.specified."));
                 } else {
                     MessageFormat form = new MessageFormat(rb.getString
-                        ("Certificate chain not found for: alias.  alias must" +
-                        " reference a valid KeyStore key entry containing a" +
-                        " private key and corresponding public key certificate chain."));
+                        ("Certificate.chain.not.found.for.alias.alias.must.reference.a.valid.KeyStore.key.entry.containing.a.private.key.and"));
                     Object[] source = {alias, alias};
                     error(form.format(source));
                 }
@@ -1845,7 +1840,7 @@ public class JarSigner {
             for (int i=0; i<cs.length; i++) {
                 if (!(cs[i] instanceof X509Certificate)) {
                     error(rb.getString
-                        ("found non-X.509 certificate in signer's chain"));
+                        ("found.non.X.509.certificate.in.signer.s.chain"));
                 }
                 certChain[i] = (X509Certificate)cs[i];
             }
@@ -1872,7 +1867,7 @@ public class JarSigner {
                 } else if (keypass == null) {
                     // Did not work out, so prompt user for key password
                     MessageFormat form = new MessageFormat(rb.getString
-                        ("Enter key password for alias: "));
+                        ("Enter.key.password.for.alias."));
                     Object[] source = {alias};
                     keypass = getPass(form.format(source));
                     key = store.getKey(alias, keypass);
@@ -1881,14 +1876,14 @@ public class JarSigner {
         } catch (NoSuchAlgorithmException e) {
             error(e.getMessage());
         } catch (UnrecoverableKeyException e) {
-            error(rb.getString("unable to recover key from keystore"));
+            error(rb.getString("unable.to.recover.key.from.keystore"));
         } catch (KeyStoreException kse) {
             // this never happens, because keystore has been loaded
         }
 
         if (!(key instanceof PrivateKey)) {
             MessageFormat form = new MessageFormat(rb.getString
-                ("key associated with alias not a private key"));
+                ("key.associated.with.alias.not.a.private.key"));
             Object[] source = {alias};
             error(form.format(source));
         } else {
@@ -1898,14 +1893,14 @@ public class JarSigner {
 
     void error(String message)
     {
-        System.out.println(rb.getString("jarsigner: ")+message);
+        System.out.println(rb.getString("jarsigner.")+message);
         System.exit(1);
     }
 
 
     void error(String message, Exception e)
     {
-        System.out.println(rb.getString("jarsigner: ")+message);
+        System.out.println(rb.getString("jarsigner.")+message);
         if (debug) {
             e.printStackTrace();
         }
@@ -1920,12 +1915,12 @@ public class JarSigner {
             char[] pass = Password.readPassword(System.in);
 
             if (pass == null) {
-                error(rb.getString("you must enter key password"));
+                error(rb.getString("you.must.enter.key.password"));
             } else {
                 return pass;
             }
         } catch (IOException ioe) {
-            error(rb.getString("unable to read password: ")+ioe.getMessage());
+            error(rb.getString("unable.to.read.password.")+ioe.getMessage());
         }
         // this shouldn't happen
         return null;
@@ -2113,7 +2108,7 @@ public class JarSigner {
         Object signer = signerClass.newInstance();
         if (!(signer instanceof ContentSigner)) {
             MessageFormat form = new MessageFormat(
-                rb.getString("signerClass is not a signing mechanism"));
+                rb.getString("signerClass.is.not.a.signing.mechanism"));
             Object[] source = {signerClass.getName()};
             throw new IllegalArgumentException(form.format(source));
         }

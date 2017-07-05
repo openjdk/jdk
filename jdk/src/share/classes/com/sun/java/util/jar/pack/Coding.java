@@ -25,8 +25,10 @@
 
 package com.sun.java.util.jar.pack;
 
-import java.io.*;
-import java.util.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.HashMap;
 
 /**
  * Define the conversions between sequences of small integers and raw bytes.
