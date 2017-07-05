@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -418,25 +418,17 @@ HeapWord* ParallelScavengeHeap::mem_allocate(
       gc_count = Universe::heap()->total_collections();
 
       result = young_gen()->allocate(size);
-
-      // (1) If the requested object is too large to easily fit in the
-      //     young_gen, or
-      // (2) If GC is locked out via GCLocker, young gen is full and
-      //     the need for a GC already signalled to GCLocker (done
-      //     at a safepoint),
-      // ... then, rather than force a safepoint and (a potentially futile)
-      // collection (attempt) for each allocation, try allocation directly
-      // in old_gen. For case (2) above, we may in the future allow
-      // TLAB allocation directly in the old gen.
       if (result != NULL) {
         return result;
       }
-      if (size >= (young_gen()->eden_space()->capacity_in_words(Thread::current()) / 2)) {
-        result = old_gen()->allocate(size);
-        if (result != NULL) {
-          return result;
-        }
+
+      // If certain conditions hold, try allocating from the old gen.
+      result = mem_allocate_old_gen(size);
+      if (result != NULL) {
+        return result;
       }
+
+      // Failed to allocate without a gc.
       if (GC_locker::is_active_and_needs_gc()) {
         // If this thread is not in a jni critical section, we stall
         // the requestor until the critical section has cleared and
@@ -460,7 +452,6 @@ HeapWord* ParallelScavengeHeap::mem_allocate(
     }
 
     if (result == NULL) {
-
       // Generate a VM operation
       VM_ParallelGCFailedAllocation op(size, gc_count);
       VMThread::execute(&op);
@@ -523,6 +514,42 @@ HeapWord* ParallelScavengeHeap::mem_allocate(
   return result;
 }
 
+// A "death march" is a series of ultra-slow allocations in which a full gc is
+// done before each allocation, and after the full gc the allocation still
+// cannot be satisfied from the young gen.  This routine detects that condition;
+// it should be called after a full gc has been done and the allocation
+// attempted from the young gen. The parameter 'addr' should be the result of
+// that young gen allocation attempt.
+void
+ParallelScavengeHeap::death_march_check(HeapWord* const addr, size_t size) {
+  if (addr != NULL) {
+    _death_march_count = 0;  // death march has ended
+  } else if (_death_march_count == 0) {
+    if (should_alloc_in_eden(size)) {
+      _death_march_count = 1;    // death march has started
+    }
+  }
+}
+
+HeapWord* ParallelScavengeHeap::mem_allocate_old_gen(size_t size) {
+  if (!should_alloc_in_eden(size) || GC_locker::is_active_and_needs_gc()) {
+    // Size is too big for eden, or gc is locked out.
+    return old_gen()->allocate(size);
+  }
+
+  // If a "death march" is in progress, allocate from the old gen a limited
+  // number of times before doing a GC.
+  if (_death_march_count > 0) {
+    if (_death_march_count < 64) {
+      ++_death_march_count;
+      return old_gen()->allocate(size);
+    } else {
+      _death_march_count = 0;
+    }
+  }
+  return NULL;
+}
+
 // Failed allocation policy. Must be called from the VM thread, and
 // only at a safepoint! Note that this method has policy for allocation
 // flow, and NOT collection policy. So we do not check for gc collection
@@ -535,26 +562,21 @@ HeapWord* ParallelScavengeHeap::failed_mem_allocate(size_t size) {
   assert(!Universe::heap()->is_gc_active(), "not reentrant");
   assert(!Heap_lock->owned_by_self(), "this thread should not own the Heap_lock");
 
-  size_t mark_sweep_invocation_count = total_invocations();
-
-  // We assume (and assert!) that an allocation at this point will fail
-  // unless we collect.
+  // We assume that allocation in eden will fail unless we collect.
 
   // First level allocation failure, scavenge and allocate in young gen.
   GCCauseSetter gccs(this, GCCause::_allocation_failure);
-  PSScavenge::invoke();
+  const bool invoked_full_gc = PSScavenge::invoke();
   HeapWord* result = young_gen()->allocate(size);
 
   // Second level allocation failure.
   //   Mark sweep and allocate in young generation.
-  if (result == NULL) {
-    // There is some chance the scavenge method decided to invoke mark_sweep.
-    // Don't mark sweep twice if so.
-    if (mark_sweep_invocation_count == total_invocations()) {
-      invoke_full_gc(false);
-      result = young_gen()->allocate(size);
-    }
+  if (result == NULL && !invoked_full_gc) {
+    invoke_full_gc(false);
+    result = young_gen()->allocate(size);
   }
+
+  death_march_check(result, size);
 
   // Third level allocation failure.
   //   After mark sweep and young generation allocation failure,

@@ -160,11 +160,11 @@ class LinearScan : public CompilationResourceObj {
   // TODO: cached scope values for registers could be static
   ScopeValueArray           _scope_value_cache;
 
-  static ConstantOopWriteValue _oop_null_scope_value;
-  static ConstantIntValue    _int_m1_scope_value;
-  static ConstantIntValue    _int_0_scope_value;
-  static ConstantIntValue    _int_1_scope_value;
-  static ConstantIntValue    _int_2_scope_value;
+  static ConstantOopWriteValue* _oop_null_scope_value;
+  static ConstantIntValue*    _int_m1_scope_value;
+  static ConstantIntValue*    _int_0_scope_value;
+  static ConstantIntValue*    _int_1_scope_value;
+  static ConstantIntValue*    _int_2_scope_value;
 
   // accessors
   IR*           ir() const                       { return _ir; }

@@ -25,7 +25,9 @@
 #include "precompiled.hpp"
 #include "prims/jvm.h"
 #include "runtime/mutexLocker.hpp"
+#include "runtime/os.hpp"
 #include "utilities/decoder.hpp"
+#include "utilities/vmError.hpp"
 
 #if defined(_WINDOWS)
   #include "decoder_windows.hpp"
@@ -35,74 +37,94 @@
   #include "decoder_elf.hpp"
 #endif
 
-NullDecoder*  Decoder::_decoder = NULL;
-NullDecoder   Decoder::_do_nothing_decoder;
-Mutex*           Decoder::_decoder_lock = new Mutex(Mutex::safepoint,
-                                "DecoderLock");
+AbstractDecoder*  Decoder::_shared_decoder = NULL;
+AbstractDecoder*  Decoder::_error_handler_decoder = NULL;
+NullDecoder       Decoder::_do_nothing_decoder;
+Mutex*            Decoder::_shared_decoder_lock = new Mutex(Mutex::native,
+                                "SharedDecoderLock");
 
-// _decoder_lock should already acquired before enter this method
-NullDecoder* Decoder::get_decoder() {
-  assert(_decoder_lock != NULL && _decoder_lock->owned_by_self(),
+AbstractDecoder* Decoder::get_shared_instance() {
+  assert(_shared_decoder_lock != NULL && _shared_decoder_lock->owned_by_self(),
     "Require DecoderLock to enter");
 
-  if (_decoder != NULL) {
-    return _decoder;
+  if (_shared_decoder == NULL) {
+    _shared_decoder = create_decoder();
   }
+  return _shared_decoder;
+}
 
-  // Decoder is a secondary service. Although, it is good to have,
-  // but we can live without it.
+AbstractDecoder* Decoder::get_error_handler_instance() {
+  if (_error_handler_decoder == NULL) {
+    _error_handler_decoder = create_decoder();
+  }
+  return _error_handler_decoder;
+}
+
+
+AbstractDecoder* Decoder::create_decoder() {
+  AbstractDecoder* decoder;
 #if defined(_WINDOWS)
-  _decoder = new (std::nothrow) WindowsDecoder();
+  decoder = new (std::nothrow) WindowsDecoder();
 #elif defined (__APPLE__)
-    _decoder = new (std::nothrow)MachODecoder();
+  decoder = new (std::nothrow)MachODecoder();
 #else
-    _decoder = new (std::nothrow)ElfDecoder();
+  decoder = new (std::nothrow)ElfDecoder();
 #endif
 
-  if (_decoder == NULL || _decoder->has_error()) {
-    if (_decoder != NULL) {
-      delete _decoder;
+  if (decoder == NULL || decoder->has_error()) {
+    if (decoder != NULL) {
+      delete decoder;
     }
-    _decoder = &_do_nothing_decoder;
+    decoder = &_do_nothing_decoder;
   }
-  return _decoder;
+  return decoder;
 }
 
 bool Decoder::decode(address addr, char* buf, int buflen, int* offset, const char* modulepath) {
-  assert(_decoder_lock != NULL, "Just check");
-  MutexLockerEx locker(_decoder_lock, true);
-  NullDecoder* decoder = get_decoder();
+  assert(_shared_decoder_lock != NULL, "Just check");
+  bool error_handling_thread = os::current_thread_id() == VMError::first_error_tid;
+  MutexLockerEx locker(error_handling_thread ? NULL : _shared_decoder_lock, true);
+  AbstractDecoder* decoder = error_handling_thread ?
+    get_error_handler_instance(): get_shared_instance();
   assert(decoder != NULL, "null decoder");
 
   return decoder->decode(addr, buf, buflen, offset, modulepath);
 }
 
 bool Decoder::demangle(const char* symbol, char* buf, int buflen) {
-  assert(_decoder_lock != NULL, "Just check");
-  MutexLockerEx locker(_decoder_lock, true);
-  NullDecoder* decoder = get_decoder();
+  assert(_shared_decoder_lock != NULL, "Just check");
+  bool error_handling_thread = os::current_thread_id() == VMError::first_error_tid;
+  MutexLockerEx locker(error_handling_thread ? NULL : _shared_decoder_lock, true);
+  AbstractDecoder* decoder = error_handling_thread ?
+    get_error_handler_instance(): get_shared_instance();
   assert(decoder != NULL, "null decoder");
   return decoder->demangle(symbol, buf, buflen);
 }
 
 bool Decoder::can_decode_C_frame_in_vm() {
-  assert(_decoder_lock != NULL, "Just check");
-  MutexLockerEx locker(_decoder_lock, true);
-  NullDecoder* decoder = get_decoder();
+  assert(_shared_decoder_lock != NULL, "Just check");
+  bool error_handling_thread = os::current_thread_id() == VMError::first_error_tid;
+  MutexLockerEx locker(error_handling_thread ? NULL : _shared_decoder_lock, true);
+  AbstractDecoder* decoder = error_handling_thread ?
+    get_error_handler_instance(): get_shared_instance();
   assert(decoder != NULL, "null decoder");
   return decoder->can_decode_C_frame_in_vm();
 }
 
-// shutdown real decoder and replace it with
-// _do_nothing_decoder
+/*
+ * Shutdown shared decoder and replace it with
+ * _do_nothing_decoder. Do nothing with error handler
+ * instance, since the JVM is going down.
+ */
 void Decoder::shutdown() {
-  assert(_decoder_lock != NULL, "Just check");
-  MutexLockerEx locker(_decoder_lock, true);
+  assert(_shared_decoder_lock != NULL, "Just check");
+  MutexLockerEx locker(_shared_decoder_lock, true);
 
-  if (_decoder != NULL && _decoder != &_do_nothing_decoder) {
-    delete _decoder;
+  if (_shared_decoder != NULL &&
+    _shared_decoder != &_do_nothing_decoder) {
+    delete _shared_decoder;
   }
 
-  _decoder = &_do_nothing_decoder;
+  _shared_decoder = &_do_nothing_decoder;
 }
 

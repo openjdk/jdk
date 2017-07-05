@@ -424,8 +424,8 @@ class Universe: AllStatic {
   static void print_heap_at_SIGBREAK();
   static void print_heap_before_gc() { print_heap_before_gc(gclog_or_tty); }
   static void print_heap_after_gc()  { print_heap_after_gc(gclog_or_tty); }
-  static void print_heap_before_gc(outputStream* st);
-  static void print_heap_after_gc(outputStream* st);
+  static void print_heap_before_gc(outputStream* st, bool ignore_extended = false);
+  static void print_heap_after_gc(outputStream* st, bool ignore_extended = false);
 
   // Change the number of dummy objects kept reachable by the full gc dummy
   // array; this should trigger relocation in a sliding compaction collector.
