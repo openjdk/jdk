@@ -26,7 +26,7 @@
  * @bug 8026844
  * @summary Test decrementExact
  * @compile DecExactITest.java Verify.java
- * @run main DecExactITest -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseMathExactIntrinsics
+ * @run main DecExactITest
  *
  */
 

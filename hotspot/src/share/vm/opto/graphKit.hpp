@@ -406,7 +406,7 @@ class GraphKit : public Phase {
   // Use the type profile to narrow an object type.
   Node* maybe_cast_profiled_receiver(Node* not_null_obj,
                                      ciKlass* require_klass,
-                                    ciKlass* spec,
+                                     ciKlass* spec,
                                      bool safe_for_replace);
 
   // Cast obj to type and emit guard unless we had too many traps here already
@@ -510,36 +510,50 @@ class GraphKit : public Phase {
 
   // Create a LoadNode, reading from the parser's memory state.
   // (Note:  require_atomic_access is useful only with T_LONG.)
+  //
+  // We choose the unordered semantics by default because we have
+  // adapted the `do_put_xxx' and `do_get_xxx' procedures for the case
+  // of volatile fields.
   Node* make_load(Node* ctl, Node* adr, const Type* t, BasicType bt,
-                  bool require_atomic_access = false) {
+                  MemNode::MemOrd mo, bool require_atomic_access = false) {
     // This version computes alias_index from bottom_type
     return make_load(ctl, adr, t, bt, adr->bottom_type()->is_ptr(),
-                     require_atomic_access);
+                     mo, require_atomic_access);
   }
-  Node* make_load(Node* ctl, Node* adr, const Type* t, BasicType bt, const TypePtr* adr_type, bool require_atomic_access = false) {
+  Node* make_load(Node* ctl, Node* adr, const Type* t, BasicType bt, const TypePtr* adr_type,
+                  MemNode::MemOrd mo, bool require_atomic_access = false) {
     // This version computes alias_index from an address type
     assert(adr_type != NULL, "use other make_load factory");
     return make_load(ctl, adr, t, bt, C->get_alias_index(adr_type),
-                     require_atomic_access);
+                     mo, require_atomic_access);
   }
   // This is the base version which is given an alias index.
-  Node* make_load(Node* ctl, Node* adr, const Type* t, BasicType bt, int adr_idx, bool require_atomic_access = false);
+  Node* make_load(Node* ctl, Node* adr, const Type* t, BasicType bt, int adr_idx,
+                  MemNode::MemOrd mo, bool require_atomic_access = false);
 
   // Create & transform a StoreNode and store the effect into the
   // parser's memory state.
+  //
+  // We must ensure that stores of object references will be visible
+  // only after the object's initialization. So the clients of this
+  // procedure must indicate that the store requires `release'
+  // semantics, if the stored value is an object reference that might
+  // point to a new object and may become externally visible.
   Node* store_to_memory(Node* ctl, Node* adr, Node* val, BasicType bt,
                         const TypePtr* adr_type,
+                        MemNode::MemOrd mo,
                         bool require_atomic_access = false) {
     // This version computes alias_index from an address type
     assert(adr_type != NULL, "use other store_to_memory factory");
     return store_to_memory(ctl, adr, val, bt,
                            C->get_alias_index(adr_type),
-                           require_atomic_access);
+                           mo, require_atomic_access);
   }
   // This is the base version which is given alias index
   // Return the new StoreXNode
   Node* store_to_memory(Node* ctl, Node* adr, Node* val, BasicType bt,
                         int adr_idx,
+                        MemNode::MemOrd,
                         bool require_atomic_access = false);
 
 
@@ -557,40 +571,44 @@ class GraphKit : public Phase {
 
   Node* store_oop(Node* ctl,
                   Node* obj,   // containing obj
-                  Node* adr,  // actual adress to store val at
+                  Node* adr,   // actual adress to store val at
                   const TypePtr* adr_type,
                   Node* val,
                   const TypeOopPtr* val_type,
                   BasicType bt,
-                  bool use_precise);
+                  bool use_precise,
+                  MemNode::MemOrd mo);
 
   Node* store_oop_to_object(Node* ctl,
                             Node* obj,   // containing obj
-                            Node* adr,  // actual adress to store val at
+                            Node* adr,   // actual adress to store val at
                             const TypePtr* adr_type,
                             Node* val,
                             const TypeOopPtr* val_type,
-                            BasicType bt) {
-    return store_oop(ctl, obj, adr, adr_type, val, val_type, bt, false);
+                            BasicType bt,
+                            MemNode::MemOrd mo) {
+    return store_oop(ctl, obj, adr, adr_type, val, val_type, bt, false, mo);
   }
 
   Node* store_oop_to_array(Node* ctl,
                            Node* obj,   // containing obj
-                           Node* adr,  // actual adress to store val at
+                           Node* adr,   // actual adress to store val at
                            const TypePtr* adr_type,
                            Node* val,
                            const TypeOopPtr* val_type,
-                           BasicType bt) {
-    return store_oop(ctl, obj, adr, adr_type, val, val_type, bt, true);
+                           BasicType bt,
+                           MemNode::MemOrd mo) {
+    return store_oop(ctl, obj, adr, adr_type, val, val_type, bt, true, mo);
   }
 
   // Could be an array or object we don't know at compile time (unsafe ref.)
   Node* store_oop_to_unknown(Node* ctl,
                              Node* obj,   // containing obj
-                             Node* adr,  // actual adress to store val at
+                             Node* adr,   // actual adress to store val at
                              const TypePtr* adr_type,
                              Node* val,
-                             BasicType bt);
+                             BasicType bt,
+                             MemNode::MemOrd mo);
 
   // For the few case where the barriers need special help
   void pre_barrier(bool do_load, Node* ctl,

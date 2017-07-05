@@ -131,6 +131,7 @@ class VtableStubs : AllStatic {
   static VtableStub* stub_containing(address pc);                    // stub containing pc or NULL
   static int         number_of_vtable_stubs() { return _number_of_vtable_stubs; }
   static void        initialize();
+  static void        vtable_stub_do(void f(VtableStub*));            // iterates over all vtable stubs
 };
 
 #endif // SHARE_VM_CODE_VTABLESTUBS_HPP

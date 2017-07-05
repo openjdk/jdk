@@ -22,10 +22,12 @@
  */
 
 /*
+ * @ignore 8032224
  * @test DefaultUseWithClient
  * @summary Test default behavior of sharing with -client
  * @library /testlibrary
  * @run main DefaultUseWithClient
+ * @bug 8032224
  */
 
 import com.oracle.java.testlibrary.*;
