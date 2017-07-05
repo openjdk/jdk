@@ -839,6 +839,12 @@ public interface MBeanServerConnection {
      *
      * <p>Otherwise, the result is false.</p>
      *
+     * <p>If the MBean implements the {@link DynamicWrapperMBean}
+     * interface, then in the above rules X is the result of the MBean's {@link
+     * DynamicWrapperMBean#getWrappedObject() getWrappedObject()} method and L
+     * is the result of its {@link DynamicWrapperMBean#getWrappedClassLoader()
+     * getWrappedClassLoader()} method.
+     *
      * @param name The <CODE>ObjectName</CODE> of the MBean.
      * @param className The name of the class.
      *

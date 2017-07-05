@@ -38,14 +38,17 @@ have any questions.
       so within the access control context of the
       {@link javax.management.monitor.Monitor#start} caller.</p>
 
-      <p>The value being monitored can be a simple value contained within a
-      complex type. For example, the {@link java.lang.management.MemoryMXBean
-      MemoryMXBean} defined in <tt>java.lang.management</tt> has an attribute
-      <tt>HeapMemoryUsage</tt> of type {@link java.lang.management.MemoryUsage
-      MemoryUsage}. To monitor the amount of <i>used</i> memory, described by
-      the <tt>used</tt> property of <tt>MemoryUsage</tt>, you could monitor
-      "<tt>HeapMemoryUsage.used</tt>". That string would be the argument to
-      {@link javax.management.monitor.MonitorMBean#setObservedAttribute(String)
+      <p id="complex">The value being monitored can be a simple value
+      contained within a complex type. For example, the {@link
+      java.lang.management.MemoryMXBean MemoryMXBean} defined in
+      <tt>java.lang.management</tt> has an attribute
+      <tt>HeapMemoryUsage</tt> of type {@link
+      java.lang.management.MemoryUsage MemoryUsage}. To monitor the
+      amount of <i>used</i> memory, described by the <tt>used</tt>
+      property of <tt>MemoryUsage</tt>, you could monitor
+      "<tt>HeapMemoryUsage.used</tt>". That string would be the
+      argument to {@link
+      javax.management.monitor.MonitorMBean#setObservedAttribute(String)
       setObservedAttribute}.</p>
 
       <p>The rules used to interpret an <tt>ObservedAttribute</tt> like

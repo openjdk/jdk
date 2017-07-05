@@ -71,13 +71,8 @@ bool PSVirtualSpace::contains(void* p) const {
 
 void PSVirtualSpace::release() {
   DEBUG_ONLY(PSVirtualSpaceVerifier this_verifier(this));
-  if (reserved_low_addr() != NULL) {
-    if (special()) {
-      os::release_memory_special(reserved_low_addr(), reserved_size());
-    } else {
-      (void)os::release_memory(reserved_low_addr(), reserved_size());
-    }
-  }
+  // This may not release memory it didn't reserve.
+  // Use rs.release() to release the underlying memory instead.
   _reserved_low_addr = _reserved_high_addr = NULL;
   _committed_low_addr = _committed_high_addr = NULL;
   _special = false;

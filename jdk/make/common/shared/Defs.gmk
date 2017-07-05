@@ -188,16 +188,18 @@ ifndef MILESTONE
 endif
 
 # Default names
-LAUNCHER_NAME = java
-PRODUCT_NAME = Java(TM)
-PRODUCT_SUFFIX = SE Runtime Environment
-COMPANY_NAME = Sun Microsystems, Inc.
-
 ifdef OPENJDK
   LAUNCHER_NAME = openjdk
   PRODUCT_NAME = OpenJDK
   PRODUCT_SUFFIX = Runtime Environment
-  COMPANY_NAME =
+  JDK_RC_PLATFORM_NAME = Platform
+  COMPANY_NAME = N/A
+else
+  LAUNCHER_NAME = java
+  PRODUCT_NAME = Java(TM)
+  PRODUCT_SUFFIX = SE Runtime Environment
+  JDK_RC_PLATFORM_NAME = Platform SE
+  COMPANY_NAME = Sun Microsystems, Inc.
 endif
 
 RUNTIME_NAME = $(PRODUCT_NAME) $(PRODUCT_SUFFIX)

@@ -43,8 +43,6 @@ ifeq ($(PLATFORM), windows)
   #
   JAVALIB = 
   EXTRA_LIBS = 
-  # Files built here do not compile with warning level 3 if warnings are fatal
-  COMPILER_WARNINGS_FATAL=false
 endif
 
 #

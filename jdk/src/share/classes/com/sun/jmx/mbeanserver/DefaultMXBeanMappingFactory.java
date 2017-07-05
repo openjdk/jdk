@@ -686,7 +686,7 @@ public class DefaultMXBeanMappingFactory extends MXBeanMappingFactory {
                     final String msg =
                         "Cannot convert SortedSet with non-null comparator: " +
                         comparator;
-                    throw new OpenDataException(msg);
+                    throw openDataException(msg, new IllegalArgumentException(msg));
                 }
             }
             final Object[] openArray = (Object[])
@@ -800,7 +800,7 @@ public class DefaultMXBeanMappingFactory extends MXBeanMappingFactory {
                     final String msg =
                         "Cannot convert SortedMap with non-null comparator: " +
                         comparator;
-                    throw new OpenDataException(msg);
+                    throw openDataException(msg, new IllegalArgumentException(msg));
                 }
             }
             final TabularType tabularType = (TabularType) getOpenType();

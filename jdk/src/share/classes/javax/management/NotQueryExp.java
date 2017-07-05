@@ -91,6 +91,7 @@ class NotQueryExp extends QueryEval implements QueryExp {
         return "not (" + exp + ")";
     }
 
+    @Override
     String toQueryString() {
         return "not (" + Query.toString(exp) + ")";
     }
