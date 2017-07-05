@@ -34,8 +34,6 @@
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-// OtherRegionsTable
-
 class PerRegionTable: public CHeapObj<mtGC> {
   friend class OtherRegionsTable;
   friend class HeapRegionRemSetIterator;
@@ -44,19 +42,17 @@ class PerRegionTable: public CHeapObj<mtGC> {
   BitMap          _bm;
   jint            _occupied;
 
-  // next pointer for free/allocated lis
+  // next pointer for free/allocated 'all' list
   PerRegionTable* _next;
 
+  // prev pointer for the allocated 'all' list
+  PerRegionTable* _prev;
+
+  // next pointer in collision list
+  PerRegionTable * _collision_list_next;
+
+  // Global free list of PRTs
   static PerRegionTable* _free_list;
-
-#ifdef _MSC_VER
-  // For some reason even though the classes are marked as friend they are unable
-  // to access CardsPerRegion when private/protected. Only the windows c++ compiler
-  // says this Sun CC and linux gcc don't have a problem with access when private
-
-  public:
-
-#endif // _MSC_VER
 
 protected:
   // We need access in order to union things into the base table.
@@ -69,7 +65,8 @@ protected:
   PerRegionTable(HeapRegion* hr) :
     _hr(hr),
     _occupied(0),
-    _bm(HeapRegion::CardsPerRegion, false /* in-resource-area */)
+    _bm(HeapRegion::CardsPerRegion, false /* in-resource-area */),
+    _collision_list_next(NULL), _next(NULL), _prev(NULL)
   {}
 
   void add_card_work(CardIdx_t from_card, bool par) {
@@ -126,9 +123,13 @@ public:
     return _occupied;
   }
 
-  void init(HeapRegion* hr) {
+  void init(HeapRegion* hr, bool clear_links_to_all_list) {
+    if (clear_links_to_all_list) {
+      set_next(NULL);
+      set_prev(NULL);
+    }
     _hr = hr;
-    _next = NULL;
+    _collision_list_next = NULL;
     _occupied = 0;
     _bm.clear();
   }
@@ -175,22 +176,25 @@ public:
     return _bm.at(card_ind);
   }
 
-  PerRegionTable* next() const { return _next; }
-  void set_next(PerRegionTable* nxt) { _next = nxt; }
-  PerRegionTable** next_addr() { return &_next; }
-
-  static void free(PerRegionTable* prt) {
+  // Bulk-free the PRTs from prt to last, assumes that they are
+  // linked together using their _next field.
+  static void bulk_free(PerRegionTable* prt, PerRegionTable* last) {
     while (true) {
       PerRegionTable* fl = _free_list;
-      prt->set_next(fl);
-      PerRegionTable* res =
-        (PerRegionTable*)
-        Atomic::cmpxchg_ptr(prt, &_free_list, fl);
-      if (res == fl) return;
+      last->set_next(fl);
+      PerRegionTable* res = (PerRegionTable*) Atomic::cmpxchg_ptr(prt, &_free_list, fl);
+      if (res == fl) {
+        return;
+      }
     }
     ShouldNotReachHere();
   }
 
+  static void free(PerRegionTable* prt) {
+    bulk_free(prt, prt);
+  }
+
+  // Returns an initialized PerRegionTable instance.
   static PerRegionTable* alloc(HeapRegion* hr) {
     PerRegionTable* fl = _free_list;
     while (fl != NULL) {
@@ -199,7 +203,7 @@ public:
         (PerRegionTable*)
         Atomic::cmpxchg_ptr(nxt, &_free_list, fl);
       if (res == fl) {
-        fl->init(hr);
+        fl->init(hr, true);
         return fl;
       } else {
         fl = _free_list;
@@ -207,6 +211,31 @@ public:
     }
     assert(fl == NULL, "Loop condition.");
     return new PerRegionTable(hr);
+  }
+
+  PerRegionTable* next() const { return _next; }
+  void set_next(PerRegionTable* next) { _next = next; }
+  PerRegionTable* prev() const { return _prev; }
+  void set_prev(PerRegionTable* prev) { _prev = prev; }
+
+  // Accessor and Modification routines for the pointer for the
+  // singly linked collision list that links the PRTs within the
+  // OtherRegionsTable::_fine_grain_regions hash table.
+  //
+  // It might be useful to also make the collision list doubly linked
+  // to avoid iteration over the collisions list during scrubbing/deletion.
+  // OTOH there might not be many collisions.
+
+  PerRegionTable* collision_list_next() const {
+    return _collision_list_next;
+  }
+
+  void set_collision_list_next(PerRegionTable* next) {
+    _collision_list_next = next;
+  }
+
+  PerRegionTable** collision_list_next_addr() {
+    return &_collision_list_next;
   }
 
   static size_t fl_mem_size() {
@@ -234,6 +263,7 @@ OtherRegionsTable::OtherRegionsTable(HeapRegion* hr) :
   _coarse_map(G1CollectedHeap::heap()->max_regions(),
               false /* in-resource-area */),
   _fine_grain_regions(NULL),
+  _first_all_fine_prts(NULL), _last_all_fine_prts(NULL),
   _n_fine_entries(0), _n_coarse_entries(0),
   _fine_eviction_start(0),
   _sparse_table(hr)
@@ -262,6 +292,66 @@ OtherRegionsTable::OtherRegionsTable(HeapRegion* hr) :
   for (size_t i = 0; i < _max_fine_entries; i++) {
     _fine_grain_regions[i] = NULL;
   }
+}
+
+void OtherRegionsTable::link_to_all(PerRegionTable* prt) {
+  // We always append to the beginning of the list for convenience;
+  // the order of entries in this list does not matter.
+  if (_first_all_fine_prts != NULL) {
+    assert(_first_all_fine_prts->prev() == NULL, "invariant");
+    _first_all_fine_prts->set_prev(prt);
+    prt->set_next(_first_all_fine_prts);
+  } else {
+    // this is the first element we insert. Adjust the "last" pointer
+    _last_all_fine_prts = prt;
+    assert(prt->next() == NULL, "just checking");
+  }
+  // the new element is always the first element without a predecessor
+  prt->set_prev(NULL);
+  _first_all_fine_prts = prt;
+
+  assert(prt->prev() == NULL, "just checking");
+  assert(_first_all_fine_prts == prt, "just checking");
+  assert((_first_all_fine_prts == NULL && _last_all_fine_prts == NULL) ||
+         (_first_all_fine_prts != NULL && _last_all_fine_prts != NULL),
+         "just checking");
+  assert(_last_all_fine_prts == NULL || _last_all_fine_prts->next() == NULL,
+         "just checking");
+  assert(_first_all_fine_prts == NULL || _first_all_fine_prts->prev() == NULL,
+         "just checking");
+}
+
+void OtherRegionsTable::unlink_from_all(PerRegionTable* prt) {
+  if (prt->prev() != NULL) {
+    assert(_first_all_fine_prts != prt, "just checking");
+    prt->prev()->set_next(prt->next());
+    // removing the last element in the list?
+    if (_last_all_fine_prts == prt) {
+      _last_all_fine_prts = prt->prev();
+    }
+  } else {
+    assert(_first_all_fine_prts == prt, "just checking");
+    _first_all_fine_prts = prt->next();
+    // list is empty now?
+    if (_first_all_fine_prts == NULL) {
+      _last_all_fine_prts = NULL;
+    }
+  }
+
+  if (prt->next() != NULL) {
+    prt->next()->set_prev(prt->prev());
+  }
+
+  prt->set_next(NULL);
+  prt->set_prev(NULL);
+
+  assert((_first_all_fine_prts == NULL && _last_all_fine_prts == NULL) ||
+         (_first_all_fine_prts != NULL && _last_all_fine_prts != NULL),
+         "just checking");
+  assert(_last_all_fine_prts == NULL || _last_all_fine_prts->next() == NULL,
+         "just checking");
+  assert(_first_all_fine_prts == NULL || _first_all_fine_prts->prev() == NULL,
+         "just checking");
 }
 
 int**  OtherRegionsTable::_from_card_cache = NULL;
@@ -386,13 +476,16 @@ void OtherRegionsTable::add_reference(OopOrNarrowOopStar from, int tid) {
 
       if (_n_fine_entries == _max_fine_entries) {
         prt = delete_region_table();
+        // There is no need to clear the links to the 'all' list here:
+        // prt will be reused immediately, i.e. remain in the 'all' list.
+        prt->init(from_hr, false /* clear_links_to_all_list */);
       } else {
         prt = PerRegionTable::alloc(from_hr);
+        link_to_all(prt);
       }
-      prt->init(from_hr);
 
       PerRegionTable* first_prt = _fine_grain_regions[ind];
-      prt->set_next(first_prt);  // XXX Maybe move to init?
+      prt->set_collision_list_next(first_prt);
       _fine_grain_regions[ind] = prt;
       _n_fine_entries++;
 
@@ -438,7 +531,7 @@ OtherRegionsTable::find_region_table(size_t ind, HeapRegion* hr) const {
   assert(0 <= ind && ind < _max_fine_entries, "Preconditions.");
   PerRegionTable* prt = _fine_grain_regions[ind];
   while (prt != NULL && prt->hr() != hr) {
-    prt = prt->next();
+    prt = prt->collision_list_next();
   }
   // Loop postcondition is the method postcondition.
   return prt;
@@ -473,8 +566,8 @@ PerRegionTable* OtherRegionsTable::delete_region_table() {
         max_ind = i;
         max_occ = cur_occ;
       }
-      prev = cur->next_addr();
-      cur = cur->next();
+      prev = cur->collision_list_next_addr();
+      cur = cur->collision_list_next();
     }
     i = i + _fine_eviction_stride;
     if (i >= _n_fine_entries) i = i - _n_fine_entries;
@@ -503,7 +596,7 @@ PerRegionTable* OtherRegionsTable::delete_region_table() {
   }
 
   // Unsplice.
-  *max_prev = max->next();
+  *max_prev = max->collision_list_next();
   Atomic::inc(&_n_coarsenings);
   _n_fine_entries--;
   return max;
@@ -534,7 +627,7 @@ void OtherRegionsTable::scrub(CardTableModRefBS* ctbs,
     PerRegionTable* cur = _fine_grain_regions[i];
     PerRegionTable** prev = &_fine_grain_regions[i];
     while (cur != NULL) {
-      PerRegionTable* nxt = cur->next();
+      PerRegionTable* nxt = cur->collision_list_next();
       // If the entire region is dead, eliminate.
       if (G1RSScrubVerbose) {
         gclog_or_tty->print_cr("     For other region %u:",
@@ -542,11 +635,12 @@ void OtherRegionsTable::scrub(CardTableModRefBS* ctbs,
       }
       if (!region_bm->at((size_t) cur->hr()->hrs_index())) {
         *prev = nxt;
-        cur->set_next(NULL);
+        cur->set_collision_list_next(NULL);
         _n_fine_entries--;
         if (G1RSScrubVerbose) {
           gclog_or_tty->print_cr("          deleted via region map.");
         }
+        unlink_from_all(cur);
         PerRegionTable::free(cur);
       } else {
         // Do fine-grain elimination.
@@ -560,11 +654,12 @@ void OtherRegionsTable::scrub(CardTableModRefBS* ctbs,
         // Did that empty the table completely?
         if (cur->occupied() == 0) {
           *prev = nxt;
-          cur->set_next(NULL);
+          cur->set_collision_list_next(NULL);
           _n_fine_entries--;
+          unlink_from_all(cur);
           PerRegionTable::free(cur);
         } else {
-          prev = cur->next_addr();
+          prev = cur->collision_list_next_addr();
         }
       }
       cur = nxt;
@@ -587,13 +682,15 @@ size_t OtherRegionsTable::occupied() const {
 
 size_t OtherRegionsTable::occ_fine() const {
   size_t sum = 0;
-  for (size_t i = 0; i < _max_fine_entries; i++) {
-    PerRegionTable* cur = _fine_grain_regions[i];
-    while (cur != NULL) {
-      sum += cur->occupied();
-      cur = cur->next();
-    }
+
+  size_t num = 0;
+  PerRegionTable * cur = _first_all_fine_prts;
+  while (cur != NULL) {
+    sum += cur->occupied();
+    cur = cur->next();
+    num++;
   }
+  guarantee(num == _n_fine_entries, "just checking");
   return sum;
 }
 
@@ -609,12 +706,10 @@ size_t OtherRegionsTable::mem_size() const {
   // Cast away const in this case.
   MutexLockerEx x((Mutex*)&_m, Mutex::_no_safepoint_check_flag);
   size_t sum = 0;
-  for (size_t i = 0; i < _max_fine_entries; i++) {
-    PerRegionTable* cur = _fine_grain_regions[i];
-    while (cur != NULL) {
-      sum += cur->mem_size();
-      cur = cur->next();
-    }
+  PerRegionTable * cur = _first_all_fine_prts;
+  while (cur != NULL) {
+    sum += cur->mem_size();
+    cur = cur->next();
   }
   sum += (sizeof(PerRegionTable*) * _max_fine_entries);
   sum += (_coarse_map.size_in_words() * HeapWordSize);
@@ -632,22 +727,24 @@ size_t OtherRegionsTable::fl_mem_size() {
 }
 
 void OtherRegionsTable::clear_fcc() {
+  size_t hrs_idx = hr()->hrs_index();
   for (int i = 0; i < HeapRegionRemSet::num_par_rem_sets(); i++) {
-    _from_card_cache[i][hr()->hrs_index()] = -1;
+    _from_card_cache[i][hrs_idx] = -1;
   }
 }
 
 void OtherRegionsTable::clear() {
   MutexLockerEx x(&_m, Mutex::_no_safepoint_check_flag);
-  for (size_t i = 0; i < _max_fine_entries; i++) {
-    PerRegionTable* cur = _fine_grain_regions[i];
-    while (cur != NULL) {
-      PerRegionTable* nxt = cur->next();
-      PerRegionTable::free(cur);
-      cur = nxt;
-    }
-    _fine_grain_regions[i] = NULL;
+  // if there are no entries, skip this step
+  if (_first_all_fine_prts != NULL) {
+    guarantee(_first_all_fine_prts != NULL && _last_all_fine_prts != NULL, "just checking");
+    PerRegionTable::bulk_free(_first_all_fine_prts, _last_all_fine_prts);
+    memset(_fine_grain_regions, 0, _max_fine_entries * sizeof(_fine_grain_regions[0]));
+  } else {
+    guarantee(_first_all_fine_prts == NULL && _last_all_fine_prts == NULL, "just checking");
   }
+
+  _first_all_fine_prts = _last_all_fine_prts = NULL;
   _sparse_table.clear();
   _coarse_map.clear();
   _n_fine_entries = 0;
@@ -686,12 +783,13 @@ bool OtherRegionsTable::del_single_region_table(size_t ind,
   PerRegionTable** prev_addr = &_fine_grain_regions[ind];
   PerRegionTable* prt = *prev_addr;
   while (prt != NULL && prt->hr() != hr) {
-    prev_addr = prt->next_addr();
-    prt = prt->next();
+    prev_addr = prt->collision_list_next_addr();
+    prt = prt->collision_list_next();
   }
   if (prt != NULL) {
     assert(prt->hr() == hr, "Loop postcondition.");
-    *prev_addr = prt->next();
+    *prev_addr = prt->collision_list_next();
+    unlink_from_all(prt);
     PerRegionTable::free(prt);
     _n_fine_entries--;
     return true;
@@ -793,7 +891,6 @@ void HeapRegionRemSet::print() const {
       G1CollectedHeap::heap()->bot_shared()->address_for_index(card_index);
     gclog_or_tty->print_cr("  Card " PTR_FORMAT, card_start);
   }
-
   if (iter.n_yielded() != occupied()) {
     gclog_or_tty->print_cr("Yielded disagrees with occupied:");
     gclog_or_tty->print_cr("  %6d yielded (%6d coarse, %6d fine).",
@@ -905,7 +1002,7 @@ bool HeapRegionRemSetIterator::fine_has_next(size_t& card_index) {
   while (!fine_has_next()) {
     if (_cur_region_cur_card == (size_t) HeapRegion::CardsPerRegion) {
       _cur_region_cur_card = 0;
-      _fine_cur_prt = _fine_cur_prt->next();
+      _fine_cur_prt = _fine_cur_prt->collision_list_next();
     }
     if (_fine_cur_prt == NULL) {
       fine_find_next_non_null_prt();

@@ -45,7 +45,7 @@ public class MS932_OLD extends Charset implements HistoricallyNamedCharset
 
     public boolean contains(Charset cs) {
         return ((cs.name().equals("US-ASCII"))
-                || (cs instanceof JIS_X_0201)
+                || (cs instanceof JIS_X_0201_OLD)
                 || (cs instanceof MS932_OLD));
     }
 
@@ -61,11 +61,11 @@ public class MS932_OLD extends Charset implements HistoricallyNamedCharset
                                          //        implements DelegatableDecoder
     {
 
-        JIS_X_0201.Decoder jisDec0201;
+        JIS_X_0201_OLD.Decoder jisDec0201;
 
         private Decoder(Charset cs) {
             super(cs);
-            jisDec0201 = new JIS_X_0201.Decoder(cs);
+            jisDec0201 = new JIS_X_0201_OLD.Decoder(cs);
         }
 
         protected char decodeSingle(int b) {
@@ -90,12 +90,12 @@ public class MS932_OLD extends Charset implements HistoricallyNamedCharset
 
     private static class Encoder extends MS932DB.Encoder {
 
-        private JIS_X_0201.Encoder jisEnc0201;
+        private JIS_X_0201_OLD.Encoder jisEnc0201;
 
 
         private Encoder(Charset cs) {
             super(cs);
-            jisEnc0201 = new JIS_X_0201.Encoder(cs);
+            jisEnc0201 = new JIS_X_0201_OLD.Encoder(cs);
         }
 
         protected int encodeSingle(char inputChar) {

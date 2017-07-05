@@ -67,7 +67,7 @@ public class BadKdc {
      *       This is tough.
      *    c. Feed the KDC a UDP packet first. The current "solution".
      */
-    public static void go(int[]... expected)
+    public static void go(String... expected)
             throws Exception {
         try {
             go0(expected);
@@ -83,7 +83,7 @@ public class BadKdc {
         }
     }
 
-    public static void go0(int[]... expected)
+    public static void go0(String... expected)
             throws Exception {
         System.setProperty("sun.security.krb5.debug", "true");
 
@@ -148,8 +148,9 @@ public class BadKdc {
         return k;
     }
 
-    private static void test(int... expected) throws Exception {
+    private static void test(String expected) throws Exception {
         ByteArrayOutputStream bo = new ByteArrayOutputStream();
+        System.out.println("----------------- TEST -----------------");
         try {
             test0(bo, expected);
         } catch (Exception e) {
@@ -164,31 +165,34 @@ public class BadKdc {
      * One round of test for max_retries and timeout.
      * @param expected the expected kdc# timeout kdc# timeout...
      */
-    private static void test0(ByteArrayOutputStream bo, int... expected)
+    private static void test0(ByteArrayOutputStream bo, String expected)
             throws Exception {
         PrintStream oldout = System.out;
+        boolean failed = false;
         System.setOut(new PrintStream(bo));
         try {
             Context.fromUserPass(OneKDC.USER, OneKDC.PASS, false);
+        } catch (Exception e) {
+            failed = true;
         } finally {
             System.setOut(oldout);
         }
 
         String[] lines = new String(bo.toByteArray()).split("\n");
-        System.out.println("----------------- TEST -----------------");
-        int count = 0;
+        StringBuilder sb = new StringBuilder();
         for (String line: lines) {
             Matcher m = re.matcher(line);
             if (m.find()) {
                 System.out.println(line);
-                if (Integer.parseInt(m.group(1)) != expected[count++] ||
-                        Integer.parseInt(m.group(2)) != expected[count++]) {
-                    throw new Exception("Fail here");
-                }
+                sb.append(m.group(1)).append(m.group(2));
             }
         }
-        if (count != expected.length) {
-            throw new Exception("Less rounds");
+        if (failed) sb.append('-');
+
+        String output = sb.toString();
+        System.out.println("Expected: " + expected + ", actual " + output);
+        if (!output.matches(expected)) {
+            throw new Exception("Does not match");
         }
     }
 }

@@ -45,30 +45,23 @@ import java.rmi.registry.*;
 import java.util.Properties;
 
 class Callback extends UnicastRemoteObject implements CallbackInterface {
+    public int num_deactivated = 0;
 
-  public static int num_deactivated = 0;
+    public Callback() throws RemoteException { super(); }
 
-  public Callback() throws RemoteException { super(); }
+    public synchronized void inc() throws RemoteException {
+        num_deactivated++;
+    }
 
-  public void inc() throws RemoteException {
-    incNumDeactivated();
-  }
-
-  public synchronized int getNumDeactivated() throws RemoteException {
-    return(num_deactivated);
-  }
-
-  public synchronized void incNumDeactivated() {
-    num_deactivated++;
-  }
-
+    public synchronized int getNumDeactivated() throws RemoteException {
+        return num_deactivated;
+    }
 }
 
 public class UnregisterGroup
         extends Activatable
         implements ActivateMe, Runnable
 {
-
     private static Exception exception = null;
     private static String error = null;
     private static boolean done = false;
@@ -104,35 +97,46 @@ public class UnregisterGroup
     }
 
     /**
-     * Thread to deactivate object. First attempts to make object
-     * inactive (via the inactive method).  If that fails (the
-     * object may still have pending/executing calls), then
-     * unexport the object forcibly.
+     * Thread to deactivate object. Get the callback object from the registry,
+     * call inc() on it, and finally call deactivate(). The call to
+     * deactivate() causes this JVM to be destroyed, so anything following
+     * might not be executed.
      */
     public void run() {
+        String regPortStr = System.getProperty("unregisterGroup.port");
+        int regPort = -1;
 
-        ActivationLibrary.deactivate(this, getID());
-        System.err.println("\tActivationLibrary.deactivate returned");
+        if (regPortStr != null) {
+            regPort = Integer.parseInt(regPortStr);
+        }
 
         try {
             CallbackInterface cobj =
-                (CallbackInterface)Naming.lookup("//:" + registryPort + "/Callback");
+                (CallbackInterface)Naming.lookup("//:" + regPort + "/Callback");
             cobj.inc();
+            System.err.println("cobj.inc called and returned ok");
         } catch (Exception e) {
             System.err.println("cobj.inc exception");
             e.printStackTrace();
         }
 
+        ActivationLibrary.deactivate(this, getID());
+        System.err.println("\tActivationLibrary.deactivate returned");
     }
 
-    public static void main(String[] args) {
-
-        Registry registry;
-
+    public static void main(String[] args) throws RemoteException {
         System.err.println("\nRegression test for bug 4134233\n");
-
         TestLibrary.suggestSecurityManager("java.rmi.RMISecurityManager");
         RMID rmid = null;
+
+        // Create registry and export callback object so they're
+        // available to the objects that are activated below.
+        // TODO: see if we can use RMID's registry instead of
+        // creating one here.
+        Registry registry = TestLibrary.createRegistryOnUnusedPort();
+        registryPort = TestLibrary.getRegistryPort(registry);
+        Callback robj = new Callback();
+        registry.rebind("Callback", robj);
 
         try {
             RMID.removeLog();
@@ -149,8 +153,7 @@ public class UnregisterGroup
                   TestParams.defaultGroupPolicy);
             p.put("java.security.manager",
                   TestParams.defaultSecurityManager);
-
-            //final int NUM_OBJECTS = 10;
+            p.put("unregisterGroup.port", Integer.toString(registryPort));
 
             Thread t = new Thread() {
                 public void run () {
@@ -219,8 +222,6 @@ public class UnregisterGroup
             } else {
                 System.err.println("Test passed");
             }
-
-
         } catch (Exception e) {
             TestLibrary.bomb("test failed", e);
         } finally {
@@ -233,13 +234,6 @@ public class UnregisterGroup
 
             // Wait for the object deactivation to take place first
             try {
-
-                // create reg and export callback object
-                registry = TestLibrary.createRegistryOnUnusedPort();
-                registryPort = TestLibrary.getRegistryPort(registry);
-                Callback robj = new Callback();
-                registry.bind("Callback", robj);
-
                 //get the callback object
                 int maxwait=30;
                 int nd = robj.getNumDeactivated();
