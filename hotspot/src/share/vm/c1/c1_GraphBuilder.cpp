@@ -707,12 +707,10 @@ BlockBegin* GraphBuilder::ScopeData::block_at(int bci) {
     BlockBegin* block = bci2block()->at(bci);
     if (block != NULL && block == parent()->bci2block()->at(bci)) {
       BlockBegin* new_block = new BlockBegin(block->bci());
-#ifndef PRODUCT
       if (PrintInitialBlockList) {
         tty->print_cr("CFG: cloned block %d (bci %d) as block %d for jsr",
                       block->block_id(), block->bci(), new_block->block_id());
       }
-#endif
       // copy data from cloned blocked
       new_block->set_depth_first_number(block->depth_first_number());
       if (block->is_set(BlockBegin::parser_loop_header_flag)) new_block->set(BlockBegin::parser_loop_header_flag);
@@ -1438,7 +1436,9 @@ void GraphBuilder::method_return(Value x) {
 
   bool need_mem_bar = false;
   if (method()->name() == ciSymbol::object_initializer_name() &&
-      (scope()->wrote_final() || (AlwaysSafeConstructors && scope()->wrote_fields()))) {
+      (scope()->wrote_final() || (AlwaysSafeConstructors && scope()->wrote_fields())
+                              || (support_IRIW_for_not_multiple_copy_atomic_cpu && scope()->wrote_volatile())
+     )){
     need_mem_bar = true;
   }
 
@@ -1554,6 +1554,9 @@ void GraphBuilder::access_field(Bytecodes::Code code) {
 
   if (code == Bytecodes::_putfield) {
     scope()->set_wrote_fields();
+    if (field->is_volatile()) {
+      scope()->set_wrote_volatile();
+    }
   }
 
   const int offset = !needs_patching ? field->offset() : -1;
@@ -3785,12 +3788,10 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, Bytecode
     cont = new BlockBegin(next_bci());
     // low number so that continuation gets parsed as early as possible
     cont->set_depth_first_number(0);
-#ifndef PRODUCT
     if (PrintInitialBlockList) {
       tty->print_cr("CFG: created block %d (bci %d) as continuation for inline at bci %d",
                     cont->block_id(), cont->bci(), bci());
     }
-#endif
     continuation_existed = false;
   }
   // Record number of predecessors of continuation block before

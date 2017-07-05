@@ -638,7 +638,7 @@ public final class SoftSynthesizer implements AudioSynthesizer,
                     File javahome = new File(System.getProperties()
                             .getProperty("java.home"));
                     File libaudio = new File(new File(javahome, "lib"), "audio");
-                    if (libaudio.exists()) {
+                    if (libaudio.isDirectory()) {
                         File foundfile = null;
                         File[] files = libaudio.listFiles();
                         if (files != null) {
@@ -686,9 +686,9 @@ public final class SoftSynthesizer implements AudioSynthesizer,
                          * Look for a default.sf2
                          */
                         for (File systemSoundFontDir : systemSoundFontsDir) {
-                            if (systemSoundFontDir.exists()) {
+                            if (systemSoundFontDir.isDirectory()) {
                                 File defaultSoundFont = new File(systemSoundFontDir, "default.sf2");
-                                if (defaultSoundFont.exists()) {
+                                if (defaultSoundFont.isFile()) {
                                     try {
                                         return new FileInputStream(defaultSoundFont);
                                     } catch (IOException e) {
@@ -708,7 +708,7 @@ public final class SoftSynthesizer implements AudioSynthesizer,
                             .startsWith("Windows")) {
                         File gm_dls = new File(System.getenv("SystemRoot")
                                 + "\\system32\\drivers\\gm.dls");
-                        if (gm_dls.exists()) {
+                        if (gm_dls.isFile()) {
                             try {
                                 return new FileInputStream(gm_dls);
                             } catch (IOException e) {
@@ -728,7 +728,7 @@ public final class SoftSynthesizer implements AudioSynthesizer,
                             ".gervill");
                     File emg_soundbank_file = new File(userhome,
                             "soundbank-emg.sf2");
-                    if (emg_soundbank_file.exists()) {
+                    if (emg_soundbank_file.isFile()) {
                         try {
                             return new FileInputStream(emg_soundbank_file);
                         } catch (IOException e) {
@@ -773,12 +773,14 @@ public final class SoftSynthesizer implements AudioSynthesizer,
                             try {
                                 File userhome = new File(System
                                         .getProperty("user.home"), ".gervill");
-                                if (!userhome.exists()) {
-                                    userhome.mkdirs();
+                                if (!userhome.isDirectory()) {
+                                    if (!userhome.mkdirs()) {
+                                        return null;
+                                    }
                                 }
                                 File emg_soundbank_file = new File(
                                         userhome, "soundbank-emg.sf2");
-                                if (emg_soundbank_file.exists()) {
+                                if (emg_soundbank_file.isFile()) {
                                     return null;
                                 }
                                 return new FileOutputStream(emg_soundbank_file);

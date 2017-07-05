@@ -132,7 +132,7 @@ private:
   static volatile int _parallel_claimed_idx;
 
   // Release any dead symbols
-  static void buckets_unlink(int start_idx, int end_idx, int* processed, int* removed, size_t* memory_total);
+  static void buckets_unlink(int start_idx, int end_idx, int* processed, int* removed);
 public:
   enum {
     symbol_alloc_batch_size = 8,

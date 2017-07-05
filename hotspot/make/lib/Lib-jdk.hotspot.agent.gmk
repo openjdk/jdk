@@ -1,0 +1,130 @@
+#
+# Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+include NativeCompilation.gmk
+
+$(eval $(call IncludeCustomExtension, hotspot, lib/Lib-jdk.hotspot.agent.gmk))
+
+################################################################################
+
+SA_TOPDIR := $(HOTSPOT_TOPDIR)/agent
+
+# SA has a slightly different OS naming scheme
+ifeq ($(OPENJDK_TARGET_OS), windows)
+  SA_TARGET_OS := win32
+else ifeq ($(OPENJDK_TARGET_OS), macosx)
+  SA_TARGET_OS := bsd
+else
+  SA_TARGET_OS := $(OPENJDK_TARGET_OS)
+endif
+
+# Defaults for most platforms
+SA_TOOLCHAIN := TOOLCHAIN_DEFAULT
+SA_NAME := saproc
+SA_SRC += $(SA_TOPDIR)/src/share/native $(SA_TOPDIR)/src/os/$(SA_TARGET_OS)
+SA_MAPFILE := $(SA_TOPDIR)/src/os/$(OPENJDK_TARGET_OS)/mapfile
+SA_INCLUDES := \
+    $(addprefix -I, $(SA_SRC)) \
+    -I$(SUPPORT_OUTPUTDIR)/headers/jdk.hotspot.agent \
+    -I$(HOTSPOT_TOPDIR)/src/os/$(OPENJDK_TARGET_OS) \
+    #
+
+ifeq ($(OPENJDK_TARGET_CPU), x86_64)
+  SA_MACHINE_FLAG_windows := -machine:AMD64
+else ifeq ($(OPENJDK_TARGET_CPU), x86)
+  SA_MACHINE_FLAG_linux := -march=i586
+  SA_MACHINE_FLAG_windows := -machine:I386
+endif
+
+ifeq ($(OPENJDK_TARGET_OS), linux)
+  SA_CFLAGS := $(CFLAGS_JDKLIB) -D_FILE_OFFSET_BITS=64 \
+      $(SA_MACHINE_FLAG_linux)
+  SA_LDFLAGS := $(LDFLAGS_JDKLIB) $(SA_MACHINE_FLAG_linux)
+  SA_LIBS := -lthread_db $(LIBDL)
+
+else ifeq ($(OPENJDK_TARGET_OS), solaris)
+  SA_TOOLCHAIN := TOOLCHAIN_LINK_CXX
+  SA_MAPFILE := $(SA_TOPDIR)/src/os/solaris/proc/mapfile
+  COMMON_CFLAGS := -I$(SA_TOPDIR)/src/os/$(OPENJDK_TARGET_OS)/proc \
+      -DSOLARIS_11_B159_OR_LATER
+  SA_CFLAGS := $(CFLAGS_JDKLIB) $(COMMON_CFLAGS)
+  SA_CXXFLAGS := $(CXXFLAGS_JDKLIB) $(COMMON_CFLAGS)
+  SA_LDFLAGS := $(subst -z defs,, $(LDFLAGS_JDKLIB)) \
+      -mt $(LDFLAGS_CXX_JDK)
+  SA_LIBS := -ldl -ldemangle -lthread -lc
+
+else ifeq ($(OPENJDK_TARGET_OS), macosx)
+  SA_EXCLUDE_FILES := BsdDebuggerLocal.c ps_proc.c salibelf.c StubDebuggerLocal.c
+  SA_CFLAGS := $(CFLAGS_JDKLIB) \
+      -Damd64 -D_GNU_SOURCE -mno-omit-leaf-frame-pointer \
+      -mstack-alignment=16 -fPIC
+  SA_LDFLAGS := $(LDFLAGS_JDKLIB)
+  SA_LIBS := -framework Foundation -framework JavaNativeFoundation \
+      -framework Security -framework CoreFoundation
+
+else ifeq ($(OPENJDK_TARGET_OS), windows)
+  SA_NAME := sawindbg
+  COMMON_CFLAGS := -D_WINDOWS -D_DEBUG -D_CONSOLE -D_MBCS -EHsc -FD
+  SA_CFLAGS := $(subst -DWIN32_LEAN_AND_MEAN,, $(CFLAGS_JDKLIB)) \
+      $(COMMON_CFLAGS)
+  SA_CXXFLAGS := $(subst -DWIN32_LEAN_AND_MEAN,, $(CXXFLAGS_JDKLIB)) \
+      $(COMMON_CFLAGS)
+  SA_LDFLAGS := $(LDFLAGS_JDKLIB) \
+      $(SA_MACHINE_FLAG_windows) -manifest \
+      -subsystem:console -map
+  SA_LIBS := dbgeng.lib
+  ifeq ($(OPENJDK_TARGET_CPU), x86_64)
+    SA_CXXFLAGS += -DWIN64
+  else
+    SA_CXXFLAGS += -RTC1 -ZI
+    SA_LDFLAGS += -SAFESEH
+  endif
+endif
+
+################################################################################
+
+$(eval $(call SetupNativeCompilation, BUILD_LIBSA, \
+    TOOLCHAIN := $(SA_TOOLCHAIN), \
+    OPTIMIZATION := NONE, \
+    DISABLED_WARNINGS_microsoft := 4267, \
+    DISABLED_WARNINGS_gcc := sign-compare, \
+    DISABLED_WARNINGS_CXX_solstudio := truncwarn unknownpragma, \
+    LIBRARY := $(SA_NAME), \
+    OUTPUT_DIR := $(call FindLibDirForModule, $(MODULE)), \
+    SRC := $(SA_SRC), \
+    EXCLUDE_FILES := test.c saproc_audit.cpp $(SA_EXCLUDE_FILES), \
+    CFLAGS := $(SA_INCLUDES) $(SA_CFLAGS) $(SA_CUSTOM_CFLAGS), \
+    CXXFLAGS := $(SA_INCLUDES) $(SA_CXXFLAGS) $(SA_CUSTOM_CXXFLAGS), \
+    LDFLAGS := $(SA_LDFLAGS) $(SA_CUSTOM_LDFLAGS), \
+    LIBS := $(SA_LIBS), \
+    MAPFILE := $(SA_MAPFILE), \
+    OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libsa, \
+    DEBUG_SYMBOLS := true, \
+    STRIP_SYMBOLS := true, \
+))
+
+TARGETS += $(BUILD_LIBSA)
+
+################################################################################

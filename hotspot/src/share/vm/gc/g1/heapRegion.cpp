@@ -211,14 +211,14 @@ void HeapRegion::calc_gc_efficiency() {
   _gc_efficiency = (double) reclaimable_bytes() / region_elapsed_time_ms;
 }
 
-void HeapRegion::set_starts_humongous(HeapWord* obj_top) {
+void HeapRegion::set_starts_humongous(HeapWord* obj_top, size_t fill_size) {
   assert(!is_humongous(), "sanity / pre-condition");
   assert(top() == bottom(), "should be empty");
 
   _type.set_starts_humongous();
   _humongous_start_region = this;
 
-  _offsets.set_for_starts_humongous(obj_top);
+  _offsets.set_for_starts_humongous(obj_top, fill_size);
 }
 
 void HeapRegion::set_continues_humongous(HeapRegion* first_hr) {
@@ -756,16 +756,6 @@ void HeapRegion::verify(VerifyOption vo,
     size_t obj_size = block_size(p);
     object_num += 1;
 
-    if (is_region_humongous != g1->is_humongous(obj_size) &&
-        !g1->is_obj_dead(obj, this)) { // Dead objects may have bigger block_size since they span several objects.
-      gclog_or_tty->print_cr("obj " PTR_FORMAT " is of %shumongous size ("
-                             SIZE_FORMAT " words) in a %shumongous region",
-                             p2i(p), g1->is_humongous(obj_size) ? "" : "non-",
-                             obj_size, is_region_humongous ? "" : "non-");
-       *failures = true;
-       return;
-    }
-
     if (!g1->is_obj_dead_cond(obj, this, vo)) {
       if (obj->is_oop()) {
         Klass* klass = obj->klass();
@@ -874,14 +864,6 @@ void HeapRegion::verify(VerifyOption vo,
       *failures = true;
       return;
     }
-  }
-
-  if (is_region_humongous && object_num > 1) {
-    gclog_or_tty->print_cr("region [" PTR_FORMAT "," PTR_FORMAT "] is humongous "
-                           "but has " SIZE_FORMAT ", objects",
-                           p2i(bottom()), p2i(end()), object_num);
-    *failures = true;
-    return;
   }
 
   verify_strong_code_roots(vo, failures);

@@ -389,10 +389,22 @@ abstract class KeyStore extends KeyStoreSpi {
                 }
             }
 
+            X509Certificate[] xchain;
+            if (chain != null) {
+                if (chain instanceof X509Certificate[]) {
+                    xchain = (X509Certificate[]) chain;
+                } else {
+                    xchain = new X509Certificate[chain.length];
+                    System.arraycopy(chain, 0, xchain, 0, chain.length);
+                }
+            } else {
+                xchain = null;
+            }
+
             if (! found) {
                 entry =
                     //TODO new KeyEntry(alias, key, (X509Certificate[]) chain);
-                    new KeyEntry(alias, null, (X509Certificate[]) chain);
+                    new KeyEntry(alias, null, xchain);
                 entries.add(entry);
             }
 
@@ -400,7 +412,7 @@ abstract class KeyStore extends KeyStoreSpi {
 
             try {
                 entry.setPrivateKey((RSAPrivateCrtKey) key);
-                entry.setCertificateChain((X509Certificate[]) chain);
+                entry.setCertificateChain(xchain);
 
             } catch (CertificateException ce) {
                 throw new KeyStoreException(ce);

@@ -938,7 +938,7 @@ assertEquals("[A, B, C]", (String) caToString2.invokeExact('A', "BC".toCharArray
         Class<?> arrayElement = arrayType.getComponentType();
         MethodType mtype = type();
         boolean match = true, fail = false;
-        for (int i = pos; i < arrayLength; i++) {
+        for (int i = pos; i < pos + arrayLength; i++) {
             Class<?> ptype = mtype.parameterType(i);
             if (ptype != arrayElement) {
                 match = false;

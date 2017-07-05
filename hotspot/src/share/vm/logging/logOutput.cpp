@@ -24,7 +24,9 @@
 #include "precompiled.hpp"
 #include "logging/logFileStreamOutput.hpp"
 #include "logging/logOutput.hpp"
+#include "logging/logTagSet.hpp"
 #include "memory/allocation.inline.hpp"
+#include "runtime/mutexLocker.hpp"
 #include "runtime/os.inline.hpp"
 
 LogOutput* const LogOutput::Stdout = &LogStdoutOutput::_instance;
@@ -34,7 +36,54 @@ LogOutput::~LogOutput() {
   os::free(_config_string);
 }
 
-void LogOutput::set_config_string(const char* string) {
+void LogOutput::clear_config_string() {
+  assert(LogConfiguration_lock == NULL || LogConfiguration_lock->owned_by_self(),
+         "Must hold configuration lock to modify config string");
+
   os::free(_config_string);
-  _config_string = os::strdup_check_oom(string, mtLogging);
+  _config_string_buffer_size = InitialConfigBufferSize;
+  _config_string = NEW_C_HEAP_ARRAY(char, _config_string_buffer_size, mtLogging);
+  _config_string[0] = '\0';
+}
+
+void LogOutput::set_config_string(const char* string) {
+  assert(LogConfiguration_lock == NULL || LogConfiguration_lock->owned_by_self(),
+         "Must hold configuration lock to modify config string");
+
+  os::free(_config_string);
+  _config_string = os::strdup(string, mtLogging);
+  _config_string_buffer_size = strlen(_config_string) + 1;
+}
+
+void LogOutput::add_to_config_string(const LogTagSet* ts, LogLevelType level) {
+  assert(LogConfiguration_lock == NULL || LogConfiguration_lock->owned_by_self(),
+         "Must hold configuration lock to modify config string");
+
+  if (_config_string_buffer_size < InitialConfigBufferSize) {
+    _config_string_buffer_size = InitialConfigBufferSize;
+    _config_string = REALLOC_C_HEAP_ARRAY(char, _config_string, _config_string_buffer_size, mtLogging);
+  }
+
+  size_t offset = strlen(_config_string);
+  for (;;) {
+    int ret = ts->label(_config_string + offset, _config_string_buffer_size - offset, "+");
+    if (ret == -1) {
+      // Double the buffer size and retry
+      _config_string_buffer_size *= 2;
+      _config_string = REALLOC_C_HEAP_ARRAY(char, _config_string, _config_string_buffer_size, mtLogging);
+      continue;
+    }
+    break;
+  };
+
+  offset = strlen(_config_string);
+  for (;;) {
+    int ret = jio_snprintf(_config_string + offset, _config_string_buffer_size - offset, "=%s,", LogLevel::name(level));
+    if (ret == -1) {
+      _config_string_buffer_size *= 2;
+      _config_string = REALLOC_C_HEAP_ARRAY(char, _config_string, _config_string_buffer_size, mtLogging);
+      continue;
+    }
+    break;
+  }
 }

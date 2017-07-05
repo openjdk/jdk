@@ -300,6 +300,22 @@ public class XBaseWindow {
     }
 
     /**
+     * Returns scale factor of the window. It is used to convert native
+     * coordinates to local and vice verse.
+     */
+    protected int getScale() {
+        return 1;
+    }
+
+    protected int scaleUp(int x) {
+        return x;
+    }
+
+    protected int scaleDown(int x) {
+        return x;
+    }
+
+    /**
      * Creates window with parameters specified by <code>params</code>
      * @see #init
      */
@@ -366,15 +382,17 @@ public class XBaseWindow {
                     log.fine("Creating window for " + this + " with the following attributes: \n" + params);
                 }
                 window = XlibWrapper.XCreateWindow(XToolkit.getDisplay(),
-                                   parentWindow.longValue(),
-                                   bounds.x, bounds.y, // location
-                                   bounds.width, bounds.height, // size
-                                   0, // border
-                                   depth.intValue(), // depth
-                                   visual_class.intValue(), // class
-                                   visual.longValue(), // visual
-                                   value_mask,  // value mask
-                                   xattr.pData); // attributes
+                                                   parentWindow.longValue(),
+                                                   scaleUp(bounds.x),
+                                                   scaleUp(bounds.y),
+                                                   scaleUp(bounds.width),
+                                                   scaleUp(bounds.height),
+                                                   0, // border
+                                                   depth.intValue(), // depth
+                                                   visual_class.intValue(), // class
+                                                   visual.longValue(), // visual
+                                                   value_mask,  // value mask
+                                                   xattr.pData); // attributes
 
                 if (window == 0) {
                     throw new IllegalStateException("Couldn't create window because of wrong parameters. Run with NOISY_AWT to see details");
@@ -492,18 +510,18 @@ public class XBaseWindow {
             // we want to reset PPosition in hints.  This is necessary
             // for locationByPlatform functionality
             if ((flags & XUtilConstants.PPosition) != 0) {
-                hints.set_x(x);
-                hints.set_y(y);
+                hints.set_x(scaleUp(x));
+                hints.set_y(scaleUp(y));
             }
             if ((flags & XUtilConstants.PSize) != 0) {
-                hints.set_width(width);
-                hints.set_height(height);
+                hints.set_width(scaleUp(width));
+                hints.set_height(scaleUp(height));
             } else if ((hints.get_flags() & XUtilConstants.PSize) != 0) {
                 flags |= XUtilConstants.PSize;
             }
             if ((flags & XUtilConstants.PMinSize) != 0) {
-                hints.set_min_width(width);
-                hints.set_min_height(height);
+                hints.set_min_width(scaleUp(width));
+                hints.set_min_height(scaleUp(height));
             } else if ((hints.get_flags() & XUtilConstants.PMinSize) != 0) {
                 flags |= XUtilConstants.PMinSize;
                 //Fix for 4320050: Minimum size for java.awt.Frame is not being enforced.
@@ -512,31 +530,31 @@ public class XBaseWindow {
             if ((flags & XUtilConstants.PMaxSize) != 0) {
                 if (maxBounds != null) {
                     if (maxBounds.width != Integer.MAX_VALUE) {
-                        hints.set_max_width(maxBounds.width);
+                        hints.set_max_width(scaleUp(maxBounds.width));
                     } else {
                         hints.set_max_width(XToolkit.getDefaultScreenWidth());
                     }
                     if (maxBounds.height != Integer.MAX_VALUE) {
-                        hints.set_max_height(maxBounds.height);
+                        hints.set_max_height(scaleUp(maxBounds.height));
                     } else {
                         hints.set_max_height(XToolkit.getDefaultScreenHeight());
                     }
                 } else {
-                    hints.set_max_width(width);
-                    hints.set_max_height(height);
+                    hints.set_max_width(scaleUp(width));
+                    hints.set_max_height(scaleUp(height));
                 }
             } else if ((hints.get_flags() & XUtilConstants.PMaxSize) != 0) {
                 flags |= XUtilConstants.PMaxSize;
                 if (maxBounds != null) {
                     if (maxBounds.width != Integer.MAX_VALUE) {
-                        hints.set_max_width(maxBounds.width);
+                        hints.set_max_width(scaleUp(maxBounds.width));
                     } else {
-                        hints.set_max_width(XToolkit.getDefaultScreenWidth());
+                        hints.set_max_width(scaleUp(XToolkit.getDefaultScreenWidth()));
                     }
                     if (maxBounds.height != Integer.MAX_VALUE) {
-                        hints.set_max_height(maxBounds.height);
+                        hints.set_max_height(scaleUp(maxBounds.height));
                     } else {
-                        hints.set_max_height(XToolkit.getDefaultScreenHeight());
+                        hints.set_max_height(scaleUp(XToolkit.getDefaultScreenHeight()));
                     }
                 } else {
                     // Leave intact
@@ -723,7 +741,9 @@ public class XBaseWindow {
         height = Math.max(MIN_SIZE, height);
         XToolkit.awtLock();
         try {
-             XlibWrapper.XMoveResizeWindow(XToolkit.getDisplay(), getWindow(), x,y,width,height);
+            XlibWrapper.XMoveResizeWindow(XToolkit.getDisplay(), getWindow(),
+                                          scaleUp(x), scaleUp(y),
+                                          scaleUp(width), scaleUp(height));
         } finally {
             XToolkit.awtUnlock();
         }
@@ -756,7 +776,8 @@ public class XBaseWindow {
             rpt.x = x + srcPeer.getAbsoluteX();
             rpt.y = y + srcPeer.getAbsoluteY();
         } else {
-            rpt = XlibUtil.translateCoordinates(src, dst, new Point(x, y));
+            int scale = srcPeer == null ? 1 : srcPeer.getScale();
+            rpt = XlibUtil.translateCoordinates(src, dst, new Point(x, y), scale);
         }
         return rpt;
     }
@@ -1042,10 +1063,11 @@ public class XBaseWindow {
         if (insLog.isLoggable(PlatformLogger.Level.FINER)) {
             insLog.finer("Configure, {0}", xe);
         }
-        x = xe.get_x();
-        y = xe.get_y();
-        width = xe.get_width();
-        height = xe.get_height();
+
+        x = scaleDown(xe.get_x());
+        y = scaleDown(xe.get_y());
+        width = scaleDown(xe.get_width());
+        height = scaleDown(xe.get_height());
     }
     /**
      * Checks ButtonRelease released all Mouse buttons

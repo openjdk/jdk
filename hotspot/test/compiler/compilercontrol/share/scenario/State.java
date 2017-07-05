@@ -182,11 +182,13 @@ public class State {
     }
 
     public boolean isC1Inlinable() {
-        return ! dontInline[Scenario.Compiler.C1.ordinal()].orElse(false);
+        return ! dontInline[Scenario.Compiler.C1.ordinal()].orElse(false)
+                && isC1Compilable();
     }
 
     public boolean isC2Inlinable() {
-        return ! dontInline[Scenario.Compiler.C2.ordinal()].orElse(false);
+        return ! dontInline[Scenario.Compiler.C2.ordinal()].orElse(false)
+                && isC2Compilable();
     }
 
     public boolean isInlinable() {
@@ -206,11 +208,13 @@ public class State {
     }
 
     public boolean isC1ForceInline() {
-        return forceInline[Scenario.Compiler.C1.ordinal()].orElse(false);
+        return forceInline[Scenario.Compiler.C1.ordinal()].orElse(false)
+                && isC1Compilable();
     }
 
     public boolean isC2ForceInline() {
-        return forceInline[Scenario.Compiler.C2.ordinal()].orElse(false);
+        return forceInline[Scenario.Compiler.C2.ordinal()].orElse(false)
+                && isC2Compilable();
     }
 
     public boolean isForceInline() {
@@ -229,7 +233,7 @@ public class State {
         if (value && isC2Compilable()) {
             setForceInline(Scenario.Compiler.C2.ordinal());
         } else {
-            setDontInline(Scenario.Compiler.C1.ordinal());
+            setDontInline(Scenario.Compiler.C2.ordinal());
         }
     }
 

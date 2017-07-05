@@ -1,3 +1,2 @@
 sun.jvmstat.perfdata.monitor.protocol.file.MonitoredHostFileService
 sun.jvmstat.perfdata.monitor.protocol.local.MonitoredHostLocalService
-sun.jvmstat.perfdata.monitor.protocol.rmi.MonitoredHostRmiService

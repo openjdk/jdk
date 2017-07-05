@@ -753,6 +753,21 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
     // in farg_reg[j] if argument i is the j-th float argument of this call.
     //
     case T_FLOAT:
+#if defined(LINUX)
+      // Linux uses ELF ABI. Both original ELF and ELFv2 ABIs have float
+      // in the least significant word of an argument slot.
+#if defined(VM_LITTLE_ENDIAN)
+#define FLOAT_WORD_OFFSET_IN_SLOT 0
+#else
+#define FLOAT_WORD_OFFSET_IN_SLOT 1
+#endif
+#elif defined(AIX)
+      // Although AIX runs on big endian CPU, float is in the most
+      // significant word of an argument slot.
+#define FLOAT_WORD_OFFSET_IN_SLOT 0
+#else
+#error "unknown OS"
+#endif
       if (freg < Argument::n_float_register_parameters_c) {
         // Put float in register ...
         reg = farg_reg[freg];
@@ -766,14 +781,14 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
         if (arg >= Argument::n_regs_not_on_stack_c) {
           // ... and on the stack.
           guarantee(regs2 != NULL, "must pass float in register and stack slot");
-          VMReg reg2 = VMRegImpl::stack2reg(stk LINUX_ONLY(+1));
+          VMReg reg2 = VMRegImpl::stack2reg(stk + FLOAT_WORD_OFFSET_IN_SLOT);
           regs2[i].set1(reg2);
           stk += inc_stk_for_intfloat;
         }
 
       } else {
         // Put float on stack.
-        reg = VMRegImpl::stack2reg(stk LINUX_ONLY(+1));
+        reg = VMRegImpl::stack2reg(stk + FLOAT_WORD_OFFSET_IN_SLOT);
         stk += inc_stk_for_intfloat;
       }
       regs[i].set1(reg);
@@ -2802,7 +2817,7 @@ void SharedRuntime::generate_deopt_blob() {
   __ set_last_Java_frame(R1_SP, noreg);
 
   // With EscapeAnalysis turned on, this call may safepoint!
-  __ call_VM_leaf(CAST_FROM_FN_PTR(address, Deoptimization::fetch_unroll_info), R16_thread);
+  __ call_VM_leaf(CAST_FROM_FN_PTR(address, Deoptimization::fetch_unroll_info), R16_thread, exec_mode_reg);
   address calls_return_pc = __ last_calls_return_pc();
   // Set an oopmap for the call site that describes all our saved registers.
   oop_maps->add_gc_map(calls_return_pc - start, map);
@@ -2815,6 +2830,8 @@ void SharedRuntime::generate_deopt_blob() {
   // by save_volatile_registers(...).
   RegisterSaver::restore_result_registers(masm, first_frame_size_in_bytes);
 
+  // reload the exec mode from the UnrollBlock (it might have changed)
+  __ lwz(exec_mode_reg, Deoptimization::UnrollBlock::unpack_kind_offset_in_bytes(), unroll_block_reg);
   // In excp_deopt_mode, restore and clear exception oop which we
   // stored in the thread during exception entry above. The exception
   // oop will be the return value of this stub.
@@ -2945,8 +2962,9 @@ void SharedRuntime::generate_uncommon_trap_blob() {
   __ set_last_Java_frame(/*sp*/R1_SP, /*pc*/R11_scratch1);
 
   __ mr(klass_index_reg, R3);
+  __ li(R5_ARG3, Deoptimization::Unpack_uncommon_trap);
   __ call_VM_leaf(CAST_FROM_FN_PTR(address, Deoptimization::uncommon_trap),
-                  R16_thread, klass_index_reg);
+                  R16_thread, klass_index_reg, R5_ARG3);
 
   // Set an oopmap for the call site.
   oop_maps->add_gc_map(gc_map_pc - start, map);
@@ -2965,6 +2983,12 @@ void SharedRuntime::generate_uncommon_trap_blob() {
   __ pop_frame();
 
   // stack: (caller_of_deoptee, ...).
+
+#ifdef ASSERT
+  __ lwz(R22_tmp2, Deoptimization::UnrollBlock::unpack_kind_offset_in_bytes(), unroll_block_reg);
+  __ cmpdi(CCR0, R22_tmp2, (unsigned)Deoptimization::Unpack_uncommon_trap);
+  __ asm_assert_eq("SharedRuntime::generate_deopt_blob: expected Unpack_uncommon_trap", 0);
+#endif
 
   // Allocate new interpreter frame(s) and possibly a c2i adapter
   // frame.

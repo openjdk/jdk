@@ -64,7 +64,7 @@ class XRobotPeer implements RobotPeer {
 
     @Override
     public void mouseMove(int x, int y) {
-        mouseMoveImpl(xgc, x, y);
+        mouseMoveImpl(xgc, xgc.scaleUp(x), xgc.scaleUp(y));
     }
 
     @Override
@@ -95,7 +95,8 @@ class XRobotPeer implements RobotPeer {
     @Override
     public int getRGBPixel(int x, int y) {
         int pixelArray[] = new int[1];
-        getRGBPixelsImpl(xgc, x, y, 1, 1, pixelArray, isGtkSupported);
+        getRGBPixelsImpl(xgc, x, y, 1, 1, xgc.getScale(), pixelArray,
+                         isGtkSupported);
         return pixelArray[0];
     }
 
@@ -103,7 +104,7 @@ class XRobotPeer implements RobotPeer {
     public int [] getRGBPixels(Rectangle bounds) {
         int pixelArray[] = new int[bounds.width*bounds.height];
         getRGBPixelsImpl(xgc, bounds.x, bounds.y, bounds.width, bounds.height,
-                            pixelArray, isGtkSupported);
+                         xgc.getScale(), pixelArray, isGtkSupported);
         return pixelArray;
     }
 
@@ -118,5 +119,6 @@ class XRobotPeer implements RobotPeer {
     private static synchronized native void keyReleaseImpl(int keycode);
 
     private static synchronized native void getRGBPixelsImpl(X11GraphicsConfig xgc,
-            int x, int y, int width, int height, int pixelArray[], boolean isGtkSupported);
+            int x, int y, int width, int height, int scale,
+            int pixelArray[], boolean isGtkSupported);
 }

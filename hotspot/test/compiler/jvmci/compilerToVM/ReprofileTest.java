@@ -45,17 +45,14 @@ import compiler.jvmci.common.CTVMUtilities;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
+
+import compiler.whitebox.CompilerWhiteBoxTest;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
 import jdk.vm.ci.hotspot.CompilerToVMHelper;
 import jdk.vm.ci.meta.ProfilingInfo;
 import jdk.test.lib.Asserts;
-import jdk.test.lib.Utils;
-import sun.hotspot.WhiteBox;
 
 public class ReprofileTest {
-
-    private static final WhiteBox WB = WhiteBox.getWhiteBox();
 
     public static void main(String[] args) {
         List<Method> testCases = createTestCases();
@@ -67,10 +64,10 @@ public class ReprofileTest {
         try {
 
             Class<?> aClass = DummyClass.class;
-            testCases.add(aClass.getMethod("withLoop"));
+            testCases.add(aClass.getMethod("dummyInstanceFunction"));
 
             aClass = DummyClass.class;
-            testCases.add(aClass.getDeclaredMethod("dummyFunction"));
+            testCases.add(aClass.getMethod("dummyFunction"));
         } catch (NoSuchMethodException e) {
             throw new Error("TEST BUG " + e.getMessage(), e);
         }
@@ -78,17 +75,17 @@ public class ReprofileTest {
     }
 
     private static void runSanityTest(Method aMethod) {
+        System.out.println(aMethod);
         HotSpotResolvedJavaMethod method = CTVMUtilities
                 .getResolvedMethod(aMethod);
         ProfilingInfo startProfile = method.getProfilingInfo();
         Asserts.assertFalse(startProfile.isMature(), aMethod
-                + " : profiling info is mature in the begging");
+                + " : profiling info is mature in the beginning");
 
-        long compileThreshold = (Long) WB.getVMFlag("CompileThreshold");
         // make interpreter to profile this method
         try {
             Object obj = aMethod.getDeclaringClass().newInstance();
-            for (long i = 0; i < compileThreshold; i++) {
+            for (long i = 0; i < CompilerWhiteBoxTest.THRESHOLD; i++) {
                 aMethod.invoke(obj);
             }
         } catch (ReflectiveOperationException e) {
@@ -99,10 +96,10 @@ public class ReprofileTest {
         Asserts.assertNE(startProfile.toString(), compProfile.toString(),
                 String.format("%s : profiling info wasn't changed after "
                                 + "%d invocations",
-                        aMethod, compileThreshold));
+                        aMethod, CompilerWhiteBoxTest.THRESHOLD));
         Asserts.assertTrue(compProfile.isMature(),
                 String.format("%s is not mature after %d invocations",
-                        aMethod, compileThreshold));
+                        aMethod, CompilerWhiteBoxTest.THRESHOLD));
 
         CompilerToVMHelper.reprofile(method);
         ProfilingInfo reprofiledProfile = method.getProfilingInfo();

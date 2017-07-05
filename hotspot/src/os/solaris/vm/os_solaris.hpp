@@ -113,9 +113,6 @@ class Solaris {
 
   static void try_enable_extended_io();
 
-  // For signal-chaining
-  static unsigned long sigs;                 // mask of signals that have
-                                             // preinstalled signal handlers
   static struct sigaction *(*get_signal_action)(int);
   static struct sigaction *get_preinstalled_handler(int);
   static int (*get_libjsig_version)();

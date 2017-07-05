@@ -149,6 +149,25 @@ public final class CompositeFont extends Font2D {
         }
     }
 
+    /*
+     * Build a composite from a set of individual slot fonts.
+     */
+    CompositeFont(PhysicalFont[] slotFonts) {
+
+        isStdComposite = false;
+        handle = new Font2DHandle(this);
+        fullName = slotFonts[0].fullName;
+        familyName = slotFonts[0].familyName;
+        style = slotFonts[0].style;
+
+        numMetricsSlots = 1; /* Only the physical Font */
+        numSlots = slotFonts.length;
+
+        components = new PhysicalFont[numSlots];
+        System.arraycopy(slotFonts, 0, components, 0, numSlots);
+        deferredInitialisation = new boolean[numSlots]; // all false.
+    }
+
     /* This method is currently intended to be called only from
      * FontManager.getCompositeFontUIResource(Font)
      * It creates a new CompositeFont with the contents of the Physical

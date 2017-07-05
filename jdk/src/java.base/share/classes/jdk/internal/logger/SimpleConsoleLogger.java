@@ -31,13 +31,12 @@ import java.io.StringWriter;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.time.ZonedDateTime;
+import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.function.Function;
 import java.lang.System.Logger;
-import java.lang.System.Logger.Level;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
-import jdk.internal.misc.JavaLangAccess;
-import jdk.internal.misc.SharedSecrets;
 import sun.util.logging.PlatformLogger;
 import sun.util.logging.PlatformLogger.ConfigurableBridge.LoggerConfiguration;
 
@@ -169,42 +168,55 @@ public class SimpleConsoleLogger extends LoggerConfiguration
     // Returns the caller's class and method's name; best effort
     // if cannot infer, return the logger's name.
     private String getCallerInfo() {
-        String sourceClassName = null;
-        String sourceMethodName = null;
-
-        JavaLangAccess access = SharedSecrets.getJavaLangAccess();
-        Throwable throwable = new Throwable();
-        int depth = access.getStackTraceDepth(throwable);
-
-        String logClassName = "sun.util.logging.PlatformLogger";
-        String simpleLoggerClassName = "jdk.internal.logger.SimpleConsoleLogger";
-        boolean lookingForLogger = true;
-        for (int ix = 0; ix < depth; ix++) {
-            // Calling getStackTraceElement directly prevents the VM
-            // from paying the cost of building the entire stack frame.
-            final StackTraceElement frame =
-                access.getStackTraceElement(throwable, ix);
-            final String cname = frame.getClassName();
-            if (lookingForLogger) {
-                // Skip all frames until we have found the first logger frame.
-                if (cname.equals(logClassName) || cname.equals(simpleLoggerClassName)) {
-                    lookingForLogger = false;
-                }
-            } else {
-                if (skipLoggingFrame(cname)) continue;
-                if (!cname.equals(logClassName) && !cname.equals(simpleLoggerClassName)) {
-                    // We've found the relevant frame.
-                    sourceClassName = cname;
-                    sourceMethodName = frame.getMethodName();
-                    break;
-                }
-            }
-        }
-
-        if (sourceClassName != null) {
-            return sourceClassName + " " + sourceMethodName;
+        Optional<StackWalker.StackFrame> frame = new CallerFinder().get();
+        if (frame.isPresent()) {
+            return frame.get().getClassName() + " " + frame.get().getMethodName();
         } else {
             return name;
+        }
+    }
+
+    /*
+     * CallerFinder is a stateful predicate.
+     */
+    static final class CallerFinder implements Predicate<StackWalker.StackFrame> {
+        static final StackWalker WALKER = StackWalker.getInstance();
+
+        /**
+         * Returns StackFrame of the caller's frame.
+         * @return StackFrame of the caller's frame.
+         */
+        Optional<StackWalker.StackFrame> get() {
+            return WALKER.walk((s) -> s.filter(this).findFirst());
+        }
+
+        private boolean lookingForLogger = true;
+        /**
+         * Returns true if we have found the caller's frame, false if the frame
+         * must be skipped.
+         *
+         * @param t The frame info.
+         * @return true if we have found the caller's frame, false if the frame
+         * must be skipped.
+         */
+        @Override
+        public boolean test(StackWalker.StackFrame t) {
+            final String cname = t.getClassName();
+            // We should skip all frames until we have found the logger,
+            // because these frames could be frames introduced by e.g. custom
+            // sub classes of Handler.
+            if (lookingForLogger) {
+                // Skip all frames until we have found the first logger frame.
+                lookingForLogger = !isLoggerImplFrame(cname);
+                return false;
+            }
+            // We've found the relevant frame.
+            return !skipLoggingFrame(cname) && !isLoggerImplFrame(cname);
+        }
+
+        private boolean isLoggerImplFrame(String cname) {
+            return (cname.equals("sun.util.logging.PlatformLogger") ||
+                    cname.equals("jdk.internal.logger.SimpleConsoleLogger"));
         }
     }
 

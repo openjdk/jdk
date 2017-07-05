@@ -59,10 +59,10 @@ public class XRVolatileSurfaceManager extends VolatileSurfaceManager {
                 drawable = ((Long)context).longValue();
             }
             sData = XRSurfaceData.createData(gc,
-                                              vImg.getWidth(),
-                                              vImg.getHeight(),
-                                              cm, vImg, drawable,
-                                              vImg.getTransparency());
+                                             vImg.getWidth(),
+                                             vImg.getHeight(),
+                                             cm, vImg, drawable,
+                                             vImg.getTransparency(), false);
         } catch (NullPointerException ex) {
             sData = null;
         } catch (OutOfMemoryError er) {

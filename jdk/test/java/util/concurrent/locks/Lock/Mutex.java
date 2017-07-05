@@ -31,11 +31,13 @@
  * http://creativecommons.org/publicdomain/zero/1.0/
  */
 
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.concurrent.locks.*;
-import java.util.concurrent.atomic.*;
-import java.io.*;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.AbstractQueuedSynchronizer;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.io.IOException;
+import java.io.ObjectInputStream;
 
 /**
  * A sample user extension of AbstractQueuedSynchronizer.
