@@ -709,7 +709,7 @@ class StubGenerator: public StubCodeGenerator {
   //
   //  Input:
   //     start   -  starting address
-  //     end     -  element count
+  //     count   -  element count
   void  gen_write_ref_array_pre_barrier(Register start, Register count) {
     assert_different_registers(start, count);
     BarrierSet* bs = Universe::heap()->barrier_set();
@@ -757,7 +757,6 @@ class StubGenerator: public StubCodeGenerator {
           __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, BarrierSet::static_write_ref_array_post)));
           __ addptr(rsp, 2*wordSize);
           __ popa();
-
         }
         break;
 

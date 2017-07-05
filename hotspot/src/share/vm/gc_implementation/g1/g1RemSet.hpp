@@ -62,10 +62,12 @@ public:
   // If "this" is of the given subtype, return "this", else "NULL".
   virtual HRInto_G1RemSet* as_HRInto_G1RemSet() { return NULL; }
 
-  // Record, if necessary, the fact that *p (where "p" is in region "from")
-  // has changed to its new value.
+  // Record, if necessary, the fact that *p (where "p" is in region "from",
+  // and is, a fortiori, required to be non-NULL) has changed to its new value.
   virtual void write_ref(HeapRegion* from, oop* p) = 0;
+  virtual void write_ref(HeapRegion* from, narrowOop* p) = 0;
   virtual void par_write_ref(HeapRegion* from, oop* p, int tid) = 0;
+  virtual void par_write_ref(HeapRegion* from, narrowOop* p, int tid) = 0;
 
   // Requires "region_bm" and "card_bm" to be bitmaps with 1 bit per region
   // or card, respectively, such that a region or card with a corresponding
@@ -105,7 +107,9 @@ public:
 
   // Nothing is necessary in the version below.
   void write_ref(HeapRegion* from, oop* p) {}
+  void write_ref(HeapRegion* from, narrowOop* p) {}
   void par_write_ref(HeapRegion* from, oop* p, int tid) {}
+  void par_write_ref(HeapRegion* from, narrowOop* p, int tid) {}
 
   void scrub(BitMap* region_bm, BitMap* card_bm) {}
   void scrub_par(BitMap* region_bm, BitMap* card_bm,
@@ -143,8 +147,19 @@ protected:
   // their references into the collection summarized in "_new_refs".
   bool _par_traversal_in_progress;
   void set_par_traversal(bool b) { _par_traversal_in_progress = b; }
-  GrowableArray<oop*>** _new_refs;
-  void new_refs_iterate(OopClosure* cl);
+  GrowableArray<OopOrNarrowOopStar>** _new_refs;
+  template <class T> void new_refs_iterate_work(OopClosure* cl);
+  void new_refs_iterate(OopClosure* cl) {
+    if (UseCompressedOops) {
+      new_refs_iterate_work<narrowOop>(cl);
+    } else {
+      new_refs_iterate_work<oop>(cl);
+    }
+  }
+
+protected:
+  template <class T> void write_ref_nv(HeapRegion* from, T* p);
+  template <class T> void par_write_ref_nv(HeapRegion* from, T* p, int tid);
 
 public:
   // This is called to reset dual hash tables after the gc pause
@@ -161,7 +176,14 @@ public:
   void prepare_for_oops_into_collection_set_do();
   void cleanup_after_oops_into_collection_set_do();
   void scanRS(OopsInHeapRegionClosure* oc, int worker_i);
-  void scanNewRefsRS(OopsInHeapRegionClosure* oc, int worker_i);
+  template <class T> void scanNewRefsRS_work(OopsInHeapRegionClosure* oc, int worker_i);
+  void scanNewRefsRS(OopsInHeapRegionClosure* oc, int worker_i) {
+    if (UseCompressedOops) {
+      scanNewRefsRS_work<narrowOop>(oc, worker_i);
+    } else {
+      scanNewRefsRS_work<oop>(oc, worker_i);
+    }
+  }
   void updateRS(int worker_i);
   HeapRegion* calculateStartRegion(int i);
 
@@ -172,12 +194,22 @@ public:
 
   // Record, if necessary, the fact that *p (where "p" is in region "from",
   // which is required to be non-NULL) has changed to a new non-NULL value.
-  inline void write_ref(HeapRegion* from, oop* p);
-  // The "_nv" version is the same; it exists just so that it is not virtual.
-  inline void write_ref_nv(HeapRegion* from, oop* p);
+  // [Below the virtual version calls a non-virtual protected
+  // workhorse that is templatified for narrow vs wide oop.]
+  inline void write_ref(HeapRegion* from, oop* p) {
+    write_ref_nv(from, p);
+  }
+  inline void write_ref(HeapRegion* from, narrowOop* p) {
+    write_ref_nv(from, p);
+  }
+  inline void par_write_ref(HeapRegion* from, oop* p, int tid) {
+    par_write_ref_nv(from, p, tid);
+  }
+  inline void par_write_ref(HeapRegion* from, narrowOop* p, int tid) {
+    par_write_ref_nv(from, p, tid);
+  }
 
-  inline bool self_forwarded(oop obj);
-  inline void par_write_ref(HeapRegion* from, oop* p, int tid);
+  bool self_forwarded(oop obj);
 
   void scrub(BitMap* region_bm, BitMap* card_bm);
   void scrub_par(BitMap* region_bm, BitMap* card_bm,
@@ -208,6 +240,9 @@ class UpdateRSOopClosure: public OopClosure {
   HeapRegion* _from;
   HRInto_G1RemSet* _rs;
   int _worker_i;
+
+  template <class T> void do_oop_work(T* p);
+
 public:
   UpdateRSOopClosure(HRInto_G1RemSet* rs, int worker_i = 0) :
     _from(NULL), _rs(rs), _worker_i(worker_i) {
@@ -219,11 +254,10 @@ public:
     _from = from;
   }
 
-  virtual void do_oop(narrowOop* p);
-  virtual void do_oop(oop* p);
+  virtual void do_oop(narrowOop* p) { do_oop_work(p); }
+  virtual void do_oop(oop* p)       { do_oop_work(p); }
 
   // Override: this closure is idempotent.
   //  bool idempotent() { return true; }
   bool apply_to_weak_ref_discovered_field() { return true; }
 };
-

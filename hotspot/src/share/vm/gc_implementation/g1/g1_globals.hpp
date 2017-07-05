@@ -80,9 +80,6 @@
   develop(bool, G1TraceConcurrentRefinement, false,                         \
           "Trace G1 concurrent refinement")                                 \
                                                                             \
-  develop(bool, G1ConcMark, true,                                           \
-          "If true, run concurrent marking for G1")                         \
-                                                                            \
   product(intx, G1MarkStackSize, 2 * 1024 * 1024,                           \
           "Size of the mark stack for concurrent marking.")                 \
                                                                             \

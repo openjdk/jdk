@@ -379,7 +379,15 @@ void OopMapSet::all_do(const frame *fr, const RegisterMap *reg_map,
         if ( loc != NULL ) {
           oop *base_loc    = fr->oopmapreg_to_location(omv.content_reg(), reg_map);
           oop *derived_loc = loc;
-          derived_oop_fn(base_loc, derived_loc);
+          oop val = *base_loc;
+          if (val == (oop)NULL || Universe::is_narrow_oop_base(val)) {
+            // Ignore NULL oops and decoded NULL narrow oops which
+            // equal to Universe::narrow_oop_base when a narrow oop
+            // implicit null check is used in compiled code.
+            // The narrow_oop_base could be NULL or be the address
+            // of the page below heap depending on compressed oops mode.
+          } else
+            derived_oop_fn(base_loc, derived_loc);
         }
         oms.next();
       }  while (!oms.is_done());
@@ -394,6 +402,15 @@ void OopMapSet::all_do(const frame *fr, const RegisterMap *reg_map,
       oop* loc = fr->oopmapreg_to_location(omv.reg(),reg_map);
       if ( loc != NULL ) {
         if ( omv.type() == OopMapValue::oop_value ) {
+          oop val = *loc;
+          if (val == (oop)NULL || Universe::is_narrow_oop_base(val)) {
+            // Ignore NULL oops and decoded NULL narrow oops which
+            // equal to Universe::narrow_oop_base when a narrow oop
+            // implicit null check is used in compiled code.
+            // The narrow_oop_base could be NULL or be the address
+            // of the page below heap depending on compressed oops mode.
+            continue;
+          }
 #ifdef ASSERT
           if ((((uintptr_t)loc & (sizeof(*loc)-1)) != 0) ||
              !Universe::heap()->is_in_or_null(*loc)) {
@@ -410,6 +427,8 @@ void OopMapSet::all_do(const frame *fr, const RegisterMap *reg_map,
 #endif // ASSERT
           oop_fn->do_oop(loc);
         } else if ( omv.type() == OopMapValue::value_value ) {
+          assert((*loc) == (oop)NULL || !Universe::is_narrow_oop_base(*loc),
+                 "found invalid value pointer");
           value_fn->do_oop(loc);
         } else if ( omv.type() == OopMapValue::narrowoop_value ) {
           narrowOop *nl = (narrowOop*)loc;
