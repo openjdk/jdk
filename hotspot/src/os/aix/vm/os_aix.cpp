@@ -971,34 +971,32 @@ bool os::create_thread(Thread* thread, ThreadType thr_type, size_t stack_size) {
   guarantee(pthread_attr_setsuspendstate_np(&attr, PTHREAD_CREATE_SUSPENDED_NP) == 0, "???");
 
   // calculate stack size if it's not specified by caller
-  if (os::Aix::supports_variable_stack_size()) {
-    if (stack_size == 0) {
-      stack_size = os::Aix::default_stack_size(thr_type);
+  if (stack_size == 0) {
+    stack_size = os::Aix::default_stack_size(thr_type);
 
-      switch (thr_type) {
-      case os::java_thread:
-        // Java threads use ThreadStackSize whose default value can be changed with the flag -Xss.
-        assert(JavaThread::stack_size_at_create() > 0, "this should be set");
-        stack_size = JavaThread::stack_size_at_create();
+    switch (thr_type) {
+    case os::java_thread:
+      // Java threads use ThreadStackSize whose default value can be changed with the flag -Xss.
+      assert(JavaThread::stack_size_at_create() > 0, "this should be set");
+      stack_size = JavaThread::stack_size_at_create();
+      break;
+    case os::compiler_thread:
+      if (CompilerThreadStackSize > 0) {
+        stack_size = (size_t)(CompilerThreadStackSize * K);
         break;
-      case os::compiler_thread:
-        if (CompilerThreadStackSize > 0) {
-          stack_size = (size_t)(CompilerThreadStackSize * K);
-          break;
-        } // else fall through:
-          // use VMThreadStackSize if CompilerThreadStackSize is not defined
-      case os::vm_thread:
-      case os::pgc_thread:
-      case os::cgc_thread:
-      case os::watcher_thread:
-        if (VMThreadStackSize > 0) stack_size = (size_t)(VMThreadStackSize * K);
-        break;
-      }
+      } // else fall through:
+        // use VMThreadStackSize if CompilerThreadStackSize is not defined
+    case os::vm_thread:
+    case os::pgc_thread:
+    case os::cgc_thread:
+    case os::watcher_thread:
+      if (VMThreadStackSize > 0) stack_size = (size_t)(VMThreadStackSize * K);
+      break;
     }
+  }
 
-    stack_size = MAX2(stack_size, os::Aix::min_stack_allowed);
-    pthread_attr_setstacksize(&attr, stack_size);
-  } //else let thread_create() pick the default value (96 K on AIX)
+  stack_size = MAX2(stack_size, os::Aix::min_stack_allowed);
+  pthread_attr_setstacksize(&attr, stack_size);
 
   pthread_t tid;
   int ret = pthread_create(&tid, &attr, (void* (*)(void*)) java_start, thread);

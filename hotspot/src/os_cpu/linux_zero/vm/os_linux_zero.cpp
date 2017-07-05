@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2009, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -304,10 +304,6 @@ bool os::is_allocatable(size_t bytes) {
 // thread stack
 
 size_t os::Linux::min_stack_allowed = 64 * K;
-
-bool os::Linux::supports_variable_stack_size() {
-  return true;
-}
 
 size_t os::Linux::default_stack_size(os::ThreadType thr_type) {
 #ifdef _LP64

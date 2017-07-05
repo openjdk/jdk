@@ -87,6 +87,24 @@ public class PrintTouchedMethods {
       output.shouldNotContain("TestLogTouchedMethods.methodB:()V");
       output.shouldHaveExitValue(0);
 
+      String[] javaArgs4 = {"-XX:+UnlockDiagnosticVMOptions", "-Xint", "-XX:+LogTouchedMethods", "-XX:+PrintTouchedMethodsAtExit", "-XX:-TieredCompilation", "TestLogTouchedMethods"};
+      pb = ProcessTools.createJavaProcessBuilder(javaArgs4);
+      output = new OutputAnalyzer(pb.start());
+      lines = output.asLines();
+
+      if (lines.size() < 1) {
+        throw new Exception("Empty output");
+      }
+
+      first = lines.get(0);
+      if (!first.equals("# Method::print_touched_methods version 1")) {
+        throw new Exception("First line mismatch");
+      }
+
+      output.shouldContain("TestLogTouchedMethods.methodA:()V");
+      output.shouldNotContain("TestLogTouchedMethods.methodB:()V");
+      output.shouldHaveExitValue(0);
+
       // Test jcmd PrintTouchedMethods VM.print_touched_methods
       String pid = Integer.toString(ProcessTools.getProcessId());
       pb = new ProcessBuilder();

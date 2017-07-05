@@ -22,8 +22,8 @@
  *
  */
 
-#include "runtime/thread.inline.hpp"
 #include "precompiled.hpp"
+#include "runtime/thread.inline.hpp"
 #include "classfile/imageDecompressor.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/bytes.hpp"

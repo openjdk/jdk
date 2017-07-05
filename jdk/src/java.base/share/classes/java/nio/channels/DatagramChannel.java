@@ -187,8 +187,8 @@ public abstract class DatagramChannel
      * operations.
      *
      * <p> Datagram channels support reading and writing, so this method
-     * returns <tt>(</tt>{@link SelectionKey#OP_READ} <tt>|</tt>&nbsp;{@link
-     * SelectionKey#OP_WRITE}<tt>)</tt>.  </p>
+     * returns {@code (}{@link SelectionKey#OP_READ} {@code |}&nbsp;{@link
+     * SelectionKey#OP_WRITE}{@code )}.
      *
      * @return  The valid-operation set
      */
@@ -341,7 +341,7 @@ public abstract class DatagramChannel
      * copied into the given byte buffer and its source address is returned.
      * If this channel is in non-blocking mode and a datagram is not
      * immediately available then this method immediately returns
-     * <tt>null</tt>.
+     * {@code null}.
      *
      * <p> The datagram is transferred into the given byte buffer starting at
      * its current position, as if by a regular {@link
@@ -371,7 +371,7 @@ public abstract class DatagramChannel
      *         The buffer into which the datagram is to be transferred
      *
      * @return  The datagram's source address,
-     *          or <tt>null</tt> if this channel is in non-blocking mode
+     *          or {@code null} if this channel is in non-blocking mode
      *          and no datagram was immediately available
      *
      * @throws  ClosedChannelException

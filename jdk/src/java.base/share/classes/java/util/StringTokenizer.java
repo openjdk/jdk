@@ -30,32 +30,32 @@ import java.lang.*;
 /**
  * The string tokenizer class allows an application to break a
  * string into tokens. The tokenization method is much simpler than
- * the one used by the <code>StreamTokenizer</code> class. The
- * <code>StringTokenizer</code> methods do not distinguish among
+ * the one used by the {@code StreamTokenizer} class. The
+ * {@code StringTokenizer} methods do not distinguish among
  * identifiers, numbers, and quoted strings, nor do they recognize
  * and skip comments.
  * <p>
  * The set of delimiters (the characters that separate tokens) may
  * be specified either at creation time or on a per-token basis.
  * <p>
- * An instance of <code>StringTokenizer</code> behaves in one of two
+ * An instance of {@code StringTokenizer} behaves in one of two
  * ways, depending on whether it was created with the
- * <code>returnDelims</code> flag having the value <code>true</code>
- * or <code>false</code>:
+ * {@code returnDelims} flag having the value {@code true}
+ * or {@code false}:
  * <ul>
- * <li>If the flag is <code>false</code>, delimiter characters serve to
+ * <li>If the flag is {@code false}, delimiter characters serve to
  *     separate tokens. A token is a maximal sequence of consecutive
  *     characters that are not delimiters.
- * <li>If the flag is <code>true</code>, delimiter characters are themselves
+ * <li>If the flag is {@code true}, delimiter characters are themselves
  *     considered to be tokens. A token is thus either one delimiter
  *     character, or a maximal sequence of consecutive characters that are
  *     not delimiters.
  * </ul><p>
- * A <tt>StringTokenizer</tt> object internally maintains a current
+ * A {@code StringTokenizer} object internally maintains a current
  * position within the string to be tokenized. Some operations advance this
  * current position past the characters processed.<p>
  * A token is returned by taking a substring of the string that was used to
- * create the <tt>StringTokenizer</tt> object.
+ * create the {@code StringTokenizer} object.
  * <p>
  * The following is one example of the use of the tokenizer. The code:
  * <blockquote><pre>
@@ -74,12 +74,12 @@ import java.lang.*;
  * </pre></blockquote>
  *
  * <p>
- * <tt>StringTokenizer</tt> is a legacy class that is retained for
+ * {@code StringTokenizer} is a legacy class that is retained for
  * compatibility reasons although its use is discouraged in new code. It is
- * recommended that anyone seeking this functionality use the <tt>split</tt>
- * method of <tt>String</tt> or the java.util.regex package instead.
+ * recommended that anyone seeking this functionality use the {@code split}
+ * method of {@code String} or the java.util.regex package instead.
  * <p>
- * The following example illustrates how the <tt>String.split</tt>
+ * The following example illustrates how the {@code String.split}
  * method can be used to break up a string into its basic tokens:
  * <blockquote><pre>
  *     String[] result = "this is a test".split("\\s");
@@ -171,25 +171,25 @@ class StringTokenizer implements Enumeration<Object> {
 
     /**
      * Constructs a string tokenizer for the specified string. All
-     * characters in the <code>delim</code> argument are the delimiters
+     * characters in the {@code delim} argument are the delimiters
      * for separating tokens.
      * <p>
-     * If the <code>returnDelims</code> flag is <code>true</code>, then
+     * If the {@code returnDelims} flag is {@code true}, then
      * the delimiter characters are also returned as tokens. Each
      * delimiter is returned as a string of length one. If the flag is
-     * <code>false</code>, the delimiter characters are skipped and only
+     * {@code false}, the delimiter characters are skipped and only
      * serve as separators between tokens.
      * <p>
-     * Note that if <tt>delim</tt> is <tt>null</tt>, this constructor does
+     * Note that if {@code delim} is {@code null}, this constructor does
      * not throw an exception. However, trying to invoke other methods on the
-     * resulting <tt>StringTokenizer</tt> may result in a
-     * <tt>NullPointerException</tt>.
+     * resulting {@code StringTokenizer} may result in a
+     * {@code NullPointerException}.
      *
      * @param   str            a string to be parsed.
      * @param   delim          the delimiters.
      * @param   returnDelims   flag indicating whether to return the delimiters
      *                         as tokens.
-     * @exception NullPointerException if str is <CODE>null</CODE>
+     * @exception NullPointerException if str is {@code null}
      */
     public StringTokenizer(String str, String delim, boolean returnDelims) {
         currentPosition = 0;
@@ -204,18 +204,18 @@ class StringTokenizer implements Enumeration<Object> {
 
     /**
      * Constructs a string tokenizer for the specified string. The
-     * characters in the <code>delim</code> argument are the delimiters
+     * characters in the {@code delim} argument are the delimiters
      * for separating tokens. Delimiter characters themselves will not
      * be treated as tokens.
      * <p>
-     * Note that if <tt>delim</tt> is <tt>null</tt>, this constructor does
+     * Note that if {@code delim} is {@code null}, this constructor does
      * not throw an exception. However, trying to invoke other methods on the
-     * resulting <tt>StringTokenizer</tt> may result in a
-     * <tt>NullPointerException</tt>.
+     * resulting {@code StringTokenizer} may result in a
+     * {@code NullPointerException}.
      *
      * @param   str     a string to be parsed.
      * @param   delim   the delimiters.
-     * @exception NullPointerException if str is <CODE>null</CODE>
+     * @exception NullPointerException if str is {@code null}
      */
     public StringTokenizer(String str, String delim) {
         this(str, delim, false);
@@ -230,7 +230,7 @@ class StringTokenizer implements Enumeration<Object> {
      * not be treated as tokens.
      *
      * @param   str   a string to be parsed.
-     * @exception NullPointerException if str is <CODE>null</CODE>
+     * @exception NullPointerException if str is {@code null}
      */
     public StringTokenizer(String str) {
         this(str, " \t\n\r\f", false);
@@ -307,11 +307,11 @@ class StringTokenizer implements Enumeration<Object> {
 
     /**
      * Tests if there are more tokens available from this tokenizer's string.
-     * If this method returns <tt>true</tt>, then a subsequent call to
-     * <tt>nextToken</tt> with no argument will successfully return a token.
+     * If this method returns {@code true}, then a subsequent call to
+     * {@code nextToken} with no argument will successfully return a token.
      *
-     * @return  <code>true</code> if and only if there is at least one token
-     *          in the string after the current position; <code>false</code>
+     * @return  {@code true} if and only if there is at least one token
+     *          in the string after the current position; {@code false}
      *          otherwise.
      */
     public boolean hasMoreTokens() {
@@ -355,8 +355,8 @@ class StringTokenizer implements Enumeration<Object> {
     /**
      * Returns the next token in this string tokenizer's string. First,
      * the set of characters considered to be delimiters by this
-     * <tt>StringTokenizer</tt> object is changed to be the characters in
-     * the string <tt>delim</tt>. Then the next token in the string
+     * {@code StringTokenizer} object is changed to be the characters in
+     * the string {@code delim}. Then the next token in the string
      * after the current position is returned. The current position is
      * advanced beyond the recognized token.  The new delimiter set
      * remains the default after this call.
@@ -365,7 +365,7 @@ class StringTokenizer implements Enumeration<Object> {
      * @return     the next token, after switching to the new delimiter set.
      * @exception  NoSuchElementException  if there are no more tokens in this
      *               tokenizer's string.
-     * @exception NullPointerException if delim is <CODE>null</CODE>
+     * @exception NullPointerException if delim is {@code null}
      */
     public String nextToken(String delim) {
         delimiters = delim;
@@ -378,12 +378,12 @@ class StringTokenizer implements Enumeration<Object> {
     }
 
     /**
-     * Returns the same value as the <code>hasMoreTokens</code>
+     * Returns the same value as the {@code hasMoreTokens}
      * method. It exists so that this class can implement the
-     * <code>Enumeration</code> interface.
+     * {@code Enumeration} interface.
      *
-     * @return  <code>true</code> if there are more tokens;
-     *          <code>false</code> otherwise.
+     * @return  {@code true} if there are more tokens;
+     *          {@code false} otherwise.
      * @see     java.util.Enumeration
      * @see     java.util.StringTokenizer#hasMoreTokens()
      */
@@ -392,10 +392,10 @@ class StringTokenizer implements Enumeration<Object> {
     }
 
     /**
-     * Returns the same value as the <code>nextToken</code> method,
-     * except that its declared return value is <code>Object</code> rather than
-     * <code>String</code>. It exists so that this class can implement the
-     * <code>Enumeration</code> interface.
+     * Returns the same value as the {@code nextToken} method,
+     * except that its declared return value is {@code Object} rather than
+     * {@code String}. It exists so that this class can implement the
+     * {@code Enumeration} interface.
      *
      * @return     the next token in the string.
      * @exception  NoSuchElementException  if there are no more tokens in this
@@ -409,7 +409,7 @@ class StringTokenizer implements Enumeration<Object> {
 
     /**
      * Calculates the number of times that this tokenizer's
-     * <code>nextToken</code> method can be called before it generates an
+     * {@code nextToken} method can be called before it generates an
      * exception. The current position is not advanced.
      *
      * @return  the number of tokens remaining in the string using the current

@@ -1961,29 +1961,6 @@ Java_sun_awt_windows_WFramePeer_synthesizeWmActivate(JNIEnv *env, jobject self, 
     CATCH_BAD_ALLOC;
 }
 
-JNIEXPORT jboolean JNICALL
-Java_sun_awt_windows_WEmbeddedFramePeer_requestFocusToEmbedder(JNIEnv *env, jobject self)
-{
-    jboolean result = JNI_FALSE;
-
-    TRY;
-
-    AwtFrame *frame = NULL;
-
-    PDATA pData;
-    JNI_CHECK_PEER_GOTO(self, ret);
-    frame = (AwtFrame *)pData;
-
-    // JDK-8056915: During initial applet activation, set focus to plugin control window
-    HWND hwndParent = ::GetParent(frame->GetHWnd());
-
-    result = SetFocusToPluginControl(hwndParent);
-
-    CATCH_BAD_ALLOC_RET(JNI_FALSE);
-ret:
-    return result;
-}
-
 } /* extern "C" */
 
 static bool SetFocusToPluginControl(HWND hwndPlugin)

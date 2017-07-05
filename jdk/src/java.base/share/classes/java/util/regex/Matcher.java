@@ -258,7 +258,7 @@ public final class Matcher implements MatchResult {
      * The result is unaffected by subsequent operations performed upon this
      * matcher.
      *
-     * @return  a <code>MatchResult</code> with the state of this matcher
+     * @return  a {@code MatchResult} with the state of this matcher
      * @since 1.5
      */
     public MatchResult toMatchResult() {
@@ -347,7 +347,7 @@ public final class Matcher implements MatchResult {
     }
 
     /**
-      * Changes the <tt>Pattern</tt> that this <tt>Matcher</tt> uses to
+      * Changes the {@code Pattern} that this {@code Matcher} uses to
       * find matches with.
       *
       * <p> This method causes this matcher to lose information
@@ -359,7 +359,7 @@ public final class Matcher implements MatchResult {
       *         The new pattern used by this matcher
       * @return  This matcher
       * @throws  IllegalArgumentException
-      *          If newPattern is <tt>null</tt>
+      *          If newPattern is {@code null}
       * @since 1.5
       */
     public Matcher usePattern(Pattern newPattern) {
@@ -444,14 +444,14 @@ public final class Matcher implements MatchResult {
      *
      * <p> <a href="Pattern.html#cg">Capturing groups</a> are indexed from left
      * to right, starting at one.  Group zero denotes the entire pattern, so
-     * the expression <i>m.</i><tt>start(0)</tt> is equivalent to
-     * <i>m.</i><tt>start()</tt>.  </p>
+     * the expression <i>m.</i>{@code start(0)} is equivalent to
+     * <i>m.</i>{@code start()}.  </p>
      *
      * @param  group
      *         The index of a capturing group in this matcher's pattern
      *
      * @return  The index of the first character captured by the group,
-     *          or <tt>-1</tt> if the match was successful but the group
+     *          or {@code -1} if the match was successful but the group
      *          itself did not match anything
      *
      * @throws  IllegalStateException
@@ -516,14 +516,14 @@ public final class Matcher implements MatchResult {
      *
      * <p> <a href="Pattern.html#cg">Capturing groups</a> are indexed from left
      * to right, starting at one.  Group zero denotes the entire pattern, so
-     * the expression <i>m.</i><tt>end(0)</tt> is equivalent to
-     * <i>m.</i><tt>end()</tt>.  </p>
+     * the expression <i>m.</i>{@code end(0)} is equivalent to
+     * <i>m.</i>{@code end()}.  </p>
      *
      * @param  group
      *         The index of a capturing group in this matcher's pattern
      *
      * @return  The offset after the last character captured by the group,
-     *          or <tt>-1</tt> if the match was successful
+     *          or {@code -1} if the match was successful
      *          but the group itself did not match anything
      *
      * @throws  IllegalStateException
@@ -571,11 +571,11 @@ public final class Matcher implements MatchResult {
      * Returns the input subsequence matched by the previous match.
      *
      * <p> For a matcher <i>m</i> with input sequence <i>s</i>,
-     * the expressions <i>m.</i><tt>group()</tt> and
-     * <i>s.</i><tt>substring(</tt><i>m.</i><tt>start(),</tt>&nbsp;<i>m.</i><tt>end())</tt>
+     * the expressions <i>m.</i>{@code group()} and
+     * <i>s.</i>{@code substring(}<i>m.</i>{@code start(),}&nbsp;<i>m.</i>{@code end())}
      * are equivalent.  </p>
      *
-     * <p> Note that some patterns, for example <tt>a*</tt>, match the empty
+     * <p> Note that some patterns, for example {@code a*}, match the empty
      * string.  This method will return the empty string when the pattern
      * successfully matches the empty string in the input.  </p>
      *
@@ -595,18 +595,19 @@ public final class Matcher implements MatchResult {
      * previous match operation.
      *
      * <p> For a matcher <i>m</i>, input sequence <i>s</i>, and group index
-     * <i>g</i>, the expressions <i>m.</i><tt>group(</tt><i>g</i><tt>)</tt> and
-     * <i>s.</i><tt>substring(</tt><i>m.</i><tt>start(</tt><i>g</i><tt>),</tt>&nbsp;<i>m.</i><tt>end(</tt><i>g</i><tt>))</tt>
+     * <i>g</i>, the expressions <i>m.</i>{@code group(}<i>g</i>{@code )} and
+     * <i>s.</i>{@code substring(}<i>m.</i>{@code start(}<i>g</i>{@code
+     * ),}&nbsp;<i>m.</i>{@code end(}<i>g</i>{@code ))}
      * are equivalent.  </p>
      *
      * <p> <a href="Pattern.html#cg">Capturing groups</a> are indexed from left
      * to right, starting at one.  Group zero denotes the entire pattern, so
-     * the expression <tt>m.group(0)</tt> is equivalent to <tt>m.group()</tt>.
+     * the expression {@code m.group(0)} is equivalent to {@code m.group()}.
      * </p>
      *
      * <p> If the match was successful but the group specified failed to match
-     * any part of the input sequence, then <tt>null</tt> is returned. Note
-     * that some groups, for example <tt>(a*)</tt>, match the empty string.
+     * any part of the input sequence, then {@code null} is returned. Note
+     * that some groups, for example {@code (a*)}, match the empty string.
      * This method will return the empty string when such a group successfully
      * matches the empty string in the input.  </p>
      *
@@ -614,7 +615,7 @@ public final class Matcher implements MatchResult {
      *         The index of a capturing group in this matcher's pattern
      *
      * @return  The (possibly empty) subsequence captured by the group
-     *          during the previous match, or <tt>null</tt> if the group
+     *          during the previous match, or {@code null} if the group
      *          failed to match part of the input
      *
      * @throws  IllegalStateException
@@ -641,8 +642,8 @@ public final class Matcher implements MatchResult {
      * match operation.
      *
      * <p> If the match was successful but the group specified failed to match
-     * any part of the input sequence, then <tt>null</tt> is returned. Note
-     * that some groups, for example <tt>(a*)</tt>, match the empty string.
+     * any part of the input sequence, then {@code null} is returned. Note
+     * that some groups, for example {@code (a*)}, match the empty string.
      * This method will return the empty string when such a group successfully
      * matches the empty string in the input.  </p>
      *
@@ -650,7 +651,7 @@ public final class Matcher implements MatchResult {
      *         The name of a named-capturing group in this matcher's pattern
      *
      * @return  The (possibly empty) subsequence captured by the named group
-     *          during the previous match, or <tt>null</tt> if the group
+     *          during the previous match, or {@code null} if the group
      *          failed to match part of the input
      *
      * @throws  IllegalStateException
@@ -689,9 +690,9 @@ public final class Matcher implements MatchResult {
      * Attempts to match the entire region against the pattern.
      *
      * <p> If the match succeeds then more information can be obtained via the
-     * <tt>start</tt>, <tt>end</tt>, and <tt>group</tt> methods.  </p>
+     * {@code start}, {@code end}, and {@code group} methods.  </p>
      *
-     * @return  <tt>true</tt> if, and only if, the entire region sequence
+     * @return  {@code true} if, and only if, the entire region sequence
      *          matches this matcher's pattern
      */
     public boolean matches() {
@@ -708,9 +709,9 @@ public final class Matcher implements MatchResult {
      * match.
      *
      * <p> If the match succeeds then more information can be obtained via the
-     * <tt>start</tt>, <tt>end</tt>, and <tt>group</tt> methods.  </p>
+     * {@code start}, {@code end}, and {@code group} methods.  </p>
      *
-     * @return  <tt>true</tt> if, and only if, a subsequence of the input
+     * @return  {@code true} if, and only if, a subsequence of the input
      *          sequence matches this matcher's pattern
      */
     public boolean find() {
@@ -737,7 +738,7 @@ public final class Matcher implements MatchResult {
      * index.
      *
      * <p> If the match succeeds then more information can be obtained via the
-     * <tt>start</tt>, <tt>end</tt>, and <tt>group</tt> methods, and subsequent
+     * {@code start}, {@code end}, and {@code group} methods, and subsequent
      * invocations of the {@link #find()} method will start at the first
      * character not matched by this match.  </p>
      *
@@ -746,7 +747,7 @@ public final class Matcher implements MatchResult {
      *          If start is less than zero or if start is greater than the
      *          length of the input sequence.
      *
-     * @return  <tt>true</tt> if, and only if, a subsequence of the input
+     * @return  {@code true} if, and only if, a subsequence of the input
      *          sequence starting at the given index matches this matcher's
      *          pattern
      */
@@ -767,9 +768,9 @@ public final class Matcher implements MatchResult {
      * require that the entire region be matched.
      *
      * <p> If the match succeeds then more information can be obtained via the
-     * <tt>start</tt>, <tt>end</tt>, and <tt>group</tt> methods.  </p>
+     * {@code start}, {@code end}, and {@code group} methods.  </p>
      *
-     * @return  <tt>true</tt> if, and only if, a prefix of the input
+     * @return  {@code true} if, and only if, a prefix of the input
      *          sequence matches this matcher's pattern
      */
     public boolean lookingAt() {
@@ -777,14 +778,14 @@ public final class Matcher implements MatchResult {
     }
 
     /**
-     * Returns a literal replacement <code>String</code> for the specified
-     * <code>String</code>.
+     * Returns a literal replacement {@code String} for the specified
+     * {@code String}.
      *
-     * This method produces a <code>String</code> that will work
-     * as a literal replacement <code>s</code> in the
-     * <code>appendReplacement</code> method of the {@link Matcher} class.
-     * The <code>String</code> produced will match the sequence of characters
-     * in <code>s</code> treated as a literal sequence. Slashes ('\') and
+     * This method produces a {@code String} that will work
+     * as a literal replacement {@code s} in the
+     * {@code appendReplacement} method of the {@link Matcher} class.
+     * The {@code String} produced will match the sequence of characters
+     * in {@code s} treated as a literal sequence. Slashes ('\') and
      * dollar signs ('$') will be given no special meaning.
      *
      * @param  s The string to be literalized
@@ -816,7 +817,7 @@ public final class Matcher implements MatchResult {
      *   append position, and appends them to the given string buffer.  It
      *   stops after reading the last character preceding the previous match,
      *   that is, the character at index {@link
-     *   #start()}&nbsp;<tt>-</tt>&nbsp;<tt>1</tt>.  </p></li>
+     *   #start()}&nbsp;{@code -}&nbsp;{@code 1}.  </p></li>
      *
      *   <li><p> It appends the given replacement string to the string buffer.
      *   </p></li>
@@ -829,21 +830,21 @@ public final class Matcher implements MatchResult {
      *
      * <p> The replacement string may contain references to subsequences
      * captured during the previous match: Each occurrence of
-     * <tt>${</tt><i>name</i><tt>}</tt> or <tt>$</tt><i>g</i>
+     * <code>${</code><i>name</i><code>}</code> or {@code $}<i>g</i>
      * will be replaced by the result of evaluating the corresponding
      * {@link #group(String) group(name)} or {@link #group(int) group(g)}
-     * respectively. For  <tt>$</tt><i>g</i>,
-     * the first number after the <tt>$</tt> is always treated as part of
+     * respectively. For {@code $}<i>g</i>,
+     * the first number after the {@code $} is always treated as part of
      * the group reference. Subsequent numbers are incorporated into g if
      * they would form a legal group reference. Only the numerals '0'
      * through '9' are considered as potential components of the group
-     * reference. If the second group matched the string <tt>"foo"</tt>, for
-     * example, then passing the replacement string <tt>"$2bar"</tt> would
-     * cause <tt>"foobar"</tt> to be appended to the string buffer. A dollar
-     * sign (<tt>$</tt>) may be included as a literal in the replacement
-     * string by preceding it with a backslash (<tt>\$</tt>).
+     * reference. If the second group matched the string {@code "foo"}, for
+     * example, then passing the replacement string {@code "$2bar"} would
+     * cause {@code "foobar"} to be appended to the string buffer. A dollar
+     * sign ({@code $}) may be included as a literal in the replacement
+     * string by preceding it with a backslash ({@code \$}).
      *
-     * <p> Note that backslashes (<tt>\</tt>) and dollar signs (<tt>$</tt>) in
+     * <p> Note that backslashes ({@code \}) and dollar signs ({@code $}) in
      * the replacement string may cause the results to be different than if it
      * were being treated as a literal replacement string. Dollar signs may be
      * treated as references to captured subsequences as described above, and
@@ -852,8 +853,8 @@ public final class Matcher implements MatchResult {
      *
      * <p> This method is intended to be used in a loop together with the
      * {@link #appendTail appendTail} and {@link #find find} methods.  The
-     * following code, for example, writes <tt>one dog two dogs in the
-     * yard</tt> to the standard-output stream: </p>
+     * following code, for example, writes {@code one dog two dogs in the
+     * yard} to the standard-output stream: </p>
      *
      * <blockquote><pre>
      * Pattern p = Pattern.compile("cat");
@@ -911,7 +912,7 @@ public final class Matcher implements MatchResult {
      *   append position, and appends them to the given string builder.  It
      *   stops after reading the last character preceding the previous match,
      *   that is, the character at index {@link
-     *   #start()}&nbsp;<tt>-</tt>&nbsp;<tt>1</tt>.  </p></li>
+     *   #start()}&nbsp;{@code -}&nbsp;{@code 1}.  </p></li>
      *
      *   <li><p> It appends the given replacement string to the string builder.
      *   </p></li>
@@ -924,19 +925,19 @@ public final class Matcher implements MatchResult {
      *
      * <p> The replacement string may contain references to subsequences
      * captured during the previous match: Each occurrence of
-     * <tt>$</tt><i>g</i> will be replaced by the result of
-     * evaluating {@link #group(int) group}<tt>(</tt><i>g</i><tt>)</tt>.
-     * The first number after the <tt>$</tt> is always treated as part of
+     * {@code $}<i>g</i> will be replaced by the result of
+     * evaluating {@link #group(int) group}{@code (}<i>g</i>{@code )}.
+     * The first number after the {@code $} is always treated as part of
      * the group reference. Subsequent numbers are incorporated into g if
      * they would form a legal group reference. Only the numerals '0'
      * through '9' are considered as potential components of the group
-     * reference. If the second group matched the string <tt>"foo"</tt>, for
-     * example, then passing the replacement string <tt>"$2bar"</tt> would
-     * cause <tt>"foobar"</tt> to be appended to the string builder. A dollar
-     * sign (<tt>$</tt>) may be included as a literal in the replacement
-     * string by preceding it with a backslash (<tt>\$</tt>).
+     * reference. If the second group matched the string {@code "foo"}, for
+     * example, then passing the replacement string {@code "$2bar"} would
+     * cause {@code "foobar"} to be appended to the string builder. A dollar
+     * sign ({@code $}) may be included as a literal in the replacement
+     * string by preceding it with a backslash ({@code \$}).
      *
-     * <p> Note that backslashes (<tt>\</tt>) and dollar signs (<tt>$</tt>) in
+     * <p> Note that backslashes ({@code \}) and dollar signs ({@code $}) in
      * the replacement string may cause the results to be different than if it
      * were being treated as a literal replacement string. Dollar signs may be
      * treated as references to captured subsequences as described above, and
@@ -945,8 +946,8 @@ public final class Matcher implements MatchResult {
      *
      * <p> This method is intended to be used in a loop together with the
      * {@link #appendTail appendTail} and {@link #find find} methods.  The
-     * following code, for example, writes <tt>one dog two dogs in the
-     * yard</tt> to the standard-output stream: </p>
+     * following code, for example, writes {@code one dog two dogs in the
+     * yard} to the standard-output stream: </p>
      *
      * <blockquote><pre>
      * Pattern p = Pattern.compile("cat");
@@ -1134,17 +1135,17 @@ public final class Matcher implements MatchResult {
      * string may contain references to captured subsequences as in the {@link
      * #appendReplacement appendReplacement} method.
      *
-     * <p> Note that backslashes (<tt>\</tt>) and dollar signs (<tt>$</tt>) in
+     * <p> Note that backslashes ({@code \}) and dollar signs ({@code $}) in
      * the replacement string may cause the results to be different than if it
      * were being treated as a literal replacement string. Dollar signs may be
      * treated as references to captured subsequences as described above, and
      * backslashes are used to escape literal characters in the replacement
      * string.
      *
-     * <p> Given the regular expression <tt>a*b</tt>, the input
-     * <tt>"aabfooaabfooabfoob"</tt>, and the replacement string
-     * <tt>"-"</tt>, an invocation of this method on a matcher for that
-     * expression would yield the string <tt>"-foo-foo-foo-"</tt>.
+     * <p> Given the regular expression {@code a*b}, the input
+     * {@code "aabfooaabfooabfoob"}, and the replacement string
+     * {@code "-"}, an invocation of this method on a matcher for that
+     * expression would yield the string {@code "-foo-foo-foo-"}.
      *
      * <p> Invoking this method changes this matcher's state.  If the matcher
      * is to be used in further matching operations then it should first be
@@ -1186,18 +1187,18 @@ public final class Matcher implements MatchResult {
      * references to captured subsequences as in the {@link #appendReplacement
      * appendReplacement} method.
      *
-     * <p> Note that backslashes (<tt>\</tt>) and dollar signs (<tt>$</tt>) in
+     * <p> Note that backslashes ({@code \}) and dollar signs ({@code $}) in
      * a replacement string may cause the results to be different than if it
      * were being treated as a literal replacement string. Dollar signs may be
      * treated as references to captured subsequences as described above, and
      * backslashes are used to escape literal characters in the replacement
      * string.
      *
-     * <p> Given the regular expression <tt>dog</tt>, the input
-     * <tt>"zzzdogzzzdogzzz"</tt>, and the function
+     * <p> Given the regular expression {@code dog}, the input
+     * {@code "zzzdogzzzdogzzz"}, and the function
      * {@code mr -> mr.group().toUpperCase()}, an invocation of this method on
      * a matcher for that expression would yield the string
-     * <tt>"zzzDOGzzzDOGzzz"</tt>.
+     * {@code "zzzDOGzzzDOGzzz"}.
      *
      * <p> Invoking this method changes this matcher's state.  If the matcher
      * is to be used in further matching operations then it should first be
@@ -1360,17 +1361,17 @@ public final class Matcher implements MatchResult {
      * string may contain references to captured subsequences as in the {@link
      * #appendReplacement appendReplacement} method.
      *
-     * <p>Note that backslashes (<tt>\</tt>) and dollar signs (<tt>$</tt>) in
+     * <p>Note that backslashes ({@code \}) and dollar signs ({@code $}) in
      * the replacement string may cause the results to be different than if it
      * were being treated as a literal replacement string. Dollar signs may be
      * treated as references to captured subsequences as described above, and
      * backslashes are used to escape literal characters in the replacement
      * string.
      *
-     * <p> Given the regular expression <tt>dog</tt>, the input
-     * <tt>"zzzdogzzzdogzzz"</tt>, and the replacement string
-     * <tt>"cat"</tt>, an invocation of this method on a matcher for that
-     * expression would yield the string <tt>"zzzcatzzzdogzzz"</tt>.  </p>
+     * <p> Given the regular expression {@code dog}, the input
+     * {@code "zzzdogzzzdogzzz"}, and the replacement string
+     * {@code "cat"}, an invocation of this method on a matcher for that
+     * expression would yield the string {@code "zzzcatzzzdogzzz"}.  </p>
      *
      * <p> Invoking this method changes this matcher's state.  If the matcher
      * is to be used in further matching operations then it should first be
@@ -1408,18 +1409,18 @@ public final class Matcher implements MatchResult {
      * references to captured subsequences as in the {@link #appendReplacement
      * appendReplacement} method.
      *
-     * <p>Note that backslashes (<tt>\</tt>) and dollar signs (<tt>$</tt>) in
+     * <p>Note that backslashes ({@code \}) and dollar signs ({@code $}) in
      * the replacement string may cause the results to be different than if it
      * were being treated as a literal replacement string. Dollar signs may be
      * treated as references to captured subsequences as described above, and
      * backslashes are used to escape literal characters in the replacement
      * string.
      *
-     * <p> Given the regular expression <tt>dog</tt>, the input
-     * <tt>"zzzdogzzzdogzzz"</tt>, and the function
+     * <p> Given the regular expression {@code dog}, the input
+     * {@code "zzzdogzzzdogzzz"}, and the function
      * {@code mr -> mr.group().toUpperCase()}, an invocation of this method on
      * a matcher for that expression would yield the string
-     * <tt>"zzzDOGzzzdogzzz"</tt>.
+     * {@code "zzzDOGzzzdogzzz"}.
      *
      * <p> Invoking this method changes this matcher's state.  If the matcher
      * is to be used in further matching operations then it should first be
@@ -1471,8 +1472,8 @@ public final class Matcher implements MatchResult {
      * Sets the limits of this matcher's region. The region is the part of the
      * input sequence that will be searched to find a match. Invoking this
      * method resets the matcher, and then sets the region to start at the
-     * index specified by the <code>start</code> parameter and end at the
-     * index specified by the <code>end</code> parameter.
+     * index specified by the {@code start} parameter and end at the
+     * index specified by the {@code end} parameter.
      *
      * <p>Depending on the transparency and anchoring being used (see
      * {@link #useTransparentBounds useTransparentBounds} and
@@ -1534,8 +1535,8 @@ public final class Matcher implements MatchResult {
     /**
      * Queries the transparency of region bounds for this matcher.
      *
-     * <p> This method returns <tt>true</tt> if this matcher uses
-     * <i>transparent</i> bounds, <tt>false</tt> if it uses <i>opaque</i>
+     * <p> This method returns {@code true} if this matcher uses
+     * <i>transparent</i> bounds, {@code false} if it uses <i>opaque</i>
      * bounds.
      *
      * <p> See {@link #useTransparentBounds useTransparentBounds} for a
@@ -1543,8 +1544,8 @@ public final class Matcher implements MatchResult {
      *
      * <p> By default, a matcher uses opaque region boundaries.
      *
-     * @return <tt>true</tt> iff this matcher is using transparent bounds,
-     *         <tt>false</tt> otherwise.
+     * @return {@code true} iff this matcher is using transparent bounds,
+     *         {@code false} otherwise.
      * @see java.util.regex.Matcher#useTransparentBounds(boolean)
      * @since 1.5
      */
@@ -1555,9 +1556,9 @@ public final class Matcher implements MatchResult {
     /**
      * Sets the transparency of region bounds for this matcher.
      *
-     * <p> Invoking this method with an argument of <tt>true</tt> will set this
+     * <p> Invoking this method with an argument of {@code true} will set this
      * matcher to use <i>transparent</i> bounds. If the boolean
-     * argument is <tt>false</tt>, then <i>opaque</i> bounds will be used.
+     * argument is {@code false}, then <i>opaque</i> bounds will be used.
      *
      * <p> Using transparent bounds, the boundaries of this
      * matcher's region are transparent to lookahead, lookbehind,
@@ -1586,16 +1587,16 @@ public final class Matcher implements MatchResult {
     /**
      * Queries the anchoring of region bounds for this matcher.
      *
-     * <p> This method returns <tt>true</tt> if this matcher uses
-     * <i>anchoring</i> bounds, <tt>false</tt> otherwise.
+     * <p> This method returns {@code true} if this matcher uses
+     * <i>anchoring</i> bounds, {@code false} otherwise.
      *
      * <p> See {@link #useAnchoringBounds useAnchoringBounds} for a
      * description of anchoring bounds.
      *
      * <p> By default, a matcher uses anchoring region boundaries.
      *
-     * @return <tt>true</tt> iff this matcher is using anchoring bounds,
-     *         <tt>false</tt> otherwise.
+     * @return {@code true} iff this matcher is using anchoring bounds,
+     *         {@code false} otherwise.
      * @see java.util.regex.Matcher#useAnchoringBounds(boolean)
      * @since 1.5
      */
@@ -1606,9 +1607,9 @@ public final class Matcher implements MatchResult {
     /**
      * Sets the anchoring of region bounds for this matcher.
      *
-     * <p> Invoking this method with an argument of <tt>true</tt> will set this
+     * <p> Invoking this method with an argument of {@code true} will set this
      * matcher to use <i>anchoring</i> bounds. If the boolean
-     * argument is <tt>false</tt>, then <i>non-anchoring</i> bounds will be
+     * argument is {@code false}, then <i>non-anchoring</i> bounds will be
      * used.
      *
      * <p> Using anchoring bounds, the boundaries of this
@@ -1631,7 +1632,7 @@ public final class Matcher implements MatchResult {
 
     /**
      * <p>Returns the string representation of this matcher. The
-     * string representation of a <code>Matcher</code> contains information
+     * string representation of a {@code Matcher} contains information
      * that may be useful for debugging. The exact format is unspecified.
      *
      * @return  The string representation of this matcher
