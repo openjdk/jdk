@@ -26,8 +26,6 @@
  * @bug 4851776 4891522 4905335
  * @summary Basic tests for the RoundingMode class.
  * @author Joseph D. Darcy
- * @compile -source 1.5 RoundingModeTests.java
- * @run main RoundingModeTests
  */
 
 import java.math.RoundingMode;

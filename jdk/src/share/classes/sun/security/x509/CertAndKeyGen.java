@@ -190,41 +190,6 @@ public final class CertAndKeyGen {
 
 
     /**
-     * Returns a self-signed X.509v1 certificate for the public key.
-     * The certificate is immediately valid.
-     *
-     * <P>Such certificates normally are used to identify a "Certificate
-     * Authority" (CA).  Accordingly, they will not always be accepted by
-     * other parties.  However, such certificates are also useful when
-     * you are bootstrapping your security infrastructure, or deploying
-     * system prototypes.
-     *
-     * @deprecated Use the new <a href =
-     * "#getSelfCertificate(sun.security.x509.X500Name, long)">
-     *
-     * @param myname X.500 name of the subject (who is also the issuer)
-     * @param validity how long the certificate should be valid, in seconds
-     */
-    @Deprecated
-    public X509Cert             getSelfCert (X500Name myname, long validity)
-    throws InvalidKeyException, SignatureException, NoSuchAlgorithmException
-    {
-        X509Certificate cert;
-
-        try {
-            cert = getSelfCertificate(myname, validity);
-            return new X509Cert(cert.getEncoded());
-        } catch (CertificateException e) {
-            throw new SignatureException(e.getMessage());
-        } catch (NoSuchProviderException e) {
-            throw new NoSuchAlgorithmException(e.getMessage());
-        } catch (IOException e) {
-            throw new SignatureException(e.getMessage());
-        }
-    }
-
-
-    /**
      * Returns a self-signed X.509v3 certificate for the public key.
      * The certificate is immediately valid. No extensions.
      *
@@ -248,13 +213,10 @@ public final class CertAndKeyGen {
     throws CertificateException, InvalidKeyException, SignatureException,
         NoSuchAlgorithmException, NoSuchProviderException
     {
-        X500Signer      issuer;
         X509CertImpl    cert;
         Date            lastDate;
 
         try {
-            issuer = getSigner (myname);
-
             lastDate = new Date ();
             lastDate.setTime (firstDate.getTime () + validity * 1000);
 
@@ -267,14 +229,13 @@ public final class CertAndKeyGen {
                      new CertificateVersion(CertificateVersion.V3));
             info.set(X509CertInfo.SERIAL_NUMBER, new CertificateSerialNumber(
                     new java.util.Random().nextInt() & 0x7fffffff));
-            AlgorithmId algID = issuer.getAlgorithmId();
+            AlgorithmId algID = AlgorithmId.getAlgorithmId(sigAlg);
             info.set(X509CertInfo.ALGORITHM_ID,
                      new CertificateAlgorithmId(algID));
             info.set(X509CertInfo.SUBJECT, new CertificateSubjectName(myname));
             info.set(X509CertInfo.KEY, new CertificateX509Key(publicKey));
             info.set(X509CertInfo.VALIDITY, interval);
-            info.set(X509CertInfo.ISSUER,
-                     new CertificateIssuerName(issuer.getSigner()));
+            info.set(X509CertInfo.ISSUER, new CertificateIssuerName(myname));
 
             cert = new X509CertImpl(info);
             cert.sign(privateKey, this.sigAlg);
@@ -315,7 +276,9 @@ public final class CertAndKeyGen {
         PKCS10  req = new PKCS10 (publicKey);
 
         try {
-            req.encodeAndSign (getSigner (myname));
+            Signature signature = Signature.getInstance(sigAlg);
+            signature.initSign (privateKey);
+            req.encodeAndSign(myname, signature);
 
         } catch (CertificateException e) {
             throw new SignatureException (sigAlg + " CertificateException");
@@ -328,18 +291,6 @@ public final class CertAndKeyGen {
             throw new SignatureException (sigAlg + " unavailable?");
         }
         return req;
-    }
-
-    private X500Signer getSigner (X500Name me)
-    throws InvalidKeyException, NoSuchAlgorithmException
-    {
-        Signature signature = Signature.getInstance(sigAlg);
-
-        // XXX should have a way to pass prng to the signature
-        // algorithm ... appropriate for DSS/DSA, not RSA
-
-        signature.initSign (privateKey);
-        return new X500Signer (signature, me);
     }
 
     private SecureRandom        prng;

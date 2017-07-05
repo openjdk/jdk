@@ -26,8 +26,6 @@
  * @bug     4906359 4963461 4965058 4965039 4986770
  * @summary Unit test for annotation reading
  * @author  Josh Bloch
- * @compile -source 1.5 UnitTest.java
- * @run main UnitTest
  */
 
 import static java.lang.annotation.RetentionPolicy.RUNTIME;

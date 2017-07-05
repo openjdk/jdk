@@ -26,9 +26,6 @@
  * @bug     4329937
  * @summary Basic test for making Boolean implement Comparable
  * @author  Josh Bloch
- *
- * @compile -source 1.5 MakeBooleanComparable.java
- * @run main MakeBooleanComparable
  */
 
 import java.util.*;

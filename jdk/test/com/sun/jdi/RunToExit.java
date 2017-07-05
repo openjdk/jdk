@@ -26,7 +26,7 @@
  * @summary Test that with server=y, when VM runs to System.exit() no error happens
  *
  * @build VMConnection RunToExit Exit0
- * @run main RunToExit
+ * @run main/othervm RunToExit
  */
 import java.io.InputStream;
 import java.io.IOException;
@@ -115,8 +115,11 @@ public class RunToExit {
         String exe =   System.getProperty("java.home")
                      + File.separator + "bin" + File.separator;
         String arch = System.getProperty("os.arch");
-        if (arch.equals("sparcv9")) {
+        String osname = System.getProperty("os.name");
+        if (osname.equals("SunOS") && arch.equals("sparcv9")) {
             exe += "sparcv9/java";
+        } else if (osname.equals("SunOS") && arch.equals("amd64")) {
+            exe += "amd64/java";
         } else {
             exe += "java";
         }

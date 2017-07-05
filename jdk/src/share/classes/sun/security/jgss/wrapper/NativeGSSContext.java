@@ -549,6 +549,9 @@ class NativeGSSContext implements GSSContextSpi {
     public void requestInteg(boolean state) throws GSSException {
         changeFlags(GSS_C_INTEG_FLAG, state);
     }
+    public void requestDelegPolicy(boolean state) throws GSSException {
+        // Not supported, ignore
+    }
     public void requestLifetime(int lifetime) throws GSSException {
         if (isInitiator && pContext == 0) {
             this.lifetime = lifetime;
@@ -589,6 +592,9 @@ class NativeGSSContext implements GSSContextSpi {
     }
     public boolean getIntegState() {
         return checkFlags(GSS_C_INTEG_FLAG);
+    }
+    public boolean getDelegPolicyState() {
+        return false;
     }
     public int getLifetime() {
         return cStub.getContextTime(pContext);

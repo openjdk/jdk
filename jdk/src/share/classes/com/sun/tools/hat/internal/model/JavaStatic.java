@@ -57,7 +57,10 @@ public class JavaStatic {
             id = ((JavaObjectRef)value).getId();
         }
         value = value.dereference(snapshot, field);
-        if (value.isHeapAllocated()) {
+        if (value.isHeapAllocated() &&
+            clazz.getLoader() == snapshot.getNullThing()) {
+            // static fields are only roots if they are in classes
+            //    loaded by the root classloader.
             JavaHeapObject ho = (JavaHeapObject) value;
             String s = "Static reference from " + clazz.getName()
                        + "." + field.getName();

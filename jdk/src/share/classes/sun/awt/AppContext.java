@@ -43,6 +43,9 @@ import java.util.HashSet;
 import java.beans.PropertyChangeSupport;
 import java.beans.PropertyChangeListener;
 import sun.util.logging.PlatformLogger;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * The AppContext is a table referenced by ThreadGroup which stores
@@ -132,9 +135,16 @@ public final class AppContext {
     /* Since the contents of an AppContext are unique to each Java
      * session, this class should never be serialized. */
 
-    /* The key to put()/get() the Java EventQueue into/from the AppContext.
+    /*
+     * The key to put()/get() the Java EventQueue into/from the AppContext.
      */
     public static final Object EVENT_QUEUE_KEY = new StringBuffer("EventQueue");
+
+    /*
+     * The keys to store EventQueue push/pop lock and condition.
+     */
+    public final static Object EVENT_QUEUE_LOCK_KEY = new StringBuilder("EventQueue.Lock");
+    public final static Object EVENT_QUEUE_COND_KEY = new StringBuilder("EventQueue.Condition");
 
     /* A map of AppContexts, referenced by ThreadGroup.
      */
@@ -244,6 +254,13 @@ public final class AppContext {
                         return Thread.currentThread().getContextClassLoader();
                     }
                 });
+
+        // Initialize push/pop lock and its condition to be used by all the
+        // EventQueues within this AppContext
+        Lock eventQueuePushPopLock = new ReentrantLock();
+        put(EVENT_QUEUE_LOCK_KEY, eventQueuePushPopLock);
+        Condition eventQueuePushPopCond = eventQueuePushPopLock.newCondition();
+        put(EVENT_QUEUE_COND_KEY, eventQueuePushPopCond);
     }
 
     private static final ThreadLocal<AppContext> threadAppContext =

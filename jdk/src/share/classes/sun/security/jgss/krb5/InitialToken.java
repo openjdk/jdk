@@ -85,32 +85,39 @@ abstract class InitialToken extends Krb5Token {
             int size = CHECKSUM_LENGTH_SIZE + CHECKSUM_BINDINGS_SIZE +
                 CHECKSUM_FLAGS_SIZE;
 
-            if (context.getCredDelegState()) {
-                if (context.getCaller() instanceof HttpCaller &&
-                        !serviceTicket.getFlags()[Krb5.TKT_OPTS_DELEGATE]) {
-                    // When the caller is HTTP/SPNEGO and OK-AS-DELEGATE
-                    // is not present in the service ticket, delegation
-                    // is disabled.
-                    context.setCredDelegState(false);
-                } else if (!tgt.isForwardable()) {
-                    // XXX log this resetting of delegation state
-                    context.setCredDelegState(false);
-                } else {
-                    KrbCred krbCred = null;
-                    CipherHelper cipherHelper =
-                        context.getCipherHelper(serviceTicket.getSessionKey());
-                    if (useNullKey(cipherHelper)) {
-                        krbCred = new KrbCred(tgt, serviceTicket,
-                                                  EncryptionKey.NULL_KEY);
-                    } else {
-                        krbCred = new KrbCred(tgt, serviceTicket,
-                                        serviceTicket.getSessionKey());
+            if (!tgt.isForwardable()) {
+                context.setCredDelegState(false);
+                context.setDelegPolicyState(false);
+            } else if (context.getCredDelegState()) {
+                if (context.getDelegPolicyState()) {
+                    if (!serviceTicket.checkDelegate()) {
+                        // delegation not permitted by server policy, mark it
+                        context.setDelegPolicyState(false);
                     }
-                    krbCredMessage = krbCred.getMessage();
-                    size += CHECKSUM_DELEG_OPT_SIZE +
-                            CHECKSUM_DELEG_LGTH_SIZE +
-                            krbCredMessage.length;
                 }
+            } else if (context.getDelegPolicyState()) {
+                if (serviceTicket.checkDelegate()) {
+                    context.setCredDelegState(true);
+                } else {
+                    context.setDelegPolicyState(false);
+                }
+            }
+
+            if (context.getCredDelegState()) {
+                KrbCred krbCred = null;
+                CipherHelper cipherHelper =
+                    context.getCipherHelper(serviceTicket.getSessionKey());
+                if (useNullKey(cipherHelper)) {
+                    krbCred = new KrbCred(tgt, serviceTicket,
+                                              EncryptionKey.NULL_KEY);
+                } else {
+                    krbCred = new KrbCred(tgt, serviceTicket,
+                                    serviceTicket.getSessionKey());
+                }
+                krbCredMessage = krbCred.getMessage();
+                size += CHECKSUM_DELEG_OPT_SIZE +
+                        CHECKSUM_DELEG_LGTH_SIZE +
+                        krbCredMessage.length;
             }
 
             checksumBytes = new byte[size];
@@ -296,6 +303,7 @@ abstract class InitialToken extends Krb5Token {
             return delegCreds;
         }
 
+        // Only called by acceptor
         public void setContextFlags(Krb5Context context) {
                 // default for cred delegation is false
             if ((flags & CHECKSUM_DELEG_FLAG) > 0)

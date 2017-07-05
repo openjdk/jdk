@@ -26,8 +26,6 @@
  * @bug 4981727
  * @summary
  * @author Joseph D. Darcy
- * @compile -source 1.5 exceptionCauseTest.java
- * @run main exceptionCauseTest
  */
 
 import java.io.PrintStream;

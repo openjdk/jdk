@@ -26,8 +26,8 @@ package com.sun.media.sound;
 
 import java.util.TreeMap;
 
+import javax.sound.midi.MidiDevice;
 import javax.sound.midi.MidiMessage;
-import javax.sound.midi.Receiver;
 import javax.sound.midi.ShortMessage;
 
 /**
@@ -35,7 +35,7 @@ import javax.sound.midi.ShortMessage;
  *
  * @author Karl Helgason
  */
-public class SoftReceiver implements Receiver {
+public class SoftReceiver implements MidiDeviceReceiver {
 
     protected boolean open = true;
     private Object control_mutex;
@@ -51,6 +51,10 @@ public class SoftReceiver implements Receiver {
             this.midimessages = mainmixer.midimessages;
     }
 
+    public MidiDevice getMidiDevice() {
+        return synth;
+    }
+
     public void send(MidiMessage message, long timeStamp) {
 
         synchronized (control_mutex) {
@@ -60,6 +64,7 @@ public class SoftReceiver implements Receiver {
 
         if (timeStamp != -1) {
             synchronized (control_mutex) {
+                mainmixer.activity();
                 while (midimessages.get(timeStamp) != null)
                     timeStamp++;
                 if (message instanceof ShortMessage

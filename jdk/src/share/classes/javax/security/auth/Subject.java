@@ -40,7 +40,6 @@ import java.security.PrivilegedExceptionAction;
 import java.security.PrivilegedActionException;
 import java.security.ProtectionDomain;
 import sun.security.util.ResourcesMgr;
-import sun.security.util.SecurityConstants;
 
 /**
  * <p> A <code>Subject</code> represents a grouping of related information
@@ -239,7 +238,7 @@ public final class Subject implements java.io.Serializable {
     public void setReadOnly() {
         java.lang.SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
-            sm.checkPermission(new AuthPermission("setReadOnly"));
+            sm.checkPermission(AuthPermissionHolder.SET_READ_ONLY_PERMISSION);
         }
 
         this.readOnly = true;
@@ -285,7 +284,7 @@ public final class Subject implements java.io.Serializable {
 
         java.lang.SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
-            sm.checkPermission(new AuthPermission("getSubject"));
+            sm.checkPermission(AuthPermissionHolder.GET_SUBJECT_PERMISSION);
         }
 
         if (acc == null) {
@@ -343,7 +342,7 @@ public final class Subject implements java.io.Serializable {
 
         java.lang.SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
-            sm.checkPermission(SecurityConstants.DO_AS_PERMISSION);
+            sm.checkPermission(AuthPermissionHolder.DO_AS_PERMISSION);
         }
         if (action == null)
             throw new NullPointerException
@@ -402,7 +401,7 @@ public final class Subject implements java.io.Serializable {
 
         java.lang.SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
-            sm.checkPermission(SecurityConstants.DO_AS_PERMISSION);
+            sm.checkPermission(AuthPermissionHolder.DO_AS_PERMISSION);
         }
 
         if (action == null)
@@ -456,7 +455,7 @@ public final class Subject implements java.io.Serializable {
 
         java.lang.SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
-            sm.checkPermission(SecurityConstants.DO_AS_PRIVILEGED_PERMISSION);
+            sm.checkPermission(AuthPermissionHolder.DO_AS_PRIVILEGED_PERMISSION);
         }
 
         if (action == null)
@@ -520,7 +519,7 @@ public final class Subject implements java.io.Serializable {
 
         java.lang.SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
-            sm.checkPermission(SecurityConstants.DO_AS_PRIVILEGED_PERMISSION);
+            sm.checkPermission(AuthPermissionHolder.DO_AS_PRIVILEGED_PERMISSION);
         }
 
         if (action == null)
@@ -1044,16 +1043,13 @@ public final class Subject implements java.io.Serializable {
                     if (sm != null) {
                         switch (which) {
                         case Subject.PRINCIPAL_SET:
-                            sm.checkPermission(new AuthPermission
-                                        ("modifyPrincipals"));
+                            sm.checkPermission(AuthPermissionHolder.MODIFY_PRINCIPALS_PERMISSION);
                             break;
                         case Subject.PUB_CREDENTIAL_SET:
-                            sm.checkPermission(new AuthPermission
-                                        ("modifyPublicCredentials"));
+                            sm.checkPermission(AuthPermissionHolder.MODIFY_PUBLIC_CREDENTIALS_PERMISSION);
                             break;
                         default:
-                            sm.checkPermission(new AuthPermission
-                                        ("modifyPrivateCredentials"));
+                            sm.checkPermission(AuthPermissionHolder.MODIFY_PRIVATE_CREDENTIALS_PERMISSION);
                             break;
                         }
                     }
@@ -1073,16 +1069,13 @@ public final class Subject implements java.io.Serializable {
             if (sm != null) {
                 switch (which) {
                 case Subject.PRINCIPAL_SET:
-                    sm.checkPermission
-                        (new AuthPermission("modifyPrincipals"));
+                    sm.checkPermission(AuthPermissionHolder.MODIFY_PRINCIPALS_PERMISSION);
                     break;
                 case Subject.PUB_CREDENTIAL_SET:
-                    sm.checkPermission
-                        (new AuthPermission("modifyPublicCredentials"));
+                    sm.checkPermission(AuthPermissionHolder.MODIFY_PUBLIC_CREDENTIALS_PERMISSION);
                     break;
                 default:
-                    sm.checkPermission
-                        (new AuthPermission("modifyPrivateCredentials"));
+                    sm.checkPermission(AuthPermissionHolder.MODIFY_PRIVATE_CREDENTIALS_PERMISSION);
                     break;
                 }
             }
@@ -1404,5 +1397,28 @@ public final class Subject implements java.io.Serializable {
 
             return set.add(o);
         }
+    }
+
+    static class AuthPermissionHolder {
+        static final AuthPermission DO_AS_PERMISSION =
+            new AuthPermission("doAs");
+
+        static final AuthPermission DO_AS_PRIVILEGED_PERMISSION =
+            new AuthPermission("doAsPrivileged");
+
+        static final AuthPermission SET_READ_ONLY_PERMISSION =
+            new AuthPermission("setReadOnly");
+
+        static final AuthPermission GET_SUBJECT_PERMISSION =
+            new AuthPermission("getSubject");
+
+        static final AuthPermission MODIFY_PRINCIPALS_PERMISSION =
+            new AuthPermission("modifyPrincipals");
+
+        static final AuthPermission MODIFY_PUBLIC_CREDENTIALS_PERMISSION =
+            new AuthPermission("modifyPublicCredentials");
+
+        static final AuthPermission MODIFY_PRIVATE_CREDENTIALS_PERMISSION =
+            new AuthPermission("modifyPrivateCredentials");
     }
 }
