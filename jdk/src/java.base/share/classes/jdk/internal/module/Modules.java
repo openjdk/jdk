@@ -26,23 +26,20 @@
 package jdk.internal.module;
 
 import java.lang.module.ModuleDescriptor;
-import java.lang.reflect.Layer;
-import java.lang.reflect.Module;
 import java.net.URI;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.Set;
 
 import jdk.internal.loader.BootLoader;
 import jdk.internal.loader.ClassLoaders;
-import jdk.internal.misc.JavaLangReflectModuleAccess;
+import jdk.internal.misc.JavaLangAccess;
 import jdk.internal.misc.SharedSecrets;
 
 /**
- * A helper class to allow JDK classes create dynamic modules and to update
- * modules, exports and the readability graph. It is also invoked by the VM
- * to add read edges when agents are instrumenting code that need to link
- * to supporting classes.
+ * A helper class for creating and updating modules. This class is intended to
+ * support command-line options, tests, and the instrumentation API. It is also
+ * used by the VM to add read edges when agents are instrumenting code that
+ * need to link to supporting classes.
  *
  * The parameters that are package names in this API are the fully-qualified
  * names of the packages as defined in section 6.5.3 of <cite>The Java&trade;
@@ -52,8 +49,7 @@ import jdk.internal.misc.SharedSecrets;
 public class Modules {
     private Modules() { }
 
-    private static final JavaLangReflectModuleAccess JLRMA
-        = SharedSecrets.getJavaLangReflectModuleAccess();
+    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
 
     /**
      * Creates a new Module. The module has the given ModuleDescriptor and
@@ -68,48 +64,37 @@ public class Modules {
                                       ModuleDescriptor descriptor,
                                       URI uri)
     {
-        return JLRMA.defineModule(loader, descriptor, uri);
+        return JLA.defineModule(loader, descriptor, uri);
     }
 
     /**
-     * Define a new module to the VM. The module has the given set of
-     * packages and is defined to the given class loader.
-     *
-     * The resulting Module is in a larval state in that it does not not read
-     * any other module and does not have any exports.
-     */
-    public static Module defineModule(ClassLoader loader,
-                                      String name,
-                                      Set<String> packages)
-    {
-        ModuleDescriptor descriptor = ModuleDescriptor.module(name)
-                .contains(packages)
-                .build();
-
-        return JLRMA.defineModule(loader, descriptor, null);
-    }
-
-    /**
-     * Adds a read-edge so that module {@code m1} reads module {@code m1}.
+     * Updates m1 to read m2.
      * Same as m1.addReads(m2) but without a caller check.
      */
     public static void addReads(Module m1, Module m2) {
-        JLRMA.addReads(m1, m2);
+        JLA.addReads(m1, m2);
     }
 
     /**
-     * Update module {@code m} to read all unnamed modules.
+     * Update module m to read all unnamed modules.
      */
     public static void addReadsAllUnnamed(Module m) {
-        JLRMA.addReadsAllUnnamed(m);
+        JLA.addReadsAllUnnamed(m);
     }
 
     /**
      * Updates module m1 to export a package to module m2.
-     * Same as m1.addExports(pn, m2) but without a caller check.
+     * Same as m1.addExports(pn, m2) but without a caller check
      */
     public static void addExports(Module m1, String pn, Module m2) {
-        JLRMA.addExports(m1, pn, m2);
+        JLA.addExports(m1, pn, m2);
+    }
+
+    /**
+     * Updates module m to export a package to all unnamed modules.
+     */
+    public static void addExportsToAllUnnamed(Module m, String pn) {
+        JLA.addExportsToAllUnnamed(m, pn);
     }
 
     /**
@@ -117,51 +102,31 @@ public class Modules {
      * Same as m1.addOpens(pn, m2) but without a caller check.
      */
     public static void addOpens(Module m1, String pn, Module m2) {
-        JLRMA.addOpens(m1, pn, m2);
-    }
-
-    /**
-     * Updates a module m to export a package to all modules.
-     */
-    public static void addExportsToAll(Module m, String pn) {
-        JLRMA.addExportsToAll(m, pn);
-    }
-
-    /**
-     * Updates a module m to open a package to all modules.
-     */
-    public static void addOpensToAll(Module m, String pn) {
-        JLRMA.addOpensToAll(m, pn);
-    }
-
-    /**
-     * Updates module m to export a package to all unnamed modules.
-     */
-    public static void addExportsToAllUnnamed(Module m, String pn) {
-        JLRMA.addExportsToAllUnnamed(m, pn);
+        JLA.addOpens(m1, pn, m2);
     }
 
     /**
      * Updates module m to open a package to all unnamed modules.
      */
     public static void addOpensToAllUnnamed(Module m, String pn) {
-        JLRMA.addOpensToAllUnnamed(m, pn);
+        JLA.addOpensToAllUnnamed(m, pn);
     }
 
     /**
-     * Updates module m to use a service
+     * Updates module m to use a service.
+     * Same as m2.addUses(service) but without a caller check.
      */
     public static void addUses(Module m, Class<?> service) {
-        JLRMA.addUses(m, service);
+        JLA.addUses(m, service);
     }
 
     /**
      * Updates module m to provide a service
      */
     public static void addProvides(Module m, Class<?> service, Class<?> impl) {
-        Layer layer = m.getLayer();
+        ModuleLayer layer = m.getLayer();
 
-        if (layer == null || layer == Layer.boot()) {
+        if (layer == null || layer == ModuleLayer.boot()) {
             // update ClassLoader catalog
             PrivilegedAction<ClassLoader> pa = m::getClassLoader;
             ClassLoader loader = AccessController.doPrivileged(pa);
@@ -176,19 +141,8 @@ public class Modules {
 
         if (layer != null) {
             // update Layer catalog
-            SharedSecrets.getJavaLangReflectModuleAccess()
-                    .getServicesCatalog(layer)
-                    .addProvider(m, service, impl);
+            JLA.getServicesCatalog(layer).addProvider(m, service, impl);
         }
-    }
-
-    /**
-     * Adds a package to a module's content.
-     *
-     * This method is a no-op if the module already contains the package.
-     */
-    public static void addPackage(Module m, String pn) {
-        JLRMA.addPackage(m, pn);
     }
 
     /**

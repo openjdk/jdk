@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      8004893 8022738 8029143
+ * @bug      8004893 8022738 8029143 8175200
  * @summary  Make sure that the lambda feature changes work fine in
  *           javadoc.
  * @author   bpatel
@@ -55,7 +55,7 @@ public class TestLambdaFeature extends JavadocTester {
 
         checkOutput("pkg/A.html", true,
                 "<td class=\"colFirst\"><code>default void</code></td>",
-                "<pre>default&nbsp;void&nbsp;defaultMethod()</pre>",
+                "<pre>default&nbsp;void&nbsp;defaultMethod&#8203;()</pre>",
                 "<caption><span id=\"t0\" class=\"activeTableTab\"><span>"
                 + "All Methods</span><span class=\"tabEnd\">&nbsp;</span></span>"
                 + "<span id=\"t2\" class=\"tableTab\"><span>"
@@ -83,7 +83,7 @@ public class TestLambdaFeature extends JavadocTester {
 
         checkOutput("pkg/A.html", false,
                 "<td class=\"colFirst\"><code>default default void</code></td>",
-                "<pre>default&nbsp;default&nbsp;void&nbsp;defaultMethod()</pre>");
+                "<pre>default&nbsp;default&nbsp;void&nbsp;defaultMethod&#8203;()</pre>");
 
         checkOutput("pkg/B.html", false,
                 "<td class=\"colFirst\"><code>default void</code></td>",

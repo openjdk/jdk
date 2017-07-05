@@ -1,5 +1,6 @@
 grant codebase "file:/-" {
     permission javax.security.auth.AuthPermission "createLoginContext.JMXPluggableAuthenticator";
+    permission java.lang.RuntimePermission "*";
     permission java.net.SocketPermission "*:*", "accept,connect,listen,resolve";
     permission java.security.SecurityPermission "createAccessControlContext";
     permission javax.management.remote.SubjectDelegationPermission "javax.management.remote.JMXPrincipal.monitorRole";
