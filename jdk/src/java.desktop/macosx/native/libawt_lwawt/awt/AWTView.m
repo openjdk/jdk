@@ -381,6 +381,13 @@ static BOOL shouldUsePressAndHold() {
     } else {
         clickCount = [event clickCount];
     }
+
+    jdouble deltaX = [event deltaX];
+    jdouble deltaY = [event deltaY];
+    if ([AWTToolkit hasPreciseScrollingDeltas: event]) {
+        deltaX = [event scrollingDeltaX] * 0.1;
+        deltaY = [event scrollingDeltaY] * 0.1;
+    }
     
     static JNF_CLASS_CACHE(jc_NSEvent, "sun/lwawt/macosx/NSEvent");
     static JNF_CTOR_CACHE(jctor_NSEvent, jc_NSEvent, "(IIIIIIIIDDI)V");
@@ -391,8 +398,8 @@ static BOOL shouldUsePressAndHold() {
                                   [event buttonNumber],
                                   (jint)localPoint.x, (jint)localPoint.y,
                                   (jint)absP.x, (jint)absP.y,
-                                  [event deltaY],
-                                  [event deltaX],
+                                  deltaY,
+                                  deltaX,
                                   [AWTToolkit scrollStateWithEvent: event]);
     CHECK_NULL(jEvent);
     

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
-import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.SimpleElementVisitor9;
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
@@ -75,6 +74,10 @@ import static javax.tools.Diagnostic.Kind.*;
  * @author Jamie Ho
  */
 public abstract class Configuration {
+    /**
+     * The doclet that created this configuration.
+     */
+    public final Doclet doclet;
 
     /**
      * The factory for builders.
@@ -343,8 +346,10 @@ public abstract class Configuration {
             "jdk.javadoc.internal.doclets.toolkit.resources.doclets";
     /**
      * Constructs the configurations needed by the doclet.
+     * @param doclet the doclet that created this configuration
      */
-    public Configuration() {
+    public Configuration(Doclet doclet) {
+        this.doclet = doclet;
         excludedDocFileDirs = new HashSet<>();
         excludedQualifiers = new HashSet<>();
         setTabWidth(DocletConstants.DEFAULT_TAB_STOP_LENGTH);
@@ -441,6 +446,11 @@ public abstract class Configuration {
                 s.add(p);
             }
         }
+
+        // add entries for modules which may not have exported packages
+        modules.forEach((ModuleElement mdle) -> {
+            modulePackages.computeIfAbsent(mdle, m -> Collections.emptySet());
+        });
 
         modules.addAll(modulePackages.keySet());
         showModules = !modules.isEmpty();
@@ -1116,7 +1126,7 @@ public abstract class Configuration {
 
         @Override
         public String toString() {
-            return names.toString();
+            return Arrays.toString(names);
         }
 
         @Override
