@@ -545,7 +545,6 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
                                                                                                                                      \
   nonstatic_field(Generation,                  _reserved,                                     MemRegion)                             \
   nonstatic_field(Generation,                  _virtual_space,                                VirtualSpace)                          \
-  nonstatic_field(Generation,                  _level,                                        int)                                   \
   nonstatic_field(Generation,                  _stat_record,                                  Generation::StatRecord)                \
                                                                                                                                      \
   nonstatic_field(Generation::StatRecord,      invocations,                                   int)                                   \
@@ -828,6 +827,7 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
      static_field(StubRoutines,                _aescrypt_decryptBlock,                        address)                               \
      static_field(StubRoutines,                _cipherBlockChaining_encryptAESCrypt,          address)                               \
      static_field(StubRoutines,                _cipherBlockChaining_decryptAESCrypt,          address)                               \
+     static_field(StubRoutines,                _ghash_processBlocks,                          address)                               \
      static_field(StubRoutines,                _updateBytesCRC32,                             address)                               \
      static_field(StubRoutines,                _crc_table_adr,                                address)                               \
      static_field(StubRoutines,                _multiplyToLen,                                address)                               \

@@ -52,6 +52,8 @@ public:
   static G1StringDedupThread* thread();
 
   virtual void run();
+
+  void deduplicate_shared_strings(G1StringDedupStat& stat);
 };
 
 #endif // SHARE_VM_GC_G1_G1STRINGDEDUPTHREAD_HPP

@@ -103,13 +103,12 @@ public:
   void sort_regions();
 
   // Determine whether to add the given region to the CSet chooser or
-  // not. Currently, we skip humongous regions (we never add them to
-  // the CSet, we only reclaim them during cleanup) and regions whose
-  // live bytes are over the threshold.
+  // not. Currently, we skip pinned regions and regions whose live
+  // bytes are over the threshold. Humongous regions may be reclaimed during cleanup.
   bool should_add(HeapRegion* hr) {
     assert(hr->is_marked(), "pre-condition");
     assert(!hr->is_young(), "should never consider young regions");
-    return !hr->is_humongous() &&
+    return !hr->is_pinned() &&
             hr->live_bytes() < _region_live_threshold_bytes;
   }
 
