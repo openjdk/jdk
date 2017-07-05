@@ -13,7 +13,7 @@ System is script object? false
 Object is script object? true
 {} is script object? true
 /foo/ is script object? true
-java.awt.Color is java function? true
+java.lang.String is java function? true
 java.lang.Runnable instance is java function? true
 eval is java function? false
 println is java function? true

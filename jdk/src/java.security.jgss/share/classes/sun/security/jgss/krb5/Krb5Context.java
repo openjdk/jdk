@@ -25,7 +25,6 @@
 
 package sun.security.jgss.krb5;
 
-import com.sun.security.jgss.InquireType;
 import org.ietf.jgss.*;
 import sun.misc.HexDumpEncoder;
 import sun.security.jgss.GSSUtil;
@@ -48,6 +47,7 @@ import javax.security.auth.kerberos.KerberosCredMessage;
 import javax.security.auth.kerberos.KerberosPrincipal;
 import javax.security.auth.kerberos.KerberosTicket;
 import sun.security.krb5.internal.Ticket;
+import sun.security.krb5.internal.AuthorizationData;
 
 /**
  * Implements the mechanism specific context class for the Kerberos v5
@@ -1419,30 +1419,30 @@ class Krb5Context implements GSSContextSpi {
     /**
      * Return the mechanism-specific attribute associated with {@code type}.
      */
-    public Object inquireSecContext(InquireType type)
+    public Object inquireSecContext(String type)
             throws GSSException {
         if (!isEstablished()) {
              throw new GSSException(GSSException.NO_CONTEXT, -1,
                      "Security context not established.");
         }
         switch (type) {
-            case KRB5_GET_SESSION_KEY:
+            case "KRB5_GET_SESSION_KEY":
                 return new KerberosSessionKey(key);
-            case KRB5_GET_SESSION_KEY_EX:
+            case "KRB5_GET_SESSION_KEY_EX":
                 return new javax.security.auth.kerberos.EncryptionKey(
                         key.getBytes(), key.getEType());
-            case KRB5_GET_TKT_FLAGS:
+            case "KRB5_GET_TKT_FLAGS":
                 return tktFlags.clone();
-            case KRB5_GET_AUTHZ_DATA:
+            case "KRB5_GET_AUTHZ_DATA":
                 if (isInitiator()) {
                     throw new GSSException(GSSException.UNAVAILABLE, -1,
                             "AuthzData not available on initiator side.");
                 } else {
-                    return (authzData==null)?null:authzData.clone();
+                    return authzData;
                 }
-            case KRB5_GET_AUTHTIME:
+            case "KRB5_GET_AUTHTIME":
                 return authTime;
-            case KRB5_GET_KRB_CRED:
+            case "KRB5_GET_KRB_CRED":
                 if (!isInitiator()) {
                     throw new GSSException(GSSException.UNAVAILABLE, -1,
                             "KRB_CRED not available on acceptor side.");
@@ -1470,7 +1470,7 @@ class Krb5Context implements GSSContextSpi {
     // Helpers for inquireSecContext
     private boolean[] tktFlags;
     private String authTime;
-    private com.sun.security.jgss.AuthorizationDataEntry[] authzData;
+    private AuthorizationData authzData;
 
     public void setTktFlags(boolean[] tktFlags) {
         this.tktFlags = tktFlags;
@@ -1480,7 +1480,7 @@ class Krb5Context implements GSSContextSpi {
         this.authTime = authTime;
     }
 
-    public void setAuthzData(com.sun.security.jgss.AuthorizationDataEntry[] authzData) {
+    public void setAuthzData(AuthorizationData authzData) {
         this.authzData = authzData;
     }
 

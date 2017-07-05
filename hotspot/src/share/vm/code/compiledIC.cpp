@@ -595,6 +595,7 @@ void CompiledStaticCall::compute_entry(methodHandle m, StaticCallInfo& info) {
   } else {
     // Callee is interpreted code.  In any case entering the interpreter
     // puts a converter-frame on the stack to save arguments.
+    assert(!m->is_method_handle_intrinsic(), "Compiled code should never call interpreter MH intrinsics");
     info._to_interpreter = true;
     info._entry      = m()->get_c2i_entry();
   }

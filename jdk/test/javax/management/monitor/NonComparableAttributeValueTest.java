@@ -39,7 +39,7 @@ import javax.management.monitor.*;
 public class NonComparableAttributeValueTest implements NotificationListener {
 
     // Flag to notify that a message has been received
-    private boolean messageReceived = false;
+    private volatile boolean messageReceived = false;
 
     // MBean class
     public class ObservedObject implements ObservedObjectMBean {
@@ -69,7 +69,11 @@ public class NonComparableAttributeValueTest implements NotificationListener {
                 echo("\t\t" + n.getObservedAttribute() + " is null");
                 echo("\t\tDerived Gauge = " + n.getDerivedGauge());
                 echo("\t\tTrigger = " + n.getTrigger());
-                messageReceived = true;
+
+                synchronized (this) {
+                    messageReceived = true;
+                    notifyAll();
+                }
             } else {
                 echo("\t\tSkipping notification of type: " + type);
             }
@@ -134,12 +138,9 @@ public class NonComparableAttributeValueTest implements NotificationListener {
             echo(">>> START the CounterMonitor");
             counterMonitor.start();
 
-            // Wait for granularity period (multiplied by 2 for sure)
-            //
-            Thread.sleep(granularityperiod * 2);
-
             // Check if notification was received
             //
+            doWait();
             if (messageReceived) {
                 echo("\tOK: CounterMonitor notification received");
             } else {
@@ -212,12 +213,9 @@ public class NonComparableAttributeValueTest implements NotificationListener {
             echo(">>> START the GaugeMonitor");
             gaugeMonitor.start();
 
-            // Wait for granularity period (multiplied by 2 for sure)
-            //
-            Thread.sleep(granularityperiod * 2);
-
             // Check if notification was received
             //
+            doWait();
             if (messageReceived) {
                 echo("\tOK: GaugeMonitor notification received");
             } else {
@@ -289,12 +287,9 @@ public class NonComparableAttributeValueTest implements NotificationListener {
             echo(">>> START the StringMonitor");
             stringMonitor.start();
 
-            // Wait for granularity period (multiplied by 2 for sure)
-            //
-            Thread.sleep(granularityperiod * 2);
-
             // Check if notification was received
             //
+            doWait();
             if (messageReceived) {
                 echo("\tOK: StringMonitor notification received");
             } else {
@@ -331,6 +326,21 @@ public class NonComparableAttributeValueTest implements NotificationListener {
      */
     private static void echo(String message) {
         System.out.println(message);
+    }
+
+    /*
+     * Wait messageReceived to be true
+     */
+    synchronized void doWait() {
+        while (!messageReceived) {
+            try {
+                wait();
+            } catch (InterruptedException e) {
+                System.err.println("Got unexpected exception: " + e);
+                e.printStackTrace();
+                break;
+            }
+        }
     }
 
     /*

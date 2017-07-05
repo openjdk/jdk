@@ -22,7 +22,9 @@
  */
 
 /* @test
- * @bug 4405354 6594296
+ * @bug 4405354 6594296 8058216
+ * @run main Test
+ * @run main/othervm -Djava.net.preferIPv4Stack=true Test
  * @summary Basic tests for NetworkInterface
  */
 import java.net.NetworkInterface;

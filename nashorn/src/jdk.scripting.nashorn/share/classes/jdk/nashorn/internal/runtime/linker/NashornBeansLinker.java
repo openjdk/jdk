@@ -125,6 +125,15 @@ public class NashornBeansLinker implements GuardingDynamicLinker {
 
         @Override
         public Comparison compareConversion(final Class<?> sourceType, final Class<?> targetType1, final Class<?> targetType2) {
+            if (sourceType == ConsString.class) {
+                if (String.class == targetType1 || CharSequence.class == targetType1) {
+                    return Comparison.TYPE_1_BETTER;
+                }
+
+                if (String.class == targetType2 || CharSequence.class == targetType2) {
+                    return Comparison.TYPE_2_BETTER;
+                }
+            }
             return linkerServices.compareConversion(sourceType, targetType1, targetType2);
         }
     }

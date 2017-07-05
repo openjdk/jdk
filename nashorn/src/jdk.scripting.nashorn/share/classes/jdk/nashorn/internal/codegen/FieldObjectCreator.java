@@ -231,7 +231,7 @@ public abstract class FieldObjectCreator<T> extends ObjectCreator<T> {
             if (symbol != null) {
                 if (hasArguments() && symbol.isParam()) {
                     symbol.setFieldIndex(paramCount++);
-                } else {
+                } else if (!isValidArrayIndex(getArrayIndex(tuple.key))) {
                     symbol.setFieldIndex(fieldCount++);
                 }
             }

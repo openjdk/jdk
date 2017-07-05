@@ -62,7 +62,13 @@ AD_Files_If_Required = $(AD_Files_If_Required/$(TYPE))
 
 # Wierd argument adjustment for "gnumake -j..."
 adjust-mflags   = $(GENERATED)/adjust-mflags
-MFLAGS-adjusted = -r `$(adjust-mflags) "$(MFLAGS)" "$(HOTSPOT_BUILD_JOBS)"`
+# If SPEC is set, it's from configure and it's already controlling concurrency
+# for us. Skip setting -j with HOTSPOT_BUILD_JOBS.
+ifeq ($(SPEC), )
+  MFLAGS-adjusted = -r `$(adjust-mflags) "$(MFLAGS)" "$(HOTSPOT_BUILD_JOBS)"`
+else
+  MFLAGS-adjusted = -r $(MFLAGS)
+endif
 
 
 # default target: update lists, make vm
@@ -136,3 +142,5 @@ realclean:
 .PHONY: default vm_build_preliminaries
 .PHONY: lists ad_stuff jvmti_stuff trace_stuff sa_stuff the_vm clean realclean
 .PHONY: checks check_os_version install
+
+.NOTPARALLEL:
