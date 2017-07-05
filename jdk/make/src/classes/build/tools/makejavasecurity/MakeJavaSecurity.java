@@ -89,7 +89,7 @@ public class MakeJavaSecurity {
         }
 
         // Filter out platform-unrelated ones. We only support
-        // #ifdef, #ifndef, and #endif.
+        // #ifdef, #ifndef, #else, and #endif. Nesting not supported (yet).
         int mode = 0;   // 0: out of block, 1: in match, 2: in non-match
         Iterator<String> iter = lines.iterator();
         while (iter.hasNext()) {
@@ -105,7 +105,17 @@ public class MakeJavaSecurity {
                 }
                 iter.remove();
             } else if (line.startsWith("#ifndef ")) {
-                mode = line.endsWith(args[2])?2:1;
+                if (line.indexOf('-') > 0) {
+                    mode = line.endsWith(args[2]+"-"+args[3]) ? 2 : 1;
+                } else {
+                    mode = line.endsWith(args[2]) ? 2 : 1;
+                }
+                iter.remove();
+            } else if (line.startsWith("#else")) {
+                if (mode == 0) {
+                    throw new IllegalStateException("#else not in #if block");
+                }
+                mode = 3 - mode;
                 iter.remove();
             } else {
                 if (mode == 2) iter.remove();
@@ -150,7 +160,7 @@ public class MakeJavaSecurity {
                                     List<String> args) throws IOException {
         // parse property until EOL, not including line breaks
         boolean first = true;
-        while (!line.isEmpty()) {
+        while (line != null && !line.isEmpty()) {
             if (!line.startsWith("#")) {
                 if (!line.endsWith(",\\") ||
                         (!first && line.contains("="))) {
@@ -169,6 +179,8 @@ public class MakeJavaSecurity {
                 lines.add(String.format("%"+numSpaces+"s", "") + arg + ",\\");
             }
         }
-        lines.add(line);
+        if (line != null) {
+            lines.add(line);
+        }
     }
 }

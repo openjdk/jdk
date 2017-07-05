@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8031321
- * @library /testlibrary /test/lib /compiler/whitebox ..
+ * @library /testlibrary /test/lib /compiler/whitebox / ..
  * @modules java.base/sun.misc
  *          java.management
  * @build LZcntTestL
@@ -46,6 +46,8 @@ public class LZcntTestL extends LZcntTestI {
     public static void main(String[] args) throws Exception {
         // j.l.Integer and Long should be loaded to allow a compilation of the methods that use their methods
         System.out.println("classes java.lang.Long should be loaded. Proof: " + Long.class);
+        // Avoid uncommon traps.
+        System.out.println("Num leading zeroes: " + new  TestLzcntL.LzcntLExpr().longExpr(12341341));
         BmiIntrinsicBase.verifyTestCase(LZcntTestL::new, TestLzcntL.LzcntLExpr.class.getDeclaredMethods());
     }
 }

@@ -38,10 +38,15 @@
  * @summary  Exercise ExecutorCompletionServiceLoops
  */
 
-import java.util.concurrent.*;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorCompletionService;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class ExecutorCompletionServiceLoops {
-    static final int POOLSIZE =      100;
+    static final int POOLSIZE = 100;
     static final ExecutorService pool =
         Executors.newFixedThreadPool(POOLSIZE);
     static final ExecutorCompletionService<Integer> ecs =
@@ -66,7 +71,7 @@ public class ExecutorCompletionServiceLoops {
             Thread.sleep(100);
         }
         pool.shutdown();
-        if (! pool.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS))
+        if (! pool.awaitTermination(60L, SECONDS))
             throw new Error();
    }
 

@@ -155,7 +155,7 @@ public class Exchanger<V> {
      * a value that is enough for common platforms.  Additionally,
      * extra care elsewhere is taken to avoid other false/unintended
      * sharing and to enhance locality, including adding padding (via
-     * sun.misc.Contended) to Nodes, embedding "bound" as an Exchanger
+     * jdk.internal.vm.annotation.Contended) to Nodes, embedding "bound" as an Exchanger
      * field, and reworking some park/unpark mechanics compared to
      * LockSupport versions.
      *
@@ -304,10 +304,10 @@ public class Exchanger<V> {
 
     /**
      * Nodes hold partially exchanged data, plus other per-thread
-     * bookkeeping. Padded via @sun.misc.Contended to reduce memory
+     * bookkeeping. Padded via @jdk.internal.vm.annotation.Contended to reduce memory
      * contention.
      */
-    @sun.misc.Contended static final class Node {
+    @jdk.internal.vm.annotation.Contended static final class Node {
         int index;              // Arena index
         int bound;              // Last recorded value of Exchanger.bound
         int collides;           // Number of CAS failures at current bound

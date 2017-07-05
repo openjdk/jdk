@@ -36,6 +36,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
 
 /**
  * Directive file and state builder class
@@ -45,9 +46,9 @@ public class DirectiveBuilder implements StateBuilder<CompileCommand> {
             = new PoolHelper().getAllMethods();
     private final Map<Executable, State> stateMap = new HashMap<>();
     private final String fileName;
-    private Map<MethodDescriptor, List<CompileCommand>> matchBlocks
+    private final Map<MethodDescriptor, List<CompileCommand>> matchBlocks
             = new LinkedHashMap<>();
-    private List<String> inlineMatch = new ArrayList<>();
+    private final List<CompileCommand> inlines = new ArrayList<>();
     private boolean isFileValid = true;
 
     public DirectiveBuilder(String fileName) {
@@ -66,7 +67,10 @@ public class DirectiveBuilder implements StateBuilder<CompileCommand> {
 
     @Override
     public List<CompileCommand> getCompileCommands() {
-        throw new Error("TESTBUG: isn't applicable for directives");
+        return matchBlocks.keySet().stream()
+                // only method descriptor is required to check print_directives
+                .map(md -> new CompileCommand(null, md, null, null))
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -77,20 +81,36 @@ public class DirectiveBuilder implements StateBuilder<CompileCommand> {
 
     @Override
     public Map<Executable, State> getStates() {
+        writeDirectiveFile();
+        if (isFileValid) {
+            // Build states for each method according to match blocks
+            for (Pair<Executable, Callable<?>> pair : METHODS) {
+                State state = getState(pair);
+                if (state != null) {
+                    stateMap.put(pair.first, state);
+                }
+            }
+            return stateMap;
+        } else {
+            // return empty map because invalid file doesn't change states
+            return new HashMap<>();
+        }
+    }
+
+    private void writeDirectiveFile() {
         try (DirectiveWriter dirFile = new DirectiveWriter(fileName)) {
             for (MethodDescriptor matchDescriptor : matchBlocks.keySet()) {
                 // Write match block with all options converted from commands
                 dirFile.match(matchDescriptor);
                 for (CompileCommand compileCommand :
                         matchBlocks.get(matchDescriptor)) {
-                    isFileValid &= compileCommand.isValid();
                     handleCommand(dirFile, compileCommand);
                 }
-                if ("Inlinee.caller".matches((matchDescriptor.getRegexp()))) {
+                if ("Inlinee.caller()".matches(matchDescriptor.getRegexp())
+                        && !inlines.isEmpty()) {
                     // Got a *.* match block, where inline would be written
-                    dirFile.inline(inlineMatch.toArray(
-                            new String[inlineMatch.size()]));
-                    inlineMatch.clear();
+                    writeInlines(dirFile);
+                    inlines.clear();
                 }
                 dirFile.end(); // ends match block
             }
@@ -100,12 +120,12 @@ public class DirectiveBuilder implements StateBuilder<CompileCommand> {
              * if we didn't do this before
              * Inlinee caller methods should match this block only
              */
-            if (!inlineMatch.isEmpty()) {
+            if (!inlines.isEmpty()) {
                 Pair<Executable, Callable<?>> pair = METHODS.get(0);
                 MethodDescriptor md = MethodGenerator.anyMatchDescriptor(
                         pair.first);
-                CompileCommand cc = new CompileCommand(Command.QUIET, md, null,
-                        Scenario.Type.DIRECTIVE);
+                CompileCommand cc = new CompileCommand(Command.QUIET, md,
+                        null, Scenario.Type.DIRECTIVE);
                 List<CompileCommand> commands = new ArrayList<>();
 
                 // Add appropriate "*.*" match block
@@ -113,8 +133,7 @@ public class DirectiveBuilder implements StateBuilder<CompileCommand> {
                 matchBlocks.put(md, commands);
                 // Add match block for this descriptor with inlines
                 dirFile.match(md);
-                dirFile.inline(inlineMatch.toArray(
-                        new String[inlineMatch.size()]));
+                writeInlines(dirFile);
                 dirFile.end();
             }
             if (!matchBlocks.isEmpty()) {
@@ -122,19 +141,6 @@ public class DirectiveBuilder implements StateBuilder<CompileCommand> {
                 dirFile.end();
             }
 
-            // Build states for each method according to match blocks
-            for (Pair<Executable, Callable<?>> pair : METHODS) {
-                State state = getState(pair);
-                if (state != null) {
-                    stateMap.put(pair.first, state);
-                }
-            }
-        }
-        if (isFileValid) {
-            return stateMap;
-        } else {
-            // return empty map because invalid file doesn't change states
-            return new HashMap<>();
         }
     }
 
@@ -154,7 +160,9 @@ public class DirectiveBuilder implements StateBuilder<CompileCommand> {
                  * then apply commands from this match to the state
                  */
                 for (CompileCommand cc : matchBlocks.get(matchDesc)) {
-                    state = new State();
+                    if (state == null) {
+                        state = new State();
+                    }
                     if (!isMatchFound) {
                         // this is a first found match, apply all commands
                         state.apply(cc);
@@ -184,15 +192,22 @@ public class DirectiveBuilder implements StateBuilder<CompileCommand> {
             case EXCLUDE:
                 dirFile.excludeCompile(cmd.compiler, true);
                 break;
+            case QUIET:
+                /* there are no appropriate directive for this, just make
+                   match be enabled */
             case INLINE:
             case DONTINLINE:
-                // Inline commands will be written later
+                /* Inline commands will be written later.
+                   Just make this match be enabled */
+                dirFile.emitCompiler(Scenario.Compiler.C1);
+                dirFile.option(DirectiveWriter.Option.ENABLE, true);
+                dirFile.end();
+                dirFile.emitCompiler(Scenario.Compiler.C2);
+                dirFile.option(DirectiveWriter.Option.ENABLE, true);
+                dirFile.end();
                 break;
             case LOG:
                 dirFile.option(DirectiveWriter.Option.LOG, true);
-                break;
-            case QUIET:
-                // there are no appropriate directive for this
                 break;
             case PRINT:
                 dirFile.option(DirectiveWriter.Option.PRINT_ASSEMBLY, true);
@@ -210,16 +225,59 @@ public class DirectiveBuilder implements StateBuilder<CompileCommand> {
         }
     }
 
+    private void writeInlines(DirectiveWriter dirFile) {
+        List<String> c1Block = new ArrayList<>();
+        List<String> c2Block = new ArrayList<>();
+        List<String> allBlock = new ArrayList<>();
+        for (CompileCommand cc : inlines) {
+            String inlineMethodPattern;
+            switch (cc.command) {
+                case INLINE:
+                    inlineMethodPattern = "+" + cc.methodDescriptor.getString();
+                    break;
+                case DONTINLINE:
+                    inlineMethodPattern = "-" + cc.methodDescriptor.getString();
+                    break;
+                default:
+                    throw new Error("TESTBUG: incorrect command got in "
+                            + "the list: " + cc.command);
+            }
+            if (cc.compiler == Scenario.Compiler.C1) {
+                c1Block.add(inlineMethodPattern);
+            } else if (cc.compiler == Scenario.Compiler.C2) {
+                c2Block.add(inlineMethodPattern);
+            } else {
+                allBlock.add(inlineMethodPattern);
+            }
+        }
+        dirFile.emitCompiler(Scenario.Compiler.C1);
+        if (!c1Block.isEmpty()) {
+            dirFile.inline(c1Block);
+        } else {
+            dirFile.option(DirectiveWriter.Option.ENABLE, true);
+        }
+        dirFile.end();
+        dirFile.emitCompiler(Scenario.Compiler.C2);
+        if (!c2Block.isEmpty()) {
+            dirFile.inline(c2Block);
+        } else {
+            dirFile.option(DirectiveWriter.Option.ENABLE, true);
+        }
+        dirFile.end();
+        if (!allBlock.isEmpty()) {
+            dirFile.inline(allBlock);
+        }
+    }
+
     @Override
     public void add(CompileCommand compileCommand) {
+        isFileValid &= compileCommand.isValid();
         MethodDescriptor methodDescriptor = compileCommand.methodDescriptor;
 
         switch (compileCommand.command) {
             case INLINE:
-                inlineMatch.add("+" + methodDescriptor.getString());
-                break;
             case DONTINLINE:
-                inlineMatch.add("-" + methodDescriptor.getString());
+                inlines.add(compileCommand);
                 break;
         }
         for (MethodDescriptor md: matchBlocks.keySet()) {

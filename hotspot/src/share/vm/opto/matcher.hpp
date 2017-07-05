@@ -269,6 +269,10 @@ public:
   // should generate this one.
   static const bool match_rule_supported(int opcode);
 
+  // identify extra cases that we might want to provide match rules for
+  // e.g. Op_ vector nodes and other intrinsics while guarding with vlen
+  static const bool match_rule_supported_vector(int opcode, int vlen);
+
   // Some uarchs have different sized float register resources
   static const int float_pressure(int default_pressure_threshold);
 

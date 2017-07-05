@@ -9,6 +9,7 @@ jdk.crypto.ec
 jdk.crypto.mscapi
 jdk.crypto.pkcs11
 jdk.crypto.ucrypto
+jdk.dynalink
 jdk.localedata
 jdk.naming.dns
 jdk.scripting.nashorn

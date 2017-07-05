@@ -210,6 +210,7 @@ Java_sun_awt_X11_XRobotPeer_getRGBPixelsImpl( JNIEnv *env,
                              jint jy,
                              jint jwidth,
                              jint jheight,
+                             jint scale,
                              jintArray pixelArray,
                              jboolean isGtkSupported) {
     XImage *image;
@@ -231,13 +232,18 @@ Java_sun_awt_X11_XRobotPeer_getRGBPixelsImpl( JNIEnv *env,
 
     AWT_LOCK();
 
+    jint sx = jx * scale;
+    jint sy = jy * scale;
+    jint swidth = jwidth * scale;
+    jint sheight = jheight * scale;
+
     rootWindow = XRootWindow(awt_display, adata->awt_visInfo.screen);
 
     if (!XGetWindowAttributes(awt_display, rootWindow, &attr)
-            || jx + jwidth <= attr.x
-            || attr.x + attr.width <= jx
-            || jy + jheight <= attr.y
-            || attr.y + attr.height <= jy) {
+            || sx + swidth <= attr.x
+            || attr.x + attr.width <= sx
+            || sy + sheight <= attr.y
+            || attr.y + attr.height <= sy) {
 
         AWT_UNLOCK();
         return; // Does not intersect with root window
@@ -246,14 +252,14 @@ Java_sun_awt_X11_XRobotPeer_getRGBPixelsImpl( JNIEnv *env,
     gboolean gtk_failed = TRUE;
     jint _x, _y;
 
-    jint x = MAX(jx, attr.x);
-    jint y = MAX(jy, attr.y);
-    jint width = MIN(jx + jwidth, attr.x + attr.width) - x;
-    jint height = MIN(jy + jheight, attr.y + attr.height) - y;
+    jint x = MAX(sx, attr.x);
+    jint y = MAX(sy, attr.y);
+    jint width = MIN(sx + swidth, attr.x + attr.width) - x;
+    jint height = MIN(sy + sheight, attr.y + attr.height) - y;
 
 
-    int dx = attr.x > jx ? attr.x - jx : 0;
-    int dy = attr.y > jy ? attr.y - jy : 0;
+    int dx = attr.x > sx ? attr.x - sx : 0;
+    int dy = attr.y > sy ? attr.y - sy : 0;
 
     int index;
 
@@ -264,6 +270,19 @@ Java_sun_awt_X11_XRobotPeer_getRGBPixelsImpl( JNIEnv *env,
 
         pixbuf = (*fp_gdk_pixbuf_get_from_drawable)(NULL, root, NULL,
                                                     x, y, 0, 0, width, height);
+        if (pixbuf && scale != 1) {
+            GdkPixbuf *scaledPixbuf;
+            x /= scale;
+            y /= scale;
+            width /= scale;
+            height /= scale;
+            dx /= scale;
+            dy /= scale;
+            scaledPixbuf = (*fp_gdk_pixbuf_scale_simple)(pixbuf, width, height,
+                                                         GDK_INTERP_BILINEAR);
+            (*fp_g_object_unref)(pixbuf);
+            pixbuf = scaledPixbuf;
+        }
 
         if (pixbuf) {
             int nchan = (*fp_gdk_pixbuf_get_n_channels)(pixbuf);
@@ -312,7 +331,7 @@ Java_sun_awt_X11_XRobotPeer_getRGBPixelsImpl( JNIEnv *env,
     }
 
     if (gtk_failed) {
-        image = getWindowImage(awt_display, rootWindow, x, y, width, height);
+        image = getWindowImage(awt_display, rootWindow, sx, sy, swidth, sheight);
 
         ary = (*env)->GetPrimitiveArrayCritical(env, pixelArray, NULL);
 
@@ -322,10 +341,16 @@ Java_sun_awt_X11_XRobotPeer_getRGBPixelsImpl( JNIEnv *env,
             return;
         }
 
+        dx /= scale;
+        dy /= scale;
+        width /= scale;
+        height /= scale;
+
         /* convert to Java ARGB pixels */
         for (_y = 0; _y < height; _y++) {
             for (_x = 0; _x < width; _x++) {
-                jint pixel = (jint) XGetPixel(image, _x, _y); /* Note ignore upper
+                jint pixel = (jint) XGetPixel(image, _x * scale, _y * scale);
+                                                              /* Note ignore upper
                                                                * 32-bits on 64-bit
                                                                * OSes.
                                                                */

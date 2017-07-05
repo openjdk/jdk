@@ -233,8 +233,17 @@ public class SunVolatileImage extends VolatileImage
      * or a backup surface.
      */
     public BufferedImage getBackupImage() {
-        return graphicsConfig.createCompatibleImage(getWidth(), getHeight(),
-                                                    getTransparency());
+        return getBackupImage(1, 1);
+    }
+
+    /**
+     * This method creates a BufferedImage intended for use as a "snapshot"
+     * or a backup surface with the given horizontal and vertical scale factors.
+     */
+    public BufferedImage getBackupImage(double scaleX, double scaleY) {
+        int w = (int) Math.ceil(getWidth() * scaleX);
+        int h = (int) Math.ceil(getHeight() * scaleY);
+        return graphicsConfig.createCompatibleImage(w, h, getTransparency());
     }
 
     public BufferedImage getSnapshot() {

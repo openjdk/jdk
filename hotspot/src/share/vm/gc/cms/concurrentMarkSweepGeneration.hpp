@@ -926,7 +926,7 @@ class CMSCollector: public CHeapObj<mtGC> {
   // one (foreground collector or background collector).
   static void check_correct_thread_executing() PRODUCT_RETURN;
 
-  bool is_cms_reachable(HeapWord* addr);
+  NOT_PRODUCT(bool is_cms_reachable(HeapWord* addr);)
 
   // Performance Counter Support
   CollectorCounters* counters()    { return _gc_counters; }

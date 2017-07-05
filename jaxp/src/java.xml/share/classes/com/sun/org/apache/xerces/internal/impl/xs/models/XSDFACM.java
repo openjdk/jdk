@@ -136,6 +136,7 @@ public class XSDFACM
      * positions in the second dimension of the transition table.
      */
     private int fTransTable[][] = null;
+
     /**
      * Array containing occurence information for looping states
      * which use counters to check minOccurs/maxOccurs.
@@ -211,6 +212,7 @@ public class XSDFACM
 
         // Store away our index and pools in members
         fLeafCount = leafCount;
+        fIsCompactedForUPA = syntaxTree.isCompactedForUPA();
 
         //
         //  Create some string pool indexes that represent the names of some

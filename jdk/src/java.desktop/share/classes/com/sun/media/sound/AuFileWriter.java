@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.RandomAccessFile;
 import java.io.SequenceInputStream;
+import java.util.Objects;
 
 import javax.sound.sampled.AudioFileFormat;
 import javax.sound.sampled.AudioInputStream;
@@ -83,6 +84,9 @@ public final class AuFileWriter extends SunFileWriter {
 
 
     public int write(AudioInputStream stream, AudioFileFormat.Type fileType, OutputStream out) throws IOException {
+        Objects.requireNonNull(stream);
+        Objects.requireNonNull(fileType);
+        Objects.requireNonNull(out);
 
         // we must know the total data length to calculate the file length
         //$$fb 2001-07-13: fix for bug 4351296: do not throw an exception
@@ -100,6 +104,9 @@ public final class AuFileWriter extends SunFileWriter {
 
 
     public int write(AudioInputStream stream, AudioFileFormat.Type fileType, File out) throws IOException {
+        Objects.requireNonNull(stream);
+        Objects.requireNonNull(fileType);
+        Objects.requireNonNull(out);
 
         // throws IllegalArgumentException if not supported
         AuFileFormat auFileFormat = (AuFileFormat)getAudioFileFormat(fileType, stream);

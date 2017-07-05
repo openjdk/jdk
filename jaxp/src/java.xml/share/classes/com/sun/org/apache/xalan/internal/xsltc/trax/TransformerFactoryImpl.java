@@ -524,7 +524,7 @@ public class TransformerFactoryImpl
             _xmlSecurityManager.setSecureProcessing(value);
 
             // set external access restriction when FSP is explicitly set
-            if (value && XalanConstants.IS_JDK8_OR_ABOVE) {
+            if (value) {
                 _xmlSecurityPropertyMgr.setValue(Property.ACCESS_EXTERNAL_DTD,
                         State.FSP, XalanConstants.EXTERNAL_ACCESS_DEFAULT_FSP);
                 _xmlSecurityPropertyMgr.setValue(Property.ACCESS_EXTERNAL_STYLESHEET,
@@ -539,7 +539,6 @@ public class TransformerFactoryImpl
                 _featureManager.setValue(FeatureManager.Feature.ORACLE_ENABLE_EXTENSION_FUNCTION,
                         FeaturePropertyBase.State.FSP, XalanConstants.FEATURE_FALSE);
             }
-            return;
         }
         else if (name.equals(XalanConstants.ORACLE_FEATURE_SERVICE_MECHANISM)) {
             //in secure mode, let _useServicesMechanism be determined by the constructor

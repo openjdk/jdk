@@ -55,7 +55,7 @@ XMMRegister LIR_OprDesc::as_xmm_double_reg() const {
 
 #endif // X86
 
-#if defined(SPARC) || defined(PPC)
+#if defined(SPARC) || defined(PPC32)
 
 FloatRegister LIR_OprDesc::as_float_reg() const {
   return FrameMap::nr2floatreg(fpu_regnr());
@@ -67,7 +67,7 @@ FloatRegister LIR_OprDesc::as_double_reg() const {
 
 #endif
 
-#if defined(ARM) || defined (AARCH64)
+#if defined(ARM) || defined(AARCH64) || defined(PPC64)
 
 FloatRegister LIR_OprDesc::as_float_reg() const {
   return as_FloatRegister(fpu_regnr());
@@ -207,17 +207,17 @@ void LIR_OprDesc::validate_type() const {
              size_field() == double_size, "must match");
       break;
     case T_FLOAT:
-      // FP return values can be also in CPU registers on ARM and PPC (softfp ABI)
+      // FP return values can be also in CPU registers on ARM and PPC32 (softfp ABI)
       assert((kindfield == fpu_register || kindfield == stack_value
              ARM_ONLY(|| kindfield == cpu_register)
-             PPC_ONLY(|| kindfield == cpu_register) ) &&
+             PPC32_ONLY(|| kindfield == cpu_register) ) &&
              size_field() == single_size, "must match");
       break;
     case T_DOUBLE:
-      // FP return values can be also in CPU registers on ARM and PPC (softfp ABI)
+      // FP return values can be also in CPU registers on ARM and PPC32 (softfp ABI)
       assert((kindfield == fpu_register || kindfield == stack_value
              ARM_ONLY(|| kindfield == cpu_register)
-             PPC_ONLY(|| kindfield == cpu_register) ) &&
+             PPC32_ONLY(|| kindfield == cpu_register) ) &&
              size_field() == double_size, "must match");
       break;
     case T_BOOLEAN:
@@ -558,7 +558,7 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
       assert(opConvert->_info == NULL, "must be");
       if (opConvert->_opr->is_valid())       do_input(opConvert->_opr);
       if (opConvert->_result->is_valid())    do_output(opConvert->_result);
-#ifdef PPC
+#ifdef PPC32
       if (opConvert->_tmp1->is_valid())      do_temp(opConvert->_tmp1);
       if (opConvert->_tmp2->is_valid())      do_temp(opConvert->_tmp2);
 #endif
@@ -1953,7 +1953,7 @@ void LIR_OpConvert::print_instr(outputStream* out) const {
   print_bytecode(out, bytecode());
   in_opr()->print(out);                  out->print(" ");
   result_opr()->print(out);              out->print(" ");
-#ifdef PPC
+#ifdef PPC32
   if(tmp1()->is_valid()) {
     tmp1()->print(out); out->print(" ");
     tmp2()->print(out); out->print(" ");
@@ -2004,7 +2004,7 @@ void LIR_OpRoundFP::print_instr(outputStream* out) const {
 
 // LIR_Op2
 void LIR_Op2::print_instr(outputStream* out) const {
-  if (code() == lir_cmove) {
+  if (code() == lir_cmove || code() == lir_cmp) {
     print_condition(out, condition());         out->print(" ");
   }
   in_opr1()->print(out);    out->print(" ");

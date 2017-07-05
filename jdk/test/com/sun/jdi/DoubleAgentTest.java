@@ -31,7 +31,7 @@ import jdk.testlibrary.Utils;
  *
  * @library /lib/testlibrary
  * @modules java.management
- * @build jdk.testlibarary.*
+ * @build jdk.testlibrary.*
  * @build DoubleAgentTest Exit0
  * @run driver DoubleAgentTest
  */

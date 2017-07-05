@@ -34,15 +34,9 @@ static bool zero_page_read_protected() { return false; }
 class Aix {
   friend class os;
 
-  // For signal-chaining
-  // highest so far (AIX 5.2 - 6.1) is SIGSAK (63)
-#define MAXSIGNUM 63
   // Length of strings included in the libperfstat structures.
 #define IDENTIFIER_LENGTH 64
 
-  static struct sigaction sigact[MAXSIGNUM]; // saved preinstalled sigactions
-  static unsigned int sigs;             // mask of signals that have
-                                        // preinstalled signal handlers
   static bool libjsig_is_loaded;        // libjsig that interposes sigaction(),
                                         // __sigaction(), signal() is loaded
   static struct sigaction *(*get_signal_action)(int);
@@ -50,9 +44,6 @@ class Aix {
   static void save_preinstalled_handler(int, struct sigaction&);
 
   static void check_signal_handler(int sig);
-
-  // For signal flags diagnostics
-  static int sigflags[MAXSIGNUM];
 
  protected:
 

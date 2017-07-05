@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,7 +101,6 @@ public final class PortMixerProvider extends MixerProvider {
         }
     }
 
-
     public Mixer getMixer(Mixer.Info info) {
         synchronized (PortMixerProvider.class) {
             for (int i = 0; i < infos.length; i++) {
@@ -110,8 +109,8 @@ public final class PortMixerProvider extends MixerProvider {
                 }
             }
         }
-        throw new IllegalArgumentException("Mixer " + info.toString()
-                                           + " not supported by this provider.");
+        throw new IllegalArgumentException(
+                String.format("Mixer %s not supported by this provider", info));
     }
 
 

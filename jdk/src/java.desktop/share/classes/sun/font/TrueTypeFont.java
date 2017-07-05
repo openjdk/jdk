@@ -83,6 +83,7 @@ public class TrueTypeFont extends FileFont {
     public static final int GPOSTag = 0x47504F53; // 'GPOS'
     public static final int GSUBTag = 0x47535542; // 'GSUB'
     public static final int mortTag = 0x6D6F7274; // 'mort'
+    public static final int morxTag = 0x6D6F7278; // 'morx'
 
     /* -- Tags for non-standard tables */
     public static final int fdscTag = 0x66647363; // 'fdsc' - gxFont descriptor
@@ -874,8 +875,8 @@ public class TrueTypeFont extends FileFont {
         }
     }
 
-    /* NB: is it better to move declaration to Font2D? */
-    long getLayoutTableCache() {
+    @Override
+    protected long getLayoutTableCache() {
         try {
           return getScaler().getLayoutTableCache();
         } catch(FontScalerException fe) {
@@ -884,7 +885,7 @@ public class TrueTypeFont extends FileFont {
     }
 
     @Override
-    byte[] getTableBytes(int tag) {
+    protected byte[] getTableBytes(int tag) {
         ByteBuffer buffer = getTableBuffer(tag);
         if (buffer == null) {
             return null;

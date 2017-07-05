@@ -857,13 +857,13 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         bool with_frame = false; // I don't know if we can do with-frame.
         int satb_q_index_byte_offset =
           in_bytes(JavaThread::satb_mark_queue_offset() +
-                   PtrQueue::byte_offset_of_index());
+                   SATBMarkQueue::byte_offset_of_index());
         int satb_q_buf_byte_offset =
           in_bytes(JavaThread::satb_mark_queue_offset() +
-                   PtrQueue::byte_offset_of_buf());
+                   SATBMarkQueue::byte_offset_of_buf());
 
         __ bind(restart);
-        // Load the index into the SATB buffer. PtrQueue::_index is a
+        // Load the index into the SATB buffer. SATBMarkQueue::_index is a
         // size_t so ld_ptr is appropriate
         __ ld_ptr(G2_thread, satb_q_index_byte_offset, tmp);
 
@@ -961,14 +961,14 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
 
         int dirty_card_q_index_byte_offset =
           in_bytes(JavaThread::dirty_card_queue_offset() +
-                   PtrQueue::byte_offset_of_index());
+                   DirtyCardQueue::byte_offset_of_index());
         int dirty_card_q_buf_byte_offset =
           in_bytes(JavaThread::dirty_card_queue_offset() +
-                   PtrQueue::byte_offset_of_buf());
+                   DirtyCardQueue::byte_offset_of_buf());
 
         __ bind(restart);
 
-        // Get the index into the update buffer. PtrQueue::_index is
+        // Get the index into the update buffer. DirtyCardQueue::_index is
         // a size_t so ld_ptr is appropriate here.
         __ ld_ptr(G2_thread, dirty_card_q_index_byte_offset, tmp3);
 
