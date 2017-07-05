@@ -63,6 +63,10 @@ case "$OS" in
     PS=":"
     FS="/"
     ;;
+  AIX )
+    PS=":"
+    FS="/"
+    ;;
   CYGWIN* )
     PS=";"
     FS="/"

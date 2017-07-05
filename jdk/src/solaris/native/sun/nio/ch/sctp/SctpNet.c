@@ -157,6 +157,7 @@ Java_sun_nio_ch_sctp_SctpNet_init
     }
     preCloseFD = sp[0];
     close(sp[1]);
+    initInetAddressIDs(env);
 }
 
 /*
@@ -382,8 +383,9 @@ JNIEXPORT jobjectArray JNICALL Java_sun_nio_ch_sctp_SctpNet_getLocalAddresses0
         ia = NET_SockaddrToInetAddress(env, sap, &port);
         if (ia != NULL)
             isa = (*env)->NewObject(env, isaCls, isaCtrID, ia, port);
-        if (isa != NULL)
-            (*env)->SetObjectArrayElement(env, isaa, i, isa);
+        if (isa == NULL)
+            break;
+        (*env)->SetObjectArrayElement(env, isaa, i, isa);
 
         if (sap->sa_family == AF_INET)
             addr_buf = ((struct sockaddr_in*)addr_buf) + 1;
@@ -433,8 +435,9 @@ jobjectArray getRemoteAddresses
         ia = NET_SockaddrToInetAddress(env, sap, &port);
         if (ia != NULL)
             isa = (*env)->NewObject(env, isaCls, isaCtrID, ia, port);
-        if (isa != NULL)
-            (*env)->SetObjectArrayElement(env, isaa, i, isa);
+        if (isa == NULL)
+            break;
+        (*env)->SetObjectArrayElement(env, isaa, i, isa);
 
         if (sap->sa_family == AF_INET)
             addr_buf = ((struct sockaddr_in*)addr_buf) + 1;

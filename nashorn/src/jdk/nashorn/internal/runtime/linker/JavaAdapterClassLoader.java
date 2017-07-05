@@ -27,10 +27,6 @@ package jdk.nashorn.internal.runtime.linker;
 
 import java.security.AccessControlContext;
 import java.security.AccessController;
-import java.security.AllPermission;
-import java.security.CodeSigner;
-import java.security.CodeSource;
-import java.security.Permissions;
 import java.security.PrivilegedAction;
 import java.security.ProtectionDomain;
 import java.security.SecureClassLoader;
@@ -45,11 +41,10 @@ import jdk.internal.dynalink.beans.StaticClass;
  */
 @SuppressWarnings("javadoc")
 final class JavaAdapterClassLoader {
-    private static final ProtectionDomain GENERATED_PROTECTION_DOMAIN = createGeneratedProtectionDomain();
     private static final AccessControlContext CREATE_LOADER_ACC_CTXT = ClassAndLoader.createPermAccCtxt("createClassLoader");
 
     private final String className;
-    private volatile byte[] classBytes;
+    private final byte[] classBytes;
 
     JavaAdapterClassLoader(String className, byte[] classBytes) {
         this.className = className.replace('/', '.');
@@ -57,23 +52,18 @@ final class JavaAdapterClassLoader {
     }
 
     /**
-     * clear classBytes after loading class.
-     */
-    void clearClassBytes() {
-       this.classBytes = null;
-    }
-
-    /**
      * Loads the generated adapter class into the JVM.
      * @param parentLoader the parent class loader for the generated class loader
+     * @param protectionDomain the protection domain for the generated class
      * @return the generated adapter class
      */
-    StaticClass generateClass(final ClassLoader parentLoader) {
+    StaticClass generateClass(final ClassLoader parentLoader, final ProtectionDomain protectionDomain) {
+        assert protectionDomain != null;
         return AccessController.doPrivileged(new PrivilegedAction<StaticClass>() {
             @Override
             public StaticClass run() {
                 try {
-                    return StaticClass.forClass(Class.forName(className, true, createClassLoader(parentLoader)));
+                    return StaticClass.forClass(Class.forName(className, true, createClassLoader(parentLoader, protectionDomain)));
                 } catch (final ClassNotFoundException e) {
                     throw new AssertionError(e); // cannot happen
                 }
@@ -88,7 +78,7 @@ final class JavaAdapterClassLoader {
     // it even more by separating its invocation into a separate static method on the adapter class, but then someone
     // with ability to introspect on the class and use setAccessible(true) on it could invoke the method. It's a
     // security tradeoff...
-    private ClassLoader createClassLoader(final ClassLoader parentLoader) {
+    private ClassLoader createClassLoader(final ClassLoader parentLoader, final ProtectionDomain protectionDomain) {
         return new SecureClassLoader(parentLoader) {
             private final ClassLoader myLoader = getClass().getClassLoader();
 
@@ -112,21 +102,10 @@ final class JavaAdapterClassLoader {
             protected Class<?> findClass(final String name) throws ClassNotFoundException {
                 if(name.equals(className)) {
                     assert classBytes != null : "what? already cleared .class bytes!!";
-                    return defineClass(name, classBytes, 0, classBytes.length, GENERATED_PROTECTION_DOMAIN);
+                    return defineClass(name, classBytes, 0, classBytes.length, protectionDomain);
                 }
                 throw new ClassNotFoundException(name);
             }
         };
-    }
-
-    private static ProtectionDomain createGeneratedProtectionDomain() {
-        // Generated classes need to have AllPermission. Since we require the "createClassLoader" RuntimePermission, we
-        // can create a class loader that'll load new classes with any permissions. Our generated classes are just
-        // delegating adapters, so having AllPermission can't cause anything wrong; the effective set of permissions for
-        // the executing script functions will still be limited by the permissions of the caller and the permissions of
-        // the script.
-        final Permissions permissions = new Permissions();
-        permissions.add(new AllPermission());
-        return new ProtectionDomain(new CodeSource(null, (CodeSigner[])null), permissions);
     }
 }

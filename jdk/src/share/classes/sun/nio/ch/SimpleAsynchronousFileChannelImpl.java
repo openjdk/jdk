@@ -88,7 +88,6 @@ public class SimpleAsynchronousFileChannelImpl
         invalidateAllLocks();
 
         // signal any threads blocked on this channel
-        nd.preClose(fdObj);
         threads.signalAndWait();
 
         // wait until all async I/O operations have completely gracefully

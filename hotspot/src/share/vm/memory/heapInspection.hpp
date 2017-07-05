@@ -347,7 +347,7 @@ class KlassInfoHisto : public StackObj {
 
 #endif // INCLUDE_SERVICES
 
-// These declarations are needed since teh declaration of KlassInfoTable and
+// These declarations are needed since the declaration of KlassInfoTable and
 // KlassInfoClosure are guarded by #if INLCUDE_SERVICES
 class KlassInfoTable;
 class KlassInfoClosure;

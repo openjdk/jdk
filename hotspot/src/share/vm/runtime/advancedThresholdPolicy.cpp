@@ -306,7 +306,7 @@ void AdvancedThresholdPolicy::create_mdo(methodHandle mh, JavaThread* THREAD) {
  *    profiling can start at level 0 and finish at level 3.
  *
  * b. 0 -> 2 -> 3 -> 4.
- *    This case occures when the load on C2 is deemed too high. So, instead of transitioning
+ *    This case occurs when the load on C2 is deemed too high. So, instead of transitioning
  *    into state 3 directly and over-profiling while a method is in the C2 queue we transition to
  *    level 2 and wait until the load on C2 decreases. This path is disabled for OSRs.
  *

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -495,7 +495,7 @@ final class DirectAudioDevice extends AbstractMixer {
             }
 
             // align buffer to full frames
-            bufferSize = ((int) bufferSize / format.getFrameSize()) * format.getFrameSize();
+            bufferSize = ( bufferSize / format.getFrameSize()) * format.getFrameSize();
 
             id = nOpen(mixerIndex, deviceID, isSource,
                     encoding,
@@ -1381,7 +1381,7 @@ final class DirectAudioDevice extends AbstractMixer {
                     if (toWriteBytes > getBufferSize()) {
                         toWriteBytes = Toolkit.align(getBufferSize(), frameSize);
                     }
-                    int written = write(audioData, (int) clipBytePosition, toWriteBytes); // increases bytePosition
+                    int written = write(audioData, clipBytePosition, toWriteBytes); // increases bytePosition
                     clipBytePosition += written;
                     // make sure nobody called setFramePosition, or stop() during the write() call
                     if (doIO && newFramePosition < 0 && written >= 0) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 1997, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,11 +53,11 @@ class AppletMessageHandler {
     }
 
     String getMessage(String key) {
-        return (String)rb.getString(getQualifiedKey(key));
+        return rb.getString(getQualifiedKey(key));
     }
 
     String getMessage(String key, Object arg){
-        String basemsgfmt = (String)rb.getString(getQualifiedKey(key));
+        String basemsgfmt = rb.getString(getQualifiedKey(key));
         MessageFormat msgfmt = new MessageFormat(basemsgfmt);
         Object msgobj[] = new Object[1];
         if (arg == null) {
@@ -68,7 +68,7 @@ class AppletMessageHandler {
     }
 
     String getMessage(String key, Object arg1, Object arg2) {
-        String basemsgfmt = (String)rb.getString(getQualifiedKey(key));
+        String basemsgfmt = rb.getString(getQualifiedKey(key));
         MessageFormat msgfmt = new MessageFormat(basemsgfmt);
         Object msgobj[] = new Object[2];
         if (arg1 == null) {
@@ -83,7 +83,7 @@ class AppletMessageHandler {
     }
 
     String getMessage(String key, Object arg1, Object arg2, Object arg3) {
-        String basemsgfmt = (String)rb.getString(getQualifiedKey(key));
+        String basemsgfmt = rb.getString(getQualifiedKey(key));
         MessageFormat msgfmt = new MessageFormat(basemsgfmt);
         Object msgobj[] = new Object[3];
         if (arg1 == null) {
@@ -102,7 +102,7 @@ class AppletMessageHandler {
     }
 
     String getMessage(String key, Object arg[]) {
-        String basemsgfmt = (String)rb.getString(getQualifiedKey(key));
+        String basemsgfmt = rb.getString(getQualifiedKey(key));
         MessageFormat msgfmt = new MessageFormat(basemsgfmt);
         return msgfmt.format(arg);
     }

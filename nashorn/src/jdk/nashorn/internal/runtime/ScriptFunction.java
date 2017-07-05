@@ -26,14 +26,13 @@
 package jdk.nashorn.internal.runtime;
 
 import static jdk.nashorn.internal.codegen.CompilerConstants.virtualCallNoLookup;
+import static jdk.nashorn.internal.lookup.Lookup.MH;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
-import static jdk.nashorn.internal.lookup.Lookup.MH;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.LinkRequest;
@@ -524,7 +523,11 @@ public abstract class ScriptFunction extends ScriptObject {
             }
         } else {
             final MethodHandle callHandle = getBestInvoker(type.dropParameterTypes(0, 1), request.getArguments());
-            if (scopeCall) {
+            if (data.isBuiltin() && "extend".equals(data.getName())) {
+                // NOTE: the only built-in named "extend" is NativeJava.extend. As a special-case we're binding the
+                // current lookup as its "this" so it can do security-sensitive creation of adapter classes.
+                boundHandle = MH.dropArguments(MH.bindTo(callHandle, desc.getLookup()), 0, Object.class, Object.class);
+            } else if (scopeCall) {
                 // Make a handle that drops the passed "this" argument and substitutes either Global or Undefined
                 // (this, args...) => (args...)
                 boundHandle = MH.bindTo(callHandle, needsWrappedThis() ? Context.getGlobalTrusted() : ScriptRuntime.UNDEFINED);

@@ -1,0 +1,256 @@
+#
+# Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+#
+# Only used for OSX/Darwin builds
+
+# Define public interface.
+                # _JNI
+                _JNI_CreateJavaVM
+                _JNI_GetCreatedJavaVMs
+                _JNI_GetDefaultJavaVMInitArgs
+
+                # _JVM
+                _JVM_Accept
+                _JVM_ActiveProcessorCount
+                _JVM_AllocateNewArray
+                _JVM_AllocateNewObject
+                _JVM_ArrayCopy
+                _JVM_AssertionStatusDirectives
+                _JVM_Available
+                _JVM_Bind
+                _JVM_ClassDepth
+                _JVM_ClassLoaderDepth
+                _JVM_Clone
+                _JVM_Close
+                _JVM_CX8Field
+                _JVM_CompileClass
+                _JVM_CompileClasses
+                _JVM_CompilerCommand
+                _JVM_Connect
+                _JVM_ConstantPoolGetClassAt
+                _JVM_ConstantPoolGetClassAtIfLoaded
+                _JVM_ConstantPoolGetDoubleAt
+                _JVM_ConstantPoolGetFieldAt
+                _JVM_ConstantPoolGetFieldAtIfLoaded
+                _JVM_ConstantPoolGetFloatAt
+                _JVM_ConstantPoolGetIntAt
+                _JVM_ConstantPoolGetLongAt
+                _JVM_ConstantPoolGetMethodAt
+                _JVM_ConstantPoolGetMethodAtIfLoaded
+                _JVM_ConstantPoolGetMemberRefInfoAt
+                _JVM_ConstantPoolGetSize
+                _JVM_ConstantPoolGetStringAt
+                _JVM_ConstantPoolGetUTF8At
+                _JVM_CountStackFrames
+                _JVM_CurrentClassLoader
+                _JVM_CurrentLoadedClass
+                _JVM_CurrentThread
+                _JVM_CurrentTimeMillis
+                _JVM_DefineClass
+                _JVM_DefineClassWithSource
+                _JVM_DefineClassWithSourceCond
+                _JVM_DesiredAssertionStatus
+                _JVM_DisableCompiler
+                _JVM_DoPrivileged
+                _JVM_DTraceGetVersion
+                _JVM_DTraceActivate
+                _JVM_DTraceIsProbeEnabled
+                _JVM_DTraceIsSupported
+                _JVM_DTraceDispose
+                _JVM_DumpAllStacks
+                _JVM_DumpThreads
+                _JVM_EnableCompiler
+                _JVM_Exit
+                _JVM_FillInStackTrace
+                _JVM_FindClassFromClass
+                _JVM_FindClassFromClassLoader
+                _JVM_FindClassFromBootLoader
+                _JVM_FindLibraryEntry
+                _JVM_FindLoadedClass
+                _JVM_FindPrimitiveClass
+                _JVM_FindSignal
+                _JVM_FreeMemory
+                _JVM_GC
+                _JVM_GetAllThreads
+                _JVM_GetArrayElement
+                _JVM_GetArrayLength
+                _JVM_GetCPClassNameUTF
+                _JVM_GetCPFieldClassNameUTF
+                _JVM_GetCPFieldModifiers
+                _JVM_GetCPFieldNameUTF
+                _JVM_GetCPFieldSignatureUTF
+                _JVM_GetCPMethodClassNameUTF
+                _JVM_GetCPMethodModifiers
+                _JVM_GetCPMethodNameUTF
+                _JVM_GetCPMethodSignatureUTF
+                _JVM_GetCallerClass
+                _JVM_GetClassAccessFlags
+                _JVM_GetClassAnnotations
+                _JVM_GetClassCPEntriesCount
+                _JVM_GetClassCPTypes
+                _JVM_GetClassConstantPool
+                _JVM_GetClassContext
+                _JVM_GetClassDeclaredConstructors
+                _JVM_GetClassDeclaredFields
+                _JVM_GetClassDeclaredMethods
+                _JVM_GetClassFieldsCount
+                _JVM_GetClassInterfaces
+                _JVM_GetClassLoader
+                _JVM_GetClassMethodsCount
+                _JVM_GetClassModifiers
+                _JVM_GetClassName
+                _JVM_GetClassNameUTF
+                _JVM_GetClassSignature
+                _JVM_GetClassSigners
+                _JVM_GetClassTypeAnnotations
+                _JVM_GetComponentType
+                _JVM_GetDeclaredClasses
+                _JVM_GetDeclaringClass
+                _JVM_GetEnclosingMethodInfo
+                _JVM_GetFieldAnnotations
+                _JVM_GetFieldIxModifiers
+                _JVM_GetFieldTypeAnnotations
+                _JVM_GetHostName
+                _JVM_GetInheritedAccessControlContext
+                _JVM_GetInterfaceVersion
+                _JVM_GetLastErrorString
+                _JVM_GetManagement
+                _JVM_GetMethodAnnotations
+                _JVM_GetMethodDefaultAnnotationValue
+                _JVM_GetMethodIxArgsSize
+                _JVM_GetMethodIxByteCode
+                _JVM_GetMethodIxByteCodeLength
+                _JVM_GetMethodIxExceptionIndexes
+                _JVM_GetMethodIxExceptionTableEntry
+                _JVM_GetMethodIxExceptionTableLength
+                _JVM_GetMethodIxExceptionsCount
+                _JVM_GetMethodIxLocalsCount
+                _JVM_GetMethodIxMaxStack
+                _JVM_GetMethodIxModifiers
+                _JVM_GetMethodIxNameUTF
+                _JVM_GetMethodIxSignatureUTF
+                _JVM_GetMethodParameterAnnotations
+                _JVM_GetMethodParameters
+                _JVM_GetMethodTypeAnnotations
+                _JVM_GetPrimitiveArrayElement
+                _JVM_GetProtectionDomain
+                _JVM_GetSockName
+                _JVM_GetSockOpt
+                _JVM_GetStackAccessControlContext
+                _JVM_GetStackTraceDepth
+                _JVM_GetStackTraceElement
+                _JVM_GetSystemPackage
+                _JVM_GetSystemPackages
+                _JVM_GetThreadStateNames
+                _JVM_GetThreadStateValues
+                _JVM_GetVersionInfo
+                _JVM_Halt
+                _JVM_HoldsLock
+                _JVM_IHashCode
+                _JVM_InitAgentProperties
+                _JVM_InitProperties
+                _JVM_InitializeCompiler
+                _JVM_InitializeSocketLibrary
+                _JVM_InternString
+                _JVM_Interrupt
+                _JVM_InvokeMethod
+                _JVM_IsArrayClass
+                _JVM_IsConstructorIx
+                _JVM_IsInterface
+                _JVM_IsInterrupted
+                _JVM_IsNaN
+                _JVM_IsPrimitiveClass
+                _JVM_IsSameClassPackage
+                _JVM_IsSilentCompiler
+                _JVM_IsSupportedJNIVersion
+                _JVM_IsThreadAlive
+                _JVM_IsVMGeneratedMethodIx
+                _JVM_LatestUserDefinedLoader
+                _JVM_Listen
+                _JVM_LoadClass0
+                _JVM_LoadLibrary
+                _JVM_Lseek
+                _JVM_MaxObjectInspectionAge
+                _JVM_MaxMemory
+                _JVM_MonitorNotify
+                _JVM_MonitorNotifyAll
+                _JVM_MonitorWait
+                _JVM_NanoTime
+                _JVM_NativePath
+                _JVM_NewArray
+                _JVM_NewInstanceFromConstructor
+                _JVM_NewMultiArray
+                _JVM_OnExit
+                _JVM_Open
+                _JVM_RaiseSignal
+                _JVM_RawMonitorCreate
+                _JVM_RawMonitorDestroy
+                _JVM_RawMonitorEnter
+                _JVM_RawMonitorExit
+                _JVM_Read
+                _JVM_Recv
+                _JVM_RecvFrom
+                _JVM_RegisterSignal
+                _JVM_ReleaseUTF
+                _JVM_ResolveClass
+                _JVM_ResumeThread
+                _JVM_Send
+                _JVM_SendTo
+                _JVM_SetArrayElement
+                _JVM_SetClassSigners
+                _JVM_SetLength
+                _JVM_SetNativeThreadName
+                _JVM_SetPrimitiveArrayElement
+                _JVM_SetSockOpt
+                _JVM_SetThreadPriority
+                _JVM_Sleep
+                _JVM_Socket
+                _JVM_SocketAvailable
+                _JVM_SocketClose
+                _JVM_SocketShutdown
+                _JVM_StartThread
+                _JVM_StopThread
+                _JVM_SuspendThread
+                _JVM_SupportsCX8
+                _JVM_Sync
+                _JVM_Timeout
+                _JVM_TotalMemory
+                _JVM_TraceInstructions
+                _JVM_TraceMethodCalls
+                _JVM_UnloadLibrary
+                _JVM_Write
+                _JVM_Yield
+                _JVM_handle_bsd_signal
+
+                # miscellaneous functions
+                _jio_fprintf
+                _jio_printf
+                _jio_snprintf
+                _jio_vfprintf
+                _jio_vsnprintf
+
+                # This is for Forte Analyzer profiling support.
+                _AsyncGetCallTrace
+
+                # INSERT VTABLE SYMBOLS HERE
+

@@ -197,13 +197,13 @@ inline HeapWord* CMSBitMap::getNextMarkedWordAddress(
 }
 
 
-// Return the HeapWord address corrsponding to the next "0" bit
+// Return the HeapWord address corresponding to the next "0" bit
 // (inclusive).
 inline HeapWord* CMSBitMap::getNextUnmarkedWordAddress(HeapWord* addr) const {
   return getNextUnmarkedWordAddress(addr, endWord());
 }
 
-// Return the HeapWord address corrsponding to the next "0" bit
+// Return the HeapWord address corresponding to the next "0" bit
 // (inclusive).
 inline HeapWord* CMSBitMap::getNextUnmarkedWordAddress(
   HeapWord* start_addr, HeapWord* end_addr) const {

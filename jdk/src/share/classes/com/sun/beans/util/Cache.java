@@ -244,7 +244,7 @@ public abstract class Cache<K,V> {
      * @param size requested capacity MUST be a power of two
      * @return a new array for the cache entries
      */
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "rawtypes"})
     private CacheEntry<K,V>[] newTable(int size) {
         return (CacheEntry<K,V>[]) new CacheEntry[size];
     }
@@ -265,6 +265,7 @@ public abstract class Cache<K,V> {
             synchronized (this.queue) {
                 do {
                     if (reference instanceof Ref) {
+                        @SuppressWarnings("rawtypes")
                         Ref ref = (Ref) reference;
                         @SuppressWarnings("unchecked")
                         CacheEntry<K,V> owner = (CacheEntry<K,V>) ref.getOwner();

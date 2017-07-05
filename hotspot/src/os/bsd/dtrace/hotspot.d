@@ -56,7 +56,7 @@ provider hotspot {
   probe thread__park__end(uintptr_t);
   probe thread__unpark(uintptr_t);
   probe method__compile__begin(
-    const char*, uintptr_t, const char*, uintptr_t, const char*, uintptr_t, const char*, uintptr_t); 
+    char*, uintptr_t, char*, uintptr_t, char*, uintptr_t, char*, uintptr_t); 
   probe method__compile__end(
     char*, uintptr_t, char*, uintptr_t, char*, uintptr_t, 
     char*, uintptr_t, uintptr_t); 

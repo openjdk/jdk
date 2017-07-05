@@ -105,7 +105,7 @@ inline void ConcurrentMark::count_region(MemRegion mr, HeapRegion* hr,
   // will then correspond to a (non-existent) card that is also
   // just beyond the heap.
   if (g1h->is_in_g1_reserved(end) && !ct_bs->is_card_aligned(end)) {
-    // end of region is not card aligned - incremement to cover
+    // end of region is not card aligned - increment to cover
     // all the cards spanned by the region.
     end_idx += 1;
   }
@@ -222,7 +222,7 @@ inline bool ConcurrentMark::par_mark_and_count(oop obj,
   return false;
 }
 
-// Unconditionally mark the given object, and unconditinally count
+// Unconditionally mark the given object, and unconditionally count
 // the object in the counting structures for worker id 0.
 // Should *not* be called from parallel code.
 inline bool ConcurrentMark::mark_and_count(oop obj, HeapRegion* hr) {

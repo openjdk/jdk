@@ -55,8 +55,8 @@ public class RetryPost
     void doClient() {
         try {
             InetSocketAddress address = httpServer.getAddress();
-            URL url = new URL("http://" + address.getHostName() + ":" + address.getPort() + "/test/");
-            HttpURLConnection uc = (HttpURLConnection)url.openConnection();
+            URL url = new URL("http://localhost:" + address.getPort() + "/test/");
+            HttpURLConnection uc = (HttpURLConnection)url.openConnection(Proxy.NO_PROXY);
             uc.setDoOutput(true);
             uc.setRequestMethod("POST");
             uc.getResponseCode();

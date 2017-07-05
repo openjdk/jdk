@@ -103,7 +103,7 @@ private:
   // The data structure implemented is a circular queue.
   // Head "points" to the most recent addition, tail to the oldest one.
   // The array is of fixed size and I don't think we'll need more than
-  // two or three entries with the current behaviour of G1 pauses.
+  // two or three entries with the current behavior of G1 pauses.
   // If the array is full, an easy fix is to look for the pauses with
   // the shortest gap between them and consolidate them.
   // For now, we have taken the expedient alternative of forgetting

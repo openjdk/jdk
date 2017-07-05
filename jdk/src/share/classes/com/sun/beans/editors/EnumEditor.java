@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,17 +45,18 @@ import java.util.List;
 public final class EnumEditor implements PropertyEditor {
     private final List<PropertyChangeListener> listeners = new ArrayList<PropertyChangeListener>();
 
-    private final Class type;
+    @SuppressWarnings("rawtypes")
+    private final Class<? extends Enum> type;
     private final String[] tags;
 
     private Object value;
 
-    public EnumEditor( Class type ) {
+    public EnumEditor(Class<?> type) {
         Object[] values = type.getEnumConstants();
         if ( values == null ) {
             throw new IllegalArgumentException( "Unsupported " + type );
         }
-        this.type = type;
+        this.type = type.asSubclass(java.lang.Enum.class);
         this.tags = new String[values.length];
         for ( int i = 0; i < values.length; i++ ) {
             this.tags[i] = ( ( Enum )values[i] ).name();
@@ -98,9 +99,11 @@ public final class EnumEditor implements PropertyEditor {
     }
 
     public void setAsText( String text ) {
-        setValue( ( text != null )
-                ? Enum.valueOf( this.type, text )
-                : null );
+        @SuppressWarnings("unchecked")
+        Object tmp = ( text != null )
+            ? Enum.valueOf( (Class)this.type, text )
+            : null;
+        setValue(tmp);
     }
 
     public String[] getTags() {

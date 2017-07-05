@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@
  */
 
 import sun.misc.DoubleConsts;
-import sun.misc.FpUtils;
 
 public class Log1pTests {
     private Log1pTests(){}
@@ -105,7 +104,7 @@ public class Log1pTests {
         for(int i = 0; i < 1000; i++) {
             double d = rand.nextDouble();
 
-            d = Math.scalb(d, -53 - FpUtils.ilogb(d));
+            d = Math.scalb(d, -53 - Tests.ilogb(d));
 
             for(int j = -53; j <= 52; j++) {
                 failures += testLog1pCaseWithUlpDiff(d, hp15cLogp(d), 5);

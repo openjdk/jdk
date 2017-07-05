@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -280,7 +280,7 @@ public final class StrikeCache {
         RenderQueue rq = null;
         GraphicsEnvironment ge =
             GraphicsEnvironment.getLocalGraphicsEnvironment();
-        if (!ge.isHeadless()) {
+        if (!GraphicsEnvironment.isHeadless()) {
             GraphicsConfiguration gc =
                 ge.getDefaultScreenDevice().getDefaultConfiguration();
             if (gc instanceof AccelGraphicsConfig) {
@@ -351,7 +351,7 @@ public final class StrikeCache {
                         if (gids == null) {
                             gids = new ArrayList<Long>();
                         }
-                        gids.add((long) glyphPtrs[i]);
+                        gids.add(glyphPtrs[i]);
                     }
                 }
 

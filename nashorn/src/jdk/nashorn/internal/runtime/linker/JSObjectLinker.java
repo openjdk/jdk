@@ -32,6 +32,7 @@ import java.util.HashMap;
 import java.util.Map;
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.linker.GuardedInvocation;
+import jdk.internal.dynalink.linker.GuardedTypeConversion;
 import jdk.internal.dynalink.linker.GuardingTypeConverterFactory;
 import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.internal.dynalink.linker.LinkerServices;
@@ -79,7 +80,7 @@ final class JSObjectLinker implements TypeBasedGuardingDynamicLinker, GuardingTy
     }
 
     @Override
-    public GuardedInvocation convertToType(final Class<?> sourceType, final Class<?> targetType) throws Exception {
+    public GuardedTypeConversion convertToType(final Class<?> sourceType, final Class<?> targetType) throws Exception {
         final boolean sourceIsAlwaysJSObject = JSObject.class.isAssignableFrom(sourceType);
         if(!sourceIsAlwaysJSObject && !sourceType.isAssignableFrom(JSObject.class)) {
             return null;
@@ -90,7 +91,7 @@ final class JSObjectLinker implements TypeBasedGuardingDynamicLinker, GuardingTy
             return null;
         }
 
-        return new GuardedInvocation(converter, sourceIsAlwaysJSObject ? null : IS_JSOBJECT_GUARD).asType(MethodType.methodType(targetType, sourceType));
+        return new GuardedTypeConversion(new GuardedInvocation(converter, sourceIsAlwaysJSObject ? null : IS_JSOBJECT_GUARD).asType(MethodType.methodType(targetType, sourceType)), true);
     }
 
 

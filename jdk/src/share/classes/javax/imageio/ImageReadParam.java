@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -294,7 +294,7 @@ public class ImageReadParam extends IIOParam {
                     }
                 }
             }
-            this.destinationBands = (int[])destinationBands.clone();
+            this.destinationBands = destinationBands.clone();
         }
     }
 
@@ -312,7 +312,7 @@ public class ImageReadParam extends IIOParam {
         if (destinationBands == null) {
             return null;
         } else {
-            return (int[])(destinationBands.clone());
+            return destinationBands.clone();
         }
     }
 

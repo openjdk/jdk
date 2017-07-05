@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,8 +93,7 @@ class SOSMarkerSegment extends MarkerSegment {
     protected Object clone () {
         SOSMarkerSegment newGuy = (SOSMarkerSegment) super.clone();
         if (componentSpecs != null) {
-            newGuy.componentSpecs =
-                (ScanComponentSpec []) componentSpecs.clone();
+            newGuy.componentSpecs = componentSpecs.clone();
             for (int i = 0; i < componentSpecs.length; i++) {
                 newGuy.componentSpecs[i] =
                     (ScanComponentSpec) componentSpecs[i].clone();
