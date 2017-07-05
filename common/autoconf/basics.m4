@@ -90,13 +90,25 @@ AC_DEFUN([BASIC_FIXUP_EXECUTABLE],
     tmp="$complete EOL"
     arguments="${tmp#* }"
 
-    new_path=`$WHICH $path 2> /dev/null`
+    # Cannot rely on the command "which" here since it doesn't always work.
+    is_absolute_path=`$ECHO "$path" | $GREP ^/`
+    if test -z "$is_absolute_path"; then
+      # Path to executable is not absolute. Find it.
+      IFS_save="$IFS"
+      IFS=:
+      for p in $PATH; do
+        if test -f "$p/$path" && test -x "$p/$path"; then
+          new_path="$p/$path"
+          break
+        fi
+      done
+      IFS="$IFS_save"
+    else
+      AC_MSG_NOTICE([Resolving $1 (as $path) failed, using $path directly.])
+      new_path="$path"
+    fi
+    
     if test "x$new_path" = x; then
-      is_absolute_path=`$ECHO "$path" | $GREP ^/`
-      if test "x$is_absolute_path" != x; then
-        AC_MSG_NOTICE([Resolving $1 (as $path) with 'which' failed, using $path directly.])
-        new_path="$path"
-      else
         AC_MSG_NOTICE([The path of $1, which resolves as "$complete", is not found.])
         has_space=`$ECHO "$complete" | $GREP " "`
         if test "x$has_space" != x; then
@@ -104,20 +116,19 @@ AC_DEFUN([BASIC_FIXUP_EXECUTABLE],
         fi
         AC_MSG_ERROR([Cannot locate the the path of $1])
       fi
-    fi
   fi
 
-  # Now join together the path and the arguments once again
-  if test "x$arguments" != xEOL; then
-      new_complete="$new_path ${arguments% *}"
-  else
-      new_complete="$new_path"
-  fi
+      # Now join together the path and the arguments once again
+      if test "x$arguments" != xEOL; then
+        new_complete="$new_path ${arguments% *}"
+      else
+        new_complete="$new_path"
+      fi
 
   if test "x$complete" != "x$new_complete"; then
-    $1="$new_complete"
-    AC_MSG_NOTICE([Rewriting $1 to "$new_complete"])
-  fi
+      $1="$new_complete"
+      AC_MSG_NOTICE([Rewriting $1 to "$new_complete"])
+    fi
 ])
 
 AC_DEFUN([BASIC_REMOVE_SYMBOLIC_LINKS],
