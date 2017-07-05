@@ -886,6 +886,14 @@ public abstract class RasterPrinterJob extends PrinterJob {
         }
    }
 
+   protected PageFormat getPageFormatFromAttributes() {
+       if (attributes == null || attributes.isEmpty()) {
+            return null;
+        }
+        return attributeToPageFormat(getPrintService(), this.attributes);
+   }
+
+
    /**
      * Presents the user a dialog for changing properties of the
      * print job interactively.

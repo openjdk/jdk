@@ -24,8 +24,17 @@
  */
 
 /**
- * Nashorn shell module
+ * Defines Nashorn shell module.
  *
+ * <p>This module includes the command line tool <em>{@index jjs jjs tool}</em>
+ * to invoke the Nashorn engine.
+ *
+ * <dl style="font-family:'DejaVu Sans', Arial, Helvetica, sans serif">
+ * <dt class="simpleTagLabel">Tool Guides:
+ * <dd>{@extLink jjs_tool_reference jjs}
+ * </dl>
+ *
+ * @moduleGraph
  * @since 9
  */
 module jdk.scripting.nashorn.shell {
