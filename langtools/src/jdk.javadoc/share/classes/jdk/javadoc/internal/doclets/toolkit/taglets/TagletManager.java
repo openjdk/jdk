@@ -251,7 +251,7 @@ public class TagletManager {
             tagClassLoader = fileManager.getClassLoader(TAGLET_PATH);
             Class<?> customTagClass = tagClassLoader.loadClass(classname);
             Object instance = customTagClass.getConstructor().newInstance();
-            Taglet newLegacy = new UserTaglet((jdk.javadoc.doclet.taglet.Taglet)instance);
+            Taglet newLegacy = new UserTaglet((jdk.javadoc.doclet.Taglet)instance);
             String tname = newLegacy.getName();
             Taglet t = customTags.get(tname);
             if (t != null) {
@@ -315,8 +315,8 @@ public class TagletManager {
     private void checkTaglet(Object taglet) {
         if (taglet instanceof Taglet) {
             checkTagName(((Taglet) taglet).getName());
-        } else if (taglet instanceof jdk.javadoc.doclet.taglet.Taglet) {
-            jdk.javadoc.doclet.taglet.Taglet legacyTaglet = (jdk.javadoc.doclet.taglet.Taglet) taglet;
+        } else if (taglet instanceof jdk.javadoc.doclet.Taglet) {
+            jdk.javadoc.doclet.Taglet legacyTaglet = (jdk.javadoc.doclet.Taglet) taglet;
             customTags.remove(legacyTaglet.getName());
             customTags.put(legacyTaglet.getName(), new UserTaglet(legacyTaglet));
             checkTagName(legacyTaglet.getName());

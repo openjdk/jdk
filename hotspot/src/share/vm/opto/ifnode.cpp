@@ -249,6 +249,13 @@ static Node* split_if(IfNode *iff, PhaseIterGVN *igvn) {
       predicate_proj = proj;
     }
   }
+
+  // If all the defs of the phi are the same constant, we already have the desired end state.
+  // Skip the split that would create empty phi and region nodes.
+  if((r->req() - req_c) == 1) {
+    return NULL;
+  }
+
   if (nb_predicate_proj > 1) {
     // Can happen in case of loop unswitching and when the loop is
     // optimized out: it's not a loop anymore so we don't care about

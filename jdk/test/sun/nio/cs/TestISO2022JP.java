@@ -22,8 +22,9 @@
  */
 
 /* @test
-   @bug 4626545 4879522 4913711 4119445 8042125
-   @summary Check full coverage encode/decode for ISO-2022-JP
+ * @bug 4626545 4879522 4913711 4119445 8042125
+ * @summary Check full coverage encode/decode for ISO-2022-JP
+ * @modules jdk.charsets
  */
 
 /*
