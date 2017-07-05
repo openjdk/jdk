@@ -15,7 +15,7 @@
 * @bug 8005956
 * @summary C2: assert(!def_outside->member(r)) failed: Use of external LRG overlaps the same LRG defined in this block
 *
-* @run main PolynomialRoot
+* @run main/timeout=300 PolynomialRoot
 */
 
 public class PolynomialRoot  {
@@ -757,19 +757,26 @@ public static int root4(final double [] p,final double [] re_root,final double [
 
     public static void main(final String [] args)
     {
-  final long t0=System.currentTimeMillis();
-  final double eps=1e-6;
-  //checkRoots();
-  final java.util.Random r=new java.util.Random(-1381923);
-  printSpecialValues();
+      if (System.getProperty("os.arch").equals("x86") ||
+         System.getProperty("os.arch").equals("amd64") ||
+         System.getProperty("os.arch").equals("x86_64")){
+        final long t0=System.currentTimeMillis();
+        final double eps=1e-6;
+        //checkRoots();
+        final java.util.Random r=new java.util.Random(-1381923);
+        printSpecialValues();
 
-  final int n_tests=10000000;
-  //testRoots(2,n_tests,r,eps);
-  //testRoots(3,n_tests,r,eps);
-  testRoots(4,n_tests,r,eps);
-  final long t1=System.currentTimeMillis();
-  System.err.println("PolynomialRoot.main: "+n_tests+" tests OK done in "+(t1-t0)+" milliseconds. ver=$Id: PolynomialRoot.java,v 1.105 2012/08/18 00:00:05 mal Exp $");
-    }
+        final int n_tests=100000;
+        //testRoots(2,n_tests,r,eps);
+        //testRoots(3,n_tests,r,eps);
+        testRoots(4,n_tests,r,eps);
+        final long t1=System.currentTimeMillis();
+        System.err.println("PolynomialRoot.main: "+n_tests+" tests OK done in "+(t1-t0)+" milliseconds. ver=$Id: PolynomialRoot.java,v 1.105 2012/08/18 00:00:05 mal Exp $");
+        System.out.println("PASSED");
+     } else {
+       System.out.println("PASS test for non-x86");
+     }
+   }
 
 
 
