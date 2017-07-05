@@ -24,6 +24,8 @@
 /**
  * @test
  * @bug 7030180
+ * @modules java.security.jgss/sun.security.jgss
+ *          java.security.jgss/sun.security.krb5
  * @run main/othervm KrbCredSubKey
  * @summary AES 128/256 decrypt exception
  */

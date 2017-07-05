@@ -35,32 +35,36 @@ import com.sun.jndi.toolkit.url.UrlUtil;
  * Extract components of a "corbaname" URL.
  *
  * The format of an corbaname URL is defined in INS 99-12-03 as follows.
- *<p>
+ * <pre>{@code
  * corbaname url = "corbaname:" <corbaloc_obj> ["#" <string_name>]
  * corbaloc_obj  = <obj_addr_list> ["/" <key_string>]
  * obj_addr_list = as defined in a corbaloc URL
  * key_string    = as defined in a corbaloc URL
  * string_name   = stringified COS name | empty_string
- *<p>
- * Characters in <string_name> are escaped as follows.
+ * }</pre>
+ * Characters in {@code <string_name>} are escaped as follows.
  * US-ASCII alphanumeric characters are not escaped. Any characters outside
  * of this range are escaped except for the following:
+ * <pre>{@code
  *        ; / : ? @ & = + $ , - _ . ! ~ * ; ( )
+ * }</pre>
  * Escaped characters is escaped by using a % followed by its 2 hexadecimal
  * numbers representing the octet.
- *<p>
+ * <p>
  * The corbaname URL is parsed into two parts: a corbaloc URL and a COS name.
- * The corbaloc URL is constructed by concatenation "corbaloc:" with
- * <corbaloc_obj>.
- * The COS name is <string_name> with the escaped characters resolved.
- *<p>
+ * The corbaloc URL is constructed by concatenation {@code "corbaloc:"} with
+ * {@code <corbaloc_obj>}.
+ * The COS name is {@code <string_name>} with the escaped characters resolved.
+ * <p>
  * A corbaname URL is resolved by:
- *<ol>
- *<li>Construct a corbaloc URL by concatenating "corbaloc:" and <corbaloc_obj>.
- *<li>Resolve the corbaloc URL to a NamingContext by using
+ * <ol>
+ * <li>Construct a corbaloc URL by concatenating {@code "corbaloc:"} and {@code <corbaloc_obj>}.
+ * <li>Resolve the corbaloc URL to a NamingContext by using
+ * <pre>{@code
  *     nctx = ORB.string_to_object(corbalocUrl);
- *<li>Resolve <string_name> in the NamingContext.
- *</ol>
+ * }</pre>
+ * <li>Resolve {@code <string_name>} in the NamingContext.
+ * </ol>
  *
  * @author Rosanna Lee
  */

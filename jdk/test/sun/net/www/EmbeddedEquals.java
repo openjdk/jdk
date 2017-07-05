@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 4456995
+ * @modules java.base/sun.net.www
  * @summary  HeaderParser misinterprets a '=' character embedded in value
  */
 

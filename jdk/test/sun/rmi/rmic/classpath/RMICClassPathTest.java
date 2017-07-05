@@ -30,6 +30,8 @@
  * @summary New constructor in sun.tools.java.ClassPath builds a path using
  *          File.separator instead of File.pathSeparator. This test does
  *          not affect VM global state, so othervm is not required.
+ * @modules jdk.rmic/sun.rmi.rmic
+ *          jdk.rmic/sun.tools.java
  * @run main RMICClassPathTest
  */
 

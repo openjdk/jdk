@@ -1013,7 +1013,6 @@ class WindowsPreferences extends AbstractPreferences {
      * description of the encoding algorithm.
      */
      private static String toJavaValueString(byte[] windowsNameArray) {
-        // Use modified native2ascii algorithm
         String windowsName = byteArrayToString(windowsNameArray);
         StringBuilder javaName = new StringBuilder();
         char ch;
@@ -1055,8 +1054,7 @@ class WindowsPreferences extends AbstractPreferences {
      * Encoding algorithm adds "/" character to capital letters, i.e.
      * "A" is encoded as "/A". Character '\' is encoded as '//',
      * '/' is encoded as  '\'.
-     * Then encoding scheme similar to jdk's native2ascii converter is used
-     * to convert java string to a byte array of ASCII characters.
+     * Then convert java string to a byte array of ASCII characters.
      */
     private static byte[] toWindowsValueString(String javaName) {
         StringBuilder windowsName = new StringBuilder();

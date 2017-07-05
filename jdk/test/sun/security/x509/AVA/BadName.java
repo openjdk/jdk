@@ -26,6 +26,7 @@
  * @bug 4184274
  * @summary Make sure bad distinguished names (without keywords) don't
  * cause out-of-memory condition
+ * @modules java.base/sun.security.x509
  */
 import java.io.IOException;
 import sun.security.x509.X500Name;

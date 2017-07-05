@@ -110,8 +110,10 @@ public class Config {
      * java.security.krb5.kdc not specified, error reading configuration file.
      */
 
-    public static synchronized void refresh() throws KrbException {
-        singleton = new Config();
+    public static void refresh() throws KrbException {
+        synchronized (Config.class) {
+            singleton = new Config();
+        }
         KdcComm.initStatic();
         EType.initStatic();
         Checksum.initStatic();

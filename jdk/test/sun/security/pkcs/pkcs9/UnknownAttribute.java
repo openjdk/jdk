@@ -25,6 +25,9 @@
  * @test
  * @bug 8011867
  * @summary Accept unknown PKCS #9 attributes
+ * @modules java.base/sun.misc
+ *          java.base/sun.security.pkcs
+ *          java.base/sun.security.util
  */
 
 import java.io.*;

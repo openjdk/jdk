@@ -25,6 +25,8 @@
  * @test
  * @bug 6355295
  * @summary Certificate validation using OCSP fails for a particular class of certificates
+ * @modules java.base/sun.security.provider.certpath
+ *          java.base/sun.security.x509
  */
 
 import java.io.*;

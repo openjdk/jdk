@@ -27,6 +27,7 @@
    @author Semyon Sadetsky
    @library ../../../../lib/testlibrary
    @build jdk.testlibrary.OSInfo
+   @run main bug8072769
   */
 
 import jdk.testlibrary.OSInfo;

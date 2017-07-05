@@ -33,7 +33,7 @@ import jdk.testlibrary.Utils;
  * @modules java.management
  * @run build jdk.testlibrary.* DummyMain
  * @run shell ../MakeJAR3.sh NoPremainAgent
- * @run main NoPremainAgentTest
+ * @run main/othervm -XX:-CreateCoredumpOnCrash NoPremainAgentTest
  */
 public class NoPremainAgentTest {
     // Use a javaagent without the premain() function.

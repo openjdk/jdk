@@ -25,6 +25,8 @@
  * @test
  * @bug 6346729 6705893
  * @summary Create JavaScript engine and check language and engine version
+ * @modules java.scripting
+ *          jdk.scripting.nashorn/jdk.nashorn.internal.runtime
  */
 
 import javax.script.*;

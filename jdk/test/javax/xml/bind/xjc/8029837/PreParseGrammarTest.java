@@ -26,6 +26,10 @@
  * @bug 8029837
  * @summary Test simulates the partial call to xjc ant task that fails with
  *          NullPointer exception
+ * @modules java.xml/com.sun.org.apache.xerces.internal.parsers
+ * @modules java.xml/com.sun.org.apache.xerces.internal.xni
+ * @modules java.xml/com.sun.org.apache.xerces.internal.xni.grammars
+ * @modules java.xml/com.sun.org.apache.xerces.internal.xni.parser
  * @run main/othervm PreParseGrammarTest
  */
 
