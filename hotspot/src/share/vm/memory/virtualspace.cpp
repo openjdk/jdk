@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -502,7 +502,7 @@ void ReservedHeapSpace::initialize_compressed_heap(const size_t size, size_t ali
 
       // Calc address range within we try to attach (range of possible start addresses).
       char* const highest_start = (char *)align_ptr_down((char *)UnscaledOopHeapMax - size, attach_point_alignment);
-      char* const lowest_start  = (char *)align_ptr_up  (        aligned_heap_base_min_address             , attach_point_alignment);
+      char* const lowest_start  = (char *)align_ptr_up(aligned_heap_base_min_address, attach_point_alignment);
       try_reserve_range(highest_start, lowest_start, attach_point_alignment,
                         aligned_heap_base_min_address, (char *)UnscaledOopHeapMax, size, alignment, large);
     }

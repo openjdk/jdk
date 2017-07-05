@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,7 @@ public class ConstantPoolCache extends Metadata {
   public ConstantPool getConstants() { return (ConstantPool) constants.getValue(this); }
 
   public long getSize() {
-    return Oop.alignObjectSize(baseOffset + getLength() * elementSize);
+    return alignSize(baseOffset + getLength() * elementSize);
   }
 
   public ConstantPoolCacheEntry getEntryAt(int i) {
@@ -79,8 +79,7 @@ public class ConstantPoolCache extends Metadata {
   }
 
   public int getIntAt(int entry, int fld) {
-    //alignObjectSize ?
-    long offset = baseOffset + /*alignObjectSize*/entry * elementSize + fld * intSize;
+    long offset = baseOffset + entry * elementSize + fld * intSize;
     return (int) getAddress().getCIntegerAt(offset, intSize, true );
   }
 

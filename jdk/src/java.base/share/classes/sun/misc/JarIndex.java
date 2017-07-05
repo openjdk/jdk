@@ -106,31 +106,11 @@ public class JarIndex {
     /**
      * Returns the jar index, or <code>null</code> if none.
      *
-     * This single parameter version of the method is retained
-     * for binary compatibility with earlier releases.
-     *
      * @param jar the JAR file to get the index from.
      * @exception IOException if an I/O error has occurred.
      */
     public static JarIndex getJarIndex(JarFile jar) throws IOException {
-        return getJarIndex(jar, null);
-    }
-
-    /**
-     * Returns the jar index, or <code>null</code> if none.
-     *
-     * @param jar the JAR file to get the index from.
-     * @exception IOException if an I/O error has occurred.
-     */
-    public static JarIndex getJarIndex(JarFile jar, MetaIndex metaIndex) throws IOException {
         JarIndex index = null;
-        /* If metaIndex is not null, check the meta index to see
-           if META-INF/INDEX.LIST is contained in jar file or not.
-        */
-        if (metaIndex != null &&
-            !metaIndex.mayContain(INDEX_NAME)) {
-            return null;
-        }
         JarEntry e = jar.getJarEntry(INDEX_NAME);
         // if found, then load the index
         if (e != null) {

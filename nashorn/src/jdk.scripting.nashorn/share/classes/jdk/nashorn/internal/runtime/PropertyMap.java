@@ -702,10 +702,8 @@ public class PropertyMap implements Iterable<Object>, Serializable {
     private boolean allFrozen() {
         for (final Property property : properties.getProperties()) {
             // check if it is a data descriptor
-            if (!(property instanceof UserAccessorProperty)) {
-                if (property.isWritable()) {
-                    return false;
-                }
+            if (!property.isAccessorProperty() && property.isWritable()) {
+                return false;
             }
             if (property.isConfigurable()) {
                return false;

@@ -2188,30 +2188,18 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
   }
 
   // Compute start of first itableOffsetEntry (which is at the end of the vtable)
-  int vtable_base = InstanceKlass::vtable_start_offset() * wordSize;
+  int vtable_base = in_bytes(Klass::vtable_start_offset());
   int scan_step   = itableOffsetEntry::size() * wordSize;
-  int vte_size    = vtableEntry::size() * wordSize;
+  int vte_size    = vtableEntry::size_in_bytes();
 
-  lduw(recv_klass, InstanceKlass::vtable_length_offset() * wordSize, scan_temp);
+  lduw(recv_klass, in_bytes(Klass::vtable_length_offset()), scan_temp);
   // %%% We should store the aligned, prescaled offset in the klassoop.
   // Then the next several instructions would fold away.
 
-  int round_to_unit = ((HeapWordsPerLong > 1) ? BytesPerLong : 0);
   int itb_offset = vtable_base;
-  if (round_to_unit != 0) {
-    // hoist first instruction of round_to(scan_temp, BytesPerLong):
-    itb_offset += round_to_unit - wordSize;
-  }
-  int itb_scale = exact_log2(vtableEntry::size() * wordSize);
+  int itb_scale = exact_log2(vtableEntry::size_in_bytes());
   sll(scan_temp, itb_scale,  scan_temp);
   add(scan_temp, itb_offset, scan_temp);
-  if (round_to_unit != 0) {
-    // Round up to align_object_offset boundary
-    // see code for InstanceKlass::start_of_itable!
-    // Was: round_to(scan_temp, BytesPerLong);
-    // Hoisted: add(scan_temp, BytesPerLong-1, scan_temp);
-    and3(scan_temp, -round_to_unit, scan_temp);
-  }
   add(recv_klass, scan_temp, scan_temp);
 
   // Adjust recv_klass by scaled itable_index, so we can free itable_index.
@@ -2280,16 +2268,16 @@ void MacroAssembler::lookup_virtual_method(Register recv_klass,
                                            Register method_result) {
   assert_different_registers(recv_klass, method_result, vtable_index.register_or_noreg());
   Register sethi_temp = method_result;
-  const int base = (InstanceKlass::vtable_start_offset() * wordSize +
-                    // method pointer offset within the vtable entry:
-                    vtableEntry::method_offset_in_bytes());
+  const int base = in_bytes(Klass::vtable_start_offset()) +
+                   // method pointer offset within the vtable entry:
+                   vtableEntry::method_offset_in_bytes();
   RegisterOrConstant vtable_offset = vtable_index;
   // Each of the following three lines potentially generates an instruction.
   // But the total number of address formation instructions will always be
   // at most two, and will often be zero.  In any case, it will be optimal.
   // If vtable_index is a register, we will have (sll_ptr N,x; inc_ptr B,x; ld_ptr k,x).
   // If vtable_index is a constant, we will have at most (set B+X<<N,t; ld_ptr k,t).
-  vtable_offset = regcon_sll_ptr(vtable_index, exact_log2(vtableEntry::size() * wordSize), vtable_offset);
+  vtable_offset = regcon_sll_ptr(vtable_index, exact_log2(vtableEntry::size_in_bytes()), vtable_offset);
   vtable_offset = regcon_inc_ptr(vtable_offset, base, vtable_offset, sethi_temp);
   Address vtable_entry_addr(recv_klass, ensure_simm13_or_reg(vtable_offset, sethi_temp));
   ld_ptr(vtable_entry_addr, method_result);

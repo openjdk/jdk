@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,13 +30,18 @@
 #include <jvm.h>
 #include <jni_util.h>
 #include <jlong.h>
-#include "sun_misc_Signal.h"
+#include "jdk_internal_misc_Signal.h"
 
 JNIEXPORT jint JNICALL
-Java_sun_misc_Signal_findSignal(JNIEnv *env, jclass cls, jstring name)
+Java_jdk_internal_misc_Signal_findSignal0(JNIEnv *env, jclass cls, jstring name)
 {
     jint res;
-    const char *cname = (*env)->GetStringUTFChars(env, name, 0);
+    const char *cname;
+    if (name == NULL) {
+        JNU_ThrowNullPointerException(env, "name");
+        return 0;
+    }
+    cname = (*env)->GetStringUTFChars(env, name, 0);
     if (cname == NULL) {
         /* out of memory thrown */
         return 0;
@@ -47,13 +52,13 @@ Java_sun_misc_Signal_findSignal(JNIEnv *env, jclass cls, jstring name)
 }
 
 JNIEXPORT jlong JNICALL
-Java_sun_misc_Signal_handle0(JNIEnv *env, jclass cls, jint sig, jlong handler)
+Java_jdk_internal_misc_Signal_handle0(JNIEnv *env, jclass cls, jint sig, jlong handler)
 {
     return ptr_to_jlong(JVM_RegisterSignal(sig, jlong_to_ptr(handler)));
 }
 
 JNIEXPORT void JNICALL
-Java_sun_misc_Signal_raise0(JNIEnv *env, jclass cls, jint sig)
+Java_jdk_internal_misc_Signal_raise0(JNIEnv *env, jclass cls, jint sig)
 {
     JVM_RaiseSignal(sig);
 }

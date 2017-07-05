@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,9 +74,15 @@ class CodeRootSetTable : public Hashtable<nmethod*, mtGC> {
   static size_t static_mem_size() {
     return sizeof(_purge_list);
   }
+
+  size_t mem_size();
 };
 
 CodeRootSetTable* volatile CodeRootSetTable::_purge_list = NULL;
+
+size_t CodeRootSetTable::mem_size() {
+  return sizeof(CodeRootSetTable) + (entry_size() * number_of_entries()) + (sizeof(HashtableBucket<mtGC>) * table_size());
+}
 
 CodeRootSetTable::Entry* CodeRootSetTable::new_entry(nmethod* nm) {
   unsigned int hash = compute_hash(nm);
@@ -232,7 +238,6 @@ void G1CodeRootSet::move_to_large() {
   OrderAccess::release_store_ptr(&_table, temp);
 }
 
-
 void G1CodeRootSet::purge() {
   CodeRootSetTable::purge();
 }
@@ -247,12 +252,13 @@ void G1CodeRootSet::add(nmethod* method) {
     allocate_small_table();
   }
   added = _table->add(method);
-  if (_length == Threshold) {
-    move_to_large();
-  }
   if (added) {
+    if (_length == Threshold) {
+      move_to_large();
+    }
     ++_length;
   }
+  assert(_length == (size_t)_table->number_of_entries(), "sizes should match");
 }
 
 bool G1CodeRootSet::remove(nmethod* method) {
@@ -266,11 +272,13 @@ bool G1CodeRootSet::remove(nmethod* method) {
       clear();
     }
   }
+  assert((_length == 0 && _table == NULL) ||
+         (_length == (size_t)_table->number_of_entries()), "sizes should match");
   return removed;
 }
 
 bool G1CodeRootSet::contains(nmethod* method) {
-  CodeRootSetTable* table = load_acquire_table();
+  CodeRootSetTable* table = load_acquire_table(); // contains() may be called outside of lock, so ensure mem sync.
   if (table != NULL) {
     return table->contains(method);
   }
@@ -284,8 +292,7 @@ void G1CodeRootSet::clear() {
 }
 
 size_t G1CodeRootSet::mem_size() {
-  return sizeof(*this) +
-      (_table != NULL ? sizeof(CodeRootSetTable) + _table->entry_size() * _length : 0);
+  return sizeof(*this) + (_table != NULL ? _table->mem_size() : 0);
 }
 
 void G1CodeRootSet::nmethods_do(CodeBlobClosure* blk) const {

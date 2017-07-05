@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import static jdk.nashorn.internal.runtime.JSType.isString;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.util.Map;
 import javax.script.Bindings;
 import jdk.dynalink.CallSiteDescriptor;
@@ -135,12 +136,15 @@ final class JSObjectLinker implements TypeBasedGuardingDynamicLinker {
     }
 
     private static GuardedInvocation findCallMethod(final CallSiteDescriptor desc) {
-        // TODO: if call site is already a vararg, don't do asCollector
         MethodHandle mh = JSOBJECT_CALL;
         if (NashornCallSiteDescriptor.isApplyToCall(desc)) {
             mh = MH.insertArguments(JSOBJECT_CALL_TO_APPLY, 0, JSOBJECT_CALL);
         }
-        return new GuardedInvocation(MH.asCollector(mh, Object[].class, desc.getMethodType().parameterCount() - 2), IS_JSOBJECT_GUARD);
+        final MethodType type = desc.getMethodType();
+        mh = type.parameterType(type.parameterCount() - 1) == Object[].class ?
+                mh :
+                MH.asCollector(mh, Object[].class, type.parameterCount() - 2);
+        return new GuardedInvocation(mh, IS_JSOBJECT_GUARD);
     }
 
     private static GuardedInvocation findNewMethod(final CallSiteDescriptor desc) {

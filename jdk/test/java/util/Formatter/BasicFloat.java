@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,9 +35,6 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.text.DateFormatSymbols;
 import java.util.*;
-
-
-
 
 import static java.util.Calendar.*;
 
@@ -1081,6 +1078,10 @@ public class BasicFloat extends Basic {
         test("%,3.0f", "100,000,000", 100000000.00);
         test("%,3.0f", "10,000,000",  10000000.00);
         test("%,3.0f", "100,000,000", 100000000.00);
+
+
+
+
 
 
 

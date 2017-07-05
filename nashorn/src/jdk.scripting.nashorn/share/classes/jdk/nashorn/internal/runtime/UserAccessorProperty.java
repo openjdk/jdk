@@ -119,7 +119,8 @@ public final class UserAccessorProperty extends SpillProperty {
      * @param slot  spill slot
      */
     UserAccessorProperty(final Object key, final int flags, final int slot) {
-        super(key, flags, slot);
+        // Always set accessor property flag for this class
+        super(key, flags | IS_ACCESSOR_PROPERTY, slot);
     }
 
     private UserAccessorProperty(final UserAccessorProperty property) {

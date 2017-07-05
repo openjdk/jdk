@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -360,9 +360,7 @@ private:
     return size;
   }
 
-  inline size_t obj_size(const HeapWord* addr) const {
-    return oop(addr)->size();
-  }
+  inline size_t obj_size(const HeapWord* addr) const;
 
 public:
   CompactibleSpace() :
@@ -508,9 +506,7 @@ class ContiguousSpace: public CompactibleSpace {
     return true; // Always true, since scan_limit is top
   }
 
-  inline size_t scanned_block_size(const HeapWord* addr) const {
-    return oop(addr)->size();
-  }
+  inline size_t scanned_block_size(const HeapWord* addr) const;
 
  protected:
   HeapWord* _top;

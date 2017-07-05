@@ -1583,13 +1583,13 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
          "caller must use same register for non-constant itable index as for method");
 
   // Compute start of first itableOffsetEntry (which is at the end of the vtable).
-  int vtable_base = InstanceKlass::vtable_start_offset() * wordSize;
+  int vtable_base = in_bytes(Klass::vtable_start_offset());
   int itentry_off = itableMethodEntry::method_offset_in_bytes();
   int logMEsize   = exact_log2(itableMethodEntry::size() * wordSize);
   int scan_step   = itableOffsetEntry::size() * wordSize;
-  int log_vte_size= exact_log2(vtableEntry::size() * wordSize);
+  int log_vte_size= exact_log2(vtableEntry::size_in_bytes());
 
-  lwz(scan_temp, InstanceKlass::vtable_length_offset() * wordSize, recv_klass);
+  lwz(scan_temp, in_bytes(Klass::vtable_length_offset()), recv_klass);
   // %%% We should store the aligned, prescaled offset in the klassoop.
   // Then the next several instructions would fold away.
 
@@ -1657,7 +1657,7 @@ void MacroAssembler::lookup_virtual_method(Register recv_klass,
 
   assert_different_registers(recv_klass, method_result, vtable_index.register_or_noreg());
 
-  const int base = InstanceKlass::vtable_start_offset() * wordSize;
+  const int base = in_bytes(Klass::vtable_start_offset());
   assert(vtableEntry::size() * wordSize == wordSize, "adjust the scaling in the code below");
 
   if (vtable_index.is_register()) {

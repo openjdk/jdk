@@ -468,7 +468,7 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
             final boolean enumerable   = property.isEnumerable();
             final boolean writable     = property.isWritable();
 
-            if (property instanceof UserAccessorProperty) {
+            if (property.isAccessorProperty()) {
                 return global.newAccessorDescriptor(
                     get != null ?
                         get :
@@ -910,10 +910,9 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
     }
 
     private void erasePropertyValue(final Property property) {
-        // Erase the property field value with undefined. If the property is defined
-        // by user-defined accessors, we don't want to call the setter!!
-        if (!(property instanceof UserAccessorProperty)) {
-            assert property != null;
+        // Erase the property field value with undefined. If the property is an accessor property
+        // we don't want to call the setter!!
+        if (property != null && !property.isAccessorProperty()) {
             property.setValue(this, this, UNDEFINED, false);
         }
     }
@@ -996,7 +995,7 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
             assert gs != null;
             //reuse existing getter setter for speed
             gs.set(getter, setter);
-            if (uc.getFlags() == propertyFlags) {
+            if (uc.getFlags() == (propertyFlags | Property.IS_ACCESSOR_PROPERTY)) {
                 return oldProperty;
             }
             newProperty = new UserAccessorProperty(uc.getKey(), propertyFlags, slot);
@@ -2022,7 +2021,7 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
         } else if (!find.isSelf()) {
             assert mh.type().returnType().equals(returnType) :
                     "return type mismatch for getter " + mh.type().returnType() + " != " + returnType;
-            if (!(property instanceof UserAccessorProperty)) {
+            if (!property.isAccessorProperty()) {
                 // Add a filter that replaces the self object with the prototype owning the property.
                 mh = addProtoFilter(mh, find.getProtoChainLength());
             }
@@ -2185,7 +2184,7 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
         FindProperty find = findProperty(name, true, this);
 
         // If it's not a scope search, then we don't want any inherited properties except those with user defined accessors.
-        if (find != null && find.isInherited() && !(find.getProperty() instanceof UserAccessorProperty)) {
+        if (find != null && find.isInherited() && !find.getProperty().isAccessorProperty()) {
             // We should still check if inherited data property is not writable
             if (isExtensible() && !find.getProperty().isWritable()) {
                 return createEmptySetMethod(desc, explicitInstanceOfCheck, "property.not.writable", true);
@@ -2201,8 +2200,12 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
                 if (NashornCallSiteDescriptor.isScope(desc) && find.getProperty().isLexicalBinding()) {
                     throw typeError("assign.constant", name); // Overwriting ES6 const should throw also in non-strict mode.
                 }
-                // Existing, non-writable property
+                // Existing, non-writable data property
                 return createEmptySetMethod(desc, explicitInstanceOfCheck, "property.not.writable", true);
+            }
+            if (!find.getProperty().hasNativeSetter()) {
+                // Existing accessor property without setter
+                return createEmptySetMethod(desc, explicitInstanceOfCheck, "property.has.no.setter", true);
             }
         } else {
             if (!isExtensible()) {
@@ -3040,7 +3043,7 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
 
         invalidateGlobalConstant(key);
 
-        if (f != null && f.isInherited() && !(f.getProperty() instanceof UserAccessorProperty)) {
+        if (f != null && f.isInherited() && !f.getProperty().isAccessorProperty()) {
             final boolean isScope = isScopeFlag(callSiteFlags);
             // If the start object of the find is not this object it means the property was found inside a
             // 'with' statement expression (see WithObject.findProperty()). In this case we forward the 'set'
@@ -3061,12 +3064,14 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
         }
 
         if (f != null) {
-            if (!f.getProperty().isWritable()) {
+            if (!f.getProperty().isWritable() || !f.getProperty().hasNativeSetter()) {
                 if (isScopeFlag(callSiteFlags) && f.getProperty().isLexicalBinding()) {
                     throw typeError("assign.constant", key.toString()); // Overwriting ES6 const should throw also in non-strict mode.
                 }
                 if (isStrictFlag(callSiteFlags)) {
-                    throw typeError("property.not.writable", key.toString(), ScriptRuntime.safeToString(this));
+                    throw typeError(
+                            f.getProperty().isAccessorProperty() ? "property.has.no.setter" : "property.not.writable",
+                            key.toString(), ScriptRuntime.safeToString(this));
                 }
                 return;
             }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
 
 class GCPolicyCounters;
 
-/* Copyright (c) 1992, 2015, Oracle and/or its affiliates, and Stanford University.
+/* Copyright (c) 1992, 2016, Oracle and/or its affiliates, and Stanford University.
    See the LICENSE file for license information. */
 
 // Age table for adaptive feedback-mediated tenuring (scavenging)
@@ -56,9 +56,7 @@ class AgeTable VALUE_OBJ_CLASS_SPEC {
   void clear();
 
   // add entry
-  void add(oop p, size_t oop_size) {
-    add(p->age(), oop_size);
-  }
+  inline void add(oop p, size_t oop_size);
 
   void add(uint age, size_t oop_size) {
     assert(age > 0 && age < table_size, "invalid age of object");
