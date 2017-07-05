@@ -1320,6 +1320,9 @@ class VM_HeapIterateOperation: public VM_Operation {
     }
 
     // do the iteration
+    // If this operation encounters a bad object when using CMS,
+    // consider using safe_object_iterate() which avoids perm gen
+    // objects that may contain bad references.
     Universe::heap()->object_iterate(_blk);
 
     // when sharing is enabled we must iterate over the shared spaces

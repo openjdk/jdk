@@ -39,6 +39,8 @@ RuntimeStub*       SharedRuntime::_resolve_opt_virtual_call_blob;
 RuntimeStub*       SharedRuntime::_resolve_virtual_call_blob;
 RuntimeStub*       SharedRuntime::_resolve_static_call_blob;
 
+const int StackAlignmentInSlots = StackAlignmentInBytes / VMRegImpl::stack_slot_size;
+
 class RegisterSaver {
   enum { FPU_regs_live = 8 /*for the FPU stack*/+8/*eight more for XMM registers*/ };
   // Capture info about frame layout
@@ -1299,7 +1301,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
 
   // Now compute actual number of stack words we need rounding to make
   // stack properly aligned.
-  stack_slots = round_to(stack_slots, 2 * VMRegImpl::slots_per_word);
+  stack_slots = round_to(stack_slots, StackAlignmentInSlots);
 
   int stack_size = stack_slots * VMRegImpl::stack_slot_size;
 
@@ -1793,7 +1795,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   // reset handle block
   __ movptr(rcx, Address(thread, JavaThread::active_handles_offset()));
 
-  __ movptr(Address(rcx, JNIHandleBlock::top_offset_in_bytes()), (int32_t)NULL_WORD);
+  __ movptr(Address(rcx, JNIHandleBlock::top_offset_in_bytes()), NULL_WORD);
 
   // Any exception pending?
   __ cmpptr(Address(thread, in_bytes(Thread::pending_exception_offset())), (int32_t)NULL_WORD);
@@ -1865,7 +1867,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     // Save pending exception around call to VM (which contains an EXCEPTION_MARK)
 
     __ pushptr(Address(thread, in_bytes(Thread::pending_exception_offset())));
-    __ movptr(Address(thread, in_bytes(Thread::pending_exception_offset())), (int32_t)NULL_WORD);
+    __ movptr(Address(thread, in_bytes(Thread::pending_exception_offset())), NULL_WORD);
 
 
     // should be a peal
@@ -2431,7 +2433,7 @@ void SharedRuntime::generate_deopt_blob() {
   __ get_thread(rdi);
   __ movptr(rdx, Address(rdi, JavaThread::exception_pc_offset()));
   __ movptr(Address(rbp, wordSize), rdx);
-  __ movptr(Address(rdi, JavaThread::exception_pc_offset()), (int32_t)NULL_WORD);
+  __ movptr(Address(rdi, JavaThread::exception_pc_offset()), NULL_WORD);
 
 #ifdef ASSERT
   // verify that there is really an exception oop in JavaThread
@@ -2489,8 +2491,8 @@ void SharedRuntime::generate_deopt_blob() {
   __ jcc(Assembler::notEqual, noException);
   __ movptr(rax, Address(rcx, JavaThread::exception_oop_offset()));
   __ movptr(rdx, Address(rcx, JavaThread::exception_pc_offset()));
-  __ movptr(Address(rcx, JavaThread::exception_oop_offset()), (int32_t)NULL_WORD);
-  __ movptr(Address(rcx, JavaThread::exception_pc_offset()), (int32_t)NULL_WORD);
+  __ movptr(Address(rcx, JavaThread::exception_oop_offset()), NULL_WORD);
+  __ movptr(Address(rcx, JavaThread::exception_pc_offset()), NULL_WORD);
 
   __ verify_oop(rax);
 
@@ -2582,7 +2584,7 @@ void SharedRuntime::generate_deopt_blob() {
           rbx); // Make it walkable
 #else /* CC_INTERP */
   // This value is corrected by layout_activation_impl
-  __ movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), (int32_t)NULL_WORD );
+  __ movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), NULL_WORD);
   __ movptr(Address(rbp, frame::interpreter_frame_sender_sp_offset * wordSize), rbx); // Make it walkable
 #endif /* CC_INTERP */
   __ movptr(sp_temp, rsp);              // pass to next frame
@@ -2802,7 +2804,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
           rbx); // Make it walkable
 #else /* CC_INTERP */
   // This value is corrected by layout_activation_impl
-  __ movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), (int32_t)NULL_WORD );
+  __ movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), NULL_WORD );
   __ movptr(Address(rbp, frame::interpreter_frame_sender_sp_offset * wordSize), rbx); // Make it walkable
 #endif /* CC_INTERP */
   __ movptr(sp_temp, rsp);              // pass to next frame
@@ -3020,7 +3022,7 @@ static RuntimeStub* generate_resolve_blob(address destination, const char* name)
   // exception pending => remove activation and forward to exception handler
 
   __ get_thread(thread);
-  __ movptr(Address(thread, JavaThread::vm_result_offset()), (int32_t)NULL_WORD);
+  __ movptr(Address(thread, JavaThread::vm_result_offset()), NULL_WORD);
   __ movptr(rax, Address(thread, Thread::pending_exception_offset()));
   __ jump(RuntimeAddress(StubRoutines::forward_exception_entry()));
 

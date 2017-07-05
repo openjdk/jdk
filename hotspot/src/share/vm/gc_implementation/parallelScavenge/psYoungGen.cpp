@@ -64,12 +64,12 @@ void PSYoungGen::initialize_work() {
   }
 
   if (UseNUMA) {
-    _eden_space = new MutableNUMASpace();
+    _eden_space = new MutableNUMASpace(virtual_space()->alignment());
   } else {
-    _eden_space = new MutableSpace();
+    _eden_space = new MutableSpace(virtual_space()->alignment());
   }
-  _from_space = new MutableSpace();
-  _to_space   = new MutableSpace();
+  _from_space = new MutableSpace(virtual_space()->alignment());
+  _to_space   = new MutableSpace(virtual_space()->alignment());
 
   if (_eden_space == NULL || _from_space == NULL || _to_space == NULL) {
     vm_exit_during_initialization("Could not allocate a young gen space");

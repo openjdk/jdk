@@ -792,15 +792,34 @@ methodHandle methodOopDesc:: clone_with_new_data(methodHandle m, u_char* new_cod
   AccessFlags flags = m->access_flags();
   int checked_exceptions_len = m->checked_exceptions_length();
   int localvariable_len = m->localvariable_table_length();
-  methodOop newm_oop = oopFactory::new_method(new_code_length, flags, new_compressed_linenumber_size, localvariable_len, checked_exceptions_len, CHECK_(methodHandle()));
+  // Allocate newm_oop with the is_conc_safe parameter set
+  // to IsUnsafeConc to indicate that newm_oop is not yet
+  // safe for concurrent processing by a GC.
+  methodOop newm_oop = oopFactory::new_method(new_code_length,
+                                              flags,
+                                              new_compressed_linenumber_size,
+                                              localvariable_len,
+                                              checked_exceptions_len,
+                                              IsUnsafeConc,
+                                              CHECK_(methodHandle()));
   methodHandle newm (THREAD, newm_oop);
   int new_method_size = newm->method_size();
   // Create a shallow copy of methodOopDesc part, but be careful to preserve the new constMethodOop
   constMethodOop newcm = newm->constMethod();
   int new_const_method_size = newm->constMethod()->object_size();
+
   memcpy(newm(), m(), sizeof(methodOopDesc));
   // Create shallow copy of constMethodOopDesc, but be careful to preserve the methodOop
+  // is_conc_safe is set to false because that is the value of
+  // is_conc_safe initialzied into newcm and the copy should
+  // not overwrite that value.  During the window during which it is
+  // tagged as unsafe, some extra work could be needed during precleaning
+  // or concurrent marking but those phases will be correct.  Setting and
+  // resetting is done in preference to a careful copying into newcm to
+  // avoid having to know the precise layout of a constMethodOop.
+  m->constMethod()->set_is_conc_safe(false);
   memcpy(newcm, m->constMethod(), sizeof(constMethodOopDesc));
+  m->constMethod()->set_is_conc_safe(true);
   // Reset correct method/const method, method size, and parameter info
   newcm->set_method(newm());
   newm->set_constMethod(newcm);
@@ -831,6 +850,10 @@ methodHandle methodOopDesc:: clone_with_new_data(methodHandle m, u_char* new_cod
            m->localvariable_table_start(),
            localvariable_len * sizeof(LocalVariableTableElement));
   }
+
+  // Only set is_conc_safe to true when changes to newcm are
+  // complete.
+  newcm->set_is_conc_safe(true);
   return newm;
 }
 
