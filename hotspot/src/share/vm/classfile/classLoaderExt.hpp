@@ -59,8 +59,8 @@ public:
   };
 
 
-  static void add_class_path_entry(char* path, bool check_for_duplicates,
-                            ClassPathEntry* new_entry) {
+  static void add_class_path_entry(const char* path, bool check_for_duplicates,
+                                   ClassPathEntry* new_entry) {
     ClassLoader::add_to_list(new_entry);
   }
   static void setup_search_paths() {}

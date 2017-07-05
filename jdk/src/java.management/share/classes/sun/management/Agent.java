@@ -210,6 +210,8 @@ public class Agent {
             } else {
                 throw new AgentConfigurationError(INVALID_JMXREMOTE_PORT, "No port specified");
             }
+        } catch (JdpException e) {
+            error(e);
         } catch (AgentConfigurationError err) {
             error(err.getError(), err.getParams());
         }
@@ -273,7 +275,7 @@ public class Agent {
     }
 
     private static void startDiscoveryService(Properties props)
-            throws IOException {
+            throws IOException, JdpException {
         // Start discovery service if requested
         String discoveryPort = props.getProperty("com.sun.management.jdp.port");
         String discoveryAddress = props.getProperty("com.sun.management.jdp.address");
@@ -291,7 +293,7 @@ public class Agent {
             try{
                shouldStart = Boolean.parseBoolean(discoveryShouldStart);
             } catch (NumberFormatException e) {
-                throw new AgentConfigurationError("Couldn't parse autodiscovery argument");
+                throw new AgentConfigurationError(AGENT_EXCEPTION, "Couldn't parse autodiscovery argument");
             }
         }
 
@@ -302,7 +304,7 @@ public class Agent {
                 address = (discoveryAddress == null) ?
                         InetAddress.getByName(JDP_DEFAULT_ADDRESS) : InetAddress.getByName(discoveryAddress);
             } catch (UnknownHostException e) {
-                throw new AgentConfigurationError("Unable to broadcast to requested address", e);
+                throw new AgentConfigurationError(AGENT_EXCEPTION, e, "Unable to broadcast to requested address");
             }
 
             int port = JDP_DEFAULT_PORT;
@@ -310,7 +312,7 @@ public class Agent {
                try {
                   port = Integer.parseInt(discoveryPort);
                } catch (NumberFormatException e) {
-                 throw new AgentConfigurationError("Couldn't parse JDP port argument");
+                 throw new AgentConfigurationError(AGENT_EXCEPTION, "Couldn't parse JDP port argument");
                }
             }
 
@@ -330,12 +332,7 @@ public class Agent {
 
             String instanceName = props.getProperty("com.sun.management.jdp.name");
 
-            try{
-               JdpController.startDiscoveryService(address, port, instanceName, jmxUrlStr);
-            }
-            catch(JdpException e){
-                throw new AgentConfigurationError("Couldn't start JDP service", e);
-            }
+            JdpController.startDiscoveryService(address, port, instanceName, jmxUrlStr);
         }
     }
 

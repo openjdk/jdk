@@ -90,8 +90,6 @@ public abstract class ScriptFunctionData implements Serializable {
     public static final int USES_THIS      = 1 << 4;
     /** Is this a variable arity function? */
     public static final int IS_VARIABLE_ARITY = 1 << 5;
-    /** Is this declared in a dynamic context */
-    public static final int IN_DYNAMIC_CONTEXT = 1 << 6;
 
     /** Flag for strict or built-in functions */
     public static final int IS_STRICT_OR_BUILTIN = IS_STRICT | IS_BUILTIN;

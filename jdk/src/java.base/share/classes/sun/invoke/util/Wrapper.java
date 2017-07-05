@@ -230,14 +230,6 @@ public enum Wrapper {
      */
     public <T> T zero(Class<T> type) { return convert(zero, type); }
 
-//    /** Produce a wrapper for the given wrapper or primitive type. */
-//    public static Wrapper valueOf(Class<?> type) {
-//        if (isPrimitiveType(type))
-//            return forPrimitiveType(type);
-//        else
-//            return forWrapperType(type);
-//    }
-
     /** Return the wrapper that wraps values of the given type.
      *  The type may be {@code Object}, meaning the {@code OBJECT} wrapper.
      *  Otherwise, the type must be a primitive.

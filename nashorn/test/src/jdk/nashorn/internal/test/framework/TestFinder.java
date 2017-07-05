@@ -261,14 +261,17 @@ final class TestFinder {
                     isTest = false;
                     isNotTest = true;
                     break;
-                case "@runif":
-                    if (System.getProperty(scanner.next()) != null) {
+                case "@runif": {
+                    final String prop = scanner.next();
+                    if (System.getProperty(prop) != null) {
                         shouldRun = true;
                     } else {
+                        factory.log("WARNING: (" + prop + ") skipping " + testFile);
                         isTest = false;
                         isNotTest = true;
                     }
                     break;
+                }
                 case "@run":
                     shouldRun = true;
                     break;

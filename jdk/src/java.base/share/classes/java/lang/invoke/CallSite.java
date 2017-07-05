@@ -102,7 +102,7 @@ public class CallSite {
      */
     /*package-private*/
     CallSite(MethodType type) {
-        target = type.invokers().uninitializedCallSite();
+        target = makeUninitializedCallSite(type);
     }
 
     /**
@@ -211,25 +211,38 @@ public class CallSite {
     public abstract MethodHandle dynamicInvoker();
 
     /*non-public*/ MethodHandle makeDynamicInvoker() {
-        MethodHandle getTarget = GET_TARGET.bindReceiver(this);
+        MethodHandle getTarget = GET_TARGET.bindArgumentL(0, this);
         MethodHandle invoker = MethodHandles.exactInvoker(this.type());
         return MethodHandles.foldArguments(invoker, getTarget);
     }
 
     private static final MethodHandle GET_TARGET;
+    private static final MethodHandle THROW_UCS;
     static {
         try {
             GET_TARGET = IMPL_LOOKUP.
                 findVirtual(CallSite.class, "getTarget", MethodType.methodType(MethodHandle.class));
+            THROW_UCS = IMPL_LOOKUP.
+                findStatic(CallSite.class, "uninitializedCallSite", MethodType.methodType(Object.class, Object[].class));
         } catch (ReflectiveOperationException e) {
             throw newInternalError(e);
         }
     }
 
     /** This guy is rolled into the default target if a MethodType is supplied to the constructor. */
-    /*package-private*/
-    static Empty uninitializedCallSite() {
+    private static Object uninitializedCallSite(Object... ignore) {
         throw new IllegalStateException("uninitialized call site");
+    }
+
+    private MethodHandle makeUninitializedCallSite(MethodType targetType) {
+        MethodType basicType = targetType.basicType();
+        MethodHandle invoker = basicType.form().cachedMethodHandle(MethodTypeForm.MH_UNINIT_CS);
+        if (invoker == null) {
+            invoker = THROW_UCS.asType(basicType);
+            invoker = basicType.form().setCachedMethodHandle(MethodTypeForm.MH_UNINIT_CS, invoker);
+        }
+        // unchecked view is OK since no values will be received or returned
+        return invoker.viewAsType(targetType, false);
     }
 
     // unsafe stuff:
@@ -319,7 +332,7 @@ public class CallSite {
                 throw new ClassCastException("bootstrap method failed to produce a CallSite");
             }
             if (!site.getTarget().type().equals(type))
-                throw new WrongMethodTypeException("wrong type: "+site.getTarget());
+                throw wrongTargetType(site.getTarget(), type);
         } catch (Throwable ex) {
             BootstrapMethodError bex;
             if (ex instanceof BootstrapMethodError)

@@ -110,7 +110,7 @@ class ScanRSClosure : public HeapRegionClosure {
   G1CollectedHeap* _g1h;
 
   OopsInHeapRegionClosure* _oc;
-  CodeBlobToOopClosure* _code_root_cl;
+  CodeBlobClosure* _code_root_cl;
 
   G1BlockOffsetSharedArray* _bot_shared;
   G1SATBCardTableModRefBS *_ct_bs;
@@ -122,7 +122,7 @@ class ScanRSClosure : public HeapRegionClosure {
 
 public:
   ScanRSClosure(OopsInHeapRegionClosure* oc,
-                CodeBlobToOopClosure* code_root_cl,
+                CodeBlobClosure* code_root_cl,
                 uint worker_i) :
     _oc(oc),
     _code_root_cl(code_root_cl),
@@ -242,7 +242,7 @@ public:
 };
 
 void G1RemSet::scanRS(OopsInHeapRegionClosure* oc,
-                      CodeBlobToOopClosure* code_root_cl,
+                      CodeBlobClosure* code_root_cl,
                       uint worker_i) {
   double rs_time_start = os::elapsedTime();
   HeapRegion *startRegion = _g1->start_cset_region_for_worker(worker_i);
@@ -321,7 +321,7 @@ void G1RemSet::cleanupHRRS() {
 }
 
 void G1RemSet::oops_into_collection_set_do(OopsInHeapRegionClosure* oc,
-                                           CodeBlobToOopClosure* code_root_cl,
+                                           CodeBlobClosure* code_root_cl,
                                            uint worker_i) {
 #if CARD_REPEAT_HISTO
   ct_freq_update_histo_and_reset();

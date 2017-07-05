@@ -25,33 +25,24 @@
 package sun.tools.attach;
 
 import com.sun.tools.attach.VirtualMachineDescriptor;
-import com.sun.tools.attach.VirtualMachine;
 import com.sun.tools.attach.AttachPermission;
 import com.sun.tools.attach.AttachNotSupportedException;
 import com.sun.tools.attach.spi.AttachProvider;
 
-import java.io.IOException;
 import java.util.List;
-import java.util.Iterator;
 import java.util.ArrayList;
 import java.util.Set;
-import java.net.URISyntaxException;
 
 import sun.jvmstat.monitor.HostIdentifier;
-import sun.jvmstat.monitor.Monitor;
 import sun.jvmstat.monitor.MonitoredHost;
 import sun.jvmstat.monitor.MonitoredVm;
 import sun.jvmstat.monitor.MonitoredVmUtil;
 import sun.jvmstat.monitor.VmIdentifier;
-import sun.jvmstat.monitor.MonitorException;
 
 /*
  * Platform specific provider implementations extend this
  */
 public abstract class HotSpotAttachProvider extends AttachProvider {
-
-    // perf count name for the JVM version
-    private static final String JVM_VERSION = "java.property.java.vm.version";
 
     public HotSpotAttachProvider() {
     }

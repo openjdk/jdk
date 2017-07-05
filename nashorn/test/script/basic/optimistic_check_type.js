@@ -36,13 +36,18 @@ var trees = new Array("redwood", "bay", "cedar", "oak");
 
 // Testing conditional operator
 print(inspect("" ? b : x.a, "ternary operator"))
-print(inspect(x.b ? b : x.a, "ternary operator"))
-print(inspect(c ? b : a, "ternary operator"))
-print(inspect(!c ? b : a, "ternary operator"))
-print(inspect(d ? b : x.c, "ternary operator"))
+var b1 = b;
+print(inspect(x.b ? b1 : x.a, "ternary operator"))
+var b2 = b;
+print(inspect(c ? b2 : a, "ternary operator"))
+var b3 = b;
+print(inspect(!c ? b3 : a, "ternary operator"))
+var b4 = b;
+print(inspect(d ? b4 : x.c, "ternary operator"))
 print(inspect(x.c ? a : c, "ternary operator"))
 print(inspect(c ? d : a, "ternary operator"))
-print(inspect(c ? +a : b, "ternary operator"))
+var b5 = b;
+print(inspect(c ? +a : b5, "ternary operator"))
 
 // Testing format methods
 print(inspect(b.toFixed(2), "global double toFixed()"))
@@ -53,11 +58,14 @@ print(inspect(b.toExponential(2), "global double toExponential()"))
 print(inspect(trees[1], "member object"))
 trees[1] = undefined;
 print(inspect(trees[1], "member undefined"))
-print(inspect(1 in trees ? b : a, "conditional on array member"))
+var b6=b;
+print(inspect(1 in trees ? b6 : a, "conditional on array member"))
 delete trees[2]
-print(inspect(2 in trees ? b : a, "conditional on array member"))
+var b7=b;
+print(inspect(2 in trees ? b7 : a, "conditional on array member"))
 print(inspect(3 in trees ? trees[2]="bay" : a, "conditional on array member"))
-print(inspect("oak" in trees ? b : a, "conditional on array member"))
+var b8=b;
+print(inspect("oak" in trees ? b8 : a, "conditional on array member"))
 
 // Testing nested functions and return value
 function f1() {

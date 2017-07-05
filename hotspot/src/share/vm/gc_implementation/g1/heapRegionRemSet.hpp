@@ -349,13 +349,13 @@ public:
   // Returns the memory occupancy of all static data structures associated
   // with remembered sets.
   static size_t static_mem_size() {
-    return OtherRegionsTable::static_mem_size() + G1CodeRootSet::free_chunks_static_mem_size();
+    return OtherRegionsTable::static_mem_size() + G1CodeRootSet::static_mem_size();
   }
 
   // Returns the memory occupancy of all free_list data structures associated
   // with remembered sets.
   static size_t fl_mem_size() {
-    return OtherRegionsTable::fl_mem_size() + G1CodeRootSet::free_chunks_mem_size();
+    return OtherRegionsTable::fl_mem_size();
   }
 
   bool contains_reference(OopOrNarrowOopStar from) const {
@@ -365,17 +365,14 @@ public:
   // Routines for managing the list of code roots that point into
   // the heap region that owns this RSet.
   void add_strong_code_root(nmethod* nm);
+  void add_strong_code_root_locked(nmethod* nm);
   void remove_strong_code_root(nmethod* nm);
-
-  // During a collection, migrate the successfully evacuated strong
-  // code roots that referenced into the region that owns this RSet
-  // to the RSets of the new regions that they now point into.
-  // Unsuccessfully evacuated code roots are not migrated.
-  void migrate_strong_code_roots();
 
   // Applies blk->do_code_blob() to each of the entries in
   // the strong code roots list
   void strong_code_roots_do(CodeBlobClosure* blk) const;
+
+  void clean_strong_code_roots(HeapRegion* hr);
 
   // Returns the number of elements in the strong code roots list
   size_t strong_code_roots_list_length() const {
