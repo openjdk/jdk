@@ -36,7 +36,7 @@ typedef BOOL  (WINAPI *pfn_SymInitialize)(HANDLE, PCTSTR, BOOL);
 typedef BOOL  (WINAPI *pfn_SymGetSymFromAddr64)(HANDLE, DWORD64, PDWORD64, PIMAGEHLP_SYMBOL64);
 typedef DWORD (WINAPI *pfn_UndecorateSymbolName)(const char*, char*, DWORD, DWORD);
 
-class WindowsDecoder: public NullDecoder {
+class WindowsDecoder : public AbstractDecoder {
 
 public:
   WindowsDecoder();

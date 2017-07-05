@@ -266,7 +266,17 @@ void NMethodSweeper::sweep_code_cache() {
 
     // The last invocation iterates until there are no more nmethods
     for (int i = 0; (i < todo || _invocations == 1) && _current != NULL; i++) {
+      if (SafepointSynchronize::is_synchronizing()) { // Safepoint request
+        if (PrintMethodFlushing && Verbose) {
+          tty->print_cr("### Sweep at %d out of %d, invocation: %d, yielding to safepoint", _seen, CodeCache::nof_nmethods(), _invocations);
+        }
+        MutexUnlockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 
+        assert(Thread::current()->is_Java_thread(), "should be java thread");
+        JavaThread* thread = (JavaThread*)Thread::current();
+        ThreadBlockInVM tbivm(thread);
+        thread->java_suspend_self();
+      }
       // Since we will give up the CodeCache_lock, always skip ahead
       // to the next nmethod.  Other blobs can be deleted by other
       // threads but nmethods are only reclaimed by the sweeper.
