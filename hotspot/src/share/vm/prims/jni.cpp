@@ -3861,6 +3861,7 @@ void TestKlass_test();
 void TestBitMap_test();
 void TestAsUtf8();
 void Test_linked_list();
+void TestChunkedList_test();
 #if INCLUDE_ALL_GCS
 void TestOldFreeSpaceCalculation_test();
 void TestG1BiasedArray_test();
@@ -3894,6 +3895,7 @@ void execute_internal_vm_tests() {
     run_unit_test(TestAsUtf8());
     run_unit_test(ObjectMonitor::sanity_checks());
     run_unit_test(Test_linked_list());
+    run_unit_test(TestChunkedList_test());
 #if INCLUDE_VM_STRUCTS
     run_unit_test(VMStructs::test());
 #endif

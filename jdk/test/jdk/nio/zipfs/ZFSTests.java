@@ -26,7 +26,7 @@
  * @summary ZipFileSystem regression tests
  *
  * @run main ZFSTests
- * @run main/othervm/policy=test.policy ZFSTests
+ * @run main/othervm/java.security.policy=test.policy ZFSTests
  */
 
 

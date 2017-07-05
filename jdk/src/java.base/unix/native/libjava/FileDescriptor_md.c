@@ -23,6 +23,9 @@
  * questions.
  */
 
+#include <unistd.h>
+#include <fcntl.h>
+
 #include "jvm.h"
 #include "io_util_md.h"
 
@@ -35,6 +38,9 @@
 /* field id for jint 'fd' in java.io.FileDescriptor */
 jfieldID IO_fd_fdID;
 
+/* field id for jboolean 'append' in java.io.FileDescriptor */
+jfieldID IO_append_fdID;
+
 /**************************************************************
  * static methods to store field ID's in initializers
  */
@@ -42,6 +48,7 @@ jfieldID IO_fd_fdID;
 JNIEXPORT void JNICALL
 Java_java_io_FileDescriptor_initIDs(JNIEnv *env, jclass fdClass) {
     IO_fd_fdID = (*env)->GetFieldID(env, fdClass, "fd", "I");
+    IO_append_fdID = (*env)->GetFieldID(env, fdClass, "append", "Z");
 }
 
 /**************************************************************
@@ -54,4 +61,10 @@ Java_java_io_FileDescriptor_sync(JNIEnv *env, jobject this) {
     if (IO_Sync(fd) == -1) {
         JNU_ThrowByName(env, "java/io/SyncFailedException", "sync failed");
     }
+}
+
+JNIEXPORT jboolean JNICALL
+Java_java_io_FileDescriptor_getAppend(JNIEnv *env, jclass fdClass, jint fd) {
+    int flags = fcntl(fd, F_GETFL);
+    return ((flags & O_APPEND) == 0) ? JNI_FALSE : JNI_TRUE;
 }
