@@ -72,7 +72,7 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
     NOF_PUBLICITY_LEVELS
   };
 
-  enum { LegalClass, LegalField, LegalMethod, LegalModule }; // used to verify unqualified names
+  enum { LegalClass, LegalField, LegalMethod }; // used to verify unqualified names
 
  private:
   const ClassFileStream* _stream; // Actual input stream

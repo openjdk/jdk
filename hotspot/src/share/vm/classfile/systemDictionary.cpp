@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "aot/aotLoader.hpp"
 #include "classfile/classFileParser.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.hpp"
@@ -621,35 +622,28 @@ instanceKlassHandle SystemDictionary::handle_parallel_super_load(
   return (nh);
 }
 
-// utility function for class load event
 static void post_class_load_event(const Ticks& start_time,
                                   instanceKlassHandle k,
-                                  Handle initiating_loader) {
+                                  const ClassLoaderData* init_cld) {
 #if INCLUDE_TRACE
   EventClassLoad event(UNTIMED);
   if (event.should_commit()) {
     event.set_starttime(start_time);
     event.set_loadedClass(k());
-    oop defining_class_loader = k->class_loader();
-    event.set_definingClassLoader(defining_class_loader != NULL ?
-      defining_class_loader->klass() : (Klass*)NULL);
-    oop class_loader = initiating_loader.is_null() ? (oop)NULL : initiating_loader();
-    event.set_initiatingClassLoader(class_loader != NULL ?
-      class_loader->klass() : (Klass*)NULL);
+    event.set_definingClassLoader(k->class_loader_data());
+    event.set_initiatingClassLoader(init_cld);
     event.commit();
   }
 #endif // INCLUDE_TRACE
 }
 
-// utility function for class define event
-static void class_define_event(instanceKlassHandle k) {
+static void class_define_event(instanceKlassHandle k,
+                               const ClassLoaderData* def_cld) {
 #if INCLUDE_TRACE
-  EventClassDefine event(UNTIMED);
+  EventClassDefine event;
   if (event.should_commit()) {
     event.set_definedClass(k());
-    oop defining_class_loader = k->class_loader();
-    event.set_definingClassLoader(defining_class_loader != NULL ?
-      defining_class_loader->klass() : (Klass*)NULL);
+    event.set_definingClassLoader(def_cld);
     event.commit();
   }
 #endif // INCLUDE_TRACE
@@ -907,7 +901,7 @@ Klass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
     return NULL;
   }
 
-  post_class_load_event(class_load_start_time, k, class_loader);
+  post_class_load_event(class_load_start_time, k, loader_data);
 
 #ifdef ASSERT
   {
@@ -1090,7 +1084,7 @@ Klass* SystemDictionary::parse_stream(Symbol* class_name,
         JvmtiExport::post_class_load((JavaThread *) THREAD, k());
     }
 
-    post_class_load_event(class_load_start_time, k, class_loader);
+    post_class_load_event(class_load_start_time, k, loader_data);
   }
   assert(host_klass != NULL || NULL == cp_patches,
          "cp_patches only found with host_klass");
@@ -1158,13 +1152,21 @@ Klass* SystemDictionary::resolve_from_stream(Symbol* class_name,
   Symbol* h_name = k->name();
   assert(class_name == NULL || class_name == h_name, "name mismatch");
 
+  bool define_succeeded = false;
   // Add class just loaded
   // If a class loader supports parallel classloading handle parallel define requests
   // find_or_define_instance_class may return a different InstanceKlass
   if (is_parallelCapable(class_loader)) {
-    k = find_or_define_instance_class(h_name, class_loader, k, CHECK_NULL);
+    instanceKlassHandle defined_k = find_or_define_instance_class(h_name, class_loader, k, CHECK_NULL);
+    if (k() == defined_k()) {
+      // we have won over other concurrent threads (if any) that are
+      // competing to define the same class.
+      define_succeeded = true;
+    }
+    k = defined_k;
   } else {
     define_instance_class(k, CHECK_NULL);
+    define_succeeded = true;
   }
 
   // Make sure we have an entry in the SystemDictionary on success
@@ -1408,6 +1410,19 @@ instanceKlassHandle SystemDictionary::load_shared_class(instanceKlassHandle ik,
     // notify a class loaded from shared object
     ClassLoadingService::notify_class_loaded(ik(), true /* shared class */);
   }
+
+  ik->set_has_passed_fingerprint_check(false);
+  if (UseAOT && ik->supers_have_passed_fingerprint_checks()) {
+    uint64_t aot_fp = AOTLoader::get_saved_fingerprint(ik());
+    uint64_t cds_fp = ik->get_stored_fingerprint();
+    if (aot_fp != 0 && aot_fp == cds_fp) {
+      // This class matches with a class saved in an AOT library
+      ik->set_has_passed_fingerprint_check(true);
+    } else {
+      ResourceMark rm;
+      log_info(class, fingerprint)("%s :  expected = " PTR64_FORMAT " actual = " PTR64_FORMAT, ik->external_name(), aot_fp, cds_fp);
+    }
+  }
   return ik;
 }
 #endif // INCLUDE_CDS
@@ -1494,7 +1509,9 @@ instanceKlassHandle SystemDictionary::load_instance_class(Symbol* class_name, Ha
 
     // find_or_define_instance_class may return a different InstanceKlass
     if (!k.is_null()) {
-      k = find_or_define_instance_class(class_name, class_loader, k, CHECK_(nh));
+      instanceKlassHandle defined_k =
+        find_or_define_instance_class(class_name, class_loader, k, CHECK_(nh));
+      k = defined_k;
     }
     return k;
   } else {
@@ -1641,7 +1658,7 @@ void SystemDictionary::define_instance_class(instanceKlassHandle k, TRAPS) {
       JvmtiExport::post_class_load((JavaThread *) THREAD, k());
 
   }
-  class_define_event(k);
+  class_define_event(k, loader_data);
 }
 
 // Support parallel classloading
@@ -2897,11 +2914,11 @@ void SystemDictionary::verify() {
 // caller needs ResourceMark
 const char* SystemDictionary::loader_name(const oop loader) {
   return ((loader) == NULL ? "<bootloader>" :
-    InstanceKlass::cast((loader)->klass())->name()->as_C_string());
+          InstanceKlass::cast((loader)->klass())->name()->as_C_string());
 }
 
 // caller needs ResourceMark
 const char* SystemDictionary::loader_name(const ClassLoaderData* loader_data) {
   return (loader_data->class_loader() == NULL ? "<bootloader>" :
-    InstanceKlass::cast((loader_data->class_loader())->klass())->name()->as_C_string());
+          SystemDictionary::loader_name(loader_data->class_loader()));
 }

@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "aot/aotLoader.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -515,6 +516,7 @@ void PSMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
     ClassLoaderDataGraph::always_strong_cld_do(follow_cld_closure());
     // Do not treat nmethods as strong roots for mark/sweep, since we can unload them.
     //CodeCache::scavenge_root_nmethods_do(CodeBlobToOopClosure(mark_and_push_closure()));
+    AOTLoader::oops_do(mark_and_push_closure());
   }
 
   // Flush marking stack.
@@ -611,6 +613,7 @@ void PSMarkSweep::mark_sweep_phase3() {
 
   CodeBlobToOopClosure adjust_from_blobs(adjust_pointer_closure(), CodeBlobToOopClosure::FixRelocations);
   CodeCache::blobs_do(&adjust_from_blobs);
+  AOTLoader::oops_do(adjust_pointer_closure());
   StringTable::oops_do(adjust_pointer_closure());
   ref_processor()->weak_oops_do(adjust_pointer_closure());
   PSScavenge::reference_processor()->weak_oops_do(adjust_pointer_closure());

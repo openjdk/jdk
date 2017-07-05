@@ -102,11 +102,8 @@ address Relocation::pd_call_destination(address orig_addr) {
     if (orig_addr == NULL) {
       call = nativeFarCall_at(inst_addr);
     } else {
-      if (MacroAssembler::is_call_far_patchable_pcrelative_at(inst_addr)) {
-        call = nativeFarCall_at(orig_addr);
-      } else {
-        call = nativeFarCall_at(orig_addr);  // must access location (in CP) where destination is stored in unmoved code, because load from CP is pc-relative
-      }
+      // must access location (in CP) where destination is stored in unmoved code, because load from CP is pc-relative
+      call = nativeFarCall_at(orig_addr);
     }
     return call->destination();
   }

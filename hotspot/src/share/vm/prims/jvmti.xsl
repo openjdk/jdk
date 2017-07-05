@@ -1033,6 +1033,10 @@ typedef struct {
 <xsl:template match="externallink">
   <a>
     <xsl:attribute name="href">
+      <!-- All external links start from the same prefix -->
+      <xsl:text>http://docs.oracle.com/javase/</xsl:text>
+      <xsl:value-of select="//specification/@majorversion"/>
+      <xsl:text>/</xsl:text>
       <xsl:value-of select="@id"/>
     </xsl:attribute>
     <xsl:value-of select="."/>

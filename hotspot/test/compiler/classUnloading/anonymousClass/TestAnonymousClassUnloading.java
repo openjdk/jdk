@@ -42,12 +42,11 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLConnection;
+import compiler.whitebox.CompilerWhiteBoxTest;
 
 public class TestAnonymousClassUnloading {
     private static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
     private static final Unsafe UNSAFE = Unsafe.getUnsafe();
-    private static int COMP_LEVEL_SIMPLE = 1;
-    private static int COMP_LEVEL_FULL_OPTIMIZATION = 4;
 
     /**
      * We override hashCode here to be able to access this implementation
@@ -87,9 +86,9 @@ public class TestAnonymousClassUnloading {
         // Check if already compiled
         if (!WHITE_BOX.isMethodCompiled(m)) {
             // If not, try to compile it with C2
-            if(!WHITE_BOX.enqueueMethodForCompilation(m, COMP_LEVEL_FULL_OPTIMIZATION)) {
+            if(!WHITE_BOX.enqueueMethodForCompilation(m, CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION)) {
                 // C2 compiler not available, try to compile with C1
-                WHITE_BOX.enqueueMethodForCompilation(m, COMP_LEVEL_SIMPLE);
+                WHITE_BOX.enqueueMethodForCompilation(m, CompilerWhiteBoxTest.COMP_LEVEL_SIMPLE);
             }
             // Because background compilation is disabled, method should now be compiled
             if(!WHITE_BOX.isMethodCompiled(m)) {
