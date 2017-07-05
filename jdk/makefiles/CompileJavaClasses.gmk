@@ -281,8 +281,7 @@ endif
 # These resources violates the convention of having code and resources together under
 # $(JDK_TOPDIR)/src/.../classes directories
 $(JDK_OUTPUTDIR)/classes/javax/swing/beaninfo/images/%.gif: $(JDK_TOPDIR)/make/tools/swing-beans/beaninfo/images/%.gif
-	$(MKDIR) -p $(@D)
-	$(CP) $< $@
+	$(call install-file)
 
 # The JDK_USER_DEFINED_FILTER is a poor man's incremental build: by specifying
 # JDK_FILTER at the make command line, only a subset of the JDK java files will

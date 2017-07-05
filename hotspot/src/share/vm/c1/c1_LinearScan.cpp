@@ -6231,26 +6231,29 @@ void ControlFlowOptimizer::delete_unnecessary_jumps(BlockList* code) {
             assert(prev_op->as_OpBranch() != NULL, "branch must be of type LIR_OpBranch");
             LIR_OpBranch* prev_branch = (LIR_OpBranch*)prev_op;
 
-            LIR_Op2* prev_cmp = NULL;
+            if (prev_branch->stub() == NULL) {
 
-            for(int j = instructions->length() - 3; j >= 0 && prev_cmp == NULL; j--) {
-              prev_op = instructions->at(j);
-              if(prev_op->code() == lir_cmp) {
-                assert(prev_op->as_Op2() != NULL, "branch must be of type LIR_Op2");
-                prev_cmp = (LIR_Op2*)prev_op;
-                assert(prev_branch->cond() == prev_cmp->condition(), "should be the same");
+              LIR_Op2* prev_cmp = NULL;
+
+              for(int j = instructions->length() - 3; j >= 0 && prev_cmp == NULL; j--) {
+                prev_op = instructions->at(j);
+                if (prev_op->code() == lir_cmp) {
+                  assert(prev_op->as_Op2() != NULL, "branch must be of type LIR_Op2");
+                  prev_cmp = (LIR_Op2*)prev_op;
+                  assert(prev_branch->cond() == prev_cmp->condition(), "should be the same");
+                }
               }
-            }
-            assert(prev_cmp != NULL, "should have found comp instruction for branch");
-            if (prev_branch->block() == code->at(i + 1) && prev_branch->info() == NULL) {
+              assert(prev_cmp != NULL, "should have found comp instruction for branch");
+              if (prev_branch->block() == code->at(i + 1) && prev_branch->info() == NULL) {
 
-              TRACE_LINEAR_SCAN(3, tty->print_cr("Negating conditional branch and deleting unconditional branch at end of block B%d", block->block_id()));
+                TRACE_LINEAR_SCAN(3, tty->print_cr("Negating conditional branch and deleting unconditional branch at end of block B%d", block->block_id()));
 
-              // eliminate a conditional branch to the immediate successor
-              prev_branch->change_block(last_branch->block());
-              prev_branch->negate_cond();
-              prev_cmp->set_condition(prev_branch->cond());
-              instructions->truncate(instructions->length() - 1);
+                // eliminate a conditional branch to the immediate successor
+                prev_branch->change_block(last_branch->block());
+                prev_branch->negate_cond();
+                prev_cmp->set_condition(prev_branch->cond());
+                instructions->truncate(instructions->length() - 1);
+              }
             }
           }
         }

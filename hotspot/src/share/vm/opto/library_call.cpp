@@ -231,7 +231,6 @@ class LibraryCallKit : public GraphKit {
   void copy_to_clone(Node* obj, Node* alloc_obj, Node* obj_size, bool is_array, bool card_mark);
   bool inline_native_clone(bool is_virtual);
   bool inline_native_Reflection_getCallerClass();
-  bool is_method_invoke_or_aux_frame(JVMState* jvms);
   // Helper function for inlining native object hash method
   bool inline_native_hashcode(bool is_virtual, bool is_static);
   bool inline_native_getClass();
@@ -393,7 +392,7 @@ CallGenerator* Compile::make_vm_intrinsic(ciMethod* m, bool is_virtual) {
   case vmIntrinsics::_getCallerClass:
     if (!UseNewReflection)  return NULL;
     if (!InlineReflectionGetCallerClass)  return NULL;
-    if (!JDK_Version::is_gte_jdk14x_version())  return NULL;
+    if (SystemDictionary::reflect_CallerSensitive_klass() == NULL)  return NULL;
     break;
 
   case vmIntrinsics::_bitCount_i:
@@ -3872,48 +3871,19 @@ bool LibraryCallKit::inline_native_getClass() {
 }
 
 //-----------------inline_native_Reflection_getCallerClass---------------------
-// public static native Class<?> sun.reflect.Reflection.getCallerClass(int realFramesToSkip);
+// public static native Class<?> sun.reflect.Reflection.getCallerClass();
 //
 // In the presence of deep enough inlining, getCallerClass() becomes a no-op.
 //
-// NOTE that this code must perform the same logic as
-// vframeStream::security_get_caller_frame in that it must skip
-// Method.invoke() and auxiliary frames.
+// NOTE: This code must perform the same logic as JVM_GetCallerClass
+// in that it must skip particular security frames and checks for
+// caller sensitive methods.
 bool LibraryCallKit::inline_native_Reflection_getCallerClass() {
 #ifndef PRODUCT
   if ((PrintIntrinsics || PrintInlining || PrintOptoInlining) && Verbose) {
     tty->print_cr("Attempting to inline sun.reflect.Reflection.getCallerClass");
   }
 #endif
-
-  Node* caller_depth_node = argument(0);
-
-  // The depth value must be a constant in order for the runtime call
-  // to be eliminated.
-  const TypeInt* caller_depth_type = _gvn.type(caller_depth_node)->isa_int();
-  if (caller_depth_type == NULL || !caller_depth_type->is_con()) {
-#ifndef PRODUCT
-    if ((PrintIntrinsics || PrintInlining || PrintOptoInlining) && Verbose) {
-      tty->print_cr("  Bailing out because caller depth was not a constant");
-    }
-#endif
-    return false;
-  }
-  // Note that the JVM state at this point does not include the
-  // getCallerClass() frame which we are trying to inline. The
-  // semantics of getCallerClass(), however, are that the "first"
-  // frame is the getCallerClass() frame, so we subtract one from the
-  // requested depth before continuing. We don't inline requests of
-  // getCallerClass(0).
-  int caller_depth = caller_depth_type->get_con() - 1;
-  if (caller_depth < 0) {
-#ifndef PRODUCT
-    if ((PrintIntrinsics || PrintInlining || PrintOptoInlining) && Verbose) {
-      tty->print_cr("  Bailing out because caller depth was %d", caller_depth);
-    }
-#endif
-    return false;
-  }
 
   if (!jvms()->has_method()) {
 #ifndef PRODUCT
@@ -3923,95 +3893,67 @@ bool LibraryCallKit::inline_native_Reflection_getCallerClass() {
 #endif
     return false;
   }
-  int _depth = jvms()->depth();  // cache call chain depth
 
   // Walk back up the JVM state to find the caller at the required
-  // depth. NOTE that this code must perform the same logic as
-  // vframeStream::security_get_caller_frame in that it must skip
-  // Method.invoke() and auxiliary frames. Note also that depth is
-  // 1-based (1 is the bottom of the inlining).
-  int inlining_depth = _depth;
-  JVMState* caller_jvms = NULL;
+  // depth.
+  JVMState* caller_jvms = jvms();
 
-  if (inlining_depth > 0) {
-    caller_jvms = jvms();
-    assert(caller_jvms = jvms()->of_depth(inlining_depth), "inlining_depth == our depth");
-    do {
-      // The following if-tests should be performed in this order
-      if (is_method_invoke_or_aux_frame(caller_jvms)) {
-        // Skip a Method.invoke() or auxiliary frame
-      } else if (caller_depth > 0) {
-        // Skip real frame
-        --caller_depth;
-      } else {
-        // We're done: reached desired caller after skipping.
-        break;
-      }
-      caller_jvms = caller_jvms->caller();
-      --inlining_depth;
-    } while (inlining_depth > 0);
-  }
-
-  if (inlining_depth == 0) {
+  // Cf. JVM_GetCallerClass
+  // NOTE: Start the loop at depth 1 because the current JVM state does
+  // not include the Reflection.getCallerClass() frame.
+  for (int n = 1; caller_jvms != NULL; caller_jvms = caller_jvms->caller(), n++) {
+    ciMethod* m = caller_jvms->method();
+    switch (n) {
+    case 0:
+      fatal("current JVM state does not include the Reflection.getCallerClass frame");
+      break;
+    case 1:
+      // Frame 0 and 1 must be caller sensitive (see JVM_GetCallerClass).
+      if (!m->caller_sensitive()) {
 #ifndef PRODUCT
-    if ((PrintIntrinsics || PrintInlining || PrintOptoInlining) && Verbose) {
-      tty->print_cr("  Bailing out because caller depth (%d) exceeded inlining depth (%d)", caller_depth_type->get_con(), _depth);
-      tty->print_cr("  JVM state at this point:");
-      for (int i = _depth; i >= 1; i--) {
-        ciMethod* m = jvms()->of_depth(i)->method();
-        tty->print_cr("   %d) %s.%s", i, m->holder()->name()->as_utf8(), m->name()->as_utf8());
-      }
-    }
+        if ((PrintIntrinsics || PrintInlining || PrintOptoInlining) && Verbose) {
+          tty->print_cr("  Bailing out: CallerSensitive annotation expected at frame %d", n);
+        }
 #endif
-    return false; // Reached end of inlining
+        return false;  // bail-out; let JVM_GetCallerClass do the work
+      }
+      break;
+    default:
+      if (!m->is_ignored_by_security_stack_walk()) {
+        // We have reached the desired frame; return the holder class.
+        // Acquire method holder as java.lang.Class and push as constant.
+        ciInstanceKlass* caller_klass = caller_jvms->method()->holder();
+        ciInstance* caller_mirror = caller_klass->java_mirror();
+        set_result(makecon(TypeInstPtr::make(caller_mirror)));
+
+#ifndef PRODUCT
+        if ((PrintIntrinsics || PrintInlining || PrintOptoInlining) && Verbose) {
+          tty->print_cr("  Succeeded: caller = %d) %s.%s, JVMS depth = %d", n, caller_klass->name()->as_utf8(), caller_jvms->method()->name()->as_utf8(), jvms()->depth());
+          tty->print_cr("  JVM state at this point:");
+          for (int i = jvms()->depth(), n = 1; i >= 1; i--, n++) {
+            ciMethod* m = jvms()->of_depth(i)->method();
+            tty->print_cr("   %d) %s.%s", n, m->holder()->name()->as_utf8(), m->name()->as_utf8());
+          }
+        }
+#endif
+        return true;
+      }
+      break;
+    }
   }
-
-  // Acquire method holder as java.lang.Class
-  ciInstanceKlass* caller_klass  = caller_jvms->method()->holder();
-  ciInstance*      caller_mirror = caller_klass->java_mirror();
-
-  // Push this as a constant
-  set_result(makecon(TypeInstPtr::make(caller_mirror)));
 
 #ifndef PRODUCT
   if ((PrintIntrinsics || PrintInlining || PrintOptoInlining) && Verbose) {
-    tty->print_cr("  Succeeded: caller = %s.%s, caller depth = %d, depth = %d", caller_klass->name()->as_utf8(), caller_jvms->method()->name()->as_utf8(), caller_depth_type->get_con(), _depth);
+    tty->print_cr("  Bailing out because caller depth exceeded inlining depth = %d", jvms()->depth());
     tty->print_cr("  JVM state at this point:");
-    for (int i = _depth; i >= 1; i--) {
+    for (int i = jvms()->depth(), n = 1; i >= 1; i--, n++) {
       ciMethod* m = jvms()->of_depth(i)->method();
-      tty->print_cr("   %d) %s.%s", i, m->holder()->name()->as_utf8(), m->name()->as_utf8());
+      tty->print_cr("   %d) %s.%s", n, m->holder()->name()->as_utf8(), m->name()->as_utf8());
     }
   }
 #endif
-  return true;
-}
 
-// Helper routine for above
-bool LibraryCallKit::is_method_invoke_or_aux_frame(JVMState* jvms) {
-  ciMethod* method = jvms->method();
-
-  // Is this the Method.invoke method itself?
-  if (method->intrinsic_id() == vmIntrinsics::_invoke)
-    return true;
-
-  // Is this a helper, defined somewhere underneath MethodAccessorImpl.
-  ciKlass* k = method->holder();
-  if (k->is_instance_klass()) {
-    ciInstanceKlass* ik = k->as_instance_klass();
-    for (; ik != NULL; ik = ik->super()) {
-      if (ik->name() == ciSymbol::sun_reflect_MethodAccessorImpl() &&
-          ik == env()->find_system_klass(ik->name())) {
-        return true;
-      }
-    }
-  }
-  else if (method->is_method_handle_intrinsic() ||
-           method->is_compiled_lambda_form()) {
-    // This is an internal adapter frame from the MethodHandleCompiler -- skip it
-    return true;
-  }
-
-  return false;
+  return false;  // bail-out; let JVM_GetCallerClass do the work
 }
 
 bool LibraryCallKit::inline_fp_conversions(vmIntrinsics::ID id) {

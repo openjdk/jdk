@@ -25,7 +25,7 @@
  * @test
  * @bug 8009761
  * @summary Deoptimization on sparc doesn't set Llast_SP correctly in the interpreter frames it creates
- * @run main/othervm -XX:-UseOnStackReplacement -XX:-BackgroundCompilation Test8009761
+ * @run main/othervm -Xmixed -XX:-UseOnStackReplacement -XX:-BackgroundCompilation Test8009761
  *
  */
 

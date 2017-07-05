@@ -110,6 +110,8 @@ class   ProfileCall;
 class   ProfileInvoke;
 class   RuntimeCall;
 class   MemBar;
+class   RangeCheckPredicate;
+class   Assert;
 
 // A Value is a reference to the instruction creating the value
 typedef Instruction* Value;
@@ -210,6 +212,10 @@ class InstructionVisitor: public StackObj {
   virtual void do_ProfileInvoke  (ProfileInvoke*   x) = 0;
   virtual void do_RuntimeCall    (RuntimeCall*     x) = 0;
   virtual void do_MemBar         (MemBar*          x) = 0;
+  virtual void do_RangeCheckPredicate(RangeCheckPredicate* x) = 0;
+#ifdef ASSERT
+  virtual void do_Assert         (Assert*          x) = 0;
+#endif
 };
 
 
@@ -306,8 +312,9 @@ class Instruction: public CompilationResourceObj {
 
   void update_exception_state(ValueStack* state);
 
- //protected:
- public:
+ protected:
+  BlockBegin*  _block;                           // Block that contains this instruction
+
   void set_type(ValueType* type) {
     assert(type != NULL, "type must exist");
     _type = type;
@@ -342,6 +349,9 @@ class Instruction: public CompilationResourceObj {
     ThrowIncompatibleClassChangeErrorFlag,
     ProfileMDOFlag,
     IsLinkedInBlockFlag,
+    NeedsRangeCheckFlag,
+    InWorkListFlag,
+    DeoptimizeOnException,
     InstructionLastFlag
   };
 
@@ -351,7 +361,7 @@ class Instruction: public CompilationResourceObj {
 
   // 'globally' used condition values
   enum Condition {
-    eql, neq, lss, leq, gtr, geq
+    eql, neq, lss, leq, gtr, geq, aeq, beq
   };
 
   // Instructions may be pinned for many reasons and under certain conditions
@@ -381,6 +391,7 @@ class Instruction: public CompilationResourceObj {
   , _pin_state(0)
   , _type(type)
   , _next(NULL)
+  , _block(NULL)
   , _subst(NULL)
   , _flags(0)
   , _operand(LIR_OprFact::illegalOpr)
@@ -399,11 +410,13 @@ class Instruction: public CompilationResourceObj {
   int printable_bci() const                      { assert(has_printable_bci(), "_printable_bci should have been set"); return _printable_bci; }
   void set_printable_bci(int bci)                { _printable_bci = bci; }
 #endif
+  int dominator_depth();
   int use_count() const                          { return _use_count; }
   int pin_state() const                          { return _pin_state; }
   bool is_pinned() const                         { return _pin_state != 0 || PinAllInstructions; }
   ValueType* type() const                        { return _type; }
-  Instruction* prev(BlockBegin* block);          // use carefully, expensive operation
+  BlockBegin *block() const                      { return _block; }
+  Instruction* prev();                           // use carefully, expensive operation
   Instruction* next() const                      { return _next; }
   bool has_subst() const                         { return _subst != NULL; }
   Instruction* subst()                           { return _subst == NULL ? this : _subst->subst(); }
@@ -432,6 +445,9 @@ class Instruction: public CompilationResourceObj {
     assert(as_BlockEnd() == NULL, "BlockEnd instructions must have no next");
     assert(next->can_be_linked(), "shouldn't link these instructions into list");
 
+    BlockBegin *block = this->block();
+    next->_block = block;
+
     next->set_flag(Instruction::IsLinkedInBlockFlag, true);
     _next = next;
     return next;
@@ -444,6 +460,29 @@ class Instruction: public CompilationResourceObj {
     return set_next(next);
   }
 
+  // when blocks are merged
+  void fixup_block_pointers() {
+    Instruction *cur = next()->next(); // next()'s block is set in set_next
+    while (cur && cur->_block != block()) {
+      cur->_block = block();
+      cur = cur->next();
+    }
+  }
+
+  Instruction *insert_after(Instruction *i) {
+    Instruction* n = _next;
+    set_next(i);
+    i->set_next(n);
+    return _next;
+  }
+
+  Instruction *insert_after_same_bci(Instruction *i) {
+#ifndef PRODUCT
+    i->set_printable_bci(printable_bci());
+#endif
+    return insert_after(i);
+  }
+
   void set_subst(Instruction* subst)             {
     assert(subst == NULL ||
            type()->base() == subst->type()->base() ||
@@ -452,6 +491,7 @@ class Instruction: public CompilationResourceObj {
   }
   void set_exception_handlers(XHandlers *xhandlers) { _exception_handlers = xhandlers; }
   void set_exception_state(ValueStack* s)        { check_state(s); _exception_state = s; }
+  void set_state_before(ValueStack* s)           { check_state(s); _state_before = s; }
 
   // machine-specifics
   void set_operand(LIR_Opr operand)              { assert(operand != LIR_OprFact::illegalOpr, "operand must exist"); _operand = operand; }
@@ -509,6 +549,11 @@ class Instruction: public CompilationResourceObj {
   virtual ExceptionObject*  as_ExceptionObject() { return NULL; }
   virtual UnsafeOp*         as_UnsafeOp()        { return NULL; }
   virtual ProfileInvoke*    as_ProfileInvoke()   { return NULL; }
+  virtual RangeCheckPredicate* as_RangeCheckPredicate() { return NULL; }
+
+#ifdef ASSERT
+  virtual Assert*           as_Assert()          { return NULL; }
+#endif
 
   virtual void visit(InstructionVisitor* v)      = 0;
 
@@ -570,7 +615,6 @@ class AssertValues: public ValueVisitor {
 
 LEAF(Phi, Instruction)
  private:
-  BlockBegin* _block;    // the block to which the phi function belongs
   int         _pf_flags; // the flags of the phi function
   int         _index;    // to value on operand stack (index < 0) or to local
  public:
@@ -578,9 +622,9 @@ LEAF(Phi, Instruction)
   Phi(ValueType* type, BlockBegin* b, int index)
   : Instruction(type->base())
   , _pf_flags(0)
-  , _block(b)
   , _index(index)
   {
+    _block = b;
     NOT_PRODUCT(set_printable_bci(Value(b)->printable_bci()));
     if (type->is_illegal()) {
       make_illegal();
@@ -602,8 +646,6 @@ LEAF(Phi, Instruction)
 
   Value operand_at(int i) const;
   int   operand_count() const;
-
-  BlockBegin* block() const       { return _block; }
 
   void   set(Flag f)              { _pf_flags |=  f; }
   void   clear(Flag f)            { _pf_flags &= ~f; }
@@ -670,6 +712,7 @@ LEAF(Constant, Instruction)
     pin();
   }
 
+  // generic
   virtual bool can_trap() const                  { return state_before() != NULL; }
   virtual void input_values_do(ValueVisitor* f)   { /* no values */ }
 
@@ -852,6 +895,7 @@ BASE(AccessIndexed, AccessArray)
   , _length(length)
   , _elt_type(elt_type)
   {
+    set_flag(Instruction::NeedsRangeCheckFlag, true);
     ASSERT_VALUES
   }
 
@@ -860,6 +904,7 @@ BASE(AccessIndexed, AccessArray)
   Value length() const                           { return _length; }
   BasicType elt_type() const                     { return _elt_type; }
 
+  void clear_length()                            { _length = NULL; }
   // perform elimination of range checks involving constants
   bool compute_needs_range_check();
 
@@ -1524,6 +1569,7 @@ LEAF(BlockBegin, StateSplit)
   int        _bci;                               // start-bci of block
   int        _depth_first_number;                // number of this block in a depth-first ordering
   int        _linear_scan_number;                // number of this block in linear-scan ordering
+  int        _dominator_depth;
   int        _loop_depth;                        // the loop nesting level of this block
   int        _loop_index;                        // number of the innermost loop of this block
   int        _flags;                             // the flags associated with this block
@@ -1535,6 +1581,7 @@ LEAF(BlockBegin, StateSplit)
   // SSA specific fields: (factor out later)
   BlockList   _successors;                       // the successors of this block
   BlockList   _predecessors;                     // the predecessors of this block
+  BlockList   _dominates;                        // list of blocks that are dominated by this block
   BlockBegin* _dominator;                        // the dominator of this block
   // SSA specific ends
   BlockEnd*  _end;                               // the last instruction of this block
@@ -1583,10 +1630,12 @@ LEAF(BlockBegin, StateSplit)
   , _linear_scan_number(-1)
   , _loop_depth(0)
   , _flags(0)
+  , _dominator_depth(-1)
   , _dominator(NULL)
   , _end(NULL)
   , _predecessors(2)
   , _successors(2)
+  , _dominates(2)
   , _exception_handlers(1)
   , _exception_states(NULL)
   , _exception_handler_pco(-1)
@@ -1603,6 +1652,7 @@ LEAF(BlockBegin, StateSplit)
   , _total_preds(0)
   , _stores_to_locals()
   {
+    _block = this;
 #ifndef PRODUCT
     set_printable_bci(bci);
 #endif
@@ -1612,8 +1662,10 @@ LEAF(BlockBegin, StateSplit)
   int block_id() const                           { return _block_id; }
   int bci() const                                { return _bci; }
   BlockList* successors()                        { return &_successors; }
+  BlockList* dominates()                         { return &_dominates; }
   BlockBegin* dominator() const                  { return _dominator; }
   int loop_depth() const                         { return _loop_depth; }
+  int dominator_depth() const                    { return _dominator_depth; }
   int depth_first_number() const                 { return _depth_first_number; }
   int linear_scan_number() const                 { return _linear_scan_number; }
   BlockEnd* end() const                          { return _end; }
@@ -1634,6 +1686,7 @@ LEAF(BlockBegin, StateSplit)
   // manipulation
   void set_dominator(BlockBegin* dom)            { _dominator = dom; }
   void set_loop_depth(int d)                     { _loop_depth = d; }
+  void set_dominator_depth(int d)                { _dominator_depth = d; }
   void set_depth_first_number(int dfn)           { _depth_first_number = dfn; }
   void set_linear_scan_number(int lsn)           { _linear_scan_number = lsn; }
   void set_end(BlockEnd* end);
@@ -1695,7 +1748,8 @@ LEAF(BlockBegin, StateSplit)
     parser_loop_header_flag       = 1 << 7,  // set by parser to identify blocks where phi functions can not be created on demand
     critical_edge_split_flag      = 1 << 8, // set for all blocks that are introduced when critical edges are split
     linear_scan_loop_header_flag  = 1 << 9, // set during loop-detection for LinearScan
-    linear_scan_loop_end_flag     = 1 << 10  // set during loop-detection for LinearScan
+    linear_scan_loop_end_flag     = 1 << 10, // set during loop-detection for LinearScan
+    donot_eliminate_range_checks  = 1 << 11  // Should be try to eliminate range checks in this block
   };
 
   void set(Flag f)                               { _flags |= f; }
@@ -1728,7 +1782,6 @@ LEAF(BlockBegin, StateSplit)
 
 BASE(BlockEnd, StateSplit)
  private:
-  BlockBegin* _begin;
   BlockList*  _sux;
 
  protected:
@@ -1746,7 +1799,6 @@ BASE(BlockEnd, StateSplit)
   // creation
   BlockEnd(ValueType* type, ValueStack* state_before, bool is_safepoint)
   : StateSplit(type, state_before)
-  , _begin(NULL)
   , _sux(NULL)
   {
     set_flag(IsSafepointFlag, is_safepoint);
@@ -1754,7 +1806,8 @@ BASE(BlockEnd, StateSplit)
 
   // accessors
   bool is_safepoint() const                      { return check_flag(IsSafepointFlag); }
-  BlockBegin* begin() const                      { return _begin; }
+  // For compatibility with old code, for new code use block()
+  BlockBegin* begin() const                      { return _block; }
 
   // manipulation
   void set_begin(BlockBegin* begin);
@@ -1811,6 +1864,74 @@ LEAF(Goto, BlockEnd)
   void set_direction(Direction d)                { _direction = d; }
 };
 
+#ifdef ASSERT
+LEAF(Assert, Instruction)
+  private:
+  Value       _x;
+  Condition   _cond;
+  Value       _y;
+  char        *_message;
+
+ public:
+  // creation
+  // unordered_is_true is valid for float/double compares only
+   Assert(Value x, Condition cond, bool unordered_is_true, Value y);
+
+  // accessors
+  Value x() const                                { return _x; }
+  Condition cond() const                         { return _cond; }
+  bool unordered_is_true() const                 { return check_flag(UnorderedIsTrueFlag); }
+  Value y() const                                { return _y; }
+  const char *message() const                    { return _message; }
+
+  // generic
+  virtual void input_values_do(ValueVisitor* f)  { f->visit(&_x); f->visit(&_y); }
+};
+#endif
+
+LEAF(RangeCheckPredicate, StateSplit)
+ private:
+  Value       _x;
+  Condition   _cond;
+  Value       _y;
+
+  void check_state();
+
+ public:
+  // creation
+  // unordered_is_true is valid for float/double compares only
+   RangeCheckPredicate(Value x, Condition cond, bool unordered_is_true, Value y, ValueStack* state) : StateSplit(illegalType)
+  , _x(x)
+  , _cond(cond)
+  , _y(y)
+  {
+    ASSERT_VALUES
+    set_flag(UnorderedIsTrueFlag, unordered_is_true);
+    assert(x->type()->tag() == y->type()->tag(), "types must match");
+    this->set_state(state);
+    check_state();
+  }
+
+  // Always deoptimize
+  RangeCheckPredicate(ValueStack* state) : StateSplit(illegalType)
+  {
+    this->set_state(state);
+    _x = _y = NULL;
+    check_state();
+  }
+
+  // accessors
+  Value x() const                                { return _x; }
+  Condition cond() const                         { return _cond; }
+  bool unordered_is_true() const                 { return check_flag(UnorderedIsTrueFlag); }
+  Value y() const                                { return _y; }
+
+  void always_fail()                             { _x = _y = NULL; }
+
+  // generic
+  virtual void input_values_do(ValueVisitor* f)  { StateSplit::input_values_do(f); f->visit(&_x); f->visit(&_y); }
+  HASHING3(RangeCheckPredicate, true, x()->subst(), y()->subst(), cond())
+};
 
 LEAF(If, BlockEnd)
  private:
