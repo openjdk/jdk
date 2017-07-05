@@ -380,7 +380,7 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
   frame deopt_sender = stub_frame.sender(&dummy_map); // First is the deoptee frame
   deopt_sender = deopt_sender.sender(&dummy_map);     // Now deoptee caller
 
-  // It's possible that the number of paramters at the call site is
+  // It's possible that the number of parameters at the call site is
   // different than number of arguments in the callee when method
   // handles are used.  If the caller is interpreted get the real
   // value so that the proper amount of space can be added to it's
@@ -540,7 +540,7 @@ void Deoptimization::cleanup_deopt_info(JavaThread *thread,
     // popframe condition bit set, we should always clear it now
     thread->clear_popframe_condition();
 #else
-    // C++ interpeter will clear has_pending_popframe when it enters
+    // C++ interpreter will clear has_pending_popframe when it enters
     // with method_resume. For deopt_resume2 we clear it now.
     if (thread->popframe_forcing_deopt_reexecution())
         thread->clear_popframe_condition();

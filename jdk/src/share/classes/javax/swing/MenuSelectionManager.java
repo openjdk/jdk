@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -246,7 +246,7 @@ public class MenuSelectionManager {
         selectionSize = tmp.size();
         boolean success = false;
         for (i=selectionSize - 1;i >= 0 && success == false; i--) {
-            menuElement = (MenuElement) tmp.elementAt(i);
+            menuElement = tmp.elementAt(i);
             subElements = menuElement.getSubElements();
 
             path = null;
@@ -277,7 +277,7 @@ public class MenuSelectionManager {
                     if(path == null) {
                         path = new MenuElement[i+2];
                         for(k=0;k<=i;k++)
-                            path[k] = (MenuElement)tmp.elementAt(k);
+                            path[k] = tmp.elementAt(k);
                     }
                     path[i+1] = subElements[j];
                     MenuElement currentSelection[] = getSelectedPath();
@@ -388,7 +388,7 @@ public class MenuSelectionManager {
         tmp = (Vector<MenuElement>)selection.clone();
         selectionSize = tmp.size();
         for(i=selectionSize - 1 ; i >= 0 ; i--) {
-            menuElement = (MenuElement) tmp.elementAt(i);
+            menuElement = tmp.elementAt(i);
             subElements = menuElement.getSubElements();
 
             for(j = 0, d = subElements.length ; j < d ; j++) {

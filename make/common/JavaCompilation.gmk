@@ -163,11 +163,12 @@ define SetupArchive
 
   # The capture contents macro finds all files (matching the patterns, typically
   # .class and .prp) that are newer than the jar-file, ie the new content to be put into the jar.
+  # NOTICE: please leave the parentheses space separated otherwise the AIX build will break!
   $1_CAPTURE_CONTENTS=$$(foreach src,$$($1_SRCS), \
-      (($(FIND) $$(src) -type f -a \( $$($1_FIND_PATTERNS) \) -a -newer $$@ $$($1_GREP_INCLUDES) \
+      ( ( $(FIND) $$(src) -type f -a \( $$($1_FIND_PATTERNS) \) -a -newer $$@ $$($1_GREP_INCLUDES) \
           $$($1_GREP_EXCLUDES) | $(SED) 's|$$(src)/||g' && \
-      $(ECHO) $$(subst $$(src)/,,$$($1_EXTRA_FILES))) > \
-      $$(src)/_the.$$($1_JARNAME)_contents) $$(NEWLINE))
+      $(ECHO) $$(subst $$(src)/,,$$($1_EXTRA_FILES) ) ) > \
+      $$(src)/_the.$$($1_JARNAME)_contents) $$(NEWLINE) )
   # The capture metainf macro finds all files below the META-INF directory that are newer than the jar-file.
   ifeq (,$$($1_SKIP_METAINF))
     $1_CAPTURE_METAINF =$$(foreach src,$$($1_SRCS),($(FIND) $$(src)/META-INF -type f -a -newer $$@ 2> /dev/null | $(SED) 's|$$(src)/||g' >> $$(src)/_the.$$($1_JARNAME)_contents ) $$(NEWLINE))
@@ -176,19 +177,20 @@ define SetupArchive
   # tells us what to remove from the jar-file.
   $1_CAPTURE_DELETES=$$(foreach src,$$($1_SRCS),($(FIND) $$(src) -name _the.package.deleted -newer $$@ -exec $(SED) 's|$$(src)||g' \{\} >> $$($1_DELETES_FILE) \;) $$(NEWLINE))
   # The update contents macro updates the jar file with the previously capture contents.
-  # xargs is used to trim the whitespace from the contents file, to see if it is empty.
+  # Use 'wc -w' to see if the contents file is empty.
   $1_UPDATE_CONTENTS=$$(foreach src,$$($1_SRCS), \
       (cd $$(src) && \
-       if [ -n "`$(CAT) _the.$$($1_JARNAME)_contents | $(XARGS)`" ]; then \
+       if [ "`$(WC) -w _the.$$($1_JARNAME)_contents | $(AWK) '{ print $$$$1 }'`" -gt "0" ]; then \
          $(ECHO) "  updating" `$(WC) -l _the.$$($1_JARNAME)_contents | $(AWK) '{ print $$$$1 }'` files && \
          $(JAR) $$($1_JAR_UPDATE_OPTIONS) $$@ @_the.$$($1_JARNAME)_contents; \
        fi) $$(NEWLINE))
   # The s-variants of the above macros are used when the jar is created from scratch.
+  # NOTICE: please leave the parentheses space separated otherwise the AIX build will break!
   $1_SCAPTURE_CONTENTS=$$(foreach src,$$($1_SRCS), \
-      (($(FIND) $$(src) -type f -a \( $$($1_FIND_PATTERNS) \) $$($1_GREP_INCLUDES) \
+      ( ( $(FIND) $$(src) -type f -a \( $$($1_FIND_PATTERNS) \) $$($1_GREP_INCLUDES) \
           $$($1_GREP_EXCLUDES) | $(SED) 's|$$(src)/||g' && \
-      $$(subst $$(src)/,,$(ECHO) $$($1_EXTRA_FILES))) > \
-      $$(src)/_the.$$($1_JARNAME)_contents) $$(NEWLINE))
+      $$(subst $$(src)/,,$(ECHO) $$($1_EXTRA_FILES) ) ) > \
+      $$(src)/_the.$$($1_JARNAME)_contents) $$(NEWLINE) )
 
   ifeq (,$$($1_SKIP_METAINF))
     $1_SCAPTURE_METAINF=$$(foreach src,$$($1_SRCS), \
@@ -245,6 +247,8 @@ define SetupArchive
 	  $$($1_SUPDATE_CONTENTS) \
 	  $$($1_JARINDEX) && true )
 
+  # Add jar to target list
+  $1 += $$($1_JAR)
 endef
 
 define SetupZipArchive
@@ -305,6 +309,9 @@ define SetupZipArchive
 	$(ECHO) Updating $$($1_NAME)
 	$$(foreach i,$$($1_SRC),(cd $$i && $(ZIP) -qru $$@ . $$($1_ZIP_INCLUDES) $$($1_ZIP_EXCLUDES) -x \*_the.\* $$(addprefix -x$(SPACE),$$(patsubst $$i/%,%,$$($1_EXCLUDE_FILES))) || test "$$$$?" = "12" )$$(NEWLINE)) true
 	$(TOUCH) $$@
+
+  # Add zip to target list
+  $1 += $$($1_ZIP)
 endef
 
 define add_file_to_copy
@@ -527,16 +534,16 @@ define SetupJavaCompilation
     # When building in batch, put headers in a temp dir to filter out those that actually
     # changed before copying them to the real header dir.
     ifneq (,$$($1_HEADERS))
-      $1_HEADERS_ARG := -h $$($1_HEADERS).tmp
+      $1_HEADERS_ARG := -h $$($1_HEADERS).$1.tmp
 
       $$($1_HEADERS)/_the.$1_headers: $$($1_BIN)/_the.$1_batch
 		$(MKDIR) -p $$(@D)
-		for f in `ls $$($1_HEADERS).tmp`; do \
-		  if [ ! -f "$$($1_HEADERS)/$$$$f" ] || [ "`$(DIFF) $$($1_HEADERS)/$$$$f $$($1_HEADERS).tmp/$$$$f`" != "" ]; then \
-		    $(CP) -f $$($1_HEADERS).tmp/$$$$f $$($1_HEADERS)/$$$$f; \
+		for f in `ls $$($1_HEADERS).$1.tmp`; do \
+		  if [ ! -f "$$($1_HEADERS)/$$$$f" ] || [ "`$(DIFF) $$($1_HEADERS)/$$$$f $$($1_HEADERS).$1.tmp/$$$$f`" != "" ]; then \
+		    $(CP) -f $$($1_HEADERS).$1.tmp/$$$$f $$($1_HEADERS)/$$$$f; \
 		  fi; \
 		done
-		$(RM) -r $$($1_HEADERS).tmp
+		$(RM) -r $$($1_HEADERS).$1.tmp
 		$(TOUCH) $$@
 
       $1 += $$($1_HEADERS)/_the.$1_headers
@@ -577,6 +584,9 @@ define SetupJavaCompilation
         JARINDEX:=$$($1_JARINDEX), \
         HEADERS:=$$($1_HEADERS), \
         SETUP:=$$($1_SETUP)))
+
+    # Add jar to target list
+    $1 += $$($1_JAR)
   endif
 
   # Check if a srczip was specified, then setup the rules for the srczip.
@@ -587,6 +597,8 @@ define SetupJavaCompilation
         INCLUDES:=$$($1_INCLUDES), \
         EXCLUDES:=$$($1_EXCLUDES), \
         EXCLUDE_FILES:=$$($1_EXCLUDE_FILES)))
-  endif
 
+    # Add zip to target list
+    $1 += $$($1_SRCZIP)
+  endif
 endef

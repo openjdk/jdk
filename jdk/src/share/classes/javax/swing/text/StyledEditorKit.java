@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,7 +90,7 @@ public class StyledEditorKit extends DefaultEditorKit {
      * @return the command list
      */
     public Action[] getActions() {
-        return TextAction.augmentList(super.getActions(), this.defaultActions);
+        return TextAction.augmentList(super.getActions(), defaultActions);
     }
 
     /**
@@ -375,6 +375,7 @@ public class StyledEditorKit extends DefaultEditorKit {
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */
+    @SuppressWarnings("serial") // Same-version serialization only
     public abstract static class StyledTextAction extends TextAction {
 
         /**
@@ -494,6 +495,7 @@ public class StyledEditorKit extends DefaultEditorKit {
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */
+    @SuppressWarnings("serial") // Same-version serialization only
     public static class FontFamilyAction extends StyledTextAction {
 
         /**
@@ -550,6 +552,7 @@ public class StyledEditorKit extends DefaultEditorKit {
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */
+    @SuppressWarnings("serial") // Same-version serialization only
     public static class FontSizeAction extends StyledTextAction {
 
         /**
@@ -617,6 +620,7 @@ public class StyledEditorKit extends DefaultEditorKit {
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */
+    @SuppressWarnings("serial") // Same-version serialization only
     public static class ForegroundAction extends StyledTextAction {
 
         /**
@@ -683,6 +687,7 @@ public class StyledEditorKit extends DefaultEditorKit {
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */
+    @SuppressWarnings("serial") // Same-version serialization only
     public static class AlignmentAction extends StyledTextAction {
 
         /**
@@ -733,6 +738,7 @@ public class StyledEditorKit extends DefaultEditorKit {
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */
+    @SuppressWarnings("serial") // Same-version serialization only
     public static class BoldAction extends StyledTextAction {
 
         /**
@@ -772,6 +778,7 @@ public class StyledEditorKit extends DefaultEditorKit {
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */
+    @SuppressWarnings("serial") // Same-version serialization only
     public static class ItalicAction extends StyledTextAction {
 
         /**
@@ -811,6 +818,7 @@ public class StyledEditorKit extends DefaultEditorKit {
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */
+    @SuppressWarnings("serial") // Same-version serialization only
     public static class UnderlineAction extends StyledTextAction {
 
         /**

@@ -214,9 +214,12 @@ define SetupJVMTIDemo
   # Param 5 = libs for posix
   # Param 6 = libs for windows
   # Param 7 = libs for solaris
+  # Param 8 = libs for linux
+  # Param 9 = extra directories with required sources
   BUILD_DEMO_JVMTI_$1_EXTRA_SRC := \
       $$(wildcard $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/demo/jvmti/$1) \
-      $$(wildcard $$(addprefix $(JDK_TOPDIR)/src/share/demo/jvmti/, $2))
+      $$(wildcard $$(addprefix $(JDK_TOPDIR)/src/share/demo/jvmti/, $2)) \
+      $9
   BUILD_DEMO_JVMTI_$1_EXTRA_SRC_EXCLUDE := \
       $$(wildcard $$(addprefix $(JDK_TOPDIR)/src/share/demo/jvmti/, $2)/README.txt) \
       $$(wildcard $$(addprefix $(JDK_TOPDIR)/src/share/demo/jvmti/, $2)/sample.makefile.txt)
@@ -308,9 +311,19 @@ $(eval $(call SetupJVMTIDemo,compiledMethodLoad, agent_util))
 $(eval $(call SetupJVMTIDemo,gctest, agent_util))
 $(eval $(call SetupJVMTIDemo,heapTracker, agent_util java_crw_demo))
 $(eval $(call SetupJVMTIDemo,heapViewer, agent_util))
+
+# On AIX, hprof requires 'dladdr' from src/aix/porting/porting_aix.cpp
+BUILD_LIBHPROF_AIX_EXTRA_SRC :=
+BUILD_LIBHPROF_AIX_EXTRA_CFLAGS :=
+ifeq ($(OPENJDK_TARGET_OS), aix)
+  BUILD_LIBHPROF_AIX_EXTRA_SRC += $(JDK_TOPDIR)/src/aix/porting
+  BUILD_LIBHPROF_AIX_EXTRA_CFLAGS += -I$(JDK_TOPDIR)/src/aix/porting
+endif
+
 $(eval $(call SetupJVMTIDemo,hprof, java_crw_demo, \
-    -I$(JDK_TOPDIR)/src/share/npt -I$(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/npt, C, \
-    -ldl, ws2_32.lib winmm.lib, -lsocket -lnsl, -lpthread))
+    -I$(JDK_TOPDIR)/src/share/npt -I$(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/npt \
+    $(BUILD_LIBHPROF_AIX_EXTRA_CFLAGS), C, \
+    -ldl, ws2_32.lib winmm.lib, -lsocket -lnsl, -lpthread, $(BUILD_LIBHPROF_AIX_EXTRA_SRC)))
 
 $(eval $(call SetupJVMTIDemo,minst, agent_util java_crw_demo))
 $(eval $(call SetupJVMTIDemo,mtrace, agent_util java_crw_demo))

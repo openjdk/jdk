@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -181,25 +181,25 @@ public abstract class OGLSurfaceData extends SurfaceData
     static {
         if (!GraphicsEnvironment.isHeadless()) {
             // fbobject currently enabled by default; use "false" to disable
-            String fbo = (String)java.security.AccessController.doPrivileged(
+            String fbo = java.security.AccessController.doPrivileged(
                 new sun.security.action.GetPropertyAction(
                     "sun.java2d.opengl.fbobject"));
             isFBObjectEnabled = !"false".equals(fbo);
 
             // lcdshader currently enabled by default; use "false" to disable
-            String lcd = (String)java.security.AccessController.doPrivileged(
+            String lcd = java.security.AccessController.doPrivileged(
                 new sun.security.action.GetPropertyAction(
                     "sun.java2d.opengl.lcdshader"));
             isLCDShaderEnabled = !"false".equals(lcd);
 
             // biopshader currently enabled by default; use "false" to disable
-            String biop = (String)java.security.AccessController.doPrivileged(
+            String biop = java.security.AccessController.doPrivileged(
                 new sun.security.action.GetPropertyAction(
                     "sun.java2d.opengl.biopshader"));
             isBIOpShaderEnabled = !"false".equals(biop);
 
             // gradshader currently enabled by default; use "false" to disable
-            String grad = (String)java.security.AccessController.doPrivileged(
+            String grad = java.security.AccessController.doPrivileged(
                 new sun.security.action.GetPropertyAction(
                     "sun.java2d.opengl.gradshader"));
             isGradShaderEnabled = !"false".equals(grad);

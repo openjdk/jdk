@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,8 @@ import java.util.*;
  *
  * @author Scott Violet
  */
-public class BakedArrayList extends ArrayList {
+@SuppressWarnings("serial") // JDK-implementation class
+public class BakedArrayList extends ArrayList<Object> {
     /**
      * The cached hashCode.
      */
@@ -53,7 +54,7 @@ public class BakedArrayList extends ArrayList {
         super(size);
     }
 
-    public BakedArrayList(java.util.List data) {
+    public BakedArrayList(java.util.List<?> data) {
         this(data.size());
         for (int counter = 0, max = data.size(); counter < max; counter++){
             add(data.get(counter));

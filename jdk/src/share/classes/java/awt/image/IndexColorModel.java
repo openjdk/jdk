@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -909,7 +909,7 @@ public class IndexColorModel extends ColorModel {
 
             int minDist = 256;
             int d;
-            int gray = (int) (red*77 + green*150 + blue*29 + 128)/256;
+            int gray = (red*77 + green*150 + blue*29 + 128)/256;
 
             for (int i = 0; i < map_size; i++) {
                 if (this.rgb[i] == 0x0) {

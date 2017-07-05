@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -593,16 +593,15 @@ public class ImageUtil {
                     int i = eltOffset;
                     while(xRemaining > 24) {
                         data[i++] =
-                            (int)(((binaryDataArray[b++] & 0xFF) << 24) |
-                                  ((binaryDataArray[b++] & 0xFF) << 16) |
-                                  ((binaryDataArray[b++] & 0xFF) << 8) |
-                                  (binaryDataArray[b++] & 0xFF));
+                            (((binaryDataArray[b++] & 0xFF) << 24) |
+                             ((binaryDataArray[b++] & 0xFF) << 16) |
+                             ((binaryDataArray[b++] & 0xFF) << 8) |
+                             (binaryDataArray[b++] & 0xFF));
                         xRemaining -= 32;
                     }
                     int shift = 24;
                     while(xRemaining > 0) {
-                        data[i] |=
-                            (int)((binaryDataArray[b++] & 0xFF) << shift);
+                        data[i] |= ((binaryDataArray[b++] & 0xFF) << shift);
                         shift -= 8;
                         xRemaining -= 8;
                     }
@@ -835,8 +834,7 @@ public class ImageUtil {
                 for(int x = 0; x < rectWidth; x++) {
                     if(bdata[k++] != (byte)0) {
                         data[bOffset/32] |=
-                            (int)(0x00000001 <<
-                                  (31 - bOffset % 32));
+                            (0x00000001 << (31 - bOffset % 32));
                     }
                     bOffset++;
                 }

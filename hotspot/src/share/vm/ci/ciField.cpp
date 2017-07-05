@@ -201,16 +201,10 @@ void ciField::initialize_from(fieldDescriptor* fd) {
       return;
     }
 
-    // This field just may be constant.  The only cases where it will
-    // not be constant are:
-    //
-    // 1. The field holds a non-perm-space oop.  The field is, strictly
-    //    speaking, constant but we cannot embed non-perm-space oops into
-    //    generated code.  For the time being we need to consider the
-    //    field to be not constant.
-    // 2. The field is a *special* static&final field whose value
-    //    may change.  The three examples are java.lang.System.in,
-    //    java.lang.System.out, and java.lang.System.err.
+    // This field just may be constant.  The only case where it will
+    // not be constant is when the field is a *special* static&final field
+    // whose value may change.  The three examples are java.lang.System.in,
+    // java.lang.System.out, and java.lang.System.err.
 
     KlassHandle k = _holder->get_Klass();
     assert( SystemDictionary::System_klass() != NULL, "Check once per vm");

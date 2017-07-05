@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -457,7 +457,7 @@ public abstract class ImageReader {
         if (availableLocales == null) {
             return null;
         } else {
-            return (Locale[])availableLocales.clone();
+            return availableLocales.clone();
         }
     }
 
@@ -678,7 +678,7 @@ public abstract class ImageReader {
      */
     public ImageTypeSpecifier getRawImageType(int imageIndex)
         throws IOException {
-        return (ImageTypeSpecifier)getImageTypes(imageIndex).next();
+        return getImageTypes(imageIndex).next();
     }
 
     /**
@@ -2012,7 +2012,7 @@ public abstract class ImageReader {
         int numListeners = progressListeners.size();
         for (int i = 0; i < numListeners; i++) {
             IIOReadProgressListener listener =
-                (IIOReadProgressListener)progressListeners.get(i);
+                progressListeners.get(i);
             listener.sequenceStarted(this, minIndex);
         }
     }
@@ -2030,7 +2030,7 @@ public abstract class ImageReader {
         int numListeners = progressListeners.size();
         for (int i = 0; i < numListeners; i++) {
             IIOReadProgressListener listener =
-                (IIOReadProgressListener)progressListeners.get(i);
+                progressListeners.get(i);
             listener.sequenceComplete(this);
         }
     }
@@ -2050,7 +2050,7 @@ public abstract class ImageReader {
         int numListeners = progressListeners.size();
         for (int i = 0; i < numListeners; i++) {
             IIOReadProgressListener listener =
-                (IIOReadProgressListener)progressListeners.get(i);
+                progressListeners.get(i);
             listener.imageStarted(this, imageIndex);
         }
     }
@@ -2071,7 +2071,7 @@ public abstract class ImageReader {
         int numListeners = progressListeners.size();
         for (int i = 0; i < numListeners; i++) {
             IIOReadProgressListener listener =
-                (IIOReadProgressListener)progressListeners.get(i);
+                progressListeners.get(i);
             listener.imageProgress(this, percentageDone);
         }
     }
@@ -2089,7 +2089,7 @@ public abstract class ImageReader {
         int numListeners = progressListeners.size();
         for (int i = 0; i < numListeners; i++) {
             IIOReadProgressListener listener =
-                (IIOReadProgressListener)progressListeners.get(i);
+                progressListeners.get(i);
             listener.imageComplete(this);
         }
     }
@@ -2112,7 +2112,7 @@ public abstract class ImageReader {
         int numListeners = progressListeners.size();
         for (int i = 0; i < numListeners; i++) {
             IIOReadProgressListener listener =
-                (IIOReadProgressListener)progressListeners.get(i);
+                progressListeners.get(i);
             listener.thumbnailStarted(this, imageIndex, thumbnailIndex);
         }
     }
@@ -2133,7 +2133,7 @@ public abstract class ImageReader {
         int numListeners = progressListeners.size();
         for (int i = 0; i < numListeners; i++) {
             IIOReadProgressListener listener =
-                (IIOReadProgressListener)progressListeners.get(i);
+                progressListeners.get(i);
             listener.thumbnailProgress(this, percentageDone);
         }
     }
@@ -2151,7 +2151,7 @@ public abstract class ImageReader {
         int numListeners = progressListeners.size();
         for (int i = 0; i < numListeners; i++) {
             IIOReadProgressListener listener =
-                (IIOReadProgressListener)progressListeners.get(i);
+                progressListeners.get(i);
             listener.thumbnailComplete(this);
         }
     }
@@ -2169,7 +2169,7 @@ public abstract class ImageReader {
         int numListeners = progressListeners.size();
         for (int i = 0; i < numListeners; i++) {
             IIOReadProgressListener listener =
-                (IIOReadProgressListener)progressListeners.get(i);
+                progressListeners.get(i);
             listener.readAborted(this);
         }
     }
@@ -2205,7 +2205,7 @@ public abstract class ImageReader {
         int numListeners = updateListeners.size();
         for (int i = 0; i < numListeners; i++) {
             IIOReadUpdateListener listener =
-                (IIOReadUpdateListener)updateListeners.get(i);
+                updateListeners.get(i);
             listener.passStarted(this, theImage, pass,
                                  minPass,
                                  maxPass,
@@ -2246,7 +2246,7 @@ public abstract class ImageReader {
         int numListeners = updateListeners.size();
         for (int i = 0; i < numListeners; i++) {
             IIOReadUpdateListener listener =
-                (IIOReadUpdateListener)updateListeners.get(i);
+                updateListeners.get(i);
             listener.imageUpdate(this,
                                  theImage,
                                  minX, minY,
@@ -2271,7 +2271,7 @@ public abstract class ImageReader {
         int numListeners = updateListeners.size();
         for (int i = 0; i < numListeners; i++) {
             IIOReadUpdateListener listener =
-                (IIOReadUpdateListener)updateListeners.get(i);
+                updateListeners.get(i);
             listener.passComplete(this, theImage);
         }
     }
@@ -2308,7 +2308,7 @@ public abstract class ImageReader {
         int numListeners = updateListeners.size();
         for (int i = 0; i < numListeners; i++) {
             IIOReadUpdateListener listener =
-                (IIOReadUpdateListener)updateListeners.get(i);
+                updateListeners.get(i);
             listener.thumbnailPassStarted(this, theThumbnail, pass,
                                           minPass,
                                           maxPass,
@@ -2350,7 +2350,7 @@ public abstract class ImageReader {
         int numListeners = updateListeners.size();
         for (int i = 0; i < numListeners; i++) {
             IIOReadUpdateListener listener =
-                (IIOReadUpdateListener)updateListeners.get(i);
+                updateListeners.get(i);
             listener.thumbnailUpdate(this,
                                      theThumbnail,
                                      minX, minY,
@@ -2376,7 +2376,7 @@ public abstract class ImageReader {
         int numListeners = updateListeners.size();
         for (int i = 0; i < numListeners; i++) {
             IIOReadUpdateListener listener =
-                (IIOReadUpdateListener)updateListeners.get(i);
+                updateListeners.get(i);
             listener.thumbnailPassComplete(this, theThumbnail);
         }
     }
@@ -2402,7 +2402,7 @@ public abstract class ImageReader {
         int numListeners = warningListeners.size();
         for (int i = 0; i < numListeners; i++) {
             IIOReadWarningListener listener =
-                (IIOReadWarningListener)warningListeners.get(i);
+                warningListeners.get(i);
 
             listener.warningOccurred(this, warning);
         }
@@ -2447,8 +2447,8 @@ public abstract class ImageReader {
         int numListeners = warningListeners.size();
         for (int i = 0; i < numListeners; i++) {
             IIOReadWarningListener listener =
-                (IIOReadWarningListener)warningListeners.get(i);
-            Locale locale = (Locale)warningLocales.get(i);
+                warningListeners.get(i);
+            Locale locale = warningLocales.get(i);
             if (locale == null) {
                 locale = Locale.getDefault();
             }
@@ -2864,7 +2864,7 @@ public abstract class ImageReader {
             boolean foundIt = false;
             while (imageTypes.hasNext()) {
                 ImageTypeSpecifier type =
-                    (ImageTypeSpecifier)imageTypes.next();
+                    imageTypes.next();
                 if (type.equals(imageType)) {
                     foundIt = true;
                     break;

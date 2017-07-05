@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -283,7 +283,7 @@ public class MBeanServerFileAccessController
     public synchronized void refresh() throws IOException {
         Properties props;
         if (accessFileName == null)
-            props = (Properties) originalProps;
+            props = originalProps;
         else
             props = propertiesFromFile(accessFileName);
         parseProperties(props);

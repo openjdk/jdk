@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -147,7 +147,7 @@ public class ComponentSampleModel extends SampleModel
         this.dataType = dataType;
         this.pixelStride = pixelStride;
         this.scanlineStride  = scanlineStride;
-        this.bandOffsets = (int[])bandOffsets.clone();
+        this.bandOffsets = bandOffsets.clone();
         numBands = this.bandOffsets.length;
         if (pixelStride < 0) {
             throw new IllegalArgumentException("Pixel stride must be >= 0");
@@ -211,8 +211,8 @@ public class ComponentSampleModel extends SampleModel
         this.dataType = dataType;
         this.pixelStride = pixelStride;
         this.scanlineStride  = scanlineStride;
-        this.bandOffsets = (int[])bandOffsets.clone();
-        this.bankIndices = (int[]) bankIndices.clone();
+        this.bandOffsets = bandOffsets.clone();
+        this.bankIndices = bankIndices.clone();
         if (pixelStride < 0) {
             throw new IllegalArgumentException("Pixel stride must be >= 0");
         }
@@ -526,14 +526,14 @@ public class ComponentSampleModel extends SampleModel
      *  @return the bank indices for all bands.
      */
     public final int [] getBankIndices() {
-        return (int[]) bankIndices.clone();
+        return bankIndices.clone();
     }
 
     /** Returns the band offset for all bands.
      *  @return the band offsets for all bands.
      */
     public final int [] getBandOffsets() {
-        return (int[])bandOffsets.clone();
+        return bandOffsets.clone();
     }
 
     /** Returns the scanline stride of this ComponentSampleModel.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -578,7 +578,7 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
                     // newFocusOwner is not focus traversable.
                     dequeueKeyEvents(-1, newFocusOwner);
                     if (KeyboardFocusManager.isAutoFocusTransferEnabled()) {
-                        restoreFocus(fe, (Window)newFocusedWindow);
+                        restoreFocus(fe, newFocusedWindow);
                     }
                     break;
                 }
@@ -590,7 +590,7 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
                         // Focus change was rejected. Unlikely, but possible.
                         dequeueKeyEvents(-1, newFocusOwner);
                         if (KeyboardFocusManager.isAutoFocusTransferEnabled()) {
-                            restoreFocus(fe, (Window)newFocusedWindow);
+                            restoreFocus(fe, newFocusedWindow);
                         }
                         break;
                     }

@@ -50,18 +50,48 @@ class OperatingSystemImpl extends BaseOperatingSystemImpl
             return getCommittedVirtualMemorySize0();
         }
     }
-    private native long getCommittedVirtualMemorySize0();
 
-    public native long getTotalSwapSpaceSize();
-    public native long getFreeSwapSpaceSize();
-    public native long getProcessCpuTime();
-    public native long getFreePhysicalMemorySize();
-    public native long getTotalPhysicalMemorySize();
-    public native double getSystemCpuLoad();
-    public native double getProcessCpuLoad();
+    public long getTotalSwapSpaceSize() {
+        return getTotalSwapSpaceSize0();
+    }
+
+    public long getFreeSwapSpaceSize() {
+        return getFreeSwapSpaceSize0();
+    }
+
+    public long getProcessCpuTime() {
+        return getProcessCpuTime0();
+    }
+
+    public long getFreePhysicalMemorySize() {
+        return getFreePhysicalMemorySize0();
+    }
+
+    public long getTotalPhysicalMemorySize() {
+        return getTotalPhysicalMemorySize0();
+    }
+
+    public double getSystemCpuLoad() {
+        return getSystemCpuLoad0();
+    }
+
+    public double getProcessCpuLoad() {
+        return getProcessCpuLoad0();
+    }
+
+    /* native methods */
+    private native long getCommittedVirtualMemorySize0();
+    private native long getFreePhysicalMemorySize0();
+    private native long getFreeSwapSpaceSize0();
+    private native double getProcessCpuLoad0();
+    private native long getProcessCpuTime0();
+    private native double getSystemCpuLoad0();
+    private native long getTotalPhysicalMemorySize0();
+    private native long getTotalSwapSpaceSize0();
 
     static {
-        initialize();
+        initialize0();
     }
-    private static native void initialize();
+
+    private static native void initialize0();
 }

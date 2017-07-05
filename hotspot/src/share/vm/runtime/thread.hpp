@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1231,7 +1231,7 @@ class JavaThread: public Thread {
   void set_vframe_array_head(vframeArray* value) { _vframe_array_head = value; }
   vframeArray* vframe_array_head() const         { return _vframe_array_head;  }
 
-  // Side structure for defering update of java frame locals until deopt occurs
+  // Side structure for deferring update of java frame locals until deopt occurs
   GrowableArray<jvmtiDeferredLocalVariableSet*>* deferred_locals() const { return _deferred_locals_updates; }
   void set_deferred_locals(GrowableArray<jvmtiDeferredLocalVariableSet *>* vf) { _deferred_locals_updates = vf; }
 
@@ -1891,6 +1891,8 @@ class Threads: AllStatic {
   static bool        _vm_complete;
 #endif
 
+  static void initialize_java_lang_classes(JavaThread* main_thread, TRAPS);
+  static void initialize_jsr292_core_classes(TRAPS);
  public:
   // Thread management
   // force_daemon is a concession to JNI, where we may need to add a

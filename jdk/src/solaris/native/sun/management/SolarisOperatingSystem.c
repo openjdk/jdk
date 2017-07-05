@@ -226,14 +226,14 @@ double get_process_load(void) {
 }
 
 JNIEXPORT jdouble JNICALL
-Java_sun_management_OperatingSystemImpl_getSystemCpuLoad
+Java_sun_management_OperatingSystemImpl_getSystemCpuLoad0
 (JNIEnv *env, jobject dummy)
 {
     return get_cpu_load(-1);
 }
 
 JNIEXPORT jdouble JNICALL
-Java_sun_management_OperatingSystemImpl_getProcessCpuLoad
+Java_sun_management_OperatingSystemImpl_getProcessCpuLoad0
 (JNIEnv *env, jobject dummy)
 {
     return get_process_load();

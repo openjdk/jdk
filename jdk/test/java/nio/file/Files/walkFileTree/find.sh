@@ -43,7 +43,14 @@ case "$OS" in
         echo "This test does not run on Windows" 
         exit 0
         ;;
+    AIX )
+        CLASSPATH=${TESTCLASSES}:${TESTSRC}
+        # On AIX "find -follow" may core dump on recursive links without '-L'
+        # see: http://www-01.ibm.com/support/docview.wss?uid=isg1IV28143
+        FIND_FOLLOW_OPT="-L"
+        ;;
     * )
+        FIND_FOLLOW_OPT=
         CLASSPATH=${TESTCLASSES}:${TESTSRC}
         ;;
 esac
@@ -65,7 +72,7 @@ if [ $? != 0 ]; then failures=`expr $failures + 1`; fi
 # cycles (sym links to ancestor directories), other versions do
 # not. For that reason we run PrintFileTree with the -printCycles
 # option when the output without this option differs to find(1).
-find "$ROOT" -follow > out1
+find $FIND_FOLLOW_OPT "$ROOT" -follow > out1
 $JAVA ${TESTVMOPTS} PrintFileTree -follow "$ROOT" > out2
 diff out1 out2
 if [ $? != 0 ];

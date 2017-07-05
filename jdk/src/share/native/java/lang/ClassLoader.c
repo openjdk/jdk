@@ -132,7 +132,6 @@ Java_java_lang_ClassLoader_defineClass1(JNIEnv *env,
     if (name != NULL) {
         utfName = getUTF(env, name, buf, sizeof(buf));
         if (utfName == NULL) {
-            JNU_ThrowOutOfMemoryError(env, NULL);
             goto free_body;
         }
         VerifyFixClassname(utfName);
@@ -143,7 +142,6 @@ Java_java_lang_ClassLoader_defineClass1(JNIEnv *env,
     if (source != NULL) {
         utfSource = getUTF(env, source, sourceBuf, sizeof(sourceBuf));
         if (utfSource == NULL) {
-            JNU_ThrowOutOfMemoryError(env, NULL);
             goto free_utfName;
         }
     } else {
@@ -519,7 +517,6 @@ Java_java_lang_ClassLoader_00024NativeLibrary_findBuiltinLib
     procHandle = getProcessHandle();
     cname = JNU_GetStringPlatformChars(env, name, 0);
     if (cname == NULL) {
-        JNU_ThrowOutOfMemoryError(env, NULL);
         return NULL;
     }
     // Copy name Skipping PREFIX

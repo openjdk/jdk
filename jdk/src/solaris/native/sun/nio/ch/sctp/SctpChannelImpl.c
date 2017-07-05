@@ -214,6 +214,7 @@ void handleSendFailed
 
     /* retrieved address from sockaddr */
     isaObj = SockAddrToInetSocketAddress(env, sap);
+    CHECK_NULL(isaObj);
 
     /* data retrieved from sff_data */
     if (dataLength > 0) {
@@ -338,6 +339,7 @@ void handlePeerAddrChange
     }
 
     addressObj = SockAddrToInetSocketAddress(env, (struct sockaddr*)&spc->spc_aaddr);
+    CHECK_NULL(addressObj);
 
     /* create PeerAddressChanged */
     resultObj = (*env)->NewObject(env, spc_class, spc_ctrID, spc->spc_assoc_id,
@@ -394,6 +396,7 @@ void handleMessage
     }
 
     isa = SockAddrToInetSocketAddress(env, sap);
+    CHECK_NULL(isa);
     getControlData(msg, cdata);
 
     /* create MessageInfoImpl */
@@ -580,4 +583,3 @@ JNIEXPORT jint JNICALL Java_sun_nio_ch_sctp_SctpChannelImpl_checkConnect
     return Java_sun_nio_ch_SocketChannelImpl_checkConnect(env, this,
                                                           fdo, block, ready);
 }
-

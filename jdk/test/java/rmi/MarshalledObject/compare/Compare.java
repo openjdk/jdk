@@ -29,7 +29,7 @@
  *          not involved in location should be compared.
  * @author Ken Arnold
  *
- * @run main Compare 11 annotatedRef
+ * @run main/othervm Compare 11 annotatedRef
  */
 
 import java.rmi.MarshalledObject;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -214,13 +214,13 @@ public abstract class X11SurfaceData extends XSurfaceData {
        if (!isX11SurfaceDataInitialized() &&
            !GraphicsEnvironment.isHeadless()) {
             // If a screen magnifier is present, don't attempt to use DGA
-            String magPresent = (String) java.security.AccessController.doPrivileged
+            String magPresent = java.security.AccessController.doPrivileged
                 (new sun.security.action.GetPropertyAction("javax.accessibility.screen_magnifier_present"));
             boolean tryDGA = magPresent == null || !"true".equals(magPresent);
 
             initIDs(XORComposite.class, tryDGA);
 
-            String xtextpipe = (String) java.security.AccessController.doPrivileged
+            String xtextpipe = java.security.AccessController.doPrivileged
                 (new sun.security.action.GetPropertyAction("sun.java2d.xtextpipe"));
             if (xtextpipe == null || "true".startsWith(xtextpipe)) {
                 if ("true".equals(xtextpipe)) {
@@ -264,8 +264,7 @@ public abstract class X11SurfaceData extends XSurfaceData {
             if (GraphicsEnvironment.isHeadless()) {
                 accelerationEnabled = Boolean.FALSE;
             } else {
-                String prop =
-                    (String) java.security.AccessController.doPrivileged(
+                String prop = java.security.AccessController.doPrivileged(
                         new sun.security.action.GetPropertyAction("sun.java2d.pmoffscreen"));
                 if (prop != null) {
                     // true iff prop==true, false otherwise

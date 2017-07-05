@@ -235,13 +235,11 @@ public final class SocketPermission extends Permission
     private static Debug debug = null;
     private static boolean debugInit = false;
 
-    // ephemeral port range for this system
-    private static final int ephemeralLow = initEphemeralPorts(
-        "low", DEF_EPH_LOW
-    );
-    private static final int ephemeralHigh = initEphemeralPorts(
-        "high", PORT_MAX
-    );
+    // lazy initializer
+    private static class EphemeralRange {
+        static final int low = initEphemeralPorts("low", DEF_EPH_LOW);
+            static final int high = initEphemeralPorts("high", PORT_MAX);
+    };
 
     static {
         Boolean tmp = java.security.AccessController.doPrivileged(
@@ -1235,6 +1233,9 @@ public final class SocketPermission extends Permission
         int policyLow, int policyHigh, int targetLow, int targetHigh
     )
     {
+        final int ephemeralLow = EphemeralRange.low;
+        final int ephemeralHigh = EphemeralRange.high;
+
         if (targetLow == 0) {
             // check policy includes ephemeral range
             if (!inRange(policyLow, policyHigh, ephemeralLow, ephemeralHigh)) {
