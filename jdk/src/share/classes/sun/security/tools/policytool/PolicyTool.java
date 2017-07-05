@@ -1447,6 +1447,7 @@ class ToolDialog extends Dialog {
         PERM_ARRAY.add(new AWTPerm());
         PERM_ARRAY.add(new DelegationPerm());
         PERM_ARRAY.add(new FilePerm());
+        PERM_ARRAY.add(new HttpURLPerm());
         PERM_ARRAY.add(new InqSecContextPerm());
         PERM_ARRAY.add(new LogPerm());
         PERM_ARRAY.add(new MgmtPerm());
@@ -3838,6 +3839,20 @@ class FilePerm extends Perm {
                 "write",
                 "delete",
                 "execute"
+                });
+    }
+}
+
+class HttpURLPerm extends Perm {
+    public HttpURLPerm() {
+        super("HttpURLPermission",
+                "java.net.HttpURLPermission",
+                new String[]    {
+                    "<"+ PolicyTool.rb.getString("url") + ">",
+                },
+                new String[]    {
+                    "<" + PolicyTool.rb.getString("method.list") + ">:<"
+                        + PolicyTool.rb.getString("request.headers.list") + ">",
                 });
     }
 }

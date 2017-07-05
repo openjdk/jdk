@@ -60,7 +60,7 @@
  *
  * - `INSTANCE_NAME` -- The user-provided name of the running instance
  *
- * The protocol sends packets to 239.255.255.225:7095 by default.
+ * The protocol sends packets to 224.0.23.178:7095 by default.
  *
  * The protocol uses system properties to control it's behaviour:
  * - `com.sun.management.jdp.port` -- override default port

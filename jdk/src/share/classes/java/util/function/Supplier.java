@@ -40,5 +40,5 @@ public interface Supplier<T> {
      *
      * @return an object
      */
-    public T get();
+    T get();
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -151,8 +151,8 @@ public class XlibUtil
             {
                 int status = xtc.execute(XErrorHandler.IgnoreBadWindowHandler.getInstance());
                 if ((status != 0) &&
-                    ((XToolkit.saved_error == null) ||
-                     (XToolkit.saved_error.get_error_code() == XConstants.Success)))
+                    ((XErrorHandlerUtil.saved_error == null) ||
+                    (XErrorHandlerUtil.saved_error.get_error_code() == XConstants.Success)))
                 {
                     translated = new Point(xtc.get_dest_x(), xtc.get_dest_y());
                 }
@@ -345,13 +345,13 @@ public class XlibUtil
         XWindowAttributes wattr = new XWindowAttributes();
         try
         {
-            XToolkit.WITH_XERROR_HANDLER(XErrorHandler.IgnoreBadWindowHandler.getInstance());
+            XErrorHandlerUtil.WITH_XERROR_HANDLER(XErrorHandler.IgnoreBadWindowHandler.getInstance());
             int status = XlibWrapper.XGetWindowAttributes(XToolkit.getDisplay(),
                                                           window, wattr.pData);
-            XToolkit.RESTORE_XERROR_HANDLER();
+            XErrorHandlerUtil.RESTORE_XERROR_HANDLER();
             if ((status != 0) &&
-                ((XToolkit.saved_error == null) ||
-                 (XToolkit.saved_error.get_error_code() == XConstants.Success)))
+                ((XErrorHandlerUtil.saved_error == null) ||
+                (XErrorHandlerUtil.saved_error.get_error_code() == XConstants.Success)))
             {
                 return wattr.get_map_state();
             }
