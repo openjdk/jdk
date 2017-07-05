@@ -49,7 +49,7 @@ public class DeleteInterference {
      * directory.
      */
     public static void main(String[] args) throws Exception {
-        Path dir = Files.createTempDirectory("work");
+        Path dir = Files.createTempDirectory("DeleteInterference");
         ExecutorService pool = Executors.newCachedThreadPool();
         try {
             Future<?> task1 = pool.submit(() -> openAndCloseWatcher(dir));

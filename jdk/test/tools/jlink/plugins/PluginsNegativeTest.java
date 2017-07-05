@@ -44,7 +44,6 @@ import jdk.tools.jlink.Jlink.PluginsConfiguration;
 import jdk.tools.jlink.plugin.Plugin;
 import jdk.tools.jlink.plugin.ModuleEntry;
 import jdk.tools.jlink.plugin.ModulePool;
-import jdk.tools.jlink.plugin.TransformerPlugin;
 
 public class PluginsNegativeTest {
 
@@ -117,7 +116,7 @@ public class PluginsNegativeTest {
         }
     }
 
-    public static class CustomPlugin implements TransformerPlugin {
+    public static class CustomPlugin implements Plugin {
 
         private final String name;
 

@@ -78,6 +78,7 @@ final class StringReader {
             if (isLast) {
                 input.limit(input.position() + remainingLength);
             }
+            remainingLength -= Math.min(input.remaining(), remainingLength);
             if (huffman) {
                 huffmanReader.read(input, output, isLast);
             } else {
@@ -85,6 +86,7 @@ final class StringReader {
             }
             if (isLast) {
                 input.limit(oldLimit);
+                state = DONE;
             }
             return isLast;
         }

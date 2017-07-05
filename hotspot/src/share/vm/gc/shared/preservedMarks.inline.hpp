@@ -49,8 +49,7 @@ inline void PreservedMarks::init_forwarded_mark(oop obj) {
   obj->init_mark();
 }
 
-template <class E>
-inline void PreservedMarksSet::restore(E* executor) {
+inline void PreservedMarksSet::restore(RestorePreservedMarksTaskExecutor* executor) {
   volatile size_t total_size = 0;
 
 #ifdef ASSERT
@@ -61,17 +60,7 @@ inline void PreservedMarksSet::restore(E* executor) {
   }
 #endif // def ASSERT
 
-  if (executor == NULL) {
-    for (uint i = 0; i < _num; i += 1) {
-      total_size += get(i)->size();
-      get(i)->restore();
-    }
-  } else {
-    // Right now, if the executor is not NULL we do the work in
-    // parallel. In the future we might want to do the restoration
-    // serially, if there's only a small number of marks per stack.
-    restore_internal(executor, &total_size);
-  }
+  executor->restore(this, &total_size);
   assert_empty();
 
   assert(total_size == total_size_before,

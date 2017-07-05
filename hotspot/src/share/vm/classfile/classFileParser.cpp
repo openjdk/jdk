@@ -4673,6 +4673,7 @@ void ClassFileParser::verify_legal_utf8(const unsigned char* buffer,
 }
 
 // Unqualified names may not contain the characters '.', ';', '[', or '/'.
+// In class names, '/' separates unqualified names.  This is verified in this function also.
 // Method names also may not contain the characters '<' or '>', unless <init>
 // or <clinit>.  Note that method names may not be <init> or <clinit> in this
 // method.  Because these names have been checked as special cases before
@@ -4698,8 +4699,16 @@ bool ClassFileParser::verify_unqualified_name(const char* name,
       if (ch == ';' || ch == '[' ) {
         return false;   // do not permit '.', ';', or '['
       }
-      if (type != ClassFileParser::LegalClass && ch == '/') {
-        return false;   // do not permit '/' unless it's class name
+      if (ch == '/') {
+        // check for '//' or leading or trailing '/' which are not legal
+        // unqualified name must not be empty
+        if (type == ClassFileParser::LegalClass) {
+          if (p == name || p+1 >= name+length || *(p+1) == '/') {
+           return false;
+          }
+        } else {
+          return false;   // do not permit '/' unless it's class name
+        }
       }
       if (type == ClassFileParser::LegalMethod && (ch == '<' || ch == '>')) {
         return false;   // do not permit '<' or '>' in method names
@@ -5347,15 +5356,7 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik, bool changed_by_loa
   if (!is_internal()) {
     if (log_is_enabled(Info, class, load)) {
       ResourceMark rm;
-      const char* module_name = NULL;
-      static const size_t modules_image_name_len = strlen(MODULES_IMAGE_NAME);
-      size_t stream_len = strlen(_stream->source());
-      // See if _stream->source() ends in "modules"
-      if (module_entry->is_named() && modules_image_name_len < stream_len &&
-        (strncmp(_stream->source() + stream_len - modules_image_name_len,
-                 MODULES_IMAGE_NAME, modules_image_name_len) == 0)) {
-        module_name = module_entry->name()->as_C_string();
-      }
+      const char* module_name = (module_entry->name() == NULL) ? UNNAMED_MODULE : module_entry->name()->as_C_string();
 
       if (log_is_enabled(Info, class, load)) {
         ik->print_loading_log(LogLevel::Info, _loader_data, module_name, _stream);

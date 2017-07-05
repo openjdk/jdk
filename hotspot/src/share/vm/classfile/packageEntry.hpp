@@ -40,11 +40,7 @@
 //     package is exported to.
 //
 // Packages can be exported in the following 3 ways:
-//   - not exported:        the package has not been explicitly qualified to a
-//                            particular module nor has it been specified to be
-//                            unqualifiedly exported to all modules. If all states
-//                            of exportedness are false, the package is considered
-//                            not exported.
+//   - not exported:        the package does not have qualified or unqualified exports.
 //   - qualified exports:   the package has been explicitly qualified to at least
 //                            one particular module or has been qualifiedly exported
 //                            to all unnamed modules.
@@ -125,6 +121,7 @@ public:
     return _is_exported_unqualified;
   }
   void set_unqual_exported() {
+    assert(Module_lock->owned_by_self(), "should have the Module_lock");
     _is_exported_unqualified = true;
     _is_exported_allUnnamed = false;
     _qualified_exports = NULL;

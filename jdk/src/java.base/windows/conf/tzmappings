@@ -164,39 +164,63 @@ Caucasus Standard Time:8,9:AM:Asia/Yerevan:
 GMT Standard Time:88,89::GMT:
 Greenwich:88,89::GMT:
 Greenwich Standard Time:88,89::GMT:
-Argentina Standard Time:900,900::America/Buenos_Aires:
-Azerbaijan Standard Time:901,901:AZ:Asia/Baku:
-Bangladesh Standard Time:902,902::Asia/Dhaka:
-Central Brazilian Standard Time:903,903:BR:America/Cuiaba:
-Central Standard Time (Mexico):904,904::America/Mexico_City:
-Georgian Standard Time:905,905:GE:Asia/Tbilisi:
-Jordan Standard Time:906,906:JO:Asia/Amman:
-Kamchatka Standard Time:907,907:RU:Asia/Kamchatka:
-Mauritius Standard Time:908,908:MU:Indian/Mauritius:
-Middle East Standard Time:909,909:LB:Asia/Beirut:
-Montevideo Standard Time:910,910:UY:America/Montevideo:
-Morocco Standard Time:911,911:MA:Africa/Casablanca:
-Mountain Standard Time (Mexico):912,912:MX:America/Chihuahua:
-Namibia Standard Time:913,913:NA:Africa/Windhoek:
-Pacific Standard Time (Mexico):914,914:MX:America/Tijuana:
-Pakistan Standard Time:915,915::Asia/Karachi:
-Paraguay Standard Time:916,916:PY:America/Asuncion:
-Syria Standard Time:917,917:SY:Asia/Damascus:
-UTC:918,918::UTC:
-UTC+12:919,919::GMT+1200:
-UTC-02:920,920::GMT-0200:
-UTC-11:921,921::GMT-1100:
-Ulaanbaatar Standard Time:922,922::Asia/Ulaanbaatar:
-Venezuela Standard Time:923,923::America/Caracas:
-Magadan Standard Time:924,924::Asia/Magadan:
-Kaliningrad Standard Time:925,925:RU:Europe/Kaliningrad:
-Turkey Standard Time:926,926::Asia/Istanbul:
-Bahia Standard Time:927,927::America/Bahia:
-Libya Standard Time:928,928:LY:Africa/Tripoli:
-Belarus Standard Time:929,929:BY:Europe/Minsk:
-Line Islands Standard Time:930,930::Pacific/Kiritimati:
-Russia Time Zone 10:931,931::Asia/Srednekolymsk:
-Russia Time Zone 11:932,932::Asia/Anadyr:
-Russia Time Zone 3:933,933::Europe/Samara:
-Western Brazilian Standard Time:934,934:BR:America/Rio_Branco:
-Armenian Standard Time:935,935:AM:Asia/Yerevan:
+Aleutian Standard Time:900,900:US:America/Adak:
+Altai Standard Time:901,901::Asia/Barnaul:
+Argentina Standard Time:902,902::America/Buenos_Aires:
+Armenian Standard Time:903,903:AM:Asia/Yerevan:
+Astrakhan Standard Time:904,904::Europe/Astrakhan:
+Aus Central W. Standard Time:905,905::Australia/Eucla:
+Azerbaijan Standard Time:906,906:AZ:Asia/Baku:
+Bahia Standard Time:907,907::America/Bahia:
+Bangladesh Standard Time:908,908::Asia/Dhaka:
+Belarus Standard Time:909,909:BY:Europe/Minsk:
+Bougainville Standard Time:910,910::Pacific/Bougainville:
+Central Brazilian Standard Time:911,911:BR:America/Cuiaba:
+Central Standard Time (Mexico):912,912::America/Mexico_City:
+Chatham Islands Standard Time:913,913::Pacific/Chatham:
+Cuba Standard Time:914,914:CU:America/Havana:
+Easter Island Standard Time:915,915:CL:Pacific/Easter:
+Eastern Standard Time (Mexico):916,916::America/Cancun:
+Georgian Standard Time:917,917:GE:Asia/Tbilisi:
+Haiti Standard Time:918,918:HT:America/Port-au-Prince:
+Jordan Standard Time:919,919:JO:Asia/Amman:
+Kaliningrad Standard Time:920,920:RU:Europe/Kaliningrad:
+Kamchatka Standard Time:921,921:RU:Asia/Kamchatka:
+Libya Standard Time:922,922:LY:Africa/Tripoli:
+Line Islands Standard Time:923,923::Pacific/Kiritimati:
+Lord Howe Standard Time:924,924::Australia/Lord_Howe:
+Magadan Standard Time:925,925::Asia/Magadan:
+Marquesas Standard Time:926,926::Pacific/Marquesas:
+Mauritius Standard Time:927,927:MU:Indian/Mauritius:
+Middle East Standard Time:928,928:LB:Asia/Beirut:
+Montevideo Standard Time:929,929:UY:America/Montevideo:
+Morocco Standard Time:930,930:MA:Africa/Casablanca:
+Mountain Standard Time (Mexico):931,931:MX:America/Chihuahua:
+Namibia Standard Time:932,932:NA:Africa/Windhoek:
+Norfolk Standard Time:933,933::Pacific/Norfolk:
+North Korea Standard Time:934,934:KP:Asia/Pyongyang:
+Pacific Standard Time (Mexico):935,935:MX:America/Tijuana:
+Pakistan Standard Time:936,936::Asia/Karachi:
+Paraguay Standard Time:937,937:PY:America/Asuncion:
+Russia Time Zone 10:938,938::Asia/Srednekolymsk:
+Russia Time Zone 11:939,939::Asia/Anadyr:
+Russia Time Zone 3:940,940::Europe/Samara:
+Saint Pierre Standard Time:941,941:PM:America/Miquelon:
+Sakhalin Standard Time:942,942::Asia/Sakhalin:
+Syria Standard Time:943,943:SY:Asia/Damascus:
+Tocantins Standard Time:944,944::America/Araguaina:
+Tomsk Standard Time:945,945::Asia/Tomsk:
+Transbaikal Standard Time:946,946::Asia/Chita:
+Turkey Standard Time:947,947::Asia/Istanbul:
+Turks And Caicos Standard Time:948,948:TC:America/Grand_Turk:
+UTC+12:949,949::GMT+1200:
+UTC-02:950,950::GMT-0200:
+UTC-08:951,951::GMT-0800:
+UTC-09:952,952::GMT-0900:
+UTC-11:953,953::GMT-1100:
+UTC:954,954::UTC:
+Ulaanbaatar Standard Time:955,955::Asia/Ulaanbaatar:
+Venezuela Standard Time:956,956::America/Caracas:
+W. Mongolia Standard Time:957,957::Asia/Hovd:
+West Bank Standard Time:958,958::Asia/Gaza:
+Western Brazilian Standard Time:959,959:BR:America/Rio_Branco:
