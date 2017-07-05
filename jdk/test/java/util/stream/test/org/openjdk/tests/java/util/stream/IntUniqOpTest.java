@@ -60,7 +60,6 @@ public class IntUniqOpTest extends OpTestCase {
     public void testOpSorted(String name, TestData.OfInt data) {
         Collection<Integer> result = withData(data).
                 stream(s -> s.sorted().distinct().boxed()).
-                parallelEqualityAsserter(LambdaTestHelpers::assertContentsUnordered).
                 exercise();
 
         assertUnique(result);

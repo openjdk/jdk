@@ -59,8 +59,11 @@ public class HSDB implements ObjectHistogramPanel.Listener, SAListener {
   // Internals only below this point
   //
   private HotSpotAgent agent;
+  private JVMDebugger jvmDebugger;
   private JDesktopPane desktop;
   private boolean      attached;
+  private boolean      argError;
+  private JFrame frame;
   /** List <JMenuItem> */
   private java.util.List attachMenuItems;
   /** List <JMenuItem> */
@@ -85,6 +88,11 @@ public class HSDB implements ObjectHistogramPanel.Listener, SAListener {
     System.out.println("           path-to-corefile:        Debug this corefile.  The default is 'core'");
     System.out.println("        If no arguments are specified, you can select what to do from the GUI.\n");
     HotSpotAgent.showUsage();
+    argError = true;
+  }
+
+  public HSDB(JVMDebugger d) {
+    jvmDebugger = d;
   }
 
   private HSDB(String[] args) {
@@ -95,7 +103,6 @@ public class HSDB implements ObjectHistogramPanel.Listener, SAListener {
     case (1):
       if (args[0].equals("help") || args[0].equals("-help")) {
         doUsage();
-        System.exit(0);
       }
       // If all numbers, it is a PID to attach to
       // Else, it is a pathname to a .../bin/java for a core file.
@@ -117,24 +124,29 @@ public class HSDB implements ObjectHistogramPanel.Listener, SAListener {
     default:
       System.out.println("HSDB Error: Too many options specified");
       doUsage();
-      System.exit(1);
     }
   }
 
-  private void run() {
-    // At this point, if pidText != null we are supposed to attach to it.
-    // Else, if execPath != null, it is the path of a jdk/bin/java
-    // and coreFilename is the pathname of a core file we are
-    // supposed to attach to.
+  // close this tool without calling System.exit
+  protected void closeUI() {
+      workerThread.shutdown();
+      frame.dispose();
+  }
+
+  public void run() {
+    // Don't start the UI if there were bad arguments.
+    if (argError) {
+        return;
+    }
 
     agent = new HotSpotAgent();
     workerThread = new WorkerThread();
     attachMenuItems = new java.util.ArrayList();
     detachMenuItems = new java.util.ArrayList();
 
-    JFrame frame = new JFrame("HSDB - HotSpot Debugger");
+    frame = new JFrame("HSDB - HotSpot Debugger");
     frame.setSize(800, 600);
-    frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+    frame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
 
     JMenuBar menuBar = new JMenuBar();
 
@@ -197,7 +209,7 @@ public class HSDB implements ObjectHistogramPanel.Listener, SAListener {
     item = createMenuItem("Exit",
                             new ActionListener() {
                                 public void actionPerformed(ActionEvent e) {
-                                  System.exit(0);
+                                  closeUI();
                                 }
                               });
     item.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_X, ActionEvent.ALT_MASK));
@@ -406,7 +418,15 @@ public class HSDB implements ObjectHistogramPanel.Listener, SAListener {
         }
       });
 
-    if (pidText != null) {
+    // If jvmDebugger is already set, we have been given a JVMDebugger.
+    // Otherwise, if pidText != null we are supposed to attach to it.
+    // Finally, if execPath != null, it is the path of a jdk/bin/java
+    // and coreFilename is the pathname of a core file we are
+    // supposed to attach to.
+
+    if (jvmDebugger != null) {
+      attach(jvmDebugger);
+    } else if (pidText != null) {
       attach(pidText);
     } else if (execPath != null) {
       attach(execPath, coreFilename);
@@ -1111,6 +1131,12 @@ public class HSDB implements ObjectHistogramPanel.Listener, SAListener {
           annoPanel.repaint();
         }
       });
+  }
+
+  // Attach to existing JVMDebugger, which should be already attached to a core/process.
+  private void attach(JVMDebugger d) {
+    attached = true;
+    showThreadsDialog();
   }
 
   /** NOTE we are in a different thread here than either the main

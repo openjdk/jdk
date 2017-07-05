@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3458,6 +3458,14 @@ bool GraphBuilder::try_inline_intrinsics(ciMethod* callee) {
       // the referent field can be registered by the G1 pre-barrier code.
       // Also to prevent commoning reads from this field across safepoint
       // since GC can change its value.
+      preserves_state = true;
+      break;
+
+    case vmIntrinsics::_updateCRC32:
+    case vmIntrinsics::_updateBytesCRC32:
+    case vmIntrinsics::_updateByteBufferCRC32:
+      if (!UseCRC32Intrinsics) return false;
+      cantrap = false;
       preserves_state = true;
       break;
 

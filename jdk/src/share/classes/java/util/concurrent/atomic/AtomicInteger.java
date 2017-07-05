@@ -126,7 +126,7 @@ public class AtomicInteger extends Number implements java.io.Serializable {
      *
      * @param expect the expected value
      * @param update the new value
-     * @return true if successful. False return indicates that
+     * @return {@code true} if successful. False return indicates that
      * the actual value was not equal to the expected value.
      */
     public final boolean compareAndSet(int expect, int update) {
@@ -137,13 +137,13 @@ public class AtomicInteger extends Number implements java.io.Serializable {
      * Atomically sets the value to the given updated value
      * if the current value {@code ==} the expected value.
      *
-     * <p>May <a href="package-summary.html#Spurious">fail spuriously</a>
-     * and does not provide ordering guarantees, so is only rarely an
-     * appropriate alternative to {@code compareAndSet}.
+     * <p><a href="package-summary.html#weakCompareAndSet">May fail
+     * spuriously and does not provide ordering guarantees</a>, so is
+     * only rarely an appropriate alternative to {@code compareAndSet}.
      *
      * @param expect the expected value
      * @param update the new value
-     * @return true if successful
+     * @return {@code true} if successful
      */
     public final boolean weakCompareAndSet(int expect, int update) {
         return unsafe.compareAndSwapInt(this, valueOffset, expect, update);
@@ -155,7 +155,7 @@ public class AtomicInteger extends Number implements java.io.Serializable {
      * @return the previous value
      */
     public final int getAndIncrement() {
-        return getAndAdd(1);
+        return unsafe.getAndAddInt(this, valueOffset, 1);
     }
 
     /**
@@ -164,7 +164,7 @@ public class AtomicInteger extends Number implements java.io.Serializable {
      * @return the previous value
      */
     public final int getAndDecrement() {
-        return getAndAdd(-1);
+        return unsafe.getAndAddInt(this, valueOffset, -1);
     }
 
     /**
@@ -183,7 +183,7 @@ public class AtomicInteger extends Number implements java.io.Serializable {
      * @return the updated value
      */
     public final int incrementAndGet() {
-        return getAndAdd(1) + 1;
+        return unsafe.getAndAddInt(this, valueOffset, 1) + 1;
     }
 
     /**
@@ -192,7 +192,7 @@ public class AtomicInteger extends Number implements java.io.Serializable {
      * @return the updated value
      */
     public final int decrementAndGet() {
-        return getAndAdd(-1) - 1;
+        return unsafe.getAndAddInt(this, valueOffset, -1) - 1;
     }
 
     /**
@@ -202,7 +202,7 @@ public class AtomicInteger extends Number implements java.io.Serializable {
      * @return the updated value
      */
     public final int addAndGet(int delta) {
-        return getAndAdd(delta) + delta;
+        return unsafe.getAndAddInt(this, valueOffset, delta) + delta;
     }
 
     /**

@@ -31,13 +31,19 @@ import java.io.*;
 import java.util.*;
 
 public class CLHSDB {
+
+    public CLHSDB(JVMDebugger d) {
+        jvmDebugger = d;
+    }
+
     public static void main(String[] args) {
         new CLHSDB(args).run();
     }
 
-    private void run() {
-        // At this point, if pidText != null we are supposed to attach to it.
-        // Else, if execPath != null, it is the path of a jdk/bin/java
+    public void run() {
+        // If jvmDebugger is already set, we have been given a JVMDebugger.
+        // Otherwise, if pidText != null we are supposed to attach to it.
+        // Finally, if execPath != null, it is the path of a jdk/bin/java
         // and coreFilename is the pathname of a core file we are
         // supposed to attach to.
 
@@ -49,7 +55,9 @@ public class CLHSDB {
                 }
             });
 
-        if (pidText != null) {
+        if (jvmDebugger != null) {
+            attachDebugger(jvmDebugger);
+        } else if (pidText != null) {
             attachDebugger(pidText);
         } else if (execPath != null) {
             attachDebugger(execPath, coreFilename);
@@ -96,6 +104,7 @@ public class CLHSDB {
     // Internals only below this point
     //
     private HotSpotAgent agent;
+    private JVMDebugger jvmDebugger;
     private boolean      attached;
     // These had to be made data members because they are referenced in inner classes.
     private String pidText;
@@ -120,7 +129,7 @@ public class CLHSDB {
         case (1):
             if (args[0].equals("help") || args[0].equals("-help")) {
                 doUsage();
-                System.exit(0);
+                return;
             }
             // If all numbers, it is a PID to attach to
             // Else, it is a pathname to a .../bin/java for a core file.
@@ -142,9 +151,14 @@ public class CLHSDB {
         default:
             System.out.println("HSDB Error: Too many options specified");
             doUsage();
-            System.exit(1);
+            return;
         }
     }
+
+    private void attachDebugger(JVMDebugger d) {
+        agent.attach(d);
+        attached = true;
+     }
 
     /** NOTE we are in a different thread here than either the main
         thread or the Swing/AWT event handler thread, so we must be very

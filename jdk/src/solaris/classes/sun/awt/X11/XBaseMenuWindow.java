@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -904,11 +904,12 @@ abstract public class XBaseMenuWindow extends XWindow {
      */
     public void dispose() {
         setDisposed(true);
-        EventQueue.invokeLater(new Runnable() {
+        InvocationEvent ev = new InvocationEvent(target, new Runnable() {
             public void run() {
                 doDispose();
             }
         });
+        super.postEvent(ev);
     }
 
     /**
@@ -933,11 +934,12 @@ abstract public class XBaseMenuWindow extends XWindow {
      * so events can not be processed using standart means
      */
     void postEvent(final AWTEvent event) {
-        EventQueue.invokeLater(new Runnable() {
-                public void run() {
-                    handleEvent(event);
-                }
-            });
+        InvocationEvent ev = new InvocationEvent(event.getSource(), new Runnable() {
+            public void run() {
+                handleEvent(event);
+            }
+        });
+        super.postEvent(ev);
     }
 
     /**

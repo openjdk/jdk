@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ public class AccessControlException extends SecurityException {
     private Permission perm;
 
     /**
-     * Constructs an <code>AccessControlException</code> with the
+     * Constructs an {@code AccessControlException} with the
      * specified, detailed message.
      *
      * @param   s   the detail message.
@@ -58,7 +58,7 @@ public class AccessControlException extends SecurityException {
     }
 
     /**
-     * Constructs an <code>AccessControlException</code> with the
+     * Constructs an {@code AccessControlException} with the
      * specified, detailed message, and the requested permission that caused
      * the exception.
      *

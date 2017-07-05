@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,44 +40,44 @@ import java.io.*;
  * the original object has no side effect on the copy.
  *
  * <p> The underlying signing algorithm is designated by the Signature
- * object passed to the constructor and the <code>verify</code> method.
+ * object passed to the constructor and the {@code verify} method.
  * A typical usage for signing is the following:
  *
- * <p> <code> <pre>
+ * <p> <pre>{@code
  * Signature signingEngine = Signature.getInstance(algorithm,
  *                                                 provider);
  * SignedObject so = new SignedObject(myobject, signingKey,
  *                                    signingEngine);
- * </pre> </code>
+ * }</pre>
  *
  * <p> A typical usage for verification is the following (having
- * received SignedObject <code>so</code>):
+ * received SignedObject {@code so}):
  *
- * <p> <code> <pre>
+ * <p> <pre>{@code
  * Signature verificationEngine =
  *     Signature.getInstance(algorithm, provider);
  * if (so.verify(publickey, verificationEngine))
  *     try {
  *         Object myobj = so.getObject();
  *     } catch (java.lang.ClassNotFoundException e) {};
- * </pre> </code>
+ * }</pre>
  *
  * <p> Several points are worth noting.  First, there is no need to
  * initialize the signing or verification engine, as it will be
- * re-initialized inside the constructor and the <code>verify</code>
+ * re-initialized inside the constructor and the {@code verify}
  * method. Secondly, for verification to succeed, the specified
  * public key must be the public key corresponding to the private key
  * used to generate the SignedObject.
  *
  * <p> More importantly, for flexibility reasons, the
- * constructor and <code>verify</code> method allow for
+ * constructor and {@code verify} method allow for
  * customized signature engines, which can implement signature
  * algorithms that are not installed formally as part of a crypto
  * provider.  However, it is crucial that the programmer writing the
- * verifier code be aware what <code>Signature</code> engine is being
- * used, as its own implementation of the <code>verify</code> method
+ * verifier code be aware what {@code Signature} engine is being
+ * used, as its own implementation of the {@code verify} method
  * is invoked to verify a signature.  In other words, a malicious
- * <code>Signature</code> may choose to always return true on
+ * {@code Signature} may choose to always return true on
  * verification in an attempt to bypass a security check.
  *
  * <p> The signature algorithm can be, among others, the NIST standard
@@ -92,7 +92,7 @@ import java.io.*;
  *
  * <p> The name of the Cryptography Package Provider is designated
  * also by the Signature parameter to the constructor and the
- * <code>verify</code> method.  If the provider is not
+ * {@code verify} method.  If the provider is not
  * specified, the default provider is used.  Each installation can
  * be configured to use a particular provider as default.
  *
@@ -214,8 +214,8 @@ public final class SignedObject implements Serializable {
      * @exception SignatureException if signature verification failed.
      * @exception InvalidKeyException if the verification key is invalid.
      *
-     * @return <tt>true</tt> if the signature
-     * is valid, <tt>false</tt> otherwise
+     * @return {@code true} if the signature
+     * is valid, {@code false} otherwise
      */
     public boolean verify(PublicKey verificationKey,
                           Signature verificationEngine)
