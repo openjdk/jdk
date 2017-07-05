@@ -560,6 +560,11 @@ public final class Long extends Number implements Comparable<Long> {
      * significantly better space and time performance by caching
      * frequently requested values.
      *
+     * Note that unlike the {@linkplain Integer#valueOf(int)
+     * corresponding method} in the {@code Integer} class, this method
+     * is <em>not</em> required to cache values within a particular
+     * range.
+     *
      * @param  l a long value.
      * @return a {@code Long} instance representing {@code l}.
      * @since  1.5

@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -294,6 +294,11 @@ public class PropertyDescriptor extends FeatureDescriptor {
 
             writeMethod = Introspector.findMethod(cls, writeMethodName, 1,
                           (type == null) ? null : new Class[] { type });
+            if (writeMethod != null) {
+                if (!writeMethod.getReturnType().equals(void.class)) {
+                    writeMethod = null;
+                }
+            }
             try {
                 setWriteMethod(writeMethod);
             } catch (IntrospectionException ex) {
