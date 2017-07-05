@@ -26,8 +26,8 @@
 #include "c1/c1_Canonicalizer.hpp"
 #include "c1/c1_IR.hpp"
 #include "c1/c1_ValueMap.hpp"
+#include "c1/c1_ValueStack.hpp"
 #include "utilities/bitMap.inline.hpp"
-
 
 #ifndef PRODUCT
 
@@ -192,10 +192,6 @@ Value ValueMap::find_insert(Value x) {
                    && lf->field()->holder() == field->holder()                           \
                    && (all_offsets || lf->field()->offset() == field->offset());
 
-#define MUST_KILL_EXCEPTION(must_kill, entry, value)                                     \
-  assert(entry->nesting() < nesting(), "must not find bigger nesting than current");     \
-  bool must_kill = (entry->nesting() == nesting() - 1);
-
 
 void ValueMap::kill_memory() {
   GENERIC_KILL_VALUE(MUST_KILL_MEMORY);
@@ -208,11 +204,6 @@ void ValueMap::kill_array(ValueType* type) {
 void ValueMap::kill_field(ciField* field, bool all_offsets) {
   GENERIC_KILL_VALUE(MUST_KILL_FIELD);
 }
-
-void ValueMap::kill_exception() {
-  GENERIC_KILL_VALUE(MUST_KILL_EXCEPTION);
-}
-
 
 void ValueMap::kill_map(ValueMap* map) {
   assert(is_global_value_numbering(), "only for global value numbering");
@@ -274,6 +265,8 @@ class ShortLoopOptimizer : public ValueNumberingVisitor {
   GlobalValueNumbering* _gvn;
   BlockList             _loop_blocks;
   bool                  _too_complicated_loop;
+  bool                  _has_field_store[T_ARRAY + 1];
+  bool                  _has_indexed_store[T_ARRAY + 1];
 
   // simplified access to methods of GlobalValueNumbering
   ValueMap* current_map()                        { return _gvn->current_map(); }
@@ -281,8 +274,16 @@ class ShortLoopOptimizer : public ValueNumberingVisitor {
 
   // implementation for abstract methods of ValueNumberingVisitor
   void      kill_memory()                                 { _too_complicated_loop = true; }
-  void      kill_field(ciField* field, bool all_offsets)  { current_map()->kill_field(field, all_offsets); };
-  void      kill_array(ValueType* type)                   { current_map()->kill_array(type); };
+  void      kill_field(ciField* field, bool all_offsets)  {
+    current_map()->kill_field(field, all_offsets);
+    assert(field->type()->basic_type() >= 0 && field->type()->basic_type() <= T_ARRAY, "Invalid type");
+    _has_field_store[field->type()->basic_type()] = true;
+  }
+  void      kill_array(ValueType* type)                   {
+    current_map()->kill_array(type);
+    BasicType basic_type = as_BasicType(type); assert(basic_type >= 0 && basic_type <= T_ARRAY, "Invalid type");
+    _has_indexed_store[basic_type] = true;
+  }
 
  public:
   ShortLoopOptimizer(GlobalValueNumbering* gvn)
@@ -290,11 +291,141 @@ class ShortLoopOptimizer : public ValueNumberingVisitor {
     , _loop_blocks(ValueMapMaxLoopSize)
     , _too_complicated_loop(false)
   {
+    for (int i=0; i<= T_ARRAY; i++){
+      _has_field_store[i] = false;
+      _has_indexed_store[i] = false;
+    }
+  }
+
+  bool has_field_store(BasicType type) {
+    assert(type >= 0 && type <= T_ARRAY, "Invalid type");
+    return _has_field_store[type];
+  }
+
+  bool has_indexed_store(BasicType type) {
+    assert(type >= 0 && type <= T_ARRAY, "Invalid type");
+    return _has_indexed_store[type];
   }
 
   bool process(BlockBegin* loop_header);
 };
 
+class LoopInvariantCodeMotion : public StackObj  {
+ private:
+  GlobalValueNumbering* _gvn;
+  ShortLoopOptimizer*   _short_loop_optimizer;
+  Instruction*          _insertion_point;
+  ValueStack *          _state;
+
+  void set_invariant(Value v) const    { _gvn->set_processed(v); }
+  bool is_invariant(Value v) const     { return _gvn->is_processed(v); }
+
+  void process_block(BlockBegin* block);
+
+ public:
+  LoopInvariantCodeMotion(ShortLoopOptimizer *slo, GlobalValueNumbering* gvn, BlockBegin* loop_header, BlockList* loop_blocks);
+};
+
+LoopInvariantCodeMotion::LoopInvariantCodeMotion(ShortLoopOptimizer *slo, GlobalValueNumbering* gvn, BlockBegin* loop_header, BlockList* loop_blocks)
+  : _gvn(gvn), _short_loop_optimizer(slo) {
+
+  TRACE_VALUE_NUMBERING(tty->print_cr("using loop invariant code motion loop_header = %d", loop_header->block_id()));
+  TRACE_VALUE_NUMBERING(tty->print_cr("** loop invariant code motion for short loop B%d", loop_header->block_id()));
+
+  BlockBegin* insertion_block = loop_header->dominator();
+  if (insertion_block->number_of_preds() == 0) {
+    return;  // only the entry block does not have a predecessor
+  }
+
+  assert(insertion_block->end()->as_Base() == NULL, "cannot insert into entry block");
+  _insertion_point = insertion_block->end()->prev();
+
+  BlockEnd *block_end = insertion_block->end();
+  _state = block_end->state_before();
+
+  if (!_state) {
+    // If, TableSwitch and LookupSwitch always have state_before when
+    // loop invariant code motion happens..
+    assert(block_end->as_Goto(), "Block has to be goto");
+    _state = block_end->state();
+  }
+
+  // the loop_blocks are filled by going backward from the loop header, so this processing order is best
+  assert(loop_blocks->at(0) == loop_header, "loop header must be first loop block");
+  process_block(loop_header);
+  for (int i = loop_blocks->length() - 1; i >= 1; i--) {
+    process_block(loop_blocks->at(i));
+  }
+}
+
+void LoopInvariantCodeMotion::process_block(BlockBegin* block) {
+  TRACE_VALUE_NUMBERING(tty->print_cr("processing block B%d", block->block_id()));
+
+  Instruction* prev = block;
+  Instruction* cur = block->next();
+
+  while (cur != NULL) {
+
+    // determine if cur instruction is loop invariant
+    // only selected instruction types are processed here
+    bool cur_invariant = false;
+
+    if (cur->as_Constant() != NULL) {
+      cur_invariant = !cur->can_trap();
+    } else if (cur->as_ArithmeticOp() != NULL || cur->as_LogicOp() != NULL || cur->as_ShiftOp() != NULL) {
+      assert(cur->as_Op2() != NULL, "must be Op2");
+      Op2* op2 = (Op2*)cur;
+      cur_invariant = !op2->can_trap() && is_invariant(op2->x()) && is_invariant(op2->y());
+    } else if (cur->as_LoadField() != NULL) {
+      LoadField* lf = (LoadField*)cur;
+      // deoptimizes on NullPointerException
+      cur_invariant = !lf->needs_patching() && !lf->field()->is_volatile() && !_short_loop_optimizer->has_field_store(lf->field()->type()->basic_type()) && is_invariant(lf->obj());
+    } else if (cur->as_ArrayLength() != NULL) {
+      ArrayLength *length = cur->as_ArrayLength();
+      cur_invariant = is_invariant(length->array());
+    } else if (cur->as_LoadIndexed() != NULL) {
+      LoadIndexed *li = (LoadIndexed *)cur->as_LoadIndexed();
+      cur_invariant = !_short_loop_optimizer->has_indexed_store(as_BasicType(cur->type())) && is_invariant(li->array()) && is_invariant(li->index());
+    }
+
+    if (cur_invariant) {
+      // perform value numbering and mark instruction as loop-invariant
+      _gvn->substitute(cur);
+
+      if (cur->as_Constant() == NULL) {
+        // ensure that code for non-constant instructions is always generated
+        cur->pin();
+      }
+
+      // remove cur instruction from loop block and append it to block before loop
+      Instruction* next = cur->next();
+      Instruction* in = _insertion_point->next();
+      _insertion_point = _insertion_point->set_next(cur);
+      cur->set_next(in);
+
+      //  Deoptimize on exception
+      cur->set_flag(Instruction::DeoptimizeOnException, true);
+
+      //  Clear exception handlers
+      cur->set_exception_handlers(NULL);
+
+      TRACE_VALUE_NUMBERING(tty->print_cr("Instruction %c%d is loop invariant", cur->type()->tchar(), cur->id()));
+
+      if (cur->state_before() != NULL) {
+        cur->set_state_before(_state->copy());
+      }
+      if (cur->exception_state() != NULL) {
+        cur->set_exception_state(_state->copy());
+      }
+
+      cur = prev->set_next(next);
+
+    } else {
+      prev = cur;
+      cur = cur->next();
+    }
+  }
+}
 
 bool ShortLoopOptimizer::process(BlockBegin* loop_header) {
   TRACE_VALUE_NUMBERING(tty->print_cr("** loop header block"));
@@ -316,6 +447,10 @@ bool ShortLoopOptimizer::process(BlockBegin* loop_header) {
     for (int j = block->number_of_preds() - 1; j >= 0; j--) {
       BlockBegin* pred = block->pred_at(j);
 
+      if (pred->is_set(BlockBegin::osr_entry_flag)) {
+        return false;
+      }
+
       ValueMap* pred_map = value_map_of(pred);
       if (pred_map != NULL) {
         current_map()->kill_map(pred_map);
@@ -336,6 +471,12 @@ bool ShortLoopOptimizer::process(BlockBegin* loop_header) {
     }
   }
 
+  bool optimistic = this->_gvn->compilation()->is_optimistic();
+
+  if (UseLoopInvariantCodeMotion && optimistic) {
+    LoopInvariantCodeMotion code_motion(this, _gvn, loop_header, &_loop_blocks);
+  }
+
   TRACE_VALUE_NUMBERING(tty->print_cr("** loop successfully optimized"));
   return true;
 }
@@ -344,11 +485,11 @@ bool ShortLoopOptimizer::process(BlockBegin* loop_header) {
 GlobalValueNumbering::GlobalValueNumbering(IR* ir)
   : _current_map(NULL)
   , _value_maps(ir->linear_scan_order()->length(), NULL)
+  , _compilation(ir->compilation())
 {
   TRACE_VALUE_NUMBERING(tty->print_cr("****** start of global value numbering"));
 
   ShortLoopOptimizer short_loop_optimizer(this);
-  int subst_count = 0;
 
   BlockList* blocks = ir->linear_scan_order();
   int num_blocks = blocks->length();
@@ -356,6 +497,12 @@ GlobalValueNumbering::GlobalValueNumbering(IR* ir)
   BlockBegin* start_block = blocks->at(0);
   assert(start_block == ir->start() && start_block->number_of_preds() == 0 && start_block->dominator() == NULL, "must be start block");
   assert(start_block->next()->as_Base() != NULL && start_block->next()->next() == NULL, "start block must not have instructions");
+
+  // method parameters are not linked in instructions list, so process them separateley
+  for_each_state_value(start_block->state(), value,
+     assert(value->as_Local() != NULL, "only method parameters allowed");
+     set_processed(value);
+  );
 
   // initial, empty value map with nesting 0
   set_value_map_of(start_block, new ValueMap());
@@ -374,7 +521,7 @@ GlobalValueNumbering::GlobalValueNumbering(IR* ir)
     // create new value map with increased nesting
     _current_map = new ValueMap(value_map_of(dominator));
 
-    if (num_preds == 1) {
+    if (num_preds == 1 && !block->is_set(BlockBegin::exception_entry_flag)) {
       assert(dominator == block->pred_at(0), "dominator must be equal to predecessor");
       // nothing to do here
 
@@ -403,36 +550,41 @@ GlobalValueNumbering::GlobalValueNumbering(IR* ir)
       }
     }
 
-    if (block->is_set(BlockBegin::exception_entry_flag)) {
-      current_map()->kill_exception();
-    }
+    // phi functions are not linked in instructions list, so process them separateley
+    for_each_phi_fun(block, phi,
+      set_processed(phi);
+    );
 
     TRACE_VALUE_NUMBERING(tty->print("value map before processing block: "); current_map()->print());
 
     // visit all instructions of this block
     for (Value instr = block->next(); instr != NULL; instr = instr->next()) {
-      assert(!instr->has_subst(), "substitution already set");
-
       // check if instruction kills any values
       instr->visit(this);
-
-      if (instr->hash() != 0) {
-        Value f = current_map()->find_insert(instr);
-        if (f != instr) {
-          assert(!f->has_subst(), "can't have a substitution");
-          instr->set_subst(f);
-          subst_count++;
-        }
-      }
+      // perform actual value numbering
+      substitute(instr);
     }
 
     // remember value map for successors
     set_value_map_of(block, current_map());
   }
 
-  if (subst_count != 0) {
+  if (_has_substitutions) {
     SubstitutionResolver resolver(ir);
   }
 
   TRACE_VALUE_NUMBERING(tty->print("****** end of global value numbering. "); ValueMap::print_statistics());
+}
+
+void GlobalValueNumbering::substitute(Instruction* instr) {
+  assert(!instr->has_subst(), "substitution already set");
+  Value subst = current_map()->find_insert(instr);
+  if (subst != instr) {
+    assert(!subst->has_subst(), "can't have a substitution");
+
+    TRACE_VALUE_NUMBERING(tty->print_cr("substitution for %d set to %d", instr->id(), subst->id()));
+    instr->set_subst(subst);
+    _has_substitutions = true;
+  }
+  set_processed(instr);
 }

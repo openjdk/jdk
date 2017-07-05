@@ -790,6 +790,17 @@ int ciMethod::scale_count(int count, float prof_factor) {
   return count;
 }
 
+
+// ------------------------------------------------------------------
+// ciMethod::is_special_get_caller_class_method
+//
+bool ciMethod::is_ignored_by_security_stack_walk() const {
+  check_is_loaded();
+  VM_ENTRY_MARK;
+  return get_Method()->is_ignored_by_security_stack_walk();
+}
+
+
 // ------------------------------------------------------------------
 // invokedynamic support
 

@@ -287,6 +287,7 @@ public:
 
   // Probing
   static oop lookup(Symbol* symbol);
+  static oop lookup(jchar* chars, int length);
 
   // Interning
   static oop intern(Symbol* symbol, TRAPS);

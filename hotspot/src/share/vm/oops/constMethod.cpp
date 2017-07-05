@@ -363,6 +363,26 @@ AnnotationArray** ConstMethod::default_annotations_addr() const {
   return (AnnotationArray**)constMethod_end() - offset;
 }
 
+// copy annotations from 'cm' to 'this'
+void ConstMethod::copy_annotations_from(ConstMethod* cm) {
+  if (cm->has_method_annotations()) {
+    assert(has_method_annotations(), "should be allocated already");
+    set_method_annotations(cm->method_annotations());
+  }
+  if (cm->has_parameter_annotations()) {
+    assert(has_parameter_annotations(), "should be allocated already");
+    set_parameter_annotations(cm->parameter_annotations());
+  }
+  if (cm->has_type_annotations()) {
+    assert(has_type_annotations(), "should be allocated already");
+    set_type_annotations(cm->type_annotations());
+  }
+  if (cm->has_default_annotations()) {
+    assert(has_default_annotations(), "should be allocated already");
+    set_default_annotations(cm->default_annotations());
+  }
+}
+
 // Printing
 
 void ConstMethod::print_on(outputStream* st) const {

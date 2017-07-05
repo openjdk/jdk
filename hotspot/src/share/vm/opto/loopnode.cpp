@@ -2251,6 +2251,11 @@ void PhaseIdealLoop::build_and_optimize(bool do_split_ifs, bool skip_loop_opts) 
     return;
   }
 
+  // clear out the dead code after build_loop_late
+  while (_deadlist.size()) {
+    _igvn.remove_globally_dead_node(_deadlist.pop());
+  }
+
   if (stop_early) {
     assert(do_expensive_nodes, "why are we here?");
     if (process_expensive_nodes()) {
@@ -2260,9 +2265,7 @@ void PhaseIdealLoop::build_and_optimize(bool do_split_ifs, bool skip_loop_opts) 
       // nodes again.
       C->set_major_progress();
     }
-
     _igvn.optimize();
-
     return;
   }
 
@@ -2271,11 +2274,6 @@ void PhaseIdealLoop::build_and_optimize(bool do_split_ifs, bool skip_loop_opts) 
   // For example, peeling. Eliminate them before next loop optimizations.
   if (UseLoopPredicate || LoopLimitCheck) {
     eliminate_useless_predicates();
-  }
-
-  // clear out the dead code
-  while(_deadlist.size()) {
-    _igvn.remove_globally_dead_node(_deadlist.pop());
   }
 
 #ifndef PRODUCT

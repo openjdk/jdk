@@ -228,10 +228,16 @@ static jlong *float_signflip_pool  = double_quadword(&fp_signmask_pool[3*2], CON
 static jlong *double_signflip_pool = double_quadword(&fp_signmask_pool[4*2], CONST64(0x8000000000000000), CONST64(0x8000000000000000));
 
 // Offset hacking within calls.
-static int pre_call_FPU_size() {
-  if (Compile::current()->in_24_bit_fp_mode())
-    return 6; // fldcw
-  return 0;
+static int pre_call_resets_size() {
+  int size = 0;
+  Compile* C = Compile::current();
+  if (C->in_24_bit_fp_mode()) {
+    size += 6; // fldcw
+  }
+  if (C->max_vector_size() > 16) {
+    size += 3; // vzeroupper
+  }
+  return size;
 }
 
 static int preserve_SP_size() {
@@ -242,21 +248,21 @@ static int preserve_SP_size() {
 //       from the start of the call to the point where the return address
 //       will point.
 int MachCallStaticJavaNode::ret_addr_offset() {
-  int offset = 5 + pre_call_FPU_size();  // 5 bytes from start of call to where return address points
+  int offset = 5 + pre_call_resets_size();  // 5 bytes from start of call to where return address points
   if (_method_handle_invoke)
     offset += preserve_SP_size();
   return offset;
 }
 
 int MachCallDynamicJavaNode::ret_addr_offset() {
-  return 10 + pre_call_FPU_size();  // 10 bytes from start of call to where return address points
+  return 10 + pre_call_resets_size();  // 10 bytes from start of call to where return address points
 }
 
 static int sizeof_FFree_Float_Stack_All = -1;
 
 int MachCallRuntimeNode::ret_addr_offset() {
   assert(sizeof_FFree_Float_Stack_All != -1, "must have been emitted already");
-  return sizeof_FFree_Float_Stack_All + 5 + pre_call_FPU_size();
+  return sizeof_FFree_Float_Stack_All + 5 + pre_call_resets_size();
 }
 
 // Indicate if the safepoint node needs the polling page as an input.
@@ -272,7 +278,7 @@ bool SafePointNode::needs_polling_address_input() {
 // The address of the call instruction needs to be 4-byte aligned to
 // ensure that it does not span a cache line so that it can be patched.
 int CallStaticJavaDirectNode::compute_padding(int current_offset) const {
-  current_offset += pre_call_FPU_size();  // skip fldcw, if any
+  current_offset += pre_call_resets_size();  // skip fldcw, if any
   current_offset += 1;      // skip call opcode byte
   return round_to(current_offset, alignment_required()) - current_offset;
 }
@@ -280,7 +286,7 @@ int CallStaticJavaDirectNode::compute_padding(int current_offset) const {
 // The address of the call instruction needs to be 4-byte aligned to
 // ensure that it does not span a cache line so that it can be patched.
 int CallStaticJavaHandleNode::compute_padding(int current_offset) const {
-  current_offset += pre_call_FPU_size();  // skip fldcw, if any
+  current_offset += pre_call_resets_size();  // skip fldcw, if any
   current_offset += preserve_SP_size();   // skip mov rbp, rsp
   current_offset += 1;      // skip call opcode byte
   return round_to(current_offset, alignment_required()) - current_offset;
@@ -289,7 +295,7 @@ int CallStaticJavaHandleNode::compute_padding(int current_offset) const {
 // The address of the call instruction needs to be 4-byte aligned to
 // ensure that it does not span a cache line so that it can be patched.
 int CallDynamicJavaDirectNode::compute_padding(int current_offset) const {
-  current_offset += pre_call_FPU_size();  // skip fldcw, if any
+  current_offset += pre_call_resets_size();  // skip fldcw, if any
   current_offset += 5;      // skip MOV instruction
   current_offset += 1;      // skip call opcode byte
   return round_to(current_offset, alignment_required()) - current_offset;
@@ -583,16 +589,20 @@ void MachEpilogNode::format( PhaseRegAlloc *ra_, outputStream* st ) const {
   // Remove two words for return addr and rbp,
   framesize -= 2*wordSize;
 
-  if( C->in_24_bit_fp_mode() ) {
+  if (C->max_vector_size() > 16) {
+    st->print("VZEROUPPER");
+    st->cr(); st->print("\t");
+  }
+  if (C->in_24_bit_fp_mode()) {
     st->print("FLDCW  standard control word");
     st->cr(); st->print("\t");
   }
-  if( framesize ) {
+  if (framesize) {
     st->print("ADD    ESP,%d\t# Destroy frame",framesize);
     st->cr(); st->print("\t");
   }
   st->print_cr("POPL   EBP"); st->print("\t");
-  if( do_polling() && C->is_method_compilation() ) {
+  if (do_polling() && C->is_method_compilation()) {
     st->print("TEST   PollPage,EAX\t! Poll Safepoint");
     st->cr(); st->print("\t");
   }
@@ -602,8 +612,14 @@ void MachEpilogNode::format( PhaseRegAlloc *ra_, outputStream* st ) const {
 void MachEpilogNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   Compile *C = ra_->C;
 
+  if (C->max_vector_size() > 16) {
+    // Clear upper bits of YMM registers when current compiled code uses
+    // wide vectors to avoid AVX <-> SSE transition penalty during call.
+    MacroAssembler masm(&cbuf);
+    masm.vzeroupper();
+  }
   // If method set FPU control word, restore to standard control word
-  if( C->in_24_bit_fp_mode() ) {
+  if (C->in_24_bit_fp_mode()) {
     MacroAssembler masm(&cbuf);
     masm.fldcw(ExternalAddress(StubRoutines::addr_fpu_cntrl_wrd_std()));
   }
@@ -615,12 +631,11 @@ void MachEpilogNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
 
   // Note that VerifyStackAtCalls' Majik cookie does not change the frame size popped here
 
-  if( framesize >= 128 ) {
+  if (framesize >= 128) {
     emit_opcode(cbuf, 0x81); // add  SP, #framesize
     emit_rm(cbuf, 0x3, 0x00, ESP_enc);
     emit_d32(cbuf, framesize);
-  }
-  else if( framesize ) {
+  } else if (framesize) {
     emit_opcode(cbuf, 0x83); // add  SP, #framesize
     emit_rm(cbuf, 0x3, 0x00, ESP_enc);
     emit_d8(cbuf, framesize);
@@ -628,7 +643,7 @@ void MachEpilogNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
 
   emit_opcode(cbuf, 0x58 | EBP_enc);
 
-  if( do_polling() && C->is_method_compilation() ) {
+  if (do_polling() && C->is_method_compilation()) {
     cbuf.relocate(cbuf.insts_end(), relocInfo::poll_return_type, 0);
     emit_opcode(cbuf,0x85);
     emit_rm(cbuf, 0x0, EAX_enc, 0x5); // EAX
@@ -640,7 +655,8 @@ uint MachEpilogNode::size(PhaseRegAlloc *ra_) const {
   Compile *C = ra_->C;
   // If method set FPU control word, restore to standard control word
   int size = C->in_24_bit_fp_mode() ? 6 : 0;
-  if( do_polling() && C->is_method_compilation() ) size += 6;
+  if (C->max_vector_size() > 16) size += 3; // vzeroupper
+  if (do_polling() && C->is_method_compilation()) size += 6;
 
   int framesize = C->frame_slots() << LogBytesPerInt;
   assert((framesize & (StackAlignmentInBytes-1)) == 0, "frame size not aligned");
@@ -649,7 +665,7 @@ uint MachEpilogNode::size(PhaseRegAlloc *ra_) const {
 
   size++; // popl rbp,
 
-  if( framesize >= 128 ) {
+  if (framesize >= 128) {
     size += 6;
   } else {
     size += framesize ? 3 : 0;
@@ -1853,20 +1869,26 @@ encode %{
   %}
 
 
-  enc_class pre_call_FPU %{
+  enc_class pre_call_resets %{
     // If method sets FPU control word restore it here
     debug_only(int off0 = cbuf.insts_size());
-    if( Compile::current()->in_24_bit_fp_mode() ) {
-      MacroAssembler masm(&cbuf);
-      masm.fldcw(ExternalAddress(StubRoutines::addr_fpu_cntrl_wrd_std()));
+    if (ra_->C->in_24_bit_fp_mode()) {
+      MacroAssembler _masm(&cbuf);
+      __ fldcw(ExternalAddress(StubRoutines::addr_fpu_cntrl_wrd_std()));
+    }
+    if (ra_->C->max_vector_size() > 16) {
+      // Clear upper bits of YMM registers when current compiled code uses
+      // wide vectors to avoid AVX <-> SSE transition penalty during call.
+      MacroAssembler _masm(&cbuf);
+      __ vzeroupper();
     }
     debug_only(int off1 = cbuf.insts_size());
-    assert(off1 - off0 == pre_call_FPU_size(), "correct size prediction");
+    assert(off1 - off0 == pre_call_resets_size(), "correct size prediction");
   %}
 
   enc_class post_call_FPU %{
     // If method sets FPU control word do it here also
-    if( Compile::current()->in_24_bit_fp_mode() ) {
+    if (Compile::current()->in_24_bit_fp_mode()) {
       MacroAssembler masm(&cbuf);
       masm.fldcw(ExternalAddress(StubRoutines::addr_fpu_cntrl_wrd_24()));
     }
@@ -1877,17 +1899,17 @@ encode %{
     // who we intended to call.
     cbuf.set_insts_mark();
     $$$emit8$primary;
-    if ( !_method ) {
+    if (!_method) {
       emit_d32_reloc(cbuf, ($meth$$method - (int)(cbuf.insts_end()) - 4),
                      runtime_call_Relocation::spec(), RELOC_IMM32 );
-    } else if(_optimized_virtual) {
+    } else if (_optimized_virtual) {
       emit_d32_reloc(cbuf, ($meth$$method - (int)(cbuf.insts_end()) - 4),
                      opt_virtual_call_Relocation::spec(), RELOC_IMM32 );
     } else {
       emit_d32_reloc(cbuf, ($meth$$method - (int)(cbuf.insts_end()) - 4),
                      static_call_Relocation::spec(), RELOC_IMM32 );
     }
-    if( _method ) {  // Emit stub for static call
+    if (_method) {  // Emit stub for static call
       emit_java_to_interp(cbuf);
     }
   %}
@@ -12828,7 +12850,7 @@ instruct CallStaticJavaDirect(method meth) %{
   ins_cost(300);
   format %{ "CALL,static " %}
   opcode(0xE8); /* E8 cd */
-  ins_encode( pre_call_FPU,
+  ins_encode( pre_call_resets,
               Java_Static_Call( meth ),
               call_epilog,
               post_call_FPU );
@@ -12849,7 +12871,7 @@ instruct CallStaticJavaHandle(method meth, eBPRegP ebp_mh_SP_save) %{
   ins_cost(300);
   format %{ "CALL,static/MethodHandle " %}
   opcode(0xE8); /* E8 cd */
-  ins_encode( pre_call_FPU,
+  ins_encode( pre_call_resets,
               preserve_SP,
               Java_Static_Call( meth ),
               restore_SP,
@@ -12870,7 +12892,7 @@ instruct CallDynamicJavaDirect(method meth) %{
   format %{ "MOV    EAX,(oop)-1\n\t"
             "CALL,dynamic" %}
   opcode(0xE8); /* E8 cd */
-  ins_encode( pre_call_FPU,
+  ins_encode( pre_call_resets,
               Java_Dynamic_Call( meth ),
               call_epilog,
               post_call_FPU );
@@ -12887,7 +12909,7 @@ instruct CallRuntimeDirect(method meth) %{
   format %{ "CALL,runtime " %}
   opcode(0xE8); /* E8 cd */
   // Use FFREEs to clear entries in float stack
-  ins_encode( pre_call_FPU,
+  ins_encode( pre_call_resets,
               FFree_Float_Stack_All,
               Java_To_Runtime( meth ),
               post_call_FPU );
@@ -12902,7 +12924,7 @@ instruct CallLeafDirect(method meth) %{
   ins_cost(300);
   format %{ "CALL_LEAF,runtime " %}
   opcode(0xE8); /* E8 cd */
-  ins_encode( pre_call_FPU,
+  ins_encode( pre_call_resets,
               FFree_Float_Stack_All,
               Java_To_Runtime( meth ),
               Verify_FPU_For_Leaf, post_call_FPU );

@@ -449,6 +449,17 @@ void Compile::shorten_branches(uint* blk_starts, int& code_size, int& reloc_size
       int max_loop_pad = nb->code_alignment()-relocInfo::addr_unit();
       if (max_loop_pad > 0) {
         assert(is_power_of_2(max_loop_pad+relocInfo::addr_unit()), "");
+        // Adjust last_call_adr and/or last_avoid_back_to_back_adr.
+        // If either is the last instruction in this block, bump by
+        // max_loop_pad in lock-step with blk_size, so sizing
+        // calculations in subsequent blocks still can conservatively
+        // detect that it may the last instruction in this block.
+        if (last_call_adr == blk_starts[i]+blk_size) {
+          last_call_adr += max_loop_pad;
+        }
+        if (last_avoid_back_to_back_adr == blk_starts[i]+blk_size) {
+          last_avoid_back_to_back_adr += max_loop_pad;
+        }
         blk_size += max_loop_pad;
       }
     }
@@ -1193,8 +1204,6 @@ void Compile::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
   int last_call_offset = -1;
   int last_avoid_back_to_back_offset = -1;
 #ifdef ASSERT
-  int block_alignment_padding = 0;
-
   uint* jmp_target = NEW_RESOURCE_ARRAY(uint,nblocks);
   uint* jmp_offset = NEW_RESOURCE_ARRAY(uint,nblocks);
   uint* jmp_size   = NEW_RESOURCE_ARRAY(uint,nblocks);
@@ -1228,8 +1237,6 @@ void Compile::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
   Node *delay_slot = NULL;
 
   for (uint i=0; i < nblocks; i++) {
-    guarantee(blk_starts[i] >= (uint)cb->insts_size(),"should not increase size");
-
     Block *b = _cfg->_blocks[i];
 
     Node *head = b->head();
@@ -1250,14 +1257,6 @@ void Compile::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
     jmp_offset[i] = 0;
     jmp_size[i]   = 0;
     jmp_rule[i]   = 0;
-
-    // Maximum alignment padding for loop block was used
-    // during first round of branches shortening, as result
-    // padding for nodes (sfpt after call) was not added.
-    // Take this into account for block's size change check
-    // and allow increase block's size by the difference
-    // of maximum and actual alignment paddings.
-    int orig_blk_size = blk_starts[i+1] - blk_starts[i] + block_alignment_padding;
 #endif
     int blk_offset = current_offset;
 
@@ -1557,8 +1556,6 @@ void Compile::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
       }
 
     } // End for all instructions in block
-    assert((uint)blk_offset <= blk_starts[i], "shouldn't increase distance");
-    blk_starts[i] = blk_offset;
 
     // If the next block is the top of a loop, pad this block out to align
     // the loop top a little. Helps prevent pipe stalls at loop back branches.
@@ -1572,16 +1569,13 @@ void Compile::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
         nop->emit(*cb, _regalloc);
         current_offset = cb->insts_size();
       }
-#ifdef ASSERT
-      int max_loop_pad = nb->code_alignment()-relocInfo::addr_unit();
-      block_alignment_padding = (max_loop_pad - padding);
-      assert(block_alignment_padding >= 0, "sanity");
-#endif
     }
     // Verify that the distance for generated before forward
     // short branches is still valid.
-    assert(orig_blk_size >= (current_offset - blk_offset), "shouldn't increase block size");
+    guarantee((int)(blk_starts[i+1] - blk_starts[i]) >= (current_offset - blk_offset), "shouldn't increase block size");
 
+    // Save new block start offset
+    blk_starts[i] = blk_offset;
   } // End of for all blocks
   blk_starts[nblocks] = current_offset;
 
