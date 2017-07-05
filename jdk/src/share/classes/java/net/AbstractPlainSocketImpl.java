@@ -457,10 +457,10 @@ abstract class AbstractPlainSocketImpl extends SocketImpl
         }
 
         /*
-         * If connection has been reset then return 0 to indicate
-         * there are no buffered bytes.
+         * If connection has been reset or shut down for input, then return 0
+         * to indicate there are no buffered bytes.
          */
-        if (isConnectionReset()) {
+        if (isConnectionReset() || shut_rd) {
             return 0;
         }
 

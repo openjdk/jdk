@@ -677,9 +677,7 @@ public class ValueConversions {
             EMPTY = IMPL_LOOKUP.findStatic(THIS_CLASS, "empty", ignoreType.dropParameterTypes(0, 1));
             NEW_ARRAY = IMPL_LOOKUP.findStatic(THIS_CLASS, "newArray", MethodType.methodType(Object[].class, int.class));
         } catch (NoSuchMethodException | IllegalAccessException ex) {
-            Error err = new InternalError("uncaught exception");
-            err.initCause(ex);
-            throw err;
+            throw new InternalError("uncaught exception", ex);
         }
     }
 
@@ -693,9 +691,7 @@ public class ValueConversions {
                 COPY_AS_PRIMITIVE_ARRAY = IMPL_LOOKUP.findStatic(THIS_CLASS, "copyAsPrimitiveArray", MethodType.methodType(Object.class, Wrapper.class, Object[].class));
                 MAKE_LIST = IMPL_LOOKUP.findStatic(THIS_CLASS, "makeList", MethodType.methodType(List.class, Object[].class));
             } catch (ReflectiveOperationException ex) {
-                Error err = new InternalError("uncaught exception");
-                err.initCause(ex);
-                throw err;
+                throw new InternalError("uncaught exception", ex);
             }
         }
     }

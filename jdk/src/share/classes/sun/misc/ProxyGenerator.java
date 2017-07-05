@@ -460,7 +460,7 @@ public class ProxyGenerator {
             methods.add(generateStaticInitializer());
 
         } catch (IOException e) {
-            throw new InternalError("unexpected I/O Exception");
+            throw new InternalError("unexpected I/O Exception", e);
         }
 
         if (methods.size() > 65535) {
@@ -540,7 +540,7 @@ public class ProxyGenerator {
             dout.writeShort(0); // (no ClassFile attributes for proxy classes)
 
         } catch (IOException e) {
-            throw new InternalError("unexpected I/O Exception");
+            throw new InternalError("unexpected I/O Exception", e);
         }
 
         return bout.toByteArray();

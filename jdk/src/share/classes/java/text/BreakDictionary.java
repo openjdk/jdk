@@ -154,7 +154,7 @@ class BreakDictionary {
             );
         }
         catch (PrivilegedActionException e) {
-            throw new InternalError(e.toString());
+            throw new InternalError(e.toString(), e);
         }
 
         byte[] buf = new byte[8];

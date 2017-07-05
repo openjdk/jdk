@@ -99,7 +99,6 @@ public class KRBError implements java.io.Serializable {
     private Checksum eCksum; //optional
 
     private PAData[] pa;    // PA-DATA in eData
-    private int pa_eType;   // The 1st etype appeared in salt-related PAData
 
     private static boolean DEBUG = Krb5.DEBUG;
 
@@ -266,50 +265,8 @@ public class KRBError implements java.io.Serializable {
             DerValue tmp = derPA.data.getDerValue();
             PAData pa_data = new PAData(tmp);
             paList.add(pa_data);
-            int pa_type = pa_data.getType();
-            byte[] pa_value = pa_data.getValue();
             if (DEBUG) {
-                System.out.println(">>>Pre-Authentication Data:");
-                System.out.println("\t PA-DATA type = " + pa_type);
-            }
-
-            switch(pa_type) {
-                case Krb5.PA_ENC_TIMESTAMP:
-                    if (DEBUG) {
-                        System.out.println("\t PA-ENC-TIMESTAMP");
-                    }
-                    break;
-                case Krb5.PA_ETYPE_INFO:
-                    if (pa_value != null) {
-                        DerValue der = new DerValue(pa_value);
-                        while (der.data.available() > 0) {
-                            DerValue value = der.data.getDerValue();
-                            ETypeInfo info = new ETypeInfo(value);
-                            if (pa_eType == 0) pa_eType = info.getEType();
-                            if (DEBUG) {
-                                System.out.println("\t PA-ETYPE-INFO etype = " + info.getEType());
-                                System.out.println("\t PA-ETYPE-INFO salt = " + info.getSalt());
-                            }
-                        }
-                    }
-                    break;
-                case Krb5.PA_ETYPE_INFO2:
-                    if (pa_value != null) {
-                        DerValue der = new DerValue(pa_value);
-                        while (der.data.available() > 0) {
-                            DerValue value = der.data.getDerValue();
-                            ETypeInfo2 info2 = new ETypeInfo2(value);
-                            if (pa_eType == 0) pa_eType = info2.getEType();
-                            if (DEBUG) {
-                                System.out.println("\t PA-ETYPE-INFO2 etype = " + info2.getEType());
-                                System.out.println("\t PA-ETYPE-INFO2 salt = " + info2.getSalt());
-                            }
-                        }
-                    }
-                    break;
-                default:
-                    // Unknown Pre-auth type
-                    break;
+                System.out.println(pa_data);
             }
         }
         pa = paList.toArray(new PAData[paList.size()]);
@@ -338,10 +295,6 @@ public class KRBError implements java.io.Serializable {
     // access pre-auth info
     public final PAData[] getPA() {
         return pa;
-    }
-
-    public final int getEType() {
-        return pa_eType;
     }
 
     public final String getErrorString() {

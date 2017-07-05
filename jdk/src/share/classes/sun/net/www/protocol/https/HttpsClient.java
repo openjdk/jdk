@@ -529,7 +529,7 @@ final class HttpsClient extends HttpClient
                     new BufferedOutputStream(serverSocket.getOutputStream()),
                     false, encoding);
             } catch (UnsupportedEncodingException e) {
-                throw new InternalError(encoding+" encoding not found");
+                throw new InternalError(encoding+" encoding not found", e);
             }
 
             // check URL spoofing if it has not been checked under handshaking

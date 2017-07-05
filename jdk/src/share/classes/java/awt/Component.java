@@ -3776,11 +3776,10 @@ public abstract class Component implements ImageObserver, MenuContainer,
             createBufferStrategy(numBuffers, bufferCaps);
             return; // Success
         } catch (AWTException e) {
-            // Failed
+            // Code should never reach here (an unaccelerated blitting
+            // strategy should always work)
+            throw new InternalError("Could not create a buffer strategy", e);
         }
-        // Code should never reach here (an unaccelerated blitting
-        // strategy should always work)
-        throw new InternalError("Could not create a buffer strategy");
     }
 
     /**
@@ -7910,7 +7909,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
                 res = toFocus.requestFocusInWindow(CausedFocusEvent.Cause.TRAVERSAL_BACKWARD);
             }
         }
-        if (!res) {
+        if (clearOnFailure && !res) {
             if (focusLog.isLoggable(PlatformLogger.FINER)) {
                 focusLog.finer("clear global focus owner");
             }

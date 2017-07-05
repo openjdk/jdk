@@ -423,7 +423,8 @@ JDK_ALL_TARGETS =
 # Stable othervm testruns (minus items from PROBLEM_LIST)
 #   Using samevm has problems, and doesn't help performance as much as others.
 JDK_ALL_TARGETS += jdk_awt
-jdk_awt: $(call TestDirs, com/sun/awt java/awt sun/awt)
+jdk_awt: $(call TestDirs, com/sun/awt java/awt sun/awt \
+         javax/imageio javax/print sun/pisces)
 	$(call RunOthervmBatch)
 
 # Stable samevm testruns (minus items from PROBLEM_LIST)
@@ -486,9 +487,8 @@ jdk_math: $(call TestDirs, java/math)
 # Stable samevm testruns (minus items from PROBLEM_LIST)
 JDK_ALL_TARGETS += jdk_misc
 jdk_misc: $(call TestDirs, \
-          demo javax/imageio javax/naming javax/print javax/script \
-          javax/smartcardio javax/sound com/sun/java com/sun/jndi \
-	  com/sun/org com/sun/xml sun/misc sun/pisces)
+          demo/jvmti demo/zipfs javax/naming javax/script \
+          javax/smartcardio com/sun/jndi com/sun/xml sun/misc)
 	$(call RunSamevmBatch)
 
 # Stable samevm testruns (minus items from PROBLEM_LIST)
@@ -532,17 +532,15 @@ JDK_ALL_TARGETS += jdk_security1
 jdk_security1: $(call TestDirs, java/security)
 	$(call RunSamevmBatch)
 
-# Stable othervm testruns (minus items from PROBLEM_LIST)
-#   Using samevm has serious problems with these tests
+# Stable samevm testruns (minus items from PROBLEM_LIST)
 JDK_ALL_TARGETS += jdk_security2
-jdk_security2: $(call TestDirs, javax/crypto com/sun/crypto)
+jdk_security2: $(call TestDirs, javax/crypto javax/xml/crypto com/sun/crypto)
 	$(call RunSamevmBatch)
 
-# Stable othervm testruns (minus items from PROBLEM_LIST)
-#   Using samevm has serious problems with these tests
+# Stable samevm testruns (minus items from PROBLEM_LIST)
 JDK_ALL_TARGETS += jdk_security3
-jdk_security3: $(call TestDirs, com/sun/security lib/security \
-               javax/security sun/security)
+jdk_security3: $(call TestDirs, com/sun/security lib/security javax/security \
+        sun/security com/sun/org/apache/xml/internal/security)
 	$(call SharedLibraryPermissions,sun/security)
 	$(call RunSamevmBatch)
 
@@ -550,10 +548,16 @@ jdk_security3: $(call TestDirs, com/sun/security lib/security \
 jdk_security: jdk_security1 jdk_security2 jdk_security3
 	@$(SummaryInfo)
 
+# Stable samevm testruns (minus items from PROBLEM_LIST)
+JDK_ALL_TARGETS += jdk_sound
+jdk_sound: $(call TestDirs, javax/sound)
+	$(call RunSamevmBatch)
+
 # Stable othervm testruns (minus items from PROBLEM_LIST)
 #   Using samevm has problems, and doesn't help performance as much as others.
 JDK_ALL_TARGETS += jdk_swing
-jdk_swing: $(call TestDirs, javax/swing sun/java2d)
+jdk_swing: $(call TestDirs, javax/swing sun/java2d \
+           demo/jfc com/sun/java/swing)
 	$(call RunOthervmBatch)
 
 # Stable samevm testruns (minus items from PROBLEM_LIST)
@@ -802,17 +806,17 @@ endif
 # The jtjck.jar utility to use to run the tests
 JTJCK_JAR = $(JCK_HOME)/lib/jtjck.jar
 JTJCK_JAVA_ARGS =  -XX:MaxPermSize=256m -Xmx512m
-JTJCK_OPTIONS = -headless -v 
+JTJCK_OPTIONS = -headless -v
 
 # Default tests to run
 ifndef JCK_COMPILER_TESTS
-  JCK_COMPILER_TESTS = 
+  JCK_COMPILER_TESTS =
 endif
 ifndef JCK_RUNTIME_TESTS
-  JCK_RUNTIME_TESTS  = 
+  JCK_RUNTIME_TESTS  =
 endif
 ifndef JCK_DEVTOOLS_TESTS
-  JCK_DEVTOOLS_TESTS = 
+  JCK_DEVTOOLS_TESTS =
 endif
 
 # Generic rule used to run jck tests
@@ -838,14 +842,14 @@ jck7compiler:
                 _generic_jck_tests
 
 # JCK7 runtime tests
-jck7runtime: 
+jck7runtime:
 	$(MAKE) UNIQUE_DIR=$@ \
 	        JCK_HOME=$(JCK7RUNTIME_HOME) \
 	        TESTDIRS="$(JCK_RUNTIME_TESTS)" \
                 _generic_jck_tests
 
 # JCK7 devtools tests
-jck7devtools: 
+jck7devtools:
 	$(MAKE) UNIQUE_DIR=$@ \
 	        JCK_HOME=$(JCK7DEVTOOLS_HOME) \
                 TESTDIRS="$(JCK_DEVTOOLS_TESTS)" \
