@@ -180,7 +180,7 @@ public class AccessorProperty extends Property {
      * @param objectSetter    object setter
      */
     protected AccessorProperty(
-            final String key,
+            final Object key,
             final int flags,
             final int slot,
             final MethodHandle primitiveGetter,
@@ -209,7 +209,7 @@ public class AccessorProperty extends Property {
      * @param getter the property getter
      * @param setter the property setter or null if non writable, non configurable
      */
-    private AccessorProperty(final String key, final int flags, final int slot, final MethodHandle getter, final MethodHandle setter) {
+    private AccessorProperty(final Object key, final int flags, final int slot, final MethodHandle getter, final MethodHandle setter) {
         super(key, flags | IS_BUILTIN | DUAL_FIELDS | (getter.type().returnType().isPrimitive() ? IS_NASGEN_PRIMITIVE : 0), slot);
         assert !isSpill();
 
@@ -249,7 +249,7 @@ public class AccessorProperty extends Property {
      * @param structure        structure for objects associated with this property
      * @param slot             property field number or spill slot
      */
-    public AccessorProperty(final String key, final int flags, final Class<?> structure, final int slot) {
+    public AccessorProperty(final Object key, final int flags, final Class<?> structure, final int slot) {
         super(key, flags, slot);
 
         initGetterSetter(structure);
@@ -292,7 +292,7 @@ public class AccessorProperty extends Property {
      * @param owner        owner of property
      * @param initialValue initial value to which the property can be set
      */
-    protected AccessorProperty(final String key, final int flags, final int slot, final ScriptObject owner, final Object initialValue) {
+    protected AccessorProperty(final Object key, final int flags, final int slot, final ScriptObject owner, final Object initialValue) {
         this(key, flags, owner.getClass(), slot);
         setInitialValue(owner, initialValue);
     }
@@ -307,7 +307,7 @@ public class AccessorProperty extends Property {
      * @param slot         field slot index
      * @param initialType  initial type of the property
      */
-    public AccessorProperty(final String key, final int flags, final Class<?> structure, final int slot, final Class<?> initialType) {
+    public AccessorProperty(final Object key, final int flags, final Class<?> structure, final int slot, final Class<?> initialType) {
         this(key, flags, structure, slot);
         setType(hasDualFields() ? initialType : Object.class);
     }
@@ -603,7 +603,7 @@ public class AccessorProperty extends Property {
     private void checkUndeclared() {
         if ((getFlags() & NEEDS_DECLARATION) != 0) {
             // a lexically defined variable that hasn't seen its declaration - throw ReferenceError
-            throw ECMAErrors.referenceError("not.defined", getKey());
+            throw ECMAErrors.referenceError("not.defined", getKey().toString());
         }
     }
 
@@ -659,7 +659,7 @@ public class AccessorProperty extends Property {
         }
 
         if (isBuiltin()) {
-           mh = MH.filterArguments(mh, 0, debugInvalidate(MH.insertArguments(INVALIDATE_SP, 0, this), getKey()));
+           mh = MH.filterArguments(mh, 0, debugInvalidate(MH.insertArguments(INVALIDATE_SP, 0, this), getKey().toString()));
         }
 
         assert mh.type().returnType() == void.class : mh.type();

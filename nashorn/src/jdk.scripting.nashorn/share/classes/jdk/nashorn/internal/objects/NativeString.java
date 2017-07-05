@@ -33,6 +33,7 @@ import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.lang.reflect.Array;
 import java.text.Collator;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -104,20 +105,6 @@ public final class NativeString extends ScriptObject implements OptimisticBuilti
     @Override
     public String toString() {
         return getStringValue();
-    }
-
-    @Override
-    public boolean equals(final Object other) {
-        if (other instanceof NativeString) {
-            return getStringValue().equals(((NativeString) other).getStringValue());
-        }
-
-        return false;
-    }
-
-    @Override
-    public int hashCode() {
-        return getStringValue().hashCode();
     }
 
     private String getStringValue() {
@@ -382,7 +369,7 @@ public final class NativeString extends ScriptObject implements OptimisticBuilti
     }
 
     @Override
-    public Object getOwnPropertyDescriptor(final String key) {
+    public Object getOwnPropertyDescriptor(final Object key) {
         final int index = ArrayIndex.getArrayIndex(key);
         if (index >= 0 && index < value.length()) {
             final Global global = Global.instance();
@@ -400,7 +387,12 @@ public final class NativeString extends ScriptObject implements OptimisticBuilti
      * @return Array of keys.
      */
     @Override
-    protected String[] getOwnKeys(final boolean all, final Set<String> nonEnumerable) {
+    @SuppressWarnings("unchecked")
+    protected <T> T[] getOwnKeys(final Class<T> type, final boolean all, final Set<T> nonEnumerable) {
+        if (type != String.class) {
+            return super.getOwnKeys(type, all, nonEnumerable);
+        }
+
         final List<Object> keys = new ArrayList<>();
 
         // add string index keys
@@ -409,8 +401,8 @@ public final class NativeString extends ScriptObject implements OptimisticBuilti
         }
 
         // add super class properties
-        keys.addAll(Arrays.asList(super.getOwnKeys(all, nonEnumerable)));
-        return keys.toArray(new String[keys.size()]);
+        keys.addAll(Arrays.asList(super.getOwnKeys(type, all, nonEnumerable)));
+        return keys.toArray((T[]) Array.newInstance(type, keys.size()));
     }
 
     /**

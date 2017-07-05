@@ -33,11 +33,12 @@
  * @build sun.hotspot.WhiteBox.*
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run testng/othervm -Xbootclasspath/a:. -XX:-PrintAssembly -XX:CompileCommand=print,*.* -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI TestCompilerDirectivesCompatibilityCommandOn
+ * @run testng/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *      -XX:-PrintAssembly -XX:CompileCommand=print,*.* -XX:+WhiteBoxAPI
+ *      TestCompilerDirectivesCompatibilityCommandOn
  * @summary Test compiler control compatibility with compile command
  */
 
-// import jdk.test.lib.OutputAnalyzer;
 import jdk.test.lib.dcmd.CommandExecutor;
 import jdk.test.lib.dcmd.JMXExecutor;
 

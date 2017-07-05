@@ -22,7 +22,8 @@
  */
 package jdk.vm.ci.meta;
 
-import java.util.*;
+import java.util.IllegalFormatException;
+import java.util.UnknownFormatConversionException;
 
 /**
  * Represents a reference to a Java method, either resolved or unresolved. Methods, like fields and
@@ -71,7 +72,6 @@ public interface JavaMethod extends TrustedInterface {
      * @return the result of formatting this method according to {@code format}
      * @throws IllegalFormatException if an illegal specifier is encountered in {@code format}
      */
-    @SuppressWarnings("fallthrough")
     default String format(String format) throws IllegalFormatException {
         StringBuilder sb = new StringBuilder();
         int index = 0;

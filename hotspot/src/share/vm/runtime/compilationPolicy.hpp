@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,7 @@ public:
   virtual int compiler_count(CompLevel comp_level) = 0;
   // main notification entry, return a pointer to an nmethod if the OSR is required,
   // returns NULL otherwise.
-  virtual nmethod* event(methodHandle method, methodHandle inlinee, int branch_bci, int bci, CompLevel comp_level, nmethod* nm, JavaThread* thread) = 0;
+  virtual nmethod* event(const methodHandle& method, const methodHandle& inlinee, int branch_bci, int bci, CompLevel comp_level, nmethod* nm, JavaThread* thread) = 0;
   // safepoint() is called at the end of the safepoint
   virtual void do_safepoint_work() = 0;
   // reprofile request
@@ -91,11 +91,11 @@ public:
 class NonTieredCompPolicy : public CompilationPolicy {
   int _compiler_count;
 protected:
-  static void trace_frequency_counter_overflow(methodHandle m, int branch_bci, int bci);
-  static void trace_osr_request(methodHandle method, nmethod* osr, int bci);
+  static void trace_frequency_counter_overflow(const methodHandle& m, int branch_bci, int bci);
+  static void trace_osr_request(const methodHandle& method, nmethod* osr, int bci);
   static void trace_osr_completion(nmethod* osr_nm);
-  void reset_counter_for_invocation_event(methodHandle method);
-  void reset_counter_for_back_branch_event(methodHandle method);
+  void reset_counter_for_invocation_event(const methodHandle& method);
+  void reset_counter_for_back_branch_event(const methodHandle& method);
 public:
   NonTieredCompPolicy() : _compiler_count(0) { }
   virtual CompLevel initial_compile_level() { return CompLevel_highest_tier; }
@@ -107,15 +107,15 @@ public:
   virtual bool is_mature(Method* method);
   virtual void initialize();
   virtual CompileTask* select_task(CompileQueue* compile_queue);
-  virtual nmethod* event(methodHandle method, methodHandle inlinee, int branch_bci, int bci, CompLevel comp_level, nmethod* nm, JavaThread* thread);
-  virtual void method_invocation_event(methodHandle m, JavaThread* thread) = 0;
-  virtual void method_back_branch_event(methodHandle m, int bci, JavaThread* thread) = 0;
+  virtual nmethod* event(const methodHandle& method, const methodHandle& inlinee, int branch_bci, int bci, CompLevel comp_level, nmethod* nm, JavaThread* thread);
+  virtual void method_invocation_event(const methodHandle& m, JavaThread* thread) = 0;
+  virtual void method_back_branch_event(const methodHandle& m, int bci, JavaThread* thread) = 0;
 };
 
 class SimpleCompPolicy : public NonTieredCompPolicy {
  public:
-  virtual void method_invocation_event(methodHandle m, JavaThread* thread);
-  virtual void method_back_branch_event(methodHandle m, int bci, JavaThread* thread);
+  virtual void method_invocation_event(const methodHandle& m, JavaThread* thread);
+  virtual void method_back_branch_event(const methodHandle& m, int bci, JavaThread* thread);
 };
 
 // StackWalkCompPolicy - existing C2 policy
@@ -123,8 +123,8 @@ class SimpleCompPolicy : public NonTieredCompPolicy {
 #ifdef COMPILER2
 class StackWalkCompPolicy : public NonTieredCompPolicy {
  public:
-  virtual void method_invocation_event(methodHandle m, JavaThread* thread);
-  virtual void method_back_branch_event(methodHandle m, int bci, JavaThread* thread);
+  virtual void method_invocation_event(const methodHandle& m, JavaThread* thread);
+  virtual void method_back_branch_event(const methodHandle& m, int bci, JavaThread* thread);
 
  private:
   RFrame* findTopInlinableFrame(GrowableArray<RFrame*>* stack);
@@ -134,9 +134,9 @@ class StackWalkCompPolicy : public NonTieredCompPolicy {
   // they are used for performance debugging only (print better messages)
   static const char* _msg;            // reason for not inlining
 
-  static const char* shouldInline   (methodHandle callee, float frequency, int cnt);
+  static const char* shouldInline   (const methodHandle& callee, float frequency, int cnt);
   // positive filter: should send be inlined?  returns NULL (--> yes) or rejection msg
-  static const char* shouldNotInline(methodHandle callee);
+  static const char* shouldNotInline(const methodHandle& callee);
   // negative filter: should send NOT be inlined?  returns NULL (--> inline) or rejection msg
 
 };

@@ -142,10 +142,10 @@ include $(MAKEFILES_DIR)/dtrace.make
 
 JVM    = jvm
 ifeq ($(OS_VENDOR), Darwin)
-  LIBJVM   = lib$(JVM).dylib
+  LIBJVM   = lib$(JVM).$(LIBRARY_SUFFIX)
   CFLAGS  += -D_XOPEN_SOURCE -D_DARWIN_C_SOURCE
 
-  LIBJVM_DEBUGINFO   = lib$(JVM).dylib.dSYM
+  LIBJVM_DEBUGINFO   = lib$(JVM).$(LIBRARY_SUFFIX).dSYM
   LIBJVM_DIZ         = lib$(JVM).diz
 else
   LIBJVM   = lib$(JVM).so
@@ -261,6 +261,16 @@ mapfile : $(MAPFILE) mapfile_extra vm.def
                  { print $$0 }				\
              }' > $@ < $(MAPFILE)
 
+ifeq ($(STATIC_BUILD),true)
+EXPORTED_SYMBOLS = libjvm.symbols
+
+libjvm.symbols : mapfile
+	$(CP) mapfile libjvm.symbols
+
+else
+EXPORTED_SYMBOLS =
+endif
+
 mapfile_reorder : mapfile $(REORDERFILE)
 	rm -f $@
 	cat $^ > $@
@@ -288,9 +298,11 @@ else
   LFLAGS_VM                += $(SONAMEFLAG:SONAME=$(LIBJVM))
 
   ifeq ($(OS_VENDOR), Darwin)
-    LFLAGS_VM += -Xlinker -rpath -Xlinker @loader_path/.
-    LFLAGS_VM += -Xlinker -rpath -Xlinker @loader_path/..
-    LFLAGS_VM += -Xlinker -install_name -Xlinker @rpath/$(@F)
+    ifneq ($(STATIC_BUILD),true)
+      LFLAGS_VM += -Xlinker -rpath -Xlinker @loader_path/.
+      LFLAGS_VM += -Xlinker -rpath -Xlinker @loader_path/..
+      LFLAGS_VM += -Xlinker -install_name -Xlinker @rpath/$(@F)
+    endif
   else
     LFLAGS_VM                += -Wl,-z,defs
   endif
@@ -345,6 +357,10 @@ LD_SCRIPT_FLAG = -Wl,-T,$(LD_SCRIPT)
 endif
 
 $(LIBJVM): $(LIBJVM.o) $(LIBJVM_MAPFILE) $(LD_SCRIPT)
+ifeq ($(STATIC_BUILD),true)
+	echo Linking static vm...;
+	$(LINK_LIB.CC) $@ $(LIBJVM.o)
+else
 	$(QUIETLY) {                                                    \
 	    echo $(LOG_INFO) Linking vm...;                                         \
 	    $(LINK_LIB.CXX/PRE_HOOK)                                     \
@@ -353,6 +369,8 @@ $(LIBJVM): $(LIBJVM.o) $(LIBJVM_MAPFILE) $(LD_SCRIPT)
 	    $(LINK_LIB.CXX/POST_HOOK)                                    \
 	    rm -f $@.1; ln -s $@ $@.1;                                  \
 	}
+
+endif
 
 ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
   ifeq ($(OS_VENDOR), Darwin)
@@ -410,10 +428,10 @@ include $(MAKEFILES_DIR)/saproc.make
 
 ifeq ($(OS_VENDOR), Darwin)
 # no libjvm_db for macosx
-build: $(LIBJVM) $(LAUNCHER) $(LIBJSIG) $(BUILDLIBSAPROC) dtraceCheck
+build: $(LIBJVM) $(LAUNCHER) $(LIBJSIG) $(BUILDLIBSAPROC) dtraceCheck $(EXPORTED_SYMBOLS)
 	echo "Doing vm.make build:"
 else
-build: $(LIBJVM) $(LAUNCHER) $(LIBJSIG) $(LIBJVM_DB) $(BUILDLIBSAPROC)
+build: $(LIBJVM) $(LAUNCHER) $(LIBJSIG) $(LIBJVM_DB) $(BUILDLIBSAPROC) $(EXPORTED_SYMBOLS)
 endif
 
 install: install_jvm install_jsig install_saproc

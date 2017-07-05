@@ -23,21 +23,22 @@
 //
 //
 
-import jdk.test.lib.Utils;
-import static java.lang.Math.abs;
+import java.nio.BufferOverflowException;
+import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import static java.nio.ByteOrder.BIG_ENDIAN;
 import static java.nio.ByteOrder.LITTLE_ENDIAN;
-import java.util.Random;
+import java.nio.ByteOrder;
 import java.util.Arrays;
+import java.util.Random;
+import jdk.test.lib.Utils;
 
 /**
  * @test
  * @bug 8026049
  * @library /testlibrary
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:-UseUnalignedAccesses HeapByteBufferTest
- * @run main/othervm HeapByteBufferTest
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:-UseUnalignedAccesses -Djdk.test.lib.random.seed=0 HeapByteBufferTest
+ * @run main/othervm -Djdk.test.lib.random.seed=0 HeapByteBufferTest
  * @summary Verify that byte buffers are correctly accessed.
  */
 
@@ -345,7 +346,149 @@ public class HeapByteBufferTest implements Runnable {
         return result;
     }
 
+    enum PrimitiveType {
+        BYTE(1), CHAR(2), SHORT(2), INT(4), LONG(8), FLOAT(4), DOUBLE(8);
+
+        public final int size;
+        PrimitiveType(int size) {
+            this.size = size;
+        }
+    }
+
+    void getOne(ByteBuffer b, PrimitiveType t) {
+        switch (t) {
+        case BYTE: b.get(); break;
+        case CHAR: b.getChar(); break;
+        case SHORT: b.getShort(); break;
+        case INT: b.getInt(); break;
+        case LONG: b.getLong(); break;
+        case FLOAT: b.getFloat(); break;
+        case DOUBLE: b.getDouble(); break;
+        }
+    }
+
+    void putOne(ByteBuffer b, PrimitiveType t) {
+        switch (t) {
+        case BYTE: b.put((byte)0); break;
+        case CHAR: b.putChar('0'); break;
+        case SHORT: b.putShort((short)0); break;
+        case INT: b.putInt(0); break;
+        case LONG: b.putLong(0); break;
+        case FLOAT: b.putFloat(0); break;
+        case DOUBLE: b.putDouble(0); break;
+        }
+    }
+
+    void getOne(ByteBuffer b, PrimitiveType t, int index) {
+        switch (t) {
+        case BYTE: b.get(index); break;
+        case CHAR: b.getChar(index); break;
+        case SHORT: b.getShort(index); break;
+        case INT: b.getInt(index); break;
+        case LONG: b.getLong(index); break;
+        case FLOAT: b.getFloat(index); break;
+        case DOUBLE: b.getDouble(index); break;
+        }
+    }
+
+    void putOne(ByteBuffer b, PrimitiveType t, int index) {
+        switch (t) {
+        case BYTE: b.put(index, (byte)0); break;
+        case CHAR: b.putChar(index, '0'); break;
+        case SHORT: b.putShort(index, (short)0); break;
+        case INT: b.putInt(index, 0); break;
+        case LONG: b.putLong(index, 0); break;
+        case FLOAT: b.putFloat(index, 0); break;
+        case DOUBLE: b.putDouble(index, 0); break;
+        }
+    }
+
+    void checkBoundaryConditions() {
+        for (int i = 0; i < 100; i++) {
+            int bufSize = random.nextInt(16);
+            byte[] bytes = new byte[bufSize];
+            ByteBuffer buf = ByteBuffer.wrap(bytes);
+            for (int j = 0; j < 100; j++) {
+                int offset = random.nextInt(32) - 8;
+                for (PrimitiveType t : PrimitiveType.values()) {
+                    int threw = 0;
+                    try {
+                        try {
+                            buf.position(offset);
+                            getOne(buf, t);
+                        } catch (BufferUnderflowException e) {
+                            if (offset + t.size < bufSize)
+                                throw new RuntimeException
+                                    ("type = " + t + ", offset = " + offset + ", bufSize = " + bufSize, e);
+                            threw++;
+                        } catch (IllegalArgumentException e) {
+                            if (offset >= 0 && offset + t.size < bufSize)
+                                throw new RuntimeException
+                                    ("type = " + t + ", offset = " + offset + ", bufSize = " + bufSize, e);
+                            threw++;
+                        }
+
+                        try {
+                            buf.position(offset);
+                            putOne(buf, t);
+                        } catch (BufferOverflowException e) {
+                            if (offset + t.size < bufSize)
+                                throw new RuntimeException
+                                    ("type = " + t + ", offset = " + offset + ", bufSize = " + bufSize, e);
+                            threw++;
+                        } catch (IllegalArgumentException e) {
+                            if (offset >= 0 && offset + t.size < bufSize)
+                                throw new RuntimeException
+                                    ("type = " + t + ", offset = " + offset + ", bufSize = " + bufSize, e);
+                            threw++;
+                        }
+
+                        try {
+                            putOne(buf, t, offset);
+                        } catch (IndexOutOfBoundsException e) {
+                            if (offset >= 0 && offset + t.size < bufSize)
+                                throw new RuntimeException
+                                    ("type = " + t + ", offset = " + offset + ", bufSize = " + bufSize, e);
+                            threw++;
+                        }
+
+                        try {
+                            getOne(buf, t, offset);
+                        } catch (IndexOutOfBoundsException e) {
+                            if (offset >= 0 && offset + t.size < bufSize)
+                                throw new RuntimeException
+                                    ("type = " + t + ", offset = " + offset + ", bufSize = " + bufSize, e);
+                            threw++;
+                        }
+
+                        if (threw == 0) {
+                            // Make sure that we should not have thrown.
+                            if (offset < 0 || offset + t.size > bufSize) {
+                                throw new RuntimeException
+                                    ("should have thrown but did not, type = " + t
+                                     + ", offset = " + offset + ", bufSize = " + bufSize);
+                            }
+                        } else if (threw != 4) {
+                            // If one of the {get,put} operations threw
+                            // due to an invalid offset then all four of
+                            // them should have thrown.
+                            throw new RuntimeException
+                                ("should have thrown but at least one did not, type = " + t
+                                 + ", offset = " + offset + ", bufSize = " + bufSize);
+                        }
+                    } catch (Throwable th) {
+                        throw new RuntimeException
+                            ("unexpected throw: type  = " + t + ", offset = " + offset + ", bufSize = " + bufSize, th);
+
+                    }
+                }
+            }
+        }
+    }
+
     public void run() {
+        checkBoundaryConditions();
+
         for (int i = 0; i < data.capacity(); i += 8) {
             data.putLong(i, random.nextLong());
         }

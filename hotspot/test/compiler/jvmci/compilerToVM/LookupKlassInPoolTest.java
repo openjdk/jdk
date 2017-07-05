@@ -44,8 +44,7 @@ package compiler.jvmci.compilerToVM;
 import java.util.HashMap;
 import java.util.Map;
 import jdk.vm.ci.hotspot.CompilerToVMHelper;
-import jdk.vm.ci.hotspot.HotSpotConstantPool;
-import jdk.vm.ci.hotspot.HotSpotResolvedObjectTypeImpl;
+import jdk.vm.ci.hotspot.HotSpotResolvedObjectType;
 import sun.reflect.ConstantPool;
 
 /**
@@ -62,16 +61,16 @@ public class LookupKlassInPoolTest {
         testCase.test();
     }
 
-    public static void validate(HotSpotConstantPool constantPoolCTVM,
+    public static void validate(jdk.vm.ci.meta.ConstantPool constantPoolCTVM,
             ConstantPool constantPoolSS,
             ConstantPoolTestsHelper.DummyClasses dummyClass, int i) {
         Object classToVerify = CompilerToVMHelper
                 .lookupKlassInPool(constantPoolCTVM, i);
-        if (!(classToVerify instanceof HotSpotResolvedObjectTypeImpl)
+        if (!(classToVerify instanceof HotSpotResolvedObjectType)
                 && !(classToVerify instanceof String)) {
             String msg = String.format("Output of method"
                     + " CTVM.lookupKlassInPool is neither"
-                    + " a HotSpotResolvedObjectTypeImpl, nor a String");
+                    + " a HotSpotResolvedObjectType, nor a String");
             throw new AssertionError(msg);
         }
         int classNameIndex = (int) dummyClass.cp.get(i).value;

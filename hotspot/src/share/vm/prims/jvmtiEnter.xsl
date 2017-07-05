@@ -629,8 +629,8 @@ static jvmtiError JNICALL
   jint trace_flags = JvmtiTrace::trace_flags(</xsl:text>
       <xsl:value-of select="@num"/>
       <xsl:text>);
-  const char *func_name;
-  const char *curr_thread_name;
+  const char *func_name = NULL;
+  const char *curr_thread_name = NULL;
   if (trace_flags) {
     func_name = JvmtiTrace::function_name(</xsl:text>
       <xsl:value-of select="@num"/>
