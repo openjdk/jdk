@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,6 +67,8 @@ public abstract class SunDragSourceContextPeer implements DragSourceContextPeer 
     private DragGestureEvent  trigger;
     private Component         component;
     private Cursor            cursor;
+    private Image             dragImage;
+    private Point             dragImageOffset;
     private long              nativeCtxt;
     private DragSourceContext dragSourceContext;
     private int               sourceActions;
@@ -120,6 +122,8 @@ public abstract class SunDragSourceContextPeer implements DragSourceContextPeer 
         dragSourceContext = dsc;
         cursor            = c;
         sourceActions     = getDragSourceContext().getSourceActions();
+        dragImage         = di;
+        dragImageOffset   = p;
 
         Transferable transferable  = getDragSourceContext().getTransferable();
         SortedMap formatMap = DataTransferer.getInstance().getFormatsForTransferable
@@ -166,6 +170,31 @@ public abstract class SunDragSourceContextPeer implements DragSourceContextPeer 
 
     public Cursor getCursor() {
         return cursor;
+    }
+
+    /**
+     * Returns the drag image. If there is no image to drag,
+     * the returned value is {@code null}
+     *
+     * @return the reference to the drag image
+     */
+    public Image getDragImage() {
+        return dragImage;
+    }
+
+    /**
+     * Returns an anchor offset for the image to drag.
+     *
+     * @return a {@code Point} object that corresponds
+     * to coordinates of an anchor offset of the image
+     * relative to the upper left corner of the image.
+     * The point {@code (0,0)} returns by default.
+     */
+    public Point getDragImageOffset() {
+        if (dragImageOffset == null) {
+            return new Point(0,0);
+        }
+        return new Point(dragImageOffset);
     }
 
     /**
@@ -317,6 +346,8 @@ public abstract class SunDragSourceContextPeer implements DragSourceContextPeer 
 
         startSecondaryEventLoop();
         setNativeContext(0);
+        dragImage = null;
+        dragImageOffset = null;
     }
 
     public static void setDragDropInProgress(boolean b)
