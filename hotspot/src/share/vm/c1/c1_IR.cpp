@@ -182,13 +182,14 @@ bool IRScopeDebugInfo::should_reexecute() {
 // Implementation of CodeEmitInfo
 
 // Stack must be NON-null
-CodeEmitInfo::CodeEmitInfo(ValueStack* stack, XHandlers* exception_handlers)
+CodeEmitInfo::CodeEmitInfo(ValueStack* stack, XHandlers* exception_handlers, bool deoptimize_on_exception)
   : _scope(stack->scope())
   , _scope_debug_info(NULL)
   , _oop_map(NULL)
   , _stack(stack)
   , _exception_handlers(exception_handlers)
-  , _is_method_handle_invoke(false) {
+  , _is_method_handle_invoke(false)
+  , _deoptimize_on_exception(deoptimize_on_exception) {
   assert(_stack != NULL, "must be non null");
 }
 
@@ -199,7 +200,8 @@ CodeEmitInfo::CodeEmitInfo(CodeEmitInfo* info, ValueStack* stack)
   , _scope_debug_info(NULL)
   , _oop_map(NULL)
   , _stack(stack == NULL ? info->_stack : stack)
-  , _is_method_handle_invoke(info->_is_method_handle_invoke) {
+  , _is_method_handle_invoke(info->_is_method_handle_invoke)
+  , _deoptimize_on_exception(info->_deoptimize_on_exception) {
 
   // deep copy of exception handlers
   if (info->_exception_handlers != NULL) {
@@ -239,7 +241,7 @@ IR::IR(Compilation* compilation, ciMethod* method, int osr_bci) :
 }
 
 
-void IR::optimize() {
+void IR::optimize_blocks() {
   Optimizer opt(this);
   if (!compilation()->profile_branches()) {
     if (DoCEE) {
@@ -257,6 +259,10 @@ void IR::optimize() {
 #endif
     }
   }
+}
+
+void IR::eliminate_null_checks() {
+  Optimizer opt(this);
   if (EliminateNullChecks) {
     opt.eliminate_null_checks();
 #ifndef PRODUCT
@@ -429,6 +435,7 @@ class ComputeLinearScanOrder : public StackObj {
   BlockList  _loop_end_blocks;     // list of all loop end blocks collected during count_edges
   BitMap2D   _loop_map;            // two-dimensional bit set: a bit is set if a block is contained in a loop
   BlockList  _work_list;           // temporary list (used in mark_loops and compute_order)
+  BlockList  _loop_headers;
 
   Compilation* _compilation;
 
@@ -594,6 +601,7 @@ void ComputeLinearScanOrder::count_edges(BlockBegin* cur, BlockBegin* parent) {
     TRACE_LINEAR_SCAN(3, tty->print_cr("Block B%d is loop header of loop %d", cur->block_id(), _num_loops));
 
     cur->set_loop_index(_num_loops);
+    _loop_headers.append(cur);
     _num_loops++;
   }
 
@@ -655,6 +663,16 @@ void ComputeLinearScanOrder::clear_non_natural_loops(BlockBegin* start_block) {
       // loop i contains the entry block of the method
       // -> this is not a natural loop, so ignore it
       TRACE_LINEAR_SCAN(2, tty->print_cr("Loop %d is non-natural, so it is ignored", i));
+
+      BlockBegin *loop_header = _loop_headers.at(i);
+      assert(loop_header->is_set(BlockBegin::linear_scan_loop_header_flag), "Must be loop header");
+
+      for (int j = 0; j < loop_header->number_of_preds(); j++) {
+        BlockBegin *pred = loop_header->pred_at(j);
+        pred->clear(BlockBegin::linear_scan_loop_end_flag);
+      }
+
+      loop_header->clear(BlockBegin::linear_scan_loop_header_flag);
 
       for (int block_id = _max_block_id - 1; block_id >= 0; block_id--) {
         clear_block_in_loop(i, block_id);
@@ -729,8 +747,19 @@ void ComputeLinearScanOrder::compute_dominator(BlockBegin* cur, BlockBegin* pare
 
   } else if (!(cur->is_set(BlockBegin::linear_scan_loop_header_flag) && parent->is_set(BlockBegin::linear_scan_loop_end_flag))) {
     TRACE_LINEAR_SCAN(4, tty->print_cr("DOM: computing dominator of B%d: common dominator of B%d and B%d is B%d", cur->block_id(), parent->block_id(), cur->dominator()->block_id(), common_dominator(cur->dominator(), parent)->block_id()));
-    assert(cur->number_of_preds() > 1, "");
+    // Does not hold for exception blocks
+    assert(cur->number_of_preds() > 1 || cur->is_set(BlockBegin::exception_entry_flag), "");
     cur->set_dominator(common_dominator(cur->dominator(), parent));
+  }
+
+  // Additional edge to xhandler of all our successors
+  // range check elimination needs that the state at the end of a
+  // block be valid in every block it dominates so cur must dominate
+  // the exception handlers of its successors.
+  int num_cur_xhandler = cur->number_of_exception_handlers();
+  for (int j = 0; j < num_cur_xhandler; j++) {
+    BlockBegin* xhandler = cur->exception_handler_at(j);
+    compute_dominator(xhandler, parent);
   }
 }
 
@@ -898,7 +927,6 @@ void ComputeLinearScanOrder::compute_order(BlockBegin* start_block) {
     num_sux = cur->number_of_exception_handlers();
     for (i = 0; i < num_sux; i++) {
       BlockBegin* sux = cur->exception_handler_at(i);
-      compute_dominator(sux, cur);
       if (ready_for_processing(sux)) {
         sort_into_work_list(sux);
       }
@@ -918,8 +946,23 @@ bool ComputeLinearScanOrder::compute_dominators_iter() {
 
     BlockBegin* dominator = block->pred_at(0);
     int num_preds = block->number_of_preds();
-    for (int i = 1; i < num_preds; i++) {
-      dominator = common_dominator(dominator, block->pred_at(i));
+
+    TRACE_LINEAR_SCAN(4, tty->print_cr("DOM: Processing B%d", block->block_id()));
+
+    for (int j = 0; j < num_preds; j++) {
+
+      BlockBegin *pred = block->pred_at(j);
+      TRACE_LINEAR_SCAN(4, tty->print_cr("   DOM: Subrocessing B%d", pred->block_id()));
+
+      if (block->is_set(BlockBegin::exception_entry_flag)) {
+        dominator = common_dominator(dominator, pred);
+        int num_pred_preds = pred->number_of_preds();
+        for (int k = 0; k < num_pred_preds; k++) {
+          dominator = common_dominator(dominator, pred->pred_at(k));
+        }
+      } else {
+        dominator = common_dominator(dominator, pred);
+      }
     }
 
     if (dominator != block->dominator()) {
@@ -946,6 +989,21 @@ void ComputeLinearScanOrder::compute_dominators() {
 
   // check that dominators are correct
   assert(!compute_dominators_iter(), "fix point not reached");
+
+  // Add Blocks to dominates-Array
+  int num_blocks = _linear_scan_order->length();
+  for (int i = 0; i < num_blocks; i++) {
+    BlockBegin* block = _linear_scan_order->at(i);
+
+    BlockBegin *dom = block->dominator();
+    if (dom) {
+      assert(dom->dominator_depth() != -1, "Dominator must have been visited before");
+      dom->dominates()->append(block);
+      block->set_dominator_depth(dom->dominator_depth() + 1);
+    } else {
+      block->set_dominator_depth(0);
+    }
+  }
 }
 
 
@@ -1032,7 +1090,7 @@ void ComputeLinearScanOrder::verify() {
       BlockBegin* sux = cur->sux_at(j);
 
       assert(sux->linear_scan_number() >= 0 && sux->linear_scan_number() == _linear_scan_order->index_of(sux), "incorrect linear_scan_number");
-      if (!cur->is_set(BlockBegin::linear_scan_loop_end_flag)) {
+      if (!sux->is_set(BlockBegin::backward_branch_target_flag)) {
         assert(cur->linear_scan_number() < sux->linear_scan_number(), "invalid order");
       }
       if (cur->loop_depth() == sux->loop_depth()) {
@@ -1044,7 +1102,7 @@ void ComputeLinearScanOrder::verify() {
       BlockBegin* pred = cur->pred_at(j);
 
       assert(pred->linear_scan_number() >= 0 && pred->linear_scan_number() == _linear_scan_order->index_of(pred), "incorrect linear_scan_number");
-      if (!cur->is_set(BlockBegin::linear_scan_loop_header_flag)) {
+      if (!cur->is_set(BlockBegin::backward_branch_target_flag)) {
         assert(cur->linear_scan_number() > pred->linear_scan_number(), "invalid order");
       }
       if (cur->loop_depth() == pred->loop_depth()) {
@@ -1060,7 +1118,8 @@ void ComputeLinearScanOrder::verify() {
     } else {
       assert(cur->dominator() != NULL, "all but first block must have dominator");
     }
-    assert(cur->number_of_preds() != 1 || cur->dominator() == cur->pred_at(0), "Single predecessor must also be dominator");
+    // Assertion does not hold for exception handlers
+    assert(cur->number_of_preds() != 1 || cur->dominator() == cur->pred_at(0) || cur->is_set(BlockBegin::exception_entry_flag), "Single predecessor must also be dominator");
   }
 
   // check that all loops are continuous
@@ -1249,9 +1308,22 @@ class PredecessorValidator : public BlockClosure {
   }
 };
 
+class VerifyBlockBeginField : public BlockClosure {
+
+public:
+
+  virtual void block_do(BlockBegin *block) {
+    for ( Instruction *cur = block; cur != NULL; cur = cur->next()) {
+      assert(cur->block() == block, "Block begin is not correct");
+    }
+  }
+};
+
 void IR::verify() {
 #ifdef ASSERT
   PredecessorValidator pv(this);
+  VerifyBlockBeginField verifier;
+  this->iterate_postorder(&verifier);
 #endif
 }
 

@@ -51,6 +51,16 @@ RangeCheckStub::RangeCheckStub(CodeEmitInfo* info, LIR_Opr index,
 void RangeCheckStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
 
+  if (_info->deoptimize_on_exception()) {
+    address a = Runtime1::entry_for(Runtime1::predicate_failed_trap_id);
+    __ call(a, relocInfo::runtime_call_type);
+    __ delayed()->nop();
+    ce->add_call_info_here(_info);
+    ce->verify_oop_map(_info);
+    debug_only(__ should_not_reach_here());
+    return;
+  }
+
   if (_index->is_register()) {
     __ mov(_index->as_register(), G4);
   } else {
@@ -64,11 +74,22 @@ void RangeCheckStub::emit_code(LIR_Assembler* ce) {
   __ delayed()->nop();
   ce->add_call_info_here(_info);
   ce->verify_oop_map(_info);
-#ifdef ASSERT
-  __ should_not_reach_here();
-#endif
+  debug_only(__ should_not_reach_here());
 }
 
+PredicateFailedStub::PredicateFailedStub(CodeEmitInfo* info) {
+  _info = new CodeEmitInfo(info);
+}
+
+void PredicateFailedStub::emit_code(LIR_Assembler* ce) {
+  __ bind(_entry);
+  address a = Runtime1::entry_for(Runtime1::predicate_failed_trap_id);
+  __ call(a, relocInfo::runtime_call_type);
+  __ delayed()->nop();
+  ce->add_call_info_here(_info);
+  ce->verify_oop_map(_info);
+  debug_only(__ should_not_reach_here());
+}
 
 void CounterOverflowStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
@@ -99,10 +120,17 @@ void DivByZeroStub::emit_code(LIR_Assembler* ce) {
 
 
 void ImplicitNullCheckStub::emit_code(LIR_Assembler* ce) {
+  address a;
+  if (_info->deoptimize_on_exception()) {
+    // Deoptimize, do not throw the exception, because it is probably wrong to do it here.
+    a = Runtime1::entry_for(Runtime1::predicate_failed_trap_id);
+  } else {
+    a = Runtime1::entry_for(Runtime1::throw_null_pointer_exception_id);
+  }
+
   ce->compilation()->implicit_exception_table()->append(_offset, __ offset());
   __ bind(_entry);
-  __ call(Runtime1::entry_for(Runtime1::throw_null_pointer_exception_id),
-          relocInfo::runtime_call_type);
+  __ call(a, relocInfo::runtime_call_type);
   __ delayed()->nop();
   ce->add_call_info_here(_info);
   ce->verify_oop_map(_info);

@@ -572,9 +572,14 @@ public class WindbgDebuggerLocal extends DebuggerBase implements WindbgDebugger 
       DTFWHome = sysRoot + File.separator + ".." + File.separator +
           "Program Files" + File.separator + "Debugging Tools For Windows";
       searchList.add(DTFWHome);
-      searchList.add(DTFWHome + " (x86)");
-      searchList.add(DTFWHome + " (x64)");
 
+      // Only add the search path for the current CPU architecture:
+      String cpu = PlatformInfo.getCPU();
+      if (cpu.equals("x86")) {
+          searchList.add(DTFWHome + " (x86)");
+      } else if (cpu.equals("amd64")) {
+          searchList.add(DTFWHome + " (x64)");
+      }
       // The last place to search is the system directory:
       searchList.add(sysRoot + File.separator + "system32");
     }

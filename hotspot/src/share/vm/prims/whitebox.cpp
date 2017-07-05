@@ -254,6 +254,24 @@ WB_ENTRY(jint, WB_GetCompileQueuesSize(JNIEnv* env, jobject o))
          CompileBroker::queue_size(CompLevel_full_profile) /* C1 */;
 WB_END
 
+WB_ENTRY(jboolean, WB_IsInStringTable(JNIEnv* env, jobject o, jstring javaString))
+  ResourceMark rm(THREAD);
+  int len;
+  jchar* name = java_lang_String::as_unicode_string(JNIHandles::resolve(javaString), len);
+  oop found_string = StringTable::the_table()->lookup(name, len);
+  if (found_string == NULL) {
+        return false;
+  }
+  return true;
+WB_END
+
+
+WB_ENTRY(void, WB_FullGC(JNIEnv* env, jobject o))
+  Universe::heap()->collector_policy()->set_should_clear_all_soft_refs(true);
+  Universe::heap()->collect(GCCause::_last_ditch_collection);
+WB_END
+
+
 //Some convenience methods to deal with objects from java
 int WhiteBox::offset_for_field(const char* field_name, oop object,
     Symbol* signature_symbol) {
@@ -343,6 +361,8 @@ static JNINativeMethod methods[] = {
       CC"(Ljava/lang/reflect/Method;)I",              (void*)&WB_GetMethodCompilationLevel},
   {CC"getCompileQueuesSize",
       CC"()I",                                        (void*)&WB_GetCompileQueuesSize},
+  {CC"isInStringTable",   CC"(Ljava/lang/String;)Z",  (void*)&WB_IsInStringTable  },
+  {CC"fullGC",   CC"()V",                             (void*)&WB_FullGC },
 };
 
 #undef CC

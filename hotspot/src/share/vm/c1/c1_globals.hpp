@@ -119,6 +119,24 @@
   develop(bool, UseGlobalValueNumbering, true,                              \
           "Use Global Value Numbering (separate phase)")                    \
                                                                             \
+  product(bool, UseLoopInvariantCodeMotion, true,                           \
+          "Simple loop invariant code motion for short loops during GVN")   \
+                                                                            \
+  develop(bool, TracePredicateFailedTraps, false,                           \
+          "trace runtime traps caused by predicate failure")                \
+                                                                            \
+  develop(bool, StressLoopInvariantCodeMotion, false,                       \
+          "stress loop invariant code motion")                              \
+                                                                            \
+  develop(bool, TraceRangeCheckElimination, false,                          \
+          "Trace Range Check Elimination")                                  \
+                                                                            \
+  develop(bool, AssertRangeCheckElimination, false,                         \
+          "Assert Range Check Elimination")                                 \
+                                                                            \
+  develop(bool, StressRangeCheckElimination, false,                         \
+          "stress Range Check Elimination")                                 \
+                                                                            \
   develop(bool, PrintValueNumbering, false,                                 \
           "Print Value Numbering")                                          \
                                                                             \

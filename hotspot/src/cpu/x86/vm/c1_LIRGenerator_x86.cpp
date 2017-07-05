@@ -263,7 +263,7 @@ void LIRGenerator::store_stack_parameter (LIR_Opr item, ByteSize offset_from_sp)
 
 void LIRGenerator::do_StoreIndexed(StoreIndexed* x) {
   assert(x->is_pinned(),"");
-  bool needs_range_check = true;
+  bool needs_range_check = x->compute_needs_range_check();
   bool use_length = x->length() != NULL;
   bool obj_store = x->elt_type() == T_ARRAY || x->elt_type() == T_OBJECT;
   bool needs_store_check = obj_store && (x->value()->as_Constant() == NULL ||
@@ -278,12 +278,10 @@ void LIRGenerator::do_StoreIndexed(StoreIndexed* x) {
   array.load_item();
   index.load_nonconstant();
 
-  if (use_length) {
-    needs_range_check = x->compute_needs_range_check();
-    if (needs_range_check) {
-      length.set_instruction(x->length());
-      length.load_item();
-    }
+  if (use_length && needs_range_check) {
+    length.set_instruction(x->length());
+    length.load_item();
+
   }
   if (needs_store_check) {
     value.load_item();

@@ -881,6 +881,7 @@ class    LIR_OpLock;
 class    LIR_OpTypeCheck;
 class    LIR_OpCompareAndSwap;
 class    LIR_OpProfileCall;
+class    LIR_OpAssert;
 
 
 // LIR operation codes
@@ -1000,6 +1001,9 @@ enum LIR_Code {
   , begin_opMDOProfile
     , lir_profile_call
   , end_opMDOProfile
+  , begin_opAssert
+    , lir_assert
+  , end_opAssert
 };
 
 
@@ -1135,6 +1139,7 @@ class LIR_Op: public CompilationResourceObj {
   virtual LIR_OpTypeCheck* as_OpTypeCheck() { return NULL; }
   virtual LIR_OpCompareAndSwap* as_OpCompareAndSwap() { return NULL; }
   virtual LIR_OpProfileCall* as_OpProfileCall() { return NULL; }
+  virtual LIR_OpAssert* as_OpAssert() { return NULL; }
 
   virtual void verify() const {}
 };
@@ -1623,7 +1628,7 @@ class LIR_Op2: public LIR_Op {
     , _tmp3(LIR_OprFact::illegalOpr)
     , _tmp4(LIR_OprFact::illegalOpr)
     , _tmp5(LIR_OprFact::illegalOpr) {
-    assert(code == lir_cmp, "code check");
+    assert(code == lir_cmp || code == lir_assert, "code check");
   }
 
   LIR_Op2(LIR_Code code, LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2, LIR_Opr result, BasicType type)
@@ -1683,7 +1688,7 @@ class LIR_Op2: public LIR_Op {
   LIR_Opr tmp4_opr() const                       { return _tmp4; }
   LIR_Opr tmp5_opr() const                       { return _tmp5; }
   LIR_Condition condition() const  {
-    assert(code() == lir_cmp || code() == lir_cmove, "only valid for cmp and cmove"); return _condition;
+    assert(code() == lir_cmp || code() == lir_cmove || code() == lir_assert, "only valid for cmp and cmove and assert"); return _condition;
   }
   void set_condition(LIR_Condition condition) {
     assert(code() == lir_cmp || code() == lir_cmove, "only valid for cmp and cmove");  _condition = condition;
@@ -1823,6 +1828,30 @@ class LIR_OpDelay: public LIR_Op {
   CodeEmitInfo* call_info() const { return info(); }
 };
 
+#ifdef ASSERT
+// LIR_OpAssert
+class LIR_OpAssert : public LIR_Op2 {
+ friend class LIR_OpVisitState;
+
+ private:
+  const char* _msg;
+  bool        _halt;
+
+ public:
+  LIR_OpAssert(LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2, const char* msg, bool halt)
+    : LIR_Op2(lir_assert, condition, opr1, opr2)
+    , _halt(halt)
+    , _msg(msg) {
+  }
+
+  const char* msg() const                        { return _msg; }
+  bool        halt() const                       { return _halt; }
+
+  virtual void emit_code(LIR_Assembler* masm);
+  virtual LIR_OpAssert* as_OpAssert()            { return this; }
+  virtual void print_instr(outputStream* out) const PRODUCT_RETURN;
+};
+#endif
 
 // LIR_OpCompareAndSwap
 class LIR_OpCompareAndSwap : public LIR_Op {
@@ -2196,6 +2225,9 @@ class LIR_List: public CompilationResourceObj {
 
   void xadd(LIR_Opr src, LIR_Opr add, LIR_Opr res, LIR_Opr tmp) { append(new LIR_Op2(lir_xadd, src, add, res, tmp)); }
   void xchg(LIR_Opr src, LIR_Opr set, LIR_Opr res, LIR_Opr tmp) { append(new LIR_Op2(lir_xchg, src, set, res, tmp)); }
+#ifdef ASSERT
+  void lir_assert(LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2, const char* msg, bool halt) { append(new LIR_OpAssert(condition, opr1, opr2, msg, halt)); }
+#endif
 };
 
 void print_LIR(BlockList* blocks);

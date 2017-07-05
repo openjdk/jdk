@@ -72,36 +72,6 @@
 //    0x20000000 |  536870912 - unused
 //    0x40000000 | 1073741824 - unused
 //    0x80000000 | 2147483648 - unused
-//
-// Note: The ResourceMark is to cleanup resource allocated args.
-//   The "while (0)" is so we can use semi-colon at end of RC_TRACE().
-#define RC_TRACE(level, args) \
-  if ((TraceRedefineClasses & level) != 0) { \
-    ResourceMark rm; \
-    tty->print("RedefineClasses-0x%x: ", level); \
-    tty->print_cr args; \
-  } while (0)
-
-#define RC_TRACE_NO_CR(level, args) \
-  if ((TraceRedefineClasses & level) != 0) { \
-    ResourceMark rm; \
-    tty->print("RedefineClasses-0x%x: ", level); \
-    tty->print args; \
-  } while (0)
-
-#define RC_TRACE_WITH_THREAD(level, thread, args) \
-  if ((TraceRedefineClasses & level) != 0) { \
-    ResourceMark rm(thread); \
-    tty->print("RedefineClasses-0x%x: ", level); \
-    tty->print_cr args; \
-  } while (0)
-
-#define RC_TRACE_MESG(args) \
-  { \
-    ResourceMark rm; \
-    tty->print("RedefineClasses: "); \
-    tty->print_cr args; \
-  } while (0)
 
 // Macro for checking if TraceRedefineClasses has a specific bit
 // enabled. Returns true if the bit specified by level is set.
@@ -120,16 +90,49 @@
 #define RC_TRACE_IN_RANGE(low, high) \
 (((TraceRedefineClasses & ((high << 1) - 1)) & ~(low - 1)) != 0)
 
-// Timer support macros. Only do timer operations if timer tracing
-// is enabled. The "while (0)" is so we can use semi-colon at end of
-// the macro.
-#define RC_TIMER_START(t) \
+// Note: The ResourceMark is to cleanup resource allocated args.
+// The "do {...} while (0)" is so we can use semi-colon at end of RC_TRACE().
+#define RC_TRACE(level, args) do { \
+  if (RC_TRACE_ENABLED(level)) { \
+    ResourceMark rm; \
+    tty->print("RedefineClasses-0x%x: ", level); \
+    tty->print_cr args; \
+  } \
+} while (0)
+
+#define RC_TRACE_NO_CR(level, args) do { \
+  if (RC_TRACE_ENABLED(level)) { \
+    ResourceMark rm; \
+    tty->print("RedefineClasses-0x%x: ", level); \
+    tty->print args; \
+  } \
+} while (0)
+
+#define RC_TRACE_WITH_THREAD(level, thread, args) do { \
+  if (RC_TRACE_ENABLED(level)) { \
+    ResourceMark rm(thread); \
+    tty->print("RedefineClasses-0x%x: ", level); \
+    tty->print_cr args; \
+  } \
+} while (0)
+
+#define RC_TRACE_MESG(args) do { \
+  ResourceMark rm; \
+  tty->print("RedefineClasses: "); \
+  tty->print_cr args; \
+} while (0)
+
+// Timer support macros. Only do timer operations if timer tracing is enabled.
+// The "do {...} while (0)" is so we can use semi-colon at end of the macro.
+#define RC_TIMER_START(t) do { \
   if (RC_TRACE_ENABLED(0x00000004)) { \
     t.start(); \
-  } while (0)
-#define RC_TIMER_STOP(t) \
+  } \
+} while (0)
+#define RC_TIMER_STOP(t) do { \
   if (RC_TRACE_ENABLED(0x00000004)) { \
     t.stop(); \
-  } while (0)
+  } \
+} while (0)
 
 #endif // SHARE_VM_PRIMS_JVMTIREDEFINECLASSESTRACE_HPP
