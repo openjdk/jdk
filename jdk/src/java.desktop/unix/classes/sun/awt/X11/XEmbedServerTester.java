@@ -452,6 +452,7 @@ public class XEmbedServerTester implements XEventDispatcher {
         waitWindowActivated(res);
         return res;
     }
+    @SuppressWarnings("deprecation")
     private int activateServerNoWait(int prev) {
         xembedLog.fine("Activating server");
         int res = getEventPos();
@@ -467,6 +468,7 @@ public class XEmbedServerTester implements XEventDispatcher {
         robot.mouseRelease(InputEvent.BUTTON1_MASK);
         return res;
     }
+    @SuppressWarnings("deprecation")
     private int deactivateServer() {
         xembedLog.fine("Deactivating server");
         int res = getEventPos();
@@ -480,6 +482,7 @@ public class XEmbedServerTester implements XEventDispatcher {
         waitWindowDeactivated(res);
         return res;
     }
+    @SuppressWarnings("deprecation")
     private int focusServer() {
         xembedLog.fine("Focusing server");
         boolean weFocused = focused;
@@ -740,6 +743,7 @@ public class XEmbedServerTester implements XEventDispatcher {
     private void ungrabKey() {
         sendMessage(XEmbedHelper.NON_STANDARD_XEMBED_GTK_UNGRAB_KEY, 0, accel_keysym, accel_mods);
     }
+    @SuppressWarnings("deprecation")
     private int showModalDialog() {
         xembedLog.fine("Showing modal dialog");
         int res = getEventPos();

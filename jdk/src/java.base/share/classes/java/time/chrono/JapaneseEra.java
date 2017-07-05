@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -240,19 +240,10 @@ public final class JapaneseEra
     }
 
     /**
-     * Gets the textual representation of this era.
-     * <p>
-     * This returns the textual name used to identify the era,
-     * suitable for presentation to the user.
-     * The parameters control the style of the returned text and the locale.
-     * <p>
-     * If no textual mapping is found then the {@link #getValue() numeric value}
-     * is returned.
+     * {@inheritDoc}
      *
-     * @param style  the style of the text required, not null
-     * @param locale  the locale to use, not null
-     * @return the text value of the era, not null
-     * @since 9
+     * @param style {@inheritDoc}
+     * @param locale {@inheritDoc}
      */
     @Override
     public String getDisplayName(TextStyle style, Locale locale) {

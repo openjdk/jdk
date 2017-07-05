@@ -29,7 +29,6 @@
  *
  * @author  Mandy Chung
  *
- * @modules jdk.management
  * @build MXBeanException
  * @run main MXBeanException
  */

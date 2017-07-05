@@ -412,6 +412,7 @@ public class JMenuItem extends AbstractButton implements Accessible,MenuElement 
      * @param path  the <code>MenuElement</code> path array
      * @param manager   the <code>MenuSelectionManager</code>
      */
+    @SuppressWarnings("deprecation")
     public void processMouseEvent(MouseEvent e,MenuElement path[],MenuSelectionManager manager) {
         processMenuDragMouseEvent(
                  new MenuDragMouseEvent(e.getComponent(), e.getID(),
@@ -435,6 +436,7 @@ public class JMenuItem extends AbstractButton implements Accessible,MenuElement 
      * @param path the <code>MenuElement</code> path array
      * @param manager   the <code>MenuSelectionManager</code>
      */
+    @SuppressWarnings("deprecation")
     public void processKeyEvent(KeyEvent e,MenuElement path[],MenuSelectionManager manager) {
         if (DEBUG) {
             System.out.println("in JMenuItem.processKeyEvent/3 for " + getText() +
