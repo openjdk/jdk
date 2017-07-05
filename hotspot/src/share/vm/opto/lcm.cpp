@@ -113,6 +113,7 @@ void Block::implicit_null_check(PhaseCFG *cfg, Node *proj, Node *val, int allowe
     case Op_LoadN:
     case Op_LoadS:
     case Op_LoadKlass:
+    case Op_LoadNKlass:
     case Op_LoadRange:
     case Op_LoadD_unaligned:
     case Op_LoadL_unaligned:
@@ -133,6 +134,7 @@ void Block::implicit_null_check(PhaseCFG *cfg, Node *proj, Node *val, int allowe
       if( mach->in(2) != val ) continue;
       break;                    // Found a memory op?
     case Op_StrComp:
+    case Op_AryEq:
       // Not a legit memory op for implicit null check regardless of
       // embedded loads
       continue;

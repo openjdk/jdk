@@ -98,5 +98,5 @@ class MutableSpace: public ImmutableSpace {
   virtual void print_on(outputStream* st) const;
   virtual void print_short() const;
   virtual void print_short_on(outputStream* st) const;
-  virtual void verify(bool allow_dirty) const;
+  virtual void verify(bool allow_dirty);
 };

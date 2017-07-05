@@ -38,7 +38,7 @@ void GraphKit::make_dtrace_method_entry_exit(ciMethod* method, bool is_entry) {
 
   // Get method
   const TypeInstPtr* method_type = TypeInstPtr::make(TypePtr::Constant, method->klass(), true, method, 0);
-  Node *method_node = _gvn.transform( new (C, 1) ConPNode(method_type) );
+  Node *method_node = _gvn.transform( ConNode::make(C, method_type) );
 
   kill_dead_locals();
 
@@ -143,7 +143,7 @@ void Parse::array_store_check() {
   int klass_offset = oopDesc::klass_offset_in_bytes();
   Node* p = basic_plus_adr( ary, ary, klass_offset );
   // p's type is array-of-OOPS plus klass_offset
-  Node* array_klass = _gvn.transform(new (C, 3) LoadKlassNode(0, immutable_memory(), p, TypeInstPtr::KLASS));
+  Node* array_klass = _gvn.transform( LoadKlassNode::make(_gvn, immutable_memory(), p, TypeInstPtr::KLASS) );
   // Get the array klass
   const TypeKlassPtr *tak = _gvn.type(array_klass)->is_klassptr();
 
@@ -189,7 +189,7 @@ void Parse::array_store_check() {
   // Extract the array element class
   int element_klass_offset = objArrayKlass::element_klass_offset_in_bytes() + sizeof(oopDesc);
   Node *p2 = basic_plus_adr(array_klass, array_klass, element_klass_offset);
-  Node *a_e_klass = _gvn.transform(new (C, 3) LoadKlassNode(0, immutable_memory(), p2, tak));
+  Node *a_e_klass = _gvn.transform( LoadKlassNode::make(_gvn, immutable_memory(), p2, tak) );
 
   // Check (the hard way) and throw if not a subklass.
   // Result is ignored, we just need the CFG effects.

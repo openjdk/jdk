@@ -398,7 +398,7 @@ public class HSDB implements ObjectHistogramPanel.Listener, SAListener {
     frame.getContentPane().add(desktop);
     GraphicsUtilities.reshapeToAspectRatio(frame, 4.0f/3.0f, 0.75f, Toolkit.getDefaultToolkit().getScreenSize());
     GraphicsUtilities.centerInContainer(frame, Toolkit.getDefaultToolkit().getScreenSize());
-    frame.show();
+    frame.setVisible(true);
 
     Runtime.getRuntime().addShutdownHook(new java.lang.Thread() {
         public void run() {

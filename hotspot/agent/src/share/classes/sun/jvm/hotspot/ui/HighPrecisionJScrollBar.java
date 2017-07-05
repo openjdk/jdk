@@ -424,7 +424,7 @@ public class HighPrecisionJScrollBar extends JScrollBar {
         }
       });
     frame.getContentPane().add(hpsb);
-    frame.show();
+    frame.setVisible(true);
   }
 
 }

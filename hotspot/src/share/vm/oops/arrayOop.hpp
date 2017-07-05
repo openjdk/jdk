@@ -41,11 +41,10 @@ class arrayOopDesc : public oopDesc {
   // Header size computation.
   // The header is considered the oop part of this type plus the length.
   // Returns the aligned header_size_in_bytes.  This is not equivalent to
-  // sizeof(arrayOopDesc) which should not appear in the code, except here.
+  // sizeof(arrayOopDesc) which should not appear in the code.
   static int header_size_in_bytes() {
-    size_t hs = UseCompressedOops ?
-            sizeof(arrayOopDesc) :
-            align_size_up(sizeof(arrayOopDesc) + sizeof(int), HeapWordSize);
+    size_t hs = align_size_up(length_offset_in_bytes() + sizeof(int),
+                              HeapWordSize);
 #ifdef ASSERT
     // make sure it isn't called before UseCompressedOops is initialized.
     static size_t arrayoopdesc_hs = 0;

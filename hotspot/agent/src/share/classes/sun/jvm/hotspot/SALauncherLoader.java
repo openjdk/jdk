@@ -148,7 +148,7 @@ public class SALauncherLoader extends URLClassLoader {
         }
 
         try {
-            return file.toURL();
+            return file.toURI().toURL();
         } catch (MalformedURLException mue) {
             throw new InternalError(mue.getMessage());
         }
