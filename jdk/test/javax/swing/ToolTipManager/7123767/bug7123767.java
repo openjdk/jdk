@@ -28,8 +28,6 @@
    @run main bug7123767
 */
 
-import sun.awt.SunToolkit;
-
 import javax.swing.*;
 import javax.swing.plaf.metal.MetalLookAndFeel;
 import java.awt.*;
@@ -160,8 +158,10 @@ public class bug7123767 extends JFrame {
 
     // Moves mouse pointer to the corners of every GraphicsConfiguration
     private static void testToolTip() throws AWTException {
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
-        toolkit.realSync();
+
+        robot = new Robot();
+        robot.setAutoDelay(20);
+        robot.waitForIdle();
 
         GraphicsEnvironment environment = GraphicsEnvironment.getLocalGraphicsEnvironment();
         GraphicsDevice[] devices = environment.getScreenDevices();
@@ -169,28 +169,28 @@ public class bug7123767 extends JFrame {
             GraphicsConfiguration[] configs = device.getConfigurations();
             for (GraphicsConfiguration config : configs) {
                 Rectangle rect = config.getBounds();
-                Insets insets = toolkit.getScreenInsets(config);
+                Insets insets = Toolkit.getDefaultToolkit().getScreenInsets(config);
                 adjustInsets(rect, insets);
 
                 // Upper left
                 glide(rect.x + rect.width / 2, rect.y + rect.height / 2,
                         rect.x + MARGIN, rect.y + MARGIN);
-                toolkit.realSync();
+                robot.waitForIdle();
 
                 // Lower left
                 glide(rect.x + rect.width / 2, rect.y + rect.height / 2,
                         rect.x + MARGIN, rect.y + rect.height - MARGIN);
-                toolkit.realSync();
+                robot.waitForIdle();
 
                 // Upper right
                 glide(rect.x + rect.width / 2, rect.y + rect.height / 2,
                         rect.x + rect.width - MARGIN, rect.y + MARGIN);
-                toolkit.realSync();
+                robot.waitForIdle();
 
                 // Lower right
                 glide(rect.x + rect.width / 2, rect.y + rect.height / 2,
                         rect.x + rect.width - MARGIN, rect.y + rect.height - MARGIN);
-                toolkit.realSync();
+                robot.waitForIdle();
             }
         }
     }

@@ -2335,8 +2335,24 @@ Zone America/Dawson	-9:17:40 -	LMT	1900 Aug 20
 # "...the new time zone will come into effect at two o'clock on the first Sunday
 # of February, when we will have to advance the clock one hour from its current
 # time..."
-#
 # Also, the new zone will not use DST.
+#
+# From Carlos Raúl Perasso (2015-02-02):
+# The decree that modifies the Mexican Hour System Law has finally
+# been published at the Diario Oficial de la Federación
+# http://www.dof.gob.mx/nota_detalle.php?codigo=5380123&fecha=31/01/2015
+# It establishes 5 zones for Mexico:
+# 1- Zona Centro (Central Zone): Corresponds to longitude 90 W,
+#    includes most of Mexico, excluding what's mentioned below.
+# 2- Zona Pacífico (Pacific Zone): Longitude 105 W, includes the
+#    states of Baja California Sur; Chihuahua; Nayarit (excluding Bahía
+#    de Banderas which lies in Central Zone); Sinaloa and Sonora.
+# 3- Zona Noroeste (Northwest Zone): Longitude 120 W, includes the
+#    state of Baja California.
+# 4- Zona Sureste (Southeast Zone): Longitude 75 W, includes the state
+#    of Quintana Roo.
+# 5- The islands, reefs and keys shall take their timezone from the
+#    longitude they are located at.
 
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	Mexico	1939	only	-	Feb	5	0:00	1:00	D
@@ -2531,13 +2547,8 @@ Zone America/Santa_Isabel	-7:39:28 -	LMT	1922 Jan  1  0:20:32
 ###############################################################################
 
 # Anguilla
-# See America/Port_of_Spain.
-
 # Antigua and Barbuda
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
-Zone	America/Antigua	-4:07:12 -	LMT	1912 Mar 2
-			-5:00	-	EST	1951
-			-4:00	-	AST
+# See America/Port_of_Spain.
 
 # Bahamas
 #
@@ -2604,10 +2615,7 @@ Zone Atlantic/Bermuda	-4:19:18 -	LMT	1930 Jan  1  2:00 # Hamilton
 			-4:00	US	A%sT
 
 # Cayman Is
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
-Zone	America/Cayman	-5:25:32 -	LMT	1890     # Georgetown
-			-5:07:11 -	KMT	1912 Feb # Kingston Mean Time
-			-5:00	-	EST
+# See America/Panama.
 
 # Costa Rica
 
@@ -3130,6 +3138,7 @@ Zone	America/Managua	-5:45:08 -	LMT	1890
 Zone	America/Panama	-5:18:08 -	LMT	1890
 			-5:19:36 -	CMT	1908 Apr 22 # Colón Mean Time
 			-5:00	-	EST
+Link America/Panama America/Cayman
 
 # Puerto Rico
 # There are too many San Juans elsewhere, so we'll use 'Puerto_Rico'.

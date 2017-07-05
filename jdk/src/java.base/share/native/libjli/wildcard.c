@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -274,7 +274,7 @@ FileList_add(FileList fl, char *file)
 }
 
 static void
-FileList_addSubstring(FileList fl, const char *beg, int len)
+FileList_addSubstring(FileList fl, const char *beg, size_t len)
 {
     char *filename = (char *) JLI_MemAlloc(len+1);
     memcpy(filename, beg, len);
@@ -310,7 +310,7 @@ static FileList
 FileList_split(const char *path, char sep)
 {
     const char *p, *q;
-    int len = (int)JLI_StrLen(path);
+    size_t len = JLI_StrLen(path);
     int count;
     FileList fl;
     for (count = 1, p = path; p < path + len; p++)

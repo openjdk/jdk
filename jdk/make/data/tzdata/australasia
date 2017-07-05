@@ -396,6 +396,7 @@ Zone	Pacific/Guam	-14:21:00 -	LMT	1844 Dec 31
 			 9:39:00 -	LMT	1901        # Agana
 			10:00	-	GST	2000 Dec 23 # Guam
 			10:00	-	ChST	# Chamorro Standard Time
+Link Pacific/Guam Pacific/Saipan # N Mariana Is
 
 # Kiribati
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
@@ -411,12 +412,7 @@ Zone Pacific/Kiritimati	-10:29:20 -	LMT	1901
 			 14:00	-	LINT
 
 # N Mariana Is
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
-Zone Pacific/Saipan	-14:17:00 -	LMT	1844 Dec 31
-			 9:43:00 -	LMT	1901
-			 9:00	-	MPT	1969 Oct    # N Mariana Is Time
-			10:00	-	MPT	2000 Dec 23
-			10:00	-	ChST	# Chamorro Standard Time
+# See Pacific/Guam.
 
 # Marshall Is
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
@@ -586,6 +582,7 @@ Zone Pacific/Pago_Pago	 12:37:12 -	LMT	1879 Jul  5
 			-11:00	-	NST	1967 Apr    # N=Nome
 			-11:00	-	BST	1983 Nov 30 # B=Bering
 			-11:00	-	SST	            # S=Samoa
+Link Pacific/Pago_Pago Pacific/Midway # in US minor outlying islands
 
 # Samoa (formerly and also known as Western Samoa)
 
@@ -767,23 +764,7 @@ Zone Pacific/Funafuti	11:56:52 -	LMT	1901
 # uninhabited
 
 # Midway
-#
-# From Mark Brader (2005-01-23):
-# [Fallacies and Fantasies of Air Transport History, by R.E.G. Davies,
-# published 1994 by Paladwr Press, McLean, VA, USA; ISBN 0-9626483-5-3]
-# reproduced a Pan American Airways timetable from 1936, for their weekly
-# "Orient Express" flights between San Francisco and Manila, and connecting
-# flights to Chicago and the US East Coast.  As it uses some time zone
-# designations that I've never seen before:....
-# Fri. 6:30A Lv. HONOLOLU (Pearl Harbor), H.I.   H.L.T. Ar. 5:30P Sun.
-#  "   3:00P Ar. MIDWAY ISLAND . . . . . . . . . M.L.T. Lv. 6:00A  "
-#
-Zone Pacific/Midway	-11:49:28 -	LMT	1901
-			-11:00	-	NST	1956 Jun  3
-			-11:00	1:00	NDT	1956 Sep  2
-			-11:00	-	NST	1967 Apr    # N=Nome
-			-11:00	-	BST	1983 Nov 30 # B=Bering
-			-11:00	-	SST	            # S=Samoa
+# See Pacific/Pago_Pago.
 
 # Palmyra
 # uninhabited since World War II; was probably like Pacific/Kiritimati

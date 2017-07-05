@@ -30,6 +30,7 @@
 #include "memory/genOopClosures.inline.hpp"
 #include "memory/iterator.inline.hpp"
 #include "memory/oopFactory.hpp"
+#include "memory/specialized_oop_closures.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/instanceMirrorKlass.hpp"
 #include "oops/instanceOop.hpp"
@@ -250,8 +251,6 @@ int InstanceMirrorKlass::oop_adjust_pointers(oop obj) {
 int InstanceMirrorKlass::                                                             \
 oop_oop_iterate##nv_suffix(oop obj, OopClosureType* closure) {                        \
   /* Get size before changing pointers */                                             \
-  SpecializationStats::record_iterate_call##nv_suffix(SpecializationStats::irk);      \
-                                                                                      \
   InstanceKlass::oop_oop_iterate##nv_suffix(obj, closure);                            \
                                                                                       \
   if_do_metadata_checked(closure, nv_suffix) {                                        \
@@ -275,8 +274,6 @@ oop_oop_iterate##nv_suffix(oop obj, OopClosureType* closure) {                  
 int InstanceMirrorKlass::                                                             \
 oop_oop_iterate_backwards##nv_suffix(oop obj, OopClosureType* closure) {              \
   /* Get size before changing pointers */                                             \
-  SpecializationStats::record_iterate_call##nv_suffix(SpecializationStats::irk);      \
-                                                                                      \
   InstanceKlass::oop_oop_iterate_backwards##nv_suffix(obj, closure);                  \
                                                                                       \
   if (UseCompressedOops) {                                                            \
@@ -294,8 +291,6 @@ int InstanceMirrorKlass::                                                       
 oop_oop_iterate##nv_suffix##_m(oop obj,                                               \
                                OopClosureType* closure,                               \
                                MemRegion mr) {                                        \
-  SpecializationStats::record_iterate_call##nv_suffix(SpecializationStats::irk);      \
-                                                                                      \
   InstanceKlass::oop_oop_iterate##nv_suffix##_m(obj, closure, mr);                    \
                                                                                       \
   if_do_metadata_checked(closure, nv_suffix) {                                        \

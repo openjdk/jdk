@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,12 @@
 #define IS_FILE_SEPARATOR(c) ((c) == '/')
 #ifndef MAXNAMELEN
 #define MAXNAMELEN              PATH_MAX
+#endif
+
+#ifdef _LP64
+#define JLONG_FORMAT_SPECIFIER "%ld"
+#else
+#define JLONG_FORMAT_SPECIFIER "%lld"
 #endif
 
 int UnsetEnv(char *name);

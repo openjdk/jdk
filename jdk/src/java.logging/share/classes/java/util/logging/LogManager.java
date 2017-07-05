@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.util.*;
 import java.security.*;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import sun.misc.JavaAWTAccess;
 import sun.misc.SharedSecrets;
@@ -579,7 +580,8 @@ public class LogManager {
     // added in the user context.
     class LoggerContext {
         // Table of named Loggers that maps names to Loggers.
-        private final Hashtable<String,LoggerWeakRef> namedLoggers = new Hashtable<>();
+        private final ConcurrentHashMap<String,LoggerWeakRef> namedLoggers =
+                new ConcurrentHashMap<>();
         // Tree of named Loggers
         private final LogNode root;
         private LoggerContext() {
@@ -642,21 +644,44 @@ public class LogManager {
         }
 
 
-        synchronized Logger findLogger(String name) {
-            // ensure that this context is properly initialized before
-            // looking for loggers.
-            ensureInitialized();
+        Logger findLogger(String name) {
+            // Attempt to find logger without locking.
             LoggerWeakRef ref = namedLoggers.get(name);
-            if (ref == null) {
-                return null;
+            Logger logger = ref == null ? null : ref.get();
+
+            // if logger is not null, then we can return it right away.
+            // if name is "" or "global" and logger is null
+            // we need to fall through and check that this context is
+            // initialized.
+            // if ref is not null and logger is null we also need to
+            // fall through.
+            if (logger != null || (ref == null && !name.isEmpty()
+                    && !name.equals(Logger.GLOBAL_LOGGER_NAME))) {
+                return logger;
             }
-            Logger logger = ref.get();
-            if (logger == null) {
-                // Hashtable holds stale weak reference
-                // to a logger which has been GC-ed.
-                ref.dispose();
+
+            // We either found a stale reference, or we were looking for
+            // "" or "global" and didn't find them.
+            // Make sure context is initialized (has the default loggers),
+            // and look up again, cleaning the stale reference if it hasn't
+            // been cleaned up in between. All this needs to be done inside
+            // a synchronized block.
+            synchronized(this) {
+                // ensure that this context is properly initialized before
+                // looking for loggers.
+                ensureInitialized();
+                ref = namedLoggers.get(name);
+                if (ref == null) {
+                    return null;
+                }
+                logger = ref.get();
+                if (logger == null) {
+                    // The namedLoggers map holds stale weak reference
+                    // to a logger which has been GC-ed.
+                    ref.dispose();
+                }
+                return logger;
             }
-            return logger;
         }
 
         // This method is called before adding a logger to the
@@ -752,7 +777,6 @@ public class LogManager {
             final LogManager owner = getOwner();
             logger.setLogManager(owner);
             ref = owner.new LoggerWeakRef(logger);
-            namedLoggers.put(name, ref);
 
             // Apply any initial level defined for the new logger, unless
             // the logger's level is already initialized
@@ -789,10 +813,17 @@ public class LogManager {
             node.walkAndSetParent(logger);
             // new LogNode is ready so tell the LoggerWeakRef about it
             ref.setNode(node);
+
+            // Do not publish 'ref' in namedLoggers before the logger tree
+            // is fully updated - because the named logger will be visible as
+            // soon as it is published in namedLoggers (findLogger takes
+            // benefit of the ConcurrentHashMap implementation of namedLoggers
+            // to avoid synchronizing on retrieval when that is possible).
+            namedLoggers.put(name, ref);
             return true;
         }
 
-        synchronized void removeLoggerRef(String name, LoggerWeakRef ref) {
+        void removeLoggerRef(String name, LoggerWeakRef ref) {
             namedLoggers.remove(name, ref);
         }
 
@@ -800,7 +831,7 @@ public class LogManager {
             // ensure that this context is properly initialized before
             // returning logger names.
             ensureInitialized();
-            return namedLoggers.keys();
+            return Collections.enumeration(namedLoggers.keySet());
         }
 
         // If logger.getUseParentHandlers() returns 'true' and any of the logger's
@@ -1379,7 +1410,19 @@ public class LogManager {
         reset();
 
         // Load the properties
-        props.load(ins);
+        try {
+            props.load(ins);
+        } catch (IllegalArgumentException x) {
+            // props.load may throw an IllegalArgumentException if the stream
+            // contains malformed Unicode escape sequences.
+            // We wrap that in an IOException as readConfiguration is
+            // specified to throw IOException if there are problems reading
+            // from the stream.
+            // Note: new IOException(x.getMessage(), x) allow us to get a more
+            // concise error message than new IOException(x);
+            throw new IOException(x.getMessage(), x);
+        }
+
         // Instantiate new configuration objects.
         String names[] = parseClassNames("config");
 

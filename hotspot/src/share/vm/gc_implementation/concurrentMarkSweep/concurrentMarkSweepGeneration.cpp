@@ -369,7 +369,7 @@ void CMSStats::adjust_cms_free_adjustment_factor(bool fail, size_t free) {
 double CMSStats::time_until_cms_gen_full() const {
   size_t cms_free = _cms_gen->cmsSpace()->free();
   GenCollectedHeap* gch = GenCollectedHeap::heap();
-  size_t expected_promotion = MIN2(gch->get_gen(0)->capacity(),
+  size_t expected_promotion = MIN2(gch->young_gen()->capacity(),
                                    (size_t) _cms_gen->gc_stats()->avg_promoted()->padded_average());
   if (cms_free > expected_promotion) {
     // Start a cms collection if there isn't enough space to promote
@@ -506,7 +506,7 @@ CMSCollector::CMSCollector(ConcurrentMarkSweepGeneration* cmsGen,
   _collector_policy(cp),
   _should_unload_classes(CMSClassUnloadingEnabled),
   _concurrent_cycles_since_last_unload(0),
-  _roots_scanning_options(SharedHeap::SO_None),
+  _roots_scanning_options(GenCollectedHeap::SO_None),
   _inter_sweep_estimate(CMS_SweepWeight, CMS_SweepPadding),
   _intra_sweep_estimate(CMS_SweepWeight, CMS_SweepPadding),
   _gc_tracer_cm(new (ResourceObj::C_HEAP, mtGC) CMSTracer()),
@@ -626,8 +626,8 @@ CMSCollector::CMSCollector(ConcurrentMarkSweepGeneration* cmsGen,
 
   // Support for parallelizing young gen rescan
   GenCollectedHeap* gch = GenCollectedHeap::heap();
-  assert(gch->prev_gen(_cmsGen)->kind() == Generation::ParNew, "CMS can only be used with ParNew");
-  _young_gen = (ParNewGeneration*)gch->prev_gen(_cmsGen);
+  assert(gch->young_gen()->kind() == Generation::ParNew, "CMS can only be used with ParNew");
+  _young_gen = (ParNewGeneration*)gch->young_gen();
   if (gch->supports_inline_contig_alloc()) {
     _top_addr = gch->top_addr();
     _end_addr = gch->end_addr();
@@ -869,7 +869,7 @@ void ConcurrentMarkSweepGeneration::compute_new_size_free_list() {
       if (prev_level >= 0) {
         size_t prev_size = 0;
         GenCollectedHeap* gch = GenCollectedHeap::heap();
-        Generation* prev_gen = gch->get_gen(prev_level);
+        Generation* prev_gen = gch->young_gen();
         prev_size = prev_gen->capacity();
           gclog_or_tty->print_cr("  Younger gen size "SIZE_FORMAT,
                                  prev_size/1000);
@@ -1049,11 +1049,8 @@ oop ConcurrentMarkSweepGeneration::promote(oop obj, size_t obj_size) {
     // expand and retry
     size_t s = _cmsSpace->expansionSpaceRequired(obj_size);  // HeapWords
     expand_for_gc_cause(s*HeapWordSize, MinHeapDeltaBytes, CMSExpansionCause::_satisfy_promotion);
-    // Since there's currently no next generation, we don't try to promote
+    // Since this is the old generation, we don't try to promote
     // into a more senior generation.
-    assert(next_gen() == NULL, "assumption, based upon which no attempt "
-                               "is made to pass on a possibly failing "
-                               "promotion to next generation");
     res = _cmsSpace->promote(obj, obj_size);
   }
   if (res != NULL) {
@@ -2499,7 +2496,7 @@ void CMSCollector::verify_after_remark_work_1() {
   gch->gen_process_roots(_cmsGen->level(),
                          true,   // younger gens are roots
                          true,   // activate StrongRootsScope
-                         SharedHeap::ScanningOption(roots_scanning_options()),
+                         GenCollectedHeap::ScanningOption(roots_scanning_options()),
                          should_unload_classes(),
                          &notOlder,
                          NULL,
@@ -2567,7 +2564,7 @@ void CMSCollector::verify_after_remark_work_2() {
   gch->gen_process_roots(_cmsGen->level(),
                          true,   // younger gens are roots
                          true,   // activate StrongRootsScope
-                         SharedHeap::ScanningOption(roots_scanning_options()),
+                         GenCollectedHeap::ScanningOption(roots_scanning_options()),
                          should_unload_classes(),
                          &notOlder,
                          NULL,
@@ -2751,7 +2748,7 @@ bool ConcurrentMarkSweepGeneration::is_too_full() const {
 void CMSCollector::setup_cms_unloading_and_verification_state() {
   const  bool should_verify =   VerifyBeforeGC || VerifyAfterGC || VerifyDuringGC
                              || VerifyBeforeExit;
-  const  int  rso           =   SharedHeap::SO_AllCodeCache;
+  const  int  rso           =   GenCollectedHeap::SO_AllCodeCache;
 
   // We set the proper root for this CMS cycle here.
   if (should_unload_classes()) {   // Should unload classes this cycle
@@ -3000,7 +2997,6 @@ void CMSCollector::checkpointRootsInitial() {
   report_heap_summary(GCWhen::BeforeGC);
 
   ReferenceProcessor* rp = ref_processor();
-  SpecializationStats::clear();
   assert(_restart_addr == NULL, "Control point invariant");
   {
     // acquire locks for subsequent manipulations
@@ -3011,7 +3007,6 @@ void CMSCollector::checkpointRootsInitial() {
     rp->enable_discovery();
     _collectorState = Marking;
   }
-  SpecializationStats::print();
 }
 
 void CMSCollector::checkpointRootsInitialWork() {
@@ -3092,7 +3087,7 @@ void CMSCollector::checkpointRootsInitialWork() {
       gch->gen_process_roots(_cmsGen->level(),
                              true,   // younger gens are roots
                              true,   // activate StrongRootsScope
-                             SharedHeap::ScanningOption(roots_scanning_options()),
+                             GenCollectedHeap::ScanningOption(roots_scanning_options()),
                              should_unload_classes(),
                              &notOlder,
                              NULL,
@@ -4329,7 +4324,6 @@ void CMSCollector::checkpointRootsFinal() {
   verify_work_stacks_empty();
   verify_overflow_empty();
 
-  SpecializationStats::clear();
   if (PrintGCDetails) {
     gclog_or_tty->print("[YG occupancy: "SIZE_FORMAT" K ("SIZE_FORMAT" K)]",
                         _young_gen->used() / K,
@@ -4360,7 +4354,6 @@ void CMSCollector::checkpointRootsFinal() {
   }
   verify_work_stacks_empty();
   verify_overflow_empty();
-  SpecializationStats::print();
 }
 
 void CMSCollector::checkpointRootsFinalWork() {
@@ -4528,13 +4521,13 @@ void CMSParInitialMarkTask::work(uint worker_id) {
   gch->gen_process_roots(_collector->_cmsGen->level(),
                          false,     // yg was scanned above
                          false,     // this is parallel code
-                         SharedHeap::ScanningOption(_collector->CMSCollector::roots_scanning_options()),
+                         GenCollectedHeap::ScanningOption(_collector->CMSCollector::roots_scanning_options()),
                          _collector->should_unload_classes(),
                          &par_mri_cl,
                          NULL,
                          &cld_closure);
   assert(_collector->should_unload_classes()
-         || (_collector->CMSCollector::roots_scanning_options() & SharedHeap::SO_AllCodeCache),
+         || (_collector->CMSCollector::roots_scanning_options() & GenCollectedHeap::SO_AllCodeCache),
          "if we didn't scan the code cache, we have to be ready to drop nmethods with expired weak oops");
   _timer.stop();
   if (PrintCMSStatistics != 0) {
@@ -4664,14 +4657,14 @@ void CMSParRemarkTask::work(uint worker_id) {
   gch->gen_process_roots(_collector->_cmsGen->level(),
                          false,     // yg was scanned above
                          false,     // this is parallel code
-                         SharedHeap::ScanningOption(_collector->CMSCollector::roots_scanning_options()),
+                         GenCollectedHeap::ScanningOption(_collector->CMSCollector::roots_scanning_options()),
                          _collector->should_unload_classes(),
                          &par_mrias_cl,
                          NULL,
                          NULL);     // The dirty klasses will be handled below
 
   assert(_collector->should_unload_classes()
-         || (_collector->CMSCollector::roots_scanning_options() & SharedHeap::SO_AllCodeCache),
+         || (_collector->CMSCollector::roots_scanning_options() & GenCollectedHeap::SO_AllCodeCache),
          "if we didn't scan the code cache, we have to be ready to drop nmethods with expired weak oops");
   _timer.stop();
   if (PrintCMSStatistics != 0) {
@@ -5255,14 +5248,14 @@ void CMSCollector::do_remark_non_parallel() {
     gch->gen_process_roots(_cmsGen->level(),
                            true,  // younger gens as roots
                            false, // use the local StrongRootsScope
-                           SharedHeap::ScanningOption(roots_scanning_options()),
+                           GenCollectedHeap::ScanningOption(roots_scanning_options()),
                            should_unload_classes(),
                            &mrias_cl,
                            NULL,
                            NULL); // The dirty klasses will be handled below
 
     assert(should_unload_classes()
-           || (roots_scanning_options() & SharedHeap::SO_AllCodeCache),
+           || (roots_scanning_options() & GenCollectedHeap::SO_AllCodeCache),
            "if we didn't scan the code cache, we have to be ready to drop nmethods with expired weak oops");
   }
 

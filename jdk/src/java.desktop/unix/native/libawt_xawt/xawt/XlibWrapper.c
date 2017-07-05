@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@
 
 #include <X11/XKBlib.h>
 
-#if defined(DEBUG) || defined(INTERNAL_BUILD)
+#if defined(DEBUG)
 static jmethodID lockIsHeldMID = NULL;
 
 static void
@@ -2346,4 +2346,3 @@ Java_sun_awt_X11_XlibWrapper_SetBitmapShape
 
     (*env)->ReleaseIntArrayElements(env, bitmap, values, JNI_ABORT);
 }
-

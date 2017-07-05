@@ -116,6 +116,14 @@ address os::Linux::ucontext_get_pc(ucontext_t * uc) {
 #endif
 }
 
+void os::Linux::ucontext_set_pc(ucontext_t * uc, address pc) {
+#ifdef BUILTIN_SIM
+  uc->uc_mcontext.gregs[REG_PC] = (intptr_t)pc;
+#else
+  uc->uc_mcontext.pc = (intptr_t)pc;
+#endif
+}
+
 intptr_t* os::Linux::ucontext_get_sp(ucontext_t * uc) {
 #ifdef BUILTIN_SIM
   return (intptr_t*)uc->uc_mcontext.gregs[REG_SP];
@@ -311,7 +319,7 @@ JVM_handle_linux_signal(int sig,
     }
 #else
     if (StubRoutines::is_safefetch_fault(pc)) {
-      uc->uc_mcontext.pc = intptr_t(StubRoutines::continuation_for_safefetch_fault(pc));
+      os::Linux::ucontext_set_pc(uc, StubRoutines::continuation_for_safefetch_fault(pc));
       return 1;
     }
 #endif
@@ -432,11 +440,7 @@ JVM_handle_linux_signal(int sig,
     // save all thread context in case we need to restore it
     if (thread != NULL) thread->set_saved_exception_pc(pc);
 
-#ifdef BUILTIN_SIM
-    uc->uc_mcontext.gregs[REG_PC] = (greg_t)stub;
-#else
-    uc->uc_mcontext.pc = (__u64)stub;
-#endif
+    os::Linux::ucontext_set_pc(uc, stub);
     return true;
   }
 
