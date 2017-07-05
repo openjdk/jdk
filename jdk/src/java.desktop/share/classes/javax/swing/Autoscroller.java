@@ -82,6 +82,7 @@ class Autoscroller implements ActionListener {
     /**
      * Starts the timer targeting the passed in component.
      */
+    @SuppressWarnings("deprecation")
     private void start(JComponent c, MouseEvent e) {
         Point screenLocation = c.getLocationOnScreen();
 
@@ -156,6 +157,7 @@ class Autoscroller implements ActionListener {
      * ActionListener method. Invoked when the Timer fires. This will scroll
      * if necessary.
      */
+    @SuppressWarnings("deprecation")
     public void actionPerformed(ActionEvent x) {
         JComponent component = Autoscroller.component;
 
