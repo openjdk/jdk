@@ -4743,49 +4743,26 @@ jlong os::thread_cpu_time(Thread *thread, bool user_sys_cpu_time) {
 //
 
 static jlong slow_thread_cpu_time(Thread *thread, bool user_sys_cpu_time) {
-  static bool proc_pid_cpu_avail = true;
   static bool proc_task_unchecked = true;
   static const char *proc_stat_path = "/proc/%d/stat";
   pid_t  tid = thread->osthread()->thread_id();
-  int i;
   char *s;
   char stat[2048];
   int statlen;
   char proc_name[64];
   int count;
   long sys_time, user_time;
-  char string[64];
   char cdummy;
   int idummy;
   long ldummy;
   FILE *fp;
 
-  // We first try accessing /proc/<pid>/cpu since this is faster to
-  // process.  If this file is not present (linux kernels 2.5 and above)
-  // then we open /proc/<pid>/stat.
-  if ( proc_pid_cpu_avail ) {
-    sprintf(proc_name, "/proc/%d/cpu", tid);
-    fp =  fopen(proc_name, "r");
-    if ( fp != NULL ) {
-      count = fscanf( fp, "%s %lu %lu\n", string, &user_time, &sys_time);
-      fclose(fp);
-      if ( count != 3 ) return -1;
-
-      if (user_sys_cpu_time) {
-        return ((jlong)sys_time + (jlong)user_time) * (1000000000 / clock_tics_per_sec);
-      } else {
-        return (jlong)user_time * (1000000000 / clock_tics_per_sec);
-      }
-    }
-    else proc_pid_cpu_avail = false;
-  }
-
   // The /proc/<tid>/stat aggregates per-process usage on
   // new Linux kernels 2.6+ where NPTL is supported.
   // The /proc/self/task/<tid>/stat still has the per-thread usage.
   // See bug 6328462.
-  // There can be no directory /proc/self/task on kernels 2.4 with NPTL
-  // and possibly in some other cases, so we check its availability.
+  // There possibly can be cases where there is no directory
+  // /proc/self/task, so we check its availability.
   if (proc_task_unchecked && os::Linux::is_NPTL()) {
     // This is executed only once
     proc_task_unchecked = false;
@@ -4810,7 +4787,6 @@ static jlong slow_thread_cpu_time(Thread *thread, bool user_sys_cpu_time) {
   // We don't really need to know the command string, just find the last
   // occurrence of ")" and then start parsing from there. See bug 4726580.
   s = strrchr(stat, ')');
-  i = 0;
   if (s == NULL ) return -1;
 
   // Skip blank chars

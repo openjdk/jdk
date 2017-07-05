@@ -464,9 +464,6 @@ endif
 $(EXPORT_LIB_DIR)/%.jar: $(GEN_DIR)/%.jar
 	$(install-file)
 
-$(EXPORT_JRE_LIB_DIR)/%.jar: $(GEN_DIR)/%.jar
-	$(install-file)
-
 # Include files (jvmti.h, jvmticmlr.h, jni.h, $(JDK_INCLUDE_SUBDIR)/jni_md.h, jmm.h, jfr.h)
 $(EXPORT_INCLUDE_DIR)/%: $(GEN_DIR)/jvmtifiles/%
 	$(install-file)

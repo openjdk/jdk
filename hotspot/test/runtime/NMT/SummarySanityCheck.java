@@ -25,9 +25,10 @@
  * @test
  * @key nmt jcmd
  * @summary Sanity check the output of NMT
- * @library /testlibrary
- * @run compile -J-XX:+UnlockDiagnosticVMOptions -J-XX:+WhiteBoxAPI SummarySanityCheck.java
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:NativeMemoryTracking=summary -XX:+WhiteBoxAPI SummarySanityCheck
+ * @library /testlibrary /testlibrary/whitebox
+ * @build SummarySanityCheck
+ * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:NativeMemoryTracking=summary -XX:+WhiteBoxAPI SummarySanityCheck
  */
 
 import com.oracle.java.testlibrary.*;

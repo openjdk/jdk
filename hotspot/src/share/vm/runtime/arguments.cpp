@@ -2181,19 +2181,6 @@ jint Arguments::parse_vm_init_args(const JavaVMInitArgs* args) {
     FREE_C_HEAP_ARRAY(char, altclasses_path, mtInternal);
   }
 
-  if (WhiteBoxAPI) {
-    // Append wb.jar to bootclasspath if enabled
-    const char* wb_jar = "wb.jar";
-    size_t wb_path_len = strlen(get_meta_index_dir()) + 1 +
-                         strlen(wb_jar);
-    char* wb_path = NEW_C_HEAP_ARRAY(char, wb_path_len, mtInternal);
-    strcpy(wb_path, get_meta_index_dir());
-    strcat(wb_path, wb_jar);
-    scp.add_suffix(wb_path);
-    scp_assembly_required = true;
-    FREE_C_HEAP_ARRAY(char, wb_path, mtInternal);
-  }
-
   // Parse _JAVA_OPTIONS environment variable (if present) (mimics classic VM)
   result = parse_java_options_environment_variable(&scp, &scp_assembly_required);
   if (result != JNI_OK) {

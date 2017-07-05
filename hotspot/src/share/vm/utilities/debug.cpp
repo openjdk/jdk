@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -228,28 +228,16 @@ void report_fatal(const char* file, int line, const char* message)
   report_vm_error(file, line, "fatal error", message);
 }
 
-// Used by report_vm_out_of_memory to detect recursion.
-static jint _exiting_out_of_mem = 0;
-
 void report_vm_out_of_memory(const char* file, int line, size_t size,
                              const char* message) {
   if (Debugging) return;
 
-  // We try to gather additional information for the first out of memory
-  // error only; gathering additional data might cause an allocation and a
-  // recursive out_of_memory condition.
+  Thread* thread = ThreadLocalStorage::get_thread_slow();
+  VMError(thread, file, line, size, message).report_and_die();
 
-  const jint exiting = 1;
-  // If we succeed in changing the value, we're the first one in.
-  bool first_time_here = Atomic::xchg(exiting, &_exiting_out_of_mem) != exiting;
-
-  if (first_time_here) {
-    Thread* thread = ThreadLocalStorage::get_thread_slow();
-    VMError(thread, file, line, size, message).report_and_die();
-  }
-
-  // Dump core and abort
-  vm_abort(true);
+  // The UseOSErrorReporting option in report_and_die() may allow a return
+  // to here. If so then we'll have to figure out how to handle it.
+  guarantee(false, "report_and_die() should not return here");
 }
 
 void report_should_not_call(const char* file, int line) {

@@ -28,6 +28,7 @@
 #
 
 ifeq ($(PLATFORM), windows)
+ifndef CONFIGURE_BUILD
   CC           = $(COMPILER_PATH)cl
   CPP          = $(COMPILER_PATH)cl
   CXX          = $(COMPILER_PATH)cl
@@ -36,7 +37,7 @@ ifeq ($(PLATFORM), windows)
   LINK         = $(COMPILER_PATH)link
   LINK32       = $(LINK)
   DUMPBIN      = $(COMPILER_PATH)dumpbin.exe
- 
+
   # Fill in unknown values
   COMPILER_NAME=Unknown MSVC Compiler
   COMPILER_VERSION=
@@ -87,6 +88,6 @@ ifeq ($(PLATFORM), windows)
   SHARED_LIBRARY_FLAG = -LD
   # RSC is always same as RC (Not sure who uses this RSC variable)
   RSC = $(RC)
-
+endif 
 endif
 
