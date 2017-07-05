@@ -115,6 +115,6 @@ class KQueue {
         throws IOException;
 
     static {
-        Util.load();
+        IOUtil.load();
     }
 }

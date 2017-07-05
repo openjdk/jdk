@@ -2109,7 +2109,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         // This is a quick way to approximate the size of the result,
         // similar to doing log2[n] * exponent.  This will give an upper bound
         // of how big the result can be, and which algorithm to use.
-        int scaleFactor = remainingBits * exponent;
+        long scaleFactor = (long)remainingBits * exponent;
 
         // Use slightly different algorithms for small and large operands.
         // See if the result will safely fit into a long. (Largest 2^63-1)

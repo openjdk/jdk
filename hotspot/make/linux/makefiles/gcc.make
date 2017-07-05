@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -397,4 +397,11 @@ endif
 # favor code space over speed
 ifdef MINIMIZE_RAM_USAGE
 CFLAGS += -DMINIMIZE_RAM_USAGE
+endif
+
+# Stack walking in the JVM relies on frame pointer (%rbp) to walk thread stack.
+# Explicitly specify -fno-omit-frame-pointer because it is off by default
+# starting with gcc 4.6.
+ifndef USE_SUNCC
+  CFLAGS += -fno-omit-frame-pointer
 endif

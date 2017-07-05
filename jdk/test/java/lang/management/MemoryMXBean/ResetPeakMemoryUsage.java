@@ -33,10 +33,10 @@
  * @author  Mandy Chung
  *
  * @build ResetPeakMemoryUsage MemoryUtil
- * @run main/othervm -XX:+UseSerialGC -XX:MarkSweepAlwaysCompactCount=1 -Xmn8m ResetPeakMemoryUsage
- * @run main/othervm -XX:+UseConcMarkSweepGC -Xmn8m ResetPeakMemoryUsage
- * @run main/othervm -XX:+UseParallelGC -Xmn8m ResetPeakMemoryUsage
- * @run main/othervm -XX:+UseG1GC -Xmn8m -XX:G1HeapRegionSize=1m ResetPeakMemoryUsage
+ * @run main/othervm -XX:+PrintGCDetails -XX:+UseSerialGC -Xms256m -XX:MarkSweepAlwaysCompactCount=1 -Xmn8m ResetPeakMemoryUsage
+ * @run main/othervm -XX:+PrintGCDetails -XX:+UseConcMarkSweepGC -Xms256m -Xmn8m ResetPeakMemoryUsage
+ * @run main/othervm -XX:+PrintGCDetails -XX:+UseParallelGC -Xms256m -Xmn8m ResetPeakMemoryUsage
+ * @run main/othervm -XX:+PrintGCDetails -XX:+UseG1GC -Xms256m -Xmn8m -XX:G1HeapRegionSize=1m ResetPeakMemoryUsage
  */
 
 import java.lang.management.*;

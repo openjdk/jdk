@@ -443,7 +443,7 @@ class Iocp extends AsynchronousChannelGroupImpl {
     private static native String getErrorMessage(int error);
 
     static {
-        Util.load();
+        IOUtil.load();
         initIDs();
 
         // thread agnostic I/O on Vista/2008 or newer

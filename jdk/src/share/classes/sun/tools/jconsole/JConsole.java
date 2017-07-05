@@ -858,6 +858,10 @@ public class JConsole extends JFrame
                 try {
                     updateInterval = Integer.parseInt(arg.substring(10)) *
                         1000;
+                    if (updateInterval <= 0) {
+                        usage();
+                        return;
+                    }
                 } catch (NumberFormatException ex) {
                     usage();
                     return;

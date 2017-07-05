@@ -185,7 +185,7 @@ OLD_CFLAGS="$CFLAGS"
 CFLAGS="$CFLAGS $X_CFLAGS"
 
 # Need to include Xlib.h and Xutil.h to avoid "present but cannot be compiled" warnings on Solaris 10
-AC_CHECK_HEADERS([X11/extensions/shape.h X11/extensions/Xrender.h X11/extensions/XTest.h],
+AC_CHECK_HEADERS([X11/extensions/shape.h X11/extensions/Xrender.h X11/extensions/XTest.h X11/Intrinsic.h],
                  [X11_A_OK=yes],
                  [X11_A_OK=no; break],
                  [ # include <X11/Xlib.h>
@@ -197,7 +197,7 @@ AC_LANG_POP(C)
 
 if test "x$X11_A_OK" = xno && test "x$X11_NOT_NEEDED" != xyes; then 
     HELP_MSG_MISSING_DEPENDENCY([x11])
-    AC_MSG_ERROR([Could not find all X11 headers (shape.h Xrender.h XTest.h). $HELP_MSG])
+    AC_MSG_ERROR([Could not find all X11 headers (shape.h Xrender.h XTest.h Intrinsic.h). $HELP_MSG])
 fi
 
 AC_SUBST(X_CFLAGS)

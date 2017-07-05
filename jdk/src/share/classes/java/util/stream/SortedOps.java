@@ -129,7 +129,7 @@ final class SortedOps {
         }
 
         @Override
-        public Sink<T> opWrapSink(int flags, Sink sink) {
+        public Sink<T> opWrapSink(int flags, Sink<T> sink) {
             Objects.requireNonNull(sink);
 
             // If the input is already naturally sorted and this operation
@@ -280,12 +280,12 @@ final class SortedOps {
     /**
      * {@link ForkJoinTask} for implementing sort on SIZED reference streams.
      */
-    private static final class SizedRefSortingSink<T> extends Sink.ChainedReference<T> {
+    private static final class SizedRefSortingSink<T> extends Sink.ChainedReference<T, T> {
         private final Comparator<? super T> comparator;
         private T[] array;
         private int offset;
 
-        SizedRefSortingSink(Sink<T> sink, Comparator<? super T> comparator) {
+        SizedRefSortingSink(Sink<? super T> sink, Comparator<? super T> comparator) {
             super(sink);
             this.comparator = comparator;
         }
@@ -320,11 +320,11 @@ final class SortedOps {
     /**
      * {@link Sink} for implementing sort on reference streams.
      */
-    private static final class RefSortingSink<T> extends Sink.ChainedReference<T> {
+    private static final class RefSortingSink<T> extends Sink.ChainedReference<T, T> {
         private final Comparator<? super T> comparator;
         private ArrayList<T> list;
 
-        RefSortingSink(Sink<T> sink, Comparator<? super T> comparator) {
+        RefSortingSink(Sink<? super T> sink, Comparator<? super T> comparator) {
             super(sink);
             this.comparator = comparator;
         }
@@ -352,11 +352,11 @@ final class SortedOps {
     /**
      * {@link Sink} for implementing sort on SIZED int streams.
      */
-    private static final class SizedIntSortingSink extends Sink.ChainedInt {
+    private static final class SizedIntSortingSink extends Sink.ChainedInt<Integer> {
         private int[] array;
         private int offset;
 
-        SizedIntSortingSink(Sink downstream) {
+        SizedIntSortingSink(Sink<? super Integer> downstream) {
             super(downstream);
         }
 
@@ -386,10 +386,10 @@ final class SortedOps {
     /**
      * {@link Sink} for implementing sort on int streams.
      */
-    private static final class IntSortingSink extends Sink.ChainedInt {
+    private static final class IntSortingSink extends Sink.ChainedInt<Integer> {
         private SpinedBuffer.OfInt b;
 
-        IntSortingSink(Sink sink) {
+        IntSortingSink(Sink<? super Integer> sink) {
             super(sink);
         }
 
@@ -417,11 +417,11 @@ final class SortedOps {
     /**
      * {@link Sink} for implementing sort on SIZED long streams.
      */
-    private static final class SizedLongSortingSink extends Sink.ChainedLong {
+    private static final class SizedLongSortingSink extends Sink.ChainedLong<Long> {
         private long[] array;
         private int offset;
 
-        SizedLongSortingSink(Sink downstream) {
+        SizedLongSortingSink(Sink<? super Long> downstream) {
             super(downstream);
         }
 
@@ -451,10 +451,10 @@ final class SortedOps {
     /**
      * {@link Sink} for implementing sort on long streams.
      */
-    private static final class LongSortingSink extends Sink.ChainedLong {
+    private static final class LongSortingSink extends Sink.ChainedLong<Long> {
         private SpinedBuffer.OfLong b;
 
-        LongSortingSink(Sink sink) {
+        LongSortingSink(Sink<? super Long> sink) {
             super(sink);
         }
 
@@ -482,11 +482,11 @@ final class SortedOps {
     /**
      * {@link Sink} for implementing sort on SIZED double streams.
      */
-    private static final class SizedDoubleSortingSink extends Sink.ChainedDouble {
+    private static final class SizedDoubleSortingSink extends Sink.ChainedDouble<Double> {
         private double[] array;
         private int offset;
 
-        SizedDoubleSortingSink(Sink downstream) {
+        SizedDoubleSortingSink(Sink<? super Double> downstream) {
             super(downstream);
         }
 
@@ -516,10 +516,10 @@ final class SortedOps {
     /**
      * {@link Sink} for implementing sort on double streams.
      */
-    private static final class DoubleSortingSink extends Sink.ChainedDouble {
+    private static final class DoubleSortingSink extends Sink.ChainedDouble<Double> {
         private SpinedBuffer.OfDouble b;
 
-        DoubleSortingSink(Sink sink) {
+        DoubleSortingSink(Sink<? super Double> sink) {
             super(sink);
         }
 

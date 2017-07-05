@@ -96,6 +96,11 @@ final class SliceOps {
         }
     }
 
+    @SuppressWarnings("unchecked")
+    private static <T> IntFunction<T[]> castingArray() {
+        return size -> (T[]) new Object[size];
+    }
+
     /**
      * Appends a "slice" operation to the provided stream.  The slice operation
      * may be may be skip-only, limit-only, or skip-and-limit.
@@ -107,12 +112,12 @@ final class SliceOps {
      *        is to be imposed
      */
     public static <T> Stream<T> makeRef(AbstractPipeline<?, T, ?> upstream,
-                                       long skip, long limit) {
+                                        long skip, long limit) {
         if (skip < 0)
             throw new IllegalArgumentException("Skip must be non-negative: " + skip);
 
-        return new ReferencePipeline.StatefulOp<T,T>(upstream, StreamShape.REFERENCE,
-                                                     flags(limit)) {
+        return new ReferencePipeline.StatefulOp<T, T>(upstream, StreamShape.REFERENCE,
+                                                      flags(limit)) {
             Spliterator<T> unorderedSkipLimitSpliterator(Spliterator<T> s,
                                                          long skip, long limit, long sizeIfKnown) {
                 if (skip <= sizeIfKnown) {
@@ -146,7 +151,7 @@ final class SliceOps {
                     //     cancellation will be more aggressive cancelling later tasks
                     //     if the target slice size has been reached from a given task,
                     //     cancellation should also clear local results if any
-                    return new SliceTask<>(this, helper, spliterator, i -> (T[]) new Object[i], skip, limit).
+                    return new SliceTask<>(this, helper, spliterator, castingArray(), skip, limit).
                             invoke().spliterator();
                 }
             }
@@ -182,7 +187,7 @@ final class SliceOps {
 
             @Override
             Sink<T> opWrapSink(int flags, Sink<T> sink) {
-                return new Sink.ChainedReference<T>(sink) {
+                return new Sink.ChainedReference<T, T>(sink) {
                     long n = skip;
                     long m = limit >= 0 ? limit : Long.MAX_VALUE;
 
@@ -291,7 +296,7 @@ final class SliceOps {
 
             @Override
             Sink<Integer> opWrapSink(int flags, Sink<Integer> sink) {
-                return new Sink.ChainedInt(sink) {
+                return new Sink.ChainedInt<Integer>(sink) {
                     long n = skip;
                     long m = limit >= 0 ? limit : Long.MAX_VALUE;
 
@@ -400,7 +405,7 @@ final class SliceOps {
 
             @Override
             Sink<Long> opWrapSink(int flags, Sink<Long> sink) {
-                return new Sink.ChainedLong(sink) {
+                return new Sink.ChainedLong<Long>(sink) {
                     long n = skip;
                     long m = limit >= 0 ? limit : Long.MAX_VALUE;
 
@@ -509,7 +514,7 @@ final class SliceOps {
 
             @Override
             Sink<Double> opWrapSink(int flags, Sink<Double> sink) {
-                return new Sink.ChainedDouble(sink) {
+                return new Sink.ChainedDouble<Double>(sink) {
                     long n = skip;
                     long m = limit >= 0 ? limit : Long.MAX_VALUE;
 
@@ -560,13 +565,13 @@ final class SliceOps {
 
         private volatile boolean completed;
 
-        SliceTask(AbstractPipeline<?, P_OUT, ?> op,
+        SliceTask(AbstractPipeline<P_OUT, P_OUT, ?> op,
                   PipelineHelper<P_OUT> helper,
                   Spliterator<P_IN> spliterator,
                   IntFunction<P_OUT[]> generator,
                   long offset, long size) {
             super(helper, spliterator);
-            this.op = (AbstractPipeline<P_OUT, P_OUT, ?>) op;
+            this.op = op;
             this.generator = generator;
             this.targetOffset = offset;
             this.targetSize = size;
