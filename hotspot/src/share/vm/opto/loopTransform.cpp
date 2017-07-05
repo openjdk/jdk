@@ -2049,11 +2049,18 @@ bool IdealLoopTree::is_range_check_if(IfNode *iff, PhaseIdealLoop *phase, Invari
   if (cmp->Opcode() != Op_CmpU ) {
     return false;
   }
-  if (cmp->in(2)->Opcode() != Op_LoadRange) {
-    return false;
+  Node* range = cmp->in(2);
+  if (range->Opcode() != Op_LoadRange) {
+    const TypeInt* tint = phase->_igvn.type(range)->isa_int();
+    if (!OptimizeFill || tint == NULL || tint->empty() || tint->_lo < 0) {
+      // Allow predication on positive values that aren't LoadRanges.
+      // This allows optimization of loops where the length of the
+      // array is a known value and doesn't need to be loaded back
+      // from the array.
+      return false;
+    }
   }
-  LoadRangeNode* lr = (LoadRangeNode*)cmp->in(2);
-  if (!invar.is_invariant(lr)) { // loadRange must be invariant
+  if (!invar.is_invariant(range)) {
     return false;
   }
   Node *iv     = _head->as_CountedLoop()->phi();
@@ -2248,9 +2255,9 @@ bool PhaseIdealLoop::loop_predication_impl(IdealLoopTree *loop) {
       const Node*    cmp    = bol->in(1)->as_Cmp();
       Node*          idx    = cmp->in(1);
       assert(!invar.is_invariant(idx), "index is variant");
-      assert(cmp->in(2)->Opcode() == Op_LoadRange, "must be");
-      Node* ld_rng = cmp->in(2); // LoadRangeNode
-      assert(invar.is_invariant(ld_rng), "load range must be invariant");
+      assert(cmp->in(2)->Opcode() == Op_LoadRange || OptimizeFill, "must be");
+      Node* rng = cmp->in(2);
+      assert(invar.is_invariant(rng), "range must be invariant");
       int scale    = 1;
       Node* offset = zero;
       bool ok = is_scaled_iv_plus_offset(idx, cl->phi(), &scale, &offset);
@@ -2271,21 +2278,21 @@ bool PhaseIdealLoop::loop_predication_impl(IdealLoopTree *loop) {
 
       // Perform cloning to keep Invariance state correct since the
       // late schedule will place invariant things in the loop.
-      ld_rng = invar.clone(ld_rng, ctrl);
+      rng = invar.clone(rng, ctrl);
       if (offset && offset != zero) {
         assert(invar.is_invariant(offset), "offset must be loop invariant");
         offset = invar.clone(offset, ctrl);
       }
 
       // Test the lower bound
-      Node*  lower_bound_bol = rc_predicate(ctrl, scale, offset, init, limit, stride, ld_rng, false);
+      Node*  lower_bound_bol = rc_predicate(ctrl, scale, offset, init, limit, stride, rng, false);
       IfNode* lower_bound_iff = lower_bound_proj->in(0)->as_If();
       _igvn.hash_delete(lower_bound_iff);
       lower_bound_iff->set_req(1, lower_bound_bol);
       if (TraceLoopPredicate) tty->print_cr("lower bound check if: %d", lower_bound_iff->_idx);
 
       // Test the upper bound
-      Node* upper_bound_bol = rc_predicate(ctrl, scale, offset, init, limit, stride, ld_rng, true);
+      Node* upper_bound_bol = rc_predicate(ctrl, scale, offset, init, limit, stride, rng, true);
       IfNode* upper_bound_iff = upper_bound_proj->in(0)->as_If();
       _igvn.hash_delete(upper_bound_iff);
       upper_bound_iff->set_req(1, upper_bound_bol);
@@ -2365,4 +2372,359 @@ bool IdealLoopTree::loop_predication( PhaseIdealLoop *phase) {
   }
 
   return hoisted;
+}
+
+
+// Process all the loops in the loop tree and replace any fill
+// patterns with an intrisc version.
+bool PhaseIdealLoop::do_intrinsify_fill() {
+  bool changed = false;
+  for (LoopTreeIterator iter(_ltree_root); !iter.done(); iter.next()) {
+    IdealLoopTree* lpt = iter.current();
+    changed |= intrinsify_fill(lpt);
+  }
+  return changed;
+}
+
+
+// Examine an inner loop looking for a a single store of an invariant
+// value in a unit stride loop,
+bool PhaseIdealLoop::match_fill_loop(IdealLoopTree* lpt, Node*& store, Node*& store_value,
+                                     Node*& shift, Node*& con) {
+  const char* msg = NULL;
+  Node* msg_node = NULL;
+
+  store_value = NULL;
+  con = NULL;
+  shift = NULL;
+
+  // Process the loop looking for stores.  If there are multiple
+  // stores or extra control flow give at this point.
+  CountedLoopNode* head = lpt->_head->as_CountedLoop();
+  for (uint i = 0; msg == NULL && i < lpt->_body.size(); i++) {
+    Node* n = lpt->_body.at(i);
+    if (n->outcnt() == 0) continue; // Ignore dead
+    if (n->is_Store()) {
+      if (store != NULL) {
+        msg = "multiple stores";
+        break;
+      }
+      int opc = n->Opcode();
+      if (opc == Op_StoreP || opc == Op_StoreN || opc == Op_StoreCM) {
+        msg = "oop fills not handled";
+        break;
+      }
+      Node* value = n->in(MemNode::ValueIn);
+      if (!lpt->is_invariant(value)) {
+        msg  = "variant store value";
+      } else if (!_igvn.type(n->in(MemNode::Address))->isa_aryptr()) {
+        msg = "not array address";
+      }
+      store = n;
+      store_value = value;
+    } else if (n->is_If() && n != head->loopexit()) {
+      msg = "extra control flow";
+      msg_node = n;
+    }
+  }
+
+  if (store == NULL) {
+    // No store in loop
+    return false;
+  }
+
+  if (msg == NULL && head->stride_con() != 1) {
+    // could handle negative strides too
+    if (head->stride_con() < 0) {
+      msg = "negative stride";
+    } else {
+      msg = "non-unit stride";
+    }
+  }
+
+  if (msg == NULL && !store->in(MemNode::Address)->is_AddP()) {
+    msg = "can't handle store address";
+    msg_node = store->in(MemNode::Address);
+  }
+
+  // Make sure there is an appropriate fill routine
+  BasicType t = store->as_Mem()->memory_type();
+  const char* fill_name;
+  if (msg == NULL &&
+      StubRoutines::select_fill_function(t, false, fill_name) == NULL) {
+    msg = "unsupported store";
+    msg_node = store;
+  }
+
+  if (msg != NULL) {
+#ifndef PRODUCT
+    if (TraceOptimizeFill) {
+      tty->print_cr("not fill intrinsic candidate: %s", msg);
+      if (msg_node != NULL) msg_node->dump();
+    }
+#endif
+    return false;
+  }
+
+  // Make sure the address expression can be handled.  It should be
+  // head->phi * elsize + con.  head->phi might have a ConvI2L.
+  Node* elements[4];
+  Node* conv = NULL;
+  bool found_index = false;
+  int count = store->in(MemNode::Address)->as_AddP()->unpack_offsets(elements, ARRAY_SIZE(elements));
+  for (int e = 0; e < count; e++) {
+    Node* n = elements[e];
+    if (n->is_Con() && con == NULL) {
+      con = n;
+    } else if (n->Opcode() == Op_LShiftX && shift == NULL) {
+      Node* value = n->in(1);
+#ifdef _LP64
+      if (value->Opcode() == Op_ConvI2L) {
+        conv = value;
+        value = value->in(1);
+      }
+#endif
+      if (value != head->phi()) {
+        msg = "unhandled shift in address";
+      } else {
+        found_index = true;
+        shift = n;
+        assert(type2aelembytes(store->as_Mem()->memory_type(), true) == 1 << shift->in(2)->get_int(), "scale should match");
+      }
+    } else if (n->Opcode() == Op_ConvI2L && conv == NULL) {
+      if (n->in(1) == head->phi()) {
+        found_index = true;
+        conv = n;
+      } else {
+        msg = "unhandled input to ConvI2L";
+      }
+    } else if (n == head->phi()) {
+      // no shift, check below for allowed cases
+      found_index = true;
+    } else {
+      msg = "unhandled node in address";
+      msg_node = n;
+    }
+  }
+
+  if (count == -1) {
+    msg = "malformed address expression";
+    msg_node = store;
+  }
+
+  if (!found_index) {
+    msg = "missing use of index";
+  }
+
+  // byte sized items won't have a shift
+  if (msg == NULL && shift == NULL && t != T_BYTE && t != T_BOOLEAN) {
+    msg = "can't find shift";
+    msg_node = store;
+  }
+
+  if (msg != NULL) {
+#ifndef PRODUCT
+    if (TraceOptimizeFill) {
+      tty->print_cr("not fill intrinsic: %s", msg);
+      if (msg_node != NULL) msg_node->dump();
+    }
+#endif
+    return false;
+  }
+
+  // No make sure all the other nodes in the loop can be handled
+  VectorSet ok(Thread::current()->resource_area());
+
+  // store related values are ok
+  ok.set(store->_idx);
+  ok.set(store->in(MemNode::Memory)->_idx);
+
+  // Loop structure is ok
+  ok.set(head->_idx);
+  ok.set(head->loopexit()->_idx);
+  ok.set(head->phi()->_idx);
+  ok.set(head->incr()->_idx);
+  ok.set(head->loopexit()->cmp_node()->_idx);
+  ok.set(head->loopexit()->in(1)->_idx);
+
+  // Address elements are ok
+  if (con)   ok.set(con->_idx);
+  if (shift) ok.set(shift->_idx);
+  if (conv)  ok.set(conv->_idx);
+
+  for (uint i = 0; msg == NULL && i < lpt->_body.size(); i++) {
+    Node* n = lpt->_body.at(i);
+    if (n->outcnt() == 0) continue; // Ignore dead
+    if (ok.test(n->_idx)) continue;
+    // Backedge projection is ok
+    if (n->is_IfTrue() && n->in(0) == head->loopexit()) continue;
+    if (!n->is_AddP()) {
+      msg = "unhandled node";
+      msg_node = n;
+      break;
+    }
+  }
+
+  // Make sure no unexpected values are used outside the loop
+  for (uint i = 0; msg == NULL && i < lpt->_body.size(); i++) {
+    Node* n = lpt->_body.at(i);
+    // These values can be replaced with other nodes if they are used
+    // outside the loop.
+    if (n == store || n == head->loopexit() || n == head->incr()) continue;
+    for (SimpleDUIterator iter(n); iter.has_next(); iter.next()) {
+      Node* use = iter.get();
+      if (!lpt->_body.contains(use)) {
+        msg = "node is used outside loop";
+        // lpt->_body.dump();
+        msg_node = n;
+        break;
+      }
+    }
+  }
+
+#ifdef ASSERT
+  if (TraceOptimizeFill) {
+    if (msg != NULL) {
+      tty->print_cr("no fill intrinsic: %s", msg);
+      if (msg_node != NULL) msg_node->dump();
+    } else {
+      tty->print_cr("fill intrinsic for:");
+    }
+    store->dump();
+    if (Verbose) {
+      lpt->_body.dump();
+    }
+  }
+#endif
+
+  return msg == NULL;
+}
+
+
+
+bool PhaseIdealLoop::intrinsify_fill(IdealLoopTree* lpt) {
+  // Only for counted inner loops
+  if (!lpt->is_counted() || !lpt->is_inner()) {
+    return false;
+  }
+
+  // Must have constant stride
+  CountedLoopNode* head = lpt->_head->as_CountedLoop();
+  if (!head->stride_is_con() || !head->is_normal_loop()) {
+    return false;
+  }
+
+  // Check that the body only contains a store of a loop invariant
+  // value that is indexed by the loop phi.
+  Node* store = NULL;
+  Node* store_value = NULL;
+  Node* shift = NULL;
+  Node* offset = NULL;
+  if (!match_fill_loop(lpt, store, store_value, shift, offset)) {
+    return false;
+  }
+
+  // Now replace the whole loop body by a call to a fill routine that
+  // covers the same region as the loop.
+  Node* base = store->in(MemNode::Address)->as_AddP()->in(AddPNode::Base);
+
+  // Build an expression for the beginning of the copy region
+  Node* index = head->init_trip();
+#ifdef _LP64
+  index = new (C, 2) ConvI2LNode(index);
+  _igvn.register_new_node_with_optimizer(index);
+#endif
+  if (shift != NULL) {
+    // byte arrays don't require a shift but others do.
+    index = new (C, 3) LShiftXNode(index, shift->in(2));
+    _igvn.register_new_node_with_optimizer(index);
+  }
+  index = new (C, 4) AddPNode(base, base, index);
+  _igvn.register_new_node_with_optimizer(index);
+  Node* from = new (C, 4) AddPNode(base, index, offset);
+  _igvn.register_new_node_with_optimizer(from);
+  // Compute the number of elements to copy
+  Node* len = new (C, 3) SubINode(head->limit(), head->init_trip());
+  _igvn.register_new_node_with_optimizer(len);
+
+  BasicType t = store->as_Mem()->memory_type();
+  bool aligned = false;
+  if (offset != NULL && head->init_trip()->is_Con()) {
+    int element_size = type2aelembytes(t);
+    aligned = (offset->find_intptr_t_type()->get_con() + head->init_trip()->get_int() * element_size) % HeapWordSize == 0;
+  }
+
+  // Build a call to the fill routine
+  const char* fill_name;
+  address fill = StubRoutines::select_fill_function(t, aligned, fill_name);
+  assert(fill != NULL, "what?");
+
+  // Convert float/double to int/long for fill routines
+  if (t == T_FLOAT) {
+    store_value = new (C, 2) MoveF2INode(store_value);
+    _igvn.register_new_node_with_optimizer(store_value);
+  } else if (t == T_DOUBLE) {
+    store_value = new (C, 2) MoveD2LNode(store_value);
+    _igvn.register_new_node_with_optimizer(store_value);
+  }
+
+  Node* mem_phi = store->in(MemNode::Memory);
+  Node* result_ctrl;
+  Node* result_mem;
+  const TypeFunc* call_type = OptoRuntime::array_fill_Type();
+  int size = call_type->domain()->cnt();
+  CallLeafNode *call = new (C, size) CallLeafNoFPNode(call_type, fill,
+                                                      fill_name, TypeAryPtr::get_array_body_type(t));
+  call->init_req(TypeFunc::Parms+0, from);
+  call->init_req(TypeFunc::Parms+1, store_value);
+  call->init_req(TypeFunc::Parms+2, len);
+  call->init_req( TypeFunc::Control, head->init_control());
+  call->init_req( TypeFunc::I_O    , C->top() )        ;   // does no i/o
+  call->init_req( TypeFunc::Memory ,  mem_phi->in(LoopNode::EntryControl) );
+  call->init_req( TypeFunc::ReturnAdr, C->start()->proj_out(TypeFunc::ReturnAdr) );
+  call->init_req( TypeFunc::FramePtr, C->start()->proj_out(TypeFunc::FramePtr) );
+  _igvn.register_new_node_with_optimizer(call);
+  result_ctrl = new (C, 1) ProjNode(call,TypeFunc::Control);
+  _igvn.register_new_node_with_optimizer(result_ctrl);
+  result_mem = new (C, 1) ProjNode(call,TypeFunc::Memory);
+  _igvn.register_new_node_with_optimizer(result_mem);
+
+  // If this fill is tightly coupled to an allocation and overwrites
+  // the whole body, allow it to take over the zeroing.
+  AllocateNode* alloc = AllocateNode::Ideal_allocation(base, this);
+  if (alloc != NULL && alloc->is_AllocateArray()) {
+    Node* length = alloc->as_AllocateArray()->Ideal_length();
+    if (head->limit() == length &&
+        head->init_trip() == _igvn.intcon(0)) {
+      if (TraceOptimizeFill) {
+        tty->print_cr("Eliminated zeroing in allocation");
+      }
+      alloc->maybe_set_complete(&_igvn);
+    } else {
+#ifdef ASSERT
+      if (TraceOptimizeFill) {
+        tty->print_cr("filling array but bounds don't match");
+        alloc->dump();
+        head->init_trip()->dump();
+        head->limit()->dump();
+        length->dump();
+      }
+#endif
+    }
+  }
+
+  // Redirect the old control and memory edges that are outside the loop.
+  Node* exit = head->loopexit()->proj_out(0);
+  _igvn.replace_node(exit, result_ctrl);
+  _igvn.replace_node(store, result_mem);
+  // Any uses the increment outside of the loop become the loop limit.
+  _igvn.replace_node(head->incr(), head->limit());
+
+  // Disconnect the head from the loop.
+  for (uint i = 0; i < lpt->_body.size(); i++) {
+    Node* n = lpt->_body.at(i);
+    _igvn.replace_node(n, C->top());
+  }
+
+  return true;
 }

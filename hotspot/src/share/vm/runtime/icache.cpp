@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ void AbstractICache::initialize() {
   ResourceMark rm;
 
   BufferBlob* b = BufferBlob::create("flush_icache_stub", ICache::stub_size);
-  CodeBuffer c(b->instructions_begin(), b->instructions_size());
+  CodeBuffer c(b);
 
   ICacheStubGenerator g(&c);
   g.generate_icache_flush(&_flush_icache_stub);

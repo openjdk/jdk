@@ -53,13 +53,14 @@ public class ScrollSelectionTest extends Applet
       frame.add(tf);
       tf.select(0, 20);
 
-      String[] instructions =
-       {
+      String[] instructions = {
           "INSTRUCTIONS:",
           "This is a test for a win32 specific problem",
-          "If you see all the letters from 'a' to 'z' and",
-          "letters from 'a' to 't' are selected then test passes"
-       };
+         "If you see all the letters from 'a' to 'z' and",
+          "letters from 'a' to 't' are selected then test passes.",
+          "You may have to activate the frame to see the selection"
+          + " highlighted (e.g. by clicking on frame's title)."
+      };
       Sysout.createDialogWithInstructions( instructions );
 
     }// init()

@@ -31,8 +31,21 @@
 #
 cat /etc/*release
 uname -a
-env LC_COLLATE=C ls /usr/lib/locale | while read line; do
+echo "Testing all available locales"
+/usr/bin/locale -a | while read line; do
     echo ""
     echo "OS Locale: " $line
-    env LANG=$line LC_ALL=$line $1 PrintDefaultLocale
+    env LC_ALL= LC_CTYPE= LC_MESSAGES= LANG=$line $1 $2 $3 $4 $5 $6 $7 $8 $9 PrintDefaultLocale
 done
+
+echo ""
+echo "Testing some typical combinations"
+echo ""
+while read lcctype lcmessages; do
+    if [ "$lcctype" = "#" -o "$lcctype" = "" ]; then
+        continue
+    fi
+    echo ""
+    echo "OS Locale (LC_CTYPE: "$lcctype", LC_MESSAGES: "$lcmessages")"
+    env LC_ALL= LC_CTYPE=$lcctype LC_MESSAGES=$lcmessages $1 $2 $3 $4 $5 $6 $7 $8 $9 PrintDefaultLocale
+done < deflocale.input

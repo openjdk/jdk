@@ -53,6 +53,7 @@ FILES_java = \
 	sun/net/ftp/FtpProtocolException.java \
 	sun/net/ftp/impl/FtpClient.java \
 	sun/net/ftp/impl/DefaultFtpClientProvider.java \
+	sun/net/sdp/SdpSupport.java \
 	sun/net/spi/DefaultProxySelector.java \
 	sun/net/spi/nameservice/NameServiceDescriptor.java \
 	sun/net/spi/nameservice/NameService.java \
@@ -136,8 +137,6 @@ FILES_java = \
 
 ifeq ($(PLATFORM), windows)
     FILES_java += sun/net/www/protocol/http/ntlm/NTLMAuthSequence.java 
-endif
-
-ifeq ($(PLATFORM), solaris)
-    FILES_java += sun/net/spi/SdpProvider.java
+else
+    FILES_java += sun/net/sdp/SdpProvider.java
 endif

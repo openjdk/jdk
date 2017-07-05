@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,8 @@ enum {
   JVM_ACC_HAS_LOOPS               = 0x40000000,     // Method has loops
   JVM_ACC_LOOPS_FLAG_INIT         = (int)0x80000000,// The loop flag has been initialized
   JVM_ACC_QUEUED                  = 0x01000000,     // Queued for compilation
-  JVM_ACC_NOT_TIER1_COMPILABLE    = 0x04000000,
+  JVM_ACC_NOT_C2_COMPILABLE       = 0x02000000,
+  JVM_ACC_NOT_C1_COMPILABLE       = 0x04000000,
   JVM_ACC_NOT_OSR_COMPILABLE      = 0x08000000,
   JVM_ACC_HAS_LINE_NUMBER_TABLE   = 0x00100000,
   JVM_ACC_HAS_CHECKED_EXCEPTIONS  = 0x00400000,
@@ -47,6 +48,7 @@ enum {
   JVM_ACC_IS_OLD                  = 0x00010000,     // RedefineClasses() has replaced this method
   JVM_ACC_IS_OBSOLETE             = 0x00020000,     // RedefineClasses() has made method obsolete
   JVM_ACC_IS_PREFIXED_NATIVE      = 0x00040000,     // JVMTI has prefixed this native method
+
   JVM_MH_INVOKE_BITS           // = 0x10001100      // MethodHandle.invoke quasi-native
                                   = (JVM_ACC_NATIVE | JVM_ACC_SYNTHETIC | JVM_ACC_MONITOR_MATCH),
 
@@ -108,7 +110,8 @@ class AccessFlags VALUE_OBJ_CLASS_SPEC {
   bool has_loops               () const { return (_flags & JVM_ACC_HAS_LOOPS              ) != 0; }
   bool loops_flag_init         () const { return (_flags & JVM_ACC_LOOPS_FLAG_INIT        ) != 0; }
   bool queued_for_compilation  () const { return (_flags & JVM_ACC_QUEUED                 ) != 0; }
-  bool is_not_tier1_compilable  () const { return (_flags & JVM_ACC_NOT_TIER1_COMPILABLE  ) != 0; }
+  bool is_not_c1_compilable () const    { return (_flags & JVM_ACC_NOT_C1_COMPILABLE      ) != 0; }
+  bool is_not_c2_compilable () const    { return (_flags & JVM_ACC_NOT_C2_COMPILABLE      ) != 0; }
   bool is_not_osr_compilable   () const { return (_flags & JVM_ACC_NOT_OSR_COMPILABLE     ) != 0; }
   bool has_linenumber_table    () const { return (_flags & JVM_ACC_HAS_LINE_NUMBER_TABLE  ) != 0; }
   bool has_checked_exceptions  () const { return (_flags & JVM_ACC_HAS_CHECKED_EXCEPTIONS ) != 0; }
@@ -172,7 +175,8 @@ class AccessFlags VALUE_OBJ_CLASS_SPEC {
   void set_has_monitor_bytecodes()     { atomic_set_bits(JVM_ACC_HAS_MONITOR_BYTECODES);   }
   void set_has_loops()                 { atomic_set_bits(JVM_ACC_HAS_LOOPS);               }
   void set_loops_flag_init()           { atomic_set_bits(JVM_ACC_LOOPS_FLAG_INIT);         }
-  void set_not_tier1_compilable()      { atomic_set_bits(JVM_ACC_NOT_TIER1_COMPILABLE);    }
+  void set_not_c1_compilable()         { atomic_set_bits(JVM_ACC_NOT_C1_COMPILABLE);       }
+  void set_not_c2_compilable()         { atomic_set_bits(JVM_ACC_NOT_C2_COMPILABLE);       }
   void set_not_osr_compilable()        { atomic_set_bits(JVM_ACC_NOT_OSR_COMPILABLE);      }
   void set_has_linenumber_table()      { atomic_set_bits(JVM_ACC_HAS_LINE_NUMBER_TABLE);   }
   void set_has_checked_exceptions()    { atomic_set_bits(JVM_ACC_HAS_CHECKED_EXCEPTIONS);  }

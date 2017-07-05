@@ -937,6 +937,12 @@ public:
   // same block.  Split thru the Region.
   void do_split_if( Node *iff );
 
+  // Conversion of fill/copy patterns into intrisic versions
+  bool do_intrinsify_fill();
+  bool intrinsify_fill(IdealLoopTree* lpt);
+  bool match_fill_loop(IdealLoopTree* lpt, Node*& store, Node*& store_value,
+                       Node*& shift, Node*& offset);
+
 private:
   // Return a type based on condition control flow
   const TypeInt* filtered_type( Node *n, Node* n_ctrl);

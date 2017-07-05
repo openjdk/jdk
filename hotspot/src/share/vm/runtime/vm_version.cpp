@@ -121,7 +121,8 @@ const char* Abstract_VM_Version::vm_vendor() {
 #ifdef VENDOR
   return XSTR(VENDOR);
 #else
-  return "Sun Microsystems Inc.";
+  return JDK_Version::is_gte_jdk17x_version() ?
+    "Oracle Corporation" : "Sun Microsystems Inc.";
 #endif
 }
 

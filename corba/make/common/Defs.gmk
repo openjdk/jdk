@@ -73,54 +73,10 @@ JDK_LOCALES  = ja zh_CN
 #
 JRE_NONEXIST_LOCALES = en en_US de_DE es_ES fr_FR it_IT ja_JP ko_KR sv_SE zh
 
-#
-# All libraries except libjava and libjvm itself link against libjvm and
-# libjava, the latter for its exported common utilities.  libjava only links
-# against libjvm.  Programs' makefiles take their own responsibility for
-# adding other libs.
-#
-ifdef PACKAGE
-# put JAVALIB first, but do not lose any platform specific values....
-  LDLIBS_COMMON = $(JAVALIB)
-endif # PACKAGE
-
-#
-# Libraries that must appear ahead of libc.so on the link command line
-#
-ifdef PROGRAM
-
-  ifeq ($(PLATFORM), solaris)
-    LDLIBS_COMMON = -lthread -ldl
-  endif
-
-  ifeq ($(PLATFORM), linux)
-    LDLIBS_COMMON = -ldl
-  endif
-
-endif # PROGRAM
-
-LDLIBS_COMMON += $(EXTRA_LIBS)
-
-#
-# Default is to build, not import native binaries
-#
-ifndef IMPORT_NATIVE_BINARIES
-  IMPORT_NATIVE_BINARIES=false
-endif
-# If importing libraries in, no incremental builds
-ifeq ($(IMPORT_NATIVE_BINARIES),true)
- INCREMENTAL_BUILD=false
-endif
-
-# for generated libraries
 LIBDIR              = $(OUTPUTDIR)/lib
 ABS_LIBDIR          = $(ABS_OUTPUTDIR)/lib
-# Optional place to save the windows .lib files
-LIBFILES_DIR        = $(OUTPUTDIR)/libfiles
 # for ext jre files
 EXTDIR              = $(LIBDIR)/ext
-# for generated include files
-INCLUDEDIR          = $(OUTPUTDIR)/include
 # for generated class files
 CLASSBINDIR         = $(OUTPUTDIR)/classes
 DEMOCLASSDIR        = $(OUTPUTDIR)/democlasses
@@ -131,8 +87,6 @@ BUILDTOOLJARDIR     = $(OUTPUTDIR)/btjars
 ABS_BUILDTOOLJARDIR = $(ABS_OUTPUTDIR)/btjars
 # for generated java source files
 GENSRCDIR           = $(OUTPUTDIR)/gensrc
-# for generated C source files (not javah)
-GENNATIVESRCDIR     = $(OUTPUTDIR)/gennativesrc
 # for imported source files
 IMPORTSRCDIR        = $(OUTPUTDIR)/impsrc
 # for imported documents
@@ -196,19 +150,6 @@ override ABS_TEMPDIR  = $(ABS_OUTPUTDIR)/$(UNIQUE_PATH)
 dummy1:=$(shell $(MKDIR) -p $(TEMPDIR))
 dummy2:=$(shell $(MKDIR) -p $(TEMP_DISK))
 
-# OBJDIRNAME is the name of the directory where the object code is to
-#   be placed. It's name depends on whether the data model architecture 
-#   is 32-bit or not.
-ifneq ($(ARCH_DATA_MODEL), 32)
-  OBJDIRNAME  = obj$(ARCH_DATA_MODEL)$(OBJDIRNAME_SUFFIX)
-else
-  OBJDIRNAME  = obj$(OBJDIRNAME_SUFFIX)
-endif
-OBJDIR      = $(TEMPDIR)/$(OBJDIRNAME)
-
-# CLASSHDRDIR is where the generated C Class Header files go.
-CLASSHDRDIR = $(TEMPDIR)/CClassHeaders
-
 #
 # CLASSDESTDIR can be used to specify the directory where generated classes
 # are to be placed. The default is CLASSBINDIR.
@@ -216,11 +157,6 @@ CLASSHDRDIR = $(TEMPDIR)/CClassHeaders
 ifndef CLASSDESTDIR
 CLASSDESTDIR = $(CLASSBINDIR)
 endif
-
-INCLUDES = -I. -I$(CLASSHDRDIR) \
-	$(patsubst %,-I%,$(subst $(CLASSPATH_SEPARATOR), ,$(VPATH.h))) $(OTHER_INCLUDES)
-OTHER_CPPFLAGS = $(INCLUDES)
-
 
 #
 # vpaths.  These are the default locations searched for source files.
@@ -235,35 +171,6 @@ VPATH0.java = $(GENSRCDIR)$(CLASSPATH_SEPARATOR)$(PLATFORM_SRC)/classes$(CLASSPA
 VPATH.java = $(VPATH0.java)
 vpath %.java $(VPATH.java)
 vpath %.class $(CLASSBINDIR)
-vpath %.$(OBJECT_SUFFIX) $(OBJDIR)
-
-#
-# VPATH.h is used elsewhere to generate include flags.  By default, 
-# anyone has access to the include files that the JVM area exports,
-# namely jni.h, jvm.h, and jni_utils.h, plus their platform-specific
-# relatives.
-#
-ifeq ($(PLATFORM), windows)
-  VPATH.h = $(BOOTDIR)/include;$(BOOTDIR)/include/$(PLATFORM_INCLUDE_NAME)
-else
-  VPATH.h = $(PLATFORM_SRC)/javavm/export$(CLASSPATH_SEPARATOR)$(SHARE_SRC)/javavm/export$(CLASSPATH_SEPARATOR)$(SHARE_SRC)/javavm/include$(CLASSPATH_SEPARATOR)$(PLATFORM_SRC)/javavm/include
-endif
-vpath %.h   $(VPATH.h)
-
-#
-# Used in two ways: helps link against libjava.so. Also if overridden
-# determines where your shared library is installed.
-#
-ifndef LIB_LOCATION
-  LIB_LOCATION    =  $(LIBDIR)/$(LIBARCH)
-endif
-
-#
-# Java header and stub variables
-#
-CLASSHDRS     = $(patsubst %,$(CLASSHDRDIR)/%.h,$(subst .,_,$(CLASSES.export)))
-CLASSSTUBOBJS = classstubs.$(OBJECT_SUFFIX)
-STUBPREAMBLE  = $(INCLUDEDIR)/StubPreamble.h
 
 #
 # Classpath seen by javac (different from the one seen by the VM
@@ -338,38 +245,9 @@ define OTHERSUBDIRS-loop
 done
 endef
 
-#
-# Create BYFILE OPT and DBG settings, if CFLAGS_OPT/foobar.o is set then it is
-#    used for this file, otherwise the default settings are used.
-#
-CFLAGS_$(VARIANT)/BYFILE    = $(CFLAGS_$(VARIANT)/$(@F)) \
-                              $(CFLAGS_$(VARIANT)$(CFLAGS_$(VARIANT)/$(@F)))
-CXXFLAGS_$(VARIANT)/BYFILE  = $(CXXFLAGS_$(VARIANT)/$(@F)) \
-                              $(CXXFLAGS_$(VARIANT)$(CXXFLAGS_$(VARIANT)/$(@F)))
-
-#
-# Tool flags
-#
-ASFLAGS         = $(ASFLAGS_$(VARIANT)) $(ASFLAGS_COMMON) $(OTHER_ASFLAGS)
-CFLAGS          = $(CFLAGS_$(VARIANT)/BYFILE)   $(CFLAGS_COMMON) $(OTHER_CFLAGS)
-CXXFLAGS        = $(CXXFLAGS_$(VARIANT)/BYFILE) $(CXXFLAGS_COMMON) $(OTHER_CXXFLAGS)
-CPPFLAGS        = $(CPPFLAGS_$(VARIANT)) $(CPPFLAGS_COMMON) $(OTHER_CPPFLAGS) \
-		  $(DEFINES) $(OPTIONS:%=-D%)
-LDFLAGS         = $(LDFLAGS_$(VARIANT)) $(LDFLAGS_COMMON) $(OTHER_LDFLAGS)
-LDLIBS          = $(OTHER_LDLIBS) $(LDLIBS_$(VARIANT)) $(LDLIBS_COMMON)
-LINTFLAGS       = $(LINTFLAGS_$(VARIANT)) $(LINTFLAGS_COMMON) \
-		  $(OTHER_LINTFLAGS)
-
-# this should be moved into Defs-<platform>.gmk.....
-ifeq ($(PLATFORM), windows)
-  VERSION_DEFINES = -DRELEASE="\"$(RELEASE)\""
-else
-  VERSION_DEFINES = -DRELEASE='"$(RELEASE)"'
-endif
-
 # Prevent the use of many default suffix rules we do not need
 .SUFFIXES:
-.SUFFIXES: .c .o .h .obj .cpp .hpp .java .class
+.SUFFIXES: .java .class
 
 # Make sure we are all insane
 ifdef INSANE
