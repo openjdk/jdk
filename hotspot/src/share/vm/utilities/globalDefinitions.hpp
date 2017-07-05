@@ -1452,14 +1452,4 @@ static inline void* dereference_vptr(const void* addr) {
   return *(void**)addr;
 }
 
-#ifndef PRODUCT
-
-// For unit testing only
-class GlobalDefinitions {
-public:
-  static void test_globals();
-};
-
-#endif // PRODUCT
-
 #endif // SHARE_VM_UTILITIES_GLOBALDEFINITIONS_HPP

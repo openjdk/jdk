@@ -257,7 +257,7 @@ void PSOldGen::expand(size_t bytes) {
     success = expand_to_reserved();
   }
 
-  if (success && GC_locker::is_active_and_needs_gc()) {
+  if (success && GCLocker::is_active_and_needs_gc()) {
     log_debug(gc)("Garbage collection disabled, expanded heap instead");
   }
 }

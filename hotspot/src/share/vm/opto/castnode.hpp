@@ -32,38 +32,62 @@
 //------------------------------ConstraintCastNode-----------------------------
 // cast to a different range
 class ConstraintCastNode: public TypeNode {
+  protected:
+  // Can this node be removed post CCP or does it carry a required dependency?
+  const bool _carry_dependency;
+  virtual uint cmp( const Node &n ) const;
+  virtual uint size_of() const;
+
   public:
-  ConstraintCastNode (Node *n, const Type *t ): TypeNode(t,2) {
+  ConstraintCastNode(Node *n, const Type *t, bool carry_dependency)
+    : TypeNode(t,2), _carry_dependency(carry_dependency) {
     init_class_id(Class_ConstraintCast);
     init_req(1, n);
   }
-  virtual Node *Identity( PhaseTransform *phase );
-  virtual const Type *Value( PhaseTransform *phase ) const;
+  virtual Node* Identity(PhaseGVN* phase);
+  virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual int Opcode() const;
   virtual uint ideal_reg() const = 0;
+  virtual bool depends_only_on_test() const { return !_carry_dependency; }
+  bool carry_dependency() const { return _carry_dependency; }
+  TypeNode* dominating_cast(PhaseTransform *phase) const;
+  static Node* make_cast(int opcode,  Node* c, Node *n, const Type *t, bool carry_dependency);
+
+#ifndef PRODUCT
+  virtual void dump_spec(outputStream *st) const;
+#endif
 };
 
 //------------------------------CastIINode-------------------------------------
 // cast integer to integer (different range)
 class CastIINode: public ConstraintCastNode {
-  private:
-  // Can this node be removed post CCP or does it carry a required dependency?
-  const bool _carry_dependency;
-
   protected:
-  virtual uint cmp( const Node &n ) const;
+  // Is this node dependent on a range check?
+  const bool _range_check_dependency;
+  virtual uint cmp(const Node &n) const;
   virtual uint size_of() const;
 
   public:
-  CastIINode(Node *n, const Type *t, bool carry_dependency = false)
-    : ConstraintCastNode(n,t), _carry_dependency(carry_dependency) {}
+  CastIINode(Node* n, const Type* t, bool carry_dependency = false, bool range_check_dependency = false)
+    : ConstraintCastNode(n, t, carry_dependency), _range_check_dependency(range_check_dependency) {
+    init_class_id(Class_CastII);
+  }
   virtual int Opcode() const;
   virtual uint ideal_reg() const { return Op_RegI; }
-  virtual Node *Identity( PhaseTransform *phase );
-  virtual const Type *Value( PhaseTransform *phase ) const;
+  virtual const Type* Value(PhaseGVN* phase) const;
+  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
+  const bool has_range_check() {
+#ifdef _LP64
+    return _range_check_dependency;
+#else
+    assert(!_range_check_dependency, "Should not have range check dependency");
+    return false;
+#endif
+  }
+
 #ifndef PRODUCT
-  virtual void dump_spec(outputStream *st) const;
+  virtual void dump_spec(outputStream* st) const;
 #endif
 };
 
@@ -71,24 +95,25 @@ class CastIINode: public ConstraintCastNode {
 // cast pointer to pointer (different type)
 class CastPPNode: public ConstraintCastNode {
   public:
-  CastPPNode (Node *n, const Type *t ): ConstraintCastNode(n, t) {}
+  CastPPNode (Node *n, const Type *t, bool carry_dependency = false)
+    : ConstraintCastNode(n, t, carry_dependency) {
+  }
   virtual int Opcode() const;
   virtual uint ideal_reg() const { return Op_RegP; }
 };
 
 //------------------------------CheckCastPPNode--------------------------------
 // for _checkcast, cast pointer to pointer (different type), without JOIN,
-class CheckCastPPNode: public TypeNode {
+class CheckCastPPNode: public ConstraintCastNode {
   public:
-  CheckCastPPNode( Node *c, Node *n, const Type *t ) : TypeNode(t,2) {
+  CheckCastPPNode(Node *c, Node *n, const Type *t, bool carry_dependency = false)
+    : ConstraintCastNode(n, t, carry_dependency) {
     init_class_id(Class_CheckCastPP);
     init_req(0, c);
-    init_req(1, n);
   }
 
-  virtual Node *Identity( PhaseTransform *phase );
-  virtual const Type *Value( PhaseTransform *phase ) const;
-  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
+  virtual Node* Identity(PhaseGVN* phase);
+  virtual const Type* Value(PhaseGVN* phase) const;
   virtual int   Opcode() const;
   virtual uint  ideal_reg() const { return Op_RegP; }
 };
@@ -100,9 +125,9 @@ class CastX2PNode : public Node {
   public:
   CastX2PNode( Node *n ) : Node(NULL, n) {}
   virtual int Opcode() const;
-  virtual const Type *Value( PhaseTransform *phase ) const;
+  virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
-  virtual Node *Identity( PhaseTransform *phase );
+  virtual Node* Identity(PhaseGVN* phase);
   virtual uint ideal_reg() const { return Op_RegP; }
   virtual const Type *bottom_type() const { return TypeRawPtr::BOTTOM; }
 };
@@ -114,9 +139,9 @@ class CastP2XNode : public Node {
   public:
   CastP2XNode( Node *ctrl, Node *n ) : Node(ctrl, n) {}
   virtual int Opcode() const;
-  virtual const Type *Value( PhaseTransform *phase ) const;
+  virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
-  virtual Node *Identity( PhaseTransform *phase );
+  virtual Node* Identity(PhaseGVN* phase);
   virtual uint ideal_reg() const { return Op_RegX; }
   virtual const Type *bottom_type() const { return TypeX_X; }
   // Return false to keep node from moving away from an associated card mark.

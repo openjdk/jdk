@@ -1658,7 +1658,7 @@ Node* GraphKit::store_oop_to_unknown(Node* ctl,
 
 //-------------------------array_element_address-------------------------
 Node* GraphKit::array_element_address(Node* ary, Node* idx, BasicType elembt,
-                                      const TypeInt* sizetype) {
+                                      const TypeInt* sizetype, Node* ctrl) {
   uint shift  = exact_log2(type2aelembytes(elembt));
   uint header = arrayOopDesc::base_offset_in_bytes(elembt);
 
@@ -1671,7 +1671,7 @@ Node* GraphKit::array_element_address(Node* ary, Node* idx, BasicType elembt,
 
   // must be correct type for alignment purposes
   Node* base  = basic_plus_adr(ary, header);
-  idx = Compile::conv_I2X_index(&_gvn, idx, sizetype);
+  idx = Compile::conv_I2X_index(&_gvn, idx, sizetype, ctrl);
   Node* scale = _gvn.transform( new LShiftXNode(idx, intcon(shift)) );
   return basic_plus_adr(ary, base, scale);
 }
@@ -3407,8 +3407,7 @@ Node* GraphKit::new_instance(Node* klass_node,
   if (layout_is_con) {
     assert(!StressReflectiveCode, "stress mode does not use these paths");
     bool must_go_slow = Klass::layout_helper_needs_slow_path(layout_con);
-    initial_slow_test = must_go_slow? intcon(1): extra_slow_test;
-
+    initial_slow_test = must_go_slow ? intcon(1) : extra_slow_test;
   } else {   // reflective case
     // This reflective path is used by Unsafe.allocateInstance.
     // (It may be stress-tested by specifying StressReflectiveCode.)
@@ -3507,10 +3506,6 @@ Node* GraphKit::new_array(Node* klass_node,     // array klass (maybe variable)
 
   Node* initial_slow_cmp  = _gvn.transform( new CmpUNode( length, intcon( fast_size_limit ) ) );
   Node* initial_slow_test = _gvn.transform( new BoolNode( initial_slow_cmp, BoolTest::gt ) );
-  if (initial_slow_test->is_Bool()) {
-    // Hide it behind a CMoveI, or else PhaseIdealLoop::split_up will get sick.
-    initial_slow_test = initial_slow_test->as_Bool()->as_int_value(&_gvn);
-  }
 
   // --- Size Computation ---
   // array_size = round_to_heap(array_header + (length << elem_shift));
@@ -3556,13 +3551,35 @@ Node* GraphKit::new_array(Node* klass_node,     // array klass (maybe variable)
   Node* lengthx = ConvI2X(length);
   Node* headerx = ConvI2X(header_size);
 #ifdef _LP64
-  { const TypeLong* tllen = _gvn.find_long_type(lengthx);
-    if (tllen != NULL && tllen->_lo < 0) {
+  { const TypeInt* tilen = _gvn.find_int_type(length);
+    if (tilen != NULL && tilen->_lo < 0) {
       // Add a manual constraint to a positive range.  Cf. array_element_address.
-      jlong size_max = arrayOopDesc::max_array_length(T_BYTE);
-      if (size_max > tllen->_hi)  size_max = tllen->_hi;
-      const TypeLong* tlcon = TypeLong::make(CONST64(0), size_max, Type::WidenMin);
-      lengthx = _gvn.transform( new ConvI2LNode(length, tlcon));
+      jint size_max = fast_size_limit;
+      if (size_max > tilen->_hi)  size_max = tilen->_hi;
+      const TypeInt* tlcon = TypeInt::make(0, size_max, Type::WidenMin);
+
+      // Only do a narrow I2L conversion if the range check passed.
+      IfNode* iff = new IfNode(control(), initial_slow_test, PROB_MIN, COUNT_UNKNOWN);
+      _gvn.transform(iff);
+      RegionNode* region = new RegionNode(3);
+      _gvn.set_type(region, Type::CONTROL);
+      lengthx = new PhiNode(region, TypeLong::LONG);
+      _gvn.set_type(lengthx, TypeLong::LONG);
+
+      // Range check passed. Use ConvI2L node with narrow type.
+      Node* passed = IfFalse(iff);
+      region->init_req(1, passed);
+      // Make I2L conversion control dependent to prevent it from
+      // floating above the range check during loop optimizations.
+      lengthx->init_req(1, C->constrained_convI2L(&_gvn, length, tlcon, passed));
+
+      // Range check failed. Use ConvI2L with wide type because length may be invalid.
+      region->init_req(2, IfTrue(iff));
+      lengthx->init_req(2, ConvI2X(length));
+
+      set_control(region);
+      record_for_igvn(region);
+      record_for_igvn(lengthx);
     }
   }
 #endif
@@ -3592,6 +3609,11 @@ Node* GraphKit::new_array(Node* klass_node,     // array klass (maybe variable)
   // since GC and deoptimization can happened.
   Node *mem = reset_memory();
   set_all_memory(mem); // Create new memory state
+
+  if (initial_slow_test->is_Bool()) {
+    // Hide it behind a CMoveI, or else PhaseIdealLoop::split_up will get sick.
+    initial_slow_test = initial_slow_test->as_Bool()->as_int_value(&_gvn);
+  }
 
   // Create the AllocateArrayNode and its result projections
   AllocateArrayNode* alloc
@@ -4341,20 +4363,51 @@ void GraphKit::store_String_coder(Node* ctrl, Node* str, Node* value) {
                   value, T_BYTE, coder_field_idx, MemNode::unordered);
 }
 
-Node* GraphKit::compress_string(Node* src, Node* dst, Node* count) {
+// Capture src and dst memory state with a MergeMemNode
+Node* GraphKit::capture_memory(const TypePtr* src_type, const TypePtr* dst_type) {
+  if (src_type == dst_type) {
+    // Types are equal, we don't need a MergeMemNode
+    return memory(src_type);
+  }
+  MergeMemNode* merge = MergeMemNode::make(map()->memory());
+  record_for_igvn(merge); // fold it up later, if possible
+  int src_idx = C->get_alias_index(src_type);
+  int dst_idx = C->get_alias_index(dst_type);
+  merge->set_memory_at(src_idx, memory(src_idx));
+  merge->set_memory_at(dst_idx, memory(dst_idx));
+  return merge;
+}
+
+Node* GraphKit::compress_string(Node* src, const TypeAryPtr* src_type, Node* dst, Node* count) {
   assert(Matcher::match_rule_supported(Op_StrCompressedCopy), "Intrinsic not supported");
-  uint idx = C->get_alias_index(TypeAryPtr::BYTES);
-  StrCompressedCopyNode* str = new StrCompressedCopyNode(control(), memory(idx), src, dst, count);
+  assert(src_type == TypeAryPtr::BYTES || src_type == TypeAryPtr::CHARS, "invalid source type");
+  // If input and output memory types differ, capture both states to preserve
+  // the dependency between preceding and subsequent loads/stores.
+  // For example, the following program:
+  //  StoreB
+  //  compress_string
+  //  LoadB
+  // has this memory graph (use->def):
+  //  LoadB -> compress_string -> CharMem
+  //             ... -> StoreB -> ByteMem
+  // The intrinsic hides the dependency between LoadB and StoreB, causing
+  // the load to read from memory not containing the result of the StoreB.
+  // The correct memory graph should look like this:
+  //  LoadB -> compress_string -> MergeMem(CharMem, StoreB(ByteMem))
+  Node* mem = capture_memory(src_type, TypeAryPtr::BYTES);
+  StrCompressedCopyNode* str = new StrCompressedCopyNode(control(), mem, src, dst, count);
   Node* res_mem = _gvn.transform(new SCMemProjNode(str));
-  set_memory(res_mem, idx);
+  set_memory(res_mem, TypeAryPtr::BYTES);
   return str;
 }
 
-void GraphKit::inflate_string(Node* src, Node* dst, Node* count) {
+void GraphKit::inflate_string(Node* src, Node* dst, const TypeAryPtr* dst_type, Node* count) {
   assert(Matcher::match_rule_supported(Op_StrInflatedCopy), "Intrinsic not supported");
-  uint idx = C->get_alias_index(TypeAryPtr::BYTES);
-  StrInflatedCopyNode* str = new StrInflatedCopyNode(control(), memory(idx), src, dst, count);
-  set_memory(_gvn.transform(str), idx);
+  assert(dst_type == TypeAryPtr::BYTES || dst_type == TypeAryPtr::CHARS, "invalid dest type");
+  // Capture src and dst memory (see comment in 'compress_string').
+  Node* mem = capture_memory(TypeAryPtr::BYTES, dst_type);
+  StrInflatedCopyNode* str = new StrInflatedCopyNode(control(), mem, src, dst, count);
+  set_memory(_gvn.transform(str), dst_type);
 }
 
 void GraphKit::inflate_string_slow(Node* src, Node* dst, Node* start, Node* count) {

@@ -608,7 +608,7 @@ void DirectivesParser::test(const char* text, bool should_pass) {
   cd.clean_tmp();
 }
 
-bool DirectivesParser::test() {
+void DirectivesParser::test() {
   DirectivesParser::test("{}", false);
   DirectivesParser::test("[]", true);
   DirectivesParser::test("[{}]", false);
@@ -742,8 +742,10 @@ bool DirectivesParser::test() {
     "    }" "\n"
     "  }" "\n"
     "]" "\n", false);
+}
 
-  return true;
+void DirectivesParser_test() {
+  DirectivesParser::test();
 }
 
 #endif

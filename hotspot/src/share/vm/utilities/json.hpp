@@ -108,20 +108,4 @@ class JSON : public ResourceObj {
   const char* strerror(JSON_ERROR e);
 };
 
-#ifndef PRODUCT
-class JSONTest : public JSON {
- public:
-  static bool test();
-
- private:
-  JSONTest(const char* text);
-  static void test(const char* json, bool valid);
-
-  void log(uint level, const char* format, ...) ATTRIBUTE_PRINTF(3, 4);
-
-  bool callback(JSON_TYPE t, JSON_VAL* v, uint level);
-  JSON_TYPE prev;
-};
-#endif
-
 #endif // SHARE_VM_UTILITIES_JSON_HPP

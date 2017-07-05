@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,7 @@ class CallLeafNode;
 class CallNode;
 class CallRuntimeNode;
 class CallStaticJavaNode;
+class CastIINode;
 class CatchNode;
 class CatchProjNode;
 class CheckCastPPNode;
@@ -423,6 +424,16 @@ protected:
   }
   // Find first occurrence of n among my edges:
   int find_edge(Node* n);
+  int find_prec_edge(Node* n) {
+    for (uint i = req(); i < len(); i++) {
+      if (_in[i] == n) return i;
+      if (_in[i] == NULL) {
+        DEBUG_ONLY( while ((++i) < len()) assert(_in[i] == NULL, "Gap in prec edges!"); )
+        break;
+      }
+    }
+    return -1;
+  }
   int replace_edge(Node* old, Node* neww);
   int replace_edges_in_range(Node* old, Node* neww, int start, int end);
   // NULL out all inputs to eliminate incoming Def-Use edges.
@@ -476,6 +487,19 @@ private:
     debug_only(_last_del = n; ++_del_tick);
     #endif
   }
+  // Close gap after removing edge.
+  void close_prec_gap_at(uint gap) {
+    assert(_cnt <= gap && gap < _max, "no valid prec edge");
+    uint i = gap;
+    Node *last = NULL;
+    for (; i < _max-1; ++i) {
+      Node *next = _in[i+1];
+      if (next == NULL) break;
+      last = next;
+    }
+    _in[gap] = last; // Move last slot to empty one.
+    _in[i] = NULL;   // NULL out last slot.
+  }
 
 public:
   // Globally replace this node by a given new node, updating all uses.
@@ -492,13 +516,23 @@ public:
   // Add or remove precedence edges
   void add_prec( Node *n );
   void rm_prec( uint i );
+
+  // Note: prec(i) will not necessarily point to n if edge already exists.
   void set_prec( uint i, Node *n ) {
-    assert( is_not_dead(n), "can not use dead node");
-    assert( i >= _cnt, "not a precedence edge");
+    assert(i < _max, "oob: i=%d, _max=%d", i, _max);
+    assert(is_not_dead(n), "can not use dead node");
+    assert(i >= _cnt, "not a precedence edge");
+    // Avoid spec violation: duplicated prec edge.
+    if (_in[i] == n) return;
+    if (n == NULL || find_prec_edge(n) != -1) {
+      rm_prec(i);
+      return;
+    }
     if (_in[i] != NULL) _in[i]->del_out((Node *)this);
     _in[i] = n;
     if (n != NULL) n->add_out((Node *)this);
   }
+
   // Set this node's index, used by cisc_version to replace current node
   void set_idx(uint new_idx) {
     const node_idx_t* ref = &_idx;
@@ -620,7 +654,8 @@ public:
     DEFINE_CLASS_ID(Type,  Node, 2)
       DEFINE_CLASS_ID(Phi,   Type, 0)
       DEFINE_CLASS_ID(ConstraintCast, Type, 1)
-      DEFINE_CLASS_ID(CheckCastPP, Type, 2)
+        DEFINE_CLASS_ID(CastII, ConstraintCast, 0)
+        DEFINE_CLASS_ID(CheckCastPP, ConstraintCast, 1)
       DEFINE_CLASS_ID(CMove, Type, 3)
       DEFINE_CLASS_ID(SafePointScalarObject, Type, 4)
       DEFINE_CLASS_ID(DecodeNarrowPtr, Type, 5)
@@ -751,6 +786,7 @@ public:
   DEFINE_CLASS_QUERY(Catch)
   DEFINE_CLASS_QUERY(CatchProj)
   DEFINE_CLASS_QUERY(CheckCastPP)
+  DEFINE_CLASS_QUERY(CastII)
   DEFINE_CLASS_QUERY(ConstraintCast)
   DEFINE_CLASS_QUERY(ClearArray)
   DEFINE_CLASS_QUERY(CMove)
@@ -893,10 +929,10 @@ public:
   // Return an existing node which computes the same function as this node.
   // The optimistic combined algorithm requires this to return a Node which
   // is a small number of steps away (e.g., one of my inputs).
-  virtual Node *Identity( PhaseTransform *phase );
+  virtual Node* Identity(PhaseGVN* phase);
 
   // Return the set of values this Node can take on at runtime.
-  virtual const Type *Value( PhaseTransform *phase ) const;
+  virtual const Type* Value(PhaseGVN* phase) const;
 
   // Return a node which is more "ideal" than the current node.
   // The invariants on this call are subtle.  If in doubt, read the
@@ -1663,7 +1699,7 @@ public:
   TypeNode( const Type *t, uint required ) : Node(required), _type(t) {
     init_class_id(Class_Type);
   }
-  virtual const Type *Value( PhaseTransform *phase ) const;
+  virtual const Type* Value(PhaseGVN* phase) const;
   virtual const Type *bottom_type() const;
   virtual       uint  ideal_reg() const;
 #ifndef PRODUCT

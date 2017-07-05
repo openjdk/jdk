@@ -23,6 +23,8 @@
 import java.lang.reflect.Executable;
 import java.util.concurrent.Callable;
 import java.util.Objects;
+
+import jdk.test.lib.*;
 import compiler.whitebox.CompilerWhiteBoxTest;
 /*
  * @test
@@ -105,17 +107,16 @@ public class IntrinsicAvailableTest extends CompilerWhiteBoxTest {
         }
     }
 
-    protected boolean isServerVM() {
-        return VMName.toLowerCase().contains("server");
-    }
-
     public void test() throws Exception {
         Executable intrinsicMethod = testCase.getExecutable();
-        if (isServerVM()) {
+        if (Platform.isServer()) {
             if (TIERED_COMPILATION) {
                 checkIntrinsicForCompilationLevel(intrinsicMethod, COMP_LEVEL_SIMPLE);
             }
-            checkIntrinsicForCompilationLevel(intrinsicMethod, COMP_LEVEL_FULL_OPTIMIZATION);
+            // Dont bother check JVMCI compiler - returns false on all intrinsics.
+            if (!Boolean.valueOf(getVMOption("UseJVMCICompiler"))) {
+                checkIntrinsicForCompilationLevel(intrinsicMethod, COMP_LEVEL_FULL_OPTIMIZATION);
+            }
         } else {
             checkIntrinsicForCompilationLevel(intrinsicMethod, COMP_LEVEL_SIMPLE);
         }

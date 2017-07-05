@@ -1140,7 +1140,7 @@ MethodData::MethodData(const methodHandle& method, int size, TRAPS)
 }
 
 void MethodData::initialize() {
-  No_Safepoint_Verifier no_safepoint;  // init function atomic wrt GC
+  NoSafepointVerifier no_safepoint;  // init function atomic wrt GC
   ResourceMark rm;
 
   init();
