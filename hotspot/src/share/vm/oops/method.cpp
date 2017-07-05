@@ -1351,11 +1351,16 @@ void Method::init_intrinsic_id() {
   // ditto for method and signature:
   vmSymbols::SID  name_id = vmSymbols::find_sid(name());
   if (klass_id != vmSymbols::VM_SYMBOL_ENUM_NAME(java_lang_invoke_MethodHandle)
-      && name_id == vmSymbols::NO_SID)
+      && klass_id != vmSymbols::VM_SYMBOL_ENUM_NAME(java_lang_invoke_VarHandle)
+      && name_id == vmSymbols::NO_SID) {
     return;
+  }
   vmSymbols::SID   sig_id = vmSymbols::find_sid(signature());
   if (klass_id != vmSymbols::VM_SYMBOL_ENUM_NAME(java_lang_invoke_MethodHandle)
-      && sig_id == vmSymbols::NO_SID)  return;
+      && klass_id != vmSymbols::VM_SYMBOL_ENUM_NAME(java_lang_invoke_VarHandle)
+      && sig_id == vmSymbols::NO_SID) {
+    return;
+  }
   jshort flags = access_flags().as_short();
 
   vmIntrinsics::ID id = vmIntrinsics::find_id(klass_id, name_id, sig_id, flags);
@@ -1383,8 +1388,9 @@ void Method::init_intrinsic_id() {
     }
     break;
 
-  // Signature-polymorphic methods: MethodHandle.invoke*, InvokeDynamic.*.
+  // Signature-polymorphic methods: MethodHandle.invoke*, InvokeDynamic.*., VarHandle
   case vmSymbols::VM_SYMBOL_ENUM_NAME(java_lang_invoke_MethodHandle):
+  case vmSymbols::VM_SYMBOL_ENUM_NAME(java_lang_invoke_VarHandle):
     if (!is_native())  break;
     id = MethodHandles::signature_polymorphic_name_id(method_holder(), name());
     if (is_static() != MethodHandles::is_signature_polymorphic_static(id))

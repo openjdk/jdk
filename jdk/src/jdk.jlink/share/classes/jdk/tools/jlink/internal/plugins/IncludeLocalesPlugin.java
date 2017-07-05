@@ -41,12 +41,13 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import jdk.internal.org.objectweb.asm.ClassReader;
-import jdk.tools.jlink.plugin.TransformerPlugin;
-import jdk.tools.jlink.plugin.Pool;
-import jdk.tools.jlink.plugin.PluginException;
 import jdk.tools.jlink.internal.ResourcePrevisitor;
 import jdk.tools.jlink.internal.StringTable;
 import jdk.tools.jlink.internal.Utils;
+import jdk.tools.jlink.plugin.PluginException;
+import jdk.tools.jlink.plugin.Pool;
+import jdk.tools.jlink.plugin.Pool.ModuleDataType;
+import jdk.tools.jlink.plugin.TransformerPlugin;
 
 /**
  * Plugin to explicitly specify the locale data included in jdk.localedata
@@ -84,8 +85,8 @@ public final class IncludeLocalesPlugin implements TransformerPlugin, ResourcePr
     private static final String METAINFONAME = "LocaleDataMetaInfo";
     private static final String META_FILES =
         "*module-info.class," +
-        "*LocaleDataProvider*," +
-        "*" + METAINFONAME + "*,";
+        "*LocaleDataProvider.class," +
+        "*" + METAINFONAME + ".class,";
     private static final String INCLUDE_LOCALE_FILES =
         "*sun/text/resources/ext/[^\\/]+_%%.class," +
         "*sun/util/resources/ext/[^\\/]+_%%.class," +
@@ -116,7 +117,8 @@ public final class IncludeLocalesPlugin implements TransformerPlugin, ResourcePr
             if (resource.getModule().equals(MODULENAME)) {
                 String path = resource.getPath();
                 resource = predicate.test(path) ? resource: null;
-                if (resource != null) {
+                if (resource != null &&
+                    resource.getType().equals(ModuleDataType.CLASS_OR_RESOURCE)) {
                     byte[] bytes = resource.getBytes();
                     ClassReader cr = new ClassReader(bytes);
                     if (Arrays.stream(cr.getInterfaces())
@@ -249,10 +251,10 @@ public final class IncludeLocalesPlugin implements TransformerPlugin, ResourcePr
             files += INCLUDE_LOCALE_FILES.replaceAll("%%", isoSpecial + "_[0-9]{3}");
         }
 
-        // Add Thai BreakIterator related files
+        // Add Thai BreakIterator related data files
         if (lang.equals("th")) {
             files += "*sun/text/resources/thai_dict," +
-                     "*sun/text/resources/[^\\/]+_th,";
+                     "*sun/text/resources/[^\\/]+BreakIteratorData_th,";
         }
 
         // Add Taiwan resource bundles for Hong Kong

@@ -26,7 +26,7 @@
  * @bug 7168848
  * @summary G1: humongous object allocations should initiate marking cycles when necessary
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  */
 

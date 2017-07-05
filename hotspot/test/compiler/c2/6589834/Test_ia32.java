@@ -27,7 +27,7 @@
  * @summary Safepoint placed between stack pointer increment and decrement leads
  *          to interpreter's stack corruption after deoptimization.
  * @library /testlibrary /test/lib
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.compiler
  *          java.management
  *          jdk.jvmstat/sun.jvmstat.monitor

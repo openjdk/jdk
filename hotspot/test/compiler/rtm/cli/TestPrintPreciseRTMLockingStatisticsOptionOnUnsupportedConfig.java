@@ -28,7 +28,7 @@
  * @summary Verify PrintPreciseRTMLockingStatistics on CPUs without
  *          rtm support and/or unsupported VM.
  * @library /testlibrary /test/lib /compiler/testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @build TestPrintPreciseRTMLockingStatisticsOptionOnUnsupportedConfig
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

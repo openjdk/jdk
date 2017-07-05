@@ -26,7 +26,7 @@
  * @bug 8067187
  * @summary Testing CDS dumping with the -XX:MaxMetaspaceSize=<size> option
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  */
 

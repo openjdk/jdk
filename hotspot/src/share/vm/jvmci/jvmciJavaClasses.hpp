@@ -64,6 +64,9 @@ class JVMCIJavaClasses : AllStatic {
   start_class(HotSpotResolvedJavaMethodImpl)                                                                                                                   \
     long_field(HotSpotResolvedJavaMethodImpl, metaspaceMethod)                                                                                                 \
   end_class                                                                                                                                                    \
+  start_class(HotSpotSymbol)                                                                                                                                   \
+    long_field(HotSpotSymbol, pointer)                                                                                                                         \
+  end_class                                                                                                                                                    \
   start_class(InstalledCode)                                                                                                                                   \
     long_field(InstalledCode, address)                                                                                                                         \
     long_field(InstalledCode, entryPoint)                                                                                                                      \

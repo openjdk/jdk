@@ -441,7 +441,7 @@ public abstract class AbstractWriter {
             --offsetIndent;
         }
         else {
-            indentLevel = indentLevel > 0 ? indentLevel-- : 0;
+            indentLevel--;
         }
     }
 

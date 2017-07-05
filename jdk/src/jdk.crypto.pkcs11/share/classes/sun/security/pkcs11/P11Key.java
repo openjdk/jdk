@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@ import sun.security.internal.interfaces.TlsMasterSecret;
 import sun.security.pkcs11.wrapper.*;
 import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
 
+import sun.security.util.Debug;
 import sun.security.util.DerValue;
 import sun.security.util.Length;
 import sun.security.util.ECUtil;
@@ -1110,10 +1111,40 @@ final class SessionKeyRef extends PhantomReference<P11Key>
     }
 
     private static void drainRefQueueBounded() {
+        Session sess = null;
+        Token tkn = null;
         while (true) {
             SessionKeyRef next = (SessionKeyRef) refQueue.poll();
-            if (next == null) break;
+            if (next == null) {
+                break;
+            }
+
+            // If the token is still valid, try to remove the object
+            if (next.session.token.isValid()) {
+                // If this key's token is the same as the previous key, the
+                // same session can be used for C_DestroyObject.
+                try {
+                    if (next.session.token != tkn || sess == null) {
+                        // Release session if not using previous token
+                        if (tkn != null && sess != null) {
+                            tkn.releaseSession(sess);
+                            sess = null;
+                        }
+
+                        tkn = next.session.token;
+                        sess = tkn.getOpSession();
+                    }
+                    next.disposeNative(sess);
+                } catch (PKCS11Exception e) {
+                    // ignore
+                }
+            }
+            // Regardless of native results, dispose of java references
             next.dispose();
+        }
+
+        if (tkn != null && sess != null) {
+            tkn.releaseSession(sess);
         }
     }
 
@@ -1127,25 +1158,17 @@ final class SessionKeyRef extends PhantomReference<P11Key>
         this.session = session;
         this.session.addObject();
         refList.add(this);
-        // TBD: run at some interval and not every time?
         drainRefQueueBounded();
+    }
+
+    private void disposeNative(Session s) throws PKCS11Exception {
+        session.token.p11.C_DestroyObject(s.id(), keyID);
     }
 
     private void dispose() {
         refList.remove(this);
-        if (session.token.isValid()) {
-            Session newSession = null;
-            try {
-                newSession = session.token.getOpSession();
-                session.token.p11.C_DestroyObject(newSession.id(), keyID);
-            } catch (PKCS11Exception e) {
-                // ignore
-            } finally {
-                this.clear();
-                session.token.releaseSession(newSession);
-                session.removeObject();
-            }
-        }
+        this.clear();
+        session.removeObject();
     }
 
     public int compareTo(SessionKeyRef other) {

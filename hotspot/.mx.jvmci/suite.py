@@ -32,24 +32,9 @@ suite = {
 
   "libraries" : {
 
-    "HCFDIS" : {
-      "urls" : ["https://lafo.ssw.uni-linz.ac.at/pub/hcfdis-3.jar"],
-      "sha1" : "a71247c6ddb90aad4abf7c77e501acc60674ef57",
-    },
-
-    "C1VISUALIZER_DIST" : {
-      "urls" : ["https://java.net/downloads/c1visualizer/c1visualizer_2015-07-22.zip"],
-      "sha1" : "7ead6b2f7ed4643ef4d3343a5562e3d3f39564ac",
-    },
-
-    "JOL_INTERNALS" : {
-      "urls" : ["https://lafo.ssw.uni-linz.ac.at/pub/truffle/jol/jol-internals.jar"],
-      "sha1" : "508bcd26a4d7c4c44048990c6ea789a3b11a62dc",
-    },
-
-    "BATIK" : {
-      "sha1" : "122b87ca88e41a415cf8b523fd3d03b4325134a3",
-      "urls" : ["https://lafo.ssw.uni-linz.ac.at/pub/graal-external-deps/batik-all-1.7.jar"],
+    "TESTNG" : {
+      "urls" : ["http://central.maven.org/maven2/org/testng/testng/6.9.10/testng-6.9.10.jar"],
+      "sha1" : "6feb3e964aeb7097aff30c372aac3ec0f8d87ede",
     },
 
     # Stubs for classes introduced in JDK9 that allow compilation with a JDK8 javac and Eclipse.
@@ -173,6 +158,18 @@ suite = {
       "checkstyle" : "jdk.vm.ci.services",
       "javaCompliance" : "1.8",
       "workingSets" : "JVMCI",
+    },
+
+    "jdk.vm.ci.hotspot.test" : {
+      "subDir" : "test/compiler/jvmci",
+      "sourceDirs" : ["src"],
+      "dependencies" : [
+        "mx:TESTNG",
+        "jdk.vm.ci.hotspot",
+      ],
+      "checkstyle" : "jdk.vm.ci.services",
+      "javaCompliance" : "1.8",
+      "workingSets" : "API,JVMCI",
     },
 
     "jdk.vm.ci.hotspotvmconfig" : {

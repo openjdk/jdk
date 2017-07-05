@@ -120,7 +120,8 @@ class MethodHandles: AllStatic {
             iid <= vmIntrinsics::_linkToInterface);
   }
   static bool has_member_arg(Symbol* klass, Symbol* name) {
-    if ((klass == vmSymbols::java_lang_invoke_MethodHandle()) &&
+    if ((klass == vmSymbols::java_lang_invoke_MethodHandle() ||
+         klass == vmSymbols::java_lang_invoke_VarHandle()) &&
         is_signature_polymorphic_name(name)) {
       vmIntrinsics::ID iid = signature_polymorphic_name_id(name);
       return has_member_arg(iid);

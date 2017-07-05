@@ -26,7 +26,7 @@
  * @bug 8006298
  * @summary Setting an invalid value for a bool argument should result in a useful error message
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  */
 

@@ -26,7 +26,7 @@
  * @bug 8030783
  * @summary Regression test for 8026478
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  */
 import jdk.test.lib.*;

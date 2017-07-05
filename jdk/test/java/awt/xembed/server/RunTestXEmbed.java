@@ -28,8 +28,8 @@
  * @author Denis Mikhalkin: area=awt.xembed
  * @requires (!(os.family=="mac") & !(os.family=="windows"))
  * @library /lib/testlibrary
- * @build jdk.testlibrary.Platform
  * @modules java.desktop/sun.awt
+ * @build jdk.testlibrary.Platform
  * @compile JavaClient.java TesterClient.java TestXEmbedServer.java
  * @run main/timeout=6000 RunTestXEmbed
  */
@@ -39,6 +39,7 @@ import java.lang.reflect.Method;
 import java.util.logging.*;
 import java.util.*;
 import java.io.*;
+import jdk.testlibrary.Platform;
 
 public class RunTestXEmbed extends TestXEmbedServer {
     private static final Logger log = Logger.getLogger("test.xembed");
@@ -72,7 +73,7 @@ public class RunTestXEmbed extends TestXEmbedServer {
                 }
             }
             Process proc = Runtime.getRuntime().exec(java_home +
-                                                     "/bin/java -Dawt.toolkit=sun.awt.X11.XToolkit TesterClient "
+                                                     "/bin/java -XaddExports:java.desktop/sun.awt.X11=ALL-UNNAMED -Dawt.toolkit=sun.awt.X11.XToolkit TesterClient "
                                                      + test.getName() + " " + window + buf,
                                                      enva);
             System.err.println("Test for " + test.getName() + " has started.");
