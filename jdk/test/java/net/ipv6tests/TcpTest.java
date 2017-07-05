@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,8 +60,7 @@ public class TcpTest extends Tests {
         dprintln ("Local Addresses");
         dprintln (ia4addr.toString());
         dprintln (ia6addr.toString());
-        test1 (0);
-        test1 (5100);
+        test1();
         test2();
         test3();
         test4();
@@ -69,11 +68,9 @@ public class TcpTest extends Tests {
 
     /* basic TCP connectivity test using IPv6 only and IPv4/IPv6 together */
 
-    static void test1 (int port) throws Exception {
-        server = new ServerSocket (port);
-        if (port == 0) {
-            port = server.getLocalPort();
-        }
+    static void test1 () throws Exception {
+        server = new ServerSocket (0);
+        int port = server.getLocalPort();
         // try Ipv6 only
         c1 = new Socket ("::1", port);
         s1 = server.accept ();
@@ -107,9 +104,7 @@ public class TcpTest extends Tests {
     /** bind tests:
      *  1. bind to specific address IPv4 only (any port)
      *  2. bind to specific address IPv6 only (any port)
-     *  3. bind to specific address IPv4 only (specific port)
-     *  4. bind to specific address IPv4 only (specific port)
-     *  5. bind to any address IPv4 (test collision)
+     *  3. bind to any address IPv4 (test collision)
      */
 
     static void test2 () throws Exception {
@@ -147,39 +142,6 @@ public class TcpTest extends Tests {
         server.close ();
         c1.close ();
 
-        /* now try IPv6 specific port only */
-
-        server = new ServerSocket ();
-        sadr = new InetSocketAddress (ia6addr, 5200);
-        server.bind (sadr);
-        port = server.getLocalPort();
-        t_assert (port == 5200);
-
-        c1 = new Socket (ia6addr, port);
-        try {
-            c2 = new Socket (ia4addr, port);
-            throw new RuntimeException ("connect to IPv4 address should be refused");
-        } catch (IOException e) { }
-        server.close ();
-        c1.close ();
-
-        /* now try IPv4 specific port only */
-
-        server = new ServerSocket ();
-        sadr = new InetSocketAddress (ia4addr, 5200);
-        server.bind (sadr);
-        port = server.getLocalPort();
-        t_assert (port == 5200);
-
-        c1 = new Socket (ia4addr, port);
-
-        try {
-            c2 = new Socket (ia6addr, port);
-            throw new RuntimeException ("connect to IPv6 address should be refused");
-        } catch (IOException e) { }
-        server.accept().close();
-        c1.close ();
-        server.close();
         System.out.println ("Test2: OK");
     }
 
@@ -242,3 +204,4 @@ public class TcpTest extends Tests {
         System.out.println ("Test4: OK");
     }
 }
+

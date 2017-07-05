@@ -32,6 +32,7 @@ import sun.reflect.CallerSensitive;
 import sun.reflect.Reflection;
 
 import jdk.internal.HotSpotIntrinsicCandidate;
+import jdk.internal.misc.VM;
 
 
 /**

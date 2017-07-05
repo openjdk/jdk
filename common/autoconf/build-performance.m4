@@ -253,6 +253,24 @@ AC_DEFUN([BPERF_SETUP_CCACHE_USAGE],
 
 ################################################################################
 #
+# Runs icecc-create-env once and prints the error if it fails
+#
+# $1: arguments to icecc-create-env
+# $2: log file
+#
+AC_DEFUN([BPERF_RUN_ICECC_CREATE_ENV],
+[
+  cd ${CONFIGURESUPPORT_OUTPUTDIR}/icecc \
+      && ${ICECC_CREATE_ENV} $1 > $2 2>&1
+  if test "$?" != "0"; then
+    AC_MSG_NOTICE([icecc-create-env output:])
+    cat $2
+    AC_MSG_ERROR([Failed to create icecc compiler environment])
+  fi
+])
+
+################################################################################
+#
 # Optionally enable distributed compilation of native code using icecc/icecream
 #
 AC_DEFUN([BPERF_SETUP_ICECC],
@@ -271,16 +289,18 @@ AC_DEFUN([BPERF_SETUP_ICECC],
     # be sent to the other hosts in the icecream cluster.
     icecc_create_env_log="${CONFIGURESUPPORT_OUTPUTDIR}/icecc/icecc_create_env.log"
     ${MKDIR} -p ${CONFIGURESUPPORT_OUTPUTDIR}/icecc
-    AC_MSG_CHECKING([for icecc build environment for target compiler])
+    # Older versions of icecc does not have the --gcc parameter
+    if ${ICECC_CREATE_ENV} | $GREP -q -e --gcc; then
+      icecc_gcc_arg="--gcc"
+    fi
     if test "x${TOOLCHAIN_TYPE}" = "xgcc"; then
-      cd ${CONFIGURESUPPORT_OUTPUTDIR}/icecc \
-          && ${ICECC_CREATE_ENV} --gcc ${CC} ${CXX} > ${icecc_create_env_log}
+      BPERF_RUN_ICECC_CREATE_ENV([${icecc_gcc_arg} ${CC} ${CXX}], \
+          ${icecc_create_env_log})
     elif test "x$TOOLCHAIN_TYPE" = "xclang"; then
       # For clang, the icecc compilerwrapper is needed. It usually resides next
       # to icecc-create-env.
       BASIC_REQUIRE_PROGS(ICECC_WRAPPER, compilerwrapper)
-      cd ${CONFIGURESUPPORT_OUTPUTDIR}/icecc \
-          && ${ICECC_CREATE_ENV} --clang ${CC} ${ICECC_WRAPPER} > ${icecc_create_env_log}
+      BPERF_RUN_ICECC_CREATE_ENV([--clang ${CC} ${ICECC_WRAPPER}], ${icecc_create_env_log})
     else
       AC_MSG_ERROR([Can only create icecc compiler packages for toolchain types gcc and clang])
     fi
@@ -289,24 +309,31 @@ AC_DEFUN([BPERF_SETUP_ICECC],
     # to find it.
     ICECC_ENV_BUNDLE_BASENAME="`${SED} -n '/^creating/s/creating //p' ${icecc_create_env_log}`"
     ICECC_ENV_BUNDLE="${CONFIGURESUPPORT_OUTPUTDIR}/icecc/${ICECC_ENV_BUNDLE_BASENAME}"
+    if test ! -f ${ICECC_ENV_BUNDLE}; then
+      AC_MSG_ERROR([icecc-create-env did not produce an environment ${ICECC_ENV_BUNDLE}])
+    fi
+    AC_MSG_CHECKING([for icecc build environment for target compiler])
     AC_MSG_RESULT([${ICECC_ENV_BUNDLE}])
     ICECC="ICECC_VERSION=${ICECC_ENV_BUNDLE} ICECC_CC=${CC} ICECC_CXX=${CXX} ${ICECC_CMD}"
 
     if test "x${COMPILE_TYPE}" = "xcross"; then
       # If cross compiling, create a separate env package for the build compiler
-      AC_MSG_CHECKING([for icecc build environment for build compiler])
       # Assume "gcc" or "cc" is gcc and "clang" is clang. Otherwise bail.
+      icecc_create_env_log_build="${CONFIGURESUPPORT_OUTPUTDIR}/icecc/icecc_create_env_build.log"
       if test "x${BUILD_CC##*/}" = "xgcc" ||  test "x${BUILD_CC##*/}" = "xcc"; then
-        cd ${CONFIGURESUPPORT_OUTPUTDIR}/icecc \
-            && ${ICECC_CREATE_ENV} --gcc ${BUILD_CC} ${BUILD_CXX} > ${icecc_create_env_log}
+        BPERF_RUN_ICECC_CREATE_ENV([${icecc_gcc_arg} ${BUILD_CC} ${BUILD_CXX}], \
+            ${icecc_create_env_log_build})
       elif test "x${BUILD_CC##*/}" = "xclang"; then
-        cd ${CONFIGURESUPPORT_OUTPUTDIR}/icecc \
-            && ${ICECC_CREATE_ENV} --clang ${BUILD_CC} ${ICECC_WRAPPER} > ${icecc_create_env_log}
+        BPERF_RUN_ICECC_CREATE_ENV([--clang ${BUILD_CC} ${ICECC_WRAPPER}], ${icecc_create_env_log_build})
       else
         AC_MSG_ERROR([Cannot create icecc compiler package for ${BUILD_CC}])
       fi
-      ICECC_ENV_BUNDLE_BASENAME="`${SED} -n '/^creating/s/creating //p' ${icecc_create_env_log}`"
+      ICECC_ENV_BUNDLE_BASENAME="`${SED} -n '/^creating/s/creating //p' ${icecc_create_env_log_build}`"
       ICECC_ENV_BUNDLE="${CONFIGURESUPPORT_OUTPUTDIR}/icecc/${ICECC_ENV_BUNDLE_BASENAME}"
+      if test ! -f ${ICECC_ENV_BUNDLE}; then
+        AC_MSG_ERROR([icecc-create-env did not produce an environment ${ICECC_ENV_BUNDLE}])
+      fi
+      AC_MSG_CHECKING([for icecc build environment for build compiler])
       AC_MSG_RESULT([${ICECC_ENV_BUNDLE}])
       BUILD_ICECC="ICECC_VERSION=${ICECC_ENV_BUNDLE} ICECC_CC=${BUILD_CC} \
           ICECC_CXX=${BUILD_CXX} ${ICECC_CMD}"

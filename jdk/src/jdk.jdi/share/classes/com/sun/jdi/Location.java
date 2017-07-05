@@ -86,7 +86,6 @@ import java.util.List;
  * @author James McIlree
  * @since 1.3
  */
-@jdk.Exported
 public interface Location extends Mirror, Comparable<Location> {
 
     /**

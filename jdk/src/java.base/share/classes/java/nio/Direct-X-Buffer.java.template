@@ -30,7 +30,7 @@ package java.nio;
 import java.io.FileDescriptor;
 import sun.misc.Cleaner;
 import jdk.internal.misc.Unsafe;
-import sun.misc.VM;
+import jdk.internal.misc.VM;
 import sun.nio.ch.DirectBuffer;
 
 
