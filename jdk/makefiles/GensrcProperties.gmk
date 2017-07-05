@@ -85,7 +85,7 @@ define add_properties_to_clean
   ALL_CLEANED_PROPSOURCES+=$2
 
   # Generate the list of to be created java files.
-  $1_PROPOUTPUT:=$$(patsubst %,$(JDK_OUTPUTDIR)/newclasses/%.properties,$$($1_PROPPATHS))
+  $1_PROPOUTPUT:=$$(patsubst %,$(JDK_OUTPUTDIR)/classes/%.properties,$$($1_PROPPATHS))
   # If the properties target file isn't in a "resources" dir, add one.
   ifneq ($5,)
     $1_PROPOUTPUT:=$$(foreach p,$$($1_PROPOUTPUT), $$(dir $$p)$5/$$(notdir $$p))
@@ -121,9 +121,32 @@ $(eval $(call add_properties_to_compile,COM_SUN_ACCESSIBILITY_HK,\
 	$(shell find $(JDK_TOPDIR)/src/share/classes/com/sun/accessibility/internal/resources -name "*.properties"),\
 		ListResourceBundle,%zh_TW,%zh_HK))
 #com/sun/imageio/plugins/common
+$(eval $(call add_properties_to_clean,COM_SUN_IMAGEIO,\
+	$(shell find $(JDK_TOPDIR)/src/share/classes/com/sun/imageio -name "*.properties")))
 #com/sun/java/swing/plaf/gtk/resources
+ifneq ($(PLATFORM), windows)
+# Only compile GTK resource bundles on Solaris/Linux
+$(eval $(call add_properties_to_compile,COM_SUN_SWING_PLAF_GTK,\
+	$(shell find $(JDK_TOPDIR)/src/share/classes/com/sun/java/swing/plaf/gtk/resources -name "*.properties"),\
+		ListResourceBundle))
+$(eval $(call add_properties_to_compile,COM_SUN_SWING_PLAF_GTK_HK,\
+	$(shell find $(JDK_TOPDIR)/src/share/classes/com/sun/java/swing/plaf/gtk/resources -name "*.properties"),\
+		ListResourceBundle,%zh_TW,%zh_HK))
+endif
 #com/sun/java/swing/plaf/motif/resources
+$(eval $(call add_properties_to_compile,COM_SUN_SWING_PLAF_MOTIF,\
+	$(shell find $(JDK_TOPDIR)/src/share/classes/com/sun/java/swing/plaf/motif/resources -name "*.properties"),\
+		ListResourceBundle))
+$(eval $(call add_properties_to_compile,COM_SUN_SWING_PLAF_MOTIF_HK,\
+	$(shell find $(JDK_TOPDIR)/src/share/classes/com/sun/java/swing/plaf/motif/resources -name "*.properties"),\
+		ListResourceBundle,%zh_TW,%zh_HK))
 #com/sun/java/swing/plaf/windows/resources
+$(eval $(call add_properties_to_compile,COM_SUN_SWING_PLAF_WINDOWS,\
+	$(shell find $(JDK_TOPDIR)/src/share/classes/com/sun/java/swing/plaf/windows/resources -name "*.properties"),\
+		ListResourceBundle))
+$(eval $(call add_properties_to_compile,COM_SUN_SWING_PLAF_WINDOWS_HK,\
+	$(shell find $(JDK_TOPDIR)/src/share/classes/com/sun/java/swing/plaf/windows/resources -name "*.properties"),\
+		ListResourceBundle,%zh_TW,%zh_HK))
 #com/sun/java/util/jar/pack
 $(eval $(call add_properties_to_clean,JNDI_COSNAMING,\
 	$(JDK_TOPDIR)/src/share/classes/com/sun/java/util/jar/pack/intrinsic.properties))
@@ -149,8 +172,26 @@ $(eval $(call add_properties_to_clean,COM_SUN_ROWSET_HK,\
 
 #com/sun/servicetag/resources
 #com/sun/swing/internal/plaf/basic/resources
+$(eval $(call add_properties_to_compile,COM_SUN_SWING_PLAF_BASIC,\
+	$(shell find $(JDK_TOPDIR)/src/share/classes/com/sun/swing/internal/plaf/basic/resources -name "*.properties"),\
+		ListResourceBundle))
+$(eval $(call add_properties_to_compile,COM_SUN_SWING_PLAF_BASIC_HK,\
+	$(shell find $(JDK_TOPDIR)/src/share/classes/com/sun/swing/internal/plaf/basic/resources -name "*.properties"),\
+		ListResourceBundle,%zh_TW,%zh_HK))
 #com/sun/swing/internal/plaf/metal/resources
+$(eval $(call add_properties_to_compile,COM_SUN_SWING_PLAF_METAL,\
+	$(shell find $(JDK_TOPDIR)/src/share/classes/com/sun/swing/internal/plaf/metal/resources -name "*.properties"),\
+		ListResourceBundle))
+$(eval $(call add_properties_to_compile,COM_SUN_SWING_PLAF_METAL_HK,\
+	$(shell find $(JDK_TOPDIR)/src/share/classes/com/sun/swing/internal/plaf/metal/resources -name "*.properties"),\
+		ListResourceBundle,%zh_TW,%zh_HK))
 #com/sun/swing/internal/plaf/synth/resources
+$(eval $(call add_properties_to_compile,COM_SUN_SWING_PLAF_SYNTH,\
+	$(shell find $(JDK_TOPDIR)/src/share/classes/com/sun/swing/internal/plaf/synth/resources -name "*.properties"),\
+		ListResourceBundle))
+$(eval $(call add_properties_to_compile,COM_SUN_SWING_PLAF_SYNTH_HK,\
+	$(shell find $(JDK_TOPDIR)/src/share/classes/com/sun/swing/internal/plaf/synth/resources -name "*.properties"),\
+		ListResourceBundle,%zh_TW,%zh_HK))
 
 #com/sun/tools/jdi/resources
 $(eval $(call add_properties_to_compile,COM_SUN_TOOLS_JDI,\
@@ -160,6 +201,8 @@ $(eval $(call add_properties_to_compile,COM_SUN_TOOLS_JDI,\
 #com/sun/tools/script/shell
 #java/util
 #javax/sql/rowset
+$(eval $(call add_properties_to_clean,JAVAX_SQL_ROWSET,\
+	$(shell find $(JDK_TOPDIR)/src/share/classes/javax/sql/rowset -name "*.properties")))
 #sun/awt/resources
 $(eval $(call add_properties_to_compile,SUN_AWT,\
 	$(shell find $(JDK_TOPDIR)/src/share/classes/sun/awt/resources -name "*.properties"),\
@@ -175,6 +218,12 @@ $(eval $(call add_properties_to_compile,SUN_LAUNCHER_HK,\
 	$(shell find $(JDK_TOPDIR)/src/share/classes/sun/launcher/resources -name "*.properties"),\
 		ListResourceBundle,%zh_TW,%zh_HK))
 #sun/management/resources
+$(eval $(call add_properties_to_compile,SUN_MANAGEMENT,\
+	$(shell find $(JDK_TOPDIR)/src/share/classes/sun/management/resources -name "*.properties"),\
+		ListResourceBundle))
+$(eval $(call add_properties_to_compile,SUN_MANAGEMENT_KH,\
+	$(shell find $(JDK_TOPDIR)/src/share/classes/sun/management/resources -name "*.properties"),\
+		ListResourceBundle,%zh_TW,%zh_HK))
 #sun/print
 #sun/print/resources
 $(eval $(call add_properties_to_compile,SUN_PRINT,\
@@ -231,31 +280,30 @@ $(eval $(call add_properties_to_compile,SUN_UTIL,\
 	$(shell find $(JDK_TOPDIR)/src/share/classes/sun/util/resources -name "*.properties"),\
 		LocaleNamesBundle))
 
-
 # Now setup the rule for the generation of the resource bundles.
 $(JDK_OUTPUTDIR)/gensrc_properties/_the.compiled_properties : $(ALL_COMPILED_PROPSOURCES) $(BUILD_TOOLS)
 	$(RM) -rf $(JDK_OUTPUTDIR)/gensrc_properties/*
 #	Generate all output directories in advance since the build tool does not do that...
 	$(MKDIR) -p $(sort $(dir $(ALL_COMPILED_PROPJAVAS)))
-	echo Compiling $(words $(ALL_COMPILED_PROPSOURCES)) properties into resource bundles
+	$(ECHO) Compiling $(words $(ALL_COMPILED_PROPSOURCES)) properties into resource bundles
 	$(call ListPathsSafely,COMPILE_PROPCMDLINE,\n, >> $(JDK_OUTPUTDIR)/gensrc_properties/_the.cmdline)
 	$(TOOL_COMPILEPROPERTIES) -quiet @$(JDK_OUTPUTDIR)/gensrc_properties/_the.cmdline
-	touch $@
+	$(TOUCH) $@
 
 # Now setup the rule for the generation of the cleaned properties.
 # FIXME: We currently don't handle removed properties incrementally. 
-$(JDK_OUTPUTDIR)/newclasses/_the.cleaned_properties : $(ALL_CLEANED_PROPSOURCES) $(BUILD_TOOLS)
-	$(RM) -f $(JDK_OUTPUTDIR)/newclasses/_the.cleaned_properties.cmdline
+$(JDK_OUTPUTDIR)/classes/_the.cleaned_properties : $(ALL_CLEANED_PROPSOURCES) $(BUILD_TOOLS)
+	$(RM) -f $(JDK_OUTPUTDIR)/classes/_the.cleaned_properties.cmdline
 #	Generate all output directories in advance since the build tool does not do that...
 	$(MKDIR) -p $(sort $(dir $(ALL_CLEANED_PROPOUTPUT)))
-	echo Copying and cleaning $(words $(ALL_CLEANED_PROPSOURCES)) properties 
-	$(call ListPathsSafely,CLEAN_PROPCMDLINE,\n, >> $(JDK_OUTPUTDIR)/newclasses/_the.cleaned_properties.cmdline)
-	$(TOOL_STRIPPROPERTIES) @$(JDK_OUTPUTDIR)/newclasses/_the.cleaned_properties.cmdline
-	touch $@
+	$(ECHO) Copying and cleaning $(words $(ALL_CLEANED_PROPSOURCES)) properties 
+	$(call ListPathsSafely,CLEAN_PROPCMDLINE,\n, >> $(JDK_OUTPUTDIR)/classes/_the.cleaned_properties.cmdline)
+	$(TOOL_STRIPPROPERTIES) @$(JDK_OUTPUTDIR)/classes/_the.cleaned_properties.cmdline
+	$(TOUCH) $@
 
 $(ALL_COMPILED_PROPJAVAS) : $(JDK_OUTPUTDIR)/gensrc_properties/_the.compiled_properties
 
-$(ALL_CLEANED_PROPOUTPUT) : $(JDK_OUTPUTDIR)/newclasses/_the.cleaned_properties
+$(ALL_CLEANED_PROPOUTPUT) : $(JDK_OUTPUTDIR)/classes/_the.cleaned_properties
 
 
 # Some zh_HK resources are just copied of zh_TW
@@ -265,7 +313,9 @@ $(JDK_OUTPUTDIR)/gensrc_properties/%_zh_HK.java: $(JDK_TOPDIR)/src/share/classes
 
 ZH_HK_JAVA:=	sun/applet/resources/MsgAppletViewer_zh_HK.java \
 		sun/misc/resources/Messages_zh_HK.java \
-		sun/security/util/AuthResources_zh_HK.java
+		sun/security/util/AuthResources_zh_HK.java \
+                sun/security/util/Resources_zh_HK.java
+
 ZH_HK_JAVA_FILES:=$(addprefix $(JDK_OUTPUTDIR)/gensrc_properties/,$(ZH_HK_JAVA))
 
 

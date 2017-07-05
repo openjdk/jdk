@@ -53,21 +53,21 @@ AUTO_FILES_JAVA_DIRS =  sun/tools/jconsole \
 
 FILES_png = $(PNG_FILES:%.png=$(CLASSBINDIR)/%.png)
 FILES_gif = $(GIF_FILES:%.gif=$(CLASSBINDIR)/%.gif)
-
+FILES_prop = $(PROP_FILES:%.properties=$(CLASSBINDIR)/%.properties)
 build: $(GENSRCDIR)/sun/tools/jconsole/Version.java
 
 #
 # Resources
 #
 LOCALE_SET_DEFINITION = jdk
-RESOURCE_BUNDLES_JAVA = $(PKGDIR)/resources/JConsoleResources.java
+RESOURCE_BUNDLES_UNCOMPILED_PROPERTIES = $(PKGDIR)/resources/messages.properties
 
 #
 # Rules.
 #
 include $(BUILDDIR)/common/Classes.gmk
 
-build: $(FILES_png) $(FILES_gif) $(TEMPDIR)/manifest $(JARFILE)
+build: $(FILES_png) $(FILES_gif) $(FILES_prop) $(TEMPDIR)/manifest $(JARFILE)
 
 $(GENSRCDIR)/sun/tools/jconsole/Version.java: \
                 $(SHARE_SRC)/classes/sun/tools/jconsole/Version.java.template
@@ -85,7 +85,7 @@ $(TEMPDIR)/manifest: $(SHARE_SRC)/classes/$(PKGDIR)/manifest
 # Extra rule to build jconsole.jar
 #
 
-$(JARFILE): $(LIBDIR) $(FILES_class) $(FILES_png) $(FILES_gif) $(TEMPDIR)/manifest
+$(JARFILE): $(LIBDIR) $(FILES_class) $(FILES_png) $(FILES_gif) $(FILES_prop) $(TEMPDIR)/manifest
 	$(BOOT_JAR_CMD) -cfm $(JARFILE) $(TEMPDIR)/manifest \
                -C $(CLASSBINDIR) sun/tools/jconsole \
                -C $(CLASSBINDIR) com/sun/tools/jconsole \

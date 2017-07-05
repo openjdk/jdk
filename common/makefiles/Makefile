@@ -23,49 +23,144 @@
 # questions.
 #
 
-# Default to sane output from make.
-# Override with empty string to get insane amount of output.
-# Override with -d to get even more insane amount of debugging output.
-# Override with "-d -p" to get it all.
-VERBOSE=-s
+# This must be the first rule
+default: all
+
+# Find out which variables were passed explicitely on the make command line. These
+# will be passed on to sub-makes, overriding spec.gmk settings.
+MAKE_ARGS=$(foreach var,$(subst =command,,$(filter %=command,$(foreach var,$(.VARIABLES),$(var)=$(firstword $(origin $(var)))))),$(var)=$($(var)))
+
+define fatal-error
+    # If the user specificed a "global" target (e.g. 'help'), do not exit but continue running
+    $$(if $$(findstring help,$$(MAKECMDGOALS)),,$$(error Cannot continue))
+endef
+
+ifeq ($(origin VERBOSE),undefined)
+    # Setup logging according to LOG (but only if VERBOSE is not given)
+    ifeq ($(LOG),)
+        # Set LOG to "warn" as default if not set (and no VERBOSE given)
+        LOG=warn
+    endif
+    ifeq ($(LOG),warn)
+        VERBOSE=-s
+    else ifeq ($(LOG),info)
+        VERBOSE=
+    else ifeq ($(LOG),debug)
+        VERBOSE=
+    else ifeq ($(LOG),trace)
+        VERBOSE=-d -p
+    else
+        $(info Error: LOG must be one of: warn, info, debug or trace.)
+        $(eval $(call fatal-error))
+    endif
+else
+    ifneq ($(LOG),)
+        # We have both a VERBOSE and a LOG argument. This is OK only if this is a repeated call by ourselves,
+        # but complain if this is the top-level make call.
+        ifeq ($(MAKELEVEL),0)
+            $(info Cannot use LOG=$(LOG) and VERBOSE=$(VERBOSE) at the same time. Choose one.)
+            $(eval $(call fatal-error))
+        endif
+    endif
+endif
+
+# TODO: Fix duplication in MakeBase.gmk
+define SetupLogging
+    ifneq ($(findstring $(LOG),debug trace),)
+        # Shell redefinition trick inspired by http://www.cmcrossroads.com/ask-mr-make/6535-tracing-rule-execution-in-gnu-make
+        OLD_SHELL:=$$(SHELL)
+        SHELL = $$(warning Building $$@$$(if $$<, (from $$<))$(if $$?, ($$? newer)))$$(OLD_SHELL) -x
+    endif
+endef
+
+$(eval $(call SetupLogging))
 
 # Find all environment or command line variables that begin with ALT.
 list_alt_overrides_with_origins = $(filter ALT_%=environment ALT_%=command,$(foreach var,$(.VARIABLES),$(var)=$(firstword $(origin $(var)))))
 list_alt_overrides=$(subst =command,,$(subst =environment,,$(list_alt_overrides_with_origins)))
-ifneq ($(list_alt_overrides),)
-    $(info You have set the following ALT_ variables:)
-    $(foreach var,$(list_alt_overrides), $(info $(var)=$($(var))))
-    $(error Using ALT_ variables is deprecated! Please clean your environment!)
+
+ifeq ($(filter /%,$(lastword $(MAKEFILE_LIST))),)
+    makefile_path=$(CURDIR)/$(lastword $(MAKEFILE_LIST))
+else
+    makefile_path=$(lastword $(MAKEFILE_LIST))
 endif
+root_dir=$(patsubst %/common/makefiles/Makefile,%,$(makefile_path))
+output_dir=$(root_dir)/build
 
-# The spec.gmk file contains the variables extracted by the configure script.
-# It is usually set with SPEC=....spec.gmk on the make command line.
-# However if you simply type make from the openjdk source root, it will go looking
-# for a spec file, if only one is found, use it. If more than one is found,
-# complain. If none is found, request the user to run configure!
-SPEC ?= $(wildcard $(CURDIR)/../../build/*/spec.gmk)
+ifneq ($(origin SPEC),undefined)
+    # We have been given a SPEC, check that it works out properly
+    ifeq ($(wildcard $(SPEC)),)
+        $(info Cannot locate spec.gmk, given by SPEC=$(SPEC))
+        $(eval $(call fatal-error))
+    endif
+    ifneq ($(origin CONF),undefined)
+        # We also have a CONF argument. This is OK only if this is a repeated call by ourselves,
+        # but complain if this is the top-level make call.
+        ifeq ($(MAKELEVEL),0)
+            $(info Cannot use CONF=$(CONF) and SPEC=$(SPEC) at the same time. Choose one.)
+            $(eval $(call fatal-error))
+        endif
+    endif
+    # ... OK, we're satisfied, we'll use this SPEC later on
+else
+    # Find all spec.gmk files in the build output directory
+    all_spec_files=$(wildcard $(output_dir)/*/spec.gmk)
+    ifeq ($(all_spec_files),)
+        $(info No configurations found for $(root_dir)! Please run configure to create a configuration.)
+        $(eval $(call fatal-error))
+    endif
+    # Extract the configuration names from the path
+    all_confs=$(patsubst %/spec.gmk,%,$(patsubst $(output_dir)/%,%,$(all_spec_files)))
 
-ifeq ($(words $(SPEC)),0)
-    $(error You must run configure!)
+    ifneq ($(origin CONF),undefined)
+        # User have given a CONF= argument.
+        ifeq ($(CONF),)
+            # If given CONF=, match all configurations
+            matching_confs=$(strip $(all_confs))
+        else
+            # Otherwise select those that contain the given CONF string
+            matching_confs=$(strip $(foreach var,$(all_confs),$(if $(findstring $(CONF),$(var)),$(var))))
+        endif
+        ifeq ($(matching_confs),)
+            $(info No configurations found matching CONF=$(CONF))
+            $(info Available configurations:)
+            $(foreach var,$(all_confs),$(info * $(var)))
+            $(eval $(call fatal-error))
+        else
+            ifeq ($(words $(matching_confs)),1)
+                $(info Building '$(matching_confs)' (matching CONF=$(CONF)))
+            else
+                $(info Building the following configurations (matching CONF=$(CONF)):)
+                $(foreach var,$(matching_confs),$(info * $(var)))
+            endif
+        endif
+
+        # Create a SPEC definition. This will contain the path to one or more spec.gmk files.
+        SPEC=$(addsuffix /spec.gmk,$(addprefix $(output_dir)/,$(matching_confs)))
+    else
+        # No CONF or SPEC given, check the available configurations
+        ifneq ($(words $(all_spec_files)),1)
+            $(info No CONF or SPEC given, but more than one spec.gmk found in $(output_dir).)
+            $(info Available configurations:)
+            $(foreach var,$(all_confs),$(info * $(var)))
+            $(info Please retry building with CONF=<config> or SPEC=<specfile>)
+            $(eval $(call fatal-error))
+        endif
+
+        # We found exactly one configuration, use it
+        SPEC=$(strip $(all_spec_files))
+    endif
 endif
 
 ifneq ($(words $(SPEC)),1)
-    ifeq ($(MAKECMDGOALS),all-conf)
-        SPECS:=$(shell echo $(SPEC) | sed -e 's|$(CURDIR)/build/||g' -e 's|/spec.gmk|\\n|g' -e 's| ||g')
-        allconf:
-		@echo Building configurations:
-		@printf "$(SPECS)"
-		@$(foreach s,$(SPEC),($(MAKE) SPEC=$s $(VERBOSE) VERBOSE=$(VERBOSE) images) &&) true
-		@echo Done building configurations:
-		@printf "$(SPECS)"
-        .PHONY: all-conf
-    else
-        $(error Since you have more than one output dir configured under build, \
-            you have to either run make from the output dir of your choice \
-            or specify run "make SPEC=build/.../spec.gmk" or run all the build configurations \
-	    using "make all-conf")
-    endif
+# We have multiple configurations to build, call make repeatedly
+all jdk hotspot jaxws jaxp corba langtools install images packages clean dist-clean:
+	@$(foreach spec,$(SPEC),($(MAKE) -f $(makefile_path) SPEC=$(spec) $(VERBOSE) VERBOSE=$(VERBOSE) $@ $(MAKE_ARGS)) &&) true
+
+.PHONY: all jdk hotspot jaxws jaxp corba langtools install images packages clean dist-clean
+
 else
+# This is the main part of the Makefile, for the normal case with SPEC specifying a single existing spec.gmk file.
 
 # Now load the spec
 -include $(SPEC)
@@ -88,51 +183,101 @@ $(eval $(call ResetTimers))
 # Clean out any notifications from the previous build.
 $(shell find $(OUTPUT_ROOT) -name "_the.*.notify" $(FIND_DELETE))
 
-all: jdk
-	@$(call StopTimer)
-	@$(if $(JAVAC_SERVERS),rm -rf $(JAVAC_SERVERS)/*.port)
+# If make was called explicitely with -j, don't add a -j ourself to sub-makes, since
+# this will be inherited automatically by make. Otherwise use our default for sub-makes.
+# The -j in MAKEFLAGS is only visible when executing a recipe, hence this macro.
+define GetMakeJobFlag
+    $(if $(findstring -j,$(MAKEFLAGS)),,-j$(NUM_CORES))
+endef
 
-langtools: start-timer
+define CheckEnvironment
+    $(if $(list_alt_overrides),
+        @$(PRINTF) "\nWARNING: You have the following ALT_ variables set:\n"
+    @$(PRINTF) "$(foreach var,$(list_alt_overrides),$(var)=$$$(var))\n"
+    @$(PRINTF) "ALT_ variables are deprecated and will be ignored. Please clean your environment.\n"
+    )
+endef
+
+define PrintStartMessage
+    $(if $(VERBOSE),,@$(ECHO) Running make as $(MAKE) $(MFLAGS) $(MAKE_ARGS))
+    $(call CheckEnvironment)
+    @$(ECHO) "Building OpenJDK for target $(if $(MAKECMDGOALS),'$(MAKECMDGOALS)','all') in configuration '$(CONF_NAME)'"
+endef
+
+define PrintEndMessage
+    @$(ECHO) "Finished building OpenJDK for target '$@'"
+    $(call CheckEnvironment)
+endef
+
+all: jdk
+	@$(if $(JAVAC_SERVERS),rm -rf $(JAVAC_SERVERS)/*.port)
+	@$(call AtRootMakeEnd)
+
+langtools: start-make
 	@$(call MakeStart,langtools,all)
-	@($(CD) $(LANGTOOLS_TOPDIR)/makefiles && $(BUILD_LOG_WRAPPER) $(MAKE) -j$(NUM_CORES) $(LANGTOOLS_MAKE_ARGS))
+	@($(CD) $(LANGTOOLS_TOPDIR)/makefiles && $(BUILD_LOG_WRAPPER) $(MAKE) $(call GetMakeJobFlag) $(LANGTOOLS_MAKE_ARGS) $(MAKE_ARGS))
 	@$(call MakeFinish,langtools,all)
 
 corba: langtools
 	@$(call MakeStart,corba,all)
-	@($(CD) $(CORBA_TOPDIR)/makefiles && $(BUILD_LOG_WRAPPER) $(MAKE) -j$(NUM_CORES) $(CORBA_MAKE_ARGS))
+	@($(CD) $(CORBA_TOPDIR)/makefiles && $(BUILD_LOG_WRAPPER) $(MAKE) $(call GetMakeJobFlag) $(CORBA_MAKE_ARGS) $(MAKE_ARGS))
 	@$(call MakeFinish,corba,all)
 
 jaxp: langtools
 	@$(call MakeStart,jaxp,all)
-	@($(CD) $(JAXP_TOPDIR)/makefiles && $(BUILD_LOG_WRAPPER) $(MAKE) -j$(NUM_CORES) $(CORBA_MAKE_ARGS))
+	@($(CD) $(JAXP_TOPDIR)/makefiles && $(BUILD_LOG_WRAPPER) $(MAKE) $(call GetMakeJobFlag) $(CORBA_MAKE_ARGS) $(MAKE_ARGS))
 	@$(call MakeFinish,jaxp,all)
 
 jaxws: langtools jaxp
 	@$(call MakeStart,jaxws,all)
-	@($(CD) $(JAXWS_TOPDIR)/makefiles && $(BUILD_LOG_WRAPPER) $(MAKE) -j$(NUM_CORES) $(CORBA_MAKE_ARGS))
+	@($(CD) $(JAXWS_TOPDIR)/makefiles && $(BUILD_LOG_WRAPPER) $(MAKE) $(call GetMakeJobFlag) $(CORBA_MAKE_ARGS) $(MAKE_ARGS))
 	@$(call MakeFinish,jaxws,all)
 
 hotspot: langtools
 	@$(call MakeStart,hotspot,all)
-	@($(CD) $(HOTSPOT_TOPDIR)/make && $(BUILD_LOG_WRAPPER) $(MAKE) -j1 $(HOTSPOT_MAKE_ARGS))
+	@($(CD) $(HOTSPOT_TOPDIR)/make && $(BUILD_LOG_WRAPPER) $(MAKE) -j1 $(HOTSPOT_MAKE_ARGS) $(MAKE_ARGS))
 	@$(call MakeFinish,hotspot,all)
 
 jdk: langtools corba jaxp jaxws hotspot
 	@$(call MakeStart,jdk,all)
-	@($(CD) $(JDK_TOPDIR)/makefiles && $(BUILD_LOG_WRAPPER) $(MAKE) -j$(NUM_CORES) $(JDK_MAKE_ARGS))
+	@($(CD) $(JDK_TOPDIR)/makefiles && $(BUILD_LOG_WRAPPER) $(MAKE) $(call GetMakeJobFlag) $(JDK_MAKE_ARGS) $(MAKE_ARGS))
 	@$(call MakeFinish,jdk,all)
 
-images install packages: start-timer jdk langtools corba jaxp jaxws hotspot
+images install packages: source-tips start-make jdk langtools corba jaxp jaxws hotspot
 	@$(call MakeStart,jdk-images,$@)
-	@($(CD) $(JDK_TOPDIR)/makefiles && $(BUILD_LOG_WRAPPER) $(MAKE) -j$(NUM_CORES) $(JDK_MAKE_ARGS) $@)
+	@($(CD) $(JDK_TOPDIR)/makefiles && $(BUILD_LOG_WRAPPER) $(MAKE) $(call GetMakeJobFlag) $(JDK_MAKE_ARGS) $(MAKE_ARGS) $@)
 	@$(call MakeFinish,jdk-images,$@)
-	@$(call StopTimer)
 	@$(if $(JAVAC_SERVERS),rm -rf $(JAVAC_SERVERS)/*.port)
+	@$(call AtRootMakeEnd)
 
-start-timer:
-	@$(call StartTimer)
+old-images: source-tips start-make jdk langtools corba jaxp jaxws hotspot
+	@$(call MakeStart,jdk-old-images,$@)
+	@($(CD) $(JDK_TOPDIR)/makefiles && $(BUILD_LOG_WRAPPER) $(MAKE) $(call GetMakeJobFlag) $(JDK_MAKE_ARGS) $(MAKE_ARGS) $@)
+	@$(call MakeFinish,old-jdk-images,$@)
+	@$(if $(JAVAC_SERVERS),rm -rf $(JAVAC_SERVERS)/*.port)
+	@$(call AtRootMakeEnd)
 
-.PHONY: jdk hotspot jaxws jaxp corba langtools install images packages start-timer
+start-make:
+	@$(call AtRootMakeStart)
+
+.PHONY: jdk hotspot jaxws jaxp corba langtools install images packages start-make
+
+test: start-make
+	@$(call MakeStart,test,$(if $(TEST),$(TEST),all))
+	@($(CD) $(SRC_ROOT)/test && $(BUILD_LOG_WRAPPER) $(MAKE) MAKEFLAGS= -j1 PRODUCT_HOME=$(OUTPUT_ROOT)/jdk JPRT_JAVA_HOME=$(OUTPUT_ROOT)/jdk ALT_OUTPUTDIR=$(OUTPUT_ROOT) $(TEST)) || true
+	@$(call MakeFinish,test,$(if $(TEST),$(TEST),all))
+	@$(call AtRootMakeEnd)
+.PHONY: test
+
+
+# Stores the tips for each repository. This file is be used when constructing the jdk image and can be
+# used to track the exact sources used to build that image.
+source-tips: $(OUTPUT_ROOT)/source_tips
+$(OUTPUT_ROOT)/source_tips: FRC
+	@$(MKDIR) -p $(@D)
+	@$(RM) $@
+	@$(call GetSourceTips)
+
 
 # Remove everything, except the output from configure.
 clean:
@@ -152,25 +297,35 @@ clean-jdk:
 	@$(ECHO) "Cleaned jdk build artifacts (but not langtools,corba,jaxp,jaxws,hotspot nor the build configuration)"
 .PHONY: clean
 
-help:
-	$(info     )
-	$(info Typical make commands:)
-	$(info     make)
-	$(info     make VERBOSE=        # print all commands)
-	$(info     make VERBOSE="-d -p" # debug make as well)
-	$(info     make all-conf        # build images for all configurations)
-	$(info     make clean           # remove build artifacts)
-	$(info     make dist-clean      # you have to rerun configure)
-#	$(info     make test            # run tests)
-	$(info     make images          # create the jdk and jre images)
-	$(info     make install         # install the jdk image)
-#	$(info     make modules         # EXPERIMENTAL: Migrate JDK into a modularized form!)
-	$(info     make packages        # create zips and other packages)
-
-#	$(info     make eclipse_workspace  # Create an Eclipse workspace)
-#	$(info     make netbeans_workspace # Create a NetBeans workspace)
-#	$(info     make vs_workspace       # Create a Visual Studio workspace)
-
-.PHONY: help
-
 endif
+
+# Here are "global" targets, i.e. targets that can be executed without specifying a single configuration.
+# If you addd more global targets, please update the fatal-error macro.
+
+help:
+	$(info )
+	$(info OpenJDK Makefile help)
+	$(info =====================)
+	$(info )
+	$(info Common make targets)
+	$(info .  make [all]            # Compile all code but do not create images)
+	$(info .  make images           # Create complete j2sdk and j2re images)
+	$(info .  make install          # Install the generated images locally)
+	$(info .  make clean            # Remove all files generated by make, but not those generated by configure)
+	$(info .  make dist-clean       # Remove all files generated by both make and configure)
+	$(info .  make help             # Give some help on using make)
+	$(info .  make test             # Run tests, default is all tests (see TEST below))
+	$(info )
+	$(info Useful make variables)
+	$(info .  make CONF=            # Build all configurations (note, assignment is empty))
+	$(info .  make CONF=<substring> # Build the configuration(s) with a name matching the given substring)
+	$(info )
+	$(info .  make LOG=<loglevel>   # Change loglevel from warn (default) to the given loglevel)
+	$(info .                        # Available loglevels are: warn, info, debug and trace)
+	$(info .                        # To see executed command lines, use LOG=info)
+	$(info )
+	$(info .  make test TEST=<test> # Only run the given test or tests, e.g.)
+	$(info .                        # make test TEST="jdk_lang jdk_net")
+	$(info )
+.PHONY: help
+FRC: # Force target

@@ -27,6 +27,8 @@ package java.awt;
 
 import java.awt.event.*;
 
+import javax.tools.annotation.GenerateNativeHeader;
+
 /**
  * The interface for objects which have an adjustable numeric value
  * contained within a bounded range of values.
@@ -34,7 +36,8 @@ import java.awt.event.*;
  * @author Amy Fowler
  * @author Tim Prinzing
  */
-
+/* No native methods here, but the constants are needed in the supporting JNI code */
+@GenerateNativeHeader
 public interface Adjustable {
 
     /**

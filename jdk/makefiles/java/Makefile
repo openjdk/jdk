@@ -34,29 +34,18 @@ include $(BUILDDIR)/common/Defs.gmk
 #
 # The order of subdirs here is important
 #
-SUBDIRS += jvm redist verify fdlibm java sun_nio jli main
+SUBDIRS += redist
 
 # Others
 #    Note: java_crw_demo java_hprof_demo are demos but must be delivered built in sdk
 
-SUBDIRS += security util net nio
+SUBDIRS +=
 
-SUBDIRS_management = management
-SUBDIRS_misc       = npt java_crw_demo java_hprof_demo \
-                     instrument 
+SUBDIRS_management =
+SUBDIRS_misc       =
+
 #TODO Check invoke
 #                     logging instrument invoke sql rmi
-
-
-ifeq ($(PLATFORM), solaris)
-  ifeq ($(ARCH_DATA_MODEL), 32)
-    SUBDIRS += jexec
-  endif
-endif # PLATFORM
-
-ifeq ($(PLATFORM), linux)
-  SUBDIRS += jexec
-endif # PLATFORM
 
 ifeq ($(PLATFORM), macosx)
   SUBDIRS += jobjc

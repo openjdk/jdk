@@ -561,7 +561,7 @@ public abstract class KeyboardFocusManager
                         rootAncestor = (Container)focusOwner;
                     }
                     if (rootAncestor != null) {
-                        setGlobalCurrentFocusCycleRoot(rootAncestor);
+                        setGlobalCurrentFocusCycleRootPriv(rootAncestor);
                     }
                 }
 

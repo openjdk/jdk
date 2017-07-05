@@ -29,23 +29,17 @@ import java.util.List;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.*;
-import java.net.MalformedURLException;
-import java.io.IOException;
 
-import javax.accessibility.*;
 import javax.swing.*;
-import javax.swing.Timer;
 import javax.swing.border.*;
 import javax.swing.event.*;
 import javax.swing.plaf.basic.BasicRadioButtonUI;
 import javax.swing.table.*;
 
-import javax.management.remote.JMXServiceURL;
-import javax.management.remote.JMXConnector;
+
 
 import static java.awt.BorderLayout.*;
 import static javax.swing.ListSelectionModel.*;
-import static sun.tools.jconsole.Resources.*;
 import static sun.tools.jconsole.Utilities.*;
 
 @SuppressWarnings("serial")
@@ -66,7 +60,7 @@ public class ConnectDialog extends InternalDialog
     JPanel radioButtonPanel;
 
     private Icon mastheadIcon =
-        new MastheadIcon(getText("ConnectDialog.masthead.title"));
+        new MastheadIcon(Messages.CONNECT_DIALOG_MASTHEAD_TITLE);
     private Color hintTextColor, disabledTableCellColor;
 
     // The table of managed VM (local process)
@@ -79,11 +73,11 @@ public class ConnectDialog extends InternalDialog
 
 
     public ConnectDialog(JConsole jConsole) {
-        super(jConsole, Resources.getText("ConnectDialog.title"), true);
+        super(jConsole, Messages.CONNECT_DIALOG_TITLE, true);
 
         this.jConsole = jConsole;
         setAccessibleDescription(this,
-                                 getText("ConnectDialog.accessibleDescription"));
+                                 Messages.CONNECT_DIALOG_ACCESSIBLE_DESCRIPTION);
         setDefaultCloseOperation(HIDE_ON_CLOSE);
         setResizable(false);
         Container cp = (JComponent)getContentPane();
@@ -95,7 +89,7 @@ public class ConnectDialog extends InternalDialog
 
         statusBar = new JLabel(" ", JLabel.CENTER);
         setAccessibleName(statusBar,
-                          getText("ConnectDialog.statusBar.accessibleName"));
+                          Messages.CONNECT_DIALOG_STATUS_BAR_ACCESSIBLE_NAME);
 
         Font normalLabelFont = statusBar.getFont();
         Font boldLabelFont = normalLabelFont.deriveFont(Font.BOLD);
@@ -103,7 +97,7 @@ public class ConnectDialog extends InternalDialog
 
         JLabel mastheadLabel = new JLabel(mastheadIcon);
         setAccessibleName(mastheadLabel,
-                          getText("ConnectDialog.masthead.accessibleName"));
+                          Messages.CONNECT_DIALOG_MASTHEAD_ACCESSIBLE_NAME);
 
         cp.add(mastheadLabel, NORTH);
         cp.add(radioButtonPanel, CENTER);
@@ -117,7 +111,7 @@ public class ConnectDialog extends InternalDialog
         remoteTF.addFocusListener(this);
         remoteTF.setPreferredSize(remoteTF.getPreferredSize());
         setAccessibleName(remoteTF,
-                          getText("Remote Process.textField.accessibleName"));
+                          Messages.REMOTE_PROCESS_TEXT_FIELD_ACCESSIBLE_NAME);
 
         //
         // If the VM supports the local attach mechanism (is: Sun
@@ -141,8 +135,8 @@ public class ConnectDialog extends InternalDialog
             TableColumn cmdLineColumn = columnModel.getColumn(COL_NAME);
             cmdLineColumn.setResizable(false);
 
-            localRadioButton = new JRadioButton(getText("Local Process:"));
-            localRadioButton.setMnemonic(getMnemonicInt("Local Process:"));
+            localRadioButton = new JRadioButton(Messages.LOCAL_PROCESS_COLON);
+            localRadioButton.setMnemonic(Resources.getMnemonicInt(Messages.LOCAL_PROCESS_COLON));
             localRadioButton.setFont(boldLabelFont);
             localRadioButton.addItemListener(this);
             radioButtonGroup.add(localRadioButton);
@@ -167,8 +161,8 @@ public class ConnectDialog extends InternalDialog
             localTablePanel.add(localMessageLabel, SOUTH);
         }
 
-        remoteRadioButton = new JRadioButton(getText("Remote Process:"));
-        remoteRadioButton.setMnemonic(getMnemonicInt("Remote Process:"));
+        remoteRadioButton = new JRadioButton(Messages.REMOTE_PROCESS_COLON);
+        remoteRadioButton.setMnemonic(Resources.getMnemonicInt(Messages.REMOTE_PROCESS_COLON));
         remoteRadioButton.setFont(boldLabelFont);
         radioButtonGroup.add(remoteRadioButton);
 
@@ -207,7 +201,7 @@ public class ConnectDialog extends InternalDialog
 
         remoteTFPanel.add(remoteTF, NORTH);
 
-        remoteMessageLabel = new JLabel("<html>" + getText("remoteTF.usage"));
+        remoteMessageLabel = new JLabel("<html>" + Messages.REMOTE_TF_USAGE + "</html>");
         remoteMessageLabel.setFont(smallLabelFont);
         remoteMessageLabel.setForeground(hintTextColor);
         remoteTFPanel.add(remoteMessageLabel, CENTER);
@@ -222,11 +216,10 @@ public class ConnectDialog extends InternalDialog
         userNameTF.getDocument().addDocumentListener(this);
         userNameTF.addFocusListener(this);
         setAccessibleName(userNameTF,
-                          getText("Username.accessibleName"));
-        String labelKey = "Username: ";
+            Messages.USERNAME_ACCESSIBLE_NAME);
         LabeledComponent lc;
-        lc = new LabeledComponent(getText(labelKey),
-                                  getMnemonicInt(labelKey),
+        lc = new LabeledComponent(Messages.USERNAME_COLON_,
+                                  Resources.getMnemonicInt(Messages.USERNAME_COLON_),
                                   userNameTF);
         lc.label.setFont(boldLabelFont);
         userPwdPanel.add(lc);
@@ -238,10 +231,10 @@ public class ConnectDialog extends InternalDialog
         passwordTF.getDocument().addDocumentListener(this);
         passwordTF.addFocusListener(this);
         setAccessibleName(passwordTF,
-                          getText("Password.accessibleName"));
-        labelKey = "Password: ";
-        lc = new LabeledComponent(getText(labelKey),
-                                  getMnemonicInt(labelKey),
+            Messages.PASSWORD_ACCESSIBLE_NAME);
+
+        lc = new LabeledComponent(Messages.PASSWORD_COLON_,
+                                  Resources.getMnemonicInt(Messages.PASSWORD_COLON_),
                                   passwordTF);
         lc.setBorder(new EmptyBorder(0, 12, 0, 0)); // Left padding
         lc.label.setFont(boldLabelFont);
@@ -250,7 +243,7 @@ public class ConnectDialog extends InternalDialog
         remoteTFPanel.add(userPwdPanel, SOUTH);
 
         String connectButtonToolTipText =
-            getText("ConnectDialog.connectButton.toolTip");
+            Messages.CONNECT_DIALOG_CONNECT_BUTTON_TOOLTIP;
         connectButton = new JButton(connectAction);
         connectButton.setToolTipText(connectButtonToolTipText);
 
@@ -288,7 +281,7 @@ public class ConnectDialog extends InternalDialog
             String colorStr =
                 String.format("%06x", hintTextColor.getRGB() & 0xFFFFFF);
             remoteMessageLabel.setText("<html><font color=#" + colorStr + ">" +
-                                       getText("remoteTF.usage"));
+                                       Messages.REMOTE_TF_USAGE);
         }
         if (localMessageLabel != null) {
             localMessageLabel.setForeground(hintTextColor);
@@ -300,9 +293,9 @@ public class ConnectDialog extends InternalDialog
     }
 
     private void createActions() {
-        connectAction = new AbstractAction(getText("Connect")) {
+        connectAction = new AbstractAction(Messages.CONNECT) {
             /* init */ {
-                putValue(Action.MNEMONIC_KEY, getMnemonicInt("Connect"));
+                putValue(Action.MNEMONIC_KEY, Resources.getMnemonicInt(Messages.CONNECT));
             }
 
             public void actionPerformed(ActionEvent ev) {
@@ -321,7 +314,6 @@ public class ConnectDialog extends InternalDialog
                     try {
                         if (txt.startsWith(JConsole.ROOT_URL)) {
                             String url = txt;
-                            String msg = null;
                             jConsole.addUrl(url, userName, password, false);
                             remoteTF.setText(JConsole.ROOT_URL);
                             return;
@@ -361,7 +353,7 @@ public class ConnectDialog extends InternalDialog
             }
         };
 
-        cancelAction = new AbstractAction(getText("Cancel")) {
+        cancelAction = new AbstractAction(Messages.CANCEL) {
             public void actionPerformed(ActionEvent ev) {
                 setVisible(false);
                 statusBar.setText("");
@@ -588,9 +580,9 @@ public class ConnectDialog extends InternalDialog
             LocalVirtualMachine lvm = vmModel.vmAt(row);
             if (!lvm.isManageable()) {
                 if (lvm.isAttachable()) {
-                    labelText = getText("Management Will Be Enabled");
+                    labelText = Messages.MANAGEMENT_WILL_BE_ENABLED;
                 } else {
-                    labelText = getText("Management Not Enabled");
+                    labelText = Messages.MANAGEMENT_NOT_ENABLED;
                 }
             }
         }
@@ -650,8 +642,8 @@ public class ConnectDialog extends InternalDialog
     // Represents the list of managed VMs as a tabular data model.
     private static class ManagedVmTableModel extends AbstractTableModel {
         private static String[] columnNames = {
-            Resources.getText("Column.Name"),
-            Resources.getText("Column.PID"),
+            Messages.COLUMN_NAME,
+            Messages.COLUMN_PID,
         };
 
         private List<LocalVirtualMachine> vmList;
@@ -678,7 +670,7 @@ public class ConnectDialog extends InternalDialog
             }
         }
 
-        public Class getColumnClass(int column) {
+        public Class<?> getColumnClass(int column) {
             switch (column) {
                 case COL_NAME: return String.class;
                 case COL_PID:  return Integer.class;
@@ -706,13 +698,6 @@ public class ConnectDialog extends InternalDialog
         }
     }
 
-
-    // Convenience method
-    private static String getText(String key) {
-        return Resources.getText(key);
-    }
-
-
     // A blank component that takes up as much space as the
     // button part of a JRadioButton.
     private static class Padder extends JPanel {
@@ -721,7 +706,7 @@ public class ConnectDialog extends InternalDialog
         Padder(JRadioButton radioButton) {
             this.radioButton = radioButton;
 
-            setAccessibleName(this, getText("Blank"));
+            setAccessibleName(this, Messages.BLANK);
         }
 
         public Dimension getPreferredSize() {
@@ -758,7 +743,6 @@ public class ConnectDialog extends InternalDialog
             if (g == null) {
                 return null;
             }
-            String clippedText =
                 SwingUtilities.layoutCompoundLabel(button,
                                                    g.getFontMetrics(),
                                                    text,

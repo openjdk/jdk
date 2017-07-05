@@ -60,6 +60,7 @@ class PackageReader extends BandStructure {
     Package pkg;
     byte[] bytes;
     LimitedBuffer in;
+    Package.Version packageVersion;
 
     PackageReader(Package pkg, InputStream in) throws IOException {
         this.pkg = pkg;
@@ -220,7 +221,6 @@ class PackageReader extends BandStructure {
     final static int MAGIC_BYTES = 4;
 
     void readArchiveMagic() throws IOException {
-
         // Read a minimum of bytes in the first gulp.
         in.setReadLimit(MAGIC_BYTES + AH_LENGTH_MIN);
 
@@ -230,8 +230,36 @@ class PackageReader extends BandStructure {
         archive_magic.readFrom(in);
 
         // read and check magic numbers:
-        pkg.magic = getMagicInt32();
+        int magic = getMagicInt32();
+        if (pkg.magic != magic) {
+            throw new IOException("Unexpected package magic number: got "
+                    + magic + "; expected " + pkg.magic);
+        }
         archive_magic.doneDisbursing();
+    }
+
+     // Fixed 6211177, converted to throw IOException
+    void checkArchiveVersion() throws IOException {
+        Package.Version versionFound = null;
+        for (Package.Version v : new Package.Version[] {
+                JAVA7_PACKAGE_VERSION,
+                JAVA6_PACKAGE_VERSION,
+                JAVA5_PACKAGE_VERSION
+            }) {
+            if (packageVersion.equals(v)) {
+                versionFound = v;
+                break;
+            }
+        }
+        if (versionFound == null) {
+            String expVer = JAVA7_PACKAGE_VERSION.toString()
+                            + " OR "
+                            + JAVA6_PACKAGE_VERSION.toString()
+                            + " OR "
+                            + JAVA5_PACKAGE_VERSION.toString();
+            throw new IOException("Unexpected package minor version: got "
+                    +  packageVersion.toString() + "; expected " + expVer);
+        }
     }
 
     void readArchiveHeader() throws IOException {
@@ -264,10 +292,11 @@ class PackageReader extends BandStructure {
         archive_header_0.expectLength(AH_LENGTH_0);
         archive_header_0.readFrom(in);
 
-        pkg.package_minver = archive_header_0.getInt();
-        pkg.package_majver = archive_header_0.getInt();
-        pkg.checkVersion();
-        this.initPackageMajver(pkg.package_majver);
+        int minver = archive_header_0.getInt();
+        int majver = archive_header_0.getInt();
+        packageVersion = Package.Version.of(majver, minver);
+        checkArchiveVersion();
+        this.initHighestClassVersion(JAVA7_MAX_CLASS_VERSION);
 
         archiveOptions = archive_header_0.getInt();
         archive_header_0.doneDisbursing();
@@ -324,8 +353,9 @@ class PackageReader extends BandStructure {
 
         numInnerClasses = archive_header_1.getInt();
 
-        pkg.default_class_minver = (short) archive_header_1.getInt();
-        pkg.default_class_majver = (short) archive_header_1.getInt();
+        minver = (short) archive_header_1.getInt();
+        majver = (short) archive_header_1.getInt();
+        pkg.defaultClassVersion = Package.Version.of(majver, minver);
         numClasses = archive_header_1.getInt();
 
         archive_header_1.doneDisbursing();
@@ -414,7 +444,7 @@ class PackageReader extends BandStructure {
     }
 
     void checkLegacy(String bandname) {
-        if (this.pkg.package_majver < JAVA7_PACKAGE_MAJOR_VERSION) {
+        if (packageVersion.lessThan(JAVA7_PACKAGE_VERSION)) {
             throw new RuntimeException("unexpected band " + bandname);
         }
     }
@@ -947,9 +977,9 @@ class PackageReader extends BandStructure {
                                                             name.stringValue(),
                                                             layout.stringValue());
                 // Check layout string for Java 6 extensions.
-                String pvLayout = def.layoutForPackageMajver(getPackageMajver());
+                String pvLayout = def.layoutForClassVersion(getHighestClassVersion());
                 if (!pvLayout.equals(def.layout())) {
-                    throw new IOException("Bad attribute layout in version 150 archive: "+def.layout());
+                    throw new IOException("Bad attribute layout in archive: "+def.layout());
                 }
                 this.setAttributeLayoutIndex(def, index);
                 if (dump != null)  dump.println(index+" "+def);
@@ -1140,12 +1170,9 @@ class PackageReader extends BandStructure {
         Attribute retroVersion = cls.getAttribute(attrClassFileVersion);
         if (retroVersion != null) {
             cls.removeAttribute(retroVersion);
-            short[] minmajver = parseClassFileVersionAttr(retroVersion);
-            cls.minver = minmajver[0];
-            cls.majver = minmajver[1];
+            cls.version = parseClassFileVersionAttr(retroVersion);
         } else {
-            cls.minver = pkg.default_class_minver;
-            cls.majver = pkg.default_class_majver;
+            cls.version = pkg.defaultClassVersion;
         }
 
         // Replace null SourceFile by "obvious" string.

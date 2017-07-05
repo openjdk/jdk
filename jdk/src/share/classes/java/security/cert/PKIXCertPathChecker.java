@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,7 +87,8 @@ import java.util.Set;
  * @author      Yassir Elley
  * @author      Sean Mullan
  */
-public abstract class PKIXCertPathChecker implements Cloneable {
+public abstract class PKIXCertPathChecker
+    implements CertPathChecker, Cloneable {
 
     /**
      * Default constructor.
@@ -111,6 +112,7 @@ public abstract class PKIXCertPathChecker implements Cloneable {
      * the specified order; it should never be thrown if the forward flag
      * is false since reverse checking must be supported
      */
+    @Override
     public abstract void init(boolean forward)
         throws CertPathValidatorException;
 
@@ -123,6 +125,7 @@ public abstract class PKIXCertPathChecker implements Cloneable {
      * @return <code>true</code> if forward checking is supported,
      * <code>false</code> otherwise
      */
+    @Override
     public abstract boolean isForwardCheckingSupported();
 
     /**
@@ -163,6 +166,17 @@ public abstract class PKIXCertPathChecker implements Cloneable {
             throws CertPathValidatorException;
 
     /**
+     * {@inheritDoc}
+     *
+     * <p>This implementation calls
+     * {@code check(cert, java.util.Collections.<String>emptySet())}.
+     */
+    @Override
+    public void check(Certificate cert) throws CertPathValidatorException {
+        check(cert, java.util.Collections.<String>emptySet());
+    }
+
+    /**
      * Returns a clone of this object. Calls the <code>Object.clone()</code>
      * method.
      * All subclasses which maintain state must support and
@@ -170,6 +184,7 @@ public abstract class PKIXCertPathChecker implements Cloneable {
      *
      * @return a copy of this <code>PKIXCertPathChecker</code>
      */
+    @Override
     public Object clone() {
         try {
             return super.clone();
