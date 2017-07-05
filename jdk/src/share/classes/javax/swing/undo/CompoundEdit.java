@@ -59,7 +59,7 @@ public class CompoundEdit extends AbstractUndoableEdit {
         super.undo();
         int i = edits.size();
         while (i-- > 0) {
-            UndoableEdit e = (UndoableEdit)edits.elementAt(i);
+            UndoableEdit e = edits.elementAt(i);
             e.undo();
         }
     }
@@ -85,7 +85,7 @@ public class CompoundEdit extends AbstractUndoableEdit {
     protected UndoableEdit lastEdit() {
         int count = edits.size();
         if (count > 0)
-            return (UndoableEdit)edits.elementAt(count-1);
+            return edits.elementAt(count-1);
         else
             return null;
     }
@@ -98,7 +98,7 @@ public class CompoundEdit extends AbstractUndoableEdit {
         int size = edits.size();
         for (int i = size-1; i >= 0; i--)
         {
-            UndoableEdit e = (UndoableEdit)edits.elementAt(i);
+            UndoableEdit e = edits.elementAt(i);
 //          System.out.println("CompoundEdit(" + i + "): Discarding " +
 //                             e.getUndoPresentationName());
             e.die();
