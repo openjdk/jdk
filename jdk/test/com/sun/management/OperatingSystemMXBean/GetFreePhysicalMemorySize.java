@@ -26,7 +26,6 @@
  * @bug     4858522
  * @summary Basic unit test of OperatingSystemMXBean.getFreePhysicalMemorySize()
  * @author  Steve Bohne
- * @modules jdk.management
  */
 
 /*

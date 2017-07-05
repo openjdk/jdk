@@ -26,7 +26,6 @@
  * @bug 6336968
  * @summary Test adding non-Attribute values to an AttributeList.
  * @author Eamonn McManus
- * @modules java.management
  */
 
 import java.util.Collections;
