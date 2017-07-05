@@ -305,7 +305,7 @@ AC_DEFUN_ONCE([BOOTJDK_SETUP_BOOT_JDK],
   BOOT_JDK_SOURCETARGET="-source 8 -target 8"
   AC_SUBST(BOOT_JDK_SOURCETARGET)
 
-  ADD_JVM_ARG_IF_OK([-Xpatch:], dummy, [$JAVA])
+  ADD_JVM_ARG_IF_OK([-Xpatch:foo=bar], dummy, [$JAVA])
   AC_MSG_CHECKING([if Boot JDK supports modules])
   if test "x$JVM_ARG_OK" = "xtrue"; then
     AC_MSG_RESULT([yes])
@@ -444,9 +444,9 @@ AC_DEFUN([BOOTJDK_CHECK_BUILD_JDK],
         BUILD_JDK_VERSION=`"$BUILD_JDK/bin/java" -version 2>&1 | head -n 1`
 
         # Extra M4 quote needed to protect [] in grep expression.
-        [FOUND_CORRECT_VERSION=`echo $BUILD_JDK_VERSION | grep  '\"1\.[9]\.'`]
+        [FOUND_CORRECT_VERSION=`echo $BUILD_JDK_VERSION | $EGREP '\"9([\.+-].*)?\"'`]
         if test "x$FOUND_CORRECT_VERSION" = x; then
-          AC_MSG_NOTICE([Potential Boot JDK found at $BUILD_JDK is incorrect JDK version ($BUILD_JDK_VERSION); ignoring])
+          AC_MSG_NOTICE([Potential Build JDK found at $BUILD_JDK is incorrect JDK version ($BUILD_JDK_VERSION); ignoring])
           AC_MSG_NOTICE([(Your Build JDK must be version 9)])
           BUILD_JDK_FOUND=no
         else
