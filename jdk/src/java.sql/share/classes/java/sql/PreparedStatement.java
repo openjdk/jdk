@@ -56,6 +56,7 @@ import java.io.InputStream;
  *
  * @see Connection#prepareStatement
  * @see ResultSet
+ * @since 1.1
  */
 
 public interface PreparedStatement extends Statement {
