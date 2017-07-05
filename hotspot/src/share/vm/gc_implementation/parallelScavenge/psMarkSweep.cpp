@@ -100,12 +100,12 @@ void PSMarkSweep::invoke(bool maximum_heap_compaction) {
 
 // This method contains no policy. You should probably
 // be calling invoke() instead.
-void PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
+bool PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
   assert(SafepointSynchronize::is_at_safepoint(), "must be at a safepoint");
   assert(ref_processor() != NULL, "Sanity");
 
   if (GC_locker::check_active_before_gc()) {
-    return;
+    return false;
   }
 
   ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
@@ -382,6 +382,8 @@ void PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
 #ifdef TRACESPINNING
   ParallelTaskTerminator::print_termination_counts();
 #endif
+
+  return true;
 }
 
 bool PSMarkSweep::absorb_live_data_from_eden(PSAdaptiveSizePolicy* size_policy,

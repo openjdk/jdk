@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1057,7 +1057,7 @@ class PSParallelCompact : AllStatic {
   }
 
   static void invoke(bool maximum_heap_compaction);
-  static void invoke_no_policy(bool maximum_heap_compaction);
+  static bool invoke_no_policy(bool maximum_heap_compaction);
 
   static void post_initialize();
   // Perform initialization for PSParallelCompact that requires

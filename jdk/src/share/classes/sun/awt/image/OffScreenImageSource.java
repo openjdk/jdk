@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -185,6 +185,7 @@ public class OffScreenImageSource implements ImageProducer {
             theConsumer.setDimensions(image.getWidth(), image.getHeight());
             theConsumer.setProperties(properties);
             sendPixels();
+            theConsumer.imageComplete(ImageConsumer.SINGLEFRAMEDONE);
             theConsumer.imageComplete(ImageConsumer.STATICIMAGEDONE);
         } catch (NullPointerException e) {
             if (theConsumer != null) {

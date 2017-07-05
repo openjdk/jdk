@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "gc_implementation/parallelScavenge/cardTableExtension.hpp"
 #include "gc_implementation/parallelScavenge/parallelScavengeHeap.hpp"
 #include "gc_implementation/parallelScavenge/psPromotionManager.hpp"
+#include "gc_implementation/parallelScavenge/psPromotionManager.inline.hpp"
 #include "gc_implementation/parallelScavenge/psScavenge.hpp"
 
 inline void PSScavenge::save_to_space_top_before_gc() {
@@ -65,7 +66,7 @@ inline bool PSScavenge::should_scavenge(T* p, bool check_to_space) {
 // Attempt to "claim" oop at p via CAS, push the new obj if successful
 // This version tests the oop* to make sure it is within the heap before
 // attempting marking.
-template <class T>
+template <class T, bool promote_immediately>
 inline void PSScavenge::copy_and_push_safe_barrier(PSPromotionManager* pm,
                                                    T*                  p) {
   assert(should_scavenge(p, true), "revisiting object?");
@@ -73,7 +74,7 @@ inline void PSScavenge::copy_and_push_safe_barrier(PSPromotionManager* pm,
   oop o = oopDesc::load_decode_heap_oop_not_null(p);
   oop new_obj = o->is_forwarded()
         ? o->forwardee()
-        : pm->copy_to_survivor_space(o);
+        : pm->copy_to_survivor_space<promote_immediately>(o);
   oopDesc::encode_store_heap_oop_not_null(p, new_obj);
 
   // We cannot mark without test, as some code passes us pointers
@@ -86,7 +87,8 @@ inline void PSScavenge::copy_and_push_safe_barrier(PSPromotionManager* pm,
   }
 }
 
-class PSScavengeRootsClosure: public OopClosure {
+template<bool promote_immediately>
+class PSRootsClosure: public OopClosure {
  private:
   PSPromotionManager* _promotion_manager;
 
@@ -94,13 +96,16 @@ class PSScavengeRootsClosure: public OopClosure {
   template <class T> void do_oop_work(T *p) {
     if (PSScavenge::should_scavenge(p)) {
       // We never card mark roots, maybe call a func without test?
-      PSScavenge::copy_and_push_safe_barrier(_promotion_manager, p);
+      PSScavenge::copy_and_push_safe_barrier<T, promote_immediately>(_promotion_manager, p);
     }
   }
  public:
-  PSScavengeRootsClosure(PSPromotionManager* pm) : _promotion_manager(pm) { }
-  void do_oop(oop* p)       { PSScavengeRootsClosure::do_oop_work(p); }
-  void do_oop(narrowOop* p) { PSScavengeRootsClosure::do_oop_work(p); }
+  PSRootsClosure(PSPromotionManager* pm) : _promotion_manager(pm) { }
+  void do_oop(oop* p)       { PSRootsClosure::do_oop_work(p); }
+  void do_oop(narrowOop* p) { PSRootsClosure::do_oop_work(p); }
 };
+
+typedef PSRootsClosure</*promote_immediately=*/false> PSScavengeRootsClosure;
+typedef PSRootsClosure</*promote_immediately=*/true> PSPromoteRootsClosure;
 
 #endif // SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_PSSCAVENGE_INLINE_HPP

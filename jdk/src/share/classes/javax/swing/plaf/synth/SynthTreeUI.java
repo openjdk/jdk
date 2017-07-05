@@ -434,6 +434,8 @@ public class SynthTreeUI extends BasicTreeUI
 
         // Empty out the renderer pane, allowing renderers to be gc'ed.
         rendererPane.removeAll();
+
+        paintContext = null;
     }
 
     private void configureRenderer(SynthContext context) {

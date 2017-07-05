@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -242,7 +242,7 @@ public class SSLParameters {
      *
      * @param algorithm The standard string name of the endpoint
      *     identification algorithm (or null).  See Appendix A in the <a href=
-     *     "../../../technotes/guides/security/crypto/CryptoSpec.html#AppA">
+     *   "{@docRoot}/../technotes/guides/security/crypto/CryptoSpec.html#AppA">
      *     Java Cryptography Architecture API Specification &amp; Reference </a>
      *     for information about standard algorithm names.
      *

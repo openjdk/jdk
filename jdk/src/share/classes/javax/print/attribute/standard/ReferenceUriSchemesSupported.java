@@ -141,7 +141,7 @@ public class ReferenceUriSchemesSupported
      * Returns the string table for class ReferenceUriSchemesSupported.
      */
     protected String[] getStringTable() {
-        return (String[])myStringTable.clone();
+        return myStringTable.clone();
     }
 
     /**
