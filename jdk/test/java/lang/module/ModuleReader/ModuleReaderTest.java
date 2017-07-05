@@ -79,14 +79,60 @@ public class ModuleReaderTest {
         "java/lang/Object.class"
     };
 
+    // (directory) resources that may be in the base module
+    private static final String[] MAYBE_BASE_RESOURCES = {
+        "java",
+        "java/",
+        "java/lang",
+        "java/lang/",
+    };
+
+    // resource names that should not be found in the base module
+    private static final String[] NOT_BASE_RESOURCES = {
+        "NotFound",
+        "/java",
+        "//java",
+        "/java/lang",
+        "//java/lang",
+        "java//lang",
+        "/java/lang/Object.class",
+        "//java/lang/Object.class",
+        "java/lang/Object.class/",
+        "java//lang//Object.class",
+        "./java/lang/Object.class",
+        "java/./lang/Object.class",
+        "java/lang/./Object.class",
+        "../java/lang/Object.class",
+        "java/../lang/Object.class",
+        "java/lang/../Object.class",
+    };
+
     // resources in test module (can't use module-info.class as a test
     // resource as it will be modified by the jmod tool)
     private static final String[] TEST_RESOURCES = {
         "p/Main.class"
     };
 
-    // a resource that is not in the base or test module
-    private static final String NOT_A_RESOURCE = "NotAResource";
+    // (directory) resources that may be in the test module
+    private static final String[] MAYBE_TEST_RESOURCES = {
+        "p",
+        "p/"
+    };
+
+    // resource names that should not be found in the test module
+    private static final String[] NOT_TEST_RESOURCES = {
+        "NotFound",
+        "/p",
+        "//p",
+        "/p/Main.class",
+        "//p/Main.class",
+        "p/Main.class/",
+        "p//Main.class",
+        "./p/Main.class",
+        "p/./Main.class",
+        "../p/Main.class",
+        "p/../p/Main.class"
+    };
 
 
     @BeforeTest
@@ -122,14 +168,23 @@ public class ModuleReaderTest {
                 testOpen(reader, name, expectedBytes);
                 testRead(reader, name, expectedBytes);
                 testList(reader, name);
-
             }
 
-            // test "not found"
-            assertFalse(reader.find(NOT_A_RESOURCE).isPresent());
-            assertFalse(reader.open(NOT_A_RESOURCE).isPresent());
-            assertFalse(reader.read(NOT_A_RESOURCE).isPresent());
+            // test resources that may be in the base module
+            for (String name : MAYBE_BASE_RESOURCES) {
+                Optional<URI> ouri = reader.find(name);
+                ouri.ifPresent(uri -> {
+                    if (name.endsWith("/"))
+                        assertTrue(uri.toString().endsWith("/"));
+                });
+            }
 
+            // test "not found" in java.base module
+            for (String name : NOT_BASE_RESOURCES) {
+                assertFalse(reader.find(name).isPresent());
+                assertFalse(reader.open(name).isPresent());
+                assertFalse(reader.read(name).isPresent());
+            }
 
             // test nulls
             try {
@@ -216,13 +271,13 @@ public class ModuleReaderTest {
      */
     void test(Path mp) throws IOException {
 
-        ModuleFinder finder = new ModulePath(Runtime.version(), true, mp);
+        ModuleFinder finder = ModulePath.of(Runtime.version(), true, mp);
         ModuleReference mref = finder.find(TEST_MODULE).get();
         ModuleReader reader = mref.open();
 
         try (reader) {
 
-            // test each of the known resources in the module
+            // test resources in test module
             for (String name : TEST_RESOURCES) {
                 byte[] expectedBytes
                     = Files.readAllBytes(MODS_DIR
@@ -235,10 +290,22 @@ public class ModuleReaderTest {
                 testList(reader, name);
             }
 
-            // test "not found"
-            assertFalse(reader.find(NOT_A_RESOURCE).isPresent());
-            assertFalse(reader.open(NOT_A_RESOURCE).isPresent());
-            assertFalse(reader.read(NOT_A_RESOURCE).isPresent());
+            // test resources that may be in the test module
+            for (String name : MAYBE_TEST_RESOURCES) {
+                System.out.println(name);
+                Optional<URI> ouri = reader.find(name);
+                ouri.ifPresent(uri -> {
+                    if (name.endsWith("/"))
+                        assertTrue(uri.toString().endsWith("/"));
+                });
+            }
+
+            // test "not found" in test module
+            for (String name : NOT_TEST_RESOURCES) {
+                assertFalse(reader.find(name).isPresent());
+                assertFalse(reader.open(name).isPresent());
+                assertFalse(reader.read(name).isPresent());
+            }
 
             // test nulls
             try {
@@ -353,9 +420,6 @@ public class ModuleReaderTest {
         for (String e : names) {
             assertTrue(reader.find(e).isPresent());
         }
-
-        // should not contain directories
-        names.forEach(e -> assertFalse(e.endsWith("/")));
     }
 
 }

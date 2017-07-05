@@ -24,8 +24,10 @@
 /*
  * @test
  * @bug 4990825
- * @modules jdk.internal.jvmstat/sun.jvmstat.monitor
  * @summary test that VmIdentifier objects get created as expected
+ *
+ * @modules java.xml
+ *          jdk.internal.jvmstat/sun.jvmstat.monitor
  */
 
 import java.io.*;

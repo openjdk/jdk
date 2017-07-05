@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,7 @@ include $(SRC_ROOT)/make/MainSupport.gmk
 # Load the vital tools for all the makefiles.
 include $(SRC_ROOT)/make/common/MakeBase.gmk
 include $(SRC_ROOT)/make/common/Modules.gmk
+include $(SRC_ROOT)/make/common/FindTests.gmk
 
 # Declare ALL_TARGETS as an immediate variable. This variable is a list of all
 # valid top level targets. It's used to declare them all as PHONY and to
@@ -362,6 +363,9 @@ ALL_TARGETS += store-source-revision create-source-revision-tracker bootcycle-im
 ################################################################################
 # Docs targets
 
+docs-module-graphs:
+	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f Javadoc.gmk docs-module-graphs)
+
 docs-javadoc:
 	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f Javadoc.gmk docs-javadoc)
 
@@ -371,7 +375,10 @@ docs-copy:
 docs-zip:
 	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f Javadoc.gmk docs-zip)
 
-ALL_TARGETS += docs-javadoc docs-copy docs-zip
+update-build-docs:
+	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f UpdateBuildDocs.gmk)
+
+ALL_TARGETS += docs-module-graphs docs-javadoc docs-copy docs-zip update-build-docs
 
 ################################################################################
 # Cross compilation support
@@ -423,6 +430,22 @@ endif
 ALL_TARGETS += $(INTERIM_JMOD_TARGETS) interim-image generate-link-opt-data
 
 ################################################################################
+# Generate test names for all JTReg test groups
+#
+
+define DeclareRunTestRecipe
+  run-test-$1:
+	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f RunTests.gmk run-test TEST="$1")
+
+endef
+
+# ALL_NAMED_TESTS is defined in FindTests.gmk
+$(foreach t, $(ALL_NAMED_TESTS), $(eval $(call DeclareRunTestRecipe,$t)))
+ALL_TEST_TARGETS := $(addprefix run-test-, $(ALL_NAMED_TESTS))
+
+ALL_TARGETS += $(ALL_TEST_TARGETS)
+
+################################################################################
 # Build tests
 #
 
@@ -445,6 +468,9 @@ build-test-jdk-jtreg-native:
 test-image-jdk-jtreg-native:
 	+($(CD) $(JDK_TOPDIR)/make/test && $(MAKE) $(MAKE_ARGS) -f JtregNative.gmk \
 	    test-image-jdk-jtreg-native)
+
+run-test:
+	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f RunTests.gmk run-test TEST="$(TEST)")
 
 ifeq ($(BUILD_GTEST), true)
   test-image-hotspot-gtest:
@@ -474,7 +500,8 @@ endif
 ALL_TARGETS += prepare-test-image build-test-hotspot-jtreg-native \
     test-image-hotspot-jtreg-native build-test-jdk-jtreg-native \
     test-image-jdk-jtreg-native build-test-lib build-test-failure-handler \
-    test-failure-handler test-image-failure-handler test-image-hotspot-gtest
+    test-failure-handler test-image-failure-handler test-image-hotspot-gtest \
+    run-test
 
 ################################################################################
 # Run tests
@@ -633,16 +660,16 @@ else
   # in javadoc.
   java.desktop-gensrc-jdk: java.base-gensrc
 
-  # The annotation processing for jdk.vm.ci and jdk.vm.compiler needs classes
-  # from the current JDK.
-  jdk.vm.ci-gensrc-hotspot: $(addsuffix -java, \
-      $(call FindTransitiveDepsForModule, jdk.vm.ci))
-  jdk.vm.compiler-gensrc-hotspot: $(addsuffix -java, \
-      $(call FindTransitiveDepsForModule, jdk.vm.compiler))
+  # The annotation processing for jdk.internal.vm.ci and jdk.internal.vm.compiler
+  # needs classes from the current JDK.
+  jdk.internal.vm.ci-gensrc-hotspot: $(addsuffix -java, \
+      $(call FindTransitiveDepsForModule, jdk.internal.vm.ci))
+  jdk.internal.vm.compiler-gensrc-hotspot: $(addsuffix -java, \
+      $(call FindTransitiveDepsForModule, jdk.internal.vm.compiler))
 
-  # For jdk.vm.compiler, the gensrc step is generating a module-info.java.extra
+  # For jdk.internal.vm.compiler, the gensrc step is generating a module-info.java.extra
   # file to be processed by the gensrc-moduleinfo target.
-  jdk.vm.compiler-gensrc-moduleinfo: jdk.vm.compiler-gensrc-hotspot
+  jdk.internal.vm.compiler-gensrc-moduleinfo: jdk.internal.vm.compiler-gensrc-hotspot
 
   # Explicitly add dependencies for special targets
   java.base-java: unpack-sec
@@ -654,8 +681,7 @@ else
   # When creating a BUILDJDK, we don't need to add hashes to java.base, thus
   # we don't need to depend on all other jmods
   ifneq ($(CREATING_BUILDJDK), true)
-    java.base-jmod: jrtfs-jar $(filter-out java.base-jmod \
-        $(addsuffix -jmod, $(call FindAllUpgradeableModules)), $(JMOD_TARGETS))
+    java.base-jmod: jrtfs-jar $(filter-out java.base-jmod, $(JMOD_TARGETS))
   endif
 
   # Building java.base-jmod requires all of hotspot to be built.
@@ -728,7 +754,7 @@ else
     generate-link-opt-data: buildtools-jdk
 
     # The generated classlist needs to go into java.base-jmod.
-    java.base-jmod jdk-image jre-image: generate-link-opt-data
+    java.base-jmod jdk.jlink-jmod jdk-image jre-image: generate-link-opt-data
   endif
 
   release-file: create-source-revision-tracker
@@ -749,6 +775,8 @@ else
 
   bootcycle-images: jdk-image
 
+  docs-module-graphs: exploded-image buildtools-modules 
+
   docs-javadoc: $(GENSRC_TARGETS) rmic
 
   # The gensrc step for jdk.jdi creates an html file that is used by docs-copy.
@@ -757,6 +785,11 @@ else
   docs-zip: docs-javadoc docs-copy
 
   test: jdk-image test-image
+
+  run-test: jdk-image test-image
+
+  # Declare dependency for all generated test targets
+  $(foreach t, $(ALL_TEST_TARGETS), $(eval $t: jdk-image test-image))
 
   create-buildjdk-copy: jdk.jlink-java java.base-gendata \
       $(addsuffix -java, $(INTERIM_IMAGE_MODULES))
@@ -901,7 +934,7 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
 endif
 
 # This target builds the documentation image
-docs-image: docs-javadoc docs-copy
+docs-image: docs-module-graphs docs-javadoc docs-copy
 
 # This target builds the test image
 test-image: prepare-test-image test-image-hotspot-jtreg-native \
@@ -1031,6 +1064,9 @@ print-targets:
 
 print-modules:
 	  @$(ECHO) $(sort $(ALL_MODULES))
+
+print-tests:
+	  @$(ECHO) $(sort $(ALL_NAMED_TESTS))
 
 create-main-targets-include:
 	  $(call LogInfo, Generating main target list)
