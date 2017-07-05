@@ -21,25 +21,27 @@
  or visit www.oracle.com if you need additional information or have any
  questions.
 -->
-<package name="sampleapi.fx" style="fx">
-
-    <class basename="FXClass">
-        <modifier>public</modifier>
-        <member>
-            <field basename="id">
+<sampleapi>
+    <module name="UNNAMED">
+        <package name="sampleapi.fx" style="fx">
+            <class basename="FXClass">
                 <modifier>public</modifier>
-                <type>int|boolean</type>
-            </field>
-            <method basename="setProp">
-                <modifier>public|protected|private</modifier>
-                <param>int|String</param>
-                <type>void</type>
-            </method>
-            <method basename="getProp">
-                <modifier>public|protected|private</modifier>
-                <type>int|int|String</type>
-            </method>
-        </member>
-    </class>
-
-</package>
+                <member>
+                    <field basename="id">
+                        <modifier>public</modifier>
+                        <type>int|boolean</type>
+                    </field>
+                    <method basename="setProp">
+                        <modifier>public|protected|private</modifier>
+                        <param>int|String</param>
+                        <type>void</type>
+                    </method>
+                    <method basename="getProp">
+                        <modifier>public|protected|private</modifier>
+                        <type>int|int|String</type>
+                    </method>
+                </member>
+            </class>
+        </package>
+    </module>
+</sampleapi>

@@ -20,42 +20,135 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
 package sampleapi;
 
-import java.io.File;
-import java.io.FilenameFilter;
+import com.sun.source.util.JavacTask;
+import com.sun.tools.javac.api.JavacTaskImpl;
+import com.sun.tools.javac.api.JavacTool;
+import com.sun.tools.javac.util.Context;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import static java.util.stream.Collectors.toList;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
+import sampleapi.generator.ModuleGenerator;
 
 import sampleapi.generator.PackageGenerator;
 
 public class SampleApi {
 
-    PackageGenerator pkgGen = new PackageGenerator();
+    private final Context ctx;
+    private final List<ModuleGenerator> modules = new ArrayList<>();
 
-    public void generate(File resDir, File outDir) throws Fault {
-        FilenameFilter filter = (dir, name) -> { return name.endsWith(".xml"); };
-        File[] resFiles = resDir.listFiles(filter);
-        for (File resFile : resFiles) {
-            pkgGen.processDataSet(resFile);
-            pkgGen.generate(outDir);
-        }
+    public SampleApi() {
+        JavacTool jt = JavacTool.create();
+        JavacTask task = jt.getTask(null, null, null, null, null, null);
+        ctx = ((JavacTaskImpl) task).getContext();
     }
 
-    public void generate(Path res, Path dir) throws Fault {
-        generate(res.toFile(), dir.toFile());
+    public static SampleApi load(Path resDir)
+            throws ParserConfigurationException, IOException, SAXException {
+        SampleApi result = new SampleApi();
+        System.out.println("Loading resources from " + resDir);
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        DocumentBuilder builder = factory.newDocumentBuilder();
+        Files.list(resDir)
+                .peek(f -> System.out.println(f.getFileName()))
+                .filter(f -> f.getFileName().toString().endsWith(".xml"))
+                .peek(f -> System.out.println(f.getFileName()))
+                .forEach(resFile -> {
+                    try (InputStream is = Files.newInputStream(resFile)) {
+                        Document document = builder.parse(is);
+                        NodeList moduleElements = document.getElementsByTagName("module");
+                        for (int i = 0; i < moduleElements.getLength(); i++) {
+                            result.modules.add(ModuleGenerator
+                                    .load((Element) moduleElements.item(i)));
+                        }
+                    } catch (IOException ex) {
+                        throw new UncheckedIOException(ex);
+                    } catch (SAXException ex) {
+                        throw new RuntimeException(ex);
+                    }
+                });
+        return result;
     }
 
-    public void generate(String res, String dir) throws Fault {
-        generate(new File(res), new File(dir));
+    public Context getContext() {
+        return ctx;
     }
 
-    public static class Fault extends Exception {
-        public Fault(String msg) {
-            super(msg);
+    public List<ModuleGenerator> getModules() {
+        return modules;
+    }
+
+
+    public void generate(Path outDir) {
+        //resolveIDs(modules);
+        modules.forEach(m -> {
+            try {
+                m.generate(outDir, this);
+            } catch (IOException ex) {
+                throw new UncheckedIOException(ex);
+            }
+        });
+    }
+
+    public void generate(String dir)
+            throws ParserConfigurationException, IOException, SAXException {
+        generate(Paths.get(dir));
+    }
+
+    public ModuleGenerator moduleById(String id) {
+        String real_id = getId(id);
+        return modules.stream()
+                            .filter(m -> m.id.equals(real_id))
+                            .findAny().orElseThrow(() -> new IllegalStateException("No module with id: " + real_id));
+    }
+
+    public PackageGenerator packageById(String id) {
+        String real_id = getId(id);
+        return modules.stream()
+                .flatMap(m -> m.packages.stream())
+                .filter(p -> p.id.equals(real_id)).findAny()
+                .orElseThrow(() -> new IllegalStateException("No package with id: " + real_id));
+    }
+
+    public String classById(String id) {
+        String real_id = getId(id);
+        return modules.stream()
+                .flatMap(m -> m.packages.stream())
+                .peek(p -> System.out.println(p.packageName + " " + p.idBases.size()))
+                .flatMap(p -> p.idBases.entrySet().stream()
+                    .filter(e -> e.getKey().equals(real_id))
+                    .map(e -> p.packageName + "." + e.getValue().name.toString())
+                    .peek(System.out::println))
+                .findAny().orElseThrow(() -> new IllegalStateException("No class with id: " + id));
+    }
+
+    public boolean isId(String name) {
+        return name.startsWith("$");
+    }
+
+    public boolean isIdEqual(String name, String id) {
+        return isId(name) && getId(name).equals(id);
+    }
+
+    public String getId(String name) {
+        if(!isId(name)) {
+            throw new IllegalStateException("Not an id: " + name);
         }
-        public Fault(String msg, Throwable th) {
-            super(msg, th);
-        }
+        return name.substring(1);
     }
 }
