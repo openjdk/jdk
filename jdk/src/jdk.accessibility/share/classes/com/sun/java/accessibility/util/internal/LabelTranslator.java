@@ -23,7 +23,7 @@
  * questions.
  */
 
-package com.sun.java.accessibility.util.java.awt;
+package com.sun.java.accessibility.util.internal;
 
 import java.lang.*;
 import java.util.*;
@@ -49,30 +49,25 @@ import com.sun.java.accessibility.util.*;
  * </PRE>
  *
  * <P>This class extends the Translator class to provide specific support
- * for the Button class.  Translator.getAccessible() will automatically
+ * for the Label class.  Translator.getAccessible() will automatically
  * load this class when an assistive technology asks for an accessible
- * translator for Button.
+ * translator for Label.
  *
  */
-public class ButtonTranslator extends Translator {
+public class LabelTranslator extends Translator {
 
-    /**
-     * Get the name of this object.
-     * @return the name of the object -- can be null if this object does
-     * not have a name
-     */
     public String getAccessibleName() {
-        return ((Button) source).getLabel();
+        return ((Label) source).getText();
     }
 
     /**
      * Set the name of this object.
      */
     public void setAccessibleName(String s) {
-        ((Button) source).setLabel(s);
+        ((Label) source).setText(s);
     }
 
     public AccessibleRole getAccessibleRole() {
-        return AccessibleRole.PUSH_BUTTON;
+        return AccessibleRole.LABEL;
     }
 }

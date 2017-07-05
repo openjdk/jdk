@@ -141,8 +141,8 @@ final class ExternalClient implements SaslClient {
     /**
      * Retrieves the negotiated property.
      * This method can be called only after the authentication exchange has
-     * completed (i.e., when <tt>isComplete()</tt> returns true); otherwise, a
-     * <tt>IllegalStateException</tt> is thrown.
+     * completed (i.e., when {@code isComplete()} returns true);
+     * otherwise, an {@code IllegalStateException} is thrown.
      *
      * @return null No property is applicable to this mechanism.
      * @exception IllegalStateException if this authentication exchange

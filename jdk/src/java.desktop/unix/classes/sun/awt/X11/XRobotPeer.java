@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,16 @@
 package sun.awt.X11;
 
 import java.awt.*;
-import java.awt.event.InputEvent;
 import java.awt.peer.*;
 
 import sun.awt.AWTAccessor;
 import sun.awt.SunToolkit;
+import sun.awt.UNIXToolkit;
 import sun.awt.X11GraphicsConfig;
 
 class XRobotPeer implements RobotPeer {
 
+    private static volatile boolean isGtkSupported;
     private X11GraphicsConfig   xgc = null;
     /*
      * native implementation uses some static shared data (pipes, processes)
@@ -44,46 +45,65 @@ class XRobotPeer implements RobotPeer {
     XRobotPeer(GraphicsConfiguration gc) {
         this.xgc = (X11GraphicsConfig)gc;
         SunToolkit tk = (SunToolkit)Toolkit.getDefaultToolkit();
-        setup(tk.getNumberOfButtons(), AWTAccessor.getInputEventAccessor().getButtonDownMasks());
+        setup(tk.getNumberOfButtons(),
+                AWTAccessor.getInputEventAccessor().getButtonDownMasks());
+
+        Toolkit toolkit = Toolkit.getDefaultToolkit();
+        if (!isGtkSupported) {
+            if (toolkit instanceof UNIXToolkit
+                    && ((UNIXToolkit) toolkit).loadGTK()) {
+                isGtkSupported = true;
+            }
+        }
     }
 
+    @Override
     public void dispose() {
         // does nothing
     }
 
+    @Override
     public void mouseMove(int x, int y) {
         mouseMoveImpl(xgc, x, y);
     }
 
+    @Override
     public void mousePress(int buttons) {
         mousePressImpl(buttons);
     }
 
+    @Override
     public void mouseRelease(int buttons) {
         mouseReleaseImpl(buttons);
     }
 
+    @Override
     public void mouseWheel(int wheelAmt) {
-    mouseWheelImpl(wheelAmt);
+        mouseWheelImpl(wheelAmt);
     }
 
+    @Override
     public void keyPress(int keycode) {
         keyPressImpl(keycode);
     }
 
+    @Override
     public void keyRelease(int keycode) {
         keyReleaseImpl(keycode);
     }
 
+    @Override
     public int getRGBPixel(int x, int y) {
         int pixelArray[] = new int[1];
-        getRGBPixelsImpl(xgc, x, y, 1, 1, pixelArray);
+        getRGBPixelsImpl(xgc, x, y, 1, 1, pixelArray, isGtkSupported);
         return pixelArray[0];
     }
 
+    @Override
     public int [] getRGBPixels(Rectangle bounds) {
         int pixelArray[] = new int[bounds.width*bounds.height];
-        getRGBPixelsImpl(xgc, bounds.x, bounds.y, bounds.width, bounds.height, pixelArray);
+        getRGBPixelsImpl(xgc, bounds.x, bounds.y, bounds.width, bounds.height,
+                            pixelArray, isGtkSupported);
         return pixelArray;
     }
 
@@ -97,5 +117,6 @@ class XRobotPeer implements RobotPeer {
     private static native synchronized void keyPressImpl(int keycode);
     private static native synchronized void keyReleaseImpl(int keycode);
 
-    private static native synchronized void getRGBPixelsImpl(X11GraphicsConfig xgc, int x, int y, int width, int height, int pixelArray[]);
+    private static native synchronized void getRGBPixelsImpl(X11GraphicsConfig xgc,
+            int x, int y, int width, int height, int pixelArray[], boolean isGtkSupported);
 }

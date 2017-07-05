@@ -25,10 +25,10 @@
 package java.awt;
 
 /**
- * The <code>CheckboxGroup</code> class is used to group together
- * a set of <code>Checkbox</code> buttons.
+ * The {@code CheckboxGroup} class is used to group together
+ * a set of {@code Checkbox} buttons.
  * <p>
- * Exactly one check box button in a <code>CheckboxGroup</code> can
+ * Exactly one check box button in a {@code CheckboxGroup} can
  * be in the "on" state at any given time. Pushing any
  * button sets its state to "on" and forces any other button that
  * is in the "on" state into the "off" state.
@@ -69,7 +69,7 @@ public class CheckboxGroup implements java.io.Serializable {
     private static final long serialVersionUID = 3729780091441768983L;
 
     /**
-     * Creates a new instance of <code>CheckboxGroup</code>.
+     * Creates a new instance of {@code CheckboxGroup}.
      */
     public CheckboxGroup() {
     }
@@ -78,10 +78,10 @@ public class CheckboxGroup implements java.io.Serializable {
      * Gets the current choice from this check box group.
      * The current choice is the check box in this
      * group that is currently in the "on" state,
-     * or <code>null</code> if all check boxes in the
+     * or {@code null} if all check boxes in the
      * group are off.
      * @return   the check box that is currently in the
-     *                 "on" state, or <code>null</code>.
+     *                 "on" state, or {@code null}.
      * @see      java.awt.Checkbox
      * @see      java.awt.CheckboxGroup#setSelectedCheckbox
      * @since    1.1
@@ -96,7 +96,7 @@ public class CheckboxGroup implements java.io.Serializable {
      *
      * @return the selected checkbox
      * @deprecated As of JDK version 1.1,
-     * replaced by <code>getSelectedCheckbox()</code>.
+     * replaced by {@code getSelectedCheckbox()}.
      */
     @Deprecated
     public Checkbox getCurrent() {
@@ -109,11 +109,11 @@ public class CheckboxGroup implements java.io.Serializable {
      * This method sets the state of that check box to "on" and
      * sets all other check boxes in the group to be off.
      * <p>
-     * If the check box argument is <tt>null</tt>, all check boxes
+     * If the check box argument is {@code null}, all check boxes
      * in this check box group are deselected. If the check box argument
      * belongs to a different check box group, this method does
      * nothing.
-     * @param     box   the <code>Checkbox</code> to set as the
+     * @param     box   the {@code Checkbox} to set as the
      *                      current selection.
      * @see      java.awt.Checkbox
      * @see      java.awt.CheckboxGroup#getSelectedCheckbox
@@ -130,7 +130,7 @@ public class CheckboxGroup implements java.io.Serializable {
      * @param  box the {@code Checkbox} to set as the
      *         current selection.
      * @deprecated As of JDK version 1.1,
-     * replaced by <code>setSelectedCheckbox(Checkbox)</code>.
+     * replaced by {@code setSelectedCheckbox(Checkbox)}.
      */
     @Deprecated
     public synchronized void setCurrent(Checkbox box) {

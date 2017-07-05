@@ -1,24 +1,21 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  */
+
 /*
- * Copyright 2001-2004 The Apache Software Foundation.
+ * Copyright 2005 The Apache Software Foundation.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */
-/*
- * $Id: MultiDOM.java,v 1.5 2005/09/28 13:48:36 pvedula Exp $
  */
 
 package com.sun.org.apache.xalan.internal.xsltc.dom;
@@ -35,6 +32,7 @@ import com.sun.org.apache.xml.internal.dtm.DTMAxisIterator;
 import com.sun.org.apache.xml.internal.dtm.DTMManager;
 import com.sun.org.apache.xml.internal.dtm.ref.DTMAxisIteratorBase;
 import com.sun.org.apache.xml.internal.dtm.ref.DTMDefaultBase;
+import com.sun.org.apache.xml.internal.dtm.ref.DTMAxisIterNodeList;
 import com.sun.org.apache.xml.internal.utils.SuballocatedIntVector;
 
 import org.w3c.dom.Node;
@@ -569,7 +567,7 @@ public final class MultiDOM implements DOM {
     public NodeList makeNodeList(DTMAxisIterator iter) {
         int index = iter.next();
         if (index == DTM.NULL) {
-            return null;
+            return new DTMAxisIterNodeList(null, null);
         }
         iter.reset();
         return _adapters[getDTMId(index)].makeNodeList(iter);

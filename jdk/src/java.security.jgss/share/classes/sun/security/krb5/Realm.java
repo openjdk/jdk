@@ -296,7 +296,7 @@ public class Realm implements Cloneable {
      *
      * @param cRealm the initiating realm
      * @param sRealm the target realm, not the same as cRealm
-     * @returns array of realms including at least cRealm as the first
+     * @return array of realms including at least cRealm as the first
      *          element
      * @throws KrbException if the config does not contain a sub-stanza
      *          for cRealm in [capaths] or the sub-stanza does not contain
@@ -347,7 +347,7 @@ public class Realm implements Cloneable {
      * for a service in the target realm sRealm.
      * @param cRealm the initiating realm
      * @param sRealm the target realm, not the same as cRealm
-     * @returns array of realms including cRealm as the first element
+     * @return array of realms including cRealm as the first element
      */
     private static String[] parseHierarchy(String cRealm, String sRealm) {
 

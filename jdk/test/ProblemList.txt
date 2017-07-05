@@ -122,6 +122,10 @@ java/beans/XMLEncoder/java_awt_GridBagLayout.java             generic-all
 java/beans/XMLDecoder/8028054/TestConstructorFinder.java      generic-all
 java/beans/XMLDecoder/8028054/TestMethodFinder.java           generic-all
 
+# 8132565
+java/beans/Introspector/8132566/OverridePropertyInfoTest.java generic-all
+java/beans/Introspector/8132566/OverrideUserDefPropertyInfoTest.java generic-all
+
 ############################################################################
 
 # jdk_lang

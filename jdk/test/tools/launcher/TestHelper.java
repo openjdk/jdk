@@ -594,7 +594,7 @@ public class TestHelper {
         }
 
         boolean notContains(String str) {
-             for (String x : testOutput) {
+            for (String x : testOutput) {
                 if (x.contains(str)) {
                     appendError("string <" + str + "> found");
                     return false;
@@ -604,7 +604,7 @@ public class TestHelper {
         }
 
         boolean matches(String stringToMatch) {
-          for (String x : testOutput) {
+            for (String x : testOutput) {
                 if (x.matches(stringToMatch)) {
                     return true;
                 }

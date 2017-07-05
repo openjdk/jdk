@@ -26,7 +26,7 @@
 package java.awt;
 
 /**
- * The <code>GridLayout</code> class is a layout manager that
+ * The {@code GridLayout} class is a layout manager that
  * lays out a container's components in a rectangular grid.
  * The container is divided into equal-sized rectangles,
  * and one component is placed in each rectangle.
@@ -50,9 +50,9 @@ package java.awt;
  * }
  * </pre></blockquote><hr>
  * <p>
- * If the container's <code>ComponentOrientation</code> property is horizontal
+ * If the container's {@code ComponentOrientation} property is horizontal
  * and left-to-right, the above example produces the output shown in Figure 1.
- * If the container's <code>ComponentOrientation</code> property is horizontal
+ * If the container's {@code ComponentOrientation} property is horizontal
  * and right-to-left, the example produces the output shown in Figure 2.
  *
  * <table style="float:center" WIDTH=600 summary="layout">
@@ -77,7 +77,7 @@ package java.awt;
  * <p>
  * When both the number of rows and the number of columns have
  * been set to non-zero values, either by a constructor or
- * by the <tt>setRows</tt> and <tt>setColumns</tt> methods, the number of
+ * by the {@code setRows} and {@code setColumns} methods, the number of
  * columns specified is ignored.  Instead, the number of
  * columns is determined from the specified number of rows
  * and the total number of components in the layout. So, for
@@ -154,7 +154,7 @@ public class GridLayout implements LayoutManager, java.io.Serializable {
      * Creates a grid layout with the specified number of rows and
      * columns. All components in the layout are given equal size.
      * <p>
-     * One, but not both, of <code>rows</code> and <code>cols</code> can
+     * One, but not both, of {@code rows} and {@code cols} can
      * be zero, which means that any number of objects can be placed in a
      * row or in a column.
      * @param     rows   the rows, with the value zero meaning
@@ -175,11 +175,11 @@ public class GridLayout implements LayoutManager, java.io.Serializable {
      * of the columns. Vertical gaps are placed between each of
      * the rows.
      * <p>
-     * One, but not both, of <code>rows</code> and <code>cols</code> can
+     * One, but not both, of {@code rows} and {@code cols} can
      * be zero, which means that any number of objects can be placed in a
      * row or in a column.
      * <p>
-     * All <code>GridLayout</code> constructors defer to this one.
+     * All {@code GridLayout} constructors defer to this one.
      * @param     rows   the rows, with the value zero meaning
      *                   any number of rows
      * @param     cols   the columns, with the value zero meaning
@@ -187,7 +187,7 @@ public class GridLayout implements LayoutManager, java.io.Serializable {
      * @param     hgap   the horizontal gap
      * @param     vgap   the vertical gap
      * @exception   IllegalArgumentException  if the value of both
-     *                  <code>rows</code> and <code>cols</code> is
+     *                  {@code rows} and {@code cols} is
      *                  set to zero
      */
     public GridLayout(int rows, int cols, int hgap, int vgap) {
@@ -213,7 +213,7 @@ public class GridLayout implements LayoutManager, java.io.Serializable {
      * Sets the number of rows in this layout to the specified value.
      * @param        rows   the number of rows in this layout
      * @exception    IllegalArgumentException  if the value of both
-     *               <code>rows</code> and <code>cols</code> is set to zero
+     *               {@code rows} and {@code cols} is set to zero
      * @since        1.1
      */
     public void setRows(int rows) {
@@ -236,12 +236,12 @@ public class GridLayout implements LayoutManager, java.io.Serializable {
      * Sets the number of columns in this layout to the specified value.
      * Setting the number of columns has no affect on the layout
      * if the number of rows specified by a constructor or by
-     * the <tt>setRows</tt> method is non-zero. In that case, the number
+     * the {@code setRows} method is non-zero. In that case, the number
      * of columns displayed in the layout is determined by the total
      * number of components and the number of rows specified.
      * @param        cols   the number of columns in this layout
      * @exception    IllegalArgumentException  if the value of both
-     *               <code>rows</code> and <code>cols</code> is set to zero
+     *               {@code rows} and {@code cols} is set to zero
      * @since        1.1
      */
     public void setColumns(int cols) {
@@ -405,7 +405,7 @@ public class GridLayout implements LayoutManager, java.io.Serializable {
      * <p>
      * This method reshapes the components in the specified target
      * container in order to satisfy the constraints of the
-     * <code>GridLayout</code> object.
+     * {@code GridLayout} object.
      * <p>
      * The grid layout manager determines the size of individual
      * components by dividing the free space in the container into

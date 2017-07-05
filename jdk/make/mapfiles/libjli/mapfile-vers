@@ -36,6 +36,13 @@ SUNWprivate_1.1 {
 		JLI_ReportExceptionDescription;
 		JLI_GetStdArgs;
 		JLI_GetStdArgc;
+		JLI_List_new;
+		JLI_List_add;
+		JLI_StringDup;
+		JLI_MemFree;
+		JLI_InitArgProcessing;
+		JLI_PreprocessArg;
+		JLI_GetAppArgIndex;
 
 	local:
 		*;
