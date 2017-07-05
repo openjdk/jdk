@@ -44,7 +44,7 @@ class CountLeadingZerosINode : public CountBitsNode {
   public:
   CountLeadingZerosINode(Node* in1) : CountBitsNode(in1) {}
   virtual int Opcode() const;
-  virtual const Type* Value(PhaseTransform* phase) const;
+  virtual const Type* Value(PhaseGVN* phase) const;
 };
 
 //---------- CountLeadingZerosLNode --------------------------------------------
@@ -53,7 +53,7 @@ class CountLeadingZerosLNode : public CountBitsNode {
   public:
   CountLeadingZerosLNode(Node* in1) : CountBitsNode(in1) {}
   virtual int Opcode() const;
-  virtual const Type* Value(PhaseTransform* phase) const;
+  virtual const Type* Value(PhaseGVN* phase) const;
 };
 
 //---------- CountTrailingZerosINode -------------------------------------------
@@ -62,7 +62,7 @@ class CountTrailingZerosINode : public CountBitsNode {
   public:
   CountTrailingZerosINode(Node* in1) : CountBitsNode(in1) {}
   virtual int Opcode() const;
-  virtual const Type* Value(PhaseTransform* phase) const;
+  virtual const Type* Value(PhaseGVN* phase) const;
 };
 
 //---------- CountTrailingZerosLNode -------------------------------------------
@@ -71,7 +71,7 @@ class CountTrailingZerosLNode : public CountBitsNode {
   public:
   CountTrailingZerosLNode(Node* in1) : CountBitsNode(in1) {}
   virtual int Opcode() const;
-  virtual const Type* Value(PhaseTransform* phase) const;
+  virtual const Type* Value(PhaseGVN* phase) const;
 };
 
 //---------- PopCountINode -----------------------------------------------------

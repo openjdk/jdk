@@ -50,7 +50,7 @@ class ColorPaintContext implements PaintContext {
      * (Bits 24-31 are alpha, 16-23 are red, 8-15 are green, 0-7 are
      * blue).
      * @return the RGB value of the color in the default sRGB
-     *         <code>ColorModel</code>.
+     *         {@code ColorModel}.
      * @see java.awt.image.ColorModel#getRGBdefault
      * @see #getRed
      * @see #getGreen

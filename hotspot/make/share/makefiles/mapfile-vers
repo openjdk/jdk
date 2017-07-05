@@ -13,6 +13,7 @@
                 JVM_Clone;
                 JVM_ConstantPoolGetClassAt;
                 JVM_ConstantPoolGetClassAtIfLoaded;
+                JVM_ConstantPoolGetClassRefIndexAt;
                 JVM_ConstantPoolGetDoubleAt;
                 JVM_ConstantPoolGetFieldAt;
                 JVM_ConstantPoolGetFieldAtIfLoaded;
@@ -22,8 +23,11 @@
                 JVM_ConstantPoolGetMethodAt;
                 JVM_ConstantPoolGetMethodAtIfLoaded;
                 JVM_ConstantPoolGetMemberRefInfoAt;
+                JVM_ConstantPoolGetNameAndTypeRefInfoAt;
+                JVM_ConstantPoolGetNameAndTypeRefIndexAt;
                 JVM_ConstantPoolGetSize;
                 JVM_ConstantPoolGetStringAt;
+                JVM_ConstantPoolGetTagAt;
                 JVM_ConstantPoolGetUTF8At;
                 JVM_CountStackFrames;
                 JVM_CurrentClassLoader;

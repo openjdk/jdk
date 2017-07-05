@@ -130,7 +130,7 @@ public class JMXAgentInterfaceBinding {
 
     private static class JMXConnectorThread extends Thread {
 
-        private final InetAddress addr;
+        private final String addr;
         private final int jmxPort;
         private final int rmiPort;
         private final boolean useSSL;
@@ -139,7 +139,7 @@ public class JMXAgentInterfaceBinding {
         private boolean jmxConnectWorked;
         private boolean rmiConnectWorked;
 
-        private JMXConnectorThread(InetAddress addr,
+        private JMXConnectorThread(String addr,
                                    int jmxPort,
                                    int rmiPort,
                                    boolean useSSL,
@@ -163,11 +163,11 @@ public class JMXAgentInterfaceBinding {
         private void connect() throws IOException {
             System.out.println(
                     "JMXConnectorThread: Attempting JMX connection on: "
-                            + addr.getHostAddress() + " on port " + jmxPort);
+                            + addr + " on port " + jmxPort);
             JMXServiceURL url;
             try {
                 url = new JMXServiceURL("service:jmx:rmi:///jndi/rmi://"
-                        + addr.getHostAddress() + ":" + jmxPort + "/jmxrmi");
+                        + addr + ":" + jmxPort + "/jmxrmi");
             } catch (MalformedURLException e) {
                 throw new RuntimeException("Test failed.", e);
             }
@@ -200,7 +200,7 @@ public class JMXAgentInterfaceBinding {
             }
             System.out.println(
                     "JMXConnectorThread: connection to rmi socket worked host/port = "
-                            + addr.getHostAddress() + "/" + rmiPort);
+                            + addr + "/" + rmiPort);
             rmiConnectWorked = true;
             // Closing the channel without sending any data will cause an
             // java.io.EOFException on the server endpoint. We don't care about this
@@ -224,7 +224,7 @@ public class JMXAgentInterfaceBinding {
     private static class MainThread extends Thread {
 
         private static final int WAIT_FOR_JMX_AGENT_TIMEOUT_MS = 500;
-        private final InetAddress bindAddress;
+        private final String addr;
         private final int jmxPort;
         private final int rmiPort;
         private final boolean useSSL;
@@ -233,7 +233,7 @@ public class JMXAgentInterfaceBinding {
         private Exception excptn;
 
         private MainThread(InetAddress bindAddress, int jmxPort, int rmiPort, boolean useSSL) {
-            this.bindAddress = bindAddress;
+            this.addr = wrapAddress(bindAddress.getHostAddress());
             this.jmxPort = jmxPort;
             this.rmiPort = rmiPort;
             this.useSSL = useSSL;
@@ -259,7 +259,7 @@ public class JMXAgentInterfaceBinding {
         private void waitUntilReadyForConnections() {
             CountDownLatch latch = new CountDownLatch(1);
             JMXConnectorThread connectionTester = new JMXConnectorThread(
-                    bindAddress, jmxPort, rmiPort, useSSL, latch);
+                    addr, jmxPort, rmiPort, useSSL, latch);
             connectionTester.start();
             boolean expired = false;
             try {
@@ -294,4 +294,13 @@ public class JMXAgentInterfaceBinding {
         }
     }
 
+    /**
+     * Will wrap IPv6 address in '[]'
+     */
+    static String wrapAddress(String address) {
+        if (address.contains(":")) {
+            return "[" + address + "]";
+        }
+        return address;
+    }
 }

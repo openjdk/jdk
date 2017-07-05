@@ -174,7 +174,6 @@ public:
       return 2;
     }
   }
-
   bool has_default_methods()  {
     assert(is_loaded(), "must be loaded");
     return _has_default_methods;
@@ -259,6 +258,11 @@ public:
       return this;
     }
     return NULL;
+  }
+
+  bool can_be_instantiated() {
+    assert(is_loaded(), "must be loaded");
+    return !is_interface() && !is_abstract();
   }
 
   // Dump the current state of this klass for compilation replay.

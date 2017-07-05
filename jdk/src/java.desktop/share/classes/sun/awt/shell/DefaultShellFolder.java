@@ -46,9 +46,9 @@ class DefaultShellFolder extends ShellFolder {
 
     /**
      * This method is implemented to make sure that no instances
-     * of <code>ShellFolder</code> are ever serialized. An instance of
+     * of {@code ShellFolder} are ever serialized. An instance of
      * this default implementation can always be represented with a
-     * <code>java.io.File</code> object instead.
+     * {@code java.io.File} object instead.
      *
      * @return a java.io.File replacement object.
      */

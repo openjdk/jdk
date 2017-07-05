@@ -149,6 +149,10 @@ bool CodeHeap::expand_by(size_t size) {
   // expand _memory space
   size_t dm = align_to_page_size(_memory.committed_size() + size) - _memory.committed_size();
   if (dm > 0) {
+    // Use at least the available uncommitted space if 'size' is larger
+    if (_memory.uncommitted_size() != 0 && dm > _memory.uncommitted_size()) {
+      dm = _memory.uncommitted_size();
+    }
     char* base = _memory.low() + _memory.committed_size();
     if (!_memory.expand_by(dm)) return false;
     on_code_mapping(base, dm);

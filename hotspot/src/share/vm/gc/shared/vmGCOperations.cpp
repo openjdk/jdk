@@ -84,10 +84,10 @@ bool VM_GC_Operation::skip_operation() const {
   if (_full && skip) {
     skip = (_full_gc_count_before != Universe::heap()->total_full_collections());
   }
-  if (!skip && GC_locker::is_active_and_needs_gc()) {
+  if (!skip && GCLocker::is_active_and_needs_gc()) {
     skip = Universe::heap()->is_maximal_no_gc();
     assert(!(skip && (_gc_cause == GCCause::_gc_locker)),
-           "GC_locker cannot be active when initiating GC");
+           "GCLocker cannot be active when initiating GC");
   }
   return skip;
 }
@@ -136,7 +136,7 @@ bool VM_GC_HeapInspection::skip_operation() const {
 }
 
 bool VM_GC_HeapInspection::collect() {
-  if (GC_locker::is_active()) {
+  if (GCLocker::is_active()) {
     return false;
   }
   Universe::heap()->collect_as_vm_thread(GCCause::_heap_inspection);
@@ -146,7 +146,7 @@ bool VM_GC_HeapInspection::collect() {
 void VM_GC_HeapInspection::doit() {
   HandleMark hm;
   Universe::heap()->ensure_parsability(false); // must happen, even if collection does
-                                               // not happen (e.g. due to GC_locker)
+                                               // not happen (e.g. due to GCLocker)
                                                // or _full_gc being false
   if (_full_gc) {
     if (!collect()) {
@@ -177,7 +177,7 @@ void VM_GenCollectForAllocation::doit() {
   _result = gch->satisfy_failed_allocation(_word_size, _tlab);
   assert(gch->is_in_reserved_or_null(_result), "result not in heap");
 
-  if (_result == NULL && GC_locker::is_active_and_needs_gc()) {
+  if (_result == NULL && GCLocker::is_active_and_needs_gc()) {
     set_gc_locked();
   }
 }
@@ -289,7 +289,7 @@ void VM_CollectForMetadataAllocation::doit() {
 
   log_debug(gc)("After Metaspace GC failed to allocate size " SIZE_FORMAT, _size);
 
-  if (GC_locker::is_active_and_needs_gc()) {
+  if (GCLocker::is_active_and_needs_gc()) {
     set_gc_locked();
   }
 }

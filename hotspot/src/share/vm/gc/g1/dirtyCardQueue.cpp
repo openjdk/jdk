@@ -32,6 +32,72 @@
 #include "runtime/safepoint.hpp"
 #include "runtime/thread.inline.hpp"
 
+// Represents a set of free small integer ids.
+class FreeIdSet : public CHeapObj<mtGC> {
+  enum {
+    end_of_list = UINT_MAX,
+    claimed = UINT_MAX - 1
+  };
+
+  uint _size;
+  Monitor* _mon;
+
+  uint* _ids;
+  uint _hd;
+  uint _waiters;
+  uint _claimed;
+
+public:
+  FreeIdSet(uint size, Monitor* mon);
+  ~FreeIdSet();
+
+  // Returns an unclaimed parallel id (waiting for one to be released if
+  // necessary).
+  uint claim_par_id();
+
+  void release_par_id(uint id);
+};
+
+FreeIdSet::FreeIdSet(uint size, Monitor* mon) :
+  _size(size), _mon(mon), _hd(0), _waiters(0), _claimed(0)
+{
+  guarantee(size != 0, "must be");
+  _ids = NEW_C_HEAP_ARRAY(uint, size, mtGC);
+  for (uint i = 0; i < size - 1; i++) {
+    _ids[i] = i+1;
+  }
+  _ids[size-1] = end_of_list; // end of list.
+}
+
+FreeIdSet::~FreeIdSet() {
+  FREE_C_HEAP_ARRAY(uint, _ids);
+}
+
+uint FreeIdSet::claim_par_id() {
+  MutexLockerEx x(_mon, Mutex::_no_safepoint_check_flag);
+  while (_hd == end_of_list) {
+    _waiters++;
+    _mon->wait(Mutex::_no_safepoint_check_flag);
+    _waiters--;
+  }
+  uint res = _hd;
+  _hd = _ids[res];
+  _ids[res] = claimed;  // For debugging.
+  _claimed++;
+  return res;
+}
+
+void FreeIdSet::release_par_id(uint id) {
+  MutexLockerEx x(_mon, Mutex::_no_safepoint_check_flag);
+  assert(_ids[id] == claimed, "Precondition.");
+  _ids[id] = _hd;
+  _hd = id;
+  _claimed--;
+  if (_waiters > 0) {
+    _mon->notify_all();
+  }
+}
+
 DirtyCardQueue::DirtyCardQueue(DirtyCardQueueSet* qset, bool permanent) :
   // Dirty card queues are always active, so we create them with their
   // active field set to true.
@@ -103,7 +169,8 @@ void DirtyCardQueueSet::initialize(CardTableEntryClosure* cl,
                                    int process_completed_threshold,
                                    int max_completed_queue,
                                    Mutex* lock,
-                                   DirtyCardQueueSet* fl_owner) {
+                                   DirtyCardQueueSet* fl_owner,
+                                   bool init_free_ids) {
   _mut_process_closure = cl;
   PtrQueueSet::initialize(cbl_mon,
                           fl_lock,
@@ -112,7 +179,9 @@ void DirtyCardQueueSet::initialize(CardTableEntryClosure* cl,
                           fl_owner);
   set_buffer_size(G1UpdateBufferSize);
   _shared_dirty_card_queue.set_lock(lock);
-  _free_ids = new FreeIdSet(num_par_ids(), _cbl_mon);
+  if (init_free_ids) {
+    _free_ids = new FreeIdSet(num_par_ids(), _cbl_mon);
+  }
 }
 
 void DirtyCardQueueSet::handle_zero_index_for_thread(JavaThread* t) {
@@ -120,48 +189,20 @@ void DirtyCardQueueSet::handle_zero_index_for_thread(JavaThread* t) {
 }
 
 bool DirtyCardQueueSet::mut_process_buffer(void** buf) {
+  guarantee(_free_ids != NULL, "must be");
 
-  // Used to determine if we had already claimed a par_id
-  // before entering this method.
-  bool already_claimed = false;
+  // claim a par id
+  uint worker_i = _free_ids->claim_par_id();
 
-  // We grab the current JavaThread.
-  JavaThread* thread = JavaThread::current();
-
-  // We get the the number of any par_id that this thread
-  // might have already claimed.
-  uint worker_i = thread->get_claimed_par_id();
-
-  // If worker_i is not UINT_MAX then the thread has already claimed
-  // a par_id. We make note of it using the already_claimed value
-  if (worker_i != UINT_MAX) {
-    already_claimed = true;
-  } else {
-
-    // Otherwise we need to claim a par id
-    worker_i = _free_ids->claim_par_id();
-
-    // And store the par_id value in the thread
-    thread->set_claimed_par_id(worker_i);
+  bool b = DirtyCardQueue::apply_closure_to_buffer(_mut_process_closure, buf, 0,
+                                                   _sz, true, worker_i);
+  if (b) {
+    Atomic::inc(&_processed_buffers_mut);
   }
 
-  bool b = false;
-  if (worker_i != UINT_MAX) {
-    b = DirtyCardQueue::apply_closure_to_buffer(_mut_process_closure, buf, 0,
-                                                _sz, true, worker_i);
-    if (b) Atomic::inc(&_processed_buffers_mut);
+  // release the id
+  _free_ids->release_par_id(worker_i);
 
-    // If we had not claimed an id before entering the method
-    // then we must release the id.
-    if (!already_claimed) {
-
-      // we release the id
-      _free_ids->release_par_id(worker_i);
-
-      // and set the claimed_id in the thread to UINT_MAX
-      thread->set_claimed_par_id(UINT_MAX);
-    }
-  }
   return b;
 }
 

@@ -968,14 +968,15 @@ static int vec_stack_to_stack_helper(CodeBuffer *cbuf, bool do_size, int src_off
   case Op_VecS:
     calc_size = 3+src_offset_size + 3+dst_offset_size;
     break;
-  case Op_VecD:
+  case Op_VecD: {
     calc_size = 3+src_offset_size + 3+dst_offset_size;
-    src_offset += 4;
-    dst_offset += 4;
-    src_offset_size = (src_offset == 0) ? 0 : ((src_offset < 0x80) ? 1 : 4);
-    dst_offset_size = (dst_offset == 0) ? 0 : ((dst_offset < 0x80) ? 1 : 4);
+    int tmp_src_offset = src_offset + 4;
+    int tmp_dst_offset = dst_offset + 4;
+    src_offset_size = (tmp_src_offset == 0) ? 0 : ((tmp_src_offset < 0x80) ? 1 : 4);
+    dst_offset_size = (tmp_dst_offset == 0) ? 0 : ((tmp_dst_offset < 0x80) ? 1 : 4);
     calc_size += 3+src_offset_size + 3+dst_offset_size;
     break;
+  }   
   case Op_VecX:
   case Op_VecY:
   case Op_VecZ:
@@ -1009,6 +1010,7 @@ static int vec_stack_to_stack_helper(CodeBuffer *cbuf, bool do_size, int src_off
       __ vmovdqu(xmm0, Address(rsp, src_offset));
       __ vmovdqu(Address(rsp, dst_offset), xmm0);
       __ vmovdqu(xmm0, Address(rsp, -32));
+      break;
     case Op_VecZ:
       __ evmovdqul(Address(rsp, -64), xmm0, 2);
       __ evmovdqul(xmm0, Address(rsp, src_offset), 2);
@@ -1019,7 +1021,7 @@ static int vec_stack_to_stack_helper(CodeBuffer *cbuf, bool do_size, int src_off
       ShouldNotReachHere();
     }
     int size = __ offset() - offset;
-    assert(size == calc_size, "incorrect size calculattion");
+    assert(size == calc_size, "incorrect size calculation");
     return size;
 #ifndef PRODUCT
   } else if (!do_size) {
@@ -1049,6 +1051,7 @@ static int vec_stack_to_stack_helper(CodeBuffer *cbuf, bool do_size, int src_off
                 "vmovdqu [rsp + #%d], xmm0\n\t"
                 "vmovdqu xmm0, [rsp - #32]",
                 src_offset, dst_offset);
+      break;
     case Op_VecZ:
       st->print("vmovdqu [rsp - #64], xmm0\t# 512-bit mem-mem spill\n\t"
                 "vmovdqu xmm0, [rsp + #%d]\n\t"
@@ -9788,48 +9791,6 @@ instruct modD_reg(regD dst, regD src0, regD src1, eAXRegI rax, eFlagsReg cr) %{
     %}
   ins_cost(250);
   ins_encode( Push_ModD_encoding(src0, src1), emitModDPR(), Push_ResultD(dst), PopFPU);
-  ins_pipe( pipe_slow );
-%}
-
-instruct sinDPR_reg(regDPR1 dst, regDPR1 src) %{
-  predicate (UseSSE<=1);
-  match(Set dst (SinD src));
-  ins_cost(1800);
-  format %{ "DSIN   $dst" %}
-  opcode(0xD9, 0xFE);
-  ins_encode( OpcP, OpcS );
-  ins_pipe( pipe_slow );
-%}
-
-instruct sinD_reg(regD dst, eFlagsReg cr) %{
-  predicate (UseSSE>=2);
-  match(Set dst (SinD dst));
-  effect(KILL cr); // Push_{Src|Result}D() uses "{SUB|ADD} ESP,8"
-  ins_cost(1800);
-  format %{ "DSIN   $dst" %}
-  opcode(0xD9, 0xFE);
-  ins_encode( Push_SrcD(dst), OpcP, OpcS, Push_ResultD(dst) );
-  ins_pipe( pipe_slow );
-%}
-
-instruct cosDPR_reg(regDPR1 dst, regDPR1 src) %{
-  predicate (UseSSE<=1);
-  match(Set dst (CosD src));
-  ins_cost(1800);
-  format %{ "DCOS   $dst" %}
-  opcode(0xD9, 0xFF);
-  ins_encode( OpcP, OpcS );
-  ins_pipe( pipe_slow );
-%}
-
-instruct cosD_reg(regD dst, eFlagsReg cr) %{
-  predicate (UseSSE>=2);
-  match(Set dst (CosD dst));
-  effect(KILL cr); // Push_{Src|Result}D() uses "{SUB|ADD} ESP,8"
-  ins_cost(1800);
-  format %{ "DCOS   $dst" %}
-  opcode(0xD9, 0xFF);
-  ins_encode( Push_SrcD(dst), OpcP, OpcS, Push_ResultD(dst) );
   ins_pipe( pipe_slow );
 %}
 

@@ -467,18 +467,6 @@ jdk.jvmstat_COPY := aliasmap
 
 ################################################################################
 
-jdk.vm.ci_EXCLUDE_FILES += \
-    jdk/vm/ci/options/processor/OptionProcessor.java \
-    jdk/vm/ci/service/processor/ServiceProviderProcessor.java \
-    #
-
-jdk.vm.ci_EXCLUDES += \
-    META-INF/jvmci.options \
-    META-INF/jvmci.providers \
-    #
-
-################################################################################
-
 jdk.xml.bind_SETUP := GENERATE_JDKBYTECODE_NOWARNINGS
 jdk.xml.bind_CLEAN := .properties
 jdk.xml.bind_COPY := .xsd JAXBContextFactory.java ZeroOneBooleanAdapter.java

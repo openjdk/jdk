@@ -30,11 +30,11 @@ import java.awt.datatransfer.DataFlavor;
 
 /**
  *
- * The <code>AccessibleStreamable</code> interface should be implemented
- * by the <code>AccessibleContext</code> of any component that presents the
+ * The {@code AccessibleStreamable} interface should be implemented
+ * by the {@code AccessibleContext} of any component that presents the
  * raw stream behind a component on the display screen.  Examples of such
  * components are HTML, bitmap images and MathML.  An object that implements
- * <code>AccessibleStreamable</code> provides two things: a list of MIME
+ * {@code AccessibleStreamable} provides two things: a list of MIME
  * types supported by the object and a streaming interface for each MIME type to
  * get the data.
  *

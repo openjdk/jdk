@@ -574,9 +574,9 @@ ClassLoaderData* ClassLoaderDataGraph::add(Handle loader, bool is_anonymous, TRA
   // actual ClassLoaderData object.
   ClassLoaderData::Dependencies dependencies(CHECK_NULL);
 
-  No_Safepoint_Verifier no_safepoints; // we mustn't GC until we've installed the
-                                       // ClassLoaderData in the graph since the CLD
-                                       // contains unhandled oops
+  NoSafepointVerifier no_safepoints; // we mustn't GC until we've installed the
+                                     // ClassLoaderData in the graph since the CLD
+                                     // contains unhandled oops
 
   ClassLoaderData* cld = new ClassLoaderData(loader, is_anonymous, dependencies);
 

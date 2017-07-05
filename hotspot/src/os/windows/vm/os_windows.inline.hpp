@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,7 @@ inline int os::readdir_buf_size(const char *path)
 }
 
 // Bang the shadow pages if they need to be touched to be mapped.
-inline void os::bang_stack_shadow_pages() {
+inline void os::map_stack_shadow_pages() {
   // Write to each page of our new frame to force OS mapping.
   // If we decrement stack pointer more than one page
   // the OS may not map an intervening page into our space

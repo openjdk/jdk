@@ -33,7 +33,7 @@ import java.net.URI;
 
 
 /**
- * Concrete implementation of the interface <code>DesktopPeer</code> for MacOS X
+ * Concrete implementation of the interface {@code DesktopPeer} for MacOS X
  *
  * @see DesktopPeer
  */

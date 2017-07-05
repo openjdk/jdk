@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,6 +61,8 @@ class TemplateInterpreterGenerator: public AbstractInterpreterGenerator {
 
   void lock_method();
 
+  void bang_stack_shadow_pages(bool native_call);
+
   // Instruction generation
   void generate_and_dispatch (Template* t, TosState tos_out = ilgl);
   void set_vtos_entry_points (Template* t, address& bep, address& cep, address& sep, address& aep, address& iep, address& lep, address& fep, address& dep, address& vep);
@@ -113,7 +115,6 @@ class TemplateInterpreterGenerator: public AbstractInterpreterGenerator {
 #endif // SPARC
 
 #ifdef AARCH64
-  void bang_stack_shadow_pages(bool native_call);
   void generate_transcendental_entry(AbstractInterpreter::MethodKind kind, int fpargs);
 #endif // AARCH64
 

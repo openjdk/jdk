@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3386,10 +3386,20 @@ void MacroAssembler::tlab_refill(Label& retry, Label& try_eden, Label& slow_case
   // Retain tlab and allocate object in shared space if
   // the amount free in the tlab is too large to discard.
   cmp(t1, t2);
-  brx(Assembler::lessEqual, false, Assembler::pt, discard_tlab);
 
+  brx(Assembler::lessEqual, false, Assembler::pt, discard_tlab);
   // increment waste limit to prevent getting stuck on this slow path
-  delayed()->add(t2, ThreadLocalAllocBuffer::refill_waste_limit_increment(), t2);
+  if (Assembler::is_simm13(ThreadLocalAllocBuffer::refill_waste_limit_increment())) {
+    delayed()->add(t2, ThreadLocalAllocBuffer::refill_waste_limit_increment(), t2);
+  } else {
+    delayed()->nop();
+    // set64 does not use the temp register if the given constant is 32 bit. So
+    // we can just use any register; using G0 results in ignoring of the upper 32 bit
+    // of that value.
+    set64(ThreadLocalAllocBuffer::refill_waste_limit_increment(), t3, G0);
+    add(t2, t3, t2);
+  }
+
   st_ptr(t2, G2_thread, in_bytes(JavaThread::tlab_refill_waste_limit_offset()));
   if (TLABStats) {
     // increment number of slow_allocations
@@ -3459,9 +3469,25 @@ void MacroAssembler::tlab_refill(Label& retry, Label& try_eden, Label& slow_case
   add(top, t1, top); // t1 is tlab_size
   sub(top, ThreadLocalAllocBuffer::alignment_reserve_in_bytes(), top);
   st_ptr(top, G2_thread, in_bytes(JavaThread::tlab_end_offset()));
+
+  if (ZeroTLAB) {
+    // This is a fast TLAB refill, therefore the GC is not notified of it.
+    // So compiled code must fill the new TLAB with zeroes.
+    ld_ptr(G2_thread, in_bytes(JavaThread::tlab_start_offset()), t2);
+    zero_memory(t2, t1);
+  }
   verify_tlab();
   ba(retry);
   delayed()->nop();
+}
+
+void MacroAssembler::zero_memory(Register base, Register index) {
+  assert_different_registers(base, index);
+  Label loop;
+  bind(loop);
+  subcc(index, HeapWordSize, index);
+  brx(Assembler::greaterEqual, true, Assembler::pt, loop);
+  delayed()->st_ptr(G0, base, index);
 }
 
 void MacroAssembler::incr_allocated_bytes(RegisterOrConstant size_in_bytes,

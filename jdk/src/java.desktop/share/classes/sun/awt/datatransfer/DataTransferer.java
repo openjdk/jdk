@@ -124,7 +124,7 @@ import java.util.stream.Stream;
  */
 public abstract class DataTransferer {
     /**
-     * The <code>DataFlavor</code> representing a Java text encoding String
+     * The {@code DataFlavor} representing a Java text encoding String
      * encoded in UTF-8, where
      * <pre>
      *     representationClass = [B
@@ -323,7 +323,7 @@ public abstract class DataTransferer {
      * @param flavors the data flavors
      * @param map the FlavorTable which contains mappings between
      *            DataFlavors and data formats
-     * @throws NullPointerException if flavors or map is <code>null</code>
+     * @throws NullPointerException if flavors or map is {@code null}
      */
     public SortedMap<Long, DataFlavor> getFormatsForFlavors(DataFlavor[] flavors,
                                                             FlavorTable map)
@@ -478,7 +478,7 @@ public abstract class DataTransferer {
      * @param formats the data formats
      * @param map the FlavorTable which contains mappings between
      *            DataFlavors and data formats
-     * @throws NullPointerException if formats or map is <code>null</code>
+     * @throws NullPointerException if formats or map is {@code null}
      */
     public Set<DataFlavor> getFlavorsForFormatsAsSet(long[] formats, FlavorTable map) {
         Set<DataFlavor> flavorSet = new HashSet<>(formats.length);
@@ -509,13 +509,13 @@ public abstract class DataTransferer {
      * 2) the data translation for this mapping can be performed by the data
      * transfer subsystem.
      * The array will be sorted according to a
-     * <code>DataFlavorComparator</code> created with the specified
+     * {@code DataFlavorComparator} created with the specified
      * map as an argument.
      *
      * @param formats the data formats
      * @param map the FlavorTable which contains mappings between
      *            DataFlavors and data formats
-     * @throws NullPointerException if formats or map is <code>null</code>
+     * @throws NullPointerException if formats or map is {@code null}
      */
     public DataFlavor[] getFlavorsForFormatsAsArray(long[] formats,
                                                     FlavorTable map) {
@@ -1805,21 +1805,21 @@ search:
 
     /**
      * Concatenates the data represented by two objects. Objects can be either
-     * byte arrays or instances of <code>InputStream</code>. If both arguments
+     * byte arrays or instances of {@code InputStream}. If both arguments
      * are byte arrays byte array will be returned. Otherwise an
-     * <code>InputStream</code> will be returned.
+     * {@code InputStream} will be returned.
      * <p>
      * Currently is only called from native code to prepend palette data to
      * platform-specific image data during image transfer on Win32.
      *
      * @param obj1 the first object to be concatenated.
      * @param obj2 the second object to be concatenated.
-     * @return a byte array or an <code>InputStream</code> which represents
+     * @return a byte array or an {@code InputStream} which represents
      *         a logical concatenation of the two arguments.
      * @throws NullPointerException is either of the arguments is
-     *         <code>null</code>
+     *         {@code null}
      * @throws ClassCastException is either of the arguments is
-     *         neither byte array nor an instance of <code>InputStream</code>.
+     *         neither byte array nor an instance of {@code InputStream}.
      */
     private Object concatData(Object obj1, Object obj2) {
         InputStream str1 = null;
@@ -1962,7 +1962,7 @@ search:
 
     /**
      * Helper function to convert a Set of DataFlavors to a sorted array.
-     * The array will be sorted according to <code>DataFlavorComparator</code>.
+     * The array will be sorted according to {@code DataFlavorComparator}.
      */
     public static DataFlavor[] setToSortedDataFlavorArray(Set<DataFlavor> flavorsSet) {
         DataFlavor[] flavors = new DataFlavor[flavorsSet.size()];
@@ -1993,7 +1993,7 @@ search:
     /**
      * Returns platform-specific mappings for the specified native.
      * If there are no platform-specific mappings for this native, the method
-     * returns an empty <code>List</code>.
+     * returns an empty {@code List}.
      */
     public LinkedHashSet<DataFlavor> getPlatformMappingsForNative(String nat) {
         return new LinkedHashSet<>();
@@ -2002,7 +2002,7 @@ search:
     /**
      * Returns platform-specific mappings for the specified flavor.
      * If there are no platform-specific mappings for this flavor, the method
-     * returns an empty <code>List</code>.
+     * returns an empty {@code List}.
      */
     public LinkedHashSet<String> getPlatformMappingsForFlavor(DataFlavor df) {
         return new LinkedHashSet<>();

@@ -83,7 +83,7 @@ public class PropertyChangeSupport implements Serializable {
     private PropertyChangeListenerMap map = new PropertyChangeListenerMap();
 
     /**
-     * Constructs a <code>PropertyChangeSupport</code> object.
+     * Constructs a {@code PropertyChangeSupport} object.
      *
      * @param sourceBean  The bean to be given as the source for any events.
      */
@@ -99,7 +99,7 @@ public class PropertyChangeSupport implements Serializable {
      * The listener is registered for all properties.
      * The same listener object may be added more than once, and will be called
      * as many times as it is added.
-     * If <code>listener</code> is null, no exception is thrown and no action
+     * If {@code listener} is null, no exception is thrown and no action
      * is taken.
      *
      * @param listener  The PropertyChangeListener to be added
@@ -123,9 +123,9 @@ public class PropertyChangeSupport implements Serializable {
      * Remove a PropertyChangeListener from the listener list.
      * This removes a PropertyChangeListener that was registered
      * for all properties.
-     * If <code>listener</code> was added more than once to the same event
+     * If {@code listener} was added more than once to the same event
      * source, it will be notified one less time after being removed.
-     * If <code>listener</code> is null, or was never added, no exception is
+     * If {@code listener} is null, or was never added, no exception is
      * thrown and no action is taken.
      *
      * @param listener  The PropertyChangeListener to be removed
@@ -151,10 +151,10 @@ public class PropertyChangeSupport implements Serializable {
      * <p>
      * If some listeners have been added with a named property, then
      * the returned array will be a mixture of PropertyChangeListeners
-     * and <code>PropertyChangeListenerProxy</code>s. If the calling
+     * and {@code PropertyChangeListenerProxy}s. If the calling
      * method is interested in distinguishing the listeners then it must
      * test each element to see if it's a
-     * <code>PropertyChangeListenerProxy</code>, perform the cast, and examine
+     * {@code PropertyChangeListenerProxy}, perform the cast, and examine
      * the parameter.
      *
      * <pre>{@code
@@ -172,7 +172,7 @@ public class PropertyChangeSupport implements Serializable {
      * }</pre>
      *
      * @see PropertyChangeListenerProxy
-     * @return all of the <code>PropertyChangeListeners</code> added or an
+     * @return all of the {@code PropertyChangeListeners} added or an
      *         empty array if no listeners have been added
      * @since 1.4
      */
@@ -187,7 +187,7 @@ public class PropertyChangeSupport implements Serializable {
      * The same listener object may be added more than once.  For each
      * property,  the listener will be invoked the number of times it was added
      * for that property.
-     * If <code>propertyName</code> or <code>listener</code> is null, no
+     * If {@code propertyName} or {@code listener} is null, no
      * exception is thrown and no action is taken.
      *
      * @param propertyName  The name of the property to listen on.
@@ -208,12 +208,12 @@ public class PropertyChangeSupport implements Serializable {
 
     /**
      * Remove a PropertyChangeListener for a specific property.
-     * If <code>listener</code> was added more than once to the same event
+     * If {@code listener} was added more than once to the same event
      * source for the specified property, it will be notified one less time
      * after being removed.
-     * If <code>propertyName</code> is null,  no exception is thrown and no
+     * If {@code propertyName} is null,  no exception is thrown and no
      * action is taken.
-     * If <code>listener</code> is null, or was never added for the specified
+     * If {@code listener} is null, or was never added for the specified
      * property, no exception is thrown and no action is taken.
      *
      * @param propertyName  The name of the property that was listened on.
@@ -237,9 +237,9 @@ public class PropertyChangeSupport implements Serializable {
      * with the named property.
      *
      * @param propertyName  The name of the property being listened to
-     * @return all of the <code>PropertyChangeListeners</code> associated with
+     * @return all of the {@code PropertyChangeListeners} associated with
      *         the named property.  If no such listeners have been added,
-     *         or if <code>propertyName</code> is null, an empty array is
+     *         or if {@code propertyName} is null, an empty array is
      *         returned.
      * @since 1.4
      */
@@ -411,7 +411,7 @@ public class PropertyChangeSupport implements Serializable {
 
     /**
      * Check if there are any listeners for a specific property, including
-     * those registered on all properties.  If <code>propertyName</code>
+     * those registered on all properties.  If {@code propertyName}
      * is null, only check for listeners registered on all properties.
      *
      * @param propertyName  the property name.
@@ -423,7 +423,7 @@ public class PropertyChangeSupport implements Serializable {
     }
 
     /**
-     * @serialData Null terminated list of <code>PropertyChangeListeners</code>.
+     * @serialData Null terminated list of {@code PropertyChangeListeners}.
      * <p>
      * At serialization time we skip non-serializable listeners and
      * only serialize the serializable listeners.

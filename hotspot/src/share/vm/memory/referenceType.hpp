@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,8 +35,7 @@ enum ReferenceType {
   REF_SOFT,      // Subclass of java/lang/ref/SoftReference
   REF_WEAK,      // Subclass of java/lang/ref/WeakReference
   REF_FINAL,     // Subclass of java/lang/ref/FinalReference
-  REF_PHANTOM,   // Subclass of java/lang/ref/PhantomReference
-  REF_CLEANER    // Subclass of sun/misc/Cleaner
+  REF_PHANTOM    // Subclass of java/lang/ref/PhantomReference
 };
 
 #endif // SHARE_VM_MEMORY_REFERENCETYPE_HPP

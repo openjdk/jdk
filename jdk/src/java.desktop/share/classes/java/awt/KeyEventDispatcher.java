@@ -62,28 +62,28 @@ public interface KeyEventDispatcher {
      * used to deliver KeyEvents to Components other than the focus owner. This
      * can be useful when navigating children of non-focusable Windows in an
      * accessible environment, for example. Note that if a KeyEventDispatcher
-     * dispatches the KeyEvent itself, it must use <code>redispatchEvent</code>
+     * dispatches the KeyEvent itself, it must use {@code redispatchEvent}
      * to prevent the current KeyboardFocusManager from recursively requesting
      * that this KeyEventDispatcher dispatch the event again.
      * <p>
-     * If an implementation of this method returns <code>false</code>, then
+     * If an implementation of this method returns {@code false}, then
      * the KeyEvent is passed to the next KeyEventDispatcher in the chain,
      * ending with the current KeyboardFocusManager. If an implementation
-     * returns <code>true</code>, the KeyEvent is assumed to have been
+     * returns {@code true}, the KeyEvent is assumed to have been
      * dispatched (although this need not be the case), and the current
      * KeyboardFocusManager will take no further action with regard to the
      * KeyEvent. In such a case,
-     * <code>KeyboardFocusManager.dispatchEvent</code> should return
-     * <code>true</code> as well. If an implementation consumes the KeyEvent,
-     * but returns <code>false</code>, the consumed event will still be passed
+     * {@code KeyboardFocusManager.dispatchEvent} should return
+     * {@code true} as well. If an implementation consumes the KeyEvent,
+     * but returns {@code false}, the consumed event will still be passed
      * to the next KeyEventDispatcher in the chain. It is important for
      * developers to check whether the KeyEvent has been consumed before
      * dispatching it to a target. By default, the current KeyboardFocusManager
      * will not dispatch a consumed KeyEvent.
      *
      * @param e the KeyEvent to dispatch
-     * @return <code>true</code> if the KeyboardFocusManager should take no
-     *         further action with regard to the KeyEvent; <code>false</code>
+     * @return {@code true} if the KeyboardFocusManager should take no
+     *         further action with regard to the KeyEvent; {@code false}
      *         otherwise
      * @see KeyboardFocusManager#redispatchEvent
      */

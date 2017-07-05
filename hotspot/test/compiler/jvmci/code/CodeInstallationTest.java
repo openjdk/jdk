@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,12 +27,12 @@ import java.lang.reflect.Method;
 import jdk.vm.ci.amd64.AMD64;
 import jdk.vm.ci.code.Architecture;
 import jdk.vm.ci.code.CodeCacheProvider;
-import jdk.vm.ci.code.CompilationResult;
 import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.code.TargetDescription;
+import jdk.vm.ci.hotspot.HotSpotCompiledCode;
+import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
 import jdk.vm.ci.meta.ConstantReflectionProvider;
 import jdk.vm.ci.meta.MetaAccessProvider;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.runtime.JVMCI;
 import jdk.vm.ci.runtime.JVMCIBackend;
 import jdk.vm.ci.sparc.SPARC;
@@ -65,12 +65,12 @@ public class CodeInstallationTest {
         void compile(TestAssembler asm);
     }
 
-    private TestAssembler createAssembler(CompilationResult result) {
+    private TestAssembler createAssembler() {
         Architecture arch = codeCache.getTarget().arch;
         if (arch instanceof AMD64) {
-            return new AMD64TestAssembler(result, codeCache);
+            return new AMD64TestAssembler(codeCache);
         } else if (arch instanceof SPARC) {
-            return new SPARCTestAssembler(result, codeCache);
+            return new SPARCTestAssembler(codeCache);
         } else {
             Assert.fail("unsupported architecture");
             return null;
@@ -87,17 +87,14 @@ public class CodeInstallationTest {
     }
 
     protected void test(TestCompiler compiler, Method method, Object... args) {
-        CompilationResult result = new CompilationResult(method.getName());
-        TestAssembler asm = createAssembler(result);
+        HotSpotResolvedJavaMethod resolvedMethod = (HotSpotResolvedJavaMethod) metaAccess.lookupJavaMethod(method);
+        TestAssembler asm = createAssembler();
 
         asm.emitPrologue();
         compiler.compile(asm);
-        asm.finish();
 
-        result.close();
-
-        ResolvedJavaMethod resolvedMethod = metaAccess.lookupJavaMethod(method);
-        InstalledCode installed = codeCache.addCode(resolvedMethod, result, null, null);
+        HotSpotCompiledCode code = asm.finish(resolvedMethod);
+        InstalledCode installed = codeCache.addCode(resolvedMethod, code, null, null);
 
         try {
             Object expected = method.invoke(null, args);

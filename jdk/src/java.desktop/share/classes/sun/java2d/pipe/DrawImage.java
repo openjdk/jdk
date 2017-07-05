@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -954,6 +954,12 @@ public class DrawImage implements DrawImagePipe
               bgColor.getTransparency() == Transparency.OPAQUE)))
         {
             comp = CompositeType.SrcNoEa;
+        }
+        if (srcData == dstData && sx == dx && sy == dy
+                && CompositeType.SrcNoEa.equals(comp)) {
+            // Performance optimization. We skip the Blit/BlitBG if we know that
+            // it will be noop.
+            return;
         }
         if (!isBgOperation(srcData, bgColor)) {
             Blit blit = Blit.getFromCache(srcType, comp, dstType);

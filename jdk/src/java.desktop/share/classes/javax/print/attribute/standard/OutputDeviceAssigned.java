@@ -42,7 +42,7 @@ import javax.print.attribute.PrintJobAttribute;
  * <P>
  * <B>IPP Compatibility:</B> The string value gives the IPP name value. The
  * locale gives the IPP natural language. The category name returned by
- * <CODE>getName()</CODE> gives the IPP attribute name.
+ * {@code getName()} gives the IPP attribute name.
  *
  * @author  Alan Kaminsky
  */
@@ -58,10 +58,10 @@ public final class OutputDeviceAssigned extends TextSyntax
      * @param  deviceName  Device name.
      * @param  locale      Natural language of the text string. null
      * is interpreted to mean the default locale as returned
-     * by <code>Locale.getDefault()</code>
+     * by {@code Locale.getDefault()}
      *
      * @exception  NullPointerException
-     *   (unchecked exception) Thrown if <CODE>deviceName</CODE> is null.
+     *   (unchecked exception) Thrown if {@code deviceName} is null.
      */
     public OutputDeviceAssigned(String deviceName, Locale locale) {
 
@@ -76,20 +76,20 @@ public final class OutputDeviceAssigned extends TextSyntax
      * must be true:
      * <OL TYPE=1>
      * <LI>
-     * <CODE>object</CODE> is not null.
+     * {@code object} is not null.
      * <LI>
-     * <CODE>object</CODE> is an instance of class OutputDeviceAssigned.
+     * {@code object} is an instance of class OutputDeviceAssigned.
      * <LI>
      * This output device assigned attribute's underlying string and
-     * <CODE>object</CODE>'s underlying string are equal.
+     * {@code object}'s underlying string are equal.
      * <LI>
      * This output device assigned attribute's locale and
-     * <CODE>object</CODE>'s locale are equal.
+     * {@code object}'s locale are equal.
      * </OL>
      *
      * @param  object  Object to compare to.
      *
-     * @return  True if <CODE>object</CODE> is equivalent to this output
+     * @return  True if {@code object} is equivalent to this output
      *          device assigned attribute, false otherwise.
      */
     public boolean equals(Object object) {
@@ -116,7 +116,7 @@ public final class OutputDeviceAssigned extends TextSyntax
      * instance.
      * <P>
      * For class OutputDeviceAssigned, the
-     * category name is <CODE>"output-device-assigned"</CODE>.
+     * category name is {@code "output-device-assigned"}.
      *
      * @return  Attribute category name.
      */

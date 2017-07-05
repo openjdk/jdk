@@ -34,9 +34,9 @@ import com.sun.imageio.stream.StreamFinalizer;
 import sun.java2d.Disposer;
 
 /**
- * An implementation of <code>ImageOutputStream</code> that writes its
- * output directly to a <code>File</code> or
- * <code>RandomAccessFile</code>.
+ * An implementation of {@code ImageOutputStream} that writes its
+ * output directly to a {@code File} or
+ * {@code RandomAccessFile}.
  *
  */
 public class FileImageOutputStream extends ImageOutputStreamImpl {
@@ -50,16 +50,16 @@ public class FileImageOutputStream extends ImageOutputStreamImpl {
     private final CloseableDisposerRecord disposerRecord;
 
     /**
-     * Constructs a <code>FileImageOutputStream</code> that will write
-     * to a given <code>File</code>.
+     * Constructs a {@code FileImageOutputStream} that will write
+     * to a given {@code File}.
      *
-     * @param f a <code>File</code> to write to.
+     * @param f a {@code File} to write to.
      *
-     * @exception IllegalArgumentException if <code>f</code> is
-     * <code>null</code>.
+     * @exception IllegalArgumentException if {@code f} is
+     * {@code null}.
      * @exception SecurityException if a security manager exists
      * and does not allow write access to the file.
-     * @exception FileNotFoundException if <code>f</code> does not denote
+     * @exception FileNotFoundException if {@code f} does not denote
      * a regular file or it cannot be opened for reading and writing for any
      * other reason.
      * @exception IOException if an I/O error occurs.
@@ -70,13 +70,13 @@ public class FileImageOutputStream extends ImageOutputStreamImpl {
     }
 
     /**
-     * Constructs a <code>FileImageOutputStream</code> that will write
-     * to a given <code>RandomAccessFile</code>.
+     * Constructs a {@code FileImageOutputStream} that will write
+     * to a given {@code RandomAccessFile}.
      *
-     * @param raf a <code>RandomAccessFile</code> to write to.
+     * @param raf a {@code RandomAccessFile} to write to.
      *
-     * @exception IllegalArgumentException if <code>raf</code> is
-     * <code>null</code>.
+     * @exception IllegalArgumentException if {@code raf} is
+     * {@code null}.
      */
     public FileImageOutputStream(RandomAccessFile raf) {
         if (raf == null) {
@@ -137,11 +137,11 @@ public class FileImageOutputStream extends ImageOutputStreamImpl {
     /**
      * Sets the current stream position and resets the bit offset to
      * 0.  It is legal to seeking past the end of the file; an
-     * <code>EOFException</code> will be thrown only if a read is
+     * {@code EOFException} will be thrown only if a read is
      * performed.  The file length will not be increased until a write
      * is performed.
      *
-     * @exception IndexOutOfBoundsException if <code>pos</code> is smaller
+     * @exception IndexOutOfBoundsException if {@code pos} is smaller
      * than the flushed position.
      * @exception IOException if any other I/O error occurs.
      */

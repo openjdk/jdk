@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,18 +25,12 @@
 
 package com.sun.media.sound;
 
-import java.io.File;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.IOException;
 import java.io.DataInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 
 import javax.sound.sampled.AudioFileFormat;
-import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.spi.AudioFileWriter;
-
-
-
 
 /**
  * Abstract File Writer class.
@@ -74,14 +68,6 @@ abstract class SunFileWriter extends AudioFileWriter {
         System.arraycopy(types, 0, localArray, 0, types.length);
         return localArray;
     }
-
-
-    public abstract AudioFileFormat.Type[] getAudioFileTypes(AudioInputStream stream);
-
-    public abstract int write(AudioInputStream stream, AudioFileFormat.Type fileType, OutputStream out) throws IOException;
-
-    public abstract int write(AudioInputStream stream, AudioFileFormat.Type fileType, File out) throws IOException;
-
 
     // HELPER METHODS
 

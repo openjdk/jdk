@@ -32,7 +32,7 @@ import java.awt.Robot;
 
 /**
  * @test
- * @bug 8007219
+ * @bug 8007219 8146168
  * @author Alexander Scherbatiy
  * @summary Frame size reverts meaning of maximized attribute
  * @run main MaximizedToMaximized
@@ -41,7 +41,8 @@ public class MaximizedToMaximized {
 
     public static void main(String[] args) throws Exception {
 
-       Frame frame = new Frame();
+        Frame frame = new Frame();
+        Robot robot = new Robot();
         final Toolkit toolkit = Toolkit.getDefaultToolkit();
         final GraphicsEnvironment graphicsEnvironment =
                 GraphicsEnvironment.getLocalGraphicsEnvironment();
@@ -62,13 +63,15 @@ public class MaximizedToMaximized {
         frame.setBounds(availableScreenBounds.x, availableScreenBounds.y,
                 availableScreenBounds.width, availableScreenBounds.height);
         frame.setVisible(true);
+        robot.waitForIdle();
 
         Rectangle frameBounds = frame.getBounds();
         frame.setExtendedState(Frame.MAXIMIZED_BOTH);
-        Robot robot = new Robot();
         robot.waitForIdle();
 
         Rectangle maximizedFrameBounds = frame.getBounds();
+
+        frame.dispose();
         if (maximizedFrameBounds.width < frameBounds.width
                 || maximizedFrameBounds.height < frameBounds.height) {
             throw new RuntimeException("Maximized frame is smaller than non maximized");

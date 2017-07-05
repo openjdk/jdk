@@ -28,9 +28,9 @@ package javax.imageio.spi;
 import javax.imageio.ImageTranscoder;
 
 /**
- * The service provider interface (SPI) for <code>ImageTranscoder</code>s.
+ * The service provider interface (SPI) for {@code ImageTranscoder}s.
  * For more information on service provider classes, see the class comment
- * for the <code>IIORegistry</code> class.
+ * for the {@code IIORegistry} class.
  *
  * @see IIORegistry
  * @see javax.imageio.ImageTranscoder
@@ -39,7 +39,7 @@ import javax.imageio.ImageTranscoder;
 public abstract class ImageTranscoderSpi extends IIOServiceProvider {
 
     /**
-     * Constructs a blank <code>ImageTranscoderSpi</code>.  It is up
+     * Constructs a blank {@code ImageTranscoderSpi}.  It is up
      * to the subclass to initialize instance variables and/or
      * override method implementations in order to provide working
      * versions of all methods.
@@ -48,7 +48,7 @@ public abstract class ImageTranscoderSpi extends IIOServiceProvider {
     }
 
     /**
-     * Constructs an <code>ImageTranscoderSpi</code> with a given set
+     * Constructs an {@code ImageTranscoderSpi} with a given set
      * of values.
      *
      * @param vendorName the vendor name.
@@ -61,12 +61,12 @@ public abstract class ImageTranscoderSpi extends IIOServiceProvider {
 
     /**
      * Returns the fully qualified class name of an
-     * <code>ImageReaderSpi</code> class that generates
-     * <code>IIOMetadata</code> objects that may be used as input to
+     * {@code ImageReaderSpi} class that generates
+     * {@code IIOMetadata} objects that may be used as input to
      * this transcoder.
      *
-     * @return a <code>String</code> containing the fully-qualified
-     * class name of the <code>ImageReaderSpi</code> implementation class.
+     * @return a {@code String} containing the fully-qualified
+     * class name of the {@code ImageReaderSpi} implementation class.
      *
      * @see ImageReaderSpi
      */
@@ -74,22 +74,22 @@ public abstract class ImageTranscoderSpi extends IIOServiceProvider {
 
     /**
      * Returns the fully qualified class name of an
-     * <code>ImageWriterSpi</code> class that generates
-     * <code>IIOMetadata</code> objects that may be used as input to
+     * {@code ImageWriterSpi} class that generates
+     * {@code IIOMetadata} objects that may be used as input to
      * this transcoder.
      *
-     * @return a <code>String</code> containing the fully-qualified
-     * class name of the <code>ImageWriterSpi</code> implementation class.
+     * @return a {@code String} containing the fully-qualified
+     * class name of the {@code ImageWriterSpi} implementation class.
      *
      * @see ImageWriterSpi
      */
     public abstract String getWriterServiceProviderName();
 
     /**
-     * Returns an instance of the <code>ImageTranscoder</code>
+     * Returns an instance of the {@code ImageTranscoder}
      * implementation associated with this service provider.
      *
-     * @return an <code>ImageTranscoder</code> instance.
+     * @return an {@code ImageTranscoder} instance.
      */
     public abstract ImageTranscoder createTranscoderInstance();
 }

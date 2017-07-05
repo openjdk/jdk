@@ -35,7 +35,7 @@ import javax.print.attribute.PrintJobAttribute;
  * scheduled order).
  * <P>
  * <B>IPP Compatibility:</B> The integer value gives the IPP integer value.
- * The category name returned by <CODE>getName()</CODE> gives the IPP
+ * The category name returned by {@code getName()} gives the IPP
  * attribute name.
  *
  * @author  Alan Kaminsky
@@ -52,7 +52,7 @@ public final class NumberOfInterveningJobs extends IntegerSyntax
      * @param  value  Integer value.
      *
      * @exception  IllegalArgumentException
-     *   (Unchecked exception) Thrown if <CODE>value</CODE> is less than 0.
+     *   (Unchecked exception) Thrown if {@code value} is less than 0.
      */
     public NumberOfInterveningJobs(int value) {
         super(value, 0, Integer.MAX_VALUE);
@@ -64,17 +64,17 @@ public final class NumberOfInterveningJobs extends IntegerSyntax
      * conditions must be true:
      * <OL TYPE=1>
      * <LI>
-     * <CODE>object</CODE> is not null.
+     * {@code object} is not null.
      * <LI>
-     * <CODE>object</CODE> is an instance of class NumberOfInterveningJobs.
+     * {@code object} is an instance of class NumberOfInterveningJobs.
      * <LI>
      * This number of intervening jobs attribute's value and
-     * <CODE>object</CODE>'s value are equal.
+     * {@code object}'s value are equal.
      * </OL>
      *
      * @param  object  Object to compare to.
      *
-     * @return  True if <CODE>object</CODE> is equivalent to this number of
+     * @return  True if {@code object} is equivalent to this number of
      *          intervening jobs attribute, false otherwise.
      */
     public boolean equals(Object object) {
@@ -101,7 +101,7 @@ public final class NumberOfInterveningJobs extends IntegerSyntax
      * instance.
      * <P>
      * For class NumberOfInterveningJobs, the
-     * category name is <CODE>"number-of-intervening-jobs"</CODE>.
+     * category name is {@code "number-of-intervening-jobs"}.
      *
      * @return  Attribute category name.
      */

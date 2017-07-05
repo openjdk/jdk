@@ -30,7 +30,7 @@ import java.io.UTFDataFormatException;
 import java.nio.ByteOrder;
 
 /**
- * An abstract class implementing the <code>ImageOutputStream</code> interface.
+ * An abstract class implementing the {@code ImageOutputStream} interface.
  * This class is designed to reduce the number of methods that must
  * be implemented by subclasses.
  *
@@ -40,7 +40,7 @@ public abstract class ImageOutputStreamImpl
     implements ImageOutputStream {
 
     /**
-     * Constructs an <code>ImageOutputStreamImpl</code>.
+     * Constructs an {@code ImageOutputStreamImpl}.
      */
     public ImageOutputStreamImpl() {
     }
@@ -481,8 +481,8 @@ public abstract class ImageOutputStreamImpl
      * If the bit offset is non-zero, forces the remaining bits
      * in the current byte to 0 and advances the stream position
      * by one.  This method should be called by subclasses at the
-     * beginning of the <code>write(int)</code> and
-     * <code>write(byte[], int, int)</code> methods.
+     * beginning of the {@code write(int)} and
+     * {@code write(byte[], int, int)} methods.
      *
      * @exception IOException if an I/O error occurs.
      */

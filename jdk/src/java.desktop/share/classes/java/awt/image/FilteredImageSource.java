@@ -58,8 +58,8 @@ public class FilteredImageSource implements ImageProducer {
     /**
      * Constructs an ImageProducer object from an existing ImageProducer
      * and a filter object.
-     * @param orig the specified <code>ImageProducer</code>
-     * @param imgf the specified <code>ImageFilter</code>
+     * @param orig the specified {@code ImageProducer}
+     * @param imgf the specified {@code ImageFilter}
      * @see ImageFilter
      * @see java.awt.Component#createImage
      */
@@ -71,21 +71,21 @@ public class FilteredImageSource implements ImageProducer {
     private Hashtable<ImageConsumer, ImageFilter> proxies;
 
     /**
-     * Adds the specified <code>ImageConsumer</code>
+     * Adds the specified {@code ImageConsumer}
      * to the list of consumers interested in data for the filtered image.
-     * An instance of the original <code>ImageFilter</code>
+     * An instance of the original {@code ImageFilter}
      * is created
-     * (using the filter's <code>getFilterInstance</code> method)
+     * (using the filter's {@code getFilterInstance} method)
      * to manipulate the image data
-     * for the specified <code>ImageConsumer</code>.
+     * for the specified {@code ImageConsumer}.
      * The newly created filter instance
-     * is then passed to the <code>addConsumer</code> method
-     * of the original <code>ImageProducer</code>.
+     * is then passed to the {@code addConsumer} method
+     * of the original {@code ImageProducer}.
      *
      * <p>
      * This method is public as a side effect
      * of this class implementing
-     * the <code>ImageProducer</code> interface.
+     * the {@code ImageProducer} interface.
      * It should not be called from user code,
      * and its behavior if called from user code is unspecified.
      *
@@ -110,11 +110,11 @@ public class FilteredImageSource implements ImageProducer {
      * <p>
      * This method is public as a side effect
      * of this class implementing
-     * the <code>ImageProducer</code> interface.
+     * the {@code ImageProducer} interface.
      * It should not be called from user code,
      * and its behavior if called from user code is unspecified.
      *
-     * @param ic the specified <code>ImageConsumer</code>
+     * @param ic the specified {@code ImageConsumer}
      * @return true if the ImageConsumer is on the list; false otherwise
      * @see ImageConsumer
      */
@@ -129,7 +129,7 @@ public class FilteredImageSource implements ImageProducer {
      * <p>
      * This method is public as a side effect
      * of this class implementing
-     * the <code>ImageProducer</code> interface.
+     * the {@code ImageProducer} interface.
      * It should not be called from user code,
      * and its behavior if called from user code is unspecified.
      *
@@ -150,21 +150,21 @@ public class FilteredImageSource implements ImageProducer {
 
     /**
      * Starts production of the filtered image.
-     * If the specified <code>ImageConsumer</code>
+     * If the specified {@code ImageConsumer}
      * isn't already a consumer of the filtered image,
-     * an instance of the original <code>ImageFilter</code>
+     * an instance of the original {@code ImageFilter}
      * is created
-     * (using the filter's <code>getFilterInstance</code> method)
+     * (using the filter's {@code getFilterInstance} method)
      * to manipulate the image data
-     * for the <code>ImageConsumer</code>.
-     * The filter instance for the <code>ImageConsumer</code>
-     * is then passed to the <code>startProduction</code> method
-     * of the original <code>ImageProducer</code>.
+     * for the {@code ImageConsumer}.
+     * The filter instance for the {@code ImageConsumer}
+     * is then passed to the {@code startProduction} method
+     * of the original {@code ImageProducer}.
      *
      * <p>
      * This method is public as a side effect
      * of this class implementing
-     * the <code>ImageProducer</code> interface.
+     * the {@code ImageProducer} interface.
      * It should not be called from user code,
      * and its behavior if called from user code is unspecified.
      *
@@ -192,7 +192,7 @@ public class FilteredImageSource implements ImageProducer {
      * <p>
      * This method is public as a side effect
      * of this class implementing
-     * the <code>ImageProducer</code> interface.
+     * the {@code ImageProducer} interface.
      * It should not be called from user code,
      * and its behavior if called from user code is unspecified.
      *

@@ -162,8 +162,8 @@ public class PeekGraphics extends Graphics2D
 /* The Delegated Graphics Methods */
 
     /**
-     * Creates a new <code>Graphics</code> object that is
-     * a copy of this <code>Graphics</code> object.
+     * Creates a new {@code Graphics} object that is
+     * a copy of this {@code Graphics} object.
      * @return     a new graphics context that is a copy of
      *                       this graphics context.
      * @since      1.0
@@ -444,7 +444,7 @@ public class PeekGraphics extends Graphics2D
 
     /**
      * Gets the current clipping area.
-     * @return      a <code>Shape</code> object representing the
+     * @return      a {@code Shape} object representing the
      *                      current clipping area.
      * @see         java.awt.Graphics#getClipBounds
      * @see         java.awt.Graphics#clipRect
@@ -459,12 +459,12 @@ public class PeekGraphics extends Graphics2D
 
     /**
      * Sets the current clipping area to an arbitrary clip shape.
-     * Not all objects which implement the <code>Shape</code>
+     * Not all objects which implement the {@code Shape}
      * interface can be used to set the clip.  The only
-     * <code>Shape</code> objects which are guaranteed to be
-     * supported are <code>Shape</code> objects which are
-     * obtained via the <code>getClip</code> method and via
-     * <code>Rectangle</code> objects.
+     * {@code Shape} objects which are guaranteed to be
+     * supported are {@code Shape} objects which are
+     * obtained via the {@code getClip} method and via
+     * {@code Rectangle} objects.
      * @see         java.awt.Graphics#getClip()
      * @see         java.awt.Graphics#clipRect
      * @see         java.awt.Graphics#setClip(int, int, int, int)
@@ -477,16 +477,16 @@ public class PeekGraphics extends Graphics2D
 
     /**
      * Copies an area of the component by a distance specified by
-     * <code>dx</code> and <code>dy</code>. From the point specified
-     * by <code>x</code> and <code>y</code>, this method
+     * {@code dx} and {@code dy}. From the point specified
+     * by {@code x} and {@code y}, this method
      * copies downwards and to the right.  To copy an area of the
      * component to the left or upwards, specify a negative value for
-     * <code>dx</code> or <code>dy</code>.
+     * {@code dx} or {@code dy}.
      * If a portion of the source rectangle lies outside the bounds
      * of the component, or is obscured by another window or component,
-     * <code>copyArea</code> will be unable to copy the associated
+     * {@code copyArea} will be unable to copy the associated
      * pixels. The area that is omitted can be refreshed by calling
-     * the component's <code>paint</code> method.
+     * the component's {@code paint} method.
      * @param       x the <i>x</i> coordinate of the source rectangle.
      * @param       y the <i>y</i> coordinate of the source rectangle.
      * @param       width the width of the source rectangle.
@@ -520,12 +520,12 @@ public class PeekGraphics extends Graphics2D
     /**
      * Fills the specified rectangle.
      * The left and right edges of the rectangle are at
-     * <code>x</code> and <code>x&nbsp;+&nbsp;width&nbsp;-&nbsp;1</code>.
+     * {@code x} and <code>x&nbsp;+&nbsp;width&nbsp;-&nbsp;1</code>.
      * The top and bottom edges are at
-     * <code>y</code> and <code>y&nbsp;+&nbsp;height&nbsp;-&nbsp;1</code>.
+     * {@code y} and <code>y&nbsp;+&nbsp;height&nbsp;-&nbsp;1</code>.
      * The resulting rectangle covers an area
-     * <code>width</code> pixels wide by
-     * <code>height</code> pixels tall.
+     * {@code width} pixels wide by
+     * {@code height} pixels tall.
      * The rectangle is filled using the graphics context's current color.
      * @param         x   the <i>x</i> coordinate
      *                         of the rectangle to be filled.
@@ -551,7 +551,7 @@ public class PeekGraphics extends Graphics2D
      * <p>
      * Beginning with Java&nbsp;1.1, the background color
      * of offscreen images may be system dependent. Applications should
-     * use <code>setColor</code> followed by <code>fillRect</code> to
+     * use {@code setColor} followed by {@code fillRect} to
      * ensure that an offscreen image is cleared to a specific color.
      * @param       x the <i>x</i> coordinate of the rectangle to clear.
      * @param       y the <i>y</i> coordinate of the rectangle to clear.
@@ -573,9 +573,9 @@ public class PeekGraphics extends Graphics2D
     /**
      * Draws an outlined round-cornered rectangle using this graphics
      * context's current color. The left and right edges of the rectangle
-     * are at <code>x</code> and <code>x&nbsp;+&nbsp;width</code>,
+     * are at {@code x} and <code>x&nbsp;+&nbsp;width</code>,
      * respectively. The top and bottom edges of the rectangle are at
-     * <code>y</code> and <code>y&nbsp;+&nbsp;height</code>.
+     * {@code y} and <code>y&nbsp;+&nbsp;height</code>.
      * @param      x the <i>x</i> coordinate of the rectangle to be drawn.
      * @param      y the <i>y</i> coordinate of the rectangle to be drawn.
      * @param      width the width of the rectangle to be drawn.
@@ -597,9 +597,9 @@ public class PeekGraphics extends Graphics2D
     /**
      * Fills the specified rounded corner rectangle with the current color.
      * The left and right edges of the rectangle
-     * are at <code>x</code> and <code>x&nbsp;+&nbsp;width&nbsp;-&nbsp;1</code>,
+     * are at {@code x} and <code>x&nbsp;+&nbsp;width&nbsp;-&nbsp;1</code>,
      * respectively. The top and bottom edges of the rectangle are at
-     * <code>y</code> and <code>y&nbsp;+&nbsp;height&nbsp;-&nbsp;1</code>.
+     * {@code y} and <code>y&nbsp;+&nbsp;height&nbsp;-&nbsp;1</code>.
      * @param       x the <i>x</i> coordinate of the rectangle to be filled.
      * @param       y the <i>y</i> coordinate of the rectangle to be filled.
      * @param       width the width of the rectangle to be filled.
@@ -621,8 +621,8 @@ public class PeekGraphics extends Graphics2D
     /**
      * Draws the outline of an oval.
      * The result is a circle or ellipse that fits within the
-     * rectangle specified by the <code>x</code>, <code>y</code>,
-     * <code>width</code>, and <code>height</code> arguments.
+     * rectangle specified by the {@code x}, {@code y},
+     * {@code width}, and {@code height} arguments.
      * <p>
      * The oval covers an area that is
      * <code>width&nbsp;+&nbsp;1</code> pixels wide
@@ -665,8 +665,8 @@ public class PeekGraphics extends Graphics2D
      * Draws the outline of a circular or elliptical arc
      * covering the specified rectangle.
      * <p>
-     * The resulting arc begins at <code>startAngle</code> and extends
-     * for <code>arcAngle</code> degrees, using the current color.
+     * The resulting arc begins at {@code startAngle} and extends
+     * for {@code arcAngle} degrees, using the current color.
      * Angles are interpreted such that 0&nbsp;degrees
      * is at the 3&nbsp;o'clock position.
      * A positive value indicates a counter-clockwise rotation
@@ -674,7 +674,7 @@ public class PeekGraphics extends Graphics2D
      * <p>
      * The center of the arc is the center of the rectangle whose origin
      * is (<i>x</i>,&nbsp;<i>y</i>) and whose size is specified by the
-     * <code>width</code> and <code>height</code> arguments.
+     * {@code width} and {@code height} arguments.
      * <p>
      * The resulting arc covers an area
      * <code>width&nbsp;+&nbsp;1</code> pixels wide
@@ -701,8 +701,8 @@ public class PeekGraphics extends Graphics2D
     /**
      * Fills a circular or elliptical arc covering the specified rectangle.
      * <p>
-     * The resulting arc begins at <code>startAngle</code> and extends
-     * for <code>arcAngle</code> degrees.
+     * The resulting arc begins at {@code startAngle} and extends
+     * for {@code arcAngle} degrees.
      * Angles are interpreted such that 0&nbsp;degrees
      * is at the 3&nbsp;o'clock position.
      * A positive value indicates a counter-clockwise rotation
@@ -710,7 +710,7 @@ public class PeekGraphics extends Graphics2D
      * <p>
      * The center of the arc is the center of the rectangle whose origin
      * is (<i>x</i>,&nbsp;<i>y</i>) and whose size is specified by the
-     * <code>width</code> and <code>height</code> arguments.
+     * {@code width} and {@code height} arguments.
      * <p>
      * The resulting arc covers an area
      * <code>width&nbsp;+&nbsp;1</code> pixels wide
@@ -767,16 +767,16 @@ public class PeekGraphics extends Graphics2D
      * arrays of <i>x</i> and <i>y</i> coordinates.
      * Each pair of (<i>x</i>,&nbsp;<i>y</i>) coordinates defines a point.
      * <p>
-     * This method draws the polygon defined by <code>nPoint</code> line
+     * This method draws the polygon defined by {@code nPoint} line
      * segments, where the first <code>nPoint&nbsp;-&nbsp;1</code>
      * line segments are line segments from
      * <code>(xPoints[i&nbsp;-&nbsp;1],&nbsp;yPoints[i&nbsp;-&nbsp;1])</code>
      * to <code>(xPoints[i],&nbsp;yPoints[i])</code>, for
-     * 1&nbsp;&le;&nbsp;<i>i</i>&nbsp;&le;&nbsp;<code>nPoints</code>.
+     * 1&nbsp;&le;&nbsp;<i>i</i>&nbsp;&le;&nbsp;{@code nPoints}.
      * The figure is automatically closed by drawing a line connecting
      * the final point to the first point, if those points are different.
-     * @param        xPoints   a an array of <code>x</code> coordinates.
-     * @param        yPoints   a an array of <code>y</code> coordinates.
+     * @param        xPoints   a an array of {@code x} coordinates.
+     * @param        yPoints   a an array of {@code y} coordinates.
      * @param        nPoints   a the total number of points.
      * @see          java.awt.Graphics#fillPolygon
      * @see          java.awt.Graphics#drawPolyline
@@ -796,19 +796,19 @@ public class PeekGraphics extends Graphics2D
      * Fills a closed polygon defined by
      * arrays of <i>x</i> and <i>y</i> coordinates.
      * <p>
-     * This method draws the polygon defined by <code>nPoint</code> line
+     * This method draws the polygon defined by {@code nPoint} line
      * segments, where the first <code>nPoint&nbsp;-&nbsp;1</code>
      * line segments are line segments from
      * <code>(xPoints[i&nbsp;-&nbsp;1],&nbsp;yPoints[i&nbsp;-&nbsp;1])</code>
      * to <code>(xPoints[i],&nbsp;yPoints[i])</code>, for
-     * 1&nbsp;&le;&nbsp;<i>i</i>&nbsp;&le;&nbsp;<code>nPoints</code>.
+     * 1&nbsp;&le;&nbsp;<i>i</i>&nbsp;&le;&nbsp;{@code nPoints}.
      * The figure is automatically closed by drawing a line connecting
      * the final point to the first point, if those points are different.
      * <p>
      * The area inside the polygon is defined using an
      * even-odd fill rule, also known as the alternating rule.
-     * @param        xPoints   a an array of <code>x</code> coordinates.
-     * @param        yPoints   a an array of <code>y</code> coordinates.
+     * @param        xPoints   a an array of {@code x} coordinates.
+     * @param        yPoints   a an array of {@code y} coordinates.
      * @param        nPoints   a the total number of points.
      * @see          java.awt.Graphics#drawPolygon(int[], int[], int)
      * @since        1.0
@@ -931,7 +931,7 @@ public class PeekGraphics extends Graphics2D
      * and converted for the current output device.
      * <p>
      * If the image has not yet been completely loaded, then
-     * <code>drawImage</code> returns <code>false</code>. As more of
+     * {@code drawImage} returns {@code false}. As more of
      * the image becomes available, the process that draws the image notifies
      * the specified image observer.
      * @param    img the specified image to be drawn.
@@ -976,9 +976,9 @@ public class PeekGraphics extends Graphics2D
      * entire image has not yet been scaled, dithered, and converted
      * for the current output device.
      * If the current output representation is not yet complete, then
-     * <code>drawImage</code> returns <code>false</code>. As more of
+     * {@code drawImage} returns {@code false}. As more of
      * the image becomes available, the process that draws the image notifies
-     * the image observer by calling its <code>imageUpdate</code> method.
+     * the image observer by calling its {@code imageUpdate} method.
      * <p>
      * A scaled version of an image will not necessarily be
      * available immediately just because an unscaled version of the
@@ -1027,7 +1027,7 @@ public class PeekGraphics extends Graphics2D
      * and converted for the current output device.
      * <p>
      * If the image has not yet been completely loaded, then
-     * <code>drawImage</code> returns <code>false</code>. As more of
+     * {@code drawImage} returns {@code false}. As more of
      * the image becomes available, the process that draws the image notifies
      * the specified image observer.
      * @param    img    the specified image to be drawn.
@@ -1078,7 +1078,7 @@ public class PeekGraphics extends Graphics2D
      * entire image has not yet been scaled, dithered, and converted
      * for the current output device.
      * If the current output representation is not yet complete then
-     * <code>drawImage</code> returns <code>false</code>. As more of
+     * {@code drawImage} returns {@code false}. As more of
      * the image becomes available, the process that draws the image notifies
      * the specified image observer.
      * <p>
@@ -1127,7 +1127,7 @@ public class PeekGraphics extends Graphics2D
      * image area to be drawn has not yet been scaled, dithered, and converted
      * for the current output device.
      * If the current output representation is not yet complete then
-     * <code>drawImage</code> returns <code>false</code>. As more of
+     * {@code drawImage} returns {@code false}. As more of
      * the image becomes available, the process that draws the image notifies
      * the specified image observer.
      * <p>
@@ -1199,7 +1199,7 @@ public class PeekGraphics extends Graphics2D
      * image area to be drawn has not yet been scaled, dithered, and converted
      * for the current output device.
      * If the current output representation is not yet complete then
-     * <code>drawImage</code> returns <code>false</code>. As more of
+     * {@code drawImage} returns {@code false}. As more of
      * the image becomes available, the process that draws the image notifies
      * the specified image observer.
      * <p>
@@ -1304,10 +1304,10 @@ public class PeekGraphics extends Graphics2D
     /**
      * Disposes of this graphics context and releases
      * any system resources that it is using.
-     * A <code>Graphics</code> object cannot be used after
-     * <code>dispose</code>has been called.
+     * A {@code Graphics} object cannot be used after
+     * {@code dispose} has been called.
      * <p>
-     * When a Java program runs, a large number of <code>Graphics</code>
+     * When a Java program runs, a large number of {@code Graphics}
      * objects can be created within a short time frame.
      * Although the finalization process of the garbage collector
      * also disposes of the same system resources, it is preferable
@@ -1316,12 +1316,12 @@ public class PeekGraphics extends Graphics2D
      * may not run to completion for a long period of time.
      * <p>
      * Graphics objects which are provided as arguments to the
-     * <code>paint</code> and <code>update</code> methods
+     * {@code paint} and {@code update} methods
      * of components are automatically released by the system when
      * those methods return. For efficiency, programmers should
-     * call <code>dispose</code> when finished using
-     * a <code>Graphics</code> object only if it was created
-     * directly from a component or another <code>Graphics</code> object.
+     * call {@code dispose} when finished using
+     * a {@code Graphics} object only if it was created
+     * directly from a component or another {@code Graphics} object.
      * @see         java.awt.Graphics#finalize
      * @see         java.awt.Component#paint
      * @see         java.awt.Component#update
@@ -1735,7 +1735,7 @@ public class PeekGraphics extends Graphics2D
      }
 
      /**
-      * Return true if the Rectangle <code>rect</code>
+      * Return true if the Rectangle {@code rect}
       * intersects the area into which the application
       * has drawn.
       */

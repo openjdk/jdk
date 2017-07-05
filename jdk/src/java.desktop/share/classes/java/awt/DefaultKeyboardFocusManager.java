@@ -309,12 +309,12 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
      * related to focus, and all KeyEvents. These events are dispatched based
      * on the KeyboardFocusManager's notion of the focus owner and the focused
      * and active Windows, sometimes overriding the source of the specified
-     * AWTEvent. If this method returns <code>false</code>, then the AWT event
+     * AWTEvent. If this method returns {@code false}, then the AWT event
      * dispatcher will attempt to dispatch the event itself.
      *
      * @param e the AWTEvent to be dispatched
-     * @return <code>true</code> if this method dispatched the event;
-     *         <code>false</code> otherwise
+     * @return {@code true} if this method dispatched the event;
+     *         {@code false} otherwise
      */
     public boolean dispatchEvent(AWTEvent e) {
         if (focusLog.isLoggable(PlatformLogger.Level.FINE) && (e instanceof WindowEvent || e instanceof FocusEvent)) {
@@ -778,7 +778,7 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
     }
 
     /**
-     * Called by <code>dispatchEvent</code> if no other
+     * Called by {@code dispatchEvent} if no other
      * KeyEventDispatcher in the dispatcher chain dispatched the KeyEvent, or
      * if no other KeyEventDispatchers are registered. If the event has not
      * been consumed, its target is enabled, and the focus owner is not null,
@@ -787,13 +787,13 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
      * KeyEventPostProcessors. After all this operations are finished,
      * the event is passed to peers for processing.
      * <p>
-     * In all cases, this method returns <code>true</code>, since
+     * In all cases, this method returns {@code true}, since
      * DefaultKeyboardFocusManager is designed so that neither
-     * <code>dispatchEvent</code>, nor the AWT event dispatcher, should take
+     * {@code dispatchEvent}, nor the AWT event dispatcher, should take
      * further action on the event in any situation.
      *
      * @param e the KeyEvent to be dispatched
-     * @return <code>true</code>
+     * @return {@code true}
      * @see Component#dispatchEvent
      */
     public boolean dispatchKeyEvent(KeyEvent e) {
@@ -841,13 +841,13 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
     }
 
     /**
-     * This method will be called by <code>dispatchKeyEvent</code>. It will
+     * This method will be called by {@code dispatchKeyEvent}. It will
      * handle any unconsumed KeyEvents that map to an AWT
-     * <code>MenuShortcut</code> by consuming the event and activating the
+     * {@code MenuShortcut} by consuming the event and activating the
      * shortcut.
      *
      * @param e the KeyEvent to post-process
-     * @return <code>true</code>
+     * @return {@code true}
      * @see #dispatchKeyEvent
      * @see MenuShortcut
      */
@@ -998,7 +998,7 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
     }
 
     /**
-     * Returns true if there are some marker associated with component <code>comp</code>
+     * Returns true if there are some marker associated with component {@code comp}
      * in a markers' queue
      * @since 1.5
      */
@@ -1201,7 +1201,7 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
      * the focus owner. KeyEvents with timestamps later than the specified
      * timestamp will be enqueued until the specified Component receives a
      * FOCUS_GAINED event, or the AWT cancels the delay request by invoking
-     * <code>dequeueKeyEvents</code> or <code>discardKeyEvents</code>.
+     * {@code dequeueKeyEvents} or {@code discardKeyEvents}.
      *
      * @param after timestamp of current event, or the current, system time if
      *        the current event has no timestamp, or the AWT cannot determine
@@ -1241,15 +1241,15 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
     /**
      * Releases for normal dispatching to the current focus owner all
      * KeyEvents which were enqueued because of a call to
-     * <code>enqueueKeyEvents</code> with the same timestamp and Component.
+     * {@code enqueueKeyEvents} with the same timestamp and Component.
      * If the given timestamp is less than zero, the outstanding enqueue
      * request for the given Component with the <b>oldest</b> timestamp (if
      * any) should be cancelled.
      *
      * @param after the timestamp specified in the call to
-     *        <code>enqueueKeyEvents</code>, or any value &lt; 0
+     *        {@code enqueueKeyEvents}, or any value &lt; 0
      * @param untilFocused the Component specified in the call to
-     *        <code>enqueueKeyEvents</code>
+     *        {@code enqueueKeyEvents}
      * @see #enqueueKeyEvents
      * @see #discardKeyEvents
      */
@@ -1292,11 +1292,11 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
 
     /**
      * Discards all KeyEvents which were enqueued because of one or more calls
-     * to <code>enqueueKeyEvents</code> with the specified Component, or one of
+     * to {@code enqueueKeyEvents} with the specified Component, or one of
      * its descendants.
      *
      * @param comp the Component specified in one or more calls to
-     *        <code>enqueueKeyEvents</code>, or a parent of such a Component
+     *        {@code enqueueKeyEvents}, or a parent of such a Component
      * @see #enqueueKeyEvents
      * @see #dequeueKeyEvents
      */

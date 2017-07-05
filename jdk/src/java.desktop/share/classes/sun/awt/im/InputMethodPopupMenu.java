@@ -46,7 +46,7 @@ import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 
 /**
- * <code>InputMethodPopupMenu</code> provides the popup selection menu
+ * {@code InputMethodPopupMenu} provides the popup selection menu
  */
 
 abstract class InputMethodPopupMenu implements ActionListener {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2496,8 +2496,9 @@ public class TCKDuration extends AbstractTCKTest {
     //-----------------------------------------------------------------------
     @Test
     public void test_toNanos() {
-        Duration test = Duration.ofSeconds(321, 123456789);
-        assertEquals(test.toNanos(), 321123456789L);
+        assertEquals(Duration.ofSeconds(321, 123456789).toNanos(), 321123456789L);
+        assertEquals(Duration.ofNanos(Long.MAX_VALUE).toNanos(), 9223372036854775807L);
+        assertEquals(Duration.ofNanos(Long.MIN_VALUE).toNanos(), -9223372036854775808L);
     }
 
     @Test
@@ -2512,13 +2513,26 @@ public class TCKDuration extends AbstractTCKTest {
         test.toNanos();
     }
 
+    @Test
+    public void test_toNanos_min() {
+        Duration test = Duration.ofSeconds(0, Long.MIN_VALUE);
+        assertEquals(test.toNanos(), Long.MIN_VALUE);
+    }
+
+    @Test(expectedExceptions=ArithmeticException.class)
+    public void test_toNanos_tooSmall() {
+        Duration test = Duration.ofSeconds(0, Long.MIN_VALUE).minusNanos(1);
+        test.toNanos();
+    }
+
     //-----------------------------------------------------------------------
     // toMillis()
     //-----------------------------------------------------------------------
     @Test
     public void test_toMillis() {
-        Duration test = Duration.ofSeconds(321, 123456789);
-        assertEquals(test.toMillis(), 321000 + 123);
+        assertEquals(Duration.ofSeconds(321, 123456789).toMillis(), 321000 + 123);
+        assertEquals(Duration.ofMillis(Long.MAX_VALUE).toMillis(), 9223372036854775807L);
+        assertEquals(Duration.ofMillis(Long.MIN_VALUE).toMillis(), -9223372036854775808L);
     }
 
     @Test
@@ -2530,6 +2544,18 @@ public class TCKDuration extends AbstractTCKTest {
     @Test(expectedExceptions=ArithmeticException.class)
     public void test_toMillis_tooBig() {
         Duration test = Duration.ofSeconds(Long.MAX_VALUE / 1000, ((Long.MAX_VALUE % 1000) + 1) * 1000000);
+        test.toMillis();
+    }
+
+    @Test
+    public void test_toMillis_min() {
+        Duration test = Duration.ofSeconds(Long.MIN_VALUE / 1000, (Long.MIN_VALUE % 1000) * 1000000);
+        assertEquals(test.toMillis(), Long.MIN_VALUE);
+    }
+
+    @Test(expectedExceptions=ArithmeticException.class)
+    public void test_toMillis_tooSmall() {
+        Duration test = Duration.ofSeconds(Long.MIN_VALUE / 1000, ((Long.MIN_VALUE % 1000) - 1) * 1000000);
         test.toMillis();
     }
 

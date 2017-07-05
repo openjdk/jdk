@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -263,7 +263,7 @@ class os: AllStatic {
   // pages for stack overflow checking.
   static bool uses_stack_guard_pages();
   static bool allocate_stack_guard_pages();
-  static void bang_stack_shadow_pages();
+  static void map_stack_shadow_pages();
   static bool stack_shadow_pages_available(Thread *thread, const methodHandle& method);
 
   // OS interface to Virtual Memory

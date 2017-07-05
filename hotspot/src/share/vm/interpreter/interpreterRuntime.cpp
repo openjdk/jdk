@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -459,21 +459,11 @@ IRT_ENTRY(address, InterpreterRuntime::exception_handler_for_exception(JavaThrea
     // tracing
     if (log_is_enabled(Info, exceptions)) {
       ResourceMark rm(thread);
-      Symbol* message = java_lang_Throwable::detail_message(h_exception());
       stringStream tempst;
-      if (message != NULL) {
-        tempst.print("Exception <%s: %s> (" INTPTR_FORMAT ")\n",
-                     h_exception->print_value_string(), message->as_C_string(),
-                     p2i(h_exception()));
-      } else {
-        tempst.print("Exception <%s> (" INTPTR_FORMAT ")\n",
-                     h_exception->print_value_string(),
-                     p2i(h_exception()));
-      }
-      tempst.print(" thrown in interpreter method <%s>\n"
+      tempst.print("interpreter method <%s>\n"
                    " at bci %d for thread " INTPTR_FORMAT,
                    h_method->print_value_string(), current_bci, p2i(thread));
-      LogHandle(exceptions)::info_stream()->print_raw_cr(tempst.as_string());
+      Exceptions::log_exception(h_exception, tempst);
     }
 // Don't go paging in something which won't be used.
 //     else if (extable->length() == 0) {
@@ -773,9 +763,11 @@ void InterpreterRuntime::resolve_invoke(JavaThread* thread, Bytecodes::Code byte
   if (cp_cache_entry->is_resolved(bytecode)) return;
 
   if (bytecode == Bytecodes::_invokeinterface) {
-    if (TraceItables && Verbose) {
+    if (develop_log_is_enabled(Trace, itables)) {
       ResourceMark rm(thread);
-      tty->print_cr("Resolving: klass: %s to method: %s", info.resolved_klass()->name()->as_C_string(), info.resolved_method()->name()->as_C_string());
+      log_develop_trace(itables)("Resolving: klass: %s to method: %s",
+                                 info.resolved_klass()->name()->as_C_string(),
+                                 info.resolved_method()->name()->as_C_string());
     }
   }
 #ifdef ASSERT
@@ -1255,6 +1247,7 @@ void SignatureHandlerLibrary::add(const methodHandle& method) {
         } else {
           // debugging suppport
           if (PrintSignatureHandlers && (handler != Interpreter::slow_signature_handler())) {
+            ttyLocker ttyl;
             tty->cr();
             tty->print_cr("argument handler #%d for: %s %s (fingerprint = " UINT64_FORMAT ", %d bytes generated)",
                           _handlers->length(),

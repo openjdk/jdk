@@ -36,8 +36,8 @@ import sun.java2d.Disposer;
 import sun.java2d.DisposerRecord;
 
 /**
- * An implementation of <code>ImageInputStream</code> that gets its
- * input from a regular <code>InputStream</code>.  A file is used to
+ * An implementation of {@code ImageInputStream} that gets its
+ * input from a regular {@code InputStream}.  A file is used to
  * cache previously read data.
  *
  */
@@ -68,25 +68,25 @@ public class FileCacheImageInputStream extends ImageInputStreamImpl {
     private final StreamCloser.CloseAction closeAction;
 
     /**
-     * Constructs a <code>FileCacheImageInputStream</code> that will read
-     * from a given <code>InputStream</code>.
+     * Constructs a {@code FileCacheImageInputStream} that will read
+     * from a given {@code InputStream}.
      *
      * <p> A temporary file is used as a cache.  If
-     * <code>cacheDir</code>is non-<code>null</code> and is a
+     * {@code cacheDir} is non-{@code null} and is a
      * directory, the file will be created there.  If it is
-     * <code>null</code>, the system-dependent default temporary-file
+     * {@code null}, the system-dependent default temporary-file
      * directory will be used (see the documentation for
-     * <code>File.createTempFile</code> for details).
+     * {@code File.createTempFile} for details).
      *
-     * @param stream an <code>InputStream</code> to read from.
-     * @param cacheDir a <code>File</code> indicating where the
-     * cache file should be created, or <code>null</code> to use the
+     * @param stream an {@code InputStream} to read from.
+     * @param cacheDir a {@code File} indicating where the
+     * cache file should be created, or {@code null} to use the
      * system directory.
      *
-     * @exception IllegalArgumentException if <code>stream</code> is
-     * <code>null</code>.
-     * @exception IllegalArgumentException if <code>cacheDir</code> is
-     * non-<code>null</code> but is not a directory.
+     * @exception IllegalArgumentException if {@code stream} is
+     * {@code null}.
+     * @exception IllegalArgumentException if {@code cacheDir} is
+     * non-{@code null} but is not a directory.
      * @throws IOException if a cache file cannot be created.
      */
     public FileCacheImageInputStream(InputStream stream, File cacheDir)
@@ -118,9 +118,9 @@ public class FileCacheImageInputStream extends ImageInputStreamImpl {
     }
 
     /**
-     * Ensures that at least <code>pos</code> bytes are cached,
+     * Ensures that at least {@code pos} bytes are cached,
      * or the end of the source is reached.  The return value
-     * is equal to the smaller of <code>pos</code> and the
+     * is equal to the smaller of {@code pos} and the
      * length of the source file.
      *
      * @throws IOException if an I/O error occurs while reading from the
@@ -202,11 +202,11 @@ public class FileCacheImageInputStream extends ImageInputStreamImpl {
     }
 
     /**
-     * Returns <code>true</code> since this
-     * <code>ImageInputStream</code> caches data in order to allow
+     * Returns {@code true} since this
+     * {@code ImageInputStream} caches data in order to allow
      * seeking backwards.
      *
-     * @return <code>true</code>.
+     * @return {@code true}.
      *
      * @see #isCachedMemory
      * @see #isCachedFile
@@ -216,10 +216,10 @@ public class FileCacheImageInputStream extends ImageInputStreamImpl {
     }
 
     /**
-     * Returns <code>true</code> since this
-     * <code>ImageInputStream</code> maintains a file cache.
+     * Returns {@code true} since this
+     * {@code ImageInputStream} maintains a file cache.
      *
-     * @return <code>true</code>.
+     * @return {@code true}.
      *
      * @see #isCached
      * @see #isCachedMemory
@@ -229,11 +229,11 @@ public class FileCacheImageInputStream extends ImageInputStreamImpl {
     }
 
     /**
-     * Returns <code>false</code> since this
-     * <code>ImageInputStream</code> does not maintain a main memory
+     * Returns {@code false} since this
+     * {@code ImageInputStream} does not maintain a main memory
      * cache.
      *
-     * @return <code>false</code>.
+     * @return {@code false}.
      *
      * @see #isCached
      * @see #isCachedFile
@@ -243,8 +243,8 @@ public class FileCacheImageInputStream extends ImageInputStreamImpl {
     }
 
     /**
-     * Closes this <code>FileCacheImageInputStream</code>, closing
-     * and removing the cache file.  The source <code>InputStream</code>
+     * Closes this {@code FileCacheImageInputStream}, closing
+     * and removing the cache file.  The source {@code InputStream}
      * is not closed.
      *
      * @throws IOException if an error occurs.
