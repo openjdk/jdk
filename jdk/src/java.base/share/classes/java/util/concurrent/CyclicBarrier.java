@@ -82,8 +82,7 @@ import java.util.concurrent.locks.ReentrantLock;
  *   public Solver(float[][] matrix) {
  *     data = matrix;
  *     N = matrix.length;
- *     Runnable barrierAction =
- *       new Runnable() { public void run() { mergeRows(...); }};
+ *     Runnable barrierAction = () -> mergeRows(...);
  *     barrier = new CyclicBarrier(N, barrierAction);
  *
  *     List<Thread> threads = new ArrayList<>(N);

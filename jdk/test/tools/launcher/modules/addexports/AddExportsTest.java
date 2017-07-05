@@ -32,7 +32,9 @@
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.stream.Stream;
 
+import jdk.testlibrary.OutputAnalyzer;
 import static jdk.testlibrary.ProcessTools.*;
 
 import org.testng.annotations.BeforeTest;
@@ -202,13 +204,15 @@ public class AddExportsTest {
 
 
     /**
-     * --add-exports allows duplicates
+     * --add-exports and --add-opens allows duplicates
      */
     public void testWithDuplicateOption() throws Exception {
 
         int exitValue
             =  executeTestJava("--add-exports", "java.base/jdk.internal.reflect=ALL-UNNAMED",
                                "--add-exports", "java.base/jdk.internal.reflect=ALL-UNNAMED",
+                               "--add-opens", "java.base/java.util=ALL-UNNAMED",
+                               "--add-opens", "java.base/java.util=ALL-UNNAMED",
                                "-version")
                 .outputTo(System.out)
                 .errorTo(System.out)
@@ -218,23 +222,33 @@ public class AddExportsTest {
     }
 
 
+    private OutputAnalyzer execJava(String... options) {
+        try {
+            return executeTestJava(options);
+        } catch (Exception e) {
+            throw new Error(e);
+        }
+    }
+
     /**
-     * Exercise --add-exports with unknown values.  Warning is emitted.
+     * Exercise --add-exports and --add-opens with unknown values.
+     * Warning is emitted.
      */
     @Test(dataProvider = "unknownvalues")
-    public void testWithUnknownValue(String value, String ignore) throws Exception {
+    public void testWithUnknownValue(String value, String ignore) {
+        Stream.of("--add-exports", "--add-opens")
+            .forEach(option -> {
+                //  --add-exports $VALUE -version
+                int exitValue = execJava(option, value, "-version")
+                    .stderrShouldMatch("WARNING: .*.monkey.*")
+                    .outputTo(System.out)
+                    .errorTo(System.out)
+                    .getExitValue();
 
-        //  --add-exports $VALUE -version
-        int exitValue =
-            executeTestJava("--add-exports", value,
-                            "-version")
-                .stderrShouldMatch("WARNING: .*.monkey.*")
-                .outputTo(System.out)
-                .errorTo(System.out)
-                .getExitValue();
-
-        assertTrue(exitValue == 0);
+                assertTrue(exitValue == 0);
+            });
     }
+
 
     @DataProvider(name = "unknownvalues")
     public Object[][] unknownValues() {
@@ -250,20 +264,20 @@ public class AddExportsTest {
 
 
     /**
-     * Exercise --add-exports with bad values
+     * Exercise --add-exports and --add-opens with bad values
      */
     @Test(dataProvider = "badvalues")
-    public void testWithBadValue(String value, String ignore) throws Exception {
-
-        //  --add-exports $VALUE -version
-        int exitValue =
-            executeTestJava("--add-exports", value,
-                            "-version")
-                .outputTo(System.out)
-                .errorTo(System.out)
-                .getExitValue();
+    public void testWithBadValue(String value, String ignore) {
+        Stream.of("--add-exports", "--add-opens")
+            .forEach(option -> {
+                //  --add-exports $VALUE -version
+                int exitValue = execJava(option, value, "-version")
+                    .outputTo(System.out)
+                    .errorTo(System.out)
+                    .getExitValue();
 
         assertTrue(exitValue != 0);
+            });
     }
 
     @DataProvider(name = "badvalues")

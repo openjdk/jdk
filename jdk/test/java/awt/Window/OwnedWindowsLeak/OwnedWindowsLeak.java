@@ -26,6 +26,7 @@
   @key headful
   @bug 6758673
   @summary Tests that windows are removed from owner's child windows list
+  @modules java.desktop/java.awt:open
   @author art: area=awt.toplevel
   @run main/othervm -mx128m OwnedWindowsLeak
 */

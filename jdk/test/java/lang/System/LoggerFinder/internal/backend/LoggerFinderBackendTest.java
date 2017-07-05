@@ -38,7 +38,8 @@
  *           It calls both the {@link java.lang.System} factory methods and
  *           {@link jdk.internal.logger.LazyLoggers} to obtains those loggers,
  *           and configure them with all possible known levels.
- * @modules java.base/sun.util.logging
+ * @modules java.base/java.lang:open
+ *          java.base/sun.util.logging
  *          java.base/jdk.internal.logger
  *          java.logging/sun.util.logging.internal
  * @build LoggerFinderBackendTest SystemClassLoader

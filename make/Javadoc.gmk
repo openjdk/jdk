@@ -33,7 +33,7 @@ include MakeBase.gmk
 # Allow custom to overwrite.
 JAVADOC_SOURCE_DIRS = \
       $(SUPPORT_OUTPUTDIR)/gensrc/* \
-      $(if $(IMPORT_MODULES_SRC), $(IMPORT_MODULES_SRC)/*) \
+      $(addsuffix /*, $(IMPORT_MODULES_SRC)) \
       $(JDK_TOPDIR)/src/*/$(OPENJDK_TARGET_OS)/classes \
       $(JDK_TOPDIR)/src/*/$(OPENJDK_TARGET_OS_TYPE)/classes \
       $(JDK_TOPDIR)/src/*/share/classes \

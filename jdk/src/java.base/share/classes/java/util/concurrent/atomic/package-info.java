@@ -60,21 +60,9 @@
  *   }
  * }}</pre>
  *
- * <p>It is straightforward to define new utility functions that, like
- * {@code getAndIncrement}, apply a function to a value atomically.
- * For example, given some transformation
- * <pre> {@code long transform(long input)}</pre>
- *
- * write your utility method as follows:
- * <pre> {@code
- * long getAndTransform(AtomicLong var) {
- *   long prev, next;
- *   do {
- *     prev = var.get();
- *     next = transform(prev);
- *   } while (!var.compareAndSet(prev, next));
- *   return prev; // return next; for transformAndGet
- * }}</pre>
+ * <p>Arbitrary transformations of the contained value are provided both
+ * by low-level read-modify-write operations such as {@code compareAndSet}
+ * and by higher-level methods such as {@code getAndUpdate}.
  *
  * <p>These classes are not general purpose replacements for {@code
  * java.lang.Integer} and related classes.  They do <em>not</em>

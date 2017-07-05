@@ -25,6 +25,7 @@
  * @bug 6312358
  * @summary Verify that an NPE is thrown by issueing Locale.getInstance() with
  *      any argument being null.
+ * @modules java.base/java.util:open
  */
 
 import java.lang.reflect.InvocationTargetException;

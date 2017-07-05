@@ -695,7 +695,7 @@ public class ClassWriter extends ClassVisitor {
             final String[] interfaces) {
         this.version = version;
         this.access = access;
-        this.name = newClass(name);
+        this.name = (name == null) ? 0 : newClass(name);
         thisName = name;
         if (ClassReader.SIGNATURES && signature != null) {
             this.signature = newUTF8(signature);

@@ -74,7 +74,15 @@ public final class PluginRepository {
         Objects.requireNonNull(pluginsLayer);
         Plugin plugin = getPlugin(name, pluginsLayer);
         if (plugin != null) {
-            plugin.configure(config);
+            try {
+                plugin.configure(config);
+            } catch (IllegalArgumentException e) {
+                if (JlinkTask.DEBUG) {
+                    System.err.println("Plugin " + plugin.getName() + " threw exception with config: " + config);
+                    e.printStackTrace();
+                }
+                throw e;
+            }
         }
         return plugin;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,6 @@
  *          java.rmi/sun.rmi.transport.tcp
  * @build TestLibrary ReferenceRegistryStub
  * @run main/othervm InterfaceHash
- * @key intermittent
  */
 
 import java.lang.reflect.Constructor;
@@ -63,7 +62,6 @@ import sun.rmi.transport.tcp.TCPEndpoint;
 
 public class InterfaceHash {
 
-    private static final int PORT = TestLibrary.getUnusedRandomPort();
     private static final String NAME = "WMM";
 
     public static void main(String[] args) throws Exception {
@@ -73,12 +71,13 @@ public class InterfaceHash {
             "\n=== verifying that J2SE registry's skeleton uses" +
             "\ncorrect interface hash and operation numbers:");
 
-        Registry testImpl = LocateRegistry.createRegistry(PORT);
-        System.err.println("created test registry on port " + PORT);
+        Registry testImpl = TestLibrary.createRegistryOnEphemeralPort();
+        int regPort = TestLibrary.getRegistryPort(testImpl);
+        System.err.println("created test registry on port " + regPort);
 
         RemoteRef ref = new UnicastRef(
             new LiveRef(new ObjID(ObjID.REGISTRY_ID),
-                        new TCPEndpoint("", PORT), false));
+                        new TCPEndpoint("", regPort), false));
         Registry referenceStub = new ReferenceRegistryStub(ref);
         System.err.println("created reference registry stub: " +
                            referenceStub);
@@ -144,7 +143,7 @@ public class InterfaceHash {
         }
         FakeRemoteRef f = new FakeRemoteRef();
 
-        Registry testRegistry = LocateRegistry.getRegistry(PORT);
+        Registry testRegistry = LocateRegistry.getRegistry(regPort);
         System.err.println("created original test registry stub: " +
                            testRegistry);
 

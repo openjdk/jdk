@@ -40,9 +40,10 @@ import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -54,7 +55,6 @@ import java.util.jar.Manifest;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import jdk.internal.jmod.JmodFile;
@@ -399,8 +399,8 @@ class ModulePath implements ModuleFinder {
      *
      * 1. The module name (and optionally the version) is derived from the file
      *    name of the JAR file
-     * 2. The packages of all .class files in the JAR file are exported
-     * 3. It has no module-private/concealed packages
+     * 2. All packages are exported and open
+     * 3. It has no non-exported/non-open packages
      * 4. The contents of any META-INF/services configuration files are mapped
      *    to "provides" declarations
      * 5. The Main-Class attribute in the main attributes of the JAR manifest
@@ -440,8 +440,7 @@ class ModulePath implements ModuleFinder {
 
         // Builder throws IAE if module name is empty or invalid
         ModuleDescriptor.Builder builder
-            = new ModuleDescriptor.Builder(mn)
-                .automatic()
+            = ModuleDescriptor.automaticModule(mn)
                 .requires(Set.of(Requires.Modifier.MANDATED), "java.base");
         if (vs != null)
             builder.version(vs);
@@ -455,13 +454,12 @@ class ModulePath implements ModuleFinder {
 
         Set<String> resources = map.get(Boolean.FALSE);
         Set<String> configFiles = map.get(Boolean.TRUE);
-
-        // all packages are exported
+        // all packages are exported and open
         resources.stream()
                 .map(this::toPackageName)
                 .flatMap(Optional::stream)
                 .distinct()
-                .forEach(builder::exports);
+                .forEach(pn -> builder.exports(pn).opens(pn));
 
         // map names of service configuration files to service names
         Set<String> serviceNames = configFiles.stream()
@@ -472,7 +470,7 @@ class ModulePath implements ModuleFinder {
         // parse each service configuration file
         for (String sn : serviceNames) {
             JarEntry entry = jf.getJarEntry(SERVICES_PREFIX + sn);
-            Set<String> providerClasses = new LinkedHashSet<>();
+            List<String> providerClasses = new ArrayList<>();
             try (InputStream in = jf.getInputStream(entry)) {
                 BufferedReader reader
                     = new BufferedReader(new InputStreamReader(in, "UTF-8"));
@@ -493,7 +491,7 @@ class ModulePath implements ModuleFinder {
             Attributes attrs = man.getMainAttributes();
             String mainClass = attrs.getValue(Attributes.Name.MAIN_CLASS);
             if (mainClass != null)
-                builder.mainClass(mainClass);
+                builder.mainClass(mainClass.replace("/", "."));
         }
 
         return builder.build();
@@ -504,6 +502,7 @@ class ModulePath implements ModuleFinder {
      */
     private static class Patterns {
         static final Pattern DASH_VERSION = Pattern.compile("-(\\d+(\\.|$))");
+        static final Pattern TRAILING_VERSION = Pattern.compile("(\\.|\\d)*$");
         static final Pattern NON_ALPHANUM = Pattern.compile("[^A-Za-z0-9]");
         static final Pattern REPEATING_DOTS = Pattern.compile("(\\.)(\\1)+");
         static final Pattern LEADING_DOTS = Pattern.compile("^\\.");
@@ -514,6 +513,9 @@ class ModulePath implements ModuleFinder {
      * Clean up candidate module name derived from a JAR file name.
      */
     private static String cleanModuleName(String mn) {
+        // drop trailing version from name
+        mn = Patterns.TRAILING_VERSION.matcher(mn).replaceAll("");
+
         // replace non-alphanumeric
         mn = Patterns.NON_ALPHANUM.matcher(mn).replaceAll(".");
 

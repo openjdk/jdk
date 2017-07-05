@@ -259,4 +259,20 @@ public class ThreadLocalRandom8Test extends JSR166TestCase {
         assertEquals(size, counter.sum());
     }
 
+    /**
+     * A deserialized ThreadLocalRandom is always identical to
+     * ThreadLocalRandom.current()
+     */
+    public void testSerialization() {
+        assertSame(
+            ThreadLocalRandom.current(),
+            serialClone(ThreadLocalRandom.current()));
+        // In the current implementation, there is exactly one shared instance
+        if (testImplementationDetails)
+            assertSame(
+                ThreadLocalRandom.current(),
+                java.util.concurrent.CompletableFuture.supplyAsync(
+                    () -> serialClone(ThreadLocalRandom.current())).join());
+    }
+
 }
