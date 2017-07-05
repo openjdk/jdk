@@ -48,8 +48,8 @@ ALT_CUPS_HEADERS_PATH:=$(patsubst -I%,%,$(filter -I%,@CUPS_CFLAGS@))
 
 # The HOSTCC/HOSTCXX is Hotspot terminology for the BUILD_CC/BUILD_CXX, i.e. the
 # compiler that produces code that can be run on the build platform.
-HOSTCC:=@UNCYGDRIVE@ @BUILD_CC@
-HOSTCXX:=@UNCYGDRIVE@ @BUILD_CXX@
+HOSTCC:=@FIXPATH@ @BUILD_CC@
+HOSTCXX:=@FIXPATH@ @BUILD_CXX@
 
 ####################################################
 #
@@ -78,13 +78,23 @@ ARCH=$(OPENJDK_TARGET_CPU_LEGACY)
 ALT_OUTPUTDIR=$(HOTSPOT_OUTPUTDIR)
 ALT_EXPORT_PATH=$(HOTSPOT_DIST)
 
-HOTSPOT_MAKE_ARGS:=@HOTSPOT_MAKE_ARGS@
+HOTSPOT_MAKE_ARGS:=@HOTSPOT_MAKE_ARGS@ @STATIC_CXX_SETTING@
 # This is used from the libjvm build for C/C++ code.
 HOTSPOT_BUILD_JOBS:=@CONCURRENT_BUILD_JOBS@
 # Control wether Hotspot runs Queens test after building
 TEST_IN_BUILD=@TEST_IN_BUILD@
 
+# For hotspot, override compiler/tools definition to not include FIXPATH prefix.
+# Hotspot has its own handling on the Windows path situation.
+CXX:=@CCACHE@ @HOTSPOT_CXX@
+LD:=@HOTSPOT_LD@
+MT:=@HOTSPOT_MT@
+RC:=@HOTSPOT_RC@
 
 EXTRA_CFLAGS=@LEGACY_EXTRA_CFLAGS@
 EXTRA_CXXFLAGS=@LEGACY_EXTRA_CXXFLAGS@
 EXTRA_LDFLAGS=@LEGACY_EXTRA_LDFLAGS@
+
+# Sneak this in via the spec.gmk file, since we don't want to mess around too much with the Hotspot make files.
+# This is needed to get the LOG setting to work properly.
+include $(SRC_ROOT)/common/makefiles/MakeBase.gmk

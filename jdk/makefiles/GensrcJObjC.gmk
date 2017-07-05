@@ -64,7 +64,7 @@ $(MKDIR) -p $(@D)
 if [ -f $(FRAMEWORKS_DIR)/$1.framework/Resources/BridgeSupport/$(@F) ]; then \
     $(CP) $(FRAMEWORKS_DIR)/$1.framework/Resources/BridgeSupport/$(@F) $@.tmp ;\
 else \
-    $(GBM) -F complete --framework $1 -o $@.tmp ; \
+    $(GBM) $(LOG_INFO) -F complete --framework $1 -o $@.tmp ; \
 fi
 $(MV) $@.tmp $@
 endef
@@ -88,8 +88,9 @@ $(JOBJC_TMP)/bridge/AppKitFull.bridgesupport : \
 #     classpath that ends with "JObjC.jar", and emit the new bootclasspath.
 #
 $(JOBJC_TMP)/_the.generator_bootclasspath : $(BUILD_JOBJC_PRIMITIVE_CODER)
+	$(ECHO) Generating jobjc framework bridge
 	$(RM) $@
-	$(JAVA) -cp $(JOBJC_TMP)/bin com.apple.internal.jobjc.generator.BootClassPathMinus JObjC.jar > $@.tmp
+	$(JAVA) $(LOG_INFO) -cp $(JOBJC_TMP)/bin com.apple.internal.jobjc.generator.BootClassPathMinus JObjC.jar > $@.tmp
 	$(MV) $@.tmp $@
 
 #
@@ -101,8 +102,14 @@ $(JOBJC_TMP)/_the.generator_bootclasspath : $(BUILD_JOBJC_PRIMITIVE_CODER)
 #
 $(JOBJC_TMP)/_the.generator : $(JOBJC_TMP)/_the.generator_bootclasspath | $(BRIDGESUPPORT)
 	$(RM) $@
-	$(JAVA) -d64 -Xbootclasspath:`$(CAT) $(JOBJC_TMP)/_the.generator_bootclasspath` -cp $(JOBJC_TMP)/bin -ea com.apple.internal.jobjc.generator.Generator dst=$(JOBJC_DST) frameworks=$(JOBJC_TMP)/bridge
+	$(JAVA) $(LOG_INFO) -d64 -Xbootclasspath:`$(CAT) $(JOBJC_TMP)/_the.generator_bootclasspath` -cp $(JOBJC_TMP)/bin -ea com.apple.internal.jobjc.generator.Generator dst=$(JOBJC_DST) frameworks=$(JOBJC_TMP)/bridge
 	$(TOUCH) $@
 
-GENSRC_JOBJC += $(JOBJC_TMP)/_the.generator
+# The generator delets all files in the target dir so it has to work in its
+# own dir and have the files copied over to gensrc aftewards.
+$(JDK_OUTPUTDIR)/gensrc/_the.jobjc.files : $(JOBJC_TMP)/_the.generator
+	$(MKDIR) -p $(@D)
+	$(CP) -rp $(JOBJC_DST)/* $(@D)
+	$(TOUCH) $@
 
+GENSRC_JOBJC += $(JDK_OUTPUTDIR)/gensrc/_the.jobjc.files

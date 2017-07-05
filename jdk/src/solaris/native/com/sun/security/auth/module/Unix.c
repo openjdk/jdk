@@ -47,83 +47,53 @@ Java_com_sun_security_auth_module_UnixSystem_getUnixInfo
     jsize numSuppGroups = getgroups(0, NULL);
     gid_t *groups = (gid_t *)calloc(numSuppGroups, sizeof(gid_t));
 
-    jfieldID fid;
+    jfieldID userNameID;
+    jfieldID userID;
+    jfieldID groupID;
+    jfieldID supplementaryGroupID;
+
     jstring jstr;
     jlongArray jgroups;
     jlong *jgroupsAsArray;
     jclass cls = (*env)->GetObjectClass(env, obj);
 
     memset(pwd_buf, 0, sizeof(pwd_buf));
+
     if (getpwuid_r(getuid(), &resbuf, pwd_buf, sizeof(pwd_buf), &pwd) == 0 &&
         pwd != NULL &&
         getgroups(numSuppGroups, groups) != -1) {
 
-        /*
-         * set username
-         */
-        fid = (*env)->GetFieldID(env, cls, "username", "Ljava/lang/String;");
-        if (fid == 0) {
-            jclass newExcCls =
-                (*env)->FindClass(env, "java/lang/IllegalArgumentException");
-            if (newExcCls == 0) {
-                /* Unable to find the new exception class, give up. */
-                return;
-            }
-            (*env)->ThrowNew(env, newExcCls, "invalid field: username");
-        }
+        userNameID = (*env)->GetFieldID(env, cls, "username", "Ljava/lang/String;");
+        if (userNameID == 0)
+            goto cleanUpAndReturn;
+
+        userID = (*env)->GetFieldID(env, cls, "uid", "J");
+        if (userID == 0)
+            goto cleanUpAndReturn;
+
+        groupID = (*env)->GetFieldID(env, cls, "gid", "J");
+        if (groupID == 0)
+            goto cleanUpAndReturn;
+
+        supplementaryGroupID = (*env)->GetFieldID(env, cls, "groups", "[J");
+        if (supplementaryGroupID == 0)
+            goto cleanUpAndReturn;
+
         jstr = (*env)->NewStringUTF(env, pwd->pw_name);
-        (*env)->SetObjectField(env, obj, fid, jstr);
+        (*env)->SetObjectField(env, obj, userNameID, jstr);
 
-        /*
-         * set uid
-         */
-        fid = (*env)->GetFieldID(env, cls, "uid", "J");
-        if (fid == 0) {
-            jclass newExcCls =
-                (*env)->FindClass(env, "java/lang/IllegalArgumentException");
-            if (newExcCls == 0) {
-                /* Unable to find the new exception class, give up. */
-                return;
-            }
-            (*env)->ThrowNew(env, newExcCls, "invalid field: username");
-        }
-        (*env)->SetLongField(env, obj, fid, pwd->pw_uid);
+        (*env)->SetLongField(env, obj, userID, pwd->pw_uid);
 
-        /*
-         * set gid
-         */
-        fid = (*env)->GetFieldID(env, cls, "gid", "J");
-        if (fid == 0) {
-            jclass newExcCls =
-                (*env)->FindClass(env, "java/lang/IllegalArgumentException");
-            if (newExcCls == 0) {
-                /* Unable to find the new exception class, give up. */
-                return;
-            }
-            (*env)->ThrowNew(env, newExcCls, "invalid field: username");
-        }
-        (*env)->SetLongField(env, obj, fid, pwd->pw_gid);
-
-        /*
-         * set supplementary groups
-         */
-        fid = (*env)->GetFieldID(env, cls, "groups", "[J");
-        if (fid == 0) {
-            jclass newExcCls =
-                (*env)->FindClass(env, "java/lang/IllegalArgumentException");
-            if (newExcCls == 0) {
-                /* Unable to find the new exception class, give up. */
-                return;
-            }
-            (*env)->ThrowNew(env, newExcCls, "invalid field: username");
-        }
+        (*env)->SetLongField(env, obj, groupID, pwd->pw_gid);
 
         jgroups = (*env)->NewLongArray(env, numSuppGroups);
         jgroupsAsArray = (*env)->GetLongArrayElements(env, jgroups, 0);
         for (i = 0; i < numSuppGroups; i++)
             jgroupsAsArray[i] = groups[i];
         (*env)->ReleaseLongArrayElements(env, jgroups, jgroupsAsArray, 0);
-        (*env)->SetObjectField(env, obj, fid, jgroups);
+        (*env)->SetObjectField(env, obj, supplementaryGroupID, jgroups);
     }
+cleanUpAndReturn:
+    free(groups);
     return;
 }

@@ -30,6 +30,6 @@ $(HTML32DTD): $(BUILD_TOOLS)
 	$(ECHO) "Generating HTML DTD file"
 	$(MKDIR) -p $(@D)
 	$(RM) $@
-	($(TOOL_DTDBUILDER) html32 > $@) || exit 1
+	($(TOOL_DTDBUILDER) $(LOG_INFO) html32 > $@) || exit 1
 
 GENDATA_HTML32DTD += $(HTML32DTD)

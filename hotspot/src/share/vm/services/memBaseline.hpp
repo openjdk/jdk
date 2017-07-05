@@ -320,6 +320,8 @@ class MemBaseline : public _ValueObj {
   // only available when detail tracking is on.
   MemPointerArray*  _malloc_cs;
   MemPointerArray*  _vm_cs;
+  // virtual memory map
+  MemPointerArray*  _vm_map;
 
  private:
   static MemType2Name  MemType2NameMap[NUMBER_OF_MEMORY_TYPE];
@@ -431,9 +433,6 @@ class MemBaseline : public _ValueObj {
   // sorting functions for raw records
   static int malloc_sort_by_pc(const void* p1, const void* p2);
   static int malloc_sort_by_addr(const void* p1, const void* p2);
-
-  static int vm_sort_by_pc(const void* p1, const void* p2);
-  static int vm_sort_by_addr(const void* p1, const void* p2);
 
  private:
   // sorting functions for baselined records

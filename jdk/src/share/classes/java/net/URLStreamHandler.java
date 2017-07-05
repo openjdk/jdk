@@ -37,8 +37,7 @@ import sun.net.www.ParseUtil;
  * The abstract class <code>URLStreamHandler</code> is the common
  * superclass for all stream protocol handlers. A stream protocol
  * handler knows how to make a connection for a particular protocol
- * type, such as <code>http</code>, <code>ftp</code>, or
- * <code>gopher</code>.
+ * type, such as <code>http</code> or <code>https</code>.
  * <p>
  * In most cases, an instance of a <code>URLStreamHandler</code>
  * subclass is not created directly by an application. Rather, the

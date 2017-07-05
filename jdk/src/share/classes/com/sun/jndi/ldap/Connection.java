@@ -157,7 +157,8 @@ public final class Connection implements Runnable {
     volatile IOException closureReason = null;
     volatile boolean useable = true;  // is Connection still useable
 
-    private int readTimeout;
+    int readTimeout;
+    int connectTimeout;
 
     // true means v3; false means v2
     // Called in LdapClient.authenticate() (which is synchronized)
@@ -187,6 +188,7 @@ public final class Connection implements Runnable {
         this.port = port;
         this.parent = parent;
         this.readTimeout = readTimeout;
+        this.connectTimeout = connectTimeout;
 
         if (trace != null) {
             traceFile = trace;

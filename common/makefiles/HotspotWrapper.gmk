@@ -36,9 +36,12 @@ include MakeBase.gmk
 default: all
 
 # Get all files except .hg in the hotspot directory.
-HOTSPOT_FILES :=  $(shell $(FIND) $(HOTSPOT_TOPDIR) -name ".hg" -prune -o -print)
+HOTSPOT_FILES :=  $(shell $(FIND) -L $(HOTSPOT_TOPDIR) -name ".hg" -prune -o -print)
 
+# The old build creates hotspot output dir before calling hotspot and
+# not doing it breaks builds on msys.
 $(HOTSPOT_OUTPUTDIR)/_hotspot.timestamp: $(HOTSPOT_FILES)
+	@$(MKDIR) -p $(HOTSPOT_OUTPUTDIR)
 	@($(CD) $(HOTSPOT_TOPDIR)/make && $(MAKE) -j1 $(HOTSPOT_MAKE_ARGS) SPEC=$(HOTSPOT_SPEC) BASE_SPEC=$(BASE_SPEC))
 	$(TOUCH) $@
 

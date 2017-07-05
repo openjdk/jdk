@@ -34,3 +34,7 @@ PRODUCT_NAME=OpenJDK
 PRODUCT_SUFFIX="Runtime Environment"
 JDK_RC_PLATFORM_NAME=Platform
 COMPANY_NAME=N/A
+
+# Might need better names for these
+MACOSX_BUNDLE_NAME_BASE="OpenJDK"
+MACOSX_BUNDLE_ID_BASE="net.java.openjdk"

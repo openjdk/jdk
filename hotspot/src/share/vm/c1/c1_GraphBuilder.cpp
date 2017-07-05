@@ -1844,17 +1844,12 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
         code == Bytecodes::_invokevirtual && target->is_final_method() ||
         code == Bytecodes::_invokedynamic) {
       ciMethod* inline_target = (cha_monomorphic_target != NULL) ? cha_monomorphic_target : target;
-      bool success = false;
-      if (target->is_method_handle_intrinsic()) {
-        // method handle invokes
-        success = try_method_handle_inline(target);
-      } else {
-        // static binding => check if callee is ok
-        success = try_inline(inline_target, (cha_monomorphic_target != NULL) || (exact_target != NULL), code, better_receiver);
-      }
-      CHECK_BAILOUT();
+      // static binding => check if callee is ok
+      bool success = try_inline(inline_target, (cha_monomorphic_target != NULL) || (exact_target != NULL), code, better_receiver);
 
+      CHECK_BAILOUT();
       clear_inline_bailout();
+
       if (success) {
         // Register dependence if JVMTI has either breakpoint
         // setting or hotswapping of methods capabilities since they may
@@ -3201,6 +3196,11 @@ bool GraphBuilder::try_inline(ciMethod* callee, bool holder_known, Bytecodes::Co
     return false;
   }
 
+  // method handle invokes
+  if (callee->is_method_handle_intrinsic()) {
+    return try_method_handle_inline(callee);
+  }
+
   // handle intrinsics
   if (callee->intrinsic_id() != vmIntrinsics::_none) {
     if (try_inline_intrinsics(callee)) {
@@ -3885,10 +3885,14 @@ bool GraphBuilder::try_method_handle_inline(ciMethod* callee) {
       ValueType* type = state()->stack_at(args_base)->type();
       if (type->is_constant()) {
         ciMethod* target = type->as_ObjectType()->constant_value()->as_method_handle()->get_vmtarget();
-        guarantee(!target->is_method_handle_intrinsic(), "should not happen");  // XXX remove
-        Bytecodes::Code bc = target->is_static() ? Bytecodes::_invokestatic : Bytecodes::_invokevirtual;
-        if (try_inline(target, /*holder_known*/ true, bc)) {
-          return true;
+        // We don't do CHA here so only inline static and statically bindable methods.
+        if (target->is_static() || target->can_be_statically_bound()) {
+          Bytecodes::Code bc = target->is_static() ? Bytecodes::_invokestatic : Bytecodes::_invokevirtual;
+          if (try_inline(target, /*holder_known*/ true, bc)) {
+            return true;
+          }
+        } else {
+          print_inlining(target, "not static or statically bindable", /*success*/ false);
         }
       } else {
         print_inlining(callee, "receiver not constant", /*success*/ false);
@@ -3941,9 +3945,14 @@ bool GraphBuilder::try_method_handle_inline(ciMethod* callee) {
             }
             j += t->size();  // long and double take two slots
           }
-          Bytecodes::Code bc = target->is_static() ? Bytecodes::_invokestatic : Bytecodes::_invokevirtual;
-          if (try_inline(target, /*holder_known*/ true, bc)) {
-            return true;
+          // We don't do CHA here so only inline static and statically bindable methods.
+          if (target->is_static() || target->can_be_statically_bound()) {
+            Bytecodes::Code bc = target->is_static() ? Bytecodes::_invokestatic : Bytecodes::_invokevirtual;
+            if (try_inline(target, /*holder_known*/ true, bc)) {
+              return true;
+            }
+          } else {
+            print_inlining(target, "not static or statically bindable", /*success*/ false);
           }
         }
       } else {

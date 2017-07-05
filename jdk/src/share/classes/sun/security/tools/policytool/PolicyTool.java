@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,8 @@ public class PolicyTool {
 
     // for i18n
     static final java.util.ResourceBundle rb =
-        java.util.ResourceBundle.getBundle("sun.security.util.Resources");
+        java.util.ResourceBundle.getBundle(
+            "sun.security.tools.policytool.Resources");
     static final Collator collator = Collator.getInstance();
     static {
         // this is for case insensitive string comparisons
