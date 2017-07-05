@@ -103,7 +103,9 @@ public final class ExcludeVMPlugin implements Plugin {
         List<ResourcePoolEntry> ret = javaBase.entries().filter((t) -> {
             String path = t.path();
             for (String jvmlib : jvmlibs) {
-                return t.path().endsWith("/" + jvmlib);
+                if (t.path().endsWith("/" + jvmlib)) {
+                    return true;
+                }
             }
             return false;
         }).collect(Collectors.toList());

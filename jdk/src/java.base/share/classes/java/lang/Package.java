@@ -317,6 +317,9 @@ public class Package extends NamedPackage implements java.lang.reflect.Annotated
      * @return The {@code Package} of the given name defined by the caller's
      *         class loader or its ancestors, or {@code null} if not found.
      *
+     * @throws NullPointerException
+     *         if {@code name} is {@code null}.
+     *
      * @deprecated
      * If multiple class loaders delegate to each other and define classes
      * with the same package name, and one such loader relies on the lookup
