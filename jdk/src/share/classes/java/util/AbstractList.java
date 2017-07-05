@@ -256,9 +256,8 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
     public boolean addAll(int index, Collection<? extends E> c) {
         rangeCheckForAdd(index);
         boolean modified = false;
-        Iterator<? extends E> e = c.iterator();
-        while (e.hasNext()) {
-            add(index++, e.next());
+        for (E e : c) {
+            add(index++, e);
             modified = true;
         }
         return modified;

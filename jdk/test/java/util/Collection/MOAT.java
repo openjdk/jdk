@@ -76,7 +76,7 @@ public class MOAT {
         testCollection(new LinkedBlockingQueue<Integer>(20));
         testCollection(new LinkedBlockingDeque<Integer>(20));
         testCollection(new ConcurrentLinkedQueue<Integer>());
-//         testCollection(new LinkedTransferQueue<Integer>());
+        testCollection(new LinkedTransferQueue<Integer>());
         testCollection(new ConcurrentSkipListSet<Integer>());
         testCollection(Arrays.asList(new Integer(42)));
         testCollection(Arrays.asList(1,2,3));

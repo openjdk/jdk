@@ -170,8 +170,8 @@ import java.util.Date;
  * <p>As interruption generally implies cancellation, and checks for
  * interruption are often infrequent, an implementation can favor responding
  * to an interrupt over normal method return. This is true even if it can be
- * shown that the interrupt occurred after another action may have unblocked
- * the thread. An implementation should document this behavior.
+ * shown that the interrupt occurred after another action that may have
+ * unblocked the thread. An implementation should document this behavior.
  *
  * @since 1.5
  * @author Doug Lea

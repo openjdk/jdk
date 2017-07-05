@@ -421,21 +421,23 @@ void JVMState::format(PhaseRegAlloc *regalloc, const Node *n, outputStream* st) 
         iklass = cik->as_instance_klass();
       } else if (cik->is_type_array_klass()) {
         cik->as_array_klass()->base_element_type()->print_name_on(st);
-        st->print("[%d]=", spobj->n_fields());
+        st->print("[%d]", spobj->n_fields());
       } else if (cik->is_obj_array_klass()) {
-        ciType* cie = cik->as_array_klass()->base_element_type();
-        int ndim = 1;
-        while (cie->is_obj_array_klass()) {
-          ndim += 1;
-          cie = cie->as_array_klass()->base_element_type();
+        ciKlass* cie = cik->as_obj_array_klass()->base_element_klass();
+        if (cie->is_instance_klass()) {
+          cie->print_name_on(st);
+        } else if (cie->is_type_array_klass()) {
+          cie->as_array_klass()->base_element_type()->print_name_on(st);
+        } else {
+          ShouldNotReachHere();
         }
-        cie->print_name_on(st);
+        st->print("[%d]", spobj->n_fields());
+        int ndim = cik->as_array_klass()->dimension() - 1;
         while (ndim-- > 0) {
           st->print("[]");
         }
-        st->print("[%d]=", spobj->n_fields());
       }
-      st->print("{");
+      st->print("={");
       uint nf = spobj->n_fields();
       if (nf > 0) {
         uint first_ind = spobj->first_index();
