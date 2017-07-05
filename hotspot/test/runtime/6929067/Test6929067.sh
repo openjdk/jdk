@@ -27,16 +27,9 @@ case "$OS" in
     PS=":"
     FS="/"
     ;;
-  SunOS | Windows_* | *BSD)
-    NULL=NUL
-    PS=";"
-    FS="\\"
+  * )
     echo "Test passed; only valid for Linux"
     exit 0;
-    ;;
-  * )
-    echo "Unrecognized system!"
-    exit 1;
     ;;
 esac
 

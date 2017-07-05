@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -237,8 +237,9 @@ void outputStream::date_stamp(bool guard,
   return;
 }
 
-void outputStream::indent() {
+outputStream& outputStream::indent() {
   while (_position < _indentation) sp();
+  return *this;
 }
 
 void outputStream::print_jlong(jlong value) {
@@ -249,6 +250,47 @@ void outputStream::print_jlong(jlong value) {
 void outputStream::print_julong(julong value) {
   // N.B. Same as UINT64_FORMAT
   print(os::julong_format_specifier(), value);
+}
+
+/**
+ * This prints out hex data in a 'windbg' or 'xxd' form, where each line is:
+ *   <hex-address>: 8 * <hex-halfword> <ascii translation (optional)>
+ * example:
+ * 0000000: 7f44 4f46 0102 0102 0000 0000 0000 0000  .DOF............
+ * 0000010: 0000 0000 0000 0040 0000 0020 0000 0005  .......@... ....
+ * 0000020: 0000 0000 0000 0040 0000 0000 0000 015d  .......@.......]
+ * ...
+ *
+ * indent is applied to each line.  Ends with a CR.
+ */
+void outputStream::print_data(void* data, size_t len, bool with_ascii) {
+  size_t limit = (len + 16) / 16 * 16;
+  for (size_t i = 0; i < limit; ++i) {
+    if (i % 16 == 0) {
+      indent().print("%07x:", i);
+    }
+    if (i % 2 == 0) {
+      print(" ");
+    }
+    if (i < len) {
+      print("%02x", ((unsigned char*)data)[i]);
+    } else {
+      print("  ");
+    }
+    if ((i + 1) % 16 == 0) {
+      if (with_ascii) {
+        print("  ");
+        for (size_t j = 0; j < 16; ++j) {
+          size_t idx = i + j - 15;
+          if (idx < len) {
+            char c = ((char*)data)[idx];
+            print("%c", c >= 32 && c <= 126 ? c : '.');
+          }
+        }
+      }
+      print_cr("");
+    }
+  }
 }
 
 stringStream::stringStream(size_t initial_size) : outputStream() {
