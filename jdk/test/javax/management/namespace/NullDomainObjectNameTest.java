@@ -155,7 +155,7 @@ public class NullDomainObjectNameTest {
             // namespace.
             //
             RoutingServerProxy proxy =
-                    new RoutingServerProxy(sub, "", "faked", false);
+                    new RoutingServerProxy(sub, "", "faked", true);
 
             // These should fail because the ObjectName doesn't start
             // with "faked//"

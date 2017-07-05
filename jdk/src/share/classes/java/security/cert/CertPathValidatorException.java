@@ -113,7 +113,7 @@ public class CertPathValidatorException extends GeneralSecurityException {
      * permitted, and indicates that the cause is nonexistent or unknown.)
      */
     public CertPathValidatorException(Throwable cause) {
-        this(null, cause);
+        this((cause == null ? null : cause.toString()), cause);
     }
 
     /**

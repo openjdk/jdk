@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -284,7 +284,8 @@ class GSSContextImpl implements GSSContext {
         ByteArrayOutputStream bos = new ByteArrayOutputStream(100);
         acceptSecContext(new ByteArrayInputStream(inTok, offset, len),
                          bos);
-        return bos.toByteArray();
+        byte[] out = bos.toByteArray();
+        return (out.length == 0) ? null : out;
     }
 
     public void acceptSecContext(InputStream inStream,

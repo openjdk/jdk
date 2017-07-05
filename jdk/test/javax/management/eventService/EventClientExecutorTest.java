@@ -65,8 +65,7 @@ public class EventClientExecutorTest {
                 new NamedThreadFactory("LEASE"));
 
         MBeanServer mbs = MBeanServerFactory.newMBeanServer();
-        MBeanServerForwarder mbsf = EventClientDelegate.newForwarder();
-        mbsf.setMBeanServer(mbs);
+        MBeanServerForwarder mbsf = EventClientDelegate.newForwarder(mbs, null);
         mbs = mbsf;
 
         EventClientDelegateMBean ecd = EventClientDelegate.getProxy(mbs);

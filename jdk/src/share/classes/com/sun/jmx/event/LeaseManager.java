@@ -29,6 +29,7 @@ import com.sun.jmx.remote.util.ClassLogger;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -143,9 +144,10 @@ public class LeaseManager {
     private final Runnable callback;
     private ScheduledFuture<?> scheduled;  // If null, the lease has expired.
 
+    private static final ThreadFactory threadFactory =
+            new DaemonThreadFactory("JMX LeaseManager %d");
     private final ScheduledExecutorService executor
-            = Executors.newScheduledThreadPool(1,
-            new DaemonThreadFactory("JMX LeaseManager %d"));
+            = Executors.newScheduledThreadPool(1, threadFactory);
 
     private static final ClassLogger logger =
             new ClassLogger("javax.management.event", "LeaseManager");
