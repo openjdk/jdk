@@ -23,6 +23,7 @@
 
 /* @test
  * @library /test/lib
+ * @build jdk.test.lib.RandomFactory
  * @run main TestAvailable
  * @bug 7031075 8161426
  * @summary Make sure that available() method behaves as expected.

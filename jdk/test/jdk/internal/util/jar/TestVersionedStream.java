@@ -27,6 +27,8 @@
  * @summary basic tests for multi-release jar versioned streams
  * @library /test/lib
  * @modules jdk.jartool/sun.tools.jar java.base/jdk.internal.util.jar
+ * @build jdk.test.lib.Platform
+ *        jdk.test.lib.util.FileUtils
  * @run testng TestVersionedStream
  */
 

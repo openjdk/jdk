@@ -59,6 +59,7 @@ import java.util.StringJoiner;
  *
  * @author      Kenneth Russell
  * @author      Nakul Saraiya
+ * @since 1.1
  */
 public final class Constructor<T> extends Executable {
     private Class<T>            clazz;

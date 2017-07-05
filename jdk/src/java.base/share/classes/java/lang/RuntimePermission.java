@@ -403,6 +403,7 @@ import java.lang.module.ModuleFinder;
  *
  * @author Marianne Mueller
  * @author Roland Schemers
+ * @since 1.2
  */
 
 public final class RuntimePermission extends BasicPermission {

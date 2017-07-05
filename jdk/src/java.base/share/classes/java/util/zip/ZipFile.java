@@ -70,6 +70,7 @@ import static java.util.zip.ZipUtils.*;
  * thrown.
  *
  * @author      David Connelly
+ * @since 1.1
  */
 public
 class ZipFile implements ZipConstants, Closeable {

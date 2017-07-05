@@ -316,13 +316,14 @@ class MultiExchange<U,T> {
                 })
             // 5. Handle errors and cancel any timer set
             .handle((response, ex) -> {
-                if (response != null) {
+                cancelTimer();
+                if (ex == null) {
+                    assert response != null;
                     return MinimalFuture.completedFuture(response);
                 }
                 // all exceptions thrown are handled here
                 CompletableFuture<Response> error = getExceptionalCF(ex);
                 if (error == null) {
-                    cancelTimer();
                     return responseAsyncImpl();
                 } else {
                     return error;

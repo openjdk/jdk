@@ -63,6 +63,7 @@ import java.util.StringJoiner;
  *
  * @author Kenneth Russell
  * @author Nakul Saraiya
+ * @since 1.1
  */
 public final class Method extends Executable {
     private Class<?>            clazz;
