@@ -45,19 +45,19 @@ import sun.security.util.ResourcesMgr;
  * is represented as a separate
  * persistent configuration.  The configuration may be stored as a
  * flat ASCII file, as a serialized binary file of
- * the Policy class, or as a database. <p>
+ * the Policy class, or as a database.
  *
  * <p>The Java runtime creates one global Policy object, which is used to
  * represent the static policy configuration file.  It is consulted by
  * a ProtectionDomain when the protection domain initializes its set of
- * permissions. <p>
+ * permissions.
  *
  * <p>The Policy <code>init</code> method parses the policy
  * configuration file, and then
  * populates the Policy object.  The Policy object is agnostic in that
  * it is not involved in making policy decisions.  It is merely the
  * Java runtime representation of the persistent policy configuration
- * file. <p>
+ * file.
  *
  * <p>When a protection domain needs to initialize its set of
  * permissions, it executes code such as the following
@@ -842,8 +842,7 @@ public class PolicyParser {
 
     /**
      * Each grant entry in the policy configuration file is
-     * represented by a
-     * GrantEntry object.  <p>
+     * represented by a GrantEntry object.
      *
      * <p>
      * For example, the entry
@@ -1094,7 +1093,7 @@ public class PolicyParser {
     /**
      * Each permission entry in the policy configuration file is
      * represented by a
-     * PermissionEntry object.  <p>
+     * PermissionEntry object.
      *
      * <p>
      * For example, the entry

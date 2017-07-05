@@ -45,6 +45,7 @@ public class RangeCheck {
                 true,
                 "-Xmx32m",
                 "-XX:-TransmitErrorReport",
+                "-XX:-CreateCoredumpOnCrash",
                 "-XX:-InlineUnsafeOps", // The compiler intrinsics doesn't have the assert
                 DummyClassWithMainRangeCheck.class.getName());
 

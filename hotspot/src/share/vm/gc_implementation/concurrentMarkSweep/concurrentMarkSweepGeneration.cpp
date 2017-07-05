@@ -53,6 +53,7 @@
 #include "memory/padded.hpp"
 #include "memory/referencePolicy.hpp"
 #include "memory/resourceArea.hpp"
+#include "memory/strongRootsScope.hpp"
 #include "memory/tenuredGeneration.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
@@ -64,6 +65,7 @@
 #include "runtime/vmThread.hpp"
 #include "services/memoryService.hpp"
 #include "services/runtimeService.hpp"
+#include "utilities/stack.inline.hpp"
 
 // statics
 CMSCollector* ConcurrentMarkSweepGeneration::_collector = NULL;
@@ -208,10 +210,6 @@ ConcurrentMarkSweepGeneration::ConcurrentMarkSweepGeneration(
                                            use_adaptive_freelists,
                                            dictionaryChoice);
   NOT_PRODUCT(debug_cms_space = _cmsSpace;)
-  if (_cmsSpace == NULL) {
-    vm_exit_during_initialization(
-      "CompactibleFreeListSpace allocation failure");
-  }
   _cmsSpace->_gen = this;
 
   _gc_stats = new CMSGCStats();
@@ -230,14 +228,8 @@ ConcurrentMarkSweepGeneration::ConcurrentMarkSweepGeneration(
     typedef CMSParGCThreadState* CMSParGCThreadStatePtr;
     _par_gc_thread_states =
       NEW_C_HEAP_ARRAY(CMSParGCThreadStatePtr, ParallelGCThreads, mtGC);
-    if (_par_gc_thread_states == NULL) {
-      vm_exit_during_initialization("Could not allocate par gc structs");
-    }
     for (uint i = 0; i < ParallelGCThreads; i++) {
       _par_gc_thread_states[i] = new CMSParGCThreadState(cmsSpace());
-      if (_par_gc_thread_states[i] == NULL) {
-        vm_exit_during_initialization("Could not allocate par gc structs");
-      }
     }
   } else {
     _par_gc_thread_states = NULL;
@@ -308,8 +300,6 @@ void CMSCollector::ref_processor_init() {
 
 AdaptiveSizePolicy* CMSCollector::size_policy() {
   GenCollectedHeap* gch = GenCollectedHeap::heap();
-  assert(gch->kind() == CollectedHeap::GenCollectedHeap,
-    "Wrong type of heap");
   return gch->gen_policy()->size_policy();
 }
 
@@ -586,11 +576,6 @@ CMSCollector::CMSCollector(ConcurrentMarkSweepGeneration* cmsGen,
         return;
       }
       _hash_seed = NEW_C_HEAP_ARRAY(int, num_queues, mtGC);
-      if (_hash_seed == NULL) {
-        warning("_hash_seed array allocation failure");
-        return;
-      }
-
       typedef Padded<OopTaskQueue> PaddedOopTaskQueue;
       for (i = 0; i < num_queues; i++) {
         PaddedOopTaskQueue *q = new PaddedOopTaskQueue();
@@ -633,12 +618,7 @@ CMSCollector::CMSCollector(ConcurrentMarkSweepGeneration* cmsGen,
     _eden_chunk_index = 0;
     _eden_chunk_capacity = (_young_gen->max_capacity()+CMSSamplingGrain)/CMSSamplingGrain;
     _eden_chunk_array = NEW_C_HEAP_ARRAY(HeapWord*, _eden_chunk_capacity, mtGC);
-    if (_eden_chunk_array == NULL) {
-      _eden_chunk_capacity = 0;
-      warning("GC/CMS: _eden_chunk_array allocation failure");
-    }
   }
-  assert(_eden_chunk_array != NULL || _eden_chunk_capacity == 0, "Error");
 
   // Support for parallelizing survivor space rescan
   if ((CMSParallelRemarkEnabled && CMSParallelSurvivorRemarkEnabled) || CMSParallelInitialMarkEnabled) {
@@ -648,52 +628,15 @@ CMSCollector::CMSCollector(ConcurrentMarkSweepGeneration* cmsGen,
     _survivor_plab_array  = NEW_C_HEAP_ARRAY(ChunkArray, ParallelGCThreads, mtGC);
     _survivor_chunk_array = NEW_C_HEAP_ARRAY(HeapWord*, 2*max_plab_samples, mtGC);
     _cursor               = NEW_C_HEAP_ARRAY(size_t, ParallelGCThreads, mtGC);
-    if (_survivor_plab_array == NULL || _survivor_chunk_array == NULL
-        || _cursor == NULL) {
-      warning("Failed to allocate survivor plab/chunk array");
-      if (_survivor_plab_array  != NULL) {
-        FREE_C_HEAP_ARRAY(ChunkArray, _survivor_plab_array);
-        _survivor_plab_array = NULL;
-      }
-      if (_survivor_chunk_array != NULL) {
-        FREE_C_HEAP_ARRAY(HeapWord*, _survivor_chunk_array);
-        _survivor_chunk_array = NULL;
-      }
-      if (_cursor != NULL) {
-        FREE_C_HEAP_ARRAY(size_t, _cursor);
-        _cursor = NULL;
-      }
-    } else {
-      _survivor_chunk_capacity = 2*max_plab_samples;
-      for (uint i = 0; i < ParallelGCThreads; i++) {
-        HeapWord** vec = NEW_C_HEAP_ARRAY(HeapWord*, max_plab_samples, mtGC);
-        if (vec == NULL) {
-          warning("Failed to allocate survivor plab array");
-          for (int j = i; j > 0; j--) {
-            FREE_C_HEAP_ARRAY(HeapWord*, _survivor_plab_array[j-1].array());
-          }
-          FREE_C_HEAP_ARRAY(ChunkArray, _survivor_plab_array);
-          FREE_C_HEAP_ARRAY(HeapWord*, _survivor_chunk_array);
-          _survivor_plab_array = NULL;
-          _survivor_chunk_array = NULL;
-          _survivor_chunk_capacity = 0;
-          break;
-        } else {
-          ChunkArray* cur =
-            ::new (&_survivor_plab_array[i]) ChunkArray(vec,
-                                                        max_plab_samples);
-          assert(cur->end() == 0, "Should be 0");
-          assert(cur->array() == vec, "Should be vec");
-          assert(cur->capacity() == max_plab_samples, "Error");
-        }
-      }
+    _survivor_chunk_capacity = 2*max_plab_samples;
+    for (uint i = 0; i < ParallelGCThreads; i++) {
+      HeapWord** vec = NEW_C_HEAP_ARRAY(HeapWord*, max_plab_samples, mtGC);
+      ChunkArray* cur = ::new (&_survivor_plab_array[i]) ChunkArray(vec, max_plab_samples);
+      assert(cur->end() == 0, "Should be 0");
+      assert(cur->array() == vec, "Should be vec");
+      assert(cur->capacity() == max_plab_samples, "Error");
     }
   }
-  assert(   (   _survivor_plab_array  != NULL
-             && _survivor_chunk_array != NULL)
-         || (   _survivor_chunk_capacity == 0
-             && _survivor_chunk_index == 0),
-         "Error");
 
   NOT_PRODUCT(_overflow_counter = CMSMarkStackOverflowInterval;)
   _gc_counters = new CollectorCounters("CMS", 1);
@@ -1037,7 +980,7 @@ oop ConcurrentMarkSweepGeneration::promote(oop obj, size_t obj_size) {
   assert_lock_strong(freelistLock());
 
 #ifndef PRODUCT
-  if (Universe::heap()->promotion_should_fail()) {
+  if (GenCollectedHeap::heap()->promotion_should_fail()) {
     return NULL;
   }
 #endif  // #ifndef PRODUCT
@@ -1114,7 +1057,7 @@ ConcurrentMarkSweepGeneration::par_promote(int thread_num,
                                            oop old, markOop m,
                                            size_t word_sz) {
 #ifndef PRODUCT
-  if (Universe::heap()->promotion_should_fail()) {
+  if (GenCollectedHeap::heap()->promotion_should_fail()) {
     return NULL;
   }
 #endif  // #ifndef PRODUCT
@@ -2524,7 +2467,7 @@ void CMSCollector::verify_after_remark_work_1() {
   verification_mark_bm()->iterate(&vcl);
   if (vcl.failed()) {
     gclog_or_tty->print("Verification failed");
-    Universe::heap()->print_on(gclog_or_tty);
+    gch->print_on(gclog_or_tty);
     fatal("CMS: failed marking verification after remark");
   }
 }
@@ -3071,10 +3014,10 @@ void CMSCollector::checkpointRootsInitialWork() {
       gch->set_par_threads(n_workers);
       initialize_sequential_subtasks_for_young_gen_rescan(n_workers);
       if (n_workers > 1) {
-        GenCollectedHeap::StrongRootsScope srs(gch);
+        StrongRootsScope srs;
         workers->run_task(&tsk);
       } else {
-        GenCollectedHeap::StrongRootsScope srs(gch);
+        StrongRootsScope srs;
         tsk.work(0);
       }
       gch->set_par_threads(0);
@@ -5169,11 +5112,11 @@ void CMSCollector::do_remark_parallel() {
     // necessarily be so, since it's possible that we are doing
     // ST marking.
     ReferenceProcessorMTDiscoveryMutator mt(ref_processor(), true);
-    GenCollectedHeap::StrongRootsScope srs(gch);
+    StrongRootsScope srs;
     workers->run_task(&tsk);
   } else {
     ReferenceProcessorMTDiscoveryMutator mt(ref_processor(), false);
-    GenCollectedHeap::StrongRootsScope srs(gch);
+    StrongRootsScope srs;
     tsk.work(0);
   }
 
@@ -5241,7 +5184,7 @@ void CMSCollector::do_remark_non_parallel() {
     verify_work_stacks_empty();
 
     gch->rem_set()->prepare_for_younger_refs_iterate(false); // Not parallel.
-    GenCollectedHeap::StrongRootsScope srs(gch);
+    StrongRootsScope srs;
 
     gch->gen_process_roots(_cmsGen->level(),
                            true,  // younger gens as roots

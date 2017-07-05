@@ -82,6 +82,7 @@ class TemplateTable: AllStatic {
   enum Operation { add, sub, mul, div, rem, _and, _or, _xor, shl, shr, ushr };
   enum Condition { equal, not_equal, less, less_equal, greater, greater_equal };
   enum CacheByte { f1_byte = 1, f2_byte = 2 };  // byte_no codes
+  enum RewriteControl { may_rewrite, may_not_rewrite };  // control for fast code under CDS
 
  private:
   static bool            _is_initialized;        // true if TemplateTable has been initialized
@@ -165,6 +166,10 @@ class TemplateTable: AllStatic {
   static void dload(int n);
   static void aload(int n);
   static void aload_0();
+  static void nofast_aload_0();
+  static void nofast_iload();
+  static void iload_internal(RewriteControl rc = may_rewrite);
+  static void aload_0_internal(RewriteControl rc = may_rewrite);
 
   static void istore();
   static void lstore();
@@ -279,10 +284,13 @@ class TemplateTable: AllStatic {
   static void invokehandle(int byte_no);
   static void fast_invokevfinal(int byte_no);
 
-  static void getfield_or_static(int byte_no, bool is_static);
-  static void putfield_or_static(int byte_no, bool is_static);
+  static void getfield_or_static(int byte_no, bool is_static, RewriteControl rc = may_rewrite);
+  static void putfield_or_static(int byte_no, bool is_static, RewriteControl rc = may_rewrite);
+
   static void getfield(int byte_no);
   static void putfield(int byte_no);
+  static void nofast_getfield(int byte_no);
+  static void nofast_putfield(int byte_no);
   static void getstatic(int byte_no);
   static void putstatic(int byte_no);
   static void pop_and_check_object(Register obj);
@@ -343,10 +351,8 @@ class TemplateTable: AllStatic {
   // Platform specifics
 #if defined TEMPLATETABLE_MD_HPP
 # include TEMPLATETABLE_MD_HPP
-#elif defined TARGET_ARCH_MODEL_x86_32
-# include "templateTable_x86_32.hpp"
-#elif defined TARGET_ARCH_MODEL_x86_64
-# include "templateTable_x86_64.hpp"
+#elif defined (TARGET_ARCH_MODEL_x86_32) || defined (TARGET_ARCH_MODEL_x86_64)
+# include "templateTable_x86.hpp"
 #elif defined TARGET_ARCH_MODEL_sparc
 # include "templateTable_sparc.hpp"
 #elif defined TARGET_ARCH_MODEL_zero

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2014, 2015, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1469,7 +1469,7 @@ public:
     f(op, 31, 29);
     f(0b11010000, 28, 21);
     f(0b000000, 15, 10);
-    rf(Rm, 16), rf(Rn, 5), rf(Rd, 0);
+    zrf(Rm, 16), zrf(Rn, 5), zrf(Rd, 0);
   }
 
   #define INSN(NAME, op)                                \

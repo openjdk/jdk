@@ -265,23 +265,23 @@ endif
 EXPORT_LIST += $(EXPORT_DOCS_DIR)/platform/jvmti/jvmti.html
 
 # client and server subdirectories have symbolic links to ../libjsig.so
-EXPORT_LIST += $(EXPORT_JRE_LIB_ARCH_DIR)/libjsig.$(LIBRARY_SUFFIX)
+EXPORT_LIST += $(EXPORT_LIB_ARCH_DIR)/libjsig.$(LIBRARY_SUFFIX)
 
 ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
   ifeq ($(ZIP_DEBUGINFO_FILES),1)
-      EXPORT_LIST += $(EXPORT_JRE_LIB_ARCH_DIR)/libjsig.diz
+      EXPORT_LIST += $(EXPORT_LIB_ARCH_DIR)/libjsig.diz
   else
     ifeq ($(OS_VENDOR), Darwin)
-        EXPORT_LIST += $(EXPORT_JRE_LIB_ARCH_DIR)/libjsig.$(LIBRARY_SUFFIX).dSYM
+        EXPORT_LIST += $(EXPORT_LIB_ARCH_DIR)/libjsig.$(LIBRARY_SUFFIX).dSYM
     else
-        EXPORT_LIST += $(EXPORT_JRE_LIB_ARCH_DIR)/libjsig.debuginfo
+        EXPORT_LIST += $(EXPORT_LIB_ARCH_DIR)/libjsig.debuginfo
     endif
   endif
 endif
 
-EXPORT_SERVER_DIR = $(EXPORT_JRE_LIB_ARCH_DIR)/server
-EXPORT_CLIENT_DIR = $(EXPORT_JRE_LIB_ARCH_DIR)/client
-EXPORT_MINIMAL_DIR = $(EXPORT_JRE_LIB_ARCH_DIR)/minimal
+EXPORT_SERVER_DIR = $(EXPORT_LIB_ARCH_DIR)/server
+EXPORT_CLIENT_DIR = $(EXPORT_LIB_ARCH_DIR)/client
+EXPORT_MINIMAL_DIR = $(EXPORT_LIB_ARCH_DIR)/minimal
 
 ifeq ($(findstring true, $(JVM_VARIANT_SERVER) $(JVM_VARIANT_ZERO) $(JVM_VARIANT_ZEROSHARK)), true)
   EXPORT_LIST += $(EXPORT_SERVER_DIR)/Xusage.txt
@@ -324,34 +324,34 @@ endif
 
 # Serviceability Binaries
 # No SA Support for PPC, IA64, ARM or zero
-ADD_SA_BINARIES/x86   = $(EXPORT_JRE_LIB_ARCH_DIR)/libsaproc.$(LIBRARY_SUFFIX) \
+ADD_SA_BINARIES/x86   = $(EXPORT_LIB_ARCH_DIR)/libsaproc.$(LIBRARY_SUFFIX) \
                         $(EXPORT_LIB_DIR)/sa-jdi.jar
 
 ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
   ifeq ($(ZIP_DEBUGINFO_FILES),1)
-      ADD_SA_BINARIES/x86 += $(EXPORT_JRE_LIB_ARCH_DIR)/libsaproc.diz
+      ADD_SA_BINARIES/x86 += $(EXPORT_LIB_ARCH_DIR)/libsaproc.diz
   else
     ifeq ($(OS_VENDOR), Darwin)
-        ADD_SA_BINARIES/x86 += $(EXPORT_JRE_LIB_ARCH_DIR)/libsaproc.$(LIBRARY_SUFFIX).dSYM
+        ADD_SA_BINARIES/x86 += $(EXPORT_LIB_ARCH_DIR)/libsaproc.$(LIBRARY_SUFFIX).dSYM
     else
-        ADD_SA_BINARIES/x86 += $(EXPORT_JRE_LIB_ARCH_DIR)/libsaproc.debuginfo
+        ADD_SA_BINARIES/x86 += $(EXPORT_LIB_ARCH_DIR)/libsaproc.debuginfo
     endif
   endif
 endif
 
-ADD_SA_BINARIES/sparc = $(EXPORT_JRE_LIB_ARCH_DIR)/libsaproc.$(LIBRARY_SUFFIX) \
+ADD_SA_BINARIES/sparc = $(EXPORT_LIB_ARCH_DIR)/libsaproc.$(LIBRARY_SUFFIX) \
                         $(EXPORT_LIB_DIR)/sa-jdi.jar
-ADD_SA_BINARIES/universal = $(EXPORT_JRE_LIB_ARCH_DIR)/libsaproc.$(LIBRARY_SUFFIX) \
+ADD_SA_BINARIES/universal = $(EXPORT_LIB_ARCH_DIR)/libsaproc.$(LIBRARY_SUFFIX) \
                             $(EXPORT_LIB_DIR)/sa-jdi.jar
 
 ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
   ifeq ($(ZIP_DEBUGINFO_FILES),1)
-      ADD_SA_BINARIES/universal += $(EXPORT_JRE_LIB_ARCH_DIR)/libsaproc.diz
+      ADD_SA_BINARIES/universal += $(EXPORT_LIB_ARCH_DIR)/libsaproc.diz
   else
     ifeq ($(OS_VENDOR), Darwin)
-        ADD_SA_BINARIES/universal += $(EXPORT_JRE_LIB_ARCH_DIR)/libsaproc.$(LIBRARY_SUFFIX).dSYM
+        ADD_SA_BINARIES/universal += $(EXPORT_LIB_ARCH_DIR)/libsaproc.$(LIBRARY_SUFFIX).dSYM
     else
-        ADD_SA_BINARIES/universal += $(EXPORT_JRE_LIB_ARCH_DIR)/libsaproc.debuginfo
+        ADD_SA_BINARIES/universal += $(EXPORT_LIB_ARCH_DIR)/libsaproc.debuginfo
     endif
   endif
 endif
@@ -388,25 +388,25 @@ ifeq ($(OS_VENDOR), Darwin)
     endif
 
     # Binaries to 'universalize' if built
-    UNIVERSAL_LIPO_LIST += $(EXPORT_JRE_LIB_DIR)/libjsig.$(LIBRARY_SUFFIX)
-    UNIVERSAL_LIPO_LIST += $(EXPORT_JRE_LIB_DIR)/libsaproc.$(LIBRARY_SUFFIX)
-    UNIVERSAL_LIPO_LIST += $(EXPORT_JRE_LIB_DIR)/server/libjvm.$(LIBRARY_SUFFIX)
-    UNIVERSAL_LIPO_LIST += $(EXPORT_JRE_LIB_DIR)/client/libjvm.$(LIBRARY_SUFFIX)
+    UNIVERSAL_LIPO_LIST += $(EXPORT_LIB_DIR)/libjsig.$(LIBRARY_SUFFIX)
+    UNIVERSAL_LIPO_LIST += $(EXPORT_LIB_DIR)/libsaproc.$(LIBRARY_SUFFIX)
+    UNIVERSAL_LIPO_LIST += $(EXPORT_LIB_DIR)/server/libjvm.$(LIBRARY_SUFFIX)
+    UNIVERSAL_LIPO_LIST += $(EXPORT_LIB_DIR)/client/libjvm.$(LIBRARY_SUFFIX)
 
     # Files to simply copy in place
-    UNIVERSAL_COPY_LIST += $(EXPORT_JRE_LIB_DIR)/server/Xusage.txt
-    UNIVERSAL_COPY_LIST += $(EXPORT_JRE_LIB_DIR)/client/Xusage.txt
+    UNIVERSAL_COPY_LIST += $(EXPORT_LIB_DIR)/server/Xusage.txt
+    UNIVERSAL_COPY_LIST += $(EXPORT_LIB_DIR)/client/Xusage.txt
     ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
       ifeq ($(ZIP_DEBUGINFO_FILES),1)
-          UNIVERSAL_COPY_LIST += $(EXPORT_JRE_LIB_DIR)/server/libjvm.diz
-          UNIVERSAL_COPY_LIST += $(EXPORT_JRE_LIB_DIR)/client/libjvm.diz
-          UNIVERSAL_COPY_LIST += $(EXPORT_JRE_LIB_DIR)/libjsig.diz
-          UNIVERSAL_COPY_LIST += $(EXPORT_JRE_LIB_DIR)/libsaproc.diz
+          UNIVERSAL_COPY_LIST += $(EXPORT_LIB_DIR)/server/libjvm.diz
+          UNIVERSAL_COPY_LIST += $(EXPORT_LIB_DIR)/client/libjvm.diz
+          UNIVERSAL_COPY_LIST += $(EXPORT_LIB_DIR)/libjsig.diz
+          UNIVERSAL_COPY_LIST += $(EXPORT_LIB_DIR)/libsaproc.diz
       else
-          UNIVERSAL_COPY_LIST += $(EXPORT_JRE_LIB_DIR)/server/libjvm.$(LIBRARY_SUFFIX).dSYM
-          UNIVERSAL_COPY_LIST += $(EXPORT_JRE_LIB_DIR)/client/libjvm.$(LIBRARY_SUFFIX).dSYM
-          UNIVERSAL_COPY_LIST += $(EXPORT_JRE_LIB_DIR)/libjsig.$(LIBRARY_SUFFIX).dSYM
-          UNIVERSAL_COPY_LIST += $(EXPORT_JRE_LIB_DIR)/libsaproc.$(LIBRARY_SUFFIX).dSYM
+          UNIVERSAL_COPY_LIST += $(EXPORT_LIB_DIR)/server/libjvm.$(LIBRARY_SUFFIX).dSYM
+          UNIVERSAL_COPY_LIST += $(EXPORT_LIB_DIR)/client/libjvm.$(LIBRARY_SUFFIX).dSYM
+          UNIVERSAL_COPY_LIST += $(EXPORT_LIB_DIR)/libjsig.$(LIBRARY_SUFFIX).dSYM
+          UNIVERSAL_COPY_LIST += $(EXPORT_LIB_DIR)/libsaproc.$(LIBRARY_SUFFIX).dSYM
       endif
     endif
 

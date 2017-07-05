@@ -50,6 +50,7 @@ public class ReadFromNoaccessArea {
           "-XX:+WhiteBoxAPI",
           "-XX:+UseCompressedOops",
           "-XX:HeapBaseMinAddress=33G",
+          "-XX:-CreateCoredumpOnCrash",
           "-Xmx32m",
           DummyClassWithMainTryingToReadFromNoaccessArea.class.getName());
 

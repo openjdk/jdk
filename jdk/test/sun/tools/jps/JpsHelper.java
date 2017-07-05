@@ -151,6 +151,7 @@ public final class JpsHelper {
      */
     public static OutputAnalyzer jps(List<String> vmArgs, List<String> toolArgs) throws Exception {
         JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("jps");
+        launcher.addVMArg("-XX:+UsePerfData");
         if (vmArgs != null) {
             for (String vmArg : vmArgs) {
                 launcher.addVMArg(vmArg);

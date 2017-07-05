@@ -36,6 +36,7 @@ import static org.testng.Assert.*;
 /**
  * @test
  * @bug 8039080
+ * @modules jdk.jcmd/sun.tools.jinfo
  * @run testng JInfoLauncherTest
  * @summary Test JInfo launcher argument parsing
  */

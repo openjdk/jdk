@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
  * @summary Test that Open*MBeanInfo classes include "openType" in descriptor
  *          and also test serial compatibility with Java 5.
  * @author Eamonn McManus
+ * @modules java.management
  * @run clean OpenTypeDescriptorTest
  * @run build OpenTypeDescriptorTest
  * @run main OpenTypeDescriptorTest

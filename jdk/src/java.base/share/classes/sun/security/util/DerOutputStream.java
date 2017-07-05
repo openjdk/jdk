@@ -103,7 +103,7 @@ extends ByteArrayOutputStream implements DerEncoder {
      * @param tag the DER value of the context-specific tag that replaces
      * original tag of the value in the output, such as in
      * <pre>
-     *          <em> <field> [N] IMPLICIT <type></em>
+     *          <em> {@code <field> [N] IMPLICIT <type>}</em>
      * </pre>
      * For example, <em>FooLength [1] IMPLICIT INTEGER</em>, with value=4;
      * would be encoded as "81 01 04"  whereas in explicit
@@ -245,7 +245,7 @@ extends ByteArrayOutputStream implements DerEncoder {
      * Marshals a DER bit string on the output stream.
      * The bit strings need not be byte-aligned.
      *
-     * @param bits the bit string, MSB first
+     * @param ba the bit string, MSB first
      */
     public void putUnalignedBitString(BitArray ba) throws IOException {
         byte[] bits = ba.toByteArray();
@@ -260,7 +260,7 @@ extends ByteArrayOutputStream implements DerEncoder {
      * Marshals a truncated DER bit string on the output stream.
      * The bit strings need not be byte-aligned.
      *
-     * @param bits the bit string, MSB first
+     * @param ba the bit string, MSB first
      */
     public void putTruncatedUnalignedBitString(BitArray ba) throws IOException {
         putUnalignedBitString(ba.truncate());
@@ -516,7 +516,7 @@ extends ByteArrayOutputStream implements DerEncoder {
     /**
      * Put the encoding of the length in the stream.
      *
-     * @params len the length of the attribute.
+     * @param len the length of the attribute.
      * @exception IOException on writing errors.
      */
     public void putLength(int len) throws IOException {
@@ -550,11 +550,11 @@ extends ByteArrayOutputStream implements DerEncoder {
     /**
      * Put the tag of the attribute in the stream.
      *
-     * @params class the tag class type, one of UNIVERSAL, CONTEXT,
-     *                            APPLICATION or PRIVATE
-     * @params form if true, the value is constructed, otherwise it is
+     * @param tagClass the tag class type, one of UNIVERSAL, CONTEXT,
+     *        APPLICATION or PRIVATE
+     * @param form if true, the value is constructed, otherwise it is
      * primitive.
-     * @params val the tag value
+     * @param val the tag value
      */
     public void putTag(byte tagClass, boolean form, byte val) {
         byte tag = (byte)(tagClass | val);

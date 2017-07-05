@@ -27,6 +27,7 @@
  * @summary Basic unit test of OperatingSystemMXBean.getTotalSwapSpaceSize()
  *
  * @library /lib/testlibrary
+ * @modules jdk.management
  * @build TestTotalSwap jdk.testlibrary.*
  * @run main TestTotalSwap
  *

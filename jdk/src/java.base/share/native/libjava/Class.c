@@ -67,6 +67,7 @@ static JNINativeMethod methods[] = {
     {"getProtectionDomain0", "()" PD,       (void *)&JVM_GetProtectionDomain},
     {"getDeclaredClasses0",  "()[" CLS,      (void *)&JVM_GetDeclaredClasses},
     {"getDeclaringClass0",   "()" CLS,      (void *)&JVM_GetDeclaringClass},
+    {"getSimpleBinaryName0", "()" STR,      (void *)&JVM_GetSimpleBinaryName},
     {"getGenericSignature0", "()" STR,      (void *)&JVM_GetClassSignature},
     {"getRawAnnotations",      "()" BA,        (void *)&JVM_GetClassAnnotations},
     {"getConstantPool",     "()" CPL,       (void *)&JVM_GetClassConstantPool},

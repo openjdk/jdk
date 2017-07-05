@@ -38,15 +38,12 @@ PSMarkSweepDecorator* PSMarkSweepDecorator::_destination_decorator = NULL;
 
 
 void PSMarkSweepDecorator::set_destination_decorator_tenured() {
-  ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
-  assert(heap->kind() == CollectedHeap::ParallelScavengeHeap, "Sanity");
-
+  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   _destination_decorator = heap->old_gen()->object_mark_sweep();
 }
 
 void PSMarkSweepDecorator::advance_destination_decorator() {
-  ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
-  assert(heap->kind() == CollectedHeap::ParallelScavengeHeap, "Sanity");
+  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
 
   assert(_destination_decorator != NULL, "Sanity");
 

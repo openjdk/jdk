@@ -50,13 +50,13 @@ import sun.security.util.ObjectIdentifier;
  * This extension MUST be critical.
  * <p>
  * The ASN.1 syntax for this extension is:
- * <code><pre>
+ * <pre>{@code
  * id-ce-inhibitAnyPolicy OBJECT IDENTIFIER ::=  { id-ce 54 }
  *
  * InhibitAnyPolicy ::= SkipCerts
  *
  * SkipCerts ::= INTEGER (0..MAX)
- * </pre></code>
+ * }</pre>
  * @author Anne Anderson
  * @see CertAttrSet
  * @see Extension
@@ -211,7 +211,7 @@ implements CertAttrSet<String> {
      * Get the attribute value.
      *
      * @param name name of attribute to get.  Must be SKIP_CERTS.
-     * @returns value of the attribute.  In this case it will be of type
+     * @return value of the attribute.  In this case it will be of type
      *          Integer.
      * @throws IOException on error
      */
@@ -244,7 +244,7 @@ implements CertAttrSet<String> {
      * Return an enumeration of names of attributes existing within this
      * attribute.
      *
-     * @returns enumeration of elements
+     * @return enumeration of elements
      */
     public Enumeration<String> getElements() {
         AttributeNameEnumeration elements = new AttributeNameEnumeration();
@@ -255,7 +255,7 @@ implements CertAttrSet<String> {
     /**
      * Return the name of this attribute.
      *
-     * @returns name of attribute.
+     * @return name of attribute.
      */
     public String getName() {
         return (NAME);

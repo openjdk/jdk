@@ -2811,9 +2811,38 @@ void Compile::final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc) {
     break;
   }
 
-#ifdef _LP64
-  case Op_CastPP:
-    if (n->in(1)->is_DecodeN() && Matcher::gen_narrow_oop_implicit_null_checks()) {
+  case Op_CastPP: {
+    // Remove CastPP nodes to gain more freedom during scheduling but
+    // keep the dependency they encode as control or precedence edges
+    // (if control is set already) on memory operations. Some CastPP
+    // nodes don't have a control (don't carry a dependency): skip
+    // those.
+    if (n->in(0) != NULL) {
+      ResourceMark rm;
+      Unique_Node_List wq;
+      wq.push(n);
+      for (uint next = 0; next < wq.size(); ++next) {
+        Node *m = wq.at(next);
+        for (DUIterator_Fast imax, i = m->fast_outs(imax); i < imax; i++) {
+          Node* use = m->fast_out(i);
+          if (use->is_Mem() || use->is_EncodeNarrowPtr()) {
+            use->ensure_control_or_add_prec(n->in(0));
+          } else if (use->in(0) == NULL) {
+            switch(use->Opcode()) {
+            case Op_AddP:
+            case Op_DecodeN:
+            case Op_DecodeNKlass:
+            case Op_CheckCastPP:
+            case Op_CastPP:
+              wq.push(use);
+              break;
+            }
+          }
+        }
+      }
+    }
+    const bool is_LP64 = LP64_ONLY(true) NOT_LP64(false);
+    if (is_LP64 && n->in(1)->is_DecodeN() && Matcher::gen_narrow_oop_implicit_null_checks()) {
       Node* in1 = n->in(1);
       const Type* t = n->bottom_type();
       Node* new_in1 = in1->clone();
@@ -2846,9 +2875,15 @@ void Compile::final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc) {
       if (in1->outcnt() == 0) {
         in1->disconnect_inputs(NULL, this);
       }
+    } else {
+      n->subsume_by(n->in(1), this);
+      if (n->outcnt() == 0) {
+        n->disconnect_inputs(NULL, this);
+      }
     }
     break;
-
+  }
+#ifdef _LP64
   case Op_CmpP:
     // Do this transformation here to preserve CmpPNode::sub() and
     // other TypePtr related Ideal optimizations (for example, ptr nullness).
@@ -3047,6 +3082,15 @@ void Compile::final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc) {
 
   case Op_LoadVector:
   case Op_StoreVector:
+    break;
+
+  case Op_AddReductionVI:
+  case Op_AddReductionVL:
+  case Op_AddReductionVF:
+  case Op_AddReductionVD:
+  case Op_MulReductionVI:
+  case Op_MulReductionVF:
+  case Op_MulReductionVD:
     break;
 
   case Op_PackB:

@@ -389,7 +389,7 @@ JNIEXPORT jobject JNICALL Java_sun_security_krb5_Credentials_acquireDefaultNativ
     jobject authTime, renewTillTime, hostAddresses = NULL;
     KERB_EXTERNAL_TICKET *msticket;
     int found = 0;
-    FILETIME Now, EndTime, LocalEndTime;
+    FILETIME Now, EndTime;
 
     int i, netypes;
     jint *etypes = NULL;
@@ -476,8 +476,7 @@ JNIEXPORT jobject JNICALL Java_sun_security_krb5_Credentials_acquireDefaultNativ
             GetSystemTimeAsFileTime(&Now);
             EndTime.dwLowDateTime = msticket->EndTime.LowPart;
             EndTime.dwHighDateTime = msticket->EndTime.HighPart;
-            FileTimeToLocalFileTime(&EndTime, &LocalEndTime);
-            if (CompareFileTime(&Now, &LocalEndTime) < 0) {
+            if (CompareFileTime(&Now, &EndTime) < 0) {
                 for (i=0; i<netypes; i++) {
                     if (etypes[i] == msticket->SessionKey.KeyType) {
                         found = 1;
