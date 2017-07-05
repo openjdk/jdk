@@ -24,6 +24,8 @@
 /**
  * @test
  * @bug 8087112
+ * @modules java.httpclient
+ *          jdk.httpserver
  * @library /lib/testlibrary/ /
  * @build jdk.testlibrary.SimpleSSLContext ProxyServer EchoHandler
  * @compile ../../../com/sun/net/httpserver/LogFilter.java
