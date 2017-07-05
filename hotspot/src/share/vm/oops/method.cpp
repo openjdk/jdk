@@ -1023,8 +1023,7 @@ bool Method::is_ignored_by_security_stack_walk() const {
     // This is Method.invoke() -- ignore it
     return true;
   }
-  if (JDK_Version::is_gte_jdk14x_version() &&
-      method_holder()->is_subclass_of(SystemDictionary::reflect_MethodAccessorImpl_klass())) {
+  if (method_holder()->is_subclass_of(SystemDictionary::reflect_MethodAccessorImpl_klass())) {
     // This is an auxilary frame -- ignore it
     return true;
   }

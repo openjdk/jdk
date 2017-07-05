@@ -454,7 +454,7 @@ JNIEXPORT jobjectArray JNICALL Java_sun_awt_windows_WInputMethodDescriptor_getNa
     TRY;
 
     // get list of available HKLs
-    int layoutCount = ::GetKeyboardLayoutList(0, NULL);
+    const int layoutCount = ::GetKeyboardLayoutList(0, NULL);
     HKL FAR * hKLList = (HKL FAR *)SAFE_SIZE_ARRAY_ALLOC(safe_Malloc, sizeof(HKL), layoutCount);
     CHECK_NULL_RETURN(hKLList, NULL);
     ::GetKeyboardLayoutList(layoutCount, hKLList);

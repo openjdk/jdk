@@ -102,7 +102,7 @@ public class UnixNumericGroupPrincipal implements
      *
      */
     public UnixNumericGroupPrincipal(long name, boolean primaryGroup) {
-        this.name = (new Long(name)).toString();
+        this.name = Long.toString(name);
         this.primaryGroup = primaryGroup;
     }
 
@@ -129,7 +129,7 @@ public class UnixNumericGroupPrincipal implements
      *          <code>UnixNumericGroupPrincipal</code> as a long.
      */
     public long longValue() {
-        return ((new Long(name)).longValue());
+        return Long.parseLong(name);
     }
 
     /**

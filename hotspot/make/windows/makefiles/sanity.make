@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,9 @@
 all: checkCL checkLink
 
 checkCL:
-	@ if "$(MSC_VER)" NEQ "1310" if "$(MSC_VER)" NEQ "1399" if "$(MSC_VER)" NEQ "1400" if "$(MSC_VER)" NEQ "1500" if "$(MSC_VER)" NEQ "1600" if "$(MSC_VER)" NEQ "1700" \
-	echo *** WARNING *** unrecognized cl.exe version $(MSC_VER) ($(RAW_MSC_VER)).  Use FORCE_MSC_VER to override automatic detection.
+	@ if "$(MSC_VER)" NEQ "1600" if "$(MSC_VER)" NEQ "1700" if "$(MSC_VER)" NEQ "1800" \
+	echo *** WARNING *** Unsupported cl.exe version detected: $(MSC_VER) ($(RAW_MSC_VER)), only 1600/1700/1800 (Visual Studio 2010/2012/2013) are supported.
 
 checkLink:
-	@ if "$(LD_VER)" NEQ "710" if "$(LD_VER)" NEQ "800" if "$(LD_VER)" NEQ "900" if "$(LD_VER)" NEQ "1000" if "$(LD_VER)" NEQ "1100" \
-	echo *** WARNING *** unrecognized link.exe version $(LD_VER) ($(RAW_LD_VER)).  Use FORCE_LD_VER to override automatic detection.
+	@ if "$(LD_VER)" NEQ "1000" if "$(LD_VER)" NEQ "1100" if "$(LD_VER)" NEQ "1200" \
+	echo *** WARNING *** Unsupported link.exe version detected: $(LD_VER) ($(RAW_LD_VER)), only 1000/1100/1200 (Visual Studio 2010/2012/2013) are supported.

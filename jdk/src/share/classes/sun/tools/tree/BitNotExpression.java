@@ -83,7 +83,7 @@ class BitNotExpression extends UnaryExpression {
             asm.add(where, opc_ldc, new Integer(-1));
             asm.add(where, opc_ixor);
         } else {
-            asm.add(where, opc_ldc2_w, new Long(-1));
+            asm.add(where, opc_ldc2_w, -1L);
             asm.add(where, opc_lxor);
         }
     }

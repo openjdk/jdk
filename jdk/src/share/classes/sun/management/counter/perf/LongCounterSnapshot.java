@@ -43,7 +43,7 @@ class LongCounterSnapshot extends AbstractCounter
     }
 
     public Object getValue() {
-        return new Long(value);
+        return Long.valueOf(value);
     }
 
     /**

@@ -52,10 +52,22 @@ import javax.swing.plaf.*;
  */
 @SuppressWarnings("serial") // Same-version serialization only
 public class MetalButtonUI extends BasicButtonUI {
+
     // NOTE: These are not really needed, but at this point we can't pull
     // them. Their values are updated purely for historical reasons.
+    /**
+     * The color of the focused button.
+     */
     protected Color focusColor;
+
+    /**
+     * The color of the selected button.
+     */
     protected Color selectColor;
+
+    /**
+     * The color of the disabled color.
+     */
     protected Color disabledTextColor;
 
     private static final Object METAL_BUTTON_UI_KEY = new Object();
@@ -63,6 +75,13 @@ public class MetalButtonUI extends BasicButtonUI {
     // ********************************
     //          Create PLAF
     // ********************************
+
+    /**
+     * Returns an instance of {@code MetalButtonUI}.
+     *
+     * @param c a component
+     * @return an instance of {@code MetalButtonUI}
+     */
     public static ComponentUI createUI(JComponent c) {
         AppContext appContext = AppContext.getAppContext();
         MetalButtonUI metalButtonUI =
@@ -96,17 +115,33 @@ public class MetalButtonUI extends BasicButtonUI {
     // ********************************
     //         Default Accessors
     // ********************************
+
+    /**
+     * Returns the color of the selected button.
+     *
+     * @return the color of the selected button
+     */
     protected Color getSelectColor() {
         selectColor = UIManager.getColor(getPropertyPrefix() + "select");
         return selectColor;
     }
 
+    /**
+     * Returns the color of a disabled text.
+     *
+     * @return the color of a disabled text
+     */
     protected Color getDisabledTextColor() {
         disabledTextColor = UIManager.getColor(getPropertyPrefix() +
                                                "disabledText");
         return disabledTextColor;
     }
 
+    /**
+     * Returns the color of the focused button.
+     *
+     * @return the color of the focused button
+     */
     protected Color getFocusColor() {
         focusColor = UIManager.getColor(getPropertyPrefix() + "focus");
         return focusColor;

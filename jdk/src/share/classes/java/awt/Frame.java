@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1089,6 +1089,9 @@ public class Frame extends Window implements MenuContainer {
     }
 
     /**
+     * Sets the cursor for this frame to the specified type.
+     *
+     * @param  cursorType the cursor type
      * @deprecated As of JDK version 1.1,
      * replaced by <code>Component.setCursor(Cursor)</code>.
      */
@@ -1103,6 +1106,7 @@ public class Frame extends Window implements MenuContainer {
     /**
      * @deprecated As of JDK version 1.1,
      * replaced by <code>Component.getCursor()</code>.
+     * @return the cursor type for this frame
      */
     @Deprecated
     public int getCursorType() {
@@ -1123,6 +1127,8 @@ public class Frame extends Window implements MenuContainer {
      * <b>Note</b>: To obtain a list of all ownerless windows, including
      * ownerless {@code Dialog}s (introduced in release 1.6), use {@link
      * Window#getOwnerlessWindows Window.getOwnerlessWindows}.
+     *
+     * @return the array of all {@code Frame}s created by this application
      *
      * @see Window#getWindows()
      * @see Window#getOwnerlessWindows

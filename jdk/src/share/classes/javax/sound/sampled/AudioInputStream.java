@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,27 +25,24 @@
 
 package javax.sound.sampled;
 
-import java.io.InputStream;
-import java.io.PushbackInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 
 
 /**
  * An audio input stream is an input stream with a specified audio format and
- * length.  The length is expressed in sample frames, not bytes.
- * Several methods are provided for reading a certain number of bytes from
- * the stream, or an unspecified number of bytes.
- * The audio input stream keeps track  of the last byte that was read.
- * You can skip over an arbitrary number of bytes to get to a later position
- * for reading. An audio input stream may support marks.  When you set a mark,
- * the current position is remembered so that you can return to it later.
+ * length. The length is expressed in sample frames, not bytes. Several methods
+ * are provided for reading a certain number of bytes from the stream, or an
+ * unspecified number of bytes. The audio input stream keeps track of the last
+ * byte that was read. You can skip over an arbitrary number of bytes to get to
+ * a later position for reading. An audio input stream may support marks. When
+ * you set a mark, the current position is remembered so that you can return to
+ * it later.
  * <p>
- * The <code>AudioSystem</code> class includes many methods that manipulate
- * <code>AudioInputStream</code> objects.
- * For example, the methods let you:
+ * The {@code AudioSystem} class includes many methods that manipulate
+ * {@code AudioInputStream} objects. For example, the methods let you:
  * <ul>
- * <li> obtain an
- * audio input stream from an external audio file, stream, or URL
+ * <li> obtain an audio input stream from an external audio file, stream, or URL
  * <li> write an external file from an audio input stream
  * <li> convert an audio input stream to a different audio format
  * </ul>
@@ -53,16 +50,15 @@ import java.io.IOException;
  * @author David Rivas
  * @author Kara Kytle
  * @author Florian Bomers
- *
  * @see AudioSystem
- * @see Clip#open(AudioInputStream) Clip.open(AudioInputStream)
+ * @see Clip#open(AudioInputStream)
  * @since 1.3
  */
 public class AudioInputStream extends InputStream {
 
     /**
-     * The <code>InputStream</code> from which this <code>AudioInputStream</code>
-     * object was constructed.
+     * The {@code InputStream} from which this {@code AudioInputStream} object
+     * was constructed.
      */
     private InputStream stream;
 
@@ -92,35 +88,34 @@ public class AudioInputStream extends InputStream {
     private long markpos;
 
     /**
-     * When the underlying stream could only return
-     * a non-integral number of frames, store
-     * the remainder in a temporary buffer
+     * When the underlying stream could only return a non-integral number of
+     * frames, store the remainder in a temporary buffer.
      */
     private byte[] pushBackBuffer = null;
 
     /**
-     * number of valid bytes in the pushBackBuffer
+     * number of valid bytes in the pushBackBuffer.
      */
     private int pushBackLen = 0;
 
     /**
-     * MarkBuffer at mark position
+     * MarkBuffer at mark position.
      */
     private byte[] markPushBackBuffer = null;
 
     /**
-     * number of valid bytes in the markPushBackBuffer
+     * number of valid bytes in the markPushBackBuffer.
      */
     private int markPushBackLen = 0;
 
-
     /**
-     * Constructs an audio input stream that has the requested format and length in sample frames,
-     * using audio data from the specified input stream.
-     * @param stream the stream on which this <code>AudioInputStream</code>
-     * object is based
-     * @param format the format of this stream's audio data
-     * @param length the length in sample frames of the data in this stream
+     * Constructs an audio input stream that has the requested format and length
+     * in sample frames, using audio data from the specified input stream.
+     *
+     * @param  stream the stream on which this {@code AudioInputStream} object
+     *         is based
+     * @param  format the format of this stream's audio data
+     * @param  length the length in sample frames of the data in this stream
      */
     public AudioInputStream(InputStream stream, AudioFormat format, long length) {
 
@@ -141,12 +136,12 @@ public class AudioInputStream extends InputStream {
         markpos = 0;
     }
 
-
     /**
-     * Constructs an audio input stream that reads its data from the target
-     * data line indicated.  The format of the stream is the same as that of
-     * the target data line, and the length is AudioSystem#NOT_SPECIFIED.
-     * @param line the target data line from which this stream obtains its data.
+     * Constructs an audio input stream that reads its data from the target data
+     * line indicated. The format of the stream is the same as that of the
+     * target data line, and the length is AudioSystem#NOT_SPECIFIED.
+     *
+     * @param  line the target data line from which this stream obtains its data
      * @see AudioSystem#NOT_SPECIFIED
      */
     public AudioInputStream(TargetDataLine line) {
@@ -164,29 +159,29 @@ public class AudioInputStream extends InputStream {
         markpos = 0;
     }
 
-
     /**
      * Obtains the audio format of the sound data in this audio input stream.
+     *
      * @return an audio format object describing this stream's format
      */
     public AudioFormat getFormat() {
         return format;
     }
 
-
     /**
-     * Obtains the length of the stream, expressed in sample frames rather than bytes.
+     * Obtains the length of the stream, expressed in sample frames rather than
+     * bytes.
+     *
      * @return the length in sample frames
      */
     public long getFrameLength() {
         return frameLength;
     }
 
-
     /**
-     * Reads the next byte of data from the audio input stream.  The audio input
-     * stream's frame size must be one byte, or an <code>IOException</code>
-     * will be thrown.
+     * Reads the next byte of data from the audio input stream. The audio input
+     * stream's frame size must be one byte, or an {@code IOException} will be
+     * thrown.
      *
      * @return the next byte of data, or -1 if the end of the stream is reached
      * @throws IOException if an input or output error occurs
@@ -194,6 +189,7 @@ public class AudioInputStream extends InputStream {
      * @see #read(byte[])
      * @see #available
      */
+    @Override
     public int read() throws IOException {
         if( frameSize != 1 ) {
             throw new IOException("cannot read a single byte if frame size > 1");
@@ -208,50 +204,50 @@ public class AudioInputStream extends InputStream {
         return data[0] & 0xFF;
     }
 
-
     /**
-     * Reads some number of bytes from the audio input stream and stores them into
-     * the buffer array <code>b</code>. The number of bytes actually read is
-     * returned as an integer. This method blocks until input data is
-     * available, the end of the stream is detected, or an exception is thrown.
-     * <p>This method will always read an integral number of frames.
-     * If the length of the array is not an integral number
-     * of frames, a maximum of <code>b.length - (b.length % frameSize)
-     * </code> bytes will be read.
+     * Reads some number of bytes from the audio input stream and stores them
+     * into the buffer array {@code b}. The number of bytes actually read is
+     * returned as an integer. This method blocks until input data is available,
+     * the end of the stream is detected, or an exception is thrown.
+     * <p>
+     * This method will always read an integral number of frames. If the length
+     * of the array is not an integral number of frames, a maximum of
+     * {@code b.length - (b.length % frameSize)} bytes will be read.
      *
-     * @param b the buffer into which the data is read
-     * @return the total number of bytes read into the buffer, or -1 if there
-     * is no more data because the end of the stream has been reached
+     * @param  b the buffer into which the data is read
+     * @return the total number of bytes read into the buffer, or -1 if there is
+     *         no more data because the end of the stream has been reached
      * @throws IOException if an input or output error occurs
      * @see #read(byte[], int, int)
      * @see #read()
      * @see #available
      */
+    @Override
     public int read(byte[] b) throws IOException {
         return read(b,0,b.length);
     }
 
-
     /**
      * Reads up to a specified maximum number of bytes of data from the audio
      * stream, putting them into the given byte array.
-     * <p>This method will always read an integral number of frames.
-     * If <code>len</code> does not specify an integral number
-     * of frames, a maximum of <code>len - (len % frameSize)
-     * </code> bytes will be read.
+     * <p>
+     * This method will always read an integral number of frames. If {@code len}
+     * does not specify an integral number of frames, a maximum of
+     * {@code len - (len % frameSize)} bytes will be read.
      *
-     * @param b the buffer into which the data is read
-     * @param off the offset, from the beginning of array <code>b</code>, at which
-     * the data will be written
-     * @param len the maximum number of bytes to read
-     * @return the total number of bytes read into the buffer, or -1 if there
-     * is no more data because the end of the stream has been reached
+     * @param  b the buffer into which the data is read
+     * @param  off the offset, from the beginning of array {@code b}, at which
+     *         the data will be written
+     * @param  len the maximum number of bytes to read
+     * @return the total number of bytes read into the buffer, or -1 if there is
+     *         no more data because the end of the stream has been reached
      * @throws IOException if an input or output error occurs
      * @see #read(byte[])
      * @see #read()
      * @see #skip
      * @see #available
      */
+    @Override
     public int read(byte[] b, int off, int len) throws IOException {
 
         // make sure we don't read fractions of a frame.
@@ -313,16 +309,17 @@ public class AudioInputStream extends InputStream {
         return bytesRead;
     }
 
-
     /**
-     * Skips over and discards a specified number of bytes from this
-     * audio input stream.
-     * @param n the requested number of bytes to be skipped
+     * Skips over and discards a specified number of bytes from this audio input
+     * stream.
+     *
+     * @param  n the requested number of bytes to be skipped
      * @return the actual number of bytes skipped
      * @throws IOException if an input or output error occurs
      * @see #read
      * @see #available
      */
+    @Override
     public long skip(long n) throws IOException {
 
         // make sure not to skip fractional frames
@@ -351,21 +348,23 @@ public class AudioInputStream extends InputStream {
 
     }
 
-
     /**
-     * Returns the maximum number of bytes that can be read (or skipped over) from this
-     * audio input stream without blocking.  This limit applies only to the next invocation of
-     * a <code>read</code> or <code>skip</code> method for this audio input stream; the limit
-     * can vary each time these methods are invoked.
-     * Depending on the underlying stream,an IOException may be thrown if this
-     * stream is closed.
-     * @return the number of bytes that can be read from this audio input stream without blocking
+     * Returns the maximum number of bytes that can be read (or skipped over)
+     * from this audio input stream without blocking. This limit applies only
+     * to the next invocation of a {@code read} or {@code skip} method for this
+     * audio input stream; the limit can vary each time these methods are
+     * invoked. Depending on the underlying stream, an IOException may be thrown
+     * if this stream is closed.
+     *
+     * @return the number of bytes that can be read from this audio input stream
+     *         without blocking
      * @throws IOException if an input or output error occurs
      * @see #read(byte[], int, int)
      * @see #read(byte[])
      * @see #read()
      * @see #skip
      */
+    @Override
     public int available() throws IOException {
 
         int temp = stream.available();
@@ -378,25 +377,26 @@ public class AudioInputStream extends InputStream {
         }
     }
 
-
     /**
-     * Closes this audio input stream and releases any system resources associated
-     * with the stream.
+     * Closes this audio input stream and releases any system resources
+     * associated with the stream.
+     *
      * @throws IOException if an input or output error occurs
      */
+    @Override
     public void close() throws IOException {
         stream.close();
     }
 
-
     /**
      * Marks the current position in this audio input stream.
-     * @param readlimit the maximum number of bytes that can be read before
-     * the mark position becomes invalid.
+     *
+     * @param  readlimit the maximum number of bytes that can be read before the
+     *         mark position becomes invalid.
      * @see #reset
      * @see #markSupported
      */
-
+    @Override
     public void mark(int readlimit) {
 
         stream.mark(readlimit);
@@ -413,14 +413,15 @@ public class AudioInputStream extends InputStream {
         }
     }
 
-
     /**
-     * Repositions this audio input stream to the position it had at the time its
-     * <code>mark</code> method was last invoked.
-     * @throws IOException if an input or output error occurs.
+     * Repositions this audio input stream to the position it had at the time
+     * its {@code mark} method was last invoked.
+     *
+     * @throws IOException if an input or output error occurs
      * @see #mark
      * @see #markSupported
      */
+    @Override
     public void reset() throws IOException {
 
         stream.reset();
@@ -435,20 +436,20 @@ public class AudioInputStream extends InputStream {
         }
     }
 
-
     /**
-     * Tests whether this audio input stream supports the <code>mark</code> and
-     * <code>reset</code> methods.
-     * @return <code>true</code> if this stream supports the <code>mark</code>
-     * and <code>reset</code> methods; <code>false</code> otherwise
+     * Tests whether this audio input stream supports the {@code mark} and
+     * {@code reset} methods.
+     *
+     * @return {@code true} if this stream supports the {@code mark} and
+     *         {@code reset} methods; {@code false} otherwise
      * @see #mark
      * @see #reset
      */
+    @Override
     public boolean markSupported() {
 
         return stream.markSupported();
     }
-
 
     /**
      * Private inner class that makes a TargetDataLine look like an InputStream.
@@ -460,19 +461,19 @@ public class AudioInputStream extends InputStream {
          */
         TargetDataLine line;
 
-
         TargetDataLineInputStream(TargetDataLine line) {
             super();
             this.line = line;
         }
 
-
+        @Override
         public int available() throws IOException {
             return line.available();
         }
 
         //$$fb 2001-07-16: added this method to correctly close the underlying TargetDataLine.
         // fixes bug 4479984
+        @Override
         public void close() throws IOException {
             // the line needs to be flushed and stopped to avoid a dead lock...
             // Probably related to bugs 4417527, 4334868, 4383457
@@ -483,6 +484,7 @@ public class AudioInputStream extends InputStream {
             line.close();
         }
 
+        @Override
         public int read() throws IOException {
 
             byte[] b = new byte[1];
@@ -502,7 +504,7 @@ public class AudioInputStream extends InputStream {
             return value;
         }
 
-
+        @Override
         public int read(byte[] b, int off, int len) throws IOException {
             try {
                 return line.read(b, off, len);

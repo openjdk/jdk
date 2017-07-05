@@ -32,6 +32,8 @@ import javax.swing.*;
 @test
 @summary Simple Overlapping test for javax.swing.JToggleButton
 @author sergey.grinev@oracle.com: area=awt.mixing
+@library ../../regtesthelpers
+@build Util
 @run main JToggleButtonInGlassPaneOverlapping
  */
 public class JToggleButtonInGlassPaneOverlapping extends GlassPaneOverlappingTestBase {

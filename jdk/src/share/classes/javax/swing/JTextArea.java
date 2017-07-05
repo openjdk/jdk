@@ -123,6 +123,7 @@ import java.io.IOException;
  * @author  Timothy Prinzing
  * @see JTextPane
  * @see JEditorPane
+ * @since 1.2
  */
 @SuppressWarnings("serial") // Same-version serialization only
 public class JTextArea extends JTextComponent {

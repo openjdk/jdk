@@ -23,41 +23,21 @@
 
 /*
  * A simple "Application" used by the Attach API unit tests. This application is
- * launched by the test. It binds to a random port and shuts down when somebody
- * connects to that port.
- * Used port and pid are written both to stdout and to a specified file.
+ * launched by the test.
  */
-import java.net.Socket;
-import java.net.ServerSocket;
-import java.io.PrintWriter;
-import jdk.testlibrary.ProcessTools;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 
 public class Application {
+    public static final String READY_MSG="ready";
+    public static final String SHUTDOWN_MSG="shutdown";
+
     public static void main(String args[]) throws Exception {
-        // bind to a random port
-        if (args.length < 1) {
-            System.err.println("First argument should be path to output file.");
-        }
-        String outFileName = args[0];
-
-        ServerSocket ss = new ServerSocket(0);
-        int port = ss.getLocalPort();
-        int pid = ProcessTools.getProcessId();
-
-        System.out.println("shutdownPort=" + port);
-        System.out.println("pid=" + pid);
+        System.out.println(READY_MSG);
         System.out.flush();
 
-        try (PrintWriter writer = new PrintWriter(outFileName)) {
-            writer.println("shutdownPort=" + port);
-            writer.println("pid=" + pid);
-            writer.println("done");
-            writer.flush();
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(System.in))) {
+            while (!br.readLine().equals(SHUTDOWN_MSG));
         }
-
-        // wait for test harness to connect
-        Socket s = ss.accept();
-        s.close();
-        ss.close();
     }
 }

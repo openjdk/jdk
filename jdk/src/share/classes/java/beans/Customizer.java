@@ -33,6 +33,8 @@ package java.beans;
  * it can be instantiated inside an AWT dialog or panel.
  * <P>
  * Each customizer should have a null constructor.
+ *
+ * @since 1.1
  */
 
 public interface Customizer {

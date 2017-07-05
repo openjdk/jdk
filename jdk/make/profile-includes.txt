@@ -56,7 +56,6 @@ PROFILE_1_JRE_LIB_FILES := \
     $(OPENJDK_TARGET_CPU_LEGACY_LIB)/server/Xusage.txt \
     calendars.properties \
     classlist \
-    currency.data \
     ext/localedata.jar \
     ext/meta-index \
     ext/sunec.jar \

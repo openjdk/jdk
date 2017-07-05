@@ -319,7 +319,6 @@ endif
 
 ifeq ($(OPENJDK_TARGET_OS), macosx)
   LIBAWT_FILES += awt_LoadLibrary.c
-  LIBAWT_CFLAGS += -F/System/Library/Frameworks/JavaVM.framework/Frameworks
 endif
 
 ifeq ($(OPENJDK_TARGET_OS)-$(OPENJDK_TARGET_CPU_ARCH), solaris-sparc)
@@ -484,7 +483,6 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBAWT, \
     LDFLAGS_SUFFIX_macosx := -lmlib_image -ljvm $(LIBM) \
         -framework Cocoa \
         -framework OpenGL \
-        -F/System/Library/Frameworks/JavaVM.framework/Frameworks \
         -framework JavaNativeFoundation \
         -framework JavaRuntimeSupport \
         -framework ApplicationServices \
@@ -709,20 +707,23 @@ $(BUILD_LIBLCMS): $(BUILD_LIBAWT)
 
 ##########################################################################################
 
+BUILD_LIBJAVAJPEG_DIR := $(JDK_TOPDIR)/src/share/native/sun/awt/image/jpeg
+
 ifdef OPENJDK
-  BUILD_LIBJPEG_MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libjpeg/mapfile-vers
+  BUILD_LIBJAVAJPEG_MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libjpeg/mapfile-vers
 else
-  BUILD_LIBJPEG_MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libjpeg/mapfile-vers-closed
-  BUILD_LIBJPEG_CLOSED_SRC := $(JDK_TOPDIR)/src/closed/share/native/sun/awt/image/jpeg
-  BUILD_LIBJPEG_CLOSED_INCLUDES := -I$(BUILD_LIBJPEG_CLOSED_SRC)
+  BUILD_LIBJAVAJPEG_MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libjpeg/mapfile-vers-closed
+  BUILD_LIBJAVAJPEG_CLOSED_SRC := $(JDK_TOPDIR)/src/closed/share/native/sun/awt/image/jpeg
+  BUILD_LIBJAVAJPEG_CLOSED_INCLUDES := -I$(BUILD_LIBJAVAJPEG_CLOSED_SRC)
 endif
 
-BUILD_LIBJPEG_REORDER :=
+BUILD_LIBJAVAJPEG_REORDER :=
 ifeq ($(OPENJDK_TARGET_OS), solaris)
   ifneq ($(OPENJDK_TARGET_CPU), x86_64)
-    BUILD_LIBJPEG_REORDER := $(JDK_TOPDIR)/make/mapfiles/libjpeg/reorder-$(OPENJDK_TARGET_CPU)
+    BUILD_LIBJAVAJPEG_REORDER := $(JDK_TOPDIR)/make/mapfiles/libjpeg/reorder-$(OPENJDK_TARGET_CPU)
   endif
 endif
+
 
 # Suppress gcc warnings like "variable might be clobbered by 'longjmp'
 # or 'vfork'": this warning indicates that some variable is placed to
@@ -735,37 +736,50 @@ endif
 #      $(shell $(EXPR) $(CC_MAJORVER) \> 4 \| \
 #          \( $(CC_MAJORVER) = 4 \& $(CC_MINORVER) \>= 3 \) )
 #  ifeq ($(CC_43_OR_NEWER), 1)
-#    BUILD_LIBJPEG_CFLAGS_linux += -Wno-clobbered
+#    BUILD_LIBJAVAJPEG_CFLAGS_linux += -Wno-clobbered
 #  endif
 #endif
 
-$(eval $(call SetupNativeCompilation,BUILD_LIBJPEG, \
-    LIBRARY := jpeg, \
+ifeq ($(USE_EXTERNAL_LIBJPEG), true)
+  LIBJPEG_LIBS := -ljpeg
+  BUILD_LIBJAVAJPEG_INCLUDE_FILES := \
+      imageIOJPEG.c \
+      jpegdecoder.c
+  BUILD_LIBJAVAJPEG_HEADERS :=
+else
+  LIBJPEG_LIBS :=
+  BUILD_LIBJAVAJPEG_INCLUDE_FILES :=
+  BUILD_LIBJAVAJPEG_HEADERS := -I$(BUILD_LIBJAVAJPEG_DIR)
+endif
+
+$(eval $(call SetupNativeCompilation,BUILD_LIBJAVAJPEG, \
+    LIBRARY := javajpeg, \
     OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
-    SRC := $(BUILD_LIBJPEG_CLOSED_SRC) \
-        $(JDK_TOPDIR)/src/share/native/sun/awt/image/jpeg, \
+    SRC := $(BUILD_LIBJAVAJPEG_CLOSED_SRC) \
+        $(BUILD_LIBJAVAJPEG_DIR), \
+    INCLUDE_FILES := $(BUILD_LIBJAVAJPEG_INCLUDE_FILES), \
     LANG := C, \
     OPTIMIZATION := HIGHEST, \
     CFLAGS := $(CFLAGS_JDKLIB) \
-        $(BUILD_LIBJPEG_CLOSED_INCLUDES) \
-        -I$(JDK_TOPDIR)/src/share/native/sun/awt/image/jpeg, \
-    MAPFILE := $(BUILD_LIBJPEG_MAPFILE), \
-    LDFLAGS := $(LDFLAGS_JDKLIB) \
+        $(BUILD_LIBJAVAJPEG_CLOSED_INCLUDES) \
+        $(BUILD_LIBJAVAJPEG_HEADERS), \
+    MAPFILE := $(BUILD_LIBJAVAJPEG_MAPFILE), \
+    LDFLAGS := $(LDFLAGS_JDKLIB) $(LIBJPEG_LIBS) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LDFLAGS_windows := $(WIN_JAVA_LIB) jvm.lib, \
     LDFLAGS_SUFFIX := $(LDFLAGS_JDKLIB_SUFFIX), \
     VERSIONINFO_RESOURCE := $(JDK_TOPDIR)/src/windows/resource/version.rc, \
     RC_FLAGS := $(RC_FLAGS) \
-        -D "JDK_FNAME=jpeg.dll" \
-        -D "JDK_INTERNAL_NAME=jpeg" \
+        -D "JDK_FNAME=javajpeg.dll" \
+        -D "JDK_INTERNAL_NAME=javajpeg" \
         -D "JDK_FTYPE=0x2L", \
-    REORDER := $(BUILD_LIBJPEG_REORDER), \
+    REORDER := $(BUILD_LIBJAVAJPEG_REORDER), \
     OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/libjpeg, \
     DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
 
-$(BUILD_LIBJPEG): $(BUILD_LIBJAVA)
+$(BUILD_LIBJAVAJPEG): $(BUILD_LIBJAVA)
 
-BUILD_LIBRARIES += $(BUILD_LIBJPEG)
+BUILD_LIBRARIES += $(BUILD_LIBJAVAJPEG)
 
 ##########################################################################################
 
@@ -1130,12 +1144,6 @@ ifeq ($(BUILD_HEADLESS), true)
         -I$(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/sun/jdga \
         $(foreach dir, $(LIBAWT_HEADLESS_DIRS), -I$(dir))
 
-    ifeq ($(OPENJDK_TARGET_OS), macosx)
-      LIBAWT_HEADLESS_CFLAGS += \
-          -F/System/Library/Frameworks/JavaVM.framework/Frameworks \
-          -F/System/Library/Frameworks/ApplicationServices.framework/Frameworks
-    endif
-
     LIBAWT_HEADLESS_FILES := \
         awt_Font.c \
         HeadlessToolkit.c \
@@ -1213,6 +1221,13 @@ ifndef BUILD_HEADLESS_ONLY
     GIFLIB_CFLAGS := -I$(JDK_TOPDIR)/src/share/native/sun/awt/giflib
   endif
 
+  ifeq ($(USE_EXTERNAL_LIBJPEG), true)
+    LIBJPEG_LDFLAGS := -ljpeg
+  else
+    LIBSPLASHSCREEN_DIRS += $(JDK_TOPDIR)/src/share/native/sun/awt/image/jpeg
+    LIBJPEG_CFLAGS := -I$(JDK_TOPDIR)/src/share/native/sun/awt/image/jpeg
+  endif
+
   ifeq ($(USE_EXTERNAL_LIBPNG), false)
     LIBSPLASHSCREEN_DIRS += $(JDK_TOPDIR)/src/share/native/sun/awt/libpng
     LIBPNG_CFLAGS := -I$(JDK_TOPDIR)/src/share/native/sun/awt/libpng
@@ -1229,8 +1244,7 @@ ifndef BUILD_HEADLESS_ONLY
 
   ifeq ($(OPENJDK_TARGET_OS), macosx)
     LIBSPLASHSCREEN_CFLAGS := -I$(JDK_TOPDIR)/src/macosx/native/sun/awt/splashscreen \
-        $(LIBSPLASHSCREEN_CFLAGS) \
-        -F/System/Library/Frameworks/JavaVM.framework/Frameworks
+        $(LIBSPLASHSCREEN_CFLAGS)
     LIBSPLASHSCREEN_CFLAGS += -DWITH_MACOSX
     LIBSPLASHSCREEN_CFLAGS += -I$(JDK_TOPDIR)/src/macosx/native/sun/osxapp
 
@@ -1260,7 +1274,6 @@ ifndef BUILD_HEADLESS_ONLY
         -framework ApplicationServices \
         -framework Foundation \
         -framework Cocoa \
-        -F/System/Library/Frameworks/JavaVM.framework/Frameworks \
         -framework JavaNativeFoundation
   else ifeq ($(OPENJDK_TARGET_OS), windows)
     LIBSPLASHSCREEN_LDFLAGS_SUFFIX += kernel32.lib user32.lib gdi32.lib delayimp.lib -DELAYLOAD:user32.dll
@@ -1276,12 +1289,12 @@ ifndef BUILD_HEADLESS_ONLY
       LANG := C, \
       OPTIMIZATION := LOW, \
       CFLAGS := $(LIBSPLASHSCREEN_CFLAGS) $(CFLAGS_JDKLIB) \
-                $(GIFLIB_CFLAGS) $(PNG_CFLAGS), \
+                $(GIFLIB_CFLAGS) $(LIBJPEG_CFLAGS) $(PNG_CFLAGS), \
       MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libsplashscreen/mapfile-vers, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
       LDFLAGS_SUFFIX := $(LIBSPLASHSCREEN_LDFLAGS_SUFFIX) $(LIBZ) \
-                        $(GIFLIB_LDFLAGS) $(PNG_LIBS), \
+                        $(GIFLIB_LDFLAGS) $(LIBJPEG_LDFLAGS) $(PNG_LIBS), \
       LDFLAGS_SUFFIX_solaris := -lc, \
       VERSIONINFO_RESOURCE := $(JDK_TOPDIR)/src/windows/resource/version.rc, \
       RC_FLAGS := $(RC_FLAGS) \
@@ -1445,9 +1458,7 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
           -I$(JDK_TOPDIR)/src/share/native/sun/awt/image/cvutils \
           -I$(JDK_TOPDIR)/src/share/native/sun/java2d/loops \
           -I$(JDK_TOPDIR)/src/share/native/sun/java2d/pipe \
-          -I$(JDK_TOPDIR)/src/share/native/sun/awt/debug \
-          -F/System/Library/Frameworks/JavaVM.framework/Frameworks \
-          -F/System/Library/Frameworks/ApplicationServices.framework/Frameworks, \
+          -I$(JDK_TOPDIR)/src/share/native/sun/awt/debug, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
       LDFLAGS_SUFFIX_macosx := -lawt -lmlib_image -losxapp -ljvm $(LIBM) \
@@ -1458,7 +1469,6 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
           -framework Cocoa \
           -framework Security \
           -framework ExceptionHandling \
-          -F/System/Library/Frameworks/JavaVM.framework/Frameworks \
           -framework JavaNativeFoundation \
           -framework JavaRuntimeSupport \
           -framework OpenGL \
@@ -1491,8 +1501,7 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
       CFLAGS := $(CFLAGS_JDKLIB) \
           -I$(JDK_TOPDIR)/src/macosx/native/com/apple/laf \
           -I$(JDK_TOPDIR)/src/macosx/native/sun/osxapp \
-          -I$(JDK_TOPDIR)/src/macosx/native/sun/awt \
-          -F/System/Library/Frameworks/JavaVM.framework/Frameworks, \
+          -I$(JDK_TOPDIR)/src/macosx/native/sun/awt, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN) \
           -Xlinker -rpath -Xlinker @loader_path, \
@@ -1500,7 +1509,6 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
           -framework Cocoa \
           -framework Carbon \
           -framework ApplicationServices \
-          -F/System/Library/Frameworks/JavaVM.framework/Frameworks \
           -framework JavaNativeFoundation \
           -framework JavaRuntimeSupport \
           -ljava -ljvm, \

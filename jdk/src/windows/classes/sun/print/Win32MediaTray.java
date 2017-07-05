@@ -50,8 +50,8 @@ public class Win32MediaTray extends MediaTray {
     static final Win32MediaTray FORMSOURCE = new Win32MediaTray(5,
                                                       15); //DMBIN_FORMSOURCE
 
-    private static ArrayList winStringTable = new ArrayList();
-    private static ArrayList winEnumTable = new ArrayList();
+    private static ArrayList<String> winStringTable = new ArrayList<>();
+    private static ArrayList<Win32MediaTray> winEnumTable = new ArrayList<>();
     public int winID;
 
     private Win32MediaTray(int value, int id) {
@@ -97,22 +97,22 @@ public class Win32MediaTray extends MediaTray {
     }
 
     protected String[] getStringTable() {
-      ArrayList completeList = new ArrayList();
+      ArrayList<String> completeList = new ArrayList<>();
       for (int i=0; i < myStringTable.length; i++) {
         completeList.add(myStringTable[i]);
       }
       completeList.addAll(winStringTable);
       String[] nameTable = new String[completeList.size()];
-      return (String[])completeList.toArray(nameTable);
+      return completeList.toArray(nameTable);
     }
 
     protected EnumSyntax[] getEnumValueTable() {
-      ArrayList completeList = new ArrayList();
+      ArrayList<MediaTray> completeList = new ArrayList<>();
       for (int i=0; i < myEnumValueTable.length; i++) {
         completeList.add(myEnumValueTable[i]);
       }
       completeList.addAll(winEnumTable);
       MediaTray[] enumTable = new MediaTray[completeList.size()];
-      return (MediaTray[])completeList.toArray(enumTable);
+      return completeList.toArray(enumTable);
     }
 }

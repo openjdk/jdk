@@ -172,7 +172,7 @@ public class SimpleAttributeSet implements MutableAttributeSet, Serializable, Cl
     public boolean containsAttributes(AttributeSet attributes) {
         boolean result = true;
 
-        Enumeration names = attributes.getAttributeNames();
+        Enumeration<?> names = attributes.getAttributeNames();
         while (result && names.hasMoreElements()) {
             Object name = names.nextElement();
             result = attributes.getAttribute(name).equals(getAttribute(name));
@@ -197,7 +197,7 @@ public class SimpleAttributeSet implements MutableAttributeSet, Serializable, Cl
      * @param attributes the set of attributes to add
      */
     public void addAttributes(AttributeSet attributes) {
-        Enumeration names = attributes.getAttributeNames();
+        Enumeration<?> names = attributes.getAttributeNames();
         while (names.hasMoreElements()) {
             Object name = names.nextElement();
             addAttribute(name, attributes.getAttribute(name));
@@ -233,7 +233,7 @@ public class SimpleAttributeSet implements MutableAttributeSet, Serializable, Cl
             table.clear();
         }
         else {
-            Enumeration names = attributes.getAttributeNames();
+            Enumeration<?> names = attributes.getAttributeNames();
             while (names.hasMoreElements()) {
                 Object name = names.nextElement();
                 Object value = attributes.getAttribute(name);
@@ -272,6 +272,7 @@ public class SimpleAttributeSet implements MutableAttributeSet, Serializable, Cl
      *
      * @return the new set of attributes
      */
+    @SuppressWarnings("unchecked") // Cast of result of clone
     public Object clone() {
         SimpleAttributeSet attr;
         try {
@@ -317,7 +318,7 @@ public class SimpleAttributeSet implements MutableAttributeSet, Serializable, Cl
      */
     public String toString() {
         String s = "";
-        Enumeration names = getAttributeNames();
+        Enumeration<?> names = getAttributeNames();
         while (names.hasMoreElements()) {
             Object key = names.nextElement();
             Object value = getAttribute(key);
@@ -364,7 +365,7 @@ public class SimpleAttributeSet implements MutableAttributeSet, Serializable, Cl
         public Object getAttribute(Object key) {
             return null;
         }
-        public Enumeration getAttributeNames() {
+        public Enumeration<?> getAttributeNames() {
             return Collections.emptyEnumeration();
         }
         public boolean containsAttribute(Object name, Object value) {

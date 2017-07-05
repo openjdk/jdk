@@ -38,6 +38,7 @@ package javax.swing;
  * Please see {@link java.beans.XMLEncoder}.
  *
  * @author unattributed
+ * @since 1.2
  */
 @SuppressWarnings("serial") // Same-version serialization only
 public class UnsupportedLookAndFeelException extends Exception

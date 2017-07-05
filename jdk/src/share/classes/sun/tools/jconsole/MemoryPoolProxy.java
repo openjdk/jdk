@@ -56,7 +56,7 @@ public class MemoryPoolProxy {
                 ObjectName mbeanName = new ObjectName(GARBAGE_COLLECTOR_MXBEAN_DOMAIN_TYPE +
                                                       ",name=" + name);
                 if (client.isRegistered(mbeanName)) {
-                    gcMBeans.put(mbeanName, new Long(0));
+                    gcMBeans.put(mbeanName, 0L);
                 }
             } catch (Exception e) {
                 assert false;
@@ -97,7 +97,7 @@ public class MemoryPoolProxy {
             Long gcCount = e.getValue();
             Long newCount = gc.getCollectionCount();
             if (newCount > gcCount) {
-                gcMBeans.put(e.getKey(), new Long(newCount));
+                gcMBeans.put(e.getKey(), newCount);
                 lastGcInfo = gc.getLastGcInfo();
                 if (lastGcInfo.getEndTime() > lastGcEndTime) {
                     gcId = lastGcInfo.getId();

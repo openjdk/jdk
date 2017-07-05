@@ -29,18 +29,9 @@ import java.awt.*;
 import javax.swing.*;
 
 import sun.lwawt.macosx.CPlatformWindow;
+import sun.swing.SwingAccessor;
 
 class ScreenPopupFactory extends PopupFactory {
-    static {
-        java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction<Void>() {
-                public Void run() {
-                    System.loadLibrary("osxui");
-                    return null;
-                }
-            });
-    }
-
     static final Float TRANSLUCENT = new Float(248f/255f);
     static final Float OPAQUE = new Float(1.0f);
 
@@ -59,19 +50,13 @@ class ScreenPopupFactory extends PopupFactory {
         return (Window)w;
     }
 
-    /*
-     * Since we can't change the signature of PopupFactory, we have to call the
-     * private method getPopup(Component, Component, int, int, int) through JNI
-     * (see AquaLookAndFeel.m)
-     */
-    native Popup _getHeavyWeightPopup(Component comp, Component invoker, int x, int y);
-
     public Popup getPopup(final Component comp, final Component invoker, final int x, final int y) {
         if (invoker == null) throw new IllegalArgumentException("Popup.getPopup must be passed non-null contents");
 
         final Popup popup;
         if (fIsActive) {
-            popup = _getHeavyWeightPopup(comp, invoker, x, y);
+            popup = SwingAccessor.getPopupFactoryAccessor()
+                    .getHeavyWeightPopup(this, comp, invoker, x, y);
         } else {
             popup = super.getPopup(comp, invoker, x, y);
         }
