@@ -35,7 +35,7 @@ ConcurrentG1Refine::ConcurrentG1Refine(G1CollectedHeap* g1h, CardTableEntryClosu
 {
   // Ergonomically select initial concurrent refinement parameters
   if (FLAG_IS_DEFAULT(G1ConcRefinementGreenZone)) {
-    FLAG_SET_DEFAULT(G1ConcRefinementGreenZone, MAX2<int>(ParallelGCThreads, 1));
+    FLAG_SET_DEFAULT(G1ConcRefinementGreenZone, (intx)ParallelGCThreads);
   }
   set_green_zone(G1ConcRefinementGreenZone);
 

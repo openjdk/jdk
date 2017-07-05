@@ -382,7 +382,6 @@ bool PSScavenge::invoke_no_policy() {
     // Get the active number of workers here and use that value
     // throughout the methods.
     uint active_workers = gc_task_manager()->active_workers();
-    heap->set_par_threads(active_workers);
 
     PSPromotionManager::pre_scavenge();
 
@@ -846,9 +845,9 @@ void PSScavenge::initialize() {
   _ref_processor =
     new ReferenceProcessor(mr,                         // span
                            ParallelRefProcEnabled && (ParallelGCThreads > 1), // mt processing
-                           (int) ParallelGCThreads,    // mt processing degree
+                           (uint) ParallelGCThreads,   // mt processing degree
                            true,                       // mt discovery
-                           (int) ParallelGCThreads,    // mt discovery degree
+                           (uint) ParallelGCThreads,   // mt discovery degree
                            true,                       // atomic_discovery
                            NULL);                      // header provides liveness info
 

@@ -153,9 +153,7 @@ void G1StringDedup::unlink_or_oops_do(BoolObjectClosure* is_alive,
 
   G1StringDedupUnlinkOrOopsDoTask task(is_alive, keep_alive, allow_resize_and_rehash, phase_times);
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
-  g1h->set_par_threads();
   g1h->workers()->run_task(&task);
-  g1h->set_par_threads(0);
 }
 
 void G1StringDedup::threads_do(ThreadClosure* tc) {
