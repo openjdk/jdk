@@ -29,17 +29,24 @@ ifdef JPRT_BUILD_VERSION
   MILESTONE=$(JPRT_BUILD_VERSION)
 endif
 
+ifeq ($(OSNAME),windows)
+  ZIPFLAGS=-q
+else
+  # store symbolic links as the link
+  ZIPFLAGS=-q -y
+endif
+
 jprt_build_product: all_product copy_product_jdk export_product_jdk
 	( $(CD) $(JDK_IMAGE_DIR) && \
-	  $(ZIPEXE) -q -r $(JPRT_ARCHIVE_BUNDLE) . )
+	  $(ZIPEXE) $(ZIPFLAGS) -r $(JPRT_ARCHIVE_BUNDLE) . )
 
 jprt_build_fastdebug: all_fastdebug copy_fastdebug_jdk export_fastdebug_jdk
 	( $(CD) $(JDK_IMAGE_DIR)/fastdebug && \
-	  $(ZIPEXE) -q -r $(JPRT_ARCHIVE_BUNDLE) . )
+	  $(ZIPEXE) $(ZIPFLAGS) -r $(JPRT_ARCHIVE_BUNDLE) . )
 
 jprt_build_debug: all_debug copy_debug_jdk export_debug_jdk
 	( $(CD) $(JDK_IMAGE_DIR)/debug && \
-	  $(ZIPEXE) -q -r $(JPRT_ARCHIVE_BUNDLE) . )
+	  $(ZIPEXE) $(ZIPFLAGS) -r $(JPRT_ARCHIVE_BUNDLE) . )
 
 .PHONY: jprt_build_product jprt_build_fastdebug jprt_build_debug
 

@@ -49,10 +49,10 @@ ifeq ($(DEBUG_BINARIES), true)
 endif
 
 # if $(AGENT_DIR) does not exist, we don't build SA
-# also, we don't build SA on Itanium.
+# also, we don't build SA on Itanium or zero.
 
 checkAndBuildSA:
-	$(QUIETLY) if [ -d $(AGENT_DIR) -a "$(SRCARCH)" != "ia64" ] ; then \
+	$(QUIETLY) if [ -d $(AGENT_DIR) -a "$(SRCARCH)" != "ia64" -a "$(SRCARCH)" != "zero" ] ; then \
 	   $(MAKE) -f vm.make $(LIBSAPROC); \
 	fi
 
