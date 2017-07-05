@@ -210,25 +210,29 @@ public class IntegrationTest {
             props.load(reader);
         }
 
-        if (props.getProperty("JAVA_VERSION") == null) {
-            throw new AssertionError("release file does not contain JAVA_VERSION");
-        }
-
-        if (props.getProperty("OS_NAME") == null) {
-            throw new AssertionError("release file does not contain OS_NAME");
-        }
-
-        if (props.getProperty("OS_ARCH") == null) {
-            throw new AssertionError("release file does not contain OS_ARCH");
-        }
-
-        if (props.getProperty("OS_VERSION") == null) {
-            throw new AssertionError("release file does not contain OS_VERSION");
-        }
+        checkReleaseProperty(props, "JAVA_VERSION");
+        checkReleaseProperty(props, "JAVA_FULL_VERSION");
+        checkReleaseProperty(props, "OS_NAME");
+        checkReleaseProperty(props, "OS_ARCH");
+        checkReleaseProperty(props, "OS_VERSION");
 
         if (!Files.exists(output.resolve("toto.txt"))) {
             throw new AssertionError("Post processing not called");
         }
 
+    }
+
+    static void checkReleaseProperty(Properties props, String name) {
+        if (! props.containsKey(name)) {
+            throw new AssertionError("release file does not contain property : " + name);
+        }
+
+        // property value is of min. length 3 and double quoted at the ends.
+        String value = props.getProperty(name);
+        if (value.length() < 3 ||
+            value.charAt(0) != '"' ||
+            value.charAt(value.length() - 1) != '"') {
+            throw new AssertionError("release property " + name + " is not quoted property");
+        }
     }
 }

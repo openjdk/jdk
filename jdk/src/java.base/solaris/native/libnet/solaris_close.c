@@ -35,13 +35,17 @@
     if (1) {                                          \
         do {                                          \
             _result = _cmd;                           \
-        } while((_result == -1) && (errno == EINTR)); \
+        } while((_result == -1) && (errno == EINTR));      \
         return _result;                               \
     }                                                 \
 } while(0)
 
 int NET_Read(int s, void* buf, size_t len) {
     RESTARTABLE_RETURN_INT(recv(s, buf, len, 0));
+}
+
+int NET_NonBlockingRead(int s, void* buf, size_t len) {
+    RESTARTABLE_RETURN_INT(recv(s, buf, len, MSG_DONTWAIT));
 }
 
 int NET_RecvFrom(int s, void *buf, int len, unsigned int flags,
@@ -86,18 +90,13 @@ int NET_Poll(struct pollfd *ufds, unsigned int nfds, int timeout) {
     RESTARTABLE_RETURN_INT(poll(ufds, nfds, timeout));
 }
 
-int NET_Timeout(int s, long timeout) {
+int NET_Timeout0(int s, long timeout, long currentTime) {
     int result;
     struct timeval t;
-    long prevtime, newtime;
+    long prevtime = currentTime, newtime;
     struct pollfd pfd;
     pfd.fd = s;
     pfd.events = POLLIN;
-
-    if (timeout > 0) {
-        gettimeofday(&t, NULL);
-        prevtime = (t.tv_sec * 1000)  +  t.tv_usec / 1000;
-    }
 
     for(;;) {
         result = poll(&pfd, 1, timeout);

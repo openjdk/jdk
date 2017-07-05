@@ -219,6 +219,9 @@ class ThreadInVMfromJava : public ThreadStateTransition {
     trans_from_java(_thread_in_vm);
   }
   ~ThreadInVMfromJava()  {
+    if (_thread->stack_yellow_reserved_zone_disabled()) {
+      _thread->enable_stack_yellow_reserved_zone();
+    }
     trans(_thread_in_vm, _thread_in_Java);
     // Check for pending. async. exceptions or suspends.
     if (_thread->has_special_runtime_exit_condition()) _thread->handle_special_runtime_exit_condition();
@@ -306,6 +309,9 @@ class ThreadInVMfromJavaNoAsyncException : public ThreadStateTransition {
     trans_from_java(_thread_in_vm);
   }
   ~ThreadInVMfromJavaNoAsyncException()  {
+    if (_thread->stack_yellow_reserved_zone_disabled()) {
+      _thread->enable_stack_yellow_reserved_zone();
+    }
     trans(_thread_in_vm, _thread_in_Java);
     // NOTE: We do not check for pending. async. exceptions.
     // If we did and moved the pending async exception over into the
@@ -313,6 +319,7 @@ class ThreadInVMfromJavaNoAsyncException : public ThreadStateTransition {
     // only). However, to do so would require that we transition back
     // to the _thread_in_vm state. Instead we postpone the handling of
     // the async exception.
+
 
     // Check for pending. suspends only.
     if (_thread->has_special_runtime_exit_condition())

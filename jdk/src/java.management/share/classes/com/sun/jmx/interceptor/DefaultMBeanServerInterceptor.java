@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1704,25 +1704,6 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
             Object[] params, String[] signature) throws ReflectionException,
                                                         MBeanException,
                                                         InstanceNotFoundException {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    @SuppressWarnings("deprecation")
-    public ObjectInputStream deserialize(ObjectName name, byte[] data) throws InstanceNotFoundException,
-                                                                              OperationsException {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    @SuppressWarnings("deprecation")
-    public ObjectInputStream deserialize(String className, byte[] data) throws OperationsException,
-                                                                               ReflectionException {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    @SuppressWarnings("deprecation")
-    public ObjectInputStream deserialize(String className, ObjectName loaderName,
-            byte[] data) throws InstanceNotFoundException, OperationsException,
-                                ReflectionException {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 

@@ -118,7 +118,7 @@ public class BigDecimalCompatibilityTest {
            bd = bd.divide(new BigDecimal(multiplier));
         }
         catch (ArithmeticException e) {
-           bd = bd.divide(new BigDecimal(multiplier), BigDecimal.ROUND_HALF_EVEN);
+           bd = bd.divide(new BigDecimal(multiplier), RoundingMode.HALF_EVEN);
         }
         check(num, bd, multiplier);
     }

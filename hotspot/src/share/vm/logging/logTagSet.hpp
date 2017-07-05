@@ -86,7 +86,7 @@ class LogTagSet VALUE_OBJ_CLASS_SPEC {
   }
 
   bool contains(LogTagType tag) const {
-    for (size_t i = 0; _tag[i] != LogTag::__NO_TAG; i++) {
+    for (size_t i = 0; i < LogTag::MaxTags && _tag[i] != LogTag::__NO_TAG; i++) {
       if (tag == _tag[i]) {
         return true;
       }

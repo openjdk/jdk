@@ -135,6 +135,7 @@ oop Universe::_arithmetic_exception_instance          = NULL;
 oop Universe::_virtual_machine_error_instance         = NULL;
 oop Universe::_vm_exception                           = NULL;
 oop Universe::_allocation_context_notification_obj    = NULL;
+oop Universe::_reference_pending_list                 = NULL;
 
 Array<int>* Universe::_the_empty_int_array            = NULL;
 Array<u2>* Universe::_the_empty_short_array           = NULL;
@@ -212,6 +213,7 @@ void Universe::oops_do(OopClosure* f, bool do_all) {
   f->do_oop((oop*)&_system_thread_group);
   f->do_oop((oop*)&_vm_exception);
   f->do_oop((oop*)&_allocation_context_notification_obj);
+  f->do_oop((oop*)&_reference_pending_list);
   debug_only(f->do_oop((oop*)&_fullgc_alot_dummy_array);)
 }
 
@@ -488,6 +490,35 @@ void Universe::fixup_mirrors(TRAPS) {
   java_lang_Class::set_fixup_mirror_list(NULL);
 }
 
+#define assert_pll_locked(test) \
+  assert(Heap_lock->test(), "Reference pending list access requires lock")
+
+#define assert_pll_ownership() assert_pll_locked(owned_by_self)
+
+oop Universe::reference_pending_list() {
+  assert_pll_ownership();
+  return _reference_pending_list;
+}
+
+void Universe::set_reference_pending_list(oop list) {
+  assert_pll_ownership();
+  _reference_pending_list = list;
+}
+
+bool Universe::has_reference_pending_list() {
+  assert_pll_ownership();
+  return _reference_pending_list != NULL;
+}
+
+oop Universe::swap_reference_pending_list(oop list) {
+  assert_pll_locked(is_locked);
+  return (oop)Atomic::xchg_ptr(list, &_reference_pending_list);
+}
+
+#undef assert_pll_locked
+#undef assert_pll_ownership
+
+
 static bool has_run_finalizers_on_exit = false;
 
 void Universe::run_finalizers_on_exit() {
@@ -565,12 +596,14 @@ bool Universe::should_fill_in_stack_trace(Handle throwable) {
 
 oop Universe::gen_out_of_memory_error(oop default_err) {
   // generate an out of memory error:
-  // - if there is a preallocated error with backtrace available then return it wth
-  //   a filled in stack trace.
-  // - if there are no preallocated errors with backtrace available then return
-  //   an error without backtrace.
+  // - if there is a preallocated error and stack traces are available
+  //   (j.l.Throwable is initialized), then return the preallocated
+  //   error with a filled in stack trace, and with the message
+  //   provided by the default error.
+  // - otherwise, return the default error, without a stack trace.
   int next;
-  if (_preallocated_out_of_memory_error_avail_count > 0) {
+  if ((_preallocated_out_of_memory_error_avail_count > 0) &&
+      SystemDictionary::Throwable_klass()->is_initialized()) {
     next = (int)Atomic::add(-1, &_preallocated_out_of_memory_error_avail_count);
     assert(next < (int)PreallocatedOutOfMemoryErrorCount, "avail count is corrupt");
   } else {

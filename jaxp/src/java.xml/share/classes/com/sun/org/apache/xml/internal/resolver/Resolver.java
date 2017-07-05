@@ -37,12 +37,21 @@ import com.sun.org.apache.xml.internal.resolver.readers.TR9401CatalogReader;
  * suffix-based matching and an external RFC2483 resolver.
  *
  * @see Catalog
+ * @deprecated The JDK internal Catalog API in package
+ * {@code com.sun.org.apache.xml.internal.resolver}
+ * is encapsulated in JDK 9. The entire implementation under the package is now
+ * deprecated and subject to removal in a future release. Users of the API
+ * should migrate to the {@linkplain javax.xml.catalog new public API}.
+ * <p>
+ * The new Catalog API is supported throughout the JDK XML Processors, which allows
+ * the use of Catalog by simply setting a path to a Catalog file as a property.
  *
  * @author Norman Walsh
  * <a href="mailto:Norman.Walsh@Sun.COM">Norman.Walsh@Sun.COM</a>
  *
  * @version 1.0
  */
+@Deprecated(since="9", forRemoval=true)
 public class Resolver extends Catalog {
   /**
    * The URISUFFIX Catalog Entry type.

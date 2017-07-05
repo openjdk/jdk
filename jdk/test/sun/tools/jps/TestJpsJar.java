@@ -38,7 +38,7 @@ import jdk.testlibrary.ProcessTools;
  * @library /lib/testlibrary
  * @modules jdk.jartool/sun.tools.jar
  *          java.management
- * @build jdk.testlibrary.* JpsHelper JpsBase
+ * @build JpsHelper JpsBase
  * @run main/othervm TestJpsJar
  */
 public class TestJpsJar {

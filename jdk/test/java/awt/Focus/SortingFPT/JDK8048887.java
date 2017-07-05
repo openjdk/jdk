@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
   @test
-  @bug       8048887
+  @bug       8048887 8164937
   @summary   Tests SortingFTP for an exception caused by the tim-sort algo.
   @author    anton.tarasov: area=awt.focus
   @run       main JDK8048887

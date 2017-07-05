@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -348,7 +348,6 @@ GetJREPath(char *path, jint pathsize)
 
     JLI_ReportErrorMessage(JRE_ERROR8 JAVA_DLL);
     return JNI_FALSE;
-
 }
 
 /*
@@ -423,11 +422,11 @@ TruncatePath(char *buf)
     *JLI_StrRChr(buf, '\\') = '\0'; /* remove .exe file name */
     if ((cp = JLI_StrRChr(buf, '\\')) == 0) {
         /* This happens if the application is in a drive root, and
-        * there is no bin directory. */
+         * there is no bin directory. */
         buf[0] = '\0';
         return JNI_FALSE;
     }
-    *cp = '\0';  /* remove the bin\ part */
+    *cp = '\0'; /* remove the bin\ part */
     return JNI_TRUE;
 }
 
@@ -449,16 +448,16 @@ GetApplicationHome(char *buf, jint bufsize)
 jboolean
 GetApplicationHomeFromDll(char *buf, jint bufsize)
 {
-    HMODULE hModule;
-    DWORD dwFlags =
-        GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
-        GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT;
+    HMODULE module;
+    DWORD flags = GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
+                  GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT;
 
-    if (GetModuleHandleEx(dwFlags, (LPCSTR)&GetJREPath, &hModule) == 0) {
-        return JNI_FALSE;
-    };
-    GetModuleFileName(hModule, buf, bufsize);
-    return TruncatePath(buf);
+    if (GetModuleHandleEx(flags, (LPCSTR)&GetJREPath, &module) != 0) {
+        if (GetModuleFileName(module, buf, bufsize) != 0) {
+            return TruncatePath(buf);
+        }
+    }
+    return JNI_FALSE;
 }
 
 /*

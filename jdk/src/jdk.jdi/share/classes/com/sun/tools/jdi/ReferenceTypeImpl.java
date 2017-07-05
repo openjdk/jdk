@@ -993,32 +993,39 @@ implements ReferenceType {
         return minorVersion;
     }
 
-    private void getConstantPoolInfo() {
+    private byte[] getConstantPoolInfo() {
         JDWP.ReferenceType.ConstantPool jdwpCPool;
         if (!vm.canGetConstantPool()) {
             throw new UnsupportedOperationException();
         }
         if (constantPoolInfoGotten) {
-            return;
-        } else {
-            try {
-                jdwpCPool = JDWP.ReferenceType.ConstantPool.process(vm, this);
-            } catch (JDWPException exc) {
-                if (exc.errorCode() == JDWP.Error.ABSENT_INFORMATION) {
-                    constanPoolCount = 0;
-                    constantPoolBytesRef = null;
-                    constantPoolInfoGotten = true;
-                    return;
-                } else {
-                    throw exc.toJDIException();
-                }
+            if (constantPoolBytesRef == null) {
+                return null;
             }
-            byte[] cpbytes;
-            constanPoolCount = jdwpCPool.count;
-            cpbytes = jdwpCPool.bytes;
-            constantPoolBytesRef = new SoftReference<byte[]>(cpbytes);
-            constantPoolInfoGotten = true;
+            byte[] cpbytes = constantPoolBytesRef.get();
+            if (cpbytes != null) {
+                return cpbytes;
+            }
         }
+
+        try {
+            jdwpCPool = JDWP.ReferenceType.ConstantPool.process(vm, this);
+        } catch (JDWPException exc) {
+            if (exc.errorCode() == JDWP.Error.ABSENT_INFORMATION) {
+                constanPoolCount = 0;
+                constantPoolBytesRef = null;
+                constantPoolInfoGotten = true;
+                return null;
+            } else {
+                throw exc.toJDIException();
+            }
+        }
+        byte[] cpbytes;
+        constanPoolCount = jdwpCPool.count;
+        cpbytes = jdwpCPool.bytes;
+        constantPoolBytesRef = new SoftReference<byte[]>(cpbytes);
+        constantPoolInfoGotten = true;
+        return cpbytes;
     }
 
     public int constantPoolCount() {
@@ -1031,13 +1038,13 @@ implements ReferenceType {
     }
 
     public byte[] constantPool() {
+        byte[] cpbytes;
         try {
-            getConstantPoolInfo();
+            cpbytes = getConstantPoolInfo();
         } catch (RuntimeException exc) {
             throw exc;
         }
-        if (constantPoolBytesRef != null) {
-            byte[] cpbytes = constantPoolBytesRef.get();
+        if (cpbytes != null) {
             /*
              * Arrays are always modifiable, so it is a little unsafe
              * to return the cached bytecodes directly; instead, we

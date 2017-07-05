@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,17 @@
  * questions.
  */
 
+/*
+ * @test
+ * @bug 8049237
+ * @modules java.base/sun.security.x509
+ *          java.base/sun.security.util
+ *          jdk.crypto.ec
+ * @summary This test generates V3 certificate with all the supported
+ * extensions. Writes back the generated certificate in to a file and checks for
+ * equality with the original certificate.
+ */
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -28,7 +39,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
-import static java.lang.System.out;
 import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -50,15 +60,8 @@ import sun.security.util.BitArray;
 import sun.security.util.ObjectIdentifier;
 import sun.security.x509.*;
 
-/**
- * @test
- * @bug 8049237
- * @modules java.base/sun.security.x509
- *          java.base/sun.security.util
- * @summary This test generates V3 certificate with all the supported
- * extensions. Writes back the generated certificate in to a file and checks for
- * equality with the original certificate.
- */
+import static java.lang.System.out;
+
 public class V3Certificate {
 
     public static final String V3_FILE = "certV3";

@@ -24,6 +24,7 @@
 
 package sun.jvm.hotspot.gc.g1;
 
+import java.io.PrintStream;
 import java.util.Iterator;
 import java.util.Observable;
 import java.util.Observer;
@@ -123,6 +124,15 @@ public class G1CollectedHeap extends CollectedHeap {
 
     public CollectedHeapName kind() {
         return CollectedHeapName.G1_COLLECTED_HEAP;
+    }
+
+    @Override
+    public void printOn(PrintStream tty) {
+        MemRegion mr = reservedRegion();
+
+        tty.print("garbage-first heap");
+        tty.print(" [" + mr.start() + ", " + mr.end() + "]");
+        tty.println(" region size " + (HeapRegion.grainBytes() / 1024) + "K");
     }
 
     public G1CollectedHeap(Address addr) {

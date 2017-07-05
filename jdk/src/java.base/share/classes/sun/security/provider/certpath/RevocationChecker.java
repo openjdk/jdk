@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,12 +61,12 @@ class RevocationChecker extends PKIXRevocationChecker {
     private List<CertStore> certStores;
     private Map<X509Certificate, byte[]> ocspResponses;
     private List<Extension> ocspExtensions;
-    private boolean legacy;
+    private final boolean legacy;
     private LinkedList<CertPathValidatorException> softFailExceptions =
         new LinkedList<>();
 
     // state variables
-    private X509Certificate issuerCert;
+    private OCSPResponse.IssuerInfo issuerInfo;
     private PublicKey prevPubKey;
     private boolean crlSignFlag;
     private int certIndex;
@@ -301,9 +301,9 @@ class RevocationChecker extends PKIXRevocationChecker {
                 CertPathValidatorException("forward checking not supported");
         }
         if (anchor != null) {
-            issuerCert = anchor.getTrustedCert();
-            prevPubKey = (issuerCert != null) ? issuerCert.getPublicKey()
-                                              : anchor.getCAPublicKey();
+            issuerInfo = new OCSPResponse.IssuerInfo(anchor);
+            prevPubKey = issuerInfo.getPublicKey();
+
         }
         crlSignFlag = true;
         if (params != null && params.certPath() != null) {
@@ -437,7 +437,7 @@ class RevocationChecker extends PKIXRevocationChecker {
     private void updateState(X509Certificate cert)
         throws CertPathValidatorException
     {
-        issuerCert = cert;
+        issuerInfo = new OCSPResponse.IssuerInfo(cert);
 
         // Make new public key if parameters are missing
         PublicKey pubKey = cert.getPublicKey();
@@ -708,14 +708,8 @@ class RevocationChecker extends PKIXRevocationChecker {
         OCSPResponse response = null;
         CertId certId = null;
         try {
-            if (issuerCert != null) {
-                certId = new CertId(issuerCert,
-                                    currCert.getSerialNumberObject());
-            } else {
-                // must be an anchor name and key
-                certId = new CertId(anchor.getCA(), anchor.getCAPublicKey(),
-                                    currCert.getSerialNumberObject());
-            }
+            certId = new CertId(issuerInfo.getName(), issuerInfo.getPublicKey(),
+                    currCert.getSerialNumberObject());
 
             // check if there is a cached OCSP response available
             byte[] responseBytes = ocspResponses.get(cert);
@@ -732,8 +726,8 @@ class RevocationChecker extends PKIXRevocationChecker {
                         nonce = ext.getValue();
                     }
                 }
-                response.verify(Collections.singletonList(certId), issuerCert,
-                                responderCert, params.date(), nonce);
+                response.verify(Collections.singletonList(certId), issuerInfo,
+                        responderCert, params.date(), nonce);
 
             } else {
                 URI responderURI = (this.responderURI != null)
@@ -746,8 +740,8 @@ class RevocationChecker extends PKIXRevocationChecker {
                 }
 
                 response = OCSP.check(Collections.singletonList(certId),
-                                      responderURI, issuerCert, responderCert,
-                                      null, ocspExtensions);
+                                      responderURI, issuerInfo,
+                                      responderCert, null, ocspExtensions);
             }
         } catch (IOException e) {
             throw new CertPathValidatorException(

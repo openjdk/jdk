@@ -21,13 +21,14 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 6246411
  * @summary basic test for PKCS#11 SecureRandom
  * @author Andreas Sterbenz
  * @library ..
  * @key randomness
+ * @modules jdk.crypto.pkcs11
  * @run main/othervm Basic
  * @run main/othervm Basic sm
  */
