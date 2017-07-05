@@ -46,6 +46,7 @@ public interface HotspotCompilationMBean {
      * the statistic of a compiler thread.
      *
      */
+    @Deprecated
     public java.util.List<CompilerThreadStat> getCompilerThreadStats();
 
     /**

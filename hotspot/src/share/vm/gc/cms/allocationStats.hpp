@@ -105,9 +105,9 @@ class AllocationStats VALUE_OBJ_CLASS_SPEC {
       ssize_t demand = prev_sweep() - (ssize_t)count + split_births() + coal_births()
                        - split_deaths() - coal_deaths();
       assert(demand >= 0,
-             err_msg("Demand (" SSIZE_FORMAT ") should be non-negative for "
-                     PTR_FORMAT " (size=" SIZE_FORMAT ")",
-                     demand, p2i(this), count));
+             "Demand (" SSIZE_FORMAT ") should be non-negative for "
+             PTR_FORMAT " (size=" SIZE_FORMAT ")",
+             demand, p2i(this), count);
       // Defensive: adjust for imprecision in event counting
       if (demand < 0) {
         demand = 0;

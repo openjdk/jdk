@@ -51,12 +51,8 @@ import sun.misc.Unsafe;
     static final boolean PROFILE_GWT;
     static final int CUSTOMIZE_THRESHOLD;
 
-    // This is a temporary property added for improved error reporting; it will
-    // be removed once it has served its purpose.
-    static final boolean OBSERVE_BMH_SPECIES_CREATION;
-
     static {
-        final Object[] values = new Object[10];
+        final Object[] values = new Object[9];
         AccessController.doPrivileged(new PrivilegedAction<>() {
                 public Void run() {
                     values[0] = Boolean.getBoolean("java.lang.invoke.MethodHandle.DEBUG_NAMES");
@@ -68,7 +64,6 @@ import sun.misc.Unsafe;
                     values[6] = Integer.getInteger("java.lang.invoke.MethodHandle.PROFILE_LEVEL", 0);
                     values[7] = Boolean.parseBoolean(System.getProperty("java.lang.invoke.MethodHandle.PROFILE_GWT", "true"));
                     values[8] = Integer.getInteger("java.lang.invoke.MethodHandle.CUSTOMIZE_THRESHOLD", 127);
-                    values[9] = Boolean.getBoolean("java.lang.invoke.MethodHandle.OBSERVE_BMH_SPECIES_CREATION");
                     return null;
                 }
             });
@@ -81,8 +76,6 @@ import sun.misc.Unsafe;
         PROFILE_LEVEL             = (Integer) values[6];
         PROFILE_GWT               = (Boolean) values[7];
         CUSTOMIZE_THRESHOLD       = (Integer) values[8];
-
-        OBSERVE_BMH_SPECIES_CREATION = (Boolean) values[9];
 
         if (CUSTOMIZE_THRESHOLD < -1 || CUSTOMIZE_THRESHOLD > 127) {
             throw newInternalError("CUSTOMIZE_THRESHOLD should be in [-1...127] range");

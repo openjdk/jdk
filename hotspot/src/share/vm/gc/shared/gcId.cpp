@@ -25,18 +25,50 @@
 #include "precompiled.hpp"
 #include "gc/shared/gcId.hpp"
 #include "runtime/safepoint.hpp"
+#include "runtime/thread.inline.hpp"
 
 uint GCId::_next_id = 0;
 
-const GCId GCId::create() {
-  return GCId(_next_id++);
+NamedThread* currentNamedthread() {
+  assert(Thread::current()->is_Named_thread(), "This thread must be NamedThread");
+  return (NamedThread*)Thread::current();
 }
-const GCId GCId::peek() {
-  return GCId(_next_id);
+
+const uint GCId::create() {
+  return _next_id++;
 }
-const GCId GCId::undefined() {
-  return GCId(UNDEFINED);
+
+const uint GCId::current() {
+  assert(currentNamedthread()->gc_id() != undefined(), "Using undefined GC id.");
+  return current_raw();
 }
-bool GCId::is_undefined() const {
-  return _id == UNDEFINED;
+
+const uint GCId::current_raw() {
+  return currentNamedthread()->gc_id();
+}
+
+GCIdMark::GCIdMark() : _gc_id(GCId::create()) {
+  currentNamedthread()->set_gc_id(_gc_id);
+}
+
+GCIdMark::GCIdMark(uint gc_id) : _gc_id(gc_id) {
+  currentNamedthread()->set_gc_id(_gc_id);
+}
+
+GCIdMark::~GCIdMark() {
+  currentNamedthread()->set_gc_id(GCId::undefined());
+}
+
+GCIdMarkAndRestore::GCIdMarkAndRestore() : _gc_id(GCId::create()) {
+  _previous_gc_id = GCId::current_raw();
+  currentNamedthread()->set_gc_id(_gc_id);
+}
+
+GCIdMarkAndRestore::GCIdMarkAndRestore(uint gc_id) : _gc_id(gc_id) {
+  _previous_gc_id = GCId::current_raw();
+  currentNamedthread()->set_gc_id(_gc_id);
+}
+
+GCIdMarkAndRestore::~GCIdMarkAndRestore() {
+  currentNamedthread()->set_gc_id(_previous_gc_id);
 }

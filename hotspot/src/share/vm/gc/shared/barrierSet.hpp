@@ -188,6 +188,9 @@ public:
   static void static_write_ref_array_pre(HeapWord* start, size_t count);
   static void static_write_ref_array_post(HeapWord* start, size_t count);
 
+  virtual void write_ref_nmethod_pre(oop* dst, nmethod* nm) {}
+  virtual void write_ref_nmethod_post(oop* dst, nmethod* nm) {}
+
 protected:
   virtual void write_ref_array_work(MemRegion mr) = 0;
 public:

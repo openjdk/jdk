@@ -37,10 +37,11 @@
   /******************************/                                                                                                   \
   /* JavaFrameAnchor            */                                                                                                   \
   /******************************/                                                                                                   \
-  volatile_nonstatic_field(JavaFrameAnchor,     _flags,                                          int)
+  volatile_nonstatic_field(JavaFrameAnchor,     _flags,                                          int)                                \
+  static_field(VM_Version, _features, int)
 
-#define VM_TYPES_CPU(declare_type, declare_toplevel_type, declare_oop_type, declare_integer_type, declare_unsigned_integer_type, declare_c1_toplevel_type, declare_c2_type, declare_c2_toplevel_type)
-
+#define VM_TYPES_CPU(declare_type, declare_toplevel_type, declare_oop_type, declare_integer_type, declare_unsigned_integer_type, declare_c1_toplevel_type, declare_c2_type, declare_c2_toplevel_type) \
+  declare_toplevel_type(VM_Version)
 
 #define VM_INT_CONSTANTS_CPU(declare_constant, declare_preprocessor_constant, declare_c1_constant, declare_c2_constant, declare_c2_preprocessor_constant)                                                              \
   /******************************/                                        \
@@ -78,7 +79,11 @@
   declare_c2_constant(R_G4_num)                                           \
   declare_c2_constant(R_G5_num)                                           \
   declare_c2_constant(R_G6_num)                                           \
-  declare_c2_constant(R_G7_num)
+  declare_c2_constant(R_G7_num)                                           \
+  declare_constant(VM_Version::vis1_instructions_m)                       \
+  declare_constant(VM_Version::vis2_instructions_m)                       \
+  declare_constant(VM_Version::vis3_instructions_m)                       \
+  declare_constant(VM_Version::cbcond_instructions_m)
 
 #define VM_LONG_CONSTANTS_CPU(declare_constant, declare_preprocessor_constant, declare_c1_constant, declare_c2_constant, declare_c2_preprocessor_constant)
 

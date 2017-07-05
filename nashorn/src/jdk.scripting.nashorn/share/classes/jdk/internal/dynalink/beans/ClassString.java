@@ -85,11 +85,15 @@ package jdk.internal.dynalink.beans;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
+import java.security.AccessControlContext;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.LinkedList;
 import java.util.List;
+import jdk.internal.dynalink.internal.AccessControlContextFactory;
+import jdk.internal.dynalink.internal.InternalTypeUtilities;
 import jdk.internal.dynalink.linker.LinkerServices;
-import jdk.internal.dynalink.support.Guards;
-import jdk.internal.dynalink.support.TypeUtilities;
+import jdk.internal.dynalink.linker.support.TypeUtilities;
 
 /**
  * Represents a sequence of {@link Class} objects, useful for representing method signatures. Provides value
@@ -97,6 +101,9 @@ import jdk.internal.dynalink.support.TypeUtilities;
  * JLS.
  */
 final class ClassString {
+    private static final AccessControlContext GET_CLASS_LOADER_CONTEXT =
+            AccessControlContextFactory.createAccessControlContext("getClassLoader");
+
     /**
      * An anonymous inner class used solely to represent the "type" of null values for method applicability checking.
      */
@@ -143,12 +150,17 @@ final class ClassString {
     }
 
     boolean isVisibleFrom(final ClassLoader classLoader) {
-        for(int i = 0; i < classes.length; ++i) {
-            if(!Guards.canReferenceDirectly(classLoader, classes[i].getClassLoader())) {
-                return false;
+        return AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
+            @Override
+            public Boolean run() {
+                for(final Class<?> clazz: classes) {
+                    if(!InternalTypeUtilities.canReferenceDirectly(classLoader, clazz.getClassLoader())) {
+                        return false;
+                    }
+                }
+                return true;
             }
-        }
-        return true;
+        }, GET_CLASS_LOADER_CONTEXT);
     }
 
     List<MethodHandle> getMaximallySpecifics(final List<MethodHandle> methods, final LinkerServices linkerServices, final boolean varArg) {

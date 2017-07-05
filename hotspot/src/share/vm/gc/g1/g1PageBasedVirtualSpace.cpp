@@ -57,13 +57,13 @@ void G1PageBasedVirtualSpace::initialize_with_page_size(ReservedSpace rs, size_t
   vmassert(page_size > 0, "Page size must be non-zero.");
 
   guarantee(is_ptr_aligned(rs.base(), page_size),
-            err_msg("Reserved space base " PTR_FORMAT " is not aligned to requested page size " SIZE_FORMAT, p2i(rs.base()), page_size));
+            "Reserved space base " PTR_FORMAT " is not aligned to requested page size " SIZE_FORMAT, p2i(rs.base()), page_size);
   guarantee(is_size_aligned(used_size, os::vm_page_size()),
-            err_msg("Given used reserved space size needs to be OS page size aligned (%d bytes) but is " SIZE_FORMAT, os::vm_page_size(), used_size));
+            "Given used reserved space size needs to be OS page size aligned (%d bytes) but is " SIZE_FORMAT, os::vm_page_size(), used_size);
   guarantee(used_size <= rs.size(),
-            err_msg("Used size of reserved space " SIZE_FORMAT " bytes is smaller than reservation at " SIZE_FORMAT " bytes", used_size, rs.size()));
+            "Used size of reserved space " SIZE_FORMAT " bytes is smaller than reservation at " SIZE_FORMAT " bytes", used_size, rs.size());
   guarantee(is_size_aligned(rs.size(), page_size),
-            err_msg("Expected that the virtual space is size aligned, but " SIZE_FORMAT " is not aligned to page size " SIZE_FORMAT, rs.size(), page_size));
+            "Expected that the virtual space is size aligned, but " SIZE_FORMAT " is not aligned to page size " SIZE_FORMAT, rs.size(), page_size);
 
   _low_boundary  = rs.base();
   _high_boundary = _low_boundary + used_size;
@@ -137,23 +137,23 @@ char* G1PageBasedVirtualSpace::page_start(size_t index) const {
 
 bool G1PageBasedVirtualSpace::is_after_last_page(size_t index) const {
   guarantee(index <= _committed.size(),
-            err_msg("Given boundary page " SIZE_FORMAT " is beyond managed page count " SIZE_FORMAT, index, _committed.size()));
+            "Given boundary page " SIZE_FORMAT " is beyond managed page count " SIZE_FORMAT, index, _committed.size());
   return index == _committed.size();
 }
 
 void G1PageBasedVirtualSpace::commit_preferred_pages(size_t start, size_t num_pages) {
   vmassert(num_pages > 0, "No full pages to commit");
   vmassert(start + num_pages <= _committed.size(),
-           err_msg("Tried to commit area from page " SIZE_FORMAT " to page " SIZE_FORMAT " "
-                   "that is outside of managed space of " SIZE_FORMAT " pages",
-                   start, start + num_pages, _committed.size()));
+           "Tried to commit area from page " SIZE_FORMAT " to page " SIZE_FORMAT " "
+           "that is outside of managed space of " SIZE_FORMAT " pages",
+           start, start + num_pages, _committed.size());
 
   char* start_addr = page_start(start);
   size_t size = num_pages * _page_size;
 
   os::commit_memory_or_exit(start_addr, size, _page_size, _executable,
                             err_msg("Failed to commit area from " PTR_FORMAT " to " PTR_FORMAT " of length " SIZE_FORMAT ".",
-                                    p2i(start_addr), p2i(start_addr + size), size));
+                            p2i(start_addr), p2i(start_addr + size), size));
 }
 
 void G1PageBasedVirtualSpace::commit_tail() {
@@ -162,14 +162,14 @@ void G1PageBasedVirtualSpace::commit_tail() {
   char* const aligned_end_address = (char*)align_ptr_down(_high_boundary, _page_size);
   os::commit_memory_or_exit(aligned_end_address, _tail_size, os::vm_page_size(), _executable,
                             err_msg("Failed to commit tail area from " PTR_FORMAT " to " PTR_FORMAT " of length " SIZE_FORMAT ".",
-                                    p2i(aligned_end_address), p2i(_high_boundary), _tail_size));
+                            p2i(aligned_end_address), p2i(_high_boundary), _tail_size));
 }
 
 void G1PageBasedVirtualSpace::commit_internal(size_t start_page, size_t end_page) {
   guarantee(start_page < end_page,
-            err_msg("Given start page " SIZE_FORMAT " is larger or equal to end page " SIZE_FORMAT, start_page, end_page));
+            "Given start page " SIZE_FORMAT " is larger or equal to end page " SIZE_FORMAT, start_page, end_page);
   guarantee(end_page <= _committed.size(),
-            err_msg("Given end page " SIZE_FORMAT " is beyond end of managed page amount of " SIZE_FORMAT, end_page, _committed.size()));
+            "Given end page " SIZE_FORMAT " is beyond end of managed page amount of " SIZE_FORMAT, end_page, _committed.size());
 
   size_t pages = end_page - start_page;
   bool need_to_commit_tail = is_after_last_page(end_page) && is_last_page_partial();
@@ -195,7 +195,7 @@ char* G1PageBasedVirtualSpace::bounded_end_addr(size_t end_page) const {
 
 void G1PageBasedVirtualSpace::pretouch_internal(size_t start_page, size_t end_page) {
   guarantee(start_page < end_page,
-            err_msg("Given start page " SIZE_FORMAT " is larger or equal to end page " SIZE_FORMAT, start_page, end_page));
+            "Given start page " SIZE_FORMAT " is larger or equal to end page " SIZE_FORMAT, start_page, end_page);
 
   os::pretouch_memory(page_start(start_page), bounded_end_addr(end_page));
 }
@@ -226,7 +226,7 @@ bool G1PageBasedVirtualSpace::commit(size_t start_page, size_t size_in_pages) {
 
 void G1PageBasedVirtualSpace::uncommit_internal(size_t start_page, size_t end_page) {
   guarantee(start_page < end_page,
-            err_msg("Given start page " SIZE_FORMAT " is larger or equal to end page " SIZE_FORMAT, start_page, end_page));
+            "Given start page " SIZE_FORMAT " is larger or equal to end page " SIZE_FORMAT, start_page, end_page);
 
   char* start_addr = page_start(start_page);
   os::uncommit_memory(start_addr, pointer_delta(bounded_end_addr(end_page), start_addr, sizeof(char)));

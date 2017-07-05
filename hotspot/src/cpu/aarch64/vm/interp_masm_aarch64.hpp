@@ -66,6 +66,8 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   void load_earlyret_value(TosState state);
 
+  void jump_to_entry(address entry);
+
 #ifdef CC_INTERP
   void save_bcp()                                          { /*  not needed in c++ interpreter and harmless */ }
   void restore_bcp()                                       { /*  not needed in c++ interpreter and harmless */ }

@@ -35,18 +35,15 @@
 #include "c1/c1_Runtime1.hpp"
 #endif
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 void NativeInstruction::wrote(int offset) {
   ICache::invalidate_word(addr_at(offset));
 }
-
 
 void NativeCall::verify() {
   // Make sure code pattern is actually a call imm32 instruction.
   int inst = ubyte_at(0);
   if (inst != instruction_code) {
-    tty->print_cr("Addr: " INTPTR_FORMAT " Code: 0x%x", instruction_address(),
+    tty->print_cr("Addr: " INTPTR_FORMAT " Code: 0x%x", p2i(instruction_address()),
                                                         inst);
     fatal("not a call disp32");
   }
@@ -63,7 +60,7 @@ address NativeCall::destination() const {
 
 void NativeCall::print() {
   tty->print_cr(PTR_FORMAT ": call " PTR_FORMAT,
-                instruction_address(), destination());
+                p2i(instruction_address()), p2i(destination()));
 }
 
 // Inserts a native call instruction at a given pc
@@ -230,7 +227,7 @@ void NativeMovConstReg::verify() {
 
 void NativeMovConstReg::print() {
   tty->print_cr(PTR_FORMAT ": mov reg, " INTPTR_FORMAT,
-                instruction_address(), data());
+                p2i(instruction_address()), data());
 }
 
 //-------------------------------------------------------------------
@@ -396,7 +393,7 @@ void NativeMovRegMem::verify() {
 
 
 void NativeMovRegMem::print() {
-  tty->print_cr("0x%x: mov reg, [reg + %x]", instruction_address(), offset());
+  tty->print_cr(PTR_FORMAT ": mov reg, [reg + %x]", p2i(instruction_address()), offset());
 }
 
 //-------------------------------------------------------------------
@@ -418,7 +415,7 @@ void NativeLoadAddress::verify() {
 
 
 void NativeLoadAddress::print() {
-  tty->print_cr("0x%x: lea [reg + %x], reg", instruction_address(), offset());
+  tty->print_cr(PTR_FORMAT ": lea [reg + %x], reg", p2i(instruction_address()), offset());
 }
 
 //--------------------------------------------------------------------------------
@@ -474,6 +471,7 @@ void NativeJump::check_verified_entry_alignment(address entry, address verified_
 //
 // In C2 the 5+ byte sized instruction is enforced by code in MachPrologNode::emit.
 // In C1 the restriction is enforced by CodeEmitter::method_entry
+// In JVMCI, the restriction is enforced by HotSpotFrameContext.enter(...)
 //
 void NativeJump::patch_verified_entry(address entry, address verified_entry, address dest) {
   // complete jump instruction (to be inserted) is in code_buffer;

@@ -27,8 +27,6 @@
 #include "runtime/thread.inline.hpp"
 #include "runtime/objectMonitor.inline.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 void markOopDesc::print_on(outputStream* st) const {
   if (is_marked()) {
     st->print(" marked(" INTPTR_FORMAT ")", value());
@@ -39,7 +37,7 @@ void markOopDesc::print_on(outputStream* st) const {
     if (mon == NULL) {
       st->print("NULL (this should never be seen!)");
     } else {
-      st->print("{count=" INTPTR_FORMAT ",waiters=" INTPTR_FORMAT
+      st->print("{count=0x%08x,waiters=0x%08x"
                 ",recursions=" INTPTR_FORMAT ",owner=" INTPTR_FORMAT "}",
                 mon->count(), mon->waiters(), mon->recursions(),
                 p2i(mon->owner()));
@@ -65,7 +63,7 @@ void markOopDesc::print_on(outputStream* st) const {
     assert(is_unlocked() || has_bias_pattern(), "just checking");
     st->print("mark(");
     if (has_bias_pattern()) st->print("biased,");
-    st->print("hash %#lx,", hash());
+    st->print("hash " INTPTR_FORMAT ",", hash());
     st->print("age %d)", age());
   }
 }

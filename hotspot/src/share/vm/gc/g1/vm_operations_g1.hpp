@@ -26,6 +26,7 @@
 #define SHARE_VM_GC_G1_VM_OPERATIONS_G1_HPP
 
 #include "gc/g1/g1AllocationContext.hpp"
+#include "gc/shared/gcId.hpp"
 #include "gc/shared/vmGCOperations.hpp"
 
 // VM_operations for the G1 collector.
@@ -104,6 +105,7 @@ class VM_CGC_Operation: public VM_Operation {
   VoidClosure* _cl;
   const char* _printGCMessage;
   bool _needs_pll;
+  uint _gc_id;
 
 protected:
   // java.lang.ref.Reference support
@@ -112,7 +114,7 @@ protected:
 
 public:
   VM_CGC_Operation(VoidClosure* cl, const char *printGCMsg, bool needs_pll)
-    : _cl(cl), _printGCMessage(printGCMsg), _needs_pll(needs_pll) { }
+    : _cl(cl), _printGCMessage(printGCMsg), _needs_pll(needs_pll), _gc_id(GCId::current()) { }
   virtual VMOp_Type type() const { return VMOp_CGC_Operation; }
   virtual void doit();
   virtual bool doit_prologue();

@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 #include "gc/serial/defNewGeneration.hpp"
 #include "gc/serial/tenuredGeneration.hpp"
-#include "gc/shared/genRemSet.hpp"
+#include "gc/shared/cardTableRS.hpp"
 #include "gc/shared/generationSpec.hpp"
 #include "memory/binaryTreeDictionary.hpp"
 #include "memory/filemap.hpp"
@@ -36,7 +36,7 @@
 #include "gc/cms/parNewGeneration.hpp"
 #endif // INCLUDE_ALL_GCS
 
-Generation* GenerationSpec::init(ReservedSpace rs, GenRemSet* remset) {
+Generation* GenerationSpec::init(ReservedSpace rs, CardTableRS* remset) {
   switch (name()) {
     case Generation::DefNew:
       return new DefNewGeneration(rs, init_size());
@@ -50,8 +50,7 @@ Generation* GenerationSpec::init(ReservedSpace rs, GenRemSet* remset) {
 
     case Generation::ConcurrentMarkSweep: {
       assert(UseConcMarkSweepGC, "UseConcMarkSweepGC should be set");
-      CardTableRS* ctrs = remset->as_CardTableRS();
-      if (ctrs == NULL) {
+      if (remset == NULL) {
         vm_exit_during_initialization("Rem set incompatibility.");
       }
       // Otherwise
@@ -60,7 +59,7 @@ Generation* GenerationSpec::init(ReservedSpace rs, GenRemSet* remset) {
 
       ConcurrentMarkSweepGeneration* g = NULL;
       g = new ConcurrentMarkSweepGeneration(rs,
-                 init_size(), ctrs, UseCMSAdaptiveFreeLists,
+                 init_size(), remset, UseCMSAdaptiveFreeLists,
                  (FreeBlockDictionary<FreeChunk>::DictionaryChoice)CMSDictionaryChoice);
 
       g->initialize_performance_counters();

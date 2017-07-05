@@ -45,8 +45,8 @@ PLAB::PLAB(size_t desired_plab_sz_) :
   // ArrayOopDesc::header_size depends on command line initialization.
   AlignmentReserve = oopDesc::header_size() > MinObjAlignment ? align_object_size(arrayOopDesc::header_size(T_INT)) : 0;
   assert(min_size() > AlignmentReserve,
-         err_msg("Minimum PLAB size " SIZE_FORMAT " must be larger than alignment reserve " SIZE_FORMAT " "
-                 "to be able to contain objects", min_size(), AlignmentReserve));
+         "Minimum PLAB size " SIZE_FORMAT " must be larger than alignment reserve " SIZE_FORMAT " "
+         "to be able to contain objects", min_size(), AlignmentReserve);
 }
 
 // If the minimum object size is greater than MinObjAlignment, we can
@@ -125,12 +125,12 @@ void PLABStats::adjust_desired_plab_sz() {
 
   if (_allocated == 0) {
     assert(_unused == 0,
-           err_msg("Inconsistency in PLAB stats: "
-                   "_allocated: " SIZE_FORMAT ", "
-                   "_wasted: " SIZE_FORMAT ", "
-                   "_unused: " SIZE_FORMAT ", "
-                   "_undo_wasted: " SIZE_FORMAT,
-                   _allocated, _wasted, _unused, _undo_wasted));
+           "Inconsistency in PLAB stats: "
+           "_allocated: " SIZE_FORMAT ", "
+           "_wasted: " SIZE_FORMAT ", "
+           "_unused: " SIZE_FORMAT ", "
+           "_undo_wasted: " SIZE_FORMAT,
+           _allocated, _wasted, _unused, _undo_wasted);
 
     _allocated = 1;
   }

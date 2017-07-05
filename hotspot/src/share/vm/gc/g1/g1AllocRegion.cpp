@@ -91,7 +91,7 @@ size_t G1AllocRegion::fill_up_remaining_space(HeapRegion* alloc_region,
 }
 
 size_t G1AllocRegion::retire(bool fill_up) {
-  assert(_alloc_region != NULL, ar_ext_msg(this, "not initialized properly"));
+  assert_alloc_region(_alloc_region != NULL, "not initialized properly");
 
   size_t result = 0;
 
@@ -101,15 +101,14 @@ size_t G1AllocRegion::retire(bool fill_up) {
     // We never have to check whether the active region is empty or not,
     // and potentially free it if it is, given that it's guaranteed that
     // it will never be empty.
-    assert(!alloc_region->is_empty(),
-           ar_ext_msg(this, "the alloc region should never be empty"));
+    assert_alloc_region(!alloc_region->is_empty(),
+                           "the alloc region should never be empty");
 
     if (fill_up) {
       result = fill_up_remaining_space(alloc_region, _bot_updates);
     }
 
-    assert(alloc_region->used() >= _used_bytes_before,
-           ar_ext_msg(this, "invariant"));
+    assert_alloc_region(alloc_region->used() >= _used_bytes_before, "invariant");
     size_t allocated_bytes = alloc_region->used() - _used_bytes_before;
     retire_region(alloc_region, allocated_bytes);
     _used_bytes_before = 0;
@@ -122,8 +121,8 @@ size_t G1AllocRegion::retire(bool fill_up) {
 
 HeapWord* G1AllocRegion::new_alloc_region_and_allocate(size_t word_size,
                                                        bool force) {
-  assert(_alloc_region == _dummy_region, ar_ext_msg(this, "pre-condition"));
-  assert(_used_bytes_before == 0, ar_ext_msg(this, "pre-condition"));
+  assert_alloc_region(_alloc_region == _dummy_region, "pre-condition");
+  assert_alloc_region(_used_bytes_before == 0, "pre-condition");
 
   trace("attempting region allocation");
   HeapRegion* new_alloc_region = allocate_new_region(word_size, force);
@@ -132,7 +131,7 @@ HeapWord* G1AllocRegion::new_alloc_region_and_allocate(size_t word_size,
     // Need to do this before the allocation
     _used_bytes_before = new_alloc_region->used();
     HeapWord* result = allocate(new_alloc_region, word_size, _bot_updates);
-    assert(result != NULL, ar_ext_msg(this, "the allocation should succeeded"));
+    assert_alloc_region(result != NULL, "the allocation should succeeded");
 
     OrderAccess::storestore();
     // Note that we first perform the allocation and then we store the
@@ -148,17 +147,10 @@ HeapWord* G1AllocRegion::new_alloc_region_and_allocate(size_t word_size,
   ShouldNotReachHere();
 }
 
-void G1AllocRegion::fill_in_ext_msg(ar_ext_msg* msg, const char* message) {
-  msg->append("[%s] %s c: %u b: %s r: " PTR_FORMAT " u: " SIZE_FORMAT,
-              _name, message, _count, BOOL_TO_STR(_bot_updates),
-              p2i(_alloc_region), _used_bytes_before);
-}
-
 void G1AllocRegion::init() {
   trace("initializing");
-  assert(_alloc_region == NULL && _used_bytes_before == 0,
-         ar_ext_msg(this, "pre-condition"));
-  assert(_dummy_region != NULL, ar_ext_msg(this, "should have been set"));
+  assert_alloc_region(_alloc_region == NULL && _used_bytes_before == 0, "pre-condition");
+  assert_alloc_region(_dummy_region != NULL, "should have been set");
   _alloc_region = _dummy_region;
   _count = 0;
   trace("initialized");
@@ -168,11 +160,10 @@ void G1AllocRegion::set(HeapRegion* alloc_region) {
   trace("setting");
   // We explicitly check that the region is not empty to make sure we
   // maintain the "the alloc region cannot be empty" invariant.
-  assert(alloc_region != NULL && !alloc_region->is_empty(),
-         ar_ext_msg(this, "pre-condition"));
-  assert(_alloc_region == _dummy_region &&
-         _used_bytes_before == 0 && _count == 0,
-         ar_ext_msg(this, "pre-condition"));
+  assert_alloc_region(alloc_region != NULL && !alloc_region->is_empty(), "pre-condition");
+  assert_alloc_region(_alloc_region == _dummy_region &&
+                         _used_bytes_before == 0 && _count == 0,
+                         "pre-condition");
 
   _used_bytes_before = alloc_region->used();
   _alloc_region = alloc_region;
@@ -184,8 +175,7 @@ void G1AllocRegion::update_alloc_region(HeapRegion* alloc_region) {
   trace("update");
   // We explicitly check that the region is not empty to make sure we
   // maintain the "the alloc region cannot be empty" invariant.
-  assert(alloc_region != NULL && !alloc_region->is_empty(),
-         ar_ext_msg(this, "pre-condition"));
+  assert_alloc_region(alloc_region != NULL && !alloc_region->is_empty(), "pre-condition");
 
   _alloc_region = alloc_region;
   _alloc_region->set_allocation_context(allocation_context());
@@ -197,8 +187,7 @@ HeapRegion* G1AllocRegion::release() {
   trace("releasing");
   HeapRegion* alloc_region = _alloc_region;
   retire(false /* fill_up */);
-  assert(_alloc_region == _dummy_region,
-         ar_ext_msg(this, "post-condition of retire()"));
+  assert_alloc_region(_alloc_region == _dummy_region, "post-condition of retire()");
   _alloc_region = NULL;
   trace("released");
   return (alloc_region == _dummy_region) ? NULL : alloc_region;

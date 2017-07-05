@@ -37,7 +37,7 @@ class CardGeneration: public Generation {
   friend class VMStructs;
  protected:
   // This is shared with other generations.
-  GenRemSet* _rs;
+  CardTableRS* _rs;
   // This is local to this generation.
   BlockOffsetSharedArray* _bts;
 
@@ -52,7 +52,7 @@ class CardGeneration: public Generation {
   size_t _capacity_at_prologue;
   size_t _used_at_prologue;
 
-  CardGeneration(ReservedSpace rs, size_t initial_byte_size, GenRemSet* remset);
+  CardGeneration(ReservedSpace rs, size_t initial_byte_size, CardTableRS* remset);
 
   virtual void assert_correct_size_change_locking() = 0;
 

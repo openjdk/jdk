@@ -89,10 +89,7 @@ static void print_flag_error_message_if_needed(Flag::Error error, const char* na
       break;
   }
 
-  PRAGMA_DIAG_PUSH
-  PRAGMA_FORMAT_NONLITERAL_IGNORED_INTERNAL
-  err_msg.print(buffer);
-  PRAGMA_DIAG_POP
+  err_msg.print("%s", buffer);
 }
 
 // set a boolean global flag
@@ -295,7 +292,8 @@ Flag::Error WriteableFlags::set_flag_from_char(Flag* f, const void* value, Flag:
 }
 
 // a writeable flag setter accepting 'jvalue' values
-Flag::Error WriteableFlags::set_flag_from_jvalue(Flag* f, const void* value, Flag::Flags origin, FormatBuffer<80>& err_msg) {
+Flag::Error WriteableFlags::set_flag_from_jvalue(Flag* f, const void* value, Flag::Flags origin,
+                                                 FormatBuffer<80>& err_msg) {
   jvalue new_value = *(jvalue*)value;
   if (f->is_bool()) {
     bool bvalue = (new_value.z == JNI_TRUE ? true : false);

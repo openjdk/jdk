@@ -101,6 +101,12 @@ class NativeInstruction VALUE_OBJ_CLASS_SPEC {
   static bool maybe_cpool_ref(address instr) {
     return is_adrp_at(instr) || is_ldr_literal_at(instr);
   }
+
+  bool is_Membar() {
+    unsigned int insn = uint_at(0);
+    return Instruction_aarch64::extract(insn, 31, 12) == 0b11010101000000110011 &&
+      Instruction_aarch64::extract(insn, 7, 0) == 0b10111111;
+  }
 };
 
 inline NativeInstruction* nativeInstruction_at(address address) {
@@ -485,6 +491,17 @@ inline bool is_NativeCallTrampolineStub_at(address addr) {
 inline NativeCallTrampolineStub* nativeCallTrampolineStub_at(address addr) {
   assert(is_NativeCallTrampolineStub_at(addr), "no call trampoline found");
   return (NativeCallTrampolineStub*)addr;
+}
+
+class NativeMembar : public NativeInstruction {
+public:
+  unsigned int get_kind() { return Instruction_aarch64::extract(uint_at(0), 11, 8); }
+  void set_kind(int order_kind) { Instruction_aarch64::patch(addr_at(0), 11, 8, order_kind); }
+};
+
+inline NativeMembar *NativeMembar_at(address addr) {
+  assert(nativeInstruction_at(addr)->is_Membar(), "no membar found");
+  return (NativeMembar*)addr;
 }
 
 #endif // CPU_AARCH64_VM_NATIVEINST_AARCH64_HPP

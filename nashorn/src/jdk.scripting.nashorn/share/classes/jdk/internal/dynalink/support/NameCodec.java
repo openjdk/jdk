@@ -83,24 +83,15 @@
 
 package jdk.internal.dynalink.support;
 
-import jdk.internal.dynalink.CallSiteDescriptor;
 
 /**
  * Implements the name mangling and demangling as specified by John Rose's
- * <a href="https://blogs.oracle.com/jrose/entry/symbolic_freedom_in_the_vm" target="_blank">"Symbolic Freedom in the
- * VM"</a> article. It is recommended that implementers of languages on the JVM uniformly adopt this for symbolic
- * interoperability between languages. Normally, you would mangle the names as you're generating bytecode, and then
- * demangle them when you're creating {@link CallSiteDescriptor} objects. Note that you are expected to mangle
- * individual tokens, and not the whole name at the call site, i.e. the colon character normally separating the tokens
- * is never mangled. I.e. you wouldn't mangle {@code dyn:getProp:color} into {@code dyn\!getProp\!color}, but you would
- * mangle {@code dyn:getProp:color$} into {@code dyn:getProp:\=color\%} (only mangling the individual token containing
- * the symbol {@code color$}). {@link CallSiteDescriptorFactory#tokenizeName(String)} (and by implication, all call site
- * descriptors it creates) will automatically perform demangling on the passed names. If you use this factory, or you
- * have your own way of creating call site descriptors, but you still delegate to this method of the default factory
- * (it is recommended that you do), then you have demangling handled for you already, and only need to ensure that you
- * mangle the names when you're emitting them in the bytecode.
+ * <a href="https://blogs.oracle.com/jrose/entry/symbolic_freedom_in_the_vm"
+ * target="_blank">"Symbolic Freedom in the VM"</a> article. Normally, you would
+ * mangle the names in the call sites as you're generating bytecode, and then
+ * demangle them when you receive them in bootstrap methods.
  */
-public class NameCodec {
+public final class NameCodec {
     private static final char ESCAPE_CHAR = '\\';
     private static final char EMPTY_ESCAPE = '=';
     private static final String EMPTY_NAME = new String(new char[] { ESCAPE_CHAR, EMPTY_ESCAPE });
@@ -175,7 +166,7 @@ public class NameCodec {
      * @return the demangled form of the symbolic name.
      */
     public static String decode(final String name) {
-        if(name.charAt(0) != ESCAPE_CHAR) {
+        if(name.isEmpty() || name.charAt(0) != ESCAPE_CHAR) {
             return name;
         }
         final int l = name.length();

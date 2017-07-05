@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,9 @@
  */
 
 package java.sql;
+
+import java.util.regex.Pattern;
+import static java.util.stream.Collectors.joining;
 
 /**
  * <P>The object used for executing a static SQL statement
@@ -1366,5 +1369,155 @@ public interface Statement extends Wrapper, AutoCloseable {
     default long executeLargeUpdate(String sql, String columnNames[])
             throws SQLException {
         throw new SQLFeatureNotSupportedException("executeLargeUpdate not implemented");
+    }
+
+    // JDBC 4.3
+
+    /**
+     * Returns a {@code String} enclosed in single quotes. Any occurrence of a
+     * single quote within the string will be replaced by two single quotes.
+     *
+     * <blockquote>
+     * <table border = 1 cellspacing=0 cellpadding=5 >
+     * <caption>Examples of the conversion:</caption>
+     * <tr><th>Value</th><th>Result</th></tr>
+     * <tr> <td align='center'>Hello</td> <td align='center'>'Hello'</td> </tr>
+     * <tr> <td align='center'>G'Day</td> <td align='center'>'G''Day'</td> </tr>
+     * <tr> <td align='center'>'G''Day'</td>
+     * <td align='center'>'''G''''Day'''</td> </tr>
+     * <tr> <td align='center'>I'''M</td> <td align='center'>'I''''''M'</td>
+     * </tr>
+     *
+     * </table>
+     * </blockquote>
+     * @implNote
+     * JDBC driver implementations may need to provide their own implementation
+     * of this method in order to meet the requirements of the underlying
+     * datasource.
+     * @param val a character string
+     * @return A string enclosed by single quotes with every single quote
+     * converted to two single quotes
+     * @throws NullPointerException if val is null
+     */
+     default String enquoteLiteral(String val) {
+         return "'" + val.replace("'", "''") +  "'";
+    }
+
+
+     /**
+     * Returns a SQL identifier. If {@code identifier} is a simple SQL identifier:
+     * <ul>
+     * <li>Return the original value if {@code alwaysQuote} is
+     * {@code false}</li>
+     * <li>Return a delimited identifier if {@code alwaysQuote} is
+     * {@code true}</li>
+     * </ul>
+     *
+     * If {@code identifier} is not a simple SQL identifier, {@code identifier} will be
+     * enclosed in double quotes if not already present. If the datasource does
+     * not support double quotes for delimited identifiers, the
+     * identifier should be enclosed by the string returned from
+     * {@link DatabaseMetaData#getIdentifierQuoteString}.  If the datasource
+     * does not support delimited identifiers, a
+     * {@code SQLFeatureNotSupportedException} should be thrown.
+     * <p>
+     * A {@code SQLException} will be thrown if {@code identifier} contains any
+     * characters invalid in a delimited identifier or the identifier length is
+     * invalid for the datasource.
+     *
+     * @implSpec
+     * The default implementation uses the following criteria to
+     * determine a valid simple SQL identifier:
+     * <ul>
+     * <li>The string is not enclosed in double quotes</li>
+     * <li>The first character is an alphabetic character from a through z, or
+     * from A through Z</li>
+     * <li>The name only contains alphanumeric characters or the character "_"</li>
+     * </ul>
+     *
+     * The default implementation will throw a {@code SQLException} if:
+     * <ul>
+     * <li>{@code identifier} contains a null character or double quote, and is not
+     * a simple SQL identifier.</li>
+     * <li>The length of {@code identifier} is less than 1 or greater than 128 characters
+     * </ul>
+     * <blockquote>
+     * <table border = 1 cellspacing=0 cellpadding=5 >
+     * <caption>Examples of the conversion:</caption>
+     * <tr>
+     * <th>identifier</th>
+     * <th>alwaysQuote</th>
+     * <th>Result</th></tr>
+     * <tr>
+     * <td align='center'>Hello</td>
+     * <td align='center'>false</td>
+     * <td align='center'>Hello</td>
+     * </tr>
+     * <tr>
+     * <td align='center'>Hello</td>
+     * <td align='center'>true</td>
+     * <td align='center'>"Hello"</td>
+     * </tr>
+     * <tr>
+     * <td align='center'>G'Day</td>
+     * <td align='center'>false</td>
+     * <td align='center'>"G'Day"</td>
+     * </tr>
+     * <tr>
+     * <td align='center'>"Bruce Wayne"</td>
+     * <td align='center'>false</td>
+     * <td align='center'>"Bruce Wayne"</td>
+     * </tr>
+     * <tr>
+     * <td align='center'>"Bruce Wayne"</td>
+     * <td align='center'>true</td>
+     * <td align='center'>"Bruce Wayne"</td>
+     * </tr>
+     * <tr>
+     * <td align='center'>GoodDay$</td>
+     * <td align='center'>false</td>
+     * <td align='center'>"GoodDay$"</td>
+     * </tr>
+     * <tr>
+     * <td align='center'>Hello"World</td>
+     * <td align='center'>false</td>
+     * <td align='center'>SQLException</td>
+     * </tr>
+     * <tr>
+     * <td align='center'>"Hello"World"</td>
+     * <td align='center'>false</td>
+     * <td align='center'>SQLException</td>
+     * </tr>
+     * </table>
+     * </blockquote>
+     * @implNote
+     * JDBC driver implementations may need to provide their own implementation
+     * of this method in order to meet the requirements of the underlying
+     * datasource.
+     * @param identifier a SQL identifier
+     * @param alwaysQuote indicates if a simple SQL identifier should be
+     * returned as a quoted identifier
+     * @return A simple SQL identifier or a delimited identifier
+     * @throws SQLException if identifier is not a valid identifier
+     * @throws SQLFeatureNotSupportedException if the datasource does not support
+     * delimited identifiers
+     * @throws NullPointerException if identifier is null
+     */
+    default String enquoteIdentifier(String identifier, boolean alwaysQuote) throws SQLException {
+        int len = identifier.length();
+        if (len < 1 || len > 128) {
+            throw new SQLException("Invalid name");
+        }
+        if (Pattern.compile("[\\p{Alpha}][\\p{Alnum}_]+").matcher(identifier).matches()) {
+            return alwaysQuote ?  "\"" + identifier + "\"" : identifier;
+        }
+        if (identifier.matches("^\".+\"$")) {
+            identifier = identifier.substring(1, len - 1);
+        }
+        if (Pattern.compile("[^\u0000\"]+").matcher(identifier).matches()) {
+            return "\"" + identifier + "\"";
+        } else {
+            throw new SQLException("Invalid name");
+        }
     }
 }

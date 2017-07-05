@@ -84,10 +84,15 @@
 package jdk.internal.dynalink.linker;
 
 import java.lang.invoke.MethodHandle;
+import jdk.internal.dynalink.DynamicLinkerFactory;
 
 /**
  * A generic interface describing operations that transform method handles.
+ * Typical usage is for implementing
+ * {@link DynamicLinkerFactory#setInternalObjectsFilter(MethodHandleTransformer)
+ * internal objects filters}.
  */
+@FunctionalInterface
 public interface MethodHandleTransformer {
     /**
      * Transforms a method handle.
