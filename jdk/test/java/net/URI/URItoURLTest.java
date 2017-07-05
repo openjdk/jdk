@@ -23,13 +23,16 @@
 
 /**
  * @test
- * @bug  4768755 4677045
- * @summary URL.equal(URL) is inconsistant for opaque URI.toURL()
- *                      and new URL(URI.toString)
+ * @bug  4768755 4677045 8147462
+ * @summary URL.equal(URL) is inconsistent for opaque URI.toURL()
+ *              and new URL(URI.toString)
  *          URI.toURL() does not always work as specified
+ *          Ensure URIs representing invalid/malformed URLs throw similar
+ *              exception with new URL(URI.toString()) and URI.toURL()
  */
 
 import java.net.*;
+import java.util.Objects;
 
 public class URItoURLTest {
 
@@ -39,19 +42,43 @@ public class URItoURLTest {
         URL classUrl = testClass.getClass().
                                     getResource("/java/lang/Object.class");
 
-        String[] uris = { "mailto:xyz@abc.de",
+        String[] uris = {
+                        "mailto:xyz@abc.de",
                         "file:xyz#ab",
                         "http:abc/xyz/pqr",
+                        "http:abc/xyz/pqr?id=x%0a&ca=true",
                         "file:/C:/v700/dev/unitTesting/tests/apiUtil/uri",
                         "http:///p",
+                        "file:/C:/v700/dev/unitTesting/tests/apiUtil/uri",
+                        "file:/C:/v700/dev%20src/unitTesting/tests/apiUtil/uri",
+                        "file:/C:/v700/dev%20src/./unitTesting/./tests/apiUtil/uri",
+                        "http://localhost:80/abc/./xyz/../pqr?id=x%0a&ca=true",
+                        "file:./test/./x",
+                        "file:./././%20#i=3",
+                        "file:?hmm",
+                        "file:.#hmm",
                         classUrl.toExternalForm(),
+                        };
+
+        // Strings that represent valid URIs but invalid URLs that should throw
+        // MalformedURLException both when calling toURL and new URL(String)
+        String[] malformedUrls = {
+                        "test:/test",
+                        "fiel:test",
+                        };
+
+        // Non-absolute URIs should throw IAE when calling toURL but will throw
+        // MalformedURLException when calling new URL
+        String[] illegalUris = {
+                        "./test",
+                        "/test",
                         };
 
         boolean isTestFailed = false;
         boolean isURLFailed = false;
 
-        for (int i = 0; i < uris.length; i++) {
-            URI uri = URI.create(uris[i]);
+        for (String uriString : uris) {
+            URI uri = URI.create(uriString);
 
             URL url1 = new URL(uri.toString());
             URL url2 = uri.toURL();
@@ -106,6 +133,42 @@ public class URItoURLTest {
             }
             System.out.println();
             isURLFailed = false;
+        }
+        for (String malformedUrl : malformedUrls) {
+            Exception toURLEx = null;
+            Exception newURLEx = null;
+            try {
+                new URI(malformedUrl).toURL();
+            } catch (Exception e) {
+                // expected
+                toURLEx = e;
+            }
+            try {
+                new URL(new URI(malformedUrl).toString());
+            } catch (Exception e) {
+                // expected
+                newURLEx = e;
+            }
+            if (!(toURLEx instanceof MalformedURLException) ||
+                    !(newURLEx instanceof MalformedURLException) ||
+                    !toURLEx.getMessage().equals(newURLEx.getMessage())) {
+                isTestFailed = true;
+                System.out.println("Expected the same MalformedURLException: " +
+                    newURLEx + " vs " + toURLEx);
+            }
+        }
+        for (String illegalUri : illegalUris) {
+             try {
+                 new URI(illegalUri).toURL();
+             } catch (IllegalArgumentException e) {
+                 // pass
+             }
+
+             try {
+                 new URL(illegalUri);
+             } catch (MalformedURLException e) {
+                 // pass
+             }
         }
         if (isTestFailed) {
             throw new Exception("URI.toURL() test failed");
