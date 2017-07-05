@@ -32,8 +32,8 @@
  * @run main/othervm/timeout=300 -Xbatch -XX:+IgnoreUnrecognizedVMOptions -XX:-TieredCompilation -XX:+OptimizeFill TestIntUnsafeOrdered
  */
 
-import sun.misc.Unsafe;
-import java.lang.reflect.*;
+import jdk.internal.misc.Unsafe;
+import java.lang.reflect.Field;
 
 public class TestIntUnsafeOrdered {
   private static final int ARRLEN = 97;
@@ -47,10 +47,10 @@ public class TestIntUnsafeOrdered {
   private static final int BASE;
   static {
     try {
-      Class c = TestIntUnsafeOrdered.class.getClassLoader().loadClass("sun.misc.Unsafe");
+      Class<?> c = Unsafe.class;
       Field f = c.getDeclaredField("theUnsafe");
       f.setAccessible(true);
-      unsafe = (Unsafe)f.get(c);
+      unsafe = (Unsafe) f.get(c);
       BASE = unsafe.arrayBaseOffset(int[].class);
     } catch (Exception e) {
       InternalError err = new InternalError();
@@ -771,213 +771,213 @@ public class TestIntUnsafeOrdered {
 
   static void test_ci(int[] a) {
     for (int i = 0; i < ARRLEN; i+=1) {
-      unsafe.putOrderedInt(a, byte_offset(i), -123);
+      unsafe.putIntRelease(a, byte_offset(i), -123);
     }
   }
   static void test_vi(int[] a, int b, int old) {
     for (int i = 0; i < ARRLEN; i+=1) {
-      unsafe.putOrderedInt(a, byte_offset(i), b);
+      unsafe.putIntRelease(a, byte_offset(i), b);
     }
   }
   static void test_cp(int[] a, int[] b) {
     for (int i = 0; i < ARRLEN; i+=1) {
-      unsafe.putOrderedInt(a, byte_offset(i), b[i]);
+      unsafe.putIntRelease(a, byte_offset(i), b[i]);
     }
   }
   static void test_2ci(int[] a, int[] b) {
     for (int i = 0; i < ARRLEN; i+=1) {
-      unsafe.putOrderedInt(a, byte_offset(i), -123);
-      unsafe.putOrderedInt(b, byte_offset(i), -103);
+      unsafe.putIntRelease(a, byte_offset(i), -123);
+      unsafe.putIntRelease(b, byte_offset(i), -103);
     }
   }
   static void test_2vi(int[] a, int[] b, int c, int d) {
     for (int i = 0; i < ARRLEN; i+=1) {
-      unsafe.putOrderedInt(a, byte_offset(i), c);
-      unsafe.putOrderedInt(b, byte_offset(i), d);
+      unsafe.putIntRelease(a, byte_offset(i), c);
+      unsafe.putIntRelease(b, byte_offset(i), d);
     }
   }
   static void test_ci_neg(int[] a, int old) {
     for (int i = ARRLEN-1; i >= 0; i-=1) {
-      unsafe.putOrderedInt(a, byte_offset(i), -123);
+      unsafe.putIntRelease(a, byte_offset(i), -123);
     }
   }
   static void test_vi_neg(int[] a, int b, int old) {
     for (int i = ARRLEN-1; i >= 0; i-=1) {
-      unsafe.putOrderedInt(a, byte_offset(i), b);
+      unsafe.putIntRelease(a, byte_offset(i), b);
     }
   }
   static void test_cp_neg(int[] a, int[] b) {
     for (int i = ARRLEN-1; i >= 0; i-=1) {
-      unsafe.putOrderedInt(a, byte_offset(i), b[i]);
+      unsafe.putIntRelease(a, byte_offset(i), b[i]);
     }
   }
   static void test_2ci_neg(int[] a, int[] b) {
     for (int i = ARRLEN-1; i >= 0; i-=1) {
-      unsafe.putOrderedInt(a, byte_offset(i), -123);
-      unsafe.putOrderedInt(b, byte_offset(i), -103);
+      unsafe.putIntRelease(a, byte_offset(i), -123);
+      unsafe.putIntRelease(b, byte_offset(i), -103);
     }
   }
   static void test_2vi_neg(int[] a, int[] b, int c, int d) {
     for (int i = ARRLEN-1; i >= 0; i-=1) {
-      unsafe.putOrderedInt(a, byte_offset(i), c);
-      unsafe.putOrderedInt(b, byte_offset(i), d);
+      unsafe.putIntRelease(a, byte_offset(i), c);
+      unsafe.putIntRelease(b, byte_offset(i), d);
     }
   }
   static void test_ci_oppos(int[] a, int old) {
     int limit = ARRLEN-1;
     for (int i = 0; i < ARRLEN; i+=1) {
-      unsafe.putOrderedInt(a, byte_offset(limit-i), -123);
+      unsafe.putIntRelease(a, byte_offset(limit-i), -123);
     }
   }
   static void test_vi_oppos(int[] a, int b, int old) {
     int limit = ARRLEN-1;
     for (int i = limit; i >= 0; i-=1) {
-      unsafe.putOrderedInt(a, byte_offset(limit-i), b);
+      unsafe.putIntRelease(a, byte_offset(limit-i), b);
     }
   }
   static void test_cp_oppos(int[] a, int[] b) {
     int limit = ARRLEN-1;
     for (int i = 0; i < ARRLEN; i+=1) {
-      unsafe.putOrderedInt(a, byte_offset(i), b[limit-i]);
+      unsafe.putIntRelease(a, byte_offset(i), b[limit-i]);
     }
   }
   static void test_2ci_oppos(int[] a, int[] b) {
     int limit = ARRLEN-1;
     for (int i = 0; i < ARRLEN; i+=1) {
-      unsafe.putOrderedInt(a, byte_offset(limit-i), -123);
-      unsafe.putOrderedInt(b, byte_offset(i), -103);
+      unsafe.putIntRelease(a, byte_offset(limit-i), -123);
+      unsafe.putIntRelease(b, byte_offset(i), -103);
     }
   }
   static void test_2vi_oppos(int[] a, int[] b, int c, int d) {
     int limit = ARRLEN-1;
     for (int i = limit; i >= 0; i-=1) {
-      unsafe.putOrderedInt(a, byte_offset(i), c);
-      unsafe.putOrderedInt(b, byte_offset(limit-i), d);
+      unsafe.putIntRelease(a, byte_offset(i), c);
+      unsafe.putIntRelease(b, byte_offset(limit-i), d);
     }
   }
   static void test_ci_off(int[] a, int old) {
     for (int i = 0; i < ARRLEN-OFFSET; i+=1) {
-      unsafe.putOrderedInt(a, byte_offset(i+OFFSET), -123);
+      unsafe.putIntRelease(a, byte_offset(i+OFFSET), -123);
     }
   }
   static void test_vi_off(int[] a, int b, int old) {
     for (int i = 0; i < ARRLEN-OFFSET; i+=1) {
-      unsafe.putOrderedInt(a, byte_offset(i+OFFSET), b);
+      unsafe.putIntRelease(a, byte_offset(i+OFFSET), b);
     }
   }
   static void test_cp_off(int[] a, int[] b) {
     for (int i = 0; i < ARRLEN-OFFSET; i+=1) {
-      unsafe.putOrderedInt(a, byte_offset(i+OFFSET), b[i+OFFSET]);
+      unsafe.putIntRelease(a, byte_offset(i+OFFSET), b[i+OFFSET]);
     }
   }
   static void test_2ci_off(int[] a, int[] b) {
     for (int i = 0; i < ARRLEN-OFFSET; i+=1) {
-      unsafe.putOrderedInt(a, byte_offset(i+OFFSET), -123);
-      unsafe.putOrderedInt(b, byte_offset(i+OFFSET), -103);
+      unsafe.putIntRelease(a, byte_offset(i+OFFSET), -123);
+      unsafe.putIntRelease(b, byte_offset(i+OFFSET), -103);
     }
   }
   static void test_2vi_off(int[] a, int[] b, int c, int d) {
     for (int i = 0; i < ARRLEN-OFFSET; i+=1) {
-      unsafe.putOrderedInt(a, byte_offset(i+OFFSET), c);
-      unsafe.putOrderedInt(b, byte_offset(i+OFFSET), d);
+      unsafe.putIntRelease(a, byte_offset(i+OFFSET), c);
+      unsafe.putIntRelease(b, byte_offset(i+OFFSET), d);
     }
   }
   static void test_ci_inv(int[] a, int k, int old) {
     for (int i = 0; i < ARRLEN-k; i+=1) {
-      unsafe.putOrderedInt(a, byte_offset(i+k), -123);
+      unsafe.putIntRelease(a, byte_offset(i+k), -123);
     }
   }
   static void test_vi_inv(int[] a, int b, int k, int old) {
     for (int i = 0; i < ARRLEN-k; i+=1) {
-      unsafe.putOrderedInt(a, byte_offset(i+k), b);
+      unsafe.putIntRelease(a, byte_offset(i+k), b);
     }
   }
   static void test_cp_inv(int[] a, int[] b, int k) {
     for (int i = 0; i < ARRLEN-k; i+=1) {
-      unsafe.putOrderedInt(a, byte_offset(i+k), b[i+k]);
+      unsafe.putIntRelease(a, byte_offset(i+k), b[i+k]);
     }
   }
   static void test_2ci_inv(int[] a, int[] b, int k) {
     for (int i = 0; i < ARRLEN-k; i+=1) {
-      unsafe.putOrderedInt(a, byte_offset(i+k), -123);
-      unsafe.putOrderedInt(b, byte_offset(i+k), -103);
+      unsafe.putIntRelease(a, byte_offset(i+k), -123);
+      unsafe.putIntRelease(b, byte_offset(i+k), -103);
     }
   }
   static void test_2vi_inv(int[] a, int[] b, int c, int d, int k) {
     for (int i = 0; i < ARRLEN-k; i+=1) {
-      unsafe.putOrderedInt(a, byte_offset(i+k), c);
-      unsafe.putOrderedInt(b, byte_offset(i+k), d);
+      unsafe.putIntRelease(a, byte_offset(i+k), c);
+      unsafe.putIntRelease(b, byte_offset(i+k), d);
     }
   }
   static void test_ci_scl(int[] a, int old) {
     for (int i = 0; i*SCALE < ARRLEN; i+=1) {
-      unsafe.putOrderedInt(a, byte_offset(i*SCALE), -123);
+      unsafe.putIntRelease(a, byte_offset(i*SCALE), -123);
     }
   }
   static void test_vi_scl(int[] a, int b, int old) {
     for (int i = 0; i*SCALE < ARRLEN; i+=1) {
-      unsafe.putOrderedInt(a, byte_offset(i*SCALE), b);
+      unsafe.putIntRelease(a, byte_offset(i*SCALE), b);
     }
   }
   static void test_cp_scl(int[] a, int[] b) {
     for (int i = 0; i*SCALE < ARRLEN; i+=1) {
-      unsafe.putOrderedInt(a, byte_offset(i*SCALE), b[i*SCALE]);
+      unsafe.putIntRelease(a, byte_offset(i*SCALE), b[i*SCALE]);
     }
   }
   static void test_2ci_scl(int[] a, int[] b) {
     for (int i = 0; i*SCALE < ARRLEN; i+=1) {
-      unsafe.putOrderedInt(a, byte_offset(i*SCALE), -123);
-      unsafe.putOrderedInt(b, byte_offset(i*SCALE), -103);
+      unsafe.putIntRelease(a, byte_offset(i*SCALE), -123);
+      unsafe.putIntRelease(b, byte_offset(i*SCALE), -103);
     }
   }
   static void test_2vi_scl(int[] a, int[] b, int c, int d) {
     for (int i = 0; i*SCALE < ARRLEN; i+=1) {
-      unsafe.putOrderedInt(a, byte_offset(i*SCALE), c);
-      unsafe.putOrderedInt(b, byte_offset(i*SCALE), d);
+      unsafe.putIntRelease(a, byte_offset(i*SCALE), c);
+      unsafe.putIntRelease(b, byte_offset(i*SCALE), d);
     }
   }
   static void test_cp_alndst(int[] a, int[] b) {
     for (int i = 0; i < ARRLEN-ALIGN_OFF; i+=1) {
-      unsafe.putOrderedInt(a, byte_offset(i+ALIGN_OFF), b[i]);
+      unsafe.putIntRelease(a, byte_offset(i+ALIGN_OFF), b[i]);
     }
   }
   static void test_cp_alnsrc(int[] a, int[] b) {
     for (int i = 0; i < ARRLEN-ALIGN_OFF; i+=1) {
-      unsafe.putOrderedInt(a, byte_offset(i), b[i+ALIGN_OFF]);
+      unsafe.putIntRelease(a, byte_offset(i), b[i+ALIGN_OFF]);
     }
   }
   static void test_2ci_aln(int[] a, int[] b) {
     for (int i = 0; i < ARRLEN-ALIGN_OFF; i+=1) {
-      unsafe.putOrderedInt(a, byte_offset(i+ALIGN_OFF), -123);
-      unsafe.putOrderedInt(b, byte_offset(i), -103);
+      unsafe.putIntRelease(a, byte_offset(i+ALIGN_OFF), -123);
+      unsafe.putIntRelease(b, byte_offset(i), -103);
     }
   }
   static void test_2vi_aln(int[] a, int[] b, int c, int d) {
     for (int i = 0; i < ARRLEN-ALIGN_OFF; i+=1) {
-      unsafe.putOrderedInt(a, byte_offset(i), c);
-      unsafe.putOrderedInt(b, byte_offset(i+ALIGN_OFF), d);
+      unsafe.putIntRelease(a, byte_offset(i), c);
+      unsafe.putIntRelease(b, byte_offset(i+ALIGN_OFF), d);
     }
   }
   static void test_cp_unalndst(int[] a, int[] b) {
     for (int i = 0; i < ARRLEN-UNALIGN_OFF; i+=1) {
-      unsafe.putOrderedInt(a, byte_offset(i+UNALIGN_OFF), b[i]);
+      unsafe.putIntRelease(a, byte_offset(i+UNALIGN_OFF), b[i]);
     }
   }
   static void test_cp_unalnsrc(int[] a, int[] b) {
     for (int i = 0; i < ARRLEN-UNALIGN_OFF; i+=1) {
-      unsafe.putOrderedInt(a, byte_offset(i), b[i+UNALIGN_OFF]);
+      unsafe.putIntRelease(a, byte_offset(i), b[i+UNALIGN_OFF]);
     }
   }
   static void test_2ci_unaln(int[] a, int[] b) {
     for (int i = 0; i < ARRLEN-UNALIGN_OFF; i+=1) {
-      unsafe.putOrderedInt(a, byte_offset(i+UNALIGN_OFF), -123);
-      unsafe.putOrderedInt(b, byte_offset(i), -103);
+      unsafe.putIntRelease(a, byte_offset(i+UNALIGN_OFF), -123);
+      unsafe.putIntRelease(b, byte_offset(i), -103);
     }
   }
   static void test_2vi_unaln(int[] a, int[] b, int c, int d) {
     for (int i = 0; i < ARRLEN-UNALIGN_OFF; i+=1) {
-      unsafe.putOrderedInt(a, byte_offset(i), c);
-      unsafe.putOrderedInt(b, byte_offset(i+UNALIGN_OFF), d);
+      unsafe.putIntRelease(a, byte_offset(i), c);
+      unsafe.putIntRelease(b, byte_offset(i+UNALIGN_OFF), d);
     }
   }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.security.cert.*;
 import javax.security.auth.x500.X500Principal;
 import sun.security.action.GetBooleanAction;
 import sun.security.provider.certpath.AlgorithmChecker;
+import sun.security.provider.certpath.PKIXTimestampParameters;
 
 /**
  * Validator implementation built on the PKIX CertPath API. This
@@ -194,13 +195,23 @@ public final class PKIXValidator extends Validator {
                 ("null or zero-length certificate chain");
         }
 
+        // Check if 'parameter' affects 'pkixParameters'
+        PKIXBuilderParameters pkixParameters = null;
+        if (parameter instanceof Timestamp && plugin) {
+            try {
+                pkixParameters = new PKIXTimestampParameters(
+                        (PKIXBuilderParameters) parameterTemplate.clone(),
+                        (Timestamp) parameter);
+            } catch (InvalidAlgorithmParameterException e) {
+                // ignore exception
+            }
+        } else {
+            pkixParameters = (PKIXBuilderParameters) parameterTemplate.clone();
+        }
+
         // add new algorithm constraints checker
-        PKIXBuilderParameters pkixParameters =
-                    (PKIXBuilderParameters) parameterTemplate.clone();
-        AlgorithmChecker algorithmChecker = null;
         if (constraints != null) {
-            algorithmChecker = new AlgorithmChecker(constraints);
-            pkixParameters.addCertPathChecker(algorithmChecker);
+            pkixParameters.addCertPathChecker(new AlgorithmChecker(constraints));
         }
 
         // attach it to the PKIXBuilderParameters.

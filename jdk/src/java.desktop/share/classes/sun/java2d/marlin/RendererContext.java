@@ -40,12 +40,12 @@ import static sun.java2d.marlin.MarlinUtils.logInfo;
 final class RendererContext extends ReentrantContext implements MarlinConst {
 
     // RendererContext creation counter
-    private static final AtomicInteger contextCount = new AtomicInteger(1);
+    private static final AtomicInteger CTX_COUNT = new AtomicInteger(1);
     // RendererContext statistics
-    static final RendererStats stats = (doStats || doMonitors)
+    final RendererStats stats = (DO_STATS || DO_MONITORS)
                                        ? RendererStats.getInstance(): null;
 
-    private static final boolean USE_CACHE_HARD_REF = doStats
+    private static final boolean USE_CACHE_HARD_REF = DO_STATS
         || (MarlinRenderingEngine.REF_TYPE == ReentrantContextProvider.REF_WEAK);
 
     /**
@@ -55,10 +55,10 @@ final class RendererContext extends ReentrantContext implements MarlinConst {
      */
     static RendererContext createContext() {
         final RendererContext newCtx = new RendererContext("ctx"
-                    + Integer.toString(contextCount.getAndIncrement()));
+                    + Integer.toString(CTX_COUNT.getAndIncrement()));
 
-        if (RendererContext.stats != null) {
-            RendererContext.stats.allContexts.add(newCtx);
+        if (DO_STATS || DO_MONITORS) {
+            RendererStats.ALL_CONTEXTS.add(newCtx);
         }
         return newCtx;
     }
@@ -101,7 +101,7 @@ final class RendererContext extends ReentrantContext implements MarlinConst {
      * @param name context name (debugging)
      */
     RendererContext(final String name) {
-        if (logCreateContext) {
+        if (LOG_CREATE_CONTEXT) {
             MarlinUtils.logInfo("new RendererContext = " + name);
         }
 
@@ -162,7 +162,7 @@ final class RendererContext extends ReentrantContext implements MarlinConst {
                      : null;
             // create a new ArrayCachesHolder if none is available
             if (holder == null) {
-                if (logCreateContext) {
+                if (LOG_CREATE_CONTEXT) {
                     MarlinUtils.logInfo("new ArrayCachesHolder for "
                                         + "RendererContext = " + name);
                 }
@@ -192,11 +192,11 @@ final class RendererContext extends ReentrantContext implements MarlinConst {
             return getDirtyByteArrayCache(length).getArray();
         }
 
-        if (doStats) {
+        if (DO_STATS) {
             incOversize();
         }
 
-        if (doLogOverSize) {
+        if (DO_LOG_OVERSIZE) {
             logInfo("getDirtyByteArray[oversize]: length=\t" + length);
         }
 
@@ -216,10 +216,10 @@ final class RendererContext extends ReentrantContext implements MarlinConst {
                                final int usedSize, final int needSize)
     {
         final int length = in.length;
-        if (doChecks && length >= needSize) {
+        if (DO_CHECKS && length >= needSize) {
             return in;
         }
-        if (doStats) {
+        if (DO_STATS) {
             incResizeDirtyByte();
         }
 
@@ -233,7 +233,7 @@ final class RendererContext extends ReentrantContext implements MarlinConst {
         // NO clean-up of array data = DIRTY ARRAY
         putDirtyByteArray(in);
 
-        if (doLogWidenArray) {
+        if (DO_LOG_WIDEN_ARRAY) {
             logInfo("widenDirtyByteArray[" + res.length + "]: usedSize=\t"
                     + usedSize + "\tlength=\t" + length + "\tneeded length=\t"
                     + needSize);
@@ -252,11 +252,11 @@ final class RendererContext extends ReentrantContext implements MarlinConst {
             return getIntArrayCache(length).getArray();
         }
 
-        if (doStats) {
+        if (DO_STATS) {
             incOversize();
         }
 
-        if (doLogOverSize) {
+        if (DO_LOG_OVERSIZE) {
             logInfo("getIntArray[oversize]: length=\t" + length);
         }
 
@@ -268,10 +268,10 @@ final class RendererContext extends ReentrantContext implements MarlinConst {
                         final int needSize, final int clearTo)
     {
         final int length = in.length;
-        if (doChecks && length >= needSize) {
+        if (DO_CHECKS && length >= needSize) {
             return in;
         }
-        if (doStats) {
+        if (DO_STATS) {
             incResizeInt();
         }
 
@@ -284,7 +284,7 @@ final class RendererContext extends ReentrantContext implements MarlinConst {
         // maybe return current array:
         putIntArray(in, 0, clearTo); // ensure all array is cleared (grow-reduce algo)
 
-        if (doLogWidenArray) {
+        if (DO_LOG_WIDEN_ARRAY) {
             logInfo("widenIntArray[" + res.length + "]: usedSize=\t"
                     + usedSize + "\tlength=\t" + length + "\tneeded length=\t"
                     + needSize);
@@ -314,11 +314,11 @@ final class RendererContext extends ReentrantContext implements MarlinConst {
             return getDirtyIntArrayCache(length).getArray();
         }
 
-        if (doStats) {
+        if (DO_STATS) {
             incOversize();
         }
 
-        if (doLogOverSize) {
+        if (DO_LOG_OVERSIZE) {
             logInfo("getDirtyIntArray[oversize]: length=\t" + length);
         }
 
@@ -329,10 +329,10 @@ final class RendererContext extends ReentrantContext implements MarlinConst {
                              final int usedSize, final int needSize)
     {
         final int length = in.length;
-        if (doChecks && length >= needSize) {
+        if (DO_CHECKS && length >= needSize) {
             return in;
         }
-        if (doStats) {
+        if (DO_STATS) {
             incResizeDirtyInt();
         }
 
@@ -346,7 +346,7 @@ final class RendererContext extends ReentrantContext implements MarlinConst {
         // NO clean-up of array data = DIRTY ARRAY
         putDirtyIntArray(in);
 
-        if (doLogWidenArray) {
+        if (DO_LOG_WIDEN_ARRAY) {
             logInfo("widenDirtyIntArray[" + res.length + "]: usedSize=\t"
                     + usedSize + "\tlength=\t" + length + "\tneeded length=\t"
                     + needSize);
@@ -374,11 +374,11 @@ final class RendererContext extends ReentrantContext implements MarlinConst {
             return getDirtyFloatArrayCache(length).getArray();
         }
 
-        if (doStats) {
+        if (DO_STATS) {
             incOversize();
         }
 
-        if (doLogOverSize) {
+        if (DO_LOG_OVERSIZE) {
             logInfo("getDirtyFloatArray[oversize]: length=\t" + length);
         }
 
@@ -389,10 +389,10 @@ final class RendererContext extends ReentrantContext implements MarlinConst {
                                  final int usedSize, final int needSize)
     {
         final int length = in.length;
-        if (doChecks && length >= needSize) {
+        if (DO_CHECKS && length >= needSize) {
             return in;
         }
-        if (doStats) {
+        if (DO_STATS) {
             incResizeDirtyFloat();
         }
 
@@ -406,7 +406,7 @@ final class RendererContext extends ReentrantContext implements MarlinConst {
         // NO clean-up of array data = DIRTY ARRAY
         putDirtyFloatArray(in);
 
-        if (doLogWidenArray) {
+        if (DO_LOG_WIDEN_ARRAY) {
             logInfo("widenDirtyFloatArray[" + res.length + "]: usedSize=\t"
                     + usedSize + "\tlength=\t" + length + "\tneeded length=\t"
                     + needSize);

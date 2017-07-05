@@ -1000,8 +1000,19 @@ BOOL AwtPrintControl::UpdateAttributes(JNIEnv *env,
                 }
             } else {
                 int xRes = devmode->dmPrintQuality;
-                int yRes = (devmode->dmFields & DM_YRESOLUTION) ?
-                  devmode->dmYResolution : devmode->dmPrintQuality;
+
+                /* For some printers, printer quality can specify 1200IQ
+                 * In this case, dmPrintQuality comes out 600 and
+                 * dmYResolution comes out 2, similarly for 2400IQ
+                 * dmPrintQuality comes out 600 and dmYResolution comes out 4
+                 * which is not a valid resolution
+                 * so for IQ setting, we modify y-resolution only when it is
+                 * greater than 10.
+                 */
+                int yRes = (devmode->dmFields & DM_YRESOLUTION) &&
+                           (devmode->dmYResolution > 10) ?
+                           devmode->dmYResolution : devmode->dmPrintQuality;
+
                 env->CallVoidMethod(printCtrl, AwtPrintControl::setResID,
                                     xRes, yRes);
             }

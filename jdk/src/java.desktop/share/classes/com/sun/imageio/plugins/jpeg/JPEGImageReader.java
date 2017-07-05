@@ -519,28 +519,129 @@ public class JPEGImageReader extends ImageReader {
     /**
      * Skip over a complete image in the stream, leaving the stream
      * positioned such that the next byte to be read is the first
-     * byte of the next image.  For JPEG, this means that we read
+     * byte of the next image. For JPEG, this means that we read
      * until we encounter an EOI marker or until the end of the stream.
-     * If the stream ends before an EOI marker is encountered, an
-     * IndexOutOfBoundsException is thrown.
+     * We can find data same as EOI marker in some headers
+     * or comments, so we have to skip bytes related to these headers.
+     * If the stream ends before an EOI marker is encountered,
+     * an IndexOutOfBoundsException is thrown.
      */
     private void skipImage() throws IOException {
         if (debug) {
             System.out.println("skipImage called");
         }
+        // verify if image starts with an SOI marker
+        int initialFF = iis.read();
+        if (initialFF == 0xff) {
+            int soiMarker = iis.read();
+            if (soiMarker != JPEG.SOI) {
+                throw new IOException("skipImage : Invalid image doesn't "
+                        + "start with SOI marker");
+            }
+        } else {
+            throw new IOException("skipImage : Invalid image doesn't start "
+                    + "with 0xff");
+        }
         boolean foundFF = false;
+        String IOOBE = "skipImage : Reached EOF before we got EOI marker";
+        int markerLength = 2;
         for (int byteval = iis.read();
              byteval != -1;
              byteval = iis.read()) {
 
             if (foundFF == true) {
-                if (byteval == JPEG.EOI) {
-                    return;
+                switch (byteval) {
+                    case JPEG.EOI:
+                        if (debug) {
+                            System.out.println("skipImage : Found EOI at " +
+                                    (iis.getStreamPosition() - markerLength));
+                        }
+                        return;
+                    case JPEG.SOI:
+                        throw new IOException("skipImage : Found extra SOI"
+                                + " marker before getting to EOI");
+                    case 0:
+                    // markers which doesn't contain length data
+                    case JPEG.RST0:
+                    case JPEG.RST1:
+                    case JPEG.RST2:
+                    case JPEG.RST3:
+                    case JPEG.RST4:
+                    case JPEG.RST5:
+                    case JPEG.RST6:
+                    case JPEG.RST7:
+                    case JPEG.TEM:
+                        break;
+                    // markers which contains length data
+                    case JPEG.SOF0:
+                    case JPEG.SOF1:
+                    case JPEG.SOF2:
+                    case JPEG.SOF3:
+                    case JPEG.DHT:
+                    case JPEG.SOF5:
+                    case JPEG.SOF6:
+                    case JPEG.SOF7:
+                    case JPEG.JPG:
+                    case JPEG.SOF9:
+                    case JPEG.SOF10:
+                    case JPEG.SOF11:
+                    case JPEG.DAC:
+                    case JPEG.SOF13:
+                    case JPEG.SOF14:
+                    case JPEG.SOF15:
+                    case JPEG.SOS:
+                    case JPEG.DQT:
+                    case JPEG.DNL:
+                    case JPEG.DRI:
+                    case JPEG.DHP:
+                    case JPEG.EXP:
+                    case JPEG.APP0:
+                    case JPEG.APP1:
+                    case JPEG.APP2:
+                    case JPEG.APP3:
+                    case JPEG.APP4:
+                    case JPEG.APP5:
+                    case JPEG.APP6:
+                    case JPEG.APP7:
+                    case JPEG.APP8:
+                    case JPEG.APP9:
+                    case JPEG.APP10:
+                    case JPEG.APP11:
+                    case JPEG.APP12:
+                    case JPEG.APP13:
+                    case JPEG.APP14:
+                    case JPEG.APP15:
+                    case JPEG.COM:
+                        // read length of header from next 2 bytes
+                        int lengthHigherBits, lengthLowerBits, length;
+                        lengthHigherBits = iis.read();
+                        if (lengthHigherBits != (-1)) {
+                            lengthLowerBits = iis.read();
+                            if (lengthLowerBits != (-1)) {
+                                length = (lengthHigherBits << 8) |
+                                        lengthLowerBits;
+                                // length contains already read 2 bytes
+                                length -= 2;
+                            } else {
+                                throw new IndexOutOfBoundsException(IOOBE);
+                            }
+                        } else {
+                            throw new IndexOutOfBoundsException(IOOBE);
+                        }
+                        // skip the length specified in marker
+                        iis.skipBytes(length);
+                        break;
+                    case (-1):
+                        throw new IndexOutOfBoundsException(IOOBE);
+                    default:
+                        throw new IOException("skipImage : Invalid marker "
+                                + "starting with ff "
+                                + Integer.toHexString(byteval));
                 }
             }
-            foundFF = (byteval == 0xff) ? true : false;
+            foundFF = (byteval == 0xff);
         }
-        throw new IndexOutOfBoundsException();
+        throw new IndexOutOfBoundsException(IOOBE);
     }
 
     /**

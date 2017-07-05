@@ -27,12 +27,12 @@
  * @bug 8031320
  * @summary Verify UseRTMForStackLocks option processing on CPU with
  *          rtm support when VM supports rtm locking.
- * @library /testlibrary /test/lib /compiler/testlibrary
+ * @library /testlibrary /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @build TestUseRTMForStackLocksOptionOnSupportedConfig
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
- *                              sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI
  *                   TestUseRTMForStackLocksOptionOnSupportedConfig
@@ -41,8 +41,8 @@
 import jdk.test.lib.*;
 import jdk.test.lib.cli.*;
 import jdk.test.lib.cli.predicate.AndPredicate;
-import rtm.predicate.SupportedCPU;
-import rtm.predicate.SupportedVM;
+import compiler.testlibrary.rtm.predicate.SupportedCPU;
+import compiler.testlibrary.rtm.predicate.SupportedVM;
 
 public class TestUseRTMForStackLocksOptionOnSupportedConfig
         extends CommandLineOptionTest {

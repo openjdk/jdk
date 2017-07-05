@@ -121,16 +121,15 @@ void G1StringDedupThread::run_service() {
         }
       }
 
-      G1StringDedupTable::trim_entry_cache();
-
       stat.mark_done();
 
       // Print statistics
       total_stat.add(stat);
       print(stat, total_stat);
     }
-  }
 
+    G1StringDedupTable::clean_entry_cache();
+  }
 }
 
 void G1StringDedupThread::stop_service() {

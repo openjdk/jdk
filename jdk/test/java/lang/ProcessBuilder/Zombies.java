@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,9 @@ public class Zombies {
             ! new File("/bin/ps").canExecute())
             return;
         System.out.println("Looks like a Unix system.");
+        long mypid = ProcessHandle.current().getPid();
+        System.out.printf("mypid: %d%n", mypid);
+
         final Runtime rt = Runtime.getRuntime();
 
         try {
@@ -59,7 +62,10 @@ public class Zombies {
             throw new Error("expected IOException not thrown");
         } catch (IOException expected) {/* OK */}
 
-        rt.exec(TrueCommand).waitFor();
+        Process p = rt.exec(TrueCommand);
+        ProcessHandle pp = p.toHandle().parent().orElse(null);
+        System.out.printf("pid: %d, parent: %s%n", p.getPid(), pp);
+        p.waitFor();
 
         // Count all the zombies that are children of this Java process
         final String[] zombieCounter = {
@@ -68,6 +74,13 @@ public class Zombies {
         };
 
         int zombies = rt.exec(zombieCounter).waitFor();
-        if (zombies != 0) throw new Error(zombies + " zombies!");
+        if (zombies != 0) {
+            // Log remaining processes
+            ProcessBuilder pb = new ProcessBuilder("/bin/ps", "-ef");
+            pb.inheritIO();
+            Process p2 = pb.start();
+            p2.waitFor();
+            throw new Error(zombies + " zombies!");
+        }
     }
 }

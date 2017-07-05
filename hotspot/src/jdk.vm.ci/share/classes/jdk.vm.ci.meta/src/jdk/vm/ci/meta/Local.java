@@ -22,6 +22,9 @@
  */
 package jdk.vm.ci.meta;
 
+/**
+ * Describes the type and bytecode index range in which a local variable is live.
+ */
 public class Local {
 
     private final String name;

@@ -119,17 +119,20 @@ public final class VirtualObject implements JavaValue {
     }
 
     /**
-     * Returns an array containing all the values to be stored into the object when it is recreated.
+     * Returns the array containing all the values to be stored into the object when it is
+     * recreated. This field is intentional exposed as a mutable array that a compiler may modify
+     * (e.g. during register allocation).
      */
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "`values` is intentional mutable")//
     public JavaValue[] getValues() {
         return values;
     }
 
     /**
-     * Returns an array containing the Java kind of all values in the object.
+     * Returns the kind of the value at {@code index}.
      */
-    public JavaKind[] getSlotKinds() {
-        return slotKinds;
+    public JavaKind getSlotKind(int index) {
+        return slotKinds[index];
     }
 
     /**
@@ -145,9 +148,13 @@ public final class VirtualObject implements JavaValue {
      *
      * @param values an array containing all the values to be stored into the object when it is
      *            recreated.
-     * @param slotKinds an array containing the Java kinds of the values.
+     * @param slotKinds an array containing the Java kinds of the values. This must have the same
+     *            length as {@code values}. This array is now owned by this object and must not be
+     *            mutated by the caller.
      */
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "caller transfers ownership of `slotKinds`")
     public void setValues(JavaValue[] values, JavaKind[] slotKinds) {
+        assert values.length == slotKinds.length;
         this.values = values;
         this.slotKinds = slotKinds;
     }

@@ -823,15 +823,11 @@ class Compile : public Phase {
   }
 
   void record_failure(const char* reason);
-  void record_method_not_compilable(const char* reason, bool all_tiers = false) {
-    // All bailouts cover "all_tiers" when TieredCompilation is off.
-    if (!TieredCompilation) all_tiers = true;
-    env()->record_method_not_compilable(reason, all_tiers);
+  void record_method_not_compilable(const char* reason) {
+    // Bailouts cover "all_tiers" when TieredCompilation is off.
+    env()->record_method_not_compilable(reason, !TieredCompilation);
     // Record failure reason.
     record_failure(reason);
-  }
-  void record_method_not_compilable_all_tiers(const char* reason) {
-    record_method_not_compilable(reason, true);
   }
   bool check_node_count(uint margin, const char* reason) {
     if (live_nodes() + margin > max_node_limit()) {

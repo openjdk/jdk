@@ -28,7 +28,7 @@ import sun.hotspot.WhiteBox;
  * @test TestStressRSetCoarsening.java
  * @key stress
  * @bug 8146984 8147087
- * @requires vm.gc=="G1" | vm.gc=="null"
+ * @requires vm.gc.G1
  * @requires os.maxMemory > 3G
  * @requires vm.opt.MaxGCPauseMillis == "null"
  *

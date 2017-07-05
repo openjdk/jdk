@@ -49,9 +49,6 @@ class Aix {
   static Mutex* _createThread_lock;
   static int _page_size;
 
-  // Page size of newly created pthreads.
-  static int _stack_page_size;
-
   // -1 = uninitialized, 0 = AIX, 1 = OS/400 (PASE)
   static int _on_pase;
 
@@ -112,15 +109,6 @@ class Aix {
     assert(_page_size != -1, "not initialized");
     return _page_size;
   }
-
-  // Accessor methods for stack page size which may be different from usual page size.
-  static int stack_page_size(void) {
-    assert(_stack_page_size != -1, "not initialized");
-    return _stack_page_size;
-  }
-
-  // This is used to scale stack space (guard pages etc.). The name is somehow misleading.
-  static int vm_default_page_size(void ) { return 8*K; }
 
   static address   ucontext_get_pc(const ucontext_t* uc);
   static intptr_t* ucontext_get_sp(const ucontext_t* uc);

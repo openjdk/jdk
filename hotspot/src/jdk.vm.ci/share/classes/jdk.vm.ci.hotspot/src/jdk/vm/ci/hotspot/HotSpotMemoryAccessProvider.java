@@ -22,7 +22,6 @@
  */
 package jdk.vm.ci.hotspot;
 
-import jdk.vm.ci.hotspot.HotSpotVMConfig.CompressEncoding;
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.MemoryAccessProvider;
@@ -32,11 +31,11 @@ import jdk.vm.ci.meta.MemoryAccessProvider;
  */
 public interface HotSpotMemoryAccessProvider extends MemoryAccessProvider {
 
-    JavaConstant readNarrowOopConstant(Constant base, long displacement, CompressEncoding encoding);
+    JavaConstant readNarrowOopConstant(Constant base, long displacement);
 
     Constant readKlassPointerConstant(Constant base, long displacement);
 
-    Constant readNarrowKlassPointerConstant(Constant base, long displacement, CompressEncoding encoding);
+    Constant readNarrowKlassPointerConstant(Constant base, long displacement);
 
     Constant readMethodPointerConstant(Constant base, long displacement);
 }
