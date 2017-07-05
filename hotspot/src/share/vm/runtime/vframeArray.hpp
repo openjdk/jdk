@@ -85,10 +85,8 @@ class vframeArrayElement : public _ValueObj {
 
   // Returns the on stack word size for this frame
   // callee_parameters is the number of callee locals residing inside this frame
-  int on_stack_size(int caller_actual_parameters,
-                    int callee_parameters,
+  int on_stack_size(int callee_parameters,
                     int callee_locals,
-                    bool is_bottom_frame,
                     bool is_top_frame,
                     int popframe_extra_stack_expression_els) const;
 
