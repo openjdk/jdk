@@ -170,6 +170,7 @@ void TemplateTable::patch_bytecode(Bytecodes::Code new_bc, Register Rnew_bc, Reg
   switch (new_bc) {
     case Bytecodes::_fast_aputfield:
     case Bytecodes::_fast_bputfield:
+    case Bytecodes::_fast_zputfield:
     case Bytecodes::_fast_cputfield:
     case Bytecodes::_fast_dputfield:
     case Bytecodes::_fast_fputfield:
@@ -981,9 +982,21 @@ void TemplateTable::bastore() {
                  Rarray   = R12_scratch2,
                  Rscratch = R3_ARG1;
   __ pop_i(Rindex);
+  __ pop_ptr(Rarray);
   // tos: val
-  // Rarray: array ptr (popped by index_check)
-  __ index_check(Rarray, Rindex, 0, Rscratch, Rarray);
+
+  // Need to check whether array is boolean or byte
+  // since both types share the bastore bytecode.
+  __ load_klass(Rscratch, Rarray);
+  __ lwz(Rscratch, in_bytes(Klass::layout_helper_offset()), Rscratch);
+  int diffbit = exact_log2(Klass::layout_helper_boolean_diffbit());
+  __ testbitdi(CCR0, R0, Rscratch, diffbit);
+  Label L_skip;
+  __ bfalse(CCR0, L_skip);
+  __ andi(R17_tos, R17_tos, 1);  // if it is a T_BOOLEAN array, mask the stored value to 0/1
+  __ bind(L_skip);
+
+  __ index_check_without_pop(Rarray, Rindex, 0, Rscratch, Rarray);
   __ stb(R17_tos, arrayOopDesc::base_offset_in_bytes(T_BYTE), Rarray);
 }
 
@@ -2108,12 +2121,16 @@ void TemplateTable::_return(TosState state) {
   __ remove_activation(state, /* throw_monitor_exception */ true);
   // Restoration of lr done by remove_activation.
   switch (state) {
+    // Narrow result if state is itos but result type is smaller.
+    // Need to narrow in the return bytecode rather than in generate_return_entry
+    // since compiled code callers expect the result to already be narrowed.
+    case itos: __ narrow(R17_tos); /* fall through */
     case ltos:
     case btos:
+    case ztos:
     case ctos:
     case stos:
-    case atos:
-    case itos: __ mr(R3_RET, R17_tos); break;
+    case atos: __ mr(R3_RET, R17_tos); break;
     case ftos:
     case dtos: __ fmr(F1_RET, F15_ftos); break;
     case vtos: // This might be a constructor. Final fields (and volatile fields on PPC64) need
@@ -2519,6 +2536,21 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   __ dispatch_epilog(vtos, Bytecodes::length_for(bytecode()));
 
   __ align(32, 28, 28); // Align load.
+  // __ bind(Lztos); (same code as btos)
+  __ fence(); // Volatile entry point (one instruction before non-volatile_entry point).
+  assert(branch_table[ztos] == 0, "can't compute twice");
+  branch_table[ztos] = __ pc(); // non-volatile_entry point
+  __ lbzx(R17_tos, Rclass_or_obj, Roffset);
+  __ extsb(R17_tos, R17_tos);
+  __ push(ztos);
+  if (!is_static) {
+    // use btos rewriting, no truncating to t/f bit is needed for getfield.
+    patch_bytecode(Bytecodes::_fast_bgetfield, Rbc, Rscratch);
+  }
+  __ beq(CCR6, Lacquire); // Volatile?
+  __ dispatch_epilog(vtos, Bytecodes::length_for(bytecode()));
+
+  __ align(32, 28, 28); // Align load.
   // __ bind(Lctos);
   __ fence(); // Volatile entry point (one instruction before non-volatile_entry point).
   assert(branch_table[ctos] == 0, "can't compute twice");
@@ -2618,6 +2650,7 @@ void TemplateTable::jvmti_post_field_mod(Register Rcache, Register Rscratch, boo
         case Bytecodes::_fast_aputfield: __ push_ptr(); offs+= Interpreter::stackElementSize; break;
         case Bytecodes::_fast_iputfield: // Fall through
         case Bytecodes::_fast_bputfield: // Fall through
+        case Bytecodes::_fast_zputfield: // Fall through
         case Bytecodes::_fast_cputfield: // Fall through
         case Bytecodes::_fast_sputfield: __ push_i(); offs+=  Interpreter::stackElementSize; break;
         case Bytecodes::_fast_lputfield: __ push_l(); offs+=2*Interpreter::stackElementSize; break;
@@ -2658,6 +2691,7 @@ void TemplateTable::jvmti_post_field_mod(Register Rcache, Register Rscratch, boo
       case Bytecodes::_fast_aputfield: __ pop_ptr(); break;
       case Bytecodes::_fast_iputfield: // Fall through
       case Bytecodes::_fast_bputfield: // Fall through
+      case Bytecodes::_fast_zputfield: // Fall through
       case Bytecodes::_fast_cputfield: // Fall through
       case Bytecodes::_fast_sputfield: __ pop_i(); break;
       case Bytecodes::_fast_lputfield: __ pop_l(); break;
@@ -2825,6 +2859,21 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
   __ dispatch_epilog(vtos, Bytecodes::length_for(bytecode()));
 
   __ align(32, 28, 28); // Align pop.
+  // __ bind(Lztos);
+  __ release(); // Volatile entry point (one instruction before non-volatile_entry point).
+  assert(branch_table[ztos] == 0, "can't compute twice");
+  branch_table[ztos] = __ pc(); // non-volatile_entry point
+  __ pop(ztos);
+  if (!is_static) { pop_and_check_object(Rclass_or_obj); } // Kills R11_scratch1.
+  __ andi(R17_tos, R17_tos, 0x1);
+  __ stbx(R17_tos, Rclass_or_obj, Roffset);
+  if (!is_static) { patch_bytecode(Bytecodes::_fast_zputfield, Rbc, Rscratch, true, byte_no); }
+  if (!support_IRIW_for_not_multiple_copy_atomic_cpu) {
+    __ beq(CR_is_vol, Lvolatile); // Volatile?
+  }
+  __ dispatch_epilog(vtos, Bytecodes::length_for(bytecode()));
+
+  __ align(32, 28, 28); // Align pop.
   // __ bind(Lctos);
   __ release(); // Volatile entry point (one instruction before non-volatile_entry point).
   assert(branch_table[ctos] == 0, "can't compute twice");
@@ -2949,6 +2998,9 @@ void TemplateTable::fast_storefield(TosState state) {
       __ stdx(R17_tos, Rclass_or_obj, Roffset);
       break;
 
+    case Bytecodes::_fast_zputfield:
+      __ andi(R17_tos, R17_tos, 0x1);  // boolean is true if LSB is 1
+      // fall through to bputfield
     case Bytecodes::_fast_bputfield:
       __ stbx(R17_tos, Rclass_or_obj, Roffset);
       break;

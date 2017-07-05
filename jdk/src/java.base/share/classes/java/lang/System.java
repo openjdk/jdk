@@ -1715,6 +1715,7 @@ public final class System {
      *      finalizers being called on live objects while other threads are
      *      concurrently manipulating those objects, resulting in erratic
      *      behavior or deadlock.
+     *      This method is subject to removal in a future version of Java SE.
      * @param value indicating enabling or disabling of finalization
      * @throws  SecurityException
      *        if a security manager exists and its <code>checkExit</code>
@@ -1725,7 +1726,7 @@ public final class System {
      * @see     java.lang.SecurityManager#checkExit(int)
      * @since   1.1
      */
-    @Deprecated
+    @Deprecated(since="1.2", forRemoval=true)
     public static void runFinalizersOnExit(boolean value) {
         Runtime.runFinalizersOnExit(value);
     }

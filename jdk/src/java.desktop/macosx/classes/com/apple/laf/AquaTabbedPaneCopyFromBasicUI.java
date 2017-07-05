@@ -2183,50 +2183,21 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
         }
 
         protected int preferredTabAreaHeight(final int tabPlacement, final int width) {
-            final FontMetrics metrics = getFontMetrics();
             final int tabCount = tabPane.getTabCount();
             int total = 0;
             if (tabCount > 0) {
-                int rows = 1;
-                int x = 0;
-
                 final int maxTabHeight = calculateMaxTabHeight(tabPlacement);
-
-                for (int i = 0; i < tabCount; i++) {
-                    final int tabWidth = calculateTabWidth(tabPlacement, i, metrics);
-
-                    if (x != 0 && x + tabWidth > width) {
-                        rows++;
-                        x = 0;
-                    }
-                    x += tabWidth;
-                }
-                total = calculateTabAreaHeight(tabPlacement, rows, maxTabHeight);
+                total = calculateTabAreaHeight(tabPlacement, 1, maxTabHeight);
             }
             return total;
         }
 
         protected int preferredTabAreaWidth(final int tabPlacement, final int height) {
-            final FontMetrics metrics = getFontMetrics();
             final int tabCount = tabPane.getTabCount();
             int total = 0;
             if (tabCount > 0) {
-                int columns = 1;
-                int y = 0;
-                final int fontHeight = metrics.getHeight();
-
                 maxTabWidth = calculateMaxTabWidth(tabPlacement);
-
-                for (int i = 0; i < tabCount; i++) {
-                    final int tabHeight = calculateTabHeight(tabPlacement, i, fontHeight);
-
-                    if (y != 0 && y + tabHeight > height) {
-                        columns++;
-                        y = 0;
-                    }
-                    y += tabHeight;
-                }
-                total = calculateTabAreaWidth(tabPlacement, columns, maxTabWidth);
+                total = calculateTabAreaWidth(tabPlacement, 1, maxTabWidth);
             }
             return total;
         }

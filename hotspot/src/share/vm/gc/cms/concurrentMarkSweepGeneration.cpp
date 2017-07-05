@@ -425,7 +425,7 @@ void CMSStats::print_on(outputStream *st) const {
     st->print(",cms_consumption_rate=%g,time_until_full=%g",
               cms_consumption_rate(), time_until_cms_gen_full());
   }
-  st->print(" ");
+  st->cr();
 }
 #endif // #ifndef PRODUCT
 
@@ -1108,8 +1108,10 @@ bool ConcurrentMarkSweepGeneration::should_collect(bool   full,
 }
 
 bool CMSCollector::shouldConcurrentCollect() {
+  LogTarget(Trace, gc) log;
+
   if (_full_gc_requested) {
-    log_trace(gc)("CMSCollector: collect because of explicit  gc request (or GCLocker)");
+    log.print("CMSCollector: collect because of explicit  gc request (or GCLocker)");
     return true;
   }
 
@@ -1117,21 +1119,22 @@ bool CMSCollector::shouldConcurrentCollect() {
   // ------------------------------------------------------------------
   // Print out lots of information which affects the initiation of
   // a collection.
-  Log(gc) log;
-  if (log.is_trace() && stats().valid()) {
-    log.trace("CMSCollector shouldConcurrentCollect: ");
-    ResourceMark rm;
-    stats().print_on(log.debug_stream());
-    log.trace("time_until_cms_gen_full %3.7f", stats().time_until_cms_gen_full());
-    log.trace("free=" SIZE_FORMAT, _cmsGen->free());
-    log.trace("contiguous_available=" SIZE_FORMAT, _cmsGen->contiguous_available());
-    log.trace("promotion_rate=%g", stats().promotion_rate());
-    log.trace("cms_allocation_rate=%g", stats().cms_allocation_rate());
-    log.trace("occupancy=%3.7f", _cmsGen->occupancy());
-    log.trace("initiatingOccupancy=%3.7f", _cmsGen->initiating_occupancy());
-    log.trace("cms_time_since_begin=%3.7f", stats().cms_time_since_begin());
-    log.trace("cms_time_since_end=%3.7f", stats().cms_time_since_end());
-    log.trace("metadata initialized %d", MetaspaceGC::should_concurrent_collect());
+  if (log.is_enabled() && stats().valid()) {
+    log.print("CMSCollector shouldConcurrentCollect: ");
+
+    LogStream out(log);
+    stats().print_on(&out);
+
+    log.print("time_until_cms_gen_full %3.7f", stats().time_until_cms_gen_full());
+    log.print("free=" SIZE_FORMAT, _cmsGen->free());
+    log.print("contiguous_available=" SIZE_FORMAT, _cmsGen->contiguous_available());
+    log.print("promotion_rate=%g", stats().promotion_rate());
+    log.print("cms_allocation_rate=%g", stats().cms_allocation_rate());
+    log.print("occupancy=%3.7f", _cmsGen->occupancy());
+    log.print("initiatingOccupancy=%3.7f", _cmsGen->initiating_occupancy());
+    log.print("cms_time_since_begin=%3.7f", stats().cms_time_since_begin());
+    log.print("cms_time_since_end=%3.7f", stats().cms_time_since_end());
+    log.print("metadata initialized %d", MetaspaceGC::should_concurrent_collect());
   }
   // ------------------------------------------------------------------
 
@@ -1149,8 +1152,8 @@ bool CMSCollector::shouldConcurrentCollect() {
       // this branch will not fire after the first successful CMS
       // collection because the stats should then be valid.
       if (_cmsGen->occupancy() >= _bootstrap_occupancy) {
-        log_trace(gc)(" CMSCollector: collect for bootstrapping statistics: occupancy = %f, boot occupancy = %f",
-                      _cmsGen->occupancy(), _bootstrap_occupancy);
+        log.print(" CMSCollector: collect for bootstrapping statistics: occupancy = %f, boot occupancy = %f",
+                  _cmsGen->occupancy(), _bootstrap_occupancy);
         return true;
       }
     }
@@ -1162,7 +1165,7 @@ bool CMSCollector::shouldConcurrentCollect() {
   // XXX We need to make sure that the gen expansion
   // criterion dovetails well with this. XXX NEED TO FIX THIS
   if (_cmsGen->should_concurrent_collect()) {
-    log_trace(gc)("CMS old gen initiated");
+    log.print("CMS old gen initiated");
     return true;
   }
 
@@ -1173,12 +1176,12 @@ bool CMSCollector::shouldConcurrentCollect() {
   assert(gch->collector_policy()->is_generation_policy(),
          "You may want to check the correctness of the following");
   if (gch->incremental_collection_will_fail(true /* consult_young */)) {
-    log_trace(gc)("CMSCollector: collect because incremental collection will fail ");
+    log.print("CMSCollector: collect because incremental collection will fail ");
     return true;
   }
 
   if (MetaspaceGC::should_concurrent_collect()) {
-    log_trace(gc)("CMSCollector: collect for metadata allocation ");
+    log.print("CMSCollector: collect for metadata allocation ");
     return true;
   }
 
@@ -1193,10 +1196,10 @@ bool CMSCollector::shouldConcurrentCollect() {
     // as we want to be able to trigger the first CMS cycle as well)
     if (stats().cms_time_since_begin() >= (CMSTriggerInterval / ((double) MILLIUNITS))) {
       if (stats().valid()) {
-        log_trace(gc)("CMSCollector: collect because of trigger interval (time since last begin %3.7f secs)",
-                      stats().cms_time_since_begin());
+        log.print("CMSCollector: collect because of trigger interval (time since last begin %3.7f secs)",
+                  stats().cms_time_since_begin());
       } else {
-        log_trace(gc)("CMSCollector: collect because of trigger interval (first collection)");
+        log.print("CMSCollector: collect because of trigger interval (first collection)");
       }
       return true;
     }
@@ -3598,7 +3601,7 @@ void CMSCollector::preclean() {
     size_t capacity = get_eden_capacity();
     // Don't start sampling unless we will get sufficiently
     // many samples.
-    if (used < (capacity/(CMSScheduleRemarkSamplingRatio * 100)
+    if (used < (((capacity / CMSScheduleRemarkSamplingRatio) / 100)
                 * CMSScheduleRemarkEdenPenetration)) {
       _start_sampling = true;
     } else {

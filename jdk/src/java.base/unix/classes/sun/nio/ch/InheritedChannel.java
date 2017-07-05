@@ -168,7 +168,7 @@ class InheritedChannel {
         Class<?> paramTypes[] = { int.class };
         Constructor<?> ctr = Reflect.lookupConstructor("java.io.FileDescriptor",
                                                        paramTypes);
-        Object args[] = { new Integer(fdVal) };
+        Object args[] = { Integer.valueOf(fdVal) };
         FileDescriptor fd = (FileDescriptor)Reflect.invoke(ctr, args);
 
 

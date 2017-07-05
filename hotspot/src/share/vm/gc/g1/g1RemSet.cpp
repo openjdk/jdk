@@ -38,6 +38,7 @@
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionManager.inline.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
+#include "gc/shared/gcTraceTime.inline.hpp"
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
@@ -84,8 +85,16 @@ uint G1RemSet::num_par_rem_sets() {
   return MAX2(DirtyCardQueueSet::num_par_ids() + ConcurrentG1Refine::thread_num(), ParallelGCThreads);
 }
 
-void G1RemSet::initialize(uint max_regions) {
+void G1RemSet::initialize(size_t capacity, uint max_regions) {
   G1FromCardCache::initialize(num_par_rem_sets(), max_regions);
+  {
+    GCTraceTime(Debug, gc, marking)("Initialize Card Live Data");
+    _card_live_data.initialize(capacity, max_regions);
+  }
+  if (G1PretouchAuxiliaryMemory) {
+    GCTraceTime(Debug, gc, marking)("Pre-Touch Card Live Data");
+    _card_live_data.pretouch();
+  }
 }
 
 ScanRSClosure::ScanRSClosure(G1ParPushHeapRSClosure* oc,
@@ -312,27 +321,24 @@ void G1RemSet::cleanup_after_oops_into_collection_set_do() {
   _into_cset_dirty_card_queue_set.clear_n_completed_buffers();
 }
 
-class ScrubRSClosure: public HeapRegionClosure {
+class G1ScrubRSClosure: public HeapRegionClosure {
   G1CollectedHeap* _g1h;
-  BitMap* _region_bm;
-  BitMap* _card_bm;
-  CardTableModRefBS* _ctbs;
+  G1CardLiveData* _live_data;
 public:
-  ScrubRSClosure(BitMap* region_bm, BitMap* card_bm) :
+  G1ScrubRSClosure(G1CardLiveData* live_data) :
     _g1h(G1CollectedHeap::heap()),
-    _region_bm(region_bm), _card_bm(card_bm),
-    _ctbs(_g1h->g1_barrier_set()) {}
+    _live_data(live_data) { }
 
   bool doHeapRegion(HeapRegion* r) {
     if (!r->is_continues_humongous()) {
-      r->rem_set()->scrub(_ctbs, _region_bm, _card_bm);
+      r->rem_set()->scrub(_live_data);
     }
     return false;
   }
 };
 
-void G1RemSet::scrub(BitMap* region_bm, BitMap* card_bm, uint worker_num, HeapRegionClaimer *hrclaimer) {
-  ScrubRSClosure scrub_cl(region_bm, card_bm);
+void G1RemSet::scrub(uint worker_num, HeapRegionClaimer *hrclaimer) {
+  G1ScrubRSClosure scrub_cl(&_card_live_data);
   _g1->heap_region_par_iterate(&scrub_cl, worker_num, hrclaimer);
 }
 
@@ -580,3 +586,25 @@ void G1RemSet::prepare_for_verify() {
     assert(JavaThread::dirty_card_queue_set().completed_buffers_num() == 0, "All should be consumed");
   }
 }
+
+void G1RemSet::create_card_live_data(WorkGang* workers, G1CMBitMap* mark_bitmap) {
+  _card_live_data.create(workers, mark_bitmap);
+}
+
+void G1RemSet::finalize_card_live_data(WorkGang* workers, G1CMBitMap* mark_bitmap) {
+  _card_live_data.finalize(workers, mark_bitmap);
+}
+
+void G1RemSet::verify_card_live_data(WorkGang* workers, G1CMBitMap* bitmap) {
+  _card_live_data.verify(workers, bitmap);
+}
+
+void G1RemSet::clear_card_live_data(WorkGang* workers) {
+  _card_live_data.clear(workers);
+}
+
+#ifdef ASSERT
+void G1RemSet::verify_card_live_data_is_clear() {
+  _card_live_data.verify_is_clear();
+}
+#endif

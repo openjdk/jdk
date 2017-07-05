@@ -87,13 +87,13 @@ final class WindowsSelectorImpl extends SelectorImpl {
     private static final class FdMap extends HashMap<Integer, MapEntry> {
         static final long serialVersionUID = 0L;
         private MapEntry get(int desc) {
-            return get(new Integer(desc));
+            return get(Integer.valueOf(desc));
         }
         private MapEntry put(SelectionKeyImpl ski) {
-            return put(new Integer(ski.channel.getFDVal()), new MapEntry(ski));
+            return put(Integer.valueOf(ski.channel.getFDVal()), new MapEntry(ski));
         }
         private MapEntry remove(SelectionKeyImpl ski) {
-            Integer fd = new Integer(ski.channel.getFDVal());
+            Integer fd = Integer.valueOf(ski.channel.getFDVal());
             MapEntry x = get(fd);
             if ((x != null) && (x.ski.channel == ski.channel))
                 return remove(fd);

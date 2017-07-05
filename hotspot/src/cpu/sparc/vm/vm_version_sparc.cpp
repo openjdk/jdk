@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
@@ -368,36 +369,38 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseUnalignedAccesses, false);
   }
 
-  if (PrintMiscellaneous && Verbose) {
-    tty->print_cr("L1 data cache line size: %u", L1_data_cache_line_size());
-    tty->print_cr("L2 data cache line size: %u", L2_data_cache_line_size());
-    tty->print("Allocation");
+  if (log_is_enabled(Info, os, cpu)) {
+    ResourceMark rm;
+    outputStream* log = Log(os, cpu)::info_stream();
+    log->print_cr("L1 data cache line size: %u", L1_data_cache_line_size());
+    log->print_cr("L2 data cache line size: %u", L2_data_cache_line_size());
+    log->print("Allocation");
     if (AllocatePrefetchStyle <= 0) {
-      tty->print_cr(": no prefetching");
+      log->print(": no prefetching");
     } else {
-      tty->print(" prefetching: ");
+      log->print(" prefetching: ");
       if (AllocatePrefetchInstr == 0) {
-          tty->print("PREFETCH");
+          log->print("PREFETCH");
       } else if (AllocatePrefetchInstr == 1) {
-          tty->print("BIS");
+          log->print("BIS");
       }
       if (AllocatePrefetchLines > 1) {
-        tty->print_cr(" at distance %d, %d lines of %d bytes", (int) AllocatePrefetchDistance, (int) AllocatePrefetchLines, (int) AllocatePrefetchStepSize);
+        log->print_cr(" at distance %d, %d lines of %d bytes", (int) AllocatePrefetchDistance, (int) AllocatePrefetchLines, (int) AllocatePrefetchStepSize);
       } else {
-        tty->print_cr(" at distance %d, one line of %d bytes", (int) AllocatePrefetchDistance, (int) AllocatePrefetchStepSize);
+        log->print_cr(" at distance %d, one line of %d bytes", (int) AllocatePrefetchDistance, (int) AllocatePrefetchStepSize);
       }
     }
     if (PrefetchCopyIntervalInBytes > 0) {
-      tty->print_cr("PrefetchCopyIntervalInBytes %d", (int) PrefetchCopyIntervalInBytes);
+      log->print_cr("PrefetchCopyIntervalInBytes %d", (int) PrefetchCopyIntervalInBytes);
     }
     if (PrefetchScanIntervalInBytes > 0) {
-      tty->print_cr("PrefetchScanIntervalInBytes %d", (int) PrefetchScanIntervalInBytes);
+      log->print_cr("PrefetchScanIntervalInBytes %d", (int) PrefetchScanIntervalInBytes);
     }
     if (PrefetchFieldsAhead > 0) {
-      tty->print_cr("PrefetchFieldsAhead %d", (int) PrefetchFieldsAhead);
+      log->print_cr("PrefetchFieldsAhead %d", (int) PrefetchFieldsAhead);
     }
     if (ContendedPaddingWidth > 0) {
-      tty->print_cr("ContendedPaddingWidth %d", (int) ContendedPaddingWidth);
+      log->print_cr("ContendedPaddingWidth %d", (int) ContendedPaddingWidth);
     }
   }
 }
@@ -408,7 +411,7 @@ void VM_Version::print_features() {
 
 int VM_Version::determine_features() {
   if (UseV8InstrsOnly) {
-    if (PrintMiscellaneous && Verbose) { tty->print_cr("Version is Forced-V8"); }
+    log_info(os, cpu)("Version is Forced-V8");
     return generic_v8_m;
   }
 
@@ -416,7 +419,7 @@ int VM_Version::determine_features() {
 
   if (features == unknown_m) {
     features = generic_v9_m;
-    warning("Cannot recognize SPARC version. Default to V9");
+    log_info(os)("Cannot recognize SPARC version. Default to V9");
   }
 
   assert(is_T_family(features) == is_niagara(features), "Niagara should be T series");
@@ -424,12 +427,12 @@ int VM_Version::determine_features() {
     if (is_T_family(features)) {
       // Happy to accomodate...
     } else {
-      if (PrintMiscellaneous && Verbose) { tty->print_cr("Version is Forced-Niagara"); }
+      log_info(os, cpu)("Version is Forced-Niagara");
       features |= T_family_m;
     }
   } else {
     if (is_T_family(features) && !FLAG_IS_DEFAULT(UseNiagaraInstrs)) {
-      if (PrintMiscellaneous && Verbose) { tty->print_cr("Version is Forced-Not-Niagara"); }
+      log_info(os, cpu)("Version is Forced-Not-Niagara");
       features &= ~(T_family_m | T1_model_m);
     } else {
       // Happy to accomodate...

@@ -33,6 +33,7 @@
 #include "trace/traceMacros.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/hashtable.hpp"
+#include "utilities/ostream.hpp"
 
 #define UNNAMED_MODULE "Unnamed Module"
 
@@ -141,7 +142,7 @@ public:
   void purge_reads();
   void delete_reads();
 
-  void print() PRODUCT_RETURN;
+  void print(outputStream* st = tty);
   void verify();
 };
 
@@ -223,7 +224,7 @@ public:
   static void finalize_javabase(Handle module_handle, Symbol* version, Symbol* location);
   static void patch_javabase_entries(Handle module_handle);
 
-  void print() PRODUCT_RETURN;
+  void print(outputStream* st = tty);
   void verify();
 };
 

@@ -145,7 +145,7 @@ LogOutput* LogConfiguration::new_output(char* name, const char* options, outputS
     return NULL;
   }
 
-  bool success = output->initialize(options);
+  bool success = output->initialize(options, errstream);
   if (!success) {
     errstream->print_cr("Initialization of output '%s' using options '%s' failed.", name, options);
     delete output;

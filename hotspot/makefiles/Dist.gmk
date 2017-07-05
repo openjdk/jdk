@@ -1,0 +1,239 @@
+#
+# Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+################################################################################
+# Copy the generated output into well-defined places in the dist directory.
+
+# This must be the first rule
+default: all
+
+include $(SPEC)
+include MakeBase.gmk
+
+$(eval $(call IncludeCustomExtension, hotspot, Dist.gmk))
+
+DIST_OUTPUTDIR := $(HOTSPOT_OUTPUTDIR)/dist
+
+# Unfortunately, all platforms have different target subdirs.
+ifeq ($(OPENJDK_TARGET_OS), windows)
+  LIB_SUBDIR := bin
+else ifeq ($(OPENJDK_TARGET_OS), macosx)
+  LIB_SUBDIR := lib
+else
+  LIB_SUBDIR := lib$(OPENJDK_TARGET_CPU_LIBDIR)
+endif
+
+################################################################################
+# Functions to setup copying of files for variants
+
+# Support macro for SetupDistLibFile
+define macosx_universalize
+	$(MKDIR) -p $(@D)
+	$(LIPO) -create -output $@ $<
+endef
+
+################################################################################
+# Setup make rules to copy a native library and associated data.
+#
+# Parameter 1 is the name of the rule. This name is used as variable prefix,
+# and the targets generated are listed in a variable by that name.
+#
+# Remaining parameters are named arguments. These include:
+#   NAME -- The base name of the native library (e.g. 'jvm')
+#   VARIANT -- The variant to copy from
+#   VARIANT_TARGET_DIR -- The variant target sub dir, with trailing slash, optional
+SetupDistLibFile = $(NamedParamsMacroTemplate)
+define SetupDistLibFileBody
+  ifneq ($$($1_VARIANT), )
+    $1_SRC_DIR := $$(HOTSPOT_OUTPUTDIR)/variant-$$($1_VARIANT)/lib$$($1_NAME)
+  else
+    $1_SRC_DIR := $$(HOTSPOT_OUTPUTDIR)/lib$$($1_NAME)
+  endif
+  $1_LIB_NAME := $(LIBRARY_PREFIX)$$($1_NAME)
+  $1_TARGET_DIR := $$(DIST_OUTPUTDIR)/$$(LIB_SUBDIR)/$$($1_VARIANT_TARGET_DIR)
+
+  ifeq ($(OPENJDK_TARGET_OS), macosx)
+    # We must use the 'universalize' macro to run lipo on shared libraries, at
+    # least until JDK-8069540 is fixed.
+    $1_MACRO := macosx_universalize
+  endif
+
+  # Copy the the native library.
+  $$(eval $$(call SetupCopyFiles, $1_COPY_LIB, \
+      DEST := $$($1_TARGET_DIR), \
+      MACRO := $$($1_MACRO), \
+      FILES := $$(wildcard \
+          $$($1_SRC_DIR)/$$($1_LIB_NAME)$(SHARED_LIBRARY_SUFFIX)), \
+  ))
+
+  TARGETS += $$($1_COPY_LIB)
+
+  # Copy related data (debug symbols, static-build symbols file etc)
+  $$(eval $$(call SetupCopyFiles, $1_COPY_FILES, \
+      DEST := $$($1_TARGET_DIR), \
+      FILES := $$(wildcard \
+          $$(addprefix $$($1_SRC_DIR)/$$($1_LIB_NAME), \
+          .diz .debuginfo .pdb .map .symbols)), \
+  ))
+
+  TARGETS += $$($1_COPY_FILES)
+
+  ifeq ($(OPENJDK_TARGET_OS), macosx)
+    # Debug symbols on macosx is a directory, not a single file, per library.
+    $1_DSYM_SRC := $$($1_SRC_DIR)/$$($1_LIB_NAME)$(SHARED_LIBRARY_SUFFIX).dSYM)
+    ifneq ($$(wildcard $$($1_DSYM_SRC)), )
+      $$(eval $$(call SetupCopyFiles, $1_COPY_DSYM_DIR, \
+          DEST := $$($1_TARGET_DIR), \
+          SRC := $$($1_SRC_DIR), \
+          FILES := $$(shell $(FIND) $$($1_DSYM_SRC) -type f), \
+       ))
+       TARGETS += $$($1_COPY_DSYM_DIR)
+    endif
+  endif
+endef
+
+################################################################################
+# Copy common files, which are independent on the jvm variant(s) being built.
+# For files that were generated during the build, we assume all versions of
+# these files are identical, and just pick one arbitrarily to use as source.
+
+ANY_JVM_VARIANT := $(firstword $(JVM_VARIANTS))
+JVM_VARIANT_OUTPUTDIR := $(HOTSPOT_OUTPUTDIR)/variant-$(ANY_JVM_VARIANT)
+
+### Copy platform-independent .h files
+INCLUDE_FILES_SRC_DIR := $(HOTSPOT_TOPDIR)/src/share/vm
+$(eval $(call SetupCopyFiles, COPY_INCLUDE, \
+    SRC := $(INCLUDE_FILES_SRC_DIR), \
+    DEST := $(DIST_OUTPUTDIR)/include, \
+    FLATTEN := true, \
+    FILES := $(INCLUDE_FILES_SRC_DIR)/prims/jni.h \
+        $(INCLUDE_FILES_SRC_DIR)/code/jvmticmlr.h \
+        $(INCLUDE_FILES_SRC_DIR)/services/jmm.h))
+
+TARGETS += $(COPY_INCLUDE)
+
+### Copy jni_md.h
+
+# This might have been defined in a custom extension
+ifeq ($(JNI_MD_H_SRC), )
+  JNI_MD_H_SRC := $(HOTSPOT_TOPDIR)/src/cpu/$(HOTSPOT_TARGET_CPU_ARCH)/vm/jni_$(HOTSPOT_TARGET_CPU_ARCH).h
+endif
+
+ifeq ($(OPENJDK_TARGET_OS), macosx)
+  # NOTE: This should most likely be darwin, but the old hotspot build uses bsd
+  JNI_MD_SUBDIR := bsd
+else ifeq ($(OPENJDK_TARGET_OS), windows)
+  JNI_MD_SUBDIR := win32
+else
+  JNI_MD_SUBDIR := $(OPENJDK_TARGET_OS)
+endif
+
+# SetupCopyFiles is not used here since it's non-trivial to copy a single
+# file with a different target name.
+$(DIST_OUTPUTDIR)/include/$(JNI_MD_SUBDIR)/jni_md.h: $(JNI_MD_H_SRC)
+	$(call LogInfo, Copying hotspot/dist/include/$(JNI_MD_SUBDIR)/jni_md.h)
+	$(install-file)
+
+TARGETS += $(DIST_OUTPUTDIR)/include/$(JNI_MD_SUBDIR)/jni_md.h
+
+$(eval $(call SetupCopyFiles, COPY_JVMTI_H, \
+    DEST := $(DIST_OUTPUTDIR)/include, \
+    FLATTEN := true, \
+    FILES := $(JVM_VARIANT_OUTPUTDIR)/gensrc/jvmtifiles/jvmti.h))
+
+TARGETS += $(COPY_JVMTI_H)
+
+# NOTE: In the old build, this file was not copied on Windows.
+ifneq ($(OPENJDK_TARGET_OS), windows)
+  $(eval $(call SetupCopyFiles, COPY_JVMTI_HTML, \
+      DEST := $(DIST_OUTPUTDIR)/docs/platform/jvmti, \
+      FILES := $(JVM_VARIANT_OUTPUTDIR)/gensrc/jvmtifiles/jvmti.html))
+endif
+
+TARGETS += $(COPY_JVMTI_HTML)
+
+ifeq ($(OPENJDK_TARGET_OS), windows)
+  $(eval $(call SetupCopyFiles, COPY_JVM_LIB, \
+      DEST := $(DIST_OUTPUTDIR)/lib, \
+      FILES :=$(JVM_VARIANT_OUTPUTDIR)/libjvm/objs/jvm.lib))
+
+  TARGETS += $(COPY_JVM_LIB)
+endif
+
+# Copy libjsig, if it exists
+$(eval $(call SetupDistLibFile, DIST_jsig, \
+    NAME := jsig, \
+))
+
+################################################################################
+# Copy variant-specific files
+
+# Setup make rules to copy a single variant to dist.
+# $1: The name of the variant
+define SetupDistForVariant
+  ifneq ($$(filter client minimal, $1), )
+    VARIANT_TARGET_DIR := $1
+  else
+    # Use 'server' as default target directory name for all other variants.
+    VARIANT_TARGET_DIR := server
+  endif
+
+  $$(eval $$(call SetupDistLibFile, DIST_$(strip $1)_jvm, \
+      NAME := jvm, \
+      VARIANT := $1, \
+      VARIANT_TARGET_DIR := $$(VARIANT_TARGET_DIR)/, \
+  ))
+
+  # Copy the dtrace libraries, if they exist
+  $$(eval $$(call SetupDistLibFile, DIST_$(strip $1)_jvm_db, \
+      NAME := jvm_db, \
+      VARIANT := $1, \
+      VARIANT_TARGET_DIR := $$(VARIANT_TARGET_DIR)/, \
+  ))
+
+  $$(eval $$(call SetupDistLibFile, DIST_$(strip $1)_jvm_dtrace, \
+      NAME := jvm_dtrace, \
+      VARIANT := $1, \
+      VARIANT_TARGET_DIR := $$(VARIANT_TARGET_DIR)/, \
+  ))
+
+  # Copy the Xusage.txt file
+  $$(eval $$(call SetupCopyFiles, DIST_$(strip $1)_Xusage, \
+      DEST := $$(DIST_OUTPUTDIR)/$$(LIB_SUBDIR)/$(strip $1), \
+      FILES := $$(HOTSPOT_OUTPUTDIR)/variant-$(strip $1)/support/misc/Xusage.txt, \
+  ))
+
+  TARGETS += $$(DIST_$(strip $1)_Xusage)
+endef
+
+$(foreach variant, $(JVM_VARIANTS), \
+  $(eval $(call SetupDistForVariant, $(variant))) \
+)
+
+################################################################################
+
+all: $(TARGETS)
+
+.PHONY: all

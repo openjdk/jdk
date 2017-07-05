@@ -165,6 +165,7 @@ void TemplateTable::patch_bytecode(Bytecodes::Code bc, Register bc_reg,
   switch (bc) {
   case Bytecodes::_fast_aputfield:
   case Bytecodes::_fast_bputfield:
+  case Bytecodes::_fast_zputfield:
   case Bytecodes::_fast_cputfield:
   case Bytecodes::_fast_dputfield:
   case Bytecodes::_fast_fputfield:
@@ -922,8 +923,20 @@ void TemplateTable::bastore() {
   transition(itos, vtos);
   __ pop_i(O2); // index
   // Otos_i: val
+  // O2: index
   // O3: array
   __ index_check(O3, O2, 0, G3_scratch, O2);
+  // Need to check whether array is boolean or byte
+  // since both types share the bastore bytecode.
+  __ load_klass(O3, G4_scratch);
+  __ ld(G4_scratch, in_bytes(Klass::layout_helper_offset()), G4_scratch);
+  __ set(Klass::layout_helper_boolean_diffbit(), G3_scratch);
+  __ andcc(G3_scratch, G4_scratch, G0);
+  Label L_skip;
+  __ br(Assembler::zero, false, Assembler::pn, L_skip);
+  __ delayed()->nop();
+  __ and3(Otos_i, 1, Otos_i);  // if it is a T_BOOLEAN array, mask the stored value to 0/1
+  __ bind(L_skip);
   __ stb(Otos_i, O2, arrayOopDesc::base_offset_in_bytes(T_BYTE));
 }
 
@@ -2008,6 +2021,12 @@ void TemplateTable::_return(TosState state) {
     __ bind(skip_register_finalizer);
   }
 
+  // Narrow result if state is itos but result type is smaller.
+  // Need to narrow in the return bytecode rather than in generate_return_entry
+  // since compiled code callers expect the result to already be narrowed.
+  if (state == itos) {
+    __ narrow(Otos_i);
+  }
   __ remove_activation(state, /* throw_monitor_exception */ true);
 
   // The caller's SP was adjusted upon method entry to accomodate
@@ -2218,7 +2237,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   Label checkVolatile;
 
   // compute field type
-  Label notByte, notInt, notShort, notChar, notLong, notFloat, notObj;
+  Label notByte, notBool, notInt, notShort, notChar, notLong, notFloat, notObj;
   __ srl(Rflags, ConstantPoolCacheEntry::tos_state_shift, Rflags);
   // Make sure we don't need to mask Rflags after the above shift
   ConstantPoolCacheEntry::verify_tos_state_shift();
@@ -2273,7 +2292,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
 
   // cmp(Rflags, btos);
   __ br(Assembler::notEqual, false, Assembler::pt, notByte);
-  __ delayed() ->cmp(Rflags, ctos);
+  __ delayed() ->cmp(Rflags, ztos);
 
   // btos
   __ ldsb(Rclass, Roffset, Otos_i);
@@ -2285,6 +2304,22 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   __ delayed()->tst(Lscratch);
 
   __ bind(notByte);
+
+  // cmp(Rflags, ztos);
+  __ br(Assembler::notEqual, false, Assembler::pt, notBool);
+  __ delayed() ->cmp(Rflags, ctos);
+
+  // ztos
+  __ ldsb(Rclass, Roffset, Otos_i);
+  __ push(itos);
+  if (!is_static && rc == may_rewrite) {
+    // use btos rewriting, no truncating to t/f bit is needed for getfield.
+    patch_bytecode(Bytecodes::_fast_bgetfield, G3_scratch, G4_scratch);
+  }
+  __ ba(checkVolatile);
+  __ delayed()->tst(Lscratch);
+
+  __ bind(notBool);
 
   // cmp(Rflags, ctos);
   __ br(Assembler::notEqual, false, Assembler::pt, notChar);
@@ -2449,6 +2484,7 @@ void TemplateTable::jvmti_post_fast_field_mod() {
     switch (bytecode()) {  // save tos values before call_VM() clobbers them
     case Bytecodes::_fast_aputfield: __ push_ptr(Otos_i); break;
     case Bytecodes::_fast_bputfield: // fall through
+    case Bytecodes::_fast_zputfield: // fall through
     case Bytecodes::_fast_sputfield: // fall through
     case Bytecodes::_fast_cputfield: // fall through
     case Bytecodes::_fast_iputfield: __ push_i(Otos_i); break;
@@ -2466,6 +2502,7 @@ void TemplateTable::jvmti_post_fast_field_mod() {
     switch (bytecode()) {             // restore tos values
     case Bytecodes::_fast_aputfield: __ pop_ptr(Otos_i); break;
     case Bytecodes::_fast_bputfield: // fall through
+    case Bytecodes::_fast_zputfield: // fall through
     case Bytecodes::_fast_sputfield: // fall through
     case Bytecodes::_fast_cputfield: // fall through
     case Bytecodes::_fast_iputfield: __ pop_i(Otos_i); break;
@@ -2581,7 +2618,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
   ConstantPoolCacheEntry::verify_tos_state_shift();
 
   // compute field type
-  Label notInt, notShort, notChar, notObj, notByte, notLong, notFloat;
+  Label notInt, notShort, notChar, notObj, notByte, notBool, notLong, notFloat;
 
   if (is_static) {
     // putstatic with object type most likely, check that first
@@ -2649,7 +2686,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
 
   // cmp(Rflags, btos);
   __ br(Assembler::notEqual, false, Assembler::pt, notByte);
-  __ delayed()->cmp(Rflags, ltos);
+  __ delayed()->cmp(Rflags, ztos);
 
   // btos
   {
@@ -2664,6 +2701,25 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
   }
 
   __ bind(notByte);
+
+  // cmp(Rflags, btos);
+  __ br(Assembler::notEqual, false, Assembler::pt, notBool);
+  __ delayed()->cmp(Rflags, ltos);
+
+  // ztos
+  {
+    __ pop_i();
+    if (!is_static) pop_and_check_object(Rclass);
+    __ and3(Otos_i, 1, Otos_i);
+    __ stb(Otos_i, Rclass, Roffset);
+    if (!is_static && rc == may_rewrite) {
+      patch_bytecode(Bytecodes::_fast_zputfield, G3_scratch, G4_scratch, true, byte_no);
+    }
+    __ ba(checkVolatile);
+    __ delayed()->tst(Lscratch);
+  }
+
+  __ bind(notBool);
   // cmp(Rflags, ltos);
   __ br(Assembler::notEqual, false, Assembler::pt, notLong);
   __ delayed()->cmp(Rflags, ctos);
@@ -2787,6 +2843,7 @@ void TemplateTable::fast_storefield(TosState state) {
   pop_and_check_object(Rclass);
 
   switch (bytecode()) {
+    case Bytecodes::_fast_zputfield: __ and3(Otos_i, 1, Otos_i);  // fall through to bputfield
     case Bytecodes::_fast_bputfield: __ stb(Otos_i, Rclass, Roffset); break;
     case Bytecodes::_fast_cputfield: /* fall through */
     case Bytecodes::_fast_sputfield: __ sth(Otos_i, Rclass, Roffset); break;

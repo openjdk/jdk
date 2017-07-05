@@ -27,7 +27,6 @@
 
 #include "code/location.hpp"
 #include "runtime/handles.hpp"
-#include "utilities/top.hpp"
 
 class StackValue : public ResourceObj {
  private:

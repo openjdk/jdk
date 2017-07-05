@@ -143,8 +143,9 @@ enum MemoryType {
   mtTest              = 0x0D,  // Test type for verifying NMT
   mtTracing           = 0x0E,  // memory used for Tracing
   mtLogging           = 0x0F,  // memory for logging
-  mtNone              = 0x10,  // undefined
-  mt_number_of_types  = 0x11   // number of memory types (mtDontTrack
+  mtArguments         = 0x10,  // memory for argument processing
+  mtNone              = 0x11,  // undefined
+  mt_number_of_types  = 0x12   // number of memory types (mtDontTrack
                                  // is not included as validate type)
 };
 

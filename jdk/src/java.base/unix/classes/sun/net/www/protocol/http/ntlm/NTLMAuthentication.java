@@ -39,6 +39,7 @@ import sun.net.www.HeaderParser;
 import sun.net.www.protocol.http.AuthenticationInfo;
 import sun.net.www.protocol.http.AuthScheme;
 import sun.net.www.protocol.http.HttpURLConnection;
+import sun.security.action.GetPropertyAction;
 
 /**
  * NTLMAuthentication:
@@ -73,12 +74,9 @@ public class NTLMAuthentication extends AuthenticationInfo {
         NTLMAuthenticationCallback.getNTLMAuthenticationCallback();
 
     private String hostname;
-    private static String defaultDomain; /* Domain to use if not specified by user */
-
-    static {
-        defaultDomain = java.security.AccessController.doPrivileged(
-            new sun.security.action.GetPropertyAction("http.auth.ntlm.domain", ""));
-    };
+    /* Domain to use if not specified by user */
+    private static String defaultDomain =
+            GetPropertyAction.getProperty("http.auth.ntlm.domain", "");
 
     public static boolean supportsTransparentAuth () {
         return false;
@@ -143,8 +141,7 @@ public class NTLMAuthentication extends AuthenticationInfo {
         password = pw.getPassword();
         init0();
         try {
-            String version = java.security.AccessController.doPrivileged(
-                    new sun.security.action.GetPropertyAction("ntlm.version"));
+            String version = GetPropertyAction.getProperty("ntlm.version");
             client = new Client(version, hostname, username, ntdomain, password);
         } catch (NTLMException ne) {
             try {

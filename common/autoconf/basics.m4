@@ -749,8 +749,8 @@ AC_DEFUN_ONCE([BASIC_SETUP_DEVKIT],
   BASIC_PREPEND_TO_PATH([PATH],$EXTRA_PATH)
 
   if test "x$OPENJDK_BUILD_OS" = "xsolaris"; then
-    # Add extra search paths on solaris for utilities like ar and as etc...
-    PATH="$PATH:/usr/ccs/bin:/usr/sfw/bin:/opt/csw/bin"
+    # Add extra search paths on solaris for utilities like ar, as, dtrace etc...
+    PATH="$PATH:/usr/ccs/bin:/usr/sfw/bin:/opt/csw/bin:/usr/sbin"
   fi
 
   AC_MSG_CHECKING([for sysroot])
@@ -777,7 +777,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_OUTPUT_DIR],
     # Create a default ./build/target-variant-debuglevel output root.
     if test "x${CONF_NAME}" = x; then
       AC_MSG_RESULT([in default location])
-      CONF_NAME="${OPENJDK_TARGET_OS}-${OPENJDK_TARGET_CPU}-${JDK_VARIANT}-${ANDED_JVM_VARIANTS}-${DEBUG_LEVEL}"
+      CONF_NAME="${OPENJDK_TARGET_OS}-${OPENJDK_TARGET_CPU}-${JDK_VARIANT}-${JVM_VARIANTS_WITH_AND}-${DEBUG_LEVEL}"
     else
       AC_MSG_RESULT([in build directory with custom name])
     fi
@@ -1037,6 +1037,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_COMPLEX_TOOLS],
   BASIC_PATH_PROGS(HG, hg)
   BASIC_PATH_PROGS(STAT, stat)
   BASIC_PATH_PROGS(TIME, time)
+  BASIC_PATH_PROGS(DTRACE, dtrace)
   BASIC_PATH_PROGS(PATCH, [gpatch patch])
   # Check if it's GNU time
   IS_GNU_TIME=`$TIME --version 2>&1 | $GREP 'GNU time'`

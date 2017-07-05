@@ -32,7 +32,6 @@ import java.awt.dnd.DropTarget;
 import java.util.Vector;
 import sun.awt.CausedFocusEvent;
 import sun.awt.AWTAccessor;
-import sun.misc.ManagedLocalsThread;
 
 class WPrintDialogPeer extends WWindowPeer implements DialogPeer {
 
@@ -78,7 +77,7 @@ class WPrintDialogPeer extends WWindowPeer implements DialogPeer {
             }
             ((WPrintDialog)target).setVisible(false);
         };
-        new ManagedLocalsThread(runnable).start();
+        new Thread(null, runnable, "PrintDialog", 0, false).start();
     }
 
     synchronized void setHWnd(long hwnd) {
