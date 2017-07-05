@@ -31,7 +31,7 @@
 #include "oops/oop.inline.hpp"
 
 // Trim our work_queue so its length is below max at return
-inline void Par_MarkRefsIntoAndScanClosure::trim_queue(uint max) {
+inline void ParMarkRefsIntoAndScanClosure::trim_queue(uint max) {
   while (_work_queue->size() > max) {
     oop newOop;
     if (_work_queue->pop_local(newOop)) {
@@ -40,7 +40,7 @@ inline void Par_MarkRefsIntoAndScanClosure::trim_queue(uint max) {
              "only grey objects on this stack");
       // iterate over the oops in this oop, marking and pushing
       // the ones in CMS heap (i.e. in _span).
-      newOop->oop_iterate(&_par_pushAndMarkClosure);
+      newOop->oop_iterate(&_parPushAndMarkClosure);
     }
   }
 }

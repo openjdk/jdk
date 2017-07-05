@@ -37,8 +37,8 @@ import javax.print.attribute.DocAttribute;
  * NONE}).
  * <P>
  * <B>IPP Compatibility:</B> The category name returned by
- * <CODE>getName()</CODE> is the IPP attribute name.  The enumeration's
- * integer value is the IPP enum value.  The <code>toString()</code> method
+ * {@code getName()} is the IPP attribute name.  The enumeration's
+ * integer value is the IPP enum value.  The {@code toString()} method
  * returns the IPP string representation of the attribute value.
  *
  * @author  Alan Kaminsky
@@ -122,7 +122,7 @@ public class Compression extends EnumSyntax implements DocAttribute {
      * instance.
      * <P>
      * For class Compression and any vendor-defined subclasses, the category
-     * name is <CODE>"compression"</CODE>.
+     * name is {@code "compression"}.
      *
      * @return  Attribute category name.
      */

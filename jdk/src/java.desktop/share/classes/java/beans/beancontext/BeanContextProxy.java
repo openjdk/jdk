@@ -43,15 +43,15 @@ package java.beans.beancontext;
  * <p>
  * Callers of this interface shall examine the return type in order to
  * obtain a particular subinterface of BeanContextChild as follows:
- * <code>
+ * <pre>{@code
  * BeanContextChild bcc = o.getBeanContextProxy();
  *
  * if (bcc instanceof BeanContext) {
  *      // ...
  * }
- * </code>
+ * }</pre>
  * or
- * <code>
+ * <pre>{@code
  * BeanContextChild bcc = o.getBeanContextProxy();
  * BeanContext      bc  = null;
  *
@@ -60,8 +60,7 @@ package java.beans.beancontext;
  * } catch (ClassCastException cce) {
  *     // cast failed, bcc is not an instanceof BeanContext
  * }
- * </code>
- * </p>
+ * }</pre>
  * <p>
  * The return value is a constant for the lifetime of the implementing
  * instance
@@ -76,9 +75,9 @@ package java.beans.beancontext;
 public interface BeanContextProxy {
 
     /**
-     * Gets the <code>BeanContextChild</code> (or subinterface)
+     * Gets the {@code BeanContextChild} (or subinterface)
      * associated with this object.
-     * @return the <code>BeanContextChild</code> (or subinterface)
+     * @return the {@code BeanContextChild} (or subinterface)
      * associated with this object
      */
     BeanContextChild getBeanContextProxy();

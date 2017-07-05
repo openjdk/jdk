@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -48,9 +48,9 @@ CC_COMPILER_REV := \
 $(shell $(CC) -V 2>&1 | sed -n 's/^.*[ ,\t]C[ ,\t]\([1-9]\.[0-9][0-9]*\).*/\1/p')
 
 # Pick which compiler is validated
-# Validated compiler for JDK9 is SS12.3 (5.12)
-VALIDATED_COMPILER_REVS   := 5.12
-VALIDATED_CC_COMPILER_REVS := 5.12
+# Validated compiler for JDK9 is SS12.4 (5.13)
+VALIDATED_COMPILER_REVS   := 5.13
+VALIDATED_CC_COMPILER_REVS := 5.13
 
 # Warning messages about not using the above validated versions
 ENFORCE_COMPILER_REV${ENFORCE_COMPILER_REV} := $(strip ${VALIDATED_COMPILER_REVS})

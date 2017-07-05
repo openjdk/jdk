@@ -515,13 +515,13 @@ public final class LWCToolkit extends LWToolkit {
      * key for menu shortcuts.
      * <p>
      * Menu shortcuts, which are embodied in the
-     * <code>MenuShortcut</code> class, are handled by the
-     * <code>MenuBar</code> class.
+     * {@code MenuShortcut} class, are handled by the
+     * {@code MenuBar} class.
      * <p>
-     * By default, this method returns <code>Event.CTRL_MASK</code>.
+     * By default, this method returns {@code Event.CTRL_MASK}.
      * Toolkit implementations should override this method if the
      * <b>Control</b> key isn't the correct key for accelerators.
-     * @return    the modifier mask on the <code>Event</code> class
+     * @return    the modifier mask on the {@code Event} class
      *                 that is used for menu shortcuts on this toolkit.
      * @see       java.awt.MenuBar
      * @see       java.awt.MenuShortcut

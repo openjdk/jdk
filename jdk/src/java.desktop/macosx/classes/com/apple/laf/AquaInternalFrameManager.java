@@ -105,7 +105,9 @@ public class AquaInternalFrameManager extends DefaultDesktopManager {
         // Position depends on *current* position of frame, unlike super which reuses the first position
         final Rectangle r = getBoundsForIconOf(f);
         desktopIcon.setBounds(r.x, r.y, r.width, r.height);
-
+        if (!wasIcon(f)) {
+            setWasIcon(f, Boolean.TRUE);
+        }
         c = f.getParent();
         if (c == null) return;
 

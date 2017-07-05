@@ -2156,15 +2156,14 @@ public class JTabbedPane extends JComponent
             AccessibleStateSet states;
             states = parent.getAccessibleContext().getAccessibleStateSet();
             states.add(AccessibleState.SELECTABLE);
-            int i = parent.indexOfTabComponent(tabComponent);
-            if (i == parent.getSelectedIndex()) {
+            if (getPageIndex() == parent.getSelectedIndex()) {
                 states.add(AccessibleState.SELECTED);
             }
             return states;
         }
 
         public int getAccessibleIndexInParent() {
-            return parent.indexOfTabComponent(tabComponent);
+            return getPageIndex();
         }
 
         public int getAccessibleChildrenCount() {
@@ -2272,8 +2271,7 @@ public class JTabbedPane extends JComponent
         }
 
         public Rectangle getBounds() {
-            return parent.getUI().
-                getTabBounds(parent, parent.indexOfTabComponent(tabComponent));
+            return parent.getUI().getTabBounds(parent, getPageIndex());
         }
 
         public void setBounds(Rectangle r) {
@@ -2343,7 +2341,33 @@ public class JTabbedPane extends JComponent
         }
 
         private String getTitle() {
-            return getTitleAt(parent.indexOfComponent(component));
+            return getTitleAt(getPageIndex());
+        }
+
+        /*
+         * getPageIndex() has three valid scenarios:
+         * - null component and null tabComponent: use indexOfcomponent
+         * - non-null component: use indexOfComponent
+         * - null component and non-null tabComponent: use indexOfTabComponent
+         *
+         * Note: It's valid to have have a titled tab with a null component, e.g.
+         *   myPane.add("my title", null);
+         * but it's only useful to have one of those because indexOfComponent(null)
+         * will find the first one.
+         *
+         * Note: indexofTab(title) is not useful because there are cases, due to
+         * subclassing, where Page.title is not set and title is managed in a subclass
+         * and fetched with an overridden JTabbedPane.getTitleAt(index).
+         */
+        private int getPageIndex() {
+            int index;
+            if (component != null || (component == null && tabComponent == null)) {
+                index = parent.indexOfComponent(component);
+            } else {
+                // component is null, tabComponent is non-null
+                index = parent.indexOfTabComponent(tabComponent);
+            }
+            return index;
         }
 
     }

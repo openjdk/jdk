@@ -336,13 +336,13 @@ public final class WPrinterJob extends RasterPrinterJob
 
     /**
      * The last color set into the print device context or
-     * <code>null</code> if no color has been set.
+     * {@code null} if no color has been set.
      */
     private Color mLastColor;
 
     /**
      * The last text color set into the print device context or
-     * <code>null</code> if no color has been set.
+     * {@code null} if no color has been set.
      */
     private Color mLastTextColor;
 
@@ -402,17 +402,17 @@ public final class WPrinterJob extends RasterPrinterJob
     /**
      * Display a dialog to the user allowing the modification of a
      * PageFormat instance.
-     * The <code>page</code> argument is used to initialize controls
+     * The {@code page} argument is used to initialize controls
      * in the page setup dialog.
      * If the user cancels the dialog, then the method returns the
-     * original <code>page</code> object unmodified.
+     * original {@code page} object unmodified.
      * If the user okays the dialog then the method returns a new
      * PageFormat object with the indicated changes.
-     * In either case the original <code>page</code> object will
+     * In either case the original {@code page} object will
      * not be modified.
      * @param     page    the default PageFormat presented to the user
      *                    for modification
-     * @return    the original <code>page</code> object if the dialog
+     * @return    the original {@code page} object if the dialog
      *            is cancelled, or a new PageFormat object containing
      *            the format indicated by the user if the dialog is
      *            acknowledged
@@ -588,8 +588,8 @@ public final class WPrinterJob extends RasterPrinterJob
      /**
      * Associate this PrinterJob with a new PrintService.
      *
-     * Throws <code>PrinterException</code> if the specified service
-     * cannot support the <code>Pageable</code> and
+     * Throws {@code PrinterException} if the specified service
+     * cannot support the {@code Pageable} and
      * </code>Printable</code> interfaces necessary to support 2D printing.
      * @param service print service which supports 2D printing.
      *
@@ -763,14 +763,14 @@ public final class WPrinterJob extends RasterPrinterJob
 
     /**
      * Examine the metrics captured by the
-     * <code>PeekGraphics</code> instance and
+     * {@code PeekGraphics} instance and
      * if capable of directly converting this
      * print job to the printer's control language
      * or the native OS's graphics primitives, then
-     * return a <code>PathGraphics</code> to perform
+     * return a {@code PathGraphics} to perform
      * that conversion. If there is not an object
      * capable of the conversion then return
-     * <code>null</code>. Returning <code>null</code>
+     * {@code null}. Returning {@code null}
      * causes the print job to be rasterized.
      */
 
@@ -976,9 +976,9 @@ public final class WPrinterJob extends RasterPrinterJob
 
     /**
      * Set the current polgon fill rule into the printer device context.
-     * The <code>fillRule</code> should
+     * The {@code fillRule} should
      * be one of the following Windows constants:
-     * <code>ALTERNATE</code> or <code>WINDING</code>.
+     * {@code ALTERNATE} or {@code WINDING}.
      */
     protected void setPolyFillMode(int fillRule) {
         setPolyFillMode(getPrintDC(), fillRule);
@@ -986,7 +986,7 @@ public final class WPrinterJob extends RasterPrinterJob
 
     /*
      * Create a Window's solid brush for the color specified
-     * by <code>(red, green, blue)</code>. Once the brush
+     * by {@code (red, green, blue)}. Once the brush
      * is created, select it in the current printing device
      * context and free the old brush.
      */
@@ -1146,7 +1146,7 @@ public final class WPrinterJob extends RasterPrinterJob
     }
 
     /**
-     * Draw the string <code>text</code> to the printer's
+     * Draw the string {@code text} to the printer's
      * device context at the specified position.
      */
     protected void textOut(String str, float x, float y,
@@ -1166,7 +1166,7 @@ public final class WPrinterJob extends RasterPrinterJob
     }
 
    /**
-     * Draw the glyphs <code>glyphs</code> to the printer's
+     * Draw the glyphs {@code glyphs} to the printer's
      * device context at the specified position.
      */
     protected void glyphsOut(int []glyphs, float x, float y,
@@ -1208,15 +1208,15 @@ public final class WPrinterJob extends RasterPrinterJob
 
      /**
      * Draw the 24 bit BGR image buffer represented by
-     * <code>image</code> to the GDI device context
-     * <code>printDC</code>. The image is drawn at
-     * <code>(destX, destY)</code> in device coordinates.
+     * {@code image} to the GDI device context
+     * {@code printDC}. The image is drawn at
+     * {@code (destX, destY)} in device coordinates.
      * The image is scaled into a square of size
-     * specified by <code>destWidth</code> and
-     * <code>destHeight</code>. The portion of the
+     * specified by {@code destWidth} and
+     * {@code destHeight}. The portion of the
      * source image copied into that square is specified
-     * by <code>srcX</code>, <code>srcY</code>,
-     * <code>srcWidth</code>, and srcHeight.
+     * by {@code srcX}, {@code srcY},
+     * {@code srcWidth}, and srcHeight.
      */
     protected void drawImage3ByteBGR(byte[] image,
                                      float destX, float destY,
@@ -1412,37 +1412,37 @@ public final class WPrinterJob extends RasterPrinterJob
 
     /**
      * Begin a Window's rendering path in the device
-     * context <code>printDC</code>.
+     * context {@code printDC}.
      */
     protected native void beginPath(long printDC);
 
     /**
      * End a Window's rendering path in the device
-     * context <code>printDC</code>.
+     * context {@code printDC}.
      */
     protected native void endPath(long printDC);
 
     /**
      * Close a subpath in a Window's rendering path in the device
-     * context <code>printDC</code>.
+     * context {@code printDC}.
      */
     protected native void closeFigure(long printDC);
 
     /**
      * Fill a defined Window's rendering path in the device
-     * context <code>printDC</code>.
+     * context {@code printDC}.
      */
     protected native void fillPath(long printDC);
 
     /**
-     * Move the Window's pen position to <code>(x,y)</code>
-     * in the device context <code>printDC</code>.
+     * Move the Window's pen position to {@code (x,y)}
+     * in the device context {@code printDC}.
      */
     protected native void moveTo(long printDC, float x, float y);
 
     /**
      * Draw a line from the current pen position to
-     * <code>(x,y)</code> in the device context <code>printDC</code>.
+     * {@code (x,y)} in the device context {@code printDC}.
      */
     protected native void lineTo(long printDC, float x, float y);
 
@@ -1453,17 +1453,17 @@ public final class WPrinterJob extends RasterPrinterJob
 
     /**
      * Set the current polgon fill rule into the device context
-     * <code>printDC</code>. The <code>fillRule</code> should
+     * {@code printDC}. The {@code fillRule} should
      * be one of the following Windows constants:
-     * <code>ALTERNATE</code> or <code>WINDING</code>.
+     * {@code ALTERNATE} or {@code WINDING}.
      */
     protected native void setPolyFillMode(long printDC, int fillRule);
 
     /**
      * Create a Window's solid brush for the color specified
-     * by <code>(red, green, blue)</code>. Once the brush
+     * by {@code (red, green, blue)}. Once the brush
      * is created, select it in the device
-     * context <code>printDC</code> and free the old brush.
+     * context {@code printDC} and free the old brush.
      */
     protected native void selectSolidBrush(long printDC,
                                            int red, int green, int blue);
@@ -1471,14 +1471,14 @@ public final class WPrinterJob extends RasterPrinterJob
     /**
      * Return the x coordinate of the current pen
      * position in the device context
-     * <code>printDC</code>.
+     * {@code printDC}.
      */
     protected native int getPenX(long printDC);
 
     /**
      * Return the y coordinate of the current pen
      * position in the device context
-     * <code>printDC</code>.
+     * {@code printDC}.
      */
     protected native int getPenY(long printDC);
 
@@ -1537,8 +1537,8 @@ public final class WPrinterJob extends RasterPrinterJob
 
 
     /**
-     * Draw the string <code>text</code> into the device
-     * context <code>printDC</code> at the specified
+     * Draw the string {@code text} into the device
+     * context {@code printDC} at the specified
      * position.
      */
     protected native void textOut(long printDC, String text,
@@ -1550,15 +1550,15 @@ public final class WPrinterJob extends RasterPrinterJob
 
      /**
      * Draw the DIB compatible image buffer represented by
-     * <code>image</code> to the GDI device context
-     * <code>printDC</code>. The image is drawn at
-     * <code>(destX, destY)</code> in device coordinates.
+     * {@code image} to the GDI device context
+     * {@code printDC}. The image is drawn at
+     * {@code (destX, destY)} in device coordinates.
      * The image is scaled into a square of size
-     * specified by <code>destWidth</code> and
-     * <code>destHeight</code>. The portion of the
+     * specified by {@code destWidth} and
+     * {@code destHeight}. The portion of the
      * source image copied into that square is specified
-     * by <code>srcX</code>, <code>srcY</code>,
-     * <code>srcWidth</code>, and srcHeight.
+     * by {@code srcX}, {@code srcY},
+     * {@code srcWidth}, and srcHeight.
      * Note that the image isn't completely compatible with DIB format.
      * At the very least it needs to be padded so each scanline is
      * DWORD aligned. Also we "flip" the image to make it a bottom-up DIB.

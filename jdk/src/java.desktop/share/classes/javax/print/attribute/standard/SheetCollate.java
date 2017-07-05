@@ -222,7 +222,7 @@ public final class SheetCollate extends EnumSyntax
      * Get the name of the category of which this attribute value is an
      * instance.
      * <P>
-     * For class SheetCollate, the category name is <CODE>"sheet-collate"</CODE>.
+     * For class SheetCollate, the category name is {@code "sheet-collate"}.
      *
      * @return  Attribute category name.
      */

@@ -264,21 +264,37 @@ public class TestResolvedJavaMethod extends MethodUniverse {
         }
     }
 
-    @Test(timeout = 1000L)
-    public void getAnnotationTest() throws NoSuchMethodException {
-        ResolvedJavaMethod method = metaAccess.lookupJavaMethod(getClass().getDeclaredMethod("getAnnotationTest"));
-        Test annotation = method.getAnnotation(Test.class);
-        assertNotNull(annotation);
-        assertEquals(1000L, annotation.timeout());
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target(ElementType.METHOD)
+    @interface TestAnnotation {
+        long value();
     }
 
-    @Test(timeout = 1000L)
+    @Test
+    @TestAnnotation(value = 1000L)
+    public void getAnnotationTest() throws NoSuchMethodException {
+        ResolvedJavaMethod method = metaAccess.lookupJavaMethod(getClass().getDeclaredMethod("getAnnotationTest"));
+        TestAnnotation annotation = method.getAnnotation(TestAnnotation.class);
+        assertNotNull(annotation);
+        assertEquals(1000L, annotation.value());
+    }
+
+    @Test
+    @TestAnnotation(value = 1000L)
     public void getAnnotationsTest() throws NoSuchMethodException {
         ResolvedJavaMethod method = metaAccess.lookupJavaMethod(getClass().getDeclaredMethod("getAnnotationsTest"));
         Annotation[] annotations = method.getAnnotations();
         assertNotNull(annotations);
-        assertEquals(1, annotations.length);
-        assertEquals(1000L, ((Test) annotations[0]).timeout());
+        assertEquals(2, annotations.length);
+        TestAnnotation annotation = null;
+        for (Annotation a : annotations) {
+            if (a instanceof TestAnnotation) {
+                annotation = (TestAnnotation) a;
+                break;
+            }
+        }
+        assertNotNull(annotation);
+        assertEquals(1000L, annotation.value());
     }
 
     @Retention(RetentionPolicy.RUNTIME)

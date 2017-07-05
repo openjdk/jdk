@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -231,16 +231,14 @@ final class NSEvent {
         return jeventType;
     }
 
-    /*
-     * Converts NSEvent mouse modifiers to AWT mouse modifiers.
+    /**
+     * Converts NSEvent key modifiers to AWT key modifiers. Note that this
+     * method adds the current mouse state as a mouse modifiers.
+     *
+     * @param  modifierFlags the NSEvent key modifiers
+     * @return the java key and mouse modifiers
      */
-    static native int nsToJavaMouseModifiers(int buttonNumber,
-                                                    int modifierFlags);
-
-    /*
-     * Converts NSEvent key modifiers to AWT key modifiers.
-     */
-    static native int nsToJavaKeyModifiers(int modifierFlags);
+    static native int nsToJavaModifiers(int modifierFlags);
 
     /*
      * Converts NSEvent key info to AWT key info.

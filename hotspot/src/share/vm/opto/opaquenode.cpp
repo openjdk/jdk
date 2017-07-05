@@ -40,7 +40,7 @@ uint Opaque1Node::cmp( const Node &n ) const {
 // call to IterGVN and any chance of hitting this code.  Hence there's no
 // phase-ordering problem with stripping Opaque1 in IGVN followed by some
 // more loop optimizations that require it.
-Node *Opaque1Node::Identity( PhaseTransform *phase ) {
+Node* Opaque1Node::Identity(PhaseGVN* phase) {
   return phase->C->major_progress() ? this : in(1);
 }
 
@@ -76,7 +76,7 @@ Node *ProfileBooleanNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   }
 }
 
-Node *ProfileBooleanNode::Identity( PhaseTransform *phase ) {
+Node* ProfileBooleanNode::Identity(PhaseGVN* phase) {
   if (_delay_removal) {
     return this;
   } else {

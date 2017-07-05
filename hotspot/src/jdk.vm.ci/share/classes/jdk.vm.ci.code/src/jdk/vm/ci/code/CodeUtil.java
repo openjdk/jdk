@@ -417,7 +417,7 @@ public class CodeUtil {
     /**
      * Create a calling convention from a {@link ResolvedJavaMethod}.
      */
-    public static CallingConvention getCallingConvention(CodeCacheProvider codeCache, CallingConvention.Type type, ResolvedJavaMethod method, boolean stackOnly) {
+    public static CallingConvention getCallingConvention(CodeCacheProvider codeCache, CallingConvention.Type type, ResolvedJavaMethod method) {
         Signature sig = method.getSignature();
         JavaType retType = sig.getReturnType(null);
         int sigCount = sig.getParameterCount(false);
@@ -434,6 +434,6 @@ public class CodeUtil {
         }
 
         RegisterConfig registerConfig = codeCache.getRegisterConfig();
-        return registerConfig.getCallingConvention(type, retType, argTypes, codeCache.getTarget(), stackOnly);
+        return registerConfig.getCallingConvention(type, retType, argTypes, codeCache.getTarget());
     }
 }

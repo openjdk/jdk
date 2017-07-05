@@ -63,7 +63,7 @@ class Native {
 
     /**
      * Set of helper function to read data of different PLATFORM types
-     * from memory pointer by <code>ptr</code>
+     * from memory pointer by {@code ptr}
      * Note, names of types in function are NATIVE PLATFORM types
      * and they have the same size as they would have in C compiler
      * on the same platform.
@@ -93,7 +93,7 @@ class Native {
         putByte(ptr+index, data);
     }
     /**
-     * Converts length bytes of data pointed by <code>data</code> into byte array
+     * Converts length bytes of data pointed by {@code data} into byte array
      * Returns null if data is zero
      * @param data native pointer to native memory
      * @param length size in bytes of native memory
@@ -143,7 +143,7 @@ class Native {
     }
 
     /**
-     * Converts length usnigned bytes of data pointed by <code>data</code> into
+     * Converts length usnigned bytes of data pointed by {@code data} into
      * short array
      * Returns null if data is zero
      * @param data native pointer to native memory
@@ -297,8 +297,8 @@ class Native {
     }
     /**
      * Stores to C long data(four bytes)
-     * Note: <code>data</code> has <code>long</code> type
-     * to be able to keep 64-bit C <code>long</code> data
+     * Note: {@code data} has {@code long} type
+     * to be able to keep 64-bit C {@code long} data
      */
     static void putLong(long ptr, long data) {
         if (XlibWrapper.dataModel == 32) {
@@ -320,7 +320,7 @@ class Native {
     }
     /**
      * Stores Java long[] array into memory. Memory location is treated as array
-     * of native <code>long</code>s
+     * of native {@code long}s
      */
     static void put(long ptr, long[] arr) {
         for (int i = 0; i < arr.length; i ++, ptr += getLongSize()) {
@@ -330,7 +330,7 @@ class Native {
 
     /**
      * Stores Java Vector of Longs into memory. Memory location is treated as array
-     * of native <code>long</code>s
+     * of native {@code long}s
      */
     static void putLong(long ptr, Vector<Long> arr) {
         for (int i = 0; i < arr.size(); i ++, ptr += getLongSize()) {
@@ -340,7 +340,7 @@ class Native {
 
     /**
      * Stores Java Vector of Longs into memory. Memory location is treated as array
-     * of native <code>long</code>s. Array is stored in reverse order
+     * of native {@code long}s. Array is stored in reverse order
      */
     static void putLongReverse(long ptr, Vector<Long> arr) {
         for (int i = arr.size()-1; i >= 0; i--, ptr += getLongSize()) {
@@ -348,7 +348,7 @@ class Native {
         }
     }
     /**
-     * Converts length bytes of data pointed by <code>data</code> into byte array
+     * Converts length bytes of data pointed by {@code data} into byte array
      * Returns null if data is zero
      * @param data native pointer to native memory
      * @param length size in longs(platform dependent) of native memory
@@ -393,7 +393,7 @@ class Native {
     }
 
     /**
-     * Allocates memory for array of native <code>long</code>s of the size <code>length</code>
+     * Allocates memory for array of native {@code long}s of the size {@code length}
      */
     static long allocateLongArray(int length) {
         return unsafe.allocateMemory(getLongSize() * length);

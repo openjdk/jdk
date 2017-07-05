@@ -120,7 +120,7 @@ public final class DialogTypeSelection extends EnumSyntax
      * instance.
      * <P>
      * For class DialogTypeSelection the category name is
-     * <CODE>"dialog-type-selection"</CODE>.
+     * {@code "dialog-type-selection"}.
      *
      * @return  Attribute category name.
      */

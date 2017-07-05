@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -25,8 +25,15 @@
 
 #include "precompiled.hpp"
 #include "interpreter/interpreterRuntime.hpp"
+#include "runtime/thread.hpp"
 #include "stack_zero.hpp"
 #include "stack_zero.inline.hpp"
+
+// Inlined causes circular inclusion with thread.hpp
+ZeroStack::ZeroStack()
+    : _base(NULL), _top(NULL), _sp(NULL) {
+    _shadow_pages_size = JavaThread::stack_shadow_zone_size();
+  }
 
 int ZeroStack::suggest_size(Thread *thread) const {
   assert(needs_setup(), "already set up");

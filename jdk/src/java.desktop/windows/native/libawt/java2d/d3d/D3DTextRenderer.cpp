@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -355,7 +355,7 @@ D3DTR_UpdateCachedDestination(D3DContext *d3dc, D3DSDOps *dstOps,
     jint dx1, dy1, dx2, dy2;
     D3DResource *pCachedDestTexRes;
     IDirect3DSurface9 *pCachedDestSurface, *pDst;
-    HRESULT res;
+    HRESULT res = S_OK;
 
     if (isCachedDestValid && INSIDE(gx1, gy1, gx2, gy2, cachedDestBounds)) {
         // glyph is already within the cached destination bounds; no need

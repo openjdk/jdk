@@ -29,6 +29,7 @@ import static jdk.vm.ci.inittimer.InitTimer.timer;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 
+import jdk.vm.ci.code.BytecodeFrame;
 import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.code.InvalidInstalledCodeException;
 import jdk.vm.ci.code.TargetDescription;
@@ -317,21 +318,6 @@ final class CompilerToVM {
     public native int getMetadata(TargetDescription target, HotSpotCompiledCode compiledCode, HotSpotMetaData metaData);
 
     /**
-     * Notifies the VM of statistics for a completed compilation.
-     *
-     * @param id the identifier of the compilation
-     * @param method the method compiled
-     * @param osr specifies if the compilation was for on-stack-replacement
-     * @param processedBytecodes the number of bytecodes processed during the compilation, including
-     *            the bytecodes of all inlined methods
-     * @param time the amount time spent compiling {@code method}
-     * @param timeUnitsPerSecond the granularity of the units for the {@code time} value
-     * @param installedCode the nmethod installed as a result of the compilation
-     */
-    synchronized native void notifyCompilationStatistics(int id, HotSpotResolvedJavaMethodImpl method, boolean osr, int processedBytecodes, long time, long timeUnitsPerSecond,
-                    InstalledCode installedCode);
-
-    /**
      * Resets all compilation statistics.
      */
     native void resetCompilationStatistics();
@@ -604,4 +590,14 @@ final class CompilerToVM {
      * @throws IllegalArgumentException if an out of range position is given
      */
     native int methodDataProfileDataSize(long metaspaceMethodData, int position);
+
+    /**
+     * Return the amount of native stack required for the interpreter frames represented by
+     * {@code frame}. This is used when emitting the stack banging code to ensure that there is
+     * enough space for the frames during deoptimization.
+     *
+     * @param frame
+     * @return the number of bytes required for deoptimization of this frame state
+     */
+    native int interpreterFrameSize(BytecodeFrame frame);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,12 @@ JNIEXPORT jclass JNICALL Java_sun_reflect_ConstantPool_getClassAtIfLoaded0
   return JVM_ConstantPoolGetClassAtIfLoaded(env, unused, jcpool, index);
 }
 
+JNIEXPORT jint JNICALL Java_sun_reflect_ConstantPool_getClassRefIndexAt0
+(JNIEnv *env, jobject unused, jobject jcpool, jint index)
+{
+    return JVM_ConstantPoolGetClassRefIndexAt(env, unused, jcpool, index);
+}
+
 JNIEXPORT jobject JNICALL Java_sun_reflect_ConstantPool_getMethodAt0
 (JNIEnv *env, jobject unused, jobject jcpool, jint index)
 {
@@ -72,6 +78,18 @@ JNIEXPORT jobjectArray JNICALL Java_sun_reflect_ConstantPool_getMemberRefInfoAt0
 (JNIEnv *env, jobject unused, jobject jcpool, jint index)
 {
   return JVM_ConstantPoolGetMemberRefInfoAt(env, unused, jcpool, index);
+}
+
+JNIEXPORT jint JNICALL Java_sun_reflect_ConstantPool_getNameAndTypeRefIndexAt0
+(JNIEnv *env, jobject unused, jobject jcpool, jint index)
+{
+    return JVM_ConstantPoolGetNameAndTypeRefIndexAt(env, unused, jcpool, index);
+}
+
+JNIEXPORT jobjectArray JNICALL Java_sun_reflect_ConstantPool_getNameAndTypeRefInfoAt0
+(JNIEnv *env, jobject unused, jobject jcpool, jint index)
+{
+  return JVM_ConstantPoolGetNameAndTypeRefInfoAt(env, unused, jcpool, index);
 }
 
 JNIEXPORT jint JNICALL Java_sun_reflect_ConstantPool_getIntAt0
@@ -109,3 +127,10 @@ JNIEXPORT jstring JNICALL Java_sun_reflect_ConstantPool_getUTF8At0
 {
   return JVM_ConstantPoolGetUTF8At(env, unused, jcpool, index);
 }
+
+JNIEXPORT jbyte JNICALL Java_sun_reflect_ConstantPool_getTagAt0
+(JNIEnv *env, jobject unused, jobject jcpool, jint index)
+{
+  return JVM_ConstantPoolGetTagAt(env, unused, jcpool, index);
+}
+

@@ -31,23 +31,23 @@ import java.util.EventObject;
 
 /**
  * This class is the base class for
- * <code>DragSourceDragEvent</code> and
- * <code>DragSourceDropEvent</code>.
+ * {@code DragSourceDragEvent} and
+ * {@code DragSourceDropEvent}.
  * <p>
- * <code>DragSourceEvent</code>s are generated whenever the drag enters, moves
+ * {@code DragSourceEvent}s are generated whenever the drag enters, moves
  * over, or exits a drop site, when the drop action changes, and when the drag
- * ends. The location for the generated <code>DragSourceEvent</code> specifies
+ * ends. The location for the generated {@code DragSourceEvent} specifies
  * the mouse cursor location in screen coordinates at the moment this event
  * occurred.
  * <p>
  * In a multi-screen environment without a virtual device, the cursor location is
  * specified in the coordinate system of the <i>initiator</i>
- * <code>GraphicsConfiguration</code>. The <i>initiator</i>
- * <code>GraphicsConfiguration</code> is the <code>GraphicsConfiguration</code>
- * of the <code>Component</code> on which the drag gesture for the current drag
+ * {@code GraphicsConfiguration}. The <i>initiator</i>
+ * {@code GraphicsConfiguration} is the {@code GraphicsConfiguration}
+ * of the {@code Component} on which the drag gesture for the current drag
  * operation was recognized. If the cursor location is outside the bounds of
- * the initiator <code>GraphicsConfiguration</code>, the reported coordinates are
- * clipped to fit within the bounds of that <code>GraphicsConfiguration</code>.
+ * the initiator {@code GraphicsConfiguration}, the reported coordinates are
+ * clipped to fit within the bounds of that {@code GraphicsConfiguration}.
  * <p>
  * In a multi-screen environment with a virtual device, the location is specified
  * in the corresponding virtual coordinate system. If the cursor location is
@@ -62,7 +62,7 @@ public class DragSourceEvent extends EventObject {
     private static final long serialVersionUID = -763287114604032641L;
 
     /**
-     * The <code>boolean</code> indicating whether the cursor location
+     * The {@code boolean} indicating whether the cursor location
      * is specified for this event.
      *
      * @serial
@@ -88,15 +88,15 @@ public class DragSourceEvent extends EventObject {
     private final int y;
 
     /**
-     * Construct a <code>DragSourceEvent</code>
-     * given a specified <code>DragSourceContext</code>.
-     * The coordinates for this <code>DragSourceEvent</code>
-     * are not specified, so <code>getLocation</code> will return
-     * <code>null</code> for this event.
+     * Construct a {@code DragSourceEvent}
+     * given a specified {@code DragSourceContext}.
+     * The coordinates for this {@code DragSourceEvent}
+     * are not specified, so {@code getLocation} will return
+     * {@code null} for this event.
      *
-     * @param dsc the <code>DragSourceContext</code>
+     * @param dsc the {@code DragSourceContext}
      *
-     * @throws IllegalArgumentException if <code>dsc</code> is <code>null</code>.
+     * @throws IllegalArgumentException if {@code dsc} is {@code null}.
      *
      * @see #getLocation
      */
@@ -109,15 +109,15 @@ public class DragSourceEvent extends EventObject {
     }
 
     /**
-     * Construct a <code>DragSourceEvent</code> given a specified
-     * <code>DragSourceContext</code>, and coordinates of the cursor
+     * Construct a {@code DragSourceEvent} given a specified
+     * {@code DragSourceContext}, and coordinates of the cursor
      * location.
      *
-     * @param dsc the <code>DragSourceContext</code>
+     * @param dsc the {@code DragSourceContext}
      * @param x   the horizontal coordinate for the cursor location
      * @param y   the vertical coordinate for the cursor location
      *
-     * @throws IllegalArgumentException if <code>dsc</code> is <code>null</code>.
+     * @throws IllegalArgumentException if {@code dsc} is {@code null}.
      *
      * @since 1.4
      */
@@ -129,10 +129,10 @@ public class DragSourceEvent extends EventObject {
     }
 
     /**
-     * This method returns the <code>DragSourceContext</code> that
+     * This method returns the {@code DragSourceContext} that
      * originated the event.
      *
-     * @return the <code>DragSourceContext</code> that originated the event
+     * @return the {@code DragSourceContext} that originated the event
      */
 
     public DragSourceContext getDragSourceContext() {
@@ -140,13 +140,13 @@ public class DragSourceEvent extends EventObject {
     }
 
     /**
-     * This method returns a <code>Point</code> indicating the cursor
+     * This method returns a {@code Point} indicating the cursor
      * location in screen coordinates at the moment this event occurred, or
-     * <code>null</code> if the cursor location is not specified for this
+     * {@code null} if the cursor location is not specified for this
      * event.
      *
-     * @return the <code>Point</code> indicating the cursor location
-     *         or <code>null</code> if the cursor location is not specified
+     * @return the {@code Point} indicating the cursor location
+     *         or {@code null} if the cursor location is not specified
      * @since 1.4
      */
     public Point getLocation() {

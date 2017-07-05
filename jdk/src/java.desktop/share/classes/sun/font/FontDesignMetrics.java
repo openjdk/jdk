@@ -520,14 +520,14 @@ public final class FontDesignMetrics extends FontMetrics {
 
     /**
      * Gets the advance widths of the first 256 characters in the
-     * <code>Font</code>.  The advance is the
+     * {@code Font}.  The advance is the
      * distance from the leftmost point to the rightmost point on the
      * character's baseline.  Note that the advance of a
-     * <code>String</code> is not necessarily the sum of the advances
+     * {@code String} is not necessarily the sum of the advances
      * of its characters.
      * @return    an array storing the advance widths of the
-     *                 characters in the <code>Font</code>
-     *                 described by this <code>FontMetrics</code> object.
+     *                 characters in the {@code Font}
+     *                 described by this {@code FontMetrics} object.
      */
     // More efficient than base class implementation - reuses existing cache
     public int[] getWidths() {

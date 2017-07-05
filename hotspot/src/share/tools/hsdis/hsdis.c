@@ -125,15 +125,15 @@ decode_instructions(void* start_pv, void* end_pv,
                     event_callback_t  event_callback_arg,  void* event_stream_arg,
                     printf_callback_t printf_callback_arg, void* printf_stream_arg,
                     const char* options) {
-  decode_instructions_virtual((uintptr_t)start_pv,
-                             (uintptr_t)end_pv,
-                             (unsigned char*)start_pv,
-                             (uintptr_t)end_pv - (uintptr_t)start_pv,
-                             event_callback_arg,
-                             event_stream_arg,
-                             printf_callback_arg,
-                             printf_stream_arg,
-                             options, false);
+  return decode_instructions_virtual((uintptr_t)start_pv,
+                                     (uintptr_t)end_pv,
+                                     (unsigned char*)start_pv,
+                                     (uintptr_t)end_pv - (uintptr_t)start_pv,
+                                     event_callback_arg,
+                                     event_stream_arg,
+                                     printf_callback_arg,
+                                     printf_stream_arg,
+                                     options, false);
 }
 
 static void* decode(struct hsdis_app_data* app_data, const char* options) {
@@ -212,6 +212,7 @@ static const char* format_insn_close(const char* close,
   case dis_condjsr:     type = "condjsr";    break;
   case dis_dref:        type = "dref";       break;
   case dis_dref2:       type = "dref2";      break;
+  case dis_noninsn:     type = "noninsn";    break;
   }
 
   strcpy(buf, close);

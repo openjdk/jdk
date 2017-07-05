@@ -50,9 +50,9 @@ public class ApplicationEvent extends EventObject {
 
     /**
      * Determines whether an ApplicationListener has acted on a particular event.
-     * An event is marked as having been handled with <code>setHandled(true)</code>.
+     * An event is marked as having been handled with {@code setHandled(true)}.
      *
-     * @return <code>true</code> if the event has been handled, otherwise <code>false</code>
+     * @return {@code true} if the event has been handled, otherwise {@code false}
      *
      * @since 1.4
      * @deprecated
@@ -65,10 +65,10 @@ public class ApplicationEvent extends EventObject {
     /**
      * Marks the event as handled.
      * After this method handles an ApplicationEvent, it may be useful to specify that it has been handled.
-     * This is usually used in conjunction with <code>getHandled()</code>.
-     * Set to <code>true</code> to designate that this event has been handled. By default it is <code>false</code>.
+     * This is usually used in conjunction with {@code getHandled()}.
+     * Set to {@code true} to designate that this event has been handled. By default it is {@code false}.
      *
-     * @param state <code>true</code> if the event has been handled, otherwise <code>false</code>.
+     * @param state {@code true} if the event has been handled, otherwise {@code false}.
      *
      * @since 1.4
      * @deprecated
@@ -84,7 +84,7 @@ public class ApplicationEvent extends EventObject {
      * For example, the Print and Open events refer to specific files.
      * For these cases, this returns the appropriate file name.
      *
-     * @return the full path to the file associated with the event, if applicable, otherwise <code>null</code>
+     * @return the full path to the file associated with the event, if applicable, otherwise {@code null}
      *
      * @since 1.4
      * @deprecated use {@link OpenFilesHandler} or {@link PrintFilesHandler} instead

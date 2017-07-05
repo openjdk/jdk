@@ -32,7 +32,7 @@ import com.sun.imageio.plugins.bmp.BMPConstants;
 import com.sun.imageio.plugins.bmp.BMPCompressionTypes;
 
 /**
- * A subclass of <code>ImageWriteParam</code> for encoding images in
+ * A subclass of {@code ImageWriteParam} for encoding images in
  * the BMP format.
  *
  * <p> This class allows for the specification of various parameters
@@ -41,13 +41,13 @@ import com.sun.imageio.plugins.bmp.BMPCompressionTypes;
  * the first scanline being stored last.
  *
  * <p>The particular compression scheme to be used can be specified by using
- * the <code>setCompressionType()</code> method with the appropriate type
+ * the {@code setCompressionType()} method with the appropriate type
  * string.  The compression scheme specified will be honored if and only if it
  * is compatible with the type of image being written. If the specified
  * compression scheme is not compatible with the type of image being written
- * then the <code>IOException</code> will be thrown by the BMP image writer.
- * If the compression type is not set explicitly then <code>getCompressionType()</code>
- * will return <code>null</code>. In this case the BMP image writer will select
+ * then the {@code IOException} will be thrown by the BMP image writer.
+ * If the compression type is not set explicitly then {@code getCompressionType()}
+ * will return {@code null}. In this case the BMP image writer will select
  * a compression type that supports encoding of the given image without loss
  * of the color resolution.
  * <p>The compression type strings and the image type(s) each supports are
@@ -68,12 +68,12 @@ public class BMPImageWriteParam extends ImageWriteParam {
     private boolean topDown = false;
 
     /**
-     * Constructs a <code>BMPImageWriteParam</code> set to use a given
-     * <code>Locale</code> and with default values for all parameters.
+     * Constructs a {@code BMPImageWriteParam} set to use a given
+     * {@code Locale} and with default values for all parameters.
      *
-     * @param locale a <code>Locale</code> to be used to localize
+     * @param locale a {@code Locale} to be used to localize
      * compression type names and quality descriptions, or
-     * <code>null</code>.
+     * {@code null}.
      */
     public BMPImageWriteParam(Locale locale) {
         super(locale);
@@ -88,8 +88,8 @@ public class BMPImageWriteParam extends ImageWriteParam {
     }
 
     /**
-     * Constructs an <code>BMPImageWriteParam</code> object with default
-     * values for all parameters and a <code>null</code> <code>Locale</code>.
+     * Constructs an {@code BMPImageWriteParam} object with default
+     * values for all parameters and a {@code null Locale}.
      */
     public BMPImageWriteParam() {
         this(null);
@@ -106,8 +106,8 @@ public class BMPImageWriteParam extends ImageWriteParam {
     }
 
     /**
-     * Returns the value of the <code>topDown</code> parameter.
-     * The default is <code>false</code>.
+     * Returns the value of the {@code topDown} parameter.
+     * The default is {@code false}.
      *
      * @return whether the data are written in top-down order.
      */

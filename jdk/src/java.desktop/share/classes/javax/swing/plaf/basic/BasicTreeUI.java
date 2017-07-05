@@ -4416,7 +4416,8 @@ public class BasicTreeUI extends TreeUI
             super(key);
         }
 
-        public boolean isEnabled(Object o) {
+        @Override
+        public boolean accept(Object o) {
             if (o instanceof JTree) {
                 if (getName() == CANCEL_EDITING) {
                     return ((JTree)o).isEditing();

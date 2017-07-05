@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -653,6 +653,7 @@ public final class ProviderList {
         String type = null;
         String algorithm;
         String provider;
+        String alternateName = null;
 
         PreferredEntry(String t, String p) {
             int i = t.indexOf('.');
@@ -664,6 +665,11 @@ public final class ProviderList {
             }
 
             provider = p;
+            if (algorithm.compareToIgnoreCase("SHA1") == 0) {
+                alternateName = "SHA-1";
+            } else if (algorithm.compareToIgnoreCase("SHA-1") == 0) {
+                alternateName = "SHA1";
+            }
         }
 
         boolean match(String t, String a) {
@@ -681,6 +687,15 @@ public final class ProviderList {
             if (a.compareToIgnoreCase(algorithm) == 0) {
                 if (debug != null) {
                     debug.println("Config entry found:  " + toString());
+                }
+                return true;
+            }
+
+            if (alternateName != null &&
+                    a.compareToIgnoreCase(alternateName) == 0) {
+                if (debug != null) {
+                    debug.println("Config entry found (alternateName):  " +
+                            toString());
                 }
                 return true;
             }
