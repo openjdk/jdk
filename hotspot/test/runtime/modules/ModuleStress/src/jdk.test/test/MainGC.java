@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,7 @@ package test;
 
 import java.lang.module.Configuration;
 import java.lang.module.ModuleFinder;
-import java.lang.reflect.Layer;
 import java.lang.reflect.Method;
-import java.lang.reflect.Module;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
@@ -44,11 +42,11 @@ public class MainGC {
     public static void main(String[] args) throws Exception {
 
         ModuleFinder finder = ModuleFinder.of(MODS_DIR);
-        Layer layerBoot = Layer.boot();
+        ModuleLayer layerBoot = ModuleLayer.boot();
 
         Configuration cf = layerBoot
                 .configuration()
-                .resolveRequires(ModuleFinder.of(), finder, Set.of(MODULE_NAME));
+                .resolve(ModuleFinder.of(), finder, Set.of(MODULE_NAME));
 
         Module testModule = MainGC.class.getModule();
         ClassLoader scl = ClassLoader.getSystemClassLoader();
@@ -59,7 +57,7 @@ public class MainGC {
         Callable<Void> task = new Callable<Void>() {
             @Override
             public Void call() throws Exception {
-                Layer layer = Layer.boot().defineModulesWithOneLoader(cf, scl);
+                ModuleLayer layer = ModuleLayer.boot().defineModulesWithOneLoader(cf, scl);
                 Module transletModule = layer.findModule(MODULE_NAME).get();
                 testModule.addExports("test", transletModule);
                 testModule.addReads(transletModule);

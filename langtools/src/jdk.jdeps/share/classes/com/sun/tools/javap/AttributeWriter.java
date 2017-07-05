@@ -680,12 +680,6 @@ public class AttributeWriter extends BasicWriter
             print("// " + getOSArch(attr));
         }
         println();
-        print("os_version: #" + attr.os_version_index);
-        if (attr.os_version_index != 0) {
-            tab();
-            print("// " + getOSVersion(attr));
-        }
-        println();
         indent(-1);
         return null;
     }
@@ -701,14 +695,6 @@ public class AttributeWriter extends BasicWriter
     private String getOSArch(ModuleTarget_attribute attr) {
         try {
             return constant_pool.getUTF8Value(attr.os_arch_index);
-        } catch (ConstantPoolException e) {
-            return report(e);
-        }
-    }
-
-    private String getOSVersion(ModuleTarget_attribute attr) {
-        try {
-            return constant_pool.getUTF8Value(attr.os_version_index);
         } catch (ConstantPoolException e) {
             return report(e);
         }

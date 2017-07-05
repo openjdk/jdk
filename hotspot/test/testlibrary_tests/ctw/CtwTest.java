@@ -37,6 +37,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.nio.charset.Charset;
 
+import jdk.test.lib.Platform;
 import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
@@ -93,7 +94,12 @@ public abstract class CtwTest {
         // concat CTW_COMMAND and args w/o 0th element
         String[] cmd = Arrays.copyOf(CTW_COMMAND, CTW_COMMAND.length + args.length - 1);
         System.arraycopy(args, 1, cmd, CTW_COMMAND.length, args.length - 1);
-
+        if (Platform.isWindows()) {
+            // '*' has to be escaped on windows
+            for (int i = 0; i < cmd.length; ++i) {
+                cmd[i] = cmd[i].replace("*", "\"*\"");
+            }
+        }
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(true, cmd);
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         dump(output, "compile");

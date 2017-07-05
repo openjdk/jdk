@@ -26,9 +26,9 @@
  * @bug 6338874
  * @summary Check that notification dispatch is not linear in number of MBeans.
  * @author Eamonn McManus
- * @modules java.management.rmi
  *
  * @library /lib/testlibrary
+ *
  * @run build jdk.testlibrary.* ListenerScaleTest
  * @run main ListenerScaleTest
  */

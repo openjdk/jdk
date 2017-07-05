@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,6 +80,9 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
                                                 // robj ^ rcounter ^ rcounter == robj
                                                 // robj is data dependent on rcounter.
   }
+
+  __ clear_jweak_tag(robj);
+
   __ movptr(robj, Address(robj, 0));             // *obj
   __ mov   (roffset, c_rarg2);
   __ shrptr(roffset, 2);                         // offset
@@ -178,6 +181,9 @@ address JNI_FastGetField::generate_fast_get_float_field0(BasicType type) {
                                                 // robj ^ rcounter ^ rcounter == robj
                                                 // robj is data dependent on rcounter.
   }
+
+  __ clear_jweak_tag(robj);
+
   __ movptr(robj, Address(robj, 0));             // *obj
   __ mov   (roffset, c_rarg2);
   __ shrptr(roffset, 2);                         // offset
