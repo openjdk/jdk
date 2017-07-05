@@ -116,7 +116,7 @@ public abstract class AtomicReferenceFieldUpdater<T, V> {
      * @param obj An object whose field to conditionally set
      * @param expect the expected value
      * @param update the new value
-     * @return true if successful.
+     * @return true if successful
      */
     public abstract boolean compareAndSet(T obj, V expect, V update);
 
@@ -134,7 +134,7 @@ public abstract class AtomicReferenceFieldUpdater<T, V> {
      * @param obj An object whose field to conditionally set
      * @param expect the expected value
      * @param update the new value
-     * @return true if successful.
+     * @return true if successful
      */
     public abstract boolean weakCompareAndSet(T obj, V expect, V update);
 
@@ -176,11 +176,11 @@ public abstract class AtomicReferenceFieldUpdater<T, V> {
      * @return the previous value
      */
     public V getAndSet(T obj, V newValue) {
-        for (;;) {
-            V current = get(obj);
-            if (compareAndSet(obj, current, newValue))
-                return current;
-        }
+        V prev;
+        do {
+            prev = get(obj);
+        } while (!compareAndSet(obj, prev, newValue));
+        return prev;
     }
 
     private static final class AtomicReferenceFieldUpdaterImpl<T,V>
@@ -319,6 +319,15 @@ public abstract class AtomicReferenceFieldUpdater<T, V> {
             if (obj == null || obj.getClass() != tclass || cclass != null)
                 targetCheck(obj);
             return (V)unsafe.getObjectVolatile(obj, offset);
+        }
+
+        @SuppressWarnings("unchecked")
+        public V getAndSet(T obj, V newValue) {
+            if (obj == null || obj.getClass() != tclass || cclass != null ||
+                (newValue != null && vclass != null &&
+                 vclass != newValue.getClass()))
+                updateCheck(obj, newValue);
+            return (V)unsafe.getAndSetObject(obj, offset, newValue);
         }
 
         private void ensureProtectedAccess(T obj) {

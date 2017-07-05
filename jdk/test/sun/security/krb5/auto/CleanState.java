@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 6716534
+ * @compile -XDignore.symbol.file CleanState.java
  * @run main/othervm CleanState
  * @summary Krb5LoginModule has not cleaned temp info between authentication attempts
  */
