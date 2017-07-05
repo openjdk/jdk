@@ -51,12 +51,11 @@ public class FinalizeZipFile {
 
     private static void makeGarbage() throws Throwable {
         final Random rnd = new Random();
-        final String javaHome = System.getProperty("java.home");
         // Create some ZipFiles.
-        // Find some .jar files in JDK's lib directory.
-        final File lib = new File(javaHome, "lib");
-        check(lib.isDirectory());
-        final File[] jars = lib.listFiles(
+        // Find some .jar files in test directory.
+        final File testdir = new File(System.getProperty("test.src", "."));
+        check(testdir.isDirectory());
+        final File[] jars = testdir.listFiles(
             new FilenameFilter() {
                 public boolean accept(File dir, String name) {
                     return name.endsWith(".jar");}});

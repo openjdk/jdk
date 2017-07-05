@@ -25,7 +25,6 @@
 
 
 #include "precompiled.hpp"
-#include "asm/assembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "interp_masm_ppc_64.hpp"
 #include "interpreter/interpreterRuntime.hpp"

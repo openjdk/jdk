@@ -25,10 +25,6 @@
 
 include GensrcCommon.gmk
 
-# TODO: maybe split into separate modules?
-include GensrcProperties.gmk
-GENSRC_JAVA_BASE += $(GENSRC_PROPERTIES)
-
 include GensrcLocaleData.gmk
 include GensrcCharacterData.gmk
 include GensrcMisc.gmk
@@ -36,6 +32,34 @@ include GensrcCharsetMapping.gmk
 include GensrcCharsetCoder.gmk
 include GensrcBuffer.gmk
 include GensrcExceptions.gmk
+
+################################################################################
+
+include GensrcProperties.gmk
+
+$(eval $(call SetupCompileProperties,LIST_RESOURCE_BUNDLE, \
+    $(filter %.properties, \
+        $(call CacheFind, $(JDK_TOPDIR)/src/java.base/share/classes/sun/launcher/resources)), \
+    ListResourceBundle))
+
+$(eval $(call SetupCompileProperties,SUN_UTIL, \
+    $(filter %.properties, \
+        $(call CacheFind, $(JDK_TOPDIR)/src/java.base/share/classes/sun/util/resources)), \
+    sun.util.resources.LocaleNamesBundle))
+
+GENSRC_JAVA_BASE += $(LIST_RESOURCE_BUNDLE) $(SUN_UTIL)
+
+# Some resources bundles are already present as java files but still need to be
+# copied to zh_HK locale.
+$(eval $(call SetupCopy-zh_HK,COPY_ZH_HK, \
+    $(addprefix $(JDK_TOPDIR)/src/java.base/share/classes/, \
+        sun/misc/resources/Messages_zh_TW.java \
+        sun/security/util/AuthResources_zh_TW.java \
+        sun/security/util/Resources_zh_TW.java)))
+
+GENSRC_JAVA_BASE += $(COPY_ZH_HK)
+
+################################################################################
 
 java.base: $(GENSRC_JAVA_BASE)
 

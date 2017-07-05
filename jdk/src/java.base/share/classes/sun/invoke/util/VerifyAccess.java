@@ -102,19 +102,24 @@ public class VerifyAccess {
         case PUBLIC:
             return true;  // already checked above
         case PROTECTED:
+            assert !defc.isInterface(); // protected members aren't allowed in interfaces
             if ((allowedModes & PROTECTED_OR_PACKAGE_ALLOWED) != 0 &&
                 isSamePackage(defc, lookupClass))
                 return true;
             if ((allowedModes & PROTECTED) == 0)
                 return false;
+            // Protected members are accessible by subclasses, which does not include interfaces.
+            // Interfaces are types, not classes. They should not have access to
+            // protected members in j.l.Object, even though it is their superclass.
             if ((mods & STATIC) != 0 &&
                 !isRelatedClass(refc, lookupClass))
                 return false;
             if ((allowedModes & PROTECTED) != 0 &&
-                isSuperClass(defc, lookupClass))
+                isSubClass(lookupClass, defc))
                 return true;
             return false;
         case PACKAGE_ONLY:  // That is, zero.  Unmarked member is package-only access.
+            assert !defc.isInterface(); // package-private members aren't allowed in interfaces
             return ((allowedModes & PACKAGE_ALLOWED) != 0 &&
                     isSamePackage(defc, lookupClass));
         case PRIVATE:
@@ -129,12 +134,13 @@ public class VerifyAccess {
 
     static boolean isRelatedClass(Class<?> refc, Class<?> lookupClass) {
         return (refc == lookupClass ||
-                refc.isAssignableFrom(lookupClass) ||
-                lookupClass.isAssignableFrom(refc));
+                isSubClass(refc, lookupClass) ||
+                isSubClass(lookupClass, refc));
     }
 
-    static boolean isSuperClass(Class<?> defc, Class<?> lookupClass) {
-        return defc.isAssignableFrom(lookupClass);
+    static boolean isSubClass(Class<?> lookupClass, Class<?> defc) {
+        return defc.isAssignableFrom(lookupClass) &&
+               !lookupClass.isInterface(); // interfaces are types, not classes.
     }
 
     static int getClassModifiers(Class<?> c) {

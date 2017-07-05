@@ -54,7 +54,8 @@ public class SourceClassName {
             plog.severe("Log message {0} {1}", (Object[]) params);
 
             // create a java.util.logging.Logger
-            // now java.util.logging.Logger should be created for each platform logger
+            // now java.util.logging.Logger should be created for each platform
+            // logger
             Logger logger = Logger.getLogger("test.log.bar");
             logger.log(Level.SEVERE, "Log message {0} {1}", params);
 
@@ -82,6 +83,19 @@ public class SourceClassName {
                 record[i++] = line;
                 if (i == 2) {
                     i = 0;
+                    // check log message
+                    if (!record[1].equals(EXPECTED_LOG)) {
+                        // it can sometime happen that some static initializer
+                        // in the system will log an error message - due to e.g.
+                        // some kind of misconfiguration or system settings.
+                        // For instance - somethink like:
+                        //   INFO: currency.properties entry for FR ignored
+                        //         because the value format is not recognized.
+                        // instead of failing if we get such an unexpected
+                        // message, we will simply print that out.
+                        System.out.println("*** WARNING: Unexpected log: " + record[1]);
+                        continue;
+                    }
                     count++;
                     // check source class name and method
                     String[] ss = record[0].split("\\s+");
@@ -92,10 +106,6 @@ public class SourceClassName {
                             ss[len-2] + " " + ss[len-1]);
                     }
 
-                    // check log message
-                    if (!record[1].equals(EXPECTED_LOG)) {
-                        throw new RuntimeException("Unexpected log: " + record[1]);
-                    }
                 }
             }
             if (count != 3) {

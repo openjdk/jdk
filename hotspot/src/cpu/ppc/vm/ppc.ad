@@ -1249,6 +1249,7 @@ EmitCallOffsets emit_call_with_trampoline_stub(MacroAssembler &_masm, address en
 
     // Emit the trampoline stub which will be related to the branch-and-link below.
     CallStubImpl::emit_trampoline_stub(_masm, entry_point_toc_offset, offsets.insts_call_instruction_offset);
+    if (Compile::current()->env()->failing()) { return offsets; } // Code cache may be full.
     __ relocate(rtype);
   }
 
@@ -1410,7 +1411,7 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
     while (bang_offset <= bang_end) {
       // Need at least one stack bang at end of shadow zone.
 
-      // Again I had to copy code, this time from assembler_ppc64.cpp,
+      // Again I had to copy code, this time from assembler_ppc.cpp,
       // bang_stack_with_offset - see there for comments.
 
       // Stack grows down, caller passes positive offset.
@@ -2000,7 +2001,7 @@ void MachUEPNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
 
   // Inline_cache contains a klass.
   Register ic_klass       = as_Register(Matcher::inline_cache_reg_encode());
-  Register receiver_klass = R0;  // tmp
+  Register receiver_klass = R12_scratch2;  // tmp
 
   assert_different_registers(ic_klass, receiver_klass, R11_scratch1, R3_ARG1);
   assert(R11_scratch1 == R11, "need prologue scratch register");
@@ -3484,6 +3485,7 @@ encode %{
 
         // Emit the trampoline stub which will be related to the branch-and-link below.
         CallStubImpl::emit_trampoline_stub(_masm, entry_point_toc_offset, start_offset);
+        if (Compile::current()->env()->failing()) { return; } // Code cache may be full.
         __ relocate(_optimized_virtual ?
                     relocInfo::opt_virtual_call_type : relocInfo::static_call_type);
       }
@@ -3527,6 +3529,7 @@ encode %{
 
       // Emit the trampoline stub which will be related to the branch-and-link below.
       CallStubImpl::emit_trampoline_stub(_masm, entry_point_toc_offset, start_offset);
+      if (ra_->C->env()->failing()) { return; } // Code cache may be full.
       assert(_optimized_virtual, "methodHandle call should be a virtual call");
       __ relocate(relocInfo::opt_virtual_call_type);
     }
@@ -3577,9 +3580,7 @@ encode %{
       const address entry_point_const = __ address_constant(entry_point, RelocationHolder::none);
       const int entry_point_const_toc_offset = __ offset_to_method_toc(entry_point_const);
       CallStubImpl::emit_trampoline_stub(_masm, entry_point_const_toc_offset, __ offset());
-
-      if (ra_->C->env()->failing())
-        return;
+      if (ra_->C->env()->failing()) { return; } // Code cache may be full.
 
       // Build relocation at call site with ic position as data.
       assert((_load_ic_hi_node != NULL && _load_ic_node == NULL) ||
@@ -5638,19 +5639,6 @@ instruct loadNKlass(iRegNdst dst, memory mem) %{
   ins_pipe(pipe_class_memory);
 %}
 
-//// Load compressed klass and decode it if narrow_klass_shift == 0.
-//// TODO: will narrow_klass_shift ever be 0?
-//instruct decodeNKlass2Klass(iRegPdst dst, memory mem) %{
-//  match(Set dst (DecodeNKlass (LoadNKlass mem)));
-//  predicate(false /* TODO: PPC port Universe::narrow_klass_shift() == 0*);
-//  ins_cost(MEMORY_REF_COST);
-//
-//  format %{ "LWZ     $dst, $mem \t// DecodeNKlass (unscaled)" %}
-//  size(4);
-//  ins_encode( enc_lwz(dst, mem) );
-//  ins_pipe(pipe_class_memory);
-//%}
-
 // Load Klass Pointer
 instruct loadKlass(iRegPdst dst, memoryAlg4 mem) %{
   match(Set dst (LoadKlass mem));
@@ -6070,16 +6058,35 @@ instruct loadConN_Ex(iRegNdst dst, immN src) %{
   %}
 %}
 
-instruct loadConNKlass_hi(iRegNdst dst, immNKlass src) %{
+// We have seen a safepoint between the hi and lo parts, and this node was handled
+// as an oop. Therefore this needs a match rule so that build_oop_map knows this is
+// not a narrow oop.
+instruct loadConNKlass_hi(iRegNdst dst, immNKlass_NM src) %{
+  match(Set dst src);
   effect(DEF dst, USE src);
   ins_cost(DEFAULT_COST);
 
-  format %{ "LIS     $dst, $src \t// narrow oop hi" %}
+  format %{ "LIS     $dst, $src \t// narrow klass hi" %}
   size(4);
   ins_encode %{
     // TODO: PPC port $archOpcode(ppc64Opcode_addis);
     intptr_t Csrc = Klass::encode_klass((Klass *)$src$$constant);
     __ lis($dst$$Register, (int)(short)((Csrc >> 16) & 0xffff));
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+// As loadConNKlass_hi this must be recognized as narrow klass, not oop!
+instruct loadConNKlass_mask(iRegNdst dst, immNKlass_NM src1, iRegNsrc src2) %{
+  match(Set dst src1);
+  effect(TEMP src2);
+  ins_cost(DEFAULT_COST);
+
+  format %{ "MASK    $dst, $src2, 0xFFFFFFFF" %} // mask
+  size(4);
+  ins_encode %{
+    // TODO: PPC port $archOpcode(ppc64Opcode_rldicl);
+    __ clrldi($dst$$Register, $src2$$Register, 0x20);
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -6091,10 +6098,10 @@ instruct loadConNKlass_lo(iRegNdst dst, immNKlass_NM src1, iRegNsrc src2) %{
   effect(TEMP src2);
   ins_cost(DEFAULT_COST);
 
-  format %{ "ADDI    $dst, $src1, $src2 \t// narrow oop lo" %}
+  format %{ "ORI    $dst, $src1, $src2 \t// narrow klass lo" %}
   size(4);
   ins_encode %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_addi);
+    // TODO: PPC port $archOpcode(ppc64Opcode_ori);
     intptr_t Csrc = Klass::encode_klass((Klass *)$src1$$constant);
     assert(__ oop_recorder() != NULL, "this assembler needs an OopRecorder");
     int klass_index = __ oop_recorder()->find_index((Klass *)$src1$$constant);
@@ -6125,10 +6132,11 @@ instruct loadConNKlass_Ex(iRegNdst dst, immNKlass src) %{
     MachNode *m2 = m1;
     if (!Assembler::is_uimm((jlong)Klass::encode_klass((Klass *)op_src->constant()), 31)) {
       // Value might be 1-extended. Mask out these bits.
-      m2 = new clearMs32bNode();
+      m2 = new loadConNKlass_maskNode();
       m2->add_req(NULL, m1);
       m2->_opnds[0] = op_dst;
-      m2->_opnds[1] = op_dst;
+      m2->_opnds[1] = op_src;
+      m2->_opnds[2] = op_dst;
       ra_->set_pair(m2->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
       nodes->push(m2);
     }
@@ -6973,7 +6981,7 @@ instruct encodePKlass_32GAligned(iRegNdst dst, iRegPsrc src) %{
   size(4);
   ins_encode %{
     // TODO: PPC port $archOpcode(ppc64Opcode_rldicl);
-    __ rldicl($dst$$Register, $src$$Register, 64-Universe::narrow_oop_shift(), 32);
+    __ rldicl($dst$$Register, $src$$Register, 64-Universe::narrow_klass_shift(), 32);
   %}
   ins_pipe(pipe_class_default);
 %}

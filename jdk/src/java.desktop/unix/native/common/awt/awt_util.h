@@ -52,6 +52,8 @@
  */
 extern XErrorHandler current_native_xerror_handler;
 
+Window get_xawt_root_shell(JNIEnv *env);
+
 #endif /* !HEADLESS */
 
 #ifndef INTERSECTS

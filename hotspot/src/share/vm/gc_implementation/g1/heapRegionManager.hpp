@@ -31,6 +31,7 @@
 
 class HeapRegion;
 class HeapRegionClosure;
+class HeapRegionClaimer;
 class FreeRegionList;
 
 class G1HeapRegionTable : public G1BiasedMappedArray<HeapRegion*> {
@@ -66,6 +67,7 @@ class G1HeapRegionTable : public G1BiasedMappedArray<HeapRegion*> {
 
 class HeapRegionManager: public CHeapObj<mtGC> {
   friend class VMStructs;
+  friend class HeapRegionClaimer;
 
   G1HeapRegionTable _regions;
 
@@ -99,9 +101,6 @@ class HeapRegionManager: public CHeapObj<mtGC> {
 
   // Notify other data structures about change in the heap layout.
   void update_committed_space(HeapWord* old_end, HeapWord* new_end);
-  // Calculate the starting region for each worker during parallel iteration so
-  // that they do not all start from the same region.
-  uint start_region_for_worker(uint worker_i, uint num_workers, uint num_regions) const;
 
   // Find a contiguous set of empty or uncommitted regions of length num and return
   // the index of the first region or G1_NO_HRM_INDEX if the search was unsuccessful.
@@ -223,7 +222,7 @@ public:
   // terminating the iteration early if doHeapRegion() returns true.
   void iterate(HeapRegionClosure* blk) const;
 
-  void par_iterate(HeapRegionClosure* blk, uint worker_id, uint no_of_par_workers, jint claim_value) const;
+  void par_iterate(HeapRegionClosure* blk, uint worker_id, HeapRegionClaimer* hrclaimer) const;
 
   // Uncommit up to num_regions_to_remove regions that are completely free.
   // Return the actual number of uncommitted regions.
@@ -235,5 +234,33 @@ public:
   void verify_optional() PRODUCT_RETURN;
 };
 
+// The HeapRegionClaimer is used during parallel iteration over heap regions,
+// allowing workers to claim heap regions, gaining exclusive rights to these regions.
+class HeapRegionClaimer : public StackObj {
+  uint  _n_workers;
+  uint  _n_regions;
+  uint* _claims;
+
+  static const uint Unclaimed = 0;
+  static const uint Claimed   = 1;
+
+ public:
+  HeapRegionClaimer(uint n_workers);
+  ~HeapRegionClaimer();
+
+  inline uint n_regions() const {
+    return _n_regions;
+  }
+
+  // Calculate the starting region for given worker so
+  // that they do not all start from the same region.
+  uint start_region_for_worker(uint worker_id) const;
+
+  // Check if region has been claimed with this HRClaimer.
+  bool is_region_claimed(uint region_index) const;
+
+  // Claim the given region, returns true if successfully claimed.
+  bool claim_region(uint region_index);
+};
 #endif // SHARE_VM_GC_IMPLEMENTATION_G1_HEAPREGIONMANAGER_HPP
 
