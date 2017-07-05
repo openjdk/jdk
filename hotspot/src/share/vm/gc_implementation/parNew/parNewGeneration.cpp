@@ -50,6 +50,7 @@ ParScanThreadState::ParScanThreadState(Space* to_space_,
                       work_queue_set_, &term_),
   _is_alive_closure(gen_), _scan_weak_ref_closure(gen_, this),
   _keep_alive_closure(&_scan_weak_ref_closure),
+  _promotion_failure_size(0),
   _pushes(0), _pops(0), _steals(0), _steal_attempts(0), _term_attempts(0),
   _strong_roots_time(0.0), _term_time(0.0)
 {
@@ -249,6 +250,16 @@ void ParScanThreadState::undo_alloc_in_to_space(HeapWord* obj,
   }
 }
 
+void ParScanThreadState::print_and_clear_promotion_failure_size() {
+  if (_promotion_failure_size != 0) {
+    if (PrintPromotionFailure) {
+      gclog_or_tty->print(" (%d: promotion failure size = " SIZE_FORMAT ") ",
+        _thread_num, _promotion_failure_size);
+    }
+    _promotion_failure_size = 0;
+  }
+}
+
 class ParScanThreadStateSet: private ResourceArray {
 public:
   // Initializes states for the specified number of threads;
@@ -260,11 +271,11 @@ public:
                         GrowableArray<oop>**    overflow_stacks_,
                         size_t                  desired_plab_sz,
                         ParallelTaskTerminator& term);
-  inline ParScanThreadState& thread_sate(int i);
+  inline ParScanThreadState& thread_state(int i);
   int pushes() { return _pushes; }
   int pops()   { return _pops; }
   int steals() { return _steals; }
-  void reset();
+  void reset(bool promotion_failed);
   void flush();
 private:
   ParallelTaskTerminator& _term;
@@ -295,22 +306,31 @@ ParScanThreadStateSet::ParScanThreadStateSet(
   }
 }
 
-inline ParScanThreadState& ParScanThreadStateSet::thread_sate(int i)
+inline ParScanThreadState& ParScanThreadStateSet::thread_state(int i)
 {
   assert(i >= 0 && i < length(), "sanity check!");
   return ((ParScanThreadState*)_data)[i];
 }
 
 
-void ParScanThreadStateSet::reset()
+void ParScanThreadStateSet::reset(bool promotion_failed)
 {
   _term.reset_for_reuse();
+  if (promotion_failed) {
+    for (int i = 0; i < length(); ++i) {
+      thread_state(i).print_and_clear_promotion_failure_size();
+    }
+  }
 }
 
 void ParScanThreadStateSet::flush()
 {
+  // Work in this loop should be kept as lightweight as
+  // possible since this might otherwise become a bottleneck
+  // to scaling. Should we add heavy-weight work into this
+  // loop, consider parallelizing the loop into the worker threads.
   for (int i = 0; i < length(); ++i) {
-    ParScanThreadState& par_scan_state = thread_sate(i);
+    ParScanThreadState& par_scan_state = thread_state(i);
 
     // Flush stats related to To-space PLAB activity and
     // retire the last buffer.
@@ -361,6 +381,14 @@ void ParScanThreadStateSet::flush()
                            par_scan_state.term_attempts());
       }
     }
+  }
+  if (UseConcMarkSweepGC && ParallelGCThreads > 0) {
+    // We need to call this even when ResizeOldPLAB is disabled
+    // so as to avoid breaking some asserts. While we may be able
+    // to avoid this by reorganizing the code a bit, I am loathe
+    // to do that unless we find cases where ergo leads to bad
+    // performance.
+    CFLS_LAB::compute_desired_plab_size();
   }
 }
 
@@ -475,7 +503,7 @@ void ParNewGenTask::work(int i) {
 
   Generation* old_gen = gch->next_gen(_gen);
 
-  ParScanThreadState& par_scan_state = _state_set->thread_sate(i);
+  ParScanThreadState& par_scan_state = _state_set->thread_state(i);
   par_scan_state.set_young_old_boundary(_young_old_boundary);
 
   par_scan_state.start_strong_roots();
@@ -659,7 +687,7 @@ void ParNewRefProcTaskProxy::work(int i)
 {
   ResourceMark rm;
   HandleMark hm;
-  ParScanThreadState& par_scan_state = _state_set.thread_sate(i);
+  ParScanThreadState& par_scan_state = _state_set.thread_state(i);
   par_scan_state.set_young_old_boundary(_young_old_boundary);
   _task.work(i, par_scan_state.is_alive_closure(),
              par_scan_state.keep_alive_closure(),
@@ -693,7 +721,7 @@ void ParNewRefProcTaskExecutor::execute(ProcessTask& task)
   ParNewRefProcTaskProxy rp_task(task, _generation, *_generation.next_gen(),
                                  _generation.reserved().end(), _state_set);
   workers->run_task(&rp_task);
-  _state_set.reset();
+  _state_set.reset(_generation.promotion_failed());
 }
 
 void ParNewRefProcTaskExecutor::execute(EnqueueTask& task)
@@ -813,7 +841,7 @@ void ParNewGeneration::collect(bool   full,
     GenCollectedHeap::StrongRootsScope srs(gch);
     tsk.work(0);
   }
-  thread_state_set.reset();
+  thread_state_set.reset(promotion_failed());
 
   if (PAR_STATS_ENABLED && ParallelGCVerbose) {
     gclog_or_tty->print("Thread totals:\n"
@@ -882,6 +910,8 @@ void ParNewGeneration::collect(bool   full,
     swap_spaces();  // Make life simpler for CMS || rescan; see 6483690.
     from()->set_next_compaction_space(to());
     gch->set_incremental_collection_will_fail();
+    // Inform the next generation that a promotion failure occurred.
+    _next_gen->promotion_failure_occurred();
 
     // Reset the PromotionFailureALot counters.
     NOT_PRODUCT(Universe::heap()->reset_promotion_should_fail();)
@@ -1029,6 +1059,8 @@ oop ParNewGeneration::copy_to_survivor_space_avoiding_promotion_undo(
       new_obj = old;
 
       preserve_mark_if_necessary(old, m);
+      // Log the size of the maiden promotion failure
+      par_scan_state->log_promotion_failure(sz);
     }
 
     old->forward_to(new_obj);
@@ -1150,6 +1182,8 @@ oop ParNewGeneration::copy_to_survivor_space_with_undo(
       failed_to_promote = true;
 
       preserve_mark_if_necessary(old, m);
+      // Log the size of the maiden promotion failure
+      par_scan_state->log_promotion_failure(sz);
     }
   } else {
     // Is in to-space; do copying ourselves.

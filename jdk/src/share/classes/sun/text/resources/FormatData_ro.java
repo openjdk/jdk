@@ -90,7 +90,7 @@ public class FormatData_ro extends ListResourceBundle {
                     "miercuri", // Wednesday
                     "joi", // Thursday
                     "vineri", // Friday
-                    "s\u00eemb\u0103t\u0103" // Saturday
+                    "s\u00e2mb\u0103t\u0103" // Saturday
                 }
             },
             { "DayAbbreviations",

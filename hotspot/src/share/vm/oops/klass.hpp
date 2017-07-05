@@ -776,14 +776,13 @@ class Klass : public Klass_vtbl {
   // JVMTI support
   virtual jint jvmti_class_status() const;
 
-#ifndef PRODUCT
  public:
   // Printing
-  virtual void oop_print_on      (oop obj, outputStream* st);
   virtual void oop_print_value_on(oop obj, outputStream* st);
-#endif
+#ifndef PRODUCT
+  virtual void oop_print_on      (oop obj, outputStream* st);
+#endif //PRODUCT
 
- public:
   // Verification
   virtual const char* internal_name() const = 0;
   virtual void oop_verify_on(oop obj, outputStream* st);

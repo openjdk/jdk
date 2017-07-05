@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,8 +70,21 @@ class symbolOopDesc : public oopDesc {
 
   void set_utf8_length(int len) { _length = len; }
 
-  // Compares the symbol with a string
+  // Compares the symbol with a string.
   bool equals(const char* str, int len) const;
+  bool equals(const char* str) const { return equals(str, (int) strlen(str)); }
+
+  // Tests if the symbol starts with the given prefix.
+  bool starts_with(const char* prefix, int len) const;
+  bool starts_with(const char* prefix) const {
+    return starts_with(prefix, (int) strlen(prefix));
+  }
+
+  // Tests if the symbol starts with the given prefix.
+  int index_of_at(int i, const char* str, int len) const;
+  int index_of_at(int i, const char* str) const {
+    return index_of_at(i, str, (int) strlen(str));
+  }
 
   // Three-way compare for sorting; returns -1/0/1 if receiver is </==/> than arg
   // note that the ordering is not alfabetical

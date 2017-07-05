@@ -181,6 +181,12 @@ class Generation: public CHeapObj {
   virtual bool promotion_attempt_is_safe(size_t promotion_in_bytes,
     bool younger_handles_promotion_failure) const;
 
+  // For a non-young generation, this interface can be used to inform a
+  // generation that a promotion attempt into that generation failed.
+  // Typically used to enable diagnostic output for post-mortem analysis,
+  // but other uses of the interface are not ruled out.
+  virtual void promotion_failure_occurred() { /* does nothing */ }
+
   // Return an estimate of the maximum allocation that could be performed
   // in the generation without triggering any collection or expansion
   // activity.  It is "unsafe" because no locks are taken; the result

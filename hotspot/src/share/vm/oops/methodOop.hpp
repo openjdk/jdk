@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -365,6 +365,7 @@ class methodOopDesc : public oopDesc {
 #endif
 
   // byte codes
+  void    set_code(address code)      { return constMethod()->set_code(code); }
   address code_base() const           { return constMethod()->code_base(); }
   bool    contains(address bcp) const { return constMethod()->contains(bcp); }
 
@@ -524,6 +525,9 @@ class methodOopDesc : public oopDesc {
 
   // JSR 292 support
   bool is_method_handle_invoke() const              { return access_flags().is_method_handle_invoke(); }
+  // Tests if this method is an internal adapter frame from the
+  // MethodHandleCompiler.
+  bool is_method_handle_adapter() const;
   static methodHandle make_invoke_method(KlassHandle holder,
                                          symbolHandle signature,
                                          Handle method_type,
@@ -537,6 +541,7 @@ class methodOopDesc : public oopDesc {
   // all without checking for a stack overflow
   static int extra_stack_entries() { return (EnableMethodHandles ? (int)MethodHandlePushLimit : 0) + (EnableInvokeDynamic ? 3 : 0); }
   static int extra_stack_words();  // = extra_stack_entries() * Interpreter::stackElementSize()
+
   // RedefineClasses() support:
   bool is_old() const                               { return access_flags().is_old(); }
   void set_is_old()                                 { _access_flags.set_is_old(); }

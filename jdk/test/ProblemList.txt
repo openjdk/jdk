@@ -571,6 +571,7 @@ javax/print/attribute/ChromaticityValues.java			generic-all
 javax/print/attribute/GetCopiesSupported.java			generic-all
 javax/print/attribute/SidesPageRangesTest.java			generic-all
 javax/print/attribute/SupportedPrintableAreas.java		generic-all
+javax/print/attribute/AttributeTest.java                        generic-all
 
 # Only print test left, excluding just because all print tests have been
 javax/print/attribute/MediaMappingsTest.java 			generic-all
