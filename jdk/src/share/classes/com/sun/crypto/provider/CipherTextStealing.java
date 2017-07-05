@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,9 +83,10 @@ final class CipherTextStealing extends CipherBlockChaining {
      * @param plainLen the length of the input data
      * @param cipher the buffer for the result
      * @param cipherOffset the offset in <code>cipher</code>
+     * @return the number of bytes placed into <code>cipher</code>
      */
-    void encryptFinal(byte[] plain, int plainOffset, int plainLen,
-                      byte[] cipher, int cipherOffset)
+    int encryptFinal(byte[] plain, int plainOffset, int plainLen,
+                     byte[] cipher, int cipherOffset)
         throws IllegalBlockSizeException {
 
         if (plainLen < blockSize) {
@@ -134,6 +135,7 @@ final class CipherTextStealing extends CipherBlockChaining {
                 embeddedCipher.encryptBlock(tmp2, 0, cipher, cipherOffset);
             }
         }
+        return plainLen;
     }
 
     /**
@@ -158,9 +160,10 @@ final class CipherTextStealing extends CipherBlockChaining {
      * @param cipherLen the length of the input data
      * @param plain the buffer for the result
      * @param plainOffset the offset in <code>plain</code>
+     * @return the number of bytes placed into <code>plain</code>
      */
-    void decryptFinal(byte[] cipher, int cipherOffset, int cipherLen,
-                      byte[] plain, int plainOffset)
+    int decryptFinal(byte[] cipher, int cipherOffset, int cipherLen,
+                     byte[] plain, int plainOffset)
         throws IllegalBlockSizeException {
         if (cipherLen < blockSize) {
             throw new IllegalBlockSizeException("input is too short!");
@@ -211,5 +214,6 @@ final class CipherTextStealing extends CipherBlockChaining {
                 }
             }
         }
+        return cipherLen;
     }
 }

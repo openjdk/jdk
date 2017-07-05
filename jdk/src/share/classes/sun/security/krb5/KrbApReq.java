@@ -34,6 +34,7 @@ package sun.security.krb5;
 import sun.security.krb5.internal.*;
 import sun.security.krb5.internal.crypto.*;
 import sun.security.krb5.internal.rcache.*;
+import sun.security.jgss.krb5.Krb5AcceptCredential;
 import java.net.InetAddress;
 import sun.security.util.*;
 import java.io.IOException;
@@ -135,13 +136,13 @@ public class KrbApReq {
      */
      // Used in InitSecContextToken (for AP_REQ and not TGS REQ)
     public KrbApReq(byte[] message,
-                    EncryptionKey[] keys,
+                    Krb5AcceptCredential cred,
                     InetAddress initiator)
         throws KrbException, IOException {
         obuf = message;
         if (apReqMessg == null)
             decode();
-        authenticate(keys, initiator);
+        authenticate(cred, initiator);
     }
 
     /**
@@ -260,10 +261,11 @@ public class KrbApReq {
         }
     }
 
-    private void authenticate(EncryptionKey[] keys, InetAddress initiator)
+    private void authenticate(Krb5AcceptCredential cred, InetAddress initiator)
         throws KrbException, IOException {
         int encPartKeyType = apReqMessg.ticket.encPart.getEType();
         Integer kvno = apReqMessg.ticket.encPart.getKeyVersionNumber();
+        EncryptionKey[] keys = cred.getKrb5EncryptionKeys(apReqMessg.ticket.sname);
         EncryptionKey dkey = EncryptionKey.findKey(encPartKeyType, kvno, keys);
 
         if (dkey == null) {

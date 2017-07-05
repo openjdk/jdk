@@ -131,21 +131,24 @@ public class Context {
         return out;
     }
 
+    /**
+     * Logins with username/password as a new Subject
+     */
     public static Context fromUserPass(
             String user, char[] pass, boolean storeKey) throws Exception {
-        return fromUserPass(null, user, pass, storeKey);
+        return fromUserPass(new Subject(), user, pass, storeKey);
     }
 
     /**
-     * Logins with a username and a password, using Krb5LoginModule directly
-     * @param s existing subject, test multiple princ & creds for single subj
-     * @param storeKey true if key should be saved, used on acceptor side
+     * Logins with username/password as an existing Subject. The
+     * same subject can be used multiple times to simulate multiple logins.
+     * @param s existing subject
      */
     public static Context fromUserPass(Subject s,
             String user, char[] pass, boolean storeKey) throws Exception {
         Context out = new Context();
         out.name = user;
-        out.s = s == null ? new Subject() : s;
+        out.s = s;
         Krb5LoginModule krb5 = new Krb5LoginModule();
         Map<String, String> map = new HashMap<>();
         Map<String, Object> shared = new HashMap<>();
@@ -172,14 +175,23 @@ public class Context {
     }
 
     /**
-     * Logins with a username and a keytab, using Krb5LoginModule directly
-     * @param storeKey true if key should be saved, used on acceptor side
+     * Logins with username/keytab as an existing Subject. The
+     * same subject can be used multiple times to simulate multiple logins.
+     * @param s existing subject
      */
-    public static Context fromUserKtab(String user, String ktab, boolean storeKey)
-            throws Exception {
+    public static Context fromUserKtab(
+            String user, String ktab, boolean storeKey) throws Exception {
+        return fromUserKtab(new Subject(), user, ktab, storeKey);
+    }
+
+    /**
+     * Logins with username/keytab as a new subject,
+     */
+    public static Context fromUserKtab(Subject s,
+            String user, String ktab, boolean storeKey) throws Exception {
         Context out = new Context();
         out.name = user;
-        out.s = new Subject();
+        out.s = s;
         Krb5LoginModule krb5 = new Krb5LoginModule();
         Map<String, String> map = new HashMap<>();
 

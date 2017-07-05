@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ import java.security.spec.AlgorithmParameterSpec;
  * (Additional Authenticated Data (AAD), Keys, block ciphers,
  * plain/ciphertext and authentication tags) are handled in the {@code
  * Cipher} class.
-  <p>
+ * <p>
  * Please see <a href="http://www.ietf.org/rfc/rfc5116.txt"> RFC 5116
  * </a> for more information on the Authenticated Encryption with
  * Associated Data (AEAD) algorithm, and <a href=
