@@ -1000,10 +1000,7 @@ public class XBaseWindow {
         int buttonState = 0;
         final int buttonsNumber = ((SunToolkit)(Toolkit.getDefaultToolkit())).getNumberOfButtons();
         for (int i = 0; i<buttonsNumber; i++){
-            // A bug in WM implementation: extra buttons doesn't have state!=0 as they should on Release message.
-            if ((i != 4) && (i != 5)){
-                buttonState |= (xbe.get_state() & XConstants.buttonsMask[i]);
-            }
+            buttonState |= (xbe.get_state() & XConstants.buttonsMask[i]);
         }
         switch (xev.get_type()) {
         case XConstants.ButtonPress:
