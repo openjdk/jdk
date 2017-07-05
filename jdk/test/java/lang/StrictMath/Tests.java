@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,6 +60,16 @@ public class Tests {
             return 0;
     }
 
+    /**
+     * Returns a double over the normalized range of floating-point values.
+     * @return a double over the normalized range of floating-point values
+     */
+    static double createRandomDouble(java.util.Random random) {
+        final int EXPONENT_RANGE = Double.MAX_EXPONENT - Double.MIN_EXPONENT + 1;
 
-
+        int targetExponent = Double.MIN_EXPONENT + random.nextInt(EXPONENT_RANGE + 1);
+        double tmp = random.nextDouble(); // Double in the range of [0.0, 1.0)
+        int tmpExponent = Math.getExponent(tmp);
+        return Math.scalb(tmp, targetExponent - tmpExponent);
+    }
 }

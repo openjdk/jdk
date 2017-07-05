@@ -187,11 +187,28 @@ public abstract class Provider extends Properties {
      *         is invalid.
      * @return a provider configured with the supplied configuration argument.
      *
-     * @since 1.9
+     * @since 9
      */
     public Provider configure(String configArg) {
         throw new UnsupportedOperationException("configure is not supported");
     }
+
+    /**
+     * Check if this provider instance has been configured.
+     *
+     * @implSpec
+     * The default implementation returns true.
+     * Subclasses should override this method if the provider instance requires
+     * an explicit {@code configure} call after being constructed.
+     *
+     * @return true if no further configuration is needed, false otherwise.
+     *
+     * @since 9
+     */
+    public boolean isConfigured() {
+        return true;
+    }
+
 
     /**
      * Returns the name of this provider.

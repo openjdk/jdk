@@ -106,9 +106,9 @@ public final class SunPKCS11 extends AuthProvider {
     public Provider configure(String configArg) throws InvalidParameterException {
         final String newConfigName = checkNull(configArg);
         try {
-            return AccessController.doPrivileged(new PrivilegedExceptionAction<Provider>() {
+            return AccessController.doPrivileged(new PrivilegedExceptionAction<>() {
                 @Override
-                public Provider run() throws Exception {
+                public SunPKCS11 run() throws Exception {
                     return new SunPKCS11(new Config(newConfigName));
                 }
             });
@@ -117,6 +117,11 @@ public final class SunPKCS11 extends AuthProvider {
                 new InvalidParameterException("Error configuring SunPKCS11 provider");
             throw (InvalidParameterException) ipe.initCause(pae.getException());
         }
+    }
+
+    @Override
+    public boolean isConfigured() {
+        return (config != null);
     }
 
     private static <T> T checkNull(T obj) {
@@ -1142,8 +1147,10 @@ public final class SunPKCS11 extends AuthProvider {
      * @param handler the <code>CallbackHandler</code> used by
      *  this provider to communicate with the caller
      *
-     * @exception LoginException if the login operation fails
-     * @exception SecurityException if the does not pass a security check for
+     * @throws IllegalStateException if the provider requires configuration
+     * and Provider.configure has not been called
+     * @throws LoginException if the login operation fails
+     * @throws SecurityException if the does not pass a security check for
      *  <code>SecurityPermission("authProvider.<i>name</i>")</code>,
      *  where <i>name</i> is the value returned by
      *  this provider's <code>getName</code> method
@@ -1151,8 +1158,11 @@ public final class SunPKCS11 extends AuthProvider {
     public void login(Subject subject, CallbackHandler handler)
         throws LoginException {
 
-        // security check
+        if (!isConfigured()) {
+            throw new IllegalStateException("Configuration is required");
+        }
 
+        // security check
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             if (debug != null) {
@@ -1271,16 +1281,21 @@ public final class SunPKCS11 extends AuthProvider {
     /**
      * Log out from this provider
      *
-     * @exception LoginException if the logout operation fails
-     * @exception SecurityException if the does not pass a security check for
+     * @throws IllegalStateException if the provider requires configuration
+     * and Provider.configure has not been called
+     * @throws LoginException if the logout operation fails
+     * @throws SecurityException if the does not pass a security check for
      *  <code>SecurityPermission("authProvider.<i>name</i>")</code>,
      *  where <i>name</i> is the value returned by
      *  this provider's <code>getName</code> method
      */
     public void logout() throws LoginException {
 
-        // security check
+        if (!isConfigured()) {
+            throw new IllegalStateException("Configuration is required");
+        }
 
+        // security check
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission
@@ -1353,7 +1368,9 @@ public final class SunPKCS11 extends AuthProvider {
      * @param handler a <code>CallbackHandler</code> for obtaining
      *          authentication information, which may be <code>null</code>
      *
-     * @exception SecurityException if the caller does not pass a
+     * @throws IllegalStateException if the provider requires configuration
+     * and Provider.configure has not been called
+     * @throws SecurityException if the caller does not pass a
      *  security check for
      *  <code>SecurityPermission("authProvider.<i>name</i>")</code>,
      *  where <i>name</i> is the value returned by
@@ -1361,8 +1378,11 @@ public final class SunPKCS11 extends AuthProvider {
      */
     public void setCallbackHandler(CallbackHandler handler) {
 
-        // security check
+        if (!isConfigured()) {
+            throw new IllegalStateException("Configuration is required");
+        }
 
+        // security check
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission
