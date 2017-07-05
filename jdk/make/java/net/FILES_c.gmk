@@ -39,10 +39,6 @@ FILES_c = \
 	ResolverConfigurationImpl.c \
 	DefaultProxySelector.c
 
-ifeq ($(PLATFORM), solaris)
-    FILES_c += SdpProvider.c
-endif
-
 ifeq ($(PLATFORM), linux)
     FILES_c += linux_close.c
 endif

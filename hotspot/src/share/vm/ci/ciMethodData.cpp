@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,8 @@ ciMethodData::ciMethodData(methodDataHandle h_md) : ciObject(h_md) {
   _data_size = 0;
   _extra_data_size = 0;
   _current_mileage = 0;
+  _invocation_counter = 0;
+  _backedge_counter = 0;
   _state = empty_state;
   _saw_free_extra_data = false;
   // Set an initial hint. Don't use set_hint_di() because
@@ -56,6 +58,8 @@ ciMethodData::ciMethodData() : ciObject() {
   _data_size = 0;
   _extra_data_size = 0;
   _current_mileage = 0;
+  _invocation_counter = 0;
+  _backedge_counter = 0;
   _state = empty_state;
   _saw_free_extra_data = false;
   // Set an initial hint. Don't use set_hint_di() because
@@ -99,6 +103,8 @@ void ciMethodData::load_data() {
   }
   // Note:  Extra data are all BitData, and do not need translation.
   _current_mileage = methodDataOopDesc::mileage_of(mdo->method());
+  _invocation_counter = mdo->invocation_count();
+  _backedge_counter = mdo->backedge_count();
   _state = mdo->is_mature()? mature_state: immature_state;
 
   _eflags = mdo->eflags();
@@ -250,6 +256,23 @@ void ciMethodData::update_escape_info() {
     for (int i = 0; i < arg_count; i++) {
       mdo->set_arg_modified(i, arg_modified(i));
     }
+  }
+}
+
+void ciMethodData::set_compilation_stats(short loops, short blocks) {
+  VM_ENTRY_MARK;
+  methodDataOop mdo = get_methodDataOop();
+  if (mdo != NULL) {
+    mdo->set_num_loops(loops);
+    mdo->set_num_blocks(blocks);
+  }
+}
+
+void ciMethodData::set_would_profile(bool p) {
+  VM_ENTRY_MARK;
+  methodDataOop mdo = get_methodDataOop();
+  if (mdo != NULL) {
+    mdo->set_would_profile(p);
   }
 }
 

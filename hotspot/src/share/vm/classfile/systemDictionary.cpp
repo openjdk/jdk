@@ -2361,8 +2361,11 @@ methodOop SystemDictionary::find_method_handle_invoke(symbolHandle name,
     // Must create lots of stuff here, but outside of the SystemDictionary lock.
     if (THREAD->is_Compiler_thread())
       return NULL;              // do not attempt from within compiler
+    bool for_invokeGeneric = (name_id == vmSymbols::VM_SYMBOL_ENUM_NAME(invokeGeneric_name));
     bool found_on_bcp = false;
-    Handle mt = find_method_handle_type(signature(), accessing_klass, found_on_bcp, CHECK_NULL);
+    Handle mt = find_method_handle_type(signature(), accessing_klass,
+                                        for_invokeGeneric,
+                                        found_on_bcp, CHECK_NULL);
     KlassHandle  mh_klass = SystemDictionaryHandles::MethodHandle_klass();
     methodHandle m = methodOopDesc::make_invoke_method(mh_klass, name, signature,
                                                        mt, CHECK_NULL);
@@ -2393,6 +2396,7 @@ methodOop SystemDictionary::find_method_handle_invoke(symbolHandle name,
 // consistent with this loader.
 Handle SystemDictionary::find_method_handle_type(symbolHandle signature,
                                                  KlassHandle accessing_klass,
+                                                 bool for_invokeGeneric,
                                                  bool& return_bcp_flag,
                                                  TRAPS) {
   Handle class_loader, protection_domain;
@@ -2448,10 +2452,26 @@ Handle SystemDictionary::find_method_handle_type(symbolHandle signature,
                          vmSymbols::findMethodHandleType_name(),
                          vmSymbols::findMethodHandleType_signature(),
                          &args, CHECK_(empty));
+  Handle method_type(THREAD, (oop) result.get_jobject());
+
+  if (for_invokeGeneric) {
+    // call sun.dyn.MethodHandleNatives::notifyGenericMethodType(MethodType) -> void
+    JavaCallArguments args(Handle(THREAD, method_type()));
+    JavaValue no_result(T_VOID);
+    JavaCalls::call_static(&no_result,
+                           SystemDictionary::MethodHandleNatives_klass(),
+                           vmSymbols::notifyGenericMethodType_name(),
+                           vmSymbols::notifyGenericMethodType_signature(),
+                           &args, THREAD);
+    if (HAS_PENDING_EXCEPTION) {
+      // If the notification fails, just kill it.
+      CLEAR_PENDING_EXCEPTION;
+    }
+  }
 
   // report back to the caller with the MethodType and the "on_bcp" flag
   return_bcp_flag = is_on_bcp;
-  return Handle(THREAD, (oop) result.get_jobject());
+  return method_type;
 }
 
 // Ask Java code to find or construct a method handle constant.
@@ -2466,7 +2486,7 @@ Handle SystemDictionary::link_method_handle_constant(KlassHandle caller,
   Handle type;
   if (signature->utf8_length() > 0 && signature->byte_at(0) == '(') {
     bool ignore_is_on_bcp = false;
-    type = find_method_handle_type(signature, caller, ignore_is_on_bcp, CHECK_(empty));
+    type = find_method_handle_type(signature, caller, false, ignore_is_on_bcp, CHECK_(empty));
   } else {
     SignatureStream ss(signature(), false);
     if (!ss.is_done()) {

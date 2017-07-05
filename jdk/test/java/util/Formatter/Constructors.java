@@ -58,7 +58,7 @@ public class Constructors {
     }
 
     static void locale(Formatter f) {
-        locale(f, Locale.getDefault());
+        locale(f, Locale.getDefault(Locale.Category.FORMAT));
     }
 
     static void locale(Formatter f, Locale l) {

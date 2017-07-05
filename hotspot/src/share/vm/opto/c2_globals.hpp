@@ -157,6 +157,12 @@
   develop(bool, TraceLoopPredicate, false,                                  \
           "Trace generation of loop predicates")                            \
                                                                             \
+  product(bool, OptimizeFill, false,                                        \
+          "convert fill/copy loops into intrinsic")                         \
+                                                                            \
+  develop(bool, TraceOptimizeFill, false,                                   \
+          "print detailed information about fill conversion")               \
+                                                                            \
   develop(bool, OptoCoalesce, true,                                         \
           "Use Conservative Copy Coalescing in the Register Allocator")     \
                                                                             \

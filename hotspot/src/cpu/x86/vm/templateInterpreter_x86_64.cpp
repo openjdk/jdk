@@ -310,42 +310,61 @@ void InterpreterGenerator::generate_counter_incr(
         Label* overflow,
         Label* profile_method,
         Label* profile_method_continue) {
-
-  const Address invocation_counter(rbx,
-                                   methodOopDesc::invocation_counter_offset() +
+  const Address invocation_counter(rbx, in_bytes(methodOopDesc::invocation_counter_offset()) +
+                                        in_bytes(InvocationCounter::counter_offset()));
+  // Note: In tiered we increment either counters in methodOop or in MDO depending if we're profiling or not.
+  if (TieredCompilation) {
+    int increment = InvocationCounter::count_increment;
+    int mask = ((1 << Tier0InvokeNotifyFreqLog)  - 1) << InvocationCounter::count_shift;
+    Label no_mdo, done;
+    if (ProfileInterpreter) {
+      // Are we profiling?
+      __ movptr(rax, Address(rbx, methodOopDesc::method_data_offset()));
+      __ testptr(rax, rax);
+      __ jccb(Assembler::zero, no_mdo);
+      // Increment counter in the MDO
+      const Address mdo_invocation_counter(rax, in_bytes(methodDataOopDesc::invocation_counter_offset()) +
+                                                in_bytes(InvocationCounter::counter_offset()));
+      __ increment_mask_and_jump(mdo_invocation_counter, increment, mask, rcx, false, Assembler::zero, overflow);
+      __ jmpb(done);
+    }
+    __ bind(no_mdo);
+    // Increment counter in methodOop (we don't need to load it, it's in ecx).
+    __ increment_mask_and_jump(invocation_counter, increment, mask, rcx, true, Assembler::zero, overflow);
+    __ bind(done);
+  } else {
+    const Address backedge_counter(rbx,
+                                   methodOopDesc::backedge_counter_offset() +
                                    InvocationCounter::counter_offset());
-  const Address backedge_counter(rbx,
-                                 methodOopDesc::backedge_counter_offset() +
-                                 InvocationCounter::counter_offset());
 
-  if (ProfileInterpreter) { // %%% Merge this into methodDataOop
-    __ incrementl(Address(rbx,
-                    methodOopDesc::interpreter_invocation_counter_offset()));
+    if (ProfileInterpreter) { // %%% Merge this into methodDataOop
+      __ incrementl(Address(rbx,
+                            methodOopDesc::interpreter_invocation_counter_offset()));
+    }
+    // Update standard invocation counters
+    __ movl(rax, backedge_counter);   // load backedge counter
+
+    __ incrementl(rcx, InvocationCounter::count_increment);
+    __ andl(rax, InvocationCounter::count_mask_value); // mask out the status bits
+
+    __ movl(invocation_counter, rcx); // save invocation count
+    __ addl(rcx, rax);                // add both counters
+
+    // profile_method is non-null only for interpreted method so
+    // profile_method != NULL == !native_call
+
+    if (ProfileInterpreter && profile_method != NULL) {
+      // Test to see if we should create a method data oop
+      __ cmp32(rcx, ExternalAddress((address)&InvocationCounter::InterpreterProfileLimit));
+      __ jcc(Assembler::less, *profile_method_continue);
+
+      // if no method data exists, go to profile_method
+      __ test_method_data_pointer(rax, *profile_method);
+    }
+
+    __ cmp32(rcx, ExternalAddress((address)&InvocationCounter::InterpreterInvocationLimit));
+    __ jcc(Assembler::aboveEqual, *overflow);
   }
-  // Update standard invocation counters
-  __ movl(rax, backedge_counter); // load backedge counter
-
-  __ incrementl(rcx, InvocationCounter::count_increment);
-  __ andl(rax, InvocationCounter::count_mask_value); // mask out the
-                                                     // status bits
-
-  __ movl(invocation_counter, rcx); // save invocation count
-  __ addl(rcx, rax); // add both counters
-
-  // profile_method is non-null only for interpreted method so
-  // profile_method != NULL == !native_call
-
-  if (ProfileInterpreter && profile_method != NULL) {
-    // Test to see if we should create a method data oop
-    __ cmp32(rcx, ExternalAddress((address)&InvocationCounter::InterpreterProfileLimit));
-    __ jcc(Assembler::less, *profile_method_continue);
-
-    // if no method data exists, go to profile_method
-    __ test_method_data_pointer(rax, *profile_method);
-  }
-
-  __ cmp32(rcx, ExternalAddress((address)&InvocationCounter::InterpreterInvocationLimit));
-  __ jcc(Assembler::aboveEqual, *overflow);
 }
 
 void InterpreterGenerator::generate_counter_overflow(Label* do_continue) {

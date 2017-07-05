@@ -27,13 +27,11 @@ package javax.swing;
 
 import java.awt.*;
 import java.awt.event.*;
-import java.beans.*;
 import java.io.*;
 import java.util.*;
 
 import javax.swing.colorchooser.*;
 import javax.swing.plaf.ColorChooserUI;
-import javax.swing.event.*;
 import javax.accessibility.*;
 
 import sun.swing.SwingUtilities2;
@@ -95,7 +93,7 @@ public class JColorChooser extends JComponent implements Accessible {
 
     private ColorSelectionModel selectionModel;
 
-    private JComponent previewPanel;
+    private JComponent previewPanel = ColorChooserComponentFactory.getPreviewPanel();
 
     private AbstractColorChooserPanel[] chooserPanels = new AbstractColorChooserPanel[0];
 

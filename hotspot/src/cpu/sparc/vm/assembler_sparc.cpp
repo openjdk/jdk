@@ -4192,7 +4192,7 @@ static void check_index(int ind) {
 
 static void generate_satb_log_enqueue(bool with_frame) {
   BufferBlob* bb = BufferBlob::create("enqueue_with_frame", EnqueueCodeSize);
-  CodeBuffer buf(bb->instructions_begin(), bb->instructions_size());
+  CodeBuffer buf(bb);
   MacroAssembler masm(&buf);
   address start = masm.pc();
   Register pre_val;
@@ -4421,7 +4421,7 @@ static u_char* dirty_card_log_enqueue_end = 0;
 // This gets to assume that o0 contains the object address.
 static void generate_dirty_card_log_enqueue(jbyte* byte_map_base) {
   BufferBlob* bb = BufferBlob::create("dirty_card_enqueue", EnqueueCodeSize*2);
-  CodeBuffer buf(bb->instructions_begin(), bb->instructions_size());
+  CodeBuffer buf(bb);
   MacroAssembler masm(&buf);
   address start = masm.pc();
 
