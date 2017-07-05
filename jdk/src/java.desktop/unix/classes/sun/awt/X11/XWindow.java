@@ -572,10 +572,6 @@ class XWindow extends XBaseWindow implements X11ComponentPeer {
     }
 
     static int getModifiers(int state, int button, int keyCode) {
-        return getModifiers(state, button, keyCode, 0,  false);
-    }
-
-    static int getModifiers(int state, int button, int keyCode, int type, boolean wheel_mouse) {
         int modifiers = 0;
 
         if (((state & XConstants.ShiftMask) != 0) ^ (keyCode == KeyEvent.VK_SHIFT)) {
@@ -606,12 +602,17 @@ class XWindow extends XBaseWindow implements X11ComponentPeer {
             // ONLY one of these conditions should be TRUE to add that modifier.
             if (((state & XlibUtil.getButtonMask(i + 1)) != 0) != (button == XConstants.buttons[i])){
                 //exclude wheel buttons from adding their numbers as modifiers
-                if (!wheel_mouse) {
+                if (!isWheel(XConstants.buttons[i])) {
                     modifiers |= InputEvent.getMaskForButton(i+1);
                 }
             }
         }
         return modifiers;
+    }
+
+    static boolean isWheel(int button) {
+        // 4 and 5 buttons are usually considered assigned to a first wheel
+        return button == XConstants.buttons[3] || button == XConstants.buttons[4];
     }
 
     static int getXModifiers(AWTKeyStroke stroke) {
@@ -653,7 +654,6 @@ class XWindow extends XBaseWindow implements X11ComponentPeer {
         int modifiers;
         boolean popupTrigger = false;
         int button=0;
-        boolean wheel_mouse = false;
         int lbutton = xbe.get_button();
         /*
          * Ignore the buttons above 20 due to the bit limit for
@@ -706,11 +706,6 @@ class XWindow extends XBaseWindow implements X11ComponentPeer {
         }
 
         button = XConstants.buttons[lbutton - 1];
-        // 4 and 5 buttons are usually considered assigned to a first wheel
-        if (lbutton == XConstants.buttons[3] ||
-            lbutton == XConstants.buttons[4]) {
-            wheel_mouse = true;
-        }
 
         // mapping extra buttons to numbers starting from 4.
         if ((button > XConstants.buttons[4]) && (!Toolkit.getDefaultToolkit().areExtraMouseButtonsEnabled())){
@@ -720,9 +715,9 @@ class XWindow extends XBaseWindow implements X11ComponentPeer {
         if (button > XConstants.buttons[4]){
             button -= 2;
         }
-        modifiers = getModifiers(xbe.get_state(),button,0, type, wheel_mouse);
+        modifiers = getModifiers(xbe.get_state(),button,0);
 
-        if (!wheel_mouse) {
+        if (!isWheel(lbutton)) {
             MouseEvent me = new MouseEvent(getEventSource(),
                                            type == XConstants.ButtonPress ? MouseEvent.MOUSE_PRESSED : MouseEvent.MOUSE_RELEASED,
                                            jWhen,modifiers, x, y,

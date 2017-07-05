@@ -199,7 +199,7 @@ public class DesktopProperty implements UIDefaults.ActiveValue {
 
     /**
      * Requests that all components in the GUI hierarchy be updated
-     * to reflect dynamic changes in this look&feel.  This update occurs
+     * to reflect dynamic changes in this {@literal look&feel}. This update occurs
      * by uninstalling and re-installing the UI objects. Requests are
      * batched and collapsed into a single update pass because often
      * many desktop properties will change at once.

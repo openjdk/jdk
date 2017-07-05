@@ -665,6 +665,12 @@
   product(bool, UseMultiplyToLenIntrinsic, false,                           \
           "Enables intrinsification of BigInteger.multiplyToLen()")         \
                                                                             \
+  product(bool, UseSquareToLenIntrinsic, false,                             \
+          "Enables intrinsification of BigInteger.squareToLen()")           \
+                                                                            \
+  product(bool, UseMulAddIntrinsic, false,                                  \
+          "Enables intrinsification of BigInteger.mulAdd()")                \
+                                                                            \
   product(bool, UseTypeSpeculation, true,                                   \
           "Speculatively propagate types from profiles")                    \
                                                                             \

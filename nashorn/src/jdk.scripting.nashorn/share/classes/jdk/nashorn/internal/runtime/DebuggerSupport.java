@@ -156,7 +156,7 @@ final class DebuggerSupport {
         final Context context = global.getContext();
 
         try {
-            return context.eval(initialScope, string, callThis, ScriptRuntime.UNDEFINED, false);
+            return context.eval(initialScope, string, callThis, ScriptRuntime.UNDEFINED);
         } catch (final Throwable ex) {
             return returnException ? ex : null;
         }
