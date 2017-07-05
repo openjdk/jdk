@@ -158,7 +158,19 @@ public interface MBeanRegistration   {
     /**
      * Allows the MBean to perform any operations needed after having been
      * registered in the MBean server or after the registration has failed.
-     *
+     * <p>If the implementation of this method throws a {@link RuntimeException}
+     * or an {@link Error}, the MBean Server will rethrow those inside
+     * a {@link RuntimeMBeanException} or {@link RuntimeErrorException},
+     * respectively. However, throwing an exception in {@code postRegister}
+     * will not change the state of the MBean:
+     * if the MBean was already registered ({@code registrationDone} is
+     * {@code true}), the MBean will remain registered. </p>
+     * <p>This might be confusing for the code calling {@code createMBean()}
+     * or {@code registerMBean()}, as such code might assume that MBean
+     * registration has failed when such an exception is raised.
+     * Therefore it is recommended that implementations of
+     * {@code postRegister} do not throw Runtime Exceptions or Errors if it
+     * can be avoided.</p>
      * @param registrationDone Indicates whether or not the MBean has
      * been successfully registered in the MBean server. The value
      * false means that the registration phase has failed.
@@ -178,6 +190,17 @@ public interface MBeanRegistration   {
     /**
      * Allows the MBean to perform any operations needed after having been
      * unregistered in the MBean server.
+     * <p>If the implementation of this method throws a {@link RuntimeException}
+     * or an {@link Error}, the MBean Server will rethrow those inside
+     * a {@link RuntimeMBeanException} or {@link RuntimeErrorException},
+     * respectively. However, throwing an excepption in {@code postDeregister}
+     * will not change the state of the MBean:
+     * the MBean was already successfully deregistered and will remain so. </p>
+     * <p>This might be confusing for the code calling
+     * {@code unregisterMBean()}, as it might assume that MBean deregistration
+     * has failed. Therefore it is recommended that implementations of
+     * {@code postDeregister} do not throw Runtime Exceptions or Errors if it
+     * can be avoided.</p>
      */
     public void postDeregister();
 

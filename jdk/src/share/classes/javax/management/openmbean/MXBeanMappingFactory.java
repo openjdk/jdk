@@ -82,6 +82,9 @@ import java.lang.reflect.Type;
  * appears in, or we can supply the factory to a {@link
  * javax.management.StandardMBean StandardMBean} constructor or MXBean
  * proxy.</p>
+ *
+ * @see <a href="../MXBean.html#custom">MXBean specification, section
+ * "Custom MXBean type mappings"</a>
  */
 public abstract class MXBeanMappingFactory {
     /**

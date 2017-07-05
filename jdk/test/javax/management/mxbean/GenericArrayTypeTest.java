@@ -32,17 +32,19 @@
  */
 
 import java.lang.management.ManagementFactory;
-import java.lang.management.MonitorInfo;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import javax.management.Attribute;
 import javax.management.JMX;
 import javax.management.MBeanServer;
 import javax.management.MBeanServerConnection;
 import javax.management.ObjectName;
+import javax.management.StandardMBean;
+import javax.management.openmbean.CompositeData;
 import javax.management.remote.JMXConnector;
 import javax.management.remote.JMXConnectorFactory;
 import javax.management.remote.JMXConnectorServer;
@@ -50,6 +52,58 @@ import javax.management.remote.JMXConnectorServerFactory;
 import javax.management.remote.JMXServiceURL;
 
 public class GenericArrayTypeTest {
+    // A version of java.lang.management.MonitorInfo so we can run this test
+    // on JDK 5, where that class didn't exist.
+    public static class MonitorInfo {
+        private final String className;
+        private final int identityHashCode;
+        private final int lockedStackDepth;
+        private final StackTraceElement lockedStackFrame;
+
+        public MonitorInfo(
+                String className, int identityHashCode,
+                int lockedStackDepth, StackTraceElement lockedStackFrame) {
+            this.className = className;
+            this.identityHashCode = identityHashCode;
+            this.lockedStackDepth = lockedStackDepth;
+            this.lockedStackFrame = lockedStackFrame;
+        }
+
+        public static MonitorInfo from(CompositeData cd) {
+            try {
+                CompositeData stecd = (CompositeData) cd.get("lockedStackFrame");
+                StackTraceElement ste = new StackTraceElement(
+                        (String) stecd.get("className"),
+                        (String) stecd.get("methodName"),
+                        (String) stecd.get("fileName"),
+                        (Integer) stecd.get("lineNumber"));
+                return new MonitorInfo(
+                        (String) cd.get("className"),
+                        (Integer) cd.get("identityHashCode"),
+                        (Integer) cd.get("lockedStackDepth"),
+                        ste);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        public String getClassName() {
+            return className;
+        }
+
+        public int getIdentityHashCode() {
+            return identityHashCode;
+        }
+
+        public int getLockedStackDepth() {
+            return lockedStackDepth;
+        }
+
+        public StackTraceElement getLockedStackFrame() {
+            return lockedStackFrame;
+        }
+    }
+
 
     public interface TestMXBean {
 

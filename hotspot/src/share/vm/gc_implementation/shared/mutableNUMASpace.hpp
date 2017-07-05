@@ -112,6 +112,7 @@ class MutableNUMASpace : public MutableSpace {
     int lgrp_id() const                             { return _lgrp_id;             }
     MutableSpace* space() const                     { return _space;               }
     AdaptiveWeightedAverage* alloc_rate() const     { return _alloc_rate;          }
+    void clear_alloc_rate()                         { _alloc_rate->clear();        }
     SpaceStats* space_stats()                       { return &_space_stats;        }
     void clear_space_stats()                        { _space_stats = SpaceStats(); }
 
@@ -171,14 +172,21 @@ class MutableNUMASpace : public MutableSpace {
   MutableNUMASpace();
   virtual ~MutableNUMASpace();
   // Space initialization.
-  virtual void initialize(MemRegion mr, bool clear_space);
+  virtual void initialize(MemRegion mr, bool clear_space, bool mangle_space);
   // Update space layout if necessary. Do all adaptive resizing job.
   virtual void update();
   // Update allocation rate averages.
   virtual void accumulate_statistics();
 
-  virtual void clear();
-  virtual void mangle_unused_area();
+  virtual void clear(bool mangle_space);
+  virtual void mangle_unused_area() PRODUCT_RETURN;
+  virtual void mangle_unused_area_complete() PRODUCT_RETURN;
+  virtual void mangle_region(MemRegion mr) PRODUCT_RETURN;
+  virtual void check_mangled_unused_area(HeapWord* limit) PRODUCT_RETURN;
+  virtual void check_mangled_unused_area_complete() PRODUCT_RETURN;
+  virtual void set_top_for_allocations(HeapWord* v) PRODUCT_RETURN;
+  virtual void set_top_for_allocations() PRODUCT_RETURN;
+
   virtual void ensure_parsability();
   virtual size_t used_in_words() const;
   virtual size_t free_in_words() const;

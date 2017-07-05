@@ -390,6 +390,10 @@ class os: AllStatic {
   static const char*    get_temp_directory();
   static const char*    get_current_directory(char *buf, int buflen);
 
+  // Builds a platform-specific full library path given a ld path and lib name
+  static void           dll_build_name(char* buffer, size_t size,
+                                       const char* pathname, const char* fname);
+
   // Symbol lookup, find nearest function name; basically it implements
   // dladdr() for all platforms. Name of the nearest function is copied
   // to buf. Distance from its base address is returned as offset.
@@ -412,6 +416,9 @@ class os: AllStatic {
   // in case of error it checks if .dll/.so was built for the
   // same architecture as Hotspot is running on
   static void* dll_load(const char *name, char *ebuf, int ebuflen);
+
+  // lookup symbol in a shared library
+  static void* dll_lookup(void* handle, const char* name);
 
   // Print out system information; they are called by fatal error handler.
   // Output format may be different on different platforms.

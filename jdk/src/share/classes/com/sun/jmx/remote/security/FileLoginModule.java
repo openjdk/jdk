@@ -25,6 +25,7 @@
 
 package com.sun.jmx.remote.security;
 
+import com.sun.jmx.mbeanserver.GetPropertyAction;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -46,8 +47,6 @@ import javax.management.remote.JMXPrincipal;
 import com.sun.jmx.remote.util.ClassLogger;
 import com.sun.jmx.remote.util.EnvHelp;
 import sun.management.jmxremote.ConnectorBootstrap;
-
-import sun.security.action.GetPropertyAction;
 
 /**
  * This {@link LoginModule} performs file-based authentication.
@@ -479,7 +478,7 @@ public class FileLoginModule implements LoginModule {
             if (userSuppliedPasswordFile || hasJavaHomePermission) {
                 throw e;
             } else {
-                FilePermission fp =
+                final FilePermission fp =
                         new FilePermission(passwordFileDisplayName, "read");
                 AccessControlException ace = new AccessControlException(
                         "access denied " + fp.toString());
@@ -488,10 +487,13 @@ public class FileLoginModule implements LoginModule {
             }
         }
         try {
-            BufferedInputStream bis = new BufferedInputStream(fis);
-            userCredentials = new Properties();
-            userCredentials.load(bis);
-            bis.close();
+            final BufferedInputStream bis = new BufferedInputStream(fis);
+            try {
+                userCredentials = new Properties();
+                userCredentials.load(bis);
+            } finally {
+                bis.close();
+            }
         } finally {
             fis.close();
         }
