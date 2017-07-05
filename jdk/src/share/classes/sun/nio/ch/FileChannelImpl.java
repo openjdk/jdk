@@ -51,6 +51,7 @@ public class FileChannelImpl
     // File access mode (immutable)
     private final boolean writable;
     private final boolean readable;
+    private final boolean append;
 
     // Required to prevent finalization of creating stream (immutable)
     private final Object parent;
@@ -67,6 +68,7 @@ public class FileChannelImpl
         this.fd = fd;
         this.readable = readable;
         this.writable = writable;
+        this.append = append;
         this.parent = parent;
         this.nd = new FileDispatcherImpl(append);
     }
@@ -242,7 +244,8 @@ public class FileChannelImpl
                 if (!isOpen())
                     return 0;
                 do {
-                    p = position0(fd, -1);
+                    // in append-mode then position is advanced to end before writing
+                    p = (append) ? nd.size(fd) : position0(fd, -1);
                 } while ((p == IOStatus.INTERRUPTED) && isOpen());
                 return IOStatus.normalize(p);
             } finally {

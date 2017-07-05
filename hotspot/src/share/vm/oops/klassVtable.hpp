@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,8 +99,6 @@ class klassVtable : public ResourceObj {
   // Parallel Old
   void oop_follow_contents(ParCompactionManager* cm);
   void oop_update_pointers(ParCompactionManager* cm);
-  void oop_update_pointers(ParCompactionManager* cm,
-                           HeapWord* beg_addr, HeapWord* end_addr);
 #endif // SERIALGC
 
   // Iterators
@@ -295,8 +293,6 @@ class klassItable : public ResourceObj {
   // Parallel Old
   void oop_follow_contents(ParCompactionManager* cm);
   void oop_update_pointers(ParCompactionManager* cm);
-  void oop_update_pointers(ParCompactionManager* cm,
-                           HeapWord* beg_addr, HeapWord* end_addr);
 #endif // SERIALGC
 
   // Iterators

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1397,6 +1397,7 @@ class VM_HeapDumper : public VM_GC_Operation {
  public:
   VM_HeapDumper(DumpWriter* writer, bool gc_before_heap_dump, bool oome) :
     VM_GC_Operation(0 /* total collections,      dummy, ignored */,
+                    GCCause::_heap_dump /* GC Cause */,
                     0 /* total full collections, dummy, ignored */,
                     gc_before_heap_dump) {
     _local_writer = writer;

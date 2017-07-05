@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -660,25 +660,6 @@ static void gen_i2c_adapter(MacroAssembler *masm,
                             int comp_args_on_stack,
                             const BasicType *sig_bt,
                             const VMRegPair *regs) {
-  // we're being called from the interpreter but need to find the
-  // compiled return entry point.  The return address on the stack
-  // should point at it and we just need to pull the old value out.
-  // load up the pointer to the compiled return entry point and
-  // rewrite our return pc. The code is arranged like so:
-  //
-  // .word Interpreter::return_sentinel
-  // .word address_of_compiled_return_point
-  // return_entry_point: blah_blah_blah
-  //
-  // So we can find the appropriate return point by loading up the word
-  // just prior to the current return address we have on the stack.
-  //
-  // We will only enter here from an interpreted frame and never from after
-  // passing thru a c2i. Azul allowed this but we do not. If we lose the
-  // race and use a c2i we will remain interpreted for the race loser(s).
-  // This removes all sorts of headaches on the x86 side and also eliminates
-  // the possibility of having c2i -> i2c -> c2i -> ... endless transitions.
-
 
   // Note: rsi contains the senderSP on entry. We must preserve it since
   // we may do a i2c -> c2i transition if we lose a race where compiled
@@ -686,40 +667,6 @@ static void gen_i2c_adapter(MacroAssembler *masm,
 
   // Pick up the return address
   __ movptr(rax, Address(rsp, 0));
-
-  // If UseSSE >= 2 then no cleanup is needed on the return to the
-  // interpreter so skip fixing up the return entry point unless
-  // VerifyFPU is enabled.
-  if (UseSSE < 2 || VerifyFPU) {
-    Label skip, chk_int;
-    // If we were called from the call stub we need to do a little bit different
-    // cleanup than if the interpreter returned to the call stub.
-
-    ExternalAddress stub_return_address(StubRoutines::_call_stub_return_address);
-    __ cmpptr(rax, stub_return_address.addr());
-    __ jcc(Assembler::notEqual, chk_int);
-    assert(StubRoutines::x86::get_call_stub_compiled_return() != NULL, "must be set");
-    __ lea(rax, ExternalAddress(StubRoutines::x86::get_call_stub_compiled_return()));
-    __ jmp(skip);
-
-    // It must be the interpreter since we never get here via a c2i (unlike Azul)
-
-    __ bind(chk_int);
-#ifdef ASSERT
-    {
-      Label ok;
-      __ cmpl(Address(rax, -2*wordSize), Interpreter::return_sentinel);
-      __ jcc(Assembler::equal, ok);
-      __ int3();
-      __ bind(ok);
-    }
-#endif // ASSERT
-    __ movptr(rax, Address(rax, -wordSize));
-    __ bind(skip);
-  }
-
-  // rax, now contains the compiled return entry point which will do an
-  // cleanup needed for the return from compiled to interpreted.
 
   // Must preserve original SP for loading incoming arguments because
   // we need to align the outgoing SP for compiled code.

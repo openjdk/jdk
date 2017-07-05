@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -160,6 +160,13 @@ endif
 JDK_IMPORT_PATH=$(SLASH_JAVA)/re/j2se/$(JDK_VERSION)/promoted/latest/binaries/$(PLATFORM)
 ifneq ($(ALT_JDK_IMPORT_PATH),)
   JDK_IMPORT_PATH=$(ALT_JDK_IMPORT_PATH)
+endif
+
+# Other parts of JDK build may require an import JDK that can be executed
+# on the build host. For cross-compile builds we also need an import JDK
+# that matches the target arch, so for that we set ALT_JDK_TARGET_IMPORT_PATH
+ifneq ($(ALT_JDK_TARGET_IMPORT_PATH),)
+  JDK_IMPORT_PATH=$(ALT_JDK_TARGET_IMPORT_PATH)
 endif
 
 # Find JDK used for javac compiles
