@@ -26,15 +26,13 @@
  * @author Tom Deneau
  */
 
+import com.oracle.java.testlibrary.Utils;
+import java.security.AlgorithmParameters;
+import java.util.Random;
 import javax.crypto.Cipher;
-import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
-import java.security.AlgorithmParameters;
-
-import java.util.Random;
-import java.util.Arrays;
 
 abstract public class TestAESBase {
   int msgSize = Integer.getInteger("msgSize", 646);
@@ -59,7 +57,7 @@ abstract public class TestAESBase {
   byte[] expectedEncode;
   byte[] decode;
   byte[] expectedDecode;
-  Random random = new Random(0);
+  final Random random = Utils.getRandomInstance();
   Cipher cipher;
   Cipher dCipher;
   AlgorithmParameters algParams;

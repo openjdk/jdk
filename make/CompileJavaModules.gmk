@@ -245,7 +245,6 @@ java.sql.rowset_CLEAN_FILES := $(wildcard \
 
 ################################################################################
 # Exclude building of IIOP transport for RMI Connector
-java.management_EXCLUDES := com/sun/jmx/remote/protocol/iiop
 
 ifeq ($(RMICONNECTOR_IIOP), false)
   java.management_EXCLUDES += com/sun/jmx/remote/protocol/iiop
@@ -264,11 +263,11 @@ java.corba_SETUP := GENERATE_JDKBYTECODE_NOWARNINGS
 java.corba_COPY := .prp
 java.corba_CLEAN := .properties
 
-java.corba_EXCLUDES := \
+java.corba_EXCLUDES += \
     com/sun/corba/se/PortableActivationIDL \
     com/sun/tools/corba/se/logutil \
     #
-java.corba_EXCLUDE_FILES := \
+java.corba_EXCLUDE_FILES += \
     com/sun/corba/se/impl/presentation/rmi/JNDIStateFactoryImpl.java \
     com/sun/corba/se/spi/presentation/rmi/StubWrapper.java \
     com/sun/org/omg/CORBA/IDLTypeOperations.java \
@@ -350,12 +349,12 @@ SCTP_IMPL_CLASSES = \
     $(JDK_TOPDIR)/src/jdk.sctp/unix/classes/sun/nio/ch/sctp/Shutdown.java
 
 ifeq ($(OPENJDK_TARGET_OS), macosx)
-  jdk.sctp_EXCLUDE_FILES := $(SCTP_IMPL_CLASSES)
+  jdk.sctp_EXCLUDE_FILES += $(SCTP_IMPL_CLASSES)
 endif
 
 ifeq ($(OPENJDK_TARGET_OS),aix)
   # These files are duplicated in AIX_SRC_DIRS
-  jdk.sctp_EXCLUDE_FILES := $(SCTP_IMPL_CLASSES)
+  jdk.sctp_EXCLUDE_FILES += $(SCTP_IMPL_CLASSES)
 endif
 
 ################################################################################
@@ -373,7 +372,7 @@ jdk.compiler_CLEAN_FILES := $(wildcard \
 
 ################################################################################
 
-jdk.jdi_EXCLUDES := \
+jdk.jdi_EXCLUDES += \
     com/sun/tools/example/debug/bdi \
     com/sun/tools/example/debug/event \
     com/sun/tools/example/debug/gui \
@@ -414,7 +413,7 @@ sun.charsets_COPY := .dat
 jdk.localedata_COPY := _dict _th
 # Exclude BreakIterator classes that are just used in compile process to generate
 # data files and shouldn't go in the product
-jdk.localedata_EXCLUDE_FILES := sun/text/resources/th/BreakIteratorRules_th.java
+jdk.localedata_EXCLUDE_FILES += sun/text/resources/th/BreakIteratorRules_th.java
 
 ################################################################################
 # Setup the compilation of each module

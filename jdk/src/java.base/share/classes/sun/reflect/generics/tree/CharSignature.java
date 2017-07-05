@@ -29,7 +29,7 @@ import sun.reflect.generics.visitor.TypeTreeVisitor;
 
 /** AST that represents the type char. */
 public class CharSignature implements BaseType {
-    private static CharSignature singleton = new CharSignature();
+    private static final CharSignature singleton = new CharSignature();
 
     private CharSignature(){}
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,13 @@
  * @test
  * @bug 7100757
  * @summary The BitSet.nextSetBit() produces incorrect result in 32bit VM on Sparc
- *
+ * @library /testlibrary
  * @run main/timeout=300 Test7100757
  */
 
-import java.util.*;
+import com.oracle.java.testlibrary.Utils;
+import java.util.BitSet;
+import java.util.Random;
 
 public class Test7100757 {
 
@@ -39,7 +41,7 @@ public class Test7100757 {
   public static void main(String[] args) {
 
     BitSet bs = new BitSet(NBITS);
-    Random rnd = new Random();
+    Random rnd = Utils.getRandomInstance();
     long[] ra = new long[(NBITS+63)/64];
 
     for(int l=0; l < 5000000; l++) {

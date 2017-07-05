@@ -20,35 +20,45 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package util;
 
-/*
- * @test
- * @bug 8058818
- * @library /testlibrary
- * @build UnsafeMallocLimit2
- * @run main/othervm -Xmx32m -XX:NativeMemoryTracking=off UnsafeMallocLimit2
- */
+import javax.sql.RowSetEvent;
+import javax.sql.RowSetListener;
 
-import com.oracle.java.testlibrary.*;
-import sun.misc.Unsafe;
+public class TestRowSetListener implements RowSetListener {
 
-public class UnsafeMallocLimit2 {
+    // Flags to indicate which listener events should have been notified
+    public final static int ROWSET_CHANGED = 1;
+    public final static int ROW_CHANGED = 2;
+    public final static int CURSOR_MOVED = 4;
+    private int flag;
 
-    public static void main(String args[]) throws Exception {
-        if (Platform.is32bit()) {
-            Unsafe unsafe = Utils.getUnsafe();
-            try {
-                // Allocate greater than MALLOC_MAX and likely won't fail to allocate,
-                // so it hits the NMT code that asserted.
-                // Test that this doesn't cause an assertion with NMT off.
-                // The option above overrides if all the tests are run with NMT on.
-                unsafe.allocateMemory(0x40000000);
-                System.out.println("Allocation succeeded");
-            } catch (OutOfMemoryError e) {
-                System.out.println("Allocation failed");
-            }
-        } else {
-            System.out.println("Test only valid on 32-bit platforms");
-        }
+    @Override
+    public void rowSetChanged(RowSetEvent event) {
+        flag |= ROWSET_CHANGED;
+    }
+
+    @Override
+    public void rowChanged(RowSetEvent event) {
+        flag |= ROW_CHANGED;
+    }
+
+    @Override
+    public void cursorMoved(RowSetEvent event) {
+        flag |= CURSOR_MOVED;
+    }
+
+    /*
+     * Clear the flag indicating which events we were notified for
+     */
+    public void resetFlag() {
+        flag = 0;
+    }
+
+    /*
+     *  Method used to validate that the correct event was notified
+     */
+    public boolean isNotified( int val) {
+        return flag == val;
     }
 }

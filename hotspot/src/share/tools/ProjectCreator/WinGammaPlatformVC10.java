@@ -411,7 +411,7 @@ class CompilerInterfaceVC10 extends CompilerInterface {
                 "/export:jio_vsnprintf "+
                 "/export:JVM_GetVersionInfo "+
                 "/export:JVM_InitAgentProperties");
-        addAttr(rv, "AdditionalDependencies", "kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;Wsock32.lib;winmm.lib;psapi.lib");
+        addAttr(rv, "AdditionalDependencies", "kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;Wsock32.lib;winmm.lib;psapi.lib;version.lib");
         addAttr(rv, "OutputFile", outDll);
         addAttr(rv, "SuppressStartupBanner", "true");
         addAttr(rv, "ModuleDefinitionFile", outDir+Util.sep+"vm.def");

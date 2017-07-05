@@ -28,7 +28,7 @@ package sun.reflect;
 /** Assists in iterating down a method's signature */
 
 public class SignatureIterator {
-    private String sig;
+    private final String sig;
     private int idx;
 
     public SignatureIterator(String sig) {

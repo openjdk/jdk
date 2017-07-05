@@ -705,25 +705,35 @@ int JDK_Version::compare(const JDK_Version& other) const {
 }
 
 void JDK_Version::to_string(char* buffer, size_t buflen) const {
+  assert(buffer && buflen > 0, "call with useful buffer");
   size_t index = 0;
+
   if (!is_valid()) {
     jio_snprintf(buffer, buflen, "%s", "(uninitialized)");
   } else if (is_partially_initialized()) {
     jio_snprintf(buffer, buflen, "%s", "(uninitialized) pre-1.6.0");
   } else {
-    index += jio_snprintf(
+    int rc = jio_snprintf(
         &buffer[index], buflen - index, "%d.%d", _major, _minor);
+    if (rc == -1) return;
+    index += rc;
     if (_micro > 0) {
-      index += jio_snprintf(&buffer[index], buflen - index, ".%d", _micro);
+      rc = jio_snprintf(&buffer[index], buflen - index, ".%d", _micro);
     }
     if (_update > 0) {
-      index += jio_snprintf(&buffer[index], buflen - index, "_%02d", _update);
+      rc = jio_snprintf(&buffer[index], buflen - index, "_%02d", _update);
+      if (rc == -1) return;
+      index += rc;
     }
     if (_special > 0) {
-      index += jio_snprintf(&buffer[index], buflen - index, "%c", _special);
+      rc = jio_snprintf(&buffer[index], buflen - index, "%c", _special);
+      if (rc == -1) return;
+      index += rc;
     }
     if (_build > 0) {
-      index += jio_snprintf(&buffer[index], buflen - index, "-b%02d", _build);
+      rc = jio_snprintf(&buffer[index], buflen - index, "-b%02d", _build);
+      if (rc == -1) return;
+      index += rc;
     }
   }
 }

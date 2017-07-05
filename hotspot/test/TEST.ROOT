@@ -30,3 +30,4 @@
 keys=cte_test jcmd nmt regression gc stress
 
 groups=TEST.groups [closed/TEST.groups]
+requires.properties=sun.arch.data.model
