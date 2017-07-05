@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -228,6 +228,9 @@ public class LocaleData {
 
     private static class LocaleDataStrategy implements Bundles.Strategy {
         private static final LocaleDataStrategy INSTANCE = new LocaleDataStrategy();
+        // TODO: avoid hard-coded Locales
+        private static Set<Locale> JAVA_BASE_LOCALES
+            = Set.of(Locale.ROOT, Locale.ENGLISH, Locale.US, new Locale("en", "US", "POSIX"));
 
         private LocaleDataStrategy() {
         }
@@ -275,11 +278,7 @@ public class LocaleData {
         }
 
         boolean inJavaBaseModule(String baseName, Locale locale) {
-            // TODO: avoid hard-coded Locales
-            return locale.equals(Locale.ROOT) ||
-                (locale.getLanguage() == "en" &&
-                    (locale.getCountry().isEmpty() ||
-                     locale.getCountry() == "US"));
+            return JAVA_BASE_LOCALES.contains(locale);
         }
 
         @Override
@@ -313,6 +312,9 @@ public class LocaleData {
     private static class SupplementaryStrategy extends LocaleDataStrategy {
         private static final SupplementaryStrategy INSTANCE
                 = new SupplementaryStrategy();
+        // TODO: avoid hard-coded Locales
+        private static Set<Locale> JAVA_BASE_LOCALES
+            = Set.of(Locale.ROOT, Locale.ENGLISH, Locale.US);
 
         private SupplementaryStrategy() {
         }
@@ -332,8 +334,7 @@ public class LocaleData {
 
         @Override
         boolean inJavaBaseModule(String baseName, Locale locale) {
-            // TODO: avoid hard-coded Locales
-            return locale.equals(Locale.ROOT) || locale.getLanguage() == "en";
+            return JAVA_BASE_LOCALES.contains(locale);
         }
     }
 }

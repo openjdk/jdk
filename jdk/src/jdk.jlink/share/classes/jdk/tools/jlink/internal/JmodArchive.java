@@ -25,7 +25,6 @@
 
 package jdk.tools.jlink.internal;
 
-import jdk.tools.jlink.internal.JarArchive;
 import java.nio.file.Path;
 import java.util.Objects;
 import jdk.tools.jlink.internal.Archive.Entry.EntryType;
@@ -35,7 +34,7 @@ import jdk.tools.jlink.internal.Archive.Entry.EntryType;
  */
 public class JmodArchive extends JarArchive {
 
-    private static final String JMOD_EXT = ".jmod";
+    private static final String JMOD_EXT    = ".jmod";
     private static final String MODULE_NAME = "module";
     private static final String MODULE_INFO = "module-info.class";
     private static final String CLASSES     = "classes";
@@ -46,8 +45,9 @@ public class JmodArchive extends JarArchive {
     public JmodArchive(String mn, Path jmod) {
         super(mn, jmod);
         String filename = Objects.requireNonNull(jmod.getFileName()).toString();
-        if (!filename.endsWith(JMOD_EXT))
+        if (!filename.endsWith(JMOD_EXT)) {
             throw new UnsupportedOperationException("Unsupported format: " + filename);
+        }
     }
 
     @Override
@@ -65,7 +65,6 @@ public class JmodArchive extends JarArchive {
             case MODULE_NAME:
                 return EntryType.MODULE_NAME;
             default:
-                //throw new InternalError("unexpected entry: " + name + " " + zipfile.toString()); //TODO
                 throw new InternalError("unexpected entry: " + section);
         }
     }

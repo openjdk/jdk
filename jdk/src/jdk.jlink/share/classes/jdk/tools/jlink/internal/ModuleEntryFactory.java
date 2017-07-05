@@ -24,7 +24,6 @@
  */
 package jdk.tools.jlink.internal;
 
-import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.Objects;
 import jdk.tools.jlink.plugin.ModuleEntry;

@@ -36,6 +36,7 @@ import java.io.PrintWriter;
 import java.io.Reader;
 import java.lang.ref.WeakReference;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
@@ -75,8 +76,8 @@ public final class Source implements Loggable {
     private final String name;
 
     /**
-     * Base directory the File or base part of the URL. Used to implement __DIR__.
-     * Used to load scripts relative to the 'directory' or 'base' URL of current script.
+     * Base path or URL of this source. Used to implement __DIR__, which can be
+     * used to load scripts relative to the location of the current script.
      * This will be null when it can't be computed.
      */
     private final String base;
@@ -875,31 +876,25 @@ public final class Source implements Loggable {
     }
 
     /**
-     * Get the base url. This is currently used for testing only
+     * Returns the base directory or URL for the given URL. Used to implement __DIR__.
      * @param url a URL
-     * @return base URL for url
+     * @return base path or URL, or null if argument is not a hierarchical URL
      */
     public static String baseURL(final URL url) {
-        if (url.getProtocol().equals("file")) {
-            try {
-                final Path path = Paths.get(url.toURI());
+        try {
+            final URI uri = url.toURI();
+
+            if (uri.getScheme().equals("file")) {
+                final Path path = Paths.get(uri);
                 final Path parent = path.getParent();
                 return (parent != null) ? (parent + File.separator) : null;
-            } catch (final SecurityException | URISyntaxException | IOError e) {
+            }
+            if (uri.isOpaque() || uri.getPath() == null || uri.getPath().isEmpty()) {
                 return null;
             }
-        }
+            return uri.resolve("").toString();
 
-        // FIXME: is there a better way to find 'base' URL of a given URL?
-        String path = url.getPath();
-        if (path.isEmpty()) {
-            return null;
-        }
-        path = path.substring(0, path.lastIndexOf('/') + 1);
-        final int port = url.getPort();
-        try {
-            return new URL(url.getProtocol(), url.getHost(), port, path).toString();
-        } catch (final MalformedURLException e) {
+        } catch (final SecurityException | URISyntaxException | IOError e) {
             return null;
         }
     }
