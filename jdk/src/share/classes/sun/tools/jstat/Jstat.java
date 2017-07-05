@@ -28,8 +28,6 @@ package sun.tools.jstat;
 import java.util.*;
 import sun.jvmstat.monitor.*;
 import sun.jvmstat.monitor.event.*;
-import sun.management.counter.Variability;
-import sun.management.counter.Units;
 
 /**
  * Application to output jvmstat statistics exported by a target Java

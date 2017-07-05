@@ -47,8 +47,7 @@ IMAGE_BINDIR = bin
 # Swing has taken this approach only as a temporary measure to avoid
 # the compiler warnings until we can properly document these packages.
 # This is covered under 6491853.
-EXCLUDE_PROPWARN_PKGS = com.sun.java.swing.plaf          \
-                        com.sun.java.swing.plaf.windows  \
+EXCLUDE_PROPWARN_PKGS = com.sun.java.swing.plaf.windows  \
                         com.sun.java.swing.plaf.motif    \
                         com.sun.java.swing.plaf.gtk
 

@@ -76,7 +76,7 @@ class JarVerifier {
     private ByteArrayOutputStream baos;
 
     /** The ManifestDigester object */
-    private ManifestDigester manDig;
+    private volatile ManifestDigester manDig;
 
     /** the bytes for the manDig object */
     byte manifestRawBytes[] = null;
