@@ -77,6 +77,7 @@ import java.time.temporal.JulianFields;
 import java.time.temporal.Temporal;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalField;
+import java.time.temporal.TemporalQueries;
 import java.time.temporal.TemporalQuery;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -215,13 +216,13 @@ public class TCKDayOfWeek extends AbstractDateTimeTest {
     @DataProvider(name="query")
     Object[][] data_query() {
         return new Object[][] {
-                {DayOfWeek.FRIDAY, TemporalQuery.chronology(), null},
-                {DayOfWeek.FRIDAY, TemporalQuery.zoneId(), null},
-                {DayOfWeek.FRIDAY, TemporalQuery.precision(), ChronoUnit.DAYS},
-                {DayOfWeek.FRIDAY, TemporalQuery.zone(), null},
-                {DayOfWeek.FRIDAY, TemporalQuery.offset(), null},
-                {DayOfWeek.FRIDAY, TemporalQuery.localDate(), null},
-                {DayOfWeek.FRIDAY, TemporalQuery.localTime(), null},
+                {DayOfWeek.FRIDAY, TemporalQueries.chronology(), null},
+                {DayOfWeek.FRIDAY, TemporalQueries.zoneId(), null},
+                {DayOfWeek.FRIDAY, TemporalQueries.precision(), ChronoUnit.DAYS},
+                {DayOfWeek.FRIDAY, TemporalQueries.zone(), null},
+                {DayOfWeek.FRIDAY, TemporalQueries.offset(), null},
+                {DayOfWeek.FRIDAY, TemporalQueries.localDate(), null},
+                {DayOfWeek.FRIDAY, TemporalQueries.localTime(), null},
         };
     }
 

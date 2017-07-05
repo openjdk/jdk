@@ -35,6 +35,7 @@ import com.sun.jdi.VirtualMachine;
  * @author Gordon Hirsch
  * @since  1.3
  */
+@jdk.Exported
 public interface ListeningConnector extends Connector {
     /**
      * Indicates whether this listening connector supports multiple

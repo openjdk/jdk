@@ -35,8 +35,9 @@ package com.sun.jdi;
  * @author James McIlree
  * @since  1.3
  */
-public interface PrimitiveValue extends Value
-{
+@jdk.Exported
+public interface PrimitiveValue extends Value {
+
     /**
      * Converts this value to a BooleanValue and returns the result
      * as a boolean.

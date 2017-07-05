@@ -173,6 +173,12 @@ class JarMetaIndex {
      */
     private HashMap<String, HashSet<String>> knownPrefixMap = new HashMap<>();
 
+    /**
+     * Special value for the HashSet to indicate that there are classes in
+     * the top-level package.
+     */
+    private static final String TOP_LEVEL = "TOP";
+
     /*
      * A class for mapping package prefixes to the number of
      * levels of package elements to include.
@@ -212,7 +218,7 @@ class JarMetaIndex {
 
 
     /*
-     * We add maximum 5 second level entries to "sun", "java" and
+     * We add maximum 5 second level entries to "sun", "jdk", "java" and
      * "javax" entries. Tune this parameter to get a balance on the
      * cold start and footprint.
      */
@@ -223,6 +229,7 @@ class JarMetaIndex {
     JarMetaIndex(String fileName) throws IOException {
         jar = new JarFile(fileName);
         knownPrefixMap.put("sun", new HashSet<String>());
+        knownPrefixMap.put("jdk", new HashSet<String>());
         knownPrefixMap.put("java", new HashSet<String>());
         knownPrefixMap.put("javax", new HashSet<String>());
     }
@@ -336,12 +343,12 @@ class JarMetaIndex {
             return false;
         }
 
-        String secondPkgElement = name.substring(firstSlashIndex + 1,
-                                                 name.indexOf("/",
-                                                              firstSlashIndex + 1));
-
         /* Add the second level package name to the corresponding hashset. */
-        if (secondPkgElement != null) {
+        int secondSlashIndex = name.indexOf("/", firstSlashIndex+1);
+        if (secondSlashIndex == -1) {
+            pkgSet.add(TOP_LEVEL);
+        } else {
+            String secondPkgElement = name.substring(firstSlashIndex+1, secondSlashIndex);
             pkgSet.add(secondPkgElement);
         }
 
@@ -368,8 +375,9 @@ class JarMetaIndex {
             if (setSize == 0) {
                 continue;
             }
-            else if (setSize > JarMetaIndex.MAX_PKGS_WITH_KNOWN_PREFIX) {
-                indexSet.add(key + "/");
+            if (setSize > JarMetaIndex.MAX_PKGS_WITH_KNOWN_PREFIX ||
+                pkgSetStartsWithKey.contains(TOP_LEVEL)) {
+                 indexSet.add(key + "/");
             } else {
                 /* If the set contains less than MAX_PKGS_WITH_KNOWN_PREFIX, add
                  * them to the indexSet of the MetaIndex object.

@@ -28,6 +28,7 @@ import com.sun.org.apache.xalan.internal.XalanConstants;
 import com.sun.org.apache.xalan.internal.utils.FactoryImpl;
 import com.sun.org.apache.xalan.internal.utils.ObjectFactory;
 import com.sun.org.apache.xalan.internal.utils.SecuritySupport;
+import com.sun.org.apache.xalan.internal.utils.XMLSecurityManager;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.ErrorMsg;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.MethodType;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.Type;
@@ -487,6 +488,20 @@ public class Parser implements Constants, ContentHandler {
             }
 
             final XMLReader reader = parser.getXMLReader();
+            try {
+                XMLSecurityManager securityManager =
+                        (XMLSecurityManager)_xsltc.getProperty(XalanConstants.SECURITY_MANAGER);
+                for (XMLSecurityManager.Limit limit : XMLSecurityManager.Limit.values()) {
+                    reader.setProperty(limit.apiProperty(), securityManager.getLimitValueAsString(limit));
+                }
+                if (securityManager.printEntityCountInfo()) {
+                    parser.setProperty(XalanConstants.JDK_ENTITY_COUNT_INFO, XalanConstants.JDK_YES);
+                }
+            } catch (SAXException se) {
+                System.err.println("Warning:  " + reader.getClass().getName() + ": "
+                            + se.getMessage());
+            }
+
             return(parse(reader, input));
         }
         catch (ParserConfigurationException e) {
@@ -565,7 +580,7 @@ public class Parser implements Constants, ContentHandler {
                 }
                 path = SystemIDResolver.getAbsoluteURI(path);
                 String accessError = SecuritySupport.checkAccess(path,
-                        _xsltc.getProperty(XMLConstants.ACCESS_EXTERNAL_STYLESHEET),
+                        (String)_xsltc.getProperty(XMLConstants.ACCESS_EXTERNAL_STYLESHEET),
                         XalanConstants.ACCESS_EXTERNAL_ALL);
                 if (accessError != null) {
                     ErrorMsg msg = new ErrorMsg(ErrorMsg.ACCESSING_XSLT_TARGET_ERR,

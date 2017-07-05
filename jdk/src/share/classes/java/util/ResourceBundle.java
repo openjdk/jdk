@@ -311,6 +311,24 @@ public abstract class ResourceBundle {
     private static final ReferenceQueue<Object> referenceQueue = new ReferenceQueue<>();
 
     /**
+     * Returns the base name of this bundle, if known, or {@code null} if unknown.
+     *
+     * If not null, then this is the value of the {@code baseName} parameter
+     * that was passed to the {@code ResourceBundle.getBundle(...)} method
+     * when the resource bundle was loaded.
+     *
+     * @return The base name of the resource bundle, as provided to and expected
+     * by the {@code ResourceBundle.getBundle(...)} methods.
+     *
+     * @see #getBundle(java.lang.String, java.util.Locale, java.lang.ClassLoader)
+     *
+     * @since 1.8
+     */
+    public String getBaseBundleName() {
+        return name;
+    }
+
+    /**
      * The parent bundle of this bundle.
      * The parent bundle is searched by {@link #getObject getObject}
      * when this bundle does not contain a particular resource.

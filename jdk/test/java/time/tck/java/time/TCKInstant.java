@@ -97,6 +97,7 @@ import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalAdjuster;
 import java.time.temporal.TemporalAmount;
 import java.time.temporal.TemporalField;
+import java.time.temporal.TemporalQueries;
 import java.time.temporal.TemporalQuery;
 import java.time.temporal.TemporalUnit;
 import java.time.temporal.UnsupportedTemporalTypeException;
@@ -401,13 +402,13 @@ public class TCKInstant extends AbstractDateTimeTest {
     @DataProvider(name="query")
     Object[][] data_query() {
         return new Object[][] {
-                {TEST_12345_123456789, TemporalQuery.chronology(), null},
-                {TEST_12345_123456789, TemporalQuery.zoneId(), null},
-                {TEST_12345_123456789, TemporalQuery.precision(), NANOS},
-                {TEST_12345_123456789, TemporalQuery.zone(), null},
-                {TEST_12345_123456789, TemporalQuery.offset(), null},
-                {TEST_12345_123456789, TemporalQuery.localDate(), null},
-                {TEST_12345_123456789, TemporalQuery.localTime(), null},
+                {TEST_12345_123456789, TemporalQueries.chronology(), null},
+                {TEST_12345_123456789, TemporalQueries.zoneId(), null},
+                {TEST_12345_123456789, TemporalQueries.precision(), NANOS},
+                {TEST_12345_123456789, TemporalQueries.zone(), null},
+                {TEST_12345_123456789, TemporalQueries.offset(), null},
+                {TEST_12345_123456789, TemporalQueries.localDate(), null},
+                {TEST_12345_123456789, TemporalQueries.localTime(), null},
         };
     }
 

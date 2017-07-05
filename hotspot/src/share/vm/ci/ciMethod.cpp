@@ -846,7 +846,9 @@ bool ciMethod::has_member_arg() const {
 // Return true if allocation was successful or no MDO is required.
 bool ciMethod::ensure_method_data(methodHandle h_m) {
   EXCEPTION_CONTEXT;
-  if (is_native() || is_abstract() || h_m()->is_accessor()) return true;
+  if (is_native() || is_abstract() || h_m()->is_accessor()) {
+    return true;
+  }
   if (h_m()->method_data() == NULL) {
     Method::build_interpreter_method_data(h_m, THREAD);
     if (HAS_PENDING_EXCEPTION) {
@@ -903,22 +905,21 @@ ciMethodData* ciMethod::method_data() {
 // NULL otherwise.
 ciMethodData* ciMethod::method_data_or_null() {
   ciMethodData *md = method_data();
-  if (md->is_empty()) return NULL;
+  if (md->is_empty()) {
+    return NULL;
+  }
   return md;
 }
 
 // ------------------------------------------------------------------
 // ciMethod::ensure_method_counters
 //
-address ciMethod::ensure_method_counters() {
+MethodCounters* ciMethod::ensure_method_counters() {
   check_is_loaded();
   VM_ENTRY_MARK;
   methodHandle mh(THREAD, get_Method());
-  MethodCounters *counter = mh->method_counters();
-  if (counter == NULL) {
-    counter = Method::build_method_counters(mh(), CHECK_AND_CLEAR_NULL);
-  }
-  return (address)counter;
+  MethodCounters* method_counters = mh->get_method_counters(CHECK_NULL);
+  return method_counters;
 }
 
 // ------------------------------------------------------------------
@@ -1247,7 +1248,6 @@ ciMethodBlocks  *ciMethod::get_method_blocks() {
 #undef FETCH_FLAG_FROM_VM
 
 void ciMethod::dump_replay_data(outputStream* st) {
-  ASSERT_IN_VM;
   ResourceMark rm;
   Method* method = get_Method();
   MethodCounters* mcs = method->method_counters();

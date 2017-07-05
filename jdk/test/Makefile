@@ -484,7 +484,8 @@ jdk_other: $(call TestDirs, \
 	  com/sun/org/apache/xerces \
           com/sun/corba \
 	  com/sun/tracing \
-	  sun/usagetracker)
+	  sun/usagetracker \
+	  misc)
 	$(call RunBatch)
 
 JDK_ALL_TARGETS += jdk_net

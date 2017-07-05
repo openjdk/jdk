@@ -68,6 +68,7 @@ import java.nio.channels.spi.AbstractSelectableChannel;
  *
  * @since 1.7
  */
+@jdk.Exported
 public abstract class SctpServerChannel
     extends AbstractSelectableChannel
 {

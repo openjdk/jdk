@@ -223,16 +223,24 @@ public final class KdcComm {
         if (!tempKdc.hasNext()) {
             throw new KrbException("Cannot get kdc for realm " + realm);
         }
+        byte[] ibuf = null;
         try {
-            return sendIfPossible(obuf, tempKdc.next(), useTCP);
+            ibuf = sendIfPossible(obuf, tempKdc.next(), useTCP);
         } catch(Exception first) {
+            boolean ok = false;
             while(tempKdc.hasNext()) {
                 try {
-                    return sendIfPossible(obuf, tempKdc.next(), useTCP);
+                    ibuf = sendIfPossible(obuf, tempKdc.next(), useTCP);
+                    ok = true;
+                    break;
                 } catch(Exception ignore) {}
             }
-            throw first;
+            if (!ok) throw first;
         }
+        if (ibuf == null) {
+            throw new IOException("Cannot get a KDC reply");
+        }
+        return ibuf;
     }
 
     // send the AS Request to the specified KDC

@@ -65,7 +65,7 @@
 #	</a> (1998-09-21, in Portuguese)
 
 #
-# I invented the abbreviations marked `*' in the following table;
+# I invented the abbreviations marked '*' in the following table;
 # the rest are from earlier versions of this file, or from other sources.
 # Corrections are welcome!
 #                   std dst  2dst
@@ -119,7 +119,7 @@
 # and a sketch map showing some of the sightlines involved. One paragraph
 # of the text said:
 #
-# `An old stone obelisk marking a forgotten terrestrial meridian stands
+# 'An old stone obelisk marking a forgotten terrestrial meridian stands
 # beside the river at Kew. In the 18th century, before time and longitude
 # was standardised by the Royal Observatory in Greenwich, scholars observed
 # this stone and the movement of stars from Kew Observatory nearby. They
@@ -163,7 +163,7 @@
 # From Paul Eggert (2003-09-27):
 # Summer Time was first seriously proposed by William Willett (1857-1915),
 # a London builder and member of the Royal Astronomical Society
-# who circulated a pamphlet ``The Waste of Daylight'' (1907)
+# who circulated a pamphlet "The Waste of Daylight" (1907)
 # that proposed advancing clocks 20 minutes on each of four Sundays in April,
 # and retarding them by the same amount on four Sundays in September.
 # A bill was drafted in 1909 and introduced in Parliament several times,
@@ -188,10 +188,10 @@
 #	</a>
 
 # From Paul Eggert (1996-09-03):
-# The OED Supplement says that the English originally said ``Daylight Saving''
+# The OED Supplement says that the English originally said "Daylight Saving"
 # when they were debating the adoption of DST in 1908; but by 1916 this
 # term appears only in quotes taken from DST's opponents, whereas the
-# proponents (who eventually won the argument) are quoted as using ``Summer''.
+# proponents (who eventually won the argument) are quoted as using "Summer".
 
 # From Arthur David Olson (1989-01-19):
 #
@@ -231,9 +231,9 @@
 # which could not be said to run counter to any official description.
 
 # From Paul Eggert (2000-10-02):
-# Howse writes (p 157) `DBST' too, but `BDST' seems to have been common
+# Howse writes (p 157) 'DBST' too, but 'BDST' seems to have been common
 # and follows the more usual convention of putting the location name first,
-# so we use `BDST'.
+# so we use 'BDST'.
 
 # Peter Ilieve (1998-04-19) described at length
 # the history of summer time legislation in the United Kingdom.
@@ -454,6 +454,8 @@ Rule	GB-Eire 1981	1989	-	Oct	Sun>=23	1:00u	0	GMT
 Rule	GB-Eire 1990	1995	-	Oct	Sun>=22	1:00u	0	GMT
 # Summer Time Order 1997 (S.I. 1997/2982)
 # See EU for rules starting in 1996.
+#
+# Use Europe/London for Jersey, Guernsey, and the Isle of Man.
 
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Europe/London	-0:01:15 -	LMT	1847 Dec  1 0:00s
@@ -820,7 +822,7 @@ Zone	Europe/Brussels	0:17:30 -	LMT	1880
 			1:00	EU	CE%sT
 
 # Bosnia and Herzegovina
-# see Serbia
+# See Europe/Belgrade.
 
 # Bulgaria
 #
@@ -848,10 +850,10 @@ Zone	Europe/Sofia	1:33:16 -	LMT	1880
 			2:00	EU	EE%sT
 
 # Croatia
-# see Serbia
+# See Europe/Belgrade.
 
 # Cyprus
-# Please see the `asia' file for Asia/Nicosia.
+# Please see the 'asia' file for Asia/Nicosia.
 
 # Czech Republic
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
@@ -868,6 +870,7 @@ Zone	Europe/Prague	0:57:44 -	LMT	1850
 			1:00	C-Eur	CE%sT	1944 Sep 17 2:00s
 			1:00	Czech	CE%sT	1979
 			1:00	EU	CE%sT
+# Use Europe/Prague also for Slovakia.
 
 # Denmark, Faroe Islands, and Greenland
 
@@ -1031,12 +1034,12 @@ Zone America/Thule	-4:35:08 -	LMT	1916 Jul 28 # Pituffik air base
 # From Peter Ilieve (1996-10-28):
 # [IATA SSIM (1992/1996) claims that the Baltic republics switch at 01:00s,
 # but a relative confirms that Estonia still switches at 02:00s, writing:]
-# ``I do not [know] exactly but there are some little different
+# "I do not [know] exactly but there are some little different
 # (confusing) rules for International Air and Railway Transport Schedules
 # conversion in Sunday connected with end of summer time in Estonia....
 # A discussion is running about the summer time efficiency and effect on
 # human physiology.  It seems that Estonia maybe will not change to
-# summer time next spring.''
+# summer time next spring."
 
 # From Peter Ilieve (1998-11-04), heavily edited:
 # <a href="http://trip.rk.ee/cgi-bin/thw?${BASE}=akt&${OOHTML}=rtd&TA=1998&TO=1&AN=1390">
@@ -1091,7 +1094,7 @@ Zone	Europe/Tallinn	1:39:00	-	LMT	1880
 # Well, here in Helsinki we're just changing from summer time to regular one,
 # and it's supposed to change at 4am...
 
-# From Janne Snabb (2010-0715):
+# From Janne Snabb (2010-07-15):
 #
 # I noticed that the Finland data is not accurate for years 1981 and 1982.
 # During these two first trial years the DST adjustment was made one hour
@@ -1148,7 +1151,7 @@ Link	Europe/Helsinki	Europe/Mariehamn
 
 
 #
-# Shank & Pottenger seem to use `24:00' ambiguously; resolve it with Whitman.
+# Shank & Pottenger seem to use '24:00' ambiguously; resolve it with Whitman.
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	France	1916	only	-	Jun	14	23:00s	1:00	S
 Rule	France	1916	1919	-	Oct	Sun>=1	23:00s	0	-
@@ -1438,7 +1441,7 @@ Zone Atlantic/Reykjavik	-1:27:24 -	LMT	1837
 # <a href="http://toi.iriti.cnr.it/uk/ienitlt.html">
 # Day-light Saving Time in Italy (2006-02-03)
 # </a>
-# (`FP' below), taken from an Italian National Electrotechnical Institute
+# ('FP' below), taken from an Italian National Electrotechnical Institute
 # publication. When the three sources disagree, guess who's right, as follows:
 #
 # year	FP	Shanks&P. (S)	Whitman (W)	Go with:
@@ -1584,10 +1587,22 @@ Zone	Europe/Riga	1:36:24	-	LMT	1880
 			2:00	EU	EE%sT
 
 # Liechtenstein
-# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
-Zone	Europe/Vaduz	0:38:04 -	LMT	1894 Jun
-			1:00	-	CET	1981
-			1:00	EU	CE%sT
+
+# From Paul Eggert (2013-09-09):
+# Shanks & Pottenger say Vaduz is like Zurich.
+
+# From Alois Treindl (2013-09-18):
+# http://www.eliechtensteinensia.li/LIJ/1978/1938-1978/1941.pdf
+# ... confirms on p. 6 that Liechtenstein followed Switzerland in 1941 and 1942.
+# I ... translate only the last two paragraphs:
+#    ... during second world war, in the years 1941 and 1942, Liechtenstein
+#    introduced daylight saving time, adapting to Switzerland.  From 1943 on
+#    central European time was in force throughout the year.
+#    From a report of the duke's government to the high council,
+#    regarding the introduction of a time law, of 31 May 1977.
+
+Link Europe/Zurich Europe/Vaduz
+
 
 # Lithuania
 
@@ -1675,7 +1690,7 @@ Zone Europe/Luxembourg	0:24:36 -	LMT	1904 Jun
 			1:00	EU	CE%sT
 
 # Macedonia
-# see Serbia
+# See Europe/Belgrade.
 
 # Malta
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
@@ -1768,7 +1783,7 @@ Zone	Europe/Monaco	0:29:32 -	LMT	1891 Mar 15
 			1:00	EU	CE%sT
 
 # Montenegro
-# see Serbia
+# See Europe/Belgrade.
 
 # Netherlands
 
@@ -1883,7 +1898,7 @@ Zone	Europe/Oslo	0:43:00 -	LMT	1895 Jan  1
 # before 1895, and therefore probably changed the local time somewhere
 # between 1895 and 1925 (inclusive).
 
-# From Paul Eggert (2001-05-01):
+# From Paul Eggert (2013-09-04):
 #
 # Actually, Jan Mayen was never occupied by Germany during World War II,
 # so it must have diverged from Oslo time during the war, as Oslo was
@@ -1894,7 +1909,7 @@ Zone	Europe/Oslo	0:43:00 -	LMT	1895 Jan  1
 # 1941 with a small Norwegian garrison and continued operations despite
 # frequent air ttacks from Germans.  In 1943 the Americans established a
 # radiolocating station on the island, called "Atlantic City".  Possibly
-# the UTC offset changed during the war, but I think it unlikely that
+# the UT offset changed during the war, but I think it unlikely that
 # Jan Mayen used German daylight-saving rules.
 #
 # Svalbard is more complicated, as it was raided in August 1941 by an
@@ -1907,9 +1922,8 @@ Zone	Europe/Oslo	0:43:00 -	LMT	1895 Jan  1
 # the German armed forces at the Svalbard weather station code-named
 # Haudegen did not surrender to the Allies until September 1945.
 #
-# All these events predate our cutoff date of 1970.  Unless we can
-# come up with more definitive info about the timekeeping during the
-# war years it's probably best just do...the following for now:
+# All these events predate our cutoff date of 1970, so use Europe/Oslo
+# for these regions.
 Link	Europe/Oslo	Arctic/Longyearbyen
 
 # Poland
@@ -2167,7 +2181,7 @@ Zone Europe/Bucharest	1:44:24 -	LMT	1891 Oct
 # so we (Novosibirsk) simply did not switch.
 #
 # From Andrey A. Chernov (1996-10-04):
-# `MSK' and `MSD' were born and used initially on Moscow computers with
+# 'MSK' and 'MSD' were born and used initially on Moscow computers with
 # UNIX-like OSes by several developer groups (e.g. Demos group, Kiae group)....
 # The next step was the UUCP network, the Relcom predecessor
 # (used mainly for mail), and MSK/MSD was actively used there.
@@ -2466,6 +2480,9 @@ Zone Asia/Anadyr	11:49:56 -	LMT	1924 May  2
 			11:00	Russia	ANA%sT	2011 Mar 27 2:00s
 			12:00	-	ANAT
 
+# San Marino
+# See Europe/Rome.
+
 # Serbia
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Europe/Belgrade	1:22:00	-	LMT	1884
@@ -2488,7 +2505,7 @@ Link Europe/Belgrade Europe/Zagreb	# Croatia
 Link Europe/Prague Europe/Bratislava
 
 # Slovenia
-# see Serbia
+# See Europe/Belgrade.
 
 # Spain
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
@@ -2622,7 +2639,7 @@ Zone Europe/Stockholm	1:12:12 -	LMT	1879 Jan  1
 # and their performance improved enormously.  Communities began to keep
 # mean time in preference to apparent time -- Geneva from 1780 ....
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
-# From Whitman (who writes ``Midnight?''):
+# From Whitman (who writes "Midnight?"):
 # Rule	Swiss	1940	only	-	Nov	 2	0:00	1:00	S
 # Rule	Swiss	1940	only	-	Dec	31	0:00	0	-
 # From Shanks & Pottenger:
@@ -2667,23 +2684,53 @@ Zone Europe/Stockholm	1:12:12 -	LMT	1879 Jan  1
 # The 1940 rules must be deleted.
 #
 # One further detail for Switzerland, which is probably out of scope for
-# most users of tzdata:
-# The zone file
-# Zone    Europe/Zurich   0:34:08 -       LMT     1848 Sep 12
-#                          0:29:44 -       BMT     1894 Jun #Bern Mean Time
-#                          1:00    Swiss   CE%sT   1981
-#                          1:00    EU      CE%sT
+# most users of tzdata: The [Europe/Zurich zone] ...
 # describes all of Switzerland correctly, with the exception of
 # the Cantone Geneve (Geneva, Genf). Between 1848 and 1894 Geneve did not
 # follow Bern Mean Time but kept its own local mean time.
 # To represent this, an extra zone would be needed.
+#
+# From Alois Treindl (2013-09-11):
+# The Federal regulations say
+# http://www.admin.ch/opc/de/classified-compilation/20071096/index.html
+# ... the meridian for Bern mean time ... is 7 degrees 26'22.50".
+# Expressed in time, it is 0h29m45.5s.
+
+# From Pierre-Yves Berger (2013-09-11):
+# the "Circulaire du conseil federal" (December 11 1893)
+# <http://www.amtsdruckschriften.bar.admin.ch/viewOrigDoc.do?id=10071353> ...
+# clearly states that the [1894-06-01] change should be done at midnight
+# but if no one is present after 11 at night, could be postponed until one
+# hour before the beginning of service.
+
+# From Paul Eggert (2013-09-11):
+# Round BMT to the nearest even second, 0:29:46.
+#
+# We can find no reliable source for Shanks's assertion that all of Switzerland
+# except Geneva switched to Bern Mean Time at 00:00 on 1848-09-12.  This book:
+#
+#	Jakob Messerli. Gleichmassig, punktlich, schnell: Zeiteinteilung und
+#	Zeitgebrauch in der Schweiz im 19. Jahrhundert. Chronos, Zurich 1995,
+#	ISBN 3-905311-68-2, OCLC 717570797.
+#
+# suggests that the transition was more gradual, and that the Swiss did not
+# agree about civil time during the transition.  The timekeeping it gives the
+# most detail for is postal and telegraph time: here, federal legislation (the
+# "Bundesgesetz uber die Erstellung von elektrischen Telegraphen") passed on
+# 1851-11-23, and an official implementation notice was published 1853-07-16
+# (Bundesblatt 1853, Bd. II, S. 859).  On p 72 Messerli writes that in
+# practice since July 1853 Bernese time was used in "all postal and telegraph
+# offices in Switzerland from Geneva to St. Gallen and Basel to Chiasso"
+# (Google translation).  For now, model this transition as occurring on
+# 1853-07-16, though it probably occurred at some other date in Zurich, and
+# legal civil time probably changed at still some other transition date.
 
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	Swiss	1941	1942	-	May	Mon>=1	1:00	1:00	S
 Rule	Swiss	1941	1942	-	Oct	Mon>=1	2:00	0	-
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
-Zone	Europe/Zurich	0:34:08 -	LMT	1848 Sep 12
-			0:29:44	-	BMT	1894 Jun # Bern Mean Time
+Zone	Europe/Zurich	0:34:08 -	LMT	1853 Jul 16 # See above comment.
+			0:29:46	-	BMT	1894 Jun # Bern Mean Time
 			1:00	Swiss	CE%sT	1981
 			1:00	EU	CE%sT
 
@@ -2907,7 +2954,7 @@ Zone Europe/Simferopol	2:16:24 -	LMT	1880
 # From Paul Eggert (2006-03-22):
 # The _Economist_ (1994-05-28, p 45) reports that central Crimea switched
 # from Kiev to Moscow time sometime after the January 1994 elections.
-# Shanks (1999) says ``date of change uncertain'', but implies that it happened
+# Shanks (1999) says "date of change uncertain", but implies that it happened
 # sometime between the 1994 DST switches.  Shanks & Pottenger simply say
 # 1994-09-25 03:00, but that can't be right.  For now, guess it
 # changed in May.
@@ -2920,6 +2967,9 @@ Zone Europe/Simferopol	2:16:24 -	LMT	1880
 			3:00	Russia	MSK/MSD	1997
 			3:00	-	MSK	1997 Mar lastSun 1:00u
 			2:00	EU	EE%sT
+
+# Vatican City
+# See Europe/Rome.
 
 ###############################################################################
 

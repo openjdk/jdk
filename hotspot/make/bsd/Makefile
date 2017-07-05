@@ -204,6 +204,7 @@ TARGETS_MINIMAL1  = $(addsuffix minimal1,$(TARGETS))
 BUILDTREE_MAKE    = $(GAMMADIR)/make/$(OSNAME)/makefiles/buildtree.make
 BUILDTREE_VARS    = GAMMADIR=$(GAMMADIR) OS_FAMILY=$(OSNAME) SRCARCH=$(SRCARCH) BUILDARCH=$(BUILDARCH) LIBARCH=$(LIBARCH) LIBRARY_SUFFIX=$(LIBRARY_SUFFIX)
 BUILDTREE_VARS   += HOTSPOT_RELEASE_VERSION=$(HOTSPOT_RELEASE_VERSION) HOTSPOT_BUILD_VERSION=$(HOTSPOT_BUILD_VERSION) JRE_RELEASE_VERSION=$(JRE_RELEASE_VERSION)
+BUILDTREE_VARS   += ENABLE_FULL_DEBUG_SYMBOLS=$(ENABLE_FULL_DEBUG_SYMBOLS) OBJCOPY=$(OBJCOPY) STRIP_POLICY=$(STRIP_POLICY) ZIP_DEBUGINFO_FILES=$(ZIP_DEBUGINFO_FILES) ZIPEXE=$(ZIPEXE)
 
 BUILDTREE         = $(MAKE) -f $(BUILDTREE_MAKE) $(BUILDTREE_VARS)
 
@@ -337,9 +338,11 @@ treeminimal1: $(SUBDIRS_MINIMAL1)
 
 # Doc target.  This is the same for all build options.
 #     Hence create a docs directory beside ...$(ARCH)_[...]
+# We specify 'BUILD_FLAVOR=product' so that the proper
+# ENABLE_FULL_DEBUG_SYMBOLS value is used.
 docs: checks
 	$(QUIETLY) mkdir -p $(SUBDIR_DOCS)
-	$(MAKE) -f $(GAMMADIR)/make/$(OSNAME)/makefiles/jvmti.make $(MFLAGS) $(BUILDTREE_VARS) JvmtiOutDir=$(SUBDIR_DOCS) jvmtidocs
+	$(MAKE) -f $(GAMMADIR)/make/$(OSNAME)/makefiles/jvmti.make $(MFLAGS) $(BUILDTREE_VARS) JvmtiOutDir=$(SUBDIR_DOCS) BUILD_FLAVOR=product jvmtidocs
 
 # Synonyms for win32-like targets.
 compiler2:  debug product

@@ -51,8 +51,6 @@ public class NodeOperatorVisitor<T extends LexicalContext> extends NodeVisitor<T
             return enterADD(unaryNode);
         case BIT_NOT:
             return enterBIT_NOT(unaryNode);
-        case CONVERT:
-            return enterCONVERT(unaryNode);
         case DELETE:
             return enterDELETE(unaryNode);
         case DISCARD:
@@ -84,8 +82,6 @@ public class NodeOperatorVisitor<T extends LexicalContext> extends NodeVisitor<T
             return leaveADD(unaryNode);
         case BIT_NOT:
             return leaveBIT_NOT(unaryNode);
-        case CONVERT:
-            return leaveCONVERT(unaryNode);
         case DELETE:
             return leaveDELETE(unaryNode);
         case DISCARD:
@@ -319,26 +315,6 @@ public class NodeOperatorVisitor<T extends LexicalContext> extends NodeVisitor<T
      * @return processed node, which will replace the original one, or the original node
      */
     public Node leaveBIT_NOT(final UnaryNode unaryNode) {
-        return leaveDefault(unaryNode);
-    }
-
-    /**
-     * Unary enter - callback for entering a conversion
-     *
-     * @param  unaryNode the node
-     * @return true if traversal should continue and node children be traversed, false otherwise
-     */
-    public boolean enterCONVERT(final UnaryNode unaryNode) {
-        return enterDefault(unaryNode);
-    }
-
-    /**
-     * Unary leave - callback for leaving a conversion
-     *
-     * @param  unaryNode the node
-     * @return processed node, which will replace the original one, or the original node
-     */
-    public Node leaveCONVERT(final UnaryNode unaryNode) {
         return leaveDefault(unaryNode);
     }
 

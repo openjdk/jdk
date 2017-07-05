@@ -111,7 +111,15 @@ import java.util.Base64;
 
 public class DHEKeySizing {
 
-    private static boolean debug = true;
+    private final static boolean debug = true;
+
+    // key length bias because of the stripping of leading zero bytes of
+    // negotiated DH keys.
+    //
+    // This is an effort to mimum intermittent failure when we cannot
+    // estimate what's the exact number of leading zero bytes of
+    // negotiated DH keys.
+    private final static int KEY_LEN_BIAS = 6;
 
     private SSLContext sslc;
     private SSLEngine ssle1;    // client
@@ -269,7 +277,8 @@ public class DHEKeySizing {
         twoToOne.flip();
 
         log("Message length of ServerHello series: " + twoToOne.remaining());
-        if (lenServerKeyEx != twoToOne.remaining()) {
+        if (twoToOne.remaining() < (lenServerKeyEx - KEY_LEN_BIAS) ||
+                twoToOne.remaining() > lenServerKeyEx) {
             throw new Exception(
                 "Expected to generate ServerHello series messages of " +
                 lenServerKeyEx + " bytes, but not " + twoToOne.remaining());
@@ -289,7 +298,8 @@ public class DHEKeySizing {
         oneToTwo.flip();
 
         log("Message length of ClientKeyExchange: " + oneToTwo.remaining());
-        if (lenClientKeyEx != oneToTwo.remaining()) {
+        if (oneToTwo.remaining() < (lenClientKeyEx - KEY_LEN_BIAS) ||
+                oneToTwo.remaining() > lenClientKeyEx) {
             throw new Exception(
                 "Expected to generate ClientKeyExchange message of " +
                 lenClientKeyEx + " bytes, but not " + oneToTwo.remaining());

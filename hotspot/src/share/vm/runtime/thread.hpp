@@ -923,9 +923,6 @@ class JavaThread: public Thread {
   volatile address _exception_handler_pc;        // PC for handler of exception
   volatile int     _is_method_handle_return;     // true (== 1) if the current exception PC is a MethodHandle call site.
 
-  // support for compilation
-  bool    _is_compiling;                         // is true if a compilation is active inthis thread (one compilation per thread possible)
-
   // support for JNI critical regions
   jint    _jni_active_critical;                  // count of entries into JNI critical region
 
@@ -1004,10 +1001,6 @@ class JavaThread: public Thread {
 
   // Testers
   virtual bool is_Java_thread() const            { return true;  }
-
-  // compilation
-  void set_is_compiling(bool f)                  { _is_compiling = f; }
-  bool is_compiling() const                      { return _is_compiling; }
 
   // Thread chain operations
   JavaThread* next() const                       { return _next; }
@@ -1282,6 +1275,11 @@ class JavaThread: public Thread {
   void set_exception_pc(address a)               { _exception_pc = a; }
   void set_exception_handler_pc(address a)       { _exception_handler_pc = a; }
   void set_is_method_handle_return(bool value)   { _is_method_handle_return = value ? 1 : 0; }
+
+  void clear_exception_oop_and_pc() {
+    set_exception_oop(NULL);
+    set_exception_pc(NULL);
+  }
 
   // Stack overflow support
   inline size_t stack_available(address cur_sp);
@@ -1811,13 +1809,14 @@ class CompilerThread : public JavaThread {
  private:
   CompilerCounters* _counters;
 
-  ciEnv*        _env;
-  CompileLog*   _log;
-  CompileTask*  _task;
-  CompileQueue* _queue;
-  BufferBlob*   _buffer_blob;
+  ciEnv*            _env;
+  CompileLog*       _log;
+  CompileTask*      _task;
+  CompileQueue*     _queue;
+  BufferBlob*       _buffer_blob;
 
-  nmethod*      _scanned_nmethod;  // nmethod being scanned by the sweeper
+  nmethod*          _scanned_nmethod;  // nmethod being scanned by the sweeper
+  AbstractCompiler* _compiler;
 
  public:
 
@@ -1829,14 +1828,17 @@ class CompilerThread : public JavaThread {
   // Hide this compiler thread from external view.
   bool is_hidden_from_external_view() const      { return true; }
 
-  CompileQueue* queue()                          { return _queue; }
-  CompilerCounters* counters()                   { return _counters; }
+  void set_compiler(AbstractCompiler* c)         { _compiler = c; }
+  AbstractCompiler* compiler() const             { return _compiler; }
+
+  CompileQueue* queue()        const             { return _queue; }
+  CompilerCounters* counters() const             { return _counters; }
 
   // Get/set the thread's compilation environment.
   ciEnv*        env()                            { return _env; }
   void          set_env(ciEnv* env)              { _env = env; }
 
-  BufferBlob*   get_buffer_blob()                { return _buffer_blob; }
+  BufferBlob*   get_buffer_blob() const          { return _buffer_blob; }
   void          set_buffer_blob(BufferBlob* b)   { _buffer_blob = b; };
 
   // Get/set the thread's logging information

@@ -211,7 +211,7 @@ void VM_CollectForMetadataAllocation::doit() {
   // a GC that freed space for the allocation.
   if (!MetadataAllocationFailALot) {
     _result = _loader_data->metaspace_non_null()->allocate(_size, _mdtype);
-    }
+  }
 
   if (_result == NULL) {
     if (UseConcMarkSweepGC) {
@@ -223,9 +223,7 @@ void VM_CollectForMetadataAllocation::doit() {
         _loader_data->metaspace_non_null()->expand_and_allocate(_size, _mdtype);
     }
     if (_result == NULL) {
-      // Don't clear the soft refs.  This GC is for reclaiming metadata
-      // and is unrelated to the fullness of the Java heap which should
-      // be the criteria for clearing SoftReferences.
+      // Don't clear the soft refs yet.
       if (Verbose && PrintGCDetails && UseConcMarkSweepGC) {
         gclog_or_tty->print_cr("\nCMS full GC for Metaspace");
       }
@@ -235,7 +233,7 @@ void VM_CollectForMetadataAllocation::doit() {
       _result =
         _loader_data->metaspace_non_null()->allocate(_size, _mdtype);
     }
-    if (_result == NULL && !UseConcMarkSweepGC /* CMS already tried */) {
+    if (_result == NULL) {
       // If still failing, allow the Metaspace to expand.
       // See delta_capacity_until_GC() for explanation of the
       // amount of the expansion.
@@ -243,7 +241,16 @@ void VM_CollectForMetadataAllocation::doit() {
       // or a MaxMetaspaceSize has been specified on the command line.
       _result =
         _loader_data->metaspace_non_null()->expand_and_allocate(_size, _mdtype);
-
+      if (_result == NULL) {
+        // If expansion failed, do a last-ditch collection and try allocating
+        // again.  A last-ditch collection will clear softrefs.  This
+        // behavior is similar to the last-ditch collection done for perm
+        // gen when it was full and a collection for failed allocation
+        // did not free perm gen space.
+        heap->collect_as_vm_thread(GCCause::_last_ditch_collection);
+        _result =
+          _loader_data->metaspace_non_null()->allocate(_size, _mdtype);
+      }
     }
     if (Verbose && PrintGCDetails && _result == NULL) {
       gclog_or_tty->print_cr("\nAfter Metaspace GC failed to allocate size "

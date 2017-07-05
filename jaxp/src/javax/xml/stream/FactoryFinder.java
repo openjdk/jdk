@@ -253,7 +253,13 @@ class FactoryFinder {
 
         // Use the system property first
         try {
-            String systemProp = ss.getSystemProperty(factoryId);
+
+            final String systemProp;
+            if (type.getName().equals(factoryId)) {
+                systemProp = ss.getSystemProperty(factoryId);
+            } else {
+                systemProp = System.getProperty(factoryId);
+            }
             if (systemProp != null) {
                 dPrint("found system property, value=" + systemProp);
                 // There's a bug here - because 'cl' is ignored.
@@ -262,7 +268,8 @@ class FactoryFinder {
             }
         }
         catch (SecurityException se) {
-            if (debug) se.printStackTrace();
+            throw new FactoryConfigurationError(
+                    "Failed to read factoryId '" + factoryId + "'", se);
         }
 
         // Try read $java.home/lib/stax.properties followed by

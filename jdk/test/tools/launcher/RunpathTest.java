@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7190813
+ * @bug 7190813 8022719
  * @summary Check for extended  RPATHs on *nixes
  * @compile -XDignore.symbol.file RunpathTest.java
  * @run main RunpathTest
@@ -64,8 +64,7 @@ public class RunpathTest extends TestHelper {
     }
 
     void testRpath() {
-        String expectedRpath = ".*RPATH.*\\$ORIGIN/../lib/" + getJreArch()
-                + ":\\$ORIGIN/../jre/lib/" + getJreArch() + ".*";
+        String expectedRpath = ".*RPATH.*\\$ORIGIN/../lib/" + getJreArch() + ".*";
         elfCheck(javaCmd, expectedRpath);
     }
 

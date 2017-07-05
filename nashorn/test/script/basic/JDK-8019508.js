@@ -36,7 +36,7 @@ function checkObjLiteral(str) {
         if (! (e instanceof SyntaxError)) {
             fail("expected SyntaxError, got " + e);
         }
-        print(e.message.replace(/\\/g, '/'));
+        printError(e);
     }
 }
 
