@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,17 +59,19 @@ public class IdentityConstraintImpl extends ComponentImpl implements XSIdentityC
         this.name = name;
         this.selector = selector;
         selector.setParent(this);
-        this.fields = Collections.unmodifiableList((List<? extends XSXPath>)fields);
+        this.fields = (List<XSXPath>) Collections.unmodifiableList((List<? extends XSXPath>)fields);
         for( XPathImpl xp : fields )
             xp.setParent(this);
         this.refer = refer;
     }
 
 
+    @Override
     public void visit(XSVisitor visitor) {
         visitor.identityConstraint(this);
     }
 
+    @Override
     public <T> T apply(XSFunction<T> function) {
         return function.identityConstraint(this);
     }
@@ -79,30 +81,37 @@ public class IdentityConstraintImpl extends ComponentImpl implements XSIdentityC
         parent.getOwnerSchema().addIdentityConstraint(this);
     }
 
+    @Override
     public XSElementDecl getParent() {
         return parent;
     }
 
+    @Override
     public String getName() {
         return name;
     }
 
+    @Override
     public String getTargetNamespace() {
         return getParent().getTargetNamespace();
     }
 
+    @Override
     public short getCategory() {
         return category;
     }
 
+    @Override
     public XSXPath getSelector() {
         return selector;
     }
 
+    @Override
     public List<XSXPath> getFields() {
         return fields;
     }
 
+    @Override
     public XSIdentityConstraint getReferencedKey() {
         if(category==KEYREF)
             return refer.get();
@@ -110,6 +119,7 @@ public class IdentityConstraintImpl extends ComponentImpl implements XSIdentityC
             throw new IllegalStateException("not a keyref");
     }
 
+    @Override
     public XSIdentityConstraint get() {
         return this;
     }
