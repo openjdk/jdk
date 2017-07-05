@@ -33,21 +33,43 @@
 // The following must be named "jvm", as there are extern references to it in AWT
 JavaVM *jvm = NULL;
 static JNIEnv *appKitEnv = NULL;
+static jobject appkitThreadGroup = NULL;
+static BOOL awtEmbedded = NO;
+
+inline void attachCurrentThread(void** env) {
+    if ([NSThread isMainThread]) {
+        JavaVMAttachArgs args;
+        args.version = JNI_VERSION_1_4;
+        args.name = "AppKit Thread";
+        args.group = appkitThreadGroup;
+        (*jvm)->AttachCurrentThreadAsDaemon(jvm, env, &args);
+    } else {
+        (*jvm)->AttachCurrentThreadAsDaemon(jvm, env, NULL);
+    }
+}
 
 @implementation ThreadUtilities
 
 + (JNIEnv*)getJNIEnv {
 AWT_ASSERT_APPKIT_THREAD;
     if (appKitEnv == NULL) {
-        (*jvm)->AttachCurrentThreadAsDaemon(jvm, (void **)&appKitEnv, NULL);
+        attachCurrentThread((void **)&appKitEnv);
     }
     return appKitEnv;
 }
 
 + (JNIEnv*)getJNIEnvUncached {
     JNIEnv *env = NULL;
-    (*jvm)->AttachCurrentThreadAsDaemon(jvm, (void **)&env, nil);
+    attachCurrentThread((void **)&env);
     return env;
+}
+
++ (void)detachCurrentThread {
+    (*jvm)->DetachCurrentThread(jvm);
+}
+
++ (void)setAppkitThreadGroup:(jobject)group {
+    appkitThreadGroup = group;
 }
 
 + (void)performOnMainThreadWaiting:(BOOL)wait block:(void (^)())block {
@@ -64,6 +86,14 @@ AWT_ASSERT_APPKIT_THREAD;
     } else {
         [JNFRunLoop performOnMainThread:aSelector on:target withObject:arg waitUntilDone:wait];
     }
+}
+
++ (void)setAWTEmbedded:(BOOL)embedded {
+    awtEmbedded = embedded;
+}
+
++ (BOOL)isAWTEmbedded {
+    return awtEmbedded;
 }
 
 @end

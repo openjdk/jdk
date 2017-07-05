@@ -61,7 +61,7 @@ class WindowsAclFileAttributeView
         this.followLinks = followLinks;
     }
 
-    // permision check
+    // permission check
     private void checkAccess(WindowsPath file,
                              boolean checkRead,
                              boolean checkWrite)

@@ -36,7 +36,7 @@ public interface JavaNetHttpCookieAccess {
     public List<HttpCookie> parse(String header);
 
     /*
-     * Returns the original header this cookie was consructed from, if it was
+     * Returns the original header this cookie was constructed from, if it was
      * constructed by parsing a header, otherwise null.
      */
     public String header(HttpCookie cookie);

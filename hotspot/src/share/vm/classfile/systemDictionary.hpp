@@ -617,7 +617,6 @@ private:
                                                Handle class_loader, TRAPS);
   static instanceKlassHandle load_shared_class(instanceKlassHandle ik,
                                                Handle class_loader, TRAPS);
-  static void clean_up_shared_class(instanceKlassHandle ik, Handle class_loader, TRAPS);
   static instanceKlassHandle load_instance_class(Symbol* class_name, Handle class_loader, TRAPS);
   static Handle compute_loader_lock_object(Handle class_loader, TRAPS);
   static void check_loader_lock_contention(Handle loader_lock, TRAPS);
