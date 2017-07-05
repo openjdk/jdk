@@ -194,9 +194,9 @@ inline jint AwtRobot::WinToJavaPixel(USHORT r, USHORT g, USHORT b)
 
 jint AwtRobot::GetRGBPixel( jint x, jint y)
 {
-    HDC hdc = GetDC(NULL);
+    HDC hdc = ::CreateDC(TEXT("DISPLAY"), NULL, NULL, NULL);
     COLORREF ref = ::GetPixel( hdc, x, y );
-    ReleaseDC(NULL,hdc);
+    ::DeleteDC(hdc);
     jint value = WinToJavaPixel(GetRValue(ref), GetGValue(ref), GetBValue(ref));
     return value;
 }

@@ -4734,6 +4734,8 @@ public abstract class JComponent extends Container implements Serializable,
      * Notifies this component that it now has a parent component.
      * When this method is invoked, the chain of parent components is
      * set up with <code>KeyboardAction</code> event listeners.
+     * This method is called by the toolkit internally and should
+     * not be called directly by programs.
      *
      * @see #registerKeyboardAction
      */
@@ -4750,6 +4752,8 @@ public abstract class JComponent extends Container implements Serializable,
      * Notifies this component that it no longer has a parent component.
      * When this method is invoked, any <code>KeyboardAction</code>s
      * set up in the the chain of parent components are removed.
+     * This method is called by the toolkit internally and should
+     * not be called directly by programs.
      *
      * @see #registerKeyboardAction
      */

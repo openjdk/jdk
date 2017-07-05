@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,7 +89,7 @@ public class SolarisNumericGroupPrincipal implements
      */
     public SolarisNumericGroupPrincipal(String name, boolean primaryGroup) {
         if (name == null)
-            throw new NullPointerException(rb.getString("provided null name"));
+            throw new NullPointerException(rb.getString("provided.null.name"));
 
         this.name = name;
         this.primaryGroup = primaryGroup;
@@ -165,9 +165,9 @@ public class SolarisNumericGroupPrincipal implements
     public String toString() {
         return((primaryGroup ?
             rb.getString
-            ("SolarisNumericGroupPrincipal [Primary Group]: ") + name :
+            ("SolarisNumericGroupPrincipal.Primary.Group.") + name :
             rb.getString
-            ("SolarisNumericGroupPrincipal [Supplementary Group]: ") + name));
+            ("SolarisNumericGroupPrincipal.Supplementary.Group.") + name));
     }
 
     /**

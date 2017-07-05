@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,18 +34,38 @@ package sun.security.krb5.internal;
 import java.io.*;
 import java.net.*;
 
-public class TCPClient {
+public abstract class NetClient {
+    public static NetClient getInstance(String protocol, String hostname, int port,
+            int timeout) throws IOException {
+        if (protocol.equals("TCP")) {
+            return new TCPClient(hostname, port, timeout);
+        } else {
+            return new UDPClient(hostname, port, timeout);
+        }
+    }
+
+    abstract public void send(byte[] data) throws IOException;
+
+    abstract public byte[] receive() throws IOException;
+
+    abstract public void close() throws IOException;
+}
+
+class TCPClient extends NetClient {
 
     private Socket tcpSocket;
     private BufferedOutputStream out;
     private BufferedInputStream in;
 
-    public TCPClient(String hostname, int port) throws IOException {
+    TCPClient(String hostname, int port, int timeout)
+            throws IOException {
         tcpSocket = new Socket(hostname, port);
         out = new BufferedOutputStream(tcpSocket.getOutputStream());
         in = new BufferedInputStream(tcpSocket.getInputStream());
+        tcpSocket.setSoTimeout(timeout);
     }
 
+    @Override
     public void send(byte[] data) throws IOException {
         byte[] lenField = new byte[4];
         intToNetworkByteOrder(data.length, lenField, 0, 4);
@@ -55,6 +75,7 @@ public class TCPClient {
         out.flush();
     }
 
+    @Override
     public byte[] receive() throws IOException {
         byte[] lenField = new byte[4];
         int count = readFully(lenField, 4);
@@ -94,6 +115,7 @@ public class TCPClient {
         }
     }
 
+    @Override
     public void close() throws IOException {
         tcpSocket.close();
     }
@@ -120,7 +142,7 @@ public class TCPClient {
     /**
      * Returns the integer represented by 4 bytes in network byte order.
      */
-    private static final int networkByteOrderToInt(byte[] buf, int start,
+    private static int networkByteOrderToInt(byte[] buf, int start,
         int count) {
         if (count > 4) {
             throw new IllegalArgumentException(
@@ -140,7 +162,7 @@ public class TCPClient {
      * Encodes an integer into 4 bytes in network byte order in the buffer
      * supplied.
      */
-    private static final void intToNetworkByteOrder(int num, byte[] buf,
+    private static void intToNetworkByteOrder(int num, byte[] buf,
         int start, int count) {
         if (count > 4) {
             throw new IllegalArgumentException(
@@ -151,5 +173,49 @@ public class TCPClient {
             buf[start+i] = (byte)(num & 0xff);
             num >>>= 8;
         }
+    }
+}
+
+class UDPClient extends NetClient {
+    InetAddress iaddr;
+    int iport;
+    int bufSize = 65507;
+    DatagramSocket dgSocket;
+    DatagramPacket dgPacketIn;
+
+    UDPClient(String hostname, int port, int timeout)
+        throws UnknownHostException, SocketException {
+        iaddr = InetAddress.getByName(hostname);
+        iport = port;
+        dgSocket = new DatagramSocket();
+        dgSocket.setSoTimeout(timeout);
+    }
+
+    @Override
+    public void send(byte[] data) throws IOException {
+        DatagramPacket dgPacketOut = new DatagramPacket(data, data.length,
+                                                        iaddr, iport);
+        dgSocket.send(dgPacketOut);
+    }
+
+    @Override
+    public byte[] receive() throws IOException {
+        byte ibuf[] = new byte[bufSize];
+        dgPacketIn = new DatagramPacket(ibuf, ibuf.length);
+        try {
+            dgSocket.receive(dgPacketIn);
+        }
+        catch (SocketException e) {
+            dgSocket.receive(dgPacketIn);
+        }
+        byte[] data = new byte[dgPacketIn.getLength()];
+        System.arraycopy(dgPacketIn.getData(), 0, data, 0,
+                         dgPacketIn.getLength());
+        return data;
+    }
+
+    @Override
+    public void close() {
+        dgSocket.close();
     }
 }

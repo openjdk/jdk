@@ -30,9 +30,11 @@
 
 package sun.security.krb5.internal;
 
+import sun.security.krb5.KrbException;
 import sun.security.util.*;
 import sun.security.krb5.Asn1Exception;
 import java.io.IOException;
+import sun.security.krb5.internal.util.KerberosString;
 
 /**
  * Implements the ASN.1 PA-DATA type.
@@ -134,5 +136,76 @@ public class PAData {
 
     public byte[] getValue() {
         return ((pADataValue == null) ? null : pADataValue.clone());
+    }
+
+    /**
+     * A place to store a pair of salt and s2kparams.
+     * An empty salt is changed to null, to be interopable
+     * with Windows 2000 server.
+     */
+    public static class SaltAndParams {
+        public final String salt;
+        public final byte[] params;
+        public SaltAndParams(String s, byte[] p) {
+            if (s != null && s.isEmpty()) s = null;
+            this.salt = s;
+            this.params = p;
+        }
+    }
+
+    /**
+     * Fetches salt and s2kparams value for eType in a series of PA-DATAs.
+     * The preference order is PA-ETYPE-INFO2 > PA-ETYPE-INFO > PA-PW-SALT.
+     * If multiple PA-DATA for the same etype appears, use the last one.
+     * (This is useful when PA-DATAs from KRB-ERROR and AS-REP are combined).
+     * @return salt and s2kparams. never null, its field might be null.
+     */
+    public static SaltAndParams getSaltAndParams(int eType, PAData[] pas)
+            throws Asn1Exception, KrbException {
+
+        if (pas == null || pas.length == 0) {
+            return new SaltAndParams(null, null);
+        }
+
+        String paPwSalt = null;
+        ETypeInfo2 info2 = null;
+        ETypeInfo info = null;
+
+        for (PAData p: pas) {
+            if (p.getValue() != null) {
+                try {
+                    switch (p.getType()) {
+                        case Krb5.PA_PW_SALT:
+                            paPwSalt = new String(p.getValue(),
+                                    KerberosString.MSNAME?"UTF8":"8859_1");
+                            break;
+                        case Krb5.PA_ETYPE_INFO:
+                            DerValue der = new DerValue(p.getValue());
+                            while (der.data.available() > 0) {
+                                DerValue value = der.data.getDerValue();
+                                ETypeInfo tmp = new ETypeInfo(value);
+                                if (tmp.getEType() == eType) info = tmp;
+                            }
+                            break;
+                        case Krb5.PA_ETYPE_INFO2:
+                            der = new DerValue(p.getValue());
+                            while (der.data.available() > 0) {
+                                DerValue value = der.data.getDerValue();
+                                ETypeInfo2 tmp = new ETypeInfo2(value);
+                                if (tmp.getEType() == eType) info2 = tmp;
+                            }
+                            break;
+                    }
+                } catch (IOException ioe) {
+                    // Ignored
+                }
+            }
+        }
+        if (info2 != null) {
+            return new SaltAndParams(info2.getSalt(), info2.getParams());
+        } else if (info != null) {
+            return new SaltAndParams(info.getSalt(), null);
+        }
+        return new SaltAndParams(paPwSalt, null);
     }
 }

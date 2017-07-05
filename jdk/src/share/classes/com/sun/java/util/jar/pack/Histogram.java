@@ -25,8 +25,10 @@
 
 package com.sun.java.util.jar.pack;
 
-import java.util.*;
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintStream;
+import java.util.Arrays;
 
 /**
  * Histogram derived from an integer array of events (int[]).

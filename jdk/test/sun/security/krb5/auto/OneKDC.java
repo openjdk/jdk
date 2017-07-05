@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,8 @@ public class OneKDC extends KDC {
 
     public static final String USER = "dummy";
     public static final char[] PASS = "bogus".toCharArray();
+    public static final String USER2 = "foo";
+    public static final char[] PASS2 = "bar".toCharArray();
     public static final String KRB5_CONF = "localkdc-krb5.conf";
     public static final String KTAB = "localkdc.ktab";
     public static final String JAAS_CONF = "localkdc-jaas.conf";
@@ -61,6 +63,7 @@ public class OneKDC extends KDC {
     public OneKDC(String etype) throws Exception {
         super(REALM, KDCHOST, 0, true);
         addPrincipal(USER, PASS);
+        addPrincipal(USER2, PASS2);
         addPrincipalRandKey("krbtgt/" + REALM);
         addPrincipalRandKey(SERVER);
         addPrincipalRandKey(BACKEND);

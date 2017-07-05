@@ -766,7 +766,9 @@ adjustKeySym(XEvent *event, KeySym *keysym)
 static Boolean
 isXsunServer(XEvent *event) {
     if( awt_ServerDetected ) return awt_IsXsun;
-    if( strncmp( ServerVendor( event->xkey.display ), "Sun Microsystems, Inc.", 32) ) {
+    if( (strncmp( ServerVendor( event->xkey.display ), "Sun Microsystems, Inc.", 22) != 0) &&
+        (strncmp( ServerVendor( event->xkey.display ), "Oracle Corporation", 18) != 0) )
+    {
         awt_ServerDetected = True;
         awt_IsXsun = False;
         return False;

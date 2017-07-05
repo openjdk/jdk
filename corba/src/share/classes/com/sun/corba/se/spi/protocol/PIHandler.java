@@ -142,6 +142,27 @@ public interface PIHandler {
         int replyStatus, Exception exception ) ;
 
     /**
+     * Called when a retry is needed after initiateClientPIRequest but
+     * before invokeClientPIRequest.  In this case, we need to properly
+     * balance initiateClientPIRequest/cleanupClientPIRequest calls,
+     * but WITHOUT extraneous calls to invokeClientPIEndingPoint
+     * (see bug 6763340).
+     *
+     * @param replyStatus One of the constants in iiop.messages.ReplyMessage
+     *     indicating which reply status to set.
+     * @param exception The exception before ending interception points have
+     *     been invoked, or null if no exception at the moment.
+     * @return The exception to be thrown, after having gone through
+     *     all ending points, or null if there is no exception to be
+     *     thrown.  Note that this exception can be either the same or
+     *     different from the exception set using setClientPIException.
+     *     There are four possible return types: null (no exception),
+     *     SystemException, UserException, or RemarshalException.
+     */
+    Exception makeCompletedClientRequest(
+        int replyStatus, Exception exception ) ;
+
+    /**
      * Invoked when a request is about to be created.  Must be called before
      * any of the setClientPI* methods so that a new info object can be
      * prepared for information collection.

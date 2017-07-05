@@ -2154,6 +2154,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      *
      * @param d the dimension specifying the new size
      *          of this component
+     * @throws NullPointerException if {@code d} is {@code null}
      * @see #setSize
      * @see #setBounds
      * @see #invalidate
@@ -2351,6 +2352,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * invalidates the component hierarchy.
      *
      * @param r the new bounding rectangle for this component
+     * @throws NullPointerException if {@code r} is {@code null}
      * @see       #getBounds
      * @see       #setLocation(int, int)
      * @see       #setLocation(Point)
@@ -4545,6 +4547,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * where the point's <i>x</i> and <i>y</i> coordinates are defined
      * to be relative to the coordinate system of this component.
      * @param     p     the point
+     * @throws    NullPointerException if {@code p} is {@code null}
      * @see       #getComponentAt(Point)
      * @since     JDK1.1
      */
@@ -5879,7 +5882,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @exception ClassCastException if <code>listenerType</code>
      *          doesn't specify a class or interface that implements
      *          <code>java.util.EventListener</code>
-     *
+     * @throws NullPointerException if {@code listenerType} is {@code null}
      * @see #getComponentListeners
      * @see #getFocusListeners
      * @see #getHierarchyListeners
@@ -8038,6 +8041,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * Prints a listing of this component to the specified output
      * stream.
      * @param    out   a print stream
+     * @throws   NullPointerException if {@code out} is {@code null}
      * @since    JDK1.0
      */
     public void list(PrintStream out) {
@@ -8050,6 +8054,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @param     out      a print stream
      * @param     indent   number of spaces to indent
      * @see       java.io.PrintStream#println(java.lang.Object)
+     * @throws    NullPointerException if {@code out} is {@code null}
      * @since     JDK1.0
      */
     public void list(PrintStream out, int indent) {
@@ -8062,6 +8067,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
     /**
      * Prints a listing to the specified print writer.
      * @param  out  the print writer to print to
+     * @throws NullPointerException if {@code out} is {@code null}
      * @since JDK1.1
      */
     public void list(PrintWriter out) {
@@ -8073,6 +8079,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * the specified print writer.
      * @param out the print writer to print to
      * @param indent the number of spaces to indent
+     * @throws NullPointerException if {@code out} is {@code null}
      * @see       java.io.PrintStream#println(java.lang.Object)
      * @since JDK1.1
      */

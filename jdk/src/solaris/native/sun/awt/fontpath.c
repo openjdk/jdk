@@ -557,7 +557,8 @@ JNIEXPORT jstring JNICALL Java_sun_awt_X11FontManager_getFontPath
 #ifndef HEADLESS
 static int isSunXServer() {
 #ifdef __solaris__
-  return (strcmp("Sun Microsystems, Inc.", ServerVendor(awt_display)) == 0 &&
+  return ((strncmp(ServerVendor(awt_display), "Sun Microsystems, Inc.", 22) == 0) ||
+          (strncmp(ServerVendor(awt_display), "Oracle Corporation", 18) == 0) &&
           VendorRelease(awt_display) >= 6410);
 #else
   return 0;
