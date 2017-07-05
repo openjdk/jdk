@@ -55,7 +55,7 @@ import sun.awt.SunToolkit;
  * windows using a translucency-capable graphics configuration.
  * The {@code isTranslucencyCapable()} method must
  * be used to verify whether any given GraphicsConfiguration supports
- * the trasnlcency effects.
+ * the translucency effects.
  * <p>
  * <b>WARNING</b>: This class is an implementation detail and only meant
  * for limited use outside of the core platform. This API may change

@@ -27,13 +27,15 @@ import java.awt.Frame;
 import java.awt.TextArea;
 import javax.swing.JApplet;
 import javax.swing.JOptionPane;
-import sun.awt.OSInfo;
+import jdk.testlibrary.OSInfo;
 
 /**
  * @test
  * @bug 8024926 8040279
  * @summary [macosx] AquaIcon HiDPI support
  * @author Alexander Scherbatiy
+ * @library ../../../../lib/testlibrary
+ * @build jdk.testlibrary.OSInfo
  * @run applet/manual=yesno bug8024926.html
  */
 public class bug8024926 extends JApplet {

@@ -3250,7 +3250,7 @@ public final class URI
                 if (q > p) {
                     checkChars(p, q, L_DIGIT, H_DIGIT, "port number");
                     try {
-                        port = Integer.parseInt(substring(p, q));
+                        port = Integer.parseInt(input, p, q, 10);
                     } catch (NumberFormatException x) {
                         fail("Malformed port number", p);
                     }
@@ -3271,7 +3271,7 @@ public final class URI
             int p = start;
             int q = scan(p, n, L_DIGIT, H_DIGIT);
             if (q <= p) return q;
-            if (Integer.parseInt(substring(p, q)) > 255) return p;
+            if (Integer.parseInt(input, p, q, 10) > 255) return p;
             return q;
         }
 

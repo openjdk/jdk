@@ -25,8 +25,49 @@
 
 include GensrcCommon.gmk
 
-include GensrcJDWP.gmk
-include GensrcProviders.gmk
+################################################################################
+# Translate the Java debugger wire protocol (jdwp.spec) file into a JDWP.java file
+# and a JDWPCommands.h C-header file.
+
+JDWP_SPEC_FILE := $(JDK_TOPDIR)/make/data/jdwp/jdwp.spec
+
+$(JDK_OUTPUTDIR)/gensrc_jdwp_headers/JDWPCommands.h: $(JDWP_SPEC_FILE)
+
+$(JDK_OUTPUTDIR)/gensrc/jdk.jdi/com/sun/tools/jdi/JDWP.java: \
+    $(JDWP_SPEC_FILE) $(BUILD_TOOLS_JDK)
+	$(MKDIR) -p $(@D)
+	$(MKDIR) -p $(JDK_OUTPUTDIR)/gensrc_jdwp_headers
+	$(RM) $@ $(JDK_OUTPUTDIR)/gensrc_jdwp_headers/JDWPCommands.h
+	$(ECHO) $(LOG_INFO) Creating JDWP.java and JDWPCommands.h from jdwp.spec
+	$(TOOL_JDWPGEN) $< -jdi $@ -include $(JDK_OUTPUTDIR)/gensrc_jdwp_headers/JDWPCommands.h
+
+$(JDK_OUTPUTDIR)/gensrc_jdwp_doc/jdwp-protocol.html: $(JDWP_SPEC_FILE) \
+    $(BUILD_TOOLS_JDK)
+	$(MKDIR) -p $(@D)
+	$(RM) $@
+	$(ECHO) $(LOG_INFO) Creating $(@F) from jdwp.spec
+	$(TOOL_JDWPGEN) $< -doc $@
+
+GENSRC_JDWP := $(JDK_OUTPUTDIR)/gensrc/jdk.jdi/com/sun/tools/jdi/JDWP.java \
+    $(JDK_OUTPUTDIR)/gensrc_jdwp_headers/JDWPCommands.h \
+    $(JDK_OUTPUTDIR)/gensrc_jdwp_doc/jdwp-protocol.html
+GENSRC_JDK_JDI += $(GENSRC_JDWP)
+
+################################################################################
+
+define process-provider
+	$(MKDIR) -p $(@D)
+	$(CAT) $^ | $(SED) -e "s/^#\[$(OPENJDK_TARGET_OS)\]//" > $@
+endef
+
+# Filter com.sun.jdi.connect.Connector
+$(JDK_OUTPUTDIR)/gensrc/jdk.jdi/META-INF/services/com.sun.jdi.connect.Connector: \
+    $(JDK_TOPDIR)/src/jdk.jdi/share/classes/META-INF/services/com.sun.jdi.connect.Connector
+	$(process-provider)
+
+GENSRC_JDK_JDI += $(JDK_OUTPUTDIR)/gensrc/jdk.jdi/META-INF/services/com.sun.jdi.connect.Connector
+
+################################################################################
 
 jdk.jdi: $(GENSRC_JDK_JDI)
 

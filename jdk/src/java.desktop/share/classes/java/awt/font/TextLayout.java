@@ -195,7 +195,7 @@ import sun.font.LayoutPathImpl;
  *   Color selectionColor = ...;
  *   Shape selection = layout.getLogicalHighlightShape(selStart, selLimit);
  *   // selection may consist of disjoint areas
- *   // graphics is assumed to be tranlated to origin of layout
+ *   // graphics is assumed to be translated to origin of layout
  *   g.setColor(selectionColor);
  *   g.fill(selection);
  * </pre></blockquote>
@@ -292,7 +292,7 @@ public final class TextLayout implements Cloneable {
     private Rectangle2D boundsRect = null;
 
     /*
-     * flag to supress/allow carets inside of ligatures when hit testing or
+     * flag to suppress/allow carets inside of ligatures when hit testing or
      * arrow-keying
      */
     private boolean caretsInLigaturesAreAllowed = false;
@@ -767,7 +767,7 @@ public final class TextLayout implements Cloneable {
     }
 
     /*
-     * Utility to throw an expection if an invalid TextHitInfo is passed
+     * Utility to throw an exception if an invalid TextHitInfo is passed
      * as a parameter.  Avoids code duplication.
      */
     private void checkTextHit(TextHitInfo hit) {
@@ -833,7 +833,7 @@ public final class TextLayout implements Cloneable {
      * punctuation and trailing whitespace to overhang the justification width.
      * Once justified, the layout may not be rejustified.
      * <p>
-     * Some code may rely on immutablity of layouts.  Subclassers should not
+     * Some code may rely on immutability of layouts.  Subclassers should not
      * call this directly, but instead should call getJustifiedLayout, which
      * will call this method on a clone of this layout, preserving
      * the original.

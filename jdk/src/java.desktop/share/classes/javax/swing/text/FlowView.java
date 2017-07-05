@@ -800,14 +800,22 @@ public abstract class FlowView extends BoxView {
         @Override
         protected void forwardUpdate(DocumentEvent.ElementChange ec,
                                           DocumentEvent e, Shape a, ViewFactory f) {
-            calculateUpdateIndexes(e);
-            // Send update event to all views followed by the changed place.
-            lastUpdateIndex = Math.max((getViewCount() - 1), 0);
-            for (int i = firstUpdateIndex; i <= lastUpdateIndex; i++) {
-                View v = getView(i);
-                if (v != null) {
-                    Shape childAlloc = getChildAllocation(i, a);
-                    forwardUpdateToView(v, e, childAlloc, f);
+            // Update the view responsible for the changed element by invocation of
+            // super method.
+            super.forwardUpdate(ec, e, a, f);
+            // Re-calculate the update indexes and update the views followed by
+            // the changed place. Note: we update the views only when insertion or
+            // removal takes place.
+            DocumentEvent.EventType type = e.getType();
+            if (type == DocumentEvent.EventType.INSERT ||
+                type == DocumentEvent.EventType.REMOVE) {
+                firstUpdateIndex = Math.min((lastUpdateIndex + 1), (getViewCount() - 1));
+                lastUpdateIndex = Math.max((getViewCount() - 1), 0);
+                for (int i = firstUpdateIndex; i <= lastUpdateIndex; i++) {
+                    View v = getView(i);
+                    if (v != null) {
+                        v.updateAfterChange();
+                    }
                 }
             }
         }

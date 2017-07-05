@@ -68,7 +68,7 @@ public class Paper implements Cloneable {
 
     /**
      * The area of the page on which drawing will
-     * be visable. The area outside of this
+     * be visible. The area outside of this
      * rectangle but on the Page generally
      * reflects the printer's hardware margins.
      * The origin of the physical page is

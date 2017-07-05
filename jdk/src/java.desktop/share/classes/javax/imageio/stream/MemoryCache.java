@@ -82,6 +82,8 @@ class MemoryCache {
      * or the end of the source is reached.  The return value
      * is equal to the smaller of <code>pos</code> and the
      * length of the source.
+     *
+     * @throws IOException if there is no more memory for cache
      */
     public long loadFromStream(InputStream stream, long pos)
         throws IOException {
@@ -143,6 +145,8 @@ class MemoryCache {
      * the requested data is not in the cache (including if <code>pos</code>
      * is in a block already disposed), or if either <code>pos</code> or
      * <code>len</code> is < 0.
+     * @throws IOException if there is an I/O exception while writing to the
+     * stream
      */
     public void writeToStream(OutputStream stream, long pos, long len)
         throws IOException {
@@ -177,6 +181,8 @@ class MemoryCache {
 
     /**
      * Ensure that there is space to write a byte at the given position.
+     *
+     * throws IOException if there is no more memory left for cache
      */
     private void pad(long pos) throws IOException {
         long currIndex = cacheStart + cache.size() - 1;
@@ -197,7 +203,7 @@ class MemoryCache {
      * the incoming data.
      *
      * @param b an array of bytes containing data to be written.
-     * @param off the starting offset withing the data array.
+     * @param off the starting offset within the data array.
      * @param len the number of bytes to be written.
      * @param pos the cache position at which to begin writing.
      *
@@ -205,6 +211,7 @@ class MemoryCache {
      * @exception IndexOutOfBoundsException if <code>off</code>,
      * <code>len</code>, or <code>pos</code> are negative,
      * or if <code>off+len > b.length</code>.
+     * @throws IOException if there is an I/O error while writing to the cache
      */
     public void write(byte[] b, int off, int len, long pos)
         throws IOException {
@@ -248,6 +255,7 @@ class MemoryCache {
      * @param pos the cache position at which to begin writing.
      *
      * @exception IndexOutOfBoundsException if <code>pos</code> is negative.
+     * @throws IOException if there is an I/O error while writing to the cache
      */
     public void write(int b, long pos) throws IOException {
         if (pos < 0) {
@@ -279,6 +287,9 @@ class MemoryCache {
      * Returns the single byte at the given position, as an
      * <code>int</code>.  Returns -1 if this position has
      * not been cached or has been disposed.
+     *
+     * @throws IOException if an I/O error occurs while reading from the byte
+     * array
      */
     public int read(long pos) throws IOException {
         if (pos >= length) {
@@ -304,6 +315,8 @@ class MemoryCache {
      * <code>off + len > b.length</code> or if any portion of the
      * requested data is not in the cache (including if
      * <code>pos</code> is in a block that has already been disposed).
+     * @throws IOException if an I/O exception occurs while reading from the
+     * byte array
      */
     public void read(byte[] b, int off, int len, long pos)
         throws IOException {

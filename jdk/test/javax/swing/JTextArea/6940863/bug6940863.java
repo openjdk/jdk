@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,12 @@
  * @bug 6940863
  * @summary Textarea within scrollpane shows vertical scrollbar
  * @author Pavel Porvatov
+ * @library ../../../../lib/testlibrary
+ * @build jdk.testlibrary.OSInfo
  * @run main bug6940863
  */
 
-import sun.awt.OSInfo;
+import jdk.testlibrary.OSInfo;
 
 import javax.swing.*;
 import java.awt.*;

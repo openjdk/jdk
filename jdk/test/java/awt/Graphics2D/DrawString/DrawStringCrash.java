@@ -52,7 +52,7 @@ public class DrawStringCrash {
         Graphics2D g2d = bi.createGraphics();
         while (len < maxLen) {
             try {
-                g2d.drawString(s, 20, 20);
+                g2d.drawString(sb.toString(), 20, 20);
             } catch (OutOfMemoryError e) {
                 return;
             }
