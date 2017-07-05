@@ -293,7 +293,7 @@ public class AddLimitMods extends ModuleTestBase {
         }
 
         actual = new JavacTask(tb)
-                   .options("-Xmodule:java.base",
+                   .options("--patch-module", "java.base=" + cpSrc.toString(),
                             "-XDrawDiagnostics",
                             "--add-modules", "ALL-MODULE-PATH")
                    .outdir(cpOut)
