@@ -236,7 +236,7 @@ public class SPARCFrame extends Frame {
       CodeBlob cb = VM.getVM().getCodeCache().findBlob(pc);
       if (cb != null && cb.isJavaMethod()) {
         NMethod nm = (NMethod) cb;
-        if (pc.equals(nm.deoptBegin())) {
+        if (pc.equals(nm.deoptHandlerBegin())) {
           // adjust pc if frame is deoptimized.
           pc = this.getUnextendedSP().getAddressAt(nm.origPCOffset());
           deoptimized = true;
@@ -559,49 +559,46 @@ public class SPARCFrame extends Frame {
       }
     }
 
-    if (!VM.getVM().isCore()) {
-      // Note:  The version of this operation on any platform with callee-save
-      //        registers must update the register map (if not null).
-      //        In order to do this correctly, the various subtypes of
-      //        of frame (interpreted, compiled, glue, native),
-      //        must be distinguished.  There is no need on SPARC for
-      //        such distinctions, because all callee-save registers are
-      //        preserved for all frames via SPARC-specific mechanisms.
-      //
-      //        *** HOWEVER, *** if and when we make any floating-point
-      //        registers callee-saved, then we will have to copy over
-      //        the RegisterMap update logic from the Intel code.
+    // Note:  The version of this operation on any platform with callee-save
+    //        registers must update the register map (if not null).
+    //        In order to do this correctly, the various subtypes of
+    //        of frame (interpreted, compiled, glue, native),
+    //        must be distinguished.  There is no need on SPARC for
+    //        such distinctions, because all callee-save registers are
+    //        preserved for all frames via SPARC-specific mechanisms.
+    //
+    //        *** HOWEVER, *** if and when we make any floating-point
+    //        registers callee-saved, then we will have to copy over
+    //        the RegisterMap update logic from the Intel code.
 
+    if (isRicochetFrame()) return senderForRicochetFrame(map);
 
-      // The constructor of the sender must know whether this frame is interpreted so it can set the
-      // sender's _interpreter_sp_adjustment field.
-      if (VM.getVM().getInterpreter().contains(pc)) {
-        isInterpreted = true;
-        map.makeIntegerRegsUnsaved();
+    // The constructor of the sender must know whether this frame is interpreted so it can set the
+    // sender's _interpreter_sp_adjustment field.
+    if (VM.getVM().getInterpreter().contains(pc)) {
+      isInterpreted = true;
+      map.makeIntegerRegsUnsaved();
+      map.shiftWindow(sp, youngerSP);
+    } else {
+      // Find a CodeBlob containing this frame's pc or elide the lookup and use the
+      // supplied blob which is already known to be associated with this frame.
+      cb = VM.getVM().getCodeCache().findBlob(pc);
+      if (cb != null) {
+        // Update the location of all implicitly saved registers
+        // as the address of these registers in the register save
+        // area (for %o registers we use the address of the %i
+        // register in the next younger frame)
         map.shiftWindow(sp, youngerSP);
-      } else {
-        // Find a CodeBlob containing this frame's pc or elide the lookup and use the
-        // supplied blob which is already known to be associated with this frame.
-        cb = VM.getVM().getCodeCache().findBlob(pc);
-        if (cb != null) {
-
-          if (cb.callerMustGCArguments(map.getThread())) {
+        if (map.getUpdateMap()) {
+          if (cb.callerMustGCArguments()) {
             map.setIncludeArgumentOops(true);
           }
-
-          // Update the location of all implicitly saved registers
-          // as the address of these registers in the register save
-          // area (for %o registers we use the address of the %i
-          // register in the next younger frame)
-          map.shiftWindow(sp, youngerSP);
-          if (map.getUpdateMap()) {
-            if (cb.getOopMaps() != null) {
-              OopMapSet.updateRegisterMap(this, cb, map, VM.getVM().isDebugging());
-            }
+          if (cb.getOopMaps() != null) {
+            OopMapSet.updateRegisterMap(this, cb, map, VM.getVM().isDebugging());
           }
         }
       }
-    } // #ifndef CORE
+    }
 
     return new SPARCFrame(biasSP(sp), biasSP(youngerSP), isInterpreted);
   }
@@ -948,6 +945,20 @@ public class SPARCFrame extends Frame {
   }
 
 
+  private Frame senderForRicochetFrame(SPARCRegisterMap map) {
+    if (DEBUG) {
+      System.out.println("senderForRicochetFrame");
+    }
+    //RicochetFrame* f = RicochetFrame::from_frame(fr);
+    // Cf. is_interpreted_frame path of frame::sender
+    Address youngerSP = getSP();
+    Address sp        = getSenderSP();
+    map.makeIntegerRegsUnsaved();
+    map.shiftWindow(sp, youngerSP);
+    boolean thisFrameAdjustedStack = true;  // I5_savedSP is live in this RF
+    return new SPARCFrame(sp, youngerSP, thisFrameAdjustedStack);
+  }
+
   private Frame senderForEntryFrame(RegisterMap regMap) {
     SPARCRegisterMap map = (SPARCRegisterMap) regMap;
 
@@ -965,10 +976,8 @@ public class SPARCFrame extends Frame {
     Address lastJavaPC = jcw.getLastJavaPC();
     map.clear();
 
-    if (!VM.getVM().isCore()) {
-      map.makeIntegerRegsUnsaved();
-      map.shiftWindow(lastJavaSP, null);
-    }
+    map.makeIntegerRegsUnsaved();
+    map.shiftWindow(lastJavaSP, null);
 
     if (Assert.ASSERTS_ENABLED) {
       Assert.that(map.getIncludeArgumentOops(), "should be set by clear");

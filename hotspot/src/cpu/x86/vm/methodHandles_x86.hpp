@@ -110,6 +110,7 @@ public:
 
 class RicochetFrame {
   friend class MethodHandles;
+  friend class VMStructs;
 
  private:
   intptr_t* _continuation;          // what to do when control gets back here

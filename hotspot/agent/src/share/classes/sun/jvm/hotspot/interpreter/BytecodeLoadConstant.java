@@ -90,7 +90,7 @@ public class BytecodeLoadConstant extends Bytecode {
            jcode == Bytecodes._ldc2_w;
     if (! codeOk) return false;
 
-    ConstantTag ctag = method().getConstants().getTagAt(rawIndex());
+    ConstantTag ctag = method().getConstants().getTagAt(poolIndex());
     if (jcode == Bytecodes._ldc2_w) {
        // has to be double or long
        return (ctag.isDouble() || ctag.isLong()) ? true: false;

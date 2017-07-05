@@ -259,13 +259,8 @@
   };
 #endif /* CC_INTERP */
 
-  // the compiler frame has many of the same fields as the interpreter frame
-  // %%%%% factor out declarations of the shared fields
   enum compiler_frame_fixed_locals {
-       compiler_frame_d_scratch_fp_offset          = -2,
-       compiler_frame_vm_locals_fp_offset          = -2, // should be same as above
-
-       compiler_frame_vm_local_words = -compiler_frame_vm_locals_fp_offset
+       compiler_frame_vm_locals_fp_offset          = -2
   };
 
  private:
@@ -283,9 +278,6 @@
 
   inline void interpreter_frame_set_tos_address(intptr_t* x);
 
-
-  // %%%%% Another idea: instead of defining 3 fns per item, just define one returning a ref
-
   // monitors:
 
   // next two fns read and write Lmonitors value,
@@ -298,22 +290,8 @@
     return ((interpreterState)sp_at(interpreter_state_ptr_offset));
   }
 
-
 #endif /* CC_INTERP */
 
-
-
- // Compiled frames
-
  public:
-  // Tells if this register can hold 64 bits on V9 (really, V8+).
-  static bool holds_a_doubleword(Register reg) {
-#ifdef _LP64
-    //    return true;
-    return reg->is_out() || reg->is_global();
-#else
-    return reg->is_out() || reg->is_global();
-#endif
-  }
 
 #endif // CPU_SPARC_VM_FRAME_SPARC_HPP

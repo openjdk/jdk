@@ -600,6 +600,11 @@ public:
   uint taken() {
     return uint_at(taken_off_set);
   }
+
+  void set_taken(uint cnt) {
+    set_uint_at(taken_off_set, cnt);
+  }
+
   // Saturating counter
   uint inc_taken() {
     uint cnt = taken() + 1;
@@ -924,6 +929,10 @@ public:
   // Direct accessor
   uint not_taken() {
     return uint_at(not_taken_off_set);
+  }
+
+  void set_not_taken(uint cnt) {
+    set_uint_at(not_taken_off_set, cnt);
   }
 
   uint inc_not_taken() {

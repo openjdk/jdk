@@ -246,7 +246,7 @@ public class OopMapSet extends VMObject {
     }
 
     // Check if caller must update oop argument
-    regMap.setIncludeArgumentOops(cb.callerMustGCArguments(regMap.getThread()));
+    regMap.setIncludeArgumentOops(cb.callerMustGCArguments());
 
     int nofCallee = 0;
     Address[] locs = new Address[2 * REG_COUNT + 1];

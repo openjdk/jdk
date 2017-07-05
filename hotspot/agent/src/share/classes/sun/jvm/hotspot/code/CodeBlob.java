@@ -102,6 +102,11 @@ public class CodeBlob extends VMObject {
   /** On-Stack Replacement method */
   public boolean isOSRMethod()          { return false; }
 
+  public NMethod asNMethodOrNull() {
+    if (isNMethod()) return (NMethod)this;
+    return null;
+  }
+
   // Boundaries
   public Address headerBegin() {
     return addr;
@@ -195,7 +200,7 @@ public class CodeBlob extends VMObject {
   }
 
   // Returns true, if the next frame is responsible for GC'ing oops passed as arguments
-  public boolean callerMustGCArguments(JavaThread thread) { return false; }
+  public boolean callerMustGCArguments() { return false; }
 
   public String getName() {
     return CStringUtilities.getString(nameField.getValue(addr));

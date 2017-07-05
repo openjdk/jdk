@@ -214,8 +214,10 @@ class oopDesc {
 
   // Access to fields in a instanceOop through these methods.
   oop obj_field(int offset) const;
+  volatile oop obj_field_volatile(int offset) const;
   void obj_field_put(int offset, oop value);
-  void obj_field_raw_put(int offset, oop value);
+  void obj_field_put_raw(int offset, oop value);
+  void obj_field_put_volatile(int offset, oop value);
 
   jbyte byte_field(int offset) const;
   void byte_field_put(int offset, jbyte contents);

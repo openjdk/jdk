@@ -91,7 +91,7 @@ void ConcurrentG1RefineThread::sample_young_list_rs_lengths() {
       }
     }
 
-    g1p->check_prediction_validity();
+    g1p->revise_young_list_target_length_if_necessary();
   }
 }
 

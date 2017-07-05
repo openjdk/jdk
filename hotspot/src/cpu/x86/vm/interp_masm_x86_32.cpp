@@ -45,6 +45,9 @@
 #ifdef TARGET_OS_FAMILY_windows
 # include "thread_windows.inline.hpp"
 #endif
+#ifdef TARGET_OS_FAMILY_bsd
+# include "thread_bsd.inline.hpp"
+#endif
 
 
 // Implementation of InterpreterMacroAssembler
@@ -1158,7 +1161,7 @@ void InterpreterMacroAssembler::record_klass_in_profile_helper(
   int recvr_offset = in_bytes(VirtualCallData::receiver_offset(start_row));
   set_mdp_data_at(mdp, recvr_offset, receiver);
   int count_offset = in_bytes(VirtualCallData::receiver_count_offset(start_row));
-  movptr(reg2, (int32_t)DataLayout::counter_increment);
+  movptr(reg2, (intptr_t)DataLayout::counter_increment);
   set_mdp_data_at(mdp, count_offset, reg2);
   if (start_row > 0) {
     jmp(done);
@@ -1301,7 +1304,7 @@ void InterpreterMacroAssembler::profile_switch_case(Register index, Register mdp
     test_method_data_pointer(mdp, profile_continue);
 
     // Build the base (index * per_case_size_in_bytes()) + case_array_offset_in_bytes()
-    movptr(reg2, (int32_t)in_bytes(MultiBranchData::per_case_size()));
+    movptr(reg2, (intptr_t)in_bytes(MultiBranchData::per_case_size()));
     // index is positive and so should have correct value if this code were
     // used on 64bits
     imulptr(index, reg2);
