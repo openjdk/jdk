@@ -849,8 +849,25 @@ static void trace_osr_request(methodHandle method, nmethod* osr, int bci) {
 }
 #endif // !PRODUCT
 
+nmethod* InterpreterRuntime::frequency_counter_overflow(JavaThread* thread, address branch_bcp) {
+  nmethod* nm = frequency_counter_overflow_inner(thread, branch_bcp);
+  assert(branch_bcp != NULL || nm == NULL, "always returns null for non OSR requests");
+  if (branch_bcp != NULL && nm != NULL) {
+    // This was a successful request for an OSR nmethod.  Because
+    // frequency_counter_overflow_inner ends with a safepoint check,
+    // nm could have been unloaded so look it up again.  It's unsafe
+    // to examine nm directly since it might have been freed and used
+    // for something else.
+    frame fr = thread->last_frame();
+    methodOop method =  fr.interpreter_frame_method();
+    int bci = method->bci_from(fr.interpreter_frame_bcp());
+    nm = method->lookup_osr_nmethod_for(bci);
+  }
+  return nm;
+}
+
 IRT_ENTRY(nmethod*,
-          InterpreterRuntime::frequency_counter_overflow(JavaThread* thread, address branch_bcp))
+          InterpreterRuntime::frequency_counter_overflow_inner(JavaThread* thread, address branch_bcp))
   // use UnlockFlagSaver to clear and restore the _do_not_unlock_if_synchronized
   // flag, in case this method triggers classloading which will call into Java.
   UnlockFlagSaver fs(thread);
@@ -923,7 +940,6 @@ IRT_ENTRY(nmethod*,
         }
         BiasedLocking::revoke(objects_to_revoke);
       }
-
       return osr_nm;
     }
   }

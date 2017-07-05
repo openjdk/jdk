@@ -81,4 +81,8 @@ public class DebugInfoReadStream extends CompressedReadStream {
     Assert.that(false, "should not reach here");
     return null;
   }
+
+  public int readBCI() {
+    return readInt() + InvocationEntryBCI;
+  }
 }

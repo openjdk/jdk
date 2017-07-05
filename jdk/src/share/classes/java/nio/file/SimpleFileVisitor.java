@@ -124,8 +124,8 @@ public class SimpleFileVisitor<T> implements FileVisitor<T> {
      * cause.
      *
      * @throws  IOError
-     *          if iteration of the directory completed prematurely due to an
-     *          I/O error
+     *          with the I/O exception thrown when iteration of the directory
+     *          completed prematurely due to an I/O error
      */
     @Override
     public FileVisitResult postVisitDirectory(T dir, IOException exc) {

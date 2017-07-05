@@ -22,6 +22,8 @@
 # have any questions.
 #
 # <pre>
+# This file is in the public domain, so clarified as of
+# 2009-05-17 by Arthur David Olson.
 
 # This data is by no means authoritative; if you think you know better,
 # go ahead and edit the file (and please send any changes to
@@ -479,7 +481,7 @@ Rule	EU	1979	1995	-	Sep	lastSun	 1:00u	0	-
 Rule	EU	1981	max	-	Mar	lastSun	 1:00u	1:00	S
 Rule	EU	1996	max	-	Oct	lastSun	 1:00u	0	-
 # The most recent directive covers the years starting in 2002.  See:
-# <a href="http://europa.eu.int/eur-lex/en/lif/dat/2000/en_300L0084.html">
+# <a="http://eur-lex.europa.eu/LexUriServ/LexUriServ.do?uri=CELEX:32000L0084:EN:NOT">
 # Directive 2000/84/EC of the European Parliament and of the Council
 # of 19 January 2001 on summer-time arrangements.
 # </a>

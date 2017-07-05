@@ -1233,10 +1233,8 @@ void Arguments::set_ergonomics_flags() {
   // Check that UseCompressedOops can be set with the max heap size allocated
   // by ergonomics.
   if (MaxHeapSize <= max_heap_for_compressed_oops()) {
-    if (FLAG_IS_DEFAULT(UseCompressedOops)) {
-      // Turn off until bug is fixed.
-      // the following line to return it to default status.
-      // FLAG_SET_ERGO(bool, UseCompressedOops, true);
+    if (FLAG_IS_DEFAULT(UseCompressedOops) && !UseG1GC) {
+      FLAG_SET_ERGO(bool, UseCompressedOops, true);
     }
 #ifdef _WIN64
     if (UseLargePages && UseCompressedOops) {
@@ -1452,6 +1450,7 @@ static void set_serial_gc_flags() {
   FLAG_SET_DEFAULT(UseSerialGC, true);
   FLAG_SET_DEFAULT(UseParNewGC, false);
   FLAG_SET_DEFAULT(UseConcMarkSweepGC, false);
+  FLAG_SET_DEFAULT(CMSIncrementalMode, false);  // special CMS suboption
   FLAG_SET_DEFAULT(UseParallelGC, false);
   FLAG_SET_DEFAULT(UseParallelOldGC, false);
   FLAG_SET_DEFAULT(UseG1GC, false);
@@ -1459,7 +1458,7 @@ static void set_serial_gc_flags() {
 
 static bool verify_serial_gc_flags() {
   return (UseSerialGC &&
-        !(UseParNewGC || UseConcMarkSweepGC || UseG1GC ||
+        !(UseParNewGC || (UseConcMarkSweepGC || CMSIncrementalMode) || UseG1GC ||
           UseParallelGC || UseParallelOldGC));
 }
 
@@ -1574,7 +1573,7 @@ bool Arguments::check_vm_args_consistency() {
   status = status && verify_percentage(GCHeapFreeLimit, "GCHeapFreeLimit");
 
   // Check user specified sharing option conflict with Parallel GC
-  bool cannot_share = (UseConcMarkSweepGC || UseG1GC || UseParNewGC ||
+  bool cannot_share = ((UseConcMarkSweepGC || CMSIncrementalMode) || UseG1GC || UseParNewGC ||
                        UseParallelGC || UseParallelOldGC ||
                        SOLARIS_ONLY(UseISM) NOT_SOLARIS(UseLargePages));
 
@@ -1582,9 +1581,17 @@ bool Arguments::check_vm_args_consistency() {
     // Either force sharing on by forcing the other options off, or
     // force sharing off.
     if (DumpSharedSpaces || ForceSharedSpaces) {
+      jio_fprintf(defaultStream::error_stream(),
+                  "Reverting to Serial GC because of %s \n",
+                  ForceSharedSpaces ? " -Xshare:on" : "-Xshare:dump");
       set_serial_gc_flags();
       FLAG_SET_DEFAULT(SOLARIS_ONLY(UseISM) NOT_SOLARIS(UseLargePages), false);
     } else {
+      if (UseSharedSpaces) {
+        jio_fprintf(defaultStream::error_stream(),
+                    "Turning off use of shared archive because of "
+                    "choice of garbage collector or large pages \n");
+      }
       no_shared_spaces();
     }
   }

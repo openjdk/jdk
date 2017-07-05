@@ -1,5 +1,5 @@
 /*
- * Copyright 2001 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,6 @@
 package javax.swing.plaf.metal;
 
 import java.awt.*;
-import java.beans.*;
-import javax.swing.*;
 
 /**
  * DesktopProperty that only uses font height in configuring font. This
@@ -60,7 +58,7 @@ class MetalFontDesktopProperty extends com.sun.java.swing.plaf.windows.DesktopPr
      * @param type MetalTheme font type.
      */
     MetalFontDesktopProperty(int type) {
-        this(propertyMapping[type], Toolkit.getDefaultToolkit(), type);
+        this(propertyMapping[type], type);
     }
 
     /**
@@ -72,8 +70,8 @@ class MetalFontDesktopProperty extends com.sun.java.swing.plaf.windows.DesktopPr
      * @param type Type of font being used, corresponds to MetalTheme font
      *        type.
      */
-    MetalFontDesktopProperty(String key, Toolkit kit, int type) {
-        super(key, null, kit);
+    MetalFontDesktopProperty(String key, int type) {
+        super(key, null);
         this.type = type;
     }
 
