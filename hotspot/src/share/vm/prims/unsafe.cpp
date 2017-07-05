@@ -315,10 +315,7 @@ UNSAFE_ENTRY(void, Unsafe_SetObjectVolatile(JNIEnv *env, jobject unsafe, jobject
   OrderAccess::fence();
 UNSAFE_END
 
-#if defined(SPARC) || defined(X86)
-// Sparc and X86 have atomic jlong (8 bytes) instructions
-
-#else
+#ifndef SUPPORTS_NATIVE_CX8
 // Keep old code for platforms which may not have atomic jlong (8 bytes) instructions
 
 // Volatile long versions must use locks if !VM_Version::supports_cx8().
@@ -356,7 +353,7 @@ UNSAFE_ENTRY(void, Unsafe_SetLongVolatile(JNIEnv *env, jobject unsafe, jobject o
   }
 UNSAFE_END
 
-#endif // not SPARC and not X86
+#endif // not SUPPORTS_NATIVE_CX8
 
 #define DEFINE_GETSETOOP(jboolean, Boolean) \
  \
@@ -420,8 +417,7 @@ DEFINE_GETSETOOP_VOLATILE(jint, Int);
 DEFINE_GETSETOOP_VOLATILE(jfloat, Float);
 DEFINE_GETSETOOP_VOLATILE(jdouble, Double);
 
-#if defined(SPARC) || defined(X86)
-// Sparc and X86 have atomic jlong (8 bytes) instructions
+#ifdef SUPPORTS_NATIVE_CX8
 DEFINE_GETSETOOP_VOLATILE(jlong, Long);
 #endif
 
@@ -450,8 +446,7 @@ UNSAFE_END
 
 UNSAFE_ENTRY(void, Unsafe_SetOrderedLong(JNIEnv *env, jobject unsafe, jobject obj, jlong offset, jlong x))
   UnsafeWrapper("Unsafe_SetOrderedLong");
-#if defined(SPARC) || defined(X86)
-  // Sparc and X86 have atomic jlong (8 bytes) instructions
+#ifdef SUPPORTS_NATIVE_CX8
   SET_FIELD_VOLATILE(obj, offset, jlong, x);
 #else
   // Keep old code for platforms which may not have atomic long (8 bytes) instructions
