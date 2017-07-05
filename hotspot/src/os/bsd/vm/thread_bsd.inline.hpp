@@ -29,18 +29,12 @@
 #error "This file should only be included from thread.inline.hpp"
 #endif
 
-#include "runtime/atomic.hpp"
-#include "runtime/prefetch.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/threadLocalStorage.hpp"
 #ifdef TARGET_OS_ARCH_bsd_x86
-# include "atomic_bsd_x86.inline.hpp"
-# include "orderAccess_bsd_x86.inline.hpp"
 # include "prefetch_bsd_x86.inline.hpp"
 #endif
 #ifdef TARGET_OS_ARCH_bsd_zero
-# include "atomic_bsd_zero.inline.hpp"
-# include "orderAccess_bsd_zero.inline.hpp"
 # include "prefetch_bsd_zero.inline.hpp"
 #endif
 

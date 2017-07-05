@@ -28,9 +28,9 @@
 #include "memory/collectorPolicy.hpp"
 
 // There is a nice batch of tested generation sizing code in
-// TwoGenerationCollectorPolicy. Lets reuse it!
+// GenCollectorPolicy. Lets reuse it!
 
-class GenerationSizer : public TwoGenerationCollectorPolicy {
+class GenerationSizer : public GenCollectorPolicy {
  private:
 
   void trace_gen_sizes(const char* const str);

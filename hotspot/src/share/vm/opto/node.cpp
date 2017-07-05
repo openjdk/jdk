@@ -27,6 +27,7 @@
 #include "memory/allocation.inline.hpp"
 #include "opto/cfgnode.hpp"
 #include "opto/connode.hpp"
+#include "opto/loopnode.hpp"
 #include "opto/machnode.hpp"
 #include "opto/matcher.hpp"
 #include "opto/node.hpp"
@@ -1263,6 +1264,7 @@ static void kill_dead_code( Node *dead, PhaseIterGVN *igvn ) {
 
   Node *top = igvn->C->top();
   nstack.push(dead);
+  bool has_irreducible_loop = igvn->C->has_irreducible_loop();
 
   while (nstack.size() > 0) {
     dead = nstack.pop();
@@ -1277,13 +1279,31 @@ static void kill_dead_code( Node *dead, PhaseIterGVN *igvn ) {
           assert (!use->is_Con(), "Control for Con node should be Root node.");
           use->set_req(0, top);       // Cut dead edge to prevent processing
           nstack.push(use);           // the dead node again.
+        } else if (!has_irreducible_loop && // Backedge could be alive in irreducible loop
+                   use->is_Loop() && !use->is_Root() &&       // Don't kill Root (RootNode extends LoopNode)
+                   use->in(LoopNode::EntryControl) == dead) { // Dead loop if its entry is dead
+          use->set_req(LoopNode::EntryControl, top);          // Cut dead edge to prevent processing
+          use->set_req(0, top);       // Cut self edge
+          nstack.push(use);
         } else {                      // Else found a not-dead user
+          // Dead if all inputs are top or null
+          bool dead_use = !use->is_Root(); // Keep empty graph alive
           for (uint j = 1; j < use->req(); j++) {
-            if (use->in(j) == dead) { // Turn all dead inputs into TOP
+            Node* in = use->in(j);
+            if (in == dead) {         // Turn all dead inputs into TOP
               use->set_req(j, top);
+            } else if (in != NULL && !in->is_top()) {
+              dead_use = false;
             }
           }
-          igvn->_worklist.push(use);
+          if (dead_use) {
+            if (use->is_Region()) {
+              use->set_req(0, top);   // Cut self edge
+            }
+            nstack.push(use);
+          } else {
+            igvn->_worklist.push(use);
+          }
         }
         // Refresh the iterator, since any number of kills might have happened.
         k = dead->last_outs(kmin);

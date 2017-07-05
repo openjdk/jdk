@@ -263,8 +263,7 @@ int CodeEmitInfo::interpreter_frame_size() const {
 // Implementation of IR
 
 IR::IR(Compilation* compilation, ciMethod* method, int osr_bci) :
-    _locals_size(in_WordSize(-1))
-  , _num_loops(0) {
+  _num_loops(0) {
   // setup IR fields
   _compilation = compilation;
   _top_scope   = new IRScope(compilation, NULL, -1, method, osr_bci, true);

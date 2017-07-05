@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,9 +60,6 @@ public final class PKIXValidator extends Validator {
         AccessController.doPrivileged
             (new GetBooleanAction("com.sun.net.ssl.checkRevocation"));
 
-    // enable use of the validator if possible
-    private final static boolean TRY_VALIDATOR = true;
-
     private final Set<X509Certificate> trustedCerts;
     private final PKIXBuilderParameters parameterTemplate;
     private int certPathLength = -1;
@@ -75,48 +72,28 @@ public final class PKIXValidator extends Validator {
 
     PKIXValidator(String variant, Collection<X509Certificate> trustedCerts) {
         super(TYPE_PKIX, variant);
-        if (trustedCerts instanceof Set) {
-            this.trustedCerts = (Set<X509Certificate>)trustedCerts;
-        } else {
-            this.trustedCerts = new HashSet<X509Certificate>(trustedCerts);
-        }
-        Set<TrustAnchor> trustAnchors = new HashSet<TrustAnchor>();
+        this.trustedCerts = (trustedCerts instanceof Set) ?
+                            (Set<X509Certificate>)trustedCerts :
+                            new HashSet<X509Certificate>(trustedCerts);
+
+        Set<TrustAnchor> trustAnchors = new HashSet<>();
         for (X509Certificate cert : trustedCerts) {
             trustAnchors.add(new TrustAnchor(cert, null));
         }
+
         try {
             parameterTemplate = new PKIXBuilderParameters(trustAnchors, null);
+            factory = CertificateFactory.getInstance("X.509");
         } catch (InvalidAlgorithmParameterException e) {
             throw new RuntimeException("Unexpected error: " + e.toString(), e);
-        }
-        setDefaultParameters(variant);
-
-        // initCommon();
-        if (TRY_VALIDATOR) {
-            if (TRY_VALIDATOR == false) {
-                return;
-            }
-            trustedSubjects = new HashMap<X500Principal, List<PublicKey>>();
-            for (X509Certificate cert : trustedCerts) {
-                X500Principal dn = cert.getSubjectX500Principal();
-                List<PublicKey> keys;
-                if (trustedSubjects.containsKey(dn)) {
-                    keys = trustedSubjects.get(dn);
-                } else {
-                    keys = new ArrayList<PublicKey>();
-                    trustedSubjects.put(dn, keys);
-                }
-                keys.add(cert.getPublicKey());
-            }
-            try {
-                factory = CertificateFactory.getInstance("X.509");
             } catch (CertificateException e) {
                 throw new RuntimeException("Internal error", e);
             }
+
+        setDefaultParameters(variant);
             plugin = variant.equals(VAR_PLUGIN_CODE_SIGNING);
-        } else {
-            plugin = false;
-        }
+
+        trustedSubjects = setTrustedSubjects();
     }
 
     PKIXValidator(String variant, PKIXBuilderParameters params) {
@@ -130,32 +107,40 @@ public final class PKIXValidator extends Validator {
         }
         parameterTemplate = params;
 
-        // initCommon();
-        if (TRY_VALIDATOR) {
-            if (TRY_VALIDATOR == false) {
-                return;
-            }
-            trustedSubjects = new HashMap<X500Principal, List<PublicKey>>();
-            for (X509Certificate cert : trustedCerts) {
-                X500Principal dn = cert.getSubjectX500Principal();
-                List<PublicKey> keys;
-                if (trustedSubjects.containsKey(dn)) {
-                    keys = trustedSubjects.get(dn);
-                } else {
-                    keys = new ArrayList<PublicKey>();
-                    trustedSubjects.put(dn, keys);
-                }
-                keys.add(cert.getPublicKey());
-            }
             try {
                 factory = CertificateFactory.getInstance("X.509");
             } catch (CertificateException e) {
                 throw new RuntimeException("Internal error", e);
             }
+
             plugin = variant.equals(VAR_PLUGIN_CODE_SIGNING);
+
+        trustedSubjects = setTrustedSubjects();
+    }
+
+    /**
+     * Populate the trustedSubjects Map using the DN and public keys from
+     * the list of trusted certificates
+     *
+     * @return Map containing each subject DN and one or more public keys
+     *    tied to those DNs.
+     */
+    private Map<X500Principal, List<PublicKey>> setTrustedSubjects() {
+        Map<X500Principal, List<PublicKey>> subjectMap = new HashMap<>();
+
+        for (X509Certificate cert : trustedCerts) {
+            X500Principal dn = cert.getSubjectX500Principal();
+            List<PublicKey> keys;
+            if (subjectMap.containsKey(dn)) {
+                keys = subjectMap.get(dn);
         } else {
-            plugin = false;
+                keys = new ArrayList<PublicKey>();
+                subjectMap.put(dn, keys);
         }
+            keys.add(cert.getPublicKey());
+        }
+
+        return subjectMap;
     }
 
     public Collection<X509Certificate> getTrustedCertificates() {
@@ -217,7 +202,6 @@ public final class PKIXValidator extends Validator {
             pkixParameters.addCertPathChecker(algorithmChecker);
         }
 
-        if (TRY_VALIDATOR) {
             // check that chain is in correct order and check if chain contains
             // trust anchor
             X500Principal prevIssuer = null;
@@ -287,7 +271,6 @@ public final class PKIXValidator extends Validator {
                     (ValidatorException.T_NO_TRUST_ANCHOR);
             }
             // otherwise, fall back to builder
-        }
 
         return doBuild(chain, otherCerts, pkixParameters);
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -868,7 +868,7 @@ const TypeFunc* OptoRuntime::updateBytesCRC32_Type() {
   return TypeFunc::make(domain, range);
 }
 
-// for cipherBlockChaining calls of aescrypt encrypt/decrypt, four pointers and a length, returning void
+// for cipherBlockChaining calls of aescrypt encrypt/decrypt, four pointers and a length, returning int
 const TypeFunc* OptoRuntime::cipherBlockChaining_aescrypt_Type() {
   // create input type (domain)
   int num_args      = 5;
