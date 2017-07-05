@@ -123,7 +123,7 @@ LIBM=-lm
 
 # GCC29_COMPILER_PATH: is the path to where the gcc 2.9 compiler is installed
 #  NOTE: Must end with / so that it could be empty, allowing PATH usage.
-ifneq "$(origin ALT_GCC29_COMPILER_PATH)" "undefined"
+ifdef ALT_GCC29_COMPILER_PATH
   GCC29_COMPILER_PATH :=$(call PrefixPath,$(ALT_GCC29_COMPILER_PATH))
 else
   GCC29_COMPILER_PATH = $(JDK_DEVTOOLS_DIR)/$(PLATFORM)/gcc29/usr/

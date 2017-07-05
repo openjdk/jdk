@@ -31,6 +31,7 @@ import java.awt.peer.ComponentPeer;
 import java.awt.dnd.DropTarget;
 import java.util.Vector;
 import sun.awt.AppContext;
+import sun.awt.CausedFocusEvent;
 import sun.awt.AWTAccessor;
 
 public class WPrintDialogPeer extends WWindowPeer implements DialogPeer {
@@ -131,6 +132,15 @@ public class WPrintDialogPeer extends WWindowPeer implements DialogPeer {
     public boolean requestFocus(boolean temporary, boolean focusedWindowChangeAllowed) {
         return false;
     }
+
+    public boolean requestFocus
+         (Component lightweightChild, boolean temporary,
+          boolean focusedWindowChangeAllowed, long time, CausedFocusEvent.Cause cause)
+    {
+
+        return false;
+    }
+
     public void updateFocusableWindowState() {}
     void start() {}
     public void beginValidate() {}

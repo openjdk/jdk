@@ -22,8 +22,17 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_heapRegion.cpp.incl"
+#include "precompiled.hpp"
+#include "gc_implementation/g1/concurrentZFThread.hpp"
+#include "gc_implementation/g1/g1BlockOffsetTable.inline.hpp"
+#include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
+#include "gc_implementation/g1/g1OopClosures.inline.hpp"
+#include "gc_implementation/g1/heapRegion.inline.hpp"
+#include "gc_implementation/g1/heapRegionRemSet.hpp"
+#include "gc_implementation/g1/heapRegionSeq.inline.hpp"
+#include "memory/genOopClosures.inline.hpp"
+#include "memory/iterator.hpp"
+#include "oops/oop.inline.hpp"
 
 int HeapRegion::LogOfHRGrainBytes = 0;
 int HeapRegion::LogOfHRGrainWords = 0;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,11 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_CODE_PCDESC_HPP
+#define SHARE_VM_CODE_PCDESC_HPP
+
+#include "memory/allocation.hpp"
 
 // PcDescs map a physical PC (given as offset from start of nmethod) to
 // the corresponding source scope and byte code index.
@@ -86,3 +91,5 @@ class PcDesc VALUE_OBJ_CLASS_SPEC {
   void print(nmethod* code);
   bool verify(nmethod* code);
 };
+
+#endif // SHARE_VM_CODE_PCDESC_HPP

@@ -25,7 +25,6 @@
 
 package sun.dyn.util;
 
-import java.dyn.LinkagePermission;
 import java.dyn.NoAccessException;
 import java.lang.reflect.Modifier;
 import sun.dyn.MemberName;
@@ -43,6 +42,7 @@ public class VerifyAccess {
 
     private static final int PACKAGE_ONLY = 0;
     private static final int ALL_ACCESS_MODES = (PUBLIC|PRIVATE|PROTECTED|PACKAGE_ONLY);
+    private static final boolean ALLOW_NESTMATE_ACCESS = false;
 
     /**
      * Evaluate the JVM linkage rules for access to the given method
@@ -102,6 +102,8 @@ public class VerifyAccess {
                 // a superclass of the lookup class.
             }
         }
+        if (defc == lookupClass)
+            return true;        // easy check; all self-access is OK
         switch (mods & ALL_ACCESS_MODES) {
         case PUBLIC:
             if (refc != defc)  return true;  // already checked above
@@ -112,7 +114,8 @@ public class VerifyAccess {
             return isSamePackage(defc, lookupClass);
         case PRIVATE:
             // Loosened rules for privates follows access rules for inner classes.
-            return isSamePackageMember(defc, lookupClass);
+            return (ALLOW_NESTMATE_ACCESS &&
+                    isSamePackageMember(defc, lookupClass));
         default:
             throw new IllegalArgumentException("bad modifiers: "+Modifier.toString(mods));
         }
@@ -205,25 +208,5 @@ public class VerifyAccess {
             if (scan2 == loader1)  return true;
         }
         return false;
-    }
-
-    /**
-     * Ensure the requesting class have privileges to perform invokedynamic
-     * linkage operations on subjectClass.  True if requestingClass is
-     * Access.class (meaning the request originates from the JVM) or if the
-     * classes are in the same package and have consistent class loaders.
-     * (The subject class loader must be identical with or be a child of
-     * the requesting class loader.)
-     * @param requestingClass
-     * @param subjectClass
-     */
-    public static void checkBootstrapPrivilege(Class requestingClass, Class subjectClass,
-                                               String permissionName) {
-        if (requestingClass == null)          return;
-        if (requestingClass == subjectClass)  return;
-        SecurityManager security = System.getSecurityManager();
-        if (security == null)  return;  // open season
-        if (isSamePackage(requestingClass, subjectClass))  return;
-        security.checkPermission(new LinkagePermission(permissionName, requestingClass));
     }
 }

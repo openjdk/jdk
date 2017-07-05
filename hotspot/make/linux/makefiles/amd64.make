@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -21,9 +21,6 @@
 # questions.
 #  
 #
-
-# Not included in includeDB because it has no dependencies
-Obj_Files += linux_x86_64.o
 
 # The copied fdlibm routines in sharedRuntimeTrig.o must not be optimized
 OPT_CFLAGS/sharedRuntimeTrig.o = $(OPT_CFLAGS/NOOPT)

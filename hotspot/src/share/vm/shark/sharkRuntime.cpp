@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2008, 2009, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,16 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_sharkRuntime.cpp.incl"
+#include "precompiled.hpp"
+#include "oops/klassOop.hpp"
+#include "runtime/biasedLocking.hpp"
+#include "runtime/deoptimization.hpp"
+#include "runtime/thread.hpp"
+#include "shark/llvmHeaders.hpp"
+#include "shark/sharkRuntime.hpp"
+#ifdef TARGET_ARCH_zero
+# include "stack_zero.inline.hpp"
+#endif
 
 using namespace llvm;
 

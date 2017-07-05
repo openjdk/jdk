@@ -22,6 +22,13 @@
  *
  */
 
+#ifndef SHARE_VM_RUNTIME_ARGUMENTS_HPP
+#define SHARE_VM_RUNTIME_ARGUMENTS_HPP
+
+#include "runtime/java.hpp"
+#include "runtime/perfData.hpp"
+#include "utilities/top.hpp"
+
 // Arguments parses the command line and recognizes options
 
 // Invocation API hook typedefs (these should really be defined in jni.hpp)
@@ -532,3 +539,5 @@ class Arguments : AllStatic {
   static char *get_kernel_properties();
 #endif // KERNEL
 };
+
+#endif // SHARE_VM_RUNTIME_ARGUMENTS_HPP

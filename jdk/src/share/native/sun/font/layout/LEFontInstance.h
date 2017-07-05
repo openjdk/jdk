@@ -26,7 +26,7 @@
 
 /*
  *
- * (C) Copyright IBM Corp. 1998-2005 - All Rights Reserved
+ * (C) Copyright IBM Corp. 1998-2007 - All Rights Reserved
  *
  */
 
@@ -57,7 +57,7 @@ public:
      * Destructor.
      * @stable ICU 3.2
      */
-    virtual inline ~LECharMapper() {};
+    virtual ~LECharMapper();
 
     /**
      * This method does the adjustments.
@@ -75,7 +75,7 @@ public:
  * This is a forward reference to the class which holds the per-glyph
  * storage.
  *
- * @draft ICU 3.0
+ * @stable ICU 3.0
  */
 class LEGlyphStorage;
 
@@ -101,7 +101,7 @@ class LEGlyphStorage;
  * methods with some default behavior such as returning constant values, or using the
  * values from the first subfont.
  *
- * @draft ICU 3.0
+ * @stable ICU 3.0
  */
 class U_LAYOUT_API LEFontInstance : public UObject
 {
@@ -113,7 +113,7 @@ public:
      *
      * @stable ICU 2.8
      */
-    virtual inline ~LEFontInstance() {};
+    virtual ~LEFontInstance();
 
     /**
      * Get a physical font which can render the given text. For composite fonts,
@@ -209,7 +209,7 @@ public:
      *
      * @stable ICU 3.2
      */
-    virtual inline le_bool canDisplay(LEUnicode32 ch) const;
+    virtual le_bool canDisplay(LEUnicode32 ch) const;
 
     /**
      * This method returns the number of design units in
@@ -237,13 +237,31 @@ public:
      * @param count - the number of characters
      * @param reverse - if <code>TRUE</code>, store the glyph indices in reverse order.
      * @param mapper - the character mapper.
+     * @param filterZeroWidth - <code>TRUE</code> if ZWJ / ZWNJ characters should map to a glyph w/ no contours.
      * @param glyphStorage - the object which contains the output glyph array
      *
      * @see LECharMapper
      *
-     * @draft ICU 3.0
+     * @stable ICU 3.6
      */
-    virtual void mapCharsToGlyphs(const LEUnicode chars[], le_int32 offset, le_int32 count, le_bool reverse, const LECharMapper *mapper, LEGlyphStorage &glyphStorage) const;
+    virtual void mapCharsToGlyphs(const LEUnicode chars[], le_int32 offset, le_int32 count, le_bool reverse, const LECharMapper *mapper, le_bool filterZeroWidth, LEGlyphStorage &glyphStorage) const;
+
+    /**
+     * This method maps a single character to a glyph index, using the
+     * font's character to glyph map. The default implementation of this
+     * method calls the mapper, and then calls <code>mapCharToGlyph(mappedCh)</code>.
+     *
+     * @param ch - the character
+     * @param mapper - the character mapper
+     * @param filterZeroWidth - <code>TRUE</code> if ZWJ / ZWNJ characters should map to a glyph w/ no contours.
+     *
+     * @return the glyph index
+     *
+     * @see LECharMapper
+     *
+     * @stable ICU 3.6
+     */
+    virtual LEGlyphID mapCharToGlyph(LEUnicode32 ch, const LECharMapper *mapper, le_bool filterZeroWidth) const;
 
     /**
      * This method maps a single character to a glyph index, using the
@@ -335,7 +353,7 @@ public:
      *
      * @stable ICU 3.2
      */
-    virtual inline float xUnitsToPoints(float xUnits) const;
+    virtual float xUnitsToPoints(float xUnits) const;
 
     /**
      * This method converts font design units in the
@@ -347,7 +365,7 @@ public:
      *
      * @stable ICU 3.2
      */
-    virtual inline float yUnitsToPoints(float yUnits) const;
+    virtual float yUnitsToPoints(float yUnits) const;
 
     /**
      * This method converts font design units to points.
@@ -357,7 +375,7 @@ public:
      *
      * @stable ICU 3.2
      */
-    virtual inline void unitsToPoints(LEPoint &units, LEPoint &points) const;
+    virtual void unitsToPoints(LEPoint &units, LEPoint &points) const;
 
     /**
      * This method converts pixels in the
@@ -369,7 +387,7 @@ public:
      *
      * @stable ICU 3.2
      */
-    virtual inline float xPixelsToUnits(float xPixels) const;
+    virtual float xPixelsToUnits(float xPixels) const;
 
     /**
      * This method converts pixels in the
@@ -381,7 +399,7 @@ public:
      *
      * @stable ICU 3.2
      */
-    virtual inline float yPixelsToUnits(float yPixels) const;
+    virtual float yPixelsToUnits(float yPixels) const;
 
     /**
      * This method converts pixels to font design units.
@@ -391,7 +409,7 @@ public:
      *
      * @stable ICU 3.2
      */
-    virtual inline void pixelsToUnits(LEPoint &pixels, LEPoint &units) const;
+    virtual void pixelsToUnits(LEPoint &pixels, LEPoint &units) const;
 
     /**
      * Get the X scale factor from the font's transform. The default
@@ -433,7 +451,7 @@ public:
      *
      * @stable ICU 3.2
      */
-    virtual inline void transformFunits(float xFunits, float yFunits, LEPoint &pixels) const;
+    virtual void transformFunits(float xFunits, float yFunits, LEPoint &pixels) const;
 
     /**
      * This is a convenience method used to convert
@@ -523,49 +541,6 @@ public:
 
 };
 
-inline le_bool LEFontInstance::canDisplay(LEUnicode32 ch) const
-{
-    return LE_GET_GLYPH(mapCharToGlyph(ch)) != 0;
-}
-
-inline float LEFontInstance::xUnitsToPoints(float xUnits) const
-{
-    return (xUnits * getXPixelsPerEm()) / (float) getUnitsPerEM();
-}
-
-inline float LEFontInstance::yUnitsToPoints(float yUnits) const
-{
-    return (yUnits * getYPixelsPerEm()) / (float) getUnitsPerEM();
-}
-
-inline void LEFontInstance::unitsToPoints(LEPoint &units, LEPoint &points) const
-{
-    points.fX = xUnitsToPoints(units.fX);
-    points.fY = yUnitsToPoints(units.fY);
-}
-
-inline float LEFontInstance::xPixelsToUnits(float xPixels) const
-{
-    return (xPixels * getUnitsPerEM()) / (float) getXPixelsPerEm();
-}
-
-inline float LEFontInstance::yPixelsToUnits(float yPixels) const
-{
-    return (yPixels * getUnitsPerEM()) / (float) getYPixelsPerEm();
-}
-
-inline void LEFontInstance::pixelsToUnits(LEPoint &pixels, LEPoint &units) const
-{
-    units.fX = xPixelsToUnits(pixels.fX);
-    units.fY = yPixelsToUnits(pixels.fY);
-}
-
-inline void LEFontInstance::transformFunits(float xFunits, float yFunits, LEPoint &pixels) const
-{
-    pixels.fX = xUnitsToPoints(xFunits) * getScaleFactorX();
-    pixels.fY = yUnitsToPoints(yFunits) * getScaleFactorY();
-}
-
 inline float LEFontInstance::fixedToFloat(le_int32 fixed)
 {
     return (float) (fixed / 65536.0);
@@ -574,11 +549,6 @@ inline float LEFontInstance::fixedToFloat(le_int32 fixed)
 inline le_int32 LEFontInstance::floatToFixed(float theFloat)
 {
     return (le_int32) (theFloat * 65536.0);
-}
-
-inline le_int32 LEFontInstance::getLineHeight() const
-{
-    return getAscent() + getDescent() + getLeading();
 }
 
 U_NAMESPACE_END

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,13 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_symbolKlass.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/symbolTable.hpp"
+#include "memory/gcLocker.hpp"
+#include "oops/oop.inline.hpp"
+#include "oops/symbolKlass.hpp"
+#include "oops/symbolOop.hpp"
+#include "runtime/handles.inline.hpp"
 
 symbolOop symbolKlass::allocate_symbol(u1* name, int len, TRAPS) {
   // Don't allow symbol oops to be created which cannot fit in a symbolOop.

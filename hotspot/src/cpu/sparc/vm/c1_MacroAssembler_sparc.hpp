@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,9 @@
  * questions.
  *
  */
+
+#ifndef CPU_SPARC_VM_C1_MACROASSEMBLER_SPARC_HPP
+#define CPU_SPARC_VM_C1_MACROASSEMBLER_SPARC_HPP
 
   void pd_init() { /* nothing to do */ }
 
@@ -84,3 +87,5 @@
   // invalidates registers in this window
   void invalidate_registers(bool iregisters, bool lregisters, bool oregisters,
                             Register preserve1 = noreg, Register preserve2 = noreg);
+
+#endif // CPU_SPARC_VM_C1_MACROASSEMBLER_SPARC_HPP

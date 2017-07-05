@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,61 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_safepoint.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "code/codeCache.hpp"
+#include "code/icBuffer.hpp"
+#include "code/nmethod.hpp"
+#include "code/pcDesc.hpp"
+#include "code/scopeDesc.hpp"
+#include "gc_interface/collectedHeap.hpp"
+#include "interpreter/interpreter.hpp"
+#include "memory/resourceArea.hpp"
+#include "memory/universe.inline.hpp"
+#include "oops/oop.inline.hpp"
+#include "oops/symbolOop.hpp"
+#include "runtime/compilationPolicy.hpp"
+#include "runtime/deoptimization.hpp"
+#include "runtime/frame.inline.hpp"
+#include "runtime/interfaceSupport.hpp"
+#include "runtime/mutexLocker.hpp"
+#include "runtime/osThread.hpp"
+#include "runtime/safepoint.hpp"
+#include "runtime/signature.hpp"
+#include "runtime/stubCodeGenerator.hpp"
+#include "runtime/stubRoutines.hpp"
+#include "runtime/sweeper.hpp"
+#include "runtime/synchronizer.hpp"
+#include "services/runtimeService.hpp"
+#include "utilities/events.hpp"
+#ifdef TARGET_ARCH_x86
+# include "nativeInst_x86.hpp"
+# include "vmreg_x86.inline.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "nativeInst_sparc.hpp"
+# include "vmreg_sparc.inline.hpp"
+#endif
+#ifdef TARGET_ARCH_zero
+# include "nativeInst_zero.hpp"
+# include "vmreg_zero.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_linux
+# include "thread_linux.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_solaris
+# include "thread_solaris.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_windows
+# include "thread_windows.inline.hpp"
+#endif
+#ifndef SERIALGC
+#include "gc_implementation/concurrentMarkSweep/concurrentMarkSweepThread.hpp"
+#include "gc_implementation/shared/concurrentGCThread.hpp"
+#endif
+#ifdef COMPILER1
+#include "c1/c1_globals.hpp"
+#endif
 
 // --------------------------------------------------------------------------------------------------
 // Implementation of Safepoint begin/end

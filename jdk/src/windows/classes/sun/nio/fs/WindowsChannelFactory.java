@@ -157,7 +157,7 @@ class WindowsChannelFactory {
             throw new IllegalArgumentException("APPEND + TRUNCATE_EXISTING not allowed");
 
         FileDescriptor fdObj = open(pathForWindows, pathToCheck, flags, pSecurityDescriptor);
-        return FileChannelImpl.open(fdObj, flags.read, flags.write, null);
+        return FileChannelImpl.open(fdObj, flags.read, flags.write, flags.append, null);
     }
 
     /**
@@ -230,7 +230,7 @@ class WindowsChannelFactory {
         if (flags.read)
             dwDesiredAccess |= GENERIC_READ;
         if (flags.write)
-            dwDesiredAccess |= (flags.append) ? FILE_APPEND_DATA : GENERIC_WRITE;
+            dwDesiredAccess |= GENERIC_WRITE;
 
         int dwShareMode = 0;
         if (flags.shareRead)

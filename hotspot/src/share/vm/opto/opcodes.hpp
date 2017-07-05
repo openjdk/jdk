@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,9 @@
  *
  */
 
+#ifndef SHARE_VM_OPTO_OPCODES_HPP
+#define SHARE_VM_OPTO_OPCODES_HPP
+
 // Build a big enum of class names to give them dense integer indices
 #define macro(x) Op_##x,
 enum Opcodes {
@@ -42,3 +45,5 @@ enum Opcodes {
 
 // Table of names, indexed by Opcode
 extern const char *NodeClassNames[];
+
+#endif // SHARE_VM_OPTO_OPCODES_HPP

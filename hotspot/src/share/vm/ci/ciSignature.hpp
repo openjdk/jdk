@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2000, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,14 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_CI_CISIGNATURE_HPP
+#define SHARE_VM_CI_CISIGNATURE_HPP
+
+#include "ci/ciClassList.hpp"
+#include "ci/ciSymbol.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/growableArray.hpp"
 
 // ciSignature
 //
@@ -54,3 +62,5 @@ public:
   void print_signature();
   void print();
 };
+
+#endif // SHARE_VM_CI_CISIGNATURE_HPP

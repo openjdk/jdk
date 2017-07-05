@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,14 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_ASM_ASSEMBLER_INLINE_HPP
+#define SHARE_VM_ASM_ASSEMBLER_INLINE_HPP
+
+#include "asm/assembler.hpp"
+#include "asm/codeBuffer.hpp"
+#include "compiler/disassembler.hpp"
+#include "runtime/threadLocalStorage.hpp"
 
 inline void AbstractAssembler::sync() {
   CodeSection* cs = code_section();
@@ -106,30 +114,4 @@ inline void Label::bind_loc(int pos, int sect) {
   bind_loc(CodeBuffer::locator(pos, sect));
 }
 
-address AbstractAssembler::address_constant(Label& L) {
-  address c = NULL;
-  address ptr = start_a_const(sizeof(c), sizeof(c));
-  if (ptr != NULL) {
-    relocate(Relocation::spec_simple(relocInfo::internal_word_type));
-    *(address*)ptr = c = code_section()->target(L, ptr);
-    _code_pos = ptr + sizeof(c);
-    end_a_const();
-  }
-  return ptr;
-}
-
-address AbstractAssembler::address_table_constant(GrowableArray<Label*> labels) {
-  int addressSize = sizeof(address);
-  int sizeLabel = addressSize * labels.length();
-  address ptr = start_a_const(sizeLabel, addressSize);
-
-  if (ptr != NULL) {
-    address *labelLoc = (address*)ptr;
-    for (int i=0; i < labels.length(); i++) {
-      emit_address(code_section()->target(*labels.at(i), (address)&labelLoc[i]));
-      code_section()->relocate((address)&labelLoc[i], relocInfo::internal_word_type);
-    }
-    end_a_const();
-  }
-  return ptr;
-}
+#endif // SHARE_VM_ASM_ASSEMBLER_INLINE_HPP

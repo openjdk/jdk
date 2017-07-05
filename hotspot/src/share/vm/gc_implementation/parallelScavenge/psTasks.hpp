@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,12 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_PSTASKS_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_PSTASKS_HPP
+
+#include "memory/allocation.hpp"
+#include "utilities/growableArray.hpp"
 
 //
 // psTasks.hpp is a collection of GCTasks used by the
@@ -144,3 +150,5 @@ class OldToYoungRootsTask : public GCTask {
 
   virtual void do_it(GCTaskManager* manager, uint which);
 };
+
+#endif // SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_PSTASKS_HPP

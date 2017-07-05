@@ -83,7 +83,7 @@ public class Executors {
      *
      * @param nThreads the number of threads in the pool
      * @return the newly created thread pool
-     * @throws IllegalArgumentException if <tt>nThreads &lt;= 0</tt>
+     * @throws IllegalArgumentException if {@code nThreads <= 0}
      */
     public static ExecutorService newFixedThreadPool(int nThreads) {
         return new ThreadPoolExecutor(nThreads, nThreads,
@@ -108,7 +108,7 @@ public class Executors {
      * @param threadFactory the factory to use when creating new threads
      * @return the newly created thread pool
      * @throws NullPointerException if threadFactory is null
-     * @throws IllegalArgumentException if <tt>nThreads &lt;= 0</tt>
+     * @throws IllegalArgumentException if {@code nThreads <= 0}
      */
     public static ExecutorService newFixedThreadPool(int nThreads, ThreadFactory threadFactory) {
         return new ThreadPoolExecutor(nThreads, nThreads,
@@ -242,7 +242,7 @@ public class Executors {
      * @param corePoolSize the number of threads to keep in the pool,
      * even if they are idle.
      * @return a newly created scheduled thread pool
-     * @throws IllegalArgumentException if <tt>corePoolSize &lt; 0</tt>
+     * @throws IllegalArgumentException if {@code corePoolSize < 0}
      */
     public static ScheduledExecutorService newScheduledThreadPool(int corePoolSize) {
         return new ScheduledThreadPoolExecutor(corePoolSize);
@@ -256,7 +256,7 @@ public class Executors {
      * @param threadFactory the factory to use when the executor
      * creates a new thread.
      * @return a newly created scheduled thread pool
-     * @throws IllegalArgumentException if <tt>corePoolSize &lt; 0</tt>
+     * @throws IllegalArgumentException if {@code corePoolSize < 0}
      * @throws NullPointerException if threadFactory is null
      */
     public static ScheduledExecutorService newScheduledThreadPool(
@@ -562,8 +562,8 @@ public class Executors {
 
         DefaultThreadFactory() {
             SecurityManager s = System.getSecurityManager();
-            group = (s != null)? s.getThreadGroup() :
-                                 Thread.currentThread().getThreadGroup();
+            group = (s != null) ? s.getThreadGroup() :
+                                  Thread.currentThread().getThreadGroup();
             namePrefix = "pool-" +
                           poolNumber.getAndIncrement() +
                          "-thread-";
@@ -669,7 +669,7 @@ public class Executors {
         FinalizableDelegatedExecutorService(ExecutorService executor) {
             super(executor);
         }
-        protected void finalize()  {
+        protected void finalize() {
             super.shutdown();
         }
     }

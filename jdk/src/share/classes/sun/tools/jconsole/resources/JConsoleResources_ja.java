@@ -46,8 +46,6 @@ import static java.awt.event.KeyEvent.*;
  */
 public class JConsoleResources_ja extends JConsoleResources {
 
-    private static final String cr = System.getProperty("line.separator");
-
     /**
      * Returns the contents of this <code>ResourceBundle</code>.
      *
@@ -56,7 +54,7 @@ public class JConsoleResources_ja extends JConsoleResources {
      * @return the contents of this <code>ResourceBundle</code>.
      */
     protected Object[][] getContents0() {
-        return new Object[][] {
+        Object[][] temp = new Object[][] {
         // NOTE 1: The value strings in this file containing "{0}" are
         //         processed by the java.text.MessageFormat class.  Any
         //         single quotes appearing in these strings need to be
@@ -98,7 +96,7 @@ public class JConsoleResources_ja extends JConsoleResources {
         {"Attributes","\u5c5e\u6027"},
         {"Blank", "\u30d6\u30e9\u30f3\u30af"},
         {"BlockedCount WaitedCount",
-             "\u7dcf\u30d6\u30ed\u30c3\u30af\u6570 : {0}  \u7dcf\u5f85\u6a5f\u6570 : {1}" + cr},
+             "\u7dcf\u30d6\u30ed\u30c3\u30af\u6570 : {0}  \u7dcf\u5f85\u6a5f\u6570 : {1}\n"},
         {"Boot class path","\u30d6\u30fc\u30c8\u30af\u30e9\u30b9\u30d1\u30b9"},
         {"BorderedComponent.moreOrLessButton.toolTip", "\u8a73\u7d30\u60c5\u5831\u3092\u8868\u793a\u3059\u308b\u304b\u3069\u3046\u304b\u5207\u308a\u66ff\u3048\u308b"},
         {"CPU Usage","CPU \u4f7f\u7528\u72b6\u6cc1"},
@@ -268,21 +266,21 @@ public class JConsoleResources_ja extends JConsoleResources {
         {"Minimize All.mnemonic", 'M'},
         {"Minus Version", "\u3053\u308c\u306f {0} \u30d0\u30fc\u30b8\u30e7\u30f3 {1} \u3067\u3059"},
         {"Monitor locked",
-             "   - \u30ed\u30c3\u30af\u3055\u308c\u305f {0}" + cr},
+             "   - \u30ed\u30c3\u30af\u3055\u308c\u305f {0}\n"},
         {"Motif","Motif"},
         {"Name Build and Mode","{0} (\u30d3\u30eb\u30c9 {1}, {2})"},
         {"Name and Build","{0} (\u30d3\u30eb\u30c9 {1})"},
         {"Name","\u540d\u524d"},
         {"Name: ","\u540d\u524d: "},
         {"Name State",
-             "\u540d\u524d: {0}" + cr +
-             "\u72b6\u614b: {1}" + cr},
+             "\u540d\u524d: {0}\n" +
+             "\u72b6\u614b: {1}\n"},
         {"Name State LockName",
-             "\u540d\u524d: {0}" + cr +
-             "\u72b6\u614b: {1} ({2} \u4e0a)" + cr},
+             "\u540d\u524d: {0}\n" +
+             "\u72b6\u614b: {1} ({2} \u4e0a)\n"},
         {"Name State LockName LockOwner",
-             "\u540d\u524d: {0}" + cr +
-             "\u72b6\u614b: {1} ({2} \u4e0a) \u6240\u6709\u8005: {3}" + cr},
+             "\u540d\u524d: {0}\n" +
+             "\u72b6\u614b: {1} ({2} \u4e0a) \u6240\u6709\u8005: {3}\n"},
         {"New Connection...", "\u65b0\u898f\u63a5\u7d9a(N)..."},
         {"New Connection....mnemonic", 'N'},
         {"New value applied","\u65b0\u3057\u3044\u5024\u304c\u9069\u7528\u3055\u308c\u307e\u3057\u305f"},
@@ -348,7 +346,7 @@ public class JConsoleResources_ja extends JConsoleResources {
         {"Size Mb","{0} M \u30d0\u30a4\u30c8"},
         {"Source","\u30bd\u30fc\u30b9"},
         {"Stack trace",
-             cr + "\u30b9\u30bf\u30c3\u30af\u30c8\u30ec\u30fc\u30b9: " + cr},
+             "\n\u30b9\u30bf\u30c3\u30af\u30c8\u30ec\u30fc\u30b9: \n"},
         {"Success:","\u6210\u529f:"},
         // Note: SummaryTab.headerDateTimeFormat can be one the following:
         // 1. A combination of two styles for date and time, using the
@@ -426,22 +424,29 @@ public class JConsoleResources_ja extends JConsoleResources {
         {"plot", "\u30d7\u30ed\u30c3\u30c8"},
         {"visualize","\u8868\u793a"},
         {"zz usage text",
-             "\u4f7f\u3044\u65b9: {0} [ -interval=n ] [ -notile ] [ -pluginpath <path> ] [ -version ] [ connection ... ]" + cr +
-             cr +
-             "  -interval   \u66f4\u65b0\u9593\u9694\u3092 n \u79d2\u306b\u8a2d\u5b9a\u3059\u308b (\u30c7\u30d5\u30a9\u30eb\u30c8\u306f 4 \u79d2)" + cr +
-             "  -notile     \u521d\u671f\u72b6\u614b\u306e\u30a6\u30a3\u30f3\u30c9\u30a6\u3092\u30bf\u30a4\u30eb\u72b6\u306b\u4e26\u3079\u306a\u3044 (\u63a5\u7d9a\u304c\u8907\u6570\u3042\u308b\u5834\u5408)" + cr +
-             "  -pluginpath JConsole \u3067\u30d7\u30e9\u30b0\u30a4\u30f3\u3092\u63a2\u3059\u305f\u3081\u306b\u4f7f\u7528\u3059\u308b\u30d1\u30b9\u3092\u6307\u5b9a\u3059\u308b" + cr +
-             "  -version    \u30d7\u30ed\u30b0\u30e9\u30e0\u306e\u30d0\u30fc\u30b8\u30e7\u30f3\u3092\u51fa\u529b\u3059\u308b" + cr +
-             cr +
-             "  connection = pid || host:port || JMX URL (service:jmx:<protocol>://...)" + cr +
-             "  pid         \u30bf\u30fc\u30b2\u30c3\u30c8\u30d7\u30ed\u30bb\u30b9\u306e\u30d7\u30ed\u30bb\u30b9 ID" + cr +
-             "  host        \u30ea\u30e2\u30fc\u30c8\u30db\u30b9\u30c8\u306e\u540d\u524d\u307e\u305f\u306f IP \u30a2\u30c9\u30ec\u30b9" + cr +
-             "  port        \u30ea\u30e2\u30fc\u30c8\u63a5\u7d9a\u7528\u306e\u30dd\u30fc\u30c8\u756a\u53f7" + cr +
-             cr +
-             "  -J          JConsole \u3092\u5b9f\u884c\u3059\u308b Java \u4eee\u60f3\u30de\u30b7\u30f3\u3078\u306e" + cr +
+             "\u4f7f\u3044\u65b9: {0} [ -interval=n ] [ -notile ] [ -pluginpath <path> ] [ -version ] [ connection ... ]\n\n" +
+             "  -interval   \u66f4\u65b0\u9593\u9694\u3092 n \u79d2\u306b\u8a2d\u5b9a\u3059\u308b (\u30c7\u30d5\u30a9\u30eb\u30c8\u306f 4 \u79d2)\n" +
+             "  -notile     \u521d\u671f\u72b6\u614b\u306e\u30a6\u30a3\u30f3\u30c9\u30a6\u3092\u30bf\u30a4\u30eb\u72b6\u306b\u4e26\u3079\u306a\u3044 (\u63a5\u7d9a\u304c\u8907\u6570\u3042\u308b\u5834\u5408)\n" +
+             "  -pluginpath JConsole \u3067\u30d7\u30e9\u30b0\u30a4\u30f3\u3092\u63a2\u3059\u305f\u3081\u306b\u4f7f\u7528\u3059\u308b\u30d1\u30b9\u3092\u6307\u5b9a\u3059\u308b\n" +
+             "  -version    \u30d7\u30ed\u30b0\u30e9\u30e0\u306e\u30d0\u30fc\u30b8\u30e7\u30f3\u3092\u51fa\u529b\u3059\u308b\n\n" +
+             "  connection = pid || host:port || JMX URL (service:jmx:<protocol>://...)\n" +
+             "  pid         \u30bf\u30fc\u30b2\u30c3\u30c8\u30d7\u30ed\u30bb\u30b9\u306e\u30d7\u30ed\u30bb\u30b9 ID\n" +
+             "  host        \u30ea\u30e2\u30fc\u30c8\u30db\u30b9\u30c8\u306e\u540d\u524d\u307e\u305f\u306f IP \u30a2\u30c9\u30ec\u30b9\n" +
+             "  port        \u30ea\u30e2\u30fc\u30c8\u63a5\u7d9a\u7528\u306e\u30dd\u30fc\u30c8\u756a\u53f7\n\n" +
+             "  -J          JConsole \u3092\u5b9f\u884c\u3059\u308b Java \u4eee\u60f3\u30de\u30b7\u30f3\u3078\u306e\n" +
              "              \u5165\u529b\u5f15\u6570\u3092\u6307\u5b9a\u3059\u308b"},
         // END OF MATERIAL TO LOCALIZE
         };
+
+        String ls = System.getProperty("line.separator");
+        for(int i=0;i<temp.length;i++) {
+            if (temp[i][1] instanceof String){
+            temp[i][1] = temp[i][1].toString().replaceAll("\n",ls);
+            }
+        }
+
+        return temp;
+
     }
 
     public synchronized Object[][] getContents() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,16 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_GC_IMPLEMENTATION_SHARED_SPACECOUNTERS_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_SHARED_SPACECOUNTERS_HPP
+
+#ifndef SERIALGC
+#include "gc_implementation/shared/generationCounters.hpp"
+#include "gc_implementation/shared/immutableSpace.hpp"
+#include "gc_implementation/shared/mutableSpace.hpp"
+#include "runtime/perfData.hpp"
+#endif
 
 // A SpaceCounter is a holder class for performance counters
 // that track a space;
@@ -75,3 +85,5 @@ class MutableSpaceUsedHelper: public PerfLongSampleHelper {
       return _m->used_in_bytes();
     }
 };
+
+#endif // SHARE_VM_GC_IMPLEMENTATION_SHARED_SPACECOUNTERS_HPP

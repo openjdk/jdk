@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,12 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_GC_IMPLEMENTATION_CONCURRENTMARKSWEEP_CMSOOPCLOSURES_INLINE_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_CONCURRENTMARKSWEEP_CMSOOPCLOSURES_INLINE_HPP
+
+#include "gc_implementation/concurrentMarkSweep/cmsOopClosures.hpp"
+#include "gc_implementation/concurrentMarkSweep/concurrentMarkSweepGeneration.hpp"
 
 // Trim our work_queue so its length is below max at return
 inline void Par_MarkRefsIntoAndScanClosure::trim_queue(uint max) {
@@ -74,3 +80,5 @@ inline void PushOrMarkClosure::do_yield_check() {
 inline void Par_PushOrMarkClosure::do_yield_check() {
   _parent->do_yield_check();
 }
+
+#endif // SHARE_VM_GC_IMPLEMENTATION_CONCURRENTMARKSWEEP_CMSOOPCLOSURES_INLINE_HPP

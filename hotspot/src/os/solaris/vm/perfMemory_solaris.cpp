@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,15 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_perfMemory_solaris.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/vmSymbols.hpp"
+#include "memory/allocation.inline.hpp"
+#include "memory/resourceArea.hpp"
+#include "oops/oop.inline.hpp"
+#include "os_solaris.inline.hpp"
+#include "runtime/handles.inline.hpp"
+#include "runtime/perfMemory.hpp"
+#include "utilities/exceptions.hpp"
 
 // put OS-includes here
 # include <sys/types.h>

@@ -25,7 +25,7 @@
 
 /*
  **********************************************************************
- *   Copyright (C) 1998-2004, International Business Machines
+ *   Copyright (C) 1998-2008, International Business Machines
  *   Corporation and others.  All Rights Reserved.
  **********************************************************************
  */
@@ -76,9 +76,17 @@ le_int32 LEInsertionList::getGrowAmount()
     return growAmount;
 }
 
-LEGlyphID *LEInsertionList::insert(le_int32 position, le_int32 count)
+LEGlyphID *LEInsertionList::insert(le_int32 position, le_int32 count, LEErrorCode &success)
 {
+    if (LE_FAILURE(success)) {
+        return 0;
+    }
+
     InsertionRecord *insertion = (InsertionRecord *) LE_NEW_ARRAY(char, sizeof(InsertionRecord) + (count - ANY_NUMBER) * sizeof (LEGlyphID));
+    if (insertion == NULL) {
+        success = LE_MEMORY_ALLOCATION_ERROR;
+        return 0;
+    }
 
     insertion->position = position;
     insertion->count = count;

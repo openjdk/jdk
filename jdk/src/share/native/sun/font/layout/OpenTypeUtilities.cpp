@@ -25,7 +25,7 @@
 
 /*
  *
- * (C) Copyright IBM Corp. 1998-2004 - All Rights Reserved
+ * (C) Copyright IBM Corp. 1998-2010 - All Rights Reserved
  *
  */
 
@@ -110,6 +110,10 @@ le_int32 OpenTypeUtilities::getGlyphRangeIndex(TTGlyphID glyphID, const GlyphRan
     le_int32 extra = recordCount - power;
     le_int32 probe = power;
     le_int32 range = 0;
+
+        if (recordCount == 0) {
+                return -1;
+        }
 
     if (SWAPW(records[extra].firstGlyph) <= glyphID) {
         range = extra;

@@ -197,7 +197,8 @@ public class ExecutorCompletionService<V> implements CompletionService<V> {
         return completionQueue.poll();
     }
 
-    public Future<V> poll(long timeout, TimeUnit unit) throws InterruptedException {
+    public Future<V> poll(long timeout, TimeUnit unit)
+            throws InterruptedException {
         return completionQueue.poll(timeout, unit);
     }
 

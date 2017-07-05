@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_register_sparc.cpp.incl"
+#include "precompiled.hpp"
+#include "register_sparc.hpp"
 
 const int ConcreteRegisterImpl::max_gpr = RegisterImpl::number_of_registers << 1;
 const int ConcreteRegisterImpl::max_fpr =  ConcreteRegisterImpl::max_gpr + FloatRegisterImpl::number_of_registers;

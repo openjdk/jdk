@@ -22,6 +22,21 @@
  *
  */
 
+#ifndef SHARE_VM_UTILITIES_GLOBALDEFINITIONS_HPP
+#define SHARE_VM_UTILITIES_GLOBALDEFINITIONS_HPP
+
+#ifdef TARGET_COMPILER_gcc
+# include "utilities/globalDefinitions_gcc.hpp"
+#endif
+#ifdef TARGET_COMPILER_visCPP
+# include "utilities/globalDefinitions_visCPP.hpp"
+#endif
+#ifdef TARGET_COMPILER_sparcWorks
+# include "utilities/globalDefinitions_sparcWorks.hpp"
+#endif
+
+#include "utilities/macros.hpp"
+
 // This file holds all globally used constants & types, class (forward)
 // declarations and a few frequently used utility functions.
 
@@ -304,7 +319,16 @@ extern int LogMinObjAlignmentInBytes;
 
 // Machine dependent stuff
 
-#include "incls/_globalDefinitions_pd.hpp.incl"
+#ifdef TARGET_ARCH_x86
+# include "globalDefinitions_x86.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "globalDefinitions_sparc.hpp"
+#endif
+#ifdef TARGET_ARCH_zero
+# include "globalDefinitions_zero.hpp"
+#endif
+
 
 // The byte alignment to be used by Arena::Amalloc.  See bugid 4169348.
 // Note: this value must be a power of 2
@@ -1217,3 +1241,5 @@ inline int build_int_from_shorts( jushort low, jushort high ) {
 # endif /* ASSERT */
 
 #define ARRAY_SIZE(array) (sizeof(array)/sizeof((array)[0]))
+
+#endif // SHARE_VM_UTILITIES_GLOBALDEFINITIONS_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,25 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_c1_Compiler.cpp.incl"
+#include "precompiled.hpp"
+#include "c1/c1_Compilation.hpp"
+#include "c1/c1_Compiler.hpp"
+#include "c1/c1_FrameMap.hpp"
+#include "c1/c1_GraphBuilder.hpp"
+#include "c1/c1_LinearScan.hpp"
+#include "c1/c1_MacroAssembler.hpp"
+#include "c1/c1_Runtime1.hpp"
+#include "c1/c1_ValueType.hpp"
+#include "compiler/compileBroker.hpp"
+#include "compiler/compilerOracle.hpp"
+#include "interpreter/linkResolver.hpp"
+#include "memory/allocation.hpp"
+#include "memory/allocation.inline.hpp"
+#include "memory/resourceArea.hpp"
+#include "prims/nativeLookup.hpp"
+#include "runtime/arguments.hpp"
+#include "runtime/interfaceSupport.hpp"
+#include "runtime/sharedRuntime.hpp"
 
 volatile int Compiler::_runtimes = uninitialized;
 

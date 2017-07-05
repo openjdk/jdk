@@ -22,8 +22,28 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_interpreter_x86_64.cpp.incl"
+#include "precompiled.hpp"
+#include "asm/assembler.hpp"
+#include "interpreter/bytecodeHistogram.hpp"
+#include "interpreter/interpreter.hpp"
+#include "interpreter/interpreterGenerator.hpp"
+#include "interpreter/interpreterRuntime.hpp"
+#include "interpreter/templateTable.hpp"
+#include "oops/arrayOop.hpp"
+#include "oops/methodDataOop.hpp"
+#include "oops/methodOop.hpp"
+#include "oops/oop.inline.hpp"
+#include "prims/jvmtiExport.hpp"
+#include "prims/jvmtiThreadState.hpp"
+#include "runtime/arguments.hpp"
+#include "runtime/deoptimization.hpp"
+#include "runtime/frame.inline.hpp"
+#include "runtime/sharedRuntime.hpp"
+#include "runtime/stubRoutines.hpp"
+#include "runtime/synchronizer.hpp"
+#include "runtime/timer.hpp"
+#include "runtime/vframeArray.hpp"
+#include "utilities/debug.hpp"
 
 #define __ _masm->
 
@@ -1049,7 +1069,7 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
     // runtime call by hand.
     //
     __ mov(c_rarg0, r15_thread);
-    __ mov(r12, rsp); // remember sp
+    __ mov(r12, rsp); // remember sp (can only use r12 if not using call_VM)
     __ subptr(rsp, frame::arg_reg_save_area_bytes); // windows
     __ andptr(rsp, -16); // align stack as required by ABI
     __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans)));
@@ -1096,7 +1116,7 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
     __ jcc(Assembler::notEqual, no_reguard);
 
     __ pusha(); // XXX only save smashed registers
-    __ mov(r12, rsp); // remember sp
+    __ mov(r12, rsp); // remember sp (can only use r12 if not using call_VM)
     __ subptr(rsp, frame::arg_reg_save_area_bytes); // windows
     __ andptr(rsp, -16); // align stack as required by ABI
     __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, SharedRuntime::reguard_yellow_pages)));
@@ -1887,7 +1907,7 @@ void TemplateInterpreterGenerator::trace_bytecode(Template* t) {
 
   assert(Interpreter::trace_code(t->tos_in()) != NULL,
          "entry must have been generated");
-  __ mov(r12, rsp); // remember sp
+  __ mov(r12, rsp); // remember sp (can only use r12 if not using call_VM)
   __ andptr(rsp, -16); // align stack as required by ABI
   __ call(RuntimeAddress(Interpreter::trace_code(t->tos_in())));
   __ mov(rsp, r12); // restore sp

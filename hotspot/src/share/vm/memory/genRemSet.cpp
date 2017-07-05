@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,13 @@
  *
  */
 
+#include "precompiled.hpp"
+#include "memory/cardTableRS.hpp"
+#include "memory/genRemSet.hpp"
+
 // This kind of "BarrierSet" allows a "CollectedHeap" to detect and
 // enumerate ref fields that have been modified (since the last
 // enumeration.)
-
-# include "incls/_precompiled.incl"
-# include "incls/_genRemSet.cpp.incl"
 
 uintx GenRemSet::max_alignment_constraint(Name nm) {
   switch (nm) {

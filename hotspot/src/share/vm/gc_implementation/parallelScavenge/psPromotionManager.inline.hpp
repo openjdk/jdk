@@ -22,6 +22,12 @@
  *
  */
 
+#ifndef SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_PSPROMOTIONMANAGER_INLINE_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_PSPROMOTIONMANAGER_INLINE_HPP
+
+#include "gc_implementation/parallelScavenge/psPromotionManager.hpp"
+#include "gc_implementation/parallelScavenge/psScavenge.hpp"
+
 inline PSPromotionManager* PSPromotionManager::manager_array(int index) {
   assert(_manager_array != NULL, "access of NULL manager_array");
   assert(index >= 0 && index <= (int)ParallelGCThreads, "out of range manager_array access");
@@ -77,3 +83,5 @@ void PSPromotionManager::record_steal(StarTask& p) {
   }
 }
 #endif // TASKQUEUE_STATS
+
+#endif // SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_PSPROMOTIONMANAGER_INLINE_HPP

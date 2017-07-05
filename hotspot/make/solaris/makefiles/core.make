@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1998, 2008, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,7 @@
 
 # Sets make macros for making core version of VM
 
-# Note the effect on includeDB lists in top.make:
-# includeDB_compiler* and ad_<arch>.*pp are excluded from the build,
+# Select which files to use (in top.make)
 TYPE=CORE
 
 # There is no "core" directory in JDK. Install core build in server directory.

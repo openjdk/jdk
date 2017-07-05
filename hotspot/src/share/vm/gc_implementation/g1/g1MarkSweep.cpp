@@ -22,8 +22,30 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_g1MarkSweep.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/javaClasses.hpp"
+#include "classfile/symbolTable.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "classfile/vmSymbols.hpp"
+#include "code/codeCache.hpp"
+#include "code/icBuffer.hpp"
+#include "gc_implementation/g1/g1MarkSweep.hpp"
+#include "memory/gcLocker.hpp"
+#include "memory/genCollectedHeap.hpp"
+#include "memory/modRefBarrierSet.hpp"
+#include "memory/referencePolicy.hpp"
+#include "memory/space.hpp"
+#include "oops/instanceRefKlass.hpp"
+#include "oops/oop.inline.hpp"
+#include "prims/jvmtiExport.hpp"
+#include "runtime/aprofiler.hpp"
+#include "runtime/biasedLocking.hpp"
+#include "runtime/fprofiler.hpp"
+#include "runtime/synchronizer.hpp"
+#include "runtime/thread.hpp"
+#include "runtime/vmThread.hpp"
+#include "utilities/copy.hpp"
+#include "utilities/events.hpp"
 
 class HeapRegion;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,14 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_ADJOININGGENERATIONS_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_ADJOININGGENERATIONS_HPP
+
+#include "gc_implementation/parallelScavenge/adjoiningVirtualSpaces.hpp"
+#include "gc_implementation/parallelScavenge/asPSOldGen.hpp"
+#include "gc_implementation/parallelScavenge/asPSYoungGen.hpp"
+#include "gc_implementation/parallelScavenge/psPermGen.hpp"
 
 
 // Contains two generations that both use an AdjoiningVirtualSpaces.
@@ -75,3 +83,5 @@ class AdjoiningGenerations : public CHeapObj {
   // for the adjoining generations.
   size_t reserved_byte_size();
 };
+
+#endif // SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_ADJOININGGENERATIONS_HPP

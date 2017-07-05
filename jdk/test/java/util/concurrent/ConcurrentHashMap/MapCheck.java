@@ -34,7 +34,7 @@
 /*
  * @test
  * @bug 4486658
- * @compile MapCheck.java
+ * @compile -source 1.5 MapCheck.java
  * @run main/timeout=240 MapCheck
  * @summary Times and checks basic map operations
  */
@@ -64,7 +64,7 @@ public class MapCheck {
         if (args.length > 0) {
             try {
                 mapClass = Class.forName(args[0]);
-            } catch(ClassNotFoundException e) {
+            } catch (ClassNotFoundException e) {
                 throw new RuntimeException("Class " + args[0] + " not found.");
             }
         }
@@ -102,7 +102,7 @@ public class MapCheck {
         try {
             Map m = (Map)cl.newInstance();
             return m;
-        } catch(Exception e) {
+        } catch (Exception e) {
             throw new RuntimeException("Can't instantiate " + cl + ": " + e);
         }
     }
@@ -139,7 +139,7 @@ public class MapCheck {
             }
         }
         timer.finish();
-        reallyAssert (sum == expect * iters);
+        reallyAssert(sum == expect * iters);
     }
 
     static void t2(String nm, int n, Map s, Object[] key, int expect) {
@@ -149,7 +149,7 @@ public class MapCheck {
             if (s.remove(key[i]) != null) ++sum;
         }
         timer.finish();
-        reallyAssert (sum == expect);
+        reallyAssert(sum == expect);
     }
 
     static void t3(String nm, int n, Map s, Object[] key, int expect) {
@@ -159,7 +159,7 @@ public class MapCheck {
             if (s.put(key[i], absent[i & absentMask]) == null) ++sum;
         }
         timer.finish();
-        reallyAssert (sum == expect);
+        reallyAssert(sum == expect);
     }
 
     static void t4(String nm, int n, Map s, Object[] key, int expect) {
@@ -169,7 +169,7 @@ public class MapCheck {
             if (s.containsKey(key[i])) ++sum;
         }
         timer.finish();
-        reallyAssert (sum == expect);
+        reallyAssert(sum == expect);
     }
 
     static void t5(String nm, int n, Map s, Object[] key, int expect) {
@@ -179,7 +179,7 @@ public class MapCheck {
             if (s.remove(key[i]) != null) ++sum;
         }
         timer.finish();
-        reallyAssert (sum == expect);
+        reallyAssert(sum == expect);
     }
 
     static void t6(String nm, int n, Map s, Object[] k1, Object[] k2) {
@@ -190,7 +190,7 @@ public class MapCheck {
             if (s.get(k2[i & absentMask]) != null) ++sum;
         }
         timer.finish();
-        reallyAssert (sum == n);
+        reallyAssert(sum == n);
     }
 
     static void t7(String nm, int n, Map s, Object[] k1, Object[] k2) {
@@ -201,7 +201,7 @@ public class MapCheck {
             if (s.containsKey(k2[i & absentMask])) ++sum;
         }
         timer.finish();
-        reallyAssert (sum == n);
+        reallyAssert(sum == n);
     }
 
     static void t8(String nm, int n, Map s, Object[] key, int expect) {
@@ -211,7 +211,7 @@ public class MapCheck {
             if (s.get(key[i]) != null) ++sum;
         }
         timer.finish();
-        reallyAssert (sum == expect);
+        reallyAssert(sum == expect);
     }
 
 
@@ -223,7 +223,7 @@ public class MapCheck {
         for (int i = 0; i < absentSize; i += step)
             if (s.containsValue(absent[i])) ++sum;
         timer.finish();
-        reallyAssert (sum != 0);
+        reallyAssert(sum != 0);
     }
 
 
@@ -235,7 +235,7 @@ public class MapCheck {
             if (ks.contains(key[i])) ++sum;
         }
         timer.finish();
-        reallyAssert (sum == size);
+        reallyAssert(sum == size);
     }
 
 
@@ -243,37 +243,37 @@ public class MapCheck {
         int sum = 0;
         timer.start("Iter Key               ", size);
         for (Iterator it = s.keySet().iterator(); it.hasNext(); ) {
-            if(it.next() != MISSING)
+            if (it.next() != MISSING)
                 ++sum;
         }
         timer.finish();
-        reallyAssert (sum == size);
+        reallyAssert(sum == size);
     }
 
     static void ittest2(Map s, int size) {
         int sum = 0;
         timer.start("Iter Value             ", size);
         for (Iterator it = s.values().iterator(); it.hasNext(); ) {
-            if(it.next() != MISSING)
+            if (it.next() != MISSING)
                 ++sum;
         }
         timer.finish();
-        reallyAssert (sum == size);
+        reallyAssert(sum == size);
     }
     static void ittest3(Map s, int size) {
         int sum = 0;
         timer.start("Iter Entry             ", size);
         for (Iterator it = s.entrySet().iterator(); it.hasNext(); ) {
-            if(it.next() != MISSING)
+            if (it.next() != MISSING)
                 ++sum;
         }
         timer.finish();
-        reallyAssert (sum == size);
+        reallyAssert(sum == size);
     }
 
     static void ittest4(Map s, int size, int pos) {
         IdentityHashMap seen = new IdentityHashMap(size);
-        reallyAssert (s.size() == size);
+        reallyAssert(s.size() == size);
         int sum = 0;
         timer.start("Iter XEntry            ", size);
         Iterator it = s.entrySet().iterator();
@@ -287,9 +287,9 @@ public class MapCheck {
             if (x != MISSING)
                 ++sum;
         }
-        reallyAssert (s.containsKey(k));
+        reallyAssert(s.containsKey(k));
         it.remove();
-        reallyAssert (!s.containsKey(k));
+        reallyAssert(!s.containsKey(k));
         while (it.hasNext()) {
             Map.Entry x = (Map.Entry)(it.next());
             Object k2 = x.getKey();
@@ -298,12 +298,12 @@ public class MapCheck {
                 ++sum;
         }
 
-        reallyAssert (s.size() == size-1);
+        reallyAssert(s.size() == size-1);
         s.put(k, v);
-        reallyAssert (seen.size() == size);
+        reallyAssert(seen.size() == size);
         timer.finish();
-        reallyAssert (sum == size);
-        reallyAssert (s.size() == size);
+        reallyAssert(sum == size);
+        reallyAssert(s.size() == size);
     }
 
 
@@ -324,7 +324,7 @@ public class MapCheck {
                 ++sum;
         }
         timer.finish();
-        reallyAssert (sum == size);
+        reallyAssert(sum == size);
     }
 
     static void entest2(Hashtable ht, int size) {
@@ -335,7 +335,7 @@ public class MapCheck {
                 ++sum;
         }
         timer.finish();
-        reallyAssert (sum == size);
+        reallyAssert(sum == size);
     }
 
 
@@ -349,7 +349,7 @@ public class MapCheck {
                 ++sum;
         }
         timer.finish();
-        reallyAssert (sum == size);
+        reallyAssert(sum == size);
     }
 
     static void entest4(Hashtable ht, int size) {
@@ -361,7 +361,7 @@ public class MapCheck {
                 ++sum;
         }
         timer.finish();
-        reallyAssert (sum == size);
+        reallyAssert(sum == size);
     }
 
     static void entest(Map s, int size) {
@@ -409,13 +409,13 @@ public class MapCheck {
 
         timer.start("Iter Equals            ", size * 2);
         boolean eqt = s2.equals(s) && s.equals(s2);
-        reallyAssert (eqt);
+        reallyAssert(eqt);
         timer.finish();
 
         timer.start("Iter HashCode          ", size * 2);
         int shc = s.hashCode();
         int s2hc = s2.hashCode();
-        reallyAssert (shc == s2hc);
+        reallyAssert(shc == s2hc);
         timer.finish();
 
         timer.start("Put (present)          ", size);
@@ -430,7 +430,7 @@ public class MapCheck {
             if (es2.contains(entry)) ++sum;
         }
         timer.finish();
-        reallyAssert (sum == size);
+        reallyAssert(sum == size);
 
         t6("Get                    ", size, s2, key, absent);
 
@@ -438,13 +438,13 @@ public class MapCheck {
         s2.put(key[size-1], absent[0]);
         timer.start("Iter Equals            ", size * 2);
         eqt = s2.equals(s) && s.equals(s2);
-        reallyAssert (!eqt);
+        reallyAssert(!eqt);
         timer.finish();
 
         timer.start("Iter HashCode          ", size * 2);
         int s1h = s.hashCode();
         int s2h = s2.hashCode();
-        reallyAssert (s1h != s2h);
+        reallyAssert(s1h != s2h);
         timer.finish();
 
         s2.put(key[size-1], hold);
@@ -455,12 +455,12 @@ public class MapCheck {
             es.remove(s2i.next());
         timer.finish();
 
-        reallyAssert (s.isEmpty());
+        reallyAssert(s.isEmpty());
 
         timer.start("Clear                  ", size);
         s2.clear();
         timer.finish();
-        reallyAssert (s2.isEmpty() && s.isEmpty());
+        reallyAssert(s2.isEmpty() && s.isEmpty());
     }
 
     static void stest(Map s, int size) throws Exception {
@@ -489,7 +489,7 @@ public class MapCheck {
         System.out.print(time + "ms");
 
         if (s instanceof IdentityHashMap) return;
-        reallyAssert (s.equals(m));
+        reallyAssert(s.equals(m));
     }
 
 

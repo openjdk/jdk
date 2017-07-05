@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,11 @@
  *
  */
 
+#ifndef OS_CPU_LINUX_SPARC_VM_PREFETCH_LINUX_SPARC_INLINE_HPP
+#define OS_CPU_LINUX_SPARC_VM_PREFETCH_LINUX_SPARC_INLINE_HPP
+
+#include "runtime/prefetch.hpp"
+
 #if defined(COMPILER2) || defined(_LP64)
 
 inline void Prefetch::read(void *loc, intx interval) {
@@ -38,3 +43,5 @@ inline void Prefetch::read (void *loc, intx interval) {}
 inline void Prefetch::write(void *loc, intx interval) {}
 
 #endif
+
+#endif // OS_CPU_LINUX_SPARC_VM_PREFETCH_LINUX_SPARC_INLINE_HPP

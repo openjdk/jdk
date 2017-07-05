@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,13 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_SERVICES_MEMORYMANAGER_HPP
+#define SHARE_VM_SERVICES_MEMORYMANAGER_HPP
+
+#include "memory/allocation.hpp"
+#include "runtime/timer.hpp"
+#include "services/memoryUsage.hpp"
 
 // A memory manager is responsible for managing one or more memory pools.
 // The garbage collector is one type of memory managers responsible
@@ -263,3 +270,5 @@ public:
   MemoryManager::Name kind() { return MemoryManager::G1OldGen; }
   const char* name()         { return "G1 Old Generation"; }
 };
+
+#endif // SHARE_VM_SERVICES_MEMORYMANAGER_HPP

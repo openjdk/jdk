@@ -22,8 +22,56 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_instanceKlass.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/javaClasses.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "classfile/verifier.hpp"
+#include "classfile/vmSymbols.hpp"
+#include "compiler/compileBroker.hpp"
+#include "gc_implementation/shared/markSweep.inline.hpp"
+#include "gc_interface/collectedHeap.inline.hpp"
+#include "interpreter/oopMapCache.hpp"
+#include "interpreter/rewriter.hpp"
+#include "jvmtifiles/jvmti.h"
+#include "memory/genOopClosures.inline.hpp"
+#include "memory/oopFactory.hpp"
+#include "memory/permGen.hpp"
+#include "oops/instanceKlass.hpp"
+#include "oops/instanceOop.hpp"
+#include "oops/methodOop.hpp"
+#include "oops/objArrayKlassKlass.hpp"
+#include "oops/oop.inline.hpp"
+#include "oops/symbolOop.hpp"
+#include "prims/jvmtiExport.hpp"
+#include "prims/jvmtiRedefineClassesTrace.hpp"
+#include "runtime/fieldDescriptor.hpp"
+#include "runtime/handles.inline.hpp"
+#include "runtime/javaCalls.hpp"
+#include "runtime/mutexLocker.hpp"
+#include "services/threadService.hpp"
+#include "utilities/dtrace.hpp"
+#ifdef TARGET_OS_FAMILY_linux
+# include "thread_linux.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_solaris
+# include "thread_solaris.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_windows
+# include "thread_windows.inline.hpp"
+#endif
+#ifndef SERIALGC
+#include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
+#include "gc_implementation/g1/g1OopClosures.inline.hpp"
+#include "gc_implementation/g1/g1RemSet.inline.hpp"
+#include "gc_implementation/g1/heapRegionSeq.inline.hpp"
+#include "gc_implementation/parNew/parOopClosures.inline.hpp"
+#include "gc_implementation/parallelScavenge/psPromotionManager.inline.hpp"
+#include "gc_implementation/parallelScavenge/psScavenge.inline.hpp"
+#include "oops/oop.pcgc.inline.hpp"
+#endif
+#ifdef COMPILER1
+#include "c1/c1_Compiler.hpp"
+#endif
 
 #ifdef DTRACE_ENABLED
 

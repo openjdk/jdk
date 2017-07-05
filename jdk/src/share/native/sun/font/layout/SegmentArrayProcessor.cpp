@@ -74,7 +74,7 @@ void SegmentArrayProcessor::process(LEGlyphStorage &glyphStorage)
 
             if (offset != 0) {
                 TTGlyphID  *glyphArray = (TTGlyphID *) ((char *) subtableHeader + offset);
-                TTGlyphID   newGlyph   = (TTGlyphID)SWAPW(glyphArray[LE_GET_GLYPH(thisGlyph) - firstGlyph]);
+                TTGlyphID   newGlyph   = SWAPW(glyphArray[LE_GET_GLYPH(thisGlyph) - firstGlyph]);
 
                 glyphStorage[glyph] = LE_SET_GLYPH(thisGlyph, newGlyph);
             }

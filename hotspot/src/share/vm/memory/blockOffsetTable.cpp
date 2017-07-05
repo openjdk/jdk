@@ -22,8 +22,14 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_blockOffsetTable.cpp.incl"
+#include "precompiled.hpp"
+#include "gc_interface/collectedHeap.inline.hpp"
+#include "memory/blockOffsetTable.inline.hpp"
+#include "memory/iterator.hpp"
+#include "memory/space.inline.hpp"
+#include "memory/universe.hpp"
+#include "oops/oop.inline.hpp"
+#include "runtime/java.hpp"
 
 //////////////////////////////////////////////////////////////////////
 // BlockOffsetSharedArray

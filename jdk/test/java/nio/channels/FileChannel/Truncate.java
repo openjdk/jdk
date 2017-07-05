@@ -22,14 +22,14 @@
  */
 
 /* @test
- * @bug 6191269
+ * @bug 6191269 6709457
  * @summary Test truncate method of FileChannel
  */
 
 import java.io.*;
-import java.nio.MappedByteBuffer;
-import java.nio.channels.*;
+import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import static java.nio.file.StandardOpenOption.*;
 import java.util.Random;
 
 
@@ -38,43 +38,79 @@ import java.util.Random;
  */
 
 public class Truncate {
-
-    private static Random generator = new Random();
-
-    private static File blah;
+    private static final Random generator = new Random();
 
     public static void main(String[] args) throws Exception {
-        blah = File.createTempFile("blah", null);
+        File blah = File.createTempFile("blah", null);
         blah.deleteOnExit();
+        try {
+            basicTest(blah);
+            appendTest(blah);
+        } finally {
+            blah.delete();
+        }
+    }
+
+    /**
+     * Basic test of asserts in truncate's specification.
+     */
+    static void basicTest(File blah) throws Exception {
         for(int i=0; i<100; i++) {
             long testSize = generator.nextInt(1000) + 10;
             initTestFile(blah, testSize);
-            RandomAccessFile fis = new RandomAccessFile(blah, "rw");
-            FileChannel c = fis.getChannel();
-            if (c.size() != testSize)
-                throw new RuntimeException("Size failed");
+            FileChannel fc = (i < 50) ?
+                new RandomAccessFile(blah, "rw").getChannel() :
+                FileChannel.open(blah.toPath(), READ, WRITE);
+            try (fc) {
+                if (fc.size() != testSize)
+                    throw new RuntimeException("Size failed");
 
-            long position = generator.nextInt((int)testSize);
-            c.position(position);
+                long position = generator.nextInt((int)testSize);
+                fc.position(position);
 
-            long newSize = generator.nextInt((int)testSize);
-            c.truncate(newSize);
+                long newSize = generator.nextInt((int)testSize);
+                fc.truncate(newSize);
 
-            if (c.size() != newSize)
-                throw new RuntimeException("Truncate failed");
+                if (fc.size() != newSize)
+                    throw new RuntimeException("Truncate failed");
 
-            if (position > newSize) {
-                if (c.position() != newSize)
-                    throw new RuntimeException("Position greater than size");
-            } else {
-                if (c.position() != position)
-                    throw new RuntimeException("Truncate changed position");
+                if (position > newSize) {
+                    if (fc.position() != newSize)
+                        throw new RuntimeException("Position greater than size");
+                } else {
+                    if (fc.position() != position)
+                        throw new RuntimeException("Truncate changed position");
+                };
             }
-
-            c.close();
-            fis.close();
         }
-        blah.delete();
+    }
+
+    /**
+     * Test behavior of truncate method when file is opened for append
+     */
+    static void appendTest(File blah) throws Exception {
+        for (int i=0; i<10; i++) {
+            long testSize = generator.nextInt(1000) + 10;
+            initTestFile(blah, testSize);
+            FileChannel fc = (i < 5) ?
+                new FileOutputStream(blah, true).getChannel() :
+                FileChannel.open(blah.toPath(), APPEND);
+            try (fc) {
+                // truncate file
+                long newSize = generator.nextInt((int)testSize);
+                fc.truncate(newSize);
+                if (fc.size() != newSize)
+                    throw new RuntimeException("Truncate failed");
+
+                // write one byte
+                ByteBuffer buf = ByteBuffer.allocate(1);
+                buf.put((byte)'x');
+                buf.flip();
+                fc.write(buf);
+                if (fc.size() != (newSize+1))
+                    throw new RuntimeException("Unexpected size");
+            }
+        }
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,19 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_MEMORY_GENERATION_HPP
+#define SHARE_VM_MEMORY_GENERATION_HPP
+
+#include "gc_implementation/shared/collectorCounters.hpp"
+#include "memory/allocation.hpp"
+#include "memory/memRegion.hpp"
+#include "memory/referenceProcessor.hpp"
+#include "memory/universe.hpp"
+#include "memory/watermark.hpp"
+#include "runtime/mutex.hpp"
+#include "runtime/perfData.hpp"
+#include "runtime/virtualspace.hpp"
 
 // A Generation models a heap area for similarly-aged objects.
 // It will contain one ore more spaces holding the actual objects.
@@ -740,3 +753,5 @@ class OneContigSpaceCardGeneration: public CardGeneration {
   virtual void verify(bool allow_dirty);
   virtual void print_on(outputStream* st) const;
 };
+
+#endif // SHARE_VM_MEMORY_GENERATION_HPP
