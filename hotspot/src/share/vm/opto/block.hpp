@@ -374,7 +374,7 @@ class PhaseCFG : public Phase {
   float _outer_loop_freq;       // Outmost loop frequency
 
   // Per node latency estimation, valid only during GCM
-  GrowableArray<uint> _node_latency;
+  GrowableArray<uint> *_node_latency;
 
 #ifndef PRODUCT
   bool _trace_opto_pipelining;  // tracing flag

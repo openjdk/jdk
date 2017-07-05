@@ -57,6 +57,10 @@ class VMError : public StackObj {
   int          _current_step;
   const char * _current_step_info;
   int          _verbose;
+  // First error, and its thread id. We must be able to handle native thread,
+  // so use thread id instead of Thread* to identify thread.
+  static VMError* volatile first_error;
+  static volatile jlong    first_error_tid;
 
   // used by reporting about OOM
   size_t       _size;
@@ -108,4 +112,7 @@ public:
   // returns original handler for signal, if it was resetted, or NULL if
   // signal was not changed by error reporter
   static address get_resetted_sighandler(int sig);
+
+  // check to see if fatal error reporting is in progress
+  static bool fatal_error_in_progress() { return first_error != NULL; }
 };

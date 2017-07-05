@@ -194,15 +194,11 @@ int klassKlass::oop_update_pointers(ParCompactionManager* cm, oop obj,
 #endif // SERIALGC
 
 
-#ifndef PRODUCT
-
 // Printing
 
 void klassKlass::oop_print_on(oop obj, outputStream* st) {
   Klass::oop_print_on(obj, st);
 }
-
-#endif //PRODUCT
 
 void klassKlass::oop_print_value_on(oop obj, outputStream* st) {
   Klass::oop_print_value_on(obj, st);
