@@ -24,6 +24,7 @@
 /*
  * @test
  * @summary Check that appends are atomic
+ * @key randomness
  */
 
 import java.io.File;

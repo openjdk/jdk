@@ -27,6 +27,7 @@
  * @ignore until 6842353 is resolved
  * @summary Check that iterators work properly in the presence of
  *          concurrent finalization and removal of elements.
+ * @key randomness
  */
 
 import java.util.*;

@@ -25,6 +25,7 @@
  * @bug 6606598 7024172
  * @summary Unit test for java.lang.management.BufferPoolMXBean
  * @run main/othervm Basic
+ * @key randomness
  */
 
 import java.nio.ByteBuffer;

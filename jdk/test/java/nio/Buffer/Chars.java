@@ -26,6 +26,7 @@
  * @bug 8014854
  * @summary Exercises CharBuffer#chars on each of the CharBuffer types
  * @run testng Chars
+ * @key randomness
  */
 
 import java.nio.ByteBuffer;

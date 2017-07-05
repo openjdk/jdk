@@ -217,20 +217,20 @@ public interface EventRequestManager extends Mirror {
      * activate this event request.
      * <p>
      * The returned request will control stepping only in the specified
-     * <code>thread</code>; all other threads will be unaffected.
-     * A <code>size</code>value of {@link com.sun.jdi.request.StepRequest#STEP_MIN} will generate a
+     * {@code thread}; all other threads will be unaffected.
+     * A {@code size} value of {@link com.sun.jdi.request.StepRequest#STEP_MIN} will generate a
      * step event each time the code index changes. It represents the
      * smallest step size available and often maps to the instruction
      * level.
-     * A <code>size</code> value of {@link com.sun.jdi.request.StepRequest#STEP_LINE} will generate a
+     * A {@code size} value of {@link com.sun.jdi.request.StepRequest#STEP_LINE} will generate a
      * step event each time the source line changes unless line number information is not available,
      * in which case a STEP_MIN will be done instead.  For example, no line number information is
      * available during the execution of a method that has been rendered obsolete by
      * by a {@link com.sun.jdi.VirtualMachine#redefineClasses} operation.
-     * A <code>depth</code> value of {@link com.sun.jdi.request.StepRequest#STEP_INTO} will generate
-     * step events in any called methods.  A <code>depth</code> value
+     * A {@code depth} value of {@link com.sun.jdi.request.StepRequest#STEP_INTO} will generate
+     * step events in any called methods.  A {@code depth} value
      * of {@link com.sun.jdi.request.StepRequest#STEP_OVER} restricts step events to the current frame
-     * or caller frames. A <code>depth</code> value of {@link com.sun.jdi.request.StepRequest#STEP_OUT}
+     * or caller frames. A {@code depth} value of {@link com.sun.jdi.request.StepRequest#STEP_OUT}
      * restricts step events to caller frames only. All depth
      * restrictions are relative to the call stack immediately before the
      * step takes place.
@@ -240,8 +240,7 @@ public interface EventRequestManager extends Mirror {
      * Note that a typical debugger will want to cancel stepping
      * after the first step is detected.  Thus a next line method
      * would do the following:
-     * <code>
-     * <pre>
+     * <pre>{@code
      *     EventRequestManager mgr = myVM.{@link VirtualMachine#eventRequestManager eventRequestManager}();
      *     StepRequest request = mgr.createStepRequest(myThread,
      *                                                 StepRequest.{@link StepRequest#STEP_LINE STEP_LINE},
@@ -249,8 +248,7 @@ public interface EventRequestManager extends Mirror {
      *     request.{@link EventRequest#addCountFilter addCountFilter}(1);  // next step only
      *     request.enable();
      *     myVM.{@link VirtualMachine#resume resume}();
-     * </pre>
-     * </code>
+     * }</pre>
      *
      * @param thread the thread in which to step
      * @param depth the step depth

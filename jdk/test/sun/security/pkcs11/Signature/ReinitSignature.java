@@ -27,6 +27,7 @@
  * @summary test that reinitializing Signatures works correctly
  * @author Andreas Sterbenz
  * @library ..
+ * @key randomness
  */
 
 import java.util.*;

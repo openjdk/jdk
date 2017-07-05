@@ -24,6 +24,7 @@
 /* @test
  * @bug 4862382 4862408
  * @summary Test positional read method of FileChannel
+ * @key randomness
  */
 
 import java.io.*;
