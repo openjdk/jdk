@@ -765,8 +765,8 @@ typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
   /* CodeCache (NOTE: incomplete) */                                                                                                 \
   /********************************/                                                                                                 \
                                                                                                                                      \
-     static_field(CodeCache,                   _heap,                                         CodeHeap*)                             \
-     static_field(CodeCache,                   _scavenge_root_nmethods,                       nmethod*)                              \
+  static_field(CodeCache,                      _heaps,                                        GrowableArray<CodeHeap*>*)             \
+  static_field(CodeCache,                      _scavenge_root_nmethods,                       nmethod*)                              \
                                                                                                                                      \
   /*******************************/                                                                                                  \
   /* CodeHeap (NOTE: incomplete) */                                                                                                  \
