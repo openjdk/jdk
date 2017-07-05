@@ -96,12 +96,11 @@ public class KrbCred {
         PrincipalName princ = delegatedCreds.getClient();
         Realm realm = princ.getRealm();
         PrincipalName tgService = delegatedCreds.getServer();
-        Realm tgsRealm = tgService.getRealm();
 
-        KrbCredInfo credInfo = new KrbCredInfo(sessionKey, realm,
+        KrbCredInfo credInfo = new KrbCredInfo(sessionKey,
                                                princ, delegatedCreds.flags, delegatedCreds.authTime,
                                                delegatedCreds.startTime, delegatedCreds.endTime,
-                                               delegatedCreds.renewTill, tgsRealm, tgService,
+                                               delegatedCreds.renewTill, tgService,
                                                delegatedCreds.cAddr);
 
         timeStamp = new KerberosTime(KerberosTime.NOW);
@@ -138,19 +137,13 @@ public class KrbCred {
 
         KrbCredInfo credInfo = encPart.ticketInfo[0];
         EncryptionKey credInfoKey = credInfo.key;
-        Realm prealm = credInfo.prealm;
-        // XXX PrincipalName can store realm + principalname or
-        // just principal name.
         PrincipalName pname = credInfo.pname;
-        pname.setRealm(prealm);
         TicketFlags flags = credInfo.flags;
         KerberosTime authtime = credInfo.authtime;
         KerberosTime starttime = credInfo.starttime;
         KerberosTime endtime = credInfo.endtime;
         KerberosTime renewTill = credInfo.renewTill;
-        Realm srealm = credInfo.srealm;
         PrincipalName sname = credInfo.sname;
-        sname.setRealm(srealm);
         HostAddresses caddr = credInfo.caddr;
 
         if (DEBUG) {

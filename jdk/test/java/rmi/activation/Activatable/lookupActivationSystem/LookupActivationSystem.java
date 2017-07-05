@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ public class LookupActivationSystem implements Remote, Serializable {
 
             System.err.println("look up activation system");
             Registry rmidRegistry =
-                LocateRegistry.getRegistry(ActivationSystem.SYSTEM_PORT);
+                LocateRegistry.getRegistry(rmid.getPort());
             ActivationSystem system = (ActivationSystem)
                 rmidRegistry.lookup(NAME);
 

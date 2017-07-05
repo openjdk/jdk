@@ -30,6 +30,9 @@ grant {
   permission java.util.PropertyPermission "user.dir", "read";
   permission java.util.PropertyPermission "java.home", "read";
 
+  permission java.util.PropertyPermission "rmi.registry.port", "read";
+  permission java.util.PropertyPermission "java.rmi.activation.port", "write";
+
   // required for test to create an ActivationGroup
   permission java.lang.RuntimePermission "setFactory";
 

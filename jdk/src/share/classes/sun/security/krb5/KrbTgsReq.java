@@ -148,7 +148,6 @@ public class KrbTgsReq {
                 asCreds.key,
                 ctime,
                 princName,
-                princName.getRealm(),
                 servName,
                 from,
                 till,
@@ -214,7 +213,6 @@ public class KrbTgsReq {
                          EncryptionKey key,
                          KerberosTime ctime,
                          PrincipalName cname,
-                         Realm crealm,
                          PrincipalName sname,
                          KerberosTime from,
                          KerberosTime till,
@@ -273,8 +271,6 @@ public class KrbTgsReq {
         KDCReqBody reqBody = new KDCReqBody(
                                             kdc_options,
                                             cname,
-                                            // crealm,
-                                            sname.getRealm(), // TO
                                             sname,
                                             from,
                                             req_till,
@@ -315,7 +311,6 @@ public class KrbTgsReq {
                                          new APOptions(),
                                          ticket,
                                          key,
-                                         crealm,
                                          cname,
                                          cksum,
                                          ctime,

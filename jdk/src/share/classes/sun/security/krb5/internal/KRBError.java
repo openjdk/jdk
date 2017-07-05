@@ -90,9 +90,7 @@ public class KRBError implements java.io.Serializable {
     private KerberosTime sTime;
     private Integer suSec;
     private int errorCode;
-    private Realm crealm; //optional
     private PrincipalName cname; //optional
-    private Realm realm;
     private PrincipalName sname;
     private String eText; //optional
     private byte[] eData; //optional
@@ -128,9 +126,7 @@ public class KRBError implements java.io.Serializable {
                     KerberosTime new_sTime,
                     Integer new_suSec,
                     int new_errorCode,
-                    Realm new_crealm,
                     PrincipalName new_cname,
-                    Realm new_realm,
                     PrincipalName new_sname,
                     String new_eText,
                     byte[] new_eData
@@ -142,9 +138,7 @@ public class KRBError implements java.io.Serializable {
         sTime = new_sTime;
         suSec = new_suSec;
         errorCode = new_errorCode;
-        crealm =  new_crealm;
         cname = new_cname;
-        realm = new_realm;
         sname = new_sname;
         eText = new_eText;
         eData = new_eData;
@@ -159,9 +153,7 @@ public class KRBError implements java.io.Serializable {
                     KerberosTime new_sTime,
                     Integer new_suSec,
                     int new_errorCode,
-                    Realm new_crealm,
                     PrincipalName new_cname,
-                    Realm new_realm,
                     PrincipalName new_sname,
                     String new_eText,
                     byte[] new_eData,
@@ -174,9 +166,7 @@ public class KRBError implements java.io.Serializable {
         sTime = new_sTime;
         suSec = new_suSec;
         errorCode = new_errorCode;
-        crealm =  new_crealm;
         cname = new_cname;
-        realm = new_realm;
         sname = new_sname;
         eText = new_eText;
         eData = new_eData;
@@ -359,10 +349,10 @@ public class KRBError implements java.io.Serializable {
             errorCode = subDer.getData().getBigInteger().intValue();
         }
         else  throw new Asn1Exception(Krb5.ASN1_BAD_ID);
-        crealm = Realm.parse(der.getData(), (byte)0x07, true);
-        cname = PrincipalName.parse(der.getData(), (byte)0x08, true);
-        realm = Realm.parse(der.getData(), (byte)0x09, false);
-        sname = PrincipalName.parse(der.getData(), (byte)0x0A, false);
+        Realm crealm = Realm.parse(der.getData(), (byte)0x07, true);
+        cname = PrincipalName.parse(der.getData(), (byte)0x08, true, crealm);
+        Realm realm = Realm.parse(der.getData(), (byte)0x09, false);
+        sname = PrincipalName.parse(der.getData(), (byte)0x0A, false, realm);
         eText = null;
         eData = null;
         eCksum = null;
@@ -403,14 +393,8 @@ public class KRBError implements java.io.Serializable {
             System.out.println("\t suSec is " + suSec);
             System.out.println("\t error code is " + errorCode);
             System.out.println("\t error Message is " + Krb5.getErrorMessage(errorCode));
-            if (crealm != null) {
-                System.out.println("\t crealm is " + crealm.toString());
-            }
             if (cname != null) {
                 System.out.println("\t cname is " + cname.toString());
-            }
-            if (realm != null) {
-                System.out.println("\t realm is " + realm.toString());
             }
             if (sname != null) {
                 System.out.println("\t sname is " + sname.toString());
@@ -458,14 +442,12 @@ public class KRBError implements java.io.Serializable {
         temp.putInteger(BigInteger.valueOf(errorCode));
         bytes.write(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0x06), temp);
 
-        if (crealm != null) {
-            bytes.write(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0x07), crealm.asn1Encode());
-        }
         if (cname != null) {
+            bytes.write(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0x07), cname.getRealm().asn1Encode());
             bytes.write(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0x08), cname.asn1Encode());
         }
 
-        bytes.write(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0x09), realm.asn1Encode());
+        bytes.write(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0x09), sname.getRealm().asn1Encode());
         bytes.write(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0x0A), sname.asn1Encode());
 
         if (eText != null) {
@@ -506,9 +488,7 @@ public class KRBError implements java.io.Serializable {
                 isEqual(sTime, other.sTime) &&
                 isEqual(suSec, other.suSec) &&
                 errorCode == other.errorCode &&
-                isEqual(crealm, other.crealm) &&
                 isEqual(cname, other.cname) &&
-                isEqual(realm, other.realm) &&
                 isEqual(sname, other.sname) &&
                 isEqual(eText, other.eText) &&
                 java.util.Arrays.equals(eData, other.eData) &&
@@ -528,9 +508,7 @@ public class KRBError implements java.io.Serializable {
         if (sTime != null) result = 37 * result + sTime.hashCode();
         if (suSec != null) result = 37 * result + suSec.hashCode();
         result = 37 * result + errorCode;
-        if (crealm != null) result = 37 * result + crealm.hashCode();
         if (cname != null) result = 37 * result + cname.hashCode();
-        if (realm != null) result = 37 * result + realm.hashCode();
         if (sname != null) result = 37 * result + sname.hashCode();
         if (eText != null) result = 37 * result + eText.hashCode();
         result = 37 * result + Arrays.hashCode(eData);

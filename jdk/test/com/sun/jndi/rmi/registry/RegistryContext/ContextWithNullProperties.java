@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,26 +25,21 @@
  * @test
  * @bug 6676075
  * @summary RegistryContext (com.sun.jndi.url.rmi.rmiURLContext) coding problem
+ * @library ../../../../../../java/rmi/testlibrary
+ * @build TestLibrary
+ * @run main ContextWithNullProperties
  */
 
-import java.rmi.RemoteException;
-import java.rmi.registry.LocateRegistry;
-
-import com.sun.jndi.rmi.registry.*;
+import com.sun.jndi.rmi.registry.RegistryContext;
+import java.rmi.registry.Registry;
 
 public class ContextWithNullProperties {
-
     public static void main(String[] args) throws Exception {
-
-        // Create registry on port 1099 if one is not already running.
-        try {
-            LocateRegistry.createRegistry(1099);
-        } catch (RemoteException e) {
-        }
-
+        Registry registry = TestLibrary.createRegistryOnUnusedPort();
+        int registryPort = TestLibrary.getRegistryPort(registry);
         System.out.println("Connecting to the default Registry...");
         // Connect to the default Registry.
         // Pass null as the JNDI environment properties (see final argument)
-        RegistryContext ctx = new RegistryContext(null, -1, null);
+        RegistryContext ctx = new RegistryContext(null, registryPort, null);
     }
 }

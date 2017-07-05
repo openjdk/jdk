@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,8 +68,9 @@ public class ShutdownImpl implements Shutdown {
 
     public static void main(String[] args) {
         try {
+            int registryPort = Integer.parseInt(System.getProperty("rmi.registry.port"));
             Registry registry =
-                LocateRegistry.getRegistry("", TestLibrary.REGISTRY_PORT);
+                LocateRegistry.getRegistry("", registryPort);
             ShutdownMonitor monitor = (ShutdownMonitor)
                 registry.lookup(KeepAliveDuringCall.BINDING);
             System.err.println("(ShutdownImpl) retrieved shutdown monitor");

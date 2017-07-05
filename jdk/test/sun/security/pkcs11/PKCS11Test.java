@@ -245,6 +245,10 @@ public abstract class PKCS11Test {
         osMap.put("SunOS-amd64-64", "/usr/lib/mps/64/");
         osMap.put("Linux-i386-32", "/usr/lib/");
         osMap.put("Linux-amd64-64", "/usr/lib64/");
+        osMap.put("Windows-x86-32",
+            PKCS11_BASE + "/nss/lib/windows-i586/".replace('/', SEP));
+        osMap.put("Windows-amd64-64",
+            PKCS11_BASE + "/nss/lib/windows-amd64/".replace('/', SEP));
     }
 
     private final static char[] hexDigits = "0123456789abcdef".toCharArray();

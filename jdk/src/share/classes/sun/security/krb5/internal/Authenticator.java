@@ -61,7 +61,6 @@ import java.math.BigInteger;
 public class Authenticator {
 
     public int authenticator_vno;
-    public Realm crealm;
     public PrincipalName cname;
     Checksum cksum; //optional
     public int cusec;
@@ -71,7 +70,6 @@ public class Authenticator {
     public AuthorizationData authorizationData; //optional
 
     public Authenticator(
-            Realm new_crealm,
             PrincipalName new_cname,
             Checksum new_cksum,
             int new_cusec,
@@ -80,7 +78,6 @@ public class Authenticator {
             Integer new_seqNumber,
             AuthorizationData new_authorizationData) {
         authenticator_vno = Krb5.AUTHNETICATOR_VNO;
-        crealm = new_crealm;
         cname = new_cname;
         cksum = new_cksum;
         cusec = new_cusec;
@@ -131,8 +128,8 @@ public class Authenticator {
         if (authenticator_vno != 5) {
             throw new KrbApErrException(Krb5.KRB_AP_ERR_BADVERSION);
         }
-        crealm = Realm.parse(der.getData(), (byte) 0x01, false);
-        cname = PrincipalName.parse(der.getData(), (byte) 0x02, false);
+        Realm crealm = Realm.parse(der.getData(), (byte) 0x01, false);
+        cname = PrincipalName.parse(der.getData(), (byte) 0x02, false, crealm);
         cksum = Checksum.parse(der.getData(), (byte) 0x03, true);
         subDer = der.getData().getDerValue();
         if ((subDer.getTag() & (byte) 0x1F) == 0x04) {
@@ -180,7 +177,7 @@ public class Authenticator {
         DerOutputStream temp = new DerOutputStream();
         temp.putInteger(BigInteger.valueOf(authenticator_vno));
         v.addElement(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte) 0x00), temp.toByteArray()));
-        v.addElement(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte) 0x01), crealm.asn1Encode()));
+        v.addElement(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte) 0x01), cname.getRealm().asn1Encode()));
         v.addElement(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte) 0x02), cname.asn1Encode()));
         if (cksum != null) {
             v.addElement(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte) 0x03), cksum.asn1Encode()));
