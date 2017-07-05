@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,22 +20,24 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+import java.lang.instrument.*;
 
-public class DoOverflow {
+public class GetObjectSizeOverflowAgent {
 
-    static int count;
+    static Instrumentation instrumentation;
 
-    public void overflow() {
-        count+=1;
-        overflow();
+    public static void premain(String agentArgs, Instrumentation instrumentation) {
+        GetObjectSizeOverflowAgent.instrumentation = instrumentation;
     }
 
-    public static void printIt() {
-        System.out.println("Going to overflow stack");
-        try {
-            new DoOverflow().overflow();
-        } catch(java.lang.StackOverflowError e) {
-            System.out.println("Overflow OK " + count);
+    public static void main(String[] args) throws Exception {
+        int[] a = new int[600_000_000];
+        long size = instrumentation.getObjectSize(a);
+
+        if (size < 2_400_000_000L) {
+            throw new RuntimeException("Invalid size of array, expected >= 2400000000, got " + size);
         }
+
+        System.out.println("GetObjectSizeOverflow passed");
     }
 }

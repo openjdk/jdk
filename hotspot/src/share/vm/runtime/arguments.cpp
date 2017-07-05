@@ -1449,7 +1449,7 @@ bool verify_object_alignment() {
   return true;
 }
 
-uintx Arguments::max_heap_for_compressed_oops() {
+size_t Arguments::max_heap_for_compressed_oops() {
   // Avoid sign flip.
   assert(OopEncodingHeapMax > (uint64_t)os::vm_page_size(), "Unusual page size");
   // We need to fit both the NULL page and the heap into the memory budget, while
