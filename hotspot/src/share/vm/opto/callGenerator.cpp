@@ -158,74 +158,6 @@ JVMState* DirectCallGenerator::generate(JVMState* jvms) {
   return kit.transfer_exceptions_into_jvms();
 }
 
-//---------------------------DynamicCallGenerator-----------------------------
-// Internal class which handles all out-of-line invokedynamic calls.
-class DynamicCallGenerator : public CallGenerator {
-public:
-  DynamicCallGenerator(ciMethod* method)
-    : CallGenerator(method)
-  {
-  }
-  virtual JVMState* generate(JVMState* jvms);
-};
-
-JVMState* DynamicCallGenerator::generate(JVMState* jvms) {
-  GraphKit kit(jvms);
-  Compile* C = kit.C;
-  PhaseGVN& gvn = kit.gvn();
-
-  if (C->log() != NULL) {
-    C->log()->elem("dynamic_call bci='%d'", jvms->bci());
-  }
-
-  // Get the constant pool cache from the caller class.
-  ciMethod* caller_method = jvms->method();
-  ciBytecodeStream str(caller_method);
-  str.force_bci(jvms->bci());  // Set the stream to the invokedynamic bci.
-  assert(str.cur_bc() == Bytecodes::_invokedynamic, "wrong place to issue a dynamic call!");
-  ciCPCache* cpcache = str.get_cpcache();
-
-  // Get the offset of the CallSite from the constant pool cache
-  // pointer.
-  int index = str.get_method_index();
-  size_t call_site_offset = cpcache->get_f1_offset(index);
-
-  // Load the CallSite object from the constant pool cache.
-  const TypeOopPtr* cpcache_type   = TypeOopPtr::make_from_constant(cpcache);  // returns TypeAryPtr of type T_OBJECT
-  const TypeOopPtr* call_site_type = TypeOopPtr::make_from_klass(C->env()->CallSite_klass());
-  Node* cpcache_adr   = kit.makecon(cpcache_type);
-  Node* call_site_adr = kit.basic_plus_adr(cpcache_adr, call_site_offset);
-  // The oops in the constant pool cache are not compressed; load then as raw pointers.
-  Node* call_site     = kit.make_load(kit.control(), call_site_adr, call_site_type, T_ADDRESS, Compile::AliasIdxRaw);
-
-  // Load the target MethodHandle from the CallSite object.
-  const TypeOopPtr* target_type = TypeOopPtr::make_from_klass(C->env()->MethodHandle_klass());
-  Node* target_mh_adr = kit.basic_plus_adr(call_site, java_lang_invoke_CallSite::target_offset_in_bytes());
-  Node* target_mh     = kit.make_load(kit.control(), target_mh_adr, target_type, T_OBJECT);
-
-  address resolve_stub = SharedRuntime::get_resolve_opt_virtual_call_stub();
-
-  CallStaticJavaNode* call = new (C, tf()->domain()->cnt()) CallStaticJavaNode(tf(), resolve_stub, method(), kit.bci());
-  // invokedynamic is treated as an optimized invokevirtual.
-  call->set_optimized_virtual(true);
-  // Take extra care (in the presence of argument motion) not to trash the SP:
-  call->set_method_handle_invoke(true);
-
-  // Pass the target MethodHandle as first argument and shift the
-  // other arguments.
-  call->init_req(0 + TypeFunc::Parms, target_mh);
-  uint nargs = call->method()->arg_size();
-  for (uint i = 1; i < nargs; i++) {
-    Node* arg = kit.argument(i - 1);
-    call->init_req(i + TypeFunc::Parms, arg);
-  }
-
-  kit.set_edges_for_java_call(call);
-  Node* ret = kit.set_results_for_java_call(call);
-  kit.push_node(method()->return_type()->basic_type(), ret);
-  return kit.transfer_exceptions_into_jvms();
-}
-
 //--------------------------VirtualCallGenerator------------------------------
 // Internal class which handles all out-of-line calls checking receiver type.
 class VirtualCallGenerator : public CallGenerator {
@@ -328,12 +260,6 @@ CallGenerator* CallGenerator::for_virtual_call(ciMethod* m, int vtable_index) {
   return new VirtualCallGenerator(m, vtable_index);
 }
 
-CallGenerator* CallGenerator::for_dynamic_call(ciMethod* m) {
-  assert(m->is_compiled_lambda_form(), "for_dynamic_call mismatch");
-  //@@ FIXME: this should be done via a direct call
-  return new DynamicCallGenerator(m);
-}
-
 // Allow inlining decisions to be delayed
 class LateInlineCallGenerator : public DirectCallGenerator {
   CallGenerator* _inline_cg;
@@ -347,7 +273,7 @@ class LateInlineCallGenerator : public DirectCallGenerator {
   // Convert the CallStaticJava into an inline
   virtual void do_late_inline();
 
-  JVMState* generate(JVMState* jvms) {
+  virtual JVMState* generate(JVMState* jvms) {
     // Record that this call site should be revisited once the main
     // parse is finished.
     Compile::current()->add_late_inline(this);

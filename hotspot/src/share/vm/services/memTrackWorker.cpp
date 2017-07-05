@@ -99,9 +99,11 @@ void MemTrackWorker::run() {
     }
     if (rec != NULL) {
       // merge the recorder into staging area
-      bool result = snapshot->merge(rec);
-      assert(result, "merge failed");
-      debug_only(_merge_count ++;)
+      if (!snapshot->merge(rec)) {
+        MemTracker::shutdown(MemTracker::NMT_out_of_memory);
+      } else {
+        NOT_PRODUCT(_merge_count ++;)
+      }
       MemTracker::release_thread_recorder(rec);
     } else {
       // no more recorder to merge, promote staging area
@@ -129,7 +131,7 @@ void MemTrackWorker::run() {
   }
   assert(MemTracker::shutdown_in_progress(), "just check");
 
-  // transites to final shutdown
+  // transits to final shutdown
   MemTracker::final_shutdown();
 }
 

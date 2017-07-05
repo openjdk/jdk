@@ -26,9 +26,12 @@
 #include "classfile/classFileStream.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/stackMapTable.hpp"
+#include "classfile/stackMapFrame.hpp"
+#include "classfile/stackMapTableFormat.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/verifier.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "interpreter/bytecodes.hpp"
 #include "interpreter/bytecodeStream.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
@@ -110,8 +113,11 @@ bool Verifier::verify(instanceKlassHandle klass, Verifier::Mode mode, bool shoul
   Symbol* exception_name = NULL;
   const size_t message_buffer_len = klass->name()->utf8_length() + 1024;
   char* message_buffer = NEW_RESOURCE_ARRAY(char, message_buffer_len);
+  char* exception_message = message_buffer;
 
   const char* klassName = klass->external_name();
+  bool can_failover = FailOverToOldVerifier &&
+      klass->major_version() < NOFAILOVER_MAJOR_VERSION;
 
   // If the class should be verified, first see if we can use the split
   // verifier.  If not, or if verification fails and FailOverToOldVerifier
@@ -122,27 +128,28 @@ bool Verifier::verify(instanceKlassHandle klass, Verifier::Mode mode, bool shoul
     }
     if (UseSplitVerifier &&
         klass->major_version() >= STACKMAP_ATTRIBUTE_MAJOR_VERSION) {
-        ClassVerifier split_verifier(
-          klass, message_buffer, message_buffer_len, THREAD);
-        split_verifier.verify_class(THREAD);
-        exception_name = split_verifier.result();
-      if (klass->major_version() < NOFAILOVER_MAJOR_VERSION &&
-          FailOverToOldVerifier && !HAS_PENDING_EXCEPTION &&
+      ClassVerifier split_verifier(klass, THREAD);
+      split_verifier.verify_class(THREAD);
+      exception_name = split_verifier.result();
+      if (can_failover && !HAS_PENDING_EXCEPTION &&
           (exception_name == vmSymbols::java_lang_VerifyError() ||
            exception_name == vmSymbols::java_lang_ClassFormatError())) {
-        if (TraceClassInitialization) {
+        if (TraceClassInitialization || VerboseVerification) {
           tty->print_cr(
             "Fail over class verification to old verifier for: %s", klassName);
         }
         exception_name = inference_verify(
           klass, message_buffer, message_buffer_len, THREAD);
       }
+      if (exception_name != NULL) {
+        exception_message = split_verifier.exception_message();
+      }
     } else {
       exception_name = inference_verify(
           klass, message_buffer, message_buffer_len, THREAD);
     }
 
-    if (TraceClassInitialization) {
+    if (TraceClassInitialization || VerboseVerification) {
       if (HAS_PENDING_EXCEPTION) {
         tty->print("Verification for %s has", klassName);
         tty->print_cr(" exception pending %s ",
@@ -173,7 +180,7 @@ bool Verifier::verify(instanceKlassHandle klass, Verifier::Mode mode, bool shoul
       kls = kls->super();
     }
     message_buffer[message_buffer_len - 1] = '\0'; // just to be sure
-    THROW_MSG_(exception_name, message_buffer, false);
+    THROW_MSG_(exception_name, exception_message, false);
   }
 }
 
@@ -221,7 +228,7 @@ Symbol* Verifier::inference_verify(
   }
 
   ResourceMark rm(THREAD);
-  if (ClassVerifier::_verify_verbose) {
+  if (VerboseVerification) {
     tty->print_cr("Verifying class %s with old format", klass->external_name());
   }
 
@@ -265,14 +272,252 @@ Symbol* Verifier::inference_verify(
   }
 }
 
+TypeOrigin TypeOrigin::null() {
+  return TypeOrigin();
+}
+TypeOrigin TypeOrigin::local(u2 index, StackMapFrame* frame) {
+  assert(frame != NULL, "Must have a frame");
+  return TypeOrigin(CF_LOCALS, index, StackMapFrame::copy(frame),
+     frame->local_at(index));
+}
+TypeOrigin TypeOrigin::stack(u2 index, StackMapFrame* frame) {
+  assert(frame != NULL, "Must have a frame");
+  return TypeOrigin(CF_STACK, index, StackMapFrame::copy(frame),
+      frame->stack_at(index));
+}
+TypeOrigin TypeOrigin::sm_local(u2 index, StackMapFrame* frame) {
+  assert(frame != NULL, "Must have a frame");
+  return TypeOrigin(SM_LOCALS, index, StackMapFrame::copy(frame),
+      frame->local_at(index));
+}
+TypeOrigin TypeOrigin::sm_stack(u2 index, StackMapFrame* frame) {
+  assert(frame != NULL, "Must have a frame");
+  return TypeOrigin(SM_STACK, index, StackMapFrame::copy(frame),
+      frame->stack_at(index));
+}
+TypeOrigin TypeOrigin::bad_index(u2 index) {
+  return TypeOrigin(BAD_INDEX, index, NULL, VerificationType::bogus_type());
+}
+TypeOrigin TypeOrigin::cp(u2 index, VerificationType vt) {
+  return TypeOrigin(CONST_POOL, index, NULL, vt);
+}
+TypeOrigin TypeOrigin::signature(VerificationType vt) {
+  return TypeOrigin(SIG, 0, NULL, vt);
+}
+TypeOrigin TypeOrigin::implicit(VerificationType t) {
+  return TypeOrigin(IMPLICIT, 0, NULL, t);
+}
+TypeOrigin TypeOrigin::frame(StackMapFrame* frame) {
+  return TypeOrigin(FRAME_ONLY, 0, StackMapFrame::copy(frame),
+                    VerificationType::bogus_type());
+}
+
+void TypeOrigin::reset_frame() {
+  if (_frame != NULL) {
+    _frame->restore();
+  }
+}
+
+void TypeOrigin::details(outputStream* ss) const {
+  _type.print_on(ss);
+  switch (_origin) {
+    case CF_LOCALS:
+      ss->print(" (current frame, locals[%d])", _index);
+      break;
+    case CF_STACK:
+      ss->print(" (current frame, stack[%d])", _index);
+      break;
+    case SM_LOCALS:
+      ss->print(" (stack map, locals[%d])", _index);
+      break;
+    case SM_STACK:
+      ss->print(" (stack map, stack[%d])", _index);
+      break;
+    case CONST_POOL:
+      ss->print(" (constant pool %d)", _index);
+      break;
+    case SIG:
+      ss->print(" (from method signature)");
+      break;
+    case IMPLICIT:
+    case FRAME_ONLY:
+    case NONE:
+    default:
+      ;
+  }
+}
+
+#ifdef ASSERT
+void TypeOrigin::print_on(outputStream* str) const {
+  str->print("{%d,%d,%p:", _origin, _index, _frame);
+  if (_frame != NULL) {
+    _frame->print_on(str);
+  } else {
+    str->print("null");
+  }
+  str->print(",");
+  _type.print_on(str);
+  str->print("}");
+}
+#endif
+
+void ErrorContext::details(outputStream* ss, methodOop method) const {
+  if (is_valid()) {
+    ss->print_cr("");
+    ss->print_cr("Exception Details:");
+    location_details(ss, method);
+    reason_details(ss);
+    frame_details(ss);
+    bytecode_details(ss, method);
+    handler_details(ss, method);
+    stackmap_details(ss, method);
+  }
+}
+
+void ErrorContext::reason_details(outputStream* ss) const {
+  streamIndentor si(ss);
+  ss->indent().print_cr("Reason:");
+  streamIndentor si2(ss);
+  ss->indent().print("");
+  switch (_fault) {
+    case INVALID_BYTECODE:
+      ss->print("Error exists in the bytecode");
+      break;
+    case WRONG_TYPE:
+      if (_expected.is_valid()) {
+        ss->print("Type ");
+        _type.details(ss);
+        ss->print(" is not assignable to ");
+        _expected.details(ss);
+      } else {
+        ss->print("Invalid type: ");
+        _type.details(ss);
+      }
+      break;
+    case FLAGS_MISMATCH:
+      if (_expected.is_valid()) {
+        ss->print("Current frame's flags are not assignable "
+                  "to stack map frame's.");
+      } else {
+        ss->print("Current frame's flags are invalid in this context.");
+      }
+      break;
+    case BAD_CP_INDEX:
+      ss->print("Constant pool index %d is invalid", _type.index());
+      break;
+    case BAD_LOCAL_INDEX:
+      ss->print("Local index %d is invalid", _type.index());
+      break;
+    case LOCALS_SIZE_MISMATCH:
+      ss->print("Current frame's local size doesn't match stackmap.");
+      break;
+    case STACK_SIZE_MISMATCH:
+      ss->print("Current frame's stack size doesn't match stackmap.");
+      break;
+    case STACK_OVERFLOW:
+      ss->print("Exceeded max stack size.");
+      break;
+    case STACK_UNDERFLOW:
+      ss->print("Attempt to pop empty stack.");
+      break;
+    case MISSING_STACKMAP:
+      ss->print("Expected stackmap frame at this location.");
+      break;
+    case BAD_STACKMAP:
+      ss->print("Invalid stackmap specification.");
+      break;
+    case UNKNOWN:
+    default:
+      ShouldNotReachHere();
+      ss->print_cr("Unknown");
+  }
+  ss->print_cr("");
+}
+
+void ErrorContext::location_details(outputStream* ss, methodOop method) const {
+  if (_bci != -1 && method != NULL) {
+    streamIndentor si(ss);
+    const char* bytecode_name = "<invalid>";
+    if (method->validate_bci_from_bcx(_bci) != -1) {
+      Bytecodes::Code code = Bytecodes::code_or_bp_at(method->bcp_from(_bci));
+      if (Bytecodes::is_defined(code)) {
+          bytecode_name = Bytecodes::name(code);
+      } else {
+          bytecode_name = "<illegal>";
+      }
+    }
+    instanceKlass* ik = instanceKlass::cast(method->method_holder());
+    ss->indent().print_cr("Location:");
+    streamIndentor si2(ss);
+    ss->indent().print_cr("%s.%s%s @%d: %s",
+        ik->name()->as_C_string(), method->name()->as_C_string(),
+        method->signature()->as_C_string(), _bci, bytecode_name);
+  }
+}
+
+void ErrorContext::frame_details(outputStream* ss) const {
+  streamIndentor si(ss);
+  if (_type.is_valid() && _type.frame() != NULL) {
+    ss->indent().print_cr("Current Frame:");
+    streamIndentor si2(ss);
+    _type.frame()->print_on(ss);
+  }
+  if (_expected.is_valid() && _expected.frame() != NULL) {
+    ss->indent().print_cr("Stackmap Frame:");
+    streamIndentor si2(ss);
+    _expected.frame()->print_on(ss);
+  }
+}
+
+void ErrorContext::bytecode_details(outputStream* ss, methodOop method) const {
+  if (method != NULL) {
+    streamIndentor si(ss);
+    ss->indent().print_cr("Bytecode:");
+    streamIndentor si2(ss);
+    ss->print_data(method->code_base(), method->code_size(), false);
+  }
+}
+
+void ErrorContext::handler_details(outputStream* ss, methodOop method) const {
+  if (method != NULL) {
+    streamIndentor si(ss);
+    ExceptionTable table(method);
+    if (table.length() > 0) {
+      ss->indent().print_cr("Exception Handler Table:");
+      streamIndentor si2(ss);
+      for (int i = 0; i < table.length(); ++i) {
+        ss->indent().print_cr("bci [%d, %d] => handler: %d", table.start_pc(i),
+            table.end_pc(i), table.handler_pc(i));
+      }
+    }
+  }
+}
+
+void ErrorContext::stackmap_details(outputStream* ss, methodOop method) const {
+  if (method != NULL && method->has_stackmap_table()) {
+    streamIndentor si(ss);
+    ss->indent().print_cr("Stackmap Table:");
+    typeArrayOop data = method->stackmap_data();
+    stack_map_table* sm_table =
+        stack_map_table::at((address)data->byte_at_addr(0));
+    stack_map_frame* sm_frame = sm_table->entries();
+    streamIndentor si2(ss);
+    int current_offset = -1;
+    for (u2 i = 0; i < sm_table->number_of_entries(); ++i) {
+      ss->indent();
+      sm_frame->print_on(ss, current_offset);
+      ss->print_cr("");
+      current_offset += sm_frame->offset_delta();
+      sm_frame = sm_frame->next();
+    }
+  }
+}
+
 // Methods in ClassVerifier
 
-bool ClassVerifier::_verify_verbose = false;
-
 ClassVerifier::ClassVerifier(
-    instanceKlassHandle klass, char* msg, size_t msg_len, TRAPS)
-    : _thread(THREAD), _exception_type(NULL), _message(msg),
-      _message_buffer_len(msg_len), _klass(klass) {
+    instanceKlassHandle klass, TRAPS)
+    : _thread(THREAD), _exception_type(NULL), _message(NULL), _klass(klass) {
   _this_type = VerificationType::reference_type(klass->name());
   // Create list to hold symbols in reference area.
   _symbols = new GrowableArray<Symbol*>(100, 0, NULL);
@@ -290,8 +535,14 @@ VerificationType ClassVerifier::object_type() const {
   return VerificationType::reference_type(vmSymbols::java_lang_Object());
 }
 
+TypeOrigin ClassVerifier::ref_ctx(const char* sig, TRAPS) {
+  VerificationType vt = VerificationType::reference_type(
+      create_temporary_symbol(sig, (int)strlen(sig), THREAD));
+  return TypeOrigin::implicit(vt);
+}
+
 void ClassVerifier::verify_class(TRAPS) {
-  if (_verify_verbose) {
+  if (VerboseVerification) {
     tty->print_cr("Verifying class %s with new format",
       _klass->external_name());
   }
@@ -312,7 +563,7 @@ void ClassVerifier::verify_class(TRAPS) {
     verify_method(methodHandle(THREAD, m), CHECK_VERIFY(this));
   }
 
-  if (_verify_verbose || TraceClassInitialization) {
+  if (VerboseVerification || TraceClassInitialization) {
     if (was_recursively_verified())
       tty->print_cr("Recursive verification detected for: %s",
           _klass->external_name());
@@ -321,7 +572,7 @@ void ClassVerifier::verify_class(TRAPS) {
 
 void ClassVerifier::verify_method(methodHandle m, TRAPS) {
   _method = m;   // initialize _method
-  if (_verify_verbose) {
+  if (VerboseVerification) {
     tty->print_cr("Verifying method %s", m->name_and_sig_as_C_string());
   }
 
@@ -368,8 +619,8 @@ void ClassVerifier::verify_method(methodHandle m, TRAPS) {
   StackMapTable stackmap_table(&reader, &current_frame, max_locals, max_stack,
                                code_data, code_length, CHECK_VERIFY(this));
 
-  if (_verify_verbose) {
-    stackmap_table.print();
+  if (VerboseVerification) {
+    stackmap_table.print_on(tty);
   }
 
   RawBytecodeStream bcs(m);
@@ -388,6 +639,7 @@ void ClassVerifier::verify_method(methodHandle m, TRAPS) {
 
     // Set current frame's offset to bci
     current_frame.set_offset(bci);
+    current_frame.set_mark();
 
     // Make sure every offset in stackmap table point to the beginning to
     // an instruction. Match current_frame to stackmap_table entry with
@@ -395,6 +647,7 @@ void ClassVerifier::verify_method(methodHandle m, TRAPS) {
     stackmap_index = verify_stackmap_table(
       stackmap_index, bci, &current_frame, &stackmap_table,
       no_control_flow, CHECK_VERIFY(this));
+
 
     bool this_uninit = false;  // Set to true when invokespecial <init> initialized 'this'
 
@@ -406,8 +659,8 @@ void ClassVerifier::verify_method(methodHandle m, TRAPS) {
       VerificationType atype;
 
 #ifndef PRODUCT
-      if (_verify_verbose) {
-        current_frame.print();
+      if (VerboseVerification) {
+        current_frame.print_on(tty);
         tty->print_cr("offset = %d,  opcode = %s", bci, Bytecodes::name(opcode));
       }
 #endif
@@ -420,7 +673,10 @@ void ClassVerifier::verify_method(methodHandle m, TRAPS) {
             opcode != Bytecodes::_lstore && opcode != Bytecodes::_fload  &&
             opcode != Bytecodes::_dload  && opcode != Bytecodes::_fstore &&
             opcode != Bytecodes::_dstore) {
-          verify_error(bci, "Bad wide instruction");
+          /* Unreachable?  RawBytecodeStream's raw_next() returns 'illegal'
+           * if we encounter a wide instruction that modifies an invalid
+           * opcode (not one of the ones listed above) */
+          verify_error(ErrorContext::bad_code(bci), "Bad wide instruction");
           return;
         }
       }
@@ -532,7 +788,9 @@ void ClassVerifier::verify_method(methodHandle m, TRAPS) {
           atype = current_frame.pop_stack(
             VerificationType::reference_check(), CHECK_VERIFY(this));
           if (!atype.is_int_array()) {
-            verify_error(bci, bad_type_msg, "iaload");
+            verify_error(ErrorContext::bad_type(bci,
+                current_frame.stack_top_ctx(), ref_ctx("[I", THREAD)),
+                bad_type_msg, "iaload");
             return;
           }
           current_frame.push_stack(
@@ -544,7 +802,9 @@ void ClassVerifier::verify_method(methodHandle m, TRAPS) {
           atype = current_frame.pop_stack(
             VerificationType::reference_check(), CHECK_VERIFY(this));
           if (!atype.is_bool_array() && !atype.is_byte_array()) {
-            verify_error(bci, bad_type_msg, "baload");
+            verify_error(
+                ErrorContext::bad_type(bci, current_frame.stack_top_ctx()),
+                bad_type_msg, "baload");
             return;
           }
           current_frame.push_stack(
@@ -556,7 +816,9 @@ void ClassVerifier::verify_method(methodHandle m, TRAPS) {
           atype = current_frame.pop_stack(
             VerificationType::reference_check(), CHECK_VERIFY(this));
           if (!atype.is_char_array()) {
-            verify_error(bci, bad_type_msg, "caload");
+            verify_error(ErrorContext::bad_type(bci,
+                current_frame.stack_top_ctx(), ref_ctx("[C", THREAD)),
+                bad_type_msg, "caload");
             return;
           }
           current_frame.push_stack(
@@ -568,7 +830,9 @@ void ClassVerifier::verify_method(methodHandle m, TRAPS) {
           atype = current_frame.pop_stack(
             VerificationType::reference_check(), CHECK_VERIFY(this));
           if (!atype.is_short_array()) {
-            verify_error(bci, bad_type_msg, "saload");
+            verify_error(ErrorContext::bad_type(bci,
+                current_frame.stack_top_ctx(), ref_ctx("[S", THREAD)),
+                bad_type_msg, "saload");
             return;
           }
           current_frame.push_stack(
@@ -580,7 +844,9 @@ void ClassVerifier::verify_method(methodHandle m, TRAPS) {
           atype = current_frame.pop_stack(
             VerificationType::reference_check(), CHECK_VERIFY(this));
           if (!atype.is_long_array()) {
-            verify_error(bci, bad_type_msg, "laload");
+            verify_error(ErrorContext::bad_type(bci,
+                current_frame.stack_top_ctx(), ref_ctx("[J", THREAD)),
+                bad_type_msg, "laload");
             return;
           }
           current_frame.push_stack_2(
@@ -593,7 +859,9 @@ void ClassVerifier::verify_method(methodHandle m, TRAPS) {
           atype = current_frame.pop_stack(
             VerificationType::reference_check(), CHECK_VERIFY(this));
           if (!atype.is_float_array()) {
-            verify_error(bci, bad_type_msg, "faload");
+            verify_error(ErrorContext::bad_type(bci,
+                current_frame.stack_top_ctx(), ref_ctx("[F", THREAD)),
+                bad_type_msg, "faload");
             return;
           }
           current_frame.push_stack(
@@ -605,7 +873,9 @@ void ClassVerifier::verify_method(methodHandle m, TRAPS) {
           atype = current_frame.pop_stack(
             VerificationType::reference_check(), CHECK_VERIFY(this));
           if (!atype.is_double_array()) {
-            verify_error(bci, bad_type_msg, "daload");
+            verify_error(ErrorContext::bad_type(bci,
+                current_frame.stack_top_ctx(), ref_ctx("[D", THREAD)),
+                bad_type_msg, "daload");
             return;
           }
           current_frame.push_stack_2(
@@ -618,7 +888,10 @@ void ClassVerifier::verify_method(methodHandle m, TRAPS) {
           atype = current_frame.pop_stack(
             VerificationType::reference_check(), CHECK_VERIFY(this));
           if (!atype.is_reference_array()) {
-            verify_error(bci, bad_type_msg, "aaload");
+            verify_error(ErrorContext::bad_type(bci,
+                current_frame.stack_top_ctx(),
+                TypeOrigin::implicit(VerificationType::reference_check())),
+                bad_type_msg, "aaload");
             return;
           }
           if (atype.is_null()) {
@@ -689,7 +962,9 @@ void ClassVerifier::verify_method(methodHandle m, TRAPS) {
           atype = current_frame.pop_stack(
             VerificationType::reference_check(), CHECK_VERIFY(this));
           if (!atype.is_int_array()) {
-            verify_error(bci, bad_type_msg, "iastore");
+            verify_error(ErrorContext::bad_type(bci,
+                current_frame.stack_top_ctx(), ref_ctx("[I", THREAD)),
+                bad_type_msg, "iastore");
             return;
           }
           no_control_flow = false; break;
@@ -701,7 +976,9 @@ void ClassVerifier::verify_method(methodHandle m, TRAPS) {
           atype = current_frame.pop_stack(
             VerificationType::reference_check(), CHECK_VERIFY(this));
           if (!atype.is_bool_array() && !atype.is_byte_array()) {
-            verify_error(bci, bad_type_msg, "bastore");
+            verify_error(
+                ErrorContext::bad_type(bci, current_frame.stack_top_ctx()),
+                bad_type_msg, "bastore");
             return;
           }
           no_control_flow = false; break;
@@ -713,7 +990,9 @@ void ClassVerifier::verify_method(methodHandle m, TRAPS) {
           atype = current_frame.pop_stack(
             VerificationType::reference_check(), CHECK_VERIFY(this));
           if (!atype.is_char_array()) {
-            verify_error(bci, bad_type_msg, "castore");
+            verify_error(ErrorContext::bad_type(bci,
+                current_frame.stack_top_ctx(), ref_ctx("[C", THREAD)),
+                bad_type_msg, "castore");
             return;
           }
           no_control_flow = false; break;
@@ -725,7 +1004,9 @@ void ClassVerifier::verify_method(methodHandle m, TRAPS) {
           atype = current_frame.pop_stack(
             VerificationType::reference_check(), CHECK_VERIFY(this));
           if (!atype.is_short_array()) {
-            verify_error(bci, bad_type_msg, "sastore");
+            verify_error(ErrorContext::bad_type(bci,
+                current_frame.stack_top_ctx(), ref_ctx("[S", THREAD)),
+                bad_type_msg, "sastore");
             return;
           }
           no_control_flow = false; break;
@@ -738,7 +1019,9 @@ void ClassVerifier::verify_method(methodHandle m, TRAPS) {
           atype = current_frame.pop_stack(
             VerificationType::reference_check(), CHECK_VERIFY(this));
           if (!atype.is_long_array()) {
-            verify_error(bci, bad_type_msg, "lastore");
+            verify_error(ErrorContext::bad_type(bci,
+                current_frame.stack_top_ctx(), ref_ctx("[J", THREAD)),
+                bad_type_msg, "lastore");
             return;
           }
           no_control_flow = false; break;
@@ -750,7 +1033,9 @@ void ClassVerifier::verify_method(methodHandle m, TRAPS) {
           atype = current_frame.pop_stack(
             VerificationType::reference_check(), CHECK_VERIFY(this));
           if (!atype.is_float_array()) {
-            verify_error(bci, bad_type_msg, "fastore");
+            verify_error(ErrorContext::bad_type(bci,
+                current_frame.stack_top_ctx(), ref_ctx("[F", THREAD)),
+                bad_type_msg, "fastore");
             return;
           }
           no_control_flow = false; break;
@@ -763,7 +1048,9 @@ void ClassVerifier::verify_method(methodHandle m, TRAPS) {
           atype = current_frame.pop_stack(
             VerificationType::reference_check(), CHECK_VERIFY(this));
           if (!atype.is_double_array()) {
-            verify_error(bci, bad_type_msg, "dastore");
+            verify_error(ErrorContext::bad_type(bci,
+                current_frame.stack_top_ctx(), ref_ctx("[D", THREAD)),
+                bad_type_msg, "dastore");
             return;
           }
           no_control_flow = false; break;
@@ -775,7 +1062,10 @@ void ClassVerifier::verify_method(methodHandle m, TRAPS) {
             VerificationType::reference_check(), CHECK_VERIFY(this));
           // more type-checking is done at runtime
           if (!atype.is_reference_array()) {
-            verify_error(bci, bad_type_msg, "aastore");
+            verify_error(ErrorContext::bad_type(bci,
+                current_frame.stack_top_ctx(),
+                TypeOrigin::implicit(VerificationType::reference_check())),
+                bad_type_msg, "aastore");
             return;
           }
           // 4938384: relaxed constraint in JVMS 3nd edition.
@@ -793,7 +1083,11 @@ void ClassVerifier::verify_method(methodHandle m, TRAPS) {
             current_frame.pop_stack(
               VerificationType::category2_check(), CHECK_VERIFY(this));
           } else {
-            verify_error(bci, bad_type_msg, "pop2");
+            /* Unreachable? Would need a category2_1st on TOS
+             * which does not appear possible. */
+            verify_error(
+                ErrorContext::bad_type(bci, current_frame.stack_top_ctx()),
+                bad_type_msg, "pop2");
             return;
           }
           no_control_flow = false; break;
@@ -825,7 +1119,10 @@ void ClassVerifier::verify_method(methodHandle m, TRAPS) {
             type3 = current_frame.pop_stack(
               VerificationType::category2_check(), CHECK_VERIFY(this));
           } else {
-            verify_error(bci, bad_type_msg, "dup_x2");
+            /* Unreachable? Would need a category2_1st at stack depth 2 with
+             * a category1 on TOS which does not appear possible. */
+            verify_error(ErrorContext::bad_type(
+                bci, current_frame.stack_top_ctx()), bad_type_msg, "dup_x2");
             return;
           }
           current_frame.push_stack(type, CHECK_VERIFY(this));
@@ -843,7 +1140,11 @@ void ClassVerifier::verify_method(methodHandle m, TRAPS) {
             type2 = current_frame.pop_stack(
               VerificationType::category2_check(), CHECK_VERIFY(this));
           } else {
-            verify_error(bci, bad_type_msg, "dup2");
+            /* Unreachable?  Would need a category2_1st on TOS which does not
+             * appear possible. */
+            verify_error(
+                ErrorContext::bad_type(bci, current_frame.stack_top_ctx()),
+                bad_type_msg, "dup2");
             return;
           }
           current_frame.push_stack(type2, CHECK_VERIFY(this));
@@ -858,11 +1159,15 @@ void ClassVerifier::verify_method(methodHandle m, TRAPS) {
           if (type.is_category1()) {
             type2 = current_frame.pop_stack(
               VerificationType::category1_check(), CHECK_VERIFY(this));
-          } else if(type.is_category2_2nd()) {
-            type2 = current_frame.pop_stack
-              (VerificationType::category2_check(), CHECK_VERIFY(this));
+          } else if (type.is_category2_2nd()) {
+            type2 = current_frame.pop_stack(
+              VerificationType::category2_check(), CHECK_VERIFY(this));
           } else {
-            verify_error(bci, bad_type_msg, "dup2_x1");
+            /* Unreachable?  Would need a category2_1st on TOS which does
+             * not appear possible. */
+            verify_error(
+                ErrorContext::bad_type(bci, current_frame.stack_top_ctx()),
+                bad_type_msg, "dup2_x1");
             return;
           }
           type3 = current_frame.pop_stack(
@@ -885,7 +1190,11 @@ void ClassVerifier::verify_method(methodHandle m, TRAPS) {
             type2 = current_frame.pop_stack(
               VerificationType::category2_check(), CHECK_VERIFY(this));
           } else {
-            verify_error(bci, bad_type_msg, "dup2_x2");
+            /* Unreachable?  Would need a category2_1st on TOS which does
+             * not appear possible. */
+            verify_error(
+                ErrorContext::bad_type(bci, current_frame.stack_top_ctx()),
+                bad_type_msg, "dup2_x2");
             return;
           }
           type3 = current_frame.pop_stack(CHECK_VERIFY(this));
@@ -896,7 +1205,12 @@ void ClassVerifier::verify_method(methodHandle m, TRAPS) {
             type4 = current_frame.pop_stack(
               VerificationType::category2_check(), CHECK_VERIFY(this));
           } else {
-            verify_error(bci, bad_type_msg, "dup2_x2");
+            /* Unreachable?  Would need a category2_1st on TOS after popping
+             * a long/double or two category 1's, which does not
+             * appear possible. */
+            verify_error(
+                ErrorContext::bad_type(bci, current_frame.stack_top_ctx()),
+                bad_type_msg, "dup2_x2");
             return;
           }
           current_frame.push_stack(type2, CHECK_VERIFY(this));
@@ -1176,43 +1490,50 @@ void ClassVerifier::verify_method(methodHandle m, TRAPS) {
         case Bytecodes::_ireturn :
           type = current_frame.pop_stack(
             VerificationType::integer_type(), CHECK_VERIFY(this));
-          verify_return_value(return_type, type, bci, CHECK_VERIFY(this));
+          verify_return_value(return_type, type, bci,
+                              &current_frame, CHECK_VERIFY(this));
           no_control_flow = true; break;
         case Bytecodes::_lreturn :
           type2 = current_frame.pop_stack(
             VerificationType::long2_type(), CHECK_VERIFY(this));
           type = current_frame.pop_stack(
             VerificationType::long_type(), CHECK_VERIFY(this));
-          verify_return_value(return_type, type, bci, CHECK_VERIFY(this));
+          verify_return_value(return_type, type, bci,
+                              &current_frame, CHECK_VERIFY(this));
           no_control_flow = true; break;
         case Bytecodes::_freturn :
           type = current_frame.pop_stack(
             VerificationType::float_type(), CHECK_VERIFY(this));
-          verify_return_value(return_type, type, bci, CHECK_VERIFY(this));
+          verify_return_value(return_type, type, bci,
+                              &current_frame, CHECK_VERIFY(this));
           no_control_flow = true; break;
         case Bytecodes::_dreturn :
           type2 = current_frame.pop_stack(
             VerificationType::double2_type(),  CHECK_VERIFY(this));
           type = current_frame.pop_stack(
             VerificationType::double_type(), CHECK_VERIFY(this));
-          verify_return_value(return_type, type, bci, CHECK_VERIFY(this));
+          verify_return_value(return_type, type, bci,
+                              &current_frame, CHECK_VERIFY(this));
           no_control_flow = true; break;
         case Bytecodes::_areturn :
           type = current_frame.pop_stack(
             VerificationType::reference_check(), CHECK_VERIFY(this));
-          verify_return_value(return_type, type, bci, CHECK_VERIFY(this));
+          verify_return_value(return_type, type, bci,
+                              &current_frame, CHECK_VERIFY(this));
           no_control_flow = true; break;
         case Bytecodes::_return :
           if (return_type != VerificationType::bogus_type()) {
-            verify_error(bci, "Method expects no return value");
+            verify_error(ErrorContext::bad_code(bci),
+                         "Method expects a return value");
             return;
           }
           // Make sure "this" has been initialized if current method is an
           // <init>
           if (_method->name() == vmSymbols::object_initializer_name() &&
               current_frame.flag_this_uninit()) {
-            verify_error(bci,
-              "Constructor must call super() or this() before return");
+            verify_error(ErrorContext::bad_code(bci),
+                         "Constructor must call super() or this() "
+                         "before return");
             return;
           }
           no_control_flow = true; break;
@@ -1239,11 +1560,13 @@ void ClassVerifier::verify_method(methodHandle m, TRAPS) {
         case Bytecodes::_new :
         {
           index = bcs.get_index_u2();
-          verify_cp_class_type(index, cp, CHECK_VERIFY(this));
+          verify_cp_class_type(bci, index, cp, CHECK_VERIFY(this));
           VerificationType new_class_type =
             cp_index_to_type(index, cp, CHECK_VERIFY(this));
           if (!new_class_type.is_object()) {
-            verify_error(bci, "Illegal new instruction");
+            verify_error(ErrorContext::bad_type(bci,
+                TypeOrigin::cp(index, new_class_type)),
+                "Illegal new instruction");
             return;
           }
           type = VerificationType::uninitialized_type(bci);
@@ -1258,13 +1581,15 @@ void ClassVerifier::verify_method(methodHandle m, TRAPS) {
           no_control_flow = false; break;
         case Bytecodes::_anewarray :
           verify_anewarray(
-            bcs.get_index_u2(), cp, &current_frame, CHECK_VERIFY(this));
+            bci, bcs.get_index_u2(), cp, &current_frame, CHECK_VERIFY(this));
           no_control_flow = false; break;
         case Bytecodes::_arraylength :
           type = current_frame.pop_stack(
             VerificationType::reference_check(), CHECK_VERIFY(this));
           if (!(type.is_null() || type.is_array())) {
-            verify_error(bci, bad_type_msg, "arraylength");
+            verify_error(ErrorContext::bad_type(
+                bci, current_frame.stack_top_ctx()),
+                bad_type_msg, "arraylength");
           }
           current_frame.push_stack(
             VerificationType::integer_type(), CHECK_VERIFY(this));
@@ -1272,7 +1597,7 @@ void ClassVerifier::verify_method(methodHandle m, TRAPS) {
         case Bytecodes::_checkcast :
         {
           index = bcs.get_index_u2();
-          verify_cp_class_type(index, cp, CHECK_VERIFY(this));
+          verify_cp_class_type(bci, index, cp, CHECK_VERIFY(this));
           current_frame.pop_stack(object_type(), CHECK_VERIFY(this));
           VerificationType klass_type = cp_index_to_type(
             index, cp, CHECK_VERIFY(this));
@@ -1281,7 +1606,7 @@ void ClassVerifier::verify_method(methodHandle m, TRAPS) {
         }
         case Bytecodes::_instanceof : {
           index = bcs.get_index_u2();
-          verify_cp_class_type(index, cp, CHECK_VERIFY(this));
+          verify_cp_class_type(bci, index, cp, CHECK_VERIFY(this));
           current_frame.pop_stack(object_type(), CHECK_VERIFY(this));
           current_frame.push_stack(
             VerificationType::integer_type(), CHECK_VERIFY(this));
@@ -1296,17 +1621,18 @@ void ClassVerifier::verify_method(methodHandle m, TRAPS) {
         {
           index = bcs.get_index_u2();
           u2 dim = *(bcs.bcp()+3);
-          verify_cp_class_type(index, cp, CHECK_VERIFY(this));
+          verify_cp_class_type(bci, index, cp, CHECK_VERIFY(this));
           VerificationType new_array_type =
             cp_index_to_type(index, cp, CHECK_VERIFY(this));
           if (!new_array_type.is_array()) {
-            verify_error(bci,
-              "Illegal constant pool index in multianewarray instruction");
+            verify_error(ErrorContext::bad_type(bci,
+                TypeOrigin::cp(index, new_array_type)),
+                "Illegal constant pool index in multianewarray instruction");
             return;
           }
           if (dim < 1 || new_array_type.dimensions() < dim) {
-            verify_error(bci,
-              "Illegal dimension in multianewarray instruction");
+            verify_error(ErrorContext::bad_code(bci),
+                "Illegal dimension in multianewarray instruction: %d", dim);
             return;
           }
           for (int i = 0; i < dim; i++) {
@@ -1324,7 +1650,8 @@ void ClassVerifier::verify_method(methodHandle m, TRAPS) {
         default:
           // We only need to check the valid bytecodes in class file.
           // And jsr and ret are not in the new class file format in JDK1.5.
-          verify_error(bci, "Bad instruction");
+          verify_error(ErrorContext::bad_code(bci),
+              "Bad instruction: %02x", opcode);
           no_control_flow = false;
           return;
       }  // end switch
@@ -1340,7 +1667,8 @@ void ClassVerifier::verify_method(methodHandle m, TRAPS) {
 
   // Make sure that control flow does not fall through end of the method
   if (!no_control_flow) {
-    verify_error(code_length, "Control flow falls through code end");
+    verify_error(ErrorContext::bad_code(code_length),
+        "Control flow falls through code end");
     return;
   }
 }
@@ -1359,7 +1687,7 @@ char* ClassVerifier::generate_code_data(methodHandle m, u4 code_length, TRAPS) {
         code_data[bci] = BYTECODE_OFFSET;
       }
     } else {
-      verify_error(bcs.bci(), "Bad instruction");
+      verify_error(ErrorContext::bad_code(bcs.bci()), "Bad instruction");
       return NULL;
     }
   }
@@ -1402,9 +1730,11 @@ void ClassVerifier::verify_exception_handler_table(u4 code_length, char* code_da
         catch_type, this, CHECK_VERIFY(this));
       if (!is_subclass) {
         // 4286534: should throw VerifyError according to recent spec change
-        verify_error(
-          "Catch type is not a subclass of Throwable in handler %d",
-          handler_pc);
+        verify_error(ErrorContext::bad_type(handler_pc,
+            TypeOrigin::cp(catch_type_index, catch_type),
+            TypeOrigin::implicit(throwable)),
+            "Catch type is not a subclass "
+            "of Throwable in exception handler %d", handler_pc);
         return;
       }
     }
@@ -1444,19 +1774,21 @@ u2 ClassVerifier::verify_stackmap_table(u2 stackmap_index, u2 bci,
   if (stackmap_index < stackmap_table->get_frame_count()) {
     u2 this_offset = stackmap_table->get_offset(stackmap_index);
     if (no_control_flow && this_offset > bci) {
-      verify_error(bci, "Expecting a stack map frame");
+      verify_error(ErrorContext::missing_stackmap(bci),
+                   "Expecting a stack map frame");
       return 0;
     }
     if (this_offset == bci) {
+      ErrorContext ctx;
       // See if current stack map can be assigned to the frame in table.
       // current_frame is the stackmap frame got from the last instruction.
       // If matched, current_frame will be updated by this method.
-      bool match = stackmap_table->match_stackmap(
+      bool matches = stackmap_table->match_stackmap(
         current_frame, this_offset, stackmap_index,
-        !no_control_flow, true, CHECK_VERIFY_(this, 0));
-      if (!match) {
+        !no_control_flow, true, &ctx, CHECK_VERIFY_(this, 0));
+      if (!matches) {
         // report type error
-        verify_error(bci, "Instruction type does not match stack map");
+        verify_error(ctx, "Instruction type does not match stack map");
         return 0;
       }
       stackmap_index++;
@@ -1466,7 +1798,7 @@ u2 ClassVerifier::verify_stackmap_table(u2 stackmap_index, u2 bci,
       return 0;
     }
   } else if (no_control_flow) {
-    verify_error(bci, "Expecting a stack map frame");
+    verify_error(ErrorContext::bad_code(bci), "Expecting a stack map frame");
     return 0;
   }
   return stackmap_index;
@@ -1498,29 +1830,31 @@ void ClassVerifier::verify_exception_handler_targets(u2 bci, bool this_uninit, S
           VerificationType::reference_type(vmSymbols::java_lang_Throwable());
         new_frame->push_stack(throwable, CHECK_VERIFY(this));
       }
-      bool match = stackmap_table->match_stackmap(
-        new_frame, handler_pc, true, false, CHECK_VERIFY(this));
-      if (!match) {
-        verify_error(bci,
-          "Stack map does not match the one at exception handler %d",
-          handler_pc);
+      ErrorContext ctx;
+      bool matches = stackmap_table->match_stackmap(
+        new_frame, handler_pc, true, false, &ctx, CHECK_VERIFY(this));
+      if (!matches) {
+        verify_error(ctx, "Stack map does not match the one at "
+            "exception handler %d", handler_pc);
         return;
       }
     }
   }
 }
 
-void ClassVerifier::verify_cp_index(constantPoolHandle cp, int index, TRAPS) {
+void ClassVerifier::verify_cp_index(
+    u2 bci, constantPoolHandle cp, int index, TRAPS) {
   int nconstants = cp->length();
   if ((index <= 0) || (index >= nconstants)) {
-    verify_error("Illegal constant pool index %d in class %s",
-      index, instanceKlass::cast(cp->pool_holder())->external_name());
+    verify_error(ErrorContext::bad_cp_index(bci, index),
+        "Illegal constant pool index %d in class %s",
+        index, instanceKlass::cast(cp->pool_holder())->external_name());
     return;
   }
 }
 
 void ClassVerifier::verify_cp_type(
-    int index, constantPoolHandle cp, unsigned int types, TRAPS) {
+    u2 bci, int index, constantPoolHandle cp, unsigned int types, TRAPS) {
 
   // In some situations, bytecode rewriting may occur while we're verifying.
   // In this case, a constant pool cache exists and some indices refer to that
@@ -1528,10 +1862,10 @@ void ClassVerifier::verify_cp_type(
   // We must check was_recursively_verified() before we get here.
   guarantee(cp->cache() == NULL, "not rewritten yet");
 
-  verify_cp_index(cp, index, CHECK_VERIFY(this));
+  verify_cp_index(bci, cp, index, CHECK_VERIFY(this));
   unsigned int tag = cp->tag_at(index).value();
   if ((types & (1 << tag)) == 0) {
-    verify_error(
+    verify_error(ErrorContext::bad_cp_index(bci, index),
       "Illegal type at constant pool entry %d in class %s",
       index, instanceKlass::cast(cp->pool_holder())->external_name());
     return;
@@ -1539,51 +1873,46 @@ void ClassVerifier::verify_cp_type(
 }
 
 void ClassVerifier::verify_cp_class_type(
-    int index, constantPoolHandle cp, TRAPS) {
-  verify_cp_index(cp, index, CHECK_VERIFY(this));
+    u2 bci, int index, constantPoolHandle cp, TRAPS) {
+  verify_cp_index(bci, cp, index, CHECK_VERIFY(this));
   constantTag tag = cp->tag_at(index);
   if (!tag.is_klass() && !tag.is_unresolved_klass()) {
-    verify_error("Illegal type at constant pool entry %d in class %s",
-      index, instanceKlass::cast(cp->pool_holder())->external_name());
+    verify_error(ErrorContext::bad_cp_index(bci, index),
+        "Illegal type at constant pool entry %d in class %s",
+        index, instanceKlass::cast(cp->pool_holder())->external_name());
     return;
   }
 }
 
-void ClassVerifier::format_error_message(
-    const char* fmt, int offset, va_list va) {
-  ResourceMark rm(_thread);
-  stringStream message(_message, _message_buffer_len);
-  message.vprint(fmt, va);
-  if (!_method.is_null()) {
-    message.print(" in method %s", _method->name_and_sig_as_C_string());
-  }
-  if (offset != -1) {
-    message.print(" at offset %d", offset);
-  }
-}
+void ClassVerifier::verify_error(ErrorContext ctx, const char* msg, ...) {
+  stringStream ss;
 
-void ClassVerifier::verify_error(u2 offset, const char* fmt, ...) {
+  ctx.reset_frames();
   _exception_type = vmSymbols::java_lang_VerifyError();
+  _error_context = ctx;
   va_list va;
-  va_start(va, fmt);
-  format_error_message(fmt, offset, va);
+  va_start(va, msg);
+  ss.vprint(msg, va);
   va_end(va);
-}
-
-void ClassVerifier::verify_error(const char* fmt, ...) {
-  _exception_type = vmSymbols::java_lang_VerifyError();
-  va_list va;
-  va_start(va, fmt);
-  format_error_message(fmt, -1, va);
-  va_end(va);
+  _message = ss.as_string();
+#ifdef ASSERT
+  ResourceMark rm;
+  const char* exception_name = _exception_type->as_C_string();
+  Exceptions::debug_check_abort(exception_name, NULL);
+#endif // ndef ASSERT
 }
 
 void ClassVerifier::class_format_error(const char* msg, ...) {
+  stringStream ss;
   _exception_type = vmSymbols::java_lang_ClassFormatError();
   va_list va;
   va_start(va, msg);
-  format_error_message(msg, -1, va);
+  ss.vprint(msg, va);
   va_end(va);
+  if (!_method.is_null()) {
+    ss.print(" in method %s", _method->name_and_sig_as_C_string());
+  }
+  _message = ss.as_string();
 }
 
 klassOop ClassVerifier::load_class(Symbol* name, TRAPS) {
@@ -1619,7 +1948,7 @@ bool ClassVerifier::is_protected_access(instanceKlassHandle this_class,
     }
   } else {
     klassOop member_klass = target_instance->find_field(field_name, field_sig, &fd);
-    if(member_klass != NULL && fd.is_protected()) {
+    if (member_klass != NULL && fd.is_protected()) {
       if (!this_class->is_same_class_package(member_klass)) {
         return true;
       }
@@ -1629,9 +1958,9 @@ bool ClassVerifier::is_protected_access(instanceKlassHandle this_class,
 }
 
 void ClassVerifier::verify_ldc(
-    int opcode, u2 index, StackMapFrame *current_frame,
-     constantPoolHandle cp, u2 bci, TRAPS) {
-  verify_cp_index(cp, index, CHECK_VERIFY(this));
+    int opcode, u2 index, StackMapFrame* current_frame,
+    constantPoolHandle cp, u2 bci, TRAPS) {
+  verify_cp_index(bci, cp, index, CHECK_VERIFY(this));
   constantTag tag = cp->tag_at(index);
   unsigned int types;
   if (opcode == Bytecodes::_ldc || opcode == Bytecodes::_ldc_w) {
@@ -1641,12 +1970,12 @@ void ClassVerifier::verify_ldc(
             | (1 << JVM_CONSTANT_MethodHandle) | (1 << JVM_CONSTANT_MethodType);
       // Note:  The class file parser already verified the legality of
       // MethodHandle and MethodType constants.
-      verify_cp_type(index, cp, types, CHECK_VERIFY(this));
+      verify_cp_type(bci, index, cp, types, CHECK_VERIFY(this));
     }
   } else {
     assert(opcode == Bytecodes::_ldc2_w, "must be ldc2_w");
     types = (1 << JVM_CONSTANT_Double) | (1 << JVM_CONSTANT_Long);
-    verify_cp_type(index, cp, types, CHECK_VERIFY(this));
+    verify_cp_type(bci, index, cp, types, CHECK_VERIFY(this));
   }
   if (tag.is_string() && cp->is_pseudo_string_at(index)) {
     current_frame->push_stack(object_type(), CHECK_VERIFY(this));
@@ -1681,7 +2010,9 @@ void ClassVerifier::verify_ldc(
       VerificationType::reference_type(
         vmSymbols::java_lang_invoke_MethodType()), CHECK_VERIFY(this));
   } else {
-    verify_error(bci, "Invalid index in ldc");
+    /* Unreachable? verify_cp_type has already validated the cp type. */
+    verify_error(
+        ErrorContext::bad_cp_index(bci, index), "Invalid index in ldc");
     return;
   }
 }
@@ -1697,7 +2028,8 @@ void ClassVerifier::verify_switch(
   u2 padding_offset = 1;
   while ((bcp + padding_offset) < aligned_bcp) {
     if(*(bcp + padding_offset) != 0) {
-      verify_error(bci, "Nonzero padding byte in lookswitch or tableswitch");
+      verify_error(ErrorContext::bad_code(bci),
+                   "Nonzero padding byte in lookswitch or tableswitch");
       return;
     }
     padding_offset++;
@@ -1710,20 +2042,21 @@ void ClassVerifier::verify_switch(
     jint low = (jint)Bytes::get_Java_u4(aligned_bcp + jintSize);
     jint high = (jint)Bytes::get_Java_u4(aligned_bcp + 2*jintSize);
     if (low > high) {
-      verify_error(bci,
-        "low must be less than or equal to high in tableswitch");
+      verify_error(ErrorContext::bad_code(bci),
+          "low must be less than or equal to high in tableswitch");
       return;
     }
     keys = high - low + 1;
     if (keys < 0) {
-      verify_error(bci, "too many keys in tableswitch");
+      verify_error(ErrorContext::bad_code(bci), "too many keys in tableswitch");
       return;
     }
     delta = 1;
   } else {
     keys = (int)Bytes::get_Java_u4(aligned_bcp + jintSize);
     if (keys < 0) {
-      verify_error(bci, "number of keys in lookupswitch less than 0");
+      verify_error(ErrorContext::bad_code(bci),
+                   "number of keys in lookupswitch less than 0");
       return;
     }
     delta = 2;
@@ -1732,7 +2065,8 @@ void ClassVerifier::verify_switch(
       jint this_key = Bytes::get_Java_u4(aligned_bcp + (2+2*i)*jintSize);
       jint next_key = Bytes::get_Java_u4(aligned_bcp + (2+2*i+2)*jintSize);
       if (this_key >= next_key) {
-        verify_error(bci, "Bad lookupswitch instruction");
+        verify_error(ErrorContext::bad_code(bci),
+                     "Bad lookupswitch instruction");
         return;
       }
     }
@@ -1767,7 +2101,8 @@ void ClassVerifier::verify_field_instructions(RawBytecodeStream* bcs,
                                               constantPoolHandle cp,
                                               TRAPS) {
   u2 index = bcs->get_index_u2();
-  verify_cp_type(index, cp, 1 << JVM_CONSTANT_Fieldref, CHECK_VERIFY(this));
+  verify_cp_type(bcs->bci(), index, cp,
+      1 << JVM_CONSTANT_Fieldref, CHECK_VERIFY(this));
 
   // Get field name and signature
   Symbol* field_name = cp->name_ref_at(index);
@@ -1784,9 +2119,11 @@ void ClassVerifier::verify_field_instructions(RawBytecodeStream* bcs,
   VerificationType ref_class_type = cp_ref_index_to_type(
     index, cp, CHECK_VERIFY(this));
   if (!ref_class_type.is_object()) {
-    verify_error(
-      "Expecting reference to class in class %s at constant pool index %d",
-      _klass->external_name(), index);
+    /* Unreachable?  Class file parser verifies Fieldref contents */
+    verify_error(ErrorContext::bad_type(bcs->bci(),
+        TypeOrigin::cp(index, ref_class_type)),
+        "Expecting reference to class in class %s at constant pool index %d",
+        _klass->external_name(), index);
     return;
   }
   VerificationType target_class_type = ref_class_type;
@@ -1844,7 +2181,10 @@ void ClassVerifier::verify_field_instructions(RawBytecodeStream* bcs,
       is_assignable = target_class_type.is_assignable_from(
         stack_object_type, this, CHECK_VERIFY(this));
       if (!is_assignable) {
-        verify_error(bci, "Bad type on operand stack in putfield");
+        verify_error(ErrorContext::bad_type(bci,
+            current_frame->stack_top_ctx(),
+            TypeOrigin::cp(index, target_class_type)),
+            "Bad type on operand stack in putfield");
         return;
       }
     }
@@ -1868,7 +2208,10 @@ void ClassVerifier::verify_field_instructions(RawBytecodeStream* bcs,
         is_assignable = current_type().is_assignable_from(
           stack_object_type, this, CHECK_VERIFY(this));
         if (!is_assignable) {
-          verify_error(bci, "Bad access to protected data in getfield");
+          verify_error(ErrorContext::bad_type(bci,
+              current_frame->stack_top_ctx(),
+              TypeOrigin::implicit(current_type())),
+              "Bad access to protected data in getfield");
           return;
         }
       }
@@ -1879,7 +2222,7 @@ void ClassVerifier::verify_field_instructions(RawBytecodeStream* bcs,
 }
 
 void ClassVerifier::verify_invoke_init(
-    RawBytecodeStream* bcs, VerificationType ref_class_type,
+    RawBytecodeStream* bcs, u2 ref_class_index, VerificationType ref_class_type,
     StackMapFrame* current_frame, u4 code_length, bool *this_uninit,
     constantPoolHandle cp, TRAPS) {
   u2 bci = bcs->bci();
@@ -1890,7 +2233,10 @@ void ClassVerifier::verify_invoke_init(
     klassOop superk = current_class()->super();
     if (ref_class_type.name() != current_class()->name() &&
         ref_class_type.name() != superk->klass_part()->name()) {
-      verify_error(bci, "Bad <init> method call");
+      verify_error(ErrorContext::bad_type(bci,
+          TypeOrigin::implicit(ref_class_type),
+          TypeOrigin::implicit(current_type())),
+          "Bad <init> method call");
       return;
     }
     current_frame->initialize_object(type, current_type());
@@ -1899,17 +2245,23 @@ void ClassVerifier::verify_invoke_init(
     u2 new_offset = type.bci();
     address new_bcp = bcs->bcp() - bci + new_offset;
     if (new_offset > (code_length - 3) || (*new_bcp) != Bytecodes::_new) {
-      verify_error(new_offset, "Expecting new instruction");
+      /* Unreachable?  Stack map parsing ensures valid type and new
+       * instructions have a valid BCI. */
+      verify_error(ErrorContext::bad_code(new_offset),
+                   "Expecting new instruction");
       return;
     }
     u2 new_class_index = Bytes::get_Java_u2(new_bcp + 1);
-    verify_cp_class_type(new_class_index, cp, CHECK_VERIFY(this));
+    verify_cp_class_type(bci, new_class_index, cp, CHECK_VERIFY(this));
 
     // The method must be an <init> method of the indicated class
     VerificationType new_class_type = cp_index_to_type(
       new_class_index, cp, CHECK_VERIFY(this));
     if (!new_class_type.equals(ref_class_type)) {
-      verify_error(bci, "Call to wrong <init> method");
+      verify_error(ErrorContext::bad_type(bci,
+          TypeOrigin::cp(new_class_index, new_class_type),
+          TypeOrigin::cp(ref_class_index, ref_class_type)),
+          "Call to wrong <init> method");
       return;
     }
     // According to the VM spec, if the referent class is a superclass of the
@@ -1928,14 +2280,18 @@ void ClassVerifier::verify_invoke_init(
         bool assignable = current_type().is_assignable_from(
           objectref_type, this, CHECK_VERIFY(this));
         if (!assignable) {
-          verify_error(bci, "Bad access to protected <init> method");
+          verify_error(ErrorContext::bad_type(bci,
+              TypeOrigin::cp(new_class_index, objectref_type),
+              TypeOrigin::implicit(current_type())),
+              "Bad access to protected <init> method");
           return;
         }
       }
     }
     current_frame->initialize_object(type, new_class_type);
   } else {
-    verify_error(bci, "Bad operand type when invoking <init>");
+    verify_error(ErrorContext::bad_type(bci, current_frame->stack_top_ctx()),
+        "Bad operand type when invoking <init>");
     return;
   }
 }
@@ -1952,7 +2308,7 @@ void ClassVerifier::verify_invoke_instructions(
                       : opcode == Bytecodes::_invokedynamic
                                 ? 1 << JVM_CONSTANT_InvokeDynamic
                                 : 1 << JVM_CONSTANT_Methodref);
-  verify_cp_type(index, cp, types, CHECK_VERIFY(this));
+  verify_cp_type(bcs->bci(), index, cp, types, CHECK_VERIFY(this));
 
   // Get method name and signature
   Symbol* method_name = cp->name_ref_at(index);
@@ -2029,11 +2385,13 @@ void ClassVerifier::verify_invoke_instructions(
     // the difference between the size of the operand stack before and after the instruction
     // executes.
     if (*(bcp+3) != (nargs+1)) {
-      verify_error(bci, "Inconsistent args count operand in invokeinterface");
+      verify_error(ErrorContext::bad_code(bci),
+          "Inconsistent args count operand in invokeinterface");
       return;
     }
     if (*(bcp+4) != 0) {
-      verify_error(bci, "Fourth operand byte of invokeinterface must be zero");
+      verify_error(ErrorContext::bad_code(bci),
+          "Fourth operand byte of invokeinterface must be zero");
       return;
     }
   }
@@ -2041,7 +2399,8 @@ void ClassVerifier::verify_invoke_instructions(
   if (opcode == Bytecodes::_invokedynamic) {
     address bcp = bcs->bcp();
     if (*(bcp+3) != 0 || *(bcp+4) != 0) {
-      verify_error(bci, "Third and fourth operand bytes of invokedynamic must be zero");
+      verify_error(ErrorContext::bad_code(bci),
+          "Third and fourth operand bytes of invokedynamic must be zero");
       return;
     }
   }
@@ -2050,7 +2409,8 @@ void ClassVerifier::verify_invoke_instructions(
     // Make sure <init> can only be invoked by invokespecial
     if (opcode != Bytecodes::_invokespecial ||
         method_name != vmSymbols::object_initializer_name()) {
-      verify_error(bci, "Illegal call to internal method");
+      verify_error(ErrorContext::bad_code(bci),
+          "Illegal call to internal method");
       return;
     }
   } else if (opcode == Bytecodes::_invokespecial
@@ -2060,7 +2420,8 @@ void ClassVerifier::verify_invoke_instructions(
     bool subtype = ref_class_type.is_assignable_from(
       current_type(), this, CHECK_VERIFY(this));
     if (!subtype) {
-      verify_error(bci, "Bad invokespecial instruction: "
+      verify_error(ErrorContext::bad_code(bci),
+          "Bad invokespecial instruction: "
           "current class isn't assignable to reference class.");
        return;
     }
@@ -2073,7 +2434,7 @@ void ClassVerifier::verify_invoke_instructions(
   if (opcode != Bytecodes::_invokestatic &&
       opcode != Bytecodes::_invokedynamic) {
     if (method_name == vmSymbols::object_initializer_name()) {  // <init> method
-      verify_invoke_init(bcs, ref_class_type, current_frame,
+      verify_invoke_init(bcs, index, ref_class_type, current_frame,
         code_length, this_uninit, cp, CHECK_VERIFY(this));
     } else {   // other methods
       // Ensures that target class is assignable to method class.
@@ -2103,8 +2464,10 @@ void ClassVerifier::verify_invoke_instructions(
                   // Special case: arrays pretend to implement public Object
                   // clone().
                 } else {
-                  verify_error(bci,
-                    "Bad access to protected data in invokevirtual");
+                  verify_error(ErrorContext::bad_type(bci,
+                      current_frame->stack_top_ctx(),
+                      TypeOrigin::implicit(current_type())),
+                      "Bad access to protected data in invokevirtual");
                   return;
                 }
               }
@@ -2121,7 +2484,10 @@ void ClassVerifier::verify_invoke_instructions(
   if (sig_stream.type() != T_VOID) {
     if (method_name == vmSymbols::object_initializer_name()) {
       // <init> method must have a void return type
-      verify_error(bci, "Return type must be void in <init> method");
+      /* Unreachable?  Class file parser verifies that methods with '<' have
+       * void return */
+      verify_error(ErrorContext::bad_code(bci),
+          "Return type must be void in <init> method");
       return;
     }
     VerificationType return_type[2];
@@ -2139,7 +2505,7 @@ VerificationType ClassVerifier::get_newarray_type(
     NULL, NULL, NULL, NULL, "[Z", "[C", "[F", "[D", "[B", "[S", "[I", "[J",
   };
   if (index < T_BOOLEAN || index > T_LONG) {
-    verify_error(bci, "Illegal newarray instruction");
+    verify_error(ErrorContext::bad_code(bci), "Illegal newarray instruction");
     return VerificationType::bogus_type();
   }
 
@@ -2150,8 +2516,9 @@ VerificationType ClassVerifier::get_newarray_type(
 }
 
 void ClassVerifier::verify_anewarray(
-    u2 index, constantPoolHandle cp, StackMapFrame* current_frame, TRAPS) {
-  verify_cp_class_type(index, cp, CHECK_VERIFY(this));
+    u2 bci, u2 index, constantPoolHandle cp,
+    StackMapFrame* current_frame, TRAPS) {
+  verify_cp_class_type(bci, index, cp, CHECK_VERIFY(this));
   current_frame->pop_stack(
     VerificationType::integer_type(), CHECK_VERIFY(this));
 
@@ -2264,14 +2631,19 @@ void ClassVerifier::verify_iinc(u2 index, StackMapFrame* current_frame, TRAPS) {
 }
 
 void ClassVerifier::verify_return_value(
-    VerificationType return_type, VerificationType type, u2 bci, TRAPS) {
+    VerificationType return_type, VerificationType type, u2 bci,
+    StackMapFrame* current_frame, TRAPS) {
   if (return_type == VerificationType::bogus_type()) {
-    verify_error(bci, "Method expects a return value");
+    verify_error(ErrorContext::bad_type(bci,
+        current_frame->stack_top_ctx(), TypeOrigin::signature(return_type)),
+        "Method expects a return value");
     return;
   }
   bool match = return_type.is_assignable_from(type, this, CHECK_VERIFY(this));
   if (!match) {
-    verify_error(bci, "Bad return type");
+    verify_error(ErrorContext::bad_type(bci,
+        current_frame->stack_top_ctx(), TypeOrigin::signature(return_type)),
+        "Bad return type");
     return;
   }
 }
