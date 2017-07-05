@@ -504,7 +504,7 @@ grant codeBase "file:/${basedir}/test/script/markdown.js" {
 
     <testng outputdir="${build.test.results.dir}" classfilesetref="test.classes"
        verbose="${testng.verbose}" haltonfailure="true" useDefaultListeners="false" listeners="${testng.listeners}" workingDir="${basedir}">
-      <jvmarg line="${ext.class.path}"/>
+      <jvmarg line="${boot.class.path}"/>
       <jvmarg line="${run.test.jvmargs} -Xmx${run.test.xmx} -Dbuild.dir=${build.dir}"/>
       <propertyset>
         <propertyref prefix="testjfx-test-sys-prop."/>
@@ -524,7 +524,7 @@ grant codeBase "file:/${basedir}/test/script/markdown.js" {
 
     <testng outputdir="${build.test.results.dir}" classfilesetref="test.classes"
        verbose="${testng.verbose}" haltonfailure="true" useDefaultListeners="false" listeners="${testng.listeners}" workingDir="${basedir}">
-      <jvmarg line="${ext.class.path}"/>
+      <jvmarg line="${boot.class.path}"/>
       <jvmarg line="${run.test.jvmargs} -Xmx${run.test.xmx} ${run.test.jvmsecurityargs} -Dbuild.dir=${build.dir}"/>
       <propertyset>
         <propertyref prefix="testmarkdown-test-sys-prop."/>
@@ -543,7 +543,7 @@ grant codeBase "file:/${basedir}/test/script/markdown.js" {
 
     <testng outputdir="${build.test.results.dir}" classfilesetref="test.classes"
        verbose="${testng.verbose}" haltonfailure="true" useDefaultListeners="false" listeners="${testng.listeners}" workingDir="${basedir}">
-      <jvmarg line="${ext.class.path}"/>
+      <jvmarg line="${boot.class.path}"/>
       <jvmarg line="${run.test.jvmargs} -Xmx${run.test.xmx} ${run.test.jvmsecurityargs} -Dbuild.dir=${build.dir}"/>
       <propertyset>
         <propertyref prefix="nashorn."/>

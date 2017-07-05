@@ -185,7 +185,6 @@ static void do_oop_store(InterpreterMacroAssembler* _masm,
       }
       break;
     case BarrierSet::ModRef:
-    case BarrierSet::Other:
       if (val == noreg) {
         __ movptr(obj, NULL_WORD);
       } else {

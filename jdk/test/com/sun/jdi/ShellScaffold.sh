@@ -259,7 +259,7 @@ setup()
                     ;;
             esac
 
-            if [ -r $jdk/bin/dt_shmem.dll -o -r $jdk/jre/bin/dt_shmem.dll ] ; then
+            if [ -r $jdk/bin/dt_shmem.dll ] ; then
                 transport=dt_shmem
                 address=kkkk.$$
             else
@@ -933,18 +933,10 @@ dojstack()
         debuggeeCmd=`$jdk/bin/jps -v | $grep $debuggeeKeyword`
         realDebuggeePid=`echo "$debuggeeCmd" | sed -e 's@ .*@@'`
         if [ ! -z "$realDebuggeePid" ] ; then
-            if [ -r "$jdk/lib/sa-jdi.jar" ] ; then
-                # disableVersionCheck can be removed after 6475822
-                # is fixed.
-                moption="-m -J-Dsun.jvm.hotspot.runtime.VM.disableVersionCheck"
-            else
-                moption=
-            fi
-
             echo "-- debuggee process info ----------------------" >&2
             echo "      $debuggeeCmd"                              >&2
             echo "-- debuggee threads: jstack $moption $realDebuggeePid" >&2
-            $jdk/bin/$jstack $moption $realDebuggeePid             >&2
+            $jdk/bin/$jstack $realDebuggeePid                      >&2
             echo "============================================="   >&2
             echo                                                   >&2
         fi

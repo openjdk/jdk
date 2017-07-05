@@ -74,6 +74,9 @@ class GCCause : public AllStatic {
     _g1_humongous_allocation,
 
     _last_ditch_collection,
+
+    _dcmd_gc_run,
+
     _last_gc_cause
   };
 

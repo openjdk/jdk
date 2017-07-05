@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4851776 4907265 6177836 6876282
+ * @bug 4851776 4907265 6177836 6876282 8066842
  * @summary Some tests for the divide methods.
  * @author Joseph D. Darcy
  */
@@ -358,6 +358,57 @@ public class DivideTests {
         return failures;
     }
 
+    private static int divideByOneTests() {
+        int failures = 0;
+
+        //problematic divisor: one with scale 17
+        BigDecimal one = BigDecimal.ONE.setScale(17);
+        RoundingMode rounding = RoundingMode.UNNECESSARY;
+
+        long[][] unscaledAndScale = new long[][] {
+            { Long.MAX_VALUE,  17},
+            {-Long.MAX_VALUE,  17},
+            { Long.MAX_VALUE,   0},
+            {-Long.MAX_VALUE,   0},
+            { Long.MAX_VALUE, 100},
+            {-Long.MAX_VALUE, 100}
+        };
+
+        for (long[] uas : unscaledAndScale) {
+            long unscaled = uas[0];
+            int scale = (int)uas[1];
+
+            BigDecimal noRound = null;
+            try {
+                noRound = BigDecimal.valueOf(unscaled, scale).
+                    divide(one, RoundingMode.UNNECESSARY);
+            } catch (ArithmeticException e) {
+                failures++;
+                System.err.println("ArithmeticException for value " + unscaled
+                    + " and scale " + scale + " without rounding");
+            }
+
+            BigDecimal roundDown = null;
+            try {
+                roundDown = BigDecimal.valueOf(unscaled, scale).
+                        divide(one, RoundingMode.DOWN);
+            } catch (ArithmeticException e) {
+                failures++;
+                System.err.println("ArithmeticException for value " + unscaled
+                    + " and scale " + scale + " with rounding down");
+            }
+
+            if (noRound != null && roundDown != null
+                && noRound.compareTo(roundDown) != 0) {
+                failures++;
+                System.err.println("Equality failure for value " + unscaled
+                        + " and scale " + scale);
+            }
+        }
+
+        return failures;
+    }
+
     public static void main(String argv[]) {
         int failures = 0;
 
@@ -366,10 +417,11 @@ public class DivideTests {
         failures += properScaleTests();
         failures += trailingZeroTests();
         failures += scaledRoundedDivideTests();
+        failures += divideByOneTests();
 
         if (failures > 0) {
             throw new RuntimeException("Incurred " + failures +
-                                       " failures while testing exact divide.");
+                                       " failures while testing division.");
         }
     }
 }

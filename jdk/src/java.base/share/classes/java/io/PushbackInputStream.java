@@ -28,9 +28,10 @@ package java.io;
 /**
  * A <code>PushbackInputStream</code> adds
  * functionality to another input stream, namely
- * the  ability to "push back" or "unread"
- * one byte. This is useful in situations where
- * it is  convenient for a fragment of code
+ * the  ability to "push back" or "unread" bytes,
+ * by storing pushed-back bytes in an internal buffer.
+ * This is useful in situations where
+ * it is convenient for a fragment of code
  * to read an indefinite number of data bytes
  * that  are delimited by a particular byte
  * value; after reading the terminating byte,
@@ -77,11 +78,9 @@ class PushbackInputStream extends FilterInputStream {
     /**
      * Creates a <code>PushbackInputStream</code>
      * with a pushback buffer of the specified <code>size</code>,
-     * and saves its  argument, the input stream
+     * and saves its argument, the input stream
      * <code>in</code>, for later use. Initially,
-     * there is no pushed-back byte  (the field
-     * <code>pushBack</code> is initialized to
-     * <code>-1</code>).
+     * the pushback buffer is empty.
      *
      * @param  in    the input stream from which bytes will be read.
      * @param  size  the size of the pushback buffer.
@@ -99,11 +98,9 @@ class PushbackInputStream extends FilterInputStream {
 
     /**
      * Creates a <code>PushbackInputStream</code>
-     * and saves its  argument, the input stream
+     * with a 1-byte pushback buffer, and saves its argument, the input stream
      * <code>in</code>, for later use. Initially,
-     * there is no pushed-back byte  (the field
-     * <code>pushBack</code> is initialized to
-     * <code>-1</code>).
+     * the pushback buffer is empty.
      *
      * @param   in   the input stream from which bytes will be read.
      */

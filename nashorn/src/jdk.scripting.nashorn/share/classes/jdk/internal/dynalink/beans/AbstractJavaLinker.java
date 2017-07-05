@@ -570,7 +570,7 @@ abstract class AbstractJavaLinker implements GuardingDynamicLinker {
     private static final MethodHandle CONSTANT_NULL_DROP_ANNOTATED_METHOD = MethodHandles.dropArguments(
             MethodHandles.constant(Object.class, null), 0, AnnotatedDynamicMethod.class);
     private static final MethodHandle GET_ANNOTATED_METHOD = privateLookup.findVirtual(AnnotatedDynamicMethod.class,
-            "getTarget", MethodType.methodType(MethodHandle.class, MethodHandles.Lookup.class));
+            "getTarget", MethodType.methodType(MethodHandle.class, MethodHandles.Lookup.class, LinkerServices.class));
     private static final MethodHandle GETTER_INVOKER = MethodHandles.invoker(MethodType.methodType(Object.class, Object.class));
 
     private GuardedInvocationComponent getPropertyGetter(final CallSiteDescriptor callSiteDescriptor,
@@ -593,7 +593,7 @@ abstract class AbstractJavaLinker implements GuardingDynamicLinker {
                 final MethodHandle typedGetter = linkerServices.asType(getPropertyGetterHandle, type.changeReturnType(
                         AnnotatedDynamicMethod.class));
                 final MethodHandle callSiteBoundMethodGetter = MethodHandles.insertArguments(
-                        GET_ANNOTATED_METHOD, 1, callSiteDescriptor.getLookup());
+                        GET_ANNOTATED_METHOD, 1, callSiteDescriptor.getLookup(), linkerServices);
                 final MethodHandle callSiteBoundInvoker = MethodHandles.filterArguments(GETTER_INVOKER, 0,
                         callSiteBoundMethodGetter);
                 // Object(AnnotatedDynamicMethod, Object)->Object(AnnotatedDynamicMethod, T0)
@@ -873,8 +873,8 @@ abstract class AbstractJavaLinker implements GuardingDynamicLinker {
         }
 
         @SuppressWarnings("unused")
-        MethodHandle getTarget(final MethodHandles.Lookup lookup) {
-            final MethodHandle inv = method.getTarget(lookup);
+        MethodHandle getTarget(final MethodHandles.Lookup lookup, final LinkerServices linkerServices) {
+            final MethodHandle inv = linkerServices.filterInternalObjects(method.getTarget(lookup));
             assert inv != null;
             return inv;
         }
