@@ -34,7 +34,7 @@
   static_field(HeapRegion, GrainBytes, size_t)                                \
                                                                               \
   nonstatic_field(HeapRegionSeq,   _regions, HeapRegion**)                    \
-  nonstatic_field(HeapRegionSeq,   _length,  size_t)                          \
+  nonstatic_field(HeapRegionSeq,   _length,  uint)                            \
                                                                               \
   nonstatic_field(G1CollectedHeap, _hrs,                HeapRegionSeq)        \
   nonstatic_field(G1CollectedHeap, _g1_committed,       MemRegion)            \
@@ -50,8 +50,8 @@
   nonstatic_field(G1MonitoringSupport, _old_committed,      size_t)           \
   nonstatic_field(G1MonitoringSupport, _old_used,           size_t)           \
                                                                               \
-  nonstatic_field(HeapRegionSetBase,   _length,             size_t)           \
-  nonstatic_field(HeapRegionSetBase,   _region_num,         size_t)           \
+  nonstatic_field(HeapRegionSetBase,   _length,             uint)             \
+  nonstatic_field(HeapRegionSetBase,   _region_num,         uint)             \
   nonstatic_field(HeapRegionSetBase,   _total_used_bytes,   size_t)           \
 
 

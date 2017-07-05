@@ -26,6 +26,7 @@
 #include "gc_implementation/g1/concurrentMarkThread.inline.hpp"
 #include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
 #include "gc_implementation/g1/g1CollectorPolicy.hpp"
+#include "gc_implementation/g1/g1Log.hpp"
 #include "gc_implementation/g1/vm_operations_g1.hpp"
 #include "gc_implementation/shared/isGCActiveMark.hpp"
 #include "gc_implementation/g1/vm_operations_g1.hpp"
@@ -223,9 +224,9 @@ void VM_CGC_Operation::release_and_notify_pending_list_lock() {
 }
 
 void VM_CGC_Operation::doit() {
-  gclog_or_tty->date_stamp(PrintGC && PrintGCDateStamps);
-  TraceCPUTime tcpu(PrintGCDetails, true, gclog_or_tty);
-  TraceTime t(_printGCMessage, PrintGC, true, gclog_or_tty);
+  gclog_or_tty->date_stamp(G1Log::fine() && PrintGCDateStamps);
+  TraceCPUTime tcpu(G1Log::finer(), true, gclog_or_tty);
+  TraceTime t(_printGCMessage, G1Log::fine(), true, gclog_or_tty);
   SharedHeap* sh = SharedHeap::heap();
   // This could go away if CollectedHeap gave access to _gc_is_active...
   if (sh != NULL) {

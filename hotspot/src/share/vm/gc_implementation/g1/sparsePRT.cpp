@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -481,8 +481,7 @@ size_t SparsePRT::mem_size() const {
 
 bool SparsePRT::add_card(RegionIdx_t region_id, CardIdx_t card_index) {
 #if SPARSE_PRT_VERBOSE
-  gclog_or_tty->print_cr("  Adding card %d from region %d to region "
-                         SIZE_FORMAT" sparse.",
+  gclog_or_tty->print_cr("  Adding card %d from region %d to region %u sparse.",
                          card_index, region_id, _hr->hrs_index());
 #endif
   if (_next->occupied_entries() * 2 > _next->capacity()) {
@@ -534,7 +533,7 @@ void SparsePRT::expand() {
   _next = new RSHashTable(last->capacity() * 2);
 
 #if SPARSE_PRT_VERBOSE
-  gclog_or_tty->print_cr("  Expanded sparse table for "SIZE_FORMAT" to %d.",
+  gclog_or_tty->print_cr("  Expanded sparse table for %u to %d.",
                          _hr->hrs_index(), _next->capacity());
 #endif
   for (size_t i = 0; i < last->capacity(); i++) {

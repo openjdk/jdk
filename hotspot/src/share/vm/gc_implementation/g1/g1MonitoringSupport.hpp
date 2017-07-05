@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -147,7 +147,7 @@ class G1MonitoringSupport : public CHeapObj {
   size_t _overall_committed;
   size_t _overall_used;
 
-  size_t _young_region_num;
+  uint   _young_region_num;
   size_t _young_gen_committed;
   size_t _eden_committed;
   size_t _eden_used;

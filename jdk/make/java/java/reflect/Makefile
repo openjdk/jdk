@@ -36,7 +36,7 @@ include $(BUILDDIR)/common/Defs.gmk
 #
 # Files to compile.
 #
-AUTO_FILES_JAVA_DIRS = java/lang/reflect sun/reflect
+AUTO_FILES_JAVA_DIRS = java/lang/reflect sun/reflect java/lang/annotation
 
 #
 # Install .lib file.

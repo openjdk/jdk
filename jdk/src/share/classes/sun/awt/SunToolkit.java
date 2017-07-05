@@ -1126,6 +1126,16 @@ public abstract class SunToolkit extends Toolkit
     }
 
     /**
+     * Tests whether specified key modifiers mask can be used to enter a printable
+     * character. This is a default implementation of this method, which reflects
+     * the way things work on Windows: here, pressing ctrl + alt allows user to enter
+     * characters from the extended character set (like euro sign or math symbols)
+     */
+    public boolean isPrintableCharacterModifiersMask(int mods) {
+        return ((mods & InputEvent.ALT_MASK) == (mods & InputEvent.CTRL_MASK));
+    }
+
+    /**
      * Returns a new input method window, with behavior as specified in
      * {@link java.awt.im.spi.InputMethodContext#createInputMethodWindow}.
      * If the inputContext is not null, the window should return it from its

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *com.sun.tools.attach.AttachNotSupportedException
 
@@ -142,17 +142,20 @@ public class JCmd {
         // Cast to HotSpotVirtualMachine as this is an
         // implementation specific method.
         HotSpotVirtualMachine hvm = (HotSpotVirtualMachine) vm;
-        try (InputStream in = hvm.executeJCmd(command);) {
-            // read to EOF and just print output
-            byte b[] = new byte[256];
-            int n;
-            do {
-                n = in.read(b);
-                if (n > 0) {
-                    String s = new String(b, 0, n, "UTF-8");
-                    System.out.print(s);
-                }
-            } while (n > 0);
+        String lines[] = command .split("\\n");
+        for (String line : lines) {
+            try (InputStream in = hvm.executeJCmd(line);) {
+                // read to EOF and just print output
+                byte b[] = new byte[256];
+                int n;
+                do {
+                    n = in.read(b);
+                    if (n > 0) {
+                        String s = new String(b, 0, n, "UTF-8");
+                        System.out.print(s);
+                    }
+                } while (n > 0);
+            }
         }
         vm.detach();
     }

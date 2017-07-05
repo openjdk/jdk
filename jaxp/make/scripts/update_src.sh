@@ -40,7 +40,7 @@ mkdir -p ${srcroot}
 drops_dir="/java/devtools/share/jdk8-drops"
 url1="http://download.java.net/jaxp/1.4.5"
 bundle1="jaxp145_01.zip"
-srcdir1="${srcroot}/share/classes"
+srcdir1="${srcroot}"
 
 # Function to get a bundle and explode it and normalize the source files.
 getBundle() # drops_dir url bundlename bundledestdir srcrootdir
