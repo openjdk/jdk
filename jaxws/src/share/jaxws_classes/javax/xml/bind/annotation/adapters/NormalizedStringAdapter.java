@@ -35,7 +35,7 @@ package javax.xml.bind.annotation.adapters;
  * as specified in <a href="http://www.w3.org/TR/xmlschema-2/#rf-whiteSpace">the whitespace facet 'replace'</a>
  *
  * @author Kohsuke Kawaguchi, Martin Grebac
- * @since JAXB 2.0
+ * @since 1.6, JAXB 2.0
  */
 public final class NormalizedStringAdapter extends XmlAdapter<String,String> {
     /**

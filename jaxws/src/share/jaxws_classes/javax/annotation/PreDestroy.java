@@ -72,7 +72,7 @@ import static java.lang.annotation.RetentionPolicy.*;
  *
  * @see javax.annotation.PostConstruct
  * @see javax.annotation.Resource
- * @since Common Annotations 1.0
+ * @since 1.6, Common Annotations 1.0
  */
 
 @Documented

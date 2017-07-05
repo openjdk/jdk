@@ -56,6 +56,7 @@
 #include "runtime/threadCritical.hpp"
 #include "runtime/vframe.hpp"
 #include "runtime/vframeArray.hpp"
+#include "runtime/vm_version.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/events.hpp"
 

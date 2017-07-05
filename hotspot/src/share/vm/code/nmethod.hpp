@@ -69,7 +69,12 @@ class PcDescCache VALUE_OBJ_CLASS_SPEC {
   friend class VMStructs;
  private:
   enum { cache_size = 4 };
-  PcDesc* _pc_descs[cache_size]; // last cache_size pc_descs found
+  // The array elements MUST be volatile! Several threads may modify
+  // and read from the cache concurrently. find_pc_desc_internal has
+  // returned wrong results. C++ compiler (namely xlC12) may duplicate
+  // C++ field accesses if the elements are not volatile.
+  typedef PcDesc* PcDescPtr;
+  volatile PcDescPtr _pc_descs[cache_size]; // last cache_size pc_descs found
  public:
   PcDescCache() { debug_only(_pc_descs[0] = NULL); }
   void    reset_to(PcDesc* initial_pc_desc);

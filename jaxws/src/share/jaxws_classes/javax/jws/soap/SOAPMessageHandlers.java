@@ -27,7 +27,8 @@ package javax.jws.soap;
 import java.lang.annotation.*;
 import static java.lang.annotation.ElementType.*;
 
-/*
+/**
+ * @since 1.6
  * @Deprecated
  */
 @Retention(value=RetentionPolicy.RUNTIME)

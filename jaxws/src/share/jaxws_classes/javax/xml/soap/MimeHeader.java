@@ -32,6 +32,7 @@ package javax.xml.soap;
  * object.
  *
  * @see MimeHeaders
+ * @since 1.6
  */
 public class MimeHeader {
 

@@ -63,6 +63,8 @@ import java.io.InputStream;
  *        This method can be used internally by a service implementation to
  *        create a message that is a response to a request.
  * </UL>
+ *
+ * @since 1.6
  */
 public abstract class MessageFactory {
 
@@ -140,7 +142,7 @@ public abstract class MessageFactory {
      * @exception SOAPException if there was an error in creating the
      *            specified implementation of  <code>MessageFactory</code>.
      * @see SAAJMetaFactory
-     * @since SAAJ 1.3
+     * @since 1.6, SAAJ 1.3
      */
     public static MessageFactory newInstance(String protocol) throws SOAPException {
         return SAAJMetaFactory.getInstance().newMessageFactory(protocol);

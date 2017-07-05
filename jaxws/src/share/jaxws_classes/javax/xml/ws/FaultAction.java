@@ -145,7 +145,7 @@ import java.lang.annotation.Target;
  *   &lt;/definitions>
  * </pre>
  *
- * @since JAX-WS 2.1
+ * @since 1.6, JAX-WS 2.1
  */
 
 @Documented

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -351,7 +351,7 @@ public class Polygon implements Shape, java.io.Serializable {
     /**
      * Determines whether the specified coordinates are inside this
      * <code>Polygon</code>.
-     * <p>
+     *
      * @param x the specified X coordinate to be tested
      * @param y the specified Y coordinate to be tested
      * @return {@code true} if this {@code Polygon} contains

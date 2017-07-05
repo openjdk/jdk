@@ -33,7 +33,7 @@ import java.util.Set;
  *  to provide typesafety for the message context parameter and add a method
  *  to obtain access to the headers that may be processed by the handler.
  *
- *  @since JAX-WS 2.0
+ *  @since 1.6, JAX-WS 2.0
 **/
 public interface SOAPHandler<T extends SOAPMessageContext>
     extends Handler<T> {

@@ -61,7 +61,7 @@ public final class ObjectNode extends Expression {
     @Override
     public Node accept(final NodeVisitor<? extends LexicalContext> visitor) {
         if (visitor.enterObjectNode(this)) {
-            return visitor.leaveObjectNode(setElements(Node.accept(visitor, PropertyNode.class, elements)));
+            return visitor.leaveObjectNode(setElements(Node.accept(visitor, elements)));
         }
 
         return this;

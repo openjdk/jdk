@@ -3,9 +3,11 @@
  * DO NOT REMOVE OR ALTER!
  */
 /*
- * Copyright 2004 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership. The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the  "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -200,6 +202,93 @@ public class SerializerMessages_de extends ListResourceBundle {
             {   MsgKey.ER_ENCODING_NOT_SUPPORTED,
                 "Warnung: Die Codierung \"{0}\" wird nicht von der Java-Laufzeit unterst\u00FCtzt." },
 
+             {MsgKey.ER_FEATURE_NOT_FOUND,
+             "Der Parameter ''{0}'' wird nicht erkannt."},
+
+             {MsgKey.ER_FEATURE_NOT_SUPPORTED,
+             "Der Parameter ''{0}'' wird erkannt, der angeforderte Wert kann jedoch nicht festgelegt werden."},
+
+             {MsgKey.ER_STRING_TOO_LONG,
+             "Die Ergebniszeichenfolge ist zu lang f\u00fcr eine DOM-Zeichenfolge: ''{0}''."},
+
+             {MsgKey.ER_TYPE_MISMATCH_ERR,
+             "Der Werttyp f\u00fcr diesen Parameternamen ist nicht kompatibel mit dem erwarteten Werttyp."},
+
+             {MsgKey.ER_NO_OUTPUT_SPECIFIED,
+             "Das Ausgabeziel f\u00fcr die zu schreibenden Daten war leer."},
+
+             {MsgKey.ER_UNSUPPORTED_ENCODING,
+             "Eine nicht unterst\u00fctzte Codierung wurde festgestellt."},
+
+             {MsgKey.ER_UNABLE_TO_SERIALIZE_NODE,
+             "Der Knoten konnte nicht serialisiert werden."},
+
+             {MsgKey.ER_CDATA_SECTIONS_SPLIT,
+             "Der Abschnitt CDATA enth\u00e4lt mindestens eine Beendigungsmarkierung ']]>'."},
+
+             {MsgKey.ER_WARNING_WF_NOT_CHECKED,
+                 "Eine Instanz des Pr\u00fcfprogramms f\u00fcr korrekte Formatierung konnte nicht erstellt werden.  F\u00fcr den korrekt formatierten Parameter wurde der Wert 'True' festgelegt, die Pr\u00fcfung auf korrekte Formatierung kann jedoch nicht durchgef\u00fchrt werden."
+             },
+
+             {MsgKey.ER_WF_INVALID_CHARACTER,
+                 "Der Knoten ''{0}'' enth\u00e4lt ung\u00fcltige XML-Zeichen."
+             },
+
+             { MsgKey.ER_WF_INVALID_CHARACTER_IN_COMMENT,
+                 "Im Kommentar wurde ein ung\u00fcltiges XML-Zeichen (Unicode: 0x{0}) gefunden."
+             },
+
+             { MsgKey.ER_WF_INVALID_CHARACTER_IN_PI,
+                 "In der Verarbeitungsanweisung wurde ein ung\u00fcltiges XML-Zeichen (Unicode: 0x{0}) gefunden."
+             },
+
+             { MsgKey.ER_WF_INVALID_CHARACTER_IN_CDATA,
+                 "Im Inhalt von CDATASection wurde ein ung\u00fcltiges XML-Zeichen (Unicode: 0x{0}) gefunden."
+             },
+
+             { MsgKey.ER_WF_INVALID_CHARACTER_IN_TEXT,
+                 "Ein ung\u00fcltiges XML-Zeichen  (Unicode: 0x{0}) wurde im Inhalt der Zeichendaten des Knotens gefunden."
+             },
+
+             { MsgKey.ER_WF_INVALID_CHARACTER_IN_NODE_NAME,
+                 "Ung\u00fcltige XML-Zeichen wurden gefunden in {0} im Knoten ''{1}''."
+             },
+
+             { MsgKey.ER_WF_DASH_IN_COMMENT,
+                 "Die Zeichenfolge \"--\" ist innerhalb von Kommentaren nicht zul\u00e4ssig."
+             },
+
+             {MsgKey.ER_WF_LT_IN_ATTVAL,
+                 "Der Wert des Attributs \"{1}\" mit einem Elementtyp \"{0}\" darf nicht das Zeichen ''<'' enthalten."
+             },
+
+             {MsgKey.ER_WF_REF_TO_UNPARSED_ENT,
+                 "Der syntaktisch nicht analysierte Entit\u00e4tenverweis \"&{0};\" ist nicht zul\u00e4ssig."
+             },
+
+             {MsgKey.ER_WF_REF_TO_EXTERNAL_ENT,
+                 "Der externe Entit\u00e4tenverweis \"&{0};\" ist in einem Attributwert nicht zul\u00e4ssig."
+             },
+
+             {MsgKey.ER_NS_PREFIX_CANNOT_BE_BOUND,
+                 "Das Pr\u00e4fix \"{0}\" kann nicht an den Namensbereich \"{1}\" gebunden werden."
+             },
+
+             {MsgKey.ER_NULL_LOCAL_ELEMENT_NAME,
+                 "Der lokale Name von Element \"{0}\" ist nicht angegeben."
+             },
+
+             {MsgKey.ER_NULL_LOCAL_ATTR_NAME,
+                 "Der lokale Name des Attributs \"{0}\" ist nicht angegeben."
+             },
+
+             { MsgKey.ER_ELEM_UNBOUND_PREFIX_IN_ENTREF,
+                 "Der Ersatztext des Entit\u00e4tenknotens \"{0}\" enth\u00e4lt einen Elementknoten \"{1}\" mit einem nicht gebundenen Pr\u00e4fix \"{2}\"."
+             },
+
+             { MsgKey.ER_ATTR_UNBOUND_PREFIX_IN_ENTREF,
+                 "Der Ersatztext des Entit\u00e4tenknotens \"{0}\" enth\u00e4lt einen Attributknoten \"{1}\" mit einem nicht gebundenen Pr\u00e4fix \"{2}\"."
+             },
 
         };
 

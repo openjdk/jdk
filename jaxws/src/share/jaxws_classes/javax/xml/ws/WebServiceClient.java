@@ -40,7 +40,7 @@ import java.lang.annotation.RetentionPolicy;
  *  element represents the Web service for which the generated
  *  service interface provides a client view.
  *
- *  @since JAX-WS 2.0
+ *  @since 1.6, JAX-WS 2.0
 **/
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)

@@ -216,7 +216,7 @@ import static java.lang.annotation.ElementType.METHOD;
  *
  * @author <ul><li>Kohsuke Kawaguchi, Sun Microsystems,Inc. </li><li>Sekhar Vajjhala, Sun Microsystems, Inc.</li></ul>
  * @see XmlElementRefs
- * @since JAXB2.0
+ * @since 1.6, JAXB 2.0
  */
 @Retention(RUNTIME)
 @Target({FIELD,METHOD})
@@ -284,7 +284,7 @@ public @interface XmlElementRef {
      * For compatibility with JAXB 2.1, this property defaults to <tt>true</tt>,
      * despite the fact that {@link XmlElement#required()} defaults to false.
      *
-     * @since 2.2
+     * @since 1.7, JAXB 2.2
      */
     boolean required() default true;
 }

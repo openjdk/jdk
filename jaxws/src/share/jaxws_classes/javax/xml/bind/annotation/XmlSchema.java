@@ -114,7 +114,7 @@ import static java.lang.annotation.RetentionPolicy.*;
  * </pre>
 
  * @author Sekhar Vajjhala, Sun Microsystems, Inc.
- * @since JAXB2.0
+ * @since 1.6, JAXB 2.0
  */
 
 @Retention(RUNTIME) @Target(PACKAGE)
@@ -191,7 +191,7 @@ public @interface XmlSchema {
      * such attribute), for example so that the user can specify a local
      * copy of the resource through the command line interface.
      *
-     * @since JAXB2.1
+     * @since 1.6, JAXB 2.1
      */
     String location() default NO_LOCATION;
 

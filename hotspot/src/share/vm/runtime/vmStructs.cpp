@@ -193,33 +193,13 @@
 #include "opto/movenode.hpp"
 #include "opto/narrowptrnode.hpp"
 #include "opto/opaquenode.hpp"
+#include "opto/optoreg.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/parse.hpp"
 #include "opto/regalloc.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/subnode.hpp"
 #include "opto/vectornode.hpp"
-#ifdef TARGET_ARCH_MODEL_x86_32
-# include "adfiles/adGlobals_x86_32.hpp"
-#endif
-#ifdef TARGET_ARCH_MODEL_x86_64
-# include "adfiles/adGlobals_x86_64.hpp"
-#endif
-#ifdef TARGET_ARCH_MODEL_sparc
-# include "adfiles/adGlobals_sparc.hpp"
-#endif
-#ifdef TARGET_ARCH_MODEL_zero
-# include "adfiles/adGlobals_zero.hpp"
-#endif
-#ifdef TARGET_ARCH_MODEL_arm
-# include "adfiles/adGlobals_arm.hpp"
-#endif
-#ifdef TARGET_ARCH_MODEL_ppc_32
-# include "adfiles/adGlobals_ppc_32.hpp"
-#endif
-#ifdef TARGET_ARCH_MODEL_ppc_64
-# include "adfiles/adGlobals_ppc_64.hpp"
-#endif
 #endif // COMPILER2
 
 // Note: the cross-product of (c1, c2, product, nonproduct, ...),

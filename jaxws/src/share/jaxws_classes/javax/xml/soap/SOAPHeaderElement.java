@@ -33,6 +33,8 @@ package javax.xml.soap;
  * <P>
  * A <code>SOAPHeaderElement</code> object can have other
  * <code>SOAPElement</code> objects as its children.
+ *
+ * @since 1.6
  */
 public interface SOAPHeaderElement extends SOAPElement {
 
@@ -65,7 +67,7 @@ public interface SOAPHeaderElement extends SOAPElement {
      * @exception UnsupportedOperationException if this message does not
      *      support the SOAP 1.2 concept of Fault Role.
      *
-     * @since SAAJ 1.3
+     * @since 1.6, SAAJ 1.3
      */
     public void setRole(String uri) throws SOAPException;
 
@@ -89,7 +91,7 @@ public interface SOAPHeaderElement extends SOAPElement {
      * @exception UnsupportedOperationException if this message does not
      *      support the SOAP 1.2 concept of Fault Role.
      *
-     * @since SAAJ 1.3
+     * @since 1.6, SAAJ 1.3
      */
     public String getRole();
 
@@ -143,7 +145,7 @@ public interface SOAPHeaderElement extends SOAPElement {
      * @see #setMustUnderstand
      * @see #getRelay
      *
-     * @since SAAJ 1.3
+     * @since 1.6, SAAJ 1.3
      */
     public void setRelay(boolean relay) throws SOAPException;
 
@@ -160,7 +162,7 @@ public interface SOAPHeaderElement extends SOAPElement {
      * @see #getMustUnderstand
      * @see #setRelay
      *
-     * @since SAAJ 1.3
+     * @since 1.6, SAAJ 1.3
      */
     public boolean getRelay();
 }

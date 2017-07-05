@@ -50,7 +50,7 @@ import java.lang.annotation.Target;
  *
  * @author <ul><li>Sekhar Vajjhala, Sun Microsystems, Inc.</li></ul>
  * @see XmlSchemaType
- * @since JAXB2.0
+ * @since 1.6, JAXB 2.0
  */
 @Retention(RUNTIME) @Target({PACKAGE})
 public @interface XmlSchemaTypes {

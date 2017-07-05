@@ -42,6 +42,7 @@ import java.io.IOException;
  *
  * @author
  *     Kohsuke Kawaguchi (kohsuke.kawaguchi@sun.com)
+ * @since 1.6
  */
 public abstract class SchemaOutputResolver {
     /**

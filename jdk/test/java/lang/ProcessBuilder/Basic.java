@@ -2269,9 +2269,9 @@ public class Basic {
                 fail("Test failed: Process exited prematurely");
             }
             long end = System.nanoTime();
-            // give waitFor(timeout) a wide berth (100ms)
+            // give waitFor(timeout) a wide berth (200ms)
             // Old AIX machines my need a little longer.
-            if ((end - start) > 100000000L * (AIX.is() ? 4 : 1))
+            if ((end - start) > 200000000L * (AIX.is() ? 2 : 1))
                 fail("Test failed: waitFor took too long (" + (end - start) + "ns)");
 
             p.destroy();

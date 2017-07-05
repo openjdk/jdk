@@ -36,7 +36,7 @@ import java.util.Map;
  * enable handlers in a handler chain to share processing related
  * state.
  *
- * @since JAX-WS 2.0
+ * @since 1.6, JAX-WS 2.0
  */
 public interface MessageContext extends Map<String, Object> {
 
@@ -168,7 +168,7 @@ public interface MessageContext extends Map<String, Object> {
      * wsa:IsReferenceParameter="true" attribute.
      * <p>Type: List&lt;Element>
      *
-     * @since JAX-WS 2.1
+     * @since 1.6, JAX-WS 2.1
      */
     public static final String REFERENCE_PARAMETERS =
             "javax.xml.ws.reference.parameters";

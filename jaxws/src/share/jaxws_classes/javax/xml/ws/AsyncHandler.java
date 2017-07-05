@@ -29,7 +29,7 @@ package javax.xml.ws;
  * clients that wish to receive callback notification of the completion of
  * service endpoint operations invoked asynchronously.
  *
- *  @since JAX-WS 2.0
+ *  @since 1.6, JAX-WS 2.0
 **/
 public interface AsyncHandler<T> {
 

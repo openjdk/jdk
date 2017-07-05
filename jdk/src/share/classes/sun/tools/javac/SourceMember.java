@@ -46,7 +46,7 @@ class SourceMember extends MemberDefinition implements Constants {
     /**
      * The argument names (if it is a method)
      */
-    Vector args;
+    Vector<MemberDefinition> args;
 
     // set to the MemberDefinition in the interface if we have this field because
     // it has been forced on us
@@ -64,7 +64,7 @@ class SourceMember extends MemberDefinition implements Constants {
     static final int INLINED    = 4;
     static final int ERROR      = 5;
 
-    public Vector getArguments() {
+    public Vector<MemberDefinition> getArguments() {
         return args;
     }
 
@@ -74,7 +74,7 @@ class SourceMember extends MemberDefinition implements Constants {
      */
     public SourceMember(long where, ClassDefinition clazz,
                        String doc, int modifiers, Type type,
-                       Identifier name, Vector argNames,
+                       Identifier name, Vector<MemberDefinition> argNames,
                        IdentifierToken exp[], Node value) {
         super(where, clazz, modifiers, type, name, exp, value);
         this.documentation = doc;
@@ -86,17 +86,17 @@ class SourceMember extends MemberDefinition implements Constants {
         }
     }
 
-    void createArgumentFields(Vector argNames) {
+    void createArgumentFields(Vector<MemberDefinition> argNames) {
         // Create a list of arguments
         if (isMethod()) {
-            args = new Vector();
+            args = new Vector<>();
 
             if (isConstructor() || !(isStatic() || isInitializer())) {
                 args.addElement(((SourceClass)clazz).getThisArgument());
             }
 
             if (argNames != null) {
-                Enumeration e = argNames.elements();
+                Enumeration<MemberDefinition> e = argNames.elements();
                 Type argTypes[] = getType().getArgumentTypes();
                 for (int i = 0 ; i < argTypes.length ; i++) {
                     Object x = e.nextElement();
@@ -359,7 +359,7 @@ class SourceMember extends MemberDefinition implements Constants {
             getExceptions(env);
 
             if (isMethod()) {
-                Vector argNames = args; args = null;
+                Vector<MemberDefinition> argNames = args; args = null;
                 createArgumentFields(argNames);
                 // Add outer instance argument for constructors.
                 if (isConstructor()) {
@@ -523,7 +523,7 @@ class SourceMember extends MemberDefinition implements Constants {
                     // initialize vset, indication that each of the arguments
                     // to the function has a value
 
-                    for (Enumeration e = args.elements(); e.hasMoreElements();){
+                    for (Enumeration<MemberDefinition> e = args.elements(); e.hasMoreElements();){
                         LocalMember f = (LocalMember)e.nextElement();
                         vset.addVar(ctx.declare(env, f));
                     }
@@ -549,7 +549,7 @@ class SourceMember extends MemberDefinition implements Constants {
                     //System.out.println("VSET = " + vset);
                     ClassDeclaration exp[] = getExceptions(env);
                     int htsize = (exp.length > 3) ? 17 : 7;
-                    Hashtable thrown = new Hashtable(htsize);
+                    Hashtable<Object, Object> thrown = new Hashtable<>(htsize);
 
                     vset = s.checkMethod(env, ctx, vset, thrown);
 
@@ -558,7 +558,7 @@ class SourceMember extends MemberDefinition implements Constants {
                     ClassDeclaration ignore2 =
                         env.getClassDeclaration(idJavaLangRuntimeException);
 
-                    for (Enumeration e = thrown.keys(); e.hasMoreElements();) {
+                    for (Enumeration<Object> e = thrown.keys(); e.hasMoreElements();) {
                         ClassDeclaration c = (ClassDeclaration)e.nextElement();
                         ClassDefinition def = c.getClassDefinition(env);
                         if (def.subClassOf(env, ignore1)
@@ -606,7 +606,7 @@ class SourceMember extends MemberDefinition implements Constants {
                         }
                     }
                 } else {
-                    Hashtable thrown = new Hashtable(3);  // small & throw-away
+                    Hashtable<Object, Object> thrown = new Hashtable<>(3);  // small & throw-away
                     Expression val = (Expression)getValue();
 
                     vset = val.checkInitializer(env, ctx, vset,
@@ -636,7 +636,7 @@ class SourceMember extends MemberDefinition implements Constants {
                     ClassDeclaration ignore2 =
                         env.getClassDeclaration(idJavaLangRuntimeException);
 
-                    for (Enumeration e = thrown.keys(); e.hasMoreElements(); ) {
+                    for (Enumeration<Object> e = thrown.keys(); e.hasMoreElements(); ) {
                         ClassDeclaration c = (ClassDeclaration)e.nextElement();
                         ClassDefinition def = c.getClassDefinition(env);
 
@@ -707,7 +707,7 @@ class SourceMember extends MemberDefinition implements Constants {
                 if ((!isNative()) && (!isAbstract())) {
                     Statement s = (Statement)getValue();
                     Context ctx = new Context((Context)null, this);
-                    for (Enumeration e = args.elements() ; e.hasMoreElements() ;) {
+                    for (Enumeration<MemberDefinition> e = args.elements() ; e.hasMoreElements() ;) {
                         LocalMember local = (LocalMember)e.nextElement();
                         ctx.declare(env, local);
                     }
@@ -812,7 +812,7 @@ class SourceMember extends MemberDefinition implements Constants {
                 Context ctx = new Context((Context)null, this);
                 Statement s = (Statement)getValue();
 
-                for (Enumeration e = args.elements() ; e.hasMoreElements() ; ) {
+                for (Enumeration<MemberDefinition> e = args.elements() ; e.hasMoreElements() ; ) {
                     LocalMember f = (LocalMember)e.nextElement();
                     ctx.declare(env, f);
                     //ctx.declare(env, (LocalMember)e.nextElement());

@@ -34,7 +34,7 @@ package javax.xml.bind;
  * is a checked exception.
  *
  * @see JAXB
- * @since JAXB2.1
+ * @since 1.6, JAXB 2.1
  */
 public class DataBindingException extends RuntimeException {
     public DataBindingException(String message, Throwable cause) {

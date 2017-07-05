@@ -84,10 +84,16 @@ import org.xml.sax.helpers.AttributesImpl;
  * boundaries, indent lines, and serialize elements on separate
  * lines. Line terminators will be regarded as spaces, and
  * spaces at beginning of line will be stripped.
+ *
  * @author <a href="mailto:arkin@intalio.com">Assaf Arkin</a>
  * @author <a href="mailto:rahul.srivastava@sun.com">Rahul Srivastava</a>
  * @author Elena Litani IBM
  * @see Serializer
+ *
+ * @deprecated As of JDK 1.9, Xerces 2.9.0, Xerces DOM L3 Serializer implementation
+ * is replaced by that of Xalan. Main class
+ * {@link com.sun.org.apache.xml.internal.serialize.DOMSerializerImpl} is replaced
+ * by {@link com.sun.org.apache.xml.internal.serializer.dom3.LSSerializerImpl}.
  */
 public class XMLSerializer
 extends BaseMarkupSerializer {

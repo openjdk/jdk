@@ -100,6 +100,7 @@ import javax.activation.DataHandler;
  *
  * @see MessageFactory
  * @see AttachmentPart
+ * @since 1.6
  */
 public abstract class SOAPMessage {
     /**
@@ -108,7 +109,7 @@ public abstract class SOAPMessage {
          * supported values. The default is "utf-8".
          *
          * @see SOAPMessage#setProperty(String, Object) SOAPMessage.setProperty
-         * @since SAAJ 1.2
+         * @since 1.6, SAAJ 1.2
          */
     public static final String CHARACTER_SET_ENCODING =
         "javax.xml.soap.character-set-encoding";
@@ -119,7 +120,7 @@ public abstract class SOAPMessage {
      * "false".
      *
      * @see SOAPMessage#setProperty(String, Object) SOAPMessage.setProperty
-     * @since SAAJ 1.2
+     * @since 1.6, SAAJ 1.2
      */
     public static final String WRITE_XML_DECLARATION =
         "javax.xml.soap.write-xml-declaration";
@@ -163,7 +164,7 @@ public abstract class SOAPMessage {
          *         object
          * @exception SOAPException
          *               if the SOAP Body does not exist or cannot be retrieved
-         * @since SAAJ 1.2
+         * @since 1.6, SAAJ 1.2
          */
     public SOAPBody getSOAPBody() throws SOAPException {
         throw new UnsupportedOperationException("getSOAPBody must be overridden by all subclasses of SOAPMessage");
@@ -178,7 +179,7 @@ public abstract class SOAPMessage {
          *         object
          * @exception SOAPException
          *               if the SOAP Header does not exist or cannot be retrieved
-         * @since SAAJ 1.2
+         * @since 1.6, SAAJ 1.2
          */
     public SOAPHeader getSOAPHeader() throws SOAPException {
         throw new UnsupportedOperationException("getSOAPHeader must be overridden by all subclasses of SOAPMessage");
@@ -230,7 +231,7 @@ public abstract class SOAPMessage {
      * @param headers
      *           a <code>MimeHeaders</code> object containing the MIME
      *           headers for which to search
-     * @since SAAJ 1.3
+     * @since 1.6, SAAJ 1.3
      */
     public abstract void removeAttachments(MimeHeaders headers);
 
@@ -258,7 +259,7 @@ public abstract class SOAPMessage {
      * @throws SOAPException if there is an error in the attempt to access the
      *          attachment
      *
-     * @since SAAJ 1.3
+     * @since 1.6, SAAJ 1.3
      */
     public abstract AttachmentPart getAttachment(SOAPElement element) throws SOAPException;
 
@@ -432,7 +433,7 @@ public abstract class SOAPMessage {
      *           the value to be associated with the specified property
      * @exception SOAPException
      *               if the property name is not recognized.
-     * @since SAAJ 1.2
+     * @since 1.6, SAAJ 1.2
      */
     public void setProperty(String property, Object value)
         throws SOAPException {
@@ -448,7 +449,7 @@ public abstract class SOAPMessage {
      *         if no such property exists.
      * @exception SOAPException
      *               if the property name is not recognized.
-     * @since SAAJ 1.2
+     * @since 1.6, SAAJ 1.2
      */
     public Object getProperty(String property) throws SOAPException {
         throw new UnsupportedOperationException("getProperty must be overridden by all subclasses of SOAPMessage");

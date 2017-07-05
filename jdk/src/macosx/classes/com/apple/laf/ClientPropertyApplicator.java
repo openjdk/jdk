@@ -33,6 +33,7 @@ import javax.swing.JComponent;
 public class ClientPropertyApplicator<T extends JComponent, N> implements PropertyChangeListener {
     private final Map<String, Property<N>> properties = new HashMap<String, Property<N>>();
 
+    @SuppressWarnings("unchecked")
     public ClientPropertyApplicator(final Property<N>... propertyList) {
         for (final Property<N> p : propertyList) {
             properties.put(p.name, p);

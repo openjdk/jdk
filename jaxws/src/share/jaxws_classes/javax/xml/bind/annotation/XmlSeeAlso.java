@@ -70,7 +70,7 @@ import java.lang.annotation.Target;
  * correctly bind <tt>Dog</tt> and <tt>Cat</tt>.
  *
  * @author Kohsuke Kawaguchi
- * @since JAXB2.1
+ * @since 1.6, JAXB 2.1
  */
 @Target({ElementType.TYPE})
 @Retention(RUNTIME)

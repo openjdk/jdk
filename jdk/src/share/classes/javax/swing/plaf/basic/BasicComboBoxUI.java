@@ -61,6 +61,10 @@ import sun.swing.UIAction;
  * @author Mark Davidson
  */
 public class BasicComboBoxUI extends ComboBoxUI {
+
+    /**
+     * The instance of {@code JComboBox}.
+     */
     protected JComboBox<Object> comboBox;
     /**
      * This protected field is implementation specific. Do not access directly
@@ -73,20 +77,30 @@ public class BasicComboBoxUI extends ComboBoxUI {
     private boolean isTableCellEditor = false;
     private static final String IS_TABLE_CELL_EDITOR = "JComboBox.isTableCellEditor";
 
-    // This list is for drawing the current item in the combo box.
+    /**
+     * This list is for drawing the current item in the combo box.
+     */
     protected JList<Object>   listBox;
 
-    // Used to render the currently selected item in the combo box.
-    // It doesn't have anything to do with the popup's rendering.
+    /**
+     * Used to render the currently selected item in the combo box.
+     * It doesn't have anything to do with the popup's rendering.
+     */
     protected CellRendererPane currentValuePane = new CellRendererPane();
 
-    // The implementation of ComboPopup that is used to show the popup.
+    /**
+     * The implementation of {@code ComboPopup} that is used to show the popup.
+     */
     protected ComboPopup popup;
 
-    // The Component that the ComboBoxEditor uses for editing
+    /**
+     * The Component that the @{code ComboBoxEditor} uses for editing.
+     */
     protected Component editor;
 
-    // The arrow button that invokes the popup.
+    /**
+     * The arrow button that invokes the popup.
+     */
     protected JButton   arrowButton;
 
     // Listeners that are attached to the JComboBox
@@ -121,8 +135,19 @@ public class BasicComboBoxUI extends ComboBoxUI {
     protected ItemListener itemListener;
 
     // Listeners that the ComboPopup produces.
+    /**
+     * The {@code MouseListener} listens to events.
+     */
     protected MouseListener popupMouseListener;
+
+    /**
+     * The {@code MouseMotionListener} listens to events.
+     */
     protected MouseMotionListener popupMouseMotionListener;
+
+    /**
+     * The {@code KeyListener} listens to events.
+     */
     protected KeyListener popupKeyListener;
 
     // This is used for knowing when to cache the minimum preferred size.
@@ -160,10 +185,14 @@ public class BasicComboBoxUI extends ComboBoxUI {
      */
     JComboBox.KeySelectionManager keySelectionManager;
 
-    // Flag for recalculating the minimum preferred size.
+    /**
+     * The flag for recalculating the minimum preferred size.
+     */
     protected boolean isMinimumSizeDirty = true;
 
-    // Cached minimum preferred size.
+    /**
+     * The cached minimum preferred size.
+     */
     protected Dimension cachedMinimumSize = new Dimension( 0, 0 );
 
     // Flag for calculating the display size
@@ -238,6 +267,12 @@ public class BasicComboBoxUI extends ComboBoxUI {
     // begin UI Initialization
     //
 
+    /**
+     * Constructs a new instance of {@code BasicComboBoxUI}.
+     *
+     * @param c a component
+     * @return a new instance of {@code BasicComboBoxUI}
+     */
     public static ComponentUI createUI(JComponent c) {
         return new BasicComboBoxUI();
     }
@@ -1090,6 +1125,9 @@ public class BasicComboBoxUI extends ComboBoxUI {
      * navigation.  This is used for optimizing key input by only passing non-
      * navigation keys to the type-ahead mechanism.  Subclasses should override this
      * if they change the navigation keys.
+     *
+     * @param keyCode a key code
+     * @return {@code true} if the supplied {@code keyCode} maps to a navigation key
      */
     protected boolean isNavigationKey( int keyCode ) {
         return keyCode == KeyEvent.VK_UP || keyCode == KeyEvent.VK_DOWN ||
@@ -1167,6 +1205,8 @@ public class BasicComboBoxUI extends ComboBoxUI {
 
     /**
      * Returns the area that is reserved for drawing the currently selected item.
+     *
+     * @return the area that is reserved for drawing the currently selected item
      */
     protected Rectangle rectangleForCurrentValue() {
         int width = comboBox.getWidth();
@@ -1190,6 +1230,8 @@ public class BasicComboBoxUI extends ComboBoxUI {
 
     /**
      * Gets the insets from the JComboBox.
+     *
+     * @return the insets
      */
     protected Insets getInsets() {
         return comboBox.getInsets();
@@ -1206,6 +1248,10 @@ public class BasicComboBoxUI extends ComboBoxUI {
 
     /**
      * Paints the currently selected item.
+     *
+     * @param g an instance of {@code Graphics}
+     * @param bounds a bounding rectangle to render to
+     * @param hasFocus is focused
      */
     public void paintCurrentValue(Graphics g,Rectangle bounds,boolean hasFocus) {
         ListCellRenderer<Object> renderer = comboBox.getRenderer();
@@ -1263,6 +1309,10 @@ public class BasicComboBoxUI extends ComboBoxUI {
 
     /**
      * Paints the background of the currently selected item.
+     *
+     * @param g an instance of {@code Graphics}
+     * @param bounds a bounding rectangle to render to
+     * @param hasFocus is focused
      */
     public void paintCurrentValueBackground(Graphics g,Rectangle bounds,boolean hasFocus) {
         Color t = g.getColor();

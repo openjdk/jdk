@@ -204,6 +204,7 @@ SUNWprivate_1.1 {
                 Java_sun_print_CUPSPrinter_canConnect;
                 Java_sun_print_CUPSPrinter_getMedia;
                 Java_sun_print_CUPSPrinter_getPageSizes;
+                Java_sun_print_CUPSPrinter_getResolutions;
 
                 Java_com_sun_java_swing_plaf_gtk_GTKEngine_native_1paint_1arrow;
                 Java_com_sun_java_swing_plaf_gtk_GTKEngine_native_1paint_1box;

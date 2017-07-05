@@ -114,7 +114,7 @@ import static java.lang.annotation.ElementType.FIELD;
  *     &lt;/xs:simpleType>
  * </pre>
  *
- * @since JAXB 2.0
+ * @since 1.6, JAXB 2.0
  */
 @Retention(RUNTIME)
 @Target({FIELD})
