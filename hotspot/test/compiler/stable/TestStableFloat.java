@@ -26,9 +26,11 @@
 /*
  * @test TestStableFloat
  * @summary tests on stable fields and arrays
- * @library /testlibrary
- * @compile -XDignore.symbol.file TestStableFloat.java
+ * @library /testlibrary /testlibrary/whitebox
+ * @build TestStableFloat StableConfiguration sun.hotspot.WhiteBox
+ * @run main ClassFileInstaller sun.hotspot.WhiteBox sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main ClassFileInstaller
+ *           java/lang/invoke/StableConfiguration
  *           java/lang/invoke/TestStableFloat
  *           java/lang/invoke/TestStableFloat$FloatStable
  *           java/lang/invoke/TestStableFloat$StaticFloatStable
@@ -48,46 +50,60 @@
  *           java/lang/invoke/TestStableFloat$NestedStableField3
  *           java/lang/invoke/TestStableFloat$NestedStableField3$A
  *           java/lang/invoke/TestStableFloat$DefaultValue
+ *           java/lang/invoke/TestStableFloat$DefaultStaticValue
  *           java/lang/invoke/TestStableFloat$ObjectArrayLowerDim2
  *
  * @run main/othervm -Xbootclasspath/a:. -XX:+IgnoreUnrecognizedVMOptions
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+FoldStableValues -XX:+UseCompressedOop
- *                   -server -XX:-TieredCompilation -Xcomp
+ *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
+ *                   -server -XX:-TieredCompilation
+ *                   -XX:+FoldStableValues
+ *                   -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
+ *                   java.lang.invoke.TestStableFloat
+ * @run main/othervm -Xbootclasspath/a:. -XX:+IgnoreUnrecognizedVMOptions
+ *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
+ *                   -server -XX:-TieredCompilation
+ *                   -XX:-FoldStableValues
  *                   -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
  *                   java.lang.invoke.TestStableFloat
  *
  * @run main/othervm -Xbootclasspath/a:. -XX:+IgnoreUnrecognizedVMOptions
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+FoldStableValues -XX:-UseCompressedOop
- *                   -server -XX:-TieredCompilation -Xcomp
+ *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
+ *                   -server -XX:+TieredCompilation -XX:TieredStopAtLevel=1
+ *                   -XX:+FoldStableValues
+ *                   -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
+ *                   java.lang.invoke.TestStableFloat
+ * @run main/othervm -Xbootclasspath/a:. -XX:+IgnoreUnrecognizedVMOptions
+ *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
+ *                   -server -XX:+TieredCompilation -XX:TieredStopAtLevel=1
+ *                   -XX:-FoldStableValues
  *                   -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
  *                   java.lang.invoke.TestStableFloat
  *
  * @run main/othervm -Xbootclasspath/a:. -XX:+IgnoreUnrecognizedVMOptions
- *                   -XX:+UnlockDiagnosticVMOptions -XX:-FoldStableValues -XX:+UseCompressedOop
- *                   -server -XX:-TieredCompilation -Xcomp
+ *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
+ *                   -client -XX:-TieredCompilation
+ *                   -XX:+FoldStableValues
  *                   -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
  *                   java.lang.invoke.TestStableFloat
- *
  * @run main/othervm -Xbootclasspath/a:. -XX:+IgnoreUnrecognizedVMOptions
- *                   -XX:+UnlockDiagnosticVMOptions -XX:-FoldStableValues -XX:-UseCompressedOop
- *                   -server -XX:-TieredCompilation -Xcomp
+ *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
+ *                   -client -XX:-TieredCompilation
+ *                   -XX:-FoldStableValues
  *                   -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
  *                   java.lang.invoke.TestStableFloat
  */
 package java.lang.invoke;
 
-import com.sun.management.HotSpotDiagnosticMXBean;
-import com.sun.management.VMOption;
-import sun.management.ManagementFactoryHelper;
 import java.lang.reflect.InvocationTargetException;
 
 public class TestStableFloat {
-    public static void main(String[] args) throws Exception {
-        System.out.println("@Stable enabled: "+isStableEnabled);
-        System.out.println();
+    static final boolean isStableEnabled    = StableConfiguration.isStableEnabled;
+    static final boolean isServerWithStable = StableConfiguration.isServerWithStable;
 
+    public static void main(String[] args) throws Exception {
         run(DefaultValue.class);
         run(FloatStable.class);
+        run(DefaultStaticValue.class);
         run(StaticFloatStable.class);
         run(VolatileFloatStable.class);
 
@@ -145,6 +161,21 @@ public class TestStableFloat {
 
     /* ==================================================== */
 
+    static class DefaultStaticValue {
+        public static @Stable float v;
+
+        public static final DefaultStaticValue c = new DefaultStaticValue();
+        public static float get() { return c.v; }
+        public static void test() throws Exception {
+                        float val1 = get();
+            c.v = 1.0F; float val2 = get();
+            assertEquals(val1, 0F);
+            assertEquals(val2, 1.0F);
+        }
+    }
+
+    /* ==================================================== */
+
     static class StaticFloatStable {
         public static @Stable float v;
 
@@ -188,20 +219,22 @@ public class TestStableFloat {
                 c.v = new float[1]; c.v[0] = 1.0F; float val1 = get();
                                     c.v[0] = 2.0F; float val2 = get();
                 assertEquals(val1, 1.0F);
-                assertEquals(val2, (isStableEnabled ? 1.0F : 2.0F));
+                assertEquals(val2, (isServerWithStable ? 1.0F : 2.0F));
 
                 c.v = new float[1]; c.v[0] = 3.0F; float val3 = get();
-                assertEquals(val3, (isStableEnabled ? 1.0F : 3.0F));
+                assertEquals(val3, (isStableEnabled ? (isServerWithStable ? 1.0F : 2.0F)
+                                                    : 3.0F));
             }
 
             {
                 c.v = new float[20]; c.v[10] = 1.0F; float val1 = get1();
                                      c.v[10] = 2.0F; float val2 = get1();
                 assertEquals(val1, 1.0F);
-                assertEquals(val2, (isStableEnabled ? 1.0F : 2.0F));
+                assertEquals(val2, (isServerWithStable ? 1.0F : 2.0F));
 
                 c.v = new float[20]; c.v[10] = 3.0F; float val3 = get1();
-                assertEquals(val3, (isStableEnabled ? 1.0F : 3.0F));
+                assertEquals(val3, (isStableEnabled ? (isServerWithStable ? 1.0F : 2.0F)
+                                                    : 3.0F));
             }
 
             {
@@ -226,19 +259,21 @@ public class TestStableFloat {
                 c.v = new float[1][1]; c.v[0][0] = 1.0F; float val1 = get();
                                        c.v[0][0] = 2.0F; float val2 = get();
                 assertEquals(val1, 1.0F);
-                assertEquals(val2, (isStableEnabled ? 1.0F : 2.0F));
+                assertEquals(val2, (isServerWithStable ? 1.0F : 2.0F));
 
                 c.v = new float[1][1]; c.v[0][0] = 3.0F; float val3 = get();
-                assertEquals(val3, (isStableEnabled ? 1.0F : 3.0F));
+                assertEquals(val3, (isStableEnabled ? (isServerWithStable ? 1.0F : 2.0F)
+                                                    : 3.0F));
 
                 c.v[0] = new float[1]; c.v[0][0] = 4.0F; float val4 = get();
-                assertEquals(val4, (isStableEnabled ? 1.0F : 4.0F));
+                assertEquals(val4, (isStableEnabled ? (isServerWithStable ? 1.0F : 2.0F)
+                                                    : 4.0F));
             }
 
             {
                 c.v = new float[1][1]; float[] val1 = get1();
                 c.v[0] = new float[1]; float[] val2 = get1();
-                assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
+                assertTrue((isServerWithStable ? (val1 == val2) : (val1 != val2)));
             }
 
             {
@@ -264,28 +299,31 @@ public class TestStableFloat {
                 c.v = new float[1][1][1]; c.v[0][0][0] = 1.0F; float val1 = get();
                                           c.v[0][0][0] = 2.0F; float val2 = get();
                 assertEquals(val1, 1.0F);
-                assertEquals(val2, (isStableEnabled ? 1.0F : 2.0F));
+                assertEquals(val2, (isServerWithStable ? 1.0F : 2.0F));
 
                 c.v = new float[1][1][1]; c.v[0][0][0] = 3.0F; float val3 = get();
-                assertEquals(val3, (isStableEnabled ? 1.0F : 3.0F));
+                assertEquals(val3, (isStableEnabled ? (isServerWithStable ? 1.0F : 2.0F)
+                                                    : 3.0F));
 
                 c.v[0] = new float[1][1]; c.v[0][0][0] = 4.0F; float val4 = get();
-                assertEquals(val4, (isStableEnabled ? 1.0F : 4.0F));
+                assertEquals(val4, (isStableEnabled ? (isServerWithStable ? 1.0F : 2.0F)
+                                                    : 4.0F));
 
                 c.v[0][0] = new float[1]; c.v[0][0][0] = 5.0F; float val5 = get();
-                assertEquals(val5, (isStableEnabled ? 1.0F : 5.0F));
+                assertEquals(val5, (isStableEnabled ? (isServerWithStable ? 1.0F : 2.0F)
+                                                    : 5.0F));
             }
 
             {
                 c.v = new float[1][1][1]; float[] val1 = get1();
                 c.v[0][0] = new float[1]; float[] val2 = get1();
-                assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
+                assertTrue((isServerWithStable ? (val1 == val2) : (val1 != val2)));
             }
 
             {
                 c.v = new float[1][1][1]; float[][] val1 = get2();
                 c.v[0] = new float[1][1]; float[][] val2 = get2();
-                assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
+                assertTrue((isServerWithStable ? (val1 == val2) : (val1 != val2)));
             }
 
             {
@@ -312,37 +350,41 @@ public class TestStableFloat {
                 c.v = new float[1][1][1][1]; c.v[0][0][0][0] = 1.0F; float val1 = get();
                                              c.v[0][0][0][0] = 2.0F; float val2 = get();
                 assertEquals(val1, 1.0F);
-                assertEquals(val2, (isStableEnabled ? 1.0F : 2.0F));
+                assertEquals(val2, (isServerWithStable ? 1.0F : 2.0F));
 
                 c.v = new float[1][1][1][1]; c.v[0][0][0][0] = 3.0F; float val3 = get();
-                assertEquals(val3, (isStableEnabled ? 1.0F : 3.0F));
+                assertEquals(val3, (isStableEnabled ? (isServerWithStable ? 1.0F : 2.0F)
+                                                    : 3.0F));
 
                 c.v[0] = new float[1][1][1]; c.v[0][0][0][0] = 4.0F; float val4 = get();
-                assertEquals(val4, (isStableEnabled ? 1.0F : 4.0F));
+                assertEquals(val4, (isStableEnabled ? (isServerWithStable ? 1.0F : 2.0F)
+                                                    : 4.0F));
 
                 c.v[0][0] = new float[1][1]; c.v[0][0][0][0] = 5.0F; float val5 = get();
-                assertEquals(val5, (isStableEnabled ? 1.0F : 5.0F));
+                assertEquals(val5, (isStableEnabled ? (isServerWithStable ? 1.0F : 2.0F)
+                                                    : 5.0F));
 
                 c.v[0][0][0] = new float[1]; c.v[0][0][0][0] = 6.0F; float val6 = get();
-                assertEquals(val6, (isStableEnabled ? 1.0F : 6.0F));
+                assertEquals(val6, (isStableEnabled ? (isServerWithStable ? 1.0F : 2.0F)
+                                                    : 6.0F));
             }
 
             {
                 c.v = new float[1][1][1][1]; float[] val1 = get1();
                 c.v[0][0][0] = new float[1]; float[] val2 = get1();
-                assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
+                assertTrue((isServerWithStable ? (val1 == val2) : (val1 != val2)));
             }
 
             {
                 c.v = new float[1][1][1][1]; float[][] val1 = get2();
                 c.v[0][0] = new float[1][1]; float[][] val2 = get2();
-                assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
+                assertTrue((isServerWithStable ? (val1 == val2) : (val1 != val2)));
             }
 
             {
                 c.v = new float[1][1][1][1]; float[][][] val1 = get3();
                 c.v[0] = new float[1][1][1]; float[][][] val2 = get3();
-                assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
+                assertTrue((isServerWithStable ? (val1 == val2) : (val1 != val2)));
             }
 
             {
@@ -350,13 +392,11 @@ public class TestStableFloat {
                 c.v = new float[1][1][1][1]; float[][][][] val2 = get4();
                 assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
             }
-
         }
     }
 
     /* ==================================================== */
     // Dynamic Dim is higher than static
-
     static class ObjectArrayLowerDim0 {
         public @Stable Object v;
 
@@ -404,7 +444,7 @@ public class TestStableFloat {
                 c.v = new float[1][1]; c.v[0] = new float[0]; float[] val1 = get1();
                                        c.v[0] = new float[0]; float[] val2 = get1();
 
-                assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
+                assertTrue((isServerWithStable ? (val1 == val2) : (val1 != val2)));
             }
 
             {
@@ -440,14 +480,14 @@ public class TestStableFloat {
                 c.v = new float[1][1][1]; c.v[0][0] = new float[0]; float[] val1 = get1();
                                           c.v[0][0] = new float[0]; float[] val2 = get1();
 
-                assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
+                assertTrue((isServerWithStable ? (val1 == val2) : (val1 != val2)));
             }
 
             {
                 c.v = new float[1][1][1]; c.v[0] = new float[0][0]; float[][] val1 = get2();
                                           c.v[0] = new float[0][0]; float[][] val2 = get2();
 
-                assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
+                assertTrue((isServerWithStable ? (val1 == val2) : (val1 != val2)));
             }
 
             {
@@ -582,7 +622,7 @@ public class TestStableFloat {
                                elem.a = 2.0F; float val3 = get(); float val4 = get1();
 
                 assertEquals(val1, 1.0F);
-                assertEquals(val3, (isStableEnabled ? 1.0F : 2.0F));
+                assertEquals(val3, (isServerWithStable ? 1.0F : 2.0F));
 
                 assertEquals(val2, 1.0F);
                 assertEquals(val4, 2.0F);
@@ -615,18 +655,5 @@ public class TestStableFloat {
                 ex.printStackTrace(System.out);
             }
         }
-    }
-
-    static final boolean isStableEnabled;
-    static {
-        HotSpotDiagnosticMXBean diagnostic
-                = ManagementFactoryHelper.getDiagnosticMXBean();
-        VMOption tmp;
-        try {
-            tmp = diagnostic.getVMOption("FoldStableValues");
-        } catch (IllegalArgumentException e) {
-            tmp = null;
-        }
-        isStableEnabled = (tmp == null ? false : Boolean.parseBoolean(tmp.getValue()));
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@ import java.util.Collection;
 import java.util.Map;
 
 import java.util.regex.Pattern;
+import sun.security.util.CurveDB;
+import sun.security.util.NamedCurve;
 
 /**
  * Defines the entries of the SunEC provider.
@@ -55,7 +57,7 @@ final class SunECEntries {
         /*
          * Algorithm Parameter engine
          */
-        map.put("AlgorithmParameters.EC", "sun.security.ec.ECParameters");
+        map.put("AlgorithmParameters.EC", "sun.security.util.ECParameters");
         map.put("Alg.Alias.AlgorithmParameters.EllipticCurve", "EC");
         map.put("Alg.Alias.AlgorithmParameters.1.2.840.10045.2.1", "EC");
 

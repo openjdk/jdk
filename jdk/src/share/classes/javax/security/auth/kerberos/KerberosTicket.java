@@ -35,9 +35,6 @@ import javax.security.auth.Destroyable;
 import javax.security.auth.RefreshFailedException;
 import javax.security.auth.DestroyFailedException;
 import sun.misc.HexDumpEncoder;
-import sun.security.krb5.EncryptionKey;
-import sun.security.krb5.Asn1Exception;
-import sun.security.util.*;
 
 /**
  * This class encapsulates a Kerberos ticket and associated
@@ -253,9 +250,10 @@ public class KerberosTicket implements Destroyable, Refreshable,
                          Date endTime,
                          Date renewTill,
                          InetAddress[] clientAddresses) {
-        if (sessionKey == null)
-           throw new IllegalArgumentException("Session key for ticket"
-                                              + " cannot be null");
+        if (sessionKey == null) {
+            throw new IllegalArgumentException("Session key for ticket"
+                    + " cannot be null");
+        }
         init(asn1Encoding, client, server,
              new KeyImpl(sessionKey, keyType), flags, authTime,
              startTime, endTime, renewTill, clientAddresses);
@@ -271,41 +269,46 @@ public class KerberosTicket implements Destroyable, Refreshable,
                          Date endTime,
                          Date renewTill,
                          InetAddress[] clientAddresses) {
-        if (asn1Encoding == null)
-           throw new IllegalArgumentException("ASN.1 encoding of ticket"
-                                              + " cannot be null");
+        if (asn1Encoding == null) {
+            throw new IllegalArgumentException("ASN.1 encoding of ticket"
+                    + " cannot be null");
+        }
         this.asn1Encoding = asn1Encoding.clone();
 
-        if (client == null)
-           throw new IllegalArgumentException("Client name in ticket"
-                                              + " cannot be null");
+        if (client == null) {
+            throw new IllegalArgumentException("Client name in ticket"
+                    + " cannot be null");
+        }
         this.client = client;
 
-        if (server == null)
-           throw new IllegalArgumentException("Server name in ticket"
-                                              + " cannot be null");
+        if (server == null) {
+            throw new IllegalArgumentException("Server name in ticket"
+                    + " cannot be null");
+        }
         this.server = server;
 
         // Caller needs to make sure `sessionKey` will not be null
         this.sessionKey = sessionKey;
 
         if (flags != null) {
-           if (flags.length >= NUM_FLAGS)
-                this.flags = flags.clone();
-           else {
+           if (flags.length >= NUM_FLAGS) {
+               this.flags = flags.clone();
+           } else {
                 this.flags = new boolean[NUM_FLAGS];
                 // Fill in whatever we have
-                for (int i = 0; i < flags.length; i++)
+                for (int i = 0; i < flags.length; i++) {
                     this.flags[i] = flags[i];
+                }
            }
-        } else
-           this.flags = new boolean[NUM_FLAGS];
+        } else {
+            this.flags = new boolean[NUM_FLAGS];
+        }
 
         if (this.flags[RENEWABLE_TICKET_FLAG]) {
-           if (renewTill == null)
-                throw new IllegalArgumentException("The renewable period "
+           if (renewTill == null) {
+               throw new IllegalArgumentException("The renewable period "
                        + "end time cannot be null for renewable tickets.");
-
+           }
            this.renewTill = new Date(renewTill.getTime());
         }
 
@@ -318,13 +321,15 @@ public class KerberosTicket implements Destroyable, Refreshable,
             this.startTime = this.authTime;
         }
 
-        if (endTime == null)
-           throw new IllegalArgumentException("End time for ticket validity"
-                                              + " cannot be null");
+        if (endTime == null) {
+            throw new IllegalArgumentException("End time for ticket validity"
+                    + " cannot be null");
+        }
         this.endTime = new Date(endTime.getTime());
 
-        if (clientAddresses != null)
-           this.clientAddresses = clientAddresses.clone();
+        if (clientAddresses != null) {
+            this.clientAddresses = clientAddresses.clone();
+        }
     }
 
     /**
@@ -346,14 +351,17 @@ public class KerberosTicket implements Destroyable, Refreshable,
     }
 
     /**
-     * Returns the session key associated with this ticket.
+     * Returns the session key associated with this ticket. The return value
+     * is always a {@link EncryptionKey} object.
      *
      * @return the session key.
      */
     public final SecretKey getSessionKey() {
-        if (destroyed)
+        if (destroyed) {
             throw new IllegalStateException("This ticket is no longer valid");
-        return sessionKey;
+        }
+        return new EncryptionKey(
+                sessionKey.getEncoded(), sessionKey.getKeyType());
     }
 
     /**
@@ -366,8 +374,9 @@ public class KerberosTicket implements Destroyable, Refreshable,
      * @see #getSessionKey()
      */
     public final int getSessionKeyType() {
-        if (destroyed)
+        if (destroyed) {
             throw new IllegalStateException("This ticket is no longer valid");
+        }
         return sessionKey.getKeyType();
     }
 
@@ -508,8 +517,9 @@ public class KerberosTicket implements Destroyable, Refreshable,
      * @return an ASN.1 encoding of the entire ticket.
      */
     public final byte[] getEncoded() {
-        if (destroyed)
+        if (destroyed) {
             throw new IllegalStateException("This ticket is no longer valid");
+        }
         return asn1Encoding.clone();
     }
 
@@ -539,16 +549,17 @@ public class KerberosTicket implements Destroyable, Refreshable,
      */
     public void refresh() throws RefreshFailedException {
 
-        if (destroyed)
+        if (destroyed) {
             throw new RefreshFailedException("A destroyed ticket "
-                                             + "cannot be renewd.");
-
-        if (!isRenewable())
+                    + "cannot be renewd.");
+        }
+        if (!isRenewable()) {
             throw new RefreshFailedException("This ticket is not renewable");
-
-        if (System.currentTimeMillis() > getRenewTill().getTime())
+        }
+        if (System.currentTimeMillis() > getRenewTill().getTime()) {
             throw new RefreshFailedException("This ticket is past "
-                                             + "its last renewal time.");
+                                           + "its last renewal time.");
+        }
         Throwable e = null;
         sun.security.krb5.Credentials krb5Creds = null;
 
@@ -634,8 +645,9 @@ public class KerberosTicket implements Destroyable, Refreshable,
     }
 
     public String toString() {
-        if (destroyed)
-            throw new IllegalStateException("This ticket is no longer valid");
+        if (destroyed) {
+            return "Destroyed KerberosTicket";
+        }
         StringBuilder caddrString = new StringBuilder();
         if (clientAddresses != null) {
             for (int i = 0; i < clientAddresses.length; i++) {
@@ -715,8 +727,9 @@ public class KerberosTicket implements Destroyable, Refreshable,
      */
     public boolean equals(Object other) {
 
-        if (other == this)
+        if (other == this) {
             return true;
+        }
 
         if (! (other instanceof KerberosTicket)) {
             return false;
@@ -731,7 +744,7 @@ public class KerberosTicket implements Destroyable, Refreshable,
                 !endTime.equals(otherTicket.getEndTime()) ||
                 !server.equals(otherTicket.getServer()) ||
                 !client.equals(otherTicket.getClient()) ||
-                !sessionKey.equals(otherTicket.getSessionKey()) ||
+                !sessionKey.equals(otherTicket.sessionKey) ||
                 !Arrays.equals(clientAddresses, otherTicket.getClientAddresses()) ||
                 !Arrays.equals(flags, otherTicket.getFlags())) {
             return false;
@@ -739,35 +752,41 @@ public class KerberosTicket implements Destroyable, Refreshable,
 
         // authTime may be null
         if (authTime == null) {
-            if (otherTicket.getAuthTime() != null)
+            if (otherTicket.getAuthTime() != null) {
                 return false;
+            }
         } else {
-            if (!authTime.equals(otherTicket.getAuthTime()))
+            if (!authTime.equals(otherTicket.getAuthTime())) {
                 return false;
+            }
         }
 
         // startTime may be null
         if (startTime == null) {
-            if (otherTicket.getStartTime() != null)
+            if (otherTicket.getStartTime() != null) {
                 return false;
+            }
         } else {
-            if (!startTime.equals(otherTicket.getStartTime()))
+            if (!startTime.equals(otherTicket.getStartTime())) {
                 return false;
+            }
         }
 
         if (renewTill == null) {
-            if (otherTicket.getRenewTill() != null)
+            if (otherTicket.getRenewTill() != null) {
                 return false;
+            }
         } else {
-            if (!renewTill.equals(otherTicket.getRenewTill()))
+            if (!renewTill.equals(otherTicket.getRenewTill())) {
                 return false;
+            }
         }
 
         return true;
     }
 
     private void readObject(ObjectInputStream s)
-        throws IOException, ClassNotFoundException {
+            throws IOException, ClassNotFoundException {
         s.defaultReadObject();
         if (sessionKey == null) {
            throw new InvalidObjectException("Session key cannot be null");

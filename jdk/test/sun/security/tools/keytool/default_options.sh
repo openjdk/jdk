@@ -33,15 +33,11 @@ fi
 
 KS=ks
 KEYTOOL="$TESTJAVA/bin/keytool ${TESTTOOLVMOPTS}"
-JAR="$TESTJAVA/bin/jar ${TESTTOOLVMOPTS}"
-JARSIGNER="$TESTJAVA/bin/jarsigner ${TESTTOOLVMOPTS}"
 
 rm $KS 2> /dev/null
 
 PASS=changeit
 export PASS
-
-# keytool
 
 cat <<EOF > kt.conf
 # A Pre-configured options file
@@ -68,23 +64,6 @@ $KEYTOOL -conf kt.conf -delete -alias a && exit 16
 
 # Single-valued option on command line overrides again
 $KEYTOOL -conf kt.conf -delete -alias b -keystore $KS || exit 17
-
-# jarsigner
-
-cat <<EOF > js.conf
-jarsigner.all = -keystore \${user.dir}/$KS -storepass:env PASS -debug -strict
-jarsigner.sign = -digestalg SHA1
-jarsigner.verify = -verbose:summary
-
-EOF
-
-$JAR cvf a.jar ks js.conf kt.conf
-
-$JARSIGNER -conf js.conf a.jar a || exit 21
-$JARSIGNER -conf js.conf -verify a.jar > jarsigner.out || exit 22
-grep "and 2 more" jarsigner.out || exit 23
-$JAR xvf a.jar META-INF/MANIFEST.MF
-grep "SHA1-Digest" META-INF/MANIFEST.MF || exit 24
 
 # Error cases
 
