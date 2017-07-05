@@ -136,6 +136,9 @@ public class LongStreamTestDataProvider {
                                             () -> LongStream.range(0, longs.length).spliterator()));
                 spliterators.add(splitDescr("LongStream.longRangeClosed(0,l):" + name,
                                             () -> LongStream.rangeClosed(0, longs.length).spliterator()));
+                spliterators.add(splitDescr("LongStream.iterate(0,x->x<l;x->x+1):" + name,
+                                            () -> LongStream.iterate(0L, x -> x < longs.length, x -> x + 1L)
+                                                            .spliterator()));
                 // Need more!
             }
             spliteratorTestData = spliterators.toArray(new Object[0][]);

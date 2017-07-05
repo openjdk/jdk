@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -403,25 +403,20 @@ void Flag::print_on(outputStream* st, bool withComments, bool printRanges) {
     st->cr();
 
   } else if (!is_bool() && !is_ccstr()) {
+    st->print("%9s %-50s ", _type, _name);
 
-    if (printRanges) {
+    CommandLineFlagRangeList::print(_name, st, true);
 
-      st->print("%9s %-50s ", _type, _name);
-
-      CommandLineFlagRangeList::print(_name, st, true);
-
-      st->print(" %-20s", " ");
-      print_kind(st);
+    st->print(" %-20s", " ");
+    print_kind(st);
 
 #ifndef PRODUCT
-      if (withComments) {
-        st->print("%s", _doc);
-      }
+    if (withComments) {
+      st->print("%s", _doc);
+    }
 #endif
 
-      st->cr();
-
-    }
+    st->cr();
   }
 }
 
@@ -1255,8 +1250,6 @@ void CommandLineFlags::verify() {
 
 #endif // PRODUCT
 
-#define ONLY_PRINT_PRODUCT_FLAGS
-
 void CommandLineFlags::printFlags(outputStream* out, bool withComments, bool printRanges) {
   // Print the flags sorted by name
   // note: this method is called before the thread structure is in place
@@ -1281,9 +1274,6 @@ void CommandLineFlags::printFlags(outputStream* out, bool withComments, bool pri
 
   for (size_t i = 0; i < length; i++) {
     if (array[i]->is_unlocked()) {
-#ifdef ONLY_PRINT_PRODUCT_FLAGS
-      if (!array[i]->is_notproduct() && !array[i]->is_develop())
-#endif // ONLY_PRINT_PRODUCT_FLAGS
       array[i]->print_on(out, withComments, printRanges);
     }
   }

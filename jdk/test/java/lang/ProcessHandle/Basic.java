@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,8 @@ import org.testng.annotations.Test;
 /*
  * @test
  * @library /test/lib/share/classes
- * @run testng InfoTest
+ * @modules jdk.management
+ * @run testng Basic
  * @summary Basic tests for ProcessHandler
  * @author Roger Riggs
  */

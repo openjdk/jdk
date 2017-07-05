@@ -311,6 +311,16 @@ var getJibProfilesProfiles = function (input, common) {
             labels: [ "open" ]
         },
 
+        "linux-x86-open": {
+            target_os: mainProfiles["linux-x86"].target_os,
+            target_cpu: mainProfiles["linux-x86"].target_cpu,
+            dependencies: mainProfiles["linux-x86"].dependencies,
+            configure_args: concat(mainProfiles["linux-x86"].configure_args,
+                "--enable-openjdk-only"),
+            make_args: mainProfiles["linux-x86"].make_args,
+            labels: [ "open" ]
+        },
+
         "solaris-x64-open": {
             target_os: mainProfiles["solaris-x64"].target_os,
             target_cpu: mainProfiles["solaris-x64"].target_cpu,
@@ -318,6 +328,16 @@ var getJibProfilesProfiles = function (input, common) {
             configure_args: concat(mainProfiles["solaris-x64"].configure_args,
                 "--enable-openjdk-only"),
             make_args: mainProfiles["solaris-x64"].make_args,
+            labels: [ "open" ]
+        },
+
+        "windows-x86-open": {
+            target_os: mainProfiles["windows-x86"].target_os,
+            target_cpu: mainProfiles["windows-x86"].target_cpu,
+            dependencies: mainProfiles["windows-x86"].dependencies,
+            configure_args: concat(mainProfiles["windows-x86"].configure_args,
+                "--enable-openjdk-only"),
+            make_args: mainProfiles["windows-x86"].make_args,
             labels: [ "open" ]
         }
     };
