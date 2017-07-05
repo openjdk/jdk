@@ -59,7 +59,7 @@ public class FileURLConnection extends URLConnection {
     String filename;
     boolean isDirectory = false;
     boolean exists = false;
-    List files;
+    List<String> files;
 
     long length = -1;
     long lastModified = 0;
@@ -81,7 +81,10 @@ public class FileURLConnection extends URLConnection {
                 filename = file.toString();
                 isDirectory = file.isDirectory();
                 if (isDirectory) {
-                    files = (List) Arrays.asList(file.list());
+                    String[] fileList = file.list();
+                    if (fileList == null)
+                        throw new FileNotFoundException(filename + " exists, but is not accessible");
+                    files = Arrays.<String>asList(fileList);
                 } else {
 
                     is = new BufferedInputStream(new FileInputStream(filename));
@@ -197,7 +200,7 @@ public class FileURLConnection extends URLConnection {
                 Collections.sort(files, Collator.getInstance());
 
                 for (int i = 0 ; i < files.size() ; i++) {
-                    String fileName = (String)files.get(i);
+                    String fileName = files.get(i);
                     buf.append(fileName);
                     buf.append("\n");
                 }

@@ -2200,6 +2200,18 @@ Zone	Asia/Karachi	4:28:12 -	LMT	1907
 # "At 12:01am Friday, clocks in Israel and the West Bank will change to
 # 1:01am, while Gaza clocks will change at 12:01am Saturday morning."
 
+# From Steffen Thorsen (2010-08-11):
+# According to several sources, including
+# <a href="http://www.maannews.net/eng/ViewDetails.aspx?ID=306795">
+# http://www.maannews.net/eng/ViewDetails.aspx?ID=306795
+# </a>
+# the clocks were set back one hour at 2010-08-11 00:00:00 local time in 
+# Gaza and the West Bank.
+# Some more background info:
+# <a href="http://www.timeanddate.com/news/time/westbank-gaza-end-dst-2010.html">
+# http://www.timeanddate.com/news/time/westbank-gaza-end-dst-2010.html
+# </a>
+
 # The rules for Egypt are stolen from the `africa' file.
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule EgyptAsia	1957	only	-	May	10	0:00	1:00	S
@@ -2220,6 +2232,7 @@ Rule Palestine	2008	only	-	Aug	lastFri	2:00	0	-
 Rule Palestine	2009	only	-	Mar	lastFri	0:00	1:00	S
 Rule Palestine	2010	max	-	Mar	lastSat	0:01	1:00	S
 Rule Palestine	2009	max	-	Sep	Fri>=1	2:00	0	-
+Rule Palestine	2010	only	-	Aug	11	0:00	0	-
 
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Gaza	2:17:52	-	LMT	1900 Oct

@@ -1768,6 +1768,10 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
         // Not really necessary for a tunnel, but can't hurt
         requests.setIfNotSet("Accept", acceptString);
 
+        if (http.getHttpKeepAliveSet()) {
+            requests.setIfNotSet("Proxy-Connection", "keep-alive");
+        }
+
         setPreemptiveProxyAuthentication(requests);
 
          /* Log the CONNECT request */

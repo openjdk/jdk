@@ -414,6 +414,18 @@ class Thread implements Runnable {
     }
 
     /**
+     * Throws CloneNotSupportedException as a Thread can not be meaningfully
+     * cloned. Construct a new Thread instead.
+     *
+     * @throws  CloneNotSupportedException
+     *          always
+     */
+    @Override
+    protected Object clone() throws CloneNotSupportedException {
+        throw new CloneNotSupportedException();
+    }
+
+    /**
      * Allocates a new {@code Thread} object. This constructor has the same
      * effect as {@linkplain #Thread(ThreadGroup,Runnable,String) Thread}
      * {@code (null, null, gname)}, where {@code gname} is a newly generated

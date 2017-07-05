@@ -215,17 +215,15 @@ bool frame::can_be_deoptimized() const {
   return !nm->is_at_poll_return(pc());
 }
 
-void frame::deoptimize(JavaThread* thread, bool thread_is_known_safe) {
-// Schedule deoptimization of an nmethod activation with this frame.
-
-  // Store the original pc before an patch (or request to self-deopt)
-  // in the published location of the frame.
-
+void frame::deoptimize(JavaThread* thread) {
+  // Schedule deoptimization of an nmethod activation with this frame.
   assert(_cb != NULL && _cb->is_nmethod(), "must be");
   nmethod* nm = (nmethod*)_cb;
 
   // This is a fix for register window patching race
-  if (NeedsDeoptSuspend && !thread_is_known_safe) {
+  if (NeedsDeoptSuspend && Thread::current() != thread) {
+    assert(SafepointSynchronize::is_at_safepoint(),
+           "patching other threads for deopt may only occur at a safepoint");
 
     // It is possible especially with DeoptimizeALot/DeoptimizeRandom that
     // we could see the frame again and ask for it to be deoptimized since
@@ -248,7 +246,11 @@ void frame::deoptimize(JavaThread* thread, bool thread_is_known_safe) {
     // whether to spin or block. It isn't worth it. Just treat it like
     // native and be done with it.
     //
-    JavaThreadState state = thread->thread_state();
+    // Examine the state of the thread at the start of safepoint since
+    // threads that were in native at the start of the safepoint could
+    // come to a halt during the safepoint, changing the current value
+    // of the safepoint_state.
+    JavaThreadState state = thread->safepoint_state()->orig_thread_state();
     if (state == _thread_in_native || state == _thread_in_native_trans) {
       // Since we are at a safepoint the target thread will stop itself
       // before it can return to java as long as we remain at the safepoint.

@@ -421,7 +421,9 @@ BytecodeInterpreter::run(interpreterState istate) {
 #ifdef ASSERT
   if (istate->_msg != initialize) {
     assert(abs(istate->_stack_base - istate->_stack_limit) == (istate->_method->max_stack() + 1), "bad stack limit");
-  IA32_ONLY(assert(istate->_stack_limit == istate->_thread->last_Java_sp() + 1, "wrong"));
+#ifndef SHARK
+    IA32_ONLY(assert(istate->_stack_limit == istate->_thread->last_Java_sp() + 1, "wrong"));
+#endif // !SHARK
   }
   // Verify linkages.
   interpreterState l = istate;

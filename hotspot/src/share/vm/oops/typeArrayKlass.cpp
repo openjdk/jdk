@@ -228,10 +228,6 @@ int typeArrayKlass::oop_oop_iterate_m(oop obj, OopClosure* blk, MemRegion mr) {
 }
 
 #ifndef SERIALGC
-void typeArrayKlass::oop_copy_contents(PSPromotionManager* pm, oop obj) {
-  assert(obj->is_typeArray(),"must be a type array");
-}
-
 void typeArrayKlass::oop_push_contents(PSPromotionManager* pm, oop obj) {
   assert(obj->is_typeArray(),"must be a type array");
 }
