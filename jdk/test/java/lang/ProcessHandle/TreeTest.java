@@ -75,10 +75,12 @@ public class TreeTest extends ProcessUtil {
                 spawned.add(JavaChild.spawnJavaChild("pid", "stdin"));
             }
 
-            List<ProcessHandle> subprocesses = getChildren(self);
-            subprocesses.forEach(ProcessUtil::printProcess);
-            count = subprocesses.size();
-            Assert.assertEquals(count, MAXCHILDREN, "Wrong number of spawned children");
+            // Verify spawned Process is in list of children
+            final List<ProcessHandle> initialChildren = getChildren(self);
+            spawned.stream()
+                    .map(Process::toHandle)
+                    .filter(p -> !initialChildren.contains(p))
+                    .forEach(p -> Assert.fail("Spawned process missing from children: " + p));
 
             // Send exit command to each spawned Process
             spawned.forEach(p -> {
@@ -102,20 +104,25 @@ public class TreeTest extends ProcessUtil {
                 });
 
             // Verify that ProcessHandle.isAlive sees each of them as not alive
-            for (ProcessHandle ph : subprocesses) {
+            for (Process p : spawned) {
+                ProcessHandle ph = p.toHandle();
                 Assert.assertFalse(ph.isAlive(),
                         "ProcessHandle.isAlive for exited process: " + ph);
             }
 
-            // Verify no current children are visible
-            count = getChildren(self).size();
-            Assert.assertEquals(count, 0, "Children destroyed, should be zero");
+            // Verify spawned processes are not visible as children
+            final List<ProcessHandle> afterChildren = getChildren(self);
+            spawned.stream()
+                    .map(Process::toHandle)
+                    .filter(p -> afterChildren.contains(p))
+                    .forEach(p -> Assert.fail("Spawned process missing from children: " + p));
 
         } catch (IOException ioe) {
             Assert.fail("unable to spawn process", ioe);
         } finally {
             // Cleanup any left over processes
-            spawned.stream().map(Process::toHandle)
+            spawned.stream()
+                    .map(Process::toHandle)
                     .filter(ProcessHandle::isAlive)
                     .forEach(ph -> printDeep(ph, "test1 cleanup: "));
             destroyProcessTree(ProcessHandle.current());
@@ -127,7 +134,6 @@ public class TreeTest extends ProcessUtil {
      */
     @Test
     public static void test2() {
-        ProcessHandle p1Handle = null;
         try {
             ProcessHandle self = ProcessHandle.current();
             List<ProcessHandle> initialChildren = getChildren(self);
@@ -138,7 +144,7 @@ public class TreeTest extends ProcessUtil {
             }
 
             JavaChild p1 = JavaChild.spawnJavaChild("stdin");
-            p1Handle = p1.toHandle();
+            ProcessHandle p1Handle = p1.toHandle();
             printf("  p1 pid: %d%n", p1.getPid());
 
             int spawnNew = 3;
@@ -187,9 +193,6 @@ public class TreeTest extends ProcessUtil {
             throw new RuntimeException(t);
         } finally {
             // Cleanup any left over processes
-            if (p1Handle.isAlive()) {
-                printDeep(p1Handle, "test2 cleanup: ");
-            }
             destroyProcessTree(ProcessHandle.current());
         }
     }
@@ -205,7 +208,10 @@ public class TreeTest extends ProcessUtil {
             JavaChild p1 = JavaChild.spawnJavaChild("stdin");
             ProcessHandle p1Handle = p1.toHandle();
             printf(" p1: %s%n", p1.getPid());
-            long count = getChildren(self).size();
+
+            List<ProcessHandle> subprocesses = getChildren(self);
+            subprocesses.forEach(ProcessUtil::printProcess);
+            long count = subprocesses.size();
             Assert.assertEquals(count, 1, "Wrong number of spawned children");
 
             int newChildren = 3;
@@ -213,7 +219,7 @@ public class TreeTest extends ProcessUtil {
             p1.sendAction("spawn", newChildren, "stdin");
 
             // Wait for the new processes and save the list
-            List<ProcessHandle> subprocesses = waitForAllChildren(p1Handle, newChildren);
+            subprocesses = waitForAllChildren(p1Handle, newChildren);
             printDeep(p1Handle, "allChildren");
 
             Assert.assertEquals(subprocesses.size(), newChildren, "Wrong number of children");
@@ -249,6 +255,9 @@ public class TreeTest extends ProcessUtil {
             Assert.fail("Spawn of subprocess failed", ioe);
         } catch (InterruptedException inte) {
             Assert.fail("InterruptedException", inte);
+        } finally {
+            // Cleanup any left over processes
+            destroyProcessTree(ProcessHandle.current());
         }
     }
 
@@ -299,16 +308,15 @@ public class TreeTest extends ProcessUtil {
     }
 
     /**
-     * A test for scale; launch a large number (39) of subprocesses.
+     * A test for scale; launch a large number (14) of subprocesses.
      */
     @Test
     public static void test5() {
         int factor = 2;
-        ProcessHandle p1Handle = null;
         Instant start = Instant.now();
         try {
             JavaChild p1 = JavaChild.spawnJavaChild("stdin");
-            p1Handle = p1.toHandle();
+            ProcessHandle p1Handle = p1.toHandle();
 
             printf("Spawning %d x %d x %d processes, pid: %d%n",
                     factor, factor, factor, p1.getPid());
@@ -325,18 +333,14 @@ public class TreeTest extends ProcessUtil {
             int newChildren = factor * (1 + factor * (1 + factor));
             List<ProcessHandle> children = ProcessUtil.waitForAllChildren(p1Handle, newChildren);
 
-            Assert.assertEquals(p1.children()
-                    .filter(ProcessUtil::isNotWindowsConsole)
-                    .count(), factor, "expected direct children");
-            Assert.assertEquals(p1.allChildren()
-                    .filter(ProcessUtil::isNotWindowsConsole)
-                    .count(),
-                    factor * factor * factor + factor * factor + factor,
-                    "expected all children");
+            Assert.assertEquals(getChildren(p1Handle).size(),
+                    factor, "expected direct children");
+            long count = getAllChildren(p1Handle).size();
+            long totalChildren = factor * factor * factor + factor * factor + factor;
+            Assert.assertTrue(count >= totalChildren,
+                    "expected at least " + totalChildren + ", actual: " + count);
 
-            List<ProcessHandle> subprocesses = p1.allChildren()
-                    .filter(ProcessUtil::isNotWindowsConsole)
-                    .collect(Collectors.toList());
+            List<ProcessHandle> subprocesses = getAllChildren(p1Handle);
             printf(" allChildren:  %s%n",
                     subprocesses.stream().map(p -> p.getPid())
                     .collect(Collectors.toList()));
@@ -347,10 +351,6 @@ public class TreeTest extends ProcessUtil {
             Assert.fail("Unexpected Exception", ex);
         } finally {
             printf("Duration: %s%n", Duration.between(start, Instant.now()));
-            // Cleanup any left over processes
-            if (p1Handle.isAlive()) {
-                printDeep(p1Handle, "test5 cleanup: ");
-            }
             destroyProcessTree(ProcessHandle.current());
         }
     }

@@ -699,6 +699,12 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(UseSHA512Intrinsics, false);
   }
 
+  if (UseCRC32CIntrinsics) {
+    if (!FLAG_IS_DEFAULT(UseCRC32CIntrinsics))
+      warning("CRC32C intrinsics are not available on this CPU");
+    FLAG_SET_DEFAULT(UseCRC32CIntrinsics, false);
+  }
+
   // Adjust RTM (Restricted Transactional Memory) flags
   if (!supports_rtm() && UseRTMLocking) {
     // Can't continue because UseRTMLocking affects UseBiasedLocking flag

@@ -281,12 +281,12 @@ private static volatile int commandSeq = 0;         // Command sequence number
                         sendResult(action, Integer.toString(millis));
                         break;
                     case "cpuloop":
-                        long times = Long.valueOf(args[nextArg++]);
-                        Instant end = Instant.now().plusMillis(times);
-                        while (Instant.now().isBefore(end)) {
-                            // burn the cpu til the time is up
+                        long cpuMillis = Long.valueOf(args[nextArg++]);
+                        long cpuTarget = getCpuTime() + cpuMillis * 1_000_000L;
+                        while (getCpuTime() < cpuTarget) {
+                            // burn the cpu until the time is up
                         }
-                        sendResult(action, times);
+                        sendResult(action, cpuMillis);
                         break;
                     case "cputime":
                         sendResult(action, getCpuTime());

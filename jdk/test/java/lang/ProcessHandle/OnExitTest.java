@@ -27,16 +27,19 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
+
+import jdk.testlibrary.Utils;
+
 import org.testng.annotations.Test;
 import org.testng.Assert;
 import org.testng.TestNG;
 
 /*
  * @test
+ * @build jdk.testlibrary.Utils
  * @summary Functions of Process.onExit and ProcessHandle.onExit
  * @author Roger Riggs
  */
@@ -88,6 +91,7 @@ public class OnExitTest extends ProcessUtil {
      */
     @Test
     public static void test2() {
+        ProcessHandle procHandle = null;
         try {
             ConcurrentHashMap<ProcessHandle, ProcessHandle> processes = new ConcurrentHashMap<>();
             List<ProcessHandle> children = getChildren(ProcessHandle.current());
@@ -96,7 +100,7 @@ public class OnExitTest extends ProcessUtil {
                     "Expected to start with zero children; " + children);
 
             JavaChild proc = JavaChild.spawnJavaChild("stdin");
-            ProcessHandle procHandle = proc.toHandle();
+            procHandle = proc.toHandle();
             printf(" spawned: %d%n", proc.getPid());
 
             proc.forEachOutputLine((s) -> {
@@ -114,7 +118,8 @@ public class OnExitTest extends ProcessUtil {
 
             // Poll until all 9 child processes exist or the timeout is reached
             int expected = 9;
-            Instant endTimeout = Instant.now().plusSeconds(10L);
+            long timeout = Utils.adjustTimeout(10L);
+            Instant endTimeout = Instant.now().plusSeconds(timeout);
             do {
                 Thread.sleep(200L);
                 printf(" subprocess count: %d, waiting for %d%n", processes.size(), expected);
@@ -123,16 +128,17 @@ public class OnExitTest extends ProcessUtil {
 
             children = getAllChildren(procHandle);
 
-            ArrayBlockingQueue<ProcessHandle> completions = new ArrayBlockingQueue<>(expected + 1);
+            ConcurrentHashMap<ProcessHandle, CompletableFuture<ProcessHandle>> completions =
+                    new ConcurrentHashMap<>();
             Instant startTime = Instant.now();
             // Create a future for each of the 9 children
             processes.forEach( (p, parent) -> {
-                        p.onExit().whenComplete((ph, ex) -> {
+                        CompletableFuture<ProcessHandle> cf = p.onExit().whenComplete((ph, ex) -> {
                             Duration elapsed = Duration.between(startTime, Instant.now());
-                            completions.add(ph);
                             printf("whenComplete: pid: %s, exception: %s, thread: %s, elapsed: %s%n",
                                     ph, ex, Thread.currentThread(), elapsed);
                         });
+                        completions.put(p, cf);
                     });
 
             // Check that each of the spawned processes is included in the children
@@ -153,20 +159,23 @@ public class OnExitTest extends ProcessUtil {
             proc.destroy();  // kill off the parent
             proc.waitFor();
 
-            // Wait for all the processes to be completed
+            // Wait for all the processes and corresponding onExit CF to be completed
             processes.forEach((p, parent) -> {
                 try {
                     p.onExit().get();
+                    completions.get(p).join();
                 } catch (InterruptedException | ExecutionException ex) {
                     // ignore
                 }
             });
 
-            // Verify that all 9 exit handlers were called
-            processes.forEach((p, parent) ->
-                Assert.assertTrue(completions.contains(p), "Child onExit not called: " + p
-                        + ", parent: " + parent
-                        + ": " + p.info()));
+            // Verify that all 9 exit handlers were called with the correct ProcessHandle
+            processes.forEach((p, parent) -> {
+                ProcessHandle value = completions.get(p).getNow(null);
+                Assert.assertEquals(p, value, "onExit.get value expected: " + p
+                        + ", actual: " + value
+                        + ": " + p.info());
+            });
 
             // Show the status of the original children
             children.forEach(p -> printProcess(p, "after onExit:"));
@@ -176,13 +185,12 @@ public class OnExitTest extends ProcessUtil {
             List<ProcessHandle> children2 = getAllChildren(procHandle);
             printf(" children2: %s%n", children2.toString());
             Assert.assertEquals(children2.size(), 0, "After onExit, expected no children");
-
-            Assert.assertEquals(remaining.size(), 0, "Unaccounted for children");
-
         } catch (IOException | InterruptedException ex) {
             Assert.fail(ex.getMessage());
         } finally {
-            destroyProcessTree(ProcessHandle.current());
+            if (procHandle != null) {
+                destroyProcessTree(procHandle);
+            }
         }
     }
 

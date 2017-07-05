@@ -32,24 +32,24 @@ import java.nio.file.Paths;
 import java.nio.file.attribute.UserPrincipal;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
-import java.util.Scanner;
-import java.util.StringTokenizer;
 import java.util.concurrent.TimeUnit;
 
 import jdk.testlibrary.Platform;
+import jdk.testlibrary.Utils;
+
 import org.testng.Assert;
 import org.testng.annotations.Test;
 import org.testng.TestNG;
 
 /*
  * @test
+ * @build jdk.testlibrary.*
  * @library /lib/testlibrary
  * @summary Functions of ProcessHandle.Info
  * @author Roger Riggs
@@ -91,16 +91,16 @@ public class InfoTest {
                 "test runner is included.");
         ProcessHandle self = ProcessHandle.current();
 
-        Duration somecpu = Duration.ofMillis(200L);
-        Instant end = Instant.now().plus(somecpu);
+        Duration someCPU = Duration.ofMillis(200L);
+        Instant end = Instant.now().plus(someCPU);
         while (Instant.now().isBefore(end)) {
             // waste the cpu
         }
         ProcessHandle.Info info = self.info();
         System.out.printf(" info: %s%n", info);
         Optional<Duration> totalCpu = info.totalCpuDuration();
-        if (totalCpu.isPresent() && (totalCpu.get().compareTo(somecpu) < 0)) {
-            Assert.fail("reported cputime less than expected: " + somecpu + ", " +
+        if (totalCpu.isPresent() && (totalCpu.get().compareTo(someCPU) < 0)) {
+            Assert.fail("reported cputime less than expected: " + someCPU + ", " +
                     "actual: " + info.totalCpuDuration());
         }
     }
@@ -111,17 +111,16 @@ public class InfoTest {
     @Test
     public static void test2() {
         try {
-            long cpulooptime = 1 << 8;
+            long cpuLoopTime = 100;             // 100 ms
             String[] extraArgs = {"pid", "parent", "stdin"};
-            Instant beforeStart = Instant.now().truncatedTo(ChronoUnit.SECONDS);
             JavaChild p1 = JavaChild.spawnJavaChild((Object[])extraArgs);
             Instant afterStart = Instant.now();
 
             try (BufferedReader lines = p1.outputReader()) {
                 Duration lastCpu = Duration.ofMillis(0L);
-                for (int j = 0; j < 20; j++) {
+                for (int j = 0; j < 10; j++) {
 
-                    p1.sendAction("cpuloop", cpulooptime);
+                    p1.sendAction("cpuloop", cpuLoopTime);
                     p1.sendAction("cputime", "");
 
                     // Read cputime from child
@@ -187,17 +186,21 @@ public class InfoTest {
                     if (info.totalCpuDuration().isPresent()) {
                         Duration totalCPU = info.totalCpuDuration().get();
                         Duration epsilon = Duration.ofMillis(200L);
-                        Assert.assertTrue(totalCPU.toNanos() > 0L,
-                                "total cpu time expected > 0ms, actual: " + totalCPU);
-                        Assert.assertTrue(totalCPU.toNanos() < lastCpu.toNanos() + 10_000_000_000L,
-                                "total cpu time expected < 10s more than previous iteration, actual: " + totalCPU);
                         if (childCpuTime != null) {
                             System.out.printf(" info.totalCPU: %s, childCpuTime: %s, diff: %s%n",
-                                    totalCPU.toNanos(), childCpuTime.toNanos(), childCpuTime.toNanos() - totalCPU.toNanos());
+                                    totalCPU.toNanos(), childCpuTime.toNanos(),
+                                    childCpuTime.toNanos() - totalCPU.toNanos());
                             Assert.assertTrue(checkEpsilon(childCpuTime, totalCPU, epsilon),
                                     childCpuTime + " should be within " +
                                             epsilon + " of " + totalCPU);
                         }
+                        Assert.assertTrue(totalCPU.toNanos() > 0L,
+                                "total cpu time expected > 0ms, actual: " + totalCPU);
+                        long t = Utils.adjustTimeout(10L);  // Adjusted timeout seconds
+                        Assert.assertTrue(totalCPU.toNanos() < lastCpu.toNanos() + t * 1_000_000_000L,
+                                "total cpu time expected < " + t
+                                        + " seconds more than previous iteration, actual: "
+                                        + (totalCPU.toNanos() - lastCpu.toNanos()));
                         lastCpu = totalCPU;
                     }
 
@@ -209,7 +212,7 @@ public class InfoTest {
                     }
                 }
             }
-            p1.waitFor(5, TimeUnit.SECONDS);
+            p1.waitFor(Utils.adjustTimeout(5), TimeUnit.SECONDS);
         } catch (IOException | InterruptedException ie) {
             ie.printStackTrace(System.out);
             Assert.fail("unexpected exception", ie);
@@ -252,7 +255,7 @@ public class InfoTest {
                 Assert.assertTrue(p.waitFor(15, TimeUnit.SECONDS));
             }
         } catch (IOException | InterruptedException ex) {
-            ex.printStackTrace(System.out);;
+            ex.printStackTrace(System.out);
         } finally {
             // Destroy any children that still exist
             ProcessUtil.destroyProcessTree(ProcessHandle.current());
@@ -274,7 +277,7 @@ public class InfoTest {
 
         if (dur1.isPresent() && dur2.isPresent()) {
             Duration total1 = dur1.get();
-            Duration total2 = dur2.get();       ;
+            Duration total2 = dur2.get();
             System.out.printf(" total1 vs. mbean: %s, getProcessCpuTime: %s, diff: %s%n",
                     Objects.toString(total1), myCputime1, myCputime1.minus(total1));
             System.out.printf(" total2 vs. mbean: %s, getProcessCpuTime: %s, diff: %s%n",
@@ -326,7 +329,7 @@ public class InfoTest {
      * @param d1 a Duration - presumed to be shorter
      * @param d2 a 2nd Duration - presumed to be greater (or within Epsilon)
      * @param epsilon Epsilon the amount of overlap allowed
-     * @return
+     * @return true if d2 is greater than d1 or within epsilon, false otherwise
      */
     static boolean checkEpsilon(Duration d1, Duration d2, Duration epsilon) {
         if (d1.toNanos() <= d2.toNanos()) {
@@ -339,7 +342,7 @@ public class InfoTest {
     /**
      * Spawn a native process with the provided arguments.
      * @param command the executable of native process
-     * @args
+     * @param args to start a new process
      * @return the Process that was started
      * @throws IOException thrown by ProcessBuilder.start
      */

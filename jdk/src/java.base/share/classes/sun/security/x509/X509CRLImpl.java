@@ -1086,7 +1086,7 @@ public class X509CRLImpl extends X509CRL implements DerEncoder {
             throw new CRLException("Invalid DER-encoded CRL data");
 
         signedCRL = val.toByteArray();
-        DerValue seq[] = new DerValue[3];
+        DerValue[] seq = new DerValue[3];
 
         seq[0] = val.data.getDerValue();
         seq[1] = val.data.getDerValue();

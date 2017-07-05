@@ -356,13 +356,7 @@ public class MOAT {
             }
 
             check(c.toArray().length == c.size());
-            check(c.toArray().getClass() == Object[].class
-                  ||
-                  // !!!!
-                  // 6260652: (coll) Arrays.asList(x).toArray().getClass()
-                  // should be Object[].class
-                  (c.getClass().getName().equals("java.util.Arrays$ArrayList"))
-                  );
+            check(c.toArray().getClass() == Object[].class);
             for (int size : new int[]{0,1,c.size(), c.size()+1}) {
                 Integer[] a = c.toArray(new Integer[size]);
                 check((size > c.size()) || a.length == c.size());
