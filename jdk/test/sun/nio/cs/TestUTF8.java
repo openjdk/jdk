@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4486841 7040220
+ * @bug 4486841 7040220 7096080
  * @summary Test UTF-8 charset
  */
 
@@ -156,15 +156,22 @@ public class TestUTF8 {
         return 3;
     }
 
+    static int to4ByteUTF8(int uc, byte[] bb, int pos) {
+        bb[pos++] = (byte)(0xf0 | ((uc >> 18)));
+        bb[pos++] = (byte)(0x80 | ((uc >> 12) & 0x3f));
+        bb[pos++] = (byte)(0x80 | ((uc >>  6) & 0x3f));
+        bb[pos++] = (byte)(0x80 | (uc & 0x3f));
+        return 4;
+    }
+
     static void checkRoundtrip(String csn) throws Exception {
         System.out.printf("    Check roundtrip <%s>...", csn);
         char[] cc = getUTFChars();
         byte[] bb = encode(cc, csn, false);
         char[] ccO = decode(bb, csn, false);
 
-        if (!Arrays.equals(cc, ccO)) {
+        if (!Arrays.equals(cc, ccO))
             System.out.printf("    non-direct failed");
-        }
         bb = encode(cc, csn, true);
         ccO = decode(bb, csn, true);
         if (!Arrays.equals(cc, ccO)) {
@@ -180,6 +187,40 @@ public class TestUTF8 {
         System.out.println();
     }
 
+    static void check4ByteSurrs(String csn) throws Exception {
+        System.out.printf("    Check 4-byte Surrogates <%s>...%n", csn);
+        byte[] bb = new byte[(0x110000 - 0x10000) * 4];
+        char[] cc = new char[(0x110000 - 0x10000) * 2];
+        int bpos = 0;
+        int cpos = 0;
+        for (int i = 0x10000; i < 0x110000; i++) {
+            Character.toChars(i, cc, cpos);
+            bpos += to4ByteUTF8(i, bb, bpos);
+            cpos += 2;
+        }
+        checkSurrs(csn, bb, cc);
+    }
+
+
+    static void checkSurrs(String csn, byte[] bb, char[] cc)
+        throws Exception
+    {
+        char[] ccO = decode(bb, csn, false);
+        if (!Arrays.equals(cc, ccO)) {
+            System.out.printf("    decoding failed%n");
+        }
+        ccO = decode(bb, csn, true);
+        if (!Arrays.equals(cc, ccO)) {
+            System.out.printf("    decoding(direct) failed%n");
+        }
+        if (!Arrays.equals(cc, new String(bb, csn).toCharArray())) {
+            System.out.printf("    String.toCharArray() failed");
+        }
+        if (!Arrays.equals(bb, new String(cc).getBytes(csn))) {
+            System.out.printf("    String.getBytes() failed");
+        }
+    }
+
     static void check6ByteSurrs(String csn) throws Exception {
         System.out.printf("    Check 6-byte Surrogates <%s>...%n", csn);
         byte[] bb = new byte[(0x110000 - 0x10000) * 6];
@@ -192,22 +233,9 @@ public class TestUTF8 {
             bpos += to3ByteUTF8(cc[cpos + 1], bb, bpos);
             cpos += 2;
         }
-
-        char[] ccO = decode(bb, csn, false);
-        if (!Arrays.equals(cc, ccO)) {
-            System.out.printf("    decoding failed%n");
-        }
-        ccO = decode(bb, csn, true);
-        if (!Arrays.equals(cc, ccO)) {
-            System.out.printf("    decoding(direct) failed%n");
-        }
-        // new String(bb, csn).getBytes(csn) will not return
-        // the 6 bytes surrogates as in bb, so only test
-        // toCharArray() here.
-        if (!Arrays.equals(cc, new String(bb, csn).toCharArray())) {
-            System.out.printf("    String.toCharArray() failed");
-        }
+        checkSurrs(csn, bb, cc);
     }
+
 
     static void compare(String csn1, String csn2) throws Exception {
         System.out.printf("    Diff <%s> <%s>...%n", csn1, csn2);
@@ -266,6 +294,10 @@ public class TestUTF8 {
         {1, (byte)0xFF, (byte)0xFF, (byte)0xFF }, // all ones
         {1, (byte)0xE0, (byte)0xC0, (byte)0x80 }, // invalid second byte
         {1, (byte)0xE0, (byte)0x80, (byte)0xC0 }, // invalid first byte
+        {1, (byte)0xE0, (byte)0x41,},             // invalid second byte & 2 bytes
+        {3, (byte)0xED, (byte)0xAE, (byte)0x80 }, // 3 bytes surrogate
+        {3, (byte)0xED, (byte)0xB0, (byte)0x80 }, // 3 bytes surrogate
+
 
         // Four-byte sequences
         {1, (byte)0xF0, (byte)0x80, (byte)0x80, (byte)0x80 }, // U+0000 zero-padded
@@ -276,8 +308,13 @@ public class TestUTF8 {
         {1, (byte)0xFF, (byte)0xFF, (byte)0xFF, (byte)0xFF }, // all ones
         {1, (byte)0xF0, (byte)0x80, (byte)0x80, (byte)0x80},  // invalid second byte
         {1, (byte)0xF0, (byte)0xC0, (byte)0x80, (byte)0x80 }, // invalid second byte
+        {1, (byte)0xF0, (byte)41 },                           // invalid second byte
+                                                              // & only 2 bytes
+
         {2, (byte)0xF0, (byte)0x90, (byte)0xC0, (byte)0x80 }, // invalid third byte
-        {3, (byte)0xF0, (byte)0x90, (byte)0x80, (byte)0xC0 }, // invalid third byte
+        {3, (byte)0xF0, (byte)0x90, (byte)0x80, (byte)0xC0 }, // invalid forth byte
+        {2, (byte)0xF0, (byte)0x90, (byte)0x41 },             // invalid third byte
+                                                              // & 3 bytes input
 
         {1, (byte)0xF1, (byte)0xC0, (byte)0x80, (byte)0x80 }, // invalid second byte
         {2, (byte)0xF1, (byte)0x80, (byte)0xC0, (byte)0x80 }, // invalid third byte
@@ -287,30 +324,113 @@ public class TestUTF8 {
         {1, (byte)0xF5, (byte)0x80, (byte)0x80, (byte)0xC0 }, // out-range 4-byte
 
         // Five-byte sequences
-        {5, (byte)0xF8, (byte)0x80, (byte)0x80, (byte)0x80, (byte)0x80},  // invalid first byte
-        {5, (byte)0xF8, (byte)0x80, (byte)0x80, (byte)0x80, (byte)0x80 }, // U+0000 zero-padded
-        {5, (byte)0xF8, (byte)0x80, (byte)0x80, (byte)0x81, (byte)0xBF }, // U+007F zero-padded
-        {5, (byte)0xF8, (byte)0x80, (byte)0x80, (byte)0x9F, (byte)0xBF }, // U+07FF zero-padded
-        {5, (byte)0xF8, (byte)0x80, (byte)0x8F, (byte)0xBF, (byte)0xBF }, // U+FFFF zero-padded
+        {1, (byte)0xF8, (byte)0x80, (byte)0x80, (byte)0x80, (byte)0x80},  // invalid first byte
+        {1, (byte)0xF8, (byte)0x80, (byte)0x80, (byte)0x80, (byte)0x80 }, // U+0000 zero-padded
+        {1, (byte)0xF8, (byte)0x80, (byte)0x80, (byte)0x81, (byte)0xBF }, // U+007F zero-padded
+        {1, (byte)0xF8, (byte)0x80, (byte)0x80, (byte)0x9F, (byte)0xBF }, // U+07FF zero-padded
+        {1, (byte)0xF8, (byte)0x80, (byte)0x8F, (byte)0xBF, (byte)0xBF }, // U+FFFF zero-padded
 
         {1, (byte)0xF8, (byte)0xC0, (byte)0x80, (byte)0x80, (byte)0x80},
-        {2, (byte)0xF8, (byte)0x80, (byte)0xC0, (byte)0x80, (byte)0x80 },
-        {3, (byte)0xF8, (byte)0x80, (byte)0x80, (byte)0xC1, (byte)0xBF },
-        {4, (byte)0xF8, (byte)0x80, (byte)0x80, (byte)0x9F, (byte)0xC0 },
+        {1, (byte)0xF8, (byte)0x80, (byte)0xC0, (byte)0x80, (byte)0x80 },
+        {1, (byte)0xF8, (byte)0x80, (byte)0x80, (byte)0xC1, (byte)0xBF },
+        {1, (byte)0xF8, (byte)0x80, (byte)0x80, (byte)0x9F, (byte)0xC0 },
 
         // Six-byte sequences
-        {6, (byte)0xFC, (byte)0x80, (byte)0x80, (byte)0x80, (byte)0x80, (byte)0x80 }, // U+0000 zero-padded
-        {6, (byte)0xFC, (byte)0x80, (byte)0x80, (byte)0x80, (byte)0x81, (byte)0xBF }, // U+007F zero-padded
-        {6, (byte)0xFC, (byte)0x80, (byte)0x80, (byte)0x80, (byte)0x9F, (byte)0xBF }, // U+07FF zero-padded
-        {6, (byte)0xFC, (byte)0x80, (byte)0x80, (byte)0x8F, (byte)0xBF, (byte)0xBF }, // U+FFFF zero-padded
+        {1, (byte)0xFC, (byte)0x80, (byte)0x80, (byte)0x80, (byte)0x80, (byte)0x80 }, // U+0000 zero-padded
+        {1, (byte)0xFC, (byte)0x80, (byte)0x80, (byte)0x80, (byte)0x81, (byte)0xBF }, // U+007F zero-padded
+        {1, (byte)0xFC, (byte)0x80, (byte)0x80, (byte)0x80, (byte)0x9F, (byte)0xBF }, // U+07FF zero-padded
+        {1, (byte)0xFC, (byte)0x80, (byte)0x80, (byte)0x8F, (byte)0xBF, (byte)0xBF }, // U+FFFF zero-padded
         {1, (byte)0xF8, (byte)0xC0, (byte)0x80, (byte)0x80, (byte)0x80, (byte)0x80 },
-        {2, (byte)0xF8, (byte)0x80, (byte)0xC0, (byte)0x80, (byte)0x80, (byte)0x80 },
-        {3, (byte)0xF8, (byte)0x80, (byte)0x80, (byte)0xC1, (byte)0xBF, (byte)0x80 },
-        {4, (byte)0xF8, (byte)0x80, (byte)0x80, (byte)0x9F, (byte)0xC0, (byte)0x80 },
-        {5, (byte)0xF8, (byte)0x80, (byte)0x80, (byte)0x9F, (byte)0x80, (byte)0xC0 },
+        {1, (byte)0xF8, (byte)0x80, (byte)0xC0, (byte)0x80, (byte)0x80, (byte)0x80 },
+        {1, (byte)0xF8, (byte)0x80, (byte)0x80, (byte)0xC1, (byte)0xBF, (byte)0x80 },
+        {1, (byte)0xF8, (byte)0x80, (byte)0x80, (byte)0x9F, (byte)0xC0, (byte)0x80 },
+        {1, (byte)0xF8, (byte)0x80, (byte)0x80, (byte)0x9F, (byte)0x80, (byte)0xC0 },
     };
 
-    static void checkMalformed(String csn) throws Exception {
+   // The first byte is the length of malformed bytes
+    static byte[][] malformed_cesu8 = {
+        // One-byte sequences:
+        {1, (byte)0xFF },
+        {1, (byte)0xC0 },
+        {1, (byte)0x80 },
+
+        {1, (byte)0xFF, (byte)0xFF}, // all ones
+        {1, (byte)0xA0, (byte)0x80}, // 101x first byte first nibble
+
+        // Two-byte sequences:
+        {1, (byte)0xC0, (byte)0x80}, // invalid first byte
+        {1, (byte)0xC1, (byte)0xBF}, // invalid first byte
+        {1, (byte)0xC2, (byte)0x00}, // invalid second byte
+        {1, (byte)0xC2, (byte)0xC0}, // invalid second byte
+        {1, (byte)0xD0, (byte)0x00}, // invalid second byte
+        {1, (byte)0xD0, (byte)0xC0}, // invalid second byte
+        {1, (byte)0xDF, (byte)0x00}, // invalid second byte
+        {1, (byte)0xDF, (byte)0xC0}, // invalid second byte
+
+        // Three-byte sequences
+        {1, (byte)0xE0, (byte)0x80, (byte)0x80},  // 111x first byte first nibble
+        {1, (byte)0xE0, (byte)0x80, (byte)0x80 }, // U+0000 zero-padded
+        {1, (byte)0xE0, (byte)0x81, (byte)0xBF }, // U+007F zero-padded
+        {1, (byte)0xE0, (byte)0x9F, (byte)0xBF }, // U+07FF zero-padded
+
+        {1, (byte)0xE0, (byte)0xC0, (byte)0xBF }, // invalid second byte
+        {2, (byte)0xE0, (byte)0xA0, (byte)0x7F }, // invalid third byte
+        {2, (byte)0xE0, (byte)0xA0, (byte)0xC0 }, // invalid third byte
+        {1, (byte)0xFF, (byte)0xFF, (byte)0xFF }, // all ones
+        {1, (byte)0xE0, (byte)0xC0, (byte)0x80 }, // invalid second byte
+        {1, (byte)0xE0, (byte)0x80, (byte)0xC0 }, // invalid first byte
+        {1, (byte)0xE0, (byte)0x41,},             // invalid second byte & 2 bytes
+
+        // CESU-8 does not have 4, 5, 6 bytes sequenc
+        // Four-byte sequences
+        {1, (byte)0xF0, (byte)0x80, (byte)0x80, (byte)0x80 }, // U+0000 zero-padded
+        {1, (byte)0xF0, (byte)0x80, (byte)0x81, (byte)0xBF }, // U+007F zero-padded
+        {1, (byte)0xF0, (byte)0x80, (byte)0x9F, (byte)0xBF }, // U+007F zero-padded
+        {1, (byte)0xF0, (byte)0x8F, (byte)0xBF, (byte)0xBF }, // U+07FF zero-padded
+
+        {1, (byte)0xFF, (byte)0xFF, (byte)0xFF, (byte)0xFF }, // all ones
+        {1, (byte)0xF0, (byte)0x80, (byte)0x80, (byte)0x80},  // invalid second byte
+        {1, (byte)0xF0, (byte)0xC0, (byte)0x80, (byte)0x80 }, // invalid second byte
+        {1, (byte)0xF0, (byte)41 },                           // invalid second byte
+                                                              // & only 2 bytes
+        {1, (byte)0xF0, (byte)0x90, (byte)0xC0, (byte)0x80 }, // invalid third byte
+        {1, (byte)0xF0, (byte)0x90, (byte)0x80, (byte)0xC0 }, // invalid forth byte
+        {1, (byte)0xF0, (byte)0x90, (byte)0x41 },             // invalid third byte
+                                                              // & 3 bytes input
+
+        {1, (byte)0xF1, (byte)0xC0, (byte)0x80, (byte)0x80 }, // invalid second byte
+        {1, (byte)0xF1, (byte)0x80, (byte)0xC0, (byte)0x80 }, // invalid third byte
+        {1, (byte)0xF1, (byte)0x80, (byte)0x80, (byte)0xC0 }, // invalid forth byte
+        {1, (byte)0xF4, (byte)0x90, (byte)0x80, (byte)0xC0 }, // out-range 4-byte
+        {1, (byte)0xF4, (byte)0xC0, (byte)0x80, (byte)0xC0 }, // out-range 4-byte
+        {1, (byte)0xF5, (byte)0x80, (byte)0x80, (byte)0xC0 }, // out-range 4-byte
+
+        // Five-byte sequences
+        {1, (byte)0xF8, (byte)0x80, (byte)0x80, (byte)0x80, (byte)0x80},  // invalid first byte
+        {1, (byte)0xF8, (byte)0x80, (byte)0x80, (byte)0x80, (byte)0x80 }, // U+0000 zero-padded
+        {1, (byte)0xF8, (byte)0x80, (byte)0x80, (byte)0x81, (byte)0xBF }, // U+007F zero-padded
+        {1, (byte)0xF8, (byte)0x80, (byte)0x80, (byte)0x9F, (byte)0xBF }, // U+07FF zero-padded
+        {1, (byte)0xF8, (byte)0x80, (byte)0x8F, (byte)0xBF, (byte)0xBF }, // U+FFFF zero-padded
+
+        {1, (byte)0xF8, (byte)0xC0, (byte)0x80, (byte)0x80, (byte)0x80},
+        {1, (byte)0xF8, (byte)0x80, (byte)0xC0, (byte)0x80, (byte)0x80 },
+        {1, (byte)0xF8, (byte)0x80, (byte)0x80, (byte)0xC1, (byte)0xBF },
+        {1, (byte)0xF8, (byte)0x80, (byte)0x80, (byte)0x9F, (byte)0xC0 },
+
+        // Six-byte sequences
+        {1, (byte)0xFC, (byte)0x80, (byte)0x80, (byte)0x80, (byte)0x80, (byte)0x80 }, // U+0000 zero-padded
+        {1, (byte)0xFC, (byte)0x80, (byte)0x80, (byte)0x80, (byte)0x81, (byte)0xBF }, // U+007F zero-padded
+        {1, (byte)0xFC, (byte)0x80, (byte)0x80, (byte)0x80, (byte)0x9F, (byte)0xBF }, // U+07FF zero-padded
+        {1, (byte)0xFC, (byte)0x80, (byte)0x80, (byte)0x8F, (byte)0xBF, (byte)0xBF }, // U+FFFF zero-padded
+        {1, (byte)0xF8, (byte)0xC0, (byte)0x80, (byte)0x80, (byte)0x80, (byte)0x80 },
+        {1, (byte)0xF8, (byte)0x80, (byte)0xC0, (byte)0x80, (byte)0x80, (byte)0x80 },
+        {1, (byte)0xF8, (byte)0x80, (byte)0x80, (byte)0xC1, (byte)0xBF, (byte)0x80 },
+        {1, (byte)0xF8, (byte)0x80, (byte)0x80, (byte)0x9F, (byte)0xC0, (byte)0x80 },
+        {1, (byte)0xF8, (byte)0x80, (byte)0x80, (byte)0x9F, (byte)0x80, (byte)0xC0 },
+    };
+
+
+    static void checkMalformed(String csn, byte[][] malformed) throws Exception {
         boolean failed = false;
         System.out.printf("    Check malformed <%s>...%n", csn);
         Charset cs = Charset.forName(csn);
@@ -430,9 +550,12 @@ public class TestUTF8 {
 
     public static void main(String[] args) throws Exception {
         checkRoundtrip("UTF-8");
-        check6ByteSurrs("UTF-8");
-        //compare("UTF-8", "UTF-8-OLD");
-        checkMalformed("UTF-8");
+        check4ByteSurrs("UTF-8");
+        checkMalformed("UTF-8", malformed);
         checkUnderOverflow("UTF-8");
+
+        checkRoundtrip("CESU-8");
+        check6ByteSurrs("CESU-8");
+        checkMalformed("CESU-8", malformed_cesu8);
     }
 }

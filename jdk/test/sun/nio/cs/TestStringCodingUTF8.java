@@ -33,14 +33,16 @@ import java.nio.charset.*;
 
 public class TestStringCodingUTF8 {
     public static void main(String[] args) throws Throwable {
-        test();
+        test("UTF-8");
+        test("CESU-8");
         // security manager on
         System.setSecurityManager(new PermissiveSecurityManger());
-        test();
+        test("UTF-8");
+        test("CESU-8");
     }
 
-    static void test() throws Throwable {
-        Charset cs = Charset.forName("UTF-8");
+    static void test(String csn) throws Throwable {
+        Charset cs = Charset.forName(csn);
         char[] bmp = new char[0x10000];
         for (int i = 0; i < 0x10000; i++) {
             bmp[i] = (char)i;

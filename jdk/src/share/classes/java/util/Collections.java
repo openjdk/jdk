@@ -3202,6 +3202,102 @@ public class Collections {
     }
 
     /**
+     * Returns the empty sorted set (immutable).  This set is serializable.
+     *
+     * <p>This example illustrates the type-safe way to obtain an empty sorted
+     * set:
+     * <pre>
+     *     SortedSet&lt;String&gt; s = Collections.emptySortedSet();
+     * </pre>
+     * Implementation note:  Implementations of this method need not
+     * create a separate <tt>SortedSet</tt> object for each call.
+     *
+     * @since 1.8
+     */
+    @SuppressWarnings("unchecked")
+    public static final <E> SortedSet<E> emptySortedSet() {
+        return (SortedSet<E>) new EmptySortedSet<>();
+    }
+
+    /**
+     * @serial include
+     */
+    private static class EmptySortedSet<E>
+        extends AbstractSet<E>
+        implements SortedSet<E>, Serializable
+    {
+        private static final long serialVersionUID = 6316515401502265487L;
+        public Iterator<E> iterator() { return emptyIterator(); }
+        public int size() {return 0;}
+        public boolean isEmpty() {return true;}
+        public boolean contains(Object obj) {return false;}
+        public boolean containsAll(Collection<?> c) { return c.isEmpty(); }
+        public Object[] toArray() { return new Object[0]; }
+
+        public <E> E[] toArray(E[] a) {
+            if (a.length > 0)
+                a[0] = null;
+            return a;
+        }
+
+        // Preserves singleton property
+        private Object readResolve() {
+            return new EmptySortedSet<>();
+        }
+
+        public Comparator comparator() {
+            return null;
+        }
+
+        public SortedSet<E> subSet(Object fromElement, Object toElement) {
+            Objects.requireNonNull(fromElement);
+            Objects.requireNonNull(toElement);
+
+            if (!(fromElement instanceof Comparable) ||
+                    !(toElement instanceof Comparable))
+            {
+                throw new ClassCastException();
+            }
+
+            if ((((Comparable)fromElement).compareTo(toElement) >= 0) ||
+                    (((Comparable)toElement).compareTo(fromElement) < 0))
+            {
+                throw new IllegalArgumentException();
+            }
+
+            return emptySortedSet();
+        }
+
+        public SortedSet<E> headSet(Object toElement) {
+            Objects.requireNonNull(toElement);
+
+            if (!(toElement instanceof Comparable)) {
+                throw new ClassCastException();
+            }
+
+            return emptySortedSet();
+        }
+
+        public SortedSet<E> tailSet(Object fromElement) {
+            Objects.requireNonNull(fromElement);
+
+            if (!(fromElement instanceof Comparable)) {
+                throw new ClassCastException();
+            }
+
+            return emptySortedSet();
+        }
+
+        public E first() {
+            throw new NoSuchElementException();
+        }
+
+        public E last() {
+            throw new NoSuchElementException();
+        }
+    }
+
+    /**
      * The empty list (immutable).  This list is serializable.
      *
      * @see #emptyList()
