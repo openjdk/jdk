@@ -27,6 +27,8 @@
  * @summary test RMI-IIOP call with ConcurrentHashMap as an argument
  * @library /lib/testlibrary
  * @modules java.corba
+ *          java.naming
+ *          java.rmi
  * @build jdk.testlibrary.*
  * @compile Test.java HelloInterface.java HelloServer.java HelloClient.java
  *    HelloImpl.java _HelloImpl_Tie.java _HelloInterface_Stub.java ConcurrentHashMapTest.java

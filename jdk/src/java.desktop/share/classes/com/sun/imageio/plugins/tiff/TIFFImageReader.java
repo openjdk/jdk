@@ -1174,7 +1174,14 @@ public class TIFFImageReader extends ImageReader {
             int predictor = ((predictorField == null)
                     ? BaselineTIFFTagSet.PREDICTOR_NONE
                     : predictorField.getAsInt(0));
-            this.decompressor = new TIFFLZWDecompressor(predictor);
+
+            TIFFField fillOrderField
+                    = imageMetadata.getTIFFField(BaselineTIFFTagSet.TAG_FILL_ORDER);
+            int fillOrder = ((fillOrderField == null)
+                    ? BaselineTIFFTagSet.FILL_ORDER_LEFT_TO_RIGHT
+                    : fillOrderField.getAsInt(0));
+
+            this.decompressor = new TIFFLZWDecompressor(predictor, fillOrder);
         } else if (compression
                 == BaselineTIFFTagSet.COMPRESSION_JPEG) {
             this.decompressor = new TIFFJPEGDecompressor();

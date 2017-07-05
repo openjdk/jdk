@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,18 +25,7 @@
 
 package sun.swing;
 
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Component;
-import java.awt.Container;
-import java.awt.Dimension;
-import java.awt.EventQueue;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.MouseInfo;
-import java.awt.Point;
-import java.awt.Rectangle;
-import java.awt.Window;
+import java.awt.*;
 import java.awt.dnd.DragGestureEvent;
 import java.awt.dnd.DragGestureListener;
 import java.awt.dnd.DragGestureRecognizer;
@@ -46,6 +35,7 @@ import java.awt.dnd.InvalidDnDOperationException;
 import java.awt.dnd.peer.DragSourceContextPeer;
 import java.awt.event.ContainerEvent;
 import java.awt.event.ContainerListener;
+import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
 import java.beans.PropertyChangeEvent;
@@ -89,7 +79,8 @@ public final class JLightweightFrame extends LightweightFrame implements RootPan
 
     private BufferedImage bbImage;
 
-    private volatile int scaleFactor = 1;
+    private volatile double scaleFactorX;
+    private volatile double scaleFactorY;
 
     /**
      * {@code copyBufferEnabled}, true by default, defines the following strategy.
@@ -124,6 +115,10 @@ public final class JLightweightFrame extends LightweightFrame implements RootPan
      */
     public JLightweightFrame() {
         super();
+        AffineTransform defaultTransform =
+                           getGraphicsConfiguration().getDefaultTransform();
+        scaleFactorX = defaultTransform.getScaleX();
+        scaleFactorY = defaultTransform.getScaleY();
         copyBufferEnabled = "true".equals(AccessController.
             doPrivileged(new GetPropertyAction("swing.jlf.copyBufferEnabled", "true")));
 
@@ -157,8 +152,9 @@ public final class JLightweightFrame extends LightweightFrame implements RootPan
             }
             Point p = SwingUtilities.convertPoint(c, x, y, jlf);
             Rectangle r = new Rectangle(p.x, p.y, w, h).intersection(
-                    new Rectangle(0, 0, bbImage.getWidth() / scaleFactor,
-                                  bbImage.getHeight() / scaleFactor));
+                    new Rectangle(0, 0,
+                          (int)Math.round(bbImage.getWidth() / scaleFactorX),
+                          (int)Math.round(bbImage.getHeight() / scaleFactorY)));
 
             if (!r.isEmpty()) {
                 notifyImageUpdated(r.x, r.y, r.width, r.height);
@@ -212,7 +208,7 @@ public final class JLightweightFrame extends LightweightFrame implements RootPan
         g.setBackground(getBackground());
         g.setColor(getForeground());
         g.setFont(getFont());
-        g.scale(scaleFactor, scaleFactor);
+        g.scale(scaleFactorX, scaleFactorY);
         return g;
     }
 
@@ -237,28 +233,53 @@ public final class JLightweightFrame extends LightweightFrame implements RootPan
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public int getScaleFactor() {
-        return scaleFactor;
+        return (int)scaleFactorX;
     }
 
     @Override
+    public double getScaleFactorX() {
+        return scaleFactorX;
+    }
+
+    @Override
+    public double getScaleFactorY() {
+        return scaleFactorY;
+    }
+
+    @Override
+    @SuppressWarnings("deprecation")
     public void notifyDisplayChanged(final int scaleFactor) {
-        if (scaleFactor != this.scaleFactor) {
+        notifyDisplayChanged(scaleFactor, scaleFactor);
+    }
+
+    @Override
+    public void notifyDisplayChanged(final double scaleFactorX,
+                                                    final double scaleFactorY) {
+        if (Double.compare(scaleFactorX, this.scaleFactorX) != 0 ||
+                         Double.compare(scaleFactorY, this.scaleFactorY) != 0) {
             if (!copyBufferEnabled) content.paintLock();
             try {
                 if (bbImage != null) {
-                    resizeBuffer(getWidth(), getHeight(), scaleFactor);
+                    resizeBuffer(getWidth(), getHeight(), scaleFactorX,
+                                                                  scaleFactorY);
                 }
             } finally {
                 if (!copyBufferEnabled) content.paintUnlock();
             }
-            this.scaleFactor = scaleFactor;
+            this.scaleFactorX = scaleFactorX;
+            this.scaleFactorY = scaleFactorY;
+
+            if(isVisible()) {
+                final Object peer =
+                        AWTAccessor.getComponentAccessor().getPeer(this);
+                if (peer instanceof DisplayChangedListener) {
+                    ((DisplayChangedListener) peer).displayChanged();
+                }
+                repaint();
+            }
         }
-        final Object peer = AWTAccessor.getComponentAccessor().getPeer(this);
-        if (peer instanceof DisplayChangedListener) {
-            ((DisplayChangedListener) peer).displayChanged();
-        }
-        repaint();
     }
 
     @Override
@@ -270,7 +291,8 @@ public final class JLightweightFrame extends LightweightFrame implements RootPan
         }
     }
 
-    private void syncCopyBuffer(boolean reset, int x, int y, int w, int h, int scale) {
+    private void syncCopyBuffer(boolean reset, int x, int y, int w, int h,
+                                                 double scaleX, double scaleY) {
         content.paintLock();
         try {
             int[] srcBuffer = ((DataBufferInt)bbImage.getRaster().getDataBuffer()).getData();
@@ -279,14 +301,14 @@ public final class JLightweightFrame extends LightweightFrame implements RootPan
             }
             int linestride = bbImage.getWidth();
 
-            x *= scale;
-            y *= scale;
-            w *= scale;
-            h *= scale;
+            int startX = (int)Math.floor(x * scaleX);
+            int startY = (int)Math.floor(y * scaleY);
+            int width  = (int)Math.ceil((x + w) * scaleX) - startX;
+            int height = (int)Math.ceil((y + h) * scaleY) - startY;
 
-            for (int i=0; i<h; i++) {
-                int from = (y + i) * linestride + x;
-                System.arraycopy(srcBuffer, from, copyBuffer, from, w);
+            for (int i = 0; i < height; i++) {
+                int from = (startY + i) * linestride + startX;
+                System.arraycopy(srcBuffer, from, copyBuffer, from, width);
             }
         } finally {
             content.paintUnlock();
@@ -295,7 +317,8 @@ public final class JLightweightFrame extends LightweightFrame implements RootPan
 
     private void notifyImageUpdated(int x, int y, int width, int height) {
         if (copyBufferEnabled) {
-            syncCopyBuffer(false, x, y, width, height, scaleFactor);
+            syncCopyBuffer(false, x, y, width, height, scaleFactorX,
+                                                                  scaleFactorY);
         }
         content.imageUpdated(x, y, width, height);
     }
@@ -382,8 +405,10 @@ public final class JLightweightFrame extends LightweightFrame implements RootPan
             int newW = width;
             int newH = height;
             if (bbImage != null) {
-                int imgWidth = bbImage.getWidth() / scaleFactor;
-                int imgHeight = bbImage.getHeight() / scaleFactor;
+                int imgWidth = (int)Math.round(bbImage.getWidth() /
+                                                                  scaleFactorX);
+                int imgHeight = (int)Math.round(bbImage.getHeight() /
+                                                                  scaleFactorY);
                 if (width != imgWidth || height != imgHeight) {
                     createBB = true;
                     if (bbImage != null) {
@@ -407,7 +432,7 @@ public final class JLightweightFrame extends LightweightFrame implements RootPan
                 }
             }
             if (createBB) {
-                resizeBuffer(newW, newH, scaleFactor);
+                resizeBuffer(newW, newH, scaleFactorX, scaleFactorY);
                 return;
             }
             content.imageReshaped(0, 0, width, height);
@@ -419,16 +444,19 @@ public final class JLightweightFrame extends LightweightFrame implements RootPan
         }
     }
 
-    private void resizeBuffer(int width, int height, int newScaleFactor) {
-            bbImage = new BufferedImage(width*newScaleFactor,height*newScaleFactor,
+    private void resizeBuffer(int width, int height, double newScaleFactorX,
+                                                     double newScaleFactorY) {
+        bbImage = new BufferedImage((int)Math.round(width * newScaleFactorX),
+                                    (int)Math.round(height * newScaleFactorY),
                                         BufferedImage.TYPE_INT_ARGB_PRE);
         int[] pixels= ((DataBufferInt)bbImage.getRaster().getDataBuffer()).getData();
         if (copyBufferEnabled) {
-            syncCopyBuffer(true, 0, 0, width, height, newScaleFactor);
+            syncCopyBuffer(true, 0, 0, width, height, newScaleFactorX,
+                                                               newScaleFactorY);
             pixels = copyBuffer;
         }
         content.imageBufferReset(pixels, 0, 0, width, height,
-                                 width * newScaleFactor, newScaleFactor);
+                          bbImage.getWidth(), newScaleFactorX, newScaleFactorY);
     }
 
     @Override

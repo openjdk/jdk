@@ -55,7 +55,7 @@ TEE       = tee
 UNAME     = uname
 UNIQ      = uniq
 WC        = wc
-ZIP       = zip
+ZIPEXE    = zip
 
 # Get OS name from uname (Cygwin inexplicably adds _NT-5.1)
 UNAME_S := $(shell $(UNAME) -s | $(CUT) -f1 -d_)
@@ -162,7 +162,7 @@ endif
 ZIP_UP_RESULTS = ( $(MKDIR) -p `$(DIRNAME) $(ARCHIVE_BUNDLE)`     \
 	           && $(CD) $(ABS_TEST_OUTPUT_DIR)             \
 	           && $(CHMOD) -R a+r . \
-	           && $(ZIP) -q -r $(ARCHIVE_BUNDLE) . )
+	           && $(ZIPEXE) -q -r $(ARCHIVE_BUNDLE) . )
 
 # important results files
 SUMMARY_TXT = $(shell $(GETMIXEDPATH) "$(ABS_TEST_OUTPUT_DIR)/JTreport/text/summary.txt")

@@ -76,7 +76,9 @@ public class GregorianCutoverTest extends IntlTest {
         checkContinuity(cal, WEEK_OF_YEAR);
 
         // Use large date (year >= 50000)
-        cal.setGregorianChange(new Date(50000-1900, JANUARY, 20));
+        @SuppressWarnings("deprecation")
+        Date d = new Date(50000 - 1900, JANUARY, 20);
+        cal.setGregorianChange(d);
         cal.set(49998, JANUARY, 1);
         checkContinuity(cal, DAY_OF_YEAR);
         checkContinuity(cal, WEEK_OF_YEAR);
@@ -124,7 +126,9 @@ public class GregorianCutoverTest extends IntlTest {
 
         // should handle the gap between 1969/12/22 (Julian) to 1970/1/5 (Gregorian)
         logln("Cutover date is 1970/1/5");
-        cal.setGregorianChange(new Date(1970-1900, JANUARY, 5));
+        @SuppressWarnings("deprecation")
+        Date d1 = new Date(1970 - 1900, JANUARY, 5);
+        cal.setGregorianChange(d1);
         cal.set(ERA, AD);
         cal.set(YEAR, 1970);
         logln("  Set DAY_OF_YEAR to the 28th day of 1970");
@@ -203,16 +207,17 @@ public class GregorianCutoverTest extends IntlTest {
     public void Test4928615() {
         Koyomi cal = new Koyomi();
         logln("Today is 2003/10/1 Gregorian.");
-        Date x = new Date(2003-1900, 10-1, 1);
+        @SuppressWarnings("deprecation")
+        Date x = new Date(2003 - 1900, 10 - 1, 1);
         cal.setTime(x);
 
         logln("  Changing the cutover date to yesterday...");
-        cal.setGregorianChange(new Date(x.getTime() - (24*3600*1000)));
+        cal.setGregorianChange(new Date(x.getTime() - (24 * 3600 * 1000)));
         if (!cal.checkDate(2003, OCTOBER, 1)) {
             errln("    " + cal.getMessage());
         }
         logln("  Changing the cutover date to tomorrow...");
-        cal.setGregorianChange(new Date(x.getTime() + (24*3600*1000)));
+        cal.setGregorianChange(new Date(x.getTime() + (24 * 3600 * 1000)));
         if (!cal.checkDate(2003, SEPTEMBER, 18)) {
             errln("    " + cal.getMessage());
         }
@@ -225,11 +230,11 @@ public class GregorianCutoverTest extends IntlTest {
         Koyomi cal = new Koyomi();
         Koyomi cal2 = (Koyomi) cal.clone();
         logln("getLeastMaximum should handle cutover year.\n"
-              +"  default cutover date");
-        if (!cal.checkLeastMaximum(DAY_OF_YEAR, 365-10)) {
+                + "  default cutover date");
+        if (!cal.checkLeastMaximum(DAY_OF_YEAR, 365 - 10)) {
             errln("    " + cal.getMessage());
         }
-        if (!cal.checkLeastMaximum(WEEK_OF_YEAR, 52-((10+6)/7))) {
+        if (!cal.checkLeastMaximum(WEEK_OF_YEAR, 52 - ((10 + 6) / 7))) {
             errln("    " + cal.getMessage());
         }
         // Corrected for 4956232
@@ -261,7 +266,9 @@ public class GregorianCutoverTest extends IntlTest {
 
         cal = new Koyomi();
         logln("Change the cutover date to 1970/1/5.");
-        cal.setGregorianChange(new Date(1970-1900, 0, 5));
+        @SuppressWarnings("deprecation")
+        Date d = new Date(1970 - 1900, 0, 5);
+        cal.setGregorianChange(d);
         if (!cal.checkLeastMaximum(DAY_OF_YEAR, 356)) {
             errln("    " + cal.getMessage());
         }
@@ -287,15 +294,15 @@ public class GregorianCutoverTest extends IntlTest {
         int hour = 13865672;
         Koyomi gc1 = new Koyomi();
         gc1.clear();
-        gc1.set(1, gc1.JANUARY, 1, 0, 0, 0);
-        gc1.set(gc1.HOUR_OF_DAY, hour);
-        if (!gc1.checkDate(1582, gc1.OCTOBER, 4)) {
+        gc1.set(1, JANUARY, 1, 0, 0, 0);
+        gc1.set(HOUR_OF_DAY, hour);
+        if (!gc1.checkDate(1582, OCTOBER, 4)) {
             errln("test case 1: " + gc1.getMessage());
         }
         gc1.clear();
-        gc1.set(1, gc1.JANUARY, 1, 0, 0, 0);
-        gc1.set(gc1.HOUR_OF_DAY, hour + 24);
-        if (!gc1.checkDate(1582, gc1.OCTOBER, 15)) {
+        gc1.set(1, JANUARY, 1, 0, 0, 0);
+        gc1.set(HOUR_OF_DAY, hour + 24);
+        if (!gc1.checkDate(1582, OCTOBER, 15)) {
             errln("test case 2: " + gc1.getMessage());
         }
     }

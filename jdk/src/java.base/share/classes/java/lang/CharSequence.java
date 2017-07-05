@@ -121,8 +121,11 @@ public interface CharSequence {
      * href="{@docRoot}/java/lang/Character.html#unicode">surrogate code
      * point</a> is passed through uninterpreted.
      *
-     * <p>If the sequence is mutated while the stream is being read, the
-     * result is undefined.
+     * <p>The stream binds to this sequence when the terminal stream operation
+     * commences (specifically, for mutable sequences the spliterator for the
+     * stream is <a href="../Spliterator.html#binding"><em>late-binding</em></a>).
+     * If the sequence is modified during that operation then the result is
+     * undefined.
      *
      * @return an IntStream of char values from this sequence
      * @since 1.8
@@ -168,8 +171,11 @@ public interface CharSequence {
      * unpaired surrogates, and undefined code units, are zero-extended to
      * {@code int} values which are then passed to the stream.
      *
-     * <p>If the sequence is mutated while the stream is being read, the result
-     * is undefined.
+     * <p>The stream binds to this sequence when the terminal stream operation
+     * commences (specifically, for mutable sequences the spliterator for the
+     * stream is <a href="../Spliterator.html#binding"><em>late-binding</em></a>).
+     * If the sequence is modified during that operation then the result is
+     * undefined.
      *
      * @return an IntStream of Unicode code points from this sequence
      * @since 1.8
