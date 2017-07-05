@@ -55,11 +55,11 @@ public class SAGetopt {
     private void extractOptarg(String opt) {
         // Argument expected
         if (_optind > _argv.length) {
-            throw new RuntimeException("Not enough arguments for '" + opt + "'");
+            throw new SAGetoptException("Not enough arguments for '" + opt + "'");
         }
 
         if (! _argv[_optind].isEmpty() && _argv[_optind].charAt(0) == '-') {
-            throw new RuntimeException("Argument is expected for '" + opt + "'");
+            throw new SAGetoptException("Argument is expected for '" + opt + "'");
         }
 
         _optarg = _argv[_optind];
@@ -72,7 +72,7 @@ public class SAGetopt {
 
         if (los.contains(ca[0])) {
             if (ca.length > 1) {
-                throw new RuntimeException("Argument is not expected for '" + ca[0] + "'");
+                throw new SAGetoptException("Argument is not expected for '" + ca[0] + "'");
             }
             return carg;
         }
@@ -87,14 +87,14 @@ public class SAGetopt {
                 try {
                     extractOptarg(ca[0]);
                 } catch (ArrayIndexOutOfBoundsException e) {
-                    throw new RuntimeException("Argument is expected for '" + ca[0] + "'");
+                    throw new SAGetoptException("Argument is expected for '" + ca[0] + "'");
                 }
             }
 
             return ca[0];
         }
 
-        throw new RuntimeException("Invalid option '" + ca[0] + "'");
+        throw new SAGetoptException("Invalid option '" + ca[0] + "'");
     }
 
     public String next(String optStr, String[] longOptStr) {
@@ -148,7 +148,7 @@ public class SAGetopt {
 
         int chIndex = optStr.indexOf(ch);
         if (chIndex == -1) {
-            throw new RuntimeException("Invalid option '" + ch + "'");
+            throw new SAGetoptException("Invalid option '" + ch + "'");
         }
 
         if (_optopt >= carg.length()) {

@@ -29,7 +29,6 @@ import java.awt.PopupMenu;
 import java.awt.Taskbar.Feature;
 import java.awt.peer.TaskbarPeer;
 import java.awt.event.ActionEvent;
-import sun.misc.ManagedLocalsThread;
 import java.security.AccessController;
 import sun.security.action.GetPropertyAction;
 
@@ -48,10 +47,8 @@ final class XTaskbarPeer implements TaskbarPeer {
                                 new GetPropertyAction("java.desktop.appName", ""));
                 nativeLibraryLoaded = init(dname);
                 if (nativeLibraryLoaded) {
-                    ManagedLocalsThread t
-                            = new ManagedLocalsThread(() -> {
-                                runloop();
-                            });
+                    Thread t = new Thread(null, () -> { runloop(); },
+                                          "TaskBar", 0, false);
                     t.setDaemon(true);
                     t.start();
                 }

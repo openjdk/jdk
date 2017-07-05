@@ -32,6 +32,7 @@
 #include "utilities/events.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/hashtable.inline.hpp"
+#include "utilities/ostream.hpp"
 
 // Return true if this package is exported to m.
 bool PackageEntry::is_qexported_to(ModuleEntry* m) const {
@@ -265,28 +266,26 @@ void PackageEntryTable::purge_all_package_exports() {
   }
 }
 
-#ifndef PRODUCT
-void PackageEntryTable::print() {
-  tty->print_cr("Package Entry Table (table_size=%d, entries=%d)",
-                table_size(), number_of_entries());
+void PackageEntryTable::print(outputStream* st) {
+  st->print_cr("Package Entry Table (table_size=%d, entries=%d)",
+               table_size(), number_of_entries());
   for (int i = 0; i < table_size(); i++) {
     for (PackageEntry* probe = bucket(i);
                        probe != NULL;
                        probe = probe->next()) {
-      probe->print();
+      probe->print(st);
     }
   }
 }
 
-void PackageEntry::print() {
+void PackageEntry::print(outputStream* st) {
   ResourceMark rm;
-  tty->print_cr("package entry "PTR_FORMAT" name %s module %s classpath_index "
-                INT32_FORMAT " is_exported %d is_exported_allUnnamed %d " "next "PTR_FORMAT,
-                p2i(this), name()->as_C_string(),
-                (module()->is_named() ? module()->name()->as_C_string() : UNNAMED_MODULE),
-                _classpath_index, _is_exported, _is_exported_allUnnamed, p2i(next()));
+  st->print_cr("package entry "PTR_FORMAT" name %s module %s classpath_index "
+               INT32_FORMAT " is_exported %d is_exported_allUnnamed %d " "next "PTR_FORMAT,
+               p2i(this), name()->as_C_string(),
+               (module()->is_named() ? module()->name()->as_C_string() : UNNAMED_MODULE),
+               _classpath_index, _is_exported, _is_exported_allUnnamed, p2i(next()));
 }
-#endif
 
 void PackageEntryTable::verify() {
   int element_count = 0;

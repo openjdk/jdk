@@ -242,7 +242,6 @@
 # include "utilities/ostream.hpp"
 # include "utilities/preserveException.hpp"
 # include "utilities/sizes.hpp"
-# include "utilities/top.hpp"
 # include "utilities/utf8.hpp"
 #ifdef COMPILER2
 # include "libadt/dict.hpp"

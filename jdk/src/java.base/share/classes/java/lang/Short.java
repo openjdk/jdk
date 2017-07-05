@@ -302,7 +302,13 @@ public final class Short extends Number implements Comparable<Short> {
      *
      * @param value     the value to be represented by the
      *                  {@code Short}.
+     *
+     * @deprecated
+     * It is rarely appropriate to use this constructor. The static factory
+     * {@link #valueOf(short)} is generally a better choice, as it is
+     * likely to yield significantly better space and time performance.
      */
+    @Deprecated(since="9")
     public Short(short value) {
         this.value = value;
     }
@@ -318,8 +324,14 @@ public final class Short extends Number implements Comparable<Short> {
      *          {@code Short}
      * @throws  NumberFormatException If the {@code String}
      *          does not contain a parsable {@code short}.
-     * @see     java.lang.Short#parseShort(java.lang.String, int)
+     *
+     * @deprecated
+     * It is rarely appropriate to use this constructor.
+     * Use {@link #parseShort(String)} to convert a string to a
+     * {@code short} primitive, or use {@link #valueOf(String)}
+     * to convert a string to a {@code Short} object.
      */
+    @Deprecated(since="9")
     public Short(String s) throws NumberFormatException {
         this.value = parseShort(s, 10);
     }

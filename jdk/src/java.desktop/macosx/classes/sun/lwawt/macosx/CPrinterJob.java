@@ -36,6 +36,7 @@ import java.security.PrivilegedAction;
 import javax.print.*;
 import javax.print.attribute.PrintRequestAttributeSet;
 import javax.print.attribute.HashPrintRequestAttributeSet;
+import javax.print.attribute.standard.Copies;
 import javax.print.attribute.standard.Media;
 import javax.print.attribute.standard.MediaPrintableArea;
 import javax.print.attribute.standard.MediaSize;
@@ -43,7 +44,6 @@ import javax.print.attribute.standard.MediaSizeName;
 import javax.print.attribute.standard.PageRanges;
 
 import sun.java2d.*;
-import sun.misc.ManagedLocalsThread;
 import sun.print.*;
 
 public final class CPrinterJob extends RasterPrinterJob {
@@ -194,7 +194,34 @@ public final class CPrinterJob extends RasterPrinterJob {
                 // setPageRange will set firstPage and lastPage as called in getFirstPage
                 // and getLastPage
                 setPageRange(range[0][0] - 1, range[0][1] - 1);
+            } else {
+                // if rangeSelect is SunPageSelection.ALL
+                // then setPageRange appropriately
+                setPageRange(-1, -1);
             }
+        }
+    }
+
+    private void setPageRangeAttribute(int from, int to, boolean isRangeSet) {
+        if (attributes != null) {
+            // since native Print use zero-based page indices,
+            // we need to store in 1-based format in attributes set
+            // but setPageRange again uses zero-based indices so it should be
+            // 1 less than pageRanges attribute
+            if (isRangeSet) {
+                attributes.add(new PageRanges(from+1, to+1));
+                attributes.add(SunPageSelection.RANGE);
+                setPageRange(from, to);
+            } else {
+                attributes.add(SunPageSelection.ALL);
+            }
+        }
+    }
+
+    private void setCopiesAttribute(int copies) {
+        if (attributes != null) {
+            attributes.add(new Copies(copies));
+            super.setCopies(copies);
         }
     }
 
@@ -691,9 +718,15 @@ public final class CPrinterJob extends RasterPrinterJob {
                 if (pageFormat != null) {
                     Printable printable = pageable.getPrintable(pageIndex);
                     if (printable != null) {
-                        BufferedImage bimg = new BufferedImage((int)Math.round(pageFormat.getWidth()), (int)Math.round(pageFormat.getHeight()), BufferedImage.TYPE_INT_ARGB_PRE);
-                        PeekGraphics peekGraphics = createPeekGraphics(bimg.createGraphics(), printerJob);
-                        Rectangle2D pageFormatArea = getPageFormatArea(pageFormat);
+                        BufferedImage bimg =
+                              new BufferedImage(
+                                  (int)Math.round(pageFormat.getWidth()),
+                                  (int)Math.round(pageFormat.getHeight()),
+                                  BufferedImage.TYPE_INT_ARGB_PRE);
+                        PeekGraphics peekGraphics =
+                         createPeekGraphics(bimg.createGraphics(), printerJob);
+                        Rectangle2D pageFormatArea =
+                             getPageFormatArea(pageFormat);
                         initPrinterGraphics(peekGraphics, pageFormatArea);
 
                         // Do the assignment here!
@@ -741,7 +774,8 @@ public final class CPrinterJob extends RasterPrinterJob {
 
     // upcall from native
     private static void detachPrintLoop(final long target, final long arg) {
-        new ManagedLocalsThread(() -> _safePrintLoop(target, arg)).start();
+        new Thread(null, () -> _safePrintLoop(target, arg),
+                   "PrintLoop", 0, false).start();
     }
     private static native void _safePrintLoop(long target, long arg);
 

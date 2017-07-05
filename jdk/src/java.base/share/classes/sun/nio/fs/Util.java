@@ -28,8 +28,7 @@ package sun.nio.fs;
 import java.util.*;
 import java.nio.file.*;
 import java.nio.charset.Charset;
-import java.security.*;
-import sun.security.action.*;
+import sun.security.action.GetPropertyAction;
 
 /**
  * Utility methods
@@ -39,7 +38,7 @@ class Util {
     private Util() { }
 
     private static final Charset jnuEncoding = Charset.forName(
-        AccessController.doPrivileged(new GetPropertyAction("sun.jnu.encoding")));
+        GetPropertyAction.getProperty("sun.jnu.encoding"));
 
     /**
      * Returns {@code Charset} corresponding to the sun.jnu.encoding property

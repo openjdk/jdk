@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "utilities/constantTag.hpp"
+#include "utilities/ostream.hpp"
 
 #ifndef PRODUCT
 

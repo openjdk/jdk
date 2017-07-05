@@ -30,10 +30,11 @@ import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
-import java.security.AccessController;
 import java.security.Permission;
 import java.security.PrivilegedAction;
+import java.util.Properties;
 import sun.reflect.misc.ReflectUtil;
+import sun.security.action.GetPropertyAction;
 
 /** <P> The master factory for all reflective objects, both those in
     java.lang.reflect (Fields, Methods, Constructors) as well as their
@@ -382,41 +383,37 @@ public class ReflectionFactory {
         run, before the system properties are set up. */
     private static void checkInitted() {
         if (initted) return;
-        AccessController.doPrivileged(
-            new PrivilegedAction<>() {
-                public Void run() {
-                    // Tests to ensure the system properties table is fully
-                    // initialized. This is needed because reflection code is
-                    // called very early in the initialization process (before
-                    // command-line arguments have been parsed and therefore
-                    // these user-settable properties installed.) We assume that
-                    // if System.out is non-null then the System class has been
-                    // fully initialized and that the bulk of the startup code
-                    // has been run.
 
-                    if (System.out == null) {
-                        // java.lang.System not yet fully initialized
-                        return null;
-                    }
+        // Tests to ensure the system properties table is fully
+        // initialized. This is needed because reflection code is
+        // called very early in the initialization process (before
+        // command-line arguments have been parsed and therefore
+        // these user-settable properties installed.) We assume that
+        // if System.out is non-null then the System class has been
+        // fully initialized and that the bulk of the startup code
+        // has been run.
 
-                    String val = System.getProperty("sun.reflect.noInflation");
-                    if (val != null && val.equals("true")) {
-                        noInflation = true;
-                    }
+        if (System.out == null) {
+            // java.lang.System not yet fully initialized
+            return;
+        }
 
-                    val = System.getProperty("sun.reflect.inflationThreshold");
-                    if (val != null) {
-                        try {
-                            inflationThreshold = Integer.parseInt(val);
-                        } catch (NumberFormatException e) {
-                            throw new RuntimeException("Unable to parse property sun.reflect.inflationThreshold", e);
-                        }
-                    }
+        Properties props = GetPropertyAction.getProperties();
+        String val = props.getProperty("sun.reflect.noInflation");
+        if (val != null && val.equals("true")) {
+            noInflation = true;
+        }
 
-                    initted = true;
-                    return null;
-                }
-            });
+        val = props.getProperty("sun.reflect.inflationThreshold");
+        if (val != null) {
+            try {
+                inflationThreshold = Integer.parseInt(val);
+            } catch (NumberFormatException e) {
+                throw new RuntimeException("Unable to parse property sun.reflect.inflationThreshold", e);
+            }
+        }
+
+        initted = true;
     }
 
     private static LangReflectAccess langReflectAccess() {

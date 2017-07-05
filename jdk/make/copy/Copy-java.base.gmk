@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -88,7 +88,7 @@ endif
 #
 # How to install jvm.cfg.
 #
-ifeq ($(JVM_VARIANT_ZERO), true)
+ifeq ($(call check-jvm-variant, zero zeroshark), true)
   JVMCFG_ARCH := zero
 else
   JVMCFG_ARCH := $(OPENJDK_TARGET_CPU_LEGACY)
@@ -99,7 +99,7 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
 else
   JVMCFG_SRC := $(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/conf/$(JVMCFG_ARCH)/jvm.cfg
   # Allow override by ALT_JVMCFG_SRC if it exists
-  JVMCFG_SRC := $(if $(wildcard $(ALT_JVMCFG_SRC)),$(ALT_JVMCFG_SRC),$(JVMCFG_SRC)) 
+  JVMCFG_SRC := $(if $(wildcard $(ALT_JVMCFG_SRC)),$(ALT_JVMCFG_SRC),$(JVMCFG_SRC))
 endif
 JVMCFG_DIR := $(LIB_DST_DIR)$(OPENJDK_TARGET_CPU_LIBDIR)
 JVMCFG := $(JVMCFG_DIR)/jvm.cfg
@@ -117,12 +117,12 @@ else
   # The main problem is deciding whether to use aliases for the VMs that are not
   # present and the current position is that we add aliases for client and server, but
   # not for minimal.
-  CLIENT_AND_SERVER := $(and $(findstring true, $(JVM_VARIANT_SERVER)), $(findstring true, $(JVM_VARIANT_CLIENT)))
-  ifeq ($(CLIENT_AND_SERVER), true)
+  CLIENT_AND_SERVER := $(call check-jvm-variant, client)+$(call check-jvm-variant, server)
+  ifeq ($(CLIENT_AND_SERVER), true+true)
     COPY_JVM_CFG_FILE := true
   else
     # For zero, the default jvm.cfg file is sufficient
-    ifeq ($(JVM_VARIANT_ZERO), true)
+    ifeq ($(call check-jvm-variant, zero zeroshark), true)
       COPY_JVM_CFG_FILE := true
     endif
   endif
@@ -136,21 +136,21 @@ else
 	$(MKDIR) -p $(@D)
 	$(RM) $(@)
         # Now check for other permutations
-        ifeq ($(JVM_VARIANT_SERVER), true)
+        ifeq ($(call check-jvm-variant, server), true)
 	  $(PRINTF) "-server KNOWN\n">>$(@)
 	  $(PRINTF) "-client ALIASED_TO -server\n">>$(@)
-          ifeq ($(JVM_VARIANT_MINIMAL1), true)
+          ifeq ($(call check-jvm-variant, minimal), true)
 	    $(PRINTF) "-minimal KNOWN\n">>$(@)
           endif
         else
-          ifeq ($(JVM_VARIANT_CLIENT), true)
+          ifeq ($(call check-jvm-variant, client), true)
 	    $(PRINTF) "-client KNOWN\n">>$(@)
 	    $(PRINTF) "-server ALIASED_TO -client\n">>$(@)
-            ifeq ($(JVM_VARIANT_MINIMAL1), true)
+            ifeq ($(call check-jvm-variant, minimal), true)
 	      $(PRINTF) "-minimal KNOWN\n">>$(@)
             endif
           else
-            ifeq ($(JVM_VARIANT_MINIMAL1), true)
+            ifeq ($(call check-jvm-variant, minimal), true)
 	      $(PRINTF) "-minimal KNOWN\n">>$(@)
 	      $(PRINTF) "-server ALIASED_TO -minimal\n">>$(@)
 	      $(PRINTF) "-client ALIASED_TO -minimal\n">>$(@)

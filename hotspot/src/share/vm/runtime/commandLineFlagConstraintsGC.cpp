@@ -457,6 +457,51 @@ Flag::Error MarkStackSizeConstraintFunc(size_t value, bool verbose) {
   }
 }
 
+static Flag::Error CMSReservedAreaConstraintFunc(const char* name, size_t value, bool verbose) {
+#if INCLUDE_ALL_GCS
+  if (UseConcMarkSweepGC) {
+    ConcurrentMarkSweepGeneration* cms = (ConcurrentMarkSweepGeneration*)GenCollectedHeap::heap()->old_gen();
+    const size_t ergo_max = cms->cmsSpace()->max_flag_size_for_task_size();
+    if (value > ergo_max) {
+      CommandLineError::print(verbose,
+                              "%s (" SIZE_FORMAT ") must be "
+                              "less than or equal to ergonomic maximum (" SIZE_FORMAT ") "
+                              "which is based on the maximum size of the old generation of the Java heap\n",
+                              name, value, ergo_max);
+      return Flag::VIOLATES_CONSTRAINT;
+    }
+  }
+#endif
+
+  return Flag::SUCCESS;
+}
+
+Flag::Error CMSRescanMultipleConstraintFunc(size_t value, bool verbose) {
+  Flag::Error status = CMSReservedAreaConstraintFunc("CMSRescanMultiple", value, verbose);
+
+#if INCLUDE_ALL_GCS
+  if (status == Flag::SUCCESS && UseConcMarkSweepGC) {
+    // CMSParRemarkTask::do_dirty_card_rescan_tasks requires CompactibleFreeListSpace::rescan_task_size()
+    // to be aligned to CardTableModRefBS::card_size * BitsPerWord.
+    // Note that rescan_task_size() will be aligned if CMSRescanMultiple is a multiple of 'HeapWordSize'
+    // because rescan_task_size() is CardTableModRefBS::card_size / HeapWordSize * BitsPerWord.
+    if (value % HeapWordSize != 0) {
+      CommandLineError::print(verbose,
+                              "CMSRescanMultiple (" SIZE_FORMAT ") must be "
+                              "a multiple of " SIZE_FORMAT "\n",
+                              value, HeapWordSize);
+      status = Flag::VIOLATES_CONSTRAINT;
+    }
+  }
+#endif
+
+  return status;
+}
+
+Flag::Error CMSConcMarkMultipleConstraintFunc(size_t value, bool verbose) {
+  return CMSReservedAreaConstraintFunc("CMSConcMarkMultiple", value, verbose);
+}
+
 Flag::Error CMSPrecleanDenominatorConstraintFunc(uintx value, bool verbose) {
 #if INCLUDE_ALL_GCS
   if (UseConcMarkSweepGC && (value <= CMSPrecleanNumerator)) {

@@ -959,6 +959,16 @@ bool FileMapInfo::is_in_shared_space(const void* p) {
   return false;
 }
 
+// Check if a given address is within one of the shared regions (ro, rw, md, mc)
+bool FileMapInfo::is_in_shared_region(const void* p, int idx) {
+  assert((idx >= MetaspaceShared::ro) && (idx <= MetaspaceShared::mc), "invalid region index");
+  char* base = _header->region_addr(idx);
+  if (p >= base && p < base + _header->_space[idx]._used) {
+    return true;
+  }
+  return false;
+}
+
 void FileMapInfo::print_shared_spaces() {
   tty->print_cr("Shared Spaces:");
   for (int i = 0; i < MetaspaceShared::n_regions; i++) {

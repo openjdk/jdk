@@ -766,6 +766,49 @@ public class Font implements java.io.Serializable
     }
 
     /**
+     * Returns true if any part of the specified text is from a
+     * complex script for which the implementation will need to invoke
+     * layout processing in order to render correctly when using
+     * {@link Graphics#drawString(String,int,int) drawString(String,int,int)}
+     * and other text rendering methods. Measurement of the text
+     * may similarly need the same extra processing.
+     * The {@code start} and {@code end} indices are provided so that
+     * the application can request only a subset of the text be considered.
+     * The last char index examined is at {@code "end-1"},
+     * i.e a request to examine the entire array would be
+     * <pre>
+     * {@code Font.textRequiresLayout(chars, 0, chars.length);}
+     * </pre>
+     * An application may find this information helpful in
+     * performance sensitive code.
+     * <p>
+     * Note that even if this method returns {@code false}, layout processing
+     * may still be invoked when used with any {@code Font}
+     * for which {@link #hasLayoutAttributes()} returns {@code true},
+     * so that method will need to be consulted for the specific font,
+     * in order to obtain an answer which accounts for such font attributes.
+     *
+     * @param chars the text.
+     * @param start the index of the first char to examine.
+     * @param end the ending index, exclusive.
+     * @return {@code true} if the specified text will need special layout.
+     * @throws NullPointerException if {@code chars} is null.
+     * @throws ArrayIndexOutOfBoundsException if {@code start} is negative or
+     * {@code end} is greater than the length of the {@code chars} array.
+     * @since 9
+     */
+    public static boolean textRequiresLayout(char[] chars,
+                                             int start, int end) {
+        if (chars == null) {
+           throw new NullPointerException("null char array");
+        }
+        if (start < 0 || end > chars.length) {
+            throw new ArrayIndexOutOfBoundsException("start < 0 or end > len");
+        }
+        return FontUtilities.isComplexScript(chars, start, end);
+    }
+
+    /**
      * Returns a {@code Font} appropriate to the attributes.
      * If {@code attributes} contains a {@code FONT} attribute
      * with a valid {@code Font} as its value, it will be

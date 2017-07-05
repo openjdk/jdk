@@ -27,13 +27,12 @@ package jdk.internal.reflect;
 
 
 import java.lang.reflect.*;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import jdk.internal.HotSpotIntrinsicCandidate;
 import jdk.internal.misc.VM;
+import sun.security.action.GetPropertyAction;
 
 /** Common utility routines used by both java.lang and
     java.lang.reflect */
@@ -344,15 +343,10 @@ public class Reflection {
 
     private static void printStackTraceIfNeeded(Throwable e) {
         if (!printStackWhenAccessFailsSet && VM.initLevel() >= 1) {
-            // can't use method reference here, might be too early in startup
-            PrivilegedAction<Boolean> pa = new PrivilegedAction<Boolean>() {
-                public Boolean run() {
-                    String s;
-                    s = System.getProperty("sun.reflect.debugModuleAccessChecks");
-                    return (s != null && !s.equalsIgnoreCase("false"));
-                }
-            };
-            printStackWhenAccessFails = AccessController.doPrivileged(pa);
+            String s = GetPropertyAction
+                    .getProperty("sun.reflect.debugModuleAccessChecks");
+            printStackWhenAccessFails =
+                    (s != null && !s.equalsIgnoreCase("false"));
             printStackWhenAccessFailsSet = true;
         }
         if (printStackWhenAccessFails) {

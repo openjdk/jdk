@@ -28,7 +28,6 @@ import java.io.File;
 import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLOutputFactory;
-import javax.xml.stream.events.XMLEvent;
 
 import org.testng.Assert;
 import org.testng.annotations.Test;
@@ -74,7 +73,7 @@ public class Bug6668115Test {
             er.nextTag();
             er.nextTag();
 
-            XMLEvent event = er.peek();
+            er.peek();
             System.out.println(er.getElementText());
             er.nextTag();
             System.out.println(er.getElementText());

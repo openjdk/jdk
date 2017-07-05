@@ -30,6 +30,7 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.stream.Stream;
 
 /**
@@ -69,11 +70,12 @@ public class Main {
     private static FileSystem createFsWithURLClassloader(String javaHome) throws IOException{
         URL url = Paths.get(javaHome, "jrt-fs.jar").toUri().toURL();
         URLClassLoader loader = new URLClassLoader(new URL[] { url });
-        return FileSystems.newFileSystem(URI.create("jrt:/"), null, loader);
+        return FileSystems.newFileSystem(URI.create("jrt:/"),
+                                                    Collections.emptyMap(),
+                                                    loader);
     }
 
     private static FileSystem createFsByInstalledProvider() throws IOException {
         return FileSystems.getFileSystem(URI.create("jrt:/"));
     }
 }
-
