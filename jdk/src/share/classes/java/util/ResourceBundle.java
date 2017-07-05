@@ -184,6 +184,13 @@ import sun.util.locale.LocaleObjectCache;
  * subclass.  Your subclasses must override two methods: <code>handleGetObject</code>
  * and <code>getKeys()</code>.
  *
+ * <p>
+ * The implementation of a {@code ResourceBundle} subclass must be thread-safe
+ * if it's simultaneously used by multiple threads. The default implementations
+ * of the non-abstract methods in this class, and the methods in the direct
+ * known concrete subclasses {@code ListResourceBundle} and
+ * {@code PropertyResourceBundle} are thread-safe.
+ *
  * <h3>ResourceBundle.Control</h3>
  *
  * The {@link ResourceBundle.Control} class provides information necessary

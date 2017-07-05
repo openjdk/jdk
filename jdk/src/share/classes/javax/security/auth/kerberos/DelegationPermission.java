@@ -48,14 +48,14 @@ import java.io.IOException;
  * <p>
  * For example, to specify the "host" service use of a forwardable TGT the
  * target permission is specified as follows:
- * <p>
+ *
  * <pre>
  *  DelegationPermission("\"host/foo.example.com@EXAMPLE.COM\" \"krbtgt/EXAMPLE.COM@EXAMPLE.COM\"");
  * </pre>
  * <p>
  * To give the "backup" service a proxiable nfs service ticket the target permission
  * might be specified:
- * <p>
+ *
  * <pre>
  *  DelegationPermission("\"backup/bar.example.com@EXAMPLE.COM\" \"nfs/home.EXAMPLE.COM@EXAMPLE.COM\"");
  * </pre>

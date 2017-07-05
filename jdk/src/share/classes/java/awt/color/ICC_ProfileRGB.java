@@ -23,7 +23,8 @@
  * questions.
  */
 
-/**********************************************************************
+/*
+ **********************************************************************
  **********************************************************************
  **********************************************************************
  *** COPYRIGHT (c) Eastman Kodak Company, 1997                      ***
@@ -82,7 +83,6 @@ import sun.java2d.cmm.ProfileDeferralInfo;
  * The inverse transform is performed by converting PCS XYZ components to linear
  * RGB components through the inverse of the above 3x3 matrix, and then converting
  * linear RGB to device RGB through inverses of the TRCs.
- * <p>
  */
 
 
@@ -111,7 +111,7 @@ extends ICC_Profile {
     /**
      * Constructs an new <code>ICC_ProfileRGB</code> from a CMM ID.
      *
-     * @param ID The CMM ID for the profile.
+     * @param p The CMM ID for the profile.
      *
      */
     ICC_ProfileRGB(Profile p) {

@@ -41,7 +41,7 @@ import javax.swing.UIManager;
  * of text document.  This implementation provides a default
  * implementation which treats text as plain text and
  * provides a minimal set of actions for a simple editor.
- * <p>
+ *
  * <dl>
  * <dt><b><font size=+1>Newlines</font></b>
  * <dd>

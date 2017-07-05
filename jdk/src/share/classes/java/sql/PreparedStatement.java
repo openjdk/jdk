@@ -401,7 +401,7 @@ public interface PreparedStatement extends Statement {
     * marker in the SQL statement; if a database access error occurs or this
     * method is called on a closed PreparedStatement
     * @exception SQLFeatureNotSupportedException if
-    * the JDBC driver does not support this data type
+    * the JDBC driver does not support the specified targetSqlType
     * @see Types
     */
     void setObject(int parameterIndex, Object x, int targetSqlType)
@@ -951,7 +951,7 @@ public interface PreparedStatement extends Statement {
      *            or Reader object and the value of the scale parameter is less
      *            than zero
      * @exception SQLFeatureNotSupportedException if
-     * the JDBC driver does not support this data type
+     * the JDBC driver does not support the specified targetSqlType
      * @see Types
      *
      */
@@ -1255,7 +1255,7 @@ public interface PreparedStatement extends Statement {
      *            or Reader object and the value of the scale parameter is less
      *            than zero
      * @exception SQLFeatureNotSupportedException if
-     * the JDBC driver does not support this data type
+     * the JDBC driver does not support the specified targetSqlType
      * @see JDBCType
      * @see SQLType
      * @since 1.8
@@ -1281,7 +1281,7 @@ public interface PreparedStatement extends Statement {
      * parameter marker in the SQL statement; if a database access error occurs
      * or this method is called on a closed {@code PreparedStatement}
      * @exception SQLFeatureNotSupportedException if
-     * the JDBC driver does not support this data type
+     * the JDBC driver does not support the specified targetSqlType
      * @see JDBCType
      * @see SQLType
      * @since 1.8

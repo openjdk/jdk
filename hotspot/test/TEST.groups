@@ -70,7 +70,6 @@ needs_jdk = \
   runtime/7107135/Test7107135.sh \
   runtime/7158988/FieldMonitor.java \
   runtime/7194254/Test7194254.java \
-  runtime/8026365/InvokeSpecialAnonTest.java \
   runtime/jsig/Test8017498.sh \
   runtime/Metaspace/FragmentMetaspace.java \
   runtime/NMT/BaselineWithParameter.java \

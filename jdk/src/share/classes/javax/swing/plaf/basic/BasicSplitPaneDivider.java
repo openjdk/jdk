@@ -521,7 +521,7 @@ public class BasicSplitPaneDivider extends Container
      * MouseHandler is responsible for converting mouse events
      * (released, dragged...) into the appropriate DragController
      * methods.
-     * <p>
+     *
      */
     protected class MouseHandler extends MouseAdapter
             implements MouseMotionListener
@@ -890,7 +890,7 @@ public class BasicSplitPaneDivider extends Container
      * Used to layout a <code>BasicSplitPaneDivider</code>.
      * Layout for the divider
      * involves appropriately moving the left/right buttons around.
-     * <p>
+     *
      */
     protected class DividerLayout implements LayoutManager
     {

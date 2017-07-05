@@ -242,7 +242,7 @@ void LinkResolver::resolve_klass(KlassHandle& result, constantPoolHandle pool, i
 
 // Look up method in klasses, including static methods
 // Then look up local default methods
-void LinkResolver::lookup_method_in_klasses(methodHandle& result, KlassHandle klass, Symbol* name, Symbol* signature, TRAPS) {
+void LinkResolver::lookup_method_in_klasses(methodHandle& result, KlassHandle klass, Symbol* name, Symbol* signature, bool checkpolymorphism, TRAPS) {
   Method* result_oop = klass->uncached_lookup_method(name, signature);
   if (result_oop == NULL) {
     Array<Method*>* default_methods = InstanceKlass::cast(klass())->default_methods();
@@ -251,7 +251,7 @@ void LinkResolver::lookup_method_in_klasses(methodHandle& result, KlassHandle kl
     }
   }
 
-  if (EnableInvokeDynamic && result_oop != NULL) {
+  if (checkpolymorphism && EnableInvokeDynamic && result_oop != NULL) {
     vmIntrinsics::ID iid = result_oop->intrinsic_id();
     if (MethodHandles::is_signature_polymorphic(iid)) {
       // Do not link directly to these.  The VM must produce a synthetic one using lookup_polymorphic_method.
@@ -267,8 +267,8 @@ void LinkResolver::lookup_instance_method_in_klasses(methodHandle& result, Klass
   Method* result_oop = klass->uncached_lookup_method(name, signature);
   result = methodHandle(THREAD, result_oop);
   while (!result.is_null() && result->is_static() && result->method_holder()->super() != NULL) {
-    klass = KlassHandle(THREAD, result->method_holder()->super());
-    result = methodHandle(THREAD, klass->uncached_lookup_method(name, signature));
+    KlassHandle super_klass = KlassHandle(THREAD, result->method_holder()->super());
+    result = methodHandle(THREAD, super_klass->uncached_lookup_method(name, signature));
   }
 
   if (result.is_null()) {
@@ -503,11 +503,14 @@ void LinkResolver::resolve_method_statically(methodHandle& resolved_method, Klas
   }
 
   if (code == Bytecodes::_invokeinterface) {
-    resolve_interface_method(resolved_method, resolved_klass, method_name, method_signature, current_klass, true, CHECK);
+    resolve_interface_method(resolved_method, resolved_klass, method_name, method_signature, current_klass, true, true, CHECK);
   } else if (code == Bytecodes::_invokevirtual) {
     resolve_method(resolved_method, resolved_klass, method_name, method_signature, current_klass, true, true, CHECK);
-  } else {
+  } else if (!resolved_klass->is_interface()) {
     resolve_method(resolved_method, resolved_klass, method_name, method_signature, current_klass, true, false, CHECK);
+  } else {
+    bool nostatics = (code == Bytecodes::_invokestatic) ? false : true;
+    resolve_interface_method(resolved_method, resolved_klass, method_name, method_signature, current_klass, true, nostatics, CHECK);
   }
 }
 
@@ -528,7 +531,7 @@ void LinkResolver::resolve_method(methodHandle& resolved_method, KlassHandle res
   }
 
   // 2. lookup method in resolved klass and its super klasses
-  lookup_method_in_klasses(resolved_method, resolved_klass, method_name, method_signature, CHECK);
+  lookup_method_in_klasses(resolved_method, resolved_klass, method_name, method_signature, true, CHECK);
 
   if (resolved_method.is_null()) { // not found in the class hierarchy
     // 3. lookup method in all the interfaces implemented by the resolved klass
@@ -612,7 +615,8 @@ void LinkResolver::resolve_interface_method(methodHandle& resolved_method,
                                             Symbol* method_name,
                                             Symbol* method_signature,
                                             KlassHandle current_klass,
-                                            bool check_access, TRAPS) {
+                                            bool check_access,
+                                            bool nostatics, TRAPS) {
 
  // check if klass is interface
   if (!resolved_klass->is_interface()) {
@@ -623,7 +627,8 @@ void LinkResolver::resolve_interface_method(methodHandle& resolved_method,
   }
 
   // lookup method in this interface or its super, java.lang.Object
-  lookup_instance_method_in_klasses(resolved_method, resolved_klass, method_name, method_signature, CHECK);
+  // JDK8: also look for static methods
+  lookup_method_in_klasses(resolved_method, resolved_klass, method_name, method_signature, false, CHECK);
 
   if (resolved_method.is_null()) {
     // lookup method in all the super-interfaces
@@ -637,6 +642,16 @@ void LinkResolver::resolve_interface_method(methodHandle& resolved_method,
                                                         method_signature));
     }
   }
+
+  if (nostatics && resolved_method->is_static()) {
+    ResourceMark rm(THREAD);
+    char buf[200];
+    jio_snprintf(buf, sizeof(buf), "Expected instance not static method %s", Method::name_and_sig_as_C_string(resolved_klass(),
+                                                      resolved_method->name(),
+                                                      resolved_method->signature()));
+    THROW_MSG(vmSymbols::java_lang_IncompatibleClassChangeError(), buf);
+  }
+
 
   if (check_access) {
     // JDK8 adds non-public interface methods, and accessability check requirement
@@ -864,7 +879,11 @@ void LinkResolver::linktime_resolve_static_method(methodHandle& resolved_method,
                                                   Symbol* method_name, Symbol* method_signature,
                                                   KlassHandle current_klass, bool check_access, TRAPS) {
 
-  resolve_method(resolved_method, resolved_klass, method_name, method_signature, current_klass, check_access, false, CHECK);
+  if (!resolved_klass->is_interface()) {
+    resolve_method(resolved_method, resolved_klass, method_name, method_signature, current_klass, check_access, false, CHECK);
+  } else {
+    resolve_interface_method(resolved_method, resolved_klass, method_name, method_signature, current_klass, check_access, false, CHECK);
+  }
   assert(resolved_method->name() != vmSymbols::class_initializer_name(), "should have been checked in verifier");
 
   // check if static
@@ -898,7 +917,11 @@ void LinkResolver::linktime_resolve_special_method(methodHandle& resolved_method
   // and the selected method is recalculated relative to the direct superclass
   // superinterface.method, which explicitly does not check shadowing
 
-  resolve_method(resolved_method, resolved_klass, method_name, method_signature, current_klass, check_access, false, CHECK);
+  if (!resolved_klass->is_interface()) {
+    resolve_method(resolved_method, resolved_klass, method_name, method_signature, current_klass, check_access, false, CHECK);
+  } else {
+    resolve_interface_method(resolved_method, resolved_klass, method_name, method_signature, current_klass, check_access, true, CHECK);
+  }
 
   // check if method name is <init>, that it is found in same klass as static type
   if (resolved_method->name() == vmSymbols::object_initializer_name() &&
@@ -1219,7 +1242,7 @@ void LinkResolver::resolve_interface_call(CallInfo& result, Handle recv, KlassHa
 void LinkResolver::linktime_resolve_interface_method(methodHandle& resolved_method, KlassHandle resolved_klass, Symbol* method_name,
                                                      Symbol* method_signature, KlassHandle current_klass, bool check_access, TRAPS) {
   // normal interface method resolution
-  resolve_interface_method(resolved_method, resolved_klass, method_name, method_signature, current_klass, check_access, CHECK);
+  resolve_interface_method(resolved_method, resolved_klass, method_name, method_signature, current_klass, check_access, true, CHECK);
 
   assert(resolved_method->name() != vmSymbols::object_initializer_name(), "should have been checked in verifier");
   assert(resolved_method->name() != vmSymbols::class_initializer_name (), "should have been checked in verifier");
