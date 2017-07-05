@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1995, 2008, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1995, 2010, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -76,26 +76,6 @@ LINKER=$(LINK.cc)
 else
 LINKER=$(LINK.c)
 endif
-
-# FIXUP: unpack needs the zip .o files. So we must build zip?
-#     or fix unpack makefile so it uses Program.gmk.
-ifneq ($(IMPORT_NATIVE_BINARIES),true)
-  COMPILE_IT=true
-else
-  ifeq ($(LIBRARY),zip)
-    COMPILE_IT=true
-  else
-    COMPILE_IT=false
-  endif
-endif
-
-# If a Makefile has specified a pre-compiled closed src lib, just copy it.
-ifdef USE_BINARY_PLUG_LIBRARY
-  COMPILE_IT=false
-endif
-
-# We either need to import (copy) libraries in, or build them
-ifeq ($(COMPILE_IT),true)
 
 $(ACTUAL_LIBRARY):: $(INIT) $(TEMPDIR) $(LIBDIR) $(BINDIR) $(EXTDIR) classheaders
 
@@ -274,31 +254,6 @@ ifeq ($(PLATFORM),solaris)
 lint.errors : $(FILES_ln)
 	$(LINT.c) $(FILES_ln) $(LDLIBS) 
 endif
-
-else  # COMPILE_IT
-
-# OpenJDK rule is first so any lib is preferentially copied from that location.
-ifndef USE_BINARY_PLUG_LIBRARY
-
-# In this case we are just copying the file.
-ifneq ($(LIBRARY), fdlibm)
-# Copies in the file from the JDK_IMPORT_PATH area
-$(ACTUAL_LIBRARY_DIR)/%: $(JDK_IMPORT_PATH)/$(ARCH_VM_SUBDIR)/%
-	$(install-import-file)
-$(ACTUAL_LIBRARY_DIR)/%: $(JDK_IMPORT_PATH)/$(ARCH_VM_SUBDIR)/native_threads/%
-	$(install-import-file)
-$(ACTUAL_LIBRARY_DIR)/%: $(JDK_IMPORT_PATH)/$(ARCH_VM_SUBDIR)/headless/%
-	$(install-import-file)
-$(ACTUAL_LIBRARY_DIR)/%: $(JDK_IMPORT_PATH)/$(ARCH_VM_SUBDIR)/xawt/%
-	$(install-import-file)
-else # fdlibm
-$(ACTUAL_LIBRARY_DIR)/%:
-	$(prep-target)
-endif # fdlibm
-
-endif # USE_BINARY_PLUG_LIBRARY
-
-endif # COMPILE_IT
 
 #
 # Class libraries with JNI native methods get a include to the package.

@@ -684,23 +684,28 @@ void DefNewGeneration::remove_forwarding_pointers() {
   _preserved_marks_of_objs.clear(true);
 }
 
+void DefNewGeneration::preserve_mark(oop obj, markOop m) {
+  assert(promotion_failed() && m->must_be_preserved_for_promotion_failure(obj),
+         "Oversaving!");
+  _objs_with_preserved_marks.push(obj);
+  _preserved_marks_of_objs.push(m);
+}
+
 void DefNewGeneration::preserve_mark_if_necessary(oop obj, markOop m) {
   if (m->must_be_preserved_for_promotion_failure(obj)) {
-    _objs_with_preserved_marks.push(obj);
-    _preserved_marks_of_objs.push(m);
+    preserve_mark(obj, m);
   }
 }
 
 void DefNewGeneration::handle_promotion_failure(oop old) {
-  preserve_mark_if_necessary(old, old->mark());
-  if (!_promotion_failed && PrintPromotionFailure) {
+  if (PrintPromotionFailure && !_promotion_failed) {
     gclog_or_tty->print(" (promotion failure size = " SIZE_FORMAT ") ",
                         old->size());
   }
-
+  _promotion_failed = true;
+  preserve_mark_if_necessary(old, old->mark());
   // forward to self
   old->forward_to(old);
-  _promotion_failed = true;
 
   _promo_failure_scan_stack.push(old);
 
