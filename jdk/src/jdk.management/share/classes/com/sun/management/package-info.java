@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,15 +26,13 @@
 /**
  * This package contains Oracle Corporation's platform extension to
  * the implementation of the
- * <a href="{@docRoot}/../../../../api/java/lang/management/package-summary.html">
- * java.lang.management</a> API and also defines the management
+ * {@link java.lang.management} API and also defines the management
  * interface for some other components for the platform.
  *
  * <p>
  * All platform MBeans are registered in the <em>platform MBeanServer</em>
  * which can be obtained via the
- * <a href="{@docRoot}/../../../../api/java/lang/management/ManagementFactory.html#getPlatformMBeanServer()">
- * java.lang.management.ManagementFactory.getPlatformMBeanServer</a>
+ * {@link java.lang.management.ManagementFactory#getPlatformMBeanServer}
  *
  * @author  Mandy Chung
  * @since   1.5

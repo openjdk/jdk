@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -281,8 +281,8 @@ public final class Security {
     /**
      * Gets a specified property for an algorithm. The algorithm name
      * should be a standard name. See the <a href=
-     * "{@docRoot}/../technotes/guides/security/StandardNames.html">
-     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     * "{@docRoot}/../specs/security/standard-names.html">
+     * Java Security Standard Algorithm Names Specification</a>
      * for information about standard algorithm names.
      *
      * One possible use is by specialized algorithm parsers, which may map
@@ -511,8 +511,8 @@ public final class Security {
      * </ul>
      *
      * <p> See the <a href=
-     * "{@docRoot}/../technotes/guides/security/StandardNames.html">
-     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     * "{@docRoot}/../specs/security/standard-names.html">
+     * Java Security Standard Algorithm Names Specification</a>
      * for information about standard cryptographic service names, standard
      * algorithm names and standard attribute names.
      *
@@ -582,8 +582,8 @@ public final class Security {
      * </ul>
      *
      * <p> See the <a href=
-     * "../../../technotes/guides/security/StandardNames.html">
-     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     * "{@docRoot}/../specs/security/standard-names.html">
+     * Java Security Standard Algorithm Names Specification</a>
      * for information about standard cryptographic service names, standard
      * algorithm names and standard attribute names.
      *

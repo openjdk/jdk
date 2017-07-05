@@ -53,7 +53,7 @@ import java.util.NoSuchElementException;
  * and the fourth blocks for only a given maximum time limit before giving
  * up.  These methods are summarized in the following table:
  *
- * <table BORDER CELLPADDING=3 CELLSPACING=1>
+ * <table class="plain">
  * <caption>Summary of BlockingDeque methods</caption>
  *  <tr>
  *    <td style="text-align:center" COLSPAN = 5> <b>First Element (Head)</b></td>
@@ -128,7 +128,7 @@ import java.util.NoSuchElementException;
  * {@code BlockingQueue} interface are precisely equivalent to
  * {@code BlockingDeque} methods as indicated in the following table:
  *
- * <table BORDER CELLPADDING=3 CELLSPACING=1>
+ * <table class="plain">
  * <caption>Comparison of BlockingQueue and BlockingDeque methods</caption>
  *  <tr>
  *    <td style="text-align:center"> <b>{@code BlockingQueue} Method</b></td>
