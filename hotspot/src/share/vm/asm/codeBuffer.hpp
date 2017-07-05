@@ -28,7 +28,7 @@
 #include "code/oopRecorder.hpp"
 #include "code/relocInfo.hpp"
 
-class CodeComments;
+class CodeStrings;
 class PhaseCFG;
 class Compile;
 class BufferBlob;
@@ -240,26 +240,30 @@ class CodeSection VALUE_OBJ_CLASS_SPEC {
 #endif //PRODUCT
 };
 
-class CodeComment;
-class CodeComments VALUE_OBJ_CLASS_SPEC {
+class CodeString;
+class CodeStrings VALUE_OBJ_CLASS_SPEC {
 private:
 #ifndef PRODUCT
-  CodeComment* _comments;
+  CodeString* _strings;
 #endif
 
+  CodeString* find(intptr_t offset) const;
+  CodeString* find_last(intptr_t offset) const;
+
 public:
-  CodeComments() {
+  CodeStrings() {
 #ifndef PRODUCT
-    _comments = NULL;
+    _strings = NULL;
 #endif
   }
 
+  const char* add_string(const char * string) PRODUCT_RETURN_(return NULL;);
+
   void add_comment(intptr_t offset, const char * comment) PRODUCT_RETURN;
   void print_block_comment(outputStream* stream, intptr_t offset) const PRODUCT_RETURN;
-  void assign(CodeComments& other)  PRODUCT_RETURN;
+  void assign(CodeStrings& other)  PRODUCT_RETURN;
   void free() PRODUCT_RETURN;
 };
-
 
 // A CodeBuffer describes a memory space into which assembly
 // code is generated.  This memory space usually occupies the
@@ -326,7 +330,7 @@ class CodeBuffer: public StackObj {
   csize_t      _total_size;     // size in bytes of combined memory buffer
 
   OopRecorder* _oop_recorder;
-  CodeComments _comments;
+  CodeStrings  _strings;
   OopRecorder  _default_oop_recorder;  // override with initialize_oop_recorder
   Arena*       _overflow_arena;
 
@@ -527,7 +531,7 @@ class CodeBuffer: public StackObj {
   void initialize_oop_recorder(OopRecorder* r);
 
   OopRecorder* oop_recorder() const   { return _oop_recorder; }
-  CodeComments& comments()            { return _comments; }
+  CodeStrings& strings()              { return _strings; }
 
   // Code generation
   void relocate(address at, RelocationHolder const& rspec, int format = 0) {
@@ -556,6 +560,7 @@ class CodeBuffer: public StackObj {
   address transform_address(const CodeBuffer &cb, address addr) const;
 
   void block_comment(intptr_t offset, const char * comment) PRODUCT_RETURN;
+  const char* code_string(const char* str) PRODUCT_RETURN_(return NULL;);
 
   // Log a little info about section usage in the CodeBuffer
   void log_section_sizes(const char* name);

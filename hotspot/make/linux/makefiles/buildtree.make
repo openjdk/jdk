@@ -50,7 +50,6 @@
 # jvmti.make	- generate JVMTI bindings from the spec (JSR-163)
 # sa.make	- generate SA jar file and natives
 # env.[ck]sh	- environment settings
-# test_gamma	- script to run the Queens program
 # 
 # The makefiles are split this way so that "make foo" will run faster by not
 # having to read the dependency files for the vm.
@@ -63,9 +62,6 @@ include $(GAMMADIR)/make/altsrc.make
 
 # 'gmake MAKE_VERBOSE=y' or 'gmake QUIETLY=' gives all the gory details.
 QUIETLY$(MAKE_VERBOSE)	= @
-
-# For now, until the compiler is less wobbly:
-TESTFLAGS	= -Xbatch -showversion
 
 ifeq ($(findstring true, $(JVM_VARIANT_ZERO) $(JVM_VARIANT_ZEROSHARK)), true)
   PLATFORM_FILE = $(shell dirname $(shell dirname $(shell pwd)))/platform_zero
@@ -128,7 +124,7 @@ SUBMAKE_DIRS = $(addprefix $(PLATFORM_DIR)/,$(TARGETS))
 BUILDTREE_MAKE	= $(GAMMADIR)/make/$(OS_FAMILY)/makefiles/buildtree.make
 
 BUILDTREE_TARGETS = Makefile flags.make flags_vm.make vm.make adlc.make jvmti.make sa.make \
-        env.sh env.csh jdkpath.sh .dbxrc test_gamma
+        env.sh env.csh jdkpath.sh
 
 BUILDTREE_VARS	= GAMMADIR=$(GAMMADIR) OS_FAMILY=$(OS_FAMILY) \
 	SRCARCH=$(SRCARCH) BUILDARCH=$(BUILDARCH) LIBARCH=$(LIBARCH) VARIANT=$(VARIANT)
@@ -345,7 +341,7 @@ env.sh: $(BUILDTREE_MAKE)
 	@echo Creating $@ ...
 	$(QUIETLY) ( \
 	$(BUILDTREE_COMMENT); \
-	[ -n "$$JAVA_HOME" ] && { echo ": \$${JAVA_HOME:=$${JAVA_HOME}}"; }; \
+	{ echo "JAVA_HOME=$(JDK_IMPORT_PATH)"; }; \
 	{ \
 	echo "CLASSPATH=$${CLASSPATH:+$$CLASSPATH:}.:\$${JAVA_HOME}/jre/lib/rt.jar:\$${JAVA_HOME}/jre/lib/i18n.jar"; \
 	} | sed s:$${JAVA_HOME:--------}:\$${JAVA_HOME}:g; \
@@ -357,8 +353,7 @@ env.csh: env.sh
 	@echo Creating $@ ...
 	$(QUIETLY) ( \
 	$(BUILDTREE_COMMENT); \
-	[ -n "$$JAVA_HOME" ] && \
-	{ echo "if (! \$$?JAVA_HOME) setenv JAVA_HOME \"$$JAVA_HOME\""; }; \
+	{ echo "setenv JAVA_HOME \"$(JDK_IMPORT_PATH)\""; }; \
 	sed -n 's/^\([A-Za-z_][A-Za-z0-9_]*\)=/setenv \1 /p' $?; \
 	) > $@
 
@@ -368,119 +363,6 @@ jdkpath.sh: $(BUILDTREE_MAKE)
 	$(BUILDTREE_COMMENT); \
 	echo "JDK=${JAVA_HOME}"; \
 	) > $@	   
-
-.dbxrc:  $(BUILDTREE_MAKE)
-	@echo Creating $@ ...
-	$(QUIETLY) ( \
-	echo "echo '# Loading $(PLATFORM_DIR)/$(TARGET)/.dbxrc'"; \
-	echo "if [ -f \"\$${HOTSPOT_DBXWARE}\" ]"; \
-	echo "then"; \
-	echo "	source \"\$${HOTSPOT_DBXWARE}\""; \
-	echo "elif [ -f \"\$$HOME/.dbxrc\" ]"; \
-	echo "then"; \
-	echo "	source \"\$$HOME/.dbxrc\""; \
-	echo "fi"; \
-	) > $@
-
-# Skip the test for product builds (which only work when installed in a JDK), to
-# avoid exiting with an error and causing make to halt.
-NO_TEST_MSG	= \
-	echo "$@:  skipping the test--this build must be tested in a JDK."
-
-NO_JAVA_HOME_MSG	= \
-	echo "JAVA_HOME must be set to run this test."
-
-DATA_MODE = $(DATA_MODE/$(BUILDARCH))
-JAVA_FLAG = $(JAVA_FLAG/$(DATA_MODE))
-
-DATA_MODE/i486    = 32
-DATA_MODE/sparc   = 32
-DATA_MODE/sparcv9 = 64
-DATA_MODE/amd64   = 64
-DATA_MODE/ia64    = 64
-DATA_MODE/zero    = $(ARCH_DATA_MODEL)
-
-JAVA_FLAG/32 = -d32
-JAVA_FLAG/64 = -d64
-
-WRONG_DATA_MODE_MSG = \
-	echo "JAVA_HOME must point to a $(DATA_MODE)-bit OpenJDK."
-
-CROSS_COMPILING_MSG = \
-	echo "Cross compiling for ARCH $(CROSS_COMPILE_ARCH), skipping gamma run."
-
-test_gamma:  $(BUILDTREE_MAKE) $(GAMMADIR)/make/test/Queens.java
-	@echo Creating $@ ...
-	$(QUIETLY) ( \
-	echo "#!/bin/sh"; \
-	echo ""; \
-	$(BUILDTREE_COMMENT); \
-	echo ""; \
-	echo "# Include environment settings for gamma run"; \
-	echo ""; \
-	echo ". ./env.sh"; \
-	echo ""; \
-	echo "# Do not run gamma test for cross compiles"; \
-	echo ""; \
-	echo "if [ -n \"$(CROSS_COMPILE_ARCH)\" ]; then "; \
-	echo "  $(CROSS_COMPILING_MSG)"; \
-	echo "  exit 0"; \
-	echo "fi"; \
-	echo ""; \
-	echo "# Make sure JAVA_HOME is set as it is required for gamma"; \
-	echo ""; \
-	echo "if [ -z \"\$${JAVA_HOME}\" ]; then "; \
-	echo "  $(NO_JAVA_HOME_MSG)"; \
-	echo "  exit 0"; \
-	echo "fi"; \
-	echo ""; \
-	echo "# Check JAVA_HOME version to be used for the test"; \
-	echo ""; \
-	echo "\$${JAVA_HOME}/bin/java $(JAVA_FLAG) -fullversion > /dev/null 2>&1"; \
-	echo "if [ \$$? -ne 0 ]; then "; \
-	echo "  $(WRONG_DATA_MODE_MSG)"; \
-	echo "  exit 0"; \
-	echo "fi"; \
-	echo ""; \
-	echo "GAMMA_PROG=gamma"; \
-	echo ""; \
-	echo "if [ \"$(OS_VENDOR)\" = \"Darwin\" ]; then "; \
-	echo "  # Ensure architecture for gamma and JAVA_HOME is the same."; \
-	echo "  # NOTE: gamma assumes the OpenJDK directory layout."; \
-	echo ""; \
-	echo "  GAMMA_ARCH=\"\`file \$${GAMMA_PROG} | awk '{print \$$NF}'\`\""; \
-	echo "  JVM_LIB=\"\$${JAVA_HOME}/jre/lib/libjava.$(LIBRARY_SUFFIX)\""; \
-	echo "  if [ ! -f \$${JVM_LIB} ]; then"; \
-	echo "    JVM_LIB=\"\$${JAVA_HOME}/jre/lib/$${LIBARCH}/libjava.$(LIBRARY_SUFFIX)\""; \
-	echo "  fi"; \
-	echo "  if [ ! -f \$${JVM_LIB} ] || [ -z \"\`file \$${JVM_LIB} | grep \$${GAMMA_ARCH}\`\" ]; then "; \
-	echo "    $(WRONG_DATA_MODE_MSG)"; \
-	echo "    exit 0"; \
-	echo "  fi"; \
-	echo "fi"; \
-	echo ""; \
-	echo "# Compile Queens program for test"; \
-	echo ""; \
-	echo "rm -f Queens.class"; \
-	echo "\$${JAVA_HOME}/bin/javac -d . $(GAMMADIR)/make/test/Queens.java"; \
-	echo ""; \
-	echo "# Set library path solely for gamma launcher test run"; \
-	echo ""; \
-	echo "LD_LIBRARY_PATH=.:$${LD_LIBRARY_PATH:+$$LD_LIBRARY_PATH:}\$${JAVA_HOME}/jre/lib/${LIBARCH}/native_threads:\$${JAVA_HOME}/jre/lib/${LIBARCH}:${GCC_LIB}"; \
-	echo "export LD_LIBRARY_PATH"; \
-	echo "unset LD_LIBRARY_PATH_32"; \
-	echo "unset LD_LIBRARY_PATH_64"; \
-	echo ""; \
-	echo "if [ \"$(OS_VENDOR)\" = \"Darwin\" ]; then "; \
-	echo "  DYLD_LIBRARY_PATH=.:$${DYLD_LIBRARY_PATH:+$$DYLD_LIBRARY_PATH:}\$${JAVA_HOME}/jre/lib/native_threads:\$${JAVA_HOME}/jre/lib:$${DYLD_LIBRARY_PATH:+$$DYLD_LIBRARY_PATH:}\$${JAVA_HOME}/jre/lib/${LIBARCH}/native_threads:\$${JAVA_HOME}/jre/lib/${LIBARCH}:${GCC_LIB}"; \
-	echo "  export DYLD_LIBRARY_PATH"; \
-	echo "fi"; \
-	echo ""; \
-	echo "# Use the gamma launcher and JAVA_HOME to run the test"; \
-	echo ""; \
-	echo "./\$${GAMMA_PROG} $(TESTFLAGS) Queens < /dev/null"; \
-	) > $@
-	$(QUIETLY) chmod +x $@
 
 FORCE:
 
