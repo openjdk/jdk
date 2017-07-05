@@ -37,7 +37,7 @@ import sun.java2d.SunGraphics2D;
  */
 public final class Test8004859 {
 
-    private static Shape[] clips = {new Rectangle(0, 0, 1, 1), new Rectangle(
+    private static Shape[] clips = {new Rectangle(0, 0, -1, -1), new Rectangle(
             100, 100, -100, -100)};
 
     private static boolean status = true;

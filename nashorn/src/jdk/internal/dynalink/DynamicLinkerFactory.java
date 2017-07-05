@@ -84,6 +84,8 @@
 package jdk.internal.dynalink;
 
 import java.lang.invoke.MutableCallSite;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -97,6 +99,7 @@ import jdk.internal.dynalink.linker.GuardingTypeConverterFactory;
 import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.internal.dynalink.support.AutoDiscovery;
 import jdk.internal.dynalink.support.BottomGuardingDynamicLinker;
+import jdk.internal.dynalink.support.ClassLoaderGetterContextProvider;
 import jdk.internal.dynalink.support.CompositeGuardingDynamicLinker;
 import jdk.internal.dynalink.support.CompositeTypeBasedGuardingDynamicLinker;
 import jdk.internal.dynalink.support.LinkerServicesImpl;
@@ -117,7 +120,9 @@ public class DynamicLinkerFactory {
      */
     public static final int DEFAULT_UNSTABLE_RELINK_THRESHOLD = 8;
 
-    private ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+    private boolean classLoaderExplicitlySet = false;
+    private ClassLoader classLoader;
+
     private List<? extends GuardingDynamicLinker> prioritizedLinkers;
     private List<? extends GuardingDynamicLinker> fallbackLinkers;
     private int runtimeContextArgCount = 0;
@@ -126,12 +131,13 @@ public class DynamicLinkerFactory {
 
     /**
      * Sets the class loader for automatic discovery of available linkers. If not set explicitly, then the thread
-     * context class loader at the time of the constructor invocation will be used.
+     * context class loader at the time of {@link #createLinker()} invocation will be used.
      *
      * @param classLoader the class loader used for the autodiscovery of available linkers.
      */
     public void setClassLoader(ClassLoader classLoader) {
         this.classLoader = classLoader;
+        classLoaderExplicitlySet = true;
     }
 
     /**
@@ -260,7 +266,8 @@ public class DynamicLinkerFactory {
         addClasses(knownLinkerClasses, prioritizedLinkers);
         addClasses(knownLinkerClasses, fallbackLinkers);
 
-        final List<GuardingDynamicLinker> discovered = AutoDiscovery.loadLinkers(classLoader);
+        final ClassLoader effectiveClassLoader = classLoaderExplicitlySet ? classLoader : getThreadContextClassLoader();
+        final List<GuardingDynamicLinker> discovered = AutoDiscovery.loadLinkers(effectiveClassLoader);
         // Now, concatenate ...
         final List<GuardingDynamicLinker> linkers =
                 new ArrayList<>(prioritizedLinkers.size() + discovered.size()
@@ -301,6 +308,15 @@ public class DynamicLinkerFactory {
 
         return new DynamicLinker(new LinkerServicesImpl(new TypeConverterFactory(typeConverters), composite),
                 runtimeContextArgCount, syncOnRelink, unstableRelinkThreshold);
+    }
+
+    private static ClassLoader getThreadContextClassLoader() {
+        return AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {
+            @Override
+            public ClassLoader run() {
+                return Thread.currentThread().getContextClassLoader();
+            }
+        }, ClassLoaderGetterContextProvider.GET_CLASS_LOADER_CONTEXT);
     }
 
     private static void addClasses(Set<Class<? extends GuardingDynamicLinker>> knownLinkerClasses,

@@ -45,9 +45,11 @@ public abstract class ObjectCreator {
     /** Code generator */
     protected final CodeGenerator codegen;
 
-    private   final boolean       isScope;
-    private   final boolean       hasArguments;
-    protected       PropertyMap   propertyMap;
+    /** Property map */
+    protected PropertyMap   propertyMap;
+
+    private final boolean       isScope;
+    private final boolean       hasArguments;
 
     /**
      * Constructor

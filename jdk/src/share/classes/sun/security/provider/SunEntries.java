@@ -242,7 +242,7 @@ final class SunEntries {
          * Configuration
          */
         map.put("Configuration.JavaLoginConfig",
-                        "sun.security.provider.ConfigSpiFile");
+                        "sun.security.provider.ConfigFile$Spi");
 
         /*
          * CertPathBuilder

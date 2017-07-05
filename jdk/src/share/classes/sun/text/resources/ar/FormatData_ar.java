@@ -264,6 +264,10 @@ public class FormatData_ar extends ParallelListResourceBundle {
                 }
             },
             { "DateTimePatternChars", "GanjkHmsSEDFwWxhKzZ" },
+
+            // Workaround for islamic-umalqura name support (JDK-8015986)
+            { "calendarname.islamic-umalqura",
+              "\u0644\u062a\u0642\u0648\u064a\u0645 \u0627\u0644\u0647\u062c\u0631\u064a\u060c \u0623\u0645 \u0627\u0644\u0642\u0631\u0649" },
         };
     }
 }

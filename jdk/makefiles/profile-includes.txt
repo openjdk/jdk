@@ -102,6 +102,7 @@ PROFILE_1_JRE_JAR_FILES := \
     security/US_export_policy.jar \
     security/local_policy.jar
 
+
 PROFILE_2_JRE_BIN_FILES := \
     rmid$(EXE_SUFFIX) \
     rmiregistry$(EXE_SUFFIX)
@@ -140,7 +141,6 @@ PROFILE_3_JRE_LIB_FILES := \
 PROFILE_3_JRE_OTHER_FILES := 
 
 PROFILE_3_JRE_JAR_FILES := \
-    jfr.jar \
     management-agent.jar
 
 
@@ -253,6 +253,6 @@ FULL_JRE_JAR_FILES := \
     ext/cldrdata.jar \
     ext/dnsns.jar \
     ext/nashorn.jar \
-    ext/zipfs.jar
-
+    ext/zipfs.jar \
+    jfr.jar
 

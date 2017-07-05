@@ -25,11 +25,47 @@
 #include "precompiled.hpp"
 #include "memory/metaspaceCounters.hpp"
 #include "memory/resourceArea.hpp"
+#include "runtime/globals.hpp"
+#include "runtime/perfData.hpp"
 #include "utilities/exceptions.hpp"
 
-MetaspaceCounters* MetaspaceCounters::_metaspace_counters = NULL;
+class MetaspacePerfCounters: public CHeapObj<mtInternal> {
+  friend class VMStructs;
+  PerfVariable*      _capacity;
+  PerfVariable*      _used;
+  PerfVariable*      _max_capacity;
 
-size_t MetaspaceCounters::calc_total_capacity() {
+  PerfVariable* create_variable(const char *ns, const char *name, size_t value, TRAPS) {
+    const char *path = PerfDataManager::counter_name(ns, name);
+    return PerfDataManager::create_variable(SUN_GC, path, PerfData::U_Bytes, value, THREAD);
+  }
+
+  void create_constant(const char *ns, const char *name, size_t value, TRAPS) {
+    const char *path = PerfDataManager::counter_name(ns, name);
+    PerfDataManager::create_constant(SUN_GC, path, PerfData::U_Bytes, value, THREAD);
+  }
+
+ public:
+  MetaspacePerfCounters(const char* ns, size_t min_capacity, size_t curr_capacity, size_t max_capacity, size_t used) {
+    EXCEPTION_MARK;
+    ResourceMark rm;
+
+    create_constant(ns, "minCapacity", min_capacity, THREAD);
+    _capacity = create_variable(ns, "capacity", curr_capacity, THREAD);
+    _max_capacity = create_variable(ns, "maxCapacity", max_capacity, THREAD);
+    _used = create_variable(ns, "used", used, THREAD);
+  }
+
+  void update(size_t capacity, size_t max_capacity, size_t used) {
+    _capacity->set_value(capacity);
+    _max_capacity->set_value(max_capacity);
+    _used->set_value(used);
+  }
+};
+
+MetaspacePerfCounters* MetaspaceCounters::_perf_counters = NULL;
+
+size_t MetaspaceCounters::calculate_capacity() {
   // The total capacity is the sum of
   //   1) capacity of Metachunks in use by all Metaspaces
   //   2) unused space at the end of each Metachunk
@@ -39,95 +75,65 @@ size_t MetaspaceCounters::calc_total_capacity() {
   return total_capacity;
 }
 
-MetaspaceCounters::MetaspaceCounters() :
-    _capacity(NULL),
-    _used(NULL),
-    _max_capacity(NULL) {
-  if (UsePerfData) {
-    size_t min_capacity = MetaspaceAux::min_chunk_size();
-    size_t max_capacity = MetaspaceAux::reserved_in_bytes();
-    size_t curr_capacity = calc_total_capacity();
-    size_t used = MetaspaceAux::allocated_used_bytes();
-
-    initialize(min_capacity, max_capacity, curr_capacity, used);
-  }
-}
-
-static PerfVariable* create_ms_variable(const char *ns,
-                                        const char *name,
-                                        size_t value,
-                                        TRAPS) {
-  const char *path = PerfDataManager::counter_name(ns, name);
-  PerfVariable *result =
-      PerfDataManager::create_variable(SUN_GC, path, PerfData::U_Bytes, value,
-                                       CHECK_NULL);
-  return result;
-}
-
-static void create_ms_constant(const char *ns,
-                               const char *name,
-                               size_t value,
-                               TRAPS) {
-  const char *path = PerfDataManager::counter_name(ns, name);
-  PerfDataManager::create_constant(SUN_GC, path, PerfData::U_Bytes, value, CHECK);
-}
-
-void MetaspaceCounters::initialize(size_t min_capacity,
-                                   size_t max_capacity,
-                                   size_t curr_capacity,
-                                   size_t used) {
-
-  if (UsePerfData) {
-    EXCEPTION_MARK;
-    ResourceMark rm;
-
-    const char *ms = "metaspace";
-
-    create_ms_constant(ms, "minCapacity", min_capacity, CHECK);
-    _max_capacity = create_ms_variable(ms, "maxCapacity", max_capacity, CHECK);
-    _capacity = create_ms_variable(ms, "capacity", curr_capacity, CHECK);
-    _used = create_ms_variable(ms, "used", used, CHECK);
-  }
-}
-
-void MetaspaceCounters::update_capacity() {
-  assert(UsePerfData, "Should not be called unless being used");
-  size_t total_capacity = calc_total_capacity();
-  _capacity->set_value(total_capacity);
-}
-
-void MetaspaceCounters::update_used() {
-  assert(UsePerfData, "Should not be called unless being used");
-  size_t used_in_bytes = MetaspaceAux::allocated_used_bytes();
-  _used->set_value(used_in_bytes);
-}
-
-void MetaspaceCounters::update_max_capacity() {
-  assert(UsePerfData, "Should not be called unless being used");
-  assert(_max_capacity != NULL, "Should be initialized");
-  size_t reserved_in_bytes = MetaspaceAux::reserved_in_bytes();
-  _max_capacity->set_value(reserved_in_bytes);
-}
-
-void MetaspaceCounters::update_all() {
-  if (UsePerfData) {
-    update_used();
-    update_capacity();
-    update_max_capacity();
-  }
-}
-
 void MetaspaceCounters::initialize_performance_counters() {
   if (UsePerfData) {
-    assert(_metaspace_counters == NULL, "Should only be initialized once");
-    _metaspace_counters = new MetaspaceCounters();
+    assert(_perf_counters == NULL, "Should only be initialized once");
+
+    size_t min_capacity = MetaspaceAux::min_chunk_size();
+    size_t capacity = calculate_capacity();
+    size_t max_capacity = MetaspaceAux::reserved_in_bytes();
+    size_t used = MetaspaceAux::allocated_used_bytes();
+
+    _perf_counters = new MetaspacePerfCounters("metaspace", min_capacity, capacity, max_capacity, used);
   }
 }
 
 void MetaspaceCounters::update_performance_counters() {
   if (UsePerfData) {
-    assert(_metaspace_counters != NULL, "Should be initialized");
-    _metaspace_counters->update_all();
+    assert(_perf_counters != NULL, "Should be initialized");
+
+    size_t capacity = calculate_capacity();
+    size_t max_capacity = MetaspaceAux::reserved_in_bytes();
+    size_t used = MetaspaceAux::allocated_used_bytes();
+
+    _perf_counters->update(capacity, max_capacity, used);
   }
 }
 
+MetaspacePerfCounters* CompressedClassSpaceCounters::_perf_counters = NULL;
+
+size_t CompressedClassSpaceCounters::calculate_capacity() {
+    return MetaspaceAux::allocated_capacity_bytes(_class_type) +
+           MetaspaceAux::free_bytes(_class_type) +
+           MetaspaceAux::free_chunks_total_in_bytes(_class_type);
+}
+
+void CompressedClassSpaceCounters::update_performance_counters() {
+  if (UsePerfData && UseCompressedKlassPointers) {
+    assert(_perf_counters != NULL, "Should be initialized");
+
+    size_t capacity = calculate_capacity();
+    size_t max_capacity = MetaspaceAux::reserved_in_bytes(_class_type);
+    size_t used = MetaspaceAux::allocated_used_bytes(_class_type);
+
+    _perf_counters->update(capacity, max_capacity, used);
+  }
+}
+
+void CompressedClassSpaceCounters::initialize_performance_counters() {
+  if (UsePerfData) {
+    assert(_perf_counters == NULL, "Should only be initialized once");
+    const char* ns = "compressedclassspace";
+
+    if (UseCompressedKlassPointers) {
+      size_t min_capacity = MetaspaceAux::min_chunk_size();
+      size_t capacity = calculate_capacity();
+      size_t max_capacity = MetaspaceAux::reserved_in_bytes(_class_type);
+      size_t used = MetaspaceAux::allocated_used_bytes(_class_type);
+
+      _perf_counters = new MetaspacePerfCounters(ns, min_capacity, capacity, max_capacity, used);
+    } else {
+      _perf_counters = new MetaspacePerfCounters(ns, 0, 0, 0, 0);
+    }
+  }
+}

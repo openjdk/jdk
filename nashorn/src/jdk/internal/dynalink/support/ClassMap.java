@@ -85,6 +85,8 @@ package jdk.internal.dynalink.support;
 
 import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
@@ -122,21 +124,12 @@ public abstract class ClassMap<T> {
     protected abstract T computeValue(Class<?> clazz);
 
     /**
-     * Returns the class loader that governs the strong referenceability of this class map.
-     *
-     * @return the class loader that governs the strong referenceability of this class map.
-     */
-    public ClassLoader getClassLoader() {
-        return classLoader;
-    }
-
-    /**
      * Returns the value associated with the class
      *
      * @param clazz the class
      * @return the value associated with the class
      */
-    public T get(Class<?> clazz) {
+    public T get(final Class<?> clazz) {
         // Check in fastest first - objects we're allowed to strongly reference
         final T v = map.get(clazz);
         if(v != null) {
@@ -156,8 +149,16 @@ public abstract class ClassMap<T> {
         // Not found in either place; create a new value
         final T newV = computeValue(clazz);
         assert newV != null;
+
+        final ClassLoader clazzLoader = AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {
+            @Override
+            public ClassLoader run() {
+                return clazz.getClassLoader();
+            }
+        }, ClassLoaderGetterContextProvider.GET_CLASS_LOADER_CONTEXT);
+
         // If allowed to strongly reference, put it in the fast map
-        if(Guards.canReferenceDirectly(classLoader, clazz.getClassLoader())) {
+        if(Guards.canReferenceDirectly(classLoader, clazzLoader)) {
             final T oldV = map.putIfAbsent(clazz, newV);
             return oldV != null ? oldV : newV;
         }

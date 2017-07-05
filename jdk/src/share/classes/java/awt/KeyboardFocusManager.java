@@ -2426,7 +2426,8 @@ public abstract class KeyboardFocusManager
                 focusLog.finest("Request {0}", String.valueOf(hwFocusRequest));
             }
             if (hwFocusRequest == null &&
-                heavyweight == nativeFocusOwner)
+                heavyweight == nativeFocusOwner &&
+                heavyweight.getContainingWindow() == nativeFocusedWindow)
             {
                 if (descendant == currentFocusOwner) {
                     // Redundant request.

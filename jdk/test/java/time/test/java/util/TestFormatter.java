@@ -22,16 +22,27 @@
  */
 package test.java.util;
 
+import static org.testng.Assert.assertEquals;
+
 import java.time.Instant;
+import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.ZonedDateTime;
 import java.time.ZoneId;
+
+import java.time.chrono.ChronoLocalDate;
+import java.time.chrono.ChronoLocalDateTime;
+import java.time.chrono.ChronoZonedDateTime;
+import java.time.chrono.Chronology;
+
 import java.time.temporal.ChronoField;
+import java.time.temporal.TemporalQuery;
+import java.time.temporal.TemporalAccessor;
 
 import java.util.*;
 
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
-import static org.testng.Assert.assertEquals;
 
 /* @test
  * @summary Unit test for j.u.Formatter threeten date/time support
@@ -57,18 +68,32 @@ public class TestFormatter {
 
     private int total = 0;
     private int failure = 0;
-    private boolean verbose = true;
+    private boolean verbose = false;
 
-    @Test
-    public void test () {
+    @DataProvider(name = "calendarsByLocale")
+    Object[][] data_calendars() {
+        return new Object[][] {
+            {"en_US"},
+            {"th_TH"},
+            {"ja-JP-u-ca-japanese"},
+        };
+    }
 
+    @Test(dataProvider="calendarsByLocale")
+    public void test (String calendarLocale) {
+        failure = 0;
         int N = 12;
         //locales = Locale.getAvailableLocales();
         Locale[] locales = new Locale[] {
            Locale.ENGLISH, Locale.FRENCH, Locale.JAPANESE, Locale.CHINESE};
         Random r = new Random();
-        ZonedDateTime  zdt0 = ZonedDateTime.now();
-        ZonedDateTime[] zdts = new ZonedDateTime[] {
+
+        Locale calLocale = Locale.forLanguageTag(calendarLocale);
+        Chronology chrono = Chronology.ofLocale(calLocale);
+        ChronoLocalDate now = chrono.dateNow();
+        ChronoLocalDateTime<?> ldt0 = now.atTime(LocalTime.now());
+        ChronoZonedDateTime<?>  zdt0 = ldt0.atZone(ZoneId.systemDefault());
+        ChronoZonedDateTime<?>[] zdts = new ChronoZonedDateTime<?>[] {
             zdt0,
             zdt0.withZoneSameLocal(ZoneId.of("UTC")),
             zdt0.withZoneSameLocal(ZoneId.of("GMT")),
@@ -76,11 +101,11 @@ public class TestFormatter {
         };
 
         while (N-- > 0) {
-            for (ZonedDateTime zdt : zdts) {
-                zdt = zdt.withDayOfYear(r.nextInt(365) + 1)
+            for (ChronoZonedDateTime<?> zdt : zdts) {
+                zdt = zdt.with(ChronoField.DAY_OF_YEAR, (r.nextInt(365) + 1))
                          .with(ChronoField.SECOND_OF_DAY, r.nextInt(86400));
                 Instant instant = zdt.toInstant();
-                Calendar cal = Calendar.getInstance();
+                Calendar cal = Calendar.getInstance(calLocale);
                 cal.setTimeInMillis(instant.toEpochMilli());
                 cal.setTimeZone(TimeZone.getTimeZone(zdt.getZone()));
                 for (Locale locale : locales) {
@@ -106,8 +131,19 @@ public class TestFormatter {
     }
 
     private String getClassName(Object o) {
-        Class c = o.getClass();
-        return c.getName().substring(c.getPackage().getName().length() + 1);
+        Class<?> c = o.getClass();
+        String clname = c.getName().substring(c.getPackage().getName().length() + 1);
+        if (o instanceof TemporalAccessor) {
+            Chronology chrono = ((TemporalAccessor)o).query(TemporalQuery.chronology());
+            if (chrono != null) {
+                clname = clname + "(" + chrono.getId() + ")";
+            }
+        }
+        if (o instanceof Calendar) {
+            String type = ((Calendar)o).getCalendarType();
+            clname = clname + "(" + type + ")";
+        }
+        return clname;
     }
 
     private String test(String fmtStr, Locale locale,
@@ -115,12 +151,12 @@ public class TestFormatter {
         String out = new Formatter(
             new StringBuilder(), locale).format(fmtStr, dt).out().toString();
         if (verbose) {
-            System.out.printf("%-18s  : %s%n", getClassName(dt), out);
+            System.out.printf("%-24s  : %s%n", getClassName(dt), out);
         }
         if (expected != null && !out.equals(expected)) {
-            System.out.printf("=====>%-18s  : %s  [ FAILED expected: %s ]%n",
+            System.out.printf("%-24s  actual: %s%n                FAILED; expected: %s%n",
                               getClassName(dt), out, expected);
-            new RuntimeException().printStackTrace();
+            new RuntimeException().printStackTrace(System.out);
             failure++;
         }
         total++;
@@ -135,24 +171,29 @@ public class TestFormatter {
     }
 
     private void testDate(String fmtStr, Locale locale,
-                                 ZonedDateTime zdt, Calendar cal) {
+                                 ChronoZonedDateTime<?> zdt, Calendar cal) {
         printFmtStr(locale, fmtStr);
         String expected = test(fmtStr, locale, null, cal);
         test(fmtStr, locale, expected, zdt);
-        test(fmtStr, locale, expected, zdt.toOffsetDateTime());
         test(fmtStr, locale, expected, zdt.toLocalDateTime());
         test(fmtStr, locale, expected, zdt.toLocalDate());
+        if (zdt instanceof ZonedDateTime) {
+            test(fmtStr, locale, expected, ((ZonedDateTime)zdt).toOffsetDateTime());
+        }
     }
 
     private void testTime(String fmtStr, Locale locale,
-                                 ZonedDateTime zdt, Calendar cal) {
+                                 ChronoZonedDateTime<?> zdt, Calendar cal) {
         printFmtStr(locale, fmtStr);
         String expected = test(fmtStr, locale, null, cal);
         test(fmtStr, locale, expected, zdt);
-        test(fmtStr, locale, expected, zdt.toOffsetDateTime());
         test(fmtStr, locale, expected, zdt.toLocalDateTime());
-        test(fmtStr, locale, expected, zdt.toOffsetDateTime().toOffsetTime());
         test(fmtStr, locale, expected, zdt.toLocalTime());
+        if (zdt instanceof ZonedDateTime) {
+            OffsetDateTime odt = ((ZonedDateTime)zdt).toOffsetDateTime();
+            test(fmtStr, locale, expected, odt);
+            test(fmtStr, locale, expected, odt.toOffsetTime());
+        }
     }
 
     private String toZoneIdStr(String expected) {
@@ -164,7 +205,7 @@ public class TestFormatter {
                        .replaceAll("GMT|UTC|UT", "Z");
     }
 
-    private void testZoneId(Locale locale, ZonedDateTime zdt, Calendar cal) {
+    private void testZoneId(Locale locale, ChronoZonedDateTime<?> zdt, Calendar cal) {
         String fmtStr = "z:[%tz] z:[%1$Tz] Z:[%1$tZ] Z:[%1$TZ]";
         printFmtStr(locale, fmtStr);
         String expected = toZoneIdStr(test(fmtStr, locale, null, cal));
@@ -174,8 +215,11 @@ public class TestFormatter {
         cal0.setTimeInMillis(zdt.toInstant().toEpochMilli());
         cal0.setTimeZone(TimeZone.getTimeZone("GMT" + zdt.getOffset().getId()));
         expected = toZoneOffsetStr(test(fmtStr, locale, null, cal0));
-        test(fmtStr, locale, expected, zdt.toOffsetDateTime());
-        test(fmtStr, locale, expected, zdt.toOffsetDateTime().toOffsetTime());
+        if (zdt instanceof ZonedDateTime) {
+            OffsetDateTime odt = ((ZonedDateTime)zdt).toOffsetDateTime();
+            test(fmtStr, locale, expected, odt);
+            test(fmtStr, locale, expected, odt.toOffsetTime());
+        }
 
         // datetime + zid
         fmtStr = "c:[%tc] c:[%1$Tc]";
@@ -185,12 +229,15 @@ public class TestFormatter {
     }
 
     private void testInstant(Locale locale, Instant instant,
-                             ZonedDateTime zdt, Calendar cal) {
+                             ChronoZonedDateTime<?> zdt, Calendar cal) {
         String fmtStr = "s:[%ts] s:[%1$Ts] Q:[%1$tQ] Q:[%1$TQ]";
         printFmtStr(locale, fmtStr);
         String expected = test(fmtStr, locale, null, cal);
         test(fmtStr, locale, expected, instant);
         test(fmtStr, locale, expected, zdt);
-        test(fmtStr, locale, expected, zdt.toOffsetDateTime());
+        if (zdt instanceof ZonedDateTime) {
+            OffsetDateTime odt = ((ZonedDateTime)zdt).toOffsetDateTime();
+            test(fmtStr, locale, expected, odt);
+        }
     }
 }

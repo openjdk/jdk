@@ -81,14 +81,23 @@ public:
   G1RemSet(G1CollectedHeap* g1, CardTableModRefBS* ct_bs);
   ~G1RemSet();
 
-  // Invoke "blk->do_oop" on all pointers into the CS in objects in regions
-  // outside the CS (having invoked "blk->set_region" to set the "from"
-  // region correctly beforehand.) The "worker_i" param is for the
-  // parallel case where the number of the worker thread calling this
-  // function can be helpful in partitioning the work to be done. It
-  // should be the same as the "i" passed to the calling thread's
-  // work(i) function. In the sequential case this param will be ingored.
-  void oops_into_collection_set_do(OopsInHeapRegionClosure* blk, int worker_i);
+  // Invoke "blk->do_oop" on all pointers into the collection set
+  // from objects in regions outside the collection set (having
+  // invoked "blk->set_region" to set the "from" region correctly
+  // beforehand.)
+  //
+  // Invoke code_root_cl->do_code_blob on the unmarked nmethods
+  // on the strong code roots list for each region in the
+  // collection set.
+  //
+  // The "worker_i" param is for the parallel case where the id
+  // of the worker thread calling this function can be helpful in
+  // partitioning the work to be done. It should be the same as
+  // the "i" passed to the calling thread's work(i) function.
+  // In the sequential case this param will be ignored.
+  void oops_into_collection_set_do(OopsInHeapRegionClosure* blk,
+                                   CodeBlobToOopClosure* code_root_cl,
+                                   int worker_i);
 
   // Prepare for and cleanup after an oops_into_collection_set_do
   // call.  Must call each of these once before and after (in sequential
@@ -98,7 +107,10 @@ public:
   void prepare_for_oops_into_collection_set_do();
   void cleanup_after_oops_into_collection_set_do();
 
-  void scanRS(OopsInHeapRegionClosure* oc, int worker_i);
+  void scanRS(OopsInHeapRegionClosure* oc,
+              CodeBlobToOopClosure* code_root_cl,
+              int worker_i);
+
   void updateRS(DirtyCardQueue* into_cset_dcq, int worker_i);
 
   CardTableModRefBS* ct_bs() { return _ct_bs; }

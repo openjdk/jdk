@@ -27,6 +27,7 @@ package jdk.nashorn.internal.runtime;
 
 import java.lang.invoke.MethodHandle;
 import java.util.Iterator;
+import java.util.concurrent.Callable;
 import jdk.nashorn.internal.ir.LiteralNode;
 import jdk.nashorn.internal.ir.Node;
 import jdk.nashorn.internal.ir.ObjectNode;
@@ -42,8 +43,19 @@ import jdk.nashorn.internal.runtime.linker.Bootstrap;
  */
 public final class JSONFunctions {
     private JSONFunctions() {}
-    private static final MethodHandle REVIVER_INVOKER = Bootstrap.createDynamicInvoker("dyn:call", Object.class,
-            ScriptFunction.class, ScriptObject.class, String.class, Object.class);
+
+    private static final Object REVIVER_INVOKER = new Object();
+
+    private static MethodHandle getREVIVER_INVOKER() {
+        return ((GlobalObject)Context.getGlobal()).getDynamicInvoker(REVIVER_INVOKER,
+                new Callable<MethodHandle>() {
+                    @Override
+                    public MethodHandle call() {
+                        return Bootstrap.createDynamicInvoker("dyn:call", Object.class,
+                            ScriptFunction.class, ScriptObject.class, String.class, Object.class);
+                    }
+                });
+    }
 
     /**
      * Returns JSON-compatible quoted version of the given string.
@@ -117,7 +129,7 @@ public final class JSONFunctions {
 
         try {
              // Object.class, ScriptFunction.class, ScriptObject.class, String.class, Object.class);
-             return REVIVER_INVOKER.invokeExact(reviver, holder, JSType.toString(name), val);
+             return getREVIVER_INVOKER().invokeExact(reviver, holder, JSType.toString(name), val);
         } catch(Error|RuntimeException t) {
             throw t;
         } catch(final Throwable t) {

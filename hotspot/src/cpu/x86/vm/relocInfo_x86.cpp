@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,9 +55,9 @@ void Relocation::pd_set_data_value(address x, intptr_t o, bool verify_only) {
     }
   } else {
       if (verify_only) {
-        assert(*(uint32_t*) disp == oopDesc::encode_klass((Klass*)x), "instructions must match");
+        assert(*(uint32_t*) disp == Klass::encode_klass((Klass*)x), "instructions must match");
       } else {
-        *(int32_t*) disp = oopDesc::encode_klass((Klass*)x);
+        *(int32_t*) disp = Klass::encode_klass((Klass*)x);
       }
     }
   } else {
