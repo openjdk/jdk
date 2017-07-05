@@ -1835,7 +1835,7 @@ public final class NativeArray extends ScriptObject implements OptimisticBuiltin
             return false;
         }
 
-        private ContinuousArrayData getContinuousNonEmptyArrayData(final Object self) {
+        private static ContinuousArrayData getContinuousNonEmptyArrayData(final Object self) {
             final ContinuousArrayData data = getContinuousArrayData(self);
             if (data != null) {
                 return data.length() == 0 ? null : data;

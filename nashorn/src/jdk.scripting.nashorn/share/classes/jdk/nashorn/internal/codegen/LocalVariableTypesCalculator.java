@@ -464,21 +464,20 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
 
     @Override
     public boolean enterBreakNode(final BreakNode breakNode) {
-        if(!reachable) {
-            return false;
-        }
-
-        final BreakableNode target = lc.getBreakable(breakNode.getLabelName());
-        return splitAwareJumpToLabel(breakNode, target, target.getBreakLabel());
+        return enterJumpStatement(breakNode);
     }
 
     @Override
     public boolean enterContinueNode(final ContinueNode continueNode) {
+        return enterJumpStatement(continueNode);
+    }
+
+    private boolean enterJumpStatement(final JumpStatement jump) {
         if(!reachable) {
             return false;
         }
-        final LoopNode target = lc.getContinueTo(continueNode.getLabelName());
-        return splitAwareJumpToLabel(continueNode, target, target.getContinueLabel());
+        final BreakableNode target = jump.getTarget(lc);
+        return splitAwareJumpToLabel(jump, target, jump.getTargetLabel(target));
     }
 
     private boolean splitAwareJumpToLabel(final JumpStatement jumpStatement, final BreakableNode target, final Label targetLabel) {

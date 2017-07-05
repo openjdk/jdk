@@ -699,15 +699,15 @@ public final class XMLSignature extends SignatureElementProxy {
             //create a SignatureAlgorithms from the SignatureMethod inside
             //SignedInfo. This is used to validate the signature.
             SignatureAlgorithm sa = si.getSignatureAlgorithm();
-            if (log.isLoggable(java.util.logging.Level.FINE)) {
-                log.log(java.util.logging.Level.FINE, "signatureMethodURI = " + sa.getAlgorithmURI());
-                log.log(java.util.logging.Level.FINE, "jceSigAlgorithm    = " + sa.getJCEAlgorithmString());
-                log.log(java.util.logging.Level.FINE, "jceSigProvider     = " + sa.getJCEProviderName());
-                log.log(java.util.logging.Level.FINE, "PublicKey = " + pk);
-            }
             byte sigBytes[] = null;
             try {
                 sa.initVerify(pk);
+                if (log.isLoggable(java.util.logging.Level.FINE)) {
+                    log.log(java.util.logging.Level.FINE, "signatureMethodURI = " + sa.getAlgorithmURI());
+                    log.log(java.util.logging.Level.FINE, "jceSigAlgorithm    = " + sa.getJCEAlgorithmString());
+                    log.log(java.util.logging.Level.FINE, "jceSigProvider     = " + sa.getJCEProviderName());
+                    log.log(java.util.logging.Level.FINE, "PublicKey = " + pk);
+                }
 
                 // Get the canonicalized (normalized) SignedInfo
                 SignerOutputStream so = new SignerOutputStream(sa);

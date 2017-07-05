@@ -79,6 +79,9 @@ define_pd_global(bool, OptoScheduling,               false);
 
 define_pd_global(intx, InitialCodeCacheSize,         2048*K); // Integral multiple of CodeCacheExpansionSize
 define_pd_global(intx, ReservedCodeCacheSize,        256*M);
+define_pd_global(intx, NonProfiledCodeHeapSize,      125*M);
+define_pd_global(intx, ProfiledCodeHeapSize,         126*M);
+define_pd_global(intx, NonMethodCodeHeapSize,        5*M  );
 define_pd_global(intx, CodeCacheExpansionSize,       64*K);
 
 // Ergonomics related flags

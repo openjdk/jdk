@@ -211,6 +211,7 @@ JNICALL Java_sun_security_ec_ECDSASignature_signDigest
     digest_item.len = jDigestLength;
 
     ECPrivateKey privKey;
+    privKey.privateValue.data = NULL;
 
     // Initialize the ECParams struct
     ECParams *ecparams = NULL;
@@ -387,9 +388,14 @@ JNICALL Java_sun_security_ec_ECDHKeyAgreement_deriveKey
 {
     jbyteArray jSecret = NULL;
     ECParams *ecparams = NULL;
+    SECItem privateValue_item;
+    privateValue_item.data = NULL;
+    SECItem publicValue_item;
+    publicValue_item.data = NULL;
+    SECKEYECParams params_item;
+    params_item.data = NULL;
 
     // Extract private key value
-    SECItem privateValue_item;
     privateValue_item.len = env->GetArrayLength(privateKey);
     privateValue_item.data =
             (unsigned char *) env->GetByteArrayElements(privateKey, 0);
@@ -398,7 +404,6 @@ JNICALL Java_sun_security_ec_ECDHKeyAgreement_deriveKey
     }
 
     // Extract public key value
-    SECItem publicValue_item;
     publicValue_item.len = env->GetArrayLength(publicKey);
     publicValue_item.data =
         (unsigned char *) env->GetByteArrayElements(publicKey, 0);
@@ -407,7 +412,6 @@ JNICALL Java_sun_security_ec_ECDHKeyAgreement_deriveKey
     }
 
     // Initialize the ECParams struct
-    SECKEYECParams params_item;
     params_item.len = env->GetArrayLength(encodedParams);
     params_item.data =
         (unsigned char *) env->GetByteArrayElements(encodedParams, 0);

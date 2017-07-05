@@ -63,7 +63,7 @@ void* VtableStub::operator new(size_t size, int code_size) throw() {
    // If changing the name, update the other file accordingly.
     BufferBlob* blob = BufferBlob::create("vtable chunks", bytes);
     if (blob == NULL) {
-      CompileBroker::handle_full_code_cache();
+      CompileBroker::handle_full_code_cache(CodeBlobType::NonMethod);
       return NULL;
     }
     _chunk = blob->content_begin();

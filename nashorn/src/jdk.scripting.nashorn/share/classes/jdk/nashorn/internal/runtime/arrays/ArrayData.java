@@ -536,7 +536,7 @@ public abstract class ArrayData {
         final Class<?>  widest  = widestType(items);
 
         ArrayData newData = convert(widest);
-        long      pos     = newData.length();
+        long      pos     = newData.length;
         for (final Object item : items) {
             newData = newData.ensure(pos); //avoid sparse array
             newData.set((int)pos++, item, strict);

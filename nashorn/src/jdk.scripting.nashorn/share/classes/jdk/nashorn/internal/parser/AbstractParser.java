@@ -30,7 +30,6 @@ import static jdk.nashorn.internal.parser.TokenType.DIRECTIVE_COMMENT;
 import static jdk.nashorn.internal.parser.TokenType.EOF;
 import static jdk.nashorn.internal.parser.TokenType.EOL;
 import static jdk.nashorn.internal.parser.TokenType.IDENT;
-
 import java.util.HashMap;
 import java.util.Map;
 import jdk.nashorn.internal.ir.IdentNode;

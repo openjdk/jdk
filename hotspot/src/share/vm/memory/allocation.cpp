@@ -693,14 +693,16 @@ void* Arena::internal_malloc_4(size_t x) {
 // compilers and they should be upwards compatible with C++11/14. Therefore
 // PLEASE BE CAREFUL if you change the signature of the following operators!
 
+static void * zero = (void *) 0;
+
 void* operator new(size_t size) /* throw(std::bad_alloc) */ {
   fatal("Should not call global operator new");
-  return 0;
+  return zero;
 }
 
 void* operator new [](size_t size) /* throw(std::bad_alloc) */ {
   fatal("Should not call global operator new[]");
-  return 0;
+  return zero;
 }
 
 void* operator new(size_t size, const std::nothrow_t&  nothrow_constant) throw() {
