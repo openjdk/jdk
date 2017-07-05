@@ -1,16 +1,10 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
- */
-// TR9401CatalogReader.java - Read OASIS Catalog files
-
-/*
- * Copyright 2001-2004 The Apache Software Foundation or its licensors,
- * as applicable.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -23,13 +17,14 @@
 
 package com.sun.org.apache.xml.internal.resolver.readers;
 
-import java.io.InputStream;
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.util.Vector;
 import com.sun.org.apache.xml.internal.resolver.Catalog;
 import com.sun.org.apache.xml.internal.resolver.CatalogEntry;
 import com.sun.org.apache.xml.internal.resolver.CatalogException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.util.Locale;
+import java.util.Vector;
 
 /**
  * Parses OASIS Open Catalog files.
@@ -97,7 +92,7 @@ public class TR9401CatalogReader extends TextCatalogReader {
         if (caseSensitive) {
           entryToken = token;
         } else {
-          entryToken = token.toUpperCase();
+          entryToken = token.toUpperCase(Locale.ENGLISH);
         }
 
         if (entryToken.equals("DELEGATE")) {

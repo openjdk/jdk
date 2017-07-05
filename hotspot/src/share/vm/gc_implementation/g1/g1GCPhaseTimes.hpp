@@ -129,7 +129,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
   double _cur_collection_par_time_ms;
   double _cur_collection_code_root_fixup_time_ms;
-  double _cur_strong_code_root_migration_time_ms;
   double _cur_strong_code_root_purge_time_ms;
 
   double _cur_evac_fail_recalc_used;
@@ -231,10 +230,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
   void record_code_root_fixup_time(double ms) {
     _cur_collection_code_root_fixup_time_ms = ms;
-  }
-
-  void record_strong_code_root_migration_time(double ms) {
-    _cur_strong_code_root_migration_time_ms = ms;
   }
 
   void record_strong_code_root_purge_time(double ms) {

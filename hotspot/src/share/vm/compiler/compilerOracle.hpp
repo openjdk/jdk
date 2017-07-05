@@ -64,6 +64,11 @@ class CompilerOracle : AllStatic {
   // Check to see if this method has option set for it
   static bool has_option_string(methodHandle method, const char * option);
 
+  // Check if method has option and value set. If yes, overwrite value and return true,
+  // otherwise leave value unchanged and return false.
+  template<typename T>
+  static bool has_option_value(methodHandle method, const char* option, T& value);
+
   // Reads from string instead of file
   static void parse_from_string(const char* command_string, void (*parser)(char*));
 

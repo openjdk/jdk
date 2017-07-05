@@ -217,6 +217,8 @@ public:
         _update_rset_cl->set_region(hr);
         hr->object_iterate(&rspc);
 
+        hr->rem_set()->clean_strong_code_roots(hr);
+
         hr->note_self_forwarding_removal_end(during_initial_mark,
                                              during_conc_mark,
                                              rspc.marked_bytes());

@@ -35,7 +35,7 @@ class UnsafeQualifiedStaticCharacterFieldAccessorImpl
     }
 
     public Object get(Object obj) throws IllegalArgumentException {
-        return new Character(getChar(obj));
+        return Character.valueOf(getChar(obj));
     }
 
     public boolean getBoolean(Object obj) throws IllegalArgumentException {

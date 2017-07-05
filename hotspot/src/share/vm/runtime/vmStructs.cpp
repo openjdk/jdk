@@ -274,7 +274,6 @@ typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
   volatile_nonstatic_field(ArrayKlass,         _higher_dimension,                             Klass*)                                \
   volatile_nonstatic_field(ArrayKlass,         _lower_dimension,                              Klass*)                                \
   nonstatic_field(ArrayKlass,                  _vtable_len,                                   int)                                   \
-  nonstatic_field(ArrayKlass,                  _component_mirror,                             oop)                                   \
   nonstatic_field(CompiledICHolder,     _holder_method,                                Method*)                               \
   nonstatic_field(CompiledICHolder,     _holder_klass,                                 Klass*)                                \
   nonstatic_field(ConstantPool,         _tags,                                         Array<u1>*)                            \
@@ -811,6 +810,7 @@ typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
      static_field(StubRoutines,                _cipherBlockChaining_decryptAESCrypt,          address)                               \
      static_field(StubRoutines,                _updateBytesCRC32,                             address)                               \
      static_field(StubRoutines,                _crc_table_adr,                                address)                               \
+     static_field(StubRoutines,                _multiplyToLen,                                address)                               \
                                                                                                                                      \
   /*****************/                                                                                                                \
   /* SharedRuntime */                                                                                                                \

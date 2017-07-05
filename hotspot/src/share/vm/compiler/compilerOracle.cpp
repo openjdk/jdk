@@ -168,48 +168,134 @@ bool MethodMatcher::match(Symbol* candidate, Symbol* match, Mode match_mode) {
   }
 }
 
+enum OptionType {
+  IntxType,
+  UintxType,
+  BoolType,
+  CcstrType,
+  UnknownType
+};
 
-class MethodOptionMatcher: public MethodMatcher {
-  const char * option;
- public:
-  MethodOptionMatcher(Symbol* class_name, Mode class_mode,
-                             Symbol* method_name, Mode method_mode,
-                             Symbol* signature, const char * opt, MethodMatcher* next):
-    MethodMatcher(class_name, class_mode, method_name, method_mode, signature, next) {
-    option = os::strdup_check_oom(opt);
+/* Methods to map real type names to OptionType */
+template<typename T>
+static OptionType get_type_for() {
+  return UnknownType;
+};
+
+template<> OptionType get_type_for<intx>() {
+  return IntxType;
+}
+
+template<> OptionType get_type_for<uintx>() {
+  return UintxType;
+}
+
+template<> OptionType get_type_for<bool>() {
+  return BoolType;
+}
+
+template<> OptionType get_type_for<ccstr>() {
+  return CcstrType;
+}
+
+template<typename T>
+static const T copy_value(const T value) {
+  return value;
+}
+
+template<> const ccstr copy_value<ccstr>(const ccstr value) {
+  return (const ccstr)os::strdup_check_oom(value);
+}
+
+template <typename T>
+class TypedMethodOptionMatcher : public MethodMatcher {
+  const char* _option;
+  OptionType _type;
+  const T _value;
+
+public:
+  TypedMethodOptionMatcher(Symbol* class_name, Mode class_mode,
+                           Symbol* method_name, Mode method_mode,
+                           Symbol* signature, const char* opt,
+                           const T value,  MethodMatcher* next) :
+    MethodMatcher(class_name, class_mode, method_name, method_mode, signature, next),
+                  _type(get_type_for<T>()), _value(copy_value<T>(value)) {
+    _option = os::strdup_check_oom(opt);
   }
 
-  virtual ~MethodOptionMatcher() {
-    os::free((void*)option);
+  ~TypedMethodOptionMatcher() {
+    os::free((void*)_option);
   }
 
-  bool match(methodHandle method, const char* opt) {
-    MethodOptionMatcher* current = this;
+  TypedMethodOptionMatcher* match(methodHandle method, const char* opt) {
+    TypedMethodOptionMatcher* current = this;
     while (current != NULL) {
-      current = (MethodOptionMatcher*)current->find(method);
+      current = (TypedMethodOptionMatcher*)current->find(method);
       if (current == NULL) {
-        return false;
+        return NULL;
       }
-      if (strcmp(current->option, opt) == 0) {
-        return true;
+      if (strcmp(current->_option, opt) == 0) {
+        return current;
       }
       current = current->next();
     }
-    return false;
+    return NULL;
   }
 
-  MethodOptionMatcher* next() {
-    return (MethodOptionMatcher*)_next;
+  TypedMethodOptionMatcher* next() {
+    return (TypedMethodOptionMatcher*)_next;
   }
 
-  virtual void print() {
+  OptionType get_type(void) {
+      return _type;
+  };
+
+  T value() { return _value; }
+
+  void print() {
+    ttyLocker ttyl;
     print_base();
-    tty->print(" %s", option);
+    tty->print(" %s", _option);
+    tty->print(" <unknown option type>");
     tty->cr();
   }
 };
 
+template<>
+void TypedMethodOptionMatcher<intx>::print() {
+  ttyLocker ttyl;
+  print_base();
+  tty->print(" intx %s", _option);
+  tty->print(" = " INTX_FORMAT, _value);
+  tty->cr();
+};
 
+template<>
+void TypedMethodOptionMatcher<uintx>::print() {
+  ttyLocker ttyl;
+  print_base();
+  tty->print(" uintx %s", _option);
+  tty->print(" = " UINTX_FORMAT, _value);
+  tty->cr();
+};
+
+template<>
+void TypedMethodOptionMatcher<bool>::print() {
+  ttyLocker ttyl;
+  print_base();
+  tty->print(" bool %s", _option);
+  tty->print(" = %s", _value ? "true" : "false");
+  tty->cr();
+};
+
+template<>
+void TypedMethodOptionMatcher<ccstr>::print() {
+  ttyLocker ttyl;
+  print_base();
+  tty->print(" const char* %s", _option);
+  tty->print(" = '%s'", _value);
+  tty->cr();
+};
 
 // this must parallel the command_names below
 enum OracleCommand {
@@ -264,23 +350,46 @@ static MethodMatcher* add_predicate(OracleCommand command,
   return lists[command];
 }
 
-
-
+template<typename T>
 static MethodMatcher* add_option_string(Symbol* class_name, MethodMatcher::Mode c_mode,
                                         Symbol* method_name, MethodMatcher::Mode m_mode,
                                         Symbol* signature,
-                                        const char* option) {
-  lists[OptionCommand] = new MethodOptionMatcher(class_name, c_mode, method_name, m_mode,
-                                                 signature, option, lists[OptionCommand]);
+                                        const char* option,
+                                        T value) {
+  lists[OptionCommand] = new TypedMethodOptionMatcher<T>(class_name, c_mode, method_name, m_mode,
+                                                         signature, option, value, lists[OptionCommand]);
   return lists[OptionCommand];
 }
 
-
-bool CompilerOracle::has_option_string(methodHandle method, const char* option) {
-  return lists[OptionCommand] != NULL &&
-    ((MethodOptionMatcher*)lists[OptionCommand])->match(method, option);
+template<typename T>
+static bool get_option_value(methodHandle method, const char* option, T& value) {
+   TypedMethodOptionMatcher<T>* m;
+   if (lists[OptionCommand] != NULL
+       && (m = ((TypedMethodOptionMatcher<T>*)lists[OptionCommand])->match(method, option)) != NULL
+       && m->get_type() == get_type_for<T>()) {
+       value = m->value();
+       return true;
+   } else {
+     return false;
+   }
 }
 
+bool CompilerOracle::has_option_string(methodHandle method, const char* option) {
+  bool value = false;
+  get_option_value(method, option, value);
+  return value;
+}
+
+template<typename T>
+bool CompilerOracle::has_option_value(methodHandle method, const char* option, T& value) {
+  return ::get_option_value(method, option, value);
+}
+
+// Explicit instantiation for all OptionTypes supported.
+template bool CompilerOracle::has_option_value<intx>(methodHandle method, const char* option, intx& value);
+template bool CompilerOracle::has_option_value<uintx>(methodHandle method, const char* option, uintx& value);
+template bool CompilerOracle::has_option_value<bool>(methodHandle method, const char* option, bool& value);
+template bool CompilerOracle::has_option_value<ccstr>(methodHandle method, const char* option, ccstr& value);
 
 bool CompilerOracle::should_exclude(methodHandle method, bool& quietly) {
   quietly = true;
@@ -422,6 +531,94 @@ static bool scan_line(const char * line,
 
 
 
+// Scan next flag and value in line, return MethodMatcher object on success, NULL on failure.
+// On failure, error_msg contains description for the first error.
+// For future extensions: set error_msg on first error.
+static MethodMatcher* scan_flag_and_value(const char* type, const char* line, int& total_bytes_read,
+                                          Symbol* c_name, MethodMatcher::Mode c_match,
+                                          Symbol* m_name, MethodMatcher::Mode m_match,
+                                          Symbol* signature,
+                                          char* errorbuf, const int buf_size) {
+  total_bytes_read = 0;
+  int bytes_read = 0;
+  char flag[256];
+
+  // Read flag name.
+  if (sscanf(line, "%*[ \t]%255[a-zA-Z0-9]%n", flag, &bytes_read) == 1) {
+    line += bytes_read;
+    total_bytes_read += bytes_read;
+
+    // Read value.
+    if (strcmp(type, "intx") == 0) {
+      intx value;
+      if (sscanf(line, "%*[ \t]" INTX_FORMAT "%n", &value, &bytes_read) == 1) {
+        total_bytes_read += bytes_read;
+        return add_option_string(c_name, c_match, m_name, m_match, signature, flag, value);
+      } else {
+        jio_snprintf(errorbuf, buf_size, "  Value cannot be read for flag %s of type %s ", flag, type);
+      }
+    } else if (strcmp(type, "uintx") == 0) {
+      uintx value;
+      if (sscanf(line, "%*[ \t]" UINTX_FORMAT "%n", &value, &bytes_read) == 1) {
+        total_bytes_read += bytes_read;
+        return add_option_string(c_name, c_match, m_name, m_match, signature, flag, value);
+      } else {
+        jio_snprintf(errorbuf, buf_size, "  Value cannot be read for flag %s of type %s", flag, type);
+      }
+    } else if (strcmp(type, "ccstr") == 0) {
+      ResourceMark rm;
+      char* value = NEW_RESOURCE_ARRAY(char, strlen(line) + 1);
+      if (sscanf(line, "%*[ \t]%255[_a-zA-Z0-9]%n", value, &bytes_read) == 1) {
+        total_bytes_read += bytes_read;
+        return add_option_string(c_name, c_match, m_name, m_match, signature, flag, (ccstr)value);
+      } else {
+        jio_snprintf(errorbuf, buf_size, "  Value cannot be read for flag %s of type %s", flag, type);
+      }
+    } else if (strcmp(type, "ccstrlist") == 0) {
+      // Accumulates several strings into one. The internal type is ccstr.
+      ResourceMark rm;
+      char* value = NEW_RESOURCE_ARRAY(char, strlen(line) + 1);
+      char* next_value = value;
+      if (sscanf(line, "%*[ \t]%255[_a-zA-Z0-9]%n", next_value, &bytes_read) == 1) {
+        total_bytes_read += bytes_read;
+        line += bytes_read;
+        next_value += bytes_read;
+        char* end_value = next_value-1;
+        while (sscanf(line, "%*[ \t]%255[_a-zA-Z0-9]%n", next_value, &bytes_read) == 1) {
+          total_bytes_read += bytes_read;
+          line += bytes_read;
+          *end_value = ' '; // override '\0'
+          next_value += bytes_read;
+          end_value = next_value-1;
+        }
+        return add_option_string(c_name, c_match, m_name, m_match, signature, flag, (ccstr)value);
+      } else {
+        jio_snprintf(errorbuf, buf_size, "  Value cannot be read for flag %s of type %s", flag, type);
+      }
+    } else if (strcmp(type, "bool") == 0) {
+      char value[256];
+      if (sscanf(line, "%*[ \t]%255[a-zA-Z]%n", value, &bytes_read) == 1) {
+        if (strcmp(value, "true") == 0) {
+          total_bytes_read += bytes_read;
+          return add_option_string(c_name, c_match, m_name, m_match, signature, flag, true);
+        } else if (strcmp(value, "false") == 0) {
+          total_bytes_read += bytes_read;
+          return add_option_string(c_name, c_match, m_name, m_match, signature, flag, false);
+        } else {
+          jio_snprintf(errorbuf, buf_size, "  Value cannot be read for flag %s of type %s", flag, type);
+        }
+      } else {
+        jio_snprintf(errorbuf, sizeof(errorbuf), "  Value cannot be read for flag %s of type %s", flag, type);
+      }
+    } else {
+      jio_snprintf(errorbuf, sizeof(errorbuf), "  Type %s not supported ", type);
+    }
+  } else {
+    jio_snprintf(errorbuf, sizeof(errorbuf), "  Flag name for type %s should be alphanumeric ", type);
+  }
+  return NULL;
+}
+
 void CompilerOracle::parse_from_line(char* line) {
   if (line[0] == '\0') return;
   if (line[0] == '#')  return;
@@ -451,8 +648,10 @@ void CompilerOracle::parse_from_line(char* line) {
   int bytes_read;
   OracleCommand command = parse_command_name(line, &bytes_read);
   line += bytes_read;
+  ResourceMark rm;
 
   if (command == UnknownCommand) {
+    ttyLocker ttyl;
     tty->print_cr("CompilerOracle: unrecognized line");
     tty->print_cr("  \"%s\"", original_line);
     return;
@@ -474,7 +673,7 @@ void CompilerOracle::parse_from_line(char* line) {
   char method_name[256];
   char sig[1024];
   char errorbuf[1024];
-  const char* error_msg = NULL;
+  const char* error_msg = NULL; // description of first error that appears
   MethodMatcher* match = NULL;
 
   if (scan_line(line, class_name, &c_match, method_name, &m_match, &bytes_read, error_msg)) {
@@ -493,42 +692,76 @@ void CompilerOracle::parse_from_line(char* line) {
     }
 
     if (command == OptionCommand) {
-      // Look for trailing options to support
-      // ciMethod::has_option("string") to control features in the
-      // compiler.  Multiple options may follow the method name.
-      char option[256];
+      // Look for trailing options.
+      //
+      // Two types of trailing options are
+      // supported:
+      //
+      // (1) CompileCommand=option,Klass::method,flag
+      // (2) CompileCommand=option,Klass::method,type,flag,value
+      //
+      // Type (1) is used to support ciMethod::has_option("someflag")
+      // (i.e., to check if a flag "someflag" is enabled for a method).
+      //
+      // Type (2) is used to support options with a value. Values can have the
+      // the following types: intx, uintx, bool, ccstr, and ccstrlist.
+      //
+      // For future extensions: extend scan_flag_and_value()
+      char option[256]; // stores flag for Type (1) and type of Type (2)
       while (sscanf(line, "%*[ \t]%255[a-zA-Z0-9]%n", option, &bytes_read) == 1) {
         if (match != NULL && !_quiet) {
           // Print out the last match added
+          ttyLocker ttyl;
           tty->print("CompilerOracle: %s ", command_names[command]);
           match->print();
         }
-        match = add_option_string(c_name, c_match, m_name, m_match, signature, option);
         line += bytes_read;
-      }
+
+        if (strcmp(option, "intx") == 0
+            || strcmp(option, "uintx") == 0
+            || strcmp(option, "bool") == 0
+            || strcmp(option, "ccstr") == 0
+            || strcmp(option, "ccstrlist") == 0
+            ) {
+
+          // Type (2) option: parse flag name and value.
+          match = scan_flag_and_value(option, line, bytes_read,
+                                      c_name, c_match, m_name, m_match, signature,
+                                      errorbuf, sizeof(errorbuf));
+          if (match == NULL) {
+            error_msg = errorbuf;
+            break;
+          }
+          line += bytes_read;
+        } else {
+          // Type (1) option
+          match = add_option_string(c_name, c_match, m_name, m_match, signature, option, true);
+        }
+      } // while(
     } else {
-      bytes_read = 0;
-      sscanf(line, "%*[ \t]%n", &bytes_read);
-      if (line[bytes_read] != '\0') {
-        jio_snprintf(errorbuf, sizeof(errorbuf), "  Unrecognized text after command: %s", line);
-        error_msg = errorbuf;
-      } else {
-        match = add_predicate(command, c_name, c_match, m_name, m_match, signature);
-      }
+      match = add_predicate(command, c_name, c_match, m_name, m_match, signature);
     }
   }
 
-  if (match != NULL) {
-    if (!_quiet) {
-      ResourceMark rm;
-      tty->print("CompilerOracle: %s ", command_names[command]);
-      match->print();
-    }
-  } else {
+  ttyLocker ttyl;
+  if (error_msg != NULL) {
+    // an error has happened
     tty->print_cr("CompilerOracle: unrecognized line");
     tty->print_cr("  \"%s\"", original_line);
     if (error_msg != NULL) {
       tty->print_cr("%s", error_msg);
+    }
+  } else {
+    // check for remaining characters
+    bytes_read = 0;
+    sscanf(line, "%*[ \t]%n", &bytes_read);
+    if (line[bytes_read] != '\0') {
+      tty->print_cr("CompilerOracle: unrecognized line");
+      tty->print_cr("  \"%s\"", original_line);
+      tty->print_cr("  Unrecognized text %s after command ", line);
+    } else if (match != NULL && !_quiet) {
+      tty->print("CompilerOracle: %s ", command_names[command]);
+      match->print();
     }
   }
 }

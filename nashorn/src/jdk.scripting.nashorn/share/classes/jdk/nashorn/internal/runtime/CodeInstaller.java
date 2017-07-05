@@ -80,12 +80,6 @@ public interface CodeInstaller<T> {
     public long getUniqueScriptId();
 
     /**
-     * Get next unique eval id
-     * @return unique eval id
-     */
-    public long getUniqueEvalId();
-
-    /**
      * Store a compiled script for later reuse
      * @param source the script source
      * @param mainClassName the main class name

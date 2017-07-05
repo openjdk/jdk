@@ -107,6 +107,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
             if (status != 0) {
                 // read from the stream and use that as the error message
                 String message = readErrorMessage(is);
+                is.close();
                 // special case the load command so that the right exception is thrown
                 if (cmd.equals("load")) {
                     throw new AgentLoadException("Failed to load agent library");
