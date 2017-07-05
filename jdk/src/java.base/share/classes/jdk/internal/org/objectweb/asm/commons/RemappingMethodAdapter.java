@@ -69,10 +69,10 @@ import jdk.internal.org.objectweb.asm.TypePath;
 /**
  * A {@link LocalVariablesSorter} for type mapping.
  *
- * //@deprecated use {@link MethodRemapper} instead.
+ * @deprecated use {@link MethodRemapper} instead.
  * @author Eugene Kuleshov
  */
-//@Deprecated
+@Deprecated
 public class RemappingMethodAdapter extends LocalVariablesSorter {
 
     protected final Remapper remapper;

@@ -29,6 +29,7 @@
 #include "interpreter/bytecodeStream.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "memory/heapInspection.hpp"
+#include "memory/resourceArea.hpp"
 #include "oops/methodData.hpp"
 #include "prims/jvmtiRedefineClasses.hpp"
 #include "runtime/arguments.hpp"

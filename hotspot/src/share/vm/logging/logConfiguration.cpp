@@ -40,6 +40,9 @@
 LogOutput** LogConfiguration::_outputs = NULL;
 size_t      LogConfiguration::_n_outputs = 0;
 
+LogConfiguration::UpdateListenerFunction* LogConfiguration::_listener_callbacks = NULL;
+size_t      LogConfiguration::_n_listener_callbacks = 0;
+
 // Stack object to take the lock for configuring the logging.
 // Should only be held during the critical parts of the configuration
 // (when calling configure_output or reading/modifying the outputs array).
@@ -71,7 +74,7 @@ bool ConfigurationLock::current_thread_has_lock() {
 
 void LogConfiguration::post_initialize() {
   LogDiagnosticCommand::registerCommand();
-  LogHandle(logging) log;
+  Log(logging) log;
   log.info("Log configuration fully initialized.");
   log_develop_info(logging)("Develop logging is available.");
   if (log.is_trace()) {
@@ -254,6 +257,7 @@ void LogConfiguration::disable_logging() {
   for (size_t i = 0; i < _n_outputs; i++) {
     disable_output(i);
   }
+  notify_update_listeners();
 }
 
 void LogConfiguration::configure_stdout(LogLevelType level, bool exact_match, ...) {
@@ -282,6 +286,7 @@ void LogConfiguration::configure_stdout(LogLevelType level, bool exact_match, ..
   // Apply configuration to stdout (output #0), with the same decorators as before.
   ConfigurationLock cl;
   configure_output(0, expr, LogOutput::Stdout->decorators());
+  notify_update_listeners();
 }
 
 bool LogConfiguration::parse_command_line_arguments(const char* opts) {
@@ -373,6 +378,7 @@ bool LogConfiguration::parse_log_arguments(const char* outputstr,
     }
   }
   configure_output(idx, expr, decorators);
+  notify_update_listeners();
   return true;
 }
 
@@ -471,3 +477,20 @@ void LogConfiguration::rotate_all_outputs() {
   }
 }
 
+void LogConfiguration::register_update_listener(UpdateListenerFunction cb) {
+  assert(cb != NULL, "Should not register NULL as listener");
+  ConfigurationLock cl;
+  size_t idx = _n_listener_callbacks++;
+  _listener_callbacks = REALLOC_C_HEAP_ARRAY(UpdateListenerFunction,
+                                             _listener_callbacks,
+                                             _n_listener_callbacks,
+                                             mtLogging);
+  _listener_callbacks[idx] = cb;
+}
+
+void LogConfiguration::notify_update_listeners() {
+  assert(ConfigurationLock::current_thread_has_lock(), "notify_update_listeners must be called in ConfigurationLock scope (lock held)");
+  for (size_t i = 0; i < _n_listener_callbacks; i++) {
+    _listener_callbacks[i]();
+  }
+}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,11 +29,13 @@
 #include "gc/parallel/psPromotionManager.inline.hpp"
 #include "gc/parallel/psScavenge.inline.hpp"
 #include "gc/shared/gcTrace.hpp"
+#include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/memRegion.hpp"
 #include "memory/padded.inline.hpp"
+#include "memory/resourceArea.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/instanceMirrorKlass.inline.hpp"
 #include "oops/objArrayKlass.inline.hpp"
@@ -41,6 +43,7 @@
 
 PaddedEnd<PSPromotionManager>* PSPromotionManager::_manager_array = NULL;
 OopStarTaskQueueSet*           PSPromotionManager::_stack_array_depth = NULL;
+PreservedMarksSet*             PSPromotionManager::_preserved_marks_set = NULL;
 PSOldGen*                      PSPromotionManager::_old_gen = NULL;
 MutableSpace*                  PSPromotionManager::_young_space = NULL;
 
@@ -50,10 +53,12 @@ void PSPromotionManager::initialize() {
   _old_gen = heap->old_gen();
   _young_space = heap->young_gen()->to_space();
 
+  const uint promotion_manager_num = ParallelGCThreads + 1;
+
   // To prevent false sharing, we pad the PSPromotionManagers
   // and make sure that the first instance starts at a cache line.
   assert(_manager_array == NULL, "Attempt to initialize twice");
-  _manager_array = PaddedArray<PSPromotionManager, mtGC>::create_unfreeable(ParallelGCThreads + 1);
+  _manager_array = PaddedArray<PSPromotionManager, mtGC>::create_unfreeable(promotion_manager_num);
   guarantee(_manager_array != NULL, "Could not initialize promotion manager");
 
   _stack_array_depth = new OopStarTaskQueueSet(ParallelGCThreads);
@@ -65,6 +70,14 @@ void PSPromotionManager::initialize() {
   }
   // The VMThread gets its own PSPromotionManager, which is not available
   // for work stealing.
+
+  assert(_preserved_marks_set == NULL, "Attempt to initialize twice");
+  _preserved_marks_set = new PreservedMarksSet(true /* in_c_heap */);
+  guarantee(_preserved_marks_set != NULL, "Could not initialize preserved marks set");
+  _preserved_marks_set->init(promotion_manager_num);
+  for (uint i = 0; i < promotion_manager_num; i += 1) {
+    _manager_array[i].register_preserved_marks(_preserved_marks_set->get(i));
+  }
 }
 
 // Helper functions to get around the circular dependency between
@@ -90,6 +103,7 @@ PSPromotionManager* PSPromotionManager::vm_thread_promotion_manager() {
 void PSPromotionManager::pre_scavenge() {
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
 
+  _preserved_marks_set->assert_empty();
   _young_space = heap->young_gen()->to_space();
 
   for(uint i=0; i<ParallelGCThreads+1; i++) {
@@ -109,6 +123,11 @@ bool PSPromotionManager::post_scavenge(YoungGCTracer& gc_tracer) {
       promotion_failure_occurred = true;
     }
     manager->flush_labs();
+  }
+  if (!promotion_failure_occurred) {
+    // If there was no promotion failure, the preserved mark stacks
+    // should be empty.
+    _preserved_marks_set->assert_empty();
   }
   return promotion_failure_occurred;
 }
@@ -133,7 +152,7 @@ PSPromotionManager::print_taskqueue_stats() {
   if (!log_develop_is_enabled(Trace, gc, task, stats)) {
     return;
   }
-  LogHandle(gc, task, stats) log;
+  Log(gc, task, stats) log;
   ResourceMark rm;
   outputStream* out = log.trace_stream();
   out->print_cr("== GC Tasks Stats, GC %3d",
@@ -187,6 +206,8 @@ PSPromotionManager::PSPromotionManager() {
   // let's choose 1.5x the chunk size
   _min_array_size_for_chunking = 3 * _array_chunk_size / 2;
 
+  _preserved_marks = NULL;
+
   reset();
 }
 
@@ -211,6 +232,10 @@ void PSPromotionManager::reset() {
   TASKQUEUE_STATS_ONLY(reset_stats());
 }
 
+void PSPromotionManager::register_preserved_marks(PreservedMarks* preserved_marks) {
+  assert(_preserved_marks == NULL, "do not set it twice");
+  _preserved_marks = preserved_marks;
+}
 
 void PSPromotionManager::drain_stacks_depth(bool totally_drain) {
   totally_drain = totally_drain || _totally_drain;
@@ -422,8 +447,7 @@ oop PSPromotionManager::oop_promotion_failed(oop obj, markOop obj_mark) {
 
     push_contents(obj);
 
-    // Save the mark if needed
-    PSScavenge::oop_promotion_failed(obj, obj_mark);
+    _preserved_marks->push_if_necessary(obj, obj_mark);
   }  else {
     // We lost, someone else "owns" this object
     guarantee(obj->is_forwarded(), "Object must be forwarded if the cas failed.");

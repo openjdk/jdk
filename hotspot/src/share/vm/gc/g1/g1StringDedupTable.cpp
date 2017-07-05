@@ -570,7 +570,7 @@ void G1StringDedupTable::trim_entry_cache() {
 }
 
 void G1StringDedupTable::print_statistics() {
-  LogHandle(gc, stringdedup) log;
+  Log(gc, stringdedup) log;
   log.debug("   [Table]");
   log.debug("      [Memory Usage: " G1_STRDEDUP_BYTES_FORMAT_NS "]",
             G1_STRDEDUP_BYTES_PARAM(_table->_size * sizeof(G1StringDedupEntry*) + (_table->_entries + _entry_cache->size()) * sizeof(G1StringDedupEntry)));

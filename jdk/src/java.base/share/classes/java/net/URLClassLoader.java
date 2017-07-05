@@ -465,23 +465,21 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
     }
 
     /**
-     * Defines a new package by name in this ClassLoader. The attributes
-     * contained in the specified Manifest will be used to obtain package
-     * version and sealing information. For sealed packages, the additional
-     * URL specifies the code source URL from which the package was loaded.
+     * Defines a new package by name in this {@code URLClassLoader}.
+     * The attributes contained in the specified {@code Manifest}
+     * will be used to obtain package version and sealing information.
+     * For sealed packages, the additional URL specifies the code source URL
+     * from which the package was loaded.
      *
      * @param name  the package name
-     * @param man   the Manifest containing package version and sealing
+     * @param man   the {@code Manifest} containing package version and sealing
      *              information
      * @param url   the code source url for the package, or null if none
-     * @exception   IllegalArgumentException if the package name duplicates
-     *              an existing package either in this class loader or one
-     *              of its ancestors
-     * @return the newly defined Package object
+     * @throws      IllegalArgumentException if the package name is
+     *              already defined by this class loader
+     * @return      the newly defined {@code Package} object
      */
-    protected Package definePackage(String name, Manifest man, URL url)
-        throws IllegalArgumentException
-    {
+    protected Package definePackage(String name, Manifest man, URL url) {
         String path = name.replace('.', '/').concat("/");
         String specTitle = null, specVersion = null, specVendor = null;
         String implTitle = null, implVersion = null, implVendor = null;

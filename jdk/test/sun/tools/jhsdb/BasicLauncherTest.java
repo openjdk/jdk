@@ -143,6 +143,7 @@ public class BasicLauncherTest {
         launch("No deadlocks found", "jstack");
         launch("compiler detected", "jmap");
         launch("Java System Properties", "jinfo");
+        launch("java.threads", "jsnap");
 
         // The test throws RuntimeException on error.
         // IOException is thrown if LingeredApp can't start because of some bad

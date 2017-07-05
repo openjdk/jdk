@@ -44,6 +44,7 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/filemap.hpp"
 #include "memory/oopFactory.hpp"
+#include "memory/resourceArea.hpp"
 #include "memory/universe.inline.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/instanceRefKlass.hpp"
@@ -226,11 +227,12 @@ ClassFileStream* ClassPathDirEntry::open_stream(const char* name, TRAPS) {
   return NULL;
 }
 
-ClassPathZipEntry::ClassPathZipEntry(jzfile* zip, const char* zip_name) : ClassPathEntry() {
+ClassPathZipEntry::ClassPathZipEntry(jzfile* zip, const char* zip_name, bool is_boot_append) : ClassPathEntry() {
   _zip = zip;
   char *copy = NEW_C_HEAP_ARRAY(char, strlen(zip_name)+1, mtClass);
   strcpy(copy, zip_name);
   _zip_name = copy;
+  _is_boot_append = is_boot_append;
 }
 
 ClassPathZipEntry::~ClassPathZipEntry() {
@@ -274,11 +276,79 @@ u1* ClassPathZipEntry::open_entry(const char* name, jint* filesize, bool nul_ter
   return buffer;
 }
 
+#if INCLUDE_CDS
+u1* ClassPathZipEntry::open_versioned_entry(const char* name, jint* filesize, TRAPS) {
+  u1* buffer = NULL;
+  if (!_is_boot_append) {
+    assert(DumpSharedSpaces, "Should be called only for non-boot entries during dump time");
+    // We presume default is multi-release enabled
+    const char* multi_ver = Arguments::get_property("jdk.util.jar.enableMultiRelease");
+    const char* verstr = Arguments::get_property("jdk.util.jar.version");
+    bool is_multi_ver = (multi_ver == NULL ||
+                         strcmp(multi_ver, "true") == 0 ||
+                         strcmp(multi_ver, "force")  == 0) &&
+                         is_multiple_versioned(THREAD);
+    // command line version setting
+    int version = 0;
+    const int base_version = 8; // JDK8
+    int cur_ver = JDK_Version::current().major_version();
+    if (verstr != NULL) {
+      version = atoi(verstr);
+      if (version < base_version || version > cur_ver) {
+        is_multi_ver = false;
+        // print out warning, do not use assertion here since it will continue to look
+        // for proper version.
+        warning("JDK%d is not supported in multiple version jars", version);
+      }
+    }
+
+    if (is_multi_ver) {
+      int n;
+      char entry_name[JVM_MAXPATHLEN];
+      if (version > 0) {
+        n = jio_snprintf(entry_name, sizeof(entry_name), "META-INF/versions/%d/%s", version, name);
+        entry_name[n] = '\0';
+        buffer = open_entry((const char*)entry_name, filesize, false, CHECK_NULL);
+        if (buffer == NULL) {
+          warning("Could not find %s in %s, try to find highest version instead", entry_name, _zip_name);
+        }
+      }
+      if (buffer == NULL) {
+        for (int i = cur_ver; i >= base_version; i--) {
+          n = jio_snprintf(entry_name, sizeof(entry_name), "META-INF/versions/%d/%s", i, name);
+          entry_name[n] = '\0';
+          buffer = open_entry((const char*)entry_name, filesize, false, CHECK_NULL);
+          if (buffer != NULL) {
+            break;
+          }
+        }
+      }
+    }
+  }
+  return buffer;
+}
+
+bool ClassPathZipEntry::is_multiple_versioned(TRAPS) {
+  assert(DumpSharedSpaces, "called only at dump time");
+  jint size;
+  char* buffer = (char*)open_entry("META-INF/MANIFEST.MF", &size, false, CHECK_false);
+  if (buffer != NULL) {
+    if (strstr(buffer, "Multi-Release: true") != NULL) {
+      return true;
+    }
+  }
+  return false;
+}
+#endif // INCLUDE_CDS
+
 ClassFileStream* ClassPathZipEntry::open_stream(const char* name, TRAPS) {
   jint filesize;
-  const u1* buffer = open_entry(name, &filesize, false, CHECK_NULL);
+  u1* buffer = open_versioned_entry(name, &filesize, CHECK_NULL);
   if (buffer == NULL) {
-    return NULL;
+    buffer = open_entry(name, &filesize, false, CHECK_NULL);
+    if (buffer == NULL) {
+      return NULL;
+    }
   }
   if (UsePerfData) {
     ClassLoader::perf_sys_classfile_bytes_read()->inc(filesize);
@@ -466,7 +536,7 @@ void ClassLoader::exit_with_path_failure(const char* error, const char* message)
 void ClassLoader::trace_class_path(const char* msg, const char* name) {
   if (log_is_enabled(Info, classpath)) {
     ResourceMark rm;
-    outputStream* out = LogHandle(classpath)::info_stream();
+    outputStream* out = Log(classpath)::info_stream();
     if (msg) {
       out->print("%s", msg);
     }
@@ -558,7 +628,7 @@ void ClassLoader::setup_search_path(const char *class_path, bool bootstrap_searc
     char* path = NEW_RESOURCE_ARRAY(char, end - start + 1);
     strncpy(path, &class_path[start], end - start);
     path[end - start] = '\0';
-    update_class_path_entry_list(path, false, mark_append_entry, false);
+    update_class_path_entry_list(path, false, mark_append_entry, false, bootstrap_search);
 
     // Check on the state of the boot loader's append path
     if (mark_append_entry && (_first_append_entry == NULL)) {
@@ -582,7 +652,8 @@ void ClassLoader::setup_search_path(const char *class_path, bool bootstrap_searc
 }
 
 ClassPathEntry* ClassLoader::create_class_path_entry(const char *path, const struct stat* st,
-                                                     bool throw_exception, TRAPS) {
+                                                     bool throw_exception,
+                                                     bool is_boot_append, TRAPS) {
   JavaThread* thread = JavaThread::current();
   ClassPathEntry* new_entry = NULL;
   if ((st->st_mode & S_IFREG) == S_IFREG) {
@@ -611,7 +682,7 @@ ClassPathEntry* ClassLoader::create_class_path_entry(const char *path, const str
         zip = (*ZipOpen)(canonical_path, &error_msg);
       }
       if (zip != NULL && error_msg == NULL) {
-        new_entry = new ClassPathZipEntry(zip, path);
+        new_entry = new ClassPathZipEntry(zip, path, is_boot_append);
       } else {
         ResourceMark rm(thread);
         char *msg;
@@ -644,7 +715,7 @@ ClassPathEntry* ClassLoader::create_class_path_entry(const char *path, const str
 
 // Create a class path zip entry for a given path (return NULL if not found
 // or zip/JAR file cannot be opened)
-ClassPathZipEntry* ClassLoader::create_class_path_zip_entry(const char *path) {
+ClassPathZipEntry* ClassLoader::create_class_path_zip_entry(const char *path, bool is_boot_append) {
   // check for a regular file
   struct stat st;
   if (os::stat(path, &st) == 0) {
@@ -662,7 +733,7 @@ ClassPathZipEntry* ClassLoader::create_class_path_zip_entry(const char *path) {
         }
         if (zip != NULL && error_msg == NULL) {
           // create using canonical path
-          return new ClassPathZipEntry(zip, canonical_path);
+          return new ClassPathZipEntry(zip, canonical_path, is_boot_append);
         }
       }
     }
@@ -720,11 +791,11 @@ void ClassLoader::prepend_to_list(ClassPathEntry *new_entry) {
 }
 
 void ClassLoader::add_to_list(const char *apath) {
-  update_class_path_entry_list((char*)apath, false, false, false);
+  update_class_path_entry_list((char*)apath, false, false, false, false);
 }
 
 void ClassLoader::prepend_to_list(const char *apath) {
-  update_class_path_entry_list((char*)apath, false, false, true);
+  update_class_path_entry_list((char*)apath, false, false, true, false);
 }
 
 // Returns true IFF the file/dir exists and the entry was successfully created.
@@ -732,13 +803,14 @@ bool ClassLoader::update_class_path_entry_list(const char *path,
                                                bool check_for_duplicates,
                                                bool mark_append_entry,
                                                bool prepend_entry,
+                                               bool is_boot_append,
                                                bool throw_exception) {
   struct stat st;
   if (os::stat(path, &st) == 0) {
     // File or directory found
     ClassPathEntry* new_entry = NULL;
     Thread* THREAD = Thread::current();
-    new_entry = create_class_path_entry(path, &st, throw_exception, CHECK_(false));
+    new_entry = create_class_path_entry(path, &st, throw_exception, is_boot_append, CHECK_(false));
     if (new_entry == NULL) {
       return false;
     }

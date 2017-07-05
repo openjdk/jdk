@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,9 @@
 #ifndef SHARE_VM_GC_G1_G1COLLECTORSTATE_HPP
 #define SHARE_VM_GC_G1_G1COLLECTORSTATE_HPP
 
-#include "utilities/globalDefinitions.hpp"
 #include "gc/g1/g1YCTypes.hpp"
+#include "memory/allocation.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 // Various state variables that indicate
 // the phase of the G1 collection.
@@ -71,7 +72,6 @@ class G1CollectorState VALUE_OBJ_CLASS_SPEC {
   bool _in_marking_window;
   bool _in_marking_window_im;
 
-  bool _concurrent_cycle_started;
   bool _full_collection;
 
   public:
@@ -87,7 +87,6 @@ class G1CollectorState VALUE_OBJ_CLASS_SPEC {
       _mark_in_progress(false),
       _in_marking_window(false),
       _in_marking_window_im(false),
-      _concurrent_cycle_started(false),
       _full_collection(false) {}
 
   // Setters
@@ -100,7 +99,6 @@ class G1CollectorState VALUE_OBJ_CLASS_SPEC {
   void set_mark_in_progress(bool v) { _mark_in_progress = v; }
   void set_in_marking_window(bool v) { _in_marking_window = v; }
   void set_in_marking_window_im(bool v) { _in_marking_window_im = v; }
-  void set_concurrent_cycle_started(bool v) { _concurrent_cycle_started = v; }
   void set_full_collection(bool v) { _full_collection = v; }
 
   // Getters
@@ -113,7 +111,6 @@ class G1CollectorState VALUE_OBJ_CLASS_SPEC {
   bool mark_in_progress() const { return _mark_in_progress; }
   bool in_marking_window() const { return _in_marking_window; }
   bool in_marking_window_im() const { return _in_marking_window_im; }
-  bool concurrent_cycle_started() const { return _concurrent_cycle_started; }
   bool full_collection() const { return _full_collection; }
 
   // Composite booleans (clients worry about flickering)

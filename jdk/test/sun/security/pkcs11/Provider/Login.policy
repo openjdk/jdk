@@ -4,6 +4,7 @@ grant {
     permission java.lang.RuntimePermission "accessClassInPackage.apple.*";
     permission java.lang.RuntimePermission "accessClassInPackage.sun.*";
     permission java.lang.RuntimePermission "getProtectionDomain";
+    permission java.lang.RuntimePermission "setSecurityManager";
     permission java.security.SecurityPermission "putProviderProperty.*";
 
 

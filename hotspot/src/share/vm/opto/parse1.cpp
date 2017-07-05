@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "compiler/compileLog.hpp"
 #include "interpreter/linkResolver.hpp"
+#include "memory/resourceArea.hpp"
 #include "oops/method.hpp"
 #include "opto/addnode.hpp"
 #include "opto/c2compiler.hpp"
@@ -661,8 +662,7 @@ void Parse::do_all_blocks() {
         // (Note that dead locals do not get phis built, ever.)
         ensure_phis_everywhere();
 
-        if (block->is_SEL_head() &&
-            (UseLoopPredicate || LoopLimitCheck)) {
+        if (block->is_SEL_head() && UseLoopPredicate) {
           // Add predicate to single entry (not irreducible) loop head.
           assert(!block->has_merged_backedge(), "only entry paths should be merged for now");
           // Need correct bci for predicate.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -205,30 +205,18 @@ void VM_G1IncCollectionPause::doit_epilogue() {
 }
 
 void VM_CGC_Operation::acquire_pending_list_lock() {
-  assert(_needs_pll, "don't call this otherwise");
-  // The caller may block while communicating
-  // with the SLT thread in order to acquire/release the PLL.
-  SurrogateLockerThread* slt = ConcurrentMarkThread::slt();
-  if (slt != NULL) {
-    slt->manipulatePLL(SurrogateLockerThread::acquirePLL);
-  } else {
-    SurrogateLockerThread::report_missing_slt();
-  }
+  _pending_list_locker.lock();
 }
 
 void VM_CGC_Operation::release_and_notify_pending_list_lock() {
-  assert(_needs_pll, "don't call this otherwise");
-  // The caller may block while communicating
-  // with the SLT thread in order to acquire/release the PLL.
-  ConcurrentMarkThread::slt()->
-    manipulatePLL(SurrogateLockerThread::releaseAndNotifyPLL);
+  _pending_list_locker.unlock();
 }
 
 void VM_CGC_Operation::doit() {
   GCIdMark gc_id_mark(_gc_id);
   GCTraceCPUTime tcpu;
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
-  GCTraceTime(Info, gc) t(_printGCMessage, g1h->gc_timer_cm(), GCCause::_no_gc, true);
+  GCTraceTime(Info, gc) t(_printGCMessage, g1h->concurrent_mark()->gc_timer_cm(), GCCause::_no_gc, true);
   IsGCActiveMark x;
   _cl->do_void();
 }
@@ -236,10 +224,9 @@ void VM_CGC_Operation::doit() {
 bool VM_CGC_Operation::doit_prologue() {
   // Note the relative order of the locks must match that in
   // VM_GC_Operation::doit_prologue() or deadlocks can occur
-  if (_needs_pll) {
+  if (_needs_pending_list_lock) {
     acquire_pending_list_lock();
   }
-
   Heap_lock->lock();
   return true;
 }
@@ -248,7 +235,7 @@ void VM_CGC_Operation::doit_epilogue() {
   // Note the relative order of the unlocks must match that in
   // VM_GC_Operation::doit_epilogue()
   Heap_lock->unlock();
-  if (_needs_pll) {
+  if (_needs_pending_list_lock) {
     release_and_notify_pending_list_lock();
   }
 }

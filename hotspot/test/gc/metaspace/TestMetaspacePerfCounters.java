@@ -37,7 +37,6 @@ import static jdk.test.lib.Asserts.*;
  *          java.compiler
  *          java.management
  *          jdk.jvmstat/sun.jvmstat.monitor
- * @ignore 8151460
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-UseCompressedOops -XX:-UseCompressedClassPointers -XX:+UsePerfData -XX:+UseSerialGC TestMetaspacePerfCounters
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-UseCompressedOops -XX:-UseCompressedClassPointers -XX:+UsePerfData -XX:+UseParallelGC -XX:+UseParallelOldGC TestMetaspacePerfCounters
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-UseCompressedOops -XX:-UseCompressedClassPointers -XX:+UsePerfData -XX:+UseG1GC TestMetaspacePerfCounters
@@ -85,6 +84,9 @@ public class TestMetaspacePerfCounters {
     }
 
     private static void checkUsedIncreasesWhenLoadingClass(String ns) throws Exception {
+        // Need to ensure that used is up to date and that all unreachable
+        // classes are unloaded before doing this check.
+        System.gc();
         long before = getUsed(ns);
         fooClass = compileAndLoad("Foo", "public class Foo { }");
         System.gc();

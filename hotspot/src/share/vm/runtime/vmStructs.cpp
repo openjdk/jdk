@@ -54,6 +54,7 @@
 #include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/generation.hpp"
 #include "gc/shared/generationSpec.hpp"
+#include "gc/shared/referencePendingListLocker.hpp"
 #include "gc/shared/space.hpp"
 #include "interpreter/bytecodeInterpreter.hpp"
 #include "interpreter/bytecodes.hpp"
@@ -384,8 +385,8 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   nonstatic_field(MethodCounters,              _interpreter_profile_limit,                    int)                                   \
   nonstatic_field(MethodCounters,              _invoke_mask,                                  int)                                   \
   nonstatic_field(MethodCounters,              _backedge_mask,                                int)                                   \
-  nonstatic_field(MethodCounters,              _interpreter_invocation_count,                 int)                                   \
-  nonstatic_field(MethodCounters,              _interpreter_throwout_count,                   u2)                                    \
+  COMPILER2_OR_JVMCI_PRESENT(nonstatic_field(MethodCounters, _interpreter_invocation_count,   int))                                  \
+  COMPILER2_OR_JVMCI_PRESENT(nonstatic_field(MethodCounters, _interpreter_throwout_count,     u2))                                   \
   nonstatic_field(MethodCounters,              _number_of_breakpoints,                        u2)                                    \
   nonstatic_field(MethodCounters,              _invocation_counter,                           InvocationCounter)                     \
   nonstatic_field(MethodCounters,              _backedge_counter,                             InvocationCounter)                     \
@@ -1692,6 +1693,7 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
            declare_type(JavaThread, Thread)                               \
            declare_type(JvmtiAgentThread, JavaThread)                     \
            declare_type(ServiceThread, JavaThread)                        \
+           declare_type(ReferencePendingListLockerThread, JavaThread)     \
   declare_type(CompilerThread, JavaThread)                                \
   declare_type(CodeCacheSweeperThread, JavaThread)                        \
   declare_toplevel_type(OSThread)                                         \

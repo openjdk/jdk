@@ -1221,6 +1221,38 @@ public:
   INSN(caspal,  true,  true)
 #undef INSN
 
+  // 8.1 Atomic operations
+  void lse_atomic(Register Rs, Register Rt, Register Rn,
+                  enum operand_size sz, int op1, int op2, bool a, bool r) {
+    starti;
+    f(sz, 31, 30), f(0b111000, 29, 24), f(a, 23), f(r, 22), f(1, 21);
+    rf(Rs, 16), f(op1, 15), f(op2, 14, 12), f(0, 11, 10), rf(Rn, 5), zrf(Rt, 0);
+  }
+
+#define INSN(NAME, NAME_A, NAME_L, NAME_AL, op1, op2)                   \
+  void NAME(operand_size sz, Register Rs, Register Rt, Register Rn) {   \
+    lse_atomic(Rs, Rt, Rn, sz, op1, op2, false, false);                 \
+  }                                                                     \
+  void NAME_A(operand_size sz, Register Rs, Register Rt, Register Rn) { \
+    lse_atomic(Rs, Rt, Rn, sz, op1, op2, true, false);                  \
+  }                                                                     \
+  void NAME_L(operand_size sz, Register Rs, Register Rt, Register Rn) { \
+    lse_atomic(Rs, Rt, Rn, sz, op1, op2, false, true);                  \
+  }                                                                     \
+  void NAME_AL(operand_size sz, Register Rs, Register Rt, Register Rn) {\
+    lse_atomic(Rs, Rt, Rn, sz, op1, op2, true, true);                   \
+  }
+  INSN(ldadd,  ldadda,  ldaddl,  ldaddal,  0, 0b000);
+  INSN(ldbic,  ldbica,  ldbicl,  ldbical,  0, 0b001);
+  INSN(ldeor,  ldeora,  ldeorl,  ldeoral,  0, 0b010);
+  INSN(ldorr,  ldorra,  ldorrl,  ldorral,  0, 0b011);
+  INSN(ldsmax, ldsmaxa, ldsmaxl, ldsmaxal, 0, 0b100);
+  INSN(ldsmin, ldsmina, ldsminl, ldsminal, 0, 0b101);
+  INSN(ldumax, ldumaxa, ldumaxl, ldumaxal, 0, 0b110);
+  INSN(ldumin, ldumina, lduminl, lduminal, 0, 0b111);
+  INSN(swp,    swpa,    swpl,    swpal,    1, 0b000);
+#undef INSN
+
   // Load register (literal)
 #define INSN(NAME, opc, V)                                              \
   void NAME(Register Rt, address dest) {                                \
