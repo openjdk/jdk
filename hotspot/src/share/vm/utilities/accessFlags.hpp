@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -172,7 +172,6 @@ class AccessFlags VALUE_OBJ_CLASS_SPEC {
 
   // Atomic update of flags
   void atomic_set_bits(jint bits);
-  bool atomic_set_one_bit(jint bit);
   void atomic_clear_bits(jint bits);
 
  private:
@@ -234,13 +233,12 @@ class AccessFlags VALUE_OBJ_CLASS_SPEC {
                                          atomic_set_bits(JVM_ACC_FIELD_HAS_GENERIC_SIGNATURE);
                                        }
 
-  bool set_on_stack(const bool value)
+  void set_on_stack(const bool value)
                                        {
                                          if (value) {
-                                           return atomic_set_one_bit(JVM_ACC_ON_STACK);
+                                           atomic_set_bits(JVM_ACC_ON_STACK);
                                          } else {
                                            atomic_clear_bits(JVM_ACC_ON_STACK);
-                                           return true; // Ignored
                                          }
                                        }
   // Conversion

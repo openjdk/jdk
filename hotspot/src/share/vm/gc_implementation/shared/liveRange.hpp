@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,6 @@ public:
     MemRegion::set_end(e);
   }
   void set_word_size(size_t ws) {
-    assert(ws >= 0, "should be a non-zero range");
     MemRegion::set_word_size(ws);
   }
 
