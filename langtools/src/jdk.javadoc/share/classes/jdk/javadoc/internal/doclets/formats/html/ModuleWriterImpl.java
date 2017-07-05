@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -284,12 +285,14 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
                 additionalModules.remove(m);
         }
         });
+
         // Get all packages for the module and put it in the concealed packages set.
-        (utils.getModulePackageMap().get(mdle)).forEach((pkg) -> {
+        utils.getModulePackageMap().getOrDefault(mdle, Collections.emptySet()).forEach((pkg) -> {
             if (shouldDocument(pkg)) {
                 concealedPackages.add(pkg);
             }
         });
+
         // Get all exported packages for the module using the exports directive for the module.
         (ElementFilter.exportsIn(mdle.getDirectives())).forEach((directive) -> {
             PackageElement p = directive.getPackage();

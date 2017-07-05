@@ -36,6 +36,8 @@ BUILD_TOOLS_JDK := $(call SetupJavaCompilationCompileTarget, \
     BUILD_JIGSAW_TOOLS, $(TOOLS_CLASSES_DIR))
 
 TOOL_GENGRAPHS := $(BUILD_JAVA) -esa -ea -cp $(TOOLS_CLASSES_DIR) \
+    --add-modules jdk.jdeps \
+    --add-exports jdk.jdeps/com.sun.tools.jdeps=ALL-UNNAMED \
     build.tools.jigsaw.GenGraphs
 
 TOOL_MODULESUMMARY := $(BUILD_JAVA) -esa -ea -cp $(TOOLS_CLASSES_DIR) \
