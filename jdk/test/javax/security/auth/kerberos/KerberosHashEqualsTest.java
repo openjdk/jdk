@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,11 @@
  * @test
  * @bug 4641821
  * @summary hashCode() and equals() for KerberosKey and KerberosTicket
- * @ignore Must set up KDC and setup Kerberos configuration file
+ * @run main/manual KerberosHashEqualsTest
+ */
+
+/*
+ * Must setup KDC and Kerberos configuration file
  */
 
 import java.net.InetAddress;

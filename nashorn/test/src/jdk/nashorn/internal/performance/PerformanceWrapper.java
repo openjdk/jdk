@@ -31,9 +31,9 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.ScriptFunction;
-import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 
 /**
@@ -89,7 +89,7 @@ public class PerformanceWrapper extends jdk.nashorn.tools.Shell {
     @Override
     protected Object apply(final ScriptFunction target, final Object self) {
         if (_runsPerIteration == 0 && _numberOfIterations == 0) {
-            final ScriptObject global = jdk.nashorn.internal.runtime.Context.getGlobal();
+            final Global global = jdk.nashorn.internal.runtime.Context.getGlobal();
             final ScriptFunction _target = target;
             final Object _self = self;
 

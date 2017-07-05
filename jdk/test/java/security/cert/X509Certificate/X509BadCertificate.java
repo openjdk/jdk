@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8028431
+ * @bug 8028431 8028591
  * @summary Make sure that proper CertificateException is thrown
  *          when loading bad x509 certificate
  * @author Artem Smotrakov
@@ -39,6 +39,7 @@ public class X509BadCertificate {
 
     public static void main(String[] args) throws Exception {
         test("bad-cert-1.pem");
+        test("bad-cert-2.pem");
     }
 
     /**

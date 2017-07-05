@@ -109,8 +109,7 @@ public class BasicOptionPaneUI extends OptionPaneUI {
 
 
     static {
-        newline = java.security.AccessController.doPrivileged(
-                                new GetPropertyAction("line.separator"));
+        newline = System.lineSeparator();
         if (newline == null) {
             newline = "\n";
         }

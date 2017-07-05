@@ -544,7 +544,7 @@ public final class SystemFlavorMap implements FlavorMap, FlavorTable {
             DataTransferer transferer = DataTransferer.getInstance();
             if (transferer != null) {
                 List<DataFlavor> platformFlavors =
-                    transferer.getPlatformMappingsForNative(nat);
+                        transferer.getPlatformMappingsForNative(nat);
                 if (!platformFlavors.isEmpty()) {
                     if (flavors != null) {
                         platformFlavors.removeAll(new HashSet<>(flavors));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -170,10 +170,10 @@ public final class FontDesignMetrics extends FontMetrics {
      * Also we put the references on a queue so that if they do get nulled
      * out we can clear the keys from the table.
      */
-    private static class KeyReference extends SoftReference
+    private static class KeyReference extends SoftReference<Object>
         implements DisposerRecord, Disposer.PollDisposable {
 
-        static ReferenceQueue queue = Disposer.getQueue();
+        static ReferenceQueue<Object> queue = Disposer.getQueue();
 
         Object key;
 

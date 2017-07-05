@@ -38,6 +38,8 @@
 #include "GraphicsPrimitiveMgr.h"
 #include "Region.h"
 
+#include "jvm.h"
+
 /**
  * The following methods are implemented in the windowing system (i.e. GLX
  * and WGL) source files.

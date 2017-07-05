@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,12 +29,12 @@ import java.awt.peer.*;
 
 import sun.awt.AWTAccessor;
 
-public class WPopupMenuPeer extends WMenuPeer implements PopupMenuPeer {
+final class WPopupMenuPeer extends WMenuPeer implements PopupMenuPeer {
     // We can't use target.getParent() for TrayIcon popup
     // because this method should return null for the TrayIcon
     // popup regardless of that whether it has parent or not.
 
-    public WPopupMenuPeer(PopupMenu target) {
+    WPopupMenuPeer(PopupMenu target) {
         this.target = target;
         MenuContainer parent = null;
 
@@ -67,7 +67,7 @@ public class WPopupMenuPeer extends WMenuPeer implements PopupMenuPeer {
         }
     }
 
-    native void createMenu(WComponentPeer parent);
+    private native void createMenu(WComponentPeer parent);
 
     public void show(Event e) {
         Component origin = (Component)e.target;
@@ -106,5 +106,5 @@ public class WPopupMenuPeer extends WMenuPeer implements PopupMenuPeer {
         _show(e);
     }
 
-    public native void _show(Event e);
+    private native void _show(Event e);
 }

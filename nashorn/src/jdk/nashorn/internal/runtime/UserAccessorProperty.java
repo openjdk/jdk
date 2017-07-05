@@ -34,6 +34,7 @@ import jdk.nashorn.internal.lookup.Lookup;
 import jdk.nashorn.internal.runtime.linker.Bootstrap;
 
 import static jdk.nashorn.internal.codegen.CompilerConstants.staticCall;
+import jdk.nashorn.internal.objects.Global;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
 
@@ -73,7 +74,7 @@ public final class UserAccessorProperty extends Property {
 
     private static MethodHandle getINVOKE_UA_GETTER() {
 
-        return ((GlobalObject)Context.getGlobal()).getDynamicInvoker(INVOKE_UA_GETTER,
+        return Context.getGlobal().getDynamicInvoker(INVOKE_UA_GETTER,
                 new Callable<MethodHandle>() {
                     @Override
                     public MethodHandle call() {
@@ -86,7 +87,7 @@ public final class UserAccessorProperty extends Property {
     /** Dynamic invoker for setter */
     private static Object INVOKE_UA_SETTER = new Object();
     private static MethodHandle getINVOKE_UA_SETTER() {
-        return ((GlobalObject)Context.getGlobal()).getDynamicInvoker(INVOKE_UA_SETTER,
+        return Context.getGlobal().getDynamicInvoker(INVOKE_UA_SETTER,
                 new Callable<MethodHandle>() {
                     @Override
                     public MethodHandle call() {
