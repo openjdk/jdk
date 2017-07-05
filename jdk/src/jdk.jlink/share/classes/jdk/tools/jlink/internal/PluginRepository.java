@@ -24,7 +24,6 @@
  */
 package jdk.tools.jlink.internal;
 
-import java.lang.reflect.Layer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -56,7 +55,7 @@ public final class PluginRepository {
      * @return A provider or null if not found.
      */
     public static Plugin getPlugin(String name,
-            Layer pluginsLayer) {
+            ModuleLayer pluginsLayer) {
         return getPlugin(Plugin.class, name, pluginsLayer);
     }
 
@@ -69,7 +68,7 @@ public final class PluginRepository {
      * @return A plugin or null if no plugin found.
      */
     public static Plugin newPlugin(Map<String, String> config, String name,
-            Layer pluginsLayer) {
+            ModuleLayer pluginsLayer) {
         Objects.requireNonNull(name);
         Objects.requireNonNull(pluginsLayer);
         Plugin plugin = getPlugin(name, pluginsLayer);
@@ -107,12 +106,12 @@ public final class PluginRepository {
         registeredPlugins.remove(name);
     }
 
-    public static List<Plugin> getPlugins(Layer pluginsLayer) {
+    public static List<Plugin> getPlugins(ModuleLayer pluginsLayer) {
         return getPlugins(Plugin.class, pluginsLayer);
     }
 
     private static <T extends Plugin> T getPlugin(Class<T> clazz, String name,
-            Layer pluginsLayer) {
+            ModuleLayer pluginsLayer) {
         Objects.requireNonNull(name);
         Objects.requireNonNull(pluginsLayer);
         @SuppressWarnings("unchecked")
@@ -136,7 +135,7 @@ public final class PluginRepository {
      * @param pluginsLayer
      * @return The list of plugins.
      */
-    private static <T extends Plugin> List<T> getPlugins(Class<T> clazz, Layer pluginsLayer) {
+    private static <T extends Plugin> List<T> getPlugins(Class<T> clazz, ModuleLayer pluginsLayer) {
         Objects.requireNonNull(pluginsLayer);
         List<T> factories = new ArrayList<>();
         try {

@@ -186,7 +186,17 @@ public class D3DGraphicsConfig
         SurfaceData sd = d3dvsm.getPrimarySurfaceData();
         if (sd instanceof D3DSurfaceData) {
             D3DSurfaceData d3dsd = (D3DSurfaceData)sd;
-            D3DSurfaceData.swapBuffers(d3dsd, x1, y1, x2, y2);
+            double scaleX = sd.getDefaultScaleX();
+            double scaleY = sd.getDefaultScaleY();
+            if (scaleX > 1 || scaleY > 1) {
+                int sx1 = (int) Math.floor(x1 * scaleX);
+                int sy1 = (int) Math.floor(y1 * scaleY);
+                int sx2 = (int) Math.ceil(x2 * scaleX);
+                int sy2 = (int) Math.ceil(y2 * scaleY);
+                D3DSurfaceData.swapBuffers(d3dsd, sx1, sy1, sx2, sy2);
+            } else {
+                D3DSurfaceData.swapBuffers(d3dsd, x1, y1, x2, y2);
+            }
         } else {
             // the surface was likely lost could not have been restored
             Graphics g = peer.getGraphics();

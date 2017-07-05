@@ -71,7 +71,7 @@ class ReplacedNodes VALUE_OBJ_CLASS_SPEC {
   void record(Node* initial, Node* improved);
   void transfer_from(const ReplacedNodes& other, uint idx);
   void reset();
-  void apply(Node* n);
+  void apply(Node* n, uint idx);
   void merge_with(const ReplacedNodes& other);
   bool is_empty() const;
   void dump(outputStream *st) const;

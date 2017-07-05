@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,17 +25,34 @@
 
 package sun.awt.X11;
 
-import java.awt.*;
-import java.awt.event.*;
-import java.awt.peer.TrayIconPeer;
-import sun.awt.*;
-
-import java.awt.image.*;
-import java.text.BreakIterator;
-import java.util.concurrent.ArrayBlockingQueue;
+import java.awt.BorderLayout;
+import java.awt.Button;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.Frame;
+import java.awt.GridLayout;
+import java.awt.Image;
+import java.awt.Insets;
+import java.awt.Label;
+import java.awt.MouseInfo;
+import java.awt.Panel;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.Toolkit;
+import java.awt.Window;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.lang.reflect.InvocationTargetException;
+import java.text.BreakIterator;
+import java.util.concurrent.ArrayBlockingQueue;
+
+import sun.awt.SunToolkit;
 
 /**
  * An utility window class. This is a base class for Tooltip and Balloon.
@@ -81,16 +98,16 @@ public abstract class InfoWindow extends Window {
         Dimension size = getSize();
         Rectangle scrSize = getGraphicsConfiguration().getBounds();
 
-        if (corner.x < scrSize.width/2 && corner.y < scrSize.height/2) { // 1st square
+        if (corner.x < scrSize.x + scrSize.width/2 && corner.y < scrSize.y + scrSize.height/2) { // 1st square
             setLocation(corner.x + indent, corner.y + indent);
 
-        } else if (corner.x >= scrSize.width/2 && corner.y < scrSize.height/2) { // 2nd square
+        } else if (corner.x >= scrSize.x + scrSize.width/2 && corner.y < scrSize.y + scrSize.height/2) { // 2nd square
             setLocation(corner.x - indent - size.width, corner.y + indent);
 
-        } else if (corner.x < scrSize.width/2 && corner.y >= scrSize.height/2) { // 3rd square
+        } else if (corner.x < scrSize.x + scrSize.width/2 && corner.y >= scrSize.y + scrSize.height/2) { // 3rd square
             setLocation(corner.x + indent, corner.y - indent - size.height);
 
-        } else if (corner.x >= scrSize.width/2 && corner.y >= scrSize.height/2) { // 4th square
+        } else if (corner.x >= scrSize.x +scrSize.width/2 && corner.y >= scrSize.y +scrSize.height/2) { // 4th square
             setLocation(corner.x - indent - size.width, corner.y - indent - size.height);
         }
 
@@ -429,7 +446,7 @@ public abstract class InfoWindow extends Window {
                 gtkImagesLoaded = true;
             }
         }
-
+        @SuppressWarnings("deprecation")
         private class ActionPerformer extends MouseAdapter {
             public void mouseClicked(MouseEvent e) {
                 // hide the balloon by any click

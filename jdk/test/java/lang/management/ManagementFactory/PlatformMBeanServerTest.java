@@ -26,7 +26,9 @@
  * @bug     4947536
  * @summary Basic unit test of ManagementFactory.getPlatformMBeanServer()
  * @author  Mandy Chung
- * @modules jdk.management
+ *
+ * @modules java.logging
+ *          jdk.management
  */
 
 import java.lang.management.*;

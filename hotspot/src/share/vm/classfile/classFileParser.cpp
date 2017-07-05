@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,6 +104,12 @@
 #define JAVA_8_VERSION                    52
 
 #define JAVA_9_VERSION                    53
+
+void ClassFileParser::set_class_bad_constant_seen(short bad_constant) {
+  assert((bad_constant == 19 || bad_constant == 20) && _major_version >= JAVA_9_VERSION,
+         "Unexpected bad constant pool entry");
+  if (_bad_constant_seen == 0) _bad_constant_seen = bad_constant;
+}
 
 void ClassFileParser::parse_constant_pool_entries(const ClassFileStream* const stream,
                                                   ConstantPool* cp,
@@ -302,6 +308,18 @@ void ClassFileParser::parse_constant_pool_entries(const ClassFileStream* const s
         }
         break;
       }
+      case 19:
+      case 20: {
+        // Record that an error occurred in these two cases but keep parsing so
+        // that ACC_Module can be checked for in the access_flags.  Need to
+        // throw NoClassDefFoundError in that case.
+        if (_major_version >= JAVA_9_VERSION) {
+          cfs->guarantee_more(3, CHECK);
+          cfs->get_u2_fast();
+          set_class_bad_constant_seen(tag);
+          break;
+        }
+      }
       default: {
         classfile_parse_error("Unknown constant tag %u in class file %s",
                               tag,
@@ -359,14 +377,18 @@ PRAGMA_DIAG_POP
 #endif
 
 void ClassFileParser::parse_constant_pool(const ClassFileStream* const stream,
-                                          ConstantPool* const cp,
-                                          const int length,
-                                          TRAPS) {
+                                         ConstantPool* const cp,
+                                         const int length,
+                                         TRAPS) {
   assert(cp != NULL, "invariant");
   assert(stream != NULL, "invariant");
 
   // parsing constant pool entries
   parse_constant_pool_entries(stream, cp, length, CHECK);
+  if (class_bad_constant_seen() != 0) {
+    // a bad CP entry has been detected previously so stop parsing and just return.
+    return;
+  }
 
   int index = 1;  // declared outside of loops for portability
 
@@ -1244,6 +1266,10 @@ void ClassFileParser::parse_field_attributes(const ClassFileStream* const cfs,
       }
     } else if (_major_version >= JAVA_1_5_VERSION) {
       if (attribute_name == vmSymbols::tag_signature()) {
+        if (generic_signature_index != 0) {
+          classfile_parse_error(
+            "Multiple Signature attributes for field in class file %s", CHECK);
+        }
         if (attribute_length != 2) {
           classfile_parse_error(
             "Wrong size %u for field's Signature attribute in class file %s",
@@ -2565,6 +2591,11 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
       }
     } else if (_major_version >= JAVA_1_5_VERSION) {
       if (method_attribute_name == vmSymbols::tag_signature()) {
+        if (generic_signature_index != 0) {
+          classfile_parse_error(
+            "Multiple Signature attributes for method in class file %s",
+            CHECK_NULL);
+        }
         if (method_attribute_length != 2) {
           classfile_parse_error(
             "Invalid Signature attribute length %u in class file %s",
@@ -3052,7 +3083,13 @@ u2 ClassFileParser::parse_classfile_inner_classes_attribute(const ClassFileStrea
                          "Class is both outer and inner class in class file %s", CHECK_0);
     }
     // Access flags
-    jint flags = cfs->get_u2_fast() & RECOGNIZED_INNER_CLASS_MODIFIERS;
+    jint flags;
+    // JVM_ACC_MODULE is defined in JDK-9 and later.
+    if (_major_version >= JAVA_9_VERSION) {
+      flags = cfs->get_u2_fast() & (RECOGNIZED_INNER_CLASS_MODIFIERS | JVM_ACC_MODULE);
+    } else {
+      flags = cfs->get_u2_fast() & RECOGNIZED_INNER_CLASS_MODIFIERS;
+    }
     if ((flags & JVM_ACC_INTERFACE) && _major_version < JAVA_6_VERSION) {
       // Set abstract bit for old class files for backward compatibility
       flags |= JVM_ACC_ABSTRACT;
@@ -3278,6 +3315,10 @@ void ClassFileParser::parse_classfile_attributes(const ClassFileStream* const cf
       }
     } else if (_major_version >= JAVA_1_5_VERSION) {
       if (tag == vmSymbols::tag_signature()) {
+        if (_generic_signature_index != 0) {
+          classfile_parse_error(
+            "Multiple Signature attributes in class file %s", CHECK);
+        }
         if (attribute_length != 2) {
           classfile_parse_error(
             "Wrong Signature attribute length %u in class file %s",
@@ -4524,6 +4565,18 @@ static void check_illegal_static_method(const InstanceKlass* this_klass, TRAPS) 
 // utility methods for format checking
 
 void ClassFileParser::verify_legal_class_modifiers(jint flags, TRAPS) const {
+  const bool is_module = (flags & JVM_ACC_MODULE) != 0;
+  assert(_major_version >= JAVA_9_VERSION || !is_module, "JVM_ACC_MODULE should not be set");
+  if (is_module) {
+    ResourceMark rm(THREAD);
+    Exceptions::fthrow(
+      THREAD_AND_LOCATION,
+      vmSymbols::java_lang_NoClassDefFoundError(),
+      "%s is not a class because access_flag ACC_MODULE is set",
+      _class_name->as_C_string());
+    return;
+  }
+
   if (!_need_verify) { return; }
 
   const bool is_interface  = (flags & JVM_ACC_INTERFACE)  != 0;
@@ -4532,14 +4585,12 @@ void ClassFileParser::verify_legal_class_modifiers(jint flags, TRAPS) const {
   const bool is_super      = (flags & JVM_ACC_SUPER)      != 0;
   const bool is_enum       = (flags & JVM_ACC_ENUM)       != 0;
   const bool is_annotation = (flags & JVM_ACC_ANNOTATION) != 0;
-  const bool is_module_info= (flags & JVM_ACC_MODULE)     != 0;
   const bool major_gte_15  = _major_version >= JAVA_1_5_VERSION;
 
   if ((is_abstract && is_final) ||
       (is_interface && !is_abstract) ||
       (is_interface && major_gte_15 && (is_super || is_enum)) ||
-      (!is_interface && major_gte_15 && is_annotation) ||
-      is_module_info) {
+      (!is_interface && major_gte_15 && is_annotation)) {
     ResourceMark rm(THREAD);
     Exceptions::fthrow(
       THREAD_AND_LOCATION,
@@ -5355,7 +5406,7 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik, bool changed_by_loa
   ModuleEntry* module_entry = ik->module();
   assert(module_entry != NULL, "module_entry should always be set");
 
-  // Obtain java.lang.reflect.Module
+  // Obtain java.lang.Module
   Handle module_handle(THREAD, JNIHandles::resolve(module_entry->module()));
 
   // Allocate mirror and initialize static fields
@@ -5542,6 +5593,7 @@ ClassFileParser::ClassFileParser(ClassFileStream* stream,
   _protection_domain(protection_domain),
   _access_flags(),
   _pub_level(pub_level),
+  _bad_constant_seen(0),
   _synthetic_flag(false),
   _sde_length(false),
   _sde_buffer(NULL),
@@ -5734,16 +5786,29 @@ void ClassFileParser::parse_stream(const ClassFileStream* const stream,
   stream->guarantee_more(8, CHECK);  // flags, this_class, super_class, infs_len
 
   // Access flags
-  jint flags = stream->get_u2_fast() & JVM_RECOGNIZED_CLASS_MODIFIERS;
+  jint flags;
+  // JVM_ACC_MODULE is defined in JDK-9 and later.
+  if (_major_version >= JAVA_9_VERSION) {
+    flags = stream->get_u2_fast() & (JVM_RECOGNIZED_CLASS_MODIFIERS | JVM_ACC_MODULE);
+  } else {
+    flags = stream->get_u2_fast() & JVM_RECOGNIZED_CLASS_MODIFIERS;
+  }
 
   if ((flags & JVM_ACC_INTERFACE) && _major_version < JAVA_6_VERSION) {
     // Set abstract bit for old class files for backward compatibility
     flags |= JVM_ACC_ABSTRACT;
   }
 
-  _access_flags.set_flags(flags);
+  verify_legal_class_modifiers(flags, CHECK);
 
-  verify_legal_class_modifiers((jint)_access_flags.as_int(), CHECK);
+  short bad_constant = class_bad_constant_seen();
+  if (bad_constant != 0) {
+    // Do not throw CFE until after the access_flags are checked because if
+    // ACC_MODULE is set in the access flags, then NCDFE must be thrown, not CFE.
+    classfile_parse_error("Unknown constant tag %u in class file %s", bad_constant, CHECK);
+  }
+
+  _access_flags.set_flags(flags);
 
   // This class and superclass
   _this_class_index = stream->get_u2_fast();
