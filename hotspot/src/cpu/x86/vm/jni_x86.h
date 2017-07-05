@@ -26,8 +26,14 @@
 #ifndef _JAVASOFT_JNI_MD_H_
 #define _JAVASOFT_JNI_MD_H_
 
-#if defined(SOLARIS) || defined(LINUX) || defined(_ALLBSD_SOURCE)
+#if defined(_WIN32)
+  #define JNIEXPORT __declspec(dllexport)
+  #define JNIIMPORT __declspec(dllimport)
+  #define JNICALL __stdcall
 
+  typedef int jint;
+  typedef __int64 jlong;
+#else
 
 // Note: please do not change these without also changing jni_md.h in the JDK
 // repository
@@ -50,13 +56,6 @@
   typedef long long jlong;
 #endif
 
-#else
-  #define JNIEXPORT __declspec(dllexport)
-  #define JNIIMPORT __declspec(dllimport)
-  #define JNICALL __stdcall
-
-  typedef int jint;
-  typedef __int64 jlong;
 #endif
 
 typedef signed char jbyte;

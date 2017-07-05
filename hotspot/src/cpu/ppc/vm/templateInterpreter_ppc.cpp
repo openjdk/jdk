@@ -81,24 +81,18 @@ address TemplateInterpreterGenerator::generate_ArrayIndexOutOfBounds_handler(con
 #if 0
 // Call special ClassCastException constructor taking object to cast
 // and target class as arguments.
-address TemplateInterpreterGenerator::generate_ClassCastException_verbose_handler(const char* name) {
+address TemplateInterpreterGenerator::generate_ClassCastException_verbose_handler() {
   address entry = __ pc();
-
-  // Target class oop is in register R6_ARG4 by convention!
 
   // Expression stack must be empty before entering the VM if an
   // exception happened.
   __ empty_expression_stack();
-  // Setup parameters.
+
   // Thread will be loaded to R3_ARG1.
-  __ load_const_optimized(R4_ARG2, (address) name);
-  __ mr(R5_ARG3, R17_tos);
-  // R6_ARG4 contains specified class.
-  __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::throw_ClassCastException_verbose));
-#ifdef ASSERT
+  // Target class oop is in register R5_ARG3 by convention!
+  __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::throw_ClassCastException_verbose, R17_tos, R5_ARG3));
   // Above call must not return here since exception pending.
-  __ should_not_reach_here();
-#endif
+  DEBUG_ONLY(__ should_not_reach_here();)
   return entry;
 }
 #endif
@@ -1538,14 +1532,32 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
     __ stw(R0, in_bytes(JavaThread::popframe_condition_offset()), R16_thread);
 
     // Get out of the current method and re-execute the call that called us.
-    __ merge_frames(/*top_frame_sp*/ R21_sender_SP, /*return_pc*/ return_pc, R11_scratch1, R12_scratch2);
+    __ merge_frames(/*top_frame_sp*/ R21_sender_SP, /*return_pc*/ noreg, R11_scratch1, R12_scratch2);
     __ restore_interpreter_state(R11_scratch1);
     __ ld(R12_scratch2, _ijava_state_neg(top_frame_sp), R11_scratch1);
     __ resize_frame_absolute(R12_scratch2, R11_scratch1, R0);
-    __ mtlr(return_pc);
     if (ProfileInterpreter) {
       __ set_method_data_pointer_for_bcp();
     }
+#if INCLUDE_JVMTI
+    Label L_done;
+
+    __ lbz(R11_scratch1, 0, R14_bcp);
+    __ cmpwi(CCR0, R11_scratch1, Bytecodes::_invokestatic);
+    __ bne(CCR0, L_done);
+
+    // The member name argument must be restored if _invokestatic is re-executed after a PopFrame call.
+    // Detect such a case in the InterpreterRuntime function and return the member name argument, or NULL.
+    __ ld(R4_ARG2, 0, R18_locals);
+    __ call_VM(R11_scratch1, CAST_FROM_FN_PTR(address, InterpreterRuntime::member_name_arg_or_null),
+               R4_ARG2, R19_method, R14_bcp);
+
+    __ cmpdi(CCR0, R11_scratch1, 0);
+    __ beq(CCR0, L_done);
+
+    __ std(R11_scratch1, wordSize, R15_esp);
+    __ bind(L_done);
+#endif // INCLUDE_JVMTI
     __ dispatch_next(vtos);
   }
   // end of JVMTI PopFrame support

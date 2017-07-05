@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3597,7 +3597,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * Converts the specified BigInteger to a string and appends to
      * {@code sb}.  This implements the recursive Schoenhage algorithm
      * for base conversions.
-     * <p/>
+     * <p>
      * See Knuth, Donald,  _The Art of Computer Programming_, Vol. 2,
      * Answers to Exercises (4.4) Question 14.
      *
@@ -3646,7 +3646,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     /**
      * Returns the value radix^(2^exponent) from the cache.
      * If this value doesn't already exist in the cache, it is added.
-     * <p/>
+     * <p>
      * This could be changed to a more complicated caching method using
      * {@code Future}.
      */

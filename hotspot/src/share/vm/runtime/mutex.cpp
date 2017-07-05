@@ -25,6 +25,7 @@
 
 #include "precompiled.hpp"
 #include "runtime/mutex.hpp"
+#include "runtime/orderAccess.inline.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/thread.inline.hpp"
 #include "utilities/events.hpp"

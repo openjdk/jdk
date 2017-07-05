@@ -1532,10 +1532,12 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
      *
      * @param corePoolSize the new core size
      * @throws IllegalArgumentException if {@code corePoolSize < 0}
+     *         or {@code corePoolSize} is greater than the {@linkplain
+     *         #getMaximumPoolSize() maximum pool size}
      * @see #getCorePoolSize
      */
     public void setCorePoolSize(int corePoolSize) {
-        if (corePoolSize < 0)
+        if (corePoolSize < 0 || maximumPoolSize < corePoolSize)
             throw new IllegalArgumentException();
         int delta = corePoolSize - this.corePoolSize;
         this.corePoolSize = corePoolSize;

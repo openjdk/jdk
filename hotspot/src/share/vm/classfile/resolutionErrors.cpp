@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,12 +32,13 @@
 
 // add new entry to the table
 void ResolutionErrorTable::add_entry(int index, unsigned int hash,
-                                     constantPoolHandle pool, int cp_index, Symbol* error)
+                                     constantPoolHandle pool, int cp_index,
+                                     Symbol* error, Symbol* message)
 {
   assert_locked_or_safepoint(SystemDictionary_lock);
   assert(!pool.is_null() && error != NULL, "adding NULL obj");
 
-  ResolutionErrorEntry* entry = new_entry(hash, pool(), cp_index, error);
+  ResolutionErrorEntry* entry = new_entry(hash, pool(), cp_index, error, message);
   add_entry(index, entry);
 }
 
@@ -58,19 +59,26 @@ ResolutionErrorEntry* ResolutionErrorTable::find_entry(int index, unsigned int h
 }
 
 void ResolutionErrorEntry::set_error(Symbol* e) {
-  assert(e == NULL || _error == NULL, "cannot reset error");
+  assert(e != NULL, "must set a value");
   _error = e;
-  if (_error != NULL) _error->increment_refcount();
+  _error->increment_refcount();
+}
+
+void ResolutionErrorEntry::set_message(Symbol* c) {
+  assert(c != NULL, "must set a value");
+  _message = c;
+  _message->increment_refcount();
 }
 
 // create new error entry
 ResolutionErrorEntry* ResolutionErrorTable::new_entry(int hash, ConstantPool* pool,
-                                                      int cp_index, Symbol* error)
+                                                      int cp_index, Symbol* error,
+                                                      Symbol* message)
 {
   ResolutionErrorEntry* entry = (ResolutionErrorEntry*)Hashtable<ConstantPool*, mtClass>::new_entry(hash, pool);
   entry->set_cp_index(cp_index);
-  NOT_PRODUCT(entry->set_error(NULL);)
   entry->set_error(error);
+  entry->set_message(message);
 
   return entry;
 }
@@ -79,6 +87,7 @@ void ResolutionErrorTable::free_entry(ResolutionErrorEntry *entry) {
   // decrement error refcount
   assert(entry->error() != NULL, "error should be set");
   entry->error()->decrement_refcount();
+  entry->message()->decrement_refcount();
   Hashtable<ConstantPool*, mtClass>::free_entry(entry);
 }
 

@@ -33,6 +33,7 @@
 #include "prims/jvmtiRedefineClassesTrace.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/orderAccess.inline.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_ALL_GCS
 # include "gc_implementation/parallelScavenge/psPromotionManager.hpp"

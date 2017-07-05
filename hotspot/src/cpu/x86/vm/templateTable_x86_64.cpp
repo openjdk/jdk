@@ -3179,12 +3179,6 @@ void TemplateTable::invokehandle(int byte_no) {
   const Register rcx_recv   = rcx;
   const Register rdx_flags  = rdx;
 
-  if (!EnableInvokeDynamic) {
-    // rewriter does not generate this bytecode
-    __ should_not_reach_here();
-    return;
-  }
-
   prepare_invoke(byte_no, rbx_method, rax_mtype, rcx_recv);
   __ verify_method_ptr(rbx_method);
   __ verify_oop(rcx_recv);
@@ -3206,17 +3200,6 @@ void TemplateTable::invokehandle(int byte_no) {
 void TemplateTable::invokedynamic(int byte_no) {
   transition(vtos, vtos);
   assert(byte_no == f1_byte, "use this argument");
-
-  if (!EnableInvokeDynamic) {
-    // We should not encounter this bytecode if !EnableInvokeDynamic.
-    // The verifier will stop it.  However, if we get past the verifier,
-    // this will stop the thread in a reasonable way, without crashing the JVM.
-    __ call_VM(noreg, CAST_FROM_FN_PTR(address,
-                     InterpreterRuntime::throw_IncompatibleClassChangeError));
-    // the call_VM checks for exception, so we should never return here.
-    __ should_not_reach_here();
-    return;
-  }
 
   const Register rbx_method   = rbx;
   const Register rax_callsite = rax;
