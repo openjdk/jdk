@@ -36,7 +36,7 @@ class ciMethodHandle : public ciInstance {
 private:
   ciMethod*      _callee;
   ciMethod*      _caller;
-  ciCallProfile* _profile;
+  ciCallProfile  _profile;
 
   // Return an adapter for this MethodHandle.
   ciMethod* get_adapter_impl(bool is_invokedynamic) const;
@@ -49,8 +49,7 @@ public:
   ciMethodHandle(instanceHandle h_i) :
     ciInstance(h_i),
     _callee(NULL),
-    _caller(NULL),
-    _profile(NULL)
+    _caller(NULL)
   {}
 
   // What kind of ciObject is this?
@@ -58,7 +57,7 @@ public:
 
   void set_callee(ciMethod* m)                  { _callee  = m;       }
   void set_caller(ciMethod* m)                  { _caller  = m;       }
-  void set_call_profile(ciCallProfile* profile) { _profile = profile; }
+  void set_call_profile(ciCallProfile profile)  { _profile = profile; }
 
   // Return an adapter for a MethodHandle call.
   ciMethod* get_method_handle_adapter() const { return get_adapter(false); }

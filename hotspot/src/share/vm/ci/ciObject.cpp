@@ -187,7 +187,7 @@ jobject ciObject::constant_encoding() {
 // ciObject::can_be_constant
 bool ciObject::can_be_constant() {
   if (ScavengeRootsInCode >= 1)  return true;  // now everybody can encode as a constant
-  return handle() == NULL || !is_scavengable();
+  return handle() == NULL || is_perm();
 }
 
 // ------------------------------------------------------------------
@@ -204,7 +204,7 @@ bool ciObject::should_be_constant() {
       return true;
     }
   }
-  return handle() == NULL || !is_scavengable();
+  return handle() == NULL || is_perm();
 }
 
 

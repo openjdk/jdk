@@ -3804,6 +3804,14 @@ void Assembler::addq(Register dst, Register src) {
   emit_arith(0x03, 0xC0, dst, src);
 }
 
+void Assembler::andq(Address dst, int32_t imm32) {
+  InstructionMark im(this);
+  prefixq(dst);
+  emit_byte(0x81);
+  emit_operand(rsp, dst, 4);
+  emit_long(imm32);
+}
+
 void Assembler::andq(Register dst, int32_t imm32) {
   (void) prefixq_and_encode(dst->encoding());
   emit_arith(0x81, 0xE0, dst, imm32);
@@ -5090,7 +5098,7 @@ void MacroAssembler::debug32(int rdi, int rsi, int rbp, int rsp, int rbx, int rd
   } else {
     ttyLocker ttyl;
     ::tty->print_cr("=============== DEBUG MESSAGE: %s ================\n", msg);
-    assert(false, "DEBUG MESSAGE");
+    assert(false, err_msg("DEBUG MESSAGE: %s", msg));
   }
   ThreadStateTransition::transition(thread, _thread_in_vm, saved_state);
 }
@@ -5653,6 +5661,7 @@ void MacroAssembler::debug64(char* msg, int64_t pc, int64_t regs[]) {
     ttyLocker ttyl;
     ::tty->print_cr("=============== DEBUG MESSAGE: %s ================\n",
                     msg);
+    assert(false, err_msg("DEBUG MESSAGE: %s", msg));
   }
 }
 
@@ -5888,6 +5897,53 @@ void MacroAssembler::call_VM(Register oop_result,
   pass_arg2(this, arg_2);
   pass_arg1(this, arg_1);
   call_VM(oop_result, last_java_sp, entry_point, 3, check_exceptions);
+}
+
+void MacroAssembler::super_call_VM(Register oop_result,
+                                   Register last_java_sp,
+                                   address entry_point,
+                                   int number_of_arguments,
+                                   bool check_exceptions) {
+  Register thread = LP64_ONLY(r15_thread) NOT_LP64(noreg);
+  MacroAssembler::call_VM_base(oop_result, thread, last_java_sp, entry_point, number_of_arguments, check_exceptions);
+}
+
+void MacroAssembler::super_call_VM(Register oop_result,
+                                   Register last_java_sp,
+                                   address entry_point,
+                                   Register arg_1,
+                                   bool check_exceptions) {
+  pass_arg1(this, arg_1);
+  super_call_VM(oop_result, last_java_sp, entry_point, 1, check_exceptions);
+}
+
+void MacroAssembler::super_call_VM(Register oop_result,
+                                   Register last_java_sp,
+                                   address entry_point,
+                                   Register arg_1,
+                                   Register arg_2,
+                                   bool check_exceptions) {
+
+  LP64_ONLY(assert(arg_1 != c_rarg2, "smashed arg"));
+  pass_arg2(this, arg_2);
+  pass_arg1(this, arg_1);
+  super_call_VM(oop_result, last_java_sp, entry_point, 2, check_exceptions);
+}
+
+void MacroAssembler::super_call_VM(Register oop_result,
+                                   Register last_java_sp,
+                                   address entry_point,
+                                   Register arg_1,
+                                   Register arg_2,
+                                   Register arg_3,
+                                   bool check_exceptions) {
+  LP64_ONLY(assert(arg_1 != c_rarg3, "smashed arg"));
+  LP64_ONLY(assert(arg_2 != c_rarg3, "smashed arg"));
+  pass_arg3(this, arg_3);
+  LP64_ONLY(assert(arg_1 != c_rarg2, "smashed arg"));
+  pass_arg2(this, arg_2);
+  pass_arg1(this, arg_1);
+  super_call_VM(oop_result, last_java_sp, entry_point, 3, check_exceptions);
 }
 
 void MacroAssembler::call_VM_base(Register oop_result,

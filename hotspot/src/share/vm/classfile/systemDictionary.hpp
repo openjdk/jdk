@@ -152,6 +152,7 @@ class SymbolPropertyTable;
   template(DirectMethodHandle_klass,     java_lang_invoke_DirectMethodHandle, Pre_JSR292) \
   template(MethodType_klass,             java_lang_invoke_MethodType,       Pre_JSR292) \
   template(MethodTypeForm_klass,         java_lang_invoke_MethodTypeForm,   Pre_JSR292) \
+  template(BootstrapMethodError_klass,   java_lang_BootstrapMethodError, Pre_JSR292) \
   template(WrongMethodTypeException_klass, java_lang_invoke_WrongMethodTypeException, Pre_JSR292) \
   template(CallSite_klass,               java_lang_invoke_CallSite,         Pre_JSR292) \
   /* Note: MethodHandle must be first, and CallSite last in group */          \

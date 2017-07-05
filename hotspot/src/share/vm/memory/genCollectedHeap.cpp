@@ -434,11 +434,9 @@ HeapWord* GenCollectedHeap::attempt_allocation(size_t size,
 }
 
 HeapWord* GenCollectedHeap::mem_allocate(size_t size,
-                                         bool is_large_noref,
-                                         bool is_tlab,
                                          bool* gc_overhead_limit_was_exceeded) {
   return collector_policy()->mem_allocate_work(size,
-                                               is_tlab,
+                                               false /* is_tlab */,
                                                gc_overhead_limit_was_exceeded);
 }
 
@@ -711,15 +709,6 @@ void GenCollectedHeap::set_par_threads(int t) {
   _gen_process_strong_tasks->set_n_threads(t);
 }
 
-class AssertIsPermClosure: public OopClosure {
-public:
-  void do_oop(oop* p) {
-    assert((*p) == NULL || (*p)->is_perm(), "Referent should be perm.");
-  }
-  void do_oop(narrowOop* p) { ShouldNotReachHere(); }
-};
-static AssertIsPermClosure assert_is_perm_closure;
-
 void GenCollectedHeap::
 gen_process_strong_roots(int level,
                          bool younger_gens_as_roots,
@@ -962,6 +951,13 @@ void GenCollectedHeap::do_full_collection(bool clear_all_soft_refs,
   }
 }
 
+bool GenCollectedHeap::is_in_young(oop p) {
+  bool result = ((HeapWord*)p) < _gens[_n_gens - 1]->reserved().start();
+  assert(result == _gens[0]->is_in_reserved(p),
+         err_msg("incorrect test - result=%d, p=" PTR_FORMAT, result, (void*)p));
+  return result;
+}
+
 // Returns "TRUE" iff "p" points into the allocated area of the heap.
 bool GenCollectedHeap::is_in(const void* p) const {
   #ifndef ASSERT
@@ -984,10 +980,16 @@ bool GenCollectedHeap::is_in(const void* p) const {
   return false;
 }
 
-// Returns "TRUE" iff "p" points into the allocated area of the heap.
-bool GenCollectedHeap::is_in_youngest(void* p) {
-  return _gens[0]->is_in(p);
+#ifdef ASSERT
+// Don't implement this by using is_in_young().  This method is used
+// in some cases to check that is_in_young() is correct.
+bool GenCollectedHeap::is_in_partial_collection(const void* p) {
+  assert(is_in_reserved(p) || p == NULL,
+    "Does not work if address is non-null and outside of the heap");
+  // The order of the generations is young (low addr), old, perm (high addr)
+  return p < _gens[_n_gens - 2]->reserved().end() && p != NULL;
 }
+#endif
 
 void GenCollectedHeap::oop_iterate(OopClosure* cl) {
   for (int i = 0; i < _n_gens; i++) {
@@ -1116,11 +1118,9 @@ size_t GenCollectedHeap::unsafe_max_tlab_alloc(Thread* thr) const {
 
 HeapWord* GenCollectedHeap::allocate_new_tlab(size_t size) {
   bool gc_overhead_limit_was_exceeded;
-  HeapWord* result = mem_allocate(size   /* size */,
-                                  false  /* is_large_noref */,
-                                  true   /* is_tlab */,
-                                  &gc_overhead_limit_was_exceeded);
-  return result;
+  return collector_policy()->mem_allocate_work(size /* size */,
+                                               true /* is_tlab */,
+                                               &gc_overhead_limit_was_exceeded);
 }
 
 // Requires "*prev_ptr" to be non-NULL.  Deletes and a block of minimal size
@@ -1173,10 +1173,6 @@ void GenCollectedHeap::release_scratch() {
   for (int i = 0; i < _n_gens; i++) {
     _gens[i]->reset_scratch();
   }
-}
-
-size_t GenCollectedHeap::large_typearray_limit() {
-  return gen_policy()->large_typearray_limit();
 }
 
 class GenPrepareForVerifyClosure: public GenCollectedHeap::GenClosure {
@@ -1256,7 +1252,7 @@ GCStats* GenCollectedHeap::gc_stats(int level) const {
   return _gens[level]->gc_stats();
 }
 
-void GenCollectedHeap::verify(bool allow_dirty, bool silent, bool option /* ignored */) {
+void GenCollectedHeap::verify(bool allow_dirty, bool silent, VerifyOption option /* ignored */) {
   if (!silent) {
     gclog_or_tty->print("permgen ");
   }
@@ -1387,6 +1383,10 @@ void GenCollectedHeap::gc_epilogue(bool full) {
   GenGCEpilogueClosure blk(full);
   generation_iterate(&blk, false);  // not old-to-young.
   perm_gen()->gc_epilogue(full);
+
+  if (!CleanChunkPoolAsync) {
+    Chunk::clean_chunk_pool();
+  }
 
   always_do_update_barrier = UseConcMarkSweepGC;
 };
