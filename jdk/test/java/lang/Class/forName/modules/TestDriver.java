@@ -43,7 +43,10 @@ import static org.testng.Assert.assertTrue;
  * @summary Tests for Class.forName(Module,String)
  * @library /lib/testlibrary /test/lib
  * @modules jdk.compiler
- * @build jdk.test.lib.compiler.CompilerUtils jdk.testlibrary.ProcessTools
+ * @build jdk.test.lib.Platform
+ *        jdk.test.lib.util.FileUtils
+ *        jdk.test.lib.compiler.CompilerUtils
+ *        jdk.testlibrary.ProcessTools
  *        TestDriver TestMain TestLayer
  * @run testng TestDriver
  */

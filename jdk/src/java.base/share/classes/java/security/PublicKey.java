@@ -34,6 +34,7 @@ package java.security;
  * See, for example, the DSAPublicKey interface in
  * {@code java.security.interfaces}.
  *
+ * @since 1.1
  * @see Key
  * @see PrivateKey
  * @see Certificate

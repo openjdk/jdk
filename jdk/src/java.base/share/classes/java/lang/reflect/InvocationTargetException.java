@@ -38,6 +38,7 @@ package java.lang.reflect;
  *
  * @see Method
  * @see Constructor
+ * @since 1.1
  */
 public class InvocationTargetException extends ReflectiveOperationException {
     /**

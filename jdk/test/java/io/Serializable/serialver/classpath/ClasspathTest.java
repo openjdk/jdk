@@ -25,8 +25,12 @@
  * @test
  * @bug 4035147 4785472
  * @library /test/lib
+ * @build jdk.test.lib.Utils
+ * @build jdk.test.lib.Asserts
+ * @build jdk.test.lib.JDKToolFinder
  * @build jdk.test.lib.JDKToolLauncher
- * @build jdk.test.lib.process.ProcessTools
+ * @build jdk.test.lib.Platform
+ * @build jdk.test.lib.process.*
  * @build ClasspathTest
  * @run main serialver.ClasspathTest
  * @summary Test the use of the -classpath switch in the serialver application.

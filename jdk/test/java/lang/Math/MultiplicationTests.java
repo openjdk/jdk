@@ -24,6 +24,7 @@
 /*
  * @test
  * @library /test/lib
+ * @build jdk.test.lib.RandomFactory
  * @run main MultiplicationTests
  * @bug 5100935
  * @summary Tests for multiplication methods (use -Dseed=X to set PRNG seed)

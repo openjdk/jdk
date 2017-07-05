@@ -1,5 +1,6 @@
+<!DOCTYPE HTML>
 <!--
- Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -22,15 +23,14 @@
  or visit www.oracle.com if you need additional information or have any
  questions.
 -->
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
 <HTML>
 <HEAD>
 	<META HTTP-EQUIV="CONTENT-TYPE" CONTENT="text/html; charset=iso-8859-1">
 	<TITLE>Networking Properties</TITLE>
 </HEAD>
 <BODY LANG="en-US" DIR="LTR">
-<H1 ALIGN=CENTER>Networking Properties</H1>
-<P ALIGN=LEFT>There are a few standard system properties used to
+<H1 style="text-align:center">Networking Properties</H1>
+<P>There are a few standard system properties used to
 alter the mechanisms and behavior of the various classes of the
 java.net package. Some are checked only once at startup of the VM,
 and therefore are best set using the -D option of the java command,
@@ -39,7 +39,7 @@ the <a href="../../lang/System.html#setProperty(java.lang.String,%20java.lang.St
 The purpose of this document is to list
 and detail all of these properties.</P>
 <P>If there is no special note, a property value is checked every time it is used.</P>
-<a name="Ipv4IPv6"></a>
+<a id="Ipv4IPv6"></a>
 <H2>IPv4 / IPv6</H2>
 <UL>
 	<LI><P><B>java.net.preferIPv4Stack</B> (default: false)<BR>
@@ -62,7 +62,7 @@ and detail all of these properties.</P>
     returned by the operating system.</P>
 </UL>
 <P>Both of these properties are checked only once, at startup.</P>
-<a name="Proxies"></a>
+<a id="Proxies"></a>
 <H2>Proxies</H2>
 <P>A proxy server allows indirect connection to network services and
 is used mainly for security (to get through firewalls) and
@@ -155,7 +155,7 @@ of proxies.</P>
 	globally through their user interface). Note that this property is
 	checked only once at startup.</P>
 </UL>
-<a name="MiscHTTP"></a>
+<a id="MiscHTTP"></a>
 <H2>Misc HTTP properties</H2>
 <UL>
 	<LI><P><B>http.agent</B> (default: &ldquo;Java/&lt;version&gt;&rdquo;)<BR>
@@ -214,7 +214,7 @@ of proxies.</P>
 	</OL>
 </UL>
 <P>All these properties are checked only once at startup.</P>
-<a name="AddressCache"></a>
+<a id="AddressCache"></a>
 <H2>Address Cache</H2>
 <P>The java.net package, when doing name resolution, uses an address
 cache for both security and performance reasons. Any address

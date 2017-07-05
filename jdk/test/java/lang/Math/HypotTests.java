@@ -24,6 +24,7 @@
 /*
  * @test
  * @library /test/lib
+ * @build jdk.test.lib.RandomFactory
  * @run main HypotTests
  * @bug 4851638 4939441 8078672
  * @summary Tests for {Math, StrictMath}.hypot (use -Dseed=X to set PRNG seed)
