@@ -27,7 +27,7 @@
  * @summary Test that setting an MBeanServerForwarder on an already
  *          started RMI connector server has the expected behavior.
  * @author Luis-Miguel Alventosa
- * @modules java.management.rmi
+ *
  * @run clean MBSFPreStartPostStartTest
  * @run build MBSFPreStartPostStartTest
  * @run main MBSFPreStartPostStartTest

@@ -29,15 +29,15 @@
 # tz@iana.org for general use in the future).  For more, please see
 # the file CONTRIBUTING in the tz distribution.
 
-# From Paul Eggert (2014-10-31):
+# From Paul Eggert (2017-02-10):
 #
 # Unless otherwise specified, the source for data through 1990 is:
 # Thomas G. Shanks and Rique Pottenger, The International Atlas (6th edition),
 # San Diego: ACS Publications, Inc. (2003).
 # Unfortunately this book contains many errors and cites no sources.
 #
-# Gwillim Law writes that a good source
-# for recent time zone data is the International Air Transport
+# Many years ago Gwillim Law wrote that a good source
+# for time zone data was the International Air Transport
 # Association's Standard Schedules Information Manual (IATA SSIM),
 # published semiannually.  Law sent in several helpful summaries
 # of the IATA's data after 1990.  Except where otherwise noted,
@@ -79,26 +79,23 @@
 #	History of Summer Time
 #	<http://pcdsh01.on.br/HISTHV.htm>
 #	(1998-09-21, in Portuguese)
-
 #
 # I invented the abbreviations marked '*' in the following table;
-# the rest are from earlier versions of this file, or from other sources.
-# Corrections are welcome!
-#                   std dst  2dst
-#                   LMT           Local Mean Time
-#       -4:00       AST ADT       Atlantic
-#       -3:00       WGT WGST      Western Greenland*
-#       -1:00       EGT EGST      Eastern Greenland*
-#        0:00       GMT BST  BDST Greenwich, British Summer
-#        0:00       GMT IST       Greenwich, Irish Summer
-#        0:00       WET WEST WEMT Western Europe
-#        0:19:32.13 AMT NST       Amsterdam, Netherlands Summer (1835-1937)*
-#        0:20       NET NEST      Netherlands (1937-1940)*
-#        1:00       BST           British Standard (1968-1971)
-#        1:00       CET CEST CEMT Central Europe
-#        1:00:14    SET           Swedish (1879-1899)*
-#        2:00       EET EEST      Eastern Europe
-#        3:00       MSK MSD       Moscow
+# the rest are variants of the "xMT" pattern for a city's mean time,
+# or are from other sources.  Corrections are welcome!
+#                   std  dst  2dst
+#                   LMT             Local Mean Time
+#       -4:00       AST  ADT        Atlantic
+#        0:00       GMT  BST  BDST  Greenwich, British Summer
+#        0:00       GMT  IST        Greenwich, Irish Summer
+#        0:00       WET  WEST WEMT  Western Europe
+#        0:19:32.13 AMT* NST*       Amsterdam, Netherlands Summer (1835-1937)
+#        1:00       BST             British Standard (1968-1971)
+#        1:00       CET  CEST CEMT  Central Europe
+#        1:00:14    SET             Swedish (1879-1899)
+#        1:36:34    RMT* LST*       Riga, Latvian Summer (1880-1926)*
+#        2:00       EET  EEST       Eastern Europe
+#        3:00       MSK  MSD  MDST* Moscow
 
 # From Peter Ilieve (1994-12-04),
 # The original six [EU members]: Belgium, France, (West) Germany, Italy,
@@ -498,7 +495,7 @@ Link	Europe/London	Europe/Isle_of_Man
 
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Europe/Dublin	-0:25:00 -	LMT	1880 Aug  2
-			-0:25:21 -	DMT	1916 May 21  2:00
+			-0:25:21 -	DMT	1916 May 21  2:00 # Dublin MT
 			-0:25:21 1:00	IST	1916 Oct  1  2:00s
 			 0:00	GB-Eire	%s	1921 Dec  6 # independence
 			 0:00	GB-Eire	GMT/IST	1940 Feb 25  2:00
@@ -1087,16 +1084,16 @@ Rule	Thule	2007	max	-	Nov	Sun>=1	2:00	0	S
 #
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone America/Danmarkshavn -1:14:40 -	LMT	1916 Jul 28
-			-3:00	-	WGT	1980 Apr  6  2:00
-			-3:00	EU	WG%sT	1996
+			-3:00	-	-03	1980 Apr  6  2:00
+			-3:00	EU	-03/-02	1996
 			0:00	-	GMT
 Zone America/Scoresbysund -1:27:52 -	LMT	1916 Jul 28 # Ittoqqortoormiit
-			-2:00	-	CGT	1980 Apr  6  2:00
-			-2:00	C-Eur	CG%sT	1981 Mar 29
-			-1:00	EU	EG%sT
+			-2:00	-	-02	1980 Apr  6  2:00
+			-2:00	C-Eur	-02/-01	1981 Mar 29
+			-1:00	EU	-01/+00
 Zone America/Godthab	-3:26:56 -	LMT	1916 Jul 28 # Nuuk
-			-3:00	-	WGT	1980 Apr  6  2:00
-			-3:00	EU	WG%sT
+			-3:00	-	-03	1980 Apr  6  2:00
+			-3:00	EU	-03/-02
 Zone America/Thule	-4:35:08 -	LMT	1916 Jul 28 # Pituffik air base
 			-4:00	Thule	A%sT
 
@@ -1511,7 +1508,7 @@ Rule	Iceland	1950	1966	-	Oct	Sun>=22	 1:00s	0	-
 Rule	Iceland	1967	only	-	Oct	29	 1:00s	0	-
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone Atlantic/Reykjavik	-1:28	-	LMT	1908
-			-1:00	Iceland	IS%sT	1968 Apr  7  1:00s
+			-1:00	Iceland	-01/+00	1968 Apr  7  1:00s
 			 0:00	-	GMT
 
 # Italy
@@ -1975,7 +1972,7 @@ Rule	Neth	1945	only	-	Sep	16	2:00s	0	-
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone Europe/Amsterdam	0:19:32 -	LMT	1835
 			0:19:32	Neth	%s	1937 Jul  1
-			0:20	Neth	NE%sT	1940 May 16  0:00 # Dutch Time
+			0:20	Neth +0020/+0120 1940 May 16  0:00
 			1:00	C-Eur	CE%sT	1945 Apr  2  2:00
 			1:00	Neth	CE%sT	1977
 			1:00	EU	CE%sT
@@ -2192,16 +2189,34 @@ Zone	Europe/Lisbon	-0:36:45 -	LMT	1884
 			 0:00	W-Eur	WE%sT	1992 Sep 27  1:00s
 			 1:00	EU	CE%sT	1996 Mar 31  1:00u
 			 0:00	EU	WE%sT
+# This Zone can be simplified once we assume zic %z.
 Zone Atlantic/Azores	-1:42:40 -	LMT	1884        # Ponta Delgada
 			-1:54:32 -	HMT	1912 Jan  1 # Horta Mean Time
-			-2:00	Port	AZO%sT	1966 Apr  3  2:00  # Azores Time
-			-1:00	Port	AZO%sT	1983 Sep 25  1:00s
-			-1:00	W-Eur	AZO%sT	1992 Sep 27  1:00s
+			-2:00	Port	-02/-01	1942 Apr 25 22:00s
+			-2:00	Port	+00	1942 Aug 15 22:00s
+			-2:00	Port	-02/-01	1943 Apr 17 22:00s
+			-2:00	Port	+00	1943 Aug 28 22:00s
+			-2:00	Port	-02/-01	1944 Apr 22 22:00s
+			-2:00	Port	+00	1944 Aug 26 22:00s
+			-2:00	Port	-02/-01	1945 Apr 21 22:00s
+			-2:00	Port	+00	1945 Aug 25 22:00s
+			-2:00	Port	-02/-01	1966 Apr  3  2:00
+			-1:00	Port	-01/+00	1983 Sep 25  1:00s
+			-1:00	W-Eur	-01/+00	1992 Sep 27  1:00s
 			 0:00	EU	WE%sT	1993 Mar 28  1:00u
-			-1:00	EU	AZO%sT
+			-1:00	EU	-01/+00
+# This Zone can be simplified once we assume zic %z.
 Zone Atlantic/Madeira	-1:07:36 -	LMT	1884        # Funchal
 			-1:07:36 -	FMT	1912 Jan  1 # Funchal Mean Time
-			-1:00	Port	MAD%sT	1966 Apr  3  2:00 # Madeira Time
+			-1:00	Port	-01/+00	1942 Apr 25 22:00s
+			-1:00	Port	+01	1942 Aug 15 22:00s
+			-1:00	Port	-01/+00	1943 Apr 17 22:00s
+			-1:00	Port	+01	1943 Aug 28 22:00s
+			-1:00	Port	-01/+00	1944 Apr 22 22:00s
+			-1:00	Port	+01	1944 Aug 26 22:00s
+			-1:00	Port	-01/+00	1945 Apr 21 22:00s
+			-1:00	Port	+01	1945 Aug 25 22:00s
+			-1:00	Port	-01/+00	1966 Apr  3  2:00
 			 0:00	Port	WE%sT	1983 Sep 25  1:00s
 			 0:00	EU	WE%sT
 
@@ -2559,10 +2574,8 @@ Zone Europe/Moscow	 2:30:17 -	LMT	1880
 			 3:00	-	MSK
 
 
-# From Tim Parenti (2014-07-03):
-# Europe/Simferopol covers...
-# **	****	Crimea, Republic of
-# **	****	Sevastopol
+# From Paul Eggert (2016-12-06):
+# Europe/Simferopol covers Crimea.
 
 Zone Europe/Simferopol	 2:16:24 -	LMT	1880
 			 2:16	-	SMT	1924 May  2 # Simferopol Mean T
@@ -3255,46 +3268,77 @@ Link Europe/Prague Europe/Bratislava
 # See Europe/Belgrade.
 
 # Spain
+#
+# From Paul Eggert (2016-12-14):
+#
+# The source for Europe/Madrid before 2013 is:
+# Planesas P. La hora oficial en España y sus cambios.
+# Anuario del Observatorio Astronómico de Madrid (2013, in Spanish).
+# http://astronomia.ign.es/rknowsys-theme/images/webAstro/paginas/documentos/Anuario/lahoraoficialenespana.pdf
+# As this source says that historical time in the Canaries is obscure,
+# and it does not discuss Ceuta, stick with Shanks for now for that data.
+#
+# In the 1918 and 1919 fallback transitions in Spain, the clock for
+# the hour-longer day officially kept going after midnight, so that
+# the repeated instances of that day's 00:00 hour were 24 hours apart,
+# with a fallback transition from the second occurrence of 00:59... to
+# the next day's 00:00.  Our data format cannot represent this
+# directly, and instead repeats the first hour of the next day, with a
+# fallback transition from the next day's 00:59... to 00:00.
+
+# From Michael Deckers (2016-12-15):
+# The Royal Decree of 1900-06-26 quoted by Planesas, online at
+# https://www.boe.es/datos/pdfs/BOE//1900/209/A00383-00384.pdf
+# says in its article 5 (my translation):
+# These dispositions will enter into force beginning with the
+# instant at which, according to the time indicated in article 1,
+# the 1st day of January of 1901 will begin.
+
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
-# For 1917-1919 Whitman gives Apr Sat>=1 - Oct Sat>=1;
-# go with Shanks & Pottenger.
-Rule	Spain	1917	only	-	May	 5	23:00s	1:00	S
-Rule	Spain	1917	1919	-	Oct	 6	23:00s	0	-
-Rule	Spain	1918	only	-	Apr	15	23:00s	1:00	S
-Rule	Spain	1919	only	-	Apr	 5	23:00s	1:00	S
-# Whitman gives 1921 Feb 28 - Oct 14; go with Shanks & Pottenger.
-Rule	Spain	1924	only	-	Apr	16	23:00s	1:00	S
-# Whitman gives 1924 Oct 14; go with Shanks & Pottenger.
-Rule	Spain	1924	only	-	Oct	 4	23:00s	0	-
-Rule	Spain	1926	only	-	Apr	17	23:00s	1:00	S
-# Whitman says no DST in 1929; go with Shanks & Pottenger.
-Rule	Spain	1926	1929	-	Oct	Sat>=1	23:00s	0	-
-Rule	Spain	1927	only	-	Apr	 9	23:00s	1:00	S
-Rule	Spain	1928	only	-	Apr	14	23:00s	1:00	S
-Rule	Spain	1929	only	-	Apr	20	23:00s	1:00	S
-# Whitman gives 1937 Jun 16, 1938 Apr 16, 1940 Apr 13;
-# go with Shanks & Pottenger.
-Rule	Spain	1937	only	-	May	22	23:00s	1:00	S
-Rule	Spain	1937	1939	-	Oct	Sat>=1	23:00s	0	-
-Rule	Spain	1938	only	-	Mar	22	23:00s	1:00	S
-Rule	Spain	1939	only	-	Apr	15	23:00s	1:00	S
-Rule	Spain	1940	only	-	Mar	16	23:00s	1:00	S
-# Whitman says no DST 1942-1945; go with Shanks & Pottenger.
-Rule	Spain	1942	only	-	May	 2	22:00s	2:00	M # Midsummer
-Rule	Spain	1942	only	-	Sep	 1	22:00s	1:00	S
-Rule	Spain	1943	1946	-	Apr	Sat>=13	22:00s	2:00	M
-Rule	Spain	1943	only	-	Oct	 3	22:00s	1:00	S
-Rule	Spain	1944	only	-	Oct	10	22:00s	1:00	S
-Rule	Spain	1945	only	-	Sep	30	 1:00	1:00	S
-Rule	Spain	1946	only	-	Sep	30	 0:00	0	-
+Rule	Spain	1918	only	-	Apr	15	23:00	1:00	S
+Rule	Spain	1918	1919	-	Oct	 6	24:00s	0	-
+Rule	Spain	1919	only	-	Apr	 6	23:00	1:00	S
+Rule	Spain	1924	only	-	Apr	16	23:00	1:00	S
+Rule	Spain	1924	only	-	Oct	 4	24:00s	0	-
+Rule	Spain	1926	only	-	Apr	17	23:00	1:00	S
+Rule	Spain	1926	1929	-	Oct	Sat>=1	24:00s	0	-
+Rule	Spain	1927	only	-	Apr	 9	23:00	1:00	S
+Rule	Spain	1928	only	-	Apr	15	 0:00	1:00	S
+Rule	Spain	1929	only	-	Apr	20	23:00	1:00	S
+# Republican Spain during the civil war; it controlled Madrid until 1939-03-28.
+Rule	Spain	1937	only	-	Jun	16	23:00	1:00	S
+Rule	Spain	1937	only	-	Oct	 2	24:00s	0	-
+Rule	Spain	1938	only	-	Apr	 2	23:00	1:00	S
+Rule	Spain	1938	only	-	Apr	30	23:00	2:00	M
+Rule	Spain	1938	only	-	Oct	 2	24:00	1:00	S
+# The following rules are for unified Spain again.
+#
+# Planesas does not say what happened in Madrid between its fall on
+# 1939-03-28 and the Nationalist spring-forward transition on
+# 1939-04-15.  For lack of better info, assume Madrid's clocks did not
+# change during that period.
+#
+# The first rule is commented out, as it is redundant for Republican Spain.
+#Rule	Spain	1939	only	-	Apr	15	23:00	1:00	S
+Rule	Spain	1939	only	-	Oct	 7	24:00s	0	-
+Rule	Spain	1942	only	-	May	 2	23:00	1:00	S
+Rule	Spain	1942	only	-	Sep	 1	 1:00	0	-
+Rule	Spain	1943	1946	-	Apr	Sat>=13	23:00	1:00	S
+Rule	Spain	1943	1944	-	Oct	Sun>=1	 1:00	0	-
+Rule	Spain	1945	1946	-	Sep	lastSun	 1:00	0	-
 Rule	Spain	1949	only	-	Apr	30	23:00	1:00	S
-Rule	Spain	1949	only	-	Sep	30	 1:00	0	-
-Rule	Spain	1974	1975	-	Apr	Sat>=13	23:00	1:00	S
+Rule	Spain	1949	only	-	Oct	 2	 1:00	0	-
+Rule	Spain	1974	1975	-	Apr	Sat>=12	23:00	1:00	S
 Rule	Spain	1974	1975	-	Oct	Sun>=1	 1:00	0	-
 Rule	Spain	1976	only	-	Mar	27	23:00	1:00	S
 Rule	Spain	1976	1977	-	Sep	lastSun	 1:00	0	-
-Rule	Spain	1977	1978	-	Apr	 2	23:00	1:00	S
-Rule	Spain	1978	only	-	Oct	 1	 1:00	0	-
+Rule	Spain	1977	only	-	Apr	 2	23:00	1:00	S
+Rule	Spain	1978	only	-	Apr	 2	 2:00s	1:00	S
+Rule	Spain	1978	only	-	Oct	 1	 2:00s	0	-
+# Nationalist Spain during the civil war
+#Rule NatSpain	1937	only	-	May	22	23:00	1:00	S
+#Rule NatSpain	1937	1938	-	Oct	Sat>=1	24:00s	0	-
+#Rule NatSpain	1938	only	-	Mar	26	23:00	1:00	S
 # The following rules are copied from Morocco from 1967 through 1978.
 Rule SpainAfrica 1967	only	-	Jun	 3	12:00	1:00	S
 Rule SpainAfrica 1967	only	-	Oct	 1	 0:00	0	-
@@ -3306,11 +3350,11 @@ Rule SpainAfrica 1977	only	-	Sep	28	 0:00	0	-
 Rule SpainAfrica 1978	only	-	Jun	 1	 0:00	1:00	S
 Rule SpainAfrica 1978	only	-	Aug	 4	 0:00	0	-
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
-Zone	Europe/Madrid	-0:14:44 -	LMT	1901 Jan  1  0:00s
-			 0:00	Spain	WE%sT	1946 Sep 30
+Zone	Europe/Madrid	-0:14:44 -	LMT	1900 Dec 31 23:45:16
+			 0:00	Spain	WE%sT	1940 Mar 16 23:00
 			 1:00	Spain	CE%sT	1979
 			 1:00	EU	CE%sT
-Zone	Africa/Ceuta	-0:21:16 -	LMT	1901
+Zone	Africa/Ceuta	-0:21:16 -	LMT	1900 Dec 31 23:38:44
 			 0:00	-	WET	1918 May  6 23:00
 			 0:00	1:00	WEST	1918 Oct  7 23:00
 			 0:00	-	WET	1924
@@ -3319,7 +3363,7 @@ Zone	Africa/Ceuta	-0:21:16 -	LMT	1901
 			 1:00	-	CET	1986
 			 1:00	EU	CE%sT
 Zone	Atlantic/Canary	-1:01:36 -	LMT	1922 Mar # Las Palmas de Gran C.
-			-1:00	-	CANT	1946 Sep 30  1:00 # Canaries T
+			-1:00	-	-01	1946 Sep 30  1:00
 			 0:00	-	WET	1980 Apr  6  0:00s
 			 0:00	1:00	WEST	1980 Sep 28  1:00u
 			 0:00	EU	WE%sT
@@ -3732,7 +3776,7 @@ Zone Europe/Uzhgorod	1:29:12 -	LMT	1890 Oct
 # spelling, except omit the apostrophe as it is not allowed in
 # portable Posix file names.
 Zone Europe/Zaporozhye	2:20:40 -	LMT	1880
-			2:20	-	CUT	1924 May  2 # Central Ukraine T
+			2:20	-	+0220	1924 May  2
 			2:00	-	EET	1930 Jun 21
 			3:00	-	MSK	1941 Aug 25
 			1:00	C-Eur	CE%sT	1943 Oct 25
