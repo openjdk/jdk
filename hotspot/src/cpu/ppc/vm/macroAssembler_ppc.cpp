@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2012, 2014 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -2204,7 +2204,8 @@ void MacroAssembler::serialize_memory(Register thread, Register tmp1, Register t
 
 // Write the card table byte if needed.
 void MacroAssembler::card_write_barrier_post(Register Rstore_addr, Register Rnew_val, Register Rtmp) {
-  CardTableModRefBS* bs = (CardTableModRefBS*) Universe::heap()->barrier_set();
+  CardTableModRefBS* bs =
+    barrier_set_cast<CardTableModRefBS>(Universe::heap()->barrier_set());
   assert(bs->kind() == BarrierSet::CardTableModRef ||
          bs->kind() == BarrierSet::CardTableExtension, "wrong barrier");
 #ifdef ASSERT
@@ -2310,9 +2311,8 @@ void MacroAssembler::g1_write_barrier_post(Register Rstore_addr, Register Rnew_v
   Label& filtered = (filtered_ext != NULL) ? *filtered_ext : filtered_int;
   assert_different_registers(Rstore_addr, Rnew_val, Rtmp1, Rtmp2);
 
-  G1SATBCardTableModRefBS* bs = (G1SATBCardTableModRefBS*) Universe::heap()->barrier_set();
-  assert(bs->kind() == BarrierSet::G1SATBCT ||
-         bs->kind() == BarrierSet::G1SATBCTLogging, "wrong barrier");
+  G1SATBCardTableLoggingModRefBS* bs =
+    barrier_set_cast<G1SATBCardTableLoggingModRefBS>(Universe::heap()->barrier_set());
 
   // Does store cross heap regions?
   if (G1RSBarrierRegionFilter) {

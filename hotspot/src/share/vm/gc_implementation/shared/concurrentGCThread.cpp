@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,6 +56,7 @@ void ConcurrentGCThread::create_and_start() {
 void ConcurrentGCThread::initialize_in_thread() {
   this->record_stack_base_and_size();
   this->initialize_thread_local_storage();
+  this->initialize_named_thread();
   this->set_active_handles(JNIHandleBlock::allocate_block());
   // From this time Thread::current() should be working.
   assert(this == Thread::current(), "just checking");

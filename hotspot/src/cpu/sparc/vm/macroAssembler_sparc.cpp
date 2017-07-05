@@ -3858,9 +3858,8 @@ void MacroAssembler::g1_write_barrier_post(Register store_addr, Register new_val
 
   if (new_val == G0) return;
 
-  G1SATBCardTableModRefBS* bs = (G1SATBCardTableModRefBS*) Universe::heap()->barrier_set();
-  assert(bs->kind() == BarrierSet::G1SATBCT ||
-         bs->kind() == BarrierSet::G1SATBCTLogging, "wrong barrier");
+  G1SATBCardTableLoggingModRefBS* bs =
+    barrier_set_cast<G1SATBCardTableLoggingModRefBS>(Universe::heap()->barrier_set());
 
   if (G1RSBarrierRegionFilter) {
     xor3(store_addr, new_val, tmp);
@@ -3904,7 +3903,8 @@ void MacroAssembler::g1_write_barrier_post(Register store_addr, Register new_val
 void MacroAssembler::card_write_barrier_post(Register store_addr, Register new_val, Register tmp) {
   // If we're writing constant NULL, we can skip the write barrier.
   if (new_val == G0) return;
-  CardTableModRefBS* bs = (CardTableModRefBS*) Universe::heap()->barrier_set();
+  CardTableModRefBS* bs =
+    barrier_set_cast<CardTableModRefBS>(Universe::heap()->barrier_set());
   assert(bs->kind() == BarrierSet::CardTableModRef ||
          bs->kind() == BarrierSet::CardTableExtension, "wrong barrier");
   card_table_write(bs->byte_map_base, tmp, store_addr);

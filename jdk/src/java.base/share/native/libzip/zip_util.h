@@ -33,13 +33,14 @@
 /*
  * Header signatures
  */
-#define LOCSIG 0x04034b50L          /* "PK\003\004" */
-#define EXTSIG 0x08074b50L          /* "PK\007\008" */
-#define CENSIG 0x02014b50L          /* "PK\001\002" */
-#define ENDSIG 0x06054b50L          /* "PK\005\006" */
-
-#define ZIP64_ENDSIG 0x06064b50L    /* "PK\006\006" */
-#define ZIP64_LOCSIG 0x07064b50L    /* "PK\006\007" */
+#define PKZIP_SIGNATURE_AT(p, b2, b3) \
+  (((p)[0] == 'P') & ((p)[1] == 'K') & ((p)[2] == b2) & ((p)[3] == b3))
+#define CENSIG_AT(p)       PKZIP_SIGNATURE_AT(p, 1, 2)
+#define LOCSIG_AT(p)       PKZIP_SIGNATURE_AT(p, 3, 4)
+#define ENDSIG_AT(p)       PKZIP_SIGNATURE_AT(p, 5, 6)
+#define EXTSIG_AT(p)       PKZIP_SIGNATURE_AT(p, 7, 8)
+#define ZIP64_ENDSIG_AT(p) PKZIP_SIGNATURE_AT(p, 6, 6)
+#define ZIP64_LOCSIG_AT(p) PKZIP_SIGNATURE_AT(p, 6, 7)
 
 /*
  * Header sizes including signatures
