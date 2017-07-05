@@ -871,8 +871,11 @@ CallGenerator* CallGenerator::for_method_handle_inline(JVMState* jvms, ciMethod*
           Node*             receiver_node = kit.argument(0);
           const TypeOopPtr* receiver_type = gvn.type(receiver_node)->isa_oopptr();
           // call_does_dispatch and vtable_index are out-parameters.  They might be changed.
-          target = C->optimize_virtual_call(caller, jvms->bci(), klass, target, receiver_type,
-                                            is_virtual,
+          // optimize_virtual_call() takes 2 different holder
+          // arguments for a corner case that doesn't apply here (see
+          // Parse::do_call())
+          target = C->optimize_virtual_call(caller, jvms->bci(), klass, klass,
+                                            target, receiver_type, is_virtual,
                                             call_does_dispatch, vtable_index);  // out-parameters
           // We lack profiling at this call but type speculation may
           // provide us with a type

@@ -25,6 +25,7 @@
 #ifndef SHARE_VM_MEMORY_METADATAFACTORY_HPP
 #define SHARE_VM_MEMORY_METADATAFACTORY_HPP
 
+#include "classfile/classLoaderData.hpp"
 #include "utilities/array.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/globalDefinitions.hpp"

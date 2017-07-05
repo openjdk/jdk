@@ -54,21 +54,14 @@ void MarkSweep::FollowRootClosure::do_oop(oop* p)       { follow_root(p); }
 void MarkSweep::FollowRootClosure::do_oop(narrowOop* p) { follow_root(p); }
 
 MarkSweep::MarkAndPushClosure MarkSweep::mark_and_push_closure;
-MarkSweep::FollowKlassClosure MarkSweep::follow_klass_closure;
-MarkSweep::AdjustKlassClosure MarkSweep::adjust_klass_closure;
+CLDToOopClosure               MarkSweep::follow_cld_closure(&mark_and_push_closure);
+CLDToOopClosure               MarkSweep::adjust_cld_closure(&adjust_pointer_closure);
 
 void MarkSweep::MarkAndPushClosure::do_oop(oop* p)       { mark_and_push(p); }
 void MarkSweep::MarkAndPushClosure::do_oop(narrowOop* p) { mark_and_push(p); }
 
-void MarkSweep::FollowKlassClosure::do_klass(Klass* klass) {
-  klass->oops_do(&MarkSweep::mark_and_push_closure);
-}
-void MarkSweep::AdjustKlassClosure::do_klass(Klass* klass) {
-  klass->oops_do(&MarkSweep::adjust_pointer_closure);
-}
-
 void MarkSweep::follow_class_loader(ClassLoaderData* cld) {
-  cld->oops_do(&MarkSweep::mark_and_push_closure, &MarkSweep::follow_klass_closure, true);
+  MarkSweep::follow_cld_closure.do_cld(cld);
 }
 
 void MarkSweep::follow_stack() {

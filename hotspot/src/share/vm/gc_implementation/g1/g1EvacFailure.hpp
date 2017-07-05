@@ -71,6 +71,9 @@ private:
   bool _during_initial_mark;
   bool _during_conc_mark;
   uint _worker_id;
+  HeapWord* _end_of_last_gap;
+  HeapWord* _last_gap_threshold;
+  HeapWord* _last_obj_threshold;
 
 public:
   RemoveSelfForwardPtrObjClosure(G1CollectedHeap* g1, ConcurrentMark* cm,
@@ -83,7 +86,10 @@ public:
     _update_rset_cl(update_rset_cl),
     _during_initial_mark(during_initial_mark),
     _during_conc_mark(during_conc_mark),
-    _worker_id(worker_id) { }
+    _worker_id(worker_id),
+    _end_of_last_gap(hr->bottom()),
+    _last_gap_threshold(hr->bottom()),
+    _last_obj_threshold(hr->bottom()) { }
 
   size_t marked_bytes() { return _marked_bytes; }
 
@@ -107,7 +113,12 @@ public:
     HeapWord* obj_addr = (HeapWord*) obj;
     assert(_hr->is_in(obj_addr), "sanity");
     size_t obj_size = obj->size();
-    _hr->update_bot_for_object(obj_addr, obj_size);
+    HeapWord* obj_end = obj_addr + obj_size;
+
+    if (_end_of_last_gap != obj_addr) {
+      // there was a gap before obj_addr
+      _last_gap_threshold = _hr->cross_threshold(_end_of_last_gap, obj_addr);
+    }
 
     if (obj->is_forwarded() && obj->forwardee() == obj) {
       // The object failed to move.
@@ -115,7 +126,9 @@ public:
       // We consider all objects that we find self-forwarded to be
       // live. What we'll do is that we'll update the prev marking
       // info so that they are all under PTAMS and explicitly marked.
-      _cm->markPrev(obj);
+      if (!_cm->isPrevMarked(obj)) {
+        _cm->markPrev(obj);
+      }
       if (_during_initial_mark) {
         // For the next marking info we'll only mark the
         // self-forwarded objects explicitly if we are during
@@ -145,13 +158,18 @@ public:
       // remembered set entries missing given that we skipped cards on
       // the collection set. So, we'll recreate such entries now.
       obj->oop_iterate(_update_rset_cl);
-      assert(_cm->isPrevMarked(obj), "Should be marked!");
     } else {
+
       // The object has been either evacuated or is dead. Fill it with a
       // dummy object.
-      MemRegion mr((HeapWord*) obj, obj_size);
+      MemRegion mr(obj_addr, obj_size);
       CollectedHeap::fill_with_object(mr);
+
+      // must nuke all dead objects which we skipped when iterating over the region
+      _cm->clearRangePrevBitmap(MemRegion(_end_of_last_gap, obj_end));
     }
+    _end_of_last_gap = obj_end;
+    _last_obj_threshold = _hr->cross_threshold(obj_addr, obj_end);
   }
 };
 
@@ -181,13 +199,6 @@ public:
                                             during_initial_mark,
                                             during_conc_mark,
                                             _worker_id);
-
-        MemRegion mr(hr->bottom(), hr->end());
-        // We'll recreate the prev marking info so we'll first clear
-        // the prev bitmap range for this region. We never mark any
-        // CSet objects explicitly so the next bitmap range should be
-        // cleared anyway.
-        _cm->clearRangePrevBitmap(mr);
 
         hr->note_self_forwarding_removal_start(during_initial_mark,
                                                during_conc_mark);
