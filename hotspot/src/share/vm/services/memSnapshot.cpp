@@ -528,7 +528,8 @@ bool MemSnapshot::promote_malloc_records(MemPointerArrayIterator* itr) {
         // an arena record can be followed by a size record, we need to remove both
         if (matched_rec->is_arena_record()) {
           MemPointerRecord* next = (MemPointerRecord*)malloc_snapshot_itr.peek_next();
-          if (next->is_arena_memory_record() && next->is_memory_record_of_arena(matched_rec)) {
+          if (next != NULL && next->is_arena_memory_record() &&
+              next->is_memory_record_of_arena(matched_rec)) {
             malloc_snapshot_itr.remove();
           }
         }

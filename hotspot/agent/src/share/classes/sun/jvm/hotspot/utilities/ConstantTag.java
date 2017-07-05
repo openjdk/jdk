@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,6 @@ public class ConstantTag {
   private static final int JVM_CONSTANT_UnresolvedClassInError  = 103; // Resolution failed
   private static final int JVM_CONSTANT_MethodHandleInError     = 104; // Error tag due to resolution error
   private static final int JVM_CONSTANT_MethodTypeInError       = 105; // Error tag due to resolution error
-  private static final int JVM_CONSTANT_Object                  = 106; // Required for BoundMethodHandle arguments.
 
   // JVM_CONSTANT_MethodHandle subtypes //FIXME: connect these to data structure
   private static int JVM_REF_getField                = 1;
@@ -96,8 +95,6 @@ public class ConstantTag {
   public boolean isKlassIndex()             { return tag == JVM_CONSTANT_ClassIndex; }
   public boolean isStringIndex()            { return tag == JVM_CONSTANT_StringIndex; }
 
-  public boolean isObject()                 { return tag == JVM_CONSTANT_Object; }
-
   public boolean isKlassReference()   { return isKlassIndex() || isUnresolvedKlass(); }
   public boolean isFieldOrMethod()    { return isField() || isMethod() || isInterfaceMethod(); }
   public boolean isSymbol()           { return isUtf8(); }
@@ -123,7 +120,6 @@ public class ConstantTag {
     case JVM_CONSTANT_StringIndex :
     case JVM_CONSTANT_MethodHandle :
     case JVM_CONSTANT_MethodType :
-    case JVM_CONSTANT_Object :
       return BasicType.T_OBJECT;
     default:
       throw new InternalError("unexpected tag: " + tag);
