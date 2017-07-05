@@ -1,5 +1,5 @@
 #
-# Copyright 2002-2007 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2002-2009 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -57,38 +57,48 @@ install: install-build
 
 install-build:
 ifeq ($(BUILD_INSTALL), true)
+	@$(call MakeStart, install, $(INSTALL_BUILD_TARGETS))
 	($(CD) $(INSTALL_TOPDIR)/make && \
 	  $(MAKE) $(INSTALL_BUILD_TARGETS) $(INSTALL_BUILD_ARGUMENTS))
+	@$(call MakeFinish, install, $(INSTALL_BUILD_TARGETS))
 endif
 
 update-patcher:
 ifeq ($(BUILD_INSTALL), true)
 	if [ -r $(INSTALL_TOPDIR)/make/update/Makefile ]; then \
+	  $(call MakeStart, install update, all); \
 	  ( $(CD) $(INSTALL_TOPDIR)/make/update && \
 	    $(MAKE) all $(INSTALL_BUILD_ARGUMENTS) ); \
+	  $(call MakeFinish, install, all); \
 	fi
 endif
 
 update-patchgen:
 ifeq ($(BUILD_INSTALL), true)
 	if [ -r $(INSTALL_TOPDIR)/make/update/Makefile ]; then \
+	  $(call MakeStart, install update, patchgen); \
 	  ( $(CD) $(INSTALL_TOPDIR)/make/update && \
 	    $(MAKE) patchgen $(INSTALL_BUILD_ARGUMENTS) ); \
+	  $(call MakeFinish, install, patchgen); \
 	fi
 endif
 
 installer:
 ifeq ($(BUILD_INSTALL), true)
 	if [ -r $(INSTALL_TOPDIR)/make/installer/Makefile ]; then \
+	  $(call MakeStart, install installer, all); \
 	  ( $(CD) $(INSTALL_TOPDIR)/make/installer && \
 	    $(MAKE) all $(INSTALL_BUILD_ARGUMENTS) ); \
+	  $(call MakeFinish, install, all); \
 	fi
 endif
 
 install-clobber:
 ifeq ($(BUILD_INSTALL), true)
+	@$(call MakeStart, install, clobber)
 	($(CD) $(INSTALL_TOPDIR)/make && \
 	  $(MAKE) clobber $(INSTALL_BUILD_ARGUMENTS))
+	@$(call MakeFinish, install, clobber)
 endif
 
 install-sanity:: 
