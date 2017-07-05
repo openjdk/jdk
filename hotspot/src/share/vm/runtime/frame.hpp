@@ -44,6 +44,12 @@
 #ifdef TARGET_ARCH_MODEL_zero
 # include "adfiles/adGlobals_zero.hpp"
 #endif
+#ifdef TARGET_ARCH_MODEL_arm
+# include "adfiles/adGlobals_arm.hpp"
+#endif
+#ifdef TARGET_ARCH_MODEL_ppc
+# include "adfiles/adGlobals_ppc.hpp"
+#endif
 #endif
 #ifdef ZERO
 #ifdef TARGET_ARCH_zero
@@ -456,6 +462,12 @@ class frame VALUE_OBJ_CLASS_SPEC {
 #endif
 #ifdef TARGET_ARCH_zero
 # include "frame_zero.hpp"
+#endif
+#ifdef TARGET_ARCH_arm
+# include "frame_arm.hpp"
+#endif
+#ifdef TARGET_ARCH_ppc
+# include "frame_ppc.hpp"
 #endif
 
 };

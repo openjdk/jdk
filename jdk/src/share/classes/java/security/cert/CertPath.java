@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,6 +83,19 @@ import java.util.List;
  * may not follow these conventions. PKIX <code>CertPathValidator</code>s will
  * detect any departure from these conventions that cause the certification
  * path to be invalid and throw a <code>CertPathValidatorException</code>.
+ *
+ * <p> Every implementation of the Java platform is required to support the
+ * following standard <code>CertPath</code> encodings:
+ * <ul>
+ * <li><tt>PKCS7</tt></li>
+ * <li><tt>PkiPath</tt></li>
+ * </ul>
+ * These encodings are described in the <a href=
+ * "{@docRoot}/../technotes/guides/security/StandardNames.html#CertPathEncodings">
+ * CertPath Encodings section</a> of the
+ * Java Cryptography Architecture Standard Algorithm Name Documentation.
+ * Consult the release documentation for your implementation to see if any
+ * other encodings are supported.
  * <p>
  * <b>Concurrent Access</b>
  * <p>

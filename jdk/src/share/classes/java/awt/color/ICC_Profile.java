@@ -1856,13 +1856,6 @@ public class ICC_Profile implements Serializable {
             File.separatorChar + "lib" + File.separatorChar + "cmm";
         String fullPath = dir + File.separatorChar + fileName;
         File f = new File(fullPath);
-        if (!f.isFile()) {
-            //make sure file was installed in the kernel mode
-            BootClassLoaderHook hook = BootClassLoaderHook.getHook();
-            if (hook != null) {
-                hook.prefetchFile("lib/cmm/"+fileName);
-            }
-        }
         return (f.isFile() && isChildOf(f, dir)) ? f : null;
     }
 

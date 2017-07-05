@@ -96,6 +96,12 @@ class TemplateInterpreterGenerator: public AbstractInterpreterGenerator {
 #ifdef TARGET_ARCH_zero
 # include "templateInterpreterGenerator_zero.hpp"
 #endif
+#ifdef TARGET_ARCH_arm
+# include "templateInterpreterGenerator_arm.hpp"
+#endif
+#ifdef TARGET_ARCH_ppc
+# include "templateInterpreterGenerator_ppc.hpp"
+#endif
 
 
 };

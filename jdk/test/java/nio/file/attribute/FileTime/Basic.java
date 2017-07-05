@@ -29,13 +29,16 @@
 import java.nio.file.attribute.FileTime;
 import java.util.concurrent.TimeUnit;
 import static java.util.concurrent.TimeUnit.*;
-import java.io.IOException;
+import java.util.Random;
 
 public class Basic {
 
-    public static void main(String[] args) throws IOException {
+    static final Random rand = new Random();
+
+    public static void main(String[] args) {
         long now = System.currentTimeMillis();
         long tomorrowInDays = TimeUnit.DAYS.convert(now, MILLISECONDS) + 1;
+        long yesterdayInDays = TimeUnit.DAYS.convert(now, MILLISECONDS) - 1;
 
         // equals
         eq(now, MILLISECONDS, now, MILLISECONDS);
@@ -50,6 +53,29 @@ public class Basic {
         cmp(now, MILLISECONDS, now+1234, MILLISECONDS, -1);
         cmp(tomorrowInDays, DAYS, now, MILLISECONDS, 1);
         cmp(now, MILLISECONDS, tomorrowInDays, DAYS, -1);
+        cmp(yesterdayInDays, DAYS, now, MILLISECONDS, -1);
+        cmp(now, MILLISECONDS, yesterdayInDays, DAYS, 1);
+        cmp(yesterdayInDays, DAYS, now, MILLISECONDS, -1);
+        cmp(Long.MAX_VALUE, DAYS, Long.MAX_VALUE, NANOSECONDS, 1);
+        cmp(Long.MAX_VALUE, DAYS, Long.MIN_VALUE, NANOSECONDS, 1);
+        cmp(Long.MIN_VALUE, DAYS, Long.MIN_VALUE, NANOSECONDS, -1);
+        cmp(Long.MIN_VALUE, DAYS, Long.MAX_VALUE, NANOSECONDS, -1);
+
+        // to(TimeUnit)
+        to(MILLISECONDS.convert(1, DAYS) - 1, MILLISECONDS);
+        to(MILLISECONDS.convert(1, DAYS) + 0, MILLISECONDS);
+        to(MILLISECONDS.convert(1, DAYS) + 1, MILLISECONDS);
+        to(1, MILLISECONDS);
+        to(0, MILLISECONDS);
+        to(1, MILLISECONDS);
+        to(MILLISECONDS.convert(-1, DAYS) - 1, MILLISECONDS);
+        to(MILLISECONDS.convert(-1, DAYS) + 0, MILLISECONDS);
+        to(MILLISECONDS.convert(-1, DAYS) + 1, MILLISECONDS);
+        for (TimeUnit unit: TimeUnit.values()) {
+            for (int i=0; i<100; i++) { to(rand.nextLong(), unit); }
+            to(Long.MIN_VALUE, unit);
+            to(Long.MAX_VALUE, unit);
+        }
 
         // toString
         ts(1L, DAYS, "1970-01-02T00:00:00Z");
@@ -59,6 +85,8 @@ public class Basic {
         ts(1L, MILLISECONDS, "1970-01-01T00:00:00.001Z");
         ts(1L, MICROSECONDS, "1970-01-01T00:00:00.000001Z");
         ts(1L, NANOSECONDS, "1970-01-01T00:00:00.000000001Z");
+        ts(999999999L, NANOSECONDS, "1970-01-01T00:00:00.999999999Z");
+        ts(9999999999L, NANOSECONDS, "1970-01-01T00:00:09.999999999Z");
 
         ts(-1L, DAYS, "1969-12-31T00:00:00Z");
         ts(-1L, HOURS, "1969-12-31T23:00:00Z");
@@ -67,6 +95,8 @@ public class Basic {
         ts(-1L, MILLISECONDS, "1969-12-31T23:59:59.999Z");
         ts(-1L, MICROSECONDS, "1969-12-31T23:59:59.999999Z");
         ts(-1L, NANOSECONDS, "1969-12-31T23:59:59.999999999Z");
+        ts(-999999999L, NANOSECONDS, "1969-12-31T23:59:59.000000001Z");
+        ts(-9999999999L, NANOSECONDS, "1969-12-31T23:59:50.000000001Z");
 
         ts(-62135596799999L, MILLISECONDS, "0001-01-01T00:00:00.001Z");
         ts(-62135596800000L, MILLISECONDS, "0001-01-01T00:00:00Z");
@@ -114,9 +144,24 @@ public class Basic {
             throw new RuntimeException("should not be equal");
     }
 
-    static void ts(long v, TimeUnit y, String expected) {
-        String s = FileTime.from(v, y).toString();
-        if (!s.equals(expected))
-            throw new RuntimeException("unexpected format");
+    static void to(long v, TimeUnit unit) {
+        FileTime t = FileTime.from(v, unit);
+        for (TimeUnit u: TimeUnit.values()) {
+            long result = t.to(u);
+            long expected = u.convert(v, unit);
+            if (result != expected) {
+                throw new RuntimeException("unexpected result");
+            }
+        }
+    }
+
+    static void ts(long v, TimeUnit unit, String expected) {
+        String result = FileTime.from(v, unit).toString();
+        if (!result.equals(expected)) {
+            System.err.format("FileTime.from(%d, %s).toString() failed\n", v, unit);
+            System.err.format("Expected: %s\n", expected);
+            System.err.format("     Got: %s\n", result);
+            throw new RuntimeException();
+        }
     }
 }

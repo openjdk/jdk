@@ -59,10 +59,10 @@ class AttachListener: AllStatic {
   static void detachall() KERNEL_RETURN;
 
   // indicates if the Attach Listener needs to be created at startup
-  static bool init_at_startup() KERNEL_RETURN_(return false;);
+  static bool init_at_startup() KERNEL_RETURN_(false);
 
   // indicates if we have a trigger to start the Attach Listener
-  static bool is_init_trigger() KERNEL_RETURN_(return false;);
+  static bool is_init_trigger() KERNEL_RETURN_(false);
 
 #ifdef SERVICES_KERNEL
   static bool is_attach_supported()             { return false; }

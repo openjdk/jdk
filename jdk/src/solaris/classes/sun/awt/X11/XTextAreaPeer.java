@@ -175,6 +175,34 @@ class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
         super.dispose();
     }
 
+
+    /*
+     * The method overrides one from XComponentPeer
+     * If ignoreSubComponents=={@code true} it calls super.
+     * If ignoreSubComponents=={@code false} it uses the XTextArea machinery
+     * to change cursor appropriately. In particular it changes the cursor to
+     * default if over scrollbars.
+     */
+    @Override
+    public void pSetCursor(Cursor cursor, boolean ignoreSubComponents) {
+        Point onScreen = getLocationOnScreen();
+        if (ignoreSubComponents ||
+            javaMouseEventHandler == null ||
+            onScreen == null)
+        {
+            super.pSetCursor(cursor, true);
+            return;
+        }
+
+        Point cursorPos = new Point();
+        ((XGlobalCursorManager)XGlobalCursorManager.getCursorManager()).getCursorPos(cursorPos);
+
+        Point localPoint = new Point(cursorPos.x - onScreen.x, cursorPos.y - onScreen.y );
+
+        javaMouseEventHandler.setPointerToUnderPoint(localPoint);
+        javaMouseEventHandler.setCursor();
+    }
+
     void setScrollBarVisibility() {
         int visibility = ((TextArea)target).getScrollbarVisibility();
         jtext.setLineWrap(false);
@@ -1264,13 +1292,13 @@ class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
         void handle( MouseEvent event ) {
             if ( ! grabbed ) {
                 // dispatch() needs up-to-date pointer in ungrabbed case.
-                setPointerToUnderEventPoint( event );
+                setPointerToUnderPoint( event.getPoint() );
             }
             dispatch( event );
             boolean wasGrabbed = grabbed;
             grabbed_update( event );
             if ( wasGrabbed && ! grabbed ) {
-                setPointerToUnderEventPoint( event );
+                setPointerToUnderPoint( event.getPoint() );
             }
             setCursor();
         }
@@ -1338,7 +1366,7 @@ class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
                 // 'target.getCursor()' is also applied from elsewhere
                 // (at least now), but only when mouse "entered", and
                 // before 'XTextAreaPeer.handleJavaMouseEvent' is invoked.
-                outer.pSetCursor( outer.target.getCursor() );
+                outer.pSetCursor( outer.target.getCursor(), true );
             }
             else {
                 // We can write here a more intelligent cursor selection
@@ -1346,7 +1374,7 @@ class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
                 // However, I see no point in doing so now. But if you feel
                 // like implementing it, you'll probably need to introduce
                 // 'Pointer.Type.PANEL'.
-                outer.pSetCursor( outer.textPane.getCursor() );
+                outer.pSetCursor( outer.textPane.getCursor(), true );
             }
         }
 
@@ -1391,8 +1419,7 @@ class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
             return l;
         }
 
-        private void setPointerToUnderEventPoint( MouseEvent event ) {
-            Point point = event.getPoint();
+        private void setPointerToUnderPoint( Point point ) {
             if ( outer.textPane.getViewport().getBounds().contains( point ) ) {
                 current.setText();
             }

@@ -22,122 +22,335 @@
  */
 
 /* @test
- * @bug 4313887 6838333 6865748
- * @summary Unit test for java.nio.file.Files for miscellenous cases not
- *   covered by other tests
+ * @bug 4313887 6838333
+ * @summary Unit test for miscellenous methods in java.nio.file.Files
  * @library ..
  */
 
 import java.nio.file.*;
-import java.nio.file.attribute.Attributes;
-import java.nio.file.attribute.BasicFileAttributes;
+import static java.nio.file.Files.*;
+import static java.nio.file.LinkOption.*;
+import java.nio.file.attribute.*;
 import java.io.IOException;
 import java.util.*;
 
 public class Misc {
 
-    static void npeExpected() {
-        throw new RuntimeException("NullPointerException expected");
-    }
-
     public static void main(String[] args) throws IOException {
-
-        // -- Files.createDirectories --
-
         Path dir = TestUtil.createTemporaryDirectory();
         try {
-            // no-op
-            Files.createDirectories(dir);
+            testCreateDirectories(dir);
+            testIsHidden(dir);
+            testIsSameFile(dir);
+            testFileTypeMethods(dir);
+            testAccessMethods(dir);
+        } finally {
+             TestUtil.removeAll(dir);
+        }
+    }
 
-            // create one directory
-            Path subdir = dir.resolve("a");
-            Files.createDirectories(subdir);
-            if (!subdir.exists())
-                throw new RuntimeException("directory not created");
+    /**
+     * Tests createDirectories
+     */
+    static void testCreateDirectories(Path tmpdir) throws IOException {
+        // a no-op
+        createDirectories(tmpdir);
 
-            // create parents
-            subdir = subdir.resolve("b/c/d");
-            Files.createDirectories(subdir);
-            if (!subdir.exists())
-                throw new RuntimeException("directory not created");
+        // create one directory
+        Path subdir = tmpdir.resolve("a");
+        createDirectories(subdir);
+        assertTrue(exists(subdir));
 
-            // existing file is not a directory
-            Path file = dir.resolve("x").createFile();
+        // create parents
+        subdir = subdir.resolve("b/c/d");
+        createDirectories(subdir);
+        assertTrue(exists(subdir));
+
+        // existing file is not a directory
+        Path file = createFile(tmpdir.resolve("x"));
+        try {
+            createDirectories(file);
+            throw new RuntimeException("failure expected");
+        } catch (FileAlreadyExistsException x) { }
+        try {
+            createDirectories(file.resolve("y"));
+            throw new RuntimeException("failure expected");
+        } catch (IOException x) { }
+    }
+
+    /**
+     * Tests isHidden
+     */
+    static void testIsHidden(Path tmpdir) throws IOException {
+        assertTrue(!isHidden(tmpdir));
+
+        Path file = tmpdir.resolve(".foo");
+        if (System.getProperty("os.name").startsWith("Windows")) {
+            createFile(file);
             try {
-                Files.createDirectories(file);
-                throw new RuntimeException("failure expected");
-            } catch (FileAlreadyExistsException x) { }
+                setAttribute(file, "dos:hidden", true);
+                try {
+                    assertTrue(isHidden(file));
+                } finally {
+                    setAttribute(file, "dos:hidden", false);
+                }
+            } finally {
+                delete(file);
+            }
+        } else {
+            assertTrue(isHidden(file));
+        }
+    }
+
+    /**
+     * Tests isSameFile
+     */
+    static void testIsSameFile(Path tmpdir) throws IOException {
+        Path thisFile = tmpdir.resolve("thisFile");
+        Path thatFile = tmpdir.resolve("thatFile");
+
+        /**
+         * Test: isSameFile for self
+         */
+        assertTrue(isSameFile(thisFile, thisFile));
+
+        /**
+         * Test: Neither files exist
+         */
+        try {
+            isSameFile(thisFile, thatFile);
+            throw new RuntimeException("IOException not thrown");
+        } catch (IOException x) {
+        }
+        try {
+            isSameFile(thatFile, thisFile);
+            throw new RuntimeException("IOException not thrown");
+        } catch (IOException x) {
+        }
+
+        createFile(thisFile);
+        try {
+            /**
+             * Test: One file exists
+             */
             try {
-                Files.createDirectories(file.resolve("y"));
-                throw new RuntimeException("failure expected");
-            } catch (IOException x) { }
+                isSameFile(thisFile, thatFile);
+                throw new RuntimeException("IOException not thrown");
+            } catch (IOException x) {
+            }
+            try {
+                isSameFile(thatFile, thisFile);
+                throw new RuntimeException("IOException not thrown");
+            } catch (IOException x) {
+            }
+
+            /**
+             * Test: Both file exists
+             */
+            createFile(thatFile);
+            try {
+                assertTrue(!isSameFile(thisFile, thatFile));
+                assertTrue(!isSameFile(thatFile, thisFile));
+            } finally {
+                delete(thatFile);
+            }
+
+            /**
+             * Test: Symbolic links
+             */
+            if (TestUtil.supportsLinks(tmpdir)) {
+                createSymbolicLink(thatFile, thisFile);
+                try {
+                    assertTrue(isSameFile(thisFile, thatFile));
+                    assertTrue(isSameFile(thatFile, thisFile));
+                } finally {
+                    TestUtil.deleteUnchecked(thatFile);
+                }
+            }
+        } finally {
+            delete(thisFile);
+        }
+
+        // nulls
+        try {
+            isSameFile(thisFile, null);
+            throw new RuntimeException("NullPointerException expected");
+        } catch (NullPointerException ignore) { }
+        try {
+            isSameFile(null, thatFile);
+            throw new RuntimeException("NullPointerException expected");
+        } catch (NullPointerException ignore) { }
+    }
+
+    /**
+     * Exercise isRegularFile, isDirectory, isSymbolicLink
+     */
+    static void testFileTypeMethods(Path tmpdir) throws IOException {
+        assertTrue(!isRegularFile(tmpdir));
+        assertTrue(!isRegularFile(tmpdir, NOFOLLOW_LINKS));
+        assertTrue(isDirectory(tmpdir));
+        assertTrue(isDirectory(tmpdir, NOFOLLOW_LINKS));
+        assertTrue(!isSymbolicLink(tmpdir));
+
+        Path file = createFile(tmpdir.resolve("foo"));
+        try {
+            assertTrue(isRegularFile(file));
+            assertTrue(isRegularFile(file, NOFOLLOW_LINKS));
+            assertTrue(!isDirectory(file));
+            assertTrue(!isDirectory(file, NOFOLLOW_LINKS));
+            assertTrue(!isSymbolicLink(file));
+
+            if (TestUtil.supportsLinks(tmpdir)) {
+                Path link = tmpdir.resolve("link");
+
+                createSymbolicLink(link, tmpdir);
+                try {
+                    assertTrue(!isRegularFile(link));
+                    assertTrue(!isRegularFile(link, NOFOLLOW_LINKS));
+                    assertTrue(isDirectory(link));
+                    assertTrue(!isDirectory(link, NOFOLLOW_LINKS));
+                    assertTrue(isSymbolicLink(link));
+                } finally {
+                    delete(link);
+                }
+
+                createSymbolicLink(link, file);
+                try {
+                    assertTrue(isRegularFile(link));
+                    assertTrue(!isRegularFile(link, NOFOLLOW_LINKS));
+                    assertTrue(!isDirectory(link));
+                    assertTrue(!isDirectory(link, NOFOLLOW_LINKS));
+                    assertTrue(isSymbolicLink(link));
+                } finally {
+                    delete(link);
+                }
+
+                createLink(link, file);
+                try {
+                    assertTrue(isRegularFile(link));
+                    assertTrue(isRegularFile(link, NOFOLLOW_LINKS));
+                    assertTrue(!isDirectory(link));
+                    assertTrue(!isDirectory(link, NOFOLLOW_LINKS));
+                    assertTrue(!isSymbolicLink(link));
+                } finally {
+                    delete(link);
+                }
+            }
 
         } finally {
-            TestUtil.removeAll(dir);
+            delete(file);
         }
+    }
 
-        // --- NullPointerException --
+    /**
+     * Exercise isReadbale, isWritable, isExecutable, exists, notExists
+     */
+    static void testAccessMethods(Path tmpdir) throws IOException {
+        // should return false when file does not exist
+        Path doesNotExist = tmpdir.resolve("doesNotExist");
+        assertTrue(!isReadable(doesNotExist));
+        assertTrue(!isWritable(doesNotExist));
+        assertTrue(!isExecutable(doesNotExist));
+        assertTrue(!exists(doesNotExist));
+        assertTrue(notExists(doesNotExist));
 
+        Path file = createFile(tmpdir.resolve("foo"));
         try {
-            Files.probeContentType(null);
-            npeExpected();
-        } catch (NullPointerException e) {
-        }
-        try {
-            Files.walkFileTree(null, EnumSet.noneOf(FileVisitOption.class),
-                Integer.MAX_VALUE, new SimpleFileVisitor<Path>(){});
-            npeExpected();
-        } catch (NullPointerException e) {
-        }
-        try {
-            Files.walkFileTree(Paths.get("."), null, Integer.MAX_VALUE,
-                new SimpleFileVisitor<Path>(){});
-            npeExpected();
-        } catch (NullPointerException e) {
-        }
-        try {
-            Files.walkFileTree(Paths.get("."), EnumSet.noneOf(FileVisitOption.class),
-                -1, new SimpleFileVisitor<Path>(){});
-            throw new RuntimeException("IllegalArgumentExpected expected");
-        } catch (IllegalArgumentException e) {
-        }
-        try {
-            Set<FileVisitOption> opts = new HashSet<FileVisitOption>(1);
-            opts.add(null);
-            Files.walkFileTree(Paths.get("."), opts, Integer.MAX_VALUE,
-                new SimpleFileVisitor<Path>(){});
-            npeExpected();
-        } catch (NullPointerException e) {
-        }
-        try {
-            Files.walkFileTree(Paths.get("."), EnumSet.noneOf(FileVisitOption.class),
-                Integer.MAX_VALUE, null);
-            npeExpected();
-        } catch (NullPointerException e) {
-        }
+            // files exist
+            assertTrue(isReadable(file));
+            assertTrue(isWritable(file));
+            assertTrue(exists(file));
+            assertTrue(!notExists(file));
+            assertTrue(isReadable(tmpdir));
+            assertTrue(isWritable(tmpdir));
+            assertTrue(exists(tmpdir));
+            assertTrue(!notExists(tmpdir));
 
-        SimpleFileVisitor<Path> visitor = new SimpleFileVisitor<Path>() { };
-        boolean ranTheGauntlet = false;
-        BasicFileAttributes attrs = Attributes.readBasicFileAttributes(Paths.get("."));
 
-        try { visitor.preVisitDirectory(null, attrs);
-        } catch (NullPointerException x0) {
-        try { visitor.preVisitDirectory(dir, null);
-        } catch (NullPointerException x1) {
-        try { visitor.visitFile(null, attrs);
-        } catch (NullPointerException x2) {
-        try {  visitor.visitFile(dir, null);
-        } catch (NullPointerException x3) {
-        try { visitor.visitFileFailed(null, new IOException());
-        } catch (NullPointerException x4) {
-        try { visitor.visitFileFailed(dir, null);
-        } catch (NullPointerException x5) {
-        try { visitor.postVisitDirectory(null, new IOException());
-        } catch (NullPointerException x6) {
-            // if we get here then all visit* methods threw NPE as expected
-            ranTheGauntlet = true;
-        }}}}}}}
-        if (!ranTheGauntlet)
-            throw new RuntimeException("A visit method did not throw NPE");
+            // sym link exists
+            if (TestUtil.supportsLinks(tmpdir)) {
+                Path link = tmpdir.resolve("link");
+
+                createSymbolicLink(link, file);
+                try {
+                    assertTrue(isReadable(link));
+                    assertTrue(isWritable(link));
+                    assertTrue(exists(link));
+                    assertTrue(!notExists(link));
+                } finally {
+                    delete(link);
+                }
+
+                createSymbolicLink(link, doesNotExist);
+                try {
+                    assertTrue(!isReadable(link));
+                    assertTrue(!isWritable(link));
+                    assertTrue(!exists(link));
+                    assertTrue(exists(link, NOFOLLOW_LINKS));
+                    assertTrue(notExists(link));
+                    assertTrue(!notExists(link, NOFOLLOW_LINKS));
+                } finally {
+                    delete(link);
+                }
+            }
+
+            /**
+             * Test: Edit ACL to deny WRITE and EXECUTE
+             */
+            if (getFileStore(file).supportsFileAttributeView("acl")) {
+                AclFileAttributeView view =
+                    getFileAttributeView(file, AclFileAttributeView.class);
+                UserPrincipal owner = view.getOwner();
+                List<AclEntry> acl = view.getAcl();
+
+                // Insert entry to deny WRITE and EXECUTE
+                AclEntry entry = AclEntry.newBuilder()
+                    .setType(AclEntryType.DENY)
+                    .setPrincipal(owner)
+                    .setPermissions(AclEntryPermission.WRITE_DATA,
+                                    AclEntryPermission.EXECUTE)
+                    .build();
+                acl.add(0, entry);
+                view.setAcl(acl);
+                try {
+                    assertTrue(!isWritable(file));
+                    assertTrue(!isExecutable(file));
+                } finally {
+                    // Restore ACL
+                    acl.remove(0);
+                    view.setAcl(acl);
+                }
+            }
+
+            /**
+             * Test: Windows DOS read-only attribute
+             */
+            if (System.getProperty("os.name").startsWith("Windows")) {
+                setAttribute(file, "dos:readonly", true);
+                try {
+                    assertTrue(!isWritable(file));
+                } finally {
+                    setAttribute(file, "dos:readonly", false);
+                }
+
+                // Read-only attribute does not make direcory read-only
+                DosFileAttributeView view =
+                    getFileAttributeView(tmpdir, DosFileAttributeView.class);
+                boolean save = view.readAttributes().isReadOnly();
+                view.setReadOnly(true);
+                try {
+                    assertTrue(isWritable(file));
+                } finally {
+                    view.setReadOnly(save);
+                }
+            }
+        } finally {
+            delete(file);
+        }
+    }
+
+    static void assertTrue(boolean okay) {
+        if (!okay)
+            throw new RuntimeException("Assertion Failed");
     }
 }

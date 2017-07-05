@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,10 +91,28 @@ import sun.security.jca.GetInstance.Instance;
  * }
  * </pre>
  *
+ * <p> Every implementation of the Java platform is required to support the
+ * following standard <code>CertificateFactory</code> type:
+ * <ul>
+ * <li><tt>X.509</tt></li>
+ * </ul>
+ * and the following standard <code>CertPath</code> encodings:
+ * <ul>
+ * <li><tt>PKCS7</tt></li>
+ * <li><tt>PkiPath</tt></li>
+ * </ul>
+ * The type and encodings are described in the <a href=
+ * "{@docRoot}/../technotes/guides/security/StandardNames.html#CertificateFactory">
+ * CertificateFactory section</a> and the <a href=
+ * "{@docRoot}/../technotes/guides/security/StandardNames.html#CertPathEncodings">
+ * CertPath Encodings section</a> of the
+ * Java Cryptography Architecture Standard Algorithm Name Documentation.
+ * Consult the release documentation for your implementation to see if any
+ * other types or encodings are supported.
+ *
  * @author Hemma Prafullchandra
  * @author Jan Luehe
  * @author Sean Mullan
- *
  *
  * @see Certificate
  * @see X509Certificate
@@ -146,9 +164,9 @@ public class CertificateFactory {
      * the {@link Security#getProviders() Security.getProviders()} method.
      *
      * @param type the name of the requested certificate type.
-     * See Appendix A in the <a href=
-     * "../../../../technotes/guides/security/crypto/CryptoSpec.html#AppA">
-     * Java Cryptography Architecture API Specification &amp; Reference </a>
+     * See the CertificateFactory section in the <a href=
+     * "{@docRoot}/../technotes/guides/security/StandardNames.html#CertificateFactory">
+     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
      * for information about standard certificate types.
      *
      * @return a certificate factory object for the specified type.
@@ -184,9 +202,9 @@ public class CertificateFactory {
      * the {@link Security#getProviders() Security.getProviders()} method.
      *
      * @param type the certificate type.
-     * See Appendix A in the <a href=
-     * "../../../../technotes/guides/security/crypto/CryptoSpec.html#AppA">
-     * Java Cryptography Architecture API Specification &amp; Reference </a>
+     * See the CertificateFactory section in the <a href=
+     * "{@docRoot}/../technotes/guides/security/StandardNames.html#CertificateFactory">
+     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
      * for information about standard certificate types.
      *
      * @param provider the name of the provider.
@@ -228,11 +246,10 @@ public class CertificateFactory {
      * does not have to be registered in the provider list.
      *
      * @param type the certificate type.
-     * See Appendix A in the <a href=
-     * "../../../../technotes/guides/security/crypto/CryptoSpec.html#AppA">
-     * Java Cryptography Architecture API Specification &amp; Reference </a>
+     * See the CertificateFactory section in the <a href=
+     * "{@docRoot}/../technotes/guides/security/StandardNames.html#CertificateFactory">
+     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
      * for information about standard certificate types.
-
      * @param provider the provider.
      *
      * @return a certificate factory object for the specified type.
@@ -325,10 +342,10 @@ public class CertificateFactory {
     /**
      * Returns an iteration of the <code>CertPath</code> encodings supported
      * by this certificate factory, with the default encoding first. See
-     * Appendix A in the
-     * <a href="../../../../technotes/guides/security/certpath/CertPathProgGuide.html#AppA">
-     * Java Certification Path API Programmer's Guide</a> for information about
-     * standard encoding names and their formats.
+     * the CertPath Encodings section in the <a href=
+     * "{@docRoot}/../technotes/guides/security/StandardNames.html#CertPathEncodings">
+     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     * for information about standard encoding names and their formats.
      * <p>
      * Attempts to modify the returned <code>Iterator</code> via its
      * <code>remove</code> method result in an
@@ -364,9 +381,10 @@ public class CertificateFactory {
     /**
      * Generates a <code>CertPath</code> object and initializes it with
      * the data read from the <code>InputStream</code> inStream. The data
-     * is assumed to be in the specified encoding. See Appendix A in the
-     * <a href="../../../../technotes/guides/security/certpath/CertPathProgGuide.html#AppA">
-     * Java Certification Path API Programmer's Guide</a>
+     * is assumed to be in the specified encoding. See
+     * the CertPath Encodings section in the <a href=
+     * "{@docRoot}/../technotes/guides/security/StandardNames.html#CertPathEncodings">
+     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
      * for information about standard encoding names and their formats.
      *
      * @param inStream an <code>InputStream</code> containing the data

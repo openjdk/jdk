@@ -164,8 +164,19 @@ import javax.security.auth.callback.*;
  * different passwords or other protection parameters
  * may also be used.
  *
- * @author Jan Luehe
+ * <p> Every implementation of the Java platform is required to support
+ * the following standard <code>KeyStore</code> type:
+ * <ul>
+ * <li><tt>PKCS12</tt></li>
+ * </ul>
+ * This type is described in the <a href=
+ * "{@docRoot}/../technotes/guides/security/StandardNames.html#KeyStore">
+ * KeyStore section</a> of the
+ * Java Cryptography Architecture Standard Algorithm Name Documentation.
+ * Consult the release documentation for your implementation to see if any
+ * other types are supported.
  *
+ * @author Jan Luehe
  *
  * @see java.security.PrivateKey
  * @see javax.crypto.SecretKey
@@ -582,9 +593,9 @@ public class KeyStore {
      * the {@link Security#getProviders() Security.getProviders()} method.
      *
      * @param type the type of keystore.
-     * See Appendix A in the <a href=
-     * "../../../technotes/guides/security/crypto/CryptoSpec.html#AppA">
-     * Java Cryptography Architecture API Specification &amp; Reference </a>
+     * See the KeyStore section in the <a href=
+     * "{@docRoot}/../technotes/guides/security/StandardNames.html#KeyStore">
+     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
      * for information about standard keystore types.
      *
      * @return a keystore object of the specified type.
@@ -620,9 +631,9 @@ public class KeyStore {
      * the {@link Security#getProviders() Security.getProviders()} method.
      *
      * @param type the type of keystore.
-     * See Appendix A in the <a href=
-     * "../../../technotes/guides/security/crypto/CryptoSpec.html#AppA">
-     * Java Cryptography Architecture API Specification &amp; Reference </a>
+     * See the KeyStore section in the <a href=
+     * "{@docRoot}/../technotes/guides/security/StandardNames.html#KeyStore">
+     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
      * for information about standard keystore types.
      *
      * @param provider the name of the provider.
@@ -663,9 +674,9 @@ public class KeyStore {
      * does not have to be registered in the provider list.
      *
      * @param type the type of keystore.
-     * See Appendix A in the <a href=
-     * "../../../technotes/guides/security/crypto/CryptoSpec.html#AppA">
-     * Java Cryptography Architecture API Specification &amp; Reference </a>
+     * See the KeyStore section in the <a href=
+     * "{@docRoot}/../technotes/guides/security/StandardNames.html#KeyStore">
+     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
      * for information about standard keystore types.
      *
      * @param provider the provider.

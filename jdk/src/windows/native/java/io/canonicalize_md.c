@@ -479,7 +479,7 @@ wcanonicalize(WCHAR *orig_path, WCHAR *result, int size)
         assert(*src == L'\\');        /* Invariant */
         *p = L'\0';            /* Temporarily clear separator */
 
-        if ((pathlen = wcslen(path)) > MAX_PATH - 1) {
+        if ((pathlen = (int)wcslen(path)) > MAX_PATH - 1) {
             pathbuf = getPrefixed(path, pathlen);
             h = FindFirstFileW(pathbuf, &fd);    /* Look up prefix */
             free(pathbuf);
@@ -538,7 +538,7 @@ wcanonicalizeWithPrefix(WCHAR *canonicalPrefix, WCHAR *pathWithCanonicalPrefix, 
     dend = dst + size;   /* Don't go to or past here */
 
 
-    if ((pathlen=wcslen(pathWithCanonicalPrefix)) > MAX_PATH - 1) {
+    if ((pathlen=(int)wcslen(pathWithCanonicalPrefix)) > MAX_PATH - 1) {
         pathbuf = getPrefixed(pathWithCanonicalPrefix, pathlen);
         h = FindFirstFileW(pathbuf, &fd);    /* Look up prefix */
         free(pathbuf);

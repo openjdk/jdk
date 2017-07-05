@@ -75,6 +75,11 @@ CFLAGS += -fno-rtti
 CFLAGS += -fno-exceptions
 CFLAGS += -D_REENTRANT
 CFLAGS += -fcheck-new
+# version 4 and above support fvisibility=hidden (matches jni_x86.h file)
+# except 4.1.2 gives pointless warnings that can't be disabled (afaik)
+ifneq "$(shell expr \( $(CC_VER_MAJOR) \> 4 \) \| \( \( $(CC_VER_MAJOR) = 4 \) \& \( $(CC_VER_MINOR) \>= 3 \) \))" "0"
+CFLAGS += -fvisibility=hidden
+endif
 
 ARCHFLAG = $(ARCHFLAG/$(BUILDARCH))
 ARCHFLAG/i486    = -m32 -march=i586

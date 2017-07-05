@@ -34,10 +34,7 @@ import sun.misc.URLClassPath;
  * BootClassLoaderHook defines an interface for a hook to inject
  * into the bootstrap class loader.
  *
- * In jkernel build, the sun.jkernel.DownloadManager is set as
- * a BootClassLoaderHook by the jkernel VM after the VM is initialized.
- *
- * In other JDK builds, no hook is set.
+ * With jkernel now removed, no hook is set
  */
 public abstract class BootClassLoaderHook {
     private static BootClassLoaderHook bootLoaderHook = null;

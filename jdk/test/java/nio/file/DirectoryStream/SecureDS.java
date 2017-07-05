@@ -28,6 +28,7 @@
  */
 
 import java.nio.file.*;
+import static java.nio.file.Files.*;
 import static java.nio.file.StandardOpenOption.*;
 import static java.nio.file.LinkOption.*;
 import java.nio.file.attribute.*;
@@ -41,7 +42,7 @@ public class SecureDS {
     public static void main(String[] args) throws IOException {
         Path dir = TestUtil.createTemporaryDirectory();
         try {
-            DirectoryStream<Path> stream = dir.newDirectoryStream();
+            DirectoryStream<Path> stream = newDirectoryStream(dir);
             stream.close();
             if (!(stream instanceof SecureDirectoryStream)) {
                 System.out.println("SecureDirectoryStream not supported.");
@@ -62,28 +63,28 @@ public class SecureDS {
 
     // Exercise each of SecureDirectoryStream's method (except move)
     static void doBasicTests(Path dir) throws IOException {
-        Path dir1 = dir.resolve("dir1").createDirectory();
+        Path dir1 = createDirectory(dir.resolve("dir1"));
         Path dir2 = dir.resolve("dir2");
 
         // create a file, directory, and two sym links in the directory
         Path fileEntry = Paths.get("myfile");
-        dir1.resolve(fileEntry).createFile();
+        createFile(dir1.resolve(fileEntry));
         Path dirEntry = Paths.get("mydir");
-        dir1.resolve(dirEntry).createDirectory();
+        createDirectory(dir1.resolve(dirEntry));
         // myfilelink -> myfile
         Path link1Entry = Paths.get("myfilelink");
         if (supportsLinks)
-            dir1.resolve(link1Entry).createSymbolicLink(fileEntry);
+            createSymbolicLink(dir1.resolve(link1Entry), fileEntry);
         // mydirlink -> mydir
         Path link2Entry = Paths.get("mydirlink");
         if (supportsLinks)
-            dir1.resolve(link2Entry).createSymbolicLink(dirEntry);
+            createSymbolicLink(dir1.resolve(link2Entry), dirEntry);
 
         // open directory and then move it so that it is no longer accessible
         // via its original path.
         SecureDirectoryStream<Path> stream =
-            (SecureDirectoryStream<Path>)dir1.newDirectoryStream();
-        dir1.moveTo(dir2);
+            (SecureDirectoryStream<Path>)newDirectoryStream(dir1);
+        move(dir1, dir2);
 
         // Test: iterate over all entries
         int count = 0;
@@ -138,7 +139,7 @@ public class SecureDS {
         if (supportsLinks) {
             stream.newByteChannel(link1Entry, opts).close();
             try {
-                Set<OpenOption> mixed = new HashSet<OpenOption>();
+                Set<OpenOption> mixed = new HashSet<>();
                 mixed.add(READ);
                 mixed.add(NOFOLLOW_LINKS);
                 stream.newByteChannel(link1Entry, mixed).close();
@@ -168,51 +169,48 @@ public class SecureDS {
 
         // clean-up
         stream.close();
-        dir2.delete();
+        delete(dir2);
     }
 
     // Exercise SecureDirectoryStream's move method
     static void doMoveTests(Path dir) throws IOException {
-        Path dir1 = dir.resolve("dir1").createDirectory();
-        Path dir2 = dir.resolve("dir2").createDirectory();
+        Path dir1 = createDirectory(dir.resolve("dir1"));
+        Path dir2 = createDirectory(dir.resolve("dir2"));
 
         // create dir1/myfile, dir1/mydir, dir1/mylink
         Path fileEntry = Paths.get("myfile");
-        dir1.resolve(fileEntry).createFile();
+        createFile(dir1.resolve(fileEntry));
         Path dirEntry = Paths.get("mydir");
-        dir1.resolve(dirEntry).createDirectory();
+        createDirectory(dir1.resolve(dirEntry));
         Path linkEntry = Paths.get("mylink");
         if (supportsLinks)
-            dir1.resolve(linkEntry).createSymbolicLink(Paths.get("missing"));
+            createSymbolicLink(dir1.resolve(linkEntry), Paths.get("missing"));
 
         // target name
         Path target = Paths.get("newfile");
 
         // open stream to both directories
         SecureDirectoryStream<Path> stream1 =
-            (SecureDirectoryStream<Path>)dir1.newDirectoryStream();
+            (SecureDirectoryStream<Path>)newDirectoryStream(dir1);
         SecureDirectoryStream<Path> stream2 =
-            (SecureDirectoryStream<Path>)dir2.newDirectoryStream();
+            (SecureDirectoryStream<Path>)newDirectoryStream(dir2);
 
         // Test: move dir1/myfile -> dir2/newfile
         stream1.move(fileEntry, stream2, target);
-        assertTrue(dir1.resolve(fileEntry).notExists());
-        assertTrue(dir2.resolve(target).exists());
+        assertTrue(notExists(dir1.resolve(fileEntry)));
+        assertTrue(exists(dir2.resolve(target)));
         stream2.deleteFile(target);
 
         // Test: move dir1/mydir -> dir2/newfile
         stream1.move(dirEntry, stream2, target);
-        assertTrue(dir1.resolve(dirEntry).notExists());
-        assertTrue(dir2.resolve(target).exists());
+        assertTrue(notExists(dir1.resolve(dirEntry)));
+        assertTrue(exists(dir2.resolve(target)));
         stream2.deleteDirectory(target);
 
         // Test: move dir1/mylink -> dir2/newfile
         if (supportsLinks) {
             stream1.move(linkEntry, stream2, target);
-            assertTrue(dir2.resolve(target)
-                .getFileAttributeView(BasicFileAttributeView.class, NOFOLLOW_LINKS)
-                .readAttributes()
-                .isSymbolicLink());
+            assertTrue(isSymbolicLink(dir2.resolve(target)));
             stream2.deleteFile(target);
         }
 
@@ -220,10 +218,10 @@ public class SecureDS {
         String testDirAsString = System.getProperty("test.dir");
         if (testDirAsString != null) {
             Path testDir = Paths.get(testDirAsString);
-            if (!dir1.getFileStore().equals(testDir.getFileStore())) {
+            if (!getFileStore(dir1).equals(getFileStore(testDir))) {
                 SecureDirectoryStream<Path> ts =
-                    (SecureDirectoryStream<Path>)testDir.newDirectoryStream();
-                dir1.resolve(fileEntry).createFile();
+                    (SecureDirectoryStream<Path>)newDirectoryStream(testDir);
+                createFile(dir1.resolve(fileEntry));
                 try {
                     stream1.move(fileEntry, ts, target);
                     shouldNotGetHere();
@@ -234,17 +232,17 @@ public class SecureDS {
         }
 
         // clean-up
-        dir1.delete();
-        dir2.delete();
+        delete(dir1);
+        delete(dir2);
     }
 
     // null and ClosedDirectoryStreamException
     static void miscTests(Path dir) throws IOException {
         Path file = Paths.get("file");
-        dir.resolve(file).createFile();
+        createFile(dir.resolve(file));
 
         SecureDirectoryStream<Path> stream =
-            (SecureDirectoryStream<Path>)dir.newDirectoryStream();
+            (SecureDirectoryStream<Path>)newDirectoryStream(dir);
 
         // NullPointerException
         try {
@@ -319,7 +317,7 @@ public class SecureDS {
         } catch (ClosedDirectoryStreamException x) { }
 
         // clean-up
-        dir.resolve(file).delete();
+        delete(dir.resolve(file));
     }
 
     static void assertTrue(boolean b) {

@@ -45,7 +45,7 @@ public class Copy {
     /**
      * Returns {@code true} if okay to overwrite a  file ("cp -i")
      */
-    static boolean okayToOverwrite(FileRef file) {
+    static boolean okayToOverwrite(Path file) {
         String answer = System.console().readLine("overwrite %s (yes/no)? ", file);
         return (answer.equalsIgnoreCase("y") || answer.equalsIgnoreCase("yes"));
     }
@@ -59,9 +59,9 @@ public class Copy {
         CopyOption[] options = (preserve) ?
             new CopyOption[] { COPY_ATTRIBUTES, REPLACE_EXISTING } :
             new CopyOption[] { REPLACE_EXISTING };
-        if (!prompt || target.notExists() || okayToOverwrite(target)) {
+        if (!prompt || Files.notExists(target) || okayToOverwrite(target)) {
             try {
-                source.copyTo(target, options);
+                Files.copy(source, target, options);
             } catch (IOException x) {
                 System.err.format("Unable to copy: %s: %s%n", source, x);
             }
@@ -93,7 +93,7 @@ public class Copy {
 
             Path newdir = target.resolve(source.relativize(dir));
             try {
-                dir.copyTo(newdir, options);
+                Files.copy(dir, newdir, options);
             } catch (FileAlreadyExistsException x) {
                 // ignore
             } catch (IOException x) {
@@ -116,8 +116,8 @@ public class Copy {
             if (exc == null && preserve) {
                 Path newdir = target.resolve(source.relativize(dir));
                 try {
-                    BasicFileAttributes attrs = Attributes.readBasicFileAttributes(dir);
-                    Attributes.setLastModifiedTime(newdir, attrs.lastModifiedTime());
+                    FileTime time = Files.getLastModifiedTime(dir);
+                    Files.setLastModifiedTime(newdir, time);
                 } catch (IOException x) {
                     System.err.format("Unable to copy all attributes to: %s: %s%n", newdir, x);
                 }
@@ -180,16 +180,11 @@ public class Copy {
         Path target = Paths.get(args[argi]);
 
         // check if target is a directory
-        boolean isDir = false;
-        try {
-            isDir = Attributes.readBasicFileAttributes(target).isDirectory();
-        } catch (IOException x) {
-            // ignore (probably target does not exist)
-        }
+        boolean isDir = Files.isDirectory(target);
 
         // copy each source file/directory to target
         for (i=0; i<source.length; i++) {
-            Path dest = (isDir) ? target.resolve(source[i].getName()) : target;
+            Path dest = (isDir) ? target.resolve(source[i].getFileName()) : target;
 
             if (recursive) {
                 // follow links when copying files
@@ -198,13 +193,9 @@ public class Copy {
                 Files.walkFileTree(source[i], opts, Integer.MAX_VALUE, tc);
             } else {
                 // not recursive so source must not be a directory
-                try {
-                    if (Attributes.readBasicFileAttributes(source[i]).isDirectory()) {
-                        System.err.format("%s: is a directory%n", source[i]);
-                        continue;
-                    }
-                } catch (IOException x) {
-                    // assume not directory
+                if (Files.isDirectory(source[i])) {
+                    System.err.format("%s: is a directory%n", source[i]);
+                    continue;
                 }
                 copyFile(source[i], dest, prompt, preserve);
             }

@@ -209,7 +209,7 @@ class BufferStrategyPaintManager extends RepaintManager.PaintManager {
                 synchronized(BufferStrategyPaintManager.this) {
                     while (showing) {
                         try {
-                            wait();
+                            BufferStrategyPaintManager.this.wait();
                         } catch (InterruptedException ie) {
                         }
                     }
