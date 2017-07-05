@@ -24,11 +24,11 @@
 package catalog;
 
 import static catalog.CatalogTestUtils.catalogUriResolver;
-import static catalog.ResolutionChecker.checkNoMatch;
+import static catalog.ResolutionChecker.checkNoUriMatch;
 import static catalog.ResolutionChecker.checkUriResolution;
 
+import javax.xml.catalog.CatalogResolver;
 import javax.xml.catalog.CatalogException;
-import javax.xml.catalog.CatalogUriResolver;
 
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Listeners;
@@ -88,11 +88,10 @@ public class RewriteUriTest {
      */
     @Test(expectedExceptions = CatalogException.class)
     public void testNoMatch() {
-        checkNoMatch(createResolver());
+        checkNoUriMatch(createResolver());
     }
 
-    private CatalogUriResolver createResolver() {
+    private CatalogResolver createResolver() {
         return catalogUriResolver("rewriteUri.xml");
     }
 }
-

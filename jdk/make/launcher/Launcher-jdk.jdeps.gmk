@@ -36,3 +36,9 @@ $(eval $(call SetupBuildLauncher, jdeps, \
     CFLAGS := -DEXPAND_CLASSPATH_WILDCARDS \
         -DNEVER_ACT_AS_SERVER_CLASS_MACHINE, \
 ))
+
+$(eval $(call SetupBuildLauncher, jdeprscan, \
+    MAIN_CLASS := com.sun.tools.jdeprscan.Main, \
+    CFLAGS := -DEXPAND_CLASSPATH_WILDCARDS \
+        -DNEVER_ACT_AS_SERVER_CLASS_MACHINE, \
+))

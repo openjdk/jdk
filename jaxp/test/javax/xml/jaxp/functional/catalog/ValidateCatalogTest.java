@@ -98,8 +98,7 @@ public class ValidateCatalogTest {
                 "http://remote/dtd/alice/docAlice.dtd",
                 "http://local/dtd/docAliceSys.dtd");
         checkUriResolution(catalogUriResolver(catalogName, CATALOG_URI),
-                "http://remote/dtd/alice/docAlice.dtd",
+                "http://remote/dtd/uri/alice/docAlice.dtd",
                 "http://local/dtd/docAliceURI.dtd");
     }
 }
-

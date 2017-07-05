@@ -100,4 +100,3 @@ public class DelegateSystemTest {
         return catalogResolver("delegateSystem.xml");
     }
 }
-

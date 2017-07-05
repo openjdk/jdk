@@ -275,12 +275,52 @@ class LambdaForm {
         BOUND_REINVOKER("BMH.reinvoke"),
         REINVOKER("MH.reinvoke"),
         DELEGATE("MH.delegate"),
+        EXACT_LINKER("MH.invokeExact_MT"),
+        EXACT_INVOKER("MH.exactInvoker"),
+        GENERIC_LINKER("MH.invoke_MT"),
+        GENERIC_INVOKER("MH.invoker"),
         DIRECT_INVOKE_VIRTUAL("DMH.invokeVirtual"),
         DIRECT_INVOKE_SPECIAL("DMH.invokeSpecial"),
         DIRECT_INVOKE_STATIC("DMH.invokeStatic"),
         DIRECT_NEW_INVOKE_SPECIAL("DMH.newInvokeSpecial"),
         DIRECT_INVOKE_INTERFACE("DMH.invokeInterface"),
-        DIRECT_INVOKE_STATIC_INIT("DMH.invokeStaticInit");
+        DIRECT_INVOKE_STATIC_INIT("DMH.invokeStaticInit"),
+        GET_OBJECT("getObject"),
+        PUT_OBJECT("putObject"),
+        GET_OBJECT_VOLATILE("getObjectVolatile"),
+        PUT_OBJECT_VOLATILE("putObjectVolatile"),
+        GET_INT("getInt"),
+        PUT_INT("putInt"),
+        GET_INT_VOLATILE("getIntVolatile"),
+        PUT_INT_VOLATILE("putIntVolatile"),
+        GET_BOOLEAN("getBoolean"),
+        PUT_BOOLEAN("putBoolean"),
+        GET_BOOLEAN_VOLATILE("getBooleanVolatile"),
+        PUT_BOOLEAN_VOLATILE("putBooleanVolatile"),
+        GET_BYTE("getByte"),
+        PUT_BYTE("putByte"),
+        GET_BYTE_VOLATILE("getByteVolatile"),
+        PUT_BYTE_VOLATILE("putByteVolatile"),
+        GET_CHAR("getChar"),
+        PUT_CHAR("putChar"),
+        GET_CHAR_VOLATILE("getCharVolatile"),
+        PUT_CHAR_VOLATILE("putCharVolatile"),
+        GET_SHORT("getShort"),
+        PUT_SHORT("putShort"),
+        GET_SHORT_VOLATILE("getShortVolatile"),
+        PUT_SHORT_VOLATILE("putShortVolatile"),
+        GET_LONG("getLong"),
+        PUT_LONG("putLong"),
+        GET_LONG_VOLATILE("getLongVolatile"),
+        PUT_LONG_VOLATILE("putLongVolatile"),
+        GET_FLOAT("getFloat"),
+        PUT_FLOAT("putFloat"),
+        GET_FLOAT_VOLATILE("getFloatVolatile"),
+        PUT_FLOAT_VOLATILE("putFloatVolatile"),
+        GET_DOUBLE("getDouble"),
+        PUT_DOUBLE("putDouble"),
+        GET_DOUBLE_VOLATILE("getDoubleVolatile"),
+        PUT_DOUBLE_VOLATILE("putDoubleVolatile");
 
         final String defaultLambdaName;
         final String methodName;
@@ -328,6 +368,10 @@ class LambdaForm {
     LambdaForm(String debugName,
                int arity, Name[] names) {
         this(debugName, arity, names, LAST_RESULT, /*forceInline=*/true, /*customized=*/null, Kind.GENERIC);
+    }
+    LambdaForm(String debugName,
+               int arity, Name[] names, Kind kind) {
+        this(debugName, arity, names, LAST_RESULT, /*forceInline=*/true, /*customized=*/null, kind);
     }
     LambdaForm(String debugName,
                int arity, Name[] names, boolean forceInline) {
@@ -817,54 +861,6 @@ class LambdaForm {
         }
     }
 
-    private static void computeInitialPreparedForms() {
-        // Find all predefined invokers and associate them with canonical empty lambda forms.
-        for (MemberName m : MemberName.getFactory().getMethods(LambdaForm.class, false, null, null, null)) {
-            if (!m.isStatic() || !m.isPackage())  continue;
-            MethodType mt = m.getMethodType();
-            if (mt.parameterCount() > 0 &&
-                mt.parameterType(0) == MethodHandle.class &&
-                m.getName().startsWith("interpret_")) {
-                String sig = null;
-                assert((sig = basicTypeSignature(mt)) != null &&
-                        m.getName().equals("interpret" + sig.substring(sig.indexOf('_'))));
-                LambdaForm form = new LambdaForm(mt);
-                form.vmentry = m;
-                form = mt.form().setCachedLambdaForm(MethodTypeForm.LF_INTERPRET, form);
-            }
-        }
-    }
-
-    // Set this false to disable use of the interpret_L methods defined in this file.
-    private static final boolean USE_PREDEFINED_INTERPRET_METHODS = true;
-
-    // The following are predefined exact invokers.  The system must build
-    // a separate invoker for each distinct signature.
-    static Object interpret_L(MethodHandle mh) throws Throwable {
-        Object[] av = {mh};
-        String sig = null;
-        assert(argumentTypesMatch(sig = "L_L", av));
-        Object res = mh.form.interpretWithArguments(av);
-        assert(returnTypesMatch(sig, av, res));
-        return res;
-    }
-    static Object interpret_L(MethodHandle mh, Object x1) throws Throwable {
-        Object[] av = {mh, x1};
-        String sig = null;
-        assert(argumentTypesMatch(sig = "LL_L", av));
-        Object res = mh.form.interpretWithArguments(av);
-        assert(returnTypesMatch(sig, av, res));
-        return res;
-    }
-    static Object interpret_L(MethodHandle mh, Object x1, Object x2) throws Throwable {
-        Object[] av = {mh, x1, x2};
-        String sig = null;
-        assert(argumentTypesMatch(sig = "LLL_L", av));
-        Object res = mh.form.interpretWithArguments(av);
-        assert(returnTypesMatch(sig, av, res));
-        return res;
-    }
-
     // The next few routines are called only from assert expressions
     // They verify that the built-in invokers process the correct raw data types.
     private static boolean argumentTypesMatch(String sig, Object[] av) {
@@ -1149,113 +1145,6 @@ class LambdaForm {
             if (member != null)
                 return member.hashCode();
             return super.hashCode();
-        }
-
-        // Put the predefined NamedFunction invokers into the table.
-        static void initializeInvokers() {
-            for (MemberName m : MemberName.getFactory().getMethods(NamedFunction.class, false, null, null, null)) {
-                if (!m.isStatic() || !m.isPackage())  continue;
-                MethodType type = m.getMethodType();
-                if (type.equals(INVOKER_METHOD_TYPE) &&
-                    m.getName().startsWith("invoke_")) {
-                    String sig = m.getName().substring("invoke_".length());
-                    int arity = LambdaForm.signatureArity(sig);
-                    MethodType srcType = MethodType.genericMethodType(arity);
-                    if (LambdaForm.signatureReturn(sig) == V_TYPE)
-                        srcType = srcType.changeReturnType(void.class);
-                    MethodTypeForm typeForm = srcType.form();
-                    typeForm.setCachedMethodHandle(MethodTypeForm.MH_NF_INV, DirectMethodHandle.make(m));
-                }
-            }
-        }
-
-        // The following are predefined NamedFunction invokers.  The system must build
-        // a separate invoker for each distinct signature.
-        /** void return type invokers. */
-        @Hidden
-        static Object invoke__V(MethodHandle mh, Object[] a) throws Throwable {
-            assert(arityCheck(0, void.class, mh, a));
-            mh.invokeBasic();
-            return null;
-        }
-        @Hidden
-        static Object invoke_L_V(MethodHandle mh, Object[] a) throws Throwable {
-            assert(arityCheck(1, void.class, mh, a));
-            mh.invokeBasic(a[0]);
-            return null;
-        }
-        @Hidden
-        static Object invoke_LL_V(MethodHandle mh, Object[] a) throws Throwable {
-            assert(arityCheck(2, void.class, mh, a));
-            mh.invokeBasic(a[0], a[1]);
-            return null;
-        }
-        @Hidden
-        static Object invoke_LLL_V(MethodHandle mh, Object[] a) throws Throwable {
-            assert(arityCheck(3, void.class, mh, a));
-            mh.invokeBasic(a[0], a[1], a[2]);
-            return null;
-        }
-        @Hidden
-        static Object invoke_LLLL_V(MethodHandle mh, Object[] a) throws Throwable {
-            assert(arityCheck(4, void.class, mh, a));
-            mh.invokeBasic(a[0], a[1], a[2], a[3]);
-            return null;
-        }
-        @Hidden
-        static Object invoke_LLLLL_V(MethodHandle mh, Object[] a) throws Throwable {
-            assert(arityCheck(5, void.class, mh, a));
-            mh.invokeBasic(a[0], a[1], a[2], a[3], a[4]);
-            return null;
-        }
-        /** Object return type invokers. */
-        @Hidden
-        static Object invoke__L(MethodHandle mh, Object[] a) throws Throwable {
-            assert(arityCheck(0, mh, a));
-            return mh.invokeBasic();
-        }
-        @Hidden
-        static Object invoke_L_L(MethodHandle mh, Object[] a) throws Throwable {
-            assert(arityCheck(1, mh, a));
-            return mh.invokeBasic(a[0]);
-        }
-        @Hidden
-        static Object invoke_LL_L(MethodHandle mh, Object[] a) throws Throwable {
-            assert(arityCheck(2, mh, a));
-            return mh.invokeBasic(a[0], a[1]);
-        }
-        @Hidden
-        static Object invoke_LLL_L(MethodHandle mh, Object[] a) throws Throwable {
-            assert(arityCheck(3, mh, a));
-            return mh.invokeBasic(a[0], a[1], a[2]);
-        }
-        @Hidden
-        static Object invoke_LLLL_L(MethodHandle mh, Object[] a) throws Throwable {
-            assert(arityCheck(4, mh, a));
-            return mh.invokeBasic(a[0], a[1], a[2], a[3]);
-        }
-        @Hidden
-        static Object invoke_LLLLL_L(MethodHandle mh, Object[] a) throws Throwable {
-            assert(arityCheck(5, mh, a));
-            return mh.invokeBasic(a[0], a[1], a[2], a[3], a[4]);
-        }
-        private static boolean arityCheck(int arity, MethodHandle mh, Object[] a) {
-            return arityCheck(arity, Object.class, mh, a);
-        }
-        private static boolean arityCheck(int arity, Class<?> rtype, MethodHandle mh, Object[] a) {
-            assert(a.length == arity)
-                    : Arrays.asList(a.length, arity);
-            assert(mh.type().basicType() == MethodType.genericMethodType(arity).changeReturnType(rtype))
-                    : Arrays.asList(mh, rtype, arity);
-            MemberName member = mh.internalMemberName();
-            if (isInvokeBasic(member)) {
-                assert(arity > 0);
-                assert(a[0] instanceof MethodHandle);
-                MethodHandle mh2 = (MethodHandle) a[0];
-                assert(mh2.type().basicType() == MethodType.genericMethodType(arity-1).changeReturnType(rtype))
-                        : Arrays.asList(member, mh2, rtype, arity);
-            }
-            return true;
         }
 
         static final MethodType INVOKER_METHOD_TYPE =
@@ -1920,12 +1809,7 @@ class LambdaForm {
             DEBUG_NAME_COUNTERS = null;
     }
 
-    // Put this last, so that previous static inits can run before.
     static {
-        if (USE_PREDEFINED_INTERPRET_METHODS)
-            computeInitialPreparedForms();
-        NamedFunction.initializeInvokers();
-
         // The Holder class will contain pre-generated forms resolved
         // using MemberName.getFactory(). However, that doesn't initialize the
         // class, which subtly breaks inlining etc. By forcing

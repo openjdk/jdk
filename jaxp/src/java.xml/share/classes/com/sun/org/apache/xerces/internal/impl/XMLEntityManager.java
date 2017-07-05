@@ -20,8 +20,6 @@
 
 package com.sun.org.apache.xerces.internal.impl ;
 
-import com.sun.org.apache.xerces.internal.impl.Constants;
-import com.sun.org.apache.xerces.internal.impl.XMLEntityHandler;
 import com.sun.org.apache.xerces.internal.impl.io.ASCIIReader;
 import com.sun.org.apache.xerces.internal.impl.io.UCSReader;
 import com.sun.org.apache.xerces.internal.impl.io.UTF8Reader;
@@ -42,7 +40,6 @@ import com.sun.xml.internal.stream.StaxEntityResolverWrapper;
 import com.sun.xml.internal.stream.StaxXMLInputSource;
 import com.sun.xml.internal.stream.XMLEntityStorage;
 import java.io.*;
-import java.lang.reflect.Method;
 import java.net.HttpURLConnection;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -59,7 +56,6 @@ import javax.xml.catalog.CatalogFeatures;
 import javax.xml.catalog.CatalogFeatures.Feature;
 import javax.xml.catalog.CatalogManager;
 import javax.xml.catalog.CatalogResolver;
-import javax.xml.catalog.CatalogUriResolver;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.transform.Source;
 import jdk.xml.internal.JdkXmlUtils;
@@ -420,7 +416,6 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
     private boolean fUseCatalog = true;
     CatalogFeatures fCatalogFeatures;
     CatalogResolver fCatalogResolver;
-    CatalogUriResolver fCatalogUriResolver;
 
     private String fCatalogFile;
     private String fDefer;
@@ -1044,12 +1039,18 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
             }
             fCatalogFile = fCatalogFeatures.get(Feature.FILES);
             if (fUseCatalog && fCatalogFile != null) {
-                if (fCatalogResolver == null) {
-                    fCatalogResolver = CatalogManager.catalogResolver(fCatalogFeatures);
-                }
-                InputSource is = fCatalogResolver.resolveEntity(publicId, literalSystemId);
-                if (is != null && !is.isEmpty()) {
-                    staxInputSource = new StaxXMLInputSource(new XMLInputSource(is, true), true);
+                try {
+                    if (fCatalogResolver == null) {
+                        fCatalogResolver = CatalogManager.catalogResolver(fCatalogFeatures);
+                    }
+                    InputSource is = fCatalogResolver.resolveEntity(publicId, literalSystemId);
+                    if (is != null && !is.isEmpty()) {
+                        staxInputSource = new StaxXMLInputSource(new XMLInputSource(is, true), true);
+                    }
+                } catch (CatalogException e) {
+                    fErrorReporter.reportError(XMLMessageFormatter.XML_DOMAIN,"CatalogException",
+                    new Object[]{SecuritySupport.sanitizePath(fCatalogFile)},
+                    XMLErrorReporter.SEVERITY_FATAL_ERROR, e );
                 }
             }
         }
@@ -1140,7 +1141,7 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
             if (fUseCatalog && fCatalogFile != null) {
                 /*
                  since the method can be called from various processors, both
-                 CatalogResolver and CatalogUriResolver are used to attempt to find
+                 EntityResolver and URIResolver are used to attempt to find
                  a match
                 */
                 InputSource is = null;
@@ -1153,13 +1154,20 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
                         is = fCatalogResolver.resolveEntity(pid, literalSystemId);
                     }
                 } catch (CatalogException e) {}
+
                 if (is != null && !is.isEmpty()) {
                     xmlInputSource = new XMLInputSource(is, true);
                 } else if (literalSystemId != null) {
-                    if (fCatalogUriResolver == null) {
-                        fCatalogUriResolver = CatalogManager.catalogUriResolver(fCatalogFeatures);
+                    if (fCatalogResolver == null) {
+                        fCatalogResolver = CatalogManager.catalogResolver(fCatalogFeatures);
                     }
-                    Source source = fCatalogUriResolver.resolve(literalSystemId, baseSystemId);
+
+                    Source source = null;
+                    try {
+                        source = fCatalogResolver.resolve(literalSystemId, baseSystemId);
+                    } catch (CatalogException e) {
+                        throw new XNIException(e);
+                    }
                     if (source != null && !source.isEmpty()) {
                         xmlInputSource = new XMLInputSource(publicId, source.getSystemId(), baseSystemId, true);
                     }

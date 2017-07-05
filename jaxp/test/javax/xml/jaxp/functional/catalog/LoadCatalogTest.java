@@ -33,7 +33,6 @@ import static catalog.ResolutionChecker.checkUriResolution;
 
 import javax.xml.catalog.CatalogException;
 import javax.xml.catalog.CatalogResolver;
-import javax.xml.catalog.CatalogUriResolver;
 
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Listeners;
@@ -56,6 +55,7 @@ public class LoadCatalogTest {
     private static final String CATALOG_DUMMY = "dummy.xml";
 
     private static final String ID_ALICE = "http://remote/dtd/alice/docAlice.dtd";
+    private static final String ID_ALICE_URI = "http://remote/dtd/uri/alice/docAlice.dtd";
     private static final String ID_DUMMY = "http://remote/dtd/doc.dtd";
 
     @Test(dataProvider = "entityResolver")
@@ -79,8 +79,8 @@ public class LoadCatalogTest {
     }
 
     @Test(dataProvider = "uriResolver")
-    public void testMatchOnUriResolver(CatalogUriResolver resolver) {
-        checkUriResolution(resolver, ID_ALICE,
+    public void testMatchOnUriResolver(CatalogResolver resolver) {
+        checkUriResolution(resolver, ID_ALICE_URI,
                 "http://local/dtd/docAliceURI.dtd");
     }
 
@@ -121,4 +121,3 @@ public class LoadCatalogTest {
                 { new String[] { CATALOG_LOADCATALOGFILES } } };
     }
 }
-

@@ -155,7 +155,6 @@ public:
   void update_recent_gc_times(double end_time_sec, double elapsed_ms);
   void compute_pause_time_ratio(double interval_ms, double pause_time_ms);
 
-  double oldest_known_gc_end_time_sec() const;
   double last_known_gc_end_time_sec() const;
 };
 

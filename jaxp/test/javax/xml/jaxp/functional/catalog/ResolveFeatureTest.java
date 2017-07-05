@@ -38,7 +38,6 @@ import javax.xml.catalog.CatalogException;
 import javax.xml.catalog.CatalogFeatures;
 import javax.xml.catalog.CatalogFeatures.Feature;
 import javax.xml.catalog.CatalogResolver;
-import javax.xml.catalog.CatalogUriResolver;
 
 import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
@@ -93,7 +92,7 @@ public class ResolveFeatureTest {
      */
     @Test
     public void testContinueResolutionOnUriResolver() {
-        CatalogUriResolver resolver = createUriResolver(RESOLVE_CONTINUE);
+        CatalogResolver resolver = createUriResolver(RESOLVE_CONTINUE);
         resolver.resolve("http://remote/dtd/bob/docBobDummy.dtd", null);
         checkUriResolution(resolver, "http://remote/dtd/bob/docBob.dtd",
                 "http://local/base/dtd/docBobURI.dtd");
@@ -123,7 +122,7 @@ public class ResolveFeatureTest {
         return catalogResolver(createFeature(resolve), CATALOG_SYSTEM);
     }
 
-    private CatalogUriResolver createUriResolver(String resolve) {
+    private CatalogResolver createUriResolver(String resolve) {
         return catalogUriResolver(createFeature(resolve), CATALOG_URI);
     }
 
@@ -131,4 +130,3 @@ public class ResolveFeatureTest {
         return builder().with(Feature.RESOLVE, resolve).build();
     }
 }
-
