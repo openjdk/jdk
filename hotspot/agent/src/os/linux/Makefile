@@ -36,25 +36,33 @@ SOURCES  = salibelf.c   \
 
 INCLUDES = -I${JAVA_HOME}/include -I${JAVA_HOME}/include/linux 
 
-OBJS     = $(SOURCES:.c=.o)
+OBJS     = $(SOURCES:%.c=$(ARCH)/%.o) $(ARCH)/sadis.o
 
 LIBS     = -lthread_db
 
-CFLAGS   = -c -fPIC -g -D_GNU_SOURCE -D$(ARCH) $(INCLUDES) -D_FILE_OFFSET_BITS=64
+CFLAGS   = -c -fPIC -g -D_GNU_SOURCE -D$(ARCH) $(INCLUDES) -I$(ARCH)
 
 LIBSA = $(ARCH)/libsaproc.so
 
 all: $(LIBSA)
 
-LinuxDebuggerLocal.o: LinuxDebuggerLocal.c
-	$(JAVAH) -jni -classpath ../../../build/classes  \
+$(ARCH):
+       mkdir $(ARCH)
+
+$(ARCH)/LinuxDebuggerLocal.o: LinuxDebuggerLocal.c
+        $(JAVAH) -jni -classpath ../../../build/classes -d $(ARCH) \
 		sun.jvm.hotspot.debugger.x86.X86ThreadContext \
 		sun.jvm.hotspot.debugger.sparc.SPARCThreadContext \
 		sun.jvm.hotspot.debugger.amd64.AMD64ThreadContext 
-	$(GCC) $(CFLAGS) $<
+        $(GCC) $(CFLAGS) $< -o $@
 
-.c.obj:
-	$(GCC) $(CFLAGS)
+$(ARCH)/sadis.o:  ../../share/native/sadis.c
+        $(JAVAH) -jni -classpath ../../../build/classes -d $(ARCH) \
+                sun.jvm.hotspot.asm.Disassembler
+        $(GCC) $(CFLAGS) $< -o $@
+ 
+$(ARCH)/%.o: %.c
+        $(GCC) $(CFLAGS) $< -o $@
 
 ifndef LDNOMAP
   LFLAGS_LIBSA = -Xlinker --version-script=mapfile
@@ -68,9 +76,8 @@ ifneq ($(_HAS_HASH_STYLE_GNU),)
 endif
 LFLAGS_LIBSA += $(LDFLAGS_HASH_STYLE)
 
-$(LIBSA): $(OBJS) mapfile
-	if [ ! -d $(ARCH) ] ; then mkdir $(ARCH) ; fi
-	$(GCC) -shared $(LFLAGS_LIBSA) -o $(LIBSA) $(OBJS) $(LIBS)
+$(LIBSA): $(ARCH) $(OBJS) mapfile
+        $(GCC) -shared $(LFLAGS_LIBSA) -o $(LIBSA) $(OBJS) $(LIBS)
 
 test.o: test.c
 	$(GCC) -c -o test.o -g -D_GNU_SOURCE -D$(ARCH) $(INCLUDES) test.c
@@ -79,7 +86,4 @@ test: test.o
 	$(GCC) -o test test.o -L$(ARCH) -lsaproc $(LIBS)
 
 clean:
-	rm -rf $(LIBSA)
-	rm -rf $(OBJS)
-	rmdir $(ARCH)
-
+        rm -fr $(ARCH)

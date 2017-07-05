@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,9 @@ package sun.jvm.hotspot.asm;
 
 public interface InstructionVisitor {
    public void prologue();
-   public void visit(long currentPc, Instruction instr);
+   public void beginInstruction(long currentPc);
+   public void printAddress(long address);
+   public void print(String format);
+   public void endInstruction(long endPc);
    public void epilogue();
 }
