@@ -38,11 +38,11 @@ class BinaryStringPlusFactory extends BinaryOperatorFactory {
 
     @Override
     protected boolean isApplicable(Type resultType) {
-        return resultType.equals(TypeList.find("java.lang.String"));
-        }
+        return resultType.equals(TypeList.STRING);
+    }
 
     @Override
-    protected Pair<Type, Type> generateTypes() throws ProductionFailedException {
+    protected Pair<Type, Type> generateTypes() {
         return new Pair<>(resultType, resultType);
     }
 }

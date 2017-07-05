@@ -26,7 +26,6 @@
  * @summary test ensures the proper sequencing of bands, dump bands as well.
  * @compile -XDignore.symbol.file Utils.java BandIntegrity.java
  * @run main BandIntegrity
- * @key intermittent
  * @author ksrini
  */
 import java.io.File;

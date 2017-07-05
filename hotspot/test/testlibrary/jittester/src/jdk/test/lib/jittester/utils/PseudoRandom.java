@@ -23,18 +23,31 @@
 
 package jdk.test.lib.jittester.utils;
 
+import java.lang.reflect.Field;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Random;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * This class is used for any random generation operations.
  */
 public class PseudoRandom {
 
-    private static java.util.Random random = null;
+    private static Random random = null;
+    private static final Field SEED_FIELD;
+
+    static {
+        try {
+            SEED_FIELD = Random.class.getDeclaredField("seed");
+            SEED_FIELD.setAccessible(true);
+        } catch (ReflectiveOperationException roe) {
+            throw new Error("Can't get seed field: " + roe, roe);
+        }
+    }
 
     public static void reset(String seed) {
         if (seed == null || seed.length() == 0) {
@@ -71,9 +84,9 @@ public class PseudoRandom {
         Collections.shuffle(list, random);
     }
 
-    public static byte randomNotNegative(byte limit) {
-        byte result = (byte) (limit * random.nextDouble());
-        return (byte)Math.abs(result);
+    public static int randomNotNegative(int limit) {
+        int result = (int) (limit * random.nextDouble());
+        return Math.abs(result);
     }
 
     public static <T> T randomElement(Collection<T> collection) {
@@ -102,5 +115,22 @@ public class PseudoRandom {
         if (array.length == 0)
             throw new NoSuchElementException("Empty, no element can be randomly selected");
         return array[random.nextInt(array.length)];
+    }
+
+    public static long getCurrentSeed() {
+        try {
+            return ((AtomicLong)SEED_FIELD.get(random)).get();
+        } catch (ReflectiveOperationException roe) {
+            throw new Error("Can't get seed: " + roe, roe);
+        }
+    }
+
+    public static void setCurrentSeed(long seed) {
+        try {
+            AtomicLong seedObject = (AtomicLong)SEED_FIELD.get(random);
+            seedObject.set(seed);
+        } catch (ReflectiveOperationException roe) {
+            throw new Error("Can't set seed: " + roe, roe);
+        }
     }
 }

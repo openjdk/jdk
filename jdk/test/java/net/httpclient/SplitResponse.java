@@ -33,6 +33,7 @@ import java.util.concurrent.CompletableFuture;
 /**
  * @test
  * @bug 8087112
+ * @key intermittent
  * @build Server
  * @run main/othervm -Djava.net.HttpClient.log=all SplitResponse
  */

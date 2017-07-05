@@ -26,6 +26,7 @@ package jdk.test.lib.jittester.loops;
 import java.util.List;
 import jdk.test.lib.jittester.Block;
 import jdk.test.lib.jittester.IRNode;
+import jdk.test.lib.jittester.Statement;
 import jdk.test.lib.jittester.visitors.Visitor;
 
 public class For extends IRNode {
@@ -45,7 +46,7 @@ public class For extends IRNode {
         BODY1,
         BODY2,
         BODY3,
-    };
+    }
 
     private final Loop loop;
     // header;                       // [subblock]
@@ -57,8 +58,9 @@ public class For extends IRNode {
     // }
     private long thisLoopIterLimit = 0;
     public For(int level, Loop loop, long thisLoopIterLimit,
-            IRNode header, IRNode statement1,
-            IRNode statement2, IRNode body1, IRNode body2, IRNode body3) {
+               Block header, Statement statement1,
+               Statement statement2, Block body1, Block body2, Block body3) {
+        super(body1.getResultType());
         this.level = level;
         this.loop = loop;
         this.thisLoopIterLimit = thisLoopIterLimit;
@@ -100,13 +102,12 @@ public class For extends IRNode {
         IRNode header = getChildren().get(ForPart.HEADER.ordinal());
         List<IRNode> siblings = getParent().getChildren();
         int index = siblings.indexOf(this);
+        siblings.set(index++, loop.initialization);
         if (header instanceof Block) {
-            siblings.remove(this);
             siblings.addAll(index, header.getChildren());
         } else {
-            siblings.set(index, header);
+            siblings.add(index, header);
         }
-        siblings.add(index + header.getChildren().size(), loop.initialization);
         return true;
     }
 }

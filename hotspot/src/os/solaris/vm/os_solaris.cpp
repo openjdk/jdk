@@ -756,15 +756,9 @@ extern "C" void* thread_native_entry(void* thread_addr) {
     }
   }
 
-  // If the creator called set priority before we started,
-  // we need to call set_native_priority now that we have an lwp.
-  // We used to get the priority from thr_getprio (we called
-  // thr_setprio way back in create_thread) and pass it to
-  // set_native_priority, but Solaris scales the priority
-  // in java_to_os_priority, so when we read it back here,
-  // we pass trash to set_native_priority instead of what's
-  // in java_to_os_priority. So we save the native priority
-  // in the osThread and recall it here.
+  // Our priority was set when we were created, and stored in the
+  // osthread, but couldn't be passed through to our LWP until now.
+  // So read back the priority and set it again.
 
   if (osthr->thread_id() != -1) {
     if (UseThreadPriorities) {
@@ -1043,6 +1037,10 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
 
   // Remember that we created this thread so we can set priority on it
   osthread->set_vm_created();
+
+  // Most thread types will set an explicit priority before starting the thread,
+  // but for those that don't we need a valid value to read back in thread_native_entry.
+  osthread->set_native_priority(NormPriority);
 
   // Initial thread state is INITIALIZED, not SUSPENDED
   osthread->set_state(INITIALIZED);
@@ -1357,29 +1355,20 @@ double os::elapsedVTime() {
   return (double)gethrvtime() / (double)hrtime_hz;
 }
 
-// in-memory timestamp support - has update accuracy of 1ms
-typedef void (*_get_nsec_fromepoch_func_t)(hrtime_t*);
-static _get_nsec_fromepoch_func_t _get_nsec_fromepoch = NULL;
-
 // Must return millis since Jan 1 1970 for JVM_CurrentTimeMillis
 jlong os::javaTimeMillis() {
-  if (_get_nsec_fromepoch != NULL) {
-    hrtime_t now;
-    _get_nsec_fromepoch(&now);
-    return now / NANOSECS_PER_MILLISEC;
+  timeval t;
+  if (gettimeofday(&t, NULL) == -1) {
+    fatal("os::javaTimeMillis: gettimeofday (%s)", os::strerror(errno));
   }
-  else {
-    timeval t;
-    if (gettimeofday(&t, NULL) == -1) {
-      fatal("os::javaTimeMillis: gettimeofday (%s)", os::strerror(errno));
-    }
-    return jlong(t.tv_sec) * 1000  +  jlong(t.tv_usec) / 1000;
-  }
+  return jlong(t.tv_sec) * 1000  +  jlong(t.tv_usec) / 1000;
 }
 
+// Must return seconds+nanos since Jan 1 1970. This must use the same
+// time source as javaTimeMillis and can't use get_nsec_fromepoch as
+// we need better than 1ms accuracy
 void os::javaTimeSystemUTC(jlong &seconds, jlong &nanos) {
   timeval t;
-  // can't use get_nsec_fromepoch here as we need better accuracy than 1ms
   if (gettimeofday(&t, NULL) == -1) {
     fatal("os::javaTimeSystemUTC: gettimeofday (%s)", os::strerror(errno));
   }
@@ -4449,9 +4438,6 @@ void os::init(void) {
   if (handle != NULL) {
     Solaris::_pthread_setname_np =  // from 11.3
         (Solaris::pthread_setname_np_func_t)dlsym(handle, "pthread_setname_np");
-
-    _get_nsec_fromepoch =           // from 11.3.6
-        (_get_nsec_fromepoch_func_t) dlsym(handle, "get_nsec_fromepoch");
   }
 }
 

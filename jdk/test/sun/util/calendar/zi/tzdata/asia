@@ -102,13 +102,9 @@ Rule E-EurAsia	1979	1995	-	Sep	lastSun	 0:00	0	-
 Rule E-EurAsia	1996	max	-	Oct	lastSun	 0:00	0	-
 Rule RussiaAsia	1981	1984	-	Apr	1	 0:00	1:00	S
 Rule RussiaAsia	1981	1983	-	Oct	1	 0:00	0	-
-Rule RussiaAsia	1984	1991	-	Sep	lastSun	 2:00s	0	-
-Rule RussiaAsia	1985	1991	-	Mar	lastSun	 2:00s	1:00	S
-Rule RussiaAsia	1992	only	-	Mar	lastSat	23:00	1:00	S
-Rule RussiaAsia	1992	only	-	Sep	lastSat	23:00	0	-
-Rule RussiaAsia	1993	max	-	Mar	lastSun	 2:00s	1:00	S
-Rule RussiaAsia	1993	1995	-	Sep	lastSun	 2:00s	0	-
-Rule RussiaAsia	1996	max	-	Oct	lastSun	 2:00s	0	-
+Rule RussiaAsia	1984	1995	-	Sep	lastSun	 2:00s	0	-
+Rule RussiaAsia	1985	2011	-	Mar	lastSun	 2:00s	1:00	S
+Rule RussiaAsia	1996	2011	-	Oct	lastSun	 2:00s	0	-
 
 # Afghanistan
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
@@ -148,17 +144,26 @@ Zone	Asia/Yerevan	2:58:00 -	LMT	1924 May  2
 			3:00	1:00	YERST	1991 Sep 23 # independence
 			3:00 RussiaAsia	AM%sT	1995 Sep 24  2:00s
 			4:00	-	AMT	1997
-			4:00 RussiaAsia	AM%sT	2012 Mar 25  2:00s
+			4:00 RussiaAsia	AM%sT	2012 Feb  9
 			4:00	-	AMT
 
 # Azerbaijan
+
 # From Rustam Aliyev of the Azerbaijan Internet Forum (2005-10-23):
 # According to the resolution of Cabinet of Ministers, 1997
 # From Paul Eggert (2015-09-17): It was Resolution No. 21 (1997-03-17).
 # http://code.az/files/daylight_res.pdf
+
+# From Steffen Thorsen (2016-03-17):
+# ... the Azerbaijani Cabinet of Ministers has cancelled switching to
+# daylight saving time....
+# http://www.azernews.az/azerbaijan/94137.html
+# http://vestnikkavkaza.net/news/Azerbaijani-Cabinet-of-Ministers-cancels-daylight-saving-time.html
+# http://en.apa.az/xeber_azerbaijan_abolishes_daylight_savings_ti_240862.html
+
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
-Rule	Azer	1997	max	-	Mar	lastSun	 4:00	1:00	S
-Rule	Azer	1997	max	-	Oct	lastSun	 5:00	0	-
+Rule	Azer	1997	2015	-	Mar	lastSun	 4:00	1:00	S
+Rule	Azer	1997	2015	-	Oct	lastSun	 5:00	0	-
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Baku	3:19:24 -	LMT	1924 May  2
 			3:00	-	BAKT	1957 Mar    # Baku Time
@@ -1581,23 +1586,6 @@ Zone	Asia/Amman	2:23:44 -	LMT	1931
 
 # Kazakhstan
 
-# From Paul Eggert (1996-11-22):
-# Andrew Evtichov (1996-04-13) writes that Kazakhstan
-# stayed in sync with Moscow after 1990, and that Aqtobe (formerly Aktyubinsk)
-# and Aqtau (formerly Shevchenko) are the largest cities in their zones.
-# Guess that Aqtau and Aqtobe diverged in 1995, since that's the first time
-# IATA SSIM mentions a third time zone in Kazakhstan.
-
-# From Paul Eggert (2006-03-22):
-# German Iofis, ELSI, Almaty (2001-10-09) reports that Kazakhstan uses
-# RussiaAsia rules, instead of switching at 00:00 as the IATA has it.
-# Go with Shanks & Pottenger, who have them always using RussiaAsia rules.
-# Also go with the following claims of Shanks & Pottenger:
-#
-# - Kazakhstan did not observe DST in 1991.
-# - Qyzylorda switched from +5:00 to +6:00 on 1992-01-19 02:00.
-# - Oral switched from +5:00 to +4:00 in spring 1989.
-
 # From Kazakhstan Embassy's News Bulletin No. 11
 # <http://www.kazsociety.org.uk/news/2005/03/30.htm> (2005-03-21):
 # The Government of Kazakhstan passed a resolution March 15 abolishing
@@ -1614,61 +1602,232 @@ Zone	Asia/Amman	2:23:44 -	LMT	1931
 # everything else....  I guess that would make Kazakhstan time zones
 # de jure UTC+5 and UTC+6 respectively.
 
+# From Stepan Golosunov (2016-03-27) ([*] means see later comments below):
+# Review of the linked documents from http://adilet.zan.kz/
+# produced the following data for post-1991 Kazakhstan:
+#
+# 0. Act of the Cabinet of Ministers of the USSR
+# from 1991-02-04 No. 20
+# http://pravo.gov.ru/proxy/ips/?docbody=&nd=102010545
+# removed the extra hour ("decree time") on the territory of the USSR
+# starting with the last Sunday of March 1991.
+# It also allowed (but not mandated) Kazakh SSR, Kirghiz SSR, Tajik SSR,
+# Turkmen SSR and Uzbek SSR to not have "summer" time.
+#
+# The 1992-01-13 act also refers to the act of the Cabinet of Ministers
+# of the Kazakh SSR from 1991-03-20 No. 170 "About the act of the Cabinet
+# of Ministers of the USSR from 1991-02-04 No. 20" but I didn't found its
+# text.
+#
+# According to Izvestia newspaper No. 68 (23334) from 1991-03-20
+# (page 6; available at http://libinfo.org/newsr/newsr2574.djvu via
+# http://libinfo.org/index.php?id=58564) on 1991-03-31 at 2:00 during
+# transition to "summer" time:
+# Republic of Georgia, Latvian SSR, Lithuanian SSR, SSR Moldova,
+# Estonian SSR; Komi ASSR; Kaliningrad oblast; Nenets autonomous okrug
+# were to move clocks 1 hour forward.
+# Kazakh SSR (excluding Uralsk oblast); Republic of Kyrgyzstan, Tajik
+# SSR; Andijan, Jizzakh, Namangan, Sirdarya, Tashkent, Fergana oblasts
+# of the Uzbek SSR were to move clocks 1 hour backwards.
+# Other territories were to not move clocks.
+# When the "summer" time would end on 1991-09-29, clocks were to be
+# moved 1 hour backwards on the territory of the USSR excluding
+# Kazakhstan, Kirghizia, Uzbekistan, Turkmenia, Tajikistan.
+#
+# Apparently there were last minute changes. Apparently Kazakh act No. 170
+# was one of such changes.
+#
+# https://ru.wikipedia.org/wiki/Декретное время
+# claims that Sovetskaya Rossiya newspaper on 1991-03-29 published that
+# Nenets autonomous okrug, Komi and Kazakhstan (excluding Uralsk oblast)
+# were to not move clocks and Uralsk oblast was to move clocks
+# forward; on 1991-09-29 Kazakhstan was to move clocks backwards.
+# (Probably there were changes even after that publication. There is an
+# article claiming that Kaliningrad oblast decided on 1991-03-29 to not
+# move clocks.)
+#
+# This implies that on 1991-03-31 Asia/Oral remained on +04/+05 while
+# the rest of Kazakhstan switched from +06/+07 to +05/06 or from +05/06
+# to +04/+05. It's unclear how Kzyl-Orda oblast moved into the fifth
+# time belt. (By switching from +04/+05 to +05/+06 on 1991-09-29?) ...
+#
+# 1. Act of the Cabinet of Ministers of the Republic of Kazakhstan
+# from 1992-01-13 No. 28
+# http://adilet.zan.kz/rus/docs/P920000028_
+# (text includes modification from the 1996 act)
+# introduced new rules for calculation of time, mirroring Russian
+# 1992-01-08 act.  It specified that time would be calculated
+# according to time belts plus extra hour ("decree time"), moved clocks
+# on the whole territory of Kazakhstan 1 hour forward on 1992-01-19 at
+# 2:00, specified DST rules.  It acknowledged that Kazakhstan was
+# located in the fourth and the fifth time belts and specified the
+# border between them to be located east of Kustanay and Aktyubinsk
+# oblasts (notably including Turgai and Kzyl-Orda oblasts into the fifth
+# time belt).
+#
+# This means switch on 1992-01-19 at 2:00 from +04/+05 to +05/+06 for
+# Asia/Aqtau, Asia/Aqtobe, Asia/Oral, Atyrau and Kustanay oblasts; from
+# +05/+06 to +06/+07 for Asia/Almaty and Asia/Qyzylorda (and Arkalyk) [*]....
+#
+# 2. Act of the Cabinet of Ministers of the Republic of Kazakhstan
+# from 1992-03-27 No. 284
+# http://adilet.zan.kz/rus/docs/P920000284_
+# cancels extra hour ("decree time") for Uralsk and Kzyl-Orda oblasts
+# since the last Sunday of March 1992, while keeping them in the fourth
+# and the fifth time belts respectively.
+#
+# 3. Order of the Prime Minister of the Republic of Kazakhstan
+# from 1994-09-23 No. 384
+# http://adilet.zan.kz/rus/docs/R940000384_
+# cancels the extra hour ("decree time") on the territory of Mangystau
+# oblast since the last Sunday of September 1994 (saying that time on
+# the territory would correspond to the third time belt as a
+# result)....
+#
+# 4. Act of the Government of the Republic of Kazakhstan
+# from 1996-05-08 No. 575
+# http://adilet.zan.kz/rus/docs/P960000575_
+# amends the 1992-01-13 act to end summer time in October instead
+# of September, mirroring identical Russian change from 1996-04-23 act.
+#
+# 5. Act of the Government of the Republic of Kazakhstan
+# from 1999-03-26 No. 305
+# http://adilet.zan.kz/rus/docs/P990000305_
+# cancels the extra hour ("decree time") for Atyrau oblast since the
+# last Sunday of March 1999 while retaining the oblast in the fourth
+# time belt.
+#
+# This means change from +05/+06 to +04/+05.
+#
+# There is no zone for Atyrau currently (listed under Asia/Aqtau in
+# zone1970.tab).[*]
+#
+# 6. Act of the Government of the Republic of Kazakhstan
+# from 2000-11-23 No. 1749
+# http://adilet.zan.kz/rus/archive/docs/P000001749_/23.11.2000
+# replaces the previous five documents.
+#
+# The only changes I noticed are in definition of the border between the
+# fourth and the fifth time belts.  They account for changes in spelling
+# and administrative division (splitting of Turgai oblast in 1997
+# probably changed time in territories incorporated into Kostanay oblast
+# (including Arkalyk) from +06/+07 to +05/+06) and move Kyzylorda oblast
+# from being in the fifth time belt and not using decree time into the
+# fourth time belt (no change in practice).[*]
+#
+# 7. Act of the Government of the Republic of Kazakhstan
+# from 2003-12-29 No. 1342
+# http://adilet.zan.kz/rus/docs/P030001342_
+# modified the 2000-11-23 act.  No relevant changes, apparently.
+#
+# 8. Act of the Government of the Republic of Kazakhstan
+# from 2004-07-20 No. 775
+# http://adilet.zan.kz/rus/archive/docs/P040000775_/20.07.2004
+# modified the 2000-11-23 act to move Kostanay and Kyzylorda oblasts into
+# the fifth time belt and add Aktobe oblast to the list of regions not
+# using extra hour ("decree time"), leaving Kazakhstan with only 2 time
+# zones (+04/+05 and +06/+07).  The changes were to be implemented
+# during DST transitions in 2004 and 2005 but the acts got radically
+# amended before implementation happened.
+#
+# 9. Act of the Government of the Republic of Kazakhstan
+# from 2004-09-15 No. 1059
+# http://adilet.zan.kz/rus/docs/P040001059_
+# modified the 2000-11-23 act to remove exceptions from the "decree time"
+# (leaving Kazakhstan in +05/+06 and +06/+07 zones), amended the
+# 2004-07-20 act to implement changes for Atyrau, West Kazakhstan,
+# Kostanay, Kyzylorda and Mangystau oblasts by not moving clocks
+# during the 2014 transition to "winter" time.
+#
+# This means transition from +04/+05 to +05/+06 for Atyrau oblast (no
+# zone currently), Asia/Oral, Asia/Aqtau and transition from +05/+06 to
+# +06/+07 for Kostanay oblast (Kostanay and Arkalyk, no zones currently)
+# and Asia/Qyzylorda on 2004-10-31 at 3:00....[*]
+#
+# 10. Act of the Government of the Republic of Kazakhstan
+# from 2005-03-15 No. 231
+# http://adilet.zan.kz/rus/docs/P050000231_
+# removes DST provisions from the 2000-11-23 act, removes most of the
+# (already implemented) provisions from the 2004-07-20 and 2004-09-15
+# acts, comes into effect 10 days after official publication.
+# The only practical effect seems to be the abolition of the summer
+# time.
+#
+# Unamended version of the act of the Government of the Russian Federation
+# No. 23 from 1992-01-08 [See 'europe' file for details].
+# Kazakh 1992-01-13 act appears to provide the same rules and 1992-03-27
+# act was to be enacted on the last Sunday of March 1992.
+
+# From Paul Eggert (2016-04-15):
+# The tables below should reflect Stepan Golosunov's remarks above,
+# except for the items marked "[*]" which I haven't gotten to yet.
+# It looks like we will need new zones Asia/Atyrau and Asia/Qostanay
+# to handle changes from 1992 through 2004 that we did not previously
+# know about.
+
 #
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 #
 # Almaty (formerly Alma-Ata), representing most locations in Kazakhstan
+# This includes KZ-AKM, KZ-ALA, KZ-ALM, KZ-AST, KZ-BAY, KZ-VOS, KZ-ZHA,
+# KZ-KAR, KZ-SEV, KZ-PAV, and KZ-YUZ.
 Zone	Asia/Almaty	5:07:48 -	LMT	1924 May  2 # or Alma-Ata
-			5:00	-	ALMT	1930 Jun 21 # Alma-Ata Time
-			6:00 RussiaAsia ALM%sT	1991
-			6:00	-	ALMT	1992
-			6:00 RussiaAsia	ALM%sT	2005 Mar 15
-			6:00	-	ALMT
-# Qyzylorda (aka Kyzylorda, Kizilorda, Kzyl-Orda, etc.)
+			5:00	-	+05	1930 Jun 21
+			6:00 RussiaAsia +06/+07	1991 Mar 31  2:00s
+			5:00 RussiaAsia	+05/+06	1992 Jan 19  2:00s
+			6:00 RussiaAsia	+06/+07	2004 Oct 31  2:00s
+			6:00	-	+06
+# Qyzylorda (aka Kyzylorda, Kizilorda, Kzyl-Orda, etc.) (KZ-KZY)
 Zone	Asia/Qyzylorda	4:21:52 -	LMT	1924 May  2
-			4:00	-	KIZT	1930 Jun 21 # Kizilorda Time
-			5:00	-	KIZT	1981 Apr  1
-			5:00	1:00	KIZST	1981 Oct  1
-			6:00	-	KIZT	1982 Apr  1
-			5:00 RussiaAsia	KIZ%sT	1991
-			5:00	-	KIZT	1991 Dec 16 # independence
-			5:00	-	QYZT	1992 Jan 19  2:00
-			6:00 RussiaAsia	QYZ%sT	2005 Mar 15
-			6:00	-	QYZT
-# Aqtobe (aka Aktobe, formerly Aktyubinsk)
+			4:00	-	+04	1930 Jun 21
+			5:00	-	+05	1981 Apr  1
+			5:00	1:00	+06	1981 Oct  1
+			6:00	-	+06	1982 Apr  1
+			5:00 RussiaAsia	+05/+06	1991 Mar 31  2:00s
+			4:00 RussiaAsia	+04/+05	1991 Sep 29  2:00s
+			5:00 RussiaAsia	+05/+06	1992 Jan 19  2:00s
+			6:00 RussiaAsia	+06/+07	1992 Mar 29  2:00s
+			5:00 RussiaAsia	+05/+06	2004 Oct 31  2:00s
+			6:00	-	+06
+# Aqtobe (aka Aktobe, formerly Aktyubinsk) (KZ-AKT)
 Zone	Asia/Aqtobe	3:48:40	-	LMT	1924 May  2
-			4:00	-	AKTT	1930 Jun 21 # Aktyubinsk Time
-			5:00	-	AKTT	1981 Apr  1
-			5:00	1:00	AKTST	1981 Oct  1
-			6:00	-	AKTT	1982 Apr  1
-			5:00 RussiaAsia	AKT%sT	1991
-			5:00	-	AKTT	1991 Dec 16 # independence
-			5:00 RussiaAsia	AQT%sT	2005 Mar 15 # Aqtobe Time
-			5:00	-	AQTT
-# Mangghystau
+			4:00	-	+04	1930 Jun 21
+			5:00	-	+05	1981 Apr  1
+			5:00	1:00	+06	1981 Oct  1
+			6:00	-	+06	1982 Apr  1
+			5:00 RussiaAsia	+05/+06	1991 Mar 31  2:00s
+			4:00 RussiaAsia	+04/+05	1992 Jan 19  2:00s
+			5:00 RussiaAsia	+05/+06	2004 Oct 31  2:00s
+			5:00	-	+05
+# Qostanay (KZ-KUS)
+
+# Mangghystau (KZ-MAN)
 # Aqtau was not founded until 1963, but it represents an inhabited region,
 # so include time stamps before 1963.
 Zone	Asia/Aqtau	3:21:04	-	LMT	1924 May  2
-			4:00	-	FORT	1930 Jun 21 # Fort Shevchenko T
-			5:00	-	FORT	1963
-			5:00	-	SHET	1981 Oct  1 # Shevchenko Time
-			6:00	-	SHET	1982 Apr  1
-			5:00 RussiaAsia	SHE%sT	1991
-			5:00	-	SHET	1991 Dec 16 # independence
-			5:00 RussiaAsia	AQT%sT	1995 Mar lastSun  2:00 # Aqtau Time
-			4:00 RussiaAsia	AQT%sT	2005 Mar 15
-			5:00	-	AQTT
-# West Kazakhstan
+			4:00	-	+04	1930 Jun 21
+			5:00	-	+05	1963
+			5:00	-	+05	1981 Oct  1
+			6:00	-	+06	1982 Apr  1
+			5:00 RussiaAsia	+05/+06	1991 Mar 31  2:00s
+			4:00 RussiaAsia	+04/+05	1992 Jan 19  2:00s
+			5:00 RussiaAsia	+05/+06	1994 Sep 25  2:00s
+			4:00 RussiaAsia	+04/+05	2004 Oct 31  2:00s
+			5:00	-	+05
+
+# West Kazakhstan (KZ-ZAP)
+# From Paul Eggert (2016-03-18):
+# The 1989 transition is from USSR act No. 227 (1989-03-14).
 Zone	Asia/Oral	3:25:24	-	LMT	1924 May  2 # or Ural'sk
-			4:00	-	URAT	1930 Jun 21 # Ural'sk time
-			5:00	-	URAT	1981 Apr  1
-			5:00	1:00	URAST	1981 Oct  1
-			6:00	-	URAT	1982 Apr  1
-			5:00 RussiaAsia	URA%sT	1989 Mar 26  2:00
-			4:00 RussiaAsia	URA%sT	1991
-			4:00	-	URAT	1991 Dec 16 # independence
-			4:00 RussiaAsia	ORA%sT	2005 Mar 15 # Oral Time
-			5:00	-	ORAT
+			4:00	-	+04	1930 Jun 21
+			5:00	-	+05	1981 Apr  1
+			5:00	1:00	+06	1981 Oct  1
+			6:00	-	+06	1982 Apr  1
+			5:00 RussiaAsia	+05/+06	1989 Mar 26  2:00s
+			4:00 RussiaAsia	+04/+05	1992 Jan 19  2:00s
+			5:00 RussiaAsia	+05/+06	1992 Mar 29  2:00s
+			4:00 RussiaAsia	+04/+05	2004 Oct 31  2:00s
+			5:00	-	+05
 
 # Kyrgyzstan (Kirgizstan)
 # Transitions through 1991 are from Shanks & Pottenger.
@@ -2419,6 +2578,16 @@ Zone	Asia/Karachi	4:28:12 -	LMT	1907
 # http://www.timeanddate.com/time/change/gaza-strip/gaza
 # http://www.timeanddate.com/time/change/west-bank/hebron
 
+# From Hannah Kreitem (2016-03-09):
+# http://www.palestinecabinet.gov.ps/WebSite/ar/ViewDetails?ID=31728
+# [Google translation]: "The Council also decided to start daylight
+# saving in Palestine as of one o'clock on Saturday morning,
+# 2016-03-26, to provide the clock 60 minutes ahead."
+#
+# From Paul Eggert (2016-03-12):
+# Predict spring transitions on March's last Saturday at 01:00 from now on.
+# Leave fall predictions alone for now.
+
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule EgyptAsia	1957	only	-	May	10	0:00	1:00	S
 Rule EgyptAsia	1957	1958	-	Oct	 1	0:00	0	-
@@ -2447,7 +2616,8 @@ Rule Palestine	2012	2014	-	Mar	lastThu	24:00	1:00	S
 Rule Palestine	2012	only	-	Sep	21	1:00	0	-
 Rule Palestine	2013	only	-	Sep	Fri>=21	0:00	0	-
 Rule Palestine	2014	max	-	Oct	Fri>=21	0:00	0	-
-Rule Palestine	2015	max	-	Mar	lastFri	24:00	1:00	S
+Rule Palestine	2015	only	-	Mar	lastFri	24:00	1:00	S
+Rule Palestine	2016	max	-	Mar	lastSat	1:00	1:00	S
 
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Gaza	2:17:52	-	LMT	1900 Oct

@@ -72,6 +72,6 @@ class Clazz extends ClassConstruct {
     public Clazz(String name, String extending, int access, int classFileVersion, int index, String... implementing) {
         super(name, extending == null ? "java/lang/Object" : extending, access + ACC_SUPER, classFileVersion, index, implementing);
         // Add the default constructor
-        addMethod("<init>", "()V", ACC_PUBLIC).makeConstructor(extending);
+        addMethod("<init>", "()V", ACC_PUBLIC).makeConstructor(extending, false);
     }
 }

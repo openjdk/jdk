@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8140450
+ * @bug 8140450 8152893
  * @summary Basic test for StackWalker.getCallerClass()
  * @run main/othervm GetCallerClassTest
  * @run main/othervm GetCallerClassTest sm
@@ -41,6 +41,7 @@ import java.security.Permissions;
 import java.security.Policy;
 import java.security.ProtectionDomain;
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.List;
 
 public class GetCallerClassTest {
@@ -65,16 +66,20 @@ public class GetCallerClassTest {
         }
         new GetCallerClassTest(StackWalker.getInstance(), true).test();
         new GetCallerClassTest(StackWalker.getInstance(RETAIN_CLASS_REFERENCE), false).test();
+        new GetCallerClassTest(StackWalker.getInstance(EnumSet.of(RETAIN_CLASS_REFERENCE,
+                                                                  SHOW_HIDDEN_FRAMES)), false).test();
     }
 
     public void test() {
         new TopLevelCaller().run();
+        new LambdaTest().run();
         new Nested().createNestedCaller().run();
         new InnerClassCaller().run();
         new ReflectionTest().run();
 
         List<Thread> threads = Arrays.asList(
                 new Thread(new TopLevelCaller()),
+                new Thread(new LambdaTest()),
                 new Thread(new Nested().createNestedCaller()),
                 new Thread(new InnerClassCaller()),
                 new Thread(new ReflectionTest())
@@ -149,7 +154,7 @@ public class GetCallerClassTest {
 
     public static void assertEquals(Class<?> c, Class<?> expected) {
         if (expected != c) {
-            throw new RuntimeException(c + " != " + expected);
+            throw new RuntimeException("Got " + c + ", but expected " + expected);
         }
     }
 
@@ -169,6 +174,28 @@ public class GetCallerClassTest {
             GetCallerClassTest.staticGetCallerClass(walker, this.getClass(), expectUOE);
             GetCallerClassTest.reflectiveGetCallerClass(walker, this.getClass(), expectUOE);
             GetCallerClassTest.methodHandleGetCallerClass(walker, this.getClass(), expectUOE);
+        }
+    }
+
+    class LambdaTest implements Runnable {
+        public void run() {
+            Runnable lambdaRunnable = () -> {
+                try {
+                    Class<?> c = walker.getCallerClass();
+
+                    assertEquals(c, LambdaTest.class);
+                    if (expectUOE) { // Should have thrown
+                        throw new RuntimeException("Didn't get expected exception");
+                    }
+                } catch (Throwable e) {
+                    if (expectUOE && causeIsUOE(e)) {
+                        return; /* expected */
+                    }
+                    System.err.println("Unexpected exception:");
+                    throw new RuntimeException(e);
+                }
+            };
+            lambdaRunnable.run();
         }
     }
 

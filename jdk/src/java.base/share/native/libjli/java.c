@@ -108,6 +108,7 @@ static void SetAddExportsProp(const jint n, const char *s);
 static void SetPatchProp(const jint n, const char *s);
 static void SelectVersion(int argc, char **argv, char **main_class);
 static void SetJvmEnvironment(int argc, char **argv);
+static jboolean IsWhiteSpaceOptionArgument(const char* name);
 static jboolean ParseArguments(int *pargc, char ***pargv,
                                int *pmode, char **pwhat,
                                int *pret, const char *jrepath);
@@ -500,6 +501,20 @@ JavaMain(void * _args)
 }
 
 /*
+ * Test if the given option name has a whitespace separated argument.
+ */
+jboolean
+IsWhiteSpaceOptionArgument(const char* name) {
+    return JLI_StrCmp(name, "-classpath") == 0 ||
+           JLI_StrCmp(name, "-cp") == 0 ||
+           JLI_StrCmp(name, "-modulepath") == 0 ||
+           JLI_StrCmp(name, "-mp") == 0 ||
+           JLI_StrCmp(name, "-upgrademodulepath") == 0 ||
+           JLI_StrCmp(name, "-addmods") == 0 ||
+           JLI_StrCmp(name, "-limitmods") == 0;
+}
+
+/*
  * Checks the command line options to find which JVM type was
  * specified.  If no command line option was given for the JVM type,
  * the default type is used.  The environment variable
@@ -534,13 +549,7 @@ CheckJvmType(int *pargc, char ***argv, jboolean speculative) {
                 continue;
             }
         } else {
-            if (JLI_StrCmp(arg, "-classpath") == 0 ||
-                JLI_StrCmp(arg, "-cp") == 0 ||
-                JLI_StrCmp(arg, "-modulepath") == 0 ||
-                JLI_StrCmp(arg, "-mp") == 0 ||
-                JLI_StrCmp(arg, "-upgrademodulepath") == 0 ||
-                JLI_StrCmp(arg, "-addmods") == 0 ||
-                JLI_StrCmp(arg, "-limitmods") == 0) {
+            if (IsWhiteSpaceOptionArgument(arg)) {
                 newArgv[newArgvIdx++] = arg;
                 argi++;
                 if (argi < argc) {
@@ -682,9 +691,7 @@ SetJvmEnvironment(int argc, char **argv) {
         if (i > 0) {
             char *prev = argv[i - 1];
             // skip non-dash arg preceded by class path specifiers
-            if (*arg != '-' &&
-                    ((JLI_StrCmp(prev, "-cp") == 0
-                    || JLI_StrCmp(prev, "-classpath") == 0))) {
+            if (*arg != '-' && IsWhiteSpaceOptionArgument(prev)) {
                 continue;
             }
 
@@ -1028,9 +1035,7 @@ SelectVersion(int argc, char **argv, char **main_class)
         } else {
             if (JLI_StrCmp(arg, "-jar") == 0)
                 jarflag = 1;
-            /* deal with "unfortunate" classpath syntax */
-            if ((JLI_StrCmp(arg, "-classpath") == 0 || JLI_StrCmp(arg, "-cp") == 0) &&
-              (argc >= 2)) {
+            if (IsWhiteSpaceOptionArgument(arg) && (argc >= 2)) {
                 argc--;
                 argv++;
                 arg = *argv;

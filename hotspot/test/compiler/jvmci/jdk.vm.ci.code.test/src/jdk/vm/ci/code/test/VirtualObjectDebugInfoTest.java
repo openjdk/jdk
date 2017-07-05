@@ -136,7 +136,7 @@ public class VirtualObjectDebugInfoTest extends DebugInfoTest {
             } else if (template.arrayField[i] instanceof String) {
                 String value = (String) template.arrayField[i];
                 Register reg = asm.emitLoadPointer((HotSpotConstant) constantReflection.forString(value));
-                arrayContent[i] = reg.asValue(target.getLIRKind(JavaKind.Object));
+                arrayContent[i] = reg.asValue(asm.getValueKind(JavaKind.Object));
             } else {
                 Assert.fail("unexpected value");
             }
@@ -159,7 +159,7 @@ public class VirtualObjectDebugInfoTest extends DebugInfoTest {
                     break;
                 case Float: // template.floatField
                     Register fReg = asm.emitLoadFloat(template.floatField);
-                    retContent[i] = fReg.asValue(target.getLIRKind(JavaKind.Float));
+                    retContent[i] = fReg.asValue(asm.getValueKind(JavaKind.Float));
                     break;
                 case Object: // template.arrayField
                     retContent[i] = array;

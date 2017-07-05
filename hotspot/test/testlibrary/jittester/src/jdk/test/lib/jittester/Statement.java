@@ -29,6 +29,7 @@ public class Statement extends IRNode {
     private final boolean needSemicolon;
 
     public Statement(IRNode statementBody, boolean needSemicolon) {
+        super(statementBody.getResultType());
         this.needSemicolon = needSemicolon;
         addChild(statementBody);
     }

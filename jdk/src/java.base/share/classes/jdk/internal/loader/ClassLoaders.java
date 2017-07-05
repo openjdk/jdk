@@ -237,24 +237,29 @@ public class ClassLoaders {
         int off = 0;
         int next;
         while ((next = cp.indexOf(File.pathSeparator, off)) != -1) {
-            addURLToUCP(cp.substring(off, next), ucp);
+            URL url = toFileURL(cp.substring(off, next));
+            if (url != null)
+                ucp.addURL(url);
             off = next + 1;
         }
 
         // remaining
-        addURLToUCP(cp.substring(off), ucp);
+        URL url = toFileURL(cp.substring(off));
+        if (url != null)
+            ucp.addURL(url);
     }
 
     /**
-     * Attempts to convert to the given string to a file URL and adds it
-     * to the given URLClassPath.
+     * Attempts to convert the given string to a file URL.
+     *
+     * @apiNote This is called by the VM
      */
-    private static void addURLToUCP(String s, URLClassPath ucp) {
+    private static URL toFileURL(String s) {
         try {
-            URL url = Paths.get(s).toRealPath().toUri().toURL();
-            ucp.addURL(url);
+            return Paths.get(s).toRealPath().toUri().toURL();
         } catch (InvalidPathException | IOException ignore) {
             // malformed path string or class path element does not exist
+            return null;
         }
     }
 

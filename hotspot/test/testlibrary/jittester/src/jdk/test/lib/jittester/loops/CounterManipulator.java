@@ -25,6 +25,7 @@ package jdk.test.lib.jittester.loops;
 
 import jdk.test.lib.jittester.IRNode;
 import jdk.test.lib.jittester.LocalVariable;
+import jdk.test.lib.jittester.Statement;
 import jdk.test.lib.jittester.visitors.Visitor;
 
 /*
@@ -36,7 +37,8 @@ import jdk.test.lib.jittester.visitors.Visitor;
 public class CounterManipulator extends IRNode {
     LocalVariable counter;
 
-    public CounterManipulator(IRNode manipulator) {
+    public CounterManipulator(Statement manipulator) {
+        super(manipulator.getResultType());
         addChild(manipulator);
     }
 
