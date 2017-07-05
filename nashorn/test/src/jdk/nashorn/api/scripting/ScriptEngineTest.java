@@ -29,7 +29,6 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
-
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.lang.reflect.InvocationHandler;
@@ -54,9 +53,10 @@ import org.testng.annotations.Test;
  * @build jdk.nashorn.api.scripting.Window jdk.nashorn.api.scripting.WindowEventHandler jdk.nashorn.api.scripting.VariableArityTestInterface jdk.nashorn.api.scripting.ScriptEngineTest
  * @run testng/othervm jdk.nashorn.api.scripting.ScriptEngineTest
  */
+@SuppressWarnings("javadoc")
 public class ScriptEngineTest {
 
-    private void log(final String msg) {
+    private static void log(final String msg) {
         org.testng.Reporter.log(msg, true);
     }
 
@@ -145,6 +145,8 @@ public class ScriptEngineTest {
                 case "nashorn": seenNashorn = true; break;
                 case "javascript": seenJavaScript = true; break;
                 case "ECMAScript": seenECMAScript = true; break;
+            default:
+                break;
             }
         }
 
@@ -159,6 +161,8 @@ public class ScriptEngineTest {
                 case "application/ecmascript": seenAppECMA = true; break;
                 case "text/javascript": seenTextJS = true; break;
                 case "text/ecmascript": seenTextECMA = true; break;
+            default:
+                break;
             }
         }
 
@@ -548,7 +552,7 @@ public class ScriptEngineTest {
             new Class[] { Runnable.class },
             new InvocationHandler() {
                 @Override
-                public Object invoke(final Object p, final Method m, final Object[] a) {
+                public Object invoke(final Object p, final Method mtd, final Object[] a) {
                     reached[0] = true;
                     return null;
                 }
@@ -633,7 +637,7 @@ public class ScriptEngineTest {
     public static class Context {
         private Object myobj;
 
-        public void set(Object o) {
+        public void set(final Object o) {
             myobj = o;
         }
 

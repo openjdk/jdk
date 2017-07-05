@@ -27,7 +27,6 @@ package jdk.nashorn.internal.runtime;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.fail;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.NotSerializableException;
@@ -43,6 +42,7 @@ import org.testng.annotations.Test;
  * @test
  * @run testng jdk.nashorn.internal.runtime.ExceptionsNotSerializable
  */
+@SuppressWarnings("javadoc")
 public class ExceptionsNotSerializable {
     @Test
     public void rewriteExceptionNotSerializable() throws ScriptException {
@@ -59,7 +59,7 @@ public class ExceptionsNotSerializable {
     }
 
     @Test
-    public void unwarrantedOptimismExceptionNotSerializable() throws IOException {
+    public void unwarrantedOptimismExceptionNotSerializable() {
         tryToSerialize(new UnwarrantedOptimismException(new Double(1.0), 128));
     }
 

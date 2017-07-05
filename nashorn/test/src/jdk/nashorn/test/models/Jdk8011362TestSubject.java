@@ -26,8 +26,9 @@
 package jdk.nashorn.test.models;
 
 /**
- * Test class used by JDK-8011362.js.
+ * Test class used by JDK-8011362.js
  */
+@SuppressWarnings("javadoc")
 public class Jdk8011362TestSubject {
     // This is selected for overloaded("", null)
     public String overloaded(final String a, final String b) {

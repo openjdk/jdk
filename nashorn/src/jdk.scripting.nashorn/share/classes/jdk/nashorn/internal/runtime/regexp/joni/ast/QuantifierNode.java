@@ -26,11 +26,11 @@ import static jdk.nashorn.internal.runtime.regexp.joni.ast.QuantifierNode.Reduce
 import static jdk.nashorn.internal.runtime.regexp.joni.ast.QuantifierNode.ReduceType.PQ_Q;
 import static jdk.nashorn.internal.runtime.regexp.joni.ast.QuantifierNode.ReduceType.P_QQ;
 import static jdk.nashorn.internal.runtime.regexp.joni.ast.QuantifierNode.ReduceType.QQ;
-
 import jdk.nashorn.internal.runtime.regexp.joni.Config;
 import jdk.nashorn.internal.runtime.regexp.joni.ScanEnvironment;
 import jdk.nashorn.internal.runtime.regexp.joni.constants.TargetInfo;
 
+@SuppressWarnings("javadoc")
 public final class QuantifierNode extends StateNode {
 
     public Node target;
@@ -78,7 +78,9 @@ public final class QuantifierNode extends StateNode {
         greedy = true;
         targetEmptyInfo = TargetInfo.ISNOT_EMPTY;
 
-        if (byNumber) setByNumber();
+        if (byNumber) {
+            setByNumber();
+        }
     }
 
     @Override
@@ -136,17 +138,27 @@ public final class QuantifierNode extends StateNode {
     protected int popularNum() {
         if (greedy) {
             if (lower == 0) {
-                if (upper == 1) return 0;
-                else if (isRepeatInfinite(upper)) return 1;
+                if (upper == 1) {
+                    return 0;
+                } else if (isRepeatInfinite(upper)) {
+                    return 1;
+                }
             } else if (lower == 1) {
-                if (isRepeatInfinite(upper)) return 2;
+                if (isRepeatInfinite(upper)) {
+                    return 2;
+                }
             }
         } else {
             if (lower == 0) {
-                if (upper == 1) return 3;
-                else if (isRepeatInfinite(upper)) return 4;
+                if (upper == 1) {
+                    return 3;
+                } else if (isRepeatInfinite(upper)) {
+                    return 4;
+                }
             } else if (lower == 1) {
-                if (isRepeatInfinite(upper)) return 5;
+                if (isRepeatInfinite(upper)) {
+                    return 5;
+                }
             }
         }
         return -1;
@@ -171,7 +183,9 @@ public final class QuantifierNode extends StateNode {
         final int pnum = popularNum();
         final int cnum = other.popularNum();
 
-        if (pnum < 0 || cnum < 0) return;
+        if (pnum < 0 || cnum < 0) {
+            return;
+        }
 
         switch(REDUCE_TABLE[cnum][pnum]) {
         case DEL:
@@ -224,6 +238,9 @@ public final class QuantifierNode extends StateNode {
         case ASIS:
             setTarget(other);
             return;
+
+        default:
+            break;
         }
         // ??? remove the parent from target ???
         other.target = null; // remove target from reduced quantifier
@@ -231,7 +248,9 @@ public final class QuantifierNode extends StateNode {
 
     @SuppressWarnings("fallthrough")
     public int setQuantifier(final Node tgt, final boolean group, final ScanEnvironment env, final char[] chars, final int p, final int end) {
-        if (lower == 1 && upper == 1) return 1;
+        if (lower == 1 && upper == 1) {
+            return 1;
+        }
 
         switch(tgt.getType()) {
 

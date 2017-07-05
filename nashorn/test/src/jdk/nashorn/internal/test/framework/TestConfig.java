@@ -28,6 +28,7 @@ package jdk.nashorn.internal.test.framework;
 /**
  * Configuration info for script tests.
  */
+@SuppressWarnings("javadoc")
 public interface TestConfig {
     // Test options inferred from various test @foo tags and passed to test factory.
     public static final String   OPTIONS_RUN                 = "run";

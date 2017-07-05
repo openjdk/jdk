@@ -19,6 +19,7 @@
  */
 package jdk.nashorn.internal.runtime.regexp.joni.constants;
 
+@SuppressWarnings("javadoc")
 public interface StackPopLevel {
     final int FREE      = 0;
     final int MEM_START = 1;

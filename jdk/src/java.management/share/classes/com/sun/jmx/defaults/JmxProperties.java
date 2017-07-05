@@ -205,28 +205,4 @@ public class JmxProperties {
      */
     public static final Logger MISC_LOGGER =
             Logger.getLogger(MISC_LOGGER_NAME);
-
-    /**
-     * Logger name for SNMP.
-     */
-    public static final String SNMP_LOGGER_NAME =
-            "javax.management.snmp";
-
-    /**
-     * Logger for SNMP.
-     */
-    public static final Logger SNMP_LOGGER =
-            Logger.getLogger(SNMP_LOGGER_NAME);
-
-    /**
-     * Logger name for SNMP Adaptor.
-     */
-    public static final String SNMP_ADAPTOR_LOGGER_NAME =
-            "javax.management.snmp.daemon";
-
-    /**
-     * Logger for SNMP Adaptor.
-     */
-    public static final Logger SNMP_ADAPTOR_LOGGER =
-            Logger.getLogger(SNMP_ADAPTOR_LOGGER_NAME);
 }
