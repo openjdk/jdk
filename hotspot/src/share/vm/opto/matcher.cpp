@@ -305,7 +305,7 @@ void Matcher::match( ) {
   // to avoid false sharing if the corresponding mach node is not used.
   // The corresponding mach node is only used in rare cases for derived
   // pointers.
-  Node* new_ideal_null = ConNode::make(C, TypePtr::NULL_PTR);
+  Node* new_ideal_null = ConNode::make(TypePtr::NULL_PTR);
 
   // Swap out to old-space; emptying new-space
   Arena *old = C->node_arena()->move_contents(C->old_arena());
@@ -1643,8 +1643,8 @@ MachNode *Matcher::ReduceInst( State *s, int rule, Node *&mem ) {
   }
 
   // Build the object to represent this state & prepare for recursive calls
-  MachNode *mach = s->MachNodeGenerator( rule, C );
-  mach->_opnds[0] = s->MachOperGenerator( _reduceOp[rule], C );
+  MachNode *mach = s->MachNodeGenerator(rule);
+  mach->_opnds[0] = s->MachOperGenerator(_reduceOp[rule]);
   assert( mach->_opnds[0] != NULL, "Missing result operand" );
   Node *leaf = s->_leaf;
   // Check for instruction or instruction chain rule
@@ -1756,13 +1756,13 @@ void Matcher::ReduceInst_Chain_Rule( State *s, int rule, Node *&mem, MachNode *m
     assert( 0 <= opnd_class_instance && opnd_class_instance < NUM_OPERANDS,
             "Bad AD file: Instruction chain rule must chain from operand");
     // Insert operand into array of operands for this instruction
-    mach->_opnds[1] = s->MachOperGenerator( opnd_class_instance, C );
+    mach->_opnds[1] = s->MachOperGenerator(opnd_class_instance);
 
     ReduceOper( s, newrule, mem, mach );
   } else {
     // Chain from the result of an instruction
     assert( newrule >= _LAST_MACH_OPER, "Do NOT chain from internal operand");
-    mach->_opnds[1] = s->MachOperGenerator( _reduceOp[catch_op], C );
+    mach->_opnds[1] = s->MachOperGenerator(_reduceOp[catch_op]);
     Node *mem1 = (Node*)1;
     debug_only(Node *save_mem_node = _mem_node;)
     mach->add_req( ReduceInst(s, newrule, mem1) );
@@ -1807,7 +1807,7 @@ uint Matcher::ReduceInst_Interior( State *s, int rule, Node *&mem, MachNode *mac
     if( newrule < NUM_OPERANDS ) { // Operand/operandClass or internalOp/instruction?
       // Operand/operandClass
       // Insert operand into array of operands for this instruction
-      mach->_opnds[num_opnds++] = newstate->MachOperGenerator( opnd_class_instance, C );
+      mach->_opnds[num_opnds++] = newstate->MachOperGenerator(opnd_class_instance);
       ReduceOper( newstate, newrule, mem, mach );
 
     } else {                    // Child is internal operand or new instruction
@@ -1818,7 +1818,7 @@ uint Matcher::ReduceInst_Interior( State *s, int rule, Node *&mem, MachNode *mac
       } else {
         // instruction --> call build operand(  ) to catch result
         //             --> ReduceInst( newrule )
-        mach->_opnds[num_opnds++] = s->MachOperGenerator( _reduceOp[catch_op], C );
+        mach->_opnds[num_opnds++] = s->MachOperGenerator(_reduceOp[catch_op]);
         Node *mem1 = (Node*)1;
         debug_only(Node *save_mem_node = _mem_node;)
         mach->add_req( ReduceInst( newstate, newrule, mem1 ) );

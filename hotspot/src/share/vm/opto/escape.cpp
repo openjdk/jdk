@@ -1452,7 +1452,6 @@ int ConnectionGraph::find_init_values(JavaObjectNode* pta, PointsToNode* init_va
     return 0;
 
   InitializeNode* ini = alloc->as_Allocate()->initialization();
-  Compile* C = _compile;
   bool visited_bottom_offset = false;
   GrowableArray<int> offsets_worklist;
 

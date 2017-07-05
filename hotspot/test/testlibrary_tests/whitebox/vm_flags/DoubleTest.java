@@ -27,6 +27,7 @@
  * @library /testlibrary /testlibrary/whitebox
  * @build DoubleTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm/timeout=600 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI DoubleTest
  * @summary testing of WB::set/getDoubleVMFlag()
  * @author igor.ignatyev@oracle.com

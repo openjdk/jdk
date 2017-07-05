@@ -1168,7 +1168,6 @@ uint BoolNode::cmp( const Node &n ) const {
 Node* BoolNode::make_predicate(Node* test_value, PhaseGVN* phase) {
   if (test_value->is_Con())   return test_value;
   if (test_value->is_Bool())  return test_value;
-  Compile* C = phase->C;
   if (test_value->is_CMove() &&
       test_value->in(CMoveNode::Condition)->is_Bool()) {
     BoolNode*   bol   = test_value->in(CMoveNode::Condition)->as_Bool();
@@ -1191,7 +1190,7 @@ Node* BoolNode::make_predicate(Node* test_value, PhaseGVN* phase) {
 //--------------------------------as_int_value---------------------------------
 Node* BoolNode::as_int_value(PhaseGVN* phase) {
   // Inverse to make_predicate.  The CMove probably boils down to a Conv2B.
-  Node* cmov = CMoveNode::make(phase->C, NULL, this,
+  Node* cmov = CMoveNode::make(NULL, this,
                                phase->intcon(0), phase->intcon(1),
                                TypeInt::BOOL);
   return phase->transform(cmov);
@@ -1199,7 +1198,6 @@ Node* BoolNode::as_int_value(PhaseGVN* phase) {
 
 //----------------------------------negate-------------------------------------
 BoolNode* BoolNode::negate(PhaseGVN* phase) {
-  Compile* C = phase->C;
   return new BoolNode(in(1), _test.negate());
 }
 

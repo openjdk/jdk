@@ -609,15 +609,15 @@ public:
 // signature types.
 class TypeTuple : public Type {
   TypeTuple( uint cnt, const Type **fields ) : Type(Tuple), _cnt(cnt), _fields(fields) { }
+
+  const uint          _cnt;              // Count of fields
+  const Type ** const _fields;           // Array of field types
+
 public:
   virtual bool eq( const Type *t ) const;
   virtual int  hash() const;             // Type specific hashing
   virtual bool singleton(void) const;    // TRUE if type is a singleton
   virtual bool empty(void) const;        // TRUE if type is vacuous
-
-public:
-  const uint          _cnt;              // Count of fields
-  const Type ** const _fields;           // Array of field types
 
   // Accessors:
   uint cnt() const { return _cnt; }
@@ -1447,6 +1447,10 @@ class TypeFunc : public Type {
   virtual int  hash() const;             // Type specific hashing
   virtual bool singleton(void) const;    // TRUE if type is a singleton
   virtual bool empty(void) const;        // TRUE if type is vacuous
+
+  const TypeTuple* const _domain;     // Domain of inputs
+  const TypeTuple* const _range;      // Range of results
+
 public:
   // Constants are shared among ADLC and VM
   enum { Control    = AdlcVMDeps::Control,
@@ -1457,8 +1461,6 @@ public:
          Parms      = AdlcVMDeps::Parms
   };
 
-  const TypeTuple* const _domain;     // Domain of inputs
-  const TypeTuple* const _range;      // Range of results
 
   // Accessors:
   const TypeTuple* domain() const { return _domain; }

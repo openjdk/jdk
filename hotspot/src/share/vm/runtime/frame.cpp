@@ -407,7 +407,8 @@ jint frame::interpreter_frame_bci() const {
 
 address frame::interpreter_frame_bcp() const {
   assert(is_interpreted_frame(), "interpreted frame expected");
-  return (address)*interpreter_frame_bcp_addr();
+  address bcp = (address)*interpreter_frame_bcp_addr();
+  return interpreter_frame_method()->bcp_from(bcp);
 }
 
 void frame::interpreter_frame_set_bcp(address bcp) {

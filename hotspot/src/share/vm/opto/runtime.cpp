@@ -1381,11 +1381,11 @@ NamedCounter* OptoRuntime::new_named_counter(JVMState* youngest_jvms, NamedCount
   }
   NamedCounter* c;
   if (tag == NamedCounter::BiasedLockingCounter) {
-    c = new BiasedLockingNamedCounter(strdup(st.as_string()));
+    c = new BiasedLockingNamedCounter(st.as_string());
   } else if (tag == NamedCounter::RTMLockingCounter) {
-    c = new RTMLockingNamedCounter(strdup(st.as_string()));
+    c = new RTMLockingNamedCounter(st.as_string());
   } else {
-    c = new NamedCounter(strdup(st.as_string()), tag);
+    c = new NamedCounter(st.as_string(), tag);
   }
 
   // atomically add the new counter to the head of the list.  We only
