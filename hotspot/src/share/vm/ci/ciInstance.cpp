@@ -66,8 +66,8 @@ ciConstant ciInstance::field_value(ciField* field) {
          "invalid access");
   VM_ENTRY_MARK;
   ciConstant result;
-  oop obj = get_oop();
-  assert(obj != NULL, "bad oop");
+  Handle obj = get_oop();
+  assert(!obj.is_null(), "bad oop");
   BasicType field_btype = field->type()->basic_type();
   int offset = field->offset();
 

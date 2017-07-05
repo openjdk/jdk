@@ -215,8 +215,20 @@ class WarmCallInfo : public ResourceObj {
   WarmCallInfo*  next() const          { return _next; }
   void       set_next(WarmCallInfo* n) { _next = n; }
 
-  static WarmCallInfo* _always_hot;
-  static WarmCallInfo* _always_cold;
+  static WarmCallInfo _always_hot;
+  static WarmCallInfo _always_cold;
+
+  // Constructor intitialization of always_hot and always_cold
+  WarmCallInfo(float c, float p, float w, float s) {
+    _call = NULL;
+    _hot_cg = NULL;
+    _next = NULL;
+    _count = c;
+    _profit = p;
+    _work = w;
+    _size = s;
+    _heat = 0;
+  }
 
  public:
   // Because WarmInfo objects live over the entire lifetime of the
