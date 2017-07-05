@@ -79,7 +79,7 @@ extern Monitor* Threads_lock;                    // a lock on the Threads table 
                                                  // (also used by Safepoints too to block threads creation/destruction)
 extern Monitor* CGC_lock;                        // used for coordination between
                                                  // fore- & background GC threads.
-extern Mutex*   STS_init_lock;                   // coordinate initialization of SuspendibleThreadSets.
+extern Monitor* STS_lock;                        // used for joining/leaving SuspendibleThreadSet.
 extern Monitor* SLT_lock;                        // used in CMS GC for acquiring PLL
 extern Monitor* iCMS_lock;                       // CMS incremental mode start/stop notification
 extern Monitor* FullGCCount_lock;                // in support of "concurrent" full gc

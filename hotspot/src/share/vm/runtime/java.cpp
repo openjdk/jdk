@@ -499,6 +499,9 @@ void before_exit(JavaThread * thread) {
     os::infinite_sleep();
   }
 
+  // Stop any ongoing concurrent GC work
+  Universe::heap()->stop();
+
   // Terminate watcher thread - must before disenrolling any periodic task
   if (PeriodicTask::num_tasks() > 0)
     WatcherThread::stop();

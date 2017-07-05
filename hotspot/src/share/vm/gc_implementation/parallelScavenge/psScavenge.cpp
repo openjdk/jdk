@@ -510,7 +510,8 @@ bool PSScavenge::invoke_no_policy() {
                          heap->total_collections());
 
           if (Verbose) {
-            gclog_or_tty->print("old_gen_capacity: %d young_gen_capacity: %d",
+            gclog_or_tty->print("old_gen_capacity: " SIZE_FORMAT
+              " young_gen_capacity: " SIZE_FORMAT,
               old_gen->capacity_in_bytes(), young_gen->capacity_in_bytes());
           }
         }
@@ -728,7 +729,7 @@ void PSScavenge::clean_up_failed_promotion() {
     young_gen->object_iterate(&unforward_closure);
 
     if (PrintGC && Verbose) {
-      gclog_or_tty->print_cr("Restoring %d marks", _preserved_oop_stack.size());
+      gclog_or_tty->print_cr("Restoring " SIZE_FORMAT " marks", _preserved_oop_stack.size());
     }
 
     // Restore any saved marks.
