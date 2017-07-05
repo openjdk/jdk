@@ -683,7 +683,7 @@ class Inet6Address extends InetAddress {
      * @return a {@code boolean} indicating if the InetAddress is an IP
      *         multicast address
      *
-     * @since JDK1.1
+     * @since 1.1
      */
     @Override
     public boolean isMulticastAddress() {

@@ -72,7 +72,7 @@ import java.rmi.RemoteException;
  *
  * @author      Ann Wollrath
  * @author      Peter Jones
- * @since       JDK1.1
+ * @since       1.1
  * @see         LocateRegistry
  */
 public interface Registry extends Remote {

@@ -37,7 +37,7 @@ import javax.swing.*;
  * them.
  */
 @SuppressWarnings("serial")
-public class TimeComboBox extends JComboBox implements ItemListener, PropertyChangeListener {
+public class TimeComboBox extends JComboBox<String> implements ItemListener, PropertyChangeListener {
     private ArrayList<Plotter> plotters = new ArrayList<Plotter>();
 
     public TimeComboBox(Plotter... plotterArray) {

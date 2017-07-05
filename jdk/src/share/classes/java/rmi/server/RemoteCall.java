@@ -37,7 +37,7 @@ import java.io.IOException;
  * deprecated because it is only used by deprecated methods of
  * <code>java.rmi.server.RemoteRef</code>.
  *
- * @since   JDK1.1
+ * @since   1.1
  * @author  Ann Wollrath
  * @author  Roger Riggs
  * @see     java.rmi.server.RemoteRef
@@ -52,7 +52,7 @@ public interface RemoteCall {
      *
      * @return output stream for arguments/results
      * @exception java.io.IOException if an I/O error occurs.
-     * @since JDK1.1
+     * @since 1.1
      * @deprecated no replacement
      */
     @Deprecated
@@ -63,7 +63,7 @@ public interface RemoteCall {
      * the stream.
      *
      * @exception java.io.IOException if an I/O error occurs.
-     * @since JDK1.1
+     * @since 1.1
      * @deprecated no replacement
      */
     @Deprecated
@@ -75,7 +75,7 @@ public interface RemoteCall {
      *
      * @return input stream for reading arguments/results
      * @exception java.io.IOException if an I/O error occurs.
-     * @since JDK1.1
+     * @since 1.1
      * @deprecated no replacement
      */
     @Deprecated
@@ -87,7 +87,7 @@ public interface RemoteCall {
      * the channel early.
      *
      * @exception java.io.IOException if an I/O error occurs.
-     * @since JDK1.1
+     * @since 1.1
      * @deprecated no replacement
      */
     @Deprecated
@@ -103,7 +103,7 @@ public interface RemoteCall {
      * @return output stream for writing call result
      * @exception java.io.IOException              if an I/O error occurs.
      * @exception java.io.StreamCorruptedException If already been called.
-     * @since JDK1.1
+     * @since 1.1
      * @deprecated no replacement
      */
     @Deprecated
@@ -114,7 +114,7 @@ public interface RemoteCall {
      * Do whatever it takes to execute the call.
      *
      * @exception java.lang.Exception if a general exception occurs.
-     * @since JDK1.1
+     * @since 1.1
      * @deprecated no replacement
      */
     @Deprecated
@@ -124,7 +124,7 @@ public interface RemoteCall {
      * Allow cleanup after the remote call has completed.
      *
      * @exception java.io.IOException if an I/O error occurs.
-     * @since JDK1.1
+     * @since 1.1
      * @deprecated no replacement
      */
     @Deprecated

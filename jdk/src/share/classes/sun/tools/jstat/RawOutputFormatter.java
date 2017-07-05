@@ -35,11 +35,11 @@ import sun.jvmstat.monitor.*;
  * @since 1.5
  */
 public class RawOutputFormatter implements OutputFormatter {
-    private List logged;
+    private List<Monitor> logged;
     private String header;
     private boolean printStrings;
 
-    public RawOutputFormatter(List logged, boolean printStrings) {
+    public RawOutputFormatter(List<Monitor> logged, boolean printStrings) {
         this.logged = logged;
         this.printStrings = printStrings;
     }
@@ -48,8 +48,8 @@ public class RawOutputFormatter implements OutputFormatter {
         if (header == null) {
             // build the header string and prune out any unwanted monitors
             StringBuilder headerBuilder = new StringBuilder();
-            for (Iterator i = logged.iterator(); i.hasNext(); /* empty */ ) {
-                Monitor m = (Monitor)i.next();
+            for (Iterator<Monitor> i = logged.iterator(); i.hasNext(); /* empty */ ) {
+                Monitor m = i.next();
                 headerBuilder.append(m.getName() + " ");
             }
             header = headerBuilder.toString();
@@ -60,8 +60,8 @@ public class RawOutputFormatter implements OutputFormatter {
     public String getRow() throws MonitorException {
         StringBuilder row = new StringBuilder();
         int count = 0;
-        for (Iterator i = logged.iterator(); i.hasNext(); /* empty */ ) {
-            Monitor m = (Monitor)i.next();
+        for (Iterator<Monitor> i = logged.iterator(); i.hasNext(); /* empty */ ) {
+            Monitor m = i.next();
             if (count++ > 0) {
                 row.append(" ");
             }

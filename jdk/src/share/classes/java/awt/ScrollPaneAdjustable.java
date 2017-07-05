@@ -393,7 +393,7 @@ public class ScrollPaneAdjustable implements Adjustable, Serializable {
      * @see           #getAdjustmentListeners
      * @see           java.awt.event.AdjustmentListener
      * @see           java.awt.event.AdjustmentEvent
-     * @since         JDK1.1
+     * @since         1.1
      */
     public synchronized void removeAdjustmentListener(AdjustmentListener l){
         if (l == null) {

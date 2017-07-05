@@ -32,7 +32,7 @@ package java.lang;
  *
  * @author  unascribed
  * @see     java.lang.Integer#parseInt(String)
- * @since   JDK1.0
+ * @since   1.0
  */
 public
 class NumberFormatException extends IllegalArgumentException {

@@ -332,7 +332,7 @@ public abstract class PathGraphics extends ProxyGraphics2D {
      * @param       width the width of the oval to be drawn.
      * @param       height the height of the oval to be drawn.
      * @see         java.awt.Graphics#fillOval
-     * @since       JDK1.0
+     * @since       1.0
      */
     public void drawOval(int x, int y, int width, int height) {
         draw(new Ellipse2D.Float(x, y, width, height));
@@ -453,7 +453,7 @@ public abstract class PathGraphics extends ProxyGraphics2D {
      * @param       yPoints an array of <i>y</i> points
      * @param       nPoints the total number of points
      * @see         java.awt.Graphics#drawPolygon(int[], int[], int)
-     * @since       JDK1.1
+     * @since       1.1
      */
     public void drawPolyline(int xPoints[], int yPoints[],
                              int nPoints) {
@@ -564,7 +564,7 @@ public abstract class PathGraphics extends ProxyGraphics2D {
      * @param       y        the <i>y</i> coordinate.
      * @see         java.awt.Graphics#drawBytes
      * @see         java.awt.Graphics#drawChars
-     * @since       JDK1.0
+     * @since       1.0
      */
     public void drawString(String str, int x, int y) {
         drawString(str, (float) x, (float) y);
@@ -1388,7 +1388,7 @@ public abstract class PathGraphics extends ProxyGraphics2D {
      * @see      java.awt.Image
      * @see      java.awt.image.ImageObserver
      * @see      java.awt.image.ImageObserver#imageUpdate(java.awt.Image, int, int, int, int, int)
-     * @since    JDK1.0
+     * @since    1.0
      */
     public boolean drawImage(Image img, int x, int y,
                              ImageObserver observer) {
@@ -1428,7 +1428,7 @@ public abstract class PathGraphics extends ProxyGraphics2D {
      * @see      java.awt.Image
      * @see      java.awt.image.ImageObserver
      * @see      java.awt.image.ImageObserver#imageUpdate(java.awt.Image, int, int, int, int, int)
-     * @since    JDK1.0
+     * @since    1.0
      */
     public boolean drawImage(Image img, int x, int y,
                              int width, int height,
@@ -1472,7 +1472,7 @@ public abstract class PathGraphics extends ProxyGraphics2D {
      * @see      java.awt.Image
      * @see      java.awt.image.ImageObserver
      * @see      java.awt.image.ImageObserver#imageUpdate(java.awt.Image, int, int, int, int, int)
-     * @since    JDK1.0
+     * @since    1.0
      */
     public boolean drawImage(Image img, int x, int y,
                              Color bgcolor,
@@ -1533,7 +1533,7 @@ public abstract class PathGraphics extends ProxyGraphics2D {
      * @see      java.awt.Image
      * @see      java.awt.image.ImageObserver
      * @see      java.awt.image.ImageObserver#imageUpdate(java.awt.Image, int, int, int, int, int)
-     * @since    JDK1.0
+     * @since    1.0
      */
     public boolean drawImage(Image img, int x, int y,
                              int width, int height,
@@ -1605,7 +1605,7 @@ public abstract class PathGraphics extends ProxyGraphics2D {
      * @see         java.awt.Image
      * @see         java.awt.image.ImageObserver
      * @see         java.awt.image.ImageObserver#imageUpdate(java.awt.Image, int, int, int, int, int)
-     * @since       JDK1.1
+     * @since       1.1
      */
     public boolean drawImage(Image img,
                              int dx1, int dy1, int dx2, int dy2,
@@ -1670,7 +1670,7 @@ public abstract class PathGraphics extends ProxyGraphics2D {
      * @see         java.awt.Image
      * @see         java.awt.image.ImageObserver
      * @see         java.awt.image.ImageObserver#imageUpdate(java.awt.Image, int, int, int, int, int)
-     * @since       JDK1.1
+     * @since       1.1
      */
     public boolean drawImage(Image img,
                              int dx1, int dy1, int dx2, int dy2,

@@ -66,6 +66,11 @@ public abstract class PKCS11Test {
     // The other is "libnss3.so", listed as "nss3".
     static String nss_library = "softokn3";
 
+    // NSS versions of each library.  It is simplier to keep nss_version
+    // for quick checking for generic testing than many if-else statements.
+    static double softoken3_version = -1;
+    static double nss3_version = -1;
+
     static Provider getSunPKCS11(String config) throws Exception {
         Class clazz = Class.forName("sun.security.pkcs11.SunPKCS11");
         Constructor cons = clazz.getConstructor(new Class[] {String.class});
@@ -175,6 +180,10 @@ public abstract class PKCS11Test {
     }
 
     public static String getNSSLibDir() throws Exception {
+        return getNSSLibDir(nss_library);
+    }
+
+    static String getNSSLibDir(String library) throws Exception {
         Properties props = System.getProperties();
         String osName = props.getProperty("os.name");
         if (osName.startsWith("Win")) {
@@ -195,7 +204,7 @@ public abstract class PKCS11Test {
         String nssLibDir = null;
         for (String dir : nssLibDirs) {
             if (new File(dir).exists() &&
-                new File(dir + System.mapLibraryName(nss_library)).exists()) {
+                new File(dir + System.mapLibraryName(library)).exists()) {
                 nssLibDir = dir;
                 System.setProperty("pkcs11test.nss.libdir", nssLibDir);
                 break;
@@ -241,16 +250,37 @@ public abstract class PKCS11Test {
         return nss_ecc_status;
     }
 
+    public static double getLibsoftokn3Version() {
+        if (softoken3_version == -1)
+            return getNSSInfo("softokn3");
+        return softoken3_version;
+    }
+
+    public static double getLibnss3Version() {
+        if (nss3_version == -1)
+            return getNSSInfo("nss3");
+        return nss3_version;
+    }
+
     /* Read the library to find out the verison */
     static void getNSSInfo() {
+        getNSSInfo(nss_library);
+    }
+
+    static double getNSSInfo(String library) {
         String nssHeader = "$Header: NSS";
         boolean found = false;
         String s = null;
         int i = 0;
         String libfile = "";
 
+        if (library.compareTo("softokn3") == 0 && softoken3_version > -1)
+            return softoken3_version;
+        if (library.compareTo("nss3") == 0 && nss3_version > -1)
+            return nss3_version;
+
         try {
-            libfile = getNSSLibDir() + System.mapLibraryName(nss_library);
+            libfile = getNSSLibDir() + System.mapLibraryName(library);
             FileInputStream is = new FileInputStream(libfile);
             byte[] data = new byte[1000];
             int read = 0;
@@ -284,9 +314,10 @@ public abstract class PKCS11Test {
         }
 
         if (!found) {
-            System.out.println("NSS version not found, set to 0.0: "+libfile);
+            System.out.println("lib" + library +
+                    " version not found, set to 0.0: " + libfile);
             nss_version = 0.0;
-            return;
+            return nss_version;
         }
 
         // the index after whitespace after nssHeader
@@ -306,11 +337,12 @@ public abstract class PKCS11Test {
         try {
             nss_version = Double.parseDouble(version);
         } catch (NumberFormatException e) {
-            System.out.println("Failed to parse NSS version. Set to 0.0");
+            System.out.println("Failed to parse lib" + library +
+                    " version. Set to 0.0");
             e.printStackTrace();
         }
 
-        System.out.print("NSS version = "+version+".  ");
+        System.out.print("lib" + library + " version = "+version+".  ");
 
         // Check for ECC
         if (s.indexOf("Basic") > 0) {
@@ -319,7 +351,17 @@ public abstract class PKCS11Test {
         } else if (s.indexOf("Extended") > 0) {
             nss_ecc_status = ECCState.Extended;
             System.out.println("ECC Extended.");
+        } else {
+            System.out.println("ECC None.");
         }
+
+        if (library.compareTo("softokn3") == 0) {
+            softoken3_version = nss_version;
+        } else if (library.compareTo("nss3") == 0) {
+            nss3_version = nss_version;
+        }
+
+        return nss_version;
     }
 
     // Used to set the nss_library file to search for libsoftokn3.so

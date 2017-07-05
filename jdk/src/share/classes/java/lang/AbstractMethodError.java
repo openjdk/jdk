@@ -33,7 +33,7 @@ package java.lang;
  * compiled.
  *
  * @author  unascribed
- * @since   JDK1.0
+ * @since   1.0
  */
 public
 class AbstractMethodError extends IncompatibleClassChangeError {

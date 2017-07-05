@@ -42,7 +42,7 @@ package java.lang;
  * <p> If no compiler is available, these methods do nothing.
  *
  * @author  Frank Yellin
- * @since   JDK1.0
+ * @since   1.0
  */
 public final class Compiler  {
     private Compiler() {}               // don't make instances

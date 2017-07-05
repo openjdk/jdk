@@ -57,7 +57,7 @@ import java.io.*;
  * <code>PGDN</code>, <code>F1</code>, <code>F2</code>, etc).
  *
  * @author     Sami Shaio
- * @since      JDK1.0
+ * @since      1.0
  */
 public class Event implements java.io.Serializable {
     private transient long data;
@@ -871,7 +871,7 @@ public class Event implements java.io.Serializable {
      * @return    a string that represents the event and the values
      *                 of its member fields.
      * @see       java.awt.Event#paramString
-     * @since     JDK1.1
+     * @since     1.1
      */
     public String toString() {
         return getClass().getName() + "[" + paramString() + "]";

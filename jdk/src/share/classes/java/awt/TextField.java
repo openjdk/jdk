@@ -92,7 +92,7 @@ import javax.accessibility.*;
  * @see         java.awt.TextField#processEvent
  * @see         java.awt.TextField#processActionEvent
  * @see         java.awt.TextField#addActionListener
- * @since       JDK1.0
+ * @since       1.0
  */
 public class TextField extends TextComponent {
 
@@ -265,7 +265,7 @@ public class TextField extends TextComponent {
      * @param       c   the echo character for this text field.
      * @see         java.awt.TextField#echoCharIsSet
      * @see         java.awt.TextField#getEchoChar
-     * @since       JDK1.1
+     * @since       1.1
      */
     public void setEchoChar(char c) {
         setEchoCharacter(c);
@@ -321,7 +321,7 @@ public class TextField extends TextComponent {
      * approximate average character width that is platform-dependent.
      * @return     the number of columns.
      * @see        java.awt.TextField#setColumns
-     * @since      JDK1.1
+     * @since      1.1
      */
     public int getColumns() {
         return columns;
@@ -335,7 +335,7 @@ public class TextField extends TextComponent {
      * @exception  IllegalArgumentException   if the value
      *                 supplied for <code>columns</code>
      *                 is less than <code>0</code>.
-     * @since      JDK1.1
+     * @since      1.1
      */
     public void setColumns(int columns) {
         int oldVal;
@@ -361,7 +361,7 @@ public class TextField extends TextComponent {
      *                 in this text field.
      * @return    the preferred dimensions for
      *                 displaying this text field.
-     * @since     JDK1.1
+     * @since     1.1
      */
     public Dimension getPreferredSize(int columns) {
         return preferredSize(columns);
@@ -385,7 +385,7 @@ public class TextField extends TextComponent {
      * Gets the preferred size of this text field.
      * @return     the preferred dimensions for
      *                         displaying this text field.
-     * @since      JDK1.1
+     * @since      1.1
      */
     public Dimension getPreferredSize() {
         return preferredSize();
@@ -409,7 +409,7 @@ public class TextField extends TextComponent {
      * the specified number of columns.
      * @param    columns   the number of columns in
      *                          this text field.
-     * @since    JDK1.1
+     * @since    1.1
      */
     public Dimension getMinimumSize(int columns) {
         return minimumSize(columns);
@@ -433,7 +433,7 @@ public class TextField extends TextComponent {
      * Gets the minimum dimensions for this text field.
      * @return     the minimum dimensions for
      *                  displaying this text field.
-     * @since      JDK1.1
+     * @since      1.1
      */
     public Dimension getMinimumSize() {
         return minimumSize();
@@ -463,7 +463,7 @@ public class TextField extends TextComponent {
      * @see        #removeActionListener
      * @see        #getActionListeners
      * @see        java.awt.event.ActionListener
-     * @since      JDK1.1
+     * @since      1.1
      */
     public synchronized void addActionListener(ActionListener l) {
         if (l == null) {
@@ -484,7 +484,7 @@ public class TextField extends TextComponent {
      * @see             #addActionListener
      * @see             #getActionListeners
      * @see             java.awt.event.ActionListener
-     * @since           JDK1.1
+     * @since           1.1
      */
     public synchronized void removeActionListener(ActionListener l) {
         if (l == null) {
@@ -578,7 +578,7 @@ public class TextField extends TextComponent {
      * @param      e the event
      * @see        java.awt.event.ActionEvent
      * @see        java.awt.TextField#processActionEvent
-     * @since      JDK1.1
+     * @since      1.1
      */
     protected void processEvent(AWTEvent e) {
         if (e instanceof ActionEvent) {
@@ -609,7 +609,7 @@ public class TextField extends TextComponent {
      * @see         java.awt.event.ActionListener
      * @see         java.awt.TextField#addActionListener
      * @see         java.awt.Component#enableEvents
-     * @since       JDK1.1
+     * @since       1.1
      */
     protected void processActionEvent(ActionEvent e) {
         ActionListener listener = actionListener;

@@ -66,7 +66,7 @@ import java.security.SecureRandom;
  *
  * @author      Ann Wollrath
  * @author      Peter Jones
- * @since       JDK1.1
+ * @since       1.1
  */
 public final class UID implements Serializable {
 
