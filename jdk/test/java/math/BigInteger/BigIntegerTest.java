@@ -56,32 +56,32 @@ public class BigIntegerTest {
     // Bit large number thresholds based on the int thresholds
     // defined in BigInteger itself:
     //
-    // KARATSUBA_THRESHOLD        = 50  ints = 1600 bits
-    // TOOM_COOK_THRESHOLD        = 75  ints = 2400 bits
-    // KARATSUBA_SQUARE_THRESHOLD = 90  ints = 2880 bits
-    // TOOM_COOK_SQUARE_THRESHOLD = 140 ints = 4480 bits
+    // KARATSUBA_THRESHOLD        = 80  ints = 2560 bits
+    // TOOM_COOK_THRESHOLD        = 240 ints = 7680 bits
+    // KARATSUBA_SQUARE_THRESHOLD = 128 ints = 4096 bits
+    // TOOM_COOK_SQUARE_THRESHOLD = 216 ints = 6912 bits
     //
-    // SCHOENHAGE_BASE_CONVERSION_THRESHOLD = 8 ints = 256 bits
+    // SCHOENHAGE_BASE_CONVERSION_THRESHOLD = 20 ints = 640 bits
     //
-    // BURNIKEL_ZIEGLER_THRESHOLD = 50  ints = 1600 bits
+    // BURNIKEL_ZIEGLER_THRESHOLD = 80  ints = 2560 bits
     //
-    static final int BITS_KARATSUBA = 1600;
-    static final int BITS_TOOM_COOK = 2400;
-    static final int BITS_KARATSUBA_SQUARE = 2880;
-    static final int BITS_TOOM_COOK_SQUARE = 4480;
-    static final int BITS_SCHOENHAGE_BASE = 256;
-    static final int BITS_BURNIKEL_ZIEGLER = 1600;
+    static final int BITS_KARATSUBA = 2560;
+    static final int BITS_TOOM_COOK = 7680;
+    static final int BITS_KARATSUBA_SQUARE = 4096;
+    static final int BITS_TOOM_COOK_SQUARE = 6912;
+    static final int BITS_SCHOENHAGE_BASE = 640;
+    static final int BITS_BURNIKEL_ZIEGLER = 2560;
 
     static final int ORDER_SMALL = 60;
     static final int ORDER_MEDIUM = 100;
     // #bits for testing Karatsuba
-    static final int ORDER_KARATSUBA = 1800;
+    static final int ORDER_KARATSUBA = 2760;
     // #bits for testing Toom-Cook and Burnikel-Ziegler
-    static final int ORDER_TOOM_COOK = 4000;
+    static final int ORDER_TOOM_COOK = 8000;
     // #bits for testing Karatsuba squaring
-    static final int ORDER_KARATSUBA_SQUARE = 3200;
+    static final int ORDER_KARATSUBA_SQUARE = 4200;
     // #bits for testing Toom-Cook squaring
-    static final int ORDER_TOOM_COOK_SQUARE = 4600;
+    static final int ORDER_TOOM_COOK_SQUARE = 7000;
 
     static final int SIZE = 1000; // numbers per batch
 

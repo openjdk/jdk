@@ -570,6 +570,10 @@ class WPathGraphics extends PathGraphics {
             return false;
         }
 
+        if (gv.getNumGlyphs() == 0) {
+            return true; // nothing to do.
+        }
+
         AffineTransform deviceTransform = getTransform();
         AffineTransform fontTransform = new AffineTransform(deviceTransform);
         Font font = gv.getFont();
@@ -599,6 +603,10 @@ class WPathGraphics extends PathGraphics {
          * device space.
          */
         Point2D.Float userpos = new Point2D.Float(x, y);
+        /* Add the position of the first glyph - its not always 0,0 */
+        Point2D g0pos = gv.getGlyphPosition(0);
+        userpos.x += (float)g0pos.getX();
+        userpos.y += (float)g0pos.getY();
         Point2D.Float devpos = new Point2D.Float();
 
         /* Already have the translate from the deviceTransform,

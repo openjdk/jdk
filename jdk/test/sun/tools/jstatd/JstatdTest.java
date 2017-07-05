@@ -353,6 +353,14 @@ public final class JstatdTest {
         } finally {
             cleanUpThread(jstatdThread);
         }
+
+        // Verify output from jstatd
+        OutputAnalyzer output = jstatdThread.getOutput();
+        assertTrue(output.getOutput().isEmpty(),
+                "jstatd should get an empty output, got: "
+                + Utils.NEW_LINE + output.getOutput());
+        assertNotEquals(output.getExitValue(), 0,
+                "jstatd process exited with unexpected exit code");
     }
 
 }

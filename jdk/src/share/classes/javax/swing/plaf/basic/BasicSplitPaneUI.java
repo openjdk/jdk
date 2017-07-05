@@ -2015,7 +2015,7 @@ public class BasicSplitPaneUI extends SplitPaneUI
     /**
      * LayoutManager used for JSplitPanes with an orientation of
      * VERTICAL_SPLIT.
-     * <p>
+     *
      */
     public class BasicVerticalLayoutManager extends
             BasicHorizontalLayoutManager

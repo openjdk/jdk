@@ -322,7 +322,7 @@ final class StyledParagraph {
     }
 
     /**
-     * Return i such that starts[i] <= index < starts[i+1].  starts
+     * Return i such that starts[i] &lt;= index &lt; starts[i+1].  starts
      * must be in increasing order, with at least one element greater
      * than index.
      */

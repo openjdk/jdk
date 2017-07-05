@@ -469,7 +469,7 @@ public class FixedHeightLayoutCache extends AbstractLayoutCache {
      * <p>Invoked after the tree has drastically changed structure from a
      * given node down.  If the path returned by e.getPath() is of length
      * one and the first element does not identify the current root node
-     * the first element should become the new root of the tree.<p>
+     * the first element should become the new root of the tree.
      *
      * <p>e.path() holds the path to the node.</p>
      * <p>e.childIndices() returns null.</p>
@@ -677,7 +677,7 @@ public class FixedHeightLayoutCache extends AbstractLayoutCache {
 
     /**
      * Messages getTreeNodeForPage(path, onlyIfVisible, shouldCreate,
-     * path.length) as long as path is non-null and the length is > 0.
+     * path.length) as long as path is non-null and the length is {@literal >} 0.
      * Otherwise returns null.
      */
     private FHTreeStateNode getNodeForPath(TreePath path,
@@ -1283,7 +1283,7 @@ public class FixedHeightLayoutCache extends AbstractLayoutCache {
 
         /**
          * Messaged when a child has been inserted at index. For all the
-         * children that have a childIndex >= index their index is incremented
+         * children that have a childIndex &ge; index their index is incremented
          * by one.
          */
         protected void childInsertedAtModelIndex(int index,

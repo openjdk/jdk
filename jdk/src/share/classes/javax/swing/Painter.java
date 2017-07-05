@@ -54,7 +54,7 @@ import java.awt.Graphics2D;
  *     }
  * }
  * }
- * </pre></p>
+ * </pre>
  *
  * <p>This interface makes no guarantees of threadsafety.</p>
  *

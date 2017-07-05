@@ -33,6 +33,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 
 /**
  * Common library for various test helper functions.
@@ -170,4 +172,61 @@ public final class Utils {
         return hostName;
     }
 
+    /**
+     * Uses "jcmd -l" to search for a jvm pid. This function will wait
+     * forever (until jtreg timeout) for the pid to be found.
+     * @param key Regular expression to search for
+     * @return The found pid.
+     */
+    public static int waitForJvmPid(String key) throws Throwable {
+        final long iterationSleepMillis = 250;
+        System.out.println("waitForJvmPid: Waiting for key '" + key + "'");
+        System.out.flush();
+        while (true) {
+            int pid = tryFindJvmPid(key);
+            if (pid >= 0) {
+                return pid;
+            }
+            Thread.sleep(iterationSleepMillis);
+        }
+    }
+
+    /**
+     * Searches for a jvm pid in the output from "jcmd -l".
+     *
+     * Example output from jcmd is:
+     * 12498 sun.tools.jcmd.JCmd -l
+     * 12254 /tmp/jdk8/tl/jdk/JTwork/classes/com/sun/tools/attach/Application.jar
+     *
+     * @param key A regular expression to search for.
+     * @return The found pid, or -1 if Enot found.
+     * @throws Exception If multiple matching jvms are found.
+     */
+    public static int tryFindJvmPid(String key) throws Throwable {
+        ProcessBuilder pb = null;
+        OutputAnalyzer output = null;
+        try {
+            JDKToolLauncher jcmdLauncher = JDKToolLauncher.create("jcmd");
+            jcmdLauncher.addToolArg("-l");
+            output = ProcessTools.executeProcess(jcmdLauncher.getCommand());
+            output.shouldHaveExitValue(0);
+
+            // Search for a line starting with numbers (pid), follwed by the key.
+            Pattern pattern = Pattern.compile("([0-9]+)\\s.*(" + key + ").*\\r?\\n");
+            Matcher matcher = pattern.matcher(output.getStdout());
+
+            int pid = -1;
+            if (matcher.find()) {
+                pid = Integer.parseInt(matcher.group(1));
+                System.out.println("findJvmPid.pid: " + pid);
+                if (matcher.find()) {
+                    throw new Exception("Found multiple JVM pids for key: " + key);
+                }
+            }
+            return pid;
+        } catch (Throwable t) {
+            System.out.println(String.format("Utils.findJvmPid(%s) failed: %s", key, t));
+            throw t;
+        }
+    }
 }

@@ -29,57 +29,29 @@
 #ifndef HEADLESS
 #include "gdefs.h"
 
-/*
- * Expected types of arguments of the macro.
- * (JNIEnv*, const char*, const char*, jboolean, jobject)
- */
-#define WITH_XERROR_HANDLER(env, handlerClassName, getInstanceSignature,                          \
-                            handlerHasFlag, handlerRef) do {                                      \
-    handlerRef = JNU_CallStaticMethodByName(env, NULL, handlerClassName, "getInstance",           \
-        getInstanceSignature).l;                                                                  \
-    if (handlerHasFlag == JNI_TRUE) {                                                             \
-        JNU_CallMethodByName(env, NULL, handlerRef, "setErrorOccurredFlag", "(Z)V", JNI_FALSE);   \
-    }                                                                                             \
-    JNU_CallStaticMethodByName(env, NULL, "sun/awt/X11/XErrorHandlerUtil", "WITH_XERROR_HANDLER", \
-        "(Lsun/awt/X11/XErrorHandler;)V", handlerRef);                                            \
+#define WITH_XERROR_HANDLER(f) do {             \
+    XSync(awt_display, False);                  \
+    current_native_xerror_handler = (f);        \
+} while (0)
+
+#define RESTORE_XERROR_HANDLER do {             \
+    XSync(awt_display, False);                  \
+    current_native_xerror_handler = NULL;       \
+} while (0)
+
+#define EXEC_WITH_XERROR_HANDLER(f, code) do {  \
+    WITH_XERROR_HANDLER(f);                     \
+    do {                                        \
+        code;                                   \
+    } while (0);                                \
+    RESTORE_XERROR_HANDLER;                     \
 } while (0)
 
 /*
- * Expected types of arguments of the macro.
- * (JNIEnv*, jboolean)
+ * Called by "ToolkitErrorHandler" function in "XlibWrapper.c" file.
  */
-#define RESTORE_XERROR_HANDLER(env, doXSync) do {                                                 \
-    JNU_CallStaticMethodByName(env, NULL, "sun/awt/X11/XErrorHandlerUtil",                        \
-        "RESTORE_XERROR_HANDLER", "(Z)V", doXSync);                                               \
-} while (0)
+extern XErrorHandler current_native_xerror_handler;
 
-/*
- * Expected types of arguments of the macro.
- * (JNIEnv*, const char*, const char*, jboolean, jobject, jboolean, No type - C expression)
- */
-#define EXEC_WITH_XERROR_HANDLER(env, handlerClassName, getInstanceSignature, handlerHasFlag,     \
-                                 handlerRef, errorOccurredFlag, code) do {                        \
-    handlerRef = NULL;                                                                            \
-    WITH_XERROR_HANDLER(env, handlerClassName, getInstanceSignature, handlerHasFlag, handlerRef); \
-    do {                                                                                          \
-        code;                                                                                     \
-    } while (0);                                                                                  \
-    RESTORE_XERROR_HANDLER(env, JNI_TRUE);                                                        \
-    if (handlerHasFlag == JNI_TRUE) {                                                             \
-        GET_HANDLER_ERROR_OCCURRED_FLAG(env, handlerRef, errorOccurredFlag);                      \
-    }                                                                                             \
-} while (0)
-
-/*
- * Expected types of arguments of the macro.
- * (JNIEnv*, jobject, jboolean)
- */
-#define GET_HANDLER_ERROR_OCCURRED_FLAG(env, handlerRef, errorOccurredFlag) do {                  \
-    if (handlerRef != NULL) {                                                                     \
-        errorOccurredFlag = JNU_CallMethodByName(env, NULL, handlerRef, "getErrorOccurredFlag",   \
-            "()Z").z;                                                                             \
-    }                                                                                             \
-} while (0)
 #endif /* !HEADLESS */
 
 #ifndef INTERSECTS

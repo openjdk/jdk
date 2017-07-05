@@ -55,7 +55,7 @@ import java.util.Arrays;
  * of the <code>GridBagConstraints</code> objects that are associated
  * with its components. You customize a <code>GridBagConstraints</code>
  * object by setting one or more of its instance variables:
- * <p>
+ *
  * <dl>
  * <dt>{@link GridBagConstraints#gridx},
  * {@link GridBagConstraints#gridy}
@@ -121,7 +121,7 @@ import java.util.Arrays;
  * <code>ComponentOrientation</code> property while absolute values
  * are not.  Baseline relative values are calculated relative to the
  * baseline.  Valid values are:
- * <p>
+ *
  * <center><table BORDER=0 WIDTH=800
  *        SUMMARY="absolute, relative and baseline values as described above">
  * <tr>
@@ -251,7 +251,7 @@ import java.util.Arrays;
  * managed by a grid bag layout.  Figure 2 shows the layout for a horizontal,
  * left-to-right container and Figure 3 shows the layout for a horizontal,
  * right-to-left container.
- * <p>
+ *
  * <center><table WIDTH=600 summary="layout">
  * <tr ALIGN=CENTER>
  * <td>
@@ -270,7 +270,7 @@ import java.util.Arrays;
  * of its associated <code>GridBagConstraints</code> object
  * set to <code>GridBagConstraints.BOTH</code>.
  * In addition, the components have the following non-default constraints:
- * <p>
+ *
  * <ul>
  * <li>Button1, Button2, Button3: <code>weightx&nbsp;=&nbsp;1.0</code>
  * <li>Button4: <code>weightx&nbsp;=&nbsp;1.0</code>,
@@ -285,7 +285,7 @@ import java.util.Arrays;
  * </ul>
  * <p>
  * Here is the code that implements the example shown above:
- * <p>
+ *
  * <hr><blockquote><pre>
  * import java.awt.*;
  * import java.util.*;

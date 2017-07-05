@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,24 +21,98 @@
  * questions.
  */
 
-/*
- *
- *
- * Unit test for Attach API. Attaches to the given VM and performs a number
- * unit tests.
- */
+import java.io.File;
+import jdk.testlibrary.OutputAnalyzer;
+import jdk.testlibrary.JDKToolLauncher;
+import jdk.testlibrary.ProcessTools;
 import com.sun.tools.attach.VirtualMachine;
 import com.sun.tools.attach.spi.AttachProvider;
 
+/*
+ * @test
+ * @bug 6173612 6273707 6277253 6335921 6348630 6342019 6381757
+ * @summary Basic unit tests for the VM attach mechanism.
+ * @library /lib/testlibrary
+ * @run build SimpleProvider
+ * @run main ProviderTest
+ *
+ * The test will attach and detach to/from the running Application.
+ */
 public class ProviderTest {
-    public static void main(String args[]) throws Exception {
-        // deal with internal builds where classes are loaded from the
-        // 'classes' directory rather than rt.jar
-        ClassLoader cl = AttachProvider.class.getClassLoader();
-        if (cl != ClassLoader.getSystemClassLoader()) {
-            System.out.println("Attach API not loaded by system class loader - test skipped");
-            return;
+
+    /*
+     * The actual tests are in the nested class TestMain below.
+     * The responsibility of this class is to:
+     * 1. Build the needed jar.
+     * 2. Run tests in ProviderTest.TestMain.
+     */
+    public static void main(String args[]) throws Throwable {
+        try {
+            buildJar();
+            runTests();
+        } catch (Throwable t) {
+            System.out.println("TestProvider got unexpected exception: " + t);
+            t.printStackTrace();
+            throw t;
         }
-        VirtualMachine.attach("simple:1234").detach();
+    }
+
+    /**
+     * Runs the actual tests in the nested class TestMain.
+     * We need to run the tests in a separate process,
+     * because we need to add to the classpath.
+     */
+    private static void runTests() throws Throwable {
+        final String sep = File.separator;
+        String testClassPath = System.getProperty("test.class.path", "");
+        String testClasses = System.getProperty("test.classes", "") + sep;
+        String jdkLib = System.getProperty("test.jdk", ".") + sep + "lib" + sep;
+
+        // Need to add SimpleProvider.jar and tools.jar to classpath.
+        String classpath =
+                testClassPath + File.pathSeparator +
+                testClasses + "SimpleProvider.jar" + File.pathSeparator +
+                jdkLib + "tools.jar";
+
+        String[] args = {
+                "-classpath",
+                classpath,
+                "ProviderTest$TestMain" };
+        OutputAnalyzer output = ProcessTools.executeTestJvm(args);
+        output.shouldHaveExitValue(0);
+    }
+
+    /**
+     * Will build the SimpleProvider.jar.
+     */
+    private static void buildJar() throws Throwable {
+        final String sep = File.separator;
+        String testClasses = System.getProperty("test.classes", "?") + sep;
+        String testSrc = System.getProperty("test.src", "?") + sep;
+        String serviceDir = "META-INF" + sep + "services" + sep;
+
+        RunnerUtil.createJar(
+            "-cf", testClasses + "SimpleProvider.jar",
+            "-C", testClasses, "SimpleProvider.class",
+            "-C", testClasses, "SimpleVirtualMachine.class",
+            "-C", testSrc,
+            serviceDir + "com.sun.tools.attach.spi.AttachProvider");
+    }
+
+    /**
+     * This is the actual test code that attaches to the running Application.
+     * This class is run in a separate process.
+     */
+    public static class TestMain {
+        public static void main(String args[]) throws Exception {
+            // deal with internal builds where classes are loaded from the
+            // 'classes' directory rather than rt.jar
+            ClassLoader cl = AttachProvider.class.getClassLoader();
+            if (cl != ClassLoader.getSystemClassLoader()) {
+                System.out.println("Attach API not loaded by system class loader - test skipped");
+                return;
+            }
+            VirtualMachine.attach("simple:1234").detach();
+        }
     }
 }
