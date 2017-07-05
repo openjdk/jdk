@@ -454,7 +454,7 @@ class GraphKit : public Phase {
                             Node* adr,  // actual adress to store val at
                             const TypePtr* adr_type,
                             Node* val,
-                            const Type* val_type,
+                            const TypeOopPtr* val_type,
                             BasicType bt);
 
   Node* store_oop_to_array(Node* ctl,
@@ -462,7 +462,7 @@ class GraphKit : public Phase {
                            Node* adr,  // actual adress to store val at
                            const TypePtr* adr_type,
                            Node* val,
-                           const Type* val_type,
+                           const TypeOopPtr* val_type,
                            BasicType bt);
 
   // Could be an array or object we don't know at compile time (unsafe ref.)
@@ -471,12 +471,11 @@ class GraphKit : public Phase {
                              Node* adr,  // actual adress to store val at
                              const TypePtr* adr_type,
                              Node* val,
-                             const Type* val_type,
                              BasicType bt);
 
   // For the few case where the barriers need special help
   void pre_barrier(Node* ctl, Node* obj, Node* adr, uint adr_idx,
-                   Node* val, const Type* val_type, BasicType bt);
+                   Node* val, const TypeOopPtr* val_type, BasicType bt);
 
   void post_barrier(Node* ctl, Node* store, Node* obj, Node* adr, uint adr_idx,
                     Node* val, BasicType bt, bool use_precise);
@@ -599,7 +598,7 @@ class GraphKit : public Phase {
                             Node* adr,
                             uint alias_idx,
                             Node* val,
-                            const Type* val_type,
+                            const TypeOopPtr* val_type,
                             BasicType bt);
 
   void g1_write_barrier_post(Node* store,
