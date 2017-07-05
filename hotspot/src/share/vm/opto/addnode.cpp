@@ -573,8 +573,6 @@ const Type *AddPNode::bottom_type() const {
   intptr_t txoffset = Type::OffsetBot;
   if (tx->is_con()) {   // Left input is an add of a constant?
     txoffset = tx->get_con();
-    if (txoffset != (int)txoffset)
-      txoffset = Type::OffsetBot;   // oops:  add_offset will choke on it
   }
   return tp->add_offset(txoffset);
 }
@@ -595,8 +593,6 @@ const Type *AddPNode::Value( PhaseTransform *phase ) const {
   intptr_t p2offset = Type::OffsetBot;
   if (p2->is_con()) {   // Left input is an add of a constant?
     p2offset = p2->get_con();
-    if (p2offset != (int)p2offset)
-      p2offset = Type::OffsetBot;   // oops:  add_offset will choke on it
   }
   return p1->add_offset(p2offset);
 }
@@ -675,7 +671,7 @@ const Type *AddPNode::mach_bottom_type( const MachNode* n) {
     // Check for any interesting operand info.
     // In particular, check for both memory and non-memory operands.
     // %%%%% Clean this up: use xadd_offset
-    int con = opnd->constant();
+    intptr_t con = opnd->constant();
     if ( con == TypePtr::OffsetBot )  goto bottom_out;
     offset += con;
     con = opnd->constant_disp();
@@ -695,6 +691,8 @@ const Type *AddPNode::mach_bottom_type( const MachNode* n) {
         guarantee(tptr == NULL, "must be only one pointer operand");
         tptr = et->isa_oopptr();
         guarantee(tptr != NULL, "non-int operand must be pointer");
+        if (tptr->higher_equal(tp->add_offset(tptr->offset())))
+          tp = tptr; // Set more precise type for bailout
         continue;
       }
       if ( eti->_hi != eti->_lo )  goto bottom_out;

@@ -633,20 +633,31 @@ const Type *CmpPNode::sub( const Type *t1, const Type *t2 ) const {
         kps != 1 &&             // both or neither are klass pointers
         !klass0->is_interface() && // do not trust interfaces
         !klass1->is_interface()) {
+      bool unrelated_classes = false;
       // See if neither subclasses the other, or if the class on top
-      // is precise.  In either of these cases, the compare must fail.
+      // is precise.  In either of these cases, the compare is known
+      // to fail if at least one of the pointers is provably not null.
       if (klass0->equals(klass1)   ||   // if types are unequal but klasses are
           !klass0->is_java_klass() ||   // types not part of Java language?
           !klass1->is_java_klass()) {   // types not part of Java language?
         // Do nothing; we know nothing for imprecise types
       } else if (klass0->is_subtype_of(klass1)) {
-        // If klass1's type is PRECISE, then we can fail.
-        if (xklass1)  return TypeInt::CC_GT;
+        // If klass1's type is PRECISE, then classes are unrelated.
+        unrelated_classes = xklass1;
       } else if (klass1->is_subtype_of(klass0)) {
-        // If klass0's type is PRECISE, then we can fail.
-        if (xklass0)  return TypeInt::CC_GT;
+        // If klass0's type is PRECISE, then classes are unrelated.
+        unrelated_classes = xklass0;
       } else {                  // Neither subtypes the other
-        return TypeInt::CC_GT;  // ...so always fail
+        unrelated_classes = true;
+      }
+      if (unrelated_classes) {
+        // The oops classes are known to be unrelated. If the joined PTRs of
+        // two oops is not Null and not Bottom, then we are sure that one
+        // of the two oops is non-null, and the comparison will always fail.
+        TypePtr::PTR jp = r0->join_ptr(r1->_ptr);
+        if (jp != TypePtr::Null && jp != TypePtr::BotPTR) {
+          return TypeInt::CC_GT;
+        }
       }
     }
   }
@@ -681,7 +692,11 @@ Node *CmpPNode::Ideal( PhaseGVN *phase, bool can_reshape ) {
 
   // Now check for LoadKlass on left.
   Node* ldk1 = in(1);
-  if (ldk1->Opcode() != Op_LoadKlass)
+  if (ldk1->is_DecodeN()) {
+    ldk1 = ldk1->in(1);
+    if (ldk1->Opcode() != Op_LoadNKlass )
+      return NULL;
+  } else if (ldk1->Opcode() != Op_LoadKlass )
     return NULL;
   // Take apart the address of the LoadKlass:
   Node* adr1 = ldk1->in(MemNode::Address);
@@ -702,7 +717,11 @@ Node *CmpPNode::Ideal( PhaseGVN *phase, bool can_reshape ) {
 
   // Check for a LoadKlass from primary supertype array.
   // Any nested loadklass from loadklass+con must be from the p.s. array.
-  if (ldk2->Opcode() != Op_LoadKlass)
+  if (ldk2->is_DecodeN()) {
+    // Keep ldk2 as DecodeN since it could be used in CmpP below.
+    if (ldk2->in(1)->Opcode() != Op_LoadNKlass )
+      return NULL;
+  } else if (ldk2->Opcode() != Op_LoadKlass)
     return NULL;
 
   // Verify that we understand the situation
@@ -769,20 +788,31 @@ const Type *CmpNNode::sub( const Type *t1, const Type *t2 ) const {
         kps != 1 &&             // both or neither are klass pointers
         !klass0->is_interface() && // do not trust interfaces
         !klass1->is_interface()) {
+      bool unrelated_classes = false;
       // See if neither subclasses the other, or if the class on top
-      // is precise.  In either of these cases, the compare must fail.
+      // is precise.  In either of these cases, the compare is known
+      // to fail if at least one of the pointers is provably not null.
       if (klass0->equals(klass1)   ||   // if types are unequal but klasses are
           !klass0->is_java_klass() ||   // types not part of Java language?
           !klass1->is_java_klass()) {   // types not part of Java language?
         // Do nothing; we know nothing for imprecise types
       } else if (klass0->is_subtype_of(klass1)) {
-        // If klass1's type is PRECISE, then we can fail.
-        if (xklass1)  return TypeInt::CC_GT;
+        // If klass1's type is PRECISE, then classes are unrelated.
+        unrelated_classes = xklass1;
       } else if (klass1->is_subtype_of(klass0)) {
-        // If klass0's type is PRECISE, then we can fail.
-        if (xklass0)  return TypeInt::CC_GT;
+        // If klass0's type is PRECISE, then classes are unrelated.
+        unrelated_classes = xklass0;
       } else {                  // Neither subtypes the other
-        return TypeInt::CC_GT;  // ...so always fail
+        unrelated_classes = true;
+      }
+      if (unrelated_classes) {
+        // The oops classes are known to be unrelated. If the joined PTRs of
+        // two oops is not Null and not Bottom, then we are sure that one
+        // of the two oops is non-null, and the comparison will always fail.
+        TypePtr::PTR jp = r0->join_ptr(r1->_ptr);
+        if (jp != TypePtr::Null && jp != TypePtr::BotPTR) {
+          return TypeInt::CC_GT;
+        }
       }
     }
   }

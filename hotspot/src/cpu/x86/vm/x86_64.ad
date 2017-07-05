@@ -478,7 +478,7 @@ reg_class int_no_rcx_reg(RAX,
 
 // Class for all int registers except RAX, RDX (and RSP)
 reg_class int_no_rax_rdx_reg(RBP,
-                             RDI
+                             RDI,
                              RSI,
                              RCX,
                              RBX,
@@ -552,7 +552,7 @@ reg_class double_reg(XMM0,  XMM0_H,
 // This is a block of C++ code which provides values, functions, and
 // definitions necessary in the rest of the architecture description
 source %{
-#define   RELOC_IMM64    Assembler::imm64_operand
+#define   RELOC_IMM64    Assembler::imm_operand
 #define   RELOC_DISP32   Assembler::disp32_operand
 
 #define __ _masm.
@@ -962,11 +962,11 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const
   if (VerifyStackAtCalls) {
     Label L;
     MacroAssembler masm(&cbuf);
-    masm.pushq(rax);
-    masm.movq(rax, rsp);
-    masm.andq(rax, StackAlignmentInBytes-1);
-    masm.cmpq(rax, StackAlignmentInBytes-wordSize);
-    masm.popq(rax);
+    masm.push(rax);
+    masm.mov(rax, rsp);
+    masm.andptr(rax, StackAlignmentInBytes-1);
+    masm.cmpptr(rax, StackAlignmentInBytes-wordSize);
+    masm.pop(rax);
     masm.jcc(Assembler::equal, L);
     masm.stop("Stack is not properly aligned!");
     masm.bind(L);
@@ -1817,6 +1817,7 @@ void emit_java_to_interp(CodeBuffer& cbuf)
   __ relocate(static_stub_Relocation::spec(mark), RELOC_IMM64);
   // static stub relocation also tags the methodOop in the code-stream.
   __ movoop(rbx, (jobject) NULL);  // method is zapped till fixup time
+  // This is recognized as unresolved by relocs/nativeinst/ic code
   __ jump(RuntimeAddress(__ pc()));
 
   // Update current stubs pointer and restore code_end.
@@ -1863,9 +1864,9 @@ void MachUEPNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const
 #endif
   if (UseCompressedOops) {
     masm.load_klass(rscratch1, j_rarg0);
-    masm.cmpq(rax, rscratch1);
+    masm.cmpptr(rax, rscratch1);
   } else {
-    masm.cmpq(rax, Address(j_rarg0, oopDesc::klass_offset_in_bytes()));
+    masm.cmpptr(rax, Address(j_rarg0, oopDesc::klass_offset_in_bytes()));
   }
 
   masm.jump_cc(Assembler::notEqual, RuntimeAddress(SharedRuntime::get_ic_miss_stub()));
@@ -1949,7 +1950,7 @@ int emit_deopt_handler(CodeBuffer& cbuf)
   __ call(next, relocInfo::none); // reloc none is fine since it is a disp32
   __ bind(next);
   // adjust it so it matches "the_pc"
-  __ subq(Address(rsp, 0), __ offset() - offset);
+  __ subptr(Address(rsp, 0), __ offset() - offset);
   __ jump(RuntimeAddress(SharedRuntime::deopt_blob()->unpack()));
   assert(__ offset() - offset <= (int) size_deopt_handler(), "overflow");
   __ end_a_stub();
@@ -2577,23 +2578,23 @@ encode %{
     // Compare super with sub directly, since super is not in its own SSA.
     // The compiler used to emit this test, but we fold it in here,
     // to allow platform-specific tweaking on sparc.
-    __ cmpq(Rrax, Rrsi);
+    __ cmpptr(Rrax, Rrsi);
     __ jcc(Assembler::equal, hit);
 #ifndef PRODUCT
     __ lea(Rrcx, ExternalAddress((address)&SharedRuntime::_partial_subtype_ctr));
     __ incrementl(Address(Rrcx, 0));
 #endif //PRODUCT
-    __ movq(Rrdi, Address(Rrsi,
-                          sizeof(oopDesc) +
+    __ movptr(Rrdi, Address(Rrsi, 
+                          sizeof(oopDesc) + 
                           Klass::secondary_supers_offset_in_bytes()));
     __ movl(Rrcx, Address(Rrdi, arrayOopDesc::length_offset_in_bytes()));
-    __ addq(Rrdi, arrayOopDesc::base_offset_in_bytes(T_OBJECT));
+    __ addptr(Rrdi, arrayOopDesc::base_offset_in_bytes(T_OBJECT));
     if (UseCompressedOops) {
       __ encode_heap_oop(Rrax);
       __ repne_scanl();
       __ jcc(Assembler::notEqual, cmiss);
       __ decode_heap_oop(Rrax);
-      __ movq(Address(Rrsi,
+      __ movptr(Address(Rrsi,
                       sizeof(oopDesc) +
                       Klass::secondary_super_cache_offset_in_bytes()),
               Rrax);
@@ -2602,16 +2603,16 @@ encode %{
       __ decode_heap_oop(Rrax);
       __ jmp(miss);
     } else {
-      __ repne_scanq();
+      __ repne_scan();
       __ jcc(Assembler::notEqual, miss);
-      __ movq(Address(Rrsi,
+      __ movptr(Address(Rrsi,
                       sizeof(oopDesc) +
                       Klass::secondary_super_cache_offset_in_bytes()),
               Rrax);
     }
     __ bind(hit);
     if ($primary) {
-      __ xorq(Rrdi, Rrdi);
+      __ xorptr(Rrdi, Rrdi);
     }
     __ bind(miss);
   %}
@@ -3527,8 +3528,9 @@ encode %{
       masm.atomic_incl(ExternalAddress((address) _counters->total_entry_count_addr()));
     }
     if (EmitSync & 1) {
-        masm.movptr (Address(boxReg, 0), intptr_t(markOopDesc::unused_mark())) ;
-        masm.cmpq   (rsp, 0) ;
+        // Without cast to int32_t a movptr will destroy r10 which is typically obj
+        masm.movptr (Address(boxReg, 0), (int32_t)intptr_t(markOopDesc::unused_mark())) ; 
+        masm.cmpptr(rsp, (int32_t)NULL_WORD) ; 
     } else
     if (EmitSync & 2) {
         Label DONE_LABEL;
@@ -3536,29 +3538,30 @@ encode %{
            // Note: tmpReg maps to the swap_reg argument and scrReg to the tmp_reg argument.
           masm.biased_locking_enter(boxReg, objReg, tmpReg, scrReg, false, DONE_LABEL, NULL, _counters);
         }
-        masm.movl(tmpReg, 0x1);
-        masm.orq(tmpReg, Address(objReg, 0));
-        masm.movq(Address(boxReg, 0), tmpReg);
+        // QQQ was movl...
+        masm.movptr(tmpReg, 0x1);
+        masm.orptr(tmpReg, Address(objReg, 0));
+        masm.movptr(Address(boxReg, 0), tmpReg);
         if (os::is_MP()) {
           masm.lock();
         }
-        masm.cmpxchgq(boxReg, Address(objReg, 0)); // Updates tmpReg
+        masm.cmpxchgptr(boxReg, Address(objReg, 0)); // Updates tmpReg
         masm.jcc(Assembler::equal, DONE_LABEL);
 
         // Recursive locking
-        masm.subq(tmpReg, rsp);
-        masm.andq(tmpReg, 7 - os::vm_page_size());
-        masm.movq(Address(boxReg, 0), tmpReg);
+        masm.subptr(tmpReg, rsp);
+        masm.andptr(tmpReg, 7 - os::vm_page_size());
+        masm.movptr(Address(boxReg, 0), tmpReg);
 
         masm.bind(DONE_LABEL);
         masm.nop(); // avoid branch to branch
     } else {
         Label DONE_LABEL, IsInflated, Egress;
 
-        masm.movq  (tmpReg, Address(objReg, 0)) ;
-        masm.testq (tmpReg, 0x02) ;         // inflated vs stack-locked|neutral|biased
-        masm.jcc   (Assembler::notZero, IsInflated) ;
-
+        masm.movptr(tmpReg, Address(objReg, 0)) ; 
+        masm.testl (tmpReg, 0x02) ;         // inflated vs stack-locked|neutral|biased
+        masm.jcc   (Assembler::notZero, IsInflated) ; 
+         
         // it's stack-locked, biased or neutral
         // TODO: optimize markword triage order to reduce the number of
         // conditional branches in the most common cases.
@@ -3568,13 +3571,14 @@ encode %{
 
         if (UseBiasedLocking) {
           masm.biased_locking_enter(boxReg, objReg, tmpReg, scrReg, true, DONE_LABEL, NULL, _counters);
-          masm.movq  (tmpReg, Address(objReg, 0)) ;        // [FETCH]
+          masm.movptr(tmpReg, Address(objReg, 0)) ;        // [FETCH]
         }
 
-        masm.orq   (tmpReg, 1) ;
-        masm.movq  (Address(boxReg, 0), tmpReg) ;
-        if (os::is_MP()) { masm.lock(); }
-        masm.cmpxchgq(boxReg, Address(objReg, 0)); // Updates tmpReg
+        // was q will it destroy high?
+        masm.orl   (tmpReg, 1) ; 
+        masm.movptr(Address(boxReg, 0), tmpReg) ;  
+        if (os::is_MP()) { masm.lock(); } 
+        masm.cmpxchgptr(boxReg, Address(objReg, 0)); // Updates tmpReg
         if (_counters != NULL) {
            masm.cond_inc32(Assembler::equal,
                            ExternalAddress((address) _counters->fast_path_entry_count_addr()));
@@ -3582,9 +3586,9 @@ encode %{
         masm.jcc   (Assembler::equal, DONE_LABEL);
 
         // Recursive locking
-        masm.subq  (tmpReg, rsp);
-        masm.andq  (tmpReg, 7 - os::vm_page_size());
-        masm.movq  (Address(boxReg, 0), tmpReg);
+        masm.subptr(tmpReg, rsp);
+        masm.andptr(tmpReg, 7 - os::vm_page_size());
+        masm.movptr(Address(boxReg, 0), tmpReg);
         if (_counters != NULL) {
            masm.cond_inc32(Assembler::equal,
                            ExternalAddress((address) _counters->fast_path_entry_count_addr()));
@@ -3599,16 +3603,17 @@ encode %{
         // We should also think about trying a CAS without having
         // fetched _owner.  If the CAS is successful we may
         // avoid an RTO->RTS upgrade on the $line.
-        masm.movptr(Address(boxReg, 0), intptr_t(markOopDesc::unused_mark())) ;
+        // Without cast to int32_t a movptr will destroy r10 which is typically obj
+        masm.movptr(Address(boxReg, 0), (int32_t)intptr_t(markOopDesc::unused_mark())) ; 
 
-        masm.movq  (boxReg, tmpReg) ;
-        masm.movq  (tmpReg, Address(tmpReg, ObjectMonitor::owner_offset_in_bytes()-2)) ;
-        masm.testq (tmpReg, tmpReg) ;
-        masm.jcc   (Assembler::notZero, DONE_LABEL) ;
+        masm.mov    (boxReg, tmpReg) ; 
+        masm.movptr (tmpReg, Address(tmpReg, ObjectMonitor::owner_offset_in_bytes()-2)) ; 
+        masm.testptr(tmpReg, tmpReg) ;   
+        masm.jcc    (Assembler::notZero, DONE_LABEL) ; 
 
         // It's inflated and appears unlocked
-        if (os::is_MP()) { masm.lock(); }
-        masm.cmpxchgq(r15_thread, Address(boxReg, ObjectMonitor::owner_offset_in_bytes()-2)) ;
+        if (os::is_MP()) { masm.lock(); } 
+        masm.cmpxchgptr(r15_thread, Address(boxReg, ObjectMonitor::owner_offset_in_bytes()-2)) ; 
         // Intentional fall-through into DONE_LABEL ...
 
         masm.bind  (DONE_LABEL) ;
@@ -3627,8 +3632,8 @@ encode %{
     Register tmpReg = as_Register($tmp$$reg);
     MacroAssembler masm(&cbuf);
 
-    if (EmitSync & 4) {
-       masm.cmpq  (rsp, 0) ;
+    if (EmitSync & 4) { 
+       masm.cmpptr(rsp, 0) ; 
     } else
     if (EmitSync & 8) {
        Label DONE_LABEL;
@@ -3638,15 +3643,15 @@ encode %{
 
        // Check whether the displaced header is 0
        //(=> recursive unlock)
-       masm.movq(tmpReg, Address(boxReg, 0));
-       masm.testq(tmpReg, tmpReg);
+       masm.movptr(tmpReg, Address(boxReg, 0));
+       masm.testptr(tmpReg, tmpReg);
        masm.jcc(Assembler::zero, DONE_LABEL);
 
        // If not recursive lock, reset the header to displaced header
        if (os::is_MP()) {
          masm.lock();
        }
-       masm.cmpxchgq(tmpReg, Address(objReg, 0)); // Uses RAX which is box
+       masm.cmpxchgptr(tmpReg, Address(objReg, 0)); // Uses RAX which is box
        masm.bind(DONE_LABEL);
        masm.nop(); // avoid branch to branch
     } else {
@@ -3655,44 +3660,44 @@ encode %{
        if (UseBiasedLocking) {
          masm.biased_locking_exit(objReg, tmpReg, DONE_LABEL);
        }
-
-       masm.movq  (tmpReg, Address(objReg, 0)) ;
-       masm.cmpq  (Address(boxReg, 0), (int)NULL_WORD) ;
-       masm.jcc   (Assembler::zero, DONE_LABEL) ;
-       masm.testq (tmpReg, 0x02) ;
-       masm.jcc   (Assembler::zero, Stacked) ;
-
+        
+       masm.movptr(tmpReg, Address(objReg, 0)) ; 
+       masm.cmpptr(Address(boxReg, 0), (int32_t)NULL_WORD) ; 
+       masm.jcc   (Assembler::zero, DONE_LABEL) ; 
+       masm.testl (tmpReg, 0x02) ; 
+       masm.jcc   (Assembler::zero, Stacked) ; 
+        
        // It's inflated
-       masm.movq  (boxReg, Address (tmpReg, ObjectMonitor::owner_offset_in_bytes()-2)) ;
-       masm.xorq  (boxReg, r15_thread) ;
-       masm.orq   (boxReg, Address (tmpReg, ObjectMonitor::recursions_offset_in_bytes()-2)) ;
-       masm.jcc   (Assembler::notZero, DONE_LABEL) ;
-       masm.movq  (boxReg, Address (tmpReg, ObjectMonitor::cxq_offset_in_bytes()-2)) ;
-       masm.orq   (boxReg, Address (tmpReg, ObjectMonitor::EntryList_offset_in_bytes()-2)) ;
-       masm.jcc   (Assembler::notZero, CheckSucc) ;
-       masm.mov64 (Address (tmpReg, ObjectMonitor::owner_offset_in_bytes()-2), (int)NULL_WORD) ;
-       masm.jmp   (DONE_LABEL) ;
-
-       if ((EmitSync & 65536) == 0) {
+       masm.movptr(boxReg, Address (tmpReg, ObjectMonitor::owner_offset_in_bytes()-2)) ; 
+       masm.xorptr(boxReg, r15_thread) ; 
+       masm.orptr (boxReg, Address (tmpReg, ObjectMonitor::recursions_offset_in_bytes()-2)) ; 
+       masm.jcc   (Assembler::notZero, DONE_LABEL) ; 
+       masm.movptr(boxReg, Address (tmpReg, ObjectMonitor::cxq_offset_in_bytes()-2)) ; 
+       masm.orptr (boxReg, Address (tmpReg, ObjectMonitor::EntryList_offset_in_bytes()-2)) ; 
+       masm.jcc   (Assembler::notZero, CheckSucc) ; 
+       masm.movptr(Address (tmpReg, ObjectMonitor::owner_offset_in_bytes()-2), (int32_t)NULL_WORD) ; 
+       masm.jmp   (DONE_LABEL) ; 
+        
+       if ((EmitSync & 65536) == 0) { 
          Label LSuccess, LGoSlowPath ;
          masm.bind  (CheckSucc) ;
-         masm.cmpq  (Address (tmpReg, ObjectMonitor::succ_offset_in_bytes()-2), (int)NULL_WORD) ;
+         masm.cmpptr(Address (tmpReg, ObjectMonitor::succ_offset_in_bytes()-2), (int32_t)NULL_WORD) ;
          masm.jcc   (Assembler::zero, LGoSlowPath) ;
 
          // I'd much rather use lock:andl m->_owner, 0 as it's faster than the
          // the explicit ST;MEMBAR combination, but masm doesn't currently support
          // "ANDQ M,IMM".  Don't use MFENCE here.  lock:add to TOS, xchg, etc
          // are all faster when the write buffer is populated.
-         masm.movptr (Address (tmpReg, ObjectMonitor::owner_offset_in_bytes()-2), (int)NULL_WORD) ;
+         masm.movptr (Address (tmpReg, ObjectMonitor::owner_offset_in_bytes()-2), (int32_t)NULL_WORD) ;
          if (os::is_MP()) {
-            masm.lock () ; masm.addq (Address(rsp, 0), 0) ;
+            masm.lock () ; masm.addl (Address(rsp, 0), 0) ;
          }
-         masm.cmpq  (Address (tmpReg, ObjectMonitor::succ_offset_in_bytes()-2), (int)NULL_WORD) ;
+         masm.cmpptr(Address (tmpReg, ObjectMonitor::succ_offset_in_bytes()-2), (int32_t)NULL_WORD) ;
          masm.jcc   (Assembler::notZero, LSuccess) ;
 
-         masm.movptr (boxReg, (int)NULL_WORD) ;                   // box is really EAX
+         masm.movptr (boxReg, (int32_t)NULL_WORD) ;                   // box is really EAX
          if (os::is_MP()) { masm.lock(); }
-         masm.cmpxchgq (r15_thread, Address(tmpReg, ObjectMonitor::owner_offset_in_bytes()-2));
+         masm.cmpxchgptr(r15_thread, Address(tmpReg, ObjectMonitor::owner_offset_in_bytes()-2));
          masm.jcc   (Assembler::notEqual, LSuccess) ;
          // Intentional fall-through into slow-path
 
@@ -3705,10 +3710,10 @@ encode %{
          masm.jmp   (DONE_LABEL) ;
        }
 
-       masm.bind  (Stacked) ;
-       masm.movq  (tmpReg, Address (boxReg, 0)) ;      // re-fetch
-       if (os::is_MP()) { masm.lock(); }
-       masm.cmpxchgq(tmpReg, Address(objReg, 0)); // Uses RAX which is box
+       masm.bind  (Stacked) ; 
+       masm.movptr(tmpReg, Address (boxReg, 0)) ;      // re-fetch
+       if (os::is_MP()) { masm.lock(); } 
+       masm.cmpxchgptr(tmpReg, Address(objReg, 0)); // Uses RAX which is box
 
        if (EmitSync & 65536) {
           masm.bind (CheckSucc) ;
@@ -3736,10 +3741,10 @@ encode %{
 
     masm.load_heap_oop(rax, Address(rsi, value_offset));
     masm.movl(rcx, Address(rsi, offset_offset));
-    masm.leaq(rax, Address(rax, rcx, Address::times_2, base_offset));
+    masm.lea(rax, Address(rax, rcx, Address::times_2, base_offset));
     masm.load_heap_oop(rbx, Address(rdi, value_offset));
     masm.movl(rcx, Address(rdi, offset_offset));
-    masm.leaq(rbx, Address(rbx, rcx, Address::times_2, base_offset));
+    masm.lea(rbx, Address(rbx, rcx, Address::times_2, base_offset));
 
     // Compute the minimum of the string lengths(rsi) and the
     // difference of the string lengths (stack)
@@ -3748,8 +3753,8 @@ encode %{
     masm.movl(rsi, Address(rsi, count_offset));
     masm.movl(rcx, rdi);
     masm.subl(rdi, rsi);
-    masm.pushq(rdi);
-    masm.cmovl(Assembler::lessEqual, rsi, rcx);
+    masm.push(rdi);
+    masm.cmov(Assembler::lessEqual, rsi, rcx);
 
     // Is the minimum length zero?
     masm.bind(RCX_GOOD_LABEL);
@@ -3770,7 +3775,7 @@ encode %{
       // Check after comparing first character to see if strings are equivalent
       Label LSkip2;
       // Check if the strings start at same location
-      masm.cmpq(rbx, rax);
+      masm.cmpptr(rbx, rax);
       masm.jcc(Assembler::notEqual, LSkip2);
 
       // Check if the length difference is zero (from stack)
@@ -3782,9 +3787,9 @@ encode %{
     }
 
     // Shift RAX and RBX to the end of the arrays, negate min
-    masm.leaq(rax, Address(rax, rsi, Address::times_2, 2));
-    masm.leaq(rbx, Address(rbx, rsi, Address::times_2, 2));
-    masm.negq(rsi);
+    masm.lea(rax, Address(rax, rsi, Address::times_2, 2));
+    masm.lea(rbx, Address(rbx, rsi, Address::times_2, 2));
+    masm.negptr(rsi);
 
     // Compare the rest of the characters
     masm.bind(WHILE_HEAD_LABEL);
@@ -3792,18 +3797,18 @@ encode %{
     masm.load_unsigned_word(rdi, Address(rax, rsi, Address::times_2, 0));
     masm.subl(rcx, rdi);
     masm.jcc(Assembler::notZero, POP_LABEL);
-    masm.incrementq(rsi);
+    masm.increment(rsi);
     masm.jcc(Assembler::notZero, WHILE_HEAD_LABEL);
 
     // Strings are equal up to min length.  Return the length difference.
     masm.bind(LENGTH_DIFF_LABEL);
-    masm.popq(rcx);
+    masm.pop(rcx);
     masm.jmp(DONE_LABEL);
 
     // Discard the stored length difference
     masm.bind(POP_LABEL);
-    masm.addq(rsp, 8);
-
+    masm.addptr(rsp, 8);
+       
     // That's it
     masm.bind(DONE_LABEL);
   %}
@@ -3893,7 +3898,7 @@ encode %{
   enc_class absF_encoding(regF dst)
   %{
     int dstenc = $dst$$reg;
-    address signmask_address = (address) StubRoutines::amd64::float_sign_mask();
+    address signmask_address = (address) StubRoutines::x86::float_sign_mask();
 
     cbuf.set_inst_mark();
     if (dstenc >= 8) {
@@ -3910,7 +3915,7 @@ encode %{
   enc_class absD_encoding(regD dst)
   %{
     int dstenc = $dst$$reg;
-    address signmask_address = (address) StubRoutines::amd64::double_sign_mask();
+    address signmask_address = (address) StubRoutines::x86::double_sign_mask();
 
     cbuf.set_inst_mark();
     emit_opcode(cbuf, 0x66);
@@ -3928,7 +3933,7 @@ encode %{
   enc_class negF_encoding(regF dst)
   %{
     int dstenc = $dst$$reg;
-    address signflip_address = (address) StubRoutines::amd64::float_sign_flip();
+    address signflip_address = (address) StubRoutines::x86::float_sign_flip();
 
     cbuf.set_inst_mark();
     if (dstenc >= 8) {
@@ -3945,7 +3950,7 @@ encode %{
   enc_class negD_encoding(regD dst)
   %{
     int dstenc = $dst$$reg;
-    address signflip_address = (address) StubRoutines::amd64::double_sign_flip();
+    address signflip_address = (address) StubRoutines::x86::double_sign_flip();
 
     cbuf.set_inst_mark();
     emit_opcode(cbuf, 0x66);
@@ -4003,7 +4008,7 @@ encode %{
     emit_opcode(cbuf, 0xE8);
     emit_d32_reloc(cbuf,
                    (int)
-                   (StubRoutines::amd64::f2i_fixup() - cbuf.code_end() - 4),
+                   (StubRoutines::x86::f2i_fixup() - cbuf.code_end() - 4),
                    runtime_call_Relocation::spec(),
                    RELOC_DISP32);
 
@@ -4020,7 +4025,7 @@ encode %{
   %{
     int dstenc = $dst$$reg;
     int srcenc = $src$$reg;
-    address const_address = (address) StubRoutines::amd64::double_sign_flip();
+    address const_address = (address) StubRoutines::x86::double_sign_flip();
 
     // cmpq $dst, [0x8000000000000000]
     cbuf.set_inst_mark();
@@ -4061,7 +4066,7 @@ encode %{
     emit_opcode(cbuf, 0xE8);
     emit_d32_reloc(cbuf,
                    (int)
-                   (StubRoutines::amd64::f2l_fixup() - cbuf.code_end() - 4),
+                   (StubRoutines::x86::f2l_fixup() - cbuf.code_end() - 4),
                    runtime_call_Relocation::spec(),
                    RELOC_DISP32);
 
@@ -4117,7 +4122,7 @@ encode %{
     emit_opcode(cbuf, 0xE8);
     emit_d32_reloc(cbuf,
                    (int)
-                   (StubRoutines::amd64::d2i_fixup() - cbuf.code_end() - 4),
+                   (StubRoutines::x86::d2i_fixup() - cbuf.code_end() - 4),
                    runtime_call_Relocation::spec(),
                    RELOC_DISP32);
 
@@ -4134,7 +4139,7 @@ encode %{
   %{
     int dstenc = $dst$$reg;
     int srcenc = $src$$reg;
-    address const_address = (address) StubRoutines::amd64::double_sign_flip();
+    address const_address = (address) StubRoutines::x86::double_sign_flip();
 
     // cmpq $dst, [0x8000000000000000]
     cbuf.set_inst_mark();
@@ -4175,7 +4180,7 @@ encode %{
     emit_opcode(cbuf, 0xE8);
     emit_d32_reloc(cbuf,
                    (int)
-                   (StubRoutines::amd64::d2l_fixup() - cbuf.code_end() - 4),
+                   (StubRoutines::x86::d2l_fixup() - cbuf.code_end() - 4),
                    runtime_call_Relocation::spec(),
                    RELOC_DISP32);
 

@@ -36,13 +36,20 @@
   address float_constant(float f);
   address double_constant(double d);
 
+  bool is_literal_address(LIR_Address* addr);
+
+  // When we need to use something other than rscratch1 use this
+  // method.
+  Address as_Address(LIR_Address* addr, Register tmp);
+
+
 public:
 
   void store_parameter(Register r, int offset_from_esp_in_words);
   void store_parameter(jint c,     int offset_from_esp_in_words);
   void store_parameter(jobject c,  int offset_from_esp_in_words);
 
-  enum { call_stub_size = 15,
+  enum { call_stub_size = NOT_LP64(15) LP64_ONLY(28),
          exception_handler_size = DEBUG_ONLY(1*K) NOT_DEBUG(175),
-         deopt_handler_size = 10
+         deopt_handler_size = NOT_LP64(10) LP64_ONLY(17)
        };

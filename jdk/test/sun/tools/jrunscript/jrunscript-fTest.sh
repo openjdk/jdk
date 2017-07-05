@@ -25,13 +25,19 @@
 
 
 # @test
-# @bug 6265810
+# @bug 6265810 6705893
+# @build CheckEngine
 # @run shell jrunscript-fTest.sh
 # @summary Test that output of 'jrunscript -f' matches the dash-f.out file
 
 . ${TESTSRC-.}/common.sh
 
 setup
+${JAVA} -cp ${TESTCLASSES} CheckEngine
+if [ $? -eq 2 ]; then
+    echo "No js engine found and engine not required; test vacuously passes."
+    exit 0
+fi
 
 rm -f jrunscript-fTest.out 2>/dev/null
 ${JRUNSCRIPT} -f ${TESTSRC}/hello.js > jrunscript-fTest.out 2>&1
