@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,12 +29,11 @@ import org.ietf.jgss.*;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.IOException;
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 
 /**
  * This class represents the new format of GSS MIC tokens, as specified
- * in draft-ietf-krb-wg-gssapi-cfx-07.txt
+ * in RFC 4121
  *
  * MIC tokens = { 16-byte token-header |  HMAC }
  * where HMAC is on { plaintext | 16-byte token-header }
@@ -48,12 +47,11 @@ class MicToken_v2 extends MessageToken_v2 {
                   byte[] tokenBytes, int tokenOffset, int tokenLen,
                   MessageProp prop)  throws GSSException {
         super(Krb5Token.MIC_ID_v2, context,
-          tokenBytes, tokenOffset, tokenLen, prop);
+                tokenBytes, tokenOffset, tokenLen, prop);
     }
 
-    public MicToken_v2(Krb5Context context,
-                   InputStream is, MessageProp prop)
-    throws GSSException {
+    public MicToken_v2(Krb5Context context, InputStream is, MessageProp prop)
+            throws GSSException {
         super(Krb5Token.MIC_ID_v2, context, is, prop);
     }
 
@@ -64,7 +62,6 @@ class MicToken_v2 extends MessageToken_v2 {
     }
 
     public void verify(InputStream data) throws GSSException {
-
         byte[] dataBytes = null;
         try {
             dataBytes = new byte[data.available()];
@@ -79,7 +76,7 @@ class MicToken_v2 extends MessageToken_v2 {
 
     public MicToken_v2(Krb5Context context, MessageProp prop,
                   byte[] data, int pos, int len)
-        throws GSSException {
+            throws GSSException {
         super(Krb5Token.MIC_ID_v2, context);
 
         //      debug("Application data to MicToken verify is [" +
@@ -89,7 +86,7 @@ class MicToken_v2 extends MessageToken_v2 {
     }
 
     public MicToken_v2(Krb5Context context, MessageProp prop, InputStream data)
-        throws GSSException, IOException {
+            throws GSSException, IOException {
 
         super(Krb5Token.MIC_ID_v2, context);
         byte[] dataBytes = new byte[data.available()];
@@ -101,22 +98,21 @@ class MicToken_v2 extends MessageToken_v2 {
         genSignAndSeqNumber(prop, dataBytes, 0, dataBytes.length);
     }
 
-    public int encode(byte[] outToken, int offset)
-        throws IOException, GSSException {
-
-        // Token  is small
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        super.encode(bos);
-        byte[] token = bos.toByteArray();
-        System.arraycopy(token, 0, outToken, offset, token.length);
-        return token.length;
-    }
-
-    public byte[] encode() throws IOException, GSSException {
-
+    public byte[] encode() throws IOException {
         // XXX Fine tune this initial size
         ByteArrayOutputStream bos = new ByteArrayOutputStream(50);
         encode(bos);
         return bos.toByteArray();
+    }
+
+    public int encode(byte[] outToken, int offset) throws IOException {
+        byte[] token = encode();
+        System.arraycopy(token, 0, outToken, offset, token.length);
+        return token.length;
+    }
+
+    public void encode(OutputStream os) throws IOException {
+        encodeHeader(os);
+        os.write(checksum);
     }
 }

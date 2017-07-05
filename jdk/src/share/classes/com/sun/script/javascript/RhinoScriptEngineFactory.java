@@ -58,11 +58,11 @@ public class RhinoScriptEngineFactory extends ScriptEngineFactoryBase {
         } else if (key.equals(ScriptEngine.ENGINE)) {
             return "Mozilla Rhino";
         } else if (key.equals(ScriptEngine.ENGINE_VERSION)) {
-            return "1.6 release 2";
+            return "1.7 release 3 PRERELEASE";
         } else if (key.equals(ScriptEngine.LANGUAGE)) {
             return "ECMAScript";
         } else if (key.equals(ScriptEngine.LANGUAGE_VERSION)) {
-            return "1.6";
+            return "1.8";
         } else if (key.equals("THREADING")) {
             return "MULTITHREADED";
         } else {
@@ -128,10 +128,12 @@ public class RhinoScriptEngineFactory extends ScriptEngineFactoryBase {
         return ret;
     }
 
+    /*
     public static void main(String[] args) {
         RhinoScriptEngineFactory fact = new RhinoScriptEngineFactory();
         System.out.println(fact.getParameter(ScriptEngine.ENGINE_VERSION));
     }
+    */
 
     private static List<String> names;
     private static List<String> mimeTypes;
