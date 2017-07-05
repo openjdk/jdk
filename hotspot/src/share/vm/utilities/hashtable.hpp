@@ -282,6 +282,19 @@ protected:
   static bool use_alternate_hashcode()  { return _seed != 0; }
   static jint seed()                    { return _seed; }
 
+  static int literal_size(Symbol *symbol);
+  static int literal_size(oop oop);
+
+  // The following two are currently not used, but are needed anyway because some
+  // C++ compilers (MacOS and Solaris) force the instantiation of
+  // Hashtable<ConstantPool*, mtClass>::dump_table() even though we never call this function
+  // in the VM code.
+  static int literal_size(ConstantPool *cp) {Unimplemented(); return 0;}
+  static int literal_size(Klass *k)         {Unimplemented(); return 0;}
+
+public:
+  void dump_table(outputStream* st, const char *table_name);
+
  private:
   static jint _seed;
 };

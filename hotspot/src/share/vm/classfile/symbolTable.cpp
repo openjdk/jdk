@@ -35,7 +35,6 @@
 #include "oops/oop.inline2.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "utilities/hashtable.inline.hpp"
-#include "utilities/numberSeq.hpp"
 
 // --------------------------------------------------------------------------
 
@@ -451,21 +450,7 @@ void SymbolTable::verify() {
 }
 
 void SymbolTable::dump(outputStream* st) {
-  NumberSeq summary;
-  for (int i = 0; i < the_table()->table_size(); ++i) {
-    int count = 0;
-    for (HashtableEntry<Symbol*, mtSymbol>* e = the_table()->bucket(i);
-       e != NULL; e = e->next()) {
-      count++;
-    }
-    summary.add((double)count);
-  }
-  st->print_cr("SymbolTable statistics:");
-  st->print_cr("Number of buckets       : %7d", summary.num());
-  st->print_cr("Average bucket size     : %7.0f", summary.avg());
-  st->print_cr("Variance of bucket size : %7.0f", summary.variance());
-  st->print_cr("Std. dev. of bucket size: %7.0f", summary.sd());
-  st->print_cr("Maximum bucket size     : %7.0f", summary.maximum());
+  the_table()->dump_table(st, "SymbolTable");
 }
 
 
@@ -814,21 +799,7 @@ void StringTable::verify() {
 }
 
 void StringTable::dump(outputStream* st) {
-  NumberSeq summary;
-  for (int i = 0; i < the_table()->table_size(); ++i) {
-    HashtableEntry<oop, mtSymbol>* p = the_table()->bucket(i);
-    int count = 0;
-    for ( ; p != NULL; p = p->next()) {
-      count++;
-    }
-    summary.add((double)count);
-  }
-  st->print_cr("StringTable statistics:");
-  st->print_cr("Number of buckets       : %7d", summary.num());
-  st->print_cr("Average bucket size     : %7.0f", summary.avg());
-  st->print_cr("Variance of bucket size : %7.0f", summary.variance());
-  st->print_cr("Std. dev. of bucket size: %7.0f", summary.sd());
-  st->print_cr("Maximum bucket size     : %7.0f", summary.maximum());
+  the_table()->dump_table(st, "StringTable");
 }
 
 
