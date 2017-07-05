@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1120,7 +1120,7 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
      *
      * <table summary="Describes the tag and view created by this factory by default">
      * <tr>
-     * <th align=left>Tag<th align=left>View created
+     * <th style="text-align:left">Tag<th style="text-align:left">View created
      * </tr><tr>
      * <td>HTML.Tag.CONTENT<td>InlineView
      * </tr><tr>

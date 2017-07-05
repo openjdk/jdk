@@ -31,6 +31,7 @@ package java.security;
  * length, uninitialized, etc).
  *
  * @author Benjamin Renaud
+ * @since 1.1
  */
 
 public class InvalidKeyException extends KeyException {

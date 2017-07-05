@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,15 +67,19 @@ public class JContainerMousePositionTest {
         robot.waitForIdle();
 
         AtomicReference<Rectangle> frameBounds = new AtomicReference<>();
+        AtomicReference<Insets> frameInsets = new AtomicReference<>();
         AtomicReference<Dimension> button1Size = new AtomicReference<>();
         SwingUtilities.invokeAndWait(() -> {
             frameBounds.set(frame1.getBounds());
+            frameInsets.set(frame1.getInsets());
             button1Size.set(jButton1.getSize());
         });
 
 //point mouse to center of top-left Component (button1)
-        robot.mouseMove(frameBounds.get().x + button1Size.get().width / 2,
-                        frameBounds.get().y + button1Size.get().height / 2);
+        robot.mouseMove(frameBounds.get().x + frameInsets.get().left +
+                                                    button1Size.get().width / 2,
+                        frameBounds.get().y + frameInsets.get().top +
+                                                  button1Size.get().height / 2);
 
         AtomicReference<Point> pFalse = new AtomicReference<>();
         AtomicReference<Point> pTrue = new AtomicReference<>();
@@ -108,10 +112,12 @@ public class JContainerMousePositionTest {
         System.out.println("Test stage completed: Container.getMousePosition(boolean) returned null result outside Container. Passed.");
 
 //point mouse in place free from child components (right-botton component)
-        robot.mouseMove(frameBounds.get().x + centerC4.get().x,
-                        frameBounds.get().y + centerC4.get().y);
+        robot.mouseMove(frameBounds.get().x + frameInsets.get().left +
+                                                               centerC4.get().x,
+                        frameBounds.get().y + frameInsets.get().top +
+                                                              centerC4.get().y);
 
-        robot.delay(3000);
+        robot.waitForIdle();
         SwingUtilities.invokeAndWait(() -> {
             pFalse.set(contentPane.getMousePosition(false));
             pTrue.set(frame1.getMousePosition(true));
@@ -123,7 +129,8 @@ public class JContainerMousePositionTest {
         }
         System.out.println("Test stage completed: Container.getMousePosition(boolean) returned non-null results  inside Container. Passed.");
 
-        if (pTrue.get().x != centerC4.get().x || pTrue.get().y != centerC4.get().y) {
+        if (pTrue.get().x != frameInsets.get().left + centerC4.get().x ||
+            pTrue.get().y != frameInsets.get().top + centerC4.get().y) {
             throw new RuntimeException("Test failed: Container.getMousePosition(true) returned incorrect result inside Container.");
         }
         System.out.println("Test stage completed: Container.getMousePosition(true) returned correct result inside Container. Passed.");

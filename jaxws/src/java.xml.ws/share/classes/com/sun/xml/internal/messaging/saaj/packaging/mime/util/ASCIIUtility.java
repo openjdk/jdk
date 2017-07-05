@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,9 +43,17 @@ public class ASCIIUtility {
     /**
      * Convert the bytes within the specified range of the given byte
      * array into a signed integer in the given radix . The range extends
-     * from <code>start</code> till, but not including <code>end</code>. <p>
+     * from <code>start</code> till, but not including <code>end</code>.
      *
-     * Based on java.lang.Integer.parseInt()
+     * Based on java.lang.Integer.parseInt().
+     *
+     * @param b bytes to convert to integer.
+     * @param start start of the range.
+     * @param end end of the range (not including).
+     * @param radix radix.
+     *
+     * @return integer.
+     *
      */
     public static int parseInt(byte[] b, int start, int end, int radix)
                 throws NumberFormatException {
@@ -110,7 +118,14 @@ public class ASCIIUtility {
     /**
      * Convert the bytes within the specified range of the given byte
      * array into a String. The range extends from <code>start</code>
-     * till, but not including <code>end</code>. <p>
+     * till, but not including <code>end</code>.
+     *
+     * @param b bytes to convert to integer.
+     * @param start start of the range.
+     * @param end end of the range (not including).
+     *
+     * @return integer.
+     *
      */
     public static String toString(byte[] b, int start, int end) {
         int size = end - start;
@@ -122,6 +137,15 @@ public class ASCIIUtility {
         return new String(theChars);
     }
 
+        /**
+         * Encodes specified String into a sequence of bytes using the platform's
+         * default charset, storing the result into a new byte array.
+         *
+         * @param s string to encode into byte array.
+         *
+         * @return byte array.
+         *
+         */
     public static byte[] getBytes(String s) {
         char [] chars= s.toCharArray();
         int size = chars.length;
@@ -133,6 +157,13 @@ public class ASCIIUtility {
     }
 
     /**
+         * Converts input stream to array.
+         *
+         * @param is stream to convert to array.
+         *
+         * @return byte array.
+         *
+         * @throws IOException if an I/O error occurs.
      *
      * @deprecated
      *      this is an expensive operation that require an additional
@@ -140,6 +171,7 @@ public class ASCIIUtility {
      *      Unless you absolutely need the exact size array, don't use this.
      *      Use {@link ByteOutputStream} and {@link ByteOutputStream#write(InputStream)}.
      */
+    @Deprecated
     public static byte[] getBytes(InputStream is) throws IOException {
         ByteOutputStream bos = null;
         try {

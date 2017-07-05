@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,8 @@ public class bug6827786 {
     public static void main(String[] args) throws Exception {
         Robot robot = new Robot();
         robot.setAutoDelay(50);
+        // move mouse outside menu to prevent auto selection
+        robot.mouseMove(100,100);
 
         SwingUtilities.invokeAndWait(new Runnable() {
 
@@ -147,6 +149,7 @@ public class bug6827786 {
         focusable = new JButton("Set Focus Here");
         frame.add(focusable);
         frame.pack();
+        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
     }
 }

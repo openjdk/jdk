@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,7 @@ import java.beans.Transient;
  *
  * <TABLE STYLE="FLOAT:RIGHT" BORDER="0" SUMMARY="layout">
  *    <TR>
- *    <TD ALIGN="CENTER">
+ *    <TD style="text-align:center">
  *      <P STYLE="TEXT-ALIGN:CENTER"><IMG SRC="doc-files/JScrollPane-1.gif"
  *      alt="The following text describes this image."
  *      WIDTH="256" HEIGHT="248" STYLE="FLOAT:BOTTOM; BORDER:0px">
