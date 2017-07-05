@@ -192,7 +192,7 @@ class MultiUIDefaults extends UIDefaults
     public synchronized String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("{");
-        Enumeration keys = keys();
+        Enumeration<?> keys = keys();
         while (keys.hasMoreElements()) {
             Object key = keys.nextElement();
             sb.append(key + "=" + get(key) + ", ");

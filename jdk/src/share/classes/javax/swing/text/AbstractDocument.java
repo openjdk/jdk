@@ -2193,7 +2193,7 @@ public abstract class AbstractDocument implements Document, Serializable {
          * <code>Enumeration</code>.
          * @return the children of the receiver as an <code>Enumeration</code>
          */
-        public abstract Enumeration<?> children();
+        public abstract Enumeration<TreeNode> children();
 
 
         // --- serialization ---------------------------------------------
@@ -2456,11 +2456,11 @@ public abstract class AbstractDocument implements Document, Serializable {
          * <code>Enumeration</code>.
          * @return the children of the receiver
          */
-        public Enumeration<AbstractElement> children() {
+        public Enumeration<TreeNode> children() {
             if(nchildren == 0)
                 return null;
 
-            Vector<AbstractElement> tempVector = new Vector<AbstractElement>(nchildren);
+            Vector<TreeNode> tempVector = new Vector<>(nchildren);
 
             for(int counter = 0; counter < nchildren; counter++)
                 tempVector.addElement(children[counter]);
@@ -2610,7 +2610,8 @@ public abstract class AbstractDocument implements Document, Serializable {
          * <code>Enumeration</code>.
          * @return the children of the receiver
          */
-        public Enumeration<?> children() {
+        @Override
+        public Enumeration<TreeNode> children() {
             return null;
         }
 

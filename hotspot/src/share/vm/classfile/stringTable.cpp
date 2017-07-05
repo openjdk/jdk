@@ -37,6 +37,7 @@
 #include "runtime/mutexLocker.hpp"
 #include "utilities/hashtable.inline.hpp"
 #if INCLUDE_ALL_GCS
+#include "gc_implementation/g1/g1SATBCardTableModRefBS.hpp"
 #include "gc_implementation/g1/g1StringDedup.hpp"
 #endif
 
@@ -157,11 +158,26 @@ oop StringTable::lookup(Symbol* symbol) {
   return lookup(chars, length);
 }
 
+// Tell the GC that this string was looked up in the StringTable.
+static void ensure_string_alive(oop string) {
+  // A lookup in the StringTable could return an object that was previously
+  // considered dead. The SATB part of G1 needs to get notified about this
+  // potential resurrection, otherwise the marking might not find the object.
+#if INCLUDE_ALL_GCS
+  if (UseG1GC && string != NULL) {
+    G1SATBCardTableModRefBS::enqueue(string);
+  }
+#endif
+}
 
 oop StringTable::lookup(jchar* name, int len) {
   unsigned int hash = hash_string(name, len);
   int index = the_table()->hash_to_index(hash);
-  return the_table()->lookup(index, name, len, hash);
+  oop string = the_table()->lookup(index, name, len, hash);
+
+  ensure_string_alive(string);
+
+  return string;
 }
 
 
@@ -172,7 +188,10 @@ oop StringTable::intern(Handle string_or_null, jchar* name,
   oop found_string = the_table()->lookup(index, name, len, hashValue);
 
   // Found
-  if (found_string != NULL) return found_string;
+  if (found_string != NULL) {
+    ensure_string_alive(found_string);
+    return found_string;
+  }
 
   debug_only(StableMemoryChecker smc(name, len * sizeof(name[0])));
   assert(!Universe::heap()->is_in_reserved(name),
@@ -197,11 +216,17 @@ oop StringTable::intern(Handle string_or_null, jchar* name,
 
   // Grab the StringTable_lock before getting the_table() because it could
   // change at safepoint.
-  MutexLocker ml(StringTable_lock, THREAD);
+  oop added_or_found;
+  {
+    MutexLocker ml(StringTable_lock, THREAD);
+    // Otherwise, add to symbol to table
+    added_or_found = the_table()->basic_add(index, string, name, len,
+                                  hashValue, CHECK_NULL);
+  }
 
-  // Otherwise, add to symbol to table
-  return the_table()->basic_add(index, string, name, len,
-                                hashValue, CHECK_NULL);
+  ensure_string_alive(added_or_found);
+
+  return added_or_found;
 }
 
 oop StringTable::intern(Symbol* symbol, TRAPS) {

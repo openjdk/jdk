@@ -219,7 +219,6 @@ class PlatformEvent : public CHeapObj<mtInternal> {
     int  fired() { return _Event; }
     void park();
     void unpark();
-    int  TryPark();
     int  park(jlong millis);
     void SetAssociation(Thread * a) { _Assoc = a; }
 };

@@ -49,7 +49,7 @@ import java.io.Serializable;
  */
 @SuppressWarnings("serial") // Same-version serialization only
 public class BasicComboBoxRenderer extends JLabel
-implements ListCellRenderer, Serializable {
+implements ListCellRenderer<Object>, Serializable {
 
    /**
     * An empty <code>Border</code>. This field might not be used. To change the
@@ -88,8 +88,8 @@ implements ListCellRenderer, Serializable {
         return size;
     }
 
-    public Component getListCellRendererComponent(
-                                                 JList list,
+    @Override
+    public Component getListCellRendererComponent(JList<?> list,
                                                  Object value,
                                                  int index,
                                                  boolean isSelected,

@@ -957,6 +957,7 @@ public final class ProcessBuilder
      * <li>The operating system program file was not found.
      * <li>Access to the program file was denied.
      * <li>The working directory does not exist.
+     * <li>Invalid character in command argument, such as NUL.
      * </ul>
      *
      * <p>In such cases an exception will be thrown.  The exact nature
@@ -1018,6 +1019,12 @@ public final class ProcessBuilder
             security.checkExec(prog);
 
         String dir = directory == null ? null : directory.toString();
+
+        for (int i = 1; i < cmdarray.length; i++) {
+            if (cmdarray[i].indexOf('\u0000') >= 0) {
+                throw new IOException("invalid null character in command");
+            }
+        }
 
         try {
             return ProcessImpl.start(cmdarray,

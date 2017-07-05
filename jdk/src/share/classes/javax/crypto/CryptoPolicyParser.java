@@ -256,11 +256,11 @@ final class CryptoPolicyParser {
             while (peek(",")) {
                 match(",");
                 if (peek("number")) {
-                    paramsV.addElement(new Integer(match()));
+                    paramsV.addElement(match());
                 } else {
                     if (peek("*")) {
                         match("*");
-                        paramsV.addElement(new Integer(Integer.MAX_VALUE));
+                        paramsV.addElement(Integer.MAX_VALUE);
                     } else {
                         throw new ParsingException(st.lineno(),
                                                    "Expecting an integer");

@@ -1924,7 +1924,7 @@ public final class Locale implements Cloneable, Serializable {
         // the qualifier; if there are no qualifiers, the third element is
         // unused by the format pattern.
         Object[] displayNames = {
-            new Integer(qualifierNames.length != 0 ? 2 : 1),
+            qualifierNames.length != 0 ? 2 : 1,
             mainName,
             // We could also just call formatList() and have it handle the empty
             // list case, but this is more efficient, and we want it to be
@@ -2078,7 +2078,7 @@ public final class Locale implements Cloneable, Serializable {
         // Rebuild the argument list with the list length as the first element
         Object[] args = new Object[stringList.length + 1];
         System.arraycopy(stringList, 0, args, 1, stringList.length);
-        args[0] = new Integer(stringList.length);
+        args[0] = stringList.length;
 
         // Format it using the pattern in the resource
         MessageFormat format = new MessageFormat(listPattern);

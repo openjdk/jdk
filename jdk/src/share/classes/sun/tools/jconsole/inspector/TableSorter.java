@@ -217,17 +217,17 @@ public class TableSorter extends DefaultTableModel implements MouseListener {
             }
     }
 
-    private Vector<?> getRow(int row) {
-        return (Vector) dataVector.elementAt(row);
+    private Vector<Object> getRow(int row) {
+        return dataVector.elementAt(row);
     }
 
     @SuppressWarnings("unchecked")
-    private void setRow(Vector<?> data, int row) {
+    private void setRow(Vector<Object> data, int row) {
         dataVector.setElementAt(data,row);
     }
 
     private void swap(int i, int j, int column) {
-        Vector<?> data = getRow(i);
+        Vector<Object> data = getRow(i);
         setRow(getRow(j),i);
         setRow(data,j);
 
