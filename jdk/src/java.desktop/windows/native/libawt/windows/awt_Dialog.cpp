@@ -240,6 +240,7 @@ LRESULT CALLBACK AwtDialog::MouseHookProc(int nCode,
             (wParam == WM_RBUTTONDOWN) ||
             (wParam == WM_MOUSEACTIVATE) ||
             (wParam == WM_MOUSEWHEEL) ||
+            (wParam == WM_MOUSEHWHEEL) ||
             (wParam == WM_NCLBUTTONDOWN) ||
             (wParam == WM_NCMBUTTONDOWN) ||
             (wParam == WM_NCRBUTTONDOWN))

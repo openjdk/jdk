@@ -5513,7 +5513,7 @@ bool LibraryCallKit::inline_montgomeryMultiply() {
   }
 
   assert(UseMontgomeryMultiplyIntrinsic, "not implemented on this platform");
-  const char* stubName = "montgomery_square";
+  const char* stubName = "montgomery_multiply";
 
   assert(callee()->signature()->size() == 7, "montgomeryMultiply has 7 parameters");
 

@@ -184,6 +184,14 @@ class VirtualSpace VALUE_OBJ_CLASS_SPEC {
   char* low_boundary()  const { return _low_boundary; }
   char* high_boundary() const { return _high_boundary; }
 
+#if INCLUDE_AOT
+  // Set boundaries for code section in AOT library.
+  void set_low_boundary(char *p)  { _low_boundary = p; }
+  void set_high_boundary(char *p) { _high_boundary = p; }
+  void set_low(char *p)           { _low = p; }
+  void set_high(char *p)          { _high = p; }
+#endif
+
   bool special() const { return _special; }
 
  public:

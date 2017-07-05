@@ -42,6 +42,12 @@ module java.security.jgss {
         jdk.security.jgss;
     exports sun.security.krb5.internal.ktab to
         jdk.security.auth;
+
+    // Opens for reflective instantiation of sun.net.www.protocol.http.spnego.NegotiatorImpl
+    // to sun.net.www.protocol.http.HttpURLConnection
+    opens sun.net.www.protocol.http.spnego to
+        java.base;
+
     provides java.security.Provider with sun.security.jgss.SunProvider;
     provides sun.security.ssl.ClientKeyExchangeService
         with sun.security.krb5.internal.ssl.Krb5KeyExchangeService;

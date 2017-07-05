@@ -395,9 +395,13 @@ get_LNC_array_for_space(Space* sp,
   // event lock and do the read again in case some other thread had already
   // succeeded and done the resize.
   int cur_collection = GenCollectedHeap::heap()->total_collections();
-  if (_last_LNC_resizing_collection[i] != cur_collection) {
+  // Updated _last_LNC_resizing_collection[i] must not be visible before
+  // _lowest_non_clean and friends are visible. Therefore use acquire/release
+  // to guarantee this on non TSO architecures.
+  if (OrderAccess::load_acquire(&_last_LNC_resizing_collection[i]) != cur_collection) {
     MutexLocker x(ParGCRareEvent_lock);
-    if (_last_LNC_resizing_collection[i] != cur_collection) {
+    // This load_acquire is here for clarity only. The MutexLocker already fences.
+    if (OrderAccess::load_acquire(&_last_LNC_resizing_collection[i]) != cur_collection) {
       if (_lowest_non_clean[i] == NULL ||
           n_chunks != _lowest_non_clean_chunk_size[i]) {
 
@@ -417,7 +421,8 @@ get_LNC_array_for_space(Space* sp,
             _lowest_non_clean[i][j] = NULL;
         }
       }
-      _last_LNC_resizing_collection[i] = cur_collection;
+      // Make sure this gets visible only after _lowest_non_clean* was initialized
+      OrderAccess::release_store(&_last_LNC_resizing_collection[i], cur_collection);
     }
   }
   // In any case, now do the initialization.

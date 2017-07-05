@@ -1,15 +1,16 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  */
 
 /*
- * Copyright 2005 The Apache Software Foundation.
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -34,7 +35,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 
 /**
  * A DTD grammar. This class implements the XNI handler interfaces
@@ -95,8 +95,8 @@ public class DTDGrammar {
     protected boolean fReadingExternalDTD = false;
 
     /** Symbol table. */
-    private SymbolTable fSymbolTable;
-    private ArrayList notationDecls = new ArrayList();
+    private final SymbolTable fSymbolTable;
+    private final ArrayList<XMLNotationDecl> notationDecls = new ArrayList<>();
 
     // element declarations
 
@@ -334,18 +334,19 @@ public class DTDGrammar {
         fSimpleType.clear();
         if ( defaultType != null ) {
             if ( defaultType.equals( "#FIXED") ) {
-                fSimpleType.defaultType = fSimpleType.DEFAULT_TYPE_FIXED;
+                fSimpleType.defaultType = XMLSimpleType.DEFAULT_TYPE_FIXED;
             } else if ( defaultType.equals( "#IMPLIED") ) {
-                fSimpleType.defaultType = fSimpleType.DEFAULT_TYPE_IMPLIED;
+                fSimpleType.defaultType = XMLSimpleType.DEFAULT_TYPE_IMPLIED;
             } else if ( defaultType.equals( "#REQUIRED") ) {
-                fSimpleType.defaultType = fSimpleType.DEFAULT_TYPE_REQUIRED;
+                fSimpleType.defaultType = XMLSimpleType.DEFAULT_TYPE_REQUIRED;
             }
         }
         if ( DEBUG ) {
             System.out.println("defaultvalue = " + defaultValue.toString() );
         }
-        fSimpleType.defaultValue      = defaultValue!=null ?  defaultValue.toString() : null;
-        fSimpleType.nonNormalizedDefaultValue      = nonNormalizedDefaultValue!=null ?  nonNormalizedDefaultValue.toString() : null;
+        fSimpleType.defaultValue = defaultValue!=null ? defaultValue.toString() : null;
+        fSimpleType.nonNormalizedDefaultValue = nonNormalizedDefaultValue!=null ?
+                nonNormalizedDefaultValue.toString() : null;
         fSimpleType.enumeration       = enumeration;
 
         if (type.equals("CDATA")) {
@@ -731,7 +732,7 @@ public class DTDGrammar {
         notationDecls.add(notationDecl);
     }
 
-    public List getNotationDecls(){
+    public List<XMLNotationDecl> getNotationDecls() {
         return notationDecls;
     }
 

@@ -28,7 +28,7 @@
  * @author Andreas Sterbenz
  * @library ..
  * @key randomness
- * @modules jdk.crypto.pkcs11
+ * @modules jdk.crypto.token
  * @run main/othervm ReinitDigest
  * @run main/othervm ReinitDigest sm
  */

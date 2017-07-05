@@ -2537,6 +2537,24 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   declare_constant(InstanceKlass::fully_initialized)                      \
   declare_constant(InstanceKlass::initialization_error)                   \
                                                                           \
+  /***************************************/                               \
+  /* InstanceKlass enums for _misc_flags */                               \
+  /***************************************/                               \
+                                                                          \
+  declare_constant(InstanceKlass::_misc_rewritten)                        \
+  declare_constant(InstanceKlass::_misc_has_nonstatic_fields)             \
+  declare_constant(InstanceKlass::_misc_should_verify_class)              \
+  declare_constant(InstanceKlass::_misc_is_anonymous)                     \
+  declare_constant(InstanceKlass::_misc_is_contended)                     \
+  declare_constant(InstanceKlass::_misc_has_nonstatic_concrete_methods)   \
+  declare_constant(InstanceKlass::_misc_declares_nonstatic_concrete_methods)\
+  declare_constant(InstanceKlass::_misc_has_been_redefined)               \
+  declare_constant(InstanceKlass::_misc_has_passed_fingerprint_check)     \
+  declare_constant(InstanceKlass::_misc_is_scratch_class)                 \
+  declare_constant(InstanceKlass::_misc_is_shared_boot_class)             \
+  declare_constant(InstanceKlass::_misc_is_shared_platform_class)         \
+  declare_constant(InstanceKlass::_misc_is_shared_app_class)              \
+                                                                          \
   /*********************************/                                     \
   /* Symbol* - symbol max length */                                       \
   /*********************************/                                     \
@@ -2685,6 +2703,7 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   declare_constant(CompLevel_limited_profile)                             \
   declare_constant(CompLevel_full_profile)                                \
   declare_constant(CompLevel_full_optimization)                           \
+  declare_constant(CompLevel_aot)                                         \
                                                                           \
   /***************/                                                       \
   /* OopMapValue */                                                       \

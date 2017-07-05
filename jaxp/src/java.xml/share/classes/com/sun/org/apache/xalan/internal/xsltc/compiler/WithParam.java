@@ -128,8 +128,7 @@ final class WithParam extends Instruction {
                 parser.reportError(Constants.ERROR, err);
             }
             setName(parser.getQNameIgnoreDefaultNs(name));
-        }
-        else {
+        } else {
             reportError(this, parser, ErrorMsg.REQUIRED_ATTR_ERR, "name");
         }
 
@@ -151,8 +150,7 @@ final class WithParam extends Instruction {
             if (tselect instanceof ReferenceType == false) {
                 _select = new CastExpr(_select, Type.Reference);
             }
-        }
-        else {
+        } else {
             typeCheckContents(stable);
         }
         return Type.Void;
@@ -163,23 +161,24 @@ final class WithParam extends Instruction {
      * a 'select' attribute, or in the with-param element's body
      */
     public void translateValue(ClassGenerator classGen,
-                               MethodGenerator methodGen) {
+                               MethodGenerator methodGen)
+    {
         // Compile expression is 'select' attribute if present
         if (_select != null) {
             _select.translate(classGen, methodGen);
             _select.startIterator(classGen, methodGen);
-        }
         // If not, compile result tree from parameter body if present.
         // Store result tree into local variable for releasing it later
-        else if (hasContents()) {
+        } else if (hasContents()) {
             final InstructionList il = methodGen.getInstructionList();
             compileResultTree(classGen, methodGen);
-            _domAdapter = methodGen.addLocalVariable2("@" + _escapedName, Type.ResultTree.toJCType(), il.getEnd());
+            _domAdapter = methodGen.addLocalVariable2("@" + _escapedName,
+                                                      Type.ResultTree.toJCType(),
+                                                      il.getEnd());
             il.append(DUP);
             il.append(new ASTORE(_domAdapter.getIndex()));
-        }
         // If neither are present then store empty string in parameter slot
-        else {
+        } else {
             final ConstantPoolGen cpg = classGen.getConstantPool();
             final InstructionList il = methodGen.getInstructionList();
             il.append(new PUSH(cpg, Constants.EMPTYSTRING));
@@ -223,22 +222,31 @@ final class WithParam extends Instruction {
     /**
      * Release the compiled result tree.
      */
-    public void releaseResultTree(ClassGenerator classGen, MethodGenerator methodGen) {
+    public void releaseResultTree(ClassGenerator classGen,
+                                  MethodGenerator methodGen)
+    {
         if (_domAdapter != null) {
             final ConstantPoolGen cpg = classGen.getConstantPool();
             final InstructionList il = methodGen.getInstructionList();
-            if (classGen.getStylesheet().callsNodeset() && classGen.getDOMClass().equals(MULTI_DOM_CLASS)) {
-                final int removeDA = cpg.addMethodref(MULTI_DOM_CLASS, "removeDOMAdapter", "(" + DOM_ADAPTER_SIG + ")V");
+            if (classGen.getStylesheet().callsNodeset() &&
+                classGen.getDOMClass().equals(MULTI_DOM_CLASS))
+            {
+                final int removeDA =
+                    cpg.addMethodref(MULTI_DOM_CLASS, "removeDOMAdapter",
+                                     "(" + DOM_ADAPTER_SIG + ")V");
                 il.append(methodGen.loadDOM());
                 il.append(new CHECKCAST(cpg.addClass(MULTI_DOM_CLASS)));
                 il.append(new ALOAD(_domAdapter.getIndex()));
                 il.append(new CHECKCAST(cpg.addClass(DOM_ADAPTER_CLASS)));
                 il.append(new INVOKEVIRTUAL(removeDA));
             }
-            final int release = cpg.addInterfaceMethodref(DOM_IMPL_CLASS, "release", "()V");
+            final int release =
+                cpg.addInterfaceMethodref(DOM_IMPL_CLASS, "release", "()V");
             il.append(new ALOAD(_domAdapter.getIndex()));
             il.append(new INVOKEINTERFACE(release, 1));
+            _domAdapter.setEnd(il.getEnd());
+            methodGen.removeLocalVariable(_domAdapter);
             _domAdapter = null;
-         }
-     }
+        }
+    }
 }

@@ -191,17 +191,6 @@ public class JLinkTest {
         }
 
         {
-            // License files
-            String copied = "LICENSE";
-            String[] arr = copied.split(",");
-            String[] copyFiles = new String[2];
-            copyFiles[0] = "--copy-files";
-            copyFiles[1] = copied;
-            Path imageDir = helper.generateDefaultImage(copyFiles, "composite2").assertSuccess();
-            helper.checkImage(imageDir, "composite2", null, null, arr);
-        }
-
-        {
             // List plugins
             StringWriter writer = new StringWriter();
             PrintWriter pw = new PrintWriter(writer);

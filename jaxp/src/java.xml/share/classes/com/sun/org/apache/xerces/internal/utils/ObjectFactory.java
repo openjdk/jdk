@@ -20,6 +20,8 @@
 
 package com.sun.org.apache.xerces.internal.utils;
 
+import java.util.function.Supplier;
+
 /**
  * This class is duplicated for each JAXP subpackage so keep it in sync.
  * It is package private and therefore is not exposed as part of the JAXP
@@ -61,9 +63,9 @@ public final class ObjectFactory {
     } // isDebugEnabled()
 
     /** Prints a message to standard error if debugging is enabled. */
-    private static void debugPrintln(String msg) {
+    private static void debugPrintln(Supplier<String> msgGen) {
         if (DEBUG) {
-            System.err.println("XERCES: " + msg);
+            System.err.println("XERCES: " + msgGen.get());
         }
     } // debugPrintln(String)
 
@@ -155,8 +157,8 @@ public final class ObjectFactory {
         try{
             Class providerClass = findProviderClass(className, cl, doFallback);
             Object instance = providerClass.newInstance();
-            if (DEBUG) debugPrintln("created new instance of " + providerClass +
-                   " using ClassLoader: " + cl);
+            debugPrintln(()->"created new instance of " + providerClass +
+                             " using ClassLoader: " + cl);
             return instance;
         } catch (ClassNotFoundException x) {
             throw new ConfigurationError(

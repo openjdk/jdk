@@ -24,7 +24,7 @@
 /**
  * @test
  * @bug 8136421
- * @requires (vm.simpleArch == "x64" | vm.simpleArch == "sparcv9" | vm.simpleArch == "aarch64") & (vm.opt.TieredStopAtLevel == null | vm.opt.TieredStopAtLevel == 3)
+ * @requires vm.jvmci & (vm.opt.TieredStopAtLevel == null | vm.opt.TieredStopAtLevel == 3)
  * @library /test/lib /
  * @library ../common/patches
  * @modules java.base/jdk.internal.misc

@@ -35,8 +35,6 @@ import com.sun.org.apache.xerces.internal.util.XMLResourceIdentifierImpl;
 import com.sun.org.apache.xerces.internal.utils.SecuritySupport;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLComponentManager;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLConfigurationException;
-import java.util.Collections;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -142,16 +140,8 @@ public class XMLEntityStorage {
         return fEntities.get(name);
     } // getEntity(String)
 
-    public boolean hasEntities() {
-            return (fEntities!=null);
-    } // getEntity(String)
-
-    public int getEntitySize() {
-        return fEntities.size();
-    } // getEntity(String)
-
-    public Enumeration getEntityKeys() {
-        return Collections.enumeration(fEntities.keySet());
+    public Map<String, Entity> getEntities() {
+        return fEntities;
     }
     /**
      * Adds an internal entity declaration.
@@ -310,9 +300,9 @@ public class XMLEntityStorage {
 
         fCurrentEntity = fEntityManager.getCurrentEntity();
         if (!fEntities.containsKey(name)) {
-            Entity entity = new Entity.ExternalEntity(name, new XMLResourceIdentifierImpl(publicId, systemId, baseSystemId, null), notation, fInExternalSubset);
-            //                  (fCurrentEntity == null) ? fasle : fCurrentEntity.isEntityDeclInExternalSubset());
-            //                  fCurrentEntity.isEntityDeclInExternalSubset());
+            Entity entity = new Entity.ExternalEntity(name,
+                    new XMLResourceIdentifierImpl(publicId, systemId, baseSystemId, null),
+                    notation, fInExternalSubset);
             fEntities.put(name, entity);
         }
         else{
@@ -438,7 +428,7 @@ public class XMLEntityStorage {
         userDir = userDir.replace(separator, '/');
 
         int len = userDir.length(), ch;
-        StringBuffer buffer = new StringBuffer(len*3);
+        StringBuilder buffer = new StringBuilder(len*3);
         // change C:/blah to /C:/blah
         if (len >= 2 && userDir.charAt(1) == ':') {
             ch = Character.toUpperCase(userDir.charAt(0));

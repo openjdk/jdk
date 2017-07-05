@@ -340,9 +340,6 @@ endif
 
 LIBJLI_CFLAGS += $(addprefix -I, $(LIBJLI_SRC_DIRS))
 
-# Append defines depending on target platform
-LIBJLI_CFLAGS += $(OPENJDK_TARGET_CPU_JLI_CFLAGS)
-
 ifneq ($(USE_EXTERNAL_LIBZ), true)
   LIBJLI_CFLAGS += $(ZLIB_CPPFLAGS)
   LIBJLI_EXTRA_FILES += \

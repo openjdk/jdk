@@ -26,9 +26,12 @@
 package com.sun.xml.internal.stream.writers;
 
 import java.util.Iterator;
+import javax.xml.namespace.NamespaceContext;
 import javax.xml.namespace.QName;
+import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLEventWriter;
 import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamWriter;
 import javax.xml.stream.events.Attribute;
 import javax.xml.stream.events.Characters;
 import javax.xml.stream.events.Comment;
@@ -39,24 +42,24 @@ import javax.xml.stream.events.ProcessingInstruction;
 import javax.xml.stream.events.StartDocument;
 import javax.xml.stream.events.StartElement;
 import javax.xml.stream.events.XMLEvent;
-import javax.xml.stream.XMLStreamWriter;
 
 /**
  *
- * @author  Neeraj Bajaj, Sun Microsystems.
+ * @author Neeraj Bajaj, Sun Microsystems.
  *
  */
-public class XMLEventWriterImpl implements XMLEventWriter{
+public class XMLEventWriterImpl implements XMLEventWriter {
 
     //delegate everything to XMLStreamWriter..
-    private final XMLStreamWriterBase fStreamWriter ;
+    private final XMLStreamWriterBase fStreamWriter;
     private static final boolean DEBUG = false;
+
     /**
      *
      * @param streamWriter
      */
-    public XMLEventWriterImpl(XMLStreamWriter streamWriter){
-        fStreamWriter = (XMLStreamWriterBase)streamWriter;
+    public XMLEventWriterImpl(XMLStreamWriter streamWriter) {
+        fStreamWriter = (XMLStreamWriterBase) streamWriter;
     }
 
     /**
@@ -64,9 +67,11 @@ public class XMLEventWriterImpl implements XMLEventWriter{
      * @param xMLEventReader
      * @throws XMLStreamException
      */
-    public void add(javax.xml.stream.XMLEventReader xMLEventReader) throws javax.xml.stream.XMLStreamException {
-        if(xMLEventReader == null) throw new XMLStreamException("Event reader shouldn't be null");
-        while(xMLEventReader.hasNext()){
+    public void add(XMLEventReader xMLEventReader) throws XMLStreamException {
+        if (xMLEventReader == null) {
+            throw new XMLStreamException("Event reader shouldn't be null");
+        }
+        while (xMLEventReader.hasNext()) {
             add(xMLEventReader.nextEvent());
         }
     }
@@ -76,101 +81,127 @@ public class XMLEventWriterImpl implements XMLEventWriter{
      * @param xMLEvent
      * @throws XMLStreamException
      */
-    public void add(javax.xml.stream.events.XMLEvent xMLEvent) throws javax.xml.stream.XMLStreamException {
+    public void add(XMLEvent xMLEvent) throws XMLStreamException {
         int type = xMLEvent.getEventType();
-        switch(type){
-            case XMLEvent.DTD:{
-                DTD dtd = (DTD)xMLEvent ;
-                if (DEBUG)System.out.println("Adding DTD = " + dtd.toString());
+        switch (type) {
+            case XMLEvent.DTD: {
+                DTD dtd = (DTD) xMLEvent;
+                if (DEBUG) {
+                    System.out.println("Adding DTD = " + dtd.toString());
+                }
                 fStreamWriter.writeDTD(dtd.getDocumentTypeDeclaration());
                 break;
             }
-            case XMLEvent.START_DOCUMENT :{
-                StartDocument startDocument = (StartDocument)xMLEvent ;
-                if (DEBUG)System.out.println("Adding StartDocument = " + startDocument.toString());
+            case XMLEvent.START_DOCUMENT: {
+                StartDocument startDocument = (StartDocument) xMLEvent;
+                if (DEBUG) {
+                    System.out.println("Adding StartDocument = " + startDocument.toString());
+                }
                 try {
-                   fStreamWriter.writeStartDocument(startDocument.getCharacterEncodingScheme(), startDocument.getVersion(),
-                           startDocument.isStandalone(), startDocument.standaloneSet());
-                }catch(XMLStreamException e) {
+                    fStreamWriter.writeStartDocument(startDocument.getCharacterEncodingScheme(),
+                            startDocument.getVersion(),
+                            startDocument.isStandalone(), startDocument.standaloneSet());
+                } catch (XMLStreamException e) {
                     fStreamWriter.writeStartDocument(startDocument.getVersion());
                 }
                 break;
             }
-            case XMLEvent.START_ELEMENT :{
-                StartElement startElement = xMLEvent.asStartElement() ;
-                if (DEBUG)System.out.println("Adding startelement = " + startElement.toString());
+            case XMLEvent.START_ELEMENT: {
+                StartElement startElement = xMLEvent.asStartElement();
+                if (DEBUG) {
+                    System.out.println("Adding startelement = " + startElement.toString());
+                }
                 QName qname = startElement.getName();
-                fStreamWriter.writeStartElement(qname.getPrefix(), qname.getLocalPart(), qname.getNamespaceURI());
+                fStreamWriter.writeStartElement(qname.getPrefix(), qname.getLocalPart(),
+                        qname.getNamespaceURI());
 
-                //getNamespaces() Returns an Iterator of namespaces declared on this element. This Iterator does not contain
-                //previously declared namespaces unless they appear on the current START_ELEMENT. Therefore
-                //this list may contain redeclared namespaces and duplicate namespace declarations. Use the
-                //getNamespaceContext() method to get the current context of namespace declarations.
-
-                //so we should be using getNamespaces() to write namespace declarations for this START_ELEMENT
-                Iterator iterator = startElement.getNamespaces();
-                while(iterator.hasNext()){
-                    Namespace namespace = (Namespace)iterator.next();
+                /*
+                  getNamespaces() Returns an Iterator of namespaces declared on this element.
+                This Iterator does not contain previously declared namespaces unless they
+                appear on the current START_ELEMENT. Therefore this list may contain redeclared
+                namespaces and duplicate namespace declarations. Use the getNamespaceContext()
+                method to get the current context of namespace declarations. We should be
+                using getNamespaces() to write namespace declarations for this START_ELEMENT
+                */
+                Iterator<? extends Namespace> iterator = startElement.getNamespaces();
+                while (iterator.hasNext()) {
+                    Namespace namespace = iterator.next();
                     fStreamWriter.writeNamespace(namespace.getPrefix(), namespace.getNamespaceURI());
                 }
                 //REVISIT: What about writing attributes ?
-                Iterator attributes = startElement.getAttributes();
-                while(attributes.hasNext()){
-                    Attribute attribute = (Attribute)attributes.next();
+                Iterator<? extends Attribute> attributes = startElement.getAttributes();
+                while (attributes.hasNext()) {
+                    Attribute attribute = attributes.next();
                     QName aqname = attribute.getName();
-                    fStreamWriter.writeAttribute(aqname.getPrefix(), aqname.getNamespaceURI(), aqname.getLocalPart(),attribute.getValue());
+                    fStreamWriter.writeAttribute(aqname.getPrefix(), aqname.getNamespaceURI(),
+                            aqname.getLocalPart(), attribute.getValue());
                 }
                 break;
             }
-            case XMLEvent.NAMESPACE:{
-                Namespace namespace = (Namespace)xMLEvent;
-                if (DEBUG)System.out.println("Adding namespace = " + namespace.toString());
+            case XMLEvent.NAMESPACE: {
+                Namespace namespace = (Namespace) xMLEvent;
+                if (DEBUG) {
+                    System.out.println("Adding namespace = " + namespace.toString());
+                }
                 fStreamWriter.writeNamespace(namespace.getPrefix(), namespace.getNamespaceURI());
-                break ;
+                break;
             }
             case XMLEvent.COMMENT: {
-                Comment comment = (Comment)xMLEvent ;
-                if (DEBUG)System.out.println("Adding comment = " + comment.toString());
+                Comment comment = (Comment) xMLEvent;
+                if (DEBUG) {
+                    System.out.println("Adding comment = " + comment.toString());
+                }
                 fStreamWriter.writeComment(comment.getText());
                 break;
             }
-            case XMLEvent.PROCESSING_INSTRUCTION:{
-                ProcessingInstruction processingInstruction = (ProcessingInstruction)xMLEvent ;
-                if (DEBUG)System.out.println("Adding processing instruction = " + processingInstruction.toString());
-                fStreamWriter.writeProcessingInstruction(processingInstruction.getTarget(), processingInstruction.getData());
+            case XMLEvent.PROCESSING_INSTRUCTION: {
+                ProcessingInstruction processingInstruction = (ProcessingInstruction) xMLEvent;
+                if (DEBUG) {
+                    System.out.println("Adding processing instruction = " + processingInstruction.toString());
+                }
+                fStreamWriter.writeProcessingInstruction(processingInstruction.getTarget(),
+                        processingInstruction.getData());
                 break;
             }
-            case XMLEvent.CHARACTERS:{
+            case XMLEvent.CHARACTERS: {
                 Characters characters = xMLEvent.asCharacters();
-                if (DEBUG)System.out.println("Adding characters = " + characters.toString());
-                //check if the CHARACTERS are CDATA
-                if(characters.isCData()){
-                    fStreamWriter.writeCData(characters.getData());
+                if (DEBUG) {
+                    System.out.println("Adding characters = " + characters.toString());
                 }
-                else{
+                //check if the CHARACTERS are CDATA
+                if (characters.isCData()) {
+                    fStreamWriter.writeCData(characters.getData());
+                } else {
                     fStreamWriter.writeCharacters(characters.getData());
                 }
                 break;
             }
-            case XMLEvent.ENTITY_REFERENCE:{
-                EntityReference entityReference = (EntityReference)xMLEvent ;
-                if (DEBUG)System.out.println("Adding Entity Reference = "+ entityReference.toString());
+            case XMLEvent.ENTITY_REFERENCE: {
+                EntityReference entityReference = (EntityReference) xMLEvent;
+                if (DEBUG) {
+                    System.out.println("Adding Entity Reference = " + entityReference.toString());
+                }
                 fStreamWriter.writeEntityRef(entityReference.getName());
                 break;
             }
-            case XMLEvent.ATTRIBUTE:{
-                Attribute attribute = (Attribute)xMLEvent;
-                if (DEBUG)System.out.println("Adding Attribute = " + attribute.toString());
+            case XMLEvent.ATTRIBUTE: {
+                Attribute attribute = (Attribute) xMLEvent;
+                if (DEBUG) {
+                    System.out.println("Adding Attribute = " + attribute.toString());
+                }
                 QName qname = attribute.getName();
-                fStreamWriter.writeAttribute(qname.getPrefix(), qname.getNamespaceURI(), qname.getLocalPart(),attribute.getValue());
+                fStreamWriter.writeAttribute(qname.getPrefix(), qname.getNamespaceURI(),
+                        qname.getLocalPart(), attribute.getValue());
                 break;
             }
-            case XMLEvent.CDATA:{
+            case XMLEvent.CDATA: {
                 //there is no separate CDATA datatype but CDATA event can be reported
                 //by using vendor specific CDATA property.
-                Characters characters = (Characters)xMLEvent;
-                if (DEBUG)System.out.println("Adding characters = " + characters.toString());
-                if(characters.isCData()){
+                Characters characters = (Characters) xMLEvent;
+                if (DEBUG) {
+                    System.out.println("Adding characters = " + characters.toString());
+                }
+                if (characters.isCData()) {
                     fStreamWriter.writeCData(characters.getData());
                 }
                 break;
@@ -179,15 +210,11 @@ public class XMLEventWriterImpl implements XMLEventWriter{
             //case XMLEvent.NOTATION_DECLARATION:{
             //}
 
-            case XMLEvent.END_ELEMENT:{
-                //we dont need to typecast it.. just call writeEndElement() and fStreamWriter will take care of it.
-                //EndElement endElement = (EndElement)xMLEvent;
+            case XMLEvent.END_ELEMENT: {
                 fStreamWriter.writeEndElement();
                 break;
             }
-            case XMLEvent.END_DOCUMENT:{
-                //we dont need to typecast just call writeEndDocument() and fStreamWriter will take care rest.
-                //EndDocument endDocument = (EndDocument)xMLEvent;
+            case XMLEvent.END_DOCUMENT: {
                 fStreamWriter.writeEndDocument();
                 break;
             }
@@ -200,16 +227,16 @@ public class XMLEventWriterImpl implements XMLEventWriter{
      *
      * @throws XMLStreamException
      */
-    public void close() throws javax.xml.stream.XMLStreamException {
+    public void close() throws XMLStreamException {
         fStreamWriter.close();
     }
 
     /**
      *
-     * @throws XMLStreamException will inturn call flush on the stream to which data is being
-     * written.
+     * @throws XMLStreamException will inturn call flush on the stream to which
+     * data is being written.
      */
-    public void flush() throws javax.xml.stream.XMLStreamException {
+    public void flush() throws XMLStreamException {
         fStreamWriter.flush();
     }
 
@@ -217,7 +244,7 @@ public class XMLEventWriterImpl implements XMLEventWriter{
      *
      * @return
      */
-    public javax.xml.namespace.NamespaceContext getNamespaceContext() {
+    public NamespaceContext getNamespaceContext() {
         return fStreamWriter.getNamespaceContext();
     }
 
@@ -227,7 +254,7 @@ public class XMLEventWriterImpl implements XMLEventWriter{
      * @throws XMLStreamException
      * @return prefix associated with the URI.
      */
-    public String getPrefix(String namespaceURI) throws javax.xml.stream.XMLStreamException {
+    public String getPrefix(String namespaceURI) throws XMLStreamException {
         return fStreamWriter.getPrefix(namespaceURI);
     }
 
@@ -236,7 +263,7 @@ public class XMLEventWriterImpl implements XMLEventWriter{
      * @param uri Namespace URI
      * @throws XMLStreamException
      */
-    public void setDefaultNamespace(String uri) throws javax.xml.stream.XMLStreamException {
+    public void setDefaultNamespace(String uri) throws XMLStreamException {
         fStreamWriter.setDefaultNamespace(uri);
     }
 
@@ -245,7 +272,8 @@ public class XMLEventWriterImpl implements XMLEventWriter{
      * @param namespaceContext Namespace Context
      * @throws XMLStreamException
      */
-    public void setNamespaceContext(javax.xml.namespace.NamespaceContext namespaceContext) throws javax.xml.stream.XMLStreamException {
+    public void setNamespaceContext(NamespaceContext namespaceContext)
+            throws XMLStreamException {
         fStreamWriter.setNamespaceContext(namespaceContext);
     }
 
@@ -255,7 +283,7 @@ public class XMLEventWriterImpl implements XMLEventWriter{
      * @param uri Namespace URI
      * @throws XMLStreamException
      */
-    public void setPrefix(String prefix, String uri) throws javax.xml.stream.XMLStreamException {
+    public void setPrefix(String prefix, String uri) throws XMLStreamException {
         fStreamWriter.setPrefix(prefix, uri);
     }
 
