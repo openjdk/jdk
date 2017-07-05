@@ -36,6 +36,10 @@ then
   exit 1
 fi
 
+if [ "${COMPILEJAVA}" = "" ] ; then
+  COMPILEJAVA="${TESTJAVA}"
+fi
+
 
 OS=`uname -s`
 # Need to determine the classpath separator and filepath separator based on the
@@ -51,7 +55,7 @@ Windows* | CYGWIN* )
 esac
 
 JAVA=${TESTJAVA}/bin/java
-JAVAC=${TESTJAVA}/bin/javac
+JAVAC=${COMPILEJAVA}/bin/javac
 MKDIR=mkdir
 RDEL="rm -r"
 
@@ -78,11 +82,14 @@ mkdir ${TESTCLASSES}/nclasses
 
 # Build sources
 set -e
-${JAVAC} -d ${TESTCLASSES}/share ${TESTSRC}/extension/ExtendedObjectInputStream.java
+${JAVAC} ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -d ${TESTCLASSES}/share \
+    ${TESTSRC}/extension/ExtendedObjectInputStream.java
 CLASSPATH=${TESTCLASSES}/share; export CLASSPATH;
-${JAVAC} -d ${TESTCLASSES}/oclasses ${TESTSRC}/test/SerialDriver.java
+${JAVAC} ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -d ${TESTCLASSES}/oclasses \
+    ${TESTSRC}/test/SerialDriver.java
 CLASSPATH=${TESTCLASSES}/share; export CLASSPATH;
-${JAVAC} -d ${TESTCLASSES}/nclasses ${TESTSRC}/install/SerialDriver.java
+${JAVAC} ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -d ${TESTCLASSES}/nclasses \
+    ${TESTSRC}/install/SerialDriver.java
 
 # Run Case 1. Map test.SerialDriver within stream to install.SerialDriver.
 CLASSPATH="${TESTCLASSES}/oclasses${PS}${TESTCLASSES}/share"; export CLASSPATH;

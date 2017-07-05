@@ -47,6 +47,10 @@ if [ "${TESTJAVA}" = "" ] ; then
    exit 1
 fi
 
+if [ "${COMPILEJAVA}" = "" ]; then
+   COMPILEJAVA="${TESTJAVA}"
+fi
+
 # set platform-dependent variables
 OS=`uname -s`
 case "$OS" in
@@ -88,12 +92,12 @@ else
 fi
 
 # compile and package the test program
-${TESTJAVA}${FILESEP}bin${FILESEP}javac \
+${COMPILEJAVA}${FILESEP}bin${FILESEP}javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} \
     -d ${TESTCLASSES} \
     ${TESTSRC}${FILESEP}CreateSerialized.java \
     ${TESTSRC}${FILESEP}Deadlock2.java
 
-${TESTJAVA}${FILESEP}bin${FILESEP}jar \
+${COMPILEJAVA}${FILESEP}bin${FILESEP}jar ${TESTTOOLVMOPTS} \
     -cvf testlib${FILESEP}Deadlock2.jar \
     Deadlock2*.class
 

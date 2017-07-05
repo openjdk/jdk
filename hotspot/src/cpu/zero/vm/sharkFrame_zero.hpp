@@ -68,6 +68,10 @@ class SharkFrame : public ZeroFrame {
     return (address) value_of_word(pc_off);
   }
 
+  void set_pc(address pc) const {
+    *((address*) addr_of_word(pc_off)) = pc;
+  }
+
   intptr_t* unextended_sp() const {
     return (intptr_t *) value_of_word(unextended_sp_off);
   }

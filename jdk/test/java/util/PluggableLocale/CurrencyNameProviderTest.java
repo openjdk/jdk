@@ -58,7 +58,7 @@ public class CurrencyNameProviderTest extends ProviderTest {
 
         for (Locale target: availloc) {
             // pure JRE implementation
-            OpenListResourceBundle rb = (OpenListResourceBundle)LocaleProviderAdapter.forJRE().getLocaleData().getCurrencyNames(target);
+            OpenListResourceBundle rb = ((ResourceBundleBasedAdapter)LocaleProviderAdapter.forJRE()).getLocaleData().getCurrencyNames(target);
             boolean jreSupportsTarget = jreimplloc.contains(target);
 
             for (Locale test: testloc) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,7 @@ ConstantPool::ConstantPool(Array<u1>* tags) {
   set_pool_holder(NULL);
   set_flags(0);
   // only set to non-zero if constant pool is merged by RedefineClasses
-  set_orig_length(0);
+  set_version(0);
   set_lock(new Monitor(Monitor::nonleaf + 2, "A constant pool lock"));
   // all fields are initialized; needed for GC
   set_on_stack(false);

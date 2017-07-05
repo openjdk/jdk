@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -388,23 +388,20 @@ public interface PreparedStatement extends Statement {
 
    /**
     * Sets the value of the designated parameter with the given object.
-    * This method is like the method <code>setObject</code>
-    * above, except that it assumes a scale of zero.
+    *
+    * This method is similar to {@link #setObject(int parameterIndex,
+    * Object x, int targetSqlType, int scaleOrLength)},
+    * except that it assumes a scale of zero.
     *
     * @param parameterIndex the first parameter is 1, the second is 2, ...
     * @param x the object containing the input parameter value
     * @param targetSqlType the SQL type (as defined in java.sql.Types) to be
     *                      sent to the database
     * @exception SQLException if parameterIndex does not correspond to a parameter
-     * marker in the SQL statement; if a database access error occurs or
-    * this method is called on a closed <code>PreparedStatement</code>
-    * @exception SQLFeatureNotSupportedException if <code>targetSqlType</code> is
-    * a <code>ARRAY</code>, <code>BLOB</code>, <code>CLOB</code>,
-    * <code>DATALINK</code>, <code>JAVA_OBJECT</code>, <code>NCHAR</code>,
-    * <code>NCLOB</code>, <code>NVARCHAR</code>, <code>LONGNVARCHAR</code>,
-    *  <code>REF</code>, <code>ROWID</code>, <code>SQLXML</code>
-    * or  <code>STRUCT</code> data type and the JDBC driver does not support
-    * this data type
+    * marker in the SQL statement; if a database access error occurs or this
+    * method is called on a closed PreparedStatement
+    * @exception SQLFeatureNotSupportedException if
+    * the JDBC driver does not support this data type
     * @see Types
     */
     void setObject(int parameterIndex, Object x, int targetSqlType)
@@ -412,8 +409,6 @@ public interface PreparedStatement extends Statement {
 
     /**
      * <p>Sets the value of the designated parameter using the given object.
-     * The second parameter must be of type <code>Object</code>; therefore, the
-     * <code>java.lang</code> equivalent objects should be used for built-in types.
      *
      * <p>The JDBC specification specifies a standard mapping from
      * Java <code>Object</code> types to SQL types.  The given argument
@@ -914,9 +909,7 @@ public interface PreparedStatement extends Statement {
      void setSQLXML(int parameterIndex, SQLXML xmlObject) throws SQLException;
 
     /**
-     * <p>Sets the value of the designated parameter with the given object. The second
-     * argument must be an object type; for integral values, the
-     * <code>java.lang</code> equivalent objects should be used.
+     * <p>Sets the value of the designated parameter with the given object.
      *
      * If the second argument is an <code>InputStream</code> then the stream must contain
      * the number of bytes specified by scaleOrLength.  If the second argument is a
@@ -957,13 +950,8 @@ public interface PreparedStatement extends Statement {
      *            if the Java Object specified by x is an InputStream
      *            or Reader object and the value of the scale parameter is less
      *            than zero
-     * @exception SQLFeatureNotSupportedException if <code>targetSqlType</code> is
-     * a <code>ARRAY</code>, <code>BLOB</code>, <code>CLOB</code>,
-     * <code>DATALINK</code>, <code>JAVA_OBJECT</code>, <code>NCHAR</code>,
-     * <code>NCLOB</code>, <code>NVARCHAR</code>, <code>LONGNVARCHAR</code>,
-     *  <code>REF</code>, <code>ROWID</code>, <code>SQLXML</code>
-     * or  <code>STRUCT</code> data type and the JDBC driver does not support
-     * this data type
+     * @exception SQLFeatureNotSupportedException if
+     * the JDBC driver does not support this data type
      * @see Types
      *
      * @since 1.6
@@ -1220,5 +1208,114 @@ public interface PreparedStatement extends Statement {
      void setNClob(int parameterIndex, Reader reader)
        throws SQLException;
 
+    //------------------------- JDBC 4.2 -----------------------------------
 
+    /**
+     * <p>Sets the value of the designated parameter with the given object.
+     *
+     * If the second argument is an {@code InputStream} then the stream
+     * must contain the number of bytes specified by scaleOrLength.
+     * If the second argument is a {@code Reader} then the reader must
+     * contain the number of characters specified by scaleOrLength. If these
+     * conditions are not true the driver will generate a
+     * {@code SQLException} when the prepared statement is executed.
+     *
+     * <p>The given Java object will be converted to the given targetSqlType
+     * before being sent to the database.
+     *
+     * If the object has a custom mapping (is of a class implementing the
+     * interface {@code SQLData}),
+     * the JDBC driver should call the method {@code SQLData.writeSQL} to
+     * write it to the SQL data stream.
+     * If, on the other hand, the object is of a class implementing
+     * {@code Ref}, {@code Blob}, {@code Clob},  {@code NClob},
+     *  {@code Struct}, {@code java.net.URL},
+     * or {@code Array}, the driver should pass it to the database as a
+     * value of the corresponding SQL type.
+     *
+     * <p>Note that this method may be used to pass database-specific
+     * abstract data types.
+     *<P>
+     * The default implementation will throw {@code SQLFeatureNotSupportedException}
+     *
+     * @param parameterIndex the first parameter is 1, the second is 2, ...
+     * @param x the object containing the input parameter value
+     * @param targetSqlType the SQL type to be sent to the database. The
+     * scale argument may further qualify this type.
+     * @param scaleOrLength for {@code java.sql.JDBCType.DECIMAL}
+     *          or {@code java.sql.JDBCType.NUMERIC types},
+     *          this is the number of digits after the decimal point. For
+     *          Java Object types {@code InputStream} and {@code Reader},
+     *          this is the length
+     *          of the data in the stream or reader.  For all other types,
+     *          this value will be ignored.
+     * @exception SQLException if parameterIndex does not correspond to a
+     * parameter marker in the SQL statement; if a database access error occurs
+     * or this method is called on a closed {@code PreparedStatement}  or
+     *            if the Java Object specified by x is an InputStream
+     *            or Reader object and the value of the scale parameter is less
+     *            than zero
+     * @exception SQLFeatureNotSupportedException if
+     * the JDBC driver does not support this data type
+     * @see JDBCType
+     * @see SQLType
+     * @since 1.8
+     */
+    default void setObject(int parameterIndex, Object x, SQLType targetSqlType,
+             int scaleOrLength) throws SQLException {
+        throw new SQLFeatureNotSupportedException("setObject not implemented");
+    }
+
+    /**
+     * Sets the value of the designated parameter with the given object.
+     *
+     * This method is similar to {@link #setObject(int parameterIndex,
+     * Object x, SQLType targetSqlType, int scaleOrLength)},
+     * except that it assumes a scale of zero.
+     *<P>
+     * The default implementation will throw {@code SQLFeatureNotSupportedException}
+     *
+     * @param parameterIndex the first parameter is 1, the second is 2, ...
+     * @param x the object containing the input parameter value
+     * @param targetSqlType the SQL type to be sent to the database
+     * @exception SQLException if parameterIndex does not correspond to a
+     * parameter marker in the SQL statement; if a database access error occurs
+     * or this method is called on a closed {@code PreparedStatement}
+     * @exception SQLFeatureNotSupportedException if
+     * the JDBC driver does not support this data type
+     * @see JDBCType
+     * @see SQLType
+     * @since 1.8
+     */
+    default void setObject(int parameterIndex, Object x, SQLType targetSqlType)
+      throws SQLException {
+        throw new SQLFeatureNotSupportedException("setObject not implemented");
+    }
+
+    /**
+     * Executes the SQL statement in this <code>PreparedStatement</code> object,
+     * which must be an SQL Data Manipulation Language (DML) statement,
+     * such as <code>INSERT</code>, <code>UPDATE</code> or
+     * <code>DELETE</code>; or an SQL statement that returns nothing,
+     * such as a DDL statement.
+     * <p>
+     * This method should be used when the returned row count may exceed
+     * {@link Integer#MAX_VALUE}.
+     * <p>
+     * The default implementation will throw {@code UnsupportedOperationException}
+     *
+     * @return either (1) the row count for SQL Data Manipulation Language
+     * (DML) statements or (2) 0 for SQL statements that return nothing
+     * @exception SQLException if a database access error occurs;
+     * this method is called on a closed  <code>PreparedStatement</code>
+     * or the SQL statement returns a <code>ResultSet</code> object
+     * @throws SQLTimeoutException when the driver has determined that the
+     * timeout value that was specified by the {@code setQueryTimeout}
+     * method has been exceeded and has at least attempted to cancel
+     * the currently running {@code Statement}
+     * @since 1.8
+     */
+    default long executeLargeUpdate() throws SQLException {
+        throw new UnsupportedOperationException("executeLargeUpdate not implemented");
+    }
 }

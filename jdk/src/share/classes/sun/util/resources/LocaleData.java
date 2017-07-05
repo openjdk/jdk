@@ -99,6 +99,14 @@ public class LocaleData {
     }
 
     /**
+     * Gets a break iterator info resource bundle, using privileges
+     * to allow accessing a sun.* package.
+     */
+    public ResourceBundle getBreakIteratorInfo(Locale locale) {
+        return getBundle(type.getTextResourcesPackage() + ".BreakIteratorInfo", locale);
+    }
+
+    /**
      * Gets a collation data resource bundle, using privileges
      * to allow accessing a sun.* package.
      */

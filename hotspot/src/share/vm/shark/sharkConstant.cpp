@@ -37,7 +37,12 @@ SharkConstant* SharkConstant::for_ldc(ciBytecodeStream *iter) {
   ciType *type = NULL;
   if (constant.basic_type() == T_OBJECT) {
     ciEnv *env = ciEnv::current();
-    assert(constant.as_object()->klass() == env->String_klass() || constant.as_object()->klass() == env->Class_klass(), "should be");
+
+    assert(constant.as_object()->klass() == env->String_klass()
+           || constant.as_object()->klass() == env->Class_klass()
+           || constant.as_object()->klass()->is_subtype_of(env->MethodType_klass())
+           || constant.as_object()->klass()->is_subtype_of(env->MethodHandle_klass()), "should be");
+
     type = constant.as_object()->klass();
   }
   return new SharkConstant(constant, type);

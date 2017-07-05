@@ -46,7 +46,7 @@ case "$OS" in
     ;;
 esac
 
-${TESTJAVA}${FS}bin${FS}javac -d . ${TESTSRC}${FS}MarkResetTest.java
+${COMPILEJAVA}${FS}bin${FS}javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -d . ${TESTSRC}${FS}MarkResetTest.java
 
 # ftp server used by the test requires the file to be present
 # in this directory

@@ -1047,9 +1047,9 @@ public class Dialog extends Window {
                     // if this dialog is toolkit-modal, the filter should be added
                     // to all EDTs (for all AppContexts)
                     if (modalityType == ModalityType.TOOLKIT_MODAL) {
-                        Iterator it = AppContext.getAppContexts().iterator();
+                        Iterator<AppContext> it = AppContext.getAppContexts().iterator();
                         while (it.hasNext()) {
-                            AppContext appContext = (AppContext)it.next();
+                            AppContext appContext = it.next();
                             if (appContext == showAppContext) {
                                 continue;
                             }
@@ -1084,9 +1084,9 @@ public class Dialog extends Window {
                     // if this dialog is toolkit-modal, its filter must be removed
                     // from all EDTs (for all AppContexts)
                     if (modalityType == ModalityType.TOOLKIT_MODAL) {
-                        Iterator it = AppContext.getAppContexts().iterator();
+                        Iterator<AppContext> it = AppContext.getAppContexts().iterator();
                         while (it.hasNext()) {
-                            AppContext appContext = (AppContext)it.next();
+                            AppContext appContext = it.next();
                             if (appContext == showAppContext) {
                                 continue;
                             }
@@ -1396,7 +1396,7 @@ public class Dialog extends Window {
             if (d.shouldBlock(this)) {
                 Window w = d;
                 while ((w != null) && (w != this)) {
-                    w = (Window)(w.getOwner_NoClientCode());
+                    w = w.getOwner_NoClientCode();
                 }
                 if ((w == this) || !shouldBlock(d) || (modalityType.compareTo(d.getModalityType()) < 0)) {
                     blockers.add(d);
@@ -1611,7 +1611,7 @@ public class Dialog extends Window {
             setModal(modal);
         }
 
-        blockedWindows = new IdentityArrayList();
+        blockedWindows = new IdentityArrayList<>();
     }
 
     /*

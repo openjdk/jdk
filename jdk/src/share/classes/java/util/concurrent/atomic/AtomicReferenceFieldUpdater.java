@@ -34,6 +34,8 @@
  */
 
 package java.util.concurrent.atomic;
+import java.util.function.UnaryOperator;
+import java.util.function.BinaryOperator;
 import sun.misc.Unsafe;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -181,6 +183,96 @@ public abstract class AtomicReferenceFieldUpdater<T, V> {
             prev = get(obj);
         } while (!compareAndSet(obj, prev, newValue));
         return prev;
+    }
+
+    /**
+     * Atomically updates the field of the given object managed by this updater
+     * with the results of applying the given function, returning the previous
+     * value. The function should be side-effect-free, since it may be
+     * re-applied when attempted updates fail due to contention among threads.
+     *
+     * @param obj An object whose field to get and set
+     * @param updateFunction a side-effect-free function
+     * @return the previous value
+     * @since 1.8
+     */
+    public final V getAndUpdate(T obj, UnaryOperator<V> updateFunction) {
+        V prev, next;
+        do {
+            prev = get(obj);
+            next = updateFunction.operate(prev);
+        } while (!compareAndSet(obj, prev, next));
+        return prev;
+    }
+
+    /**
+     * Atomically updates the field of the given object managed by this updater
+     * with the results of applying the given function, returning the updated
+     * value. The function should be side-effect-free, since it may be
+     * re-applied when attempted updates fail due to contention among threads.
+     *
+     * @param obj An object whose field to get and set
+     * @param updateFunction a side-effect-free function
+     * @return the updated value
+     * @since 1.8
+     */
+    public final V updateAndGet(T obj, UnaryOperator<V> updateFunction) {
+        V prev, next;
+        do {
+            prev = get(obj);
+            next = updateFunction.operate(prev);
+        } while (!compareAndSet(obj, prev, next));
+        return next;
+    }
+
+    /**
+     * Atomically updates the field of the given object managed by this
+     * updater with the results of applying the given function to the
+     * current and given values, returning the previous value. The
+     * function should be side-effect-free, since it may be re-applied
+     * when attempted updates fail due to contention among threads.  The
+     * function is applied with the current value as its first argument,
+     * and the given update as the second argument.
+     *
+     * @param obj An object whose field to get and set
+     * @param x the update value
+     * @param accumulatorFunction a side-effect-free function of two arguments
+     * @return the previous value
+     * @since 1.8
+     */
+    public final V getAndAccumulate(T obj, V x,
+                                    BinaryOperator<V> accumulatorFunction) {
+        V prev, next;
+        do {
+            prev = get(obj);
+            next = accumulatorFunction.operate(prev, x);
+        } while (!compareAndSet(obj, prev, next));
+        return prev;
+    }
+
+    /**
+     * Atomically updates the field of the given object managed by this
+     * updater with the results of applying the given function to the
+     * current and given values, returning the updated value. The
+     * function should be side-effect-free, since it may be re-applied
+     * when attempted updates fail due to contention among threads.  The
+     * function is applied with the current value as its first argument,
+     * and the given update as the second argument.
+     *
+     * @param obj An object whose field to get and set
+     * @param x the update value
+     * @param accumulatorFunction a side-effect-free function of two arguments
+     * @return the updated value
+     * @since 1.8
+     */
+    public final V accumulateAndGet(T obj, V x,
+                                    BinaryOperator<V> accumulatorFunction) {
+        V prev, next;
+        do {
+            prev = get(obj);
+            next = accumulatorFunction.operate(prev, x);
+        } while (!compareAndSet(obj, prev, next));
+        return next;
     }
 
     private static final class AtomicReferenceFieldUpdaterImpl<T,V>

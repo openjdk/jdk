@@ -38,7 +38,7 @@ fi
 
 echo "Creating JAR file ..."
 
-$JAR -cf ${TESTCLASSES}/dummy.jar \
+$JAR ${TESTTOOLVMOPTS} -cf ${TESTCLASSES}/dummy.jar \
     -C ${TESTCLASSES} DummyScriptEngine.class \
     -C ${TESTCLASSES} DummyScriptEngineFactory.class \
     -C "${TESTSRC}" META-INF/services/javax.script.ScriptEngineFactory

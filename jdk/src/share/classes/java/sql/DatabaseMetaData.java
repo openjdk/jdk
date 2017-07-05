@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2522,10 +2522,10 @@ public interface DatabaseMetaData extends Wrapper {
      *  <LI><B>ASC_OR_DESC</B> String => column sort sequence, "A" => ascending,
      *      "D" => descending, may be <code>null</code> if sort sequence is not supported;
      *      <code>null</code> when TYPE is tableIndexStatistic
-     *  <LI><B>CARDINALITY</B> int => When TYPE is tableIndexStatistic, then
+     *  <LI><B>CARDINALITY</B> long => When TYPE is tableIndexStatistic, then
      *      this is the number of rows in the table; otherwise, it is the
      *      number of unique values in the index.
-     *  <LI><B>PAGES</B> int => When TYPE is  tableIndexStatisic then
+     *  <LI><B>PAGES</B> long => When TYPE is  tableIndexStatisic then
      *      this is the number of pages used for the table, otherwise it
      *      is the number of pages used for the current index.
      *  <LI><B>FILTER_CONDITION</B> String => Filter condition, if any.
@@ -2759,7 +2759,7 @@ public interface DatabaseMetaData extends Wrapper {
     /**
      * Retrieves whether this database supports batch updates.
      *
-     * @return <code>true</code> if this database supports batch upcates;
+     * @return <code>true</code> if this database supports batch updates;
      *         <code>false</code> otherwise
      * @exception SQLException if a database access error occurs
      * @since 1.2
@@ -3652,4 +3652,37 @@ public interface DatabaseMetaData extends Wrapper {
      * @since 1.7
      */
     boolean  generatedKeyAlwaysReturned() throws SQLException;
+
+    //--------------------------JDBC 4.2 -----------------------------
+
+    /**
+     *
+     * Retrieves the maximum number of bytes this database allows for
+     * the logical size for a {@code LOB}.
+     *<p>
+     * The default implementation will return {@code 0}
+     *
+     * @return the maximum number of bytes allowed; a result of zero
+     * means that there is no limit or the limit is not known
+     * @exception SQLException if a database access error occurs
+     * @since 1.8
+     */
+    default long getMaxLogicalLobSize() throws SQLException {
+        return 0;
+    }
+
+    /**
+     * Retrieves whether this database supports REF CURSOR.
+     *<p>
+     * The default implementation will return {@code false}
+     *
+     * @return {@code true} if this database supports REF CURSOR;
+     *         {@code false} otherwise
+     * @exception SQLException if a database access error occurs
+     * @since 1.8
+     */
+    default boolean supportsRefCursors() throws SQLException{
+        return false;
+    }
+
 }

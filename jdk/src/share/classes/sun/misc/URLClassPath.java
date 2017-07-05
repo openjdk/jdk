@@ -508,7 +508,8 @@ public class URLClassPath {
                     }
                 } else {
                     // our best guess for the other cases
-                    InputStream is = url.openStream();
+                    uc.setUseCaches(false);
+                    InputStream is = uc.getInputStream();
                     is.close();
                 }
                 return url;

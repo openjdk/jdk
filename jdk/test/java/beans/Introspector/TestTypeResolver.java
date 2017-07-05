@@ -180,7 +180,19 @@ public class TestTypeResolver {
             return null; // not used
         }
 
+        public <T extends Annotation> T[] getAnnotations(Class<T> annotationClass) {
+            return null; // not used
+        }
+
         public Annotation[] getAnnotations() {
+            return null; // not used
+        }
+
+        public <T extends Annotation> T getDeclaredAnnotation(Class<T> annotationClass) {
+            return null; // not used
+        }
+
+        public <T extends Annotation> T[] getDeclaredAnnotations(Class<T> annotationClass) {
             return null; // not used
         }
 

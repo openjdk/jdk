@@ -93,7 +93,7 @@ public class TestLibrary {
     public final static int INHERITEDCHANNELNOTSERVERSOCKET_ACTIVATION_PORT = 64003;
     public final static int INHERITEDCHANNELNOTSERVERSOCKET_REGISTRY_PORT = 64004;
     public final static int READTEST_REGISTRY_PORT = 64005;
-    private final static int MAX_SERVER_SOCKET_TRIES = 10;
+    private final static int MAX_SERVER_SOCKET_TRIES = 2*(FIXED_PORT_MAX-FIXED_PORT_MIN+1);
 
     static void mesg(Object mesg) {
         System.err.println("TEST_LIBRARY: " + mesg.toString());
