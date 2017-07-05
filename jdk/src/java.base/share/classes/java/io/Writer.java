@@ -142,7 +142,7 @@ public abstract class Writer implements Appendable, Closeable, Flushable {
      * @throws  IOException
      *          If an I/O error occurs
      */
-    abstract public void write(char cbuf[], int off, int len) throws IOException;
+    public abstract void write(char cbuf[], int off, int len) throws IOException;
 
     /**
      * Writes a string.
@@ -312,7 +312,7 @@ public abstract class Writer implements Appendable, Closeable, Flushable {
      * @throws  IOException
      *          If an I/O error occurs
      */
-    abstract public void flush() throws IOException;
+    public abstract void flush() throws IOException;
 
     /**
      * Closes the stream, flushing it first. Once the stream has been closed,
@@ -322,6 +322,6 @@ public abstract class Writer implements Appendable, Closeable, Flushable {
      * @throws  IOException
      *          If an I/O error occurs
      */
-    abstract public void close() throws IOException;
+    public abstract void close() throws IOException;
 
 }

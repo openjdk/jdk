@@ -49,7 +49,7 @@ class AppOutputStream extends OutputStream {
      * Write the data out, NOW.
      */
     @Override
-    synchronized public void write(byte[] b, int off, int len)
+    public synchronized void write(byte[] b, int off, int len)
             throws IOException {
         if (b == null) {
             throw new NullPointerException();
@@ -76,7 +76,7 @@ class AppOutputStream extends OutputStream {
      * Write one byte now.
      */
     @Override
-    synchronized public void write(int i) throws IOException {
+    public synchronized void write(int i) throws IOException {
         oneByte[0] = (byte)i;
         write(oneByte, 0, 1);
     }

@@ -47,7 +47,7 @@ class NegotiateAuthentication extends AuthenticationInfo {
     private static final long serialVersionUID = 100L;
     private static final PlatformLogger logger = HttpURLConnection.getHttpLogger();
 
-    final private HttpCallerInfo hci;
+    private final HttpCallerInfo hci;
 
     // These maps are used to manage the GSS availability for diffrent
     // hosts. The key for both maps is the host name.

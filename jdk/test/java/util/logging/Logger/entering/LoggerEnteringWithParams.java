@@ -43,7 +43,7 @@ import java.util.logging.StreamHandler;
  */
 public class LoggerEnteringWithParams {
 
-    final static Object[] data = {
+    static final Object[] data = {
         "one", "two", "three", "four", "five", "six", "seven", "eight"
     };
 

@@ -43,7 +43,6 @@ if (arguments.length == 0) {
 // Java types used
 var File = Java.type("java.io.File");
 var Files = Java.type("java.nio.file.Files");
-var FileVisitOption = Java.type("java.nio.file.FileVisitOption");
 var StringArray = Java.type("java.lang.String[]");
 var ToolProvider = Java.type("javax.tools.ToolProvider");
 var Tree = Java.type("com.sun.source.tree.Tree");
@@ -106,7 +105,7 @@ function checkNonFinalParams(p) {
 // for each ".java" file in directory (recursively).
 function main(dir) {
     var totalCount = 0;
-    Files.walk(dir.toPath(), FileVisitOption.FOLLOW_LINKS).
+    Files.walk(dir.toPath()).
       forEach(function(p) {
         var name = p.toFile().absolutePath;
         if (name.endsWith(".java")) {

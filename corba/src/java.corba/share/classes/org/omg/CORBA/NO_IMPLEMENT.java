@@ -28,7 +28,7 @@ package org.omg.CORBA;
 /**
  * This exception indicates that even though the operation that
  * was invoked exists (it has an IDL definition), no implementation
- * for that operation exists. <tt>NO_IMPLEMENT</tt> can, for
+ * for that operation exists. {@code NO_IMPLEMENT} can, for
  * example, be raised by an ORB if a client asks for an object's
  * type definition from the interface repository, but no interface
  * repository is provided by the ORB.<P>
@@ -44,7 +44,7 @@ package org.omg.CORBA;
 
 public final class NO_IMPLEMENT extends SystemException {
     /**
-     * Constructs a <code>NO_IMPLEMENT</code> exception with a default minor code
+     * Constructs a {@code NO_IMPLEMENT} exception with a default minor code
      * of 0, a completion state of CompletionStatus.COMPLETED_NO,
      * and a null description.
      */
@@ -53,7 +53,7 @@ public final class NO_IMPLEMENT extends SystemException {
     }
 
     /**
-     * Constructs a <code>NO_IMPLEMENT</code> exception with the specified description message,
+     * Constructs a {@code NO_IMPLEMENT} exception with the specified description message,
      * a minor code of 0, and a completion state of COMPLETED_NO.
      * @param s the String containing a description of the exception
      */
@@ -62,10 +62,10 @@ public final class NO_IMPLEMENT extends SystemException {
     }
 
     /**
-     * Constructs a <code>NO_IMPLEMENT</code> exception with the specified
+     * Constructs a {@code NO_IMPLEMENT} exception with the specified
      * minor code and completion status.
-     * @param minor an <code>int</code> specifying the minor code
-     * @param completed a <code>CompletionStatus</code> instance indicating
+     * @param minor an {@code int} specifying the minor code
+     * @param completed a {@code CompletionStatus} instance indicating
      *                  the completion status
      */
     public NO_IMPLEMENT(int minor, CompletionStatus completed) {
@@ -73,11 +73,11 @@ public final class NO_IMPLEMENT extends SystemException {
     }
 
     /**
-     * Constructs a <code>NO_IMPLEMENT</code> exception with the specified description
+     * Constructs a {@code NO_IMPLEMENT} exception with the specified description
      * message, minor code, and completion status.
      * @param s the String containing a description message
-     * @param minor an <code>int</code> specifying the minor code
-     * @param completed a <code>CompletionStatus</code> instance indicating
+     * @param minor an {@code int} specifying the minor code
+     * @param completed a {@code CompletionStatus} instance indicating
      *                  the completion status
      */
     public NO_IMPLEMENT(String s, int minor, CompletionStatus completed) {

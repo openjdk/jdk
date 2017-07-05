@@ -127,7 +127,7 @@ public abstract class Pack200 {
      *
      * @return  A newly allocated Packer engine.
      */
-    public synchronized static Packer newPacker() {
+    public static synchronized Packer newPacker() {
         return (Packer) newInstance(PACK_PROVIDER);
     }
 
@@ -688,7 +688,7 @@ public abstract class Pack200 {
     private static Class<?> packerImpl;
     private static Class<?> unpackerImpl;
 
-    private synchronized static Object newInstance(String prop) {
+    private static synchronized Object newInstance(String prop) {
         String implName = "(unknown)";
         try {
             Class<?> impl = (PACK_PROVIDER.equals(prop))? packerImpl: unpackerImpl;

@@ -34,7 +34,7 @@ import java.util.*;
  * @author  James Gosling
  */
 
-abstract public class URLConnection extends java.net.URLConnection {
+public abstract class URLConnection extends java.net.URLConnection {
 
     /** The URL that it is connected to */
 
@@ -236,11 +236,11 @@ abstract public class URLConnection extends java.net.URLConnection {
 
     private static HashMap<String,Void> proxiedHosts = new HashMap<>();
 
-    public synchronized static void setProxiedHost(String host) {
+    public static synchronized void setProxiedHost(String host) {
         proxiedHosts.put(host.toLowerCase(), null);
     }
 
-    public synchronized static boolean isProxiedHost(String host) {
+    public static synchronized boolean isProxiedHost(String host) {
         return proxiedHosts.containsKey(host.toLowerCase());
     }
 }

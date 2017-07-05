@@ -36,22 +36,30 @@ class ReferenceProcessorStats {
   size_t _weak_count;
   size_t _final_count;
   size_t _phantom_count;
+  size_t _cleaner_count;
+  size_t _jni_weak_ref_count;
 
  public:
   ReferenceProcessorStats() :
     _soft_count(0),
     _weak_count(0),
     _final_count(0),
-    _phantom_count(0) {}
+    _phantom_count(0),
+    _cleaner_count(0),
+    _jni_weak_ref_count(0) {}
 
   ReferenceProcessorStats(size_t soft_count,
                           size_t weak_count,
                           size_t final_count,
-                          size_t phantom_count) :
+                          size_t phantom_count,
+                          size_t cleaner_count,
+                          size_t jni_weak_ref_count) :
     _soft_count(soft_count),
     _weak_count(weak_count),
     _final_count(final_count),
-    _phantom_count(phantom_count)
+    _phantom_count(phantom_count),
+    _cleaner_count(cleaner_count),
+    _jni_weak_ref_count(jni_weak_ref_count)
   {}
 
   size_t soft_count() const {
@@ -68,6 +76,14 @@ class ReferenceProcessorStats {
 
   size_t phantom_count() const {
     return _phantom_count;
+  }
+
+  size_t cleaner_count() const {
+    return _cleaner_count;
+  }
+
+  size_t jni_weak_ref_count() const {
+    return _jni_weak_ref_count;
   }
 };
 #endif

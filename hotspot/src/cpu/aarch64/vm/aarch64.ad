@@ -4373,12 +4373,12 @@ encode %{
       return;
     }
 
-    if (UseBiasedLocking) {
-      __ biased_locking_enter(disp_hdr, oop, box, tmp, true, cont);
+    if (UseBiasedLocking && !UseOptoBiasInlining) {
+      __ biased_locking_enter(box, oop, disp_hdr, tmp, true, cont);
     }
 
     // Handle existing monitor
-    if (EmitSync & 0x02) {
+    if ((EmitSync & 0x02) == 0) {
       // we can use AArch64's bit test and branch here but
       // markoopDesc does not define a bit index just the bit value
       // so assert in case the bit pos changes
@@ -4518,7 +4518,7 @@ encode %{
       return;
     }
 
-    if (UseBiasedLocking) {
+    if (UseBiasedLocking && !UseOptoBiasInlining) {
       __ biased_locking_exit(oop, tmp, cont);
     }
 

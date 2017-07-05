@@ -129,7 +129,7 @@ public class ImageReader extends BasicImageReader {
     // jimage file does not store directory structure. We build nodes
     // using the "path" strings found in the jimage file.
     // Node can be a directory or a resource
-    public static abstract class Node {
+    public abstract static class Node {
         private static final int ROOT_DIR = 0b0000_0000_0000_0001;
         private static final int PACKAGES_DIR = 0b0000_0000_0000_0010;
         private static final int MODULES_DIR = 0b0000_0000_0000_0100;

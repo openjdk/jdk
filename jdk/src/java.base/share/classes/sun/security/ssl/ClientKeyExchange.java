@@ -44,17 +44,17 @@ public abstract class ClientKeyExchange extends HandshakeMessage {
     }
 
     @Override
-    abstract public int messageLength();
+    public abstract int messageLength();
 
     @Override
-    abstract public void send(HandshakeOutStream s) throws IOException;
+    public abstract void send(HandshakeOutStream s) throws IOException;
 
     @Override
-    abstract public void print(PrintStream s) throws IOException;
+    public abstract void print(PrintStream s) throws IOException;
 
-    abstract public SecretKey clientKeyExchange();
+    public abstract SecretKey clientKeyExchange();
 
-    abstract public Principal getPeerPrincipal();
+    public abstract Principal getPeerPrincipal();
 
-    abstract public Principal getLocalPrincipal();
+    public abstract Principal getLocalPrincipal();
 }

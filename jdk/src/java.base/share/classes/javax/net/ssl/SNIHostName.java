@@ -321,7 +321,7 @@ public final class SNIHostName extends SNIServerName {
         }
     }
 
-    private final static class SNIHostNameMatcher extends SNIMatcher {
+    private static final class SNIHostNameMatcher extends SNIMatcher {
 
         // the compiled representation of a regular expression.
         private final Pattern pattern;

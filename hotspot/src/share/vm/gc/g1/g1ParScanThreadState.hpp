@@ -173,6 +173,10 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
                                   bool previous_plab_refill_failed);
 
   inline InCSetState next_state(InCSetState const state, markOop const m, uint& age);
+
+  void report_promotion_event(InCSetState const dest_state,
+                              oop const old, size_t word_sz, uint age,
+                              HeapWord * const obj_ptr, const AllocationContext_t context) const;
  public:
 
   oop copy_to_survivor_space(InCSetState const state, oop const obj, markOop const old_mark);

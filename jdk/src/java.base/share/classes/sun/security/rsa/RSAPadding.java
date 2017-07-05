@@ -85,13 +85,13 @@ public final class RSAPadding {
     // file. Do not change without coordinating the update
 
     // PKCS#1 v1.5 padding, blocktype 1 (signing)
-    public final static int PAD_BLOCKTYPE_1    = 1;
+    public static final int PAD_BLOCKTYPE_1    = 1;
     // PKCS#1 v1.5 padding, blocktype 2 (encryption)
-    public final static int PAD_BLOCKTYPE_2    = 2;
+    public static final int PAD_BLOCKTYPE_2    = 2;
     // nopadding. Does not do anything, but allows simpler RSACipher code
-    public final static int PAD_NONE           = 3;
+    public static final int PAD_NONE           = 3;
     // PKCS#1 v2.1 OAEP padding
-    public final static int PAD_OAEP_MGF1 = 4;
+    public static final int PAD_OAEP_MGF1 = 4;
 
     // type, one of PAD_*
     private final int type;

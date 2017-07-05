@@ -249,7 +249,7 @@ public final class NormalizerBase implements Cloneable {
      * and any fields or methods should not be called or overridden by users.
      * @stable ICU 2.8
      */
-    public static abstract class Mode {
+    public abstract static class Mode {
 
         /**
          * Sole constructor

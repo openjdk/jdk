@@ -39,7 +39,7 @@ public class Collisions {
      */
     private static final int TEST_SIZE = 5000;
 
-    final static class HashableInteger implements Comparable<HashableInteger> {
+    static final class HashableInteger implements Comparable<HashableInteger> {
 
         final int value;
         final int hashmask; //yes duplication

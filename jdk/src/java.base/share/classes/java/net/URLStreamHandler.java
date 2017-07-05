@@ -68,7 +68,7 @@ public abstract class URLStreamHandler {
      * @exception  IOException  if an I/O error occurs while opening the
      *               connection.
      */
-    abstract protected URLConnection openConnection(URL u) throws IOException;
+    protected abstract URLConnection openConnection(URL u) throws IOException;
 
     /**
      * Same as openConnection(URL), except that the connection will be

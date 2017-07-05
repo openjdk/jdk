@@ -38,9 +38,9 @@ public class ReferenceEnqueuePending {
         }
     }
 
-    final static boolean debug = System.getProperty("test.debug") != null;
-    final static int iterations = 1000;
-    final static int gc_trigger = 99;
+    static final boolean debug = System.getProperty("test.debug") != null;
+    static final int iterations = 1000;
+    static final int gc_trigger = 99;
     static int[] a = new int[2 * iterations];
     // Keep all weak references alive with the following array.
     static NumberedWeakReference[] b = new NumberedWeakReference[iterations];

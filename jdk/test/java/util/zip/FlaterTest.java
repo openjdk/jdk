@@ -92,7 +92,7 @@ public class FlaterTest extends Thread {
         new FlaterTest().go(numThreads);
     }
 
-    synchronized private void go(int numThreads) throws Throwable {
+    private synchronized void go(int numThreads) throws Throwable {
         int deflatedLength = getDeflatedLength();
 
         long time = System.currentTimeMillis();

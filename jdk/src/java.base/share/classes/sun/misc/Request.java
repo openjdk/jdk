@@ -32,10 +32,10 @@ package sun.misc;
  * @author      Steven B. Byrne
  */
 
-abstract public class Request {
+public abstract class Request {
     /**
      * The main task of the Request object is to be exectuted from a request
      * queue.
      */
-    abstract public void execute();
+    public abstract void execute();
 }

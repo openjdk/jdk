@@ -128,24 +128,32 @@ test({ valueOf: function() { return 42; } }, "java.lang.String", "[object Object
 // Converting to string, toString takes precedence over valueOf
 test({ valueOf: function() { return "42"; },  toString: function() { return "43"; } }, "java.lang.String", "43")
 
+function assertCanConvert(sourceType, targetType) {
+  Java.to([new (Java.type(sourceType))()], targetType + "[]")
+  ++testCount;
+}
+
 function assertCantConvert(sourceType, targetType) {
   try {
-    Java.to([new Java.type(sourceType)()], targetType + "[]")
+    Java.to([new (Java.type(sourceType))()], targetType + "[]")
     throw "no TypeError encountered"
   } catch(e) {
-      if(!(e instanceof TypeError)) {
+      if(!(e instanceof TypeError) ||
+          !e.message.startsWith("Java.to conversion to array type")) {
         throw e;
       }
       ++testCount;
   }
 }
 
+// Arbitrary POJOs to JS Primitive type should work
+assertCanConvert("java.util.BitSet", "int")
+assertCanConvert("java.util.BitSet", "double")
+assertCanConvert("java.util.BitSet", "long")
+assertCanConvert("java.util.BitSet", "boolean")
+assertCanConvert("java.util.BitSet", "java.lang.String")
+
 // Arbitrary POJOs can't be converted to Java values
-assertCantConvert("java.util.BitSet", "int")
-assertCantConvert("java.util.BitSet", "double")
-assertCantConvert("java.util.BitSet", "long")
-assertCantConvert("java.util.BitSet", "boolean")
-assertCantConvert("java.util.BitSet", "java.lang.String")
 assertCantConvert("java.util.BitSet", "java.lang.Double")
 assertCantConvert("java.util.BitSet", "java.lang.Long")
 
