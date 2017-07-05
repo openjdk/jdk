@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,11 +36,11 @@ import sun.java2d.windows.WindowsFlags;
 import sun.java2d.windows.WinVolatileSurfaceManager;
 
 /**
- * This is a factory class with static methods for creating a
- * platform-specific instance of a particular SurfaceManager.  Each platform
- * (Windows, Unix, etc.) has its own specialized SurfaceManagerFactory.
+ * The SurfaceManagerFactory that creates VolatileSurfaceManager
+ * implementations for the Windows volatile images.
  */
-public class SurfaceManagerFactory {
+public class WindowsSurfaceManagerFactory extends SurfaceManagerFactory {
+
     /**
      * Creates a new instance of a VolatileSurfaceManager given any
      * arbitrary SunVolatileImage.  An optional context Object can be supplied
@@ -50,9 +50,8 @@ public class SurfaceManagerFactory {
      * For Windows platforms, this method returns a Windows-specific
      * VolatileSurfaceManager.
      */
-    public static VolatileSurfaceManager
-        createVolatileManager(SunVolatileImage vImg,
-                              Object context)
+    public VolatileSurfaceManager createVolatileManager(SunVolatileImage vImg,
+                                                        Object context)
     {
         GraphicsConfiguration gc = vImg.getGraphicsConfig();
         if (gc instanceof WGLGraphicsConfig) {
@@ -61,4 +60,5 @@ public class SurfaceManagerFactory {
             return new WinVolatileSurfaceManager(vImg, context);
         }
     }
+
 }

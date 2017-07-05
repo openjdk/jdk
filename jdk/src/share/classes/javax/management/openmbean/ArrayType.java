@@ -726,7 +726,7 @@ public class ArrayType<T> extends OpenType<T> {
             value += dimension;
             value += elementType.hashCode();
             value += Boolean.valueOf(primitiveArray).hashCode();
-            myHashCode = new Integer(value);
+            myHashCode = Integer.valueOf(value);
         }
 
         // return always the same hash code for this instance (immutable)

@@ -165,7 +165,8 @@ public class SunVolatileImage extends VolatileImage {
         {
             return new BufImgVolatileSurfaceManager(this, context);
         }
-        return SurfaceManagerFactory.createVolatileManager(this, context);
+        SurfaceManagerFactory smf = SurfaceManagerFactory.getInstance();
+        return smf.createVolatileManager(this, context);
     }
 
     private Color getForeground() {
