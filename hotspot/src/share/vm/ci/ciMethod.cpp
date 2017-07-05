@@ -31,6 +31,7 @@
 #include "ci/ciMethodData.hpp"
 #include "ci/ciStreams.hpp"
 #include "ci/ciSymbol.hpp"
+#include "ci/ciReplay.hpp"
 #include "ci/ciUtilities.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "compiler/abstractCompiler.hpp"
@@ -139,6 +140,12 @@ ciMethod::ciMethod(methodHandle h_m) : ciMetadata(h_m()) {
   }
   if (_interpreter_invocation_count == 0)
     _interpreter_invocation_count = 1;
+  _instructions_size = -1;
+#ifdef ASSERT
+  if (ReplayCompiles) {
+    ciReplay::initialize(this);
+  }
+#endif
 }
 
 
@@ -161,7 +168,8 @@ ciMethod::ciMethod(ciInstanceKlass* holder,
 #if defined(COMPILER2) || defined(SHARK)
   ,
   _flow(                   NULL),
-  _bcea(                   NULL)
+  _bcea(                   NULL),
+  _instructions_size(-1)
 #endif // COMPILER2 || SHARK
 {
   // Usually holder and accessor are the same type but in some cases
@@ -868,25 +876,6 @@ ciMethodData* ciMethod::method_data_or_null() {
 }
 
 // ------------------------------------------------------------------
-// ciMethod::will_link
-//
-// Will this method link in a specific calling context?
-bool ciMethod::will_link(ciKlass* accessing_klass,
-                         ciKlass* declared_method_holder,
-                         Bytecodes::Code bc) {
-  if (!is_loaded()) {
-    // Method lookup failed.
-    return false;
-  }
-
-  // The link checks have been front-loaded into the get_method
-  // call.  This method (ciMethod::will_link()) will be removed
-  // in the future.
-
-  return true;
-}
-
-// ------------------------------------------------------------------
 // ciMethod::should_exclude
 //
 // Should this method be excluded from compilation?
@@ -1000,8 +989,7 @@ bool ciMethod::can_be_osr_compiled(int entry_bci) {
 // ------------------------------------------------------------------
 // ciMethod::has_compiled_code
 bool ciMethod::has_compiled_code() {
-  VM_ENTRY_MARK;
-  return get_Method()->code() != NULL;
+  return instructions_size() > 0;
 }
 
 int ciMethod::comp_level() {
@@ -1039,14 +1027,18 @@ int ciMethod::code_size_for_inlining() {
 // junk like exception handler, stubs, and constant table, which are
 // not highly relevant to an inlined method.  So we use the more
 // specific accessor nmethod::insts_size.
-int ciMethod::instructions_size(int comp_level) {
-  GUARDED_VM_ENTRY(
-    nmethod* code = get_Method()->code();
-    if (code != NULL && (comp_level == CompLevel_any || comp_level == code->comp_level())) {
-      return code->insts_end() - code->verified_entry_point();
-    }
-    return 0;
-  )
+int ciMethod::instructions_size() {
+  if (_instructions_size == -1) {
+    GUARDED_VM_ENTRY(
+                     nmethod* code = get_Method()->code();
+                     if (code != NULL && (code->comp_level() == CompLevel_full_optimization)) {
+                       _instructions_size = code->insts_end() - code->verified_entry_point();
+                     } else {
+                       _instructions_size = 0;
+                     }
+                     );
+  }
+  return _instructions_size;
 }
 
 // ------------------------------------------------------------------
@@ -1166,6 +1158,20 @@ ciMethodBlocks  *ciMethod::get_method_blocks() {
 
 #undef FETCH_FLAG_FROM_VM
 
+void ciMethod::dump_replay_data(outputStream* st) {
+  ASSERT_IN_VM;
+  Method* method = get_Method();
+  Klass*  holder = method->method_holder();
+  st->print_cr("ciMethod %s %s %s %d %d %d %d %d",
+               holder->name()->as_quoted_ascii(),
+               method->name()->as_quoted_ascii(),
+               method->signature()->as_quoted_ascii(),
+               method->invocation_counter()->raw_counter(),
+               method->backedge_counter()->raw_counter(),
+               interpreter_invocation_count(),
+               interpreter_throwout_count(),
+               _instructions_size);
+}
 
 // ------------------------------------------------------------------
 // ciMethod::print_codes

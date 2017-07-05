@@ -31,7 +31,6 @@
 #include "services/memBaseline.hpp"
 #include "services/memPtrArray.hpp"
 
-
 // Snapshot pointer array iterator
 
 // The pointer array contains malloc-ed pointers
@@ -165,39 +164,58 @@ class VMMemPointerIterator : public MemPointerIterator {
 };
 
 class MallocRecordIterator : public MemPointerArrayIterator {
- protected:
+ private:
   MemPointerArrayIteratorImpl  _itr;
+
+
 
  public:
   MallocRecordIterator(MemPointerArray* arr) : _itr(arr) {
   }
 
   virtual MemPointer* current() const {
-    MemPointerRecord* cur = (MemPointerRecord*)_itr.current();
-    assert(cur == NULL || !cur->is_vm_pointer(), "seek error");
-    MemPointerRecord* next = (MemPointerRecord*)_itr.peek_next();
-    if (next == NULL || next->addr() != cur->addr()) {
-      return cur;
-    } else {
-      assert(!cur->is_vm_pointer(), "Sanity check");
-      assert(cur->is_allocation_record() && next->is_deallocation_record(),
-             "sorting order");
-      assert(cur->seq() != next->seq(), "Sanity check");
-      return cur->seq() >  next->seq() ? cur : next;
+#ifdef ASSERT
+    MemPointer* cur_rec = _itr.current();
+    if (cur_rec != NULL) {
+      MemPointer* prev_rec = _itr.peek_prev();
+      MemPointer* next_rec = _itr.peek_next();
+      assert(prev_rec == NULL || prev_rec->addr() < cur_rec->addr(), "Sorting order");
+      assert(next_rec == NULL || next_rec->addr() > cur_rec->addr(), "Sorting order");
     }
+#endif
+    return _itr.current();
   }
-
   virtual MemPointer* next() {
-    MemPointerRecord* cur = (MemPointerRecord*)_itr.current();
-    assert(cur == NULL || !cur->is_vm_pointer(), "Sanity check");
-    MemPointerRecord* next = (MemPointerRecord*)_itr.next();
-    if (next == NULL) {
-      return NULL;
+    MemPointerRecord* next_rec = (MemPointerRecord*)_itr.next();
+    // arena memory record is a special case, which we have to compare
+    // sequence number against its associated arena record.
+    if (next_rec != NULL && next_rec->is_arena_memory_record()) {
+      MemPointerRecord* prev_rec = (MemPointerRecord*)_itr.peek_prev();
+      // if there is an associated arena record, it has to be previous
+      // record because of sorting order (by address) - NMT generates a pseudo address
+      // for arena's size record by offsetting arena's address, that guarantees
+      // the order of arena record and it's size record.
+      if (prev_rec != NULL && prev_rec->is_arena_record() &&
+        next_rec->is_memory_record_of_arena(prev_rec)) {
+        if (prev_rec->seq() > next_rec->seq()) {
+          // Skip this arena memory record
+          // Two scenarios:
+          //   - if the arena record is an allocation record, this early
+          //     size record must be leftover by previous arena,
+          //     and the last size record should have size = 0.
+          //   - if the arena record is a deallocation record, this
+          //     size record should be its cleanup record, which should
+          //     also have size = 0. In other world, arena alway reset
+          //     its size before gone (see Arena's destructor)
+          assert(next_rec->size() == 0, "size not reset");
+          return _itr.next();
+        } else {
+          assert(prev_rec->is_allocation_record(),
+            "Arena size record ahead of allocation record");
+        }
+      }
     }
-    if (cur->addr() == next->addr()) {
-      next = (MemPointerRecord*)_itr.next();
-    }
-    return current();
+    return next_rec;
   }
 
   MemPointer* peek_next() const      { ShouldNotReachHere(); return NULL; }
@@ -213,9 +231,12 @@ class MallocRecordIterator : public MemPointerArrayIterator {
 // still chances seeing duplicated records during promotion.
 // We want to use the record with higher sequence number, because it has
 // more accurate callsite pc.
-class VMRecordIterator : public MallocRecordIterator {
+class VMRecordIterator : public MemPointerArrayIterator {
+ private:
+  MemPointerArrayIteratorImpl  _itr;
+
  public:
-  VMRecordIterator(MemPointerArray* arr) : MallocRecordIterator(arr) {
+  VMRecordIterator(MemPointerArray* arr) : _itr(arr) {
     MemPointerRecord* cur = (MemPointerRecord*)_itr.current();
     MemPointerRecord* next = (MemPointerRecord*)_itr.peek_next();
     while (next != NULL) {
@@ -255,6 +276,12 @@ class VMRecordIterator : public MallocRecordIterator {
     }
     return cur;
   }
+
+  MemPointer* peek_next() const      { ShouldNotReachHere(); return NULL; }
+  MemPointer* peek_prev() const      { ShouldNotReachHere(); return NULL; }
+  void remove()                      { ShouldNotReachHere(); }
+  bool insert(MemPointer* ptr)       { ShouldNotReachHere(); return false; }
+  bool insert_after(MemPointer* ptr) { ShouldNotReachHere(); return false; }
 
  private:
   bool is_duplicated_record(MemPointerRecord* p1, MemPointerRecord* p2) const {
@@ -348,8 +375,10 @@ class MemSnapshot : public CHeapObj<mtNMT> {
   DEBUG_ONLY( void dump_all_vm_pointers();)
 
  private:
-   // copy pointer data from src to dest
-   void copy_pointer(MemPointerRecord* dest, const MemPointerRecord* src);
+   // copy sequenced pointer from src to dest
+   void copy_seq_pointer(MemPointerRecord* dest, const MemPointerRecord* src);
+   // assign a sequenced pointer to non-sequenced pointer
+   void assign_pointer(MemPointerRecord*dest, const MemPointerRecord* src);
 
    bool promote_malloc_records(MemPointerArrayIterator* itr);
    bool promote_virtual_memory_records(MemPointerArrayIterator* itr);
