@@ -231,7 +231,6 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_LIBS],
 
   AC_SUBST(C_FLAG_REORDER)
   AC_SUBST(CXX_FLAG_REORDER)
-  AC_SUBST(SHARED_LIBRARY_FLAGS)
   AC_SUBST(SET_EXECUTABLE_ORIGIN)
   AC_SUBST(SET_SHARED_LIBRARY_ORIGIN)
   AC_SUBST(SET_SHARED_LIBRARY_NAME)
@@ -524,6 +523,10 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK],
   #    CXXFLAGS_JDK  - C++ Compiler flags
   #    COMMON_CCXXFLAGS_JDK - common to C and C++
   if test "x$TOOLCHAIN_TYPE" = xgcc; then
+    if test "x$OPENJDK_TARGET_CPU" = xx86; then
+      # Force compatibility with i586 on 32 bit intel platforms.
+      COMMON_CCXXFLAGS="${COMMON_CCXXFLAGS} -march=i586"
+    fi
     COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS $COMMON_CCXXFLAGS_JDK -Wall -Wextra -Wno-unused -Wno-unused-parameter -Wformat=2 \
         -pipe -D_GNU_SOURCE -D_REENTRANT -D_LARGEFILE64_SOURCE"
     case $OPENJDK_TARGET_CPU_ARCH in
@@ -899,6 +902,24 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_MISC],
       [COMPILER_SUPPORTS_TARGET_BITS_FLAG=true],
       [COMPILER_SUPPORTS_TARGET_BITS_FLAG=false])
   AC_SUBST(COMPILER_SUPPORTS_TARGET_BITS_FLAG)
+
+  AC_ARG_ENABLE([warnings-as-errors], [AS_HELP_STRING([--disable-warnings-as-errors],
+      [do not consider native warnings to be an error @<:@enabled@:>@])])
+
+  AC_MSG_CHECKING([if native warnings are errors])
+  if test "x$enable_warnings_as_errors" = "xyes"; then
+    AC_MSG_RESULT([yes (explicitely set)])
+    WARNINGS_AS_ERRORS=true
+  elif test "x$enable_warnings_as_errors" = "xno"; then
+    AC_MSG_RESULT([no])
+    WARNINGS_AS_ERRORS=false
+  elif test "x$enable_warnings_as_errors" = "x"; then
+    AC_MSG_RESULT([yes (default)])
+    WARNINGS_AS_ERRORS=true
+  else
+    AC_MSG_ERROR([--enable-warnings-as-errors accepts no argument])
+  fi
+  AC_SUBST(WARNINGS_AS_ERRORS)
 
   case "${TOOLCHAIN_TYPE}" in
     microsoft)
