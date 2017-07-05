@@ -22,13 +22,14 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package sun.misc;
+package jdk.internal.perf;
 
 import java.nio.ByteBuffer;
 import java.security.Permission;
 import java.security.PrivilegedAction;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import jdk.internal.ref.CleanerFactory;
 
 /**
  * The Perf class provides the ability to attach to an instrumentation
@@ -46,7 +47,7 @@ import java.io.UnsupportedEncodingException;
  * @author   Brian Doherty
  * @since    1.4.2
  * @see      #getPerf
- * @see      sun.misc.Perf$GetPerfAction
+ * @see      jdk.internal.perf.Perf.GetPerfAction
  * @see      java.nio.ByteBuffer
  */
 public final class Perf {
@@ -123,10 +124,10 @@ public final class Perf {
      * Please note that the <em>"sun.misc.Perf.getPerf"</em> permission
      * is not a JDK specified permission.
      *
-     * @return       A reference to the singleton Perf instance.
-     * @throws AccessControlException  if a security manager exists and
-     *               its <code>checkPermission</code> method doesn't allow
-     *               access to the <em>"sun.misc.Perf.getPerf"</em> target.
+     * @return  A reference to the singleton Perf instance.
+     * @throws SecurityException  if a security manager exists and its
+     *         <code>checkPermission</code> method doesn't allow access
+     *         to the <em>"jdk.internal.perf.Perf.getPerf""</em> target.
      * @see  java.lang.RuntimePermission
      * @see  #attach
      */
@@ -134,7 +135,7 @@ public final class Perf {
     {
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
-            Permission perm = new RuntimePermission("sun.misc.Perf.getPerf");
+            Permission perm = new RuntimePermission("jdk.internal.perf.Perf.getPerf");
             security.checkPermission(perm);
         }
 
@@ -277,24 +278,32 @@ public final class Perf {
             // This is an instrumentation buffer for another Java virtual
             // machine with native resources that need to be managed. We
             // create a duplicate of the native ByteBuffer and manage it
-            // with a Cleaner object (PhantomReference). When the duplicate
-            // becomes only phantomly reachable, the native resources will
-            // be released.
+            // with a Cleaner. When the duplicate becomes phantom reachable,
+            // the native resources will be released.
 
             final ByteBuffer dup = b.duplicate();
-            Cleaner.create(dup, new Runnable() {
-                    public void run() {
-                        try {
-                            instance.detach(b);
-                        }
-                        catch (Throwable th) {
-                            // avoid crashing the reference handler thread,
-                            // but provide for some diagnosability
-                            assert false : th.toString();
-                        }
-                    }
-                });
+
+            CleanerFactory.cleaner()
+                          .register(dup, new CleanerAction(instance, b));
             return dup;
+        }
+    }
+
+    private static class CleanerAction implements Runnable {
+        private final ByteBuffer bb;
+        private final Perf perf;
+        CleanerAction(Perf perf, ByteBuffer bb) {
+            this.perf = perf;
+            this.bb = bb;
+        }
+        public void run() {
+            try {
+                perf.detach(bb);
+            } catch (Throwable th) {
+                // avoid crashing the reference handler thread,
+                // but provide for some diagnosability
+                assert false : th.toString();
+            }
         }
     }
 
@@ -341,7 +350,7 @@ public final class Perf {
      * machine running this method (lvmid=0, for example), then the detach
      * request is silently ignored.
      *
-     * @param ByteBuffer  A direct allocated byte buffer created by the
+     * @param bb  A direct allocated byte buffer created by the
      *                    <code>attach</code> method.
      * @see   java.nio.ByteBuffer
      * @see   #attach

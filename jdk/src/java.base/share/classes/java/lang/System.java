@@ -1535,6 +1535,8 @@ public final class System {
      * @return an instance of {@link Logger} that can be used by the calling
      *         class.
      * @throws NullPointerException if {@code name} is {@code null}.
+     *
+     * @since 9
      */
     @CallerSensitive
     public static Logger getLogger(String name) {
@@ -1572,6 +1574,8 @@ public final class System {
      * resource bundle for message localization.
      * @throws NullPointerException if {@code name} is {@code null} or
      *         {@code bundle} is {@code null}.
+     *
+     * @since 9
      */
     @CallerSensitive
     public static Logger getLogger(String name, ResourceBundle bundle) {

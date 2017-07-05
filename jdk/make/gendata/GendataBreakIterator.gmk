@@ -48,7 +48,6 @@ BREAK_ITERATOR_CLASSES := $(BUILDTOOLS_OUTPUTDIR)/break_iterator_classes
 $(eval $(call SetupJavaCompilation,BUILD_BREAKITERATOR, \
     SETUP := GENERATE_OLDBYTECODE, \
     SRC := $(TEXT_SRCDIR), \
-    INCLUDES := $(TEXT_PKG), \
     INCLUDE_FILES := $(TEXT_SOURCES), \
     BIN := $(BREAK_ITERATOR_CLASSES)))
 
