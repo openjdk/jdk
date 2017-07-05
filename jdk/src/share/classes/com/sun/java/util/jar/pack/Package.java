@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package com.sun.java.util.jar.pack;
 import com.sun.java.util.jar.pack.Attribute.Layout;
 import com.sun.java.util.jar.pack.ConstantPool.ClassEntry;
 import com.sun.java.util.jar.pack.ConstantPool.DescriptorEntry;
+import com.sun.java.util.jar.pack.ConstantPool.BootstrapMethodEntry;
 import com.sun.java.util.jar.pack.ConstantPool.Index;
 import com.sun.java.util.jar.pack.ConstantPool.LiteralEntry;
 import com.sun.java.util.jar.pack.ConstantPool.Utf8Entry;
@@ -100,6 +101,8 @@ class Package {
         classes.clear();
         files.clear();
         BandStructure.nextSeqForDebug = 0;
+        package_minver = -1;  // fill in later
+        package_majver = 0;   // fill in later
     }
 
     int getPackageVersion() {
@@ -108,6 +111,7 @@ class Package {
 
     // Special empty versions of Code and InnerClasses, used for markers.
     public static final Attribute.Layout attrCodeEmpty;
+    public static final Attribute.Layout attrBootstrapMethodsEmpty;
     public static final Attribute.Layout attrInnerClassesEmpty;
     public static final Attribute.Layout attrSourceFileSpecial;
     public static final Map<Attribute.Layout, Attribute> attrDefs;
@@ -115,6 +119,8 @@ class Package {
         Map<Layout, Attribute> ad = new HashMap<>(3);
         attrCodeEmpty = Attribute.define(ad, ATTR_CONTEXT_METHOD,
                                          "Code", "").layout();
+        attrBootstrapMethodsEmpty = Attribute.define(ad, ATTR_CONTEXT_CLASS,
+                                                     "BootstrapMethods", "").layout();
         attrInnerClassesEmpty = Attribute.define(ad, ATTR_CONTEXT_CLASS,
                                                  "InnerClasses", "").layout();
         attrSourceFileSpecial = Attribute.define(ad, ATTR_CONTEXT_CLASS,
@@ -153,9 +159,8 @@ class Package {
             package_minver = JAVA6_PACKAGE_MINOR_VERSION;
         } else {
             // Normal case.  Use the newest archive format, when available
-            // TODO: replace the following with JAVA7* when the need arises
-            package_majver = JAVA6_PACKAGE_MAJOR_VERSION;
-            package_minver = JAVA6_PACKAGE_MINOR_VERSION;
+            package_majver = JAVA7_PACKAGE_MAJOR_VERSION;
+            package_minver = JAVA7_PACKAGE_MINOR_VERSION;
         }
     }
 
@@ -168,13 +173,22 @@ class Package {
             String expMag = Integer.toHexString(JAVA_PACKAGE_MAGIC);
             throw new IOException("Unexpected package magic number: got "+gotMag+"; expected "+expMag);
         }
-        if ((package_majver != JAVA6_PACKAGE_MAJOR_VERSION  &&
-             package_majver != JAVA5_PACKAGE_MAJOR_VERSION) ||
-             (package_minver != JAVA6_PACKAGE_MINOR_VERSION &&
-             package_minver != JAVA5_PACKAGE_MINOR_VERSION)) {
-
+        int[] majminFound = null;
+        for (int[] majmin : new int[][]{
+                { JAVA7_PACKAGE_MAJOR_VERSION, JAVA7_PACKAGE_MINOR_VERSION },
+                { JAVA6_PACKAGE_MAJOR_VERSION, JAVA6_PACKAGE_MINOR_VERSION },
+                { JAVA5_PACKAGE_MAJOR_VERSION, JAVA5_PACKAGE_MINOR_VERSION }
+            }) {
+            if (package_majver == majmin[0] && package_minver == majmin[1]) {
+                majminFound = majmin;
+                break;
+            }
+        }
+        if (majminFound == null) {
             String gotVer = package_majver+"."+package_minver;
-            String expVer = JAVA6_PACKAGE_MAJOR_VERSION+"."+JAVA6_PACKAGE_MINOR_VERSION+
+            String expVer = JAVA7_PACKAGE_MAJOR_VERSION+"."+JAVA7_PACKAGE_MINOR_VERSION+
+                            " OR "+
+                            JAVA6_PACKAGE_MAJOR_VERSION+"."+JAVA6_PACKAGE_MINOR_VERSION+
                             " OR "+
                             JAVA5_PACKAGE_MAJOR_VERSION+"."+JAVA5_PACKAGE_MINOR_VERSION;
             throw new IOException("Unexpected package minor version: got "+gotVer+"; expected "+expVer);
@@ -213,6 +227,7 @@ class Package {
         //ArrayList attributes;  // in Attribute.Holder.this.attributes
         // Note that InnerClasses may be collected at the package level.
         ArrayList<InnerClass> innerClasses;
+        ArrayList<BootstrapMethodEntry> bootstrapMethods;
 
         Class(int flags, ClassEntry thisClass, ClassEntry superClass, ClassEntry[] interfaces) {
             this.magic      = JAVA_MAGIC;
@@ -311,6 +326,25 @@ class Package {
 
         protected void setCPMap(Entry[] cpMap) {
             this.cpMap = cpMap;
+        }
+
+        boolean hasBootstrapMethods() {
+            return bootstrapMethods != null && !bootstrapMethods.isEmpty();
+        }
+
+        List<BootstrapMethodEntry> getBootstrapMethods() {
+            return bootstrapMethods;
+        }
+
+        BootstrapMethodEntry[] getBootstrapMethodMap() {
+            return (hasBootstrapMethods())
+                    ? bootstrapMethods.toArray(new BootstrapMethodEntry[bootstrapMethods.size()])
+                    : null;
+        }
+
+        void setBootstrapMethods(Collection<BootstrapMethodEntry> bsms) {
+            assert(bootstrapMethods == null);  // do not do this twice
+            bootstrapMethods = new ArrayList<>(bsms);
         }
 
         boolean hasInnerClasses() {
@@ -1283,7 +1317,8 @@ class Package {
             byTagU[tag] = null;  // done with it
         }
         for (int i = 0; i < byTagU.length; i++) {
-            assert(byTagU[i] == null);  // all consumed
+            Index ix = byTagU[i];
+            assert(ix == null);  // all consumed
         }
         for (int i = 0; i < ConstantPool.TAGS_IN_ORDER.length; i++) {
             byte tag = ConstantPool.TAGS_IN_ORDER[i];

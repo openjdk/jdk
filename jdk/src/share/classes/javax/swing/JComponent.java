@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2638,17 +2638,16 @@ public abstract class JComponent extends Container implements Serializable,
      *    attribute: visualUpdate true
      */
     public void setVisible(boolean aFlag) {
-        if(aFlag != isVisible()) {
+        if (aFlag != isVisible()) {
             super.setVisible(aFlag);
-            Container parent = getParent();
-            if(parent != null) {
-                Rectangle r = getBounds();
-                parent.repaint(r.x,r.y,r.width,r.height);
+            if (aFlag) {
+                Container parent = getParent();
+                if (parent != null) {
+                    Rectangle r = getBounds();
+                    parent.repaint(r.x, r.y, r.width, r.height);
+                }
+                revalidate();
             }
-            // Some (all should) LayoutManagers do not consider components
-            // that are not visible. As such we need to revalidate when the
-            // visible bit changes.
-            revalidate();
         }
     }
 
@@ -5566,6 +5565,23 @@ public abstract class JComponent extends Container implements Serializable,
         ",maximumSize=" + maximumSizeString +
         ",minimumSize=" + minimumSizeString +
         ",preferredSize=" + preferredSizeString;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void hide() {
+        boolean showing = isShowing();
+        super.hide();
+        if (showing) {
+            Container parent = getParent();
+            if (parent != null) {
+                Rectangle r = getBounds();
+                parent.repaint(r.x, r.y, r.width, r.height);
+            }
+            revalidate();
+        }
     }
 
 }

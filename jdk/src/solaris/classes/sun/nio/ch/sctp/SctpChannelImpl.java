@@ -1100,7 +1100,12 @@ public class SctpChannelImpl extends SctpChannel
     static {
         Util.load();   /* loads nio & net native libraries */
         java.security.AccessController.doPrivileged(
-                new sun.security.action.LoadLibraryAction("sctp"));
+            new java.security.PrivilegedAction<Void>() {
+                public Void run() {
+                    System.loadLibrary("sctp");
+                    return null;
+                }
+            });
         initIDs();
     }
 }

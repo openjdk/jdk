@@ -81,6 +81,7 @@ endif
 # SA tools
 ifeq ($(PROGRAM),jstack)
   SA_TOOL=true
+  INFO_PLIST_FILE=Info-privileged.plist
 endif
 ifeq ($(PROGRAM),jsadebugd)
   SA_TOOL=true

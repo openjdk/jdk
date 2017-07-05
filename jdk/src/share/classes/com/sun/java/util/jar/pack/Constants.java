@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,6 +65,9 @@ class Constants {
     public final static int JAVA6_PACKAGE_MAJOR_VERSION = 160;
     public final static int JAVA6_PACKAGE_MINOR_VERSION = 1;
 
+    public final static int JAVA7_PACKAGE_MAJOR_VERSION = 170;
+    public final static int JAVA7_PACKAGE_MINOR_VERSION = 1;
+
     public final static int CONSTANT_POOL_INDEX_LIMIT  = 0x10000;
     public final static int CONSTANT_POOL_NARROW_LIMIT = 0x00100;
 
@@ -82,14 +85,36 @@ class Constants {
     public final static byte CONSTANT_Methodref = 10;
     public final static byte CONSTANT_InterfaceMethodref = 11;
     public final static byte CONSTANT_NameandType = 12;
+    public final static byte CONSTANT_unused13 = 13;
+    public final static byte CONSTANT_unused14 = 14;
+    public final static byte CONSTANT_MethodHandle = 15;
+    public final static byte CONSTANT_MethodType = 16;
+    public final static byte CONSTANT_unused17 = 17;  // unused
+    public final static byte CONSTANT_InvokeDynamic = 18;
 
     // pseudo-constants:
     public final static byte CONSTANT_None = 0;
-    public final static byte CONSTANT_Signature = 13;
-    public final static byte CONSTANT_Limit  = 14;
+    public final static byte CONSTANT_Signature = CONSTANT_unused13;
+    public final static byte CONSTANT_BootstrapMethod = CONSTANT_unused17; // used only in InvokeDynamic constants
+    public final static byte CONSTANT_Limit = 19;
 
-    public final static byte CONSTANT_All = 19;  // combined global map
-    public final static byte CONSTANT_Literal = 20; // used only for ldc fields
+    public final static byte CONSTANT_All = 50;  // combined global map
+    public final static byte CONSTANT_LoadableValue = 51; // used for 'KL' and qldc operands
+    public final static byte CONSTANT_AnyMember = 52; // union of refs to field or (interface) method
+    public final static byte CONSTANT_FieldSpecific = 53; // used only for 'KQ' ConstantValue attrs
+    public final static byte CONSTANT_GroupFirst = CONSTANT_All;
+    public final static byte CONSTANT_GroupLimit = CONSTANT_FieldSpecific+1;
+
+    // CONSTANT_MethodHandle reference kinds
+    public final static byte REF_getField = 1;
+    public final static byte REF_getStatic = 2;
+    public final static byte REF_putField = 3;
+    public final static byte REF_putStatic = 4;
+    public final static byte REF_invokeVirtual = 5;
+    public final static byte REF_invokeStatic = 6;
+    public final static byte REF_invokeSpecial = 7;
+    public final static byte REF_newInvokeSpecial = 8;
+    public final static byte REF_invokeInterface = 9;
 
     // pseudo-access bits
     public final static int ACC_IC_LONG_FORM   = (1<<16); //for ic_flags
@@ -133,7 +158,7 @@ class Constants {
     public static final int AO_HAVE_SPECIAL_FORMATS   = 1<<0;
     public static final int AO_HAVE_CP_NUMBERS        = 1<<1;
     public static final int AO_HAVE_ALL_CODE_FLAGS    = 1<<2;
-    public static final int AO_3_UNUSED_MBZ           = 1<<3;
+    public static final int AO_HAVE_CP_EXTRAS         = 1<<3;
     public static final int AO_HAVE_FILE_HEADERS      = 1<<4;
     public static final int AO_DEFLATE_HINT           = 1<<5;
     public static final int AO_HAVE_FILE_MODTIME      = 1<<6;
@@ -143,6 +168,7 @@ class Constants {
     public static final int AO_HAVE_FIELD_FLAGS_HI    = 1<<10;
     public static final int AO_HAVE_METHOD_FLAGS_HI   = 1<<11;
     public static final int AO_HAVE_CODE_FLAGS_HI     = 1<<12;
+    public static final int AO_UNUSED_MBZ          = (-1)<<13;  // option bits reserved for future use
 
     public static final int LG_AO_HAVE_XXX_FLAGS_HI   = 9;
 
@@ -357,7 +383,7 @@ class Constants {
         _invokespecial        = 183, // 0xb7
         _invokestatic         = 184, // 0xb8
         _invokeinterface      = 185, // 0xb9
-        _xxxunusedxxx         = 186, // 0xba
+        _invokedynamic        = 186, // 0xba
         _new                  = 187, // 0xbb
         _newarray             = 188, // 0xbc
         _anewarray            = 189, // 0xbd
@@ -422,15 +448,18 @@ class Constants {
     // Ldc variants gain us only 0.007% improvement in compression ratio,
     // but they simplify the file format greatly.
     public final static int _xldc_op = _invokeinit_limit;
-    public final static int _aldc = _ldc;
+    public final static int _sldc = _ldc;  // previously named _aldc
     public final static int _cldc = _xldc_op+0;
     public final static int _ildc = _xldc_op+1;
     public final static int _fldc = _xldc_op+2;
-    public final static int _aldc_w = _ldc_w;
+    public final static int _sldc_w = _ldc_w;  // previously named _aldc_w
     public final static int _cldc_w = _xldc_op+3;
     public final static int _ildc_w = _xldc_op+4;
     public final static int _fldc_w = _xldc_op+5;
     public final static int _lldc2_w = _ldc2_w;
     public final static int _dldc2_w = _xldc_op+6;
-    public final static int _xldc_limit = _xldc_op+7;
+    // anything other than primitive, string, or class must be handled with qldc:
+    public final static int _qldc   = _xldc_op+7;
+    public final static int _qldc_w = _xldc_op+8;
+    public final static int _xldc_limit = _xldc_op+9;
 }

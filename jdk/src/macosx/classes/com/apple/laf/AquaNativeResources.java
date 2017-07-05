@@ -27,7 +27,6 @@ package com.apple.laf;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.security.PrivilegedAction;
 
 import javax.swing.plaf.UIResource;
 
@@ -35,7 +34,13 @@ import com.apple.laf.AquaUtils.RecyclableSingleton;
 
 public class AquaNativeResources {
     static {
-        java.security.AccessController.doPrivileged((PrivilegedAction<?>)new sun.security.action.LoadLibraryAction("osxui"));
+        java.security.AccessController.doPrivileged(
+            new java.security.PrivilegedAction<Void>() {
+                public Void run() {
+                    System.loadLibrary("osxui");
+                    return null;
+                }
+            });
     }
 
     // TODO: removing CColorPaint for now

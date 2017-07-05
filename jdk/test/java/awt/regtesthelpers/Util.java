@@ -600,4 +600,34 @@ public final class Util {
                                 time, printEvent);
 
     }
+
+
+    /**
+     * Invokes the <code>task</code> on the EDT thread.
+     *
+     * @return result of the <code>task</code>
+     */
+    public static <T> T invokeOnEDT(final java.util.concurrent.Callable<T> task) throws Exception {
+        final java.util.List<T> result = new java.util.ArrayList<T>(1);
+        final Exception[] exception = new Exception[1];
+
+        javax.swing.SwingUtilities.invokeAndWait(new Runnable() {
+
+            @Override
+            public void run() {
+                try {
+                    result.add(task.call());
+                } catch (Exception e) {
+                    exception[0] = e;
+                }
+            }
+        });
+
+        if (exception[0] != null) {
+            throw exception[0];
+        }
+
+        return result.get(0);
+    }
+
 }

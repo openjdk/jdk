@@ -234,7 +234,13 @@ class InetAddress implements java.io.Serializable {
     static {
         preferIPv6Address = java.security.AccessController.doPrivileged(
             new GetBooleanAction("java.net.preferIPv6Addresses")).booleanValue();
-        AccessController.doPrivileged(new LoadLibraryAction("net"));
+        AccessController.doPrivileged(
+            new java.security.PrivilegedAction<Void>() {
+                public Void run() {
+                    System.loadLibrary("net");
+                    return null;
+                }
+            });
         init();
     }
 
