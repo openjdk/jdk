@@ -690,8 +690,8 @@ void FpuStackAllocator::handle_op2(LIR_Op2* op2) {
 
     case lir_mul_strictfp:
     case lir_div_strictfp: {
-      assert(op2->tmp_opr()->is_fpu_register(), "strict operations need temporary fpu stack slot");
-      insert_free_if_dead(op2->tmp_opr());
+      assert(op2->tmp1_opr()->is_fpu_register(), "strict operations need temporary fpu stack slot");
+      insert_free_if_dead(op2->tmp1_opr());
       assert(sim()->stack_size() <= 7, "at least one stack slot must be free");
       // fall-through: continue with the normal handling of lir_mul and lir_div
     }
@@ -787,16 +787,17 @@ void FpuStackAllocator::handle_op2(LIR_Op2* op2) {
 
     case lir_log:
     case lir_log10: {
-      // log and log10 needs one temporary fpu stack slot, so there is ontemporary
-      // registers stored in temp of the operation.
-      // the stack allocator must guarantee that the stack slots are really free,
-      // otherwise there might be a stack overflow.
+      // log and log10 need one temporary fpu stack slot, so
+      // there is one temporary registers stored in temp of the
+      // operation. the stack allocator must guarantee that the stack
+      // slots are really free, otherwise there might be a stack
+      // overflow.
       assert(right->is_illegal(), "must be");
       assert(left->is_fpu_register(), "must be");
       assert(res->is_fpu_register(), "must be");
-      assert(op2->tmp_opr()->is_fpu_register(), "must be");
+      assert(op2->tmp1_opr()->is_fpu_register(), "must be");
 
-      insert_free_if_dead(op2->tmp_opr());
+      insert_free_if_dead(op2->tmp1_opr());
       insert_free_if_dead(res, left);
       insert_exchange(left);
       do_rename(left, res);
@@ -812,8 +813,9 @@ void FpuStackAllocator::handle_op2(LIR_Op2* op2) {
 
     case lir_tan:
     case lir_sin:
-    case lir_cos: {
-      // sin and cos need two temporary fpu stack slots, so there are two temporary
+    case lir_cos:
+    case lir_exp: {
+      // sin, cos and exp need two temporary fpu stack slots, so there are two temporary
       // registers (stored in right and temp of the operation).
       // the stack allocator must guarantee that the stack slots are really free,
       // otherwise there might be a stack overflow.
@@ -821,11 +823,11 @@ void FpuStackAllocator::handle_op2(LIR_Op2* op2) {
       assert(res->is_fpu_register(), "must be");
       // assert(left->is_last_use(), "old value gets destroyed");
       assert(right->is_fpu_register(), "right is used as the first temporary register");
-      assert(op2->tmp_opr()->is_fpu_register(), "temp is used as the second temporary register");
-      assert(fpu_num(left) != fpu_num(right) && fpu_num(right) != fpu_num(op2->tmp_opr()) && fpu_num(op2->tmp_opr()) != fpu_num(res), "need distinct temp registers");
+      assert(op2->tmp1_opr()->is_fpu_register(), "temp is used as the second temporary register");
+      assert(fpu_num(left) != fpu_num(right) && fpu_num(right) != fpu_num(op2->tmp1_opr()) && fpu_num(op2->tmp1_opr()) != fpu_num(res), "need distinct temp registers");
 
       insert_free_if_dead(right);
-      insert_free_if_dead(op2->tmp_opr());
+      insert_free_if_dead(op2->tmp1_opr());
 
       insert_free_if_dead(res, left);
       insert_exchange(left);
@@ -836,6 +838,53 @@ void FpuStackAllocator::handle_op2(LIR_Op2* op2) {
 
       op2->set_fpu_stack_size(sim()->stack_size());
       assert(sim()->stack_size() <= 6, "at least two stack slots must be free");
+      break;
+    }
+
+    case lir_pow: {
+      // pow needs two temporary fpu stack slots, so there are two temporary
+      // registers (stored in tmp1 and tmp2 of the operation).
+      // the stack allocator must guarantee that the stack slots are really free,
+      // otherwise there might be a stack overflow.
+      assert(left->is_fpu_register(), "must be");
+      assert(right->is_fpu_register(), "must be");
+      assert(res->is_fpu_register(), "must be");
+
+      assert(op2->tmp1_opr()->is_fpu_register(), "tmp1 is the first temporary register");
+      assert(op2->tmp2_opr()->is_fpu_register(), "tmp2 is the second temporary register");
+      assert(fpu_num(left) != fpu_num(right) && fpu_num(left) != fpu_num(op2->tmp1_opr()) && fpu_num(left) != fpu_num(op2->tmp2_opr()) && fpu_num(left) != fpu_num(res), "need distinct temp registers");
+      assert(fpu_num(right) != fpu_num(op2->tmp1_opr()) && fpu_num(right) != fpu_num(op2->tmp2_opr()) && fpu_num(right) != fpu_num(res), "need distinct temp registers");
+      assert(fpu_num(op2->tmp1_opr()) != fpu_num(op2->tmp2_opr()) && fpu_num(op2->tmp1_opr()) != fpu_num(res), "need distinct temp registers");
+      assert(fpu_num(op2->tmp2_opr()) != fpu_num(res), "need distinct temp registers");
+
+      insert_free_if_dead(op2->tmp1_opr());
+      insert_free_if_dead(op2->tmp2_opr());
+
+      // Must bring both operands to top of stack with following operand ordering:
+      // * fpu stack before pow: ... right left
+      // * fpu stack after pow:  ... left
+
+      insert_free_if_dead(res, right);
+
+      if (tos_offset(right) != 1) {
+        insert_exchange(right);
+        insert_exchange(1);
+      }
+      insert_exchange(left);
+      assert(tos_offset(right) == 1, "check");
+      assert(tos_offset(left) == 0, "check");
+
+      new_left = to_fpu_stack_top(left);
+      new_right = to_fpu_stack(right);
+
+      op2->set_fpu_stack_size(sim()->stack_size());
+      assert(sim()->stack_size() <= 6, "at least two stack slots must be free");
+
+      sim()->pop();
+
+      do_rename(right, res);
+
+      new_res = to_fpu_stack_top(res);
       break;
     }
 

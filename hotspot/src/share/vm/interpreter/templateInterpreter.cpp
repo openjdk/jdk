@@ -370,6 +370,8 @@ void TemplateInterpreterGenerator::generate_all() {
   method_entry(java_lang_math_sqrt )
   method_entry(java_lang_math_log  )
   method_entry(java_lang_math_log10)
+  method_entry(java_lang_math_exp  )
+  method_entry(java_lang_math_pow  )
   method_entry(java_lang_ref_reference_get)
 
   // all native method kinds (must be one contiguous block)
