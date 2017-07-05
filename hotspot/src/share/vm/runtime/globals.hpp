@@ -535,6 +535,9 @@ class CommandLineFlags {
   develop(bool, CleanChunkPoolAsync, falseInEmbedded,                       \
           "Clean the chunk pool asynchronously")                            \
                                                                             \
+  experimental(bool, AlwaysSafeConstructors, false,                         \
+          "Force safe construction, as if all fields are final.")           \
+                                                                            \
   /* Temporary: See 6948537 */                                              \
   experimental(bool, UseMemSetInBOT, true,                                  \
           "(Unstable) uses memset in BOT updates in GC code")               \
@@ -811,8 +814,8 @@ class CommandLineFlags {
   product(bool, PrintOopAddress, false,                                     \
           "Always print the location of the oop")                           \
                                                                             \
-  notproduct(bool, VerifyCodeCacheOften, false,                             \
-          "Verify compiled-code cache often")                               \
+  notproduct(bool, VerifyCodeCache, false,                                  \
+          "Verify code cache on memory allocation/deallocation")            \
                                                                             \
   develop(bool, ZapDeadCompiledLocals, false,                               \
           "Zap dead locals in compiler frames")                             \
@@ -2984,7 +2987,8 @@ class CommandLineFlags {
           "maximum number of nested recursive calls that are inlined")      \
                                                                             \
   develop(intx, MaxForceInlineLevel, 100,                                   \
-          "maximum number of nested @ForceInline calls that are inlined")   \
+          "maximum number of nested calls that are forced for inlining "    \
+          "(using CompilerOracle or marked w/ @ForceInline)")               \
                                                                             \
   product_pd(intx, InlineSmallCode,                                         \
           "Only inline already compiled methods if their code size is "     \
@@ -3292,8 +3296,8 @@ class CommandLineFlags {
           "disable this feature")                                           \
                                                                             \
   /* code cache parameters */                                               \
-  /* ppc64 has large code-entry alignment. */                               \
-  develop(uintx, CodeCacheSegmentSize, 64 PPC64_ONLY(+64),                  \
+  /* ppc64/tiered compilation has large code-entry alignment. */            \
+  develop(uintx, CodeCacheSegmentSize, 64 PPC64_ONLY(+64) NOT_PPC64(TIERED_ONLY(+64)),\
           "Code cache segment size (in bytes) - smallest unit of "          \
           "allocation")                                                     \
                                                                             \
@@ -3795,8 +3799,8 @@ class CommandLineFlags {
   experimental(bool, TrustFinalNonStaticFields, false,                      \
           "trust final non-static declarations for constant folding")       \
                                                                             \
-  experimental(bool, FoldStableValues, false,                               \
-          "Private flag to control optimizations for stable variables")     \
+  diagnostic(bool, FoldStableValues, true,                                  \
+          "Optimize loads from stable fields (marked w/ @Stable)")          \
                                                                             \
   develop(bool, TraceInvokeDynamic, false,                                  \
           "trace internal invoke dynamic operations")                       \
@@ -3863,6 +3867,9 @@ class CommandLineFlags {
           SOLARIS_ONLY(64*K) NOT_SOLARIS(max_uintx),                        \
           "Allocation less than this value will be allocated "              \
           "using malloc. Larger allocations will use mmap.")                \
+                                                                            \
+  experimental(bool, AlwaysAtomicAccesses, false,                           \
+          "Accesses to all variables should always be atomic")              \
                                                                             \
   product(bool, EnableTracing, false,                                       \
           "Enable event-based tracing")                                     \

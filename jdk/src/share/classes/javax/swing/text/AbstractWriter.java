@@ -141,10 +141,7 @@ public abstract class AbstractWriter {
             setLineSeparator((String)docNewline);
         }
         else {
-            String newline = null;
-            try {
-                newline = System.getProperty("line.separator");
-            } catch (SecurityException se) {}
+            String newline = System.lineSeparator();
             if (newline == null) {
                 // Should not get here, but if we do it means we could not
                 // find a newline string, use \n in this case.

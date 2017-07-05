@@ -141,7 +141,8 @@ public:
     struct {
       uint32_t LahfSahf     : 1,
                CmpLegacy    : 1,
-                            : 4,
+                            : 3,
+               lzcnt_intel  : 1,
                lzcnt        : 1,
                sse4a        : 1,
                misalignsse  : 1,
@@ -251,7 +252,9 @@ protected:
     CPU_AVX2   = (1 << 18),
     CPU_AES    = (1 << 19),
     CPU_ERMS   = (1 << 20), // enhanced 'rep movsb/stosb' instructions
-    CPU_CLMUL  = (1 << 21) // carryless multiply for CRC
+    CPU_CLMUL  = (1 << 21), // carryless multiply for CRC
+    CPU_BMI1   = (1 << 22),
+    CPU_BMI2   = (1 << 23)
   } cpuFeatureFlags;
 
   enum {
@@ -423,6 +426,8 @@ protected:
       if (_cpuid_info.sef_cpuid7_ebx.bits.avx2 != 0)
         result |= CPU_AVX2;
     }
+    if(_cpuid_info.sef_cpuid7_ebx.bits.bmi1 != 0)
+      result |= CPU_BMI1;
     if (_cpuid_info.std_cpuid1_edx.bits.tsc != 0)
       result |= CPU_TSC;
     if (_cpuid_info.ext_cpuid7_edx.bits.tsc_invariance != 0)
@@ -443,6 +448,13 @@ protected:
         result |= CPU_LZCNT;
       if (_cpuid_info.ext_cpuid1_ecx.bits.sse4a != 0)
         result |= CPU_SSE4A;
+    }
+    // Intel features.
+    if(is_intel()) {
+      if(_cpuid_info.sef_cpuid7_ebx.bits.bmi2 != 0)
+        result |= CPU_BMI2;
+      if(_cpuid_info.ext_cpuid1_ecx.bits.lzcnt_intel != 0)
+        result |= CPU_LZCNT;
     }
 
     return result;
@@ -560,7 +572,8 @@ public:
   static bool supports_aes()      { return (_cpuFeatures & CPU_AES) != 0; }
   static bool supports_erms()     { return (_cpuFeatures & CPU_ERMS) != 0; }
   static bool supports_clmul()    { return (_cpuFeatures & CPU_CLMUL) != 0; }
-
+  static bool supports_bmi1()     { return (_cpuFeatures & CPU_BMI1) != 0; }
+  static bool supports_bmi2()     { return (_cpuFeatures & CPU_BMI2) != 0; }
   // Intel features
   static bool is_intel_family_core() { return is_intel() &&
                                        extended_cpu_family() == CPU_FAMILY_INTEL_CORE; }

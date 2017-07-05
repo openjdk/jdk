@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -989,21 +989,21 @@ JvmtiEventController::set_extension_event_callback(JvmtiEnvBase *env,
 
 void
 JvmtiEventController::set_frame_pop(JvmtiEnvThreadState *ets, JvmtiFramePop fpop) {
-  MutexLocker mu(JvmtiThreadState_lock);
+  MutexLockerEx mu(SafepointSynchronize::is_at_safepoint() ? NULL : JvmtiThreadState_lock);
   JvmtiEventControllerPrivate::set_frame_pop(ets, fpop);
 }
 
 
 void
 JvmtiEventController::clear_frame_pop(JvmtiEnvThreadState *ets, JvmtiFramePop fpop) {
-  MutexLocker mu(JvmtiThreadState_lock);
+  MutexLockerEx mu(SafepointSynchronize::is_at_safepoint() ? NULL : JvmtiThreadState_lock);
   JvmtiEventControllerPrivate::clear_frame_pop(ets, fpop);
 }
 
 
 void
 JvmtiEventController::clear_to_frame_pop(JvmtiEnvThreadState *ets, JvmtiFramePop fpop) {
-  MutexLocker mu(JvmtiThreadState_lock);
+  MutexLockerEx mu(SafepointSynchronize::is_at_safepoint() ? NULL : JvmtiThreadState_lock);
   JvmtiEventControllerPrivate::clear_to_frame_pop(ets, fpop);
 }
 

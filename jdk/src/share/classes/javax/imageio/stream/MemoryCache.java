@@ -58,7 +58,7 @@ class MemoryCache {
 
     private static final int BUFFER_LENGTH = 8192;
 
-    private ArrayList cache = new ArrayList();
+    private ArrayList<byte[]> cache = new ArrayList<>();
 
     private long cacheStart = 0L;
 
@@ -74,7 +74,7 @@ class MemoryCache {
             // contiguous data...
             throw new IOException("Cache addressing limit exceeded!");
         }
-        return (byte[])cache.get((int)blockOffset);
+        return cache.get((int)blockOffset);
     }
 
     /**

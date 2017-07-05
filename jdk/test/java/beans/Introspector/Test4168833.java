@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,11 @@
 
 /*
  * @test
- * @bug 4168833
+ * @bug 4168833 8034085
  * @summary Tests that Introspector does not create IndexedPropertyDescriptor
  *          from non-indexed PropertyDescriptor
  * @author Mark Davidson
+ * @author Sergey Malenkov
  */
 
 import java.awt.Color;
@@ -42,10 +43,6 @@ import java.beans.PropertyDescriptor;
  */
 public class Test4168833 {
     public static void main(String[] args) throws Exception {
-        IndexedPropertyDescriptor ipd = BeanUtils.getIndexedPropertyDescriptor(Base.class, "prop");
-        if (!ipd.getIndexedPropertyType().equals(Dimension.class)) {
-            error(ipd, "Base.prop property should a Dimension");
-        }
         // When the Sub class is introspected,
         // the property type should be color.
         // The complete "classic" set of properties

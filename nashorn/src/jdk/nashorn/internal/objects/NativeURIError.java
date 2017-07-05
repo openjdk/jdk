@@ -61,13 +61,9 @@ public final class NativeURIError extends ScriptObject {
     // initialized by nasgen
     private static PropertyMap $nasgenmap$;
 
-    static PropertyMap getInitialMap() {
-        return $nasgenmap$;
-    }
-
     @SuppressWarnings("LeakingThisInConstructor")
     NativeURIError(final Object msg, final Global global) {
-        super(global.getURIErrorPrototype(), getInitialMap());
+        super(global.getURIErrorPrototype(), $nasgenmap$);
         if (msg != UNDEFINED) {
             this.instMessage = JSType.toString(msg);
         } else {

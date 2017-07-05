@@ -50,8 +50,6 @@ import sun.rmi.runtime.RuntimeUtil;
 import sun.rmi.server.UnicastRef;
 import sun.rmi.server.UnicastServerRef;
 import sun.rmi.server.Util;
-import sun.security.action.GetLongAction;
-import sun.security.action.GetPropertyAction;
 
 /**
  * This class implements the guts of the server-side distributed GC
@@ -65,17 +63,17 @@ final class DGCImpl implements DGC {
     /* dgc system log */
     static final Log dgcLog = Log.getLog("sun.rmi.dgc", "dgc",
         LogStream.parseLevel(AccessController.doPrivileged(
-            new GetPropertyAction("sun.rmi.dgc.logLevel"))));
+            (PrivilegedAction<String>) () -> System.getProperty("sun.rmi.dgc.logLevel"))));
 
     /** lease duration to grant to clients */
     private static final long leaseValue =              // default 10 minutes
         AccessController.doPrivileged(
-            new GetLongAction("java.rmi.dgc.leaseValue", 600000));
+            (PrivilegedAction<Long>) () -> Long.getLong("java.rmi.dgc.leaseValue", 600000));
 
     /** lease check interval; default is half of lease grant duration */
     private static final long leaseCheckInterval =
         AccessController.doPrivileged(
-            new GetLongAction("sun.rmi.dgc.checkInterval", leaseValue / 2));
+            (PrivilegedAction<Long>) () -> Long.getLong("sun.rmi.dgc.checkInterval", leaseValue / 2));
 
     /** thread pool for scheduling delayed tasks */
     private static final ScheduledExecutorService scheduler =

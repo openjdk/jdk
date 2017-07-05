@@ -24,7 +24,8 @@
  */
 
 #include "precompiled.hpp"
-#include "assembler_ppc.inline.hpp"
+#include "asm/assembler.inline.hpp"
+#include "asm/macroAssembler.inline.hpp"
 #include "compiler/disassembler.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/java.hpp"
@@ -168,7 +169,7 @@ void VM_Version::determine_section_size() {
 
   uint32_t *code = (uint32_t *)a->pc();
   // Emit code.
-  void (*test1)() = (void(*)())(void *)a->emit_fd();
+  void (*test1)() = (void(*)())(void *)a->function_entry();
 
   Label l1;
 
@@ -242,7 +243,7 @@ void VM_Version::determine_section_size() {
   a->blr();
 
   // Emit code.
-  void (*test2)() = (void(*)())(void *)a->emit_fd();
+  void (*test2)() = (void(*)())(void *)a->function_entry();
   // uint32_t *code = (uint32_t *)a->pc();
 
   Label l2;
@@ -383,8 +384,12 @@ void VM_Version::determine_section_size() {
 #endif // COMPILER2
 
 void VM_Version::determine_features() {
+#if defined(ABI_ELFv2)
+  const int code_size = (num_features+1+2*7)*BytesPerInstWord; // TODO(asmundak): calculation is incorrect.
+#else
   // 7 InstWords for each call (function descriptor + blr instruction).
   const int code_size = (num_features+1+2*7)*BytesPerInstWord;
+#endif
   int features = 0;
 
   // create test area
@@ -398,7 +403,7 @@ void VM_Version::determine_features() {
   MacroAssembler* a = new MacroAssembler(&cb);
 
   // Emit code.
-  void (*test)(address addr, uint64_t offset)=(void(*)(address addr, uint64_t offset))(void *)a->emit_fd();
+  void (*test)(address addr, uint64_t offset)=(void(*)(address addr, uint64_t offset))(void *)a->function_entry();
   uint32_t *code = (uint32_t *)a->pc();
   // Don't use R0 in ldarx.
   // Keep R3_ARG1 unmodified, it contains &field (see below).
@@ -415,7 +420,7 @@ void VM_Version::determine_features() {
   a->blr();
 
   // Emit function to set one cache line to zero. Emit function descriptor and get pointer to it.
-  void (*zero_cacheline_func_ptr)(char*) = (void(*)(char*))(void *)a->emit_fd();
+  void (*zero_cacheline_func_ptr)(char*) = (void(*)(char*))(void *)a->function_entry();
   a->dcbz(R3_ARG1); // R3_ARG1 = addr
   a->blr();
 

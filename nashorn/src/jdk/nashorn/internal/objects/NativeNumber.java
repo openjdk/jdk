@@ -34,6 +34,7 @@ import static jdk.nashorn.internal.lookup.Lookup.MH;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.text.NumberFormat;
 import java.util.Locale;
 import jdk.internal.dynalink.linker.GuardedInvocation;
@@ -57,7 +58,10 @@ import jdk.nashorn.internal.runtime.linker.PrimitiveLookup;
 @ScriptClass("Number")
 public final class NativeNumber extends ScriptObject {
 
-    static final MethodHandle WRAPFILTER = findWrapFilter();
+    // Method handle to create an object wrapper for a primitive number
+    private static final MethodHandle WRAPFILTER = findOwnMH("wrapFilter", MH.type(NativeNumber.class, Object.class));
+    // Method handle to retrieve the Number prototype object
+    private static final MethodHandle PROTOFILTER = findOwnMH("protoFilter", MH.type(Object.class, Object.class));
 
     /** ECMA 15.7.3.2 largest positive finite value */
     @Property(attributes = Attribute.NON_ENUMERABLE_CONSTANT, where = Where.CONSTRUCTOR)
@@ -86,10 +90,6 @@ public final class NativeNumber extends ScriptObject {
     // initialized by nasgen
     private static PropertyMap $nasgenmap$;
 
-    static PropertyMap getInitialMap() {
-        return $nasgenmap$;
-    }
-
     private NativeNumber(final double value, final ScriptObject proto, final PropertyMap map) {
         super(proto, map);
         this.value = value;
@@ -98,7 +98,7 @@ public final class NativeNumber extends ScriptObject {
     }
 
     NativeNumber(final double value, final Global global) {
-        this(value, global.getNumberPrototype(), getInitialMap());
+        this(value, global.getNumberPrototype(), $nasgenmap$);
     }
 
     private NativeNumber(final double value) {
@@ -322,12 +322,17 @@ public final class NativeNumber extends ScriptObject {
      * @return Link to be invoked at call site.
      */
     public static GuardedInvocation lookupPrimitive(final LinkRequest request, final Object receiver) {
-        return PrimitiveLookup.lookupPrimitive(request, Number.class, new NativeNumber(((Number)receiver).doubleValue()), WRAPFILTER);
+        return PrimitiveLookup.lookupPrimitive(request, Number.class, new NativeNumber(((Number)receiver).doubleValue()), WRAPFILTER, PROTOFILTER);
     }
 
     @SuppressWarnings("unused")
     private static NativeNumber wrapFilter(final Object receiver) {
         return new NativeNumber(((Number)receiver).doubleValue());
+    }
+
+    @SuppressWarnings("unused")
+    private static Object protoFilter(final Object object) {
+        return Global.instance().getNumberPrototype();
     }
 
     private static double getNumberValue(final Object self) {
@@ -378,7 +383,7 @@ public final class NativeNumber extends ScriptObject {
         return str;
     }
 
-    private static MethodHandle findWrapFilter() {
-        return MH.findStatic(MethodHandles.lookup(), NativeNumber.class, "wrapFilter", MH.type(NativeNumber.class, Object.class));
+    private static MethodHandle findOwnMH(final String name, final MethodType type) {
+        return MH.findStatic(MethodHandles.lookup(), NativeNumber.class, name, type);
     }
 }

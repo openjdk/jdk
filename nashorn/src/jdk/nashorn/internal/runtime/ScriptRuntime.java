@@ -474,7 +474,7 @@ public final class ScriptRuntime {
      * @return {@link WithObject} that is the new scope
      */
     public static ScriptObject openWith(final ScriptObject scope, final Object expression) {
-        final ScriptObject global = Context.getGlobalTrusted();
+        final Global global = Context.getGlobal();
         if (expression == UNDEFINED) {
             throw typeError(global, "cant.apply.with.to.undefined");
         } else if (expression == null) {

@@ -108,12 +108,16 @@ class Method : public Metadata {
 #endif
   u2                _method_size;                // size of this object
   u1                _intrinsic_id;               // vmSymbols::intrinsic_id (0 == _none)
-  u1                _jfr_towrite      : 1,       // Flags
-                    _caller_sensitive : 1,
-                    _force_inline     : 1,
-                    _hidden           : 1,
-                    _dont_inline      : 1,
-                                      : 3;
+
+  // Flags
+  enum Flags {
+    _jfr_towrite      = 1 << 0,
+    _caller_sensitive = 1 << 1,
+    _force_inline     = 1 << 2,
+    _dont_inline      = 1 << 3,
+    _hidden           = 1 << 4
+  };
+  u1 _flags;
 
 #ifndef PRODUCT
   int               _compiled_invocation_count;  // Number of nmethod invocations so far (for perf. debugging)
@@ -759,16 +763,41 @@ class Method : public Metadata {
   void init_intrinsic_id();     // updates from _none if a match
   static vmSymbols::SID klass_id_for_intrinsics(Klass* holder);
 
-  bool     jfr_towrite()            { return _jfr_towrite;          }
-  void set_jfr_towrite(bool x)      {        _jfr_towrite = x;      }
-  bool     caller_sensitive()       { return _caller_sensitive;     }
-  void set_caller_sensitive(bool x) {        _caller_sensitive = x; }
-  bool     force_inline()           { return _force_inline;         }
-  void set_force_inline(bool x)     {        _force_inline = x;     }
-  bool     dont_inline()            { return _dont_inline;          }
-  void set_dont_inline(bool x)      {        _dont_inline = x;      }
-  bool  is_hidden()                 { return _hidden;               }
-  void set_hidden(bool x)           {        _hidden = x;           }
+  bool jfr_towrite() {
+    return (_flags & _jfr_towrite) != 0;
+  }
+  void set_jfr_towrite(bool x) {
+    _flags = x ? (_flags | _jfr_towrite) : (_flags & ~_jfr_towrite);
+  }
+
+  bool caller_sensitive() {
+    return (_flags & _caller_sensitive) != 0;
+  }
+  void set_caller_sensitive(bool x) {
+    _flags = x ? (_flags | _caller_sensitive) : (_flags & ~_caller_sensitive);
+  }
+
+  bool force_inline() {
+    return (_flags & _force_inline) != 0;
+  }
+  void set_force_inline(bool x) {
+    _flags = x ? (_flags | _force_inline) : (_flags & ~_force_inline);
+  }
+
+  bool dont_inline() {
+    return (_flags & _dont_inline) != 0;
+  }
+  void set_dont_inline(bool x) {
+    _flags = x ? (_flags | _dont_inline) : (_flags & ~_dont_inline);
+  }
+
+  bool is_hidden() {
+    return (_flags & _hidden) != 0;
+  }
+  void set_hidden(bool x) {
+    _flags = x ? (_flags | _hidden) : (_flags & ~_hidden);
+  }
+
   ConstMethod::MethodType method_type() const {
       return _constMethod->method_type();
   }

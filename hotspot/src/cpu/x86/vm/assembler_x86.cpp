@@ -1089,6 +1089,21 @@ void Assembler::andl(Register dst, Register src) {
   emit_arith(0x23, 0xC0, dst, src);
 }
 
+void Assembler::andnl(Register dst, Register src1, Register src2) {
+  assert(VM_Version::supports_bmi1(), "bit manipulation instructions not supported");
+  int encode = vex_prefix_0F38_and_encode(dst, src1, src2);
+  emit_int8((unsigned char)0xF2);
+  emit_int8((unsigned char)(0xC0 | encode));
+}
+
+void Assembler::andnl(Register dst, Register src1, Address src2) {
+  InstructionMark im(this);
+  assert(VM_Version::supports_bmi1(), "bit manipulation instructions not supported");
+  vex_prefix_0F38(dst, src1, src2);
+  emit_int8((unsigned char)0xF2);
+  emit_operand(dst, src2);
+}
+
 void Assembler::bsfl(Register dst, Register src) {
   int encode = prefix_and_encode(dst->encoding(), src->encoding());
   emit_int8(0x0F);
@@ -1108,6 +1123,51 @@ void Assembler::bswapl(Register reg) { // bswap
   int encode = prefix_and_encode(reg->encoding());
   emit_int8(0x0F);
   emit_int8((unsigned char)(0xC8 | encode));
+}
+
+void Assembler::blsil(Register dst, Register src) {
+  assert(VM_Version::supports_bmi1(), "bit manipulation instructions not supported");
+  int encode = vex_prefix_0F38_and_encode(rbx, dst, src);
+  emit_int8((unsigned char)0xF3);
+  emit_int8((unsigned char)(0xC0 | encode));
+}
+
+void Assembler::blsil(Register dst, Address src) {
+  InstructionMark im(this);
+  assert(VM_Version::supports_bmi1(), "bit manipulation instructions not supported");
+  vex_prefix_0F38(rbx, dst, src);
+  emit_int8((unsigned char)0xF3);
+  emit_operand(rbx, src);
+}
+
+void Assembler::blsmskl(Register dst, Register src) {
+  assert(VM_Version::supports_bmi1(), "bit manipulation instructions not supported");
+  int encode = vex_prefix_0F38_and_encode(rdx, dst, src);
+  emit_int8((unsigned char)0xF3);
+  emit_int8((unsigned char)(0xC0 | encode));
+}
+
+void Assembler::blsmskl(Register dst, Address src) {
+  InstructionMark im(this);
+  assert(VM_Version::supports_bmi1(), "bit manipulation instructions not supported");
+  vex_prefix_0F38(rdx, dst, src);
+  emit_int8((unsigned char)0xF3);
+  emit_operand(rdx, src);
+}
+
+void Assembler::blsrl(Register dst, Register src) {
+  assert(VM_Version::supports_bmi1(), "bit manipulation instructions not supported");
+  int encode = vex_prefix_0F38_and_encode(rcx, dst, src);
+  emit_int8((unsigned char)0xF3);
+  emit_int8((unsigned char)(0xC0 | encode));
+}
+
+void Assembler::blsrl(Register dst, Address src) {
+  InstructionMark im(this);
+  assert(VM_Version::supports_bmi1(), "bit manipulation instructions not supported");
+  vex_prefix_0F38(rcx, dst, src);
+  emit_int8((unsigned char)0xF3);
+  emit_operand(rcx, src);
 }
 
 void Assembler::call(Label& L, relocInfo::relocType rtype) {
@@ -2876,6 +2936,24 @@ void Assembler::testl(Register dst, Address  src) {
   prefix(src, dst);
   emit_int8((unsigned char)0x85);
   emit_operand(dst, src);
+}
+
+void Assembler::tzcntl(Register dst, Register src) {
+  assert(VM_Version::supports_bmi1(), "tzcnt instruction not supported");
+  emit_int8((unsigned char)0xF3);
+  int encode = prefix_and_encode(dst->encoding(), src->encoding());
+  emit_int8(0x0F);
+  emit_int8((unsigned char)0xBC);
+  emit_int8((unsigned char)0xC0 | encode);
+}
+
+void Assembler::tzcntq(Register dst, Register src) {
+  assert(VM_Version::supports_bmi1(), "tzcnt instruction not supported");
+  emit_int8((unsigned char)0xF3);
+  int encode = prefixq_and_encode(dst->encoding(), src->encoding());
+  emit_int8(0x0F);
+  emit_int8((unsigned char)0xBC);
+  emit_int8((unsigned char)(0xC0 | encode));
 }
 
 void Assembler::ucomisd(XMMRegister dst, Address src) {
@@ -4837,6 +4915,21 @@ void Assembler::andq(Register dst, Register src) {
   emit_arith(0x23, 0xC0, dst, src);
 }
 
+void Assembler::andnq(Register dst, Register src1, Register src2) {
+  assert(VM_Version::supports_bmi1(), "bit manipulation instructions not supported");
+  int encode = vex_prefix_0F38_and_encode_q(dst, src1, src2);
+  emit_int8((unsigned char)0xF2);
+  emit_int8((unsigned char)(0xC0 | encode));
+}
+
+void Assembler::andnq(Register dst, Register src1, Address src2) {
+  InstructionMark im(this);
+  assert(VM_Version::supports_bmi1(), "bit manipulation instructions not supported");
+  vex_prefix_0F38_q(dst, src1, src2);
+  emit_int8((unsigned char)0xF2);
+  emit_operand(dst, src2);
+}
+
 void Assembler::bsfq(Register dst, Register src) {
   int encode = prefixq_and_encode(dst->encoding(), src->encoding());
   emit_int8(0x0F);
@@ -4856,6 +4949,51 @@ void Assembler::bswapq(Register reg) {
   int encode = prefixq_and_encode(reg->encoding());
   emit_int8(0x0F);
   emit_int8((unsigned char)(0xC8 | encode));
+}
+
+void Assembler::blsiq(Register dst, Register src) {
+  assert(VM_Version::supports_bmi1(), "bit manipulation instructions not supported");
+  int encode = vex_prefix_0F38_and_encode_q(rbx, dst, src);
+  emit_int8((unsigned char)0xF3);
+  emit_int8((unsigned char)(0xC0 | encode));
+}
+
+void Assembler::blsiq(Register dst, Address src) {
+  InstructionMark im(this);
+  assert(VM_Version::supports_bmi1(), "bit manipulation instructions not supported");
+  vex_prefix_0F38_q(rbx, dst, src);
+  emit_int8((unsigned char)0xF3);
+  emit_operand(rbx, src);
+}
+
+void Assembler::blsmskq(Register dst, Register src) {
+  assert(VM_Version::supports_bmi1(), "bit manipulation instructions not supported");
+  int encode = vex_prefix_0F38_and_encode_q(rdx, dst, src);
+  emit_int8((unsigned char)0xF3);
+  emit_int8((unsigned char)(0xC0 | encode));
+}
+
+void Assembler::blsmskq(Register dst, Address src) {
+  InstructionMark im(this);
+  assert(VM_Version::supports_bmi1(), "bit manipulation instructions not supported");
+  vex_prefix_0F38_q(rdx, dst, src);
+  emit_int8((unsigned char)0xF3);
+  emit_operand(rdx, src);
+}
+
+void Assembler::blsrq(Register dst, Register src) {
+  assert(VM_Version::supports_bmi1(), "bit manipulation instructions not supported");
+  int encode = vex_prefix_0F38_and_encode_q(rcx, dst, src);
+  emit_int8((unsigned char)0xF3);
+  emit_int8((unsigned char)(0xC0 | encode));
+}
+
+void Assembler::blsrq(Register dst, Address src) {
+  InstructionMark im(this);
+  assert(VM_Version::supports_bmi1(), "bit manipulation instructions not supported");
+  vex_prefix_0F38_q(rcx, dst, src);
+  emit_int8((unsigned char)0xF3);
+  emit_operand(rcx, src);
 }
 
 void Assembler::cdqq() {

@@ -453,11 +453,11 @@ void trace_method_handle_stub(const char* adaptername,
 
   if (Verbose) {
     tty->print_cr("Registers:");
-    const int abi_offset = frame::abi_112_size / 8;
+    const int abi_offset = frame::abi_reg_args_size / 8;
     for (int i = R3->encoding(); i <= R12->encoding(); i++) {
       Register r = as_Register(i);
       int count = i - R3->encoding();
-      // The registers are stored in reverse order on the stack (by save_volatile_gprs(R1_SP, abi_112_size)).
+      // The registers are stored in reverse order on the stack (by save_volatile_gprs(R1_SP, abi_reg_args_size)).
       tty->print("%3s=" PTR_FORMAT, r->name(), saved_regs[abi_offset + count]);
       if ((count + 1) % 4 == 0) {
         tty->cr();
@@ -524,9 +524,9 @@ void MethodHandles::trace_method_handle(MacroAssembler* _masm, const char* adapt
   __ save_LR_CR(R0);
   __ mr(R0, R1_SP);                     // saved_sp
   assert(Assembler::is_simm(-nbytes_save, 16), "Overwriting R0");
-  // push_frame_abi112 only uses R0 if nbytes_save is wider than 16 bit
-  __ push_frame_abi112(nbytes_save, R0);
-  __ save_volatile_gprs(R1_SP, frame::abi_112_size); // Except R0.
+  // Push_frame_reg_args only uses R0 if nbytes_save is wider than 16 bit.
+  __ push_frame_reg_args(nbytes_save, R0);
+  __ save_volatile_gprs(R1_SP, frame::abi_reg_args_size); // Except R0.
 
   __ load_const(R3_ARG1, (address)adaptername);
   __ mr(R4_ARG2, R23_method_handle);

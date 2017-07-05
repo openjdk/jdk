@@ -409,7 +409,11 @@ public class UnixPrintJob implements CancelablePrintJob {
                     ((IPPPrintService)service).isIPPSupportedImages(
                                                 flavor.getMimeType()))) {
                     printableJob(new ImagePrinter(instream));
-                    ((UnixPrintService)service).wakeNotifier();
+                    if (service instanceof IPPPrintService) {
+                        ((IPPPrintService)service).wakeNotifier();
+                    } else {
+                        ((UnixPrintService)service).wakeNotifier();
+                    }
                     return;
                 }
             } catch (ClassCastException cce) {
@@ -430,7 +434,11 @@ public class UnixPrintJob implements CancelablePrintJob {
                     instream = url.openStream();
                 } else {
                     printableJob(new ImagePrinter(url));
-                    ((UnixPrintService)service).wakeNotifier();
+                    if (service instanceof IPPPrintService) {
+                        ((IPPPrintService)service).wakeNotifier();
+                    } else {
+                        ((UnixPrintService)service).wakeNotifier();
+                    }
                     return;
                 }
             } catch (ClassCastException cce) {
