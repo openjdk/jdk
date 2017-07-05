@@ -9,11 +9,14 @@ README:
   will be needed.
 
   This one root repository can be obtained with something like:
-    hg clone http://hg.openjdk.java.net/jdk7/jdk7 openjdk7
-  To make sure you have all the nested repositories, you can run:
-    cd openjdk7 && sh ./get_source.sh
-  (This is identical to using the Mercurial Forest Extension command 
-   'hg fclone http://hg.openjdk.java.net/jdk7/jdk7 openjdk7').
+
+    hg clone http://hg.openjdk.java.net/jdk8/jdk8 openjdk8
+  
+  To make sure you have all the nested repositories, you can run the
+  get_source.sh script located in the same respository as this file:
+
+    cd openjdk8 && sh ./get_source.sh
+
   People unfamiliar with Mercurial should read the first few chapters of
   the Mercurial book: http://hgbook.red-bean.com/read/
 
@@ -22,7 +25,7 @@ README:
 Simple Build Instructions:
   
   0. Get the necessary system software/packages installed on your system, see
-     http://hg.openjdk.java.net/jdk7/build/raw-file/tip/README-builds.html
+     http://hg.openjdk.java.net/jdk8/build/raw-file/tip/README-builds.html
 
   1. If you don't have a jdk6 installed, download and install a JDK 6 from
      http://java.sun.com/javase/downloads/index.jsp
