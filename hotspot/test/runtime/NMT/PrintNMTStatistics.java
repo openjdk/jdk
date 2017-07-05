@@ -26,8 +26,8 @@
  * @key nmt regression
  * @bug 8005936
  * @summary Make sure PrintNMTStatistics works on normal JVM exit
- * @library /testlibrary
- * @run compile -J-XX:+UnlockDiagnosticVMOptions -J-XX:+WhiteBoxAPI PrintNMTStatistics.java
+ * @library /testlibrary /testlibrary/whitebox
+ * @run compile PrintNMTStatistics.java
  */
 
 import com.oracle.java.testlibrary.*;

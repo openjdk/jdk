@@ -47,10 +47,6 @@ AC_DEFUN([BPERF_CHECK_CORES],
         FOUND_CORES=yes
     fi
 
-    # For c/c++ code we run twice as many concurrent build
-    # jobs than we have cores, otherwise we will stall on io.
-    CONCURRENT_BUILD_JOBS=`expr $NUM_CORES \* 2`
-
     if test "x$FOUND_CORES" = xyes; then
         AC_MSG_RESULT([$NUM_CORES])
     else
@@ -98,32 +94,62 @@ AC_DEFUN([BPERF_CHECK_MEMORY_SIZE],
 
 AC_DEFUN_ONCE([BPERF_SETUP_BUILD_CORES],
 [
-# How many cores do we have on this build system?
-AC_ARG_WITH(num-cores, [AS_HELP_STRING([--with-num-cores],
+  # How many cores do we have on this build system?
+  AC_ARG_WITH(num-cores, [AS_HELP_STRING([--with-num-cores],
     [number of cores in the build system, e.g. --with-num-cores=8 @<:@probed@:>@])])
-if test "x$with_num_cores" = x; then
+  if test "x$with_num_cores" = x; then
     # The number of cores were not specified, try to probe them.
     BPERF_CHECK_CORES
-else
+  else
     NUM_CORES=$with_num_cores
-    CONCURRENT_BUILD_JOBS=`expr $NUM_CORES \* 2`
-fi
-AC_SUBST(NUM_CORES)
-AC_SUBST(CONCURRENT_BUILD_JOBS)
+  fi
+  AC_SUBST(NUM_CORES)
 ])
 
 AC_DEFUN_ONCE([BPERF_SETUP_BUILD_MEMORY],
 [
-# How much memory do we have on this build system?
-AC_ARG_WITH(memory-size, [AS_HELP_STRING([--with-memory-size],
+  # How much memory do we have on this build system?
+  AC_ARG_WITH(memory-size, [AS_HELP_STRING([--with-memory-size],
     [memory (in MB) available in the build system, e.g. --with-memory-size=1024 @<:@probed@:>@])])
-if test "x$with_memory_size" = x; then
+  if test "x$with_memory_size" = x; then
     # The memory size was not specified, try to probe it.
     BPERF_CHECK_MEMORY_SIZE
-else
+  else
     MEMORY_SIZE=$with_memory_size
-fi
-AC_SUBST(MEMORY_SIZE)
+  fi
+  AC_SUBST(MEMORY_SIZE)
+])
+
+AC_DEFUN_ONCE([BPERF_SETUP_BUILD_JOBS],
+[
+  # Provide a decent default number of parallel jobs for make depending on 
+  # number of cores, amount of memory and machine architecture.
+  AC_ARG_WITH(jobs, [AS_HELP_STRING([--with-jobs],
+    [number of parallel jobs to let make run @<:@calculated based on cores and memory@:>@])])
+  if test "x$with_jobs" = x; then
+    # Number of jobs was not specified, calculate.
+    AC_MSG_CHECKING([for appropriate number of jobs to run in parallel])
+    # Approximate memory in GB, rounding up a bit.
+    memory_gb=`expr $MEMORY_SIZE / 1100`
+    # Pick the lowest of memory in gb and number of cores.
+    if test "$memory_gb" -lt "$NUM_CORES"; then
+      JOBS="$memory_gb"
+    else
+      JOBS="$NUM_CORES"
+      # On bigger machines, leave some room for other processes to run
+      if test "$JOBS" -gt "4"; then
+        JOBS=`expr $JOBS '*' 90 / 100`
+      fi
+    fi
+    # Cap number of jobs to 16
+    if test "$JOBS" -gt "16"; then
+      JOBS=16
+    fi
+    AC_MSG_RESULT([$JOBS])
+  else
+    JOBS=$with_jobs
+  fi
+  AC_SUBST(JOBS)
 ])
 
 AC_DEFUN([BPERF_SETUP_CCACHE],
