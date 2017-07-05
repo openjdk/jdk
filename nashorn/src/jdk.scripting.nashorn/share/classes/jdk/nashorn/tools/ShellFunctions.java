@@ -34,6 +34,7 @@ import java.io.InputStreamReader;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import jdk.nashorn.internal.runtime.JSType;
+import jdk.nashorn.internal.runtime.ScriptingFunctions;
 import jdk.nashorn.internal.objects.Global;
 
 /**
@@ -66,11 +67,9 @@ public final class ShellFunctions {
     public static Object input(final Object self, final Object endMarker, final Object prompt) throws IOException {
         final String endMarkerStr = (endMarker != UNDEFINED)? JSType.toString(endMarker) : "";
         final String promptStr = (prompt != UNDEFINED)? JSType.toString(prompt)  : ">> ";
-        final BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
         final StringBuilder buf = new StringBuilder();
         while (true) {
-            System.out.print(promptStr);
-            final String line = reader.readLine();
+            final String line = ScriptingFunctions.readLine(promptStr);
             if (line == null || line.equals(endMarkerStr)) {
                 break;
             }

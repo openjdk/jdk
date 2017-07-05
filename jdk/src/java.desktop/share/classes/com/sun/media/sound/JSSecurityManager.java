@@ -26,18 +26,16 @@
 package com.sun.media.sound;
 
 import java.io.BufferedInputStream;
-import java.io.InputStream;
 import java.io.File;
 import java.io.FileInputStream;
-
+import java.io.InputStream;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
 import java.util.ServiceLoader;
-
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 
 import javax.sound.sampled.AudioPermission;
 
@@ -64,7 +62,6 @@ final class JSSecurityManager {
         return (System.getSecurityManager() != null);
     }
 
-
     static void checkRecordPermission() throws SecurityException {
         if(Printer.trace) Printer.trace("JSSecurityManager.checkRecordPermission()");
         SecurityManager sm = System.getSecurityManager();
@@ -90,6 +87,7 @@ final class JSSecurityManager {
             try {
                 // invoke the privileged action using 1.2 security
                 PrivilegedAction<Void> action = new PrivilegedAction<Void>() {
+                        @Override
                         public Void run() {
                             loadPropertiesImpl(properties, filename);
                             return null;
@@ -107,7 +105,6 @@ final class JSSecurityManager {
             loadPropertiesImpl(properties, filename);
         }
     }
-
 
     private static void loadPropertiesImpl(Properties properties,
                                            String filename) {
@@ -176,6 +173,7 @@ final class JSSecurityManager {
         // the iterator's hasNext() method looks through classpath for
         // the provider class names, so it requires read permissions
         PrivilegedAction<Boolean> hasNextAction = new PrivilegedAction<Boolean>() {
+            @Override
             public Boolean run() {
                 return ps.hasNext();
             }

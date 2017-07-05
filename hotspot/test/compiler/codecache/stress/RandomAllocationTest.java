@@ -24,6 +24,7 @@
 
 /*
  * @test RandomAllocationTest
+ * @key stress
  * @summary stressing code cache by allocating randomly sized "dummy" code blobs
  * @library /testlibrary /test/lib /
  * @modules java.base/jdk.internal.misc

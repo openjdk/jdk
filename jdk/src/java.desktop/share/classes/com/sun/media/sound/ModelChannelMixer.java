@@ -22,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package com.sun.media.sound;
 
 import javax.sound.midi.MidiChannel;
@@ -42,9 +43,9 @@ import javax.sound.midi.MidiChannel;
 public interface ModelChannelMixer extends MidiChannel {
 
     // Used to process input audio from voices mix.
-    public boolean process(float[][] buffer, int offset, int len);
+    boolean process(float[][] buffer, int offset, int len);
 
     // Is used to trigger that this mixer is not be used
     // and it should fade out.
-    public void stop();
+    void stop();
 }

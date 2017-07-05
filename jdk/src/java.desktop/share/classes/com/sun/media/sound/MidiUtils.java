@@ -77,7 +77,6 @@ public final class MidiUtils {
         return ((msg[1] & 0xFF) == META_END_OF_TRACK_TYPE) && (msg[2] == 0);
     }
 
-
     /** return if the given message is a meta tempo message */
     public static boolean isMetaTempo(MidiMessage midiMsg) {
         // first check if it is a META message at all
@@ -90,7 +89,6 @@ public final class MidiUtils {
         // meta type must be 0x51, and data length must be 3
         return ((msg[1] & 0xFF) == META_TEMPO_TYPE) && (msg[2] == 3);
     }
-
 
     /** parses this message for a META tempo message and returns
      * the tempo in MPQ, or -1 if this isn't a tempo message
@@ -111,7 +109,6 @@ public final class MidiUtils {
         return tempo;
     }
 
-
     /**
      * converts<br>
      * 1 - MPQ-Tempo to BPM tempo<br>
@@ -123,7 +120,6 @@ public final class MidiUtils {
         }
         return ((double) 60000000l) / tempo;
     }
-
 
     /**
      * convert tick to microsecond with given tempo.
@@ -144,7 +140,6 @@ public final class MidiUtils {
         //return (long) Math.round((((double)us) * resolution) / tempoMPQ);
         return (long) ((((double)us) * resolution) / tempoMPQ);
     }
-
 
     /**
      * Given a tick, convert to microsecond
@@ -246,7 +241,6 @@ public final class MidiUtils {
         return tick;
     }
 
-
     /**
      * Binary search for the event indexes of the track
      *
@@ -283,7 +277,6 @@ public final class MidiUtils {
         return ret;
     }
 
-
     public static final class TempoCache {
         long[] ticks;
         int[] tempos; // in MPQ
@@ -309,7 +302,6 @@ public final class MidiUtils {
             this();
             refresh(seq);
         }
-
 
         public synchronized void refresh(Sequence seq) {
             ArrayList<MidiEvent> list = new ArrayList<>();
@@ -373,6 +365,5 @@ public final class MidiUtils {
             }
             return tempos[tempos.length - 1];
         }
-
     }
 }

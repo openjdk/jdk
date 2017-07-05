@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package sun.security.smartcardio;
 import java.security.*;
 
 import javax.smartcardio.*;
+import static sun.security.util.SecurityConstants.PROVIDER_VER;
 
 /**
  * Provider object for PC/SC.
@@ -65,7 +66,7 @@ public final class SunPCSC extends Provider {
     }
 
     public SunPCSC() {
-        super("SunPCSC", 9.0d, "Sun PC/SC provider");
+        super("SunPCSC", PROVIDER_VER, "Sun PC/SC provider");
 
         final Provider p = this;
         AccessController.doPrivileged(new PrivilegedAction<Void>() {

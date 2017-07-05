@@ -23,7 +23,6 @@
 
 /*
  * @test LFSingleThreadCachingTest
- * @ignore 8129523
  * @bug 8046703
  * @key randomness
  * @summary Test verifies that lambda forms are cached when run with single thread
@@ -33,7 +32,7 @@
  * @build LambdaFormTestCase
  * @build LFCachingTestCase
  * @build LFSingleThreadCachingTest
- * @run main/othervm LFSingleThreadCachingTest
+ * @run main/othervm -XX:ReservedCodeCacheSize=128m LFSingleThreadCachingTest
  */
 
 import java.lang.invoke.MethodHandle;

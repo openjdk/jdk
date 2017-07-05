@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,16 +103,60 @@ public class ClassnameCharTest {
 
     //--------------------- Infrastructure ---------------------------
     static volatile int passed = 0, failed = 0;
-    static boolean pass() {passed++; return true;}
-    static boolean fail() {failed++; server.stop(0); Thread.dumpStack(); return false;}
-    static boolean fail(String msg) {System.out.println(msg); return fail();}
-    static void unexpected(Throwable t) {failed++; server.stop(0); t.printStackTrace();}
-    static boolean check(boolean cond) {if (cond) pass(); else fail(); return cond;}
+
+    static boolean pass() {
+        passed++;
+        return true;
+    }
+
+    static boolean fail() {
+        failed++;
+        if (server != null) {
+            server.stop(0);
+        }
+        Thread.dumpStack();
+        return false;
+    }
+
+    static boolean fail(String msg) {
+        System.out.println(msg);
+        return fail();
+    }
+
+    static void unexpected(Throwable t) {
+        failed++;
+        if (server != null) {
+            server.stop(0);
+        }
+        t.printStackTrace();
+    }
+
+    static boolean check(boolean cond) {
+        if (cond) {
+            pass();
+        } else {
+            fail();
+        }
+        return cond;
+    }
+
     static boolean equal(Object x, Object y) {
-        if (x == null ? y == null : x.equals(y)) return pass();
-        else return fail(x + " not equal to " + y);}
+        if (x == null ? y == null : x.equals(y)) {
+            return pass();
+        } else {
+            return fail(x + " not equal to " + y);
+        }
+    }
+
     public static void main(String[] args) throws Throwable {
-        try {realMain(args);} catch (Throwable t) {unexpected(t);}
+        try {
+            realMain(args);
+        } catch (Throwable t) {
+            unexpected(t);
+        }
         System.out.println("\nPassed = " + passed + " failed = " + failed);
-        if (failed > 0) throw new AssertionError("Some tests failed");}
+        if (failed > 0) {
+            throw new AssertionError("Some tests failed");
+        }
+    }
 }

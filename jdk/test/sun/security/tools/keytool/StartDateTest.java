@@ -49,23 +49,31 @@ public class StartDateTest {
 
         new File("jks").delete();
 
-        run("-keystore jks -storetype jks -storepass changeit -keypass changeit -alias me " +
-                "-keyalg rsa -genkeypair -dname CN=Haha -startdate +1y");
-        cal.setTime(getIssueDate());
+        run("one", "+1y");
+        cal.setTime(getIssueDate("one"));
         System.out.println(cal);
         if (cal.get(Calendar.YEAR) != year + 1) {
             throw new Exception("Function check #1 fails");
         }
 
-        run("-keystore jks -storetype jks -storepass changeit -keypass changeit -alias me " +
-                "-selfcert -startdate +1m");
-        cal.setTime(getIssueDate());
+        run("two", "+1m");
+        cal.setTime(getIssueDate("two"));
         System.out.println(cal);
         if (cal.get(Calendar.MONTH) != (month + 1) % 12) {
             throw new Exception("Function check #2 fails");
         }
 
-        new File("jks").delete();
+        run("three", "2009/10/11 12:34:56");
+        cal.setTime(getIssueDate("three"));
+        System.out.println(cal);
+        if (cal.get(Calendar.YEAR) != 2009 ||
+                cal.get(Calendar.MONTH) != Calendar.OCTOBER ||
+                cal.get(Calendar.DAY_OF_MONTH) != 11 ||
+                cal.get(Calendar.HOUR_OF_DAY) != 12 ||
+                cal.get(Calendar.MINUTE) != 34 ||
+                cal.get(Calendar.SECOND) != 56) {
+            throw new Exception("Function check #3 fails");
+        }
 
         // Part 2: Test format
         Method m = sun.security.tools.keytool.Main.class.getDeclaredMethod(
@@ -129,16 +137,23 @@ public class StartDateTest {
         }
     }
 
-    static void run(String s) throws Exception {
-        sun.security.tools.keytool.Main.main((s+" -debug").split(" "));
+    // The keytool command line template, alias and startdate TBD
+    static String[] cmd = ("-alias tbd -startdate tbd -keystore jks " +
+            "-storetype jks -storepass changeit -keypass changeit " +
+            "-keyalg rsa -genkeypair -dname CN=Haha -debug").split(" ");
+
+    static void run(String alias, String startDate) throws Exception {
+        cmd[1] = alias;
+        cmd[3] = startDate;
+        sun.security.tools.keytool.Main.main(cmd);
     }
 
-    static Date getIssueDate() throws Exception {
+    static Date getIssueDate(String alias) throws Exception {
         KeyStore ks = KeyStore.getInstance("jks");
         try (FileInputStream fis = new FileInputStream("jks")) {
             ks.load(fis, "changeit".toCharArray());
         }
-        X509Certificate cert = (X509Certificate)ks.getCertificate("me");
+        X509Certificate cert = (X509Certificate)ks.getCertificate(alias);
         return cert.getNotBefore();
     }
 }

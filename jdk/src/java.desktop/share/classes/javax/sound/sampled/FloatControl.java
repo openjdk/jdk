@@ -54,23 +54,23 @@ public abstract class FloatControl extends Control {
     /**
      * The minimum supported value.
      */
-    private float minimum;
+    private final float minimum;
 
     /**
      * The maximum supported value.
      */
-    private float maximum;
+    private final float maximum;
 
     /**
      * The control's precision.
      */
-    private float precision;
+    private final float precision;
 
     /**
      * The smallest time increment in which a value change can be effected
      * during a value shift, in microseconds.
      */
-    private int updatePeriod;
+    private final int updatePeriod;
 
     /**
      * A label for the units in which the control values are expressed, such as
@@ -334,6 +334,7 @@ public abstract class FloatControl extends Control {
      *
      * @return a string description
      */
+    @Override
     public String toString() {
         return new String(getType() + " with current value: " + getValue() + " " + units +
                           " (range: " + minimum + " - " + maximum + ")");

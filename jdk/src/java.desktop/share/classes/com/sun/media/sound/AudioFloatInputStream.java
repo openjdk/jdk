@@ -22,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package com.sun.media.sound;
 
 import java.io.ByteArrayInputStream;
@@ -66,14 +67,17 @@ public abstract class AudioFloatInputStream {
 
         }
 
+        @Override
         public AudioFormat getFormat() {
             return format;
         }
 
+        @Override
         public long getFrameLength() {
             return buffer_len;// / format.getFrameSize();
         }
 
+        @Override
         public int read(float[] b, int off, int len) throws IOException {
             if (b == null)
                 throw new NullPointerException();
@@ -91,6 +95,7 @@ public abstract class AudioFloatInputStream {
             return len;
         }
 
+        @Override
         public long skip(long len) throws IOException {
             if (pos >= buffer_len)
                 return -1;
@@ -102,21 +107,26 @@ public abstract class AudioFloatInputStream {
             return len;
         }
 
+        @Override
         public int available() throws IOException {
             return buffer_len - pos;
         }
 
+        @Override
         public void close() throws IOException {
         }
 
+        @Override
         public void mark(int readlimit) {
             markpos = pos;
         }
 
+        @Override
         public boolean markSupported() {
             return true;
         }
 
+        @Override
         public void reset() throws IOException {
             pos = markpos;
         }
@@ -163,14 +173,17 @@ public abstract class AudioFloatInputStream {
             this.stream = stream;
         }
 
+        @Override
         public AudioFormat getFormat() {
             return stream.getFormat();
         }
 
+        @Override
         public long getFrameLength() {
             return stream.getFrameLength();
         }
 
+        @Override
         public int read(float[] b, int off, int len) throws IOException {
             int b_len = len * framesize_pc;
             if (buffer == null || buffer.length < b_len)
@@ -182,6 +195,7 @@ public abstract class AudioFloatInputStream {
             return ret / framesize_pc;
         }
 
+        @Override
         public long skip(long len) throws IOException {
             long b_len = len * framesize_pc;
             long ret = stream.skip(b_len);
@@ -190,22 +204,27 @@ public abstract class AudioFloatInputStream {
             return ret / framesize_pc;
         }
 
+        @Override
         public int available() throws IOException {
             return stream.available() / framesize_pc;
         }
 
+        @Override
         public void close() throws IOException {
             stream.close();
         }
 
+        @Override
         public void mark(int readlimit) {
             stream.mark(readlimit * framesize_pc);
         }
 
+        @Override
         public boolean markSupported() {
             return stream.markSupported();
         }
 
+        @Override
         public void reset() throws IOException {
             stream.reset();
         }

@@ -22,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package com.sun.media.sound;
 
 /**
@@ -73,6 +74,7 @@ public final class ModelStandardTransform implements ModelTransform {
         this.transform = transform;
     }
 
+    @Override
     public double transform(double value) {
         double s;
         double a;

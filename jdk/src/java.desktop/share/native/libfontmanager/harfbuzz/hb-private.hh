@@ -83,7 +83,7 @@ extern "C" void  hb_free_impl(void *ptr);
 #define unlikely(expr) (expr)
 #endif
 
-#ifndef __GNUC__
+#if !defined(__GNUC__) && !defined(__clang__)
 #undef __attribute__
 #define __attribute__(x)
 #endif
@@ -119,6 +119,36 @@ extern "C" void  hb_free_impl(void *ptr);
 #define HB_FUNC __func__
 #endif
 
+/*
+ * Borrowed from https://bugzilla.mozilla.org/show_bug.cgi?id=1215411
+ * HB_FALLTHROUGH is an annotation to suppress compiler warnings about switch
+ * cases that fall through without a break or return statement. HB_FALLTHROUGH
+ * is only needed on cases that have code:
+ *
+ * switch (foo) {
+ *   case 1: // These cases have no code. No fallthrough annotations are needed.
+ *   case 2:
+ *   case 3:
+ *     foo = 4; // This case has code, so a fallthrough annotation is needed:
+ *     HB_FALLTHROUGH;
+ *   default:
+ *     return foo;
+ * }
+ */
+#if defined(__clang__) && __cplusplus >= 201103L
+   /* clang's fallthrough annotations are only available starting in C++11. */
+#  define HB_FALLTHROUGH [[clang::fallthrough]]
+#elif defined(_MSC_VER)
+   /*
+    * MSVC's __fallthrough annotations are checked by /analyze (Code Analysis):
+    * https://msdn.microsoft.com/en-us/library/ms235402%28VS.80%29.aspx
+    */
+#  include <sal.h>
+#  define HB_FALLTHROUGH __fallthrough
+#else
+#  define HB_FALLTHROUGH /* FALLTHROUGH */
+#endif
+
 #if defined(_WIN32) || defined(__CYGWIN__)
    /* We need Windows Vista for both Uniscribe backend and for
     * MemoryBarrier.  We don't support compiling on Windows XP,
@@ -139,6 +169,7 @@ extern "C" void  hb_free_impl(void *ptr);
 #  if defined(_WIN32_WCE)
      /* Some things not defined on Windows CE. */
 #    define strdup _strdup
+#    define vsnprintf _vsnprintf
 #    define getenv(Name) NULL
 #    if _WIN32_WCE < 0x800
 #      define setlocale(Category, Locale) "C"
@@ -149,6 +180,9 @@ static int errno = 0; /* Use something better? */
 #  endif
 #  if defined(_MSC_VER) && _MSC_VER < 1900
 #    define snprintf _snprintf
+#  elif defined(_MSC_VER) && _MSC_VER >= 1900
+#    /* Covers VC++ Error for strdup being a deprecated POSIX name and to instead use _strdup instead */
+#    define strdup _strdup
 #  endif
 #endif
 
@@ -210,9 +244,9 @@ static inline unsigned int ARRAY_LENGTH (const Type (&)[n]) { return n; }
 #define _ASSERT_STATIC0(_line, _cond)   _ASSERT_STATIC1 (_line, (_cond))
 #define ASSERT_STATIC(_cond)            _ASSERT_STATIC0 (__LINE__, (_cond))
 
-/* Note: C++ allows sizeof() of variable-lengh arrays.  So, if _cond is not
- * constant, it still compiles (ouch!), but at least we'll get a -Wvla warning. */
-#define ASSERT_STATIC_EXPR_ZERO(_cond) (0 * sizeof (char[(_cond) ? 1 : -1]))
+template <unsigned int cond> class hb_assert_constant_t {};
+
+#define ASSERT_STATIC_EXPR_ZERO(_cond) (0 * (unsigned int) sizeof (hb_assert_constant_t<_cond>))
 
 #define _PASTE1(a,b) a##b
 #define PASTE(a,b) _PASTE1(a,b)
@@ -578,6 +612,15 @@ static inline unsigned char TOLOWER (unsigned char c)
 /* Debug */
 
 
+/* HB_NDEBUG disables some sanity checks that are very safe to disable and
+ * should be disabled in production systems.  If NDEBUG is defined, enable
+ * HB_NDEBUG; but if it's desirable that normal assert()s (which are very
+ * light-weight) to be enabled, then HB_DEBUG can be defined to disable
+ * the costlier checks. */
+#ifdef NDEBUG
+#define HB_NDEBUG
+#endif
+
 #ifndef HB_DEBUG
 #define HB_DEBUG 0
 #endif
@@ -861,6 +904,29 @@ hb_in_ranges (T u, T lo1, T hi1, T lo2, T hi2, T lo3, T hi3)
 }
 
 
+/* Enable bitwise ops on enums marked as flags_t */
+/* To my surprise, looks like the function resolver is happy to silently cast
+ * one enum to another...  So this doesn't provide the type-checking that I
+ * originally had in mind... :(.
+ *
+ * For MSVC warnings, see: https://github.com/behdad/harfbuzz/pull/163
+ */
+#ifdef _MSC_VER
+# pragma warning(disable:4200)
+# pragma warning(disable:4800)
+#endif
+#define HB_MARK_AS_FLAG_T(T) \
+        extern "C++" { \
+          static inline T operator | (T l, T r) { return T ((unsigned) l | (unsigned) r); } \
+          static inline T operator & (T l, T r) { return T ((unsigned) l & (unsigned) r); } \
+          static inline T operator ^ (T l, T r) { return T ((unsigned) l ^ (unsigned) r); } \
+          static inline T operator ~ (T r) { return T (~(unsigned int) r); } \
+          static inline T& operator |= (T &l, T r) { l = l | r; return l; } \
+          static inline T& operator &= (T& l, T r) { l = l & r; return l; } \
+          static inline T& operator ^= (T& l, T r) { l = l ^ r; return l; } \
+        }
+
+
 /* Useful for set-operations on small enums.
  * For example, for testing "x ∈ {x1, x2, x3}" use:
  * (FLAG_SAFE(x) & (FLAG(x1) | FLAG(x2) | FLAG(x3)))
@@ -949,5 +1015,7 @@ hb_options (void)
   return _hb_options.opts;
 }
 
+/* Size signifying variable-sized array */
+#define VAR 1
 
 #endif /* HB_PRIVATE_HH */

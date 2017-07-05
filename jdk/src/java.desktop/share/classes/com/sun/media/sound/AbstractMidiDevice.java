@@ -26,10 +26,17 @@
 package com.sun.media.sound;
 
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Collections;
+import java.util.List;
 
-import javax.sound.midi.*;
+import javax.sound.midi.InvalidMidiDataException;
+import javax.sound.midi.MidiDevice;
+import javax.sound.midi.MidiDeviceReceiver;
+import javax.sound.midi.MidiDeviceTransmitter;
+import javax.sound.midi.MidiMessage;
+import javax.sound.midi.MidiUnavailableException;
+import javax.sound.midi.Receiver;
+import javax.sound.midi.Transmitter;
 
 
 /**
@@ -43,10 +50,7 @@ import javax.sound.midi.*;
  */
 abstract class AbstractMidiDevice implements MidiDevice, ReferenceCountingDevice {
 
-    // STATIC VARIABLES
     private static final boolean TRACE_TRANSMITTER = false;
-
-    // INSTANCE VARIABLES
 
     private ArrayList<Receiver> receiverList;
 
@@ -62,7 +66,6 @@ abstract class AbstractMidiDevice implements MidiDevice, ReferenceCountingDevice
 
     private final MidiDevice.Info info;
 
-
     // DEVICE STATE
 
     private volatile boolean open;
@@ -73,14 +76,9 @@ abstract class AbstractMidiDevice implements MidiDevice, ReferenceCountingDevice
     private List<Object> openKeepingObjects;
 
     /**
-     * This is the device handle returned from native code
+     * This is the device handle returned from native code.
      */
     protected volatile long id;
-
-
-
-    // CONSTRUCTOR
-
 
     /**
      * Constructs an AbstractMidiDevice with the specified info object.
@@ -99,9 +97,9 @@ abstract class AbstractMidiDevice implements MidiDevice, ReferenceCountingDevice
         if(Printer.trace) Printer.trace("<< AbstractMidiDevice CONSTRUCTOR completed");
     }
 
-
     // MIDI DEVICE METHODS
 
+    @Override
     public final MidiDevice.Info getDeviceInfo() {
         return info;
     }
@@ -111,6 +109,7 @@ abstract class AbstractMidiDevice implements MidiDevice, ReferenceCountingDevice
      * opened the device implicitly from closing it. The only way to close the device after
      * this call is a call to close().
      */
+    @Override
     public final void open() throws MidiUnavailableException {
         if (Printer.trace) Printer.trace("> AbstractMidiDevice: open()");
         synchronized(this) {
@@ -119,8 +118,6 @@ abstract class AbstractMidiDevice implements MidiDevice, ReferenceCountingDevice
         }
         if (Printer.trace) Printer.trace("< AbstractMidiDevice: open() completed");
     }
-
-
 
     /** Open the device implicitly.
      * This method is intended to be used by AbstractReceiver
@@ -146,7 +143,6 @@ abstract class AbstractMidiDevice implements MidiDevice, ReferenceCountingDevice
         if (Printer.trace) Printer.trace("< AbstractMidiDevice: openInternal() completed");
     }
 
-
     private void doOpen() throws MidiUnavailableException {
         if (Printer.trace) Printer.trace("> AbstractMidiDevice: doOpen()");
         synchronized(this) {
@@ -158,7 +154,7 @@ abstract class AbstractMidiDevice implements MidiDevice, ReferenceCountingDevice
         if (Printer.trace) Printer.trace("< AbstractMidiDevice: doOpen() completed");
     }
 
-
+    @Override
     public final void close() {
         if (Printer.trace) Printer.trace("> AbstractMidiDevice: close()");
         synchronized (this) {
@@ -167,7 +163,6 @@ abstract class AbstractMidiDevice implements MidiDevice, ReferenceCountingDevice
         }
         if (Printer.trace) Printer.trace("< AbstractMidiDevice: close() completed");
     }
-
 
     /** Close the device for an object that implicitely opened it.
      * This method is intended to be used by Transmitter.close() and Receiver.close().
@@ -196,7 +191,6 @@ abstract class AbstractMidiDevice implements MidiDevice, ReferenceCountingDevice
         if (Printer.trace) Printer.trace("< AbstractMidiDevice: closeInternal() completed");
     }
 
-
     public final void doClose() {
         if (Printer.trace) Printer.trace("> AbstractMidiDevice: doClose()");
         synchronized(this) {
@@ -208,11 +202,10 @@ abstract class AbstractMidiDevice implements MidiDevice, ReferenceCountingDevice
         if (Printer.trace) Printer.trace("< AbstractMidiDevice: doClose() completed");
     }
 
-
+    @Override
     public final boolean isOpen() {
         return open;
     }
-
 
     protected void implClose() {
         synchronized (traRecLock) {
@@ -230,21 +223,21 @@ abstract class AbstractMidiDevice implements MidiDevice, ReferenceCountingDevice
         }
     }
 
-
     /**
      * This implementation always returns -1.
      * Devices that actually provide this should over-ride
      * this method.
      */
+    @Override
     public long getMicrosecondPosition() {
         return -1;
     }
-
 
     /** Return the maximum number of Receivers supported by this device.
         Depending on the return value of hasReceivers(), this method returns either 0 or -1.
         Subclasses should rather override hasReceivers() than override this method.
      */
+    @Override
     public final int getMaxReceivers() {
         if (hasReceivers()) {
             return -1;
@@ -253,11 +246,11 @@ abstract class AbstractMidiDevice implements MidiDevice, ReferenceCountingDevice
         }
     }
 
-
     /** Return the maximum number of Transmitters supported by this device.
         Depending on the return value of hasTransmitters(), this method returns either 0 or -1.
         Subclasses should override hasTransmitters().
      */
+    @Override
     public final int getMaxTransmitters() {
         if (hasTransmitters()) {
             return -1;
@@ -266,7 +259,6 @@ abstract class AbstractMidiDevice implements MidiDevice, ReferenceCountingDevice
         }
     }
 
-
     /** Retrieve a Receiver for this device.
         This method returns the value returned by createReceiver(), if it doesn't throw
         an exception. Subclasses should rather override createReceiver() than override
@@ -274,6 +266,7 @@ abstract class AbstractMidiDevice implements MidiDevice, ReferenceCountingDevice
         If createReceiver returns a Receiver, it is added to the internal list
         of Receivers (see getReceiversList)
      */
+    @Override
     public final Receiver getReceiver() throws MidiUnavailableException {
         Receiver receiver;
         synchronized (traRecLock) {
@@ -283,7 +276,7 @@ abstract class AbstractMidiDevice implements MidiDevice, ReferenceCountingDevice
         return receiver;
     }
 
-
+    @Override
     @SuppressWarnings("unchecked") // Cast of result of clone
     public final List<Receiver> getReceivers() {
         List<Receiver> recs;
@@ -298,12 +291,12 @@ abstract class AbstractMidiDevice implements MidiDevice, ReferenceCountingDevice
         return recs;
     }
 
-
     /**
      * This implementation uses createTransmitter, which may throw an exception.
      * If a transmitter is returned in createTransmitter, it is added to the internal
      * TransmitterList
      */
+    @Override
     public final Transmitter getTransmitter() throws MidiUnavailableException {
         Transmitter transmitter;
         synchronized (traRecLock) {
@@ -313,7 +306,7 @@ abstract class AbstractMidiDevice implements MidiDevice, ReferenceCountingDevice
         return transmitter;
     }
 
-
+    @Override
     @SuppressWarnings("unchecked") // Cast of result of clone
     public final List<Transmitter> getTransmitters() {
         List<Transmitter> tras;
@@ -328,19 +321,16 @@ abstract class AbstractMidiDevice implements MidiDevice, ReferenceCountingDevice
         return tras;
     }
 
-
-    // HELPER METHODS
-
     final long getId() {
         return id;
     }
-
 
     // REFERENCE COUNTING
 
     /** Retrieve a Receiver and open the device implicitly.
         This method is called by MidiSystem.getReceiver().
      */
+    @Override
     public final Receiver getReceiverReferenceCounting()
             throws MidiUnavailableException {
         /* Keep this order of commands! If getReceiver() throws an exception,
@@ -354,10 +344,10 @@ abstract class AbstractMidiDevice implements MidiDevice, ReferenceCountingDevice
         return receiver;
     }
 
-
     /** Retrieve a Transmitter and open the device implicitly.
         This method is called by MidiSystem.getTransmitter().
      */
+    @Override
     public final Transmitter getTransmitterReferenceCounting()
             throws MidiUnavailableException {
         /* Keep this order of commands! If getTransmitter() throws an exception,
@@ -371,7 +361,6 @@ abstract class AbstractMidiDevice implements MidiDevice, ReferenceCountingDevice
         return transmitter;
     }
 
-
     /** Return the list of objects that have opened the device implicitely.
      */
     private synchronized List<Object> getOpenKeepingObjects() {
@@ -381,22 +370,18 @@ abstract class AbstractMidiDevice implements MidiDevice, ReferenceCountingDevice
         return openKeepingObjects;
     }
 
-
-
     // RECEIVER HANDLING METHODS
-
 
     /** Return the internal list of Receivers, possibly creating it first.
      */
     private List<Receiver> getReceiverList() {
         synchronized (traRecLock) {
             if (receiverList == null) {
-                receiverList = new ArrayList<Receiver>();
+                receiverList = new ArrayList<>();
             }
         }
         return receiverList;
     }
-
 
     /** Returns if this device supports Receivers.
         Subclasses that use Receivers should override this method to
@@ -408,7 +393,6 @@ abstract class AbstractMidiDevice implements MidiDevice, ReferenceCountingDevice
         return false;
     }
 
-
     /** Create a Receiver object.
         throwing an exception here means that Receivers aren't enabled.
         Subclasses that use Receivers should override this method with
@@ -419,8 +403,6 @@ abstract class AbstractMidiDevice implements MidiDevice, ReferenceCountingDevice
     protected Receiver createReceiver() throws MidiUnavailableException {
         throw new MidiUnavailableException("MIDI IN receiver not available");
     }
-
-
 
     // TRANSMITTER HANDLING
 
@@ -435,7 +417,6 @@ abstract class AbstractMidiDevice implements MidiDevice, ReferenceCountingDevice
         return transmitterList;
     }
 
-
     /** Returns if this device supports Transmitters.
         Subclasses that use Transmitters should override this method to
         return true. They also should override createTransmitter().
@@ -445,7 +426,6 @@ abstract class AbstractMidiDevice implements MidiDevice, ReferenceCountingDevice
     protected boolean hasTransmitters() {
         return false;
     }
-
 
     /** Create a Transmitter object.
         throwing an exception here means that Transmitters aren't enabled.
@@ -458,19 +438,15 @@ abstract class AbstractMidiDevice implements MidiDevice, ReferenceCountingDevice
         throw new MidiUnavailableException("MIDI OUT transmitter not available");
     }
 
-    // ABSTRACT METHODS
-
     protected abstract void implOpen() throws MidiUnavailableException;
 
-
     /**
-     * close this device if discarded by the garbage collector
+     * close this device if discarded by the garbage collector.
      */
+    @Override
     protected final void finalize() {
         close();
     }
-
-    // INNER CLASSES
 
     /** Base class for Receivers.
         Subclasses that use Receivers must use this base class, since it
@@ -550,6 +526,7 @@ abstract class AbstractMidiDevice implements MidiDevice, ReferenceCountingDevice
             this.tlist = tlist;
         }
 
+        @Override
         public final void setReceiver(Receiver receiver) {
             if (tlist != null && this.receiver != receiver) {
                 if (Printer.debug) Printer.debug("Transmitter "+toString()+": set receiver "+receiver);
@@ -558,16 +535,17 @@ abstract class AbstractMidiDevice implements MidiDevice, ReferenceCountingDevice
             }
         }
 
+        @Override
         public final Receiver getReceiver() {
             return receiver;
         }
-
 
         /** Close the Transmitter.
          * Here, the call to the magic method closeInternal() takes place.
          * Therefore, subclasses that override this method must call
          * 'super.close()'.
          */
+        @Override
         public final void close() {
             AbstractMidiDevice.this.closeInternal(this);
             if (tlist != null) {
@@ -577,19 +555,19 @@ abstract class AbstractMidiDevice implements MidiDevice, ReferenceCountingDevice
             }
         }
 
+        @Override
         public final MidiDevice getMidiDevice() {
             return AbstractMidiDevice.this;
         }
 
     } // class BasicTransmitter
 
-
     /**
-     * a class to manage a list of transmitters
+     * a class to manage a list of transmitters.
      */
     final class TransmitterList {
 
-        private final ArrayList<Transmitter> transmitters = new ArrayList<Transmitter>();
+        private final ArrayList<Transmitter> transmitters = new ArrayList<>();
         private MidiOutDevice.MidiOutReceiver midiOutReceiver;
 
         // how many transmitters must be present for optimized
@@ -712,9 +690,8 @@ abstract class AbstractMidiDevice implements MidiDevice, ReferenceCountingDevice
             }
         }
 
-
         /**
-        * Send this message to all transmitters
+        * Send this message to all transmitters.
         */
         void sendMessage(MidiMessage message, long timeStamp) {
             if (message instanceof FastShortMessage) {
@@ -746,8 +723,5 @@ abstract class AbstractMidiDevice implements MidiDevice, ReferenceCountingDevice
                 }
             }
         }
-
-
     } // TransmitterList
-
 }

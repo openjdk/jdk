@@ -295,7 +295,13 @@ public final class Collectors {
     public static <T>
     Collector<T, ?, Set<T>> toSet() {
         return new CollectorImpl<>((Supplier<Set<T>>) HashSet::new, Set::add,
-                                   (left, right) -> { left.addAll(right); return left; },
+                                   (left, right) -> {
+                                       if (left.size() < right.size()) {
+                                           right.addAll(left); return right;
+                                       } else {
+                                           left.addAll(right); return left;
+                                       }
+                                   },
                                    CH_UNORDERED_ID);
     }
 

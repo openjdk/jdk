@@ -225,19 +225,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
     // Entry frame checks
     if (is_entry_frame()) {
       // an entry frame must have a valid fp.
-
-      if (!fp_safe) {
-        return false;
-      }
-
-      // Validate the JavaCallWrapper an entry frame must have
-
-      address jcw = (address)entry_frame_call_wrapper();
-
-      bool jcw_safe = (jcw <= thread->stack_base()) && ( jcw > _FP);
-
-      return jcw_safe;
-
+      return fp_safe && is_entry_frame_valid(thread);
     }
 
     intptr_t* younger_sp = sp();
@@ -290,14 +278,8 @@ bool frame::safe_for_sender(JavaThread *thread) {
       return false;
     }
 
-    if( sender.is_entry_frame()) {
-      // Validate the JavaCallWrapper an entry frame must have
-
-      address jcw = (address)sender.entry_frame_call_wrapper();
-
-      bool jcw_safe = (jcw <= thread->stack_base()) && ( jcw > sender_fp);
-
-      return jcw_safe;
+    if (sender.is_entry_frame()) {
+      return sender.is_entry_frame_valid(thread);
     }
 
     // If the frame size is 0 something (or less) is bad because every nmethod has a non-zero frame size
@@ -357,12 +339,6 @@ void frame::init(intptr_t* sp, address pc, CodeBlob* cb) {
     _cb = CodeCache::find_blob(_pc);
   }
   _deopt_state = unknown;
-#ifdef ASSERT
-  if ( _cb != NULL && _cb->is_compiled()) {
-    // Without a valid unextended_sp() we can't convert the pc to "original"
-    assert(!((CompiledMethod*)_cb)->is_deopt_pc(_pc), "invariant broken");
-  }
-#endif // ASSERT
 }
 
 frame::frame(intptr_t* sp, unpatchable_t, address pc, CodeBlob* cb) {
@@ -534,6 +510,7 @@ frame frame::sender(RegisterMap* map) const {
 
 
 void frame::patch_pc(Thread* thread, address pc) {
+  vmassert(_deopt_state != unknown, "frame is unpatchable");
   if(thread == Thread::current()) {
    StubRoutines::Sparc::flush_callers_register_windows_func()();
   }

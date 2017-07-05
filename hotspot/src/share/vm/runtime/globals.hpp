@@ -2411,7 +2411,7 @@ public:
   product(intx, CICompilerCount, CI_COMPILER_COUNT,                         \
           "Number of compiler threads to run")                              \
           range(0, max_jint)                                                \
-          constraint(CICompilerCountConstraintFunc, AtParse)                \
+          constraint(CICompilerCountConstraintFunc, AfterErgo)              \
                                                                             \
   product(intx, CompilationPolicyChoice, 0,                                 \
           "which compilation policy (0-3)")                                 \

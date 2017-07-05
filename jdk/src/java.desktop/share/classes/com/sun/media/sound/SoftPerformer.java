@@ -22,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package com.sun.media.sound;
 
 import java.util.ArrayList;
@@ -92,6 +93,7 @@ public final class SoftPerformer {
                 ModelStandardTransform.TRANSFORM_LINEAR),
             new ModelSource(new ModelIdentifier("midi_rpn", "0"),
                 new ModelTransform() {
+                    @Override
                     public double transform(double value) {
                         int v = (int) (value * 16384.0);
                         int msb = v >> 7;
@@ -309,21 +311,22 @@ public final class SoftPerformer {
     public ModelPerformer performer;
     public ModelConnectionBlock[] connections;
     public ModelOscillator[] oscillators;
-    public Map<Integer, int[]> midi_rpn_connections = new HashMap<Integer, int[]>();
-    public Map<Integer, int[]> midi_nrpn_connections = new HashMap<Integer, int[]>();
+    public Map<Integer, int[]> midi_rpn_connections = new HashMap<>();
+    public Map<Integer, int[]> midi_nrpn_connections = new HashMap<>();
     public int[][] midi_ctrl_connections;
     public int[][] midi_connections;
     public int[] ctrl_connections;
-    private List<Integer> ctrl_connections_list = new ArrayList<Integer>();
+    private final List<Integer> ctrl_connections_list = new ArrayList<>();
 
     private static class KeySortComparator implements Comparator<ModelSource> {
 
+        @Override
         public int compare(ModelSource o1, ModelSource o2) {
             return o1.getIdentifier().toString().compareTo(
                     o2.getIdentifier().toString());
         }
     }
-    private static KeySortComparator keySortComparator = new KeySortComparator();
+    private static final KeySortComparator keySortComparator = new KeySortComparator();
 
     private String extractKeys(ModelConnectionBlock conn) {
         StringBuilder sb = new StringBuilder();
@@ -474,9 +477,9 @@ public final class SoftPerformer {
         exclusiveClass = performer.getExclusiveClass();
         selfNonExclusive = performer.isSelfNonExclusive();
 
-        Map<String, ModelConnectionBlock> connmap = new HashMap<String, ModelConnectionBlock>();
+        Map<String, ModelConnectionBlock> connmap = new HashMap<>();
 
-        List<ModelConnectionBlock> performer_connections = new ArrayList<ModelConnectionBlock>();
+        List<ModelConnectionBlock> performer_connections = new ArrayList<>();
         performer_connections.addAll(performer.getConnectionBlocks());
 
         if (performer.isDefaultConnectionsEnabled()) {
@@ -649,6 +652,7 @@ public final class SoftPerformer {
                 new ModelSource(new ModelIdentifier("midi_cc", "77"),
                     new ModelTransform() {
                         double s = scale;
+                        @Override
                         public double transform(double value) {
                             value = value * 2 - 1;
                             value *= 600;
@@ -687,7 +691,7 @@ public final class SoftPerformer {
             connmap.put(extractKeys(connection), connection);
         // seperate connection blocks : Init time, Midi Time, Midi/Control Time,
         // Control Time
-        List<ModelConnectionBlock> connections = new ArrayList<ModelConnectionBlock>();
+        List<ModelConnectionBlock> connections = new ArrayList<>();
 
         midi_ctrl_connections = new int[128][];
         for (int i = 0; i < midi_ctrl_connections.length; i++) {

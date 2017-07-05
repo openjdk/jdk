@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ import java.util.PropertyPermission;
 
 /*
  * @test
- * @bug 6826789 8131486
+ * @bug 6826789 8131486 8130181
  * @summary Make sure equivalent ProtectionDomains are granted the same
  *          permissions when the CodeSource URLs are different but resolve
  *          to the same ip address after name service resolution.
@@ -194,7 +194,7 @@ public class DefineClass {
 
     private static class TestProvider extends Provider {
         TestProvider() {
-            super("Test8131486", 0.0, "For testing only");
+            super("Test8131486", "0.0", "For testing only");
             putService(new Provider.Service(this, "KeyStore", "Test8131486",
                        "DefineClass$TestKeyStore", null, null));
         }
