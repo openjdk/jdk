@@ -355,12 +355,24 @@
                     </li>
                     <li>
                         Install a
-                        <a name="bootjdk">Bootstrap JDK</a>
-                        <br>
+                        <a name="bootjdk">Bootstrap JDK</a>.
                         All OpenJDK builds require access to a previously released
-                        JDK, this is often called a bootstrap JDK.
-                        Currently, for this JDK release we require
-                        JDK 7 Update 7 or newer.
+                        JDK called the <i>bootstrap JDK</i> or <i>boot JDK.</i>
+                        The general rule is that the bootstrap JDK
+                        must be an instance of the previous major
+                        release of the JDK. In addition, there may be
+                        a requirement to use a release at or beyond a
+                        particular update level.
+                        <br>&nbsp;<br>
+
+                        <b><i>Building JDK 8 requires use of a version
+                        of JDK 7 that is at Update 7 or newer. JDK 8
+                        developers should not use JDK 8 as the boot
+                        JDK, to ensure that JDK 8 dependencies are
+                        not introduced into the parts of the system
+                        that are built with JDK 7.</i></b>
+
+                        <br>&nbsp;<br>
                         The JDK 7 binaries can be downloaded from Oracle's 
                         <a href="http://www.oracle.com/technetwork/java/javase/downloads/index.html"
                            target="_blank">JDK 7 download site</a>.
