@@ -135,7 +135,8 @@ static netif  *enumIPv6Interfaces(JNIEnv *env, int sock, netif *ifs);
 #endif
 
 static netif  *addif(JNIEnv *env, int sock, const char *if_name, netif *ifs,
-                     struct sockaddr *ifr_addrP, int family, short prefix);
+                     struct sockaddr *ifr_addrP, struct sockaddr *ifr_broadaddrP,
+                     struct sockaddr *ifr_subnetaddrP, int family, short prefix);
 static void    freeif(netif *ifs);
 
 static int     openSocket(JNIEnv *env, int proto);
@@ -145,6 +146,7 @@ static int     openSocketWithFallback(JNIEnv *env, const char *ifname);
 static struct  sockaddr *getBroadcast(JNIEnv *env, int sock, const char *name,
                                       struct sockaddr *brdcast_store);
 static short   getSubnet(JNIEnv *env, int sock, const char *ifname);
+static short   computeMaskFromAddress(struct sockaddr *ifr_subnetaddrP);
 static int     getIndex(int sock, const char *ifname);
 
 static int     getFlags(int sock, const char *ifname, int *flags);
@@ -864,7 +866,8 @@ void freeif(netif *ifs) {
 }
 
 netif *addif(JNIEnv *env, int sock, const char *if_name, netif *ifs,
-             struct sockaddr *ifr_addrP, int family, short prefix)
+             struct sockaddr *ifr_addrP, struct sockaddr *ifr_broadaddrP,
+             struct sockaddr *ifr_subnetaddrP, int family, short prefix)
 {
     netif *currif = ifs, *parent;
     netaddr *addrP;
@@ -912,19 +915,30 @@ netif *addif(JNIEnv *env, int sock, const char *if_name, netif *ifs,
     addrP->mask = prefix;
     addrP->next = 0;
     if (family == AF_INET) {
-       // Deal with broadcast addr & subnet mask
-       struct sockaddr *brdcast_to =
-              (struct sockaddr *) ((char *)addrP + sizeof(netaddr) + addr_size);
-       addrP->brdcast = getBroadcast(env, sock, name, brdcast_to);
-       if ((*env)->ExceptionCheck(env) == JNI_TRUE) {
-           return ifs;
-       }
-       if ((mask = getSubnet(env, sock, name)) != -1) {
-           addrP->mask = mask;
-       } else if((*env)->ExceptionCheck(env)) {
-           return ifs;
-       }
-     }
+        // Deal with broadcast addr & subnet mask
+        if (ifr_broadaddrP != NULL) {  // just set it, if already known
+            addrP->brdcast =
+                (struct sockaddr *)((char *)addrP + sizeof(netaddr) + addr_size);
+            memcpy(addrP->brdcast, ifr_broadaddrP, addr_size);
+        } else {  // otherwise look it up
+            struct sockaddr *brdcast_to =
+                (struct sockaddr *)((char *)addrP + sizeof(netaddr) + addr_size);
+            addrP->brdcast = getBroadcast(env, sock, name, brdcast_to);
+            if ((*env)->ExceptionCheck(env) == JNI_TRUE) {
+                return ifs;
+            }
+        }
+
+        if (ifr_subnetaddrP != NULL) {  // just compute the mask, if already known
+            addrP->mask = computeMaskFromAddress(ifr_subnetaddrP);
+        } else {   // otherwise look it up
+            if ((mask = getSubnet(env, sock, name)) != -1) {
+                addrP->mask = mask;
+            } else if((*env)->ExceptionCheck(env)) {
+                return ifs;
+            }
+        }
+    }
 
     // Deal with virtual interface with colon notation e.g. eth0:1
     name_colonP = strchr(name, ':');
@@ -1021,6 +1035,20 @@ netif *addif(JNIEnv *env, int sock, const char *if_name, netif *ifs,
     }
 
     return ifs;
+}
+
+static short computeMaskFromAddress(struct sockaddr *ifr_subnetaddrP) {
+    short ret = 0;
+    unsigned int mask;
+
+    mask = ntohl(((struct sockaddr_in*)ifr_subnetaddrP)->sin_addr.s_addr);
+
+    while (mask) {
+       mask <<= 1;
+       ret++;
+    }
+
+    return ret;
 }
 
 /*
@@ -1122,13 +1150,43 @@ static netif *enumIPv4Interfaces(JNIEnv *env, int sock, netif *ifs) {
 
     // Iterate through each interface
     ifreqP = ifc.ifc_req;
+    struct sockaddr addr, broadaddr, netmask;
     for (i = 0; i < ifc.ifc_len / sizeof(struct ifreq); i++, ifreqP++) {
+        struct sockaddr* broadaddrP = NULL;
+        struct sockaddr* subnetaddrP = NULL;
+
+        // Ignore non IPv4 Interfaces
+        if ((struct sockaddr *)&(ifreqP->ifr_addr) != NULL &&
+            ((struct sockaddr *)&(ifreqP->ifr_addr))->sa_family != AF_INET) {
+            continue;
+        }
+
+        memcpy(&addr, &(ifreqP->ifr_addr), sizeof(struct sockaddr));
+
+        // set broadaddrP, if applicable
+        if ((ifreqP->ifr_flags & IFF_POINTOPOINT) == 0 &&
+            ifreqP->ifr_flags & IFF_BROADCAST) {
+
+            if (ioctl(sock, SIOCGIFBRDADDR, ifreqP) == 0) {
+                memcpy(&broadaddr, &(ifreqP->ifr_broadaddr), sizeof(struct sockaddr));
+                broadaddrP = &broadaddr;
+            }
+            // restore the address, for subsequent calls
+            memcpy(&(ifreqP->ifr_addr), &addr, sizeof(struct sockaddr));
+        }
+
+        if (ioctl(sock, SIOCGIFNETMASK, ifreqP) == 0) {
 #if defined(_AIX)
-        if (ifreqP->ifr_addr.sa_family != AF_INET) continue;
+            memcpy(&netmask, &(ifreqP->ifr_addr), sizeof(struct sockaddr));
+#else
+            memcpy(&netmask, &(ifreqP->ifr_netmask), sizeof(struct sockaddr));
 #endif
+            subnetaddrP = &netmask;
+        }
+
         // Add to the list
         ifs = addif(env, sock, ifreqP->ifr_name, ifs,
-                    (struct sockaddr *)&(ifreqP->ifr_addr), AF_INET, 0);
+                    &addr, broadaddrP, subnetaddrP, AF_INET, 0);
 
         // If an exception occurred then free the list
         if ((*env)->ExceptionOccurred(env)) {
@@ -1177,7 +1235,7 @@ static netif *enumIPv6Interfaces(JNIEnv *env, int sock, netif *ifs) {
             addr.sin6_scope_id = if_idx;
 
             ifs = addif(env, sock, devname, ifs, (struct sockaddr *)&addr,
-                        AF_INET6, (short)prefix);
+                        NULL, NULL, AF_INET6, (short)prefix);
 
             // If an exception occurred then return the list as is.
             if ((*env)->ExceptionOccurred(env)) {
@@ -1261,7 +1319,8 @@ static netif *enumIPv6Interfaces(JNIEnv *env, int sock, netif *ifs) {
 
         // Add to the list
         ifs = addif(env, sock, ifreqP->ifr_name, ifs,
-                    (struct sockaddr *)&(ifreqP->ifr_addr), AF_INET6, 0);
+                    (struct sockaddr *)&(ifreqP->ifr_addr),
+                    NULL, NULL, AF_INET6, 0);
 
         // If an exception occurred then free the list
         if ((*env)->ExceptionOccurred(env)) {
@@ -1346,14 +1405,7 @@ static short getSubnet(JNIEnv *env, int sock, const char *ifname) {
         return -1;
     }
 
-    mask = ntohl(((struct sockaddr_in*)&(if2.ifr_addr))->sin_addr.s_addr);
-    ret = 0;
-    while (mask) {
-       mask <<= 1;
-       ret++;
-    }
-
-    return ret;
+    return computeMaskFromAddress(&(if2.ifr_addr));
 }
 
 /*
@@ -1595,8 +1647,8 @@ static netif *enumIPvXInterfaces(JNIEnv *env, int sock, netif *ifs, int family) 
 
         // add to the list
         ifs = addif(env, sock,ifr->lifr_name, ifs,
-                    (struct sockaddr *)&(ifr->lifr_addr), family,
-                    (short)ifr->lifr_addrlen);
+                    (struct sockaddr *)&(ifr->lifr_addr),
+                    NULL, NULL, family, (short)ifr->lifr_addrlen);
 
         // If an exception occurred we return immediately
         if ((*env)->ExceptionOccurred(env)) {
@@ -1674,15 +1726,7 @@ static short getSubnet(JNIEnv *env, int sock, const char *ifname) {
         return -1;
     }
 
-    mask = ntohl(((struct sockaddr_in*)&(if2.lifr_addr))->sin_addr.s_addr);
-    ret = 0;
-
-    while (mask) {
-       mask <<= 1;
-       ret++;
-    }
-
-    return ret;
+    return computeMaskFromAddress(&(if2.lifr_addr));
 }
 
 
@@ -1889,13 +1933,21 @@ static netif *enumIPv4Interfaces(JNIEnv *env, int sock, netif *ifs) {
     }
 
     for (ifa = origifa; ifa != NULL; ifa = ifa->ifa_next) {
+        struct sockaddr* ifa_broadaddr = NULL;
 
         // Skip non-AF_INET entries.
         if (ifa->ifa_addr == NULL || ifa->ifa_addr->sa_family != AF_INET)
             continue;
 
+        // set ifa_broadaddr, if there is one
+        if ((ifa->ifa_flags & IFF_POINTOPOINT) == 0 &&
+            ifa->ifa_flags & IFF_BROADCAST) {
+            ifa_broadaddr = ifa->ifa_broadaddr;
+        }
+
         // Add to the list.
-        ifs = addif(env, sock, ifa->ifa_name, ifs, ifa->ifa_addr, AF_INET, 0);
+        ifs = addif(env, sock, ifa->ifa_name, ifs, ifa->ifa_addr,
+                    ifa_broadaddr, ifa->ifa_netmask, AF_INET, 0);
 
         // If an exception occurred then free the list.
         if ((*env)->ExceptionOccurred(env)) {
@@ -1971,8 +2023,9 @@ static netif *enumIPv6Interfaces(JNIEnv *env, int sock, netif *ifs) {
 
         // Add to the list.
         sin6 = (struct sockaddr_in6 *)&ifr6.ifr_addr;
-        ifs = addif(env, sock, ifa->ifa_name, ifs, ifa->ifa_addr, AF_INET6,
-            (short)prefix(&sin6->sin6_addr, sizeof(struct in6_addr)));
+        ifs = addif(env, sock, ifa->ifa_name, ifs, ifa->ifa_addr, NULL, NULL,
+                    AF_INET6,
+                    (short)prefix(&sin6->sin6_addr, sizeof(struct in6_addr)));
 
         // If an exception occurred then free the list.
         if ((*env)->ExceptionOccurred(env)) {
@@ -2059,14 +2112,7 @@ static short getSubnet(JNIEnv *env, int sock, const char *ifname) {
         return -1;
     }
 
-    mask = ntohl(((struct sockaddr_in*)&(if2.ifr_addr))->sin_addr.s_addr);
-    ret = 0;
-    while (mask) {
-       mask <<= 1;
-       ret++;
-    }
-
-    return ret;
+    return computeMaskFromAddress(&(if2.ifr_addr));
 }
 
 /*

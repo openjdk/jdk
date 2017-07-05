@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ import java.net.Socket;
  * key pairs are used to authenticate the local side of a secure
  * socket.
  * <P>
- * During secure socket negotiations, implentations
+ * During secure socket negotiations, implementations
  * call methods in this interface to:
  * <UL>
  * <LI> determine the set of aliases that are available for negotiations

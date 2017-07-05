@@ -30,6 +30,7 @@ import java.net.http.HttpClient;
 import java.net.http.WebSocket;
 import java.net.http.WebSocket.CloseCode;
 import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
 import java.nio.channels.SocketChannel;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -92,9 +93,21 @@ public class BasicWebSocketAPITest {
         );
         checkAndClose(
                 (ws) ->
+                        TestKit.assertThrows(IllegalArgumentException.class,
+                                ".*message.*",
+                                () -> ws.sendPing(ByteBuffer.allocate(126)))
+        );
+        checkAndClose(
+                (ws) ->
                         TestKit.assertThrows(NullPointerException.class,
                                 "message",
                                 () -> ws.sendPing(null))
+        );
+        checkAndClose(
+                (ws) ->
+                        TestKit.assertThrows(IllegalArgumentException.class,
+                                ".*message.*",
+                                () -> ws.sendPong(ByteBuffer.allocate(126)))
         );
         checkAndClose(
                 (ws) ->
@@ -106,7 +119,7 @@ public class BasicWebSocketAPITest {
                 (ws) ->
                         TestKit.assertThrows(NullPointerException.class,
                                 "message",
-                                () -> ws.sendText((CharSequence) null, true))
+                                () -> ws.sendText(null, true))
         );
         checkAndClose(
                 (ws) ->
@@ -119,6 +132,12 @@ public class BasicWebSocketAPITest {
                         TestKit.assertThrows(NullPointerException.class,
                                 "message",
                                 () -> ws.sendText((Stream<? extends CharSequence>) null))
+        );
+        checkAndClose(
+                (ws) ->
+                        TestKit.assertThrows(IllegalArgumentException.class,
+                                "(?i).*reason.*",
+                                () -> ws.sendClose(CloseCode.NORMAL_CLOSURE, CharBuffer.allocate(124)))
         );
         checkAndClose(
                 (ws) ->
