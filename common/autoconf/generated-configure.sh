@@ -3865,7 +3865,7 @@ fi
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1384422786
+DATE_WHEN_GENERATED=1389186094
 
 ###############################################################################
 #
@@ -29625,7 +29625,7 @@ fi
   fi
 
   CCXXFLAGS_JDK="$CCXXFLAGS_JDK -DARCH='\"$OPENJDK_TARGET_CPU_LEGACY\"' -D$OPENJDK_TARGET_CPU_LEGACY"
-  CCXXFLAGS_JDK="$CCXXFLAGS_JDK -DRELEASE='\"$RELEASE\"'"
+  CCXXFLAGS_JDK="$CCXXFLAGS_JDK -DRELEASE='\"\$(RELEASE)\"'"
 
   CCXXFLAGS_JDK="$CCXXFLAGS_JDK \
       -I${JDK_OUTPUTDIR}/include \
