@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,50 +28,111 @@
  *     LoginContext
  * @author Brad Wetmore
  *
- * @run main/othervm -Xmx2m -XX:OldSize=1m -XX:NewSize=512k TestProviderLeak
+ * @run main/othervm -Xmx20m TestProviderLeak
  *
- * The original test invocation is below, but had to use the above
- * workaround for bug 6923123.
- *
- * run main/othervm -Xmx2m TestProviderLeak
  */
 
 /*
- * We force the leak to become a problem by specifying the minimum
- * size heap we can (above).  In current runs on a server and client
- * machine, it took roughly 220-240 iterations to have the memory leak
- * shut down other operations.  It complained about "Unable to verify
- * the SunJCE provider."
+ * We force the leak to become a problem by eating up most JVM free memory.
+ * In current runs on a server and client machine, it took roughly 50-150
+ * iterations to have the memory leak or time-out shut down other operations.
+ * It complained about "JCE cannot authenticate the provider SunJCE" or timed
+ * out.
  */
 
 import javax.crypto.*;
 import javax.crypto.spec.*;
 
+import java.util.*;
+import java.util.concurrent.*;
+
 public class TestProviderLeak {
+    private static final int MB = 1024 * 1024;
+    // Currently, 3MB heap size is reserved for running testing iterations.
+    // It is tweaked to make sure the test quickly triggers the memory leak
+    // or throws out TimeoutException.
+    private static final int RESERVATION = 3;
+    // The maximum time, 5 seconds, to wait for each iteration.
+    private static final int TIME_OUT = 5;
+
+    private static Deque<byte []> eatupMemory() throws Exception {
+        dumpMemoryStats("Before memory allocation");
+
+        Deque<byte []> data = new ArrayDeque<byte []>();
+        boolean hasException = false;
+        while (!hasException) {
+            byte [] megaByte;
+            try {
+                megaByte = new byte [MB];
+                data.add(megaByte);
+            } catch (OutOfMemoryError e) {
+                System.out.println("OOME is thrown when allocating "
+                        + data.size() + "MB memory.");
+                megaByte = null;
+
+                for (int j = 0; j < RESERVATION && !data.isEmpty(); j++) {
+                    data.removeLast();
+                }
+                System.gc();
+                hasException = true;
+            }
+        }
+        dumpMemoryStats("After memory allocation");
+
+        return data;
+    }
+
     private static void dumpMemoryStats(String s) throws Exception {
         Runtime rt = Runtime.getRuntime();
-        System.out.println(s + ":\t" +
-            rt.freeMemory() + " bytes free");
+        System.out.println(s + ":\t"
+            + rt.freeMemory() + " bytes free");
     }
 
     public static void main(String [] args) throws Exception {
-        SecretKeyFactory skf =
+        // Eat up memory
+        Deque<byte []> dummyData = eatupMemory();
+        assert (dummyData != null);
+
+        // Prepare the test
+        final SecretKeyFactory skf =
             SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1", "SunJCE");
-        PBEKeySpec pbeKS = new PBEKeySpec(
+        final PBEKeySpec pbeKS = new PBEKeySpec(
             "passPhrase".toCharArray(), new byte [] { 0 }, 5, 512);
-        for (int i = 0; i <= 1000; i++) {
-            try {
-                skf.generateSecret(pbeKS);
+
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        Callable<SecretKey> task = new Callable<SecretKey>() {
+            @Override
+            public SecretKey call() throws Exception {
+                return skf.generateSecret(pbeKS);
+            }
+        };
+
+        // Start testing iteration
+        try {
+            for (int i = 0; i <= 1000; i++) {
                 if ((i % 20) == 0) {
-                     // Calling gc() isn't dependable, but doesn't hurt.
-                     // Gives better output in leak cases.
+                    // Calling gc() isn't dependable, but doesn't hurt.
+                    // Gives better output in leak cases.
                     System.gc();
                     dumpMemoryStats("Iteration " + i);
                 }
-            } catch (Exception e) {
-                dumpMemoryStats("\nException seen at iteration " + i);
-                throw e;
+
+                Future<SecretKey> future = executor.submit(task);
+
+                try {
+                    future.get(TIME_OUT, TimeUnit.SECONDS);
+                } catch (Exception e) {
+                    dumpMemoryStats("\nException seen at iteration " + i);
+                    throw e;
+                }
             }
+        } finally {
+            // JTReg will time out after two minutes. Proactively release
+            // the memory to avoid JTReg time-out situation.
+            dummyData = null;
+            System.gc();
+            dumpMemoryStats("Memory dereference");
+            executor.shutdownNow();
         }
     }
 }

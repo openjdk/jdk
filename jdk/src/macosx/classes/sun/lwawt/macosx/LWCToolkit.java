@@ -750,12 +750,21 @@ public class LWCToolkit extends LWToolkit {
     }
 
     @Override
+    public boolean isWindowShapingSupported() {
+        return true;
+    }
+
+    @Override
     public boolean isWindowTranslucencySupported() {
         return true;
     }
 
     @Override
     public boolean isTranslucencyCapable(GraphicsConfiguration gc) {
+        return true;
+    }
+
+    public boolean isSwingBackbufferTranslucencySupported() {
         return true;
     }
 

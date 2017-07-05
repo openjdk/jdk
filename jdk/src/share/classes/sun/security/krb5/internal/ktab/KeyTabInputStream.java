@@ -83,8 +83,7 @@ public class KeyTabInputStream extends KrbDataInputStream implements KeyTabConst
         }
         int nameType = read(4);
         index -= 4;
-        PrincipalName service = new PrincipalName(nameParts, nameType);
-        service.setRealm(realm);
+        PrincipalName service = new PrincipalName(nameType, nameParts, realm);
         KerberosTime timeStamp = readTimeStamp();
 
         int keyVersion = read() & 0xff;

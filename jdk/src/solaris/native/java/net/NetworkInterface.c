@@ -804,7 +804,7 @@ static netif *enumInterfaces(JNIEnv *env) {
        do{ \
         _pointer = (_type)malloc( _size ); \
         if (_pointer == NULL) { \
-            JNU_ThrowOutOfMemoryError(env, "heap allocation failed"); \
+            JNU_ThrowOutOfMemoryError(env, "Native heap allocation failed"); \
             return ifs; /* return untouched list */ \
         } \
        } while(0)

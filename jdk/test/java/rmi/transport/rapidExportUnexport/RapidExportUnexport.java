@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,8 @@
  * procedure (which sleeps 10 seconds after 10 rapid failures).
  * @author Peter Jones
  *
- * @build RapidExportUnexport
+ * @library ../../testlibrary
+ * @build TestLibrary RapidExportUnexport
  * @run main/othervm RapidExportUnexport
  */
 
@@ -39,9 +40,7 @@ import java.rmi.Remote;
 import java.rmi.server.UnicastRemoteObject;
 
 public class RapidExportUnexport {
-
-    private static final int PORT = 2055;
-
+    private static final int PORT = TestLibrary.getUnusedRandomPort();
     private static final int REPS = 100;
     private static final long TIMEOUT = 60000;
 
