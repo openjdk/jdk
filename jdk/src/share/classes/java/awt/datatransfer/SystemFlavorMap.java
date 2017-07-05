@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,11 +56,6 @@ import sun.awt.datatransfer.DataTransferer;
  * by the data transfer subsystem to transfer data between Java and native
  * applications, and between Java applications in separate VMs.
  * <p>
- * In the Sun reference implementation, the default SystemFlavorMap is
- * initialized by the file <code>jre/lib/flavormap.properties</code> and the
- * contents of the URL referenced by the AWT property
- * <code>AWT.DnD.flavorMapFileURL</code>. See <code>flavormap.properties</code>
- * for details.
  *
  * @since 1.2
  */
@@ -1213,7 +1208,7 @@ public final class SystemFlavorMap implements FlavorMap, FlavorTable {
      * are equal according to <code>String.equals(Object)</code>.</li>
      * </ul>
      * <p>
-     * Sun's reference implementation of this method returns the specified MIME
+     * The reference implementation of this method returns the specified MIME
      * type <code>String</code> prefixed with <code>JAVA_DATAFLAVOR:</code>.
      *
      * @param mimeType the MIME type to encode
@@ -1241,7 +1236,7 @@ public final class SystemFlavorMap implements FlavorMap, FlavorTable {
      * according to <code>String.equals(Object)</code>.</li>
      * </ul>
      * <p>
-     * Sun's reference implementation of this method returns the MIME type
+     * The reference implementation of this method returns the MIME type
      * <code>String</code> of the specified <code>DataFlavor</code> prefixed
      * with <code>JAVA_DATAFLAVOR:</code>.
      *

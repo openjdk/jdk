@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,10 +65,15 @@ public interface Driver {
      * driver to connect to the given URL but has trouble connecting to
      * the database.
      *
-     * <P>The <code>java.util.Properties</code> argument can be used to pass
+     * <P>The {@code Properties} argument can be used to pass
      * arbitrary string tag/value pairs as connection arguments.
      * Normally at least "user" and "password" properties should be
-     * included in the <code>Properties</code> object.
+     * included in the {@code Properties} object.
+     * <p>
+     * <B>Note:</B> If a property is specified as part of the {@code url} and
+     * is also specified in the {@code Properties} object, it is
+     * implementation-defined as to which value will take precedence. For
+     * maximum portability, an application should only specify a property once.
      *
      * @param url the URL of the database to which to connect
      * @param info a list of arbitrary string tag/value pairs as
@@ -76,7 +81,8 @@ public interface Driver {
      * "password" property should be included.
      * @return a <code>Connection</code> object that represents a
      *         connection to the URL
-     * @exception SQLException if a database access error occurs
+     * @exception SQLException if a database access error occurs or the url is
+     * {@code null}
      */
     Connection connect(String url, java.util.Properties info)
         throws SQLException;
@@ -84,13 +90,14 @@ public interface Driver {
     /**
      * Retrieves whether the driver thinks that it can open a connection
      * to the given URL.  Typically drivers will return <code>true</code> if they
-     * understand the subprotocol specified in the URL and <code>false</code> if
+     * understand the sub-protocol specified in the URL and <code>false</code> if
      * they do not.
      *
      * @param url the URL of the database
      * @return <code>true</code> if this driver understands the given URL;
      *         <code>false</code> otherwise
-     * @exception SQLException if a database access error occurs
+     * @exception SQLException if a database access error occurs or the url is
+     * {@code null}
      */
     boolean acceptsURL(String url) throws SQLException;
 

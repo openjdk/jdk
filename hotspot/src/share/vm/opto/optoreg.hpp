@@ -77,7 +77,7 @@ class OptoReg VALUE_OBJ_CLASS_SPEC {
   // (We would like to have an operator+ for RegName, but it is not
   // a class, so this would be illegal in C++.)
 
-  static void dump( int );
+  static void dump(int, outputStream *st = tty);
 
   // Get the stack slot number of an OptoReg::Name
   static unsigned int reg2stack( OptoReg::Name r) {

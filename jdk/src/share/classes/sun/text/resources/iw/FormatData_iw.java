@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,42 @@
  * This notice and attribution to Taligent may not be removed.
  * Taligent is a registered trademark of Taligent, Inc.
  *
+ */
+
+/*
+ * COPYRIGHT AND PERMISSION NOTICE
+ *
+ * Copyright (C) 1991-2012 Unicode, Inc. All rights reserved. Distributed under
+ * the Terms of Use in http://www.unicode.org/copyright.html.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of the Unicode data files and any associated documentation (the "Data
+ * Files") or Unicode software and any associated documentation (the
+ * "Software") to deal in the Data Files or Software without restriction,
+ * including without limitation the rights to use, copy, modify, merge,
+ * publish, distribute, and/or sell copies of the Data Files or Software, and
+ * to permit persons to whom the Data Files or Software are furnished to do so,
+ * provided that (a) the above copyright notice(s) and this permission notice
+ * appear with all copies of the Data Files or Software, (b) both the above
+ * copyright notice(s) and this permission notice appear in associated
+ * documentation, and (c) there is clear notice in each modified Data File or
+ * in the Software as well as in the documentation associated with the Data
+ * File(s) or Software that the data or software has been modified.
+ *
+ * THE DATA FILES AND SOFTWARE ARE PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+ * KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT OF
+ * THIRD PARTY RIGHTS. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR HOLDERS
+ * INCLUDED IN THIS NOTICE BE LIABLE FOR ANY CLAIM, OR ANY SPECIAL INDIRECT OR
+ * CONSEQUENTIAL DAMAGES, OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE,
+ * DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
+ * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE
+ * OF THE DATA FILES OR SOFTWARE.
+ *
+ * Except as contained in this notice, the name of a copyright holder shall not
+ * be used in advertising or otherwise to promote the sale, use or other
+ * dealings in these Data Files or Software without prior written authorization
+ * of the copyright holder.
  */
 
 package sun.text.resources.iw;
@@ -171,6 +207,46 @@ public class FormatData_iw extends ListResourceBundle {
                 }
             },
             { "DateTimePatternChars", "GanjkHmsSEDFwWxhKzZ" },
+            { "islamic.MonthNames",
+                new String[] {
+                    "\u05de\u05d5\u05d7\u05e8\u05dd",
+                    "\u05e1\u05e4\u05e8",
+                    "\u05e8\u05d1\u05d9\u05e2 \u05d0\u05dc-\u05d0\u05d5\u05d5\u05d0\u05dc",
+                    "\u05e8\u05d1\u05d9\u05e2 \u05d0\u05dc-\u05ea\u05e0\u05d9",
+                    "\u05d2\u05f3\u05d5\u05de\u05d3\u05d4 \u05d0\u05dc-\u05d0\u05d5\u05d5\u05d0\u05dc",
+                    "\u05d2\u05f3\u05d5\u05de\u05d3\u05d4 \u05d0\u05dc-\u05ea\u05e0\u05d9",
+                    "\u05e8\u05d2\u05f3\u05d0\u05d1",
+                    "\u05e9\u05e2\u05d1\u05d0\u05df",
+                    "\u05e8\u05d0\u05de\u05d3\u05df",
+                    "\u05e9\u05d5\u05d5\u05d0\u05dc",
+                    "\u05d6\u05d5 \u05d0\u05dc-QI'DAH",
+                    "\u05d6\u05d5 \u05d0\u05dc-\u05d7\u05d9\u05d2\u05f3\u05d4",
+                    "",
+                }
+            },
+            { "islamic.Eras",
+                new String[] {
+                    "",
+                    "\u05e9\u05e0\u05ea \u05d4\u05d9\u05d2\u05f3\u05e8\u05d4",
+                }
+            },
+            { "calendarname.islamic-civil", "\u05dc\u05d5\u05d7 \u05e9\u05e0\u05d4 \u05de\u05d5\u05e1\u05dc\u05de\u05d9-\u05d0\u05d6\u05e8\u05d7\u05d9" },
+            { "calendarname.islamicc", "\u05dc\u05d5\u05d7 \u05e9\u05e0\u05d4 \u05de\u05d5\u05e1\u05dc\u05de\u05d9-\u05d0\u05d6\u05e8\u05d7\u05d9" },
+            { "calendarname.islamic", "\u05dc\u05d5\u05d7 \u05e9\u05e0\u05d4 \u05de\u05d5\u05e1\u05dc\u05de\u05d9" },
+            { "calendarname.buddhist", "\u05dc\u05d5\u05d7 \u05e9\u05e0\u05d4 \u05d1\u05d5\u05d3\u05d4\u05d9\u05e1\u05d8\u05d9" },
+            { "calendarname.japanese", "\u05dc\u05d5\u05d7 \u05e9\u05e0\u05d4 \u05d9\u05e4\u05e0\u05d9" },
+            { "calendarname.gregorian", "\u05dc\u05d5\u05d7 \u05e9\u05e0\u05d4 \u05d2\u05e8\u05d2\u05d5\u05e8\u05d9\u05d0\u05e0\u05d9" },
+            { "calendarname.gregory", "\u05dc\u05d5\u05d7 \u05e9\u05e0\u05d4 \u05d2\u05e8\u05d2\u05d5\u05e8\u05d9\u05d0\u05e0\u05d9" },
+            { "field.era", "\u05ea\u05e7\u05d5\u05e4\u05d4" },
+            { "field.year", "\u05e9\u05e0\u05d4" },
+            { "field.month", "\u05d7\u05d5\u05d3\u05e9" },
+            { "field.week", "\u05e9\u05d1\u05d5\u05e2" },
+            { "field.weekday", "\u05d9\u05d5\u05dd \u05d1\u05e9\u05d1\u05d5\u05e2" },
+            { "field.dayperiod", "\u05dc\u05e4\u05d4\u05f4\u05e6/\u05d0\u05d7\u05d4\u05f4\u05e6" },
+            { "field.hour", "\u05e9\u05e2\u05d4" },
+            { "field.minute", "\u05d3\u05e7\u05d4" },
+            { "field.second", "\u05e9\u05e0\u05d9\u05d9\u05d4" },
+            { "field.zone", "\u05d0\u05d6\u05d5\u05e8" },
         };
     }
 }

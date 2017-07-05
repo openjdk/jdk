@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,8 +103,8 @@ class ConstantPool : public Metadata {
   union {
     // set for CDS to restore resolved references
     int                _resolved_reference_length;
-  // only set to non-zero if constant pool is merged by RedefineClasses
-  int                  _orig_length;
+    // keeps version number for redefined classes (used in backtrace)
+    int                _version;
   } _saved;
 
   Monitor*             _lock;
@@ -784,8 +784,11 @@ class ConstantPool : public Metadata {
   static void copy_cp_to_impl(constantPoolHandle from_cp, int start_i, int end_i, constantPoolHandle to_cp, int to_i, TRAPS);
   static void copy_entry_to(constantPoolHandle from_cp, int from_i, constantPoolHandle to_cp, int to_i, TRAPS);
   int  find_matching_entry(int pattern_i, constantPoolHandle search_cp, TRAPS);
-  int  orig_length() const                { return _saved._orig_length; }
-  void set_orig_length(int orig_length)   { _saved._orig_length = orig_length; }
+  int  version() const                    { return _saved._version; }
+  void set_version(int version)           { _saved._version = version; }
+  void increment_and_save_version(int version) {
+    _saved._version = version >= 0 ? (version + 1) : version;  // keep overflow
+  }
 
   void set_resolved_reference_length(int length) { _saved._resolved_reference_length = length; }
   int  resolved_reference_length() const  { return _saved._resolved_reference_length; }

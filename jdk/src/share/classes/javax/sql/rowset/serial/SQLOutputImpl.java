@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -579,7 +579,7 @@ public class SQLOutputImpl implements SQLOutput {
     }
 
 
-    /**
+  /**
    * Writes the next attribute to the stream as a <code>String</code>
    * in the Java programming language. The driver converts this to a
    * SQL <code>NCHAR</code> or
@@ -594,8 +594,8 @@ public class SQLOutputImpl implements SQLOutput {
    */
    @SuppressWarnings("unchecked")
    public void writeNString(String x) throws SQLException {
-        throw new UnsupportedOperationException("Operation not supported");
-    }
+       attribs.add(x);
+   }
 
   /**
    * Writes an SQL <code>NCLOB</code> value to the stream.
@@ -608,8 +608,8 @@ public class SQLOutputImpl implements SQLOutput {
    */
    @SuppressWarnings("unchecked")
    public void writeNClob(NClob x) throws SQLException {
-        throw new UnsupportedOperationException("Operation not supported");
-    }
+           attribs.add(x);
+   }
 
 
   /**
@@ -623,8 +623,8 @@ public class SQLOutputImpl implements SQLOutput {
    */
    @SuppressWarnings("unchecked")
    public void writeRowId(RowId x) throws SQLException {
-        throw new UnsupportedOperationException("Operation not supported");
-    }
+        attribs.add(x);
+   }
 
 
   /**
@@ -638,7 +638,7 @@ public class SQLOutputImpl implements SQLOutput {
    */
    @SuppressWarnings("unchecked")
    public void writeSQLXML(SQLXML x) throws SQLException {
-        throw new UnsupportedOperationException("Operation not supported");
+        attribs.add(x);
     }
 
 }

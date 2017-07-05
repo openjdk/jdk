@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,14 +57,6 @@ inline const char* os::line_separator() {
 
 inline const char* os::path_separator() {
   return ":";
-}
-
-inline const char* os::jlong_format_specifier() {
-  return "%lld";
-}
-
-inline const char* os::julong_format_specifier() {
-  return "%llu";
 }
 
 // File names are case-sensitive on windows only

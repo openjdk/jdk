@@ -136,6 +136,12 @@ fi
 AC_PATH_X
 AC_PATH_XTRA
 
+# AC_PATH_XTRA creates X_LIBS and sometimes adds -R flags. When cross compiling
+# this doesn't make sense so we remove it.
+if test "x$COMPILE_TYPE" = xcross; then
+  X_LIBS=`$ECHO $X_LIBS | $SED 's/-R \{0,1\}[[^ ]]*//g'`
+fi
+
 if test "x$no_x" = xyes && test "x$X11_NOT_NEEDED" != xyes; then 
     HELP_MSG_MISSING_DEPENDENCY([x11])
     AC_MSG_ERROR([Could not find X11 libraries. $HELP_MSG])

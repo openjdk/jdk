@@ -300,7 +300,7 @@ public class Button extends Component implements Accessible {
      * @since 1.4
      */
     public synchronized ActionListener[] getActionListeners() {
-        return (ActionListener[]) (getListeners(ActionListener.class));
+        return getListeners(ActionListener.class);
     }
 
     /**

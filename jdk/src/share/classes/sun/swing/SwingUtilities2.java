@@ -1879,4 +1879,12 @@ public class SwingUtilities2 {
         }
         return -1;
     }
+
+    public static int getSystemMnemonicKeyMask() {
+        Toolkit toolkit = Toolkit.getDefaultToolkit();
+        if (toolkit instanceof SunToolkit) {
+            return ((SunToolkit) toolkit).getFocusAcceleratorKeyMask();
+        }
+        return InputEvent.ALT_MASK;
+    }
 }

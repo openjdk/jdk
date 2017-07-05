@@ -109,7 +109,6 @@ static CClipboard *sClipboard = nil;
 }
 
 - (void) javaDeclareTypes:(NSArray *)inTypes withOwner:(jobject)inClipboard jniEnv:(JNIEnv *)inEnv {
-    AWT_ASSERT_NOT_APPKIT_THREAD;
 
     //NSLog(@"CClipboard javaDeclareTypes %@ withOwner", inTypes);
 
@@ -134,7 +133,6 @@ static CClipboard *sClipboard = nil;
 
 
 - (NSArray *) javaGetTypes {
-    AWT_ASSERT_NOT_APPKIT_THREAD;
 
     NSMutableArray *args = [NSMutableArray arrayWithCapacity:1];
     [ThreadUtilities performOnMainThread:@selector(_nativeGetTypes:) onObject:self withObject:args waitUntilDone:YES awtMode:YES];
@@ -152,7 +150,6 @@ static CClipboard *sClipboard = nil;
 }
 
 - (void) javaSetData:(NSData *)inData forType:(NSString *) inFormat {
-    AWT_ASSERT_NOT_APPKIT_THREAD;
 
     CClipboardUpdate *newUpdate = [[CClipboardUpdate alloc] initWithData:inData withFormat:inFormat];
     [ThreadUtilities performOnMainThread:@selector(_nativeSetData:) onObject:self withObject:newUpdate waitUntilDone:YES awtMode:YES];
@@ -171,7 +168,6 @@ static CClipboard *sClipboard = nil;
 }
 
 - (NSData *) javaGetDataForType:(NSString *) inFormat {
-    AWT_ASSERT_NOT_APPKIT_THREAD;
 
     NSMutableArray *args = [NSMutableArray arrayWithObject:inFormat];
     [ThreadUtilities performOnMainThread:@selector(_nativeGetDataForType:) onObject:self withObject:args waitUntilDone:YES awtMode:YES];

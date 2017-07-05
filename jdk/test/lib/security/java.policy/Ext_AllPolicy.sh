@@ -46,6 +46,9 @@ if [ "${TESTJAVA}" = "" ] ; then
   echo "FAILED!!!"
   exit 1
 fi
+if [ "${COMPILEJAVA}" = "" ]; then
+  COMPILEJAVA="${TESTJAVA}"
+fi
 
 # set platform-dependent variables
 OS=`uname -s`
@@ -74,7 +77,7 @@ esac
 # the test code
 
 cd ${TESTCLASSES}
-${TESTJAVA}${FS}bin${FS}jar -cvf Ext_AllPolicy.jar Ext_AllPolicy.class
+${COMPILEJAVA}${FS}bin${FS}jar ${TESTTOOLVMOPTS} -cvf Ext_AllPolicy.jar Ext_AllPolicy.class
 
 rm Ext_AllPolicy.class
 ${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} \

@@ -85,7 +85,7 @@ public class Choice extends Component implements ItemSelectable, Accessible {
      * @see #insert(String, int)
      * @see #remove(String)
      */
-    Vector pItems;
+    Vector<String> pItems;
 
     /**
      * The index of the current choice for this <code>Choice</code>
@@ -129,7 +129,7 @@ public class Choice extends Component implements ItemSelectable, Accessible {
      */
     public Choice() throws HeadlessException {
         GraphicsEnvironment.checkHeadless();
-        pItems = new Vector();
+        pItems = new Vector<>();
     }
 
     /**
@@ -191,7 +191,7 @@ public class Choice extends Component implements ItemSelectable, Accessible {
      * be called on the toolkit thread.
      */
     final String getItemImpl(int index) {
-        return (String)pItems.elementAt(index);
+        return pItems.elementAt(index);
     }
 
     /**
@@ -524,7 +524,7 @@ public class Choice extends Component implements ItemSelectable, Accessible {
      * @since 1.4
      */
     public synchronized ItemListener[] getItemListeners() {
-        return (ItemListener[])(getListeners(ItemListener.class));
+        return getListeners(ItemListener.class);
     }
 
     /**

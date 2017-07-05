@@ -28,6 +28,7 @@ import java.lang.annotation.*;
 @Inherited
 @Retention(RetentionPolicy.RUNTIME)
 @ContainedBy(InheritedContainer.class)
+@Repeatable(InheritedContainer.class)
 public @interface InheritedContainee {
     int value();
 }

@@ -33,6 +33,9 @@ if [ "${TESTJAVA}" = "" ] ; then
   echo "FAILED!!!"
   exit 1
 fi
+if [ "${COMPILEJAVA}" = "" ]; then
+  COMPILEJAVA="${TESTJAVA}"
+fi
 
 # set platform-dependent variables
 OS=`uname -s`
@@ -52,7 +55,7 @@ case "$OS" in
     ;;
 esac
 
-${TESTJAVA}${FS}bin${FS}javac -d . ${TESTSRC}${FS}PrintSSL.java || exit 10
+${COMPILEJAVA}${FS}bin${FS}javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -d . ${TESTSRC}${FS}PrintSSL.java || exit 10
 ${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} -Dtest.src=$TESTSRC PrintSSL | ( read PORT; ${TESTJAVA}${FS}bin${FS}keytool -printcert -sslserver localhost:$PORT )
 status=$?
 
