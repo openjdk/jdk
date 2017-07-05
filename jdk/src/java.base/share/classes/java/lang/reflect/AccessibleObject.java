@@ -28,9 +28,11 @@ package java.lang.reflect;
 import java.lang.annotation.Annotation;
 import java.security.AccessController;
 
+import jdk.internal.misc.VM;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
 import jdk.internal.reflect.ReflectionFactory;
+import sun.security.action.GetPropertyAction;
 
 /**
  * The AccessibleObject class is the base class for Field, Method and
@@ -172,8 +174,10 @@ public class AccessibleObject implements AnnotatedElement {
 
         // package is open to caller
         String pn = packageName(declaringClass);
-        if (declaringModule.isOpen(pn, callerModule))
+        if (declaringModule.isOpen(pn, callerModule)) {
+            printStackTraceIfOpenedReflectively(declaringModule, pn, callerModule);
             return;
+        }
 
         // package is exported to caller and class/member is public
         boolean isExported = declaringModule.isExported(pn, callerModule);
@@ -185,8 +189,10 @@ public class AccessibleObject implements AnnotatedElement {
             modifiers = ((Field) this).getModifiers();
         }
         boolean isMemberPublic = Modifier.isPublic(modifiers);
-        if (isExported && isClassPublic && isMemberPublic)
+        if (isExported && isClassPublic && isMemberPublic) {
+            printStackTraceIfExportedReflectively(declaringModule, pn, callerModule);
             return;
+        }
 
         // not accessible
         String msg = "Unable to make ";
@@ -198,7 +204,44 @@ public class AccessibleObject implements AnnotatedElement {
         else
             msg += "opens";
         msg += " " + pn + "\" to " + callerModule;
-        Reflection.throwInaccessibleObjectException(msg);
+        InaccessibleObjectException e = new InaccessibleObjectException(msg);
+        if (Reflection.printStackTraceWhenAccessFails()) {
+            e.printStackTrace(System.err);
+        }
+        throw e;
+    }
+
+    private void printStackTraceIfOpenedReflectively(Module module,
+                                                     String pn,
+                                                     Module other) {
+        printStackTraceIfExposedReflectively(module, pn, other, true);
+    }
+
+    private void printStackTraceIfExportedReflectively(Module module,
+                                                       String pn,
+                                                       Module other) {
+        printStackTraceIfExposedReflectively(module, pn, other, false);
+    }
+
+    private void printStackTraceIfExposedReflectively(Module module,
+                                                      String pn,
+                                                      Module other,
+                                                      boolean open)
+    {
+        if (Reflection.printStackTraceWhenAccessSucceeds()
+            && !module.isStaticallyExportedOrOpen(pn, other, open))
+        {
+            String msg = other + " allowed to invoke setAccessible on ";
+            if (this instanceof Field)
+                msg += "field ";
+            msg += this;
+            new Exception(msg) {
+                private static final long serialVersionUID = 42L;
+                public String toString() {
+                    return "WARNING: " + getMessage();
+                }
+            }.printStackTrace(System.err);
+        }
     }
 
     /**

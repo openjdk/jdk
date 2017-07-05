@@ -54,10 +54,8 @@ char *FindExecName(char *program);
 const char *SetExecname(char **argv);
 const char *GetExecName();
 static jboolean GetJVMPath(const char *jrepath, const char *jvmtype,
-                           char *jvmpath, jint jvmpathsize, const char * arch,
-                           int bitsWanted);
-static jboolean GetJREPath(char *path, jint pathsize, const char * arch,
-                           jboolean speculative);
+                           char *jvmpath, jint jvmpathsize, int bitsWanted);
+static jboolean GetJREPath(char *path, jint pathsize, jboolean speculative);
 
 #if defined(_AIX)
 #include "java_md_aix.h"

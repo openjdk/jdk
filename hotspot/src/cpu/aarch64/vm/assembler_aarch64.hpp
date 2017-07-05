@@ -848,7 +848,7 @@ public:
   // architecture.  In debug mode we shrink it in order to test
   // trampolines, but not so small that branches in the interpreter
   // are out of range.
-  static const unsigned long branch_range = NOT_DEBUG(128 * M) DEBUG_ONLY(2 * M);
+  static const unsigned long branch_range = INCLUDE_JVMCI ? 128 * M : NOT_DEBUG(128 * M) DEBUG_ONLY(2 * M);
 
   static bool reachable_from_branch_at(address branch, address target) {
     return uabs(target - branch) < branch_range;

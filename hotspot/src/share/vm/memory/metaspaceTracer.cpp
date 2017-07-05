@@ -62,18 +62,12 @@ void MetaspaceTracer::send_allocation_failure_event(ClassLoaderData *cld,
                                                     Metaspace::MetadataType mdtype) const {
   E event;
   if (event.should_commit()) {
+    event.set_classLoader(cld);
     if (cld->is_anonymous()) {
-      event.set_classLoader(NULL);
       event.set_anonymousClassLoader(true);
     } else {
-      if (cld->is_the_null_class_loader_data()) {
-        event.set_classLoader((Klass*) NULL);
-      } else {
-        event.set_classLoader(cld->class_loader()->klass());
-      }
       event.set_anonymousClassLoader(false);
     }
-
     event.set_size(word_size * BytesPerWord);
     event.set_metadataType((u1) mdtype);
     event.set_metaspaceObjectType((u1) objtype);

@@ -87,20 +87,29 @@ public class BasicTest {
         JarUtils.createJarFile(jarfile, classes);
 
         Path image = Paths.get("mysmallimage");
-        runJmod(jarfile.toString(), TEST_MODULE);
-        runJlink(image, TEST_MODULE, "--compress", "2");
-        execute(image, TEST_MODULE);
+        runJmod(jarfile.toString(), TEST_MODULE, true);
+        runJlink(image, TEST_MODULE, "--compress", "2", "--launcher", "foo=" + TEST_MODULE);
+        execute(image, "foo");
 
         Files.delete(jmods.resolve(TEST_MODULE + ".jmod"));
 
         image = Paths.get("myimage");
-        runJmod(classes.toString(), TEST_MODULE);
-        runJlink(image, TEST_MODULE);
-        execute(image, TEST_MODULE);
+        runJmod(classes.toString(), TEST_MODULE, true);
+        runJlink(image, TEST_MODULE, "--launcher", "bar=" + TEST_MODULE);
+        execute(image, "bar");
+
+        Files.delete(jmods.resolve(TEST_MODULE + ".jmod"));
+
+        image = Paths.get("myimage2");
+        runJmod(classes.toString(), TEST_MODULE, false /* no ModuleMainClass! */);
+        // specify main class in --launcher command line
+        runJlink(image, TEST_MODULE, "--launcher", "bar2=" + TEST_MODULE + "/jdk.test.Test");
+        execute(image, "bar2");
+
     }
 
-    private void execute(Path image, String moduleName) throws Throwable {
-        String cmd = image.resolve("bin").resolve(moduleName).toString();
+    private void execute(Path image, String scriptName) throws Throwable {
+        String cmd = image.resolve("bin").resolve(scriptName).toString();
         OutputAnalyzer analyzer;
         if (System.getProperty("os.name").startsWith("Windows")) {
             analyzer = ProcessTools.executeProcess("sh.exe", cmd, "1", "2", "3");
@@ -127,14 +136,25 @@ public class BasicTest {
         }
     }
 
-    private void runJmod(String cp, String modName) {
-        int rc = JMOD_TOOL.run(System.out, System.out, new String[] {
+    private void runJmod(String cp, String modName, boolean main) {
+        int rc;
+        if (main) {
+            rc = JMOD_TOOL.run(System.out, System.out, new String[] {
                 "create",
                 "--class-path", cp,
                 "--module-version", "1.0",
                 "--main-class", "jdk.test.Test",
+                jmods.resolve(modName + ".jmod").toString()
+            });
+        } else {
+            rc = JMOD_TOOL.run(System.out, System.out, new String[] {
+                "create",
+                "--class-path", cp,
+                "--module-version", "1.0",
                 jmods.resolve(modName + ".jmod").toString(),
-        });
+            });
+        }
+
         if (rc != 0) {
             throw new AssertionError("Jmod failed: rc = " + rc);
         }

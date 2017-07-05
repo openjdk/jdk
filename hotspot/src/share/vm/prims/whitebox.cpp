@@ -1172,6 +1172,9 @@ WB_END
 
 int WhiteBox::get_blob_type(const CodeBlob* code) {
   guarantee(WhiteBoxAPI, "internal testing API :: WhiteBox has to be enabled");
+  if (code->is_aot()) {
+    return -1;
+  }
   return CodeCache::get_code_heap(code)->code_blob_type();
 }
 
@@ -1227,7 +1230,8 @@ WB_ENTRY(jobjectArray, WB_GetNMethod(JNIEnv* env, jobject o, jobject method, jbo
   if (code == NULL) {
     return result;
   }
-  int insts_size = code->insts_size();
+  int comp_level = code->comp_level();
+  int insts_size = comp_level == CompLevel_aot ? code->code_end() - code->code_begin() : code->insts_size();
 
   ThreadToNativeFromVM ttn(thread);
   jclass clazz = env->FindClass(vmSymbols::java_lang_Object()->as_C_string());
@@ -1242,7 +1246,7 @@ WB_ENTRY(jobjectArray, WB_GetNMethod(JNIEnv* env, jobject o, jobject method, jbo
   CHECK_JNI_EXCEPTION_(env, NULL);
   env->SetObjectArrayElement(result, 0, codeBlob);
 
-  jobject level = integerBox(thread, env, code->comp_level());
+  jobject level = integerBox(thread, env, comp_level);
   CHECK_JNI_EXCEPTION_(env, NULL);
   env->SetObjectArrayElement(result, 1, level);
 

@@ -42,6 +42,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
+import jdk.internal.module.ModulePath;
+import jdk.internal.module.SystemModuleFinder;
 import sun.security.action.GetPropertyAction;
 
 /**
@@ -137,7 +139,7 @@ public interface ModuleFinder {
 
     /**
      * Returns a module finder that locates the <em>system modules</em>. The
-     * system modules are typically linked into the Java run-time image.
+     * system modules are the modules in the Java run-time image.
      * The module finder will always find {@code java.base}.
      *
      * <p> If there is a security manager set then its {@link
@@ -166,7 +168,7 @@ public interface ModuleFinder {
 
         Path modules = Paths.get(home, "lib", "modules");
         if (Files.isRegularFile(modules)) {
-            return new SystemModuleFinder();
+            return SystemModuleFinder.getInstance();
         } else {
             Path mlib = Paths.get(home, "modules");
             if (Files.isDirectory(mlib)) {

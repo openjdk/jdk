@@ -125,6 +125,10 @@ class CompilerToVM {
     return java_lang_Class::as_Klass(HotSpotResolvedObjectTypeImpl::javaClass(jvmci_type));
   }
 
+  static inline Klass* asKlass(jlong metaspaceKlass) {
+    return (Klass*) (address) metaspaceKlass;
+  }
+
   static inline MethodData* asMethodData(jlong metaspaceMethodData) {
     return (MethodData*) (address) metaspaceMethodData;
   }

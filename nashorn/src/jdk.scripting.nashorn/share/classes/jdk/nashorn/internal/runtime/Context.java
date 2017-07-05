@@ -39,7 +39,6 @@ import java.io.File;
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.io.UncheckedIOException;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -49,6 +48,7 @@ import java.lang.ref.SoftReference;
 import java.lang.module.Configuration;
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleFinder;
+import java.lang.module.ModuleReader;
 import java.lang.module.ModuleReference;
 import java.lang.reflect.Field;
 import java.lang.reflect.Layer;
@@ -1349,10 +1349,12 @@ public final class Context {
     static Module createModuleTrusted(final Layer parent, final ModuleDescriptor descriptor, final ClassLoader loader) {
         final String mn = descriptor.name();
 
-        final ModuleReference mref = new ModuleReference(descriptor, null, () -> {
-            IOException ioe = new IOException("<dynamic module>");
-            throw new UncheckedIOException(ioe);
-        });
+        final ModuleReference mref = new ModuleReference(descriptor, null) {
+            @Override
+            public ModuleReader open() {
+                throw new UnsupportedOperationException();
+            }
+        };
 
         final ModuleFinder finder = new ModuleFinder() {
             @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,30 +29,37 @@ import javax.print.attribute.standard.PrinterName;
 
 /*
  * @test
- * @bug 8013810
- * @summary Test that print service returned without filter are of the same class as with name filter
+ * @bug 8013810 8025439
+ * @summary Test that print service returned without filter are of the same class
+ *          as with name filter
  */
 public class GetPrintServices {
 
-  public static void main(String[] args) throws Exception {
-    for (PrintService service : PrintServiceLookup.lookupPrintServices(null, null)) {
-      String serviceName = service.getName();
-      PrintService serviceByName = lookupByName(serviceName);
-      if (!service.equals(serviceByName)) {
-        throw new RuntimeException("NOK " + serviceName
+    public static void main(String[] args) throws Exception {
+        for (PrintService service : PrintServiceLookup.lookupPrintServices(null, null)) {
+            String serviceName = service.getName();
+            PrinterName name = service.getAttribute(PrinterName.class);
+            String printerName = name.getValue();
+
+            PrintService serviceByName = lookupByName(printerName);
+            System.out.println("service " + service);
+            System.out.println("serviceByName " + serviceByName);
+            if (!service.equals(serviceByName)) {
+                throw new RuntimeException("NOK " + serviceName
                                    + " expected: " + service.getClass().getName()
                                    + " got: " + serviceByName.getClass().getName());
-      }
+            }
+        }
+        System.out.println("Test PASSED");
     }
-    System.out.println("Test PASSED");
-  }
 
-  private static PrintService lookupByName(String name) {
-    AttributeSet attributes = new HashAttributeSet();
-    attributes.add(new PrinterName(name, null));
-    for (PrintService service : PrintServiceLookup.lookupPrintServices(null, attributes)) {
-      return service;
+    private static PrintService lookupByName(String name) {
+        AttributeSet attributes = new HashAttributeSet();
+        attributes.add(new PrinterName(name, null));
+        for (PrintService service :
+             PrintServiceLookup.lookupPrintServices(null, attributes)) {
+            return service;
+        }
+        return null;
     }
-    return null;
-  }
 }

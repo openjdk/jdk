@@ -52,8 +52,8 @@ public class ResourcePoolManager {
         String p = "/" + mod.name() + "/module-info.class";
         Optional<ResourcePoolEntry> content = mod.findEntry(p);
         if (!content.isPresent()) {
-              throw new PluginException("No module-info for " + mod.name()
-                      + " module");
+              throw new PluginException("module-info.class not found for " +
+                  mod.name() + " module");
         }
         ByteBuffer bb = ByteBuffer.wrap(content.get().contentBytes());
         try {

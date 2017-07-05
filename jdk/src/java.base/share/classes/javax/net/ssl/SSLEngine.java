@@ -27,6 +27,8 @@ package javax.net.ssl;
 
 import java.nio.ByteBuffer;
 import java.nio.ReadOnlyBufferException;
+import java.util.List;
+import java.util.function.BiFunction;
 
 
 /**
@@ -1330,6 +1332,91 @@ public abstract class SSLEngine {
      * @since 9
      */
     public String getHandshakeApplicationProtocol() {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * Registers a callback function that selects an application protocol
+     * value for a SSL/TLS/DTLS handshake.
+     * The function overrides any values set using
+     * {@link SSLParameters#setApplicationProtocols
+     * SSLParameters.setApplicationProtocols} and it supports the following
+     * type parameters:
+     * <blockquote>
+     * <dl>
+     * <dt> {@code SSLEngine}
+     * <dd> The function's first argument allows the current {@code SSLEngine}
+     *      to be inspected, including the handshake session and configuration
+     *      settings.
+     * <dt> {@code List<String>}
+     * <dd> The function's second argument lists the application protocol names
+     *      advertised by the TLS peer.
+     * <dt> {@code String}
+     * <dd> The function's result is an application protocol name, or null to
+     *      indicate that none of the advertised names are acceptable.
+     *      If the return value is null (no value chosen) or is a value that
+     *      was not advertised by the peer, the underlying protocol will
+     *      determine what action to take. (For example, ALPN will send a
+     *      "no_application_protocol" alert and terminate the connection.)
+     * </dl>
+     * </blockquote>
+     *
+     * For example, the following call registers a callback function that
+     * examines the TLS handshake parameters and selects an application protocol
+     * name:
+     * <pre>{@code
+     *     serverEngine.setHandshakeApplicationProtocolSelector(
+     *         (serverEngine, clientProtocols) -> {
+     *             SSLSession session = serverEngine.getHandshakeSession();
+     *             return chooseApplicationProtocol(
+     *                 serverEngine,
+     *                 clientProtocols,
+     *                 session.getProtocol(),
+     *                 session.getCipherSuite());
+     *         });
+     * }</pre>
+     *
+     * @apiNote
+     * This method should be called by TLS server applications before the TLS
+     * handshake begins. Also, this {@code SSLEngine} should be configured with
+     * parameters that are compatible with the application protocol selected by
+     * the callback function. For example, enabling a poor choice of cipher
+     * suites could result in no suitable application protocol.
+     * See {@link SSLParameters}.
+     *
+     * @implSpec
+     * The implementation in this class throws
+     * {@code UnsupportedOperationException} and performs no other action.
+     *
+     * @param selector the callback function, or null to disable the callback
+     *         functionality.
+     * @throws UnsupportedOperationException if the underlying provider
+     *         does not implement the operation.
+     * @since 9
+     */
+    public void setHandshakeApplicationProtocolSelector(
+            BiFunction<SSLEngine, List<String>, String> selector) {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * Retrieves the callback function that selects an application protocol
+     * value during a SSL/TLS/DTLS handshake.
+     * See {@link #setHandshakeApplicationProtocolSelector
+     * setHandshakeApplicationProtocolSelector}
+     * for the function's type parameters.
+     *
+     * @implSpec
+     * The implementation in this class throws
+     * {@code UnsupportedOperationException} and performs no other action.
+     *
+     * @return the callback function, or null if none has been set.
+     * @throws UnsupportedOperationException if the underlying provider
+     *         does not implement the operation.
+     * @since 9
+     */
+    public BiFunction<SSLEngine, List<String>, String>
+            getHandshakeApplicationProtocolSelector() {
         throw new UnsupportedOperationException();
     }
 }

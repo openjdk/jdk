@@ -262,9 +262,8 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(UseCRC32CIntrinsics, false);
   }
 
-  if (UseFMA) {
-    warning("FMA instructions are not available on this CPU");
-    FLAG_SET_DEFAULT(UseFMA, false);
+  if (FLAG_IS_DEFAULT(UseFMA)) {
+    FLAG_SET_DEFAULT(UseFMA, true);
   }
 
   if (auxv & (HWCAP_SHA1 | HWCAP_SHA2)) {

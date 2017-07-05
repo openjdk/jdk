@@ -43,6 +43,7 @@ import org.testng.annotations.Test;
 import static java.lang.String.format;
 import static java.lang.System.out;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 
 /*
@@ -428,10 +429,12 @@ public class CLICompatibility {
 
         jar("--help")
             .assertSuccess()
-            .resultChecker(r ->
+            .resultChecker(r -> {
                 assertTrue(r.output.startsWith("Usage: jar [OPTION...] [ [--release VERSION] [-C dir] files]"),
-                           "Failed, got [" + r.output + "]")
-            );
+                           "Failed, got [" + r.output + "]");
+                assertFalse(r.output.contains("--do-not-resolve-by-default"));
+                assertFalse(r.output.contains("--warn-if-resolved"));
+            });
 
         jar("--help:compat")
             .assertSuccess()
@@ -439,6 +442,15 @@ public class CLICompatibility {
                 assertTrue(r.output.startsWith("Compatibility Interface:"),
                            "Failed, got [" + r.output + "]")
             );
+
+        jar("--help-extra")
+            .assertSuccess()
+            .resultChecker(r -> {
+                assertTrue(r.output.startsWith("Usage: jar [OPTION...] [ [--release VERSION] [-C dir] files]"),
+                           "Failed, got [" + r.output + "]");
+                assertTrue(r.output.contains("--do-not-resolve-by-default"));
+                assertTrue(r.output.contains("--warn-if-resolved"));
+            });
     }
 
     // -- Infrastructure

@@ -31,7 +31,6 @@
  * @modules java.base/jdk.internal.misc
  *          java.management
  *
- * @ignore 8134286
  * @run driver compiler.startup.SmallCodeCacheStartup
  */
 

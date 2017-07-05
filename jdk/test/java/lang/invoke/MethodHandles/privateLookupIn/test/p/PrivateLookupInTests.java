@@ -84,8 +84,7 @@ public class PrivateLookupInTests {
 
     // Invoke MethodHandles.privateLookupIn with a reduced-power caller
     public void testReducedAccessCallerSameModule() throws Throwable {
-        // drop access
-        Lookup caller = MethodHandles.lookup().in(publicType);
+        Lookup caller = MethodHandles.lookup().dropLookupMode(PACKAGE);
         assertTrue((caller.lookupModes() & PRIVATE) == 0);
         assertTrue((caller.lookupModes() & PACKAGE) == 0);
         assertTrue((caller.lookupModes() & MODULE) != 0);

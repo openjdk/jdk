@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,80 +25,88 @@
 
 package com.sun.xml.internal.stream.events;
 
+import java.util.List;
 import javax.xml.stream.events.DTD;
+import javax.xml.stream.events.EntityDeclaration;
+import javax.xml.stream.events.NotationDeclaration;
 import javax.xml.stream.events.XMLEvent;
 
 /**
  *
- * @author  Neeraj Bajaj, Sun Microsystesm.
+ * @author Neeraj Bajaj, Sun Microsystesm.
  *
  */
-public class DTDEvent extends DummyEvent implements DTD{
+public class DTDEvent extends DummyEvent implements DTD {
 
     private String fDoctypeDeclaration;
-    private java.util.List fNotations;
-    private java.util.List fEntities;
+    private List<NotationDeclaration> fNotations;
+    private List<EntityDeclaration> fEntities;
 
-    /** Creates a new instance of DTDEvent */
+    /**
+     * Creates a new instance of DTDEvent
+     */
     public DTDEvent() {
         init();
     }
 
-    public DTDEvent(String doctypeDeclaration){
+    public DTDEvent(String doctypeDeclaration) {
         init();
         fDoctypeDeclaration = doctypeDeclaration;
     }
 
-    public void setDocumentTypeDeclaration(String doctypeDeclaration){
+    public void setDocumentTypeDeclaration(String doctypeDeclaration) {
         fDoctypeDeclaration = doctypeDeclaration;
     }
 
+    @Override
     public String getDocumentTypeDeclaration() {
         return fDoctypeDeclaration;
     }
 
     //xxx: we can change the signature if the implementation doesn't store the entities in List Datatype.
     //and then convert that DT to list format here. That way callee dont need to bother about conversion
-
-    public void setEntities(java.util.List entites){
+    public void setEntities(List<EntityDeclaration> entites) {
         fEntities = entites;
     }
 
-    public java.util.List getEntities() {
+    @Override
+    public List<EntityDeclaration> getEntities() {
         return fEntities;
     }
 
     //xxx: we can change the signature if the implementation doesn't store the entities in List Datatype.
     //and then convert that DT to list format here. That way callee dont need to bother about conversion
-
-    public void setNotations(java.util.List notations){
+    public void setNotations(List<NotationDeclaration> notations) {
         fNotations = notations;
     }
 
-    public java.util.List getNotations() {
+    @Override
+    public List<NotationDeclaration> getNotations() {
         return fNotations;
     }
 
     /**
-     *Returns an implementation defined representation of the DTD.
-     * This method may return null if no representation is available.
+     * Returns an implementation defined representation of the DTD. This method
+     * may return null if no representation is available.
      *
      */
+    @Override
     public Object getProcessedDTD() {
         return null;
     }
 
-    protected void init(){
+    protected final void init() {
         setEventType(XMLEvent.DTD);
     }
 
-    public String toString(){
-        return fDoctypeDeclaration ;
+    @Override
+    public String toString() {
+        return fDoctypeDeclaration;
     }
 
+    @Override
     protected void writeAsEncodedUnicodeEx(java.io.Writer writer)
-    throws java.io.IOException
-    {
+            throws java.io.IOException {
         writer.write(fDoctypeDeclaration);
     }
 }

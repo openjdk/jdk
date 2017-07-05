@@ -38,10 +38,8 @@ import java.lang.module.ModuleReader;
 import java.lang.module.ModuleReference;
 import java.net.URI;
 import java.nio.file.Path;
-import java.util.Map;
 import java.util.Collection;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 
@@ -59,21 +57,28 @@ public interface JavaLangModuleAccess {
      * @param strict
      *        Indicates whether module names are checked or not
      */
-    ModuleDescriptor.Builder newModuleBuilder(String mn, boolean strict);
+    ModuleDescriptor.Builder newModuleBuilder(String mn,
+                                              boolean strict,
+                                              boolean open,
+                                              boolean synthetic);
 
     /**
-     * Creates a builder for building an open module with the given module name.
-     *
-     * @param strict
-     *        Indicates whether module names are checked or not
+     * Returns the set of packages that are exported (unconditionally or
+     * unconditionally).
      */
-    ModuleDescriptor.Builder newOpenModuleBuilder(String mn, boolean strict);
+    Set<String> exportedPackages(ModuleDescriptor.Builder builder);
+
+    /**
+     * Returns the set of packages that are opened (unconditionally or
+     * unconditionally).
+     */
+    Set<String> openPackages(ModuleDescriptor.Builder builder);
 
     /**
      * Returns a {@code ModuleDescriptor.Requires} of the given modifiers
      * and module name.
      */
-    Requires newRequires(Set<Requires.Modifier> ms, String mn);
+    Requires newRequires(Set<Requires.Modifier> ms, String mn, Version v);
 
     /**
      * Returns an unqualified {@code ModuleDescriptor.Exports}
@@ -122,6 +127,7 @@ public interface JavaLangModuleAccess {
      * Returns a new {@code ModuleDescriptor} instance.
      */
     ModuleDescriptor newModuleDescriptor(String name,
+                                         Version version,
                                          boolean open,
                                          boolean automatic,
                                          boolean synthetic,
@@ -130,19 +136,12 @@ public interface JavaLangModuleAccess {
                                          Set<Opens> opens,
                                          Set<String> uses,
                                          Set<Provides> provides,
-                                         Version version,
+                                         Set<String> packages,
                                          String mainClass,
                                          String osName,
                                          String osArch,
                                          String osVersion,
-                                         Set<String> packages,
-                                         ModuleHashes hashes,
                                          int hashCode);
-
-    /**
-     * Returns the object with the hashes of other modules
-     */
-    Optional<ModuleHashes> hashes(ModuleDescriptor descriptor);
 
     /**
      * Resolves a collection of root modules, with service binding
@@ -153,19 +152,5 @@ public interface JavaLangModuleAccess {
                                          Collection<String> roots,
                                          boolean check,
                                          PrintStream traceOutput);
-
-    /**
-     * Creates a ModuleReference to a "patched" module.
-     */
-    ModuleReference newPatchedModule(ModuleDescriptor descriptor,
-                                     URI location,
-                                     Supplier<ModuleReader> readerSupplier);
-
-    /**
-     * Creates a ModuleFinder for a module path.
-     */
-    ModuleFinder newModulePath(Runtime.Version version,
-                               boolean isLinkPhase,
-                               Path... entries);
 
 }

@@ -46,11 +46,18 @@ import javax.imageio.ImageReadParam;
  * {@code ExifParentTIFFTagSet}, and {@code GeoTIFFTagSet}
  * are included.
  *
+ * <p> Forcing reading of fields corresponding to {@code TIFFTag}s
+ * not in any of the allowed {@code TIFFTagSet}s may be effected via
+ * {@link #setReadUnknownTags setReadUnknownTags}.
+ *
  * @since 9
  */
 public final class TIFFImageReadParam extends ImageReadParam {
 
-    private List<TIFFTagSet> allowedTagSets = new ArrayList<TIFFTagSet>(4);
+    private final List<TIFFTagSet> allowedTagSets =
+        new ArrayList<TIFFTagSet>(4);
+
+    private boolean readUnknownTags = false;
 
     /**
      * Constructs a {@code TIFFImageReadParam}.  Tags defined by
@@ -72,7 +79,8 @@ public final class TIFFImageReadParam extends ImageReadParam {
 
     /**
      * Adds a {@code TIFFTagSet} object to the list of allowed
-     * tag sets.
+     * tag sets.  Attempting to add a duplicate object to the list
+     * has no effect.
      *
      * @param tagSet a {@code TIFFTagSet}.
      *
@@ -83,7 +91,9 @@ public final class TIFFImageReadParam extends ImageReadParam {
         if (tagSet == null) {
             throw new IllegalArgumentException("tagSet == null!");
         }
-        allowedTagSets.add(tagSet);
+        if (!allowedTagSets.contains(tagSet)) {
+            allowedTagSets.add(tagSet);
+        }
     }
 
     /**
@@ -112,5 +122,28 @@ public final class TIFFImageReadParam extends ImageReadParam {
      */
     public List<TIFFTagSet> getAllowedTagSets() {
         return allowedTagSets;
+    }
+
+    /**
+     * Set whether to read fields corresponding to {@code TIFFTag}s not in
+     * the allowed {@code TIFFTagSet}s. The default setting is {@code false}.
+     * If the TIFF {@code ImageReader} is ignoring metadata, then a setting
+     * of {@code true} is overridden as all metadata are ignored except those
+     * essential to reading the image itself.
+     *
+     * @param readUnknownTags Whether to read fields of unrecognized tags
+     */
+    public void setReadUnknownTags(boolean readUnknownTags) {
+        this.readUnknownTags = readUnknownTags;
+    }
+
+    /**
+     * Retrieve the setting of whether to read fields corresponding to unknown
+     * {@code TIFFTag}s.
+     *
+     * @return Whether to read fields of unrecognized tags
+     */
+    public boolean getReadUnknownTags() {
+        return readUnknownTags;
     }
 }

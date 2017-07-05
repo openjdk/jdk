@@ -503,6 +503,7 @@ template<class E> class GrowableArrayIterator : public StackObj {
   }
 
  public:
+  GrowableArrayIterator() : _array(NULL), _position(0) { }
   GrowableArrayIterator<E>& operator++()  { ++_position; return *this; }
   E operator*()                           { return _array->at(_position); }
 

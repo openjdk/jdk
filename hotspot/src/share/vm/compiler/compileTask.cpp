@@ -292,8 +292,7 @@ void CompileTask::log_task(xmlStream* log) {
   if (_osr_bci != CompileBroker::standard_entry_bci) {
     log->print(" osr_bci='%d'", _osr_bci);
   }
-  // Always print the level in tiered.
-  if (_comp_level != CompLevel_highest_tier || TieredCompilation) {
+  if (_comp_level != CompLevel_highest_tier) {
     log->print(" level='%d'", _comp_level);
   }
   if (_is_blocking) {
@@ -325,24 +324,6 @@ void CompileTask::log_task_queued() {
     xtty->print(" hot_count='%d'", _hot_count);
   }
   xtty->end_elem();
-}
-
-
-// ------------------------------------------------------------------
-// CompileTask::log_task_dequeued
-void CompileTask::log_task_dequeued(const char* comment) {
-  if (LogCompilation && xtty != NULL) {
-    Thread* thread = Thread::current();
-    ttyLocker ttyl;
-    ResourceMark rm(thread);
-
-    xtty->begin_elem("task_dequeued");
-    log_task(xtty);
-    if (comment != NULL) {
-      xtty->print(" comment='%s'", comment);
-    }
-    xtty->end_elem();
-  }
 }
 
 

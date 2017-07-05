@@ -733,9 +733,6 @@ public class XMLDocumentScannerImpl
 
 
         public int next() throws IOException, XNIException {
-            if(DEBUG_NEXT){
-                System.out.println("NOW IN XMLDeclDriver");
-            }
 
             // next driver is prolog regardless of whether there
             // is an XMLDecl in this document
@@ -745,7 +742,7 @@ public class XMLDocumentScannerImpl
             //System.out.println("fEntityScanner = " + fEntityScanner);
             // scan XMLDecl
             try {
-                if (fEntityScanner.skipString(xmlDecl)) {
+                if (fEntityScanner.skipString(XMLDECL)) {
                     if (fEntityScanner.peekChar() == ' ') {
                         fMarkupDepth++;
                         scanXMLDeclOrTextDecl(false);
@@ -797,11 +794,7 @@ public class XMLDocumentScannerImpl
          */
 
         public int next() throws IOException, XNIException {
-            //System.out.println("here in next");
 
-            if(DEBUG_NEXT){
-                System.out.println("NOW IN PrologDriver");
-            }
             try {
                 do {
                     switch (fScannerState) {
@@ -1014,16 +1007,8 @@ public class XMLDocumentScannerImpl
         //
 
         public int next() throws IOException, XNIException{
-            // throw new XNIException("DTD Parsing is currently not supported");
-            if(DEBUG_NEXT){
-                System.out.println("Now in DTD Driver");
-            }
 
             dispatch(true);
-
-            if(DEBUG_NEXT){
-                System.out.println("After calling dispatch(true) -- At this point whole DTD is read.");
-            }
 
             //xxx: remove this hack and align this with reusing DTD components
             //currently this routine will only be executed from Stax
@@ -1380,10 +1365,9 @@ public class XMLDocumentScannerImpl
                             break;
                         }
                     }
-                }while(fScannerState == SCANNER_STATE_START_OF_MARKUP || fScannerState == SCANNER_STATE_TRAILING_MISC);
-                if(DEBUG_NEXT){
-                    System.out.println("State set by deciding while loop [TrailingMiscellaneous] is = " + getScannerStateName(fScannerState));
-                }
+                } while(fScannerState == SCANNER_STATE_START_OF_MARKUP ||
+                        fScannerState == SCANNER_STATE_TRAILING_MISC);
+
                 switch (fScannerState){
                     case SCANNER_STATE_PI: {
                         fContentBuffer.clear();
