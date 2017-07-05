@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -137,4 +137,10 @@ ciConstant ciInstance::field_value_by_offset(int field_offset) {
 void ciInstance::print_impl(outputStream* st) {
   st->print(" type=");
   klass()->print(st);
+}
+
+
+ciKlass* ciInstance::java_lang_Class_klass() {
+  VM_ENTRY_MARK;
+  return CURRENT_ENV->get_object(java_lang_Class::as_klassOop(get_oop()))->as_klass();
 }

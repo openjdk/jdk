@@ -138,16 +138,17 @@ class java_lang_Class : AllStatic {
   // The fake offsets are added by the class loader when java.lang.Class is loaded
 
   enum {
-    hc_klass_offset                = 0,
-    hc_array_klass_offset          = 1,
-    hc_resolved_constructor_offset = 2,
-    hc_number_of_fake_oop_fields   = 3
+    hc_number_of_fake_oop_fields   = 3,
+    hc_number_of_fake_int_fields   = 2
   };
 
   static int klass_offset;
   static int resolved_constructor_offset;
   static int array_klass_offset;
   static int number_of_fake_oop_fields;
+
+  static int oop_size_offset;
+  static int static_oop_field_count_offset;
 
   static void compute_offsets();
   static bool offsets_computed;
@@ -157,6 +158,7 @@ class java_lang_Class : AllStatic {
  public:
   // Instance creation
   static oop  create_mirror(KlassHandle k, TRAPS);
+  static void fixup_mirror(KlassHandle k, TRAPS);
   static oop  create_basic_type_mirror(const char* basic_type_name, BasicType type, TRAPS);
   // Conversion
   static klassOop as_klassOop(oop java_class);
@@ -191,6 +193,12 @@ class java_lang_Class : AllStatic {
   static void set_classRedefinedCount(oop the_class_mirror, int value);
   // Support for parallelCapable field
   static bool parallelCapable(oop the_class_mirror);
+
+  static int oop_size(oop java_class);
+  static void set_oop_size(oop java_class, int size);
+  static int static_oop_field_count(oop java_class);
+  static void set_static_oop_field_count(oop java_class, int size);
+
   // Debugging
   friend class JavaClasses;
   friend class instanceKlass;   // verification code accesses offsets
@@ -1165,12 +1173,9 @@ class java_lang_System : AllStatic {
    hc_static_err_offset = 2
   };
 
-  static int offset_of_static_fields;
   static int  static_in_offset;
   static int static_out_offset;
   static int static_err_offset;
-
-  static void compute_offsets();
 
  public:
   static int  in_offset_in_bytes();

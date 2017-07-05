@@ -32,6 +32,7 @@
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/instanceKlass.hpp"
+#include "oops/instanceMirrorKlass.hpp"
 #include "oops/klassKlass.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/typeArrayKlass.hpp"
@@ -2241,43 +2242,49 @@ TypeOopPtr::TypeOopPtr( TYPES t, PTR ptr, ciKlass* k, bool xk, ciObject* o, int 
     } else if (this->isa_aryptr()) {
       _is_ptr_to_narrowoop = (klass()->is_obj_array_klass() &&
                              _offset != arrayOopDesc::length_offset_in_bytes());
-    } else if (klass() == ciEnv::current()->Class_klass() &&
-               (_offset == java_lang_Class::klass_offset_in_bytes() ||
-                _offset == java_lang_Class::array_klass_offset_in_bytes())) {
-      // Special hidden fields from the Class.
-      assert(this->isa_instptr(), "must be an instance ptr.");
-      _is_ptr_to_narrowoop = true;
     } else if (klass()->is_instance_klass()) {
       ciInstanceKlass* ik = klass()->as_instance_klass();
       ciField* field = NULL;
       if (this->isa_klassptr()) {
-        // Perm objects don't use compressed references, except for
-        // static fields which are currently compressed.
-        field = ik->get_field_by_offset(_offset, true);
-        if (field != NULL) {
-          BasicType basic_elem_type = field->layout_type();
-          _is_ptr_to_narrowoop = (basic_elem_type == T_OBJECT ||
-                                  basic_elem_type == T_ARRAY);
-        }
+        // Perm objects don't use compressed references
       } else if (_offset == OffsetBot || _offset == OffsetTop) {
         // unsafe access
         _is_ptr_to_narrowoop = true;
       } else { // exclude unsafe ops
         assert(this->isa_instptr(), "must be an instance ptr.");
-        // Field which contains a compressed oop references.
-        field = ik->get_field_by_offset(_offset, false);
-        if (field != NULL) {
+
+        if (klass() == ciEnv::current()->Class_klass() &&
+            (_offset == java_lang_Class::klass_offset_in_bytes() ||
+             _offset == java_lang_Class::array_klass_offset_in_bytes())) {
+          // Special hidden fields from the Class.
+          assert(this->isa_instptr(), "must be an instance ptr.");
+          _is_ptr_to_narrowoop = true;
+        } else if (klass() == ciEnv::current()->Class_klass() &&
+                   _offset >= instanceMirrorKlass::offset_of_static_fields()) {
+          // Static fields
+          assert(o != NULL, "must be constant");
+          ciInstanceKlass* k = o->as_instance()->java_lang_Class_klass()->as_instance_klass();
+          ciField* field = k->get_field_by_offset(_offset, true);
+          assert(field != NULL, "missing field");
           BasicType basic_elem_type = field->layout_type();
           _is_ptr_to_narrowoop = (basic_elem_type == T_OBJECT ||
                                   basic_elem_type == T_ARRAY);
-        } else if (klass()->equals(ciEnv::current()->Object_klass())) {
-          // Compile::find_alias_type() cast exactness on all types to verify
-          // that it does not affect alias type.
-          _is_ptr_to_narrowoop = true;
         } else {
-          // Type for the copy start in LibraryCallKit::inline_native_clone().
-          assert(!klass_is_exact(), "only non-exact klass");
-          _is_ptr_to_narrowoop = true;
+          // Instance fields which contains a compressed oop references.
+          field = ik->get_field_by_offset(_offset, false);
+          if (field != NULL) {
+            BasicType basic_elem_type = field->layout_type();
+            _is_ptr_to_narrowoop = (basic_elem_type == T_OBJECT ||
+                                    basic_elem_type == T_ARRAY);
+          } else if (klass()->equals(ciEnv::current()->Object_klass())) {
+            // Compile::find_alias_type() cast exactness on all types to verify
+            // that it does not affect alias type.
+            _is_ptr_to_narrowoop = true;
+          } else {
+            // Type for the copy start in LibraryCallKit::inline_native_clone().
+            assert(!klass_is_exact(), "only non-exact klass");
+            _is_ptr_to_narrowoop = true;
+          }
         }
       }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2009, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -281,7 +281,7 @@ int CppInterpreter::native_entry(methodOop method, intptr_t UNUSED, TRAPS) {
 
     if (method->is_static()) {
       istate->set_oop_temp(
-        method->constants()->pool_holder()->klass_part()->java_mirror());
+        method->constants()->pool_holder()->java_mirror());
       mirror = istate->oop_temp_addr();
       *(dst++) = &mirror;
     }
@@ -667,7 +667,7 @@ InterpreterFrame *InterpreterFrame::build(const methodOop method, TRAPS) {
       (BasicObjectLock *) stack->alloc(monitor_words * wordSize);
     oop object;
     if (method->is_static())
-      object = method->constants()->pool_holder()->klass_part()->java_mirror();
+      object = method->constants()->pool_holder()->java_mirror();
     else
       object = (oop) locals[0];
     monitor->set_obj(object);
