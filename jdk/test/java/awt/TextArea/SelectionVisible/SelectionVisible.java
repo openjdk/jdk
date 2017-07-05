@@ -31,32 +31,32 @@ import java.awt.TextArea;
 
 public final class SelectionVisible extends Applet {
 
-    TextArea tf;
+    private TextArea ta;
 
     @Override
     public void init() {
-        tf = new TextArea(3, 20);
-        tf.setText("0123456789");
-        tf.select(0, 6);
+        ta = new TextArea(4, 20);
+        ta.setText("01234\n56789");
+        ta.select(3, 9);
 
-        final TextArea ta = new TextArea("INSTRUCTIONS:\n"
-                                                 + "The text 012345 should be selected in the TextArea.\n"
+        final TextArea instruction = new TextArea("INSTRUCTIONS:\n"
+                                                 + "The text 34567 should be selected in the TextArea.\n"
                                                  + "If this is what you observe, then the test passes.\n"
                                                  + "Otherwise, the test fails.", 40, 5,
                                          TextArea.SCROLLBARS_NONE);
-        ta.setEditable(false);
-        ta.setPreferredSize(new Dimension(300, 70));
+        instruction.setEditable(false);
+        instruction.setPreferredSize(new Dimension(300, 70));
         final Panel panel = new Panel();
         panel.setLayout(new FlowLayout());
-        panel.add(tf);
+        panel.add(ta);
         setLayout(new BorderLayout());
-        add(ta, BorderLayout.CENTER);
+        add(instruction, BorderLayout.CENTER);
         add(panel, BorderLayout.PAGE_END);
     }
 
     @Override
     public void start() {
         setVisible(true);
-        tf.requestFocus();
+        ta.requestFocus();
     }
 }

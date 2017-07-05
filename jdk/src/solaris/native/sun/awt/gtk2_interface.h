@@ -270,6 +270,7 @@ typedef enum
 /* We define all structure pointers to be void* */
 typedef void GError;
 typedef void GMainContext;
+typedef void GVfs;
 
 typedef struct _GSList GSList;
 struct _GSList
@@ -647,9 +648,18 @@ const char *getStrFor(JNIEnv *env, jstring value);
  * Returns :
  * NULL if the GLib library is compatible with the given version, or a string
  * describing the version mismatch.
+ * Please note that the glib_check_version() is available since 2.6,
+ * so you should use GLIB_CHECK_VERSION macro instead.
  */
 gchar* (*fp_glib_check_version)(guint required_major, guint required_minor,
                        guint required_micro);
+
+/**
+ * Returns :
+ *  TRUE if the GLib library is compatible with the given version
+ */
+#define GLIB_CHECK_VERSION(major, minor, micro) \
+    (fp_glib_check_version && fp_glib_check_version(major, minor, micro) == NULL)
 
 /*
  * Check whether the gtk2 library is available and meets the minimum
@@ -680,7 +690,7 @@ gboolean gtk2_load(JNIEnv *env);
  * gtk2_load, so it must be invoked only after a successful gtk2_load
  * invocation
  */
-gboolean gtk2_show_uri_load();
+gboolean gtk2_show_uri_load(JNIEnv *env);
 
 /*
  * Unload the gtk2 library.  If the library is already unloaded this method has
@@ -811,7 +821,7 @@ guint (*fp_gtk_main_level)(void);
 
 /**
  * This function is available for GLIB > 2.20, so it MUST be
- * called within (fp_glib_check_version(2, 20, 0) == NULL) check.
+ * called within GLIB_CHECK_VERSION(2, 20, 0) check.
  */
 gboolean (*fp_g_thread_get_initialized)(void);
 

@@ -1075,7 +1075,7 @@ public class ImageTypeSpecifier {
                                             new Point(0, 0));
             return new BufferedImage(colorModel, raster,
                                      colorModel.isAlphaPremultiplied(),
-                                     new Hashtable());
+                                     new Hashtable<>());
         } catch (NegativeArraySizeException e) {
             // Exception most likely thrown from a DataBuffer constructor
             throw new IllegalArgumentException

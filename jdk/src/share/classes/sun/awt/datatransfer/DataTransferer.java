@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,10 @@
 
 package sun.awt.datatransfer;
 
-import java.awt.AWTError;
 import java.awt.EventQueue;
-import java.awt.Image;
 import java.awt.Graphics;
+import java.awt.Image;
+import java.awt.Toolkit;
 
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.FlavorMap;
@@ -70,6 +70,7 @@ import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.security.ProtectionDomain;
 
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -112,6 +113,7 @@ import sun.awt.image.ImageRepresentation;
 import sun.awt.image.ToolkitImage;
 
 import java.io.FilePermission;
+import java.util.stream.Stream;
 
 
 /**
@@ -136,27 +138,6 @@ import java.io.FilePermission;
  * @since 1.3.1
  */
 public abstract class DataTransferer {
-
-    /**
-     * Cached value of Class.forName("[C");
-     */
-    public static final Class charArrayClass;
-
-    /**
-     * Cached value of Class.forName("[B");
-     */
-    public static final Class byteArrayClass;
-
-    /**
-     * The <code>DataFlavor</code> representing plain text with Unicode
-     * encoding, where:
-     * <pre>
-     *     representationClass = java.lang.String
-     *     mimeType            = "text/plain; charset=Unicode"
-     * </pre>
-     */
-    public static final DataFlavor plainTextStringFlavor;
-
     /**
      * The <code>DataFlavor</code> representing a Java text encoding String
      * encoded in UTF-8, where
@@ -174,9 +155,9 @@ public abstract class DataTransferer {
         private static final SortedSet<String> standardEncodings = load();
 
         private static SortedSet<String> load() {
-            final Comparator comparator =
+            final Comparator<String> comparator =
                     new CharsetComparator(IndexedComparator.SELECT_WORST);
-            final SortedSet<String> tempSet = new TreeSet<String>(comparator);
+            final SortedSet<String> tempSet = new TreeSet<>(comparator);
             tempSet.add("US-ASCII");
             tempSet.add("ISO-8859-1");
             tempSet.add("UTF-8");
@@ -194,7 +175,7 @@ public abstract class DataTransferer {
      * listed in the DataFlavor.selectBestTextFlavor method comment. Additional
      * entries may be added during the life of the JRE for text/<other> types.
      */
-    private static final Map textMIMESubtypeCharsetSupport;
+    private static final Map<String, Boolean> textMIMESubtypeCharsetSupport;
 
     /**
      * Cache of the platform default encoding as specified in the
@@ -206,67 +187,43 @@ public abstract class DataTransferer {
      * A collection of all natives listed in flavormap.properties with
      * a primary MIME type of "text".
      */
-    private static final Set textNatives =
-        Collections.synchronizedSet(new HashSet());
+    private static final Set<Long> textNatives =
+            Collections.synchronizedSet(new HashSet<>());
 
     /**
      * The native encodings/charsets for the Set of textNatives.
      */
-    private static final Map nativeCharsets =
-        Collections.synchronizedMap(new HashMap());
+    private static final Map<Long, String> nativeCharsets =
+            Collections.synchronizedMap(new HashMap<>());
 
     /**
      * The end-of-line markers for the Set of textNatives.
      */
-    private static final Map nativeEOLNs =
-        Collections.synchronizedMap(new HashMap());
+    private static final Map<Long, String> nativeEOLNs =
+            Collections.synchronizedMap(new HashMap<>());
 
     /**
      * The number of terminating NUL bytes for the Set of textNatives.
      */
-    private static final Map nativeTerminators =
-        Collections.synchronizedMap(new HashMap());
+    private static final Map<Long, Integer> nativeTerminators =
+            Collections.synchronizedMap(new HashMap<>());
 
     /**
      * The key used to store pending data conversion requests for an AppContext.
      */
     private static final String DATA_CONVERTER_KEY = "DATA_CONVERTER_KEY";
 
-    /**
-     * The singleton DataTransferer instance. It is created during MToolkit
-     * or WToolkit initialization.
-     */
-    private static DataTransferer transferer;
-
     private static final PlatformLogger dtLog = PlatformLogger.getLogger("sun.awt.datatransfer.DataTransfer");
 
     static {
-        Class tCharArrayClass = null, tByteArrayClass = null;
-        try {
-            tCharArrayClass = Class.forName("[C");
-            tByteArrayClass = Class.forName("[B");
-        } catch (ClassNotFoundException cannotHappen) {
-        }
-        charArrayClass = tCharArrayClass;
-        byteArrayClass = tByteArrayClass;
-
-        DataFlavor tPlainTextStringFlavor = null;
-        try {
-            tPlainTextStringFlavor = new DataFlavor
-                ("text/plain;charset=Unicode;class=java.lang.String");
-        } catch (ClassNotFoundException cannotHappen) {
-        }
-        plainTextStringFlavor = tPlainTextStringFlavor;
-
         DataFlavor tJavaTextEncodingFlavor = null;
         try {
-            tJavaTextEncodingFlavor = new DataFlavor
-                ("application/x-java-text-encoding;class=\"[B\"");
+            tJavaTextEncodingFlavor = new DataFlavor("application/x-java-text-encoding;class=\"[B\"");
         } catch (ClassNotFoundException cannotHappen) {
         }
         javaTextEncodingFlavor = tJavaTextEncodingFlavor;
 
-        Map tempMap = new HashMap(17);
+        Map<String, Boolean> tempMap = new HashMap<>(17);
         tempMap.put("sgml", Boolean.TRUE);
         tempMap.put("xml", Boolean.TRUE);
         tempMap.put("html", Boolean.TRUE);
@@ -290,63 +247,8 @@ public abstract class DataTransferer {
      * that in a headless environment, there may be no DataTransferer instance;
      * instead, null will be returned.
      */
-    public static DataTransferer getInstance() {
-        synchronized (DataTransferer.class) {
-            if (transferer == null) {
-                final String name = SunToolkit.getDataTransfererClassName();
-                if (name != null) {
-                    PrivilegedAction<DataTransferer> action = new PrivilegedAction<DataTransferer>()
-                    {
-                      public DataTransferer run() {
-                          Class cls = null;
-                          Method method = null;
-                          DataTransferer ret = null;
-
-                          try {
-                              cls = Class.forName(name);
-                          } catch (ClassNotFoundException e) {
-                              ClassLoader cl = ClassLoader.
-                                  getSystemClassLoader();
-                              if (cl != null) {
-                                  try {
-                                      cls = cl.loadClass(name);
-                                  } catch (ClassNotFoundException ee) {
-                                      ee.printStackTrace();
-                                      throw new AWTError("DataTransferer not found: " + name);
-                                  }
-                              }
-                          }
-                          if (cls != null) {
-                              try {
-                                  method = cls.getDeclaredMethod("getInstanceImpl");
-                                  method.setAccessible(true);
-                              } catch (NoSuchMethodException e) {
-                                  e.printStackTrace();
-                                  throw new AWTError("Cannot instantiate DataTransferer: " + name);
-                              } catch (SecurityException e) {
-                                  e.printStackTrace();
-                                  throw new AWTError("Access is denied for DataTransferer: " + name);
-                              }
-                          }
-                          if (method != null) {
-                              try {
-                                  ret = (DataTransferer) method.invoke(null);
-                              } catch (InvocationTargetException e) {
-                                  e.printStackTrace();
-                                  throw new AWTError("Cannot instantiate DataTransferer: " + name);
-                              } catch (IllegalAccessException e) {
-                                  e.printStackTrace();
-                                  throw new AWTError("Cannot access DataTransferer: " + name);
-                              }
-                          }
-                          return ret;
-                      }
-                    };
-                    transferer = AccessController.doPrivileged(action);
-                }
-            }
-        }
-        return transferer;
+    public static synchronized DataTransferer getInstance() {
+        return ((SunToolkit) Toolkit.getDefaultToolkit()).getDataTransferer();
     }
 
     /**
@@ -409,29 +311,27 @@ public abstract class DataTransferer {
             return false;
         }
 
-        Object support = textMIMESubtypeCharsetSupport.get(subType);
+        Boolean support = textMIMESubtypeCharsetSupport.get(subType);
 
         if (support != null) {
-            return (support == Boolean.TRUE);
+            return support;
         }
 
         boolean ret_val = (flavor.getParameter("charset") != null);
-        textMIMESubtypeCharsetSupport.put
-            (subType, (ret_val) ? Boolean.TRUE : Boolean.FALSE);
+        textMIMESubtypeCharsetSupport.put(subType, ret_val);
         return ret_val;
     }
     public static boolean doesSubtypeSupportCharset(String subType,
                                                     String charset)
     {
-        Object support = textMIMESubtypeCharsetSupport.get(subType);
+        Boolean support = textMIMESubtypeCharsetSupport.get(subType);
 
         if (support != null) {
-            return (support == Boolean.TRUE);
+            return support;
         }
 
         boolean ret_val = (charset != null);
-        textMIMESubtypeCharsetSupport.put
-            (subType, (ret_val) ? Boolean.TRUE : Boolean.FALSE);
+        textMIMESubtypeCharsetSupport.put(subType, ret_val);
         return ret_val;
     }
 
@@ -459,14 +359,14 @@ public abstract class DataTransferer {
         if (flavor.isRepresentationClassReader() ||
             String.class.equals(rep_class) ||
             flavor.isRepresentationClassCharBuffer() ||
-            DataTransferer.charArrayClass.equals(rep_class))
+            char[].class.equals(rep_class))
         {
             return true;
         }
 
         if (!(flavor.isRepresentationClassInputStream() ||
               flavor.isRepresentationClassByteBuffer() ||
-              DataTransferer.byteArrayClass.equals(rep_class))) {
+              byte[].class.equals(rep_class))) {
             return false;
         }
 
@@ -490,15 +390,14 @@ public abstract class DataTransferer {
 
         return (flavor.isRepresentationClassInputStream() ||
                 flavor.isRepresentationClassByteBuffer() ||
-                DataTransferer.byteArrayClass.
-                    equals(flavor.getRepresentationClass()));
+                byte[].class.equals(flavor.getRepresentationClass()));
     }
 
     /**
      * Determines whether this JRE can both encode and decode text in the
      * specified encoding.
      */
-    public static boolean isEncodingSupported(String encoding) {
+    private static boolean isEncodingSupported(String encoding) {
         if (encoding == null) {
             return false;
         }
@@ -536,37 +435,35 @@ public abstract class DataTransferer {
         }
 
         return new FlavorTable() {
-                public Map getNativesForFlavors(DataFlavor[] flavors) {
-                    return map.getNativesForFlavors(flavors);
+            @Override
+            public Map<DataFlavor, String> getNativesForFlavors(DataFlavor[] flavors) {
+                return map.getNativesForFlavors(flavors);
+            }
+            @Override
+            public Map<String, DataFlavor> getFlavorsForNatives(String[] natives) {
+                return map.getFlavorsForNatives(natives);
+            }
+            @Override
+            public List<String> getNativesForFlavor(DataFlavor flav) {
+                Map<DataFlavor, String> natives = getNativesForFlavors(new DataFlavor[]{flav});
+                String nat = natives.get(flav);
+                if (nat != null) {
+                    return Collections.singletonList(nat);
+                } else {
+                    return Collections.emptyList();
                 }
-                public Map getFlavorsForNatives(String[] natives) {
-                    return map.getFlavorsForNatives(natives);
+            }
+            @Override
+            public List<DataFlavor> getFlavorsForNative(String nat) {
+                Map<String, DataFlavor> flavors = getFlavorsForNatives(new String[]{nat});
+                DataFlavor flavor = flavors.get(nat);
+                if (flavor != null) {
+                    return Collections.singletonList(flavor);
+                } else {
+                    return Collections.emptyList();
                 }
-                public List getNativesForFlavor(DataFlavor flav) {
-                    Map natives =
-                        getNativesForFlavors(new DataFlavor[] { flav } );
-                    String nat = (String)natives.get(flav);
-                    if (nat != null) {
-                        List list = new ArrayList(1);
-                        list.add(nat);
-                        return list;
-                    } else {
-                        return Collections.EMPTY_LIST;
-                    }
-                }
-                public List getFlavorsForNative(String nat) {
-                    Map flavors =
-                        getFlavorsForNatives(new String[] { nat } );
-                    DataFlavor flavor = (DataFlavor)flavors.get(nat);
-                    if (flavor != null) {
-                        List list = new ArrayList(1);
-                        list.add(flavor);
-                        return list;
-                    } else {
-                        return Collections.EMPTY_LIST;
-                    }
-                }
-            };
+            }
+        };
     }
 
     /**
@@ -588,13 +485,13 @@ public abstract class DataTransferer {
 
         textNatives.add(format);
         nativeCharsets.put(format, (charset != null && charset.length() != 0)
-            ? charset : getDefaultTextCharset());
+                ? charset : getDefaultTextCharset());
         if (eoln != null && eoln.length() != 0 && !eoln.equals("\n")) {
             nativeEOLNs.put(format, eoln);
         }
         if (terminators != null && terminators.length() != 0) {
             Integer iTerminators = Integer.valueOf(terminators);
-            if (iTerminators.intValue() > 0) {
+            if (iTerminators > 0) {
                 nativeTerminators.put(format, iTerminators);
             }
         }
@@ -609,7 +506,7 @@ public abstract class DataTransferer {
     }
 
     protected String getCharsetForTextFormat(Long lFormat) {
-        return (String)nativeCharsets.get(lFormat);
+        return nativeCharsets.get(lFormat);
     }
 
     /**
@@ -649,28 +546,14 @@ public abstract class DataTransferer {
      * The map keys are sorted according to the native formats preference
      * order.
      */
-    public SortedMap<Long,DataFlavor> getFormatsForTransferable(
-                               Transferable contents, FlavorTable map)
+    public SortedMap<Long,DataFlavor> getFormatsForTransferable(Transferable contents,
+                                                                FlavorTable map)
     {
         DataFlavor[] flavors = contents.getTransferDataFlavors();
         if (flavors == null) {
-            return new TreeMap();
+            return Collections.emptySortedMap();
         }
         return getFormatsForFlavors(flavors, map);
-    }
-
-    /**
-     * Returns a Map whose keys are all of the possible formats into which data
-     * in the specified DataFlavor can be translated. The value of each key
-     * is the DataFlavor in which a Transferable's data should be requested
-     * when converting to the format.
-     * <p>
-     * The map keys are sorted according to the native formats preference
-     * order.
-     */
-    public SortedMap getFormatsForFlavor(DataFlavor flavor, FlavorTable map) {
-        return getFormatsForFlavors(new DataFlavor[] { flavor },
-                                    map);
     }
 
     /**
@@ -687,18 +570,16 @@ public abstract class DataTransferer {
      *            DataFlavors and data formats
      * @throws NullPointerException if flavors or map is <code>null</code>
      */
-    public SortedMap <Long, DataFlavor> getFormatsForFlavors(
-        DataFlavor[] flavors, FlavorTable map)
+    public SortedMap<Long, DataFlavor> getFormatsForFlavors(DataFlavor[] flavors,
+                                                            FlavorTable map)
     {
-        Map <Long,DataFlavor> formatMap =
-            new HashMap <> (flavors.length);
-        Map <Long,DataFlavor> textPlainMap =
-            new HashMap <> (flavors.length);
+        Map<Long,DataFlavor> formatMap = new HashMap<>(flavors.length);
+        Map<Long,DataFlavor> textPlainMap = new HashMap<>(flavors.length);
         // Maps formats to indices that will be used to sort the formats
         // according to the preference order.
         // Larger index value corresponds to the more preferable format.
-        Map indexMap = new HashMap(flavors.length);
-        Map textPlainIndexMap = new HashMap(flavors.length);
+        Map<Long, Integer> indexMap = new HashMap<>(flavors.length);
+        Map<Long, Integer> textPlainIndexMap = new HashMap<>(flavors.length);
 
         int currentIndex = 0;
 
@@ -718,14 +599,13 @@ public abstract class DataTransferer {
                 flavor.isRepresentationClassInputStream() ||
                 flavor.isRepresentationClassRemote())
             {
-                List natives = map.getNativesForFlavor(flavor);
+                List<String> natives = map.getNativesForFlavor(flavor);
 
                 currentIndex += natives.size();
 
-                for (Iterator iter = natives.iterator(); iter.hasNext(); ) {
-                    Long lFormat =
-                        getFormatForNativeAsLong((String)iter.next());
-                    Integer index = Integer.valueOf(currentIndex--);
+                for (String aNative : natives) {
+                    Long lFormat = getFormatForNativeAsLong(aNative);
+                    Integer index = currentIndex--;
 
                     formatMap.put(lFormat, flavor);
                     indexMap.put(lFormat, index);
@@ -735,9 +615,8 @@ public abstract class DataTransferer {
                     // for a single text/* flavor, we would prefer that
                     // text/plain native data come from a text/plain flavor.
                     if (("text".equals(flavor.getPrimaryType()) &&
-                         "plain".equals(flavor.getSubType())) ||
-                        flavor.equals(DataFlavor.stringFlavor))
-                    {
+                            "plain".equals(flavor.getSubType())) ||
+                            flavor.equals(DataFlavor.stringFlavor)) {
                         textPlainMap.put(lFormat, flavor);
                         textPlainIndexMap.put(lFormat, index);
                     }
@@ -751,9 +630,9 @@ public abstract class DataTransferer {
         indexMap.putAll(textPlainIndexMap);
 
         // Sort the map keys according to the formats preference order.
-        Comparator comparator =
-            new IndexOrderComparator(indexMap, IndexedComparator.SELECT_WORST);
-        SortedMap sortedMap = new TreeMap(comparator);
+        Comparator<Long> comparator =
+                new IndexOrderComparator(indexMap, IndexedComparator.SELECT_WORST);
+        SortedMap<Long, DataFlavor> sortedMap = new TreeMap<>(comparator);
         sortedMap.putAll(formatMap);
 
         return sortedMap;
@@ -767,24 +646,6 @@ public abstract class DataTransferer {
                                                    FlavorTable map) {
         return keysToLongArray(getFormatsForTransferable(contents, map));
     }
-    public long[] getFormatsForFlavorAsArray(DataFlavor flavor,
-                                             FlavorTable map) {
-        return keysToLongArray(getFormatsForFlavor(flavor, map));
-    }
-    public long[] getFormatsForFlavorsAsArray(DataFlavor[] flavors,
-                                              FlavorTable map) {
-        return keysToLongArray(getFormatsForFlavors(flavors, map));
-    }
-
-    /**
-     * Returns a Map whose keys are all of the possible DataFlavors into which
-     * data in the specified format can be translated. The value of each key
-     * is the format in which the Clipboard or dropped data should be requested
-     * when converting to the DataFlavor.
-     */
-    public Map getFlavorsForFormat(long format, FlavorTable map) {
-        return getFlavorsForFormats(new long[] { format }, map);
-    }
 
     /**
      * Returns a Map whose keys are all of the possible DataFlavors into which
@@ -792,10 +653,10 @@ public abstract class DataTransferer {
      * is the format in which the Clipboard or dropped data should be requested
      * when converting to the DataFlavor.
      */
-    public Map getFlavorsForFormats(long[] formats, FlavorTable map) {
-        Map flavorMap = new HashMap(formats.length);
-        Set mappingSet = new HashSet(formats.length);
-        Set flavorSet = new HashSet(formats.length);
+    public Map<DataFlavor, Long> getFlavorsForFormats(long[] formats, FlavorTable map) {
+        Map<DataFlavor, Long> flavorMap = new HashMap<>(formats.length);
+        Set<AbstractMap.SimpleEntry<Long, DataFlavor>> mappingSet = new HashSet<>(formats.length);
+        Set<DataFlavor> flavorSet = new HashSet<>(formats.length);
 
         // First step: build flavorSet, mappingSet and initial flavorMap
         // flavorSet  - the set of all the DataFlavors into which
@@ -804,27 +665,22 @@ public abstract class DataTransferer {
         //              into any DataFlavor;
         // flavorMap  - after this step, this map maps each of the DataFlavors
         //              from flavorSet to any of the specified formats.
-        for (int i = 0; i < formats.length; i++) {
-            long format = formats[i];
+        for (long format : formats) {
             String nat = getNativeForFormat(format);
-            List flavors = map.getFlavorsForNative(nat);
-
-            for (Iterator iter = flavors.iterator(); iter.hasNext(); ) {
-                DataFlavor flavor = (DataFlavor)iter.next();
-
+            List<DataFlavor> flavors = map.getFlavorsForNative(nat);
+            for (DataFlavor flavor : flavors) {
                 // Don't explicitly test for String, since it is just a special
                 // case of Serializable
                 if (flavor.isFlavorTextType() ||
-                    flavor.isFlavorJavaFileListType() ||
-                    DataFlavor.imageFlavor.equals(flavor) ||
-                    flavor.isRepresentationClassSerializable() ||
-                    flavor.isRepresentationClassInputStream() ||
-                    flavor.isRepresentationClassRemote())
-                {
-                    Long lFormat = Long.valueOf(format);
-                    Object mapping =
-                        DataTransferer.createMapping(lFormat, flavor);
-                    flavorMap.put(flavor, lFormat);
+                        flavor.isFlavorJavaFileListType() ||
+                        DataFlavor.imageFlavor.equals(flavor) ||
+                        flavor.isRepresentationClassSerializable() ||
+                        flavor.isRepresentationClassInputStream() ||
+                        flavor.isRepresentationClassRemote()) {
+
+                    AbstractMap.SimpleEntry<Long, DataFlavor> mapping =
+                            new AbstractMap.SimpleEntry<>(format, flavor);
+                    flavorMap.put(flavor, format);
                     mappingSet.add(mapping);
                     flavorSet.add(flavor);
                 }
@@ -844,19 +700,11 @@ public abstract class DataTransferer {
         // a mappingSet of all format-to-flavor mappings for the specified formats
         // and check if the format-to-flavor mapping exists for the
         // (flavor,format) pair being added.
-        for (Iterator flavorIter = flavorSet.iterator();
-             flavorIter.hasNext(); ) {
-            DataFlavor flavor = (DataFlavor)flavorIter.next();
-
-            List natives = map.getNativesForFlavor(flavor);
-
-            for (Iterator nativeIter = natives.iterator();
-                 nativeIter.hasNext(); ) {
-                Long lFormat =
-                    getFormatForNativeAsLong((String)nativeIter.next());
-                Object mapping = DataTransferer.createMapping(lFormat, flavor);
-
-                if (mappingSet.contains(mapping)) {
+        for (DataFlavor flavor : flavorSet) {
+            List<String> natives = map.getNativesForFlavor(flavor);
+            for (String aNative : natives) {
+                Long lFormat = getFormatForNativeAsLong(aNative);
+                if (mappingSet.contains(new AbstractMap.SimpleEntry<>(lFormat, flavor))) {
                     flavorMap.put(flavor, lFormat);
                     break;
                 }
@@ -879,49 +727,25 @@ public abstract class DataTransferer {
      * @throws NullPointerException if formats or map is <code>null</code>
      */
     public Set getFlavorsForFormatsAsSet(long[] formats, FlavorTable map) {
-        Set flavorSet = new HashSet(formats.length);
+        Set<DataFlavor> flavorSet = new HashSet<>(formats.length);
 
-        for (int i = 0; i < formats.length; i++) {
-            String nat = getNativeForFormat(formats[i]);
-            List flavors = map.getFlavorsForNative(nat);
-
-            for (Iterator iter = flavors.iterator(); iter.hasNext(); ) {
-                DataFlavor flavor = (DataFlavor)iter.next();
-
+        for (long format : formats) {
+            List<DataFlavor> flavors = map.getFlavorsForNative(getNativeForFormat(format));
+            for (DataFlavor flavor : flavors) {
                 // Don't explicitly test for String, since it is just a special
                 // case of Serializable
                 if (flavor.isFlavorTextType() ||
-                    flavor.isFlavorJavaFileListType() ||
-                    DataFlavor.imageFlavor.equals(flavor) ||
-                    flavor.isRepresentationClassSerializable() ||
-                    flavor.isRepresentationClassInputStream() ||
-                    flavor.isRepresentationClassRemote())
-                {
+                        flavor.isFlavorJavaFileListType() ||
+                        DataFlavor.imageFlavor.equals(flavor) ||
+                        flavor.isRepresentationClassSerializable() ||
+                        flavor.isRepresentationClassInputStream() ||
+                        flavor.isRepresentationClassRemote()) {
                     flavorSet.add(flavor);
                 }
             }
         }
 
         return flavorSet;
-    }
-
-    /**
-     * Returns an array of all DataFlavors for which
-     * 1) a mapping from the specified format exists in the specified map and
-     * 2) the data translation for this mapping can be performed by the data
-     * transfer subsystem.
-     * The array will be sorted according to a
-     * <code>DataFlavorComparator</code> created with the specified
-     * map as an argument.
-     *
-     * @param format the data format
-     * @param map the FlavorTable which contains mappings between
-     *            DataFlavors and data formats
-     * @throws NullPointerException if map is <code>null</code>
-     */
-    public DataFlavor[] getFlavorsForFormatAsArray(long format,
-                                                   FlavorTable map) {
-        return getFlavorsForFormatsAsArray(new long[] { format }, map);
     }
 
     /**
@@ -944,22 +768,6 @@ public abstract class DataTransferer {
         // getFlavorsForFormatsAsSet() is less expensive than
         // getFlavorsForFormats().
         return setToSortedDataFlavorArray(getFlavorsForFormatsAsSet(formats, map));
-    }
-
-    /**
-     * Returns an object that represents a mapping between the specified
-     * key and value. <tt>null</tt> values and the <tt>null</tt> keys are
-     * permitted. The internal representation of the mapping object is
-     * irrelevant. The only requrement is that the two mapping objects are equal
-     * if and only if their keys are equal and their values are equal.
-     * More formally, the two mapping objects are equal if and only if
-     * <tt>(value1 == null ? value2 == null : value1.equals(value2))
-     * && (key1 == null ? key2 == null : key1.equals(key2))</tt>.
-     */
-    private static Object createMapping(Object key, Object value) {
-        // NOTE: Should be updated to use AbstractMap.SimpleEntry as
-        // soon as it is made public.
-        return Arrays.asList(new Object[] { key, value });
     }
 
     /**
@@ -1013,17 +821,16 @@ public abstract class DataTransferer {
     private byte[] translateTransferableString(String str,
                                                long format) throws IOException
     {
-        Long lFormat = Long.valueOf(format);
+        Long lFormat = format;
         String charset = getBestCharsetForTextFormat(lFormat, null);
         // Search and replace EOLN. Note that if EOLN is "\n", then we
         // never added an entry to nativeEOLNs anyway, so we'll skip this
         // code altogether.
         // windows: "abc\nde"->"abc\r\nde"
-        String eoln = (String)nativeEOLNs.get(lFormat);
+        String eoln = nativeEOLNs.get(lFormat);
         if (eoln != null) {
             int length = str.length();
-            StringBuffer buffer =
-                new StringBuffer(length * 2); // 2 is a heuristic
+            StringBuilder buffer = new StringBuilder(length * 2); // 2 is a heuristic
             for (int i = 0; i < length; i++) {
                 // Fix for 4914613 - skip native EOLN
                 if (str.startsWith(eoln, i)) {
@@ -1048,9 +855,9 @@ public abstract class DataTransferer {
         // the we never added an entry to nativeTerminators anyway, so
         // we'll skip code altogether.
         // "abcde" -> "abcde\0"
-        Integer terminators = (Integer)nativeTerminators.get(lFormat);
+        Integer terminators = nativeTerminators.get(lFormat);
         if (terminators != null) {
-            int numTerminators = terminators.intValue();
+            int numTerminators = terminators;
             byte[] terminatedBytes =
                 new byte[bytes.length + numTerminators];
             System.arraycopy(bytes, 0, terminatedBytes, 0, bytes.length);
@@ -1073,7 +880,7 @@ public abstract class DataTransferer {
             throws IOException
     {
 
-        Long lFormat = Long.valueOf(format);
+        Long lFormat = format;
         String charset = getBestCharsetForTextFormat(lFormat, localeTransferable);
 
         // Locate terminating NUL bytes. Note that if terminators is 0,
@@ -1086,11 +893,11 @@ public abstract class DataTransferer {
         // multibyte coding like UTF-8, but helps understand the procedure.
         // "abcde\0" -> "abcde"
 
-        String eoln = (String)nativeEOLNs.get(lFormat);
-        Integer terminators = (Integer)nativeTerminators.get(lFormat);
+        String eoln = nativeEOLNs.get(lFormat);
+        Integer terminators = nativeTerminators.get(lFormat);
         int count;
         if (terminators != null) {
-            int numTerminators = terminators.intValue();
+            int numTerminators = terminators;
 search:
             for (count = 0; count < (bytes.length - numTerminators + 1); count += numTerminators) {
                 for (int i = count; i < count + numTerminators; i++) {
@@ -1123,7 +930,6 @@ search:
 
             char[] buf = converted.toCharArray();
             char[] eoln_arr = eoln.toCharArray();
-            converted = null;
             int j = 0;
             boolean match;
 
@@ -1214,7 +1020,7 @@ search:
                     ("cannot transfer non-text data as Reader");
             }
 
-            StringBuffer buf = new StringBuffer();
+            StringBuilder buf = new StringBuilder();
             try (Reader r = (Reader)obj) {
                 int c;
                 while ((c = r.read()) != -1) {
@@ -1243,7 +1049,7 @@ search:
                 format);
 
         // Source data is a char array. Convert to a String and recur.
-        } else if (charArrayClass.equals(flavor.getRepresentationClass())) {
+        } else if (char[].class.equals(flavor.getRepresentationClass())) {
             if (!(isFlavorCharsetTextType(flavor) && isTextFormat(format))) {
                 throw new IOException
                     ("cannot transfer non-text data as char array");
@@ -1274,7 +1080,7 @@ search:
         // Source data is a byte array. For arbitrary flavors, simply return
         // the array. For text flavors, decode back to a String and recur to
         // reencode according to the requested format.
-        } else if (byteArrayClass.equals(flavor.getRepresentationClass())) {
+        } else if (byte[].class.equals(flavor.getRepresentationClass())) {
             byte[] bytes = (byte[])obj;
 
             if (isFlavorCharsetTextType(flavor) && isTextFormat(format)) {
@@ -1342,7 +1148,7 @@ search:
             final List list = (List)obj;
             final ProtectionDomain userProtectionDomain = getUserProtectionDomain(contents);
             final ArrayList<String> fileList = castToFiles(list, userProtectionDomain);
-            final ArrayList<String> uriList = new ArrayList<String>(fileList.size());
+            final ArrayList<String> uriList = new ArrayList<>(fileList.size());
             for (String fileObject : fileList) {
                 final URI uri = new File(fileObject).toURI();
                 // Some implementations are fussy about the number of slashes (file:///path/to/file is best)
@@ -1356,8 +1162,8 @@ search:
             byte[] eoln = "\r\n".getBytes(targetCharset);
 
             try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-                for (int i = 0; i < uriList.size(); i++) {
-                    byte[] bytes = uriList.get(i).getBytes(targetCharset);
+                for (String uri : uriList) {
+                    byte[] bytes = uri.getBytes(targetCharset);
                     bos.write(bytes, 0, bytes.length);
                     bos.write(eoln, 0, eoln.length);
                 }
@@ -1433,42 +1239,35 @@ search:
             return str;
         }
 
-
-        String ret_val = "";
         final ProtectionDomain userProtectionDomain = getUserProtectionDomain(contents);
 
         try {
-            ret_val = (String) AccessController.doPrivileged(new PrivilegedExceptionAction() {
-                    public Object run() {
+            return AccessController.doPrivileged((PrivilegedExceptionAction<String>) () -> {
 
-                        StringBuffer allowedFiles = new StringBuffer(str.length());
-                        String [] uriArray = str.split("(\\s)+");
+                StringBuilder allowedFiles = new StringBuilder(str.length());
+                String [] uriArray = str.split("(\\s)+");
 
-                        for (String fileName : uriArray)
+                for (String fileName : uriArray)
+                {
+                    File file = new File(fileName);
+                    if (file.exists() &&
+                        !(isFileInWebstartedCache(file) ||
+                        isForbiddenToRead(file, userProtectionDomain)))
+                    {
+                        if (0 != allowedFiles.length())
                         {
-                            File file = new File(fileName);
-                            if (file.exists() &&
-                                !(isFileInWebstartedCache(file) ||
-                                isForbiddenToRead(file, userProtectionDomain)))
-                            {
-
-                                if (0 != allowedFiles.length())
-                                {
-                                    allowedFiles.append("\\r\\n");
-                                }
-
-                                allowedFiles.append(fileName);
-                            }
+                            allowedFiles.append("\\r\\n");
                         }
 
-                        return allowedFiles.toString();
+                        allowedFiles.append(fileName);
                     }
-                });
+                }
+
+                return allowedFiles.toString();
+            });
         } catch (PrivilegedActionException pae) {
             throw new IOException(pae.getMessage(), pae);
         }
-
-        return ret_val;
     }
 
     private static ProtectionDomain getUserProtectionDomain(Transferable contents) {
@@ -1492,30 +1291,26 @@ search:
     }
 
     private ArrayList<String> castToFiles(final List files,
-                                          final ProtectionDomain userProtectionDomain) throws IOException
-    {
-        final ArrayList<String> fileList = new ArrayList<String>();
+                                          final ProtectionDomain userProtectionDomain) throws IOException {
         try {
-            AccessController.doPrivileged(new PrivilegedExceptionAction() {
-                public Object run() throws IOException {
-                    for (Object fileObject : files)
+            return AccessController.doPrivileged((PrivilegedExceptionAction<ArrayList<String>>) () -> {
+                ArrayList<String> fileList = new ArrayList<>();
+                for (Object fileObject : files)
+                {
+                    File file = castToFile(fileObject);
+                    if (file != null &&
+                        (null == System.getSecurityManager() ||
+                        !(isFileInWebstartedCache(file) ||
+                        isForbiddenToRead(file, userProtectionDomain))))
                     {
-                        File file = castToFile(fileObject);
-                        if (file != null &&
-                            (null == System.getSecurityManager() ||
-                            !(isFileInWebstartedCache(file) ||
-                            isForbiddenToRead(file, userProtectionDomain))))
-                        {
-                            fileList.add(file.getCanonicalPath());
-                        }
+                        fileList.add(file.getCanonicalPath());
                     }
-                    return null;
                 }
+                return fileList;
             });
         } catch (PrivilegedActionException pae) {
             throw new IOException(pae.getMessage());
         }
-        return fileList;
     }
 
     // It is important do not use user's successors
@@ -1539,8 +1334,7 @@ search:
         "deployment.javapi.cachedir"
     };
 
-    private final static ArrayList <File> deploymentCacheDirectoryList =
-            new ArrayList<File>();
+    private final static ArrayList <File> deploymentCacheDirectoryList = new ArrayList<>();
 
     private static boolean isFileInWebstartedCache(File f) {
 
@@ -1598,6 +1392,30 @@ search:
             // Turn the list of Files into a List and return
             theObject = Arrays.asList(files);
 
+            // Source data is a URI list. Convert to DataFlavor.javaFileListFlavor
+            // where possible.
+        } else if (isURIListFormat(format)
+                    && DataFlavor.javaFileListFlavor.equals(flavor)) {
+
+            try (ByteArrayInputStream str = new ByteArrayInputStream(bytes))  {
+
+                URI uris[] = dragQueryURIs(str, format, localeTransferable);
+                if (uris == null) {
+                    return null;
+                }
+                List<File> files = new ArrayList<>();
+                for (URI uri : uris) {
+                    try {
+                        files.add(new File(uri));
+                    } catch (IllegalArgumentException illegalArg) {
+                        // When converting from URIs to less generic files,
+                        // common practice (Wine, SWT) seems to be to
+                        // silently drop the URIs that aren't local files.
+                    }
+                }
+                theObject = files;
+            }
+
             // Target data is a String. Strip terminating NUL bytes. Decode bytes
             // into characters. Search-and-replace EOLN.
         } else if (String.class.equals(flavor.getRepresentationClass()) &&
@@ -1627,7 +1445,7 @@ search:
 
             // Target data is a char array. Recur to obtain String and convert to
             // char array.
-        } else if (charArrayClass.equals(flavor.getRepresentationClass())) {
+        } else if (char[].class.equals(flavor.getRepresentationClass())) {
             if (!(isFlavorCharsetTextType(flavor) && isTextFormat(format))) {
                 throw new IOException
                           ("cannot transfer non-text data as char array");
@@ -1655,7 +1473,7 @@ search:
             // the raw bytes. For text flavors, convert to a String to strip
             // terminators and search-and-replace EOLN, then reencode according to
             // the requested flavor.
-        } else if (byteArrayClass.equals(flavor.getRepresentationClass())) {
+        } else if (byte[].class.equals(flavor.getRepresentationClass())) {
             if (isFlavorCharsetTextType(flavor) && isTextFormat(format)) {
                 theObject = translateBytesToString(
                     bytes, format, localeTransferable
@@ -1728,7 +1546,7 @@ search:
             if (uris == null) {
                 return null;
             }
-            ArrayList files = new ArrayList();
+            List<File> files = new ArrayList<>();
             for (URI uri : uris) {
                 try {
                     files.add(new File(uri));
@@ -1783,7 +1601,7 @@ search:
 
             theObject = constructFlavoredObject(reader, flavor, Reader.class);
             // Target data is a byte array
-        } else if (byteArrayClass.equals(flavor.getRepresentationClass())) {
+        } else if (byte[].class.equals(flavor.getRepresentationClass())) {
             if(isFlavorCharsetTextType(flavor) && isTextFormat(format)) {
                 theObject = translateBytesToString(inputStreamToByteArray(str), format, localeTransferable)
                         .getBytes(DataTransferer.getTextCharset(flavor));
@@ -1853,47 +1671,34 @@ search:
                                            Class clazz)
         throws IOException
     {
-        final Class dfrc = flavor.getRepresentationClass();
+        final Class<?> dfrc = flavor.getRepresentationClass();
 
         if (clazz.equals(dfrc)) {
             return arg; // simple case
         } else {
-            Constructor[] constructors = null;
+            Constructor[] constructors;
 
             try {
-                constructors = (Constructor[])
-                    AccessController.doPrivileged(new PrivilegedAction() {
-                            public Object run() {
-                                return dfrc.getConstructors();
-                            }
-                        });
+                constructors = AccessController.doPrivileged(
+                        (PrivilegedAction<Constructor[]>) dfrc::getConstructors);
             } catch (SecurityException se) {
                 throw new IOException(se.getMessage());
             }
 
-            Constructor constructor = null;
-
-            for (int j = 0; j < constructors.length; j++) {
-                if (!Modifier.isPublic(constructors[j].getModifiers())) {
-                    continue;
-                }
-
-                Class[] ptypes = constructors[j].getParameterTypes();
-
-                if (ptypes != null && ptypes.length == 1 &&
-                    clazz.equals(ptypes[0])) {
-                    constructor = constructors[j];
-                    break;
-                }
-            }
-
-            if (constructor == null) {
-                throw new IOException("can't find <init>(L"+ clazz +
-                                      ";)V for class: " + dfrc.getName());
-            }
+            Constructor constructor = Stream.of(constructors)
+                    .filter(c -> Modifier.isPublic(c.getModifiers()))
+                    .filter(c -> {
+                        Class[] ptypes = c.getParameterTypes();
+                        return ptypes != null
+                                && ptypes.length == 1
+                                && clazz.equals(ptypes[0]);
+                    })
+                    .findFirst()
+                    .orElseThrow(() ->
+                            new IOException("can't find <init>(L"+ clazz + ";)V for class: " + dfrc.getName()));
 
             try {
-                return constructor.newInstance(new Object[] { arg } );
+                return constructor.newInstance(arg);
             } catch (Exception e) {
                 throw new IOException(e.getMessage());
             }
@@ -1905,26 +1710,26 @@ search:
      * can strip NUL terminators and perform EOLN search-and-replace.
      */
     public class ReencodingInputStream extends InputStream {
-        protected BufferedReader wrapped;
-        protected final char[] in = new char[2];
-        protected byte[] out;
+        BufferedReader wrapped;
+        final char[] in = new char[2];
+        byte[] out;
 
-        protected CharsetEncoder encoder;
-        protected CharBuffer inBuf;
-        protected ByteBuffer outBuf;
+        CharsetEncoder encoder;
+        CharBuffer inBuf;
+        ByteBuffer outBuf;
 
-        protected char[] eoln;
-        protected int numTerminators;
+        char[] eoln;
+        int numTerminators;
 
-        protected boolean eos;
-        protected int index, limit;
+        boolean eos;
+        int index, limit;
 
         public ReencodingInputStream(InputStream bytestream, long format,
                                      String targetEncoding,
                                      Transferable localeTransferable)
             throws IOException
         {
-            Long lFormat = Long.valueOf(format);
+            Long lFormat = format;
 
             String sourceEncoding = null;
             if (isLocaleDependentTextFormat(format) &&
@@ -1962,24 +1767,22 @@ search:
                 out = new byte[(int)(encoder.maxBytesPerChar() * 2 + 0.5)];
                 inBuf = CharBuffer.wrap(in);
                 outBuf = ByteBuffer.wrap(out);
-            } catch (IllegalCharsetNameException e) {
-                throw new IOException(e.toString());
-            } catch (UnsupportedCharsetException e) {
-                throw new IOException(e.toString());
-            } catch (UnsupportedOperationException e) {
+            } catch (IllegalCharsetNameException
+                    | UnsupportedCharsetException
+                    | UnsupportedOperationException e) {
                 throw new IOException(e.toString());
             }
 
-            String sEoln = (String)nativeEOLNs.get(lFormat);
+            String sEoln = nativeEOLNs.get(lFormat);
             if (sEoln != null) {
                 eoln = sEoln.toCharArray();
             }
 
             // A hope and a prayer that this works generically. This will
             // definitely work on Win32.
-            Integer terminators = (Integer)nativeTerminators.get(lFormat);
+            Integer terminators = nativeTerminators.get(lFormat);
             if (terminators != null) {
-                numTerminators = terminators.intValue();
+                numTerminators = terminators;
             }
         }
 
@@ -2126,19 +1929,14 @@ search:
         while (readerIterator.hasNext()) {
             ImageReader imageReader = (ImageReader)readerIterator.next();
             try (ByteArrayInputStream bais = new ByteArrayInputStream(bytes)) {
-                ImageInputStream imageInputStream =
-                    ImageIO.createImageInputStream(bais);
-
-                try {
+                try (ImageInputStream imageInputStream = ImageIO.createImageInputStream(bais)) {
                     ImageReadParam param = imageReader.getDefaultReadParam();
                     imageReader.setInput(imageInputStream, true, true);
-                    BufferedImage bufferedImage =
-                        imageReader.read(imageReader.getMinIndex(), param);
+                    BufferedImage bufferedImage = imageReader.read(imageReader.getMinIndex(), param);
                     if (bufferedImage != null) {
                         return bufferedImage;
                     }
                 } finally {
-                    imageInputStream.close();
                     imageReader.dispose();
                 }
             } catch (IOException e) {
@@ -2227,7 +2025,7 @@ search:
         }
     }
 
-    protected byte[] imageToStandardBytesImpl(RenderedImage renderedImage,
+    byte[] imageToStandardBytesImpl(RenderedImage renderedImage,
                                               String mimeType)
         throws IOException {
 
@@ -2248,14 +2046,10 @@ search:
             }
 
             try {
-                ImageOutputStream imageOutputStream =
-                    ImageIO.createImageOutputStream(baos);
-                try {
+                try (ImageOutputStream imageOutputStream = ImageIO.createImageOutputStream(baos)) {
                     imageWriter.setOutput(imageOutputStream);
                     imageWriter.write(renderedImage);
                     imageOutputStream.flush();
-                } finally {
-                    imageOutputStream.close();
                 }
             } catch (IOException e) {
                 imageWriter.dispose();
@@ -2341,7 +2135,7 @@ search:
          * that may contain client code.
          */
         if (isToolkitThread) try {
-            final Stack stack = new Stack();
+            final Stack<byte[]> stack = new Stack<>();
             final Runnable dataConverter = new Runnable() {
                 // Guard against multiple executions.
                 private boolean done = false;
@@ -2351,7 +2145,7 @@ search:
                     }
                     byte[] data = null;
                     try {
-                        DataFlavor flavor = (DataFlavor)formatMap.get(Long.valueOf(format));
+                        DataFlavor flavor = (DataFlavor)formatMap.get(format);
                         if (flavor != null) {
                             data = translateTransferable(contents, flavor, format);
                         }
@@ -2388,12 +2182,11 @@ search:
                 appContext.remove(DATA_CONVERTER_KEY);
             }
 
-            ret = (byte[])stack.pop();
+            ret = stack.pop();
         } finally {
             getToolkitThreadBlockedHandler().unlock();
         } else {
-            DataFlavor flavor = (DataFlavor)
-                formatMap.get(Long.valueOf(format));
+            DataFlavor flavor = (DataFlavor)formatMap.get(format);
             if (flavor != null) {
                 ret = translateTransferable(contents, flavor, format);
             }
@@ -2428,12 +2221,12 @@ search:
      * The map keys are sorted according to the native formats preference
      * order.
      */
-    public static long[] keysToLongArray(SortedMap map) {
-        Set keySet = map.keySet();
+    public static long[] keysToLongArray(SortedMap<Long, ?> map) {
+        Set<Long> keySet = map.keySet();
         long[] retval = new long[keySet.size()];
         int i = 0;
-        for (Iterator iter = keySet.iterator(); iter.hasNext(); i++) {
-            retval[i] = ((Long)iter.next()).longValue();
+        for (Iterator<Long> iter = keySet.iterator(); iter.hasNext(); i++) {
+            retval[i] = iter.next();
         }
         return retval;
     }
@@ -2445,7 +2238,7 @@ search:
     public static DataFlavor[] setToSortedDataFlavorArray(Set flavorsSet) {
         DataFlavor[] flavors = new DataFlavor[flavorsSet.size()];
         flavorsSet.toArray(flavors);
-        final Comparator comparator =
+        final Comparator<DataFlavor> comparator =
                 new DataFlavorComparator(IndexedComparator.SELECT_WORST);
         Arrays.sort(flavors, comparator);
         return flavors;
@@ -2474,8 +2267,8 @@ search:
      * If there are no platform-specific mappings for this native, the method
      * returns an empty <code>List</code>.
      */
-    public List getPlatformMappingsForNative(String nat) {
-        return new ArrayList();
+    public List<DataFlavor> getPlatformMappingsForNative(String nat) {
+        return new ArrayList<>();
     }
 
     /**
@@ -2483,15 +2276,15 @@ search:
      * If there are no platform-specific mappings for this flavor, the method
      * returns an empty <code>List</code>.
      */
-    public List getPlatformMappingsForFlavor(DataFlavor df) {
-        return new ArrayList();
+    public List<String> getPlatformMappingsForFlavor(DataFlavor df) {
+        return new ArrayList<>();
     }
 
     /**
      * A Comparator which includes a helper function for comparing two Objects
      * which are likely to be keys in the specified Map.
      */
-    public abstract static class IndexedComparator implements Comparator {
+    public abstract static class IndexedComparator<T> implements Comparator<T> {
 
         /**
          * The best Object (e.g., DataFlavor) will be the last in sequence.
@@ -2503,11 +2296,7 @@ search:
          */
         public static final boolean SELECT_WORST = false;
 
-        protected final boolean order;
-
-        public IndexedComparator() {
-            this(SELECT_BEST);
-        }
+        final boolean order;
 
         public IndexedComparator(boolean order) {
             this.order = order;
@@ -2526,48 +2315,11 @@ search:
          *             first object is mapped to a less, equal to, or greater
          *             index than the second.
          */
-        protected static int compareIndices(Map indexMap,
-                                            Object obj1, Object obj2,
-                                            Integer fallbackIndex) {
-            Integer index1 = (Integer)indexMap.get(obj1);
-            Integer index2 = (Integer)indexMap.get(obj2);
-
-            if (index1 == null) {
-                index1 = fallbackIndex;
-            }
-            if (index2 == null) {
-                index2 = fallbackIndex;
-            }
-
-            return index1.compareTo(index2);
-        }
-
-        /**
-         * Helper method to compare two objects by their Long indices in the
-         * given map. If the map doesn't contain an entry for either of the
-         * objects, the fallback index will be used for the object instead.
-         *
-         * @param indexMap the map which maps objects into Long indexes.
-         * @param obj1 the first object to be compared.
-         * @param obj2 the second object to be compared.
-         * @param fallbackIndex the Long to be used as a fallback index.
-         * @return a negative integer, zero, or a positive integer as the
-         *             first object is mapped to a less, equal to, or greater
-         *             index than the second.
-         */
-        protected static int compareLongs(Map indexMap,
-                                          Object obj1, Object obj2,
-                                          Long fallbackIndex) {
-            Long index1 = (Long)indexMap.get(obj1);
-            Long index2 = (Long)indexMap.get(obj2);
-
-            if (index1 == null) {
-                index1 = fallbackIndex;
-            }
-            if (index2 == null) {
-                index2 = fallbackIndex;
-            }
-
+        static <T> int compareIndices(Map<T, Integer> indexMap,
+                                      T obj1, T obj2,
+                                      Integer fallbackIndex) {
+            Integer index1 = indexMap.getOrDefault(obj1, fallbackIndex);
+            Integer index2 = indexMap.getOrDefault(obj2, fallbackIndex);
             return index1.compareTo(index2);
         }
     }
@@ -2579,43 +2331,35 @@ search:
      * in alphabetical order, charsets are not automatically converted to their
      * canonical forms.
      */
-    public static class CharsetComparator extends IndexedComparator {
-        private static final Map charsets;
-        private static String defaultEncoding;
+    public static class CharsetComparator extends IndexedComparator<String> {
+        private static final Map<String, Integer> charsets;
+        private static final String defaultEncoding;
 
-        private static final Integer DEFAULT_CHARSET_INDEX = Integer.valueOf(2);
-        private static final Integer OTHER_CHARSET_INDEX = Integer.valueOf(1);
-        private static final Integer WORST_CHARSET_INDEX = Integer.valueOf(0);
-        private static final Integer UNSUPPORTED_CHARSET_INDEX =
-            Integer.valueOf(Integer.MIN_VALUE);
+        private static final Integer DEFAULT_CHARSET_INDEX = 2;
+        private static final Integer OTHER_CHARSET_INDEX = 1;
+        private static final Integer WORST_CHARSET_INDEX = 0;
+        private static final Integer UNSUPPORTED_CHARSET_INDEX = Integer.MIN_VALUE;
 
         private static final String UNSUPPORTED_CHARSET = "UNSUPPORTED";
 
         static {
-            HashMap charsetsMap = new HashMap(8, 1.0f);
+            Map<String, Integer> charsetsMap = new HashMap<>(8, 1.0f);
 
             // we prefer Unicode charsets
-            charsetsMap.put(canonicalName("UTF-16LE"), Integer.valueOf(4));
-            charsetsMap.put(canonicalName("UTF-16BE"), Integer.valueOf(5));
-            charsetsMap.put(canonicalName("UTF-8"), Integer.valueOf(6));
-            charsetsMap.put(canonicalName("UTF-16"), Integer.valueOf(7));
+            charsetsMap.put(canonicalName("UTF-16LE"), 4);
+            charsetsMap.put(canonicalName("UTF-16BE"), 5);
+            charsetsMap.put(canonicalName("UTF-8"), 6);
+            charsetsMap.put(canonicalName("UTF-16"), 7);
 
             // US-ASCII is the worst charset supported
             charsetsMap.put(canonicalName("US-ASCII"), WORST_CHARSET_INDEX);
 
-            String defEncoding = DataTransferer.canonicalName
-                (DataTransferer.getDefaultTextCharset());
+            defaultEncoding = DataTransferer.canonicalName(DataTransferer.getDefaultTextCharset());
+            charsetsMap.putIfAbsent(defaultEncoding, DEFAULT_CHARSET_INDEX);
 
-            if (charsetsMap.get(defaultEncoding) == null) {
-                charsetsMap.put(defaultEncoding, DEFAULT_CHARSET_INDEX);
-            }
             charsetsMap.put(UNSUPPORTED_CHARSET, UNSUPPORTED_CHARSET_INDEX);
 
             charsets = Collections.unmodifiableMap(charsetsMap);
-        }
-
-        public CharsetComparator() {
-            this(SELECT_BEST);
         }
 
         public CharsetComparator(boolean order) {
@@ -2637,18 +2381,12 @@ search:
          * @throws NullPointerException if either of the arguments is
          *         <code>null</code>.
          */
-        public int compare(Object obj1, Object obj2) {
-            String charset1 = null;
-            String charset2 = null;
+        public int compare(String obj1, String obj2) {
             if (order == SELECT_BEST) {
-                charset1 = (String)obj1;
-                charset2 = (String)obj2;
+                return compareCharsets(obj1, obj2);
             } else {
-                charset1 = (String)obj2;
-                charset2 = (String)obj1;
+                return compareCharsets(obj2, obj1);
             }
-
-            return compareCharsets(charset1, charset2);
         }
 
         /**
@@ -2674,7 +2412,7 @@ search:
          *             first argument is worse, equal to, or better than the
          *             second.
          */
-        protected int compareCharsets(String charset1, String charset2) {
+        int compareCharsets(String charset1, String charset2) {
             charset1 = getEncoding(charset1);
             charset2 = getEncoding(charset2);
 
@@ -2704,7 +2442,7 @@ search:
          * @param charset the charset.
          * @return an encoding for this charset.
          */
-        protected static String getEncoding(String charset) {
+        static String getEncoding(String charset) {
             if (charset == null) {
                 return null;
             } else if (!DataTransferer.isEncodingSupported(charset)) {
@@ -2732,131 +2470,108 @@ search:
      * most descriptive one. For flavors which are otherwise equal, the
      * flavors' string representation are compared in the alphabetical order.
      */
-    public static class DataFlavorComparator extends IndexedComparator {
+    public static class DataFlavorComparator extends IndexedComparator<DataFlavor> {
 
         private final CharsetComparator charsetComparator;
 
-        private static final Map exactTypes;
-        private static final Map primaryTypes;
-        private static final Map nonTextRepresentations;
-        private static final Map textTypes;
-        private static final Map decodedTextRepresentations;
-        private static final Map encodedTextRepresentations;
+        private static final Map<String, Integer> exactTypes;
+        private static final Map<String, Integer> primaryTypes;
+        private static final Map<Class<?>, Integer> nonTextRepresentations;
+        private static final Map<String, Integer> textTypes;
+        private static final Map<Class<?>, Integer> decodedTextRepresentations;
+        private static final Map<Class<?>, Integer> encodedTextRepresentations;
 
-        private static final Integer UNKNOWN_OBJECT_LOSES =
-            Integer.valueOf(Integer.MIN_VALUE);
-        private static final Integer UNKNOWN_OBJECT_WINS =
-            Integer.valueOf(Integer.MAX_VALUE);
-
-        private static final Long UNKNOWN_OBJECT_LOSES_L =
-            Long.valueOf(Long.MIN_VALUE);
-        private static final Long UNKNOWN_OBJECT_WINS_L =
-            Long.valueOf(Long.MAX_VALUE);
+        private static final Integer UNKNOWN_OBJECT_LOSES = Integer.MIN_VALUE;
+        private static final Integer UNKNOWN_OBJECT_WINS = Integer.MAX_VALUE;
 
         static {
             {
-                HashMap exactTypesMap = new HashMap(4, 1.0f);
+                Map<String, Integer> exactTypesMap = new HashMap<>(4, 1.0f);
 
                 // application/x-java-* MIME types
-                exactTypesMap.put("application/x-java-file-list",
-                                  Integer.valueOf(0));
-                exactTypesMap.put("application/x-java-serialized-object",
-                                  Integer.valueOf(1));
-                exactTypesMap.put("application/x-java-jvm-local-objectref",
-                                  Integer.valueOf(2));
-                exactTypesMap.put("application/x-java-remote-object",
-                                  Integer.valueOf(3));
+                exactTypesMap.put("application/x-java-file-list", 0);
+                exactTypesMap.put("application/x-java-serialized-object", 1);
+                exactTypesMap.put("application/x-java-jvm-local-objectref", 2);
+                exactTypesMap.put("application/x-java-remote-object", 3);
 
                 exactTypes = Collections.unmodifiableMap(exactTypesMap);
             }
 
             {
-                HashMap primaryTypesMap = new HashMap(1, 1.0f);
+                Map<String, Integer> primaryTypesMap = new HashMap<>(1, 1.0f);
 
-                primaryTypesMap.put("application", Integer.valueOf(0));
+                primaryTypesMap.put("application", 0);
 
                 primaryTypes = Collections.unmodifiableMap(primaryTypesMap);
             }
 
             {
-                HashMap nonTextRepresentationsMap = new HashMap(3, 1.0f);
+                Map<Class<?>, Integer> nonTextRepresentationsMap = new HashMap<>(3, 1.0f);
 
-                nonTextRepresentationsMap.put(java.io.InputStream.class,
-                                              Integer.valueOf(0));
-                nonTextRepresentationsMap.put(java.io.Serializable.class,
-                                              Integer.valueOf(1));
+                nonTextRepresentationsMap.put(java.io.InputStream.class, 0);
+                nonTextRepresentationsMap.put(java.io.Serializable.class, 1);
 
                 Class<?> remoteClass = RMI.remoteClass();
                 if (remoteClass != null) {
-                    nonTextRepresentationsMap.put(remoteClass,
-                                                  Integer.valueOf(2));
+                    nonTextRepresentationsMap.put(remoteClass, 2);
                 }
 
-                nonTextRepresentations =
-                    Collections.unmodifiableMap(nonTextRepresentationsMap);
+                nonTextRepresentations = Collections.unmodifiableMap(nonTextRepresentationsMap);
             }
 
             {
-                HashMap textTypesMap = new HashMap(16, 1.0f);
+                Map<String, Integer> textTypesMap = new HashMap<>(16, 1.0f);
 
                 // plain text
-                textTypesMap.put("text/plain", Integer.valueOf(0));
+                textTypesMap.put("text/plain", 0);
 
                 // stringFlavor
-                textTypesMap.put("application/x-java-serialized-object",
-                                Integer.valueOf(1));
+                textTypesMap.put("application/x-java-serialized-object", 1);
 
                 // misc
-                textTypesMap.put("text/calendar", Integer.valueOf(2));
-                textTypesMap.put("text/css", Integer.valueOf(3));
-                textTypesMap.put("text/directory", Integer.valueOf(4));
-                textTypesMap.put("text/parityfec", Integer.valueOf(5));
-                textTypesMap.put("text/rfc822-headers", Integer.valueOf(6));
-                textTypesMap.put("text/t140", Integer.valueOf(7));
-                textTypesMap.put("text/tab-separated-values", Integer.valueOf(8));
-                textTypesMap.put("text/uri-list", Integer.valueOf(9));
+                textTypesMap.put("text/calendar", 2);
+                textTypesMap.put("text/css", 3);
+                textTypesMap.put("text/directory", 4);
+                textTypesMap.put("text/parityfec", 5);
+                textTypesMap.put("text/rfc822-headers", 6);
+                textTypesMap.put("text/t140", 7);
+                textTypesMap.put("text/tab-separated-values", 8);
+                textTypesMap.put("text/uri-list", 9);
 
                 // enriched
-                textTypesMap.put("text/richtext", Integer.valueOf(10));
-                textTypesMap.put("text/enriched", Integer.valueOf(11));
-                textTypesMap.put("text/rtf", Integer.valueOf(12));
+                textTypesMap.put("text/richtext", 10);
+                textTypesMap.put("text/enriched", 11);
+                textTypesMap.put("text/rtf", 12);
 
                 // markup
-                textTypesMap.put("text/html", Integer.valueOf(13));
-                textTypesMap.put("text/xml", Integer.valueOf(14));
-                textTypesMap.put("text/sgml", Integer.valueOf(15));
+                textTypesMap.put("text/html", 13);
+                textTypesMap.put("text/xml", 14);
+                textTypesMap.put("text/sgml", 15);
 
                 textTypes = Collections.unmodifiableMap(textTypesMap);
             }
 
             {
-                HashMap decodedTextRepresentationsMap = new HashMap(4, 1.0f);
+                Map<Class<?>, Integer> decodedTextRepresentationsMap = new HashMap<>(4, 1.0f);
 
-                decodedTextRepresentationsMap.put
-                    (DataTransferer.charArrayClass, Integer.valueOf(0));
-                decodedTextRepresentationsMap.put
-                    (java.nio.CharBuffer.class, Integer.valueOf(1));
-                decodedTextRepresentationsMap.put
-                    (java.lang.String.class, Integer.valueOf(2));
-                decodedTextRepresentationsMap.put
-                    (java.io.Reader.class, Integer.valueOf(3));
+                decodedTextRepresentationsMap.put(char[].class, 0);
+                decodedTextRepresentationsMap.put(CharBuffer.class, 1);
+                decodedTextRepresentationsMap.put(String.class, 2);
+                decodedTextRepresentationsMap.put(Reader.class, 3);
 
                 decodedTextRepresentations =
-                    Collections.unmodifiableMap(decodedTextRepresentationsMap);
+                        Collections.unmodifiableMap(decodedTextRepresentationsMap);
             }
 
             {
-                HashMap encodedTextRepresentationsMap = new HashMap(3, 1.0f);
+                Map<Class<?>, Integer> encodedTextRepresentationsMap = new HashMap<>(3, 1.0f);
 
-                encodedTextRepresentationsMap.put
-                    (DataTransferer.byteArrayClass, Integer.valueOf(0));
-                encodedTextRepresentationsMap.put
-                    (java.nio.ByteBuffer.class, Integer.valueOf(1));
-                encodedTextRepresentationsMap.put
-                    (java.io.InputStream.class, Integer.valueOf(2));
+                encodedTextRepresentationsMap.put(byte[].class, 0);
+                encodedTextRepresentationsMap.put(ByteBuffer.class, 1);
+                encodedTextRepresentationsMap.put(InputStream.class, 2);
 
                 encodedTextRepresentations =
-                    Collections.unmodifiableMap(encodedTextRepresentationsMap);
+                        Collections.unmodifiableMap(encodedTextRepresentationsMap);
             }
         }
 
@@ -2870,16 +2585,9 @@ search:
             charsetComparator = new CharsetComparator(order);
         }
 
-        public int compare(Object obj1, Object obj2) {
-            DataFlavor flavor1 = null;
-            DataFlavor flavor2 = null;
-            if (order == SELECT_BEST) {
-                flavor1 = (DataFlavor)obj1;
-                flavor2 = (DataFlavor)obj2;
-            } else {
-                flavor1 = (DataFlavor)obj2;
-                flavor2 = (DataFlavor)obj1;
-            }
+        public int compare(DataFlavor obj1, DataFlavor obj2) {
+            DataFlavor flavor1 = order == SELECT_BEST ? obj1 : obj2;
+            DataFlavor flavor2 = order == SELECT_BEST ? obj2 : obj1;
 
             if (flavor1.equals(flavor2)) {
                 return 0;
@@ -2982,22 +2690,16 @@ search:
      * reverse index-based order: an object A is greater than an object B if and
      * only if A is less than B with the direct index-based order.
      */
-    public static class IndexOrderComparator extends IndexedComparator {
-        private final Map indexMap;
-        private static final Integer FALLBACK_INDEX =
-            Integer.valueOf(Integer.MIN_VALUE);
+    public static class IndexOrderComparator extends IndexedComparator<Long> {
+        private final Map<Long, Integer> indexMap;
+        private static final Integer FALLBACK_INDEX = Integer.MIN_VALUE;
 
-        public IndexOrderComparator(Map indexMap) {
-            super(SELECT_BEST);
-            this.indexMap = indexMap;
-        }
-
-        public IndexOrderComparator(Map indexMap, boolean order) {
+        public IndexOrderComparator(Map<Long, Integer> indexMap, boolean order) {
             super(order);
             this.indexMap = indexMap;
         }
 
-        public int compare(Object obj1, Object obj2) {
+        public int compare(Long obj1, Long obj2) {
             if (order == SELECT_WORST) {
                 return -compareIndices(indexMap, obj1, obj2, FALLBACK_INDEX);
             } else {
@@ -3047,7 +2749,7 @@ search:
          * Returns {@code true} if the given class is java.rmi.Remote.
          */
         static boolean isRemote(Class<?> c) {
-            return (remoteClass == null) ? null : remoteClass.isAssignableFrom(c);
+            return (remoteClass == null) ? false : remoteClass.isAssignableFrom(c);
         }
 
         /**
@@ -3064,9 +2766,7 @@ search:
         static Object newMarshalledObject(Object obj) throws IOException {
             try {
                 return marshallCtor.newInstance(obj);
-            } catch (InstantiationException x) {
-                throw new AssertionError(x);
-            } catch (IllegalAccessException x) {
+            } catch (InstantiationException | IllegalAccessException x) {
                 throw new AssertionError(x);
             } catch (InvocationTargetException  x) {
                 Throwable cause = x.getCause();

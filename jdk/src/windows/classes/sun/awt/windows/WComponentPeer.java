@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,7 +93,9 @@ public abstract class WComponentPeer extends WObjectPeer
     private Color background;
     private Font font;
 
+    @Override
     public native boolean isObscured();
+    @Override
     public boolean canDetermineObscurity() { return true; }
 
     // DropTarget support
@@ -101,19 +103,21 @@ public abstract class WComponentPeer extends WObjectPeer
     int nDropTargets;
     long nativeDropTargetContext; // native pointer
 
-    public synchronized native void pShow();
-    public synchronized native void hide();
-    public synchronized native void enable();
-    public synchronized native void disable();
+    private synchronized native void pShow();
+    synchronized native void hide();
+    synchronized native void enable();
+    synchronized native void disable();
 
     public long getHWnd() {
         return hwnd;
     }
 
     /* New 1.1 API */
+    @Override
     public native Point getLocationOnScreen();
 
     /* New 1.1 API */
+    @Override
     public void setVisible(boolean b) {
         if (b) {
             show();
@@ -130,6 +134,7 @@ public abstract class WComponentPeer extends WObjectPeer
     }
 
     /* New 1.1 API */
+    @Override
     public void setEnabled(boolean b) {
         if (b) {
             enable();
@@ -143,6 +148,7 @@ public abstract class WComponentPeer extends WObjectPeer
     private native void reshapeNoCheck(int x, int y, int width, int height);
 
     /* New 1.1 API */
+    @Override
     public void setBounds(int x, int y, int width, int height, int op) {
         // Should set paintPending before reahape to prevent
         // thread race between paint events
@@ -185,6 +191,7 @@ public abstract class WComponentPeer extends WObjectPeer
         final Container cont = (Container)target;
 
         WToolkit.executeOnEventHandlerThread(cont, new Runnable() {
+            @Override
             public void run() {
                 // Discarding old paint events doesn't seem to be necessary.
                 cont.invalidate();
@@ -228,6 +235,7 @@ public abstract class WComponentPeer extends WObjectPeer
 
     native synchronized void updateWindow();
 
+    @Override
     public void paint(Graphics g) {
         ((Component)target).paint(g);
     }
@@ -239,6 +247,7 @@ public abstract class WComponentPeer extends WObjectPeer
     private native int[] createPrintedPixels(int srcX, int srcY,
                                              int srcW, int srcH,
                                              int alpha);
+    @Override
     public void print(Graphics g) {
 
         Component comp = (Component)target;
@@ -275,6 +284,7 @@ public abstract class WComponentPeer extends WObjectPeer
         comp.print(g);
     }
 
+    @Override
     public void coalescePaintEvent(PaintEvent e) {
         Rectangle r = e.getUpdateRect();
         if (!(e instanceof IgnorePaintEvent)) {
@@ -319,6 +329,7 @@ public abstract class WComponentPeer extends WObjectPeer
 
     native void nativeHandleEvent(AWTEvent e);
 
+    @Override
     @SuppressWarnings("fallthrough")
     public void handleEvent(AWTEvent e) {
         int id = e.getID();
@@ -367,21 +378,25 @@ public abstract class WComponentPeer extends WObjectPeer
 
     native void setFocus(boolean doSetFocus);
 
+    @Override
     public Dimension getMinimumSize() {
         return ((Component)target).getSize();
     }
 
+    @Override
     public Dimension getPreferredSize() {
         return getMinimumSize();
     }
 
     // Do nothing for heavyweight implementation
+    @Override
     public void layout() {}
 
     public Rectangle getBounds() {
         return ((Component)target).getBounds();
     }
 
+    @Override
     public boolean isFocusable() {
         return false;
     }
@@ -390,6 +405,7 @@ public abstract class WComponentPeer extends WObjectPeer
      * Return the GraphicsConfiguration associated with this peer, either
      * the locally stored winGraphicsConfig, or that of the target Component.
      */
+    @Override
     public GraphicsConfiguration getGraphicsConfiguration() {
         if (winGraphicsConfig != null) {
             return winGraphicsConfig;
@@ -481,6 +497,7 @@ public abstract class WComponentPeer extends WObjectPeer
 
     public void replaceSurfaceDataLater() {
         Runnable r = new Runnable() {
+            @Override
             public void run() {
                 // Shouldn't do anything if object is disposed in meanwhile
                 // No need for sync as disposeAction in Window is performed
@@ -501,6 +518,7 @@ public abstract class WComponentPeer extends WObjectPeer
         }
     }
 
+    @Override
     public boolean updateGraphicsData(GraphicsConfiguration gc) {
         winGraphicsConfig = (Win32GraphicsConfig)gc;
         try {
@@ -512,6 +530,7 @@ public abstract class WComponentPeer extends WObjectPeer
     }
 
     //This will return null for Components not yet added to a Container
+    @Override
     public ColorModel getColorModel() {
         GraphicsConfiguration gc = getGraphicsConfiguration();
         if (gc != null) {
@@ -549,6 +568,7 @@ public abstract class WComponentPeer extends WObjectPeer
     // fallback default font object
     final static Font defaultFont = new Font(Font.DIALOG, Font.PLAIN, 12);
 
+    @Override
     @SuppressWarnings("deprecation")
     public Graphics getGraphics() {
         if (isDisposed()) {
@@ -601,11 +621,13 @@ public abstract class WComponentPeer extends WObjectPeer
         }
         return null;
     }
+    @Override
     public FontMetrics getFontMetrics(Font font) {
         return WFontMetrics.getFontMetrics(font);
     }
 
     private synchronized native void _dispose();
+    @Override
     protected void disposeImpl() {
         SurfaceData oldData = surfaceData;
         surfaceData = null;
@@ -618,17 +640,20 @@ public abstract class WComponentPeer extends WObjectPeer
 
     public void disposeLater() {
         postEvent(new InvocationEvent(target, new Runnable() {
+            @Override
             public void run() {
                 dispose();
             }
         }));
     }
 
+    @Override
     public synchronized void setForeground(Color c) {
         foreground = c;
         _setForeground(c.getRGB());
     }
 
+    @Override
     public synchronized void setBackground(Color c) {
         background = c;
         _setBackground(c.getRGB());
@@ -644,19 +669,22 @@ public abstract class WComponentPeer extends WObjectPeer
         return background;
     }
 
-    public native void _setForeground(int rgb);
-    public native void _setBackground(int rgb);
+    private native void _setForeground(int rgb);
+    private native void _setBackground(int rgb);
 
+    @Override
     public synchronized void setFont(Font f) {
         font = f;
         _setFont(f);
     }
-    public synchronized native void _setFont(Font f);
+    synchronized native void _setFont(Font f);
+    @Override
     public void updateCursorImmediately() {
         WGlobalCursorManager.getCursorManager().updateCursorImmediately();
     }
 
     // TODO: consider moving it to KeyboardFocusManagerPeerImpl
+    @Override
     @SuppressWarnings("deprecation")
     public boolean requestFocus(Component lightweightChild, boolean temporary,
                                 boolean focusedWindowChangeAllowed, long time,
@@ -720,24 +748,29 @@ public abstract class WComponentPeer extends WObjectPeer
         return false;
     }
 
+    @Override
     public Image createImage(ImageProducer producer) {
         return new ToolkitImage(producer);
     }
 
+    @Override
     public Image createImage(int width, int height) {
         Win32GraphicsConfig gc =
             (Win32GraphicsConfig)getGraphicsConfiguration();
         return gc.createAcceleratedImage((Component)target, width, height);
     }
 
+    @Override
     public VolatileImage createVolatileImage(int width, int height) {
         return new SunVolatileImage((Component)target, width, height);
     }
 
+    @Override
     public boolean prepareImage(Image img, int w, int h, ImageObserver o) {
         return Toolkit.getDefaultToolkit().prepareImage(img, w, h, o);
     }
 
+    @Override
     public int checkImage(Image img, int w, int h, ImageObserver o) {
         return Toolkit.getDefaultToolkit().checkImage(img, w, h, o);
     }
@@ -891,6 +924,7 @@ public abstract class WComponentPeer extends WObjectPeer
      * register a DropTarget with this native peer
      */
 
+    @Override
     public synchronized void addDropTarget(DropTarget dt) {
         if (nDropTargets == 0) {
             nativeDropTargetContext = addNativeDropTarget();
@@ -902,6 +936,7 @@ public abstract class WComponentPeer extends WObjectPeer
      * unregister a DropTarget with this native peer
      */
 
+    @Override
     public synchronized void removeDropTarget(DropTarget dt) {
         nDropTargets--;
         if (nDropTargets == 0) {
@@ -924,6 +959,7 @@ public abstract class WComponentPeer extends WObjectPeer
     native void removeNativeDropTarget();
     native boolean nativeHandlesWheelScrolling();
 
+    @Override
     public boolean handlesWheelScrolling() {
         // should this be cached?
         return nativeHandlesWheelScrolling();
@@ -1001,6 +1037,7 @@ public abstract class WComponentPeer extends WObjectPeer
     /**
      * @see java.awt.peer.ComponentPeer#reparent
      */
+    @Override
     public void reparent(ContainerPeer newNativeParent) {
         pSetParent(newNativeParent);
     }
@@ -1008,6 +1045,7 @@ public abstract class WComponentPeer extends WObjectPeer
     /**
      * @see java.awt.peer.ComponentPeer#isReparentSupported
      */
+    @Override
     public boolean isReparentSupported() {
         return true;
     }
@@ -1081,6 +1119,7 @@ public abstract class WComponentPeer extends WObjectPeer
      * Applies the shape to the native component window.
      * @since 1.7
      */
+    @Override
     @SuppressWarnings("deprecation")
     public void applyShape(Region shape) {
         if (shapeLog.isLoggable(PlatformLogger.Level.FINER)) {
@@ -1101,6 +1140,7 @@ public abstract class WComponentPeer extends WObjectPeer
      * Lowers this component at the bottom of the above component. If the above parameter
      * is null then the method places this component at the top of the Z-order.
      */
+    @Override
     public void setZOrder(ComponentPeer above) {
         long aboveHWND = (above != null) ? ((WComponentPeer)above).getHWnd() : 0;
 

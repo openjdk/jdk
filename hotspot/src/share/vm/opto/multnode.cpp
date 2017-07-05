@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -194,7 +194,9 @@ bool ProjNode::is_uncommon_trap_if_pattern(Deoptimization::DeoptReason reason) {
     }
   }
 
-  ProjNode* other_proj = iff->proj_out(1-_con)->as_Proj();
+  ProjNode* other_proj = iff->proj_out(1-_con);
+  if (other_proj == NULL) // Should never happen, but make Parfait happy.
+      return false;
   if (other_proj->is_uncommon_trap_proj(reason)) {
     assert(reason == Deoptimization::Reason_none ||
            Compile::current()->is_predicate_opaq(iff->in(1)->in(1)), "should be on the list");

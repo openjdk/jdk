@@ -27,7 +27,7 @@ package jdk.nashorn.internal.runtime.arrays;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 
 import java.nio.ByteBuffer;
-import jdk.nashorn.internal.runtime.GlobalObject;
+import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.runtime.PropertyDescriptor;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 
@@ -60,7 +60,8 @@ final class ByteBufferArrayData extends ArrayData {
      *
      * @return property descriptor for element
      */
-    public PropertyDescriptor getDescriptor(final GlobalObject global, final int index) {
+    @Override
+    public PropertyDescriptor getDescriptor(final Global global, final int index) {
         // make the index properties not configurable
         return global.newDataDescriptor(getObject(index), false, true, true);
     }

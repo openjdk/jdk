@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,9 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+
+#include <jni_util.h>
 
 #import "com_apple_laf_AquaFileView.h"
 
@@ -98,6 +101,7 @@ JNIEXPORT jint JNICALL Java_com_apple_laf_AquaFileView_getNativeLSInfo
 JNF_COCOA_ENTER(env);
 
     jbyte *byteArray = (*env)->GetByteArrayElements(env, absolutePath, NULL);
+    CHECK_NULL_RETURN(byteArray, returnValue);
     jsize length = (*env)->GetArrayLength(env, absolutePath);
 
     // Can't assume that byteArray is NULL terminated and FSPathMakeRef doesn't
@@ -138,6 +142,7 @@ JNIEXPORT jstring JNICALL Java_com_apple_laf_AquaFileView_getNativeDisplayName
 JNF_COCOA_ENTER(env);
 
     jbyte *byteArray = (*env)->GetByteArrayElements(env, absolutePath, NULL);
+    CHECK_NULL_RETURN(byteArray, returnValue);
     jsize length = (*env)->GetArrayLength(env, absolutePath);
 
     // Can't assume that byteArray is NULL terminated and FSPathMakeRef doesn't
@@ -153,7 +158,9 @@ JNF_COCOA_ENTER(env);
     Boolean isDirectory = (isDir == JNI_TRUE ? true : false);
     FSRef ref;
 
-    OSErr theErr = FSPathMakeRefWithOptions((const UInt8 *)&arrayCopy, kFSPathMakeRefDoNotFollowLeafSymlink, &ref, &isDirectory);
+    OSErr theErr = FSPathMakeRefWithOptions((const UInt8 *)&arrayCopy,
+                                            kFSPathMakeRefDoNotFollowLeafSymlink,
+                                            &ref, &isDirectory);
     if (theErr == noErr) {
         CFStringRef displayName = NULL;
 
@@ -190,6 +197,7 @@ JNF_COCOA_ENTER(env);
     size_t maxPathLen = sizeof(pathCString) - 1;
 
     jbyte *byteArray = (*env)->GetByteArrayElements(env, pathToAlias, NULL);
+    CHECK_NULL_RETURN(byteArray, returnValue);
     jsize length = (*env)->GetArrayLength(env, pathToAlias);
 
     if (length > maxPathLen) {
@@ -205,7 +213,8 @@ JNF_COCOA_ENTER(env);
     OSErr theErr = FSPathMakeRef(pathCString, &fileRef, &isDirectory);
 
     Boolean ignored;
-    theErr = FSResolveAliasFileWithMountFlags(&fileRef, false, &ignored, &ignored, kResolveAliasFileNoUI);
+    theErr = FSResolveAliasFileWithMountFlags(&fileRef, false, &ignored,
+                                              &ignored, kResolveAliasFileNoUI);
     if (theErr == noErr) {
         UInt8 resolvedPath[MAXPATHLEN];
         theErr = FSRefMakePath(&fileRef, resolvedPath, MAXPATHLEN);

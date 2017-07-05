@@ -42,11 +42,10 @@ $(eval $(call SetupJavaCompiler,GENERATE_NEWBYTECODE_DEBUG, \
     SERVER_DIR := $(SJAVAC_SERVER_DIR), \
     SERVER_JVM := $(SJAVAC_SERVER_JAVA)))
 
-# Dummy here is needed to trigger copying of META-INF
 $(eval $(call SetupJavaCompilation,BUILD_JAF, \
     SETUP := GENERATE_NEWBYTECODE_DEBUG, \
     SRC := $(JAXWS_TOPDIR)/src/share/jaf_classes, \
-    COPY := "dummy", \
+    CLEAN := .properties, \
     BIN := $(JAXWS_OUTPUTDIR)/jaf_classes))
 
 $(eval $(call SetupJavaCompilation,BUILD_JAXWS, \
@@ -57,6 +56,7 @@ $(eval $(call SetupJavaCompilation,BUILD_JAXWS, \
     COPY_FILES := $(JAXWS_TOPDIR)/src/share/jaxws_classes/com/sun/tools/internal/xjc/runtime/JAXBContextFactory.java \
         $(JAXWS_TOPDIR)/src/share/jaxws_classes/com/sun/tools/internal/xjc/runtime/ZeroOneBooleanAdapter.java \
         $(JAXWS_TOPDIR)/src/share/jaxws_classes/com/sun/xml/internal/ws/assembler/jaxws-tubes-default.xml, \
+    CLEAN := .properties, \
     ADD_JAVAC_FLAGS = -Xbootclasspath/p:$(OUTPUT_ROOT)/jaxp/dist/lib/classes.jar))
 
 $(JAXWS_OUTPUTDIR)/jaxws_classes/META-INF/services/com.sun.tools.internal.ws.wscompile.Plugin: \
@@ -72,30 +72,6 @@ $(JAXWS_OUTPUTDIR)/jaxws_classes/META-INF/services/com.sun.tools.internal.xjc.Pl
 # There are two META-INF services files that are needed, add these to the list of goals
 BUILD_JAXWS += $(JAXWS_OUTPUTDIR)/jaxws_classes/META-INF/services/com.sun.tools.internal.ws.wscompile.Plugin \
                $(JAXWS_OUTPUTDIR)/jaxws_classes/META-INF/services/com.sun.tools.internal.xjc.Plugin
-
-# Imitate the property cleaning mechanism in the old build. This will likely be replaced
-# by the unified functionality in JavaCompilation.gmk, but keep it the same as old build
-# for now, even though it actually breaks properties containing # in the value.
-# Using nawk to avoid solaris sed.
-$(JAXWS_OUTPUTDIR)/jaxws_classes/%.properties: $(JAXWS_TOPDIR)/src/share/jaxws_classes/%.properties
-	$(MKDIR) -p $(@D)
-	$(RM) $@ $@.tmp
-	$(CAT) $< | LANG=C $(NAWK) '{ sub(/#.*$$/,"#"); print }' > $@.tmp
-	$(MV) $@.tmp $@
-
-JAXWS_SRC_PROP_FILES := $(shell $(FIND) $(JAXWS_TOPDIR)/src/share/jaxws_classes -name "*.properties")
-TARGET_PROP_FILES := $(patsubst $(JAXWS_TOPDIR)/src/share/jaxws_classes/%, \
-    $(JAXWS_OUTPUTDIR)/jaxws_classes/%, $(JAXWS_SRC_PROP_FILES))
-
-$(JAXWS_OUTPUTDIR)/jaf_classes/%.properties: $(JAXWS_TOPDIR)/src/share/jaf_classes/%.properties
-	$(MKDIR) -p $(@D)
-	$(RM) $@ $@.tmp
-	$(CAT) $< | LANG=C $(NAWK) '{ sub(/#.*$$/,"#"); print }' > $@.tmp
-	$(MV) $@.tmp $@
-
-JAF_SRC_PROP_FILES := $(shell $(FIND) $(JAXWS_TOPDIR)/src/share/jaf_classes -name "*.properties")
-TARGET_PROP_FILES += $(patsubst $(JAXWS_TOPDIR)/src/share/jaf_classes/%, \
-    $(JAXWS_OUTPUTDIR)/jaf_classes/%, $(JAF_SRC_PROP_FILES))
 
 $(eval $(call SetupArchive,ARCHIVE_JAXWS, $(BUILD_JAXWS) $(BUILD_JAF) $(TARGET_PROP_FILES), \
     SRCS := $(JAXWS_OUTPUTDIR)/jaxws_classes $(JAXWS_OUTPUTDIR)/jaf_classes, \

@@ -78,6 +78,10 @@ void FileMapInfo::fail_continue(const char *msg, ...) {
   va_start(ap, msg);
   if (RequireSharedSpaces) {
     fail(msg, ap);
+  } else {
+    if (PrintSharedSpaces) {
+      tty->print_cr("UseSharedSpaces: %s", msg);
+    }
   }
   va_end(ap);
   UseSharedSpaces = false;

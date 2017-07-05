@@ -47,6 +47,7 @@ import java.util.*;
 import javax.swing.LookAndFeel;
 import javax.swing.UIDefaults;
 import sun.awt.*;
+import sun.awt.datatransfer.DataTransferer;
 import sun.font.FontConfigManager;
 import sun.java2d.SunGraphicsEnvironment;
 import sun.misc.PerformanceLogger;
@@ -299,8 +300,6 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
         return awtAppClassName;
     }
 
-    static final String DATA_TRANSFERER_CLASS_NAME = "sun.awt.X11.XDataTransferer";
-
     public XToolkit() {
         super();
         if (PerformanceLogger.loggingEnabled()) {
@@ -322,7 +321,6 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
 
             init();
             XWM.init();
-            SunToolkit.setDataTransfererClassName(DATA_TRANSFERER_CLASS_NAME);
 
             PrivilegedAction<Thread> action = new PrivilegedAction() {
                 public Thread run() {
@@ -823,10 +821,32 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
                     // managers don't set this hint correctly, so we just get intersection with windowBounds
                     if (windowBounds != null && windowBounds.intersects(screenBounds))
                     {
-                        insets.left = Math.max((int)Native.getLong(native_ptr, 0), insets.left);
-                        insets.right = Math.max((int)Native.getLong(native_ptr, 1), insets.right);
-                        insets.top = Math.max((int)Native.getLong(native_ptr, 2), insets.top);
-                        insets.bottom = Math.max((int)Native.getLong(native_ptr, 3), insets.bottom);
+                        int left = (int)Native.getLong(native_ptr, 0);
+                        int right = (int)Native.getLong(native_ptr, 1);
+                        int top = (int)Native.getLong(native_ptr, 2);
+                        int bottom = (int)Native.getLong(native_ptr, 3);
+
+                        /*
+                         * struts could be relative to root window bounds, so
+                         * make them relative to the screen bounds in this case
+                         */
+                        left = rootBounds.x + left > screenBounds.x ?
+                                rootBounds.x + left - screenBounds.x : 0;
+                        right = rootBounds.x + rootBounds.width - right <
+                                screenBounds.x + screenBounds.width ?
+                                screenBounds.x + screenBounds.width -
+                                (rootBounds.x + rootBounds.width - right) : 0;
+                        top = rootBounds.y + top > screenBounds.y ?
+                                rootBounds.y + top - screenBounds.y : 0;
+                        bottom = rootBounds.y + rootBounds.height - bottom <
+                                screenBounds.y + screenBounds.height ?
+                                screenBounds.y + screenBounds.height -
+                                (rootBounds.y + rootBounds.height - bottom) : 0;
+
+                        insets.left = Math.max(left, insets.left);
+                        insets.right = Math.max(right, insets.right);
+                        insets.top = Math.max(top, insets.top);
+                        insets.bottom = Math.max(bottom, insets.bottom);
                     }
                 }
             }
@@ -1122,6 +1142,11 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
             return peer.isAvailable();
         }
         return false;
+    }
+
+    @Override
+    public DataTransferer getDataTransferer() {
+        return XDataTransferer.getInstanceImpl();
     }
 
     /**
@@ -2357,9 +2382,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
 
     private static XEventDispatcher oops_waiter;
     private static boolean oops_updated;
-    private static boolean oops_failed;
-    private XAtom oops;
-    private static final long WORKAROUND_SLEEP = 100;
+    private static boolean oops_move;
 
     /**
      * @inheritDoc
@@ -2370,28 +2393,13 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
         if (oops_waiter == null) {
             oops_waiter = new XEventDispatcher() {
                     public void dispatchEvent(XEvent e) {
-                        if (e.get_type() == XConstants.SelectionNotify) {
-                            XSelectionEvent pe = e.get_xselection();
-                            if (pe.get_property() == oops.getAtom()) {
-                                oops_updated = true;
-                                awtLockNotifyAll();
-                            } else if (pe.get_selection() == XAtom.get("WM_S0").getAtom() &&
-                                       pe.get_target() == XAtom.get("VERSION").getAtom() &&
-                                       pe.get_property() == 0 &&
-                                       XlibWrapper.XGetSelectionOwner(getDisplay(), XAtom.get("WM_S0").getAtom()) == 0)
-                            {
-                                // WM forgot to acquire selection  or there is no WM
-                                oops_failed = true;
-                                awtLockNotifyAll();
-                            }
-
+                        if (e.get_type() == XConstants.ConfigureNotify) {
+                            // OOPS ConfigureNotify event catched
+                            oops_updated = true;
+                            awtLockNotifyAll();
                         }
                     }
                 };
-        }
-
-        if (oops == null) {
-            oops = XAtom.get("OOPS");
         }
 
         awtLock();
@@ -2399,23 +2407,19 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
             addEventDispatcher(win.getWindow(), oops_waiter);
 
             oops_updated = false;
-            oops_failed = false;
-            // Wait for selection notify for oops on win
             long event_number = getEventNumber();
-            XAtom atom = XAtom.get("WM_S0");
-            if (eventLog.isLoggable(PlatformLogger.Level.FINER)) {
-                eventLog.finer("WM_S0 selection owner {0}", XlibWrapper.XGetSelectionOwner(getDisplay(), atom.getAtom()));
-            }
-            XlibWrapper.XConvertSelection(getDisplay(), atom.getAtom(),
-                                          XAtom.get("VERSION").getAtom(), oops.getAtom(),
-                                          win.getWindow(), XConstants.CurrentTime);
+            // Generate OOPS ConfigureNotify event
+            XlibWrapper.XMoveWindow(getDisplay(), win.getWindow(), oops_move ? 0 : 1, 0);
+            // Change win position each time to avoid system optimization
+            oops_move = !oops_move;
             XSync();
 
-            eventLog.finer("Requested OOPS");
+            eventLog.finer("Generated OOPS ConfigureNotify event");
 
             long start = System.currentTimeMillis();
-            while (!oops_updated && !oops_failed) {
+            while (!oops_updated) {
                 try {
+                    // Wait for OOPS ConfigureNotify event
                     awtLockWait(timeout);
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
@@ -2426,20 +2430,8 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
                     throw new OperationTimedOut(Long.toString(System.currentTimeMillis() - start));
                 }
             }
-            if (oops_failed && getEventNumber() - event_number == 1) {
-                // If selection update failed we can simply wait some time
-                // hoping some events will arrive
-                awtUnlock();
-                eventLog.finest("Emergency sleep");
-                try {
-                    Thread.sleep(WORKAROUND_SLEEP);
-                } catch (InterruptedException ie) {
-                    throw new RuntimeException(ie);
-                } finally {
-                    awtLock();
-                }
-            }
-            return getEventNumber() - event_number > 2;
+            // Don't take into account OOPS ConfigureNotify event
+            return getEventNumber() - event_number > 1;
         } finally {
             removeEventDispatcher(win.getWindow(), oops_waiter);
             eventLog.finer("Exiting syncNativeQueue");

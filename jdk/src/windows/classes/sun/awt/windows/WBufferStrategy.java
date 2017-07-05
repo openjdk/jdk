@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,8 +34,9 @@ import java.awt.Component;
  * the back buffer associated with a Component.  If that
  * Component has a BufferStrategy with >1 buffer, then the
  * Image subclass associated with that buffer will be returned.
+ * Note: the class is used by the JAWT3d.
  */
-public class WBufferStrategy {
+public final class WBufferStrategy {
 
     private static native void initIDs(Class <?> componentClass);
 

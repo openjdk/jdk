@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,26 +57,19 @@ import java.awt.print.PrinterJob;
 import java.awt.print.PrinterException;
 import javax.print.PrintService;
 
-import java.io.IOException;
 import java.io.File;
 
-import java.util.Hashtable;
-import java.util.Properties;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
-
-import sun.awt.Win32GraphicsEnvironment;
 
 import sun.print.PeekGraphics;
 import sun.print.PeekMetrics;
 
-import java.net.URL;
 import java.net.URI;
 import java.net.URISyntaxException;
 
 import javax.print.PrintServiceLookup;
 import javax.print.attribute.PrintRequestAttributeSet;
-import javax.print.attribute.HashPrintServiceAttributeSet;
 import javax.print.attribute.HashPrintRequestAttributeSet;
 import javax.print.attribute.Attribute;
 import javax.print.attribute.standard.Sides;
@@ -84,7 +77,6 @@ import javax.print.attribute.standard.Chromaticity;
 import javax.print.attribute.standard.PrintQuality;
 import javax.print.attribute.standard.PrinterResolution;
 import javax.print.attribute.standard.SheetCollate;
-import javax.print.attribute.IntegerSyntax;
 import javax.print.attribute.standard.Copies;
 import javax.print.attribute.standard.Destination;
 import javax.print.attribute.standard.OrientationRequested;
@@ -92,17 +84,13 @@ import javax.print.attribute.standard.Media;
 import javax.print.attribute.standard.MediaSizeName;
 import javax.print.attribute.standard.MediaSize;
 import javax.print.attribute.standard.MediaTray;
-import javax.print.attribute.standard.PrinterName;
-import javax.print.attribute.standard.JobMediaSheetsSupported;
 import javax.print.attribute.standard.PageRanges;
-import javax.print.attribute.Size2DSyntax;
 
 import sun.awt.Win32FontManager;
 
 import sun.print.RasterPrinterJob;
 import sun.print.SunAlternateMedia;
 import sun.print.SunPageSelection;
-import sun.print.SunMinMaxPage;
 import sun.print.Win32MediaTray;
 import sun.print.Win32PrintService;
 import sun.print.Win32PrintServiceLookup;
@@ -121,7 +109,8 @@ import sun.java2d.DisposerTarget;
  *
  * @author Richard Blanchard
  */
-public class WPrinterJob extends RasterPrinterJob implements DisposerTarget {
+public final class WPrinterJob extends RasterPrinterJob
+        implements DisposerTarget {
 
  /* Class Constants */
 
@@ -290,6 +279,7 @@ public class WPrinterJob extends RasterPrinterJob implements DisposerTarget {
         private long mPrintHDevMode;
         private long mPrintHDevNames;
 
+        @Override
         public void dispose() {
             WPrinterJob.deleteDC(mPrintDC, mPrintHDevMode, mPrintHDevNames);
         }
@@ -402,6 +392,7 @@ public class WPrinterJob extends RasterPrinterJob implements DisposerTarget {
      */
     private Object disposerReferent = new Object();
 
+    @Override
     public Object getDisposerReferent() {
         return disposerReferent;
     }
@@ -430,6 +421,7 @@ public class WPrinterJob extends RasterPrinterJob implements DisposerTarget {
      * @see java.awt.GraphicsEnvironment#isHeadless
      * @since     JDK1.2
      */
+    @Override
     public PageFormat pageDialog(PageFormat page) throws HeadlessException {
         if (GraphicsEnvironment.isHeadless()) {
             throw new HeadlessException();
@@ -570,6 +562,7 @@ public class WPrinterJob extends RasterPrinterJob implements DisposerTarget {
      * returns true.
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
+    @Override
     public boolean printDialog() throws HeadlessException {
 
         if (GraphicsEnvironment.isHeadless()) {
@@ -603,6 +596,7 @@ public class WPrinterJob extends RasterPrinterJob implements DisposerTarget {
      * @throws PrinterException if the specified service does not support
      * 2D printing.
      */
+    @Override
     public void setPrintService(PrintService service)
         throws PrinterException {
         super.setPrintService(service);
@@ -628,6 +622,7 @@ public class WPrinterJob extends RasterPrinterJob implements DisposerTarget {
         }
     }
 
+    @Override
     public PrintService getPrintService() {
         if (myService == null) {
             String printerName = getNativePrintService();
@@ -681,6 +676,7 @@ public class WPrinterJob extends RasterPrinterJob implements DisposerTarget {
      * In the event that the user changes the printer using the
       dialog, then it is up to GDI to report back all changed values.
      */
+    @Override
     protected void setAttributes(PrintRequestAttributeSet attributes)
         throws PrinterException {
 
@@ -705,7 +701,9 @@ public class WPrinterJob extends RasterPrinterJob implements DisposerTarget {
                     setColorAttrib(attr);
                 }
                 else if (attr.getCategory() == PrinterResolution.class) {
-                    setResolutionAttrib(attr);
+                    if (myService.isAttributeValueSupported(attr, null, null)) {
+                        setResolutionAttrib(attr);
+                    }
                 }
                 else if (attr.getCategory() == PrintQuality.class) {
                     setQualityAttrib(attr);
@@ -750,6 +748,7 @@ public class WPrinterJob extends RasterPrinterJob implements DisposerTarget {
      * Note: PageFormat.getPaper() returns a clone and getDefaultPage()
      * gets that clone so it won't overwrite the original paper.
      */
+    @Override
     public PageFormat defaultPage(PageFormat page) {
         PageFormat newPage = (PageFormat)page.clone();
         getDefaultPage(newPage);
@@ -759,6 +758,7 @@ public class WPrinterJob extends RasterPrinterJob implements DisposerTarget {
     /**
      * validate the paper size against the current printer.
      */
+    @Override
     protected native void validatePaper(Paper origPaper, Paper newPaper );
 
     /**
@@ -774,6 +774,7 @@ public class WPrinterJob extends RasterPrinterJob implements DisposerTarget {
      * causes the print job to be rasterized.
      */
 
+    @Override
     protected Graphics2D createPathGraphics(PeekGraphics peekGraphics,
                                             PrinterJob printerJob,
                                             Printable painter,
@@ -810,6 +811,7 @@ public class WPrinterJob extends RasterPrinterJob implements DisposerTarget {
     }
 
 
+    @Override
     protected double getXRes() {
         if (mAttXRes != 0) {
             return mAttXRes;
@@ -818,6 +820,7 @@ public class WPrinterJob extends RasterPrinterJob implements DisposerTarget {
         }
     }
 
+    @Override
     protected double getYRes() {
         if (mAttYRes != 0) {
             return mAttYRes;
@@ -826,26 +829,32 @@ public class WPrinterJob extends RasterPrinterJob implements DisposerTarget {
         }
     }
 
+    @Override
     protected double getPhysicalPrintableX(Paper p) {
         return mPrintPhysX;
     }
 
+    @Override
     protected double getPhysicalPrintableY(Paper p) {
         return mPrintPhysY;
     }
 
+    @Override
     protected double getPhysicalPrintableWidth(Paper p) {
         return mPrintWidth;
     }
 
+    @Override
     protected double getPhysicalPrintableHeight(Paper p) {
         return mPrintHeight;
     }
 
+    @Override
     protected double getPhysicalPageWidth(Paper p) {
         return mPageWidth;
     }
 
+    @Override
     protected double getPhysicalPageHeight(Paper p) {
         return mPageHeight;
     }
@@ -857,6 +866,7 @@ public class WPrinterJob extends RasterPrinterJob implements DisposerTarget {
      * collation requests - which can only originate from the print dialog.
      * REMIND: check if this can be deleted already.
      */
+    @Override
     protected boolean isCollated() {
         return userRequestedCollation;
     }
@@ -869,6 +879,7 @@ public class WPrinterJob extends RasterPrinterJob implements DisposerTarget {
      * book need only be printed once and the copies
      * will be collated and made in the printer.
      */
+    @Override
     protected int getCollatedCopies() {
         debug_println("driverDoesMultipleCopies="+driverDoesMultipleCopies
                       +" driverDoesCollation="+driverDoesCollation);
@@ -891,6 +902,7 @@ public class WPrinterJob extends RasterPrinterJob implements DisposerTarget {
      * iterate over the number of copies, this method always returns
      * 1.
      */
+    @Override
     protected int getNoncollatedCopies() {
         if (driverDoesMultipleCopies || super.isCollated()) {
             return 1;
@@ -1128,6 +1140,7 @@ public class WPrinterJob extends RasterPrinterJob implements DisposerTarget {
     /**
      * Remove control characters.
      */
+    @Override
     protected String removeControlChars(String str) {
         return super.removeControlChars(str);
     }
@@ -1267,6 +1280,7 @@ public class WPrinterJob extends RasterPrinterJob implements DisposerTarget {
     /**
      * Begin a new page.
      */
+    @Override
     protected void startPage(PageFormat format, Printable painter,
                              int index, boolean paperChanged) {
 
@@ -1283,6 +1297,7 @@ public class WPrinterJob extends RasterPrinterJob implements DisposerTarget {
     /**
      * End a page.
      */
+    @Override
     protected void endPage(PageFormat format, Printable painter,
                            int index) {
 
@@ -1302,6 +1317,7 @@ public class WPrinterJob extends RasterPrinterJob implements DisposerTarget {
     /**
      * Set the number of copies to be printed.
      */
+    @Override
     public void setCopies(int copies) {
         super.setCopies(copies);
         defaultCopies = false;
@@ -1315,7 +1331,7 @@ public class WPrinterJob extends RasterPrinterJob implements DisposerTarget {
     /**
      * Set copies in device.
      */
-    public native void setNativeCopies(int copies);
+    private native void setNativeCopies(int copies);
 
     /**
      * Displays the print dialog and records the user's settings
@@ -1328,6 +1344,7 @@ public class WPrinterJob extends RasterPrinterJob implements DisposerTarget {
     /* Make sure printer DC is intialised and that info about the printer
      * is reflected back up to Java code
      */
+    @Override
     protected native void initPrinter();
 
     /**
@@ -1343,6 +1360,7 @@ public class WPrinterJob extends RasterPrinterJob implements DisposerTarget {
      */
     private native boolean _startDoc(String dest, String jobName)
                                      throws PrinterException;
+    @Override
     protected void startDoc() throws PrinterException {
         if (!_startDoc(mDestination, getJobName())) {
             cancel();
@@ -1353,12 +1371,14 @@ public class WPrinterJob extends RasterPrinterJob implements DisposerTarget {
      * Call Window's EndDoc routine to end a
      * print job.
      */
+    @Override
     protected native void endDoc();
 
     /**
      * Call Window's AbortDoc routine to abort a
      * print job.
      */
+    @Override
     protected native void abortDoc();
 
     /**
@@ -1386,6 +1406,7 @@ public class WPrinterJob extends RasterPrinterJob implements DisposerTarget {
      * page. The width and height of the band is
      * specified by the caller.
      */
+    @Override
     protected native void printBand(byte[] data, int x, int y,
                                     int width, int height);
 
@@ -2204,6 +2225,7 @@ class PrintToFileErrorDialog extends Dialog implements ActionListener{
         }
     }
 
+    @Override
     public void actionPerformed(ActionEvent event) {
         setVisible(false);
         dispose();

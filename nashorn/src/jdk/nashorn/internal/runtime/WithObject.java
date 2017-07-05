@@ -88,6 +88,11 @@ public final class WithObject extends ScriptObject implements Scope {
 
     @Override
     public GuardedInvocation lookup(final CallSiteDescriptor desc, final LinkRequest request) {
+        if (request.isCallSiteUnstable()) {
+            // Fall back to megamorphic invocation which performs a complete lookup each time without further relinking.
+            return super.lookup(desc, request);
+        }
+
         // With scopes can never be observed outside of Nashorn code, so all call sites that can address it will of
         // necessity have a Nashorn descriptor - it is safe to cast.
         final NashornCallSiteDescriptor ndesc = (NashornCallSiteDescriptor)desc;
@@ -265,7 +270,7 @@ public final class WithObject extends ScriptObject implements Scope {
     }
 
     private static MethodHandle filter(final MethodHandle mh, final MethodHandle filter) {
-        return MH.filterArguments(mh, 0, filter);
+        return MH.filterArguments(mh, 0, filter.asType(filter.type().changeReturnType(mh.type().parameterType(0))));
     }
 
     /**

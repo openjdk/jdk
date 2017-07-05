@@ -247,10 +247,7 @@ public final class CWarningWindow extends CPlatformWindow
                             nsWindowPtr, CWrapper.NSWindow.NSWindowAbove);
 
                     // do not allow security warning to be obscured by other windows
-                    if (ownerWindow.isAlwaysOnTop()) {
-                        CWrapper.NSWindow.setLevel(nsWindowPtr,
-                                CWrapper.NSWindow.NSFloatingWindowLevel);
-                    }
+                    applyWindowLevel(ownerWindow);
                 }
             }
         }
