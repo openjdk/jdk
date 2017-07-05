@@ -194,6 +194,13 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(methodHandle m)
                                 return java_lang_ref_reference_get;
   }
 
+  if (UseFMA) {
+    switch (m->intrinsic_id()) {
+      case vmIntrinsics::_fmaD: return java_lang_math_fmaD;
+      case vmIntrinsics::_fmaF: return java_lang_math_fmaF;
+    }
+  }
+
   // Accessor method?
   if (m->is_getter()) {
     // TODO: We should have used ::is_accessor above, but fast accessors in Zero expect only getters.
@@ -281,6 +288,8 @@ void AbstractInterpreter::print_method_kind(MethodKind kind) {
     case java_lang_math_sqrt    : tty->print("java_lang_math_sqrt"    ); break;
     case java_lang_math_log     : tty->print("java_lang_math_log"     ); break;
     case java_lang_math_log10   : tty->print("java_lang_math_log10"   ); break;
+    case java_lang_math_fmaD    : tty->print("java_lang_math_fmaD"    ); break;
+    case java_lang_math_fmaF    : tty->print("java_lang_math_fmaF"    ); break;
     case java_util_zip_CRC32_update           : tty->print("java_util_zip_CRC32_update"); break;
     case java_util_zip_CRC32_updateBytes      : tty->print("java_util_zip_CRC32_updateBytes"); break;
     case java_util_zip_CRC32_updateByteBuffer : tty->print("java_util_zip_CRC32_updateByteBuffer"); break;

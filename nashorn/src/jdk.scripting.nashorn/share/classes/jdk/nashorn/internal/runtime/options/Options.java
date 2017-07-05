@@ -500,7 +500,16 @@ public final class Options {
                 throw new IllegalOptionException(parg.template);
             }
 
-            set(parg.template.getKey(), createOption(parg.template, parg.value));
+            if (parg.template.isRepeated()) {
+                assert parg.template.getType().equals("string");
+
+                final String key = key(parg.template.getKey());
+                final String value = options.containsKey(key)?
+                    (options.get(key).getValue() + "," + parg.value) : Objects.toString(parg.value);
+                options.put(key, new Option<>(value));
+            } else {
+                set(parg.template.getKey(), createOption(parg.template, parg.value));
+            }
 
             // Arg may have a dependency to set other args, e.g.
             // scripting->anon.functions

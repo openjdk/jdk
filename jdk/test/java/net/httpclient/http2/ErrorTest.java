@@ -28,6 +28,7 @@
  * @library /lib/testlibrary
  * @build jdk.testlibrary.SimpleSSLContext
  * @modules java.httpclient
+ *          java.security.jgss
  * @compile/module=java.httpclient java/net/http/BodyOutputStream.java
  * @compile/module=java.httpclient java/net/http/BodyInputStream.java
  * @compile/module=java.httpclient java/net/http/EchoHandler.java
@@ -41,18 +42,21 @@
  * @summary check exception thrown when bad TLS parameters selected
  */
 
-import java.io.*;
-import java.net.*;
-import java.net.http.*;
-import static java.net.http.HttpClient.Version.HTTP_2;
-import javax.net.ssl.*;
-import java.nio.file.*;
-import java.util.concurrent.*;
+import java.io.IOException;
+import java.net.URI;
+import java.net.http.EchoHandler;
+import java.net.http.HttpClient;
+import java.net.http.Http2TestServer;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.util.concurrent.ExecutorService;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLParameters;
 import jdk.testlibrary.SimpleSSLContext;
 
-
 import org.testng.annotations.Test;
-import org.testng.annotations.Parameters;
+
+import static java.net.http.HttpClient.Version.HTTP_2;
 
 /**
  * When selecting an unacceptable cipher suite the TLS handshake will fail.

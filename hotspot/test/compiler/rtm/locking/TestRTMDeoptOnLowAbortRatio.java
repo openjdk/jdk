@@ -44,6 +44,7 @@ import compiler.testlibrary.rtm.CompilableTest;
 import compiler.testlibrary.rtm.RTMLockingStatistics;
 import compiler.testlibrary.rtm.RTMTestBase;
 import compiler.testlibrary.rtm.predicate.SupportedCPU;
+import compiler.testlibrary.rtm.predicate.SupportedOS;
 import compiler.testlibrary.rtm.predicate.SupportedVM;
 import jdk.internal.misc.Unsafe;
 import jdk.test.lib.Asserts;
@@ -66,7 +67,7 @@ public class TestRTMDeoptOnLowAbortRatio extends CommandLineOptionTest {
     private static final long ABORT_THRESHOLD = LOCKING_THRESHOLD / 2L;
 
     private TestRTMDeoptOnLowAbortRatio() {
-        super(new AndPredicate(new SupportedCPU(), new SupportedVM()));
+        super(new AndPredicate(new SupportedCPU(), new SupportedOS(), new SupportedVM()));
     }
 
     @Override

@@ -60,11 +60,11 @@ public class NameCodecTest {
     static final String REPLACEMENT_CHARS = "-|,?!%{}^_";
 
     static String[][] canonicalSamples() {
-        int ndc = DANGEROUS_CHARS.length();
-        String[][] res = new String[2 * ndc][];
+        final int ndc = DANGEROUS_CHARS.length();
+        final String[][] res = new String[2 * ndc][];
         for (int i = 0; i < ndc; i++) {
-            char dc = DANGEROUS_CHARS.charAt(i);
-            char rc = REPLACEMENT_CHARS.charAt(i);
+            final char dc = DANGEROUS_CHARS.charAt(i);
+            final char rc = REPLACEMENT_CHARS.charAt(i);
             if (dc == '\\') {
                 res[2 * i + 0] = new String[]{"\\-%", "\\%"};
             } else {
@@ -82,11 +82,11 @@ public class NameCodecTest {
         testEncode(canonicalSamples());
     }
 
-    private void testEncode(String[][] samples) {
-        for (String[] sample : samples) {
-            String s = sample[1];
-            String expResult = sample[0];
-            String result = NameCodec.encode(s);
+    private void testEncode(final String[][] samples) {
+        for (final String[] sample : samples) {
+            final String s = sample[1];
+            final String expResult = sample[0];
+            final String result = NameCodec.encode(s);
             if (!result.equals(expResult)) {
                 System.out.println(s + " => " + result + " != " + expResult);
             }
@@ -101,11 +101,11 @@ public class NameCodecTest {
         testDecode(canonicalSamples());
     }
 
-    private void testDecode(String[][] samples) {
-        for (String[] sample : samples) {
-            String s = sample[0];
-            String expResult = sample[1];
-            String result = NameCodec.decode(s);
+    private void testDecode(final String[][] samples) {
+        for (final String[] sample : samples) {
+            final String s = sample[0];
+            final String expResult = sample[1];
+            final String result = NameCodec.decode(s);
             assertEquals(expResult, result);
         }
     }

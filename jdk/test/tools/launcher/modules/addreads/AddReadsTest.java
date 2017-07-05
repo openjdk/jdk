@@ -182,28 +182,43 @@ public class AddReadsTest {
                   "--add-reads", "m1=java.xml",
                   "--add-reads", "m1=junit",
                   "-m", MAIN)
-                  .shouldContain("specified more than once")
                  .getExitValue();
 
-        assertTrue(exitValue != 0);
+        assertTrue(exitValue == 0);
     }
 
 
     /**
-     * Exercise --add-reads with bad values
+     * Exercise --add-reads with missing source
+     */
+    public void testWithMissingSource() throws Exception {
+
+        //  --add-exports $VALUE -version
+        assertTrue(run("--add-reads", "java.base", "-version").getExitValue() != 0);
+    }
+
+
+    /**
+     * Exercise --add-reads with unknown source/target module.
+     * Warning is emitted.
      */
     @Test(dataProvider = "badvalues")
     public void testWithBadValue(String value, String ignore) throws Exception {
 
         //  --add-exports $VALUE -version
-        assertTrue(run("--add-reads", value, "-version").getExitValue() != 0);
+        int exitValue = run("--add-reads", value, "-version")
+                            .stderrShouldMatch("WARNING: Unknown module: .*.monkey")
+                            .outputTo(System.out)
+                            .errorTo(System.out)
+                            .getExitValue();
+
+        assertTrue(exitValue == 0);
     }
 
     @DataProvider(name = "badvalues")
     public Object[][] badValues() {
         return new Object[][]{
 
-            { "java.base",                  null }, // missing source
             { "java.monkey=java.base",      null }, // unknown module
             { "java.base=sun.monkey",       null }, // unknown source
 

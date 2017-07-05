@@ -30,10 +30,7 @@
  */
 
 import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-import java.util.ArrayList;
-import java.util.List;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
@@ -42,17 +39,19 @@ import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.nio.LongBuffer;
 import java.nio.ShortBuffer;
+import java.util.ArrayList;
+import java.util.List;
 import jdk.dynalink.CallSiteDescriptor;
 import jdk.dynalink.CompositeOperation;
 import jdk.dynalink.NamedOperation;
 import jdk.dynalink.Operation;
 import jdk.dynalink.StandardOperation;
+import jdk.dynalink.linker.GuardedInvocation;
 import jdk.dynalink.linker.GuardingDynamicLinker;
 import jdk.dynalink.linker.GuardingDynamicLinkerExporter;
-import jdk.dynalink.linker.GuardedInvocation;
-import jdk.dynalink.linker.TypeBasedGuardingDynamicLinker;
 import jdk.dynalink.linker.LinkRequest;
 import jdk.dynalink.linker.LinkerServices;
+import jdk.dynalink.linker.TypeBasedGuardingDynamicLinker;
 import jdk.dynalink.linker.support.Guards;
 import jdk.dynalink.linker.support.Lookup;
 
@@ -94,7 +93,7 @@ public final class BufferIndexingLinkerExporter extends GuardingDynamicLinkerExp
     private static final MethodType GUARD_TYPE;
 
     static {
-        Lookup look = Lookup.PUBLIC;
+        final Lookup look = Lookup.PUBLIC;
         BUFFER_LIMIT = look.findVirtual(Buffer.class, "limit", MethodType.methodType(int.class));
         BYTEBUFFER_GET = look.findVirtual(ByteBuffer.class, "get",
                 MethodType.methodType(byte.class, int.class));
@@ -163,15 +162,15 @@ public final class BufferIndexingLinkerExporter extends GuardingDynamicLinkerExp
             }
 
             @Override
-            public GuardedInvocation getGuardedInvocation(LinkRequest request,
-                LinkerServices linkerServices) throws Exception {
+            public GuardedInvocation getGuardedInvocation(final LinkRequest request,
+                final LinkerServices linkerServices) throws Exception {
                 final Object self = request.getReceiver();
                 if (self == null || !canLinkType(self.getClass())) {
                     return null;
                 }
 
-                CallSiteDescriptor desc = request.getCallSiteDescriptor();
-                StandardOperation op = getFirstStandardOperation(desc);
+                final CallSiteDescriptor desc = request.getCallSiteDescriptor();
+                final StandardOperation op = getFirstStandardOperation(desc);
                 if (op == null) {
                     return null;
                 }
@@ -182,7 +181,7 @@ public final class BufferIndexingLinkerExporter extends GuardingDynamicLinkerExp
                     case SET_ELEMENT:
                         return linkSetElement(self);
                     case GET_PROPERTY: {
-                        Object name = NamedOperation.getName(desc.getOperation());
+                        final Object name = NamedOperation.getName(desc.getOperation());
                         if ("length".equals(name)) {
                             return linkLength();
                         }
@@ -195,7 +194,7 @@ public final class BufferIndexingLinkerExporter extends GuardingDynamicLinkerExp
         return linkers;
     }
 
-    private static GuardedInvocation linkGetElement(Object self) {
+    private static GuardedInvocation linkGetElement(final Object self) {
         MethodHandle method = null;
         MethodHandle guard = null;
         if (self instanceof ByteBuffer) {
@@ -224,7 +223,7 @@ public final class BufferIndexingLinkerExporter extends GuardingDynamicLinkerExp
         return method != null? new GuardedInvocation(method, guard) : null;
     }
 
-    private static GuardedInvocation linkSetElement(Object self) {
+    private static GuardedInvocation linkSetElement(final Object self) {
         MethodHandle method = null;
         MethodHandle guard = null;
         if (self instanceof ByteBuffer) {

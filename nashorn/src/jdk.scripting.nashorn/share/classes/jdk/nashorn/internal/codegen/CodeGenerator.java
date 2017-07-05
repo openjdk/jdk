@@ -258,7 +258,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
     private final int[] continuationEntryPoints;
 
     // Scope object creators needed for for-of and for-in loops
-    private Deque<FieldObjectCreator<?>> scopeObjectCreators = new ArrayDeque<>();
+    private final Deque<FieldObjectCreator<?>> scopeObjectCreators = new ArrayDeque<>();
 
     /**
      * Constructor.

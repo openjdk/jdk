@@ -45,6 +45,7 @@ import compiler.testlibrary.rtm.AbortType;
 import compiler.testlibrary.rtm.RTMLockingStatistics;
 import compiler.testlibrary.rtm.RTMTestBase;
 import compiler.testlibrary.rtm.predicate.SupportedCPU;
+import compiler.testlibrary.rtm.predicate.SupportedOS;
 import compiler.testlibrary.rtm.predicate.SupportedVM;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.process.OutputAnalyzer;
@@ -59,7 +60,7 @@ import java.util.List;
  */
 public class TestRTMAbortThreshold extends CommandLineOptionTest {
     private TestRTMAbortThreshold() {
-        super(new AndPredicate(new SupportedCPU(), new SupportedVM()));
+        super(new AndPredicate(new SupportedCPU(), new SupportedOS(), new SupportedVM()));
     }
 
     @Override

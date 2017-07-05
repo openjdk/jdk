@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ class MutableSpace: public ImmutableSpace {
   MemRegion _last_setup_region;
   size_t _alignment;
  protected:
-  HeapWord* _top;
+  HeapWord* volatile _top;
 
   MutableSpaceMangler* mangler() { return _mangler; }
 
@@ -69,7 +69,7 @@ class MutableSpace: public ImmutableSpace {
   HeapWord* top() const                    { return _top;    }
   virtual void set_top(HeapWord* value)    { _top = value;   }
 
-  HeapWord** top_addr()                    { return &_top; }
+  HeapWord* volatile* top_addr()           { return &_top; }
   HeapWord** end_addr()                    { return &_end; }
 
   virtual void set_bottom(HeapWord* value) { _bottom = value; }

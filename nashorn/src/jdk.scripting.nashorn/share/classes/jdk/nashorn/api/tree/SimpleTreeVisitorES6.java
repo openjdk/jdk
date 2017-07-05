@@ -66,7 +66,7 @@ public class SimpleTreeVisitorES6<R, P> extends SimpleTreeVisitorES5_1<R, P> {
      * @return value from the visitor
      */
     @Override
-    public R visitModule(ModuleTree node, P p) {
+    public R visitModule(final ModuleTree node, final P p) {
         node.getImportEntries().forEach(e -> visitImportEntry(e, p));
         node.getLocalExportEntries().forEach(e -> visitExportEntry(e, p));
         node.getIndirectExportEntries().forEach(e -> visitExportEntry(e, p));
@@ -82,7 +82,7 @@ public class SimpleTreeVisitorES6<R, P> extends SimpleTreeVisitorES5_1<R, P> {
      * @return value from the visitor
      */
     @Override
-    public R visitExportEntry(ExportEntryTree node, P p) {
+    public R visitExportEntry(final ExportEntryTree node, final P p) {
         return null;
     }
 
@@ -94,7 +94,7 @@ public class SimpleTreeVisitorES6<R, P> extends SimpleTreeVisitorES5_1<R, P> {
      * @return value from the visitor
      */
     @Override
-    public R visitImportEntry(ImportEntryTree node, P p) {
+    public R visitImportEntry(final ImportEntryTree node, final P p) {
         return null;
     }
 
@@ -106,7 +106,7 @@ public class SimpleTreeVisitorES6<R, P> extends SimpleTreeVisitorES5_1<R, P> {
     * @return value from the visitor
     */
     @Override
-    public R visitClassDeclaration(ClassDeclarationTree node, P p) {
+    public R visitClassDeclaration(final ClassDeclarationTree node, final P p) {
         node.getName().accept(this, p);
         final ExpressionTree heritage = node.getClassHeritage();
         if (heritage != null) {
@@ -118,7 +118,7 @@ public class SimpleTreeVisitorES6<R, P> extends SimpleTreeVisitorES5_1<R, P> {
         }
         final List<? extends PropertyTree> elements = node.getClassElements();
         if (elements != null) {
-            for (PropertyTree prop : elements) {
+            for (final PropertyTree prop : elements) {
                 prop.accept(this, p);
             }
         }
@@ -134,7 +134,7 @@ public class SimpleTreeVisitorES6<R, P> extends SimpleTreeVisitorES5_1<R, P> {
      * @return value from the visitor
      */
     @Override
-    public R visitClassExpression(ClassExpressionTree node, P p) {
+    public R visitClassExpression(final ClassExpressionTree node, final P p) {
         node.getName().accept(this, p);
         final ExpressionTree heritage = node.getClassHeritage();
         if (heritage != null) {
@@ -146,7 +146,7 @@ public class SimpleTreeVisitorES6<R, P> extends SimpleTreeVisitorES5_1<R, P> {
         }
         final List<? extends PropertyTree> elements = node.getClassElements();
         if (elements != null) {
-            for (PropertyTree prop : elements) {
+            for (final PropertyTree prop : elements) {
                 prop.accept(this, p);
             }
         }
@@ -180,7 +180,7 @@ public class SimpleTreeVisitorES6<R, P> extends SimpleTreeVisitorES5_1<R, P> {
      * @return value from the visitor
      */
     @Override
-    public R visitYield(YieldTree node, P p) {
+    public R visitYield(final YieldTree node, final P p) {
         node.getExpression().accept(this, p);
         return null;
     }
@@ -193,7 +193,7 @@ public class SimpleTreeVisitorES6<R, P> extends SimpleTreeVisitorES5_1<R, P> {
      * @return value from the visitor
      */
     @Override
-    public R visitSpread(SpreadTree node, P p) {
+    public R visitSpread(final SpreadTree node, final P p) {
         node.getExpression().accept(this, p);
         return null;
     }
@@ -206,9 +206,9 @@ public class SimpleTreeVisitorES6<R, P> extends SimpleTreeVisitorES5_1<R, P> {
     * @return value from the visitor
     */
     @Override
-    public R visitTemplateLiteral(TemplateLiteralTree node, P p) {
+    public R visitTemplateLiteral(final TemplateLiteralTree node, final P p) {
         final List<? extends ExpressionTree> expressions = node.getExpressions();
-        for (ExpressionTree expr : expressions) {
+        for (final ExpressionTree expr : expressions) {
             expr.accept(this, p);
         }
         return null;

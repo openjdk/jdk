@@ -3236,11 +3236,6 @@ class StubGenerator: public StubCodeGenerator {
 #ifdef _WIN64
     // on win64, fill len_reg from stack position
     __ movl(len_reg, len_mem);
-    // save the xmm registers which must be preserved 6-15
-    __ subptr(rsp, -rsp_after_call_off * wordSize);
-    for (int i = 6; i <= XMM_REG_NUM_KEY_LAST; i++) {
-      __ movdqu(xmm_save(i), as_XMMRegister(i));
-    }
 #else
     __ push(len_reg); // Save
 #endif
@@ -3281,10 +3276,6 @@ class StubGenerator: public StubCodeGenerator {
     __ movdqu(Address(rvec, 0), xmm_result);     // final value of r stored in rvec of CipherBlockChaining object
 
 #ifdef _WIN64
-    // restore xmm regs belonging to calling function
-    for (int i = 6; i <= XMM_REG_NUM_KEY_LAST; i++) {
-      __ movdqu(as_XMMRegister(i), xmm_save(i));
-    }
     __ movl(rax, len_mem);
 #else
     __ pop(rax); // return length
@@ -3446,11 +3437,6 @@ class StubGenerator: public StubCodeGenerator {
 #ifdef _WIN64
     // on win64, fill len_reg from stack position
     __ movl(len_reg, len_mem);
-    // save the xmm registers which must be preserved 6-15
-    __ subptr(rsp, -rsp_after_call_off * wordSize);
-    for (int i = 6; i <= XMM_REG_NUM_KEY_LAST; i++) {
-      __ movdqu(xmm_save(i), as_XMMRegister(i));
-    }
 #else
     __ push(len_reg); // Save
 #endif
@@ -3644,10 +3630,6 @@ class StubGenerator: public StubCodeGenerator {
     __ movdqu(Address(rvec, 0), xmm_prev_block_cipher);     // final value of r stored in rvec of CipherBlockChaining object
     __ pop(rbx);
 #ifdef _WIN64
-    // restore regs belonging to calling function
-    for (int i = 6; i <= XMM_REG_NUM_KEY_LAST; i++) {
-      __ movdqu(as_XMMRegister(i), xmm_save(i));
-    }
     __ movl(rax, len_mem);
 #else
     __ pop(rax); // return length
@@ -3699,25 +3681,12 @@ class StubGenerator: public StubCodeGenerator {
 
     __ enter();
 
-#ifdef _WIN64
-    // save the xmm registers which must be preserved 6-7
-    __ subptr(rsp, 4 * wordSize);
-    __ movdqu(Address(rsp, 0), xmm6);
-    __ movdqu(Address(rsp, 2 * wordSize), xmm7);
-#endif
-
     __ subptr(rsp, 4 * wordSize);
 
     __ fast_sha1(abcd, e0, e1, msg0, msg1, msg2, msg3, shuf_mask,
       buf, state, ofs, limit, rsp, multi_block);
 
     __ addptr(rsp, 4 * wordSize);
-#ifdef _WIN64
-    // restore xmm regs belonging to calling function
-    __ movdqu(xmm6, Address(rsp, 0));
-    __ movdqu(xmm7, Address(rsp, 2 * wordSize));
-    __ addptr(rsp, 4 * wordSize);
-#endif
 
     __ leave();
     __ ret(0);
@@ -3775,22 +3744,6 @@ class StubGenerator: public StubCodeGenerator {
     const XMMRegister shuf_mask = xmm8;
 
     __ enter();
-#ifdef _WIN64
-    // save the xmm registers which must be preserved 6-7
-    __ subptr(rsp, 6 * wordSize);
-    __ movdqu(Address(rsp, 0), xmm6);
-    __ movdqu(Address(rsp, 2 * wordSize), xmm7);
-    __ movdqu(Address(rsp, 4 * wordSize), xmm8);
-
-    if (!VM_Version::supports_sha() && VM_Version::supports_avx2()) {
-      __ subptr(rsp, 10 * wordSize);
-      __ movdqu(Address(rsp, 0), xmm9);
-      __ movdqu(Address(rsp, 2 * wordSize), xmm10);
-      __ movdqu(Address(rsp, 4 * wordSize), xmm11);
-      __ movdqu(Address(rsp, 6 * wordSize), xmm12);
-      __ movdqu(Address(rsp, 8 * wordSize), xmm13);
-    }
-#endif
 
     __ subptr(rsp, 4 * wordSize);
 
@@ -3802,21 +3755,7 @@ class StubGenerator: public StubCodeGenerator {
         buf, state, ofs, limit, rsp, multi_block, shuf_mask);
     }
     __ addptr(rsp, 4 * wordSize);
-#ifdef _WIN64
-    // restore xmm regs belonging to calling function
-    if (!VM_Version::supports_sha() && VM_Version::supports_avx2()) {
-      __ movdqu(xmm9, Address(rsp, 0));
-      __ movdqu(xmm10, Address(rsp, 2 * wordSize));
-      __ movdqu(xmm11, Address(rsp, 4 * wordSize));
-      __ movdqu(xmm12, Address(rsp, 6 * wordSize));
-      __ movdqu(xmm13, Address(rsp, 8 * wordSize));
-      __ addptr(rsp, 10 * wordSize);
-    }
-    __ movdqu(xmm6, Address(rsp, 0));
-    __ movdqu(xmm7, Address(rsp, 2 * wordSize));
-    __ movdqu(xmm8, Address(rsp, 4 * wordSize));
-    __ addptr(rsp, 6 * wordSize);
-#endif
+
     __ leave();
     __ ret(0);
     return start;
@@ -3917,18 +3856,14 @@ class StubGenerator: public StubCodeGenerator {
     }
 
 #ifdef _WIN64
-    // save the xmm registers which must be preserved 6-14
-    const int XMM_REG_NUM_KEY_LAST = 14;
-    __ subptr(rsp, -rsp_after_call_off * wordSize);
-    for (int i = 6; i <= XMM_REG_NUM_KEY_LAST; i++) {
-      __ movdqu(xmm_save(i), as_XMMRegister(i));
-    }
-
-    const Address r13_save(rbp, rdi_off * wordSize);
-    const Address r14_save(rbp, rsi_off * wordSize);
-
-    __ movptr(r13_save, r13);
-    __ movptr(r14_save, r14);
+    // allocate spill slots for r13, r14
+    enum {
+        saved_r13_offset,
+        saved_r14_offset
+    };
+    __ subptr(rsp, 2 * wordSize);
+    __ movptr(Address(rsp, saved_r13_offset * wordSize), r13);
+    __ movptr(Address(rsp, saved_r14_offset * wordSize), r14);
 
     // on win64, fill len_reg from stack position
     __ movl(len_reg, len_mem);
@@ -4130,13 +4065,10 @@ class StubGenerator: public StubCodeGenerator {
     __ movdqu(Address(counter, 0), xmm_curr_counter); //save counter back
     __ pop(rbx); // pop the saved RBX.
 #ifdef _WIN64
-    // restore regs belonging to calling function
-    for (int i = 6; i <= XMM_REG_NUM_KEY_LAST; i++) {
-      __ movdqu(as_XMMRegister(i), xmm_save(i));
-    }
     __ movl(rax, len_mem);
-    __ movptr(r13, r13_save);
-    __ movptr(r14, r14_save);
+    __ movptr(r13, Address(rsp, saved_r13_offset * wordSize));
+    __ movptr(r14, Address(rsp, saved_r14_offset * wordSize));
+    __ addptr(rsp, 2 * wordSize);
 #else
     __ pop(rax); // return 'len'
 #endif
@@ -4177,10 +4109,6 @@ class StubGenerator: public StubCodeGenerator {
     const Register data         = c_rarg2;
     const Register blocks       = c_rarg3;
 
-#ifdef _WIN64
-    const int XMM_REG_LAST  = 10;
-#endif
-
     const XMMRegister xmm_temp0 = xmm0;
     const XMMRegister xmm_temp1 = xmm1;
     const XMMRegister xmm_temp2 = xmm2;
@@ -4202,14 +4130,6 @@ class StubGenerator: public StubCodeGenerator {
       __ movl(rax, 0xffff);
       __ kmovql(k1, rax);
     }
-
-#ifdef _WIN64
-    // save the xmm registers which must be preserved 6-10
-    __ subptr(rsp, -rsp_after_call_off * wordSize);
-    for (int i = 6; i <= XMM_REG_LAST; i++) {
-      __ movdqu(xmm_save(i), as_XMMRegister(i));
-    }
-#endif
 
     __ movdqu(xmm_temp10, ExternalAddress(StubRoutines::x86::ghash_long_swap_mask_addr()));
 
@@ -4310,12 +4230,6 @@ class StubGenerator: public StubCodeGenerator {
     __ pshufb(xmm_temp6, xmm_temp10);          // Byte swap 16-byte result
     __ movdqu(Address(state, 0), xmm_temp6);   // store the result
 
-#ifdef _WIN64
-    // restore xmm regs belonging to calling function
-    for (int i = 6; i <= XMM_REG_LAST; i++) {
-      __ movdqu(as_XMMRegister(i), xmm_save(i));
-    }
-#endif
     __ leave();
     __ ret(0);
     return start;
@@ -4652,20 +4566,7 @@ class StubGenerator: public StubCodeGenerator {
     BLOCK_COMMENT("Entry:");
     __ enter(); // required for proper stackwalking of RuntimeStub frame
 
-#ifdef _WIN64
-    // save the xmm registers which must be preserved 6-7
-    __ subptr(rsp, 4 * wordSize);
-    __ movdqu(Address(rsp, 0), xmm6);
-    __ movdqu(Address(rsp, 2 * wordSize), xmm7);
-#endif
       __ fast_exp(x0, x1, x2, x3, x4, x5, x6, x7, rax, rcx, rdx, tmp);
-
-#ifdef _WIN64
-    // restore xmm regs belonging to calling function
-      __ movdqu(xmm6, Address(rsp, 0));
-      __ movdqu(xmm7, Address(rsp, 2 * wordSize));
-      __ addptr(rsp, 4 * wordSize);
-#endif
 
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret(0);
@@ -4693,20 +4594,7 @@ class StubGenerator: public StubCodeGenerator {
     BLOCK_COMMENT("Entry:");
     __ enter(); // required for proper stackwalking of RuntimeStub frame
 
-#ifdef _WIN64
-    // save the xmm registers which must be preserved 6-7
-    __ subptr(rsp, 4 * wordSize);
-    __ movdqu(Address(rsp, 0), xmm6);
-    __ movdqu(Address(rsp, 2 * wordSize), xmm7);
-#endif
     __ fast_log(x0, x1, x2, x3, x4, x5, x6, x7, rax, rcx, rdx, tmp1, tmp2);
-
-#ifdef _WIN64
-    // restore xmm regs belonging to calling function
-    __ movdqu(xmm6, Address(rsp, 0));
-    __ movdqu(xmm7, Address(rsp, 2 * wordSize));
-    __ addptr(rsp, 4 * wordSize);
-#endif
 
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret(0);
@@ -4733,20 +4621,7 @@ class StubGenerator: public StubCodeGenerator {
     BLOCK_COMMENT("Entry:");
     __ enter(); // required for proper stackwalking of RuntimeStub frame
 
-#ifdef _WIN64
-    // save the xmm registers which must be preserved 6-7
-    __ subptr(rsp, 4 * wordSize);
-    __ movdqu(Address(rsp, 0), xmm6);
-    __ movdqu(Address(rsp, 2 * wordSize), xmm7);
-#endif
     __ fast_log10(x0, x1, x2, x3, x4, x5, x6, x7, rax, rcx, rdx, tmp);
-
-#ifdef _WIN64
-    // restore xmm regs belonging to calling function
-    __ movdqu(xmm6, Address(rsp, 0));
-    __ movdqu(xmm7, Address(rsp, 2 * wordSize));
-    __ addptr(rsp, 4 * wordSize);
-#endif
 
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret(0);
@@ -4776,20 +4651,7 @@ class StubGenerator: public StubCodeGenerator {
     BLOCK_COMMENT("Entry:");
     __ enter(); // required for proper stackwalking of RuntimeStub frame
 
-#ifdef _WIN64
-    // save the xmm registers which must be preserved 6-7
-    __ subptr(rsp, 4 * wordSize);
-    __ movdqu(Address(rsp, 0), xmm6);
-    __ movdqu(Address(rsp, 2 * wordSize), xmm7);
-#endif
     __ fast_pow(x0, x1, x2, x3, x4, x5, x6, x7, rax, rcx, rdx, tmp1, tmp2, tmp3, tmp4);
-
-#ifdef _WIN64
-    // restore xmm regs belonging to calling function
-    __ movdqu(xmm6, Address(rsp, 0));
-    __ movdqu(xmm7, Address(rsp, 2 * wordSize));
-    __ addptr(rsp, 4 * wordSize);
-#endif
 
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret(0);
@@ -4822,18 +4684,10 @@ class StubGenerator: public StubCodeGenerator {
 #ifdef _WIN64
     __ push(rsi);
     __ push(rdi);
-    // save the xmm registers which must be preserved 6-7
-    __ subptr(rsp, 4 * wordSize);
-    __ movdqu(Address(rsp, 0), xmm6);
-    __ movdqu(Address(rsp, 2 * wordSize), xmm7);
 #endif
     __ fast_sin(x0, x1, x2, x3, x4, x5, x6, x7, rax, rbx, rcx, rdx, tmp1, tmp2, tmp3, tmp4);
 
 #ifdef _WIN64
-    // restore xmm regs belonging to calling function
-    __ movdqu(xmm6, Address(rsp, 0));
-    __ movdqu(xmm7, Address(rsp, 2 * wordSize));
-    __ addptr(rsp, 4 * wordSize);
     __ pop(rdi);
     __ pop(rsi);
 #endif
@@ -4869,18 +4723,10 @@ class StubGenerator: public StubCodeGenerator {
 #ifdef _WIN64
     __ push(rsi);
     __ push(rdi);
-    // save the xmm registers which must be preserved 6-7
-    __ subptr(rsp, 4 * wordSize);
-    __ movdqu(Address(rsp, 0), xmm6);
-    __ movdqu(Address(rsp, 2 * wordSize), xmm7);
 #endif
     __ fast_cos(x0, x1, x2, x3, x4, x5, x6, x7, rax, rcx, rdx, tmp1, tmp2, tmp3, tmp4);
 
 #ifdef _WIN64
-    // restore xmm regs belonging to calling function
-    __ movdqu(xmm6, Address(rsp, 0));
-    __ movdqu(xmm7, Address(rsp, 2 * wordSize));
-    __ addptr(rsp, 4 * wordSize);
     __ pop(rdi);
     __ pop(rsi);
 #endif
@@ -4916,18 +4762,10 @@ class StubGenerator: public StubCodeGenerator {
 #ifdef _WIN64
     __ push(rsi);
     __ push(rdi);
-    // save the xmm registers which must be preserved 6-7
-    __ subptr(rsp, 4 * wordSize);
-    __ movdqu(Address(rsp, 0), xmm6);
-    __ movdqu(Address(rsp, 2 * wordSize), xmm7);
 #endif
     __ fast_tan(x0, x1, x2, x3, x4, x5, x6, x7, rax, rcx, rdx, tmp1, tmp2, tmp3, tmp4);
 
 #ifdef _WIN64
-    // restore xmm regs belonging to calling function
-    __ movdqu(xmm6, Address(rsp, 0));
-    __ movdqu(xmm7, Address(rsp, 2 * wordSize));
-    __ addptr(rsp, 4 * wordSize);
     __ pop(rdi);
     __ pop(rsi);
 #endif
