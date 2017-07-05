@@ -106,7 +106,15 @@ public class EnumMap<K extends Enum<K>, V> extends AbstractMap<K, V>
     /**
      * Distinguished non-null value for representing null values.
      */
-    private static final Object NULL = new Integer(0);
+    private static final Object NULL = new Object() {
+        public int hashCode() {
+            return 0;
+        }
+
+        public String toString() {
+            return "java.util.EnumMap.NULL";
+        }
+    };
 
     private Object maskNull(Object value) {
         return (value == null ? NULL : value);

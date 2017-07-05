@@ -1115,9 +1115,8 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
 
     protected int getTabLabelShiftY(int tabPlacement, int tabIndex, boolean isSelected) {
         Rectangle tabRect = rects[tabIndex];
-        String propKey = (isSelected ? "selectedLabelShift" : "labelShift");
-        int nudge = DefaultLookup.getInt(
-                tabPane, this, "TabbedPane." + propKey, 1);
+        int nudge = (isSelected ? DefaultLookup.getInt(tabPane, this, "TabbedPane.selectedLabelShift", -1) :
+                DefaultLookup.getInt(tabPane, this, "TabbedPane.labelShift", 1));
 
         switch (tabPlacement) {
             case BOTTOM:

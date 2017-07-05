@@ -28,11 +28,9 @@ HEADLESS = true
 NO_ROBOT = true
 MOTIF_VERSION = none
 MOTIF_VERSION_STRING=none
-LIB_LOCATION = $(LIBDIR)/$(LIBARCH)/headless
 
 PACKAGE = sun.awt
-LIBRARY = mawt
-LIBRARY_OUTPUT = headless
+LIBRARY = awt_headless
 PRODUCT = sun
 
 include $(BUILDDIR)/common/Defs.gmk

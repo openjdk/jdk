@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -5594,6 +5594,7 @@ void CMSCollector::do_remark_parallel() {
     GenCollectedHeap::StrongRootsScope srs(gch);
     workers->run_task(&tsk);
   } else {
+    ReferenceProcessorMTDiscoveryMutator mt(ref_processor(), false);
     GenCollectedHeap::StrongRootsScope srs(gch);
     tsk.work(0);
   }
@@ -5608,6 +5609,8 @@ void CMSCollector::do_remark_non_parallel() {
   ResourceMark rm;
   HandleMark   hm;
   GenCollectedHeap* gch = GenCollectedHeap::heap();
+  ReferenceProcessorMTDiscoveryMutator mt(ref_processor(), false);
+
   MarkRefsIntoAndScanClosure
     mrias_cl(_span, ref_processor(), &_markBitMap, &_modUnionTable,
              &_markStack, &_revisitStack, this,
