@@ -33,7 +33,6 @@ import java.awt.event.InputEvent;
 import java.lang.reflect.Field;
 import javax.swing.*;
 import javax.swing.tree.*;
-import sun.awt.SunToolkit;
 
 public class bug6263446 {
 
@@ -42,10 +41,8 @@ public class bug6263446 {
     private static final String ALL = FIRST + " " + SECOND;
     private static JTree tree;
     private static Robot robot;
-    private static SunToolkit toolkit;
 
     public static void main(String[] args) throws Exception {
-        toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
         robot = new Robot();
         robot.setAutoDelay(50);
 
@@ -56,7 +53,7 @@ public class bug6263446 {
             }
         });
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         Point point = getClickPoint();
         robot.mouseMove(point.x, point.y);
@@ -182,7 +179,7 @@ public class bug6263446 {
             }
         });
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
     }
 
@@ -252,7 +249,7 @@ public class bug6263446 {
     }
 
     private static void assertEditingNoTreeLock(final boolean editing) throws Exception {
-        toolkit.realSync();
+        robot.waitForIdle();
 
         SwingUtilities.invokeAndWait(new Runnable() {
 

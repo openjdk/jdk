@@ -674,6 +674,9 @@ OGLBlitLoops_Blit(JNIEnv *env,
                         viaTexture = JNI_TRUE;
                         break;
 #endif
+                    case OGLC_VENDOR_INTEL:
+                        viaTexture = JNI_TRUE;
+                        break;
                     default:
                         // just use the glDrawPixels() codepath
                         viaTexture = JNI_FALSE;

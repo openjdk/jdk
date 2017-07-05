@@ -70,7 +70,7 @@ public interface IIOReadUpdateListener extends EventListener {
      * a value of 1 means no gaps.
      * @param periodY the vertical spacing between updated pixels;
      * a value of 1 means no gaps.
-     * @param bands an array of <code>int</code>s indicating the the
+     * @param bands an array of <code>int</code>s indicating the
      * set bands that may be updated.
      */
     void passStarted(ImageReader source,
@@ -187,7 +187,7 @@ public interface IIOReadUpdateListener extends EventListener {
      * a value of 1 means no gaps.
      * @param periodY the vertical spacing between updated pixels;
      * a value of 1 means no gaps.
-     * @param bands an array of <code>int</code>s indicating the the
+     * @param bands an array of <code>int</code>s indicating the
      * set bands that may be updated.
      *
      * @see #passStarted

@@ -1309,7 +1309,7 @@ public class KeyEvent extends InputEvent {
     /**
      * Set the keyChar value to indicate a logical character.
      *
-     * @param keyChar a char corresponding to to the combination of keystrokes
+     * @param keyChar a char corresponding to the combination of keystrokes
      *                that make up this event.
      */
     public void setKeyChar(char keyChar) {

@@ -90,29 +90,26 @@ public class F10TopToplevel extends Applet
         Robot robot;
         try {
             robot = new Robot();
+            robot.setAutoDelay(5);
         } catch(AWTException e){
             throw new RuntimeException("cannot create robot.", e);
         }
-        ((sun.awt.SunToolkit)Toolkit.getDefaultToolkit()).realSync();
+        robot.waitForIdle();
         robot.mouseMove(dialog.getLocationOnScreen().x + dialog.getWidth()/2,
                         dialog.getLocationOnScreen().y + dialog.getHeight()/2 );
-        robot.delay(5);
+        robot.waitForIdle();
         robot.mousePress(InputEvent.BUTTON1_MASK);
-        robot.delay(5);
         robot.mouseRelease(InputEvent.BUTTON1_MASK);
-        robot.delay(5);
+        robot.waitForIdle();
         robot.keyPress(KeyEvent.VK_F10);
-        robot.delay(5);
         robot.keyRelease(KeyEvent.VK_F10);
-        robot.delay(5);
 
         robot.delay(10);
         robot.keyPress(KeyEvent.VK_ENTER);
-        robot.delay(5);
+        robot.waitForIdle();
         robot.keyRelease(KeyEvent.VK_ENTER);
-        robot.delay(5);
 
-        ((sun.awt.SunToolkit)Toolkit.getDefaultToolkit()).realSync();
+        robot.waitForIdle();
 
         if(menuToggled) {
             throw new RuntimeException("Oops! Menu should not open.");

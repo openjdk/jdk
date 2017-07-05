@@ -390,7 +390,7 @@ public class FileCredentialsCache extends CredentialsCache
          * /tmp/krb5cc_uid ; for all other platforms  we use
          * {user_home}/krb5cc_{user_name}
          * Please note that for Windows we will use LSA to get
-         * the TGT from the the default cache even before we come here;
+         * the TGT from the default cache even before we come here;
          * however when we create cache we will create a cache under
          * {user_home}/krb5cc_{user_name} for non-Unix platforms including
          * Windows.

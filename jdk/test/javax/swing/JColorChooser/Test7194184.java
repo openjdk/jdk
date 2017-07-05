@@ -39,7 +39,6 @@ import java.awt.Component;
 import java.awt.AWTException;
 import java.awt.Color;
 import java.awt.Robot;
-import java.awt.Toolkit;
 import java.awt.event.KeyEvent;
 
 import javax.swing.JColorChooser;
@@ -47,7 +46,6 @@ import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 
 import java.util.concurrent.Callable;
-import sun.awt.SunToolkit;
 
 public class Test7194184 implements Runnable {
     private static JFrame frame;
@@ -60,10 +58,9 @@ public class Test7194184 implements Runnable {
 
     private static void testKeyBoardAccess() throws Exception {
         Robot robot = new Robot();
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
 
         SwingUtilities.invokeLater(new Test7194184());
-        toolkit.realSync();
+        robot.waitForIdle();
 
         SwingUtilities.invokeLater(new Runnable() {
             @Override
@@ -78,7 +75,7 @@ public class Test7194184 implements Runnable {
             }
         });
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         // Tab to move the focus to MainSwatch
         Util.hitKeys(robot, KeyEvent.VK_SHIFT, KeyEvent.VK_TAB);
@@ -87,7 +84,7 @@ public class Test7194184 implements Runnable {
         Util.hitKeys(robot, KeyEvent.VK_RIGHT);
         Util.hitKeys(robot, KeyEvent.VK_RIGHT);
         Util.hitKeys(robot, KeyEvent.VK_SPACE);
-        toolkit.realSync();
+        robot.waitForIdle();
 
         SwingUtilities.invokeAndWait(new Runnable() {
             @Override

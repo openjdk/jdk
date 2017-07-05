@@ -287,9 +287,13 @@ void ConstantPoolCacheEntry::set_method_handle_common(constantPoolHandle cpool,
   // the lock, so that when the losing writer returns, he can use the linked
   // cache entry.
 
-  // Use the lock from the metaspace for this, which cannot stop for safepoint.
-  Mutex* metaspace_lock = cpool->pool_holder()->class_loader_data()->metaspace_lock();
-  MutexLockerEx ml(metaspace_lock,  Mutex::_no_safepoint_check_flag);
+  objArrayHandle resolved_references = cpool->resolved_references();
+  // Use the resolved_references() lock for this cpCache entry.
+  // resolved_references are created for all classes with Invokedynamic, MethodHandle
+  // or MethodType constant pool cache entries.
+  assert(resolved_references() != NULL,
+         "a resolved_references array should have been created for this class");
+  ObjectLocker ol(resolved_references, Thread::current());
   if (!is_f1_null()) {
     return;
   }
@@ -336,7 +340,6 @@ void ConstantPoolCacheEntry::set_method_handle_common(constantPoolHandle cpool,
   // This allows us to create fewer Methods, while keeping type safety.
   //
 
-  objArrayHandle resolved_references = cpool->resolved_references();
   // Store appendix, if any.
   if (has_appendix) {
     const int appendix_index = f2_as_index() + _indy_resolved_references_appendix_offset;

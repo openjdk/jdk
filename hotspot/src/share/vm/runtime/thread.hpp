@@ -908,6 +908,12 @@ class JavaThread: public Thread {
   // This is set to popframe_pending to signal that top Java frame should be popped immediately
   int _popframe_condition;
 
+  // If reallocation of scalar replaced objects fails, we throw OOM
+  // and during exception propagation, pop the top
+  // _frames_to_pop_failed_realloc frames, the ones that reference
+  // failed reallocations.
+  int _frames_to_pop_failed_realloc;
+
 #ifndef PRODUCT
   int _jmp_ring_index;
   struct {
@@ -1566,6 +1572,10 @@ class JavaThread: public Thread {
   void set_pop_frame_in_process(void)                 { _popframe_condition |= popframe_processing_bit; }
   void clr_pop_frame_in_process(void)                 { _popframe_condition &= ~popframe_processing_bit; }
 #endif
+
+  int frames_to_pop_failed_realloc() const            { return _frames_to_pop_failed_realloc; }
+  void set_frames_to_pop_failed_realloc(int nb)       { _frames_to_pop_failed_realloc = nb; }
+  void dec_frames_to_pop_failed_realloc()             { _frames_to_pop_failed_realloc--; }
 
  private:
   // Saved incoming arguments to popped frame.

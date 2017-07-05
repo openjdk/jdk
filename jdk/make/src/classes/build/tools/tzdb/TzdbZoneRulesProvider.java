@@ -758,8 +758,8 @@ class TzdbZoneRulesProvider {
                         if (endYear == Year.MAX_VALUE) {
                             endYear = startYear;
                             lastRules.add(new TransRule(endYear, rule));
-                            lastRulesStartYear = Math.max(startYear, lastRulesStartYear);
                         }
+                        lastRulesStartYear = Math.max(startYear, lastRulesStartYear);
                     } else {
                         if (endYear == Year.MAX_VALUE) {
                             //endYear = zoneEnd.getYear();

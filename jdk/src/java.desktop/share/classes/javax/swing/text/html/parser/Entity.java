@@ -35,7 +35,7 @@ import java.net.URL;
 
 /**
  * An entity is described in a DTD using the ENTITY construct.
- * It defines the type and value of the the entity.
+ * It defines the type and value of the entity.
  *
  * @see DTD
  * @author Arthur van Hoff

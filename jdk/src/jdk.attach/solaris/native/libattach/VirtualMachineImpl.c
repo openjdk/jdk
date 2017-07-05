@@ -320,7 +320,7 @@ JNIEXPORT jint JNICALL Java_sun_tools_attach_VirtualMachineImpl_enqueue
         JNU_ThrowIOExceptionWithLastError(env, "door_call");
     } else {
         /*
-         * door_call succeeded but the call didn't return the the expected jint.
+         * door_call succeeded but the call didn't return the expected jint.
          */
         if (door_args.data_size < sizeof(jint)) {
             JNU_ThrowIOException(env, "Enqueue error - reason unknown as result is truncated!");

@@ -70,6 +70,11 @@ class MetaspaceShared : AllStatic {
   };
 
   enum {
+    min_ro_size = NOT_LP64(8*M) LP64_ONLY(9*M), // minimum ro and rw regions sizes based on dumping
+    min_rw_size = NOT_LP64(7*M) LP64_ONLY(12*M) // of a shared archive using the default classlist
+  };
+
+  enum {
     ro = 0,  // read-only shared space in the heap
     rw = 1,  // read-write shared space in the heap
     md = 2,  // miscellaneous data for initializing tables, etc.

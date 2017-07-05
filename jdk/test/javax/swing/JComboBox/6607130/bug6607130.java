@@ -30,8 +30,6 @@
  * @author Mikhail Lapshin
  */
 
-import sun.awt.SunToolkit;
-
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
@@ -79,44 +77,44 @@ public class bug6607130 {
     }
 
     private void test() throws Exception {
-        realSync();
+        robot.waitForIdle();
         test1();
-        realSync();
+        robot.waitForIdle();
         checkResult("First test");
         test2();
-        realSync();
+        robot.waitForIdle();
         checkResult("Second test");
     }
 
     private void test1() throws Exception {
         // Select 'one'
         hitKey(KeyEvent.VK_TAB);
-        realSync();
+        robot.waitForIdle();
         hitKey(KeyEvent.VK_F2);
-        realSync();
+        robot.waitForIdle();
         hitKey(KeyEvent.VK_DOWN);
-        realSync();
+        robot.waitForIdle();
         hitKey(KeyEvent.VK_DOWN);
-        realSync();
+        robot.waitForIdle();
         hitKey(KeyEvent.VK_ENTER);
-        realSync();
+        robot.waitForIdle();
 
         // Select 'one' again
         hitKey(KeyEvent.VK_F2);
-        realSync();
+        robot.waitForIdle();
         hitKey(KeyEvent.VK_DOWN);
-        realSync();
+        robot.waitForIdle();
         hitKey(KeyEvent.VK_ENTER);
-        realSync();
+        robot.waitForIdle();
     }
 
     private void test2() throws Exception {
         // Press F2 and then press ENTER
         // Editor should be shown and then closed
         hitKey(KeyEvent.VK_F2);
-        realSync();
+        robot.waitForIdle();
         hitKey(KeyEvent.VK_ENTER);
-        realSync();
+        robot.waitForIdle();
     }
 
     private void checkResult(String testName) {
@@ -127,10 +125,6 @@ public class bug6607130 {
             throw new RuntimeException("JComboBox is showing " +
                     "after item selection.");
         }
-    }
-
-    private static void realSync() {
-        ((SunToolkit) (Toolkit.getDefaultToolkit())).realSync();
     }
 
     public void hitKey(int keycode) {

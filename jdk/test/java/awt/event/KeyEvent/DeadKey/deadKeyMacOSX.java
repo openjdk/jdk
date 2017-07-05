@@ -26,18 +26,19 @@
  * @bug 7196547
  * @summary Dead Key implementation for KeyEvent on Mac OS X
  * @author alexandr.scherbatiy area=awt.event
+ * @library ../../../../../lib/testlibrary
+ * @build  jdk.testlibrary.OSInfo
  * @run main deadKeyMacOSX
  */
 
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.event.KeyEvent;
-import sun.awt.OSInfo;
-import sun.awt.SunToolkit;
+
+import jdk.testlibrary.OSInfo;
 
 public class deadKeyMacOSX {
 
-    private static SunToolkit toolkit;
     private static volatile int state = 0;
 
     public static void main(String[] args) throws Exception {
@@ -46,11 +47,10 @@ public class deadKeyMacOSX {
             return;
         }
 
-        toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
         Robot robot = new Robot();
         robot.setAutoDelay(50);
 
-        createAndShowGUI();
+        createAndShowGUI(robot);
 
         // Pressed keys: Alt + E + A
         // Results:  ALT + VK_DEAD_ACUTE + a with accute accent
@@ -67,17 +67,17 @@ public class deadKeyMacOSX {
         }
     }
 
-    static void createAndShowGUI() {
+    static void createAndShowGUI(Robot robot) {
         Frame frame = new Frame();
         frame.setSize(300, 300);
         Panel panel = new Panel();
         panel.addKeyListener(new DeadKeyListener());
         frame.add(panel);
         frame.setVisible(true);
-        toolkit.realSync();
+        robot.waitForIdle();
 
         panel.requestFocusInWindow();
-        toolkit.realSync();
+        robot.waitForIdle();
     }
 
     static class DeadKeyListener extends KeyAdapter {

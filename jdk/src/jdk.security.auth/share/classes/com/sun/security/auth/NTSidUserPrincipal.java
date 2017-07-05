@@ -85,7 +85,7 @@ public class NTSidUserPrincipal extends NTSid {
      * @param o Object to be compared for equality with this
      *          <code>NTSidUserPrincipal</code>.
      *
-     * @return true if the specified Object is equal equal to this
+     * @return true if the specified Object is equal to this
      *          <code>NTSidUserPrincipal</code>.
      */
     public boolean equals(Object o) {

@@ -102,7 +102,7 @@ public class KrbApReq {
      * @param useSubkey Whether the subkey is to be used to protect this
      *        specific application session. If this is not set then the
      *        session key from the ticket will be used.
-     * @param checksum checksum of the the application data that accompanies
+     * @param checksum checksum of the application data that accompanies
      *        the KRB_AP_REQ.
      * @throws KrbException for any Kerberos protocol specific error
      * @throws IOException for any IO related errors

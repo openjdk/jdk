@@ -535,7 +535,7 @@ public class KerberosTicket implements Destroyable, Refreshable,
      * allowable renew time has passed. Any other error returned by the
      * KDC will also cause this method to fail.
      *
-     * Note: This method is not synchronized with the the accessor
+     * Note: This method is not synchronized with the accessor
      * methods of this object. Hence callers need to be aware of multiple
      * threads that might access this and try to renew it at the same
      * time.

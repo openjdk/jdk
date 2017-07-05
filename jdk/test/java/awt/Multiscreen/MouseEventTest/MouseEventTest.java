@@ -28,8 +28,6 @@
   @run main MouseEventTest
  */
 
-import sun.awt.SunToolkit;
-
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -37,8 +35,8 @@ import java.awt.event.MouseEvent;
 public class MouseEventTest {
     static volatile boolean crossed = false;
 
-    static void sleep() throws InterruptedException {
-        ((SunToolkit) Toolkit.getDefaultToolkit()).realSync();
+    static void sleep(Robot robot) throws InterruptedException {
+        robot.waitForIdle();
         Thread.sleep(500);
     }
 
@@ -64,7 +62,7 @@ public class MouseEventTest {
             frame.setLocation(screen.x + 200, screen.y + 200);
             frame.setBackground(Color.YELLOW);
             frame.setVisible(true);
-            sleep();
+            sleep(robot);
 
             Point loc = frame.getLocationOnScreen();
             Dimension size = frame.getSize();
@@ -86,7 +84,7 @@ public class MouseEventTest {
             robot.mouseMove(point.x - 1, point.y - 1);
             robot.mouseMove(point.x, point.y);
 
-            sleep();
+            sleep(robot);
             frame.dispose();
 
             if (!crossed) {

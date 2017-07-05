@@ -1771,7 +1771,7 @@ public abstract class KeyboardFocusManager
      * will be notified in the order in which they were added; the current
      * KeyboardFocusManager will be notified last. Notifications will halt
      * as soon as one KeyEventPostProcessor returns <code>true</code> from its
-     * <code>postProcessKeyEvent</code> method. There is no limit to the the
+     * <code>postProcessKeyEvent</code> method. There is no limit to the
      * total number of KeyEventPostProcessors that can be added, nor to the
      * number of times that a particular KeyEventPostProcessor instance can be
      * added.
@@ -2666,7 +2666,7 @@ public abstract class KeyboardFocusManager
                      * We allow to trigger restoreFocus() in the dispatching process
                      * only if we have the last request to dispatch. If the last request
                      * fails, focus will be restored to either the component of the last
-                     * previously succeeded request, or to to the focus owner that was
+                     * previously succeeded request, or to the focus owner that was
                      * before this clearing process.
                      */
                     if (!iter.hasNext()) {
