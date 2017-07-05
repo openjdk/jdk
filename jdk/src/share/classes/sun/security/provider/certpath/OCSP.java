@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,10 +85,9 @@ public final class OCSP {
      * value is negative, set the timeout length to the default.
      */
     private static int initializeTimeout() {
-        int tmp = java.security.AccessController.doPrivileged(
-                new GetIntegerAction("com.sun.security.ocsp.timeout",
-                                     DEFAULT_CONNECT_TIMEOUT));
-        if (tmp < 0) {
+        Integer tmp = java.security.AccessController.doPrivileged(
+                new GetIntegerAction("com.sun.security.ocsp.timeout"));
+        if (tmp == null || tmp < 0) {
             return DEFAULT_CONNECT_TIMEOUT;
         }
         // Convert to milliseconds, as the system property will be

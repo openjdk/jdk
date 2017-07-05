@@ -111,7 +111,9 @@ class   ProfileInvoke;
 class   RuntimeCall;
 class   MemBar;
 class   RangeCheckPredicate;
+#ifdef ASSERT
 class   Assert;
+#endif
 
 // A Value is a reference to the instruction creating the value
 typedef Instruction* Value;

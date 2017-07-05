@@ -1014,13 +1014,28 @@ void LinkResolver::runtime_resolve_interface_method(CallInfo& result, methodHand
                                                       resolved_method->name(),
                                                       resolved_method->signature()));
   }
-  // check if public
-  if (!sel_method->is_public()) {
-    ResourceMark rm(THREAD);
-    THROW_MSG(vmSymbols::java_lang_IllegalAccessError(),
-              Method::name_and_sig_as_C_string(recv_klass(),
-                                                      sel_method->name(),
-                                                      sel_method->signature()));
+  // check access
+  if (sel_method->method_holder()->is_interface()) {
+    // Method holder is an interface. Throw Illegal Access Error if sel_method
+    // is neither public nor private.
+    if (!(sel_method->is_public() || sel_method->is_private())) {
+      ResourceMark rm(THREAD);
+      THROW_MSG(vmSymbols::java_lang_IllegalAccessError(),
+                Method::name_and_sig_as_C_string(recv_klass(),
+                                                 sel_method->name(),
+                                                 sel_method->signature()));
+    }
+  }
+  else {
+    // Method holder is a class. Throw Illegal Access Error if sel_method
+    // is not public.
+    if (!sel_method->is_public()) {
+      ResourceMark rm(THREAD);
+      THROW_MSG(vmSymbols::java_lang_IllegalAccessError(),
+                Method::name_and_sig_as_C_string(recv_klass(),
+                                                 sel_method->name(),
+                                                 sel_method->signature()));
+    }
   }
   // check if abstract
   if (check_null_and_abstract && sel_method->is_abstract()) {
