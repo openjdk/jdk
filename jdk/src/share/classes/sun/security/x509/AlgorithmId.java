@@ -242,10 +242,7 @@ public class AlgorithmId implements Serializable, DerEncoder {
                 AlgorithmId paramsId =
                         AlgorithmId.parse(new DerValue(getEncodedParams()));
                 String paramsName = paramsId.getName();
-                if (paramsName.equals("SHA")) {
-                    paramsName = "SHA1";
-                }
-                algName = paramsName + "withECDSA";
+                algName = makeSigAlg(paramsName, "EC");
             } catch (IOException e) {
                 // ignore
             }
@@ -876,11 +873,11 @@ public class AlgorithmId implements Serializable, DerEncoder {
         nameTable = new HashMap<ObjectIdentifier,String>();
         nameTable.put(MD5_oid, "MD5");
         nameTable.put(MD2_oid, "MD2");
-        nameTable.put(SHA_oid, "SHA");
-        nameTable.put(SHA224_oid, "SHA224");
-        nameTable.put(SHA256_oid, "SHA256");
-        nameTable.put(SHA384_oid, "SHA384");
-        nameTable.put(SHA512_oid, "SHA512");
+        nameTable.put(SHA_oid, "SHA-1");
+        nameTable.put(SHA224_oid, "SHA-224");
+        nameTable.put(SHA256_oid, "SHA-256");
+        nameTable.put(SHA384_oid, "SHA-384");
+        nameTable.put(SHA512_oid, "SHA-512");
         nameTable.put(RSAEncryption_oid, "RSA");
         nameTable.put(RSA_oid, "RSA");
         nameTable.put(DH_oid, "Diffie-Hellman");
@@ -917,11 +914,8 @@ public class AlgorithmId implements Serializable, DerEncoder {
      * name and a encryption algorithm name.
      */
     public static String makeSigAlg(String digAlg, String encAlg) {
-        digAlg = digAlg.replace("-", "").toUpperCase(Locale.ENGLISH);
-        if (digAlg.equalsIgnoreCase("SHA")) digAlg = "SHA1";
-
-        encAlg = encAlg.toUpperCase(Locale.ENGLISH);
-        if (encAlg.equals("EC")) encAlg = "ECDSA";
+        digAlg = digAlg.replace("-", "");
+        if (encAlg.equalsIgnoreCase("EC")) encAlg = "ECDSA";
 
         return digAlg + "with" + encAlg;
     }

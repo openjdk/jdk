@@ -1149,13 +1149,16 @@ HeapWord* G1CollectedHeap::attempt_allocation_at_safepoint(size_t word_size,
 }
 
 class PostMCRemSetClearClosure: public HeapRegionClosure {
+  G1CollectedHeap* _g1h;
   ModRefBarrierSet* _mr_bs;
 public:
-  PostMCRemSetClearClosure(ModRefBarrierSet* mr_bs) : _mr_bs(mr_bs) {}
+  PostMCRemSetClearClosure(G1CollectedHeap* g1h, ModRefBarrierSet* mr_bs) :
+    _g1h(g1h), _mr_bs(mr_bs) { }
   bool doHeapRegion(HeapRegion* r) {
-    r->reset_gc_time_stamp();
-    if (r->continuesHumongous())
+    if (r->continuesHumongous()) {
       return false;
+    }
+    _g1h->reset_gc_time_stamps(r);
     HeapRegionRemSet* hrrs = r->rem_set();
     if (hrrs != NULL) hrrs->clear();
     // You might think here that we could clear just the cards
@@ -1168,19 +1171,10 @@ public:
   }
 };
 
-
-class PostMCRemSetInvalidateClosure: public HeapRegionClosure {
-  ModRefBarrierSet* _mr_bs;
-public:
-  PostMCRemSetInvalidateClosure(ModRefBarrierSet* mr_bs) : _mr_bs(mr_bs) {}
-  bool doHeapRegion(HeapRegion* r) {
-    if (r->continuesHumongous()) return false;
-    if (r->used_region().word_size() != 0) {
-      _mr_bs->invalidate(r->used_region(), true /*whole heap*/);
-    }
-    return false;
-  }
-};
+void G1CollectedHeap::clear_rsets_post_compaction() {
+  PostMCRemSetClearClosure rs_clear(this, mr_bs());
+  heap_region_iterate(&rs_clear);
+}
 
 class RebuildRSOutOfRegionClosure: public HeapRegionClosure {
   G1CollectedHeap*   _g1h;
@@ -1229,7 +1223,7 @@ public:
       if (!hr->isHumongous()) {
         _hr_printer->post_compaction(hr, G1HRPrinter::Old);
       } else if (hr->startsHumongous()) {
-        if (hr->capacity() == HeapRegion::GrainBytes) {
+        if (hr->region_num() == 1) {
           // single humongous region
           _hr_printer->post_compaction(hr, G1HRPrinter::SingleHumongous);
         } else {
@@ -1246,6 +1240,11 @@ public:
   PostCompactionPrinterClosure(G1HRPrinter* hr_printer)
     : _hr_printer(hr_printer) { }
 };
+
+void G1CollectedHeap::print_hrs_post_compaction() {
+  PostCompactionPrinterClosure cl(hr_printer());
+  heap_region_iterate(&cl);
+}
 
 bool G1CollectedHeap::do_collection(bool explicit_gc,
                                     bool clear_all_soft_refs,
@@ -1402,8 +1401,8 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
     // Since everything potentially moved, we will clear all remembered
     // sets, and clear all cards.  Later we will rebuild remebered
     // sets. We will also reset the GC time stamps of the regions.
-    PostMCRemSetClearClosure rs_clear(mr_bs());
-    heap_region_iterate(&rs_clear);
+    clear_rsets_post_compaction();
+    check_gc_time_stamps();
 
     // Resize the heap if necessary.
     resize_if_necessary_after_full_collection(explicit_gc ? 0 : word_size);
@@ -1413,9 +1412,7 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
       // that all the COMMIT / UNCOMMIT events are generated before
       // the end GC event.
 
-      PostCompactionPrinterClosure cl(hr_printer());
-      heap_region_iterate(&cl);
-
+      print_hrs_post_compaction();
       _hr_printer.end_gc(true /* full */, (size_t) total_collections());
     }
 
@@ -2263,6 +2260,51 @@ size_t G1CollectedHeap::capacity() const {
   return _g1_committed.byte_size();
 }
 
+void G1CollectedHeap::reset_gc_time_stamps(HeapRegion* hr) {
+  assert(!hr->continuesHumongous(), "pre-condition");
+  hr->reset_gc_time_stamp();
+  if (hr->startsHumongous()) {
+    uint first_index = hr->hrs_index() + 1;
+    uint last_index = hr->last_hc_index();
+    for (uint i = first_index; i < last_index; i += 1) {
+      HeapRegion* chr = region_at(i);
+      assert(chr->continuesHumongous(), "sanity");
+      chr->reset_gc_time_stamp();
+    }
+  }
+}
+
+#ifndef PRODUCT
+class CheckGCTimeStampsHRClosure : public HeapRegionClosure {
+private:
+  unsigned _gc_time_stamp;
+  bool _failures;
+
+public:
+  CheckGCTimeStampsHRClosure(unsigned gc_time_stamp) :
+    _gc_time_stamp(gc_time_stamp), _failures(false) { }
+
+  virtual bool doHeapRegion(HeapRegion* hr) {
+    unsigned region_gc_time_stamp = hr->get_gc_time_stamp();
+    if (_gc_time_stamp != region_gc_time_stamp) {
+      gclog_or_tty->print_cr("Region "HR_FORMAT" has GC time stamp = %d, "
+                             "expected %d", HR_FORMAT_PARAMS(hr),
+                             region_gc_time_stamp, _gc_time_stamp);
+      _failures = true;
+    }
+    return false;
+  }
+
+  bool failures() { return _failures; }
+};
+
+void G1CollectedHeap::check_gc_time_stamps() {
+  CheckGCTimeStampsHRClosure cl(_gc_time_stamp);
+  heap_region_iterate(&cl);
+  guarantee(!cl.failures(), "all GC time stamps should have been reset");
+}
+#endif // PRODUCT
+
 void G1CollectedHeap::iterate_dirty_card_closure(CardTableEntryClosure* cl,
                                                  DirtyCardQueue* into_cset_dcq,
                                                  bool concurrent,
@@ -2530,7 +2572,7 @@ public:
   IterateOopClosureRegionClosure(MemRegion mr, OopClosure* cl)
     : _mr(mr), _cl(cl) {}
   bool doHeapRegion(HeapRegion* r) {
-    if (! r->continuesHumongous()) {
+    if (!r->continuesHumongous()) {
       r->oop_iterate(_cl);
     }
     return false;
@@ -2601,14 +2643,9 @@ void G1CollectedHeap::heap_region_iterate(HeapRegionClosure* cl) const {
   _hrs.iterate(cl);
 }
 
-void G1CollectedHeap::heap_region_iterate_from(HeapRegion* r,
-                                               HeapRegionClosure* cl) const {
-  _hrs.iterate_from(r, cl);
-}
-
 void
 G1CollectedHeap::heap_region_par_iterate_chunked(HeapRegionClosure* cl,
-                                                 uint worker,
+                                                 uint worker_id,
                                                  uint no_of_par_workers,
                                                  jint claim_value) {
   const uint regions = n_regions();
@@ -2619,7 +2656,9 @@ G1CollectedHeap::heap_region_par_iterate_chunked(HeapRegionClosure* cl,
          no_of_par_workers == workers()->total_workers(),
          "Non dynamic should use fixed number of workers");
   // try to spread out the starting points of the workers
-  const uint start_index = regions / max_workers * worker;
+  const HeapRegion* start_hr =
+                        start_region_for_worker(worker_id, no_of_par_workers);
+  const uint start_index = start_hr->hrs_index();
 
   // each worker will actually look at all regions
   for (uint count = 0; count < regions; ++count) {
@@ -2861,6 +2900,17 @@ HeapRegion* G1CollectedHeap::start_cset_region_for_worker(int worker_i) {
   return result;
 }
 
+HeapRegion* G1CollectedHeap::start_region_for_worker(uint worker_i,
+                                                     uint no_of_par_workers) {
+  uint worker_num =
+           G1CollectedHeap::use_parallel_gc_threads() ? no_of_par_workers : 1U;
+  assert(UseDynamicNumberOfGCThreads ||
+         no_of_par_workers == workers()->total_workers(),
+         "Non dynamic should use fixed number of workers");
+  const uint start_index = n_regions() * worker_i / worker_num;
+  return region_at(start_index);
+}
+
 void G1CollectedHeap::collection_set_iterate(HeapRegionClosure* cl) {
   HeapRegion* r = g1_policy()->collection_set();
   while (r != NULL) {
@@ -2974,6 +3024,51 @@ void G1CollectedHeap::prepare_for_verify() {
   g1_rem_set()->prepare_for_verify();
 }
 
+bool G1CollectedHeap::allocated_since_marking(oop obj, HeapRegion* hr,
+                                              VerifyOption vo) {
+  switch (vo) {
+  case VerifyOption_G1UsePrevMarking:
+    return hr->obj_allocated_since_prev_marking(obj);
+  case VerifyOption_G1UseNextMarking:
+    return hr->obj_allocated_since_next_marking(obj);
+  case VerifyOption_G1UseMarkWord:
+    return false;
+  default:
+    ShouldNotReachHere();
+  }
+  return false; // keep some compilers happy
+}
+
+HeapWord* G1CollectedHeap::top_at_mark_start(HeapRegion* hr, VerifyOption vo) {
+  switch (vo) {
+  case VerifyOption_G1UsePrevMarking: return hr->prev_top_at_mark_start();
+  case VerifyOption_G1UseNextMarking: return hr->next_top_at_mark_start();
+  case VerifyOption_G1UseMarkWord:    return NULL;
+  default:                            ShouldNotReachHere();
+  }
+  return NULL; // keep some compilers happy
+}
+
+bool G1CollectedHeap::is_marked(oop obj, VerifyOption vo) {
+  switch (vo) {
+  case VerifyOption_G1UsePrevMarking: return isMarkedPrev(obj);
+  case VerifyOption_G1UseNextMarking: return isMarkedNext(obj);
+  case VerifyOption_G1UseMarkWord:    return obj->is_gc_marked();
+  default:                            ShouldNotReachHere();
+  }
+  return false; // keep some compilers happy
+}
+
+const char* G1CollectedHeap::top_at_mark_start_str(VerifyOption vo) {
+  switch (vo) {
+  case VerifyOption_G1UsePrevMarking: return "PTAMS";
+  case VerifyOption_G1UseNextMarking: return "NTAMS";
+  case VerifyOption_G1UseMarkWord:    return "NONE";
+  default:                            ShouldNotReachHere();
+  }
+  return NULL; // keep some compilers happy
+}
+
 class VerifyLivenessOopClosure: public OopClosure {
   G1CollectedHeap* _g1h;
   VerifyOption _vo;
@@ -3061,9 +3156,9 @@ public:
 
 class VerifyRegionClosure: public HeapRegionClosure {
 private:
-  bool         _par;
-  VerifyOption _vo;
-  bool         _failures;
+  bool             _par;
+  VerifyOption     _vo;
+  bool             _failures;
 public:
   // _vo == UsePrevMarking -> use "prev" marking information,
   // _vo == UseNextMarking -> use "next" marking information,
@@ -3078,8 +3173,6 @@ public:
   }
 
   bool doHeapRegion(HeapRegion* r) {
-    guarantee(_par || r->claim_value() == HeapRegion::InitialClaimValue,
-              "Should be unclaimed at verify points.");
     if (!r->continuesHumongous()) {
       bool failures = false;
       r->verify(_vo, &failures);
@@ -5612,19 +5705,18 @@ void G1CollectedHeap::free_humongous_region(HeapRegion* hr,
   size_t hr_capacity = hr->capacity();
   size_t hr_pre_used = 0;
   _humongous_set.remove_with_proxy(hr, humongous_proxy_set);
+  // We need to read this before we make the region non-humongous,
+  // otherwise the information will be gone.
+  uint last_index = hr->last_hc_index();
   hr->set_notHumongous();
   free_region(hr, &hr_pre_used, free_list, par);
 
   uint i = hr->hrs_index() + 1;
-  uint num = 1;
-  while (i < n_regions()) {
+  while (i < last_index) {
     HeapRegion* curr_hr = region_at(i);
-    if (!curr_hr->continuesHumongous()) {
-      break;
-    }
+    assert(curr_hr->continuesHumongous(), "invariant");
     curr_hr->set_notHumongous();
     free_region(curr_hr, &hr_pre_used, free_list, par);
-    num += 1;
     i += 1;
   }
   assert(hr_pre_used == hr_used,
@@ -5732,7 +5824,6 @@ void G1CollectedHeap::verify_dirty_young_list(HeapRegion* head) {
 
 void G1CollectedHeap::verify_dirty_young_regions() {
   verify_dirty_young_list(_young_list->first_region());
-  verify_dirty_young_list(_young_list->first_survivor_region());
 }
 #endif
 

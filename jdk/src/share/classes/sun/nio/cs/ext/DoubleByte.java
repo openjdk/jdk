@@ -249,11 +249,11 @@ public class DoubleByte {
         }
 
         public char decodeDouble(int b1, int b2) {
-            if (b2 < b2Min || b2 > b2Max)
+            if (b1 < 0 || b1 > b2c.length ||
+                b2 < b2Min || b2 > b2Max)
                 return UNMAPPABLE_DECODING;
             return  b2c[b1][b2 - b2Min];
         }
-
     }
 
     // IBM_EBCDIC_DBCS
@@ -435,15 +435,15 @@ public class DoubleByte {
         }
     }
 
-    // EBCDIC_DBCS_ONLY
-    public static class Decoder_EBCDIC_DBCSONLY extends Decoder {
-        static final char[] b2cSB;
+    // DBCS_ONLY
+    public static class Decoder_DBCSONLY extends Decoder {
+        static final char[] b2cSB_UNMAPPABLE;
         static {
-            b2cSB = new char[0x100];
-            Arrays.fill(b2cSB, UNMAPPABLE_DECODING);
+            b2cSB_UNMAPPABLE = new char[0x100];
+            Arrays.fill(b2cSB_UNMAPPABLE, UNMAPPABLE_DECODING);
         }
-        Decoder_EBCDIC_DBCSONLY(Charset cs, char[][] b2c, int b2Min, int b2Max) {
-            super(cs, 0.5f, 1.0f, b2c, b2cSB, b2Min, b2Max);
+        Decoder_DBCSONLY(Charset cs, char[][] b2c, char[] b2cSB, int b2Min, int b2Max) {
+            super(cs, 0.5f, 1.0f, b2c, b2cSB_UNMAPPABLE, b2Min, b2Max);
         }
     }
 
@@ -727,9 +727,9 @@ public class DoubleByte {
         }
     }
 
-    public static class Encoder_EBCDIC_DBCSONLY extends Encoder {
-        Encoder_EBCDIC_DBCSONLY(Charset cs, byte[] repl,
-                                char[] c2b, char[] c2bIndex) {
+    public static class Encoder_DBCSONLY extends Encoder {
+        Encoder_DBCSONLY(Charset cs, byte[] repl,
+                         char[] c2b, char[] c2bIndex) {
             super(cs, 2.0f, 2.0f, repl, c2b, c2bIndex);
         }
 
@@ -740,6 +740,8 @@ public class DoubleByte {
             return bb;
         }
     }
+
+
 
     public static class Encoder_EBCDIC extends Encoder {
         static final int SBCS = 0;
@@ -911,4 +913,5 @@ public class DoubleByte {
             super(cs, c2b, c2bIndex);
         }
     }
+
 }
