@@ -63,7 +63,7 @@ public class GenerateDBCS {
             int    b2Min    = toInteger(fields[8]);
             int    b2Max    = toInteger(fields[9]);
             System.out.printf("%s,%s,%s,%b,%s%n", clzName, csName, hisName, isASCII, pkgName);
-            genClass(args[0], args[1], "DoubleByte-X.java",
+            genClass(args[0], args[1], "DoubleByte-X.java.template",
                     clzName, csName, hisName, pkgName,
                     isASCII, type,
                     b1Min, b1Max, b2Min, b2Max);

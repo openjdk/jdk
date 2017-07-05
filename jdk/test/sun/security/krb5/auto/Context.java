@@ -72,7 +72,7 @@ import com.sun.security.jgss.AuthorizationDataEntry;
 public class Context {
 
     private Subject s;
-    private GSSContext x;
+    private ExtendedGSSContext x;
     private boolean f;      // context established?
     private String name;
     private GSSCredential cred;     // see static method delegated().
@@ -147,8 +147,8 @@ public class Context {
             @Override
             public byte[] run(Context me, byte[] dummy) throws Exception {
                 GSSManager m = GSSManager.getInstance();
-                me.x = m.createContext(
-                        target.indexOf('@') < 0 ?
+                me.x = (ExtendedGSSContext)m.createContext(
+                          target.indexOf('@') < 0 ?
                             m.createName(target, null) :
                             m.createName(target, GSSName.NT_HOSTBASED_SERVICE),
                         mech,
@@ -170,7 +170,7 @@ public class Context {
             @Override
             public byte[] run(Context me, byte[] dummy) throws Exception {
                 GSSManager m = GSSManager.getInstance();
-                me.x = m.createContext(m.createCredential(
+                me.x = (ExtendedGSSContext)m.createContext(m.createCredential(
                         null,
                         GSSCredential.INDEFINITE_LIFETIME,
                         mech,
@@ -193,7 +193,7 @@ public class Context {
      *
      * @return the GSSContext object
      */
-    public GSSContext x() {
+    public ExtendedGSSContext x() {
         return x;
     }
 
@@ -254,6 +254,11 @@ public class Context {
             }
             if (x.getSequenceDetState()) {
                 sb.append("seq det, ");
+            }
+            if (x instanceof ExtendedGSSContext) {
+                if (((ExtendedGSSContext)x).getDelegPolicyState()) {
+                    sb.append("deleg policy, ");
+                }
             }
             System.out.println("Context status of " + name + ": " + sb.toString());
             System.out.println(x.getSrcName() + " -> " + x.getTargName());

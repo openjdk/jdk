@@ -42,9 +42,11 @@ import java.util.EventListener;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *
+ * @param <E> the type of the elements of this model
+ *
  * @author Hans Muller
  */
-public abstract class AbstractListModel implements ListModel, Serializable
+public abstract class AbstractListModel<E> implements ListModel<E>, Serializable
 {
     protected EventListenerList listenerList = new EventListenerList();
 

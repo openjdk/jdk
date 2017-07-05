@@ -34,7 +34,7 @@
 /*
  * @test
  * @bug 4486658
- * @compile -source 1.5 MapLoops.java
+ * @compile MapLoops.java
  * @run main/timeout=4700 MapLoops
  * @summary Exercise multithreaded maps, by default ConcurrentHashMap.
  * Multithreaded hash table test.  Each thread does a random walk

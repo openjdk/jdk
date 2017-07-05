@@ -411,7 +411,7 @@ Creating your own NetBeans project
             java/util/regex/,\
             java/util/spi/,\
             java/util/zip/,\
-            **/*-XLocales.java
+            **/*-XLocales.java.template
         jtreg.tests=\
             java/util/**/*Collection/ \
             java/util/**/*Map/ \

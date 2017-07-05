@@ -32,6 +32,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.annotation.Annotation;
 import java.util.HashMap;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
 import com.sun.tracing.Provider;
 import com.sun.tracing.Probe;
@@ -99,7 +101,13 @@ public abstract class ProviderSkeleton implements InvocationHandler, Provider {
      * It is up to the factory implementations to call this after construction.
      */
     public void init() {
-        for (Method m : providerType.getDeclaredMethods()) {
+        Method[] methods = AccessController.doPrivileged(new PrivilegedAction<Method[]>() {
+            public Method[] run() {
+                return providerType.getDeclaredMethods();
+            }
+        });
+
+        for (Method m : methods) {
             if ( m.getReturnType() != Void.TYPE ) {
                 throw new IllegalArgumentException(
                    "Return value of method is not void");

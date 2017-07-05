@@ -834,7 +834,7 @@ $(SCH_GEN)/SocketOptionRegistry.java: $(GENSOR_EXE)
 GENCSSRC = $(BUILDDIR)/tools/CharsetMapping
 CHARSETMAPPING_JARFILE = $(BUILDTOOLJARDIR)/charsetmapping.jar
 
-$(FILES_gensbcs_out): $(GENCSSRC)/SingleByte-X.java $(GENCSSRC)/sbcs
+$(FILES_gensbcs_out): $(GENCSSRC)/SingleByte-X.java.template $(GENCSSRC)/sbcs
 	@$(prep-target)
 	$(BOOT_JAVA_CMD) -jar $(CHARSETMAPPING_JARFILE) $(GENCSSRC) $(SCS_GEN) sbcs
 

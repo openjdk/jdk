@@ -829,7 +829,7 @@ public class BasicSplitPaneUI extends SplitPaneUI
 
     /**
      * Returns the default non continuous layout divider, which is an
-     * instanceof Canvas that fills the background in dark gray.
+     * instance of {@code Canvas} that fills in the background with dark gray.
      */
     protected Component createDefaultNonContinuousLayoutDivider() {
         return new Canvas() {
@@ -1041,11 +1041,11 @@ public class BasicSplitPaneUI extends SplitPaneUI
 
 
     /**
-     * Messaged after the JSplitPane the receiver is providing the look
-     * and feel for paints its children.
+     * Called when the specified split pane has finished painting
+     * its children.
      */
-    public void finishedPaintingChildren(JSplitPane jc, Graphics g) {
-        if(jc == splitPane && getLastDragLocation() != -1 &&
+    public void finishedPaintingChildren(JSplitPane sp, Graphics g) {
+        if(sp == splitPane && getLastDragLocation() != -1 &&
            !isContinuousLayout() && !draggingHW) {
             Dimension      size = splitPane.getSize();
 
@@ -1062,7 +1062,7 @@ public class BasicSplitPaneUI extends SplitPaneUI
 
 
     /**
-     * Messaged to paint the look and feel.
+     * @inheritDoc
      */
     public void paint(Graphics g, JComponent jc) {
         if (!painted && splitPane.getDividerLocation()<0) {

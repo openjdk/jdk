@@ -25,7 +25,7 @@
  * @test
  * @bug 5030233 6214916 6356475 6571029 6684582 6742159 4459600 6758881
  * @summary Argument parsing validation.
- * @compile Arrrghs.java TestHelper.java
+ * @compile -XDignore.symbol.file Arrrghs.java TestHelper.java
  * @run main Arrrghs
  */
 

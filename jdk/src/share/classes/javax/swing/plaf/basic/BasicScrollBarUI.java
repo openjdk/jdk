@@ -93,10 +93,13 @@ public class BasicScrollBarUI
      * scrollbar. */
     private boolean supportsAbsolutePositioning;
 
-    /** Hint as to what width (when vertical) or height (when horizontal)
+    /**
+     * Hint as to what width (when vertical) or height (when horizontal)
      * should be.
+     *
+     * @since 1.7
      */
-    private int scrollBarWidth;
+    protected int scrollBarWidth;
 
     private Handler handler;
 
@@ -117,18 +120,18 @@ public class BasicScrollBarUI
      * number. If negative, then an overlap between the button and track will occur,
      * which is useful for shaped buttons.
      *
-     * TODO This should be made protected in a feature release
+     * @since 1.7
      */
-    private int incrGap;
+    protected int incrGap;
 
     /**
      * Distance between the decrement button and the track. This may be a negative
      * number. If negative, then an overlap between the button and track will occur,
      * which is useful for shaped buttons.
      *
-     * TODO This should be made protected in a feature release
+     * @since 1.7
      */
-    private int decrGap;
+    protected int decrGap;
 
     static void loadActionMap(LazyActionMap map) {
         map.put(new Actions(Actions.POSITIVE_UNIT_INCREMENT));
@@ -586,7 +589,7 @@ public class BasicScrollBarUI
 
 
     /**
-     * Return the smallest acceptable size for the thumb.  If the scrollbar
+     * Returns the smallest acceptable size for the thumb.  If the scrollbar
      * becomes so small that this size isn't available, the thumb will be
      * hidden.
      * <p>
@@ -601,7 +604,7 @@ public class BasicScrollBarUI
     }
 
     /**
-     * Return the largest acceptable size for the thumb.  To create a fixed
+     * Returns the largest acceptable size for the thumb.  To create a fixed
      * size thumb one make this method and <code>getMinimumThumbSize</code>
      * return the same value.
      * <p>

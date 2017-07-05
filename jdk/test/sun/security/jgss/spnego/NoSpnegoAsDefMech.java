@@ -1,5 +1,5 @@
 /*
- * Copyright 2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,35 +22,22 @@
  */
 
 /*
- *
- *
- * Indictly used by SolarisRunpath.sh; this file is used to generate
- * the shared objects:
- *
- * ./lib/sparc/lib32/liblibrary.so
- * ./lib/sparc/lib32/lib32/liblibrary.so
- *
- * ./lib/sparc/lib64/liblibrary.so
- * ./lib/sparc/lib64/lib64/liblibrary.so
- *
- * ./lib/i386/lib32/liblibrary.so
- * ./lib/i386/lib32/lib32/liblibrary.so
- *
- * The function defined below returns either 0 or the size of an
- * integer in the data model used to compile the file (32 for ILP; 64
- * for LP).  The libraries in ./lib/$ARCH/lib$DM return 0; those in
- * ./lib/$ARCH/lib$DM/lib$DM return 32 or 64.
+ * @test
+ * @bug 6770883
+ * @summary Infinite loop if SPNEGO specified as sun.security.jgss.mechanism
  */
 
+import org.ietf.jgss.*;
+import sun.security.jgss.*;
 
-#include <jni.h>
-#include "libraryCaller.h"
+public class NoSpnegoAsDefMech {
 
-#ifndef RETURN_VALUE
-#define RETURN_VALUE 0
-#endif
-
-JNIEXPORT jint JNICALL Java_libraryCaller_number
-(JNIEnv *je, jclass jc) {
-  return RETURN_VALUE;
+    public static void main(String[] argv) throws Exception {
+        System.setProperty("sun.security.jgss.mechanism", GSSUtil.GSS_SPNEGO_MECH_OID.toString());
+        try {
+            GSSManager.getInstance().createName("service@host", GSSName.NT_HOSTBASED_SERVICE, new Oid("1.3.6.1.5.5.2"));
+        } catch (GSSException e) {
+            // This is OK, for example, krb5.conf is missing or other problems
+        }
+    }
 }

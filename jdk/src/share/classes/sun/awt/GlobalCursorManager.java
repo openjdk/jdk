@@ -183,7 +183,7 @@ public abstract class GlobalCursorManager {
             }
 
             if (comp instanceof Window) {
-                p = ComponentAccessor.getLocation_NoClientCode(comp);
+                p = AWTAccessor.getComponentAccessor().getLocation(comp);
             } else if (comp instanceof Container) {
                 p = getLocationOnScreen(comp);
             }
@@ -202,7 +202,7 @@ public abstract class GlobalCursorManager {
                 }
             }
 
-            setCursor(comp, ComponentAccessor.getCursor_NoClientCode(comp), useCache);
+            setCursor(comp, AWTAccessor.getComponentAccessor().getCursor(comp), useCache);
 
         } catch (IllegalComponentStateException e) {
             // Shouldn't happen, but if it does, abort.

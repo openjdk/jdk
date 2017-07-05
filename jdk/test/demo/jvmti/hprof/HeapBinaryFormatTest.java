@@ -26,7 +26,7 @@
  * @bug 4965057 6313381
  * @summary Test jvmti hprof format=b
  *
- * @compile -source 1.5 -g:source HelloWorld.java ../DemoRun.java
+ * @compile -g:source HelloWorld.java ../DemoRun.java
  * @build HeapBinaryFormatTest
  * @run main HeapBinaryFormatTest HelloWorld
  */

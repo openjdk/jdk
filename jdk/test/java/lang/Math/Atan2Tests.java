@@ -25,8 +25,6 @@
  * @test
  * @bug 4984407
  * @summary Tests for {Math, StrictMath}.atan2
- * @compile -source 1.5 Atan2Tests.java
- * @run main Atan2Tests
  * @author Joseph D. Darcy
  */
 
