@@ -99,7 +99,7 @@ void CallInfo::set_virtual(KlassHandle resolved_klass, KlassHandle selected_klas
   assert(!resolved_method->is_compiled_lambda_form(), "these must be handled via an invokehandle call");
 }
 
-void CallInfo::set_handle(methodHandle resolved_method, Handle resolved_appendix, TRAPS) {
+void CallInfo::set_handle(methodHandle resolved_method, Handle resolved_appendix, Handle resolved_method_type, TRAPS) {
   if (resolved_method.is_null()) {
     THROW_MSG(vmSymbols::java_lang_InternalError(), "resolved method is null");
   }
@@ -110,7 +110,8 @@ void CallInfo::set_handle(methodHandle resolved_method, Handle resolved_appendix
   int vtable_index = Method::nonvirtual_vtable_index;
   assert(resolved_method->vtable_index() == vtable_index, "");
   set_common(resolved_klass, resolved_klass, resolved_method, resolved_method, vtable_index, CHECK);
-  _resolved_appendix = resolved_appendix;
+  _resolved_appendix    = resolved_appendix;
+  _resolved_method_type = resolved_method_type;
 }
 
 void CallInfo::set_common(KlassHandle resolved_klass, KlassHandle selected_klass, methodHandle resolved_method, methodHandle selected_method, int vtable_index, TRAPS) {
@@ -221,7 +222,8 @@ void LinkResolver::lookup_method_in_interfaces(methodHandle& result, KlassHandle
 void LinkResolver::lookup_polymorphic_method(methodHandle& result,
                                              KlassHandle klass, Symbol* name, Symbol* full_signature,
                                              KlassHandle current_klass,
-                                             Handle* appendix_result_or_null,
+                                             Handle *appendix_result_or_null,
+                                             Handle *method_type_result,
                                              TRAPS) {
   vmIntrinsics::ID iid = MethodHandles::signature_polymorphic_name_id(name);
   if (TraceMethodHandles) {
@@ -275,10 +277,12 @@ void LinkResolver::lookup_polymorphic_method(methodHandle& result,
       }
 
       Handle appendix;
+      Handle method_type;
       result = SystemDictionary::find_method_handle_invoker(name,
                                                             full_signature,
                                                             current_klass,
                                                             &appendix,
+                                                            &method_type,
                                                             CHECK);
       if (TraceMethodHandles) {
         tty->print("lookup_polymorphic_method => (via Java) ");
@@ -307,6 +311,7 @@ void LinkResolver::lookup_polymorphic_method(methodHandle& result,
 
         assert(appendix_result_or_null != NULL, "");
         (*appendix_result_or_null) = appendix;
+        (*method_type_result)      = method_type;
         return;
       }
     }
@@ -419,7 +424,7 @@ void LinkResolver::resolve_method(methodHandle& resolved_method, KlassHandle res
     if (resolved_method.is_null()) {
       // JSR 292:  see if this is an implicitly generated method MethodHandle.linkToVirtual(*...), etc
       lookup_polymorphic_method(resolved_method, resolved_klass, method_name, method_signature,
-                                current_klass, (Handle*)NULL, THREAD);
+                                current_klass, (Handle*)NULL, (Handle*)NULL, THREAD);
       if (HAS_PENDING_EXCEPTION) {
         nested_exception = Handle(THREAD, PENDING_EXCEPTION);
         CLEAR_PENDING_EXCEPTION;
@@ -1207,11 +1212,12 @@ void LinkResolver::resolve_handle_call(CallInfo& result, KlassHandle resolved_kl
   assert(resolved_klass() == SystemDictionary::MethodHandle_klass(), "");
   assert(MethodHandles::is_signature_polymorphic_name(method_name), "");
   methodHandle resolved_method;
-  Handle resolved_appendix;
+  Handle       resolved_appendix;
+  Handle       resolved_method_type;
   lookup_polymorphic_method(resolved_method, resolved_klass,
                             method_name, method_signature,
-                            current_klass, &resolved_appendix, CHECK);
-  result.set_handle(resolved_method, resolved_appendix, CHECK);
+                            current_klass, &resolved_appendix, &resolved_method_type, CHECK);
+  result.set_handle(resolved_method, resolved_appendix, resolved_method_type, CHECK);
 }
 
 
@@ -1219,7 +1225,7 @@ void LinkResolver::resolve_invokedynamic(CallInfo& result, constantPoolHandle po
   assert(EnableInvokeDynamic, "");
   pool->set_invokedynamic();    // mark header to flag active call sites
 
-  //resolve_pool(<resolved_klass>, method_name,  method_signature, current_klass, pool, index, CHECK);
+  //resolve_pool(<resolved_klass>, method_name, method_signature, current_klass, pool, index, CHECK);
   Symbol* method_name       = pool->name_ref_at(index);
   Symbol* method_signature  = pool->signature_ref_at(index);
   KlassHandle current_klass = KlassHandle(THREAD, pool->pool_holder());
@@ -1236,9 +1242,10 @@ void LinkResolver::resolve_invokedynamic(CallInfo& result, constantPoolHandle po
     bootstrap_specifier = Handle(THREAD, bsm_info);
   }
   if (!cpce->is_f1_null()) {
-    methodHandle method(THREAD, cpce->f1_as_method());
-    Handle appendix(THREAD, cpce->appendix_if_resolved(pool));
-    result.set_handle(method, appendix, CHECK);
+    methodHandle method(     THREAD, cpce->f1_as_method());
+    Handle       appendix(   THREAD, cpce->appendix_if_resolved(pool));
+    Handle       method_type(THREAD, cpce->method_type_if_resolved(pool));
+    result.set_handle(method, appendix, method_type, CHECK);
     return;
   }
 
@@ -1260,11 +1267,13 @@ void LinkResolver::resolve_dynamic_call(CallInfo& result,
   // JSR 292:  this must resolve to an implicitly generated method MH.linkToCallSite(*...)
   // The appendix argument is likely to be a freshly-created CallSite.
   Handle       resolved_appendix;
+  Handle       resolved_method_type;
   methodHandle resolved_method =
     SystemDictionary::find_dynamic_call_site_invoker(current_klass,
                                                      bootstrap_specifier,
                                                      method_name, method_signature,
                                                      &resolved_appendix,
+                                                     &resolved_method_type,
                                                      THREAD);
   if (HAS_PENDING_EXCEPTION) {
     if (TraceMethodHandles) {
@@ -1284,7 +1293,7 @@ void LinkResolver::resolve_dynamic_call(CallInfo& result,
     CLEAR_PENDING_EXCEPTION;
     THROW_CAUSE(vmSymbols::java_lang_BootstrapMethodError(), nested_exception)
   }
-  result.set_handle(resolved_method, resolved_appendix, CHECK);
+  result.set_handle(resolved_method, resolved_appendix, resolved_method_type, CHECK);
 }
 
 //------------------------------------------------------------------------------------------------------------------------

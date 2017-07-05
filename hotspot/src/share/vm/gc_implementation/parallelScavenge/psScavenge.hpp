@@ -66,14 +66,14 @@ class PSScavenge: AllStatic {
   static PSIsAliveClosure    _is_alive_closure;     // Closure used for reference processing
   static CardTableExtension* _card_table;           // We cache the card table for fast access.
   static bool                _survivor_overflow;    // Overflow this collection
-  static int                 _tenuring_threshold;   // tenuring threshold for next scavenge
+  static uint                _tenuring_threshold;   // tenuring threshold for next scavenge
   static elapsedTimer        _accumulated_time;     // total time spent on scavenge
   static HeapWord*           _young_generation_boundary; // The lowest address possible for the young_gen.
                                                          // This is used to decide if an oop should be scavenged,
                                                          // cards should be marked, etc.
   static Stack<markOop, mtGC> _preserved_mark_stack; // List of marks to be restored after failed promotion
   static Stack<oop, mtGC>     _preserved_oop_stack;  // List of oops that need their mark restored.
-  static CollectorCounters*      _counters;         // collector performance counters
+  static CollectorCounters*      _counters;          // collector performance counters
   static bool                    _promotion_failed;
 
   static void clean_up_failed_promotion();
@@ -88,7 +88,7 @@ class PSScavenge: AllStatic {
 
  public:
   // Accessors
-  static int              tenuring_threshold()  { return _tenuring_threshold; }
+  static uint             tenuring_threshold()  { return _tenuring_threshold; }
   static elapsedTimer*    accumulated_time()    { return &_accumulated_time; }
   static bool             promotion_failed()    { return _promotion_failed; }
   static int              consecutive_skipped_scavenges()

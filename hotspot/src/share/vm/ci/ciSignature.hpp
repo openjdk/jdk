@@ -47,6 +47,7 @@ private:
   friend class ciObjectFactory;
 
   ciSignature(ciKlass* accessing_klass, constantPoolHandle cpool, ciSymbol* signature);
+  ciSignature(ciKlass* accessing_klass,                           ciSymbol* signature, ciMethodType* method_type);
 
   void get_all_klasses();
 

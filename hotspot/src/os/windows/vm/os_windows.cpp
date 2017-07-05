@@ -69,12 +69,6 @@
 # include "assembler_x86.inline.hpp"
 # include "nativeInst_x86.hpp"
 #endif
-#ifdef COMPILER1
-#include "c1/c1_Runtime1.hpp"
-#endif
-#ifdef COMPILER2
-#include "opto/runtime.hpp"
-#endif
 
 #ifdef _DEBUG
 #include <crtdbg.h>

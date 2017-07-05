@@ -1112,7 +1112,7 @@ void Arguments::set_parnew_gc_flags() {
     // AlwaysTenure flag should make ParNew promote all at first collection.
     // See CR 6362902.
     if (AlwaysTenure) {
-      FLAG_SET_CMDLINE(intx, MaxTenuringThreshold, 0);
+      FLAG_SET_CMDLINE(uintx, MaxTenuringThreshold, 0);
     }
     // When using compressed oops, we use local overflow stacks,
     // rather than using a global overflow list chained through
@@ -1231,7 +1231,7 @@ void Arguments::set_cms_and_parnew_gc_flags() {
   // promote all objects surviving "tenuring_default" scavenges.
   if (FLAG_IS_DEFAULT(MaxTenuringThreshold) &&
       FLAG_IS_DEFAULT(SurvivorRatio)) {
-    FLAG_SET_ERGO(intx, MaxTenuringThreshold, tenuring_default);
+    FLAG_SET_ERGO(uintx, MaxTenuringThreshold, tenuring_default);
   }
   // If we decided above (or user explicitly requested)
   // `promote all' (via MaxTenuringThreshold := 0),
