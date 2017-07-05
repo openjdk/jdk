@@ -61,7 +61,7 @@ import jdk.tools.jlink.plugin.Plugin;
  * ## Should use jdk.joptsimple some day.
  */
 public class JlinkTask {
-    private static final boolean DEBUG = Boolean.getBoolean("jlink.debug");
+    static final boolean DEBUG = Boolean.getBoolean("jlink.debug");
 
     private static <T extends Throwable> void fail(Class<T> type,
             String format,

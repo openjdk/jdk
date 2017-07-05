@@ -1013,8 +1013,8 @@ public class Desktop {
      * @param file the file
      * @return returns true if successfully moved the file to the trash.
      * @throws SecurityException If a security manager exists and its
-     *         {@link SecurityManager#checkWrite(java.lang.String)} method
-     *         denies write access to the file
+     *         {@link SecurityManager#checkDelete(java.lang.String)} method
+     *         denies deletion of the file
      * @throws UnsupportedOperationException if the current platform
      *         does not support the {@link Desktop.Action#MOVE_TO_TRASH} action
      * @throws NullPointerException if {@code file} is {@code null}

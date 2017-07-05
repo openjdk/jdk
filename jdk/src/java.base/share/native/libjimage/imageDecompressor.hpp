@@ -74,8 +74,8 @@ struct ResourceHeader {
  * meaning that the resource is equivalent to the not compressed resource.
  * In each iteration, the name of the compressor located in the current header
  * is used to retrieve the associated instance of ImageDecompressor.
- * For example “zip” is the name of the compressor that compresses resources
- * using the zip algorithm. The ZipDecompressor class name is also “zip”.
+ * For example "zip" is the name of the compressor that compresses resources
+ * using the zip algorithm. The ZipDecompressor class name is also "zip".
  * ImageDecompressor instances are retrieved from a static array in which
  * they are registered.
  */

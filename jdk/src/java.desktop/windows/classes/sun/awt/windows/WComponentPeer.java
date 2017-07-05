@@ -55,6 +55,7 @@ import sun.awt.event.IgnorePaintEvent;
 
 import java.awt.dnd.DropTarget;
 import java.awt.dnd.peer.DropTargetPeer;
+import java.awt.geom.AffineTransform;
 import sun.awt.AWTAccessor;
 
 import sun.util.logging.PlatformLogger;
@@ -1128,6 +1129,12 @@ public abstract class WComponentPeer extends WObjectPeer
         }
 
         if (shape != null) {
+            AffineTransform tx = winGraphicsConfig.getDefaultTransform();
+            double scaleX = tx.getScaleX();
+            double scaleY = tx.getScaleY();
+            if (scaleX != 1 || scaleY != 1) {
+                shape = shape.getScaledRegion(scaleX, scaleY);
+            }
             setRectangularShape(shape.getLoX(), shape.getLoY(), shape.getHiX(), shape.getHiY(),
                     (shape.isRectangular() ? null : shape));
         } else {

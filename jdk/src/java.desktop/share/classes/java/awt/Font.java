@@ -1813,34 +1813,30 @@ public class Font implements java.io.Serializable
             return true;
         }
 
-        if (obj != null) {
-            try {
-                Font font = (Font)obj;
-                if (size == font.size &&
-                    style == font.style &&
-                    nonIdentityTx == font.nonIdentityTx &&
-                    hasLayoutAttributes == font.hasLayoutAttributes &&
-                    pointSize == font.pointSize &&
-                    name.equals(font.name)) {
+        if (obj instanceof Font) {
+            Font font = (Font)obj;
+            if (size == font.size &&
+                style == font.style &&
+                nonIdentityTx == font.nonIdentityTx &&
+                hasLayoutAttributes == font.hasLayoutAttributes &&
+                pointSize == font.pointSize &&
+                name.equals(font.name)) {
 
-                    /* 'values' is usually initialized lazily, except when
-                     * the font is constructed from a Map, or derived using
-                     * a Map or other values. So if only one font has
-                     * the field initialized we need to initialize it in
-                     * the other instance and compare.
-                     */
-                    if (values == null) {
-                        if (font.values == null) {
-                            return true;
-                        } else {
-                            return getAttributeValues().equals(font.values);
-                        }
+                /* 'values' is usually initialized lazily, except when
+                 * the font is constructed from a Map, or derived using
+                 * a Map or other values. So if only one font has
+                 * the field initialized we need to initialize it in
+                 * the other instance and compare.
+                 */
+                if (values == null) {
+                    if (font.values == null) {
+                        return true;
                     } else {
-                        return values.equals(font.getAttributeValues());
+                        return getAttributeValues().equals(font.values);
                     }
+                } else {
+                    return values.equals(font.getAttributeValues());
                 }
-            }
-            catch (ClassCastException e) {
             }
         }
         return false;
