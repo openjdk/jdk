@@ -30,19 +30,22 @@ JDWP_SPEC_FILE := $(JDK_TOPDIR)/make/data/jdwp/jdwp.spec
 
 $(JDK_OUTPUTDIR)/gensrc_jdwp_headers/JDWPCommands.h: $(JDWP_SPEC_FILE)
 
-$(JDK_OUTPUTDIR)/gensrc/com/sun/tools/jdi/JDWP.java: $(JDWP_SPEC_FILE)
+$(JDK_OUTPUTDIR)/gensrc/jdk.jdi/com/sun/tools/jdi/JDWP.java: \
+    $(JDWP_SPEC_FILE) $(BUILD_TOOLS_JDK)
 	$(MKDIR) -p $(@D)
 	$(MKDIR) -p $(JDK_OUTPUTDIR)/gensrc_jdwp_headers
 	$(RM) $@ $(JDK_OUTPUTDIR)/gensrc_jdwp_headers/JDWPCommands.h
 	$(ECHO) $(LOG_INFO) Creating JDWP.java and JDWPCommands.h from jdwp.spec
 	$(TOOL_JDWPGEN) $< -jdi $@ -include $(JDK_OUTPUTDIR)/gensrc_jdwp_headers/JDWPCommands.h
 
-$(JDK_OUTPUTDIR)/gensrc_jdwp_doc/jdwp-protocol.html: $(JDWP_SPEC_FILE)
+$(JDK_OUTPUTDIR)/gensrc_jdwp_doc/jdwp-protocol.html: $(JDWP_SPEC_FILE) \
+    $(BUILD_TOOLS_JDK)
 	$(MKDIR) -p $(@D)
 	$(RM) $@
 	$(ECHO) $(LOG_INFO) Creating $(@F) from jdwp.spec
 	$(TOOL_JDWPGEN) $< -doc $@
 
-GENSRC_JDWP := $(JDK_OUTPUTDIR)/gensrc/com/sun/tools/jdi/JDWP.java \
+GENSRC_JDWP := $(JDK_OUTPUTDIR)/gensrc/jdk.jdi/com/sun/tools/jdi/JDWP.java \
     $(JDK_OUTPUTDIR)/gensrc_jdwp_headers/JDWPCommands.h \
     $(JDK_OUTPUTDIR)/gensrc_jdwp_doc/jdwp-protocol.html
+GENSRC_JDK_JDI += $(GENSRC_JDWP)

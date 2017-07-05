@@ -35,7 +35,7 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
 
   # JDK_BUNDLE_DIR and JRE_BUNDLE_DIR are defined in SPEC.
 
-  MACOSX_SRC := $(JDK_TOPDIR)/src/macosx
+  MACOSX_PLIST_SRC := $(JDK_TOPDIR)/make/bundle
 
   # All these OPENJDK checks are needed since there is no coherency between
   # these values in open and closed. Should probably be fixed.
@@ -106,7 +106,7 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
 	    -e "s/@@PLATFORM_VERSION@@/$(BUNDLE_PLATFORM_VERSION)/g" \
 	    -e "s/@@VERSION@@/$(BUNDLE_VERSION)/g" \
 	    -e "s/@@VENDOR@@/$(BUNDLE_VENDOR)/g" \
-	    < $(MACOSX_SRC)/bundle/JDK-Info.plist > $@
+	    < $(MACOSX_PLIST_SRC)/JDK-Info.plist > $@
 
   $(JRE_BUNDLE_DIR)/Info.plist: $(SPEC)
 	$(ECHO) Creating $(patsubst $(OUTPUT_ROOT)/%,%,$@)
@@ -117,7 +117,7 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
 	    -e "s/@@PLATFORM_VERSION@@/$(BUNDLE_PLATFORM_VERSION)/g" \
 	    -e "s/@@VERSION@@/$(BUNDLE_VERSION)/g" \
 	    -e "s/@@VENDOR@@/$(BUNDLE_VENDOR)/g" \
-	    < $(MACOSX_SRC)/bundle/JRE-Info.plist > $@
+	    < $(MACOSX_PLIST_SRC)/JRE-Info.plist > $@
 
   jdk-bundle: $(JDK_TARGET_LIST) $(JDK_BUNDLE_DIR)/MacOS/libjli.dylib \
       $(JDK_BUNDLE_DIR)/Info.plist
