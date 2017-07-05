@@ -50,14 +50,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.spi.ToolProvider;
 import java.util.stream.Collectors;
 
-import jdk.internal.misc.SharedSecrets;
-import jdk.internal.misc.JavaLangModuleAccess;
+import jdk.internal.module.ModuleInfo;
 import jdk.internal.module.ModuleHashes;
+import jdk.internal.module.ModulePath;
 
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
@@ -103,54 +102,53 @@ public class HashesTest {
     @Test
     public void test() throws Exception {
         for (String mn : modules) {
-            assertFalse(hashes(mn).isPresent());
+            assertTrue(hashes(mn) == null);
         }
 
         // hash m1 in m2
         jmod("m2", "--module-path", jmods.toString(), "--hash-modules", "m1");
-        checkHashes(hashes("m2").get(), "m1");
+        checkHashes(hashes("m2"), "m1");
 
         // hash m1 in m2
         jmod("m2", "--module-path", jmods.toString(), "--hash-modules", ".*");
-        checkHashes(hashes("m2").get(), "m1");
+        checkHashes(hashes("m2"), "m1");
 
         // create m2.jmod with no hash
         jmod("m2");
         // run jmod hash command to hash m1 in m2 and m3
         runJmod(Arrays.asList("hash", "--module-path", jmods.toString(),
                 "--hash-modules", ".*"));
-        checkHashes(hashes("m2").get(), "m1");
-        checkHashes(hashes("m3").get(), "m1");
+        checkHashes(hashes("m2"), "m1");
+        checkHashes(hashes("m3"), "m1");
 
         jmod("org.bar");
         jmod("org.foo");
 
         jmod("org.bar", "--module-path", jmods.toString(), "--hash-modules", "org.*");
-        checkHashes(hashes("org.bar").get(), "org.foo");
+        checkHashes(hashes("org.bar"), "org.foo");
 
         jmod("m3", "--module-path", jmods.toString(), "--hash-modules", ".*");
-        checkHashes(hashes("m3").get(), "org.foo", "org.bar", "m1");
+        checkHashes(hashes("m3"), "org.foo", "org.bar", "m1");
     }
 
     private void checkHashes(ModuleHashes hashes, String... hashModules) {
         assertTrue(hashes.names().equals(Set.of(hashModules)));
     }
 
-    private Optional<ModuleHashes> hashes(String name) throws Exception {
-        ModuleFinder finder = SharedSecrets.getJavaLangModuleAccess()
-            .newModulePath(Runtime.version(), true, jmods.resolve(name + ".jmod"));
+    private ModuleHashes hashes(String name) throws Exception {
+        ModuleFinder finder = new ModulePath(Runtime.version(),
+                                             true,
+                                             jmods.resolve(name + ".jmod"));
         ModuleReference mref = finder.find(name).orElseThrow(RuntimeException::new);
         ModuleReader reader = mref.open();
         try (InputStream in = reader.open("module-info.class").get()) {
-            ModuleDescriptor md = ModuleDescriptor.read(in);
-            JavaLangModuleAccess jmla = SharedSecrets.getJavaLangModuleAccess();
-            Optional<ModuleHashes> hashes = jmla.hashes(md);
+            ModuleHashes hashes = ModuleInfo.read(in, null).recordedHashes();
             System.out.format("hashes in module %s %s%n", name,
-                              hashes.isPresent() ? "present" : "absent");
-            if (hashes.isPresent()) {
-                hashes.get().names().stream()
+                    (hashes != null) ? "present" : "absent");
+            if (hashes != null) {
+                hashes.names().stream()
                     .sorted()
-                    .forEach(n -> System.out.format("  %s %s%n", n, hashes.get().hashFor(n)));
+                    .forEach(n -> System.out.format("  %s %s%n", n, hashes.hashFor(n)));
             }
             return hashes;
         } finally {

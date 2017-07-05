@@ -113,20 +113,20 @@ Declares a structure type that can be used in other events.
   <event id="ClassLoad" path="vm/class/load" label="Class Load"
          has_thread="true" has_stacktrace="true" is_instant="false">
     <value type="CLASS" field="loadedClass" label="Loaded Class"/>
-    <value type="CLASS" field="definingClassLoader" label="Defining Class Loader"/>
-    <value type="CLASS" field="initiatingClassLoader" label="Initiating Class Loader"/>
+    <value type="CLASSLOADER" field="definingClassLoader" label="Defining Class Loader"/>
+    <value type="CLASSLOADER" field="initiatingClassLoader" label="Initiating Class Loader"/>
   </event>
 
   <event id="ClassDefine" path="vm/class/define" label="Class Define"
          has_thread="true" has_stacktrace="true" is_instant="true">
     <value type="CLASS" field="definedClass" label="Defined Class"/>
-    <value type="CLASS" field="definingClassLoader" label="Defining Class Loader"/>
+    <value type="CLASSLOADER" field="definingClassLoader" label="Defining Class Loader"/>
   </event>
 
   <event id="ClassUnload" path="vm/class/unload" label="Class Unload"
          has_thread="true" is_instant="true">
     <value type="CLASS" field="unloadedClass" label="Unloaded Class"/>
-    <value type="CLASS" field="definingClassLoader" label="Defining Class Loader"/>
+    <value type="CLASSLOADER" field="definingClassLoader" label="Defining Class Loader"/>
   </event>
 
   <event id="IntFlagChanged" path="vm/flag/int_changed" label="Int Flag Changed"
@@ -229,7 +229,7 @@ Declares a structure type that can be used in other events.
   </event>
 
   <event id="MetaspaceAllocationFailure" path="vm/gc/metaspace/allocation_failure" label="Metaspace Allocation Failure" is_instant="true" has_stacktrace="true">
-    <value type="CLASS" field="classLoader" label="Class Loader" />
+    <value type="CLASSLOADER" field="classLoader" label="Class Loader" />
     <value type="BOOLEAN" field="anonymousClassLoader" label="Anonymous Class Loader" />
     <value type="BYTES64" field="size" label="Size" />
     <value type="METADATATYPE" field="metadataType" label="Metadata Type" />
@@ -237,7 +237,7 @@ Declares a structure type that can be used in other events.
   </event>
 
   <event id="MetaspaceOOM" path="vm/gc/metaspace/out_of_memory" label="Metaspace Out of Memory" is_instant="true" has_stacktrace="true">
-    <value type="CLASS" field="classLoader" label="Class Loader" />
+    <value type="CLASSLOADER" field="classLoader" label="Class Loader" />
     <value type="BOOLEAN" field="anonymousClassLoader" label="Anonymous Class Loader" />
     <value type="BYTES64" field="size" label="Size" />
     <value type="METADATATYPE" field="metadataType" label="Metadata Type" />

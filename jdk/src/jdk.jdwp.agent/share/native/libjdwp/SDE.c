@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -249,16 +249,19 @@ private jboolean isValid(void);
         int lastLn = 0;
         int sti;
 
+        if (cnt < 0) {
+            return;
+        }
         loadDebugInfo(env, clazz);
         if (!isValid()) {
             return; /* no SDE or not SourceMap - return unchanged */
         }
         sti = stratumTableIndex(globalDefaultStratumId);
-        if (sti == baseStratumIndex) {
+        if (sti == baseStratumIndex || sti < 0) {
             return; /* Java stratum - return unchanged */
         }
         LOG_MISC(("SDE is re-ordering the line table"));
-        for (; cnt-->0; ++fromEntry) {
+        for (; cnt-- > 0; ++fromEntry) {
             int jplsLine = fromEntry->line_number;
             int lti = stiLineTableIndex(sti, jplsLine);
             if (lti >= 0) {

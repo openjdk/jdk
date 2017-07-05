@@ -27,8 +27,9 @@ package sun.security.ssl;
 
 import java.io.*;
 import java.nio.*;
-import java.util.*;
 import java.security.*;
+import java.util.*;
+import java.util.function.BiFunction;
 
 import javax.crypto.BadPaddingException;
 
@@ -205,6 +206,10 @@ public final class SSLEngineImpl extends SSLEngine {
     //
     // The value under negotiation will be obtained from handshaker.
     String applicationProtocol = null;
+
+    // Callback function that selects the application protocol value during
+    // the SSL/TLS handshake.
+    BiFunction<SSLEngine, List<String>, String> applicationProtocolSelector;
 
     // Have we been told whether we're client or server?
     private boolean                     serverModeSet = false;
@@ -442,6 +447,8 @@ public final class SSLEngineImpl extends SSLEngine {
         handshaker.setEnabledCipherSuites(enabledCipherSuites);
         handshaker.setEnableSessionCreation(enableSessionCreation);
         handshaker.setApplicationProtocols(applicationProtocols);
+        handshaker.setApplicationProtocolSelectorSSLEngine(
+            applicationProtocolSelector);
 
         outputRecord.initHandshaker();
     }
@@ -2237,7 +2244,7 @@ public final class SSLEngineImpl extends SSLEngine {
         }
         applicationProtocols = params.getApplicationProtocols();
 
-        if ((handshaker != null) && !handshaker.started()) {
+        if ((handshaker != null) && !handshaker.activated()) {
             handshaker.setIdentificationProtocol(identificationProtocol);
             handshaker.setAlgorithmConstraints(algorithmConstraints);
             handshaker.setMaximumPacketSize(maximumPacketSize);
@@ -2262,6 +2269,21 @@ public final class SSLEngineImpl extends SSLEngine {
             return handshaker.getHandshakeApplicationProtocol();
         }
         return null;
+    }
+
+    @Override
+    public synchronized void setHandshakeApplicationProtocolSelector(
+        BiFunction<SSLEngine, List<String>, String> selector) {
+        applicationProtocolSelector = selector;
+        if ((handshaker != null) && !handshaker.activated()) {
+            handshaker.setApplicationProtocolSelectorSSLEngine(selector);
+        }
+    }
+
+    @Override
+    public synchronized BiFunction<SSLEngine, List<String>, String>
+        getHandshakeApplicationProtocolSelector() {
+        return this.applicationProtocolSelector;
     }
 
     /**

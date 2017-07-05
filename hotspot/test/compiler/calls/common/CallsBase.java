@@ -82,16 +82,16 @@ public abstract class CallsBase {
      */
     protected final boolean compilationLevelsSupported() {
         int[] compLevels = CompilerUtils.getAvailableCompilationLevels();
-        boolean callerCompLevelSupported = compileCaller > 0
+        boolean callerCompLevelSupported = compileCaller <= 0 || (compileCaller > 0
                 && Arrays.stream(compLevels)
                         .filter(elem -> elem == compileCaller)
                         .findAny()
-                        .isPresent();
-        boolean calleeCompLevelSupported = compileCallee > 0
+                        .isPresent());
+        boolean calleeCompLevelSupported = compileCallee <= 0 || (compileCallee > 0
                 && Arrays.stream(compLevels)
                         .filter(elem -> elem == compileCallee)
                         .findAny()
-                        .isPresent();
+                        .isPresent());
         return callerCompLevelSupported && calleeCompLevelSupported;
     }
 

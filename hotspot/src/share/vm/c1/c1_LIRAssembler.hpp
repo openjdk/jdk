@@ -260,6 +260,21 @@ class LIR_Assembler: public CompilationResourceObj {
 
 #include CPU_HEADER(c1_LIRAssembler)
 
+  static int call_stub_size() {
+    if (UseAOT) {
+      return _call_stub_size + _call_aot_stub_size;
+    } else {
+      return _call_stub_size;
+    }
+  }
+
+  static int exception_handler_size() {
+    return _exception_handler_size;
+  }
+
+  static int deopt_handler_size() {
+    return _deopt_handler_size;
+  }
 };
 
 #endif // SHARE_VM_C1_C1_LIRASSEMBLER_HPP

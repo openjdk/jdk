@@ -25,11 +25,11 @@
 
 package com.sun.jndi.ldap.pool;
 
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.LinkedList;
 
 import java.io.PrintStream;
@@ -166,17 +166,25 @@ final public class Pool {
      *          and removed.
      */
     public void expire(long threshold) {
+        Collection<ConnectionsRef> copy;
         synchronized (map) {
-            Iterator<ConnectionsRef> iter = map.values().iterator();
-            Connections conns;
-            while (iter.hasNext()) {
-                conns = iter.next().getConnections();
-                if (conns.expire(threshold)) {
-                    d("expire(): removing ", conns);
-                    iter.remove();
-                }
+            copy = new ArrayList<>(map.values());
+        }
+
+        ArrayList<ConnectionsRef> removed = new ArrayList<>();
+        Connections conns;
+        for (ConnectionsRef ref : copy) {
+            conns = ref.getConnections();
+            if (conns.expire(threshold)) {
+                d("expire(): removing ", conns);
+                removed.add(ref);
             }
         }
+
+        synchronized (map) {
+            map.values().removeAll(removed);
+        }
+
         expungeStaleConnections();
     }
 

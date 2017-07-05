@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,9 @@ public abstract class CompilerWhiteBoxTest {
     /** {@code CompLevel::CompLevel_none} -- Interpreter */
     public static final int COMP_LEVEL_NONE = 0;
     /** {@code CompLevel::CompLevel_any}, {@code CompLevel::CompLevel_all} */
-    public static final int COMP_LEVEL_ANY = -1;
+    public static final int COMP_LEVEL_ANY = -2;
+    /** {@code CompLevel::CompLevel_aot} -- AOT */
+    public static final int COMP_LEVEL_AOT = -1;
     /** {@code CompLevel::CompLevel_simple} -- C1 */
     public static final int COMP_LEVEL_SIMPLE = 1;
     /** {@code CompLevel::CompLevel_limited_profile} -- C1, invocation &amp; backedge counters */

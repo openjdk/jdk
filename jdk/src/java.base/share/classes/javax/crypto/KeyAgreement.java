@@ -484,7 +484,7 @@ public class KeyAgreement {
 
         if (!skipDebug && pdebug != null) {
             pdebug.println("KeyAgreement." + algorithm + " algorithm from: " +
-                this.provider.getName());
+                getProviderName());
         }
     }
 
@@ -517,6 +517,10 @@ public class KeyAgreement {
         init(key, params, JceSecurity.RANDOM);
     }
 
+    private String getProviderName() {
+        return (provider == null) ? "(no provider)" : provider.getName();
+    }
+
     /**
      * Initializes this key agreement with the given key, set of
      * algorithm parameters, and source of randomness.
@@ -545,7 +549,7 @@ public class KeyAgreement {
 
         if (!skipDebug && pdebug != null) {
             pdebug.println("KeyAgreement." + algorithm + " algorithm from: " +
-                this.provider.getName());
+                getProviderName());
         }
     }
 

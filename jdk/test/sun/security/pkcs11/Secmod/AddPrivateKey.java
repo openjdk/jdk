@@ -27,7 +27,7 @@
  * @summary Test that the PKCS#11 KeyStore handles RSA, DSA, and EC keys
  * @author Andreas Sterbenz
  * @library ..
- * @modules jdk.crypto.pkcs11
+ * @modules jdk.crypto.token
  * @run main/othervm AddPrivateKey
  * @run main/othervm AddPrivateKey sm policy
  */

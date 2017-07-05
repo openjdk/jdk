@@ -182,6 +182,8 @@ public abstract class DefaultRowSorter<M, I> extends RowSorter<M> {
      */
     private int modelRowCount;
 
+    // Whether to print warning about JDK-8160087
+    private static boolean warning8160087 = true;
 
     /**
      * Creates an empty <code>DefaultRowSorter</code>.
@@ -489,10 +491,7 @@ public abstract class DefaultRowSorter<M, I> extends RowSorter<M> {
      */
     public int convertRowIndexToView(int index) {
         if (modelToView == null) {
-            if (index < 0 || index >= modelRowCount) {
-                throw new IndexOutOfBoundsException("Invalid index");
-            }
-            return index;
+            return convertUnsortedUnfiltered(index);
         }
         return modelToView[index];
     }
@@ -504,13 +503,29 @@ public abstract class DefaultRowSorter<M, I> extends RowSorter<M> {
      */
     public int convertRowIndexToModel(int index) {
         if (viewToModel == null) {
-            if (index < 0 || index >= modelRowCount) {
-                throw new IndexOutOfBoundsException("Invalid index");
-            }
-            return index;
+            return convertUnsortedUnfiltered(index);
         }
         return viewToModel[index].modelIndex;
     }
+
+    private int convertUnsortedUnfiltered(int index) {
+        if (index < 0 || index >= modelRowCount) {
+            if(index >= modelRowCount &&
+                                      index < getModelWrapper().getRowCount()) {
+                // 8160087
+                if(warning8160087) {
+                    warning8160087 = false;
+                    System.err.println("WARNING: row index is bigger than " +
+                            "sorter's row count. Most likely this is a wrong " +
+                            "sorter usage.");
+                }
+            } else {
+                throw new IndexOutOfBoundsException("Invalid index");
+            }
+        }
+        return index;
+    }
+
 
     private boolean isUnsorted() {
         List<? extends SortKey> keys = getSortKeys();

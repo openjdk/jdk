@@ -32,7 +32,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Supplier;
 
 /**
  * A container of modules that acts as a ModuleFinder for testing
@@ -52,11 +51,12 @@ class ModuleLibrary implements ModuleFinder {
 
                 URI uri = URI.create("module:/" + descriptor.name());
 
-                Supplier<ModuleReader> supplier = () -> {
-                    throw new UnsupportedOperationException();
+                ModuleReference mref = new ModuleReference(descriptor, uri) {
+                    @Override
+                    public ModuleReader open() {
+                        throw new UnsupportedOperationException();
+                    }
                 };
-
-                ModuleReference mref = new ModuleReference(descriptor, uri, supplier);
 
                 namesToReference.put(name, mref);
             }

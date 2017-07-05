@@ -286,7 +286,7 @@ uint HeapRegionManager::find_highest_free(bool* expanded) {
   while (true) {
     HeapRegion *hr = _regions.get_by_index(curr);
     if (hr == NULL) {
-      uint res = expand_at(curr, 1);
+      uint res = expand_at(curr, 1, NULL);
       if (res == 1) {
         *expanded = true;
         return curr;
@@ -304,7 +304,7 @@ uint HeapRegionManager::find_highest_free(bool* expanded) {
   }
 }
 
-bool HeapRegionManager::allocate_containing_regions(MemRegion range, size_t* commit_count) {
+bool HeapRegionManager::allocate_containing_regions(MemRegion range, size_t* commit_count, WorkGang* pretouch_workers) {
   size_t commits = 0;
   uint start_index = (uint)_regions.get_index_by_address(range.start());
   uint last_index = (uint)_regions.get_index_by_address(range.last());
@@ -314,7 +314,7 @@ bool HeapRegionManager::allocate_containing_regions(MemRegion range, size_t* com
   for (uint curr_index = start_index; curr_index <= last_index; curr_index++) {
     if (!is_available(curr_index)) {
       commits++;
-      expand_at(curr_index, 1);
+      expand_at(curr_index, 1, pretouch_workers);
     }
     HeapRegion* curr_region  = _regions.get_by_index(curr_index);
     if (!curr_region->is_free()) {

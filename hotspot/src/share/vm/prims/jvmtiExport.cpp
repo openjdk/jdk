@@ -746,6 +746,7 @@ class JvmtiClassFileLoadHookPoster : public StackObj {
   JvmtiThreadState *   _state;
   KlassHandle *        _h_class_being_redefined;
   JvmtiClassLoadKind   _load_kind;
+  bool                 _has_been_modified;
 
  public:
   inline JvmtiClassFileLoadHookPoster(Symbol* h_name, Handle class_loader,
@@ -762,6 +763,7 @@ class JvmtiClassFileLoadHookPoster : public StackObj {
     _curr_data = *data_ptr;
     _curr_env = NULL;
     _cached_class_file_ptr = cache_ptr;
+    _has_been_modified = false;
 
     _state = _thread->jvmti_thread_state();
     if (_state != NULL) {
@@ -799,6 +801,8 @@ class JvmtiClassFileLoadHookPoster : public StackObj {
     post_all_envs();
     copy_modified_data();
   }
+
+  bool has_been_modified() { return _has_been_modified; }
 
  private:
   void post_all_envs() {
@@ -846,6 +850,7 @@ class JvmtiClassFileLoadHookPoster : public StackObj {
     }
     if (new_data != NULL) {
       // this agent has modified class data.
+      _has_been_modified = true;
       if (caching_needed && *_cached_class_file_ptr == NULL) {
         // data has been changed by the new retransformable agent
         // and it hasn't already been cached, cache it
@@ -893,14 +898,14 @@ class JvmtiClassFileLoadHookPoster : public StackObj {
 bool JvmtiExport::_should_post_class_file_load_hook = false;
 
 // this entry is for class file load hook on class load, redefine and retransform
-void JvmtiExport::post_class_file_load_hook(Symbol* h_name,
+bool JvmtiExport::post_class_file_load_hook(Symbol* h_name,
                                             Handle class_loader,
                                             Handle h_protection_domain,
                                             unsigned char **data_ptr,
                                             unsigned char **end_ptr,
                                             JvmtiCachedClassFileData **cache_ptr) {
   if (JvmtiEnv::get_phase() < JVMTI_PHASE_PRIMORDIAL) {
-    return;
+    return false;
   }
 
   JvmtiClassFileLoadHookPoster poster(h_name, class_loader,
@@ -908,6 +913,7 @@ void JvmtiExport::post_class_file_load_hook(Symbol* h_name,
                                       data_ptr, end_ptr,
                                       cache_ptr);
   poster.post();
+  return poster.has_been_modified();
 }
 
 void JvmtiExport::report_unsupported(bool on) {

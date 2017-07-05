@@ -256,11 +256,7 @@ void NativeFarCall::verify() {
 address NativeFarCall::destination() {
   assert(MacroAssembler::is_call_far_patchable_at((address)this), "unexpected call type");
   address ctable = NULL;
-  if (MacroAssembler::call_far_patchable_requires_alignment_nop((address)this)) {
-    return MacroAssembler::get_dest_of_call_far_patchable_at(((address)this)+MacroAssembler::nop_size(), ctable);
-  } else {
-    return MacroAssembler::get_dest_of_call_far_patchable_at((address)this, ctable);
-  }
+  return MacroAssembler::get_dest_of_call_far_patchable_at((address)this, ctable);
 }
 
 
@@ -610,20 +606,20 @@ void NativeMovRegMem::verify() {
   unsigned long inst1;
   Assembler::get_instruction(l2, &inst1);
 
-  if (!Assembler::is_z_lb(inst1)                         &&
-      !Assembler::is_z_llgh(inst1)                       &&
-      !Assembler::is_z_lh(inst1)                         &&
-      !Assembler::is_z_l(inst1)                          &&
-      !Assembler::is_z_llgf(inst1)                       &&
-      !Assembler::is_z_lg(inst1)                         &&
-      !Assembler::is_z_le(inst1)                         &&
-      !Assembler::is_z_ld(inst1)                         &&
-      !Assembler::is_z_stc(inst1)                        &&
-      !Assembler::is_z_sth(inst1)                        &&
-      !Assembler::is_z_st(inst1)                         &&
-      !(Assembler::is_z_lgr(inst1) && UseCompressedOops) &&
-      !Assembler::is_z_stg(inst1)                        &&
-      !Assembler::is_z_ste(inst1)                        &&
+  if (!Assembler::is_z_lb(inst1)   &&
+      !Assembler::is_z_llgh(inst1) &&
+      !Assembler::is_z_lh(inst1)   &&
+      !Assembler::is_z_l(inst1)    &&
+      !Assembler::is_z_llgf(inst1) &&
+      !Assembler::is_z_lg(inst1)   &&
+      !Assembler::is_z_le(inst1)   &&
+      !Assembler::is_z_ld(inst1)   &&
+      !Assembler::is_z_stc(inst1)  &&
+      !Assembler::is_z_sth(inst1)  &&
+      !Assembler::is_z_st(inst1)   &&
+      !UseCompressedOops           &&
+      !Assembler::is_z_stg(inst1)  &&
+      !Assembler::is_z_ste(inst1)  &&
       !Assembler::is_z_std(inst1)) {
     tty->cr();
     tty->print_cr("NativeMovRegMem::verify(): verifying addr " PTR_FORMAT

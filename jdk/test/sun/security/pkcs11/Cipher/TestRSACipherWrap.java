@@ -27,7 +27,7 @@
  * @summary basic test for RSA cipher key wrapping functionality
  * @author Valerie Peng
  * @library ..
- * @modules jdk.crypto.pkcs11
+ * @modules jdk.crypto.token
  * @run main/othervm TestRSACipherWrap
  * @run main/othervm TestRSACipherWrap sm
  */

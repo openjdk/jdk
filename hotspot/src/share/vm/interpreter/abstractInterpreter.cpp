@@ -124,29 +124,19 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(methodHandle m)
   }
 
 #ifndef CC_INTERP
-  if (UseCRC32Intrinsics && m->is_native()) {
+  switch (m->intrinsic_id()) {
     // Use optimized stub code for CRC32 native methods.
-    switch (m->intrinsic_id()) {
-      case vmIntrinsics::_updateCRC32            : return java_util_zip_CRC32_update;
-      case vmIntrinsics::_updateBytesCRC32       : return java_util_zip_CRC32_updateBytes;
-      case vmIntrinsics::_updateByteBufferCRC32  : return java_util_zip_CRC32_updateByteBuffer;
-    }
-  }
-  if (UseCRC32CIntrinsics) {
+    case vmIntrinsics::_updateCRC32            : return java_util_zip_CRC32_update;
+    case vmIntrinsics::_updateBytesCRC32       : return java_util_zip_CRC32_updateBytes;
+    case vmIntrinsics::_updateByteBufferCRC32  : return java_util_zip_CRC32_updateByteBuffer;
     // Use optimized stub code for CRC32C methods.
-    switch (m->intrinsic_id()) {
-      case vmIntrinsics::_updateBytesCRC32C             : return java_util_zip_CRC32C_updateBytes;
-      case vmIntrinsics::_updateDirectByteBufferCRC32C  : return java_util_zip_CRC32C_updateDirectByteBuffer;
-    }
+    case vmIntrinsics::_updateBytesCRC32C             : return java_util_zip_CRC32C_updateBytes;
+    case vmIntrinsics::_updateDirectByteBufferCRC32C  : return java_util_zip_CRC32C_updateDirectByteBuffer;
+    case vmIntrinsics::_intBitsToFloat:      return java_lang_Float_intBitsToFloat;
+    case vmIntrinsics::_floatToRawIntBits:   return java_lang_Float_floatToRawIntBits;
+    case vmIntrinsics::_longBitsToDouble:    return java_lang_Double_longBitsToDouble;
+    case vmIntrinsics::_doubleToRawLongBits: return java_lang_Double_doubleToRawLongBits;
   }
-
-  switch(m->intrinsic_id()) {
-  case vmIntrinsics::_intBitsToFloat:      return java_lang_Float_intBitsToFloat;
-  case vmIntrinsics::_floatToRawIntBits:   return java_lang_Float_floatToRawIntBits;
-  case vmIntrinsics::_longBitsToDouble:    return java_lang_Double_longBitsToDouble;
-  case vmIntrinsics::_doubleToRawLongBits: return java_lang_Double_doubleToRawLongBits;
-  }
-
 #endif // CC_INTERP
 
   // Native method?
@@ -189,16 +179,11 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(methodHandle m)
     case vmIntrinsics::_dlog10: return java_lang_math_log10;
     case vmIntrinsics::_dpow  : return java_lang_math_pow  ;
     case vmIntrinsics::_dexp  : return java_lang_math_exp  ;
+    case vmIntrinsics::_fmaD  : return java_lang_math_fmaD ;
+    case vmIntrinsics::_fmaF  : return java_lang_math_fmaF ;
 
     case vmIntrinsics::_Reference_get:
                                 return java_lang_ref_reference_get;
-  }
-
-  if (UseFMA) {
-    switch (m->intrinsic_id()) {
-      case vmIntrinsics::_fmaD: return java_lang_math_fmaD;
-      case vmIntrinsics::_fmaF: return java_lang_math_fmaF;
-    }
   }
 
   // Accessor method?

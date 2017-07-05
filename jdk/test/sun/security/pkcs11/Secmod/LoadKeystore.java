@@ -26,7 +26,7 @@
  * @bug 8048622 8134232
  * @summary Checks that PKCS#11 keystore can't be loaded with wrong password
  * @library ../
- * @modules jdk.crypto.pkcs11
+ * @modules jdk.crypto.token
  * @run main/othervm LoadKeystore
  * @run main/othervm LoadKeystore sm policy
  */
