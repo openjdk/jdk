@@ -811,16 +811,6 @@ void OneContigSpaceCardGeneration::space_iterate(SpaceClosure* blk,
   blk->do_space(_the_space);
 }
 
-void OneContigSpaceCardGeneration::object_iterate_since_last_GC(ObjectClosure* blk) {
-  // Deal with delayed initialization of _the_space,
-  // and lack of initialization of _last_gc.
-  if (_last_gc.space() == NULL) {
-    assert(the_space() != NULL, "shouldn't be NULL");
-    _last_gc = the_space()->bottom_mark();
-  }
-  the_space()->object_iterate_from(_last_gc, blk);
-}
-
 void OneContigSpaceCardGeneration::younger_refs_iterate(OopsInGenClosure* blk) {
   blk->set_generation(this);
   younger_refs_in_space_iterate(_the_space, blk);

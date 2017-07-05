@@ -227,7 +227,7 @@ class HandleArea: public Arena {
   HandleArea* _prev;          // link to outer (older) area
  public:
   // Constructor
-  HandleArea(HandleArea* prev) {
+  HandleArea(HandleArea* prev) : Arena(Chunk::tiny_size) {
     debug_only(_handle_mark_nesting    = 0);
     debug_only(_no_handle_mark_nesting = 0);
     _prev = prev;

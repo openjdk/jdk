@@ -1360,11 +1360,6 @@ public:
     object_iterate(cl);
   }
 
-  // Iterate over all objects allocated since the last collection, calling
-  // "cl.do_object" on each.  The heap must have been initialized properly
-  // to support this function, or else this call will fail.
-  virtual void object_iterate_since_last_GC(ObjectClosure* cl);
-
   // Iterate over all spaces in use in the heap, in ascending address order.
   virtual void space_iterate(SpaceClosure* cl);
 
