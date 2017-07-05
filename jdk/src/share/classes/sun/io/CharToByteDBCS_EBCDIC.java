@@ -108,7 +108,7 @@ public abstract class CharToByteDBCS_EBCDIC extends CharToByteConverter
            }
 
            // Is this a high surrogate?
-           if (Surrogate.isHigh(inputChar)) {
+           if (Character.isHighSurrogate(inputChar)) {
               // Is this the last character of the input?
               if (charOff + inputSize >= inEnd) {
                  highHalfZoneCode = inputChar;
@@ -118,7 +118,7 @@ public abstract class CharToByteDBCS_EBCDIC extends CharToByteConverter
 
               // Is there a low surrogate following?
               inputChar = input[charOff + inputSize];
-              if (Surrogate.isLow(inputChar)) {
+              if (Character.isLowSurrogate(inputChar)) {
                  // We have a valid surrogate pair.  Too bad we don't do
                  // surrogates.  Is substitution enabled?
                  if (subMode) {
@@ -142,7 +142,7 @@ public abstract class CharToByteDBCS_EBCDIC extends CharToByteConverter
               }
            }
            // Is this an unaccompanied low surrogate?
-           else if (Surrogate.isLow(inputChar)) {
+           else if (Character.isLowSurrogate(inputChar)) {
                badInputLength = 1;
                throw new MalformedInputException();
            } else {

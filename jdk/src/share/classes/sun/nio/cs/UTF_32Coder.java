@@ -154,11 +154,11 @@ class UTF_32Coder {
             try {
                 while (src.hasRemaining()) {
                     char c = src.get();
-                    if (Surrogate.isHigh(c)) {
+                    if (Character.isHighSurrogate(c)) {
                         if (!src.hasRemaining())
                             return CoderResult.UNDERFLOW;
                         char low = src.get();
-                        if (Surrogate.isLow(low)) {
+                        if (Character.isLowSurrogate(low)) {
                             if (dst.remaining() < 4)
                                 return CoderResult.OVERFLOW;
                             mark += 2;
@@ -166,7 +166,7 @@ class UTF_32Coder {
                         } else {
                             return CoderResult.malformedForLength(1);
                         }
-                    } else if (Surrogate.isLow(c)) {
+                    } else if (Character.isLowSurrogate(c)) {
                         return CoderResult.malformedForLength(1);
                     } else {
                         if (dst.remaining() < 4)

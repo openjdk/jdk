@@ -1047,16 +1047,17 @@ void LIRGenerator::do_NewMultiArray(NewMultiArray* x) {
     items->at_put(i, size);
   }
 
-  // need to get the info before, as the items may become invalid through item_free
+  // Evaluate state_for early since it may emit code.
   CodeEmitInfo* patching_info = NULL;
   if (!x->klass()->is_loaded() || PatchALot) {
     patching_info = state_for(x, x->state_before());
 
     // cannot re-use same xhandlers for multiple CodeEmitInfos, so
-    // clone all handlers.
+    // clone all handlers.  This is handled transparently in other
+    // places by the CodeEmitInfo cloning logic but is handled
+    // specially here because a stub isn't being used.
     x->set_exception_handlers(new XHandlers(x->exception_handlers()));
   }
-
   CodeEmitInfo* info = state_for(x, x->state());
 
   i = dims->length();

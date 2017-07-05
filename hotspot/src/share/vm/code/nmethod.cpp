@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -966,7 +966,7 @@ ScopeDesc* nmethod::scope_desc_at(address pc) {
   PcDesc* pd = pc_desc_at(pc);
   guarantee(pd != NULL, "scope must be present");
   return new ScopeDesc(this, pd->scope_decode_offset(),
-                       pd->obj_decode_offset());
+                       pd->obj_decode_offset(), pd->should_reexecute());
 }
 
 
@@ -1079,6 +1079,10 @@ void nmethod::make_unloaded(BoolObjectClosure* is_alive, oop cause) {
                   this, (address)_method, (address)cause);
     cause->klass()->print();
   }
+  // Unlink the osr method, so we do not look this up again
+  if (is_osr_method()) {
+    invalidate_osr_method();
+  }
   // If _method is already NULL the methodOop is about to be unloaded,
   // so we don't have to break the cycle. Note that it is possible to
   // have the methodOop live here, in case we unload the nmethod because
@@ -1148,7 +1152,7 @@ void nmethod::make_not_entrant_or_zombie(int state) {
   // will never be used anymore. That the nmethods only gets removed when class unloading
   // happens, make life much simpler, since the nmethods are not just going to disappear
   // out of the blue.
-  if (is_osr_only_method()) {
+  if (is_osr_method()) {
     if (osr_entry_bci() != InvalidOSREntryBci) {
       // only log this once
       log_state_change(state);
@@ -1520,6 +1524,17 @@ void nmethod::do_unloading(BoolObjectClosure* is_alive,
 #endif // !PRODUCT
 }
 
+// This method is called twice during GC -- once while
+// tracing the "active" nmethods on thread stacks during
+// the (strong) marking phase, and then again when walking
+// the code cache contents during the weak roots processing
+// phase. The two uses are distinguished by means of the
+// do_nmethods() method in the closure "f" below -- which
+// answers "yes" in the first case, and "no" in the second
+// case. We want to walk the weak roots in the nmethod
+// only in the second case. The weak roots in the nmethod
+// are the oops in the ExceptionCache and the InlineCache
+// oops.
 void nmethod::oops_do(OopClosure* f) {
   // make sure the oops ready to receive visitors
   assert(!is_zombie() && !is_unloaded(),
@@ -1538,19 +1553,25 @@ void nmethod::oops_do(OopClosure* f) {
 
   // Compiled code
   f->do_oop((oop*) &_method);
-  ExceptionCache* ec = exception_cache();
-  while(ec != NULL) {
-    f->do_oop((oop*)ec->exception_type_addr());
-    ec = ec->next();
-  }
+  if (!f->do_nmethods()) {
+    // weak roots processing phase -- update ExceptionCache oops
+    ExceptionCache* ec = exception_cache();
+    while(ec != NULL) {
+      f->do_oop((oop*)ec->exception_type_addr());
+      ec = ec->next();
+    }
+  } // Else strong roots phase -- skip oops in ExceptionCache
 
   RelocIterator iter(this, low_boundary);
+
   while (iter.next()) {
     if (iter.type() == relocInfo::oop_type ) {
       oop_Relocation* r = iter.oop_reloc();
       // In this loop, we must only follow those oops directly embedded in
       // the code.  Other oops (oop_index>0) are seen as part of scopes_oops.
-      assert(1 == (r->oop_is_immediate()) + (r->oop_addr() >= oops_begin() && r->oop_addr() < oops_end()), "oop must be found in exactly one place");
+      assert(1 == (r->oop_is_immediate()) +
+                   (r->oop_addr() >= oops_begin() && r->oop_addr() < oops_end()),
+             "oop must be found in exactly one place");
       if (r->oop_is_immediate() && r->oop_value() != NULL) {
         f->do_oop(r->oop_addr());
       }
@@ -1932,7 +1953,7 @@ void nmethod::verify_interrupt_point(address call_site) {
   PcDesc* pd = pc_desc_at(ic->end_of_call());
   assert(pd != NULL, "PcDesc must exist");
   for (ScopeDesc* sd = new ScopeDesc(this, pd->scope_decode_offset(),
-                                     pd->obj_decode_offset());
+                                     pd->obj_decode_offset(), pd->should_reexecute());
        !sd->is_top(); sd = sd->sender()) {
     sd->verify();
   }
@@ -2181,7 +2202,7 @@ ScopeDesc* nmethod::scope_desc_in(address begin, address end) {
   PcDesc* p = pc_desc_near(begin+1);
   if (p != NULL && p->real_pc(this) <= end) {
     return new ScopeDesc(this, p->scope_decode_offset(),
-                         p->obj_decode_offset());
+                         p->obj_decode_offset(), p->should_reexecute());
   }
   return NULL;
 }

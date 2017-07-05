@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -196,12 +196,16 @@ inline methodOop JNIHandles::resolve_jmethod_id(jmethodID mid) {
 };
 
 inline methodOop JNIHandles::checked_resolve_jmethod_id(jmethodID mid) {
-  jobject handle = (jobject)mid;
-  if (is_weak_global_handle(handle)) {
-    return (methodOop) resolve_non_null(handle);
-  } else {
+  if (mid == NULL) {
     return (methodOop) NULL;
   }
+
+  oop o = resolve_non_null((jobject) mid);
+  if (!o->is_method()) {
+    return (methodOop) NULL;
+  }
+
+  return (methodOop) o;
 };
 
 

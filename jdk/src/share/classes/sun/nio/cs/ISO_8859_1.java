@@ -228,8 +228,8 @@ class ISO_8859_1
                     dst[dp++] = (byte)c;
                     continue;
                 }
-                if (Surrogate.isHigh(c) && sp < sl &&
-                    Surrogate.isLow(src[sp])) {
+                if (Character.isHighSurrogate(c) && sp < sl &&
+                    Character.isLowSurrogate(src[sp])) {
                     if (len > dst.length) {
                         sl++;
                         len--;

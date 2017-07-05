@@ -166,6 +166,9 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
     }
 
     public static void RESTORE_XERROR_HANDLER() {
+        // wait until all requests are processed by the X server
+        // and only then uninstall the error handler
+        XSync();
         current_error_handler = null;
     }
 

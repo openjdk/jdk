@@ -39,8 +39,6 @@ import java.beans.PropertyChangeListener;
  * @author Jasper Potts
  */
 class DerivedColor extends Color {
-    private final PropertyChangeSupport changeSupport =
-            new PropertyChangeSupport(this);
     private final String uiDefaultParentName;
     private final float hOffset, sOffset, bOffset;
     private final int aOffset;
@@ -79,7 +77,6 @@ class DerivedColor extends Color {
      * Recalculate the derived color from the UIManager parent color and offsets
      */
     public void rederiveColor() {
-        int old = argbValue;
         Color src = UIManager.getColor(uiDefaultParentName);
         if (src != null) {
             float[] tmp = Color.RGBtoHSB(src.getRed(), src.getGreen(), src.getBlue(), null);
@@ -97,7 +94,6 @@ class DerivedColor extends Color {
             int alpha = clamp(aOffset);
             argbValue = (Color.HSBtoRGB(tmp[0], tmp[1], tmp[2]) & 0xFFFFFF) | (alpha << 24);
         }
-        changeSupport.firePropertyChange("rgb", old, argbValue);
     }
 
     /**
@@ -141,35 +137,6 @@ class DerivedColor extends Color {
         return result;
     }
 
-     /**
-     * Add a PropertyChangeListener to the listener list.
-     * The listener is registered for all properties.
-     * The same listener object may be added more than once, and will be called
-     * as many times as it is added.
-     * If <code>listener</code> is null, no exception is thrown and no action
-     * is taken.
-     *
-     * @param listener  The PropertyChangeListener to be added
-     */
-    public void addPropertyChangeListener(PropertyChangeListener listener) {
-        changeSupport.addPropertyChangeListener(listener);
-    }
-
-    /**
-     * Remove a PropertyChangeListener from the listener list.
-     * This removes a PropertyChangeListener that was registered
-     * for all properties.
-     * If <code>listener</code> was added more than once to the same event
-     * source, it will be notified one less time after being removed.
-     * If <code>listener</code> is null, or was never added, no exception is
-     * thrown and no action is taken.
-     *
-     * @param listener  The PropertyChangeListener to be removed
-     */
-    public void removePropertyChangeListener(PropertyChangeListener listener) {
-        changeSupport.removePropertyChangeListener(listener);
-    }
-
     private float clamp(float value) {
         if (value < 0) {
             value = 0;
@@ -210,6 +177,16 @@ class DerivedColor extends Color {
         UIResource(String uiDefaultParentName, float hOffset, float sOffset,
                    float bOffset, int aOffset) {
             super(uiDefaultParentName, hOffset, sOffset, bOffset, aOffset);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            return (o instanceof UIResource) && super.equals(o);
+        }
+
+        @Override
+        public int hashCode() {
+            return super.hashCode() + 7;
         }
     }
 }
