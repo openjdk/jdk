@@ -87,6 +87,13 @@ public class CheckCompileThresholdScaling {
         {
             "-XX:-TieredCompilation",
             "-XX:+PrintFlagsFinal",
+            "-XX:CompileThreshold=1000",
+            "-XX:CompileThresholdScaling=0.0",
+            "-version"
+        },
+        {
+            "-XX:-TieredCompilation",
+            "-XX:+PrintFlagsFinal",
             "-XX:CompileThreshold=0",
             "-XX:CompileThresholdScaling=0.75",
             "-version"
@@ -106,6 +113,11 @@ public class CheckCompileThresholdScaling {
         {
             "intx CompileThreshold                         := 750                                 {pd product}",
             "double CompileThresholdScaling                  := 0.750000                            {product}"
+        },
+        {
+            "intx CompileThreshold                         := 1000                                {pd product}",
+            "double CompileThresholdScaling                  := 0.000000                            {product}",
+            "interpreted mode"
         },
         {
             "intx CompileThreshold                         := 0                                   {pd product}",
@@ -295,21 +307,21 @@ public class CheckCompileThresholdScaling {
             "double CompileThresholdScaling                  := 2.000000                            {product}"
         },
         {
-            "intx Tier0BackedgeNotifyFreqLog               := 0                                   {product}",
-            "intx Tier0InvokeNotifyFreqLog                 := 0                                   {product}",
-            "intx Tier23InlineeNotifyFreqLog               := 0                                   {product}",
-            "intx Tier2BackedgeNotifyFreqLog               := 0                                   {product}",
-            "intx Tier2InvokeNotifyFreqLog                 := 0                                   {product}",
-            "intx Tier3BackEdgeThreshold                   := 0                                   {product}",
-            "intx Tier3BackedgeNotifyFreqLog               := 0                                   {product}",
-            "intx Tier3CompileThreshold                    := 0                                   {product}",
-            "intx Tier3InvocationThreshold                 := 0                                   {product}",
-            "intx Tier3InvokeNotifyFreqLog                 := 0                                   {product}",
-            "intx Tier3MinInvocationThreshold              := 0                                   {product}",
-            "intx Tier4BackEdgeThreshold                   := 0                                   {product}",
-            "intx Tier4CompileThreshold                    := 0                                   {product}",
-            "intx Tier4InvocationThreshold                 := 0                                   {product}",
-            "intx Tier4MinInvocationThreshold              := 0                                   {product}",
+            "intx Tier0BackedgeNotifyFreqLog               := 10                                  {product}",
+            "intx Tier0InvokeNotifyFreqLog                 := 7                                   {product}",
+            "intx Tier23InlineeNotifyFreqLog               := 20                                  {product}",
+            "intx Tier2BackedgeNotifyFreqLog               := 14                                  {product}",
+            "intx Tier2InvokeNotifyFreqLog                 := 11                                  {product}",
+            "intx Tier3BackEdgeThreshold                   := 60000                               {product}",
+            "intx Tier3BackedgeNotifyFreqLog               := 13                                  {product}",
+            "intx Tier3CompileThreshold                    := 2000                                {product}",
+            "intx Tier3InvocationThreshold                 := 200                                 {product}",
+            "intx Tier3InvokeNotifyFreqLog                 := 10                                  {product}",
+            "intx Tier3MinInvocationThreshold              := 100                                 {product}",
+            "intx Tier4BackEdgeThreshold                   := 40000                               {product}",
+            "intx Tier4CompileThreshold                    := 15000                               {product}",
+            "intx Tier4InvocationThreshold                 := 5000                                {product}",
+            "intx Tier4MinInvocationThreshold              := 600                                 {product}",
             "double CompileThresholdScaling                  := 0.000000                            {product}",
             "interpreted mode"
         }

@@ -28,6 +28,7 @@ package jdk.nashorn.api.scripting;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineFactory;
 import jdk.nashorn.internal.runtime.Context;
@@ -177,7 +178,7 @@ public final class NashornScriptEngineFactory implements ScriptEngineFactory {
      *         denies {@code RuntimePermission("nashorn.setConfig")}
      */
     public ScriptEngine getScriptEngine(final ClassFilter classFilter) {
-        classFilter.getClass(); // null check
+        Objects.requireNonNull(classFilter);
         return newEngine(DEFAULT_OPTIONS, getAppClassLoader(), classFilter);
     }
 
@@ -192,7 +193,7 @@ public final class NashornScriptEngineFactory implements ScriptEngineFactory {
      *         denies {@code RuntimePermission("nashorn.setConfig")}
      */
     public ScriptEngine getScriptEngine(final String... args) {
-        args.getClass(); // null check
+        Objects.requireNonNull(args);
         return newEngine(args, getAppClassLoader(), null);
     }
 
@@ -208,7 +209,7 @@ public final class NashornScriptEngineFactory implements ScriptEngineFactory {
      *         denies {@code RuntimePermission("nashorn.setConfig")}
      */
     public ScriptEngine getScriptEngine(final String[] args, final ClassLoader appLoader) {
-        args.getClass(); // null check
+        Objects.requireNonNull(args);
         return newEngine(args, appLoader, null);
     }
 
@@ -225,8 +226,8 @@ public final class NashornScriptEngineFactory implements ScriptEngineFactory {
      *         denies {@code RuntimePermission("nashorn.setConfig")}
      */
     public ScriptEngine getScriptEngine(final String[] args, final ClassLoader appLoader, final ClassFilter classFilter) {
-        args.getClass(); // null check
-        classFilter.getClass(); // null check
+        Objects.requireNonNull(args);
+        Objects.requireNonNull(classFilter);
         return newEngine(args, appLoader, classFilter);
     }
 

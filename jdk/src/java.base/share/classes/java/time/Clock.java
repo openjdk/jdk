@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,12 +61,15 @@
  */
 package java.time;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import static java.time.LocalTime.NANOS_PER_MINUTE;
 import static java.time.LocalTime.NANOS_PER_SECOND;
 
 import java.io.Serializable;
 import java.util.Objects;
 import java.util.TimeZone;
+import sun.misc.VM;
 
 /**
  * A clock providing access to the current instant, date and time using a time-zone.
@@ -446,10 +449,22 @@ public abstract class Clock {
      */
     static final class SystemClock extends Clock implements Serializable {
         private static final long serialVersionUID = 6740630888130243051L;
+        private static final long OFFSET_SEED =
+                System.currentTimeMillis()/1000 - 1024; // initial offest
         private final ZoneId zone;
+        // We don't actually need a volatile here.
+        // We don't care if offset is set or read concurrently by multiple
+        // threads - we just need a value which is 'recent enough' - in other
+        // words something that has been updated at least once in the last
+        // 2^32 secs (~136 years). And even if we by chance see an invalid
+        // offset, the worst that can happen is that we will get a -1 value
+        // from getNanoTimeAdjustment, forcing us to update the offset
+        // once again.
+        private transient long offset;
 
         SystemClock(ZoneId zone) {
             this.zone = zone;
+            this.offset = OFFSET_SEED;
         }
         @Override
         public ZoneId getZone() {
@@ -464,11 +479,50 @@ public abstract class Clock {
         }
         @Override
         public long millis() {
+            // System.currentTimeMillis() and VM.getNanoTimeAdjustment(offset)
+            // use the same time source - System.currentTimeMillis() simply
+            // limits the resolution to milliseconds.
+            // So we take the faster path and call System.currentTimeMillis()
+            // directly - in order to avoid the performance penalty of
+            // VM.getNanoTimeAdjustment(offset) which is less efficient.
             return System.currentTimeMillis();
         }
         @Override
         public Instant instant() {
-            return Instant.ofEpochMilli(millis());
+            // Take a local copy of offset. offset can be updated concurrently
+            // by other threads (even if we haven't made it volatile) so we will
+            // work with a local copy.
+            long localOffset = offset;
+            long adjustment = VM.getNanoTimeAdjustment(localOffset);
+
+            if (adjustment == -1) {
+                // -1 is a sentinel value returned by VM.getNanoTimeAdjustment
+                // when the offset it is given is too far off the current UTC
+                // time. In principle, this should not happen unless the
+                // JVM has run for more than ~136 years (not likely) or
+                // someone is fiddling with the system time, or the offset is
+                // by chance at 1ns in the future (very unlikely).
+                // We can easily recover from all these conditions by bringing
+                // back the offset in range and retry.
+
+                // bring back the offset in range. We use -1024 to make
+                // it more unlikely to hit the 1ns in the future condition.
+                localOffset = System.currentTimeMillis()/1000 - 1024;
+
+                // retry
+                adjustment = VM.getNanoTimeAdjustment(localOffset);
+
+                if (adjustment == -1) {
+                    // Should not happen: we just recomputed a new offset.
+                    // It should have fixed the issue.
+                    throw new InternalError("Offset " + localOffset + " is not in range");
+                } else {
+                    // OK - recovery succeeded. Update the offset for the
+                    // next call...
+                    offset = localOffset;
+                }
+            }
+            return Instant.ofEpochSecond(localOffset, adjustment);
         }
         @Override
         public boolean equals(Object obj) {
@@ -484,6 +538,12 @@ public abstract class Clock {
         @Override
         public String toString() {
             return "SystemClock[" + zone + "]";
+        }
+        private void readObject(ObjectInputStream is)
+                throws IOException, ClassNotFoundException {
+            // ensure that offset is initialized
+            is.defaultReadObject();
+            offset = OFFSET_SEED;
         }
     }
 
