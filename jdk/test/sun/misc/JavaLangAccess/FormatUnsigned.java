@@ -26,8 +26,9 @@ import sun.misc.SharedSecrets;
 
 /*
  * @test
- * @summary Test JavaLangAccess.formatUnsignedInt/-Long
  * @bug 8050114
+ * @summary Test JavaLangAccess.formatUnsignedInt/-Long
+ * @modules java.base/sun.misc
  */
 public class FormatUnsigned {
 

@@ -29,7 +29,7 @@ default: all
 include $(SPEC)
 include MakeBase.gmk
 
-JDEPS_MODULES_XML := $(JDK_OUTPUTDIR)/modules/jdk.dev/com/sun/tools/jdeps/resources/jdeps-modules.xml
+JDEPS_MODULES_XML := $(JDK_OUTPUTDIR)/modules/jdk.jdeps/com/sun/tools/jdeps/resources/jdeps-modules.xml
 
 #
 # Verify access across module boundaries

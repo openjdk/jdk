@@ -27,6 +27,10 @@
  *          containing embedded ':' characters.
  *
  * @library ../testlibrary
+ * @modules java.rmi/sun.rmi.registry
+ *          java.rmi/sun.rmi.server
+ *          java.rmi/sun.rmi.transport
+ *          java.rmi/sun.rmi.transport.tcp
  * @build TestLibrary
  * @run main/othervm LookupNameWithColon
  */

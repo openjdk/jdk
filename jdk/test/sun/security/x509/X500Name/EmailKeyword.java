@@ -25,6 +25,7 @@
  * @bug 4531319
  * @summary Make sure AVA with EMAIL or EMAILADDRESS keyword is recognized
  *    in DEFAULT format
+ * @modules java.base/sun.security.x509
  */
 import sun.security.x509.X500Name;
 

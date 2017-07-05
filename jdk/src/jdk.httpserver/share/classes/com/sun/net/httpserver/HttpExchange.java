@@ -173,12 +173,12 @@ public abstract class HttpExchange {
      * <p>
      * This method must be called prior to calling {@link #getResponseBody()}.
      * @param rCode the response code to send
-     * @param responseLength if > 0, specifies a fixed response body length
-     *        and that exact number of bytes must be written
+     * @param responseLength if {@literal > 0}, specifies a fixed response
+     *        body length and that exact number of bytes must be written
      *        to the stream acquired from getResponseBody(), or else
      *        if equal to 0, then chunked encoding is used,
      *        and an arbitrary number of bytes may be written.
-     *        if <= -1, then no response body length is specified and
+     *        if {@literal <= -1}, then no response body length is specified and
      *        no response body may be written.
      * @see HttpExchange#getResponseBody()
      */

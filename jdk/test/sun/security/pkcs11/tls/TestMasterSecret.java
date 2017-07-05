@@ -27,6 +27,8 @@
  * @summary Known-answer-test for TlsMasterSecret generator
  * @author Andreas Sterbenz
  * @library ..
+ * @modules java.base/sun.security.internal.interfaces
+ *          java.base/sun.security.internal.spec
  */
 
 import java.io.*;

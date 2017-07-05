@@ -25,6 +25,7 @@
  * @test
  * @bug 4665824
  * @summary JSSE - ClassCastException with 1.4
+ * @modules java.base/com.sun.net.ssl
  */
 
 import com.sun.net.ssl.*;

@@ -93,7 +93,6 @@ public class VersionCheck extends TestHelper {
         "kinit",
         "klist",
         "ktab",
-        "native2ascii",
         "orbd",
         "pack200",
         "packager",

@@ -25,7 +25,7 @@
  * @test
  * @bug 4041231
  * @summary Test UUEncoder.java for proper masking in encodeAtom
- *
+ * @modules java.base/sun.misc
  */
 
 import sun.misc.*;

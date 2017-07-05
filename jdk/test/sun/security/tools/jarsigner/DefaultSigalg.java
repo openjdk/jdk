@@ -25,6 +25,12 @@
  * @test
  * @bug 8057810
  * @summary New defaults for DSA keys in jarsigner and keytool
+ * @modules java.base/sun.security.pkcs
+ *          java.base/sun.security.tools.keytool
+ *          java.base/sun.security.util
+ *          java.base/sun.security.x509
+ *          jdk.jartool/sun.security.tools.jarsigner
+ *          jdk.jartool/sun.tools.jar
  */
 
 import sun.security.pkcs.PKCS7;

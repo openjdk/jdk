@@ -31,6 +31,10 @@
  * @author Laird Dornin
  *
  * @library ../../../testlibrary
+ * @modules java.rmi/sun.rmi.registry
+ *          java.rmi/sun.rmi.server
+ *          java.rmi/sun.rmi.transport
+ *          java.rmi/sun.rmi.transport.tcp
  * @build TestLibrary CheckUnmarshal CheckUnmarshalOnStopThread_Stub
  *     PoisonPill RuntimeExceptionParameter
  * @run main/othervm/timeout=480 CheckUnmarshalOnStopThread

@@ -1035,8 +1035,7 @@ void InterpreterMacroAssembler::get_method_counters(Register method,
 //      rdx, c_rarg1: BasicObjectLock to be used for locking
 //
 // Kills:
-//      rax
-//      rscratch1 (scratch regs)
+//      rax, rbx
 void InterpreterMacroAssembler::lock_object(Register lock_reg) {
   assert(lock_reg == LP64_ONLY(c_rarg1) NOT_LP64(rdx),
          "The argument is only for looks. It must be c_rarg1");
@@ -1049,6 +1048,8 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg) {
     Label done;
 
     const Register swap_reg = rax; // Must use rax for cmpxchg instruction
+    const Register tmp_reg = rbx; // Will be passed to biased_locking_enter to avoid a
+                                  // problematic case where tmp_reg = no_reg.
     const Register obj_reg = LP64_ONLY(c_rarg3) NOT_LP64(rcx); // Will contain the oop
 
     const int obj_offset = BasicObjectLock::obj_offset_in_bytes();
@@ -1062,7 +1063,7 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg) {
     movptr(obj_reg, Address(lock_reg, obj_offset));
 
     if (UseBiasedLocking) {
-      biased_locking_enter(lock_reg, obj_reg, swap_reg, rscratch1, false, done, &slow_case);
+      biased_locking_enter(lock_reg, obj_reg, swap_reg, tmp_reg, false, done, &slow_case);
     }
 
     // Load immediate 1 into swap_reg %rax

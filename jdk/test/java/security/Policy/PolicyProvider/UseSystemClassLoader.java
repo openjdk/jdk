@@ -30,6 +30,7 @@ import java.security.Security;
  * @test
  * @bug 8075706
  * @summary Check that a custom policy provider can be loaded from the classpath
+ * @modules java.base/sun.security.provider
  * @run main/othervm UseSystemClassLoader CUSTOM
  * @run main/othervm UseSystemClassLoader DEFAULT
  * @run main/othervm UseSystemClassLoader NOT_AVAIL

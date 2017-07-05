@@ -27,6 +27,11 @@
  * @author Laird Dornin
  *
  * @library ../../../testlibrary
+ * @modules java.base/sun.security.provider
+ *          java.rmi/sun.rmi.registry
+ *          java.rmi/sun.rmi.server
+ *          java.rmi/sun.rmi.transport
+ *          java.rmi/sun.rmi.transport.tcp
  * @build TestLibrary RMID ActivationLibrary
  *     CanCreateStubs StubClassesPermitted_Stub
  * @run main/othervm/java.security.policy=security.policy/secure=java.lang.SecurityManager/timeout=240 StubClassesPermitted

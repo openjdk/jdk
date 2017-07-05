@@ -25,6 +25,7 @@
  * @test
  * @bug 8035807
  * @summary Confirm that old and new Base64 encodings are compatible.
+ * @modules java.base/sun.misc
  */
 
 import java.io.*;

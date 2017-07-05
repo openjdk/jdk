@@ -44,8 +44,6 @@ import java.util.function.Predicate;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import sun.management.VMManagement;
-
 public final class ProcessTools {
     private static final class LineForwarder extends StreamPumper.LinePump {
         private final PrintStream ps;

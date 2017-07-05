@@ -24,6 +24,8 @@
 /* @test
  * @bug 4228833
  * @summary Make sure constructor that takes DerValue argument works
+ * @modules java.base/sun.security.util
+ *          java.base/sun.security.x509
  */
 
 import sun.security.util.*;

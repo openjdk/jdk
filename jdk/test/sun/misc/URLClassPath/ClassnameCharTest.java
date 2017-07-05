@@ -23,10 +23,11 @@
 
 /* @test
  * @bug 4957669 5017871
- * @compile -XDignore.symbol.file=true ClassnameCharTest.java
- * @run main ClassnameCharTest
  * @summary cannot load class names containing some JSR 202 characters;
  *          plugin does not escape unicode character in http request
+ * @modules java.desktop/sun.applet
+ * @compile -XDignore.symbol.file=true ClassnameCharTest.java
+ * @run main ClassnameCharTest
  */
 
 import java.io.*;

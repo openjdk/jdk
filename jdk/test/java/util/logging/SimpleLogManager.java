@@ -31,6 +31,7 @@ import sun.util.logging.PlatformLogger;
  * @summary A LogManager subclass overrides its own implementation of named
  *          logger (see the subclassing information in the Logger class specification)
  *
+ * @modules java.base/sun.util.logging
  * @compile -XDignore.symbol.file CustomLogManager.java SimpleLogManager.java
  * @run main/othervm -Djava.util.logging.manager=SimpleLogManager SimpleLogManager
  */

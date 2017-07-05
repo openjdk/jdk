@@ -29,6 +29,7 @@
  * @bug 4329114
  * @summary Need better way of reflecting the reason when a chain is
  *      rejected as untrusted.
+ * @modules java.base/com.sun.net.ssl
  * @ignore JSSE supports algorithm constraints with CR 6916074,
  *      need to update this test case in JDK 7 soon
  * @run main/othervm CheckMyTrustedKeystore
