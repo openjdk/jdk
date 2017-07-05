@@ -38,7 +38,7 @@ import jdk.nashorn.internal.runtime.linker.Bootstrap;
 
 /**
  * This linker exporter is a service provider that exports Nashorn Dynalink
- * linkers to external users. Other languague runtimes that use Dynalink
+ * linkers to external users. Other language runtimes that use Dynalink
  * can use the linkers exported by this provider to support tight integration
  * of Nashorn objects.
  */

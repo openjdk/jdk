@@ -42,6 +42,7 @@ SUNWprivate_1.1 {
 		JLI_MemFree;
 		JLI_InitArgProcessing;
 		JLI_PreprocessArg;
+		JLI_AddArgsFromEnvVar;
 		JLI_GetAppArgIndex;
 
 	local:
