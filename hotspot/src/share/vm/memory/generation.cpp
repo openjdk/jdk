@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,14 +83,11 @@ void Generation::print_heap_change(size_t prev_used) const {
 }
 
 // By default we get a single threaded default reference processor;
-// generations needing multi-threaded refs discovery override this method.
+// generations needing multi-threaded refs processing or discovery override this method.
 void Generation::ref_processor_init() {
   assert(_ref_processor == NULL, "a reference processor already exists");
   assert(!_reserved.is_empty(), "empty generation?");
-  _ref_processor =
-    new ReferenceProcessor(_reserved,                  // span
-                           refs_discovery_is_atomic(), // atomic_discovery
-                           refs_discovery_is_mt());    // mt_discovery
+  _ref_processor = new ReferenceProcessor(_reserved);    // a vanilla reference processor
   if (_ref_processor == NULL) {
     vm_exit_during_initialization("Could not allocate ReferenceProcessor object");
   }

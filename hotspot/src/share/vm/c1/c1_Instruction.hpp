@@ -323,8 +323,6 @@ class Instruction: public CompilationResourceObj {
     CanTrapFlag,
     DirectCompareFlag,
     IsEliminatedFlag,
-    IsInitializedFlag,
-    IsLoadedFlag,
     IsSafepointFlag,
     IsStaticFlag,
     IsStrictfpFlag,
@@ -693,7 +691,7 @@ BASE(AccessField, Instruction)
  public:
   // creation
   AccessField(Value obj, int offset, ciField* field, bool is_static,
-              ValueStack* state_before, bool is_loaded, bool is_initialized)
+              ValueStack* state_before, bool needs_patching)
   : Instruction(as_ValueType(field->type()->basic_type()), state_before)
   , _obj(obj)
   , _offset(offset)
@@ -701,16 +699,9 @@ BASE(AccessField, Instruction)
   , _explicit_null_check(NULL)
   {
     set_needs_null_check(!is_static);
-    set_flag(IsLoadedFlag, is_loaded);
-    set_flag(IsInitializedFlag, is_initialized);
     set_flag(IsStaticFlag, is_static);
+    set_flag(NeedsPatchingFlag, needs_patching);
     ASSERT_VALUES
-      if (!is_loaded || (PatchALot && !field->is_volatile())) {
-      // need to patch if the holder wasn't loaded or we're testing
-      // using PatchALot.  Don't allow PatchALot for fields which are
-      // known to be volatile they aren't patchable.
-      set_flag(NeedsPatchingFlag, true);
-    }
     // pin of all instructions with memory access
     pin();
   }
@@ -721,10 +712,13 @@ BASE(AccessField, Instruction)
   ciField* field() const                         { return _field; }
   BasicType field_type() const                   { return _field->type()->basic_type(); }
   bool is_static() const                         { return check_flag(IsStaticFlag); }
-  bool is_loaded() const                         { return check_flag(IsLoadedFlag); }
-  bool is_initialized() const                    { return check_flag(IsInitializedFlag); }
   NullCheck* explicit_null_check() const         { return _explicit_null_check; }
   bool needs_patching() const                    { return check_flag(NeedsPatchingFlag); }
+
+  // Unresolved getstatic and putstatic can cause initialization.
+  // Technically it occurs at the Constant that materializes the base
+  // of the static fields but it's simpler to model it here.
+  bool is_init_point() const                     { return is_static() && (needs_patching() || !_field->holder()->is_initialized()); }
 
   // manipulation
 
@@ -745,15 +739,15 @@ LEAF(LoadField, AccessField)
  public:
   // creation
   LoadField(Value obj, int offset, ciField* field, bool is_static,
-            ValueStack* state_before, bool is_loaded, bool is_initialized)
-  : AccessField(obj, offset, field, is_static, state_before, is_loaded, is_initialized)
+            ValueStack* state_before, bool needs_patching)
+  : AccessField(obj, offset, field, is_static, state_before, needs_patching)
   {}
 
   ciType* declared_type() const;
   ciType* exact_type() const;
 
   // generic
-  HASHING2(LoadField, is_loaded() && !field()->is_volatile(), obj()->subst(), offset())  // cannot be eliminated if not yet loaded or if volatile
+  HASHING2(LoadField, !needs_patching() && !field()->is_volatile(), obj()->subst(), offset())  // cannot be eliminated if needs patching or if volatile
 };
 
 
@@ -764,8 +758,8 @@ LEAF(StoreField, AccessField)
  public:
   // creation
   StoreField(Value obj, int offset, ciField* field, Value value, bool is_static,
-             ValueStack* state_before, bool is_loaded, bool is_initialized)
-  : AccessField(obj, offset, field, is_static, state_before, is_loaded, is_initialized)
+             ValueStack* state_before, bool needs_patching)
+  : AccessField(obj, offset, field, is_static, state_before, needs_patching)
   , _value(value)
   {
     set_flag(NeedsWriteBarrierFlag, as_ValueType(field_type())->is_object());

@@ -52,7 +52,7 @@ bool MasterFreeRegionList::check_mt_safety() {
                                             FreeList_lock->owned_by_self())) ||
             (!SafepointSynchronize::is_at_safepoint() &&
                                                 Heap_lock->owned_by_self()),
-            hrl_ext_msg(this, "master free list MT safety protocol"));
+            hrs_ext_msg(this, "master free list MT safety protocol"));
 
   return FreeRegionList::check_mt_safety();
 }
@@ -65,7 +65,7 @@ bool SecondaryFreeRegionList::check_mt_safety() {
   // while holding the SecondaryFreeList_lock.
 
   guarantee(SecondaryFreeList_lock->owned_by_self(),
-            hrl_ext_msg(this, "secondary free list MT safety protocol"));
+            hrs_ext_msg(this, "secondary free list MT safety protocol"));
 
   return FreeRegionList::check_mt_safety();
 }
@@ -81,7 +81,7 @@ const char* HumongousRegionSet::verify_region_extra(HeapRegion* hr) {
   return HeapRegionSet::verify_region_extra(hr);
 }
 
-//////////////////// HumongousRegionSet ////////////////////
+//////////////////// MasterHumongousRegionSet ////////////////////
 
 bool MasterHumongousRegionSet::check_mt_safety() {
   // Master Humongous Set MT safety protocol:
@@ -97,6 +97,6 @@ bool MasterHumongousRegionSet::check_mt_safety() {
                                              OldSets_lock->owned_by_self())) ||
             (!SafepointSynchronize::is_at_safepoint() &&
                                                  Heap_lock->owned_by_self()),
-            hrl_ext_msg(this, "master humongous set MT safety protocol"));
+            hrs_ext_msg(this, "master humongous set MT safety protocol"));
   return HumongousRegionSet::check_mt_safety();
 }

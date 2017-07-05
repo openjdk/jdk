@@ -101,9 +101,9 @@ Deoptimization::UnrollBlock::UnrollBlock(int  size_of_deoptimized_frame,
   _frame_pcs                 = frame_pcs;
   _register_block            = NEW_C_HEAP_ARRAY(intptr_t, RegisterMap::reg_count * 2);
   _return_type               = return_type;
+  _initial_fp                = 0;
   // PD (x86 only)
   _counter_temp              = 0;
-  _initial_fp                = 0;
   _unpack_kind               = 0;
   _sender_sp_temp            = 0;
 
@@ -459,18 +459,9 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
                                       frame_sizes,
                                       frame_pcs,
                                       return_type);
-#if defined(IA32) || defined(AMD64)
-  // We need a way to pass fp to the unpacking code so the skeletal frames
-  // come out correct. This is only needed for x86 because of c2 using ebp
-  // as an allocatable register. So this update is useless (and harmless)
-  // on the other platforms. It would be nice to do this in a different
-  // way but even the old style deoptimization had a problem with deriving
-  // this value. NEEDS_CLEANUP
-  // Note: now that c1 is using c2's deopt blob we must do this on all
-  // x86 based platforms
-  intptr_t** fp_addr = (intptr_t**) (((address)info) + info->initial_fp_offset_in_bytes());
-  *fp_addr = array->sender().fp(); // was adapter_caller
-#endif /* IA32 || AMD64 */
+  // On some platforms, we need a way to pass fp to the unpacking code
+  // so the skeletal frames come out correct.
+  info->set_initial_fp((intptr_t) array->sender().fp());
 
   if (array->frames() > 1) {
     if (VerifyStack && TraceDeoptimization) {
