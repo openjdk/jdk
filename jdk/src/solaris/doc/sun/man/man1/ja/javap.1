@@ -1,115 +1,137 @@
-'\" t
-.\" Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
-.\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
-.\"
-.\" This code is free software; you can redistribute it and/or modify it
-.\" under the terms of the GNU General Public License version 2 only, as
-.\" published by the Free Software Foundation.
-.\"
-.\" This code is distributed in the hope that it will be useful, but WITHOUT
-.\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-.\" FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-.\" version 2 for more details (a copy is included in the LICENSE file that
-.\" accompanied this code).
-.\"
-.\" You should have received a copy of the GNU General Public License version
-.\" 2 along with this work; if not, write to the Free Software Foundation,
-.\" Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
-.\"
-.\" Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
-.\" CA 95054 USA or visit www.sun.com if you need additional information or
-.\" have any questions.
-.\" ` 
-'\"macro stdmacro
-.TH javap 1 "2006 Ç¯ 9 ·î 4 Æü" "Java SE 6" "¥æ¡¼¥¶¡¼¥³¥Ş¥ó¥É"
-.SH "Ì¾Á°"
-javap \- Java ¥¯¥é¥¹¥Õ¥¡¥¤¥ëµÕ¥¢¥»¥ó¥Ö¥é
+." Copyright 2002-2006 Sun Microsystems, Inc.  All Rights Reserved.
+." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+."
+." This code is free software; you can redistribute it and/or modify it
+." under the terms of the GNU General Public License version 2 only, as
+." published by the Free Software Foundation.
+."
+." This code is distributed in the hope that it will be useful, but WITHOUT
+." ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+." FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+." version 2 for more details (a copy is included in the LICENSE file that
+." accompanied this code).
+."
+." You should have received a copy of the GNU General Public License version
+." 2 along with this work; if not, write to the Free Software Foundation,
+." Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+."
+." Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+." CA 95054 USA or visit www.sun.com if you need additional information or
+." have any questions.
+."
+.TH javap 1 "04 May 2009"
+." Generated from HTML by html2man (author: Eric Armstrong)
+
 .LP
+.SH "åå‰"
+javap \- Java ã‚¯ãƒ©ã‚¹ãƒ•ã‚¡ã‚¤ãƒ«é€†ã‚¢ã‚»ãƒ³ãƒ–ãƒ©
+.LP
+.RS 3
 
 .LP
 .LP
-¥¯¥é¥¹¥Õ¥¡¥¤¥ë¤òµÕ¥¢¥»¥ó¥Ö¥ë¤·¤Ş¤¹¡£
+ã‚¯ãƒ©ã‚¹ãƒ•ã‚¡ã‚¤ãƒ«ã‚’é€†ã‚¢ã‚»ãƒ³ãƒ–ãƒ«ã—ã¾ã™ã€‚
 .LP
-.\" 
-.\"  This document was created by saving an HTML file as text
-.\"  from the JavaSoft web site:
-.\" 
-.\" http://java.sun.com/products/jdk/1.2/docs/tooldocs/tools.html
-.\" 
-.\"  and adding appropriate troff macros.  Because the JavaSoft web site 
-.\"  man pages can change without notice, it may be helpful to diff
-.\"  files to identify changes other than new functionality. 
-.\" 
-.SH "·Á¼°"
-.B  javap
-[
-.B options
-] 
-.IR class .\|.\|.
-.SH "µ¡Ç½ÀâÌÀ"
-.IX "Java class file disassembler" "" "Java class file disassembler \(em \fLjavap\fP"
-.IX "javap" "" "\fLjavap\fP \(em Java class file disassembler"
-.B javap
-¥³¥Ş¥ó¥É¤Ï¡¢
-Java ¥¯¥é¥¹¥Õ¥¡¥¤¥ë¤òµÕ¥¢¥»¥ó¥Ö¥ë¤·¤Ş¤¹¡£
-½ĞÎÏÆâÍÆ¤Ï¥ª¥×¥·¥ç¥ó¤Ç»ØÄê¤·¤Ş¤¹¡£
-¥ª¥×¥·¥ç¥ó¤ò
-1
-¤Ä¤â»ØÄê¤·¤Ê¤¤¤È¡¢
-.B javap
-¤ÏÅÏ¤µ¤ì¤¿¥¯¥é¥¹¤Î
-.BR package¡¢
-.BR protected¡¢
-¤ª¤è¤Ó 
-.B public
-¥Õ¥£¡¼¥ë¥É¤È¥á¥½¥Ã¥É¤ò½ĞÎÏ¤·¤Ş¤¹¡£
-.B javap
-¥³¥Ş¥ó¥É¤Î½ĞÎÏÀè¤Ï
-.B stdout
-¤Ç¤¹¡£¤¿¤È¤¨¤Ğ¡¢°Ê²¼¤Î¥¯¥é¥¹Àë¸À¤ò¥³¥ó¥Ñ¥¤¥ë¤·¤Ş¤¹¡£
-.RS
+.RE
+.SH "å½¢å¼"
+.LP
+
+.LP
 .nf
 \f3
+.fl
+javap [ \fP\f3options\fP\f3 ] class. . .
+.fl
+\fP
+.fi
+
+.LP
+.SH "èª¬æ˜"
+.LP
+
+.LP
+.LP
+\f3javap\fP ã‚³ãƒãƒ³ãƒ‰ã¯ã€ã‚¯ãƒ©ã‚¹ãƒ•ã‚¡ã‚¤ãƒ«ã‚’é€†ã‚¢ã‚»ãƒ³ãƒ–ãƒ«ã—ã¾ã™ã€‚ãã®å‡ºåŠ›ã¯æŒ‡å®šã™ã‚‹ã‚ªãƒ—ã‚·ãƒ§ãƒ³ã«ã‚ˆã‚Šç•°ãªã‚Šã¾ã™ã€‚ã‚ªãƒ—ã‚·ãƒ§ãƒ³ã‚’æŒ‡å®šã—ãªã„å ´åˆã€\f3javap\fP ã¯ã€ãã®ãƒ‘ãƒƒã‚±ãƒ¼ã‚¸ã€æ¸¡ã•ã‚ŒãŸã‚¯ãƒ©ã‚¹ã® protected ãŠã‚ˆã³ public ã®ãƒ•ã‚£ãƒ¼ãƒ«ãƒ‰ã¨ãƒ¡ã‚½ãƒƒãƒ‰ã‚’å‡ºåŠ›ã—ã¾ã™ã€‚ \f3javap\fP ã¯ãã®å‡ºåŠ›ã‚’æ¨™æº–å‡ºåŠ›ã«è¡¨ç¤ºã—ã¾ã™ã€‚ãŸã¨ãˆã°ã€æ¬¡ã®ã‚¯ãƒ©ã‚¹å®£è¨€ã‚’ã‚³ãƒ³ãƒ‘ã‚¤ãƒ«ã™ã‚‹ã¨ã—ã¾ã™ã€‚
+.LP
+.RS 3
+
+.LP
+.nf
+\f3
+.fl
 import java.awt.*;
+.fl
 import java.applet.*;
+.fl
 
+.fl
 public class DocFooter extends Applet {
-		String date;
-		String email;
+.fl
+        String date;
+.fl
+        String email;
+.fl
 
-		public void init() {
-			resize(500,100);
-			date = getParameter("LAST_UPDATED");
-			email = getParameter("EMAIL");
-		}
+.fl
+        public void init() {
+.fl
+                resize(500,100);
+.fl
+                date = getParameter("LAST_UPDATED");
+.fl
+                email = getParameter("EMAIL");
+.fl
+        }
+.fl
 
-		public void paint(Graphics g) {
-			g.drawString(date + " by ",100, 15);
-			g.drawString(email,290,15);
-		}
+.fl
+        public void paint(Graphics g) {
+.fl
+                g.drawString(date + " by ",100, 15);
+.fl
+                g.drawString(email,290,15);
+.fl
+        }
+.fl
 }
-\f1
+.fl
+\fP
 .fi
 .RE
+
 .LP
-¤³¤Î¾ì¹ç¡¢
-.B javap DocFooter
-¤ò¼Â¹Ô¤¹¤ë¤È°Ê²¼¤Î½ĞÎÏ¤¬ÆÀ¤é¤ì¤Ş¤¹¡£
-.RS
-\f3
+.LP
+\f3javap DocFooter\fP ãŒã‚‚ãŸã‚‰ã™å‡ºåŠ›ã¯æ¬¡ã®ã‚ˆã†ã«ãªã‚Šã¾ã™ã€‚
+.LP
+.RS 3
+
+.LP
 .nf
+\f3
+.fl
 Compiled from DocFooter.java
+.fl
 public class DocFooter extends java.applet.Applet {
-	java.lang.String date;
-	java.lang.String email;
-	public void init();
-	public void paint(java.awt.Graphics);
-	public DocFooter();
+.fl
+    java.lang.String date;
+.fl
+    java.lang.String email;
+.fl
+    public DocFooter();
+.fl
+    public void init();
+.fl
+    public void paint(java.awt.Graphics);
+.fl
 }
-\f1
+.fl
+\fP
 .fi
+.RE
+
 .LP
-\f3javap \-c DocFooter\fP ¤ò¼Â¹Ô¤¹¤ë¤È°Ê²¼¤Î½ĞÎÏ¤¬ÆÀ¤é¤ì¤Ş¤¹¡£
+.LP
+\f3javap \-c DocFooter\fP ãŒã‚‚ãŸã‚‰ã™å‡ºåŠ›ã¯æ¬¡ã®ã‚ˆã†ã«ãªã‚Šã¾ã™ã€‚
 .LP
 .RS 3
 
@@ -226,34 +248,35 @@ Method void paint(java.awt.Graphics)
 .RE
 
 .LP
-.SH "¥ª¥×¥·¥ç¥ó"
+.SH "ã‚ªãƒ—ã‚·ãƒ§ãƒ³"
 .LP
 
 .LP
+.RS 3
 .TP 3
 \-help 
-\f3javap\fP ¤Î¥Ø¥ë¥×¥á¥Ã¥»¡¼¥¸¤ò½ĞÎÏ¤·¤Ş¤¹¡£
+\f3javap\fP ã®ãƒ˜ãƒ«ãƒ—ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã‚’å‡ºåŠ›ã—ã¾ã™ã€‚ 
 .TP 3
 \-l 
-¹ÔÈÖ¹æ¤È¶É½êÊÑ¿ô¥Æ¡¼¥Ö¥ë¤òÉ½¼¨¤·¤Ş¤¹¡£
+è¡Œç•ªå·ã¨å±€æ‰€å¤‰æ•°ãƒ†ãƒ¼ãƒ–ãƒ«ã‚’è¡¨ç¤ºã—ã¾ã™ã€‚ 
 .TP 3
 \-b 
-JDK 1.1 ¤Î \f3javap\fP ¤È¤Î²¼°Ì¸ß´¹À­¤òÊİ¾Ú¤·¤Ş¤¹¡£
+JDK 1.1 ã® \f3javap\fP ã¨ã®ä¸‹ä½äº’æ›æ€§ã‚’ä¿è¨¼ã—ã¾ã™ã€‚ 
 .TP 3
 \-public 
-public ¥¯¥é¥¹¤ª¤è¤Ó¥á¥ó¥Ğ¤À¤±¤òÉ½¼¨¤·¤Ş¤¹¡£
+public ã‚¯ãƒ©ã‚¹ãŠã‚ˆã³ãƒ¡ãƒ³ãƒãƒ¼ã ã‘ã‚’è¡¨ç¤ºã—ã¾ã™ã€‚ 
 .TP 3
 \-protected 
-protected ¤ª¤è¤Ó public ¤Î¥¯¥é¥¹¤È¥á¥ó¥Ğ¤À¤±¤òÉ½¼¨¤·¤Ş¤¹¡£
+protected ãŠã‚ˆã³ public ã®ã‚¯ãƒ©ã‚¹ã¨ãƒ¡ãƒ³ãƒãƒ¼ã ã‘ã‚’è¡¨ç¤ºã—ã¾ã™ã€‚ 
 .TP 3
 \-package 
-package¡¢protected¡¢¤ª¤è¤Ó public ¤Î¥¯¥é¥¹¤È¥á¥ó¥Ğ¤À¤±¤òÉ½¼¨¤·¤Ş¤¹¡£¤³¤ì¤Ï¥Ç¥Õ¥©¥ë¥È¤ÎÀßÄê¤Ç¤¹¡£
+packageã€protectedã€ãŠã‚ˆã³ public ã®ã‚¯ãƒ©ã‚¹ã¨ãƒ¡ãƒ³ãƒãƒ¼ã ã‘ã‚’è¡¨ç¤ºã—ã¾ã™ã€‚ã“ã‚Œã¯ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆã®è¨­å®šã§ã™ã€‚ 
 .TP 3
 \-private 
-¤¹¤Ù¤Æ¤Î¥¯¥é¥¹¤È¥á¥ó¥Ğ¤òÉ½¼¨¤·¤Ş¤¹¡£
+ã™ã¹ã¦ã®ã‚¯ãƒ©ã‚¹ã¨ãƒ¡ãƒ³ãƒãƒ¼ã‚’è¡¨ç¤ºã—ã¾ã™ã€‚ 
 .TP 3
 \-Jflag 
-¥é¥ó¥¿¥¤¥à¥·¥¹¥Æ¥à¤ËÄ¾ÀÜ \f2flag\fP ¤òÅÏ¤·¤Ş¤¹¡£»ÈÍÑÎã¤ò¼¡¤Ë¼¨¤·¤Ş¤¹¡£
+ãƒ©ãƒ³ã‚¿ã‚¤ãƒ ã‚·ã‚¹ãƒ†ãƒ ã«ç›´æ¥ \f2flag\fP ã‚’æ¸¡ã—ã¾ã™ã€‚ä½¿ç”¨ä¾‹ã‚’æ¬¡ã«ç¤ºã—ã¾ã™ã€‚ 
 .RS 3
 
 .LP
@@ -269,21 +292,20 @@ javap \-J\-Djava.security.manager \-J\-Djava.security.policy=MyPolicy MyClassNam
 .RE
 .TP 3
 \-s 
-ÆâÉô¤Î·¿¥·¥°¥Ë¥Á¥ã¡¼¤ò½ĞÎÏ¤·¤Ş¤¹¡£
+å†…éƒ¨ã®å‹ã‚·ã‚°ãƒ‹ãƒãƒ£ãƒ¼ã‚’å‡ºåŠ›ã—ã¾ã™ã€‚ 
 .TP 3
 \-c 
-¥¯¥é¥¹¤Î³Æ¥á¥½¥Ã¥É¤Î¤¿¤á¤ËµÕ¥¢¥»¥ó¥Ö¥ë¤µ¤ì¤ë¥³¡¼¥É¡¢¤¹¤Ê¤ï¤Á Java ¥Ğ¥¤¥È¥³¡¼¥É¤«¤éÀ®¤ëÌ¿Îá¤òÉ½¼¨¤·¤Ş¤¹¡£¤³¤ì¤é¤Ï
-.fi
-http://java.sun.com/docs/books/vmspec/
-¤Î
+ã‚¯ãƒ©ã‚¹ã®å„ãƒ¡ã‚½ãƒƒãƒ‰ã®ãŸã‚ã«é€†ã‚¢ã‚»ãƒ³ãƒ–ãƒ«ã•ã‚Œã‚‹ã‚³ãƒ¼ãƒ‰ã€ã™ãªã‚ã¡ Java ãƒã‚¤ãƒˆã‚³ãƒ¼ãƒ‰ã‹ã‚‰æˆã‚‹å‘½ä»¤ã‚’è¡¨ç¤ºã—ã¾ã™ã€‚ã“ã‚Œã‚‰ã¯
 .na
-¡Ö\f2Java Virtual Machine Specification\fP¡×¤Ë¥É¥­¥å¥á¥ó¥È²½¤µ¤ì¤Æ¤¤¤Ş¤¹¡£
+\f2ã€ŒJava Virtual Machine Specificationã€\fP @
+.fi
+http://java.sun.com/docs/books/vmspec/ã«ãƒ‰ã‚­ãƒ¥ãƒ¡ãƒ³ãƒˆåŒ–ã•ã‚Œã¦ã„ã¾ã™ã€‚ 
 .TP 3
 \-verbose 
-¥á¥½¥Ã¥É¤Î¥¹¥¿¥Ã¥¯¥µ¥¤¥º¡¢¤ª¤è¤Ó \f2locals\fP ¤È \f2args\fP ¤Î¿ô¤ò½ĞÎÏ¤·¤Ş¤¹¡£
+ãƒ¡ã‚½ãƒƒãƒ‰ã®ã‚¹ã‚¿ãƒƒã‚¯ã‚µã‚¤ã‚ºã€ãŠã‚ˆã³ \f2locals\fP ã¨ \f2args\fP ã®æ•°ã‚’å‡ºåŠ›ã—ã¾ã™ã€‚ 
 .TP 3
 \-classpath path 
-\f3javap\fP ¤¬¥¯¥é¥¹¤òÃµ¤¹¤¿¤á¤Ë»ÈÍÑ¤¹¤ë¥Ñ¥¹¤ò»ØÄê¤·¤Ş¤¹¡£¥Ç¥Õ¥©¥ë¥È¤Ş¤¿¤Ï CLASSPATH ´Ä¶­ÊÑ¿ôÀßÄê¤ò¾å½ñ¤­¤·¤Ş¤¹¡£¥Ç¥£¥ì¥¯¥È¥ê¤Ï¥³¥í¥ó¤ÇÊ¬³ä¤·¤Ş¤¹¡£¤·¤¿¤¬¤Ã¤Æ¡¢\f2path\fP ¤Î°ìÈÌ·Á¼°¤Ï¼¡¤Î¤è¤¦¤Ë¤Ê¤ê¤Ş¤¹¡£
+\f3javap\fP ãŒã‚¯ãƒ©ã‚¹ã‚’æ¢ã™ãŸã‚ã«ä½¿ç”¨ã™ã‚‹ãƒ‘ã‚¹ã‚’æŒ‡å®šã—ã¾ã™ã€‚ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆã¾ãŸã¯ CLASSPATH ç’°å¢ƒå¤‰æ•°è¨­å®šã‚’ä¸Šæ›¸ãã—ã¾ã™ã€‚ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªã¯ã‚³ãƒ­ãƒ³ã§åˆ†å‰²ã—ã¾ã™ã€‚ã—ãŸãŒã£ã¦ã€\f2path\fP ã®ä¸€èˆ¬å½¢å¼ã¯æ¬¡ã®ã‚ˆã†ã«ãªã‚Šã¾ã™ã€‚ 
 .nf
 \f3
 .fl
@@ -291,7 +313,7 @@ http://java.sun.com/docs/books/vmspec/
 .fl
 \fP
 .fi
-¼¡¤ËÎã¤ò¼¨¤·¤Ş¤¹¡£
+ä¾‹ã‚’ç¤ºã—ã¾ã™ã€‚ 
 .nf
 \f3
 .fl
@@ -301,27 +323,41 @@ http://java.sun.com/docs/books/vmspec/
 .fi
 .TP 3
 \-bootclasspath path 
-¥Ö¡¼¥È¥¹¥È¥é¥Ã¥×¥¯¥é¥¹¤ò¥í¡¼¥É¤¹¤ë¥Ñ¥¹¤ò»ØÄê¤·¤Ş¤¹¡£¥Ö¡¼¥È¥¹¥È¥é¥Ã¥×¥¯¥é¥¹¤Ï¡¢¥Ç¥Õ¥©¥ë¥È¤Ç¤Ï \f2jre/lib/rt.jar\fP ¤ª¤è¤ÓÂ¾¤Î¤¤¤¯¤Ä¤«¤Î JAR ¥Õ¥¡¥¤¥ë ¤Ë¤¢¤ë¡¢¥³¥¢ Java ¥×¥é¥Ã¥È¥Õ¥©¡¼¥à¤ò¼ÂÁõ¤¹¤ë¥¯¥é¥¹¤Ç¤¹¡£
+ãƒ–ãƒ¼ãƒˆã‚¹ãƒˆãƒ©ãƒƒãƒ—ã‚¯ãƒ©ã‚¹ã‚’ãƒ­ãƒ¼ãƒ‰ã™ã‚‹ãƒ‘ã‚¹ã‚’æŒ‡å®šã—ã¾ã™ã€‚ãƒ–ãƒ¼ãƒˆã‚¹ãƒˆãƒ©ãƒƒãƒ—ã‚¯ãƒ©ã‚¹ã¯ã€ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆã§ã¯ \f2jre/lib/rt.jar\fP ãŠã‚ˆã³ä»–ã®ã„ãã¤ã‹ã® JAR ãƒ•ã‚¡ã‚¤ãƒ« ã«ã‚ã‚‹ã€ã‚³ã‚¢ Java 2 ãƒ—ãƒ©ãƒƒãƒˆãƒ•ã‚©ãƒ¼ãƒ ã‚’å®Ÿè£…ã™ã‚‹ã‚¯ãƒ©ã‚¹ã§ã™ã€‚ 
 .TP 3
 \-extdirs dirs 
-¥¤¥ó¥¹¥È¡¼¥ë¤µ¤ì¤¿³ÈÄ¥µ¡Ç½¤ò¸¡º÷¤¹¤ë¾ì½ê¤ò¥ª¡¼¥Ğ¡¼¥é¥¤¥É¤·¤Ş¤¹¡£³ÈÄ¥µ¡Ç½¤Ï¡¢¥Ç¥Õ¥©¥ë¥È¤Ç¤Ï \f2java.ext.dirs\fP ¤Ë¤¢¤ê¤Ş¤¹¡£
-.LP
-.SH "´Ä¶­ÊÑ¿ô"
-.TP 15
-.B CLASSPATH
-¥æ¡¼¥¶ÄêµÁ¥¯¥é¥¹¤Ø¤Î¥Ñ¥¹¤ò¥·¥¹¥Æ¥à¤ËÄÌÃÎ¤¹¤ë¤¿¤á¤Ë»ÈÍÑ¤·¤Ş¤¹¡£
-Ê£¿ô¤Î¥Ç¥£¥ì¥¯¥È¥ê¤ò»ØÄê¤¹¤ë¾ì¹ç¤Ï¥³¥í¥ó¤Ç¶èÀÚ¤ê¤Ş¤¹¡£
-°Ê²¼¤ËÎã¤ò¼¨¤·¤Ş¤¹¡£
-.sp 1n
-.RS 10
-.B .:/home/avh/classes:/usr/local/java/classes
+ã‚¤ãƒ³ã‚¹ãƒˆãƒ¼ãƒ«ã•ã‚ŒãŸæ‹¡å¼µæ©Ÿèƒ½ã‚’æ¤œç´¢ã™ã‚‹å ´æ‰€ã‚’ã‚ªãƒ¼ãƒãƒ¼ãƒ©ã‚¤ãƒ‰ã—ã¾ã™ã€‚The default location for extensions is the value of \f2java.ext.dirs\fP. 
 .RE
-.SH "´ØÏ¢¹àÌÜ"
+
+.LP
+.SH "ç’°å¢ƒå¤‰æ•°"
+.LP
+
+.LP
+.RS 3
+.TP 3
+CLASSPATH 
+ãƒ¦ãƒ¼ã‚¶ãƒ¼å®šç¾©ã‚¯ãƒ©ã‚¹ã¸ã®ãƒ‘ã‚¹ã‚’ã‚·ã‚¹ãƒ†ãƒ ã«æŒ‡å®šã—ã¾ã™ã€‚ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªã¯ã‚³ãƒ­ãƒ³ã§åˆ†å‰²ã—ã¾ã™ã€‚ æ¬¡ã«ä¾‹ã‚’ç¤ºã—ã¾ã™ã€‚ 
+.RS 3
+
+.LP
+.nf
+\f3
+.fl
+.:/home/avh/classes:/usr/local/java/classes
+.fl
+\fP
+.fi
+.RE
+.RE
+
+.LP
+.SH "é–¢é€£é …ç›®"
 .LP
 
 .LP
 .LP
-javac¡¢java¡¢jdb¡¢javah¡¢javadoc
+javac(1)ã€ java(1)ã€jdb(1)ã€javah(1)ã€javadoc(1)
 .LP
 
 .LP

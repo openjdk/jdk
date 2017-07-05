@@ -1,643 +1,437 @@
-'\" t
-.\" Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
-.\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
-.\"
-.\" This code is free software; you can redistribute it and/or modify it
-.\" under the terms of the GNU General Public License version 2 only, as
-.\" published by the Free Software Foundation.
-.\"
-.\" This code is distributed in the hope that it will be useful, but WITHOUT
-.\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-.\" FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-.\" version 2 for more details (a copy is included in the LICENSE file that
-.\" accompanied this code).
-.\"
-.\" You should have received a copy of the GNU General Public License version
-.\" 2 along with this work; if not, write to the Free Software Foundation,
-.\" Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
-.\"
-.\" Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
-.\" CA 95054 USA or visit www.sun.com if you need additional information or
-.\" have any questions.
-.\" ` 
-.TH java 1 "2006 ǯ 9 �� 4 ��" "Java SE 6" "�桼�������ޥ��"
-.SH "̾��"
-java \- Java ���ץꥱ�������ư�ץ������
-.SH "����"
-.B java 
-[ 
-.B options 
-] 
-.B class 
-[ 
-.B argument ... 
-]
+." Copyright 2002-2006 Sun Microsystems, Inc.  All Rights Reserved.
+." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+."
+." This code is free software; you can redistribute it and/or modify it
+." under the terms of the GNU General Public License version 2 only, as
+." published by the Free Software Foundation.
+."
+." This code is distributed in the hope that it will be useful, but WITHOUT
+." ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+." FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+." version 2 for more details (a copy is included in the LICENSE file that
+." accompanied this code).
+."
+." You should have received a copy of the GNU General Public License version
+." 2 along with this work; if not, write to the Free Software Foundation,
+." Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+."
+." Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+." CA 95054 USA or visit www.sun.com if you need additional information or
+." have any questions.
+."
+.TH java 1 "04 May 2009"
+." Generated from HTML by html2man (author: Eric Armstrong)
+
 .LP
-.B java 
-[ 
-.B options 
-] 
-.B \-jar " file.jar"
-.if n .ti +5n
-[ 
-.B argument ... 
-]
+.SH "名前"
+java \- Java アプリケーション起動ツール
 .LP
-.TP 15
-.B options
-���ޥ�ɹԥ��ץ����
-.TP
-.B class
-�ƤӽФ���륯�饹��̾����
-.TP
-.B file.jar
-�ƤӽФ����ե������̾����ɬ��
-.I \-jar
-��Ʊ���˻��Ѥ���롣
-.TP
-.B argument
-.B main
-�ؿ����Ϥ���������
-.SH "��ǽ����"
-.IX "Java interpreter" "" "Java interpreter \(em \fLjava\fP"
-.IX "java" "" "\fLjava\fP \(em Java interpreter"
-.LP
-.B java
-�ġ���ϡ�Java ���ץꥱ��������ư���ޤ���
-.B java
-�ġ���ϡ�Java Runtime Environment ��ư�������ȡ����ꤵ�줿���饹������ɤ������Υ��饹��
-.B main 
-�᥽�åɤ�ƤӽФ��� Java ���ץꥱ��������ư���ޤ���
-.LP
-���Υ᥽�åɤ�
-.B public
-�����
-.B static
-��������졢�ͤ��֤������ѥ�᡼���Ȥ���
-.I String
-�������ѤǤ��ʤ���Фʤ�ޤ���
-�᥽�å�����ϼ��Τ褦�ˤ���ɬ�פ�����ޤ���
-.LP
-.ft 3
-.nf
-   public static void main(String args[])
-.fi
-.ft 1
-.LP
-�ǥե���ȤǤϡ����ץ����ǤϤʤ��ǽ�ΰ��������ƤӽФ����饹��̾����
-�ʤ�ޤ�������̾���ˤϡ���������Υ��饹̾����Ѥ���ɬ�פ�����ޤ���
-.B \-jar
-���ץ�������ꤷ����硢���ץ����ǤϤʤ��ǽ�ΰ����ϡ����ץꥱ��������
-���饹�ե�����ȥ꥽�����ե������ޤ� JAR ���������֤�̾���ˤʤ�ޤ���
-���ξ�硢Main-Class �ޥ˥ե����ȥإå��ǻ��ꤵ�줿���饹����������
-���åץ��饹�ˤʤ�ޤ��� 
-.LP
-Java Runtime �ϡ��֡��ȥ��ȥ�åץ��饹�ѥ������󥹥ȡ��뷿��ĥ��ǽ��
-����ӥ桼�����饹�ѥ��� 3 �Ĥξ�꤫�顢��ư���饹�Ȥ���¾��
-���Ѥ��륯�饹��õ���ޤ��� 
-.LP
-���饹̾�ޤ��� JAR �ե�����̾�Τ��Ȥˤ��륪�ץ����ǤϤʤ������ϡ�
-main �ؿ����Ϥ���ޤ��� 
-.LP
-.SH "���ץ����"
-��ư���ޥ�ɤˤϡ����ߤμ¹ԴĶ�����Ӿ���Υ�꡼���ǥ��ݡ��Ȥ����
-ɸ�४�ץ���󤬤���ޤ���
-�ޤ������ۥޥ���θ��ߤμ����Ǥϡ���ɸ�४�ץ����򥵥ݡ��Ȥ��Ƥ��ޤ���
-���λ��ͤϾ����ѹ�������ǽ��������ޤ���
-.SS "ɸ�४�ץ����"
-.IX "java" "Standard Options" "\fLjava\fP \(em Java interpreter"
-.TP 3
-.LP
-.B \-client
-Java HotSpot Client
-.SM VM\s0
-�����򤷤ޤ���
-64 �ӥå��б� JDK �ϸ������Ǥϡ����Υ��ץ�����̵�뤷������� Java Hotspot Server VM ����Ѥ��ޤ���
-�ǥե���Ȥ� VM ������ˤĤ��Ƥϡ�
-.fi
-http://java.sun.com/javase/6/docs/technotes/guides/vm/server\-class.html
-��
-.na
-��\f2Server\-Class Machine Detection\fP�פ򻲾Ȥ��Ƥ���������
-.TP
-.B \-server
-Java HotSpot Server 
-VM 
-�����򤷤ޤ���
-64 �ӥå��б� JDK ��Ǥϡ����ݡ��Ȥ����Τ� Java Hotspot Server VM �����Ǥ��뤿�ᡢ\-server ���ץ���󤬰���Ū�����򤵤�ޤ��� 
-�ǥե���Ȥ� VM ������ˤĤ��Ƥϡ�
-.fi
-http://java.sun.com/javase/6/docs/technotes/guides/vm/server\-class.html
-��
-.na
-��\f2Server\-Class Machine Detection\fP�פ򻲾Ȥ��Ƥ���������
-.TP
-.B \-agentlib:libname[=options]
-�ͥ��ƥ��֤Υ���������ȥ饤�֥��
-.I libname
-���ɤ߹��ߤ��ޤ���������򼨤��ޤ���
-.LP
-.RS 5
-.nf
-\-agentlib:hprof 
-\-agentlib:jdwp=help 
-\-agentlib:hprof=help 
-.fi
+.RS 3
+.TP 2
+o
+形式 
+.TP 2
+o
+説明 
+.TP 2
+o
+オプション 
+.TP 2
+o
+関連項目 
 .RE
-.LP
-�ܺ٤ϡ�
-.fi
-http://java.sun.com/javase/6/docs/platform/jvmti/jvmti.html#starting
-��
-.na
-��\f2JVMTI Agent Command Line Options\fP�פ򻲾Ȥ��Ƥ���������
-.TP
-.B \-agentpath:pathname[=options]
-�ͥ��ƥ��֤Υ���������ȥ饤�֥���ե�ѥ�̾����Ѥ����ɤ߹��ߤ��ޤ���
-�ܺ٤ϡ�
-.fi
-http://java.sun.com/javase/6/docs/platform/jvmti/jvmti.html#starting
-��
-.na
-��\f2JVMTI Agent Command Line Options\fP�פ򻲾Ȥ��Ƥ���������
-.TP
-.B \-classpath " classpath"
-.TP
-.B \-cp " classpath"
-���饹�ե������õ���ǥ��쥯�ȥꡢJAR ���������֡������ ZIP ���������֤Υꥹ�Ȥ���ꤷ�ޤ������饹�ѥ��γƥ���ȥ�ϥ����� (:) �Ƕ��ڤ�ޤ���
-.B \-classpath 
-�ޤ��� 
-.B \-cp
-����ꤹ��ȡ������Υ��ץ������ͤˤ�ä� 
-.SB CLASSPATH
-�Ķ��ѿ�������Ͼ�񤭤���ޤ��� 
-.LP
-.B \-classpath
-��
-.B \-cp 
-����Ѥ�����
-.SB CLASSPATH
-�����ꤵ��Ƥ��ʤ���硢�桼�����饹�ѥ��ϸ��ߤΥǥ��쥯�ȥ� (.) �ˤʤ�ޤ��� 
-.LP
-�ص��塢\f2*\fP �Υ١���̾��ޤ९�饹�ѥ����Ǥϡ��ǥ��쥯�ȥ���γ�ĥ�� \f2.jar\fP �ޤ��� \f2.JAR\fP ����Ĥ��٤ƤΥե�����Υꥹ�Ȥ���ꤹ��Τ�Ʊ���Ȥߤʤ���ޤ� (Java �ץ������Ϥ��� 2 �ĤθƤӽФ�����̤Ǥ��ʤ�)��
-.br
-.br
-���Ȥ��С��ǥ��쥯�ȥ� 
-.I foo
-�� 
-.I a.jar
-�� 
-.I b.JAR
-���ޤޤ�Ƥ����硢���饹�ѥ����� 
-.I foo/*
-�� 
-.I A.jar:b.JAR
-��Ÿ������ޤ�����������JAR �ե�����ν��֤ϻ��ꤵ��ޤ��󡣤��Υꥹ�Ȥˤϡ������ե������ޤᡢ���ꤵ�줿�ǥ��쥯�ȥ���Τ��٤Ƥ� JAR �ե����뤬�ޤޤ�ޤ���
-* �����������륯�饹�ѥ�����ȥ�ϡ������ȥǥ��쥯�ȥ���Τ��٤Ƥ� JAR �ե�����Υꥹ�Ȥ�Ÿ������ޤ���
-.I CLASSPATH
-�Ķ��ѿ��⡢������ˤ�Ʊ�ͤ�Ÿ������ޤ������饹�ѥ��Υ磻��ɥ�����Ÿ����ɬ����Java ���ۥޥ���ε�ư���˼¹Ԥ���ޤ����������äơ�
-.I System.getenv
-("
-.I CLASSPATH
-")
-�ƤӽФ��Τ褦�˴Ķ����䤤��碌��Ԥ�ʤ��¤ꡢJava �ץ�����बŸ������Ƥ��ʤ��磻��ɥ����ɤ�ǧ�����뤳�ȤϤ���ޤ���   
-.LP
-���饹�ѥ��ξܺ٤ˤĤ��Ƥϡ��֥��饹�ѥ�������פ򻲾Ȥ��Ƥ���������  
-.TP
-.B \-Dproperty=value
-�����ƥ�ץ��ѥƥ����ͤ����ꤷ�ޤ��� 
-.TP
-.B \-d32
-.TP
-.B \-d64
-���줾�� 32 �ӥåȴĶ���64 �ӥåȴĶ��ǥץ�������¹Ԥ��뤳�Ȥ��׵ᤷ�ޤ����׵ᤵ�줿�Ķ������󥹥ȡ��뤵��Ƥ��ʤ������ݡ��Ȥ���Ƥ��ʤ����ϡ����顼����𤵤�ޤ���
-.LP
-�������Ǥϡ�64 �ӥå����򥵥ݡ��Ȥ��Ƥ���Τ� Java HotSpot Server VM 
-�����Ǥ��ꡢ
-.B \-server
-���ץ����Ǥϡ�
-.B \-d64 
-������Ū�˻��Ѥ���ޤ���
-�������äơ�\-d64 ���ѻ��ˤϡ�-client�ץ��ץ�����̵�뤵��ޤ���
-���λ��ͤϾ����ѹ�������礬����ޤ���
-.LP
-.B \-d32
-��
-.B \-d64
-�Τɤ������ꤷ�ʤ��ä���硢
-64 �ӥå����ѥ����ƥ������ơ�
-�ǥե���ȤǤ� 32 �ӥåȴĶ��Ǽ¹Ԥ���ޤ���
-���λ��ͤϾ����ѹ�������礬����ޤ���
-.TP 3
-\-enableassertions[:<package name>"..." | :<class name> ]
-.TP 3
-\-ea[:<package name>"..." | :<class name> ]
-.LP
-ɽ����ͭ���ˤ��ޤ����ǥե���Ȥǡ�ɽ����̵���Ǥ���
-.sp 1n
-��������ꤷ�ʤ��Ƥ⡢
-.BR enableassertions
-�ޤ���
-.BR \-ea 
-��ɽ����ͭ���ˤʤ�ޤ���
-��...�פǽ��������� 1 �Ļ��ꤹ��ȡ�
-�����å��ˤ�ꡢ���ꤷ���ѥå���������Ӥ��٤Ƥ�
-���֥ѥå��������ɽ����ͭ���ˤʤ�ޤ���
-��...�פȤ�����������ꤹ��ȡ������å��ˤ�ꡢ
-���ߤκ���ѥǥ��쥯�ȥ���ˤ���̾���Τʤ��ѥå��������
-ɽ����ͭ���ˤʤ�ޤ���
-��...�פǽ����ʤ������� 1 �Ļ��ꤹ��ȡ�
-�����å��ˤ�ꡢ���ꤷ�����饹���ɽ����ͭ���ˤʤ�ޤ���
-.LP
-1 �ԤΥ��ޥ�ɤˡ������Υ����å���ʣ���Υ��󥹥��󥹤�
-�ޤޤ�Ƥ����硢���饹���ɤ߹������ˡ���������������ޤ���
-���Ȥ��С��ѥå�����
-.I com.wombat.fruitbat 
- (����Ӥ��٤ƤΥ��֥ѥå�����) �������ͭ����ɽ����
-�ޤ���ץ�������¹Ԥ����硢���Υ��ޥ�ɤ���ѤǤ��ޤ���
-.TP
-.BR java -ea:com.wombat.fruitbat... <Main Class>
-.LP
-.BR \-enableassertions 
-�����
-.BR \-ea 
-�����å��ϡ����٤Ƥ�
-���饹����������ӥ����ƥ९�饹 (���饹������������ʤ�) ��Ŭ�Ѥ���ޤ���
-���ε�§�ˤ� 1 ���㳰������ޤ����������ʤ������ξ�硢
-�����å��ϥ����ƥ��Ŭ�Ѥ���ޤ��󡣤�������Ѥ��ơ���ñ�ˡ�
-�����ƥ९�饹��������٤ƤΥ��饹��ɽ����ͭ���ˤ��뤳�Ȥ��Ǥ��ޤ���
-���٤ƤΥ����ƥ९�饹��ɽ����ͭ���ˤ�����̤Υ����å���
-�Ѱդ���Ƥ��ޤ���
-.BR \-enablesystemassertions 
-�򻲾Ȥ��Ƥ���������
-.TP 3
-\-disableassertions[:<package name>"..." | :<class name> ]
-.TP 3
-\-da[:<package name>"..." | :<class name> ]
-.LP
-ɽ����̵���ˤ��ޤ�������ϥǥե���ȤǤ���
-.sp 1n
-��������ꤻ���ˡ�
-.BR disableassertions 
-�ޤ���
-.BR \-da 
-��ɽ����̵���ˤ��ޤ���
-��...�פǽ��������� 1 �Ļ��ꤹ��ȡ�
-�����å��ˤ�ꡢ���ꤷ���ѥå���������Ӥ��٤Ƥ�
-���֥ѥå��������ɽ����̵���ˤʤ�ޤ���
-��...�פȤ�����������ꤹ��ȡ������å��ˤ�ꡢ���ߤκ����
-�ǥ��쥯�ȥ���ˤ���̾���Τʤ��ѥå��������ɽ����̵����
-�ʤ�ޤ�����...�פǽ����ʤ������� 1 �Ļ��ꤹ��ȡ������å��ˤ�ꡢ
-���ꤷ�����饹���ɽ����̵���ˤʤ�ޤ���
-.LP
-�ѥå�����
-.I com.wombat.fruitbat 
-��ɽ����ͭ���ˡ����饹
-.I com.wombat.fruitbat.Brickbat
-��ɽ����̵���ˤ��ƥץ�������¹Ԥ���ˤϡ�
-���Υ��ޥ�ɤ���Ѥ��ޤ���
 
-java -ea:com.wombat.fruitbat... -da:com.wombat.fruitbat.Brickbat <Main Class>
-
-.BR \-disableassertions 
-�����
-.BR \-da 
-�����å��ϡ����٤Ƥ�
-���饹����������ӥ����ƥ९�饹 (���饹������������ʤ�) ��Ŭ�Ѥ���ޤ���
-���ε�§�ˤ� 1 ���㳰������ޤ���
-����������ʤ������ξ�硢�����å��ϥ����ƥ��Ŭ�Ѥ���ޤ���
-��������Ѥ��ơ���ñ�ˡ�
-�����ƥ९�饹��������٤ƤΥ��饹���ɽ����ͭ���ˤ��뤳�Ȥ��Ǥ��ޤ���
-���٤ƤΥ����ƥ९�饹�����ɽ����ͭ���ˤ�����̤Υ����å���
-�Ѱդ���Ƥ��ޤ���
-.BR \-disablesystemassertions 
-�򻲾Ȥ��Ƥ���������
-.TP
-.BR \-enablesystemassertions
-.TP 3
-\-esa
-���٤ƤΥ����ƥ९�饹��ɽ����ͭ���ˤ��ޤ� (�����ƥ९�饹��
-�ǥե���Ȥ�ɽ�����ơ������� true �����ꤷ�ޤ�)��
-.TP
-.BR \-disablesystemassertions
-.TP 3
-\-dsa
-���٤ƤΥ����ƥ९�饹��ɽ����̵���ˤ��ޤ���
-.TP 3
-\-jar
-JAR ����˥��ץ��벽���줿�ץ�������¹Ԥ��ޤ����ǽ�ΰ����ϡ���ư���饹��̾���ǤϤʤ���JAR ���������֥ե������̾���ˤʤ�ޤ���
-���Υ��ץ����ư��뤿��ˤϡ�JAR �ե�����Υޥ˥ե����Ȥ˷��� \f3Main-Class:\f1\f2classname\f1 �ιԤ����äƤ��ʤ���Фʤ�ޤ���
-.I classname
-�ϡ��桼���Υ��ץꥱ�������γ������Ȥʤ� 
-.I public static void main(String[] args) 
-�᥽�åɤ���ĥ��饹���̤��ޤ���
-Jar �ե������ Jar �ե�����Υޥ˥ե����Ȥ򰷤���ˡ�ˤĤ��Ƥϡ�Jar �ġ���Υ�ե���󥹥ڡ����ȡ�
-.na
-\f2Java Tutorial\fP
-.fi
-(http://java.sun.com/docs/books/tutorial/jar) 
-�� Jar �ȥ졼��򻲾Ȥ��Ƥ���������
 .LP
-���Υ��ץ�������Ѥ���Ȥ��ϡ�JAR �ե����뤬���٤ƤΥ桼�����饹�Υ������Ȥʤ뤿�ᡢ¾�Υ桼�����饹�ѥ��������̵�뤵��ޤ���
+.SH "形式"
 .LP
-.B "java \-jar" 
-���ץ����Ǽ¹ԤǤ��� JAR �ե�����Ǥϡ�
-.B "java \-jar" 
-�ʤ��Ǥ�¹ԤǤ���褦�ˡ��¹Ը��¤�����Ǥ��ޤ���
-.fi
-http://java.sun.com/javase/6/docs/technotes/guides/jar/index.html
-��
-.na
-��\f2Java Archive (JAR) Files\f�פ򻲾Ȥ��Ƥ���������
-.TP
-.B \-javaagent:jarpath[=options]
-Java �ץ�����ߥ󥰸��쥨��������Ȥ��ɤ߹��ߤޤ���
-http://java.sun.com/javase/6/docs/api/java/lang/instrument/package\-summary.html
-��
-��\f2java.lang.instrument\fP�פ򻲾Ȥ��Ƥ���������
-.LP
-.B \-verbose
-.LP
-.TP 3
-\-verbose: class
-���饹���ɤ߹��ޤ�뤿�Ӥ˥��饹�˴ؤ�������ɽ�����ޤ��� 
-.PD
-.LP
-.TP 3
-\-verbose:gc
-���١������쥯����󥤥٥�Ȥ�ȯ�����뤿�Ӥ���𤷤ޤ��� 
-.TP 3
-.B \-verbose:jni
-�ͥ��ƥ��֥᥽�åɤ���Ӥ���¾�� Java Native Interface (JNI) �λ��Ѥ˴ؤ���
-�������𤷤ޤ��� 
-.TP 3
-.B \-version
-�С����������ɽ�����ƽ�λ���ޤ��� 
-.TP 3
-.B \-version:release
-���ޥ�ɹԤ˻��ꤵ�줿���饹�ޤ��� JAR �ե����뤬��\f2release\fP �ǻ��ꤵ�줿�С�������ɬ�פȤ��Ƥ��뤳�Ȥ򼨤��ޤ�����ư���줿 java ���ޥ�ɤΥС�����󤬤��λ������Ƥ���������������Ŭ�ڤʼ����������ƥ��Ǹ��Ĥ��ä����ˤϡ�����Ŭ�ڤʼ��������Ѥ���ޤ���
-.LP
-\f2release\fP �Ǥϡ�����ΥС����������Ǥ�������Ǥʤ����С������ʸ����ȸƤФ��С������Υꥹ�Ȥ���ꤹ�뤳�Ȥ�Ǥ��ޤ����С������ʸ����ϡ������Ĥ��ΥС�������ϰϤ����Ƕ��ڤä������ν���դ��ꥹ�ȤǤ����С�������ϰϤϡ��С������ ID���С������ ID �θ�˥������ꥹ�� (*) ���ղä�����Ρ��С������ ID �θ�˥ץ饹���� (+) ���ղä�����Ρ�2 �ĤΥС�������ϰϤ򥢥�ѥ���� (&) �Ƿ�礷����Ρ��Τ����줫�ˤʤ�ޤ����������ꥹ���ϥץ�ե��å������פ򡢥ץ饹����ϻ��ꤵ�줿�С������ʾ�򡢥���ѥ���ɤ� 2 �ĤΥС�������ϰϤ������Ѥ򡢤��줾���̣���ޤ���������򼨤��ޤ��� 
 .nf
 \f3
 .fl
--version:"1.5.0_04 1.5*&1.5.1_02+"
+    \fP\f3java\fP [ options ] class [ argument ... ]
 .fl
-\fP
+    \f3java\fP [ options ] \f3\-jar\fP file.jar [ argument ... ]
+.fl
 .fi
-�嵭�ΰ�̣�ϡ��С������ 1.5.0_04���ޤ��� 1.5.1_02 �ʾ�� 1.5 ��С������ ID �ץ�ե��å����Ȥ��ƻ��ĥС�����󡢤Τ����줫�򥯥饹�ޤ��� JAR �ե����뤬ɬ�פȤ��롢�Ȥ������ȤǤ����С������ʸ����θ�̩�ʹ�ʸ������ˤĤ��Ƥϡ���Java Network Launching Protocol & API Specification (JSR\-56)�פΡ�Appendix A�פ򻲾Ȥ��Ƥ���������
+
 .LP
-JAR �ե�����ξ����̾�С�������׷�򥳥ޥ�ɹԤ˻��ꤹ����⡢JAR �ե�����Υޥ˥ե�������˻��ꤹ�뤳�Ȥ��侩����Ƥ��ޤ��� 
-.LP
-���Υ��ץ����λ��Ѥ˴ؤ�����פʥݥꥷ������ˤĤ��Ƥϡ���ҤΡ�������򻲾Ȥ��Ƥ���������
-.TP
-.B \-showversion
-�С����������ɽ�����ơ��¹Ԥ��³���ޤ���
-.TP
-.B \-?
-.PD 0
-.TP
-.B \-help
-����ˡ��ɽ�����ƽ�λ���ޤ��� 
-.PD
-.TP
-.B \-X
-��ɸ�४�ץ����˴ؤ�������ɽ�����ƽ�λ���ޤ��� 
-.LP
-.SS "��ɸ�४�ץ����"
-.LP
-.IX "java" "Non-Standard Options" "\fLjava\fP \(em Java interpreter"
-.LP
-.TP 3
-.B \-Xint
-���󥿥ץ꥿���ѥ⡼�ɤ�ư��ޤ����ͥ��ƥ��֥����ɤؤΥ���ѥ����
-̵���ˤʤꡢ���٤ƤΥХ��ȥ����ɤ����󥿥ץ꥿�ˤ�äƼ¹Ԥ���ޤ���
-Java HotSpot VM Ŭ��������ѥ���ˤ�ä�������ѥե����ޥ󥹾��
-�����ϡ����Υ⡼�ɤǤϼ¸�����ޤ��� 
-.TP 3
-.B \-Xbatch
-�Хå����饦��ɥ���ѥ����̵���ˤ��ޤ���
-�̾VM �Ǥϥ᥽�åɤ�Хå����饦��ɥ������Ȥ��ƥ���ѥ��뤷�ޤ���
-���ΤȤ����Хå����饦��ɥ���ѥ��뤬��λ����ޤǤϡ�
-���󥿥ץ꥿�⡼�ɤǥ᥽�åɤ��¹Ԥ���ޤ���
-.B \-Xbatch 
-�ե饰����Ѥ���ȡ��Хå����饦��ɥ���ѥ��뤬
-̵���ˤʤ뤿�ᡢ���٤ƤΥ᥽�åɤΥ���ѥ���ϴ�λ����ޤ�
-�ե������饦��ɤΥ������Ȥ��ƽ�������ޤ���
-.TP 3
-.B \-Xbootclasspath: bootclasspath
-�֡��ȥ��饹�ե������õ�����ᡢ�ǥ��쥯�ȥꡢJAR ���������֡������ ZIP 
-���������֤򥳥���Ƕ��ڤä��ꥹ�Ȥ���ꤷ�ޤ������ꤵ�줿�ѥ���
-¸�ߤ���֡��ȥ��饹�ե�����ϡ�JDK �˴ޤޤ��
-�֡��ȥ��饹�ե����������˻Ȥ��ޤ���
-��: rt.jar ��Υ��饹���񤭤�����Ū�Ǥ��Υ��ץ�����
-���Ѥ��륢�ץꥱ���������������ʤ��Ǥ���������
-��������ȡ�Java Runtime Environment 
-�Х��ʥꥳ���ɥ饤���󥹰�ȿ�ˤʤ뤳�Ȥ�����ޤ���
-.TP 3
-.B \-Xbootclasspath/a:path
-�ǥե���ȤΥ֡��ȥ��ȥ�åץ��饹�ѥ����ɲä���ǥ��쥯�ȥꡢ
-.SM JAR
-���������֡������
-.SM ZIP
-���������֤Υѥ��򥳥���Ƕ��ڤäƻ��ꤷ�ޤ��� 
-.TP 3
-.B \-Xbootclasspath/p:path
-�ǥե���ȤΥ֡��ȥ��ȥ�åץ��饹�ѥ��������ɲä���
-�ǥ��쥯�ȥꡢ
-.SM JAR
-���������֡������
-.SM ZIP
-���������֤Υѥ��򥳥���Ƕ��ڤäƻ��ꤷ�ޤ���
-��: ���Υ��ץ�����
-.B rt.jar
-��Υ��饹�򥪡��С��饤��
-������Ū�ǻ��Ѥ��륢�ץꥱ�������ϻ��ꤷ�ʤ��Ǥ���������
-���ꤹ��ȡ�Java Runtime Environment 
-�Х��ʥꥳ���ɥ饤���󥹰�ȿ�ˤʤ뤳�Ȥ�����ޤ��� 
-.TP 3
-.B \-Xcheck:jni
-Java Native Interface (JNI) ��ǽ���Ф���
-�ɲå����å���¹Ԥ��ޤ����äˡ�Java ���ۥޥ��� (JVM) �� 
-JNI �׵������������ˡ�JNI ��ǽ���Ϥ����
-�ѥ�᡼������Ӽ¹ԴĶ��ǡ����򸡾ڤ��ޤ���
-̵���ʥǡ����򸡽Ф�����硢�ͥ��ƥ��֥����ɤ�
-���꤬�����Ƚ�Ǥ���Java ���ۥޥ����
-��̿Ū�ʥ��顼�ǽ�λ���ޤ���
-���Υ��ץ�������Ѥ���ȡ�
-�ѥե����ޥ󥹤��㲼���ޤ���
-.TP 3
-.B \-Xfuture
-��̩�ʥ��饹�ե���������θ�����¹Ԥ��ޤ������̸ߴ�����ݻ�
-���뤿�ᡢJDK �� Virtual Machine �Ǽ¹Ԥ����ǥե���Ȥ�
-���������ϡ�JDK ���եȥ������� 1.1.x �С������Ǽ¹Ԥ���븡������
-��̩�ǤϤ���ޤ���
-.B \-Xfuture
-�ե饰����Ѥ���ȡ����饹�ե����������
-�����ͤ˽�򤷤���Τˤ��뤿��Ρ�����˸�̩�ʥ��饹�ե��������������
-ͭ���ˤʤ�ޤ�����ȯ�Ԥ������������ɤ�ȯ����ݤˤϡ����Υե饰��
-���Ѥ�侩���ޤ���Java ���ץꥱ�������ư�ġ����
-����Υ�꡼���Ǥϡ���긷̩�ʸ������ǥե���Ȥˤʤ뤫��Ǥ��� 
-.TP 3
-.B \-Xnoclassgc
-���饹�Υ��١������쥯������̵���ˤ��ޤ���
-���Υ��ץ�������Ѥ���ȡ������ɺѤߥ��饹������꤬��������뤳�Ȥ��ʤ��ʤ뤿�ᡢ����Ū�ʥ�������̤����礷�ޤ������ξ�硢���ץꥱ�������ˤ�äƤ� OutOfMemoryError ��������������ǽ��������ޤ���
-.TP 3
-.BI \-Xincgc
-���󥯥��󥿥륬�١������쥯����ͭ���ˤ��ޤ���
-���󥯥��󥿥륬�١������쥯���ϡ��ǥե���ȤǤ�
-̵�������ꤵ��Ƥ��ޤ�����ͭ���ˤ���ȥץ������μ¹����
-���١������쥯�����ˤ����ߤ��ɤ��ޤ���
-���󥯥��󥿥륬�١������쥯���ϡ����ˤ�äƤϥץ�������Ʊ����
-�¹Ԥ���ޤ���Ʊ���˼¹Ԥ���Ƥ���֤ϡ��ץ����������Ѳ�ǽ��
-�ץ����å�ǽ�Ϥ��������ޤ���
-.TP 3
-.B \-Xloggc:file
-.BR \-verbose:gc 
-��Ʊ�͡��ƥ��١������쥯����󥤥٥�Ȥ�
-��ݡ��Ȥ�����������Υǡ�����
-.I file 
-�˵�Ͽ���ޤ���
-.I \-verbose:gc 
-�ˤ������Ǥ������˲ä��ơ���ݡ��Ȥ���륤�٥�Ȥˤ�
-�ǽ�Υ��١������쥯����󥤥٥�Ȥ���ηв���� (�ÿ�) ���դ����ޤ���
-.sp 1
-�ͥåȥ�����ٱ�ˤ�� JVM ����ߤ��򤱤뤿��ˡ����Υե������
-������Ȥ��ƾ�˥�������ե����륷���ƥ����Ѥ��ޤ���
-���Υե�����ϡ��ե�ե����륷���ƥप��ӥ����󥰤��Դ����ʥե�����
-���ɲä�����硢�ڤ�ͤ���뤳�Ȥ�����ޤ���
-���ޥ�ɹԤ�
-.I \-verbose:gc 
-�Ȥ��ä���˻��ꤵ�줿��硢���Υ��ץ����ͥ�褵��ޤ���
-.TP 3
-.B \-Xmsn
-���������ƥס���ν������������ꤷ�ޤ���
-���ꤹ���ͤϡ�1M �Х��Ȥ����礭�� 1024 ���ܿ��Ǥʤ���Фʤ�ޤ���
-ʸ��
-.B k 
-�ޤ���
-.B K
-���դ���� K �Х��ȡ�ʸ��
-.B m 
-�ޤ���
-.B M
-���դ���� M �Х��Ȥ�ɽ���ޤ���
-�ǥե�����ͤϡ��¹Ի��˥����ƥ������˴�Ť������򤵤�ޤ����ܺ٤ˤĤ��Ƥϡ���HotSpot Ergonomics�פ򻲾Ȥ��Ƥ�������
-.br
-��:
-.LP
-.RS 5
-.nf
-\-Xms6291456
-\-Xms6144k
-\-Xms6m
-.fi
-.RE
-.TP 3
-.B \-Xmxn
-���������ƥס���κ��祵������Х���ñ�̤ǻ��ꤷ�ޤ���
-���ꤹ���ͤϡ�2M �Х��Ȥ����礭�� 1024 ���ܿ��Ǥʤ���Фʤ�ޤ���
-ʸ��
-.B k 
-�ޤ���
-.B K
-���դ���� K �Х��ȡ�ʸ��
-.B m 
-�ޤ���
-.B M
-���դ���� M �Х��Ȥ�ɽ���ޤ���
-�ǥե�����ͤϡ��¹Ի��˥����ƥ������˴�Ť������򤵤�ޤ����ܺ٤ˤĤ��Ƥϡ���HotSpot Ergonomics�פ򻲾Ȥ��Ƥ�������
-.br
-��:
-.LP
-.RS 5
-.nf
-\-Xmx83886080
-\-Xmx81920k
-\-Xmx80m
-.fi
-.RE
-.LP
-Solaris 7 ����� Solaris 8 SPARC �ץ�åȥե�����ξ�硢�����ͤξ�¤Ϥ��褽 4000m ���饪���С��إåɤ��̤��������ΤǤ��ꡢSolaris 2.6 ����� x86 �ץ�åȥե�����ξ��� 2000m ���饪���С��إåɤ��̤��������ΤǤ���
-Linux �ץ�åȥե�����ξ��ξ�¤ϡ����褽
-2000m ���饪���С��إåɤ��̤��������ΤǤ���
-.TP 3
-.BI \-Xprof
-�¹���Υץ������Υץ��ե���������������ץ��ե�����󥰥ǡ�����
-ɸ����Ϥ�����ޤ������Υ��ץ����ϡ��ץ�����೫ȯ����Ω��
-�桼�ƥ���ƥ��Ȥ����󶡤���Ƥ����Τǡ����ֲ�ư�����ƥ�Ǥλ��Ѥ�
-��Ū�Ȥ�����ΤǤϤ���ޤ��� 
-.TP 3
-\-Xrs
-Java ���ۥޥ��� (JVM) �ˤ�륪�ڥ졼�ƥ��󥰥����ƥॷ���ʥ������
-�򸺤餷�ޤ���
-.LP
-����Υ�꡼���Ǥϥ���åȥ�����եå���ǽ���ɲä��졢
-Java ���ץꥱ����������֤˥���åȥ�����Ǥ���褦�ˤʤ�ޤ�����
-���ε�ǽ�ˤ�ꡢJVM ���۾ｪλ�������Ǥ⡢����åȥ��������
-���꡼�󥢥åץ����� (�ǡ����١�����³���Ĥ��롢�ʤ�) ��
-�¹ԤǤ���褦�ˤʤ�ޤ�����
-.LP
-Sun �� JVM �ϡ������ʥ�򥭥�å����ư۾�� JVM ��λ
-���Ф��륷��åȥ�����եå���������ޤ���JVM �ϡ�SIGHUP��SIGINT��SIGTERM ��
-���Ѥ��ƥ���åȥ�����եå��μ¹Ԥ򳫻Ϥ��ޤ���
-.LP
-JVM  �Ǥϡ�Ʊ�ͤε�������Ѥ��ơ�1.2 �����ΥǥХå��Ѥ�
-����åɥ����å�����׵�ǽ��������Ƥ��ޤ���Sun �� JVM �ϡ�
-SIGQUIT ����Ѥ��ƥ���åɥ���פ�¹Ԥ��ޤ���
-.LP
-JVM ���Ȥ߹�������ץꥱ�������ϡ�SIGINT �� SIGTERM �Τ褦��
-�����ʥ�����ˤ˥ȥ�åפ���ɬ�פ�����ޤ������Τ褦�ʾ�硢JVM ��
-�����ʥ�ϥ�ɥ�Ȥδ֤˴��Ĥ�ȯ�������ǽ��������ޤ���
-���Τ褦�ʴ��Ĥ��򤱤뤿��ˡ�\-Xrs ���ޥ�ɹԥ��ץ�����
-���ѤǤ��ޤ���
-Sun �� JVM �� \-Xrs �����Ѥ����ȡ�SIGINT��SIGTERM��SIGHUP��
-����� SIGQUIT �Υ����ʥ�ޥ����� JVM �ˤ�ä��ѹ����줺��
-�����Υ����ʥ�Υ����ʥ�ϥ�ɥ�ϥ��󥹥ȡ��뤵��ޤ���
-.LP
-\-Xrs ����ꤹ�뤳�Ȥˤ�äơ��ƶ��� 2 �Ĥ���ޤ���
 .RS 3
-.TP 2
-*
-SIGQUIT ����åɥ���פϻ��ѤǤ��ޤ���
-.TP 2
-*
-����åȥ�����եå��μ¹Ԥϡ��桼�������ɤ����������ޤ���
-���Ȥ��� JVM ����λ����Ȥ��� System.exit() ��ƤӽФ��ޤ���
-.TP
-.B \-Xssn
-����åɥ����å������������ꤷ�ޤ���
-.TP
-.BI \-XX:+UseAltSigs
-VM �Ǥϥǥե���Ȥ� 
-.I SIGUSR1 
-����� 
-.I SIGUSR2 
-����Ѥ��ޤ�����
-.I SIGUSR1 
-����� 
-.I SIGUSR2 
-�򥷥��ʥ�Ϣ�����륢�ץꥱ��������
-���礹���礬����ޤ���
-.I \-XX:+UseAltSigs 
-���ץ����ϡ�VM �˥ǥե���ȤȤ���
-.I SIGUSR1 
-�� 
-.I SIGUSR2 
-�ʳ��Υ����ʥ����Ѥ����ޤ���
+
 .LP
-.SH "��"
+.RS 3
+.TP 3
+options 
+コマンド行オプション。 
+.TP 3
+class 
+呼び出されるクラスの名前 
+.TP 3
+file.jar 
+呼び出される JAR ファイルの名前。必ず \f2\-jar\fP とともに使用する 
+.TP 3
+argument 
+\f3main\fP 関数に渡される引数 
+.RE
+
+.LP
+.RE
+.SH " 説明"
 .LP
 
 .LP
-\f3\-version:\fP\f2release\fP ���ޥ�ɹԥ��ץ����Ǥϡ��ɤ�ʤ�ʣ���˥�꡼������ꤷ�Ƥ⤫�ޤ��ޤ��󡣤�����������Ū�ʥ�꡼������θ¤�줿���֥��åȤ���Ѥ�������Ǥ�Ŭ�ڤʥݥꥷ����ɽ���Ǥ��뤿�ᡢ�����Υ��֥��åȤΤߤ������˥��ݡ��Ȥ���ޤ��������Υݥꥷ���򼡤˼����ޤ��� 
+.LP
+\f3java\fP ツールは、Java アプリケーションを起動します。java ツールは、Java Runtime Environment を起動したあと、指定されたクラスをロードし、そのクラスの \f3main\fP メソッドを呼び出すことにより、Java アプリケーションを起動します。
+.LP
+.LP
+このメソッドは、public および static として宣言する必要があります。 また、値を返してはいけません。 さらに、\f2String\fP 配列をパラメータとして指定できなければなりません。メソッドの宣言は、次のようになっていなければなりません。
+.LP
+.nf
+\f3
+.fl
+    public static void main(String args[])
+.fl
+\fP
+.fi
+
+.LP
+.LP
+デフォルトでは、コマンド行オプション以外の最初の引数が、呼び出されるクラスの名前になります。この名前には、完全指定のクラス名を使用する必要があります。\f3\-jar\fP オプションを指定した場合、コマンド行オプション以外の最初の引数が、アプリケーションのクラスファイルとリソースファイルを含む \f3JAR\fP アーカイブの名前になります。 この場合、マニフェストの \f3Main\-Class\fP ヘッダーで指定されたクラスが起動クラスになります。
+.LP
+.LP
+Java Runtime は、ブートストラップクラスパス、インストール型拡張機能、およびユーザークラスパスの 3 箇所から起動クラスと他の使用されているクラスを検索します。
+.LP
+.LP
+クラス名または JAR ファイル名のあとにある、コマンド行オプション以外の引数は、\f3main\fP 関数に渡されます。
+.LP
+.SH "オプション"
+.LP
+
+.LP
+.LP
+起動ツールには、現在の実行環境および将来のリリースでサポートされる標準オプションがあります。また、仮想マシンの現在の実装では、非標準オプションのセットもサポートされます。 これは、将来のリリースで変更される可能性があります。
+.LP
+.SH "標準オプション"
+.LP
+
+.LP
+.RS 3
+.TP 3
+\-client 
+.LP
+Java HotSpot Client VM を選択します。64 ビット対応 JDK は現時点では、このオプションを無視し、代わりに Java Hotspot Server VM を使用します。 
+.LP
+デフォルトの VM の選択については、
+.na
+\f2「サーバー \- クラスマシンの検出」\fP @
+.fi
+http://java.sun.com/javase/6/docs/technotes/guides/vm/server\-class.htmlを参照してください。  
+.TP 3
+\-server 
+.LP
+Java HotSpot Server VM を選択します。64 ビット対応 JDK 上では、サポートされるのは Java Hotspot Server VM だけであるため、\-server オプションが暗黙的に選択されます。 
+.LP
+デフォルトの VM の選択については、
+.na
+\f2「サーバー \- クラスマシンの検出」\fP @
+.fi
+http://java.sun.com/javase/6/docs/technotes/guides/vm/server\-class.htmlを参照してください。  
+.TP 3
+\-agentlib:libname[=options] 
+ネイティブエージェントライブラリ \f2libname\fP をロードします。 たとえば次のように指定します。 
+.LP
+\-agentlib:hprof 
+.LP
+\-agentlib:jdwp=help 
+.LP
+\-agentlib:hprof=help 
+.LP
+詳細については、
+.na
+\f2「JVMTI エージェントのコマンド行オプション」\fP @
+.fi
+http://java.sun.com/javase/6/docs/platform/jvmti/jvmti.html#startingを参照してください。  
+.TP 3
+\-agentpath:pathname[=options] 
+フルパス名を使用して、ネーティブエージェントライブラリをロードします。詳細については、
+.na
+\f2「JVMTI エージェントのコマンド行オプション」\fP @
+.fi
+http://java.sun.com/javase/6/docs/platform/jvmti/jvmti.html#startingを参照してください。 
+.TP 3
+\-classpath classpath 
+.TP 3
+\-cp classpath 
+クラスファイルを検索するディレクトリ、JAR アーカイブ、および ZIP アーカイブのリストを指定します。クラスパスの各エントリはコロン (\f3:\fP) で区切ります。\f3\-classpath\fP または \f3\-cp\fP を指定すると、このオプションの値によって \f3CLASSPATH\fP 環境変数の設定がオーバーライドされます。 
+.LP
+\f3\-classpath\fP も \f3\-cp\fP も使用されず、\f3CLASSPATH\fP も設定されていない場合、ユーザークラスパスは現在のディレクトリ (\f4.\fP) になります。  
+.LP
+便宜上、\f2*\fP のベース名を含むクラスパス要素は、ディレクトリ内の拡張子 \f2.jar\fP または \f2.JAR\fP を持つすべてのファイルのリストを指定するのと同じとみなされます (Java プログラムはこの 2 つの呼び出しを区別できない)。
+.br
+.br
+たとえば、ディレクトリ \f2foo\fP に \f2a.jar\fP と \f2b.JAR\fP が含まれている場合、クラスパス要素 \f2foo/*\fP は \f2A.jar:b.JAR\fP に展開されます。 ただし、JAR ファイルの順番は指定されません。このリストには、隠しファイルも含め、指定されたディレクトリ内のすべての JAR ファイルが含まれます。\f2*\fP だけから成るクラスパスエントリは、カレントディレクトリ内のすべての JAR ファイルのリストに展開されます。\f2CLASSPATH\fP 環境変数も、定義時には同様に展開されます。クラスパスのワイルドカード展開は必ず、Java 仮想マシンの起動前に実行されます。したがって、\f2System.getenv("CLASSPATH")\fP 呼び出しのように環境に問い合わせを行わない限り、Java プログラムが展開されていないワイルドカードを認識することはありません。  
+.LP
+クラスパスの詳細は、
+.na
+\f2「クラスパスの設定」\fP @
+.fi
+http://java.sun.com/javase/6/docs/technotes/tools/index.html#classpathを参照してください。  
+.TP 3
+\-Dproperty=value 
+システムプロパティーの値を設定します。 
+.TP 3
+\-d32 
+.TP 3
+\-d64 
+それぞれ 32 ビット環境、64 ビット環境でプログラムを実行することを要求します。要求された環境がインストールされていないかサポートされていない場合は、エラーが報告されます。 
+.LP
+現在のところ、Java HotSpot Server VM だけが 64 ビットの操作をサポートしており、\-d64 を使用すると \-server オプションが暗黙的に有効になります。したがって、\-d64 使用時には「\-client」オプションは無視されます。この仕様は、将来のリリースでは変更になる可能性があります。 
+.LP
+\f3\-d32\fP と \f3\-d64\fP がどちらも指定されていない場合は、デフォルトとして、32 ビット環境で実行されます。この仕様は、将来のリリースでは変更になる可能性があります。  
+.TP 3
+\-enableassertions[:<package name>"..."| :<class name> ] 
+.TP 3
+\-ea[:<package name>"..."| :<class name> ] 
+アサーションを有効にします。アサーションは、デフォルトでは無効になっています。 
+.LP
+引数なしの \f3enableassertions\fP または \f3\-ea\fP を指定すると、アサーションが有効になります。「\f2...\fP」で終わる引数を 1 つ指定すると、指定したパッケージとそのサブパッケージ内でアサーションが有効になります。引数として「\f2...\fP」だけを指定すると、現在の作業ディレクトリにある名前のないパッケージ内でアサーションが有効になります。「\f2...\fP」で終わらない引数を 1 つ指定すると、指定したクラス内でアサーションが有効になります。 
+.LP
+単一コマンド行にこれらのスイッチのインスタンスを複数指定した場合は、指定したスイッチが順番に処理されてからクラスがロードされます。したがって、たとえば、パッケージ \f2com.wombat.fruitbat\fP (サブパッケージを含む) 内でのみアサーションを有効にしてプログラムを実行するには、次のようなコマンドを使用します。 
+.nf
+\f3
+.fl
+java \-ea:com.wombat.fruitbat... <Main Class>
+.fl
+\fP
+.fi
+.LP
+\f3\-enableassertions\fP および \f3\-ea\fP スイッチは、すべてのクラスローダおよびシステムクラスに適用されます。 システムクラスにはクラスローダはありません。ただし、この規則には例外が 1 つあります。それは、引数なしでこのスイッチを指定すると、その指定はシステムクラスには適用されない、ということです。この例外を利用すれば、システムクラスを除くすべてのクラスでアサーションを簡単に有効にすることができます。すべてのシステムクラスでアサーションを有効にするために、別のスイッチが用意されています。 このあとの \f3\-enablesystemassertions\fP を参照してください。  
+.TP 3
+\-disableassertions[:<package name>"..."| :<class name> ] 
+.TP 3
+\-da[:<package name>"..."| :<class name> ] 
+アサーションを無効にします。これはデフォルトの設定です。 
+.LP
+引数なしの \f3disableassertions\fP または \f3\-da\fP を指定すると、アサーションが無効になります。「\f2...\fP」で終わる引数を 1 つ指定すると、指定したパッケージとそのサブパッケージ内でアサーションが無効になります。引数として「\f2...\fP」だけを指定すると、現在の作業ディレクトリにある名前のないパッケージ内でアサーションが無効になります。「\f2...\fP」で終わらない引数を 1 つ指定すると、指定したクラス内でアサーションが無効になります。 
+.LP
+パッケージ \f2com.wombat.fruitbat\fP 内ではアサーションを有効にし、クラス \f2com.wombat.fruitbat.Brickbat\fP 内ではアサーションを無効にしたうえで、プログラムを実行するには、次のようなコマンドを使用します。 
+.nf
+\f3
+.fl
+java \-ea:com.wombat.fruitbat... \-da:com.wombat.fruitbat.Brickbat <Main Class>
+.fl
+\fP
+.fi
+.LP
+\f3\-disableassertions\fP および \f3\-da\fP スイッチは、すべてのクラスローダおよびシステムクラスに適用されます。 システムクラスにはクラスローダはありません。ただし、この規則には例外が 1 つあります。それは、引数なしでこのスイッチを指定すると、その指定はシステムクラスには適用されない、ということです。この例外を利用すれば、システムクラスを除くすべてのクラスでアサーションを簡単に有効にすることができます。すべてのシステムクラスでアサーションを無効にするために、別のスイッチが用意されています。 このあとの \f3\-disablesystemassertions\fP を参照してください。  
+.TP 3
+\-enablesystemassertions 
+.TP 3
+\-esa 
+すべてのシステムクラス内でアサーションを有効にします。 つまり、システムクラスについてアサーションのデフォルトステータスを \f2true\fP に設定します。 
+.TP 3
+\-disablesystemassertions 
+.TP 3
+\-dsa 
+すべてのシステムクラス内でアサーションを無効にします。 
+.LP
+.TP 3
+\-jar 
+JAR ファイルにカプセル化されたプログラムを実行します。最初の引数は、起動クラスの名前ではなく、JAR ファイルの名前にします。このオプションが機能するには、JAR ファイルのマニフェストに\f3「Main\-Class:\fP\f4classname\fP\f3」\fPという形式の行を指定する必要があります。\f2classname\fP には、アプリケーションの開始位置として機能する \f2public\ static\ void\ main(String[]\ args)\fP メソッドを含むクラスを指定します。JAR ファイルとそのマニフェストについては、jar(1)と、
+.na
+\f2Java チュートリアル\fP @
+.fi
+http://java.sun.com/docs/books/tutorial/jarの「Trail: Jar Files」を参照してください。 
+.LP
+このオプションを使用すると、指定した JAR ファイルがすべてのユーザークラスのソースになり、ユーザークラスパスのほかの設定は無視されます。 
+.LP
+Solaris 8 では、「java \-jar」オプションで実行できる JAR ファイルは、実行権限のセットを保持しています。 このため、「java \-jar」を使用しないで実行することも可能です。
+.na
+\f2Java Archive (JAR) ファイル\fP @
+.fi
+http://java.sun.com/javase/6/docs/technotes/guides/jar/index.htmlを参照してください。  
+.TP 3
+\-javaagent:jarpath[=options] 
+Java プログラミング言語エージェントをロードします。
+.na
+\f2java.lang.instrument\fP @
+.fi
+http://java.sun.com/javase/6/docs/api/java/lang/instrument/package\-summary.html を参照してください。 
+.TP 3
+\-verbose 
+.TP 3
+\-verbose:class 
+クラスがロードされるたびにクラスに関する情報を表示します。 
+.TP 3
+\-verbose:gc 
+ガベージコレクションイベントが発生するたびに報告します。 
+.TP 3
+\-verbose:jni 
+ネイティブメソッドの使用およびその他の Java Native Interface (JNI) アクティビティーに関する情報を報告します。 
+.TP 3
+\-version 
+バージョン情報を表示して終了します。 
+.TP 3
+\-version:release 
+コマンド行に指定されたクラスまたは JAR ファイルが、\f2release\fP で指定されたバージョンを必要としていることを示します。起動された java コマンドのバージョンがこの指定内容を満たさず、かつ適切な実装がシステム上で見つかった場合には、その適切な実装が使用されます。 
+.LP
+\f2release\fP では、特定のバージョンを指定できるだけでなく、バージョン文字列と呼ばれるバージョンのリストを指定することもできます。バージョン文字列は、いくつかのバージョン範囲を空白で区切った形式の順序付きリストです。バージョン範囲は、バージョン ID、バージョン ID の後にアスタリスク (*) を付加したもの、バージョン ID の後にプラス記号 (+) を付加したもの、2 つのバージョン範囲をアンパサンド (&) で結合したもの、のいずれかになります。アスタリスクはプレフィックス一致を、プラス記号は指定されたバージョン以上を、アンパサンドは 2 つのバージョン範囲の論理積を、それぞれ意味します。例を示します。 
+.nf
+\f3
+.fl
+\-version:"1.5.0_04 1.5*&1.5.1_02+"
+.fl
+\fP
+.fi
+上記の意味は、バージョン 1.5.0_04、または 1.5.1_02 以上で 1.5 をバージョン ID プレフィックスとして持つバージョン、のいずれかをクラスまたは JAR ファイルが必要とする、ということです。 バージョン文字列の厳密な構文や定義については、「Java Network Launching Protocol & API Specification (JSR\-56)」の「Appendix A」を参照してください。 
+.LP
+JAR ファイルの場合は通常、バージョン要件をコマンド行に指定するよりも、JAR ファイルのマニフェスト内に指定することが推奨されています。 
+.LP
+このオプションの使用に関する重要なポリシー情報については、後述の「注」節を参照してください。  
+.TP 3
+\-showversion 
+バージョン情報を表示して続行します。 
+.TP 3
+\-? 
+.TP 3
+\-help 
+使用法を表示して終了します。 
+.TP 3
+\-X 
+非標準オプションに関する情報を表示して終了します。 
+.RE
+
+.LP
+.SS 
+非標準オプション
+.LP
+.RS 3
+
+.LP
+.RS 3
+.TP 3
+\-Xint 
+インタプリタ専用モードで動作します。ネイティブコードへのコンパイルは無効になり、すべてのバイトコードがインタプリタによって実行されます。Java HotSpot VM に対応するコンパイラが提供するパフォーマンス上の利点は、このモードでは実現されません。 
+.TP 3
+\-Xbatch 
+バックグラウンドコンパイルを無効にします。通常、VM では、バックグラウンドコンパイルが終了するまで、メソッドをバックグラウンドタスクとしてコンパイルし、インタプリタモードでメソッドを実行します。\f2\-Xbatch\fP フラグを指定すると、バックグラウンドコンパイルが無効になり、すべてのメソッドのコンパイルが完了するまでフォアグラウンドタスクとして処理されます。 
+.TP 3
+\-Xbootclasspath:bootclasspath 
+ブートクラスファイルを探すディレクトリ、JAR アーカイブ、および ZIP アーカイブをコロンで区切ったリストで指定します。指定したパスに存在するブートクラスファイルが、Java 2 SDK に含まれるブートクラスファイルの代わりに使用されます。\f2注: rt.jar 内のクラスをオーバーライドする目的でこのオプションを使用するアプリケーションは、システムに配置しないでください。Java 2 Runtime Environment バイナリコードライセンス違反になります。\fP 
+.TP 3
+\-Xbootclasspath/a:path 
+ディレクトリ、JAR アーカイブ、および ZIP アーカイブのパスをコロンで区切って指定します。 パスはデフォルトのブートストラップクラスパスのあとに追加されます。 
+.TP 3
+\-Xbootclasspath/p:path 
+ディレクトリ、JAR アーカイブ、および ZIP アーカイブのパスをコロンで区切って指定します。 パスはデフォルトのブートストラップクラスパスの前に追加されます。\f2注 rt.jar 内のクラスをオーバーライドする目的でこのオプションを使用するアプリケーションは、システムに配置しないでください。Java 2 Runtime Environment バイナリコードライセンス違反になります。\fP 
+.TP 3
+\-Xcheck:jni 
+Java Native Interface (JNI) 機能に対して追加チェックを行います。具体的には、Java 仮想マシンは JNI 要求を処理する前に、JNI 関数に渡されるパラメータと、実行環境のデータを検証します。無効なデータが見つかった場合は、ネイティブコードに問題があることを示しているため、Java 仮想マシンは致命的エラーを発生して終了します。このオプションを使用すると、パフォーマンス低下が予想されます。 
+.TP 3
+\-Xfuture 
+クラスとファイルの形式を厳密にチェックします。下位互換性を保つため、Java 2 SDK の仮想マシンが実行するデフォルトの形式チェックは、JDK ソフトウェアのバージョン 1.1.x が実行するチェックと同程度の厳密さになっています。\f3\-Xfuture\fP フラグを指定すると、クラスファイル形式の仕様への準拠を強化するためのより厳密なチェックが有効になります。Java アプリケーション起動ツールの将来のリリースでは、より厳密なチェックがデフォルトになるため、新しいコードを開発するときにはこのフラグを使用することをお勧めします。 
+.TP 3
+\-Xnoclassgc 
+クラスのガベージコレクションを無効にします。このオプションを使用すると、ロード済みクラスからメモリーが回復されることがなくなるため、全体的なメモリー使用量が増大します。この場合、アプリケーションによっては OutOfMemoryError がスローされる可能性があります。 
+.TP 3
+\-Xincgc 
+インクリメンタルガーベジコレクタを有効にします。インクリメンタルガベージコレクタは、デフォルトでは無効になっています。 有効にすると、プログラムの実行中にガベージコレクションによる一時停止が発生しなくなります。インクリメンタルガベージコレクタは、プログラムと同時に実行することがあり、この場合、プログラムの利用できるプロセッサ能力が低下します。 
+.TP 3
+\-Xloggc:file 
+\-verbose:gc と同様にガベージコレクションイベントが発生するたびに報告しますが、そのデータを \f2file\fP に記録します。\f2\-verbose:gc\fP を指定したときに報告される情報のほかに、報告される各イベントの先頭に、最初のガベージコレクションイベントからの経過時間 (秒単位) が付け加えられます。 
+.LP
+ネットワークの応答時間によって JVM の実行速度が低下するのを避けるため、このファイルの格納先は、常にローカルファイルシステムにしてください。ファイルシステムが満杯になると、ファイルは切り詰められ、そのファイルにデータが引き続き記録されます。このオプションと \f2\-verbose:gc\fP の両方がコマンド行に指定されている場合は、このオプションが優先されます。  
+.LP
+.TP 3
+\-Xmsn 
+メモリー割り当てプールの初期サイズをバイト数で指定します。指定する値は、1M バイトより大きい 1024 の倍数にしなければなりません。キロバイトを指定するには、文字 \f2k\fP または \f2K\fP を付けます。 メガバイトを指定するには、文字 \f2m\fP または \f2M\fP を付けます。デフォルト値は、実行時にシステムの設定に基づいて選択されます。詳細については、「HotSpot Ergonomics」を参照してください。
+.br
+例: 
+.RS 3
+
+.LP
+.nf
+\f3
+.fl
+       \-Xms6291456
+.fl
+       \-Xms6144k
+.fl
+       \-Xms6m
+.fl
+       
+.fl
+\fP
+.fi
+.RE
+.TP 3
+\-Xmxn 
+メモリー割り当てプールの最大サイズをバイト数で指定します。指定する値は、2M バイトより大きい 1024 の倍数にしなければなりません。キロバイトを指定するには、文字 \f2k\fP または \f2K\fP を付けます。 メガバイトを指定するには、文字 \f2m\fP または \f2M\fP を付けます。デフォルト値は、実行時にシステムの設定に基づいて選択されます。詳細については、「HotSpot Ergonomics」を参照してください。
+.br
+例: 
+.RS 3
+
+.LP
+.nf
+\f3
+.fl
+       \-Xmx83886080
+.fl
+       \-Xmx81920k
+.fl
+       \-Xmx80m
+.fl
+       
+.fl
+\fP
+.fi
+.RE
+Solaris 7 および Solaris 8 SPARC プラットフォームの場合、この値の上限はおよそ 4000m からオーバーヘッドの量を引いたものであり、Solaris 2.6 および x86 プラットフォームの場合は 2000m からオーバーヘッドの量を引いたものです。Linux プラットフォームの場合の上限は、およそ 2000m からオーバーヘッドの量を引いたものです。 
+.TP 3
+\-Xprof 
+実行中のプログラムのプロファイルを生成し、プロファイリングデータを標準出力に出力します。このオプションは、プログラム開発用のユーティリティーとして提供されています。 本番稼動システムでの使用を目的としたものではありません。  
+.LP
+.TP 3
+\-Xrs 
+Java 仮想マシン (JVM) によるオペレーティングシステムシグナルの使用を減らします。 
+.LP
+以前のリリースでは、Java アプリケーションを秩序正しくシャットダウンするためのシャットダウンフック機能が追加されました。この機能により、JVM が突然終了した場合でも、シャットダウン時にユーザークリーンアップコード (データベース接続のクローズなど) を実行できるようになりました。 
+.LP
+Sun の JVM は、シグナルをキャッチすることによって、JVM の異常終了のためのシャットダウンフックを実装します。JVM は、SIGHUP、SIGINT、および SIGTERM を使用して、シャットダウンフックの実行を開始します。 
+.LP
+JVM は、デバッグの目的でスレッドスタックをダンプするという、1.2 より前からある機能を実現するためにも、同様の機構を使用します。Sun の JVM は、スレッドダンプを実行するために SIGQUIT を使用します。 
+.LP
+JVM を埋め込んでいるアプリケーションが SIGINT や SIGTERM などのシグナルを頻繁にトラップする必要があると、JVM そのもののシグナルハンドラの処理に支障が出る可能性があります。\f3\-Xrs\fP コマンド行オプションを使用すると、この問題に対処できます。Sun の JVM に対して \f3\-Xrs\fP を使用すると、SIGINT、SIGTERM、SIGHUP、および SIGQUIT に対するシグナルマスクは JVM によって変更されず、これらのシグナルに対するシグナルハンドラはインストールされません。 
+.LP
+\f3\-Xrs\fP を指定した場合、次の 2 つの影響があります。 
+.RS 3
+.TP 2
+o
+SIGQUIT によるスレッドダンプを利用できない 
+.TP 2
+o
+シャットダウンフック処理の実行は、JVM が終了しようとしている時点で System.exit() を呼び出すなどして、ユーザーコード側で行う必要がある 
+.RE
+.TP 3
+\-Xssn 
+スレッドのスタックサイズを設定します。 
+.TP 3
+\-XX:+UseAltSigs 
+VM ではデフォルトで \f2SIGUSR1\fP および \f2SIGUSR2\fP を使用しますが、\f2SIGUSR1\fP および \f2SIGUSR2\fP をシグナル連鎖するアプリケーションと 競合する場合があります。\f2\-XX:+UseAltSigs\fP オプションは、VM にデフォルトとして \f2SIGUSR1\fP と \f2SIGUSR2\fP 以外のシグナルを使用させます。 
+.RE
+
+.LP
+.RE
+.SH "注"
+.LP
+
+.LP
+\f3\-version:\fP\f2release\fP コマンド行オプションでは、どんなに複雑にリリースを指定してもかまいません。ただし、現実的なリリース指定の限られたサブセットを使用するだけでも適切なポリシーを表現できるため、それらのサブセットのみが完全にサポートされます。それらのポリシーを次に示します。 
 .RS 3
 .TP 3
 1.
-Ǥ�դΥС�����󡣤���ϡ����Υ��ץ�������Ѥ��ʤ����Ȥ�ɽ���Ǥ��ޤ��� 
+任意のバージョン。 これは、このオプションを使用しないことで表現できます。 
 .TP 3
 2.
-��������ΥС������ ID �����礭��Ǥ�դΥС�����󡣼�����򼨤��ޤ��� 
+ある特定のバージョン ID よりも大きい任意のバージョン。 次に例を示します。 
 .nf
 \f3
 .fl
@@ -646,15 +440,20 @@ VM �Ǥϥǥե���Ȥ�
 \fP
 .fi
 .LP
-���ξ�硢1.5.0_03 �����礭��Ǥ�դΥС�����󤬻��Ѥ���ޤ�������ϡ����ꤵ�줿�С�����������Υ��󥿥ե�������Ƴ�����줿 (���뤤�Ϥ��ΥХ����������줿) ���������Ǥ���  
+この場合、1.5.0_03 よりも大きい任意のバージョンが使用されます。 これは、指定されたバージョンで特定のインタフェースが導入された (あるいはそのバグが修正された) 場合に便利です。  
 .TP 3
 3.
-��������ΥС������ ID �����礭���С�����󡣤����������Υ�꡼���ե��ߥ�ξ�¤ˤ�ä����¤����Ρ�������򼨤��ޤ��� 
-.TP
+ある特定のバージョン ID よりも大きいバージョン。 ただし、そのリリースファミリの上限によって制限するもの。例を示します。 
+.nf
+\f3
+.fl
 "1.5.0_03+&1.5*"
+.fl
+\fP
+.fi
 .TP 3
 4.
-��ι��� 2 �ޤ��� 3 �Ρ�OR��ɽ����������򼨤��ޤ��� 
+上の項目 2 または 3 の「OR」表現。例を示します。 
 .nf
 \f3
 .fl
@@ -662,48 +461,45 @@ VM �Ǥϥǥե���Ȥ�
 .fl
 \fP
 .fi
-����Ϲ��� 2 �˻��Ƥ��ޤ����������ѹ�������Υ�꡼�� (1.5) ��Ƴ�����줿��������Ʊ���ѹ��������Υ�꡼���Υ��åץǡ��ȤǤ����Ѳ�ǽ�ˤʤä����Ȥ������������Ǥ��� 
+これは項目 2 に似ていますが、ある変更が特定のリリース (1.5) で導入されたが、その同じ変更が以前のリリースのアップデートでも利用可能になった、という場合に便利です。 
 .RE
 
 .LP
-.SH "��Ϣ����"
+.SH "関連項目"
 .LP
 
 .LP
 .RS 3
 .TP 2
-*
-javac \- Java �ץ��������쥳��ѥ���
+o
+javac(1) 
 .TP 2
-*
-jdb \- Java ���ץꥱ�������ǥХå�
+o
+jdb(1) 
 .TP 2
-*
-javah \- C �إå��ȥ����֥ե����른���ͥ졼��
+o
+javah(1) 
 .TP 2
-*
-jar \- JAR ���������֥ġ���
+o
+jar(1) 
 .TP 2
-*
-.fi
-http://java.sun.com/javase/6/docs/technotes/guides/extensions/index.html
-��
+o
 .na
-��\f2The Java Extensions Framework\fP��
-.TP 2
-*
+\f2「Java 拡張機能フレームワーク」\fP @
 .fi
-http://java.sun.com/javase/6/docs/technotes/guides/security/index.html
-��
-.na
-��\f2Security Features\fP��
+http://java.sun.com/javase/6/docs/technotes/guides/extensions/index.html 
 .TP 2
-*
-.fi
-http://java.sun.com/docs/hotspot/VMOptions.html
-��
+o
 .na
-��\f2HotSpot VM Specific Options\fP��
+\f2「セキュリティー」\fP @
+.fi
+http://java.sun.com/javase/6/docs/technotes/guides/security/index.html 
+.TP 2
+o
+.na
+\f2「HotSpot VM Specific Options」\fP @
+.fi
+http://java.sun.com/docs/hotspot/VMOptions.html 
 .RE
 
 .LP

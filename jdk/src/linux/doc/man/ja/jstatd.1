@@ -1,248 +1,300 @@
-'\" t
-.\" 
-.\" Copyright 2004-2006 Sun Microsystems, Inc.  All Rights Reserved.
-.\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
-.\"
-.\" This code is free software; you can redistribute it and/or modify it
-.\" under the terms of the GNU General Public License version 2 only, as
-.\" published by the Free Software Foundation.
-.\"
-.\" This code is distributed in the hope that it will be useful, but WITHOUT
-.\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-.\" FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-.\" version 2 for more details (a copy is included in the LICENSE file that
-.\" accompanied this code).
-.\"
-.\" You should have received a copy of the GNU General Public License version
-.\" 2 along with this work; if not, write to the Free Software Foundation,
-.\" Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
-.\"
-.\" Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
-.\" CA 95054 USA or visit www.sun.com if you need additional information or
-.\" have any questions.
-.\"
-.\" 
-.TH jstatd 1 "2006 ǯ 9 �� 4 ��" "Java SE 6" "�桼�������ޥ��"
-.SH ̾��
-jstatd \- ���ۥޥ��� jstat �ǡ����
-.\"
-.SH ����
-.B jstatd 
-.BI [ options ]  
-.SH �ѥ�᡼��
-.if t .TP 20
-.if n .TP 15
-.BI options
-���ޥ�ɹԥ��ץ���󡣥��ץ�����Ǥ�դν���ǻ���Ǥ��ޤ�����Ĺ�ޤ���̷�⤹�륪�ץ���󤬤��ä����ϡ��Ǹ�˻��ꤵ�줿���ץ����ͥ�褵��ޤ���
-.SH ��ǽ����
-.B jstatd 
-�ġ���ϡ���¬�����դ� HotSpot Java ���ۥޥ��� (JVM) �κ����Ƚ�λ��ƻ뤹�� RMI �����С����ץꥱ�������Ǥ��ꡢ��⡼�ȴƻ�ġ��뤬��������ۥ��Ⱦ�Ǽ¹Ԥ��Ƥ��� JVM �˥����å����뤿��Υ��󥿥ե������������Ƥ��ޤ���
-.LP
-jstatd �����С�����ǽ���뤿��ˤϡ���������ۥ��Ⱦ�� RMI �쥸���ȥ꤬¸�ߤ���ɬ�פ�����ޤ���jstatd �����С��ϡ��ǥե���ȥݡ��Ȥޤ��� 
-.BI \-p " port" 
-���ץ����ˤ�äƼ����줿�ݡ��Ⱦ�� RMI �쥸���ȥ�ؤΥ����å����ߤޤ���RMI �쥸���ȥ꤬���Ĥ���ʤ��ä����ϡ�
-.BI \-p " port" 
-���ץ����ˤ�äƼ����줿�ݡ��Ȥ˥Х���ɤ��줿 jstatd ���ץꥱ���������Ǻ������졢 
-.BI \-p " port" 
-���ʤ��줿���ϥǥե���Ȥ� RMI �쥸���ȥ�˥Х���ɤ��줿 jstatd ���ץꥱ���������Ǻ�������ޤ������� RMI �쥸���ȥ�κ����ϡ�
-.B \-nr 
-���ץ�������ꤹ�뤳�Ȥˤ�äƶػߤǤ��ޤ���
-.LP
-�� - ���Υ桼�ƥ���ƥ��ϥ��ݡ��Ȥ���Ƥ��ʤ����ᡢJDK �ξ���ΥС������Ǥϻ��ѤǤ��ʤ���ǽ��������ޤ����������Ǥϡ�Windows 98 ����� Windows ME �ץ�åȥե�����Ǥϻ��ѤǤ��ޤ���
-.SH ���ץ����
-.B jstatd 
-���ޥ�ɤϡ��ʲ��Υ��ץ����򥵥ݡ��Ȥ��ޤ���
-.if t .TP 20
-.if n .TP 15
-.BI \-nr
-��¸�� RMI �쥸���ȥ꤬���Ĥ���ʤ��Ȥ��ˡ�
-.B jstatd 
-�ץ�������Ǥ����� RMI �쥸���ȥ�κ������ߤޤ���
-.if t .TP 20
-.if n .TP 15
-.BI \-p " port" 
-RMI �쥸���ȥ��õ���ݡ����ֹ档�ޤ��ϡ�RMI �쥸���ȥ꤬���Ĥ��餺��
-.B \-nr 
-�����ꤵ��ʤ��ä����ˡ�RMI �쥸���ȥ꤬���������ݡ����ֹ档
-.if t .TP 20
-.if n .TP 15
-.BI \-n " rminame"
-RMI �쥸���ȥ�ǥ�⡼�� RMI ���֥������Ȥ��Х���ɤ����̾�����ǥե���Ȥ�̾���ϡ�JStatRemoteHost �Ǥ���Ʊ���ۥ��Ⱦ��ʣ���� 
-.B jstatd 
-�����С�����ư���Ƥ����硢�ƥ����С��Υ������ݡ��� RMI ���֥������Ȥ�̾�����դˤ���ˤϡ����Υ��ץ�������ꤷ�ޤ��������������Τ���ˤϡ��ƻ륯�饤����Ȥ� hostid ����� vmid ʸ����˰�դΥ����С�̾���ޤޤ�Ƥ���ɬ�פ�����ޤ���
-.if t .TP 20
-.if n .TP 15
-.BI \-J option
-.I option 
-�� 
-.B javac 
-�ˤ�äƸƤӽФ��줿 java ��ư�ġ�����Ϥ��ޤ������Ȥ��С�
-.B \-J-Xms48m 
-�ϡ���ư����� 48M �Х��Ȥ����ꤷ�ޤ���Java �Ǻ������줿���ؤ� VM �¹ԥ��ץꥱ�������˥��ץ������Ϥ��Τ���
-.B \-J 
-�ΰ���Ū��§�Ǥ���
-.SH �������ƥ�
+." Copyright 2003 Sun Microsystems, Inc.  All Rights Reserved.
+." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+."
+." This code is free software; you can redistribute it and/or modify it
+." under the terms of the GNU General Public License version 2 only, as
+." published by the Free Software Foundation.
+."
+." This code is distributed in the hope that it will be useful, but WITHOUT
+." ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+." FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+." version 2 for more details (a copy is included in the LICENSE file that
+." accompanied this code).
+."
+." You should have received a copy of the GNU General Public License version
+." 2 along with this work; if not, write to the Free Software Foundation,
+." Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+."
+." Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+." CA 95054 USA or visit www.sun.com if you need additional information or
+." have any questions.
+."
+.TH jstatd 1 "04 May 2009"
+." Generated from HTML by html2man (author: Eric Armstrong)
 
-.B jstatd
-�����С��ϡ�Ŭ�ڤʥͥ��ƥ��֥�������������äƤ��� JVM ������ƻ�Ǥ��ޤ���
-���Τ��ᡢjstatd �ץ������ϡ��������å� JVM ��Ʊ���桼������ʤǼ¹Ԥ��Ƥ���ɬ�פ�����ޤ���
-UNIX(TM) �١����Υ����ƥ�� root �桼�����ʤɡ������Υ桼������ʤˤϡ�
-���Υ����ƥ���Ǥ�դ� JVM �ˤ�äƥ������ݡ��Ȥ��줿��¬�����ؤ�
-������������������Ƥ��Ƥ��ޤ���
-���Τ褦�ʻ�ʤǼ¹���� jstatd �ץ������ϡ����Υ����ƥ���Ǥ�դ� JVM ��ƻ�Ǥ��ޤ�����
-�����ȼ���������ƥ����������θ����ɬ�פ�����ޤ���
 .LP
-jstatd �����С��ϡ���⡼�ȥ��饤����Ȥ�ǧ�ڤϹԤ��ޤ���
-�Ĥޤꡢjstatd �����С��ץ�������¹Ԥ���ȡ�
-jstatd �ץ���������������������Ĥ��٤Ƥ� JVM ����
-�������ݡ��Ȥ�����¬���������ͥåȥ�����Ǥ�դΥ桼�����˸�������ޤ���
-��¬���������������ȡ��Ķ��ˤ�äƤ�˾�ޤ����ʤ���礬����ޤ���
-�ä˱��ѴĶ�����������㤤�ͥåȥ���Ǥϡ�
-jstatd �ץ������򳫻Ϥ�������
-�������륻�����ƥ��ݥꥷ����Ƥ����ɬ�פ�����ޤ���
-.LP
-.B jstatd 
-�����С��ϡ�¾�˥������ƥ��ޥ͡����㤬���󥹥ȡ��뤵��Ƥ��ʤ����ϡ�RMISecurityPolicy �Υ��󥹥��󥹤򥤥󥹥ȡ��뤹��Τǡ��������ƥ��ݥꥷ���ե��������ꤹ��ɬ�פ�����ޤ���
-�ݥꥷ���ե�����ϡ��ǥե���ȤΥݥꥷ�������Υݥꥷ���ե����빽ʸ
-.fi
- (http://java.sun.com/javase/6/docs/technotes/guides/security/PolicyFiles.html) 
-�˽���ɬ�פ�����ޤ���
-.LP
-���Υݥꥷ���ե�����Ǥϡ�
-.B jstatd 
-�����С��ϥ������ƥ��㳰�򵯤������˼¹ԤǤ��ޤ������Υݥꥷ���ϡ�
-���٤ƤΥ����ɥ١����ؤΤ��٤ƤΥ�������������Ĥ�����ϼ�ͳ�٤��㤤�Ǥ�����
-.B jstatd 
-�����С��μ¹Ԥ�ɬ�פʺǾ����٤Υ�������������Ĥ���ݥꥷ�����ϼ�ͳ�٤��⤤�Ǥ���
-.LP
-.RS
-.ft 3
-.nf
-grant codebase "file:${java.home}/../lib/tools.jar" {
-	 permission java.security.AllPermission;
-};
-.fi
-.ft 1
-.RE
-.LP
-���Υݥꥷ������Ѥ���ˤϡ��ƥ����Ȥ� jstatd.all.policy �Ȥ���̾���Υե�����˥��ԡ��������ȡ����Τ褦�ˤ��� 
-.B jstatd 
-�����С���¹Ԥ��ޤ���
-.LP
-.RS
-.ft 3
-.nf
-jstatd -J-Djava.security.policy=jstatd.all.policy
-.fi
-.ft 1
-.RE
-.LP
-��긷�ʤʥ������ƥ�����Ѥ��Ƥ��륵���ȤǤϡ�
-��������ݥꥷ���ե��������Ѥ��ơ�����ο���Ǥ���ۥ��Ȥޤ��ϥͥåȥ����
-�������������¤Ǥ��ޤ�����������������ˡ����Ѥ��Ƥ⡢
-IP ���ɥ쥹�Υ��ס��ե��󥰹���ˤ��餵��ޤ���
-��������ݥꥷ���ե��������Ѥ��뤳�Ȥǥ������ƥ���������б��Ǥ��ʤ����ˤϡ�
-jstatd �����С���¹Ԥ����ˡ�
-jstat ����� jps �ġ�����������ǻ��Ѥ���Τ��Ǥ�����Ǥ���
-.SH ��⡼�ȥ��󥿥ե�����
-.B jstatd 
-�ץ������ˤ�äƥ������ݡ��Ȥ���륤�󥿥ե������ϥץ��ץ饤������Ǥ��ꡢ�ѹ����ݾڤ���Ƥ��ޤ����桼��������ӳ�ȯ�Ԥϡ����Υ��󥿥ե������˽񤭹��ޤʤ��褦�ˤ��Ƥ���������
-.SH ������
-.B jstatd 
-�ε�ư��򤤤��Ĥ������ޤ��������� 
-.B jstatd 
-������ץȤϡ��Хå����饦��ɤǼ�ưŪ�˥����С���ư���ޤ���
-.SS ���� RMI �쥸���ȥ�λ���
-������ϡ����� RMI �쥸���ȥ����Ѥ��� 
-.B jstatd 
-�ε�ư�򼨤��Ƥ��ޤ���������Ǥϡ�¾�Υ����С����ǥե���Ȥ� RMI �쥸���ȥ�ݡ��� (�ݡ��� 1099) �˥Х���ɤ���Ƥ��ʤ����Ȥ�����Ȥ��Ƥ��ޤ���
-.LP
-.RS
-.ft 3
-.nf
-jstatd -J-Djava.security.policy=all.policy
-.fi
-.ft 1
-.RE
-.SS ���� RMI �쥸���ȥ�λ���
-������ϡ����� RMI �쥸���ȥ����Ѥ��� 
-.B jstatd 
-�ε�ư�򼨤��Ƥ��ޤ���
-.LP
-.RS
-.ft 3
-.nf
-rmiregistry&
-jstatd -J-Djava.security.policy=all.policy
-.fi
-.ft 1
-.RE
-.LP
-������ϡ��ݡ��� 2020 ��γ��� RMI �쥸���ȥꥵ���С�����Ѥ��� 
-.B jstatd 
-�ε�ư�򼨤��Ƥ��ޤ���
-.LP
-.RS
-.ft 3
-.nf
-rmiregistry 2020&
-jstatd -J-Djava.security.policy=all.policy -p 2020
-.fi
-.ft 1
-.RE
-.LP
-������ϡ��ݡ��� 2020 ��Ρ�AlternateJstatdServerName �Ȥ���̾���˥Х���ɤ��줿���� RMI �쥸���ȥ����Ѥ��� 
-.B jstatd 
-�ε�ư�򼨤��Ƥ��ޤ���
-.LP
-.RS
-.ft 3
-.nf
-rmiregistry 2020&
-jstatd -J-Djava.security.policy=all.policy -p 2020 -n AlternateJstatdServerName
-.fi
-.ft 1
-.RE
-.SS �ץ������� RMI �쥸���ȥ�κ����ζػ�
-������ϡ�RMI �쥸���ȥ꤬���Ĥ���ʤ����� RMI �쥸���ȥ��������ʤ��褦�� 
-.B jstatd 
-��ư������򼨤��Ƥ��ޤ���������Ǥϡ�RMI �����Ǥ˼¹Ԥ��Ƥ��뤳�Ȥ�����Ȥ��Ƥ��ޤ����¹Ԥ��Ƥ��ʤ��ä����ϡ�Ŭ�ڤʥ��顼��å�������ɽ������ޤ���
-.LP
-.RS
-.ft 3
-.nf
-jstatd -J-Djava.security.policy=all.policy -nr
-.fi
-.ft 1
-.RE
-.SS RMI �����󥰵�ǽ��ͭ����
-������ϡ�RMI �����󥰵�ǽ��ͭ���ˤ��� 
-.B jstatd 
-��ư������򼨤��Ƥ��ޤ���������ˡ�ϡ��㳲���פ䥵���С���ư�δƻ����Ω���ޤ���
-.LP
-.RS
-.ft 3
-.nf
-jstatd -J-Djava.security.policy=all.policy -J-Djava.rmi.server.logCalls=true
-.fi
-.ft 1
-.RE
-.LP
-.SH ��Ϣ����
+.SH "名前"
+jstatd \- 仮想マシン jstat デーモン
 .LP
 .RS 3
 .TP 2
-*
-java \- Java ���ץꥱ�������ư�ץ������
+o
+形式 
 .TP 2
-*
-jps \- Java ���ۥޥ���ץ��������ơ������ġ���
+o
+パラメータ 
 .TP 2
-*
-jstat \- Java ���ۥޥ������״ƻ�ġ���
+o
+説明 
 .TP 2
-*
-rmiregistry \- Java ��⡼�ȥ��֥������ȥ쥸���ȥ�
+o
+オプション 
+.TP 2
+o
+セキュリティー 
+.TP 2
+o
+リモートインタフェース 
+.TP 2
+o
+例 
+.TP 2
+o
+関連項目 
+.RE
+
+.LP
+.SH "形式"
+.LP
+
+.LP
+.nf
+\f3
+.fl
+jstatd [ \fP\f4options\fP\f3 ]\fP
+.br
+\f3
+.fl
+\fP
+.fi
+
+.LP
+.SH "パラメータ"
+.LP
+
+.LP
+.RS 3
+.TP 3
+options 
+コマンド行オプション。オプションは任意の順序で指定できます。重複または矛盾するオプションがある場合、最後に指定したオプションが優先されます。 
+.RE
+
+.LP
+.SH " 説明"
+.LP
+
+.LP
+.LP
+\f3jstatd\fP ツールは、計測された HotSpot Java 仮想マシン (JVM) の作成と終了を監視し、ローカルシステム上で実行している Java 仮想マシンに、リモート監視ツールが接続できるようにするためのインタフェースを提供する RMI サーバーアプリケーションです。
+.LP
+.LP
+\f3jstatd\fP サーバーでは、ローカルホストに RMI レジストリが存在することが必要になります。\f3jstatd\fP サーバーは、デフォルトポートまたは \f2\-p port\fP オプションで指定されたポート上の RMI レジストリに接続しようとします。RMI レジストリが見つからない場合、\f2\-p port\fP オプションで指定されたポート、または \f2\-p port\fP が省略されている場合は、デフォルト RMI レジストリにバインドされた \f3jstatd\fP アプリケーション内に、1 つの RMI レジストリが作成されます。内部 RMI レジストリの作成は、\f2\-nr\fP オプションを指定することによって禁止することができます。
+.LP
+.LP
+\f3注:\fP このユーティリティーはサポート対象外であり、将来の JDK のバージョンでは利用できなくなる可能性があります。現在、Windows 98 および Windows Me プラットフォームでは使用できません。
+.LP
+.SH "オプション"
+.LP
+
+.LP
+.LP
+\f3jstatd\fP コマンドは次のオプションをサポートしています。
+.LP
+.RS 3
+.TP 3
+\-nr 
+既存の RMI レジストリが見つからない場合、\f2jstatd\fP プロセス内に内部 RMI レジストリを作成しないようにします。 
+.TP 3
+\-p\  port 
+RMI レジストリがあると予想されるポート番号です。 見つからない場合は、\f2\-nr\fP が指定されていなければ作成されます。 
+.TP 3
+\-n\  rminame 
+RMI レジストリにおいて、リモート RMI オブジェクトがバインドされる名前です。デフォルト名は \f2JStatRemoteHost\fP です。複数の \f3jstatd\fP サーバーが同じホスト上で起動している場合、各サーバーのエクスポートした RMI オブジェクトの名前は、このオプションを指定することによって、一意の名前にすることができます。ただし、このオプションを使用する場合、監視クライアントの \f2hostid\fP および \f2vmid\fP 文字列に、その一意のサーバー名を含める必要があります。 
+.TP 3
+\-Joption 
+\f3javac\fP が呼び出す \f3java\fP 起動ツールに、\f2option\fP を渡します。たとえば、\f3\-J\-Xms48m\fP と指定すると、スタートアップメモリーは 48M バイトに設定されます。\f3\-J\fP を使って、Java で記述されたアプリケーションを実行する背後の VM にオプション渡すことは、よく行われています。 
+.RE
+
+.LP
+.SH "セキュリティー"
+.LP
+
+.LP
+.LP
+\f3jstatd\fP サーバーは、有効なネイティブアクセス権を持つ JVM だけを監視できます。したがって、\f3jstatd\fP プロセスは、ターゲット JVM と同じユーザー資格で実行している必要があります。一部のユーザー資格は、Unix(TM) ベースのシステムにおける \f2root\fP ユーザーのように、システム上の任意の JVM によってエクスポートされたインストゥルメンテーションへのアクセス権を持っています。このような資格で実行している \f3jstatd\fP プロセスは、システム上のすべての JVM を監視できますが、セキュリティー上の別の問題が起こります。
+.LP
+.LP
+\f3jstatd\fP サーバーは、リモートクライアントの認証を一切与えません。そのため、\f3jstatd\fP サーバープロセスを実行すると、\f3jstatd\fP プロセスがアクセス権を持つすべての JVM によるインストゥルメンテーションのエクスポートを、ネットワーク上のすべてのユーザーに公開することになります。この無防備な状態は、環境的に望ましくない場合があります。 特に実稼働環境または安全でないネットワークでは、\f3jstatd\fP プロセスを起動する前に、ローカルセキュリティーポリシーを検討する必要があります。
+.LP
+.LP
+\f3jstatd\fP サーバーは、他のセキュリティーマネージャーがインストールされていない場合には、RMISecurityPolicy のインスタンスをインストールします。 そのため、セキュリティーポリシーファイルを指定する必要があります。ポリシーファイルは、デフォルトポリシー実装の
+.na
+\f2ポリシーファイルの構文\fP @
+.fi
+http://java.sun.com/javase/6/docs/technotes/guides/security/PolicyFiles.htmlに準拠する必要があります。
+.LP
+.LP
+次のポリシーファイルの場合、\f3jstatd\fP サーバーは一切のセキュリティー例外を使用せずに実行できます。このポリシーは、すべてのコードベースへのあらゆるアクセス権を認めるポリシーよりも自由度は低いですが、\f3jstatd\fP サーバーを実行するために最低限必要なアクセス権しか認めないポリシーよりも自由度は高くなっています。
+.LP
+.nf
+\f3
+.fl
+grant codebase "file:${java.home}/../lib/tools.jar" {\fP
+.br
+\f3
+.fl
+   permission java.security.AllPermission;\fP
+.br
+\f3
+.fl
+};\fP
+.br
+\f3
+.fl
+\fP
+.fi
+
+.LP
+.LP
+このポリシーを使用するには、このテキストを \f2jstatd.all.policy\fP というファイルにコピーし、次のように \f3jstatd\fP サーバーを実行します。
+.LP
+.nf
+\f3
+.fl
+jstatd \-J\-Djava.security.policy=jstatd.all.policy\fP
+.br
+\f3
+.fl
+\fP
+.fi
+
+.LP
+.LP
+より厳しいセキュリティーを実施するサイトの場合、カスタムポリシーファイルを使用して、特定の信頼できるホストまたはネットワークにアクセスを制限することができます。 ただし、このような方法は、IP アドレスの盗聴攻撃を受けやすくなります。セキュリティーの問題について、カスタマイズしたポリシーファイルでも対処できない場合は、\f3jstatd\fP サーバーを実行せずに、\f3jstat\fP と \f3jps\fP ツールをローカルで使用することがもっとも安全な方法になります。
+.LP
+.SH "リモートインタフェース"
+.LP
+
+.LP
+.LP
+\f3jstatd\fP プロセスがエクスポートするインタフェースは、独自に開発したものであり変更される予定です。ユーザーおよび開発者は、このインタフェースへの書き込みを行わないでください。
+.LP
+.SH "例"
+.LP
+
+.LP
+.LP
+次に \f3jstatd\fP を起動する例を紹介します。\f3jstatd\fP スクリプトによって、サーバーはバックグラウンドで自動的に起動します。
+.LP
+.SS 
+内部 RMI レジストリの使用
+.LP
+.LP
+この例は、内部 RMI レジストリを使用した \f3jstatd\fP の起動を表しています。この例では、デフォルトの RMI レジストリポート (ポート 1099) には、他のサーバーはバインドされていないと想定しています。
+.LP
+.nf
+\f3
+.fl
+jstatd \-J\-Djava.security.policy=all.policy
+.fl
+\fP
+.fi
+
+.LP
+.SS 
+外部 RMI レジストリの使用
+.LP
+.LP
+この例は、外部 RMI レジストリを使用した \f3jstatd\fP の起動を表しています。
+.LP
+.nf
+\f3
+.fl
+rmiregistry&
+.fl
+jstatd \-J\-Djava.security.policy=all.policy
+.fl
+\fP
+.fi
+
+.LP
+.LP
+この例は、ポート 2020 の外部 RMI レジストリを使用した \f3jstatd\fP の起動を表しています。
+.LP
+.nf
+\f3
+.fl
+rmiregistry 2020&
+.fl
+jstatd \-J\-Djava.security.policy=all.policy \-p 2020
+.fl
+\fP
+.fi
+
+.LP
+.LP
+この例は、AlternateJstatdServerName の名前にバインドされた、ポート 2020 の外部 RMI レジストリを使用した \f3jstatd\fP の起動を表しています。
+.LP
+.nf
+\f3
+.fl
+rmiregistry 2020&
+.fl
+jstatd \-J\-Djava.security.policy=all.policy \-p 2020 \-n AlternateJstatdServerName
+.fl
+\fP
+.fi
+
+.LP
+.SS 
+インプロセス RMI レジストリの作成の禁止
+.LP
+.LP
+この例は、RMI レジストリが見つからない場合に RMI レジストリを作成しない \f3jstatd\fP の起動を表しています。この例では、RMI レジストリがすでに実行していると想定しています。実行していない場合は、該当するエラーメッセージが表示されます。
+.LP
+.nf
+\f3
+.fl
+jstatd \-J\-Djava.security.policy=all.policy \-nr
+.fl
+\fP
+.fi
+
+.LP
+.SS 
+RMI ログ機能の有効化
+.LP
+.LP
+この例は、RMI ログ機能を有効にした \f3jstatd\fP の起動を表しています。この方法は、トラブルシューティングまたはサーバー活動の監視に役立ちます。
+.LP
+.nf
+\f3
+.fl
+jstatd \-J\-Djava.security.policy=all.policy \-J\-Djava.rmi.server.logCalls=true
+.fl
+\fP
+.fi
+
+.LP
+.SH "関連項目"
+.LP
+.RS 3
+.TP 2
+o
+「java(1) \- Java アプリケーション起動ツール」 
+.TP 2
+o
+「jps(1) \- Java 仮想マシンプロセスステータスツール」 
+.TP 2
+o
+「jstat(1) \- Java 仮想マシン統計データ監視ツール」 
+.TP 2
+o
+「
+.na
+\f2rmiregistry\fP @
+.fi
+http://java.sun.com/javase/6/docs/technotes/tools/index.html#rmi \- Java リモートオブジェクトレジストリ」 
 .RE
 
 .LP

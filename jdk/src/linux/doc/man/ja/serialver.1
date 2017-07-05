@@ -1,100 +1,98 @@
-'\" t
-.\"
-.\" Copyright 2000-2006 Sun Microsystems, Inc.  All Rights Reserved.
-.\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
-.\"
-.\" This code is free software; you can redistribute it and/or modify it
-.\" under the terms of the GNU General Public License version 2 only, as
-.\" published by the Free Software Foundation.
-.\"
-.\" This code is distributed in the hope that it will be useful, but WITHOUT
-.\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-.\" FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-.\" version 2 for more details (a copy is included in the LICENSE file that
-.\" accompanied this code).
-.\"
-.\" You should have received a copy of the GNU General Public License version
-.\" 2 along with this work; if not, write to the Free Software Foundation,
-.\" Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
-.\"
-.\" Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
-.\" CA 95054 USA or visit www.sun.com if you need additional information or
-.\" have any questions.
-.\"
-.\" 
-.TH serialver 1 "2006 Ç¯ 9 ·î 4 Æü" "Java SE 6" "¥æ¡¼¥¶¡¼¥³¥Ş¥ó¥É"
-.SH "Ì¾Á°"
-serialver \- ¥·¥ê¥¢¥ë¥Ğ¡¼¥¸¥ç¥ó¥³¥Ş¥ó¥É
-.\" 
-.\"  This document was created by saving an HTML file as text
-.\"  from the JavaSoft web site:
-.\" 
-.\" http://java.sun.com/j2se/1.5/docs/tooldocs/tools.html
-.\" 
-.\"  and adding appropriate troff macros.  Because the JavaSoft web site 
-.\"  man pages can change without notice, it may be helpful to diff
-.\"  files to identify changes other than new functionality. 
-.\" 
+." Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
+." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+."
+." This code is free software; you can redistribute it and/or modify it
+." under the terms of the GNU General Public License version 2 only, as
+." published by the Free Software Foundation.
+."
+." This code is distributed in the hope that it will be useful, but WITHOUT
+." ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+." FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+." version 2 for more details (a copy is included in the LICENSE file that
+." accompanied this code).
+."
+." You should have received a copy of the GNU General Public License version
+." 2 along with this work; if not, write to the Free Software Foundation,
+." Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+."
+." Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+." CA 95054 USA or visit www.sun.com if you need additional information or
+." have any questions.
+."
+.TH serialver 1 "04 May 2009"
+." Generated from HTML by html2man (author: Eric Armstrong)
+
+.LP
+.SH "åå‰"
+serialver \- ã‚·ãƒªã‚¢ãƒ«ãƒãƒ¼ã‚¸ãƒ§ãƒ³ã‚³ãƒãƒ³ãƒ‰
+.LP
+.RS 3
+
+.LP
+.LP
+\f3serialver\fP ã‚³ãƒãƒ³ãƒ‰ã¯ \f2serialVersionUID\fP ã‚’è¿”ã—ã¾ã™ã€‚
+.LP
+.RE
+.SH "å½¢å¼"
+.LP
+
+.LP
+.nf
+\f3
+.fl
+\fP\f3serialver\fP [ options ] [ classnames ]
+.fl
+.fi
+
+.LP
+.RS 3
+
+.LP
+.RS 3
+.TP 3
+options 
+ã“ã®ãƒ‰ã‚­ãƒ¥ãƒ¡ãƒ³ãƒˆã§èª¬æ˜ã•ã‚Œã¦ã„ã‚‹ã‚³ãƒãƒ³ãƒ‰è¡Œã‚ªãƒ—ã‚·ãƒ§ãƒ³ã§ã™ã€‚ 
+.TP 3
+classnames 
+1 ã¤ä»¥ä¸Šã®ã‚¯ãƒ©ã‚¹åã§ã™ã€‚ 
+.RE
+
+.LP
+.RE
+.SH "èª¬æ˜"
 .LP
 
 .LP
 .LP
-\f3serialver\fP ¥³¥Ş¥ó¥É¤Ï \f2serialVersionUID\fP ¤òÊÖ¤·¤Ş¤¹¡£
+\f3serialver\fP ã¯ã€1 ã¤ä»¥ä¸Šã®ã‚¯ãƒ©ã‚¹ã® \f2serialVersionUID\fP ã‚’ã€å±•é–‹ã—ã¦ã„ã‚‹ã‚¯ãƒ©ã‚¹ã¸ã‚³ãƒ”ãƒ¼ã™ã‚‹ã®ã«é©ã—ãŸå½¢å¼ã§è¿”ã—ã¾ã™ã€‚å¼•æ•°ã‚’æŒ‡å®šã—ãªã„ã§å‘¼ã³å‡ºã™ã¨ã€ä½¿ç”¨æ–¹æ³•ãŒè¡¨ç¤ºã•ã‚Œã¾ã™ã€‚
 .LP
-.SH "·Á¼°"
-.B serialver 
-[
-.B options
-] [
-.I classnames
-]
-.TP
-.BI options
-¤³¤Î¥É¥­¥å¥á¥ó¥È¤Ç»ØÄê¤µ¤ì¤Æ¤¤¤ë¥³¥Ş¥ó¥É¹Ô¥ª¥×¥·¥ç¥ó¡£
-.TP
-.BI classnames
-1 ¤Ä¤Ş¤¿¤ÏÊ£¿ô¤Î¥¯¥é¥¹Ì¾¡£
-.SH "µ¡Ç½ÀâÌÀ"
-.IX "serial version command" "" "serial version command \(em \fLserialver\fP"
-.IX "serialver" "" "\fLserialver\fP \(em serial version command"
-.B serialver
-¤Ï¡¢»ØÄê¤µ¤ì¤¿ 1 ¸Ä
-¤Ş¤¿¤ÏÊ£¿ô¸Ä¤Î¥¯¥é¥¹¤Î
-.B ¥·¥ê¥¢¥ë¥Ğ¡¼¥¸¥ç¥ó UID
-¤ò¡¢Å¸³«¤·¤Æ¤¤¤ë¥¯¥é¥¹¤Ø¥³¥Ô¡¼¤¹¤ë¤Î¤ËÅ¬¤·¤¿·Á¼°¤ÇÊÖ¤·¤Ş¤¹¡£
-°ú¿ô¤Ê¤·¤Ç¸Æ¤Ó½Ğ¤·¤¿¾ì¹ç¡¢
-.B serialver
-¤Ï»ÈÍÑÊıË¡¤òÀâÌÀ¤¹¤ë¹Ô¤òÉ½¼¨¤·¤Ş¤¹¡£
-.SH "¥ª¥×¥·¥ç¥ó"
-.TP 15
-.B \-classpath " <directories and zip/jar files separated by:>"
-¥¢¥×¥ê¥±¡¼¥·¥ç¥ó¤Î¥¯¥é¥¹¤ª¤è¤Ó¥ê¥½¡¼¥¹¤Î¸¡º÷¥Ñ¥¹¤òÀßÄê¤·¤Ş¤¹¡£ 
-.TP 15
-.B \-show
-Ã±¤Ê¤ë¥æ¡¼¥¶¥¤¥ó¥¿¥Õ¥§¡¼¥¹¤òÉ½¼¨¤·¤Ş¤¹¡£
-¤³¤³¤Ç´°Á´¥¯¥é¥¹Ì¾¤òÆşÎÏ¤·¡¢
-Enter
-¥­¡¼¤Ş¤¿¤Ï
-Show
-¥Ü¥¿¥ó¤ò²¡¤¹¤È¡¢¥·¥ê¥¢¥ë¥Ğ¡¼¥¸¥ç¥ó
-UID
-¤¬É½¼¨¤µ¤ì¤Ş¤¹¡£
-.TP 15 
-.BI \-J "option"
-.I option
-¤ò Java ²¾ÁÛ¥Ş¥·¥ó¤ËÅÏ¤·¤Ş¤¹¡£¤³¤³¤Ç¡¢
-.I option
-¤Ï¡¢Java ¥¢¥×¥ê¥±¡¼¥·¥ç¥óµ¯Æ°¥×¥í¥°¥é¥à¤Î»²¾È¥Ú¡¼¥¸¤Ç
-ÀâÌÀ¤µ¤ì¤Æ¤¤¤ë¥ª¥×¥·¥ç¥ó¤Î 1 ¤Ä¤Ç¤¹¡£¤¿¤È¤¨¤Ğ¡¢
-.I \-J-Xms48m
-¤Ï¡¢µ¯Æ°»ş¤Ë»ÈÍÑ¤¹¤ë¥á¥â¥ê¤ò 48M ¥Ğ¥¤¥È¤ËÀßÄê¤·¤Ş¤¹¡£
+.SH "ã‚ªãƒ—ã‚·ãƒ§ãƒ³"
 .LP
-.SH "Ãí°Õ"
+
+.LP
+.RS 3
+.TP 3
+\-classpath <: ã§åŒºåˆ‡ã‚‰ã‚ŒãŸãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªã¨ zip ã‚„ jar ãƒ•ã‚¡ã‚¤ãƒ«> 
+ã‚¢ãƒ—ãƒªã‚±ãƒ¼ã‚·ãƒ§ãƒ³ã®ã‚¯ãƒ©ã‚¹ãŠã‚ˆã³ãƒªã‚½ãƒ¼ã‚¹ã®æ¤œç´¢ãƒ‘ã‚¹ã‚’è¨­å®šã—ã¾ã™ã€‚ 
+.RE
+
+.LP
+.RS 3
+.TP 3
+\-show 
+ç°¡å˜ãªãƒ¦ãƒ¼ã‚¶ãƒ¼ã‚¤ãƒ³ã‚¿ãƒ•ã‚§ãƒ¼ã‚¹ã‚’è¡¨ç¤ºã—ã¾ã™ã€‚å®Œå…¨æŒ‡å®šã®ã‚¯ãƒ©ã‚¹åã‚’å…¥åŠ›ã—ã¦ã€Enter ã‚­ãƒ¼ã‹ [Show] ãƒœã‚¿ãƒ³ã‚’æŠ¼ã—ã€ã‚·ãƒªã‚¢ãƒ«ãƒãƒ¼ã‚¸ãƒ§ãƒ³ UID ã‚’è¡¨ç¤ºã—ã¾ã™ã€‚ 
+.TP 3
+\-Joption 
+Java ä»®æƒ³ãƒã‚·ãƒ³ã« \f2option\fP ã‚’æ¸¡ã—ã¾ã™ã€‚ \f2option\fP ã«ã¯ã€java(1)ã®ãƒªãƒ•ã‚¡ãƒ¬ãƒ³ã‚¹ãƒšãƒ¼ã‚¸ã«è¨˜è¼‰ã•ã‚Œã¦ã„ã‚‹ã‚ªãƒ—ã‚·ãƒ§ãƒ³ã‚’ 1 ã¤æŒ‡å®šã—ã¾ã™ã€‚ãŸã¨ãˆã°ã€\f3\-J\-Xms48m\fP ã¨æŒ‡å®šã™ã‚‹ã¨ã€ã‚¹ã‚¿ãƒ¼ãƒˆã‚¢ãƒƒãƒ—ãƒ¡ãƒ¢ãƒªãƒ¼ã¯ 48M ãƒã‚¤ãƒˆã«è¨­å®šã•ã‚Œã¾ã™ã€‚ 
+.RE
+
+.LP
+.SH "æ³¨"
 .LP
 
 .LP
 .LP
-\f3serialver\fP ¥³¥Ş¥ó¥É¤Ï¡¢»ØÄê¤µ¤ì¤¿¥¯¥é¥¹¤ò¤½¤Î²¾ÁÛ¥Ş¥·¥óÆâ¤ËÆÉ¤ß¹ş¤ó¤Ç½é´ü²½¤·¤Ş¤¹¤¬¡¢¥Ç¥Õ¥©¥ë¥È¤Ç¤Ï¥»¥­¥å¥ê¥Æ¥£¥Ş¥Í¡¼¥¸¥ã¤ÎÀßÄê¤Ï¹Ô¤¤¤Ş¤»¤ó¡£¿®Íê¤Ç¤­¤Ê¤¤¥¯¥é¥¹¤È¤È¤â¤Ë \f3serialver\fP ¤ò¼Â¹Ô¤¹¤ë¾ì¹ç¤Ë¤Ï¡¢¼¡¤Î¥ª¥×¥·¥ç¥ó¤ò»È¤Ã¤Æ¥»¥­¥å¥ê¥Æ¥£¥Ş¥Í¡¼¥¸¥ã¤òÀßÄê¤Ç¤­¤Ş¤¹¡£
+\f3serialver\fP ã‚³ãƒãƒ³ãƒ‰ã¯ã€æŒ‡å®šã•ã‚ŒãŸã‚¯ãƒ©ã‚¹ã‚’ãã®ä»®æƒ³ãƒã‚·ãƒ³å†…ã«èª­ã¿è¾¼ã‚“ã§åˆæœŸåŒ–ã—ã¾ã™ãŒã€ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆã§ã¯ã‚»ã‚­ãƒ¥ãƒªãƒ†ã‚£ãƒ¼ãƒãƒãƒ¼ã‚¸ãƒ£ãƒ¼ã®è¨­å®šã¯è¡Œã„ã¾ã›ã‚“ã€‚ä¿¡é ¼ã§ããªã„ã‚¯ãƒ©ã‚¹ã¨ã¨ã‚‚ã« \f3serialver\fP ã‚’å®Ÿè¡Œã™ã‚‹å ´åˆã«ã¯ã€æ¬¡ã®ã‚ªãƒ—ã‚·ãƒ§ãƒ³ã‚’ä½¿ã£ã¦ã‚»ã‚­ãƒ¥ãƒªãƒ†ã‚£ãƒ¼ãƒãƒãƒ¼ã‚¸ãƒ£ãƒ¼ã‚’è¨­å®šã§ãã¾ã™ã€‚
 .LP
 .RS 3
 
@@ -104,7 +102,7 @@ UID
 .LP
 .RE
 .LP
-¤Ş¤¿¡¢É¬Í×¤Ç¤¢¤ì¤Ğ¡¢¼¡¤Î¥ª¥×¥·¥ç¥ó¤ò»È¤Ã¤Æ¥»¥­¥å¥ê¥Æ¥£¥İ¥ê¥·¡¼¤ò»ØÄê¤Ç¤­¤Ş¤¹¡£
+ã¾ãŸã€å¿…è¦ã§ã‚ã‚Œã°ã€æ¬¡ã®ã‚ªãƒ—ã‚·ãƒ§ãƒ³ã‚’ä½¿ã£ã¦ã‚»ã‚­ãƒ¥ãƒªãƒ†ã‚£ãƒ¼ãƒãƒªã‚·ãƒ¼ã‚’æŒ‡å®šã§ãã¾ã™ã€‚
 .LP
 .RS 3
 
@@ -112,16 +110,16 @@ UID
 .LP
 \f2\-J\-Djava.security.policy=<policy file>\fP
 .LP
-.SH "´ØÏ¢¹àÌÜ"
+.RE
+.SH "é–¢é€£é …ç›®"
 .LP
 
 .LP
 .LP
-.fi
-http://java.sun.com/javase/6/docs/api/java/io/objectstreamclass.html
-¤Î
 .na
-¡Ö\f2java.io.ObjectStreamClass\fP¡×
+\f2java.io.ObjectStreamClass\fP @
+.fi
+http://java.sun.com/javase/6/docs/api/java/io/ObjectStreamClass.html
 .LP
 
 .LP

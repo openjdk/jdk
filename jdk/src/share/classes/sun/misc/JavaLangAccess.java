@@ -55,6 +55,22 @@ public interface JavaLangAccess {
     /** Set thread's blocker field. */
     void blockedOn(Thread t, Interruptible b);
 
-    /** register shutdown hook */
-    void registerShutdownHook(int slot, Runnable r);
+    /**
+     * Registers a shutdown hook.
+     *
+     * It is expected that this method with registerShutdownInProgress=true
+     * is only used to register DeleteOnExitHook since the first file
+     * may be added to the delete on exit list by the application shutdown
+     * hooks.
+     *
+     * @params slot  the slot in the shutdown hook array, whose element
+     *               will be invoked in order during shutdown
+     * @params registerShutdownInProgress true to allow the hook
+     *               to be registered even if the shutdown is in progress.
+     * @params hook  the hook to be registered
+     *
+     * @throw IllegalStateException if shutdown is in progress and
+     *          the slot is not valid to register.
+     */
+    void registerShutdownHook(int slot, boolean registerShutdownInProgress, Runnable hook);
 }

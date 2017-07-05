@@ -1,561 +1,358 @@
-'\" t
-.\" Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
-.\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
-.\"
-.\" This code is free software; you can redistribute it and/or modify it
-.\" under the terms of the GNU General Public License version 2 only, as
-.\" published by the Free Software Foundation.
-.\"
-.\" This code is distributed in the hope that it will be useful, but WITHOUT
-.\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-.\" FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-.\" version 2 for more details (a copy is included in the LICENSE file that
-.\" accompanied this code).
-.\"
-.\" You should have received a copy of the GNU General Public License version
-.\" 2 along with this work; if not, write to the Free Software Foundation,
-.\" Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
-.\"
-.\" Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
-.\" CA 95054 USA or visit www.sun.com if you need additional information or
-.\" have any questions.
-.\" 
-.TH rmid 1 "2006 ǯ 9 �� 4 ��" "Java SE 6" "�桼�������ޥ��"
-.SH "̾��"
-rmid \- RMI ��ư�����ƥ�ǡ����
+." Copyright 2004-2006 Sun Microsystems, Inc.  All Rights Reserved.
+." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+."
+." This code is free software; you can redistribute it and/or modify it
+." under the terms of the GNU General Public License version 2 only, as
+." published by the Free Software Foundation.
+."
+." This code is distributed in the hope that it will be useful, but WITHOUT
+." ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+." FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+." version 2 for more details (a copy is included in the LICENSE file that
+." accompanied this code).
+."
+." You should have received a copy of the GNU General Public License version
+." 2 along with this work; if not, write to the Free Software Foundation,
+." Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+."
+." Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+." CA 95054 USA or visit www.sun.com if you need additional information or
+." have any questions.
+."
+.TH rmid 1 "04 May 2009"
+." Generated from HTML by html2man (author: Eric Armstrong)
+
 .LP
+.SH "名前"
+rmid \- Java RMI 起動システムデーモン
+.LP
+.RS 3
 
 .LP
 .LP
-\f3rmid\fP �ǵ�ư�����ƥ�ǡ����򳫻Ϥ���ȡ����֥������Ȥ��ۥޥ��� (VM) ����Ͽ���Ƶ�ư�Ǥ���褦�ˤʤ�ޤ���
-.LP
-.SH "����"
-.B rmid 
-[
-.I options
-]
-.SH "��ǽ����"
-.IX "RMI activation system daemon" "" "RMI activation system daemon \(em \fLrmid\fP"
-.IX "rmid" "" "\fLrmid\fP \(em RMI activation system daemon"
-.B rmid
-�ġ���ϡ���ư�����ƥ�ǡ����򳫻Ϥ��ޤ�����ư��ǽ�ʥ��֥������Ȥ�ư
-�����ƥ����Ͽ�����ꡢJava VM �ǥ����ƥ��֤ˤ����ꤹ��ˤϡ����餫���ᵯư
-�����ƥ�ǡ����򳫻Ϥ��Ƥ���ɬ�פ�����ޤ���
-��ư��ǽ�ʥ�⡼�ȥ��֥�������
-��Ȥä��ץ������κ�����ˡ�ˤĤ��Ƥξܺ٤ϡ�Java RMI �λ���
-.fi
- (http://java.sun.com/javase/6/docs/platform/rmi/spec/rmitoc.html) 
-����ӵ�ư�Υ��塼�ȥꥢ��
-.fi
- (http://java.sun.com/javase/6/docs/technotes/guides/rmi/activation/overview.html) 
-�򻲾Ȥ��Ƥ���������
-.LP
-��ư�����ƥ�ǡ����ϡ����Τ褦�˥������ƥ��ݥꥷ���ե��������ꤷ��
-.B rmid
-���ޥ�ɤ�¹Ԥ��뤳�Ȥˤ�äƳ��ϤǤ��ޤ��� 
-.LP
-.ti +5n
-.B % rmid \-J\-Djava.security.policy=rmid.policy
-.LP
-��: Sun ��
-.BR rmid
-������¹Ԥ����硢�ǥե���ȤǤϥ������ƥ��ݥꥷ���ե��������ꤹ��ɬ�פ�����ޤ����������뤳�Ȥǡ���ư���롼���Ѥ� JVM �ε�ư�ˡ���
-.B ActivationGroupDesc
-��ξ������ѤǤ��뤫�ɤ�����
-.B rmid 
-����ǧ�Ǥ��ޤ����äˡ�
-.B CommandEnvironment
-�ˤ����ꤵ��륳�ޥ�ɤ䥪�ץ���󡢤����
-.B ActivationGroupDesc
-�Υ��󥹥ȥ饯�����Ϥ���뤹�٤Ƥ�
-.B �ץ��ѥƥ�
-�ϡ�
-.BR rmid
-�ѤΥ������ƥ��ݥꥷ���ե����������Ū�˵��Ĥ��뤳�Ȥ�ɬ�פˤʤ�ޤ�����
-.B sun.rmi.activation.execPolicy
-�ץ��ѥƥ����ͤϡ���ư���롼�פ� JVM �ε�ư��
-.B ActivationGroupDesc
-��ξ������ѤǤ��뤫�ɤ�����Ƚ�Ǥ�
-.B rmid
-�����Ѥ���ݥꥷ����������ޤ��� 
-.LP
-.B rmid
-��ǥե��������Ǽ¹Ԥ��뤳�Ȥˤ�ꡢ�ʲ����Ԥ��ޤ��� 
-.LP
-.RS
-.TP 2
-\(bu
-���Υ��ޥ�ɤϥ����ƥ��١�����ư����ȤȤ�˥ǥե���ȥݡ��Ȥ�
-.BR 1098 
-�������쥸���ȥ��
-���Ϥ���
-.LP
-.PD 0
-.TP
-\(bu
-.B ActivationSystem
-��
-.B java.rmi.activation.ActivationSystem 
-�Ȥ���̾���������쥸���ȥ��ǥХ���ɤ��ޤ���
-
+\f3rmid\fP で起動システムデーモンを開始すると、オブジェクトを仮想マシン (VM) に登録して起動できるようになります。
 .LP
 .RE
-�쥸���ȥ�ˤۤ��Υݡ��Ȥ���ꤹ��ˤϡ�
-.BR rmid
-�ε�ư���� 
-.B -port 
-���ץ�������ꤷ�ʤ���Фʤ�ޤ��󡣤��Ȥ��С����Τ褦�ˤ��ޤ��� 
-
-.ti +5n
+.SH "形式"
 .LP
-.B rmid \-J\-Djava.security.policy=rmid.policy \-port 1099
 
 .LP
-���Υ��ޥ�ɤϡ���ư�����ƥ�ǡ����򳫻Ϥ����쥸���ȥ�Υǥե���ȥݡ���
-.B 1099
-�ǥ쥸���ȥ�򳫻Ϥ��ޤ���
-
-.LP
-.SS inetd/xinetd ����� rmid �ε�ư
-
-���ޥ�ɹԤ��� 
-.B rmid 
-��ư���ʤ��ǡ�
-inetd (Solaris) �ޤ��� xinetd (Linux) �����ꤷ��
-.B rmid 
-��ɬ�פ˱����Ƶ�ư���뤳�Ȥ��Ǥ��ޤ��� 
-
-.LP
-��ư���� 
-.B rmid 
-�ϡ�System.inheritedChannel �᥽�åɤ�ƤӽФ���
-�Ѿ�����ͥ� (inetd/xinetd ����ηѾ�) ��
-�������ߤޤ���
-�Ѿ����줿�����ͥ뤬 \f2null\fP �Ǥ��뤫��\f2java.nio.channels.ServerSocketChannel\fP �Υ��󥹥��󥹤Ǥʤ��ä���硢\f2rmid\fP �Ϥ��Υ����ͥ�� \f2inetd\fP/\f2xinetd\fP �ˤ�äƵ�ư���줿��ΤǤϤʤ���Ƚ�Ǥ������ҤΤ褦�˵�ư���ޤ���
-
-.LP
-.LP
-�Ѿ������ͥ뤬 ServerSocketChannel 
-���󥹥��󥹤ξ�硢
-.B rmid 
-�� ServerSocketChannel ����
-�������� java.net.ServerSocket ��
-�������ݡ��Ȥ����⡼�ȥ��֥������� 
-(java.rmi.activation.ActivationSystem ��
-�Х���ɤ����쥸���ȥ�� 
-java.rmi.activation.Activator 
-��⡼�ȥ��֥�������) ���Ф����׵��
-��������륵���Х����åȤȤ��ƻ��Ѥ��ޤ���
-.LP
-���Υ⡼�ɤǤϡ�
-.B rmid 
-��ư��ϡ����Τ��Ȥ�����ơ�
-���ޥ�ɹԤ��鵯ư��������Ʊ���Ǥ���
-
-.TP 2
-\(bu System.err ��ɽ���������Ϥϥե�����˥�����쥯��
-����ޤ������Υե�����ϡ���Ƭ����rmid-err�פ���������tmp�פ�
-���Ѥ��� java.io.tmpdir �����ƥ�ץ��ѥƥ� 
-(�̾� /var/tmp �ޤ��� /tmp) �ǻ��ꤷ���ǥ��쥯�ȥ�ˤ���ޤ���
-
-.TP 2
-\(bu \-port ���ץ����ϵ��Ĥ���Ƥ��ޤ��󡣤��Υ��ץ����
-���ꤵ��Ƥ����硢
-.B rmid 
-�ϥ��顼��å�������ɽ������
-��λ���ޤ���
-
-.TP 2
-\(bu \-log ���ץ�����ɬ�ܤǤ������Υ��ץ����
-���ꤵ��Ƥ��ʤ���硢
-.B rmid 
-�ϥ��顼��å�������ɽ������
-��λ���ޤ���
-
-.LP
-ɬ�פ˱����Ƴ��Ϥ��륵���ӥ���������ˡ�ˤĤ��Ƥξܺ٤ϡ�
-inetd (Solaris) �ޤ��� xinetd (Linux) �Υޥ˥奢��ڡ�����
-���Ȥ��Ƥ��������� 
-
-.SH "���ץ����"
-
-.TP
-.BI \-C someCommandLineOption
-.B rmid
-�λҥץ����� (��ư���롼��) ���������줿�Ȥ��ˡ��ƻҥץ������˥��ޥ�ɹ԰���
-�Ȥ����Ϥ���륪�ץ�������ꤷ�ޤ������Ȥ��С����Τ褦�˻��ꤹ��ȡ���ư�����ƥ�
-�ǡ����ˤ�ä����������� Java Virtual Machine �˥ץ��ѥƥ����Ϥ����Ȥ��Ǥ��ޤ��� 
-
-.sp 1n
-.ti +5n
-.B rmid \-C\-Dsome.property=value
-
-.sp 1n
-���ޥ�ɹ԰�����ҥץ��������Ϥ���ǽ�ϡ��ǥХå���Ԥ��ݤ������Ǥ���
-���Ȥ��С����Τ褦�ʥ��ޥ�ɤ�¹ԤǤ��ޤ��� 
-
-.sp 1n
-.ti +5n
-.B rmid \-C\-Djava.rmi.server.logCalls=true
-
-.sp 1n
-���Υ��ޥ�ɤˤ�äơ����٤Ƥλ� JVM �ǥ����иƤӽФ��Υ������Ĥ�褦�ˤʤ�ޤ��� 
-
-.TP
-.BI \-J<someCommandLineOption>
-.B rmid 
-��¹���� java ���󥿥ץ꥿���Ϥ����ץ�������ꤷ�ޤ������Ȥ��С�
-.B rmid
-�� 
-.BR rmid.policy
-�Ȥ���̾���Υݥꥷ���ե��������Ѥ����硢
-.BR rmid
-�Υ��ޥ�ɹԤ�
-.B \-J
-���ץ�����Ȥä�
-.B java.security.policy
-�ץ��ѥƥ���������ޤ���������򼨤��ޤ��� 
-
-.sp 1n
-.ti +5n
-.B rmid \-J\-Djava.security.policy=rmid.policy
-
-.TP
-.BI \-J\-Dsun.rmi.activation.execPolicy=<policy> 
-��ư���롼�פμ¹��оݤȤʤ� JVM �ε�ư�˻��Ѥ��륳�ޥ�ɤ���ӥ��ޥ�ɹԥ��ץ����򸡺����뤿��ˡ�
-.B rmid
-�����Ѥ���ݥꥷ������ꤷ�ޤ������Υ��ץ����ϡ�Sun �� RMI ��ư�ǡ�������������¸�ߤ��뤳�Ȥ����դ��Ƥ������������ޥ�ɹԤˤ��Υץ��ѥƥ�����ꤷ�ʤ���硢��̤� 
-.B \-J-Dsun.rmi.activation.execPolicy=default
-����ꤷ������Ʊ���ˤʤ�ޤ���
-.IR policy 
-�˻����ǽ���ͤϡ�
-.BR default 
-��
-.IR policyClassName
-���ޤ��� none �Ǥ���
-.BR 
-
-.RS
-.TP 2
-\(bu
-.B default 
-(�ޤ��ϡ����Υץ��ѥƥ�����ꤷ�ʤ����)
-
-.LP
-�ǥե���Ȥ�
-.B execPolicy
-�Ǥϡ����Ѥ��륻�����ƥ��ݥꥷ���ե�������Υ��ޥ�ɤ���ӥ��ץ�����¹Ԥ��븢�¤�
-.B rmid
-��Ϳ��������ˤΤߡ�
-.B rmid
-������Υ��ޥ�ɹԥ��ץ�������ꤷ�ƥ��ޥ�ɤ�¹ԤǤ��ޤ���
-.BR default 
-�μ¹ԥݥꥷ������ѤǤ���Τϡ�
-�ǥե���Ȥε�ư���롼�׼��������Ǥ��� 
-.sp 1n
-
-.B rmid
-�ϡ���ư���롼�פ� JVM ��ư����ݡ�������Ͽ���줿��ư���롼�׵��һҤǤ��� 
-.BR ActivationGroupDesc
-��ξ������Ѥ��ޤ������롼�׵��һҤǤϡ����ץ�����
-.B ActivationGroupDesc.CommandEnvironment
-����ꤷ�ޤ�������ˤϡ���ư���롼�פ򳫻Ϥ���֥��ޥ�ɡס�����ӥ��ޥ�ɹԤ��ɲä���
-Ǥ�դΥ��ޥ�ɹԡ֥��ץ����פ��ޤޤ�ޤ����ǥե���ȤǤϡ�
-.B rmid
-��
-.BR java.home 
-�ˤ���
-.B java
-���ޥ�ɤ���Ѥ��ޤ������롼�׵��һҤˤϡ����˼����褦�ˡ����ץ����Ȥ��ƥ��ޥ�ɹԤ�
-�ɲä����֥ץ��ѥƥ��ץ����С��饤�ɤ�ޤޤ�ޤ��� 
-
-.sp 1n
-.ti +5n
-.BI \-D<property>=<value>
-
-.sp 1n
-����������
-.B com.sun.rmi.rmid.ExecPermission
-����Ѥ���ȡ�
-.B rmid
-���Ф������롼�׵��һҤ�
-.B CommandEnvironment
-�ǻ��ꤵ�줿���ޥ�ɤ�¹Ԥ��Ƶ�ư���롼�פ򳫻Ϥ��븢�¤�Ϳ���뤳�Ȥ��Ǥ��ޤ���
-���������� 
-.B com.sun.rmi.rmid.ExecOptionPermission
-����Ѥ���ȡ���ư���롼�פ򳫻Ϥ���Ȥ��ˡ�
-���롼�׵��һҤǥץ��ѥƥ������С��饤�ɤȤ��ƻ��ꤵ�줿���ޥ�ɹ�
-���ץ���󡢤ޤ���
-.BR CommandEnvironment
-�ǥ��ץ����Ȥ��ƻ��ꤵ�줿���ޥ�ɹԥ��ץ�����
-.B rmid
-������ѤǤ��ޤ��� 
-
-.sp 1n
-.B rmid
-�ˤ��ޤ��ޤʥ��ޥ�ɤ���ӥ��ץ�����¹Ԥ��븢�¤�Ϳ�����硢����������
-.B ExecPermission
-�����
-.B ExecOptionPermission
-������Ū�� (�Ĥޤꡢ���٤ƤΥ����ɥ��������Ф���) ���Ĥ���ɬ�פ�����ޤ��� 
-
-.TP
-.BI ExecPermission
-.B ExecPermission
-���饹�ϡ���ư���롼�פ򳫻Ϥ��뤿���
-.B rmid
-������Ρ֥��ޥ�ɡפ�¹Ԥ��븢�¤�ɽ���ޤ��� 
-.sp 1n
-.TP
-.B ��ʸ
-.br
-.B ExecPermission
-�Ρ�̾���פϡ�
-.B rmid
-�˼¹Ը��¤�Ϳ���륳�ޥ�ɤΥѥ�̾�Ǥ�����/*��(��/�פϥե�������ڤ�ʸ�����Ĥޤ� 
-.BR File.separatorChar 
-) �ǽ����ѥ�̾�ϡ����Υǥ��쥯�ȥ�˴ޤޤ�뤹�٤ƤΥե������ɽ���ޤ�����/-��
-�ǽ����ѥ�̾�ϡ����Υǥ��쥯�ȥ�˴ޤޤ�뤹�٤ƤΥե�����ȥ��֥ǥ��쥯�ȥ� 
-(�Ƶ�Ū��) ��ɽ���ޤ����ѥ�̾�����̤ʥȡ������<<ALL FILES>>�פ���ꤷ�����ϡ�
-Ǥ�դΥե�����˰��פ��ޤ��� 
-.sp 1n
-
-.B ��: 
-��*�פ� 1 �Ĥ������ꤵ�줿�ѥ�̾�ϡ����ߤΥǥ��쥯�ȥ���Τ��٤ƤΥե������ɽ����
-��-�פ� 1 �Ĥ������ꤵ�줿�ѥ�̾�ϡ����ߤΥǥ��쥯�ȥ���Τ��٤ƤΥե�����ȡ�
-���ߤΥǥ��쥯�ȥ�˴ޤޤ�뤹�٤ƤΥե�����ȥ��֥ǥ��쥯�ȥ� (�Ƶ�Ū��) ��ɽ���ޤ��� 
-
-.TP
-.BI ExecOptionPermission
-.B ExecOptionPermission
-���饹�ϡ���ư���롼�פγ��ϻ���
-.B rmid
-������Υ��ޥ�ɹԡ֥��ץ����פ���Ѥ��븢�¤�ɽ���ޤ���
-.B ExecOptionPermission
-�Ρ�̾���פϡ����ޥ�ɹԥ��ץ������ͤǤ���
-.sp 1n
-.TP
-.B ��ʸ
-.br
-���ץ����Ǥϡ������դ��磻��ɥ����ɻ��꤬���ݡ��Ȥ���ޤ���
-�������ꥹ���ϡ��磻��ɥ����ɥޥå��󥰤���ꤷ�ޤ����������ꥹ���ϡ�
-���ץ����̾���Τ�ɽ�� (�Ĥޤꡢ���٤ƤΥ��ץ����˰��פ���) �����
-���ѤǤ��ޤ����ޤ�����.�פ���ӡ�=�פμ��˻��ꤹ����ˤΤߡ�
-���ץ����̾�κǸ�˥������ꥹ������ѤǤ��ޤ��� 
-.sp 1n
-
-��򼨤��ޤ�����*�ס���-Dfoo.*�ס���-Da.b.c=*�פ�ͭ���Ǥ�����*foo�ס���-Da*b��
-����ab*�פ�̵���Ǥ���
-
-.TP
-.BI rmid �Υݥꥷ���ե�����
-.B rmid
-�ˤ��ޤ��ޤʥ��ޥ�ɤ���ӥ��ץ�����¹Ԥ��븢�¤�Ϳ������ϡ�����������
-.B ExecPermission
-�����
-.B ExecOptionPermission
-������Ū�� (�Ĥޤꡢ���٤ƤΥ����ɥ��������Ф���) ���Ĥ���ɬ�פ�����ޤ���
-�����Υ����������򸡺�����Τ�
-.B rmid
-�����Ǥ��뤿�ᡢ����Ū�˵��Ĥ��Ƥ�����Ǥ���
-
-.sp 1n
-.B rmid
-�ˤ��ޤ��ޤʼ¹Ը��¤���Ĥ���ݥꥷ���ե��������򡢼��˼����ޤ���
-
-.sp 1n
-.ft 3
 .nf
+\f3
+.fl
+rmid [options]
+.fl
+\fP
+.fi
+
+.LP
+.SH "説明"
+.LP
+
+.LP
+.LP
+\f3rmid\fP ツールは、起動システムデーモンを開始します。起動システムデーモンを開始してからでないと、起動可能オブジェクトを起動システムに登録したり、VM 内で起動したりすることができません。起動可能なリモートオブジェクトを使ったプログラムの作成方法の詳細は、
+.na
+\f2「Java RMI 仕様」\fP @
+.fi
+http://java.sun.com/javase/6/docs/platform/rmi/spec/rmiTOC.htmlおよび
+.na
+\f2「起動のチュートリアル」\fP @
+.fi
+http://java.sun.com/javase/6/docs/technotes/guides/rmi/activation/overview.htmlを参照してくだ さい。
+.LP
+.LP
+デーモンを起動するには、次のように、セキュリティーポリシーファイルを指定して \f2rmid\fP コマンドを実行します。
+.LP
+.nf
+\f3
+.fl
+    rmid \-J\-Djava.security.policy=rmid.policy
+.fl
+\fP
+.fi
+
+.LP
+.LP
+\f3注:\fP\f2rmid\fP の Sun の 実装を実行する場合、デフォルトでは、セキュリティーポリシーファイルを指定する必要があります。 それは、起動グループ用に VM を起動するために各 \f2ActivationGroupDesc\fP 内の情報を使用できるかどうかを \f2rmid\fP が検証できるようにするためです。特に、\f2ActivationGroupDesc\fP のコンストラクタに渡される \f2CommandEnvironment\fP や任意の \f2Properties\fP によって指定されるコマンドおよびオプションは、\f2rmid\fP のセキュリティーポリシーファイルの中で明示的に許可することが必要になりました。\f2sun.rmi.activation.execPolicy\fP プロパティーの値は、起動グループ用に VM を起動するために \f2ActivationGroupDesc\fP 内の情報を使用できるかどうかを判断するときに \f2rmid\fP が使用するポリシーを決定します。
+.LP
+.LP
+\f2rmid\fP をデフォルト設定で実行すると、次のような処理が行われます。
+.LP
+.RS 3
+.TP 2
+o
+アクティベータを起動し、デフォルトポート 1098 で内部レジストリを起動する 
+.TP 2
+o
+この内部レジストリの中で、\f2ActivationSystem\fP を \f2java.rmi.activation.ActivationSystem\fP という名前にバインドする 
+.RE
+
+.LP
+.LP
+レジストリにほかのポートを指定するには、\f2rmid\fP の起動時に \f2\-port\fP オプションを指定しなければなりません。次に例を示します。
+.LP
+.nf
+\f3
+.fl
+    rmid \-J\-Djava.security.policy=rmid.policy \-port 1099
+.fl
+\fP
+.fi
+
+.LP
+.LP
+このコマンドは、起動システムデーモンを開始し、レジストリのデフォルトポート 1099 でレジストリを開始します。
+.LP
+.SS 
+rmid を inetd/xinetd から開始する
+.LP
+.LP
+\f2rmid\fP をコマンド行から開始するには、\f2inetd\fP (Solaris の場合)、または \f2xinetd\fP (Linux) を構成して \f2rmid\fP を必要に応じて開始する方法もあります。
+.LP
+.LP
+\f2rmid\fP を開始すると、\f2System.inheritedChannel\fP メソッドを呼び出して、継承されたチャンネル (\f2inetd\fP/\f2xinetd\fP から継承) を取得しようとします。継承されたチャンネルが \f2null\fP であるか、\f2java.nio.channels.ServerSocketChannel\fP のインスタンスでなかった場合、\f2rmid\fP はそのチャンネルは \f2inetd\fP/\f2xinetd\fP によって起動されたものではないと判断し、前述のように起動します。
+.LP
+.LP
+継承されたチャンネルが \f2ServerSocketChannel\fP インスタンスである場合は、エクスポートするリモートオブジェクト、つまり \f2java.rmi.activation.ActivationSystem\fP がバインドされているレジストリと \f2java.rmi.activation.Activator\fP リモートオブジェクトに対する要求を受信するサーバーソケットとして、\f2ServerSocketChannel\fP から取得した \f2java.net.ServerSocket\fP を \f2rmid\fP では使用します。このモードでは、\f2rmid\fP の動作は、次のことを除いて、 コマンド行から起動した場合と同じです。
+.LP
+.RS 3
+.TP 2
+o
+\f2System.err\fP に対する出力は、ファイルにリダイレクトされる。このファイルは \f2java.io.tmpdir\fP システムプロパティーで指定されるディレクトリ (通常は \f2/var/tmp\fP または \f2/tmp\fP) にある。 ファイル名の接頭辞は \f2rmid\-err\fP で、接尾辞は \f2"tmp"\fP である 
+.TP 2
+o
+\f2\-port\fP オプションは拒否される。このオプションを指定すると、\f2rmid\fP はエラーメッセージを出して終了する 
+.TP 2
+o
+\f2\-log\fP オプションは必須。このオプションを指定しないと、\f2rmid\fP はエラーメッセージを出して終了する 
+.RE
+
+.LP
+.LP
+必要に応じてサービスを開始するように設定する詳細については、\f2inetd\fP (Solaris) または \f2xinetd\fP (Linux) のマニュアルページを参照してください。
+.LP
+.SH "オプション"
+.LP
+
+.LP
+.RS 3
+.TP 3
+\-C<someCommandLineOption> 
+\f2rmid\fP の子プロセス (起動グループ) が作成されたときに、それぞれの子プロセスにコマンド行引数として渡されるオプションを指定します。たとえば、次のように指定すると、起動システムデーモ ンによって生成される各仮想マシンにプロパティーを渡すことができます。 
+.nf
+\f3
+.fl
+    rmid \-C\-Dsome.property=value
+.fl
+\fP
+.fi
+コマンド行引数を子プロセスに渡す機能は、デバッグを行う場合に便利です。たとえば、次のようなコマンドを実行できます。 
+.nf
+\f3
+.fl
+    rmid \-C\-Djava.rmi.server.logCalls=true
+.fl
+\fP
+.fi
+このコマンドにより、すべての子 VM でサーバー呼び出しのログが作成されるようになります。 
+.LP
+.TP 3
+\-J<someCommandLineOption> 
+\f2rmid\fP を実行している \f2java\fP インタプリタに渡すオプションを指定します。たとえば、\f2rmid\fP が \f2rmid.policy\fP という名前のポリシーファイルを使用するように指定するには、\f2rmid\fP のコマンド行で \f2\-J\fP オプションを使って、\f2java.security.policy\fP プロパティーを定義します。 次に例を示します。 
+.nf
+\f3
+.fl
+    rmid \-J\-Djava.security.policy=rmid.policy
+.fl
+\fP
+.fi
+.TP 3
+\-J\-Dsun.rmi.activation.execPolicy=<policy> 
+起動グループが実行されることになる VM の起動に使用するコマンドおよびコマンド行オプションをチェックするために、\f2rmid\fP が採用するポリシーを指定します。このオプションは、Java RMI 起動デーモンの Sun の実装だけに存在することに注意してください。コマンド行にこのプロパティーを指定しない場合、結果は \f2\-J\-Dsun.rmi.activation.execPolicy=default\fP を指定した場合と同じになります。\f2<policy>\fP に指定可能な値は、\f2default\fP、\f2<policyClassName>\fP、または \f2none\fP です。 それぞれの値について、このあと説明します。 
+.LP
+.RS 3
+.TP 2
+o
+\f3default (または、このプロパティーが「指定されていない」場合)\fP 
+.LP
+デフォルトの \f2execPolicy\fP の場合、\f2rmid\fP が実行できるのは、\f2rmid\fP が使用する セキュリティーポリシーファイルの中で、実行する権限が \f2rmid\fP に与えられているコマンドおよびコマンド行オプションだけです。「デフォルト」の実行ポリシーで使用できるのは、デフォルトの起動グループ実装だけです。 
+.LP
+\f2rmid\fP は、起動グループ用の VM を起動するときに、そのグループについて登録された起動グループ記述子である \f2ActivationGroupDesc\fP 内の情報を使用します。グループ記述子は、\f2ActivationGroupDesc.CommandEnvironment\fP を指定します (省略可能)。 これには、起動グループを開始する「コマンド」と、そのコマンド行に追加できるコマンド行「オプション」が含まれています。デフォルトでは、\f2rmid\fP は、\f2java.home\fP にある \f2java\fP コマンドを使用します。グループ記述子には、オプションとしてコマンド行に追加される「プロパティー」オーバーライドも含まれています。 このプロパティーは、次のように定義します。 
+.nf
+\f3
+.fl
+    \-D\fP\f4<property>\fP\f3=\fP\f4<value>\fP\f3
+.fl
+\fP
+.fi
+.LP
+アクセス権 \f2com.sun.rmi.rmid.ExecPermission\fP を使用すると、グループ記述子の \f2CommandEnvironment\fP で指定されたコマンドを実行して起動グループを開始する権限を、\f2rmid\fP に対して許可することができます。アクセス権 \f2com.sun.rmi.rmid.ExecOptionPermission\fP を使用すると、グループ記述子でプロパティーオーバーライドとして指定されたコマンド行オプション、または \f2CommandEnvironment\fP でオプションとして指定されたコマンド行オプションを、起動グループを開始するときに \f2rmid\fP が使用できるようになります。 
+.LP
+\f2rmid\fP にさまざまなコマンドおよびオプションを実行する権限を許可する場合は、アクセス権 \f2ExecPermission\fP および \f2ExecOptionPermission\fP を汎用的に許可する必要があります。 つまり、すべてのコードソースに対して許可します。 
+.RS 3
+.TP 3
+ExecPermission 
+\f2ExecPermission\fP クラスは、起動グループを開始するために \f2rmid\fP が特定の「コマンド」を実行する権限を表します。 
+.LP
+\f3構文\fP
+.br
+\f2ExecPermission\fP の「名前」は、\f2rmid\fP に実行を許可するコマンドのパス名です。「/*」 (「/」はファイル区切り文字 \f2File.separatorChar\fP) で終わるパス名は、そのディレクトリに含まれるすべてのファイルを示します。「/\-」で終わるパス名は、そのディレクトリに含まれるすべてのファイルとサブディレクトリ (再帰的に) を示します。パス名に特別なトークン「<<ALL FILES>>」を指定した場合は、\f3任意の\fPファイルを示します。 
+.LP
+\f3注:\fP「*」を 1 つ指定しただけのパス名は、現在のディレクトリ内のすべてのファイルを表します。 また、「\-」を 1 つ指定しただけのパス名は、現在のディレクトリ内のすべてのファイルと、現在のディレクトリに含まれるすべてのファイルとサブディレクトリ (再帰的に) を表します。  
+.TP 3
+ExecOptionPermission 
+\f2ExecOptionPermission\fP クラスは、起動グループを開始するときに \f2rmid\fP が特定のコマンド行「オプション」を使用できる権限を表します。\f2ExecOptionPermission\fP の「名前」は、コマンド行オプションの値です。 
+.LP
+\f3構文\fP
+.br
+オプションでは、ワイルドカードが限定的にサポートされます。アスタリスクは、ワイルドカードマッチを表します。 アスタリスクは、オプション名そのものとして使用できます。 つまり、任意のオプションを表すことができます。 また、オプション名の末尾に使用することもできます。 ただし、「.」か「=」の直後にアスタリスクを指定する必要があります。 
+.LP
+例を示します。「*」、「\-Dfoo.*」、「\-Da.b.c=*」は有効ですが、「*foo」、「\-Da*b」、「ab*」は無効です。  
+.TP 3
+rmid のポリシーファイル 
+\f2rmid\fP にさまざまなコマンドおよびオプションを実行する権限を許可する場合は、アクセス権 \f2ExecPermission\fP および \f2ExecOptionPermission\fP を汎用的に許可する必要があります。 つまり、すべてのコードソースに対して許可します。これらのアクセス権をチェックするのは \f2rmid\fP だけなので、これらのアクセス権を汎用的に許可しても安全です。 
+.LP
+\f2rmid\fP に各種の実行権限を許可するポリシーファイルの例を、次に示します。 
+.nf
+\f3
+.fl
 grant {
+.fl
     permission com.sun.rmi.rmid.ExecPermission
-           "/files/apps/java/jdk1.2.2/solaris/bin/java";
+.fl
+        "/files/apps/java/jdk1.2.2/solaris/bin/java";
+.fl
 
+.fl
     permission com.sun.rmi.rmid.ExecPermission
-           "/files/apps/java/jdk1.2.2/solaris/bin/java_g";
+.fl
+        "/files/apps/java/jdk1.2.2/solaris/bin/java_g";
+.fl
 
+.fl
     permission com.sun.rmi.rmid.ExecPermission
-           "/files/apps/rmidcmds/*";
+.fl
+        "/files/apps/rmidcmds/*";
+.fl
 
+.fl
     permission com.sun.rmi.rmid.ExecOptionPermission
-           "-Djava.security.policy=/files/policies/group.policy";
+.fl
+        "\-Djava.security.policy=/files/policies/group.policy";
+.fl
 
+.fl
     permission com.sun.rmi.rmid.ExecOptionPermission
-           "-Djava.security.debug=*";
+.fl
+        "\-Djava.security.debug=*";
+.fl
 
+.fl
     permission com.sun.rmi.rmid.ExecOptionPermission
-           "-Dsun.rmi.*";
+.fl
+        "\-Dsun.rmi.*";
+.fl
 };
-
+.fl
+\fP
 .fi
-.ft 1
-
-.sp 1n
-�ǽ�� 2 �ĤΥ����������ϡ�
-.B rmid
-���Ф����ѥ�̾�ˤ���������줿 1.2.2 �С�������
-.B java
-���ޥ�ɤ�¹Ԥ�����Ĥ�Ϳ���ޤ����ǥե���ȤǤϡ�
-.B java.home
-�ˤ���
-.B java
-���ޥ�ɤΥС������ (
-.B rmid
-�����Ѥ���Τ�Ʊ�����) �����Ѥ���뤿�ᡢ�ݥꥷ���ե�����ǻ��ꤹ��ɬ�פϤ���ޤ���
-3 ���ܤΥ����������ϡ�
-.B rmid
-���Ф����ǥ��쥯�ȥ�
-.BR /files/apps/rmidcmds
-���Ǥ�դΥ��ޥ�ɤ�¹Ԥ��븢�¤�Ϳ���ޤ���
-
-.sp 1n
-4 ���ܤ˵��Ĥ��줿����������
-.BR ExecOptionPermission
-�ϡ�
-.B rmid 
-���Ф����������ƥ��ݥꥷ���ե������
-.BR /files/policies/group.policy
-��������뵯ư���롼�פ򳫻Ϥ��븢�¤�Ϳ���ޤ������Υ����������ϡ���ư���롼�פ� 
-.B java.security.debug 
-�ץ��ѥƥ�����Ѥ��븢�¤�Ϳ���ޤ����Ǹ�Υ����������ϡ�
-��ư���롼�פ� 
-.B sun.rmi
-�ץ��ѥƥ�̾�������Ǥ�դΥץ��ѥƥ�����Ѥ��븢�¤�Ϳ���ޤ���
-
-.sp 1n
-�ݥꥷ���ե������Ȥä�
-.B rmid
-��ư����ˤϡ�
-.BR rmid
-�Υ��ޥ�ɹԤ�
-.B java.security.policy
-�ץ��ѥƥ�����ꤹ��ɬ�פ�����ޤ���������򼨤��ޤ���
-
-.sp 1n
-.ti +5n
-.B rmid \-J\-Djava.security.policy=rmid.policy 
-
-.TP 2
-\(bu
-.I <policyClassName>
-
-.sp 1n
-�ǥե���Ȥ�ư��ǤϽ�ʬ�ʽ������������ʤ���硢�����Ԥ�
-.BR rmid
-�ε�ư���ˡ�
-.B checkExecCommand
-�᥽�åɤ��¹Ԥ���륯�饹��̾������ꤹ�뤳�Ȥˤ�ꡢ
-.BR rmid
-���¹Ԥ��륳�ޥ�ɤ򸡺��Ǥ��ޤ���
-.sp 1n
-
-.IR policyClassName
-�ˤϡ�public �ǰ�����ɬ�פȤ��ʤ����󥹥ȥ饯���ȤȤ�� public ���饹����ꤷ�ޤ����ޤ������� 
-.B checkExecCommand
-�᥽�åɼ�������ꤷ�ޤ���
-
-.sp 1n
-.ft 3
-.nf
-.in +5n
-public void checkExecCommand(ActivationGroupDesc desc,
-                             String[] command)
-    throws SecurityException;
-.in
-.fi
-.ft 1
-
-.sp 1n
-��ư���롼�פ򳫻Ϥ������ˡ�
-.B rmid
-�ϡ��ݥꥷ����
-.BR checkExecCommand
-�᥽�åɤ�ƤӽФ��ơ���ư���롼�פε��һҤ���ӵ�ư���롼�פ򳫻Ϥ��봰����
-���ޥ�ɤ�ޤ�������Ϥ��ޤ���
-.B checkExecCommand
-��
-.BR SecurityException
-�򥹥��������硢
-.B rmid
-�ϵ�ư���롼�פ򳫻Ϥ��������֥������Ȥε�ư���ߤƤ���ƤӽФ�¦��
-.B ActivationException
-������������ޤ��� 
-
-.TP
-\(bu
-.B none
-
-.sp 1n
-.B sun.rmi.activation.execPolicy
-�ץ��ѥƥ����ͤ���none�פξ�硢
-.B rmid
-�ϡ���ư���롼�פγ��ϥ��ޥ�ɤθ��ڤ���ڹԤ��ޤ��� 
-
-.TP
-
-.BI \-log  " dir"
-��ư�����ƥ�ǡ���󤬥ǡ����١�������Ӵ�Ϣ�����񤭹���Τ˻Ȥ���
-�ǥ��쥯�ȥ��̾������ꤷ�ޤ����ǥե���ȤǤϡ�
-.B rmid
-���ޥ�ɤ�¹Ԥ����ǥ��쥯�ȥ��
-.B log 
-�Ȥ��������ǥ��쥯�ȥ꤬��������ޤ��� 
-
-.TP
-.BI \-port " port" 
-.BR rmid
-�Υ쥸���ȥ꤬�Ȥ��ݡ��Ȥ���ꤷ�ޤ�����ư�����ƥ�ǡ����ϡ�
-.BR java.rmi.activation.ActivationSystem 
-�Ȥ���̾���� 
-.BR ActivationSystem
-��쥸���ȥ�˥Х���ɤ��ޤ����������äơ���������ޥ����
-.B ActivationSystem 
-�ϡ����Τ褦��
-.B Naming.lookup
-�᥽�åɤ�ƤӽФ����Ȥˤ�äƼ����Ǥ��ޤ��� 
+最初の 2 つの付与されているアクセス権は、\f2rmid\fP に対し、パス名により明示的に指定される \f2java\fP コマンドおよび \f2java_g\fP コマンドの 1.2.2 バージョンの実行を許可します。デフォルトでは、\f2java.home\fP にあるバージョンの \f2java\fP コマンド (\f2rmid\fP が使用するのと同じバージョン) が使用されるため、そのコマンドは、ポリシーファイルで指定する必要はありません。3 番目のアクセス権は、\f2rmid\fP に対して、ディレクトリ \f2/files/apps/rmidcmds\fP 内の任意のコマンドの実行権限を許可します。 
+.LP
+4 番目のアクセス権 \f2ExecOptionPermission\fP は、\f2rmid\fP に対して、セキュリティーポリシーファイルを \f2/files/policies/group.policy\fP として定義している起動グループの開始を許可します。5 番目のアクセス権は、起動グループが \f2java.security.debug\fP プロパティーを使用することを許可しています。最後のアクセス権は、起動グループが \f2sun.rmi\fP というプロパティー名の階層内の任意のプロパティーを使用することを許可しています。 
+.LP
+ポリシーファイルを指定して \f2rmid\fP を起動するには、\f2rmid\fP のコマンド行で \f2java.security.policy\fP プロパティーを指定する必要があります。 次に例を示します。 
+.RS 3
 
 .LP
-.RS 
-.ft 3
+.LP
+\f2rmid \-J\-Djava.security.policy=rmid.policy\fP
+.LP
+.RE
+.RE
+.TP 2
+o
+.LP
+.TP 2
+o
+\f4<policyClassName>\fP 
+.LP
+デフォルトの動作では十分な柔軟性が得られない場合、管理者は、\f2rmid\fP の起動時に、\f2checkExecCommand\fP メソッドが所属するクラスの名前を指定して、rmid が実行するコマンドをチェックすることができます。 
+.LP
+\f2policyClassName\fP には、引数なしのコンストラクタを持ち、次のような \f2checkExecCommand\fP メソッドを実装している public クラスを指定します。 
 .nf
-import java.rmi.*;
-import java.rmi.activation.*;
+\f3
+.fl
+    public void checkExecCommand(ActivationGroupDesc desc,
+.fl
+                                 String[] command)
+.fl
+        throws SecurityException;
+.fl
+\fP
+.fi
+起動グループを開始する前に、\f2rmid\fP は、ポリシーの \f2checkExecCommand\fP メソッドを呼び出します。このとき、起動グループの記述子と、起動グループを開始するための完全なコマンドを含む配列をそのメソッドに渡します。\f2checkExecCommand\fP が \f2SecurityException\fP をスローすると、\f2rmid\fP はその起動グループを開始せず、オブジェクトの起動を試行している呼び出し側には \f2ActivationException\fP がスローされます。 
+.LP
+.TP 2
+o
+\f3none\fP 
+.LP
+\f2sun.rmi.activation.execPolicy\fP プロパティーの値が「none」の場合、\f2rmid\fP は、起動グループを開始するコマンドをまったく検証しません。  
+.RE
+.LP
+.TP 3
+\-log dir 
+起動システムデーモンがデータベースおよび関連情報を書き込むのに使うディレクトリの名前を指定します。デフォルトでは、\f2rmid\fP コマンドを実行したディレクトリに、\f2log\fP というログディレクトリが作成されます。 
+.LP
+.TP 3
+\-port port 
+\f2rmid\fP のレジストリが使うポートを指定します。起動システムデーモンは、このレジストリの中で、\f2java.rmi.activation.ActivationSystem\fP という名前で\f2ActivationSystem\fP をバインドします。したがって、ローカルマシン上の \f2ActivationSystem\fP は、次のように \f2Naming.lookup\fP メソッドを呼び出すことによって取得できます。 
+.nf
+\f3
+.fl
+    import java.rmi.*; 
+.fl
+    import java.rmi.activation.*;
+.fl
 
-ActivationSystem system;
-system = (ActivationSystem)
-Naming.lookup("//:port/java.rmi.activation.ActivationSystem");
+.fl
+    ActivationSystem system; system = (ActivationSystem)
+.fl
+    Naming.lookup("//:\fP\f4port\fP/java.rmi.activation.ActivationSystem");
 .fl
 .fi
-
+.TP 3
+\-stop 
+\f2\-port\fP オプションによって指定されたポートの、現在の \f2rmid\fP 呼び出しを停止します。ポートが指定されていない場合は、ポート 1098 で実行されている \f2rmid\fP を停止します。 
 .RE
-.TP 
-.BI \-stop
-.B -port
-���ץ����ˤ�äƻ��ꤵ�줿�ݡ��ȤΡ����ߤ� 
-.B rmid
-�θƤӽФ�����ߤ��ޤ����ݡ��Ȥλ��꤬�ʤ����ϡ��ݡ��� 1098 �Ǽ¹Ԥ���Ƥ��� 
-.B rmid
-����ߤ��ޤ��� 
-.SH "�Ķ��ѿ�"
-.TP 20
-.SB "CLASSPATH"
-�桼��������饹�ؤΥѥ��򥷥��ƥ�����Τ��뤿��˻��Ѥ��ޤ����ǥ��쥯�ȥ�ϥ������
-���ڤ�ޤ����ʲ�����򼨤��ޤ��� 
-.RS
+.SH "環境変数"
 .LP
-.ft 3
 
+.LP
+.RS 3
+.TP 3
+CLASSPATH 
+ユーザー定義クラスへのパスをシステムに指定します。ディレクトリはコロンで分割します。例を示します。 
 .nf
-% .:/usr/local/java/classes
-
+\f3
+.fl
+    .:/usr/local/java/classes
+.fl
+\fP
 .fi
-.ft 1
 .RE
-.SH "��Ϣ����"
+
+.LP
+.SH "関連項目"
 .LP
 
 .LP
 .LP
-rmic��CLASSPATH��java
+rmic(1)、
+.na
+\f2CLASSPATH\fP @
+.fi
+http://java.sun.com/javase/6/docs/technotes/tools/index.html#classpath、java(1)
 .LP
 
 .LP
