@@ -177,6 +177,9 @@ JDKOPT_SETUP_DEBUG_SYMBOLS
 #
 ###############################################################################
 
+# After we have toolchain, we can compile fixpath. It's needed by the lib checks.
+BASIC_COMPILE_FIXPATH
+
 LIB_SETUP_INIT
 LIB_SETUP_X11
 LIB_SETUP_CUPS
@@ -185,8 +188,6 @@ LIB_SETUP_ALSA
 LIB_SETUP_MISC_LIBS
 LIB_SETUP_STATIC_LINK_LIBSTDCPP
 
-# After we have toolchain and the paths to all libraries (needed by msys), we can compile the fixpath helper
-BASIC_COMPILE_FIXPATH
 
 ###############################################################################
 #
