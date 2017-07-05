@@ -58,6 +58,14 @@ public class ZeroContentLength {
         contentLength = cl;
     }
 
+    static synchronized String getResponse() {
+        return response;
+    }
+
+    static synchronized int getContentLength() {
+        return contentLength;
+    }
+
     /*
      * Worker thread to service single connection - can service
      * multiple http requests on same connection.
@@ -71,25 +79,44 @@ public class ZeroContentLength {
             this.id = id;
         }
 
+        final int CR = '\r';
+        final int LF = '\n';
+
         public void run() {
             try {
 
                 s.setSoTimeout(2000);
-                int max = 100;
+                int max = 20; // there should only be 20 connections
+                InputStream in = new BufferedInputStream(s.getInputStream());
 
                 for (;;) {
-
-                    // read entire request from client
-                    byte b[] = new byte[100];
-                    InputStream in = s.getInputStream();
-                    int n, total=0;
+                    // read entire request from client, until CR LF CR LF
+                    int c, total=0;
 
                     try {
-                        do {
-                            n = in.read(b);
-                            if (n > 0) total += n;
-                        } while (n > 0);
-                    } catch (SocketTimeoutException e) { }
+                        while ((c = in.read()) > 0) {
+                            total++;
+                            if (c == CR) {
+                                if ((c = in.read()) > 0) {
+                                    total++;
+                                    if (c == LF) {
+                                        if ((c = in.read()) > 0) {
+                                            total++;
+                                            if (c == CR) {
+                                                if ((c = in.read()) > 0) {
+                                                    total++;
+                                                    if (c == LF) {
+                                                        break;
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                        }
+                    } catch (SocketTimeoutException e) {}
 
                     debug("worker " + id +
                         ": Read request from client " +
@@ -105,19 +132,20 @@ public class ZeroContentLength {
                                         new BufferedOutputStream(
                                                 s.getOutputStream() ));
 
-                    out.print("HTTP/1.1 " + response + "\r\n");
-                    if (contentLength >= 0) {
-                        out.print("Content-Length: " + contentLength +
+                    out.print("HTTP/1.1 " + getResponse() + "\r\n");
+                    int clen = getContentLength();
+                    if (clen >= 0) {
+                        out.print("Content-Length: " + clen +
                                     "\r\n");
                     }
                     out.print("\r\n");
-                    for (int i=0; i<contentLength; i++) {
+                    for (int i=0; i<clen; i++) {
                         out.write( (byte)'.' );
                     }
                     out.flush();
 
                     debug("worked " + id +
-                        ": Sent response to client, length: " + contentLength);
+                        ": Sent response to client, length: " + clen);
 
                     if (--max == 0) {
                         s.close();

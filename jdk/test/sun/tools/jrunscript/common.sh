@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -43,10 +43,20 @@ setup() {
     Windows_*)
         PS=";"
         FS="\\"
+        # MKS diff deals with trailing CRs automatically
+        golden_diff="diff"
+        ;;
+    CYGWIN*)
+        PS=":"
+        FS="/"
+        # Cygwin diff needs to be told to ignore trailing CRs
+        golden_diff="diff --strip-trailing-cr"
         ;;
     *)
         PS=":"
         FS="/"
+        # Assume any other platform doesn't have the trailing CR stuff
+        golden_diff="diff"
         ;;
     esac
 

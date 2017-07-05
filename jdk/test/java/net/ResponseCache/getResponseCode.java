@@ -39,6 +39,7 @@ import java.io.*;
 public class getResponseCode {
     static URL url;
     static String FNPrefix;
+    static List<Closeable> resources = new ArrayList<>();
 
     getResponseCode() throws Exception {
         url = new URL("http://localhost/file1.cache");
@@ -57,6 +58,9 @@ public class getResponseCode {
             new getResponseCode();
         } finally{
             ResponseCache.setDefault(null);
+            for (Closeable c : resources) {
+                try { c.close(); } catch (IOException unused) {}
+            }
         }
     }
 
@@ -77,6 +81,7 @@ public class getResponseCode {
         public MyResponse(String filename) {
             try {
                 fis = new FileInputStream(new File(filename));
+                resources.add(fis);
                 headers = (Map<String,List<String>>)new ObjectInputStream(fis).readObject();
             } catch (Exception ex) {
                 throw new RuntimeException(ex.getMessage());

@@ -803,8 +803,7 @@ final class Filter {
     //
     ////////////////////////////////////////////////////////////////////////////
 
-    // private static final boolean dbg = false;
-    private static final boolean dbg = true;
+    private static final boolean dbg = false;
     private static int dbgIndent = 0;
 
     private static void dprint(String msg) {

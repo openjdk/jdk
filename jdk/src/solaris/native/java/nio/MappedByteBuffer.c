@@ -32,14 +32,11 @@
 #include <stddef.h>
 #include <stdlib.h>
 
-
 JNIEXPORT jboolean JNICALL
-Java_java_nio_MappedByteBuffer_isLoaded0(JNIEnv *env, jobject obj,
-                                        jlong address, jlong len)
+Java_java_nio_MappedByteBuffer_isLoaded0(JNIEnv *env, jobject obj, jlong address,
+                                         jlong len, jint numPages)
 {
     jboolean loaded = JNI_TRUE;
-    jint pageSize = sysconf(_SC_PAGESIZE);
-    jint numPages = (len + pageSize - 1) / pageSize;
     int result = 0;
     int i = 0;
     void *a = (void *) jlong_to_ptr(address);
@@ -55,9 +52,9 @@ Java_java_nio_MappedByteBuffer_isLoaded0(JNIEnv *env, jobject obj,
     }
 
     result = mincore(a, (size_t)len, vec);
-    if (result != 0) {
-        free(vec);
+    if (result == -1) {
         JNU_ThrowIOExceptionWithLastError(env, "mincore failed");
+        free(vec);
         return JNI_FALSE;
     }
 
@@ -72,23 +69,15 @@ Java_java_nio_MappedByteBuffer_isLoaded0(JNIEnv *env, jobject obj,
 }
 
 
-JNIEXPORT jint JNICALL
+JNIEXPORT void JNICALL
 Java_java_nio_MappedByteBuffer_load0(JNIEnv *env, jobject obj, jlong address,
-                                     jlong len, jint pageSize)
+                                     jlong len)
 {
-    int pageIncrement = pageSize / sizeof(int);
-    int numPages = (len + pageSize - 1) / pageSize;
-    int *ptr = (int *)jlong_to_ptr(address);
-    int i = 0;
-    int j = 0;
-    int result = madvise((caddr_t)ptr, len, MADV_WILLNEED);
-
-    /* touch every page */
-    for (i=0; i<numPages; i++) {
-        j += *((volatile int *)ptr);
-        ptr += pageIncrement;
+    char *a = (char *)jlong_to_ptr(address);
+    int result = madvise((caddr_t)a, (size_t)len, MADV_WILLNEED);
+    if (result == -1) {
+        JNU_ThrowIOExceptionWithLastError(env, "madvise failed");
     }
-    return j;
 }
 
 
@@ -96,13 +85,9 @@ JNIEXPORT void JNICALL
 Java_java_nio_MappedByteBuffer_force0(JNIEnv *env, jobject obj, jlong address,
                                       jlong len)
 {
-    jlong pageSize = sysconf(_SC_PAGESIZE);
-    unsigned long lAddress = address;
-
-    jlong offset = lAddress % pageSize;
-    void *a = (void *) jlong_to_ptr(lAddress - offset);
-    int result = msync(a, (size_t)(len + offset), MS_SYNC);
-    if (result != 0) {
+    void* a = (void *)jlong_to_ptr(address);
+    int result = msync(a, (size_t)len, MS_SYNC);
+    if (result == -1) {
         JNU_ThrowIOExceptionWithLastError(env, "msync failed");
     }
 }
