@@ -916,7 +916,7 @@ void ParNewGeneration::collect(bool   full,
     size_policy->minor_collection_begin();
   }
 
-  TraceTime t1("GC", PrintGC && !PrintGCDetails, true, gclog_or_tty);
+  TraceTime t1(GCCauseString("GC", gch->gc_cause()), PrintGC && !PrintGCDetails, true, gclog_or_tty);
   // Capture heap used before collection (for printing).
   size_t gch_prev_used = gch->used();
 
