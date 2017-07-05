@@ -839,19 +839,20 @@ bool os::is_allocatable(size_t bytes) {
 ////////////////////////////////////////////////////////////////////////////////
 // thread stack
 
-#ifdef AMD64
-size_t os::Posix::_compiler_thread_min_stack_allowed = 64 * K;
-size_t os::Posix::_java_thread_min_stack_allowed = 64 * K;
+// Minimum usable stack sizes required to get to user code. Space for
+// HotSpot guard pages is added later.
+size_t os::Posix::_compiler_thread_min_stack_allowed = 48 * K;
+size_t os::Posix::_java_thread_min_stack_allowed = 48 * K;
+#ifdef _LP64
 size_t os::Posix::_vm_internal_thread_min_stack_allowed = 64 * K;
 #else
-size_t os::Posix::_compiler_thread_min_stack_allowed = (48 DEBUG_ONLY(+ 4)) * K;
-size_t os::Posix::_java_thread_min_stack_allowed = (48 DEBUG_ONLY(+ 4)) * K;
 size_t os::Posix::_vm_internal_thread_min_stack_allowed = (48 DEBUG_ONLY(+ 4)) * K;
+#endif // _LP64
 
+#ifndef AMD64
 #ifdef __GNUC__
 #define GET_GS() ({int gs; __asm__ volatile("movw %%gs, %w0":"=q"(gs)); gs&0xffff;})
 #endif
-
 #endif // AMD64
 
 // return default stack size for thr_type
@@ -870,14 +871,14 @@ size_t os::Posix::default_stack_size(os::ThreadType thr_type) {
 //
 //   Low memory addresses
 //    +------------------------+
-//    |                        |\  JavaThread created by VM does not have glibc
+//    |                        |\  Java thread created by VM does not have glibc
 //    |    glibc guard page    | - guard, attached Java thread usually has
-//    |                        |/  1 page glibc guard.
+//    |                        |/  1 glibc guard page.
 // P1 +------------------------+ Thread::stack_base() - Thread::stack_size()
 //    |                        |\
-//    |  HotSpot Guard Pages   | - red and yellow pages
+//    |  HotSpot Guard Pages   | - red, yellow and reserved pages
 //    |                        |/
-//    +------------------------+ JavaThread::stack_yellow_zone_base()
+//    +------------------------+ JavaThread::stack_reserved_zone_base()
 //    |                        |\
 //    |      Normal Stack      | -
 //    |                        |/
@@ -925,7 +926,7 @@ static void current_stack_region(address * bottom, size_t * size) {
   int rslt = pthread_stackseg_np(pthread_self(), &ss);
 
   if (rslt != 0)
-    fatal("pthread_stackseg_np failed with err = %d", rslt);
+    fatal("pthread_stackseg_np failed with error = %d", rslt);
 
   *bottom = (address)((char *)ss.ss_sp - ss.ss_size);
   *size   = ss.ss_size;
@@ -936,12 +937,12 @@ static void current_stack_region(address * bottom, size_t * size) {
 
   // JVM needs to know exact stack location, abort if it fails
   if (rslt != 0)
-    fatal("pthread_attr_init failed with err = %d", rslt);
+    fatal("pthread_attr_init failed with error = %d", rslt);
 
   rslt = pthread_attr_get_np(pthread_self(), &attr);
 
   if (rslt != 0)
-    fatal("pthread_attr_get_np failed with err = %d", rslt);
+    fatal("pthread_attr_get_np failed with error = %d", rslt);
 
   if (pthread_attr_getstackaddr(&attr, (void **)bottom) != 0 ||
     pthread_attr_getstacksize(&attr, size) != 0) {
