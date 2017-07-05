@@ -24,6 +24,7 @@
 /* @test
  * @bug 4625907
  * @summary Testing force()
+ * @run main/othervm Force
  */
 
 import java.io.*;

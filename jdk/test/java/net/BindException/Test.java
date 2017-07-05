@@ -180,7 +180,7 @@ public class Test {
             while (addrs.hasMoreElements()) {
                 InetAddress ia = (InetAddress)addrs.nextElement();
 
-                if (ia.isLoopbackAddress()) {
+                if (ia.isLoopbackAddress() || ia.isAnyLocalAddress()) {
                     continue;
                 }
 

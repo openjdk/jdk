@@ -2435,6 +2435,8 @@ void os::jvm_path(char *buf, jint buflen) {
       char* java_home_var = ::getenv("JAVA_HOME");
       if (java_home_var != NULL && java_home_var[0] != 0) {
         char cpu_arch[12];
+        char* jrelib_p;
+        int   len;
         sysinfo(SI_ARCHITECTURE, cpu_arch, sizeof(cpu_arch));
 #ifdef _LP64
         // If we are on sparc running a 64-bit vm, look in jre/lib/sparcv9.
@@ -2450,14 +2452,23 @@ void os::jvm_path(char *buf, jint buflen) {
         p = strstr(p, "_g") ? "_g" : "";
 
         realpath(java_home_var, buf);
-        sprintf(buf + strlen(buf), "/jre/lib/%s", cpu_arch);
+        // determine if this is a legacy image or modules image
+        // modules image doesn't have "jre" subdirectory
+        len = strlen(buf);
+        jrelib_p = buf + len;
+        snprintf(jrelib_p, buflen-len, "/jre/lib/%s", cpu_arch);
+        if (0 != access(buf, F_OK)) {
+          snprintf(jrelib_p, buflen-len, "/lib/%s", cpu_arch);
+        }
+
         if (0 == access(buf, F_OK)) {
           // Use current module name "libjvm[_g].so" instead of
           // "libjvm"debug_only("_g")".so" since for fastdebug version
           // we should have "libjvm.so" but debug_only("_g") adds "_g"!
           // It is used when we are choosing the HPI library's name
           // "libhpi[_g].so" in hpi::initialize_get_interface().
-          sprintf(buf + strlen(buf), "/hotspot/libjvm%s.so", p);
+          len = strlen(buf);
+          snprintf(buf + len, buflen-len, "/hotspot/libjvm%s.so", p);
         } else {
           // Go back to path of .so
           realpath((char *)dlinfo.dli_fname, buf);

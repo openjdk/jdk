@@ -32,5 +32,7 @@ import java.nio.channels.Pipe;
 public class Basic {
     public static void main(String[] args) throws Exception {
         Pipe p = Pipe.open();
+        p.source().close();
+        p.sink().close();
     }
 }

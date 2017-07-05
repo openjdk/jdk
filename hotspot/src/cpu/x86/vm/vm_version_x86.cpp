@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ const char*           VM_Version::_features_str = "";
 VM_Version::CpuidInfo VM_Version::_cpuid_info   = { 0, };
 
 static BufferBlob* stub_blob;
-static const int stub_size = 300;
+static const int stub_size = 400;
 
 extern "C" {
   typedef void (*getPsrInfo_stub_t)(void*);
@@ -56,7 +56,7 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     const uint32_t CPU_FAMILY_386   = (3 << CPU_FAMILY_SHIFT);
     const uint32_t CPU_FAMILY_486   = (4 << CPU_FAMILY_SHIFT);
 
-    Label detect_486, cpu486, detect_586, std_cpuid1;
+    Label detect_486, cpu486, detect_586, std_cpuid1, std_cpuid4;
     Label ext_cpuid1, ext_cpuid5, done;
 
     StubCodeMark mark(this, "VM_Version", "getPsrInfo_stub");
@@ -131,13 +131,62 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     __ movl(Address(rsi, 8), rcx);
     __ movl(Address(rsi,12), rdx);
 
-    __ cmpl(rax, 3);     // Is cpuid(0x4) supported?
-    __ jccb(Assembler::belowEqual, std_cpuid1);
+    __ cmpl(rax, 0xa);                  // Is cpuid(0xB) supported?
+    __ jccb(Assembler::belowEqual, std_cpuid4);
+
+    //
+    // cpuid(0xB) Processor Topology
+    //
+    __ movl(rax, 0xb);
+    __ xorl(rcx, rcx);   // Threads level
+    __ cpuid();
+
+    __ lea(rsi, Address(rbp, in_bytes(VM_Version::tpl_cpuidB0_offset())));
+    __ movl(Address(rsi, 0), rax);
+    __ movl(Address(rsi, 4), rbx);
+    __ movl(Address(rsi, 8), rcx);
+    __ movl(Address(rsi,12), rdx);
+
+    __ movl(rax, 0xb);
+    __ movl(rcx, 1);     // Cores level
+    __ cpuid();
+    __ push(rax);
+    __ andl(rax, 0x1f);  // Determine if valid topology level
+    __ orl(rax, rbx);    // eax[4:0] | ebx[0:15] == 0 indicates invalid level
+    __ andl(rax, 0xffff);
+    __ pop(rax);
+    __ jccb(Assembler::equal, std_cpuid4);
+
+    __ lea(rsi, Address(rbp, in_bytes(VM_Version::tpl_cpuidB1_offset())));
+    __ movl(Address(rsi, 0), rax);
+    __ movl(Address(rsi, 4), rbx);
+    __ movl(Address(rsi, 8), rcx);
+    __ movl(Address(rsi,12), rdx);
+
+    __ movl(rax, 0xb);
+    __ movl(rcx, 2);     // Packages level
+    __ cpuid();
+    __ push(rax);
+    __ andl(rax, 0x1f);  // Determine if valid topology level
+    __ orl(rax, rbx);    // eax[4:0] | ebx[0:15] == 0 indicates invalid level
+    __ andl(rax, 0xffff);
+    __ pop(rax);
+    __ jccb(Assembler::equal, std_cpuid4);
+
+    __ lea(rsi, Address(rbp, in_bytes(VM_Version::tpl_cpuidB2_offset())));
+    __ movl(Address(rsi, 0), rax);
+    __ movl(Address(rsi, 4), rbx);
+    __ movl(Address(rsi, 8), rcx);
+    __ movl(Address(rsi,12), rdx);
 
     //
     // cpuid(0x4) Deterministic cache params
     //
+    __ bind(std_cpuid4);
     __ movl(rax, 4);
+    __ cmpl(rax, Address(rbp, in_bytes(VM_Version::std_cpuid0_offset()))); // Is cpuid(0x4) supported?
+    __ jccb(Assembler::greater, std_cpuid1);
+
     __ xorl(rcx, rcx);   // L1 cache
     __ cpuid();
     __ push(rax);
@@ -460,13 +509,18 @@ void VM_Version::get_processor_features() {
   AllocatePrefetchDistance = allocate_prefetch_distance();
   AllocatePrefetchStyle    = allocate_prefetch_style();
 
-  if( AllocatePrefetchStyle == 2 && is_intel() &&
-      cpu_family() == 6 && supports_sse3() ) { // watermark prefetching on Core
+  if( is_intel() && cpu_family() == 6 && supports_sse3() ) {
+    if( AllocatePrefetchStyle == 2 ) { // watermark prefetching on Core
 #ifdef _LP64
-    AllocatePrefetchDistance = 384;
+      AllocatePrefetchDistance = 384;
 #else
-    AllocatePrefetchDistance = 320;
+      AllocatePrefetchDistance = 320;
 #endif
+    }
+    if( supports_sse4_2() && supports_ht() ) { // Nehalem based cpus
+      AllocatePrefetchDistance = 192;
+      AllocatePrefetchLines = 4;
+    }
   }
   assert(AllocatePrefetchDistance % AllocatePrefetchStepSize == 0, "invalid value");
 

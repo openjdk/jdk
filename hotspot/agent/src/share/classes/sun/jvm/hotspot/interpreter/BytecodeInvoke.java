@@ -54,13 +54,29 @@ public class BytecodeInvoke extends BytecodeWithCPIndex {
   // returns the name of the invoked method
   public Symbol name() {
     ConstantPool cp = method().getConstants();
+    if (isInvokedynamic()) {
+       int[] nt = cp.getNameAndTypeAt(indexForFieldOrMethod());
+       return cp.getSymbolAt(nt[0]);
+    }
     return cp.getNameRefAt(index());
   }
 
   // returns the signature of the invoked method
   public Symbol signature() {
     ConstantPool cp = method().getConstants();
+    if (isInvokedynamic()) {
+       int[] nt = cp.getNameAndTypeAt(indexForFieldOrMethod());
+       return cp.getSymbolAt(nt[1]);
+    }
     return cp.getSignatureRefAt(index());
+  }
+
+  public int getSecondaryIndex() {
+    if (isInvokedynamic()) {
+      // change byte-ordering of 4-byte integer
+      return VM.getVM().getBytes().swapInt(javaSignedWordAt(1));
+    }
+    return super.getSecondaryIndex();  // throw an error
   }
 
   public Method getInvokedMethod() {
@@ -87,6 +103,7 @@ public class BytecodeInvoke extends BytecodeWithCPIndex {
   public boolean isInvokevirtual()   { return adjustedInvokeCode() == Bytecodes._invokevirtual;   }
   public boolean isInvokestatic()    { return adjustedInvokeCode() == Bytecodes._invokestatic;    }
   public boolean isInvokespecial()   { return adjustedInvokeCode() == Bytecodes._invokespecial;   }
+  public boolean isInvokedynamic()   { return adjustedInvokeCode() == Bytecodes._invokedynamic; }
 
   public boolean isValid()           { return isInvokeinterface() ||
                                               isInvokevirtual()   ||
@@ -104,6 +121,11 @@ public class BytecodeInvoke extends BytecodeWithCPIndex {
     buf.append(spaces);
     buf.append('#');
     buf.append(Integer.toString(indexForFieldOrMethod()));
+    if (isInvokedynamic()) {
+       buf.append('(');
+       buf.append(Integer.toString(getSecondaryIndex()));
+       buf.append(')');
+    }
     buf.append(" [Method ");
     StringBuffer sigBuf = new StringBuffer();
     new SignatureConverter(signature(), sigBuf).iterateReturntype();

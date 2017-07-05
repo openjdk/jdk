@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -208,7 +208,7 @@ public enum LauncherHelper {
         Method method = null;
         try {
             method = clazz.getMethod("main", String[].class);
-        } catch (Exception e) {
+        } catch (NoSuchMethodException nsme) {
             ostream.println(getLocalizedMessage("java.launcher.cls.error4",
                     classname));
             throw new RuntimeException("Main method not found in " + classname);
@@ -225,8 +225,7 @@ public enum LauncherHelper {
             throw new RuntimeException("Main method is not static in class " +
                     classname);
         }
-        Class<?> rType = method.getReturnType();
-        if (!rType.isPrimitive() || !rType.getName().equals("void")) {
+        if (method.getReturnType() != java.lang.Void.TYPE) {
             ostream.println(getLocalizedMessage("java.launcher.cls.error3",
                     classname));
             throw new RuntimeException("Main method must return a value" +

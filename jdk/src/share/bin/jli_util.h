@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@ void *JLI_MemAlloc(size_t size);
 void *JLI_MemRealloc(void *ptr, size_t size);
 char *JLI_StringDup(const char *s1);
 void  JLI_MemFree(void *ptr);
-char **JLI_CopyArgs(int argc, const char **iargv);
 int   JLI_StrCCmp(const char *s1, const char* s2);
 
 
@@ -56,10 +55,12 @@ int   JLI_StrCCmp(const char *s1, const char* s2);
 #include <io.h>
 #define JLI_StrCaseCmp(p1, p2)          stricmp((p1), (p2))
 #define JLI_StrNCaseCmp(p1, p2, p3)     strnicmp((p1), (p2), (p3))
+#define JLI_Snprintf                    _snprintf
 #else
 #include <unistd.h>
 #define JLI_StrCaseCmp(p1, p2)          strcasecmp((p1), (p2))
 #define JLI_StrNCaseCmp(p1, p2, p3)     strncasecmp((p1), (p2), (p3))
+#define JLI_Snprintf                    snprintf
 #endif /* _WIN32 */
 
 /*

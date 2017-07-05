@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,8 @@ class CodeCache : AllStatic {
   // 4422213 or 4436291 for details.
   static CodeHeap * _heap;
   static int _number_of_blobs;
+  static int _number_of_adapters;
+  static int _number_of_nmethods;
   static int _number_of_nmethods_with_dependencies;
   static bool _needs_cache_clean;
   static nmethod* _scavenge_root_nmethods;  // linked via nm->scavenge_root_link()
@@ -105,6 +107,8 @@ class CodeCache : AllStatic {
   static nmethod* first_nmethod();
   static nmethod* next_nmethod (CodeBlob* cb);
   static int       nof_blobs()                 { return _number_of_blobs; }
+  static int       nof_adapters()              { return _number_of_adapters; }
+  static int       nof_nmethods()              { return _number_of_nmethods; }
 
   // GC support
   static void gc_epilogue();

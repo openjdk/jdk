@@ -1440,10 +1440,6 @@ class GTKPainter extends SynthPainter {
             }
         }
 
-        public Insets getBorderInsets(Component c) {
-            return getBorderInsets(c, null);
-        }
-
         public Insets getBorderInsets(Component c, Insets i) {
             SynthContext context = getContext(c);
 

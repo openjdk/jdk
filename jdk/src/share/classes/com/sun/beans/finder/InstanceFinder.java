@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ class InstanceFinder<T> {
     private final Class<? extends T> type;
     private final boolean allow;
     private final String suffix;
-    private String[] packages;
+    private volatile String[] packages;
 
     InstanceFinder(Class<? extends T> type, boolean allow, String suffix, String... packages) {
         this.type = type;
@@ -49,9 +49,7 @@ class InstanceFinder<T> {
     }
 
     public String[] getPackages() {
-        return (this.packages.length > 0)
-                ? this.packages.clone()
-                : this.packages;
+        return this.packages.clone();
     }
 
     public void setPackages(String... packages) {
