@@ -30,10 +30,10 @@ import java.lang.StackWalker.StackFrame;
 
 public class LocalLongHelper {
     static StackWalker sw;
-    static Method intValue;
+    static Method longValue;
     static Method getLocals;
     static Class<?> primitiveValueClass;
-    static Method primitiveType;
+    static Method primitiveSize;
     static Method getMethodType;
     static Field memberName;
     static Field offset;
@@ -43,27 +43,29 @@ public class LocalLongHelper {
         new LocalLongHelper().longArg(0xC0FFEE, 0x1234567890ABCDEFL);
     }
 
-    // locals[2] contains the high byte of the long argument.
+    // locals[2] contains the unused slot of the long argument.
     public long longArg(int i, long l) throws Throwable {
         List<StackFrame> frames = sw.walk(s -> s.collect(Collectors.toList()));
         Object[] locals = (Object[]) getLocals.invoke(frames.get(0));
 
-        int locals_2 = (int) intValue.invoke(locals[2]);
-        if (locals_2 != 0){
-            throw new RuntimeException("Expected locals_2 == 0");
+        if (8 == (int) primitiveSize.invoke(locals[2])) { // Only test 64-bit
+            long locals_2 = (long) longValue.invoke(locals[2]);
+            if (locals_2 != 0){
+                throw new RuntimeException("Expected locals_2 == 0");
+            }
         }
         return l; // Don't want l to become a dead var
     }
 
     private static void setupReflectionStatics() throws Throwable {
         Class<?> liveStackFrameClass = Class.forName("java.lang.LiveStackFrame");
-        primitiveValueClass = Class.forName("java.lang.LiveStackFrame$PrimitiveValue");
+        primitiveValueClass = Class.forName("java.lang.LiveStackFrame$PrimitiveSlot");
 
         getLocals = liveStackFrameClass.getDeclaredMethod("getLocals");
         getLocals.setAccessible(true);
 
-        intValue = primitiveValueClass.getDeclaredMethod("intValue");
-        intValue.setAccessible(true);
+        longValue = primitiveValueClass.getDeclaredMethod("longValue");
+        longValue.setAccessible(true);
 
         Class<?> stackFrameInfoClass = Class.forName("java.lang.StackFrameInfo");
         memberName = stackFrameInfoClass.getDeclaredField("memberName");
@@ -80,20 +82,8 @@ public class LocalLongHelper {
         f.setAccessible(true);
         Object localsAndOperandsOption = f.get(null);
 
-        primitiveType = primitiveValueClass.getDeclaredMethod("type");
-        primitiveType.setAccessible(true);
-
+        primitiveSize = primitiveValueClass.getDeclaredMethod("size");
+        primitiveSize.setAccessible(true);
         sw = (StackWalker) ewsNI.invoke(null, java.util.Collections.emptySet(), localsAndOperandsOption);
-    }
-
-    private static String type(Object o) throws Throwable {
-        if (primitiveValueClass.isInstance(o)) {
-            final char c = (char) primitiveType.invoke(o);
-            return String.valueOf(c);
-        } else if (o != null) {
-            return o.getClass().getName();
-        } else {
-            return "null";
-        }
     }
 }

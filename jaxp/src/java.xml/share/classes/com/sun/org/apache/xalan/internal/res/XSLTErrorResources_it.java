@@ -1013,7 +1013,7 @@ public class XSLTErrorResources_it extends ListResourceBundle
      "Propriet\u00E0 di sistema org.xml.sax.parser non specificata"},
 
     { ER_PARSER_ARG_CANNOT_BE_NULL,
-     "L''argomento del parser non deve essere nullo"},
+     "L'argomento del parser non deve essere nullo"},
 
     { ER_FEATURE,
      "Funzione: {0}"},

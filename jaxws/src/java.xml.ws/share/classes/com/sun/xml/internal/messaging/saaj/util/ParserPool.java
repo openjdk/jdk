@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,8 +45,7 @@ public class ParserPool {
 
     public ParserPool(int capacity) {
         queue = new ArrayBlockingQueue<SAXParser>(capacity);
-        //factory = SAXParserFactory.newInstance();
-        factory = new com.sun.org.apache.xerces.internal.jaxp.SAXParserFactoryImpl();
+        factory = SAXParserFactory.newInstance("com.sun.org.apache.xerces.internal.jaxp.SAXParserFactoryImpl", SAAJUtil.getSystemClassLoader());
         factory.setNamespaceAware(true);
         for (int i = 0; i < capacity; i++) {
            try {
@@ -79,30 +78,7 @@ public class ParserPool {
 
     public void returnParser(SAXParser saxParser) {
         saxParser.reset();
-        resetSaxParser(saxParser);
         put(saxParser);
-    }
-
-
-    /**
-     * SAAJ Issue 46 :https://saaj.dev.java.net/issues/show_bug.cgi?id=46
-     * Xerces does not provide a way to reset the SymbolTable
-     * So we are trying to reset it using the proprietary code below.
-     * Temporary Until the bug : https://jaxp.dev.java.net/issues/show_bug.cgi?id=59
-     * is fixed.
-     * @param parser the parser from the pool whose Symbol Table needs to be reset.
-     */
-     private void resetSaxParser(SAXParser parser) {
-        try {
-            //Object obj = parser.getProperty("http://apache.org/xml/properties/internal/symbol-table");
-            com.sun.org.apache.xerces.internal.util.SymbolTable table = new com.sun.org.apache.xerces.internal.util.SymbolTable();
-            parser.setProperty("http://apache.org/xml/properties/internal/symbol-table", table);
-            //obj = parser.getProperty("http://apache.org/xml/properties/internal/symbol-table");
-        } catch (SAXNotRecognizedException ex) {
-            //nothing to do
-        } catch (SAXNotSupportedException ex) {
-            //nothing to do
-        }
     }
 
 }

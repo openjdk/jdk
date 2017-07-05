@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,19 +25,16 @@
  * @test
  * @bug 8164705
  * @summary check jdk.filepermission.canonicalize
- * @library /java/security/testlibrary/
- * @modules java.base/jdk.internal.misc
- * @run main/othervm -Djdk.io.permissionsUseCanonicalPath=true Flag truetrue
- * @run main/othervm -Djdk.io.permissionsUseCanonicalPath=false Flag falsetrue
- * @run main/othervm Flag falsetrue
+ * @run main/othervm/policy=flag.policy
+  *     -Djdk.io.permissionsUseCanonicalPath=true Flag true true
+ * @run main/othervm/policy=flag.policy
+  *     -Djdk.io.permissionsUseCanonicalPath=false Flag false true
+ * @run main/othervm/policy=flag.policy Flag false true
  */
 
 import java.io.File;
 import java.io.FilePermission;
 import java.lang.*;
-import java.security.Permission;
-import java.security.Policy;
-import java.security.ProtectionDomain;
 
 public class Flag {
     public static void main(String[] args) throws Exception {
@@ -51,15 +48,6 @@ public class Flag {
         FilePermission fp2 = new FilePermission(abs.toString(), "read");
         test1 = fp1.equals(fp2);
 
-        Policy pol = new Policy() {
-            @java.lang.Override
-            public boolean implies(ProtectionDomain domain, Permission permission) {
-                return fp1.implies(permission);
-            }
-        };
-
-        Policy.setPolicy(pol);
-        System.setSecurityManager(new SecurityManager());
         try {
             System.getSecurityManager().checkPermission(fp2);
             test2 = true;
@@ -67,8 +55,9 @@ public class Flag {
             test2 = false;
         }
 
-        if (!args[0].equals(test1 + "" + test2)) {
-            throw new Exception("Test failed: " + test1 + test2);
+        if (test1 != Boolean.parseBoolean(args[0]) ||
+                test2 != Boolean.parseBoolean(args[1])) {
+            throw new Exception("Test failed: " + test1 + " " + test2);
         }
     }
 }

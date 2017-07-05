@@ -26,6 +26,7 @@
  * @bug 8164705
  * @library /lib/testlibrary /test/lib
  * @modules java.base/jdk.internal.misc
+ *          java.compiler
  * @run main ReadFileOnPath
  * @summary Still able to read file on the same path
  */
@@ -57,7 +58,7 @@ public class ReadFileOnPath {
                 "module-info.class", "base", "p/App.class", "p/child");
 
         // exploded module
-        test("--module-path", "modules", "-m", "m/p.App", "SS+++++");
+        test("--module-path", "modules", "-m", "m/p.App", "SS++++0");
 
         // module in jar
         test("--module-path", "new.jar", "-m", "m/p.App", "SSSS++0");

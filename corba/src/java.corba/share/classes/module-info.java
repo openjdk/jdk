@@ -25,6 +25,8 @@
 
 /**
  * Defines the Java binding of the OMG CORBA APIs, and the RMI-IIOP API.
+ *
+ * @since 9
  */
 @Deprecated(since="9", forRemoval=true)
 module java.corba {

@@ -1460,7 +1460,7 @@ public class SwingUtilities2 {
      *
      * @param ie InputEvent to check
      */
-
+    @SuppressWarnings("deprecation")
     private static boolean isAccessClipboardGesture(InputEvent ie) {
         boolean allowedGesture = false;
         if (ie instanceof KeyEvent) { //we can validate only keyboard gestures
@@ -2129,6 +2129,7 @@ public class SwingUtilities2 {
         return -1;
     }
 
+    @SuppressWarnings("deprecation")
     public static int getSystemMnemonicKeyMask() {
         Toolkit toolkit = Toolkit.getDefaultToolkit();
         if (toolkit instanceof SunToolkit) {
@@ -2193,6 +2194,35 @@ public class SwingUtilities2 {
         }
 
         return UIManager.getBoolean(key);
+    }
+
+    /**
+     *
+     * Returns the graphics configuration which bounds contain the given
+     * point
+     *
+     * @param current the default configuration which is checked in the first place
+     * @param x the x coordinate of the given point
+     * @param y the y coordinate of the given point
+     * @return the graphics configuration
+     */
+    public static GraphicsConfiguration getGraphicsConfigurationAtPoint(GraphicsConfiguration current, double x, double y) {
+
+        if (current.getBounds().contains(x, y)) {
+            return current;
+        }
+
+        GraphicsEnvironment env = GraphicsEnvironment.getLocalGraphicsEnvironment();
+        GraphicsDevice[] devices = env.getScreenDevices();
+
+        for (GraphicsDevice device : devices) {
+            GraphicsConfiguration config = device.getDefaultConfiguration();
+            if (config.getBounds().contains(x, y)) {
+                return config;
+            }
+        }
+
+        return current;
     }
 
     /**
