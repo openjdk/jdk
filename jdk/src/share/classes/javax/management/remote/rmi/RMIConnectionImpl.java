@@ -77,6 +77,7 @@ import javax.management.event.EventClientDelegate;
 import javax.management.event.EventClientDelegateMBean;
 import javax.management.event.EventClientNotFoundException;
 import javax.management.event.FetchingEventForwarder;
+import javax.management.namespace.JMXNamespaces;
 import javax.management.remote.JMXServerErrorException;
 import javax.management.remote.NotificationResult;
 import javax.management.remote.TargetedNotification;
@@ -1292,11 +1293,27 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         public void removeNotificationListener(ObjectName name, Integer id)
             throws InstanceNotFoundException, ListenerNotFoundException,
                 IOException {
+            if (!JMXNamespaces.getContainingNamespace(name).equals("")) {
+                logger.debug("removeNotificationListener",
+                        "This connector server is not configured to support " +
+                        "forwarding of notification subscriptions to name spaces");
+                throw new RuntimeOperationsException(
+                    new UnsupportedOperationException(
+                    "removeNotificationListener on name space MBeans. "));
+                }
             forwarder.removeNotificationListener(name,id);
         }
 
         public void removeNotificationListener(ObjectName name, Integer[] ids)
             throws Exception {
+            if (!JMXNamespaces.getContainingNamespace(name).equals("")) {
+                logger.debug("removeNotificationListener",
+                        "This connector server is not configured to support " +
+                        "forwarding of notification subscriptions to name spaces");
+                throw new RuntimeOperationsException(
+                    new UnsupportedOperationException(
+                    "removeNotificationListener on name space MBeans. "));
+            }
             forwarder.removeNotificationListener(name,ids);
         }
 
@@ -1307,6 +1324,14 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         public Integer addNotificationListener(ObjectName name,
                 NotificationFilter filter)
             throws InstanceNotFoundException, IOException {
+            if (!JMXNamespaces.getContainingNamespace(name).equals("")) {
+                logger.debug("addNotificationListener",
+                        "This connector server is not configured to support " +
+                        "forwarding of notification subscriptions to name spaces");
+                throw new RuntimeOperationsException(
+                    new UnsupportedOperationException(
+                    "addNotificationListener on name space MBeans. "));
+            }
             return forwarder.addNotificationListener(name,filter);
         }
 
@@ -1326,6 +1351,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         private final boolean checkNotificationEmission;
         private final String clientId;
         private final String connectionId;
+        private volatile String mbeanServerName;
 
         EventSubscriptionManager(
                 MBeanServer mbeanServer,
@@ -1343,6 +1369,11 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
             this.connectionId = connectionId;
         }
 
+        private String mbeanServerName() {
+            if (mbeanServerName != null) return mbeanServerName;
+            else return (mbeanServerName = getMBeanServerName(mbeanServer));
+        }
+
         @SuppressWarnings("serial")  // no serialVersionUID
         private class AccessControlFilter implements NotificationFilter {
             private final NotificationFilter wrapped;
@@ -1357,7 +1388,8 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                 try {
                     if (checkNotificationEmission) {
                         ServerNotifForwarder.checkMBeanPermission(
-                                mbeanServer, name, "addNotificationListener");
+                                mbeanServerName(), mbeanServer, name,
+                                "addNotificationListener");
                     }
                     notifAC.fetchNotification(
                             connectionId, name, notification, getSubject());
@@ -1392,7 +1424,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
             if (notifAC != null)
                 notifAC.removeNotificationListener(connectionId, name, getSubject());
             try {
-                delegate.removeListenerOrSubscriber(clientId,id);
+                delegate.removeListenerOrSubscriber(clientId, id);
             } catch (EventClientNotFoundException x) {
                 throw new IOException("Unknown clientId: "+clientId,x);
             }
@@ -1405,7 +1437,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                 notifAC.removeNotificationListener(connectionId, name, getSubject());
             try {
                 for (Integer id : ids)
-                    delegate.removeListenerOrSubscriber(clientId,id);
+                    delegate.removeListenerOrSubscriber(clientId, id);
             } catch (EventClientNotFoundException x) {
                 throw new IOException("Unknown clientId: "+clientId,x);
             }
@@ -1865,6 +1897,15 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
             e = ((PrivilegedActionException)e).getException();
         }
         return e;
+    }
+
+    private static String getMBeanServerName(final MBeanServer server) {
+        final PrivilegedAction<String> action = new PrivilegedAction<String>() {
+            public String run() {
+                return Util.getMBeanServerSecurityName(server);
+            }
+        };
+        return AccessController.doPrivileged(action);
     }
 
     private static final Object[] NO_OBJECTS = new Object[0];

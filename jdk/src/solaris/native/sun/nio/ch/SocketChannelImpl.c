@@ -35,10 +35,6 @@
 #include <netinet/in.h>
 #endif
 
-#if defined(__solaris__) && !defined(_SOCKLEN_T)
-typedef size_t socklen_t;       /* New in SunOS 5.7, so need this for 5.6 */
-#endif
-
 #include "jni.h"
 #include "jni_util.h"
 #include "net_util.h"
@@ -87,13 +83,4 @@ Java_sun_nio_ch_SocketChannelImpl_checkConnect(JNIEnv *env, jobject this,
         return 1;
     }
     return 0;
-}
-
-
-JNIEXPORT void JNICALL
-Java_sun_nio_ch_SocketChannelImpl_shutdown(JNIEnv *env, jclass cl,
-                                           jobject fdo, jint how)
-{
-    if (shutdown(fdval(env, fdo), how) < 0)
-        handleSocketError(env, errno);
 }
