@@ -24,8 +24,11 @@
 
 # Rules to build add_gnu_debuglink, used by vm.make on Solaris
 
-GENERATED                 = ../generated
-ADD_GNU_DEBUGLINK         = $(GENERATED)/add_gnu_debuglink
+# Allow $(ADD_GNU_DEBUGLINK) to be called from any directory.
+# We don't set or use the GENERATED macro to avoid affecting
+# other HotSpot Makefiles.
+TOPDIR                    = $(shell echo `pwd`)
+ADD_GNU_DEBUGLINK         = $(TOPDIR)/../generated/add_gnu_debuglink
 
 ADD_GNU_DEBUGLINK_DIR     = $(GAMMADIR)/src/os/solaris/add_gnu_debuglink
 ADD_GNU_DEBUGLINK_SRC     = $(ADD_GNU_DEBUGLINK_DIR)/add_gnu_debuglink.c

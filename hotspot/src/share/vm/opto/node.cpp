@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1576,6 +1576,9 @@ void Node::dump() const {
     } else {
       tty->print("no type");
     }
+  } else if (t->isa_vect() && this->is_MachSpillCopy()) {
+    // Dump MachSpillcopy vector type.
+    t->dump();
   }
   if (is_new) {
     debug_only(dump_orig(debug_orig()));
