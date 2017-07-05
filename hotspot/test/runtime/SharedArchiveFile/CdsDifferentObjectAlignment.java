@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,13 +28,15 @@
  *          This is a negative test; using  object alignment for loading that
  *          is different from object alignment for creating a CDS file
  *          should fail when loading.
- * @library /testlibrary
+ * @library /test/lib
  * @bug 8025642
  * @modules java.base/jdk.internal.misc
  *          java.management
  */
 
-import jdk.test.lib.*;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.Platform;
 
 public class CdsDifferentObjectAlignment {
     public static void main(String[] args) throws Exception {

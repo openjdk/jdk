@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,19 +32,15 @@ import jdk.test.lib.apps.LingeredAppWithDeadlock;
 import jdk.test.lib.Utils;
 import jdk.test.lib.Platform;
 import jdk.test.lib.JDKToolLauncher;
-import jdk.test.lib.OutputAnalyzer;
-import jdk.test.lib.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 /*
  * @test
  * @summary Test deadlock detection
- * @library /test/lib/share/classes
- * @library /testlibrary
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @modules java.management
- * @build jdk.test.lib.*
- * @build jdk.test.lib.apps.*
- * @build DeadlockDetectionTest
  * @run main DeadlockDetectionTest
  */
 

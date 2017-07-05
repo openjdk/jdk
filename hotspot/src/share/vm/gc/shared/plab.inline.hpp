@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/plab.hpp"
 #include "memory/allocation.inline.hpp"
-#include "runtime/atomic.inline.hpp"
+#include "runtime/atomic.hpp"
 
 inline HeapWord* PLAB::allocate_aligned(size_t word_sz, unsigned short alignment_in_bytes) {
   HeapWord* res = CollectedHeap::align_allocation_or_fail(_top, _end, alignment_in_bytes);

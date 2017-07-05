@@ -29,7 +29,7 @@ import java.io.IOException;
 
 /**
  * @deprecated This class is deprecated. Use the one from
- *             {@code <root>/test/lib/share/classes/jdk/test/lib}
+ *             {@code <root>/test/lib/jdk/test/lib}
  */
 @Deprecated
 public class Platform {

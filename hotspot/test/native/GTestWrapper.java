@@ -24,7 +24,7 @@
 
 /* @test
  * @summary a jtreg wrapper for gtest tests
- * @library /test/lib/share/classes
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @run main/native GTestWrapper
  */

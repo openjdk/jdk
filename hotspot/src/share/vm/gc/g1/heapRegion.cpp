@@ -39,7 +39,7 @@
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.inline.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/orderAccess.inline.hpp"
 
 int    HeapRegion::LogOfHRGrainBytes = 0;

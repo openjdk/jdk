@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,9 @@
  * @summary testing of dtrace for segmented code cache
  * @requires os.family=="solaris"
  * @modules java.base/jdk.internal.misc
- * @library /testlibrary /test/lib /
+ * @library /test/lib /
  *
- * @build compiler.codecache.dtrace.SegmentedCodeCacheDtraceTest
+ * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm/timeout=600 -Xbootclasspath/a:.
@@ -42,10 +42,8 @@ package compiler.codecache.dtrace;
 import compiler.testlibrary.CompilerUtils;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.JDKToolFinder;
-import jdk.test.lib.OutputAnalyzer;
+import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.Utils;
-import jdk.test.lib.dtrace.DtraceResultsAnalyzer;
-import jdk.test.lib.dtrace.DtraceRunner;
 
 import java.io.IOException;
 import java.lang.reflect.Executable;

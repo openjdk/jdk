@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,11 +27,10 @@
  * @summary Verify that objects promoted from survivor space to tenured space
  *          when their age exceeded tenuring threshold are not aligned to
  *          SurvivorAlignmentInBytes value.
- * @library /testlibrary /test/lib
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @build TestPromotionFromSurvivorToTenuredAfterMinorGC
- *        SurvivorAlignmentTestMain AlignmentHelper
+ * @build sun.hotspot.WhiteBox
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions

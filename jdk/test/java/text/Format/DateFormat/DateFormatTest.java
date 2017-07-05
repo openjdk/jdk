@@ -26,6 +26,7 @@
  * @bug 4052223 4089987 4469904 4326988 4486735 8008577 8045998 8140571
  * @summary test DateFormat and SimpleDateFormat.
  * @library /java/text/testlib
+ * @modules jdk.localedata
  * @run main/othervm -Djava.locale.providers=COMPAT,SPI DateFormatTest
  */
 

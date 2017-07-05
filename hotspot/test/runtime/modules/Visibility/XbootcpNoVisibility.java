@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,15 @@
  * @test
  * @summary Ensure that a class defined within a java.base package can not
  *          be located via -Xbootclasspath/a
- * @library /testlibrary
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @run main/othervm XbootcpNoVisibility
  */
 
-import jdk.test.lib.*;
+import jdk.test.lib.InMemoryJavaCompiler;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
 
 public class XbootcpNoVisibility {
     public static void main(String args[]) throws Exception {

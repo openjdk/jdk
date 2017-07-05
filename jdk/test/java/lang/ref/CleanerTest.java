@@ -49,7 +49,7 @@ import org.testng.annotations.Test;
 
 /*
  * @test
- * @library /test/lib/share/classes /lib/testlibrary /test/lib
+ * @library /lib/testlibrary /test/lib
  * @build sun.hotspot.WhiteBox
  * @build jdk.test.lib.Utils
  * @modules java.base/jdk.internal

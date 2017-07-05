@@ -39,7 +39,7 @@ import jdk.internal.org.objectweb.asm.FieldVisitor;
 import jdk.internal.org.objectweb.asm.Label;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
 import jdk.internal.org.objectweb.asm.Opcodes;
-import jdk.test.lib.Pair;
+import jdk.test.lib.util.Pair;
 import jdk.test.lib.jittester.BinaryOperator;
 import jdk.test.lib.jittester.Block;
 import jdk.test.lib.jittester.BuiltInType;

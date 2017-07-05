@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
  * @test
  * @bug 6683975 8008577
  * @summary Make sure that date is formatted correctlyin th locale.
+ * @modules jdk.localedata
  * @run main/othervm -Djava.locale.providers=JRE,SPI Bug6683975
  */
 import java.text.*;

@@ -25,7 +25,7 @@
  * @test CheckCheckCICompilerCount
  * @bug 8130858 8132525 8162881
  * @summary Check that correct range of values for CICompilerCount are allowed depending on whether tiered is enabled or not
- * @library /testlibrary /
+ * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @run driver compiler.arguments.CheckCICompilerCount
@@ -33,8 +33,8 @@
 
 package compiler.arguments;
 
-import jdk.test.lib.OutputAnalyzer;
-import jdk.test.lib.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 public class CheckCICompilerCount {
     private static final String[][] NON_TIERED_ARGUMENTS = {

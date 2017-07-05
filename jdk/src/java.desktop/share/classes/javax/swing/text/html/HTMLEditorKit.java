@@ -40,6 +40,7 @@ import javax.accessibility.*;
 import java.lang.ref.*;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import javax.swing.text.html.parser.ParserDelegator;
 
 /**
  * The Swing JEditorPane text component supports different kinds
@@ -610,11 +611,7 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
      */
     protected Parser getParser() {
         if (defaultParser == null) {
-            try {
-                Class<?> c = Class.forName("javax.swing.text.html.parser.ParserDelegator");
-                defaultParser = (Parser) c.newInstance();
-            } catch (Throwable e) {
-            }
+            defaultParser = new ParserDelegator();
         }
         return defaultParser;
     }

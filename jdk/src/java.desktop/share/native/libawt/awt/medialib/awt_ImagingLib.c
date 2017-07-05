@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -772,6 +772,7 @@ Java_sun_awt_image_ImagingLib_transformBI(JNIEnv *env, jobject this,
     mlib_image *src;
     mlib_image *dst;
     int i;
+    int j = 0;
     int retStatus = 1;
     mlib_status status;
     double *matrix;
@@ -822,6 +823,15 @@ Java_sun_awt_image_ImagingLib_transformBI(JNIEnv *env, jobject this,
     if (matrix == NULL) {
         /* out of memory error already thrown */
         return 0;
+    }
+
+    /* Check for invalid double value in transformation matrix */
+    for (j = 0; j < 6; j++) {
+
+        if (!(IS_FINITE(matrix[j]))) {
+            (*env)->ReleasePrimitiveArrayCritical(env, jmatrix, matrix, JNI_ABORT);
+            return 0;
+        }
     }
 
     if (s_printIt) {
@@ -980,6 +990,7 @@ Java_sun_awt_image_ImagingLib_transformRaster(JNIEnv *env, jobject this,
     mlib_image *src;
     mlib_image *dst;
     int i;
+    int j = 0;
     int retStatus = 1;
     mlib_status status;
     double *matrix;
@@ -1042,6 +1053,18 @@ Java_sun_awt_image_ImagingLib_transformRaster(JNIEnv *env, jobject this,
         free(srcRasterP);
         free(dstRasterP);
         return 0;
+    }
+
+    /* Check for invalid double value in transformation matrix */
+    for (j = 0; j < 6; j++) {
+
+        if (!(IS_FINITE(matrix[j]))) {
+            (*env)->ReleasePrimitiveArrayCritical(env, jmatrix, matrix, JNI_ABORT);
+            free(srcRasterP);
+            free(dstRasterP);
+
+            return 0;
+        }
     }
 
     if (s_printIt) {

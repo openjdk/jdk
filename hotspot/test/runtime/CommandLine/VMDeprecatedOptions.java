@@ -21,7 +21,8 @@
  * questions.
  */
 
-import jdk.test.lib.*;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.cli.*;
 
 /*
@@ -29,7 +30,7 @@ import jdk.test.lib.cli.*;
  * @bug 8066821
  * @summary Test that various options are deprecated. See deprecated_jvm_flags in arguments.cpp.
  * @modules java.base/jdk.internal.misc
- * @library /testlibrary
+ * @library /test/lib
  */
 public class VMDeprecatedOptions {
 

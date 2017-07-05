@@ -27,7 +27,7 @@
  * @requires vm.gc.G1
  * @summary Verify that heap shrinks after GC in the presence of fragmentation
  * due to humongous objects
- * @library /testlibrary
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @modules java.management/sun.management
  * @run main/othervm -XX:-ExplicitGCInvokesConcurrent -XX:MinHeapFreeRatio=10

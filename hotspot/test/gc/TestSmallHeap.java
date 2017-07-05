@@ -26,10 +26,10 @@
  * @bug 8067438 8152239
  * @requires vm.gc=="null"
  * @summary Verify that starting the VM with a small heap works
- * @library /testlibrary /test/lib /test/lib/share/classes
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @modules java.management/sun.management
- * @build TestSmallHeap
+ * @build sun.hotspot.WhiteBox
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI TestSmallHeap
  */

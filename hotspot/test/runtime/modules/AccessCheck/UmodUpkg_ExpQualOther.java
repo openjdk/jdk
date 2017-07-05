@@ -28,11 +28,10 @@
  * @summary Test that if class c5 in an unnamed module can read package p6 in module m2, but package p6 in module m2 is
  *          exported qualifiedly to module m3, then class c5 in an unnamed module can not read p6.c6 in module m2.
  * @modules java.base/jdk.internal.misc
- * @library /testlibrary /test/lib
+ * @library /test/lib
  * @compile myloaders/MySameClassLoader.java
  * @compile p6/c6.java
  * @compile c5.java
- * @build UmodUpkg_ExpQualOther
  * @run main/othervm -Xbootclasspath/a:. UmodUpkg_ExpQualOther
  */
 

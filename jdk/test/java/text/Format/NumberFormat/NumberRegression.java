@@ -34,6 +34,7 @@
  * @library /java/text/testlib
  * @build IntlTest HexDumpReader TestUtils
  * @modules java.base/sun.util.resources
+ *          jdk.localedata
  * @compile -XDignore.symbol.file NumberRegression.java
  * @run main/othervm -Djava.locale.providers=COMPAT,SPI NumberRegression
  */

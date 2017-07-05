@@ -61,20 +61,8 @@ public class ParagraphView extends FlowView implements TabExpander {
         Object i18nFlag = doc.getProperty(AbstractDocument.I18NProperty);
         if ((i18nFlag != null) && i18nFlag.equals(Boolean.TRUE)) {
             try {
-                if (i18nStrategy == null) {
-                    // the classname should probably come from a property file.
-                    String classname = "javax.swing.text.TextLayoutStrategy";
-                    ClassLoader loader = getClass().getClassLoader();
-                    if (loader != null) {
-                        i18nStrategy = loader.loadClass(classname);
-                    } else {
-                        i18nStrategy = Class.forName(classname);
-                    }
-                }
-                Object o = i18nStrategy.newInstance();
-                if (o instanceof FlowStrategy) {
-                    strategy = (FlowStrategy) o;
-                }
+                // the classname should probably come from a property file.
+                strategy = new TextLayoutStrategy();
             } catch (Throwable e) {
                 throw new StateInvariantError("ParagraphView: Can't create i18n strategy: "
                                               + e.getMessage());

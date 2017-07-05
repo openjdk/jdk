@@ -62,7 +62,9 @@ public final class CatalogManager {
      * @throws CatalogException If an error occurs while parsing the catalog
      */
     public static Catalog catalog(CatalogFeatures features, String... paths) {
-        return new CatalogImpl(features, paths);
+        CatalogImpl catalog = new CatalogImpl(features, paths);
+        catalog.load();
+        return catalog;
     }
 
     /**
