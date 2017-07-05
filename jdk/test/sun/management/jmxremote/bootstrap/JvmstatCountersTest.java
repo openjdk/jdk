@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -143,9 +143,12 @@ public class JvmstatCountersTest {
                 String vmid = name.substring(0, name.indexOf("@"));
                 System.out.println("vmid = " + vmid);
                 VirtualMachine vm = VirtualMachine.attach(vmid);
-                String agent = vm.getSystemProperties().getProperty("java.home") +
-                        File.separator + "lib" + File.separator + "management-agent.jar";
-                vm.loadAgent(agent, "com.sun.management.jmxremote.port=0,com.sun.management.jmxremote.authenticate=false,com.sun.management.jmxremote.ssl=false");
+                Properties p = new Properties();
+                p.put("com.sun.management.jmxremote.port", "0");
+                p.put("com.sun.management.jmxremote.authenticate", "false");
+                p.put("com.sun.management.jmxremote.ssl", "false");
+                vm.startManagementAgent(p);
+                vm.startLocalManagementAgent();
                 vm.detach();
                 String localAddress2 = ConnectorAddressLink.importFrom(0);
                 if (localAddress2 == null) {

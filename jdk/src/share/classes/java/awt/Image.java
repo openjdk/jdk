@@ -41,7 +41,7 @@ import sun.awt.image.SurfaceManager;
  *
  * @author      Sami Shaio
  * @author      Arthur van Hoff
- * @since       JDK1.0
+ * @since       1.0
  */
 public abstract class Image {
 
@@ -164,7 +164,7 @@ public abstract class Image {
      * @see        java.awt.Image#SCALE_SMOOTH
      * @see        java.awt.Image#SCALE_REPLICATE
      * @see        java.awt.Image#SCALE_AREA_AVERAGING
-     * @since      JDK1.1
+     * @since      1.1
      */
     public Image getScaledInstance(int width, int height, int hints) {
         ImageFilter filter;
@@ -180,21 +180,21 @@ public abstract class Image {
 
     /**
      * Use the default image-scaling algorithm.
-     * @since JDK1.1
+     * @since 1.1
      */
     public static final int SCALE_DEFAULT = 1;
 
     /**
      * Choose an image-scaling algorithm that gives higher priority
      * to scaling speed than smoothness of the scaled image.
-     * @since JDK1.1
+     * @since 1.1
      */
     public static final int SCALE_FAST = 2;
 
     /**
      * Choose an image-scaling algorithm that gives higher priority
      * to image smoothness than scaling speed.
-     * @since JDK1.1
+     * @since 1.1
      */
     public static final int SCALE_SMOOTH = 4;
 
@@ -205,7 +205,7 @@ public abstract class Image {
      * that performs the same algorithm yet integrates more efficiently
      * into the imaging infrastructure supplied by the toolkit.
      * @see        java.awt.image.ReplicateScaleFilter
-     * @since      JDK1.1
+     * @since      1.1
      */
     public static final int SCALE_REPLICATE = 8;
 
@@ -215,7 +215,7 @@ public abstract class Image {
      * performs the same algorithm yet integrates more efficiently
      * into the image infrastructure supplied by the toolkit.
      * @see java.awt.image.AreaAveragingScaleFilter
-     * @since JDK1.1
+     * @since 1.1
      */
     public static final int SCALE_AREA_AVERAGING = 16;
 

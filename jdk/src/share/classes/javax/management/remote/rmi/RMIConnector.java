@@ -2011,13 +2011,13 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
             if (nullSubjectConnRef == null
                     || (conn = nullSubjectConnRef.get()) == null) {
                 conn = new RemoteMBeanServerConnection(null);
-                nullSubjectConnRef = new WeakReference(conn);
+                nullSubjectConnRef = new WeakReference<MBeanServerConnection>(conn);
             }
         } else {
             WeakReference<MBeanServerConnection> wr = rmbscMap.get(delegationSubject);
             if (wr == null || (conn = wr.get()) == null) {
                 conn = new RemoteMBeanServerConnection(delegationSubject);
-                rmbscMap.put(delegationSubject, new WeakReference(conn));
+                rmbscMap.put(delegationSubject, new WeakReference<MBeanServerConnection>(conn));
             }
         }
         return conn;
@@ -2115,7 +2115,7 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
         PrivilegedExceptionAction<Constructor<?>> action =
                 new PrivilegedExceptionAction<Constructor<?>>() {
             public Constructor<?> run() throws Exception {
-                Class thisClass = RMIConnector.class;
+                Class<RMIConnector> thisClass = RMIConnector.class;
                 ClassLoader thisLoader = thisClass.getClassLoader();
                 ProtectionDomain thisProtectionDomain =
                         thisClass.getProtectionDomain();
@@ -2354,7 +2354,7 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
             PrivilegedExceptionAction<Class<?>> action =
                 new PrivilegedExceptionAction<Class<?>>() {
               public Class<?> run() throws Exception {
-                Class thisClass = RMIConnector.class;
+                Class<RMIConnector> thisClass = RMIConnector.class;
                 ClassLoader thisLoader = thisClass.getClassLoader();
                 ProtectionDomain thisProtectionDomain =
                         thisClass.getProtectionDomain();

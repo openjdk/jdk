@@ -162,10 +162,7 @@ static jint jcmd(AttachOperation* op, outputStream* out) {
     java_lang_Throwable::print(PENDING_EXCEPTION, out);
     out->cr();
     CLEAR_PENDING_EXCEPTION;
-    // The exception has been printed on the output stream
-    // If the JVM returns JNI_ERR, the attachAPI throws a generic I/O
-    // exception and the content of the output stream is not processed.
-    // By returning JNI_OK, the exception will be displayed on the client side
+    return JNI_ERR;
   }
   return JNI_OK;
 }

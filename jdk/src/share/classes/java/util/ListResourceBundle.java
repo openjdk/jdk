@@ -113,7 +113,7 @@ import sun.util.ResourceBundleEnumeration;
  *
  * @see ResourceBundle
  * @see PropertyResourceBundle
- * @since JDK1.1
+ * @since 1.1
  */
 public abstract class ListResourceBundle extends ResourceBundle {
     /**

@@ -155,7 +155,7 @@ import sun.net.www.MessageHeader;
  * @see     java.net.URLConnection#setIfModifiedSince(long)
  * @see     java.net.URLConnection#setRequestProperty(java.lang.String, java.lang.String)
  * @see     java.net.URLConnection#setUseCaches(boolean)
- * @since   JDK1.0
+ * @since   1.0
  */
 public abstract class URLConnection {
 
@@ -283,7 +283,7 @@ public abstract class URLConnection {
     private MessageHeader requests;
 
    /**
-    * @since   JDK1.1
+    * @since   1.1
     */
     private static FileNameMap fileNameMap;
 
@@ -495,7 +495,7 @@ public abstract class URLConnection {
      * @return  the content length of the resource that this connection's URL
      *          references, or {@code -1} if the content length is
      *          not known.
-     * @since 7.0
+     * @since 1.7
      */
     public long getContentLengthLong() {
         return getHeaderFieldLong("content-length", -1);
@@ -623,7 +623,7 @@ public abstract class URLConnection {
      * @return  the value of the named field, parsed as a long. The
      *          {@code Default} value is returned if the field is
      *          missing or malformed.
-     * @since 7.0
+     * @since 1.7
      */
     public long getHeaderFieldLong(String name, long Default) {
         String value = getHeaderField(name);

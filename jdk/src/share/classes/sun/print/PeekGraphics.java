@@ -166,7 +166,7 @@ public class PeekGraphics extends Graphics2D
      * a copy of this <code>Graphics</code> object.
      * @return     a new graphics context that is a copy of
      *                       this graphics context.
-     * @since      JDK1.0
+     * @since      1.0
      */
     public Graphics create() {
         PeekGraphics newGraphics = null;
@@ -196,7 +196,7 @@ public class PeekGraphics extends Graphics2D
      * to this new origin.
      * @param  x   the <i>x</i> coordinate.
      * @param  y   the <i>y</i> coordinate.
-     * @since   JDK1.0
+     * @since   1.0
      */
     public void translate(int x, int y) {
         mGraphics.translate(x, y);
@@ -293,7 +293,7 @@ public class PeekGraphics extends Graphics2D
      * @return    this graphics context's current color.
      * @see       java.awt.Color
      * @see       java.awt.Graphics#setColor
-     * @since     JDK1.0
+     * @since     1.0
      */
     public Color getColor() {
         return mGraphics.getColor();
@@ -306,7 +306,7 @@ public class PeekGraphics extends Graphics2D
      * @param     c   the new rendering color.
      * @see       java.awt.Color
      * @see       java.awt.Graphics#getColor
-     * @since     JDK1.0
+     * @since     1.0
      */
     public void setColor(Color c) {
         mGraphics.setColor(c);
@@ -318,7 +318,7 @@ public class PeekGraphics extends Graphics2D
      * This sets the logical pixel operation function to the paint or
      * overwrite mode.  All subsequent rendering operations will
      * overwrite the destination with the current color.
-     * @since   JDK1.0
+     * @since   1.0
      */
     public void setPaintMode() {
         mGraphics.setPaintMode();
@@ -338,7 +338,7 @@ public class PeekGraphics extends Graphics2D
      * in an unpredictable but reversible manner; if the same figure is
      * drawn twice, then all pixels are restored to their original values.
      * @param     c1 the XOR alternation color
-     * @since     JDK1.0
+     * @since     1.0
      */
     public void setXORMode(Color c1) {
         mGraphics.setXORMode(c1);
@@ -349,7 +349,7 @@ public class PeekGraphics extends Graphics2D
      * @return    this graphics context's current font.
      * @see       java.awt.Font
      * @see       java.awt.Graphics#setFont
-     * @since     JDK1.0
+     * @since     1.0
      */
     public Font getFont() {
         return mGraphics.getFont();
@@ -364,7 +364,7 @@ public class PeekGraphics extends Graphics2D
      * @see     java.awt.Graphics#drawChars(java.lang.String, int, int)
      * @see     java.awt.Graphics#drawString(byte[], int, int, int, int)
      * @see     java.awt.Graphics#drawBytes(char[], int, int, int, int)
-     * @since   JDK1.0
+     * @since   1.0
     */
     public void setFont(Font font) {
         mGraphics.setFont(font);
@@ -377,7 +377,7 @@ public class PeekGraphics extends Graphics2D
      * @see       java.awt.Graphics#getFont
      * @see       java.awt.FontMetrics
      * @see       java.awt.Graphics#getFontMetrics()
-     * @since     JDK1.0
+     * @since     1.0
      */
     public FontMetrics getFontMetrics(Font f) {
         return mGraphics.getFontMetrics(f);
@@ -400,7 +400,7 @@ public class PeekGraphics extends Graphics2D
      * @see         java.awt.Graphics#clipRect
      * @see         java.awt.Graphics#setClip(int, int, int, int)
      * @see         java.awt.Graphics#setClip(Shape)
-     * @since       JDK1.1
+     * @since       1.1
      */
     public Rectangle getClipBounds() {
         return mGraphics.getClipBounds();
@@ -436,7 +436,7 @@ public class PeekGraphics extends Graphics2D
      * @param       height the height of the new clip rectangle.
      * @see         java.awt.Graphics#clipRect
      * @see         java.awt.Graphics#setClip(Shape)
-     * @since       JDK1.1
+     * @since       1.1
      */
     public void setClip(int x, int y, int width, int height) {
         mGraphics.setClip(x, y, width, height);
@@ -450,7 +450,7 @@ public class PeekGraphics extends Graphics2D
      * @see         java.awt.Graphics#clipRect
      * @see         java.awt.Graphics#setClip(int, int, int, int)
      * @see         java.awt.Graphics#setClip(Shape)
-     * @since       JDK1.1
+     * @since       1.1
      */
     public Shape getClip() {
         return mGraphics.getClip();
@@ -468,7 +468,7 @@ public class PeekGraphics extends Graphics2D
      * @see         java.awt.Graphics#getClip()
      * @see         java.awt.Graphics#clipRect
      * @see         java.awt.Graphics#setClip(int, int, int, int)
-     * @since       JDK1.1
+     * @since       1.1
      */
     public void setClip(Shape clip) {
         mGraphics.setClip(clip);
@@ -493,7 +493,7 @@ public class PeekGraphics extends Graphics2D
      * @param       height the height of the source rectangle.
      * @param       dx the horizontal distance to copy the pixels.
      * @param       dy the vertical distance to copy the pixels.
-     * @since       JDK1.0
+     * @since       1.0
      */
     public void copyArea(int x, int y, int width, int height,
                          int dx, int dy) {
@@ -508,7 +508,7 @@ public class PeekGraphics extends Graphics2D
      * @param   y1  the first point's <i>y</i> coordinate.
      * @param   x2  the second point's <i>x</i> coordinate.
      * @param   y2  the second point's <i>y</i> coordinate.
-     * @since   JDK1.0
+     * @since   1.0
      */
     public void drawLine(int x1, int y1, int x2, int y2) {
         addStrokeShape(new Line2D.Float(x1, y1, x2, y2));
@@ -535,7 +535,7 @@ public class PeekGraphics extends Graphics2D
      * @param         height   the height of the rectangle to be filled.
      * @see           java.awt.Graphics#fillRect
      * @see           java.awt.Graphics#clearRect
-     * @since         JDK1.0
+     * @since         1.0
      */
     public void fillRect(int x, int y, int width, int height) {
 
@@ -562,7 +562,7 @@ public class PeekGraphics extends Graphics2D
      * @see         java.awt.Graphics#setColor(java.awt.Color)
      * @see         java.awt.Graphics#setPaintMode
      * @see         java.awt.Graphics#setXORMode(java.awt.Color)
-     * @since       JDK1.0
+     * @since       1.0
      */
     public void clearRect(int x, int y, int width, int height) {
         Rectangle2D.Float rect = new Rectangle2D.Float(x, y, width, height);
@@ -585,7 +585,7 @@ public class PeekGraphics extends Graphics2D
      * @param      arcHeight the vertical diameter of the arc
      *                    at the four corners.
      * @see        java.awt.Graphics#fillRoundRect
-     * @since      JDK1.0
+     * @since      1.0
      */
     public void drawRoundRect(int x, int y, int width, int height,
                               int arcWidth, int arcHeight) {
@@ -609,7 +609,7 @@ public class PeekGraphics extends Graphics2D
      * @param       arcHeight the vertical diameter
      *                     of the arc at the four corners.
      * @see         java.awt.Graphics#drawRoundRect
-     * @since       JDK1.0
+     * @since       1.0
      */
     public void fillRoundRect(int x, int y, int width, int height,
                                        int arcWidth, int arcHeight) {
@@ -634,7 +634,7 @@ public class PeekGraphics extends Graphics2D
      * @param       width the width of the oval to be drawn.
      * @param       height the height of the oval to be drawn.
      * @see         java.awt.Graphics#fillOval
-     * @since       JDK1.0
+     * @since       1.0
      */
     public void drawOval(int x, int y, int width, int height) {
         addStrokeShape(new Rectangle2D.Float(x, y,  width, height));
@@ -651,7 +651,7 @@ public class PeekGraphics extends Graphics2D
      * @param       width the width of the oval to be filled.
      * @param       height the height of the oval to be filled.
      * @see         java.awt.Graphics#drawOval
-     * @since       JDK1.0
+     * @since       1.0
      */
     public void fillOval(int x, int y, int width, int height) {
         Rectangle2D.Float rect = new Rectangle2D.Float(x, y, width, height);
@@ -689,7 +689,7 @@ public class PeekGraphics extends Graphics2D
      * @param        arcAngle the angular extent of the arc,
      *                    relative to the start angle.
      * @see         java.awt.Graphics#fillArc
-     * @since       JDK1.0
+     * @since       1.0
      */
     public void drawArc(int x, int y, int width, int height,
                                  int startAngle, int arcAngle) {
@@ -725,7 +725,7 @@ public class PeekGraphics extends Graphics2D
      * @param        arcAngle the angular extent of the arc,
      *                    relative to the start angle.
      * @see         java.awt.Graphics#drawArc
-     * @since       JDK1.0
+     * @since       1.0
      */
     public void fillArc(int x, int y, int width, int height,
                         int startAngle, int arcAngle) {
@@ -745,7 +745,7 @@ public class PeekGraphics extends Graphics2D
      * @param       yPoints an array of <i>y</i> points
      * @param       nPoints the total number of points
      * @see         java.awt.Graphics#drawPolygon(int[], int[], int)
-     * @since       JDK1.1
+     * @since       1.1
      */
    public void drawPolyline(int xPoints[], int yPoints[],
                              int nPoints) {
@@ -780,7 +780,7 @@ public class PeekGraphics extends Graphics2D
      * @param        nPoints   a the total number of points.
      * @see          java.awt.Graphics#fillPolygon
      * @see          java.awt.Graphics#drawPolyline
-     * @since        JDK1.0
+     * @since        1.0
      */
     public void drawPolygon(int xPoints[], int yPoints[],
                             int nPoints) {
@@ -811,7 +811,7 @@ public class PeekGraphics extends Graphics2D
      * @param        yPoints   a an array of <code>y</code> coordinates.
      * @param        nPoints   a the total number of points.
      * @see          java.awt.Graphics#drawPolygon(int[], int[], int)
-     * @since        JDK1.0
+     * @since        1.0
      */
     public void fillPolygon(int xPoints[], int yPoints[],
                             int nPoints) {
@@ -854,7 +854,7 @@ public class PeekGraphics extends Graphics2D
      * @param       y        the <i>y</i> coordinate.
      * @see         java.awt.Graphics#drawBytes
      * @see         java.awt.Graphics#drawChars
-     * @since       JDK1.0
+     * @since       1.0
      */
     public void drawString(String str, int x, int y) {
 
@@ -942,7 +942,7 @@ public class PeekGraphics extends Graphics2D
      * @see      java.awt.Image
      * @see      java.awt.image.ImageObserver
      * @see      java.awt.image.ImageObserver#imageUpdate(java.awt.Image, int, int, int, int, int)
-     * @since    JDK1.0
+     * @since    1.0
      */
     public boolean drawImage(Image img, int x, int y,
                              ImageObserver observer) {
@@ -995,7 +995,7 @@ public class PeekGraphics extends Graphics2D
      * @see      java.awt.Image
      * @see      java.awt.image.ImageObserver
      * @see      java.awt.image.ImageObserver#imageUpdate(java.awt.Image, int, int, int, int, int)
-     * @since    JDK1.0
+     * @since    1.0
      */
     public boolean drawImage(Image img, int x, int y,
                              int width, int height,
@@ -1040,7 +1040,7 @@ public class PeekGraphics extends Graphics2D
      * @see      java.awt.Image
      * @see      java.awt.image.ImageObserver
      * @see      java.awt.image.ImageObserver#imageUpdate(java.awt.Image, int, int, int, int, int)
-     * @since    JDK1.0
+     * @since    1.0
      */
    public boolean drawImage(Image img, int x, int y,
                              Color bgcolor,
@@ -1099,7 +1099,7 @@ public class PeekGraphics extends Graphics2D
      * @see      java.awt.Image
      * @see      java.awt.image.ImageObserver
      * @see      java.awt.image.ImageObserver#imageUpdate(java.awt.Image, int, int, int, int, int)
-     * @since    JDK1.0
+     * @since    1.0
      */
     public boolean drawImage(Image img, int x, int y,
                              int width, int height,
@@ -1162,7 +1162,7 @@ public class PeekGraphics extends Graphics2D
      * @see         java.awt.Image
      * @see         java.awt.image.ImageObserver
      * @see         java.awt.image.ImageObserver#imageUpdate(java.awt.Image, int, int, int, int, int)
-     * @since       JDK1.1
+     * @since       1.1
      */
     public boolean drawImage(Image img,
                              int dx1, int dy1, int dx2, int dy2,
@@ -1236,7 +1236,7 @@ public class PeekGraphics extends Graphics2D
      * @see         java.awt.Image
      * @see         java.awt.image.ImageObserver
      * @see         java.awt.image.ImageObserver#imageUpdate(java.awt.Image, int, int, int, int, int)
-     * @since       JDK1.1
+     * @since       1.1
      */
     public boolean drawImage(Image img,
                              int dx1, int dy1, int dx2, int dy2,
@@ -1327,7 +1327,7 @@ public class PeekGraphics extends Graphics2D
      * @see         java.awt.Component#update
      * @see         java.awt.Component#getGraphics
      * @see         java.awt.Graphics#create
-     * @since       JDK1.0
+     * @since       1.0
      */
     public void dispose() {
         mGraphics.dispose();

@@ -47,7 +47,7 @@ import sun.nio.ch.FileChannelImpl;
  * @see     java.io.FileDescriptor
  * @see     java.io.FileInputStream
  * @see     java.nio.file.Files#newOutputStream
- * @since   JDK1.0
+ * @since   1.0
  */
 public
 class FileOutputStream extends OutputStream
@@ -125,7 +125,7 @@ class FileOutputStream extends OutputStream
      *               <code>checkWrite</code> method denies write access
      *               to the file.
      * @see        java.lang.SecurityManager#checkWrite(java.lang.String)
-     * @since     JDK1.1
+     * @since     1.1
      */
     public FileOutputStream(String name, boolean append)
         throws FileNotFoundException

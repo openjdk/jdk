@@ -40,7 +40,7 @@ package java.io;
  * @see     java.io.InputStream#read()
  * @see     java.io.OutputStream
  * @see     java.io.PushbackInputStream
- * @since   JDK1.0
+ * @since   1.0
  */
 public abstract class InputStream implements Closeable {
 

@@ -40,6 +40,6 @@
  * allowing the user to choose from a comprehensive set of eight
  * rounding modes.
  *
- * @since JDK1.1
+ * @since 1.1
  */
 package java.math;

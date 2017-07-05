@@ -30,7 +30,7 @@ package java.rmi;
  * <code>java.rmi.RMISecurityManager</code>'s methods.
  *
  * @author  Roger Riggs
- * @since   JDK1.1
+ * @since   1.1
  * @deprecated Use {@link java.lang.SecurityException} instead.
  * Application code should never directly reference this class, and
  * <code>RMISecurityManager</code> no longer throws this subclass of
@@ -45,7 +45,7 @@ public class RMISecurityException extends java.lang.SecurityException {
     /**
      * Construct an <code>RMISecurityException</code> with a detail message.
      * @param name the detail message
-     * @since JDK1.1
+     * @since 1.1
      * @deprecated no replacement
      */
     @Deprecated
@@ -57,7 +57,7 @@ public class RMISecurityException extends java.lang.SecurityException {
      * Construct an <code>RMISecurityException</code> with a detail message.
      * @param name the detail message
      * @param arg ignored
-     * @since JDK1.1
+     * @since 1.1
      * @deprecated no replacement
      */
     @Deprecated
