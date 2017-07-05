@@ -90,6 +90,7 @@ import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.GuardingDynamicLinker;
 import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.internal.dynalink.linker.LinkerServices;
+import jdk.internal.dynalink.linker.MethodHandleTransformer;
 
 /**
  * Default implementation of the {@link LinkerServices} interface.
@@ -103,17 +104,21 @@ public class LinkerServicesImpl implements LinkerServices {
 
     private final TypeConverterFactory typeConverterFactory;
     private final GuardingDynamicLinker topLevelLinker;
+    private final MethodHandleTransformer internalObjectsFilter;
 
     /**
      * Creates a new linker services object.
      *
      * @param typeConverterFactory the type converter factory exposed by the services.
      * @param topLevelLinker the top level linker used by the services.
+     * @param internalObjectsFilter a method handle transformer that is supposed to act as the implementation of this
+     * services' {@link #filterInternalObjects(java.lang.invoke.MethodHandle)} method.
      */
     public LinkerServicesImpl(final TypeConverterFactory typeConverterFactory,
-            final GuardingDynamicLinker topLevelLinker) {
+            final GuardingDynamicLinker topLevelLinker, final MethodHandleTransformer internalObjectsFilter) {
         this.typeConverterFactory = typeConverterFactory;
         this.topLevelLinker = topLevelLinker;
+        this.internalObjectsFilter = internalObjectsFilter;
     }
 
     @Override
@@ -150,6 +155,11 @@ public class LinkerServicesImpl implements LinkerServices {
         } finally {
             threadLinkRequest.set(prevLinkRequest);
         }
+    }
+
+    @Override
+    public MethodHandle filterInternalObjects(final MethodHandle target) {
+        return internalObjectsFilter != null ? internalObjectsFilter.transform(target) : target;
     }
 
     /**

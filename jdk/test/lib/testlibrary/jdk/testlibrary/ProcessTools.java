@@ -218,19 +218,8 @@ public final class ProcessTools {
      * @return Process id
      */
     public static int getProcessId() throws Exception {
-
-        // Get the current process id using a reflection hack
         RuntimeMXBean runtime = ManagementFactory.getRuntimeMXBean();
-        Field jvm = runtime.getClass().getDeclaredField("jvm");
-
-        jvm.setAccessible(true);
-        VMManagement mgmt = (sun.management.VMManagement) jvm.get(runtime);
-
-        Method pid_method = mgmt.getClass().getDeclaredMethod("getProcessId");
-
-        pid_method.setAccessible(true);
-
-        int pid = (Integer) pid_method.invoke(mgmt);
+        int pid = Integer.parseInt(runtime.getName().split("@")[0]);
 
         return pid;
     }

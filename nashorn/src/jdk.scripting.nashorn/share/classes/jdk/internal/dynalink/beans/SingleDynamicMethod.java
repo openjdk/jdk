@@ -165,10 +165,11 @@ abstract class SingleDynamicMethod extends DynamicMethod {
      * @return the adapted method handle.
      */
     static MethodHandle getInvocation(final MethodHandle target, final MethodType callSiteType, final LinkerServices linkerServices) {
-        final MethodType methodType = target.type();
+        final MethodHandle filteredTarget = linkerServices.filterInternalObjects(target);
+        final MethodType methodType = filteredTarget.type();
         final int paramsLen = methodType.parameterCount();
         final boolean varArgs = target.isVarargsCollector();
-        final MethodHandle fixTarget = varArgs ? target.asFixedArity() : target;
+        final MethodHandle fixTarget = varArgs ? filteredTarget.asFixedArity() : filteredTarget;
         final int fixParamsLen = varArgs ? paramsLen - 1 : paramsLen;
         final int argsLen = callSiteType.parameterCount();
         if(argsLen < fixParamsLen) {
@@ -204,7 +205,7 @@ abstract class SingleDynamicMethod extends DynamicMethod {
             if(varArgType.isAssignableFrom(callSiteLastArgType)) {
                 // Call site signature guarantees we'll always be passed a single compatible array; just link directly
                 // to the method, introducing necessary conversions. Also, preserve it being a variable arity method.
-                return createConvertingInvocation(target, linkerServices, callSiteType).asVarargsCollector(
+                return createConvertingInvocation(filteredTarget, linkerServices, callSiteType).asVarargsCollector(
                         callSiteLastArgType);
             }
 

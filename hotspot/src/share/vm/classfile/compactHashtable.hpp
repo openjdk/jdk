@@ -188,6 +188,7 @@ public:
 // dump time.
 //
 template <class T, class N> class CompactHashtable VALUE_OBJ_CLASS_SPEC {
+  friend class VMStructs;
   uintx  _base_address;
   juint  _entry_count;
   juint  _bucket_count;

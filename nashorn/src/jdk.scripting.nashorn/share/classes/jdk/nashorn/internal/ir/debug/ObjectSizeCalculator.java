@@ -38,6 +38,7 @@ import java.util.IdentityHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Contains utility methods for calculating the memory usage of objects. It
@@ -150,7 +151,7 @@ public final class ObjectSizeCalculator {
      * @param memoryLayoutSpecification a description of the JVM memory layout.
      */
     public ObjectSizeCalculator(final MemoryLayoutSpecification memoryLayoutSpecification) {
-        memoryLayoutSpecification.getClass();
+        Objects.requireNonNull(memoryLayoutSpecification);
         arrayHeaderSize = memoryLayoutSpecification.getArrayHeaderSize();
         objectHeaderSize = memoryLayoutSpecification.getObjectHeaderSize();
         objectPadding = memoryLayoutSpecification.getObjectPadding();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -420,7 +420,7 @@ oops_on_card_seq_iterate_careful(MemRegion mr,
   oop obj;
 
   HeapWord* next = cur;
-  while (next <= start) {
+  do {
     cur = next;
     obj = oop(cur);
     if (obj->klass_or_null() == NULL) {
@@ -429,45 +429,38 @@ oops_on_card_seq_iterate_careful(MemRegion mr,
     }
     // Otherwise...
     next = cur + block_size(cur);
-  }
+  } while (next <= start);
 
   // If we finish the above loop...We have a parseable object that
   // begins on or before the start of the memory region, and ends
   // inside or spans the entire region.
-
-  assert(obj == oop(cur), "sanity");
   assert(cur <= start, "Loop postcondition");
   assert(obj->klass_or_null() != NULL, "Loop postcondition");
-  assert((cur + block_size(cur)) > start, "Loop postcondition");
 
-  if (!g1h->is_obj_dead(obj)) {
-    obj->oop_iterate(cl, mr);
-  }
-
-  while (cur < end) {
+  do {
     obj = oop(cur);
+    assert((cur + block_size(cur)) > (HeapWord*)obj, "Loop invariant");
     if (obj->klass_or_null() == NULL) {
       // Ran into an unparseable point.
       return cur;
-    };
+    }
 
-    // Otherwise:
-    next = cur + block_size(cur);
+    // Advance the current pointer. "obj" still points to the object to iterate.
+    cur = cur + block_size(cur);
 
     if (!g1h->is_obj_dead(obj)) {
-      if (next < end || !obj->is_objArray()) {
-        // This object either does not span the MemRegion
-        // boundary, or if it does it's not an array.
-        // Apply closure to whole object.
+      // Non-objArrays are sometimes marked imprecise at the object start. We
+      // always need to iterate over them in full.
+      // We only iterate over object arrays in full if they are completely contained
+      // in the memory region.
+      if (!obj->is_objArray() || (((HeapWord*)obj) >= start && cur <= end)) {
         obj->oop_iterate(cl);
       } else {
-        // This obj is an array that spans the boundary.
-        // Stop at the boundary.
         obj->oop_iterate(cl, mr);
       }
     }
-    cur = next;
-  }
+  } while (cur < end);
+
   return NULL;
 }
 
