@@ -87,8 +87,8 @@ public final class ECParameters extends AlgorithmParametersSpi {
         if ((data.length == 0) || (data[0] != 4)) {
             throw new IOException("Only uncompressed point format supported");
         }
-        int n = (curve.getField().getFieldSize() + 7 ) >> 3;
-        if (data.length != (n * 2) + 1) {
+        int n = data.length / 2;
+        if (n > ((curve.getField().getFieldSize() + 7 ) >> 3)) {
             throw new IOException("Point does not match field size");
         }
         byte[] xb = new byte[n];

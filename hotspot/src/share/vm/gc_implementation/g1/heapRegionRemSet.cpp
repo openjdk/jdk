@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -577,7 +577,7 @@ void OtherRegionsTable::print_from_card_cache() {
 #endif
 
 void OtherRegionsTable::add_reference(OopOrNarrowOopStar from, int tid) {
-  size_t cur_hrs_ind = hr()->hrs_index();
+  size_t cur_hrs_ind = (size_t) hr()->hrs_index();
 
 #if HRRS_VERBOSE
   gclog_or_tty->print_cr("ORT::add_reference_work(" PTR_FORMAT "->" PTR_FORMAT ").",
@@ -841,7 +841,7 @@ PosParPRT* OtherRegionsTable::delete_region_table() {
 #endif
 
   // Set the corresponding coarse bit.
-  size_t max_hrs_index = max->hr()->hrs_index();
+  size_t max_hrs_index = (size_t) max->hr()->hrs_index();
   if (!_coarse_map.at(max_hrs_index)) {
     _coarse_map.at_put(max_hrs_index, true);
     _n_coarse_entries++;
@@ -866,17 +866,20 @@ PosParPRT* OtherRegionsTable::delete_region_table() {
 void OtherRegionsTable::scrub(CardTableModRefBS* ctbs,
                               BitMap* region_bm, BitMap* card_bm) {
   // First eliminated garbage regions from the coarse map.
-  if (G1RSScrubVerbose)
-    gclog_or_tty->print_cr("Scrubbing region "SIZE_FORMAT":",
-                           hr()->hrs_index());
+  if (G1RSScrubVerbose) {
+    gclog_or_tty->print_cr("Scrubbing region %u:", hr()->hrs_index());
+  }
 
   assert(_coarse_map.size() == region_bm->size(), "Precondition");
-  if (G1RSScrubVerbose)
-    gclog_or_tty->print("   Coarse map: before = %d...", _n_coarse_entries);
+  if (G1RSScrubVerbose) {
+    gclog_or_tty->print("   Coarse map: before = "SIZE_FORMAT"...",
+                        _n_coarse_entries);
+  }
   _coarse_map.set_intersection(*region_bm);
   _n_coarse_entries = _coarse_map.count_one_bits();
-  if (G1RSScrubVerbose)
-    gclog_or_tty->print_cr("   after = %d.", _n_coarse_entries);
+  if (G1RSScrubVerbose) {
+    gclog_or_tty->print_cr("   after = "SIZE_FORMAT".", _n_coarse_entries);
+  }
 
   // Now do the fine-grained maps.
   for (size_t i = 0; i < _max_fine_entries; i++) {
@@ -885,23 +888,27 @@ void OtherRegionsTable::scrub(CardTableModRefBS* ctbs,
     while (cur != NULL) {
       PosParPRT* nxt = cur->next();
       // If the entire region is dead, eliminate.
-      if (G1RSScrubVerbose)
-        gclog_or_tty->print_cr("     For other region "SIZE_FORMAT":",
+      if (G1RSScrubVerbose) {
+        gclog_or_tty->print_cr("     For other region %u:",
                                cur->hr()->hrs_index());
-      if (!region_bm->at(cur->hr()->hrs_index())) {
+      }
+      if (!region_bm->at((size_t) cur->hr()->hrs_index())) {
         *prev = nxt;
         cur->set_next(NULL);
         _n_fine_entries--;
-        if (G1RSScrubVerbose)
+        if (G1RSScrubVerbose) {
           gclog_or_tty->print_cr("          deleted via region map.");
+        }
         PosParPRT::free(cur);
       } else {
         // Do fine-grain elimination.
-        if (G1RSScrubVerbose)
+        if (G1RSScrubVerbose) {
           gclog_or_tty->print("          occ: before = %4d.", cur->occupied());
+        }
         cur->scrub(ctbs, card_bm);
-        if (G1RSScrubVerbose)
+        if (G1RSScrubVerbose) {
           gclog_or_tty->print_cr("          after = %4d.", cur->occupied());
+        }
         // Did that empty the table completely?
         if (cur->occupied() == 0) {
           *prev = nxt;
@@ -1003,7 +1010,7 @@ void OtherRegionsTable::clear() {
 
 void OtherRegionsTable::clear_incoming_entry(HeapRegion* from_hr) {
   MutexLockerEx x(&_m, Mutex::_no_safepoint_check_flag);
-  size_t hrs_ind = from_hr->hrs_index();
+  size_t hrs_ind = (size_t) from_hr->hrs_index();
   size_t ind = hrs_ind & _mod_max_fine_entries_mask;
   if (del_single_region_table(ind, from_hr)) {
     assert(!_coarse_map.at(hrs_ind), "Inv");
@@ -1011,7 +1018,7 @@ void OtherRegionsTable::clear_incoming_entry(HeapRegion* from_hr) {
     _coarse_map.par_at_put(hrs_ind, 0);
   }
   // Check to see if any of the fcc entries come from here.
-  size_t hr_ind = hr()->hrs_index();
+  size_t hr_ind = (size_t) hr()->hrs_index();
   for (int tid = 0; tid < HeapRegionRemSet::num_par_rem_sets(); tid++) {
     int fcc_ent = _from_card_cache[tid][hr_ind];
     if (fcc_ent != -1) {
@@ -1223,7 +1230,7 @@ bool HeapRegionRemSetIterator::coarse_has_next(size_t& card_index) {
     if ((size_t)_coarse_cur_region_index < _coarse_map->size()) {
       _coarse_cur_region_cur_card = 0;
       HeapWord* r_bot =
-        _g1h->region_at(_coarse_cur_region_index)->bottom();
+        _g1h->region_at((uint) _coarse_cur_region_index)->bottom();
       _cur_region_card_offset = _bosa->index_for(r_bot);
     } else {
       return false;

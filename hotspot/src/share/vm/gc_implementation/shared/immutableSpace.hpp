@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@ class ImmutableSpace: public CHeapObj {
   // Debugging
   virtual void print() const            PRODUCT_RETURN;
   virtual void print_short() const      PRODUCT_RETURN;
-  virtual void verify(bool allow_dirty);
+  virtual void verify();
 };
 
 #endif // SHARE_VM_GC_IMPLEMENTATION_SHARED_IMMUTABLESPACE_HPP

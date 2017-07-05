@@ -27,6 +27,7 @@
 
 #include "oops/symbol.hpp"
 #include "memory/iterator.hpp"
+#include "trace/traceMacros.hpp"
 
 // The class vmSymbols is a name space for fast lookup of
 // symbols commonly used in the VM.
@@ -424,6 +425,7 @@
   template(throwable_throwable_signature,             "(Ljava/lang/Throwable;)Ljava/lang/Throwable;")             \
   template(class_void_signature,                      "(Ljava/lang/Class;)V")                     \
   template(class_int_signature,                       "(Ljava/lang/Class;)I")                     \
+  template(class_long_signature,                      "(Ljava/lang/Class;)J")                     \
   template(class_boolean_signature,                   "(Ljava/lang/Class;)Z")                     \
   template(throwable_string_void_signature,           "(Ljava/lang/Throwable;Ljava/lang/String;)V")               \
   template(string_array_void_signature,               "([Ljava/lang/String;)V")                                   \
@@ -539,9 +541,11 @@
   template(serializePropertiesToByteArray_signature,   "()[B")                                                    \
   template(serializeAgentPropertiesToByteArray_name,   "serializeAgentPropertiesToByteArray")                     \
   template(classRedefinedCount_name,                   "classRedefinedCount")                                     \
+                                                                                                                  \
+  /* trace signatures */                                                                                          \
+  TRACE_TEMPLATES(template)                                                                                       \
+                                                                                                                  \
   /*end*/
-
-
 
 // Here are all the intrinsics known to the runtime and the CI.
 // Each intrinsic consists of a public enum name (like _hashCode),
@@ -647,6 +651,8 @@
    do_name(     currentTimeMillis_name,                          "currentTimeMillis")                                   \
   do_intrinsic(_nanoTime,                 java_lang_System,       nanoTime_name,          void_long_signature,   F_S)   \
    do_name(     nanoTime_name,                                   "nanoTime")                                            \
+                                                                                                                        \
+  TRACE_INTRINSICS(do_intrinsic, do_class, do_name, do_signature, do_alias)                                             \
                                                                                                                         \
   do_intrinsic(_arraycopy,                java_lang_System,       arraycopy_name, arraycopy_signature,           F_S)   \
    do_name(     arraycopy_name,                                  "arraycopy")                                           \

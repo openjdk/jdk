@@ -404,7 +404,7 @@ public final class Currency implements Serializable {
     public static Set<Currency> getAvailableCurrencies() {
         synchronized(Currency.class) {
             if (available == null) {
-                available = new HashSet<Currency>(256);
+                available = new HashSet<>(256);
 
                 // Add simple currencies first
                 for (char c1 = 'A'; c1 <= 'Z'; c1 ++) {

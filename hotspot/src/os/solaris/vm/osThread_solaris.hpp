@@ -36,6 +36,7 @@
   bool     _vm_created_thread; // true if the VM created this thread,
                                // false if primary thread or attached thread
  public:
+  static size_t thread_id_size()   { return sizeof(thread_t); }
   thread_t thread_id() const       { return _thread_id; }
   uint     lwp_id() const          { return _lwp_id; }
   int      native_priority() const { return _native_priority; }

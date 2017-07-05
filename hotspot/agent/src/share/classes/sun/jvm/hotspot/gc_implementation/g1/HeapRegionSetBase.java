@@ -40,9 +40,9 @@ import sun.jvm.hotspot.types.TypeDataBase;
 // Mirror class for HeapRegionSetBase. Represents a group of regions.
 
 public class HeapRegionSetBase extends VMObject {
-    // size_t _length;
+    // uint _length;
     static private CIntegerField lengthField;
-    // size_t _region_num;
+    // uint _region_num;
     static private CIntegerField regionNumField;
     // size_t _total_used_bytes;
     static private CIntegerField totalUsedBytesField;
