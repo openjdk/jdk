@@ -110,7 +110,7 @@ JNIEXPORT jbyteArray JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1Sign
     CK_BYTE_PTR ckpSignature;
     CK_ULONG ckDataLength;
     CK_ULONG ckSignatureLength = 0;
-    jbyteArray jSignature;
+    jbyteArray jSignature = NULL;
     CK_RV rv;
 
     CK_FUNCTION_LIST_PTR ckpFunctions = getFunctionList(env, obj);

@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -232,6 +232,10 @@ public class BasicDirectoryModel extends AbstractListModel implements PropertyCh
         public void run0() {
             FileSystemView fileSystem = filechooser.getFileSystemView();
 
+            if (isInterrupted()) {
+                return;
+            }
+
             File[] list = fileSystem.getFiles(currentDirectory, filechooser.isFileHidingEnabled());
 
             if (isInterrupted()) {
@@ -268,8 +272,8 @@ public class BasicDirectoryModel extends AbstractListModel implements PropertyCh
 
             // To avoid loads of synchronizations with Invoker and improve performance we
             // execute the whole block on the COM thread
-            DoChangeContents doChangeContents = ShellFolder.getInvoker().invoke(new Callable<DoChangeContents>() {
-                public DoChangeContents call() throws Exception {
+            DoChangeContents doChangeContents = ShellFolder.invoke(new Callable<DoChangeContents>() {
+                public DoChangeContents call() {
                     int newSize = newFileCache.size();
                     int oldSize = fileCache.size();
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,6 @@ public final class TlsRsaPremasterSecretGenerator extends KeyGeneratorSpi {
     private SecureRandom random;
 
     public TlsRsaPremasterSecretGenerator() {
-        SunJCE.ensureIntegrity(getClass());
     }
 
     protected void engineInit(SecureRandom random) {
