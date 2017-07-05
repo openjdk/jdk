@@ -24,15 +24,12 @@
  */
 package com.sun.jmx.namespace;
 
-import com.sun.jmx.defaults.JmxProperties;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Logger;
 
 import javax.management.Attribute;
 import javax.management.AttributeList;
 import javax.management.MBeanServer;
-import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
 import javax.management.namespace.JMXNamespace;
 import javax.management.namespace.JMXNamespacePermission;
@@ -114,14 +111,12 @@ public class NamespaceInterceptor extends HandlerInterceptor<JMXNamespace> {
     }
 
     @Override
-    protected ObjectName toSource(ObjectName targetName)
-            throws MalformedObjectNameException {
+    protected ObjectName toSource(ObjectName targetName) {
         return proc.toSourceContext(targetName, true);
     }
 
     @Override
-    protected ObjectName toTarget(ObjectName sourceName)
-            throws MalformedObjectNameException {
+    protected ObjectName toTarget(ObjectName sourceName) {
         return proc.toTargetContext(sourceName, false);
     }
 

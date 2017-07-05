@@ -407,6 +407,7 @@ SUNWprivate_1.1 {
 		Java_sun_java2d_x11_X11SurfaceData_initSurface;
 		Java_sun_java2d_x11_X11SurfaceData_isDrawableValid;
 		Java_sun_java2d_x11_X11SurfaceData_isDgaAvailable;
+		Java_sun_java2d_x11_X11SurfaceData_isShmPMAvailable;
 		Java_sun_java2d_x11_X11SurfaceData_setInvalid;
 		Java_sun_java2d_x11_X11SurfaceData_flushNativeSurface;
                 Java_sun_java2d_x11_X11SurfaceData_XCreateGC;

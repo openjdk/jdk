@@ -156,7 +156,7 @@ jboolean isDisplayLocal(JNIEnv *env) {
 
     isLocal = JNU_CallStaticMethodByName(env, NULL,
                                          "sun/awt/X11GraphicsEnvironment",
-                                         "isDisplayLocal",
+                                         "_isDisplayLocal",
                                          "()Z").z;
     isLocalSet = True;
     return isLocal;
@@ -1233,7 +1233,7 @@ Java_sun_font_FontManager_getFontConfig
         for (j=0; j<nfonts; j++) {
             FcPattern *fontPattern = fontset->fonts[j];
             FcChar8 *fontformat;
-            FcCharSet *unionCharset, *charset;
+            FcCharSet *unionCharset = NULL, *charset;
 
             fontformat = NULL;
             (*FcPatternGetString)(fontPattern, FC_FONTFORMAT, 0, &fontformat);
@@ -1256,7 +1256,7 @@ Java_sun_font_FontManager_getFontConfig
             if (nfonts==10) {
                 minGlyphs = 50;
             }
-            if (j == 0) {
+            if (unionCharset == NULL) {
                 unionCharset = charset;
             } else {
                 if ((*FcCharSetSubtractCount)(charset, unionCharset)

@@ -458,7 +458,7 @@ void ArchDesc::buildDFA(FILE* fp) {
 
 
 class dfa_shared_preds {
-  enum { count = 2 };
+  enum { count = 4 };
 
   static bool        _found[count];
   static const char* _type [count];
@@ -479,11 +479,14 @@ class dfa_shared_preds {
     char c  = *prev;
     switch( c ) {
     case ' ':
+    case '\n':
       return dfa_shared_preds::valid_loc(pred, prev);
     case '!':
     case '(':
     case '<':
     case '=':
+      return true;
+    case '"':  // such as: #line 10 "myfile.ad"\n mypredicate
       return true;
     case '|':
       if( prev != pred && *(prev-1) == '|' ) return true;
@@ -564,10 +567,14 @@ public:
   }
 };
 // shared predicates, _var and _pred entry should be the same length
-bool         dfa_shared_preds::_found[dfa_shared_preds::count] = { false, false };
-const char*  dfa_shared_preds::_type[dfa_shared_preds::count]  = { "int", "bool" };
-const char*  dfa_shared_preds::_var [dfa_shared_preds::count]  = { "_n_get_int__", "Compile__current____select_24_bit_instr__" };
-const char*  dfa_shared_preds::_pred[dfa_shared_preds::count]  = { "n->get_int()", "Compile::current()->select_24_bit_instr()" };
+bool         dfa_shared_preds::_found[dfa_shared_preds::count]
+  = { false, false, false, false };
+const char*  dfa_shared_preds::_type[dfa_shared_preds::count]
+  = { "int", "jlong", "intptr_t", "bool" };
+const char*  dfa_shared_preds::_var [dfa_shared_preds::count]
+  = { "_n_get_int__", "_n_get_long__", "_n_get_intptr_t__", "Compile__current____select_24_bit_instr__" };
+const char*  dfa_shared_preds::_pred[dfa_shared_preds::count]
+  = { "n->get_int()", "n->get_long()", "n->get_intptr_t()", "Compile::current()->select_24_bit_instr()" };
 
 
 void ArchDesc::gen_dfa_state_body(FILE* fp, Dict &minimize, ProductionState &status, Dict &operands_chained_from, int i) {

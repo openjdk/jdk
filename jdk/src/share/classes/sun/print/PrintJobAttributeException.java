@@ -25,7 +25,6 @@
 
 package sun.print;
 
-import javax.print.DocFlavor;
 import javax.print.AttributeException;
 import javax.print.PrintException;
 import javax.print.attribute.Attribute;

@@ -292,7 +292,7 @@ class MXBeanIntrospector extends MBeanIntrospector<ConvertingMethod> {
         Descriptor descriptor =
             typeDescriptor(returnType, originalReturnType);
         descriptor = ImmutableDescriptor.union(descriptor,
-                Introspector.descriptorForElement(method));
+                Introspector.descriptorForElement(method, false));
         final MBeanOperationInfo oi;
         if (openReturnType && openParameterTypes) {
             /* If the return value and all the parameters can be faithfully

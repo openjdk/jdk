@@ -108,6 +108,7 @@ void ADLParser::parse() {
     else if (!strcmp(ident, "pipeline"))   pipe_parse();
     else if (!strcmp(ident, "definitions")) definitions_parse();
     else if (!strcmp(ident, "peephole"))   peep_parse();
+    else if (!strcmp(ident, "#line"))      preproc_line();
     else if (!strcmp(ident, "#define"))    preproc_define();
     else if (!strcmp(ident, "#undef"))     preproc_undef();
     else {
@@ -786,9 +787,11 @@ void ADLParser::reg_parse(void) {
         parse_err(SYNERR, "missing identifier inside register block.\n");
         return;
       }
-      if (strcmp(token,"reg_def")==0)     { reg_def_parse(); }
-      if (strcmp(token,"reg_class")==0)   { reg_class_parse(); }
-      if (strcmp(token,"alloc_class")==0) { alloc_class_parse(); }
+      if (strcmp(token,"reg_def")==0)          { reg_def_parse(); }
+      else if (strcmp(token,"reg_class")==0)   { reg_class_parse(); }
+      else if (strcmp(token,"alloc_class")==0) { alloc_class_parse(); }
+      else if (strcmp(token,"#define")==0)     { preproc_define(); }
+      else { parse_err(SYNERR, "bad token %s inside register block.\n", token); break; }
       skipws();
     }
   }
@@ -903,11 +906,7 @@ void ADLParser::enc_class_parse_block(EncClass* encoding, char* ec_name) {
   skipws_no_preproc();              // Skip leading whitespace
   // Prepend location descriptor, for debugging; cf. ADLParser::find_cpp_block
   if (_AD._adlocation_debug) {
-    const char* file     = _AD._ADL_file._name;
-    int         line     = linenum();
-    char*       location = (char *)malloc(strlen(file) + 100);
-    sprintf(location, "#line %d \"%s\"\n", line, file);
-    encoding->add_code(location);
+    encoding->add_code(get_line_string());
   }
 
   // Collect the parts of the encode description
@@ -947,6 +946,10 @@ void ADLParser::enc_class_parse_block(EncClass* encoding, char* ec_name) {
   next_char();                      // Skip '}'
 
   skipws();
+
+  if (_AD._adlocation_debug) {
+    encoding->add_code(end_line_marker());
+  }
 
   // Debug Stuff
   if (_AD._adl_debug > 1) fprintf(stderr,"EncodingClass Form: %s\n", ec_name);
@@ -2349,7 +2352,11 @@ void ADLParser::reg_class_parse(void) {
         return;
       }
       RegDef *regDef = _AD._register->getRegDef(rname);
-      reg_class->addReg(regDef);     // add regDef to regClass
+      if (!regDef) {
+        parse_err(SEMERR, "unknown identifier %s inside reg_class list.\n", rname);
+      } else {
+        reg_class->addReg(regDef); // add regDef to regClass
+      }
 
       // Check for ',' and position to next token.
       skipws();
@@ -2746,7 +2753,8 @@ Predicate *ADLParser::pred_parse(void) {
   char      *rule = NULL;         // String representation of predicate
 
   skipws();                       // Skip leading whitespace
-  if ( (rule = get_paren_expr("pred expression")) == NULL ) {
+  int line = linenum();
+  if ( (rule = get_paren_expr("pred expression", true)) == NULL ) {
     parse_err(SYNERR, "incorrect or missing expression for 'predicate'\n");
     return NULL;
   }
@@ -3407,7 +3415,12 @@ FormatRule* ADLParser::format_parse(void) {
         // Check if there is a string to pass through to output
         char *start = _ptr;       // Record start of the next string
         while ((_curchar != '$') && (_curchar != '"') && (_curchar != '%') && (_curchar != '\n')) {
-          if (_curchar == '\\')  next_char();  // superquote
+          if (_curchar == '\\') {
+            next_char();  // superquote
+            if ((_curchar == '$') || (_curchar == '%'))
+              // hack to avoid % escapes and warnings about undefined \ escapes
+              *(_ptr-1) = _curchar;
+          }
           if (_curchar == '\n')  parse_err(SYNERR, "newline in string");  // unimplemented!
           next_char();
         }
@@ -3942,8 +3955,7 @@ char* ADLParser::find_cpp_block(const char* description) {
     next_char();                  // Skip block delimiter
     skipws_no_preproc();          // Skip leading whitespace
     cppBlock = _ptr;              // Point to start of expression
-    const char* file = _AD._ADL_file._name;
-    int         line = linenum();
+    int line = linenum();
     next = _ptr + 1;
     while(((_curchar != '%') || (*next != '}')) && (_curchar != '\0')) {
       next_char_or_line();
@@ -3958,15 +3970,16 @@ char* ADLParser::find_cpp_block(const char* description) {
     _curchar = *_ptr;             // Maintain invariant
 
     // Prepend location descriptor, for debugging.
-    char* location = (char *)malloc(strlen(file) + 100);
-    *location = '\0';
-    if (_AD._adlocation_debug)
-      sprintf(location, "#line %d \"%s\"\n", line, file);
-    char* result = (char *)malloc(strlen(location) + strlen(cppBlock) + 1);
-    strcpy(result, location);
-    strcat(result, cppBlock);
-    cppBlock = result;
-    free(location);
+    if (_AD._adlocation_debug) {
+      char* location = get_line_string(line);
+      char* end_loc  = end_line_marker();
+      char* result = (char *)malloc(strlen(location) + strlen(cppBlock) + strlen(end_loc) + 1);
+      strcpy(result, location);
+      strcat(result, cppBlock);
+      strcat(result, end_loc);
+      cppBlock = result;
+      free(location);
+    }
   }
 
   return cppBlock;
@@ -4036,13 +4049,26 @@ char* ADLParser::get_expr(const char *desc, const char *stop_chars) {
 
 // Helper function around get_expr
 // Sets _curchar to '(' so that get_paren_expr will search for a matching ')'
-char *ADLParser::get_paren_expr(const char *description) {
+char *ADLParser::get_paren_expr(const char *description, bool include_location) {
+  int line = linenum();
   if (_curchar != '(')            // Escape if not valid starting position
     return NULL;
   next_char();                    // Skip the required initial paren.
   char *token2 = get_expr(description, ")");
   if (_curchar == ')')
     next_char();                  // Skip required final paren.
+  int junk = 0;
+  if (include_location && _AD._adlocation_debug && !is_int_token(token2, junk)) {
+    // Prepend location descriptor, for debugging.
+    char* location = get_line_string(line);
+    char* end_loc  = end_line_marker();
+    char* result = (char *)malloc(strlen(location) + strlen(token2) + strlen(end_loc) + 1);
+    strcpy(result, location);
+    strcat(result, token2);
+    strcat(result, end_loc);
+    token2 = result;
+    free(location);
+  }
   return token2;
 }
 
@@ -4082,10 +4108,16 @@ char *ADLParser::get_ident_common(bool do_preproc) {
   if (do_preproc && start != NULL) {
     const char* def = _AD.get_preproc_def(start);
     if (def != NULL && strcmp(def, start)) {
-      const char* def2 = _AD.get_preproc_def(def);
-      if (def2 != NULL && strcmp(def2, def)) {
-        parse_err(SYNERR, "unimplemented: using %s defined as %s => %s",
-                  start, def, def2);
+      const char* def1 = def;
+      const char* def2 = _AD.get_preproc_def(def1);
+      // implement up to 2 levels of #define
+      if (def2 != NULL && strcmp(def2, def1)) {
+        def = def2;
+        const char* def3 = _AD.get_preproc_def(def2);
+        if (def3 != NULL && strcmp(def3, def2) && strcmp(def3, def1)) {
+          parse_err(SYNERR, "unimplemented: using %s defined as %s => %s => %s",
+                    start, def1, def2, def3);
+        }
       }
       start = strdup(def);
     }
@@ -4431,6 +4463,35 @@ void ADLParser::get_effectlist(FormDict &effects, FormDict &operands) {
 }
 
 
+//-------------------------------preproc_line----------------------------------
+// A "#line" keyword has been seen, so parse the rest of the line.
+void ADLParser::preproc_line(void) {
+  int line = get_int();
+  skipws_no_preproc();
+  const char* file = NULL;
+  if (_curchar == '"') {
+    next_char();              // Move past the initial '"'
+    file = _ptr;
+    while (true) {
+      if (_curchar == '\n') {
+        parse_err(SYNERR, "missing '\"' at end of #line directive");
+        return;
+      }
+      if (_curchar == '"') {
+        *_ptr  = '\0';          // Terminate the string
+        next_char();
+        skipws_no_preproc();
+        break;
+      }
+      next_char();
+    }
+  }
+  ensure_end_of_line();
+  if (file != NULL)
+    _AD._ADL_file._name = file;
+  _buf.set_linenum(line);
+}
+
 //------------------------------preproc_define---------------------------------
 // A "#define" keyword has been seen, so parse the rest of the line.
 void ADLParser::preproc_define(void) {
@@ -4494,6 +4555,7 @@ void ADLParser::parse_err(int flag, const char *fmt, ...) {
 // A preprocessor directive has been encountered.  Be sure it has fallen at
 // the begining of a line, or else report an error.
 void ADLParser::ensure_start_of_line(void) {
+  if (_curchar == '\n') { next_line(); return; }
   assert( _ptr >= _curline && _ptr < _curline+strlen(_curline),
           "Must be able to find which line we are in" );
 
@@ -4662,6 +4724,7 @@ char ADLParser::cur_char() {
 
 //---------------------------next_char-----------------------------------------
 void ADLParser::next_char() {
+  if (_curchar == '\n')  parse_err(WARN, "must call next_line!");
   _curchar = *++_ptr;
   // if ( _curchar == '\n' ) {
   //   next_line();
@@ -4682,6 +4745,18 @@ void ADLParser::next_char_or_line() {
 //---------------------------next_line-----------------------------------------
 void ADLParser::next_line() {
   _curline = _buf.get_line();
+  _curchar = ' ';
+}
+
+//------------------------get_line_string--------------------------------------
+// Prepended location descriptor, for debugging.
+// Must return a malloced string (that can be freed if desired).
+char* ADLParser::get_line_string(int linenum) {
+  const char* file = _AD._ADL_file._name;
+  int         line = linenum ? linenum : this->linenum();
+  char* location = (char *)malloc(strlen(file) + 100);
+  sprintf(location, "\n#line %d \"%s\"\n", line, file);
+  return location;
 }
 
 //-------------------------is_literal_constant---------------------------------
@@ -4721,6 +4796,66 @@ bool ADLParser::is_int_token(const char* token, int& intval) {
   intval = atoi(token);
   return true;
 }
+
+static const char* skip_expr_ws(const char* str) {
+  const char * cp = str;
+  while (cp[0]) {
+    if (cp[0] <= ' ') {
+      ++cp;
+    } else if (cp[0] == '#') {
+      ++cp;
+      while (cp[0] == ' ')  ++cp;
+      assert(0 == strncmp(cp, "line", 4), "must be a #line directive");
+      const char* eol = strchr(cp, '\n');
+      assert(eol != NULL, "must find end of line");
+      if (eol == NULL)  eol = cp + strlen(cp);
+      cp = eol;
+    } else {
+      break;
+    }
+  }
+  return cp;
+}
+
+//-----------------------equivalent_expressions--------------------------------
+bool ADLParser::equivalent_expressions(const char* str1, const char* str2) {
+  if (str1 == str2)
+    return true;
+  else if (str1 == NULL || str2 == NULL)
+    return false;
+  const char* cp1 = str1;
+  const char* cp2 = str2;
+  char in_quote = '\0';
+  while (cp1[0] && cp2[0]) {
+    if (!in_quote) {
+      // skip spaces and/or cpp directives
+      const char* cp1a = skip_expr_ws(cp1);
+      const char* cp2a = skip_expr_ws(cp2);
+      if (cp1a > cp1 && cp2a > cp2) {
+        cp1 = cp1a; cp2 = cp2a;
+        continue;
+      }
+      if (cp1a > cp1 || cp2a > cp2)  break; // fail
+    }
+    // match one non-space char
+    if (cp1[0] != cp2[0])  break; // fail
+    char ch = cp1[0];
+    cp1++; cp2++;
+    // watch for quotes
+    if (in_quote && ch == '\\') {
+      if (cp1[0] != cp2[0])  break; // fail
+      if (!cp1[0])  break;
+      cp1++; cp2++;
+    }
+    if (in_quote && ch == in_quote) {
+      in_quote = '\0';
+    } else if (!in_quote && (ch == '"' || ch == '\'')) {
+      in_quote = ch;
+    }
+  }
+  return (!cp1[0] && !cp2[0]);
+}
+
 
 //-------------------------------trim------------------------------------------
 void ADLParser::trim(char* &token) {

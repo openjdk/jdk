@@ -2377,7 +2377,7 @@ public class Cipher {
      * For more information on default key size in JCE jurisdiction
      * policy files, please see Appendix E in the
      * <a href=
-     *   "{@docRoot}/../technotes/guides/security/crypto/CryptoSpec.html#AppE">
+     *   "{@docRoot}/../technotes/guides/security/crypto/CryptoSpec.html#AppC">
      * Java Cryptography Architecture Reference Guide</a>.
      *
      * @param transformation the cipher transformation.

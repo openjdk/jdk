@@ -37,8 +37,8 @@ import java.util.logging.Logger;
 
 import javax.management.MBeanServer;
 import javax.management.MBeanServerDelegate;
-import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
+import javax.management.RuntimeOperationsException;
 import javax.management.namespace.JMXDomain;
 import javax.management.namespace.JMXNamespace;
 import static javax.management.namespace.JMXNamespaces.NAMESPACE_SEPARATOR;
@@ -60,6 +60,7 @@ public class NamespaceDispatchInterceptor
 
     private static final int NAMESPACE_SEPARATOR_LENGTH =
             NAMESPACE_SEPARATOR.length();
+    private static final ObjectName X3 = ObjectName.valueOf("x:x=x");
 
     private final DomainDispatchInterceptor nextInterceptor;
     private final String           serverName;
@@ -89,27 +90,38 @@ public class NamespaceDispatchInterceptor
            serverName = Util.getMBeanServerSecurityName(delegate);
     }
 
-    // TODO: Should move that to JMXNamespace? or to ObjectName?
     /**
      * Get first name space in ObjectName path. Ignore leading namespace
-     * separators.
+     * separators. Includes the trailing //.
+     *
+     * Examples:
+     * <pre>
+     *  For ObjectName:                   Returns:
+     *  foo//bar//baz:x=x         ->      "foo//"
+     *  foo//:type=JMXNamespace   ->      "foo//"
+     *  foo//:x=x                 ->      "foo//"
+     *  foo////:x=x               ->      "foo//"
+     *  //foo//bar//baz:x=x       ->      "//"
+     *  ////foo//bar//baz:x=x     ->      "//"
+     *  //:x=x                    ->      "//"
+     *  foo:x=x                   ->      ""
+     *  (null)                    ->      ""
+     *  :x=x                      ->      ""
+     *
+     * </pre>
      **/
-    static String getFirstNamespace(ObjectName name) {
+    static String getFirstNamespaceWithSlash(ObjectName name) {
         if (name == null) return "";
         final String domain = name.getDomain();
         if (domain.equals("")) return "";
 
-        // skip leading separators
-        int first = 0;
-        while (domain.startsWith(NAMESPACE_SEPARATOR,first))
-            first += NAMESPACE_SEPARATOR_LENGTH;
-
         // go to next separator
-        final int end = domain.indexOf(NAMESPACE_SEPARATOR,first);
+        final int end = domain.indexOf(NAMESPACE_SEPARATOR);
         if (end == -1) return ""; // no namespace
 
         // This is the first element in the namespace path.
-        final String namespace = domain.substring(first,end);
+        final String namespace =
+                domain.substring(0,end+NAMESPACE_SEPARATOR_LENGTH);
 
         return namespace;
     }
@@ -130,27 +142,49 @@ public class NamespaceDispatchInterceptor
                     resource.getClass().getName());
     }
 
-    final boolean isLocalHandlerNameFor(String namespace,
-            ObjectName handlerName) {
-        return handlerName.getDomain().equals(namespace+NAMESPACE_SEPARATOR) &&
-               JMXNamespace.TYPE_ASSIGNMENT.equals(
-               handlerName.getKeyPropertyListString());
+    // Removes the trailing //. namespaceWithSlash should be either
+    // "" or a namespace path ending with //.
+    //
+    private final String getKeyFor(String namespaceWithSlash) {
+        final int end = namespaceWithSlash.length() -
+                NAMESPACE_SEPARATOR_LENGTH;
+        if (end <= 0) return "";
+        final String key = namespaceWithSlash.substring(0,end);
+        return key;
     }
 
     @Override
     final MBeanServer getInterceptorOrNullFor(ObjectName name) {
-        final String namespace = getFirstNamespace(name);
-        if (namespace.equals("") || isLocalHandlerNameFor(namespace,name) ||
-            name.getDomain().equals(namespace+NAMESPACE_SEPARATOR)) {
+        final String namespace = getFirstNamespaceWithSlash(name);
+
+        // Leading separators should trigger instance not found exception.
+        // returning null here has this effect.
+        //
+        if (namespace.equals(NAMESPACE_SEPARATOR)) {
+            LOG.finer("ObjectName starts with: "+namespace);
+            return null;
+        }
+
+        // namespace="" means that there was no namespace path in the
+        //   ObjectName. => delegate to the next interceptor (local MBS)
+        // name.getDomain()=namespace means that we have an ObjectName of
+        //   the form blah//:x=x. This is either a JMXNamespace or a non
+        //   existent MBean. => delegate to the next interceptor (local MBS)
+        if (namespace.equals("") || name.getDomain().equals(namespace)) {
             LOG.finer("dispatching to local name space");
             return nextInterceptor;
         }
-        final NamespaceInterceptor ns = getInterceptor(namespace);
+
+        // There was a namespace path in the ObjectName. Returns the
+        // interceptor that handles it, or null if there is no such
+        // interceptor.
+        final String key = getKeyFor(namespace);
+        final NamespaceInterceptor ns = getInterceptor(key);
         if (LOG.isLoggable(Level.FINER)) {
             if (ns != null) {
-                LOG.finer("dispatching to name space: " + namespace);
+                LOG.finer("dispatching to name space: " + key);
             } else {
-                LOG.finer("no handler for: " + namespace);
+                LOG.finer("no handler for: " + key);
             }
         }
         return ns;
@@ -158,18 +192,44 @@ public class NamespaceDispatchInterceptor
 
     @Override
     final QueryInterceptor getInterceptorForQuery(ObjectName pattern) {
-        final String namespace = getFirstNamespace(pattern);
-        if (namespace.equals("") || isLocalHandlerNameFor(namespace,pattern) ||
-            pattern.getDomain().equals(namespace+NAMESPACE_SEPARATOR)) {
+        final String namespace = getFirstNamespaceWithSlash(pattern);
+
+        // Leading separators should trigger instance not found exception.
+        // returning null here has this effect.
+        //
+        if (namespace.equals(NAMESPACE_SEPARATOR)) {
+            LOG.finer("ObjectName starts with: "+namespace);
+            return null;
+        }
+
+        // namespace="" means that there was no namespace path in the
+        //   ObjectName. => delegate to the next interceptor (local MBS)
+        // name.getDomain()=namespace means that we have an ObjectName of
+        //   the form blah//:x=x. This is either a JMXNamespace or a non
+        //   existent MBean. => delegate to the next interceptor (local MBS)
+        if (namespace.equals("") || pattern.getDomain().equals(namespace)) {
             LOG.finer("dispatching to local name space");
             return new QueryInterceptor(nextInterceptor);
         }
-        final NamespaceInterceptor ns = getInterceptor(namespace);
+
+        // This is a 'hack' to check whether the first namespace is a pattern.
+        // We wan to throw RTOE wrapping IAE in that case
+        if (X3.withDomain(namespace).isDomainPattern()) {
+            throw new RuntimeOperationsException(
+                new IllegalArgumentException("Pattern not allowed in namespace path"));
+        }
+
+        // There was a namespace path in the ObjectName. Returns the
+        // interceptor that handles it, or null if there is no such
+        // interceptor.
+        //
+        final String key = getKeyFor(namespace);
+        final NamespaceInterceptor ns = getInterceptor(key);
         if (LOG.isLoggable(Level.FINER)) {
             if (ns != null) {
-                LOG.finer("dispatching to name space: " + namespace);
+                LOG.finer("dispatching to name space: " + key);
             } else {
-                LOG.finer("no handler for: " + namespace);
+                LOG.finer("no handler for: " + key);
             }
         }
         if (ns == null) return null;
@@ -177,15 +237,16 @@ public class NamespaceDispatchInterceptor
     }
 
     @Override
-    final ObjectName getHandlerNameFor(String key)
-        throws MalformedObjectNameException {
-        return ObjectName.getInstance(key+NAMESPACE_SEPARATOR,
+    final ObjectName getHandlerNameFor(String key) {
+        return ObjectName.valueOf(key+NAMESPACE_SEPARATOR,
                     "type", JMXNamespace.TYPE);
     }
 
     @Override
     final public String getHandlerKey(ObjectName name) {
-        return getFirstNamespace(name);
+        final String namespace = getFirstNamespaceWithSlash(name);
+        // namespace is either "" or a namespace ending with //
+        return getKeyFor(namespace);
     }
 
     @Override
