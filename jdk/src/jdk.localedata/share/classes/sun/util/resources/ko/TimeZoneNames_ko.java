@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -276,6 +276,9 @@ public final class TimeZoneNames_ko extends TimeZoneNamesBundle {
         String XJT[] = new String[] {"\uc911\uad6d \ud45c\uc900\uc2dc", "XJT",
                                      "\uc911\uad6d \uc77c\uad11\uc808\uc57d\uc2dc\uac04", "XJDT",
                                      "\uC911\uAD6D \uD45C\uC900\uC2DC", "XJT"};
+        String YAKT[] = new String[] {"\uc57c\uce20\ud06c \uc2dc\uac04", "YAKT",
+                                      "\uc57c\uce20\ud06c \uc77c\uad11\uc808\uc57d\uc2dc\uac04", "YAKST",
+                                      "\uC57C\uCFE0\uCE20\uD06C \uD45C\uC900\uC2DC", "YAKT"};
 
         return new Object[][] {
             {"America/Los_Angeles", PST},
@@ -487,7 +490,7 @@ public final class TimeZoneNames_ko extends TimeZoneNamesBundle {
             {"America/Mendoza", AGT},
             {"America/Menominee", CST},
             {"America/Merida", CST},
-            {"America/Metlakatla", PST},
+            {"America/Metlakatla", AKST},
             {"America/Mexico_City", CST},
             {"America/Miquelon", new String[] {"\ud53c\uc5d0\ub974 \ubbf8\ud06c\ub860 \ud45c\uc900\uc2dc", "PMST",
                                                "\ud53c\uc5d0\ub974 \ubbf8\ud06c\ub860 \uc77c\uad11\uc808\uc57d\uc2dc\uac04", "PMDT",
@@ -608,7 +611,7 @@ public final class TimeZoneNames_ko extends TimeZoneNamesBundle {
                                           "\ube0c\ub8e8\ub098\uc774 \uc77c\uad11\uc808\uc57d\uc2dc\uac04", "BNST",
                                           "\uBE0C\uB8E8\uB098\uC774 \uD45C\uC900\uC2DC", "BNT"}},
             {"Asia/Calcutta", IST},
-            {"Asia/Chita", IRKT},
+            {"Asia/Chita", YAKT},
             {"Asia/Choibalsan", new String[] {"Choibalsan \uc2dc\uac04", "CHOT",
                                               "Choibalsan \uc77c\uad11\uc808\uc57d\uc2dc\uac04", "CHOST",
                                               "\uCD08\uC774\uBC1C\uC0B0 \uD45C\uC900\uC2DC", "CHOT"}},
@@ -649,9 +652,7 @@ public final class TimeZoneNames_ko extends TimeZoneNamesBundle {
             {"Asia/Kashgar", XJT},
             {"Asia/Kathmandu", NPT},
             {"Asia/Katmandu", NPT},
-            {"Asia/Khandyga", new String[] {"\uD55C\uB514\uAC00 \uD45C\uC900\uC2DC", "YAKT",
-                                            "\uD55C\uB514\uAC00 \uC77C\uAD11 \uC808\uC57D \uC2DC\uAC04", "YAKST",
-                                            "\uD55C\uB514\uAC00 \uD45C\uC900\uC2DC", "YAKT"}},
+            {"Asia/Khandyga", YAKT},
             {"Asia/Kolkata", IST},
             {"Asia/Krasnoyarsk", KRAT},
             {"Asia/Kuala_Lumpur", MYT},
@@ -717,9 +718,7 @@ public final class TimeZoneNames_ko extends TimeZoneNamesBundle {
             {"Asia/Vladivostok", new String[] {"\ube14\ub77c\ub514\ubcf4\uc2a4\ud1a1 \uc2dc\uac04", "VLAT",
                                                "\ube14\ub77c\ub514\ubcf4\uc2a4\ud1a1 \uc77c\uad11\uc808\uc57d\uc2dc\uac04", "VLAST",
                                                "\uBE14\uB77C\uB514\uBCF4\uC2A4\uD1A1 \uD45C\uC900\uC2DC", "VLAT"}},
-            {"Asia/Yakutsk", new String[] {"\uc57c\uce20\ud06c \uc2dc\uac04", "YAKT",
-                                           "\uc57c\uce20\ud06c \uc77c\uad11\uc808\uc57d\uc2dc\uac04", "YAKST",
-                                           "\uC57C\uCFE0\uCE20\uD06C \uD45C\uC900\uC2DC", "YAKT"}},
+            {"Asia/Yakutsk", YAKT},
             {"Asia/Yekaterinburg", new String[] {"\uc608\uce74\ud14c\ub9b0\ubc84\uadf8 \uc2dc\uac04", "YEKT",
                                                  "\uc608\uce74\ud14c\ub9b0\ubc84\uadf8 \uc77c\uad11\uc808\uc57d\uc2dc\uac04", "YEKST",
                                                  "\uC608\uCE74\uD14C\uB9B0\uBD80\uB974\uD06C \uD45C\uC900\uC2DC", "YEKT"}},

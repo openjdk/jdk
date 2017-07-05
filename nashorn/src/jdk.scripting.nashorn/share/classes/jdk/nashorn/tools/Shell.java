@@ -57,6 +57,8 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.PrintWriter;
+import java.io.StreamTokenizer;
+import java.io.StringReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -278,7 +280,7 @@ public class Shell implements PartialParser {
         // as it might actually contain several arguments. Mac OS X splits shebang arguments, other platforms don't.
         // This special handling is also only necessary if the first argument actually starts with an option.
         if (args[0].startsWith("-") && !System.getProperty("os.name", "generic").startsWith("Mac OS X")) {
-            processedArgs.addAll(0, ScriptingFunctions.tokenizeString(processedArgs.remove(0)));
+            processedArgs.addAll(0, tokenizeString(processedArgs.remove(0)));
         }
 
         int shebangFilePos = -1; // -1 signifies "none found"
@@ -306,6 +308,44 @@ public class Shell implements PartialParser {
             processedArgs.add(shebangFilePos + 1, "--");
         }
         return processedArgs.stream().toArray(String[]::new);
+    }
+
+    public static List<String> tokenizeString(final String str) {
+        final StreamTokenizer tokenizer = new StreamTokenizer(new StringReader(str));
+        tokenizer.resetSyntax();
+        tokenizer.wordChars(0, 255);
+        tokenizer.whitespaceChars(0, ' ');
+        tokenizer.commentChar('#');
+        tokenizer.quoteChar('"');
+        tokenizer.quoteChar('\'');
+        final List<String> tokenList = new ArrayList<>();
+        final StringBuilder toAppend = new StringBuilder();
+        while (nextToken(tokenizer) != StreamTokenizer.TT_EOF) {
+            final String s = tokenizer.sval;
+            // The tokenizer understands about honoring quoted strings and recognizes
+            // them as one token that possibly contains multiple space-separated words.
+            // It does not recognize quoted spaces, though, and will split after the
+            // escaping \ character. This is handled here.
+            if (s.endsWith("\\")) {
+                // omit trailing \, append space instead
+                toAppend.append(s.substring(0, s.length() - 1)).append(' ');
+            } else {
+                tokenList.add(toAppend.append(s).toString());
+                toAppend.setLength(0);
+            }
+        }
+        if (toAppend.length() != 0) {
+            tokenList.add(toAppend.toString());
+        }
+        return tokenList;
+    }
+
+    private static int nextToken(final StreamTokenizer tokenizer) {
+        try {
+            return tokenizer.nextToken();
+        } catch (final IOException ioe) {
+            return StreamTokenizer.TT_EOF;
+        }
     }
 
     /**

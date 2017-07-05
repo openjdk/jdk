@@ -42,7 +42,7 @@ import jdk.test.lib.Platform;
  * @test
  * @bug 8130150 8131779 8139907
  * @summary Verify that the Montgomery multiply and square intrinsic works and correctly checks their arguments.
- * @library /testlibrary /../../test/lib
+ * @library /testlibrary /test/lib
  * @library /testlibrary
  * @build MontgomeryMultiplyTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

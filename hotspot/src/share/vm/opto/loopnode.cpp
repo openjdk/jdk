@@ -755,8 +755,8 @@ bool PhaseIdealLoop::is_counted_loop( Node *x, IdealLoopTree *loop ) {
     set_loop(iff2, get_loop(iffalse));
 
     // Lazy update of 'get_ctrl' mechanism.
-    lazy_replace_proj( iffalse, iff2 );
-    lazy_replace_proj( iftrue,  ift2 );
+    lazy_replace(iffalse, iff2);
+    lazy_replace(iftrue,  ift2);
 
     // Swap names
     iffalse = iff2;

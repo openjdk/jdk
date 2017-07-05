@@ -109,6 +109,8 @@ import java.util.stream.StreamSupport;
  *         ({@link java.lang.Character#MIN_CODE_POINT Character.MIN_CODE_POINT}
  *         &nbsp;&lt;=&nbsp;{@code 0x}<i>h...h</i>&nbsp;&lt;=&nbsp;
  *          {@link java.lang.Character#MAX_CODE_POINT Character.MAX_CODE_POINT})</td></tr>
+ * <tr><td valign="top" headers="construct characters"><code>&#92;N{</code><i>name</i><code>}</code></td>
+ *     <td headers="matches">The character with Unicode character name <i>'name'</i></td></tr>
  * <tr><td valign="top" headers="matches">{@code \t}</td>
  *     <td headers="matches">The tab character (<code>'&#92;u0009'</code>)</td></tr>
  * <tr><td valign="top" headers="construct characters">{@code \n}</td>
@@ -243,6 +245,8 @@ import java.util.stream.StreamSupport;
  *     <td headers="matches">The end of a line</td></tr>
  * <tr><td valign="top" headers="construct bounds">{@code \b}</td>
  *     <td headers="matches">A word boundary</td></tr>
+ * <tr><td valign="top" headers="construct bounds">{@code \b{g}}</td>
+ *     <td headers="matches">A Unicode extended grapheme cluster boundary</td></tr>
  * <tr><td valign="top" headers="construct bounds">{@code \B}</td>
  *     <td headers="matches">A non-word boundary</td></tr>
  * <tr><td valign="top" headers="construct bounds">{@code \A}</td>
@@ -261,6 +265,11 @@ import java.util.stream.StreamSupport;
  *     <td headers="matches">Any Unicode linebreak sequence, is equivalent to
  *     <code>&#92;u000D&#92;u000A|[&#92;u000A&#92;u000B&#92;u000C&#92;u000D&#92;u0085&#92;u2028&#92;u2029]
  *     </code></td></tr>
+ *
+ * <tr><th>&nbsp;</th></tr>
+ * <tr align="left"><th colspan="2" id="grapheme">Unicode Extended Grapheme matcher</th></tr>
+ * <tr><td valign="top" headers="construct grapheme">{@code \X}</td>
+ *     <td headers="matches">Any Unicode extended grapheme cluster</td></tr>
  *
  * <tr><th>&nbsp;</th></tr>
  * <tr align="left"><th colspan="2" id="greedy">Greedy quantifiers</th></tr>
@@ -546,12 +555,21 @@ import java.util.stream.StreamSupport;
  * {@code "\\u2014"}, while not equal, compile into the same pattern, which
  * matches the character with hexadecimal value {@code 0x2014}.
  * <p>
- * A Unicode character can also be represented in a regular-expression by
- * using its <b>Hex notation</b>(hexadecimal code point value) directly as described in construct
- * <code>&#92;x{...}</code>, for example a supplementary character U+2011F
- * can be specified as <code>&#92;x{2011F}</code>, instead of two consecutive
- * Unicode escape sequences of the surrogate pair
- * <code>&#92;uD840</code><code>&#92;uDD1F</code>.
+ * A Unicode character can also be represented by using its <b>Hex notation</b>
+ * (hexadecimal code point value) directly as described in construct
+ * <code>&#92;x{...}</code>, for example a supplementary character U+2011F can be
+ * specified as <code>&#92;x{2011F}</code>, instead of two consecutive Unicode escape
+ * sequences of the surrogate pair <code>&#92;uD840</code><code>&#92;uDD1F</code>.
+ * <p>
+ * <b>Unicode character names</b> are supported by the named character construct
+ * <code>\N{</code>...<code>}</code>, for example, <code>\N{WHITE SMILING FACE}</code>
+ * specifies character <code>&#92;u263A</code>. The character names supported
+ * by this class are the valid Unicode character names matched by
+ * {@link java.lang.Character#codePointOf(String) Character.codePointOf(name)}.
+ * <p>
+ * <a href="http://www.unicode.org/reports/tr18/#Default_Grapheme_Clusters">
+ * <b>Unicode extended grapheme clusters</b></a> are supported by the grapheme
+ * cluster matcher {@code \X} and the corresponding boundary matcher {@code \b{g}}.
  * <p>
  * Unicode scripts, blocks, categories and binary properties are written with
  * the {@code \p} and {@code \P} constructs as in Perl.
@@ -679,20 +697,10 @@ import java.util.stream.StreamSupport;
  * <p> Perl constructs not supported by this class: </p>
  *
  * <ul>
- *    <li><p> Predefined character classes (Unicode character)
- *    <p><code>\X&nbsp;&nbsp;&nbsp;&nbsp;</code>Match Unicode
- *    <a href="http://www.unicode.org/reports/tr18/#Default_Grapheme_Clusters">
- *    <i>extended grapheme cluster</i></a>
- *    </p></li>
- *
  *    <li><p> The backreference constructs, <code>\g{</code><i>n</i><code>}</code> for
  *    the <i>n</i><sup>th</sup><a href="#cg">capturing group</a> and
  *    <code>\g{</code><i>name</i><code>}</code> for
  *    <a href="#groupname">named-capturing group</a>.
- *    </p></li>
- *
- *    <li><p> The named character construct, <code>\N{</code><i>name</i><code>}</code>
- *    for a Unicode character by its name.
  *    </p></li>
  *
  *    <li><p> The conditional constructs
@@ -2357,7 +2365,9 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
         case 'K':
         case 'L':
         case 'M':
+            break;
         case 'N':
+            return N();
         case 'O':
         case 'P':
         case 'Q':
@@ -2383,6 +2393,11 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                                : new Ctype(ASCII.WORD).complement();
             return -1;
         case 'X':
+            if (inclass) break;
+            if (create) {
+                root = new XGrapheme();
+            }
+            return -1;
         case 'Y':
             break;
         case 'Z':
@@ -2398,7 +2413,19 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             return '\007';
         case 'b':
             if (inclass) break;
-            if (create) root = new Bound(Bound.BOTH, has(UNICODE_CHARACTER_CLASS));
+            if (create) {
+                if (peek() == '{') {
+                    if (skip() == 'g') {
+                        if (read() == '}') {
+                            root = new GraphemeBound();
+                            return -1;
+                        }
+                        break;  // error missing trailing }
+                    }
+                    unread(); unread();
+                }
+                root = new Bound(Bound.BOTH, has(UNICODE_CHARACTER_CLASS));
+            }
             return -1;
         case 'c':
             return c();
@@ -3275,10 +3302,25 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
         return n;
     }
 
+    private int N() {
+        if (read() == '{') {
+            int i = cursor;
+            while (cursor < patternLength && read() != '}') {}
+            if (cursor > patternLength)
+                throw error("Unclosed character name escape sequence");
+            String name = new String(temp, i, cursor - i - 1);
+            try {
+                return Character.codePointOf(name);
+            } catch (IllegalArgumentException x) {
+                throw error("Unknown character name [" + name + "]");
+            }
+        }
+        throw error("Illegal character name escape sequence");
+    }
+
     //
     // Utility methods for code point support
     //
-
     private static final int countChars(CharSequence seq, int index,
                                         int lengthInCodePoints) {
         // optimization
@@ -3954,6 +3996,62 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                    cp == 0x1680 || cp == 0x180e ||
                    cp >= 0x2000 && cp <= 0x200a ||
                    cp == 0x202f || cp == 0x205f || cp == 0x3000;
+        }
+    }
+
+    /**
+     * Node class that matches an unicode extended grapheme cluster
+     */
+    static class XGrapheme extends Node {
+        boolean match(Matcher matcher, int i, CharSequence seq) {
+            if (i < matcher.to) {
+                int ch0 = Character.codePointAt(seq, i);
+                    i += Character.charCount(ch0);
+                while (i < matcher.to) {
+                    int ch1 = Character.codePointAt(seq, i);
+                    if (Grapheme.isBoundary(ch0, ch1))
+                        break;
+                    ch0 = ch1;
+                    i += Character.charCount(ch1);
+                }
+                return next.match(matcher, i, seq);
+            }
+            matcher.hitEnd = true;
+            return false;
+        }
+
+        boolean study(TreeInfo info) {
+            info.minLength++;
+            info.deterministic = false;
+            return next.study(info);
+        }
+    }
+
+    /**
+     * Node class that handles grapheme boundaries
+     */
+    static class GraphemeBound extends Node {
+        boolean match(Matcher matcher, int i, CharSequence seq) {
+            int startIndex = matcher.from;
+            int endIndex = matcher.to;
+            if (matcher.transparentBounds) {
+                startIndex = 0;
+                endIndex = matcher.getTextLength();
+            }
+            if (i == startIndex) {
+                return next.match(matcher, i, seq);
+            }
+            if (i < endIndex) {
+                if (Character.isSurrogatePair(seq.charAt(i-1), seq.charAt(i)) ||
+                    !Grapheme.isBoundary(Character.codePointBefore(seq, i),
+                                         Character.codePointAt(seq, i))) {
+                    return false;
+                }
+            } else {
+                matcher.hitEnd = true;
+                matcher.requireEnd = true;
+            }
+            return next.match(matcher, i, seq);
         }
     }
 

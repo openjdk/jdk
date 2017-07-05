@@ -23,8 +23,7 @@ report.xml
 CC/*
 jcov2/*
 .idea/*
-test/lib/testng*.zip
-test/lib/testng.jar
+test/lib/*.jar
 test/script/external/*
 .project
 .externalToolBuilders/*
