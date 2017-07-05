@@ -464,6 +464,12 @@ JVMState* PredictedCallGenerator::generate(JVMState* jvms) {
     }
   }
 
+  if (kit.stopped()) {
+    // Instance exactly does not matches the desired type.
+    kit.set_jvms(slow_jvms);
+    return kit.transfer_exceptions_into_jvms();
+  }
+
   // fall through if the instance exactly matches the desired type
   kit.replace_in_map(receiver, exact_receiver);
 

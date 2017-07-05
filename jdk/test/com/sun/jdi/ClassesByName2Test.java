@@ -134,10 +134,11 @@ public class ClassesByName2Test extends TestScaffold {
                 }
             }
         }
-        /*
-         * resume the target listening for events
-         */
-        listenUntilVMDisconnect();
+
+
+        // Doing vm().exit(0) instead of listenUntilVMDisconnect()
+        // speeds up the test up by more than 50% in -server -Xcomp (solsparc32-fastdebug)
+        vm().exit(0);
 
         /*
          * deal with results of test

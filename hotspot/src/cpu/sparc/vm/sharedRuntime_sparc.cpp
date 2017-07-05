@@ -465,9 +465,7 @@ int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
 
     case T_LONG:
       assert(sig_bt[i+1] == T_VOID, "expecting VOID in other half");
-#ifdef COMPILER2
 #ifdef _LP64
-        // Can't be tiered (yet)
         if (int_reg < int_reg_max) {
           Register r = is_outgoing ? as_oRegister(int_reg++) : as_iRegister(int_reg++);
           regs[i].set2(r->as_VMReg());
@@ -476,11 +474,12 @@ int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
           stk_reg_pairs += 2;
         }
 #else
+#ifdef COMPILER2
         // For 32-bit build, can't pass longs in O-regs because they become
         // I-regs and get trashed.  Use G-regs instead.  G1 and G4 are almost
         // spare and available.  This convention isn't used by the Sparc ABI or
         // anywhere else. If we're tiered then we don't use G-regs because c1
-        // can't deal with them as a "pair".
+        // can't deal with them as a "pair". (Tiered makes this code think g's are filled)
         // G0: zero
         // G1: 1st Long arg
         // G2: global allocated to TLS
@@ -500,7 +499,6 @@ int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
           regs[i].set2(VMRegImpl::stack2reg(stk_reg_pairs));
           stk_reg_pairs += 2;
         }
-#endif // _LP64
 #else // COMPILER2
         if (int_reg_pairs + 1 < int_reg_max) {
           if (is_outgoing) {
@@ -514,6 +512,7 @@ int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
           stk_reg_pairs += 2;
         }
 #endif // COMPILER2
+#endif // _LP64
       break;
 
     case T_FLOAT:
@@ -699,17 +698,16 @@ Register AdapterGenerator::next_arg_slot(const int st_off){
 // Stores long into offset pointed to by base
 void AdapterGenerator::store_c2i_long(Register r, Register base,
                                       const int st_off, bool is_stack) {
-#ifdef COMPILER2
 #ifdef _LP64
   // In V9, longs are given 2 64-bit slots in the interpreter, but the
   // data is passed in only 1 slot.
   __ stx(r, base, next_arg_slot(st_off));
 #else
+#ifdef COMPILER2
   // Misaligned store of 64-bit data
   __ stw(r, base, arg_slot(st_off));    // lo bits
   __ srlx(r, 32, r);
   __ stw(r, base, next_arg_slot(st_off));  // hi bits
-#endif // _LP64
 #else
   if (is_stack) {
     // Misaligned store of 64-bit data
@@ -721,6 +719,7 @@ void AdapterGenerator::store_c2i_long(Register r, Register base,
     __ stw(r             , base, next_arg_slot(st_off)); // hi bits
   }
 #endif // COMPILER2
+#endif // _LP64
   tag_c2i_arg(frame::TagCategory2, base, st_off, r);
 }
 
@@ -1637,7 +1636,7 @@ static void long_move(MacroAssembler* masm, VMRegPair src, VMRegPair dst) {
     }
   } else if (dst.is_single_phys_reg()) {
     if (src.is_adjacent_aligned_on_stack(2)) {
-      __ ld_long(FP, reg2offset(src.first()) + STACK_BIAS, dst.first()->as_Register());
+      __ ldx(FP, reg2offset(src.first()) + STACK_BIAS, dst.first()->as_Register());
     } else {
       // dst is a single reg.
       // Remember lo is low address not msb for stack slots
@@ -1810,7 +1809,6 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
                                                 BasicType *in_sig_bt,
                                                 VMRegPair *in_regs,
                                                 BasicType ret_type) {
-
 
   // Native nmethod wrappers never take possesion of the oop arguments.
   // So the caller will gc the arguments. The only thing we need an

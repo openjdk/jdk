@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,21 @@
 // -*- C++ -*-
 // Program for unpacking specially compressed Java packages.
 // John R. Rose
+
+/*
+ * When compiling for a 64bit LP64 system (longs and pointers being 64bits),
+ *    the printf format %ld is correct and use of %lld will cause warning
+ *    errors from some compilers (gcc/g++).
+ * _LP64 can be explicitly set (used on Linux).
+ * Solaris compilers will define __sparcv9 or __x86_64 on 64bit compilations.
+ */
+#if defined(_LP64) || defined(__sparcv9) || defined(__x86_64)
+  #define LONG_LONG_FORMAT "%ld"
+  #define LONG_LONG_HEX_FORMAT "%lx"
+#else
+  #define LONG_LONG_FORMAT "%lld"
+  #define LONG_LONG_HEX_FORMAT "%016llx"
+#endif
 
 #include <sys/types.h>
 
@@ -253,12 +268,12 @@ int entry::typeSize() {
 
 inline cpindex* cpool::getFieldIndex(entry* classRef) {
   assert(classRef->tagMatches(CONSTANT_Class));
-  assert((uint)classRef->inord < tag_count[CONSTANT_Class]);
+  assert((uint)classRef->inord < (uint)tag_count[CONSTANT_Class]);
   return &member_indexes[classRef->inord*2+0];
 }
 inline cpindex* cpool::getMethodIndex(entry* classRef) {
   assert(classRef->tagMatches(CONSTANT_Class));
-  assert((uint)classRef->inord < tag_count[CONSTANT_Class]);
+  assert((uint)classRef->inord < (uint)tag_count[CONSTANT_Class]);
   return &member_indexes[classRef->inord*2+1];
 }
 
@@ -341,7 +356,7 @@ bool unpacker::ensure_input(jlong more) {
     rplimit += nr;
     fetch -= nr;
     bytes_read += nr;
-    assert(remaining == (input.limit() - rplimit));
+    assert(remaining == (julong)(input.limit() - rplimit));
   }
   return true;
 }
@@ -441,9 +456,13 @@ int unpacker::putref_index(entry* e, int size) {
     e->requestOutputIndex(cp, -size);
     // Later on we'll fix the bits.
     class_fixup_type.addByte(size);
-    class_fixup_offset.add(wpoffset());
+    class_fixup_offset.add((int)wpoffset());
     class_fixup_ref.add(e);
-    return !assert(1) ? 0 : 0x20+size;  // 0x22 is easy to eyeball
+#ifdef PRODUCT
+    return 0;
+#else
+    return 0x20+size;  // 0x22 is easy to eyeball
+#endif
   }
 }
 
@@ -472,7 +491,7 @@ enum { CHUNK = (1 << 14), SMALL = (1 << 9) };
 void* unpacker::alloc_heap(size_t size, bool smallOK, bool temp) {
   CHECK_0;
   if (!smallOK || size > SMALL) {
-    void* res = must_malloc(size);
+    void* res = must_malloc((int)size);
     (temp ? &tmallocs : &mallocs)->add(res);
     return res;
   }
@@ -481,7 +500,7 @@ void* unpacker::alloc_heap(size_t size, bool smallOK, bool temp) {
     xsmallbuf.init(CHUNK);
     (temp ? &tmallocs : &mallocs)->add(xsmallbuf.base());
   }
-  int growBy = size;
+  int growBy = (int)size;
   growBy += -growBy & 7;  // round up mod 8
   return xsmallbuf.grow(growBy);
 }
@@ -514,7 +533,7 @@ void unpacker::read_file_header() {
     FIRST_READ  = MAGIC_BYTES + AH_LENGTH_MIN
   };
   bool foreign_buf = (read_input_fn == null);
-  byte initbuf[FIRST_READ + C_SLOP + 200];  // 200 is for JAR I/O
+  byte initbuf[(int)FIRST_READ + (int)C_SLOP + 200];  // 200 is for JAR I/O
   if (foreign_buf) {
     // inbytes is all there is
     input.set(inbytes);
@@ -553,7 +572,7 @@ void unpacker::read_file_header() {
     // Copy until EOF; assume the JAR file is the last segment.
     fprintf(errstrm, "Copy-mode.\n");
     for (;;) {
-      jarout->write_data(rp, input_remaining());
+      jarout->write_data(rp, (int)input_remaining());
       if (foreign_buf)
         break;  // one-time use of a passed in buffer
       if (input.size() < CHUNK) {
@@ -572,7 +591,7 @@ void unpacker::read_file_header() {
 
   // Read the magic number.
   magic = 0;
-  for (int i1 = 0; i1 < sizeof(magic); i1++) {
+  for (int i1 = 0; i1 < (int)sizeof(magic); i1++) {
     magic <<= 8;
     magic += (*rp++ & 0xFF);
   }
@@ -586,7 +605,7 @@ void unpacker::read_file_header() {
   majver = hdr.getInt();
   hdrVals += 2;
 
-  if (magic != JAVA_PACKAGE_MAGIC ||
+  if (magic != (int)JAVA_PACKAGE_MAGIC ||
       (majver != JAVA5_PACKAGE_MAJOR_VERSION  &&
        majver != JAVA6_PACKAGE_MAJOR_VERSION) ||
       (minver != JAVA5_PACKAGE_MINOR_VERSION  &&
@@ -633,19 +652,19 @@ void unpacker::read_file_header() {
   // Now we can size the whole archive.
   // Read everything else into a mega-buffer.
   rp = hdr.rp;
-  int header_size_0 = (rp - input.base()); // used-up header (4byte + 3int)
-  int header_size_1 = (rplimit - rp);      // buffered unused initial fragment
+  int header_size_0 = (int)(rp - input.base()); // used-up header (4byte + 3int)
+  int header_size_1 = (int)(rplimit - rp);      // buffered unused initial fragment
   int header_size   = header_size_0+header_size_1;
   unsized_bytes_read = header_size_0;
   CHECK;
   if (foreign_buf) {
-    if (archive_size > header_size_1) {
+    if (archive_size > (size_t)header_size_1) {
       abort("EOF reading fixed input buffer");
       return;
     }
   } else if (archive_size > 0) {
-    input.set(U_NEW(byte, (size_t) header_size_0 + archive_size + C_SLOP),
-              (size_t) header_size_0 + archive_size);
+    input.set(U_NEW(byte, (size_t)(header_size_0 + archive_size + C_SLOP)),
+              (size_t) header_size_0 + (size_t)archive_size);
     assert(input.limit()[0] == 0);
     // Move all the bytes we read initially into the real buffer.
     input.b.copyFrom(initbuf, header_size);
@@ -712,7 +731,7 @@ void unpacker::read_file_header() {
   }
 
   int cp_counts[N_TAGS_IN_ORDER];
-  for (int k = 0; k < N_TAGS_IN_ORDER; k++) {
+  for (int k = 0; k < (int)N_TAGS_IN_ORDER; k++) {
     if (!(archive_options & AO_HAVE_CP_NUMBERS)) {
       switch (TAGS_IN_ORDER[k]) {
       case CONSTANT_Integer:
@@ -753,7 +772,10 @@ void unpacker::read_file_header() {
     abort("EOF reading archive header");
 
   // Now size the CP.
-  assert(N_TAGS_IN_ORDER == cpool::NUM_COUNTS);
+#ifndef PRODUCT
+  bool x = (N_TAGS_IN_ORDER == cpool::NUM_COUNTS);
+  assert(x);
+#endif //PRODUCT
   cp.init(this, cp_counts);
   CHECK;
 
@@ -766,7 +788,7 @@ void unpacker::read_file_header() {
   // meta-bytes, if any, immediately follow archive header
   //band_headers.readData(band_headers_size);
   ensure_input(band_headers_size);
-  if (input_remaining() < band_headers_size) {
+  if (input_remaining() < (size_t)band_headers_size) {
     abort("EOF reading band headers");
     return;
   }
@@ -789,12 +811,14 @@ void unpacker::read_file_header() {
 void unpacker::finish() {
   if (verbose >= 1) {
     fprintf(errstrm,
-            "A total of %lld bytes were read in %d segment(s).\n",
-            bytes_read_before_reset+bytes_read,
+            "A total of "
+            LONG_LONG_FORMAT " bytes were read in %d segment(s).\n",
+            (bytes_read_before_reset+bytes_read),
             segments_read_before_reset+1);
     fprintf(errstrm,
-            "A total of %lld file content bytes were written.\n",
-            bytes_written_before_reset+bytes_written);
+            "A total of "
+            LONG_LONG_FORMAT " file content bytes were written.\n",
+            (bytes_written_before_reset+bytes_written));
     fprintf(errstrm,
             "A total of %d files (of which %d are classes) were written to output.\n",
             files_written_before_reset+files_written,
@@ -822,7 +846,7 @@ void cpool::init(unpacker* u_, int counts[NUM_COUNTS]) {
   int next_entry = 0;
 
   // Size the constant pool:
-  for (int k = 0; k < N_TAGS_IN_ORDER; k++) {
+  for (int k = 0; k < (int)N_TAGS_IN_ORDER; k++) {
     byte tag = TAGS_IN_ORDER[k];
     int  len = counts[k];
     tag_count[tag] = len;
@@ -902,8 +926,8 @@ static byte* skip_Utf8_chars(byte* cp, int len) {
 }
 
 static int compare_Utf8_chars(bytes& b1, bytes& b2) {
-  int l1 = b1.len;
-  int l2 = b2.len;
+  int l1 = (int)b1.len;
+  int l2 = (int)b2.len;
   int l0 = (l1 < l2) ? l1 : l2;
   byte* p1 = b1.ptr;
   byte* p2 = b2.ptr;
@@ -949,10 +973,12 @@ void unpacker::read_Utf8_values(entry* cpMap, int len) {
   // First band:  Read lengths of shared prefixes.
   if (len > PREFIX_SKIP_2)
     cp_Utf8_prefix.readData(len - PREFIX_SKIP_2);
+  NOT_PRODUCT(else cp_Utf8_prefix.readData(0));  // for asserts
 
   // Second band:  Read lengths of unshared suffixes:
   if (len > SUFFIX_SKIP_1)
     cp_Utf8_suffix.readData(len - SUFFIX_SKIP_1);
+  NOT_PRODUCT(else cp_Utf8_suffix.readData(0));  // for asserts
 
   bytes* allsuffixes = T_NEW(bytes, len);
   CHECK;
@@ -999,7 +1025,7 @@ void unpacker::read_Utf8_values(entry* cpMap, int len) {
       CHECK;
       tmallocs.add(chars.ptr); // free it later
     } else {
-      int shrink = chars.limit() - chp;
+      int shrink = (int)(chars.limit() - chp);
       chars.len -= shrink;
       charbuf.b.len -= shrink;  // ungrow to reclaim buffer space
       // Note that we did not reclaim the final '\0'.
@@ -1008,7 +1034,9 @@ void unpacker::read_Utf8_values(entry* cpMap, int len) {
     }
   }
   //cp_Utf8_chars.done();
-  if (assert(1))  charbuf.b.set(null, 0); // tidy
+#ifndef PRODUCT
+  charbuf.b.set(null, 0); // tidy
+#endif
 
   // Fourth band:  Go back and size the specially packed strings.
   int maxlen = 0;
@@ -1041,7 +1069,7 @@ void unpacker::read_Utf8_values(entry* cpMap, int len) {
   for (i = 0; i < len; i++) {
     bytes& chars = allsuffixes[i];
     if (chars.ptr != null)  continue;  // already input
-    int suffix = chars.len;  // pick up the hack
+    int suffix = (int)chars.len;  // pick up the hack
     uint size3 = suffix * 3;
     if (suffix == 0)  continue;  // done with empty string
     chars.malloc(size3);
@@ -1071,7 +1099,7 @@ void unpacker::read_Utf8_values(entry* cpMap, int len) {
   for (i = 0; i < len; i++) {
     bytes& chars = allsuffixes[i];
     int prefix = (i < PREFIX_SKIP_2)? 0: cp_Utf8_prefix.getInt();
-    int suffix = chars.len;
+    int suffix = (int)chars.len;
     byte* fillp;
     // by induction, the buffer is already filled with the prefix
     // make sure the prefix value is not corrupted, though:
@@ -1084,7 +1112,7 @@ void unpacker::read_Utf8_values(entry* cpMap, int len) {
     fillp = chars.writeTo(fillp);
     assert(bigbuf.inBounds(fillp));
     *fillp = 0;  // bigbuf must contain a well-formed Utf8 string
-    int length = fillp - bigbuf.ptr;
+    int length = (int)(fillp - bigbuf.ptr);
     bytes& value = cpMap[i].value.b;
     value.set(U_NEW(byte, length+1), length);
     value.copyFrom(bigbuf.ptr, length);
@@ -1215,12 +1243,12 @@ void unpacker::read_cp() {
 
   int i;
 
-  for (int k = 0; k < N_TAGS_IN_ORDER; k++) {
+  for (int k = 0; k < (int)N_TAGS_IN_ORDER; k++) {
     byte tag = TAGS_IN_ORDER[k];
     int  len = cp.tag_count[tag];
     int base = cp.tag_base[tag];
 
-    printcr(1,"Reading %d %s entries...", len, NOT_PRODUCT(TAG_NAME[tag])+0);
+    PRINTCR((1,"Reading %d %s entries...", len, NOT_PRODUCT(TAG_NAME[tag])+0));
     entry* cpMap = &cp.entries[base];
     for (i = 0; i < len; i++) {
       cpMap[i].tag = tag;
@@ -1282,7 +1310,7 @@ void unpacker::read_cp() {
 #ifndef PRODUCT
     cpindex* ix = &cp.tag_index[tag];
     assert(ix->ixTag == tag);
-    assert(ix->len   == len);
+    assert((int)ix->len   == len);
     assert(ix->base1 == cpMap);
 #endif
     CHECK;
@@ -1293,7 +1321,7 @@ void unpacker::read_cp() {
   cp.initMemberIndexes();
   CHECK;
 
-  printcr(1,"parsed %d constant pool entries in %d bytes", cp.nentries, (rp - rp0));
+  PRINTCR((1,"parsed %d constant pool entries in %d bytes", cp.nentries, (rp - rp0)));
 
   #define SNAME(n,s) #s "\0"
   const char* symNames = (
@@ -1307,7 +1335,7 @@ void unpacker::read_cp() {
     bytes name; name.set(symNames);
     if (name.len > 0 && name.ptr[0] != '0') {
       cp.sym[sn] = cp.ensureUtf8(name);
-      printcr(4, "well-known sym %d=%s", sn, cp.sym[sn]->string());
+      PRINTCR((4, "well-known sym %d=%s", sn, cp.sym[sn]->string()));
     }
     symNames += name.len + 1;  // skip trailing null to next name
   }
@@ -1352,7 +1380,7 @@ unpacker::attr_definitions::defineLayout(int idx,
   assert(flag_limit != 0);  // must be set up already
   if (idx >= 0) {
     // Fixed attr.
-    if (idx >= flag_limit)
+    if (idx >= (int)flag_limit)
       abort("attribute index too large");
     if (isRedefined(idx))
       abort("redefined attribute index");
@@ -1635,7 +1663,7 @@ unpacker::attr_definitions::parseLayout(const char* lp, band** &res,
             for (;;) {
               int caseval = 0;
               lp = parseNumeral(lp, caseval);
-              band_stack.add((void*)caseval);
+              band_stack.add((void*)(size_t)caseval);
               if (*lp == '-') {
                 // new in version 160, allow (1-5) for (1,2,3,4,5)
                 if (u->majver < JAVA6_PACKAGE_MAJOR_VERSION) {
@@ -1654,7 +1682,7 @@ unpacker::attr_definitions::parseLayout(const char* lp, band** &res,
                 }
                 for (;;) {
                   ++caseval;
-                  band_stack.add((void*)caseval);
+                  band_stack.add((void*)(size_t)caseval);
                   if (caseval == caselimit)  break;
                 }
               }
@@ -1921,7 +1949,7 @@ static int lastIndexOf(int chmin, int chmax, bytes& x, int pos) {
   for (byte* cp = ptr + pos; --cp >= ptr; ) {
     assert(x.inBounds(cp));
     if (*cp >= chmin && *cp <= chmax)
-      return cp - ptr;
+      return (int)(cp - ptr);
   }
   return -1;
 }
@@ -1976,7 +2004,7 @@ void unpacker::read_ics() {
     entry* inner = ic_this_class.getRef();
     CHECK;
     uint inord = inner->inord;
-    assert(inord < cp.tag_count[CONSTANT_Class]);
+    assert(inord < (uint)cp.tag_count[CONSTANT_Class]);
     if (ic_index[inord] != null) {
       abort("identical inner class");
       break;
@@ -2003,10 +2031,10 @@ void unpacker::read_ics() {
       bytes number;
       bytes name;
       // Parse n into pkgOuter and name (and number).
-      printcr(5, "parse short IC name %s", n.ptr);
+      PRINTCR((5, "parse short IC name %s", n.ptr));
       int dollar1, dollar2;  // pointers to $ in the pattern
       // parse n = (<pkg>/)*<outer>($<number>)?($<name>)?
-      int nlen = n.len;
+      int nlen = (int)n.len;
       int pkglen = lastIndexOf(SLASH_MIN,  SLASH_MAX,  n, nlen) + 1;
       dollar2    = lastIndexOf(DOLLAR_MIN, DOLLAR_MAX, n, nlen);
       if (dollar2 < 0) {
@@ -2035,8 +2063,8 @@ void unpacker::read_ics() {
         pkgOuter = n.slice(0, dollar1);
       else
         pkgOuter.set(null,0);
-      printcr(5,"=> %s$ 0%s $%s",
-              pkgOuter.string(), number.string(), name.string());
+      PRINTCR((5,"=> %s$ 0%s $%s",
+              pkgOuter.string(), number.string(), name.string()));
 
       if (pkgOuter.ptr != null)
         ics[i].outer = cp.ensureClass(pkgOuter);
@@ -2049,7 +2077,7 @@ void unpacker::read_ics() {
     if (ics[i].outer != null) {
       uint outord = ics[i].outer->inord;
       if (outord != NO_INORD) {
-        assert(outord < cp.tag_count[CONSTANT_Class]);
+        assert(outord < (uint)cp.tag_count[CONSTANT_Class]);
         ics[i].next_sibling = ic_child_index[outord];
         ic_child_index[outord] = &ics[i];
       }
@@ -2060,8 +2088,7 @@ void unpacker::read_ics() {
 }
 
 void unpacker::read_classes() {
-  int i;
-  printcr(1,"  ...scanning %d classes...", class_count);
+  PRINTCR((1,"  ...scanning %d classes...", class_count));
   class_this.readData(class_count);
   class_super.readData(class_count);
   class_interface_count.readData(class_count);
@@ -2070,6 +2097,7 @@ void unpacker::read_classes() {
   CHECK;
 
   #if 0
+  int i;
   // Make a little mark on super-classes.
   for (i = 0; i < class_count; i++) {
     entry* e = class_super.getRefN();
@@ -2099,8 +2127,8 @@ void unpacker::read_classes() {
 
   read_code_headers();
 
-  printcr(1,"scanned %d classes, %d fields, %d methods, %d code headers",
-          class_count, field_count, method_count, code_count);
+  PRINTCR((1,"scanned %d classes, %d fields, %d methods, %d code headers",
+          class_count, field_count, method_count, code_count));
 }
 
 maybe_inline
@@ -2137,7 +2165,7 @@ void unpacker::read_attrs(int attrc, int obj_count) {
     }
     indexBits &= indexMask;  // ignore classfile flag bits
     for (idx = 0; indexBits != 0; idx++, indexBits >>= 1) {
-      ad.flag_count[idx] += (indexBits & 1);
+      ad.flag_count[idx] += (int)(indexBits & 1);
     }
   }
   // we'll scan these again later for output:
@@ -2337,7 +2365,7 @@ void unpacker::read_attrs(int attrc, int obj_count) {
   for (idx = 0; idx < ad.layouts.length(); idx++) {
     if (ad.getLayout(idx) == null)
       continue;  // none at this fixed index <32
-    if (idx < ad.flag_limit && ad.isPredefined(idx))
+    if (idx < (int)ad.flag_limit && ad.isPredefined(idx))
       continue;  // already handled
     if (ad.getCount(idx) == 0)
       continue;  // no attributes of this type (then why transmit layouts?)
@@ -2351,9 +2379,9 @@ void unpacker::attr_definitions::readBandData(int idx) {
   if (count == 0)  return;
   layout_definition* lo = getLayout(idx);
   if (lo != null) {
-    printcr(1, "counted %d [redefined = %d predefined = %d] attributes of type %s.%s",
+    PRINTCR((1, "counted %d [redefined = %d predefined = %d] attributes of type %s.%s",
             count, isRedefined(idx), isPredefined(idx),
-            ATTR_CONTEXT_NAME[attrc], lo->name);
+            ATTR_CONTEXT_NAME[attrc], lo->name));
   }
   bool hasCallables = lo->hasCallables();
   band** bands = lo->bands();
@@ -2376,13 +2404,13 @@ void unpacker::attr_definitions::readBandData(int idx) {
       }
     }
     // Now consult whichever callables have non-zero entry counts.
-    readBandData(bands, -1);
+    readBandData(bands, (uint)-1);
   }
 }
 
 // Recursive helper to the previous function:
 void unpacker::attr_definitions::readBandData(band** body, uint count) {
-  int i, j, k;
+  int j, k;
   for (j = 0; body[j] != null; j++) {
     band& b = *body[j];
     if (b.defc != null) {
@@ -2427,7 +2455,7 @@ void unpacker::attr_definitions::readBandData(band** body, uint count) {
       }
       break;
     case EK_CBLE:
-      assert(count == -1);  // incoming count is meaningless
+      assert((int)count == -1);  // incoming count is meaningless
       k = b.length;
       assert(k >= 0);
       // This is intended and required for non production mode.
@@ -2490,7 +2518,7 @@ void unpacker::putlayout(band** body) {
         assert(le_kind == EK_INT || le_kind == EK_REPL || le_kind == EK_UN);
         x = b.getInt();
 
-        assert(!b.le_bci || prevBCI == to_bci(prevBII));
+        assert(!b.le_bci || prevBCI == (int)to_bci(prevBII));
         switch (b.le_bci) {
         case EK_BCI:   // PH:  transmit R(bci), store bci
           x = to_bci(prevBII = x);
@@ -2505,7 +2533,7 @@ void unpacker::putlayout(band** body) {
           prevBCI += x;
           break;
         }
-        assert(!b.le_bci || prevBCI == to_bci(prevBII));
+        assert(!b.le_bci || prevBCI == (int)to_bci(prevBII));
 
         switch (b.le_len) {
         case 0: break;
@@ -2721,8 +2749,8 @@ band* unpacker::ref_band_for_self_op(int bc, bool& isAloadVar, int& origBCVar) {
 // Cf. PackageReader.readByteCodes
 inline  // called exactly once => inline
 void unpacker::read_bcs() {
-  printcr(3, "reading compressed bytecodes and operands for %d codes...",
-          code_count);
+  PRINTCR((3, "reading compressed bytecodes and operands for %d codes...",
+          code_count));
 
   // read from bc_codes and bc_case_count
   fillbytes all_switch_ops;
@@ -2825,18 +2853,18 @@ void unpacker::read_bcs() {
 
   // Go through the formality, so we can use it in a regular fashion later:
   assert(rp == rp0);
-  bc_codes.readData(opptr - rp);
+  bc_codes.readData((int)(opptr - rp));
 
   int i = 0;
 
   // To size instruction bands correctly, we need info on switches:
-  bc_case_count.readData(all_switch_ops.size());
-  for (i = 0; i < all_switch_ops.size(); i++) {
+  bc_case_count.readData((int)all_switch_ops.size());
+  for (i = 0; i < (int)all_switch_ops.size(); i++) {
     int caseCount = bc_case_count.getInt();
     int bc        = all_switch_ops.getByte(i);
     bc_label.expectMoreLength(1+caseCount); // default label + cases
     bc_case_value.expectMoreLength(bc == bc_tableswitch ? 1 : caseCount);
-    printcr(2, "switch bc=%d caseCount=%d", bc, caseCount);
+    PRINTCR((2, "switch bc=%d caseCount=%d", bc, caseCount));
   }
   bc_case_count.rewind();  // uses again for output
 
@@ -2849,15 +2877,14 @@ void unpacker::read_bcs() {
   // The bc_escbyte band is counted by the immediately previous band.
   bc_escbyte.readData(bc_escsize.getIntTotal());
 
-  printcr(3, "scanned %d opcode and %d operand bytes for %d codes...",
+  PRINTCR((3, "scanned %d opcode and %d operand bytes for %d codes...",
           (int)(bc_codes.size()),
           (int)(bc_escsize.maxRP() - bc_case_value.minRP()),
-          code_count);
+          code_count));
 }
 
 void unpacker::read_bands() {
   byte* rp0 = rp;
-  int i;
 
   read_file_header();
   CHECK;
@@ -2886,9 +2913,9 @@ void unpacker::read_bands() {
 /// CP routines
 
 entry*& cpool::hashTabRef(byte tag, bytes& b) {
-  printcr(5, "hashTabRef tag=%d %s[%d]", tag, b.string(), b.len);
-  uint hash = tag + b.len;
-  for (int i = 0; i < b.len; i++) {
+  PRINTCR((5, "hashTabRef tag=%d %s[%d]", tag, b.string(), b.len));
+  uint hash = tag + (int)b.len;
+  for (int i = 0; i < (int)b.len; i++) {
     hash = hash * 31 + (0xFF & b.ptr[i]);
   }
   entry**  ht = hashTab;
@@ -2905,15 +2932,15 @@ entry*& cpool::hashTabRef(byte tag, bytes& b) {
       // Note:  hash2 must be relatively prime to hlen, hence the "|1".
       hash2 = (((hash % 499) & (hlen-1)) | 1);
     hash1 += hash2;
-    if (hash1 >= hlen)  hash1 -= hlen;
-    assert(hash1 < hlen);
+    if (hash1 >= (uint)hlen)  hash1 -= hlen;
+    assert(hash1 < (uint)hlen);
     assert(++probes < hlen);
   }
   #ifndef PRODUCT
   hash_probes[0] += 1;
   hash_probes[1] += probes;
   #endif
-  printcr(5, " => @%d %p", hash1, ht[hash1]);
+  PRINTCR((5, " => @%d %p", hash1, ht[hash1]));
   return ht[hash1];
 }
 
@@ -2939,7 +2966,7 @@ entry* cpool::ensureUtf8(bytes& b) {
   u->saveTo(e.value.b, b);
   assert(&e >= first_extra_entry);
   insert_extra(&e, tag_extras[CONSTANT_Utf8]);
-  printcr(4,"ensureUtf8 miss %s", e.string());
+  PRINTCR((4,"ensureUtf8 miss %s", e.string()));
   return ix = &e;
 }
 
@@ -2961,7 +2988,7 @@ entry* cpool::ensureClass(bytes& b) {
   e.value.b = utf->value.b;
   assert(&e >= first_extra_entry);
   insert_extra(&e, tag_extras[CONSTANT_Class]);
-  printcr(4,"ensureClass miss %s", e.string());
+  PRINTCR((4,"ensureClass miss %s", e.string()));
   return &e;
 }
 
@@ -2980,7 +3007,7 @@ void cpool::expandSignatures() {
     int refnum = 0;
     bytes form = e.refs[refnum++]->asUtf8();
     buf.empty();
-    for (int j = 0; j < form.len; j++) {
+    for (int j = 0; j < (int)form.len; j++) {
       int c = form.ptr[j];
       buf.addByte(c);
       if (c == 'L') {
@@ -2990,7 +3017,7 @@ void cpool::expandSignatures() {
     }
     assert(refnum == e.nrefs);
     bytes& sig = buf.b;
-    printcr(5,"signature %d %s -> %s", i, form.ptr, sig.ptr);
+    PRINTCR((5,"signature %d %s -> %s", i, form.ptr, sig.ptr));
 
     // try to find a pre-existing Utf8:
     entry* &e2 = hashTabRef(CONSTANT_Utf8, sig);
@@ -2999,7 +3026,7 @@ void cpool::expandSignatures() {
       e.value.b = e2->value.b;
       e.refs[0] = e2;
       e.nrefs = 1;
-      printcr(5,"signature replaced %d => %s", i, e.string());
+      PRINTCR((5,"signature replaced %d => %s", i, e.string()));
       nreused++;
     } else {
       // there is no other replacement; reuse this CP entry as a Utf8
@@ -3007,15 +3034,15 @@ void cpool::expandSignatures() {
       e.tag = CONSTANT_Utf8;
       e.nrefs = 0;
       e2 = &e;
-      printcr(5,"signature changed %d => %s", e.inord, e.string());
+      PRINTCR((5,"signature changed %d => %s", e.inord, e.string()));
     }
     nsigs++;
   }
-  printcr(1,"expanded %d signatures (reused %d utfs)", nsigs, nreused);
+  PRINTCR((1,"expanded %d signatures (reused %d utfs)", nsigs, nreused));
   buf.free();
 
   // go expunge all references to remaining signatures:
-  for (i = 0; i < nentries; i++) {
+  for (i = 0; i < (int)nentries; i++) {
     entry& e = entries[i];
     for (int j = 0; j < e.nrefs; j++) {
       entry*& e2 = e.refs[j];
@@ -3028,7 +3055,7 @@ void cpool::expandSignatures() {
 void cpool::initMemberIndexes() {
   // This function does NOT refer to any class schema.
   // It is totally internal to the cpool.
-  int i, j, len;
+  int i, j;
 
   // Get the pre-existing indexes:
   int   nclasses = tag_count[CONSTANT_Class];
@@ -3047,13 +3074,13 @@ void cpool::initMemberIndexes() {
   for (j = 0; j < nfields; j++) {
     entry& f = fields[j];
     i = f.memberClass()->inord;
-    assert((uint)i < nclasses);
+    assert(i < nclasses);
     field_counts[i]++;
   }
   for (j = 0; j < nmethods; j++) {
     entry& m = methods[j];
     i = m.memberClass()->inord;
-    assert((uint)i < nclasses);
+    assert(i < nclasses);
     method_counts[i]++;
   }
 
@@ -3068,8 +3095,8 @@ void cpool::initMemberIndexes() {
     // reuse field_counts and member_counts as fill pointers:
     field_counts[i] = fbase;
     method_counts[i] = mbase;
-    printcr(3, "class %d fields @%d[%d] methods @%d[%d]",
-            i, fbase, fc, mbase, mc);
+    PRINTCR((3, "class %d fields @%d[%d] methods @%d[%d]",
+            i, fbase, fc, mbase, mc));
     fbase += fc+1;
     mbase += mc+1;
     // (the +1 leaves a space between every subarray)
@@ -3093,18 +3120,18 @@ void cpool::initMemberIndexes() {
 #ifndef PRODUCT
   // Test the result immediately on every class and field.
   int fvisited = 0, mvisited = 0;
-  int prevord;
+  int prevord, len;
   for (i = 0; i < nclasses; i++) {
     entry*   cls = &classes[i];
     cpindex* fix = getFieldIndex(cls);
     cpindex* mix = getMethodIndex(cls);
-    printcr(2, "field and method index for %s [%d] [%d]",
-            cls->string(), mix->len, fix->len);
+    PRINTCR((2, "field and method index for %s [%d] [%d]",
+            cls->string(), mix->len, fix->len));
     prevord = -1;
     for (j = 0, len = fix->len; j < len; j++) {
       entry* f = fix->get(j);
       assert(f != null);
-      printcr(3, "- field %s", f->string());
+      PRINTCR((3, "- field %s", f->string()));
       assert(f->memberClass() == cls);
       assert(prevord < (int)f->inord);
       prevord = f->inord;
@@ -3115,7 +3142,7 @@ void cpool::initMemberIndexes() {
     for (j = 0, len = mix->len; j < len; j++) {
       entry* m = mix->get(j);
       assert(m != null);
-      printcr(3, "- method %s", m->string());
+      PRINTCR((3, "- method %s", m->string()));
       assert(m->memberClass() == cls);
       assert(prevord < (int)m->inord);
       prevord = m->inord;
@@ -3164,7 +3191,7 @@ void cpool::resetOutputIndexes() {
   outputEntries.empty();
 #ifndef PRODUCT
   // they must all be clear now
-  for (i = 0; i < nentries; i++)
+  for (i = 0; i < (int)nentries; i++)
     assert(entries[i].outputIndex == NOT_REQUESTED);
 #endif
 }
@@ -3215,7 +3242,7 @@ void cpool::computeOutputIndexes() {
   static uint checkStart = 0;
   int checkStep = 1;
   if (nentries > 100)  checkStep = nentries / 100;
-  for (i = (checkStart++ % checkStep); i < nentries; i += checkStep) {
+  for (i = (int)(checkStart++ % checkStep); i < (int)nentries; i += checkStep) {
     entry& e = entries[i];
     if (e.outputIndex != NOT_REQUESTED) {
       assert(outputEntries.contains(&e));
@@ -3225,7 +3252,7 @@ void cpool::computeOutputIndexes() {
   }
 
   // check hand-initialization of TAG_ORDER
-  for (i = 0; i < N_TAGS_IN_ORDER; i++) {
+  for (i = 0; i < (int)N_TAGS_IN_ORDER; i++) {
     byte tag = TAGS_IN_ORDER[i];
     assert(TAG_ORDER[tag] == i+1);
   }
@@ -3247,7 +3274,7 @@ void cpool::computeOutputIndexes() {
     if (e.isDoubleWord())  nextIndex++;  // do not use the next index
   }
   outputIndexLimit = nextIndex;
-  printcr(3,"renumbering CP to %d entries", outputIndexLimit);
+  PRINTCR((3,"renumbering CP to %d entries", outputIndexLimit));
 }
 
 #ifndef PRODUCT
@@ -3257,9 +3284,9 @@ unpacker* debug_u;
 
 static bytes& getbuf(int len) {  // for debugging only!
   static int bn = 0;
-  static bytes bufs[8] = { 0 };
+  static bytes bufs[8];
   bytes& buf = bufs[bn++ & 7];
-  while (buf.len < len+10)
+  while ((int)buf.len < len+10)
     buf.realloc(buf.len ? buf.len * 2 : 1000);
   buf.ptr[0] = 0;  // for the sake of strcat
   return buf;
@@ -3285,7 +3312,7 @@ char* entry::string() {
   case CONSTANT_Long:
   case CONSTANT_Double:
     buf = getbuf(24);
-    sprintf((char*)buf.ptr, "0x%016llx", value.l);
+    sprintf((char*)buf.ptr, "0x" LONG_LONG_HEX_FORMAT, value.l);
     break;
   default:
     if (nrefs == 0) {
@@ -3296,7 +3323,7 @@ char* entry::string() {
     } else {
       char* s1 = refs[0]->string();
       char* s2 = refs[1]->string();
-      buf = getbuf(strlen(s1) + 1 + strlen(s2) + 4 + 1);
+      buf = getbuf((int)strlen(s1) + 1 + (int)strlen(s2) + 4 + 1);
       buf.strcat(s1).strcat(" ").strcat(s2);
       if (nrefs > 2)  buf.strcat(" ...");
     }
@@ -3409,7 +3436,9 @@ void unpacker::reset() {
   segments_read_before_reset   += 1;
   if (verbose >= 2) {
     fprintf(errstrm,
-            "After segment %d, %lld bytes read and %lld bytes written.\n",
+            "After segment %d, "
+            LONG_LONG_FORMAT " bytes read and "
+            LONG_LONG_FORMAT " bytes written.\n",
             segments_read_before_reset-1,
             bytes_read_before_reset, bytes_written_before_reset);
     fprintf(errstrm,
@@ -3475,7 +3504,9 @@ void unpacker::init(read_input_fn_t input_fn) {
   int i;
   NOT_PRODUCT(debug_u = this);
   BYTES_OF(*this).clear();
-  if (assert(1))  free();  // just to make sure freeing is idempotent
+#ifndef PRODUCT
+  free();  // just to make sure freeing is idempotent
+#endif
   this->u = this;    // self-reference for U_NEW macro
   errstrm = stdout;  // default error-output
   log_file = LOGFILE_STDOUT;
@@ -3621,7 +3652,7 @@ void unpacker::put_stackmap_type() {
 maybe_inline
 void unpacker::put_label(int curIP, int size) {
   code_fixup_type.addByte(size);
-  code_fixup_offset.add(put_empty(size));
+  code_fixup_offset.add((int)put_empty(size));
   code_fixup_source.add(curIP);
 }
 
@@ -3658,7 +3689,7 @@ void unpacker::write_bc_ops() {
   }
 
   for (int curIP = 0; ; curIP++) {
-    int curPC = wpoffset() - codeBase;
+    int curPC = (int)(wpoffset() - codeBase);
     bcimap.add(curPC);
     ensure_put_space(10);  // covers most instrs w/o further bounds check
     int bc = *opptr++ & 0xFF;
@@ -3702,7 +3733,7 @@ void unpacker::write_bc_ops() {
             put_label(curIP, 4); //int lVal = bc_label.getInt();
           }
         }
-        assert(to_bci(curIP) == curPC);
+        assert((int)to_bci(curIP) == curPC);
         continue;
       }
     case bc_iinc:
@@ -3805,7 +3836,7 @@ void unpacker::write_bc_ops() {
           assert(bc <= bc_jsr_w);
           put_label(curIP, 4);  //putu4(lVal);
         }
-        assert(to_bci(curIP) == curPC);
+        assert((int)to_bci(curIP) == curPC);
         continue;
       }
       bc_which = ref_band_for_op(bc);
@@ -3880,7 +3911,7 @@ void unpacker::write_bc_ops() {
   //bcimap.add(curPC);  // PC limit is already also in map, from bc_end_marker
 
   // Armed with a bcimap, we can now fix up all the labels.
-  for (int i = 0; i < code_fixup_type.size(); i++) {
+  for (int i = 0; i < (int)code_fixup_type.size(); i++) {
     int   type   = code_fixup_type.getByte(i);
     byte* bp     = wp_at(code_fixup_offset.get(i));
     int   curIP  = code_fixup_source.get(i);
@@ -3896,7 +3927,7 @@ void unpacker::write_bc_ops() {
 
 inline  // called exactly once => inline
 void unpacker::write_code() {
-  int i, j;
+  int j;
 
   int max_stack, max_locals, handler_count, cflags;
   get_code_header(max_stack, max_locals, handler_count, cflags);
@@ -3919,7 +3950,7 @@ void unpacker::write_code() {
   CHECK;
 
   byte* bcbasewp = wp_at(bcbase);
-  putu4_at(bcbasewp, wp - (bcbasewp+4));  // size of code attr
+  putu4_at(bcbasewp, (int)(wp - (bcbasewp+4)));  // size of code attr
 
   putu2(handler_count);
   for (j = 0; j < handler_count; j++) {
@@ -3968,10 +3999,10 @@ int unpacker::write_attrs(int attrc, julong indexBits) {
     if ((indexBits & 1) != 0)
       bitIndexes[biCount++] = idx;
   }
-  assert(biCount <= lengthof(bitIndexes));
+  assert(biCount <= (int)lengthof(bitIndexes));
 
   // Write a provisional attribute count, perhaps to be corrected later.
-  int naOffset = wpoffset();
+  int naOffset = (int)wpoffset();
   int na0 = biCount + oiCount;
   putu2(na0);
 
@@ -3986,7 +4017,7 @@ int unpacker::write_attrs(int attrc, julong indexBits) {
     entry* ref;  // scratch
     size_t abase = put_empty(2+4);
     CHECK_0;
-    if (idx < ad.flag_limit && ad.isPredefined(idx)) {
+    if (idx < (int)ad.flag_limit && ad.isPredefined(idx)) {
       // Switch on the attrc and idx simultaneously.
       switch (ADH_BYTE(attrc, idx)) {
 
@@ -4020,16 +4051,16 @@ int unpacker::write_attrs(int attrc, julong indexBits) {
         if (ref == null) {
           bytes& n = cur_class->ref(0)->value.b;
           // parse n = (<pkg>/)*<outer>?($<id>)*
-          int pkglen = lastIndexOf(SLASH_MIN,  SLASH_MAX,  n, n.len)+1;
+          int pkglen = lastIndexOf(SLASH_MIN,  SLASH_MAX,  n, (int)n.len)+1;
           bytes prefix = n.slice(pkglen, n.len);
           for (;;) {
             // Work backwards, finding all '$', '#', etc.
-            int dollar = lastIndexOf(DOLLAR_MIN, DOLLAR_MAX, prefix, prefix.len);
+            int dollar = lastIndexOf(DOLLAR_MIN, DOLLAR_MAX, prefix, (int)prefix.len);
             if (dollar < 0)  break;
             prefix = prefix.slice(0, dollar);
           }
           const char* suffix = ".java";
-          int len = prefix.len + strlen(suffix);
+          int len = (int)(prefix.len + strlen(suffix));
           bytes name; name.set(T_NEW(byte, len + 1), len);
           name.strcat(prefix).strcat(suffix);
           ref = cp.ensureUtf8(name);
@@ -4081,7 +4112,7 @@ int unpacker::write_attrs(int attrc, julong indexBits) {
             // (253)     [(1)(2)(2)]
             // (254)     [(1)(2)(2)(2)]
             putu2(code_StackMapTable_offset.getInt());
-            for (int j2 = (tag - 251); j2 > 0; j2--) {
+            for (int k = (tag - 251); k > 0; k--) {
               put_stackmap_type();
             }
           } else {
@@ -4165,7 +4196,7 @@ int unpacker::write_attrs(int attrc, julong indexBits) {
         abort("bad layout index");
         break;
       }
-      assert(lo->idx == idx);
+      assert((int)lo->idx == idx);
       aname = lo->nameEntry;
       if (aname == null) {
         bytes nameb; nameb.set(lo->name);
@@ -4198,7 +4229,7 @@ int unpacker::write_attrs(int attrc, julong indexBits) {
 
     // patch the name and length
     putref(aname);
-    putu4(wp1 - (wp+4));  // put the attr size
+    putu4((int)(wp1 - (wp+4)));  // put the attr size
     wp = wp1;
     na++;  // count the attrs actually written
   }
@@ -4279,7 +4310,7 @@ void unpacker::write_classfile_tail() {
   cur_class_has_local_ics = false;  // may be set true by write_attrs
 
 
-  int naOffset = wpoffset();
+  int naOffset = (int)wpoffset();
   int na = write_attrs(ATTR_CONTEXT_CLASS, (kflags & indexMask));
 
 
@@ -4448,7 +4479,7 @@ void unpacker::write_classfile_head() {
     putu1(tag);
     switch (tag) {
     case CONSTANT_Utf8:
-      putu2(e.value.b.len);
+      putu2((int)e.value.b.len);
       put_bytes(e.value.b);
       break;
     case CONSTANT_Integer:
@@ -4479,7 +4510,7 @@ void unpacker::write_classfile_head() {
 
 #ifndef PRODUCT
   total_cp_size[0] += cp.outputIndexLimit;
-  total_cp_size[1] += cur_classfile_head.size();
+  total_cp_size[1] += (int)cur_classfile_head.size();
 #endif
   close_output();
 }
@@ -4544,7 +4575,7 @@ unpacker::file* unpacker::get_next_file() {
     if (cur_file.name[0] == '\0') {
       bytes& prefix = cur_class->ref(0)->value.b;
       const char* suffix = ".class";
-      int len = prefix.len + strlen(suffix);
+      int len = (int)(prefix.len + strlen(suffix));
       bytes name; name.set(T_NEW(byte, len + 1), len);
       cur_file.name = name.strcat(prefix).strcat(suffix).strval();
     }
@@ -4564,7 +4595,7 @@ unpacker::file* unpacker::get_next_file() {
     }
     if (rpleft < cur_file.size) {
       // Caller must read the rest.
-      size_t fleft = cur_file.size - rpleft;
+      size_t fleft = (size_t)cur_file.size - rpleft;
       bytes_read += fleft;  // Credit it to the overall archive size.
     }
   }
@@ -4580,7 +4611,7 @@ void unpacker::write_file_to_jar(unpacker::file* f) {
   julong fsize = f->size;
 #ifndef PRODUCT
   if (nowrite NOT_PRODUCT(|| skipfiles-- > 0)) {
-    printcr(2,"would write %d bytes to %s", (int) fsize, f->name);
+    PRINTCR((2,"would write %d bytes to %s", (int) fsize, f->name));
     return;
   }
 #endif
@@ -4623,7 +4654,8 @@ void unpacker::write_file_to_jar(unpacker::file* f) {
                         part1, part2);
   }
   if (verbose >= 3) {
-    fprintf(errstrm, "Wrote %lld bytes to: %s\n", fsize, f->name);
+    fprintf(errstrm, "Wrote "
+                     LONG_LONG_FORMAT " bytes to: %s\n", fsize, f->name);
   }
 }
 

@@ -1200,11 +1200,13 @@ class section_word_Relocation : public internal_word_Relocation {
 class poll_Relocation : public Relocation {
   bool          is_data()                      { return true; }
   relocInfo::relocType type() { return relocInfo::poll_type; }
+  void     fix_relocation_after_move(const CodeBuffer* src, CodeBuffer* dest);
 };
 
 class poll_return_Relocation : public Relocation {
   bool          is_data()                      { return true; }
   relocInfo::relocType type() { return relocInfo::poll_return_type; }
+  void     fix_relocation_after_move(const CodeBuffer* src, CodeBuffer* dest);
 };
 
 

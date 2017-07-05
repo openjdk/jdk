@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2005 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,6 @@
  * have any questions.
  *
  */
-
-inline void Assembler::emit_long64(jlong x) {
-  *(jlong*) _code_pos = x;
-  _code_pos += sizeof(jlong);
-  code_section()->set_end(_code_pos);
-}
 
 inline void MacroAssembler::pd_patch_instruction(address branch, address target) {
   unsigned char op = branch[0];
@@ -69,18 +63,25 @@ inline void MacroAssembler::pd_print_patched_instruction(address branch) {
 }
 #endif // ndef PRODUCT
 
-inline void MacroAssembler::movptr(Address dst, intptr_t src) {
-#ifdef _LP64
-  Assembler::mov64(dst, src);
-#else
-  Assembler::movl(dst, src);
-#endif // _LP64
-}
+#ifndef _LP64
+inline int Assembler::prefix_and_encode(int reg_enc, bool byteinst) { return reg_enc; }
+inline int Assembler::prefixq_and_encode(int reg_enc) { return reg_enc; }
 
-inline void MacroAssembler::movptr(Register dst, intptr_t src) {
-#ifdef _LP64
-  Assembler::mov64(dst, src);
+inline int Assembler::prefix_and_encode(int dst_enc, int src_enc, bool byteinst) { return dst_enc << 3 | src_enc; }
+inline int Assembler::prefixq_and_encode(int dst_enc, int src_enc) { return dst_enc << 3 | src_enc; }
+
+inline void Assembler::prefix(Register reg) {}
+inline void Assembler::prefix(Address adr) {}
+inline void Assembler::prefixq(Address adr) {}
+
+inline void Assembler::prefix(Address adr, Register reg,  bool byteinst) {}
+inline void Assembler::prefixq(Address adr, Register reg) {}
+
+inline void Assembler::prefix(Address adr, XMMRegister reg) {}
 #else
-  Assembler::movl(dst, src);
-#endif // _LP64
+inline void Assembler::emit_long64(jlong x) {
+  *(jlong*) _code_pos = x;
+  _code_pos += sizeof(jlong);
+  code_section()->set_end(_code_pos);
 }
+#endif // _LP64

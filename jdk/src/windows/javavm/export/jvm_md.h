@@ -53,6 +53,7 @@ typedef struct {
     WIN32_FIND_DATA find_data;
 } DIR;
 
+#include <stddef.h>  /* For uintptr_t */
 #include <stdlib.h>
 
 #define JVM_MAXPATHLEN _MAX_PATH
@@ -64,6 +65,19 @@ typedef struct {
 
 JNIEXPORT void * JNICALL
 JVM_GetThreadInterruptEvent();
+
+/*
+ * These routines are only reentrant on Windows
+ */
+
+JNIEXPORT struct protoent * JNICALL
+JVM_GetProtoByName(char* name);
+
+JNIEXPORT struct hostent* JNICALL
+JVM_GetHostByAddr(const char* name, int len, int type);
+
+JNIEXPORT struct hostent* JNICALL
+JVM_GetHostByName(char* name);
 
 /*
  * File I/O

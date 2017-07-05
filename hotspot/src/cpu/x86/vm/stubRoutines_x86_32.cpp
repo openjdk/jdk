@@ -28,6 +28,6 @@
 // Implementation of the platform-specific part of StubRoutines - for
 // a description of how to extend it, see the stubRoutines.hpp file.
 
-address StubRoutines::i486::_verify_mxcsr_entry        = NULL;
-address StubRoutines::i486::_verify_fpu_cntrl_wrd_entry= NULL;
-address StubRoutines::i486::_call_stub_compiled_return = NULL;
+address StubRoutines::x86::_verify_mxcsr_entry        = NULL;
+address StubRoutines::x86::_verify_fpu_cntrl_wrd_entry= NULL;
+address StubRoutines::x86::_call_stub_compiled_return = NULL;

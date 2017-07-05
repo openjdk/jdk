@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2002-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,7 +113,7 @@ coding* coding::init() {
       jlong maxNegCode = range-1;
       while (IS_NEG_CODE(S,  maxPosCode))  --maxPosCode;
       while (!IS_NEG_CODE(S, maxNegCode))  --maxNegCode;
-      int maxPos = decode_sign(S, maxPosCode);
+      int maxPos = decode_sign(S, (uint)maxPosCode);
       if (maxPos < 0)
         this->max = INT_MAX_VALUE;  // 32-bit wraparound
       else
@@ -121,7 +121,7 @@ coding* coding::init() {
       if (maxNegCode < 0)
         this->min = 0;  // No negative codings at all.
       else
-        this->min = decode_sign(S, maxNegCode);
+        this->min = decode_sign(S, (uint)maxNegCode);
     }
   }
 
@@ -149,10 +149,10 @@ coding* coding::findBySpec(int spec) {
   coding* ptr = NEW(coding, 1);
   CHECK_NULL_0(ptr);
   coding* c = ptr->initFrom(spec);
-  if (c == null)  mtrace('f', ptr, 0);
-  if (c == null)
+  if (c == null) {
+    mtrace('f', ptr, 0);
     ::free(ptr);
-  else
+  } else
     // else caller should free it...
     c->isMalloc = true;
   return c;
@@ -167,9 +167,10 @@ coding* coding::findBySpec(int B, int H, int S, int D) {
 }
 
 void coding::free() {
-  if (isMalloc) mtrace('f', this, 0);
-  if (isMalloc)
+  if (isMalloc) {
+    mtrace('f', this, 0);
     ::free(this);
+  }
 }
 
 void coding_method::reset(value_stream* state) {
@@ -187,7 +188,7 @@ uint coding::parse(byte* &rp, int B, int H) {
   byte* ptr = rp;
   // hand peel the i==0 part of the loop:
   uint b_i = *ptr++ & 0xFF;
-  if (B == 1 || b_i < L)
+  if (B == 1 || b_i < (uint)L)
     { rp = ptr; return b_i; }
   uint sum = b_i;
   uint H_i = H;
@@ -195,7 +196,7 @@ uint coding::parse(byte* &rp, int B, int H) {
   for (int i = 2; i <= B_MAX; i++) { // easy for compilers to unroll if desired
     b_i = *ptr++ & 0xFF;
     sum += b_i * H_i;
-    if (i == B || b_i < L)
+    if (i == B || b_i < (uint)L)
       { rp = ptr; return sum; }
     H_i *= H;
   }
@@ -210,7 +211,7 @@ uint coding::parse_lgH(byte* &rp, int B, int H, int lgH) {
   byte* ptr = rp;
   // hand peel the i==0 part of the loop:
   uint b_i = *ptr++ & 0xFF;
-  if (B == 1 || b_i < L)
+  if (B == 1 || b_i < (uint)L)
     { rp = ptr; return b_i; }
   uint sum = b_i;
   uint lg_H_i = lgH;
@@ -218,7 +219,7 @@ uint coding::parse_lgH(byte* &rp, int B, int H, int lgH) {
   for (int i = 2; i <= B_MAX; i++) { // easy for compilers to unroll if desired
     b_i = *ptr++ & 0xFF;
     sum += b_i << lg_H_i;
-    if (i == B || b_i < L)
+    if (i == B || b_i < (uint)L)
       { rp = ptr; return sum; }
     lg_H_i += lgH;
   }
@@ -237,7 +238,7 @@ void coding::parseMultiple(byte* &rp, int N, byte* limit, int B, int H) {
   byte* ptr = rp;
   if (B == 1 || H == 256) {
     size_t len = (size_t)N*B;
-    if (len / B != N || ptr+len > limit) {
+    if (len / B != (size_t)N || ptr+len > limit) {
       abort(ERB);
       return;
     }
@@ -325,7 +326,7 @@ static maybe_inline
 int getPopValue(value_stream* self, uint uval) {
   if (uval > 0) {
     // note that the initial parse performed a range check
-    assert(uval <= self->cm->fVlength);
+    assert(uval <= (uint)self->cm->fVlength);
     return self->cm->fValues[uval-1];
   } else {
     // take an unfavored value
@@ -368,7 +369,7 @@ int coding::sumInUnsignedRange(int x, int y) {
 
 static maybe_inline
 int getDeltaValue(value_stream* self, uint uval, bool isSubrange) {
-  assert((bool)(self->c.isSubrange) == isSubrange);
+  assert((uint)(self->c.isSubrange) == (uint)isSubrange);
   assert(self->c.isSubrange | self->c.isFullRange);
   if (isSubrange)
     return self->sum = self->c.sumInUnsignedRange(self->sum, (int)uval);
@@ -443,7 +444,7 @@ int value_stream::getInt() {
     uval = coding::parse(rp, B, H);
     if (S != 0)
       uval = (uint) decode_sign(S, uval);
-    return getDeltaValue(this, uval, c.isSubrange);
+    return getDeltaValue(this, uval, (bool)c.isSubrange);
 
   case cmk_BHS1D1full:
     assert(S == 1 && D == 1 && c.isFullRange);
@@ -499,6 +500,9 @@ int value_stream::getInt() {
     assert(c.spec == BYTE1_spec);
     assert(B == 1 && H == 256 && S == 0 && D == 0);
     return getPopValue(this, *rp++ & 0xFF);
+
+  default:
+    break;
   }
   assert(false);
   return 0;
@@ -695,7 +699,7 @@ void coding_method::init(byte* &band_rp, byte* band_limit,
     for (int i = 0; i < N; i++) {
       uint val = vs.getInt();
       if (val == 0)  UN += 1;
-      if (!(val <= fVlength)) {
+      if (!(val <= (uint)fVlength)) {
         abort("pop token out of range");
         return;
       }
@@ -728,6 +732,7 @@ void coding_method::init(byte* &band_rp, byte* band_limit,
         switch (self->vs0.cmk) {
         case cmk_BHS0:   cmk2 = cmk_pop_BHS0;   break;
         case cmk_BYTE1:  cmk2 = cmk_pop_BYTE1;  break;
+        default: break;
         }
         self->vs0.cmk = cmk2;
         if (self != this) {
@@ -947,15 +952,17 @@ coding basic_codings[] = {
   CODING_INIT(4,240,1,1),
   CODING_INIT(4,248,0,1),
   CODING_INIT(4,248,1,1),
-
-  0
+  CODING_INIT(0,0,0,0)
 };
 #define BASIC_INDEX_LIMIT \
-        (sizeof(basic_codings)/sizeof(basic_codings[0])-1)
+        (int)(sizeof(basic_codings)/sizeof(basic_codings[0])-1)
 
 coding* coding::findByIndex(int idx) {
-  assert(_meta_canon_min == 1);
-  assert(_meta_canon_max+1 == BASIC_INDEX_LIMIT);
+#ifndef PRODUCT
+  /* Tricky assert here, constants and gcc complains about it without local. */
+  int index_limit = BASIC_INDEX_LIMIT;
+  assert(_meta_canon_min == 1 && _meta_canon_max+1 == index_limit);
+#endif
   if (idx >= _meta_canon_min && idx <= _meta_canon_max)
     return basic_codings[idx].init();
   else
