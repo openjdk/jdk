@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -387,37 +387,6 @@ public class DefaultMethodsTest extends TestHarness {
     }
 
     /**
-     * interface I<T> { default int m(T t) { return 99; } }
-     * Class C implements I<String> { public int m() { return 88; } }
-     *
-     * TEST: C c = new C(); c.m() == 88;
-     * TEST: I i = new C(); i.m() == 88;
-     */
-    public void testSelfFill() {
-        // This test ensures that a concrete method overrides a default method
-        // that matches at the language-level, but has a different method
-        // signature due to erasure.
-
-        // debugTest();
-
-        DefaultMethod dm = new DefaultMethod(
-            "int", "m", "return 99;", new MethodParameter("T", "t"));
-        ConcreteMethod cm = new ConcreteMethod(
-            "int", "m", "return 88;", AccessFlag.PUBLIC,
-            new MethodParameter("String", "s"));
-
-        Interface I = new Interface("I", new TypeParameter("T"), dm);
-        Class C = new Class("C", I.with("String"), cm);
-
-        AbstractMethod pm = new AbstractMethod(
-            "int", "m", new MethodParameter("T", "t"));
-
-        assertInvokeVirtualEquals(new Integer(88), C, cm, "-1", "\"string\"");
-        assertInvokeInterfaceEquals(
-            new Integer(88), C, I.with("String"), pm, "\"string\"");
-    }
-
-    /**
      * interface I { default int m() { return 99; } }
      * class C implements I {}
      *
@@ -470,58 +439,6 @@ public class DefaultMethodsTest extends TestHarness {
         compiler.cleanup();
     }
 
-    /**
-     * interface I<T,V,W> { default int m(T t, V v, W w) { return 99; } }
-     * interface J<T,V> extends I<String,T,V> { int m(T t, V v, String w); } }
-     * interface K<T> extends J<String,T> { int m(T t, String v, String w); } }
-     * class C implements K<String> {
-     *     public int m(String t, String v, String w) { return 88; }
-     * }
-     *
-     * TEST: I<String,String,String> i = new C(); i.m("A","B","C") == 88;
-     * TEST: J<String,String> j = new C(); j.m("A","B","C") == 88;
-     * TEST: K<String> k = new C(); k.m("A","B","C") == 88;
-     */
-    public void testBridges() {
-        DefaultMethod dm = new DefaultMethod("int", stdMethodName, "return 99;",
-            new MethodParameter("T", "t"), new MethodParameter("V", "v"),
-            new MethodParameter("W", "w"));
-
-        AbstractMethod pm0 = new AbstractMethod("int", stdMethodName,
-            new MethodParameter("T", "t"), new MethodParameter("V", "v"),
-            new MethodParameter("W", "w"));
-
-        AbstractMethod pm1 = new AbstractMethod("int", stdMethodName,
-            new MethodParameter("T", "t"), new MethodParameter("V", "v"),
-            new MethodParameter("String", "w"));
-
-        AbstractMethod pm2 = new AbstractMethod("int", stdMethodName,
-            new MethodParameter("T", "t"), new MethodParameter("String", "v"),
-            new MethodParameter("String", "w"));
-
-        ConcreteMethod cm = new ConcreteMethod("int",stdMethodName,"return 88;",
-            AccessFlag.PUBLIC,
-            new MethodParameter("String", "t"),
-            new MethodParameter("String", "v"),
-            new MethodParameter("String", "w"));
-
-        Interface I = new Interface("I", new TypeParameter("T"),
-            new TypeParameter("V"), new TypeParameter("W"), dm);
-        Interface J = new Interface("J",
-            new TypeParameter("T"), new TypeParameter("V"),
-            I.with("String", "T", "V"), pm1);
-        Interface K = new Interface("K", new TypeParameter("T"),
-            J.with("String", "T"), pm2);
-        Class C = new Class("C", K.with("String"), cm);
-
-        String[] args = new String[] { "\"A\"", "\"B\"", "\"C\"" };
-        assertInvokeInterfaceEquals(new Integer(88), C,
-            I.with("String", "String", "String"), pm0, args);
-        assertInvokeInterfaceEquals(new Integer(88), C,
-            J.with("String", "String"), pm1, args);
-        assertInvokeInterfaceEquals(new Integer(88), C,
-            K.with("String"), pm2, args);
-    }
 
     /**
      * interface J { default int m() { return 88; } }
@@ -665,33 +582,6 @@ public class DefaultMethodsTest extends TestHarness {
 
     /**
      * interface I { default Integer m() { return new Integer(88); } }
-     * class C { Number m() { return new Integer(99); } }
-     * class D extends C implements I {}
-     * class S { Object foo() { return (new D()).m(); } // link sig: ()LInteger;
-     * TEST: S s = new S(); s.foo() == new Integer(99)
-     */
-    public void testCovarBridge() {
-        Interface I = new Interface("I", new DefaultMethod(
-            "Integer", "m", "return new Integer(88);"));
-        Class C = new Class("C", new ConcreteMethod(
-            "Number", "m", "return new Integer(99);", AccessFlag.PUBLIC));
-        Class D = new Class("D", I, C);
-
-        ConcreteMethod DstubMethod = new ConcreteMethod(
-            "Integer", "m", "return null;", AccessFlag.PUBLIC);
-        Class Dstub = new Class("D", DstubMethod);
-
-        ConcreteMethod toCall = new ConcreteMethod(
-            "Object", "foo", "return (new D()).m();", AccessFlag.PUBLIC);
-        Class S = new Class("S", D, toCall);
-        S.addCompilationDependency(Dstub);
-        S.addCompilationDependency(DstubMethod);
-
-        assertInvokeVirtualEquals(new Integer(99), S, toCall, "null");
-    }
-
-    /**
-     * interface I { default Integer m() { return new Integer(88); } }
      * class C { int m() { return 99; } }
      * class D extends C implements I {}
      * class S { Object foo() { return (new D()).m(); } // link sig: ()LInteger;
@@ -735,69 +625,6 @@ public class DefaultMethodsTest extends TestHarness {
         Class B = new Class("B", J);
         Class C = new Class("C", B, I);
         assertInvokeVirtualEquals(99, C);
-    }
-
-    /**
-     * interface I<T,V,W> { int m(T t, V v, W w); }
-     * interface J<T,V> implements I<T,V,String> { int m(T t, V v, String w); }
-     * interface K<T> implements J<T,String> {
-     *     int m(T t, String v, String w); { return 99; } }
-     * class C implements K<String> {
-     *     public int m(Object t, Object v, String w) { return 77; }
-     * }
-     * TEST C = new C(); ((I)c).m(Object,Object,Object) == 99
-     * TEST C = new C(); ((J)c).m(Object,Object,String) == 77
-     * TEST C = new C(); ((K)c).m(Object,String,String) == 99
-     *
-     * Test that a erased-signature-matching method does not implement
-     * non-language-level matching methods
-     */
-    public void testNonConcreteFill() {
-        AbstractMethod ipm = new AbstractMethod("int", "m",
-            new MethodParameter("T", "t"),
-            new MethodParameter("V", "s"),
-            new MethodParameter("W", "w"));
-        Interface I = new Interface("I",
-            new TypeParameter("T"),
-            new TypeParameter("V"),
-            new TypeParameter("W"), ipm);
-
-        AbstractMethod jpm = new AbstractMethod("int", "m",
-            new MethodParameter("T", "t"),
-            new MethodParameter("V", "s"),
-            new MethodParameter("String", "w"));
-        Interface J = new Interface("J",
-            new TypeParameter("T"),
-            new TypeParameter("V"),
-            I.with("T", "V", "String"), jpm);
-
-        AbstractMethod kpm = new AbstractMethod("int", "m",
-            new MethodParameter("T", "t"),
-            new MethodParameter("String", "s"),
-            new MethodParameter("String", "w"));
-        Interface K = new Interface("K",
-            new TypeParameter("T"),
-            J.with("T", "String"),
-            new DefaultMethod("int", "m", "return 99;",
-                new MethodParameter("T", "t"),
-                new MethodParameter("String", "v"),
-                new MethodParameter("String", "w")));
-
-        Class C = new Class("C",
-            K.with("String"),
-            new ConcreteMethod("int", "m", "return 77;",
-                AccessFlag.PUBLIC,
-                new MethodParameter("Object", "t"),
-                new MethodParameter("Object", "v"),
-                new MethodParameter("String", "w")));
-
-        String a = "\"\"";
-        assertInvokeInterfaceEquals(99, C,
-            K.with("String"), kpm, a, a, a);
-        assertInvokeInterfaceEquals(77, C,
-            J.with("String", "String"), jpm, a, a, a);
-        assertInvokeInterfaceEquals(99, C,
-            I.with("String", "String", "String"), ipm, a, a, a);
     }
 
     public void testStrictfpDefault() {

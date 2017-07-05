@@ -96,7 +96,6 @@ endif
 combo_build:
 	@$(ECHO) $@ installer combo build started: `$(DATE) '+%y-%m-%d %H:%M'`
 	$(CD) $(INSTALL_TOPDIR)/make/installer/bundles/windows/ishield/wrapper/wrapper.jreboth ; $(MAKE) all
-	$(CD) $(INSTALL_TOPDIR)/make/installer/bundles/windows/ishield/wrapper/wrapper.new64jre ; $(MAKE) all
 	$(CD) $(INSTALL_TOPDIR)/make/installer/bundles/windows/ishield/jre ; $(MAKE) au_combo
 	$(CD) $(INSTALL_TOPDIR)/make/installer/bundles/windows/xmlinffile ; $(MAKE) all
 

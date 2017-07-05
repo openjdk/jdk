@@ -44,7 +44,7 @@ package java.awt.event;
  *
  * @see ContainerEvent
  * @see ContainerListener
- * @see <a href="http://java.sun.com/docs/books/tutorial/post1.0/ui/containerlistener.html">Tutorial: Writing a Container Listener</a>
+ * @see <a href="http://docs.oracle.com/javase/tutorial/uiswing/events/containerlistener.html">Tutorial: Writing a Container Listener</a>
  *
  * @author Amy Fowler
  * @since 1.1

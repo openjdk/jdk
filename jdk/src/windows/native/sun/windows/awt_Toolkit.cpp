@@ -1516,10 +1516,19 @@ BOOL AwtToolkit::PreProcessMouseMsg(AwtComponent* p, MSG& msg)
      * the mouse, not the Component with the input focus.
      */
 
-    if (msg.message == WM_MOUSEWHEEL &&
-        AwtToolkit::MainThread() == ::GetWindowThreadProcessId(hWndForWheel, NULL)) {
+    if (msg.message == WM_MOUSEWHEEL) {
             //i.e. mouse is over client area for this window
-            msg.hwnd = hWndForWheel;
+            DWORD hWndForWheelProcess;
+            DWORD hWndForWheelThread = ::GetWindowThreadProcessId(hWndForWheel, &hWndForWheelProcess);
+            if (::GetCurrentProcessId() == hWndForWheelProcess) {
+                if (AwtToolkit::MainThread() == hWndForWheelThread) {
+                    msg.hwnd = hWndForWheel;
+                } else {
+                    // Interop mode, redispatch the event to another toolkit.
+                    ::SendMessage(hWndForWheel, msg.message, mouseWParam, mouseLParam);
+                    return TRUE;
+                }
+            }
     }
 
     /*

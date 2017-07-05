@@ -91,7 +91,7 @@ import java.util.StringTokenizer;
  * to provide a specific set of defaults. These are documented in the
  * classes that require the specific default.
  *
- * <h3><a name="#defaultRecommendation">ComponentUIs and defaults</a></h2>
+ * <h3><a name="#defaultRecommendation">ComponentUIs and defaults</a></h3>
  *
  * All {@code ComponentUIs} typically need to set various properties
  * on the {@code JComponent} the {@code ComponentUI} is providing the
@@ -590,7 +590,7 @@ public abstract class LookAndFeel
      * Distinct look and feels should have different names, e.g.
      * a subclass of MotifLookAndFeel that changes the way a few components
      * are rendered should be called "CDE/Motif My Way"; something
-     * that would be useful to a user trying to select a L&F from a list
+     * that would be useful to a user trying to select a L&amp;F from a list
      * of names.
      *
      * @return short identifier for the look and feel

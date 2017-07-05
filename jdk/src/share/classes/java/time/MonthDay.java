@@ -246,7 +246,8 @@ public final class MonthDay
      * <p>
      * The conversion extracts the {@link ChronoField#MONTH_OF_YEAR MONTH_OF_YEAR} and
      * {@link ChronoField#DAY_OF_MONTH DAY_OF_MONTH} fields.
-     * The extraction is only permitted if the date-time has an ISO chronology.
+     * The extraction is only permitted if the temporal object has an ISO
+     * chronology, or can be converted to a {@code LocalDate}.
      * <p>
      * This method matches the signature of the functional interface {@link TemporalQuery}
      * allowing it to be used in queries via method reference, {@code MonthDay::from}.

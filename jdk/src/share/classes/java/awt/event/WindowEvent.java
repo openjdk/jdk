@@ -52,7 +52,7 @@ import sun.awt.SunToolkit;
  *
  * @see WindowAdapter
  * @see WindowListener
- * @see <a href="http://java.sun.com/docs/books/tutorial/post1.0/ui/windowlistener.html">Tutorial: Writing a Window Listener</a>
+ * @see <a href="http://docs.oracle.com/javase/tutorial/uiswing/events/windowlistener.html">Tutorial: Writing a Window Listener</a>
  *
  * @since JDK1.1
  */

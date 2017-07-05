@@ -38,7 +38,7 @@
 // and (super)interfaces. Streaming is done in reverse order (subclasses first,
 // interfaces last).
 //
-//    for (KlassStream st(k, false, false); !st.eos(); st.next()) {
+//    for (KlassStream st(k, false, false, false); !st.eos(); st.next()) {
 //      Klass* k = st.klass();
 //      ...
 //    }
@@ -46,17 +46,21 @@
 class KlassStream VALUE_OBJ_CLASS_SPEC {
  protected:
   instanceKlassHandle _klass;           // current klass/interface iterated over
-  Array<Klass*>*    _interfaces;      // transitive interfaces for initial class
+  instanceKlassHandle _base_klass;      // initial klass/interface to iterate over
+  Array<Klass*>*      _interfaces;      // transitive interfaces for initial class
   int                 _interface_index; // current interface being processed
   bool                _local_only;      // process initial class/interface only
   bool                _classes_only;    // process classes only (no interfaces)
+  bool                _walk_defaults;   // process default methods
+  bool                _base_class_search_defaults; // time to process default methods
+  bool                _defaults_checked; // already checked for default methods
   int                 _index;
 
-  virtual int length() const = 0;
+  virtual int length() = 0;
 
  public:
   // constructor
-  KlassStream(instanceKlassHandle klass, bool local_only, bool classes_only);
+  KlassStream(instanceKlassHandle klass, bool local_only, bool classes_only, bool walk_defaults);
 
   // testing
   bool eos();
@@ -67,6 +71,8 @@ class KlassStream VALUE_OBJ_CLASS_SPEC {
   // accessors
   instanceKlassHandle klass() const { return _klass; }
   int index() const                 { return _index; }
+  bool base_class_search_defaults() const { return _base_class_search_defaults; }
+  void base_class_search_defaults(bool b) { _base_class_search_defaults = b; }
 };
 
 
@@ -81,17 +87,24 @@ class KlassStream VALUE_OBJ_CLASS_SPEC {
 
 class MethodStream : public KlassStream {
  private:
-  int length() const          { return methods()->length(); }
-  Array<Method*>* methods() const { return _klass->methods(); }
+  int length()                    { return methods()->length(); }
+  Array<Method*>* methods() {
+    if (base_class_search_defaults()) {
+      base_class_search_defaults(false);
+      return _klass->default_methods();
+    } else {
+      return _klass->methods();
+    }
+  }
  public:
   MethodStream(instanceKlassHandle klass, bool local_only, bool classes_only)
-    : KlassStream(klass, local_only, classes_only) {
+    : KlassStream(klass, local_only, classes_only, true) {
     _index = length();
     next();
   }
 
   void next() { _index--; }
-  Method* method() const { return methods()->at(index()); }
+  Method* method() { return methods()->at(index()); }
 };
 
 
@@ -107,13 +120,13 @@ class MethodStream : public KlassStream {
 
 class FieldStream : public KlassStream {
  private:
-  int length() const                { return _klass->java_fields_count(); }
+  int length() { return _klass->java_fields_count(); }
 
   fieldDescriptor _fd_buf;
 
  public:
   FieldStream(instanceKlassHandle klass, bool local_only, bool classes_only)
-    : KlassStream(klass, local_only, classes_only) {
+    : KlassStream(klass, local_only, classes_only, false) {
     _index = length();
     next();
   }

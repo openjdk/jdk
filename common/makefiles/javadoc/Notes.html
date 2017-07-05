@@ -8,42 +8,42 @@
 <body>
 <h3><a name="REGEXP"></a><br>
 REGEXP</h3>
-<p> REGEXP is a list of wildcard patterns that determines which packages listed 
-  in CORE_PKGS.gmk go into which summary-table on the main API index page. It 
-  was motivated by the need to divide the world into &quot;core packages&quot; 
-  (java.*) and &quot;extension packages&quot; (javax.*). In time, the distinction 
-  went away. The whole table is now called &quot;Platform Packages&quot;--which 
-  eliminated the need for this list of regular expressions. But it lingered on, 
-  accreting all of the packages in the JVM, one by one. I pruned it back to &quot;*&quot;, 
-  so it now covers every package in the Java platform API docs. If some separation 
-  is needed in the future, it can grow back into a colon-separated list, starting 
-  with this, which is in all respects equivalent to &quot;*&quot; at this point 
+<p> REGEXP is a list of wildcard patterns that determines which packages listed
+  in CORE_PKGS.gmk go into which summary-table on the main API index page. It
+  was motivated by the need to divide the world into &quot;core packages&quot;
+  (java.*) and &quot;extension packages&quot; (javax.*). In time, the distinction
+  went away. The whole table is now called &quot;Platform Packages&quot;--which
+  eliminated the need for this list of regular expressions. But it lingered on,
+  accreting all of the packages in the JVM, one by one. I pruned it back to &quot;*&quot;,
+  so it now covers every package in the Java platform API docs. If some separation
+  is needed in the future, it can grow back into a colon-separated list, starting
+  with this, which is in all respects equivalent to &quot;*&quot; at this point
   in time:</p>
-<blockquote> 
+<blockquote>
   <pre>REGEXP = &quot;java.*:javax.*:org.ietf*:org.omg.</pre>
 </blockquote>
 <h3><a name="releaseTargets"></a><br>
   Release Targets</h3>
 <p> (Thanks to Kelly O'Hair for this info.)</p>
-<p> The <tt>rel-coredocs</tt> and <tt>rel-docs</tt> targets were added by Eric 
-  Armstrong. <tt>rel-coredocs</tt> assumes the kind of large, 32-bit machine used 
-  in the javapubs group's docs-release process. It specifies memory settings accordingly 
+<p> The <tt>rel-coredocs</tt> and <tt>rel-docs</tt> targets were added by Eric
+  Armstrong. <tt>rel-coredocs</tt> assumes the kind of large, 32-bit machine used
+  in the javapubs group's docs-release process. It specifies memory settings accordingly
   to maximize performance.</p>
-<p> The performance settings, like the sanity check, are most important for the 
-  core docs--the platform APIs. Running javadoc on those APIs takes a significant 
-  amount of time and memory. Setting the initial heap size as large as possible 
-  is important to prevent thrashing as the heap grows. Setting the maximum as 
+<p> The performance settings, like the sanity check, are most important for the
+  core docs--the platform APIs. Running javadoc on those APIs takes a significant
+  amount of time and memory. Setting the initial heap size as large as possible
+  is important to prevent thrashing as the heap grows. Setting the maximum as
   large as necessary is also important to keep the job from failing.</p>
 <blockquote>
   <p> <tt>-J-Xmx512</tt> sets a maximum of 512, which became necessary in 6.0<br>
     <tt>-J-Xms256</tt> sets starting size to 256 (default is 8)</p>
 </blockquote>
-<p> <tt>rel-coredocs</tt> also includes a sanity check to help ensure that <tt>BUILD_NUMBER</tt> 
-  and <tt>MILESTONE</tt> are specified properly when docs are built outside of 
-  the normal release engineering process, with the intention of releasing them 
-  on the web or in a downloaded docs bundle. (When invoked in release engineering's 
-  control build, the values are always set properly. But when the targets are 
-  run by themselves, they default to b00 and &quot;internal&quot;--which silently 
+<p> <tt>rel-coredocs</tt> also includes a sanity check to help ensure that <tt>BUILD_NUMBER</tt>
+  and <tt>MILESTONE</tt> are specified properly when docs are built outside of
+  the normal release engineering process, with the intention of releasing them
+  on the web or in a downloaded docs bundle. (When invoked in release engineering's
+  control build, the values are always set properly. But when the targets are
+  run by themselves, they default to b00 and &quot;internal&quot;--which silently
   sabotage the result of a build that can take many hours to complete.</p>
 </body>
 </html>

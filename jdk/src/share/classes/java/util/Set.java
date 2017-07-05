@@ -386,15 +386,18 @@ public interface Set<E> extends Collection<E> {
     /**
      * Creates a {@code Spliterator} over the elements in this set.
      *
-     * <p>The {@code Spliterator} reports {@link Spliterator#SIZED} and
-     * {@link Spliterator#DISTINCT}.  Implementations should document the
-     * reporting of additional characteristic values.
+     * <p>The {@code Spliterator} reports {@link Spliterator#DISTINCT}.
+     * Implementations should document the reporting of additional
+     * characteristic values.
      *
      * @implSpec
      * The default implementation creates a
      * <em><a href="Spliterator.html#binding">late-binding</a></em> spliterator
      * from the set's {@code Iterator}.  The spliterator inherits the
      * <em>fail-fast</em> properties of the set's iterator.
+     * <p>
+     * The created {@code Spliterator} additionally reports
+     * {@link Spliterator#SIZED}.
      *
      * @implNote
      * The created {@code Spliterator} additionally reports

@@ -39,7 +39,7 @@ SUNWprivate_1.1 {
 		Java_sun_security_smartcardio_PCSC_SCardBeginTransaction;
 		Java_sun_security_smartcardio_PCSC_SCardEndTransaction;
 		Java_sun_security_smartcardio_PCSC_SCardControl;
-		
+
 	local:
 		*;
 };

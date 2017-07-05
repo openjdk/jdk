@@ -27,7 +27,7 @@
 
 SUNWprivate_1.1 {
 	global:
-            JDgaLibInit;	
+            JDgaLibInit;
 	local:
 	    *;
 };

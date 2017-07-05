@@ -50,7 +50,7 @@ import javax.swing.event.*;
  * For further information on tree models,
  * including an example of a custom implementation,
  * see <a
- href="http://java.sun.com/docs/books/tutorial/uiswing/components/tree.html">How to Use Trees</a>
+ href="http://docs.oracle.com/javase/tutorial/uiswing/components/tree.html">How to Use Trees</a>
  * in <em>The Java Tutorial.</em>
  *
  * @see TreePath
