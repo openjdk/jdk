@@ -41,7 +41,7 @@ inline frame::frame() {
   _deopt_state = unknown;
 }
 
-inline frame::frame(intptr_t* sp, intptr_t* fp, address pc) {
+inline void frame::init(intptr_t* sp, intptr_t* fp, address pc) {
   _sp = sp;
   _unextended_sp = sp;
   _fp = fp;
@@ -57,6 +57,10 @@ inline frame::frame(intptr_t* sp, intptr_t* fp, address pc) {
   } else {
     _deopt_state = not_deoptimized;
   }
+}
+
+inline frame::frame(intptr_t* sp, intptr_t* fp, address pc) {
+  init(sp, fp, pc);
 }
 
 inline frame::frame(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address pc) {

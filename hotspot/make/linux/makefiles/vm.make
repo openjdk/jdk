@@ -227,10 +227,10 @@ JVM_OBJ_FILES = $(Obj_Files)
 
 vm_version.o: $(filter-out vm_version.o,$(JVM_OBJ_FILES))
 
-mapfile : $(MAPFILE) vm.def
+mapfile : $(MAPFILE) vm.def mapfile_ext
 	rm -f $@
 	awk '{ if ($$0 ~ "INSERT VTABLE SYMBOLS HERE")	\
-                 { system ("cat vm.def"); }		\
+                 { system ("cat mapfile_ext"); system ("cat vm.def"); } \
                else					\
                  { print $$0 }				\
              }' > $@ < $(MAPFILE)
@@ -241,6 +241,13 @@ mapfile_reorder : mapfile $(REORDERFILE)
 
 vm.def: $(Res_Files) $(Obj_Files)
 	sh $(GAMMADIR)/make/linux/makefiles/build_vm_def.sh *.o > $@
+
+mapfile_ext:
+	rm -f $@
+	touch $@
+	if [ -f $(HS_ALT_MAKE)/linux/makefiles/mapfile-ext ]; then \
+	  cat $(HS_ALT_MAKE)/linux/makefiles/mapfile-ext > $@; \
+	fi
 
 ifeq ($(JVM_VARIANT_ZEROSHARK), true)
   STATIC_CXX = false
@@ -261,6 +268,7 @@ else
   LIBJVM_MAPFILE$(LDNOMAP) = mapfile_reorder
   LFLAGS_VM$(LDNOMAP)      += $(MAPFLAG:FILENAME=$(LIBJVM_MAPFILE))
   LFLAGS_VM                += $(SONAMEFLAG:SONAME=$(LIBJVM))
+  LFLAGS_VM                += -Wl,-z,defs
 
   # JVM is statically linked with libgcc[_s] and libstdc++; this is needed to
   # get around library dependency and compatibility issues. Must use gcc not

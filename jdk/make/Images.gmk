@@ -203,8 +203,6 @@ ifeq ($(PROFILE), )
       jconsole.jar \
       sa-jdi.jar \
       dt.jar \
-      orb.idl \
-      ir.idl \
       ct.sym
 
   ifeq ($(OPENJDK_TARGET_OS), windows)

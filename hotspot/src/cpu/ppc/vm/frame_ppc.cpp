@@ -308,3 +308,10 @@ intptr_t *frame::initial_deoptimization_info() {
   // unused... but returns fp() to minimize changes introduced by 7087445
   return fp();
 }
+
+#ifndef PRODUCT
+// This is a generic constructor which is only used by pns() in debug.cpp.
+frame::frame(void* sp, void* fp, void* pc) : _sp((intptr_t*)sp), _unextended_sp((intptr_t*)sp) {
+  find_codeblob_and_set_pc_and_deopt_state((address)pc); // also sets _fp and adjusts _unextended_sp
+}
+#endif

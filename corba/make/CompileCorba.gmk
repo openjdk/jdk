@@ -51,13 +51,11 @@ $(eval $(call SetupJavaCompilation,BUILD_INTERIM_CORBA, \
     JAR := $(INTERIM_CORBA_JAR)))
 
 ################################################################################
-# Copy idl files straight to jdk/lib. Not sure if this is the right way to do
-# it, but we are moving away from the one repo at a time build. Perhaps we should
-# scrap the 'jdk' prefix to bin, lib etc?
-$(JDK_OUTPUTDIR)/lib/%: $(CORBA_TOPDIR)/src/java.corba/share/classes/com/sun/tools/corba/se/idl/%
+# Copy idl files straight to jdk/include.
+$(JDK_OUTPUTDIR)/include/%: $(CORBA_TOPDIR)/src/java.corba/share/classes/com/sun/tools/corba/se/idl/%
 	$(install-file)
 
-IDL_TARGET_FILES := $(JDK_OUTPUTDIR)/lib/orb.idl $(JDK_OUTPUTDIR)/lib/ir.idl
+IDL_TARGET_FILES := $(JDK_OUTPUTDIR)/include/orb.idl $(JDK_OUTPUTDIR)/include/ir.idl
 
 ################################################################################
 
