@@ -25,9 +25,8 @@
 package sun.jvm.hotspot.tools;
 
 import sun.jvm.hotspot.debugger.JVMDebugger;
-import jdk.internal.vm.agent.spi.ToolProvider;
 
-public class JStack extends Tool implements ToolProvider {
+public class JStack extends Tool {
     public JStack(boolean mixedMode, boolean concurrentLocks) {
         this.mixedMode = mixedMode;
         this.concurrentLocks = concurrentLocks;
@@ -45,6 +44,7 @@ public class JStack extends Tool implements ToolProvider {
         return false;
     }
 
+    @Override
     public String getName() {
         return "jstack";
     }
@@ -67,8 +67,7 @@ public class JStack extends Tool implements ToolProvider {
         tool.run();
     }
 
-    @Override
-    public void run(String... args) {
+    public void runWithArgs(String... args) {
         int used = 0;
         for (int i = 0; i < args.length; i++) {
             if (args[i].equals("-m")) {
@@ -93,7 +92,7 @@ public class JStack extends Tool implements ToolProvider {
 
     public static void main(String[] args) {
         JStack jstack = new JStack();
-        jstack.run(args);
+        jstack.runWithArgs(args);
     }
 
     private boolean mixedMode;

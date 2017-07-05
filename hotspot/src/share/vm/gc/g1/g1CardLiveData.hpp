@@ -46,6 +46,17 @@ private:
   size_t _max_capacity;
   size_t _cards_per_region;
 
+  // Regions may be reclaimed while concurrently creating live data (e.g. due to humongous
+  // eager reclaim). This results in wrong live data for these regions at the end.
+  // So we need to somehow detect these regions, and during live data finalization completely
+  // recreate their information.
+  // This _gc_timestamp_at_create tracks the global timestamp when live data creation
+  // has started. Any regions with a higher time stamp have been cleared after that
+  // point in time, and need re-finalization.
+  // Unsynchronized access to this variable is okay, since this value is only set during a
+  // concurrent phase, and read only at the Cleanup safepoint. I.e. there is always
+  // full memory synchronization inbetween.
+  uint _gc_timestamp_at_create;
   // The per-card liveness bitmap.
   bm_word_t* _live_cards;
   size_t _live_cards_size_in_bits;
@@ -54,21 +65,23 @@ private:
   size_t _live_regions_size_in_bits;
   // The bits in this bitmap contain for every card whether it contains
   // at least part of at least one live object.
-  BitMap live_cards_bm() const { return BitMap(_live_cards, _live_cards_size_in_bits); }
+  BitMapView live_cards_bm() const { return BitMapView(_live_cards, _live_cards_size_in_bits); }
   // The bits in this bitmap indicate that a given region contains some live objects.
-  BitMap live_regions_bm() const { return BitMap(_live_regions, _live_regions_size_in_bits); }
+  BitMapView live_regions_bm() const { return BitMapView(_live_regions, _live_regions_size_in_bits); }
 
   // Allocate a "large" bitmap from virtual memory with the given size in bits.
   bm_word_t* allocate_large_bitmap(size_t size_in_bits);
   void free_large_bitmap(bm_word_t* map, size_t size_in_bits);
 
-  inline BitMap live_card_bitmap(uint region);
+  inline BitMapView live_card_bitmap(uint region);
 
   inline bool is_card_live_at(BitMap::idx_t idx) const;
 
   size_t live_region_bitmap_size_in_bits() const;
   size_t live_card_bitmap_size_in_bits() const;
 public:
+  uint gc_timestamp_at_create() const { return _gc_timestamp_at_create; }
+
   inline bool is_region_live(uint region) const;
 
   inline void remove_nonlive_cards(uint region, BitMap* bm);

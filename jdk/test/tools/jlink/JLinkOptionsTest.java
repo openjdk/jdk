@@ -24,7 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import jdk.tools.jlink.plugin.Pool;
+import jdk.tools.jlink.plugin.ModulePool;
 import jdk.tools.jlink.internal.PluginRepository;
 import jdk.tools.jlink.plugin.TransformerPlugin;
 
@@ -62,7 +62,7 @@ public class JLinkOptionsTest {
         }
 
         @Override
-        public void visit(Pool in, Pool out) {
+        public void visit(ModulePool in, ModulePool out) {
 
         }
 

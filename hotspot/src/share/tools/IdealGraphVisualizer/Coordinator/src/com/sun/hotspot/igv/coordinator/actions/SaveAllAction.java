@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,14 +29,30 @@ import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import javax.swing.Action;
 import javax.swing.KeyStroke;
+import org.openide.awt.ActionID;
+import org.openide.awt.ActionReference;
+import org.openide.awt.ActionReferences;
+import org.openide.awt.ActionRegistration;
 import org.openide.util.HelpCtx;
 import org.openide.util.NbBundle;
+import org.openide.util.NbBundle.Messages;
 import org.openide.util.actions.CallableSystemAction;
 
 /**
  *
  * @author Thomas Wuerthinger
  */
+@ActionID(
+        category = "File",
+        id = "com.sun.hotspot.igv.coordinator.actions.SaveAllAction"
+)
+@ActionRegistration(
+        displayName = "#CTL_SaveAllAction"
+)
+@ActionReferences({
+    @ActionReference(path = "Menu/File", position = 0),
+    @ActionReference(path = "Shortcuts", name = "C-S")
+})
 public final class SaveAllAction extends CallableSystemAction {
 
     @Override

@@ -29,10 +29,12 @@
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/commandLineFlagConstraintList.hpp"
+#include "runtime/commandLineFlagWriteableList.hpp"
 #include "runtime/commandLineFlagRangeList.hpp"
 #include "runtime/os.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "trace/tracing.hpp"
+#include "utilities/defaultStream.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
 #if INCLUDE_ALL_GCS
@@ -62,7 +64,8 @@ RUNTIME_FLAGS(MATERIALIZE_DEVELOPER_FLAG, \
               MATERIALIZE_PRODUCT_RW_FLAG, \
               MATERIALIZE_LP64_PRODUCT_FLAG, \
               IGNORE_RANGE, \
-              IGNORE_CONSTRAINT)
+              IGNORE_CONSTRAINT, \
+              IGNORE_WRITEABLE)
 
 RUNTIME_OS_FLAGS(MATERIALIZE_DEVELOPER_FLAG, \
                  MATERIALIZE_PD_DEVELOPER_FLAG, \
@@ -71,7 +74,8 @@ RUNTIME_OS_FLAGS(MATERIALIZE_DEVELOPER_FLAG, \
                  MATERIALIZE_DIAGNOSTIC_FLAG, \
                  MATERIALIZE_NOTPRODUCT_FLAG, \
                  IGNORE_RANGE, \
-                 IGNORE_CONSTRAINT)
+                 IGNORE_CONSTRAINT, \
+                 IGNORE_WRITEABLE)
 
 ARCH_FLAGS(MATERIALIZE_DEVELOPER_FLAG, \
            MATERIALIZE_PRODUCT_FLAG, \
@@ -79,7 +83,8 @@ ARCH_FLAGS(MATERIALIZE_DEVELOPER_FLAG, \
            MATERIALIZE_EXPERIMENTAL_FLAG, \
            MATERIALIZE_NOTPRODUCT_FLAG, \
            IGNORE_RANGE, \
-           IGNORE_CONSTRAINT)
+           IGNORE_CONSTRAINT, \
+           IGNORE_WRITEABLE)
 
 MATERIALIZE_FLAGS_EXT
 
@@ -141,10 +146,35 @@ static bool is_product_build() {
 #endif
 }
 
-void Flag::check_writable() {
+Flag::Error Flag::check_writable(bool changed) {
   if (is_constant_in_binary()) {
     fatal("flag is constant: %s", _name);
   }
+
+  Flag::Error error = Flag::SUCCESS;
+  if (changed) {
+    CommandLineFlagWriteable* writeable = CommandLineFlagWriteableList::find(_name);
+    if (writeable) {
+      if (writeable->is_writeable() == false) {
+        switch (writeable->type())
+        {
+          case CommandLineFlagWriteable::Once:
+            error = Flag::SET_ONLY_ONCE;
+            jio_fprintf(defaultStream::error_stream(), "Error: %s may not be set more than once\n", _name);
+            break;
+          case CommandLineFlagWriteable::CommandLineOnly:
+            error = Flag::COMMAND_LINE_ONLY;
+            jio_fprintf(defaultStream::error_stream(), "Error: %s may be modified only from commad line\n", _name);
+            break;
+          default:
+            ShouldNotReachHere();
+            break;
+        }
+      }
+      writeable->mark_once();
+    }
+  }
+  return error;
 }
 
 bool Flag::is_bool() const {
@@ -155,9 +185,12 @@ bool Flag::get_bool() const {
   return *((bool*) _addr);
 }
 
-void Flag::set_bool(bool value) {
-  check_writable();
-  *((bool*) _addr) = value;
+Flag::Error Flag::set_bool(bool value) {
+  Flag::Error error = check_writable(value!=get_bool());
+  if (error == Flag::SUCCESS) {
+    *((bool*) _addr) = value;
+  }
+  return error;
 }
 
 bool Flag::is_int() const {
@@ -168,9 +201,12 @@ int Flag::get_int() const {
   return *((int*) _addr);
 }
 
-void Flag::set_int(int value) {
-  check_writable();
-  *((int*) _addr) = value;
+Flag::Error Flag::set_int(int value) {
+  Flag::Error error = check_writable(value!=get_int());
+  if (error == Flag::SUCCESS) {
+    *((int*) _addr) = value;
+  }
+  return error;
 }
 
 bool Flag::is_uint() const {
@@ -181,9 +217,12 @@ uint Flag::get_uint() const {
   return *((uint*) _addr);
 }
 
-void Flag::set_uint(uint value) {
-  check_writable();
-  *((uint*) _addr) = value;
+Flag::Error Flag::set_uint(uint value) {
+  Flag::Error error = check_writable(value!=get_uint());
+  if (error == Flag::SUCCESS) {
+    *((uint*) _addr) = value;
+  }
+  return error;
 }
 
 bool Flag::is_intx() const {
@@ -194,9 +233,12 @@ intx Flag::get_intx() const {
   return *((intx*) _addr);
 }
 
-void Flag::set_intx(intx value) {
-  check_writable();
-  *((intx*) _addr) = value;
+Flag::Error Flag::set_intx(intx value) {
+  Flag::Error error = check_writable(value!=get_intx());
+  if (error == Flag::SUCCESS) {
+    *((intx*) _addr) = value;
+  }
+  return error;
 }
 
 bool Flag::is_uintx() const {
@@ -207,9 +249,12 @@ uintx Flag::get_uintx() const {
   return *((uintx*) _addr);
 }
 
-void Flag::set_uintx(uintx value) {
-  check_writable();
-  *((uintx*) _addr) = value;
+Flag::Error Flag::set_uintx(uintx value) {
+  Flag::Error error = check_writable(value!=get_uintx());
+  if (error == Flag::SUCCESS) {
+    *((uintx*) _addr) = value;
+  }
+  return error;
 }
 
 bool Flag::is_uint64_t() const {
@@ -220,9 +265,12 @@ uint64_t Flag::get_uint64_t() const {
   return *((uint64_t*) _addr);
 }
 
-void Flag::set_uint64_t(uint64_t value) {
-  check_writable();
-  *((uint64_t*) _addr) = value;
+Flag::Error Flag::set_uint64_t(uint64_t value) {
+  Flag::Error error = check_writable(value!=get_uint64_t());
+  if (error == Flag::SUCCESS) {
+    *((uint64_t*) _addr) = value;
+  }
+  return error;
 }
 
 bool Flag::is_size_t() const {
@@ -233,9 +281,12 @@ size_t Flag::get_size_t() const {
   return *((size_t*) _addr);
 }
 
-void Flag::set_size_t(size_t value) {
-  check_writable();
-  *((size_t*) _addr) = value;
+Flag::Error Flag::set_size_t(size_t value) {
+  Flag::Error error = check_writable(value!=get_size_t());
+  if (error == Flag::SUCCESS) {
+    *((size_t*) _addr) = value;
+  }
+  return error;
 }
 
 bool Flag::is_double() const {
@@ -246,9 +297,12 @@ double Flag::get_double() const {
   return *((double*) _addr);
 }
 
-void Flag::set_double(double value) {
-  check_writable();
-  *((double*) _addr) = value;
+Flag::Error Flag::set_double(double value) {
+  Flag::Error error = check_writable(value!=get_double());
+  if (error == Flag::SUCCESS) {
+    *((double*) _addr) = value;
+  }
+  return error;
 }
 
 bool Flag::is_ccstr() const {
@@ -263,9 +317,12 @@ ccstr Flag::get_ccstr() const {
   return *((ccstr*) _addr);
 }
 
-void Flag::set_ccstr(ccstr value) {
-  check_writable();
-  *((ccstr*) _addr) = value;
+Flag::Error Flag::set_ccstr(ccstr value) {
+  Flag::Error error = check_writable(value!=get_ccstr());
+  if (error == Flag::SUCCESS) {
+    *((ccstr*) _addr) = value;
+  }
+  return error;
 }
 
 
@@ -654,7 +711,8 @@ static Flag flagTable[] = {
                RUNTIME_PRODUCT_RW_FLAG_STRUCT, \
                RUNTIME_LP64_PRODUCT_FLAG_STRUCT, \
                IGNORE_RANGE, \
-               IGNORE_CONSTRAINT)
+               IGNORE_CONSTRAINT, \
+               IGNORE_WRITEABLE)
  RUNTIME_OS_FLAGS(RUNTIME_DEVELOP_FLAG_STRUCT, \
                   RUNTIME_PD_DEVELOP_FLAG_STRUCT, \
                   RUNTIME_PRODUCT_FLAG_STRUCT, \
@@ -662,7 +720,8 @@ static Flag flagTable[] = {
                   RUNTIME_DIAGNOSTIC_FLAG_STRUCT, \
                   RUNTIME_NOTPRODUCT_FLAG_STRUCT, \
                   IGNORE_RANGE, \
-                  IGNORE_CONSTRAINT)
+                  IGNORE_CONSTRAINT, \
+                  IGNORE_WRITEABLE)
 #if INCLUDE_ALL_GCS
  G1_FLAGS(RUNTIME_DEVELOP_FLAG_STRUCT, \
           RUNTIME_PD_DEVELOP_FLAG_STRUCT, \
@@ -674,7 +733,8 @@ static Flag flagTable[] = {
           RUNTIME_MANAGEABLE_FLAG_STRUCT, \
           RUNTIME_PRODUCT_RW_FLAG_STRUCT, \
           IGNORE_RANGE, \
-          IGNORE_CONSTRAINT)
+          IGNORE_CONSTRAINT, \
+          IGNORE_WRITEABLE)
 #endif // INCLUDE_ALL_GCS
 #if INCLUDE_JVMCI
  JVMCI_FLAGS(JVMCI_DEVELOP_FLAG_STRUCT, \
@@ -685,7 +745,8 @@ static Flag flagTable[] = {
              JVMCI_EXPERIMENTAL_FLAG_STRUCT, \
              JVMCI_NOTPRODUCT_FLAG_STRUCT, \
              IGNORE_RANGE, \
-             IGNORE_CONSTRAINT)
+             IGNORE_CONSTRAINT, \
+             IGNORE_WRITEABLE)
 #endif // INCLUDE_JVMCI
 #ifdef COMPILER1
  C1_FLAGS(C1_DEVELOP_FLAG_STRUCT, \
@@ -695,7 +756,8 @@ static Flag flagTable[] = {
           C1_DIAGNOSTIC_FLAG_STRUCT, \
           C1_NOTPRODUCT_FLAG_STRUCT, \
           IGNORE_RANGE, \
-          IGNORE_CONSTRAINT)
+          IGNORE_CONSTRAINT, \
+          IGNORE_WRITEABLE)
 #endif // COMPILER1
 #ifdef COMPILER2
  C2_FLAGS(C2_DEVELOP_FLAG_STRUCT, \
@@ -706,7 +768,8 @@ static Flag flagTable[] = {
           C2_EXPERIMENTAL_FLAG_STRUCT, \
           C2_NOTPRODUCT_FLAG_STRUCT, \
           IGNORE_RANGE, \
-          IGNORE_CONSTRAINT)
+          IGNORE_CONSTRAINT, \
+          IGNORE_WRITEABLE)
 #endif // COMPILER2
 #ifdef SHARK
  SHARK_FLAGS(SHARK_DEVELOP_FLAG_STRUCT, \
@@ -714,7 +777,10 @@ static Flag flagTable[] = {
              SHARK_PRODUCT_FLAG_STRUCT, \
              SHARK_PD_PRODUCT_FLAG_STRUCT, \
              SHARK_DIAGNOSTIC_FLAG_STRUCT, \
-             SHARK_NOTPRODUCT_FLAG_STRUCT)
+             SHARK_NOTPRODUCT_FLAG_STRUCT, \
+             IGNORE_RANGE, \
+             IGNORE_CONSTRAINT, \
+             IGNORE_WRITEABLE)
 #endif // SHARK
  ARCH_FLAGS(ARCH_DEVELOP_FLAG_STRUCT, \
             ARCH_PRODUCT_FLAG_STRUCT, \
@@ -722,7 +788,8 @@ static Flag flagTable[] = {
             ARCH_EXPERIMENTAL_FLAG_STRUCT, \
             ARCH_NOTPRODUCT_FLAG_STRUCT, \
             IGNORE_RANGE, \
-            IGNORE_CONSTRAINT)
+            IGNORE_CONSTRAINT, \
+            IGNORE_WRITEABLE)
  FLAGTABLE_EXT
  {0, NULL, NULL}
 };
@@ -873,10 +940,10 @@ Flag::Error CommandLineFlags::boolAtPut(Flag* flag, bool* value, Flag::Flags ori
   if (check != Flag::SUCCESS) return check;
   bool old_value = flag->get_bool();
   trace_flag_changed<EventBooleanFlagChanged, bool>(name, old_value, *value, origin);
-  flag->set_bool(*value);
+  check = flag->set_bool(*value);
   *value = old_value;
   flag->set_origin(origin);
-  return Flag::SUCCESS;
+  return check;
 }
 
 Flag::Error CommandLineFlags::boolAtPut(const char* name, size_t len, bool* value, Flag::Flags origin) {
@@ -922,10 +989,10 @@ Flag::Error CommandLineFlags::intAtPut(Flag* flag, int* value, Flag::Flags origi
   if (check != Flag::SUCCESS) return check;
   int old_value = flag->get_int();
   trace_flag_changed<EventIntFlagChanged, s4>(name, old_value, *value, origin);
-  flag->set_int(*value);
+  check = flag->set_int(*value);
   *value = old_value;
   flag->set_origin(origin);
-  return Flag::SUCCESS;
+  return check;
 }
 
 Flag::Error CommandLineFlags::intAtPut(const char* name, size_t len, int* value, Flag::Flags origin) {
@@ -971,10 +1038,10 @@ Flag::Error CommandLineFlags::uintAtPut(Flag* flag, uint* value, Flag::Flags ori
   if (check != Flag::SUCCESS) return check;
   uint old_value = flag->get_uint();
   trace_flag_changed<EventUnsignedIntFlagChanged, u4>(name, old_value, *value, origin);
-  flag->set_uint(*value);
+  check = flag->set_uint(*value);
   *value = old_value;
   flag->set_origin(origin);
-  return Flag::SUCCESS;
+  return check;
 }
 
 Flag::Error CommandLineFlags::uintAtPut(const char* name, size_t len, uint* value, Flag::Flags origin) {
@@ -1020,10 +1087,10 @@ Flag::Error CommandLineFlags::intxAtPut(Flag* flag, intx* value, Flag::Flags ori
   if (check != Flag::SUCCESS) return check;
   intx old_value = flag->get_intx();
   trace_flag_changed<EventLongFlagChanged, intx>(name, old_value, *value, origin);
-  flag->set_intx(*value);
+  check = flag->set_intx(*value);
   *value = old_value;
   flag->set_origin(origin);
-  return Flag::SUCCESS;
+  return check;
 }
 
 Flag::Error CommandLineFlags::intxAtPut(const char* name, size_t len, intx* value, Flag::Flags origin) {
@@ -1069,10 +1136,10 @@ Flag::Error CommandLineFlags::uintxAtPut(Flag* flag, uintx* value, Flag::Flags o
   if (check != Flag::SUCCESS) return check;
   uintx old_value = flag->get_uintx();
   trace_flag_changed<EventUnsignedLongFlagChanged, u8>(name, old_value, *value, origin);
-  flag->set_uintx(*value);
+  check = flag->set_uintx(*value);
   *value = old_value;
   flag->set_origin(origin);
-  return Flag::SUCCESS;
+  return check;
 }
 
 Flag::Error CommandLineFlags::uintxAtPut(const char* name, size_t len, uintx* value, Flag::Flags origin) {
@@ -1118,10 +1185,10 @@ Flag::Error CommandLineFlags::uint64_tAtPut(Flag* flag, uint64_t* value, Flag::F
   if (check != Flag::SUCCESS) return check;
   uint64_t old_value = flag->get_uint64_t();
   trace_flag_changed<EventUnsignedLongFlagChanged, u8>(name, old_value, *value, origin);
-  flag->set_uint64_t(*value);
+  check = flag->set_uint64_t(*value);
   *value = old_value;
   flag->set_origin(origin);
-  return Flag::SUCCESS;
+  return check;
 }
 
 Flag::Error CommandLineFlags::uint64_tAtPut(const char* name, size_t len, uint64_t* value, Flag::Flags origin) {
@@ -1168,10 +1235,10 @@ Flag::Error CommandLineFlags::size_tAtPut(Flag* flag, size_t* value, Flag::Flags
   if (check != Flag::SUCCESS) return check;
   size_t old_value = flag->get_size_t();
   trace_flag_changed<EventUnsignedLongFlagChanged, u8>(name, old_value, *value, origin);
-  flag->set_size_t(*value);
+  check = flag->set_size_t(*value);
   *value = old_value;
   flag->set_origin(origin);
-  return Flag::SUCCESS;
+  return check;
 }
 
 Flag::Error CommandLineFlags::size_tAtPut(const char* name, size_t len, size_t* value, Flag::Flags origin) {
@@ -1217,10 +1284,10 @@ Flag::Error CommandLineFlags::doubleAtPut(Flag* flag, double* value, Flag::Flags
   if (check != Flag::SUCCESS) return check;
   double old_value = flag->get_double();
   trace_flag_changed<EventDoubleFlagChanged, double>(name, old_value, *value, origin);
-  flag->set_double(*value);
+  check = flag->set_double(*value);
   *value = old_value;
   flag->set_origin(origin);
-  return Flag::SUCCESS;
+  return check;
 }
 
 Flag::Error CommandLineFlags::doubleAtPut(const char* name, size_t len, double* value, Flag::Flags origin) {
@@ -1252,14 +1319,14 @@ Flag::Error CommandLineFlags::ccstrAtPut(const char* name, size_t len, ccstr* va
   if (*value != NULL) {
     new_value = os::strdup_check_oom(*value);
   }
-  result->set_ccstr(new_value);
+  Flag::Error check = result->set_ccstr(new_value);
   if (result->is_default() && old_value != NULL) {
     // Prior value is NOT heap allocated, but was a literal constant.
     old_value = os::strdup_check_oom(old_value);
   }
   *value = old_value;
   result->set_origin(origin);
-  return Flag::SUCCESS;
+  return check;
 }
 
 Flag::Error CommandLineFlagsEx::ccstrAtPut(CommandLineFlagWithType flag, ccstr value, Flag::Flags origin) {
@@ -1268,13 +1335,13 @@ Flag::Error CommandLineFlagsEx::ccstrAtPut(CommandLineFlagWithType flag, ccstr v
   ccstr old_value = faddr->get_ccstr();
   trace_flag_changed<EventStringFlagChanged, const char*>(faddr->_name, old_value, value, origin);
   char* new_value = os::strdup_check_oom(value);
-  faddr->set_ccstr(new_value);
+  Flag::Error check = faddr->set_ccstr(new_value);
   if (!faddr->is_default() && old_value != NULL) {
     // Prior value is heap allocated so free it.
     FREE_C_HEAP_ARRAY(char, old_value);
   }
   faddr->set_origin(origin);
-  return Flag::SUCCESS;
+  return check;
 }
 
 extern "C" {

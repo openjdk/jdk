@@ -59,6 +59,7 @@ public class UseSHAIntrinsicsSpecificTestCaseForUnsupportedCPU
         CommandLineOptionTest.verifySameJVMStartup(new String[] {
                         SHAOptionsBase.getWarningForUnsupportedCPU(optionName)
                 }, null, shouldPassMessage, shouldPassMessage, ExitCode.OK,
+                SHAOptionsBase.UNLOCK_DIAGNOSTIC_VM_OPTIONS,
                 CommandLineOptionTest.prepareBooleanFlag(optionName, true));
     }
 }

@@ -26,7 +26,9 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import jdk.tools.jlink.plugin.Pool;
+import java.util.function.Function;
+import jdk.tools.jlink.plugin.ModuleEntry;
+import jdk.tools.jlink.plugin.ModulePool;
 import jdk.tools.jlink.plugin.TransformerPlugin;
 
 public class CustomPlugin implements TransformerPlugin {
@@ -37,13 +39,8 @@ public class CustomPlugin implements TransformerPlugin {
     }
 
     @Override
-    public void visit(Pool in, Pool out) {
-        in.visit(new Pool.Visitor() {
-            @Override
-            public Pool.ModuleData visit(Pool.ModuleData content) {
-                return content;
-            }
-        }, out);
+    public void visit(ModulePool in, ModulePool out) {
+        in.transformAndCopy(Function.identity(), out);
     }
 
     @Override
@@ -61,9 +58,9 @@ public class CustomPlugin implements TransformerPlugin {
     }
 
     @Override
-    public Set<PluginType> getType() {
-        Set<PluginType> set = new HashSet<>();
-        set.add(CATEGORY.PROCESSOR);
+    public Set<Category> getType() {
+        Set<Category> set = new HashSet<>();
+        set.add(Category.PROCESSOR);
         return Collections.unmodifiableSet(set);
     }
 }

@@ -31,6 +31,7 @@ import java.net.URLClassLoader;
  * @test MethodUnloadingTest
  * @bug 8029443
  * @summary "Tests the unloading of methods to to class unloading"
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary /test/lib
  * @build TestMethodUnloading
  * @build WorkerClass

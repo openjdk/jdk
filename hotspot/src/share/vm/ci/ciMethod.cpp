@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -202,6 +202,7 @@ void ciMethod::load_code() {
   _code = (address)arena->Amalloc(code_size());
   memcpy(_code, me->code_base(), code_size());
 
+#if INCLUDE_JVMTI
   // Revert any breakpoint bytecodes in ci's copy
   if (me->number_of_breakpoints() > 0) {
     BreakpointInfo* bp = me->method_holder()->breakpoints();
@@ -211,6 +212,7 @@ void ciMethod::load_code() {
       }
     }
   }
+#endif
 
   // And load the exception table.
   ExceptionTable exc_table(me);
@@ -441,12 +443,12 @@ MethodLivenessResult ciMethod::liveness_at_bci(int bci) {
 // gc'ing an interpreter frame we need to use its viewpoint  during
 // OSR when loading the locals.
 
-BitMap ciMethod::live_local_oops_at_bci(int bci) {
+ResourceBitMap ciMethod::live_local_oops_at_bci(int bci) {
   VM_ENTRY_MARK;
   InterpreterOopMap mask;
   OopMapCache::compute_one_oop_map(get_Method(), bci, &mask);
   int mask_size = max_locals();
-  BitMap result(mask_size);
+  ResourceBitMap result(mask_size);
   result.clear();
   int i;
   for (i = 0; i < mask_size ; i++ ) {
@@ -461,7 +463,7 @@ BitMap ciMethod::live_local_oops_at_bci(int bci) {
 // ciMethod::bci_block_start
 //
 // Marks all bcis where a new basic block starts
-const BitMap ciMethod::bci_block_start() {
+const BitMap& ciMethod::bci_block_start() {
   check_is_loaded();
   if (_liveness == NULL) {
     // Create the liveness analyzer.
@@ -1115,7 +1117,7 @@ bool ciMethod::has_compiled_code() {
 int ciMethod::comp_level() {
   check_is_loaded();
   VM_ENTRY_MARK;
-  nmethod* nm = get_Method()->code();
+  CompiledMethod* nm = get_Method()->code();
   if (nm != NULL) return nm->comp_level();
   return 0;
 }
@@ -1150,7 +1152,7 @@ int ciMethod::code_size_for_inlining() {
 int ciMethod::instructions_size() {
   if (_instructions_size == -1) {
     GUARDED_VM_ENTRY(
-                     nmethod* code = get_Method()->code();
+                     CompiledMethod* code = get_Method()->code();
                      if (code != NULL && (code->comp_level() == CompLevel_full_optimization)) {
                        _instructions_size = code->insts_end() - code->verified_entry_point();
                      } else {
@@ -1165,7 +1167,7 @@ int ciMethod::instructions_size() {
 // ciMethod::log_nmethod_identity
 void ciMethod::log_nmethod_identity(xmlStream* log) {
   GUARDED_VM_ENTRY(
-    nmethod* code = get_Method()->code();
+    CompiledMethod* code = get_Method()->code();
     if (code != NULL) {
       code->log_identity(log);
     }

@@ -26,6 +26,7 @@
  * @bug 8061999 8135195 8136552
  * @summary Test "-XX:VMOptionsFile" VM option
  * @library /testlibrary
+ * @modules java.base/jdk.internal.misc
  * @modules jdk.management
  * @run main TestVMOptionsFile
  */

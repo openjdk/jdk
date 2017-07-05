@@ -43,7 +43,7 @@ import jdk.internal.org.objectweb.asm.ClassVisitor;
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.Opcodes;
 import jdk.tools.jlink.plugin.Plugin;
-import jdk.tools.jlink.internal.PoolImpl;
+import jdk.tools.jlink.internal.ModulePoolImpl;
 import jdk.tools.jlink.internal.StringTable;
 import jdk.tools.jlink.internal.plugins.asm.AsmGlobalPool;
 import jdk.tools.jlink.internal.plugins.asm.AsmModulePool;
@@ -51,7 +51,7 @@ import jdk.tools.jlink.internal.plugins.asm.AsmPlugin;
 import jdk.tools.jlink.internal.plugins.asm.AsmPool.ResourceFile;
 import jdk.tools.jlink.internal.plugins.asm.AsmPools;
 import jdk.tools.jlink.plugin.PluginException;
-import jdk.tools.jlink.plugin.Pool;
+import jdk.tools.jlink.plugin.ModulePool;
 
 public class NegativeTest extends AsmPluginTestBase {
     public static void main(String[] args) throws Exception {
@@ -102,7 +102,7 @@ public class NegativeTest extends AsmPluginTestBase {
                 }
             }
         };
-        Pool resources = new PoolImpl(ByteOrder.BIG_ENDIAN, new StringTable() {
+        ModulePool resources = new ModulePoolImpl(ByteOrder.BIG_ENDIAN, new StringTable() {
             @Override
             public int addString(String str) {
                 return -1;
@@ -136,7 +136,7 @@ public class NegativeTest extends AsmPluginTestBase {
                 action(() -> pools.fillOutputResources(null), "Output resource is null", NullPointerException.class);
             }
         };
-        Pool resources = new PoolImpl(ByteOrder.BIG_ENDIAN, new StringTable() {
+        ModulePool resources = new ModulePoolImpl(ByteOrder.BIG_ENDIAN, new StringTable() {
             @Override
             public int addString(String str) {
                 return -1;

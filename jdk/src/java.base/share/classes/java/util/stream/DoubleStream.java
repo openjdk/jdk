@@ -211,6 +211,11 @@ public interface DoubleStream extends BaseStream<Double, DoubleStream> {
      *         .sum();
      * }</pre>
      *
+     * <p>In cases where the stream implementation is able to optimize away the
+     * production of some or all the elements (such as with short-circuiting
+     * operations like {@code findFirst}, or in the example described in
+     * {@link #count}), the action will not be invoked for those elements.
+     *
      * @param action a <a href="package-summary.html#NonInterference">
      *               non-interfering</a> action to perform on the elements as
      *               they are consumed from the stream

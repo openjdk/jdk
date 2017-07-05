@@ -26,12 +26,12 @@
 #include "interp_masm_x86.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
+#include "logging/log.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/markOop.hpp"
 #include "oops/methodData.hpp"
 #include "oops/method.hpp"
 #include "prims/jvmtiExport.hpp"
-#include "prims/jvmtiRedefineClassesTrace.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/basicLock.hpp"
 #include "runtime/biasedLocking.hpp"
@@ -1953,7 +1953,7 @@ void InterpreterMacroAssembler::notify_method_entry() {
   }
 
   // RedefineClasses() tracing support for obsolete method entry
-  if (RC_TRACE_IN_RANGE(0x00001000, 0x00002000)) {
+  if (log_is_enabled(Trace, redefine, class, obsolete)) {
     NOT_LP64(get_thread(rthread);)
     get_method(rarg);
     call_VM_leaf(

@@ -49,8 +49,9 @@ private:
   size_t    _refill_waste_limit;                 // hold onto tlab if free() is larger than this
   size_t    _allocated_before_last_gc;           // total bytes allocated up until the last gc
 
-  static size_t   _max_size;                     // maximum size of any TLAB
-  static unsigned _target_refills;               // expected number of refills between GCs
+  static size_t   _max_size;                          // maximum size of any TLAB
+  static int      _reserve_for_allocation_prefetch;   // Reserve at the end of the TLAB
+  static unsigned _target_refills;                    // expected number of refills between GCs
 
   unsigned  _number_of_refills;
   unsigned  _fast_refill_waste;
@@ -129,7 +130,7 @@ public:
   // Reserve space at the end of TLAB
   static size_t end_reserve() {
     int reserve_size = typeArrayOopDesc::header_size(T_INT);
-    return MAX2(reserve_size, VM_Version::reserve_for_allocation_prefetch());
+    return MAX2(reserve_size, _reserve_for_allocation_prefetch);
   }
   static size_t alignment_reserve()              { return align_object_size(end_reserve()); }
   static size_t alignment_reserve_in_bytes()     { return alignment_reserve() * HeapWordSize; }

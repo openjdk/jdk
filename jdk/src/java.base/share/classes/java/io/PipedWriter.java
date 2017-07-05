@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -125,19 +125,25 @@ public class PipedWriter extends Writer {
     }
 
     /**
-     * Writes <code>len</code> characters from the specified character array
-     * starting at offset <code>off</code> to this piped output stream.
+     * Writes {@code len} characters from the specified character array
+     * starting at offset {@code off} to this piped output stream.
      * This method blocks until all the characters are written to the output
      * stream.
      * If a thread was reading data characters from the connected piped input
      * stream, but the thread is no longer alive, then an
-     * <code>IOException</code> is thrown.
+     * {@code IOException} is thrown.
      *
      * @param      cbuf  the data.
      * @param      off   the start offset in the data.
      * @param      len   the number of characters to write.
-     * @exception  IOException  if the pipe is
-     *          <a href=PipedOutputStream.html#BROKEN> <code>broken</code></a>,
+     *
+     * @throws  IndexOutOfBoundsException
+     *          If {@code off} is negative, or {@code len} is negative,
+     *          or {@code off + len} is negative or greater than the length
+     *          of the given array
+     *
+     * @throws  IOException  if the pipe is
+     *          <a href=PipedOutputStream.html#BROKEN><code>broken</code></a>,
      *          {@link #connect(java.io.PipedReader) unconnected}, closed
      *          or an I/O error occurs.
      */

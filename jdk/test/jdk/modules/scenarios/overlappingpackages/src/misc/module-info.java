@@ -22,6 +22,6 @@
  */
 
 module misc {
-    exports sun.misc;
+    exports jdk.internal.misc;
 }
 

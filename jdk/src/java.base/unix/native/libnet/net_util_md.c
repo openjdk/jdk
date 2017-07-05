@@ -353,6 +353,7 @@ jint  IPv6_supported()
     if (getsockname(0, (struct sockaddr *)&sa, &sa_len) == 0) {
         struct sockaddr *saP = (struct sockaddr *)&sa;
         if (saP->sa_family != AF_INET6) {
+            close(fd);
             return JNI_FALSE;
         }
     }

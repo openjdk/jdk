@@ -30,24 +30,25 @@
 #include "oops/oop.hpp"
 #include "utilities/stack.hpp"
 
-class OopAndMarkOop {
-private:
-  oop _o;
-  markOop _m;
-
-public:
-  OopAndMarkOop(oop obj, markOop m) : _o(obj), _m(m) { }
-
-  void set_mark() const {
-    _o->set_mark(_m);
-  }
-};
-typedef Stack<OopAndMarkOop, mtGC> OopAndMarkOopStack;
-
+class GCTaskManager;
 class WorkGang;
 
 class PreservedMarks VALUE_OBJ_CLASS_SPEC {
 private:
+  class OopAndMarkOop {
+  private:
+    oop _o;
+    markOop _m;
+
+  public:
+    OopAndMarkOop(oop obj, markOop m) : _o(obj), _m(m) { }
+
+    void set_mark() const {
+      _o->set_mark(_m);
+    }
+  };
+  typedef Stack<OopAndMarkOop, mtGC> OopAndMarkOopStack;
+
   OopAndMarkOopStack _stack;
 
   inline bool should_preserve_mark(oop obj, markOop m) const;
@@ -93,6 +94,10 @@ private:
   // Internal version of restore() that uses a WorkGang for parallelism.
   void restore_internal(WorkGang* workers, volatile size_t* total_size_addr);
 
+  // Internal version of restore() that uses a GCTaskManager for parallelism.
+  void restore_internal(GCTaskManager* gc_task_manager,
+                        volatile size_t* total_size_addr);
+
 public:
   uint num() const { return _num; }
 
@@ -110,13 +115,10 @@ public:
   // the memory taken up by the stack segments. If the executor is
   // NULL, restoration will be done serially. If the executor is not
   // NULL, restoration could be done in parallel (when it makes
-  // sense). Supported executors: WorkGang (Serial, CMS, G1)
+  // sense). Supported executors: WorkGang (Serial, CMS, G1),
+  // GCTaskManager (PS).
   template <class E>
   inline void restore(E* executor);
-
-  // Do the restoration serially. Temporary, to be used by PS until we
-  // can support GCTaskManager in restore(E*).
-  void restore();
 
   // Reclaim stack array.
   void reclaim();

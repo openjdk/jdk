@@ -1,0 +1,94 @@
+Keystores used for the JSSE regression test suite.
+
+keystore
+truststore
+==========
+
+These are the primary two keystores and contain entries for testing most
+of the JSSE regression test files.  There are three entries, one RSA-based,
+one DSA-based and one EC-based.  If they expire, simply recreate them
+using keytool and most of the test cases should work.
+
+The password on both files is:
+
+    passphrase
+
+There are no individual key entry passwords at this time.
+
+
+keystore entries
+================
+
+Alias name: dummy
+-----------------
+Creation date: May 16, 2016
+Entry type: PrivateKeyEntry
+Certificate chain length: 1
+Certificate[1]:
+Owner: CN=dummy.example.com, OU=Dummy, O=Dummy, L=Cupertino, ST=CA, C=US
+Issuer: CN=dummy.example.com, OU=Dummy, O=Dummy, L=Cupertino, ST=CA, C=US
+Serial number: 57399b87
+Valid from: Mon May 16 10:06:38 UTC 2016 until: Sat May 16 10:06:38 UTC 2026
+Signature algorithm name: SHA256withRSA
+Version: 1
+
+This can be generated using hacked (update the keytool source code so that
+it can be used for version 1 X.509 certificate) keytool command:
+% keytool -genkeypair -alias dummy -keyalg RSA -keysize 2048 \
+  -sigalg SHA256withRSA \
+  -dname "CN=dummy.example.com, OU=Dummy, O=Dummy, L=Cupertino, ST=CA, C=US" \
+  -validity 3652 -keypass passphrase -keystore keystore -storepass passphrase
+
+
+Alias name: dummyecdsa
+----------------------
+Creation date: May 16, 2016
+Entry type: PrivateKeyEntry
+Certificate chain length: 1
+Certificate[1]:
+Owner: CN=dummy.example.com, OU=Dummy, O=Dummy, L=Cupertino, ST=CA, C=US
+Issuer: CN=dummy.example.com, OU=Dummy, O=Dummy, L=Cupertino, ST=CA, C=US
+Serial number: 57399c1d
+Valid from: Mon May 16 10:09:01 UTC 2016 until: Sat May 16 10:09:01 UTC 2026
+Signature algorithm name: SHA256withECDSA
+Version: 1
+
+This can be generated using hacked (update the keytool source code so that
+it can be used for version 1 X.509 certificate) keytool command:
+% keytool -genkeypair -alias dummy -keyalg EC -keysize 256 \
+  -sigalg SHA256withECDSA \
+  -dname "CN=dummy.example.com, OU=Dummy, O=Dummy, L=Cupertino, ST=CA, C=US" \
+  -validity 3652 -keypass passphrase -keystore keystore -storepass passphrase
+
+Alias name: dummydsa
+--------------------
+Creation date: Mar 11, 2007
+Entry type: PrivateKeyEntry
+Certificate chain length: 1
+Certificate[1]:
+Owner: CN=dummy.example.com, OU=Dummy, O=Dummy, L=Cupertino, ST=CA, C=US
+Issuer: CN=dummy.example.com, OU=Dummy, O=Dummy, L=Cupertino, ST=CA, C=US
+Serial number: 45f3a314
+Valid from: Sun Mar 11 06:35:00 UTC 2007 until: Wed Mar 08 06:35:00 UTC 2017
+Certificate fingerprints:
+Signature algorithm name: SHA1withDSA
+Version: 1
+
+This can be generated using hacked (update the keytool source code so that
+it can be used for version 1 X.509 certificate) keytool command:
+% keytool -genkeypair -alias dummy -keyalg DSA -keysize 1024 \
+  -sigalg SHA1withDSA \
+  -dname "CN=dummy.example.com, OU=Dummy, O=Dummy, L=Cupertino, ST=CA, C=US" \
+  -validity 3652 -keypass passphrase -keystore keystore -storepass passphrase
+
+
+truststore entries
+==================
+This key store contains only trusted certificate entries.  The same
+certificates are used in both keystore and truststore.
+
+
+unknown_keystore
+================
+A keystore you can use when you don't want things to be verified.
+Use this with keystore/truststore, and you'll never get a match.

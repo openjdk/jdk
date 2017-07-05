@@ -565,7 +565,7 @@ uint Compile::scratch_emit_size(const Node* n) {
   relocInfo* locs_buf = scratch_locs_memory();
   address blob_begin = blob->content_begin();
   address blob_end   = (address)locs_buf;
-  assert(blob->content_contains(blob_end), "sanity");
+  assert(blob->contains(blob_end), "sanity");
   CodeBuffer buf(blob_begin, blob_end - blob_begin);
   buf.initialize_consts_size(_scratch_const_size);
   buf.initialize_stubs_size(MAX_stubs_size);
@@ -1620,6 +1620,17 @@ void Compile::AliasType::Init(int i, const TypePtr* at) {
     _general_index = Compile::current()->get_alias_index(gt);
   } else {
     _general_index = 0;
+  }
+}
+
+BasicType Compile::AliasType::basic_type() const {
+  if (element() != NULL) {
+    const Type* element = adr_type()->is_aryptr()->elem();
+    return element->isa_narrowoop() ? T_OBJECT : element->array_element_basic_type();
+  } if (field() != NULL) {
+    return field()->layout_type();
+  } else {
+    return T_ILLEGAL; // unknown
   }
 }
 
@@ -2835,7 +2846,7 @@ void Compile::final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc) {
     assert( !addp->is_AddP() ||
             addp->in(AddPNode::Base)->is_top() || // Top OK for allocation
             addp->in(AddPNode::Base) == n->in(AddPNode::Base),
-            "Base pointers must match" );
+            "Base pointers must match (addp %u)", addp->_idx );
 #ifdef _LP64
     if ((UseCompressedOops || UseCompressedClassPointers) &&
         addp->Opcode() == Op_ConP &&
@@ -2870,6 +2881,21 @@ void Compile::final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc) {
           } else {
             nn = new DecodeNKlassNode(nn, t);
           }
+          // Check for succeeding AddP which uses the same Base.
+          // Otherwise we will run into the assertion above when visiting that guy.
+          for (uint i = 0; i < n->outcnt(); ++i) {
+            Node *out_i = n->raw_out(i);
+            if (out_i && out_i->is_AddP() && out_i->in(AddPNode::Base) == addp) {
+              out_i->set_req(AddPNode::Base, nn);
+#ifdef ASSERT
+              for (uint j = 0; j < out_i->outcnt(); ++j) {
+                Node *out_j = out_i->raw_out(j);
+                assert(out_j == NULL || !out_j->is_AddP() || out_j->in(AddPNode::Base) != addp,
+                       "more than 2 AddP nodes in a chain (out_j %u)", out_j->_idx);
+              }
+#endif
+            }
+          }
           n->set_req(AddPNode::Base, nn);
           n->set_req(AddPNode::Address, nn);
           if (addp->outcnt() == 0) {
@@ -2879,6 +2905,8 @@ void Compile::final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc) {
       }
     }
 #endif
+    // platform dependent reshaping of the address expression
+    reshape_address(n->as_AddP());
     break;
   }
 
@@ -3235,6 +3263,43 @@ void Compile::final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc) {
     Node* iff = new IfNode(rc->in(0), rc->in(1), rc->_prob, rc->_fcnt);
     n->subsume_by(iff, this);
     frc._tests.push(iff);
+    break;
+  }
+  case Op_ConvI2L: {
+    if (!Matcher::convi2l_type_required) {
+      // Code generation on some platforms doesn't need accurate
+      // ConvI2L types. Widening the type can help remove redundant
+      // address computations.
+      n->as_Type()->set_type(TypeLong::INT);
+      ResourceMark rm;
+      Node_List wq;
+      wq.push(n);
+      for (uint next = 0; next < wq.size(); next++) {
+        Node *m = wq.at(next);
+
+        for(;;) {
+          // Loop over all nodes with identical inputs edges as m
+          Node* k = m->find_similar(m->Opcode());
+          if (k == NULL) {
+            break;
+          }
+          // Push their uses so we get a chance to remove node made
+          // redundant
+          for (DUIterator_Fast imax, i = k->fast_outs(imax); i < imax; i++) {
+            Node* u = k->fast_out(i);
+            assert(!wq.contains(u), "shouldn't process one node several times");
+            if (u->Opcode() == Op_LShiftL ||
+                u->Opcode() == Op_AddL ||
+                u->Opcode() == Op_SubL ||
+                u->Opcode() == Op_AddP) {
+              wq.push(u);
+            }
+          }
+          // Replace all nodes with identical edges as m with m
+          k->subsume_by(m, this);
+        }
+      }
+    }
     break;
   }
   default:

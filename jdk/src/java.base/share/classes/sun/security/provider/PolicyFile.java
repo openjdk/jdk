@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -259,14 +259,10 @@ public class PolicyFile extends java.security.Policy {
 
     private static final Debug debug = Debug.getInstance("policy");
 
-    private static final String NONE = "NONE";
-    private static final String P11KEYSTORE = "PKCS11";
-
     private static final String SELF = "${{self}}";
     private static final String X500PRINCIPAL =
                         "javax.security.auth.x500.X500Principal";
     private static final String POLICY = "java.security.policy";
-    private static final String SECURITY_MANAGER = "java.security.manager";
     private static final String POLICY_URL = "policy.url.";
     private static final String AUTH_POLICY = "java.security.auth.policy";
     private static final String AUTH_POLICY_URL = "auth.policy.url.";
@@ -286,6 +282,17 @@ public class PolicyFile extends java.security.Policy {
     private static final Class<?>[] PARAMS0 = { };
     private static final Class<?>[] PARAMS1 = { String.class };
     private static final Class<?>[] PARAMS2 = { String.class, String.class };
+
+    /**
+     * When a policy file has a syntax error, the exception code may generate
+     * another permission check and this can cause the policy file to be parsed
+     * repeatedly, leading to a StackOverflowError or ClassCircularityError.
+     * To avoid this, this set is populated with policy files that have been
+     * previously parsed and have syntax errors, so that they can be
+     * subsequently ignored.
+     */
+    private static AtomicReference<Set<URL>> badPolicyURLs =
+        new AtomicReference<>(new HashSet<>());
 
     /**
      * Initializes the Policy object and reads the default policy
@@ -580,6 +587,16 @@ public class PolicyFile extends java.security.Policy {
      * @param policyFile the policy Reader object.
      */
     private boolean init(URL policy, PolicyInfo newInfo) {
+
+        // skip parsing policy file if it has been previously parsed and
+        // has syntax errors
+        if (badPolicyURLs.get().contains(policy)) {
+            if (debug != null) {
+                debug.println("skipping bad policy file: " + policy);
+            }
+            return false;
+        }
+
         boolean success = false;
         PolicyParser pp = new PolicyParser(expandProperties);
         InputStreamReader isr = null;
@@ -622,13 +639,18 @@ public class PolicyFile extends java.security.Policy {
                 addGrantEntry(ge, keyStore, newInfo);
             }
         } catch (PolicyParser.ParsingException pe) {
+            // record bad policy file to avoid later reparsing it
+            badPolicyURLs.updateAndGet(k -> {
+                k.add(policy);
+                return k;
+            });
             MessageFormat form = new MessageFormat(ResourcesMgr.getString
                 (POLICY + ".error.parsing.policy.message"));
             Object[] source = {policy, pe.getLocalizedMessage()};
             System.err.println(form.format(source));
-            if (debug != null)
+            if (debug != null) {
                 pe.printStackTrace();
-
+            }
         } catch (Exception e) {
             if (debug != null) {
                 debug.println("error parsing "+policy);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package jdk.nio.zipfs;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.Runtime.Version;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -36,7 +37,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
-import jdk.Version;
 
 /**
  * Adds aliasing to ZipFileSystem to support multi-release jar files.  An alias map
@@ -69,7 +69,7 @@ class JarFileSystem extends ZipFileSystem {
             if (o instanceof String) {
                 String s = (String)o;
                 if (s.equals("runtime")) {
-                    version = jdk.Version.current().major();
+                    version = Runtime.version().major();
                 } else {
                     version = Integer.parseInt(s);
                 }

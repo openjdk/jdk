@@ -29,7 +29,6 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-import javax.sound.sampled.AudioFileFormat;
 import javax.sound.sampled.AudioFileFormat.Type;
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioSystem;
@@ -45,7 +44,7 @@ import javax.sound.sampled.UnsupportedAudioFileException;
 public final class AuFileReader extends SunFileReader {
 
     @Override
-    public AudioFileFormat getAudioFileFormatImpl(final InputStream stream)
+    public StandardFileFormat getAudioFileFormatImpl(final InputStream stream)
             throws UnsupportedAudioFileException, IOException {
         final DataInputStream dis = new DataInputStream(stream);
         final int magic = dis.readInt();
@@ -56,7 +55,7 @@ public final class AuFileReader extends SunFileReader {
         }
 
         final int headerSize = dis.readInt();
-        final int dataSize = dis.readInt();
+        final long /* unsigned int */ dataSize = dis.readInt() & 0xffffffffL;
         final int auType = dis.readInt();
         final int sampleRate = dis.readInt();
         final int channels = dis.readInt();
@@ -120,21 +119,21 @@ public final class AuFileReader extends SunFileReader {
                 // unsupported filetype, throw exception
                 throw new UnsupportedAudioFileException("not a valid AU file");
         }
+        // now seek past the header
+        dis.skipBytes(headerSize - AuFileFormat.AU_HEADERSIZE);
 
         final int frameSize = calculatePCMFrameSize(sampleSizeInBits, channels);
         //$$fb 2002-11-02: fix for 4629669: AU file reader: problems with empty files
-        final int length;
-        if (dataSize < 0) {
-            length = AudioSystem.NOT_SPECIFIED;
-        } else {
-            //$$fb 2003-10-20: fix for 4940459: AudioInputStream.getFrameLength() returns 0 instead of NOT_SPECIFIED
-            length = dataSize / frameSize;
+        //$$fb 2003-10-20: fix for 4940459: AudioInputStream.getFrameLength() returns 0 instead of NOT_SPECIFIED
+        long frameLength = AudioSystem.NOT_SPECIFIED;
+        long byteLength = AudioSystem.NOT_SPECIFIED;
+        if (dataSize != AuFileFormat.UNKNOWN_SIZE) {
+            frameLength = dataSize / frameSize;
+            byteLength = dataSize + headerSize;
         }
-        // now seek past the header
-        dis.skipBytes(headerSize - AuFileFormat.AU_HEADERSIZE);
         final AudioFormat format = new AudioFormat(encoding, sampleRate,
                                                    sampleSizeInBits, channels,
                                                    frameSize, sampleRate, true);
-        return new AuFileFormat(Type.AU, dataSize + headerSize, format, length);
+        return new AuFileFormat(Type.AU, byteLength, format, frameLength);
     }
 }

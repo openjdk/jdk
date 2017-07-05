@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,11 +21,11 @@
  * questions.
  */
 
-/**
+/*
  * @test
- * @bug 6425477
+ * @bug 6425477 8141039
  * @summary Better support for generation of high entropy random numbers
- * @run main/othervm StrongSecureRandom
+ * @run main StrongSecureRandom
  */
 import java.security.*;
 import java.util.*;
@@ -35,7 +35,10 @@ import java.util.*;
  */
 public class StrongSecureRandom {
 
-    private static String os = System.getProperty("os.name", "unknown");
+    private static final String os = System.getProperty("os.name", "unknown");
+    private static final String DRBG_CONFIG = "securerandom.drbg.config";
+    private static final String DRBG_CONFIG_VALUE
+            = Security.getProperty(DRBG_CONFIG);
 
     private static void testDefaultEgd() throws Exception {
         // No SecurityManager installed.
@@ -47,31 +50,53 @@ public class StrongSecureRandom {
         }
     }
 
-    private static void testSHA1PRNGImpl() throws Exception {
-        SecureRandom sr;
+    /**
+     * Verify if the mechanism is DRBG type.
+     * @param mech Mechanism name
+     * @return True if the mechanism name is DRBG type else False.
+     */
+    private static boolean isDRBG(String mech) {
+        return mech.contains("_DRBG");
+    }
+
+    private static void testSecureRandomImpl(String algo, boolean drbg)
+            throws Exception {
+
         byte[] ba;
+        final String secureRandomSource
+                = Security.getProperty("securerandom.source");
+        try {
+            String urandom = "file:/dev/urandom";
 
-        String urandom = "file:/dev/urandom";
+            System.out.println("Testing new SeedGenerator and EGD");
 
-        System.out.println("Testing new SeedGenerator and EGD");
+            Security.setProperty("securerandom.source", urandom);
+            if (!Security.getProperty("securerandom.source").equals(urandom)) {
+                throw new Exception("Couldn't set securerandom.source");
+            }
 
-        Security.setProperty("securerandom.source", urandom);
-        if (!Security.getProperty("securerandom.source").equals(urandom)) {
-            throw new Exception("Couldn't set securerandom.source");
+            /*
+             * Take out a large number of bytes in hopes of blocking.
+             * Don't expect this to happen, unless something is broken on Linux
+             */
+            SecureRandom sr = null;
+            if (drbg) {
+                Security.setProperty(DRBG_CONFIG, algo);
+                sr = SecureRandom.getInstance("DRBG");
+            } else {
+                sr = SecureRandom.getInstance(algo);
+            }
+            if (!sr.getAlgorithm().equals(isDRBG(algo) ? "DRBG" : algo)) {
+                throw new Exception("sr.getAlgorithm(): " + sr.getAlgorithm());
+            }
+
+            ba = sr.generateSeed(4096);
+            sr.nextBytes(ba);
+            sr.setSeed(ba);
+        } finally {
+            Security.setProperty("securerandom.source", secureRandomSource);
+            Security.setProperty(DRBG_CONFIG, DRBG_CONFIG_VALUE);
         }
-
-        /*
-         * Take out a large number of bytes in hopes of blocking.
-         * Don't expect this to happen, unless something is broken on Linux
-         */
-        sr = SecureRandom.getInstance("SHA1PRNG");
-        if (!sr.getAlgorithm().equals("SHA1PRNG")) {
-            throw new Exception("sr.getAlgorithm(): " + sr.getAlgorithm());
-        }
-
-        ba = sr.generateSeed(4096);
-        sr.nextBytes(ba);
-        sr.setSeed(ba);
     }
 
     private static void testNativePRNGImpls() throws Exception {
@@ -85,7 +110,7 @@ public class StrongSecureRandom {
             return;
         }
 
-        System.out.println("    Testing regular");
+        System.out.println("Testing regular");
         sr = SecureRandom.getInstance("NativePRNG");
         if (!sr.getAlgorithm().equals("NativePRNG")) {
             throw new Exception("sr.getAlgorithm(): " + sr.getAlgorithm());
@@ -94,7 +119,7 @@ public class StrongSecureRandom {
         sr.nextBytes(ba);
         sr.setSeed(ba);
 
-        System.out.println("    Testing NonBlocking");
+        System.out.println("Testing NonBlocking");
         sr = SecureRandom.getInstance("NativePRNGNonBlocking");
         if (!sr.getAlgorithm().equals("NativePRNGNonBlocking")) {
             throw new Exception("sr.getAlgorithm(): " + sr.getAlgorithm());
@@ -108,7 +133,7 @@ public class StrongSecureRandom {
             return;
         }
 
-        System.out.println("    Testing Blocking");
+        System.out.println("Testing Blocking");
         sr = SecureRandom.getInstance("NativePRNGBlocking");
         if (!sr.getAlgorithm().equals("NativePRNGBlocking")) {
             throw new Exception("sr.getAlgorithm(): " + sr.getAlgorithm());
@@ -141,9 +166,15 @@ public class StrongSecureRandom {
             throws Exception {
 
         System.out.println("Testing: '" + property + "' " + expected);
-
-        Security.setProperty("securerandom.strongAlgorithms", property);
-        testStrongInstance(expected);
+        final String origStrongAlgoProp
+                = Security.getProperty("securerandom.strongAlgorithms");
+        try {
+            Security.setProperty("securerandom.strongAlgorithms", property);
+            testStrongInstance(expected);
+        } finally {
+            Security.setProperty(
+                    "securerandom.strongAlgorithms", origStrongAlgoProp);
+        }
     }
 
     private static void testProperties() throws Exception {
@@ -228,7 +259,10 @@ public class StrongSecureRandom {
 
     public static void main(String args[]) throws Exception {
         testDefaultEgd();
-        testSHA1PRNGImpl();
+        for (String algo : new String[]{
+            "SHA1PRNG", "Hash_DRBG", "HMAC_DRBG", "CTR_DRBG"}) {
+            testSecureRandomImpl(algo, isDRBG(algo));
+        }
         testNativePRNGImpls();
         testAllImpls();
 

@@ -34,6 +34,7 @@ import jdk.test.lib.Asserts;
  * @test GetCodeHeapEntriesTest
  * @bug 8059624
  * @library /testlibrary /test/lib
+ * @modules java.base/jdk.internal.misc
  * @modules java.management
  * @build GetCodeHeapEntriesTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

@@ -34,11 +34,12 @@ G1RegionToSpaceMapper::G1RegionToSpaceMapper(ReservedSpace rs,
                                              size_t used_size,
                                              size_t page_size,
                                              size_t region_granularity,
+                                             size_t commit_factor,
                                              MemoryType type) :
   _storage(rs, used_size, page_size),
   _region_granularity(region_granularity),
   _listener(NULL),
-  _commit_map() {
+  _commit_map(rs.size() * commit_factor / region_granularity) {
   guarantee(is_power_of_2(page_size), "must be");
   guarantee(is_power_of_2(region_granularity), "must be");
 
@@ -59,11 +60,10 @@ class G1RegionsLargerThanCommitSizeMapper : public G1RegionToSpaceMapper {
                                       size_t alloc_granularity,
                                       size_t commit_factor,
                                       MemoryType type) :
-    G1RegionToSpaceMapper(rs, actual_size, page_size, alloc_granularity, type),
+    G1RegionToSpaceMapper(rs, actual_size, page_size, alloc_granularity, commit_factor, type),
     _pages_per_region(alloc_granularity / (page_size * commit_factor)) {
 
     guarantee(alloc_granularity >= page_size, "allocation granularity smaller than commit granularity");
-    _commit_map.resize(rs.size() * commit_factor / alloc_granularity, /* in_resource_area */ false);
   }
 
   virtual void commit_regions(uint start_idx, size_t num_regions) {
@@ -103,12 +103,11 @@ class G1RegionsSmallerThanCommitSizeMapper : public G1RegionToSpaceMapper {
                                        size_t alloc_granularity,
                                        size_t commit_factor,
                                        MemoryType type) :
-    G1RegionToSpaceMapper(rs, actual_size, page_size, alloc_granularity, type),
+    G1RegionToSpaceMapper(rs, actual_size, page_size, alloc_granularity, commit_factor, type),
     _regions_per_page((page_size * commit_factor) / alloc_granularity), _refcounts() {
 
     guarantee((page_size * commit_factor) >= alloc_granularity, "allocation granularity smaller than commit granularity");
     _refcounts.initialize((HeapWord*)rs.base(), (HeapWord*)(rs.base() + align_size_up(rs.size(), page_size)), page_size);
-    _commit_map.resize(rs.size() * commit_factor / alloc_granularity, /* in_resource_area */ false);
   }
 
   virtual void commit_regions(uint start_idx, size_t num_regions) {

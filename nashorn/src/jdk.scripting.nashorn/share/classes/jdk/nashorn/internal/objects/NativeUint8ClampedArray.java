@@ -85,7 +85,7 @@ public final class NativeUint8ClampedArray extends ArrayBufferView {
         private static final MethodHandle CLAMP_LONG = staticCall(MethodHandles.lookup(), Uint8ClampedArrayData.class, "clampLong", long.class, long.class).methodHandle();
 
         private Uint8ClampedArrayData(final ByteBuffer nb, final int start, final int end) {
-            super(((ByteBuffer)nb.position(start).limit(end)).slice(), end - start);
+            super((nb.position(start).limit(end)).slice(), end - start);
         }
 
         @Override

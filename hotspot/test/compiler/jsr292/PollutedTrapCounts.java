@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 8074551
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary
  * @run main PollutedTrapCounts
  */

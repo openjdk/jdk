@@ -54,10 +54,10 @@ import com.sun.tools.classfile.ConstantPoolException;
 import com.sun.tools.classfile.Method;
 import java.util.HashMap;
 import java.util.Map;
-import jdk.tools.jlink.internal.PoolImpl;
+import jdk.tools.jlink.internal.ModulePoolImpl;
 import jdk.tools.jlink.internal.plugins.StripDebugPlugin;
-import jdk.tools.jlink.plugin.Pool;
-import jdk.tools.jlink.plugin.Pool.ModuleData;
+import jdk.tools.jlink.plugin.ModuleEntry;
+import jdk.tools.jlink.plugin.ModulePool;
 import jdk.tools.jlink.plugin.TransformerPlugin;
 import tests.Helper;
 
@@ -106,7 +106,7 @@ public class StripDebugPluginTest {
         path = path.replace('\\', '/');
         StripDebugPlugin debug = new StripDebugPlugin();
         debug.configure(new HashMap<>());
-        ModuleData result1 = stripDebug(debug, Pool.newResource(path,content), path, infoPath, moduleInfo);
+        ModuleEntry result1 = stripDebug(debug, ModuleEntry.create(path,content), path, infoPath, moduleInfo);
 
         if (!path.endsWith("module-info.class")) {
             if (result1.getLength() >= content.length) {
@@ -116,7 +116,7 @@ public class StripDebugPluginTest {
             checkDebugAttributes(result1.getBytes());
         }
 
-        ModuleData result2 = stripDebug(debug, result1, path, infoPath, moduleInfo);
+        ModuleEntry result2 = stripDebug(debug, result1, path, infoPath, moduleInfo);
         if (result1.getLength() != result2.getLength()) {
             throw new AssertionError("removing debug info twice reduces class size of "
                     + path);
@@ -124,18 +124,18 @@ public class StripDebugPluginTest {
         checkDebugAttributes(result1.getBytes());
     }
 
-    private ModuleData stripDebug(TransformerPlugin debug, ModuleData classResource,
+    private ModuleEntry stripDebug(TransformerPlugin debug, ModuleEntry classResource,
             String path, String infoPath, byte[] moduleInfo) throws Exception {
-        Pool resources = new PoolImpl();
+        ModulePool resources = new ModulePoolImpl();
         resources.add(classResource);
         if (!path.endsWith("module-info.class")) {
-            ModuleData res2 = Pool.newResource(infoPath, moduleInfo);
+            ModuleEntry res2 = ModuleEntry.create(infoPath, moduleInfo);
             resources.add(res2);
         }
-        Pool results = new PoolImpl();
+        ModulePool results = new ModulePoolImpl();
         debug.visit(resources, results);
         System.out.println(classResource.getPath());
-        return results.get(classResource.getPath());
+        return results.findEntry(classResource.getPath()).get();
     }
 
     private void checkDebugAttributes(byte[] strippedClassFile) throws IOException, ConstantPoolException {

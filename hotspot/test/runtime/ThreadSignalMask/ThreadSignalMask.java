@@ -36,6 +36,7 @@ import jdk.test.lib.Asserts;
  * @bug 4345157
  * @summary JDK 1.3.0 alters thread signal mask
  * @requires (os.simpleArch == "sparcv9")
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary
  * @compile Prog.java
  * @run main/native ThreadSignalMask

@@ -769,6 +769,8 @@ class Arguments : AllStatic {
   static bool copy_expand_pid(const char* src, size_t srclen, char* buf, size_t buflen);
 
   static void check_unsupported_dumping_properties() NOT_CDS_RETURN;
+
+  static bool atojulong(const char *s, julong* result);
 };
 
 // Disable options not supported in this release, with a warning if they

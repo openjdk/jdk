@@ -27,6 +27,7 @@ import java.lang.reflect.Method;
 /*
  * @test
  * @bug 8009761
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary /test/lib
  * @summary Deoptimization on sparc doesn't set Llast_SP correctly in the interpreter frames it creates
  * @build Test8009761

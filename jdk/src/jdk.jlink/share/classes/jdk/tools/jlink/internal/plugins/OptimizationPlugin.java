@@ -24,7 +24,6 @@
  */
 package jdk.tools.jlink.internal.plugins;
 
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -287,9 +286,9 @@ public final class OptimizationPlugin extends AsmPlugin {
     }
 
     @Override
-    public Set<PluginType> getType() {
-        Set<PluginType> set = new HashSet<>();
-        set.add(CATEGORY.TRANSFORMER);
+    public Set<Category> getType() {
+        Set<Category> set = new HashSet<>();
+        set.add(Category.TRANSFORMER);
         return Collections.unmodifiableSet(set);
     }
 }

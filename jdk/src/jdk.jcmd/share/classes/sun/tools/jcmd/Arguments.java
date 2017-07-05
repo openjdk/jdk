@@ -33,16 +33,14 @@ class Arguments {
     private boolean listProcesses = false;
     private boolean listCounters  = false;
     private boolean showUsage     = false;
-    private int     pid           = -1;
     private String  command       = null;
-    private String  processSubstring;
+    private String  processString = null;
 
     public boolean isListProcesses() { return listProcesses; }
     public boolean isListCounters() { return listCounters; }
     public boolean isShowUsage() { return showUsage; }
-    public int getPid() { return pid; }
     public String getCommand() { return command; }
-    public String getProcessSubstring() { return processSubstring; }
+    public String getProcessString() { return processString; }
 
     public Arguments(String[] args) {
         if (args.length == 0 || args[0].equals("-l")) {
@@ -55,15 +53,7 @@ class Arguments {
             return;
         }
 
-        try {
-            pid = Integer.parseInt(args[0]);
-        } catch (NumberFormatException ex) {
-            // use as a partial class-name instead
-            if (args[0].charAt(0) != '-') {
-                // unless it starts with a '-'
-                processSubstring = args[0];
-            }
-        }
+        processString = args[0];
 
         StringBuilder sb = new StringBuilder();
         for (int i = 1; i < args.length; i++) {

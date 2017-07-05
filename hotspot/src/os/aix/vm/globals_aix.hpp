@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2015 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -30,7 +30,15 @@
 // Defines Aix specific flags. They are not available on other platforms.
 //
 // (Please keep the switches sorted alphabetically.)
-#define RUNTIME_OS_FLAGS(develop, develop_pd, product, product_pd, diagnostic, notproduct, range, constraint) \
+#define RUNTIME_OS_FLAGS(develop, \
+                         develop_pd, \
+                         product, \
+                         product_pd, \
+                         diagnostic, \
+                         notproduct, \
+                         range, \
+                         constraint, \
+                         writeable) \
                                                                                     \
   /* Whether to allow the VM to run if EXTSHM=ON. EXTSHM is an environment */       \
   /* variable used on AIX to activate certain hacks which allow more shm segments */\

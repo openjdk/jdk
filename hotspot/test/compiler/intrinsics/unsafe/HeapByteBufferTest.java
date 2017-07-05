@@ -36,6 +36,7 @@ import jdk.test.lib.Utils;
 /**
  * @test
  * @bug 8026049
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:-UseUnalignedAccesses -Djdk.test.lib.random.seed=0 HeapByteBufferTest
  * @run main/othervm -Djdk.test.lib.random.seed=0 HeapByteBufferTest

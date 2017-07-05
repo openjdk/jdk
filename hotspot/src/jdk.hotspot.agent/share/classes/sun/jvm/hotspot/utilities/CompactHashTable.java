@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,21 +44,23 @@ public class CompactHashTable extends VMObject {
     Type type = db.lookupType("SymbolCompactHashTable");
     baseAddressField = type.getAddressField("_base_address");
     bucketCountField = type.getCIntegerField("_bucket_count");
-    tableEndOffsetField = type.getCIntegerField("_table_end_offset");
+    entryCountField = type.getCIntegerField("_entry_count");
     bucketsField = type.getAddressField("_buckets");
-    uintSize = db.lookupType("juint").getSize();
+    entriesField = type.getAddressField("_entries");
+    uintSize = db.lookupType("u4").getSize();
   }
 
   // Fields
   private static CIntegerField bucketCountField;
-  private static CIntegerField tableEndOffsetField;
+  private static CIntegerField entryCountField;
   private static AddressField  baseAddressField;
   private static AddressField  bucketsField;
+  private static AddressField  entriesField;
   private static long uintSize;
 
   private static int BUCKET_OFFSET_MASK = 0x3FFFFFFF;
   private static int BUCKET_TYPE_SHIFT = 30;
-  private static int COMPACT_BUCKET_TYPE = 1;
+  private static int VALUE_ONLY_BUCKET_TYPE = 1;
 
   public CompactHashTable(Address addr) {
     super(addr);
@@ -68,12 +70,8 @@ public class CompactHashTable extends VMObject {
     return (int)bucketCountField.getValue(addr);
   }
 
-  private int tableEndOffset() {
-    return (int)tableEndOffsetField.getValue(addr);
-  }
-
-  private boolean isCompactBucket(int bucket_info) {
-    return (bucket_info >> BUCKET_TYPE_SHIFT) == COMPACT_BUCKET_TYPE;
+  private boolean isValueOnlyBucket(int bucket_info) {
+    return (bucket_info >> BUCKET_TYPE_SHIFT) == VALUE_ONLY_BUCKET_TYPE;
   }
 
   private int bucketOffset(int bucket_info) {
@@ -81,9 +79,8 @@ public class CompactHashTable extends VMObject {
   }
 
   public Symbol probe(byte[] name, long hash) {
-
-    if (bucketCount() == 0) {
-      // The table is invalid, so don't try to lookup
+    if (bucketCount() <= 0) {
+      // This CompactHashTable is not in use
       return null;
     }
 
@@ -91,34 +88,33 @@ public class CompactHashTable extends VMObject {
     Symbol  sym;
     Address baseAddress = baseAddressField.getValue(addr);
     Address bucket = bucketsField.getValue(addr);
-    Address bucketEnd = bucket;
     long index = hash % bucketCount();
     int bucketInfo = (int)bucket.getCIntegerAt(index * uintSize, uintSize, true);
     int bucketOffset = bucketOffset(bucketInfo);
     int nextBucketInfo = (int)bucket.getCIntegerAt((index+1) * uintSize, uintSize, true);
     int nextBucketOffset = bucketOffset(nextBucketInfo);
 
-    bucket = bucket.addOffsetTo(bucketOffset * uintSize);
+    Address entry = entriesField.getValue(addr).addOffsetTo(bucketOffset * uintSize);
 
-    if (isCompactBucket(bucketInfo)) {
-      symOffset = bucket.getCIntegerAt(0, uintSize, true);
+    if (isValueOnlyBucket(bucketInfo)) {
+      symOffset = entry.getCIntegerAt(0, uintSize, true);
       sym = Symbol.create(baseAddress.addOffsetTo(symOffset));
       if (sym.equals(name)) {
         return sym;
       }
     } else {
-      bucketEnd = bucket.addOffsetTo(nextBucketOffset * uintSize);
-      while (bucket.lessThan(bucketEnd)) {
-        long symHash = bucket.getCIntegerAt(0, uintSize, true);
+      Address entryMax = entriesField.getValue(addr).addOffsetTo(nextBucketOffset * uintSize);
+      while (entry.lessThan(entryMax)) {
+        long symHash = entry.getCIntegerAt(0, uintSize, true);
         if (symHash == hash) {
-          symOffset = bucket.getCIntegerAt(uintSize, uintSize, true);
+          symOffset = entry.getCIntegerAt(uintSize, uintSize, true);
           Address symAddr = baseAddress.addOffsetTo(symOffset);
           sym = Symbol.create(symAddr);
           if (sym.equals(name)) {
             return sym;
           }
         }
-        bucket = bucket.addOffsetTo(2 * uintSize);
+        entry = entry.addOffsetTo(2 * uintSize);
       }
     }
     return null;

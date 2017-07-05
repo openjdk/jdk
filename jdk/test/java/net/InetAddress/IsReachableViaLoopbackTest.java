@@ -5,6 +5,7 @@ import java.util.*;
 /**
  * @test
  * @bug 8135305
+ * @key intermittent
  * @summary ensure we can't ping external hosts via loopback if
  */
 
