@@ -624,6 +624,7 @@ public:
   void do_oop(oop* p) {
     assert((*p) == NULL || (*p)->is_perm(), "Referent should be perm.");
   }
+  void do_oop(narrowOop* p) { ShouldNotReachHere(); }
 };
 static AssertIsPermClosure assert_is_perm_closure;
 
@@ -1300,8 +1301,7 @@ void GenCollectedHeap::ensure_parsability(bool retire_tlabs) {
 
 oop GenCollectedHeap::handle_failed_promotion(Generation* gen,
                                               oop obj,
-                                              size_t obj_size,
-                                              oop* ref) {
+                                              size_t obj_size) {
   assert(obj_size == (size_t)obj->size(), "bad obj_size passed in");
   HeapWord* result = NULL;
 

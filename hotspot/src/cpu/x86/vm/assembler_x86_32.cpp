@@ -3405,10 +3405,16 @@ void MacroAssembler::store_check_part_2(Register obj) {
   assert(bs->kind() == BarrierSet::CardTableModRef, "Wrong barrier set kind");
   CardTableModRefBS* ct = (CardTableModRefBS*)bs;
   assert(sizeof(*ct->byte_map_base) == sizeof(jbyte), "adjust this code");
-  ExternalAddress cardtable((address)ct->byte_map_base);
-  Address index(noreg, obj, Address::times_1);
 
-  movb(as_Address(ArrayAddress(cardtable, index)), 0);
+  // The calculation for byte_map_base is as follows:
+  // byte_map_base = _byte_map - (uintptr_t(low_bound) >> card_shift);
+  // So this essentially converts an address to a displacement and
+  // it will never need to be relocated. On 64bit however the value may be too
+  // large for a 32bit displacement
+
+  intptr_t disp = (intptr_t) ct->byte_map_base;
+  Address cardtable(noreg, obj, Address::times_1, disp);
+  movb(cardtable, 0);
 }
 
 

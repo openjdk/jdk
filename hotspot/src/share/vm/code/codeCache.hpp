@@ -71,7 +71,22 @@ class CodeCache : AllStatic {
   // what you are doing)
   static CodeBlob* find_blob_unsafe(void* start) {
     CodeBlob* result = (CodeBlob*)_heap->find_start(start);
-    assert(result == NULL || result->blob_contains((address)start), "found wrong CodeBlob");
+    // this assert is too strong because the heap code will return the
+    // heapblock containing start. That block can often be larger than
+    // the codeBlob itself. If you look up an address that is within
+    // the heapblock but not in the codeBlob you will assert.
+    //
+    // Most things will not lookup such bad addresses. However
+    // AsyncGetCallTrace can see intermediate frames and get that kind
+    // of invalid address and so can a developer using hsfind.
+    //
+    // The more correct answer is to return NULL if blob_contains() returns
+    // false.
+    // assert(result == NULL || result->blob_contains((address)start), "found wrong CodeBlob");
+
+    if (result != NULL && !result->blob_contains((address)start)) {
+      result = NULL;
+    }
     return result;
   }
 

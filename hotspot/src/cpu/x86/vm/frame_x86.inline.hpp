@@ -72,15 +72,20 @@ inline frame::frame(intptr_t* sp, intptr_t* fp) {
   _unextended_sp = sp;
   _fp = fp;
   _pc = (address)(sp[-1]);
-  assert(_pc != NULL, "no pc?");
-  _cb = CodeCache::find_blob(_pc);
-  // In case of native stubs, the pc retreived here might be
-  // wrong. (the _last_native_pc will have the right value)
-  // So do not put add any asserts on the _pc here.
 
-  // QQQ The above comment is wrong and has been wrong for years. This constructor
-  // should (and MUST) not be called in that situation. In the native situation
-  // the pc should be supplied to the constructor.
+  // Here's a sticky one. This constructor can be called via AsyncGetCallTrace
+  // when last_Java_sp is non-null but the pc fetched is junk. If we are truly
+  // unlucky the junk value could be to a zombied method and we'll die on the
+  // find_blob call. This is also why we can have no asserts on the validity
+  // of the pc we find here. AsyncGetCallTrace -> pd_get_top_frame_for_signal_handler
+  // -> pd_last_frame should use a specialized version of pd_last_frame which could
+  // call a specilaized frame constructor instead of this one.
+  // Then we could use the assert below. However this assert is of somewhat dubious
+  // value.
+  // assert(_pc != NULL, "no pc?");
+
+  _cb = CodeCache::find_blob(_pc);
+
   _deopt_state = not_deoptimized;
   if (_cb != NULL && _cb->is_nmethod() && ((nmethod*)_cb)->is_deopt_pc(_pc)) {
     _pc = (((nmethod*)_cb)->get_original_pc(this));

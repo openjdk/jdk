@@ -31,10 +31,10 @@ import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.types.*;
 import sun.jvm.hotspot.utilities.*;
 
-// A ConstantPool is an array containing class constants
-// as described in the class file
-
-public class ConstantPoolCache extends Array {
+//  ConstantPoolCache : A constant pool cache (constantPoolCacheOopDesc).
+//  See cpCacheOop.hpp for details about this class.
+//
+public class ConstantPoolCache extends Oop {
   static {
     VM.registerVMInitializedObserver(new Observer() {
         public void update(Observable o, Object data) {
@@ -47,9 +47,9 @@ public class ConstantPoolCache extends Array {
     Type type      = db.lookupType("constantPoolCacheOopDesc");
     constants      = new OopField(type.getOopField("_constant_pool"), 0);
     baseOffset     = type.getSize();
-
     Type elType    = db.lookupType("ConstantPoolCacheEntry");
     elementSize    = elType.getSize();
+    length         = new CIntField(type.getCIntegerField("_length"), 0);
   }
 
   ConstantPoolCache(OopHandle handle, ObjectHeap heap) {
@@ -62,6 +62,8 @@ public class ConstantPoolCache extends Array {
 
   private static long baseOffset;
   private static long elementSize;
+  private static CIntField length;
+
 
   public ConstantPool getConstants() { return (ConstantPool) constants.getValue(this); }
 
@@ -85,6 +87,10 @@ public class ConstantPoolCache extends Array {
 
   public void printValueOn(PrintStream tty) {
     tty.print("ConstantPoolCache for " + getConstants().getPoolHolder().getName().asString());
+  }
+
+  public int getLength() {
+    return (int) length.getValue(this);
   }
 
   public void iterateFields(OopVisitor visitor, boolean doVMFields) {

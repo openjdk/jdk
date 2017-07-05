@@ -137,24 +137,20 @@ static void pd_arrayof_conjoint_oops(HeapWord* from, HeapWord* to, size_t count)
 }
 
 static void pd_fill_to_words(HeapWord* tohw, size_t count, juint value) {
-#if 0
-  if (HeapWordsPerLong == 1 ||
-      (HeapWordsPerLong == 2 &&
-       mask_bits((uintptr_t)tohw, right_n_bits(LogBytesPerLong)) == 0 &&
-       ((count & 1) ? false : count >>= 1))) {
-    julong* to = (julong*)tohw;
-    julong  v  = ((julong)value << 32) | value;
-    while (count-- > 0) {
-      *to++ = v;
-    }
-  } else {
-#endif
-    juint* to = (juint*)tohw;
-    count *= HeapWordSize / BytesPerInt;
-    while (count-- > 0) {
-      *to++ = value;
-    }
-    //  }
+#ifdef _LP64
+  guarantee(mask_bits((uintptr_t)tohw, right_n_bits(LogBytesPerLong)) == 0,
+         "unaligned fill words");
+  julong* to = (julong*)tohw;
+  julong  v  = ((julong)value << 32) | value;
+  while (count-- > 0) {
+    *to++ = v;
+  }
+#else // _LP64
+  juint* to = (juint*)tohw;
+  while (count-- > 0) {
+    *to++ = value;
+  }
+#endif // _LP64
 }
 
 static void pd_fill_to_aligned_words(HeapWord* tohw, size_t count, juint value) {

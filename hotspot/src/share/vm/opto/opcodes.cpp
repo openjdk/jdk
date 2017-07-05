@@ -29,6 +29,7 @@
 const char *NodeClassNames[] = {
   "Node",
   "Set",
+  "RegN",
   "RegI",
   "RegP",
   "RegF",

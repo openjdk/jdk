@@ -2581,7 +2581,7 @@ bool os::unguard_memory(char* addr, size_t bytes) {
 void os::realign_memory(char *addr, size_t bytes, size_t alignment_hint) { }
 void os::free_memory(char *addr, size_t bytes)         { }
 void os::numa_make_global(char *addr, size_t bytes)    { }
-void os::numa_make_local(char *addr, size_t bytes)     { }
+void os::numa_make_local(char *addr, size_t bytes, int lgrp_hint)    { }
 bool os::numa_topology_changed()                       { return false; }
 size_t os::numa_get_groups_num()                       { return 1; }
 int os::numa_get_group_id()                            { return 0; }
@@ -3116,7 +3116,7 @@ jint os::init_2(void) {
   // as reserve size, since on a 64-bit platform we'll run into that more
   // often than running out of virtual memory space.  We can use the
   // lower value of the two calculations as the os_thread_limit.
-  size_t max_address_space = ((size_t)1 << (BitsPerOop - 1)) - (200 * K * K);
+  size_t max_address_space = ((size_t)1 << (BitsPerWord - 1)) - (200 * K * K);
   win32::_os_thread_limit = (intx)(max_address_space / actual_reserve_size);
 
   // at exit methods are called in the reverse order of their registration.
