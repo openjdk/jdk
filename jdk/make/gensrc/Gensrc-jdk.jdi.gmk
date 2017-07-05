@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -78,11 +78,9 @@ $(SUPPORT_OUTPUTDIR)/gensrc/jdk.hotspot.agent/META-INF/services/com.sun.jdi.conn
 	$(install-file)
 
 # Some platforms don't have the serviceability agent
-ifeq (, $(filter $(OPENJDK_TARGET_OS)-$(OPENJDK_TARGET_CPU), aix-ppc64))
-  ifneq ($(JVM_VARIANT_ZERO), true)
-    GENSRC_JDK_JDI += $(SUPPORT_OUTPUTDIR)/gensrc/jdk.jdi/META-INF/services/com.sun.jdi.connect.Connector \
-        $(SUPPORT_OUTPUTDIR)/gensrc/jdk.hotspot.agent/META-INF/services/com.sun.jdi.connect.Connector
-  endif
+ifeq ($(INCLUDE_SA), true)
+  GENSRC_JDK_JDI += $(SUPPORT_OUTPUTDIR)/gensrc/jdk.jdi/META-INF/services/com.sun.jdi.connect.Connector \
+      $(SUPPORT_OUTPUTDIR)/gensrc/jdk.hotspot.agent/META-INF/services/com.sun.jdi.connect.Connector
 endif
 
 ################################################################################

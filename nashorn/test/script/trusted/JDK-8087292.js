@@ -46,9 +46,9 @@ function tryExec() {
 tryExec();
 
 // turn on error with non-zero exit code
-$EXEC.throwOnError = true;
+$ENV.JJS_THROW_ON_EXIT = "1";
 tryExec();
 
 // no exception after this
-$EXEC.throwOnError = false;
+$ENV.JJS_THROW_ON_EXIT = "0";
 tryExec();

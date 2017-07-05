@@ -62,7 +62,7 @@ import org.xml.sax.DocumentHandler;
  * @see OutputFormat
  * @see DOMSerializer
  *
- * @deprecated As of JDK 1.9, Xerces 2.9.0, Xerces DOM L3 Serializer implementation
+ * @deprecated As of JDK 9, Xerces 2.9.0, Xerces DOM L3 Serializer implementation
  * is replaced by that of Xalan. Main class
  * {@link com.sun.org.apache.xml.internal.serialize.DOMSerializerImpl} is replaced
  * by {@link com.sun.org.apache.xml.internal.serializer.dom3.LSSerializerImpl}.

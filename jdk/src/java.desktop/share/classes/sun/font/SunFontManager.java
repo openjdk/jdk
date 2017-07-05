@@ -54,7 +54,6 @@ import sun.awt.FontConfiguration;
 import sun.awt.SunToolkit;
 import sun.awt.util.ThreadGroupUtils;
 import sun.java2d.FontSupport;
-import sun.misc.InnocuousThread;
 import sun.misc.ManagedLocalsThread;
 import sun.util.logging.PlatformLogger;
 
