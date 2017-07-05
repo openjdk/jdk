@@ -284,6 +284,7 @@ atomic.hpp                              allocation.hpp
 atomic_<os_arch>.inline.hpp             atomic.hpp
 atomic_<os_arch>.inline.hpp             os.hpp
 atomic_<os_arch>.inline.hpp             vm_version_<arch>.hpp
+atomic_<os_arch>.inline.hpp             orderAccess_<os_arch>.inline.hpp
 
 // attachListener is jck optional, put cpp deps in includeDB_features
 
@@ -1734,6 +1735,7 @@ genCollectedHeap.cpp                    sharedHeap.hpp
 genCollectedHeap.cpp                    space.hpp
 genCollectedHeap.cpp                    symbolTable.hpp
 genCollectedHeap.cpp                    systemDictionary.hpp
+genCollectedHeap.cpp                    vmError.hpp
 genCollectedHeap.cpp                    vmGCOperations.hpp
 genCollectedHeap.cpp                    vmSymbols.hpp
 genCollectedHeap.cpp                    vmThread.hpp
@@ -3230,6 +3232,7 @@ os.cpp                                  defaultStream.hpp
 os.cpp                                  events.hpp
 os.cpp                                  frame.inline.hpp
 os.cpp                                  hpi.hpp
+os.cpp					icBuffer.hpp
 os.cpp                                  interfaceSupport.hpp
 os.cpp                                  interpreter.hpp
 os.cpp                                  java.hpp
@@ -3241,6 +3244,7 @@ os.cpp                                  mutexLocker.hpp
 os.cpp                                  oop.inline.hpp
 os.cpp                                  os.hpp
 os.cpp                                  os_<os_family>.inline.hpp
+os.cpp	                                privilegedStack.hpp
 os.cpp                                  stubRoutines.hpp
 os.cpp                                  systemDictionary.hpp
 os.cpp                                  threadService.hpp

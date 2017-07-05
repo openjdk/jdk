@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -151,9 +151,11 @@
 #if defined(IA32) || defined(AMD64)
 #define X86
 #define X86_ONLY(code) code
+#define NOT_X86(code)
 #else
 #undef X86
 #define X86_ONLY(code)
+#define NOT_X86(code) code
 #endif
 
 #ifdef IA32
@@ -186,6 +188,39 @@
 #else
 #define SPARC_ONLY(code)
 #define NOT_SPARC(code) code
+#endif
+
+#ifdef PPC
+#define PPC_ONLY(code) code
+#define NOT_PPC(code)
+#else
+#define PPC_ONLY(code)
+#define NOT_PPC(code) code
+#endif
+
+#ifdef E500V2
+#define E500V2_ONLY(code) code
+#define NOT_E500V2(code)
+#else
+#define E500V2_ONLY(code)
+#define NOT_E500V2(code) code
+#endif
+
+
+#ifdef ARM
+#define ARM_ONLY(code) code
+#define NOT_ARM(code)
+#else
+#define ARM_ONLY(code)
+#define NOT_ARM(code) code
+#endif
+
+#ifdef JAVASE_EMBEDDED
+#define EMBEDDED_ONLY(code) code
+#define NOT_EMBEDDED(code)
+#else
+#define EMBEDDED_ONLY(code)
+#define NOT_EMBEDDED(code) code
 #endif
 
 #define define_pd_global(type, name, value) const type pd_##name = value;

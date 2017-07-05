@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1999, 2008, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -75,6 +75,7 @@ Include_DBs/COMPILER1   = $(Include_DBs/CORE) $(VM)/includeDB_compiler1
 Include_DBs/COMPILER2   = $(Include_DBs/CORE) $(VM)/includeDB_compiler2
 Include_DBs/TIERED      = $(Include_DBs/CORE) $(VM)/includeDB_compiler1 $(VM)/includeDB_compiler2
 Include_DBs/ZERO        = $(Include_DBs/CORE) $(VM)/includeDB_zero
+Include_DBs/SHARK       = $(Include_DBs/ZERO) $(VM)/includeDB_shark
 Include_DBs = $(Include_DBs/$(TYPE))
 
 Cached_plat = $(GENERATED)/platform.current

@@ -253,7 +253,11 @@ static bool read_lib_info(struct ps_prochandle* ph) {
     if (nwords > 5 && find_lib(ph, word[5]) == false) {
        intptr_t base;
        lib_info* lib;
+#ifdef _LP64
        sscanf(word[0], "%lx", &base);
+#else
+       sscanf(word[0], "%x", &base);
+#endif
        if ((lib = add_lib_info(ph, word[5], (uintptr_t)base)) == NULL)
           continue; // ignore, add_lib_info prints error
 

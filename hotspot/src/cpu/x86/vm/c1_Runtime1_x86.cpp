@@ -1779,3 +1779,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
 }
 
 #undef __
+
+const char *Runtime1::pd_name_for_address(address entry) {
+  return "<unknown function>";
+}

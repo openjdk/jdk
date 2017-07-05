@@ -145,11 +145,20 @@ OPT_CFLAGS/SLOWER=-xO3
 OPT_CFLAGS/O2=-xO2
 OPT_CFLAGS/NOOPT=-xO1
 
+#################################################
+# Begin current (>=5.9) Forte compiler options #
+#################################################
+
 ifeq ($(shell expr $(COMPILER_REV_NUMERIC) \>= 509), 1)
 ifeq ($(Platform_arch), x86)
 OPT_CFLAGS/NO_TAIL_CALL_OPT  = -Wu,-O~yz
 OPT_CCFLAGS/NO_TAIL_CALL_OPT = -Qoption ube -O~yz
+OPT_CFLAGS/stubGenerator_x86_32.o = $(OPT_CFLAGS) -xspace
+OPT_CFLAGS/stubGenerator_x86_64.o = $(OPT_CFLAGS) -xspace
 endif # Platform_arch == x86
+ifeq ("${Platform_arch}", "sparc")
+OPT_CFLAGS/stubGenerator_sparc.o = $(OPT_CFLAGS) -xspace
+endif
 endif # COMPILER_REV_NUMERIC >= 509
 
 #################################################
