@@ -741,11 +741,9 @@ ALL_SINCE_SAVE_MARKS_CLOSURES(GCH_SINCE_SAVE_MARKS_ITERATE_DEFN)
 
 #undef GCH_SINCE_SAVE_MARKS_ITERATE_DEFN
 
-bool GenCollectedHeap::no_allocs_since_save_marks(bool include_young) {
-  if (include_young && !_young_gen->no_allocs_since_save_marks()) {
-    return false;
-  }
-  return _old_gen->no_allocs_since_save_marks();
+bool GenCollectedHeap::no_allocs_since_save_marks() {
+  return _young_gen->no_allocs_since_save_marks() &&
+         _old_gen->no_allocs_since_save_marks();
 }
 
 bool GenCollectedHeap::supports_inline_contig_alloc() const {

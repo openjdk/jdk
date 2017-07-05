@@ -46,16 +46,8 @@ public class CreateCoredumpOnCrash {
         runTest("-XX:-CreateCoredumpOnCrash").shouldContain("CreateCoredumpOnCrash turned off, no core file dumped");
 
         if (Platform.isWindows()) {
-            runTest("-XX:+CreateCoredumpOnCrash").shouldContain("Core dump will be written. Default location");
-
             // The old CreateMinidumpOnCrash option should still work
-            runTest("-XX:+CreateMinidumpOnCrash").shouldContain("Core dump will be written. Default location");
             runTest("-XX:-CreateMinidumpOnCrash").shouldContain("CreateCoredumpOnCrash turned off, no core file dumped");
-
-            if (Platform.isDebugBuild()) {
-                // Make sure we create dumps on Windows debug builds by default
-                runTest("-Ddummyopt=false").shouldContain("Core dump will be written. Default location");
-            }
         } else {
             runTest("-XX:+CreateCoredumpOnCrash").shouldNotContain("CreateCoredumpOnCrash turned off, no core file dumped");
         }

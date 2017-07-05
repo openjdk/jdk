@@ -55,6 +55,7 @@ extern Monitor* StringDedupQueue_lock;           // a lock on the string dedupli
 extern Mutex*   StringDedupTable_lock;           // a lock on the string deduplication table
 extern Monitor* CodeCache_lock;                  // a lock on the CodeCache, rank is special, use MutexLockerEx
 extern Mutex*   MethodData_lock;                 // a lock on installation of method data
+extern Mutex*   TouchedMethodLog_lock;           // a lock on allocation of LogExecutedMethods info
 extern Mutex*   RetData_lock;                    // a lock on installation of RetData inside method data
 extern Mutex*   DerivedPointerTableGC_lock;      // a lock to protect the derived pointer table
 extern Monitor* VMOperationQueue_lock;           // a lock on queue of vm_operations waiting to execute

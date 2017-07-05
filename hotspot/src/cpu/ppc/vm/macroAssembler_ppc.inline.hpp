@@ -423,6 +423,13 @@ inline void MacroAssembler::trap_range_check_ge(Register a, int si16) {
   twi(traptoEqual | traptoGreaterThanUnsigned, a/*reg a*/, si16);
 }
 
+// unsigned integer multiplication 64*64 -> 128 bits
+inline void MacroAssembler::multiply64(Register dest_hi, Register dest_lo,
+                                       Register x, Register y) {
+  mulld(dest_lo, x, y);
+  mulhdu(dest_hi, x, y);
+}
+
 #if defined(ABI_ELFv2)
 inline address MacroAssembler::function_entry() { return pc(); }
 #else
