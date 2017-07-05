@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2012, 2014 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -693,7 +693,7 @@ void Assembler::test_asm() {
   // PPC 1, section 4.6.7 Floating-Point Compare Instructions
   fcmpu( CCR7, F24, F25);
 
-  tty->print_cr("\ntest_asm disassembly (0x%lx 0x%lx):", code()->insts_begin(), code()->insts_end());
+  tty->print_cr("\ntest_asm disassembly (0x%lx 0x%lx):", p2i(code()->insts_begin()), p2i(code()->insts_end()));
   code()->decode();
 }
 

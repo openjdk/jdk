@@ -26,6 +26,7 @@
 #define SHARE_VM_GC_IMPLEMENTATION_G1_G1BLOCKOFFSETTABLE_INLINE_HPP
 
 #include "gc_implementation/g1/g1BlockOffsetTable.hpp"
+#include "gc_implementation/g1/heapRegion.hpp"
 #include "memory/space.hpp"
 
 inline HeapWord* G1BlockOffsetTable::block_start(const void* addr) {
@@ -69,6 +70,11 @@ G1BlockOffsetSharedArray::address_for_index(size_t index) const {
   return result;
 }
 
+inline size_t
+G1BlockOffsetArray::block_size(const HeapWord* p) const {
+  return gsp()->block_size(p);
+}
+
 inline HeapWord*
 G1BlockOffsetArray::block_at_or_preceding(const void* addr,
                                           bool has_max_index,
@@ -88,7 +94,7 @@ G1BlockOffsetArray::block_at_or_preceding(const void* addr,
     // to go back by.
     size_t n_cards_back = BlockOffsetArray::entry_to_cards_back(offset);
     q -= (N_words * n_cards_back);
-    assert(q >= _sp->bottom(), "Went below bottom!");
+    assert(q >= gsp()->bottom(), "Went below bottom!");
     index -= n_cards_back;
     offset = _array->offset_array(index);
   }
@@ -101,21 +107,12 @@ inline HeapWord*
 G1BlockOffsetArray::
 forward_to_block_containing_addr_const(HeapWord* q, HeapWord* n,
                                        const void* addr) const {
-  if (csp() != NULL) {
-    if (addr >= csp()->top()) return csp()->top();
-    while (n <= addr) {
-      q = n;
-      oop obj = oop(q);
-      if (obj->klass_or_null() == NULL) return q;
-      n += obj->size();
-    }
-  } else {
-    while (n <= addr) {
-      q = n;
-      oop obj = oop(q);
-      if (obj->klass_or_null() == NULL) return q;
-      n += _sp->block_size(q);
-    }
+  if (addr >= gsp()->top()) return gsp()->top();
+  while (n <= addr) {
+    q = n;
+    oop obj = oop(q);
+    if (obj->klass_or_null() == NULL) return q;
+    n += obj->size();
   }
   assert(q <= n, "wrong order for q and addr");
   assert(addr < n, "wrong order for addr and n");
@@ -126,7 +123,7 @@ inline HeapWord*
 G1BlockOffsetArray::forward_to_block_containing_addr(HeapWord* q,
                                                      const void* addr) {
   if (oop(q)->klass_or_null() == NULL) return q;
-  HeapWord* n = q + _sp->block_size(q);
+  HeapWord* n = q + block_size(q);
   // In the normal case, where the query "addr" is a card boundary, and the
   // offset table chunks are the same size as cards, the block starting at
   // "q" will contain addr, so the test below will fail, and we'll fall

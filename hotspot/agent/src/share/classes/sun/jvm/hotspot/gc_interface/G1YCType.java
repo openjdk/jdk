@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,16 +22,24 @@
  *
  */
 
-#ifndef CPU_SPARC_VM_BYTECODES_SPARC_HPP
-#define CPU_SPARC_VM_BYTECODES_SPARC_HPP
+package sun.jvm.hotspot.gc_interface;
 
-#ifdef SPARC
-#define NLOCALS_IN_REGS 6
-#endif
+//These definitions should be kept in sync with the definitions in the HotSpot
+//code.
 
+public enum G1YCType {
+  Normal ("Normal"),
+  InitialMark ("Initial Mark"),
+  DuringMark ("During Mark"),
+  Mixed ("Mixed"),
+  G1YCTypeEndSentinel ("Unknown");
 
-// Sparc specific bytecodes
+  private final String value;
 
-// (none)
-
-#endif // CPU_SPARC_VM_BYTECODES_SPARC_HPP
+  G1YCType(String val) {
+    this.value = val;
+  }
+  public String value() {
+    return value;
+  }
+}

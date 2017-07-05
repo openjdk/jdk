@@ -27,6 +27,7 @@
 #include "oops/oop.inline.hpp"
 
 void KlassToOopClosure::do_klass(Klass* k) {
+  assert(_oop_closure != NULL, "Not initialized?");
   k->oops_do(_oop_closure);
 }
 

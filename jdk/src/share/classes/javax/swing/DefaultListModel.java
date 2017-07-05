@@ -444,6 +444,7 @@ public class DefaultListModel<E> extends AbstractListModel<E>
      * (<code>index &lt; 0 || index &gt;= size()</code>).
      *
      * @param index index of element to return
+     * @return the element at the specified position in this list
      */
     public E get(int index) {
         return delegate.elementAt(index);

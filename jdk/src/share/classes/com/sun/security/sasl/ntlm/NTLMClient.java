@@ -160,9 +160,17 @@ final class NTLMClient implements SaslClient {
             }
         }
         try {
+            String name = ncb.getName();
+            if (name == null) {
+                name = authzid;
+            }
+            String domain = dcb.getText();
+            if (domain == null) {
+                domain = serverName;
+            }
             client = new Client(version, hostname,
-                    ncb.getName(),
-                    dcb.getText(),
+                    name,
+                    domain,
                     pcb.getPassword());
         } catch (NTLMException ne) {
             throw new SaslException(

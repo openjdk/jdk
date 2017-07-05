@@ -28,6 +28,7 @@
 #include "gc_implementation/shared/spaceDecorator.hpp"
 #include "memory/sharedHeap.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/atomic.inline.hpp"
 #include "runtime/thread.inline.hpp"
 
 PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC

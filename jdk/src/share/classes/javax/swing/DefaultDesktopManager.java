@@ -462,7 +462,12 @@ public class DefaultDesktopManager implements DesktopManager, java.io.Serializab
         f.revalidate();
     }
 
-    /** Convenience method to remove the desktopIcon of <b>f</b> is necessary. */
+    /**
+     * Convenience method to remove the desktopIcon of <b>f</b> is necessary.
+     *
+     * @param f the {@code JInternalFrame} for which to remove the
+     *          {@code desktopIcon}
+     */
     protected void removeIconFor(JInternalFrame f) {
         JInternalFrame.JDesktopIcon di = f.getDesktopIcon();
         Container c = di.getParent();
@@ -472,10 +477,13 @@ public class DefaultDesktopManager implements DesktopManager, java.io.Serializab
         }
     }
 
-    /** The iconifyFrame() code calls this to determine the proper bounds
-      * for the desktopIcon.
-      */
-
+    /**
+     * The {@code iconifyFrame()} code calls this to determine the proper bounds
+     * for the desktopIcon.
+     *
+     * @param f the {@code JInternalFrame} of interest
+     * @return a {@code Rectangle} containing bounds for the {@code desktopIcon}
+     */
     protected Rectangle getBoundsForIconOf(JInternalFrame f) {
       //
       // Get the icon for this internal frame and its preferred size
@@ -592,6 +600,9 @@ public class DefaultDesktopManager implements DesktopManager, java.io.Serializab
     /**
      * Sets that the component has been iconized and the bounds of the
      * <code>desktopIcon</code> are valid.
+     *
+     * @param f     the {@code JInternalFrame} of interest
+     * @param value a {@code Boolean} signifying if component has been iconized
      */
     protected void setWasIcon(JInternalFrame f, Boolean value)  {
         if (value != null) {

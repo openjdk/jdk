@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,16 +22,30 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "interpreter/bytecodes.hpp"
+#ifndef SHARE_VM_GC_IMPLEMENTATION_SHARED_GCID_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_SHARED_GCID_HPP
 
+#include "memory/allocation.hpp"
 
-void Bytecodes::pd_initialize() {
-  // No i486 specific initialization
-}
+class GCId VALUE_OBJ_CLASS_SPEC {
+ private:
+  uint _id;
+  GCId(uint id) : _id(id) {}
+  GCId() { } // Unused
 
+  static uint _next_id;
+  static const uint UNDEFINED = (uint)-1;
 
-Bytecodes::Code Bytecodes::pd_base_code_for(Code code) {
-  // No i486 specific bytecodes
-  return code;
-}
+ public:
+  uint id() const {
+    assert(_id != UNDEFINED, "Using undefined GC ID");
+    return _id;
+  }
+  bool is_undefined() const;
+
+  static const GCId create();
+  static const GCId peek();
+  static const GCId undefined();
+};
+
+#endif // SHARE_VM_GC_IMPLEMENTATION_SHARED_GCID_HPP

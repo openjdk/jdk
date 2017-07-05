@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2012, 2013 SAP AG. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2012, 2014 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -147,9 +147,9 @@ void NativeCall::verify() {
   address addr = addr_at(0);
 
   if (!NativeCall::is_call_at(addr)) {
-    tty->print_cr("not a NativeCall at " PTR_FORMAT, addr);
+    tty->print_cr("not a NativeCall at " PTR_FORMAT, p2i(addr));
     // TODO: PPC port: Disassembler::decode(addr - 20, addr + 20, tty);
-    fatal(err_msg("not a NativeCall at " PTR_FORMAT, addr));
+    fatal(err_msg("not a NativeCall at " PTR_FORMAT, p2i(addr)));
   }
 }
 #endif // ASSERT
@@ -160,9 +160,9 @@ void NativeFarCall::verify() {
 
   NativeInstruction::verify();
   if (!NativeFarCall::is_far_call_at(addr)) {
-    tty->print_cr("not a NativeFarCall at " PTR_FORMAT, addr);
+    tty->print_cr("not a NativeFarCall at " PTR_FORMAT, p2i(addr));
     // TODO: PPC port: Disassembler::decode(addr, 20, 20, tty);
-    fatal(err_msg("not a NativeFarCall at " PTR_FORMAT, addr));
+    fatal(err_msg("not a NativeFarCall at " PTR_FORMAT, p2i(addr)));
   }
 }
 #endif // ASSERT
@@ -306,9 +306,9 @@ void NativeMovConstReg::verify() {
     if (! (cb != NULL && MacroAssembler::is_calculate_address_from_global_toc_at(addr, cb->content_begin())) &&
         ! (cb != NULL && MacroAssembler::is_set_narrow_oop(addr, cb->content_begin())) &&
         ! MacroAssembler::is_bl(*((int*) addr))) {
-      tty->print_cr("not a NativeMovConstReg at " PTR_FORMAT, addr);
+      tty->print_cr("not a NativeMovConstReg at " PTR_FORMAT, p2i(addr));
       // TODO: PPC port: Disassembler::decode(addr, 20, 20, tty);
-      fatal(err_msg("not a NativeMovConstReg at " PTR_FORMAT, addr));
+      fatal(err_msg("not a NativeMovConstReg at " PTR_FORMAT, p2i(addr)));
     }
   }
 }
@@ -344,9 +344,9 @@ void NativeJump::verify() {
 
   NativeInstruction::verify();
   if (!NativeJump::is_jump_at(addr)) {
-    tty->print_cr("not a NativeJump at " PTR_FORMAT, addr);
+    tty->print_cr("not a NativeJump at " PTR_FORMAT, p2i(addr));
     // TODO: PPC port: Disassembler::decode(addr, 20, 20, tty);
-    fatal(err_msg("not a NativeJump at " PTR_FORMAT, addr));
+    fatal(err_msg("not a NativeJump at " PTR_FORMAT, p2i(addr)));
   }
 }
 #endif // ASSERT
