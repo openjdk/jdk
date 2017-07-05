@@ -105,7 +105,7 @@ public class Resources_pt_BR extends java.util.ListResourceBundle {
         // sun.security.provider.PolicyFile
 
         {"java.security.policy.error.parsing.policy.message",
-                "java.security.policy: erro durante o parse de {0}:\n\t{1}"},
+                "java.security.policy: erro durante o parsing de {0}:\n\t{1}"},
         {"java.security.policy.error.adding.Permission.perm.message",
                 "java.security.policy: erro ao adicionar a permiss\u00E3o, {0}:\n\t{1}"},
         {"java.security.policy.error.adding.Entry.message",

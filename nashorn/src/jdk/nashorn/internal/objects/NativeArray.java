@@ -418,7 +418,7 @@ public final class NativeArray extends ScriptObject {
                 long length;
                 if (len instanceof Integer || len instanceof Long) {
                     length = ((Number) len).longValue();
-                    if (length >= 0 && length < 0xffff_ffffL) {
+                    if (length >= 0 && length < JSType.MAX_UINT) {
                         return new NativeArray(length);
                     }
                 }

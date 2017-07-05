@@ -30,14 +30,15 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import jdk.nashorn.internal.codegen.types.Type;
+import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.parser.TokenType;
 import jdk.nashorn.internal.runtime.Source;
 
 /**
  * IR representation for a runtime call.
- *
  */
+@Immutable
 public class RuntimeNode extends Node implements TypeOverride<RuntimeNode> {
 
     /**
@@ -271,10 +272,10 @@ public class RuntimeNode extends Node implements TypeOverride<RuntimeNode> {
     private final List<Node> args;
 
     /** Call site override - e.g. we know that a ScriptRuntime.ADD will return an int */
-    private Type callSiteType;
+    private final Type callSiteType;
 
     /** is final - i.e. may not be removed again, lower in the code pipeline */
-    private boolean isFinal;
+    private final boolean isFinal;
 
     /**
      * Constructor
@@ -290,6 +291,17 @@ public class RuntimeNode extends Node implements TypeOverride<RuntimeNode> {
 
         this.request      = request;
         this.args         = args;
+        this.callSiteType = null;
+        this.isFinal      = false;
+    }
+
+    private RuntimeNode(final RuntimeNode runtimeNode, final Request request, final Type callSiteType, final boolean isFinal, final List<Node> args) {
+        super(runtimeNode);
+
+        this.request      = request;
+        this.args         = args;
+        this.callSiteType = callSiteType;
+        this.isFinal      = isFinal;
     }
 
     /**
@@ -326,8 +338,10 @@ public class RuntimeNode extends Node implements TypeOverride<RuntimeNode> {
     public RuntimeNode(final Node parent, final Request request, final List<Node> args) {
         super(parent);
 
-        this.request = request;
-        this.args    = args;
+        this.request      = request;
+        this.args         = args;
+        this.callSiteType = null;
+        this.isFinal      = false;
     }
 
     /**
@@ -350,20 +364,6 @@ public class RuntimeNode extends Node implements TypeOverride<RuntimeNode> {
         this(parent, request, parent.lhs(), parent.rhs());
     }
 
-    private RuntimeNode(final RuntimeNode runtimeNode, final CopyState cs) {
-        super(runtimeNode);
-
-        final List<Node> newArgs = new ArrayList<>();
-
-        for (final Node arg : runtimeNode.args) {
-            newArgs.add(cs.existingOrCopy(arg));
-        }
-
-        this.request      = runtimeNode.request;
-        this.args         = newArgs;
-        this.callSiteType = runtimeNode.callSiteType;
-    }
-
     /**
      * Is this node final - i.e. it can never be replaced with other nodes again
      * @return true if final
@@ -374,14 +374,14 @@ public class RuntimeNode extends Node implements TypeOverride<RuntimeNode> {
 
     /**
      * Flag this node as final - i.e it may never be replaced with other nodes again
+     * @param isFinal is the node final, i.e. can not be removed and replaced by a less generic one later in codegen
+     * @return same runtime node if already final, otherwise a new one
      */
-    public void setIsFinal() {
-        this.isFinal = true;
-    }
-
-    @Override
-    protected Node copy(final CopyState cs) {
-        return new RuntimeNode(this, cs);
+    public RuntimeNode setIsFinal(final boolean isFinal) {
+        if (this.isFinal == isFinal) {
+            return this;
+        }
+        return new RuntimeNode(this, request, callSiteType, isFinal, args);
     }
 
     /**
@@ -394,8 +394,10 @@ public class RuntimeNode extends Node implements TypeOverride<RuntimeNode> {
 
     @Override
     public RuntimeNode setType(final Type type) {
-        this.callSiteType = type;
-        return this;
+        if (this.callSiteType == type) {
+            return this;
+        }
+        return new RuntimeNode(this, request, type, isFinal, args);
     }
 
     @Override
@@ -409,12 +411,12 @@ public class RuntimeNode extends Node implements TypeOverride<RuntimeNode> {
 
     @Override
     public Node accept(final NodeVisitor visitor) {
-        if (visitor.enterRuntimeNode(this) != null) {
-            for (int i = 0, count = args.size(); i < count; i++) {
-                args.set(i, args.get(i).accept(visitor));
+        if (visitor.enterRuntimeNode(this)) {
+            final List<Node> newArgs = new ArrayList<>();
+            for (final Node arg : args) {
+                newArgs.add(arg.accept(visitor));
             }
-
-            return visitor.leaveRuntimeNode(this);
+            return visitor.leaveRuntimeNode(setArgs(newArgs));
         }
 
         return this;
@@ -447,6 +449,13 @@ public class RuntimeNode extends Node implements TypeOverride<RuntimeNode> {
      */
     public List<Node> getArgs() {
         return Collections.unmodifiableList(args);
+    }
+
+    private RuntimeNode setArgs(final List<Node> args) {
+        if (this.args == args) {
+            return this;
+        }
+        return new RuntimeNode(this, request, callSiteType, isFinal, args);
     }
 
     /**

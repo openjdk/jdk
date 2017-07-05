@@ -25,23 +25,18 @@
 
 package jdk.nashorn.internal.ir;
 
-import static jdk.nashorn.internal.codegen.ObjectClassGenerator.DEBUG_FIELDS;
-
-import jdk.nashorn.internal.codegen.ObjectClassGenerator;
 import jdk.nashorn.internal.codegen.types.Type;
+import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.runtime.Source;
 
 /**
  * IR representation of a property access (period operator.)
- *
  */
-public class AccessNode extends BaseNode implements TypeOverride<AccessNode> {
+@Immutable
+public final class AccessNode extends BaseNode {
     /** Property ident. */
-    private IdentNode property;
-
-    /** Does this node have a type override */
-    private boolean hasCallSiteType;
+    private final IdentNode property;
 
     /**
      * Constructor
@@ -53,49 +48,13 @@ public class AccessNode extends BaseNode implements TypeOverride<AccessNode> {
      * @param property  property
      */
     public AccessNode(final Source source, final long token, final int finish, final Node base, final IdentNode property) {
-        super(source, token, finish, base);
-
-        this.start    = base.getStart();
+        super(source, token, finish, base, false, false);
         this.property = property.setIsPropertyName();
     }
 
-    /**
-     * Copy constructor
-     *
-     * @param accessNode  source node
-     */
-    public AccessNode(final AccessNode accessNode) {
-        this(accessNode, new CopyState());
-    }
-
-    /**
-     * Internal copy constructor
-     *
-     * @param accessNode  source node
-     * @param cs          copy state
-     */
-    protected AccessNode(final AccessNode accessNode, final CopyState cs) {
-        super(accessNode, cs);
-        this.property = (IdentNode)cs.existingOrCopy(accessNode.getProperty());
-    }
-
-    @Override
-    protected Node copy(final CopyState cs) {
-        return new AccessNode(this, cs);
-    }
-
-    @Override
-    public boolean equals(final Object other) {
-        if (!super.equals(other)) {
-            return false;
-        }
-        final AccessNode accessNode = (AccessNode)other;
-        return property.equals(accessNode.getProperty());
-    }
-
-    @Override
-    public int hashCode() {
-        return super.hashCode() ^ property.hashCode();
+    private AccessNode(final AccessNode accessNode, final Node base, final IdentNode property, final boolean isFunction, final boolean hasCallSiteType) {
+        super(accessNode, base, isFunction, hasCallSiteType);
+        this.property = property;
     }
 
     /**
@@ -104,12 +63,11 @@ public class AccessNode extends BaseNode implements TypeOverride<AccessNode> {
      */
     @Override
     public Node accept(final NodeVisitor visitor) {
-        if (visitor.enterAccessNode(this) != null) {
-            base = base.accept(visitor);
-            property = (IdentNode)property.accept(visitor);
-            return visitor.leaveAccessNode(this);
+        if (visitor.enterAccessNode(this)) {
+            return visitor.leaveAccessNode(
+                setBase(base.accept(visitor)).
+                setProperty((IdentNode)property.accept(visitor)));
         }
-
         return this;
     }
 
@@ -117,7 +75,7 @@ public class AccessNode extends BaseNode implements TypeOverride<AccessNode> {
     public void toString(final StringBuilder sb) {
         final boolean needsParen = tokenType().needsParens(getBase().tokenType(), true);
 
-        if (hasCallSiteType) {
+        if (hasCallSiteType()) {
             sb.append('{');
             final String desc = getType().getDescriptor();
             sb.append(desc.charAt(desc.length() - 1) == ';' ? "O" : getType().getDescriptor());
@@ -147,19 +105,34 @@ public class AccessNode extends BaseNode implements TypeOverride<AccessNode> {
         return property;
     }
 
-    @Override
-    public AccessNode setType(final Type type) {
-        if (DEBUG_FIELDS && !Type.areEquivalent(getSymbol().getSymbolType(), type)) {
-            ObjectClassGenerator.LOG.info(getClass().getName() + " " + this + " => " + type + " instead of " + getType());
+    private AccessNode setBase(final Node base) {
+        if (this.base == base) {
+            return this;
         }
-        property = property.setType(type);
-        getSymbol().setTypeOverride(type); //always a temp so this is fine.
-        hasCallSiteType = true;
-        return this;
+        return new AccessNode(this, base, property, isFunction(), hasCallSiteType());
+    }
+
+
+    private AccessNode setProperty(final IdentNode property) {
+        if (this.property == property) {
+            return this;
+        }
+        return new AccessNode(this, base, property, isFunction(), hasCallSiteType());
     }
 
     @Override
-    public boolean canHaveCallSiteType() {
-        return true; //carried by the symbol and always the same nodetype==symboltype
+    public AccessNode setType(final Type type) {
+        logTypeChange(type);
+        getSymbol().setTypeOverride(type); //always a temp so this is fine.
+        return new AccessNode(this, base, property.setType(type), isFunction(), hasCallSiteType());
     }
+
+    @Override
+    public BaseNode setIsFunction() {
+        if (isFunction()) {
+            return this;
+        }
+        return new AccessNode(this, base, property, true, hasCallSiteType());
+    }
+
 }

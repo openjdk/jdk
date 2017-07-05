@@ -877,7 +877,7 @@ address Method::verified_code_entry() {
   debug_only(No_Safepoint_Verifier nsv;)
   nmethod *code = (nmethod *)OrderAccess::load_ptr_acquire(&_code);
   if (code == NULL && UseCodeCacheFlushing) {
-    nmethod *saved_code = CodeCache::find_and_remove_saved_code(this);
+    nmethod *saved_code = CodeCache::reanimate_saved_code(this);
     if (saved_code != NULL) {
       methodHandle method(this);
       assert( ! saved_code->is_osr_method(), "should not get here for osr" );

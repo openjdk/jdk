@@ -28,30 +28,28 @@ package jdk.nashorn.internal.ir;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
 import jdk.nashorn.internal.codegen.Label;
-import jdk.nashorn.internal.ir.annotations.Ignore;
+import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.runtime.Source;
 
 /**
  * IR representation of a TRY statement.
  */
-public class TryNode extends Node {
-    /** Try chain. */
-    @Ignore //don't print, will be apparent from the AST
-    private TryNode next;
-
+@Immutable
+public final class TryNode extends Node {
     /** Try statements. */
-    private Block body;
+    private final Block body;
 
     /** List of catch clauses. */
-    private List<Block> catchBlocks;
+    private final List<Block> catchBlocks;
 
     /** Finally clause. */
-    private Block finallyBody;
+    private final Block finallyBody;
 
     /** Exit label. */
-    private Label exit;
+    private final Label exit;
 
     /** Exception symbol. */
     private Symbol exception;
@@ -62,37 +60,46 @@ public class TryNode extends Node {
     /**
      * Constructor
      *
-     * @param source  the source
-     * @param token   token
-     * @param finish  finish
-     * @param next    next try node in chain
+     * @param source      the source
+     * @param token       token
+     * @param finish      finish
+     * @param body        try node body
+     * @param catchBlocks list of catch blocks in order
+     * @param finallyBody body of finally block or null if none
      */
-    public TryNode(final Source source, final long token, final int finish, final TryNode next) {
+    public TryNode(final Source source, final long token, final int finish, final Block body, final List<Block> catchBlocks, final Block finallyBody) {
         super(source, token, finish);
-
-        this.next = next;
+        this.body = body;
+        this.catchBlocks = catchBlocks;
+        this.finallyBody = finallyBody;
         this.exit = new Label("exit");
     }
 
-    private TryNode(final TryNode tryNode, final CopyState cs) {
+    private TryNode(final TryNode tryNode, final Block body, final List<Block> catchBlocks, final Block finallyBody) {
         super(tryNode);
-
-        final List<Block> newCatchBlocks = new ArrayList<>();
-
-        for (final Block block : tryNode.catchBlocks) {
-            newCatchBlocks.add((Block)cs.existingOrCopy(block));
-        }
-
-        this.next        = (TryNode)cs.existingOrSame(tryNode.getNext());
-        this.body        = (Block)cs.existingOrCopy(tryNode.getBody());
-        this.catchBlocks = newCatchBlocks;
-        this.finallyBody = (Block)cs.existingOrCopy(tryNode.getFinallyBody());
-        this.exit        = new Label(tryNode.getExit());
+        this.body = body;
+        this.catchBlocks = catchBlocks;
+        this.finallyBody = finallyBody;
+        this.exit = new Label(tryNode.exit);
     }
 
     @Override
-    protected Node copy(final CopyState cs) {
-        return new TryNode(this, cs);
+    public Node ensureUniqueLabels(final LexicalContext lc) {
+        //try nodes are never in lex context
+        return new TryNode(this, body, catchBlocks, finallyBody);
+    }
+
+    @Override
+    public boolean isTerminal() {
+        if (body.isTerminal()) {
+            for (final Block catchBlock : getCatchBlocks()) {
+                if (!catchBlock.isTerminal()) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -101,21 +108,16 @@ public class TryNode extends Node {
      */
     @Override
     public Node accept(final NodeVisitor visitor) {
-        if (visitor.enterTryNode(this) != null) {
-            // Need to do first for termination analysis.
-            if (finallyBody != null) {
-                finallyBody = (Block)finallyBody.accept(visitor);
-            }
-
-            body = (Block)body.accept(visitor);
-
-            final List<Block> newCatchBlocks = new ArrayList<>(catchBlocks.size());
-            for (final Block catchBlock : catchBlocks) {
-                newCatchBlocks.add((Block)catchBlock.accept(visitor));
-            }
-            this.catchBlocks = newCatchBlocks;
-
-            return visitor.leaveTryNode(this);
+        if (visitor.enterTryNode(this)) {
+            // Need to do finallybody first for termination analysis. TODO still necessary?
+            final Block newFinallyBody = finallyBody == null ? null : (Block)finallyBody.accept(visitor);
+            final Block newBody        = (Block)body.accept(visitor);
+            return visitor.leaveTryNode(
+                setBody(newBody).
+                setFinallyBody(newFinallyBody).
+                setCatchBlocks(Node.accept(visitor, Block.class, catchBlocks)).
+                setException(exception).
+                setFinallyCatchAll(finallyCatchAll));
         }
 
         return this;
@@ -123,7 +125,7 @@ public class TryNode extends Node {
 
     @Override
     public void toString(final StringBuilder sb) {
-        sb.append("try");
+        sb.append("try ");
     }
 
     /**
@@ -137,9 +139,13 @@ public class TryNode extends Node {
     /**
      * Reset the body of this try block
      * @param body new body
+     * @return new TryNode or same if unchanged
      */
-    public void setBody(final Block body) {
-        this.body = body;
+    public TryNode setBody(final Block body) {
+        if (this.body == body) {
+            return this;
+        }
+        return new TryNode(this,  body, catchBlocks, finallyBody);
     }
 
     /**
@@ -151,16 +157,7 @@ public class TryNode extends Node {
         for (final Block catchBlock : catchBlocks) {
             catches.add((CatchNode)catchBlock.getStatements().get(0));
         }
-        return catches;
-    }
-
-    /**
-     * Returns true if the specified block is the body of this try block, or any of its catch blocks.
-     * @param block the block
-     * @return true if the specified block is the body of this try block, or any of its catch blocks.
-     */
-    public boolean isChildBlock(Block block) {
-        return body == block || catchBlocks.contains(block);
+        return Collections.unmodifiableList(catches);
     }
 
     /**
@@ -174,9 +171,13 @@ public class TryNode extends Node {
     /**
      * Set the catch blocks of this try
      * @param catchBlocks list of catch blocks
+     * @return new TryNode or same if unchanged
      */
-    public void setCatchBlocks(final List<Block> catchBlocks) {
-        this.catchBlocks = catchBlocks;
+    public TryNode setCatchBlocks(final List<Block> catchBlocks) {
+        if (this.catchBlocks == catchBlocks) {
+            return this;
+        }
+        return new TryNode(this, body, catchBlocks, finallyBody);
     }
 
     /**
@@ -190,9 +191,11 @@ public class TryNode extends Node {
     /**
      * Set the exception symbol for this try block
      * @param exception a symbol for the compiler to store the exception in
+     * @return new TryNode or same if unchanged
      */
-    public void setException(final Symbol exception) {
+    public TryNode setException(final Symbol exception) {
         this.exception = exception;
+        return this;
     }
 
     /**
@@ -207,9 +210,13 @@ public class TryNode extends Node {
      * If a finally block exists, the synthetic catchall needs another symbol to
      * store its throwable
      * @param finallyCatchAll a symbol for the finally catch all exception
+     * @return new TryNode or same if unchanged
+     *
+     * TODO can this still be stateful?
      */
-    public void setFinallyCatchAll(final Symbol finallyCatchAll) {
+    public TryNode setFinallyCatchAll(final Symbol finallyCatchAll) {
         this.finallyCatchAll = finallyCatchAll;
+        return this;
     }
 
     /**
@@ -218,14 +225,6 @@ public class TryNode extends Node {
      */
     public Label getExit() {
         return exit;
-    }
-
-    /**
-     * Set the exit label for this try block
-     * @param exit label
-     */
-    public void setExit(final Label exit) {
-        this.exit = exit;
     }
 
     /**
@@ -239,24 +238,12 @@ public class TryNode extends Node {
     /**
      * Set the finally body of this try
      * @param finallyBody new finally body
+     * @return new TryNode or same if unchanged
      */
-    public void setFinallyBody(final Block finallyBody) {
-        this.finallyBody = finallyBody;
-    }
-
-    /**
-     * Get next try node in try chain
-     * @return next try node
-     */
-    public TryNode getNext() {
-        return next;
-    }
-
-    /**
-     * Set next try node in try chain
-     * @param next next try node
-     */
-    public void setNext(final TryNode next) {
-        this.next = next;
+    public TryNode setFinallyBody(final Block finallyBody) {
+        if (this.finallyBody == finallyBody) {
+            return this;
+        }
+        return new TryNode(this, body, catchBlocks, finallyBody);
     }
 }

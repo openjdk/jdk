@@ -320,7 +320,6 @@ final class GssKrb5Client extends GssKrb5Base implements SaslClient {
             }
 
             completed = true;  // server authenticated
-            msgProp = new MessageProp(JGSS_QOP, privacy);
 
             return gssOutToken;
         } catch (GSSException e) {

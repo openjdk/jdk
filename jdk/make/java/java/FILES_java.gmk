@@ -252,6 +252,7 @@ JAVA_JAVA_java = \
     java/util/Scanner.java \
     java/util/InputMismatchException.java \
     java/util/Stack.java \
+    java/util/StringJoiner.java \
     java/util/StringTokenizer.java \
     java/util/TimeZone.java \
         java/util/SimpleTimeZone.java \

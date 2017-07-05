@@ -87,18 +87,22 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
 
     private final T target;
 
-    // Container peer. It may not be the peer of the target's direct
-    // parent, for example, in the case of hw/lw mixing. However,
-    // let's skip this scenario for the time being. We also assume
-    // the container peer is not null, which might also be false if
-    // addNotify() is called for a component outside of the hierarchy.
-    // The exception is LWWindowPeers: their parents are always null
-    private LWContainerPeer containerPeer;
+    /**
+     * Container peer. It may not be the peer of the target's direct parent, for
+     * example, in the case of hw/lw mixing. However, let's skip this scenario
+     * for the time being. We also assume the container peer is not null, which
+     * might also be false if addNotify() is called for a component outside of
+     * the hierarchy. The exception is LWWindowPeers: their containers are
+     * always null
+     */
+    private final LWContainerPeer containerPeer;
 
-    // Handy reference to the top-level window peer. Window peer is
-    // borrowed from the containerPeer in constructor, and should also
-    // be updated when the component is reparented to another container
-    private LWWindowPeer windowPeer;
+    /**
+     * Handy reference to the top-level window peer. Window peer is borrowed
+     * from the containerPeer in constructor, and should also be updated when
+     * the component is reparented to another container
+     */
+    private final LWWindowPeer windowPeer;
 
     private final AtomicBoolean disposed = new AtomicBoolean(false);
 
@@ -183,13 +187,13 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
         this.target = target;
         this.platformComponent = platformComponent;
 
-        initializeContainerPeer();
         // Container peer is always null for LWWindowPeers, so
         // windowPeer is always null for them as well. On the other
         // hand, LWWindowPeer shouldn't use windowPeer at all
-        if (containerPeer != null) {
-            windowPeer = containerPeer.getWindowPeerOrSelf();
-        }
+        final Container container = SunToolkit.getNativeContainer(target);
+        containerPeer = (LWContainerPeer) LWToolkit.targetToPeer(container);
+        windowPeer = containerPeer != null ? containerPeer.getWindowPeerOrSelf()
+                                           : null;
         // don't bother about z-order here as updateZOrder()
         // will be called from addNotify() later anyway
         if (containerPeer != null) {
@@ -354,15 +358,6 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
     // Just a helper method
     protected final LWContainerPeer getContainerPeer() {
         return containerPeer;
-    }
-
-    // Just a helper method
-    // Overridden in LWWindowPeer to skip containerPeer initialization
-    protected void initializeContainerPeer() {
-        Container parent = LWToolkit.getNativeContainer(target);
-        if (parent != null) {
-            containerPeer = (LWContainerPeer) LWToolkit.targetToPeer(parent);
-        }
     }
 
     public PlatformWindow getPlatformWindow() {
