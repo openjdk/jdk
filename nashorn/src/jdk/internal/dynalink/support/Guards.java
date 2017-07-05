@@ -258,23 +258,24 @@ public class Guards {
                 type.changeReturnType(Boolean.TYPE), new int[] { pos });
     }
 
-    private static final MethodHandle IS_OF_CLASS = new Lookup(MethodHandles.lookup()).findStatic(Guards.class,
-            "isOfClass", MethodType.methodType(Boolean.TYPE, Class.class, Object.class));
-
     private static final MethodHandle IS_INSTANCE = Lookup.PUBLIC.findVirtual(Class.class, "isInstance",
             MethodType.methodType(Boolean.TYPE, Object.class));
 
-    private static final MethodHandle IS_ARRAY = new Lookup(MethodHandles.lookup()).findStatic(Guards.class, "isArray",
-            MethodType.methodType(Boolean.TYPE, Object.class));
+    private static final MethodHandle IS_OF_CLASS;
+    private static final MethodHandle IS_ARRAY;
+    private static final MethodHandle IS_IDENTICAL;
+    private static final MethodHandle IS_NULL;
+    private static final MethodHandle IS_NOT_NULL;
 
-    private static final MethodHandle IS_IDENTICAL = new Lookup(MethodHandles.lookup()).findStatic(Guards.class,
-            "isIdentical", MethodType.methodType(Boolean.TYPE, Object.class, Object.class));
+    static {
+        final Lookup lookup = new Lookup(MethodHandles.lookup());
 
-    private static final MethodHandle IS_NULL = new Lookup(MethodHandles.lookup()).findStatic(Guards.class,
-            "isNull", MethodType.methodType(Boolean.TYPE, Object.class));
-
-    private static final MethodHandle IS_NOT_NULL = new Lookup(MethodHandles.lookup()).findStatic(Guards.class,
-            "isNotNull", MethodType.methodType(Boolean.TYPE, Object.class));
+        IS_OF_CLASS  = lookup.findOwnStatic("isOfClass",   Boolean.TYPE, Class.class, Object.class);
+        IS_ARRAY     = lookup.findOwnStatic("isArray",     Boolean.TYPE, Object.class);
+        IS_IDENTICAL = lookup.findOwnStatic("isIdentical", Boolean.TYPE, Object.class, Object.class);
+        IS_NULL      = lookup.findOwnStatic("isNull",      Boolean.TYPE, Object.class);
+        IS_NOT_NULL  = lookup.findOwnStatic("isNotNull",   Boolean.TYPE, Object.class);
+    }
 
     /**
      * Creates a guard method that tests its only argument for being of an exact particular class.

@@ -66,6 +66,7 @@ address os::current_stack_pointer() {
 
 frame os::get_sender_for_C_frame(frame* fr) {
   ShouldNotCallThis();
+  return frame();
 }
 
 frame os::current_frame() {
@@ -103,16 +104,19 @@ void os::initialize_thread(Thread* thr) {
 
 address os::Bsd::ucontext_get_pc(ucontext_t* uc) {
   ShouldNotCallThis();
+  return NULL;
 }
 
 ExtendedPC os::fetch_frame_from_context(void* ucVoid,
                                         intptr_t** ret_sp,
                                         intptr_t** ret_fp) {
   ShouldNotCallThis();
+  return ExtendedPC();
 }
 
 frame os::fetch_frame_from_context(void* ucVoid) {
   ShouldNotCallThis();
+  return frame();
 }
 
 extern "C" JNIEXPORT int
@@ -240,6 +244,7 @@ JVM_handle_bsd_signal(int sig,
 
   sprintf(buf, fmt, sig, info->si_addr);
   fatal(buf);
+  return false;
 }
 
 void os::Bsd::init_thread_fpu_state(void) {
@@ -373,17 +378,7 @@ void os::print_register_info(outputStream *st, void *context) {
 
 extern "C" {
   int SpinPause() {
-  }
-
-  int SafeFetch32(int *adr, int errValue) {
-    int value = errValue;
-    value = *adr;
-    return value;
-  }
-  intptr_t SafeFetchN(intptr_t *adr, intptr_t errValue) {
-    intptr_t value = errValue;
-    value = *adr;
-    return value;
+    return 1;
   }
 
   void _Copy_conjoint_jshorts_atomic(jshort* from, jshort* to, size_t count) {

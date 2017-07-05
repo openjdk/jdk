@@ -1,41 +1,44 @@
 #
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
-#  
+#
 # This code is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License version 2 only, as
 # published by the Free Software Foundation.  Oracle designates this
 # particular file as subject to the "Classpath" exception as provided
 # by Oracle in the LICENSE file that accompanied this code.
-#  
+#
 # This code is distributed in the hope that it will be useful, but WITHOUT
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
 # FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
 # version 2 for more details (a copy is included in the LICENSE file that
 # accompanied this code).
-#  
+#
 # You should have received a copy of the GNU General Public License version
 # 2 along with this work; if not, write to the Free Software Foundation,
 # Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
-#  
+#
 # Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
 # or visit www.oracle.com if you need additional information or have any
 # questions.
 #
-# <pre>
+# TZ zone descriptions
+#
 # This file is in the public domain, so clarified as of
 # 2009-05-17 by Arthur David Olson.
 #
-# TZ zone descriptions
-#
-# From Paul Eggert (1996-08-05):
+# From Paul Eggert (2013-05-27):
 #
 # This file contains a table with the following columns:
 # 1.  ISO 3166 2-character country code.  See the file `iso3166.tab'.
+#     This identifies a country that overlaps the zone.  The country may
+#     overlap other zones and the zone may overlap other countries.
 # 2.  Latitude and longitude of the zone's principal location
 #     in ISO 6709 sign-degrees-minutes-seconds format,
 #     either +-DDMM+-DDDMM or +-DDMMSS+-DDDMMSS,
 #     first latitude (+ is north), then longitude (+ is east).
+#     This location need not lie within the column-1 country.
 # 3.  Zone name used in value of TZ environment variable.
+#     Please see the 'Theory' file for how zone names are chosen.
 # 4.  Comments; present if and only if the country has multiple rows.
 #
 # Columns are separated by a single tab.
@@ -44,6 +47,10 @@
 # (2) puts the most populous zones first, where that does not contradict (1).
 #
 # Lines beginning with `#' are comments.
+#
+# This table is intended as an aid for users, to help them select time
+# zone data appropriate for their practical needs.  It is not intended
+# to take or endorse any position on legal or territorial claims.
 #
 #country-
 #code	coordinates	TZ			comments
@@ -239,7 +246,7 @@ ID	-0002+10920	Asia/Pontianak	west & central Borneo
 ID	-0507+11924	Asia/Makassar	east & south Borneo, Sulawesi (Celebes), Bali, Nusa Tengarra, west Timor
 ID	-0232+14042	Asia/Jayapura	west New Guinea (Irian Jaya) & Malukus (Moluccas)
 IE	+5320-00615	Europe/Dublin
-IL	+3146+03514	Asia/Jerusalem
+IL	+314650+0351326	Asia/Jerusalem
 IM	+5409-00428	Europe/Isle_of_Man
 IN	+2232+08822	Asia/Kolkata
 IO	-0720+07225	Indian/Chagos

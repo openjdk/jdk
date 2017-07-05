@@ -559,10 +559,7 @@ int MachCallDynamicJavaNode::ret_addr_offset() {
     int klass_load_size;
     if (UseCompressedKlassPointers) {
       assert(Universe::heap() != NULL, "java heap should be initialized");
-      if (Universe::narrow_klass_base() == NULL)
-        klass_load_size = 2*BytesPerInstWord; // see MacroAssembler::load_klass()
-      else
-        klass_load_size = 3*BytesPerInstWord;
+      klass_load_size = MacroAssembler::instr_size_for_decode_klass_not_null() + 1*BytesPerInstWord;
     } else {
       klass_load_size = 1*BytesPerInstWord;
     }
@@ -1663,9 +1660,12 @@ void MachUEPNode::format( PhaseRegAlloc *ra_, outputStream *st ) const {
   if (UseCompressedKlassPointers) {
     assert(Universe::heap() != NULL, "java heap should be initialized");
     st->print_cr("\tLDUW   [R_O0 + oopDesc::klass_offset_in_bytes],R_G5\t! Inline cache check - compressed klass");
-    st->print_cr("\tSLL    R_G5,3,R_G5");
-    if (Universe::narrow_klass_base() != NULL)
-      st->print_cr("\tADD    R_G5,R_G6_heap_base,R_G5");
+    st->print_cr("\tSET    Universe::narrow_klass_base,R_G6_heap_base");
+    if (Universe::narrow_klass_shift() != 0) {
+      st->print_cr("\tSLL    R_G5,3,R_G5");
+    }
+    st->print_cr("\tADD    R_G5,R_G6_heap_base,R_G5");
+    st->print_cr("\tSET    Universe::narrow_ptrs_base,R_G6_heap_base");
   } else {
     st->print_cr("\tLDX    [R_O0 + oopDesc::klass_offset_in_bytes],R_G5\t! Inline cache check");
   }
@@ -2563,10 +2563,7 @@ encode %{
       int klass_load_size;
       if (UseCompressedKlassPointers) {
         assert(Universe::heap() != NULL, "java heap should be initialized");
-        if (Universe::narrow_klass_base() == NULL)
-          klass_load_size = 2*BytesPerInstWord;
-        else
-          klass_load_size = 3*BytesPerInstWord;
+        klass_load_size = MacroAssembler::instr_size_for_decode_klass_not_null() + 1*BytesPerInstWord;
       } else {
         klass_load_size = 1*BytesPerInstWord;
       }

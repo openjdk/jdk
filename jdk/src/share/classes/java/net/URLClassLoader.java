@@ -57,12 +57,6 @@ import sun.security.util.SecurityConstants;
  * <p>
  * The classes that are loaded are by default granted permission only to
  * access the URLs specified when the URLClassLoader was created.
- * <p>
- * Where a JAR file contains the {@link Name#PROFILE Profile} attribute
- * then its value is the name of the Java SE profile that the library
- * minimally requires. If this runtime does not support the profile then
- * it causes {@link java.util.jar.UnsupportedProfileException} to be
- * thrown at some unspecified time.
  *
  * @author  David Connelly
  * @since   1.2

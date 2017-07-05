@@ -391,9 +391,16 @@ Java_sun_awt_windows_WCustomCursor_createCursorIndirect(
 
     DASSERT(hCursor);
 
-    AwtCursor::setPData(self, ptr_to_jlong(new AwtCursor(env, hCursor, self, xHotSpot,
-                                              yHotSpot, nW, nH, nSS, cols,
-                                              (BYTE *)andMaskPtr)));
+    try {
+        AwtCursor::setPData(self, ptr_to_jlong(new AwtCursor(env, hCursor, self, xHotSpot,
+                                                             yHotSpot, nW, nH, nSS, cols,
+                                                             (BYTE *)andMaskPtr)));
+    } catch (...) {
+        if (cols) {
+            delete[] cols;
+        }
+        throw;
+    }
     CATCH_BAD_ALLOC;
 }
 

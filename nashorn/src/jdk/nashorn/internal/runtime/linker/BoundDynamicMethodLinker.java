@@ -37,7 +37,7 @@ import jdk.internal.dynalink.linker.TypeBasedGuardingDynamicLinker;
 import jdk.internal.dynalink.support.Guards;
 
 /**
- * Links {@link BoundDynamicMethod} objects. Passes through to Dynalink's BeansLinker for linking a dynamic method
+ * Links {@code BoundDynamicMethod} objects. Passes through to Dynalink's BeansLinker for linking a dynamic method
  * (they only respond to "dyn:call"), and modifies the returned invocation to deal with the receiver binding.
  */
 final class BoundDynamicMethodLinker implements TypeBasedGuardingDynamicLinker {

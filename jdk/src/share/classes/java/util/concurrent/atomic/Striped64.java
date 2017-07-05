@@ -43,6 +43,7 @@ import java.util.concurrent.ThreadLocalRandom;
  * for classes supporting dynamic striping on 64bit values. The class
  * extends Number so that concrete subclasses must publicly do so.
  */
+@SuppressWarnings("serial")
 abstract class Striped64 extends Number {
     /*
      * This class maintains a lazily-initialized table of atomically

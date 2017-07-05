@@ -39,16 +39,20 @@
 
 VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
   ShouldNotCallThis();
+  return NULL;
 }
 
 VtableStub* VtableStubs::create_itable_stub(int vtable_index) {
   ShouldNotCallThis();
+  return NULL;
 }
 
 int VtableStub::pd_code_size_limit(bool is_vtable_stub) {
   ShouldNotCallThis();
+  return 0;
 }
 
 int VtableStub::pd_code_alignment() {
   ShouldNotCallThis();
+  return 0;
 }

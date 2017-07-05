@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -288,9 +288,9 @@ class ZipInputStream extends InflaterInputStream implements ZipConstants {
         int len = get16(tmpbuf, LOCNAM);
         int blen = b.length;
         if (len > blen) {
-            do
+            do {
                 blen = blen * 2;
-            while (len > blen);
+            } while (len > blen);
             b = new byte[blen];
         }
         readFully(b, 0, len);
@@ -303,7 +303,7 @@ class ZipInputStream extends InflaterInputStream implements ZipConstants {
             throw new ZipException("encrypted ZIP entry not supported");
         }
         e.method = get16(tmpbuf, LOCHOW);
-        e.mtime = dosToJavaTime(get32(tmpbuf, LOCTIM));
+        e.time = dosToJavaTime(get32(tmpbuf, LOCTIM));
         if ((flag & 8) == 8) {
             /* "Data Descriptor" present */
             if (e.method != DEFLATED) {
@@ -319,49 +319,7 @@ class ZipInputStream extends InflaterInputStream implements ZipConstants {
         if (len > 0) {
             byte[] extra = new byte[len];
             readFully(extra, 0, len);
-            e.setExtra(extra);
-            // extra fields are in "HeaderID(2)DataSize(2)Data... format
-            int off = 0;
-            while (off + 4 < len) {
-                int pos = off;
-                int tag = get16(extra, pos);
-                int sz = get16(extra, pos + 2);
-                pos += 4;
-                if (pos + sz > len)         // invalid data
-                    break;
-                switch (tag) {
-                case EXTID_ZIP64 :
-                    // LOC extra zip64 entry MUST include BOTH original and
-                    // compressed file size fields.
-                    //
-                    // If invalid zip64 extra fields, simply skip. Even it's
-                    // rare, it's possible the entry size happens to be
-                    // the magic value and it "accidently" has some bytes
-                    // in extra match the id.
-                    if (sz >= 16 && (pos + sz) <= len ) {
-                        e.size = get64(extra, pos);
-                        e.csize = get64(extra, pos + 8);
-                    }
-                    break;
-                case EXTID_NTFS:
-                    pos += 4;    // reserved 4 bytes
-                    if (get16(extra, pos) !=  0x0001 || get16(extra, pos + 2) != 24)
-                        break;
-                    // override the loc field, NTFS time has 'microsecond' granularity
-                    e.mtime  = winToJavaTime(get64(extra, pos + 4));
-                    break;
-                case EXTID_EXTT:
-                    int flag = Byte.toUnsignedInt(extra[pos++]);
-                    if ((flag & 0x1) != 0) {
-                        e.mtime = unixToJavaTime(get32(extra, pos));
-                        pos += 4;
-                    }
-                    break;
-                default:    // unknown tag
-                }
-                off += (sz + 4);
-            }
-
+            e.setExtra0(extra, true);
         }
         return e;
     }

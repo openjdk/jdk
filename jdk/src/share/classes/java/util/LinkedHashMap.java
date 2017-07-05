@@ -129,9 +129,19 @@ import java.util.function.BiFunction;
  * exception for its correctness:   <i>the fail-fast behavior of iterators
  * should be used only to detect bugs.</i>
  *
+ * <p>The spliterators returned by the spliterator method of the collections
+ * returned by all of this class's collection view methods are
+ * <em><a href="Spliterator.html#binding">late-binding</a></em>,
+ * <em>fail-fast</em>, and additionally report {@link Spliterator#ORDERED}.
+ *
  * <p>This class is a member of the
  * <a href="{@docRoot}/../technotes/guides/collections/index.html">
  * Java Collections Framework</a>.
+ *
+ * @implNote
+ * The spliterators returned by the spliterator method of the collections
+ * returned by all of this class's collection view methods are created from
+ * the iterators of the corresponding collections.
  *
  * @param <K> the type of keys maintained by this map
  * @param <V> the type of mapped values

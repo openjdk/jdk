@@ -113,11 +113,18 @@ public final class IDN {
         int p = 0, q = 0;
         StringBuffer out = new StringBuffer();
 
+        if (isRootLabel(input)) {
+            return ".";
+        }
+
         while (p < input.length()) {
             q = searchDots(input, p);
             out.append(toASCIIInternal(input.substring(p, q),  flag));
+            if (q != (input.length())) {
+               // has more labels, or keep the trailing dot as at present
+               out.append('.');
+            }
             p = q + 1;
-            if (p < input.length()) out.append('.');
         }
 
         return out.toString();
@@ -167,11 +174,18 @@ public final class IDN {
         int p = 0, q = 0;
         StringBuffer out = new StringBuffer();
 
+        if (isRootLabel(input)) {
+            return ".";
+        }
+
         while (p < input.length()) {
             q = searchDots(input, p);
             out.append(toUnicodeInternal(input.substring(p, q),  flag));
+            if (q != (input.length())) {
+               // has more labels, or keep the trailing dot as at present
+               out.append('.');
+            }
             p = q + 1;
-            if (p < input.length()) out.append('.');
         }
 
         return out.toString();
@@ -263,6 +277,13 @@ public final class IDN {
             dest = new StringBuffer(label);
         }
 
+        // step 8, move forward to check the smallest number of the code points
+        // the length must be inside 1..63
+        if (dest.length() == 0) {
+            throw new IllegalArgumentException(
+                        "Empty label is not a legal name");
+        }
+
         // step 3
         // Verify the absence of non-LDH ASCII code points
         //   0..0x2c, 0x2e..0x2f, 0x3a..0x40, 0x5b..0x60, 0x7b..0x7f
@@ -311,7 +332,7 @@ public final class IDN {
 
         // step 8
         // the length must be inside 1..63
-        if(dest.length() > MAX_LABEL_LENGTH){
+        if (dest.length() > MAX_LABEL_LENGTH) {
             throw new IllegalArgumentException("The label in the input is too long");
         }
 
@@ -409,8 +430,7 @@ public final class IDN {
     private static int searchDots(String s, int start) {
         int i;
         for (i = start; i < s.length(); i++) {
-            char c = s.charAt(i);
-            if (c == '.' || c == '\u3002' || c == '\uFF0E' || c == '\uFF61') {
+            if (isLabelSeparator(s.charAt(i))) {
                 break;
             }
         }
@@ -418,6 +438,19 @@ public final class IDN {
         return i;
     }
 
+    //
+    // to check if a string is a root label, ".".
+    //
+    private static boolean isRootLabel(String s) {
+        return (s.length() == 1 && isLabelSeparator(s.charAt(0)));
+    }
+
+    //
+    // to check if a character is a label separator, i.e. a dot character.
+    //
+    private static boolean isLabelSeparator(char c) {
+        return (c == '.' || c == '\u3002' || c == '\uFF0E' || c == '\uFF61');
+    }
 
     //
     // to check if a string only contains US-ASCII code point
