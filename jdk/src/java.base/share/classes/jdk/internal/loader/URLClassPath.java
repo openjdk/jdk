@@ -65,8 +65,8 @@ import java.util.zip.ZipFile;
 
 import jdk.internal.misc.JavaUtilZipFileAccess;
 import jdk.internal.misc.SharedSecrets;
-import sun.misc.InvalidJarIndexException;
-import sun.misc.JarIndex;
+import jdk.internal.util.jar.InvalidJarIndexError;
+import jdk.internal.util.jar.JarIndex;
 import sun.net.util.URLUtil;
 import sun.net.www.ParseUtil;
 
@@ -902,7 +902,7 @@ public class URLClassPath {
                          */
                         if (!newLoader.validIndex(name)) {
                             /* the mapping is wrong */
-                            throw new InvalidJarIndexException("Invalid index");
+                            throw new InvalidJarIndexError("Invalid index");
                         }
                     }
 
