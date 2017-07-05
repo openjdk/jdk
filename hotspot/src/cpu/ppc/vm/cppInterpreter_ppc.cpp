@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2012, 2013 SAP AG. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2012, 2014 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2947,17 +2947,60 @@ void BytecodeInterpreter::pd_layout_interpreterState(interpreterState istate,
   istate->_last_Java_fp = last_Java_fp;
 }
 
-int AbstractInterpreter::layout_activation(Method* method,
-                                           int temps,        // Number of slots on java expression stack in use.
-                                           int popframe_args,
-                                           int monitors,     // Number of active monitors.
-                                           int caller_actual_parameters,
-                                           int callee_params,// Number of slots for callee parameters.
-                                           int callee_locals,// Number of slots for locals.
-                                           frame* caller,
-                                           frame* interpreter_frame,
-                                           bool is_top_frame,
-                                           bool is_bottom_frame) {
+// Computes monitor_size and top_frame_size in bytes.
+static void frame_size_helper(int max_stack,
+                              int monitors,
+                              int& monitor_size,
+                              int& top_frame_size) {
+  monitor_size = frame::interpreter_frame_monitor_size_in_bytes() * monitors;
+  top_frame_size = round_to(frame::interpreter_frame_cinterpreterstate_size_in_bytes()
+                            + monitor_size
+                            + max_stack * Interpreter::stackElementSize
+                            + 2 * Interpreter::stackElementSize,
+                            frame::alignment_in_bytes)
+                   + frame::top_ijava_frame_abi_size;
+}
+
+// Returns number of stackElementWords needed for the interpreter frame with the
+// given sections.
+int AbstractInterpreter::size_activation(int max_stack,
+                                         int temps,
+                                         int extra_args,
+                                         int monitors,
+                                         int callee_params,
+                                         int callee_locals,
+                                         bool is_top_frame) {
+  int monitor_size = 0;
+  int top_frame_size = 0;
+  frame_size_helper(max_stack, monitors, monitor_size, top_frame_size);
+
+  int frame_size;
+  if (is_top_frame) {
+    frame_size = top_frame_size;
+  } else {
+    frame_size = round_to(frame::interpreter_frame_cinterpreterstate_size_in_bytes()
+                          + monitor_size
+                          + (temps - callee_params + callee_locals) * Interpreter::stackElementSize
+                          + 2 * Interpreter::stackElementSize,
+                          frame::alignment_in_bytes)
+                 + frame::parent_ijava_frame_abi_size;
+    assert(extra_args == 0, "non-zero for top_frame only");
+  }
+
+  return frame_size / Interpreter::stackElementSize;
+}
+
+void AbstractInterpreter::layout_activation(Method* method,
+                                            int temps,        // Number of slots on java expression stack in use.
+                                            int popframe_args,
+                                            int monitors,     // Number of active monitors.
+                                            int caller_actual_parameters,
+                                            int callee_params,// Number of slots for callee parameters.
+                                            int callee_locals,// Number of slots for locals.
+                                            frame* caller,
+                                            frame* interpreter_frame,
+                                            bool is_top_frame,
+                                            bool is_bottom_frame) {
 
   // NOTE this code must exactly mimic what
   // InterpreterGenerator::generate_compute_interpreter_state() does
@@ -2967,86 +3010,64 @@ int AbstractInterpreter::layout_activation(Method* method,
   // both the abi scratch area and a place to hold a result from a
   // callee on its way to the callers stack.
 
-  int monitor_size = frame::interpreter_frame_monitor_size_in_bytes() * monitors;
-  int frame_size;
-  int top_frame_size = round_to(frame::interpreter_frame_cinterpreterstate_size_in_bytes()
-                                + monitor_size
-                                + (method->max_stack() *Interpreter::stackElementWords * BytesPerWord)
-                                + 2*BytesPerWord,
-                                frame::alignment_in_bytes)
-                      + frame::top_ijava_frame_abi_size;
-  if (is_top_frame) {
-    frame_size = top_frame_size;
-  } else {
-    frame_size = round_to(frame::interpreter_frame_cinterpreterstate_size_in_bytes()
-                          + monitor_size
-                          + ((temps - callee_params + callee_locals) *
-                             Interpreter::stackElementWords * BytesPerWord)
-                          + 2*BytesPerWord,
-                          frame::alignment_in_bytes)
-                 + frame::parent_ijava_frame_abi_size;
-    assert(popframe_args==0, "non-zero for top_frame only");
-  }
+  int monitor_size = 0;
+  int top_frame_size = 0;
+  frame_size_helper(method->max_stack(), monitors, monitor_size, top_frame_size);
 
-  // If we actually have a frame to layout we must now fill in all the pieces.
-  if (interpreter_frame != NULL) {
+  intptr_t sp = (intptr_t)interpreter_frame->sp();
+  intptr_t fp = *(intptr_t *)sp;
+  assert(fp == (intptr_t)caller->sp(), "fp must match");
+  interpreterState cur_state =
+    (interpreterState)(fp - frame::interpreter_frame_cinterpreterstate_size_in_bytes());
 
-    intptr_t sp = (intptr_t)interpreter_frame->sp();
-    intptr_t fp = *(intptr_t *)sp;
-    assert(fp == (intptr_t)caller->sp(), "fp must match");
-    interpreterState cur_state =
-      (interpreterState)(fp - frame::interpreter_frame_cinterpreterstate_size_in_bytes());
+  // Now fill in the interpreterState object.
 
-    // Now fill in the interpreterState object.
-
-    intptr_t* locals;
-    if (caller->is_interpreted_frame()) {
-      // Locals must agree with the caller because it will be used to set the
-      // caller's tos when we return.
-      interpreterState prev  = caller->get_interpreterState();
-      // Calculate start of "locals" for MH calls.  For MH calls, the
-      // current method() (= MH target) and prev->callee() (=
-      // MH.invoke*()) are different and especially have different
-      // signatures. To pop the argumentsof the caller, we must use
-      // the prev->callee()->size_of_arguments() because that's what
-      // the caller actually pushed.  Currently, for synthetic MH
-      // calls (deoptimized from inlined MH calls), detected by
-      // is_method_handle_invoke(), we use the callee's arguments
-      // because here, the caller's and callee's signature match.
-      if (true /*!caller->is_at_mh_callsite()*/) {
-        locals = prev->stack() + method->size_of_parameters();
-      } else {
-        // Normal MH call.
-        locals = prev->stack() + prev->callee()->size_of_parameters();
-      }
+  intptr_t* locals;
+  if (caller->is_interpreted_frame()) {
+    // Locals must agree with the caller because it will be used to set the
+    // caller's tos when we return.
+    interpreterState prev  = caller->get_interpreterState();
+    // Calculate start of "locals" for MH calls.  For MH calls, the
+    // current method() (= MH target) and prev->callee() (=
+    // MH.invoke*()) are different and especially have different
+    // signatures. To pop the argumentsof the caller, we must use
+    // the prev->callee()->size_of_arguments() because that's what
+    // the caller actually pushed.  Currently, for synthetic MH
+    // calls (deoptimized from inlined MH calls), detected by
+    // is_method_handle_invoke(), we use the callee's arguments
+    // because here, the caller's and callee's signature match.
+    if (true /*!caller->is_at_mh_callsite()*/) {
+      locals = prev->stack() + method->size_of_parameters();
     } else {
-      bool is_deopted;
-      locals = (intptr_t*) (fp + ((method->max_locals() - 1) * BytesPerWord) +
-                            frame::parent_ijava_frame_abi_size);
+      // Normal MH call.
+      locals = prev->stack() + prev->callee()->size_of_parameters();
     }
-
-    intptr_t* monitor_base = (intptr_t*) cur_state;
-    intptr_t* stack_base   = (intptr_t*) ((intptr_t) monitor_base - monitor_size);
-
-    // Provide pop_frame capability on PPC64, add popframe_args.
-    // +1 because stack is always prepushed.
-    intptr_t* stack = (intptr_t*) ((intptr_t) stack_base - (temps + popframe_args + 1) * BytesPerWord);
-
-    BytecodeInterpreter::layout_interpreterState(cur_state,
-                                                 caller,
-                                                 interpreter_frame,
-                                                 method,
-                                                 locals,
-                                                 stack,
-                                                 stack_base,
-                                                 monitor_base,
-                                                 (intptr_t*)(((intptr_t)fp)-top_frame_size),
-                                                 is_top_frame);
-
-    BytecodeInterpreter::pd_layout_interpreterState(cur_state, interpreter_return_address,
-                                                    interpreter_frame->fp());
+  } else {
+    bool is_deopted;
+    locals = (intptr_t*) (fp + ((method->max_locals() - 1) * BytesPerWord) +
+                          frame::parent_ijava_frame_abi_size);
   }
-  return frame_size/BytesPerWord;
+
+  intptr_t* monitor_base = (intptr_t*) cur_state;
+  intptr_t* stack_base   = (intptr_t*) ((intptr_t) monitor_base - monitor_size);
+
+  // Provide pop_frame capability on PPC64, add popframe_args.
+  // +1 because stack is always prepushed.
+  intptr_t* stack = (intptr_t*) ((intptr_t) stack_base - (temps + popframe_args + 1) * BytesPerWord);
+
+  BytecodeInterpreter::layout_interpreterState(cur_state,
+                                               caller,
+                                               interpreter_frame,
+                                               method,
+                                               locals,
+                                               stack,
+                                               stack_base,
+                                               monitor_base,
+                                               (intptr_t*)(((intptr_t)fp) - top_frame_size),
+                                               is_top_frame);
+
+  BytecodeInterpreter::pd_layout_interpreterState(cur_state, interpreter_return_address,
+                                                  interpreter_frame->fp());
 }
 
 #endif // CC_INTERP

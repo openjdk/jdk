@@ -1613,21 +1613,20 @@ void ArchDesc::declareClasses(FILE *fp) {
     // Each instruction attribute results in a virtual call of same name.
     // The ins_cost is not handled here.
     Attribute *attr = instr->_attribs;
-    bool avoid_back_to_back = false;
+    Attribute *avoid_back_to_back_attr = NULL;
     while (attr != NULL) {
-      if (strcmp (attr->_ident, "ins_cost") != 0 &&
+      if (strcmp (attr->_ident, "ins_is_TrapBasedCheckNode") == 0) {
+        fprintf(fp, "  virtual bool           is_TrapBasedCheckNode() const { return %s; }\n", attr->_val);
+      } else if (strcmp (attr->_ident, "ins_cost") != 0 &&
           strncmp(attr->_ident, "ins_field_", 10) != 0 &&
           // Must match function in node.hpp: return type bool, no prefix "ins_".
           strcmp (attr->_ident, "ins_is_TrapBasedCheckNode") != 0 &&
           strcmp (attr->_ident, "ins_short_branch") != 0) {
         fprintf(fp, "  virtual int            %s() const { return %s; }\n", attr->_ident, attr->_val);
       }
-      // Check value for ins_avoid_back_to_back, and if it is true (1), set the flag
-      if (!strcmp(attr->_ident, "ins_avoid_back_to_back") != 0 && attr->int_val(*this) != 0)
-        avoid_back_to_back = true;
-      if (strcmp (attr->_ident, "ins_is_TrapBasedCheckNode") == 0)
-        fprintf(fp, "  virtual bool           is_TrapBasedCheckNode() const { return %s; }\n", attr->_val);
-
+      if (strcmp(attr->_ident, "ins_avoid_back_to_back") == 0) {
+        avoid_back_to_back_attr = attr;
+      }
       attr = (Attribute *)attr->_next;
     }
 
@@ -1799,11 +1798,11 @@ void ArchDesc::declareClasses(FILE *fp) {
     }
 
     // flag: if this instruction should not be generated back to back.
-    if ( avoid_back_to_back ) {
-      if ( node_flags_set ) {
-        fprintf(fp," | Flag_avoid_back_to_back");
+    if (avoid_back_to_back_attr != NULL) {
+      if (node_flags_set) {
+        fprintf(fp," | (%s)", avoid_back_to_back_attr->_val);
       } else {
-        fprintf(fp,"init_flags(Flag_avoid_back_to_back");
+        fprintf(fp,"init_flags((%s)", avoid_back_to_back_attr->_val);
         node_flags_set = true;
       }
     }

@@ -1,6 +1,6 @@
 //
-// Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
-// Copyright 2012, 2013 SAP AG. All rights reserved.
+// Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+// Copyright 2012, 2014 SAP AG. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -1362,8 +1362,8 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   Compile* C = ra_->C;
   MacroAssembler _masm(&cbuf);
 
-  const long framesize = ((long)C->frame_slots()) << LogBytesPerInt;
-  assert(framesize%(2*wordSize) == 0, "must preserve 2*wordSize alignment");
+  const long framesize = C->frame_size_in_bytes();
+  assert(framesize % (2 * wordSize) == 0, "must preserve 2*wordSize alignment");
 
   const bool method_is_frameless      = false /* TODO: PPC port C->is_frameless_method()*/;
 
@@ -1388,19 +1388,22 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   // careful, because some VM calls (such as call site linkage) can
   // use several kilobytes of stack. But the stack safety zone should
   // account for that. See bugs 4446381, 4468289, 4497237.
-  if (C->need_stack_bang(framesize) && UseStackBanging) {
+
+  int bangsize = C->bang_size_in_bytes();
+  assert(bangsize >= framesize || bangsize <= 0, "stack bang size incorrect");
+  if (C->need_stack_bang(bangsize) && UseStackBanging) {
     // Unfortunately we cannot use the function provided in
     // assembler.cpp as we have to emulate the pipes. So I had to
     // insert the code of generate_stack_overflow_check(), see
     // assembler.cpp for some illuminative comments.
     const int page_size = os::vm_page_size();
-    int bang_end = StackShadowPages*page_size;
+    int bang_end = StackShadowPages * page_size;
 
     // This is how far the previous frame's stack banging extended.
     const int bang_end_safe = bang_end;
 
-    if (framesize > page_size) {
-      bang_end += framesize;
+    if (bangsize > page_size) {
+      bang_end += bangsize;
     }
 
     int bang_offset = bang_end_safe;
@@ -1446,7 +1449,7 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
 
   unsigned int bytes = (unsigned int)framesize;
   long offset = Assembler::align_addr(bytes, frame::alignment_in_bytes);
-  ciMethod *currMethod = C -> method();
+  ciMethod *currMethod = C->method();
 
   // Optimized version for most common case.
   if (UsePower6SchedulerPPC64 &&

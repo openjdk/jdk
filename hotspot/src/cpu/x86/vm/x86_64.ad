@@ -713,14 +713,15 @@ void MachConstantBaseNode::format(PhaseRegAlloc* ra_, outputStream* st) const {
 void MachPrologNode::format(PhaseRegAlloc* ra_, outputStream* st) const {
   Compile* C = ra_->C;
 
-  int framesize = C->frame_slots() << LogBytesPerInt;
+  int framesize = C->frame_size_in_bytes();
+  int bangsize = C->bang_size_in_bytes();
   assert((framesize & (StackAlignmentInBytes-1)) == 0, "frame size not aligned");
   // Remove wordSize for return addr which is already pushed.
   framesize -= wordSize;
 
-  if (C->need_stack_bang(framesize)) {
+  if (C->need_stack_bang(bangsize)) {
     framesize -= wordSize;
-    st->print("# stack bang");
+    st->print("# stack bang (%d bytes)", bangsize);
     st->print("\n\t");
     st->print("pushq   rbp\t# Save rbp");
     if (framesize) {
@@ -751,9 +752,10 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   Compile* C = ra_->C;
   MacroAssembler _masm(&cbuf);
 
-  int framesize = C->frame_slots() << LogBytesPerInt;
+  int framesize = C->frame_size_in_bytes();
+  int bangsize = C->bang_size_in_bytes();
 
-  __ verified_entry(framesize, C->need_stack_bang(framesize), false);
+  __ verified_entry(framesize, C->need_stack_bang(bangsize)?bangsize:0, false);
 
   C->set_frame_complete(cbuf.insts_size());
 
@@ -786,7 +788,7 @@ void MachEpilogNode::format(PhaseRegAlloc* ra_, outputStream* st) const
     st->cr(); st->print("\t");
   }
 
-  int framesize = C->frame_slots() << LogBytesPerInt;
+  int framesize = C->frame_size_in_bytes();
   assert((framesize & (StackAlignmentInBytes-1)) == 0, "frame size not aligned");
   // Remove word for return adr already pushed
   // and RBP
@@ -822,7 +824,7 @@ void MachEpilogNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const
     __ vzeroupper();
   }
 
-  int framesize = C->frame_slots() << LogBytesPerInt;
+  int framesize = C->frame_size_in_bytes();
   assert((framesize & (StackAlignmentInBytes-1)) == 0, "frame size not aligned");
   // Remove word for return adr already pushed
   // and RBP

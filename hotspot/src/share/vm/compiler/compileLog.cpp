@@ -106,7 +106,7 @@ int CompileLog::identify(ciBaseObject* obj) {
     if (mobj->is_klass()) {
       ciKlass* klass = mobj->as_klass();
       begin_elem("klass id='%d'", id);
-      name(klass->name());
+      name(klass);
       if (!klass->is_loaded()) {
         print(" unloaded='1'");
       } else {
@@ -171,6 +171,15 @@ void CompileLog::name(ciSymbol* name) {
   print("'");
 }
 
+void CompileLog::name(ciKlass* k) {
+  print(" name='");
+  if (!k->is_loaded()) {
+    text()->print(k->name()->as_klass_external_name());
+  } else {
+    text()->print(k->external_name());
+  }
+  print("'");
+}
 
 // ------------------------------------------------------------------
 // CompileLog::clear_identities
