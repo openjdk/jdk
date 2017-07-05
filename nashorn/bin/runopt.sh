@@ -69,7 +69,6 @@ ENABLE_ASSERTIONS_FLAGS="-ea -esa"
 
 if [ -z $JFR_FILENAME ]; then
     JFR_FILENAME="./nashorn_$(date|sed "s/ /_/g"|sed "s/:/_/g").jfr"
-    echo "Using default JFR filename: ${JFR_FILENAME}..."
 fi
 
 # Flight recorder

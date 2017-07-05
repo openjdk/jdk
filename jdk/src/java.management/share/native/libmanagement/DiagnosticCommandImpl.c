@@ -65,6 +65,11 @@ jobject getDiagnosticCommandArgumentInfoArray(JNIEnv *env, jstring command,
                                                    dcmd_arg_info_array);
   dcmdArgInfoCls = (*env)->FindClass(env,
                                      "sun/management/DiagnosticCommandArgumentInfo");
+  if ((*env)->ExceptionCheck(env)) {
+    free(dcmd_arg_info_array);
+    return NULL;
+  }
+
   result = (*env)->NewObjectArray(env, num_arg, dcmdArgInfoCls, NULL);
   if (result == NULL) {
     free(dcmd_arg_info_array);
@@ -91,9 +96,16 @@ jobject getDiagnosticCommandArgumentInfoArray(JNIEnv *env, jstring command,
   }
   free(dcmd_arg_info_array);
   arraysCls = (*env)->FindClass(env, "java/util/Arrays");
+  if ((*env)->ExceptionCheck(env)) {
+    return NULL;
+  }
   mid = (*env)->GetStaticMethodID(env, arraysCls,
                                   "asList", "([Ljava/lang/Object;)Ljava/util/List;");
   resultList = (*env)->CallStaticObjectMethod(env, arraysCls, mid, result);
+  if ((*env)->ExceptionCheck(env)) {
+    // Make sure we return NULL in case of OOM inside Java
+    return NULL;
+  }
   return resultList;
 }
 
@@ -121,6 +133,10 @@ Java_sun_management_DiagnosticCommandImpl_getDiagnosticCommandInfo
   num_commands = (*env)->GetArrayLength(env, commands);
   dcmdInfoCls = (*env)->FindClass(env,
                                   "sun/management/DiagnosticCommandInfo");
+  if ((*env)->ExceptionCheck(env)) {
+    return NULL;
+  }
+
   result = (*env)->NewObjectArray(env, num_commands, dcmdInfoCls, NULL);
   if (result == NULL) {
       JNU_ThrowOutOfMemoryError(env, 0);

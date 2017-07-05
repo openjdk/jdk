@@ -48,7 +48,7 @@ import jdk.nashorn.internal.runtime.options.Options;
 /**
  * This class is abstraction for all method handle, switchpoint and method type
  * operations. This enables the functionality interface to be subclassed and
- * intrumensted, as it has been proven vital to keep the number of method
+ * instrumented, as it has been proven vital to keep the number of method
  * handles in the system down.
  *
  * All operations of the above type should go through this class, and not

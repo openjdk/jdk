@@ -41,9 +41,6 @@ ALL_TOP_SRC_DIRS := \
     $(NASHORN_TOPDIR)/src \
     #
 
-# There are snmp classes in the open but they are not included in OpenJDK
-JAVA_MODULES_FILTER := jdk.snmp
-
 # Find all modules with java sources by looking in the source dirs
 define FindJavaModules
   $(filter-out $(JAVA_MODULES_FILTER), $(sort $(notdir \

@@ -52,7 +52,7 @@ public class HatHeapDump1Test {
                 "-Xverify:all",
                 "-agentlib:hprof=heap=dump,format=b,file=" + dumpFile.getAbsolutePath(),
                 className);
-        OutputAnalyzer output = new OutputAnalyzer(processBuilder.start());
+        OutputAnalyzer output = ProcessTools.executeProcess(processBuilder);
         System.out.println(output.getOutput());
         output.shouldHaveExitValue(0);
         output.shouldContain("Dumping Java heap ... done");
@@ -79,7 +79,7 @@ public class HatHeapDump1Test {
         ProcessBuilder processBuilder = new ProcessBuilder();
         processBuilder.command(launcher.getCommand());
         System.out.println(Arrays.toString(processBuilder.command().toArray()).replace(",", ""));
-        OutputAnalyzer output = new OutputAnalyzer(processBuilder.start());
+        OutputAnalyzer output = ProcessTools.executeProcess(processBuilder);
         System.out.println(output.getOutput());
 
         return output;

@@ -76,9 +76,15 @@ class PaddedEndImpl<T, /*pad_size*/ 0> : public T {
 // if the start address is a multiple of alignment.
 template <class T, size_t alignment = DEFAULT_CACHE_LINE_SIZE>
 class PaddedEnd : public PaddedEndImpl<T, PADDED_END_SIZE(T, alignment)> {
-  // C++ don't allow zero-length arrays. The padding is put in a
+  // C++ doesn't allow zero-length arrays. The padding is put in a
   // super class that is specialized for the pad_size == 0 case.
 };
+
+// Similar to PaddedEnd, this macro defines a _pad_buf#id field
+// that is (alignment - size) bytes in size. This macro is used
+// to add padding in between non-class fields in a class or struct.
+#define DEFINE_PAD_MINUS_SIZE(id, alignment, size) \
+          char _pad_buf##id[(alignment) - (size)]
 
 // Helper class to create an array of PaddedEnd<T> objects. All elements will
 // start at a multiple of alignment and the size will be aligned to alignment.

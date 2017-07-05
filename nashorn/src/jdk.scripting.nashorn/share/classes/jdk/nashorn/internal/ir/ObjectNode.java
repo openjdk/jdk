@@ -37,6 +37,7 @@ import jdk.nashorn.internal.ir.visitor.NodeVisitor;
  */
 @Immutable
 public final class ObjectNode extends Expression {
+    private static final long serialVersionUID = 1L;
 
     /** Literal elements. */
     private final List<PropertyNode> elements;

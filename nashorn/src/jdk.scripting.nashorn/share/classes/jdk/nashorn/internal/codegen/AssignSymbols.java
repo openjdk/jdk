@@ -76,7 +76,6 @@ import jdk.nashorn.internal.ir.LiteralNode.ArrayLiteralNode.ArrayUnit;
 import jdk.nashorn.internal.ir.Node;
 import jdk.nashorn.internal.ir.RuntimeNode;
 import jdk.nashorn.internal.ir.RuntimeNode.Request;
-import jdk.nashorn.internal.ir.SplitNode;
 import jdk.nashorn.internal.ir.Statement;
 import jdk.nashorn.internal.ir.SwitchNode;
 import jdk.nashorn.internal.ir.Symbol;
@@ -134,9 +133,6 @@ final class AssignSymbols extends NodeVisitor<LexicalContext> implements Loggabl
         }
         if (!(functionNode.hasScopeBlock() || functionNode.needsParentScope())) {
             functionNode.compilerConstant(SCOPE).setNeedsSlot(false);
-        }
-        if (!functionNode.usesReturnSymbol()) {
-            functionNode.compilerConstant(RETURN).setNeedsSlot(false);
         }
         // Named function expressions that end up not referencing themselves won't need a local slot for the self symbol.
         if(!functionNode.isDeclared() && !functionNode.usesSelfSymbol() && !functionNode.isAnonymous()) {
@@ -1014,7 +1010,7 @@ final class AssignSymbols extends NodeVisitor<LexicalContext> implements Loggabl
         boolean previousWasBlock = false;
         for (final Iterator<LexicalContextNode> it = lc.getAllNodes(); it.hasNext();) {
             final LexicalContextNode node = it.next();
-            if (node instanceof FunctionNode || node instanceof SplitNode || isSplitArray(node)) {
+            if (node instanceof FunctionNode || isSplitArray(node)) {
                 // We reached the function boundary or a splitting boundary without seeing a definition for the symbol.
                 // It needs to be in scope.
                 return true;

@@ -1,5 +1,4 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +29,6 @@ import static jdk.nashorn.internal.lookup.Lookup.MH;
 import static jdk.nashorn.internal.runtime.JSType.getAccessorTypeIndex;
 import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.INVALID_PROGRAM_POINT;
 import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.isValid;
-
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -50,27 +48,12 @@ import jdk.nashorn.internal.runtime.logging.Logger;
  */
 @Logger(name="arrays")
 public abstract class ContinuousArrayData extends ArrayData {
-
-    private SwitchPoint sp;
-
     /**
      * Constructor
      * @param length length (elementLength)
      */
     protected ContinuousArrayData(final long length) {
         super(length);
-    }
-
-    private SwitchPoint ensureSwitchPointExists() {
-        if (sp == null){
-            sp = new SwitchPoint();
-        }
-        return sp;
-    }
-
-    @Override
-    public void invalidateSetters() {
-        SwitchPoint.invalidateAll(new SwitchPoint[] { ensureSwitchPointExists() });
     }
 
     /**
@@ -83,6 +66,14 @@ public abstract class ContinuousArrayData extends ArrayData {
      */
     public final boolean hasRoomFor(final int index) {
         return has(index) || (index == length && ensure(index) == this);
+    }
+
+    /**
+     * Check if an arraydata is empty
+     * @return true if empty
+     */
+    public boolean isEmpty() {
+        return length == 0L;
     }
 
     /**
@@ -109,12 +100,15 @@ public abstract class ContinuousArrayData extends ArrayData {
      * @param index index to check - currently only int indexes
      * @return index
      */
-    protected int throwHas(final int index) {
+    protected final int throwHas(final int index) {
         if (!has(index)) {
             throw new ClassCastException();
         }
         return index;
     }
+
+    @Override
+    public abstract ContinuousArrayData copy();
 
     /**
      * Returns the type used to store an element in this array
@@ -125,6 +119,25 @@ public abstract class ContinuousArrayData extends ArrayData {
     @Override
     public Type getOptimisticType() {
         return Type.typeFor(getElementType());
+    }
+
+    /**
+     * Returns the boxed type of the type used to store an element in this array
+     * @return element type
+     */
+    public abstract Class<?> getBoxedElementType();
+
+    /**
+     * Get the widest element type of two arrays. This can be done faster in subclasses, but
+     * this works for all ContinuousArrayDatas and for where more optimal checks haven't been
+     * implemented.
+     *
+     * @param otherData another ContinuousArrayData
+     * @return the widest boxed element type
+     */
+    public ContinuousArrayData widest(final ContinuousArrayData otherData) {
+        final Class<?> elementType = getElementType();
+        return Type.widest(elementType, otherData.getElementType()) == elementType ? this : otherData;
     }
 
     /**
@@ -256,12 +269,7 @@ public abstract class ContinuousArrayData extends ArrayData {
             final Object[]        args  = request.getArguments();
             final int             index = (int)args[args.length - 2];
 
-            //sp may be invalidated by e.g. preventExtensions before the first setter is linked
-            //then it is already created. otherwise, create it here to guard against future
-            //invalidations
-            ensureSwitchPointExists();
-
-            if (!sp.hasBeenInvalidated() && hasRoomFor(index)) {
+            if (hasRoomFor(index)) {
                 MethodHandle setElement = getElementSetter(elementType); //Z(continuousarraydata, int, int), return true if successful
                 if (setElement != null) {
                     //else we are dealing with a wider type than supported by this callsite
@@ -269,7 +277,7 @@ public abstract class ContinuousArrayData extends ArrayData {
                     getArray   = MH.asType(getArray, getArray.type().changeReturnType(getClass()));
                     setElement = MH.filterArguments(setElement, 0, getArray);
                     final MethodHandle guard = MH.insertArguments(FAST_ACCESS_GUARD, 0, clazz);
-                    return new GuardedInvocation(setElement, guard, sp, ClassCastException.class); //CCE if not a scriptObject anymore
+                    return new GuardedInvocation(setElement, guard, (SwitchPoint)null, ClassCastException.class); //CCE if not a scriptObject anymore
                 }
             }
         }
@@ -343,5 +351,14 @@ public abstract class ContinuousArrayData extends ArrayData {
      */
     public Object fastPopObject() {
         throw new ClassCastException(String.valueOf(getClass())); //type is wrong, relink
+    }
+
+    /**
+     * Specialization - fast concat implementation
+     * @param otherData data to concat
+     * @return new arraydata
+     */
+    public ContinuousArrayData fastConcat(final ContinuousArrayData otherData) {
+        throw new ClassCastException(String.valueOf(getClass()) + " != " + String.valueOf(otherData.getClass()));
     }
 }

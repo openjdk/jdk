@@ -105,7 +105,7 @@ public final class NativeUint32Array extends ArrayBufferView {
 
         private long getElem(final int index) {
             try {
-                return nb.get(index) & JSType.MAX_UINT;
+                return JSType.toUint32(nb.get(index));
             } catch (final IndexOutOfBoundsException e) {
                 throw new ClassCastException(); //force relink - this works for unoptimistic too
             }
@@ -130,6 +130,11 @@ public final class NativeUint32Array extends ArrayBufferView {
         @Override
         public Class<?> getElementType() {
             return long.class;
+        }
+
+        @Override
+        public Class<?> getBoxedElementType() {
+            return Integer.class;
         }
 
         @Override

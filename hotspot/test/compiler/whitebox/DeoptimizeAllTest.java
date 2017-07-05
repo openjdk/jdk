@@ -25,7 +25,6 @@
  * @test DeoptimizeAllTest
  * @bug 8006683 8007288 8022832
  * @library /testlibrary /testlibrary/whitebox
- * @ignore 8046268
  * @build DeoptimizeAllTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission

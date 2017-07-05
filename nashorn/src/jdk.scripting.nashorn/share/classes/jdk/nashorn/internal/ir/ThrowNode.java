@@ -33,6 +33,8 @@ import jdk.nashorn.internal.ir.visitor.NodeVisitor;
  */
 @Immutable
 public final class ThrowNode extends Statement implements JoinPredecessor {
+    private static final long serialVersionUID = 1L;
+
     /** Exception expression. */
     private final Expression expression;
 
