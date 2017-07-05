@@ -33,29 +33,36 @@ public class GrowAfterEOF {
     public static void main(String[] args) throws Exception {
         File input = new File(".", "TestEOFInput.txt");
         RandomAccessFile rf = new RandomAccessFile(input, "rw");
-        BufferedReader r = new BufferedReader
-            (new InputStreamReader(new FileInputStream(input)));
+        try {
+            BufferedReader r = new BufferedReader
+                (new InputStreamReader(new FileInputStream(input)));
+            try {
+                // write something
+                rf.writeBytes("a line");
 
-        // write something
-        rf.writeBytes("a line");
+                // read till the end of file
+                while (r.readLine() != null);
 
-        // read till the end of file
-        while (r.readLine() != null);
+                // append to the end of the file
+                rf.seek(rf.length());
+                rf.writeBytes("new line");
 
-        // append to the end of the file
-        rf.seek(rf.length());
-        rf.writeBytes("new line");
-
-        // now try to read again
-        boolean readMore = false;
-        while (r.readLine() != null) {
-            readMore = true;
-        }
-        if (!readMore) {
-            input.delete();
-            throw new Exception("Failed test: unable to read!");
-        } else {
-            input.delete();
+                // now try to read again
+                boolean readMore = false;
+                while (r.readLine() != null) {
+                    readMore = true;
+                }
+                if (!readMore) {
+                    input.delete();
+                    throw new Exception("Failed test: unable to read!");
+                } else {
+                    input.delete();
+                }
+            } finally {
+                r.close();
+            }
+        } finally {
+            rf.close();
         }
     }
 }

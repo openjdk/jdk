@@ -62,15 +62,19 @@ class B extends A {
 
 public class Read {
     public static void main(String[] args) throws Exception {
-        ObjectInputStream oin =
-            new ObjectInputStream(new FileInputStream("tmp.ser"));
-        B b = (B) oin.readObject();
-        if (A.readObjectNoDataCalled) {
-            throw new Error("readObjectNoData with wrong return type called");
-        } else if (B.readObjectCalled) {
-            throw new Error("readObject with wrong return type called");
-        } else if (B.readResolveCalled) {
-            throw new Error("readResolve with wrong return type called");
+        FileInputStream in = new FileInputStream("tmp.ser");
+        try {
+            ObjectInputStream oin = new ObjectInputStream(in);
+            B b = (B) oin.readObject();
+            if (A.readObjectNoDataCalled) {
+                throw new Error("readObjectNoData with wrong return type called");
+            } else if (B.readObjectCalled) {
+                throw new Error("readObject with wrong return type called");
+            } else if (B.readResolveCalled) {
+                throw new Error("readResolve with wrong return type called");
+            }
+        } finally {
+            in.close();
         }
     }
 }

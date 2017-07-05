@@ -39,10 +39,10 @@ import org.ietf.jgss.*;
 
 /**
   * Implements the GSSAPI SASL client mechanism for Kerberos V5.
-  * (<A HREF="ftp://ftp.isi.edu/in-notes/rfc2222.txt">RFC 2222</A>,
+  * (<A HREF="http://www.ietf.org/rfc/rfc2222.txt">RFC 2222</A>,
   * <a HREF="http://www.ietf.org/internet-drafts/draft-ietf-cat-sasl-gssapi-04.txt">draft-ietf-cat-sasl-gssapi-04.txt</a>).
   * It uses the Java Bindings for GSSAPI
-  * (<A HREF="ftp://ftp.isi.edu/in-notes/rfc2853.txt">RFC 2853</A>)
+  * (<A HREF="http://www.ietf.org/rfc/rfc2853.txt">RFC 2853</A>)
   * for getting GSSAPI/Kerberos V5 support.
   *
   * The client/server interactions are:

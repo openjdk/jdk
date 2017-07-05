@@ -55,9 +55,29 @@
     <drop-import name="jaxp_src"/>
     <!-- <drop-import name="jaxp_tests"/> -->
 
+    <!-- Fail and print helpful messages if source does not exist. -->
+    <target name="-src-help">
+      <fail message="${failed.url.src.message}">
+	<condition>
+	    <and>
+                <not>
+	            <available file="${jaxp_src.src.dir}" type="dir"/>
+	        </not>
+	        <istrue value="${allow.downloads}"/>
+	    </and>
+	</condition>
+      </fail>
+      <fail message="${failed.nourl.src.message}">
+	<condition>
+            <not>
+	        <available file="${jaxp_src.src.dir}" type="dir"/>
+	    </not>
+	</condition>
+      </fail>
+    </target>
 
-    <!-- Special build area preparation. -->
-    <target name="-drop-build-prep" depends="init, -init-src-dirs">
+    <!-- Special build area setup. -->
+    <target name="-drop-build-setup" depends="init, -init-src-dirs">
         <mkdir dir="${build.classes.dir}"/>
         <copy todir="${build.classes.dir}">
             <fileset dir="${primary.src.dir}"
@@ -84,7 +104,7 @@
 
     <!-- Source directory selection. -->
     <target name="-init-src-dirs"
-	    depends="init, -use-drop">
+	    depends="init, -use-drop,-src-help">
         <echo message="Using primary.src.dir=${primary.src.dir}"/>
         <pathconvert property="src.list.id" refid="src.dir.id"/>
         <echo message="Using src.dir.id=${src.list.id}"/>

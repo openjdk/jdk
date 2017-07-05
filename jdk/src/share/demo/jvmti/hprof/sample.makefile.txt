@@ -132,7 +132,7 @@ ifeq ($(OSNAME), linux)
     LIBRARY=lib$(LIBNAME).so
     LDFLAGS=-Wl,-soname=$(LIBRARY) -static-libgcc -mimpure-text
     # Libraries we are dependent on
-    LIBRARIES= -lnsl -ldl -lc
+    LIBRARIES= -ldl -lc
     # Building a shared library
     LINK_SHARED=$(LINK.c) -shared -o $@
 endif

@@ -44,6 +44,7 @@ public class ParameterCheck {
 
     private static void doTest(String method) throws Exception {
         File fn = new File("x.ParameterCheck");
+        RandomAccessFile raf = null;
 
         try {
             byte b[] = new byte[32];
@@ -55,7 +56,7 @@ public class ParameterCheck {
                 fout.write(i);
             }
             fout.close();
-            RandomAccessFile raf =  new RandomAccessFile(fn , "rw");
+            raf =  new RandomAccessFile(fn , "rw");
 
             System.err.println("-----------------------------" +
                                "-----------------------------");
@@ -125,6 +126,8 @@ public class ParameterCheck {
             System.err.println("-----------------------------" +
                                "-----------------------------");
         } finally {
+            if (raf != null)
+                raf.close();
             fn.delete();
         }
 

@@ -52,5 +52,11 @@ build: copy-files
 
 copy-files: $(FILES_copy)
 
-$(SERVICEDIR)/%: $(SHARE_SRC)/classes/sun/java2d/pisces/META-INF/services/%
+ifneq ($(PLATFORM), windows)
+ SERVICE_SRC = $(PLATFORM_SRC)
+else
+ SERVICE_SRC = $(SHARE_SRC)
+endif
+
+$(SERVICEDIR)/%: $(SERVICE_SRC)/classes/sun/java2d/pisces/META-INF/services/%
 	$(install-file)

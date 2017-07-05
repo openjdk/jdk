@@ -38,13 +38,17 @@ class A implements Serializable {
 
 public class Read {
     public static void main(String[] args) throws Exception {
-        ObjectInputStream oin =
-            new ObjectInputStream(new FileInputStream("tmp.ser"));
-        oin.readObject();
+        FileInputStream in = new FileInputStream("tmp.ser");
         try {
+            ObjectInputStream oin = new ObjectInputStream(in);
             oin.readObject();
-            throw new Error("back reference read succeeded");
-        } catch (ClassNotFoundException ex) {
+            try {
+                oin.readObject();
+                throw new Error("back reference read succeeded");
+            } catch (ClassNotFoundException ex) {
+            }
+        } finally {
+            in.close();
         }
     }
 }

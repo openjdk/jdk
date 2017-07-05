@@ -29,7 +29,7 @@ import javax.security.sasl.*;
 
 /**
   * Implements the EXTERNAL SASL client mechanism.
-  * (<A HREF="ftp://ftp.isi.edu/in-notes/rfc2222.txt">RFC 2222</A>).
+  * (<A HREF="http://www.ietf.org/rfc/rfc2222.txt">RFC 2222</A>).
   * The EXTERNAL mechanism returns the optional authorization ID as
   * the initial response. It processes no challenges.
   *

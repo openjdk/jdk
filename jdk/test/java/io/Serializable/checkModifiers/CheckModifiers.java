@@ -213,33 +213,39 @@ public class CheckModifiers {
 
 
         FileOutputStream fos = new FileOutputStream("fields.ser");
-        ObjectOutputStream oos = new ObjectOutputStream(fos);
-
-        System.out.println("Writing obj 1");
-        oos.writeObject(tc1);
-        System.out.println("Writing obj 2");
-        oos.writeObject(tc2);
-        System.out.println("Writing obj 3");
-        oos.writeObject(tc3);
-        System.out.println("Writing obj 4");
-        oos.writeObject(tc4);
+        try {
+            ObjectOutputStream oos = new ObjectOutputStream(fos);
+            System.out.println("Writing obj 1");
+            oos.writeObject(tc1);
+            System.out.println("Writing obj 2");
+            oos.writeObject(tc2);
+            System.out.println("Writing obj 3");
+            oos.writeObject(tc3);
+            System.out.println("Writing obj 4");
+            oos.writeObject(tc4);
+            oos.flush();
+        } finally {
+            fos.close();
+        }
 
         FileInputStream fis = new FileInputStream("fields.ser");
-        ObjectInputStream ois = new ObjectInputStream(fis);
-
-
-        System.out.println("Test modifiers for serialPeristentFields ");
-        System.out.println("---------------------------------------- ");
-        System.out.println("Declaration missing final modifier");
-        ois.readObject();
-        System.out.println();
-        System.out.println("Declaration with public instead of private access");
-        ois.readObject();
-        System.out.println();
-        System.out.println("Declaration with different type");
-        ois.readObject();
-        System.out.println();
-        System.out.println("Declaration as in specification");
-        ois.readObject();
+        try {
+            ObjectInputStream ois = new ObjectInputStream(fis);
+            System.out.println("Test modifiers for serialPeristentFields ");
+            System.out.println("---------------------------------------- ");
+            System.out.println("Declaration missing final modifier");
+            ois.readObject();
+            System.out.println();
+            System.out.println("Declaration with public instead of private access");
+            ois.readObject();
+            System.out.println();
+            System.out.println("Declaration with different type");
+            ois.readObject();
+            System.out.println();
+            System.out.println("Declaration as in specification");
+            ois.readObject();
+        } finally {
+            fis.close();
+        }
     }
 };

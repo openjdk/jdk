@@ -10,6 +10,6 @@ project code, you might prefer to build it from the command line using ant.
 Please note: the results of building this project are *not* put in the place
 used by other projects.  In this case, the results are place in
 
-    <install-dir>/control/build/<platform>-<arch>
+    <install-dir>/build/<platform>-<arch>
 and
-    <install-dir>/control/build/<platform>-<arch>-fastdebug
+    <install-dir>/build/<platform>-<arch>-fastdebug

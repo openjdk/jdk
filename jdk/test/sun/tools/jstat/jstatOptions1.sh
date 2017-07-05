@@ -32,7 +32,9 @@ setup
 
 JSTAT="${TESTJAVA}/bin/jstat"
 
-rm -f jstat.out 2>/dev/null
-${JSTAT} -options > jstat.out 2>&1
+rm -f jstat.out1 jstat.out2 2>/dev/null
+${JSTAT} -options > jstat.out1 2>&1
+${JSTAT} -options -J-Djstat.showUnsupported=true > jstat.out2 2>&1
 
-diff -w jstat.out ${TESTSRC}/options1.out
+diff -w jstat.out1 ${TESTSRC}/options1.out
+diff -w jstat.out2 ${TESTSRC}/options2.out

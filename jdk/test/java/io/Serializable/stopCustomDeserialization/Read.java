@@ -53,16 +53,20 @@ class C extends B {
 
 public class Read {
     public static void main(String[] args) throws Exception {
-        ObjectInputStream oin =
-            new ObjectInputStream(new FileInputStream("tmp.ser"));
+        FileInputStream in = new FileInputStream("tmp.ser");
         try {
-            oin.readObject();
-            throw new Error("readObject should not succeed");
-        } catch (ClassNotFoundException e) {
-            // expected
-        }
-        if (!oin.readObject().equals("after")) {
-            throw new Error("subsequent object corrupted");
+            ObjectInputStream oin = new ObjectInputStream(in);
+            try {
+                oin.readObject();
+                throw new Error("readObject should not succeed");
+            } catch (ClassNotFoundException e) {
+                // expected
+            }
+            if (!oin.readObject().equals("after")) {
+                throw new Error("subsequent object corrupted");
+            }
+        } finally {
+            in.close();
         }
     }
 }

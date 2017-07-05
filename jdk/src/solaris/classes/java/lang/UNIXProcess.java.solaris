@@ -86,7 +86,7 @@ final class UNIXProcess extends Process {
         java.security.AccessController.doPrivileged(
         new java.security.PrivilegedAction<Void>() { public Void run() {
             if (std_fds[0] == -1)
-                stdin_stream = new ProcessBuilder.NullOutputStream();
+                stdin_stream = ProcessBuilder.NullOutputStream.INSTANCE;
             else {
                 FileDescriptor stdin_fd = new FileDescriptor();
                 fdAccess.set(stdin_fd, std_fds[0]);
@@ -95,7 +95,7 @@ final class UNIXProcess extends Process {
             }
 
             if (std_fds[1] == -1)
-                stdout_stream = new ProcessBuilder.NullInputStream();
+                stdout_stream = ProcessBuilder.NullInputStream.INSTANCE;
             else {
                 FileDescriptor stdout_fd = new FileDescriptor();
                 fdAccess.set(stdout_fd, std_fds[1]);
@@ -104,7 +104,7 @@ final class UNIXProcess extends Process {
             }
 
             if (std_fds[2] == -1)
-                stderr_stream = new ProcessBuilder.NullInputStream();
+                stderr_stream = ProcessBuilder.NullInputStream.INSTANCE;
             else {
                 FileDescriptor stderr_fd = new FileDescriptor();
                 fdAccess.set(stderr_fd, std_fds[2]);

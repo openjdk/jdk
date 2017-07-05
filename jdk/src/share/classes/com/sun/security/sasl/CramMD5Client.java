@@ -33,7 +33,7 @@ import java.util.logging.Level;
 
 /**
   * Implements the CRAM-MD5 SASL client-side mechanism.
-  * (<A HREF="ftp://ftp.isi.edu/in-notes/rfc2195.txt">RFC 2195</A>).
+  * (<A HREF="http://www.ietf.org/rfc/rfc2195.txt">RFC 2195</A>).
   * CRAM-MD5 has no initial response. It receives bytes from
   * the server as a challenge, which it hashes by using MD5 and the password.
   * It concatenates the authentication ID with this result and returns it

@@ -93,8 +93,12 @@ public class ClassDescHooks implements ObjectStreamConstants {
         bout = new ByteArrayOutputStream();
         foof = new File(System.getProperty("test.src", "."), "Foo.ser");
         fin = new FileInputStream(foof);
-        while (fin.available() > 0)
-            bout.write(fin.read());
+        try {
+            while (fin.available() > 0)
+                bout.write(fin.read());
+        } finally {
+            fin.close();
+        }
         byte[] buf1 = bout.toByteArray();
 
         bout = new ByteArrayOutputStream();
@@ -107,11 +111,16 @@ public class ClassDescHooks implements ObjectStreamConstants {
         if (! Arrays.equals(buf1, buf2))
             throw new Error("Incompatible stream format (write)");
 
+        Foo foocopy;
         fin = new FileInputStream(foof);
-        oin = new ObjectInputStream(fin);
-        Foo foocopy = (Foo) oin.readObject();
-        if (! foo.equals(foocopy))
-            throw new Error("Incompatible stream format (read)");
+        try {
+            oin = new ObjectInputStream(fin);
+            foocopy = (Foo) oin.readObject();
+            if (! foo.equals(foocopy))
+                throw new Error("Incompatible stream format (read)");
+        } finally {
+            fin.close();
+        }
 
         // make sure write hook not called when old protocol in use
         bout = new ByteArrayOutputStream();

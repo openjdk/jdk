@@ -204,8 +204,8 @@ Provided NetBeans projects
         note that pretty much regardless of your hardware, this *will* take
         a long time, and use *lots* of disk space (more than 3GB). The
         results of the build are in
-        *install-dir*/control/build/*platform*-*arch* and
-        *install-dir*/control/build/*platform*-*arch*-fastdebug.
+        *install-dir*/build/*platform*-*arch* and
+        *install-dir*/build/*platform*-*arch*-fastdebug.
 
         Consult the project's README file for details.
 
