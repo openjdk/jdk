@@ -165,6 +165,7 @@ public interface ChronoLocalDateTime<D extends ChronoLocalDate>
         if (temporal instanceof ChronoLocalDateTime) {
             return (ChronoLocalDateTime<?>) temporal;
         }
+        Objects.requireNonNull(temporal, "temporal");
         Chronology chrono = temporal.query(TemporalQuery.chronology());
         if (chrono == null) {
             throw new DateTimeException("Unable to obtain ChronoLocalDateTime from TemporalAccessor: " + temporal.getClass());
@@ -173,6 +174,18 @@ public interface ChronoLocalDateTime<D extends ChronoLocalDate>
     }
 
     //-----------------------------------------------------------------------
+    /**
+     * Gets the chronology of this date-time.
+     * <p>
+     * The {@code Chronology} represents the calendar system in use.
+     * The era and other fields in {@link ChronoField} are defined by the chronology.
+     *
+     * @return the chronology, not null
+     */
+    default Chronology getChronology() {
+        return toLocalDate().getChronology();
+    }
+
     /**
      * Gets the local date part of this date-time.
      * <p>
@@ -250,7 +263,7 @@ public interface ChronoLocalDateTime<D extends ChronoLocalDate>
      */
     @Override
     default ChronoLocalDateTime<D> with(TemporalAdjuster adjuster) {
-        return ChronoLocalDateTimeImpl.ensureValid(toLocalDate().getChronology(), Temporal.super.with(adjuster));
+        return ChronoLocalDateTimeImpl.ensureValid(getChronology(), Temporal.super.with(adjuster));
     }
 
     /**
@@ -268,7 +281,7 @@ public interface ChronoLocalDateTime<D extends ChronoLocalDate>
      */
     @Override
     default ChronoLocalDateTime<D> plus(TemporalAmount amount) {
-        return ChronoLocalDateTimeImpl.ensureValid(toLocalDate().getChronology(), Temporal.super.plus(amount));
+        return ChronoLocalDateTimeImpl.ensureValid(getChronology(), Temporal.super.plus(amount));
     }
 
     /**
@@ -286,7 +299,7 @@ public interface ChronoLocalDateTime<D extends ChronoLocalDate>
      */
     @Override
     default ChronoLocalDateTime<D> minus(TemporalAmount amount) {
-        return ChronoLocalDateTimeImpl.ensureValid(toLocalDate().getChronology(), Temporal.super.minus(amount));
+        return ChronoLocalDateTimeImpl.ensureValid(getChronology(), Temporal.super.minus(amount));
     }
 
     /**
@@ -296,7 +309,7 @@ public interface ChronoLocalDateTime<D extends ChronoLocalDate>
      */
     @Override
     default ChronoLocalDateTime<D> minus(long amountToSubtract, TemporalUnit unit) {
-        return ChronoLocalDateTimeImpl.ensureValid(toLocalDate().getChronology(), Temporal.super.minus(amountToSubtract, unit));
+        return ChronoLocalDateTimeImpl.ensureValid(getChronology(), Temporal.super.minus(amountToSubtract, unit));
     }
 
     //-----------------------------------------------------------------------
@@ -326,7 +339,7 @@ public interface ChronoLocalDateTime<D extends ChronoLocalDate>
         } else if (query == TemporalQuery.localTime()) {
             return (R) toLocalTime();
         } else if (query == TemporalQuery.chronology()) {
-            return (R) toLocalDate().getChronology();
+            return (R) getChronology();
         } else if (query == TemporalQuery.precision()) {
             return (R) NANOS;
         }
@@ -488,7 +501,7 @@ public interface ChronoLocalDateTime<D extends ChronoLocalDate>
         if (cmp == 0) {
             cmp = toLocalTime().compareTo(other.toLocalTime());
             if (cmp == 0) {
-                cmp = toLocalDate().getChronology().compareTo(other.toLocalDate().getChronology());
+                cmp = getChronology().compareTo(other.getChronology());
             }
         }
         return cmp;

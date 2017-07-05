@@ -63,11 +63,6 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertTrue;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.Serializable;
 import java.time.Duration;
 
 import org.testng.annotations.Test;
@@ -82,29 +77,6 @@ public class TestDuration extends AbstractTest {
     @Test
     public void test_immutable() {
         assertImmutable(Duration.class);
-    }
-
-    //-----------------------------------------------------------------------
-    @Test
-    public void test_interfaces() {
-        assertTrue(Serializable.class.isAssignableFrom(Duration.class));
-        assertTrue(Comparable.class.isAssignableFrom(Duration.class));
-    }
-
-    //-----------------------------------------------------------------------
-    // serialization
-    //-----------------------------------------------------------------------
-    @Test
-    public void test_deserializationSingleton() throws Exception {
-        Duration orginal = Duration.ZERO;
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ObjectOutputStream out = new ObjectOutputStream(baos);
-        out.writeObject(orginal);
-        out.close();
-        ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
-        ObjectInputStream in = new ObjectInputStream(bais);
-        Duration ser = (Duration) in.readObject();
-        assertSame(ser, Duration.ZERO);
     }
 
     @Test

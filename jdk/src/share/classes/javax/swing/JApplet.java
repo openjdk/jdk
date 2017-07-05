@@ -40,7 +40,7 @@ import javax.accessibility.*;
  * in <em>The Java Tutorial</em>,
  * in the section
  * <a
- href="http://java.sun.com/docs/books/tutorial/uiswing/components/applet.html">How to Make Applets</a>.
+ href="http://docs.oracle.com/javase/tutorial/uiswing/components/applet.html">How to Make Applets</a>.
  * <p>
  * The <code>JApplet</code> class is slightly incompatible with
  * <code>java.applet.Applet</code>.  <code>JApplet</code> contains a
@@ -77,7 +77,7 @@ import javax.accessibility.*;
  * future Swing releases. The current serialization support is
  * appropriate for short term storage or RMI between applications running
  * the same version of Swing.  As of 1.4, support for long term storage
- * of all JavaBeans<sup><font size="-2">TM</font></sup>
+ * of all JavaBeans&trade;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *
@@ -183,7 +183,7 @@ public class JApplet extends Applet implements Accessible,
      * are currently typed to {@code JComponent}.
      * <p>
      * Please see
-     * <a href="http://java.sun.com/docs/books/tutorial/uiswing/misc/dnd.html">
+     * <a href="http://docs.oracle.com/javase/tutorial/uiswing/dnd/index.html">
      * How to Use Drag and Drop and Data Transfer</a>, a section in
      * <em>The Java Tutorial</em>, for more information.
      *

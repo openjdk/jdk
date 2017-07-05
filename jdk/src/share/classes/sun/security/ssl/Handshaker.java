@@ -335,14 +335,6 @@ abstract class Handshaker {
         }
     }
 
-    boolean isLoopbackSE() {
-        if (conn != null) {
-            return conn.getInetAddress().isLoopbackAddress();
-        } else {
-            return false;
-        }
-    }
-
     int getPortSE() {
         if (conn != null) {
             return conn.getPort();

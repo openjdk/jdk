@@ -38,7 +38,14 @@ class DirtyCardQueueSet;
 // snapshot-at-the-beginning marking.
 
 class G1SATBCardTableModRefBS: public CardTableModRefBSForCTRS {
+protected:
+  enum G1CardValues {
+    g1_young_gen = CT_MR_BS_last_reserved << 1
+  };
+
 public:
+  static int g1_young_card_val()   { return g1_young_gen; }
+
   // Add "pre_val" to a set of objects that may have been disconnected from the
   // pre-marking object graph.
   static void enqueue(oop pre_val);
@@ -117,6 +124,9 @@ public:
       }
       _byte_map[card_index] = val;
   }
+
+  void verify_g1_young_region(MemRegion mr) PRODUCT_RETURN;
+  void g1_mark_as_young(const MemRegion& mr);
 
   bool mark_card_deferred(size_t card_index);
 

@@ -1937,7 +1937,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
 
     /**
      * Sets the values for the fields <code>YEAR</code>, <code>MONTH</code>,
-     * <code>DAY_OF_MONTH</code>, <code>HOUR</code>, <code>MINUTE</code>, and
+     * <code>DAY_OF_MONTH</code>, <code>HOUR_OF_DAY</code>, <code>MINUTE</code>, and
      * <code>SECOND</code>.
      * Previous values of other fields are retained.  If this is not desired,
      * call {@link #clear()} first.

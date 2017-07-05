@@ -29,7 +29,7 @@
 
 REWRITE_i686_pc_linux_gnu=i686-unknown-linux-gnu
 REWRITE_i386_pc_solaris2_10=i686-sun-solaris2_10
- 
+
 DEVTOOLS=/java/devtools
 
 builddep_cups=${DEVTOOLS}/linux/cups/include

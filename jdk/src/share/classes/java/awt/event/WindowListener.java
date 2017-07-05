@@ -44,7 +44,7 @@ import java.util.EventListener;
  *
  * @see WindowAdapter
  * @see WindowEvent
- * @see <a href="http://java.sun.com/docs/books/tutorial/uiswing/events/windowlistener.html">Tutorial: How to Write Window Listeners</a>
+ * @see <a href="http://docs.oracle.com/javase/tutorial/uiswing/events/windowlistener.html">Tutorial: How to Write Window Listeners</a>
  *
  * @since 1.1
  */

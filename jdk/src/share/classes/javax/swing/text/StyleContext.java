@@ -56,7 +56,7 @@ import sun.font.FontUtilities;
  * future Swing releases. The current serialization support is
  * appropriate for short term storage or RMI between applications running
  * the same version of Swing.  As of 1.4, support for long term storage
- * of all JavaBeans<sup><font size="-2">TM</font></sup>
+ * of all JavaBeans&trade;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *
@@ -292,7 +292,7 @@ public class StyleContext implements Serializable, AbstractDocument.AttributeCon
      * <p>
      * This method is thread safe, although most Swing methods
      * are not. Please see
-     * <A HREF="http://download.oracle.com/javase/tutorial/uiswing/concurrency/index.html">Concurrency
+     * <A HREF="http://docs.oracle.com/javase/tutorial/uiswing/concurrency/index.html">Concurrency
      * in Swing</A> for more information.
      *
      * @param old the old attribute set
@@ -321,7 +321,7 @@ public class StyleContext implements Serializable, AbstractDocument.AttributeCon
      * <p>
      * This method is thread safe, although most Swing methods
      * are not. Please see
-     * <A HREF="http://download.oracle.com/javase/tutorial/uiswing/concurrency/index.html">Concurrency
+     * <A HREF="http://docs.oracle.com/javase/tutorial/uiswing/concurrency/index.html">Concurrency
      * in Swing</A> for more information.
      *
      * @param old the old attribute set
@@ -349,7 +349,7 @@ public class StyleContext implements Serializable, AbstractDocument.AttributeCon
      * <p>
      * This method is thread safe, although most Swing methods
      * are not. Please see
-     * <A HREF="http://download.oracle.com/javase/tutorial/uiswing/concurrency/index.html">Concurrency
+     * <A HREF="http://docs.oracle.com/javase/tutorial/uiswing/concurrency/index.html">Concurrency
      * in Swing</A> for more information.
      *
      * @param old the old set of attributes
@@ -377,7 +377,7 @@ public class StyleContext implements Serializable, AbstractDocument.AttributeCon
      * <p>
      * This method is thread safe, although most Swing methods
      * are not. Please see
-     * <A HREF="http://download.oracle.com/javase/tutorial/uiswing/concurrency/index.html">Concurrency
+     * <A HREF="http://docs.oracle.com/javase/tutorial/uiswing/concurrency/index.html">Concurrency
      * in Swing</A> for more information.
      *
      * @param old the old attribute set
@@ -405,7 +405,7 @@ public class StyleContext implements Serializable, AbstractDocument.AttributeCon
      * <p>
      * This method is thread safe, although most Swing methods
      * are not. Please see
-     * <A HREF="http://download.oracle.com/javase/tutorial/uiswing/concurrency/index.html">Concurrency
+     * <A HREF="http://docs.oracle.com/javase/tutorial/uiswing/concurrency/index.html">Concurrency
      * in Swing</A> for more information.
      *
      * @param old the old attribute set
@@ -445,7 +445,7 @@ public class StyleContext implements Serializable, AbstractDocument.AttributeCon
      * <p>
      * This method is thread safe, although most Swing methods
      * are not. Please see
-     * <A HREF="http://download.oracle.com/javase/tutorial/uiswing/concurrency/index.html">Concurrency
+     * <A HREF="http://docs.oracle.com/javase/tutorial/uiswing/concurrency/index.html">Concurrency
      * in Swing</A> for more information.
      *
      * @param a the set to reclaim
@@ -1240,7 +1240,7 @@ public class StyleContext implements Serializable, AbstractDocument.AttributeCon
      * future Swing releases. The current serialization support is
      * appropriate for short term storage or RMI between applications running
      * the same version of Swing.  As of 1.4, support for long term storage
-     * of all JavaBeans<sup><font size="-2">TM</font></sup>
+     * of all JavaBeans&trade;
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */

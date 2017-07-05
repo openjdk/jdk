@@ -27,11 +27,14 @@
 
 #include "classfile/systemDictionary.hpp"
 #include "oops/instanceKlass.hpp"
-#include "oops/oop.hpp"
+#include "oops/oop.inline.hpp"
 #include "utilities/hashtable.hpp"
 
 class DictionaryEntry;
 class PSPromotionManager;
+class ProtectionDomainCacheTable;
+class ProtectionDomainCacheEntry;
+class BoolObjectClosure;
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // The data structure for the system dictionary (and the shared system
@@ -44,6 +47,8 @@ private:
   static int                    _current_class_index;
   // pointer to the current hash table entry.
   static DictionaryEntry*       _current_class_entry;
+
+  ProtectionDomainCacheTable*   _pd_cache_table;
 
   DictionaryEntry* get_entry(int index, unsigned int hash,
                              Symbol* name, ClassLoaderData* loader_data);
@@ -93,6 +98,7 @@ public:
 
   void methods_do(void f(Method*));
 
+  void unlink(BoolObjectClosure* is_alive);
 
   // Classes loaded by the bootstrap loader are always strongly reachable.
   // If we're not doing class unloading, all classes are strongly reachable.
@@ -118,6 +124,7 @@ public:
   // Sharing support
   void reorder_dictionary();
 
+  ProtectionDomainCacheEntry* cache_get(oop protection_domain);
 
 #ifndef PRODUCT
   void print();
@@ -126,21 +133,112 @@ public:
 };
 
 // The following classes can be in dictionary.cpp, but we need these
-// to be in header file so that SA's vmStructs can access.
+// to be in header file so that SA's vmStructs can access them.
+class ProtectionDomainCacheEntry : public HashtableEntry<oop, mtClass> {
+  friend class VMStructs;
+ private:
+  // Flag indicating whether this protection domain entry is strongly reachable.
+  // Used during iterating over the system dictionary to remember oops that need
+  // to be updated.
+  bool _strongly_reachable;
+ public:
+  oop protection_domain() { return literal(); }
+
+  void init() {
+    _strongly_reachable = false;
+  }
+
+  ProtectionDomainCacheEntry* next() {
+    return (ProtectionDomainCacheEntry*)HashtableEntry<oop, mtClass>::next();
+  }
+
+  ProtectionDomainCacheEntry** next_addr() {
+    return (ProtectionDomainCacheEntry**)HashtableEntry<oop, mtClass>::next_addr();
+  }
+
+  void oops_do(OopClosure* f) {
+    f->do_oop(literal_addr());
+  }
+
+  void set_strongly_reachable()   { _strongly_reachable = true; }
+  bool is_strongly_reachable()    { return _strongly_reachable; }
+  void reset_strongly_reachable() { _strongly_reachable = false; }
+
+  void print() PRODUCT_RETURN;
+  void verify();
+};
+
+// The ProtectionDomainCacheTable contains all protection domain oops. The system
+// dictionary entries reference its entries instead of having references to oops
+// directly.
+// This is used to speed up system dictionary iteration: the oops in the
+// protection domain are the only ones referring the Java heap. So when there is
+// need to update these, instead of going over every entry of the system dictionary,
+// we only need to iterate over this set.
+// The amount of different protection domains used is typically magnitudes smaller
+// than the number of system dictionary entries (loaded classes).
+class ProtectionDomainCacheTable : public Hashtable<oop, mtClass> {
+  friend class VMStructs;
+private:
+  ProtectionDomainCacheEntry* bucket(int i) {
+    return (ProtectionDomainCacheEntry*) Hashtable<oop, mtClass>::bucket(i);
+  }
+
+  // The following method is not MT-safe and must be done under lock.
+  ProtectionDomainCacheEntry** bucket_addr(int i) {
+    return (ProtectionDomainCacheEntry**) Hashtable<oop, mtClass>::bucket_addr(i);
+  }
+
+  ProtectionDomainCacheEntry* new_entry(unsigned int hash, oop protection_domain) {
+    ProtectionDomainCacheEntry* entry = (ProtectionDomainCacheEntry*) Hashtable<oop, mtClass>::new_entry(hash, protection_domain);
+    entry->init();
+    return entry;
+  }
+
+  static unsigned int compute_hash(oop protection_domain) {
+    return (unsigned int)(protection_domain->identity_hash());
+  }
+
+  int index_for(oop protection_domain) {
+    return hash_to_index(compute_hash(protection_domain));
+  }
+
+  ProtectionDomainCacheEntry* add_entry(int index, unsigned int hash, oop protection_domain);
+  ProtectionDomainCacheEntry* find_entry(int index, oop protection_domain);
+
+public:
+
+  ProtectionDomainCacheTable(int table_size);
+
+  ProtectionDomainCacheEntry* get(oop protection_domain);
+  void free(ProtectionDomainCacheEntry* entry);
+
+  void unlink(BoolObjectClosure* cl);
+
+  // GC support
+  void oops_do(OopClosure* f);
+  void always_strong_oops_do(OopClosure* f);
+
+  static uint bucket_size();
+
+  void print() PRODUCT_RETURN;
+  void verify();
+};
+
 
 class ProtectionDomainEntry :public CHeapObj<mtClass> {
   friend class VMStructs;
  public:
   ProtectionDomainEntry* _next;
-  oop                    _protection_domain;
+  ProtectionDomainCacheEntry* _pd_cache;
 
-  ProtectionDomainEntry(oop protection_domain, ProtectionDomainEntry* next) {
-    _protection_domain = protection_domain;
-    _next              = next;
+  ProtectionDomainEntry(ProtectionDomainCacheEntry* pd_cache, ProtectionDomainEntry* next) {
+    _pd_cache = pd_cache;
+    _next     = next;
   }
 
   ProtectionDomainEntry* next() { return _next; }
-  oop protection_domain() { return _protection_domain; }
+  oop protection_domain() { return _pd_cache->protection_domain(); }
 };
 
 // An entry in the system dictionary, this describes a class as
@@ -151,6 +249,24 @@ class DictionaryEntry : public HashtableEntry<Klass*, mtClass> {
  private:
   // Contains the set of approved protection domains that can access
   // this system dictionary entry.
+  //
+  // This protection domain set is a set of tuples:
+  //
+  // (InstanceKlass C, initiating class loader ICL, Protection Domain PD)
+  //
+  // [Note that C.protection_domain(), which is stored in the java.lang.Class
+  // mirror of C, is NOT the same as PD]
+  //
+  // If such an entry (C, ICL, PD) exists in the table, it means that
+  // it is okay for a class Foo to reference C, where
+  //
+  //    Foo.protection_domain() == PD, and
+  //    Foo's defining class loader == ICL
+  //
+  // The usage of the PD set can be seen in SystemDictionary::validate_protection_domain()
+  // It is essentially a cache to avoid repeated Java up-calls to
+  // ClassLoader.checkPackageAccess().
+  //
   ProtectionDomainEntry* _pd_set;
   ClassLoaderData*       _loader_data;
 
@@ -158,7 +274,7 @@ class DictionaryEntry : public HashtableEntry<Klass*, mtClass> {
   // Tells whether a protection is in the approved set.
   bool contains_protection_domain(oop protection_domain) const;
   // Adds a protection domain to the approved set.
-  void add_protection_domain(oop protection_domain);
+  void add_protection_domain(Dictionary* dict, oop protection_domain);
 
   Klass* klass() const { return (Klass*)literal(); }
   Klass** klass_addr() { return (Klass**)literal_addr(); }
@@ -189,12 +305,11 @@ class DictionaryEntry : public HashtableEntry<Klass*, mtClass> {
          : contains_protection_domain(protection_domain());
   }
 
-
-  void protection_domain_set_oops_do(OopClosure* f) {
+  void set_strongly_reachable() {
     for (ProtectionDomainEntry* current = _pd_set;
                                 current != NULL;
                                 current = current->_next) {
-      f->do_oop(&(current->_protection_domain));
+      current->_pd_cache->set_strongly_reachable();
     }
   }
 
@@ -202,7 +317,7 @@ class DictionaryEntry : public HashtableEntry<Klass*, mtClass> {
     for (ProtectionDomainEntry* current = _pd_set;
                                 current != NULL;
                                 current = current->_next) {
-      current->_protection_domain->verify();
+      current->_pd_cache->protection_domain()->verify();
     }
   }
 

@@ -47,9 +47,9 @@ SUNWprivate_1.1 {
 		Java_java_awt_ScrollPaneAdjustable_initIDs;
 		Java_java_awt_Toolkit_initIDs;
 		Java_java_awt_TrayIcon_initIDs;
-                Java_sun_awt_DebugSettings_setCTracingOn__Z; 
-                Java_sun_awt_DebugSettings_setCTracingOn__ZLjava_lang_String_2; 
-                Java_sun_awt_DebugSettings_setCTracingOn__ZLjava_lang_String_2I; 
+                Java_sun_awt_DebugSettings_setCTracingOn__Z;
+                Java_sun_awt_DebugSettings_setCTracingOn__ZLjava_lang_String_2;
+                Java_sun_awt_DebugSettings_setCTracingOn__ZLjava_lang_String_2I;
 		Java_sun_awt_image_ByteComponentRaster_initIDs;
 		Java_sun_awt_image_GifImageDecoder_initIDs;
 		Java_sun_awt_image_GifImageDecoder_parseImage;
@@ -223,8 +223,8 @@ SUNWprivate_1.1 {
 		Java_sun_awt_X11GraphicsEnvironment_pRunningXinerama;
 		Java_sun_awt_X11GraphicsEnvironment_getXineramaCenterPoint;
 		Java_sun_awt_X11GraphicsEnvironment_initXRender;
-        
-        
+
+
 
 		Java_java_awt_AWTEvent_initIDs;
 		Java_java_awt_Button_initIDs;
@@ -287,7 +287,7 @@ SUNWprivate_1.1 {
 		getAwtLockFunctions;
 		getAwtData;
 		getAwtDisplay;
-		
+
 		# libfontmanager entry points
 		AWTIsHeadless;
 		AWTCountFonts;
@@ -314,4 +314,3 @@ SUNWprivate_1.1 {
 	local:
 		*;
 };
-
