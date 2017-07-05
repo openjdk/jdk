@@ -108,7 +108,7 @@ public class ExclusiveBind {
                 "process1",
                 process1,
                 line -> line.equals("Listening for transport dt_socket at address: " + address),
-                Math.round(5000 * Utils.TIMEOUT_FACTOR),
+                Utils.adjustTimeout(5000),
                 TimeUnit.MILLISECONDS
         );
 

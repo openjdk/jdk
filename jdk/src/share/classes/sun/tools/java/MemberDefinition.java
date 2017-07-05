@@ -103,7 +103,7 @@ class MemberDefinition implements Constants {
      * uniqueness of proxy objects.  See the makeProxyMember method
      * defined below.
      */
-    static private Map proxyCache;
+    static private Map<String,MemberDefinition> proxyCache;
 
     /**
      * Create a member which is externally the same as `field' but
@@ -126,12 +126,12 @@ class MemberDefinition implements Constants {
                                                    Environment env) {
 
         if (proxyCache == null) {
-            proxyCache = new HashMap();
+            proxyCache = new HashMap<>();
         }
 
         String key = field.toString() + "@" + classDef.toString();
         // System.out.println("Key is : " + key);
-        MemberDefinition proxy = (MemberDefinition)proxyCache.get(key);
+        MemberDefinition proxy = proxyCache.get(key);
 
         if (proxy != null)
             return proxy;
@@ -217,8 +217,8 @@ class MemberDefinition implements Constants {
     /**
      * Get arguments (a vector of LocalMember)
      */
-    public Vector getArguments() {
-        return isMethod() ? new Vector() : null;
+    public Vector<MemberDefinition> getArguments() {
+        return isMethod() ? new Vector<>() : null;
     }
 
     /**

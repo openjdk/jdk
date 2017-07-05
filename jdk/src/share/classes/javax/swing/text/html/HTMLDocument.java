@@ -623,7 +623,7 @@ public class HTMLDocument extends DefaultStyledDocument {
      * @param n  the number of tokens to buffer
      */
     public void setTokenThreshold(int n) {
-        putProperty(TokenThreshold, new Integer(n));
+        putProperty(TokenThreshold, n);
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,21 +26,7 @@
 #include "interpreter/bytecodes.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/method.hpp"
-#ifdef TARGET_ARCH_x86
-# include "bytes_x86.hpp"
-#endif
-#ifdef TARGET_ARCH_sparc
-# include "bytes_sparc.hpp"
-#endif
-#ifdef TARGET_ARCH_zero
-# include "bytes_zero.hpp"
-#endif
-#ifdef TARGET_ARCH_arm
-# include "bytes_arm.hpp"
-#endif
-#ifdef TARGET_ARCH_ppc
-# include "bytes_ppc.hpp"
-#endif
+#include "utilities/bytes.hpp"
 
 
 #if defined(WIN32) && (defined(_MSC_VER) && (_MSC_VER < 1600))

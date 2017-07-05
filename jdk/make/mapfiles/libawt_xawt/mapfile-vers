@@ -442,6 +442,7 @@ SUNWprivate_1.1 {
 	Java_sun_print_CUPSPrinter_canConnect;
 	Java_sun_print_CUPSPrinter_getMedia;
 	Java_sun_print_CUPSPrinter_getPageSizes;
+	Java_sun_print_CUPSPrinter_getResolutions;
 
         awt_GetDrawingSurface;
         awt_FreeDrawingSurface;

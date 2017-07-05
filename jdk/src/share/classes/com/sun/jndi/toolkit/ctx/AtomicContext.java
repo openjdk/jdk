@@ -96,7 +96,7 @@ public abstract class AtomicContext extends ComponentContext {
       * Resolves the nns for 'name' when the named context is acting
       * as an intermediate context.
       *
-      * For a system that supports junctions, this would be equilvalent to
+      * For a system that supports junctions, this would be equivalent to
       *         a_lookup(name, cont);
       * because for junctions, an intermediate slash simply signifies
       * a syntactic separator.
@@ -487,7 +487,7 @@ public abstract class AtomicContext extends ComponentContext {
                 resolve_to_nns_and_continue(name, cont);
                 return null;
             } else {
-                // use COmponentContext
+                // use ComponentContext
                 return super.c_getNameParser_nns(name, cont);
             }
         }

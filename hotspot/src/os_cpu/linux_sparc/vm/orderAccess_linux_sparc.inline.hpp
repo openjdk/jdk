@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 #define OS_CPU_LINUX_SPARC_VM_ORDERACCESS_LINUX_SPARC_INLINE_HPP
 
 #include "runtime/orderAccess.hpp"
-#include "vm_version_sparc.hpp"
 
 // Implementation of class OrderAccess.
 

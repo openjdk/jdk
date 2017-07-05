@@ -256,7 +256,7 @@ public class SearchFilter implements AttrFilter {
     static final int LESS_MATCH = 4;
 
     /**
-     * A class for dealing wtih atomic filters
+     * A class for dealing with atomic filters
      */
     final class AtomicFilter implements StringFilter {
         private String attrID;
@@ -369,7 +369,7 @@ public class SearchFilter implements AttrFilter {
                     }
                     break;
                 default:
-                    if (debug) {System.out.println("AtomicFilter: unkown " +
+                    if (debug) {System.out.println("AtomicFilter: unknown " +
                                                    "matchType");}
                 }
             }
@@ -434,7 +434,7 @@ public class SearchFilter implements AttrFilter {
 
 
     /**
-      * Creates an LDAP filter as a conjuction of the attributes supplied.
+      * Creates an LDAP filter as a conjunction of the attributes supplied.
       */
     public static String format(Attributes attrs) throws NamingException {
         if (attrs == null || attrs.size() == 0) {

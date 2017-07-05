@@ -39,21 +39,6 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/vframe.hpp"
 #include "services/memoryService.hpp"
-#ifdef TARGET_ARCH_x86
-# include "nativeInst_x86.hpp"
-#endif
-#ifdef TARGET_ARCH_sparc
-# include "nativeInst_sparc.hpp"
-#endif
-#ifdef TARGET_ARCH_zero
-# include "nativeInst_zero.hpp"
-#endif
-#ifdef TARGET_ARCH_arm
-# include "nativeInst_arm.hpp"
-#endif
-#ifdef TARGET_ARCH_ppc
-# include "nativeInst_ppc.hpp"
-#endif
 #ifdef COMPILER1
 #include "c1/c1_Runtime1.hpp"
 #endif

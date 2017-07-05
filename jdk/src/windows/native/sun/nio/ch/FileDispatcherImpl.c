@@ -406,6 +406,14 @@ Java_sun_nio_ch_FileDispatcherImpl_lock0(JNIEnv *env, jobject this, jobject fdo,
     result = LockFileEx(h, flags, 0, lowNumBytes, highNumBytes, &o);
     if (result == 0) {
         int error = GetLastError();
+        if (error == ERROR_IO_PENDING) {
+            LPDWORD dwBytes;
+            result = GetOverlappedResult(h, &o, &dwBytes, TRUE);
+            if (result != 0) {
+                return sun_nio_ch_FileDispatcherImpl_LOCKED;
+            }
+            error = GetLastError();
+        }
         if (error != ERROR_LOCK_VIOLATION) {
             JNU_ThrowIOExceptionWithLastError(env, "Lock failed");
             return sun_nio_ch_FileDispatcherImpl_NO_LOCK;

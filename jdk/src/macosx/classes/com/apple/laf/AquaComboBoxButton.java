@@ -35,8 +35,8 @@ import apple.laf.JRSUIConstants.*;
 
 @SuppressWarnings("serial") // Superclass is not serializable across versions
 class AquaComboBoxButton extends JButton {
-    final protected JComboBox comboBox;
-    final protected JList list;
+    final protected JComboBox<Object> comboBox;
+    final protected JList<?> list;
     final protected CellRendererPane rendererPane;
     final protected AquaComboBoxUI ui;
 
@@ -45,7 +45,10 @@ class AquaComboBoxButton extends JButton {
     boolean isSquare;
 
     @SuppressWarnings("serial") // anonymous class
-    protected AquaComboBoxButton(final AquaComboBoxUI ui, final JComboBox comboBox, final CellRendererPane rendererPane, final JList list) {
+    protected AquaComboBoxButton(final AquaComboBoxUI ui,
+                                 final JComboBox<Object> comboBox,
+                                 final CellRendererPane rendererPane,
+                                 final JList<?> list) {
         super("");
         putClientProperty("JButton.buttonType", "comboboxInternal");
 
@@ -163,7 +166,7 @@ class AquaComboBoxButton extends JButton {
     }
 
     protected void doRendererPaint(final Graphics g, final ButtonModel buttonModel, final boolean editable, final Insets insets, int left, int top, int width, int height) {
-        final ListCellRenderer renderer = comboBox.getRenderer();
+        final ListCellRenderer<Object> renderer = comboBox.getRenderer();
 
         // fake it out! not renderPressed
         final Component c = renderer.getListCellRendererComponent(list, comboBox.getSelectedItem(), -1, false, false);

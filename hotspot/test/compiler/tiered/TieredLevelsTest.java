@@ -23,8 +23,8 @@
 
 /**
  * @test TieredLevelsTest
- * @ignore 8046268
  * @library /testlibrary /testlibrary/whitebox /compiler/whitebox
+ * @ignore 8046268
  * @build TieredLevelsTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+TieredCompilation

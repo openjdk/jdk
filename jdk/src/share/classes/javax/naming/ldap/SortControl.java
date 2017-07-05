@@ -188,7 +188,7 @@ final public class SortControl extends BasicControl {
     /*
      * Encodes the sort control's value using ASN.1 BER.
      * The result includes the BER tag and length for the control's value but
-     * does not include the control's object identifer and criticality setting.
+     * does not include the control's object identifier and criticality setting.
      *
      * @param   sortKeys    A non-null list of keys to sort by.
      * @return A possibly null byte array representing the ASN.1 BER encoded

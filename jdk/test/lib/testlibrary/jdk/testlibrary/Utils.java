@@ -280,4 +280,13 @@ public final class Utils {
         return output;
     }
 
+    /**
+     * Adjusts the provided timeout value for the TIMEOUT_FACTOR
+     * @param tOut the timeout value to be adjusted
+     * @return The timeout value adjusted for the value of "test.timeout.factor"
+     *         system property
+     */
+    public static long adjustTimeout(long tOut) {
+        return Math.round(tOut * Utils.TIMEOUT_FACTOR);
+    }
 }

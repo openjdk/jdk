@@ -88,7 +88,7 @@ public final class CDragSourceContextPeer extends SunDragSourceContextPeer {
         super.startDrag(dsc, cursor, dragImage, dragImageOffset);
     }
 
-    protected void startDrag(Transferable transferable, long[] formats, Map formatMap) {
+    protected void startDrag(Transferable transferable, long[] formats, Map<Long, DataFlavor> formatMap) {
         DragGestureEvent trigger = getTrigger();
         InputEvent         triggerEvent = trigger.getTriggerEvent();
 
@@ -311,7 +311,7 @@ public final class CDragSourceContextPeer extends SunDragSourceContextPeer {
         }
     }
 
-    private void setDefaultDragImage(JList component) {
+    private void setDefaultDragImage(JList<?> component) {
         Rectangle selectedOutline = null;
 
         // This code actually works, even under the (non-existant) multiple-selections, because we only draw a union outline
@@ -485,7 +485,7 @@ public final class CDragSourceContextPeer extends SunDragSourceContextPeer {
     private native long createNativeDragSource(Component component, long nativePeer, Transferable transferable,
         InputEvent triggerEvent, int dragPosX, int dragPosY, int extModifiers, int clickCount, long timestamp,
         long nsDragImagePtr, int dragImageOffsetX, int dragImageOffsetY,
-        int sourceActions, long[] formats, Map formatMap);
+        int sourceActions, long[] formats, Map<Long, DataFlavor> formatMap);
 
     private native void doDragging(long nativeDragSource);
 

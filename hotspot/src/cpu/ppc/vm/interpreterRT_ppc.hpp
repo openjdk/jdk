@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2012, 2013 SAP AG. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2012, 2014 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #ifndef CPU_PPC_VM_INTERPRETERRT_PPC_HPP
 #define CPU_PPC_VM_INTERPRETERRT_PPC_HPP
 
+#include "asm/macroAssembler.hpp"
 #include "memory/allocation.hpp"
 
 // native method calls

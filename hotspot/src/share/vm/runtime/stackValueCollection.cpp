@@ -24,21 +24,6 @@
 
 #include "precompiled.hpp"
 #include "runtime/stackValueCollection.hpp"
-#ifdef TARGET_ARCH_x86
-# include "jniTypes_x86.hpp"
-#endif
-#ifdef TARGET_ARCH_sparc
-# include "jniTypes_sparc.hpp"
-#endif
-#ifdef TARGET_ARCH_zero
-# include "jniTypes_zero.hpp"
-#endif
-#ifdef TARGET_ARCH_arm
-# include "jniTypes_arm.hpp"
-#endif
-#ifdef TARGET_ARCH_ppc
-# include "jniTypes_ppc.hpp"
-#endif
 
 PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
 
