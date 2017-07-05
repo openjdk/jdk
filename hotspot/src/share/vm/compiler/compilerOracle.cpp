@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -551,13 +551,21 @@ void CompilerOracle::parse_from_line(char* line) {
 }
 
 static const char* cc_file() {
+#ifdef ASSERT
   if (CompileCommandFile == NULL)
     return ".hotspot_compiler";
+#endif
   return CompileCommandFile;
 }
+
+bool CompilerOracle::has_command_file() {
+  return cc_file() != NULL;
+}
+
 bool CompilerOracle::_quiet = false;
 
 void CompilerOracle::parse_from_file() {
+  assert(has_command_file(), "command file must be specified");
   FILE* stream = fopen(cc_file(), "rt");
   if (stream == NULL) return;
 
@@ -600,6 +608,7 @@ void CompilerOracle::parse_from_string(const char* str, void (*parse_line)(char*
 }
 
 void CompilerOracle::append_comment_to_file(const char* message) {
+  assert(has_command_file(), "command file must be specified");
   fileStream stream(fopen(cc_file(), "at"));
   stream.print("# ");
   for (int index = 0; message[index] != '\0'; index++) {
@@ -610,6 +619,7 @@ void CompilerOracle::append_comment_to_file(const char* message) {
 }
 
 void CompilerOracle::append_exclude_to_file(methodHandle method) {
+  assert(has_command_file(), "command file must be specified");
   fileStream stream(fopen(cc_file(), "at"));
   stream.print("exclude ");
   Klass::cast(method->method_holder())->name()->print_symbol_on(&stream);
@@ -624,7 +634,9 @@ void CompilerOracle::append_exclude_to_file(methodHandle method) {
 void compilerOracle_init() {
   CompilerOracle::parse_from_string(CompileCommand, CompilerOracle::parse_from_line);
   CompilerOracle::parse_from_string(CompileOnly, CompilerOracle::parse_compile_only);
-  CompilerOracle::parse_from_file();
+  if (CompilerOracle::has_command_file()) {
+    CompilerOracle::parse_from_file();
+  }
   if (lists[PrintCommand] != NULL) {
     if (PrintAssembly) {
       warning("CompileCommand and/or .hotspot_compiler file contains 'print' commands, but PrintAssembly is also enabled");
