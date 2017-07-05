@@ -30,7 +30,7 @@ package com.sun.management;
  * on which the Java virtual machine is running.
  *
  * <p>
- * The <tt>OperatingSystemMXBean</tt> object returned by
+ * The {@code OperatingSystemMXBean} object returned by
  * {@link java.lang.management.ManagementFactory#getOperatingSystemMXBean()}
  * is an instance of the implementation class of this interface
  * or {@link UnixOperatingSystemMXBean} interface depending on
@@ -46,11 +46,11 @@ public interface OperatingSystemMXBean extends
     /**
      * Returns the amount of virtual memory that is guaranteed to
      * be available to the running process in bytes,
-     * or <tt>-1</tt> if this operation is not supported.
+     * or {@code -1} if this operation is not supported.
      *
      * @return the amount of virtual memory that is guaranteed to
      * be available to the running process in bytes,
-     * or <tt>-1</tt> if this operation is not supported.
+     * or {@code -1} if this operation is not supported.
      */
     public long getCommittedVirtualMemorySize();
 
@@ -72,11 +72,11 @@ public interface OperatingSystemMXBean extends
      * Returns the CPU time used by the process on which the Java
      * virtual machine is running in nanoseconds.  The returned value
      * is of nanoseconds precision but not necessarily nanoseconds
-     * accuracy.  This method returns <tt>-1</tt> if the
+     * accuracy.  This method returns {@code -1} if the
      * the platform does not support this operation.
      *
      * @return the CPU time used by the process in nanoseconds,
-     * or <tt>-1</tt> if this operation is not supported.
+     * or {@code -1} if this operation is not supported.
      */
     public long getProcessCpuTime();
 

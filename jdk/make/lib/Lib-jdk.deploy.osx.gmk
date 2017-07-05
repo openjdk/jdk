@@ -80,7 +80,6 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
           -framework ApplicationServices \
           -framework JavaNativeFoundation \
           -framework JavaRuntimeSupport \
-          -framework Security \
           -framework SystemConfiguration \
           $(LDFLAGS_JDKLIB_SUFFIX), \
       OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libosx, \

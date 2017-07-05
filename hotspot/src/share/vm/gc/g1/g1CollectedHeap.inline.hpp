@@ -26,7 +26,6 @@
 #define SHARE_VM_GC_G1_G1COLLECTEDHEAP_INLINE_HPP
 
 #include "gc/g1/concurrentMark.hpp"
-#include "gc/g1/g1AllocRegion.inline.hpp"
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1CollectorPolicy.hpp"
 #include "gc/g1/g1CollectorState.hpp"
@@ -55,20 +54,6 @@ size_t G1CollectedHeap::desired_plab_sz(InCSetState dest) {
   //   never be in a humongous region
   // * Allowing humongous PLABs needlessly churns the region free lists
   return MIN2(_humongous_object_threshold_in_words, gclab_word_size);
-}
-
-HeapWord* G1CollectedHeap::par_allocate_during_gc(InCSetState dest,
-                                                  size_t word_size,
-                                                  AllocationContext_t context) {
-  switch (dest.value()) {
-    case InCSetState::Young:
-      return survivor_attempt_allocation(word_size, context);
-    case InCSetState::Old:
-      return old_attempt_allocation(word_size, context);
-    default:
-      ShouldNotReachHere();
-      return NULL; // Keep some compilers happy
-  }
 }
 
 // Inline functions for G1CollectedHeap
@@ -122,69 +107,12 @@ inline void G1CollectedHeap::increment_gc_time_stamp() {
   OrderAccess::fence();
 }
 
+inline void G1CollectedHeap::old_set_add(HeapRegion* hr) {
+  _old_set.add(hr);
+}
+
 inline void G1CollectedHeap::old_set_remove(HeapRegion* hr) {
   _old_set.remove(hr);
-}
-
-inline bool G1CollectedHeap::obj_in_cs(oop obj) {
-  HeapRegion* r = _hrm.addr_to_region((HeapWord*) obj);
-  return r != NULL && r->in_collection_set();
-}
-
-inline HeapWord* G1CollectedHeap::attempt_allocation(size_t word_size,
-                                                     uint* gc_count_before_ret,
-                                                     uint* gclocker_retry_count_ret) {
-  assert_heap_not_locked_and_not_at_safepoint();
-  assert(!is_humongous(word_size), "attempt_allocation() should not "
-         "be called for humongous allocation requests");
-
-  AllocationContext_t context = AllocationContext::current();
-  HeapWord* result = _allocator->mutator_alloc_region(context)->attempt_allocation(word_size,
-                                                                                   false /* bot_updates */);
-  if (result == NULL) {
-    result = attempt_allocation_slow(word_size,
-                                     context,
-                                     gc_count_before_ret,
-                                     gclocker_retry_count_ret);
-  }
-  assert_heap_not_locked();
-  if (result != NULL) {
-    dirty_young_block(result, word_size);
-  }
-  return result;
-}
-
-inline HeapWord* G1CollectedHeap::survivor_attempt_allocation(size_t word_size,
-                                                              AllocationContext_t context) {
-  assert(!is_humongous(word_size),
-         "we should not be seeing humongous-size allocations in this path");
-
-  HeapWord* result = _allocator->survivor_gc_alloc_region(context)->attempt_allocation(word_size,
-                                                                                       false /* bot_updates */);
-  if (result == NULL) {
-    MutexLockerEx x(FreeList_lock, Mutex::_no_safepoint_check_flag);
-    result = _allocator->survivor_gc_alloc_region(context)->attempt_allocation_locked(word_size,
-                                                                                      false /* bot_updates */);
-  }
-  if (result != NULL) {
-    dirty_young_block(result, word_size);
-  }
-  return result;
-}
-
-inline HeapWord* G1CollectedHeap::old_attempt_allocation(size_t word_size,
-                                                         AllocationContext_t context) {
-  assert(!is_humongous(word_size),
-         "we should not be seeing humongous-size allocations in this path");
-
-  HeapWord* result = _allocator->old_gc_alloc_region(context)->attempt_allocation(word_size,
-                                                                                  true /* bot_updates */);
-  if (result == NULL) {
-    MutexLockerEx x(FreeList_lock, Mutex::_no_safepoint_check_flag);
-    result = _allocator->old_gc_alloc_region(context)->attempt_allocation_locked(word_size,
-                                                                                 true /* bot_updates */);
-  }
-  return result;
 }
 
 // It dirties the cards that cover the block so that so that the post

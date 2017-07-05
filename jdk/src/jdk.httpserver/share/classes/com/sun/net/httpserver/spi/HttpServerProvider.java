@@ -142,7 +142,7 @@ public abstract class HttpServerProvider {
      *   visible to the system class loader, and that jar file contains a
      *   provider-configuration file named
      *   {@code com.sun.net.httpserver.HttpServerProvider} in the resource
-     *   directory <tt>META-INF/services</tt>, then the first class name
+     *   directory {@code META-INF/services}, then the first class name
      *   specified in that file is taken.  The class is loaded and
      *   instantiated; if this process fails then an unspecified unchecked error
      *   or exception is thrown.  </p></li>

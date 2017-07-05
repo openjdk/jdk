@@ -85,7 +85,7 @@ StubQueue* AbstractInterpreter::_code = NULL;
 #define GEN_OFFS_NAME(Type,Name,OutputType)             \
   switch(gen_variant) {                                 \
   case GEN_OFFSET:                                      \
-    printf("#define OFFSET_%-33s %d\n",                 \
+    printf("#define OFFSET_%-33s %ld\n",                \
             #OutputType #Name, offset_of(Type, Name));  \
     break;                                              \
   case GEN_INDEX:                                       \
@@ -103,7 +103,7 @@ StubQueue* AbstractInterpreter::_code = NULL;
 #define GEN_SIZE(Type)                                  \
   switch(gen_variant) {                                 \
   case GEN_OFFSET:                                      \
-    printf("#define SIZE_%-35s %d\n",                   \
+    printf("#define SIZE_%-35s %ld\n",                  \
             #Type, sizeof(Type));                       \
     break;                                              \
   case GEN_INDEX:                                       \
@@ -129,7 +129,7 @@ StubQueue* AbstractInterpreter::_code = NULL;
   }
 
 void gen_prologue(GEN_variant gen_variant) {
-    const char *suffix;
+    const char *suffix = "Undefined-Suffix";
 
     switch(gen_variant) {
       case GEN_OFFSET: suffix = ".h";        break;
@@ -211,7 +211,7 @@ int generateJvmOffsets(GEN_variant gen_variant) {
   GEN_OFFS(ConstantPool, _pool_holder);
   printf("\n");
 
-  GEN_VALUE(OFFSET_HeapBlockHeader_used, offset_of(HeapBlock::Header, _used));
+  GEN_VALUE(OFFSET_HeapBlockHeader_used, (int) offset_of(HeapBlock::Header, _used));
   GEN_OFFS(oopDesc, _metadata);
   printf("\n");
 
@@ -275,7 +275,7 @@ int generateJvmOffsets(GEN_variant gen_variant) {
   GEN_OFFS(NarrowPtrStruct, _shift);
   printf("\n");
 
-  GEN_VALUE(SIZE_HeapBlockHeader, sizeof(HeapBlock::Header));
+  GEN_VALUE(SIZE_HeapBlockHeader, (int) sizeof(HeapBlock::Header));
   GEN_SIZE(oopDesc);
   GEN_SIZE(ConstantPool);
   printf("\n");

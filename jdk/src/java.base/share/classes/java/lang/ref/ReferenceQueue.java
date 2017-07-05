@@ -65,10 +65,13 @@ public class ReferenceQueue<T> {
                 return false;
             }
             assert queue == this;
-            r.queue = ENQUEUED;
             r.next = (head == null) ? r : head;
             head = r;
             queueLength++;
+            // Update r.queue *after* adding to list, to avoid race
+            // with concurrent enqueued checks and fast-path poll().
+            // Volatiles ensure ordering.
+            r.queue = ENQUEUED;
             if (r instanceof FinalReference) {
                 sun.misc.VM.addFinalRefCount(1);
             }
@@ -80,10 +83,13 @@ public class ReferenceQueue<T> {
     private Reference<? extends T> reallyPoll() {       /* Must hold lock */
         Reference<? extends T> r = head;
         if (r != null) {
+            r.queue = NULL;
+            // Update r.queue *before* removing from list, to avoid
+            // race with concurrent enqueued checks and fast-path
+            // poll().  Volatiles ensure ordering.
             @SuppressWarnings("unchecked")
             Reference<? extends T> rn = r.next;
             head = (rn == r) ? null : rn;
-            r.queue = NULL;
             r.next = r;
             queueLength--;
             if (r instanceof FinalReference) {
