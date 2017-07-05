@@ -182,7 +182,7 @@ class instanceKlass: public Klass {
   // Protection domain.
   oop             _protection_domain;
   // Host class, which grants its access privileges to this class also.
-  // This is only non-null for an anonymous class (AnonymousClasses enabled).
+  // This is only non-null for an anonymous class (JSR 292 enabled).
   // The host class is either named, or a previously loaded anonymous class.
   klassOop        _host_klass;
   // Class signers.

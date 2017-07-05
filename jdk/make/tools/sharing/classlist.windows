@@ -104,9 +104,7 @@ sun/reflect/ReflectionFactory
 java/lang/ref/Reference$Lock
 java/lang/ref/Reference$ReferenceHandler
 java/lang/ref/Finalizer$FinalizerThread
-java/util/Hashtable$EmptyEnumerator
 java/util/Enumeration
-java/util/Hashtable$EmptyIterator
 java/util/Iterator
 java/util/Hashtable$Entry
 sun/misc/Version
@@ -165,11 +163,9 @@ sun/reflect/ReflectionFactory$1
 sun/reflect/NativeConstructorAccessorImpl
 sun/reflect/DelegatingConstructorAccessorImpl
 sun/misc/VM
-sun/nio/cs/MS1252$Encoder
 sun/nio/cs/SingleByteEncoder
 java/nio/charset/CharsetEncoder
 java/nio/charset/CodingErrorAction
-sun/nio/cs/MS1252$Decoder
 sun/nio/cs/SingleByteDecoder
 java/nio/charset/CharsetDecoder
 java/nio/ByteBuffer
@@ -195,8 +191,6 @@ java/io/ExpiringCache
 java/io/ExpiringCache$1
 java/util/LinkedHashMap
 java/util/LinkedHashMap$Entry
-java/io/File$1
-sun/misc/JavaIODeleteOnExitAccess
 sun/misc/SharedSecrets
 java/lang/ClassLoader$3
 java/io/ExpiringCache$Entry
@@ -209,7 +203,6 @@ sun/misc/NativeSignalHandler
 java/io/Console
 java/io/Console$1
 sun/misc/JavaIOAccess
-java/io/Console$1$1
 java/lang/Shutdown
 java/util/ArrayList
 java/lang/Shutdown$Lock
@@ -333,10 +326,8 @@ java/util/Hashtable$Enumerator
 java/beans/PropertyChangeEvent
 java/util/EventObject
 java/awt/Component$AWTTreeLock
-sun/awt/DebugHelper
 sun/awt/NativeLibLoader
 sun/security/action/LoadLibraryAction
-sun/awt/DebugHelperStub
 java/awt/Toolkit
 java/awt/Toolkit$3
 sun/util/CoreResourceBundleControl
@@ -402,9 +393,7 @@ java/awt/geom/Point2D
 sun/awt/Win32GraphicsEnvironment
 sun/java2d/SunGraphicsEnvironment
 sun/java2d/FontSupport
-sun/java2d/SunGraphicsEnvironment$TTFilter
 java/io/FilenameFilter
-sun/java2d/SunGraphicsEnvironment$T1Filter
 sun/awt/windows/WToolkit
 sun/awt/SunToolkit
 sun/awt/WindowClosingSupport
@@ -414,7 +403,6 @@ sun/awt/InputMethodSupport
 java/util/concurrent/locks/AbstractQueuedSynchronizer$ConditionObject
 java/util/concurrent/locks/Condition
 sun/awt/AWTAutoShutdown
-sun/awt/AWTAutoShutdown$PeerMap
 sun/awt/SunToolkit$6
 java/awt/Dialog$ModalExclusionType
 java/awt/Dialog
@@ -429,7 +417,6 @@ sun/awt/windows/WPanelPeer
 java/awt/peer/PanelPeer
 sun/awt/windows/WCanvasPeer
 java/awt/peer/CanvasPeer
-sun/awt/windows/WToolkit$5
 java/awt/Color
 java/awt/Paint
 java/awt/Transparency
@@ -446,11 +433,8 @@ java/awt/event/MouseListener
 java/awt/event/MouseMotionListener
 java/awt/event/MouseWheelListener
 java/awt/event/InputMethodListener
-java/awt/EventQueueItem
-java/awt/Component$NativeInLightFixer
 java/awt/event/ContainerListener
 javax/accessibility/AccessibleContext
-sun/awt/windows/WToolkit$6
 java/io/ObjectOutputStream
 java/io/ObjectOutput
 java/io/DataOutput
@@ -509,11 +493,8 @@ java/awt/image/DirectColorModel
 java/awt/image/PackedColorModel
 java/awt/color/ColorSpace
 java/awt/color/ICC_Profile
-sun/awt/color/ProfileDeferralInfo
-sun/awt/color/ProfileDeferralMgr
 java/awt/color/ICC_ProfileRGB
 java/awt/color/ICC_Profile$1
-sun/awt/color/ProfileActivator
 java/awt/color/ICC_ColorSpace
 sun/java2d/pipe/NullPipe
 sun/java2d/pipe/PixelDrawPipe
@@ -536,8 +517,6 @@ sun/java2d/pipe/TextRenderer
 sun/java2d/pipe/SpanClipRenderer
 sun/java2d/pipe/Region
 sun/java2d/pipe/RegionIterator
-sun/java2d/pipe/DuctusShapeRenderer
-sun/java2d/pipe/DuctusRenderer
 sun/java2d/pipe/AlphaPaintPipe
 sun/java2d/pipe/SpanShapeRenderer$Composite
 sun/java2d/pipe/SpanShapeRenderer
@@ -552,10 +531,8 @@ java/awt/Image$1
 sun/awt/image/SurfaceManager$ImageAccessor
 sun/awt/image/SurfaceManager
 sun/awt/image/VolatileSurfaceManager
-sun/java2d/windows/Win32OffScreenSurfaceData
 sun/java2d/windows/WindowsFlags
 sun/java2d/windows/WindowsFlags$1
-sun/java2d/windows/DDBlitLoops
 sun/java2d/loops/Blit
 sun/java2d/loops/GraphicsPrimitive
 sun/java2d/loops/GraphicsPrimitiveMgr
@@ -599,11 +576,8 @@ sun/java2d/loops/GraphicsPrimitiveProxy
 sun/java2d/loops/GeneralRenderer
 sun/java2d/loops/GraphicsPrimitiveMgr$1
 sun/java2d/loops/GraphicsPrimitiveMgr$2
-sun/java2d/windows/Win32SurfaceData
 sun/java2d/windows/GDIBlitLoops
 sun/java2d/windows/GDIRenderer
-sun/java2d/windows/DDBlitLoops$DelegateBlitBgLoop
-sun/java2d/windows/DDRenderer
 sun/awt/windows/WToolkit$1
 sun/awt/SunDisplayChanger
 sun/java2d/SunGraphicsEnvironment$1
@@ -615,7 +589,6 @@ sun/font/CompositeFont
 java/util/HashMap$Values
 java/util/HashMap$ValueIterator
 java/util/HashMap$HashIterator
-sun/font/FontManager$1
 sun/font/TrueTypeFont
 java/awt/font/FontRenderContext
 java/awt/RenderingHints
@@ -632,7 +605,6 @@ sun/font/StrikeCache
 sun/java2d/Disposer
 sun/java2d/Disposer$1
 sun/font/StrikeCache$1
-sun/font/FontManager$FontRegistrationInfo
 sun/awt/windows/WFontConfiguration
 sun/awt/FontConfiguration
 sun/awt/FontDescriptor
@@ -670,12 +642,10 @@ java/util/LinkedList
 java/util/Deque
 java/util/Queue
 java/util/AbstractSequentialList
-java/util/LinkedList$Entry
 java/awt/DefaultKeyboardFocusManager
 java/awt/DefaultFocusTraversalPolicy
 java/awt/ContainerOrderFocusTraversalPolicy
 java/awt/FocusTraversalPolicy
-java/awt/MutableBoolean
 java/util/Collections$UnmodifiableSet
 sun/awt/HeadlessToolkit
 sun/awt/KeyboardFocusManagerPeerImpl
@@ -690,7 +660,6 @@ sun/awt/PaintEventDispatcher
 java/awt/event/InvocationEvent
 java/awt/ActiveEvent
 java/awt/MenuComponent
-sun/awt/EventQueueItem
 sun/awt/SunToolkit$3
 java/util/EmptyStackException
 java/lang/reflect/InvocationTargetException
@@ -857,7 +826,6 @@ javax/swing/RepaintManager
 javax/swing/RepaintManager$DisplayChangedHandler
 javax/swing/SwingPaintEventDispatcher
 javax/swing/UIManager$2
-javax/swing/UIManager$3
 com/sun/swing/internal/plaf/metal/resources/metal
 sun/util/ResourceBundleEnumeration
 com/sun/swing/internal/plaf/basic/resources/basic
@@ -921,9 +889,6 @@ java/util/Collections$SynchronizedCollection
 javax/swing/plaf/basic/BasicHTML
 sun/awt/AppContext$PostShutdownEventRunnable
 sun/awt/AWTAutoShutdown$1
-javax/swing/SystemEventQueueUtilities
-javax/swing/SystemEventQueueUtilities$ComponentWorkRequest
-javax/swing/SystemEventQueueUtilities$SystemEventQueue
 sun/awt/NullComponentPeer
 java/awt/GraphicsCallback$PaintCallback
 java/awt/GraphicsCallback
@@ -942,17 +907,14 @@ java/io/ByteArrayOutputStream
 sun/misc/ExtensionDependency
 java/lang/Package
 sun/security/util/ManifestEntryVerifier
-sun/security/provider/Sun
 java/security/Provider
 java/security/Provider$ServiceKey
 java/security/Provider$EngineDescription
-sun/security/provider/Sun$1
 java/security/Security
 java/security/Security$1
 sun/misc/FloatingDecimal
 sun/misc/FloatingDecimal$1
 java/util/regex/Pattern
-java/util/regex/Pattern$8
 java/util/regex/Pattern$Node
 java/util/regex/Pattern$LastNode
 java/util/regex/Pattern$GroupHead
@@ -1034,7 +996,6 @@ javax/swing/text/AttributeSet
 javax/swing/text/SimpleAttributeSet$EmptyAttributeSet
 javax/swing/text/StyleContext$NamedStyle
 javax/swing/text/Style
-javax/swing/text/SimpleAttributeSet$1
 javax/swing/text/StyleContext$SmallAttributeSet
 javax/swing/text/AbstractDocument$BidiRootElement
 javax/swing/text/AbstractDocument$BranchElement
@@ -1153,7 +1114,6 @@ java/nio/ShortBuffer
 sun/nio/cs/UTF_16
 sun/nio/cs/UTF_16$Decoder
 sun/font/FileFontStrike
-sun/font/FileFont$FileFontDisposer
 sun/font/TrueTypeGlyphMapper
 sun/font/CMap
 sun/font/CMap$NullCMapClass
@@ -1178,9 +1138,6 @@ java/util/Date
 sun/util/calendar/CalendarSystem
 sun/awt/image/OffScreenImage
 sun/java2d/SurfaceManagerFactory
-sun/java2d/windows/WinCachingSurfaceManager
-sun/awt/image/CachingSurfaceManager
-sun/awt/image/RasterListener
 sun/util/calendar/Gregorian
 sun/util/calendar/BaseCalendar
 sun/util/calendar/AbstractCalendar
@@ -1297,7 +1254,6 @@ java/awt/event/MouseAdapter
 javax/swing/ToolTipManager$insideTimerAction
 javax/swing/ToolTipManager$outsideTimerAction
 javax/swing/ToolTipManager$stillInsideTimerAction
-javax/swing/ToolTipManager$Actions
 sun/swing/UIAction
 javax/swing/Action
 javax/swing/ToolTipManager$MoveBeforeEnterListener
@@ -1665,7 +1621,6 @@ javax/swing/JComponent$2
 sun/net/www/MimeTable
 java/net/FileNameMap
 sun/net/www/MimeTable$1
-sun/net/www/MimeTable$2
 sun/net/www/MimeEntry
 java/net/URLConnection$1
 java/text/SimpleDateFormat
@@ -1687,7 +1642,6 @@ java/text/DecimalFormatSymbols
 java/text/spi/DecimalFormatSymbolsProvider
 java/util/Currency
 java/util/Currency$1
-java/util/CurrencyData
 java/util/spi/CurrencyNameProvider
 sun/util/resources/CurrencyNames
 sun/util/resources/CurrencyNames_en_US
@@ -1707,7 +1661,6 @@ java/io/PushbackInputStream
 java/util/zip/CRC32
 java/util/zip/Checksum
 java/awt/TrayIcon
-java/awt/EventDispatchThread$StopDispatchEvent
 java/lang/Thread$State
 javax/swing/SwingUtilities$SharedOwnerFrame
 javax/swing/JTable
@@ -1722,7 +1675,6 @@ sun/print/PrinterGraphicsConfig
 javax/swing/JRadioButton
 java/lang/ClassFormatError
 sun/java2d/opengl/OGLGraphicsConfig
-sun/java2d/windows/WinVolatileSurfaceManager
 java/awt/print/PrinterGraphics
 java/awt/PrintGraphics
 javax/swing/JTabbedPane
@@ -1863,7 +1815,6 @@ javax/swing/JTree$TreeModelHandler
 javax/swing/tree/VariableHeightLayoutCache$TreeStateNode
 javax/swing/tree/DefaultMutableTreeNode
 javax/swing/tree/MutableTreeNode
-javax/swing/tree/DefaultMutableTreeNode$1
 javax/swing/tree/DefaultMutableTreeNode$PreorderEnumeration
 javax/swing/event/TableColumnModelEvent
 java/text/ParseException
@@ -1918,9 +1869,6 @@ javax/swing/plaf/metal/MetalSliderUI$MetalPropertyListener
 javax/swing/plaf/basic/BasicSliderUI$PropertyChangeHandler
 sun/java2d/HeadlessGraphicsEnvironment
 java/util/Hashtable$KeySet
-sun/font/FontManager$2
-sun/java2d/SunGraphicsEnvironment$2
-sun/java2d/SunGraphicsEnvironment$3
 javax/swing/DefaultListModel
 javax/swing/event/ListDataEvent
 javax/sound/sampled/DataLine
@@ -1959,7 +1907,6 @@ sun/net/InetAddressCachePolicy$1
 sun/security/action/GetIntegerAction
 sun/net/InetAddressCachePolicy$2
 java/net/InetAddress$CacheEntry
-java/net/PlainDatagramSocketImpl
 java/net/DatagramSocketImpl
 java/text/Collator
 java/text/spi/CollatorProvider
@@ -2030,7 +1977,6 @@ java/io/ObjectStreamClass$MemberSignature
 java/math/BigInteger
 java/security/interfaces/DSAParams
 java/io/ObjectStreamClass$ClassDataSlot
-java/io/ObjectInputStream$CallbackContext
 java/io/ObjectStreamClass$4
 java/io/ObjectStreamClass$5
 java/security/MessageDigest
@@ -2076,8 +2022,6 @@ java/security/spec/DSAParameterSpec
 java/math/MutableBigInteger
 java/math/SignedMutableBigInteger
 java/awt/EventQueue$1AWTInvocationLock
-javax/swing/SystemEventQueueUtilities$RunnableCanvas
-javax/swing/SystemEventQueueUtilities$RunnableCanvasGraphics
 java/awt/LightweightDispatcher$2
 java/awt/Component$FlipBufferStrategy
 javax/swing/JTable$2
@@ -2191,7 +2135,6 @@ java/net/SocketPermission
 javax/security/auth/AuthPermission
 java/lang/Thread$1
 java/util/logging/LogManager$5
-java/util/logging/LogManager$6
 sun/applet/StdAppletViewerFactory
 sun/applet/AppletViewerFactory
 sun/applet/AppletViewer$UserActionListener
@@ -2202,7 +2145,6 @@ sun/misc/MessageUtils
 sun/applet/AppletPanel$10
 java/security/Policy$1
 sun/security/provider/PolicyFile$1
-sun/security/provider/PolicyInfo
 sun/security/provider/PolicyFile$3
 sun/security/util/PropertyExpander
 sun/security/provider/PolicyParser
@@ -2214,17 +2156,14 @@ sun/security/provider/PolicyFile$PolicyEntry
 sun/security/provider/PolicyParser$ParsingException
 sun/security/provider/PolicyFile$6
 sun/security/provider/PolicyFile$7
-sun/security/provider/SelfPermission
 java/net/SocketPermissionCollection
 java/util/PropertyPermissionCollection
 sun/applet/AppletPanel$9
 sun/applet/AppletClassLoader
-sun/applet/AppletClassLoader$4
 sun/applet/AppletThreadGroup
 sun/applet/AppContextCreator
 sun/applet/AppletPanel$1
 sun/awt/AppContext$3
-sun/awt/MostRecentThreadAppContext
 sun/awt/windows/WMenuBarPeer
 java/awt/peer/MenuBarPeer
 java/awt/peer/MenuComponentPeer

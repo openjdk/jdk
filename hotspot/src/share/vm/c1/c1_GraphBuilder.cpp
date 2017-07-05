@@ -30,6 +30,7 @@
 #include "c1/c1_InstructionPrinter.hpp"
 #include "ci/ciField.hpp"
 #include "ci/ciKlass.hpp"
+#include "compiler/compileBroker.hpp"
 #include "interpreter/bytecode.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/bitMap.inline.hpp"
@@ -3775,24 +3776,7 @@ void GraphBuilder::append_unsafe_CAS(ciMethod* callee) {
 
 #ifndef PRODUCT
 void GraphBuilder::print_inline_result(ciMethod* callee, bool res) {
-  const char sync_char      = callee->is_synchronized()        ? 's' : ' ';
-  const char exception_char = callee->has_exception_handlers() ? '!' : ' ';
-  const char monitors_char  = callee->has_monitor_bytecodes()  ? 'm' : ' ';
-  tty->print("     %c%c%c ", sync_char, exception_char, monitors_char);
-  for (int i = 0; i < scope()->level(); i++) tty->print("  ");
-  if (res) {
-    tty->print("  ");
-  } else {
-    tty->print("- ");
-  }
-  tty->print("@ %d  ", bci());
-  callee->print_short_name();
-  tty->print(" (%d bytes)", callee->code_size());
-  if (_inline_bailout_msg) {
-    tty->print("  %s", _inline_bailout_msg);
-  }
-  tty->cr();
-
+  CompileTask::print_inlining(callee, scope()->level(), bci(), _inline_bailout_msg);
   if (res && CIPrintMethodCodes) {
     callee->print_codes();
   }

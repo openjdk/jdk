@@ -427,6 +427,11 @@ public:
   // Do ints take an entire long register or just half?
   static const bool int_in_long;
 
+  // Do the processor's shift instructions only use the low 5/6 bits
+  // of the count for 32/64 bit ints? If not we need to do the masking
+  // ourselves.
+  static const bool need_masked_shift_count;
+
   // This routine is run whenever a graph fails to match.
   // If it returns, the compiler should bailout to interpreter without error.
   // In non-product mode, SoftMatchFailure is false to detect non-canonical
