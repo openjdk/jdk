@@ -33,8 +33,15 @@
 #include "awt_BitmapUtil.h"
 #include "D3DRenderQueue.h"
 
+
 // REMIND: move to awt_Component.h
 extern "C" HWND AwtComponent_GetHWnd(JNIEnv *env, jlong pData);
+
+/* This looks weird. but since some AWT headers need to be included,
+ * we end up with AWT's alloc.h macro definition of ExceptionOccurred.
+ * The reasons for that re-defintion do not apply to this code, so undef it.
+ */
+#undef ExceptionOccurred
 
 /**
  * Initializes nativeWidth/Height fields of the SurfaceData object with
@@ -55,7 +62,9 @@ void D3DSD_SetNativeDimensions(JNIEnv *env, D3DSDOps *d3dsdo) {
     }
 
     JNU_SetFieldByName(env, NULL, sdObject, "nativeWidth", "I", width);
-    JNU_SetFieldByName(env, NULL, sdObject, "nativeHeight", "I", height);
+    if (!(env->ExceptionOccurred())) {
+        JNU_SetFieldByName(env, NULL, sdObject, "nativeHeight", "I", height);
+    }
 
     env->DeleteLocalRef(sdObject);
 }

@@ -848,7 +848,7 @@ public class Introspector {
     }
 
     private static boolean isAssignable(Class<?> current, Class<?> candidate) {
-        return current == null ? candidate == null : current.isAssignableFrom(candidate);
+        return ((current == null) || (candidate == null)) ? current == candidate : current.isAssignableFrom(candidate);
     }
 
     private PropertyDescriptor mergePropertyWithIndexedProperty(PropertyDescriptor pd, IndexedPropertyDescriptor ipd) {

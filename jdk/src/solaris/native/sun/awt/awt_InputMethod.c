@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -319,6 +319,7 @@ static X11InputMethodData * getX11InputMethodData(JNIEnv * env, jobject imInstan
         JNU_CallMethodByName(env, NULL, pX11IMData->x11inputmethod,
                              "flushText",
                              "()V");
+        JNU_CHECK_EXCEPTION_RETURN(env, NULL);
         /* IMPORTANT:
            The order of the following calls is critical since "imInstance" may
            point to the global reference itself, if "freeX11InputMethodData" is called
@@ -1120,6 +1121,9 @@ PreeditDrawCallback(XIC ic, XPointer client_data,
         if (text->string.multi_byte != NULL) {
             if (pre_draw->text->encoding_is_wchar == False) {
                 javastr = JNU_NewStringPlatform(env, (const char *)text->string.multi_byte);
+                if (javastr == NULL) {
+                    goto finally;
+                }
             } else {
                 char *mbstr = wcstombsdmp(text->string.wide_char, text->length);
                 if (mbstr == NULL) {
@@ -1127,6 +1131,9 @@ PreeditDrawCallback(XIC ic, XPointer client_data,
                 }
                 javastr = JNU_NewStringPlatform(env, (const char *)mbstr);
                 free(mbstr);
+                if (javastr == NULL) {
+                    goto finally;
+                }
             }
         }
         if (text->feedback != NULL) {
@@ -1135,6 +1142,7 @@ PreeditDrawCallback(XIC ic, XPointer client_data,
 
             style = (*env)->NewIntArray(env, text->length);
             if (JNU_IsNull(env, style)) {
+                (*env)->ExceptionClear(env);
                 THROW_OUT_OF_MEMORY_ERROR();
                 goto finally;
             }
@@ -1395,14 +1403,17 @@ Java_sun_awt_X11_XInputMethod_createXICNative(JNIEnv *env,
     pX11IMData->lookup_buf = 0;
     pX11IMData->lookup_buf_len = 0;
 
-    if (createXIC(env, pX11IMData, (Window)window)
-        == False) {
+    if (createXIC(env, pX11IMData, (Window)window) == False) {
         destroyX11InputMethodData((JNIEnv *) NULL, pX11IMData);
         pX11IMData = (X11InputMethodData *) NULL;
+        if ((*env)->ExceptionCheck(env)) {
+            goto finally;
+        }
     }
 
     setX11InputMethodData(env, this, pX11IMData);
 
+finally:
     AWT_UNLOCK();
     return (pX11IMData != NULL);
 }

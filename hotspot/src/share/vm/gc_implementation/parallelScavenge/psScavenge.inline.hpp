@@ -31,6 +31,7 @@
 #include "gc_implementation/parallelScavenge/psPromotionManager.inline.hpp"
 #include "gc_implementation/parallelScavenge/psScavenge.hpp"
 #include "memory/iterator.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 inline void PSScavenge::save_to_space_top_before_gc() {
   ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
@@ -178,7 +179,7 @@ class PSScavengeKlassClosure: public KlassClosure {
 #ifndef PRODUCT
     if (TraceScavenge) {
       ResourceMark rm;
-      gclog_or_tty->print_cr("PSScavengeKlassClosure::do_klass %p, %s, dirty: %s",
+      gclog_or_tty->print_cr("PSScavengeKlassClosure::do_klass " PTR_FORMAT ", %s, dirty: %s",
                              klass,
                              klass->external_name(),
                              klass->has_modified_oops() ? "true" : "false");

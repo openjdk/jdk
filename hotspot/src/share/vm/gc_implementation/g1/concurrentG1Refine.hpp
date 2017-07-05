@@ -71,7 +71,7 @@ class ConcurrentG1Refine: public CHeapObj<mtGC> {
   void reset_threshold_step();
 
  public:
-  ConcurrentG1Refine(G1CollectedHeap* g1h);
+  ConcurrentG1Refine(G1CollectedHeap* g1h, CardTableEntryClosure* refine_closure);
   ~ConcurrentG1Refine();
 
   void init(); // Accomplish some initialization that has to wait.

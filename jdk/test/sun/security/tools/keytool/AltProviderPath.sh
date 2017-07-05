@@ -69,7 +69,7 @@ esac
 
 # the test code
 #genkey
-${TESTJAVA}${FS}bin${FS}keytool -genkey -v -alias dummyTestCA \
+${TESTJAVA}${FS}bin${FS}keytool ${TESTTOOLVMOPTS} -genkey -v -alias dummyTestCA \
     -keyalg "RSA" -keysize 1024 -sigalg "ShA1WithRSA" \
     -dname "cn=Dummy Test CA, ou=JSN, o=JavaSoft, c=US" -validity 3650 \
     -keypass storepass -keystore keystoreCA.dks -storepass storepass \
@@ -81,7 +81,7 @@ if [ $? -ne 0 ]; then
 fi
 
 #Change keystore password
-${TESTJAVA}${FS}bin${FS}keytool -storepasswd -new storepass2 \
+${TESTJAVA}${FS}bin${FS}keytool ${TESTTOOLVMOPTS} -storepasswd -new storepass2 \
     -keystore keystoreCA.dks -storetype "dummyks" -storepass storepass \
     -provider "org.test.dummy.DummyProvider" -providerPath ${TESTCLASSES}
 
@@ -91,7 +91,7 @@ fi
 
 
 #Change keystore key password
-${TESTJAVA}${FS}bin${FS}keytool -keypasswd -alias "dummyTestCA" \
+${TESTJAVA}${FS}bin${FS}keytool ${TESTTOOLVMOPTS} -keypasswd -alias "dummyTestCA" \
     -keypass storepass -new keypass -keystore keystoreCA.dks \
     -storetype "dummyks" -storepass storepass2 \
     -provider "org.test.dummy.DummyProvider" -providerPath ${TESTCLASSES}
@@ -101,7 +101,7 @@ if [ $? -ne 0 ]; then
 fi
 
 #Export certificate
-${TESTJAVA}${FS}bin${FS}keytool -v -export -rfc -alias "dummyTestCA" \
+${TESTJAVA}${FS}bin${FS}keytool ${TESTTOOLVMOPTS} -v -export -rfc -alias "dummyTestCA" \
     -file "dummyTestCA.der" -keystore keystoreCA.dks -storetype "dummyks" \
     -storepass storepass2 -provider "org.test.dummy.DummyProvider" \
     -providerPath ${TESTCLASSES}
@@ -111,7 +111,7 @@ if [ $? -ne 0 ]; then
 fi
 
 #list keystore
-${TESTJAVA}${FS}bin${FS}keytool -v -list -keystore keystoreCA.dks \
+${TESTJAVA}${FS}bin${FS}keytool ${TESTTOOLVMOPTS} -v -list -keystore keystoreCA.dks \
     -storetype "dummyks" -storepass storepass2 \
     -provider "org.test.dummy.DummyProvider" -providerPath ${TESTCLASSES}
 

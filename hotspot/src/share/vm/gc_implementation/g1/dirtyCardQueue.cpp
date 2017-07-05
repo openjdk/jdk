@@ -70,7 +70,7 @@ bool DirtyCardQueue::apply_closure_to_buffer(CardTableEntryClosure* cl,
 
 DirtyCardQueueSet::DirtyCardQueueSet(bool notify_when_complete) :
   PtrQueueSet(notify_when_complete),
-  _closure(NULL),
+  _mut_process_closure(NULL),
   _shared_dirty_card_queue(this, true /*perm*/),
   _free_ids(NULL),
   _processed_buffers_mut(0), _processed_buffers_rs_thread(0)
@@ -83,10 +83,11 @@ uint DirtyCardQueueSet::num_par_ids() {
   return (uint)os::processor_count();
 }
 
-void DirtyCardQueueSet::initialize(Monitor* cbl_mon, Mutex* fl_lock,
+void DirtyCardQueueSet::initialize(CardTableEntryClosure* cl, Monitor* cbl_mon, Mutex* fl_lock,
                                    int process_completed_threshold,
                                    int max_completed_queue,
                                    Mutex* lock, PtrQueueSet* fl_owner) {
+  _mut_process_closure = cl;
   PtrQueueSet::initialize(cbl_mon, fl_lock, process_completed_threshold,
                           max_completed_queue, fl_owner);
   set_buffer_size(G1UpdateBufferSize);
@@ -98,18 +99,15 @@ void DirtyCardQueueSet::handle_zero_index_for_thread(JavaThread* t) {
   t->dirty_card_queue().handle_zero_index();
 }
 
-void DirtyCardQueueSet::set_closure(CardTableEntryClosure* closure) {
-  _closure = closure;
-}
-
-void DirtyCardQueueSet::iterate_closure_all_threads(bool consume,
+void DirtyCardQueueSet::iterate_closure_all_threads(CardTableEntryClosure* cl,
+                                                    bool consume,
                                                     uint worker_i) {
   assert(SafepointSynchronize::is_at_safepoint(), "Must be at safepoint.");
   for(JavaThread* t = Threads::first(); t; t = t->next()) {
-    bool b = t->dirty_card_queue().apply_closure(_closure, consume);
+    bool b = t->dirty_card_queue().apply_closure(cl, consume);
     guarantee(b, "Should not be interrupted.");
   }
-  bool b = shared_dirty_card_queue()->apply_closure(_closure,
+  bool b = shared_dirty_card_queue()->apply_closure(cl,
                                                     consume,
                                                     worker_i);
   guarantee(b, "Should not be interrupted.");
@@ -143,7 +141,7 @@ bool DirtyCardQueueSet::mut_process_buffer(void** buf) {
 
   bool b = false;
   if (worker_i != UINT_MAX) {
-    b = DirtyCardQueue::apply_closure_to_buffer(_closure, buf, 0,
+    b = DirtyCardQueue::apply_closure_to_buffer(_mut_process_closure, buf, 0,
                                                 _sz, true, worker_i);
     if (b) Atomic::inc(&_processed_buffers_mut);
 
@@ -218,22 +216,33 @@ bool DirtyCardQueueSet::apply_closure_to_completed_buffer(CardTableEntryClosure*
   return res;
 }
 
-bool DirtyCardQueueSet::apply_closure_to_completed_buffer(uint worker_i,
-                                                          int stop_at,
-                                                          bool during_pause) {
-  return apply_closure_to_completed_buffer(_closure, worker_i,
-                                           stop_at, during_pause);
-}
-
-void DirtyCardQueueSet::apply_closure_to_all_completed_buffers() {
+void DirtyCardQueueSet::apply_closure_to_all_completed_buffers(CardTableEntryClosure* cl) {
   BufferNode* nd = _completed_buffers_head;
   while (nd != NULL) {
     bool b =
-      DirtyCardQueue::apply_closure_to_buffer(_closure,
+      DirtyCardQueue::apply_closure_to_buffer(cl,
                                               BufferNode::make_buffer_from_node(nd),
                                               0, _sz, false);
     guarantee(b, "Should not stop early.");
     nd = nd->next();
+  }
+}
+
+void DirtyCardQueueSet::par_apply_closure_to_all_completed_buffers(CardTableEntryClosure* cl) {
+  BufferNode* nd = _cur_par_buffer_node;
+  while (nd != NULL) {
+    BufferNode* next = (BufferNode*)nd->next();
+    BufferNode* actual = (BufferNode*)Atomic::cmpxchg_ptr((void*)next, (volatile void*)&_cur_par_buffer_node, (void*)nd);
+    if (actual == nd) {
+      bool b =
+        DirtyCardQueue::apply_closure_to_buffer(cl,
+                                                BufferNode::make_buffer_from_node(actual),
+                                                0, _sz, false);
+      guarantee(b, "Should not stop early.");
+      nd = next;
+    } else {
+      nd = actual;
+    }
   }
 }
 

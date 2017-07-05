@@ -193,11 +193,24 @@ Java_sun_awt_windows_WPrintDialogPeer__1show(JNIEnv *env, jobject peer)
     // as peer object is used later on another thread, create a global ref
     jobject peerGlobalRef = env->NewGlobalRef(peer);
     DASSERT(peerGlobalRef != NULL);
+    CHECK_NULL_RETURN(peerGlobalRef, 0);
     jobject target = env->GetObjectField(peerGlobalRef, AwtObject::targetID);
     DASSERT(target != NULL);
+    if (target == NULL) {
+        env->DeleteGlobalRef(peerGlobalRef);
+        return 0;
+    }
     jobject parent = env->GetObjectField(peerGlobalRef, AwtPrintDialog::parentID);
     jobject control = env->GetObjectField(target, AwtPrintDialog::controlID);
     DASSERT(control != NULL);
+    if (control == NULL) {
+        env->DeleteGlobalRef(peerGlobalRef);
+        env->DeleteLocalRef(target);
+        if (parent != NULL) {
+          env->DeleteLocalRef(parent);
+        }
+        return 0;
+    }
 
     AwtComponent *awtParent = (parent != NULL) ? (AwtComponent *)JNI_GET_PDATA(parent) : NULL;
     HWND hwndOwner = awtParent ? awtParent->GetHWnd() : NULL;
@@ -206,7 +219,18 @@ Java_sun_awt_windows_WPrintDialogPeer__1show(JNIEnv *env, jobject peer)
     memset(&pd, 0, sizeof(PRINTDLG));
     pd.lStructSize = sizeof(PRINTDLG);
     pd.lCustData = (LPARAM)peerGlobalRef;
-    BOOL ret = AwtPrintControl::InitPrintDialog(env, control, pd);
+    BOOL ret;
+    try {
+        ret = AwtPrintControl::InitPrintDialog(env, control, pd);
+    } catch (std::bad_alloc&) {
+        env->DeleteGlobalRef(peerGlobalRef);
+        env->DeleteLocalRef(target);
+        if (parent != NULL) {
+          env->DeleteLocalRef(parent);
+        }
+        env->DeleteLocalRef(control);
+        throw;
+    }
     if (!ret) {
         /* Couldn't use the printer, or spooler isn't running
          * Call Page dialog with ' PD_RETURNDEFAULT' so it doesn't try

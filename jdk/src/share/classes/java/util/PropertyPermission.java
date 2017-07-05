@@ -193,7 +193,7 @@ public final class PropertyPermission extends BasicPermission {
     /**
      * Checks two PropertyPermission objects for equality. Checks that <i>obj</i> is
      * a PropertyPermission, and has the same name and actions as this object.
-     * <P>
+     *
      * @param obj the object we are testing for equality with this object.
      * @return true if obj is a PropertyPermission, and has the same name and
      * actions as this PropertyPermission object.
@@ -369,7 +369,6 @@ public final class PropertyPermission extends BasicPermission {
     /**
      * Returns a new PermissionCollection object for storing
      * PropertyPermission objects.
-     * <p>
      *
      * @return a new PermissionCollection object suitable for storing
      * PropertyPermissions.
