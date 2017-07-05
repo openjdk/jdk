@@ -181,7 +181,7 @@ public class Stroker extends LineSink {
                               Transform4 transform) {
         this.lineWidth = lineWidth;
         this.lineWidth2 = lineWidth >> 1;
-        this.scaledLineWidth2 = (long)transform.m00*lineWidth2;
+        this.scaledLineWidth2 = ((long)transform.m00*lineWidth2) >> 16;
         this.capStyle = capStyle;
         this.joinStyle = joinStyle;
         this.miterLimit = miterLimit;
@@ -243,8 +243,8 @@ public class Stroker extends LineSink {
             if (ilen == 0) {
                 dx = dy = 0;
             } else {
-                dx = (int)( (ly*scaledLineWidth2)/ilen >> 16);
-                dy = (int)(-(lx*scaledLineWidth2)/ilen >> 16);
+                dx = (int)( (ly*scaledLineWidth2)/ilen);
+                dy = (int)(-(lx*scaledLineWidth2)/ilen);
             }
         } else {
             double dlx = x1 - x0;

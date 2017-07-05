@@ -475,49 +475,40 @@ class WindowsAsynchronousSocketChannelImpl
                 // get an OVERLAPPED structure (from the cache or allocate)
                 overlapped = ioCache.add(result);
 
-                // synchronize on result to allow this thread handle the case
-                // where the read completes immediately.
-                synchronized (result) {
-                    int n = read0(handle, numBufs, readBufferArray, overlapped);
-                    if (n == IOStatus.UNAVAILABLE) {
-                        // I/O is pending
-                        pending = true;
-                        return;
-                    }
-                    // read completed immediately:
-                    // 1. update buffer position
-                    // 2. reset read flag
-                    // 3. release waiters
-                    if (n == 0) {
-                        n = -1;
-                    } else {
-                        updateBuffers(n);
-                    }
+                // initiate read
+                int n = read0(handle, numBufs, readBufferArray, overlapped);
+                if (n == IOStatus.UNAVAILABLE) {
+                    // I/O is pending
+                    pending = true;
+                    return;
+                }
+                if (n == IOStatus.EOF) {
+                    // input shutdown
                     enableReading();
-
                     if (scatteringRead) {
-                        result.setResult((V)Long.valueOf(n));
+                        result.setResult((V)Long.valueOf(-1L));
                     } else {
-                        result.setResult((V)Integer.valueOf(n));
+                        result.setResult((V)Integer.valueOf(-1));
                     }
+                } else {
+                    throw new InternalError("Read completed immediately");
                 }
             } catch (Throwable x) {
-                // failed to initiate read:
-                // 1. reset read flag
-                // 2. free resources
-                // 3. release waiters
+                // failed to initiate read
+                // reset read flag before releasing waiters
                 enableReading();
-                if (overlapped != 0L)
-                    ioCache.remove(overlapped);
                 if (x instanceof ClosedChannelException)
                     x = new AsynchronousCloseException();
                 if (!(x instanceof IOException))
                     x = new IOException(x);
                 result.setFailure(x);
             } finally {
-                if (prepared && !pending) {
-                    // return direct buffer(s) to cache if substituted
-                    releaseBuffers();
+                // release resources if I/O not pending
+                if (!pending) {
+                    if (overlapped != 0L)
+                        ioCache.remove(overlapped);
+                    if (prepared)
+                        releaseBuffers();
                 }
                 end();
             }
@@ -721,7 +712,6 @@ class WindowsAsynchronousSocketChannelImpl
         @Override
         @SuppressWarnings("unchecked")
         public void run() {
-            int n = -1;
             long overlapped = 0L;
             boolean prepared = false;
             boolean pending = false;
@@ -736,56 +726,34 @@ class WindowsAsynchronousSocketChannelImpl
 
                 // get an OVERLAPPED structure (from the cache or allocate)
                 overlapped = ioCache.add(result);
-
-                // synchronize on result to allow this thread handle the case
-                // where the read completes immediately.
-                synchronized (result) {
-                    n = write0(handle, numBufs, writeBufferArray, overlapped);
-                    if (n == IOStatus.UNAVAILABLE) {
-                        // I/O is pending
-                        pending = true;
-                        return;
-                    }
-
-                    enableWriting();
-
-                    if (n == IOStatus.EOF) {
-                        // special case for shutdown output
-                        shutdown = true;
-                        throw new ClosedChannelException();
-                    }
-
-                    // write completed immediately:
-                    // 1. enable writing
-                    // 2. update buffer position
-                    // 3. release waiters
-                    updateBuffers(n);
-
-                    // result is a Long or Integer
-                    if (gatheringWrite) {
-                        result.setResult((V)Long.valueOf(n));
-                    } else {
-                        result.setResult((V)Integer.valueOf(n));
-                    }
+                int n = write0(handle, numBufs, writeBufferArray, overlapped);
+                if (n == IOStatus.UNAVAILABLE) {
+                    // I/O is pending
+                    pending = true;
+                    return;
                 }
+                if (n == IOStatus.EOF) {
+                    // special case for shutdown output
+                    shutdown = true;
+                    throw new ClosedChannelException();
+                }
+                // write completed immediately
+                throw new InternalError("Write completed immediately");
             } catch (Throwable x) {
+                // write failed. Enable writing before releasing waiters.
                 enableWriting();
-
-                // failed to initiate read:
                 if (!shutdown && (x instanceof ClosedChannelException))
                     x = new AsynchronousCloseException();
                 if (!(x instanceof IOException))
                     x = new IOException(x);
                 result.setFailure(x);
-
-                // release resources
-                if (overlapped != 0L)
-                    ioCache.remove(overlapped);
-
             } finally {
-                if (prepared && !pending) {
-                    // return direct buffer(s) to cache if substituted
-                    releaseBuffers();
+                // release resources if I/O not pending
+                if (!pending) {
+                    if (overlapped != 0L)
+                        ioCache.remove(overlapped);
+                    if (prepared)
+                        releaseBuffers();
                 }
                 end();
             }

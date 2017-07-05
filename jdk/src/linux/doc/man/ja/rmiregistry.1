@@ -1,108 +1,99 @@
-'\" t
-.\"
-.\" Copyright 2000-2004 Sun Microsystems, Inc.  All Rights Reserved.
-.\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
-.\"
-.\" This code is free software; you can redistribute it and/or modify it
-.\" under the terms of the GNU General Public License version 2 only, as
-.\" published by the Free Software Foundation.
-.\"
-.\" This code is distributed in the hope that it will be useful, but WITHOUT
-.\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-.\" FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-.\" version 2 for more details (a copy is included in the LICENSE file that
-.\" accompanied this code).
-.\"
-.\" You should have received a copy of the GNU General Public License version
-.\" 2 along with this work; if not, write to the Free Software Foundation,
-.\" Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
-.\"
-.\" Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
-.\" CA 95054 USA or visit www.sun.com if you need additional information or
-.\" have any questions.
-.\"
-.\" 
-.TH rmiregistry 1 "2004 Ç¯ 6 ·î 22 Æü"
-.SH "Ì¾Á°"
-rmiregistry \- Java ¥ê¥â¡¼¥È¥ª¥Ö¥¸¥§¥¯¥È¥ì¥¸¥¹¥È¥ê
-.\" 
-.\"  This document was created by saving an HTML file as text
-.\"  from the JavaSoft web site:
-.\" 
-.\" http://java.sun.com/j2se/1.5/docs/tooldocs/tools.html
-.\" 
-.\"  and adding appropriate troff macros.  Because the JavaSoft web site 
-.\"  man pages can change without notice, it may be helpful to diff
-.\"  files to identify changes other than new functionality. 
-.\" 
-.SH "·Á¼°"
-.B rmiregistry 
-[
-.I port
-]
-.SH "µ¡Ç½ÀâÌÀ"
-.IX "Java remote object registry" "" "Java remote object registry \(em \fLrmiregistry\fP"
-.IX "rmiregistry" "" "\fLrmiregistry\fP \(em Java remote object registry"
-.B rmiregistry
-¥³¥Ş¥ó¥É¤Ï¡¢¸½ºß¤Î¥Û¥¹¥È¾å¤Î»ØÄê¤µ¤ì¤¿¥İ¡¼¥È¤Ë¡¢¥ê¥â¡¼¥È¥ª¥Ö¥¸¥§¥¯¥È
-¥ì¥¸¥¹¥È¥ê¤òºîÀ®¤·µ¯Æ°¤·¤Ş¤¹¡£
-¥İ¡¼¥ÈÈÖ¹æ¤¬¾ÊÎ¬¤µ¤ì¤¿¾ì¹ç¤Ë¤Ï¡¢¥İ¡¼¥È
-1099
-¤¬»ÈÍÑ¤µ¤ì¤Ş¤¹¡£
-.B rmiregistry
-¤Ï¥Ğ¥Ã¥¯¥°¥é¥¦¥ó¥É¤Ç¼Â¹Ô¤µ¤ì¡¢²¿¤â½ĞÎÏ¤·¤Ş¤»¤ó¡£
-°Ê²¼¤Ë»ØÄêÎã¤ò¼¨¤·¤Ş¤¹¡£
-.LP
-.RS
-.B example% rmiregistry &
-.RE
-.LP
-¥ê¥â¡¼¥È¥ª¥Ö¥¸¥§¥¯¥È¥ì¥¸¥¹¥È¥ê¤Ï¥Ö¡¼¥È¥¹¥È¥é¥Ã¥×¥Í¡¼¥à¥µ¡¼¥Ó¥¹¤Ç¡¢
-¥Û¥¹¥È¾å¤Î
-RMI
-¥µ¡¼¥Ğ¤¬¥ê¥â¡¼¥È¥ª¥Ö¥¸¥§¥¯¥È¤ËÌ¾Á°¤ò¥Ğ¥¤¥ó¥É¤¹¤ë¤¿¤á¤Ë»ÈÍÑ¤·¤Ş¤¹¡£
-Ì¾Á°¤¬¤Ä¤¤¤¿¤¢¤È¤Ï¡¢¥¯¥é¥¤¥¢¥ó¥ÈÂ¦¤Ç¥ê¥â¡¼¥È¥ª¥Ö¥¸¥§¥¯¥È¤òÃµ¤·¤Æ
-¥ê¥â¡¼¥È¥á¥½¥Ã¥É¤ò¸Æ¤Ó½Ğ¤¹¤³¤È¤¬¤Ç¤­¤Ş¤¹¡£
-.LP
-¥ì¥¸¥¹¥È¥ê¤ÏÄÌ¾ï¡¢¥¢¥×¥ê¥±¡¼¥·¥ç¥ó¤¬¥á¥½¥Ã¥É¤ò¸Æ¤Ó½Ğ¤¹É¬Í×¤¬¤¢¤ë
-ºÇ½é¤Î¥ê¥â¡¼¥È¥ª¥Ö¥¸¥§¥¯¥È¤ò»ØÄê¤¹¤ë¤¿¤á¤Ë»ÈÍÑ¤µ¤ì¤Ş¤¹¡£
-¤½¤Î¤¢¤È¡¢¤½¤Î¥ª¥Ö¥¸¥§¥¯¥È¤ò»È¤Ã¤Æ¡¢¥¢¥×¥ê¥±¡¼¥·¥ç¥ó¸ÇÍ­¤Î
-ÊıË¡¤ÇÂ¾¤Î¥ª¥Ö¥¸¥§¥¯¥È¤òÃµ¤¹¤³¤È¤¬²ÄÇ½¤Ë¤Ê¤ê¤Ş¤¹¡£
-.LP
-.B java.rmi.registry.LocateRegistry
-¥¯¥é¥¹¤Î¥á¥½¥Ã¥É¤Ï¡¢ÆÃÄê¤Î¥Û¥¹¥È¤Ş¤¿¤ÏÆÃÄê¤Î¥Û¥¹¥È¤È¥İ¡¼¥È¾å¤Ç
-Æ°ºî¤·¤Æ¤¤¤ë¥ì¥¸¥¹¥È¥ê¤òÆÀ¤ë¤¿¤á¤ËÍÑ¤¤¤é¤ì¤Ş¤¹¡£
-.LP
-.B java.rmi.Naming
-¥¯¥é¥¹¤Î
-URL
-ÍÑ¤Î¥á¥½¥Ã¥É¤Ï¥ì¥¸¥¹¥È¥ê¤òÁàºî¤¹¤ë¤â¤Î¤Ç¡¢
-¥ê¥â¡¼¥È¥ª¥Ö¥¸¥§¥¯¥È¤ÎÃµº÷¡¢¥ê¥â¡¼¥È¥ª¥Ö¥¸¥§¥¯¥È¤Ø¤Î
-Ì¾Á°
-(Ê¸»úÎó)
-¤Î¥Ğ¥¤¥ó¥É¡¢¿·¤¿¤ÊÌ¾Á°¤Î¥Ğ¥¤¥ó¥É
-(°ÊÁ°¤Î¥Ğ¥¤¥ó¥É¤ò¾å½ñ¤­)¡¢
-¥Ğ¥¤¥ó¥É¤Î¼è¤ê¾Ã¤·¡¢¤ª¤è¤Ó¥ì¥¸¥¹¥È¥êÃæ¤Ç¥Ğ¥¤¥ó¥É¤µ¤ì¤Æ¤¤¤ë
-URL
-¤Î°ìÍ÷É½¼¨¤¬²ÄÇ½¤Ç¤¹¡£
-.SH "¥ª¥×¥·¥ç¥ó"
-°Ê²¼¤Î¥ª¥×¥·¥ç¥ó¤¬»ÈÍÑ¤Ç¤­¤Ş¤¹¡£
-.TP 15
-.BI \-J option
-java ¥ª¥×¥·¥ç¥ó¤ÈÁÈ¤ß¹ç¤ï¤»¤Æ»È¤¤¤Ş¤¹
-(
-.B \-J
-¤È java ¥ª¥×¥·¥ç¥ó¤Î´Ö¤Ë¥¹¥Ú¡¼¥¹¤ÏÉ¬Í×¤¢¤ê¤Ş¤»¤ó)¡£ 
-.B \-J
-¤Î¸å¤í¤ËÂ³¤¯¥ª¥×¥·¥ç¥ó¤ò java ¥¤¥ó¥¿¥×¥ê¥¿¤ËÅÏ¤·¤Ş¤¹¡£
-.SH "´ØÏ¢¹àÌÜ"
-¼¡¤Ë¤Ä¤¤¤Æ¤Ï¡¢
-.BR java.sun.com 
-¤ò»²¾È¤Ş¤¿¤Ï¸¡º÷¤·¤Æ¤¯¤À¤µ¤¤¡£
-.TP 5
-.B java.rmi.Naming @
-http://java.sun.com/j2se/1.5/docs/api/java/rmi/Naming.html
-.TP 5
-.B java.rmi.registry.LocateRegistry @
-http://java.sun.com/j2se/1.5/docs/api/java/rmi/registry/LocateRegistry.html
+." Copyright 2003-2006 Sun Microsystems, Inc.  All Rights Reserved.
+." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+."
+." This code is free software; you can redistribute it and/or modify it
+." under the terms of the GNU General Public License version 2 only, as
+." published by the Free Software Foundation.
+."
+." This code is distributed in the hope that it will be useful, but WITHOUT
+." ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+." FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+." version 2 for more details (a copy is included in the LICENSE file that
+." accompanied this code).
+."
+." You should have received a copy of the GNU General Public License version
+." 2 along with this work; if not, write to the Free Software Foundation,
+." Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+."
+." Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+." CA 95054 USA or visit www.sun.com if you need additional information or
+." have any questions.
+."
+.TH rmiregistry 1 "04 May 2009"
+." Generated from HTML by html2man (author: Eric Armstrong)
 
+.LP
+.SH "åå‰"
+rmiregistry \- Java ãƒªãƒ¢ãƒ¼ãƒˆã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆãƒ¬ã‚¸ã‚¹ãƒˆãƒª
+.LP
+.RS 3
+
+.LP
+.LP
+\f3rmiregistry\fP ã‚³ãƒãƒ³ãƒ‰ã¯ã€ç¾åœ¨ã®ãƒ›ã‚¹ãƒˆã®æŒ‡å®šã—ãŸãƒãƒ¼ãƒˆä¸Šã«ãƒªãƒ¢ãƒ¼ãƒˆã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆãƒ¬ã‚¸ã‚¹ãƒˆãƒªã‚’é–‹å§‹ã—ã¾ã™ã€‚
+.LP
+.RE
+.SH "å½¢å¼"
+.LP
+
+.LP
+.nf
+\f3
+.fl
+rmiregistry [\fP\f4port\fP\f3]
+.fl
+\fP
+.fi
+
+.LP
+.SH "èª¬æ˜"
+.LP
+
+.LP
+.LP
+\f3rmiregistry\fP ã‚³ãƒãƒ³ãƒ‰ã¯ã€ç¾åœ¨ã®ãƒ›ã‚¹ãƒˆã®æŒ‡å®š \f2port\fP ä¸Šã«ãƒªãƒ¢ãƒ¼ãƒˆã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆãƒ¬ã‚¸ã‚¹ãƒˆãƒªã‚’ä½œæˆã—ã€é–‹å§‹ã—ã¾ã™ã€‚\f2port\fP ã®æŒ‡å®šã‚’çœç•¥ã—ãŸå ´åˆã€ãƒ¬ã‚¸ã‚¹ãƒˆãƒªã¯ãƒãƒ¼ãƒˆ 1099 ã§é–‹å§‹ã—ã¾ã™ã€‚\f3rmiregistry\fP ã‚³ãƒãƒ³ãƒ‰ã«ã€å‡ºåŠ›æ©Ÿèƒ½ã¯ã‚ã‚Šã¾ã›ã‚“ã€‚é€šå¸¸ã€ã“ã‚Œã¯ãƒãƒƒã‚¯ã‚°ãƒ©ã‚¦ãƒ³ãƒ‰ã§å®Ÿè¡Œã•ã‚Œã¾ã™ã€‚ä¾‹ã‚’ç¤ºã—ã¾ã™ã€‚
+.LP
+.LP
+\f2rmiregistry&\fP
+.LP
+.LP
+ãƒªãƒ¢ãƒ¼ãƒˆã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆãƒ¬ã‚¸ã‚¹ãƒˆãƒªã¯ã€ãƒ–ãƒ¼ãƒˆã‚¹ãƒˆãƒ©ãƒƒãƒ—ã®ãƒãƒ¼ãƒ ã‚µãƒ¼ãƒ“ã‚¹ã§ã™ã€‚ åŒä¸€ãƒ›ã‚¹ãƒˆã® RMI ã‚µãƒ¼ãƒãƒ¼ãŒã€ãƒªãƒ¢ãƒ¼ãƒˆã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã‚’åå‰ã«ãƒã‚¤ãƒ³ãƒ‰ã™ã‚‹ãŸã‚ã«ä½¿ç”¨ã•ã‚Œã¾ã™ã€‚æ¬¡ã«ã€ãƒ­ãƒ¼ã‚«ãƒ«ãŠã‚ˆã³ãƒªãƒ¢ãƒ¼ãƒˆãƒ›ã‚¹ãƒˆã®ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆã¯ãƒªãƒ¢ãƒ¼ãƒˆã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã‚’æ¤œç´¢ã—ã€ãƒªãƒ¢ãƒ¼ãƒˆãƒ¡ã‚½ãƒƒãƒ‰ã®å‘¼ã³å‡ºã—ã‚’è¡Œã„ã¾ã™ã€‚
+.LP
+.LP
+ãƒ¬ã‚¸ã‚¹ãƒˆãƒªã¯ã€ä¸€èˆ¬çš„ã«ã€æœ€åˆã®ãƒªãƒ¢ãƒ¼ãƒˆã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã®ä½ç½®ã‚’æŒ‡å®šã—ã¾ã™ã€‚ ãã“ã§ã€ã‚¢ãƒ—ãƒªã‚±ãƒ¼ã‚·ãƒ§ãƒ³ã¯ãƒ¡ã‚½ãƒƒãƒ‰ã‚’å‘¼ã³å‡ºã™å¿…è¦ãŒã‚ã‚Šã¾ã™ã€‚ä»£ã‚ã£ã¦ã€ãã®ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã¯ã‚¢ãƒ—ãƒªã‚±ãƒ¼ã‚·ãƒ§ãƒ³æŒ‡å®šã®ã‚µãƒãƒ¼ãƒˆã‚’æä¾›ã—ã€ä»–ã®ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã‚’æ¢ã—ã¾ã™ã€‚
+.LP
+.LP
+\f2java.rmi.registry.LocateRegistry\fP ã‚¯ãƒ©ã‚¹ã®ãƒ¡ã‚½ãƒƒãƒ‰ã¯ã€ãƒ­ãƒ¼ã‚«ãƒ«ãƒ›ã‚¹ãƒˆã€ã¾ãŸã¯ãƒ­ãƒ¼ã‚«ãƒ«ãƒ›ã‚¹ãƒˆã¨ãƒãƒ¼ãƒˆã§å‹•ä½œã™ã‚‹ãƒ¬ã‚¸ã‚¹ãƒˆãƒªã‚’å–å¾—ã™ã‚‹ãŸã‚ã«ä½¿ç”¨ã•ã‚Œã¾ã™ã€‚
+.LP
+.LP
+\f2java.rmi.Naming\fP ã‚¯ãƒ©ã‚¹ã® URL ãƒ™ãƒ¼ã‚¹ã®ãƒ¡ã‚½ãƒƒãƒ‰ã¯ã€ãƒ¬ã‚¸ã‚¹ãƒˆãƒªã§å‹•ä½œã—ã€ä»»æ„ã®ãƒ›ã‚¹ãƒˆãŠã‚ˆã³ãƒ­ãƒ¼ã‚«ãƒ«ãƒ›ã‚¹ãƒˆä¸Šã®ãƒªãƒ¢ãƒ¼ãƒˆã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã®æ¤œç´¢ã«ä½¿ç”¨ã•ã‚Œã¾ã™ã€‚ãƒªãƒ¢ãƒ¼ãƒˆã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã«å˜ç´”ãª (æ–‡å­—åˆ—) åå‰ã‚’ãƒã‚¤ãƒ³ãƒ‰ã—ãŸã‚Šã€æ–°ã—ã„åå‰ã‚’ãƒªãƒã‚¤ãƒ³ãƒ‰ (å¤ã„ãƒã‚¤ãƒ³ãƒ‰ã«ã‚ªãƒ¼ãƒãƒ¼ãƒ©ã‚¤ãƒ‰) ã—ã¾ã™ã€‚ ã¾ãŸãƒªãƒ¢ãƒ¼ãƒˆã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã‚’ã‚¢ãƒ³ãƒã‚¤ãƒ³ãƒ‰ã—ãŸã‚Šã€ãƒ¬ã‚¸ã‚¹ãƒˆãƒªã«ãƒã‚¤ãƒ³ãƒ‰ã•ã‚ŒãŸ URL ã‚’å‡ºåŠ›ã—ã¾ã™ã€‚
+.LP
+.SH "ã‚ªãƒ—ã‚·ãƒ§ãƒ³"
+.LP
+
+.LP
+.RS 3
+.TP 3
+\-J 
+\f2\-J\fP ã®å¾Œã‚ã«ç¶šãã‚ªãƒ—ã‚·ãƒ§ãƒ³ã‚’ \f2java\fP ã‚¤ãƒ³ã‚¿ãƒ—ãƒªã‚¿ã«å¼•ãæ¸¡ã—ã¾ã™ã€‚ \f2java\fP ã‚ªãƒ—ã‚·ãƒ§ãƒ³ã¨çµ„ã¿åˆã‚ã›ã¦ä½¿ã„ã¾ã™ (\f2\-J\fP ã¨ \f2java\fP ã‚ªãƒ—ã‚·ãƒ§ãƒ³ã®é–“ã«ã‚¹ãƒšãƒ¼ã‚¹ã¯å…¥ã‚Œãªã„)ã€‚ 
+.RE
+
+.LP
+.SH "é–¢é€£é …ç›®"
+.LP
+
+.LP
+.LP
+java(1)ã€
+.na
+\f2java.rmi.registry.LocateRegistry\fP @
+.fi
+http://java.sun.com/javase/6/docs/api/java/rmi/registry/LocateRegistry.htmlã€ãŠã‚ˆã³ 
+.na
+\f2java.rmi.Naming\fP @
+.fi
+http://java.sun.com/javase/6/docs/api/java/rmi/Naming.html
+.LP
+
+.LP
+ 

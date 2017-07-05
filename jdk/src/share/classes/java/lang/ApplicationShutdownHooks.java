@@ -35,17 +35,26 @@ import java.util.*;
  */
 
 class ApplicationShutdownHooks {
+    /* The set of registered hooks */
+    private static IdentityHashMap<Thread, Thread> hooks;
     static {
-        Shutdown.add(1 /* shutdown hook invocation order */,
-            new Runnable() {
-                public void run() {
-                    runHooks();
+        try {
+            Shutdown.add(1 /* shutdown hook invocation order */,
+                false /* not registered if shutdown in progress */,
+                new Runnable() {
+                    public void run() {
+                        runHooks();
+                    }
                 }
-            });
+            );
+            hooks = new IdentityHashMap<Thread, Thread>();
+        } catch (IllegalStateException e) {
+            // application shutdown hooks cannot be added if
+            // shutdown is in progress.
+            hooks = null;
+        }
     }
 
-    /* The set of registered hooks */
-    private static IdentityHashMap<Thread, Thread> hooks = new IdentityHashMap<Thread, Thread>();
 
     private ApplicationShutdownHooks() {}
 

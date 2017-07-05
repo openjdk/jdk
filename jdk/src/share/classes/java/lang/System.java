@@ -1171,8 +1171,8 @@ public final class System {
             public void blockedOn(Thread t, Interruptible b) {
                 t.blockedOn(b);
             }
-            public void registerShutdownHook(int slot, Runnable r) {
-                Shutdown.add(slot, r);
+            public void registerShutdownHook(int slot, boolean registerShutdownInProgress, Runnable hook) {
+                Shutdown.add(slot, registerShutdownInProgress, hook);
             }
         });
     }
