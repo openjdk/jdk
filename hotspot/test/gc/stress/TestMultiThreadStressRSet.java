@@ -31,7 +31,7 @@ import sun.hotspot.WhiteBox;
 /*
  * @test TestMultiThreadStressRSet.java
  * @key stress
- * @requires vm.gc=="G1" | vm.gc=="null"
+ * @requires vm.gc.G1
  * @requires os.maxMemory > 2G
  * @requires vm.opt.MaxGCPauseMillis == "null"
  *

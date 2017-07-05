@@ -142,7 +142,6 @@ int (*os::Linux::_pthread_setname_np)(pthread_t, const char*) = NULL;
 Mutex* os::Linux::_createThread_lock = NULL;
 pthread_t os::Linux::_main_thread;
 int os::Linux::_page_size = -1;
-const int os::Linux::_vm_default_page_size = (8 * K);
 bool os::Linux::_supports_fast_thread_cpu_time = false;
 uint32_t os::Linux::_os_version = 0;
 const char * os::Linux::_glibc_version = NULL;
@@ -4784,13 +4783,15 @@ jint os::init_2(void) {
 
   // Check minimum allowable stack size for thread creation and to initialize
   // the java system classes, including StackOverflowError - depends on page
-  // size.  Add a page for compiler2 recursion in main thread.
-  // Add in 2*BytesPerWord times page size to account for VM stack during
+  // size.  Add two 4K pages for compiler2 recursion in main thread.
+  // Add in 4*BytesPerWord 4K pages to account for VM stack during
   // class initialization depending on 32 or 64 bit VM.
   os::Linux::min_stack_allowed = MAX2(os::Linux::min_stack_allowed,
                                       JavaThread::stack_guard_zone_size() +
                                       JavaThread::stack_shadow_zone_size() +
-                                      (2*BytesPerWord COMPILER2_PRESENT(+1)) * Linux::vm_default_page_size());
+                                      (4*BytesPerWord COMPILER2_PRESENT(+2)) * 4 * K);
+
+  os::Linux::min_stack_allowed = align_size_up(os::Linux::min_stack_allowed, os::vm_page_size());
 
   size_t threadStackSizeInBytes = ThreadStackSize * K;
   if (threadStackSizeInBytes != 0 &&

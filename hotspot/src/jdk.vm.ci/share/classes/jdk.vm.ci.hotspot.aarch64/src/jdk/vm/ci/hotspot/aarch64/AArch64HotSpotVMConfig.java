@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,34 +20,23 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.vm.ci.hotspotvmconfig;
+package jdk.vm.ci.hotspot.aarch64;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import jdk.vm.ci.hotspot.HotSpotVMConfigAccess;
+import jdk.vm.ci.hotspot.HotSpotVMConfigStore;
 
 /**
- * Refers to a C++ flag in the VM.
+ * Used to access native configuration details.
+ *
+ * All non-static, public fields in this class are so that they can be compiled as constants.
  */
-@Target(ElementType.FIELD)
-@Retention(RetentionPolicy.RUNTIME)
-public @interface HotSpotVMFlag {
+class AArch64HotSpotVMConfig extends HotSpotVMConfigAccess {
 
-    /**
-     * Returns the name of this flag.
-     *
-     * @return name of flag.
-     */
-    String name();
+    AArch64HotSpotVMConfig(HotSpotVMConfigStore config) {
+        super(config);
+    }
 
-    /**
-     * List of architectures where this constant is required. Names are derived from
-     * {@link HotSpotVMConfig#getHostArchitectureName()}. An empty list implies that the constant is
-     * required on all architectures.
-     */
-    @SuppressWarnings("javadoc")
-    String[] archs() default {};
+    final boolean linuxOs = System.getProperty("os.name", "").startsWith("Linux");
 
-    boolean optional() default false;
+    final boolean useCompressedOops = getFlag("UseCompressedOops", Boolean.class);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,16 +37,16 @@
 #include "runtime/mutexLocker.hpp"
 
 //
-// Freelist in the deduplication table entry cache. Links table
+// List of deduplication table entries. Links table
 // entries together using their _next fields.
 //
-class G1StringDedupEntryFreeList : public CHeapObj<mtGC> {
+class G1StringDedupEntryList : public CHeapObj<mtGC> {
 private:
   G1StringDedupEntry* _list;
   size_t              _length;
 
 public:
-  G1StringDedupEntryFreeList() :
+  G1StringDedupEntryList() :
     _list(NULL),
     _length(0) {
   }
@@ -64,6 +64,12 @@ public:
       _length--;
     }
     return entry;
+  }
+
+  G1StringDedupEntry* remove_all() {
+    G1StringDedupEntry* list = _list;
+    _list = NULL;
+    return list;
   }
 
   size_t length() {
@@ -87,43 +93,53 @@ public:
 //
 class G1StringDedupEntryCache : public CHeapObj<mtGC> {
 private:
-  // One freelist per GC worker to allow lock less freeing of
-  // entries while doing a parallel scan of the table. Using
-  // PaddedEnd to avoid false sharing.
-  PaddedEnd<G1StringDedupEntryFreeList>* _lists;
-  size_t                                 _nlists;
+  // One cache/overflow list per GC worker to allow lock less freeing of
+  // entries while doing a parallel scan of the table. Using PaddedEnd to
+  // avoid false sharing.
+  size_t                             _nlists;
+  size_t                             _max_list_length;
+  PaddedEnd<G1StringDedupEntryList>* _cached;
+  PaddedEnd<G1StringDedupEntryList>* _overflowed;
 
 public:
-  G1StringDedupEntryCache();
+  G1StringDedupEntryCache(size_t max_size);
   ~G1StringDedupEntryCache();
 
-  // Get a table entry from the cache freelist, or allocate a new
-  // entry if the cache is empty.
+  // Set max number of table entries to cache.
+  void set_max_size(size_t max_size);
+
+  // Get a table entry from the cache, or allocate a new entry if the cache is empty.
   G1StringDedupEntry* alloc();
 
-  // Insert a table entry into the cache freelist.
+  // Insert a table entry into the cache.
   void free(G1StringDedupEntry* entry, uint worker_id);
 
   // Returns current number of entries in the cache.
   size_t size();
 
-  // If the cache has grown above the given max size, trim it down
-  // and deallocate the memory occupied by trimmed of entries.
-  void trim(size_t max_size);
+  // Deletes overflowed entries.
+  void delete_overflowed();
 };
 
-G1StringDedupEntryCache::G1StringDedupEntryCache() {
-  _nlists = ParallelGCThreads;
-  _lists = PaddedArray<G1StringDedupEntryFreeList, mtGC>::create_unfreeable((uint)_nlists);
+G1StringDedupEntryCache::G1StringDedupEntryCache(size_t max_size) :
+  _nlists(ParallelGCThreads),
+  _max_list_length(0),
+  _cached(PaddedArray<G1StringDedupEntryList, mtGC>::create_unfreeable((uint)_nlists)),
+  _overflowed(PaddedArray<G1StringDedupEntryList, mtGC>::create_unfreeable((uint)_nlists)) {
+  set_max_size(max_size);
 }
 
 G1StringDedupEntryCache::~G1StringDedupEntryCache() {
   ShouldNotReachHere();
 }
 
+void G1StringDedupEntryCache::set_max_size(size_t size) {
+  _max_list_length = size / _nlists;
+}
+
 G1StringDedupEntry* G1StringDedupEntryCache::alloc() {
   for (size_t i = 0; i < _nlists; i++) {
-    G1StringDedupEntry* entry = _lists[i].remove();
+    G1StringDedupEntry* entry = _cached[i].remove();
     if (entry != NULL) {
       return entry;
     }
@@ -134,31 +150,53 @@ G1StringDedupEntry* G1StringDedupEntryCache::alloc() {
 void G1StringDedupEntryCache::free(G1StringDedupEntry* entry, uint worker_id) {
   assert(entry->obj() != NULL, "Double free");
   assert(worker_id < _nlists, "Invalid worker id");
+
   entry->set_obj(NULL);
   entry->set_hash(0);
-  _lists[worker_id].add(entry);
+
+  if (_cached[worker_id].length() < _max_list_length) {
+    // Cache is not full
+    _cached[worker_id].add(entry);
+  } else {
+    // Cache is full, add to overflow list for later deletion
+    _overflowed[worker_id].add(entry);
+  }
 }
 
 size_t G1StringDedupEntryCache::size() {
   size_t size = 0;
   for (size_t i = 0; i < _nlists; i++) {
-    size += _lists[i].length();
+    size += _cached[i].length();
   }
   return size;
 }
 
-void G1StringDedupEntryCache::trim(size_t max_size) {
-  size_t cache_size = 0;
+void G1StringDedupEntryCache::delete_overflowed() {
+  double start = os::elapsedTime();
+  uintx count = 0;
+
   for (size_t i = 0; i < _nlists; i++) {
-    G1StringDedupEntryFreeList* list = &_lists[i];
-    cache_size += list->length();
-    while (cache_size > max_size) {
-      G1StringDedupEntry* entry = list->remove();
-      assert(entry != NULL, "Should not be null");
-      cache_size--;
+    G1StringDedupEntry* entry;
+
+    {
+      // The overflow list can be modified during safepoints, therefore
+      // we temporarily join the suspendible thread set while removing
+      // all entries from the list.
+      SuspendibleThreadSetJoiner sts_join;
+      entry = _overflowed[i].remove_all();
+    }
+
+    // Delete all entries
+    while (entry != NULL) {
+      G1StringDedupEntry* next = entry->next();
       delete entry;
+      entry = next;
+      count++;
     }
   }
+
+  double end = os::elapsedTime();
+  log_trace(gc, stringdedup)("Deleted " UINTX_FORMAT " entries, " G1_STRDEDUP_TIME_FORMAT, count, end - start);
 }
 
 G1StringDedupTable*      G1StringDedupTable::_table = NULL;
@@ -195,7 +233,7 @@ G1StringDedupTable::~G1StringDedupTable() {
 
 void G1StringDedupTable::create() {
   assert(_table == NULL, "One string deduplication table allowed");
-  _entry_cache = new G1StringDedupEntryCache();
+  _entry_cache = new G1StringDedupEntryCache(_min_size * _max_cache_factor);
   _table = new G1StringDedupTable(_min_size);
 }
 
@@ -389,6 +427,9 @@ G1StringDedupTable* G1StringDedupTable::prepare_resize() {
   // Update statistics
   _resize_count++;
 
+  // Update max cache size
+  _entry_cache->set_max_size(size * _max_cache_factor);
+
   // Allocate the new table. The new table will be populated by workers
   // calling unlink_or_oops_do() and finally installed by finish_resize().
   return new G1StringDedupTable(size, _table->_hash_seed);
@@ -441,7 +482,7 @@ void G1StringDedupTable::unlink_or_oops_do(G1StringDedupUnlinkOrOopsDoClosure* c
     removed += unlink_or_oops_do(cl, table_half + partition_begin, table_half + partition_end, worker_id);
   }
 
-  // Delayed update avoid contention on the table lock
+  // Delayed update to avoid contention on the table lock
   if (removed > 0) {
     MutexLockerEx ml(StringDedupTable_lock, Mutex::_no_safepoint_check_flag);
     _table->_entries -= removed;
@@ -563,10 +604,8 @@ void G1StringDedupTable::verify() {
   }
 }
 
-void G1StringDedupTable::trim_entry_cache() {
-  MutexLockerEx ml(StringDedupTable_lock, Mutex::_no_safepoint_check_flag);
-  size_t max_cache_size = (size_t)(_table->_size * _max_cache_factor);
-  _entry_cache->trim(max_cache_size);
+void G1StringDedupTable::clean_entry_cache() {
+  _entry_cache->delete_overflowed();
 }
 
 void G1StringDedupTable::print_statistics() {

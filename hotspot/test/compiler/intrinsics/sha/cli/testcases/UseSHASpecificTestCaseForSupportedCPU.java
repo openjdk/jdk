@@ -27,7 +27,7 @@ import jdk.test.lib.Platform;
 import jdk.test.lib.cli.CommandLineOptionTest;
 import jdk.test.lib.cli.predicate.AndPredicate;
 import jdk.test.lib.cli.predicate.OrPredicate;
-import sha.predicate.IntrinsicPredicates;
+import compiler.testlibrary.sha.predicate.IntrinsicPredicates;
 
 /**
  * UseSHA specific test case targeted to SPARC and AArch64 CPUs which

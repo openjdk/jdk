@@ -2225,9 +2225,7 @@ void PhaseIdealLoop::build_and_optimize(bool do_split_ifs, bool skip_loop_opts) 
   // Some parser-inserted loop predicates could never be used by loop
   // predication or they were moved away from loop during some optimizations.
   // For example, peeling. Eliminate them before next loop optimizations.
-  if (UseLoopPredicate) {
-    eliminate_useless_predicates();
-  }
+  eliminate_useless_predicates();
 
 #ifndef PRODUCT
   C->verify_graph_edges();

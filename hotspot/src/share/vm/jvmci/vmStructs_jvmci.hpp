@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,12 @@ public:
    * Table of addresses.
    */
   static VMAddressEntry localHotSpotVMAddresses[];
+
+  static int localHotSpotVMStructs_count();
+  static int localHotSpotVMTypes_count();
+  static int localHotSpotVMIntConstants_count();
+  static int localHotSpotVMLongConstants_count();
+  static int localHotSpotVMAddresses_count();
 };
 
 #endif // SHARE_VM_JVMCI_VMSTRUCTS_JVMCI_HPP

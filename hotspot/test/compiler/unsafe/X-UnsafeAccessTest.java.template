@@ -333,7 +333,7 @@ public class $Qualifier$UnsafeAccessTest$Type$ {
             $type$ o = UNSAFE.getAndAdd$Type$(base, offset, $value2$);
             assertEquals(o, $value1$, "getAndAdd $type$");
             $type$ x = UNSAFE.get$Type$(base, offset);
-            assertEquals(x, $value1$ + $value2$, "getAndAdd $type$");
+            assertEquals(x, ($type$)($value1$ + $value2$), "getAndAdd $type$");
         }
 #end[AtomicAdd]
     }
