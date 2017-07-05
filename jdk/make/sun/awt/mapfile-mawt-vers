@@ -291,6 +291,7 @@ SUNWprivate_1.1 {
 		Java_sun_awt_X11GraphicsConfig_createBackBuffer;
 		Java_sun_awt_X11GraphicsConfig_destroyBackBuffer;
 		Java_sun_awt_X11GraphicsConfig_swapBuffers;
+                Java_sun_awt_X11GraphicsConfig_isTranslucencyCapable;
 		Java_sun_awt_X11GraphicsDevice_isDBESupported;
 		Java_sun_awt_X11GraphicsDevice_getDisplay;
 		Java_sun_awt_X11GraphicsDevice_getDoubleBufferVisuals;

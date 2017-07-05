@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,13 +34,11 @@
 // property name tagging windows disabled by modality
 static LPCTSTR ModalBlockerProp = TEXT("SunAwtModalBlockerProp");
 static LPCTSTR ModalDialogPeerProp = TEXT("SunAwtModalDialogPeerProp");
+static LPCTSTR NativeDialogWndProcProp = TEXT("SunAwtNativeDialogWndProcProp");
 
 #ifndef WH_MOUSE_LL
 #define WH_MOUSE_LL 14
 #endif
-
-// WS_EX_NOACTIVATE is not defined in the headers we build with
-#define AWT_WS_EX_NOACTIVATE        0x08000000L
 
 class AwtFrame;
 
@@ -56,12 +54,17 @@ public:
     static jfieldID locationByPlatformID;
     static jfieldID screenID; /* screen number passed over from WindowPeer */
     static jfieldID autoRequestFocusID;
+    static jfieldID securityWarningWidthID;
+    static jfieldID securityWarningHeightID;
 
     // The coordinates at the peer.
     static jfieldID sysXID;
     static jfieldID sysYID;
     static jfieldID sysWID;
     static jfieldID sysHID;
+
+    static jmethodID getWarningStringMID;
+    static jmethodID calculateSecurityWarningPositionMID;
 
     AwtWindow();
     virtual ~AwtWindow();
@@ -152,11 +155,12 @@ public:
     static void SetModalBlocker(HWND window, HWND blocker);
     static void SetAndActivateModalBlocker(HWND window, HWND blocker);
 
+    static HWND GetTopmostModalBlocker(HWND window);
+
     /*
      * Windows message handler functions
      */
     virtual MsgRouting WmActivate(UINT nState, BOOL fMinimized, HWND opposite);
-    static void BounceActivation(void *self); // used by WmActivate
     virtual MsgRouting WmCreate();
     virtual MsgRouting WmClose();
     virtual MsgRouting WmDestroy();
@@ -169,18 +173,35 @@ public:
     virtual MsgRouting WmSettingChange(UINT wFlag, LPCTSTR pszSection);
     virtual MsgRouting WmNcCalcSize(BOOL fCalcValidRects,
                                     LPNCCALCSIZE_PARAMS lpncsp, LRESULT& retVal);
-    virtual MsgRouting WmNcPaint(HRGN hrgn);
     virtual MsgRouting WmNcHitTest(UINT x, UINT y, LRESULT& retVal);
     virtual MsgRouting WmNcMouseDown(WPARAM hitTest, int x, int y, int button);
     virtual MsgRouting WmGetIcon(WPARAM iconType, LRESULT& retVal);
     virtual LRESULT WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
     virtual MsgRouting WmWindowPosChanging(LPARAM windowPos);
     virtual MsgRouting WmWindowPosChanged(LPARAM windowPos);
+    virtual MsgRouting WmTimer(UINT_PTR timerID);
 
     virtual MsgRouting HandleEvent(MSG *msg, BOOL synthetic);
     virtual void WindowResized();
 
+    static jboolean _RequestWindowFocus(void *param);
+
+    virtual BOOL AwtSetActiveWindow(BOOL isMouseEventCause = FALSE, UINT hittest = HTCLIENT);
+
+    // Execute on Toolkit only.
+    INLINE static LRESULT SynthesizeWmActivate(BOOL doActivate, HWND targetHWnd, HWND oppositeHWnd) {
+        if (::IsWindowVisible(targetHWnd)) {
+            return ::SendMessage(targetHWnd, WM_ACTIVATE,
+                                 MAKEWPARAM(doActivate ? WA_ACTIVE : WA_INACTIVE, FALSE),
+                                 (LPARAM) oppositeHWnd);
+        }
+        return 1; // if not processed
+    }
+
     void moveToDefaultLocation(); /* moves Window to X,Y specified by Window Manger */
+
+    void UpdateWindow(JNIEnv* env, jintArray data, int width, int height,
+                      HBITMAP hNewBitmap = NULL);
 
     INLINE virtual BOOL IsTopLevel() { return TRUE; }
     static AwtWindow * GetGrabbedWindow() { return m_grabbedWindow; }
@@ -204,10 +225,24 @@ public:
     static void _SetModalExcludedNativeProp(void *param);
     static void _ModalDisable(void *param);
     static void _ModalEnable(void *param);
+    static void _SetOpacity(void* param);
+    static void _SetOpaque(void* param);
+    static void _UpdateWindow(void* param);
+    static void _RepositionSecurityWarning(void* param);
 
     inline static BOOL IsResizing() {
         return sm_resizing;
     }
+
+    virtual void CreateHWnd(JNIEnv *env, LPCWSTR title,
+            DWORD windowStyle, DWORD windowExStyle,
+            int x, int y, int w, int h,
+            HWND hWndParent, HMENU hMenu,
+            COLORREF colorForeground, COLORREF colorBackground,
+            jobject peer);
+    virtual void DestroyHWnd();
+
+    static void FocusedWindowChanged(HWND from, HWND to);
 
 private:
     static int ms_instanceCounter;
@@ -228,6 +263,79 @@ private:
                                        // from its hierarchy when shown. Currently applied to instances of
                                        // javax/swing/Popup$HeavyWeightWindow class.
 
+    BYTE m_opacity;         // The opacity level. == 0xff by default (when opacity mode is disabled)
+    BOOL m_opaque;          // Whether the window uses the perpixel translucency (false), or not (true).
+
+    inline BYTE getOpacity() {
+        return m_opacity;
+    }
+    inline void setOpacity(BYTE opacity) {
+        m_opacity = opacity;
+    }
+
+    inline BOOL isOpaque() {
+        return m_opaque;
+    }
+    inline void setOpaque(BOOL opaque) {
+        m_opaque = opaque;
+    }
+
+    CRITICAL_SECTION contentBitmapCS;
+    HBITMAP hContentBitmap;
+    UINT contentWidth;
+    UINT contentHeight;
+
+    void SetTranslucency(BYTE opacity, BOOL opaque);
+    void UpdateWindow(int width, int height, HBITMAP hBitmap);
+    void UpdateWindowImpl(int width, int height, HBITMAP hBitmap);
+    void RedrawWindow();
+
+    static UINT untrustedWindowsCounter;
+
+    WCHAR * warningString;
+
+    // The warning icon
+    HWND warningWindow;
+    // The tooltip that appears when hovering the icon
+    HWND securityTooltipWindow;
+
+    UINT warningWindowWidth;
+    UINT warningWindowHeight;
+    void InitSecurityWarningSize(JNIEnv *env);
+    HICON GetSecurityWarningIcon();
+
+    void CreateWarningWindow(JNIEnv *env);
+    void DestroyWarningWindow();
+    static LPCTSTR GetWarningWindowClassName();
+    void FillWarningWindowClassInfo(WNDCLASS *lpwc);
+    void RegisterWarningWindowClass();
+    void UnregisterWarningWindowClass();
+    static LRESULT CALLBACK WarningWindowProc(
+            HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+
+    static void PaintWarningWindow(HWND warningWindow);
+    static void PaintWarningWindow(HWND warningWindow, HDC hdc);
+    void RepaintWarningWindow();
+    void CalculateWarningWindowBounds(JNIEnv *env, LPRECT rect);
+
+    void AnimateSecurityWarning(bool enable);
+    UINT securityWarningAnimationStage;
+
+    enum AnimationKind {
+        akNone, akShow, akPreHide, akHide
+    };
+
+    AnimationKind securityAnimationKind;
+
+    void StartSecurityAnimation(AnimationKind kind);
+    void StopSecurityAnimation();
+
+    void RepositionSecurityWarning(JNIEnv *env);
+
+public:
+    void UpdateSecurityWarningVisibility();
+    static bool IsWarningWindow(HWND hWnd);
+
 protected:
     BOOL m_isResizable;
     static AwtWindow* m_grabbedWindow; // Current grabbing window
@@ -236,6 +344,16 @@ protected:
     BOOL m_iconInherited;     /* TRUE if icon is inherited from the owner */
     BOOL m_filterFocusAndActivation; /* Used in the WH_CBT hook */
 
+    //These are used in AwtComponent::CreatePrintedPixels. They are overridden
+    //here to handle non-opaque windows.
+    virtual void FillBackground(HDC hMemoryDC, SIZE &size);
+    virtual void FillAlpha(void *bitmapBits, SIZE &size, BYTE alpha);
+
+    inline BOOL IsUntrusted() {
+        return warningString != NULL;
+    }
+
+    UINT currentWmSizeState;
 
 private:
     int m_screenNum;

@@ -555,6 +555,7 @@ public class MOAT {
 
             NavigableMap<Integer,Integer> nm =
                 (NavigableMap<Integer,Integer>) m;
+            testNavigableMapRemovers(nm);
             testNavigableMap(nm);
             testNavigableMap(nm.headMap(6, false));
             testNavigableMap(nm.headMap(5, true));
@@ -740,6 +741,97 @@ public class MOAT {
         if (rnd.nextBoolean())
             check(it.hasNext());
         equal(it.next(), expected);
+    }
+
+    static void equalMaps(Map m1, Map m2) {
+        equal(m1, m2);
+        equal(m2, m1);
+        equal(m1.size(), m2.size());
+        equal(m1.isEmpty(), m2.isEmpty());
+        equal(m1.toString(), m2.toString());
+        check(Arrays.equals(m1.entrySet().toArray(), m2.entrySet().toArray()));
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    static void testNavigableMapRemovers(NavigableMap m)
+    {
+        final Map emptyMap = new HashMap();
+
+        final Map singletonMap = new HashMap();
+        singletonMap.put(1, 2);
+
+        abstract class NavigableMapView {
+            abstract NavigableMap view(NavigableMap m);
+        }
+
+        NavigableMapView[] views = {
+            new NavigableMapView() { NavigableMap view(NavigableMap m) {
+                return m; }},
+            new NavigableMapView() { NavigableMap view(NavigableMap m) {
+                return m.headMap(99, true); }},
+            new NavigableMapView() { NavigableMap view(NavigableMap m) {
+                return m.tailMap(-99, false); }},
+            new NavigableMapView() { NavigableMap view(NavigableMap m) {
+                return m.subMap(-99, true, 99, false); }},
+        };
+
+        abstract class Remover {
+            abstract void remove(NavigableMap m, Object k, Object v);
+        }
+
+        Remover[] removers = {
+            new Remover() { void remove(NavigableMap m, Object k, Object v) {
+                equal(m.remove(k), v); }},
+
+            new Remover() { void remove(NavigableMap m, Object k, Object v) {
+                equal(m.descendingMap().remove(k), v); }},
+            new Remover() { void remove(NavigableMap m, Object k, Object v) {
+                equal(m.descendingMap().headMap(-86, false).remove(k), v); }},
+            new Remover() { void remove(NavigableMap m, Object k, Object v) {
+                equal(m.descendingMap().tailMap(86, true).remove(k), v); }},
+
+            new Remover() { void remove(NavigableMap m, Object k, Object v) {
+                equal(m.headMap(86, true).remove(k), v); }},
+            new Remover() { void remove(NavigableMap m, Object k, Object v) {
+                equal(m.tailMap(-86, true).remove(k), v); }},
+            new Remover() { void remove(NavigableMap m, Object k, Object v) {
+                equal(m.subMap(-86, false, 86, true).remove(k), v); }},
+
+            new Remover() { void remove(NavigableMap m, Object k, Object v) {
+                check(m.keySet().remove(k)); }},
+            new Remover() { void remove(NavigableMap m, Object k, Object v) {
+                check(m.navigableKeySet().remove(k)); }},
+
+            new Remover() { void remove(NavigableMap m, Object k, Object v) {
+                check(m.navigableKeySet().headSet(86, true).remove(k)); }},
+            new Remover() { void remove(NavigableMap m, Object k, Object v) {
+                check(m.navigableKeySet().tailSet(-86, false).remove(k)); }},
+            new Remover() { void remove(NavigableMap m, Object k, Object v) {
+                check(m.navigableKeySet().subSet(-86, true, 86, false)
+                      .remove(k)); }},
+
+            new Remover() { void remove(NavigableMap m, Object k, Object v) {
+                check(m.descendingKeySet().headSet(-86, false).remove(k)); }},
+            new Remover() { void remove(NavigableMap m, Object k, Object v) {
+                check(m.descendingKeySet().tailSet(86, true).remove(k)); }},
+            new Remover() { void remove(NavigableMap m, Object k, Object v) {
+                check(m.descendingKeySet().subSet(86, true, -86, false)
+                      .remove(k)); }},
+        };
+
+        for (NavigableMapView view : views) {
+            for (Remover remover : removers) {
+                try {
+                    m.clear();
+                    equalMaps(m, emptyMap);
+                    equal(m.put(1, 2), null);
+                    equalMaps(m, singletonMap);
+                    NavigableMap v = view.view(m);
+                    remover.remove(v, 1, 2);
+                    equalMaps(m, emptyMap);
+                } catch (Throwable t) { unexpected(t); }
+            }
+        }
     }
 
     private static void testNavigableMap(NavigableMap<Integer,Integer> m)

@@ -37,6 +37,7 @@ import java.util.HashSet;
 import java.util.Collections;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import sun.net.NetHooks;
 
 /**
  * Base implementation of AsynchronousServerSocketChannel.
@@ -131,6 +132,7 @@ abstract class AsynchronousServerSocketChannelImpl
             synchronized (stateLock) {
                 if (localAddress != null)
                     throw new AlreadyBoundException();
+                NetHooks.beforeTcpBind(fd, isa.getAddress(), isa.getPort());
                 Net.bind(fd, isa.getAddress(), isa.getPort());
                 Net.listen(fd, backlog < 1 ? 50 : backlog);
                 localAddress = Net.localAddress(fd);

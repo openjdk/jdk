@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2002-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,7 @@ import sun.awt.*;
 import sun.font.FontManager;
 import sun.misc.PerformanceLogger;
 import sun.print.PrintJob2D;
+import sun.security.action.GetBooleanAction;
 
 public final class XToolkit extends UNIXToolkit implements Runnable {
     private static Logger log = Logger.getLogger("sun.awt.X11.XToolkit");
@@ -291,6 +292,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
             if (XlibWrapper.XSetLocaleModifiers("") == null) {
                 log.finer("X locale modifiers are not supported, using default");
             }
+            tryXKB();
 
             AwtScreenData defaultScreen = new AwtScreenData(XToolkit.getDefaultScreenData());
             awt_defaultFg = defaultScreen.get_blackpixel();
@@ -313,6 +315,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
                     if (xs != null) {
                         ((XAWTXSettings)xs).dispose();
                     }
+                    freeXKB();
                     if (log.isLoggable(Level.FINE)) {
                         dumpPeers();
                     }
@@ -590,6 +593,9 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
 
                 if (ev.get_type() != XConstants.NoExpose) {
                     eventNumber++;
+                }
+                if (awt_UseXKB_Calls && ev.get_type() ==  awt_XKBBaseEventCode) {
+                    processXkbChanges(ev);
                 }
 
                 if (XDropTargetEventProcessor.processEvent(ev) ||
@@ -2093,8 +2099,12 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
 
     static boolean awt_ServerInquired = false;
     static boolean awt_IsXsunServer    = false;
-    static boolean awt_XKBInquired    = false;
     static boolean awt_UseXKB         = false;
+    static boolean awt_UseXKB_Calls   = false;
+    static int     awt_XKBBaseEventCode = 0;
+    static int     awt_XKBEffectiveGroup = 0; // so far, I don't use it leaving all calculations
+                                              // to XkbTranslateKeyCode
+    static long    awt_XKBDescPtr     = 0;
     /**
        Try to understand if it is Xsun server.
        By now (2005) Sun is vendor of Xsun and Xorg servers; we only return true if Xsun is running.
@@ -2124,21 +2134,141 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
             awtUnlock();
         }
     }
-    /**
-      Query XKEYBOARD extension.
-    */
     static boolean isXKBenabled() {
         awtLock();
         try {
-            if( awt_XKBInquired ) {
-                return awt_UseXKB;
-            }
-            awt_XKBInquired = true;
-            String name = "XKEYBOARD";
-            awt_UseXKB = XlibWrapper.XQueryExtension( getDisplay(), name, XlibWrapper.larg1, XlibWrapper.larg2, XlibWrapper.larg3);
             return awt_UseXKB;
         } finally {
             awtUnlock();
+        }
+    }
+
+    /**
+      Query XKEYBOARD extension.
+      If possible, initialize xkb library.
+    */
+    static boolean tryXKB() {
+        awtLock();
+        try {
+            String name = "XKEYBOARD";
+            // First, if there is extension at all.
+            awt_UseXKB = XlibWrapper.XQueryExtension( getDisplay(), name, XlibWrapper.larg1, XlibWrapper.larg2, XlibWrapper.larg3);
+            if( awt_UseXKB ) {
+                // There is a keyboard extension. Check if a client library is compatible.
+                // If not, don't use xkb calls.
+                // In this case we still may be Xkb-capable application.
+                awt_UseXKB_Calls = XlibWrapper.XkbLibraryVersion( XlibWrapper.larg1, XlibWrapper.larg2);
+                if( awt_UseXKB_Calls ) {
+                    awt_UseXKB_Calls = XlibWrapper.XkbQueryExtension( getDisplay(),  XlibWrapper.larg1, XlibWrapper.larg2,
+                                     XlibWrapper.larg3, XlibWrapper.larg4, XlibWrapper.larg5);
+                    if( awt_UseXKB_Calls ) {
+                        awt_XKBBaseEventCode = Native.getInt(XlibWrapper.larg2);
+                        XlibWrapper.XkbSelectEvents (getDisplay(),
+                                         XConstants.XkbUseCoreKbd,
+                                         XConstants.XkbNewKeyboardNotifyMask |
+                                                 XConstants.XkbMapNotifyMask ,//|
+                                                 //XConstants.XkbStateNotifyMask,
+                                         XConstants.XkbNewKeyboardNotifyMask |
+                                                 XConstants.XkbMapNotifyMask );//|
+                                                 //XConstants.XkbStateNotifyMask);
+
+                        XlibWrapper.XkbSelectEventDetails(getDisplay(), XConstants.XkbUseCoreKbd,
+                                                     XConstants.XkbStateNotify,
+                                                     XConstants.XkbGroupStateMask,
+                                                     XConstants.XkbGroupStateMask);
+                                                     //XXX ? XkbGroupLockMask last, XkbAllStateComponentsMask before last?
+                        awt_XKBDescPtr = XlibWrapper.XkbGetMap(getDisplay(),
+                                                     XConstants.XkbKeyTypesMask    |
+                                                     XConstants.XkbKeySymsMask     |
+                                                     XConstants.XkbModifierMapMask |
+                                                     XConstants.XkbVirtualModsMask,
+                                                     XConstants.XkbUseCoreKbd);
+                    }
+                }
+            }
+            return awt_UseXKB;
+        } finally {
+            awtUnlock();
+        }
+    }
+    static boolean canUseXKBCalls() {
+        awtLock();
+        try {
+            return awt_UseXKB_Calls;
+        } finally {
+            awtUnlock();
+        }
+    }
+    static int getXKBEffectiveGroup() {
+        awtLock();
+        try {
+            return awt_XKBEffectiveGroup;
+        } finally {
+            awtUnlock();
+        }
+    }
+    static int getXKBBaseEventCode() {
+        awtLock();
+        try {
+            return awt_XKBBaseEventCode;
+        } finally {
+            awtUnlock();
+        }
+    }
+    static long getXKBKbdDesc() {
+        awtLock();
+        try {
+            return awt_XKBDescPtr;
+        } finally {
+            awtUnlock();
+        }
+    }
+    void freeXKB() {
+        awtLock();
+        try {
+            if (awt_UseXKB_Calls && awt_XKBDescPtr != 0) {
+                XlibWrapper.XkbFreeKeyboard(awt_XKBDescPtr, 0xFF, true);
+            }
+        } finally {
+            awtUnlock();
+        }
+    }
+    private void processXkbChanges(XEvent ev) {
+        // mapping change --> refresh kbd map
+        // state change --> get a new effective group; do I really need it
+        //  or that should be left for XkbTranslateKeyCode?
+        XkbEvent xke = new XkbEvent( ev.getPData() );
+        int xkb_type = xke.get_any().get_xkb_type();
+        switch( xkb_type ) {
+            case XConstants.XkbNewKeyboardNotify :
+                 if( awt_XKBDescPtr != 0 ) {
+                     freeXKB();
+                 }
+                 awt_XKBDescPtr = XlibWrapper.XkbGetMap(getDisplay(),
+                                              XConstants.XkbKeyTypesMask    |
+                                              XConstants.XkbKeySymsMask     |
+                                              XConstants.XkbModifierMapMask |
+                                              XConstants.XkbVirtualModsMask,
+                                              XConstants.XkbUseCoreKbd);
+                 //System.out.println("XkbNewKeyboard:"+(xke.get_new_kbd()));
+                 break;
+            case XConstants.XkbMapNotify :
+                 //TODO: provide a simple unit test.
+                 XlibWrapper.XkbGetUpdatedMap(getDisplay(),
+                                              XConstants.XkbKeyTypesMask    |
+                                              XConstants.XkbKeySymsMask     |
+                                              XConstants.XkbModifierMapMask |
+                                              XConstants.XkbVirtualModsMask,
+                                              awt_XKBDescPtr);
+                 //System.out.println("XkbMap:"+(xke.get_map()));
+                 break;
+            case XConstants.XkbStateNotify :
+                 // May use it later e.g. to obtain an effective group etc.
+                 //System.out.println("XkbState:"+(xke.get_state()));
+                 break;
+            default:
+                 //System.out.println("XkbEvent of xkb_type "+xkb_type);
+                 break;
         }
     }
 
@@ -2272,5 +2402,45 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
 
     public boolean areExtraMouseButtonsEnabled() throws HeadlessException {
         return areExtraMouseButtonsEnabled;
+    }
+
+    @Override
+    public boolean isWindowOpacitySupported() {
+        XNETProtocol net_protocol = XWM.getWM().getNETProtocol();
+
+        if (net_protocol == null) {
+            return false;
+        }
+
+        return net_protocol.doOpacityProtocol();
+    }
+
+    @Override
+    public boolean isWindowShapingSupported() {
+        return XlibUtil.isShapingSupported();
+    }
+
+    @Override
+    public boolean isWindowTranslucencySupported() {
+        //NOTE: it may not be supported. The actual check is being performed
+        //      at com.sun.awt.AWTUtilities(). In X11 we need to check
+        //      whether there's any translucency-capable GC available.
+        return true;
+    }
+
+    @Override
+    public boolean isTranslucencyCapable(GraphicsConfiguration gc) {
+        if (!(gc instanceof X11GraphicsConfig)) {
+            return false;
+        }
+        return ((X11GraphicsConfig)gc).isTranslucencyCapable();
+    }
+
+    /**
+     * Returns the value of "sun.awt.disablegrab" property. Default
+     * value is {@code false}.
+     */
+    public static boolean getSunAwtDisableGrab() {
+        return AccessController.doPrivileged(new GetBooleanAction("sun.awt.disablegrab"));
     }
 }

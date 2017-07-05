@@ -2885,7 +2885,8 @@ LRESULT CALLBACK PageDialogWndProc(HWND hWnd, UINT message,
         }
     }
 
-    return ComCtl32Util::GetInstance().DefWindowProc(NULL, hWnd, message, wParam, lParam);
+    WNDPROC lpfnWndProc = (WNDPROC)(::GetProp(hWnd, NativeDialogWndProcProp));
+    return ComCtl32Util::GetInstance().DefWindowProc(lpfnWndProc, hWnd, message, wParam, lParam);
 }
 
 /**
@@ -2919,16 +2920,19 @@ static UINT CALLBACK pageDlgHook(HWND hDlg, UINT msg,
             }
 
             // subclass dialog's parent to receive additional messages
-            ComCtl32Util::GetInstance().SubclassHWND(hDlg,
-                                                     PageDialogWndProc);
+            WNDPROC lpfnWndProc = ComCtl32Util::GetInstance().SubclassHWND(hDlg,
+                                                                           PageDialogWndProc);
+            ::SetProp(hDlg, NativeDialogWndProcProp, reinterpret_cast<HANDLE>(lpfnWndProc));
 
             break;
         }
         case WM_DESTROY: {
+            WNDPROC lpfnWndProc = (WNDPROC)(::GetProp(hDlg, NativeDialogWndProcProp));
             ComCtl32Util::GetInstance().UnsubclassHWND(hDlg,
                                                        PageDialogWndProc,
-                                                       NULL);
+                                                       lpfnWndProc);
             ::RemoveProp(hDlg, ModalDialogPeerProp);
+            ::RemoveProp(hDlg, NativeDialogWndProcProp);
             break;
         }
     }

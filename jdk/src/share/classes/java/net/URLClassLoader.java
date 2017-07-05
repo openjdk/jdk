@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,10 +74,10 @@ import sun.security.util.SecurityConstants;
  */
 public class URLClassLoader extends SecureClassLoader implements Closeable {
     /* The search path for classes and resources */
-    URLClassPath ucp;
+    private final URLClassPath ucp;
 
     /* The context to be used when loading classes and resources */
-    private AccessControlContext acc;
+    private final AccessControlContext acc;
 
     /**
      * Constructs a new URLClassLoader for the given URLs. The URLs will be
@@ -105,7 +105,19 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
             security.checkCreateClassLoader();
         }
         ucp = new URLClassPath(urls);
-        acc = AccessController.getContext();
+        this.acc = AccessController.getContext();
+    }
+
+    URLClassLoader(URL[] urls, ClassLoader parent,
+                   AccessControlContext acc) {
+        super(parent);
+        // this is to make the stack depth consistent with 1.1
+        SecurityManager security = System.getSecurityManager();
+        if (security != null) {
+            security.checkCreateClassLoader();
+        }
+        ucp = new URLClassPath(urls);
+        this.acc = acc;
     }
 
     /**
@@ -136,7 +148,18 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
             security.checkCreateClassLoader();
         }
         ucp = new URLClassPath(urls);
-        acc = AccessController.getContext();
+        this.acc = AccessController.getContext();
+    }
+
+    URLClassLoader(URL[] urls, AccessControlContext acc) {
+        super();
+        // this is to make the stack depth consistent with 1.1
+        SecurityManager security = System.getSecurityManager();
+        if (security != null) {
+            security.checkCreateClassLoader();
+        }
+        ucp = new URLClassPath(urls);
+        this.acc = acc;
     }
 
     /**
@@ -599,17 +622,14 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
     public static URLClassLoader newInstance(final URL[] urls,
                                              final ClassLoader parent) {
         // Save the caller's context
-        AccessControlContext acc = AccessController.getContext();
+        final AccessControlContext acc = AccessController.getContext();
         // Need a privileged block to create the class loader
         URLClassLoader ucl = AccessController.doPrivileged(
             new PrivilegedAction<URLClassLoader>() {
                 public URLClassLoader run() {
-                    return new FactoryURLClassLoader(urls, parent);
+                    return new FactoryURLClassLoader(urls, parent, acc);
                 }
             });
-        // Now set the context on the loader using the one we saved,
-        // not the one inside the privileged block...
-        ucl.acc = acc;
         return ucl;
     }
 
@@ -626,18 +646,14 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
      */
     public static URLClassLoader newInstance(final URL[] urls) {
         // Save the caller's context
-        AccessControlContext acc = AccessController.getContext();
+        final AccessControlContext acc = AccessController.getContext();
         // Need a privileged block to create the class loader
         URLClassLoader ucl = AccessController.doPrivileged(
             new PrivilegedAction<URLClassLoader>() {
                 public URLClassLoader run() {
-                    return new FactoryURLClassLoader(urls);
+                    return new FactoryURLClassLoader(urls, acc);
                 }
             });
-
-        // Now set the context on the loader using the one we saved,
-        // not the one inside the privileged block...
-        ucl.acc = acc;
         return ucl;
     }
 
@@ -649,20 +665,26 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
                 }
             }
         );
+        ClassLoader.registerAsParallelCapable();
     }
 }
 
 final class FactoryURLClassLoader extends URLClassLoader {
 
-    FactoryURLClassLoader(URL[] urls, ClassLoader parent) {
-        super(urls, parent);
+    static {
+        ClassLoader.registerAsParallelCapable();
     }
 
-    FactoryURLClassLoader(URL[] urls) {
-        super(urls);
+    FactoryURLClassLoader(URL[] urls, ClassLoader parent,
+                          AccessControlContext acc) {
+        super(urls, parent, acc);
     }
 
-    public final synchronized Class loadClass(String name, boolean resolve)
+    FactoryURLClassLoader(URL[] urls, AccessControlContext acc) {
+        super(urls, acc);
+    }
+
+    public final Class loadClass(String name, boolean resolve)
         throws ClassNotFoundException
     {
         // First check if we have permission to access the package. This

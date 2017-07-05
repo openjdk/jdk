@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@
  */
 
 tojava /*
-tojava  * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
+tojava  * Copyright 2005-2009 Sun Microsystems, Inc.  All Rights Reserved.
 tojava  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 tojava  *
 tojava  * This code is free software; you can redistribute it and/or modify it
@@ -127,13 +127,46 @@ tojava
 tojava         Character ch = keysym2UCSHash.get(ks);
 tojava         return ch == null ? (char)0 : ch.charValue();
 tojava     }
-tojava     static long xkeycode2keysym(XKeyEvent ev, int ndx) {
+tojava     static long xkeycode2keysym_noxkb(XKeyEvent ev, int ndx) {
 tojava         XToolkit.awtLock();
 tojava         try {
-tojava             return XlibWrapper.XKeycodeToKeysym(ev.get_display(), ev.get_keycode(), ndx );
+tojava             return XlibWrapper.XKeycodeToKeysym(ev.get_display(), ev.get_keycode(), ndx);
 tojava         } finally {
 tojava             XToolkit.awtUnlock();
 tojava         }
+tojava     }
+tojava     static long xkeycode2keysym_xkb(XKeyEvent ev, int ndx) {
+tojava         XToolkit.awtLock();
+tojava         try {
+tojava             int mods = ev.get_state();
+tojava             if ((ndx == 0) && ((mods & XConstants.ShiftMask) != 0)) {
+tojava                 // I don't know all possible meanings of 'ndx' in case of XKB
+tojava                 // and don't want to speculate. But this particular case
+tojava                 // clearly means that caller needs a so called primary keysym.
+tojava                 mods ^= XConstants.ShiftMask;
+tojava             }
+tojava             XlibWrapper.XkbTranslateKeyCode(XToolkit.getXKBKbdDesc(), ev.get_keycode(),
+tojava                        mods, XlibWrapper.iarg1, XlibWrapper.larg3);
+tojava             //XXX unconsumed modifiers?
+tojava             return Native.getLong(XlibWrapper.larg3);
+tojava         } finally {
+tojava             XToolkit.awtUnlock();
+tojava         }
+tojava     }
+tojava     static long xkeycode2keysym(XKeyEvent ev, int ndx) {
+tojava         XToolkit.awtLock();
+tojava         try {
+tojava             if (XToolkit.canUseXKBCalls()) {
+tojava                 return xkeycode2keysym_xkb(ev, ndx);
+tojava             }else{
+tojava                 return xkeycode2keysym_noxkb(ev, ndx);
+tojava             }
+tojava         } finally {
+tojava             XToolkit.awtUnlock();
+tojava         }
+tojava     }
+tojava     static long xkeycode2primary_keysym(XKeyEvent ev) {
+tojava         return xkeycode2keysym(ev, 0);
 tojava     }
 tojava     public static boolean isKPEvent( XKeyEvent ev )
 tojava     {
@@ -234,6 +267,27 @@ tojava         return jkc;
 tojava     }
 tojava     static int getJavaKeycodeOnly( XKeyEvent ev ) {
 tojava         Keysym2JavaKeycode jkc = getJavaKeycode( ev );
+tojava         return jkc == null ? java.awt.event.KeyEvent.VK_UNDEFINED : jkc.getJavaKeycode();
+tojava     }
+tojava     /**
+tojava      * Return an integer java keycode apprx as it was before extending keycodes range.
+tojava      * This call would ignore for instance XKB and process whatever is on the bottom
+tojava      * of keysym stack. Result will not depend on actual locale, will differ between
+tojava      * dual/multiple keyboard setup systems (e.g. English+Russian vs French+Russian)
+tojava      * but will be someway compatible with old releases.
+tojava      */
+tojava     static int getLegacyJavaKeycodeOnly( XKeyEvent ev ) {
+tojava         long keysym = XConstants.NoSymbol;
+tojava         int ndx = 0;
+tojava         if( (ev.get_state() & XToolkit.numLockMask) != 0 &&
+tojava              isKPEvent(ev)) {
+tojava             keysym = getKeypadKeysym( ev );
+tojava         } else {
+tojava             // we only need primary-layer keysym to derive a java keycode.
+tojava             ndx = 0;
+tojava             keysym = xkeycode2keysym_noxkb(ev, ndx);
+tojava         }
+tojava         Keysym2JavaKeycode jkc = keysym2JavaKeycodeHash.get( keysym );
 tojava         return jkc == null ? java.awt.event.KeyEvent.VK_UNDEFINED : jkc.getJavaKeycode();
 tojava     }
 tojava     static long javaKeycode2Keysym( int jkey ) {
