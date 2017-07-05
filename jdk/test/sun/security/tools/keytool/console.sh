@@ -1,5 +1,3 @@
-#! /bin/sh
-
 #
 # Copyright (c) 2006, 2008, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -24,10 +22,11 @@
 #
 
 # @test
-# @bug 6418647
+# @bug 6418647 8005527
 # @summary Doc bug 5035358 shows sun.security.util.Password.readPassword() is buggy.
 # @author Weijun Wang
-#
+# @ignore unable to test manual tools that have input from stdin,
+#               and output to stderr and stdout
 # @run shell/manual console.sh
 
 if [ "$ALT_PASS" = "" ]; then

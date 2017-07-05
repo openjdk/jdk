@@ -37,6 +37,7 @@
     <location>${root}/src/closed/share/classes</location>
     <includes>${includes}</includes>
     <excludes>${excludes}</excludes>
+    <encoding>US-ASCII</encoding>
 </source-folder>
 <source-folder>
     <label>Closed-Source Packages</label>

@@ -32,6 +32,7 @@ import java.awt.peer.WindowPeer;
 import java.beans.*;
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
+import java.util.Objects;
 
 import javax.swing.*;
 
@@ -916,9 +917,12 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
 
         final Rectangle oldB = nativeBounds;
         nativeBounds = new Rectangle(x, y, width, height);
+        final GraphicsConfiguration oldGC = peer.getGraphicsConfiguration();
         peer.notifyReshape(x, y, width, height);
+        final GraphicsConfiguration newGC = peer.getGraphicsConfiguration();
+        // System-dependent appearance optimization.
         if ((byUser && !oldB.getSize().equals(nativeBounds.getSize()))
-            || isFullScreenAnimationOn) {
+            || isFullScreenAnimationOn || !Objects.equals(newGC, oldGC)) {
             flushBuffers();
         }
     }

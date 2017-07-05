@@ -32,13 +32,15 @@ import static jdk.nashorn.internal.codegen.ObjectClassGenerator.DEBUG_FIELDS;
 
 import jdk.nashorn.internal.codegen.ObjectClassGenerator;
 import jdk.nashorn.internal.codegen.types.Type;
+import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.runtime.Source;
 
 /**
  * IR representation for an identifier.
  */
-public class IdentNode extends Node implements PropertyKey, TypeOverride<IdentNode>, FunctionCall {
+@Immutable
+public final class IdentNode extends Node implements PropertyKey, TypeOverride<IdentNode>, FunctionCall {
     private static final int PROPERTY_NAME    = 1 << 0;
     private static final int INITIALIZED_HERE = 1 << 1;
     private static final int FUNCTION         = 1 << 2;
@@ -47,9 +49,9 @@ public class IdentNode extends Node implements PropertyKey, TypeOverride<IdentNo
     private final String name;
 
     /** Type for a callsite, e.g. X in a get()X or a set(X)V */
-    private Type callSiteType;
+    private final Type callSiteType;
 
-    private byte flags;
+    private final int flags;
 
     /**
      * Constructor
@@ -62,6 +64,15 @@ public class IdentNode extends Node implements PropertyKey, TypeOverride<IdentNo
     public IdentNode(final Source source, final long token, final int finish, final String name) {
         super(source, token, finish);
         this.name = name;
+        this.callSiteType = null;
+        this.flags = 0;
+    }
+
+    private IdentNode(final IdentNode identNode, final String name, final Type callSiteType, final int flags) {
+        super(identNode);
+        this.name = name;
+        this.callSiteType = callSiteType;
+        this.flags = flags;
     }
 
     /**
@@ -71,8 +82,9 @@ public class IdentNode extends Node implements PropertyKey, TypeOverride<IdentNo
      */
     public IdentNode(final IdentNode identNode) {
         super(identNode);
-        this.name  = identNode.getName();
-        this.flags = identNode.flags;
+        this.name         = identNode.getName();
+        this.callSiteType = null;
+        this.flags        = identNode.flags;
     }
 
     @Override
@@ -92,40 +104,15 @@ public class IdentNode extends Node implements PropertyKey, TypeOverride<IdentNo
 
     @Override
     public IdentNode setType(final Type type) {
-        if (DEBUG_FIELDS && getSymbol() != null && !Type.areEquivalent(getSymbol().getSymbolType(), type)) {
-            ObjectClassGenerator.LOG.info(getClass().getName() + " " + this + " => " + type + " instead of " + getType());
-        }
         // do NOT, repeat NOT touch the symbol here. it might be a local variable or whatever. This is the override if it isn't
-        if(this.callSiteType == type) {
+        if (this.callSiteType == type) {
             return this;
         }
-        final IdentNode n = (IdentNode)clone();
-        n.callSiteType = type;
-        return n;
-    }
-
-    @Override
-    protected Node copy(final CopyState cs) {
-        return new IdentNode(this);
-    }
-
-    /**
-     * Test to see if two IdentNode are the same.
-     *
-     * @param other Other ident.
-     * @return true if the idents are the same.
-     */
-    @Override
-    public boolean equals(final Object other) {
-        if (other instanceof IdentNode) {
-            return name.equals(((IdentNode)other).name);
+        if (DEBUG_FIELDS && getSymbol() != null && !Type.areEquivalent(getSymbol().getSymbolType(), type)) {
+            ObjectClassGenerator.LOG.info(getClass().getName(), " ", this, " => ", type, " instead of ", getType());
         }
-        return false;
-    }
 
-    @Override
-    public int hashCode() {
-        return name.hashCode();
+        return new IdentNode(this, name, type, flags);
     }
 
     /**
@@ -135,7 +122,7 @@ public class IdentNode extends Node implements PropertyKey, TypeOverride<IdentNo
      */
     @Override
     public Node accept(final NodeVisitor visitor) {
-        if (visitor.enterIdentNode(this) != null) {
+        if (visitor.enterIdentNode(this)) {
             return visitor.leaveIdentNode(this);
         }
 
@@ -147,7 +134,7 @@ public class IdentNode extends Node implements PropertyKey, TypeOverride<IdentNo
         if (hasCallSiteType()) {
             sb.append('{');
             final String desc = getType().getDescriptor();
-            sb.append(desc.charAt(desc.length() - 1) == ';' ? "O" : getType().getDescriptor());
+            sb.append(desc.charAt(desc.length() - 1) == ';' ? 'O' : getType().getDescriptor());
             sb.append('}');
         }
 
@@ -191,10 +178,10 @@ public class IdentNode extends Node implements PropertyKey, TypeOverride<IdentNo
      * @return a node equivalent to this one except for the requested change.
      */
     public IdentNode setIsPropertyName() {
-        if(isPropertyName()) return this;
-        final IdentNode n = (IdentNode)clone();
-        n.flags |= PROPERTY_NAME;
-        return n;
+        if (isPropertyName()) {
+            return this;
+        }
+        return new IdentNode(this, name, callSiteType, flags | PROPERTY_NAME);
     }
 
     /**
@@ -210,10 +197,10 @@ public class IdentNode extends Node implements PropertyKey, TypeOverride<IdentNo
      * @return a node equivalent to this one except for the requested change.
      */
     public IdentNode setIsInitializedHere() {
-        if(isInitializedHere()) return this;
-        final IdentNode n = (IdentNode)clone();
-        n.flags |= INITIALIZED_HERE;
-        return n;
+        if (isInitializedHere()) {
+            return this;
+        }
+        return new IdentNode(this, name, callSiteType, flags | INITIALIZED_HERE);
     }
 
     /**
@@ -223,7 +210,7 @@ public class IdentNode extends Node implements PropertyKey, TypeOverride<IdentNo
      * @return true if this IdentNode is special
      */
     public boolean isSpecialIdentity() {
-        return name.equals(__DIR__.tag()) || name.equals(__FILE__.tag()) || name.equals(__LINE__.tag());
+        return name.equals(__DIR__.symbolName()) || name.equals(__FILE__.symbolName()) || name.equals(__LINE__.symbolName());
     }
 
     @Override
@@ -236,9 +223,9 @@ public class IdentNode extends Node implements PropertyKey, TypeOverride<IdentNo
      * @return an ident node identical to this one in all aspects except with its function flag set.
      */
     public IdentNode setIsFunction() {
-        if(isFunction()) return this;
-        final IdentNode n = (IdentNode)clone();
-        n.flags |= FUNCTION;
-        return n;
+        if (isFunction()) {
+            return this;
+        }
+        return new IdentNode(this, name, callSiteType, flags | FUNCTION);
     }
 }

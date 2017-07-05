@@ -178,7 +178,7 @@ public class FXShell extends Application {
      *
      * @param path Path to UTF-8 encoded JavaScript file.
      *
-     * @return Last evalulation result (discarded.)
+     * @return Last evaluation result (discarded.)
      */
     private Object load(String path) {
         try {

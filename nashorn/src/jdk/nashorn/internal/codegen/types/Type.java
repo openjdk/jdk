@@ -616,6 +616,12 @@ public abstract class Type implements Comparable<Type>, BytecodeOps {
         return this;
     }
 
+    @Override
+    public Type loadEmpty(final MethodVisitor method) {
+        assert false : "unsupported operation";
+        return null;
+    }
+
     /**
      * Superclass logic for pop for all types
      *
@@ -663,7 +669,6 @@ public abstract class Type implements Comparable<Type>, BytecodeOps {
                 method.visitInsn(SWAP);
             }
         }
-
     }
 
     /**
@@ -836,12 +841,6 @@ public abstract class Type implements Comparable<Type>, BytecodeOps {
 
         @Override
         public Type loadUndefined(final MethodVisitor method) {
-            assert false : "unsupported operation";
-            return null;
-        }
-
-        @Override
-        public Type loadEmpty(final MethodVisitor method) {
             assert false : "unsupported operation";
             return null;
         }

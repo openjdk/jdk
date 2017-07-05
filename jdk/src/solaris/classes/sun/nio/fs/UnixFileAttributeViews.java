@@ -73,6 +73,8 @@ class UnixFileAttributeViews {
 
             int fd = file.openForAttributeAccess(followLinks);
             try {
+                // assert followLinks || !UnixFileAttributes.get(fd).isSymbolicLink();
+
                 // if not changing both attributes then need existing attributes
                 if (lastModifiedTime == null || lastAccessTime == null) {
                     try {
@@ -92,9 +94,13 @@ class UnixFileAttributeViews {
 
                 boolean retry = false;
                 try {
-                    futimes(fd, accessValue, modValue);
+                    if (futimesSupported()) {
+                        futimes(fd, accessValue, modValue);
+                    } else {
+                        utimes(file, accessValue, modValue);
+                    }
                 } catch (UnixException x) {
-                    // if futimes fails with EINVAL and one/both of the times is
+                    // if futimes/utimes fails with EINVAL and one/both of the times is
                     // negative then we adjust the value to the epoch and retry.
                     if (x.errno() == UnixConstants.EINVAL &&
                         (modValue < 0L || accessValue < 0L)) {
@@ -107,7 +113,11 @@ class UnixFileAttributeViews {
                     if (modValue < 0L) modValue = 0L;
                     if (accessValue < 0L) accessValue= 0L;
                     try {
-                        futimes(fd, accessValue, modValue);
+                        if (futimesSupported()) {
+                            futimes(fd, accessValue, modValue);
+                        } else {
+                            utimes(file, accessValue, modValue);
+                        }
                     } catch (UnixException x) {
                         x.rethrowAsIOException(file);
                     }

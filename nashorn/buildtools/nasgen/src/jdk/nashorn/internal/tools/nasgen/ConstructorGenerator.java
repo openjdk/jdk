@@ -38,7 +38,6 @@ import static jdk.nashorn.internal.tools.nasgen.StringConstants.MAP_DUPLICATE_DE
 import static jdk.nashorn.internal.tools.nasgen.StringConstants.MAP_FIELD_NAME;
 import static jdk.nashorn.internal.tools.nasgen.StringConstants.MAP_TYPE;
 import static jdk.nashorn.internal.tools.nasgen.StringConstants.OBJECT_DESC;
-import static jdk.nashorn.internal.tools.nasgen.StringConstants.PROTOTYPE;
 import static jdk.nashorn.internal.tools.nasgen.StringConstants.PROTOTYPEOBJECT_SETCONSTRUCTOR;
 import static jdk.nashorn.internal.tools.nasgen.StringConstants.PROTOTYPEOBJECT_SETCONSTRUCTOR_DESC;
 import static jdk.nashorn.internal.tools.nasgen.StringConstants.PROTOTYPEOBJECT_TYPE;
@@ -47,6 +46,8 @@ import static jdk.nashorn.internal.tools.nasgen.StringConstants.SCRIPTFUNCTIONIM
 import static jdk.nashorn.internal.tools.nasgen.StringConstants.SCRIPTFUNCTIONIMPL_TYPE;
 import static jdk.nashorn.internal.tools.nasgen.StringConstants.SCRIPTFUNCTION_SETARITY;
 import static jdk.nashorn.internal.tools.nasgen.StringConstants.SCRIPTFUNCTION_SETARITY_DESC;
+import static jdk.nashorn.internal.tools.nasgen.StringConstants.SCRIPTFUNCTION_SETPROTOTYPE;
+import static jdk.nashorn.internal.tools.nasgen.StringConstants.SCRIPTFUNCTION_SETPROTOTYPE_DESC;
 import static jdk.nashorn.internal.tools.nasgen.StringConstants.SCRIPTFUNCTION_TYPE;
 import static jdk.nashorn.internal.tools.nasgen.StringConstants.SCRIPTOBJECT_INIT_DESC;
 import static jdk.nashorn.internal.tools.nasgen.StringConstants.SCRIPTOBJECT_TYPE;
@@ -238,7 +239,7 @@ public class ConstructorGenerator extends ClassGenerator {
             mi.loadThis();
             mi.invokeStatic(PROTOTYPEOBJECT_TYPE, PROTOTYPEOBJECT_SETCONSTRUCTOR,
                     PROTOTYPEOBJECT_SETCONSTRUCTOR_DESC);
-            mi.putField(SCRIPTFUNCTION_TYPE, PROTOTYPE, OBJECT_DESC);
+            mi.invokeVirtual(SCRIPTFUNCTION_TYPE, SCRIPTFUNCTION_SETPROTOTYPE, SCRIPTFUNCTION_SETPROTOTYPE_DESC);
         }
     }
 

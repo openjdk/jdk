@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -203,6 +203,12 @@ class Inet6Address extends InetAddress {
      */
     private transient NetworkInterface scope_ifname;  // null
 
+    /**
+     * set if the object is constructed with a scoped
+     * interface instead of a numeric scope id.
+     */
+    private boolean scope_ifname_set; // false;
+
     private static final long serialVersionUID = 6880410070516793377L;
 
     // Perform native initialization
@@ -332,7 +338,7 @@ class Inet6Address extends InetAddress {
         }
     }
 
-    private void initif(String hostName, byte addr[],NetworkInterface nif)
+    private void initif(String hostName, byte addr[], NetworkInterface nif)
         throws UnknownHostException
     {
         holder().hostName = hostName;
@@ -344,6 +350,7 @@ class Inet6Address extends InetAddress {
             scope_ifname = nif;
             scope_id = deriveNumericScope(nif);
             scope_id_set = true;
+            scope_ifname_set = true;  // for consistency
         }
     }
 
@@ -431,6 +438,7 @@ class Inet6Address extends InetAddress {
             try {
                 scope_ifname = NetworkInterface.getByName(ifname);
                 if (scope_ifname != null) {
+                    scope_ifname_set = true;
                     try {
                         scope_id = deriveNumericScope(scope_ifname);
                     } catch (UnknownHostException e) {
@@ -438,6 +446,12 @@ class Inet6Address extends InetAddress {
                         // the machine being used for deserialization has
                         // the same interface name but without IPv6 configured.
                     }
+                } else {
+                    /* the interface does not exist on this system, so we clear
+                     * the scope information completely */
+                    scope_id_set = false;
+                    scope_ifname_set = false;
+                    scope_id = 0;
                 }
             } catch (SocketException e) {}
 
@@ -784,8 +798,10 @@ class Inet6Address extends InetAddress {
     private synchronized void writeObject(java.io.ObjectOutputStream s)
         throws IOException
     {
-        if (scope_ifname != null)
+        if (scope_ifname != null) {
             ifname = scope_ifname.getName();
+            scope_ifname_set = true;
+        }
         s.defaultWriteObject();
     }
 }

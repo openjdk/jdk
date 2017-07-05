@@ -57,7 +57,7 @@ final class FoldConstants extends NodeVisitor {
     public Node leaveUnaryNode(final UnaryNode unaryNode) {
         final LiteralNode<?> literalNode = new UnaryNodeConstantEvaluator(unaryNode).eval();
         if (literalNode != null) {
-            LOG.info("Unary constant folded " + unaryNode + " to " + literalNode);
+            LOG.info("Unary constant folded ", unaryNode, " to ", literalNode);
             return literalNode;
         }
         return unaryNode;
@@ -67,24 +67,20 @@ final class FoldConstants extends NodeVisitor {
     public Node leaveBinaryNode(final BinaryNode binaryNode) {
         final LiteralNode<?> literalNode = new BinaryNodeConstantEvaluator(binaryNode).eval();
         if (literalNode != null) {
-            LOG.info("Binary constant folded " + binaryNode + " to " + literalNode);
+            LOG.info("Binary constant folded ", binaryNode, " to ", literalNode);
             return literalNode;
         }
         return binaryNode;
     }
 
     @Override
-    public Node enterFunctionNode(final FunctionNode functionNode) {
-        if (functionNode.isLazy()) {
-            return null;
-        }
-        return functionNode;
+    public boolean enterFunctionNode(final FunctionNode functionNode) {
+        return !functionNode.isLazy();
     }
 
     @Override
     public Node leaveFunctionNode(final FunctionNode functionNode) {
-        functionNode.setState(CompilationState.CONSTANT_FOLDED);
-        return functionNode;
+        return functionNode.setState(getLexicalContext(), CompilationState.CONSTANT_FOLDED);
     }
 
     @Override
@@ -251,7 +247,7 @@ final class FoldConstants extends NodeVisitor {
                 value = lhs.getNumber() - rhs.getNumber();
                 break;
             case SHR:
-                return LiteralNode.newInstance(source, token, finish, (lhs.getInt32() >>> rhs.getInt32()) & 0xffff_ffffL);
+                return LiteralNode.newInstance(source, token, finish, (lhs.getInt32() >>> rhs.getInt32()) & JSType.MAX_UINT);
             case SAR:
                 return LiteralNode.newInstance(source, token, finish, lhs.getInt32() >> rhs.getInt32());
             case SHL:

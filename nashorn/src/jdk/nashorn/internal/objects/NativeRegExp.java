@@ -523,24 +523,45 @@ public final class NativeRegExp extends ScriptObject {
     }
 
     private RegExpResult execInner(final String string) {
+        final boolean isGlobal = regexp.isGlobal();
         int start = getLastIndex();
-        if (! regexp.isGlobal()) {
+        if (!isGlobal) {
             start = 0;
         }
 
         if (start < 0 || start > string.length()) {
-            setLastIndex(0);
+            if (isGlobal) {
+                setLastIndex(0);
+            }
             return null;
         }
 
         final RegExpMatcher matcher = regexp.match(string);
         if (matcher == null || !matcher.search(start)) {
-            setLastIndex(0);
+            if (isGlobal) {
+                setLastIndex(0);
+            }
             return null;
         }
 
-        if (regexp.isGlobal()) {
+        if (isGlobal) {
             setLastIndex(matcher.end());
+        }
+
+        final RegExpResult match = new RegExpResult(string, matcher.start(), groups(matcher));
+        globalObject.setLastRegExpResult(match);
+        return match;
+    }
+
+    // String.prototype.split method ignores the global flag and should not update lastIndex property.
+    private RegExpResult execSplit(final String string, int start) {
+        if (start < 0 || start > string.length()) {
+            return null;
+        }
+
+        final RegExpMatcher matcher = regexp.match(string);
+        if (matcher == null || !matcher.search(start)) {
+            return null;
         }
 
         final RegExpResult match = new RegExpResult(string, matcher.start(), groups(matcher));
@@ -600,7 +621,7 @@ public final class NativeRegExp extends ScriptObject {
      * @return True if a match is found.
      */
     public Object test(final String string) {
-        return exec(string) != null;
+        return execInner(string) != null;
     }
 
     /**
@@ -765,35 +786,31 @@ public final class NativeRegExp extends ScriptObject {
      * @return Array of substrings.
      */
     Object split(final String string, final long limit) {
-        return split(this, string, limit);
-    }
-
-    private static Object split(final NativeRegExp regexp0, final String input, final long limit) {
-        final List<Object> matches = new ArrayList<>();
-
-        final NativeRegExp regexp = new NativeRegExp(regexp0);
-        regexp.setGlobal(true);
-
         if (limit == 0L) {
             return new NativeArray();
         }
 
+        final List<Object> matches = new ArrayList<>();
+
         RegExpResult match;
-        final int inputLength = input.length();
+        final int inputLength = string.length();
         int lastLength = -1;
+        int lastIndex = 0;
         int lastLastIndex = 0;
 
-        while ((match = regexp.execInner(input)) != null) {
-            final int lastIndex = match.getIndex() + match.length();
+        while ((match = execSplit(string, lastIndex)) != null) {
+            lastIndex = match.getIndex() + match.length();
 
             if (lastIndex > lastLastIndex) {
-                matches.add(input.substring(lastLastIndex, match.getIndex()));
-                if (match.getGroups().length > 1 && match.getIndex() < inputLength) {
-                    matches.addAll(Arrays.asList(match.getGroups()).subList(1, match.getGroups().length));
+                matches.add(string.substring(lastLastIndex, match.getIndex()));
+                final Object[] groups = match.getGroups();
+                if (groups.length > 1 && match.getIndex() < inputLength) {
+                    for (int index = 1; index < groups.length && matches.size() < limit; index++) {
+                        matches.add(groups[index]);
+                    }
                 }
 
                 lastLength = match.length();
-                lastLastIndex = lastIndex;
 
                 if (matches.size() >= limit) {
                     break;
@@ -801,8 +818,10 @@ public final class NativeRegExp extends ScriptObject {
             }
 
             // bump the index to avoid infinite loop
-            if (regexp.getLastIndex() == match.getIndex()) {
-                regexp.setLastIndex(match.getIndex() + 1);
+            if (lastIndex == lastLastIndex) {
+                lastIndex++;
+            } else {
+                lastLastIndex = lastIndex;
             }
         }
 
@@ -810,12 +829,12 @@ public final class NativeRegExp extends ScriptObject {
             // check special case if we need to append an empty string at the
             // end of the match
             // if the lastIndex was the entire string
-            if (lastLastIndex == input.length()) {
-                if (lastLength > 0 || regexp.test("") == Boolean.FALSE) {
+            if (lastLastIndex == string.length()) {
+                if (lastLength > 0 || execSplit("", 0) == null) {
                     matches.add("");
                 }
             } else {
-                matches.add(input.substring(lastLastIndex, inputLength));
+                matches.add(string.substring(lastLastIndex, inputLength));
             }
         }
 

@@ -251,3 +251,11 @@ bool os::has_allocatable_memory_limit(julong* limit) {
   return true;
 #endif
 }
+
+const char* os::get_current_directory(char *buf, size_t buflen) {
+  return getcwd(buf, buflen);
+}
+
+FILE* os::open(int fd, const char* mode) {
+  return ::fdopen(fd, mode);
+}

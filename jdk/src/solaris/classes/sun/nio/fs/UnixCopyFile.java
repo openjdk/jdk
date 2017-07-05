@@ -189,7 +189,7 @@ class UnixCopyFile {
             // copy time stamps last
             if (flags.copyBasicAttributes) {
                 try {
-                    if (dfd >= 0) {
+                    if (dfd >= 0 && futimesSupported()) {
                         futimes(dfd,
                                 attrs.lastAccessTime().to(TimeUnit.MICROSECONDS),
                                 attrs.lastModifiedTime().to(TimeUnit.MICROSECONDS));
@@ -269,9 +269,15 @@ class UnixCopyFile {
                 // copy time attributes
                 if (flags.copyBasicAttributes) {
                     try {
-                        futimes(fo,
-                                attrs.lastAccessTime().to(TimeUnit.MICROSECONDS),
-                                attrs.lastModifiedTime().to(TimeUnit.MICROSECONDS));
+                        if (futimesSupported()) {
+                            futimes(fo,
+                                    attrs.lastAccessTime().to(TimeUnit.MICROSECONDS),
+                                    attrs.lastModifiedTime().to(TimeUnit.MICROSECONDS));
+                        } else {
+                            utimes(target,
+                                   attrs.lastAccessTime().to(TimeUnit.MICROSECONDS),
+                                   attrs.lastModifiedTime().to(TimeUnit.MICROSECONDS));
+                        }
                     } catch (UnixException x) {
                         if (flags.failIfUnableToCopyBasic)
                             x.rethrowAsIOException(target);

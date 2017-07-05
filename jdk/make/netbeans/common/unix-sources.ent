@@ -41,6 +41,7 @@
     <location>${root}/src/solaris/classes</location>
     <includes>${includes}</includes>
     <excludes>${excludes}</excludes>
+    <encoding>US-ASCII</encoding>
 </source-folder>
 <source-folder>
     <label>Sources for Unix® Platform</label>
