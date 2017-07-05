@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,19 @@
 
 /*
  * @test
- * @bug 4347132
+ * @bug 4347132 8136799
+ * @key randomness
+ * @library /lib/testlibrary/
+ * @build jdk.testlibrary.RandomFactory
+ * @build Tests
+ * @build FdlibmTranslit
+ * @build CubeRootTests
+ * @run main CubeRootTests
  * @summary Tests specifically for StrictMath.cbrt
  * @author Joseph D. Darcy
  */
+
+import jdk.testlibrary.RandomFactory;
 
 /**
  * The tests in ../Math/CubeRootTests.java test properties that should
@@ -41,6 +50,19 @@
 
 public class CubeRootTests {
     private CubeRootTests(){}
+
+    public static void main(String [] argv) {
+        int failures = 0;
+
+        failures += testCubeRoot();
+        failures += testAgainstTranslit();
+
+        if (failures > 0) {
+            System.err.println("Testing the cube root incurred "
+                               + failures + " failures.");
+            throw new RuntimeException();
+        }
+    }
 
     static int testCubeRootCase(double input, double expected) {
         int failures=0;
@@ -458,16 +480,44 @@ public class CubeRootTests {
         return failures;
     }
 
+    // Initialize shared random number generator
+    private static java.util.Random random = RandomFactory.getRandom();
 
-    public static void main(String [] argv) {
+    /**
+     * Test StrictMath.cbrt against transliteration port of cbrt.
+     */
+    private static int testAgainstTranslit() {
         int failures = 0;
+        double x;
 
-        failures += testCubeRoot();
+        // Test just above subnormal threshold...
+        x = Double.MIN_NORMAL;
+        failures += testRange(x, Math.ulp(x), 1000);
 
-        if (failures > 0) {
-            System.err.println("Testing the cube root incurred "
-                               + failures + " failures.");
-            throw new RuntimeException();
+        // ... and just below subnormal threshold ...
+        x =  Math.nextDown(Double.MIN_NORMAL);
+        failures += testRange(x, -Math.ulp(x), 1000);
+
+        // ... and near zero.
+        failures += testRange(0.0, Double.MIN_VALUE, 1000);
+
+        x = Tests.createRandomDouble(random);
+
+        // Make the increment twice the ulp value in case the random
+        // value is near an exponent threshold. Don't worry about test
+        // elements overflowing to infinity if the starting value is
+        // near Double.MAX_VALUE.
+        failures += testRange(x, 2.0 * Math.ulp(x), 1000);
+
+        return failures;
+    }
+
+    private static int testRange(double start, double increment, int count) {
+        int failures = 0;
+        double x = start;
+        for (int i = 0; i < count; i++, x += increment) {
+            failures += testCubeRootCase(x, FdlibmTranslit.Cbrt.compute(x));
         }
+        return failures;
     }
 }
