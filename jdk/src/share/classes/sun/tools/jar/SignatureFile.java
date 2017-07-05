@@ -47,7 +47,7 @@ import sun.security.x509.AlgorithmId;
  *
  * <p>Each entry section contains the name of an entry (which must
  * have a counterpart in the manifest). Like the manifest it contains
- * a hash, the hash of the manifest section correspondind to the
+ * a hash, the hash of the manifest section corresponding to the
  * name. Since the manifest entry contains the hash of the data, this
  * is equivalent to a signature of the data, plus the attributes of
  * the manifest entry.
@@ -66,7 +66,7 @@ public class SignatureFile {
 
     /* list of headers that all pertain to a particular file in the
      * archive */
-    private Vector entries = new Vector();
+    private Vector<MessageHeader> entries = new Vector<>();
 
     /* Right now we only support SHA hashes */
     static final String[] hashes = {"SHA"};
@@ -98,7 +98,7 @@ public class SignatureFile {
      * character in length.  */
     private SignatureFile(String name) throws JarException {
 
-        entries = new Vector();
+        entries = new Vector<>();
 
         if (name != null) {
             if (name.length() > 8 || name.indexOf('.') != -1) {
@@ -142,9 +142,9 @@ public class SignatureFile {
         this(name, true);
 
         this.manifest = manifest;
-        Enumeration enum_ = manifest.entries();
+        Enumeration<MessageHeader> enum_ = manifest.entries();
         while (enum_.hasMoreElements()) {
-            MessageHeader mh = (MessageHeader)enum_.nextElement();
+            MessageHeader mh = enum_.nextElement();
             String entryName = mh.findValue("Name");
             if (entryName != null) {
                 add(entryName);
@@ -269,9 +269,9 @@ public class SignatureFile {
      *the entry does not exist.
      */
     public MessageHeader getEntry(String name) {
-        Enumeration enum_ = entries();
+        Enumeration<MessageHeader> enum_ = entries();
         while(enum_.hasMoreElements()) {
-            MessageHeader mh = (MessageHeader)enum_.nextElement();
+            MessageHeader mh = enum_.nextElement();
             if (name.equals(mh.findValue("Name"))) {
                 return mh;
             }
@@ -282,13 +282,13 @@ public class SignatureFile {
     /**
      * Returns the n-th entry. The global header is a entry 0.  */
     public MessageHeader entryAt(int n) {
-        return (MessageHeader) entries.elementAt(n);
+        return entries.elementAt(n);
     }
 
     /**
      * Returns an enumeration of the entries.
      */
-    public Enumeration entries() {
+    public Enumeration<MessageHeader> entries() {
         return entries.elements();
     }
 
@@ -322,11 +322,11 @@ public class SignatureFile {
         }
     }
 
-    private Hashtable digests = new Hashtable();
+    private Hashtable<String, MessageDigest> digests = new Hashtable<>();
 
     private MessageDigest getDigest(String algorithm)
     throws NoSuchAlgorithmException {
-        MessageDigest dig = (MessageDigest)digests.get(algorithm);
+        MessageDigest dig = digests.get(algorithm);
         if (dig == null) {
             dig = MessageDigest.getInstance(algorithm);
             digests.put(algorithm, dig);
@@ -344,7 +344,7 @@ public class SignatureFile {
         /* the first header in the file should be the global one.
          * It should say "SignatureFile-Version: x.x"; barf if not
          */
-        MessageHeader globals = (MessageHeader) entries.elementAt(0);
+        MessageHeader globals = entries.elementAt(0);
         if (globals.findValue("Signature-Version") == null) {
             throw new JarException("Signature file requires " +
                             "Signature-Version: 1.0 in 1st header");
@@ -354,7 +354,7 @@ public class SignatureFile {
         globals.print(ps);
 
         for (int i = 1; i < entries.size(); ++i) {
-            MessageHeader mh = (MessageHeader) entries.elementAt(i);
+            MessageHeader mh = entries.elementAt(i);
             mh.print(ps);
         }
     }

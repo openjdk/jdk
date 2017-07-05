@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,9 +107,16 @@ public final class X500Principal implements Principal, java.io.Serializable {
      * defined in RFC 1779 and RFC 2253
      * (and listed in {@link #getName(String format) getName(String format)}),
      * as well as the T, DNQ or DNQUALIFIER, SURNAME, GIVENNAME, INITIALS,
-     * GENERATION, EMAILADDRESS, and SERIALNUMBER keywords whose OIDs are
-     * defined in RFC 3280 and its successor.
+     * GENERATION, EMAILADDRESS, and SERIALNUMBER keywords whose Object
+     * Identifiers (OIDs) are defined in RFC 3280 and its successor.
      * Any other attribute type must be specified as an OID.
+     *
+     * <p>This implementation enforces a more restrictive OID syntax than
+     * defined in RFC 1779 and 2253. It uses the more correct syntax defined in
+     * <a href="http://www.ietf.org/rfc/rfc4512.txt">RFC 4512</a>, which
+     * specifies that OIDs contain at least 2 digits:
+     *
+     * <p>{@code numericoid = number 1*( DOT number ) }
      *
      * @param name an X.500 distinguished name in RFC 1779 or RFC 2253 format
      * @exception NullPointerException if the <code>name</code>
@@ -135,9 +142,16 @@ public final class X500Principal implements Principal, java.io.Serializable {
      * keywords recognized by <code>X500Principal(String)</code>. Keywords
      * MUST be specified in all upper-case, otherwise they will be ignored.
      * Improperly specified keywords are ignored; however if a keyword in the
-     * name maps to an improperly specified OID, an
+     * name maps to an improperly specified Object Identifier (OID), an
      * <code>IllegalArgumentException</code> is thrown. It is permissible to
      * have 2 different keywords that map to the same OID.
+     *
+     * <p>This implementation enforces a more restrictive OID syntax than
+     * defined in RFC 1779 and 2253. It uses the more correct syntax defined in
+     * <a href="http://www.ietf.org/rfc/rfc4512.txt">RFC 4512</a>, which
+     * specifies that OIDs contain at least 2 digits:
+     *
+     * <p>{@code numericoid = number 1*( DOT number ) }
      *
      * @param name an X.500 distinguished name in RFC 1779 or RFC 2253 format
      * @param keywordMap an attribute type keyword map, where each key is a

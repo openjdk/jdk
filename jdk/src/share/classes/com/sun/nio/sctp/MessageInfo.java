@@ -94,7 +94,7 @@ public abstract class MessageInfo {
         if (streamNumber < 0 || streamNumber > 65536)
             throw new IllegalArgumentException("Invalid stream number");
 
-        return new sun.nio.ch.SctpMessageInfoImpl(null, address, streamNumber);
+        return new sun.nio.ch.sctp.MessageInfoImpl(null, address, streamNumber);
     }
     /**
      * Creates a {@code MessageInfo} instance suitable for use when
@@ -133,8 +133,8 @@ public abstract class MessageInfo {
         if (streamNumber < 0 || streamNumber > 65536)
             throw new IllegalArgumentException("Invalid stream number");
 
-        return new sun.nio.ch.SctpMessageInfoImpl(association, address,
-                streamNumber);
+        return new sun.nio.ch.sctp.MessageInfoImpl(association,
+                                                   address, streamNumber);
     }
 
     /**

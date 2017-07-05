@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -240,9 +240,6 @@ CompactingPermGenGen::CompactingPermGenGen(ReservedSpace rs,
     if (_ro_space == NULL || _rw_space == NULL)
       vm_exit_during_initialization("Could not allocate a shared space");
 
-    // Cover both shared spaces entirely with cards.
-    _rs->resize_covered_region(MemRegion(readonly_bottom, readwrite_end));
-
     if (UseSharedSpaces) {
 
       // Map in the regions in the shared file.
@@ -279,8 +276,12 @@ CompactingPermGenGen::CompactingPermGenGen(ReservedSpace rs,
         delete _rw_space;
         _rw_space = NULL;
         shared_end = (HeapWord*)(rs.base() + rs.size());
-        _rs->resize_covered_region(MemRegion(shared_bottom, shared_bottom));
       }
+    }
+
+    if (spec()->enable_shared_spaces()) {
+      // Cover both shared spaces entirely with cards.
+      _rs->resize_covered_region(MemRegion(readonly_bottom, readwrite_end));
     }
 
     // Reserved region includes shared spaces for oop.is_in_reserved().

@@ -3013,7 +3013,7 @@ class CommandLineFlags {
   product(intx, SafepointTimeoutDelay, 10000,                               \
           "Delay in milliseconds for option SafepointTimeout")              \
                                                                             \
-  product(intx, NmethodSweepFraction, 4,                                    \
+  product(intx, NmethodSweepFraction, 16,                                    \
           "Number of invocations of sweeper to cover all nmethods")         \
                                                                             \
   product(intx, NmethodSweepCheckInterval, 5,                               \

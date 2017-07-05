@@ -1740,8 +1740,9 @@ public class StandardGlyphVector extends GlyphVector {
                                                      tx,
                                                      sgv.font.getStyle(),
                                                      aa, fm);
-
-            FontStrike strike = sgv.font2D.getStrike(desc);  // !!! getStrike(desc, false)
+            // Get the strike via the handle. Shouldn't matter
+            // if we've invalidated the font but its an extra precaution.
+            FontStrike strike = sgv.font2D.handle.font2D.getStrike(desc);  // !!! getStrike(desc, false)
 
             return new GlyphStrike(sgv, strike, dx, dy);
         }

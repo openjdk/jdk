@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,28 +27,6 @@
 
 #include "gc_implementation/g1/heapRegion.hpp"
 #include "utilities/growableArray.hpp"
-
-// We need to sort heap regions by collection desirability.
-// This sorting is currently done in two "stages". An initial sort is
-// done following a cleanup pause as soon as all of the marked but
-// non-empty regions have been identified and the completely empty
-// ones reclaimed.
-// This gives us a global sort on a GC efficiency metric
-// based on predictive data available at that time. However,
-// any of these regions that are collected will only be collected
-// during a future GC pause, by which time it is possible that newer
-// data might allow us to revise and/or refine the earlier
-// pause predictions, leading to changes in expected gc efficiency
-// order. To somewhat mitigate this obsolescence, more so in the
-// case of regions towards the end of the list, which will be
-// picked later, these pre-sorted regions from the _markedRegions
-// array are not used as is, but a small prefix thereof is
-// insertion-sorted again into a small cache, based on more
-// recent remembered set information. Regions are then drawn
-// from this cache to construct the collection set at each
-// incremental GC.
-// This scheme and/or its implementation may be subject to
-// revision in the future.
 
 class CSetChooserCache VALUE_OBJ_CLASS_SPEC {
 private:
@@ -103,24 +81,82 @@ public:
 class CollectionSetChooser: public CHeapObj {
 
   GrowableArray<HeapRegion*> _markedRegions;
-  int _curMarkedIndex;
-  int _numMarkedRegions;
+
+  // The index of the next candidate old region to be considered for
+  // addition to the CSet.
+  int _curr_index;
+
+  // The number of candidate old regions added to the CSet chooser.
+  int _length;
+
   CSetChooserCache _cache;
-
-  // True iff last collection pause ran of out new "age 0" regions, and
-  // returned an "age 1" region.
-  bool _unmarked_age_1_returned_as_new;
-
   jint _first_par_unreserved_idx;
+
+  // If a region has more live bytes than this threshold, it will not
+  // be added to the CSet chooser and will not be a candidate for
+  // collection.
+  size_t _regionLiveThresholdBytes;
+
+  // The sum of reclaimable bytes over all the regions in the CSet chooser.
+  size_t _remainingReclaimableBytes;
 
 public:
 
-  HeapRegion* getNextMarkedRegion(double time_so_far, double avg_prediction);
+  // Return the current candidate region to be considered for
+  // collection without removing it from the CSet chooser.
+  HeapRegion* peek() {
+    HeapRegion* res = NULL;
+    if (_curr_index < _length) {
+      res = _markedRegions.at(_curr_index);
+      assert(res != NULL,
+             err_msg("Unexpected NULL hr in _markedRegions at index %d",
+                     _curr_index));
+    }
+    return res;
+  }
+
+  // Remove the given region from the CSet chooser and move to the
+  // next one. The given region should be the current candidate region
+  // in the CSet chooser.
+  void remove_and_move_to_next(HeapRegion* hr) {
+    assert(hr != NULL, "pre-condition");
+    assert(_curr_index < _length, "pre-condition");
+    assert(_markedRegions.at(_curr_index) == hr, "pre-condition");
+    hr->set_sort_index(-1);
+    _markedRegions.at_put(_curr_index, NULL);
+    assert(hr->reclaimable_bytes() <= _remainingReclaimableBytes,
+           err_msg("remaining reclaimable bytes inconsistent "
+                   "from region: "SIZE_FORMAT" remaining: "SIZE_FORMAT,
+                   hr->reclaimable_bytes(), _remainingReclaimableBytes));
+    _remainingReclaimableBytes -= hr->reclaimable_bytes();
+    _curr_index += 1;
+  }
 
   CollectionSetChooser();
 
   void sortMarkedHeapRegions();
   void fillCache();
+
+  // Determine whether to add the given region to the CSet chooser or
+  // not. Currently, we skip humongous regions (we never add them to
+  // the CSet, we only reclaim them during cleanup) and regions whose
+  // live bytes are over the threshold.
+  bool shouldAdd(HeapRegion* hr) {
+    assert(hr->is_marked(), "pre-condition");
+    assert(!hr->is_young(), "should never consider young regions");
+    return !hr->isHumongous() &&
+            hr->live_bytes() < _regionLiveThresholdBytes;
+  }
+
+  // Calculate the minimum number of old regions we'll add to the CSet
+  // during a mixed GC.
+  size_t calcMinOldCSetLength();
+
+  // Calculate the maximum number of old regions we'll add to the CSet
+  // during a mixed GC.
+  size_t calcMaxOldCSetLength();
+
+  // Serial version.
   void addMarkedHeapRegion(HeapRegion *hr);
 
   // Must be called before calls to getParMarkedHeapRegionChunk.
@@ -133,14 +169,21 @@ public:
   // Set the marked array entry at index to hr.  Careful to claim the index
   // first if in parallel.
   void setMarkedHeapRegion(jint index, HeapRegion* hr);
-  // Atomically increment the number of claimed regions by "inc_by".
-  void incNumMarkedHeapRegions(jint inc_by);
+  // Atomically increment the number of added regions by region_num
+  // and the amount of reclaimable bytes by reclaimable_bytes.
+  void updateTotals(jint region_num, size_t reclaimable_bytes);
 
   void clearMarkedHeapRegions();
 
-  void updateAfterFullCollection();
+  // Return the number of candidate regions that remain to be collected.
+  size_t remainingRegions() { return _length - _curr_index; }
 
-  bool unmarked_age_1_returned_as_new() { return _unmarked_age_1_returned_as_new; }
+  // Determine whether the CSet chooser has more candidate regions or not.
+  bool isEmpty() { return remainingRegions() == 0; }
+
+  // Return the reclaimable bytes that remain to be collected on
+  // all the candidate regions in the CSet chooser.
+  size_t remainingReclaimableBytes () { return _remainingReclaimableBytes; }
 
   // Returns true if the used portion of "_markedRegions" is properly
   // sorted, otherwise asserts false.
@@ -148,9 +191,17 @@ public:
   bool verify(void);
   bool regionProperlyOrdered(HeapRegion* r) {
     int si = r->sort_index();
-    return (si == -1) ||
-      (si > -1 && _markedRegions.at(si) == r) ||
-      (si < -1 && _cache.region_in_cache(r));
+    if (si > -1) {
+      guarantee(_curr_index <= si && si < _length,
+                err_msg("curr: %d sort index: %d: length: %d",
+                        _curr_index, si, _length));
+      guarantee(_markedRegions.at(si) == r,
+                err_msg("sort index: %d at: "PTR_FORMAT" r: "PTR_FORMAT,
+                        si, _markedRegions.at(si), r));
+    } else {
+      guarantee(si == -1, err_msg("sort index: %d", si));
+    }
+    return true;
   }
 #endif
 
