@@ -684,7 +684,7 @@ class JarVerifier {
         final List<CodeSigner[]> signersReq = req;
         final Enumeration<String> enum2 = (matchUnsigned) ? unsignedEntryNames(jar) : emptyEnumeration;
 
-        return new Enumeration<String>() {
+        return new Enumeration<>() {
 
             String name;
 
@@ -726,7 +726,7 @@ class JarVerifier {
         final Map<String, CodeSigner[]> map = new HashMap<>();
         map.putAll(signerMap());
         final Enumeration<? extends ZipEntry> enum_ = e;
-        return new Enumeration<JarEntry>() {
+        return new Enumeration<>() {
 
             Enumeration<String> signers = null;
             JarEntry entry;
@@ -786,7 +786,7 @@ class JarVerifier {
     private Enumeration<String> unsignedEntryNames(JarFile jar) {
         final Map<String, CodeSigner[]> map = signerMap();
         final Enumeration<JarEntry> entries = jar.entries();
-        return new Enumeration<String>() {
+        return new Enumeration<>() {
 
             String name;
 

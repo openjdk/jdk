@@ -64,7 +64,7 @@ public class HttpCapture {
     private static synchronized void init() {
         initialized = true;
         String rulesFile = java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction<String>() {
+            new java.security.PrivilegedAction<>() {
                 public String run() {
                     return NetProperties.get("sun.net.http.captureRules");
                 }
@@ -85,8 +85,8 @@ public class HttpCapture {
                         String[] s = line.split(",");
                         if (s.length == 2) {
                             if (patterns == null) {
-                                patterns = new ArrayList<Pattern>();
-                                capFiles = new ArrayList<String>();
+                                patterns = new ArrayList<>();
+                                capFiles = new ArrayList<>();
                             }
                             patterns.add(Pattern.compile(s[0].trim()));
                             capFiles.add(s[1].trim());

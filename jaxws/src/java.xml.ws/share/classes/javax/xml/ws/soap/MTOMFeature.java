@@ -67,14 +67,14 @@ public final class MTOMFeature extends WebServiceFeature {
      * Property for MTOM threshold value. This property serves as a hint when
      * MTOM is enabled, binary data above this size in bytes SHOULD be sent
      * as attachment.
-     * The value of this property MUST always be >= 0. Default value is 0.
+     * The value of this property MUST always be {@literal >=} 0. Default value is 0.
      */
     // should be changed to private final, keeping original modifier to keep backwards compatibility
     protected int threshold;
 
 
     /**
-     * Create an <code>MTOMFeature</code>.
+     * Create an {@code MTOMFeature}.
      * The instance created will be enabled.
      */
     public MTOMFeature() {
@@ -83,7 +83,7 @@ public final class MTOMFeature extends WebServiceFeature {
     }
 
     /**
-     * Creates an <code>MTOMFeature</code>.
+     * Creates a {@code MTOMFeature}.
      *
      * @param enabled specifies if this feature should be enabled or not
      */
@@ -94,13 +94,13 @@ public final class MTOMFeature extends WebServiceFeature {
 
 
     /**
-     * Creates an <code>MTOMFeature</code>.
+     * Creates a {@code MTOMFeature}.
      * The instance created will be enabled.
      *
      * @param threshold the size in bytes that binary data SHOULD be before
      * being sent as an attachment.
      *
-     * @throws WebServiceException if threshold is < 0
+     * @throws WebServiceException if threshold is {@literal <} 0
      */
     public MTOMFeature(int threshold) {
         if (threshold < 0)
@@ -110,13 +110,13 @@ public final class MTOMFeature extends WebServiceFeature {
     }
 
     /**
-     * Creates an <code>MTOMFeature</code>.
+     * Creates a {@code MTOMFeature}.
      *
      * @param enabled specifies if this feature should be enabled or not
      * @param threshold the size in bytes that binary data SHOULD be before
      * being sent as an attachment.
      *
-     * @throws WebServiceException if threshold is < 0
+     * @throws WebServiceException if threshold is {@literal <} 0
      */
     public MTOMFeature(boolean enabled, int threshold) {
         if (threshold < 0)

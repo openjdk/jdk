@@ -93,7 +93,7 @@ public class GnomeFileTypeDetector
     private static native byte[] probeUsingGnomeVfs(long pathAddress);
 
     static {
-        AccessController.doPrivileged(new PrivilegedAction<Void>() {
+        AccessController.doPrivileged(new PrivilegedAction<>() {
             public Void run() {
                 System.loadLibrary("nio");
                 return null;

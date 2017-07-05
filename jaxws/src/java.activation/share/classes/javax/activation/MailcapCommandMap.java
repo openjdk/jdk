@@ -45,14 +45,13 @@ import com.sun.activation.registries.LogSupport;
  * system for mailcap file entries. When requests are made
  * to search for commands in the MailcapCommandMap, it searches
  * mailcap files in the following order:
- * <p>
  * <ol>
  * <li> Programatically added entries to the MailcapCommandMap instance.
- * <li> The file <code>.mailcap</code> in the user's home directory.
- * <li> The file &lt;<i>java.home</i>&gt;<code>/lib/mailcap</code>.
- * <li> The file or resources named <code>META-INF/mailcap</code>.
- * <li> The file or resource named <code>META-INF/mailcap.default</code>
- * (usually found only in the <code>activation.jar</code> file).
+ * <li> The file {@code .mailcap} in the user's home directory.
+ * <li> The file {@literal <}<i>java.home</i>{@literal >}{@code /lib/mailcap}.
+ * <li> The file or resources named {@code META-INF/mailcap}.
+ * <li> The file or resource named {@code META-INF/mailcap.default}
+ * (usually found only in the {@code activation.jar} file).
  * </ol>
  * <p>
  * <b>Mailcap file format:</b><p>
@@ -70,46 +69,43 @@ import com.sun.activation.registries.LogSupport;
  *
  * When a mailcap file is
  * parsed, the MailcapCommandMap recognizes certain parameter signatures,
- * specifically those parameter names that begin with <code>x-java-</code>.
+ * specifically those parameter names that begin with {@code x-java-}.
  * The MailcapCommandMap uses this signature to find
  * command entries for inclusion into its registries.
- * Parameter names with the form <code>x-java-&lt;name></code>
+ * Parameter names with the form {@code x-java-<name>}
  * are read by the MailcapCommandMap as identifying a command
- * with the name <i>name</i>. When the <i>name</i> is <code>
- * content-handler</code> the MailcapCommandMap recognizes the class
+ * with the name <i>name</i>. When the <i>name</i> is {@code
+ * content-handler} the MailcapCommandMap recognizes the class
  * signified by this parameter as a <i>DataContentHandler</i>.
  * All other commands are handled generically regardless of command
  * name. The command implementation is specified by a fully qualified
  * class name of a JavaBean(tm) component. For example; a command for viewing
- * some data can be specified as: <code>x-java-view=com.foo.ViewBean</code>.<p>
+ * some data can be specified as: {@code x-java-view=com.foo.ViewBean}.<p>
  *
- * When the command name is <code>fallback-entry</code>, the value of
- * the command may be <code>true</code> or <code>false</code>.  An
+ * When the command name is {@code fallback-entry}, the value of
+ * the command may be {@code true} or {@code false}.  An
  * entry for a MIME type that includes a parameter of
- * <code>x-java-fallback-entry=true</code> defines fallback commands
+ * {@code x-java-fallback-entry=true} defines fallback commands
  * for that MIME type that will only be used if no non-fallback entry
- * can be found.  For example, an entry of the form <code>text/*; ;
- * x-java-fallback-entry=true; x-java-view=com.sun.TextViewer</code>
+ * can be found.  For example, an entry of the form {@code text/*; ;
+ * x-java-fallback-entry=true; x-java-view=com.sun.TextViewer}
  * specifies a view command to be used for any text MIME type.  This
  * view command would only be used if a non-fallback view command for
  * the MIME type could not be found.<p>
  *
  * MailcapCommandMap aware mailcap files have the
- * following general form:<p>
- * <code>
- * # Comments begin with a '#' and continue to the end of the line.<br>
- * &lt;mime type>; ; &lt;parameter list><br>
- * # Where a parameter list consists of one or more parameters,<br>
- * # where parameters look like: x-java-view=com.sun.TextViewer<br>
- * # and a parameter list looks like: <br>
+ * following general form:
+ * <pre>{@code
+ * # Comments begin with a '#' and continue to the end of the line.
+ * <mime type>; ; <parameter list>
+ * # Where a parameter list consists of one or more parameters,
+ * # where parameters look like: x-java-view=com.sun.TextViewer
+ * # and a parameter list looks like:
  * text/plain; ; x-java-view=com.sun.TextViewer; x-java-edit=com.sun.TextEdit
- * <br>
- * # Note that mailcap entries that do not contain 'x-java' parameters<br>
- * # and comply to RFC 1524 are simply ignored:<br>
- * image/gif; /usr/dt/bin/sdtimage %s<br>
- *
- * </code>
- * <p>
+ * # Note that mailcap entries that do not contain 'x-java' parameters
+ * # and comply to RFC 1524 are simply ignored:
+ * image/gif; /usr/dt/bin/sdtimage %s
+ * }</pre>
  *
  * @author Bart Calder
  * @author Bill Shannon
@@ -451,7 +447,7 @@ public class MailcapCommandMap extends CommandMap {
     }
 
     /**
-     * Get the command corresponding to <code>cmdName</code> for the MIME type.
+     * Get the command corresponding to {@code cmdName} for the MIME type.
      *
      * @param mimeType  the MIME type
      * @param cmdName   the command name

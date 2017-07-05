@@ -282,7 +282,6 @@ It is an XML document tree represented as a hierarchy of nodes, a
 <h3>5. Using the XPath API</h3>
 
 Consider the following XML document:
-<p>
 <blockquote>
 <pre>
 &lt;widgets&gt;
@@ -366,7 +365,6 @@ The XPath 1.0 Number data type is defined as a double. However, the XPath
 specification also provides functions that returns Integer type. To facilitate
 such operations, the XPath API allows Integer and Long to be used in 
 {@code evaluateExpression} method such as the following code: 
-<p>
 <blockquote>
 <pre>
 int count = xpath.evaluate("count(/widgets/widget)", document, Integer.class);

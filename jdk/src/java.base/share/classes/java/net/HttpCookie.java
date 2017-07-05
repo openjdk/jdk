@@ -1125,7 +1125,7 @@ public final class HttpCookie implements Cloneable {
      * @return  list of strings; never null
      */
     private static List<String> splitMultiCookies(String header) {
-        List<String> cookies = new java.util.ArrayList<String>();
+        List<String> cookies = new java.util.ArrayList<>();
         int quoteCount = 0;
         int p, q;
 

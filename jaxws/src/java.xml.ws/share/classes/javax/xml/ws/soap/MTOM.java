@@ -40,14 +40,14 @@ import javax.xml.ws.WebServiceProvider;
  * web service.
  * <p>
  * This annotation MUST only be used in conjunction the
- * <code>javax.jws.WebService</code>, {@link WebServiceProvider},
+ * {@code javax.jws.WebService}, {@link WebServiceProvider},
  * {@link WebServiceRef} annotations.
- * When used with the <code>javax.jws.WebService</code> annotation this
+ * When used with the {@code javax.jws.WebService} annotation this
  * annotation MUST only be used on the service endpoint implementation
  * class.
- * When used with a <code>WebServiceRef</code> annotation, this annotation
+ * When used with a {@code WebServiceRef} annotation, this annotation
  * MUST only be used when a proxy instance is created. The injected SEI
- * proxy, and endpoint MUST honor the values of the <code>MTOM</code>
+ * proxy, and endpoint MUST honor the values of the {@code MTOM}
  * annotation.
  * <p>
  *
@@ -69,7 +69,7 @@ public @interface MTOM {
     /**
      * Property for MTOM threshold value. When MTOM is enabled, binary data above this
      * size in bytes will be XOP encoded or sent as attachment. The value of this property
-     * MUST always be >= 0. Default value is 0.
+     * MUST always be {@literal >=} 0. Default value is 0.
      */
     int threshold() default 0;
 }
