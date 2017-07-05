@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -325,14 +325,8 @@
   template(java_lang_StackStreamFactory_AbstractStackWalker, "java/lang/StackStreamFactory$AbstractStackWalker") \
   template(doStackWalk_signature,                     "(JIIII)Ljava/lang/Object;")                \
   template(asPrimitive_name,                          "asPrimitive")                              \
-  template(asPrimitive_int_signature,                 "(I)Ljava/lang/LiveStackFrame$PrimitiveValue;") \
-  template(asPrimitive_long_signature,                "(J)Ljava/lang/LiveStackFrame$PrimitiveValue;") \
-  template(asPrimitive_short_signature,               "(S)Ljava/lang/LiveStackFrame$PrimitiveValue;") \
-  template(asPrimitive_byte_signature,                "(B)Ljava/lang/LiveStackFrame$PrimitiveValue;") \
-  template(asPrimitive_char_signature,                "(C)Ljava/lang/LiveStackFrame$PrimitiveValue;") \
-  template(asPrimitive_float_signature,               "(F)Ljava/lang/LiveStackFrame$PrimitiveValue;") \
-  template(asPrimitive_double_signature,              "(D)Ljava/lang/LiveStackFrame$PrimitiveValue;") \
-  template(asPrimitive_boolean_signature,             "(Z)Ljava/lang/LiveStackFrame$PrimitiveValue;") \
+  template(asPrimitive_int_signature,                 "(I)Ljava/lang/LiveStackFrame$PrimitiveSlot;") \
+  template(asPrimitive_long_signature,                "(J)Ljava/lang/LiveStackFrame$PrimitiveSlot;") \
                                                                                                   \
   /* common method and field names */                                                             \
   template(object_initializer_name,                   "<init>")                                   \
@@ -444,6 +438,7 @@
   template(monitors_name,                             "monitors")                                 \
   template(locals_name,                               "locals")                                   \
   template(operands_name,                             "operands")                                 \
+  template(mode_name,                                 "mode")                                     \
   template(oop_size_name,                             "oop_size")                                 \
   template(static_oop_field_count_name,               "static_oop_field_count")                   \
   template(protection_domain_name,                    "protection_domain")                        \
@@ -566,6 +561,7 @@
   template(int_StringBuffer_signature,                "(I)Ljava/lang/StringBuffer;")                              \
   template(char_StringBuffer_signature,               "(C)Ljava/lang/StringBuffer;")                              \
   template(int_String_signature,                      "(I)Ljava/lang/String;")                                    \
+  template(boolean_boolean_int_signature,             "(ZZ)I")                                                    \
   template(codesource_permissioncollection_signature, "(Ljava/security/CodeSource;Ljava/security/PermissionCollection;)V") \
   /* signature symbols needed by intrinsics */                                                                    \
   VM_INTRINSICS_DO(VM_INTRINSIC_IGNORE, VM_SYMBOL_IGNORE, VM_SYMBOL_IGNORE, template, VM_ALIAS_IGNORE)            \

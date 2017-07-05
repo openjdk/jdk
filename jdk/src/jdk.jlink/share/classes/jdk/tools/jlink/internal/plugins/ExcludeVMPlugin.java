@@ -95,9 +95,9 @@ public final class ExcludeVMPlugin implements Plugin {
 
     /**
      * VM paths:
-     * /java.base/native/{architecture}/{server|client|minimal}/{shared lib}
-     * e.g.: /java.base/native/amd64/server/libjvm.so
-     * /java.base/native/server/libjvm.dylib
+     * /java.base/lib/{architecture}/{server|client|minimal}/{shared lib}
+     * e.g.: /java.base/lib/server/libjvm.so
+     * /java.base/lib/server/libjvm.dylib
      */
     private List<ResourcePoolEntry> getVMs(ResourcePoolModule javaBase, String[] jvmlibs) {
         List<ResourcePoolEntry> ret = javaBase.entries().filter((t) -> {
@@ -115,7 +115,7 @@ public final class ExcludeVMPlugin implements Plugin {
     @Override
     public ResourcePool transform(ResourcePool in, ResourcePoolBuilder out) {
         ResourcePoolModule javaBase = in.moduleView().findModule("java.base").get();
-        String[] jvmlibs = jvmlibs(javaBase.descriptor().osName().get());
+        String[] jvmlibs = jvmlibs(javaBase.osName());
         TreeSet<Jvm> existing = new TreeSet<>(new JvmComparator());
         TreeSet<Jvm> removed = new TreeSet<>(new JvmComparator());
         if (!keepAll) {
@@ -198,17 +198,17 @@ public final class ExcludeVMPlugin implements Plugin {
             }
             case CLIENT: {
                 target = Jvm.CLIENT;
-                exclude = "/java.base/native**server/**,/java.base/native**minimal/**";
+                exclude = "/java.base/lib**server/**,/java.base/lib**minimal/**";
                 break;
             }
             case SERVER: {
                 target = Jvm.SERVER;
-                exclude = "/java.base/native**client/**,/java.base/native**minimal/**";
+                exclude = "/java.base/lib**client/**,/java.base/lib**minimal/**";
                 break;
             }
             case MINIMAL: {
                 target = Jvm.MINIMAL;
-                exclude = "/java.base/native**server/**,/java.base/native**client/**";
+                exclude = "/java.base/lib**server/**,/java.base/lib**client/**";
                 break;
             }
             default: {

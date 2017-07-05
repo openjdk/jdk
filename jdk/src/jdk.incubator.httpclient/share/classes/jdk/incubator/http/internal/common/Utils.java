@@ -32,12 +32,14 @@ import javax.net.ssl.SSLParameters;
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.net.NetPermission;
 import java.net.URI;
 import java.net.URLPermission;
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -54,6 +56,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.function.Predicate;
+import jdk.incubator.http.HttpHeaders;
 
 /**
  * Miscellaneous utilities
@@ -259,9 +262,11 @@ public final class Utils {
         SSLParameters p1 = new SSLParameters();
         p1.setAlgorithmConstraints(p.getAlgorithmConstraints());
         p1.setCipherSuites(p.getCipherSuites());
+        // JDK 8 EXCL START
         p1.setEnableRetransmissions(p.getEnableRetransmissions());
-        p1.setEndpointIdentificationAlgorithm(p.getEndpointIdentificationAlgorithm());
         p1.setMaximumPacketSize(p.getMaximumPacketSize());
+        // JDK 8 EXCL END
+        p1.setEndpointIdentificationAlgorithm(p.getEndpointIdentificationAlgorithm());
         p1.setNeedClientAuth(p.getNeedClientAuth());
         String[] protocols = p.getProtocols();
         if (protocols != null) {
@@ -475,4 +480,21 @@ public final class Utils {
         return newb;
     }
 
+    /**
+     * Get the Charset from the Content-encoding header. Defaults to
+     * UTF_8
+     */
+    public static Charset charsetFrom(HttpHeaders headers) {
+        String encoding = headers.firstValue("Content-encoding")
+                .orElse("UTF_8");
+        try {
+            return Charset.forName(encoding);
+        } catch (IllegalArgumentException e) {
+            return StandardCharsets.UTF_8;
+        }
+    }
+
+    public static UncheckedIOException unchecked(IOException e) {
+        return new UncheckedIOException(e);
+    }
 }

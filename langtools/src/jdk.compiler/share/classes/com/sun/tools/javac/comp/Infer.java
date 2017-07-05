@@ -26,6 +26,7 @@
 package com.sun.tools.javac.comp;
 
 import com.sun.tools.javac.code.Type.UndetVar.UndetVarListener;
+import com.sun.tools.javac.code.Types.TypeMapping;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.JCTypeCast;
 import com.sun.tools.javac.tree.TreeInfo;
@@ -61,9 +62,6 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
-import java.util.stream.Collectors;
-
-import com.sun.tools.javac.main.Option;
 
 import static com.sun.tools.javac.code.TypeTag.*;
 
@@ -192,28 +190,29 @@ public class Infer {
                 doIncorporation(inferenceContext, warn);
                 //we are inside method attribution - just return a partially inferred type
                 return new PartiallyInferredMethodType(mt, inferenceContext, env, warn);
-            } else if (allowGraphInference &&
-                    resultInfo != null &&
-                    !warn.hasNonSilentLint(Lint.LintCategory.UNCHECKED)) {
+            } else if (allowGraphInference && resultInfo != null) {
+
                 //inject return constraints earlier
                 doIncorporation(inferenceContext, warn); //propagation
 
-                boolean shouldPropagate = shouldPropagate(mt.getReturnType(), resultInfo, inferenceContext);
+                if (!warn.hasNonSilentLint(Lint.LintCategory.UNCHECKED)) {
+                    boolean shouldPropagate = shouldPropagate(mt.getReturnType(), resultInfo, inferenceContext);
 
-                InferenceContext minContext = shouldPropagate ?
-                        inferenceContext.min(roots(mt, deferredAttrContext), true, warn) :
-                        inferenceContext;
+                    InferenceContext minContext = shouldPropagate ?
+                            inferenceContext.min(roots(mt, deferredAttrContext), true, warn) :
+                            inferenceContext;
 
-                Type newRestype = generateReturnConstraints(env.tree, resultInfo,  //B3
-                        mt, minContext);
-                mt = (MethodType)types.createMethodTypeWithReturn(mt, newRestype);
+                    Type newRestype = generateReturnConstraints(env.tree, resultInfo,  //B3
+                            mt, minContext);
+                    mt = (MethodType)types.createMethodTypeWithReturn(mt, newRestype);
 
-                //propagate outwards if needed
-                if (shouldPropagate) {
-                    //propagate inference context outwards and exit
-                    minContext.dupTo(resultInfo.checkContext.inferenceContext());
-                    deferredAttrContext.complete();
-                    return mt;
+                    //propagate outwards if needed
+                    if (shouldPropagate) {
+                        //propagate inference context outwards and exit
+                        minContext.dupTo(resultInfo.checkContext.inferenceContext());
+                        deferredAttrContext.complete();
+                        return mt;
+                    }
                 }
             }
 
@@ -319,7 +318,8 @@ public class Infer {
                  *  need to use it several times: with several targets.
                  */
                 saved_undet = inferenceContext.save();
-                if (allowGraphInference && !warn.hasNonSilentLint(Lint.LintCategory.UNCHECKED)) {
+                boolean unchecked = warn.hasNonSilentLint(Lint.LintCategory.UNCHECKED);
+                if (!unchecked) {
                     boolean shouldPropagate = shouldPropagate(getReturnType(), resultInfo, inferenceContext);
 
                     InferenceContext minContext = shouldPropagate ?
@@ -338,7 +338,14 @@ public class Infer {
                     }
                 }
                 inferenceContext.solve(noWarnings);
-                return inferenceContext.asInstType(this).getReturnType();
+                Type ret = inferenceContext.asInstType(this).getReturnType();
+                if (unchecked) {
+                    //inline logic from Attr.checkMethod - if unchecked conversion was required, erase
+                    //return type _after_ resolution, and check against target
+                    ret = types.erasure(ret);
+                    resultInfo.check(env.tree, ret);
+                }
+                return ret;
             } catch (InferenceException ex) {
                 resultInfo.checkContext.report(null, ex.getDiagnostic());
                 Assert.error(); //cannot get here (the above should throw)
@@ -624,7 +631,7 @@ public class Infer {
             }
         }
 
-    TypeMapping<Void> fromTypeVarFun = new TypeMapping<Void>() {
+    TypeMapping<Void> fromTypeVarFun = new StructuralTypeMapping<Void>() {
         @Override
         public Type visitTypeVar(TypeVar tv, Void aVoid) {
             UndetVar uv = new UndetVar(tv, incorporationEngine(), types);
