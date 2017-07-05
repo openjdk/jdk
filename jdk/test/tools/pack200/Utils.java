@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,8 +54,7 @@ import static java.nio.file.StandardOpenOption.*;
  */
 
 /*
- * This class contains all the commonly used utilities used by various tests
- * in this directory.
+ * This class contains the commonly used utilities.
  */
 class Utils {
     static final String JavaHome = System.getProperty("test.java",
@@ -78,12 +77,6 @@ class Utils {
     static final File   XCLASSES = new File("xclasses");
 
     private Utils() {} // all static
-
-    static {
-        if (!JavaHome.endsWith("jre")) {
-            throw new RuntimeException("Error: requires an SDK to run");
-        }
-    }
 
     private static void init() throws IOException {
         if (VerifierJar.exists()) {
@@ -137,8 +130,7 @@ class Utils {
         List<String> cmds = new ArrayList<String>();
         cmds.add(getJavaCmd());
         cmds.add("-cp");
-        cmds.add(Utils.locateJar("tools.jar") +
-                System.getProperty("path.separator") + VerifierJar.getName());
+        cmds.add(VerifierJar.getName());
         cmds.add("sun.tools.pack.verify.Main");
         cmds.add(reference.getAbsolutePath());
         cmds.add(specimen.getAbsolutePath());
@@ -152,8 +144,7 @@ class Utils {
         List<String> cmds = new ArrayList<String>();
         cmds.add(getJavaCmd());
         cmds.add("-cp");
-        cmds.add(Utils.locateJar("tools.jar")
-                + System.getProperty("path.separator") + VerifierJar.getName());
+        cmds.add(VerifierJar.getName());
         cmds.add("sun.tools.pack.verify.Main");
         cmds.add(reference.getName());
         cmds.add(specimen.getName());
@@ -343,17 +334,21 @@ class Utils {
     }
 
     static void compiler(String... javacCmds) {
-        if (com.sun.tools.javac.Main.compile(javacCmds) != 0) {
-            throw new RuntimeException("compilation failed");
+        List<String> cmdList = new ArrayList<>();
+        cmdList.add(getJavacCmd());
+        for (String x : javacCmds) {
+            cmdList.add(x);
         }
+        runExec(cmdList);
     }
 
     static void jar(String... jargs) {
-        sun.tools.jar.Main jarTool =
-                new sun.tools.jar.Main(System.out, System.err, "jartool");
-        if (!jarTool.run(jargs)) {
-            throw new RuntimeException("jar command failed");
+        List<String> cmdList = new ArrayList<>();
+        cmdList.add(getJarCmd());
+        for (String x : jargs) {
+            cmdList.add(x);
         }
+        runExec(cmdList);
     }
 
     static void testWithRepack(File inFile, String... repackOpts) throws IOException {
@@ -528,6 +523,18 @@ class Utils {
         return getAjavaCmd("java");
     }
 
+    static String getJavacCmd() {
+        return getAjavaCmd("javac");
+    }
+
+    static String getJarCmd() {
+        return getAjavaCmd("jar");
+    }
+
+    static String getJimageCmd() {
+        return getAjavaCmd("jimage");
+    }
+
     static String getAjavaCmd(String cmdStr) {
         File binDir = new File(JavaHome, "bin");
         File unpack200File = IsWindows
@@ -542,6 +549,31 @@ class Utils {
         return cmd;
     }
 
+    static File createRtJar() throws IOException {
+        File LibDir = new File(JavaHome, "lib");
+        File ModuleDir = new File(LibDir, "modules");
+        File BootModules = new File(ModuleDir, "bootmodules.jimage");
+        List<String> cmdList = new ArrayList<>();
+        cmdList.add(getJimageCmd());
+        cmdList.add("extract");
+        cmdList.add(BootModules.getAbsolutePath());
+        cmdList.add("--dir");
+        cmdList.add("out");
+        runExec(cmdList);
+
+        File rtJar = new File("rt.jar");
+        cmdList.clear();
+        cmdList.add(getJarCmd());
+        cmdList.add("cvf");
+        cmdList.add(rtJar.getName());
+        cmdList.add("-C");
+        cmdList.add("out");
+        cmdList.add(".");
+        runExec(cmdList);
+
+        recursiveDelete(new File("out"));
+        return rtJar;
+    }
     private static List<File> locaterCache = null;
     // search the source dir and jdk dir for requested file and returns
     // the first location it finds.

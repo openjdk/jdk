@@ -548,56 +548,13 @@ class JarFile extends ZipFile {
      */
     private void checkForSpecialAttributes() throws IOException {
         if (hasCheckedSpecialAttributes) return;
-        if (!isKnownNotToHaveSpecialAttributes()) {
-            JarEntry manEntry = getManEntry();
-            if (manEntry != null) {
-                byte[] b = getBytes(manEntry);
-                if (match(CLASSPATH_CHARS, b, CLASSPATH_LASTOCC, CLASSPATH_OPTOSFT))
-                    hasClassPathAttribute = true;
-            }
+        JarEntry manEntry = getManEntry();
+        if (manEntry != null) {
+            byte[] b = getBytes(manEntry);
+            if (match(CLASSPATH_CHARS, b, CLASSPATH_LASTOCC, CLASSPATH_OPTOSFT))
+                hasClassPathAttribute = true;
         }
         hasCheckedSpecialAttributes = true;
-    }
-
-    private static String javaHome;
-    private static volatile String[] jarNames;
-    private boolean isKnownNotToHaveSpecialAttributes() {
-        // Optimize away even scanning of manifest for jar files we
-        // deliver which don't have a class-path attribute. If one of
-        // these jars is changed to include such an attribute this code
-        // must be changed.
-        if (javaHome == null) {
-            javaHome = AccessController.doPrivileged(
-                new GetPropertyAction("java.home"));
-        }
-        if (jarNames == null) {
-            String[] names = new String[11];
-            String fileSep = File.separator;
-            int i = 0;
-            names[i++] = fileSep + "rt.jar";
-            names[i++] = fileSep + "jsse.jar";
-            names[i++] = fileSep + "jce.jar";
-            names[i++] = fileSep + "charsets.jar";
-            names[i++] = fileSep + "dnsns.jar";
-            names[i++] = fileSep + "zipfs.jar";
-            names[i++] = fileSep + "localedata.jar";
-            names[i++] = fileSep = "cldrdata.jar";
-            names[i++] = fileSep + "sunjce_provider.jar";
-            names[i++] = fileSep + "sunpkcs11.jar";
-            names[i++] = fileSep + "sunec.jar";
-            jarNames = names;
-        }
-
-        String name = getName();
-        if (name.startsWith(javaHome)) {
-            String[] names = jarNames;
-            for (String jarName : names) {
-                if (name.endsWith(jarName)) {
-                    return true;
-                }
-            }
-        }
-        return false;
     }
 
     private synchronized void ensureInitialization() {

@@ -65,16 +65,10 @@ ifeq ($(ENABLE_INTREE_EC), yes)
           -D "JDK_FNAME=sunec.dll" \
           -D "JDK_INTERNAL_NAME=sunec" \
           -D "JDK_FTYPE=0x2L", \
-      OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/libsunec, \
+      OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libsunec, \
       DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
 
-  SECURITY_SUNEC_LIBRARIES += $(BUILD_LIBSUNEC)
+  TARGETS += $(BUILD_LIBSUNEC)
 endif
 
 ################################################################################
-
-jdk.crypto.ec: $(SECURITY_SUNEC_LIBRARIES)
-
-all: jdk.crypto.ec
-
-.PHONY: all jdk.crypto.ec

@@ -24,7 +24,7 @@
 #
 
 GENDATA_BLACKLISTED_CERTS_SRC := $(JDK_TOPDIR)/make/data/blacklistedcertsconverter/blacklisted.certs.pem
-GENDATA_BLACKLISTED_CERTS := $(JDK_OUTPUTDIR)/lib/security/blacklisted.certs
+GENDATA_BLACKLISTED_CERTS := $(SUPPORT_OUTPUTDIR)/modules_libs/$(MODULE)/security/blacklisted.certs
 
 ifndef OPENJDK
 	GENDATA_BLACKLISTED_CERTS_SRC += $(wildcard $(JDK_TOPDIR)/make/closed/data/blacklistedcertsconverter/blacklisted.certs.pem)
@@ -34,3 +34,5 @@ $(GENDATA_BLACKLISTED_CERTS): $(BUILD_TOOLS) $(GENDATA_BLACKLISTED_CERTS_SRC)
 	$(ECHO) "Generating blacklisted certs"
 	$(MKDIR) -p $(@D)
 	($(CAT) $(GENDATA_BLACKLISTED_CERTS_SRC) | $(TOOL_BLACKLISTED_CERTS) > $@) || exit 1
+
+TARGETS += $(GENDATA_BLACKLISTED_CERTS)

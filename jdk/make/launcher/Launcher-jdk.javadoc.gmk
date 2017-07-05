@@ -30,8 +30,3 @@ $(eval $(call SetupLauncher,javadoc, \
     -DNEVER_ACT_AS_SERVER_CLASS_MACHINE \
     -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) "com.sun.tools.javadoc.Main"$(COMMA) }'))
 
-jdk.javadoc: $(LAUNCHERS)
-
-all: jdk.javadoc
-
-.PHONY: all jdk.javadoc

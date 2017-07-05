@@ -32,8 +32,3 @@ $(eval $(call SetupLauncher,jconsole, \
     -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) "-J-Djconsole.showOutputViewer"$(COMMA) "sun.tools.jconsole.JConsole"$(COMMA) }' \
     -DAPP_CLASSPATH='{ "/lib/jconsole.jar"$(COMMA) "/lib/tools.jar"$(COMMA) "/classes" }'))
 
-jdk.jconsole: $(LAUNCHERS)
-
-all: jdk.jconsole
-
-.PHONY: all jdk.jconsole

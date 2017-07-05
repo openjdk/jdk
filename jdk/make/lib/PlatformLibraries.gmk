@@ -23,7 +23,7 @@
 # questions.
 #
 
-##########################################################################################
+################################################################################
 
 ifeq ($(OPENJDK_TARGET_OS), macosx)
 
@@ -37,7 +37,7 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
       OPTIMIZATION := LOW, \
       CFLAGS := $(CFLAGS_JDKLIB) \
           $(addprefix -I, $(LIBOSXAPP_SRC)) \
-          -I$(JDK_OUTPUTDIR)/gensrc_headers_icons, \
+          -I$(SUPPORT_OUTPUTDIR)/headers/java.desktop, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
       LDFLAGS_SUFFIX_macosx := \
@@ -53,10 +53,10 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
           -framework OpenGL \
           -framework IOSurface \
           -framework QuartzCore, \
-      OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/libosxapp, \
+      OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libosxapp, \
       DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
 
-  DESKTOP_LIBRARIES += $(BUILD_LIBOSXAPP)
+  TARGETS += $(BUILD_LIBOSXAPP)
 
 endif
 

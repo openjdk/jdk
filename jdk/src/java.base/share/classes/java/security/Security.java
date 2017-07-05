@@ -212,7 +212,7 @@ public final class Security {
         // maybe check for a system property which will specify where to
         // look. Someday.
         String sep = File.separator;
-        return new File(System.getProperty("java.home") + sep + "lib" + sep +
+        return new File(System.getProperty("java.home") + sep + "conf" + sep +
                         "security" + sep + filename);
     }
 

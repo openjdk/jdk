@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,8 @@ public class T7007157 {
 
     public static void main(String... args) throws IOException {
         File sdkHome = Utils.JavaSDK;
-        File testJar = new File(new File(sdkHome, "lib"), "tools.jar");
+        File testJar = new File("test.jar");
+        Utils.jar("cvf", testJar.getName(), Utils.TEST_CLS_DIR.getAbsolutePath());
         JarFile jarFile = new JarFile(testJar);
         File packFile = new File("foo.pack");
         Pack200.Packer packer = Pack200.newPacker();
