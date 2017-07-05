@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@ import java.nio.file.attribute.BasicFileAttributeView;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.spi.FileSystemProvider;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -67,7 +68,7 @@ import static java.nio.file.StandardCopyOption.*;
  *
  * @test
  * @bug 6990846 7009092 7009085 7015391 7014948 7005986 7017840 7007596
- *      7157656 8002390 7012868 7012856 8015728 8038500 8040059
+ *      7157656 8002390 7012868 7012856 8015728 8038500 8040059 8069211
  * @summary Test Zip filesystem provider
  * @run main ZipFSTester
  * @run main/othervm/java.security.policy=test.policy ZipFSTester
@@ -89,6 +90,7 @@ public class ZipFSTester {
             test2(fs);   // more tests
         }
         testTime(jarFile);
+        test8069211();
     }
 
     static void test0(FileSystem fs)
@@ -414,6 +416,29 @@ public class ZipFSTester {
             throw new RuntimeException("Timestamp Copy Failed!");
         }
         Files.delete(fsPath);
+    }
+
+    static void test8069211() throws Exception {
+        // create a new filesystem, copy this file into it
+        Map<String, Object> env = new HashMap<String, Object>();
+        env.put("create", "true");
+        Path fsPath = getTempPath();
+        try (FileSystem fs = newZipFileSystem(fsPath, env);) {
+            OutputStream out = Files.newOutputStream(fs.getPath("/foo"));
+            out.write("hello".getBytes());
+            out.close();
+            out.close();
+        }
+        try (FileSystem fs = newZipFileSystem(fsPath, new HashMap<String, Object>())) {
+            if (!Arrays.equals(Files.readAllBytes(fs.getPath("/foo")),
+                               "hello".getBytes())) {
+                throw new RuntimeException("entry close() failed");
+            }
+        } catch (Exception x) {
+            throw new RuntimeException("entry close() failed", x);
+        } finally {
+            Files.delete(fsPath);
+        }
     }
 
     private static FileSystem newZipFileSystem(Path path, Map<String, ?> env)
