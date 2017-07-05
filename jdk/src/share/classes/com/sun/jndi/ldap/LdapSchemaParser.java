@@ -767,7 +767,7 @@ final class LdapSchemaParser {
     final private String classDef2ObjectDesc(Attributes attrs)
         throws NamingException {
 
-        StringBuffer objectDesc = new StringBuffer("( ");
+        StringBuilder objectDesc = new StringBuilder("( ");
 
         Attribute attr = null;
         int count = 0;
@@ -879,7 +879,7 @@ final class LdapSchemaParser {
     final private String attrDef2AttrDesc(Attributes attrs)
         throws NamingException {
 
-        StringBuffer attrDesc = new StringBuffer("( "); // opening parens
+        StringBuilder attrDesc = new StringBuilder("( "); // opening parens
 
         Attribute attr = null;
         int count = 0;
@@ -1012,7 +1012,7 @@ final class LdapSchemaParser {
     final private String syntaxDef2SyntaxDesc(Attributes attrs)
         throws NamingException {
 
-        StringBuffer syntaxDesc = new StringBuffer("( "); // opening parens
+        StringBuilder syntaxDesc = new StringBuilder("( "); // opening parens
 
         Attribute attr = null;
         int count = 0;
@@ -1068,7 +1068,7 @@ final class LdapSchemaParser {
     final private String matchRuleDef2MatchRuleDesc(Attributes attrs)
         throws NamingException {
 
-        StringBuffer matchRuleDesc = new StringBuffer("( "); // opening parens
+        StringBuilder matchRuleDesc = new StringBuilder("( "); // opening parens
 
         Attribute attr = null;
         int count = 0;
@@ -1196,7 +1196,7 @@ final class LdapSchemaParser {
 
         // write QDList
 
-        StringBuffer qdList = new StringBuffer(attr.getID());
+        StringBuilder qdList = new StringBuilder(attr.getID());
         qdList.append(WHSP);
         qdList.append(OID_LIST_BEGIN);
 
@@ -1233,7 +1233,7 @@ final class LdapSchemaParser {
 
         // write OID List
 
-        StringBuffer oidList = new StringBuffer(oidsAttr.getID());
+        StringBuilder oidList = new StringBuilder(oidsAttr.getID());
         oidList.append(WHSP);
         oidList.append(OID_LIST_BEGIN);
 

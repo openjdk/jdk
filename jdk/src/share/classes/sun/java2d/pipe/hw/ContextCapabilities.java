@@ -93,37 +93,37 @@ public class ContextCapabilities {
 
     @Override
     public String toString() {
-        StringBuffer buf =
-            new StringBuffer("ContextCapabilities: adapter=" +
+        StringBuilder sb =
+            new StringBuilder("ContextCapabilities: adapter=" +
                              adapterId+", caps=");
         if (caps == CAPS_EMPTY) {
-            buf.append("CAPS_EMPTY");
+            sb.append("CAPS_EMPTY");
         } else {
             if ((caps & CAPS_RT_PLAIN_ALPHA) != 0) {
-                buf.append("CAPS_RT_PLAIN_ALPHA|");
+                sb.append("CAPS_RT_PLAIN_ALPHA|");
             }
             if ((caps & CAPS_RT_TEXTURE_ALPHA) != 0) {
-                buf.append("CAPS_RT_TEXTURE_ALPHA|");
+                sb.append("CAPS_RT_TEXTURE_ALPHA|");
             }
             if ((caps & CAPS_RT_TEXTURE_OPAQUE) != 0) {
-                buf.append("CAPS_RT_TEXTURE_OPAQUE|");
+                sb.append("CAPS_RT_TEXTURE_OPAQUE|");
             }
             if ((caps & CAPS_MULTITEXTURE) != 0) {
-                buf.append("CAPS_MULTITEXTURE|");
+                sb.append("CAPS_MULTITEXTURE|");
             }
             if ((caps & CAPS_TEXNONPOW2) != 0) {
-                buf.append("CAPS_TEXNONPOW2|");
+                sb.append("CAPS_TEXNONPOW2|");
             }
             if ((caps & CAPS_TEXNONSQUARE) != 0) {
-                buf.append("CAPS_TEXNONSQUARE|");
+                sb.append("CAPS_TEXNONSQUARE|");
             }
             if ((caps & CAPS_PS20) != 0) {
-                buf.append("CAPS_PS20|");
+                sb.append("CAPS_PS20|");
             }
             if ((caps & CAPS_PS30) != 0) {
-                buf.append("CAPS_PS30|");
+                sb.append("CAPS_PS30|");
             }
         }
-        return buf.toString();
+        return sb.toString();
     }
 }

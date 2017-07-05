@@ -751,14 +751,14 @@ class MethodAccessorGenerator extends AccessorGenerator {
     }
 
     private String buildInternalSignature() {
-        StringBuffer buf = new StringBuffer();
-        buf.append("(");
+        StringBuilder sb = new StringBuilder();
+        sb.append("(");
         for (int i = 0; i < parameterTypes.length; i++) {
-            buf.append(getClassName(parameterTypes[i], true));
+            sb.append(getClassName(parameterTypes[i], true));
         }
-        buf.append(")");
-        buf.append(getClassName(returnType, true));
-        return buf.toString();
+        sb.append(")");
+        sb.append(getClassName(returnType, true));
+        return sb.toString();
     }
 
     private static synchronized String generateName(boolean isConstructor,

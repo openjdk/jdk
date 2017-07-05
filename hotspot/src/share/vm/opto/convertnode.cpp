@@ -374,11 +374,11 @@ Node *ConvI2LNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       ryhi = -rylo0;
     }
 
-    Node* cx = phase->transform( new (phase->C) ConvI2LNode(x, TypeLong::make(rxlo, rxhi, widen)) );
-    Node* cy = phase->transform( new (phase->C) ConvI2LNode(y, TypeLong::make(rylo, ryhi, widen)) );
+    Node* cx = phase->transform( new ConvI2LNode(x, TypeLong::make(rxlo, rxhi, widen)) );
+    Node* cy = phase->transform( new ConvI2LNode(y, TypeLong::make(rylo, ryhi, widen)) );
     switch (op) {
-      case Op_AddI:  return new (phase->C) AddLNode(cx, cy);
-      case Op_SubI:  return new (phase->C) SubLNode(cx, cy);
+      case Op_AddI:  return new AddLNode(cx, cy);
+      case Op_SubI:  return new SubLNode(cx, cy);
       default:       ShouldNotReachHere();
     }
   }
@@ -452,9 +452,9 @@ Node *ConvL2INode::Ideal(PhaseGVN *phase, bool can_reshape) {
     assert( x != andl && y != andl, "dead loop in ConvL2INode::Ideal" );
     if (phase->type(x) == Type::TOP)  return NULL;
     if (phase->type(y) == Type::TOP)  return NULL;
-    Node *add1 = phase->transform(new (phase->C) ConvL2INode(x));
-    Node *add2 = phase->transform(new (phase->C) ConvL2INode(y));
-    return new (phase->C) AddINode(add1,add2);
+    Node *add1 = phase->transform(new ConvL2INode(x));
+    Node *add2 = phase->transform(new ConvL2INode(y));
+    return new AddINode(add1,add2);
   }
 
   // Disable optimization: LoadL->ConvL2I ==> LoadI.

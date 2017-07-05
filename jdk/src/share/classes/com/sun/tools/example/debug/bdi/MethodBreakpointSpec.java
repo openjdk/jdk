@@ -126,26 +126,26 @@ public class MethodBreakpointSpec extends BreakpointSpec {
 
     @Override
     public String toString() {
-        StringBuffer buffer = new StringBuffer("breakpoint ");
-        buffer.append(refSpec.toString());
-        buffer.append('.');
-        buffer.append(methodId);
+        StringBuilder sb = new StringBuilder("breakpoint ");
+        sb.append(refSpec.toString());
+        sb.append('.');
+        sb.append(methodId);
         if (methodArgs != null) {
             boolean first = true;
-            buffer.append('(');
+            sb.append('(');
             for (String name : methodArgs) {
                 if (!first) {
-                    buffer.append(',');
+                    sb.append(',');
                 }
-                buffer.append(name);
+                sb.append(name);
                 first = false;
             }
-            buffer.append(")");
+            sb.append(")");
         }
-        buffer.append(" (");
-        buffer.append(getStatusString());
-        buffer.append(')');
-        return buffer.toString();
+        sb.append(" (");
+        sb.append(getStatusString());
+        sb.append(')');
+        return sb.toString();
     }
 
     private boolean isValidMethodName(String s) {
@@ -225,8 +225,8 @@ public class MethodBreakpointSpec extends BreakpointSpec {
          * stripping whitespace after the name ends.
          */
         int i = 0;
-        StringBuffer typePart = new StringBuffer();
-        StringBuffer arrayPart = new StringBuffer();
+        StringBuilder typePart = new StringBuilder();
+        StringBuilder arrayPart = new StringBuilder();
         name = name.trim();
         int nameLength = name.length();
         /*

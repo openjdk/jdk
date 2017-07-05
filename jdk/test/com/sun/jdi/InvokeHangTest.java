@@ -30,7 +30,7 @@
  *
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter
  *  @run compile -g InvokeHangTest.java
- *  @run main InvokeHangTest
+ *  @run driver InvokeHangTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

@@ -28,7 +28,7 @@
  * @library /lib/testlibrary
  *
  * @build jdk.testlibrary.* VMConnection ExclusiveBind HelloWorld
- * @run main ExclusiveBind
+ * @run driver ExclusiveBind
  */
 import java.net.ServerSocket;
 import com.sun.jdi.Bootstrap;

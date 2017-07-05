@@ -85,7 +85,7 @@ public class SerialVer {
                 /* Class not found so far */
             }
             if (!classFound) {
-                StringBuffer workBuffer = new StringBuffer(classname);
+                StringBuilder workBuffer = new StringBuilder(classname);
                 String workName = workBuffer.toString();
                 int i;
                 while ((i = workName.lastIndexOf('.')) != -1 && !classFound) {

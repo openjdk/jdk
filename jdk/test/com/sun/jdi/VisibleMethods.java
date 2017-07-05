@@ -30,7 +30,7 @@
  *
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter
  *  @run compile -g VisibleMethods.java
- *  @run main VisibleMethods
+ *  @run driver VisibleMethods
  */
 import com.sun.jdi.Method;
 import com.sun.jdi.ReferenceType;

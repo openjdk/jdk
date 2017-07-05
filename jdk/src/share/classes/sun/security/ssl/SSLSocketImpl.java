@@ -2594,7 +2594,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
      */
     @Override
     public String toString() {
-        StringBuffer retval = new StringBuffer(80);
+        StringBuilder retval = new StringBuilder(80);
 
         retval.append(Integer.toHexString(hashCode()));
         retval.append("[");

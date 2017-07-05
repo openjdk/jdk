@@ -742,7 +742,7 @@ class VirtualMachineImpl extends MirrorImpl
     }
 
     void printReceiveTrace(int depth, String string) {
-        StringBuffer sb = new StringBuffer("Receiving:");
+        StringBuilder sb = new StringBuilder("Receiving:");
         for (int i = depth; i > 0; --i) {
             sb.append("    ");
         }
@@ -872,7 +872,7 @@ class VirtualMachineImpl extends MirrorImpl
     ReferenceTypeImpl referenceType(long id, int tag,
                                                  String signature) {
         if ((vm.traceFlags & VirtualMachine.TRACE_REFTYPES) != 0) {
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             sb.append("Looking up ");
             if (tag == JDWP.TypeTag.CLASS) {
                 sb.append("Class");

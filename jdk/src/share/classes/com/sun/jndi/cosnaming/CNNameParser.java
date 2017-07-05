@@ -96,7 +96,7 @@ final public class CNNameParser implements NameParser {
      * Used by CNCtx.getNameInNamespace(), CNCompoundName.toString().
      */
     static String cosNameToInsString(NameComponent[] cname) {
-      StringBuffer str = new StringBuffer();
+      StringBuilder str = new StringBuilder();
       for ( int i = 0; i < cname.length; i++) {
           if ( i > 0) {
               str.append(compSeparator);
@@ -254,7 +254,7 @@ final public class CNNameParser implements NameParser {
     }
 
     private static String stringifyComponent(NameComponent comp) {
-        StringBuffer one = new StringBuffer(escape(comp.id));
+        StringBuilder one = new StringBuilder(escape(comp.id));
         if (comp.kind != null && !comp.kind.equals("")) {
             one.append(kindSeparator + escape(comp.kind));
         }

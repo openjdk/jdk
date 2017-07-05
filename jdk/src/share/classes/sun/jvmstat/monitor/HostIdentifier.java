@@ -358,7 +358,7 @@ public class HostIdentifier {
 
         URI nuri = null;
 
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
 
         sb.append(scheme).append("://");
 

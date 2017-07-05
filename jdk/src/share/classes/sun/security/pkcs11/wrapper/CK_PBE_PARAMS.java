@@ -109,39 +109,39 @@ public class CK_PBE_PARAMS {
      * @return the string representation of CK_PBE_PARAMS
      */
     public String toString() {
-        StringBuffer buffer = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
 
-        buffer.append(Constants.INDENT);
-        buffer.append("pInitVector: ");
-        buffer.append(pInitVector);
-        buffer.append(Constants.NEWLINE);
+        sb.append(Constants.INDENT);
+        sb.append("pInitVector: ");
+        sb.append(pInitVector);
+        sb.append(Constants.NEWLINE);
 
-        buffer.append(Constants.INDENT);
-        buffer.append("ulPasswordLen: ");
-        buffer.append(pPassword.length);
-        buffer.append(Constants.NEWLINE);
+        sb.append(Constants.INDENT);
+        sb.append("ulPasswordLen: ");
+        sb.append(pPassword.length);
+        sb.append(Constants.NEWLINE);
 
-        buffer.append(Constants.INDENT);
-        buffer.append("pPassword: ");
-        buffer.append(pPassword);
-        buffer.append(Constants.NEWLINE);
+        sb.append(Constants.INDENT);
+        sb.append("pPassword: ");
+        sb.append(pPassword);
+        sb.append(Constants.NEWLINE);
 
-        buffer.append(Constants.INDENT);
-        buffer.append("ulSaltLen: ");
-        buffer.append(pSalt.length);
-        buffer.append(Constants.NEWLINE);
+        sb.append(Constants.INDENT);
+        sb.append("ulSaltLen: ");
+        sb.append(pSalt.length);
+        sb.append(Constants.NEWLINE);
 
-        buffer.append(Constants.INDENT);
-        buffer.append("pSalt: ");
-        buffer.append(pSalt);
-        buffer.append(Constants.NEWLINE);
+        sb.append(Constants.INDENT);
+        sb.append("pSalt: ");
+        sb.append(pSalt);
+        sb.append(Constants.NEWLINE);
 
-        buffer.append(Constants.INDENT);
-        buffer.append("ulIteration: ");
-        buffer.append(ulIteration);
+        sb.append(Constants.INDENT);
+        sb.append("ulIteration: ");
+        sb.append(ulIteration);
         //buffer.append(Constants.NEWLINE);
 
-        return buffer.toString();
+        return sb.toString();
     }
 
 }

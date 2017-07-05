@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -66,10 +66,6 @@
 #include "jvmti.h"
 #include "classfile_constants.h"
 #include "jvm_md.h"
-
-#ifndef SKIP_NPT
-#include "npt.h"   /* To get NptEnv for doing character conversions */
-#endif
 
 /* Macros to extract the upper and lower 32 bits of a jlong */
 
@@ -207,9 +203,6 @@ typedef struct {
 
     jvmtiEnv            *jvmti; /* JVMTI env for this session */
     JavaVM              *jvm;   /* JavaVM* for this session */
-#ifndef SKIP_NPT
-    NptEnv              *npt;   /* NptEnv* for this session, see npt.h */
-#endif
     jint                cachedJvmtiVersion; /* JVMTI version number */
 
     char               *header; /* "JAVA PROFILE 1.0.[12]" */

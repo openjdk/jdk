@@ -42,20 +42,24 @@ void pd_ps(frame f) {
   intptr_t *pc = NULL;
   intptr_t *next_pc = NULL;
   int count = 0;
-  tty->print("register window backtrace from %#x:\n", sp);
+  tty->print_cr("register window backtrace from " INTPTR_FORMAT ":", p2i(sp));
   while (sp != NULL && ((intptr_t)sp & 7) == 0 && sp > prev_sp && sp < prev_sp+1000) {
     pc      = next_pc;
     next_pc = (intptr_t*) sp[I7->sp_offset_in_saved_window()];
-    tty->print("[%d] sp=%#x pc=", count, sp);
+    tty->print("[%d] sp=" INTPTR_FORMAT " pc=", count, p2i(sp));
     findpc((intptr_t)pc);
     if (WizardMode && Verbose) {
       // print register window contents also
-      tty->print_cr("    L0..L7: {%#x %#x %#x %#x %#x %#x %#x %#x}",
-                    sp[0+0],sp[0+1],sp[0+2],sp[0+3],
-                    sp[0+4],sp[0+5],sp[0+6],sp[0+7]);
-      tty->print_cr("    I0..I7: {%#x %#x %#x %#x %#x %#x %#x %#x}",
-                    sp[8+0],sp[8+1],sp[8+2],sp[8+3],
-                    sp[8+4],sp[8+5],sp[8+6],sp[8+7]);
+      tty->print_cr("    L0..L7: {"
+                    INTPTR_FORMAT " " INTPTR_FORMAT " " INTPTR_FORMAT " " INTPTR_FORMAT " "
+                    INTPTR_FORMAT " " INTPTR_FORMAT " " INTPTR_FORMAT " " INTPTR_FORMAT " ",
+                    sp[0+0], sp[0+1], sp[0+2], sp[0+3],
+                    sp[0+4], sp[0+5], sp[0+6], sp[0+7]);
+      tty->print_cr("    I0..I7: {"
+                    INTPTR_FORMAT " " INTPTR_FORMAT " " INTPTR_FORMAT " " INTPTR_FORMAT " "
+                    INTPTR_FORMAT " " INTPTR_FORMAT " " INTPTR_FORMAT " " INTPTR_FORMAT " ",
+                    sp[8+0], sp[8+1], sp[8+2], sp[8+3],
+                    sp[8+4], sp[8+5], sp[8+6], sp[8+7]);
       // (and print stack frame contents too??)
 
       CodeBlob *b = CodeCache::find_blob((address) pc);
@@ -74,7 +78,7 @@ void pd_ps(frame f) {
     count += 1;
   }
   if (sp != NULL)
-    tty->print("[%d] sp=%#x [bogus sp!]", count, sp);
+    tty->print("[%d] sp=" INTPTR_FORMAT " [bogus sp!]", count, p2i(sp));
 }
 
 #endif // PRODUCT

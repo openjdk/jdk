@@ -56,16 +56,16 @@ class SDE {
                 if (sourcePath == null) {
                     sourcePath = refType.baseSourceDir() + sourceName;
                 } else {
-                    StringBuffer buf = new StringBuffer();
+                    StringBuilder sb = new StringBuilder();
                     for (int i = 0; i < sourcePath.length(); ++i) {
                         char ch = sourcePath.charAt(i);
                         if (ch == '/') {
-                            buf.append(File.separatorChar);
+                            sb.append(File.separatorChar);
                         } else {
-                            buf.append(ch);
+                            sb.append(ch);
                         }
                     }
-                    sourcePath = buf.toString();
+                    sourcePath = sb.toString();
                 }
                 isConverted = true;
             }
@@ -327,7 +327,7 @@ class SDE {
     }
 
     String readLine() {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         char ch;
 
         ignoreWhite();

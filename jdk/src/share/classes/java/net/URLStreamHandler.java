@@ -486,7 +486,7 @@ public abstract class URLStreamHandler {
         if (u.getRef() != null)
             len += 1 + u.getRef().length();
 
-        StringBuffer result = new StringBuffer(len);
+        StringBuilder result = new StringBuilder(len);
         result.append(u.getProtocol());
         result.append(":");
         if (u.getAuthority() != null && u.getAuthority().length() > 0) {

@@ -2182,29 +2182,29 @@ public class BasicTableUI extends TableUI
                     return null;
                 }
 
-                StringBuffer plainBuf = new StringBuffer();
-                StringBuffer htmlBuf = new StringBuffer();
+                StringBuilder plainStr = new StringBuilder();
+                StringBuilder htmlStr = new StringBuilder();
 
-                htmlBuf.append("<html>\n<body>\n<table>\n");
+                htmlStr.append("<html>\n<body>\n<table>\n");
 
                 for (int row = 0; row < rows.length; row++) {
-                    htmlBuf.append("<tr>\n");
+                    htmlStr.append("<tr>\n");
                     for (int col = 0; col < cols.length; col++) {
                         Object obj = table.getValueAt(rows[row], cols[col]);
                         String val = ((obj == null) ? "" : obj.toString());
-                        plainBuf.append(val + "\t");
-                        htmlBuf.append("  <td>" + val + "</td>\n");
+                        plainStr.append(val + "\t");
+                        htmlStr.append("  <td>" + val + "</td>\n");
                     }
                     // we want a newline at the end of each line and not a tab
-                    plainBuf.deleteCharAt(plainBuf.length() - 1).append("\n");
-                    htmlBuf.append("</tr>\n");
+                    plainStr.deleteCharAt(plainStr.length() - 1).append("\n");
+                    htmlStr.append("</tr>\n");
                 }
 
                 // remove the last newline
-                plainBuf.deleteCharAt(plainBuf.length() - 1);
-                htmlBuf.append("</table>\n</body>\n</html>");
+                plainStr.deleteCharAt(plainStr.length() - 1);
+                htmlStr.append("</table>\n</body>\n</html>");
 
-                return new BasicTransferable(plainBuf.toString(), htmlBuf.toString());
+                return new BasicTransferable(plainStr.toString(), htmlStr.toString());
             }
 
             return null;

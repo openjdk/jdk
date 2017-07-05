@@ -412,6 +412,10 @@ public final class MemberInfo implements Cloneable {
                     }
                 }
             }
+            break;
+
+            default:
+            break;
         }
     }
 
@@ -450,7 +454,7 @@ public final class MemberInfo implements Cloneable {
 
         if (type.getSort() == Type.OBJECT) {
             try {
-                final Class clazz = Class.forName(type.getClassName(), false, myLoader);
+                final Class<?> clazz = Class.forName(type.getClassName(), false, myLoader);
                 return ScriptObject.class.isAssignableFrom(clazz);
             } catch (final ClassNotFoundException cnfe) {
                 return false;

@@ -408,6 +408,7 @@ import org.xml.sax.*;
  * @see javax.sql.rowset.CachedRowSet
  * @see javax.sql.rowset.FilteredRowSet
  * @see javax.sql.rowset.JoinRowSet
+ * @since 1.5
  */
 
 public interface WebRowSet extends CachedRowSet {

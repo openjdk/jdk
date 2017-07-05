@@ -519,7 +519,7 @@ public class X509Factory extends CertificateFactorySpi {
 
             // Step 2: Read the rest of header, determine the line end
             int end;
-            StringBuffer header = new StringBuffer("-----");
+            StringBuilder header = new StringBuilder("-----");
             while (true) {
                 int next = is.read();
                 if (next == -1) {
@@ -562,7 +562,7 @@ public class X509Factory extends CertificateFactorySpi {
             }
 
             // Step 4: Consume the footer
-            StringBuffer footer = new StringBuffer("-");
+            StringBuilder footer = new StringBuilder("-");
             while (true) {
                 int next = is.read();
                 // Add next == '\n' for maximum safety, in case endline

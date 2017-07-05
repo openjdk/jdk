@@ -1722,15 +1722,15 @@ void AbstractInterpreter::layout_activation(Method* method,
     if (caller->is_interpreted_frame()) {
       tty->print("interpreted ");
     }
-    tty->print_cr("caller fp=0x%x sp=0x%x", caller->fp(), caller->sp());
-    tty->print_cr("save area = 0x%x, 0x%x", caller->sp(), caller->sp() + 16);
-    tty->print_cr("save area = 0x%x, 0x%x", caller->fp(), caller->fp() + 16);
-    tty->print_cr("interpreter fp=0x%x sp=0x%x", interpreter_frame->fp(), interpreter_frame->sp());
-    tty->print_cr("save area = 0x%x, 0x%x", interpreter_frame->sp(), interpreter_frame->sp() + 16);
-    tty->print_cr("save area = 0x%x, 0x%x", interpreter_frame->fp(), interpreter_frame->fp() + 16);
-    tty->print_cr("Llocals = 0x%x", locals);
-    tty->print_cr("Lesp = 0x%x", esp);
-    tty->print_cr("Lmonitors = 0x%x", monitors);
+    tty->print_cr("caller fp=" INTPTR_FORMAT " sp=" INTPTR_FORMAT, p2i(caller->fp()), p2i(caller->sp()));
+    tty->print_cr("save area = " INTPTR_FORMAT ", " INTPTR_FORMAT, p2i(caller->sp()), p2i(caller->sp() + 16));
+    tty->print_cr("save area = " INTPTR_FORMAT ", " INTPTR_FORMAT, p2i(caller->fp()), p2i(caller->fp() + 16));
+    tty->print_cr("interpreter fp=" INTPTR_FORMAT ", " INTPTR_FORMAT, p2i(interpreter_frame->fp()), p2i(interpreter_frame->sp()));
+    tty->print_cr("save area = " INTPTR_FORMAT ", " INTPTR_FORMAT, p2i(interpreter_frame->sp()), p2i(interpreter_frame->sp() + 16));
+    tty->print_cr("save area = " INTPTR_FORMAT ", " INTPTR_FORMAT, p2i(interpreter_frame->fp()), p2i(interpreter_frame->fp() + 16));
+    tty->print_cr("Llocals = " INTPTR_FORMAT, p2i(locals));
+    tty->print_cr("Lesp = " INTPTR_FORMAT, p2i(esp));
+    tty->print_cr("Lmonitors = " INTPTR_FORMAT, p2i(monitors));
   }
 
   if (method->max_locals() > 0) {

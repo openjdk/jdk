@@ -347,7 +347,7 @@ public class SnmpMessage extends SnmpMsg implements SnmpDefinitions {
      * @return The string containing the dump.
      */
     public String printMessage() {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         if (community == null) {
             sb.append("Community: null") ;
         }

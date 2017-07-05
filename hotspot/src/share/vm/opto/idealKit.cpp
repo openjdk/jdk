@@ -86,7 +86,7 @@ void IdealKit::if_then(Node* left, BoolTest::mask relop,
   }
   // Delay gvn.tranform on if-nodes until construction is finished
   // to prevent a constant bool input from discarding a control output.
-  IfNode* iff = delay_transform(new (C) IfNode(ctrl(), bol, prob, cnt))->as_If();
+  IfNode* iff = delay_transform(new IfNode(ctrl(), bol, prob, cnt))->as_If();
   Node* then  = IfTrue(iff);
   Node* elsen = IfFalse(iff);
   Node* else_cvstate = copy_cvstate();
@@ -205,7 +205,7 @@ Node* IdealKit::make_label(int goto_ct) {
   assert(_cvstate != NULL, "must declare variables before labels");
   Node* lab = new_cvstate();
   int sz = 1 + goto_ct + 1 /* fall thru */;
-  Node* reg = delay_transform(new (C) RegionNode(sz));
+  Node* reg = delay_transform(new RegionNode(sz));
   lab->init_req(TypeFunc::Control, reg);
   return lab;
 }
@@ -312,7 +312,7 @@ Node* IdealKit::delay_transform(Node* n) {
 //-----------------------------new_cvstate-----------------------------------
 Node* IdealKit::new_cvstate() {
   uint sz = _var_ct + first_var;
-  return new (C) Node(sz);
+  return new Node(sz);
 }
 
 //-----------------------------copy_cvstate-----------------------------------
@@ -397,7 +397,7 @@ Node* IdealKit::storeCM(Node* ctl, Node* adr, Node *val, Node* oop_store, int oo
 
   // Add required edge to oop_store, optimizer does not support precedence edges.
   // Convert required edge to precedence edge before allocation.
-  Node* st = new (C) StoreCMNode(ctl, mem, adr, adr_type, val, oop_store, oop_adr_idx);
+  Node* st = new StoreCMNode(ctl, mem, adr, adr_type, val, oop_store, oop_adr_idx);
 
   st = transform(st);
   set_memory(st, adr_idx);
@@ -497,7 +497,7 @@ void IdealKit::make_leaf_call(const TypeFunc *slow_call_type,
   uint adr_idx = C->get_alias_index(adr_type);
 
   // Slow-path leaf call
-  CallNode *call =  (CallNode*)new (C) CallLeafNode( slow_call_type, slow_call, leaf_name, adr_type);
+  CallNode *call =  (CallNode*)new CallLeafNode( slow_call_type, slow_call, leaf_name, adr_type);
 
   // Set fixed predefined input arguments
   call->init_req( TypeFunc::Control, ctrl() );
@@ -518,10 +518,10 @@ void IdealKit::make_leaf_call(const TypeFunc *slow_call_type,
 
   // Slow leaf call has no side-effects, sets few values
 
-  set_ctrl(transform( new (C) ProjNode(call,TypeFunc::Control) ));
+  set_ctrl(transform( new ProjNode(call,TypeFunc::Control) ));
 
   // Make memory for the call
-  Node* mem = _gvn.transform( new (C) ProjNode(call, TypeFunc::Memory) );
+  Node* mem = _gvn.transform( new ProjNode(call, TypeFunc::Memory) );
 
   // Set the RawPtr memory state only.
   set_memory(mem, adr_idx);
@@ -544,7 +544,7 @@ void IdealKit::make_leaf_call_no_fp(const TypeFunc *slow_call_type,
   uint adr_idx = C->get_alias_index(adr_type);
 
   // Slow-path leaf call
-  CallNode *call =  (CallNode*)new (C) CallLeafNoFPNode( slow_call_type, slow_call, leaf_name, adr_type);
+  CallNode *call =  (CallNode*)new CallLeafNoFPNode( slow_call_type, slow_call, leaf_name, adr_type);
 
   // Set fixed predefined input arguments
   call->init_req( TypeFunc::Control, ctrl() );
@@ -565,10 +565,10 @@ void IdealKit::make_leaf_call_no_fp(const TypeFunc *slow_call_type,
 
   // Slow leaf call has no side-effects, sets few values
 
-  set_ctrl(transform( new (C) ProjNode(call,TypeFunc::Control) ));
+  set_ctrl(transform( new ProjNode(call,TypeFunc::Control) ));
 
   // Make memory for the call
-  Node* mem = _gvn.transform( new (C) ProjNode(call, TypeFunc::Memory) );
+  Node* mem = _gvn.transform( new ProjNode(call, TypeFunc::Memory) );
 
   // Set the RawPtr memory state only.
   set_memory(mem, adr_idx);

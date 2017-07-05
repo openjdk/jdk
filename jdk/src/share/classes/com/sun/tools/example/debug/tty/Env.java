@@ -114,12 +114,12 @@ class Env {
     }
 
     static String excludesString() {
-        StringBuffer buffer = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         for (String pattern : excludes()) {
-            buffer.append(pattern);
-            buffer.append(",");
+            sb.append(pattern);
+            sb.append(",");
         }
-        return buffer.toString();
+        return sb.toString();
     }
 
     static void addExcludes(StepRequest request) {

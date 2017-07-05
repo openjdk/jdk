@@ -349,7 +349,7 @@ public class TreePath extends Object implements Serializable {
      * @return a String representation of this object
      */
     public String toString() {
-        StringBuffer tempSpot = new StringBuffer("[");
+        StringBuilder tempSpot = new StringBuilder("[");
 
         for(int counter = 0, maxCounter = getPathCount();counter < maxCounter;
             counter++) {

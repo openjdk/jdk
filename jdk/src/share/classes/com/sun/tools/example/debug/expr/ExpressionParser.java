@@ -185,7 +185,7 @@ public class ExpressionParser implements ExpressionParserConstants {
   }
 
   final public String Name() throws ParseException {
- StringBuffer sb = new StringBuffer();
+    StringBuilder sb = new StringBuilder();
     jj_consume_token(IDENTIFIER);
                  sb.append(token);
     label_2:
