@@ -27,33 +27,11 @@ include LibCommon.gmk
 
 ################################################################################
 
-ifeq ($(OPENJDK_TARGET_OS), aix)
-  LIBATTACH_OS_API_DIR := aix
-else
-  LIBATTACH_OS_API_DIR := $(OPENJDK_TARGET_OS_API_DIR)
-endif
-
-LIBATTACH_SRC := $(JDK_TOPDIR)/src/jdk.attach/$(LIBATTACH_OS_API_DIR)/native/libattach
-
-LIBATTACH_EXCLUDE_FILES :=
-ifneq ($(OPENJDK_TARGET_OS), solaris)
-  LIBATTACH_EXCLUDE_FILES += SolarisVirtualMachine.c
-endif
-ifneq ($(OPENJDK_TARGET_OS), linux)
-  LIBATTACH_EXCLUDE_FILES += LinuxVirtualMachine.c
-endif
-ifneq ($(OPENJDK_TARGET_OS), macosx)
-  LIBATTACH_EXCLUDE_FILES += BsdVirtualMachine.c
-endif
-ifneq ($(OPENJDK_TARGET_OS),aix)
-  LIBATTACH_EXCLUDE_FILES += AixVirtualMachine.c
-endif
 
 $(eval $(call SetupNativeCompilation,BUILD_LIBATTACH, \
     LIBRARY := attach, \
     OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
-    SRC := $(LIBATTACH_SRC), \
-    EXCLUDE_FILES := $(LIBATTACH_EXCLUDE_FILES), \
+    SRC := $(JDK_TOPDIR)/src/jdk.attach/$(OPENJDK_TARGET_OS)/native/libattach, \
     LANG := C, \
     OPTIMIZATION := LOW, \
     CFLAGS := $(CFLAGS_JDKLIB) $(CFLAGS_WARNINGS_ARE_ERRORS) \

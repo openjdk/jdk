@@ -27,7 +27,6 @@
  * @key nmt regression
  * @library /testlibrary /testlibrary/whitebox
  * @build ReleaseNoCommit
- * @ignore
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:NativeMemoryTracking=summary ReleaseNoCommit
  */

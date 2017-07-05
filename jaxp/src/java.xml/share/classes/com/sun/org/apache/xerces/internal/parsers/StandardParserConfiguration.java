@@ -1,13 +1,10 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
- */
-/*
- * Copyright 2001-2004 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -109,6 +106,22 @@ public class StandardParserConfiguration
     protected static final String HONOUR_ALL_SCHEMALOCATIONS =
         Constants.XERCES_FEATURE_PREFIX + Constants.HONOUR_ALL_SCHEMALOCATIONS_FEATURE;
 
+    /** Feature identifier: whether to ignore xsi:type attributes until a global element declaration is encountered */
+    protected static final String IGNORE_XSI_TYPE =
+        Constants.XERCES_FEATURE_PREFIX + Constants.IGNORE_XSI_TYPE_FEATURE;
+
+    /** Feature identifier: whether to ignore ID/IDREF errors */
+    protected static final String ID_IDREF_CHECKING =
+        Constants.XERCES_FEATURE_PREFIX + Constants.ID_IDREF_CHECKING_FEATURE;
+
+    /** Feature identifier: whether to ignore unparsed entity errors */
+    protected static final String UNPARSED_ENTITY_CHECKING =
+        Constants.XERCES_FEATURE_PREFIX + Constants.UNPARSED_ENTITY_CHECKING_FEATURE;
+
+    /** Feature identifier: whether to ignore identity constraint errors */
+    protected static final String IDENTITY_CONSTRAINT_CHECKING =
+        Constants.XERCES_FEATURE_PREFIX + Constants.IDC_CHECKING_FEATURE;
+
     /** Feature identifier: namespace growth */
     protected static final String NAMESPACE_GROWTH =
         Constants.XERCES_FEATURE_PREFIX + Constants.NAMESPACE_GROWTH_FEATURE;
@@ -134,6 +147,10 @@ public class StandardParserConfiguration
     /** Property identifier: Schema DV Factory */
     protected static final String SCHEMA_DV_FACTORY =
         Constants.XERCES_PROPERTY_PREFIX + Constants.SCHEMA_DV_FACTORY_PROPERTY;
+
+    /** Property identifier: root type definition. */
+    protected static final String ROOT_TYPE_DEF =
+        Constants.XERCES_PROPERTY_PREFIX + Constants.ROOT_TYPE_DEFINITION_PROPERTY;
 
     //
     // Data
@@ -211,6 +228,10 @@ public class StandardParserConfiguration
             //       not-recognized exception to be thrown. -Ac
             XMLSCHEMA_VALIDATION,
             XMLSCHEMA_FULL_CHECKING,
+            IGNORE_XSI_TYPE,
+            ID_IDREF_CHECKING,
+            IDENTITY_CONSTRAINT_CHECKING,
+            UNPARSED_ENTITY_CHECKING,
         };
         addRecognizedFeatures(recognizedFeatures);
 
@@ -221,6 +242,10 @@ public class StandardParserConfiguration
         setFeature(GENERATE_SYNTHETIC_ANNOTATIONS, false);
         setFeature(VALIDATE_ANNOTATIONS, false);
         setFeature(HONOUR_ALL_SCHEMALOCATIONS, false);
+        setFeature(IGNORE_XSI_TYPE, false);
+        setFeature(ID_IDREF_CHECKING, true);
+        setFeature(IDENTITY_CONSTRAINT_CHECKING, true);
+        setFeature(UNPARSED_ENTITY_CHECKING, true);
         setFeature(NAMESPACE_GROWTH, false);
         setFeature(TOLERATE_DUPLICATES, false);
 
@@ -233,11 +258,11 @@ public class StandardParserConfiguration
             //       not-recognized exception to be thrown. -Ac
             SCHEMA_LOCATION,
             SCHEMA_NONS_LOCATION,
+            ROOT_TYPE_DEF,
             SCHEMA_DV_FACTORY,
-            };
+        };
 
-                        addRecognizedProperties(recognizedProperties);
-
+        addRecognizedProperties(recognizedProperties);
     } // <init>(SymbolTable,XMLGrammarPool)
 
     //

@@ -26,6 +26,7 @@
  * @bug     4858522
  * @summary Basic unit test of HotspotRuntimeMBean.getSafepointSyncTime()
  * @author  Steve Bohne
+ * @run main/othervm -XX:+UsePerfData GetSafepointSyncTime
  */
 
 /*

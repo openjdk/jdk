@@ -27,7 +27,10 @@
 
 #include "runtime/timer.hpp"
 
-class Compile;
+class IfNode;
+class MergeMemNode;
+class Node;
+class PhaseGVN;
 
 //------------------------------Phase------------------------------------------
 // Most optimizations are done in Phases.  Creating a phase does any long
@@ -114,9 +117,20 @@ protected:
   static elapsedTimer   _t_instrSched;
   static elapsedTimer   _t_buildOopMaps;
 #endif
+
+  // Generate a subtyping check.  Takes as input the subtype and supertype.
+  // Returns 2 values: sets the default control() to the true path and
+  // returns the false path.  Only reads from constant memory taken from the
+  // default memory; does not write anything.  It also doesn't take in an
+  // Object; if you wish to check an Object you need to load the Object's
+  // class prior to coming here.
+  // Used in GraphKit and PhaseMacroExpand
+  static Node* gen_subtype_check(Node* subklass, Node* superklass, Node** ctrl, MergeMemNode* mem, PhaseGVN* gvn);
+
 public:
   Compile * C;
   Phase( PhaseNumber pnum );
+
 #ifndef PRODUCT
   static void print_timers();
 #endif

@@ -25,6 +25,7 @@
 #ifndef SHARE_VM_GC_IMPLEMENTATION_G1_G1SATBCARDTABLEMODREFBS_HPP
 #define SHARE_VM_GC_IMPLEMENTATION_G1_G1SATBCARDTABLEMODREFBS_HPP
 
+#include "gc_implementation/g1/g1RegionToSpaceMapper.hpp"
 #include "memory/cardTableModRefBS.hpp"
 #include "memory/memRegion.hpp"
 #include "oops/oop.inline.hpp"
@@ -33,6 +34,7 @@
 #if INCLUDE_ALL_GCS
 
 class DirtyCardQueueSet;
+class G1SATBCardTableLoggingModRefBS;
 
 // This barrier is specialized to use a logging barrier to support
 // snapshot-at-the-beginning marking.
@@ -126,17 +128,39 @@ public:
     jbyte val = _byte_map[card_index];
     return (val & (clean_card_mask_val() | deferred_card_val())) == deferred_card_val();
   }
+};
 
+class G1SATBCardTableLoggingModRefBSChangedListener : public G1MappingChangedListener {
+ private:
+  G1SATBCardTableLoggingModRefBS* _card_table;
+ public:
+  G1SATBCardTableLoggingModRefBSChangedListener() : _card_table(NULL) { }
+
+  void set_card_table(G1SATBCardTableLoggingModRefBS* card_table) { _card_table = card_table; }
+
+  virtual void on_commit(uint start_idx, size_t num_regions);
 };
 
 // Adds card-table logging to the post-barrier.
 // Usual invariant: all dirty cards are logged in the DirtyCardQueueSet.
 class G1SATBCardTableLoggingModRefBS: public G1SATBCardTableModRefBS {
+  friend class G1SATBCardTableLoggingModRefBSChangedListener;
  private:
+  G1SATBCardTableLoggingModRefBSChangedListener _listener;
   DirtyCardQueueSet& _dcqs;
  public:
+  static size_t compute_size(size_t mem_region_size_in_words) {
+    size_t number_of_slots = (mem_region_size_in_words / card_size_in_words);
+    return ReservedSpace::allocation_align_size_up(number_of_slots);
+  }
+
   G1SATBCardTableLoggingModRefBS(MemRegion whole_heap,
                                  int max_covered_regions);
+
+  virtual void initialize() { }
+  virtual void initialize(G1RegionToSpaceMapper* mapper);
+
+  virtual void resize_covered_region(MemRegion new_region) { ShouldNotReachHere(); }
 
   bool is_a(BarrierSet::Name bsn) {
     return bsn == BarrierSet::G1SATBCTLogging ||
@@ -154,8 +178,6 @@ class G1SATBCardTableLoggingModRefBS: public G1SATBCardTableModRefBS {
 
   void write_region_work(MemRegion mr)    { invalidate(mr); }
   void write_ref_array_work(MemRegion mr) { invalidate(mr); }
-
-
 };
 
 

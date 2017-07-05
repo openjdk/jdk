@@ -47,6 +47,13 @@ static int matchFamily(struct sockaddr *sa) {
     return (family == AF_INET);
 }
 
+JNIEXPORT void JNICALL
+Java_sun_nio_ch_InheritedChannel_initIDs(JNIEnv *env, jclass cla)
+{
+    /* Initialize InetAddress IDs before later use of NET_XXX functions */
+    initInetAddressIDs(env);
+}
+
 JNIEXPORT jobject JNICALL
 Java_sun_nio_ch_InheritedChannel_peerAddress0(JNIEnv *env, jclass cla, jint fd)
 {
