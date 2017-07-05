@@ -48,6 +48,8 @@ import sun.font.Font2D;
 import sun.font.FontManager;
 import sun.font.NativeFont;
 import sun.java2d.SunGraphicsEnvironment;
+import sun.java2d.SurfaceManagerFactory;
+import sun.java2d.UnixSurfaceManagerFactory;
 
 /**
  * This is an implementation of a GraphicsEnvironment object for the
@@ -177,6 +179,10 @@ public class X11GraphicsEnvironment
                 return null;
             }
          });
+
+        // Install the correct surface manager factory.
+        SurfaceManagerFactory.setInstance(new UnixSurfaceManagerFactory());
+
     }
 
     private static boolean glxAvailable;
