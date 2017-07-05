@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ import static jdk.vm.ci.meta.MetaUtil.internalNameToJava;
  * Represents a resolved or unresolved type. Types include primitives, objects, {@code void}, and
  * arrays thereof.
  */
-public interface JavaType extends TrustedInterface {
+public interface JavaType {
 
     /**
      * Returns the name of this type in internal form. The following are examples of strings
@@ -59,6 +59,15 @@ public interface JavaType extends TrustedInterface {
             name = name.substring(0, name.length() - 1);
         }
         return name;
+    }
+
+    /**
+     * Checks whether this type is an array class.
+     *
+     * @return {@code true} if this type is an array class
+     */
+    default boolean isArray() {
+        return getComponentType() != null;
     }
 
     /**

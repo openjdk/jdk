@@ -231,7 +231,8 @@ void CompileLog::finish_log_on_error(outputStream* file, char* buf, int buflen) 
       // Copy any remaining data inside a quote:
       bool saw_slop = false;
       int end_cdata = 0;  // state machine [0..2] watching for too many "]]"
-      while ((nr = read(partial_fd, buf, buflen)) > 0) {
+      while ((nr = read(partial_fd, buf, buflen-1)) > 0) {
+        buf[buflen-1] = '\0';
         if (!saw_slop) {
           file->print_raw_cr("<fragment>");
           file->print_raw_cr("<![CDATA[");

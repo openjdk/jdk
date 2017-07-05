@@ -25,8 +25,8 @@ package jdk.vm.ci.code;
 /**
  * Constants and intrinsic definition for memory barriers.
  *
- * The documentation for each constant is taken from Doug Lea's <a
- * href="http://gee.cs.oswego.edu/dl/jmm/cookbook.html">The JSR-133 Cookbook for Compiler
+ * The documentation for each constant is taken from Doug Lea's
+ * <a href="http://gee.cs.oswego.edu/dl/jmm/cookbook.html">The JSR-133 Cookbook for Compiler
  * Writers</a>.
  * <p>
  * The {@code JMM_*} constants capture the memory barriers necessary to implement the Java Memory

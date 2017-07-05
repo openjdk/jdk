@@ -56,8 +56,8 @@ import java.util.Objects;
  * @version 2.0.1 (sax2r2)
  */
 class NewInstance {
-
     private static final String DEFAULT_PACKAGE = "com.sun.org.apache.xerces.internal";
+    private static final String DEFAULT_CLASS = "com.sun.org.apache.xerces.internal.parsers.SAXParser";
     /**
      * Creates a new instance of the specified class name
      *
@@ -70,11 +70,26 @@ class NewInstance {
         ClassLoader classLoader = Objects.requireNonNull(loader);
         String className = Objects.requireNonNull(clsName);
 
-        if (className.startsWith(DEFAULT_PACKAGE)) {
+        // Instantiate directly for the SAX default parser
+        if (className.equals(DEFAULT_CLASS)) {
             return type.cast(new com.sun.org.apache.xerces.internal.parsers.SAXParser());
         }
 
-        Class<?> driverClass = classLoader.loadClass(className);
+        // make sure we have access to restricted packages
+        boolean internal = false;
+        if (System.getSecurityManager() != null) {
+            if (className != null && className.startsWith(DEFAULT_PACKAGE)) {
+                internal = true;
+            }
+        }
+
+        Class<?> driverClass;
+        if (classLoader == null || internal) {
+            driverClass = Class.forName(className);
+        } else {
+            driverClass = classLoader.loadClass(className);
+        }
+
         return type.cast(driverClass.newInstance());
     }
 

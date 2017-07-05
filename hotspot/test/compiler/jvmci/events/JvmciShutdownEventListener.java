@@ -24,9 +24,9 @@
 package compiler.jvmci.events;
 
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
-import jdk.vm.ci.hotspot.HotSpotVMEventListener;
+import jdk.vm.ci.hotspot.services.HotSpotVMEventListener;
 
-public class JvmciShutdownEventListener implements HotSpotVMEventListener {
+public class JvmciShutdownEventListener extends HotSpotVMEventListener {
     public static final String MESSAGE = "Shutdown notified";
     public static final String GOT_INTERNAL_ERROR = "Got internal error";
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,13 +30,21 @@ import java.util.ResourceBundle;
 
 /**
  * {@code ResourceBundleProvider} is a provider interface that is used for
- * loading resource bundles. Implementation classes of this interface are loaded
- * with {@link java.util.ServiceLoader ServiceLoader} during a call to the
+ * loading resource bundles for named modules. Implementation classes of
+ * this interface are loaded with {@link java.util.ServiceLoader ServiceLoader}
+ * during a call to the
  * {@link ResourceBundle#getBundle(String, Locale, ClassLoader)
  * ResourceBundle.getBundle} method. The provider service type is determined by
- * {@code basename+"Provider"}. For example, if the base name is
- * "com.example.app.MyResources", {@code com.example.app.MyResourcesProvider}
- * will be the provider service type.
+ * {@code basename+"Provider"}.
+ *
+ * <p>
+ * For example, if the base name is "com.example.app.MyResources",
+ * {@code com.example.app.MyResourcesProvider} will be the provider service type:
+ * <pre>{@code
+ * public interface MyResourcesProvider extends ResourceBundleProvider {
+ * }
+ * }</pre>
+ *
  * <p>
  * This providers's {@link #getBundle(String, Locale) getBundle} method is called
  * through the resource bundle loading process instead of {@link
@@ -44,13 +52,17 @@ import java.util.ResourceBundle;
  * ResourceBundle.Control.newBundle()}. Refer to {@link ResourceBundle} for
  * details.
  *
+ * @see <a href="../ResourceBundle.html#bundleprovider">
+ *     Resource Bundles in Named Modules</a>
+ * @see <a href="../ResourceBundle.html#RBP_support">
+ *     ResourceBundleProvider Service Providers</a>
  * @since 9
  */
 public interface ResourceBundleProvider {
     /**
      * Returns a {@code ResourceBundle} for the given bundle name and locale.
-     * This method returns null if there is no {@code ResourceBundle} found
-     * for the given parameters.
+     * This method returns {@code null} if there is no {@code ResourceBundle}
+     * found for the given parameters.
      *
      *
      * @param baseName

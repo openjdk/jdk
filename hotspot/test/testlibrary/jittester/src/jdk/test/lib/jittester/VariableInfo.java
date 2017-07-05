@@ -55,4 +55,8 @@ public class VariableInfo extends Symbol {
     public Symbol deepCopy() {
         return new VariableInfo(this);
     }
+
+    public boolean isLocal() {
+        return (flags & LOCAL) != 0;
+    }
 }

@@ -28,7 +28,6 @@ import jdk.test.lib.jittester.OperatorKind;
 import jdk.test.lib.jittester.ProductionFailedException;
 import jdk.test.lib.jittester.Type;
 import jdk.test.lib.jittester.TypeList;
-import jdk.test.lib.jittester.types.TypeBoolean;
 import jdk.test.lib.jittester.types.TypeKlass;
 import jdk.test.lib.jittester.utils.PseudoRandom;
 
@@ -43,13 +42,13 @@ class BinaryComparisonOperatorFactory extends BinaryOperatorFactory {
 
     @Override
     protected boolean isApplicable(Type resultType) {
-        return resultType.equals(new TypeBoolean());
+        return resultType.equals(TypeList.BOOLEAN);
     }
 
     @Override
-    protected Pair<Type, Type> generateTypes() throws ProductionFailedException {
+    protected Pair<Type, Type> generateTypes() {
         final List<Type> builtInExceptBoolean = new ArrayList<>(TypeList.getBuiltIn());
-        builtInExceptBoolean.remove(new TypeBoolean());
+        builtInExceptBoolean.remove(TypeList.BOOLEAN);
         return new Pair<>(PseudoRandom.randomElement(builtInExceptBoolean),
                 PseudoRandom.randomElement(builtInExceptBoolean));
     }

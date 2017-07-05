@@ -91,10 +91,10 @@ manifest:
 	@echo 'Main-Class: jdk.test.lib.jittester.Automatic' >> $(MANIFEST)
 
 compile_testlib: INIT
-	$(JAVAC) -XDignore.symbol.file -Xlint $(TESTLIBRARY_SRC_FILES) -d $(CLASSES_DIR) -source 1.8
+	$(JAVAC) -XDignore.symbol.file -XaddExports:java.base/jdk.internal.misc=ALL-UNNAMED -XaddExports:java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED -Xlint $(TESTLIBRARY_SRC_FILES) -d $(CLASSES_DIR)
 
 COMPILE: INIT filelist compile_testlib
-	$(JAVAC) -cp $(CLASSES_DIR) -XDignore.symbol.file -Xlint -sourcepath $(SRC_DIR) -d $(CLASSES_DIR) -source 1.8 @filelist
+	$(JAVAC) -cp $(CLASSES_DIR) -XDignore.symbol.file -XaddExports:java.base/jdk.internal.misc=ALL-UNNAMED -XaddExports:java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED -Xlint -sourcepath $(SRC_DIR) -d $(CLASSES_DIR) @filelist
 
 filelist: $(SRC_FILES)
 		@rm -f $@
@@ -104,7 +104,7 @@ INIT: $(DIST_DIR)
 	$(shell if [ ! -d $(CLASSES_DIR) ]; then mkdir -p $(CLASSES_DIR); fi)
 
 install: clean_testbase testgroup testroot copytestlibrary JAR cleantmp
-	$(JAVA) -jar $(DIST_JAR) $(APPLICATION_ARGS)
+	$(JAVA) -XaddExports:java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED -ea -jar $(DIST_JAR) $(APPLICATION_ARGS)
 
 clean_testbase:
 	@rm -rf $(TESTBASE_DIR)

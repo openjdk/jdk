@@ -23,13 +23,12 @@
 
 package jdk.test.lib.jittester.factories;
 
-import jdk.test.lib.jittester.IRNode;
 import jdk.test.lib.jittester.ProductionFailedException;
 import jdk.test.lib.jittester.Type;
 import jdk.test.lib.jittester.functions.Return;
 import jdk.test.lib.jittester.types.TypeKlass;
 
-class ReturnFactory extends SafeFactory {
+class ReturnFactory extends SafeFactory<Return> {
     private final long complexityLimit;
     private final int operatorLimit;
     private final Type resultType;
@@ -46,7 +45,7 @@ class ReturnFactory extends SafeFactory {
     }
 
     @Override
-    protected IRNode sproduce() throws ProductionFailedException {
+    protected Return sproduce() throws ProductionFailedException {
         return new Return(new IRNodeBuilder().setComplexityLimit(complexityLimit - 1)
                 .setOperatorLimit(operatorLimit - 1)
                 .setOwnerKlass(ownerClass)

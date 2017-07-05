@@ -69,7 +69,7 @@ class ZipFileSystem extends FileSystem {
 
     private final ZipFileSystemProvider provider;
     private final Path zfpath;
-    private final ZipCoder zc;
+    final ZipCoder zc;
     private final boolean noExtt;        // see readExtra()
     private final ZipPath rootdir;
     // configurable by env map
@@ -163,7 +163,7 @@ class ZipFileSystem extends FileSystem {
     @Override
     public ZipPath getPath(String first, String... more) {
         if (more.length == 0) {
-            return new ZipPath(this, getBytes(first));
+            return new ZipPath(this, first);
         }
         StringBuilder sb = new StringBuilder();
         sb.append(first);
@@ -175,7 +175,7 @@ class ZipFileSystem extends FileSystem {
                 sb.append(path);
             }
         }
-        return new ZipPath(this, getBytes(sb.toString()));
+        return new ZipPath(this, sb.toString());
     }
 
     @Override

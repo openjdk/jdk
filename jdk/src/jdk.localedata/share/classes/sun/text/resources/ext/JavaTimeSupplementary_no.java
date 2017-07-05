@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 /*
  * COPYRIGHT AND PERMISSION NOTICE
  *
- * Copyright (C) 1991-2015 Unicode, Inc. All rights reserved.
+ * Copyright (C) 1991-2016 Unicode, Inc. All rights reserved.
  * Distributed under the Terms of Use in
  * http://www.unicode.org/copyright.html.
  *
@@ -89,6 +89,14 @@ public class JavaTimeSupplementary_no extends OpenListResourceBundle {
                     "4. kvartal",
                 }
             },
+            { "QuarterNarrows",
+                new String[] {
+                    "1.",
+                    "2.",
+                    "3.",
+                    "4.",
+                }
+            },
             { "calendarname.buddhist",
                 "buddhistisk kalender" },
             { "calendarname.gregorian",
@@ -98,7 +106,7 @@ public class JavaTimeSupplementary_no extends OpenListResourceBundle {
             { "calendarname.islamic",
                 "islamsk kalender" },
             { "calendarname.islamic-civil",
-                "islamsk sivil kalender" },
+                "islamsk kalender (tabell, sivil)" },
             { "calendarname.islamic-umalqura",
                 "islamsk kalender (Umm al-Qura)" },
             { "calendarname.japanese",
@@ -108,23 +116,23 @@ public class JavaTimeSupplementary_no extends OpenListResourceBundle {
             { "field.dayperiod",
                 "AM/PM" },
             { "field.era",
-                "Tidsalder" },
+                "tidsalder" },
             { "field.hour",
-                "Time" },
+                "time" },
             { "field.minute",
-                "Minutt" },
+                "minutt" },
             { "field.month",
-                "M\u00e5ned" },
+                "m\u00e5ned" },
             { "field.second",
-                "Sekund" },
+                "sekund" },
             { "field.week",
-                "Uke" },
+                "uke" },
             { "field.weekday",
-                "Ukedag" },
+                "ukedag" },
             { "field.year",
-                "\u00c5r" },
+                "\u00e5r" },
             { "field.zone",
-                "Tidssone" },
+                "tidssone" },
             { "islamic.AmPmMarkers",
                 new String[] {
                     "a.m.",
@@ -178,6 +186,40 @@ public class JavaTimeSupplementary_no extends OpenListResourceBundle {
                     "AH",
                 }
             },
+            { "islamic.MonthAbbreviations",
+                new String[] {
+                    "muh.",
+                    "saf.",
+                    "rab. I",
+                    "rab. II",
+                    "jum. I",
+                    "jum. II",
+                    "raj.",
+                    "sha.",
+                    "ram.",
+                    "shaw.",
+                    "dhu\u02bbl-q.",
+                    "dhu\u02bbl-h.",
+                    "",
+                }
+            },
+            { "islamic.MonthNames",
+                new String[] {
+                    "muharram",
+                    "safar",
+                    "rabi\u02bb I",
+                    "rabi\u02bb II",
+                    "jumada I",
+                    "jumada II",
+                    "rajab",
+                    "sha\u02bbban",
+                    "ramadan",
+                    "shawwal",
+                    "dhu\u02bbl-qi\u02bbdah",
+                    "dhu\u02bbl-hijjah",
+                    "",
+                }
+            },
             { "islamic.QuarterAbbreviations",
                 new String[] {
                     "K1",
@@ -196,10 +238,10 @@ public class JavaTimeSupplementary_no extends OpenListResourceBundle {
             },
             { "islamic.QuarterNarrows",
                 new String[] {
-                    "1",
-                    "2",
-                    "3",
-                    "4",
+                    "1.",
+                    "2.",
+                    "3.",
+                    "4.",
                 }
             },
             { "islamic.TimePatterns",
@@ -210,10 +252,22 @@ public class JavaTimeSupplementary_no extends OpenListResourceBundle {
                     "HH.mm",
                 }
             },
+            { "islamic.abbreviated.AmPmMarkers",
+                new String[] {
+                    "a.m.",
+                    "p.m.",
+                }
+            },
             { "islamic.long.Eras",
                 new String[] {
                     "",
                     "AH",
+                }
+            },
+            { "islamic.narrow.AmPmMarkers",
+                new String[] {
+                    "a",
+                    "p",
                 }
             },
             { "islamic.narrow.Eras",
@@ -264,10 +318,28 @@ public class JavaTimeSupplementary_no extends OpenListResourceBundle {
                     "d.M y G",
                 }
             },
+            { "java.time.japanese.long.Eras",
+                new String[] {
+                    "etter Kristus",
+                    "Meiji",
+                    "Taish\u014d",
+                    "Sh\u014dwa",
+                    "Heisei",
+                }
+            },
+            { "java.time.japanese.short.Eras",
+                new String[] {
+                    "e.Kr.",
+                    "M",
+                    "T",
+                    "S",
+                    "H",
+                }
+            },
             { "java.time.long.Eras",
                 new String[] {
-                    "f.Kr.",
-                    "e.Kr.",
+                    "f\u00f8r Kristus",
+                    "etter Kristus",
                 }
             },
             { "java.time.roc.DatePatterns",
@@ -404,6 +476,14 @@ public class JavaTimeSupplementary_no extends OpenListResourceBundle {
                     "4. kvartal",
                 }
             },
+            { "roc.QuarterNarrows",
+                new String[] {
+                    "1.",
+                    "2.",
+                    "3.",
+                    "4.",
+                }
+            },
             { "roc.TimePatterns",
                 new String[] {
                     "HH.mm.ss zzzz",
@@ -412,10 +492,22 @@ public class JavaTimeSupplementary_no extends OpenListResourceBundle {
                     "HH.mm",
                 }
             },
+            { "roc.abbreviated.AmPmMarkers",
+                new String[] {
+                    "a.m.",
+                    "p.m.",
+                }
+            },
             { "roc.long.Eras",
                 new String[] {
                     "Before R.O.C.",
                     "Minguo",
+                }
+            },
+            { "roc.narrow.AmPmMarkers",
+                new String[] {
+                    "a",
+                    "p",
                 }
             },
             { "roc.narrow.Eras",

@@ -1,5 +1,6 @@
+
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,16 +28,21 @@ import java.io.PrintStream;
 import java.security.DigestInputStream;
 import java.security.DigestOutputStream;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.Security;
 import java.util.Arrays;
 import java.util.Random;
+import jdk.testlibrary.RandomFactory;
 import static java.lang.System.out;
 
 /**
  * @test
- * @bug 8050370
+ * @bug 8050370 8156059
  * @summary MessageDigest tests with DigestIOStream
  * @author Kevin Liu
  * @key randomness
+ * @library /lib/testlibrary
+ * @run main/timeout=180 TestDigestIOStream
  */
 
 enum ReadModel {
@@ -45,12 +51,11 @@ enum ReadModel {
 
 public class TestDigestIOStream {
 
-    private static final int[] DATA_LEN_ARRAY = {
-        1, 50, 2500, 125000, 6250000
-    };
-    private static final String[] ALGORITHM_ARRAY = {
-        "MD2", "MD5", "SHA1", "SHA-224", "SHA-256", "SHA-384", "SHA-512"
-    };
+    private static final int[] DATA_LEN_ARRAY = { 1, 50, 2500, 125000,
+            6250000 };
+    private static final String[] ALGORITHM_ARRAY = { "MD2", "MD5", "SHA1",
+            "SHA-224", "SHA-256", "SHA-384", "SHA-512", "SHA3-224", "SHA3-256",
+            "SHA3-384", "SHA3-512" };
 
     private static byte[] data;
 
@@ -62,42 +67,67 @@ public class TestDigestIOStream {
     }
 
     public void run() throws Exception {
-        for (String algorithm: ALGORITHM_ARRAY) {
+        for (String algorithm : ALGORITHM_ARRAY) {
+            try {
+                md = MessageDigest.getInstance(algorithm);
+                for (int length : DATA_LEN_ARRAY) {
 
-            md = MessageDigest.getInstance(algorithm);
+                    Random rdm = RandomFactory.getRandom();
+                    data = new byte[length];
+                    rdm.nextBytes(data);
 
-            for (int length: DATA_LEN_ARRAY) {
-
-                Random rdm = new Random();
-                data = new byte[length];
-                rdm.nextBytes(data);
-
-                if (!testMDChange(algorithm, length)) {
-                    throw new RuntimeException("testMDChange failed at:"
-                            + algorithm + "/" + length);
-                }
-                if (!testMDShare(algorithm, length)) {
-                    throw new RuntimeException("testMDShare failed at:"
-                            + algorithm + "/" + length);
-                }
-                for (ReadModel readModel: ReadModel.values()) {
-                    // test Digest function when digest switch on
-                    if (!testDigestOnOff(algorithm, readModel, true, length)) {
-                        throw new RuntimeException("testDigestOn failed at:"
-                                + algorithm + "/" + length + "/" + readModel);
+                    if (!testMDChange(algorithm, length)) {
+                        throw new RuntimeException("testMDChange failed at:"
+                                + algorithm + "/" + length);
                     }
-                    // test Digest function when digest switch off
-                    if (!testDigestOnOff(algorithm, readModel, false, length)) {
-                        throw new RuntimeException("testDigestOff failed at:"
-                                + algorithm + "/" + length + "/" + readModel);
+                    if (!testMDShare(algorithm, length)) {
+                        throw new RuntimeException("testMDShare failed at:"
+                                + algorithm + "/" + length);
                     }
+                    for (ReadModel readModel : ReadModel.values()) {
+                        // test Digest function when digest switch on
+                        if (!testDigestOnOff(algorithm, readModel, true,
+                                length)) {
+                            throw new RuntimeException(
+                                    "testDigestOn failed at:" + algorithm + "/"
+                                            + length + "/" + readModel);
+                        }
+                        // test Digest function when digest switch off
+                        if (!testDigestOnOff(algorithm, readModel, false,
+                                length)) {
+                            throw new RuntimeException(
+                                    "testDigestOff failed at:" + algorithm + "/"
+                                            + length + "/" + readModel);
+                        }
+                    }
+                }
+            } catch (NoSuchAlgorithmException nae) {
+                if (algorithm.startsWith("SHA3") && !isSHA3supported()) {
+                    continue;
+                } else {
+                    throw nae;
                 }
             }
         }
         int testNumber = ALGORITHM_ARRAY.length * ReadModel.values().length
-                * DATA_LEN_ARRAY.length * 2 + ALGORITHM_ARRAY.length
-                * DATA_LEN_ARRAY.length * 2;
+                * DATA_LEN_ARRAY.length * 2
+                + ALGORITHM_ARRAY.length * DATA_LEN_ARRAY.length * 2;
         out.println("All " + testNumber + " Tests Passed");
+    }
+
+    // SHA-3 hash algorithms are only supported by "SUN" provider
+    // and "OracleUcrypto" provider on Solaris 12.0 or later
+    // This method checks if system supports SHA-3
+    private boolean isSHA3supported() {
+        if (Security.getProvider("SUN") != null) {
+            return true;
+        }
+        if (Security.getProvider("OracleUcrypto") != null
+                && "SunOS".equals(System.getProperty("os.name"))
+                && System.getProperty("os.version").compareTo("5.12") >= 0) {
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -115,8 +145,8 @@ public class TestDigestIOStream {
      * @exception Exception
      *                throw unexpected exception
      */
-    public boolean testDigestOnOff(String algo, ReadModel readModel,
-            boolean on, int dataLength) throws Exception {
+    public boolean testDigestOnOff(String algo, ReadModel readModel, boolean on,
+            int dataLength) throws Exception {
 
         // Generate the DigestInputStream/DigestOutputStream object
         try (ByteArrayInputStream bais = new ByteArrayInputStream(data);
@@ -302,7 +332,8 @@ public class TestDigestIOStream {
         try (ByteArrayInputStream bais = new ByteArrayInputStream(data);
                 DigestInputStream dis = new DigestInputStream(bais, mdCommon);
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                DigestOutputStream dos = new DigestOutputStream(baos, mdCommon);) {
+                DigestOutputStream dos = new DigestOutputStream(baos,
+                        mdCommon);) {
 
             // Perform the update using all available/possible update methods
             int k = 0;

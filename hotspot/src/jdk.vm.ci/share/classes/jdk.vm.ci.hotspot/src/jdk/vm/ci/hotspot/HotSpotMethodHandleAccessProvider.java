@@ -33,7 +33,7 @@ import jdk.vm.ci.meta.ResolvedJavaField;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
 
-public class HotSpotMethodHandleAccessProvider implements MethodHandleAccessProvider, HotSpotProxified {
+public class HotSpotMethodHandleAccessProvider implements MethodHandleAccessProvider {
 
     private final ConstantReflectionProvider constantReflection;
 

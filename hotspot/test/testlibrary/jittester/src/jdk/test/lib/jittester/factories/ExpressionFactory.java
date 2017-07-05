@@ -29,11 +29,11 @@ import jdk.test.lib.jittester.ProductionFailedException;
 import jdk.test.lib.jittester.ProductionLimiter;
 import jdk.test.lib.jittester.ProductionParams;
 import jdk.test.lib.jittester.Rule;
-import jdk.test.lib.jittester.Type;;
+import jdk.test.lib.jittester.Type;
 import jdk.test.lib.jittester.types.TypeKlass;
 
-class ExpressionFactory extends SafeFactory {
-    private final Rule rule;
+class ExpressionFactory extends SafeFactory<IRNode> {
+    private final Rule<IRNode> rule;
 
     ExpressionFactory(long complexityLimit, int operatorLimit, TypeKlass ownerClass, Type resultType,
             boolean exceptionSafe, boolean noconsts) throws ProductionFailedException {
@@ -44,7 +44,7 @@ class ExpressionFactory extends SafeFactory {
                 .setResultType(resultType)
                 .setExceptionSafe(exceptionSafe)
                 .setNoConsts(noconsts);
-        rule = new Rule("expression");
+        rule = new Rule<>("expression");
         if (!noconsts) {
             rule.add("literal", builder.getLiteralFactory());
             rule.add("constant", builder.setIsConstant(true)

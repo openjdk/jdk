@@ -42,9 +42,8 @@ import jdk.test.lib.jittester.functions.FunctionInfo;
 import jdk.test.lib.jittester.types.TypeKlass;
 import jdk.test.lib.jittester.utils.PseudoRandom;
 
-class KlassFactory extends Factory {
+class KlassFactory extends Factory<Klass> {
     private final String name;
-    private final String printerName;
     private final long complexityLimit;
     private final int statementsInFunctionLimit;
     private final int operatorLimit;
@@ -55,11 +54,10 @@ class KlassFactory extends Factory {
     private TypeKlass parent;
     private int memberFunctionsLimit;
 
-    KlassFactory(String name, String printerName, long complexityLimit,
+    KlassFactory(String name, long complexityLimit,
             int memberFunctionsLimit, int memberFunctionsArgLimit, int statementsInFunctionLimit,
             int operatorLimit, int level) {
         this.name = name;
-        this.printerName = printerName;
         this.complexityLimit = complexityLimit;
         this.memberFunctionsLimit = memberFunctionsLimit;
         this.memberFunctionsArgLimit = memberFunctionsArgLimit;
@@ -70,7 +68,7 @@ class KlassFactory extends Factory {
     }
 
     @Override
-    public IRNode produce() throws ProductionFailedException {
+    public Klass produce() throws ProductionFailedException {
         HashSet<Symbol> abstractSet = new HashSet<>();
         HashSet<Symbol> overrideSet = new HashSet<>();
         thisKlass = new TypeKlass(name);
@@ -135,14 +133,10 @@ class KlassFactory extends Factory {
                 SymbolTable.remove(symbol);
             }
         } else {
-            parent = (TypeKlass) TypeList.find("java.lang.Object");
+            parent = TypeList.OBJECT;
             thisKlass.addParent(parent.getName());
             thisKlass.setParent(parent);
             parent.addChild(name);
-        }
-        // Just don't print it. It's assumed that we at least are inherited from Object.
-        if (parent.getName().equals("java.lang.Object")) {
-            parent = null;
         }
         SymbolTable.add(new VariableInfo("this", thisKlass, thisKlass,
                 VariableInfo.FINAL | VariableInfo.LOCAL | VariableInfo.INITIALIZED));
@@ -152,8 +146,7 @@ class KlassFactory extends Factory {
         IRNode functionDeclarations = null;
         IRNode abstractFunctionsRedefinitions = null;
         IRNode overridenFunctionsRedefinitions = null;
-        IRNodeBuilder builder = new IRNodeBuilder().setPrinterName(printerName)
-                .setOwnerKlass(thisKlass)
+        IRNodeBuilder builder = new IRNodeBuilder().setOwnerKlass(thisKlass)
                 .setExceptionSafe(true);
         try {
             builder.setLevel(level + 1)
@@ -227,7 +220,7 @@ class KlassFactory extends Factory {
             }
         }
         if (probableParents.isEmpty()) {
-            parent = (TypeKlass) TypeList.find("java.lang.Object");
+            parent = TypeList.OBJECT;
         } else {
             parent = (TypeKlass) PseudoRandom.randomElement(probableParents);
         }
@@ -246,7 +239,7 @@ class KlassFactory extends Factory {
                         functionInfo.argTypes.get(0).type = thisKlass;
                     }
                 }
-                symbolCopy.klass = thisKlass;
+                symbolCopy.owner = thisKlass;
                 SymbolTable.add(symbolCopy);
             }
         }
@@ -276,10 +269,9 @@ class KlassFactory extends Factory {
             interfaces.add(iface);
             iface.addChild(name);
             thisKlass.addParent(iface.getName());
-            thisKlass.setParent(iface);
             for (Symbol symbol : SymbolTable.getAllCombined(iface, FunctionInfo.class)) {
                 FunctionInfo functionInfo = (FunctionInfo) symbol.deepCopy();
-                functionInfo.klass = thisKlass;
+                functionInfo.owner = thisKlass;
                 functionInfo.argTypes.get(0).type = thisKlass;
                 SymbolTable.add(functionInfo);
             }

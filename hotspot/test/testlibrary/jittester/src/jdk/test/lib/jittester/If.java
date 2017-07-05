@@ -30,9 +30,10 @@ public class If extends IRNode {
         CONDITION,
         THEN,
         ELSE,
-    };
+    }
 
-    public If(IRNode condition, IRNode thenBlock, IRNode elseBlock, int level) {
+    public If(IRNode condition, Block thenBlock, Block elseBlock, int level) {
+        super(thenBlock.getResultType());
         this.level = level;
         resizeUpChildren(IfPart.values().length);
         setChild(IfPart.CONDITION.ordinal(), condition);
@@ -43,7 +44,7 @@ public class If extends IRNode {
     @Override
     public long complexity() {
         IRNode condition = getChild(IfPart.CONDITION.ordinal());
-        IRNode thenBlock=  getChild(IfPart.THEN.ordinal());
+        IRNode thenBlock = getChild(IfPart.THEN.ordinal());
         IRNode elseBlock = getChild(IfPart.ELSE.ordinal());
         return (condition != null ? condition.complexity() : 0)
             + Math.max(thenBlock != null ? thenBlock.complexity() : 0,

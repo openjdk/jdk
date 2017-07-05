@@ -24,15 +24,12 @@
 package jdk.test.lib.jittester.factories;
 
 import jdk.test.lib.jittester.BuiltInType;
-import jdk.test.lib.jittester.IRNode;
 import jdk.test.lib.jittester.OperatorKind;
 import jdk.test.lib.jittester.ProductionFailedException;
 import jdk.test.lib.jittester.Type;
 import jdk.test.lib.jittester.TypeList;
 import jdk.test.lib.jittester.utils.TypeUtil;
 import jdk.test.lib.jittester.UnaryOperator;
-import jdk.test.lib.jittester.types.TypeBoolean;
-import jdk.test.lib.jittester.types.TypeInt;
 import jdk.test.lib.jittester.types.TypeKlass;
 import jdk.test.lib.jittester.utils.PseudoRandom;
 
@@ -44,16 +41,16 @@ class UnaryPlusMinusOperatorFactory extends UnaryOperatorFactory {
 
     @Override
     protected boolean isApplicable(Type resultType) {
-        if (!TypeList.isBuiltIn(resultType) || resultType.equals(new TypeBoolean())) {
+        if (!TypeList.isBuiltIn(resultType) || resultType.equals(TypeList.BOOLEAN)) {
             return false;
         }
         BuiltInType resType = (BuiltInType) resultType;
-        return resType.equals(new TypeInt()) || resType.isMoreCapaciousThan(new TypeInt());
+        return resType.equals(TypeList.INT) || resType.isMoreCapaciousThan(TypeList.INT);
     }
 
     @Override
-    protected Type generateType() throws ProductionFailedException {
-        if (resultType.equals(new TypeInt())) {
+    protected Type generateType() {
+        if (resultType.equals(TypeList.INT)) {
             return PseudoRandom.randomElement(TypeUtil.getImplicitlyCastable(TypeList.getBuiltIn(), resultType));
         } else {
             return resultType;
@@ -61,7 +58,7 @@ class UnaryPlusMinusOperatorFactory extends UnaryOperatorFactory {
     }
 
     @Override
-    protected IRNode generateProduction(Type type) throws ProductionFailedException {
+    protected UnaryOperator generateProduction(Type type) throws ProductionFailedException {
         return new UnaryOperator(opKind, new IRNodeBuilder()
                 .setComplexityLimit(complexityLimit)
                 .setOperatorLimit(operatorLimit)

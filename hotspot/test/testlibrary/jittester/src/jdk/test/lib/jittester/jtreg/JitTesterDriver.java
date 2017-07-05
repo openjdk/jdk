@@ -33,6 +33,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.function.Predicate;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -52,14 +53,16 @@ public class JitTesterDriver {
             throw new Error("Unexpected exception on test jvm start :" + e, e);
         }
 
+        Pattern splitOut = Pattern.compile("\\n"); // tests use \n only in stdout
+        Pattern splitErr = Pattern.compile("\\r?\\n"); // can handle both \r\n and \n
         Path testDir = Paths.get(Utils.TEST_SRC);
         String goldOut = formatOutput(streamGoldFile(testDir, args[0], "out"), s -> true);
-        Asserts.assertEQ(oa.getStdout(), goldOut, "Actual stdout isn't equal to golden one");
-
+        String anlzOut = formatOutput(Arrays.stream(splitOut.split(oa.getStdout())), s -> true);
+        Asserts.assertEQ(anlzOut, goldOut, "Actual stdout isn't equal to golden one");
         // TODO: add a comment why we skip such lines
         Predicate<String> notStartWhitespaces = s -> !(s.startsWith("\t") || s.startsWith(" "));
         String goldErr = formatOutput(streamGoldFile(testDir, args[0], "err"), notStartWhitespaces);
-        String anlzErr = formatOutput(Arrays.stream(oa.getStderr().split(Utils.NEW_LINE)),
+        String anlzErr = formatOutput(Arrays.stream(splitErr.split(oa.getStderr())),
                                       notStartWhitespaces);
         Asserts.assertEQ(anlzErr, goldErr, "Actual stderr isn't equal to golden one");
 
