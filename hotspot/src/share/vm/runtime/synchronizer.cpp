@@ -40,6 +40,7 @@
 #include "runtime/stubRoutines.hpp"
 #include "runtime/synchronizer.hpp"
 #include "runtime/thread.inline.hpp"
+#include "runtime/vframe.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
 #include "utilities/preserveException.hpp"
@@ -927,8 +928,9 @@ static void InduceScavenge(Thread * Self, const char * Whence) {
 
   if (ForceMonitorScavenge == 0 && Atomic::xchg (1, &ForceMonitorScavenge) == 0) {
     if (ObjectMonitor::Knob_Verbose) {
-      ::printf ("Monitor scavenge - Induced STW @%s (%d)\n", Whence, ForceMonitorScavenge) ;
-      ::fflush(stdout);
+      tty->print_cr("INFO: Monitor scavenge - Induced STW @%s (%d)",
+                    Whence, ForceMonitorScavenge) ;
+      tty->flush();
     }
     // Induce a 'null' safepoint to scavenge monitors
     // Must VM_Operation instance be heap allocated as the op will be enqueue and posted
@@ -937,8 +939,9 @@ static void InduceScavenge(Thread * Self, const char * Whence) {
     VMThread::execute(new VM_ForceAsyncSafepoint());
 
     if (ObjectMonitor::Knob_Verbose) {
-      ::printf ("Monitor scavenge - STW posted @%s (%d)\n", Whence, ForceMonitorScavenge) ;
-      ::fflush(stdout);
+      tty->print_cr("INFO: Monitor scavenge - STW posted @%s (%d)",
+                    Whence, ForceMonitorScavenge) ;
+      tty->flush();
     }
   }
 }
@@ -1603,10 +1606,11 @@ void ObjectSynchronizer::deflate_idle_monitors() {
   // Consider: audit gFreeList to ensure that gMonitorFreeCount and list agree.
 
   if (ObjectMonitor::Knob_Verbose) {
-    ::printf("Deflate: InCirc=%d InUse=%d Scavenged=%d ForceMonitorScavenge=%d : pop=%d free=%d\n",
-             nInCirculation, nInuse, nScavenged, ForceMonitorScavenge,
-             gMonitorPopulation, gMonitorFreeCount);
-    ::fflush(stdout);
+    tty->print_cr("INFO: Deflate: InCirc=%d InUse=%d Scavenged=%d "
+                  "ForceMonitorScavenge=%d : pop=%d free=%d",
+                  nInCirculation, nInuse, nScavenged, ForceMonitorScavenge,
+                  gMonitorPopulation, gMonitorFreeCount);
+    tty->flush();
   }
 
   ForceMonitorScavenge = 0;    // Reset
@@ -1643,6 +1647,14 @@ class ReleaseJavaMonitorsClosure: public MonitorClosure {
   ReleaseJavaMonitorsClosure(Thread* thread) : THREAD(thread) {}
   void do_monitor(ObjectMonitor* mid) {
     if (mid->owner() == THREAD) {
+      if (ObjectMonitor::Knob_VerifyMatch != 0) {
+        Handle obj((oop) mid->object());
+        tty->print("INFO: unexpected locked object:");
+        javaVFrame::print_locked_object_class_name(tty, obj, "locked");
+        fatal(err_msg("exiting JavaThread=" INTPTR_FORMAT
+                      " unexpectedly owns ObjectMonitor=" INTPTR_FORMAT,
+                      THREAD, mid));
+      }
       (void)mid->complete_exit(CHECK);
     }
   }

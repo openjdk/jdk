@@ -28,6 +28,10 @@ import java.net.*;
 import java.io.*;
 import java.lang.reflect.Method;
 import java.security.SecureRandom;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalAmount;
+import java.time.temporal.TemporalUnit;
 import java.util.*;
 import java.util.concurrent.*;
 
@@ -939,6 +943,13 @@ public class KDC {
             } else if (till.isZero()) {
                 till = new KerberosTime(
                         new Date().getTime() + 1000 * DEFAULT_LIFETIME);
+            } else if (till.greaterThan(new KerberosTime(Instant.now()
+                    .plus(1, ChronoUnit.DAYS)))) {
+                // If till is more than 1 day later, make it renewable
+                till = new KerberosTime(
+                        new Date().getTime() + 1000 * DEFAULT_LIFETIME);
+                body.kdcOptions.set(KDCOptions.RENEWABLE, true);
+                if (rtime == null) rtime = till;
             }
             if (rtime == null && body.kdcOptions.get(KDCOptions.RENEWABLE)) {
                 rtime = new KerberosTime(
@@ -1320,14 +1331,17 @@ public class KDC {
         }
     }
 
-    public static void startKDC(final String host, final String krbConfFileName,
+    public static KDC startKDC(final String host, final String krbConfFileName,
             final String realm, final Map<String, String> principals,
             final String ktab, final KtabMode mode) {
 
+        KDC kdc;
         try {
-            KDC kdc = KDC.create(realm, host, 0, true);
+            kdc = KDC.create(realm, host, 0, true);
             kdc.setOption(KDC.Option.PREAUTH_REQUIRED, Boolean.FALSE);
-            KDC.saveConfig(krbConfFileName, kdc);
+            if (krbConfFileName != null) {
+                KDC.saveConfig(krbConfFileName, kdc);
+            }
 
             // Add principals
             if (principals != null) {
@@ -1379,6 +1393,7 @@ public class KDC {
             throw new RuntimeException("KDC: unexpected exception", e);
         }
 
+        return kdc;
     }
 
     /**
@@ -1428,13 +1443,20 @@ public class KDC {
     }
 
     public static class KDCNameService implements NameServiceDescriptor {
+
+        public static String NOT_EXISTING_HOST = "not.existing.host";
+
         @Override
         public NameService createNameService() throws Exception {
             NameService ns = new NameService() {
                 @Override
                 public InetAddress[] lookupAllHostAddr(String host)
                         throws UnknownHostException {
-                    // Everything is localhost
+                    // Everything is localhost except NOT_EXISTING_HOST
+                    if (NOT_EXISTING_HOST.equals(host)) {
+                        throw new UnknownHostException("Unknown host name: "
+                                + NOT_EXISTING_HOST);
+                    }
                     return new InetAddress[]{
                         InetAddress.getByAddress(host, new byte[]{127,0,0,1})
                     };

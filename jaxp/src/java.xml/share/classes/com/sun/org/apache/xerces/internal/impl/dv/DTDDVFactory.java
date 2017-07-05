@@ -1,13 +1,13 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * Copyright 2001, 2002,2004 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -20,8 +20,10 @@
 
 package com.sun.org.apache.xerces.internal.impl.dv;
 
-import java.util.Hashtable;
+import com.sun.org.apache.xerces.internal.impl.dv.dtd.DTDDVFactoryImpl;
+import com.sun.org.apache.xerces.internal.impl.dv.dtd.XML11DTDDVFactoryImpl;
 import com.sun.org.apache.xerces.internal.utils.ObjectFactory;
+import java.util.Hashtable;
 
 /**
  * The factory to create and return DTD types. The implementation should
@@ -35,7 +37,11 @@ import com.sun.org.apache.xerces.internal.utils.ObjectFactory;
  */
 public abstract class DTDDVFactory {
 
-    private static final String DEFAULT_FACTORY_CLASS = "com.sun.org.apache.xerces.internal.impl.dv.dtd.DTDDVFactoryImpl";
+    private static final String DEFAULT_FACTORY_CLASS =
+            "com.sun.org.apache.xerces.internal.impl.dv.dtd.DTDDVFactoryImpl";
+
+    private static final String XML11_DATATYPE_VALIDATOR_FACTORY =
+        "com.sun.org.apache.xerces.internal.impl.dv.dtd.XML11DTDDVFactoryImpl";
 
     /**
      * Get an instance of the default DTDDVFactory implementation.
@@ -58,9 +64,15 @@ public abstract class DTDDVFactory {
      */
     public static final DTDDVFactory getInstance(String factoryClass) throws DVFactoryException {
         try {
-            // if the class name is not specified, use the default one
-            return (DTDDVFactory)
-                (ObjectFactory.newInstance(factoryClass, true));
+            if (DEFAULT_FACTORY_CLASS.equals(factoryClass)) {
+                return new DTDDVFactoryImpl();
+            } else if (XML11_DATATYPE_VALIDATOR_FACTORY.equals(factoryClass)) {
+                return new XML11DTDDVFactoryImpl();
+            } else {
+                //fall back for compatibility
+                return (DTDDVFactory)
+                    (ObjectFactory.newInstance(factoryClass, true));
+            }
         }
         catch (ClassCastException e) {
             throw new DVFactoryException("DTD factory class " + factoryClass + " does not extend from DTDDVFactory.");
