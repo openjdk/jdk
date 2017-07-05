@@ -75,7 +75,9 @@ public final class IntArrayData extends ArrayData {
     }
 
     private static Object[] toObjectArray(final int[] array, final int length) {
-        final Object[] oarray = new Object[length];
+        assert length <= array.length : "length exceeds internal array size";
+        final Object[] oarray = new Object[array.length];
+
         for (int index = 0; index < length; index++) {
             oarray[index] = Integer.valueOf(array[index]);
         }
@@ -83,18 +85,22 @@ public final class IntArrayData extends ArrayData {
         return oarray;
     }
 
-    private static double[] toDoubleArray(final int[] array) {
+    private static double[] toDoubleArray(final int[] array, final int length) {
+        assert length <= array.length : "length exceeds internal array size";
         final double[] darray = new double[array.length];
-        for (int index = 0; index < array.length; index++) {
+
+        for (int index = 0; index < length; index++) {
             darray[index] = array[index];
         }
 
         return darray;
     }
 
-    private static long[] toLongArray(final int[] array) {
+    private static long[] toLongArray(final int[] array, final int length) {
+        assert length <= array.length : "length exceeds internal array size";
         final long[] larray = new long[array.length];
-        for (int index = 0; index < array.length; index++) {
+
+        for (int index = 0; index < length; index++) {
             larray[index] = array[index];
         }
 
@@ -105,12 +111,14 @@ public final class IntArrayData extends ArrayData {
     public ArrayData convert(final Class<?> type) {
         if (type == Integer.class) {
             return this;
-        } else if (type == Long.class) {
-            return new LongArrayData(IntArrayData.toLongArray(array), (int) length());
+        }
+        final int length = (int) length();
+        if (type == Long.class) {
+            return new LongArrayData(IntArrayData.toLongArray(array, length), length);
         } else if (type == Double.class) {
-            return new NumberArrayData(IntArrayData.toDoubleArray(array), (int) length());
+            return new NumberArrayData(IntArrayData.toDoubleArray(array, length), length);
         } else {
-            return new ObjectArrayData(IntArrayData.toObjectArray(array, array.length), (int) length());
+            return new ObjectArrayData(IntArrayData.toObjectArray(array, length), length);
         }
     }
 
@@ -161,26 +169,13 @@ public final class IntArrayData extends ArrayData {
 
     @Override
     public ArrayData set(final int index, final Object value, final boolean strict) {
-        try {
-            final int intValue = ((Integer)value).intValue();
-            array[index] = intValue;
-            setLength(Math.max(index + 1, length()));
-            return this;
-        } catch (final NullPointerException | ClassCastException e) {
-            if (value instanceof Short || value instanceof Byte) {
-                final int intValue = ((Number)value).intValue();
-                array[index] = intValue;
-                setLength(Math.max(index + 1, length()));
-                return this;
-            }
-
-            if (value == ScriptRuntime.UNDEFINED) {
-                return new UndefinedArrayFilter(this).set(index, value, strict);
-            }
+        if (value instanceof Integer) {
+            return set(index, ((Number)value).intValue(), strict);
+        } else if (value == ScriptRuntime.UNDEFINED) {
+            return new UndefinedArrayFilter(this).set(index, value, strict);
         }
 
         final ArrayData newData = convert(value == null ? Object.class : value.getClass());
-
         return newData.set(index, value, strict);
     }
 

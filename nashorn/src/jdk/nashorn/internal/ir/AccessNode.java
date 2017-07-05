@@ -45,12 +45,12 @@ public final class AccessNode extends BaseNode {
      * @param base      base node
      * @param property  property
      */
-    public AccessNode(final long token, final int finish, final Node base, final IdentNode property) {
+    public AccessNode(final long token, final int finish, final Expression base, final IdentNode property) {
         super(token, finish, base, false, false);
         this.property = property.setIsPropertyName();
     }
 
-    private AccessNode(final AccessNode accessNode, final Node base, final IdentNode property, final boolean isFunction, final boolean hasCallSiteType) {
+    private AccessNode(final AccessNode accessNode, final Expression base, final IdentNode property, final boolean isFunction, final boolean hasCallSiteType) {
         super(accessNode, base, isFunction, hasCallSiteType);
         this.property = property;
     }
@@ -63,7 +63,7 @@ public final class AccessNode extends BaseNode {
     public Node accept(final NodeVisitor<? extends LexicalContext> visitor) {
         if (visitor.enterAccessNode(this)) {
             return visitor.leaveAccessNode(
-                setBase(base.accept(visitor)).
+                setBase((Expression)base.accept(visitor)).
                 setProperty((IdentNode)property.accept(visitor)));
         }
         return this;
@@ -103,7 +103,7 @@ public final class AccessNode extends BaseNode {
         return property;
     }
 
-    private AccessNode setBase(final Node base) {
+    private AccessNode setBase(final Expression base) {
         if (this.base == base) {
             return this;
         }

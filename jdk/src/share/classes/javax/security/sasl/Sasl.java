@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,15 +72,15 @@ public class Sasl {
      * of quality-of-protection values that the
      * client or server is willing to support.  A qop value is one of
      * <ul>
-     * <li><tt>"auth"</tt> - authentication only</li>
-     * <li><tt>"auth-int"</tt> - authentication plus integrity protection</li>
-     * <li><tt>"auth-conf"</tt> - authentication plus integrity and confidentiality
+     * <li>{@code "auth"} - authentication only</li>
+     * <li>{@code "auth-int"} - authentication plus integrity protection</li>
+     * <li>{@code "auth-conf"} - authentication plus integrity and confidentiality
      * protection</li>
      * </ul>
      *
      * The order of the list specifies the preference order of the client or
-     * server. If this property is absent, the default qop is <tt>"auth"</tt>.
-     * The value of this constant is <tt>"javax.security.sasl.qop"</tt>.
+     * server. If this property is absent, the default qop is {@code "auth"}.
+     * The value of this constant is {@code "javax.security.sasl.qop"}.
      */
     public static final String QOP = "javax.security.sasl.qop";
 
@@ -90,9 +90,9 @@ public class Sasl {
      * of cipher strength values that
      * the client or server is willing to support. A strength value is one of
      * <ul>
-     * <li><tt>"low"</tt></li>
-     * <li><tt>"medium"</tt></li>
-     * <li><tt>"high"</tt></li>
+     * <li>{@code "low"}</li>
+     * <li>{@code "medium"}</li>
+     * <li>{@code "high"}</li>
      * </ul>
      * The order of the list specifies the preference order of the client or
      * server.  An implementation should allow configuration of the meaning
@@ -101,19 +101,19 @@ public class Sasl {
      * cipher suites that match the strength values.
      * <BR>
      * If this property is absent, the default strength is
-     * <tt>"high,medium,low"</tt>.
-     * The value of this constant is <tt>"javax.security.sasl.strength"</tt>.
+     * {@code "high,medium,low"}.
+     * The value of this constant is {@code "javax.security.sasl.strength"}.
      */
     public static final String STRENGTH = "javax.security.sasl.strength";
 
     /**
      * The name of a property that specifies whether the
      * server must authenticate to the client. The property contains
-     * <tt>"true"</tt> if the server must
-     * authenticate the to client; <tt>"false"</tt> otherwise.
-     * The default is <tt>"false"</tt>.
+     * {@code "true"} if the server must
+     * authenticate the to client; {@code "false"} otherwise.
+     * The default is {@code "false"}.
      * <br>The value of this constant is
-     * <tt>"javax.security.sasl.server.authentication"</tt>.
+     * {@code "javax.security.sasl.server.authentication"}.
      */
     public static final String SERVER_AUTH =
     "javax.security.sasl.server.authentication";
@@ -125,28 +125,28 @@ public class Sasl {
      * The property contains the bound host name after the authentication
      * exchange has completed. It is only available on the server side.
      * <br>The value of this constant is
-     * <tt>"javax.security.sasl.bound.server.name"</tt>.
+     * {@code "javax.security.sasl.bound.server.name"}.
      */
     public static final String BOUND_SERVER_NAME =
     "javax.security.sasl.bound.server.name";
 
     /**
      * The name of a property that specifies the maximum size of the receive
-     * buffer in bytes of <tt>SaslClient</tt>/<tt>SaslServer</tt>.
+     * buffer in bytes of {@code SaslClient}/{@code SaslServer}.
      * The property contains the string representation of an integer.
      * <br>If this property is absent, the default size
      * is defined by the mechanism.
-     * <br>The value of this constant is <tt>"javax.security.sasl.maxbuffer"</tt>.
+     * <br>The value of this constant is {@code "javax.security.sasl.maxbuffer"}.
      */
     public static final String MAX_BUFFER = "javax.security.sasl.maxbuffer";
 
     /**
      * The name of a property that specifies the maximum size of the raw send
-     * buffer in bytes of <tt>SaslClient</tt>/<tt>SaslServer</tt>.
+     * buffer in bytes of {@code SaslClient}/{@code SaslServer}.
      * The property contains the string representation of an integer.
      * The value of this property is negotiated between the client and server
      * during the authentication exchange.
-     * <br>The value of this constant is <tt>"javax.security.sasl.rawsendsize"</tt>.
+     * <br>The value of this constant is {@code "javax.security.sasl.rawsendsize"}.
      */
     public static final String RAW_SEND_SIZE = "javax.security.sasl.rawsendsize";
 
@@ -181,11 +181,11 @@ public class Sasl {
      * The name of a property that specifies
      * whether mechanisms susceptible to simple plain passive attacks (e.g.,
      * "PLAIN") are not permitted. The property
-     * contains <tt>"true"</tt> if such mechanisms are not permitted;
-     * <tt>"false"</tt> if such mechanisms are permitted.
-     * The default is <tt>"false"</tt>.
+     * contains {@code "true"} if such mechanisms are not permitted;
+     * {@code "false"} if such mechanisms are permitted.
+     * The default is {@code "false"}.
      * <br>The value of this constant is
-     * <tt>"javax.security.sasl.policy.noplaintext"</tt>.
+     * {@code "javax.security.sasl.policy.noplaintext"}.
      */
     public static final String POLICY_NOPLAINTEXT =
     "javax.security.sasl.policy.noplaintext";
@@ -194,12 +194,12 @@ public class Sasl {
      * The name of a property that specifies whether
      * mechanisms susceptible to active (non-dictionary) attacks
      * are not permitted.
-     * The property contains <tt>"true"</tt>
+     * The property contains {@code "true"}
      * if mechanisms susceptible to active attacks
-     * are not permitted; <tt>"false"</tt> if such mechanisms are permitted.
-     * The default is <tt>"false"</tt>.
+     * are not permitted; {@code "false"} if such mechanisms are permitted.
+     * The default is {@code "false"}.
      * <br>The value of this constant is
-     * <tt>"javax.security.sasl.policy.noactive"</tt>.
+     * {@code "javax.security.sasl.policy.noactive"}.
      */
     public static final String POLICY_NOACTIVE =
     "javax.security.sasl.policy.noactive";
@@ -207,26 +207,26 @@ public class Sasl {
     /**
      * The name of a property that specifies whether
      * mechanisms susceptible to passive dictionary attacks are not permitted.
-     * The property contains <tt>"true"</tt>
+     * The property contains {@code "true"}
      * if mechanisms susceptible to dictionary attacks are not permitted;
-     * <tt>"false"</tt> if such mechanisms are permitted.
-     * The default is <tt>"false"</tt>.
+     * {@code "false"} if such mechanisms are permitted.
+     * The default is {@code "false"}.
      *<br>
      * The value of this constant is
-     * <tt>"javax.security.sasl.policy.nodictionary"</tt>.
+     * {@code "javax.security.sasl.policy.nodictionary"}.
      */
     public static final String POLICY_NODICTIONARY =
     "javax.security.sasl.policy.nodictionary";
 
     /**
      * The name of a property that specifies whether mechanisms that accept
-     * anonymous login are not permitted. The property contains <tt>"true"</tt>
+     * anonymous login are not permitted. The property contains {@code "true"}
      * if mechanisms that accept anonymous login are not permitted;
-     * <tt>"false"</tt>
-     * if such mechanisms are permitted. The default is <tt>"false"</tt>.
+     * {@code "false"}
+     * if such mechanisms are permitted. The default is {@code "false"}.
      *<br>
      * The value of this constant is
-     * <tt>"javax.security.sasl.policy.noanonymous"</tt>.
+     * {@code "javax.security.sasl.policy.noanonymous"}.
      */
     public static final String POLICY_NOANONYMOUS =
     "javax.security.sasl.policy.noanonymous";
@@ -237,12 +237,12 @@ public class Sasl {
       * means that breaking into one session will not automatically
       * provide information for breaking into future sessions.
       * The property
-      * contains <tt>"true"</tt> if mechanisms that implement forward secrecy
-      * between sessions are required; <tt>"false"</tt> if such mechanisms
-      * are not required. The default is <tt>"false"</tt>.
+      * contains {@code "true"} if mechanisms that implement forward secrecy
+      * between sessions are required; {@code "false"} if such mechanisms
+      * are not required. The default is {@code "false"}.
       *<br>
       * The value of this constant is
-      * <tt>"javax.security.sasl.policy.forward"</tt>.
+      * {@code "javax.security.sasl.policy.forward"}.
       */
     public static final String POLICY_FORWARD_SECRECY =
     "javax.security.sasl.policy.forward";
@@ -250,12 +250,12 @@ public class Sasl {
     /**
      * The name of a property that specifies whether
      * mechanisms that pass client credentials are required. The property
-     * contains <tt>"true"</tt> if mechanisms that pass
-     * client credentials are required; <tt>"false"</tt>
-     * if such mechanisms are not required. The default is <tt>"false"</tt>.
+     * contains {@code "true"} if mechanisms that pass
+     * client credentials are required; {@code "false"}
+     * if such mechanisms are not required. The default is {@code "false"}.
      *<br>
      * The value of this constant is
-     * <tt>"javax.security.sasl.policy.credentials"</tt>.
+     * {@code "javax.security.sasl.policy.credentials"}.
      */
     public static final String POLICY_PASS_CREDENTIALS =
     "javax.security.sasl.policy.credentials";
@@ -269,38 +269,38 @@ public class Sasl {
      * supports delegated authentication.
      *<br>
      * The value of this constant is
-     * <tt>"javax.security.sasl.credentials"</tt>.
+     * {@code "javax.security.sasl.credentials"}.
      */
     public static final String CREDENTIALS = "javax.security.sasl.credentials";
 
     /**
-     * Creates a <tt>SaslClient</tt> using the parameters supplied.
+     * Creates a {@code SaslClient} using the parameters supplied.
      *
      * This method uses the
 <a href="{@docRoot}/../technotes/guides/security/crypto/CryptoSpec.html#Provider">JCA Security Provider Framework</a>, described in the
      * "Java Cryptography Architecture API Specification &amp; Reference", for
-     * locating and selecting a <tt>SaslClient</tt> implementation.
+     * locating and selecting a {@code SaslClient} implementation.
      *
      * First, it
-     * obtains an ordered list of <tt>SaslClientFactory</tt> instances from
+     * obtains an ordered list of {@code SaslClientFactory} instances from
      * the registered security providers for the "SaslClientFactory" service
      * and the specified SASL mechanism(s). It then invokes
-     * <tt>createSaslClient()</tt> on each factory instance on the list
-     * until one produces a non-null <tt>SaslClient</tt> instance. It returns
-     * the non-null <tt>SaslClient</tt> instance, or null if the search fails
-     * to produce a non-null <tt>SaslClient</tt> instance.
+     * {@code createSaslClient()} on each factory instance on the list
+     * until one produces a non-null {@code SaslClient} instance. It returns
+     * the non-null {@code SaslClient} instance, or null if the search fails
+     * to produce a non-null {@code SaslClient} instance.
      *<p>
      * A security provider for SaslClientFactory registers with the
      * JCA Security Provider Framework keys of the form <br>
-     * <tt>SaslClientFactory.<em>mechanism_name</em></tt>
+     * {@code SaslClientFactory.}<em>{@code mechanism_name}</em>
      * <br>
      * and values that are class names of implementations of
-     * <tt>javax.security.sasl.SaslClientFactory</tt>.
+     * {@code javax.security.sasl.SaslClientFactory}.
      *
      * For example, a provider that contains a factory class,
-     * <tt>com.wiz.sasl.digest.ClientFactory</tt>, that supports the
+     * {@code com.wiz.sasl.digest.ClientFactory}, that supports the
      * "DIGEST-MD5" mechanism would register the following entry with the JCA:
-     * <tt>SaslClientFactory.DIGEST-MD5 com.wiz.sasl.digest.ClientFactory</tt>
+     * {@code SaslClientFactory.DIGEST-MD5 com.wiz.sasl.digest.ClientFactory}
      *<p>
      * See the
      * "Java Cryptography Architecture API Specification &amp; Reference"
@@ -325,9 +325,9 @@ public class Sasl {
      * @param props The possibly null set of properties used to
      * select the SASL mechanism and to configure the authentication
      * exchange of the selected mechanism.
-     * For example, if <tt>props</tt> contains the
-     * <code>Sasl.POLICY_NOPLAINTEXT</code> property with the value
-     * <tt>"true"</tt>, then the selected
+     * For example, if {@code props} contains the
+     * {@code Sasl.POLICY_NOPLAINTEXT} property with the value
+     * {@code "true"}, then the selected
      * SASL mechanism must not be susceptible to simple plain passive attacks.
      * In addition to the standard properties declared in this class,
      * other, possibly mechanism-specific, properties can be included.
@@ -338,16 +338,16 @@ public class Sasl {
      * mechanisms to get further information from the application/library
      * to complete the authentication. For example, a SASL mechanism might
      * require the authentication ID, password and realm from the caller.
-     * The authentication ID is requested by using a <tt>NameCallback</tt>.
-     * The password is requested by using a <tt>PasswordCallback</tt>.
-     * The realm is requested by using a <tt>RealmChoiceCallback</tt> if there is a list
-     * of realms to choose from, and by using a <tt>RealmCallback</tt> if
+     * The authentication ID is requested by using a {@code NameCallback}.
+     * The password is requested by using a {@code PasswordCallback}.
+     * The realm is requested by using a {@code RealmChoiceCallback} if there is a list
+     * of realms to choose from, and by using a {@code RealmCallback} if
      * the realm must be entered.
      *
-     *@return A possibly null <tt>SaslClient</tt> created using the parameters
-     * supplied. If null, cannot find a <tt>SaslClientFactory</tt>
+     *@return A possibly null {@code SaslClient} created using the parameters
+     * supplied. If null, cannot find a {@code SaslClientFactory}
      * that will produce one.
-     *@exception SaslException If cannot create a <tt>SaslClient</tt> because
+     *@exception SaslException If cannot create a {@code SaslClient} because
      * of an error.
      */
     public static SaslClient createSaslClient(
@@ -423,34 +423,34 @@ public class Sasl {
 
 
     /**
-     * Creates a <tt>SaslServer</tt> for the specified mechanism.
+     * Creates a {@code SaslServer} for the specified mechanism.
      *
      * This method uses the
 <a href="{@docRoot}/../technotes/guides/security/crypto/CryptoSpec.html#Provider">JCA Security Provider Framework</a>,
      * described in the
      * "Java Cryptography Architecture API Specification &amp; Reference", for
-     * locating and selecting a <tt>SaslServer</tt> implementation.
+     * locating and selecting a {@code SaslServer} implementation.
      *
      * First, it
-     * obtains an ordered list of <tt>SaslServerFactory</tt> instances from
+     * obtains an ordered list of {@code SaslServerFactory} instances from
      * the registered security providers for the "SaslServerFactory" service
      * and the specified mechanism. It then invokes
-     * <tt>createSaslServer()</tt> on each factory instance on the list
-     * until one produces a non-null <tt>SaslServer</tt> instance. It returns
-     * the non-null <tt>SaslServer</tt> instance, or null if the search fails
-     * to produce a non-null <tt>SaslServer</tt> instance.
+     * {@code createSaslServer()} on each factory instance on the list
+     * until one produces a non-null {@code SaslServer} instance. It returns
+     * the non-null {@code SaslServer} instance, or null if the search fails
+     * to produce a non-null {@code SaslServer} instance.
      *<p>
      * A security provider for SaslServerFactory registers with the
      * JCA Security Provider Framework keys of the form <br>
-     * <tt>SaslServerFactory.<em>mechanism_name</em></tt>
+     * {@code SaslServerFactory.}<em>{@code mechanism_name}</em>
      * <br>
      * and values that are class names of implementations of
-     * <tt>javax.security.sasl.SaslServerFactory</tt>.
+     * {@code javax.security.sasl.SaslServerFactory}.
      *
      * For example, a provider that contains a factory class,
-     * <tt>com.wiz.sasl.digest.ServerFactory</tt>, that supports the
+     * {@code com.wiz.sasl.digest.ServerFactory}, that supports the
      * "DIGEST-MD5" mechanism would register the following entry with the JCA:
-     * <tt>SaslServerFactory.DIGEST-MD5  com.wiz.sasl.digest.ServerFactory</tt>
+     * {@code SaslServerFactory.DIGEST-MD5  com.wiz.sasl.digest.ServerFactory}
      *<p>
      * See the
      * "Java Cryptography Architecture API Specification &amp; Reference"
@@ -463,14 +463,14 @@ public class Sasl {
      * the authentication is being performed (e.g., "ldap").
      * @param serverName The fully qualified host name of the server, or null
      * if the server is not bound to any specific host name. If the mechanism
-     * does not allow an unbound server, a <code>SaslException</code> will
+     * does not allow an unbound server, a {@code SaslException} will
      * be thrown.
      * @param props The possibly null set of properties used to
      * select the SASL mechanism and to configure the authentication
      * exchange of the selected mechanism.
-     * For example, if <tt>props</tt> contains the
-     * <code>Sasl.POLICY_NOPLAINTEXT</code> property with the value
-     * <tt>"true"</tt>, then the selected
+     * For example, if {@code props} contains the
+     * {@code Sasl.POLICY_NOPLAINTEXT} property with the value
+     * {@code "true"}, then the selected
      * SASL mechanism must not be susceptible to simple plain passive attacks.
      * In addition to the standard properties declared in this class,
      * other, possibly mechanism-specific, properties can be included.
@@ -481,16 +481,16 @@ public class Sasl {
      * mechanisms to get further information from the application/library
      * to complete the authentication. For example, a SASL mechanism might
      * require the authentication ID, password and realm from the caller.
-     * The authentication ID is requested by using a <tt>NameCallback</tt>.
-     * The password is requested by using a <tt>PasswordCallback</tt>.
-     * The realm is requested by using a <tt>RealmChoiceCallback</tt> if there is a list
-     * of realms to choose from, and by using a <tt>RealmCallback</tt> if
+     * The authentication ID is requested by using a {@code NameCallback}.
+     * The password is requested by using a {@code PasswordCallback}.
+     * The realm is requested by using a {@code RealmChoiceCallback} if there is a list
+     * of realms to choose from, and by using a {@code RealmCallback} if
      * the realm must be entered.
      *
-     *@return A possibly null <tt>SaslServer</tt> created using the parameters
-     * supplied. If null, cannot find a <tt>SaslServerFactory</tt>
+     *@return A possibly null {@code SaslServer} created using the parameters
+     * supplied. If null, cannot find a {@code SaslServerFactory}
      * that will produce one.
-     *@exception SaslException If cannot create a <tt>SaslServer</tt> because
+     *@exception SaslException If cannot create a {@code SaslServer} because
      * of an error.
      **/
     public static SaslServer
@@ -533,11 +533,11 @@ public class Sasl {
     }
 
     /**
-     * Gets an enumeration of known factories for producing <tt>SaslClient</tt>.
+     * Gets an enumeration of known factories for producing {@code SaslClient}.
      * This method uses the same algorithm for locating factories as
-     * <tt>createSaslClient()</tt>.
+     * {@code createSaslClient()}.
      * @return A non-null enumeration of known factories for producing
-     * <tt>SaslClient</tt>.
+     * {@code SaslClient}.
      * @see #createSaslClient
      */
     public static Enumeration<SaslClientFactory> getSaslClientFactories() {
@@ -554,11 +554,11 @@ public class Sasl {
     }
 
     /**
-     * Gets an enumeration of known factories for producing <tt>SaslServer</tt>.
+     * Gets an enumeration of known factories for producing {@code SaslServer}.
      * This method uses the same algorithm for locating factories as
-     * <tt>createSaslServer()</tt>.
+     * {@code createSaslServer()}.
      * @return A non-null enumeration of known factories for producing
-     * <tt>SaslServer</tt>.
+     * {@code SaslServer}.
      * @see #createSaslServer
      */
     public static Enumeration<SaslServerFactory> getSaslServerFactories() {

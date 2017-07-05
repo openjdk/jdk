@@ -96,7 +96,7 @@ public final class StringNode extends Node implements StringType {
             if (chars[i] >= 0x20 && chars[i] < 0x7f) {
                 value.append(chars[i]);
             } else {
-                value.append(String.format("[0x%04x]", chars[i]));
+                value.append(String.format("[0x%04x]", (int)chars[i]));
             }
         }
         value.append("'");
@@ -122,10 +122,7 @@ public final class StringNode extends Node implements StringType {
     }
 
     public boolean canBeSplit() {
-        if (end > p) {
-            return 1 < (end - p);
-        }
-        return false;
+        return end > p && 1 < (end - p);
     }
 
     public void set(char[] chars, int p, int end) {

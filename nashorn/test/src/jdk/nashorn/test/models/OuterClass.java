@@ -33,6 +33,10 @@ public class OuterClass {
     }
 
     public static class InnerStaticClass {
+
+        public static class InnerInnerStaticClass {
+        }
+
         private final String value;
 
         public InnerStaticClass(String value) {

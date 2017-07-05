@@ -501,14 +501,19 @@ or
  var anArrayListWithSize = new ArrayList(16)
 </code></pre> 
 
-In the special case of inner classes, you need to use the JVM fully qualified name, meaning using $ sign in the class name:
+In the special case of inner classes, you can either use the JVM fully qualified name, meaning using the dollar sign in the class name, or you can use the dot:
 
 <pre><code>
  var ftype = Java.type("java.awt.geom.Arc2D$Float")
 </code></pre> 
  
+and
+ 
+<pre><code>
+ var ftype = Java.type("java.awt.geom.Arc2D.Float")
+</code></pre> 
 
-However, once you retrieved the outer class, you can access the inner class as a property on it:
+both work. Note however that using the dollar sign is faster, as Java.type first tries to resolve the class name as it is originally specified, and the internal JVM names for inner classes use the dollar sign. If you use the dot, Java.type will internally get a ClassNotFoundException and subsequently retry by changing the last dot to dollar sign. As a matter of fact, it'll keep replacing dots with dollar signs until it either successfully loads the class or runs out of all dots in the name. This way it can correctly resolve and load even multiply nested inner classes with the dot notation. Again, this will be slower than using the dollar signs in the name. An alternative way to access the inner class is as a property of the outer class:
 
 <pre><code>
  var arctype = Java.type("java.awt.geom.Arc2D")

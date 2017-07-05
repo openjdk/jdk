@@ -30,14 +30,7 @@ import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.LinkRequest;
 
 /**
- * Runtime interface to the global scope of the current context.
- * NOTE: never access {@code jdk.nashorn.internal.objects.Global} class directly
- * from runtime/parser/codegen/ir etc. Always go through this interface.
- * <p>
- * The reason for this is that all objects in the @{code jdk.nashorn.internal.objects.*} package
- * are different per Context and loaded separately by each Context class loader. Attempting
- * to directly refer to an object in this package from the rest of the runtime
- * will lead to {@code ClassNotFoundException} thrown upon link time
+ * Runtime interface to the global scope objects.
  */
 
 public interface GlobalObject {

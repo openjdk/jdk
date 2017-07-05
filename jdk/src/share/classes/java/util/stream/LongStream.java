@@ -655,7 +655,7 @@ public interface LongStream extends BaseStream<Long, LongStream> {
      *
      * @return a stream builder
      */
-    public static StreamBuilder.OfLong builder() {
+    public static Builder builder() {
         return new Streams.LongStreamBuilderImpl();
     }
 
@@ -665,7 +665,7 @@ public interface LongStream extends BaseStream<Long, LongStream> {
      * @return an empty sequential stream
      */
     public static LongStream empty() {
-        return StreamSupport.longStream(Spliterators.emptyLongSpliterator());
+        return StreamSupport.longStream(Spliterators.emptyLongSpliterator(), false);
     }
 
     /**
@@ -675,7 +675,7 @@ public interface LongStream extends BaseStream<Long, LongStream> {
      * @return a singleton sequential stream
      */
     public static LongStream of(long t) {
-        return StreamSupport.longStream(new Streams.LongStreamBuilderImpl(t));
+        return StreamSupport.longStream(new Streams.LongStreamBuilderImpl(t), false);
     }
 
     /**
@@ -723,7 +723,7 @@ public interface LongStream extends BaseStream<Long, LongStream> {
         };
         return StreamSupport.longStream(Spliterators.spliteratorUnknownSize(
                 iterator,
-                Spliterator.ORDERED | Spliterator.IMMUTABLE | Spliterator.NONNULL));
+                Spliterator.ORDERED | Spliterator.IMMUTABLE | Spliterator.NONNULL), false);
     }
 
     /**
@@ -737,7 +737,7 @@ public interface LongStream extends BaseStream<Long, LongStream> {
     public static LongStream generate(LongSupplier s) {
         Objects.requireNonNull(s);
         return StreamSupport.longStream(
-                new StreamSpliterators.InfiniteSupplyingSpliterator.OfLong(Long.MAX_VALUE, s));
+                new StreamSpliterators.InfiniteSupplyingSpliterator.OfLong(Long.MAX_VALUE, s), false);
     }
 
     /**
@@ -765,13 +765,11 @@ public interface LongStream extends BaseStream<Long, LongStream> {
             // Split the range in two and concatenate
             // Note: if the range is [Long.MIN_VALUE, Long.MAX_VALUE) then
             // the lower range, [Long.MIN_VALUE, 0) will be further split in two
-//            long m = startInclusive + Long.divideUnsigned(endExclusive - startInclusive, 2) + 1;
-//            return Streams.concat(range(startInclusive, m), range(m, endExclusive));
-            // This is temporary until Streams.concat is supported
-            throw new UnsupportedOperationException();
+            long m = startInclusive + Long.divideUnsigned(endExclusive - startInclusive, 2) + 1;
+            return concat(range(startInclusive, m), range(m, endExclusive));
         } else {
             return StreamSupport.longStream(
-                    new Streams.RangeLongSpliterator(startInclusive, endExclusive, false));
+                    new Streams.RangeLongSpliterator(startInclusive, endExclusive, false), false);
         }
     }
 
@@ -801,13 +799,88 @@ public interface LongStream extends BaseStream<Long, LongStream> {
             // Note: if the range is [Long.MIN_VALUE, Long.MAX_VALUE] then
             // the lower range, [Long.MIN_VALUE, 0), and upper range,
             // [0, Long.MAX_VALUE], will both be further split in two
-//            long m = startInclusive + Long.divideUnsigned(endInclusive - startInclusive, 2) + 1;
-//            return Streams.concat(range(startInclusive, m), rangeClosed(m, endInclusive));
-            // This is temporary until Streams.concat is supported
-            throw new UnsupportedOperationException();
+            long m = startInclusive + Long.divideUnsigned(endInclusive - startInclusive, 2) + 1;
+            return concat(range(startInclusive, m), rangeClosed(m, endInclusive));
         } else {
             return StreamSupport.longStream(
-                    new Streams.RangeLongSpliterator(startInclusive, endInclusive, true));
+                    new Streams.RangeLongSpliterator(startInclusive, endInclusive, true), false);
         }
+    }
+
+    /**
+     * Creates a lazy concatenated {@code LongStream} whose elements are all the
+     * elements of a first {@code LongStream} succeeded by all the elements of the
+     * second {@code LongStream}. The resulting stream is ordered if both
+     * of the input streams are ordered, and parallel if either of the input
+     * streams is parallel.
+     *
+     * @param a the first stream
+     * @param b the second stream to concatenate on to end of the first stream
+     * @return the concatenation of the two streams
+     */
+    public static LongStream concat(LongStream a, LongStream b) {
+        Objects.requireNonNull(a);
+        Objects.requireNonNull(b);
+
+        Spliterator.OfLong split = new Streams.ConcatSpliterator.OfLong(
+                a.spliterator(), b.spliterator());
+        return StreamSupport.longStream(split, a.isParallel() || b.isParallel());
+    }
+
+    /**
+     * A mutable builder for a {@code LongStream}.
+     *
+     * <p>A stream builder has a lifecycle, where it starts in a building
+     * phase, during which elements can be added, and then transitions to a
+     * built phase, after which elements may not be added.  The built phase
+     * begins when the {@link #build()} method is called, which creates an
+     * ordered stream whose elements are the elements that were added to the
+     * stream builder, in the order they were added.
+     *
+     * @see LongStream#builder()
+     * @since 1.8
+     */
+    public interface Builder extends LongConsumer {
+
+        /**
+         * Adds an element to the stream being built.
+         *
+         * @throws IllegalStateException if the builder has already transitioned
+         * to the built state
+         */
+        @Override
+        void accept(long t);
+
+        /**
+         * Adds an element to the stream being built.
+         *
+         * @implSpec
+         * The default implementation behaves as if:
+         * <pre>{@code
+         *     accept(t)
+         *     return this;
+         * }</pre>
+         *
+         * @param t the element to add
+         * @return {@code this} builder
+         * @throws IllegalStateException if the builder has already transitioned
+         * to the built state
+         */
+        default Builder add(long t) {
+            accept(t);
+            return this;
+        }
+
+        /**
+         * Builds the stream, transitioning this builder to the built state.
+         * An {@code IllegalStateException} is thrown if there are further
+         * attempts to operate on the builder after it has entered the built
+         * state.
+         *
+         * @return the built stream
+         * @throws IllegalStateException if the builder has already transitioned
+         * to the built state
+         */
+        LongStream build();
     }
 }

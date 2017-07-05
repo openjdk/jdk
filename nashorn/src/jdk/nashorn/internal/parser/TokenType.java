@@ -93,7 +93,7 @@ public enum TokenType {
     ASSIGN_BIT_OR  (BINARY,  "|=",    2, false),
     OR             (BINARY,  "||",    4, true),
     RBRACE         (BRACKET, "}"),
-    BIT_NOT        (BINARY,  "~",    14, false),
+    BIT_NOT        (UNARY,   "~",     14, false),
 
     // ECMA 7.6.1.1 Keywords, 7.6.1.2 Future Reserved Words.
     // All other Java keywords are commented out.

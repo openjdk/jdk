@@ -1195,12 +1195,7 @@ public class LinkedList<E>
                     n = s;
                 if (n > MAX_BATCH)
                     n = MAX_BATCH;
-                Object[] a;
-                try {
-                    a = new Object[n];
-                } catch (OutOfMemoryError oome) {
-                    return null;
-                }
+                Object[] a = new Object[n];
                 int j = 0;
                 do { a[j++] = p.item; } while ((p = p.next) != null && j < n);
                 current = p;

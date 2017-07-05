@@ -25,6 +25,8 @@
 
 package sun.reflect.annotation;
 
+import sun.misc.JavaLangAccess;
+
 import java.lang.annotation.*;
 import java.lang.reflect.*;
 import java.util.*;
@@ -61,12 +63,12 @@ public class AnnotationType {
     /**
      * The retention policy for this annotation type.
      */
-    private RetentionPolicy retention = RetentionPolicy.RUNTIME;;
+    private final RetentionPolicy retention;
 
     /**
      * Whether this annotation type is inherited.
      */
-    private boolean inherited = false;
+    private final boolean inherited;
 
     /**
      * Returns an AnnotationType instance for the specified annotation type.
@@ -74,13 +76,20 @@ public class AnnotationType {
      * @throw IllegalArgumentException if the specified class object for
      *     does not represent a valid annotation type
      */
-    public static synchronized AnnotationType getInstance(
+    public static AnnotationType getInstance(
         Class<? extends Annotation> annotationClass)
     {
-        AnnotationType result = sun.misc.SharedSecrets.getJavaLangAccess().
-            getAnnotationType(annotationClass);
-        if (result == null)
-            result = new AnnotationType((Class<? extends Annotation>) annotationClass);
+        JavaLangAccess jla = sun.misc.SharedSecrets.getJavaLangAccess();
+        AnnotationType result = jla.getAnnotationType(annotationClass); // volatile read
+        if (result == null) {
+            result = new AnnotationType(annotationClass);
+            // try to CAS the AnnotationType: null -> result
+            if (!jla.casAnnotationType(annotationClass, null, result)) {
+                // somebody was quicker -> read it's result
+                result = jla.getAnnotationType(annotationClass);
+                assert result != null;
+            }
+        }
 
         return result;
     }
@@ -121,16 +130,25 @@ public class AnnotationType {
                 memberDefaults.put(name, defaultValue);
         }
 
-        sun.misc.SharedSecrets.getJavaLangAccess().
-            setAnnotationType(annotationClass, this);
-
         // Initialize retention, & inherited fields.  Special treatment
         // of the corresponding annotation types breaks infinite recursion.
         if (annotationClass != Retention.class &&
             annotationClass != Inherited.class) {
-            Retention ret = annotationClass.getAnnotation(Retention.class);
+            JavaLangAccess jla = sun.misc.SharedSecrets.getJavaLangAccess();
+            Map<Class<? extends Annotation>, Annotation> metaAnnotations =
+                AnnotationParser.parseSelectAnnotations(
+                    jla.getRawClassAnnotations(annotationClass),
+                    jla.getConstantPool(annotationClass),
+                    annotationClass,
+                    Retention.class, Inherited.class
+                );
+            Retention ret = (Retention) metaAnnotations.get(Retention.class);
             retention = (ret == null ? RetentionPolicy.CLASS : ret.value());
-            inherited = annotationClass.isAnnotationPresent(Inherited.class);
+            inherited = metaAnnotations.containsKey(Inherited.class);
+        }
+        else {
+            retention = RetentionPolicy.RUNTIME;
+            inherited = false;
         }
     }
 
@@ -205,11 +223,10 @@ public class AnnotationType {
      * For debugging.
      */
     public String toString() {
-        StringBuffer s = new StringBuffer("Annotation Type:" + "\n");
-        s.append("   Member types: " + memberTypes + "\n");
-        s.append("   Member defaults: " + memberDefaults + "\n");
-        s.append("   Retention policy: " + retention + "\n");
-        s.append("   Inherited: " + inherited);
-        return s.toString();
+        return "Annotation Type:\n" +
+               "   Member types: " + memberTypes + "\n" +
+               "   Member defaults: " + memberDefaults + "\n" +
+               "   Retention policy: " + retention + "\n" +
+               "   Inherited: " + inherited;
     }
 }

@@ -60,16 +60,8 @@
     <copy todir="${build.dir}/to_be_instrumented">
       <fileset dir="${build.classes.dir}">
         <include name="**/*.class"/>
-        <include name="**/*.clazz"/>
       </fileset>
     </copy>
-
-    <move todir="${build.dir}/to_be_instrumented/jdk/nashorn/internal/objects">
-      <fileset dir="${build.dir}/to_be_instrumented/jdk/nashorn/internal/objects">
-        <include name="**/*.clazz"/>
-      </fileset>
-      <mapper type="glob" from="*.clazz" to="*.class"/>
-    </move>
   </target>
 
   <target name="generate-cc-template" depends="prepare-to-be-instrumented" description="Generates code coverage template for dynamic CC" if="cc.generate.template">

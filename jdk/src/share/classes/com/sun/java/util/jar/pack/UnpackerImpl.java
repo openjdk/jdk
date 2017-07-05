@@ -134,7 +134,7 @@ public class UnpackerImpl extends TLGlobals implements Pack200.Unpacker {
             } else {
                 try {
                     (new NativeUnpack(this)).run(in0, out);
-                } catch (UnsatisfiedLinkError ule) {
+                } catch (UnsatisfiedLinkError | NoClassDefFoundError ex) {
                     // failover to java implementation
                     (new DoUnpack()).run(in0, out);
                 }

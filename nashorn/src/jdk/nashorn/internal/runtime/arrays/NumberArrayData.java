@@ -58,7 +58,9 @@ final class NumberArrayData extends ArrayData {
     }
 
     private static Object[] toObjectArray(final double[] array, final int length) {
-        final Object[] oarray = new Object[length];
+        assert length <= array.length : "length exceeds internal array size";
+        final Object[] oarray = new Object[array.length];
+
         for (int index = 0; index < length; index++) {
             oarray[index] = Double.valueOf(array[index]);
         }
@@ -76,7 +78,8 @@ final class NumberArrayData extends ArrayData {
     @Override
     public ArrayData convert(final Class<?> type) {
         if (type != Double.class && type != Integer.class && type != Long.class) {
-            return new ObjectArrayData(NumberArrayData.toObjectArray(array, array.length), (int) length());
+            final int length = (int) length();
+            return new ObjectArrayData(NumberArrayData.toObjectArray(array, length), length);
         }
         return this;
     }
@@ -127,16 +130,12 @@ final class NumberArrayData extends ArrayData {
 
     @Override
     public ArrayData set(final int index, final Object value, final boolean strict) {
-        try {
-            final double doubleValue = ((Number)value).doubleValue();
-            array[index] = doubleValue;
-            setLength(Math.max(index + 1, length()));
-            return this;
-        } catch (final NullPointerException | ClassCastException e) {
-            if (value == UNDEFINED) {
-                return new UndefinedArrayFilter(this).set(index, value, strict);
-            }
+        if (value instanceof Double || value instanceof Integer || value instanceof Long) {
+            return set(index, ((Number)value).doubleValue(), strict);
+        } else if (value == UNDEFINED) {
+            return new UndefinedArrayFilter(this).set(index, value, strict);
         }
+
         final ArrayData newData = convert(value == null ? Object.class : value.getClass());
         return newData.set(index, value, strict);
     }

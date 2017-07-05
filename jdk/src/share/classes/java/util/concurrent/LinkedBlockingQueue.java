@@ -42,6 +42,9 @@ import java.util.AbstractQueue;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
+import java.util.Spliterator;
+import java.util.Spliterators;
+import java.util.function.Consumer;
 
 /**
  * An optionally-bounded {@linkplain BlockingQueue blocking queue} based on
@@ -56,7 +59,7 @@ import java.util.NoSuchElementException;
  * Linked queues typically have higher throughput than array-based queues but
  * less predictable performance in most concurrent applications.
  *
- * <p> The optional capacity bound constructor argument serves as a
+ * <p>The optional capacity bound constructor argument serves as a
  * way to prevent excessive queue expansion. The capacity, if unspecified,
  * is equal to {@link Integer#MAX_VALUE}.  Linked nodes are
  * dynamically created upon each insertion unless this would bring the
@@ -216,7 +219,7 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
     }
 
     /**
-     * Lock to prevent both puts and takes.
+     * Locks to prevent both puts and takes.
      */
     void fullyLock() {
         putLock.lock();
@@ -224,7 +227,7 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
     }
 
     /**
-     * Unlock to allow both puts and takes.
+     * Unlocks to allow both puts and takes.
      */
     void fullyUnlock() {
         takeLock.unlock();
@@ -362,7 +365,7 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
      * necessary up to the specified wait time for space to become available.
      *
      * @return {@code true} if successful, or {@code false} if
-     *         the specified waiting time elapses before space is available.
+     *         the specified waiting time elapses before space is available
      * @throws InterruptedException {@inheritDoc}
      * @throws NullPointerException {@inheritDoc}
      */
@@ -782,6 +785,7 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
          * item to hand out so that if hasNext() reports true, we will
          * still have it to return even if lost race with a take etc.
          */
+
         private Node<E> current;
         private Node<E> lastRet;
         private E currentElement;
@@ -853,6 +857,124 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
                 fullyUnlock();
             }
         }
+    }
+
+    /** A customized variant of Spliterators.IteratorSpliterator */
+    static final class LBQSpliterator<E> implements Spliterator<E> {
+        static final int MAX_BATCH = 1 << 25;  // max batch array size;
+        final LinkedBlockingQueue<E> queue;
+        Node<E> current;    // current node; null until initialized
+        int batch;          // batch size for splits
+        boolean exhausted;  // true when no more nodes
+        long est;           // size estimate
+        LBQSpliterator(LinkedBlockingQueue<E> queue) {
+            this.queue = queue;
+            this.est = queue.size();
+        }
+
+        public long estimateSize() { return est; }
+
+        public Spliterator<E> trySplit() {
+            Node<E> h;
+            final LinkedBlockingQueue<E> q = this.queue;
+            int b = batch;
+            int n = (b <= 0) ? 1 : (b >= MAX_BATCH) ? MAX_BATCH : b + 1;
+            if (!exhausted &&
+                ((h = current) != null || (h = q.head.next) != null) &&
+                h.next != null) {
+                Object[] a = new Object[n];
+                int i = 0;
+                Node<E> p = current;
+                q.fullyLock();
+                try {
+                    if (p != null || (p = q.head.next) != null) {
+                        do {
+                            if ((a[i] = p.item) != null)
+                                ++i;
+                        } while ((p = p.next) != null && i < n);
+                    }
+                } finally {
+                    q.fullyUnlock();
+                }
+                if ((current = p) == null) {
+                    est = 0L;
+                    exhausted = true;
+                }
+                else if ((est -= i) < 0L)
+                    est = 0L;
+                if (i > 0) {
+                    batch = i;
+                    return Spliterators.spliterator
+                        (a, 0, i, Spliterator.ORDERED | Spliterator.NONNULL |
+                         Spliterator.CONCURRENT);
+                }
+            }
+            return null;
+        }
+
+        public void forEachRemaining(Consumer<? super E> action) {
+            if (action == null) throw new NullPointerException();
+            final LinkedBlockingQueue<E> q = this.queue;
+            if (!exhausted) {
+                exhausted = true;
+                Node<E> p = current;
+                do {
+                    E e = null;
+                    q.fullyLock();
+                    try {
+                        if (p == null)
+                            p = q.head.next;
+                        while (p != null) {
+                            e = p.item;
+                            p = p.next;
+                            if (e != null)
+                                break;
+                        }
+                    } finally {
+                        q.fullyUnlock();
+                    }
+                    if (e != null)
+                        action.accept(e);
+                } while (p != null);
+            }
+        }
+
+        public boolean tryAdvance(Consumer<? super E> action) {
+            if (action == null) throw new NullPointerException();
+            final LinkedBlockingQueue<E> q = this.queue;
+            if (!exhausted) {
+                E e = null;
+                q.fullyLock();
+                try {
+                    if (current == null)
+                        current = q.head.next;
+                    while (current != null) {
+                        e = current.item;
+                        current = current.next;
+                        if (e != null)
+                            break;
+                    }
+                } finally {
+                    q.fullyUnlock();
+                }
+                if (current == null)
+                    exhausted = true;
+                if (e != null) {
+                    action.accept(e);
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public int characteristics() {
+            return Spliterator.ORDERED | Spliterator.NONNULL |
+                Spliterator.CONCURRENT;
+        }
+    }
+
+    public Spliterator<E> spliterator() {
+        return new LBQSpliterator<E>(this);
     }
 
     /**

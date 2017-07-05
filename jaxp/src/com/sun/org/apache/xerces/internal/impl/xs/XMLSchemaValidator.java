@@ -233,11 +233,9 @@ public class XMLSchemaValidator
     protected static final String SCHEMA_DV_FACTORY =
         Constants.XERCES_PROPERTY_PREFIX + Constants.SCHEMA_DV_FACTORY_PROPERTY;
 
-    /** property identifier: access external dtd. */
-    private static final String ACCESS_EXTERNAL_DTD = XMLConstants.ACCESS_EXTERNAL_DTD;
-
-    /** Property identifier: access to external schema */
-    private static final String ACCESS_EXTERNAL_SCHEMA = XMLConstants.ACCESS_EXTERNAL_SCHEMA;
+    /** Property identifier: Security property manager. */
+    private static final String XML_SECURITY_PROPERTY_MANAGER =
+            Constants.XML_SECURITY_PROPERTY_MANAGER;
 
     protected static final String USE_SERVICE_MECHANISM = Constants.ORACLE_FEATURE_SERVICE_MECHANISM;
 
@@ -297,8 +295,7 @@ public class XMLSchemaValidator
             JAXP_SCHEMA_SOURCE,
             JAXP_SCHEMA_LANGUAGE,
             SCHEMA_DV_FACTORY,
-            ACCESS_EXTERNAL_DTD,
-            ACCESS_EXTERNAL_SCHEMA
+            XML_SECURITY_PROPERTY_MANAGER
             };
 
     /** Property defaults. */

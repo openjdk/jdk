@@ -34,7 +34,7 @@ import jdk.nashorn.internal.ir.visitor.NodeVisitor;
  * IR representation of an object literal.
  */
 @Immutable
-public final class ObjectNode extends Node {
+public final class ObjectNode extends Expression {
 
     /** Literal elements. */
     private final List<PropertyNode> elements;
