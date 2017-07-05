@@ -263,6 +263,7 @@ static ObsoleteFlag obsolete_jvm_flags[] = {
   { "UseISM",                        JDK_Version::jdk(8), JDK_Version::jdk(9) },
   { "UsePermISM",                    JDK_Version::jdk(8), JDK_Version::jdk(9) },
   { "UseMPSS",                       JDK_Version::jdk(8), JDK_Version::jdk(9) },
+  { "UseStringCache",                JDK_Version::jdk(8), JDK_Version::jdk(9) },
 #ifdef PRODUCT
   { "DesiredMethodLimit",
                            JDK_Version::jdk_update(7, 2), JDK_Version::jdk(8) },

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,26 +19,24 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#include "precompiled.hpp"
-#include "runtime/deoptimization.hpp"
-#include "runtime/frame.inline.hpp"
-#include "runtime/stubRoutines.hpp"
-#include "runtime/thread.inline.hpp"
+/*
+ * @test
+ * @bug 8020433
+ * @summary Crash when using -XX:+RestoreMXCSROnJNICalls
+ * @library /testlibrary
+ *
+ */
+import com.oracle.java.testlibrary.*;
 
-// Implementation of the platform-specific part of StubRoutines - for
-// a description of how to extend it, see the stubRoutines.hpp file.
+public class RestoreMXCSR {
+  public static void main(String[] args) throws Exception {
+    ProcessBuilder pb;
+    OutputAnalyzer out;
 
-address StubRoutines::x86::_get_previous_fp_entry = NULL;
-address StubRoutines::x86::_get_previous_sp_entry = NULL;
-
-address StubRoutines::x86::_f2i_fixup = NULL;
-address StubRoutines::x86::_f2l_fixup = NULL;
-address StubRoutines::x86::_d2i_fixup = NULL;
-address StubRoutines::x86::_d2l_fixup = NULL;
-address StubRoutines::x86::_float_sign_mask = NULL;
-address StubRoutines::x86::_float_sign_flip = NULL;
-address StubRoutines::x86::_double_sign_mask = NULL;
-address StubRoutines::x86::_double_sign_flip = NULL;
+    pb = ProcessTools.createJavaProcessBuilder("-XX:+RestoreMXCSROnJNICalls", "-version");
+    out = new OutputAnalyzer(pb.start());
+    out.shouldHaveExitValue(0);
+  }
+}

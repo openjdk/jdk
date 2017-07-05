@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,9 +29,14 @@
 #ifdef AMD64
 typedef unsigned char UBYTE;
 
+#if _MSC_VER < 1700
+
+/* Not needed for VS2012 compiler, comes from winnt.h. */
 #define UNW_FLAG_EHANDLER  0x01
 #define UNW_FLAG_UHANDLER  0x02
 #define UNW_FLAG_CHAININFO 0x04
+
+#endif
 
 // This structure is used to define an UNWIND_INFO that
 // only has an ExceptionHandler.  There are no UnwindCodes
@@ -59,6 +64,9 @@ typedef struct _RUNTIME_FUNCTION {
 } RUNTIME_FUNCTION, *PRUNTIME_FUNCTION;
 */
 
+#if _MSC_VER < 1700
+
+/* Not needed for VS2012 compiler, comes from winnt.h. */
 typedef struct _DISPATCHER_CONTEXT {
     ULONG64 ControlPc;
     ULONG64 ImageBase;
@@ -70,6 +78,8 @@ typedef struct _DISPATCHER_CONTEXT {
     char * LanguageHandler; // double dependency problem
     PVOID HandlerData;
 } DISPATCHER_CONTEXT, *PDISPATCHER_CONTEXT;
+
+#endif
 
 #if _MSC_VER < 1500
 
