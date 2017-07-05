@@ -316,6 +316,7 @@ class LoopInvariantCodeMotion : public StackObj  {
   ShortLoopOptimizer*   _short_loop_optimizer;
   Instruction*          _insertion_point;
   ValueStack *          _state;
+  bool                  _insert_is_pred;
 
   void set_invariant(Value v) const    { _gvn->set_processed(v); }
   bool is_invariant(Value v) const     { return _gvn->is_processed(v); }
@@ -339,6 +340,7 @@ LoopInvariantCodeMotion::LoopInvariantCodeMotion(ShortLoopOptimizer *slo, Global
 
   assert(insertion_block->end()->as_Base() == NULL, "cannot insert into entry block");
   _insertion_point = insertion_block->end()->prev();
+  _insert_is_pred = loop_header->is_predecessor(insertion_block);
 
   BlockEnd *block_end = insertion_block->end();
   _state = block_end->state_before();
@@ -379,13 +381,13 @@ void LoopInvariantCodeMotion::process_block(BlockBegin* block) {
     } else if (cur->as_LoadField() != NULL) {
       LoadField* lf = (LoadField*)cur;
       // deoptimizes on NullPointerException
-      cur_invariant = !lf->needs_patching() && !lf->field()->is_volatile() && !_short_loop_optimizer->has_field_store(lf->field()->type()->basic_type()) && is_invariant(lf->obj());
+      cur_invariant = !lf->needs_patching() && !lf->field()->is_volatile() && !_short_loop_optimizer->has_field_store(lf->field()->type()->basic_type()) && is_invariant(lf->obj()) && _insert_is_pred;
     } else if (cur->as_ArrayLength() != NULL) {
       ArrayLength *length = cur->as_ArrayLength();
       cur_invariant = is_invariant(length->array());
     } else if (cur->as_LoadIndexed() != NULL) {
       LoadIndexed *li = (LoadIndexed *)cur->as_LoadIndexed();
-      cur_invariant = !_short_loop_optimizer->has_indexed_store(as_BasicType(cur->type())) && is_invariant(li->array()) && is_invariant(li->index());
+      cur_invariant = !_short_loop_optimizer->has_indexed_store(as_BasicType(cur->type())) && is_invariant(li->array()) && is_invariant(li->index()) && _insert_is_pred;
     }
 
     if (cur_invariant) {

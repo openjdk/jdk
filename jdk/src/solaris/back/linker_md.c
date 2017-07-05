@@ -55,34 +55,27 @@
 #endif
 
 static void dll_build_name(char* buffer, size_t buflen,
-                           const char* pname, const char* fname) {
-    // Based on os_solaris.cpp
+                           const char* paths, const char* fname) {
+    char *path, *paths_copy, *next_token;
 
-    char *path_sep = PATH_SEPARATOR;
-    char *pathname = (char *)pname;
-    *buffer = '\0';
-    while (strlen(pathname) > 0) {
-        char *p = strchr(pathname, *path_sep);
-        if (p == NULL) {
-            p = pathname + strlen(pathname);
-        }
-        /* check for NULL path */
-        if (p == pathname) {
-            continue;
-        }
-        (void)snprintf(buffer, buflen, "%.*s/lib%s." LIB_SUFFIX, (int)(p - pathname),
-                       pathname, fname);
+    paths_copy = strdup(paths);
+    if (paths_copy == NULL) {
+        return;
+    }
 
+    next_token = NULL;
+    path = strtok_r(paths_copy, PATH_SEPARATOR, &next_token);
+
+    while (path != NULL) {
+        snprintf(buffer, buflen, "%s/lib%s." LIB_SUFFIX, path, fname);
         if (access(buffer, F_OK) == 0) {
             break;
         }
-        if (*p == '\0') {
-            pathname = p;
-        } else {
-            pathname = p + 1;
-        }
         *buffer = '\0';
+        path = strtok_r(NULL, PATH_SEPARATOR, &next_token);
     }
+
+    free(paths_copy);
 }
 
 /*
@@ -103,7 +96,7 @@ dbgsysBuildFunName(char *name, int nameLen, int args_size, int encodingIndex)
  * appropriate pre and extensions to a filename and the path
  */
 void
-dbgsysBuildLibName(char *holder, int holderlen, char *pname, char *fname)
+dbgsysBuildLibName(char *holder, int holderlen, const char *pname, const char *fname)
 {
     const int pnamelen = pname ? strlen(pname) : 0;
 

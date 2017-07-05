@@ -22,7 +22,7 @@
  */
 
 /**
- * @test 4235519 8004212 8005394 8007298 8006295 8006315 8006530
+ * @test 4235519 8004212 8005394 8007298 8006295 8006315 8006530 8007379 8008925
  * @summary tests java.util.Base64
  */
 
@@ -107,6 +107,9 @@ public class TestBase64 {
         checkIAE(new Runnable() { public void run() {
             Base64.getDecoder().decode(ByteBuffer.wrap(decoded), ByteBuffer.allocateDirect(1024)); }});
 
+        // illegal ending unit
+        checkIAE(new Runnable() { public void run() { Base64.getMimeDecoder().decode("$=#"); }});
+
         // test return value from decode(ByteBuffer, ByteBuffer)
         testDecBufRet();
 
@@ -115,7 +118,6 @@ public class TestBase64 {
 
         // test decoding of unpadded data
         testDecodeUnpadded();
-
         // test mime decoding with ignored character after padding
         testDecodeIgnoredAfterPadding();
     }
@@ -384,6 +386,10 @@ public class TestBase64 {
                 encoded = Arrays.copyOf(encoded, encoded.length + 1);
                 encoded[encoded.length - 1] = nonBase64;
                 checkEqual(decM.decode(encoded), src[i], "Non-base64 char is not ignored");
+                byte[] decoded = new byte[src[i].length];
+                decM.decode(encoded, decoded);
+                checkEqual(decoded, src[i], "Non-base64 char is not ignored");
+
                 try {
                     dec.decode(encoded);
                     throw new RuntimeException("No IAE for non-base64 char");

@@ -112,6 +112,14 @@ public class CEmbeddedFrame extends EmbeddedFrame {
 
     public void handleFocusEvent(boolean focused) {
         this.focused = focused;
+        if (focused) {
+            // see bug 8010925
+            // we can't put this to handleWindowFocusEvent because
+            // it won't be invoced if focuse is moved to a html element
+            // on the same page.
+            CClipboard clipboard = (CClipboard) Toolkit.getDefaultToolkit().getSystemClipboard();
+            clipboard.checkPasteboard();
+        }
         if (parentWindowActive) {
             responder.handleWindowFocusEvent(focused, null);
         }
