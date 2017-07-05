@@ -45,10 +45,10 @@ public final class RepeatedFormatReader {
     };
 
     private static byte[] headerAU = {0x2e, 0x73, 0x6e, 0x64, // AU_SUN_MAGIC
-                                      0, 0, 0, 0, // headerSize
+                                      0, 0, 0, 24, // headerSize
                                       0, 0, 0, 0, // dataSize
                                       0, 0, 0, 1, // encoding
-                                      0, 0, 0, 0, // sampleRate
+                                      0, 0, 0, 1, // sampleRate
                                       0, 0, 0, 1  // channels
     };
 

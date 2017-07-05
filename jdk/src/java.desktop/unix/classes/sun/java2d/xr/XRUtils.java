@@ -26,6 +26,7 @@
 package sun.java2d.xr;
 
 import java.awt.*;
+import java.awt.geom.Point2D;
 import java.awt.MultipleGradientPaint.*;
 import java.awt.geom.AffineTransform;
 import java.awt.image.*;
@@ -259,6 +260,15 @@ public class XRUtils {
     public static int clampToUShort(int x) {
         return (x > 65535 ? 65535 : (x < 0) ? 0 : x);
     }
+
+    public static boolean isDoubleInShortRange(double dbl) {
+         return dbl <= Short.MAX_VALUE && dbl >= Short.MIN_VALUE;
+    }
+
+    public static boolean isPointCoordInShortRange(Point2D p) {
+        return isDoubleInShortRange(p.getX()) && isDoubleInShortRange(p.getY());
+    }
+
 
     public static boolean isTransformQuadrantRotated(AffineTransform tr) {
         return ((tr.getType() & (AffineTransform.TYPE_GENERAL_ROTATION |

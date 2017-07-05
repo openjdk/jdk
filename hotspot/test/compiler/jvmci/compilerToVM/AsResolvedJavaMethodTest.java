@@ -36,7 +36,7 @@
  *          jdk.vm.ci/jdk.vm.ci.meta
  * @build jdk.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
- *                   compiler.jvmci.compilerToVM.GetResolvedJavaMethodAtSlotTest
+ *                   compiler.jvmci.compilerToVM.AsResolvedJavaMethodTest
  */
 
 package compiler.jvmci.compilerToVM;
@@ -45,10 +45,12 @@ import jdk.test.lib.Asserts;
 import jdk.vm.ci.hotspot.CompilerToVMHelper;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.lang.reflect.Executable;
+import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.List;
 
-public class GetResolvedJavaMethodAtSlotTest {
+public class AsResolvedJavaMethodTest {
 
     private static class A {
         {
@@ -81,41 +83,31 @@ public class GetResolvedJavaMethodAtSlotTest {
     }
 
     public static void main(String[] args) {
-        Map<Class<?>, Integer> testCases = getTestCases();
-        testCases.forEach(GetResolvedJavaMethodAtSlotTest::test);
+        List<Class<?>> testCases = getTestCases();
+        testCases.forEach(AsResolvedJavaMethodTest::test);
     }
 
-    private static Map<Class<?>, Integer> getTestCases() {
-        Map<Class<?>, Integer> testCases = new HashMap<>();
-        testCases.put(A.class, 5); // ctor, init, f1, f2, f3
-        testCases.put(S.class, 5); // ctor, cinit, f1, f2, f3
-        testCases.put(I.class, 3); // f1, f2, f3
-        testCases.put(B.class, 2); // ctor, f4
+    private static List<Class<?>> getTestCases() {
+        List<Class<?>> testCases = new ArrayList<>();
+        testCases.add(A.class);
+        testCases.add(S.class);
+        testCases.add(I.class);
+        testCases.add(B.class);
         return testCases;
     }
 
-    private static void test(Class<?> aClass, int methodNumber) {
-        testSlotBigger(aClass);
-        testCorrectMethods(aClass, methodNumber);
+    private static void test(Class<?> aClass) {
+        testCorrectMethods(aClass);
     }
 
-    private static void testSlotBigger(Class<?> holder) {
-        HotSpotResolvedJavaMethod method
-                = CompilerToVMHelper.getResolvedJavaMethodAtSlot(holder, 50);
-        Asserts.assertNull(method, "Got method for non existing slot 50 in "
-                + holder);
-    }
-
-    private static void testCorrectMethods(Class<?> holder, int methodsNumber) {
-        for (int i = 0; i < methodsNumber; i++) {
-            String caseName = String.format("slot %d in %s",
-                    i, holder.getCanonicalName());
+    private static void testCorrectMethods(Class<?> holder) {
+        List<Executable> executables = new ArrayList<>();
+        executables.addAll(Arrays.asList(holder.getDeclaredMethods()));
+        executables.addAll(Arrays.asList(holder.getDeclaredConstructors()));
+        for (Executable executable : executables) {
             HotSpotResolvedJavaMethod method = CompilerToVMHelper
-                    .getResolvedJavaMethodAtSlot(holder, i);
-            Asserts.assertNotNull(method, caseName + " did not got method");
-            Asserts.assertEQ(holder,
-                    CompilerToVMHelper.getMirror(method.getDeclaringClass()),
-                    caseName + " : unexpected declaring class");
+                    .asResolvedJavaMethod(executable);
+            Asserts.assertNotNull(method, "could not convert " + method);
         }
     }
 }

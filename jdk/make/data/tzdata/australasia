@@ -568,7 +568,7 @@ Zone Pacific/Port_Moresby 9:48:40 -	LMT	1880
 # Base the Bougainville entry on the Arawa-Kieta region, which appears to have
 # the most people even though it was devastated in the Bougainville Civil War.
 #
-# Although Shanks gives 1942-03-15 / 1943-11-01 for JST, these dates
+# Although Shanks gives 1942-03-15 / 1943-11-01 for UT +09, these dates
 # are apparently rough guesswork from the starts of military campaigns.
 # The World War II entries below are instead based on Arawa-Kieta.
 # The Japanese occupied Kieta in July 1942,
@@ -576,8 +576,8 @@ Zone Pacific/Port_Moresby 9:48:40 -	LMT	1880
 # http://pwencycl.kgbudge.com/B/o/Bougainville.htm
 # and seem to have controlled it until their 1945-08-21 surrender.
 #
-# The Autonomous Region of Bougainville plans to switch from UTC+10 to UTC+11
-# on 2014-12-28 at 02:00.  They call UTC+11 "Bougainville Standard Time";
+# The Autonomous Region of Bougainville switched from UT +10 to +11
+# on 2014-12-28 at 02:00.  They call +11 "Bougainville Standard Time";
 # abbreviate this as BST.  See:
 # http://www.bougainville24.com/bougainville-issues/bougainville-gets-own-timezone/
 #
@@ -643,7 +643,7 @@ Link Pacific/Pago_Pago Pacific/Midway # in US minor outlying islands
 # From Paul Eggert (2014-06-27):
 # The International Date Line Act 2011
 # http://www.parliament.gov.ws/images/ACTS/International_Date_Line_Act__2011_-_Eng.pdf
-# changed Samoa from UTC-11 to UTC+13, effective "12 o'clock midnight, on
+# changed Samoa from UT -11 to +13, effective "12 o'clock midnight, on
 # Thursday 29th December 2011".  The International Date Line was adjusted
 # accordingly.
 
@@ -738,7 +738,7 @@ Zone Pacific/Funafuti	11:56:52 -	LMT	1901
 # 1886-1891; Baker was similar but exact dates are not known.
 # Inhabited by civilians 1935-1942; U.S. military bases 1943-1944;
 # uninhabited thereafter.
-# Howland observed Hawaii Standard Time (UT-10:30) in 1937;
+# Howland observed Hawaii Standard Time (UT -10:30) in 1937;
 # see page 206 of Elgen M. Long and Marie K. Long,
 # Amelia Earhart: the Mystery Solved, Simon & Schuster (2000).
 # So most likely Howland and Baker observed Hawaii Time from 1935
@@ -1496,7 +1496,7 @@ Zone	Pacific/Wallis	12:15:20 -	LMT	1901
 # Zealand time.  I understand that is the time they keep locally, anyhow."
 # For now, assume this practice goes back to the introduction of standard time
 # in New Zealand, as this would make Chatham Islands time almost exactly match
-# LMT back when New Zealand was at UTC+11:30; also, assume Chatham Islands did
+# LMT back when New Zealand was at UT +11:30; also, assume Chatham Islands did
 # not observe New Zealand's prewar DST.
 
 ###############################################################################
@@ -1552,7 +1552,7 @@ Zone	Pacific/Wallis	12:15:20 -	LMT	1901
 # For now, we assume the Ladrones switched at the same time as the Philippines;
 # see Asia/Manila.
 
-# US Public Law 106-564 (2000-12-23) made UTC+10 the official standard time,
+# US Public Law 106-564 (2000-12-23) made UT +10 the official standard time,
 # under the name "Chamorro Standard Time".  There is no official abbreviation,
 # but Congressman Robert A. Underwood, author of the bill that became law,
 # wrote in a press release (2000-12-27) that he will seek the use of "ChST".
@@ -1564,15 +1564,15 @@ Zone	Pacific/Wallis	12:15:20 -	LMT	1901
 # "I am certain, having lived there for the past decade, that 'Truk'
 # (now properly known as Chuuk) ... is in the time zone GMT+10."
 #
-# Shanks & Pottenger write that Truk switched from UTC+10 to UTC+11
+# Shanks & Pottenger write that Truk switched from UT +10 to +11
 # on 1978-10-01; ignore this for now.
 
 # From Paul Eggert (1999-10-29):
 # The Federated States of Micronesia Visitors Board writes in
 # The Federated States of Micronesia - Visitor Information (1999-01-26)
 # http://www.fsmgov.org/info/clocks.html
-# that Truk and Yap are UTC+10, and Ponape and Kosrae are UTC+11.
-# We don't know when Kosrae switched from UTC+12; assume January 1 for now.
+# that Truk and Yap are UT +10, and Ponape and Kosrae are +11.
+# We don't know when Kosrae switched from +12; assume January 1 for now.
 
 
 # Midway
@@ -1638,11 +1638,11 @@ Zone	Pacific/Wallis	12:15:20 -	LMT	1901
 # ordaining - by a masterpiece of diplomatic flattery - that
 # the Fourth of July should be celebrated twice in that year."
 
-# Although Shanks & Pottenger says they both switched to UTC-11:30
-# in 1911, and to UTC-11 in 1950. many earlier sources give UTC-11
+# Although Shanks & Pottenger says they both switched to UT -11:30
+# in 1911, and to -11 in 1950. many earlier sources give -11
 # for American Samoa, e.g., the US National Bureau of Standards
 # circular "Standard Time Throughout the World", 1932.
-# Assume American Samoa switched to UTC-11 in 1911, not 1950,
+# Assume American Samoa switched to -11 in 1911, not 1950,
 # and that after 1950 they agreed until (western) Samoa skipped a
 # day in 2011.  Assume also that the Samoas follow the US and New
 # Zealand's "ST"/"DT" style of daylight-saving abbreviations.

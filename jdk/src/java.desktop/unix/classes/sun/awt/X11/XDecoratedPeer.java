@@ -308,6 +308,19 @@ abstract class XDecoratedPeer extends XWindowPeer {
         super.handlePropertyNotify(xev);
 
         XPropertyEvent ev = xev.get_xproperty();
+        if( !insets_corrected && isReparented() &&
+                                         XWM.getWMID() == XWM.UNITY_COMPIZ_WM) {
+            int state = XWM.getWM().getState(this);
+            if ((state & Frame.MAXIMIZED_BOTH) ==  Frame.MAXIMIZED_BOTH) {
+                // Stop ignoring ConfigureNotify because no extents will be sent
+                // by WM for initially maximized decorated window.
+                // Re-request window bounds to ensure actual dimensions and
+                // notify the target with the initial size.
+                insets_corrected = true;
+                XlibWrapper.XConfigureWindow(XToolkit.getDisplay(),
+                                                             getWindow(), 0, 0);
+            }
+        }
         if (ev.get_atom() == XWM.XA_KDE_NET_WM_FRAME_STRUT.getAtom()
             || ev.get_atom() == XWM.XA_NET_FRAME_EXTENTS.getAtom())
         {
@@ -326,9 +339,29 @@ abstract class XDecoratedPeer extends XWindowPeer {
                     lastKnownInsets.put(getClass(), in);
                 }
                 if (!in.equals(dimensions.getInsets())) {
-                    handleCorrectInsets(in);
+                    if (insets_corrected || isMaximized()) {
+                        currentInsets = in;
+                        insets_corrected = true;
+                        // insets were changed by WM. To handle this situation
+                        // re-request window bounds because the current
+                        // dimensions may be not actual as well.
+                        XlibWrapper.XConfigureWindow(XToolkit.getDisplay(),
+                                                             getWindow(), 0, 0);
+                    } else {
+                        // recalculate dimensions when window is just created
+                        // and the initially guessed insets were wrong
+                        handleCorrectInsets(in);
+                    }
+                } else if (!dimensions.isClientSizeSet()) {
+                    insets_corrected = true;
+                    // initial insets were guessed correctly. Re-request
+                    // frame bounds because they may be changed by WM if the
+                    // initial window position overlapped desktop's toolbars.
+                    // This should initiate the final ConfigureNotify upon which
+                    // the target will be notified with the final size.
+                    XlibWrapper.XConfigureWindow(XToolkit.getDisplay(),
+                                                             getWindow(), 0, 0);
                 }
-                insets_corrected = true;
             }
         }
     }
@@ -374,6 +407,9 @@ abstract class XDecoratedPeer extends XWindowPeer {
             } else { /* reparented to WM frame, figure out our insets */
                 setReparented(true);
                 insets_corrected = false;
+                if (XWM.getWMID() == XWM.UNITY_COMPIZ_WM) {
+                    return;
+                }
 
                 // Check if we have insets provided by the WM
                 Insets correctWM = getWMSetInsets(null);
@@ -405,7 +441,7 @@ abstract class XDecoratedPeer extends XWindowPeer {
                     }
                 }
 
-                if (correctWM != null && XWM.getWMID() != XWM.UNITY_COMPIZ_WM) {
+                if (correctWM != null) {
                     handleCorrectInsets(correctWM);
                 }
             }

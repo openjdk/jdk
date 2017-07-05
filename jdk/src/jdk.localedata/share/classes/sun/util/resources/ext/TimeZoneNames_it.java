@@ -189,6 +189,9 @@ public final class TimeZoneNames_it extends TimeZoneNamesBundle {
         String MHT[] = new String[] {"Ora delle Isole Marshall", "MHT",
                                      "Ora estiva delle Isole Marshall", "MHST",
                                      "Ora delle Isole Marshall", "MHT"};
+        String MMT[] = new String[] {"Ora della Birmania/Myanmar", "MMT",
+                                     "Ora estiva della Birmania/Myanmar", "MMST",
+                                     "Ora della Birmania/Myanmar", "MMT"};
         String MSK[] = new String[] {"Ora standard di Mosca", "MSK",
                                      "Ora legale di Mosca", "MSD",
                                      "Ora Mosca", "MT"};
@@ -684,9 +687,7 @@ public final class TimeZoneNames_it extends TimeZoneNamesBundle {
             {"Asia/Qyzylorda", new String[] {"Ora di Qyzylorda", "QYZT",
                                              "Ora estiva di Qyzylorda", "QYZST",
                                              "Ora di Qyzylorda", "QYZT"}},
-            {"Asia/Rangoon", new String[] {"Ora della Birmania/Myanmar", "MMT",
-                                           "Ora estiva della Birmania/Myanmar", "MMST",
-                                           "Ora della Birmania/Myanmar", "MMT"}},
+            {"Asia/Rangoon", MMT},
             {"Asia/Riyadh", ARAST},
             {"Asia/Saigon", ICT},
             {"Asia/Sakhalin", new String[] {"Ora di Sakhalin", "SAKT",
@@ -719,6 +720,7 @@ public final class TimeZoneNames_it extends TimeZoneNamesBundle {
                                                "Ora estiva di Vladivostok", "VLAST",
                                                "Ora di Vladivostok", "VLAT"}},
             {"Asia/Yakutsk", YAKT},
+            {"Asia/Yangon", MMT},
             {"Asia/Yekaterinburg", new String[] {"Ora di Ekaterinburg", "YEKT",
                                                  "Ora estiva di Ekaterinburg", "YEKST",
                                                  "Ora di Ekaterinburg", "YEKT"}},

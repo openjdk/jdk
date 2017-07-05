@@ -2489,6 +2489,11 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     __ verify_oop(R3_RET);
   }
 
+  if (CheckJNICalls) {
+    // clear_pending_jni_exception_check
+    __ load_const_optimized(R0, 0L);
+    __ st_ptr(R0, JavaThread::pending_jni_exception_check_fn_offset(), R16_thread);
+  }
 
   // Reset handle block.
   // --------------------------------------------------------------------------

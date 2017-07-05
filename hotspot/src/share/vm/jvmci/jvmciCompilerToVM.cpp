@@ -112,7 +112,7 @@ uintptr_t CompilerToVM::Data::Universe_verify_oop_bits;
 
 bool       CompilerToVM::Data::_supports_inline_contig_alloc;
 HeapWord** CompilerToVM::Data::_heap_end_addr;
-HeapWord** CompilerToVM::Data::_heap_top_addr;
+HeapWord* volatile* CompilerToVM::Data::_heap_top_addr;
 int CompilerToVM::Data::_max_oop_map_stack_offset;
 
 jbyte* CompilerToVM::Data::cardtable_start_address;
@@ -153,7 +153,7 @@ void CompilerToVM::Data::initialize() {
 
   _supports_inline_contig_alloc = Universe::heap()->supports_inline_contig_alloc();
   _heap_end_addr = _supports_inline_contig_alloc ? Universe::heap()->end_addr() : (HeapWord**) -1;
-  _heap_top_addr = _supports_inline_contig_alloc ? Universe::heap()->top_addr() : (HeapWord**) -1;
+  _heap_top_addr = _supports_inline_contig_alloc ? Universe::heap()->top_addr() : (HeapWord* volatile*) -1;
 
   _max_oop_map_stack_offset = (OopMapValue::register_mask - VMRegImpl::stack2reg(0)->value()) * VMRegImpl::stack_slot_size;
   int max_oop_map_stack_index = _max_oop_map_stack_offset / VMRegImpl::stack_slot_size;
@@ -473,9 +473,20 @@ C2V_VMENTRY(jlong, getExceptionTableStart, (JNIEnv *, jobject, jobject jvmci_met
   return (jlong) (address) method->exception_table_start();
 C2V_END
 
-C2V_VMENTRY(jobject, getResolvedJavaMethodAtSlot, (JNIEnv *, jobject, jclass holder_handle, jint slot))
-  oop java_class = JNIHandles::resolve(holder_handle);
-  Klass* holder = java_lang_Class::as_Klass(java_class);
+C2V_VMENTRY(jobject, asResolvedJavaMethod, (JNIEnv *, jobject, jobject executable_handle))
+  oop executable = JNIHandles::resolve(executable_handle);
+  oop mirror = NULL;
+  int slot = 0;
+
+  if (executable->klass() == SystemDictionary::reflect_Constructor_klass()) {
+    mirror = java_lang_reflect_Constructor::clazz(executable);
+    slot = java_lang_reflect_Constructor::slot(executable);
+  } else {
+    assert(executable->klass() == SystemDictionary::reflect_Method_klass(), "wrong type");
+    mirror = java_lang_reflect_Method::clazz(executable);
+    slot = java_lang_reflect_Method::slot(executable);
+  }
+  Klass* holder = java_lang_Class::as_Klass(mirror);
   methodHandle method = InstanceKlass::cast(holder)->method_with_idnum(slot);
   oop result = CompilerToVM::get_jvmci_method(method, CHECK_NULL);
   return JNIHandles::make_local(THREAD, result);
@@ -1518,6 +1529,17 @@ C2V_VMENTRY(int, interpreterFrameSize, (JNIEnv*, jobject, jobject bytecode_frame
   return size + Deoptimization::last_frame_adjust(0, callee_locals) * BytesPerWord;
 C2V_END
 
+C2V_VMENTRY(void, compileToBytecode, (JNIEnv*, jobject, jobject lambda_form_handle))
+  Handle lambda_form = JNIHandles::resolve_non_null(lambda_form_handle);
+  if (lambda_form->is_a(SystemDictionary::LambdaForm_klass())) {
+    TempNewSymbol compileToBytecode = SymbolTable::new_symbol("compileToBytecode", CHECK);
+    JavaValue result(T_VOID);
+    JavaCalls::call_special(&result, lambda_form, SystemDictionary::LambdaForm_klass(), compileToBytecode, vmSymbols::void_method_signature(), CHECK);
+  } else {
+    THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
+                err_msg("Unexpected type: %s", lambda_form->klass()->external_name()));
+  }
+C2V_END
 
 #define CC (char*)  /*cast a literal from (const char*)*/
 #define FN_PTR(f) CAST_FROM_FN_PTR(void*, &(c2v_ ## f))
@@ -1525,6 +1547,7 @@ C2V_END
 #define STRING                "Ljava/lang/String;"
 #define OBJECT                "Ljava/lang/Object;"
 #define CLASS                 "Ljava/lang/Class;"
+#define EXECUTABLE            "Ljava/lang/reflect/Executable;"
 #define STACK_TRACE_ELEMENT   "Ljava/lang/StackTraceElement;"
 #define INSTALLED_CODE        "Ljdk/vm/ci/code/InstalledCode;"
 #define TARGET_DESCRIPTION    "Ljdk/vm/ci/code/TargetDescription;"
@@ -1572,7 +1595,7 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "getClassInitializer",                          CC "(" HS_RESOLVED_KLASS ")" HS_RESOLVED_METHOD,                                      FN_PTR(getClassInitializer)},
   {CC "hasFinalizableSubclass",                       CC "(" HS_RESOLVED_KLASS ")Z",                                                        FN_PTR(hasFinalizableSubclass)},
   {CC "getMaxCallTargetOffset",                       CC "(J)J",                                                                            FN_PTR(getMaxCallTargetOffset)},
-  {CC "getResolvedJavaMethodAtSlot",                  CC "(" CLASS "I)" HS_RESOLVED_METHOD,                                                 FN_PTR(getResolvedJavaMethodAtSlot)},
+  {CC "asResolvedJavaMethod",                         CC "(" EXECUTABLE ")" HS_RESOLVED_METHOD,                                             FN_PTR(asResolvedJavaMethod)},
   {CC "getResolvedJavaMethod",                        CC "(Ljava/lang/Object;J)" HS_RESOLVED_METHOD,                                        FN_PTR(getResolvedJavaMethod)},
   {CC "getConstantPool",                              CC "(Ljava/lang/Object;)" HS_CONSTANT_POOL,                                           FN_PTR(getConstantPool)},
   {CC "getResolvedJavaType",                          CC "(Ljava/lang/Object;JZ)" HS_RESOLVED_KLASS,                                        FN_PTR(getResolvedJavaType)},
@@ -1599,9 +1622,9 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "flushDebugOutput",                             CC "()V",                                                                             FN_PTR(flushDebugOutput)},
   {CC "methodDataProfileDataSize",                    CC "(JI)I",                                                                           FN_PTR(methodDataProfileDataSize)},
   {CC "interpreterFrameSize",                         CC "(" BYTECODE_FRAME ")I",                                                           FN_PTR(interpreterFrameSize)},
+  {CC "compileToBytecode",                            CC "(" OBJECT ")V",                                                                   FN_PTR(compileToBytecode)},
 };
 
 int CompilerToVM::methods_count() {
   return sizeof(methods) / sizeof(JNINativeMethod);
 }
-

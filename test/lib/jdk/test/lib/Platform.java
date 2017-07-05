@@ -28,6 +28,9 @@ import java.util.regex.Pattern;
 public class Platform {
     public  static final String vmName      = System.getProperty("java.vm.name");
     public  static final String vmInfo      = System.getProperty("java.vm.info");
+    private static final String osVersion   = System.getProperty("os.version");
+    private static       int osVersionMajor = -1;
+    private static       int osVersionMinor = -1;
     private static final String osName      = System.getProperty("os.name");
     private static final String dataModel   = System.getProperty("sun.arch.data.model");
     private static final String vmVersion   = System.getProperty("java.vm.version");
@@ -110,6 +113,35 @@ public class Platform {
 
     public static String getOsName() {
         return osName;
+    }
+
+    // Os version support.
+    private static void init_version() {
+        try {
+            final String[] tokens = osVersion.split("\\.");
+            if (tokens.length > 0) {
+                osVersionMajor = Integer.parseInt(tokens[0]);
+                if (tokens.length > 1) {
+                    osVersionMinor = Integer.parseInt(tokens[1]);
+                }
+            }
+        } catch (NumberFormatException e) {
+            osVersionMajor = osVersionMinor = 0;
+        }
+    }
+
+    // Returns major version number from os.version system property.
+    // E.g. 5 on Solaris 10 and 3 on SLES 11.3 (for the linux kernel version).
+    public static int getOsVersionMajor() {
+        if (osVersionMajor == -1) init_version();
+        return osVersionMajor;
+    }
+
+    // Returns minor version number from os.version system property.
+    // E.g. 10 on Solaris 10 and 0 on SLES 11.3 (for the linux kernel version).
+    public static int getOsVersionMinor() {
+        if (osVersionMinor == -1) init_version();
+        return osVersionMinor;
     }
 
     public static boolean isDebugBuild() {

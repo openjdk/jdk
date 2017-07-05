@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@
 #include "sun_java2d_pipe_BufferedContext.h"
 #include "sun_java2d_d3d_D3DContext_D3DContextCaps.h"
 #include "sun_java2d_d3d_D3DSurfaceData.h"
-#include "sun_java2d_pipe_hw_AccelDeviceEventNotifier.h"
 
 #include "ShaderList.h"
 #include "D3DPipeline.h"
@@ -412,10 +411,5 @@ private:
     sun_java2d_d3d_D3DContext_D3DContextCaps_CAPS_PS20
 #define CAPS_PS30           \
     sun_java2d_d3d_D3DContext_D3DContextCaps_CAPS_PS30
-
-#define DEVICE_RESET    \
-    sun_java2d_pipe_hw_AccelDeviceEventNotifier_DEVICE_RESET
-#define DEVICE_DISPOSED \
-    sun_java2d_pipe_hw_AccelDeviceEventNotifier_DEVICE_DISPOSED
 
 #endif // D3DCONTEXT_H
