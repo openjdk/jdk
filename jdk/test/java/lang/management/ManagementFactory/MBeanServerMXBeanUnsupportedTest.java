@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2013 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,8 @@ import java.lang.management.ManagementFactory;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.util.Arrays;
+import java.util.HashSet;
 import javax.management.MBeanServer;
 import javax.management.MBeanServerBuilder;
 import javax.management.MBeanServerDelegate;
@@ -80,6 +82,9 @@ public class MBeanServerMXBeanUnsupportedTest {
      */
     public static class MBeanServerForwarderInvocationHandler
             implements InvocationHandler {
+
+        public static final HashSet<String> excludeList = new HashSet<String>(
+            Arrays.asList("com.sun.management:type=DiagnosticCommand"));
 
         public static MBeanServerForwarder newProxyInstance() {
 
@@ -126,15 +131,17 @@ public class MBeanServerMXBeanUnsupportedTest {
                 if (domain.equals("java.lang") ||
                     domain.equals("java.util.logging") ||
                     domain.equals("com.sun.management")) {
-                    String mxbean = (String)
-                        mbs.getMBeanInfo(name).getDescriptor().getFieldValue("mxbean");
-                    if (mxbean == null || !mxbean.equals("true")) {
-                        throw new RuntimeException(
+                    if(!excludeList.contains(name.getCanonicalName())) {
+                        String mxbean = (String)
+                            mbs.getMBeanInfo(name).getDescriptor().getFieldValue("mxbean");
+                        if (mxbean == null || !mxbean.equals("true")) {
+                            throw new RuntimeException(
                                 "Platform MBeans must be MXBeans!");
-                    }
-                    if (!(mbean instanceof StandardMBean)) {
-                        throw new RuntimeException(
+                        }
+                        if (!(mbean instanceof StandardMBean)) {
+                            throw new RuntimeException(
                                 "MXBeans must be wrapped in StandardMBean!");
+                        }
                     }
                 }
                 return result;

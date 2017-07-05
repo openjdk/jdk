@@ -559,6 +559,7 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
                         } else {
                             restoreFocus(fe, newFocusedWindow);
                         }
+                        setMostRecentFocusOwner(newFocusedWindow, null); // see: 8013773
                     }
                     break;
                 }

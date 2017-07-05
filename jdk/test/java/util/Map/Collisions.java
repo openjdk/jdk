@@ -26,6 +26,7 @@
  * @bug 7126277
  * @run main Collisions -shortrun
  * @run main/othervm -Djdk.map.althashing.threshold=0 Collisions -shortrun
+ * @run main/othervm -Djdk.map.useRandomSeed=true Collisions -shortrun
  * @summary Ensure Maps behave well with lots of hashCode() collisions.
  * @author Mike Duigou
  */

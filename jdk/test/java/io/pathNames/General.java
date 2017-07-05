@@ -277,8 +277,8 @@ public class General {
     {
         check(ans, ask + slash);
         checkNames(depth, create,
-                   ans,
-                   ask);
+                   ans.endsWith(File.separator) ? ans : ans + File.separator,
+                   ask + slash);
     }
 
 
@@ -308,9 +308,6 @@ public class General {
                                   String ans, String ask)
         throws Exception
     {
-        ans = ans.endsWith(File.separator) ? ans : ans + File.separator;
-        ask = ask.endsWith(File.separator) ? ask : ask + File.separator;
-
         int d = depth - 1;
         File f = new File(ans);
         String n;

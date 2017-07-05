@@ -243,6 +243,10 @@ public class TestHttpCookie {
         test("set-cookie2: Customer = \"WILE_E_COYOTE\"; Version = \"1\"; Path = \"/acme\"")
         .n("Customer").v("WILE_E_COYOTE").ver(1).p("/acme");
 
+        // $NAME is reserved; result should be null
+        test("set-cookie2: $Customer = \"WILE_E_COYOTE\"; Version = \"1\"; Path = \"/acme\"")
+        .nil();
+
         // a 'full' cookie
         test("set-cookie2: Customer=\"WILE_E_COYOTE\"" +
                 ";Version=\"1\"" +

@@ -41,7 +41,11 @@ import java.util.function.Supplier;
  *
  * @since 1.8
  */
-public class StreamSupport {
+public final class StreamSupport {
+
+    // Suppresses default constructor, ensuring non-instantiability.
+    private StreamSupport() {}
+
     /**
      * Creates a new sequential {@code Stream} from a {@code Spliterator}.
      *
@@ -50,7 +54,7 @@ public class StreamSupport {
      *
      * <p>It is strongly recommended the spliterator report a characteristic of
      * {@code IMMUTABLE} or {@code CONCURRENT}, or be
-     * <a href="Spliterator.html#binding">late-binding</a>.  Otherwise,
+     * <a href="../Spliterator.html#binding">late-binding</a>.  Otherwise,
      * {@link #stream(Supplier, int)} should be used to
      * reduce the scope of potential interference with the source.  See
      * <a href="package-summary.html#Non-Interference">Non-Interference</a> for
@@ -75,7 +79,7 @@ public class StreamSupport {
      *
      * <p>It is strongly recommended the spliterator report a characteristic of
      * {@code IMMUTABLE} or {@code CONCURRENT}, or be
-     * <a href="Spliterator.html#binding">late-binding</a>.  Otherwise,
+     * <a href="../Spliterator.html#binding">late-binding</a>.  Otherwise,
      * {@link #stream(Supplier, int)} should be used to
      * reduce the scope of potential interference with the source.  See
      * <a href="package-summary.html#Non-Interference">Non-Interference</a> for
@@ -102,7 +106,7 @@ public class StreamSupport {
      *
      * <p>For spliterators that report a characteristic of {@code IMMUTABLE}
      * or {@code CONCURRENT}, or that are
-     * <a href="Spliterator.html#binding">late-binding</a>, it is likely
+     * <a href="../Spliterator.html#binding">late-binding</a>, it is likely
      * more efficient to use {@link #stream(java.util.Spliterator)} instead.
      * The use of a {@code Supplier} in this form provides a level of
      * indirection that reduces the scope of potential interference with the
@@ -138,7 +142,7 @@ public class StreamSupport {
      *
      * <p>For spliterators that report a characteristic of {@code IMMUTABLE}
      * or {@code CONCURRENT}, or that are
-     * <a href="Spliterator.html#binding">late-binding</a>, it is likely
+     * <a href="../Spliterator.html#binding">late-binding</a>, it is likely
      * more efficient to use {@link #stream(Spliterator)} instead.
      * The use of a {@code Supplier} in this form provides a level of
      * indirection that reduces the scope of potential interference with the
@@ -172,7 +176,7 @@ public class StreamSupport {
      *
      * <p>It is strongly recommended the spliterator report a characteristic of
      * {@code IMMUTABLE} or {@code CONCURRENT}, or be
-     * <a href="Spliterator.html#binding">late-binding</a>.  Otherwise,
+     * <a href="../Spliterator.html#binding">late-binding</a>.  Otherwise,
      * {@link #stream(Supplier, int)}} should be used to
      * reduce the scope of potential interference with the source.  See
      * <a href="package-summary.html#Non-Interference">Non-Interference</a> for
@@ -195,7 +199,7 @@ public class StreamSupport {
      *
      * <p>It is strongly recommended the spliterator report a characteristic of
      * {@code IMMUTABLE} or {@code CONCURRENT}, or be
-     * <a href="Spliterator.html#binding">late-binding</a>.  Otherwise,
+     * <a href="../Spliterator.html#binding">late-binding</a>.  Otherwise,
      * {@link #stream(Supplier, int)}} should be used to
      * reduce the scope of potential interference with the source.  See
      * <a href="package-summary.html#Non-Interference">Non-Interference</a> for
@@ -220,7 +224,7 @@ public class StreamSupport {
      *
      * <p>For spliterators that report a characteristic of {@code IMMUTABLE}
      * or {@code CONCURRENT}, or that are
-     * <a href="Spliterator.html#binding">late-binding</a>, it is likely
+     * <a href="../Spliterator.html#binding">late-binding</a>, it is likely
      * more efficient to use {@link #intStream(Spliterator.OfInt)} instead.
      * The use of a {@code Supplier} in this form provides a level of
      * indirection that reduces the scope of potential interference with the
@@ -254,7 +258,7 @@ public class StreamSupport {
      *
      * <p>For spliterators that report a characteristic of {@code IMMUTABLE}
      * or {@code CONCURRENT}, or that are
-     * <a href="Spliterator.html#binding">late-binding</a>, it is likely
+     * <a href="../Spliterator.html#binding">late-binding</a>, it is likely
      * more efficient to use {@link #intStream(Spliterator.OfInt)} instead.
      * The use of a {@code Supplier} in this form provides a level of
      * indirection that reduces the scope of potential interference with the
@@ -286,7 +290,7 @@ public class StreamSupport {
      *
      * <p>It is strongly recommended the spliterator report a characteristic of
      * {@code IMMUTABLE} or {@code CONCURRENT}, or be
-     * <a href="Spliterator.html#binding">late-binding</a>.  Otherwise,
+     * <a href="../Spliterator.html#binding">late-binding</a>.  Otherwise,
      * {@link #stream(Supplier, int)} should be used to
      * reduce the scope of potential interference with the source.  See
      * <a href="package-summary.html#Non-Interference">Non-Interference</a> for
@@ -310,7 +314,7 @@ public class StreamSupport {
      *
      * <p>It is strongly recommended the spliterator report a characteristic of
      * {@code IMMUTABLE} or {@code CONCURRENT}, or be
-     * <a href="Spliterator.html#binding">late-binding</a>.  Otherwise,
+     * <a href="../Spliterator.html#binding">late-binding</a>.  Otherwise,
      * {@link #stream(Supplier, int)} should be used to
      * reduce the scope of potential interference with the source.  See
      * <a href="package-summary.html#Non-Interference">Non-Interference</a> for
@@ -335,7 +339,7 @@ public class StreamSupport {
      *
      * <p>For spliterators that report a characteristic of {@code IMMUTABLE}
      * or {@code CONCURRENT}, or that are
-     * <a href="Spliterator.html#binding">late-binding</a>, it is likely
+     * <a href="../Spliterator.html#binding">late-binding</a>, it is likely
      * more efficient to use {@link #longStream(Spliterator.OfLong)} instead.
      * The use of a {@code Supplier} in this form provides a level of
      * indirection that reduces the scope of potential interference with the
@@ -369,7 +373,7 @@ public class StreamSupport {
      *
      * <p>For spliterators that report a characteristic of {@code IMMUTABLE}
      * or {@code CONCURRENT}, or that are
-     * <a href="Spliterator.html#binding">late-binding</a>, it is likely
+     * <a href="../Spliterator.html#binding">late-binding</a>, it is likely
      * more efficient to use {@link #longStream(Spliterator.OfLong)} instead.
      * The use of a {@code Supplier} in this form provides a level of
      * indirection that reduces the scope of potential interference with the
@@ -402,7 +406,7 @@ public class StreamSupport {
      *
      * <p>It is strongly recommended the spliterator report a characteristic of
      * {@code IMMUTABLE} or {@code CONCURRENT}, or be
-     * <a href="Spliterator.html#binding">late-binding</a>.  Otherwise,
+     * <a href="../Spliterator.html#binding">late-binding</a>.  Otherwise,
      * {@link #stream(Supplier, int)} should be used to
      * reduce the scope of potential interference with the source.  See
      * <a href="package-summary.html#Non-Interference">Non-Interference</a> for
@@ -426,7 +430,7 @@ public class StreamSupport {
      *
      * <p>It is strongly recommended the spliterator report a characteristic of
      * {@code IMMUTABLE} or {@code CONCURRENT}, or be
-     * <a href="Spliterator.html#binding">late-binding</a>.  Otherwise,
+     * <a href="../Spliterator.html#binding">late-binding</a>.  Otherwise,
      * {@link #stream(Supplier, int)} should be used to
      * reduce the scope of potential interference with the source.  See
      * <a href="package-summary.html#Non-Interference">Non-Interference</a> for
@@ -451,7 +455,7 @@ public class StreamSupport {
      * <p>
      * For spliterators that report a characteristic of {@code IMMUTABLE}
      * or {@code CONCURRENT}, or that are
-     * <a href="Spliterator.html#binding">late-binding</a>, it is likely
+     * <a href="../Spliterator.html#binding">late-binding</a>, it is likely
      * more efficient to use {@link #doubleStream(Spliterator.OfDouble)} instead.
      * The use of a {@code Supplier} in this form provides a level of
      * indirection that reduces the scope of potential interference with the
@@ -485,7 +489,7 @@ public class StreamSupport {
      *
      * <p>For spliterators that report a characteristic of {@code IMMUTABLE}
      * or {@code CONCURRENT}, or that are
-     * <a href="Spliterator.html#binding">late-binding</a>, it is likely
+     * <a href="../Spliterator.html#binding">late-binding</a>, it is likely
      * more efficient to use {@link #doubleStream(Spliterator.OfDouble)} instead.
      * The use of a {@code Supplier} in this form provides a level of
      * indirection that reduces the scope of potential interference with the

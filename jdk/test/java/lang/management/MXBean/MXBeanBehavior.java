@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,10 @@ import java.util.*;
 import javax.management.*;
 
 public class MXBeanBehavior {
+    // Exclude list: list of platform MBeans that are not MXBeans
+    public static final HashSet<String> excludeList = new HashSet<>(
+            Arrays.asList("com.sun.management:type=DiagnosticCommand"));
+
     public static void main(String[] args) throws Exception {
         MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
 
@@ -92,6 +96,10 @@ public class MXBeanBehavior {
        by generic MXBean tests.
      */
     private static void test(MBeanServer mbs, ObjectName name) throws Exception {
+        if(excludeList.contains(name.getCanonicalName())) {
+            // Skipping not MXBean objects.
+            return;
+        }
         System.out.println("Testing: " + name);
 
         MBeanInfo mbi = mbs.getMBeanInfo(name);
