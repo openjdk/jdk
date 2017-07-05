@@ -22,9 +22,11 @@
  */
 
 /*
- * @ test
+ * @test
+ * @ignore This test has huge memory requirements
  * @bug 8021204
  * @summary Test constructor BigInteger(String val, int radix) on very long string
+ * @run main/othervm -Xshare:off -Xmx8g StringConstructorOverflow
  * @author Dmitry Nadezhin
  */
 import java.math.BigInteger;
@@ -45,15 +47,16 @@ public class StringConstructorOverflow {
     public static void main(String[] args) {
         try {
             BigInteger bi = new BigInteger(makeLongHexString(), 16);
-            if (bi.compareTo(BigInteger.ONE) <= 0)
+            if (bi.compareTo(BigInteger.ONE) <= 0) {
                 throw new RuntimeException("Incorrect result " + bi.toString());
+            }
         } catch (ArithmeticException e) {
             // expected
             System.out.println("Overflow is reported by ArithmeticException, as expected");
         } catch (OutOfMemoryError e) {
             // possible
-            System.out.println("OutOfMemoryError");
-            System.out.println("Run jtreg with -javaoption:-Xmx8g");
+            System.err.println("StringConstructorOverflow skipped: OutOfMemoryError");
+            System.err.println("Run jtreg with -javaoption:-Xmx8g");
         }
     }
 }

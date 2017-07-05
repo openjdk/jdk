@@ -88,6 +88,7 @@ class Compilation: public StackObj {
   CodeOffsets        _offsets;
   CodeBuffer         _code;
   bool               _has_access_indexed;
+  int                _interpreter_frame_size; // Stack space needed in case of a deoptimization
 
   // compilation helpers
   void initialize();
@@ -262,6 +263,18 @@ class Compilation: public StackObj {
 
   // Dump inlining replay data to the stream.
   void dump_inline_data(outputStream* out) { /* do nothing now */ }
+
+  // How much stack space would the interpreter need in case of a
+  // deoptimization (worst case)
+  void update_interpreter_frame_size(int size) {
+    if (_interpreter_frame_size < size) {
+      _interpreter_frame_size = size;
+    }
+  }
+
+  int interpreter_frame_size() const {
+    return _interpreter_frame_size;
+  }
 };
 
 

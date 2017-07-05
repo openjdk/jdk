@@ -38,6 +38,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
+import java.lang.reflect.Field;
+import sun.misc.Unsafe;
 
 /**
  * Common library for various test helper functions.
@@ -58,6 +60,8 @@ public final class Utils {
      * Returns the value of 'test.java.opts'system property.
      */
     public static final String JAVA_OPTIONS = System.getProperty("test.java.opts", "").trim();
+
+    private static Unsafe unsafe = null;
 
     /**
     * Returns the value of 'test.timeout.factor' system property
@@ -109,10 +113,10 @@ public final class Utils {
 
     /**
      * Returns the default JTReg arguments for a jvm running a test without
-     * options that matches regular expresions in {@code filters}.
+     * options that matches regular expressions in {@code filters}.
      * This is the combination of JTReg arguments test.vm.opts and test.java.opts.
      * @param filters Regular expressions used to filter out options.
-     * @return An array of options, or an empty array if no opptions.
+     * @return An array of options, or an empty array if no options.
      */
     public static String[] getFilteredTestJavaOpts(String... filters) {
         String options[] = getTestJavaOpts();
@@ -294,4 +298,38 @@ public final class Utils {
         return output;
     }
 
+    /**
+     * @return Unsafe instance.
+     */
+    public static synchronized Unsafe getUnsafe() {
+        if (unsafe == null) {
+            try {
+                Field f = Unsafe.class.getDeclaredField("theUnsafe");
+                f.setAccessible(true);
+                unsafe = (Unsafe) f.get(null);
+            } catch (NoSuchFieldException | IllegalAccessException e) {
+                throw new RuntimeException("Unable to get Unsafe instance.", e);
+            }
+        }
+        return unsafe;
+    }
+    private static final char[] hexArray = new char[]{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
+
+    /**
+     * Returns hex view of byte array
+     *
+     * @param bytes byte array to process
+     * @return Space separated hexadecimal string representation of bytes
+     */
+
+    public static String toHexString(byte[] bytes) {
+        char[] hexView = new char[bytes.length * 3];
+        int i = 0;
+        for (byte b : bytes) {
+            hexView[i++] = hexArray[(b >> 4) & 0x0F];
+            hexView[i++] = hexArray[b & 0x0F];
+            hexView[i++] = ' ';
+        }
+        return new String(hexView);
+    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,13 +30,15 @@
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.Locale;
 
 public class CertChainUnclosed {
 
     public static void main(String[] args) throws Exception {
-        String os = java.security.AccessController.doPrivileged(
-                new sun.security.action.GetPropertyAction("os.name"));
+        String os = AccessController.doPrivileged(
+                    (PrivilegedAction<String>)() -> System.getProperty("os.name"));
         if (!os.toUpperCase(Locale.US).contains("WINDOWS")) {
             System.out.println("Not Windows. Skip test.");
             return;
