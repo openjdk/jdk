@@ -25,9 +25,7 @@
 
 package jdk.tools.jlink.internal;
 
-import java.io.IOException;
 import java.io.InputStream;
-import java.io.UncheckedIOException;
 import java.util.Objects;
 import jdk.tools.jlink.plugin.ModuleEntry;
 
@@ -44,101 +42,37 @@ import jdk.tools.jlink.plugin.ModuleEntry;
  * {@literal bin|conf|native}/{dir1}>/.../{dirN}/{file name}</li>
  * </ul>
  */
-public class ModuleEntryImpl implements ModuleEntry {
-
-    private final Type type;
+abstract class AbstractModuleEntry implements ModuleEntry {
     private final String path;
     private final String module;
-    private final long length;
-    private final InputStream stream;
-    private byte[] buffer;
+    private final Type type;
 
     /**
-     * Create a new LinkModuleEntry.
+     * Create a new AbstractModuleEntry.
      *
      * @param module The module name.
      * @param path The data path identifier.
      * @param type The data type.
-     * @param stream The data content stream.
-     * @param length The stream length.
      */
-    public ModuleEntryImpl(String module, String path, Type type, InputStream stream, long length) {
-        Objects.requireNonNull(module);
-        Objects.requireNonNull(path);
-        Objects.requireNonNull(type);
-        Objects.requireNonNull(stream);
-        this.path = path;
-        this.type = type;
-        this.module = module;
-        this.stream = stream;
-        this.length = length;
+    AbstractModuleEntry(String module, String path, Type type) {
+        this.module = Objects.requireNonNull(module);
+        this.path = Objects.requireNonNull(path);
+        this.type = Objects.requireNonNull(type);
     }
 
-    /**
-     * The LinkModuleEntry module name.
-     *
-     * @return The module name.
-     */
     @Override
     public final String getModule() {
         return module;
     }
 
-    /**
-     * The LinkModuleEntry path.
-     *
-     * @return The module path.
-     */
     @Override
     public final String getPath() {
         return path;
     }
 
-    /**
-     * The LinkModuleEntry's type.
-     *
-     * @return The data type.
-     */
     @Override
     public final Type getType() {
         return type;
-    }
-
-    /**
-     * The LinkModuleEntry content as an array of byte.
-     *
-     * @return An Array of bytes.
-     */
-    @Override
-    public byte[] getBytes() {
-        if (buffer == null) {
-            try (InputStream is = stream) {
-                buffer = is.readAllBytes();
-            } catch (IOException ex) {
-                throw new UncheckedIOException(ex);
-            }
-        }
-        return buffer;
-    }
-
-    /**
-     * The LinkModuleEntry content length.
-     *
-     * @return The length.
-     */
-    @Override
-    public long getLength() {
-        return length;
-    }
-
-    /**
-     * The LinkModuleEntry stream.
-     *
-     * @return The module data stream.
-     */
-    @Override
-    public InputStream stream() {
-        return stream;
     }
 
     @Override
@@ -150,10 +84,10 @@ public class ModuleEntryImpl implements ModuleEntry {
 
     @Override
     public boolean equals(Object other) {
-        if (!(other instanceof ModuleEntryImpl)) {
+        if (!(other instanceof AbstractModuleEntry)) {
             return false;
         }
-        ModuleEntryImpl f = (ModuleEntryImpl) other;
+        AbstractModuleEntry f = (AbstractModuleEntry) other;
         return f.path.equals(path);
     }
 

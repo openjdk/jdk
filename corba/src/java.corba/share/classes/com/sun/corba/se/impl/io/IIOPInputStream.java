@@ -2230,7 +2230,7 @@ public class IIOPInputStream
      * REVISIT -- This code doesn't do what the comment says to when
      * getField() is null!
      */
-    private void inputClassFields(Object o, Class cl,
+    private void inputClassFields(Object o, Class<?> cl,
                                   ObjectStreamField[] fields,
                                   com.sun.org.omg.SendingContext.CodeBase sender)
         throws InvalidClassException, StreamCorruptedException,
@@ -2239,6 +2239,8 @@ public class IIOPInputStream
 
         int primFields = fields.length - currentClassDesc.objFields;
 
+        // this will leave primitives in the inputstream
+        // should really consume and discard where necessary
         if (o != null) {
             for (int i = 0; i < primFields; ++i) {
                 inputPrimitiveField(o, cl, fields[i]);
@@ -2264,21 +2266,32 @@ public class IIOPInputStream
                 }
 
                 try {
-                    Class fieldCl = fields[i].getClazz();
+                    Class<?> fieldCl = fields[i].getClazz();
                     if ((objectValue != null)
                             && (!fieldCl.isAssignableFrom(
                                     objectValue.getClass()))) {
                         throw new IllegalArgumentException("Field mismatch");
                     }
-                   Field classField = null;
+                    Field declaredClassField = null;
+                    final String inputStreamFieldName = fields[i].getName();
                     try {
-                        classField = cl.getDeclaredField(fields[i].getName());
-                    } catch (NoSuchFieldException nsfEx) {
-                        throw new IllegalArgumentException(nsfEx);
+                        declaredClassField = getDeclaredField( cl, inputStreamFieldName);
+                    } catch (PrivilegedActionException paEx) {
+                        throw new IllegalArgumentException(
+                            (NoSuchFieldException) paEx.getException());
                     } catch (SecurityException secEx) {
-                        throw new IllegalArgumentException(secEx.getCause());
+                        throw new IllegalArgumentException(secEx);
+                    } catch (NullPointerException npEx) {
+                        continue;
+                    } catch (NoSuchFieldException e) {
+                        continue;
                     }
-                    Class<?> declaredFieldClass = classField.getType();
+
+                    if (declaredClassField == null) {
+                        continue;
+                    }
+
+                    Class<?> declaredFieldClass = declaredClassField.getType();
 
                     // check input field type is a declared field type
                     // input field is a subclass of the declared field
@@ -2291,15 +2304,24 @@ public class IIOPInputStream
                     }
                     bridge.putObject( o, fields[i].getFieldID(), objectValue ) ;
                     // reflective code: fields[i].getField().set( o, objectValue ) ;
-                } catch (IllegalArgumentException e) {
-                    ClassCastException exc = new ClassCastException("Assigning instance of class " +
-                                                 objectValue.getClass().getName() +
-                                                 " to field " +
-                                                 currentClassDesc.getName() +
-                                                 '#' +
-                                                 fields[i].getField().getName());
-                    exc.initCause( e ) ;
-                    throw exc ;
+                } catch (IllegalArgumentException iaEx) {
+                    String objectValueClassName = "null";
+                    String currentClassDescClassName = "null";
+                    String fieldName = "null";
+                    if (objectValue != null) {
+                        objectValueClassName = objectValue.getClass().getName();
+                    }
+                    if (currentClassDesc != null) {
+                        currentClassDescClassName = currentClassDesc.getName();
+                    }
+                    if (fields[i] != null && fields[i].getField() != null) {
+                        fieldName = fields[i].getField().getName();
+                    }
+                    ClassCastException ccEx = new ClassCastException(
+                            "Assigning instance of class " + objectValueClassName
+                                    + " to field " + currentClassDescClassName + '#' + fieldName);
+                    ccEx.initCause( iaEx ) ;
+                    throw ccEx ;
                 }
             } // end : for loop
             }
@@ -2592,12 +2614,11 @@ public class IIOPInputStream
                 throw cce ;
             }
         }
-
     }
 
-    private static void setObjectField(Object o, Class c, String fieldName, Object v) {
+    private static void setObjectField(Object o, Class<?> c, String fieldName, Object v) {
         try {
-            Field fld = c.getDeclaredField( fieldName ) ;
+            Field fld = getDeclaredField( c, fieldName ) ;
             Class fieldCl = fld.getType();
             if(v != null && !fieldCl.isInstance(v)) {
                 throw new Exception();
@@ -2617,10 +2638,10 @@ public class IIOPInputStream
         }
     }
 
-    private static void setBooleanField(Object o, Class c, String fieldName, boolean v)
+    private static void setBooleanField(Object o, Class<?> c, String fieldName, boolean v)
     {
         try {
-            Field fld = c.getDeclaredField( fieldName ) ;
+            Field fld = getDeclaredField( c, fieldName ) ;
             if ((fld != null) && (fld.getType() == Boolean.TYPE)) {
                 long key = bridge.objectFieldOffset( fld ) ;
                 bridge.putBoolean( o, key, v ) ;
@@ -2640,10 +2661,10 @@ public class IIOPInputStream
         }
     }
 
-    private static void setByteField(Object o, Class c, String fieldName, byte v)
+    private static void setByteField(Object o, Class<?> c, String fieldName, byte v)
     {
         try {
-            Field fld = c.getDeclaredField( fieldName ) ;
+            Field fld = getDeclaredField( c, fieldName ) ;
             if ((fld != null) && (fld.getType() == Byte.TYPE)) {
                 long key = bridge.objectFieldOffset( fld ) ;
                 bridge.putByte( o, key, v ) ;
@@ -2663,10 +2684,10 @@ public class IIOPInputStream
         }
     }
 
-    private static void setCharField(Object o, Class c, String fieldName, char v)
+    private static void setCharField(Object o, Class<?> c, String fieldName, char v)
     {
         try {
-            Field fld = c.getDeclaredField( fieldName ) ;
+            Field fld = getDeclaredField( c, fieldName ) ;
             if ((fld != null) && (fld.getType() == Character.TYPE)) {
                 long key = bridge.objectFieldOffset( fld ) ;
                 bridge.putChar( o, key, v ) ;
@@ -2686,10 +2707,10 @@ public class IIOPInputStream
         }
     }
 
-    private static void setShortField(Object o, Class c, String fieldName, short v)
+    private static void setShortField(Object o, Class<?> c, String fieldName, short v)
     {
         try {
-            Field fld = c.getDeclaredField( fieldName ) ;
+            Field fld = getDeclaredField( c, fieldName ) ;
             if ((fld != null) && (fld.getType() == Short.TYPE)) {
                 long key = bridge.objectFieldOffset( fld ) ;
                 bridge.putShort( o, key, v ) ;
@@ -2709,10 +2730,10 @@ public class IIOPInputStream
         }
     }
 
-    private static void setIntField(Object o, Class c, String fieldName, int v)
+    private static void setIntField(Object o, Class<?> c, String fieldName, int v)
     {
         try {
-            Field fld = c.getDeclaredField( fieldName ) ;
+            Field fld = getDeclaredField( c, fieldName ) ;
             if ((fld != null) && (fld.getType() == Integer.TYPE)) {
                 long key = bridge.objectFieldOffset( fld ) ;
                 bridge.putInt( o, key, v ) ;
@@ -2732,10 +2753,10 @@ public class IIOPInputStream
         }
     }
 
-    private static void setLongField(Object o, Class c, String fieldName, long v)
+    private static void setLongField(Object o, Class<?> c, String fieldName, long v)
     {
         try {
-            Field fld = c.getDeclaredField( fieldName ) ;
+            Field fld = getDeclaredField( c, fieldName ) ;
             if ((fld != null) && (fld.getType() == Long.TYPE)) {
                 long key = bridge.objectFieldOffset( fld ) ;
                 bridge.putLong( o, key, v ) ;
@@ -2755,10 +2776,10 @@ public class IIOPInputStream
         }
     }
 
-    private static void setFloatField(Object o, Class c, String fieldName, float v)
+    private static void setFloatField(Object o, Class<?> c, String fieldName, float v)
     {
         try {
-            Field fld = c.getDeclaredField( fieldName ) ;
+            Field fld = getDeclaredField( c, fieldName ) ;
             if ((fld != null) && (fld.getType() == Float.TYPE)) {
                 long key = bridge.objectFieldOffset( fld ) ;
                 bridge.putFloat( o, key, v ) ;
@@ -2778,10 +2799,10 @@ public class IIOPInputStream
         }
     }
 
-    private static void setDoubleField(Object o, Class c, String fieldName, double v)
+    private static void setDoubleField(Object o, Class<?> c, String fieldName, double v)
     {
         try {
-            Field fld = c.getDeclaredField( fieldName ) ;
+            Field fld = getDeclaredField( c, fieldName ) ;
             if ((fld != null) && (fld.getType() == Double.TYPE)) {
                 long key = bridge.objectFieldOffset( fld ) ;
                 bridge.putDouble( o, key, v ) ;
@@ -2801,6 +2822,22 @@ public class IIOPInputStream
         }
     }
 
+
+    private static Field getDeclaredField(final Class<?> c,
+                                            final String fieldName)
+        throws PrivilegedActionException, NoSuchFieldException, SecurityException {
+        if (System.getSecurityManager() == null) {
+            return c.getDeclaredField(fieldName);
+        } else {
+            return AccessController
+                    .doPrivileged(new PrivilegedExceptionAction<Field>() {
+                        public Field run() throws NoSuchFieldException {
+                            return c.getDeclaredField(fieldName);
+                        }
+                    });
+        }
+    }
+
     /**
      * This class maintains a map of stream position to
      * an Object currently being deserialized.  It is used
@@ -2811,12 +2848,12 @@ public class IIOPInputStream
      */
     static class ActiveRecursionManager
     {
-        private Map offsetToObjectMap;
+        private Map<Integer, Object> offsetToObjectMap;
 
         public ActiveRecursionManager() {
             // A hash map is unsynchronized and allows
             // null values
-            offsetToObjectMap = new HashMap();
+            offsetToObjectMap = new HashMap<>();
         }
 
         // Called right after allocating a new object.
