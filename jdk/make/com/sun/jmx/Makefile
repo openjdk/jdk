@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -42,12 +42,8 @@ include $(BUILDDIR)/common/Defs.gmk
 # within common included gmk files : that is why the following for loop
 # has been duplicated.
 
-# When building the openjdk, build snmp only if importing binary plugs,
-ifdef OPENJDK
-  ifeq ($(IMPORT_BINARY_PLUGS),true)
-    SUBDIRS = snmp
-  endif
-else
+# When building the openjdk, no snmp
+ifndef OPENJDK
   SUBDIRS = snmp
 endif
 

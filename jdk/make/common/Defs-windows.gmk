@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1999, 2009, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -294,6 +294,13 @@ endif
 
 # Always add _STATIC_CPPLIB definition
 STATIC_CPPLIB_OPTION = /D _STATIC_CPPLIB
+
+# Silence the warning about using _STATIC_CPPLIB
+ifneq ($(SHOW_ALL_WARNINGS),true)
+  # Needed with VS2010 to turn off the deprecated warning.
+  STATIC_CPPLIB_OPTION += /D _DISABLE_DEPRECATE_STATIC_CPPLIB
+endif
+
 MS_RUNTIME_OPTION += $(STATIC_CPPLIB_OPTION)
 
 ifeq ($(CC_VERSION),msvc)
@@ -305,7 +312,7 @@ ifeq ($(CC_VERSION),msvc)
   #   -Od      Turns off optimization and speeds compilation
   #   -YX -Fp/.../foobar.pch   Use precompiled headers (try someday?)
   #   -nologo  Don't print out startup message
-  #   /D _STATIC_CPPLIB  
+  #   /D _STATIC_CPPLIB
   #            Use static link for the C++ runtime (so msvcpnn.dll not needed)
   #   
   CFLAGS_COMMON  += -Zi -nologo
@@ -395,10 +402,18 @@ CFLAGS_COMMON += $(COMPILER_WARNINGS_TO_IGNORE:%=-wd%)
 # Treat compiler warnings as errors, if requested
 #
 CFLAGS_COMMON += -W$(COMPILER_WARNING_LEVEL)
-# Turn off security warnings about using the standard C library function strcpy
-CFLAGS_COMMON += -D _CRT_SECURE_NO_DEPRECATE
 ifeq ($(COMPILER_WARNINGS_FATAL),true)
   CFLAGS_COMMON += -WX
+endif
+
+# Turn off some warnings by default, enable them all if asked.
+ifneq ($(SHOW_ALL_WARNINGS),true)
+  # The -D _CRT_SECURE_NO_DEPRECATE turns off security/deprecated warnings on
+  #    the standard C library functions like strcpy.
+  CFLAGS_COMMON += -D _CRT_SECURE_NO_DEPRECATE
+  # The -D _CRT_NONSTDC_NO_DEPRECATE turns off deprecation warnings about using
+  #    non-standard C POSIX functions.
+  CFLAGS_COMMON += -D _CRT_NONSTDC_NO_DEPRECATE
 endif
 
 CPPFLAGS_OPT    = -DNDEBUG
