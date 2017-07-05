@@ -1,6 +1,6 @@
 
 /*
- * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.SortedSet;
+import java.util.StringJoiner;
 
 public class UnicodeLocaleExtension extends Extension {
     public static final char SINGLETON = 'u';
@@ -70,20 +71,20 @@ public class UnicodeLocaleExtension extends Extension {
         }
 
         if (!this.attributes.isEmpty() || !this.keywords.isEmpty()) {
-            StringBuilder sb = new StringBuilder();
+            StringJoiner sj = new StringJoiner(LanguageTag.SEP);
             for (String attribute : this.attributes) {
-                sb.append(LanguageTag.SEP).append(attribute);
+                sj.add(attribute);
             }
             for (Entry<String, String> keyword : this.keywords.entrySet()) {
                 String key = keyword.getKey();
                 String value = keyword.getValue();
 
-                sb.append(LanguageTag.SEP).append(key);
+                sj.add(key);
                 if (value.length() > 0) {
-                    sb.append(LanguageTag.SEP).append(value);
+                    sj.add(value);
                 }
             }
-            setValue(sb.substring(1));   // skip leading '-'
+            setValue(sj.toString());
         }
     }
 

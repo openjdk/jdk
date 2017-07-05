@@ -25,7 +25,6 @@
 
 ################################################################
 #
-# Check that GNU make and cygwin are recent enough.
 # Setup common utility functions.
 #
 ################################################################
@@ -530,71 +529,6 @@ define SetupCopyFiles
       $$(eval $$(call AddFileToCopy, $$($1_SRC)/$$f, \
       $$($1_DEST)/$$(if $$($1_FLATTEN),$$(notdir $$f),$$f), $1, $$($1_MACRO))))
 
-endef
-
-################################################################################
-# Module list macros
-
-ALL_TOP_SRC_DIRS := \
-    $(JDK_TOPDIR)/src \
-    $(LANGTOOLS_TOPDIR)/src \
-    $(CORBA_TOPDIR)/src \
-    $(JAXP_TOPDIR)/src \
-    $(JAXWS_TOPDIR)/src \
-    $(NASHORN_TOPDIR)/src \
-    #
-
-# There are snmp classes in the open but they are not included in OpenJDK
-JAVA_MODULES_FILTER := jdk.snmp
-
-# Find all modules with java sources by looking in the source dirs
-define FindJavaModules
-  $(filter-out $(JAVA_MODULES_FILTER), $(sort $(notdir \
-      $(patsubst %/,%, $(dir $(patsubst %/,%, $(dir $(patsubst %/,%, $(dir \
-      $(wildcard $(patsubst %,%/*/share/classes/*, $(ALL_TOP_SRC_DIRS)) \
-          $(patsubst %,%/*/$(OPENJDK_TARGET_OS_API_DIR)/classes/*, $(ALL_TOP_SRC_DIRS)) \
-          $(patsubst %,%/*/$(OPENJDK_TARGET_OS)/classes/*, $(ALL_TOP_SRC_DIRS))))))))))))
-endef
-
-MODULES_LIST_FILE := $(SRC_ROOT)/make/common/modules.list
-
-# Param 1: Module to find deps for
-define FindDepsForModule
-  $(if $(filter-out java.base, $1), java.base $(filter-out jdk.scripting.nashorn, $(filter-out java.base, $(wordlist 2, 100, $(shell $(GREP) '^$(strip $1):' $(MODULES_LIST_FILE))))))
-endef
-
-# Find all modules with source for the target platform.
-define FindAllModules
-  $(sort $(filter-out closed demo sample, $(notdir $(patsubst %/,%, $(dir \
-      $(wildcard $(patsubst %, %/*/share, $(ALL_TOP_SRC_DIRS)) \
-      $(patsubst %, %/*/$(OPENJDK_TARGET_OS), $(ALL_TOP_SRC_DIRS)) \
-      $(patsubst %, %/*/$(OPENJDK_TARGET_OS_API_DIR), $(ALL_TOP_SRC_DIRS))))))))
-endef
-
-################################################################################
-
-MAKE_DIR_LIST := $(JDK_TOPDIR)/make
-
-# Find all modules that has a makefile for a certain build phase
-# Param 1: Make subdir to look in
-# Param 2: File prefix to look for
-FindModulesWithMakefileFor = $(sort $(foreach d, $(MAKE_DIR_LIST), \
-    $(patsubst $d/$(strip $1)/$(strip $2)-%.gmk,%, \
-    $(wildcard $d/$(strip $1)/$(strip $2)-*.gmk))))
-
-# Declare a recipe for calling such a makefile
-# Param 1: Module name
-# Param 2: Suffix for rule
-# Param 3: Make subdir
-# Param 4: Makefile prefix
-define DeclareRecipeForModuleMakefile
-  $$(strip $1)-$$(strip $2):
-	+($(CD) $$(dir $$(firstword $$(wildcard $$(addsuffix /$$(strip $3)/$$(strip $4)-$$(strip $1).gmk, \
-	        $(MAKE_DIR_LIST))))) \
-	    && $(MAKE) $(MAKE_ARGS) \
-	    -f $$(strip $4)-$$(strip $1).gmk \
-	    $$(addprefix -I, $$(wildcard $(MAKE_DIR_LIST) \
-	        $$(addsuffix /$$(strip $3), $(MAKE_DIR_LIST)))))
 endef
 
 ################################################################################

@@ -81,7 +81,7 @@ static void setConnectionReset(SOCKET s, BOOL enable) {
 JNIEXPORT void JNICALL
 Java_sun_nio_ch_Net_initIDs(JNIEnv *env, jclass clazz)
 {
-    /* nothing to do */
+    initInetAddressIDs(env);
 }
 
 JNIEXPORT jboolean JNICALL

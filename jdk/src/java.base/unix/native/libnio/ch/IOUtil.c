@@ -35,7 +35,6 @@
 #include "java_lang_Integer.h"
 #include "nio.h"
 #include "nio_util.h"
-#include "net_util.h"
 
 static jfieldID fd_fdID;        /* for jint 'fd' in java.io.FileDescriptor */
 
@@ -45,7 +44,6 @@ Java_sun_nio_ch_IOUtil_initIDs(JNIEnv *env, jclass clazz)
 {
     CHECK_NULL(clazz = (*env)->FindClass(env, "java/io/FileDescriptor"));
     CHECK_NULL(fd_fdID = (*env)->GetFieldID(env, clazz, "fd", "I"));
-    initInetAddressIDs(env);
 }
 
 JNIEXPORT jboolean JNICALL

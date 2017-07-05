@@ -37,6 +37,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.StringJoiner;
 
 public class LanguageTag {
     //
@@ -473,21 +474,18 @@ public class LanguageTag {
             }
             if (!varitr.isDone()) {
                 // ill-formed variant subtags
-                StringBuilder buf = new StringBuilder();
+                StringJoiner sj = new StringJoiner(SEP);
                 while (!varitr.isDone()) {
                     String prvv = varitr.current();
                     if (!isPrivateuseSubtag(prvv)) {
                         // cannot use private use subtag - truncated
                         break;
                     }
-                    if (buf.length() > 0) {
-                        buf.append(SEP);
-                    }
-                    buf.append(prvv);
+                    sj.add(prvv);
                     varitr.next();
                 }
-                if (buf.length() > 0) {
-                    privuseVar = buf.toString();
+                if (sj.length() > 0) {
+                    privuseVar = sj.toString();
                 }
             }
         }

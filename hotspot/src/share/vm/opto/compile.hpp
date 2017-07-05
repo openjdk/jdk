@@ -1200,6 +1200,10 @@ class Compile : public Phase {
   // Definitions of pd methods
   static void pd_compiler2_init();
 
+  // Static parse-time type checking logic for gen_subtype_check:
+  enum { SSC_always_false, SSC_always_true, SSC_easy_test, SSC_full_test };
+  int static_subtype_check(ciKlass* superk, ciKlass* subk);
+
   // Auxiliary method for randomized fuzzing/stressing
   static bool randomized_select(int count);
 };

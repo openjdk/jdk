@@ -78,7 +78,7 @@ class G1HotCardCache: public CHeapObj<mtGC> {
   G1HotCardCache(G1CollectedHeap* g1h);
   ~G1HotCardCache();
 
-  void initialize();
+  void initialize(G1RegionToSpaceMapper* card_counts_storage);
 
   bool use_cache() { return _use_cache; }
 
@@ -114,9 +114,6 @@ class G1HotCardCache: public CHeapObj<mtGC> {
   }
 
   bool hot_cache_is_empty() { return _n_hot == 0; }
-
-  // Resizes the card counts table to match the given capacity
-  void resize_card_counts(size_t heap_capacity);
 
   // Zeros the values in the card counts table for entire committed heap
   void reset_card_counts();

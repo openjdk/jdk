@@ -22,13 +22,4 @@
 # or visit www.oracle.com if you need additional information or have any
 # questions.
 #
-# List all Sun provided attach providers here. If there
-# are providers that are only available on a particular OS
-# then prefix the line with #[OS] and they will automatically
-# uncommented by the build process.
-#
-#[solaris]sun.tools.attach.SolarisAttachProvider
-#[windows]sun.tools.attach.WindowsAttachProvider
-#[linux]sun.tools.attach.LinuxAttachProvider
-#[macosx]sun.tools.attach.BsdAttachProvider
-#[aix]sun.tools.attach.AixAttachProvider
+sun.tools.attach.AttachProviderImpl

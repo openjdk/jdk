@@ -79,6 +79,12 @@ class MetadataFactory : AllStatic {
   // Deallocation method for metadata
   template <class T>
   static void free_metadata(ClassLoaderData* loader_data, T md) {
+    if (DumpSharedSpaces) {
+      // FIXME: the freeing code is buggy, especially when PrintSharedSpaces is enabled.
+      // Disable for now -- this means if you specify bad classes in your classlist you
+      // may have wasted space inside the archive.
+      return;
+    }
     if (md != NULL) {
       assert(loader_data != NULL, "shouldn't pass null");
       int size = md->size();

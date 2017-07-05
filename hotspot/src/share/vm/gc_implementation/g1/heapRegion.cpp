@@ -345,11 +345,6 @@ HeapWord* HeapRegion::next_block_start_careful(HeapWord* addr) {
   return low;
 }
 
-#ifdef _MSC_VER // the use of 'this' below gets a warning, make it go away
-#pragma warning( disable:4355 ) // 'this' : used in base member initializer list
-#endif // _MSC_VER
-
-
 HeapRegion::HeapRegion(uint hrs_index,
                        G1BlockOffsetSharedArray* sharedOffsetArray,
                        MemRegion mr) :
@@ -361,7 +356,7 @@ HeapRegion::HeapRegion(uint hrs_index,
     _claimed(InitialClaimValue), _evacuation_failed(false),
     _prev_marked_bytes(0), _next_marked_bytes(0), _gc_efficiency(0.0),
     _young_type(NotYoung), _next_young_region(NULL),
-    _next_dirty_cards_region(NULL), _next(NULL), _prev(NULL), _pending_removal(false),
+    _next_dirty_cards_region(NULL), _next(NULL), _prev(NULL),
 #ifdef ASSERT
     _containing_set(NULL),
 #endif // ASSERT
@@ -370,14 +365,20 @@ HeapRegion::HeapRegion(uint hrs_index,
     _predicted_bytes_to_copy(0)
 {
   _rem_set = new HeapRegionRemSet(sharedOffsetArray, this);
+  assert(HeapRegionRemSet::num_par_rem_sets() > 0, "Invariant.");
+
+  initialize(mr);
+}
+
+void HeapRegion::initialize(MemRegion mr, bool clear_space, bool mangle_space) {
+  assert(_rem_set->is_empty(), "Remembered set must be empty");
+
+  G1OffsetTableContigSpace::initialize(mr, clear_space, mangle_space);
+
   _orig_end = mr.end();
-  // Note that initialize() will set the start of the unmarked area of the
-  // region.
   hr_clear(false /*par*/, false /*clear_space*/);
   set_top(bottom());
   record_top_and_timestamp();
-
-  assert(HeapRegionRemSet::num_par_rem_sets() > 0, "Invariant.");
 }
 
 CompactibleSpace* HeapRegion::next_compaction_space() const {
@@ -905,7 +906,7 @@ void HeapRegion::verify(VerifyOption vo,
     }
 
     // If it returns false, verify_for_object() will output the
-    // appropriate messasge.
+    // appropriate message.
     if (do_bot_verify &&
         !g1->is_obj_dead(obj, this) &&
         !_offsets.verify_for_object(p, obj_size)) {
@@ -1036,8 +1037,7 @@ void G1OffsetTableContigSpace::clear(bool mangle_space) {
   set_top(bottom());
   set_saved_mark_word(bottom());
   CompactibleSpace::clear(mangle_space);
-  _offsets.zero_bottom_entry();
-  _offsets.initialize_threshold();
+  reset_bot();
 }
 
 void G1OffsetTableContigSpace::set_bottom(HeapWord* new_bottom) {
@@ -1127,9 +1127,11 @@ G1OffsetTableContigSpace(G1BlockOffsetSharedArray* sharedOffsetArray,
   _gc_time_stamp(0)
 {
   _offsets.set_space(this);
-  // false ==> we'll do the clearing if there's clearing to be done.
-  CompactibleSpace::initialize(mr, false, SpaceDecorator::Mangle);
-  _top = bottom();
-  _offsets.zero_bottom_entry();
-  _offsets.initialize_threshold();
 }
+
+void G1OffsetTableContigSpace::initialize(MemRegion mr, bool clear_space, bool mangle_space) {
+  CompactibleSpace::initialize(mr, clear_space, mangle_space);
+  _top = bottom();
+  reset_bot();
+}
+

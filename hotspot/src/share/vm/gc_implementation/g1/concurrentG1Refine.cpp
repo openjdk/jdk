@@ -81,8 +81,8 @@ void ConcurrentG1Refine::reset_threshold_step() {
   }
 }
 
-void ConcurrentG1Refine::init() {
-  _hot_card_cache.initialize();
+void ConcurrentG1Refine::init(G1RegionToSpaceMapper* card_counts_storage) {
+  _hot_card_cache.initialize(card_counts_storage);
 }
 
 void ConcurrentG1Refine::stop() {

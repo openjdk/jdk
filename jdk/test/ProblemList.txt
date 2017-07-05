@@ -127,6 +127,8 @@
 # 8046351
 com/sun/management/GarbageCollectorMXBean/GarbageCollectionNotificationContentTest.java   generic-all
 com/sun/management/GarbageCollectorMXBean/GarbageCollectionNotificationTest.java          generic-all
+# 8056143
+java/lang/management/MemoryMXBean/LowMemoryTest.java                                      generic-all
 
 ############################################################################
 
@@ -273,9 +275,6 @@ com/sun/jdi/JdbReadTwiceTest.sh                                 generic-all
 ############################################################################
 
 # jdk_instrument
-
-# 8037082
-java/lang/instrument/NativeMethodPrefixAgent.java               generic-all
 
 ############################################################################
 
