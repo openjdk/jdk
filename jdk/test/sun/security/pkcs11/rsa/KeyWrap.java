@@ -21,13 +21,14 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 6231216
  * @summary Verify key wrapping (of extractable keys) works for RSA/PKCS1
  * @author Andreas Sterbenz
  * @library ..
  * @key randomness
+ * @modules jdk.crypto.pkcs11
  * @run main/othervm KeyWrap
  * @run main/othervm KeyWrap sm
  */

@@ -148,7 +148,7 @@ class InstanceKlass: public Klass {
   // Package this class is defined in
   PackageEntry*   _package_entry;
   // Array classes holding elements of this class.
-  Klass*          _array_klasses;
+  Klass* volatile _array_klasses;
   // Constant pool for this class.
   ConstantPool* _constants;
   // The InnerClasses attribute and EnclosingMethod attribute. The
@@ -230,7 +230,7 @@ class InstanceKlass: public Klass {
   OopMapCache*    volatile _oop_map_cache;   // OopMapCache for all methods in the klass (allocated lazily)
   MemberNameTable* _member_names;        // Member names
   JNIid*          _jni_ids;              // First JNI identifier for static fields in this class
-  jmethodID*      _methods_jmethod_ids;  // jmethodIDs corresponding to method_idnum, or NULL if none
+  jmethodID*      volatile _methods_jmethod_ids;  // jmethodIDs corresponding to method_idnum, or NULL if none
   intptr_t        _dep_context;          // packed DependencyContext structure
   nmethod*        _osr_nmethods_head;    // Head of list of on-stack replacement nmethods for this class
 #if INCLUDE_JVMTI
@@ -368,7 +368,9 @@ class InstanceKlass: public Klass {
 
   // array klasses
   Klass* array_klasses() const             { return _array_klasses; }
+  inline Klass* array_klasses_acquire() const; // load with acquire semantics
   void set_array_klasses(Klass* k)         { _array_klasses = k; }
+  inline void release_set_array_klasses(Klass* k); // store with release semantics
 
   // methods
   Array<Method*>* methods() const          { return _methods; }
@@ -617,8 +619,8 @@ class InstanceKlass: public Klass {
   objArrayOop signers() const;
 
   // host class
-  Klass* host_klass() const              {
-    Klass** hk = (Klass**)adr_host_klass();
+  InstanceKlass* host_klass() const              {
+    InstanceKlass** hk = adr_host_klass();
     if (hk == NULL) {
       return NULL;
     } else {
@@ -626,9 +628,9 @@ class InstanceKlass: public Klass {
       return *hk;
     }
   }
-  void set_host_klass(const Klass* host) {
+  void set_host_klass(const InstanceKlass* host) {
     assert(is_anonymous(), "not anonymous");
-    const Klass** addr = (const Klass**)adr_host_klass();
+    const InstanceKlass** addr = (const InstanceKlass **)adr_host_klass();
     assert(addr != NULL, "no reversed space");
     if (addr != NULL) {
       *addr = host;
@@ -707,6 +709,7 @@ class InstanceKlass: public Klass {
 
   // RedefineClasses() support for previous versions:
   void add_previous_version(instanceKlassHandle ikh, int emcp_method_count);
+  void purge_previous_version_list();
 
   InstanceKlass* previous_versions() const { return _previous_versions; }
 #else
@@ -766,10 +769,15 @@ public:
   }
 
  private:
-  static int  _previous_version_count;
+  static bool  _has_previous_versions;
  public:
-  static void purge_previous_versions(InstanceKlass* ik);
-  static bool has_previous_versions() { return _previous_version_count > 0; }
+  static void purge_previous_versions(InstanceKlass* ik) {
+    if (ik->has_been_redefined()) {
+      ik->purge_previous_version_list();
+    }
+  }
+
+  static bool has_previous_versions_and_reset();
 
   // JVMTI: Support for caching a class file before it is modified by an agent that can do retransformation
   void set_cached_class_file(JvmtiCachedClassFileData *data) {
@@ -790,7 +798,7 @@ public:
 #else // INCLUDE_JVMTI
 
   static void purge_previous_versions(InstanceKlass* ik) { return; };
-  static bool has_previous_versions() { return false; }
+  static bool has_previous_versions_and_reset() { return false; }
 
   void set_cached_class_file(JvmtiCachedClassFileData *data) {
     assert(data == NULL, "unexpected call with JVMTI disabled");
@@ -1055,13 +1063,13 @@ public:
     }
   };
 
-  Klass** adr_host_klass() const {
+  InstanceKlass** adr_host_klass() const {
     if (is_anonymous()) {
-      Klass** adr_impl = adr_implementor();
+      InstanceKlass** adr_impl = (InstanceKlass **)adr_implementor();
       if (adr_impl != NULL) {
         return adr_impl + 1;
       } else {
-        return end_of_nonstatic_oop_maps();
+        return (InstanceKlass **)end_of_nonstatic_oop_maps();
       }
     } else {
       return NULL;
@@ -1238,10 +1246,8 @@ private:
   // cache management logic if the caches can grow instead of just
   // going from NULL to non-NULL.
   bool idnum_can_increment() const      { return has_been_redefined(); }
-  jmethodID* methods_jmethod_ids_acquire() const
-         { return (jmethodID*)OrderAccess::load_ptr_acquire(&_methods_jmethod_ids); }
-  void release_set_methods_jmethod_ids(jmethodID* jmeths)
-         { OrderAccess::release_store_ptr(&_methods_jmethod_ids, jmeths); }
+  inline jmethodID* methods_jmethod_ids_acquire() const;
+  inline void release_set_methods_jmethod_ids(jmethodID* jmeths);
 
   // Lock during initialization
 public:

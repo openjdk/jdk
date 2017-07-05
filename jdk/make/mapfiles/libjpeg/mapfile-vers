@@ -42,6 +42,7 @@ SUNWprivate_1.1 {
         Java_com_sun_imageio_plugins_jpeg_JPEGImageReader_resetReader;
         Java_com_sun_imageio_plugins_jpeg_JPEGImageReader_disposeReader;
         Java_com_sun_imageio_plugins_jpeg_JPEGImageReader_resetLibraryState;
+        Java_com_sun_imageio_plugins_jpeg_JPEGImageReader_clearNativeReadAbortFlag;
         Java_com_sun_imageio_plugins_jpeg_JPEGImageWriter_initWriterIDs;
         Java_com_sun_imageio_plugins_jpeg_JPEGImageWriter_initJPEGImageWriter;
         Java_com_sun_imageio_plugins_jpeg_JPEGImageWriter_setDest;

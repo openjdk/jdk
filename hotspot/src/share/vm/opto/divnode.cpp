@@ -853,13 +853,6 @@ Node *ModINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if( t == Type::TOP ) return NULL;
   const TypeInt *ti = t->is_int();
 
-  // Check for useless control input
-  // Check for excluding mod-zero case
-  if( in(0) && (ti->_hi < 0 || ti->_lo > 0) ) {
-    set_req(0, NULL);        // Yank control input
-    return this;
-  }
-
   // See if we are MOD'ing by 2^k or 2^k-1.
   if( !ti->is_con() ) return NULL;
   jint con = ti->get_con();
@@ -1023,13 +1016,6 @@ Node *ModLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   const Type *t = phase->type( in(2) );
   if( t == Type::TOP ) return NULL;
   const TypeLong *tl = t->is_long();
-
-  // Check for useless control input
-  // Check for excluding mod-zero case
-  if( in(0) && (tl->_hi < 0 || tl->_lo > 0) ) {
-    set_req(0, NULL);        // Yank control input
-    return this;
-  }
 
   // See if we are MOD'ing by 2^k or 2^k-1.
   if( !tl->is_con() ) return NULL;

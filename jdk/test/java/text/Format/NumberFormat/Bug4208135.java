@@ -47,12 +47,12 @@ public class Bug4208135 {
         df.applyPattern("0.#E0");
 
         df.setDecimalSeparatorAlwaysShown(true);
-        checkFormat(new Double(0.0), "0.E0");
-        checkFormat(new Double(10.0), "1.E1");
-        checkFormat(new Double(1000.0), "1.E3");
-        checkFormat(new Long(0), "0.E0");
-        checkFormat(new Long(10), "1.E1");
-        checkFormat(new Long(1000), "1.E3");
+        checkFormat(0.0, "0.E0");
+        checkFormat(10.0, "1.E1");
+        checkFormat(1000.0, "1.E3");
+        checkFormat(0L, "0.E0");
+        checkFormat(10L, "1.E1");
+        checkFormat(1000L, "1.E3");
         checkFormat(new BigDecimal("0.0"), "0.E0");
         checkFormat(new BigDecimal("10.0"), "1.E1");
         checkFormat(new BigDecimal("1000.0"), "1.E3");
@@ -61,12 +61,12 @@ public class Bug4208135 {
         checkFormat(new BigInteger("1000"), "1.E3");
 
         df.setDecimalSeparatorAlwaysShown(false);
-        checkFormat(new Double(0.0), "0E0");
-        checkFormat(new Double(10.0), "1E1");
-        checkFormat(new Double(1000.0), "1E3");
-        checkFormat(new Long(0), "0E0");
-        checkFormat(new Long(10), "1E1");
-        checkFormat(new Long(1000), "1E3");
+        checkFormat(0.0, "0E0");
+        checkFormat(10.0, "1E1");
+        checkFormat(1000.0, "1E3");
+        checkFormat(0L, "0E0");
+        checkFormat(10L, "1E1");
+        checkFormat(1000L, "1E3");
         checkFormat(new BigDecimal("0.0"), "0E0");
         checkFormat(new BigDecimal("10.0"), "1E1");
         checkFormat(new BigDecimal("1000.0"), "1E3");
@@ -77,12 +77,12 @@ public class Bug4208135 {
         df.applyPattern("0.###");
 
         df.setDecimalSeparatorAlwaysShown(true);
-        checkFormat(new Double(0.0), "0.");
-        checkFormat(new Double(10.0), "10.");
-        checkFormat(new Double(1000.0), "1000.");
-        checkFormat(new Long(0), "0.");
-        checkFormat(new Long(10), "10.");
-        checkFormat(new Long(1000), "1000.");
+        checkFormat(0.0, "0.");
+        checkFormat(10.0, "10.");
+        checkFormat(1000.0, "1000.");
+        checkFormat(0L, "0.");
+        checkFormat(10L, "10.");
+        checkFormat(1000L, "1000.");
         checkFormat(new BigDecimal("0.0"), "0.");
         checkFormat(new BigDecimal("10.0"), "10.");
         checkFormat(new BigDecimal("1000.0"), "1000.");
@@ -91,12 +91,12 @@ public class Bug4208135 {
         checkFormat(new BigInteger("1000"), "1000.");
 
         df.setDecimalSeparatorAlwaysShown(false);
-        checkFormat(new Double(0.0), "0");
-        checkFormat(new Double(10.0), "10");
-        checkFormat(new Double(1000.0), "1000");
-        checkFormat(new Long(0), "0");
-        checkFormat(new Long(10), "10");
-        checkFormat(new Long(1000), "1000");
+        checkFormat(0.0, "0");
+        checkFormat(10.0, "10");
+        checkFormat(1000.0, "1000");
+        checkFormat(0L, "0");
+        checkFormat(10L, "10");
+        checkFormat(1000L, "1000");
         checkFormat(new BigDecimal("0.0"), "0");
         checkFormat(new BigDecimal("10.0"), "10");
         checkFormat(new BigDecimal("1000.0"), "1000");

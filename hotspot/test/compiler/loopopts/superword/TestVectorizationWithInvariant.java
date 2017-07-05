@@ -34,7 +34,7 @@
 package compiler.loopopts.superword;
 
 import jdk.internal.misc.Unsafe;
-import jdk.test.lib.Utils;
+import jdk.test.lib.unsafe.UnsafeHelper;
 
 public class TestVectorizationWithInvariant {
 
@@ -43,7 +43,7 @@ public class TestVectorizationWithInvariant {
     private static final long CHAR_ARRAY_OFFSET;
 
     static {
-        unsafe = Utils.getUnsafe();
+        unsafe = UnsafeHelper.getUnsafe();
         BYTE_ARRAY_OFFSET = unsafe.arrayBaseOffset(byte[].class);
         CHAR_ARRAY_OFFSET = unsafe.arrayBaseOffset(char[].class);
     }

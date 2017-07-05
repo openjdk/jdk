@@ -319,6 +319,31 @@ public class CatalogSupportBase {
     }
 
     /*
+       Verifies the Catalog support on StAX parser.
+    */
+    public void testStAX(boolean setUseCatalog, boolean useCatalog, String catalog,
+            String xml, XMLResolver resolver, String expected) throws Exception {
+
+            XMLStreamReader streamReader = getStreamReader(
+                    setUseCatalog, useCatalog, catalog, xml, resolver);
+            String text = getText(streamReader, XMLStreamConstants.CHARACTERS);
+            assertEquals(expected, text.trim(), "Catalog support for StAX");
+    }
+
+    /*
+       Verifies that the Catalog support for StAX parser is disabled when
+       USE_CATALOG == false.
+    */
+    public void testStAXNegative(boolean setUseCatalog, boolean useCatalog, String catalog,
+            String xml, XMLResolver resolver, String expected) throws Exception {
+
+            XMLStreamReader streamReader = getStreamReader(
+                    setUseCatalog, useCatalog, catalog, xml, resolver);
+            String text = getText(streamReader, XMLStreamConstants.ENTITY_REFERENCE);
+            assertEquals(expected, text.trim(), "Catalog support for StAX");
+    }
+
+    /*
        Verifies the Catalog support on resolving DTD, xsd import and include in
     Schema files.
     */
@@ -514,15 +539,24 @@ public class CatalogSupportBase {
      *
      * @param xmlFile the XML source file
      * @param xmlFileId the systemId of the source
+     * @param setUseCatalog a flag indicates whether USE_CATALOG shall be set
+     * through the factory
+     * @param useCatalog the value of USE_CATALOG
+     * @param catalog a catalog
      * @return a StAXSource
      * @throws XMLStreamException
      * @throws FileNotFoundException
      */
-    StAXSource getStaxSource(String xmlFile, String xmlFileId) {
+    StAXSource getStaxSource(String xmlFile, String xmlFileId, boolean setUseCatalog,
+            boolean useCatalog, String catalog) {
         StAXSource ss = null;
         try {
-            ss = new StAXSource(
-                    XMLInputFactory.newFactory().createXMLEventReader(
+            XMLInputFactory xif = XMLInputFactory.newFactory();
+            if (setUseCatalog) {
+                xif.setProperty(XMLConstants.USE_CATALOG, useCatalog);
+            }
+            xif.setProperty(CatalogFeatures.Feature.FILES.getPropertyName(), catalog);
+            ss = new StAXSource(xif.createXMLEventReader(
                         xmlFileId, new FileInputStream(xmlFile)));
         } catch (Exception e) {}
 
@@ -531,6 +565,10 @@ public class CatalogSupportBase {
 
     /**
      * Creates an XMLStreamReader.
+     *
+     * @param setUseCatalog a flag indicates whether USE_CATALOG shall be set
+     * through the factory
+     * @param useCatalog the value of USE_CATALOG
      * @param catalog the path to a catalog
      * @param xml the xml to be parsed
      * @param resolver a resolver to be set on the reader
@@ -542,9 +580,17 @@ public class CatalogSupportBase {
             String catalog, String xml, XMLResolver resolver)
             throws FileNotFoundException, XMLStreamException {
         XMLInputFactory factory = XMLInputFactory.newInstance();
-        factory.setProperty(CatalogFeatures.Feature.FILES.getPropertyName(), catalog);
+        if (catalog != null) {
+            factory.setProperty(CatalogFeatures.Feature.FILES.getPropertyName(), catalog);
+        }
+
+        factory.setProperty(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES, true);
         factory.setProperty(XMLInputFactory.IS_COALESCING, true);
-        factory.setProperty(XMLInputFactory.RESOLVER, resolver);
+
+        if (resolver != null) {
+            factory.setProperty(XMLInputFactory.RESOLVER, resolver);
+        }
+
         if (setUseCatalog) {
             factory.setProperty(XMLConstants.USE_CATALOG, useCatalog);
         }
@@ -560,17 +606,28 @@ public class CatalogSupportBase {
      * @return the text of the first element
      * @throws XMLStreamException
      */
-    String getText(XMLStreamReader streamReader) throws XMLStreamException {
+    String getText(XMLStreamReader streamReader, int type) throws XMLStreamException {
+        StringBuilder text = new StringBuilder();
+        StringBuilder entityRef = new StringBuilder();
+
         while(streamReader.hasNext()){
-            int eventType = streamReader.next() ;
-            if(eventType == XMLStreamConstants.START_ELEMENT){
-                eventType = streamReader.next() ;
-                if(eventType == XMLStreamConstants.CHARACTERS){
-                    return streamReader.getText() ;
-                }
+            int eventType = streamReader.next();
+            switch (eventType) {
+                case XMLStreamConstants.START_ELEMENT:
+                    break;
+                case XMLStreamConstants.CHARACTERS:
+                    text.append(streamReader.getText());
+                    break;
+                case XMLStreamConstants.ENTITY_REFERENCE:
+                    entityRef.append(streamReader.getText());
+                    break;
             }
         }
-        return null;
+        if (type == XMLStreamConstants.CHARACTERS) {
+            return text.toString();
+        } else {
+            return entityRef.toString();
+        }
     }
 
     /**

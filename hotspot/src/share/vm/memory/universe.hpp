@@ -185,6 +185,9 @@ class Universe: AllStatic {
 
   static oop          _allocation_context_notification_obj;
 
+  // References waiting to be transferred to the ReferenceHandler
+  static oop          _reference_pending_list;
+
   // The particular choice of collected heap.
   static CollectedHeap* _collectedHeap;
 
@@ -333,6 +336,17 @@ class Universe: AllStatic {
 
   static inline oop   allocation_context_notification_obj();
   static inline void  set_allocation_context_notification_obj(oop obj);
+
+  // Reference pending list manipulation.  Access is protected by
+  // Heap_lock.  The getter, setter and predicate require the caller
+  // owns the lock.  Swap is used by parallel non-concurrent reference
+  // processing threads, where some higher level controller owns
+  // Heap_lock, so requires the lock is locked, but not necessarily by
+  // the current thread.
+  static oop          reference_pending_list();
+  static void         set_reference_pending_list(oop list);
+  static bool         has_reference_pending_list();
+  static oop          swap_reference_pending_list(oop list);
 
   static Array<int>*       the_empty_int_array()    { return _the_empty_int_array; }
   static Array<u2>*        the_empty_short_array()  { return _the_empty_short_array; }
