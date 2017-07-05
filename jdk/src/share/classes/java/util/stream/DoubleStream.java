@@ -207,12 +207,12 @@ public interface DoubleStream extends BaseStream<Double, DoubleStream> {
      * @apiNote This method exists mainly to support debugging, where you want
      * to see the elements as they flow past a certain point in a pipeline:
      * <pre>{@code
-     *     list.stream()
-     *         .filter(filteringFunction)
-     *         .peek(e -> System.out.println("Filtered value: " + e));
-     *         .map(mappingFunction)
-     *         .peek(e -> System.out.println("Mapped value: " + e));
-     *         .collect(Collectors.toDoubleSummaryStastistics());
+     *     DoubleStream.of(1, 2, 3, 4)
+     *         .filter(e -> e > 2)
+     *         .peek(e -> System.out.println("Filtered value: " + e))
+     *         .map(e -> e * e)
+     *         .peek(e -> System.out.println("Mapped value: " + e))
+     *         .sum();
      * }</pre>
      *
      * @param action a <a href="package-summary.html#NonInterference">

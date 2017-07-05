@@ -740,37 +740,7 @@ abstract class XDecoratedPeer extends XWindowPeer {
         // Bounds of the window
         Rectangle targetBounds = AWTAccessor.getComponentAccessor().getBounds((Component)target);
 
-        Point newLocation = targetBounds.getLocation();
-        if (xe.get_send_event() || runningWM == XWM.NO_WM || XWM.isNonReparentingWM()) {
-            // Location, Client size + insets
-            newLocation = new Point(xe.get_x() - currentInsets.left, xe.get_y() - currentInsets.top);
-        } else {
-            // ICCCM 4.1.5 states that a real ConfigureNotify will be sent when
-            // a window is resized but the client can not tell if the window was
-            // moved or not. The client should consider the position as unkown
-            // and use TranslateCoordinates to find the actual position.
-            //
-            // TODO this should be the default for every case.
-            switch (XWM.getWMID()) {
-                case XWM.CDE_WM:
-                case XWM.MOTIF_WM:
-                case XWM.METACITY_WM:
-                case XWM.MUTTER_WM:
-                case XWM.SAWFISH_WM:
-                {
-                    Point xlocation = queryXLocation();
-                    if (log.isLoggable(PlatformLogger.Level.FINE)) {
-                        log.fine("New X location: {0}", xlocation);
-                    }
-                    if (xlocation != null) {
-                        newLocation = xlocation;
-                    }
-                    break;
-                }
-                default:
-                    break;
-            }
-        }
+        Point newLocation = getNewLocation(xe, currentInsets.left, currentInsets.top);
 
         WindowDimensions newDimensions =
                 new WindowDimensions(newLocation,
@@ -1260,13 +1230,5 @@ abstract class XDecoratedPeer extends XWindowPeer {
             }
         }
         super.handleWindowFocusOut(oppositeWindow, serial);
-    }
-
-    private Point queryXLocation()
-    {
-        return XlibUtil.translateCoordinates(
-            getContentWindow(),
-            XlibWrapper.RootWindow(XToolkit.getDisplay(), getScreenNumber()),
-            new Point(0, 0));
     }
 }

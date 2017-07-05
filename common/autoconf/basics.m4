@@ -412,7 +412,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_OUTPUT_DIR],
   # Test from where we are running configure, in or outside of src root.
   if test "x$CURDIR" = "x$SRC_ROOT" || test "x$CURDIR" = "x$SRC_ROOT/common" \
       || test "x$CURDIR" = "x$SRC_ROOT/common/autoconf" \
-      || test "x$CURDIR" = "x$SRC_ROOT/common/makefiles" ; then
+      || test "x$CURDIR" = "x$SRC_ROOT/make" ; then
     # We are running configure from the src root.
     # Create a default ./build/target-variant-debuglevel output root.
     if test "x${CONF_NAME}" = x; then

@@ -186,29 +186,15 @@ class CipherBlockChaining extends FeedbackCipher  {
                 byte[] plain, int plainOffset)
     {
         int i;
-        byte[] cipherOrig=null;
         int endIndex = cipherOffset + cipherLen;
 
-        if (cipher==plain && (cipherOffset >= plainOffset)
-            && ((cipherOffset - plainOffset) < blockSize)) {
-            // Save the original ciphertext blocks, so they can be
-            // stored in the feedback register "r".
-            // This is necessary because in this constellation, a
-            // ciphertext block (or parts of it) will be overridden by
-            // the plaintext result.
-            cipherOrig = cipher.clone();
-        }
         for (; cipherOffset < endIndex;
              cipherOffset += blockSize, plainOffset += blockSize) {
             embeddedCipher.decryptBlock(cipher, cipherOffset, k, 0);
             for (i = 0; i < blockSize; i++) {
                 plain[i+plainOffset] = (byte)(k[i] ^ r[i]);
             }
-            if (cipherOrig==null) {
-                System.arraycopy(cipher, cipherOffset, r, 0, blockSize);
-            } else {
-                System.arraycopy(cipherOrig, cipherOffset, r, 0, blockSize);
-            }
+            System.arraycopy(cipher, cipherOffset, r, 0, blockSize);
         }
         return cipherLen;
     }

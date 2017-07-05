@@ -1,0 +1,592 @@
+#
+# Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+# This makefile is much simpler now that it can use the smart javac wrapper
+# for dependency tracking between java packages and incremental compiles.
+# It could be even more simple if we added support for incremental jar updates
+# directly from the smart javac wrapper.
+
+# Cleaning/copying properties here is not a good solution. The properties
+# should be cleaned/copied by a annotation processor in sjavac.
+
+# When you read this source. Remember that $(sort ...) has the side effect
+# of removing duplicates. It is actually this side effect that is
+# desired whenever sort is used below!
+
+ifeq (,$(_MAKEBASE_GMK))
+  $(error You must include MakeBase.gmk prior to including JavaCompilation.gmk)
+endif
+
+FALSE_FIND_PATTERN:=-name FILE_NAME_THAT_DOESNT_EXIST
+
+define SetupJavaCompiler
+  # param 1 is for example GENERATE_OLD_BYTECODE or GENERATE_NEW_JDKBYTECODE
+  # This is the name of the compiler setup.
+  # param 2-9 are named args.
+  #   JVM:=The jvm used to run the javac/javah command
+  #   JAVAC:=The javac jar and bootstrap classpath changes, or just bin/javac if JVM is left out
+  #   FLAGS:=Flags to be supplied to javac
+  #   SERVER_DIR:=Use a javac server (-XDserver) and store the server related files here
+  #   SERVER_JVM:=Use this JVM for the server. Defaults to the JVM above.
+  $(foreach i,2 3 4 5 6 7 8 9 10 11 12 13 14 15, $(if $($i),$1_$(strip $($i)))$(NEWLINE))
+  $(call LogSetupMacroEntry,SetupJavaCompiler($1),$2,$3,$4,$5,$6,$7,$8,$9,$(10),$(11),$(12),$(13),$(14),$(15))
+  $(if $(16),$(error Internal makefile error: Too many arguments to SetupJavaCompiler, please update JavaCompilation.gmk))
+
+  # The port file contains the tcp/ip on which the server listens
+  # and the cookie necessary to talk to the server.
+  $1_SJAVAC_PORTFILE:=$$($1_SERVER_DIR)/server.port
+  # You can use a different JVM to run the background javac server.
+  ifeq ($$($1_SERVER_JVM),)
+    # It defaults to the same JVM that is used to start the javac command.
+    $1_SERVER_JVM:=$$($1_JVM)
+  endif
+endef
+
+define SetupArchive
+  # param 1 is for example ARCHIVE_MYPACKAGE
+  # param 2 are the dependecies
+  # param 3,4,5,6,7,8,9 are named args.
+  #   SRCS:=List of directories in where to find files to add to archive
+  #   SUFFIXES:=File suffixes to include in jar
+  #   INCLUDES:=List of directories/packages in SRCS that should be included
+  #   EXCLUDES:=List of directories/packages in SRCS that should be excluded
+  #   EXCLUDE_FILES:=List of files in SRCS that should be excluded
+  #   EXTRA_FILES:=List of files in SRCS that should be included regardless of suffix match.
+  #   JAR:=Jar file to create
+  #   MANIFEST:=Optional manifest file template.
+  #   JARMAIN:=Optional main class to add to manifest
+  #   JARINDEX:=true means generate the index in the jar file.
+  #   SKIP_METAINF:=Set to prevent contents of an META-INF directory to be automatically
+  #       added to the archive.
+  #   EXTRA_MANIFEST_ATTR:=Extra attribute to add to manifest.
+  #   CHECK_COMPRESS_JAR Check the COMPRESS_JAR variable
+
+  # NOTE: $2 is dependencies, not a named argument!
+  $(foreach i,3 4 5 6 7 8 9 10 11 12 13 14 15, $(if $($i),$1_$(strip $($i)))$(NEWLINE))
+  $(call LogSetupMacroEntry,SetupArchive($1),<dependencies>,$3,$4,$5,$6,$7,$8,$9,$(10),$(11),$(12),$(13),$(14),$(15))
+  $(if $(findstring $(LOG_LEVEL),trace), $(info *[2] <dependencies> = $(strip $2)))
+  $(if $(16),$(error Internal makefile error: Too many arguments to SetupArchive, please update JavaCompilation.gmk))
+
+  $1_JARMAIN:=$(strip $$($1_JARMAIN))
+  $1_JARNAME:=$$(notdir $$($1_JAR))
+  $1_MANIFEST_FILE:=$$(dir $$($1_JAR))_the.$$($1_JARNAME)_manifest
+  $1_DELETESS_FILE:=$$(dir $$($1_JAR))_the.$$($1_JARNAME)_deletess
+  $1_DELETES_FILE:=$$(dir $$($1_JAR))_the.$$($1_JARNAME)_deletes
+  $1_BIN:=$$(dir $$($1_JAR))
+
+  ifeq (,$$($1_SUFFIXES))
+    # No suffix was set, default to classes.
+    $1_SUFFIXES:=.class
+  endif
+  # Convert suffixes to a find expression
+  $1_FIND_PATTERNS:=$(FALSE_FIND_PATTERN) $$(patsubst %,$(SPACE)-o$(SPACE)-name$(SPACE)$(DQUOTE)*%$(DQUOTE),$$($1_SUFFIXES))
+  # On windows, a lot of includes/excludes risk making the command line too long, so
+  # writing the grep patterns to files.
+  ifneq (,$$($1_INCLUDES))
+    $1_GREP_INCLUDE_PATTERNS:=$$(foreach src,$$($1_SRCS), \
+        $$(addprefix $$(src)/,$$($1_INCLUDES)))
+    # If there are a lot of include patterns, output to file to shorten command lines
+    ifeq ($$(word 20,$$($1_GREP_INCLUDE_PATTERNS)),)
+      $1_GREP_INCLUDES:=| $(GREP) $$(patsubst %,$(SPACE)-e$(SPACE)$(DQUOTE)%$(DQUOTE),$$($1_GREP_INCLUDE_PATTERNS))
+    else
+      $1_GREP_INCLUDE_OUTPUT:=$(RM) $$($1_BIN)/_the.$$($1_JARNAME)_include $$(NEWLINE) \
+          $$(call ListPathsSafely,$1_GREP_INCLUDE_PATTERNS,\n, \
+          >> $$($1_BIN)/_the.$$($1_JARNAME)_include)
+      $1_GREP_INCLUDES:=| $(GREP) -f $$($1_BIN)/_the.$$($1_JARNAME)_include
+    endif
+  endif
+  ifneq (,$$($1_EXCLUDES)$$($1_EXCLUDE_FILES))
+    $1_GREP_EXCLUDE_PATTERNS:=$$(foreach src,$$($1_SRCS),$$(addprefix $$(src)/, \
+        $$($1_EXCLUDES) $$($1_EXCLUDE_FILES)))
+    # If there are a lot of include patterns, output to file to shorten command lines
+    ifeq ($$(word 20,$$($1_GREP_EXCLUDE_PATTERNS)),)
+      $1_GREP_EXCLUDES:=| $(GREP) -v $$(patsubst %,$(SPACE)-e$(SPACE)$(DQUOTE)%$(DQUOTE),$$($1_GREP_EXCLUDE_PATTERNS))
+    else
+      $1_GREP_EXCLUDE_OUTPUT=$(RM) $$($1_BIN)/_the.$$($1_JARNAME)_exclude $$(NEWLINE) \
+          $$(call ListPathsSafely,$1_GREP_EXCLUDE_PATTERNS,\n, \
+          >> $$($1_BIN)/_the.$$($1_JARNAME)_exclude)
+      $1_GREP_EXCLUDES:=| $(GREP) -v -f $$($1_BIN)/_the.$$($1_JARNAME)_exclude
+    endif
+  endif
+
+  # Check if this jar needs to have its index generated.
+  ifneq (,$$($1_JARINDEX))
+    $1_JARINDEX = (cd $$(dir $$@) && $(JAR) -i $$(notdir $$@))
+  else
+    $1_JARINDEX = true
+  endif
+  # When this macro is run in the same makefile as the java compilation, dependencies are
+  # transfered in make variables. When the macro is run in a different makefile than the
+  # java compilation, the dependencies need to be found in the filesystem.
+  ifneq (,$2)
+    $1_DEPS:=$2
+  else
+    $1_DEPS:=$$(filter $$(addprefix %,$$($1_SUFFIXES)), \
+        $$(call CacheFind,$$($1_SRCS)))
+    ifneq (,$$($1_GREP_INCLUDE_PATTERNS))
+      $1_DEPS:=$$(filter $$(addsuffix %,$$($1_GREP_INCLUDE_PATTERNS)),$$($1_DEPS))
+    endif
+    ifneq (,$$($1_GREP_EXCLUDE_PATTERNS))
+      $1_DEPS:=$$(filter-out $$(addsuffix %,$$($1_GREP_EXCLUDE_PATTERNS)),$$($1_DEPS))
+    endif
+    # The subst of \ is needed because $ has to be escaped with \ in EXTRA_FILES for the command
+    # lines, but not here for use in make dependencies.
+    $1_DEPS+=$$(subst \,,$$(foreach src,$$($1_SRCS),$$(addprefix $$(src)/,$$($1_EXTRA_FILES))))
+    ifeq (,$$($1_SKIP_METAINF))
+      $1_DEPS+=$$(call CacheFind,$$(wildcard $$(addsuffix /META-INF,$$($1_SRCS))))
+    endif
+  endif
+
+  # Utility macros, to make the shell script receipt somewhat easier to decipher.
+
+  # The capture contents macro finds all files (matching the patterns, typically
+  # .class and .prp) that are newer than the jar-file, ie the new content to be put into the jar.
+  $1_CAPTURE_CONTENTS=$$(foreach src,$$($1_SRCS), \
+      (($(FIND) $$(src) -type f -a \( $$($1_FIND_PATTERNS) \) -a -newer $$@ $$($1_GREP_INCLUDES) \
+          $$($1_GREP_EXCLUDES) | $(SED) 's|$$(src)/||g' && \
+      $(ECHO) $$(subst $$(src)/,,$$($1_EXTRA_FILES))) > \
+      $$(src)/_the.$$($1_JARNAME)_contents) $$(NEWLINE))
+  # The capture metainf macro finds all files below the META-INF directory that are newer than the jar-file.
+  ifeq (,$$($1_SKIP_METAINF))
+    $1_CAPTURE_METAINF =$$(foreach src,$$($1_SRCS),($(FIND) $$(src)/META-INF -type f -a -newer $$@ 2> /dev/null | $(SED) 's|$$(src)/||g' >> $$(src)/_the.$$($1_JARNAME)_contents ) $$(NEWLINE))
+  endif
+  # The capture deletes macro finds all deleted files and concatenates them. The resulting file
+  # tells us what to remove from the jar-file.
+  $1_CAPTURE_DELETES=$$(foreach src,$$($1_SRCS),($(FIND) $$(src) -name _the.package.deleted -newer $$@ -exec $(SED) 's|$$(src)||g' \{\} >> $$($1_DELETES_FILE) \;) $$(NEWLINE))
+  # The update contents macro updates the jar file with the previously capture contents.
+  # xargs is used to trim the whitespace from the contents file, to see if it is empty.
+  $1_UPDATE_CONTENTS=$$(foreach src,$$($1_SRCS), \
+      (cd $$(src) && \
+       if [ -n "`$(CAT) _the.$$($1_JARNAME)_contents | $(XARGS)`" ]; then \
+         $(ECHO) "  updating" `$(WC) -l _the.$$($1_JARNAME)_contents | $(AWK) '{ print $$$$1 }'` files && \
+         $(JAR) $$($1_JAR_UPDATE_OPTIONS) $$@ @_the.$$($1_JARNAME)_contents; \
+       fi) $$(NEWLINE))
+  # The s-variants of the above macros are used when the jar is created from scratch.
+  $1_SCAPTURE_CONTENTS=$$(foreach src,$$($1_SRCS), \
+      (($(FIND) $$(src) -type f -a \( $$($1_FIND_PATTERNS) \) $$($1_GREP_INCLUDES) \
+          $$($1_GREP_EXCLUDES) | $(SED) 's|$$(src)/||g' && \
+      $$(subst $$(src)/,,$(ECHO) $$($1_EXTRA_FILES))) > \
+      $$(src)/_the.$$($1_JARNAME)_contents) $$(NEWLINE))
+
+  ifeq (,$$($1_SKIP_METAINF))
+    $1_SCAPTURE_METAINF=$$(foreach src,$$($1_SRCS), \
+        ($(FIND) $$(src)/META-INF -type f 2> /dev/null | $(SED) 's|$$(src)/||g' >> \
+        $$(src)/_the.$$($1_JARNAME)_contents) $$(NEWLINE))
+  endif
+  $1_SUPDATE_CONTENTS=$$(foreach src,$$($1_SRCS), \
+      (cd $$(src) && $(JAR) $$($1_JAR_UPDATE_OPTIONS) $$@ @$$(src)/_the.$$($1_JARNAME)_contents) $$(NEWLINE))
+
+  # Use a slightly shorter name for logging, but with enough path to identify this jar.
+  $1_NAME:=$$(subst $$(OUTPUT_ROOT)/,,$$($1_JAR))
+
+  ifneq (,$$($1_CHECK_COMPRESS_JAR))
+    $1_JAR_CREATE_OPTIONS := c0fm
+    $1_JAR_UPDATE_OPTIONS := u0f
+    ifeq ($(COMPRESS_JARS), true)
+      $1_JAR_CREATE_OPTIONS := cfm
+      $1_JAR_UPDATE_OPTIONS := uf
+    endif
+  else
+    $1_JAR_CREATE_OPTIONS := cfm
+    $1_JAR_UPDATE_OPTIONS := uf
+  endif
+
+  # Here is the rule that creates/updates the jar file.
+  $$($1_JAR) : $$($1_DEPS)
+	$(MKDIR) -p $$($1_BIN)
+	$$($1_GREP_INCLUDE_OUTPUT)
+	$$($1_GREP_EXCLUDE_OUTPUT)
+	$$(if $$($1_MANIFEST), \
+	  $(SED) -e "s#@@RELEASE@@#$(RELEASE)#" \
+	      -e "s#@@COMPANY_NAME@@#$(COMPANY_NAME)#" $$($1_MANIFEST) > $$($1_MANIFEST_FILE) \
+	, \
+	  $(RM) $$($1_MANIFEST_FILE) && $(TOUCH) $$($1_MANIFEST_FILE))
+	$$(if $$($1_JARMAIN),$(ECHO) "Main-Class: $$(strip $$($1_JARMAIN))" >> $$($1_MANIFEST_FILE))
+	$$(if $$($1_EXTRA_MANIFEST_ATTR),$(PRINTF) "$$($1_EXTRA_MANIFEST_ATTR)\n" >> $$($1_MANIFEST_FILE))
+	$$(if $$(wildcard $$@), \
+	  $(ECHO) Modifying $$($1_NAME) $$(NEWLINE) \
+	  $$($1_CAPTURE_CONTENTS) \
+	  $$($1_CAPTURE_METAINF) \
+	  $(RM) $$($1_DELETES_FILE) $$(NEWLINE) \
+	  $$($1_CAPTURE_DELETES) \
+	  $(CAT) $$($1_DELETES_FILE) > $$($1_DELETESS_FILE) $$(NEWLINE) \
+	  if [ -s $$($1_DELETESS_FILE) ]; then \
+	    $(ECHO) "  deleting" `$(WC) -l $$($1_DELETESS_FILE) | $(AWK) '{ print $$$$1 }'` files && \
+	    $(ZIP) -q -d $$@ `$(CAT) $$($1_DELETESS_FILE)` ; \
+	  fi $$(NEWLINE) \
+	  $$($1_UPDATE_CONTENTS) true $$(NEWLINE) \
+	  $$($1_JARINDEX) && true \
+	, \
+	  $(ECHO) Creating $$($1_NAME) && $(JAR) $$($1_JAR_CREATE_OPTIONS) $$@ $$($1_MANIFEST_FILE) $$(NEWLINE) \
+	  $$($1_SCAPTURE_CONTENTS) \
+	  $$($1_SCAPTURE_METAINF) \
+	  $$($1_SUPDATE_CONTENTS) \
+	  $$($1_JARINDEX) && true )
+
+endef
+
+define SetupZipArchive
+  # param 1 is for example ZIP_MYSOURCE
+  # param 2,3,4,5,6,7,8,9 are named args.
+  #   SRC,ZIP,INCLUDES,INCLUDE_FILES,EXCLUDES,EXCLUDE_FILES,SUFFIXES,EXTRA_DEPS
+  $(foreach i,2 3 4 5 6 7 8 9 10 11 12 13 14 15, $(if $($i),$1_$(strip $($i)))$(NEWLINE))
+  $(call LogSetupMacroEntry,SetupZipArchive($1),$2,$3,$4,$5,$6,$7,$8,$9,$(10),$(11),$(12),$(13),$(14),$(15))
+  $(if $(16),$(error Internal makefile error: Too many arguments to SetupZipArchive, please update JavaCompilation.gmk))
+
+  # To avoid running find over too large sets of files, which causes make to crash
+  # on some configurations (cygwin), use INCLUDES and INCLUDE_FILES to build a set
+  # of directories to run find in, if available.
+  ifneq ($$($1_INCLUDES)$$($1_INCLUDE_FILES),)
+    $1_FIND_LIST := $$(wildcard $$(foreach i,$$($1_SRC), \
+        $$(addprefix $$i/,$$($1_INCLUDES) $$($1_INCLUDE_FILES))))
+  else
+    $1_FIND_LIST := $$($1_SRC)
+  endif
+
+  # Find all files in the source tree.
+  $1_ALL_SRCS := $$(call not-containing,_the.,$$(call CacheFind,$$($1_FIND_LIST)))
+
+  # Filter on suffixes if set
+  ifneq ($$($1_SUFFIXES),)
+    $1_ALL_SRCS := $$(filter $$(addprefix %, $$($1_SUFFIXES)), $$($1_ALL_SRCS))
+  endif
+
+  ifneq ($$($1_INCLUDES),)
+    ifneq ($$($1_SUFFIXES),)
+      $1_ZIP_INCLUDES := $$(foreach s,$$($1_SUFFIXES), \
+          $$(addprefix -i$(SPACE)$(DQUOTE),$$(addsuffix /*$$s$(DQUOTE),$$($1_INCLUDES))))
+    else
+      $1_ZIP_INCLUDES := $$(addprefix -i$(SPACE)$(DQUOTE),$$(addsuffix /*$(DQUOTE),$$($1_INCLUDES)))
+    endif
+  endif
+  ifneq ($$($1_INCLUDE_FILES),)
+    $1_ZIP_INCLUDES += $$(addprefix -i$(SPACE),$$($1_INCLUDE_FILES))
+  endif
+  ifneq ($$($1_EXCLUDES),)
+    $1_SRC_EXCLUDES := $$(foreach i,$$($1_SRC),$$(addprefix $$i/,$$(addsuffix /%,$$($1_EXCLUDES))))
+    $1_ZIP_EXCLUDES := $$(addprefix -x$(SPACE)$(DQUOTE),$$(addsuffix /*$(DQUOTE),$$($1_EXCLUDES)))
+    $1_ALL_SRCS := $$(filter-out $$($1_SRC_EXCLUDES),$$($1_ALL_SRCS))
+  endif
+
+  # Use a slightly shorter name for logging, but with enough path to identify this zip.
+  $1_NAME:=$$(subst $$(OUTPUT_ROOT)/,,$$($1_ZIP))
+
+  # Now $1_ALL_SRCS should contain all sources that are going to be put into the zip.
+  # I.e. the zip -i and -x options should match the filtering done in the makefile.
+  # Explicitly excluded files can be given with absolute path. The patsubst solution
+  # isn't perfect but the likelyhood of an absolute path to match something in a src
+  # dir is very small.
+  # If zip has nothing to do, it returns 12 and would fail the build. Check for 12
+  # and only fail if it's not.
+  $$($1_ZIP) : $$($1_ALL_SRCS) $$($1_EXTRA_DEPS)
+	$(MKDIR) -p $$(@D)
+	$(ECHO) Updating $$($1_NAME)
+	$$(foreach i,$$($1_SRC),(cd $$i && $(ZIP) -qru $$@ . $$($1_ZIP_INCLUDES) $$($1_ZIP_EXCLUDES) -x \*_the.\* $$(addprefix -x$(SPACE),$$(patsubst $$i/%,%,$$($1_EXCLUDE_FILES))) || test "$$$$?" = "12" )$$(NEWLINE)) true
+	$(TOUCH) $$@
+endef
+
+define add_file_to_copy
+  # param 1 = BUILD_MYPACKAGE
+  # parma 2 = The source file to copy.
+  $2_TARGET:=$2
+  # Remove the source prefix.
+  $$(foreach i,$$($1_SRC),$$(eval $$(call remove_string,$$i,$2_TARGET)))
+  # Now we can setup the depency that will trigger the copying.
+  $$($1_BIN)$$($2_TARGET) : $2
+	$(MKDIR) -p $$(@D)
+	$(CP) $$< $$@
+	$(CHMOD) -f ug+w $$@
+
+  # And do not forget this target
+  $1_ALL_COPY_TARGETS += $$($1_BIN)$$($2_TARGET)
+endef
+
+
+# This macro is used only for properties files that are to be
+# copied over to the classes directory in cleaned form:
+# Previously this was inconsistently done in different repositories.
+# This is the new clean standard. Though it is to be superseded by
+# a standard annotation processor from with sjavac.
+define add_file_to_copy_and_clean
+  # param 1 = BUILD_MYPACKAGE
+  # parma 2 = The source file to copy and clean.
+  $2_TARGET:=$2
+  # Remove the source prefix.
+  $$(foreach i,$$($1_SRC),$$(eval $$(call remove_string,$$i,$2_TARGET)))
+  # Now we can setup the depency that will trigger the copying.
+  $$($1_BIN)$$($2_TARGET) : $2
+	$(MKDIR) -p $$(@D)
+	$(CAT) $$< | $(SED) -e 's/\([^\\]\):/\1\\:/g' -e 's/\([^\\]\)=/\1\\=/g' -e 's/#.*/#/g' \
+	    | $(SED) -f "$(SRC_ROOT)/make/common/support/unicode2x.sed" \
+	    | $(SED) -e '/^#/d' -e '/^$$$$/d' \
+	        -e :a -e '/\\$$$$/N; s/\\\n//; ta' \
+	        -e 's/^[ \t]*//;s/[ \t]*$$$$//' \
+	        -e 's/\\=/=/' | LANG=C $(SORT) > $$@
+	$(CHMOD) -f ug+w $$@
+
+  # And do not forget this target
+  $1_ALL_COPY_CLEAN_TARGETS += $$($1_BIN)$$($2_TARGET)
+endef
+
+define remove_string
+  $2 := $$(subst $1,,$$($2))
+endef
+
+define replace_space_with_pathsep
+  $1:=$(subst $(SPACE),$(PATH_SEP),$(strip $(patsubst %,%,$2)))
+endef
+
+define SetupJavaCompilation
+  # param 1 is for example BUILD_MYPACKAGE
+  # param 2,3,4,5,6,7,8 are named args.
+  #   SETUP:=must point to a previously setup java compiler, for example: SETUP:=BOOTJAVAC
+  #   JVM:=path to ..bin/java
+  #   ADD_JAVAC_FLAGS:=javac flags to append to the default ones.
+  #   SRC:=one or more directories to search for sources
+  #   BIN:=store classes here
+  #   INCLUDES:=myapp.foo means will only compile java files in myapp.foo or any of its sub-packages.
+  #   EXCLUDES:=myapp.foo means will do not compile java files in myapp.foo or any of its sub-packages.
+  #   COPY:=.prp means copy all prp files to the corresponding package in BIN.
+  #   CLEAN:=.properties means copy and clean all properties file to the corresponding package in BIN.
+  #   COPY_FILES:=myapp/foo/setting.txt means copy this file over to the package myapp/foo
+  #   SRCZIP:=Create a src.zip based on the found sources and copied files.
+  #   INCLUDE_FILES:="com/sun/SolarisFoobar.java" means only compile this file!
+  #   EXCLUDE_FILES:="com/sun/SolarisFoobar.java" means do not compile this particular file!
+  #       "SolarisFoobar.java" means do not compile SolarisFoobar, wherever it is found.
+  #   JAVAC_SOURCE_PATH_OVERRIDE:=This forces an explicit -sourcepath to javac instead of the complete
+  #       source roots from SRC. This is sometimes needed when compiling specific subsets of the source.
+  #   HEADERS:=path to directory where all generated c-headers are written.
+  #   DEPENDS:=Extra dependecy
+  $(foreach i,2 3 4 5 6 7 8 9 10 11 12 13 14 15, $(if $($i),$1_$(strip $($i)))$(NEWLINE))
+  $(call LogSetupMacroEntry,SetupJavaCompilation($1),$2,$3,$4,$5,$6,$7,$8,$9,$(10),$(11),$(12),$(13),$(14),$(15))
+  $(if $(16),$(error Internal makefile error: Too many arguments to SetupJavaCompilation, please update JavaCompilation.gmk))
+
+  # Extract the info from the java compiler setup.
+  $1_JVM := $$($$($1_SETUP)_JVM)
+  $1_JAVAC := $$($$($1_SETUP)_JAVAC)
+  $1_FLAGS := $$($$($1_SETUP)_FLAGS) $(JAVAC_FLAGS) $$($1_ADD_JAVAC_FLAGS)
+  ifeq ($$($1_JAVAC),)
+    $$(error The Java compilation $1 refers to a non-existant java compiler setup $$($1_SETUP))
+  endif
+  $1_SJAVAC_PORTFILE := $$($$($1_SETUP)_SJAVAC_PORTFILE)
+  $1_SERVER_JVM := $$($$($1_SETUP)_SERVER_JVM)
+
+  # Handle addons and overrides.
+  $1_SRC:=$$(call ADD_SRCS,$$($1_SRC))
+  # Make sure the dirs exist.
+  $$(foreach d,$$($1_SRC), $$(if $$(wildcard $$d),,$$(error SRC specified to SetupJavaCompilation $1 contains missing directory $$d)))
+  $$(eval $$(call MakeDir,$$($1_BIN)))
+  # Find all files in the source trees.
+  $1_ALL_SRCS += $$(filter-out $(OVR_SRCS),$$(call CacheFind,$$($1_SRC)))
+  # Extract the java files.
+  ifneq ($$($1_EXCLUDE_FILES),)
+    $1_EXCLUDE_FILES_PATTERN:=$$(addprefix %,$$($1_EXCLUDE_FILES))
+  endif
+  $1_SRCS := $$(filter-out $$($1_EXCLUDE_FILES_PATTERN),$$(filter %.java,$$($1_ALL_SRCS)))
+  ifneq ($$($1_INCLUDE_FILES),)
+    $1_INCLUDE_FILES:=$$(foreach i,$$($1_SRC),$$(addprefix $$i/,$$($1_INCLUDE_FILES)))
+    $1_SRCS := $$(filter $$($1_INCLUDE_FILES), $$($1_SRCS))
+  endif
+
+  # Now we have a list of all java files to compile: $$($1_SRCS)
+
+  # Create the corresponding smart javac wrapper command line.
+  $1_SJAVAC_ARGS:=$$(addprefix -x ,$$(addsuffix .*,$$(subst /,.,$$($1_EXCLUDES)))) \
+      $$(addprefix -i ,$$(addsuffix .*,$$(subst /,.,$$($1_INCLUDES)))) \
+      $$(addprefix -xf *,$$(strip $$($1_EXCLUDE_FILES))) \
+      $$(addprefix -if *,$$(strip $$($1_INCLUDE_FILES))) \
+      -src "$$(subst $$(SPACE),$$(PATH_SEP),$$(strip $$($1_SRC)))"
+
+  # Prepend the source/bin path to the filter expressions.
+  ifneq ($$($1_INCLUDES),)
+    $1_SRC_INCLUDES := $$(foreach i,$$($1_SRC),$$(addprefix $$i/,$$(addsuffix /%,$$($1_INCLUDES))))
+    $1_SRCS := $$(filter $$($1_SRC_INCLUDES),$$($1_SRCS))
+  endif
+  ifneq ($$($1_EXCLUDES),)
+    $1_SRC_EXCLUDES := $$(foreach i,$$($1_SRC),$$(addprefix $$i/,$$(addsuffix /%,$$($1_EXCLUDES))))
+    $1_SRCS := $$(filter-out $$($1_SRC_EXCLUDES),$$($1_SRCS))
+  endif
+
+  # Find all files to be copied from source to bin.
+  ifneq (,$$($1_COPY))
+    # Search for all files to be copied.
+    $1_ALL_COPIES := $$(filter $$(addprefix %,$$($1_COPY)),$$($1_ALL_SRCS))
+    # Copy these explicitly
+    $1_ALL_COPIES += $$($1_COPY_FILES)
+    # Copy must also respect filters.
+    ifneq (,$$($1_INCLUDES))
+      $1_ALL_COPIES := $$(filter $$($1_SRC_INCLUDES),$$($1_ALL_COPIES))
+    endif
+    ifneq (,$$($1_EXCLUDES))
+      $1_ALL_COPIES := $$(filter-out $$($1_SRC_EXCLUDES),$$($1_ALL_COPIES))
+    endif
+    ifneq (,$$($1_EXCLUDE_FILES))
+      $1_ALL_COPIES := $$(filter-out $$($1_EXCLUDE_FILES_PATTERN),$$($1_ALL_COPIES))
+    endif
+    # All files below META-INF are always copied.
+    $1_ALL_COPIES += $$(filter $$(addsuffix /META-INF%,$$($1_SRC)),$$($1_ALL_SRCS))
+    ifneq (,$$($1_ALL_COPIES))
+      # Yep, there are files to be copied!
+      $1_ALL_COPY_TARGETS:=
+          $$(foreach i,$$($1_ALL_COPIES),$$(eval $$(call add_file_to_copy,$1,$$i)))
+      # Now we can depend on $$($1_ALL_COPY_TARGETS) to copy all files!
+    endif
+  endif
+
+  # Find all property files to be copied and cleaned from source to bin.
+  ifneq (,$$($1_CLEAN))
+    # Search for all files to be copied.
+    $1_ALL_CLEANS := $$(filter $$(addprefix %,$$($1_CLEAN)),$$($1_ALL_SRCS))
+    # Copy and clean must also respect filters.
+    ifneq (,$$($1_INCLUDES))
+      $1_ALL_CLEANS := $$(filter $$($1_SRC_INCLUDES),$$($1_ALL_CLEANS))
+    endif
+    ifneq (,$$($1_EXCLUDES))
+      $1_ALL_CLEANS := $$(filter-out $$($1_SRC_EXCLUDES),$$($1_ALL_CLEANS))
+    endif
+    ifneq (,$$($1_EXCLUDE_FILES))
+      $1_ALL_CLEANS := $$(filter-out $$($1_EXCLUDE_FILES_PATTERN),$$($1_ALL_CLEANS))
+    endif
+    ifneq (,$$($1_ALL_CLEANS))
+      # Yep, there are files to be copied and cleaned!
+      $1_ALL_COPY_CLEAN_TARGETS:=
+          $$(foreach i,$$($1_ALL_CLEANS),$$(eval $$(call add_file_to_copy_and_clean,$1,$$i)))
+      # Now we can depend on $$($1_ALL_COPY_CLEAN_TARGETS) to copy all files!
+    endif
+  endif
+
+  # Prep the source paths.
+  ifneq ($$($1_JAVAC_SOURCE_PATH_OVERRIDE),)
+    $$(eval $$(call replace_space_with_pathsep,$1_SRCROOTSC,$$($1_JAVAC_SOURCE_PATH_OVERRIDE)))
+  else
+    $$(eval $$(call replace_space_with_pathsep,$1_SRCROOTSC,$$($1_SRC)))
+  endif
+
+  # Create a sed expression to remove the source roots and to replace / with .
+  # and remove .java at the end.
+  $1_REWRITE_INTO_CLASSES:=$$(foreach i,$$($1_SRC),-e 's|$$i/||g') -e 's|/|.|g' -e 's|.java$$$$||g'
+
+  ifeq ($$($1_DISABLE_SJAVAC)x$$(ENABLE_SJAVAC),xyes)
+    ifneq (,$$($1_HEADERS))
+      $1_HEADERS_ARG := -h $$($1_HEADERS)
+    endif
+
+    # Using sjavac to compile.
+    $1 := $$($1_ALL_COPY_TARGETS) $$($1_ALL_COPY_CLEAN_TARGETS) $$($1_BIN)/javac_state
+
+    # Create SJAVAC variable form JAVAC variable. Expects $1_JAVAC to be
+    # "bootclasspathprepend -cp .../javac.jar com.sun.tools.javac.Main"
+    # and javac is simply replaced with sjavac.
+    $1_SJAVAC:=$$(subst com.sun.tools.javac.Main,com.sun.tools.sjavac.Main,$$($1_JAVAC))
+
+    # Set the $1_REMOTE to spawn a background javac server.
+    $1_REMOTE:=--server:portfile=$$($1_SJAVAC_PORTFILE),id=$1,sjavac=$$(subst $$(SPACE),%20,$$(subst $$(COMMA),%2C,$$(strip $$($1_SERVER_JVM) $$($1_SJAVAC))))
+
+    $$($1_BIN)/javac_state: $$($1_SRCS) $$($1_DEPENDS)
+	$(MKDIR) -p $$(@D)
+	$$(call ListPathsSafely,$1_SRCS,\n, >> $$($1_BIN)/_the.$1_batch.tmp)
+	$(ECHO) Compiling $1
+	($$($1_JVM) $$($1_SJAVAC) \
+	    $$($1_REMOTE) \
+	    -j $(JOBS) \
+	    --permit-unidentified-artifacts \
+	    --permit-sources-without-package \
+	    --compare-found-sources $$($1_BIN)/_the.$1_batch.tmp \
+	    --log=$(LOG_LEVEL) \
+	    $$($1_SJAVAC_ARGS) \
+	    $$($1_FLAGS) \
+	    $$($1_HEADERS_ARG) \
+	    -d $$($1_BIN) && \
+	$(MV) $$($1_BIN)/_the.$1_batch.tmp $$($1_BIN)/_the.$1_batch)
+  else
+    # Using plain javac to batch compile everything.
+    $1 := $$($1_ALL_COPY_TARGETS) $$($1_ALL_COPY_CLEAN_TARGETS) $$($1_BIN)/_the.$1_batch
+
+    # When building in batch, put headers in a temp dir to filter out those that actually
+    # changed before copying them to the real header dir.
+    ifneq (,$$($1_HEADERS))
+      $1_HEADERS_ARG := -h $$($1_HEADERS).tmp
+
+      $$($1_HEADERS)/_the.$1_headers: $$($1_BIN)/_the.$1_batch
+		$(MKDIR) -p $$(@D)
+		for f in `ls $$($1_HEADERS).tmp`; do \
+		  if [ ! -f "$$($1_HEADERS)/$$$$f" ] || [ "`$(DIFF) $$($1_HEADERS)/$$$$f $$($1_HEADERS).tmp/$$$$f`" != "" ]; then \
+		    $(CP) -f $$($1_HEADERS).tmp/$$$$f $$($1_HEADERS)/$$$$f; \
+		  fi; \
+		done
+		$(RM) -r $$($1_HEADERS).tmp
+		$(TOUCH) $$@
+
+      $1 += $$($1_HEADERS)/_the.$1_headers
+    endif
+
+    # When not using sjavac, pass along all sources to javac using an @file.
+    $$($1_BIN)/_the.$1_batch: $$($1_SRCS) $$($1_DEPENDS)
+	$(MKDIR) -p $$(@D)
+	$(RM) $$($1_BIN)/_the.$1_batch $$($1_BIN)/_the.$1_batch.tmp
+	$$(call ListPathsSafely,$1_SRCS,\n, >> $$($1_BIN)/_the.$1_batch.tmp)
+	$(ECHO) Compiling `$(WC) $$($1_BIN)/_the.$1_batch.tmp | $(TR) -s ' ' | $(CUT) -f 2 -d ' '` files for $1
+	($$($1_JVM) $$($1_JAVAC) $$($1_FLAGS) \
+	    -implicit:none -sourcepath "$$($1_SRCROOTSC)" \
+	    -d $$($1_BIN) $$($1_HEADERS_ARG) @$$($1_BIN)/_the.$1_batch.tmp && \
+	$(MV) $$($1_BIN)/_the.$1_batch.tmp $$($1_BIN)/_the.$1_batch)
+
+  endif
+
+  # Check if a jar file was specified, then setup the rules for the jar.
+  ifneq (,$$($1_JAR))
+    # If no suffixes was explicitly set for this jar file.
+    # Use class and the cleaned/copied properties file suffixes as the default
+    # for the types of files to be put into the jar.
+    ifeq (,$$($1_SUFFIXES))
+      $1_SUFFIXES:=.class $$($1_CLEAN) $$($1_COPY)
+    endif
+
+    $$(eval $$(call SetupArchive,ARCHIVE_$1,$$($1), \
+        SRCS:=$$($1_BIN), \
+        SUFFIXES:=$$($1_SUFFIXES), \
+        EXCLUDE:=$$($1_EXCLUDES), \
+        INCLUDES:=$$($1_INCLUDES), \
+        EXTRA_FILES:=$$($1_ALL_COPY_TARGETS) $$($1_ALL_COPY_CLEAN_TARGETS), \
+        JAR:=$$($1_JAR), \
+        JARMAIN:=$$($1_JARMAIN), \
+        MANIFEST:=$$($1_MANIFEST), \
+        EXTRA_MANIFEST_ATTR:=$$($1_EXTRA_MANIFEST_ATTR), \
+        JARINDEX:=$$($1_JARINDEX), \
+        HEADERS:=$$($1_HEADERS), \
+        SETUP:=$$($1_SETUP)))
+  endif
+
+  # Check if a srczip was specified, then setup the rules for the srczip.
+  ifneq (,$$($1_SRCZIP))
+    $$(eval $$(call SetupZipArchive,ARCHIVE_$1, \
+        SRC:=$$($1_SRC), \
+        ZIP:=$$($1_SRCZIP), \
+        INCLUDES:=$$($1_INCLUDES), \
+        EXCLUDES:=$$($1_EXCLUDES), \
+        EXCLUDE_FILES:=$$($1_EXCLUDE_FILES)))
+  endif
+
+endef

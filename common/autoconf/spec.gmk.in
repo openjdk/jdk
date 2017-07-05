@@ -65,8 +65,8 @@ ifeq (,$(findstring -R,$(MAKE)))
 endif
 
 # Specify where the common include directory for makefiles is.
-ifeq (,$(findstring -I @SRC_ROOT@/common/makefiles,$(MAKE)))
-  MAKE:=$(MAKE) -I @SRC_ROOT@/common/makefiles
+ifeq (,$(findstring -I @SRC_ROOT@/make/common,$(MAKE)))
+  MAKE:=$(MAKE) -I @SRC_ROOT@/make/common
 endif
 
 # The "human readable" name of this configuration

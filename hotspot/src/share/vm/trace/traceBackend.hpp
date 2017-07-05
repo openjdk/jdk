@@ -47,10 +47,6 @@ public:
     return os::elapsed_counter();
   }
 
-  static TracingTime time_adjustment(jlong time) {
-    return time;
-  }
-
   static void on_unloading_classes(void) {
   }
 };

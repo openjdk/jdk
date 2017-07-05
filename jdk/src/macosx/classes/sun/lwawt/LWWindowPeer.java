@@ -949,7 +949,8 @@ public class LWWindowPeer
         KeyEvent keyEvent = new KeyEvent(focusOwner, id, when, modifiers,
             keyCode, keyChar, keyLocation);
         AWTAccessor.getKeyEventAccessor().setExtendedKeyCode(keyEvent,
-            ExtendedKeyCodes.getExtendedKeyCodeForChar(keyChar));
+                (keyChar == KeyEvent.CHAR_UNDEFINED) ? keyCode
+                : ExtendedKeyCodes.getExtendedKeyCodeForChar(keyChar));
         postEvent(keyEvent);
     }
 

@@ -113,7 +113,7 @@ public abstract class PrinterJob {
      * A convenience method which locates factories for stream print
      * services which can image 2D graphics.
      * Sample usage :
-     * <pre>
+     * <pre>{@code
      * FileOutputStream outstream;
      * StreamPrintService psPrinter;
      * String psMimeType = "application/postscript";
@@ -131,7 +131,7 @@ public abstract class PrinterJob {
      *         e.printStackTrace();
      *     }
      * }
-     * </pre>
+     * }</pre>
      * Services returned from this method may be installed on
      * <code>PrinterJob</code> instances which support print services.
      * Calling this method is equivalent to calling

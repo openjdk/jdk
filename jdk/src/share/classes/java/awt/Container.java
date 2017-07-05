@@ -43,7 +43,6 @@ import java.io.PrintWriter;
 
 import java.security.AccessController;
 
-import java.util.Arrays;
 import java.util.EventListener;
 import java.util.HashSet;
 import java.util.Set;
@@ -4427,6 +4426,7 @@ class LightweightDispatcher implements java.io.Serializable, AWTEventListener {
         stopListeningForOtherDrags();
         mouseEventTarget = null;
         targetLastEntered = null;
+        targetLastEnteredDT = null;
     }
 
     /**
@@ -4617,59 +4617,80 @@ class LightweightDispatcher implements java.io.Serializable, AWTEventListener {
     }
 
     /*
+     * Generates dnd enter/exit events as mouse moves over lw components
+     * @param targetOver       Target mouse is over (including native container)
+     * @param e                SunDropTarget mouse event in native container
+     */
+    private void trackDropTargetEnterExit(Component targetOver, MouseEvent e) {
+        int id = e.getID();
+        if (id == MouseEvent.MOUSE_ENTERED && isMouseDTInNativeContainer) {
+            // This can happen if a lightweight component which initiated the
+            // drag has an associated drop target. MOUSE_ENTERED comes when the
+            // mouse is in the native container already. To propagate this event
+            // properly we should null out targetLastEntered.
+            targetLastEnteredDT = null;
+        } else if (id == MouseEvent.MOUSE_ENTERED) {
+            isMouseDTInNativeContainer = true;
+        } else if (id == MouseEvent.MOUSE_EXITED) {
+            isMouseDTInNativeContainer = false;
+        }
+        targetLastEnteredDT = retargetMouseEnterExit(targetOver, e,
+                                                     targetLastEnteredDT,
+                                                     isMouseDTInNativeContainer);
+    }
+
+    /*
      * Generates enter/exit events as mouse moves over lw components
      * @param targetOver        Target mouse is over (including native container)
      * @param e                 Mouse event in native container
      */
     private void trackMouseEnterExit(Component targetOver, MouseEvent e) {
-        Component       targetEnter = null;
-        int             id = e.getID();
+        if (e instanceof SunDropTargetEvent) {
+            trackDropTargetEnterExit(targetOver, e);
+            return;
+        }
+        int id = e.getID();
 
-        if (e instanceof SunDropTargetEvent &&
-            id == MouseEvent.MOUSE_ENTERED &&
-            isMouseInNativeContainer == true) {
-            // This can happen if a lightweight component which initiated the
-            // drag has an associated drop target. MOUSE_ENTERED comes when the
-            // mouse is in the native container already. To propagate this event
-            // properly we should null out targetLastEntered.
-            targetLastEntered = null;
-        } else if ( id != MouseEvent.MOUSE_EXITED &&
+        if ( id != MouseEvent.MOUSE_EXITED &&
              id != MouseEvent.MOUSE_DRAGGED &&
              id != LWD_MOUSE_DRAGGED_OVER &&
-             isMouseInNativeContainer == false ) {
+                !isMouseInNativeContainer) {
             // any event but an exit or drag means we're in the native container
             isMouseInNativeContainer = true;
             startListeningForOtherDrags();
-        } else if ( id == MouseEvent.MOUSE_EXITED ) {
+        } else if (id == MouseEvent.MOUSE_EXITED) {
             isMouseInNativeContainer = false;
             stopListeningForOtherDrags();
         }
+        targetLastEntered = retargetMouseEnterExit(targetOver, e,
+                                                   targetLastEntered,
+                                                   isMouseInNativeContainer);
+    }
 
-        if (isMouseInNativeContainer) {
-            targetEnter = targetOver;
-        }
+    private Component retargetMouseEnterExit(Component targetOver, MouseEvent e,
+                                             Component lastEntered,
+                                             boolean inNativeContainer) {
+        int id = e.getID();
+        Component targetEnter = inNativeContainer ? targetOver : null;
 
-        if (targetLastEntered == targetEnter) {
-                return;
-        }
+        if (lastEntered != targetEnter) {
+            if (lastEntered != null) {
+                retargetMouseEvent(lastEntered, MouseEvent.MOUSE_EXITED, e);
+            }
+            if (id == MouseEvent.MOUSE_EXITED) {
+                // consume native exit event if we generate one
+                e.consume();
+            }
 
-        if (targetLastEntered != null) {
-            retargetMouseEvent(targetLastEntered, MouseEvent.MOUSE_EXITED, e);
+            if (targetEnter != null) {
+                retargetMouseEvent(targetEnter, MouseEvent.MOUSE_ENTERED, e);
+            }
+            if (id == MouseEvent.MOUSE_ENTERED) {
+                // consume native enter event if we generate one
+                e.consume();
+            }
         }
-        if (id == MouseEvent.MOUSE_EXITED) {
-            // consume native exit event if we generate one
-            e.consume();
-        }
-
-        if (targetEnter != null) {
-            retargetMouseEvent(targetEnter, MouseEvent.MOUSE_ENTERED, e);
-        }
-        if (id == MouseEvent.MOUSE_ENTERED) {
-            // consume native enter event if we generate one
-            e.consume();
-        }
-
-        targetLastEntered = targetEnter;
+        return targetEnter;
     }
 
     /*
@@ -4908,9 +4929,14 @@ class LightweightDispatcher implements java.io.Serializable, AWTEventListener {
     private transient Component mouseEventTarget;
 
     /**
-     * The last component entered
+     * The last component entered by the {@code MouseEvent}.
      */
     private transient Component targetLastEntered;
+
+    /**
+     * The last component entered by the {@code SunDropTargetEvent}.
+     */
+    private transient Component targetLastEnteredDT;
 
     /**
      * Indicates whether {@code mouseEventTarget} was removed and nulled
@@ -4918,9 +4944,14 @@ class LightweightDispatcher implements java.io.Serializable, AWTEventListener {
     private transient boolean isCleaned;
 
     /**
-     * Is the mouse over the native container
+     * Is the mouse over the native container.
      */
     private transient boolean isMouseInNativeContainer = false;
+
+    /**
+     * Is DnD over the native container.
+     */
+    private transient boolean isMouseDTInNativeContainer = false;
 
     /**
      * This variable is not used, but kept for serialization compatibility
@@ -4959,6 +4990,9 @@ class LightweightDispatcher implements java.io.Serializable, AWTEventListener {
         }
         if (targetLastEntered == removedComponent) {
             targetLastEntered = null;
+        }
+        if (targetLastEnteredDT == removedComponent) {
+            targetLastEnteredDT = null;
         }
     }
 }
