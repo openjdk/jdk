@@ -60,9 +60,9 @@ package com.sun.jdi;
  * is visible to the class loader of enclosing class. (That is, the
  * class loader of the enclosing class must be an <i>initiating</i> class
  * loader for the class in question.)
- * See the <a href="http://java.sun.com/docs/books/vmspec/">Java
- * Virtual Machine Specification</a> for
- * more details.
+ * See
+ * <cite>The Java&trade; Virtual Machine Specification</cite>
+ * for more details.
  *
  * @author Gordon Hirsch
  * @since  1.3

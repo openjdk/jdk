@@ -43,7 +43,7 @@ package java.lang;
  *
  * @author  Frank Yellin
  * @see     java.lang.ThreadDeath
- * @jls3 11.2 Compile-Time Checking of Exceptions
+ * @jls 11.2 Compile-Time Checking of Exceptions
  * @since   JDK1.0
  */
 public class Error extends Throwable {

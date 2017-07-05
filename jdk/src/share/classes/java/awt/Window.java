@@ -870,6 +870,11 @@ public class Window extends Container implements Accessible {
      * are automatically enlarged if either is less than
      * the minimum size as specified by previous call to
      * {@code setMinimumSize}.
+     * <p>
+     * The method changes the geometry-related data. Therefore,
+     * the native windowing system may ignore such requests, or it may modify
+     * the requested data, so that the {@code Window} object is placed and sized
+     * in a way that corresponds closely to the desktop settings.
      *
      * @see #getSize
      * @see #setBounds
@@ -887,6 +892,11 @@ public class Window extends Container implements Accessible {
      * are automatically enlarged if either is less than
      * the minimum size as specified by previous call to
      * {@code setMinimumSize}.
+     * <p>
+     * The method changes the geometry-related data. Therefore,
+     * the native windowing system may ignore such requests, or it may modify
+     * the requested data, so that the {@code Window} object is placed and sized
+     * in a way that corresponds closely to the desktop settings.
      *
      * @see #getSize
      * @see #setBounds
@@ -895,6 +905,32 @@ public class Window extends Container implements Accessible {
      */
     public void setSize(int width, int height) {
         super.setSize(width, height);
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * The method changes the geometry-related data. Therefore,
+     * the native windowing system may ignore such requests, or it may modify
+     * the requested data, so that the {@code Window} object is placed and sized
+     * in a way that corresponds closely to the desktop settings.
+     */
+    @Override
+    public void setLocation(int x, int y) {
+        super.setLocation(x, y);
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * The method changes the geometry-related data. Therefore,
+     * the native windowing system may ignore such requests, or it may modify
+     * the requested data, so that the {@code Window} object is placed and sized
+     * in a way that corresponds closely to the desktop settings.
+     */
+    @Override
+    public void setLocation(Point p) {
+        super.setLocation(p);
     }
 
     /**
@@ -3147,6 +3183,11 @@ public class Window extends Container implements Accessible {
      * placed at the left side of the screen. The similar placement
      * will occur if both top and bottom edges are out of the screen.
      * In that case, the window is placed at the top side of the screen.
+     * <p>
+     * The method changes the geometry-related data. Therefore,
+     * the native windowing system may ignore such requests, or it may modify
+     * the requested data, so that the {@code Window} object is placed and sized
+     * in a way that corresponds closely to the desktop settings.
      *
      * @param c  the component in relation to which the window's location
      *           is determined
@@ -3395,6 +3436,11 @@ public class Window extends Container implements Accessible {
      * are automatically enlarged if either is less than
      * the minimum size as specified by previous call to
      * {@code setMinimumSize}.
+     * <p>
+     * The method changes the geometry-related data. Therefore,
+     * the native windowing system may ignore such requests, or it may modify
+     * the requested data, so that the {@code Window} object is placed and sized
+     * in a way that corresponds closely to the desktop settings.
      *
      * @see #getBounds
      * @see #setLocation(int, int)
@@ -3424,6 +3470,11 @@ public class Window extends Container implements Accessible {
      * will be automatically enlarged if either is less than
      * the minimum size as specified by previous call to
      * {@code setMinimumSize}.
+     * <p>
+     * The method changes the geometry-related data. Therefore,
+     * the native windowing system may ignore such requests, or it may modify
+     * the requested data, so that the {@code Window} object is placed and sized
+     * in a way that corresponds closely to the desktop settings.
      *
      * @see #getBounds
      * @see #setLocation(int, int)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -125,6 +125,7 @@ void CppInterpreterGenerator::generate_all() {
     method_entry(java_lang_math_sqrt  );
     method_entry(java_lang_math_log   );
     method_entry(java_lang_math_log10 );
+    method_entry(java_lang_ref_reference_get);
     Interpreter::_native_entry_begin = Interpreter::code()->code_end();
     method_entry(native);
     method_entry(native_synchronized);
