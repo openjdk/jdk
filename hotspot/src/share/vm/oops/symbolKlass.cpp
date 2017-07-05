@@ -209,10 +209,7 @@ int symbolKlass::oop_update_pointers(ParCompactionManager* cm, oop obj,
 
 void symbolKlass::oop_print_on(oop obj, outputStream* st) {
   st->print("Symbol: '");
-  symbolOop sym = symbolOop(obj);
-  for (int i = 0; i < sym->utf8_length(); i++) {
-    st->print("%c", sym->byte_at(i));
-  }
+  symbolOop(obj)->print_symbol_on(st);
   st->print("'");
 }
 

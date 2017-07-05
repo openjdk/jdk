@@ -45,10 +45,13 @@ Node *SubNode::Identity( PhaseTransform *phase ) {
     return in(2)->in(2);
   }
 
-  // Convert "(X+Y) - Y" into X
+  // Convert "(X+Y) - Y" into X and "(X+Y) - X" into Y
   if( in(1)->Opcode() == Op_AddI ) {
     if( phase->eqv(in(1)->in(2),in(2)) )
       return in(1)->in(1);
+    if (phase->eqv(in(1)->in(1),in(2)))
+      return in(1)->in(2);
+
     // Also catch: "(X + Opaque2(Y)) - Y".  In this case, 'Y' is a loop-varying
     // trip counter and X is likely to be loop-invariant (that's how O2 Nodes
     // are originally used, although the optimizer sometimes jiggers things).
@@ -740,8 +743,8 @@ Node *CmpPNode::Ideal( PhaseGVN *phase, bool can_reshape ) {
 // Simplify an CmpN (compare 2 pointers) node, based on local information.
 // If both inputs are constants, compare them.
 const Type *CmpNNode::sub( const Type *t1, const Type *t2 ) const {
-  const TypePtr *r0 = t1->is_narrowoop()->make_oopptr(); // Handy access
-  const TypePtr *r1 = t2->is_narrowoop()->make_oopptr();
+  const TypePtr *r0 = t1->make_ptr(); // Handy access
+  const TypePtr *r1 = t2->make_ptr();
 
   // Undefined inputs makes for an undefined result
   if( TypePtr::above_centerline(r0->_ptr) ||

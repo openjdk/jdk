@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE filesystem PUBLIC "-//NetBeans//DTD Filesystem 1.1//EN" "http://www.netbeans.org/dtds/filesystem-1_1.dtd">
+<filesystem>
+      <folder name="Filters">
+        <file name="Basic Coloring" url="filters/color.filter">
+            <attr name="enabled" boolvalue="true"/>
+        </file>
+        <file name="Matcher Flags Coloring" url="filters/matchingFlags.filter">
+            <attr name="enabled" boolvalue="true"/>
+            <attr name="after" stringvalue="Basic Coloring"/>
+        </file>
+        <file name="Register Coloring" url="filters/register.filter">
+            <attr name="enabled" boolvalue="true"/>
+            <attr name="after" stringvalue="Matcher Flags Coloring"/>
+        </file>
+        <file name="Extended Coloring" url="filters/extendedColor.filter">
+            <attr name="enabled" boolvalue="true"/>
+            <attr name="after" stringvalue="Register Coloring"/>
+        </file>
+        <file name="Line Coloring" url="filters/linestyle.filter">
+            <attr name="enabled" boolvalue="true"/>
+            <attr name="after" stringvalue="Extended Coloring"/>
+        </file>
+        <file name="Difference Coloring" url="filters/difference.filter">
+            <attr name="enabled" boolvalue="true"/>
+            <attr name="after" stringvalue="Line Coloring"/>
+        </file>
+        <file name="Only Control Flow" url="filters/onlyControlFlow.filter">
+            <attr name="enabled" boolvalue="false"/>
+            <attr name="after" stringvalue="Difference Coloring"/>
+        </file>
+        <file name="Remove FramePtr, I_O and Return Address" url="filters/remove.filter">
+            <attr name="enabled" boolvalue="true"/>
+            <attr name="after" stringvalue="Only Control Flow"/>
+        </file>
+        <file name="Remove Memory" url="filters/removeMemory.filter">
+            <attr name="enabled" boolvalue="false"/>
+            <attr name="after" stringvalue="Remove FramePtr, I_O and Return Address"/>
+        </file>
+        <file name="Remove Root Inputs" url="filters/removeRootInputs.filter">
+            <attr name="enabled" boolvalue="true"/>
+            <attr name="after" stringvalue="Remove Memory"/>
+        </file>
+        <file name="Remove Safepoint Inputs" url="filters/removeSafepointInputs.filter">
+            <attr name="enabled" boolvalue="true"/>
+            <attr name="after" stringvalue="Remove Root Inputs"/>
+        </file>
+        <file name="Remove Self Loops" url="filters/removeSelfLoops.filter">
+            <attr name="enabled" boolvalue="true"/>
+            <attr name="after" stringvalue="Remove Safepoint Inputs"/>
+        </file>
+        <file name="Combine" url="filters/combine.filter">
+            <attr name="enabled" boolvalue="true"/>
+            <attr name="after" stringvalue="Remove Self Loops"/>
+        </file>
+        <file name="Split" url="filters/split.filter">
+            <attr name="enabled" boolvalue="true"/>
+            <attr name="after" stringvalue="Combine"/>
+        </file>
+    </folder>
+</filesystem>

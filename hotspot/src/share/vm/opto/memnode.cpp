@@ -91,7 +91,7 @@ extern void print_alias_types();
 
 Node *MemNode::optimize_simple_memory_chain(Node *mchain, const TypePtr *t_adr, PhaseGVN *phase) {
   const TypeOopPtr *tinst = t_adr->isa_oopptr();
-  if (tinst == NULL || !tinst->is_instance_field())
+  if (tinst == NULL || !tinst->is_known_instance_field())
     return mchain;  // don't try to optimize non-instance types
   uint instance_id = tinst->instance_id();
   Node *prev = NULL;
@@ -125,7 +125,7 @@ Node *MemNode::optimize_simple_memory_chain(Node *mchain, const TypePtr *t_adr, 
 
 Node *MemNode::optimize_memory_chain(Node *mchain, const TypePtr *t_adr, PhaseGVN *phase) {
   const TypeOopPtr *t_oop = t_adr->isa_oopptr();
-  bool is_instance = (t_oop != NULL) && t_oop->is_instance_field();
+  bool is_instance = (t_oop != NULL) && t_oop->is_known_instance_field();
   PhaseIterGVN *igvn = phase->is_IterGVN();
   Node *result = mchain;
   result = optimize_simple_memory_chain(result, t_adr, phase);
@@ -134,8 +134,8 @@ Node *MemNode::optimize_memory_chain(Node *mchain, const TypePtr *t_adr, PhaseGV
     assert(mphi->bottom_type() == Type::MEMORY, "memory phi required");
     const TypePtr *t = mphi->adr_type();
     if (t == TypePtr::BOTTOM || t == TypeRawPtr::BOTTOM ||
-        t->isa_oopptr() && !t->is_oopptr()->is_instance() &&
-        t->is_oopptr()->cast_to_instance(t_oop->instance_id()) == t_oop) {
+        t->isa_oopptr() && !t->is_oopptr()->is_known_instance() &&
+        t->is_oopptr()->cast_to_instance_id(t_oop->instance_id()) == t_oop) {
       // clone the Phi with our address type
       result = mphi->split_out_instance(t_adr, igvn);
     } else {
@@ -470,7 +470,7 @@ Node* MemNode::find_previous_store(PhaseTransform* phase) {
         return mem;         // let caller handle steps (c), (d)
       }
 
-    } else if (addr_t != NULL && addr_t->is_instance_field()) {
+    } else if (addr_t != NULL && addr_t->is_known_instance_field()) {
       // Can't use optimize_simple_memory_chain() since it needs PhaseGVN.
       if (mem->is_Proj() && mem->in(0)->is_Call()) {
         CallNode *call = mem->in(0)->as_Call();
@@ -769,15 +769,8 @@ Node *LoadNode::make( PhaseGVN& gvn, Node *ctl, Node *mem, Node *adr, const Type
   case T_OBJECT:
 #ifdef _LP64
     if (adr->bottom_type()->is_ptr_to_narrowoop()) {
-      const TypeNarrowOop* narrowtype;
-      if (rt->isa_narrowoop()) {
-        narrowtype = rt->is_narrowoop();
-      } else {
-        narrowtype = rt->is_oopptr()->make_narrowoop();
-      }
-      Node* load  = gvn.transform(new (C, 3) LoadNNode(ctl, mem, adr, adr_type, narrowtype));
-
-      return DecodeNNode::decode(&gvn, load);
+      Node* load  = gvn.transform(new (C, 3) LoadNNode(ctl, mem, adr, adr_type, rt->make_narrowoop()));
+      return new (C, 2) DecodeNNode(load, load->bottom_type()->make_ptr());
     } else
 #endif
     {
@@ -923,7 +916,7 @@ bool LoadNode::is_instance_field_load_with_local_phi(Node* ctrl) {
       in(MemNode::Address)->is_AddP() ) {
     const TypeOopPtr* t_oop = in(MemNode::Address)->bottom_type()->isa_oopptr();
     // Only instances.
-    if( t_oop != NULL && t_oop->is_instance_field() &&
+    if( t_oop != NULL && t_oop->is_known_instance_field() &&
         t_oop->offset() != Type::OffsetBot &&
         t_oop->offset() != Type::OffsetTop) {
       return true;
@@ -1146,7 +1139,7 @@ Node *LoadNode::split_through_phi(PhaseGVN *phase) {
   const TypeOopPtr *t_oop = addr_t->isa_oopptr();
 
   assert(mem->is_Phi() && (t_oop != NULL) &&
-         t_oop->is_instance_field(), "invalide conditions");
+         t_oop->is_known_instance_field(), "invalide conditions");
 
   Node *region = mem->in(0);
   if (region == NULL) {
@@ -1314,7 +1307,7 @@ Node *LoadNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
     const TypeOopPtr *t_oop = addr_t->isa_oopptr();
     if (can_reshape && opt_mem->is_Phi() &&
-        (t_oop != NULL) && t_oop->is_instance_field()) {
+        (t_oop != NULL) && t_oop->is_known_instance_field()) {
       // Split instance field load through Phi.
       Node* result = split_through_phi(phase);
       if (result != NULL) return result;
@@ -1549,7 +1542,7 @@ const Type *LoadNode::Value( PhaseTransform *phase ) const {
   }
 
   const TypeOopPtr *tinst = tp->isa_oopptr();
-  if (tinst != NULL && tinst->is_instance_field()) {
+  if (tinst != NULL && tinst->is_known_instance_field()) {
     // If we have an instance type and our memory input is the
     // programs's initial memory state, there is no matching store,
     // so just return a zero of the appropriate type
@@ -1631,9 +1624,8 @@ Node *LoadKlassNode::make( PhaseGVN& gvn, Node *mem, Node *adr, const TypePtr* a
   assert(adr_type != NULL, "expecting TypeOopPtr");
 #ifdef _LP64
   if (adr_type->is_ptr_to_narrowoop()) {
-    const TypeNarrowOop* narrowtype = tk->is_oopptr()->make_narrowoop();
-    Node* load_klass = gvn.transform(new (C, 3) LoadNKlassNode(ctl, mem, adr, at, narrowtype));
-    return DecodeNNode::decode(&gvn, load_klass);
+    Node* load_klass = gvn.transform(new (C, 3) LoadNKlassNode(ctl, mem, adr, at, tk->make_narrowoop()));
+    return new (C, 2) DecodeNNode(load_klass, load_klass->bottom_type()->make_ptr());
   }
 #endif
   assert(!adr_type->is_ptr_to_narrowoop(), "should have got back a narrow oop");
@@ -1843,15 +1835,10 @@ Node* LoadNode::klass_identity_common(PhaseTransform *phase ) {
 //------------------------------Value------------------------------------------
 const Type *LoadNKlassNode::Value( PhaseTransform *phase ) const {
   const Type *t = klass_value_common(phase);
+  if (t == Type::TOP)
+    return t;
 
-  if (t == TypePtr::NULL_PTR) {
-    return TypeNarrowOop::NULL_PTR;
-  }
-  if (t != Type::TOP && !t->isa_narrowoop()) {
-    assert(t->is_oopptr(), "sanity");
-    t = t->is_oopptr()->make_narrowoop();
-  }
-  return t;
+  return t->make_narrowoop();
 }
 
 //------------------------------Identity---------------------------------------
@@ -1864,7 +1851,7 @@ Node* LoadNKlassNode::Identity( PhaseTransform *phase ) {
   if( t == Type::TOP ) return x;
   if( t->isa_narrowoop()) return x;
 
-  return EncodePNode::encode(phase, x);
+  return phase->transform(new (phase->C, 2) EncodePNode(x, t->make_narrowoop()));
 }
 
 //------------------------------Value-----------------------------------------
@@ -1930,14 +1917,13 @@ StoreNode* StoreNode::make( PhaseGVN& gvn, Node* ctl, Node* mem, Node* adr, cons
     if (adr->bottom_type()->is_ptr_to_narrowoop() ||
         (UseCompressedOops && val->bottom_type()->isa_klassptr() &&
          adr->bottom_type()->isa_rawptr())) {
-      const TypePtr* type = val->bottom_type()->is_ptr();
-      Node* cp = EncodePNode::encode(&gvn, val);
-      return new (C, 4) StoreNNode(ctl, mem, adr, adr_type, cp);
+      val = gvn.transform(new (C, 2) EncodePNode(val, val->bottom_type()->make_narrowoop()));
+      return new (C, 4) StoreNNode(ctl, mem, adr, adr_type, val);
     } else
 #endif
-      {
-        return new (C, 4) StorePNode(ctl, mem, adr, adr_type, val);
-      }
+    {
+      return new (C, 4) StorePNode(ctl, mem, adr, adr_type, val);
+    }
   }
   ShouldNotReachHere();
   return (StoreNode*)NULL;
@@ -2151,7 +2137,7 @@ bool StoreNode::value_never_loaded( PhaseTransform *phase) const {
   const TypeOopPtr *adr_oop = phase->type(adr)->isa_oopptr();
   if (adr_oop == NULL)
     return false;
-  if (!adr_oop->is_instance_field())
+  if (!adr_oop->is_known_instance_field())
     return false; // if not a distinct instance, there may be aliases of the address
   for (DUIterator_Fast imax, i = adr->fast_outs(imax); i < imax; i++) {
     Node *use = adr->fast_out(i);

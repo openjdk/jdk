@@ -70,6 +70,10 @@ inline int hpi::send(int fd, char *buf, int nBytes, int flags) {
   RESTARTABLE_RETURN_INT(::send(fd, buf, nBytes, (unsigned int) flags));
 }
 
+inline int hpi::raw_send(int fd, char *buf, int nBytes, int flags) {
+  return send(fd, buf, nBytes, flags);
+}
+
 inline int hpi::timeout(int fd, long timeout) {
   julong prevtime,newtime;
   struct timeval t;

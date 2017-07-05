@@ -52,8 +52,8 @@ class Linux {
   static address   _initial_thread_stack_bottom;
   static uintptr_t _initial_thread_stack_size;
 
-  static char *_glibc_version;
-  static char *_libpthread_version;
+  static const char *_glibc_version;
+  static const char *_libpthread_version;
 
   static bool _is_floating_stack;
   static bool _is_NPTL;
@@ -72,8 +72,8 @@ class Linux {
   static julong physical_memory() { return _physical_memory; }
   static void initialize_system_info();
 
-  static void set_glibc_version(char *s)      { _glibc_version = s; }
-  static void set_libpthread_version(char *s) { _libpthread_version = s; }
+  static void set_glibc_version(const char *s)      { _glibc_version = s; }
+  static void set_libpthread_version(const char *s) { _libpthread_version = s; }
 
   static bool supports_variable_stack_size();
 
@@ -134,8 +134,8 @@ class Linux {
   static bool chained_handler(int sig, siginfo_t* siginfo, void* context);
 
   // GNU libc and libpthread version strings
-  static char *glibc_version()                { return _glibc_version; }
-  static char *libpthread_version()           { return _libpthread_version; }
+  static const char *glibc_version()          { return _glibc_version; }
+  static const char *libpthread_version()     { return _libpthread_version; }
 
   // NPTL or LinuxThreads?
   static bool is_LinuxThreads()               { return !_is_NPTL; }
