@@ -270,7 +270,7 @@ AC_DEFUN([TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV],
     AC_MSG_NOTICE([Trying to extract Visual Studio environment variables])
 
     # We need to create a couple of temporary files.
-    VS_ENV_TMP_DIR="$OUTPUT_ROOT/vs-env"
+    VS_ENV_TMP_DIR="$CONFIGURESUPPORT_OUTPUTDIR/vs-env"
     $MKDIR -p $VS_ENV_TMP_DIR
 
     # Cannot use the VS10 setup script directly (since it only updates the DOS subshell environment).
