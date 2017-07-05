@@ -61,6 +61,7 @@ public class Klass extends Metadata implements ClassConstants {
     }
     subklass     = new MetadataField(type.getAddressField("_subklass"), 0);
     nextSibling  = new MetadataField(type.getAddressField("_next_sibling"), 0);
+    nextLink     = new MetadataField(type.getAddressField("_next_link"), 0);
     vtableLen    = new CIntField(type.getCIntegerField("_vtable_len"), 0);
 
     LH_INSTANCE_SLOW_PATH_BIT  = db.lookupIntConstant("Klass::_lh_instance_slow_path_bit").intValue();
@@ -92,6 +93,7 @@ public class Klass extends Metadata implements ClassConstants {
   private static CIntField accessFlags;
   private static MetadataField  subklass;
   private static MetadataField  nextSibling;
+  private static MetadataField  nextLink;
   private static sun.jvm.hotspot.types.Field traceIDField;
   private static CIntField vtableLen;
 
@@ -114,6 +116,7 @@ public class Klass extends Metadata implements ClassConstants {
   public AccessFlags getAccessFlagsObj(){ return new AccessFlags(getAccessFlags());      }
   public Klass    getSubklassKlass()    { return (Klass)    subklass.getValue(this);     }
   public Klass    getNextSiblingKlass() { return (Klass)    nextSibling.getValue(this);  }
+  public Klass    getNextLinkKlass()    { return (Klass)    nextLink.getValue(this);  }
   public long     getVtableLen()        { return            vtableLen.getValue(this); }
 
   public long traceID() {

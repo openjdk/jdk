@@ -453,7 +453,7 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
       }
       break;
     case T_LONG:
-      assert(sig_bt[i+1] == T_VOID, "missing Half" );
+      assert((i + 1) < total_args_passed && sig_bt[i+1] == T_VOID, "missing Half" );
       // fall through
     case T_ARRAY:
     case T_OBJECT:
@@ -478,7 +478,7 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
       }
       break;
     case T_DOUBLE:
-      assert(sig_bt[i+1] == T_VOID, "missing Half" );
+      assert((i + 1) < total_args_passed && sig_bt[i+1] == T_VOID, "missing Half" );
       if (fp_reg < FPR_PARAMS) {
         FloatRegister r = as_FloatRegister(fp_reg);
         regs[i].set2(r->as_VMReg());
@@ -532,7 +532,7 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
 #ifndef __ABI_HARD__
     case T_DOUBLE:
 #endif // !__ABI_HARD__
-      assert(sig_bt[i+1] == T_VOID, "missing Half" );
+      assert((i + 1) < total_args_passed && sig_bt[i+1] == T_VOID, "missing Half" );
       if (ireg <= 2) {
 #if (ALIGN_WIDE_ARGUMENTS == 1)
         if(ireg & 1) ireg++;  // Aligned location required

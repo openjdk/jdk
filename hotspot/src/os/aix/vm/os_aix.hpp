@@ -140,6 +140,9 @@ class Aix {
   // libpthread version string
   static void libpthread_init();
 
+  // Return default libc guard size for the specified thread type.
+  static size_t default_guard_size(os::ThreadType thr_type);
+
   // Function returns true if we run on OS/400 (pase), false if we run
   // on AIX.
   static bool on_pase() {

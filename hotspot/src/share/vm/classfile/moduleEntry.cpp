@@ -108,6 +108,18 @@ bool ModuleEntry::can_read(ModuleEntry* m) const {
   }
 
   MutexLocker m1(Module_lock);
+  // This is a guard against possible race between agent threads that redefine
+  // or retransform classes in this module. Only one of them is adding the
+  // default read edges to the unnamed modules of the boot and app class loaders
+  // with an upcall to jdk.internal.module.Modules.transformedByAgent.
+  // At the same time, another thread can instrument the module classes by
+  // injecting dependencies that require the default read edges for resolution.
+  if (this->has_default_read_edges() && !m->is_named()) {
+    ClassLoaderData* cld = m->loader_data();
+    if (cld->is_the_null_class_loader_data() || cld->is_system_class_loader_data()) {
+      return true; // default read edge
+    }
+  }
   if (!has_reads()) {
     return false;
   } else {

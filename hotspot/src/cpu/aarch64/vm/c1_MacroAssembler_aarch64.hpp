@@ -36,7 +36,6 @@ using MacroAssembler::null_check;
   // initialization
   void pd_init() { _rsp_offset = 0; }
 
-void zero_memory(Register addr, Register len, Register t1);
 
  public:
   void try_allocate(
@@ -75,7 +74,8 @@ void zero_memory(Register addr, Register len, Register t1);
     Register var_size_in_bytes,        // object size in bytes if unknown at compile time; invalid otherwise
     int      con_size_in_bytes,        // object size in bytes if   known at compile time
     Register t1,                       // temp register
-    Register t2                        // temp register
+    Register t2,                        // temp register
+    bool     is_tlab_allocated         // the object was allocated in a TLAB; relevant for the implementation of ZeroTLAB
   );
 
   // allocation of fixed-size objects

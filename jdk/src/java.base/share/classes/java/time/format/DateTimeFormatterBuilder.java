@@ -1774,16 +1774,20 @@ public final class DateTimeFormatterBuilder {
                     if (count > 1) {
                         throw new IllegalArgumentException("Too many pattern letters: " + cur);
                     }
-                    appendInternal(new WeekBasedFieldPrinterParser(cur, count));
+                    appendValue(new WeekBasedFieldPrinterParser(cur, count, count, count));
                 } else if (cur == 'w') {
                     // Fields defined by Locale
                     if (count > 2) {
                         throw new IllegalArgumentException("Too many pattern letters: " + cur);
                     }
-                    appendInternal(new WeekBasedFieldPrinterParser(cur, count));
+                    appendValue(new WeekBasedFieldPrinterParser(cur, count, count, 2));
                 } else if (cur == 'Y') {
                     // Fields defined by Locale
-                    appendInternal(new WeekBasedFieldPrinterParser(cur, count));
+                    if (count == 2) {
+                        appendValue(new WeekBasedFieldPrinterParser(cur, count, count, 2));
+                    } else {
+                        appendValue(new WeekBasedFieldPrinterParser(cur, count, count, 19));
+                    }
                 } else {
                     throw new IllegalArgumentException("Unknown pattern letter: " + cur);
                 }
@@ -1843,7 +1847,10 @@ public final class DateTimeFormatterBuilder {
                 }
                 break;
             case 'c':
-                if (count == 2) {
+                if (count == 1) {
+                    appendValue(new WeekBasedFieldPrinterParser(cur, count, count, count));
+                    break;
+                } else if (count == 2) {
                     throw new IllegalArgumentException("Invalid pattern \"cc\"");
                 }
                 /*fallthrough*/
@@ -1858,8 +1865,8 @@ public final class DateTimeFormatterBuilder {
                 switch (count) {
                     case 1:
                     case 2:
-                        if (cur == 'c' || cur == 'e') {
-                            appendInternal(new WeekBasedFieldPrinterParser(cur, count));
+                        if (cur == 'e') {
+                            appendValue(new WeekBasedFieldPrinterParser(cur, count, count, count));
                         } else if (cur == 'E') {
                             appendText(field, TextStyle.SHORT);
                         } else {
@@ -4770,8 +4777,9 @@ public final class DateTimeFormatterBuilder {
      * the field is to be printed or parsed.
      * The locale is needed to select the proper WeekFields from which
      * the field for day-of-week, week-of-month, or week-of-year is selected.
+     * Hence the inherited field NumberPrinterParser.field is unused.
      */
-    static final class WeekBasedFieldPrinterParser implements DateTimePrinterParser {
+    static final class WeekBasedFieldPrinterParser extends NumberPrinterParser {
         private char chr;
         private int count;
 
@@ -4780,10 +4788,53 @@ public final class DateTimeFormatterBuilder {
          *
          * @param chr the pattern format letter that added this PrinterParser.
          * @param count the repeat count of the format letter
+         * @param minWidth  the minimum field width, from 1 to 19
+         * @param maxWidth  the maximum field width, from minWidth to 19
          */
-        WeekBasedFieldPrinterParser(char chr, int count) {
+        WeekBasedFieldPrinterParser(char chr, int count, int minWidth, int maxWidth) {
+            this(chr, count, minWidth, maxWidth, 0);
+        }
+
+        /**
+         * Constructor.
+         *
+         * @param chr the pattern format letter that added this PrinterParser.
+         * @param count the repeat count of the format letter
+         * @param minWidth  the minimum field width, from 1 to 19
+         * @param maxWidth  the maximum field width, from minWidth to 19
+         * @param subsequentWidth  the width of subsequent non-negative numbers, 0 or greater,
+         * -1 if fixed width due to active adjacent parsing
+         */
+        WeekBasedFieldPrinterParser(char chr, int count, int minWidth, int maxWidth,
+                int subsequentWidth) {
+            super(null, minWidth, maxWidth, SignStyle.NOT_NEGATIVE, subsequentWidth);
             this.chr = chr;
             this.count = count;
+        }
+
+        /**
+         * Returns a new instance with fixed width flag set.
+         *
+         * @return a new updated printer-parser, not null
+         */
+        @Override
+        WeekBasedFieldPrinterParser withFixedWidth() {
+            if (subsequentWidth == -1) {
+                return this;
+            }
+            return new WeekBasedFieldPrinterParser(chr, count, minWidth, maxWidth, -1);
+        }
+
+        /**
+         * Returns a new instance with an updated subsequent width.
+         *
+         * @param subsequentWidth  the width of subsequent non-negative numbers, 0 or greater
+         * @return a new updated printer-parser, not null
+         */
+        @Override
+        WeekBasedFieldPrinterParser withSubsequentWidth(int subsequentWidth) {
+            return new WeekBasedFieldPrinterParser(chr, count, minWidth, maxWidth,
+                    this.subsequentWidth + subsequentWidth);
         }
 
         @Override
@@ -4810,10 +4861,12 @@ public final class DateTimeFormatterBuilder {
                 case 'Y':
                     field = weekDef.weekBasedYear();
                     if (count == 2) {
-                        return new ReducedPrinterParser(field, 2, 2, 0, ReducedPrinterParser.BASE_DATE, 0);
+                        return new ReducedPrinterParser(field, 2, 2, 0, ReducedPrinterParser.BASE_DATE,
+                                this.subsequentWidth);
                     } else {
                         return new NumberPrinterParser(field, count, 19,
-                                (count < 4) ? SignStyle.NORMAL : SignStyle.EXCEEDS_PAD, -1);
+                                (count < 4) ? SignStyle.NORMAL : SignStyle.EXCEEDS_PAD,
+                                this.subsequentWidth);
                     }
                 case 'e':
                 case 'c':
@@ -4828,7 +4881,8 @@ public final class DateTimeFormatterBuilder {
                 default:
                     throw new IllegalStateException("unreachable");
             }
-            return new NumberPrinterParser(field, (count == 2 ? 2 : 1), 2, SignStyle.NOT_NEGATIVE);
+            return new NumberPrinterParser(field, minWidth, maxWidth, SignStyle.NOT_NEGATIVE,
+                    this.subsequentWidth);
         }
 
         @Override
