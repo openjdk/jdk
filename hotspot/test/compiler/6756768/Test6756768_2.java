@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,35 +19,37 @@
  * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
- *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_bytecodeStream.cpp.incl"
+/**
+ * @test
+ * @bug 6756768
+ * @summary C1 generates invalid code
+ *
+ * @run main/othervm -Xcomp Test6756768_2
+ */
 
-Bytecodes::Code RawBytecodeStream::raw_next_special(Bytecodes::Code code) {
-  assert(!is_last_bytecode(), "should have been checked");
-  // set next bytecode position
-  address bcp = RawBytecodeStream::bcp();
-  address end = method()->code_base() + end_bci();
-  int l = Bytecodes::raw_special_length_at(bcp, end);
-  if (l <= 0 || (_bci + l) > _end_bci) {
-    code = Bytecodes::_illegal;
-  } else {
-    _next_bci += l;
-    assert(_bci < _next_bci, "length must be > 0");
-    // set attributes
-    _is_wide = false;
-    // check for special (uncommon) cases
-    if (code == Bytecodes::_wide) {
-      if (bcp + 1 >= end) {
-        code = Bytecodes::_illegal;
-      } else {
-        code = (Bytecodes::Code)bcp[1];
-        _is_wide = true;
-      }
+class Test6756768_2a {
+    static int var = ++Test6756768_2.var;
+}
+
+public class Test6756768_2 {
+    static int var = 1;
+
+    static Object d2 = null;
+
+    static void test_static_field() {
+        int v = var;
+        int v2 = Test6756768_2a.var;
+        int v3 = var;
+        var = v3;
     }
-  }
-  _code = code;
-  return code;
+
+    public static void main(String[] args) {
+        var = 1;
+        test_static_field();
+        if (var != 2) {
+            throw new InternalError();
+        }
+    }
 }

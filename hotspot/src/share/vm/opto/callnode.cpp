@@ -395,7 +395,13 @@ void JVMState::format(PhaseRegAlloc *regalloc, const Node *n, outputStream* st) 
                    OptoReg::regname(OptoReg::c_frame_pointer),
                    regalloc->reg2offset(box_reg));
       }
-      format_helper( regalloc, st, obj, "MON-OBJ[", i, &scobjs );
+      const char* obj_msg = "MON-OBJ[";
+      if (EliminateLocks) {
+        while( !box->is_BoxLock() )  box = box->in(1);
+        if (box->as_BoxLock()->is_eliminated())
+          obj_msg = "MON-OBJ(LOCK ELIMINATED)[";
+      }
+      format_helper( regalloc, st, obj, obj_msg, i, &scobjs );
     }
 
     for (i = 0; i < (uint)scobjs.length(); i++) {
@@ -908,8 +914,9 @@ void SafePointNode::push_monitor(const FastLockNode *lock) {
     add_req(lock->box_node());
     add_req(lock->obj_node());
   } else {
-    add_req(NULL);
-    add_req(NULL);
+    Node* top = Compile::current()->top();
+    add_req(top);
+    add_req(top);
   }
   jvms()->set_scloff(nextmon+MonitorEdges);
   jvms()->set_endoff(req());
@@ -1382,7 +1389,7 @@ Node *LockNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     //
     // If we are locking an unescaped object, the lock/unlock is unnecessary
     //
-    ConnectionGraph *cgr = Compile::current()->congraph();
+    ConnectionGraph *cgr = phase->C->congraph();
     PointsToNode::EscapeState es = PointsToNode::GlobalEscape;
     if (cgr != NULL)
       es = cgr->escape_state(obj_node(), phase);
@@ -1450,6 +1457,7 @@ Node *LockNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
           // Mark it eliminated to update any counters
           lock->set_eliminated();
+          lock->set_coarsened();
         }
       } else if (result != NULL && ctrl->is_Region() &&
                  iter->_worklist.member(ctrl)) {
@@ -1484,7 +1492,7 @@ Node *UnlockNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     //
     // If we are unlocking an unescaped object, the lock/unlock is unnecessary.
     //
-    ConnectionGraph *cgr = Compile::current()->congraph();
+    ConnectionGraph *cgr = phase->C->congraph();
     PointsToNode::EscapeState es = PointsToNode::GlobalEscape;
     if (cgr != NULL)
       es = cgr->escape_state(obj_node(), phase);

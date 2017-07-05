@@ -44,10 +44,15 @@ BoxLockNode::BoxLockNode( int slot ) : Node( Compile::current()->root() ),
   _inmask.Insert(reg);
 }
 
+//-----------------------------hash--------------------------------------------
+uint BoxLockNode::hash() const {
+  return Node::hash() + _slot + (_is_eliminated ? Compile::current()->fixed_slots() : 0);
+}
+
 //------------------------------cmp--------------------------------------------
 uint BoxLockNode::cmp( const Node &n ) const {
   const BoxLockNode &bn = (const BoxLockNode &)n;
-  return bn._slot == _slot;
+  return bn._slot == _slot && bn._is_eliminated == _is_eliminated;
 }
 
 OptoReg::Name BoxLockNode::stack_slot(Node* box_node) {

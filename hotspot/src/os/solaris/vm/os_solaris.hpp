@@ -176,7 +176,7 @@ class Solaris {
  public:
   static void libthread_init();
   static void synchronization_init();
-  static void liblgrp_init();
+  static bool liblgrp_init();
   // Load miscellaneous symbols.
   static void misc_sym_init();
   // This boolean allows users to forward their own non-matching signals
