@@ -2565,7 +2565,7 @@ void LIR_Assembler::type_profile_helper(Register mdo, int mdo_offset_bias,
     Address receiver_addr(mdo, md->byte_offset_of_slot(data, ReceiverTypeData::receiver_offset(i)) -
                           mdo_offset_bias);
     __ ld_ptr(receiver_addr, tmp1);
-    __ verify_oop(tmp1);
+    __ verify_klass_ptr(tmp1);
     __ cmp_and_brx_short(recv, tmp1, Assembler::notEqual, Assembler::pt, next_test);
     Address data_addr(mdo, md->byte_offset_of_slot(data, ReceiverTypeData::receiver_count_offset(i)) -
                       mdo_offset_bias);

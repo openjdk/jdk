@@ -117,6 +117,10 @@ class ciMethod : public ciMetadata {
     *bcp = code;
   }
 
+  // Check bytecode and profile data collected are compatible
+  void assert_virtual_call_type_ok(int bci);
+  void assert_call_type_ok(int bci);
+
  public:
   // Basic method information.
   ciFlags flags() const                          { check_is_loaded(); return _flags; }
@@ -229,6 +233,11 @@ class ciMethod : public ciMetadata {
   ciTypeFlow*   get_osr_flow_analysis(int osr_bci);  // alternate entry point
   ciCallProfile call_profile_at_bci(int bci);
   int           interpreter_call_site_count(int bci);
+
+  // Does type profiling provide a useful type at this point?
+  ciKlass*      argument_profiled_type(int bci, int i);
+  ciKlass*      parameter_profiled_type(int i);
+  ciKlass*      return_profiled_type(int bci);
 
   ciField*      get_field_at_bci( int bci, bool &will_link);
   ciMethod*     get_method_at_bci(int bci, bool &will_link, ciSignature* *declared_signature);

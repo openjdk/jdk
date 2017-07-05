@@ -381,8 +381,8 @@ void Parse::load_interpreter_state(Node* osr_buf) {
 
 //------------------------------Parse------------------------------------------
 // Main parser constructor.
-Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
-  : _exits(caller)
+Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses, Parse* parent)
+  : _exits(caller), _parent(parent)
 {
   // Init some variables
   _caller = caller;
@@ -1101,6 +1101,10 @@ void Parse::do_method_entry() {
     // Build the FastLockNode
     _synch_lock = shared_lock(lock_obj);
   }
+
+  // Feed profiling data for parameters to the type system so it can
+  // propagate it as speculative types
+  record_profiled_parameters_for_speculation();
 
   if (depth() == 1) {
     increment_and_test_invocation_counter(Tier2CompileThreshold);

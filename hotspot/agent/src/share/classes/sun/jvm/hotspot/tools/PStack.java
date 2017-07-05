@@ -182,8 +182,7 @@ public class PStack extends Tool {
 
    public static void main(String[] args) throws Exception {
       PStack t = new PStack();
-      t.start(args);
-      t.stop();
+      t.execute(args);
    }
 
    // -- Internals only below this point
