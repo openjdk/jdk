@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,15 +98,22 @@ JNIEXPORT void JNICALL
 JNU_ThrowInstantiationException(JNIEnv *env, const char *msg);
 
 /* Throw an exception by name, using the string returned by
- * JVM_LastErrorString for the detail string.  If the last-error
+ * getLastErrorString for the detail string. If the last-error
  * string is NULL, use the given default detail string.
  */
 JNIEXPORT void JNICALL
 JNU_ThrowByNameWithLastError(JNIEnv *env, const char *name,
-                             const char *defaultMessage);
+                             const char *defaultDetail);
+
+/* Throw an exception by name, using a given message and the string
+ * returned by getLastErrorString to construct the detail string.
+ */
+JNIEXPORT void JNICALL
+JNU_ThrowByNameWithMessageAndLastError
+  (JNIEnv *env, const char *name, const char *message);
 
 /* Throw an IOException, using the last-error string for the detail
- * string.  If the last-error string is NULL, use the given default
+ * string. If the last-error string is NULL, use the given default
  * detail string.
  */
 JNIEXPORT void JNICALL

@@ -28,6 +28,7 @@ package jdk.tools.jlink.internal;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import jdk.internal.jimage.ImageHeader;
 import jdk.internal.jimage.ImageStream;
 import jdk.internal.jimage.ImageStringsReader;
@@ -54,7 +55,7 @@ public final class BasicImageWriter {
     }
 
     public BasicImageWriter(ByteOrder byteOrder) {
-        this.byteOrder = byteOrder;
+        this.byteOrder = Objects.requireNonNull(byteOrder);
         this.input = new ArrayList<>();
         this.strings = new ImageStringsWriter();
         this.headerStream = new ImageStream(byteOrder);
@@ -96,8 +97,8 @@ public final class BasicImageWriter {
     private void generatePerfectHash() {
         PerfectHashBuilder<ImageLocationWriter> builder =
             new PerfectHashBuilder<>(
-                        PerfectHashBuilder.Entry.class, // PerfectHashBuilder.Entry<ImageLocationWriter>().getClass()
-                        PerfectHashBuilder.Bucket.class); // PerfectHashBuilder.Bucket<ImageLocationWriter>().getClass()
+                        PerfectHashBuilder.Entry.class,
+                        PerfectHashBuilder.Bucket.class);
 
         input.forEach((location) -> {
             builder.put(location.getFullName(), location);

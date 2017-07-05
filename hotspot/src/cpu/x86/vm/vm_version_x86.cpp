@@ -658,7 +658,7 @@ void VM_Version::get_processor_features() {
           FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
         }
       } else {
-        if(supports_sse4_1() && UseSSE >= 4) {
+        if(supports_sse4_1()) {
           if (FLAG_IS_DEFAULT(UseAESCTRIntrinsics)) {
             FLAG_SET_DEFAULT(UseAESCTRIntrinsics, true);
           }
@@ -970,7 +970,7 @@ void VM_Version::get_processor_features() {
         UseXmmI2D = false;
       }
     }
-    if (supports_sse4_2() && UseSSE >= 4) {
+    if (supports_sse4_2()) {
       if (FLAG_IS_DEFAULT(UseSSE42Intrinsics)) {
         FLAG_SET_DEFAULT(UseSSE42Intrinsics, true);
       }
@@ -1050,7 +1050,7 @@ void VM_Version::get_processor_features() {
           UseUnalignedLoadStores = true; // use movdqu on newest Intel cpus
         }
       }
-      if (supports_sse4_2() && UseSSE >= 4) {
+      if (supports_sse4_2()) {
         if (FLAG_IS_DEFAULT(UseSSE42Intrinsics)) {
           FLAG_SET_DEFAULT(UseSSE42Intrinsics, true);
         }

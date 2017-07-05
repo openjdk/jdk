@@ -710,7 +710,7 @@ class StubGenerator: public StubCodeGenerator {
           __ BIND(L_loop);
           __ strb(zr, Address(start, count));
           __ subs(count, count, 1);
-          __ br(Assembler::HS, L_loop);
+          __ br(Assembler::GE, L_loop);
         }
         break;
       default:
@@ -1299,7 +1299,7 @@ class StubGenerator: public StubCodeGenerator {
       if (VerifyOops)
         verify_oop_array(size, d, count, r16);
       __ sub(count, count, 1); // make an inclusive end pointer
-      __ lea(count, Address(d, count, Address::uxtw(exact_log2(size))));
+      __ lea(count, Address(d, count, Address::lsl(exact_log2(size))));
       gen_write_ref_array_post_barrier(d, count, rscratch1);
     }
     __ leave();
@@ -2002,9 +2002,9 @@ class StubGenerator: public StubCodeGenerator {
     arraycopy_range_checks(src, src_pos, dst, dst_pos, scratch_length,
                            rscratch2, L_failed);
 
-    __ lea(from, Address(src, src_pos, Address::lsl(3)));
+    __ lea(from, Address(src, src_pos, Address::lsl(LogBytesPerHeapOop)));
     __ add(from, from, arrayOopDesc::base_offset_in_bytes(T_OBJECT));
-    __ lea(to, Address(dst, dst_pos, Address::lsl(3)));
+    __ lea(to, Address(dst, dst_pos, Address::lsl(LogBytesPerHeapOop)));
     __ add(to, to, arrayOopDesc::base_offset_in_bytes(T_OBJECT));
     __ movw(count, scratch_length); // length
   __ BIND(L_plain_copy);
@@ -2027,9 +2027,9 @@ class StubGenerator: public StubCodeGenerator {
       __ load_klass(rscratch2_dst_klass, dst); // reload
 
       // Marshal the base address arguments now, freeing registers.
-      __ lea(from, Address(src, src_pos, Address::lsl(3)));
+      __ lea(from, Address(src, src_pos, Address::lsl(LogBytesPerHeapOop)));
       __ add(from, from, arrayOopDesc::base_offset_in_bytes(T_OBJECT));
-      __ lea(to, Address(dst, dst_pos, Address::lsl(3)));
+      __ lea(to, Address(dst, dst_pos, Address::lsl(LogBytesPerHeapOop)));
       __ add(to, to, arrayOopDesc::base_offset_in_bytes(T_OBJECT));
       __ movw(count, length);           // length (reloaded)
       Register sco_temp = c_rarg3;      // this register is free now
