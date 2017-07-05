@@ -138,6 +138,16 @@ bool BCEscapeAnalyzer::is_arg_stack(ArgumentMap vars){
   return false;
 }
 
+// return true if all argument elements of vars are returned
+bool BCEscapeAnalyzer::returns_all(ArgumentMap vars) {
+  for (int i = 0; i < _arg_size; i++) {
+    if (vars.contains(i) && !_arg_returned.test(i)) {
+      return false;
+    }
+  }
+  return true;
+}
+
 void BCEscapeAnalyzer::clear_bits(ArgumentMap vars, VectorSet &bm) {
   for (int i = 0; i < _arg_size; i++) {
     if (vars.contains(i)) {
@@ -165,6 +175,11 @@ void BCEscapeAnalyzer::set_global_escape(ArgumentMap vars, bool merge) {
     }
     if (vars.contains_unknown() || vars.contains_vars()) {
       _return_allocated = false;
+    }
+    if (_return_local && vars.contains_vars() && !returns_all(vars)) {
+      // Return result should be invalidated if args in new
+      // state are not recorded in return state.
+      _return_local = false;
     }
   }
 }
