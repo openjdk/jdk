@@ -881,7 +881,7 @@ methodHandle methodOopDesc::make_invoke_method(KlassHandle holder,
   assert((oop)p == method_type(), "pointer chase is correct");
 #endif
 
-  if (TraceMethodHandles)
+  if (TraceMethodHandles && (Verbose || WizardMode))
     m->print_on(tty);
 
   return m;
