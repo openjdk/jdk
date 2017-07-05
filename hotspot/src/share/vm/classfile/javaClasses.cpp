@@ -413,8 +413,7 @@ char* java_lang_String::as_utf8_string(oop java_string, int start, int len) {
 }
 
 bool java_lang_String::equals(oop java_string, jchar* chars, int len) {
-  assert(SharedSkipVerify ||
-         java_string->klass() == SystemDictionary::String_klass(),
+  assert(java_string->klass() == SystemDictionary::String_klass(),
          "must be java_string");
   typeArrayOop value  = java_lang_String::value(java_string);
   int          offset = java_lang_String::offset(java_string);

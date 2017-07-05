@@ -70,6 +70,8 @@ PLATFORM_SHARED=done
 #     LIBARCH32                   solaris only: sparc or i386
 #     LIBARCH64                   solaris only: sparcv9 or amd64
 #     USING_CYGWIN                windows only: true or false
+#     USING_MSYS                  windows only: true or false
+#     USING_MKS                   windows only: true or false
 #     ISHIELD_TEMP_MIN            windows only: minimum disk space in temp area
 
 # Only run uname once in this make session.
@@ -306,6 +308,8 @@ endif
 # Windows with and without CYGWIN will be slightly different
 ifeq ($(SYSTEM_UNAME), Windows_NT)
   PLATFORM = windows
+  USING_MKS = true
+  export USING_MKS
 endif
 ifneq (,$(findstring CYGWIN,$(SYSTEM_UNAME)))
   PLATFORM = windows
@@ -317,6 +321,11 @@ ifneq (,$(findstring CYGWIN,$(SYSTEM_UNAME)))
     CYGWIN_HOME := $(shell $(CYGPATH_CMD) /)
     export CYGWIN_HOME
   endif
+endif
+ifneq (,$(findstring MINGW,$(SYSTEM_UNAME)))
+  PLATFORM = windows
+  USING_MSYS = true
+  export USING_MSYS
 endif
 
 # Platform settings specific to Windows
@@ -395,11 +404,12 @@ ifeq ($(PLATFORM), windows)
   endif
   ARCH_FAMILY = $(ARCH)
   # Where is unwanted output to be delivered?
-  # MKS uses the special file "NUL", cygwin uses the customary unix file.
-  ifeq ($(USING_CYGWIN),true)
-    DEV_NULL = /dev/null
-  else
+  # MKS uses the special file "NUL"; Cygwin and MinGW/MSYS use the
+  # customary unix file.
+  ifeq ($(USING_MKS),true)
     DEV_NULL = NUL
+  else
+    DEV_NULL = /dev/null
   endif
   export DEV_NULL
   # Classpath separator
@@ -440,28 +450,11 @@ ifeq ($(PLATFORM), windows)
       _MB_OF_MEMORY := \
 	   $(shell free -m | grep Mem: | awk '{print $$2;}' )
     else
-      # Windows 2000 has the mem utility, but two memory areas
-      #    extended memory is what is beyond 1024M
-      _B_OF_EXT_MEMORY := \
-	   $(shell mem 2> $(DEV_NULL) | \
-		   grep 'total contiguous extended memory' | awk '{print $$1;}')
-      ifeq ($(_B_OF_EXT_MEMORY),)
-          _B_OF_MEMORY := \
-	   $(shell mem 2> $(DEV_NULL) | \
-		   grep 'total conventional memory' | awk '{print $$1;}')
-      else
-        _B_OF_MEMORY := \
-           $(shell expr 1048576 '+' $(_B_OF_EXT_MEMORY) 2> $(DEV_NULL))
-      endif
-      ifeq ($(_B_OF_MEMORY),)
-        # Windows 2003 has the systeminfo utility use it if mem doesn't work
-        _MB_OF_MEMORY := \
-	    $(shell systeminfo 2> $(DEV_NULL) | \
-		    grep 'Total Physical Memory:' | \
-		    awk '{print $$4;}' | sed -e 's@,@@')
-      else
-        _MB_OF_MEMORY := $(shell expr $(_B_OF_MEMORY) '/' 1024 2> $(DEV_NULL))
-      endif
+      # Windows XP and higher has the systeminfo utility
+      _MB_OF_MEMORY := \
+            $(shell systeminfo 2> $(DEV_NULL) | \
+                    grep 'Total Physical Memory:' | \
+                    awk '{print $$4;}' | sed -e 's@,@@')
     endif
     ifeq ($(shell expr $(_MB_OF_MEMORY) '+' 0 2> $(DEV_NULL)), $(_MB_OF_MEMORY))
       MB_OF_MEMORY := $(_MB_OF_MEMORY)
