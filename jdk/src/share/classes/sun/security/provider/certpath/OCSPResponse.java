@@ -151,6 +151,10 @@ class OCSPResponse {
 
     private SingleResponse singleResponse;
 
+    // Maximum clock skew in milliseconds (10 minutes) allowed when checking
+    // validity of OCSP responses
+    private static final long MAX_CLOCK_SKEW = 600000;
+
     // an array of all of the CRLReasons (used in SingleResponse)
     private static CRLReason[] values = CRLReason.values();
 
@@ -583,7 +587,9 @@ class OCSPResponse {
                 }
             }
 
-            Date now = new Date();
+            long now = System.currentTimeMillis();
+            Date nowPlusSkew = new Date(now + MAX_CLOCK_SKEW);
+            Date nowMinusSkew = new Date(now - MAX_CLOCK_SKEW);
             if (DEBUG != null) {
                 String until = "";
                 if (nextUpdate != null) {
@@ -593,8 +599,8 @@ class OCSPResponse {
                     thisUpdate + until);
             }
             // Check that the test date is within the validity interval
-            if ((thisUpdate != null && now.before(thisUpdate)) ||
-                (nextUpdate != null && now.after(nextUpdate))) {
+            if ((thisUpdate != null && nowPlusSkew.before(thisUpdate)) ||
+                (nextUpdate != null && nowMinusSkew.after(nextUpdate))) {
 
                 if (DEBUG != null) {
                     DEBUG.println("Response is unreliable: its validity " +

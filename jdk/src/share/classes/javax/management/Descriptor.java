@@ -35,8 +35,8 @@ import java.io.Serializable;
 // Javadoc imports:
 import java.lang.management.MemoryUsage;
 import java.util.Arrays;
+import java.util.Locale;
 import java.util.ResourceBundle;
-
 import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.MXBeanMappingFactory;
 import javax.management.openmbean.OpenMBeanAttributeInfoSupport;
@@ -118,19 +118,22 @@ import javax.management.openmbean.OpenType;
  * deprecation, for example {@code "1.3 Replaced by the Capacity
  * attribute"}.</td>
  *
- * <tr id="descriptionResourceBundleBaseName">
- * <td>descriptionResource<br>BundleBaseName</td><td>String</td><td>Any</td>
+ * <tr><td id="descriptionResourceBundleBaseName"><i>descriptionResource<br>
+ * BundleBaseName</i></td><td>String</td><td>Any</td>
  *
  * <td>The base name for the {@link ResourceBundle} in which the key given in
  * the {@code descriptionResourceKey} field can be found, for example
- * {@code "com.example.myapp.MBeanResources"}.</td>
+ * {@code "com.example.myapp.MBeanResources"}.  See
+ * {@link MBeanInfo#localizeDescriptions MBeanInfo.localizeDescriptions}.</td>
  *
- * <tr id="descriptionResourceKey">
- * <td>descriptionResourceKey</td><td>String</td><td>Any</td>
+ * <tr><td id="descriptionResourceKey"><i>descriptionResourceKey</i></td>
+ * <td>String</td><td>Any</td>
  *
  * <td>A resource key for the description of this element.  In
  * conjunction with the {@code descriptionResourceBundleBaseName},
- * this can be used to find a localized version of the description.</td>
+ * this can be used to find a localized version of the description.
+ * See {@link MBeanInfo#localizeDescriptions MBeanInfo.localizeDescriptions}.
+ * </td>
  *
  * <tr><td>enabled</td><td>String</td>
  * <td>MBeanAttributeInfo<br>MBeanNotificationInfo<br>MBeanOperationInfo</td>
@@ -157,11 +160,11 @@ import javax.management.openmbean.OpenType;
  * href="MBeanInfo.html#info-changed">{@code "jmx.mbean.info.changed"}</a>
  * notification.</td>
  *
- * <tr><td>infoTimeout</td><td>String<br>Long</td><td>MBeanInfo</td>
+ * <tr id="infoTimeout"><td>infoTimeout</td><td>String<br>Long</td><td>MBeanInfo</td>
  *
- * <td id="infoTimeout">The time in milli-seconds that the MBeanInfo can
- * reasonably be expected to be unchanged.  The value can be a {@code Long}
- * or a decimal string.  This provides a hint from a DynamicMBean or any
+ * <td>The time in milli-seconds that the MBeanInfo can reasonably be
+ * expected to be unchanged.  The value can be a {@code Long} or a
+ * decimal string.  This provides a hint from a DynamicMBean or any
  * MBean that does not define {@code immutableInfo} as {@code true}
  * that the MBeanInfo is not likely to change within this period and
  * therefore can be cached.  When this field is missing or has the
@@ -184,6 +187,13 @@ import javax.management.openmbean.OpenType;
  *
  * <td>Legal values for an attribute or parameter.  See
  * {@link javax.management.openmbean}.</td>
+ *
+ * <tr id="locale"><td><i>locale</i></td>
+ * <td>String</td><td>Any</td>
+ *
+ * <td>The {@linkplain Locale locale} of the description in this
+ * {@code MBeanInfo}, {@code MBeanAttributeInfo}, etc, as returned
+ * by {@link Locale#toString()}.</td>
  *
  * <tr id="maxValue"><td><i>maxValue</i><td>Object</td>
  * <td>MBeanAttributeInfo<br>MBeanParameterInfo</td>

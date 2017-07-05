@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import javax.management.ClientContext;
 import javax.management.MBeanServer;
 import javax.management.event.EventClientDelegate;
 import javax.management.remote.JMXConnectorServer;
@@ -62,13 +63,23 @@ public class StandardForwardersTest {
     public static void main(String[] args) throws Exception {
         MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
 
+        MBeanServerForwarder ctxFwd = ClientContext.newContextForwarder(mbs, null);
+        Forwarder ctx = new Forwarder(
+                JMXConnectorServer.CONTEXT_FORWARDER, true, ctxFwd.getClass());
+
+        MBeanServerForwarder locFwd =
+                ClientContext.newLocalizeMBeanInfoForwarder(mbs);
+        Forwarder loc = new Forwarder(
+                JMXConnectorServer.LOCALIZE_MBEAN_INFO_FORWARDER, false,
+                locFwd.getClass());
+
         MBeanServerForwarder ecdFwd =
-                EventClientDelegate.newForwarder();
+                EventClientDelegate.newForwarder(mbs, null);
         Forwarder ecd = new Forwarder(
                 JMXConnectorServer.EVENT_CLIENT_DELEGATE_FORWARDER, true,
                 ecdFwd.getClass());
 
-        Forwarder[] forwarders = {ecd};
+        Forwarder[] forwarders = {ctx, loc, ecd};
 
         // Now go through every combination of forwarders.  Each forwarder
         // may be explicitly enabled, explicitly disabled, or left to its
@@ -154,9 +165,11 @@ public class StandardForwardersTest {
         }
         MBeanServer stop = cs.getMBeanServer();
         List<Class<?>> foundClasses = new ArrayList<Class<?>>();
-        for (MBeanServer mbs = cs.getSystemMBeanServer(); mbs != stop;
-             mbs = ((MBeanServerForwarder) mbs).getMBeanServer())
+        for (MBeanServer mbs = cs.getSystemMBeanServerForwarder().getMBeanServer();
+             mbs != stop;
+             mbs = ((MBeanServerForwarder) mbs).getMBeanServer()) {
             foundClasses.add(mbs.getClass());
+        }
         if (!expectedClasses.equals(foundClasses)) {
             fail("Incorrect forwarder chain: expected " + expectedClasses +
                     "; found " + foundClasses);
@@ -165,9 +178,12 @@ public class StandardForwardersTest {
 
     // env is consistent if either (a) localizer is not enabled or (b)
     // localizer is enabled and context is enabled.
-    // Neither of those is present in this codebase so env is always consistent.
     private static boolean isConsistent(Map<String, String> env) {
-        return true;
+        String ctxS = env.get(JMXConnectorServer.CONTEXT_FORWARDER);
+        boolean ctx = (ctxS == null) ? true : Boolean.parseBoolean(ctxS);
+        String locS = env.get(JMXConnectorServer.LOCALIZE_MBEAN_INFO_FORWARDER);
+        boolean loc = (locS == null) ? false : Boolean.parseBoolean(locS);
+        return !loc || ctx;
     }
 
     private static void fail(String why) {

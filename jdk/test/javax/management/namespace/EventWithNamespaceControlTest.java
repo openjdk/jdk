@@ -85,6 +85,7 @@ public class EventWithNamespaceControlTest extends EventWithNamespaceTest {
         }
     }
 
+    @Override
     public Map<String, ?> getServerMap() {
         Map<String, ?> retValue = Collections.emptyMap();
         return retValue;

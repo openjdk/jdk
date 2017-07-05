@@ -99,7 +99,7 @@ public class ListenerTest {
         succeed &= test(new EventClient(ecd,
                 new RMIPushEventRelay(ecd),
                 null, null,
-                EventClient.DEFAULT_LEASE_TIMEOUT));
+                EventClient.DEFAULT_REQUESTED_LEASE_TIME));
 
         conn.close();
         server.stop();

@@ -111,6 +111,12 @@ class GenericGrowableArray : public ResourceObj {
   }
 
   void* raw_allocate(int elementSize);
+
+  // some uses pass the Thread explicitly for speed (4990299 tuning)
+  void* raw_allocate(Thread* thread, int elementSize) {
+    assert(on_stack(), "fast ResourceObj path only");
+    return (void*)resource_allocate_bytes(thread, elementSize * _max);
+  }
 };
 
 template<class E> class GrowableArray : public GenericGrowableArray {
@@ -121,6 +127,11 @@ template<class E> class GrowableArray : public GenericGrowableArray {
   void raw_at_put_grow(int i, const E& p, const E& fill);
   void  clear_and_deallocate();
  public:
+  GrowableArray(Thread* thread, int initial_size) : GenericGrowableArray(initial_size, 0, false) {
+    _data = (E*)raw_allocate(thread, sizeof(E));
+    for (int i = 0; i < _max; i++) ::new ((void*)&_data[i]) E();
+  }
+
   GrowableArray(int initial_size, bool C_heap = false) : GenericGrowableArray(initial_size, 0, C_heap) {
     _data = (E*)raw_allocate(sizeof(E));
     for (int i = 0; i < _max; i++) ::new ((void*)&_data[i]) E();
@@ -159,10 +170,12 @@ template<class E> class GrowableArray : public GenericGrowableArray {
 
   void print();
 
-  void append(const E& elem) {
+  int append(const E& elem) {
     check_nesting();
     if (_len == _max) grow(_len);
-    _data[_len++] = elem;
+    int idx = _len++;
+    _data[idx] = elem;
+    return idx;
   }
 
   void append_if_missing(const E& elem) {

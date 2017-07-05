@@ -54,7 +54,6 @@ import javax.management.OperationsException;
 import javax.management.QueryExp;
 import javax.management.ReflectionException;
 import javax.management.loading.ClassLoaderRepository;
-import javax.management.namespace.JMXNamespaces;
 
 /**
  * A RoutingServerProxy is an MBeanServer proxy that proxies a
@@ -76,19 +75,11 @@ public class RoutingServerProxy
         extends RoutingProxy<MBeanServer>
         implements MBeanServer {
 
-    /**
-     * Creates a new instance of RoutingServerProxy
-     */
-    public RoutingServerProxy(MBeanServer source,
-                           String sourceNs) {
-        this(source,sourceNs,"",false);
-    }
-
     public RoutingServerProxy(MBeanServer source,
                                 String sourceNs,
                                 String targetNs,
-                                boolean forwardsContext) {
-        super(source,sourceNs,targetNs,forwardsContext);
+                                boolean probe) {
+        super(source, sourceNs, targetNs, probe);
     }
 
     /**
@@ -571,20 +562,15 @@ public class RoutingServerProxy
         FACTORY = new RoutingProxyFactory<MBeanServer,RoutingServerProxy>() {
 
         public RoutingServerProxy newInstance(MBeanServer source,
-                String sourcePath, String targetPath,
-                boolean forwardsContext) {
-            return new RoutingServerProxy(source,sourcePath,
-                    targetPath,forwardsContext);
-        }
-
-        public RoutingServerProxy newInstance(
-                MBeanServer source, String sourcePath) {
-            return new RoutingServerProxy(source,sourcePath);
+                String sourcePath, String targetPath, boolean probe) {
+            return new RoutingServerProxy(
+                    source, sourcePath, targetPath, probe);
         }
     };
 
-    public static MBeanServer cd(MBeanServer source, String sourcePath) {
+    public static MBeanServer cd(
+            MBeanServer source, String sourcePath, boolean probe) {
         return RoutingProxy.cd(RoutingServerProxy.class, FACTORY,
-                source, sourcePath);
+                source, sourcePath, probe);
     }
 }
