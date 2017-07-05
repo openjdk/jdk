@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -5319,69 +5319,8 @@ instruct loadSSD(regD dst, stackSlotD src)
   ins_pipe(pipe_slow); // XXX
 %}
 
-// Prefetch instructions.
-// Must be safe to execute with invalid address (cannot fault).
-
-instruct prefetchr( memory mem ) %{
-  predicate(ReadPrefetchInstr==3);
-  match(PrefetchRead mem);
-  ins_cost(125);
-
-  format %{ "PREFETCHR $mem\t# Prefetch into level 1 cache" %}
-  ins_encode %{
-    __ prefetchr($mem$$Address);
-  %}
-  ins_pipe(ialu_mem);
-%}
-
-instruct prefetchrNTA( memory mem ) %{
-  predicate(ReadPrefetchInstr==0);
-  match(PrefetchRead mem);
-  ins_cost(125);
-
-  format %{ "PREFETCHNTA $mem\t# Prefetch into non-temporal cache for read" %}
-  ins_encode %{
-    __ prefetchnta($mem$$Address);
-  %}
-  ins_pipe(ialu_mem);
-%}
-
-instruct prefetchrT0( memory mem ) %{
-  predicate(ReadPrefetchInstr==1);
-  match(PrefetchRead mem);
-  ins_cost(125);
-
-  format %{ "PREFETCHT0 $mem\t# prefetch into L1 and L2 caches for read" %}
-  ins_encode %{
-    __ prefetcht0($mem$$Address);
-  %}
-  ins_pipe(ialu_mem);
-%}
-
-instruct prefetchrT2( memory mem ) %{
-  predicate(ReadPrefetchInstr==2);
-  match(PrefetchRead mem);
-  ins_cost(125);
-
-  format %{ "PREFETCHT2 $mem\t# prefetch into L2 caches for read" %}
-  ins_encode %{
-    __ prefetcht2($mem$$Address);
-  %}
-  ins_pipe(ialu_mem);
-%}
-
-instruct prefetchwNTA( memory mem ) %{
-  match(PrefetchWrite mem);
-  ins_cost(125);
-
-  format %{ "PREFETCHNTA $mem\t# Prefetch to non-temporal cache for write" %}
-  ins_encode %{
-    __ prefetchnta($mem$$Address);
-  %}
-  ins_pipe(ialu_mem);
-%}
-
 // Prefetch instructions for allocation.
+// Must be safe to execute with invalid address (cannot fault).
 
 instruct prefetchAlloc( memory mem ) %{
   predicate(AllocatePrefetchInstr==3);

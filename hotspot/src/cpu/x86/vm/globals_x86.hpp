@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,9 +89,6 @@ define_pd_global(uintx, TypeProfileLevel, 111);
                                                                             \
   product(intx, FenceInstruction, 0,                                        \
           "(Unsafe,Unstable) Experimental")                                 \
-                                                                            \
-  product(intx,  ReadPrefetchInstr, 0,                                      \
-          "Prefetch instruction to prefetch ahead")                         \
                                                                             \
   product(bool, UseStoreImmI16, true,                                       \
           "Use store immediate 16-bits value instruction on x86")           \

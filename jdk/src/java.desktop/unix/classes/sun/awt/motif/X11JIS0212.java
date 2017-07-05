@@ -28,7 +28,8 @@ package sun.awt.motif;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CharsetDecoder;
-import sun.nio.cs.ext.JIS_X_0212;
+import sun.nio.cs.*;
+import sun.nio.cs.ext.*;
 
 public class X11JIS0212 extends Charset {
     private static Charset jis0212 = new JIS_X_0212();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -130,6 +130,19 @@ final class SunECEntries {
             "sun.security.ec.ECDSASignature$SHA512");
         map.put("Alg.Alias.Signature.OID.1.2.840.10045.4.3.4", "SHA512withECDSA");
         map.put("Alg.Alias.Signature.1.2.840.10045.4.3.4", "SHA512withECDSA");
+
+        map.put("Signature.NONEwithECDSAinP1363Format",
+            "sun.security.ec.ECDSASignature$RawinP1363Format");
+        map.put("Signature.SHA1withECDSAinP1363Format",
+            "sun.security.ec.ECDSASignature$SHA1inP1363Format");
+        map.put("Signature.SHA224withECDSAinP1363Format",
+            "sun.security.ec.ECDSASignature$SHA224inP1363Format");
+        map.put("Signature.SHA256withECDSAinP1363Format",
+            "sun.security.ec.ECDSASignature$SHA256inP1363Format");
+        map.put("Signature.SHA384withECDSAinP1363Format",
+            "sun.security.ec.ECDSASignature$SHA384inP1363Format");
+        map.put("Signature.SHA512withECDSAinP1363Format",
+            "sun.security.ec.ECDSASignature$SHA512inP1363Format");
 
         String ecKeyClasses = "java.security.interfaces.ECPublicKey" +
                 "|java.security.interfaces.ECPrivateKey";

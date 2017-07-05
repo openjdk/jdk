@@ -39,7 +39,7 @@ public class GetPutShort {
         Test t = new Test();
         Field field = Test.class.getField("s");
 
-        int offset = unsafe.fieldOffset(field);
+        long offset = unsafe.objectFieldOffset(field);
         assertEquals((short)-1, unsafe.getShort(t, offset));
         unsafe.putShort(t, offset, (short)0);
         assertEquals((short)0, unsafe.getShort(t, offset));

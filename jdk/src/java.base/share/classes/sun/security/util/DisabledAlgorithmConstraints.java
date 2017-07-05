@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -171,8 +171,9 @@ public class DisabledAlgorithmConstraints implements AlgorithmConstraints {
             // OAEPWith<digest>And<mgf>Padding
             // <digest>with<encryption>
             // <digest>with<encryption>and<mgf>
+            // <digest>with<encryption>in<format>
             Pattern pattern =
-                    Pattern.compile("with|and", Pattern.CASE_INSENSITIVE);
+                    Pattern.compile("with|and|in", Pattern.CASE_INSENSITIVE);
             String[] tokens = pattern.split(transTocken);
 
             for (String token : tokens) {

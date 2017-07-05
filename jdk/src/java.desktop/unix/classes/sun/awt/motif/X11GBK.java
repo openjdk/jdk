@@ -26,6 +26,7 @@
 package sun.awt.motif;
 
 import java.nio.charset.*;
+import sun.nio.cs.*;
 import sun.nio.cs.ext.*;
 import static sun.nio.cs.CharsetMapping.*;
 
