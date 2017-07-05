@@ -844,6 +844,14 @@ nmethod* InterpreterRuntime::frequency_counter_overflow(JavaThread* thread, addr
     int bci = method->bci_from(fr.interpreter_frame_bcp());
     nm = method->lookup_osr_nmethod_for(bci, CompLevel_none, false);
   }
+#ifndef PRODUCT
+  if (TraceOnStackReplacement) {
+    if (nm != NULL) {
+      tty->print("OSR entry @ pc: " INTPTR_FORMAT ": ", nm->osr_entry());
+      nm->print();
+    }
+  }
+#endif
   return nm;
 }
 

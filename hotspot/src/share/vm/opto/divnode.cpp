@@ -284,9 +284,14 @@ static Node* long_by_long_mulhi(PhaseGVN* phase, Node* dividend, jlong magic_con
 
   const int N = 64;
 
+  // Dummy node to keep intermediate nodes alive during construction
+  Node* hook = new (phase->C, 4) Node(4);
+
   // u0 = u & 0xFFFFFFFF;  u1 = u >> 32;
   Node* u0 = phase->transform(new (phase->C, 3) AndLNode(dividend, phase->longcon(0xFFFFFFFF)));
   Node* u1 = phase->transform(new (phase->C, 3) RShiftLNode(dividend, phase->intcon(N / 2)));
+  hook->init_req(0, u0);
+  hook->init_req(1, u1);
 
   // v0 = v & 0xFFFFFFFF;  v1 = v >> 32;
   Node* v0 = phase->longcon(magic_const & 0xFFFFFFFF);
@@ -299,19 +304,14 @@ static Node* long_by_long_mulhi(PhaseGVN* phase, Node* dividend, jlong magic_con
   Node* u1v0 = phase->transform(new (phase->C, 3) MulLNode(u1, v0));
   Node* temp = phase->transform(new (phase->C, 3) URShiftLNode(w0, phase->intcon(N / 2)));
   Node* t    = phase->transform(new (phase->C, 3) AddLNode(u1v0, temp));
+  hook->init_req(2, t);
 
   // w1 = t & 0xFFFFFFFF;
-  Node* w1 = new (phase->C, 3) AndLNode(t, phase->longcon(0xFFFFFFFF));
+  Node* w1 = phase->transform(new (phase->C, 3) AndLNode(t, phase->longcon(0xFFFFFFFF)));
+  hook->init_req(3, w1);
 
   // w2 = t >> 32;
-  Node* w2 = new (phase->C, 3) RShiftLNode(t, phase->intcon(N / 2));
-
-  // 6732154: Construct both w1 and w2 before transforming, so t
-  // doesn't go dead prematurely.
-  // 6837011: We need to transform w2 before w1 because the
-  // transformation of w1 could return t.
-  w2 = phase->transform(w2);
-  w1 = phase->transform(w1);
+  Node* w2 = phase->transform(new (phase->C, 3) RShiftLNode(t, phase->intcon(N / 2)));
 
   // w1 = u0*v1 + w1;
   Node* u0v1 = phase->transform(new (phase->C, 3) MulLNode(u0, v1));
@@ -321,6 +321,16 @@ static Node* long_by_long_mulhi(PhaseGVN* phase, Node* dividend, jlong magic_con
   Node* u1v1  = phase->transform(new (phase->C, 3) MulLNode(u1, v1));
   Node* temp1 = phase->transform(new (phase->C, 3) AddLNode(u1v1, w2));
   Node* temp2 = phase->transform(new (phase->C, 3) RShiftLNode(w1, phase->intcon(N / 2)));
+
+  // Remove the bogus extra edges used to keep things alive
+  PhaseIterGVN* igvn = phase->is_IterGVN();
+  if (igvn != NULL) {
+    igvn->remove_dead_node(hook);
+  } else {
+    for (int i = 0; i < 4; i++) {
+      hook->set_req(i, NULL);
+    }
+  }
 
   return new (phase->C, 3) AddLNode(temp1, temp2);
 }
