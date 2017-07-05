@@ -289,11 +289,6 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   // (A scavenge is a GC which is not a full GC.)
   virtual bool is_scavengable(const void *p) = 0;
 
-  // Returns "TRUE" if "p" is a method oop in the
-  // current heap, with high probability. This predicate
-  // is not stable, in general.
-  bool is_valid_method(Method* p) const;
-
   void set_gc_cause(GCCause::Cause v) {
      if (UsePerfData) {
        _gc_lastcause = _gc_cause;

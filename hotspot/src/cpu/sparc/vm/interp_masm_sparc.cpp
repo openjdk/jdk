@@ -36,12 +36,7 @@
 #include "runtime/basicLock.hpp"
 #include "runtime/biasedLocking.hpp"
 #include "runtime/sharedRuntime.hpp"
-#ifdef TARGET_OS_FAMILY_linux
-# include "thread_linux.inline.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_solaris
-# include "thread_solaris.inline.hpp"
-#endif
+#include "runtime/thread.inline.hpp"
 
 #ifndef CC_INTERP
 #ifndef FAST_DISPATCH
@@ -523,7 +518,8 @@ void InterpreterMacroAssembler::empty_expression_stack() {
   delayed()->nop();
 
   // Compute max expression stack+register save area
-  lduh(Lmethod, in_bytes(Method::max_stack_offset()), Gframe_size);  // Load max stack.
+  ld_ptr(Lmethod, in_bytes(Method::const_offset()), Gframe_size);
+  lduh(Gframe_size, in_bytes(ConstMethod::max_stack_offset()), Gframe_size);  // Load max stack.
   add( Gframe_size, frame::memory_parameter_word_sp_offset, Gframe_size );
 
   //

@@ -146,6 +146,23 @@ class VMMemPointerIterator : public MemPointerIterator {
   // reset current position
   inline void reset() { _pos = 0; }
 #ifdef ASSERT
+  // check integrity of records on current reserved memory region.
+  bool check_reserved_region() {
+    VMMemRegion* reserved_region = (VMMemRegion*)current();
+    assert(reserved_region != NULL && reserved_region->is_reserved_region(),
+          "Sanity check");
+    // all committed regions that follow current reserved region, should all
+    // belong to the reserved region.
+    VMMemRegion* next_region = (VMMemRegion*)next();
+    for (; next_region != NULL && next_region->is_committed_region();
+         next_region = (VMMemRegion*)next() ) {
+      if(!reserved_region->contains_region(next_region)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   virtual bool is_dup_pointer(const MemPointer* ptr1,
     const MemPointer* ptr2) const {
     VMMemRegion* p1 = (VMMemRegion*)ptr1;

@@ -340,9 +340,7 @@ Klass* ConstantPool::klass_at_impl(constantPoolHandle this_oop, int which, TRAPS
       do_resolve = this_oop->tag_at(which).is_unresolved_klass();
       if (do_resolve) {
         ClassLoaderData* this_key = this_oop->pool_holder()->class_loader_data();
-        if (!this_key->is_the_null_class_loader_data()) {
-          this_key->record_dependency(k(), CHECK_NULL); // Can throw OOM
-        }
+        this_key->record_dependency(k(), CHECK_NULL); // Can throw OOM
         this_oop->klass_at_put(which, k());
       }
     }

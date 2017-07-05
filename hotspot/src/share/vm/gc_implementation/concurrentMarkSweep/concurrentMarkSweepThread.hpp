@@ -27,18 +27,7 @@
 
 #include "gc_implementation/concurrentMarkSweep/concurrentMarkSweepGeneration.hpp"
 #include "gc_implementation/shared/concurrentGCThread.hpp"
-#ifdef TARGET_OS_FAMILY_linux
-# include "thread_linux.inline.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_solaris
-# include "thread_solaris.inline.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_windows
-# include "thread_windows.inline.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_bsd
-# include "thread_bsd.inline.hpp"
-#endif
+#include "runtime/thread.inline.hpp"
 
 class ConcurrentMarkSweepGeneration;
 class CMSCollector;
