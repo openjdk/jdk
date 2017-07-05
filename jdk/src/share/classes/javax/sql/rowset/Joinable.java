@@ -57,7 +57,7 @@ import java.sql.SQLException;
  *         :
  *     }
  * </pre>
- * <P>
+ *
  * <h3>2.0 Usage Guidelines</h3>
  * <P>
  * The methods in the <code>Joinable</code> interface allow a <code>RowSet</code> object
@@ -66,7 +66,7 @@ import java.sql.SQLException;
  * An instance of a class that implements these methods can be added to a
  * <code>JoinRowSet</code> object to allow an SQL <code>JOIN</code> relationship to
  *  be established.
- * <p>
+ *
  * <pre>
  *     CachedRowSet crs = new MyRowSetImpl();
  *     crs.populate((ResultSet)rs);
@@ -97,7 +97,7 @@ import java.sql.SQLException;
  * <code>JdbcRowSet</code> object, being always connected to its data source, can
  * become part of an SQL <code>JOIN</code> directly without having to become part
  * of a <code>JoinRowSet</code> object.
- * <P>
+ *
  * <h3>3.0 Managing Multiple Match Columns</h3>
  * The index array passed into the <code>setMatchColumn</code> methods indicates
  * how many match columns are being set (the length of the array) in addition to

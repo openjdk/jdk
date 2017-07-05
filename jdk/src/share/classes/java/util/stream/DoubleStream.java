@@ -289,6 +289,20 @@ public interface DoubleStream extends BaseStream<Double, DoubleStream> {
      * <p>This is a <a href="package-summary.html#StreamOps">short-circuiting
      * stateful intermediate operation</a>.
      *
+     * @apiNote
+     * While {@code limit()} is generally a cheap operation on sequential
+     * stream pipelines, it can be quite expensive on ordered parallel pipelines,
+     * especially for large values of {@code maxSize}, since {@code limit(n)}
+     * is constrained to return not just any <em>n</em> elements, but the
+     * <em>first n</em> elements in the encounter order.  Using an unordered
+     * stream source (such as {@link #generate(DoubleSupplier)}) or removing the
+     * ordering constraint with {@link #unordered()} may result in significant
+     * speedups of {@code limit()} in parallel pipelines, if the semantics of
+     * your situation permit.  If consistency with encounter order is required,
+     * and you are experiencing poor performance or memory utilization with
+     * {@code limit()} in parallel pipelines, switching to sequential execution
+     * with {@link #sequential()} may improve performance.
+     *
      * @param maxSize the number of elements the stream should be limited to
      * @return the new stream
      * @throws IllegalArgumentException if {@code maxSize} is negative
@@ -297,37 +311,32 @@ public interface DoubleStream extends BaseStream<Double, DoubleStream> {
 
     /**
      * Returns a stream consisting of the remaining elements of this stream
-     * after discarding the first {@code startInclusive} elements of the stream.
-     * If this stream contains fewer than {@code startInclusive} elements then an
+     * after discarding the first {@code n} elements of the stream.
+     * If this stream contains fewer than {@code n} elements then an
      * empty stream will be returned.
      *
      * <p>This is a <a href="package-summary.html#StreamOps">stateful
      * intermediate operation</a>.
      *
-     * @param startInclusive the number of leading elements to skip
-     * @return the new stream
-     * @throws IllegalArgumentException if {@code startInclusive} is negative
-     */
-    DoubleStream substream(long startInclusive);
-
-    /**
-     * Returns a stream consisting of the remaining elements of this stream
-     * after discarding the first {@code startInclusive} elements and truncating
-     * the result to be no longer than {@code endExclusive - startInclusive}
-     * elements in length. If this stream contains fewer than
-     * {@code startInclusive} elements then an empty stream will be returned.
+     * @apiNote
+     * While {@code skip()} is generally a cheap operation on sequential
+     * stream pipelines, it can be quite expensive on ordered parallel pipelines,
+     * especially for large values of {@code n}, since {@code skip(n)}
+     * is constrained to skip not just any <em>n</em> elements, but the
+     * <em>first n</em> elements in the encounter order.  Using an unordered
+     * stream source (such as {@link #generate(DoubleSupplier)}) or removing the
+     * ordering constraint with {@link #unordered()} may result in significant
+     * speedups of {@code skip()} in parallel pipelines, if the semantics of
+     * your situation permit.  If consistency with encounter order is required,
+     * and you are experiencing poor performance or memory utilization with
+     * {@code skip()} in parallel pipelines, switching to sequential execution
+     * with {@link #sequential()} may improve performance.
      *
-     * <p>This is a <a href="package-summary.html#StreamOps">short-circuiting
-     * stateful intermediate operation</a>.
-     *
-     * @param startInclusive the starting position of the substream, inclusive
-     * @param endExclusive the ending position of the substream, exclusive
+     * @param n the number of leading elements to skip
      * @return the new stream
-     * @throws IllegalArgumentException if {@code startInclusive} or
-     * {@code endExclusive} is negative or {@code startInclusive} is greater
-     * than {@code endExclusive}
+     * @throws IllegalArgumentException if {@code n} is negative
      */
-    DoubleStream substream(long startInclusive, long endExclusive);
+    DoubleStream skip(long n);
 
     /**
      * Performs an action for each element of this stream.
@@ -502,21 +511,41 @@ public interface DoubleStream extends BaseStream<Double, DoubleStream> {
                   BiConsumer<R, R> combiner);
 
     /**
-     * Returns the sum of elements in this stream.  The sum returned can vary
-     * depending upon the order in which elements are encountered.  This is due
-     * to accumulated rounding error in addition of values of differing
-     * magnitudes. Elements sorted by increasing absolute magnitude tend to
-     * yield more accurate results.  If any stream element is a {@code NaN} or
-     * the sum is at any point a {@code NaN} then the sum will be {@code NaN}.
-     * This is a special case of a
-     * <a href="package-summary.html#Reduction">reduction</a> and is
+     * Returns the sum of elements in this stream.
+     *
+     * Summation is a special case of a <a
+     * href="package-summary.html#Reduction">reduction</a>. If
+     * floating-point summation were exact, this method would be
      * equivalent to:
+     *
      * <pre>{@code
      *     return reduce(0, Double::sum);
      * }</pre>
      *
+     * However, since floating-point summation is not exact, the above
+     * code is not necessarily equivalent to the summation computation
+     * done by this method.
+     *
+     * <p>If any stream element is a NaN or the sum is at any point a NaN
+     * then the sum will be NaN.
+     *
+     * The value of a floating-point sum is a function both
+     * of the input values as well as the order of addition
+     * operations. The order of addition operations of this method is
+     * intentionally not defined to allow for implementation
+     * flexibility to improve the speed and accuracy of the computed
+     * result.
+     *
+     * In particular, this method may be implemented using compensated
+     * summation or other technique to reduce the error bound in the
+     * numerical sum compared to a simple summation of {@code double}
+     * values.
+     *
      * <p>This is a <a href="package-summary.html#StreamOps">terminal
      * operation</a>.
+     *
+     * @apiNote Sorting values by increasing absolute magnitude tends to yield
+     * more accurate results.
      *
      * @return the sum of elements in this stream
      */
@@ -578,18 +607,28 @@ public interface DoubleStream extends BaseStream<Double, DoubleStream> {
     long count();
 
     /**
-     * Returns an {@code OptionalDouble} describing the arithmetic mean of elements of
-     * this stream, or an empty optional if this stream is empty.  The average
-     * returned can vary depending upon the order in which elements are
-     * encountered. This is due to accumulated rounding error in addition of
-     * elements of differing magnitudes. Elements sorted by increasing absolute
-     * magnitude tend to yield more accurate results. If any recorded value is
-     * a {@code NaN} or the sum is at any point a {@code NaN} then the average
-     * will be {@code NaN}. This is a special case of a
-     * <a href="package-summary.html#Reduction">reduction</a>.
+     * Returns an {@code OptionalDouble} describing the arithmetic
+     * mean of elements of this stream, or an empty optional if this
+     * stream is empty.
+     *
+     * If any recorded value is a NaN or the sum is at any point a NaN
+     * then the average will be NaN.
+     *
+     * <p>The average returned can vary depending upon the order in
+     * which values are recorded.
+     *
+     * This method may be implemented using compensated summation or
+     * other technique to reduce the error bound in the {@link #sum
+     * numerical sum} used to compute the average.
+     *
+     *  <p>The average is a special case of a <a
+     *  href="package-summary.html#Reduction">reduction</a>.
      *
      * <p>This is a <a href="package-summary.html#StreamOps">terminal
      * operation</a>.
+     *
+     * @apiNote Elements sorted by increasing absolute magnitude tend
+     * to yield more accurate results.
      *
      * @return an {@code OptionalDouble} containing the average element of this
      * stream, or an empty optional if the stream is empty

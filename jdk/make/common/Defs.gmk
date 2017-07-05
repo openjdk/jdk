@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1995, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -508,10 +508,16 @@ endef
 # Convenient macros
 #
 
-# Prepare $@ target, remove old one and making sure directory exists
+# Prepare $@ target, remove old one and making sure containing dir exists
 define prep-target
 $(MKDIR) -p $(@D)
 $(RM) $@
+endef
+
+# Prepare $@ target dir, remove old one and making sure containing dir exists
+define prep-target-dir
+$(MKDIR) -p $(@D)
+$(RM) -r $@
 endef
 
 # Simple install of $< file to $@
@@ -615,6 +621,26 @@ $(CP) $< $@
   fi;                                                               \
 fi
 endef
+
+# MacOS X strongly discourages 'cp -r' and provides 'cp -R' instead.
+# May need to have a MacOS X specific definition of install-import-dir
+# sometime in the future.
+define install-import-dir
+@$(ECHO) "ASSEMBLY_IMPORT: $@"
+$(prep-target-dir)
+$(CP) -r $< $@
+endef
+
+ifeq ($(PLATFORM), macosx)
+# On MacOS X, debug info is in .dSYM directories
+define install-import-debuginfo
+$(install-import-dir)
+endef
+else
+define install-import-debuginfo
+$(install-import-file)
+endef
+endif
 
 define install-import-file
 $(install-importonly-file)

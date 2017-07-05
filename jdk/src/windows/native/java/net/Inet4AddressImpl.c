@@ -241,6 +241,10 @@ Java_java_net_Inet4AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
           addrp++;
           i++;
         }
+    } else if (WSAGetLastError() == WSATRY_AGAIN) {
+        NET_ThrowByNameWithLastError(env,
+                                     JNU_JAVANETPKG "UnknownHostException",
+                                     hostname);
     } else {
         JNU_ThrowByName(env, JNU_JAVANETPKG "UnknownHostException", hostname);
     }

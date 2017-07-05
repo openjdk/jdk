@@ -61,8 +61,8 @@
  */
 package java.time.zone;
 
-import static java.time.temporal.TemporalAdjuster.nextOrSame;
-import static java.time.temporal.TemporalAdjuster.previousOrSame;
+import static java.time.temporal.TemporalAdjusters.nextOrSame;
+import static java.time.temporal.TemporalAdjusters.previousOrSame;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -83,12 +83,12 @@ import java.util.Objects;
  * <p>
  * This class allows rules for identifying future transitions to be expressed.
  * A rule might be written in many forms:
- * <p><ul>
+ * <ul>
  * <li>the 16th March
  * <li>the Sunday on or after the 16th March
  * <li>the Sunday on or before the 16th March
  * <li>the last Sunday in February
- * </ul><p>
+ * </ul>
  * These different rule types can be expressed and queried.
  *
  * @implSpec
@@ -575,11 +575,11 @@ public final class ZoneOffsetTransitionRule implements Serializable {
      * transition date-time.
      * <p>
      * Time zone rules are expressed in one of three ways:
-     * <p><ul>
+     * <ul>
      * <li>Relative to UTC</li>
      * <li>Relative to the standard offset in force</li>
      * <li>Relative to the wall offset (what you would see on a clock on the wall)</li>
-     * </ul><p>
+     * </ul>
      */
     public static enum TimeDefinition {
         /** The local date-time is expressed in terms of the UTC offset. */

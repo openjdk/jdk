@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,14 +115,15 @@ final class ElectronicCodeBook extends FeedbackCipher {
      * @param len the length of the input data
      * @param out the buffer for the result
      * @param outOff the offset in <code>cipher</code>
+     * @return the length of the encrypted data
      */
-    void encrypt(byte[] in, int inOff, int len, byte[] out, int outOff) {
-        while (len >= blockSize) {
+    int encrypt(byte[] in, int inOff, int len, byte[] out, int outOff) {
+        for (int i = len; i >= blockSize; i -= blockSize) {
             embeddedCipher.encryptBlock(in, inOff, out, outOff);
-            len -= blockSize;
             inOff += blockSize;
             outOff += blockSize;
         }
+        return len;
     }
 
     /**
@@ -147,14 +148,14 @@ final class ElectronicCodeBook extends FeedbackCipher {
      * @param len the length of the input data
      * @param out the buffer for the result
      * @param outOff the offset in <code>plain</code>
+     * @return the length of the decrypted data
      */
-    void decrypt(byte[] in, int inOff, int len, byte[] out, int outOff) {
-        while (len >= blockSize) {
+    int decrypt(byte[] in, int inOff, int len, byte[] out, int outOff) {
+        for (int i = len; i >= blockSize; i -= blockSize) {
             embeddedCipher.decryptBlock(in, inOff, out, outOff);
-            len -= blockSize;
             inOff += blockSize;
             outOff += blockSize;
         }
+        return len;
     }
-
 }

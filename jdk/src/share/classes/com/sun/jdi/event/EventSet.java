@@ -127,6 +127,7 @@ import java.util.Set;
  * @since  1.3
  */
 
+@jdk.Exported
 public interface EventSet extends Mirror, Set<Event> {
 
     /**

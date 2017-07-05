@@ -56,7 +56,7 @@ import java.io.InputStream;
  * For maximum portability, a call's <code>ResultSet</code> objects and
  * update counts should be processed prior to getting the values of output
  * parameters.
- * <P>
+ *
  *
  * @see Connection#prepareCall
  * @see ResultSet

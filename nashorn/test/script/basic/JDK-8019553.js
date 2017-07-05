@@ -33,7 +33,7 @@ function check(str) {
         eval(str);
         fail("SyntaxError expected for: " + str);
     } catch (e) {
-        print(e.toString().replace(/\\/g, '/'));
+        printError(e);
     }
 }
 

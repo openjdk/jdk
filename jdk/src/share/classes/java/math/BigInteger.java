@@ -35,6 +35,7 @@ import java.io.ObjectOutputStream;
 import java.io.ObjectStreamField;
 import java.util.Arrays;
 import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 import sun.misc.DoubleConsts;
 import sun.misc.FloatConsts;
 
@@ -918,15 +919,6 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         return u;
     }
 
-    private static volatile Random staticRandom;
-
-    private static Random getSecureRandom() {
-        if (staticRandom == null) {
-            staticRandom = new java.security.SecureRandom();
-        }
-        return staticRandom;
-    }
-
     /**
      * Returns true iff this BigInteger passes the specified number of
      * Miller-Rabin tests. This test is taken from the DSA spec (NIST FIPS
@@ -945,7 +937,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
 
         // Do the tests
         if (rnd == null) {
-            rnd = getSecureRandom();
+            rnd = ThreadLocalRandom.current();
         }
         for (int i=0; i < iterations; i++) {
             // Generate a uniform random on (1, this)

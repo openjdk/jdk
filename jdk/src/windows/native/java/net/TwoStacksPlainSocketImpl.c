@@ -728,7 +728,6 @@ Java_java_net_TwoStacksPlainSocketImpl_socketAccept(JNIEnv *env, jobject this,
         setInetAddress_family(env, socketAddressObj, IPv4);
         (*env)->SetObjectField(env, socket, psi_addressID, socketAddressObj);
     } else {
-        jbyteArray addr;
         /* AF_INET6 -> Inet6Address */
         if (inet6Cls == 0) {
             jclass c = (*env)->FindClass(env, "java/net/Inet6Address");
@@ -751,14 +750,10 @@ Java_java_net_TwoStacksPlainSocketImpl_socketAccept(JNIEnv *env, jobject this,
             NET_SocketClose(fd);
             return;
         }
-        addr = (*env)->GetObjectField (env, socketAddressObj, ia6_ipaddressID);
-        (*env)->SetByteArrayRegion (env, addr, 0, 16, (const char *)&him.him6.sin6_addr);
+        setInet6Address_ipaddress(env, socketAddressObj, (const char *)&him.him6.sin6_addr);
         setInetAddress_family(env, socketAddressObj, IPv6);
-        scope = him.him6.sin6_scope_id;
-        (*env)->SetIntField(env, socketAddressObj, ia6_scopeidID, scope);
-        if(scope>0) {
-            (*env)->SetBooleanField(env, socketAddressObj, ia6_scopeidsetID, JNI_TRUE);
-        }
+        setInet6Address_scopeid(env, socketAddressObj, him.him6.sin6_scope_id);
+
     }
     /* fields common to AF_INET and AF_INET6 */
 

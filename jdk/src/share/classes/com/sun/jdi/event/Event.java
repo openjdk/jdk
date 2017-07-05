@@ -43,6 +43,7 @@ import com.sun.jdi.request.EventRequest;
  * @author Robert Field
  * @since  1.3
  */
+@jdk.Exported
 public interface Event extends Mirror {
 
     /**

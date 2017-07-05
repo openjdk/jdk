@@ -308,7 +308,7 @@ public final class CopticDate
     @Override
     public Period until(ChronoLocalDate endDate) {
         // TODO: untested
-        CopticDate end = (CopticDate) getChronology().date(endDate);
+        CopticDate end = getChronology().date(endDate);
         long totalMonths = (end.prolepticYear - this.prolepticYear) * 13 + (end.month - this.month);  // safe
         int days = end.day - this.day;
         if (totalMonths > 0 && days < 0) {
