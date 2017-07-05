@@ -581,12 +581,18 @@ public final class LauncherHelper {
         }
 
         // load the class from the module
-        Class<?> c = Class.forName(m, mainClass);
-        if (c == null &&  System.getProperty("os.name", "").contains("OS X")
-                && Normalizer.isNormalized(mainClass, Normalizer.Form.NFD)) {
+        Class<?> c = null;
+        try {
+            c = Class.forName(m, mainClass);
+            if (c == null && System.getProperty("os.name", "").contains("OS X")
+                    && Normalizer.isNormalized(mainClass, Normalizer.Form.NFD)) {
 
-            String cn = Normalizer.normalize(mainClass, Normalizer.Form.NFC);
-            c = Class.forName(m, cn);
+                String cn = Normalizer.normalize(mainClass, Normalizer.Form.NFC);
+                c = Class.forName(m, cn);
+            }
+        } catch (LinkageError le) {
+            abort(null, "java.launcher.module.error3",
+                    mainClass, m.getName(), le.getLocalizedMessage());
         }
         if (c == null) {
             abort(null, "java.launcher.module.error2", mainClass, mainModule);
@@ -619,23 +625,27 @@ public final class LauncherHelper {
         Class<?> mainClass = null;
         ClassLoader scl = ClassLoader.getSystemClassLoader();
         try {
-            mainClass = Class.forName(cn, false, scl);
-        } catch (NoClassDefFoundError | ClassNotFoundException cnfe) {
-            if (System.getProperty("os.name", "").contains("OS X")
-                    && Normalizer.isNormalized(cn, Normalizer.Form.NFD)) {
-                try {
-                    // On Mac OS X since all names with diacritical marks are
-                    // given as decomposed it is possible that main class name
-                    // comes incorrectly from the command line and we have
-                    // to re-compose it
-                    String ncn = Normalizer.normalize(cn, Normalizer.Form.NFC);
-                    mainClass = Class.forName(ncn, false, scl);
-                } catch (NoClassDefFoundError | ClassNotFoundException cnfe1) {
+            try {
+                mainClass = Class.forName(cn, false, scl);
+            } catch (NoClassDefFoundError | ClassNotFoundException cnfe) {
+                if (System.getProperty("os.name", "").contains("OS X")
+                        && Normalizer.isNormalized(cn, Normalizer.Form.NFD)) {
+                    try {
+                        // On Mac OS X since all names with diacritical marks are
+                        // given as decomposed it is possible that main class name
+                        // comes incorrectly from the command line and we have
+                        // to re-compose it
+                        String ncn = Normalizer.normalize(cn, Normalizer.Form.NFC);
+                        mainClass = Class.forName(ncn, false, scl);
+                    } catch (NoClassDefFoundError | ClassNotFoundException cnfe1) {
+                        abort(cnfe1, "java.launcher.cls.error1", cn);
+                    }
+                } else {
                     abort(cnfe, "java.launcher.cls.error1", cn);
                 }
-            } else {
-                abort(cnfe, "java.launcher.cls.error1", cn);
             }
+        } catch (LinkageError le) {
+            abort(le, "java.launcher.cls.error6", cn, le.getLocalizedMessage());
         }
         return mainClass;
     }

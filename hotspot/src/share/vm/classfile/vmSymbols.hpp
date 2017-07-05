@@ -590,11 +590,11 @@
   template(java_lang_management_ThreadState,           "java/lang/management/ThreadState")                        \
   template(java_lang_management_MemoryUsage,           "java/lang/management/MemoryUsage")                        \
   template(java_lang_management_ThreadInfo,            "java/lang/management/ThreadInfo")                         \
+  template(jdk_internal_agent_Agent,                   "jdk/internal/agent/Agent")                                \
   template(sun_management_Sensor,                      "sun/management/Sensor")                                   \
-  template(sun_management_Agent,                       "sun/management/Agent")                                    \
+  template(sun_management_ManagementFactoryHelper,     "sun/management/ManagementFactoryHelper")                  \
   template(com_sun_management_internal_DiagnosticCommandImpl,  "com/sun/management/internal/DiagnosticCommandImpl")     \
   template(com_sun_management_internal_GarbageCollectorExtImpl,"com/sun/management/internal/GarbageCollectorExtImpl")   \
-  template(sun_management_ManagementFactoryHelper,     "sun/management/ManagementFactoryHelper")                  \
   template(getDiagnosticCommandMBean_name,             "getDiagnosticCommandMBean")                               \
   template(getDiagnosticCommandMBean_signature,        "()Lcom/sun/management/DiagnosticCommandMBean;")           \
   template(getGcInfoBuilder_name,                      "getGcInfoBuilder")                                        \

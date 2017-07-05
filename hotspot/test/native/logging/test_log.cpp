@@ -41,14 +41,14 @@ size_t Test_log_prefix_prefixer(char* buf, size_t len) {
 }
 
 #ifdef ASSERT // 'test' tag is debug only
-TEST_F(LogTest, prefix) {
+TEST_VM_F(LogTest, prefix) {
   set_log_config(TestLogFileName, "logging+test=trace");
   log_trace(logging, test)(LOG_LINE_STR);
   EXPECT_TRUE(file_contains_substring(TestLogFileName, LOG_PREFIX_STR LOG_LINE_STR));
 }
 #endif
 
-TEST_F(LogTest, large_message) {
+TEST_VM_F(LogTest, large_message) {
   char big_msg[4096] = {0};
   char Xchar = '~';
 
@@ -68,7 +68,7 @@ TEST_F(LogTest, large_message) {
   EXPECT_EQ(sizeof(big_msg) - 1, count);
 }
 
-TEST_F(LogTest, enabled_logtarget) {
+TEST_VM_F(LogTest, enabled_logtarget) {
   set_log_config(TestLogFileName, "gc=debug");
 
   LogTarget(Debug, gc) log;
@@ -80,7 +80,7 @@ TEST_F(LogTest, enabled_logtarget) {
   EXPECT_TRUE(file_contains_substring(TestLogFileName, LOG_TEST_STRING_LITERAL));
 }
 
-TEST_F(LogTest, disabled_logtarget) {
+TEST_VM_F(LogTest, disabled_logtarget) {
   set_log_config(TestLogFileName, "gc=info");
 
   LogTarget(Debug, gc) log;
@@ -95,7 +95,7 @@ TEST_F(LogTest, disabled_logtarget) {
   EXPECT_FALSE(file_contains_substring(TestLogFileName, LOG_TEST_STRING_LITERAL));
 }
 
-TEST_F(LogTest, enabled_loghandle) {
+TEST_VM_F(LogTest, enabled_loghandle) {
   set_log_config(TestLogFileName, "gc=debug");
 
   Log(gc) log;
@@ -109,7 +109,7 @@ TEST_F(LogTest, enabled_loghandle) {
   EXPECT_TRUE(file_contains_substring(TestLogFileName, "3 workers"));
 }
 
-TEST_F(LogTest, disabled_loghandle) {
+TEST_VM_F(LogTest, disabled_loghandle) {
   set_log_config(TestLogFileName, "gc=info");
 
   Log(gc) log;
@@ -126,7 +126,7 @@ TEST_F(LogTest, disabled_loghandle) {
   EXPECT_FALSE(file_contains_substring(TestLogFileName, "3 workers"));
 }
 
-TEST_F(LogTest, enabled_logtargethandle) {
+TEST_VM_F(LogTest, enabled_logtargethandle) {
   set_log_config(TestLogFileName, "gc=debug");
 
   LogTarget(Debug, gc) log;
@@ -140,7 +140,7 @@ TEST_F(LogTest, enabled_logtargethandle) {
   EXPECT_TRUE(file_contains_substring(TestLogFileName, "3 workers"));
 }
 
-TEST_F(LogTest, disabled_logtargethandle) {
+TEST_VM_F(LogTest, disabled_logtargethandle) {
   set_log_config(TestLogFileName, "gc=info");
 
   LogTarget(Debug, gc) log;

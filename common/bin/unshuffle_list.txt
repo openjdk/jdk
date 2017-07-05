@@ -60,7 +60,7 @@ jaxp/src/java.xml/share/classes/org/xml/sax : jaxp/src/org/xml/sax
 jaxws/src/java.activation/share/classes/com/sun/activation/registries : jaxws/src/share/jaf_classes/com/sun/activation/registries
 jaxws/src/java.activation/share/classes/javax/activation : jaxws/src/share/jaf_classes/javax/activation
 jaxws/src/java.activation/share/classes/META-INF : jaxws/src/share/jaf_classes/META-INF
-jaxws/src/java.annotations.common/share/classes/javax/annotation : jaxws/src/share/jaxws_classes/javax/annotation
+jaxws/src/java.xml.ws.annotation/share/classes/javax/annotation : jaxws/src/share/jaxws_classes/javax/annotation
 jaxws/src/java.xml.bind/share/classes/com/sun/istack/internal : jaxws/src/share/jaxws_classes/com/sun/istack/internal
 jaxws/src/java.xml.bind/share/classes/com/sun/istack/internal/localization : jaxws/src/share/jaxws_classes/com/sun/istack/internal/localization
 jaxws/src/java.xml.bind/share/classes/com/sun/istack/internal/logging/Logger.java : jaxws/src/share/jaxws_classes/com/sun/istack/internal/logging/Logger.java
@@ -1163,9 +1163,6 @@ jdk/src/java.management/share/classes/mgmt-overview.html : jdk/src/share/classes
 jdk/src/java.management/share/classes/sun/management/counter : jdk/src/share/classes/sun/management/counter
 jdk/src/java.management/share/classes/sun/management/counter/perf : jdk/src/share/classes/sun/management/counter/perf
 jdk/src/java.management/share/classes/sun/management : jdk/src/share/classes/sun/management
-jdk/src/java.management/share/classes/sun/management/jdp : jdk/src/share/classes/sun/management/jdp
-jdk/src/java.management/share/classes/sun/management/jmxremote : jdk/src/share/classes/sun/management/jmxremote
-jdk/src/java.management/share/classes/sun/management/resources : jdk/src/share/classes/sun/management/resources
 jdk/src/java.management/share/conf : jdk/src/share/lib/management
 jdk/src/java.management/share/native/include/jmm.h : jdk/src/share/javavm/export/jmm.h
 jdk/src/java.management/share/native/libmanagement : jdk/src/share/native/sun/management
@@ -1173,6 +1170,11 @@ jdk/src/java.management/unix/classes/sun/management : jdk/src/solaris/classes/su
 jdk/src/java.management/unix/native/libmanagement : jdk/src/solaris/native/sun/management
 jdk/src/java.management/windows/classes/sun/management : jdk/src/windows/classes/sun/management
 jdk/src/java.management/windows/native/libmanagement : jdk/src/windows/native/sun/management
+jdk/src/java.management.rmi/share/classes/com/sun/jmx/remote/internal/rmi/ProxyRef.java : jdk/src/share/classes/com/sun/jmx/remote/internal/ProxyRef.java
+jdk/src/java.management.rmi/share/classes/com/sun/jmx/remote/internal/rmi/RMIExporter.java : jdk/src/share/classes/com/sun/jmx/remote/internal/RMIExporter.java
+jdk/src/java.management.rmi/share/classes/com/sun/jmx/remote/internal/rmi/Unmarshal.java : jdk/src/share/classes/com/sun/jmx/remote/internal/Unmarshal.java
+jdk/src/java.management.rmi/share/classes/com/sun/jmx/remote/protocol/rmi : jdk/src/share/classes/com/sun/jmx/remote/protocol/rmi
+jdk/src/java.management.rmi/share/classes/javax/management/remote/rmi : jdk/src/share/classes/javax/management/remote/rmi
 jdk/src/java.naming/share/classes/com/sun/jndi/ldap/ext : jdk/src/share/classes/com/sun/jndi/ldap/ext
 jdk/src/java.naming/share/classes/com/sun/jndi/ldap : jdk/src/share/classes/com/sun/jndi/ldap
 jdk/src/java.naming/share/classes/com/sun/jndi/ldap/pool : jdk/src/share/classes/com/sun/jndi/ldap/pool
@@ -1330,9 +1332,9 @@ jdk/src/jdk.jdwp.agent/unix/native/libdt_socket : jdk/src/solaris/transport/sock
 jdk/src/jdk.jdwp.agent/unix/native/libjdwp : jdk/src/solaris/back
 jdk/src/jdk.jdwp.agent/windows/native/libdt_socket : jdk/src/windows/transport/socket
 jdk/src/jdk.jdwp.agent/windows/native/libjdwp : jdk/src/windows/back
-jdk/src/jdk.jvmstat/share/classes/sun/jvmstat/monitor : jdk/src/share/classes/sun/jvmstat/monitor
-jdk/src/jdk.jvmstat/share/classes/sun/jvmstat/perfdata : jdk/src/share/classes/sun/jvmstat/perfdata
-jdk/src/jdk.jvmstat/share/classes/sun/tools/jstatd : jdk/src/share/classes/sun/tools/jstatd
+jdk/src/jdk.internal.jvmstat/share/classes/sun/jvmstat/monitor : jdk/src/share/classes/sun/jvmstat/monitor
+jdk/src/jdk.internal.jvmstat/share/classes/sun/jvmstat/perfdata : jdk/src/share/classes/sun/jvmstat/perfdata
+jdk/src/jdk.internal.jvmstat/share/classes/sun/tools/jstatd : jdk/src/share/classes/sun/tools/jstatd
 jdk/src/jdk.localedata/share/classes/sun/text/resources/ar : jdk/src/share/classes/sun/text/resources/ar
 jdk/src/jdk.localedata/share/classes/sun/text/resources/be : jdk/src/share/classes/sun/text/resources/be
 jdk/src/jdk.localedata/share/classes/sun/text/resources/bg : jdk/src/share/classes/sun/text/resources/bg
@@ -1421,6 +1423,9 @@ jdk/src/jdk.localedata/share/classes/sun/util/resources/uk : jdk/src/share/class
 jdk/src/jdk.localedata/share/classes/sun/util/resources/vi : jdk/src/share/classes/sun/util/resources/vi
 jdk/src/jdk.localedata/share/classes/sun/util/resources/zh : jdk/src/share/classes/sun/util/resources/zh
 jdk/src/jdk.management/share/classes/com/sun/management : jdk/src/share/classes/com/sun/management
+jdk/src/jdk.management.agent/share/classes/jdk/internal/agent/resources : jdk/src/share/classes/sun/management/resources
+jdk/src/jdk.management.agent/share/classes/sun/management/jmxremote : jdk/src/share/classes/sun/management/jmxremote
+jdk/src/jdk.management.agent/share/classes/sun/management/jdp : jdk/src/share/classes/sun/management/jdp
 jdk/src/jdk.naming.dns/share/classes/com/sun/jndi/dns : jdk/src/share/classes/com/sun/jndi/dns
 jdk/src/jdk.naming.dns/share/classes/com/sun/jndi/url/dns : jdk/src/share/classes/com/sun/jndi/url/dns
 jdk/src/jdk.naming.dns/share/classes/META-INF/services : jdk/src/share/classes/sun/net/spi/nameservice/dns/META-INF/services

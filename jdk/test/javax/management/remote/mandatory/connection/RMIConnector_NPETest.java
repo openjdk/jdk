@@ -26,7 +26,7 @@
  * @summary NPE IN RMIConnector.connect
  * @bug 6984520
  * @library /java/rmi/testlibrary
- * @modules java.management
+ * @modules java.management.rmi
  *          java.rmi/sun.rmi.registry
  *          java.rmi/sun.rmi.server
  *          java.rmi/sun.rmi.transport
@@ -75,4 +75,3 @@ public class RMIConnector_NPETest {
 
     }
 }
-

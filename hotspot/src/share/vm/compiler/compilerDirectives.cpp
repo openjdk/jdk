@@ -445,7 +445,9 @@ void DirectivesStack::init() {
   _default_directives->_c1_store->EnableOption = true;
 #endif
 #ifdef COMPILER2
-  _default_directives->_c2_store->EnableOption = true;
+  if (is_server_compilation_mode_vm()) {
+    _default_directives->_c2_store->EnableOption = true;
+  }
 #endif
   assert(error_msg == NULL, "Must succeed.");
   push(_default_directives);

@@ -26,7 +26,7 @@
  * @bug 8058865
  * @summary Test all MXBeans available by default on the platform
  * @author Olivier Lagneau
- * @modules java.management
+ * @modules java.management.rmi
  * @library /lib/testlibrary
  * @run main/othervm/timeout=300 -DDEBUG_STANDARD MXBeanInteropTest1
  */

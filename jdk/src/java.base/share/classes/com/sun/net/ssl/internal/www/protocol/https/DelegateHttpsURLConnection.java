@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,9 +52,8 @@ import sun.net.www.protocol.https.AbstractDelegateHttpsURLConnection;
  * of protocol implementation (this one)
  * com.sun.net.ssl.HttpURLConnection is used in the com.sun version.
  *
- * @deprecated This class is subject to removal in a future version of JDK.
  */
-@Deprecated(since="9", forRemoval=true)
+@Deprecated(since="9")
 @SuppressWarnings("deprecation") // HttpsURLConnection is deprecated
 public class DelegateHttpsURLConnection extends AbstractDelegateHttpsURLConnection {
 

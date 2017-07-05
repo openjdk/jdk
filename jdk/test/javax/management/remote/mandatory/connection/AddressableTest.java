@@ -26,7 +26,7 @@
  * @bug 6238815
  * @summary test the new interface Addressable
  * @author Shanliang JIANG
- * @modules java.management
+ * @modules java.management.rmi
  * @run clean AddressableTest
  * @run build AddressableTest
  * @run main AddressableTest

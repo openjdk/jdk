@@ -860,16 +860,39 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
                                                   bool throw_monitor_exception,
                                                   bool install_monitor_exception,
                                                   bool notify_jvmti) {
-
+  BLOCK_COMMENT("remove_activation {");
   unlock_if_synchronized_method(state, throw_monitor_exception, install_monitor_exception);
 
   // Save result (push state before jvmti call and pop it afterwards) and notify jvmti.
   notify_method_exit(false, state, notify_jvmti ? NotifyJVMTI : SkipNotifyJVMTI);
 
+  if (StackReservedPages > 0) {
+    BLOCK_COMMENT("reserved_stack_check:");
+    // Test if reserved zone needs to be enabled.
+    Label no_reserved_zone_enabling;
+
+    // Compare frame pointers. There is no good stack pointer, as with stack
+    // frame compression we can get different SPs when we do calls. A subsequent
+    // call could have a smaller SP, so that this compare succeeds for an
+    // inner call of the method annotated with ReservedStack.
+    z_lg(Z_R0, Address(Z_SP, (intptr_t)_z_abi(callers_sp)));
+    z_clg(Z_R0, Address(Z_thread, JavaThread::reserved_stack_activation_offset())); // Compare with frame pointer in memory.
+    z_brl(no_reserved_zone_enabling);
+
+    // Enable reserved zone again, throw stack overflow exception.
+    call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::enable_stack_reserved_zone), Z_thread);
+    call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::throw_delayed_StackOverflowError));
+
+    should_not_reach_here();
+
+    bind(no_reserved_zone_enabling);
+  }
+
   verify_oop(Z_tos, state);
   verify_thread();
 
   pop_interpreter_frame(return_pc, Z_ARG2, Z_ARG3);
+  BLOCK_COMMENT("} remove_activation");
 }
 
 // lock object

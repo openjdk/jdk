@@ -85,7 +85,6 @@ Method::Method(ConstMethod* xconst, AccessFlags access_flags) {
   set_constMethod(xconst);
   set_access_flags(access_flags);
   set_intrinsic_id(vmIntrinsics::_none);
-  set_jfr_towrite(false);
   set_force_inline(false);
   set_hidden(false);
   set_dont_inline(false);

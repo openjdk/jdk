@@ -401,30 +401,67 @@ JVM_DefineClassWithSource(JNIEnv *env, const char *name, jobject loader,
  * Module support funcions
  */
 
+/*
+ * Define a module with the specified packages and bind the module to the
+ * given class loader.
+ *  module:       module to define
+ *  is_open:      specifies if module is open (currently ignored)
+ *  version:      the module version
+ *  location:     the module location
+ *  packages:     list of packages in the module
+ *  num_packages: number of packages in the module
+ */
 JNIEXPORT void JNICALL
 JVM_DefineModule(JNIEnv *env, jobject module, jboolean is_open, jstring version,
-                 jstring location, jobjectArray packages);
+                 jstring location, const char* const* packages, jsize num_packages);
 
+/*
+ * Set the boot loader's unnamed module.
+ *  module: boot loader's unnamed module
+ */
 JNIEXPORT void JNICALL
 JVM_SetBootLoaderUnnamedModule(JNIEnv *env, jobject module);
 
+/*
+ * Do a qualified export of a package.
+ *  from_module: module containing the package to export
+ *  package:     name of the package to export
+ *  to_module:   module to export the package to
+ */
 JNIEXPORT void JNICALL
-JVM_AddReadsModule(JNIEnv *env, jobject from_module, jobject to_module);
+JVM_AddModuleExports(JNIEnv *env, jobject from_module, const char* package, jobject to_module);
 
+/*
+ * Do an export of a package to all unnamed modules.
+ *  from_module: module containing the package to export
+ *  package:     name of the package to export to all unnamed modules
+ */
 JNIEXPORT void JNICALL
-JVM_AddModuleExports(JNIEnv *env, jobject from_module, jstring package, jobject to_module);
+JVM_AddModuleExportsToAllUnnamed(JNIEnv *env, jobject from_module, const char* package);
 
+/*
+ * Do an unqualified export of a package.
+ *  from_module: module containing the package to export
+ *  package:     name of the package to export
+ */
 JNIEXPORT void JNICALL
-JVM_AddModuleExportsToAll(JNIEnv *env, jobject from_module, jstring package);
+JVM_AddModuleExportsToAll(JNIEnv *env, jobject from_module, const char* package);
 
+/*
+ * Add a module to the list of modules that a given module can read.
+ *  from_module:   module requesting read access
+ *  source_module: module that from_module wants to read
+ */
 JNIEXPORT void JNICALL
-JVM_AddModuleExportsToAllUnnamed(JNIEnv *env, jobject from_module, jstring package);
+JVM_AddReadsModule(JNIEnv *env, jobject from_module, jobject source_module);
 
+/*
+ * Add a package to a module.
+ *  module:  module that will contain the package
+ *  package: package to add to the module
+ */
 JNIEXPORT void JNICALL
-JVM_AddModulePackage(JNIEnv* env,  jobject module, jstring package);
-
-JNIEXPORT jobject JNICALL
-JVM_GetModuleByPackageName(JNIEnv *env, jobject cl, jstring pkg);
+JVM_AddModulePackage(JNIEnv* env,  jobject module, const char* package);
 
 /*
  * Reflection support functions

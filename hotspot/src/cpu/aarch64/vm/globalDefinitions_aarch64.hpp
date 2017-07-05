@@ -53,4 +53,6 @@ const bool CCallingConventionRequiresIntsAsLongs = false;
 // evidence that it's worth doing.
 #define DEOPTIMIZE_WHEN_PATCHING
 
+#define SUPPORT_RESERVED_STACK_AREA
+
 #endif // CPU_AARCH64_VM_GLOBALDEFINITIONS_AARCH64_HPP

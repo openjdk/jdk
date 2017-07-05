@@ -1085,7 +1085,7 @@ public:
   void movdqu(Address     dst, XMMRegister src);
   void movdqu(XMMRegister dst, Address src);
   void movdqu(XMMRegister dst, XMMRegister src);
-  void movdqu(XMMRegister dst, AddressLiteral src);
+  void movdqu(XMMRegister dst, AddressLiteral src, Register scratchReg = rscratch1);
   // AVX Unaligned forms
   void vmovdqu(Address     dst, XMMRegister src);
   void vmovdqu(XMMRegister dst, Address src);

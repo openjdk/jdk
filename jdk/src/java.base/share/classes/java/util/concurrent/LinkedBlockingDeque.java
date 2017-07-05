@@ -45,6 +45,7 @@ import java.util.Spliterators;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 /**
  * An optionally-bounded {@linkplain BlockingDeque blocking deque} based on
@@ -63,9 +64,8 @@ import java.util.function.Consumer;
  * contains}, {@link #iterator iterator.remove()}, and the bulk
  * operations, all of which run in linear time.
  *
- * <p>This class and its iterator implement all of the
- * <em>optional</em> methods of the {@link Collection} and {@link
- * Iterator} interfaces.
+ * <p>This class and its iterator implement all of the <em>optional</em>
+ * methods of the {@link Collection} and {@link Iterator} interfaces.
  *
  * <p>This class is a member of the
  * <a href="{@docRoot}/../technotes/guides/collections/index.html">
@@ -195,18 +195,7 @@ public class LinkedBlockingDeque<E>
      */
     public LinkedBlockingDeque(Collection<? extends E> c) {
         this(Integer.MAX_VALUE);
-        final ReentrantLock lock = this.lock;
-        lock.lock(); // Never contended, but necessary for visibility
-        try {
-            for (E e : c) {
-                if (e == null)
-                    throw new NullPointerException();
-                if (!linkLast(new Node<E>(e)))
-                    throw new IllegalStateException("Deque full");
-            }
-        } finally {
-            lock.unlock();
-        }
+        addAll(c);
     }
 
 
@@ -299,6 +288,7 @@ public class LinkedBlockingDeque<E>
      */
     void unlink(Node<E> x) {
         // assert lock.isHeldByCurrentThread();
+        // assert x.item != null;
         Node<E> p = x.prev;
         Node<E> n = x.next;
         if (p == null) {
@@ -834,46 +824,65 @@ public class LinkedBlockingDeque<E>
         }
     }
 
-    /*
-     * TODO: Add support for more efficient bulk operations.
+    /**
+     * Appends all of the elements in the specified collection to the end of
+     * this deque, in the order that they are returned by the specified
+     * collection's iterator.  Attempts to {@code addAll} of a deque to
+     * itself result in {@code IllegalArgumentException}.
      *
-     * We don't want to acquire the lock for every iteration, but we
-     * also want other threads a chance to interact with the
-     * collection, especially when count is close to capacity.
+     * @param c the elements to be inserted into this deque
+     * @return {@code true} if this deque changed as a result of the call
+     * @throws NullPointerException if the specified collection or any
+     *         of its elements are null
+     * @throws IllegalArgumentException if the collection is this deque
+     * @throws IllegalStateException if this deque is full
+     * @see #add(Object)
      */
+    public boolean addAll(Collection<? extends E> c) {
+        if (c == this)
+            // As historically specified in AbstractQueue#addAll
+            throw new IllegalArgumentException();
 
-//     /**
-//      * Adds all of the elements in the specified collection to this
-//      * queue.  Attempts to addAll of a queue to itself result in
-//      * {@code IllegalArgumentException}. Further, the behavior of
-//      * this operation is undefined if the specified collection is
-//      * modified while the operation is in progress.
-//      *
-//      * @param c collection containing elements to be added to this queue
-//      * @return {@code true} if this queue changed as a result of the call
-//      * @throws ClassCastException            {@inheritDoc}
-//      * @throws NullPointerException          {@inheritDoc}
-//      * @throws IllegalArgumentException      {@inheritDoc}
-//      * @throws IllegalStateException if this deque is full
-//      * @see #add(Object)
-//      */
-//     public boolean addAll(Collection<? extends E> c) {
-//         if (c == null)
-//             throw new NullPointerException();
-//         if (c == this)
-//             throw new IllegalArgumentException();
-//         final ReentrantLock lock = this.lock;
-//         lock.lock();
-//         try {
-//             boolean modified = false;
-//             for (E e : c)
-//                 if (linkLast(e))
-//                     modified = true;
-//             return modified;
-//         } finally {
-//             lock.unlock();
-//         }
-//     }
+        // Copy c into a private chain of Nodes
+        Node<E> beg = null, end = null;
+        int n = 0;
+        for (E e : c) {
+            Objects.requireNonNull(e);
+            n++;
+            Node<E> newNode = new Node<E>(e);
+            if (beg == null)
+                beg = end = newNode;
+            else {
+                end.next = newNode;
+                newNode.prev = end;
+                end = newNode;
+            }
+        }
+        if (beg == null)
+            return false;
+
+        // Atomically append the chain at the end
+        final ReentrantLock lock = this.lock;
+        lock.lock();
+        try {
+            if (count + n <= capacity) {
+                beg.prev = last;
+                if (first == null)
+                    first = beg;
+                else
+                    last.next = beg;
+                last = end;
+                count += n;
+                notEmpty.signalAll();
+                return true;
+            }
+        } finally {
+            lock.unlock();
+        }
+        // Fall back to historic non-atomic implementation, failing
+        // with IllegalStateException when the capacity is exceeded.
+        return super.addAll(c);
+    }
 
     /**
      * Returns an array containing all of the elements in this deque, in
@@ -992,7 +1001,9 @@ public class LinkedBlockingDeque<E>
      * - (possibly multiple) interior removed nodes (p.item == null)
      */
     Node<E> succ(Node<E> p) {
-        return (p == (p = p.next)) ? first : p;
+        if (p == (p = p.next))
+            p = first;
+        return p;
     }
 
     /**
@@ -1049,7 +1060,9 @@ public class LinkedBlockingDeque<E>
         abstract Node<E> nextNode(Node<E> n);
 
         private Node<E> succ(Node<E> p) {
-            return (p == (p = nextNode(p))) ? firstNode() : p;
+            if (p == (p = nextNode(p)))
+                p = firstNode();
+            return p;
         }
 
         AbstractItr() {
@@ -1096,7 +1109,7 @@ public class LinkedBlockingDeque<E>
             lastRet = p;
             next = null;
             final ReentrantLock lock = LinkedBlockingDeque.this.lock;
-            final int batchSize = 32;
+            final int batchSize = 64;
             Object[] es = null;
             int n, len = 1;
             do {
@@ -1175,11 +1188,10 @@ public class LinkedBlockingDeque<E>
 
         public Spliterator<E> trySplit() {
             Node<E> h;
-            int b = batch;
-            int n = (b <= 0) ? 1 : (b >= MAX_BATCH) ? MAX_BATCH : b + 1;
             if (!exhausted &&
                 ((h = current) != null || (h = first) != null)
                 && h.next != null) {
+                int n = batch = Math.min(batch + 1, MAX_BATCH);
                 Object[] a = new Object[n];
                 final ReentrantLock lock = LinkedBlockingDeque.this.lock;
                 int i = 0;
@@ -1199,13 +1211,11 @@ public class LinkedBlockingDeque<E>
                 }
                 else if ((est -= i) < 0L)
                     est = 0L;
-                if (i > 0) {
-                    batch = i;
+                if (i > 0)
                     return Spliterators.spliterator
                         (a, 0, i, (Spliterator.ORDERED |
                                    Spliterator.NONNULL |
                                    Spliterator.CONCURRENT));
-                }
             }
             return null;
         }
@@ -1223,7 +1233,8 @@ public class LinkedBlockingDeque<E>
                             e = p.item;
                             p = succ(p);
                         } while (e == null && p != null);
-                    exhausted = ((current = p) == null);
+                    if ((current = p) == null)
+                        exhausted = true;
                 } finally {
                     lock.unlock();
                 }
@@ -1288,7 +1299,7 @@ public class LinkedBlockingDeque<E>
         // Extract batches of elements while holding the lock; then
         // run the action on the elements while not
         final ReentrantLock lock = this.lock;
-        final int batchSize = 32;       // max number of elements per batch
+        final int batchSize = 64;       // max number of elements per batch
         Object[] es = null;             // container for batch of elements
         int n, len = 0;
         do {
@@ -1312,6 +1323,83 @@ public class LinkedBlockingDeque<E>
                 action.accept(e);
             }
         } while (n > 0 && p != null);
+    }
+
+    /**
+     * @throws NullPointerException {@inheritDoc}
+     */
+    public boolean removeIf(Predicate<? super E> filter) {
+        Objects.requireNonNull(filter);
+        return bulkRemove(filter);
+    }
+
+    /**
+     * @throws NullPointerException {@inheritDoc}
+     */
+    public boolean removeAll(Collection<?> c) {
+        Objects.requireNonNull(c);
+        return bulkRemove(e -> c.contains(e));
+    }
+
+    /**
+     * @throws NullPointerException {@inheritDoc}
+     */
+    public boolean retainAll(Collection<?> c) {
+        Objects.requireNonNull(c);
+        return bulkRemove(e -> !c.contains(e));
+    }
+
+    /** Implementation of bulk remove methods. */
+    @SuppressWarnings("unchecked")
+    private boolean bulkRemove(Predicate<? super E> filter) {
+        boolean removed = false;
+        Node<E> p = null;
+        final ReentrantLock lock = this.lock;
+        Node<E>[] nodes = null;
+        int n, len = 0;
+        do {
+            // 1. Extract batch of up to 64 elements while holding the lock.
+            long deathRow = 0;          // "bitset" of size 64
+            lock.lock();
+            try {
+                if (nodes == null) {
+                    if (p == null) p = first;
+                    for (Node<E> q = p; q != null; q = succ(q))
+                        if (q.item != null && ++len == 64)
+                            break;
+                    nodes = (Node<E>[]) new Node<?>[len];
+                }
+                for (n = 0; p != null && n < len; p = succ(p))
+                    nodes[n++] = p;
+            } finally {
+                lock.unlock();
+            }
+
+            // 2. Run the filter on the elements while lock is free.
+            for (int i = 0; i < n; i++) {
+                final E e;
+                if ((e = nodes[i].item) != null && filter.test(e))
+                    deathRow |= 1L << i;
+            }
+
+            // 3. Remove any filtered elements while holding the lock.
+            if (deathRow != 0) {
+                lock.lock();
+                try {
+                    for (int i = 0; i < n; i++) {
+                        final Node<E> q;
+                        if ((deathRow & (1L << i)) != 0L
+                            && (q = nodes[i]).item != null) {
+                            unlink(q);
+                            removed = true;
+                        }
+                    }
+                } finally {
+                    lock.unlock();
+                }
+            }
+        } while (n > 0 && p != null);
+        return removed;
     }
 
     /**

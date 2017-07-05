@@ -63,7 +63,7 @@ public class DoneMeansDone {
         final AtomicBoolean done = new AtomicBoolean(false);
         final AtomicReference<FutureTask<Boolean>> a = new AtomicReference<>();
         final CountDownLatch threadsStarted = new CountDownLatch(nThreads);
-        final Callable<Boolean> alwaysTrue = new Callable<Boolean>() {
+        final Callable<Boolean> alwaysTrue = new Callable<>() {
             public Boolean call() {
                 return true;
             }};
