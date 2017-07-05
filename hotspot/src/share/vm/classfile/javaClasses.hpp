@@ -1068,21 +1068,22 @@ class java_dyn_CallSite: AllStatic {
   friend class JavaClasses;
 
 private:
-  static int _type_offset;
   static int _target_offset;
-  static int _vmmethod_offset;
+  static int _caller_method_offset;
+  static int _caller_bci_offset;
 
   static void compute_offsets();
 
 public:
   // Accessors
-  static oop            type(oop site);
-
   static oop            target(oop site);
   static void       set_target(oop site, oop target);
 
-  static oop            vmmethod(oop site);
-  static void       set_vmmethod(oop site, oop ref);
+  static oop            caller_method(oop site);
+  static void       set_caller_method(oop site, oop ref);
+
+  static jint           caller_bci(oop site);
+  static void       set_caller_bci(oop site, jint bci);
 
   // Testers
   static bool is_subclass(klassOop klass) {
@@ -1094,8 +1095,8 @@ public:
 
   // Accessors for code generation:
   static int target_offset_in_bytes()           { return _target_offset; }
-  static int type_offset_in_bytes()             { return _type_offset; }
-  static int vmmethod_offset_in_bytes()         { return _vmmethod_offset; }
+  static int caller_method_offset_in_bytes()    { return _caller_method_offset; }
+  static int caller_bci_offset_in_bytes()       { return _caller_bci_offset; }
 };
 
 

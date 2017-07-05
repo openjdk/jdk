@@ -40,7 +40,7 @@ package java.util.zip;
  * <blockquote><pre>
  * try {
  *     // Encode a String into bytes
- *     String inputString = "blahblahblah\u20AC\u20AC";
+ *     String inputString = "blahblahblah";
  *     byte[] input = inputString.getBytes("UTF-8");
  *
  *     // Compress the bytes

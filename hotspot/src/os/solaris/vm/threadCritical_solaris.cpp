@@ -47,7 +47,8 @@ ThreadCritical::ThreadCritical() {
     thread_t owner = thr_self();
     if (global_mut_owner != owner) {
       if (os::Solaris::mutex_lock(&global_mut))
-        fatal1("ThreadCritical::ThreadCritical: mutex_lock failed (%s)", strerror(errno));
+        fatal(err_msg("ThreadCritical::ThreadCritical: mutex_lock failed (%s)",
+                      strerror(errno)));
       assert(global_mut_count == 0, "must have clean count");
       assert(global_mut_owner == -1, "must have clean owner");
     }
@@ -66,7 +67,8 @@ ThreadCritical::~ThreadCritical() {
     if (global_mut_count == 0) {
       global_mut_owner = -1;
       if (os::Solaris::mutex_unlock(&global_mut))
-        fatal1("ThreadCritical::~ThreadCritical: mutex_unlock failed (%s)", strerror(errno));
+        fatal(err_msg("ThreadCritical::~ThreadCritical: mutex_unlock failed "
+                      "(%s)", strerror(errno)));
     }
   } else {
     assert (Threads::number_of_threads() == 0, "valid only during initialization");

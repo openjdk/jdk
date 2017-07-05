@@ -149,7 +149,6 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   void push_i(     Register r = Otos_i);
   void push_ptr(   Register r = Otos_i);
-  void push_ptr(   Register r, Register tag);
   void push_l(     Register r = Otos_l1);
   void push_f(FloatRegister f = Ftos_f);
   void push_d(FloatRegister f = Ftos_d1);
@@ -159,17 +158,9 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void push(TosState state);           // transition state -> vtos
   void empty_expression_stack();       // resets both Lesp and SP
 
-  // Support for Tagged Stacks
-  void tag_stack(frame::Tag t, Register r);
-  void tag_stack(Register tag);
-  void tag_local(frame::Tag t, Register src, Register base, int n = 0);
-
 #ifdef ASSERT
   void verify_sp(Register Rsp, Register Rtemp);
   void verify_esp(Register Resp);      // verify that Lesp points to a word in the temp stack
-
-  void verify_stack_tag(frame::Tag t, Register r, Register scratch = G0);
-  void verify_local_tag(frame::Tag t, Register base, Register scr, int n = 0);
 #endif // ASSERT
 
  public:
@@ -191,8 +182,9 @@ class InterpreterMacroAssembler: public MacroAssembler {
                                   Register   Rdst,
                                   setCCOrNot should_set_CC = dont_set_CC );
 
-  void get_cache_and_index_at_bcp(Register cache, Register tmp, int bcp_offset);
-  void get_cache_entry_pointer_at_bcp(Register cache, Register tmp, int bcp_offset);
+  void get_cache_and_index_at_bcp(Register cache, Register tmp, int bcp_offset, bool giant_index = false);
+  void get_cache_entry_pointer_at_bcp(Register cache, Register tmp, int bcp_offset, bool giant_index = false);
+  void get_cache_index_at_bcp(Register cache, Register tmp, int bcp_offset, bool giant_index = false);
 
 
   // common code
@@ -241,17 +233,17 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void check_for_regarea_stomp( Register Rindex, int offset, Register Rlimit, Register Rscratch, Register Rscratch1);
 #endif // ASSERT
   void store_local_int( Register index, Register src );
-  void store_local_ptr( Register index, Register src, Register tag = Otos_l2 );
-  void store_local_ptr( int n, Register src, Register tag = Otos_l2 );
+  void store_local_ptr( Register index, Register src );
+  void store_local_ptr( int n, Register src );
   void store_local_long( Register index, Register src );
   void store_local_float( Register index, FloatRegister src );
   void store_local_double( Register index, FloatRegister src );
 
-  // Tagged stack helpers for swap and dup
-  void load_ptr_and_tag(int n, Register val, Register tag);
-  void store_ptr_and_tag(int n, Register val, Register tag);
+  // Helpers for swap and dup
+  void load_ptr(int n, Register val);
+  void store_ptr(int n, Register val);
 
-  // Tagged stack helper for getting receiver in register.
+  // Helper for getting receiver in register.
   void load_receiver(Register param_count, Register recv);
 
   static int top_most_monitor_byte_offset(); // offset in bytes to top of monitor block
@@ -304,7 +296,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void profile_not_taken_branch(Register scratch);
   void profile_call(Register scratch);
   void profile_final_call(Register scratch);
-  void profile_virtual_call(Register receiver, Register scratch);
+  void profile_virtual_call(Register receiver, Register scratch, bool receiver_can_be_null = false);
   void profile_ret(TosState state, Register return_bci, Register scratch);
   void profile_null_seen(Register scratch);
   void profile_typecheck(Register klass, Register scratch);

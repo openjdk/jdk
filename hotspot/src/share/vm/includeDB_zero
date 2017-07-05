@@ -61,6 +61,7 @@ stack_<arch>.inline.hpp                 thread.hpp
 
 stack_<arch>.cpp                        interpreterRuntime.hpp
 stack_<arch>.cpp                        stack_<arch>.hpp
+stack_<arch>.cpp                        stack_<arch>.inline.hpp
 
 stubGenerator_<arch>.cpp                stack_<arch>.inline.hpp
 

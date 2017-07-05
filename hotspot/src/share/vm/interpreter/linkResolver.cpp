@@ -138,6 +138,15 @@ void LinkResolver::resolve_klass_no_update(KlassHandle& result, constantPoolHand
 
 void LinkResolver::lookup_method_in_klasses(methodHandle& result, KlassHandle klass, symbolHandle name, symbolHandle signature, TRAPS) {
   methodOop result_oop = klass->uncached_lookup_method(name(), signature());
+  if (EnableMethodHandles && result_oop != NULL) {
+    switch (result_oop->intrinsic_id()) {
+    case vmIntrinsics::_invokeExact:
+    case vmIntrinsics::_invokeGeneric:
+    case vmIntrinsics::_invokeDynamic:
+      // Do not link directly to these.  The VM must produce a synthetic one using lookup_implicit_method.
+      return;
+    }
+  }
   result = methodHandle(THREAD, result_oop);
 }
 
@@ -163,12 +172,16 @@ void LinkResolver::lookup_method_in_interfaces(methodHandle& result, KlassHandle
   result = methodHandle(THREAD, ik->lookup_method_in_all_interfaces(name(), signature()));
 }
 
-void LinkResolver::lookup_implicit_method(methodHandle& result, KlassHandle klass, symbolHandle name, symbolHandle signature, TRAPS) {
+void LinkResolver::lookup_implicit_method(methodHandle& result,
+                                          KlassHandle klass, symbolHandle name, symbolHandle signature,
+                                          KlassHandle current_klass,
+                                          TRAPS) {
   if (EnableMethodHandles && MethodHandles::enabled() &&
-      name == vmSymbolHandles::invoke_name() && klass() == SystemDictionary::MethodHandle_klass()) {
-    methodOop result_oop = SystemDictionary::find_method_handle_invoke(signature,
-                                                                       Handle(),
-                                                                       Handle(),
+      klass() == SystemDictionary::MethodHandle_klass() &&
+      methodOopDesc::is_method_handle_invoke_name(name())) {
+    methodOop result_oop = SystemDictionary::find_method_handle_invoke(name,
+                                                                       signature,
+                                                                       current_klass,
                                                                        CHECK);
     if (result_oop != NULL) {
       assert(result_oop->is_method_handle_invoke() && result_oop->signature() == signature(), "consistent");
@@ -239,7 +252,7 @@ void LinkResolver::resolve_dynamic_method(methodHandle& resolved_method, KlassHa
   // The class is java.dyn.MethodHandle
   resolved_klass = SystemDictionaryHandles::MethodHandle_klass();
 
-  symbolHandle method_name = vmSymbolHandles::invoke_name();
+  symbolHandle method_name = vmSymbolHandles::invokeExact_name();
 
   symbolHandle method_signature(THREAD, pool->signature_ref_at(index));
   KlassHandle  current_klass   (THREAD, pool->pool_holder());
@@ -279,7 +292,7 @@ void LinkResolver::resolve_method(methodHandle& resolved_method, KlassHandle res
 
     if (resolved_method.is_null()) {
       // JSR 292:  see if this is an implicitly generated method MethodHandle.invoke(*...)
-      lookup_implicit_method(resolved_method, resolved_klass, method_name, method_signature, CHECK);
+      lookup_implicit_method(resolved_method, resolved_klass, method_name, method_signature, current_klass, CHECK);
     }
 
     if (resolved_method.is_null()) {
@@ -1041,13 +1054,14 @@ void LinkResolver::resolve_invokedynamic(CallInfo& result, constantPoolHandle po
 
   // At this point, we only need the signature, and can ignore the name.
   symbolHandle method_signature(THREAD, pool->signature_ref_at(raw_index));  // raw_index works directly
-  symbolHandle method_name = vmSymbolHandles::invoke_name();
+  symbolHandle method_name = vmSymbolHandles::invokeExact_name();
   KlassHandle resolved_klass = SystemDictionaryHandles::MethodHandle_klass();
 
-  // JSR 292:  this must be an implicitly generated method MethodHandle.invoke(*...)
+  // JSR 292:  this must be an implicitly generated method MethodHandle.invokeExact(*...)
   // The extra MH receiver will be inserted into the stack on every call.
   methodHandle resolved_method;
-  lookup_implicit_method(resolved_method, resolved_klass, method_name, method_signature, CHECK);
+  KlassHandle current_klass(THREAD, pool->pool_holder());
+  lookup_implicit_method(resolved_method, resolved_klass, method_name, method_signature, current_klass, CHECK);
   if (resolved_method.is_null()) {
     THROW(vmSymbols::java_lang_InternalError());
   }

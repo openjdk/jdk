@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,8 @@
   // fail with a guarantee ("not enough space for interpreter generation");
   // if too small.
   // Run with +PrintInterpreter to get the VM to print out the size.
-  // Max size with JVMTI and TaggedStackInterpreter
+  // Max size with JVMTI
+
 #ifdef _LP64
   // The sethi() instruction generates lots more instructions when shell
   // stack limit is unlimited, so that's why this is much bigger.
