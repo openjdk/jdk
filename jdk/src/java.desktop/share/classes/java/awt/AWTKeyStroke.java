@@ -83,7 +83,7 @@ public class AWTKeyStroke implements Serializable {
     /*
      * Reads keystroke class from AppContext and if null, puts there the
      * AWTKeyStroke class.
-     * Must be called under locked AWTKeyStro
+     * Must be called under locked AWTKeyStroke
      */
     private static Class<AWTKeyStroke> getAWTKeyStrokeClass() {
         @SuppressWarnings("unchecked")
@@ -225,7 +225,7 @@ public class AWTKeyStroke implements Serializable {
         }
     }
 
-    /* returns noarg Constructor for class with accessible flag. No security
+    /* returns no-arg Constructor for class with accessible flag. No security
        threat as accessible flag is set only for this Constructor object,
        not for Class constructor.
      */

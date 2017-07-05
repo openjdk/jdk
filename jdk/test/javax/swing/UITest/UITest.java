@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,11 +28,14 @@
  *          GTK is not on Windows and Mac.
  * added as tabs
  * @author Scott Violet
+ * @library ../../../lib/testlibrary
+ * @build jdk.testlibrary.OSInfo
+ * @run main UITest
  */
 import javax.swing.*;
 import javax.swing.UIManager.LookAndFeelInfo;
-import sun.awt.OSInfo;
-import sun.awt.OSInfo.OSType;
+import jdk.testlibrary.OSInfo;
+import jdk.testlibrary.OSInfo.OSType;
 
 public class UITest {
 

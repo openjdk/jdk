@@ -35,6 +35,7 @@ import java.awt.*;
 import java.awt.datatransfer.*;
 import sun.awt.datatransfer.*;
 import sun.awt.datatransfer.DataTransferer.ReencodingInputStream;
+import sun.datatransfer.DataFlavorUtil;
 
 public class SuplementaryCharactersTransferTest {
 
@@ -46,7 +47,7 @@ public class SuplementaryCharactersTransferTest {
         dataTransferer.registerTextFlavorProperties("UNICODE TEXT", "utf-16le", "\r\n", "2");
         ByteTransferable transferable = new ByteTransferable();
         ReencodingInputStream is = dataTransferer.new ReencodingInputStream(transferable.getByteInputStream(), TEXT_FORMAT,
-                DataTransferer.getTextCharset(transferable.getDataFlavor()), transferable);
+                DataFlavorUtil.getTextCharset(transferable.getDataFlavor()), transferable);
 
         byte[] bytes = transferable.getBytes();
         byte[] result = new byte[bytes.length];
@@ -162,3 +163,4 @@ public class SuplementaryCharactersTransferTest {
         }
     }
 }
+

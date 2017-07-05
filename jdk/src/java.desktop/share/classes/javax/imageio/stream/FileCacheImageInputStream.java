@@ -87,7 +87,7 @@ public class FileCacheImageInputStream extends ImageInputStreamImpl {
      * <code>null</code>.
      * @exception IllegalArgumentException if <code>cacheDir</code> is
      * non-<code>null</code> but is not a directory.
-     * @exception IOException if a cache file cannot be created.
+     * @throws IOException if a cache file cannot be created.
      */
     public FileCacheImageInputStream(InputStream stream, File cacheDir)
         throws IOException {
@@ -122,6 +122,9 @@ public class FileCacheImageInputStream extends ImageInputStreamImpl {
      * or the end of the source is reached.  The return value
      * is equal to the smaller of <code>pos</code> and the
      * length of the source file.
+     *
+     * @throws IOException if an I/O error occurs while reading from the
+     * source file
      */
     private long readUntil(long pos) throws IOException {
         // We've already got enough data cached
@@ -244,7 +247,7 @@ public class FileCacheImageInputStream extends ImageInputStreamImpl {
      * and removing the cache file.  The source <code>InputStream</code>
      * is not closed.
      *
-     * @exception IOException if an error occurs.
+     * @throws IOException if an error occurs.
      */
     public void close() throws IOException {
         super.close();

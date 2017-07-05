@@ -384,6 +384,10 @@ else
   # header file used by jdk.jdwp libs.
   jdk.jdwp.agent-libs: jdk.jdi-gensrc
 
+  # The swing beans need to have java base properly generated to avoid errors
+  # in javadoc.
+  java.desktop-gensrc: java.base-gensrc
+
   # Explicitly add dependencies for special targets
   java.base-java: unpack-sec
 

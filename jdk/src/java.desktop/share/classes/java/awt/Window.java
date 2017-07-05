@@ -684,7 +684,7 @@ public class Window extends Container implements Accessible {
      * appropriate dimensions from the beginning. If the list contains
      * several images of the same size, the first will be used.
      * <p>
-     * Ownerless windows with no icon specified use platfrom-default icon.
+     * Ownerless windows with no icon specified use platform-default icon.
      * The icon of an owned window may be inherited from the owner
      * unless explicitly overridden.
      * Setting the icon to {@code null} or empty list restores
@@ -1239,9 +1239,9 @@ public class Window extends Container implements Accessible {
     }
 
     // Should only be called while holding tree lock
-    void adjustDecendantsOnParent(int num) {
+    void adjustDescendantsOnParent(int num) {
         // do nothing since parent == owner and we shouldn't
-        // ajust counter on owner
+        // adjust counter on owner
     }
 
     /**

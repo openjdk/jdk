@@ -25,6 +25,12 @@
 # This makefile (sa.make) is included from the sa.make in the
 # build directories.
 
+define print_info
+  ifneq ($$(LOG_LEVEL), warn)
+    $$(shell echo >&2 "INFO: $1")
+  endif
+endef
+
 # This makefile is used to build Serviceability Agent java code
 # and generate JNI header file for native methods.
 
@@ -53,7 +59,7 @@ ifeq ($(ALT_SA_CLASSPATH),)
     endif
   endif
 else
-  _JUNK_ := $(shell echo >&2 "INFO: ALT_SA_CLASSPATH=$(ALT_SA_CLASSPATH)")
+  $(eval $(call print_info, "ALT_SA_CLASSPATH=$(ALT_SA_CLASSPATH)"))
   SA_CLASSPATH=$(shell test -f $(ALT_SA_CLASSPATH) && echo $(ALT_SA_CLASSPATH))
 endif
 
@@ -80,7 +86,7 @@ all:
 	fi
 
 $(GENERATED)/sa-jdi.jar: $(AGENT_FILES)
-	$(QUIETLY) echo "Making $@"
+	$(QUIETLY) echo $(LOG_INFO) "Making $@"
 	$(QUIETLY) if [ "$(BOOT_JAVA_HOME)" = "" ]; then \
 	  echo "ALT_BOOTDIR, BOOTDIR or JAVA_HOME needs to be defined to build SA"; \
 	  exit 1; \

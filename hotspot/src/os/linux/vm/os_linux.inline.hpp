@@ -263,4 +263,8 @@ inline bool os::supports_monotonic_clock() {
   return Linux::_clock_gettime != NULL;
 }
 
+inline void os::exit(int num) {
+  ::exit(num);
+}
+
 #endif // OS_LINUX_VM_OS_LINUX_INLINE_HPP

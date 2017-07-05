@@ -26,7 +26,6 @@
  * @bug 7158988
  * @key regression
  * @summary verify jvm does not crash while debugging
- * @ignore 8055145
  * @run compile TestPostFieldModification.java
  * @run main/othervm FieldMonitor
  * @author axel.siebenborn@sap.com
@@ -91,35 +90,41 @@ public class FieldMonitor {
     boolean connected = true;
     int watched = 0;
     while (connected) {
-      EventSet eventSet = eventQueue.remove();
-      for (Event event : eventSet) {
-        System.out.println("FieldMonitor-main receives: "+event);
-        if (event instanceof VMStartEvent) {
-          addClassWatch(vm);
-        } else if (event instanceof VMDeathEvent
-            || event instanceof VMDisconnectEvent) {
-          // exit
-          connected = false;
-        } else if (event instanceof ClassPrepareEvent) {
-          // watch field on loaded class
-          System.out.println("ClassPrepareEvent");
-          ClassPrepareEvent classPrepEvent = (ClassPrepareEvent) event;
-          ReferenceType refType = classPrepEvent
-              .referenceType();
-          addFieldWatch(vm, refType);
-        } else if (event instanceof ModificationWatchpointEvent) {
-          watched++;
-          System.out.println("sleep for 500 ms");
-          Thread.sleep(500);
+        try {
+            EventSet eventSet = eventQueue.remove();
+            for (Event event : eventSet) {
+              System.out.println("FieldMonitor-main receives: "+event);
+              if (event instanceof VMStartEvent) {
+                addClassWatch(vm);
+              } else if (event instanceof VMDeathEvent
+                  || event instanceof VMDisconnectEvent) {
+                // exit
+                connected = false;
+              } else if (event instanceof ClassPrepareEvent) {
+                // watch field on loaded class
+                System.out.println("ClassPrepareEvent");
+                ClassPrepareEvent classPrepEvent = (ClassPrepareEvent) event;
+                ReferenceType refType = classPrepEvent
+                    .referenceType();
+                addFieldWatch(vm, refType);
+              } else if (event instanceof ModificationWatchpointEvent) {
+                watched++;
+                System.out.println("sleep for 500 ms");
+                Thread.sleep(500);
 
-          ModificationWatchpointEvent modEvent = (ModificationWatchpointEvent) event;
-          System.out.println("old="
-              + modEvent.valueCurrent());
-          System.out.println("new=" + modEvent.valueToBe());
+                ModificationWatchpointEvent modEvent = (ModificationWatchpointEvent) event;
+                System.out.println("old="
+                    + modEvent.valueCurrent());
+                System.out.println("new=" + modEvent.valueToBe());
+              }
+            }
+            System.out.println("resume...");
+            eventSet.resume();
+        } catch (com.sun.jdi.VMDisconnectedException exc) {
+            // Guess this means it's not connected anymore,
+            // sometimes this happens and everything else hangs, just return.
+            return;
         }
-      }
-      System.out.println("resume...");
-      eventSet.resume();
     }
     // Shutdown begins when event thread terminates
     try {

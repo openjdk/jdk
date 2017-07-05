@@ -298,8 +298,8 @@ public final class JobAttributes implements Cloneable {
      * @param   defaultSelection <code>DefaultSelectionType.ALL</code>,
      *          <code>DefaultSelectionType.RANGE</code>, or
      *          <code>DefaultSelectionType.SELECTION</code>
-     * @param   destination <code>DesintationType.FILE</code> or
-     *          <code>DesintationType.PRINTER</code>
+     * @param   destination <code>DestinationType.FILE</code> or
+     *          <code>DestinationType.PRINTER</code>
      * @param   dialog <code>DialogType.COMMON</code>,
      *          <code>DialogType.NATIVE</code>, or
      *          <code>DialogType.NONE</code>
@@ -462,7 +462,7 @@ public final class JobAttributes implements Cloneable {
      * these attributes. This attribute is updated to the value chosen by the
      * user.
      *
-     * @return  DesintationType.FILE or DesintationType.PRINTER
+     * @return  DestinationType.FILE or DestinationType.PRINTER
      */
     public DestinationType getDestination() {
         return destination;
@@ -471,9 +471,9 @@ public final class JobAttributes implements Cloneable {
     /**
      * Specifies whether output will be to a printer or a file for jobs using
      * these attributes. Not specifying this attribute is equivalent to
-     * specifying DesintationType.PRINTER.
+     * specifying DestinationType.PRINTER.
      *
-     * @param   destination DesintationType.FILE or DesintationType.PRINTER.
+     * @param   destination DestinationType.FILE or DestinationType.PRINTER.
      * @throws  IllegalArgumentException if destination is null.
      */
     public void setDestination(DestinationType destination) {
