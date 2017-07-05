@@ -398,10 +398,10 @@ public class Window extends Container implements Accessible {
             initIDs();
         }
 
-        String s = (String) java.security.AccessController.doPrivileged(
+        String s = java.security.AccessController.doPrivileged(
             new GetPropertyAction("java.awt.syncLWRequests"));
         systemSyncLWRequests = (s != null && s.equals("true"));
-        s = (String) java.security.AccessController.doPrivileged(
+        s = java.security.AccessController.doPrivileged(
             new GetPropertyAction("java.awt.Window.locationByPlatform"));
         locationByPlatformProp = (s != null && s.equals("true"));
     }
@@ -1378,7 +1378,7 @@ public class Window extends Container implements Accessible {
                 // make sure the privileged action is only
                 // for getting the property! We don't want the
                 // above checkTopLevelWindow call to always succeed!
-                warningString = (String) AccessController.doPrivileged(
+                warningString = AccessController.doPrivileged(
                       new GetPropertyAction("awt.appletWarning",
                                             "Java Applet Window"));
             }

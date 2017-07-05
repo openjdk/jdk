@@ -37,21 +37,21 @@ package sun.nio.ch;
 // always returns -1 and the signal(long) method has no effect.
 
 
-class NativeThread {
+public class NativeThread {
 
     // Returns an opaque token representing the native thread underlying the
     // invoking Java thread.  On systems that do not require signalling, this
     // method always returns -1.
     //
-    static native long current();
+    public static native long current();
 
     // Signals the given native thread so as to release it from a blocking I/O
     // operation.  On systems that do not require signalling, this method has
     // no effect.
     //
-    static native void signal(long nt);
+    public static native void signal(long nt);
 
-    static native void init();
+    private static native void init();
 
     static {
         Util.load();

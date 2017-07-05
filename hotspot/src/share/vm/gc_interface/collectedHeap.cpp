@@ -62,7 +62,7 @@ void GCHeapLog::log_heap(bool before) {
     return;
   }
 
-  jlong timestamp = os::javaTimeNanos() / NANOSECS_PER_MILLISEC;
+  double timestamp = fetch_timestamp();
   MutexLockerEx ml(&_mutex, Mutex::_no_safepoint_check_flag);
   int index = compute_log_index();
   _records[index].thread = NULL; // Its the GC thread so it's not that interesting.
@@ -70,9 +70,9 @@ void GCHeapLog::log_heap(bool before) {
   _records[index].data.is_before = before;
   stringStream st(_records[index].data.buffer(), _records[index].data.size());
   if (before) {
-    Universe::print_heap_before_gc(&st);
+    Universe::print_heap_before_gc(&st, true);
   } else {
-    Universe::print_heap_after_gc(&st);
+    Universe::print_heap_after_gc(&st, true);
   }
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,13 +27,9 @@ package sun.management;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import javax.management.ObjectName;
 
-import com.sun.management.DiagnosticCommandInfo;
-import com.sun.management.DiagnosticCommandArgumentInfo;
 import com.sun.management.HotSpotDiagnosticMXBean;
 import com.sun.management.VMOption;
 
@@ -120,54 +116,7 @@ public class HotSpotDiagnostic implements HotSpotDiagnosticMXBean {
         }
     }
 
-    public List<String> getDiagnosticCommands() {
-        String[] commands = getDiagnosticCommands0();
-        return commands == null ? Collections.<String>emptyList() :
-            Arrays.asList(commands);
-    }
-
-    public DiagnosticCommandInfo getDiagnosticCommandInfo(String command) {
-        String[] array = new String[] { command };
-        return getDiagnosticCommandInfo0(array)[0];
-    }
-
-    public List<DiagnosticCommandInfo> getDiagnosticCommandInfo() {
-        String[] commands = getDiagnosticCommands0();
-        return Arrays.asList(getDiagnosticCommandInfo0(commands));
-    }
-
-    public List<DiagnosticCommandInfo> getDiagnosticCommandInfo(
-        List<String> commands) {
-        return Arrays.asList(getDiagnosticCommandInfo0(
-            commands.toArray(new String[commands.size()])));
-    }
-
-    public String execute(String command) {
-        Util.checkControlAccess();
-        return executeDiagnosticCommand0(command);
-    }
-
-    public String execute(String cmd, String... arguments) {
-        if(cmd == null) {
-            throw new NullPointerException("Missing command name");
-        }
-        StringBuilder sb = new StringBuilder();
-        sb.append(cmd);
-        sb.append(" ");
-        for(String arg : arguments) {
-            sb.append(arg);
-            sb.append(" ");
-        }
-        return execute(sb.toString());
-    }
-
     public ObjectName getObjectName() {
         return Util.newObjectName("com.sun.management:type=HotSpotDiagnostic");
     }
-
-    private native String[] getDiagnosticCommands0();
-    private native DiagnosticCommandInfo[] getDiagnosticCommandInfo0(
-        String[] commands) throws IllegalArgumentException;
-    private native String executeDiagnosticCommand0(String command)
-        throws IllegalArgumentException;
 }

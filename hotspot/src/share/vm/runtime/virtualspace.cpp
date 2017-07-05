@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -455,7 +455,7 @@ void ReservedSpace::release() {
 
 void ReservedSpace::protect_noaccess_prefix(const size_t size) {
   assert( (_noaccess_prefix != 0) == (UseCompressedOops && _base != NULL &&
-                                      (size_t(_base + _size) > OopEncodingHeapMax) &&
+                                      (Universe::narrow_oop_base() != NULL) &&
                                       Universe::narrow_oop_use_implicit_null_checks()),
          "noaccess_prefix should be used only with non zero based compressed oops");
 

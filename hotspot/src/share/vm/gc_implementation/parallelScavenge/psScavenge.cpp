@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/symbolTable.hpp"
+#include "code/codeCache.hpp"
 #include "gc_implementation/parallelScavenge/cardTableExtension.hpp"
 #include "gc_implementation/parallelScavenge/gcTaskManager.hpp"
 #include "gc_implementation/parallelScavenge/generationSizer.hpp"
@@ -100,7 +101,7 @@ public:
 
     // Weak refs may be visited more than once.
     if (PSScavenge::should_scavenge(p, _to_space)) {
-      PSScavenge::copy_and_push_safe_barrier(_promotion_manager, p);
+      PSScavenge::copy_and_push_safe_barrier<T, /*promote_immediately=*/false>(_promotion_manager, p);
     }
   }
   virtual void do_oop(oop* p)       { PSKeepAliveClosure::do_oop_work(p); }
@@ -214,36 +215,41 @@ void PSRefProcTaskExecutor::execute(EnqueueTask& task)
 //
 // Note that this method should only be called from the vm_thread while
 // at a safepoint!
-void PSScavenge::invoke() {
+bool PSScavenge::invoke() {
   assert(SafepointSynchronize::is_at_safepoint(), "should be at safepoint");
   assert(Thread::current() == (Thread*)VMThread::vm_thread(), "should be in vm thread");
   assert(!Universe::heap()->is_gc_active(), "not reentrant");
 
-  ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
+  ParallelScavengeHeap* const heap = (ParallelScavengeHeap*)Universe::heap();
   assert(heap->kind() == CollectedHeap::ParallelScavengeHeap, "Sanity");
 
   PSAdaptiveSizePolicy* policy = heap->size_policy();
   IsGCActiveMark mark;
 
-  bool scavenge_was_done = PSScavenge::invoke_no_policy();
+  const bool scavenge_done = PSScavenge::invoke_no_policy();
+  const bool need_full_gc = !scavenge_done ||
+    policy->should_full_GC(heap->old_gen()->free_in_bytes());
+  bool full_gc_done = false;
 
-  PSGCAdaptivePolicyCounters* counters = heap->gc_policy_counters();
-  if (UsePerfData)
-    counters->update_full_follows_scavenge(0);
-  if (!scavenge_was_done ||
-      policy->should_full_GC(heap->old_gen()->free_in_bytes())) {
-    if (UsePerfData)
-      counters->update_full_follows_scavenge(full_follows_scavenge);
+  if (UsePerfData) {
+    PSGCAdaptivePolicyCounters* const counters = heap->gc_policy_counters();
+    const int ffs_val = need_full_gc ? full_follows_scavenge : not_skipped;
+    counters->update_full_follows_scavenge(ffs_val);
+  }
+
+  if (need_full_gc) {
     GCCauseSetter gccs(heap, GCCause::_adaptive_size_policy);
     CollectorPolicy* cp = heap->collector_policy();
     const bool clear_all_softrefs = cp->should_clear_all_soft_refs();
 
     if (UseParallelOldGC) {
-      PSParallelCompact::invoke_no_policy(clear_all_softrefs);
+      full_gc_done = PSParallelCompact::invoke_no_policy(clear_all_softrefs);
     } else {
-      PSMarkSweep::invoke_no_policy(clear_all_softrefs);
+      full_gc_done = PSMarkSweep::invoke_no_policy(clear_all_softrefs);
     }
   }
+
+  return full_gc_done;
 }
 
 // This method contains no policy. You should probably
@@ -601,6 +607,8 @@ bool PSScavenge::invoke_no_policy() {
     COMPILER2_PRESENT(DerivedPointerTable::update_pointers());
 
     NOT_PRODUCT(reference_processor()->verify_no_references_recorded());
+
+    CodeCache::prune_scavenge_root_nmethods();
 
     // Re-verify object start arrays
     if (VerifyObjectStartArray &&

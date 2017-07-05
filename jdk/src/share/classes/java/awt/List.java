@@ -115,7 +115,7 @@ public class List extends Component implements ItemSelectable, Accessible {
      * @see #addItem(String)
      * @see #getItem(int)
      */
-    Vector      items = new Vector();
+    Vector<String>      items = new Vector<>();
 
     /**
      * This field will represent the number of visible rows in the
@@ -306,7 +306,7 @@ public class List extends Component implements ItemSelectable, Accessible {
     //       to insure that it cannot be overridden by client subclasses.
     //       DO NOT INVOKE CLIENT CODE ON THIS THREAD!
     final String getItemImpl(int index) {
-        return (String)items.elementAt(index);
+        return items.elementAt(index);
     }
 
     /**
@@ -415,7 +415,7 @@ public class List extends Component implements ItemSelectable, Accessible {
         if (peer != null) {
             peer.removeAll();
         }
-        items = new Vector();
+        items = new Vector<>();
         selected = new int[0];
     }
 
@@ -490,9 +490,9 @@ public class List extends Component implements ItemSelectable, Accessible {
     public synchronized int[] getSelectedIndexes() {
         ListPeer peer = (ListPeer)this.peer;
         if (peer != null) {
-            selected = ((ListPeer)peer).getSelectedIndexes();
+            selected = peer.getSelectedIndexes();
         }
-        return (int[])selected.clone();
+        return selected.clone();
     }
 
     /**
@@ -908,7 +908,7 @@ public class List extends Component implements ItemSelectable, Accessible {
      * @since 1.4
      */
     public synchronized ItemListener[] getItemListeners() {
-        return (ItemListener[])(getListeners(ItemListener.class));
+        return getListeners(ItemListener.class);
     }
 
     /**
@@ -975,7 +975,7 @@ public class List extends Component implements ItemSelectable, Accessible {
      * @since 1.4
      */
     public synchronized ActionListener[] getActionListeners() {
-        return (ActionListener[])(getListeners(ActionListener.class));
+        return getListeners(ActionListener.class);
     }
 
     /**

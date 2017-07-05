@@ -47,7 +47,6 @@ SUBDIRS_enterprise = crypto/provider jndi \
                      org rowset net/httpserver
 SUBDIRS_misc       = $(SCRIPT_SUBDIR) tracing servicetag nio demo
 
-# Omit mirror since it's built with the apt tool.
 SUBDIRS_tools      = tools
 
 include $(BUILDDIR)/common/Subdirs.gmk

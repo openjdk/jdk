@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,12 +46,17 @@ at the permission allows, and associated risks">
  * <tr>
  *   <td>control</td>
  *   <td>Ability to control the runtime characteristics of the Java virtual
- *       machine, for example, setting the -verbose:gc and -verbose:class flag,
- *       setting the threshold of a memory pool, and enabling and disabling
- *       the thread contention monitoring support.
+ *       machine, for example, enabling and disabling the verbose output for
+ *       the class loading or memory system, setting the threshold of a memory
+ *       pool, and enabling and disabling the thread contention monitoring
+ *       support. Some actions controlled by this permission can disclose
+ *       information about the running application, like the -verbose:class
+ *       flag.
  *   </td>
  *   <td>This allows an attacker to control the runtime characteristics
- *       of the Java virtual machine and cause the system to misbehave.
+ *       of the Java virtual machine and cause the system to misbehave. An
+ *       attacker can also access some information related to the running
+ *       application.
  *   </td>
  * </tr>
  * <tr>

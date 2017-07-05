@@ -181,7 +181,7 @@ class EPollSelectorImpl
             ((SelChImpl)selch).kill();
     }
 
-    void putEventOps(SelectionKeyImpl sk, int ops) {
+    public void putEventOps(SelectionKeyImpl sk, int ops) {
         if (closed)
             throw new ClosedSelectorException();
         pollWrapper.setInterest(sk.channel, ops);
