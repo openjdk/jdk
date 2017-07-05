@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 
 AC_DEFUN_ONCE([HELP_SETUP_DEPENDENCY_HELP],
 [
-  AC_CHECK_PROGS(PKGHANDLER, apt-get yum port pkgutil pkgadd)
+  AC_CHECK_PROGS(PKGHANDLER, apt-get yum brew port pkgutil pkgadd)
 ])
 
 AC_DEFUN([HELP_MSG_MISSING_DEPENDENCY],
@@ -46,6 +46,8 @@ AC_DEFUN([HELP_MSG_MISSING_DEPENDENCY],
         apt_help     $MISSING_DEPENDENCY ;;
       yum)
         yum_help     $MISSING_DEPENDENCY ;;
+      brew)
+        brew_help    $MISSING_DEPENDENCY ;;
       port)
         port_help    $MISSING_DEPENDENCY ;;
       pkgutil)
@@ -144,6 +146,17 @@ yum_help() {
       PKGHANDLER_COMMAND="sudo yum install ccache" ;;
     elf)
       PKGHANDLER_COMMAND="sudo yum install elfutils-libelf-devel" ;;
+  esac
+}
+
+brew_help() {
+  case $1 in
+    openjdk)
+      PKGHANDLER_COMMAND="brew cask install java" ;;
+    freetype)
+      PKGHANDLER_COMMAND="brew install freetype" ;;
+    ccache)
+      PKGHANDLER_COMMAND="brew install ccache" ;;
   esac
 }
 
