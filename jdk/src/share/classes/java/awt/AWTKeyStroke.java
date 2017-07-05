@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -329,6 +329,9 @@ public class AWTKeyStroke implements Serializable {
      * <li><code>java.awt.event.KeyEvent.VK_TAB</code>
      * <li><code>java.awt.event.KeyEvent.VK_SPACE</code>
      * </ul>
+     * Alternatively, the key code may be obtained by calling
+     * <code>java.awt.event.KeyEvent.getExtendedKeyCodeForChar</code>.
+     *
      * The modifiers consist of any combination of:<ul>
      * <li>java.awt.event.InputEvent.SHIFT_DOWN_MASK
      * <li>java.awt.event.InputEvent.CTRL_DOWN_MASK

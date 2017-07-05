@@ -51,7 +51,7 @@ public class ReferenceQueue<T> {
 
     static private class Lock { };
     private Lock lock = new Lock();
-    private Reference<? extends T> head = null;
+    private volatile Reference<? extends T> head = null;
     private long queueLength = 0;
 
     boolean enqueue(Reference<? extends T> r) { /* Called only by Reference class */
@@ -95,6 +95,8 @@ public class ReferenceQueue<T> {
      *          otherwise <code>null</code>
      */
     public Reference<? extends T> poll() {
+        if (head == null)
+            return null;
         synchronized (lock) {
             return reallyPoll();
         }

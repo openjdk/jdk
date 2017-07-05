@@ -28,7 +28,6 @@
 /* fieldIDs for Window fields that may be accessed from C */
 struct WindowIDs {
     jfieldID warningString;
-    jmethodID resetGCMID;
     jfieldID locationByPlatform;
     jfieldID isAutoRequestFocus;
 };

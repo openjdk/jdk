@@ -1226,7 +1226,7 @@ public class Dialog extends Window {
         synchronized (getTreeLock()) {
             if (keepBlockingEDT) {
                 keepBlockingEDT = false;
-                PeerEvent wakingEvent = new PeerEvent(this, new WakingRunnable(), PeerEvent.PRIORITY_EVENT);
+                PeerEvent wakingEvent = new PeerEvent(getToolkit(), new WakingRunnable(), PeerEvent.PRIORITY_EVENT);
                 AppContext curAppContext = AppContext.getAppContext();
                 if (showAppContext != curAppContext) {
                     // Wake up event dispatch thread on which the dialog was

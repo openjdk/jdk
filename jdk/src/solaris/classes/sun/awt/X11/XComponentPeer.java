@@ -35,6 +35,7 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
+import java.awt.GraphicsConfiguration;
 import java.awt.Image;
 import java.awt.Insets;
 import java.awt.KeyboardFocusManager;
@@ -76,11 +77,6 @@ import sun.java2d.pipe.Region;
 public class XComponentPeer extends XWindow implements ComponentPeer, DropTargetPeer,
     BackBufferCapsProvider
 {
-    /* FIX ME: these constants copied from java.awt.KeyboardFocusManager */
-    static final int SNFH_FAILURE = 0;
-    static final int SNFH_SUCCESS_HANDLED = 1;
-    static final int SNFH_SUCCESS_PROCEED = 2;
-
     private static final Logger log = Logger.getLogger("sun.awt.X11.XComponentPeer");
     private static final Logger buffersLog = Logger.getLogger("sun.awt.X11.XComponentPeer.multibuffer");
     private static final Logger focusLog = Logger.getLogger("sun.awt.X11.focus.XComponentPeer");
@@ -166,7 +162,7 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
         enableLog.log(Level.FINE, "Initial enable state: {0}", new Object[] {Boolean.valueOf(enabled)});
 
         if (target.isVisible()) {
-            show();
+            setVisible(true);
         }
     }
 
@@ -314,113 +310,27 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
         return null;
     }
 
-    /**
-     * Returns whether or not this component should be given focus on mouse click.
-     * Default implementation return whether or not this peer is "focusable"
-     * Descendants might want to override it to extend/restrict conditions at which this
-     * component should be focused by click (see MCanvasPeer and MPanelPeer)
-     */
-    protected boolean shouldFocusOnClick() {
-        return isFocusable();
-    }
-
-    /**
-     * Checks whether or not this component would be focused by native system if it would be allowed to do so.
-     * Currently it checks that it displayable, visible, enabled and focusable.
-     */
-    static boolean canBeFocusedByClick(Component component) {
-        if (component == null) {
-            return false;
-        } else {
-            return component.isDisplayable() && component.isVisible() && component.isEnabled() && component.isFocusable();
-        }
-    }
-
-    static Window getContainingWindow(Component comp) {
-        while (comp != null && !(comp instanceof Window)) {
-            comp = comp.getParent();
-        }
-
-        return (Window)comp;
-    }
-
-    static Method processSynchronousLightweightTransferMethod;
-    static boolean processSynchronousLightweightTransfer(Component heavyweight, Component descendant,
-                                                  boolean temporary, boolean focusedWindowChangeAllowed,
-                                                  long time)
-    {
-        try {
-            if (processSynchronousLightweightTransferMethod == null) {
-                processSynchronousLightweightTransferMethod =
-                    (Method)AccessController.doPrivileged(
-                        new PrivilegedExceptionAction() {
-                                public Object run() throws IllegalAccessException, NoSuchMethodException
-                                {
-                                    Method m = KeyboardFocusManager.class.
-                                        getDeclaredMethod("processSynchronousLightweightTransfer",
-                                                          new Class[] {Component.class, Component.class,
-                                                                       Boolean.TYPE, Boolean.TYPE,
-                                                                       Long.TYPE});
-                                    m.setAccessible(true);
-                                    return m;
-                                }
-                            });
-            }
-            Object[] params = new Object[] {
-                        heavyweight,
-                        descendant,
-                        Boolean.valueOf(temporary),
-                        Boolean.valueOf(focusedWindowChangeAllowed),
-                        Long.valueOf(time)
-                    };
-            return ((Boolean)processSynchronousLightweightTransferMethod.invoke(null, params)).booleanValue();
-        } catch (PrivilegedActionException pae) {
-            pae.printStackTrace();
-            return false;
-        } catch (IllegalAccessException iae) {
-            iae.printStackTrace();
-            return false;
-        } catch (IllegalArgumentException iaee) {
-            iaee.printStackTrace();
-            return false;
-        } catch (InvocationTargetException ite) {
-            ite.printStackTrace();
-            return false;
-        }
-    }
-
-    static Method requestFocusWithCause;
-
-    static void callRequestFocus(Component target, CausedFocusEvent.Cause cause) {
-        if (requestFocusWithCause == null) {
-            requestFocusWithCause = SunToolkit.getMethod(Component.class, "requestFocus", new Class[] {CausedFocusEvent.Cause.class});
-        }
-        if (requestFocusWithCause != null) {
-            try {
-                requestFocusWithCause.invoke(target, new Object[] {cause});
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
+    // TODO: consider moving it to KeyboardFocusManagerPeerImpl
     final public boolean requestFocus(Component lightweightChild, boolean temporary,
-                                      boolean focusedWindowChangeAllowed, long time, CausedFocusEvent.Cause cause)
+                                      boolean focusedWindowChangeAllowed, long time,
+                                      CausedFocusEvent.Cause cause)
     {
-        if (processSynchronousLightweightTransfer(target, lightweightChild, temporary,
+        if (XKeyboardFocusManagerPeer.
+            processSynchronousLightweightTransfer(target, lightweightChild, temporary,
                                                   focusedWindowChangeAllowed, time))
         {
             return true;
         }
 
-        int result = XKeyboardFocusManagerPeer
-            .shouldNativelyFocusHeavyweight(target, lightweightChild,
-                                            temporary, focusedWindowChangeAllowed, time, cause);
+        int result = XKeyboardFocusManagerPeer.
+            shouldNativelyFocusHeavyweight(target, lightweightChild,
+                                           temporary, focusedWindowChangeAllowed,
+                                           time, cause);
 
         switch (result) {
-          case SNFH_FAILURE:
+          case XKeyboardFocusManagerPeer.SNFH_FAILURE:
               return false;
-          case SNFH_SUCCESS_PROCEED:
+          case XKeyboardFocusManagerPeer.SNFH_SUCCESS_PROCEED:
               // Currently we just generate focus events like we deal with lightweight instead of calling
               // XSetInputFocus on native window
               if (focusLog.isLoggable(Level.FINER)) focusLog.finer("Proceeding with request to " +
@@ -433,7 +343,7 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
                * focus owner which had focus before WLF. So, we should not add request record for such requests
                * but store this component in mostRecent - and return true as before for compatibility.
                */
-              Window parentWindow = getContainingWindow(target);
+              Window parentWindow = SunToolkit.getContainingWindow(target);
               if (parentWindow == null) {
                   return rejectFocusRequestHelper("WARNING: Parent window is null");
               }
@@ -454,14 +364,13 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
               if (!(res && parentWindow.isFocused())) {
                   return rejectFocusRequestHelper("Waiting for asynchronous processing of the request");
               }
-
-              // NOTE: We simulate heavyweight behavior of Motif - component receives focus right
-              // after request, not after event. Normally, we should better listen for event
-              // by listeners.
-              return XKeyboardFocusManagerPeer.simulateMotifRequestFocus(lightweightChild, target, temporary,
-                                                                         focusedWindowChangeAllowed, time, cause);
+              return XKeyboardFocusManagerPeer.deliverFocus(lightweightChild,
+                                                            (Component)target,
+                                                            temporary,
+                                                            focusedWindowChangeAllowed,
+                                                            time, cause);
               // Motif compatibility code
-          case SNFH_SUCCESS_HANDLED:
+          case XKeyboardFocusManagerPeer.SNFH_SUCCESS_HANDLED:
               // Either lightweight or excessive request - all events are generated.
               return true;
         }
@@ -470,7 +379,7 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
 
     private boolean rejectFocusRequestHelper(String logMsg) {
         if (focusLog.isLoggable(Level.FINER)) focusLog.finer(logMsg);
-        KeyboardFocusManagerPeerImpl.removeLastFocusRequest(target);
+        XKeyboardFocusManagerPeer.removeLastFocusRequest(target);
         return false;
     }
 
@@ -494,10 +403,6 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
 
     public void setVisible(boolean b) {
         xSetVisible(b);
-    }
-
-    public void show() {
-        setVisible(true);
     }
 
     public void hide() {
@@ -618,8 +523,9 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
     void handleJavaMouseEvent(MouseEvent e) {
         switch (e.getID()) {
           case MouseEvent.MOUSE_PRESSED:
-              if (target == e.getSource() && shouldFocusOnClick()
-                  && !target.isFocusOwner() && canBeFocusedByClick(target))
+              if (target == e.getSource() &&
+                  !target.isFocusOwner() &&
+                  XKeyboardFocusManagerPeer.shouldFocusOnClick(target))
               {
                   XWindowPeer parentXWindow = getParentTopLevel();
                   Window parentWindow = ((Window)parentXWindow.getTarget());
@@ -633,7 +539,7 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
 //                       WindowEvent wfg = new WindowEvent(parentWindow, WindowEvent.WINDOW_GAINED_FOCUS);
 //                       parentWindow.dispatchEvent(wfg);
 //                   }
-                  callRequestFocus(target, CausedFocusEvent.Cause.MOUSE_EVENT);
+                  XKeyboardFocusManagerPeer.requestFocusFor(target, CausedFocusEvent.Cause.MOUSE_EVENT);
               }
               break;
         }
@@ -1418,57 +1324,19 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
         }
     }
 
-    public void restack() {
-        synchronized(target.getTreeLock()) {
-            // Build the list of X windows in the window corresponding to this container
-            // This list is already in correct Java stacking order
-            Container cont = (Container)target;
-            Vector order = new Vector(cont.getComponentCount());
-            HashSet set = new HashSet();
+    /**
+     * Lowers this component at the bottom of the above HW peer. If the above parameter
+     * is null then the method places this component at the top of the Z-order.
+     */
+    public void setZOrder(ComponentPeer above) {
+        long aboveWindow = (above != null) ? ((XComponentPeer)above).getWindow() : 0;
 
-            addTree(order, set, cont);
-
-            XToolkit.awtLock();
-            try {
-                // Get the current list of X window in X window. Some of the windows
-                // might be only native
-                XQueryTree qt = new XQueryTree(getContentWindow());
-                try {
-                    if (qt.execute() != 0) {
-                        if (qt.get_nchildren() != 0) {
-                            long pchildren = qt.get_children();
-                            int j = 0; // index to insert
-                            for (int i = 0; i < qt.get_nchildren(); i++) {
-                                Long w = Long.valueOf(Native.getLong(pchildren, i));
-                                if (!set.contains(w)) {
-                                    set.add(w);
-                                    order.add(j++, w);
-                                }
-                            }
-                        }
-                    }
-
-                    if (order.size() != 0) {
-                        // Create native array of the windows
-                        long windows = Native.allocateLongArray(order.size());
-                        Native.putLong(windows, order);
-
-                        // Restack native window according to the new order
-                        XlibWrapper.XRestackWindows(XToolkit.getDisplay(), windows, order.size());
-
-                        XlibWrapper.unsafe.freeMemory(windows);
-                    }
-                } finally {
-                    qt.dispose();
-                }
-            } finally {
-                XToolkit.awtUnlock();
-            }
+        XToolkit.awtLock();
+        try{
+            XlibWrapper.SetZOrder(XToolkit.getDisplay(), getWindow(), aboveWindow);
+        }finally{
+            XToolkit.awtUnlock();
         }
-    }
-
-    public boolean isRestackSupported() {
-        return true;
     }
 
     private void addTree(Collection order, Set set, Container cont) {
@@ -1559,5 +1427,9 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
                 shapeLog.finer("*** WARNING: Shaping is NOT supported!");
             }
         }
+    }
+
+    public void updateGraphicsData(GraphicsConfiguration gc) {
+        initGraphicsConfiguration();
     }
 }

@@ -36,6 +36,7 @@ import java.awt.Rectangle;
 import java.awt.peer.FramePeer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import sun.awt.AWTAccessor;
 
 class XFramePeer extends XDecoratedPeer implements FramePeer {
     private static Logger log = Logger.getLogger("sun.awt.X11.XFramePeer");
@@ -231,13 +232,19 @@ class XFramePeer extends XDecoratedPeer implements FramePeer {
         }
     }
 
-    public int getState() { return state; }
+    public int getState() {
+        synchronized(getStateLock()) {
+            return state;
+        }
+    }
 
     public void setState(int newState) {
-        if (!isShowing()) {
-            stateLog.finer("Frame is not showing");
-            state = newState;
-            return;
+        synchronized(getStateLock()) {
+            if (!isShowing()) {
+                stateLog.finer("Frame is not showing");
+                state = newState;
+                return;
+            }
         }
         changeState(newState);
     }
@@ -295,6 +302,9 @@ class XFramePeer extends XDecoratedPeer implements FramePeer {
 
         int old_state = state;
         state = newState;
+
+        // sync target with peer
+        AWTAccessor.getFrameAccessor().setExtendedState((Frame)target, state);
 
         if ((changed & Frame.ICONIFIED) != 0) {
             if ((state & Frame.ICONIFIED) != 0) {
