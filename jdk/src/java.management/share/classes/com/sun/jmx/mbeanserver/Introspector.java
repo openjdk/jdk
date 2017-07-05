@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@ import java.security.AccessController;
 import javax.management.AttributeNotFoundException;
 import javax.management.openmbean.CompositeData;
 
-import sun.misc.JavaBeansIntrospectorAccess;
+import sun.misc.JavaBeansAccess;
 import sun.misc.SharedSecrets;
 import sun.reflect.misc.MethodUtil;
 import sun.reflect.misc.ReflectUtil;
@@ -552,10 +552,8 @@ public class Introspector {
                 // Java Beans introspection
                 //
                 Class<?> clazz = complex.getClass();
-                Method readMethod;
-                if (BeansIntrospector.isAvailable()) {
-                    readMethod = BeansIntrospector.getReadMethod(clazz, element);
-                } else {
+                Method readMethod = JavaBeansAccessor.getReadMethod(clazz, element);
+                if (readMethod == null) {
                     // Java Beans not available so use simple introspection
                     // to locate method
                     readMethod = SimpleIntrospector.getReadMethod(clazz, element);
@@ -576,30 +574,6 @@ public class Introspector {
         } catch (Exception e) {
             throw EnvHelp.initCause(
                 new AttributeNotFoundException(e.getMessage()), e);
-        }
-    }
-
-    /**
-     * Provides access to java.beans.Introspector if available.
-     */
-    private static class BeansIntrospector {
-        private static final JavaBeansIntrospectorAccess JBIA;
-        static {
-            // ensure that java.beans.Introspector is initialized (if present)
-            try {
-                Class.forName("java.beans.Introspector", true,
-                              BeansIntrospector.class.getClassLoader());
-            } catch (ClassNotFoundException ignore) { }
-
-            JBIA = SharedSecrets.getJavaBeansIntrospectorAccess();
-        }
-
-        static boolean isAvailable() {
-            return JBIA != null;
-        }
-
-        static Method getReadMethod(Class<?> clazz, String property) throws Exception {
-            return JBIA.getReadMethod(clazz, property);
         }
     }
 

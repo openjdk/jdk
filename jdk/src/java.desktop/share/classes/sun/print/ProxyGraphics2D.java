@@ -297,9 +297,9 @@ public class ProxyGraphics2D extends Graphics2D implements PrinterGraphics {
      * use this font.
      * @param  font   the font.
      * @see     java.awt.Graphics#getFont
-     * @see     java.awt.Graphics#drawChars(java.lang.String, int, int)
-     * @see     java.awt.Graphics#drawString(byte[], int, int, int, int)
-     * @see     java.awt.Graphics#drawBytes(char[], int, int, int, int)
+     * @see     java.awt.Graphics#drawChars(char[], int, int, int, int)
+     * @see     java.awt.Graphics#drawString(String, int, int)
+     * @see     java.awt.Graphics#drawBytes(byte[], int, int, int, int)
      * @since   1.0
     */
     public void setFont(Font font) {
@@ -1345,7 +1345,7 @@ public class ProxyGraphics2D extends Graphics2D implements PrinterGraphics {
      * Draws a string of text.
      * The rendering attributes applied include the clip, transform,
      * paint or color, font and composite attributes.
-     * @param s The string to be drawn.
+     * @param str The string to be drawn.
      * @param x,y The coordinates where the string should be drawn.
      * @see #setPaint
      * @see java.awt.Graphics#setColor
@@ -1432,7 +1432,7 @@ public class ProxyGraphics2D extends Graphics2D implements PrinterGraphics {
      * @param comp The Composite object to be used for drawing.
      * @see java.awt.Graphics#setXORMode
      * @see java.awt.Graphics#setPaintMode
-     * @see AlphaComposite
+     * @see java.awt.AlphaComposite
      */
     public void setComposite(Composite comp) {
         mGraphics.setComposite(comp);
@@ -1444,8 +1444,8 @@ public class ProxyGraphics2D extends Graphics2D implements PrinterGraphics {
      * @param paint The Paint object to be used to generate color in
      * the rendering process.
      * @see java.awt.Graphics#setColor
-     * @see GradientPaint
-     * @see TexturePaint
+     * @see java.awt.GradientPaint
+     * @see java.awt.TexturePaint
      */
     public void setPaint(Paint paint) {
         mGraphics.setPaint(paint);
@@ -1455,7 +1455,7 @@ public class ProxyGraphics2D extends Graphics2D implements PrinterGraphics {
      * Sets the Stroke in the current graphics state.
      * @param s The Stroke object to be used to stroke a Shape in
      * the rendering process.
-     * @see BasicStroke
+     * @see java.awt.BasicStroke
      */
     public void setStroke(Stroke s) {
         mGraphics.setStroke(s);
@@ -1478,7 +1478,7 @@ public class ProxyGraphics2D extends Graphics2D implements PrinterGraphics {
      * Returns the preferences for the rendering algorithms.
      * @param hintCategory The category of hint to be set.
      * @return The preferences for rendering algorithms.
-     * @see RenderingHings
+     * @see RenderingHints
      */
     public Object getRenderingHint(Key hintCategory) {
         return mGraphics.getRenderingHint(hintCategory);
@@ -1531,7 +1531,6 @@ public class ProxyGraphics2D extends Graphics2D implements PrinterGraphics {
      * @param Tx The Transform object to be composed with the current
      * transform.
      * @see #setTransform
-     * @see TransformChain
      * @see AffineTransform
      */
     public void transform(AffineTransform Tx) {
@@ -1542,7 +1541,6 @@ public class ProxyGraphics2D extends Graphics2D implements PrinterGraphics {
      * Sets the Transform in the current graphics state.
      * @param Tx The Transform object to be used in the rendering process.
      * @see #transform
-     * @see TransformChain
      * @see AffineTransform
      */
     public void setTransform(AffineTransform Tx) {
@@ -1584,8 +1582,8 @@ public class ProxyGraphics2D extends Graphics2D implements PrinterGraphics {
      * of the component, use appropriate methods of the component.
      * @param color The background color that should be used in
      * subsequent calls to clearRect().
-     * @see getBackground
-     * @see Graphics.clearRect()
+     * @see #getBackground
+     * @see Graphics#clearRect
      */
     public void setBackground(Color color) {
         mGraphics.setBackground(color);
@@ -1593,7 +1591,7 @@ public class ProxyGraphics2D extends Graphics2D implements PrinterGraphics {
 
     /**
      * Returns the background color used for clearing a region.
-     * @see setBackground
+     * @see #setBackground
      */
     public Color getBackground() {
         return mGraphics.getBackground();
@@ -1601,7 +1599,7 @@ public class ProxyGraphics2D extends Graphics2D implements PrinterGraphics {
 
     /**
      * Returns the current Stroke in the Graphics2D state.
-     * @see setStroke
+     * @see #setStroke
      */
     public Stroke getStroke() {
         return mGraphics.getStroke();

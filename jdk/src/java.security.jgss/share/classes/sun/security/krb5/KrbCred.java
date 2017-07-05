@@ -34,6 +34,9 @@ package sun.security.krb5;
 import sun.security.krb5.internal.*;
 import sun.security.krb5.internal.crypto.KeyUsage;
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+
 import sun.security.util.DerValue;
 
 /**
@@ -76,10 +79,24 @@ public class KrbCred {
         options.set(KDCOptions.FORWARDABLE, true);
 
         HostAddresses sAddrs = null;
-        // XXX Also NT_GSS_KRB5_PRINCIPAL can be a host based principal
+
         // GSSName.NT_HOSTBASED_SERVICE should display with KRB_NT_SRV_HST
-        if (server.getNameType() == PrincipalName.KRB_NT_SRV_HST)
-            sAddrs=  new HostAddresses(server);
+        if (server.getNameType() == PrincipalName.KRB_NT_SRV_HST) {
+            sAddrs = new HostAddresses(server);
+        } else if (server.getNameType() == PrincipalName.KRB_NT_UNKNOWN) {
+            // Sometimes this is also a server
+            if (server.getNameStrings().length >= 2) {
+                String host = server.getNameStrings()[1];
+                try {
+                    InetAddress[] addr = InetAddress.getAllByName(host);
+                    if (addr != null && addr.length > 0) {
+                        sAddrs = new HostAddresses(addr);
+                    }
+                } catch (UnknownHostException ioe) {
+                    // maybe we guessed wrong, let sAddrs be null
+                }
+            }
+        }
 
         KrbTgsReq tgsReq = new KrbTgsReq(options, tgt, tgService,
                                          null, null, null, null, sAddrs, null, null, null);

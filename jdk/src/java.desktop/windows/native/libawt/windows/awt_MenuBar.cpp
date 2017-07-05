@@ -156,13 +156,16 @@ AwtMenuItem* AwtMenuBar::GetItem(jobject target, long index)
     }
 
     jobject menu = env->CallObjectMethod(target, AwtMenuBar::getMenuMID,index);
+    if (!menu) return NULL; // menu item was removed concurrently
     DASSERT(!safe_ExceptionOccurred(env));
 
     jobject menuItemPeer = GetPeerForTarget(env, menu);
     PDATA pData;
-    JNI_CHECK_PEER_RETURN_NULL(menuItemPeer);
+    JNI_CHECK_PEER_GOTO(menuItemPeer, done);
+
     AwtMenuItem* awtMenuItem = (AwtMenuItem*)pData;
 
+done:
     env->DeleteLocalRef(menu);
     env->DeleteLocalRef(menuItemPeer);
 

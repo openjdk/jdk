@@ -109,6 +109,8 @@ final class SSLSessionImpl extends ExtendedSSLSession {
     private String[]            peerSupportedSignAlgs;
     private List<SNIServerName>    requestedServerNames;
 
+    private int                 negotiatedMaxFragLen;
+    private int                 maximumPacketSize;
 
     // Principals for non-certificate based cipher suites
     private Principal peerPrincipal;
@@ -177,6 +179,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
         sessionCount = ++counter;
         localSupportedSignAlgs =
             SignatureAndHashAlgorithm.getAlgorithmNames(algorithms);
+        negotiatedMaxFragLen = -1;
 
         if (debug != null && Debug.isOn("session")) {
             System.out.println("%% Initialized:  " + this);
@@ -422,10 +425,9 @@ final class SSLSessionImpl extends ExtendedSSLSession {
         // change record of peer identity even by accident, much
         // less do it intentionally.
         //
-        if ((cipherSuite.keyExchange == K_KRB5) ||
-            (cipherSuite.keyExchange == K_KRB5_EXPORT)) {
+        if (ClientKeyExchangeService.find(cipherSuite.keyExchange.name) != null) {
             throw new SSLPeerUnverifiedException("no certificates expected"
-                        + " for Kerberos cipher suites");
+                        + " for " + cipherSuite.keyExchange + " cipher suites");
         }
         if (peerCerts == null) {
             throw new SSLPeerUnverifiedException("peer not authenticated");
@@ -478,10 +480,9 @@ final class SSLSessionImpl extends ExtendedSSLSession {
         // change record of peer identity even by accident, much
         // less do it intentionally.
         //
-        if ((cipherSuite.keyExchange == K_KRB5) ||
-            (cipherSuite.keyExchange == K_KRB5_EXPORT)) {
+        if (ClientKeyExchangeService.find(cipherSuite.keyExchange.name) != null) {
             throw new SSLPeerUnverifiedException("no certificates expected"
-                        + " for Kerberos cipher suites");
+                        + " for " + cipherSuite.keyExchange + " cipher suites");
         }
         if (peerCerts == null) {
             throw new SSLPeerUnverifiedException("peer not authenticated");
@@ -519,10 +520,9 @@ final class SSLSessionImpl extends ExtendedSSLSession {
          * change record of peer identity even by accident, much
          * less do it intentionally.
          */
-        if ((cipherSuite.keyExchange == K_KRB5) ||
-            (cipherSuite.keyExchange == K_KRB5_EXPORT)) {
+        if (ClientKeyExchangeService.find(cipherSuite.keyExchange.name) != null) {
             throw new SSLPeerUnverifiedException("no certificates expected"
-                        + " for Kerberos cipher suites");
+                        + " for " + cipherSuite.keyExchange + " cipher suites");
         }
         if (peerCerts != null) {
             return peerCerts.clone();
@@ -537,7 +537,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
      *
      * @return the peer's principal. Returns an X500Principal of the
      * end-entity certificate for X509-based cipher suites, and
-     * Principal for Kerberos cipher suites.
+     * Principal for Kerberos cipher suites, etc.
      *
      * @throws SSLPeerUnverifiedException if the peer's identity has not
      *          been verified
@@ -546,12 +546,10 @@ final class SSLSessionImpl extends ExtendedSSLSession {
     public Principal getPeerPrincipal()
                 throws SSLPeerUnverifiedException
     {
-        if ((cipherSuite.keyExchange == K_KRB5) ||
-            (cipherSuite.keyExchange == K_KRB5_EXPORT)) {
+        if (ClientKeyExchangeService.find(cipherSuite.keyExchange.name) != null) {
             if (peerPrincipal == null) {
                 throw new SSLPeerUnverifiedException("peer not authenticated");
             } else {
-                // Eliminate dependency on KerberosPrincipal
                 return peerPrincipal;
             }
         }
@@ -566,15 +564,13 @@ final class SSLSessionImpl extends ExtendedSSLSession {
      *
      * @return the principal sent to the peer. Returns an X500Principal
      * of the end-entity certificate for X509-based cipher suites, and
-     * Principal for Kerberos cipher suites. If no principal was
+     * Principal for Kerberos cipher suites, etc. If no principal was
      * sent, then null is returned.
      */
     @Override
     public Principal getLocalPrincipal() {
 
-        if ((cipherSuite.keyExchange == K_KRB5) ||
-            (cipherSuite.keyExchange == K_KRB5_EXPORT)) {
-                // Eliminate dependency on KerberosPrincipal
+        if (ClientKeyExchangeService.find(cipherSuite.keyExchange.name) != null) {
                 return (localPrincipal == null ? null : localPrincipal);
         }
         return (localCerts == null ? null :
@@ -785,8 +781,30 @@ final class SSLSessionImpl extends ExtendedSSLSession {
      */
     @Override
     public synchronized int getPacketBufferSize() {
-        return acceptLargeFragments ?
-                Record.maxLargeRecordSize : Record.maxRecordSize;
+        // Use the bigger packet size calculated from maximumPacketSize
+        // and negotiatedMaxFragLen.
+        int packetSize = 0;
+        if (negotiatedMaxFragLen > 0) {
+            packetSize = cipherSuite.calculatePacketSize(
+                    negotiatedMaxFragLen, protocolVersion,
+                    protocolVersion.isDTLSProtocol());
+        }
+
+        if (maximumPacketSize > 0) {
+            return (maximumPacketSize > packetSize) ?
+                    maximumPacketSize : packetSize;
+        }
+
+        if (packetSize != 0) {
+           return packetSize;
+        }
+
+        if (protocolVersion.isDTLSProtocol()) {
+            return DTLSRecord.maxRecordSize;
+        } else {
+            return acceptLargeFragments ?
+                    SSLRecord.maxLargeRecordSize : SSLRecord.maxRecordSize;
+        }
     }
 
     /**
@@ -795,7 +813,64 @@ final class SSLSessionImpl extends ExtendedSSLSession {
      */
     @Override
     public synchronized int getApplicationBufferSize() {
-        return getPacketBufferSize() - Record.headerSize;
+        // Use the bigger fragment size calculated from maximumPacketSize
+        // and negotiatedMaxFragLen.
+        int fragmentSize = 0;
+        if (maximumPacketSize > 0) {
+            fragmentSize = cipherSuite.calculateFragSize(
+                    maximumPacketSize, protocolVersion,
+                    protocolVersion.isDTLSProtocol());
+        }
+
+        if (negotiatedMaxFragLen > 0) {
+            return (negotiatedMaxFragLen > fragmentSize) ?
+                    negotiatedMaxFragLen : fragmentSize;
+        }
+
+        if (fragmentSize != 0) {
+            return fragmentSize;
+        }
+
+        if (protocolVersion.isDTLSProtocol()) {
+            return Record.maxDataSize;
+        } else {
+            int maxPacketSize = acceptLargeFragments ?
+                        SSLRecord.maxLargeRecordSize : SSLRecord.maxRecordSize;
+            return (maxPacketSize - SSLRecord.headerSize);
+        }
+    }
+
+    /**
+     * Sets the negotiated maximum fragment length, as specified by the
+     * max_fragment_length ClientHello extension in RFC 6066.
+     *
+     * @param  negotiatedMaxFragLen
+     *         the negotiated maximum fragment length, or {@code -1} if
+     *         no such length has been negotiated.
+     */
+    synchronized void setNegotiatedMaxFragSize(
+            int negotiatedMaxFragLen) {
+
+        this.negotiatedMaxFragLen = negotiatedMaxFragLen;
+    }
+
+    /**
+     * Get the negotiated maximum fragment length, as specified by the
+     * max_fragment_length ClientHello extension in RFC 6066.
+     *
+     * @return the negotiated maximum fragment length, or {@code -1} if
+     *         no such length has been negotiated.
+     */
+    synchronized int getNegotiatedMaxFragSize() {
+        return negotiatedMaxFragLen;
+    }
+
+    synchronized void setMaximumPacketSize(int maximumPacketSize) {
+        this.maximumPacketSize = maximumPacketSize;
+    }
+
+    synchronized int getMaximumPacketSize() {
+        return maximumPacketSize;
     }
 
     /**
