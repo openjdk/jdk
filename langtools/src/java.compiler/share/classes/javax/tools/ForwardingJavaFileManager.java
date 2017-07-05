@@ -165,22 +165,42 @@ public class ForwardingJavaFileManager<M extends JavaFileManager> implements Jav
         fileManager.close();
     }
 
+    /**
+     * @since 9
+     * @spec JPMS
+     */
     public Location getLocationForModule(Location location, String moduleName) throws IOException {
         return fileManager.getLocationForModule(location, moduleName);
     }
 
+    /**
+     * @since 9
+     * @spec JPMS
+     */
     public Location getLocationForModule(Location location, JavaFileObject fo, String pkgName) throws IOException {
         return fileManager.getLocationForModule(location, fo, pkgName);
     }
 
+    /**
+     * @since 9
+     * @spec JPMS
+     */
     public <S> ServiceLoader<S> getServiceLoader(Location location, Class<S> service) throws  IOException {
         return fileManager.getServiceLoader(location, service);
     }
 
+    /**
+     * @since 9
+     * @spec JPMS
+     */
     public String inferModuleName(Location location) throws IOException {
         return fileManager.inferModuleName(location);
     }
 
+    /**
+     * @since 9
+     * @spec JPMS
+     */
     public Iterable<Set<Location>> listLocationsForModules(Location location) throws IOException {
         return fileManager.listLocationsForModules(location);
     }
