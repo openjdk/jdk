@@ -25,8 +25,10 @@
 
 package sun.lwawt.macosx;
 
+import java.awt.*;
 import java.awt.datatransfer.*;
 import java.io.IOException;
+import java.io.NotSerializableException;
 import java.util.*;
 
 import sun.awt.datatransfer.*;
@@ -65,12 +67,10 @@ public class CClipboard extends SunClipboard {
         long[] formatArray = dataTransferer.getFormatsForTransferableAsArray(contents, flavorMap);
         declareTypes(formatArray, this);
 
-        Map<Long, DataFlavor> formatMap = DataTransferer.getInstance().getFormatsForTransferable(contents, flavorMap);
-
-        for (Iterator<Long> iter = formatMap.keySet().iterator(); iter.hasNext(); ) {
-            Long lFormat = iter.next();
-            long format = lFormat.longValue();
-            DataFlavor flavor = formatMap.get(lFormat);
+        Map<Long, DataFlavor> formatMap = dataTransferer.getFormatsForTransferable(contents, flavorMap);
+        for (Map.Entry<Long, DataFlavor> entry : formatMap.entrySet()) {
+            long format = entry.getKey();
+            DataFlavor flavor = entry.getValue();
 
             try {
                 byte[] bytes = DataTransferer.getInstance().translateTransferable(contents, flavor, format);
@@ -80,15 +80,25 @@ public class CClipboard extends SunClipboard {
                 // javaJVMLocalObjectMimeType failed to serialize.
                 // May remove this if-check when 5078787 is fixed.
                 if (!(flavor.isMimeTypeEqual(DataFlavor.javaJVMLocalObjectMimeType) &&
-                      e instanceof java.io.NotSerializableException)) {
+                        e instanceof NotSerializableException)) {
                     e.printStackTrace();
                 }
             }
         }
+
+        notifyChanged();
     }
 
-    private void lostSelectionOwnershipImpl() {
+    private void notifyLostOwnership() {
         lostOwnershipImpl();
+    }
+
+    private static void notifyChanged() {
+        CClipboard clipboard = (CClipboard) Toolkit.getDefaultToolkit().getSystemClipboard();
+        if (!clipboard.areFlavorListenersRegistered()) {
+            return;
+        }
+        clipboard.checkChange(clipboard.getClipboardFormats());
     }
 
     protected native long[] getClipboardFormats();

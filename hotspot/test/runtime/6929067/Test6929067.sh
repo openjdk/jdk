@@ -1,6 +1,7 @@
 #!/bin/sh
 
 ##
+## @ignore 8028740
 ## @test Test6929067.sh
 ## @bug 6929067
 ## @bug 8021296

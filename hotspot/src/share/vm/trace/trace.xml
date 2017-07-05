@@ -176,8 +176,8 @@ Declares a structure type that can be used in other events.
       <value type="UINT" field="gcId"  label="GC ID" relation="GC_ID" />
       <value type="GCNAME" field="name" label="Name" description="The name of the Garbage Collector" />
       <value type="GCCAUSE" field="cause" label="Cause" description="The reason for triggering this Garbage Collection" />
-      <value type="RELATIVE_TICKS" field="sumOfPauses" label="Sum of Pauses" description="Sum of all the times in which Java execution was paused during the garbage collection" />
-      <value type="RELATIVE_TICKS" field="longestPause" label="Longest Pause" description="Longest individual pause during the garbage collection" />
+      <value type="TICKSPAN" field="sumOfPauses" label="Sum of Pauses" description="Sum of all the times in which Java execution was paused during the garbage collection" />
+      <value type="TICKSPAN" field="longestPause" label="Longest Pause" description="Longest individual pause during the garbage collection" />
     </event>
 
     <event id="GCParallelOld" path="vm/gc/collector/parold_garbage_collection" label="Parallel Old Garbage Collection"

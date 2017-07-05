@@ -25,7 +25,7 @@
 package com.sun.beans.finder;
 
 import com.sun.beans.TypeResolver;
-import com.sun.beans.WeakCache;
+import com.sun.beans.util.Cache;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -33,6 +33,7 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Arrays;
 
+import static com.sun.beans.util.Cache.Kind.SOFT;
 import static sun.reflect.misc.ReflectUtil.isPackageAccessible;
 
 /**
@@ -45,7 +46,18 @@ import static sun.reflect.misc.ReflectUtil.isPackageAccessible;
  * @author Sergey A. Malenkov
  */
 public final class MethodFinder extends AbstractFinder<Method> {
-    private static final WeakCache<Signature, Method> CACHE = new WeakCache<Signature, Method>();
+    private static final Cache<Signature, Method> CACHE = new Cache<Signature, Method>(SOFT, SOFT) {
+        @Override
+        public Method create(Signature signature) {
+            try {
+                MethodFinder finder = new MethodFinder(signature.getName(), signature.getArgs());
+                return findAccessibleMethod(finder.find(signature.getType().getMethods()));
+            }
+            catch (Exception exception) {
+                throw new SignatureException(exception);
+            }
+        }
+    };
 
     /**
      * Finds public method (static or non-static)
@@ -65,16 +77,13 @@ public final class MethodFinder extends AbstractFinder<Method> {
         PrimitiveWrapperMap.replacePrimitivesWithWrappers(args);
         Signature signature = new Signature(type, name, args);
 
-        Method method = CACHE.get(signature);
-        boolean cached = method != null;
-        if (cached && isPackageAccessible(method.getDeclaringClass())) {
-            return method;
+        try {
+            Method method = CACHE.get(signature);
+            return (method == null) || isPackageAccessible(method.getDeclaringClass()) ? method : CACHE.create(signature);
         }
-        method = findAccessibleMethod(new MethodFinder(name, args).find(type.getMethods()));
-        if (!cached) {
-            CACHE.put(signature, method);
+        catch (SignatureException exception) {
+            throw exception.toNoSuchMethodException("Method '" + name + "' is not found");
         }
-        return method;
     }
 
     /**
