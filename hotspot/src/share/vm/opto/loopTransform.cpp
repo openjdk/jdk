@@ -396,16 +396,16 @@ void PhaseIdealLoop::do_peeling( IdealLoopTree *loop, Node_List &old_new ) {
 // Return exact loop trip count, or 0 if not maximally unrolling
 bool IdealLoopTree::policy_maximally_unroll( PhaseIdealLoop *phase ) const {
   CountedLoopNode *cl = _head->as_CountedLoop();
-  assert( cl->is_normal_loop(), "" );
+  assert(cl->is_normal_loop(), "");
 
   Node *init_n = cl->init_trip();
   Node *limit_n = cl->limit();
 
   // Non-constant bounds
-  if( init_n   == NULL || !init_n->is_Con()  ||
+  if (init_n   == NULL || !init_n->is_Con()  ||
       limit_n  == NULL || !limit_n->is_Con() ||
       // protect against stride not being a constant
-      !cl->stride_is_con() ) {
+      !cl->stride_is_con()) {
     return false;
   }
   int init   = init_n->get_int();
@@ -428,7 +428,31 @@ bool IdealLoopTree::policy_maximally_unroll( PhaseIdealLoop *phase ) const {
   uint unroll_limit = (uint)LoopUnrollLimit * 4;
   assert( (intx)unroll_limit == LoopUnrollLimit * 4, "LoopUnrollLimit must fit in 32bits");
   cl->set_trip_count(trip_count);
-  if( trip_count <= unroll_limit && body_size <= unroll_limit ) {
+  if (trip_count > unroll_limit || body_size > unroll_limit) {
+    return false;
+  }
+
+  // Currently we don't have policy to optimize one iteration loops.
+  // Maximally unrolling transformation is used for that:
+  // it is peeled and the original loop become non reachable (dead).
+  if (trip_count == 1)
+    return true;
+
+  // Do not unroll a loop with String intrinsics code.
+  // String intrinsics are large and have loops.
+  for (uint k = 0; k < _body.size(); k++) {
+    Node* n = _body.at(k);
+    switch (n->Opcode()) {
+      case Op_StrComp:
+      case Op_StrEquals:
+      case Op_StrIndexOf:
+      case Op_AryEq: {
+        return false;
+      }
+    } // switch
+  }
+
+  if (body_size <= unroll_limit) {
     uint new_body_size = body_size * trip_count;
     if (new_body_size <= unroll_limit &&
         body_size == new_body_size / trip_count &&
@@ -448,13 +472,13 @@ bool IdealLoopTree::policy_maximally_unroll( PhaseIdealLoop *phase ) const {
 bool IdealLoopTree::policy_unroll( PhaseIdealLoop *phase ) const {
 
   CountedLoopNode *cl = _head->as_CountedLoop();
-  assert( cl->is_normal_loop() || cl->is_main_loop(), "" );
+  assert(cl->is_normal_loop() || cl->is_main_loop(), "");
 
   // protect against stride not being a constant
-  if( !cl->stride_is_con() ) return false;
+  if (!cl->stride_is_con()) return false;
 
   // protect against over-unrolling
-  if( cl->trip_count() <= 1 ) return false;
+  if (cl->trip_count() <= 1) return false;
 
   int future_unroll_ct = cl->unrolled_count() * 2;
 
@@ -485,21 +509,21 @@ bool IdealLoopTree::policy_unroll( PhaseIdealLoop *phase ) const {
   // Non-constant bounds.
   // Protect against over-unrolling when init or/and limit are not constant
   // (so that trip_count's init value is maxint) but iv range is known.
-  if( init_n   == NULL || !init_n->is_Con()  ||
-      limit_n  == NULL || !limit_n->is_Con() ) {
+  if (init_n   == NULL || !init_n->is_Con()  ||
+      limit_n  == NULL || !limit_n->is_Con()) {
     Node* phi = cl->phi();
-    if( phi != NULL ) {
+    if (phi != NULL) {
       assert(phi->is_Phi() && phi->in(0) == _head, "Counted loop should have iv phi.");
       const TypeInt* iv_type = phase->_igvn.type(phi)->is_int();
       int next_stride = cl->stride_con() * 2; // stride after this unroll
-      if( next_stride > 0 ) {
-        if( iv_type->_lo + next_stride <= iv_type->_lo || // overflow
-            iv_type->_lo + next_stride >  iv_type->_hi ) {
+      if (next_stride > 0) {
+        if (iv_type->_lo + next_stride <= iv_type->_lo || // overflow
+            iv_type->_lo + next_stride >  iv_type->_hi) {
           return false;  // over-unrolling
         }
-      } else if( next_stride < 0 ) {
-        if( iv_type->_hi + next_stride >= iv_type->_hi || // overflow
-            iv_type->_hi + next_stride <  iv_type->_lo ) {
+      } else if (next_stride < 0) {
+        if (iv_type->_hi + next_stride >= iv_type->_hi || // overflow
+            iv_type->_hi + next_stride <  iv_type->_lo) {
           return false;  // over-unrolling
         }
       }
@@ -511,24 +535,33 @@ bool IdealLoopTree::policy_unroll( PhaseIdealLoop *phase ) const {
   // Key test to unroll CaffeineMark's Logic test
   int xors_in_loop = 0;
   // Also count ModL, DivL and MulL which expand mightly
-  for( uint k = 0; k < _body.size(); k++ ) {
-    switch( _body.at(k)->Opcode() ) {
-    case Op_XorI: xors_in_loop++; break; // CaffeineMark's Logic test
-    case Op_ModL: body_size += 30; break;
-    case Op_DivL: body_size += 30; break;
-    case Op_MulL: body_size += 10; break;
-    }
+  for (uint k = 0; k < _body.size(); k++) {
+    Node* n = _body.at(k);
+    switch (n->Opcode()) {
+      case Op_XorI: xors_in_loop++; break; // CaffeineMark's Logic test
+      case Op_ModL: body_size += 30; break;
+      case Op_DivL: body_size += 30; break;
+      case Op_MulL: body_size += 10; break;
+      case Op_StrComp:
+      case Op_StrEquals:
+      case Op_StrIndexOf:
+      case Op_AryEq: {
+        // Do not unroll a loop with String intrinsics code.
+        // String intrinsics are large and have loops.
+        return false;
+      }
+    } // switch
   }
 
   // Check for being too big
-  if( body_size > (uint)LoopUnrollLimit ) {
-    if( xors_in_loop >= 4 && body_size < (uint)LoopUnrollLimit*4) return true;
+  if (body_size > (uint)LoopUnrollLimit) {
+    if (xors_in_loop >= 4 && body_size < (uint)LoopUnrollLimit*4) return true;
     // Normal case: loop too big
     return false;
   }
 
   // Check for stride being a small enough constant
-  if( abs(cl->stride_con()) > (1<<3) ) return false;
+  if (abs(cl->stride_con()) > (1<<3)) return false;
 
   // Unroll once!  (Each trip will soon do double iterations)
   return true;
@@ -1608,15 +1641,7 @@ bool IdealLoopTree::policy_do_remove_empty_loop( PhaseIdealLoop *phase ) {
     return false; // Malformed loop
   if (!phase->is_member(this, phase->get_ctrl(cl->loopexit()->in(CountedLoopEndNode::TestValue))))
     return false;             // Infinite loop
-#ifndef PRODUCT
-  if (PrintOpto) {
-    tty->print("Removing empty loop");
-    this->dump_head();
-  } else if (TraceLoopOpts) {
-    tty->print("Empty        ");
-    this->dump_head();
-  }
-#endif
+
 #ifdef ASSERT
   // Ensure only one phi which is the iv.
   Node* iv = NULL;
@@ -1629,6 +1654,43 @@ bool IdealLoopTree::policy_do_remove_empty_loop( PhaseIdealLoop *phase ) {
   }
   assert(iv == cl->phi(), "Wrong phi" );
 #endif
+
+  // main and post loops have explicitly created zero trip guard
+  bool needs_guard = !cl->is_main_loop() && !cl->is_post_loop();
+  if (needs_guard) {
+    // Check for an obvious zero trip guard.
+    Node* inctrl = cl->in(LoopNode::EntryControl);
+    if (inctrl->Opcode() == Op_IfTrue) {
+      // The test should look like just the backedge of a CountedLoop
+      Node* iff = inctrl->in(0);
+      if (iff->is_If()) {
+        Node* bol = iff->in(1);
+        if (bol->is_Bool() && bol->as_Bool()->_test._test == cl->loopexit()->test_trip()) {
+          Node* cmp = bol->in(1);
+          if (cmp->is_Cmp() && cmp->in(1) == cl->init_trip() && cmp->in(2) == cl->limit()) {
+            needs_guard = false;
+          }
+        }
+      }
+    }
+  }
+
+#ifndef PRODUCT
+  if (PrintOpto) {
+    tty->print("Removing empty loop with%s zero trip guard", needs_guard ? "out" : "");
+    this->dump_head();
+  } else if (TraceLoopOpts) {
+    tty->print("Empty with%s zero trip guard   ", needs_guard ? "out" : "");
+    this->dump_head();
+  }
+#endif
+
+  if (needs_guard) {
+    // Peel the loop to ensure there's a zero trip guard
+    Node_List old_new;
+    phase->do_peeling(this, old_new);
+  }
+
   // Replace the phi at loop head with the final value of the last
   // iteration.  Then the CountedLoopEnd will collapse (backedge never
   // taken) and all loop-invariant uses of the exit values will be correct.

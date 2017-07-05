@@ -1541,7 +1541,7 @@ int AbstractInterpreter::layout_activation(methodOop method,
          tempcount* Interpreter::stackElementWords + popframe_extra_args;
   if (interpreter_frame != NULL) {
 #ifdef ASSERT
-    if (!EnableMethodHandles)
+    if (!EnableInvokeDynamic)
       // @@@ FIXME: Should we correct interpreter_frame_sender_sp in the calling sequences?
       // Probably, since deoptimization doesn't work yet.
       assert(caller->unextended_sp() == interpreter_frame->interpreter_frame_sender_sp(), "Frame not properly walkable");
