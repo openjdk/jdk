@@ -274,45 +274,61 @@ public abstract class ShellFolder extends File {
 
     // Override File methods
 
-    public static void sort(List<? extends File> files) {
+    public static void sort(final List<? extends File> files) {
         if (files == null || files.size() <= 1) {
             return;
         }
 
-        // Check that we can use the ShellFolder.sortChildren() method:
-        //   1. All files have the same non-null parent
-        //   2. All files is ShellFolders
-        File commonParent = null;
+        // To avoid loads of synchronizations with Invoker and improve performance we
+        // synchronize the whole code of the sort method once
+        getInvoker().invoke(new Callable<Void>() {
+            public Void call() throws Exception {
+                // Check that we can use the ShellFolder.sortChildren() method:
+                //   1. All files have the same non-null parent
+                //   2. All files is ShellFolders
+                File commonParent = null;
 
-        for (File file : files) {
-            File parent = file.getParentFile();
+                for (File file : files) {
+                    File parent = file.getParentFile();
 
-            if (parent == null || !(file instanceof ShellFolder)) {
-                commonParent = null;
+                    if (parent == null || !(file instanceof ShellFolder)) {
+                        commonParent = null;
 
-                break;
-            }
+                        break;
+                    }
 
-            if (commonParent == null) {
-                commonParent = parent;
-            } else {
-                if (commonParent != parent && !commonParent.equals(parent)) {
-                    commonParent = null;
+                    if (commonParent == null) {
+                        commonParent = parent;
+                    } else {
+                        if (commonParent != parent && !commonParent.equals(parent)) {
+                            commonParent = null;
 
-                    break;
+                            break;
+                        }
+                    }
                 }
-            }
-        }
 
-        if (commonParent instanceof ShellFolder) {
-            ((ShellFolder) commonParent).sortChildren(files);
-        } else {
-            Collections.sort(files, FILE_COMPARATOR);
-        }
+                if (commonParent instanceof ShellFolder) {
+                    ((ShellFolder) commonParent).sortChildren(files);
+                } else {
+                    Collections.sort(files, FILE_COMPARATOR);
+                }
+
+                return null;
+            }
+        });
     }
 
-    public void sortChildren(List<? extends File> files) {
-        Collections.sort(files, FILE_COMPARATOR);
+    public void sortChildren(final List<? extends File> files) {
+        // To avoid loads of synchronizations with Invoker and improve performance we
+        // synchronize the whole code of the sort method once
+        getInvoker().invoke(new Callable<Void>() {
+            public Void call() throws Exception {
+                Collections.sort(files, FILE_COMPARATOR);
+
+                return null;
+            }
+        });
     }
 
     public boolean isAbsolute() {

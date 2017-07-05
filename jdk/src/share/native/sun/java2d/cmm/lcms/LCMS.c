@@ -610,14 +610,19 @@ LCMSBOOL _cmsModifyTagData(cmsHPROFILE hProfile, icTagSignature sig,
         return FALSE;
     }
 
-    if (!Icc->Grow(Icc, delta)) {
-        free(ptr);
-        if(isNew) {
-            Icc->TagCount--;
+    /* We change the size of Icc here only if we know it'll actually
+     * grow: if Icc is about to shrink we must wait until we've read
+     * the previous data.  */
+    if (delta > 0) {
+        if (!Icc->Grow(Icc, delta)) {
+            free(ptr);
+            if(isNew) {
+                Icc->TagCount--;
+            }
+            J2dRlsTraceLn(J2D_TRACE_ERROR,
+                          "_cmsModifyTagData: Icc->Grow() == FALSE");
+            return FALSE;
         }
-        J2dRlsTraceLn(J2D_TRACE_ERROR,
-                      "_cmsModifyTagData: Icc->Grow() == FALSE");
-        return FALSE;
     }
 
     /* Compute size of tag data before/after the modified tag */
@@ -680,6 +685,18 @@ LCMSBOOL _cmsModifyTagData(cmsHPROFILE hProfile, icTagSignature sig,
     temp = TransportValue32(profileSize);
     Icc->Write(Icc, sizeof(icUInt32Number), &temp);
 
+    /* Shrink Icc, if needed.  */
+    if (delta < 0) {
+        if (!Icc->Grow(Icc, delta)) {
+            free(ptr);
+            if(isNew) {
+                Icc->TagCount--;
+            }
+            J2dRlsTraceLn(J2D_TRACE_ERROR,
+                          "_cmsModifyTagData: Icc->Grow() == FALSE");
+            return FALSE;
+        }
+    }
 
     /* Adjust tag offsets: if the tag is new, we must account
        for the new tag table entry; otherwise, only those tags after

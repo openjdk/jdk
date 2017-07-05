@@ -67,6 +67,9 @@ tojava package sun.awt.X11;
 tojava import java.util.Hashtable;
 tojava import sun.misc.Unsafe;
 tojava
+tojava import java.util.logging.Level;
+tojava import java.util.logging.Logger;
+tojava
 tojava public class XKeysym {
 tojava
 tojava     public static void main( String args[] ) {
@@ -105,6 +108,7 @@ tojava     // Another use for reverse lookup: query keyboard state, for some key
 tojava     static Hashtable<Integer, Long> javaKeycode2KeysymHash = new Hashtable<Integer, Long>();
 tojava     static long keysym_lowercase = unsafe.allocateMemory(Native.getLongSize());
 tojava     static long keysym_uppercase = unsafe.allocateMemory(Native.getLongSize());
+tojava     private static Logger keyEventLog = Logger.getLogger("sun.awt.X11.kye.XKeysym");
 tojava     public static char convertKeysym( long ks, int state ) {
 tojava
 tojava         /* First check for Latin-1 characters (1:1 mapping) */
@@ -145,8 +149,15 @@ tojava                 // and don't want to speculate. But this particular case
 tojava                 // clearly means that caller needs a so called primary keysym.
 tojava                 mods ^= XConstants.ShiftMask;
 tojava             }
-tojava             XlibWrapper.XkbTranslateKeyCode(XToolkit.getXKBKbdDesc(), ev.get_keycode(),
+tojava             long kbdDesc = XToolkit.getXKBKbdDesc();
+tojava             if( kbdDesc != 0 ) {
+tojava                 XlibWrapper.XkbTranslateKeyCode(kbdDesc, ev.get_keycode(),
 tojava                        mods, XlibWrapper.iarg1, XlibWrapper.larg3);
+tojava             }else{
+tojava                 // xkb resources already gone
+tojava                 keyEventLog.fine("Thread race: Toolkit shutdown before the end of a key event processing.");
+tojava                 return 0;
+tojava             }
 tojava             //XXX unconsumed modifiers?
 tojava             return Native.getLong(XlibWrapper.larg3);
 tojava         } finally {

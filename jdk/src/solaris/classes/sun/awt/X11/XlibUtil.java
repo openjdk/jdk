@@ -149,7 +149,7 @@ public class XlibUtil
                 new XTranslateCoordinates(src, dst, p.x, p.y);
             try
             {
-                int status = xtc.execute(XToolkit.IgnoreBadWindowHandler);
+                int status = xtc.execute(XErrorHandler.IgnoreBadWindowHandler.getInstance());
                 if ((status != 0) &&
                     ((XToolkit.saved_error == null) ||
                      (XToolkit.saved_error.get_error_code() == XConstants.Success)))
@@ -306,7 +306,7 @@ public class XlibUtil
                                          XWM.XA_WM_STATE);
             try
             {
-                wpg.execute(XToolkit.IgnoreBadWindowHandler);
+                wpg.execute(XErrorHandler.IgnoreBadWindowHandler.getInstance());
                 if (wpg.getActualType() == XWM.XA_WM_STATE.getAtom())
                 {
                     return true;
@@ -345,7 +345,7 @@ public class XlibUtil
         XWindowAttributes wattr = new XWindowAttributes();
         try
         {
-            XToolkit.WITH_XERROR_HANDLER(XToolkit.IgnoreBadWindowHandler);
+            XToolkit.WITH_XERROR_HANDLER(XErrorHandler.IgnoreBadWindowHandler.getInstance());
             int status = XlibWrapper.XGetWindowAttributes(XToolkit.getDisplay(),
                                                           window, wattr.pData);
             XToolkit.RESTORE_XERROR_HANDLER();

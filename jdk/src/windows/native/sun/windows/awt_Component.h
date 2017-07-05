@@ -596,7 +596,7 @@ public:
 
     void UpdateColorModel();
 
-    jintArray CreatePrintedPixels(SIZE &loc, SIZE &size);
+    jintArray CreatePrintedPixels(SIZE &loc, SIZE &size, int alpha);
 
     /*
      * HWND, AwtComponent and Java Peer interaction
@@ -738,7 +738,6 @@ protected:
     virtual void SetDragCapture(UINT flags);
     virtual void ReleaseDragCapture(UINT flags);
 
-    //These functions are overridden in AwtWindow to handle non-opaque windows.
     virtual void FillBackground(HDC hMemoryDC, SIZE &size);
     virtual void FillAlpha(void *bitmapBits, SIZE &size, BYTE alpha);
 

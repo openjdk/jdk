@@ -89,6 +89,25 @@ public abstract class SunToolkit extends Toolkit
      */
     private static final String POST_EVENT_QUEUE_KEY = "PostEventQueue";
 
+    /**
+     * Number of buttons.
+     * By default it's taken from the system. If system value does not
+     * fit into int type range, use our own MAX_BUTTONS_SUPPORT value.
+     */
+    protected static int numberOfButtons = 0;
+
+
+    /* XFree standard mention 24 buttons as maximum:
+     * http://www.xfree86.org/current/mouse.4.html
+     * We workaround systems supporting more than 24 buttons.
+     * Otherwise, we have to use long type values as masks
+     * which leads to API change.
+     * InputEvent.BUTTON_DOWN_MASK may contain only 21 masks due to
+     * the 4-bytes limit for the int type. (CR 6799099)
+     * One more bit is reserved for FIRST_HIGH_BIT.
+     */
+    public final static int MAX_BUTTONS_SUPPORTED = 20;
+
     public SunToolkit() {
         /* If awt.threadgroup is set to class name the instance of
          * this class is created (should be subclass of ThreadGroup)
@@ -2079,6 +2098,12 @@ public abstract class SunToolkit extends Toolkit
         return false;
     }
 
+    /**
+     * Descendants of the SunToolkit should override and put their own logic here.
+     */
+    public int getNumberOfButtons(){
+        return 3;
+    }
 } // class SunToolkit
 
 
