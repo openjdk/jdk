@@ -172,6 +172,7 @@ VM_PATH=$(VM_PATH);$(WorkSpace)/src/share/vm/asm
 VM_PATH=$(VM_PATH);$(WorkSpace)/src/share/vm/memory
 VM_PATH=$(VM_PATH);$(WorkSpace)/src/share/vm/oops
 VM_PATH=$(VM_PATH);$(WorkSpace)/src/share/vm/prims
+VM_PATH=$(VM_PATH);$(WorkSpace)/src/share/vm/prims/wbtestmethods
 VM_PATH=$(VM_PATH);$(WorkSpace)/src/share/vm/runtime
 VM_PATH=$(VM_PATH);$(WorkSpace)/src/share/vm/services
 VM_PATH=$(VM_PATH);$(WorkSpace)/src/share/vm/trace
@@ -269,6 +270,9 @@ bytecodeInterpreterWithChecks.obj: ..\generated\jvmtifiles\bytecodeInterpreterWi
 {$(COMMONSRC)\share\vm\prims}.cpp.obj::
         $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
+{$(COMMONSRC)\share\vm\prims\wbtestmethods}.cpp.obj::
+        $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
+
 {$(COMMONSRC)\share\vm\runtime}.cpp.obj::
         $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
@@ -347,6 +351,9 @@ bytecodeInterpreterWithChecks.obj: ..\generated\jvmtifiles\bytecodeInterpreterWi
         $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
 {$(ALTSRC)\share\vm\prims}.cpp.obj::
+        $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
+
+{$(ALTSRC)\share\vm\prims\wbtestmethods}.cpp.obj::
         $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
 {$(ALTSRC)\share\vm\runtime}.cpp.obj::
