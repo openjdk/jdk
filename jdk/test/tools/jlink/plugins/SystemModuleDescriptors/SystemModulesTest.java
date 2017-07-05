@@ -25,6 +25,9 @@ import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleDescriptor.*;
 import java.lang.module.ModuleFinder;
 import java.lang.module.ModuleReference;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -36,6 +39,7 @@ import static org.testng.Assert.*;
 
 /**
  * @test
+ * @bug 8142968 8173381
  * @modules java.base/jdk.internal.misc
  * @run testng SystemModulesTest
  * @summary Verify the properties of ModuleDescriptor created
@@ -43,7 +47,72 @@ import static org.testng.Assert.*;
  */
 
 public class SystemModulesTest {
-    private static final JavaLangModuleAccess jlma = SharedSecrets.getJavaLangModuleAccess();
+    private static final JavaLangModuleAccess JLMA =
+        SharedSecrets.getJavaLangModuleAccess();
+    private static final String OS_NAME = System.getProperty("os.name");
+    private static final String OS_ARCH = System.getProperty("os.arch");
+    //  system modules containing no package
+    private static final Set<String> EMPTY_MODULES =
+        Set.of("java.se", "java.se.ee", "jdk.jdwp.agent", "jdk.pack");
+
+    @Test
+    public void testSystemModules() {
+        Path jimage = Paths.get(System.getProperty("java.home"), "lib", "modules");
+        if (Files.notExists(jimage))
+            return;
+
+        ModuleFinder.ofSystem().findAll().stream()
+                    .map(ModuleReference::descriptor)
+                    .forEach(this::checkAttributes);
+    }
+
+    // JMOD files are created with osName and osArch that may be different
+    // than os.name and os.arch system property
+    private boolean checkOSName(String name) {
+        if (name.equals(OS_NAME))
+            return true;
+
+        if (OS_NAME.equals("Mac OS X")) {
+            return name.equals("Darwin");
+        } else if (OS_NAME.startsWith("Windows")) {
+            return name.startsWith("Windows");
+        } else {
+            System.err.println("ERROR: " + name + " but expected: " + OS_NAME);
+            return false;
+        }
+    }
+
+    private boolean checkOSArch(String name) {
+        if (name.equals(OS_ARCH))
+            return true;
+
+        switch (OS_ARCH) {
+            case "i386":
+            case "x86":
+                return name.equals("i586");
+            default:
+                System.err.println("ERROR: " + name + " but expected: " + OS_ARCH);
+                return false;
+        }
+    }
+
+    private void checkAttributes(ModuleDescriptor md) {
+        System.out.format("%s %s %s %s%n", md.name(),
+                          md.osName(), md.osArch(), md.osVersion());
+
+        if (md.name().equals("java.base")) {
+            assertTrue(checkOSName(md.osName().get()));
+            assertTrue(checkOSArch(md.osArch().get()));
+            assertTrue(md.osVersion().isPresent());
+        } else {
+            // target platform attribute is dropped by jlink plugin
+            assertFalse(md.osName().isPresent());
+            assertFalse(md.osArch().isPresent());
+            assertFalse(md.osVersion().isPresent());
+            assertTrue(md.packages().size() > 0
+                || EMPTY_MODULES.contains(md.name()), md.name());
+        }
+    }
 
     /**
      * Verify ModuleDescriptor contains unmodifiable sets
@@ -59,18 +128,19 @@ public class SystemModulesTest {
     private void testModuleDescriptor(ModuleDescriptor md) {
         assertUnmodifiable(md.packages(), "package");
         assertUnmodifiable(md.requires(),
-                           jlma.newRequires(Set.of(Requires.Modifier.TRANSITIVE), "require", null));
+                           JLMA.newRequires(Set.of(Requires.Modifier.TRANSITIVE),
+                                            "require", null));
         for (Requires req : md.requires()) {
             assertUnmodifiable(req.modifiers(), Requires.Modifier.TRANSITIVE);
         }
 
-        assertUnmodifiable(md.exports(), jlma.newExports(Set.of(), "export", Set.of()));
+        assertUnmodifiable(md.exports(), JLMA.newExports(Set.of(), "export", Set.of()));
         for (Exports exp : md.exports()) {
             assertUnmodifiable(exp.modifiers(), Exports.Modifier.SYNTHETIC);
             assertUnmodifiable(exp.targets(), "target");
         }
 
-        assertUnmodifiable(md.opens(), jlma.newOpens(Set.of(), "open", Set.of()));
+        assertUnmodifiable(md.opens(), JLMA.newOpens(Set.of(), "open", Set.of()));
         for (Opens opens : md.opens()) {
             assertUnmodifiable(opens.modifiers(), Opens.Modifier.SYNTHETIC);
             assertUnmodifiable(opens.targets(), "target");
@@ -79,7 +149,7 @@ public class SystemModulesTest {
         assertUnmodifiable(md.uses(), "use");
 
         assertUnmodifiable(md.provides(),
-                           jlma.newProvides("provide", List.of("provide")));
+                           JLMA.newProvides("provide", List.of("provide")));
         for (Provides provides : md.provides()) {
             assertUnmodifiable(provides.providers(), "provide");
         }

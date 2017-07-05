@@ -25,8 +25,9 @@
 
 /**
  * <h2>High level HTTP and WebSocket API</h2>
+ * {@Incubating}
  *
- * This provides a high-level client interfaces to HTTP (versions 1.1 and 2) and
+ * <p> Provides high-level client interfaces to HTTP (versions 1.1 and 2) and
  * WebSocket. The main types defined are:
  *
  * <ul>

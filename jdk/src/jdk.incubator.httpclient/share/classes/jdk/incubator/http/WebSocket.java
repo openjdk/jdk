@@ -35,6 +35,7 @@ import java.util.concurrent.CompletionStage;
 
 /**
  * A WebSocket client conforming to RFC&nbsp;6455.
+ * {@Incubating}
  *
  * <p> A {@code WebSocket} provides full-duplex communication over a TCP
  * connection.
@@ -105,6 +106,7 @@ public interface WebSocket {
 
     /**
      * A builder for creating {@code WebSocket} instances.
+     * {@Incubating}
      *
      * <p> To build a {@code WebSocket}, {@linkplain HttpClient#newWebSocketBuilder(
      * URI, Listener) create} a builder, configure it as required by
@@ -219,6 +221,7 @@ public interface WebSocket {
 
     /**
      * A listener for events and messages on a {@code WebSocket}.
+     * {@Incubating}
      *
      * <p> Each method of {@code Listener} corresponds to a type of event or a
      * type of message. The {@code WebSocket} argument of the method is the
@@ -570,6 +573,7 @@ public interface WebSocket {
     /**
      * A marker used by {@link WebSocket.Listener} in cases where a partial
      * message may be received.
+     * {@Incubating}
      *
      * @see Listener#onText(WebSocket, CharSequence, MessagePart)
      * @see Listener#onBinary(WebSocket, ByteBuffer, MessagePart)

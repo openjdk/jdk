@@ -47,12 +47,15 @@ import java.util.function.Function;
 import javax.net.ssl.SSLParameters;
 
 /**
- * Represents a response to a {@link HttpRequest}. A {@code HttpResponse} is
- * available when the response status code and headers have been received, and
- * typically after the response body has also been received. This depends on
- * the response body handler provided when sending the request. In all cases,
- * the response body handler is invoked before the body is read. This gives
- * applications an opportunity to decide how to handle the body.
+ * Represents a response to a {@link HttpRequest}.
+ * {@Incubating}
+ *
+ * <p>A {@code HttpResponse} is available when the response status code and
+ * headers have been received, and typically after the response body has also
+ * been received. This depends on the response body handler provided when
+ * sending the request. In all cases, the response body handler is invoked
+ * before the body is read. This gives applications an opportunity to decide
+ * how to handle the body.
  *
  * <p> Methods are provided in this class for accessing the response headers,
  * and response body.
@@ -157,12 +160,15 @@ public abstract class HttpResponse<T> {
     public abstract HttpClient.Version version();
 
     /**
-     * A handler for response bodies. This is a function that takes two
-     * parameters: the response status code, and the response headers,
-     * and which returns a {@link BodyProcessor}. The function is always called
-     * just before the response body is read. Its implementation may examine the
-     * status code or headers and must decide, whether to accept the response
-     * body or discard it, and if accepting it, exactly how to handle it.
+     * A handler for response bodies.
+     * {@Incubating}
+     * <p>
+     * This is a function that takes two parameters: the response status code,
+     * and the response headers, and which returns a {@link BodyProcessor}.
+     * The function is always called just before the response body is read. Its
+     * implementation may examine the status code or headers and must decide,
+     * whether to accept the response body or discard it, and if accepting it,
+     * exactly how to handle it.
      * <p>
      * Some pre-defined implementations which do not utilize the status code
      * or headers (meaning the body is always accepted) are defined:
@@ -409,10 +415,13 @@ public abstract class HttpResponse<T> {
     }
 
     /**
-     * A processor for response bodies. The object acts as a
-     * {@link Flow.Subscriber}&lt;{@link ByteBuffer}&gt; to the HTTP client implementation
-     * which publishes ByteBuffers containing the response body. The processor
-     * converts the incoming buffers of data to some user-defined object type {@code T}.
+     * A processor for response bodies.
+     * {@Incubating}
+     * <p>
+     * The object acts as a {@link Flow.Subscriber}&lt;{@link ByteBuffer}&gt; to
+     * the HTTP client implementation which publishes ByteBuffers containing the
+     * response body. The processor converts the incoming buffers of data to
+     * some user-defined object type {@code T}.
      * <p>
      * The {@link #getBody()} method returns a {@link CompletionStage}{@code <T>}
      * that provides the response body object. The {@code CompletionStage} must
@@ -539,12 +548,14 @@ public abstract class HttpResponse<T> {
     }
 
     /**
-     * A response processor for a HTTP/2 multi response. A multi response
-     * comprises a main response, and zero or more additional responses. Each
-     * additional response is sent by the server in response to requests that
-     * the server also generates. Additional responses are typically resources
-     * that the server expects the client will need which are related to the
-     * initial request.
+     * A response processor for a HTTP/2 multi response.
+     * {@Incubating}
+     * <p>
+     * A multi response comprises a main response, and zero or more additional
+     * responses. Each additional response is sent by the server in response to
+     * requests that the server also generates. Additional responses are
+     * typically resources that the server expects the client will need which
+     * are related to the initial request.
      * <p>
      * Note. Instead of implementing this interface, applications should consider
      * first using the mechanism (built on this interface) provided by

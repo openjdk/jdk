@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,14 @@
 
 /*
  * @test
- * @bug 8016110
+ * @bug 8016110 8170832
  * @summary verify Japanese character in an argument are treated correctly
  * @compile -XDignore.symbol.file I18NArgTest.java
  * @run main I18NArgTest
  */
 import java.io.IOException;
+import java.util.Map;
+import java.util.HashMap;
 
 public class I18NArgTest extends TestHelper {
     public static void main(String... args) throws IOException {
@@ -80,6 +82,7 @@ public class I18NArgTest extends TestHelper {
         execTest("*" + unicodeStr + "\u00b1" + unicodeStr + "*", hexValue + "b1"+ hexValue);
         execTest("?" + unicodeStr + "\u00b1" + unicodeStr + "?", hexValue + "b1"+ hexValue);
     }
+
     static void execTest(String unicodeStr, String hexValue) {
         TestResult tr = doExec(javaCmd,
                 "-Dtest.src=" + TEST_SOURCES_DIR.getAbsolutePath(),
@@ -91,7 +94,24 @@ public class I18NArgTest extends TestHelper {
             System.err.println(tr);
             throw new RuntimeException("test fails");
         }
+
+        // Test via JAVA_OPTIONS
+/*
+        Map<String, String> env = new HashMap<>();
+        String cmd = "-Dtest.src=" + TEST_SOURCES_DIR.getAbsolutePath() +
+                " -Dtest.classes=" + TEST_CLASSES_DIR.getAbsolutePath() +
+                " -cp " + TEST_CLASSES_DIR.getAbsolutePath() +
+                " I18NArgTest " + unicodeStr + " " + hexValue;
+        env.put("JAVA_OPTIONS", cmd);
+        tr = doExec(env, javaCmd);
+        System.out.println(tr.testOutput);
+        if (!tr.isOK()) {
+            System.err.println(tr);
+            throw new RuntimeException("test fails");
+        }
+*/
     }
+
     static void testCharacters(String... args) {
         String input = args[0];
         String expected = args[1];

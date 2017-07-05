@@ -1113,6 +1113,7 @@ public class TIFFImageReader extends ImageReader {
         long offset = getTileOrStripOffset(tileIndex);
         long byteCount = getTileOrStripByteCount(tileIndex);
 
+        decompressor.setPlanarBand(band);
         decompressor.setStream(stream);
         decompressor.setOffset(offset);
         decompressor.setByteCount((int) byteCount);
