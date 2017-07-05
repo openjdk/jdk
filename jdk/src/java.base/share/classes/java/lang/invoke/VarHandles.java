@@ -280,28 +280,29 @@ final class VarHandles {
 //                "@ForceInline\n" +
 //                "@LambdaForm.Compiled\n" +
 //                "final static <METHOD> throws Throwable {\n" +
-//                "    MethodType target = VarHandle.AccessType.getMethodType(ad.type, handle);\n" +
-//                "    MethodType symbolic = ad.symbolicMethodType;\n" +
-//                "    if (target == symbolic) {\n" +
-//                "        <RETURN>MethodHandle.linkToStatic(<LINK_TO_STATIC_ARGS>);\n" +
-//                "    }\n" +
-//                "    else if (target.erase() == symbolic.erase()) {\n" +
+//                "    if (handle.vform.methodType_table[ad.type] == ad.symbolicMethodType) {\n" +
 //                "        <RESULT_ERASED>MethodHandle.linkToStatic(<LINK_TO_STATIC_ARGS>);<RETURN_ERASED>\n" +
 //                "    }\n" +
 //                "    else {\n" +
-//                "        MethodHandle vh_invoker = MethodHandles.varHandleInvoker(VarHandle.AccessMode.values()[ad.mode], symbolic);\n" +
-//                "        <RETURN>vh_invoker.invokeBasic(<LINK_TO_INVOKER_ARGS>);\n" +
+//                "        MethodHandle mh = handle.getMethodHandle(ad.mode);\n" +
+//                "        <RETURN>mh.asType(ad.symbolicMethodTypeInvoker).invokeBasic(<LINK_TO_INVOKER_ARGS>);\n" +
 //                "    }\n" +
 //                "}";
 //
-//        static final String GET_MEMBER_NAME_METHOD =
+//        static final String GUARD_METHOD_TEMPLATE_V =
 //                "@ForceInline\n" +
-//                "final static MemberName getMemberName(VarHandle handle, VarHandle.AccessDescriptor ad) {\n" +
-//                "    MemberName mn = VarHandle.AccessMode.getMemberName(ad.mode, handle.vform);\n" +
-//                "    if (mn == null) {\n" +
-//                "        throw handle.unsupported();\n" +
+//                "@LambdaForm.Compiled\n" +
+//                "final static <METHOD> throws Throwable {\n" +
+//                "    if (handle.vform.methodType_table[ad.type] == ad.symbolicMethodType) {\n" +
+//                "        MethodHandle.linkToStatic(<LINK_TO_STATIC_ARGS>);\n" +
 //                "    }\n" +
-//                "    return mn;\n" +
+//                "    else if (handle.vform.getMethodType_V(ad.type) == ad.symbolicMethodType) {\n" +
+//                "        MethodHandle.linkToStatic(<LINK_TO_STATIC_ARGS>);\n" +
+//                "    }\n" +
+//                "    else {\n" +
+//                "        MethodHandle mh = handle.getMethodHandle(ad.mode);\n" +
+//                "        mh.asType(ad.symbolicMethodTypeInvoker).invokeBasic(<LINK_TO_INVOKER_ARGS>);\n" +
+//                "    }\n" +
 //                "}";
 //
 //        // A template for deriving the operations
@@ -344,8 +345,6 @@ final class VarHandles {
 //                               ". Do not edit.");
 //            System.out.println("final class VarHandleGuards {");
 //
-//            System.out.println();
-//            System.out.println(GET_MEMBER_NAME_METHOD);
 //            System.out.println();
 //
 //            // Declare the stream of shapes
@@ -445,7 +444,10 @@ final class VarHandles {
 //
 //            List<String> LINK_TO_STATIC_ARGS = params.keySet().stream().
 //                    collect(toList());
-//            LINK_TO_STATIC_ARGS.add("getMemberName(handle, ad)");
+//            LINK_TO_STATIC_ARGS.add("handle.vform.getMemberName(ad.mode)");
+//            List<String> LINK_TO_STATIC_ARGS_V = params.keySet().stream().
+//                    collect(toList());
+//            LINK_TO_STATIC_ARGS_V.add("handle.vform.getMemberName_V(ad.mode)");
 //
 //            List<String> LINK_TO_INVOKER_ARGS = params.keySet().stream().
 //                    collect(toList());
@@ -464,15 +466,20 @@ final class VarHandles {
 //
 //            String RETURN_ERASED = returnType != Object.class
 //                                   ? ""
-//                                   : " return symbolic.returnType().cast(r);";
+//                                   : " return ad.returnType.cast(r);";
 //
-//            return GUARD_METHOD_TEMPLATE.
+//            String template = returnType == void.class
+//                              ? GUARD_METHOD_TEMPLATE_V
+//                              : GUARD_METHOD_TEMPLATE;
+//            return template.
 //                    replace("<METHOD>", METHOD).
 //                    replace("<NAME>", NAME).
 //                    replaceAll("<RETURN>", RETURN).
 //                    replace("<RESULT_ERASED>", RESULT_ERASED).
 //                    replace("<RETURN_ERASED>", RETURN_ERASED).
 //                    replaceAll("<LINK_TO_STATIC_ARGS>", LINK_TO_STATIC_ARGS.stream().
+//                            collect(joining(", "))).
+//                    replaceAll("<LINK_TO_STATIC_ARGS_V>", LINK_TO_STATIC_ARGS_V.stream().
 //                            collect(joining(", "))).
 //                    replace("<LINK_TO_INVOKER_ARGS>", LINK_TO_INVOKER_ARGS.stream().
 //                            collect(joining(", ")))

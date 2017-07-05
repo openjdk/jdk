@@ -88,8 +88,9 @@ public final class P11Util {
         p = Security.getProvider(providerName);
         if (p == null) {
             try {
-                Class<?> clazz = Class.forName(className);
-                p = (Provider)clazz.newInstance();
+                @SuppressWarnings("deprecation")
+                Object o = Class.forName(className).newInstance();
+                p = (Provider)o;
             } catch (Exception e) {
                 throw new ProviderException
                         ("Could not find provider " + providerName, e);

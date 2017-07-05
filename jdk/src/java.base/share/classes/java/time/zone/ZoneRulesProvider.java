@@ -147,6 +147,7 @@ public abstract class ZoneRulesProvider {
                 if (prop != null) {
                     try {
                         Class<?> c = Class.forName(prop, true, ClassLoader.getSystemClassLoader());
+                        @SuppressWarnings("deprecation")
                         ZoneRulesProvider provider = ZoneRulesProvider.class.cast(c.newInstance());
                         registerProvider(provider);
                         loaded.add(provider);

@@ -5,6 +5,7 @@ import java.io.OutputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.net.InetSocketAddress;
+import javax.net.ssl.SSLSession;
 
 public class Http2TestExchange {
 
@@ -14,6 +15,7 @@ public class Http2TestExchange {
     final String method;
     final InputStream is;
     final BodyOutputStream os;
+    final SSLSession sslSession;
     final int streamid;
     final boolean pushAllowed;
     final Http2TestServerConnection conn;
@@ -24,6 +26,7 @@ public class Http2TestExchange {
 
     Http2TestExchange(int streamid, String method, HttpHeadersImpl reqheaders,
             HttpHeadersImpl rspheaders, URI uri, InputStream is,
+            SSLSession sslSession,
             BodyOutputStream os, Http2TestServerConnection conn, boolean pushAllowed) {
         this.reqheaders = reqheaders;
         this.rspheaders = rspheaders;
@@ -32,6 +35,7 @@ public class Http2TestExchange {
         this.is = is;
         this.streamid = streamid;
         this.os = os;
+        this.sslSession = sslSession;
         this.pushAllowed = pushAllowed;
         this.conn = conn;
         this.server = conn.server;
@@ -51,6 +55,10 @@ public class Http2TestExchange {
 
     public String getRequestMethod() {
         return method;
+    }
+
+    public SSLSession getSSLSession() {
+        return sslSession;
     }
 
     public void close() {

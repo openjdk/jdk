@@ -196,8 +196,9 @@ public class KeyStoreDelegator extends KeyStoreSpi {
         // A new keystore is always created in the primary keystore format
         if (stream == null) {
             try {
-                keystore = primaryKeyStore.newInstance();
-
+                @SuppressWarnings("deprecation")
+                KeyStoreSpi tmp = primaryKeyStore.newInstance();
+                keystore = tmp;
             } catch (InstantiationException | IllegalAccessException e) {
                 // can safely ignore
             }
@@ -214,7 +215,9 @@ public class KeyStoreDelegator extends KeyStoreSpi {
             bufferedStream.mark(Integer.MAX_VALUE);
 
             try {
-                keystore = primaryKeyStore.newInstance();
+                @SuppressWarnings("deprecation")
+                KeyStoreSpi tmp = primaryKeyStore.newInstance();
+                keystore = tmp;
                 type = primaryType;
                 keystore.engineLoad(bufferedStream, password);
 
@@ -232,7 +235,9 @@ public class KeyStoreDelegator extends KeyStoreSpi {
                         throw e;
                     }
 
-                    keystore = secondaryKeyStore.newInstance();
+                    @SuppressWarnings("deprecation")
+                    KeyStoreSpi tmp= secondaryKeyStore.newInstance();
+                    keystore = tmp;
                     type = secondaryType;
                     bufferedStream.reset();
                     keystore.engineLoad(bufferedStream, password);
@@ -284,7 +289,9 @@ public class KeyStoreDelegator extends KeyStoreSpi {
         boolean result = false;
 
         try {
-            keystore = primaryKeyStore.newInstance();
+            @SuppressWarnings("deprecation")
+            KeyStoreSpi tmp = primaryKeyStore.newInstance();
+            keystore = tmp;
             type = primaryType;
             result = keystore.engineProbe(stream);
 

@@ -2962,7 +2962,9 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
                 SQLData obj = null;
                 try {
                     ReflectUtil.checkPackageAccess(c);
-                    obj = (SQLData) c.newInstance();
+                    @SuppressWarnings("deprecation")
+                    Object tmp = c.newInstance();
+                    obj = (SQLData) tmp;
                 } catch(Exception ex) {
                     throw new SQLException("Unable to Instantiate: ", ex);
                 }
@@ -5710,7 +5712,9 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
                 SQLData obj = null;
                 try {
                     ReflectUtil.checkPackageAccess(c);
-                    obj = (SQLData) c.newInstance();
+                    @SuppressWarnings("deprecation")
+                    Object tmp = c.newInstance();
+                    obj = (SQLData) tmp;
                 } catch(Exception ex) {
                     throw new SQLException("Unable to Instantiate: ", ex);
                 }

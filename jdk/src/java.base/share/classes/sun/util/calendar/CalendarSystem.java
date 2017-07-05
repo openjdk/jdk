@@ -157,8 +157,9 @@ public abstract class CalendarSystem {
             cal = LocalGregorianCalendar.getLocalGregorianCalendar(calendarName);
         } else {
             try {
-                Class<?> cl = Class.forName(className);
-                cal = (CalendarSystem) cl.newInstance();
+                @SuppressWarnings("deprecation")
+                Object tmp = Class.forName(className).newInstance();
+                cal = (CalendarSystem) tmp;
             } catch (Exception e) {
                 throw new InternalError(e);
             }

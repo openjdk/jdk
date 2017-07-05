@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -32,19 +32,26 @@ import com.sun.org.apache.xalan.internal.xsltc.compiler.Constants;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.ErrorMsg;
 import com.sun.org.apache.xalan.internal.xsltc.runtime.AbstractTranslet;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.io.NotSerializableException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.ObjectStreamField;
 import java.io.Serializable;
-import java.util.Arrays;
-import java.util.Collections;
+import java.lang.module.Configuration;
+import java.lang.module.ModuleDescriptor;
+import java.lang.module.ModuleFinder;
+import java.lang.module.ModuleReference;
+import java.lang.reflect.Layer;
+import java.lang.reflect.Module;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.lang.reflect.Module;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
+import java.util.Set;
 import javax.xml.XMLConstants;
 import javax.xml.transform.Templates;
 import javax.xml.transform.Transformer;
@@ -389,6 +396,48 @@ public final class TemplatesImpl implements Templates, Serializable {
         return _name;
     }
 
+
+    /**
+     * Creates a module layer with one module that is defined to the given class
+     * loader.
+     */
+    private Module createModule(ModuleDescriptor descriptor, ClassLoader loader) {
+        String mn = descriptor.name();
+
+        ModuleReference mref = new ModuleReference(descriptor, null, () -> {
+            IOException ioe = new IOException("<dynamic module>");
+            throw new UncheckedIOException(ioe);
+        });
+
+        ModuleFinder finder = new ModuleFinder() {
+            @Override
+            public Optional<ModuleReference> find(String name) {
+                if (name.equals(mn)) {
+                    return Optional.of(mref);
+                } else {
+                    return Optional.empty();
+                }
+            }
+            @Override
+            public Set<ModuleReference> findAll() {
+                return Set.of(mref);
+            }
+        };
+
+        Layer bootLayer = Layer.boot();
+
+        Configuration cf = bootLayer.configuration()
+                .resolveRequires(finder, ModuleFinder.empty(), Set.of(mn));
+
+        PrivilegedAction<Layer> pa = () -> bootLayer.defineModules(cf, name -> loader);
+        Layer layer = AccessController.doPrivileged(pa);
+
+        Module m = layer.findModule(mn).get();
+        assert m.getLayer() == layer;
+
+        return m;
+    }
+
     /**
      * Defines the translet class and auxiliary classes.
      * Returns a reference to the Class object that defines the main class
@@ -417,29 +466,32 @@ public final class TemplatesImpl implements Templates, Serializable {
             }
 
             // create a module for the translet
-            Module xmlModule = TemplatesImpl.class.getModule();
+
+            String mn = "jdk.translet";
+
             String pn = _tfactory.getPackageName();
             assert pn != null && pn.length() > 0;
 
-            Module m = Modules.defineModule(loader, "jdk.translet",
-                                            Collections.singleton(pn));
+            ModuleDescriptor descriptor
+                = new ModuleDescriptor.Builder(mn)
+                    .requires("java.xml")
+                    .exports(pn)
+                    .build();
 
-            // jdk.translate reads java.base && java.xml
-            Modules.addReads(m, Object.class.getModule());
-            Modules.addReads(m, xmlModule);
+            Module m = createModule(descriptor, loader);
 
-            // jdk.translet needs access to runtime classes
+            // the module needs access to runtime classes
+            Module thisModule = TemplatesImpl.class.getModule();
             Arrays.asList(Constants.PKGS_USED_BY_TRANSLET_CLASSES).forEach(p -> {
-                xmlModule.addExports(p, m);
+                thisModule.addExports(p, m);
             });
 
-            // jdk.translate also needs to be loose as the XSL may bind to
-            // java types in an unnamed module
-            Modules.addReads(m, null);
+            // For now, the module reads all unnnamed modules. This will be changed once
+            // the XSLT compiler is updated to generate code to invoke addReads.
+            Modules.addReadsAllUnnamed(m);
 
-            // java.xml needs to instanitate the translate class
-            xmlModule.addReads(m);
-            Modules.addExports(m, pn, xmlModule);
+            // java.xml needs to instanitate the translet class
+            thisModule.addReads(m);
 
             for (int i = 0; i < classCount; i++) {
                 _class[i] = loader.defineClass(_bytecodes[i]);

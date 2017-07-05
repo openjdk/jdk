@@ -139,7 +139,7 @@ public final class AppRuntimeImageBuilder {
 
         // build the image
         Jlink.PluginsConfiguration pluginConfig = new Jlink.PluginsConfiguration(
-            plugins, new DefaultImageBuilder(true, outputDir), null);
+            plugins, new DefaultImageBuilder(outputDir), null);
         Jlink jlink = new Jlink();
         jlink.build(jlinkConfig, pluginConfig);
     }

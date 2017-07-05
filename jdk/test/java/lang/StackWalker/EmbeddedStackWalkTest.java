@@ -140,8 +140,8 @@ public class EmbeddedStackWalkTest {
                 s.limit(BIG_LOOP)
                  .filter(f -> c.getName().equals(f.getClassName()) && mn.equals(f.getMethodName()))
                  .forEach(f -> {
-                    assertEquals(f.getFileName().get(), fileName);
-                    int line = f.getLineNumber().getAsInt();
+                    assertEquals(f.getFileName(), fileName);
+                    int line = f.getLineNumber();
                     assertTrue(line >= BEGIN_LINE && line <= END_LINE);
 
                     StackTraceElement st = f.toStackTraceElement();

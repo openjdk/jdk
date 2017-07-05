@@ -89,9 +89,10 @@ public abstract class HttpServerProvider {
         if (cn == null)
             return false;
         try {
-            Class<?> c = Class.forName(cn, true,
-                                       ClassLoader.getSystemClassLoader());
-            provider = (HttpServerProvider)c.newInstance();
+            @SuppressWarnings("deprecation")
+            Object o = Class.forName(cn, true,
+                                     ClassLoader.getSystemClassLoader()).newInstance();
+            provider = (HttpServerProvider)o;
             return true;
         } catch (ClassNotFoundException |
                  IllegalAccessException |

@@ -32,7 +32,6 @@
  * @compile ../ProxyServer.java
  *
  * @run main/othervm/secure=java.lang.SecurityManager/policy=0.policy Security 0
- * @run main/othervm/secure=java.lang.SecurityManager/policy=1.policy Security 1
  * @run main/othervm/secure=java.lang.SecurityManager/policy=2.policy Security 2
  * @run main/othervm/secure=java.lang.SecurityManager/policy=3.policy Security 3
  * @run main/othervm/secure=java.lang.SecurityManager/policy=4.policy Security 4
@@ -41,13 +40,12 @@
  * @run main/othervm/secure=java.lang.SecurityManager/policy=7.policy Security 7
  * @run main/othervm/secure=java.lang.SecurityManager/policy=8.policy Security 8
  * @run main/othervm/secure=java.lang.SecurityManager/policy=9.policy Security 9
- * @run main/othervm/secure=java.lang.SecurityManager/policy=10.policy Security 10
- * @run main/othervm/secure=java.lang.SecurityManager/policy=11.policy Security 11
- * @run main/othervm/secure=java.lang.SecurityManager/policy=12.policy Security 12
  * @run main/othervm/secure=java.lang.SecurityManager/policy=0.policy Security 13
- * @run main/othervm/secure=java.lang.SecurityManager/policy=1.policy Security 14
+ * @run main/othervm/secure=java.lang.SecurityManager/policy=14.policy Security 14
  * @run main/othervm/secure=java.lang.SecurityManager/policy=15.policy Security 15
  */
+
+// Tests 1, 10, 11 and 12 executed from Driver
 
 import com.sun.net.httpserver.*;
 import java.io.IOException;
@@ -78,7 +76,7 @@ public class Security {
 
     static HttpServer s1 = null;
     static ExecutorService executor=null;
-    static int port;
+    static int port, proxyPort;
     static HttpClient client;
     static String httproot, fileuri, fileroot, redirectroot;
     static List<HttpClient> clients = new LinkedList<>();
@@ -136,6 +134,9 @@ public class Security {
         if (!dest.toFile().exists()) {
             System.out.printf("moving %s to %s\n", src.toString(), dest.toString());
             Files.move(src, dest,  StandardCopyOption.REPLACE_EXISTING);
+        } else if (src.toFile().exists()) {
+            System.out.printf("%s exists, deleting %s\n", dest.toString(), src.toString());
+            Files.delete(src);
         } else {
             System.out.printf("NOT moving %s to %s\n", src.toString(), dest.toString());
         }
@@ -225,15 +226,15 @@ public class Security {
             }),
             // (10) policy has permission for destination URL but not for proxy
             test(false, () -> { //Policy 10
-                directProxyTest(27208, true);
+                directProxyTest(proxyPort, true);
             }),
             // (11) policy has permission for both destination URL and proxy
             test(true, () -> { //Policy 11
-                directProxyTest(27301, true);
+                directProxyTest(proxyPort, true);
             }),
             // (12) policy has permission for both destination URL and proxy
             test(false, () -> { //Policy 11
-                directProxyTest(28301, false);
+                directProxyTest(proxyPort, false);
             }),
             // (13) async version of test 0
             test(false, () -> { // Policy 0
@@ -350,6 +351,8 @@ public class Security {
                 throw new RuntimeException("Failed");
             }
             System.out.println (policy + " succeeded as expected");
+        } catch (BindException e) {
+            System.exit(10);
         } catch (SecurityException e) {
             if (succeeds) {
                 System.out.println("FAILED");
@@ -362,8 +365,12 @@ public class Security {
     }
 
     public static void main(String[] args) throws Exception {
-        initServer();
-        setupProxy();
+        try {
+            initServer();
+            setupProxy();
+        } catch (BindException e) {
+            System.exit(10);
+        }
         fileroot = System.getProperty ("test.src")+ "/docs";
         int testnum = Integer.parseInt(args[0]);
         String policy = args[0];
@@ -382,33 +389,25 @@ public class Security {
             runtest(tr.test, policy, tr.result);
         } finally {
             s1.stop(0);
-            //executor.shutdownNow();
+            executor.shutdownNow();
             for (HttpClient client : clients)
                 client.executorService().shutdownNow();
         }
     }
 
-    // create Http Server on port range below. So, we can
-    HttpServer createServer() {
-        HttpServer server;
-        for (int i=25800; i<26800; i++) {
-            InetSocketAddress a = new InetSocketAddress(i);
-            try {
-                server = HttpServer.create(a, 0);
-                return server;
-            } catch (IOException e) {}
-        }
-        return null;
-    }
-
     public static void initServer() throws Exception {
+        String portstring = System.getProperty("port.number");
+        port = portstring != null ? Integer.parseInt(portstring) : 0;
+        portstring = System.getProperty("port.number1");
+        proxyPort = portstring != null ? Integer.parseInt(portstring) : 0;
+
         Logger logger = Logger.getLogger("com.sun.net.httpserver");
         ConsoleHandler ch = new ConsoleHandler();
         logger.setLevel(Level.ALL);
         ch.setLevel(Level.ALL);
         logger.addHandler(ch);
         String root = System.getProperty ("test.src")+ "/docs";
-        InetSocketAddress addr = new InetSocketAddress (0);
+        InetSocketAddress addr = new InetSocketAddress (port);
         s1 = HttpServer.create (addr, 0);
         if (s1 instanceof HttpsServer) {
             throw new RuntimeException ("should not be httpsserver");
@@ -423,7 +422,13 @@ public class Security {
         s1.setExecutor (executor);
         s1.start();
 
-        port = s1.getAddress().getPort();
+        if (port == 0)
+            port = s1.getAddress().getPort();
+        else {
+            if (s1.getAddress().getPort() != port)
+                throw new RuntimeException("Error wrong port");
+            System.out.println("Port was assigned by Driver");
+        }
         System.out.println("HTTP server port = " + port);
         httproot = "http://127.0.0.1:" + port + "/files/";
         redirectroot = "http://127.0.0.1:" + port + "/redirect/";

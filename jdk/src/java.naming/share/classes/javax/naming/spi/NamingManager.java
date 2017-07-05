@@ -159,7 +159,9 @@ public class NamingManager {
             }
         }
 
-        return (clas != null) ? (ObjectFactory) clas.newInstance() : null;
+        @SuppressWarnings("deprecation") // Class.newInstance
+        ObjectFactory result = (clas != null) ? (ObjectFactory) clas.newInstance() : null;
+        return result;
     }
 
 
@@ -710,8 +712,9 @@ public class NamingManager {
 
             if (factory == null) {
                 try {
-                    factory = (InitialContextFactory)
-                            helper.loadClass(className).newInstance();
+                    @SuppressWarnings("deprecation")
+                    Object o = helper.loadClass(className).newInstance();
+                    factory = (InitialContextFactory) o;
                 } catch (Exception e) {
                     NoInitialContextException ne =
                             new NoInitialContextException(

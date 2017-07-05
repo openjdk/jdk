@@ -36,7 +36,7 @@
                 <pathelement location="${basedir}/jcov2/lib/jcov_j2se_rt.jar"/>
                 <pathelement location="${basedir}/buildtools/nasgen/dist/nasgen.jar"/>
             </classpath>
-            <jvmarg value="-XaddExports:${nasgen.module.imports}"/>
+            <jvmarg line="${nasgen.module.imports}"/>
             <arg value="${nashorn.module.classes.dir}"/>
             <arg value="jdk.nashorn.internal.objects"/>
             <arg value="${nashorn.module.classes.dir}"/>

@@ -98,6 +98,7 @@ public class BasicTest {
             simpleTest(true);
             streamTest(false);
             streamTest(true);
+            paramsTest();
             Thread.sleep(1000 * 4);
         } finally {
             httpServer.stop();
@@ -180,6 +181,30 @@ public class BasicTest {
         System.err.println("DONE");
     }
 
+    static void paramsTest() throws Exception {
+        Http2TestServer server = new Http2TestServer(true, 0, (t -> {
+            SSLSession s = t.getSSLSession();
+            String prot = s.getProtocol();
+            if (prot.equals("TLSv1.2")) {
+                t.sendResponseHeaders(200, -1);
+            } else {
+                System.err.printf("Protocols =%s\n", prot);
+                t.sendResponseHeaders(500, -1);
+            }
+        }), exec, sslContext);
+        server.start();
+        int port = server.getAddress().getPort();
+        URI u = new URI("https://127.0.0.1:"+port+"/foo");
+        HttpClient client = getClient();
+        HttpRequest req = client.request(u)
+            .GET();
+        HttpResponse resp = req.response();
+        int stat = resp.statusCode();
+        if (stat != 200) {
+            throw new RuntimeException("paramsTest failed "
+                + Integer.toString(stat));
+        }
+    }
 
     static void simpleTest(boolean secure) throws Exception {
         URI uri = getURI(secure);
