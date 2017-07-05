@@ -513,6 +513,10 @@ define SetupNativeCompilationBody
     $1_EXTRA_CXXFLAGS:=$$($1_EXTRA_CFLAGS)
   endif
 
+  ifeq ($(DEBUG_BINARIES), true)
+    $1_EXTRA_CFLAGS+=$(CFLAGS_DEBUG_SYMBOLS)
+    $1_EXTRA_CXXFLAGS+=$(CXXFLAGS_DEBUG_SYMBOLS)
+  endif
   ifeq ($$($1_DEBUG_SYMBOLS), true)
     ifeq ($(ENABLE_DEBUG_SYMBOLS), true)
       ifdef OPENJDK

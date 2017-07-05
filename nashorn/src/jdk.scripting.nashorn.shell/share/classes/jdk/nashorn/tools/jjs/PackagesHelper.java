@@ -27,6 +27,12 @@ package jdk.nashorn.tools.jjs;
 
 import java.io.IOException;
 import java.io.File;
+import java.net.URI;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -58,16 +64,17 @@ final class PackagesHelper {
     }
 
     /**
-     * Is Java package properties helper available?
+     * Is javac available?
      *
-     * @return true if package properties support is available
+     * @return true if javac is available
      */
-    static boolean isAvailable() {
+    private static boolean isJavacAvailable() {
         return compiler != null;
     }
 
     private final StandardJavaFileManager fm;
     private final Set<JavaFileObject.Kind> fileKinds;
+    private final FileSystem jrtfs;
 
     /**
      * Construct a new PackagesHelper.
@@ -75,16 +82,23 @@ final class PackagesHelper {
      * @param classPath Class path to compute properties of java package objects
      */
     PackagesHelper(final String classPath) throws IOException {
-        assert isAvailable() : "no java compiler found!";
+        if (isJavacAvailable()) {
+            fm = compiler.getStandardFileManager(null, null, null);
+            fileKinds = EnumSet.of(JavaFileObject.Kind.CLASS);
 
-        fm = compiler.getStandardFileManager(null, null, null);
-        fileKinds = EnumSet.of(JavaFileObject.Kind.CLASS);
-
-        if (classPath != null && !classPath.isEmpty()) {
-            fm.setLocation(StandardLocation.CLASS_PATH, getFiles(classPath));
+            if (classPath != null && !classPath.isEmpty()) {
+                fm.setLocation(StandardLocation.CLASS_PATH, getFiles(classPath));
+            } else {
+                // no classpath set. Make sure that it is empty and not any default like "."
+                fm.setLocation(StandardLocation.CLASS_PATH, Collections.<File>emptyList());
+            }
+            jrtfs = null;
         } else {
-            // no classpath set. Make sure that it is empty and not any default like "."
-            fm.setLocation(StandardLocation.CLASS_PATH, Collections.<File>emptyList());
+            // javac is not available - directly use jrt fs
+            // to support at least platform classes.
+            fm = null;
+            fileKinds = null;
+            jrtfs = FileSystems.getFileSystem(URI.create("jrt:/"));
         }
     }
 
@@ -127,13 +141,41 @@ final class PackagesHelper {
     }
 
     public void close() throws IOException {
-        fm.close();
+        if (fm != null) {
+            fm.close();
+        }
     }
 
     private Set<String> listPackage(final String pkg) throws IOException {
         final Set<String> props = new HashSet<>();
-        listPackage(StandardLocation.PLATFORM_CLASS_PATH, pkg, props);
-        listPackage(StandardLocation.CLASS_PATH, pkg, props);
+        if (fm != null) {
+            listPackage(StandardLocation.PLATFORM_CLASS_PATH, pkg, props);
+            listPackage(StandardLocation.CLASS_PATH, pkg, props);
+        } else if (jrtfs != null) {
+            // look for the /packages/<package_name> directory
+            Path pkgDir = jrtfs.getPath("/packages/" + pkg);
+            if (Files.exists(pkgDir)) {
+                String pkgSlashName = pkg.replace('.', '/');
+                try (DirectoryStream<Path> ds = Files.newDirectoryStream(pkgDir)) {
+                    // it has module links under which this package occurs
+                    for (Path mod : ds) {
+                        // get the package directory under /modules
+                        Path pkgUnderMod = jrtfs.getPath(mod.toString() + "/" + pkgSlashName);
+                        try (DirectoryStream<Path> ds2 = Files.newDirectoryStream(pkgUnderMod)) {
+                            for (Path p : ds2) {
+                                String str = p.getFileName().toString();
+                                // get rid of ".class", if any
+                                if (str.endsWith(".class")) {
+                                    props.add(str.substring(0, str.length() - ".class".length()));
+                                } else {
+                                    props.add(str);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
         return props;
     }
 
