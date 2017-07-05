@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,14 +69,6 @@ static const jboolean const_cpwildcard = JNI_TRUE;
 #else
 static const jboolean const_cpwildcard = JNI_FALSE;
 #endif /* EXPAND_CLASSPATH_WILDCARDS */
-
-#if defined(NEVER_ACT_AS_SERVER_CLASS_MACHINE)
-static const jint const_ergo_class = NEVER_SERVER_CLASS;
-#elif defined(ALWAYS_ACT_AS_SERVER_CLASS_MACHINE)
-static const jint const_ergo_class = ALWAYS_SERVER_CLASS;
-#else
-static const jint const_ergo_class = DEFAULT_POLICY;
-#endif /* NEVER_ACT_AS_SERVER_CLASS_MACHINE */
 
 #ifdef ENABLE_ARG_FILES
 static const jboolean const_disable_argfile = JNI_FALSE;
