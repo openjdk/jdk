@@ -22,10 +22,10 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
 package java.beans;
 
 import java.lang.ref.Reference;
+import javax.swing.SwingContainer;
 
 /**
  * A BeanDescriptor provides global information about a "bean",
@@ -69,6 +69,23 @@ public class BeanDescriptor extends FeatureDescriptor {
             name = name.substring(name.indexOf('.')+1);
         }
         setName(name);
+
+        JavaBean annotation = beanClass.getAnnotation(JavaBean.class);
+        if (annotation != null) {
+            setPreferred(true);
+            String description = annotation.description();
+            if (!description.isEmpty()) {
+                setShortDescription(description);
+            }
+        }
+        SwingContainer container = beanClass.getAnnotation(SwingContainer.class);
+        if (container != null) {
+            setValue("isContainer", container.value());
+            String delegate = container.delegate();
+            if (!delegate.isEmpty()) {
+                setValue("containerDelegate", delegate);
+            }
+        }
     }
 
     /**

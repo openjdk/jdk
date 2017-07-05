@@ -4311,7 +4311,7 @@ TOOLCHAIN_DESCRIPTION_xlc="IBM XL C/C++"
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1403557683
+DATE_WHEN_GENERATED=1404942241
 
 ###############################################################################
 #
@@ -42011,11 +42011,7 @@ $as_echo "$ac_cv_c_bigendian" >&6; }
         C_O_FLAG_HI="-O3"
         C_O_FLAG_NORM="-O2"
       fi
-      if test "x$HAS_CFLAG_OPTIMIZE_DEBUG" = "xtrue"; then
-        C_O_FLAG_DEBUG="$CFLAG_OPTIMIZE_DEBUG_FLAG"
-      else
-        C_O_FLAG_DEBUG="-O0"
-      fi
+      C_O_FLAG_DEBUG="-O0"
       C_O_FLAG_NONE="-O0"
     elif test "x$TOOLCHAIN_TYPE" = xclang; then
       if test "x$OPENJDK_TARGET_OS" = xmacosx; then

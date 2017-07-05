@@ -131,7 +131,7 @@ public class DefaultCellEditor extends AbstractCellEditor
      *
      * @param comboBox  a <code>JComboBox</code> object
      */
-    public DefaultCellEditor(final JComboBox comboBox) {
+    public DefaultCellEditor(final JComboBox<?> comboBox) {
         editorComponent = comboBox;
         comboBox.putClientProperty("JComboBox.isTableCellEditor", Boolean.TRUE);
         delegate = new EditorDelegate() {

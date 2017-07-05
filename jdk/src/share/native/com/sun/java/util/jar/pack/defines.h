@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,6 +79,7 @@ extern int assert_failed(const char*);
 #define ERROR_RESOURCE  "Cannot extract resource file"
 #define ERROR_OVERFLOW  "Internal buffer overflow"
 #define ERROR_INTERNAL  "Internal error"
+#define ERROR_INIT      "cannot init class members"
 
 #define LOGFILE_STDOUT "-"
 #define LOGFILE_STDERR ""

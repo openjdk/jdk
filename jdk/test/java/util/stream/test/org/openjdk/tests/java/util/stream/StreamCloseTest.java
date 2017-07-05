@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,6 +20,13 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+/*
+ * @test
+ * @summary close handlers and closing streams
+ * @bug 8044047
+ */
+
 package org.openjdk.tests.java.util.stream;
 
 import java.util.Arrays;
@@ -29,14 +36,14 @@ import java.util.stream.Stream;
 import org.testng.annotations.Test;
 
 import static java.util.stream.LambdaTestHelpers.countTo;
+import static java.util.stream.ThowableHelper.checkNPE;
 
-/**
- * StreamCloseTest
- *
- * @author Brian Goetz
- */
 @Test(groups = { "serialization-hostile" })
 public class StreamCloseTest extends OpTestCase {
+    public void testNullCloseHandler() {
+        checkNPE(() -> Stream.of(1).onClose(null));
+    }
+
     public void testEmptyCloseHandler() {
         try (Stream<Integer> ints = countTo(100).stream()) {
             ints.forEach(i -> {});

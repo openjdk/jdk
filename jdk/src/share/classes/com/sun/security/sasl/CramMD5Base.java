@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import javax.security.sasl.Sasl;
 import java.security.NoSuchAlgorithmException;
 import java.security.MessageDigest;
 
+import java.util.Arrays;
 import java.util.logging.Logger;
 
 /**
@@ -159,7 +160,7 @@ abstract class CramMD5Base {
         MessageDigest md5 = MessageDigest.getInstance("MD5");
 
         /* digest the key if longer than 64 bytes */
-        if (key.length > 64) {
+        if (key.length > MD5_BLOCKSIZE) {
             key = md5.digest(key);
         }
 
@@ -169,13 +170,9 @@ abstract class CramMD5Base {
         int i;
 
         /* store key in pads */
-        for (i = 0; i < MD5_BLOCKSIZE; i++) {
-            for ( ; i < key.length; i++) {
-                ipad[i] = key[i];
-                opad[i] = key[i];
-            }
-            ipad[i] = 0x00;
-            opad[i] = 0x00;
+        for (i = 0; i < key.length; i++) {
+            ipad[i] = key[i];
+            opad[i] = key[i];
         }
 
         /* XOR key with pads */
@@ -206,6 +203,11 @@ abstract class CramMD5Base {
                     Integer.toHexString(digest[i] & 0x000000ff));
             }
         }
+
+        Arrays.fill(ipad, (byte)0);
+        Arrays.fill(opad, (byte)0);
+        ipad = null;
+        opad = null;
 
         return (digestString.toString());
     }

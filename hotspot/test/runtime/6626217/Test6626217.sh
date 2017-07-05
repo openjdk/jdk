@@ -1,5 +1,5 @@
 # 
-#  Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+#  Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
 #  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 # 
 #  This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ sleep 2
 
 # Compile all the usual suspects, including the default 'many_loader'
 ${CP} many_loader1.java.foo many_loader.java
-${JAVAC} ${TESTJAVACOPTS} -source 1.4 -target 1.4 -Xlint *.java
+${JAVAC} ${TESTJAVACOPTS} -Xlint *.java
 
 # Rename the class files, so the custom loader (and not the system loader) will find it
 ${MV} from_loader2.class from_loader2.impl2
@@ -62,7 +62,7 @@ ${MV} from_loader2.class from_loader2.impl2
 # Compile the next version of 'many_loader'
 ${MV} many_loader.class many_loader.impl1
 ${CP} many_loader2.java.foo many_loader.java
-${JAVAC} ${TESTJAVACOPTS} -source 1.4 -target 1.4 -Xlint many_loader.java
+${JAVAC} ${TESTJAVACOPTS} -Xlint many_loader.java
 
 # Rename the class file, so the custom loader (and not the system loader) will find it
 ${MV} many_loader.class many_loader.impl2

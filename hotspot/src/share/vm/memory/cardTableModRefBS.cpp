@@ -429,7 +429,7 @@ void CardTableModRefBS::non_clean_card_iterate_possibly_parallel(Space* sp,
                                                                  OopsInGenClosure* cl,
                                                                  CardTableRS* ct) {
   if (!mr.is_empty()) {
-    // Caller (process_strong_roots()) claims that all GC threads
+    // Caller (process_roots()) claims that all GC threads
     // execute this call.  With UseDynamicNumberOfGCThreads now all
     // active GC threads execute this call.  The number of active GC
     // threads needs to be passed to par_non_clean_card_iterate_work()
@@ -438,7 +438,7 @@ void CardTableModRefBS::non_clean_card_iterate_possibly_parallel(Space* sp,
     // This is an example of where n_par_threads() is used instead
     // of workers()->active_workers().  n_par_threads can be set to 0 to
     // turn off parallelism.  For example when this code is called as
-    // part of verification and SharedHeap::process_strong_roots() is being
+    // part of verification and SharedHeap::process_roots() is being
     // used, then n_par_threads() may have been set to 0.  active_workers
     // is not overloaded with the meaning that it is a switch to disable
     // parallelism and so keeps the meaning of the number of

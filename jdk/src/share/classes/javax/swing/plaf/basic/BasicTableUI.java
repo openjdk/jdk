@@ -1710,9 +1710,9 @@ public class BasicTableUI extends TableUI
      */
     public Dimension getMinimumSize(JComponent c) {
         long width = 0;
-        Enumeration enumeration = table.getColumnModel().getColumns();
+        Enumeration<TableColumn> enumeration = table.getColumnModel().getColumns();
         while (enumeration.hasMoreElements()) {
-            TableColumn aColumn = (TableColumn)enumeration.nextElement();
+            TableColumn aColumn = enumeration.nextElement();
             width = width + aColumn.getMinWidth();
         }
         return createTableSize(width);
@@ -1725,9 +1725,9 @@ public class BasicTableUI extends TableUI
      */
     public Dimension getPreferredSize(JComponent c) {
         long width = 0;
-        Enumeration enumeration = table.getColumnModel().getColumns();
+        Enumeration<TableColumn> enumeration = table.getColumnModel().getColumns();
         while (enumeration.hasMoreElements()) {
-            TableColumn aColumn = (TableColumn)enumeration.nextElement();
+            TableColumn aColumn = enumeration.nextElement();
             width = width + aColumn.getPreferredWidth();
         }
         return createTableSize(width);
@@ -1740,9 +1740,9 @@ public class BasicTableUI extends TableUI
      */
     public Dimension getMaximumSize(JComponent c) {
         long width = 0;
-        Enumeration enumeration = table.getColumnModel().getColumns();
+        Enumeration<TableColumn> enumeration = table.getColumnModel().getColumns();
         while (enumeration.hasMoreElements()) {
-            TableColumn aColumn = (TableColumn)enumeration.nextElement();
+            TableColumn aColumn = enumeration.nextElement();
             width = width + aColumn.getMaxWidth();
         }
         return createTableSize(width);

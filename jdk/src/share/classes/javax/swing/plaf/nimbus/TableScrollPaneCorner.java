@@ -48,7 +48,8 @@ class TableScrollPaneCorner extends JComponent implements UIResource{
      * Paint the component using the Nimbus Table Header Background Painter
      */
     @Override protected void paintComponent(Graphics g) {
-        Painter painter = (Painter) UIManager.get(
+        @SuppressWarnings("unchecked")
+        Painter<JComponent> painter = (Painter) UIManager.get(
             "TableHeader:\"TableHeader.renderer\"[Enabled].backgroundPainter");
         if (painter != null){
             if (g instanceof Graphics2D){

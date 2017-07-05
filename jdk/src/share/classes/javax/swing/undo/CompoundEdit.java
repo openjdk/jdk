@@ -72,9 +72,9 @@ public class CompoundEdit extends AbstractUndoableEdit {
      */
     public void redo() throws CannotRedoException {
         super.redo();
-        Enumeration cursor = edits.elements();
+        Enumeration<UndoableEdit> cursor = edits.elements();
         while (cursor.hasMoreElements()) {
-            ((UndoableEdit)cursor.nextElement()).redo();
+            cursor.nextElement().redo();
         }
     }
 
@@ -198,9 +198,9 @@ public class CompoundEdit extends AbstractUndoableEdit {
      * Returns false if they all return false.
      */
     public boolean  isSignificant() {
-        Enumeration cursor = edits.elements();
+        Enumeration<UndoableEdit> cursor = edits.elements();
         while (cursor.hasMoreElements()) {
-            if (((UndoableEdit)cursor.nextElement()).isSignificant()) {
+            if (cursor.nextElement().isSignificant()) {
                 return true;
             }
         }

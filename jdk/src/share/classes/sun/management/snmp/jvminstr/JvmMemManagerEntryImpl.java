@@ -79,7 +79,7 @@ public class JvmMemManagerEntryImpl implements JvmMemManagerEntryMBean {
      * Getter for the "JvmMemManagerIndex" variable.
      */
     public Integer getJvmMemManagerIndex() throws SnmpStatusException {
-        return new Integer(JvmMemManagerIndex);
+        return JvmMemManagerIndex;
     }
 
     /**

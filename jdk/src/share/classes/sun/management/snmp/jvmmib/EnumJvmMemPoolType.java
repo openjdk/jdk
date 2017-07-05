@@ -49,10 +49,10 @@ public class EnumJvmMemPoolType extends Enumerated implements Serializable {
     protected static Hashtable<String, Integer> stringTable =
             new Hashtable<>();
     static  {
-        intTable.put(new Integer(2), "heap");
-        intTable.put(new Integer(1), "nonheap");
-        stringTable.put("heap", new Integer(2));
-        stringTable.put("nonheap", new Integer(1));
+        intTable.put(2, "heap");
+        intTable.put(1, "nonheap");
+        stringTable.put("heap", 2);
+        stringTable.put("nonheap", 1);
     }
 
     public EnumJvmMemPoolType(int valueIndex) throws IllegalArgumentException {

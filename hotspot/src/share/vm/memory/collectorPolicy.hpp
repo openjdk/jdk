@@ -115,7 +115,6 @@ class CollectorPolicy : public CHeapObj<mtGC> {
     CollectorPolicyKind,
     GenCollectorPolicyKind,
     ConcurrentMarkSweepPolicyKind,
-    ASConcurrentMarkSweepPolicyKind,
     G1CollectorPolicyKind
   };
 
