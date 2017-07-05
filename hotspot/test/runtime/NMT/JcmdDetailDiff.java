@@ -25,7 +25,7 @@
  * @test
  * @summary run NMT baseline, allocate memory and verify output from detail.diff
  * @key nmt jcmd
- * @library /testlibrary /testlibrary/whitebox
+ * @library /testlibrary /../../test/lib
  * @ignore
  * @build JcmdDetailDiff
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

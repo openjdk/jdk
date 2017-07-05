@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,8 @@ ConcurrentG1RefineThread(ConcurrentG1Refine* cg1r, ConcurrentG1RefineThread *nex
   // The 0th worker in notified by mutator threads and has a special monitor.
   // The last worker is used for young gen rset size sampling.
   if (worker_id > 0) {
-    _monitor = new Monitor(Mutex::nonleaf, "Refinement monitor", true);
+    _monitor = new Monitor(Mutex::nonleaf, "Refinement monitor", true,
+                           Monitor::_safepoint_check_never);
   } else {
     _monitor = DirtyCardQ_CBL_mon;
   }

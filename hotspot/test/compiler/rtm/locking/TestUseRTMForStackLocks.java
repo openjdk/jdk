@@ -26,7 +26,7 @@
  * @test
  * @bug 8031320
  * @summary Verify that rtm locking is used for stack locks.
- * @library /testlibrary /testlibrary/whitebox /compiler/testlibrary
+ * @library /testlibrary /../../test/lib /compiler/testlibrary
  * @build TestUseRTMForStackLocks
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission

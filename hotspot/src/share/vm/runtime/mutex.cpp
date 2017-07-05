@@ -895,6 +895,11 @@ int Monitor::IWait(Thread * Self, jlong timo) {
 // of Mutex-Monitor and instead directly address the underlying design flaw.
 
 void Monitor::lock(Thread * Self) {
+  // Ensure that the Monitor requires/allows safepoint checks.
+  assert(_safepoint_check_required != Monitor::_safepoint_check_never,
+         err_msg("This lock should never have a safepoint check: %s",
+                 name()));
+
 #ifdef CHECK_UNHANDLED_OOPS
   // Clear unhandled oops so we get a crash right away.  Only clear for non-vm
   // or GC threads.
@@ -953,6 +958,10 @@ void Monitor::lock() {
 // thread state set to be in VM, the safepoint synchronization code will deadlock!
 
 void Monitor::lock_without_safepoint_check(Thread * Self) {
+  // Ensure that the Monitor does not require or allow safepoint checks.
+  assert(_safepoint_check_required != Monitor::_safepoint_check_always,
+         err_msg("This lock should always have a safepoint check: %s",
+                 name()));
   assert(_owner != Self, "invariant");
   ILock(Self);
   assert(_owner == NULL, "invariant");
@@ -1082,6 +1091,12 @@ void Monitor::jvm_raw_unlock() {
 
 bool Monitor::wait(bool no_safepoint_check, long timeout,
                    bool as_suspend_equivalent) {
+  // Make sure safepoint checking is used properly.
+  assert(!(_safepoint_check_required == Monitor::_safepoint_check_never && no_safepoint_check == false),
+         err_msg("This lock should never have a safepoint check: %s", name()));
+  assert(!(_safepoint_check_required == Monitor::_safepoint_check_always && no_safepoint_check == true),
+         err_msg("This lock should always have a safepoint check: %s", name()));
+
   Thread * const Self = Thread::current();
   assert(_owner == Self, "invariant");
   assert(ILocked(), "invariant");
@@ -1168,11 +1183,13 @@ void Monitor::ClearMonitor(Monitor * m, const char *name) {
 
 Monitor::Monitor() { ClearMonitor(this); }
 
-Monitor::Monitor(int Rank, const char * name, bool allow_vm_block) {
+Monitor::Monitor(int Rank, const char * name, bool allow_vm_block,
+                 SafepointCheckRequired safepoint_check_required) {
   ClearMonitor(this, name);
 #ifdef ASSERT
   _allow_vm_block  = allow_vm_block;
   _rank            = Rank;
+  NOT_PRODUCT(_safepoint_check_required = safepoint_check_required;)
 #endif
 }
 
@@ -1180,11 +1197,13 @@ Mutex::~Mutex() {
   assert((UNS(_owner)|UNS(_LockWord.FullWord)|UNS(_EntryList)|UNS(_WaitSet)|UNS(_OnDeck)) == 0, "");
 }
 
-Mutex::Mutex(int Rank, const char * name, bool allow_vm_block) {
+Mutex::Mutex(int Rank, const char * name, bool allow_vm_block,
+             SafepointCheckRequired safepoint_check_required) {
   ClearMonitor((Monitor *) this, name);
 #ifdef ASSERT
   _allow_vm_block   = allow_vm_block;
   _rank             = Rank;
+  NOT_PRODUCT(_safepoint_check_required = safepoint_check_required;)
 #endif
 }
 

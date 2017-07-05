@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,7 @@ class XScrollbarPeer extends XComponentPeer implements ScrollbarPeer, XScrollbar
         DEFAULT_WIDTH_LINUX = XToolkit.getUIDefaults().getInt("ScrollBar.defaultWidth");
     }
 
+    @SuppressWarnings("deprecation")
     public void preInit(XCreateWindowParams params) {
         super.preInit(params);
         Scrollbar target = (Scrollbar) this.target;

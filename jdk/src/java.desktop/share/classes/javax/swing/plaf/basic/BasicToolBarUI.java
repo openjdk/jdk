@@ -421,6 +421,7 @@ public class BasicToolBarUI extends ToolBarUI implements SwingConstants
      *
      * @param direction a direction
      */
+    @SuppressWarnings("deprecation")
     protected void navigateFocusedComp(int direction)
     {
         int nComp = toolBar.getComponentCount();
@@ -886,6 +887,7 @@ public class BasicToolBarUI extends ToolBarUI implements SwingConstants
      * @param b {@code true} if the {@code JToolBar} is floating
      * @param p the position
      */
+    @SuppressWarnings("deprecation")
     public void setFloating(boolean b, Point p) {
         if (toolBar.isFloatable()) {
             boolean visible = false;
@@ -1080,6 +1082,7 @@ public class BasicToolBarUI extends ToolBarUI implements SwingConstants
      * @param position the relative to the {@code JTollBar} position
      * @param origin the screen position of {@code JToolBar} before dragging
      */
+    @SuppressWarnings("deprecation")
     protected void dragTo(Point position, Point origin)
     {
         if (toolBar.isFloatable())

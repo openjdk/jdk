@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -599,6 +599,7 @@ public class FormView extends ComponentView implements ActionListener {
      * @param point associated with the mouse click.
      * @return the image data.
      */
+    @SuppressWarnings("deprecation")
     private String getImageData(Point point) {
 
         String mouseCoords = point.x + ":" + point.y;
@@ -816,6 +817,7 @@ public class FormView extends ComponentView implements ActionListener {
      * URLEncoder.encode() method before being added to the
      * buffer.
      */
+    @SuppressWarnings("deprecation")
     private void appendBuffer(StringBuilder buffer, String name, String value) {
         if (buffer.length() > 0) {
             buffer.append('&');

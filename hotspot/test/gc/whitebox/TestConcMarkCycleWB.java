@@ -25,7 +25,7 @@
  * @test TestConMarkCycleWB
  * @bug 8065579
  * @requires vm.gc=="null" | vm.gc=="G1"
- * @library /testlibrary /testlibrary/whitebox
+ * @library /testlibrary /../../test/lib
  * @build ClassFileInstaller com.oracle.java.testlibrary.* sun.hotspot.WhiteBox TestConcMarkCycleWB
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ public class TimeStamp {
     public static void main(String... args) throws IOException {
 
         // make a local copy of our test file
-        File srcFile = Utils.locateJar("golden.jar");
+        File srcFile = Utils.getGoldenJar();
         File goldenFile = new File("golden.jar");
         Utils.copyFile(srcFile, goldenFile);
 

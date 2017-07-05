@@ -199,6 +199,7 @@ final class WScrollPanePeer extends WPanelPeer implements ScrollPanePeer {
         }
 
         @Override
+        @SuppressWarnings("deprecation")
         public void run() {
             if (getScrollChild() == null) {
                 return;

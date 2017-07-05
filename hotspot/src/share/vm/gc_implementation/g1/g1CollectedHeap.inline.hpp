@@ -35,6 +35,41 @@
 #include "runtime/orderAccess.inline.hpp"
 #include "utilities/taskqueue.hpp"
 
+PLABStats* G1CollectedHeap::alloc_buffer_stats(InCSetState dest) {
+  switch (dest.value()) {
+    case InCSetState::Young:
+      return &_survivor_plab_stats;
+    case InCSetState::Old:
+      return &_old_plab_stats;
+    default:
+      ShouldNotReachHere();
+      return NULL; // Keep some compilers happy
+  }
+}
+
+size_t G1CollectedHeap::desired_plab_sz(InCSetState dest) {
+  size_t gclab_word_size = alloc_buffer_stats(dest)->desired_plab_sz();
+  // Prevent humongous PLAB sizes for two reasons:
+  // * PLABs are allocated using a similar paths as oops, but should
+  //   never be in a humongous region
+  // * Allowing humongous PLABs needlessly churns the region free lists
+  return MIN2(_humongous_object_threshold_in_words, gclab_word_size);
+}
+
+HeapWord* G1CollectedHeap::par_allocate_during_gc(InCSetState dest,
+                                                  size_t word_size,
+                                                  AllocationContext_t context) {
+  switch (dest.value()) {
+    case InCSetState::Young:
+      return survivor_attempt_allocation(word_size, context);
+    case InCSetState::Old:
+      return old_attempt_allocation(word_size, context);
+    default:
+      ShouldNotReachHere();
+      return NULL; // Keep some compilers happy
+  }
+}
+
 // Inline functions for G1CollectedHeap
 
 inline AllocationContextStats& G1CollectedHeap::allocation_context_stats() {
@@ -203,7 +238,7 @@ bool G1CollectedHeap::is_in_cset_or_humongous(const oop obj) {
   return _in_cset_fast_test.is_in_cset_or_humongous((HeapWord*)obj);
 }
 
-G1CollectedHeap::in_cset_state_t G1CollectedHeap::in_cset_state(const oop obj) {
+InCSetState G1CollectedHeap::in_cset_state(const oop obj) {
   return _in_cset_fast_test.at((HeapWord*)obj);
 }
 

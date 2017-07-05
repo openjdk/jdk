@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @library /runtime/testlibrary
  * @build GeneratedClassLoader
- * @run main/othervm/timeout=200 FragmentMetaspace
+ * @run main/othervm/timeout=200 -Xmx300m FragmentMetaspace
  */
 
 import java.io.IOException;
@@ -38,25 +38,34 @@ import java.io.IOException;
  */
 public class FragmentMetaspace {
 
+    public static Class<?> c;
+
     public static void main(String... args) {
-        runGrowing(Long.valueOf(System.getProperty("time", "80000")));
+        runGrowing(Long.valueOf(System.getProperty("time", "80000")),
+            Integer.valueOf(System.getProperty("iterations", "200")));
         // try to clean up and unload classes to decrease
         // class verification time in debug vm
         System.gc();
     }
 
-    private static void runGrowing(long time) {
+    private static void runGrowing(long time, int iterations) {
         long startTime = System.currentTimeMillis();
-        for (int i = 0; System.currentTimeMillis() < startTime + time; ++i) {
+        for (int i = 0; System.currentTimeMillis() < startTime + time && i < iterations; ++i) {
             try {
                 GeneratedClassLoader gcl = new GeneratedClassLoader();
 
-                Class<?> c = gcl.getGeneratedClasses(i, 100)[0];
+                // getGeneratedClasses throws a RuntimeException in cases where
+                // the javac exit code is not 0. If the original reason for the exception is
+                // a "java.lang.OutOfMemoryError: Java heap space",
+                // increase the heap size in the @run tag and rerun the test.
+                // The heap can be exhausted by this test, but heap exhaustion
+                // is not a failure mode of this test and should be ignored.
+                c = gcl.getGeneratedClasses(i, 100)[0];
                 c.newInstance();
                 c = null;
 
                 gcl = null;
-            } catch (IOException|InstantiationException|IllegalAccessException ex) {
+            } catch (IOException | InstantiationException | IllegalAccessException ex) {
                 throw new RuntimeException(ex);
             }
         }
