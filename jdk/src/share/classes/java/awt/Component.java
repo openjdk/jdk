@@ -4710,7 +4710,10 @@ public abstract class Component implements ImageObserver, MenuContainer,
         /*
          * 0. Set timestamp and modifiers of current event.
          */
-        EventQueue.setCurrentEventAndMostRecentTime(e);
+        if (!(e instanceof KeyEvent)) {
+            // Timestamp of a key event is set later in DKFM.preDispatchKeyEvent(KeyEvent).
+            EventQueue.setCurrentEventAndMostRecentTime(e);
+        }
 
         /*
          * 1. Pre-dispatchers. Do any necessary retargeting/reordering here
@@ -7606,13 +7609,33 @@ public abstract class Component implements ImageObserver, MenuContainer,
                                      boolean focusedWindowChangeAllowed,
                                      CausedFocusEvent.Cause cause)
     {
+        // 1) Check if the event being dispatched is a system-generated mouse event.
+        AWTEvent currentEvent = EventQueue.getCurrentEvent();
+        if (currentEvent instanceof MouseEvent &&
+            SunToolkit.isSystemGenerated(currentEvent))
+        {
+            // 2) Sanity check: if the mouse event component source belongs to the same containing window.
+            Component source = ((MouseEvent)currentEvent).getComponent();
+            if (source == null || source.getContainingWindow() == getContainingWindow()) {
+                focusLog.finest("requesting focus by mouse event \"in window\"");
+
+                // If both the conditions are fulfilled the focus request should be strictly
+                // bounded by the toplevel window. It's assumed that the mouse event activates
+                // the window (if it wasn't active) and this makes it possible for a focus
+                // request with a strong in-window requirement to change focus in the bounds
+                // of the toplevel. If, by any means, due to asynchronous nature of the event
+                // dispatching mechanism, the window happens to be natively inactive by the time
+                // this focus request is eventually handled, it should not re-activate the
+                // toplevel. Otherwise the result may not meet user expectations. See 6981400.
+                focusedWindowChangeAllowed = false;
+            }
+        }
         if (!isRequestFocusAccepted(temporary, focusedWindowChangeAllowed, cause)) {
             if (focusLog.isLoggable(PlatformLogger.FINEST)) {
                 focusLog.finest("requestFocus is not accepted");
             }
             return false;
         }
-
         // Update most-recent map
         KeyboardFocusManager.setMostRecentFocusOwner(this);
 
@@ -7645,7 +7668,15 @@ public abstract class Component implements ImageObserver, MenuContainer,
         }
 
         // Focus this Component
-        long time = EventQueue.getMostRecentEventTime();
+        long time = 0;
+        if (EventQueue.isDispatchThread()) {
+            time = Toolkit.getEventQueue().getMostRecentKeyEventTime();
+        } else {
+            // A focus request made from outside EDT should not be associated with any event
+            // and so its time stamp is simply set to the current time.
+            time = System.currentTimeMillis();
+        }
+
         boolean success = peer.requestFocus
             (this, temporary, focusedWindowChangeAllowed, time, cause);
         if (!success) {

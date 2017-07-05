@@ -100,18 +100,20 @@ JNIEXPORT jlong JNICALL
 Java_com_sun_management_OperatingSystem_getTotalSwapSpaceSize
   (JNIEnv *env, jobject mbean)
 {
-    MEMORYSTATUS ms;
-    GlobalMemoryStatus(&ms);
-    return (jlong)ms.dwTotalPageFile;
+    MEMORYSTATUSEX ms;
+    ms.dwLength = sizeof(ms);
+    GlobalMemoryStatusEx(&ms);
+    return (jlong) ms.ullTotalPageFile;
 }
 
 JNIEXPORT jlong JNICALL
 Java_com_sun_management_OperatingSystem_getFreeSwapSpaceSize
   (JNIEnv *env, jobject mbean)
 {
-    MEMORYSTATUS ms;
-    GlobalMemoryStatus(&ms);
-    return (jlong)ms.dwAvailPageFile;
+    MEMORYSTATUSEX ms;
+    ms.dwLength = sizeof(ms);
+    GlobalMemoryStatusEx(&ms);
+    return (jlong) ms.ullAvailPageFile;
 }
 
 JNIEXPORT jlong JNICALL
@@ -137,21 +139,20 @@ JNIEXPORT jlong JNICALL
 Java_com_sun_management_OperatingSystem_getFreePhysicalMemorySize
   (JNIEnv *env, jobject mbean)
 {
-    MEMORYSTATUS ms;
-    GlobalMemoryStatus(&ms);
-    return (jlong) ms.dwAvailPhys;
+    MEMORYSTATUSEX ms;
+    ms.dwLength = sizeof(ms);
+    GlobalMemoryStatusEx(&ms);
+    return (jlong) ms.ullAvailPhys;
 }
 
 JNIEXPORT jlong JNICALL
 Java_com_sun_management_OperatingSystem_getTotalPhysicalMemorySize
   (JNIEnv *env, jobject mbean)
 {
-    MEMORYSTATUS ms;
-    // also returns dwAvailPhys (free physical memory bytes),
-    // dwTotalVirtual, dwAvailVirtual,
-    // dwMemoryLoad (% of memory in use)
-    GlobalMemoryStatus(&ms);
-    return ms.dwTotalPhys;
+    MEMORYSTATUSEX ms;
+    ms.dwLength = sizeof(ms);
+    GlobalMemoryStatusEx(&ms);
+    return (jlong) ms.ullTotalPhys;
 }
 
 // Seems WinXP PDH returns PDH_MORE_DATA whenever we send in a NULL buffer.
