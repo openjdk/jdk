@@ -27,6 +27,7 @@ package jdk.nashorn.api.scripting;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 import java.io.StringReader;
@@ -666,6 +667,17 @@ public class ScriptEngineTest {
         e.eval("var arr = [ 'hello', 'world' ]");
         e.eval("ctx.set(arr)");
         assertEquals("helloworld", inv.invokeMethod(ctx.get(), "join", ""));
+    }
+
+    // @bug 8068524: NashornScriptEngineFactory.getParameter() throws IAE
+    // for an unknown key, doesn't conform to the general spec
+    @Test
+    public void getParameterInvalidKeyTest() throws Exception {
+        final ScriptEngineManager manager = new ScriptEngineManager();
+        final ScriptEngine e = manager.getEngineByName("nashorn");
+        // no exception expected here!
+        Object value = e.getFactory().getParameter("no value assigned to this key");
+        assertNull(value);
     }
 
     private static void checkProperty(final ScriptEngine e, final String name)

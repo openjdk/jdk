@@ -48,6 +48,8 @@ class FilterOutputStream extends OutputStream {
      */
     protected OutputStream out;
 
+    private boolean closed;
+
     /**
      * Creates an output stream filter built on top of the specified
      * underlying output stream.
@@ -144,9 +146,9 @@ class FilterOutputStream extends OutputStream {
      * Closes this output stream and releases any system resources
      * associated with the stream.
      * <p>
-     * The <code>close</code> method of <code>FilterOutputStream</code>
-     * calls its <code>flush</code> method, and then calls the
-     * <code>close</code> method of its underlying output stream.
+     * When not already closed, the {@code close} method of {@code
+     * FilterOutputStream} calls its {@code flush} method, and then
+     * calls the {@code close} method of its underlying output stream.
      *
      * @exception  IOException  if an I/O error occurs.
      * @see        java.io.FilterOutputStream#flush()
@@ -154,6 +156,9 @@ class FilterOutputStream extends OutputStream {
      */
     @SuppressWarnings("try")
     public void close() throws IOException {
+        if (closed)
+            return;
+        closed = true;
         try (OutputStream ostream = out) {
             flush();
         }
