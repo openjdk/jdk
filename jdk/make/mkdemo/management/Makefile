@@ -38,6 +38,8 @@ SUBDIRS = FullThreadDump \
 	  MemoryMonitor  \
 	  JTop
 
+include $(BUILDDIR)/common/Subdirs.gmk
+
 all build clean clobber::
 	$(SUBDIRS-loop)
 

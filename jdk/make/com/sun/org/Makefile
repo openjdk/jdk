@@ -32,6 +32,8 @@ PRODUCT = org
 include $(BUILDDIR)/common/Defs.gmk
 
 SUBDIRS =  apache
+include $(BUILDDIR)/common/Subdirs.gmk
+
 all build clean clobber::
 	$(SUBDIRS-loop)
 

@@ -30,7 +30,10 @@
 BUILDDIR = ../../..
 include $(BUILDDIR)/common/Defs.gmk
 
-SUBDIRS = jgss sasl auth auth/module
+SUBDIRS = auth
+SUBDIRS_misc = jgss sasl auth/module
+include $(BUILDDIR)/common/Subdirs.gmk
+
 all build clean clobber::
 	$(SUBDIRS-loop)
 

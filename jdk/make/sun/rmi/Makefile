@@ -43,6 +43,8 @@ ifeq ($(PLATFORM), windows)
     SUBDIRS += cgi
 endif # PLATFORM
 
+include $(BUILDDIR)/common/Subdirs.gmk
+
 # Then do the rest
 all build clean clobber ::
 	$(SUBDIRS-loop)

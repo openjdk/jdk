@@ -32,6 +32,7 @@ PRODUCT = org
 include $(BUILDDIR)/common/Defs.gmk
 
 SUBDIRS = ietf jcp
+include $(BUILDDIR)/common/Subdirs.gmk
 
 all build clean clobber::
 	$(SUBDIRS-loop)
