@@ -31,8 +31,3 @@ $(eval $(call SetupLauncher,wsgen, \
 $(eval $(call SetupLauncher,wsimport, \
     -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) "com.sun.tools.internal.ws.WsImport"$(COMMA) }'))
 
-jdk.xml.ws: $(LAUNCHERS)
-
-all: jdk.xml.ws
-
-.PHONY: all jdk.xml.ws

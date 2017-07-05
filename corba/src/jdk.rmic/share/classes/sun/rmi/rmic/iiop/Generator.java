@@ -352,7 +352,7 @@ public abstract class Generator implements      sun.rmi.rmic.Generator,
                         env.output(Main.getText("rmic.generated", file.getPath(), Long.toString(duration)));
                     }
                     if (sourceFile) {
-                        env.parseFile(new ClassFile(file));
+                        env.parseFile(ClassFile.newClassFile(file));
                     }
                 } catch (IOException e) {
                     env.error(0, "cant.write", file.toString());

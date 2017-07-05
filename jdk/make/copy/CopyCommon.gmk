@@ -23,13 +23,9 @@
 # questions.
 #
 
-default: all
-
-include $(SPEC)
-include MakeBase.gmk
-
-INCLUDE_DST_DIR := $(JDK_OUTPUTDIR)/include
-LIB_DST_DIR := $(JDK_OUTPUTDIR)/lib
+INCLUDE_DST_DIR := $(SUPPORT_OUTPUTDIR)/modules_include/$(MODULE)
+LIB_DST_DIR := $(SUPPORT_OUTPUTDIR)/modules_libs/$(MODULE)
+CONF_DST_DIR := $(SUPPORT_OUTPUTDIR)/modules_conf/$(MODULE)
 
 INCLUDE_DST_OS_DIR := $(INCLUDE_DST_DIR)/$(OPENJDK_TARGET_OS)
 

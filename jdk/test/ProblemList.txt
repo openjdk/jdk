@@ -138,6 +138,9 @@ com/sun/management/GarbageCollectorMXBean/GarbageCollectionNotificationTest.java
 # 8058492
 java/lang/management/ThreadMXBean/FindDeadlocks.java                                      generic-all
 
+# 8058506
+java/lang/management/ThreadMXBean/ThreadMXBeanStateTest.java                              generic-all
+
 ############################################################################
 
 # jdk_jmx
@@ -209,6 +212,9 @@ java/rmi/transport/checkLeaseInfoLeak/CheckLeaseLeak.java       generic-all
 # 7195095
 sun/rmi/transport/proxy/EagerHttpFallback.java                  generic-all
 
+# 8062724
+java/rmi/activation/Activatable/extLoadedImpl/ext.sh            generic-all
+
 ############################################################################
 
 # jdk_security
@@ -219,6 +225,9 @@ sun/security/pkcs11/ec/TestKeyFactory.java                      generic-all
 # 7164518: no PortUnreachableException on Mac
 # 8051952: Unreachable.java test failing on Windows
 sun/security/krb5/auto/Unreachable.java                         windows-all,macosx-all
+
+# 8058849
+sun/security/krb5/config/dns.sh                                 generic-all
 
 # 6988842: 4 tests failing on Solaris 5.10
 sun/security/pkcs11/Secmod/AddPrivateKey.java                   solaris-all
@@ -232,6 +241,9 @@ sun/security/tools/keytool/standard.sh                          solaris-all
 
 # 8049312
 com/sun/crypto/provider/Cipher/AES/CICO.java			generic-all
+
+# 8062758
+java/security/Security/ClassLoaderDeadlock/Deadlock2.sh         generic-all
 
 ############################################################################
 
@@ -254,7 +266,8 @@ com/sun/crypto/provider/Cipher/AES/CICO.java			generic-all
 # jdk_tools
 
 # Tests take too long, on sparcs see 7143279
-tools/pack200/CommandLineTests.java                             solaris-all,macosx-all
+# also see 8059906
+tools/pack200/CommandLineTests.java
 tools/pack200/Pack200Test.java                                  solaris-all,macosx-all
 
 # 8007410
@@ -282,15 +295,31 @@ com/sun/jdi/JdbReadTwiceTest.sh                                 generic-all
 # 8058616
 com/sun/jdi/RedefinePop.sh                                      generic-all
 
-# 8061114
-com/sun/jdi/Redefine-g.sh                                       generic-all
-
 ############################################################################
 
 # jdk_util
 
 # 8051641
 sun/util/calendar/zi/TestZoneInfo310.java                        generic-all
+
+# 8062588
+java/util/Locale/LocaleProviders.sh                              generic-all
+java/util/PluggableLocale/BreakIteratorProviderTest.sh           generic-all
+java/util/PluggableLocale/CalendarDataProviderTest.sh            generic-all
+java/util/PluggableLocale/CalendarNameProviderTest.sh            generic-all
+java/util/PluggableLocale/CollatorProviderTest.sh                generic-all
+java/util/PluggableLocale/CurrencyNameProviderTest.sh            generic-all
+java/util/PluggableLocale/DateFormatProviderTest.sh              generic-all
+java/util/PluggableLocale/DateFormatSymbolsProviderTest.sh       generic-all
+java/util/PluggableLocale/DecimalFormatSymbolsProviderTest.sh    generic-all
+java/util/PluggableLocale/GenericTest.sh                         generic-all
+java/util/PluggableLocale/LocaleNameProviderTest.sh              generic-all
+java/util/PluggableLocale/NumberFormatProviderTest.sh            generic-all
+java/util/PluggableLocale/TimeZoneNameProviderTest.sh            generic-all
+java/util/ResourceBundle/Bug6299235Test.sh                       generic-all
+
+# 8062512
+java/util/spi/ResourceBundleControlProvider/UserDefaultControlTest.java generic-all
 
 ############################################################################
 
@@ -318,7 +347,7 @@ sun/tools/jps/TestJpsJarRelative.java				generic-all
 # 8057732
 sun/jvmstat/monitor/MonitoredVm/MonitorVmStartTerminate.java    generic-all
 
-# 8060736
-sun/jvmstat/monitor/MonitoredVm/CR6672135.java                  generic-all
+# 8060088
+com/sun/tracing/BasicWithSecurityMgr.java                       generic-all
 
 ############################################################################

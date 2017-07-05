@@ -78,12 +78,14 @@ public class CheckPackageAccess {
         "com.sun.org.apache.xml.internal.serializer.utils.",
         "com.sun.org.apache.xml.internal.utils.",
         "com.sun.org.glassfish.",
+        "com.sun.tools.script.",
         "com.oracle.xmlns.internal.",
         "com.oracle.webservices.internal.",
         "org.jcp.xml.dsig.internal.",
         "jdk.internal.",
         "jdk.nashorn.internal.",
         "jdk.nashorn.tools.",
+        "jdk.tools.jimage.",
         "com.sun.activation.registries."
     };
 
