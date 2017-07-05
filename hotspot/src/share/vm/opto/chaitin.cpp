@@ -210,7 +210,7 @@ PhaseChaitin::PhaseChaitin(uint unique, PhaseCFG &cfg, Matcher &matcher)
 {
   NOT_PRODUCT( Compile::TracePhase t3("ctorChaitin", &_t_ctorChaitin, TimeCompiler); )
 
-  _high_frequency_lrg = MIN2(float(OPTO_LRG_HIGH_FREQ), _cfg.get_outer_loop_frequency());
+  _high_frequency_lrg = MIN2(double(OPTO_LRG_HIGH_FREQ), _cfg.get_outer_loop_frequency());
 
   // Build a list of basic blocks, sorted by frequency
   _blks = NEW_RESOURCE_ARRAY(Block *, _cfg.number_of_blocks());
@@ -761,7 +761,7 @@ void PhaseChaitin::gather_lrg_masks( bool after_aggressive ) {
         // processes as vector in RA.
         if (RegMask::is_vector(ireg))
           lrg._is_vector = 1;
-        assert(n_type->isa_vect() == NULL || lrg._is_vector || ireg == Op_RegD,
+        assert(n_type->isa_vect() == NULL || lrg._is_vector || ireg == Op_RegD || ireg == Op_RegL,
                "vector must be in vector registers");
 
         // Check for bound register masks
@@ -961,7 +961,7 @@ void PhaseChaitin::gather_lrg_masks( bool after_aggressive ) {
         int kreg = n->in(k)->ideal_reg();
         bool is_vect = RegMask::is_vector(kreg);
         assert(n->in(k)->bottom_type()->isa_vect() == NULL ||
-               is_vect || kreg == Op_RegD,
+               is_vect || kreg == Op_RegD || kreg == Op_RegL,
                "vector must be in vector registers");
         if (lrgmask.is_bound(kreg))
           lrg._is_bound = 1;
@@ -1799,7 +1799,7 @@ bool PhaseChaitin::stretch_base_pointer_live_ranges(ResourceArea *a) {
           Block *phi_block = _cfg.get_block_for_node(phi);
           if (_cfg.get_block_for_node(phi_block->pred(2)) == block) {
             const RegMask *mask = C->matcher()->idealreg2spillmask[Op_RegI];
-            Node *spill = new (C) MachSpillCopyNode( phi, *mask, *mask );
+            Node *spill = new (C) MachSpillCopyNode(MachSpillCopyNode::LoopPhiInput, phi, *mask, *mask);
             insert_proj( phi_block, 1, spill, maxlrg++ );
             n->set_req(1,spill);
             must_recompute_live = true;

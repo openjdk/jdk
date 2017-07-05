@@ -43,7 +43,8 @@ define_pd_global(bool, CountInterpCalls,            false); // not implemented i
 define_pd_global(bool, NeedsDeoptSuspend,           true); // register window machines need this
 
 define_pd_global(bool, ImplicitNullChecks,          true);  // Generate code for implicit null checks
-define_pd_global(bool, UncommonNullCast,            true);  // Uncommon-trap NULLs past to check cast
+define_pd_global(bool, TrapBasedNullChecks,         false); // Not needed on sparc.
+define_pd_global(bool, UncommonNullCast,            true);  // Uncommon-trap NULLs passed to check cast
 
 define_pd_global(intx, CodeEntryAlignment,    32);
 // The default setting 16/16 seems to work best.

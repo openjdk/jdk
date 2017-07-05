@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -207,7 +207,7 @@ const char* Symbol::as_klass_external_name() const {
 }
 
 // Alternate hashing for unbalanced symbol tables.
-unsigned int Symbol::new_hash(jint seed) {
+unsigned int Symbol::new_hash(juint seed) {
   ResourceMark rm;
   // Use alternate hashing algorithm on this symbol.
   return AltHashing::murmur3_32(seed, (const jbyte*)as_C_string(), utf8_length());

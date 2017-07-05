@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ public class HeapSitesTest {
         DemoRun hprof;
 
         /* Run JVMTI hprof agent with heap=sites */
-        hprof = new DemoRun("hprof", "heap=sites");
+        hprof = new DemoRun("hprof", "heap=sites,file=heapsites.txt");
         hprof.runit(args[0]);
 
         /* Make sure patterns in output look ok */

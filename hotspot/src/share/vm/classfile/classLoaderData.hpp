@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -139,7 +139,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
                            // classes in the class loader are allocated.
   Mutex* _metaspace_lock;  // Locks the metaspace for allocations and setup.
   bool _unloading;         // true if this class loader goes away
-  bool _keep_alive;        // if this CLD can be unloaded for anonymous loaders
+  bool _keep_alive;        // if this CLD is kept alive without a keep_alive_object().
   bool _is_anonymous;      // if this CLD is for an anonymous class
   volatile int _claimed;   // true if claimed, for example during GC traces.
                            // To avoid applying oop closure more than once.
@@ -230,13 +230,16 @@ class ClassLoaderData : public CHeapObj<mtClass> {
 
   oop class_loader() const      { return _class_loader; }
 
+  // The object the GC is using to keep this ClassLoaderData alive.
+  oop keep_alive_object() const;
+
   // Returns true if this class loader data is for a loader going away.
   bool is_unloading() const     {
     assert(!(is_the_null_class_loader_data() && _unloading), "The null class loader can never be unloaded");
     return _unloading;
   }
-  // Anonymous class loader data doesn't have anything to keep them from
-  // being unloaded during parsing the anonymous class.
+
+  // Used to make sure that this CLD is not unloaded.
   void set_keep_alive(bool value) { _keep_alive = value; }
 
   unsigned int identity_hash() {
@@ -260,6 +263,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   jobject add_handle(Handle h);
   void add_class(Klass* k);
   void remove_class(Klass* k);
+  bool contains_klass(Klass* k);
   void record_dependency(Klass* to, TRAPS);
   void init_dependencies(TRAPS);
 

@@ -90,7 +90,7 @@ public abstract class RefAddr implements java.io.Serializable {
     /**
       * Determines whether obj is equal to this RefAddr.
       *<p>
-      * obj is equal to this RefAddr all of these conditions are true
+      * obj is equal to this RefAddr if all of these conditions are true
       *<ul>
       *<li> non-null
       *<li> instance of RefAddr

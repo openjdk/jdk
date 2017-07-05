@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -198,6 +198,9 @@ class Rewriter: public StackObj {
   void rewrite_invokespecial(address bcp, int offset, bool reverse, bool* invokespecial_error);
 
   void patch_invokedynamic_bytecodes();
+
+  // Do all the work.
+  void rewrite_bytecodes(TRAPS);
 
   // Revert bytecodes in case of an exception.
   void restore_bytecodes();

@@ -1,4 +1,4 @@
-Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
 DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
   
 This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,17 @@ explicitly build the 64 bit version.  By default this will build the
 disassembler library only.  If you build demo it will build a demo
 program that attempts to exercise the library.
 
+With recent version of binutils (i.e. binutils-2.23.2) you may get the
+following build error:
+
+WARNING: `makeinfo' is missing on your system.  You should only need it if
+         you modified a `.texi' or `.texinfo' file, or any other file
+         ...
+
+This is because of "Bug 15345 - binutils-2.23.2 tarball doesn't build
+without makeinfo" [2]. The easiest way to work around this problem is
+by doing a "touch $BINUTILS/bfd/doc/bfd.info".
+
 Windows
 
 In theory this should be buildable on Windows but getting a working
@@ -101,3 +112,13 @@ Now test:
 
 If the product mode of the JVM does not accept -XX:+PrintAssembly,
 you do not have a version new enough to use the hsdis plugin.
+
+* Wiki
+
+More information can be found in the OpenJDK HotSpot Wiki [1].
+
+
+Resources:
+
+[1] https://wiki.openjdk.java.net/display/HotSpot/PrintAssembly
+[2] http://sourceware.org/bugzilla/show_bug.cgi?id=15345

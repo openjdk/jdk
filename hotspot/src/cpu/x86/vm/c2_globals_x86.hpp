@@ -88,6 +88,8 @@ define_pd_global(intx, ReservedCodeCacheSize,        48*M);
 define_pd_global(uintx, CodeCacheMinBlockLength,     4);
 define_pd_global(uintx, CodeCacheMinimumUseSpace,    400*K);
 
+define_pd_global(bool,  TrapBasedRangeChecks,        false); // Not needed on x86.
+
 // Heap related flags
 define_pd_global(uintx,MetaspaceSize,    ScaleForWordSize(16*M));
 

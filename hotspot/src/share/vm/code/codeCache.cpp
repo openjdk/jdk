@@ -595,11 +595,8 @@ void CodeCache::clear_inline_caches() {
   }
 }
 
-#ifndef PRODUCT
 // Keeps track of time spent for checking dependencies
-static elapsedTimer dependentCheckTime;
-#endif
-
+NOT_PRODUCT(static elapsedTimer dependentCheckTime;)
 
 int CodeCache::mark_for_deoptimization(DepChange& changes) {
   MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);

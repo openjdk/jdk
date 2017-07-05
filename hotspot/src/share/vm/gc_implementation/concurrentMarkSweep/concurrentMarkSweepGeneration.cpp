@@ -958,7 +958,7 @@ void ConcurrentMarkSweepGeneration::compute_new_size_free_list() {
         desired_free_percentage);
       gclog_or_tty->print_cr("  Maximum free fraction %f",
         maximum_free_percentage);
-      gclog_or_tty->print_cr("  Capactiy "SIZE_FORMAT, capacity()/1000);
+      gclog_or_tty->print_cr("  Capacity "SIZE_FORMAT, capacity()/1000);
       gclog_or_tty->print_cr("  Desired capacity "SIZE_FORMAT,
         desired_capacity/1000);
       int prev_level = level() - 1;
@@ -3035,7 +3035,6 @@ void CMSCollector::verify_after_remark_work_1() {
                                 true,   // activate StrongRootsScope
                                 SharedHeap::ScanningOption(roots_scanning_options()),
                                 &notOlder,
-                                true,   // walk code active on stacks
                                 NULL,
                                 NULL); // SSS: Provide correct closure
 
@@ -3102,7 +3101,6 @@ void CMSCollector::verify_after_remark_work_2() {
                                 true,   // activate StrongRootsScope
                                 SharedHeap::ScanningOption(roots_scanning_options()),
                                 &notOlder,
-                                true,   // walk code active on stacks
                                 NULL,
                                 &klass_closure);
 
@@ -3313,7 +3311,7 @@ void CMSCollector::setup_cms_unloading_and_verification_state() {
   }
 
   // Not unloading classes this cycle
-  assert(!should_unload_classes(), "Inconsitency!");
+  assert(!should_unload_classes(), "Inconsistency!");
   remove_root_scanning_option(SharedHeap::SO_SystemClasses);
   add_root_scanning_option(SharedHeap::SO_AllClasses);
 
@@ -3680,12 +3678,6 @@ void CMSCollector::checkpointRootsInitialWork(bool asynch) {
   ResourceMark rm;
   HandleMark  hm;
 
-  FalseClosure falseClosure;
-  // In the case of a synchronous collection, we will elide the
-  // remark step, so it's important to catch all the nmethod oops
-  // in this step.
-  // The final 'true' flag to gen_process_strong_roots will ensure this.
-  // If 'async' is true, we can relax the nmethod tracing.
   MarkRefsIntoClosure notOlder(_span, &_markBitMap);
   GenCollectedHeap* gch = GenCollectedHeap::heap();
 
@@ -3738,7 +3730,6 @@ void CMSCollector::checkpointRootsInitialWork(bool asynch) {
                                     true,   // activate StrongRootsScope
                                     SharedHeap::ScanningOption(roots_scanning_options()),
                                     &notOlder,
-                                    true,   // walk all of code cache if (so & SO_AllCodeCache)
                                     NULL,
                                     &klass_closure);
     }
@@ -5237,7 +5228,6 @@ void CMSParInitialMarkTask::work(uint worker_id) {
                                 false,     // this is parallel code
                                 SharedHeap::ScanningOption(_collector->CMSCollector::roots_scanning_options()),
                                 &par_mri_cl,
-                                true,   // walk all of code cache if (so & SO_AllCodeCache)
                                 NULL,
                                 &klass_closure);
   assert(_collector->should_unload_classes()
@@ -5373,7 +5363,6 @@ void CMSParRemarkTask::work(uint worker_id) {
                                 false,     // this is parallel code
                                 SharedHeap::ScanningOption(_collector->CMSCollector::roots_scanning_options()),
                                 &par_mrias_cl,
-                                true,   // walk all of code cache if (so & SO_AllCodeCache)
                                 NULL,
                                 NULL);     // The dirty klasses will be handled below
   assert(_collector->should_unload_classes()
@@ -5963,7 +5952,6 @@ void CMSCollector::do_remark_non_parallel() {
                                   false, // use the local StrongRootsScope
                                   SharedHeap::ScanningOption(roots_scanning_options()),
                                   &mrias_cl,
-                                  true,   // walk code active on stacks
                                   NULL,
                                   NULL);  // The dirty klasses will be handled below
 
@@ -7243,7 +7231,7 @@ size_t SurvivorSpacePrecleanClosure::do_object_careful(oop p) {
   HeapWord* addr = (HeapWord*)p;
   DEBUG_ONLY(_collector->verify_work_stacks_empty();)
   assert(!_span.contains(addr), "we are scanning the survivor spaces");
-  assert(p->klass_or_null() != NULL, "object should be initializd");
+  assert(p->klass_or_null() != NULL, "object should be initialized");
   // an initialized object; ignore mark word in verification below
   // since we are running concurrent with mutators
   assert(p->is_oop(true), "should be an oop");

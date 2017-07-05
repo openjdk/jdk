@@ -299,6 +299,7 @@ public:
   JVMState* clone_deep(Compile* C) const;    // recursively clones caller chain
   JVMState* clone_shallow(Compile* C) const; // retains uncloned caller
   void      set_map_deep(SafePointNode *map);// reset map for all callers
+  void      adapt_position(int delta);       // Adapt offsets in in-array after adding an edge.
 
 #ifndef PRODUCT
   void      format(PhaseRegAlloc *regalloc, const Node *n, outputStream* st) const;
@@ -559,9 +560,15 @@ public:
   // Are we guaranteed that this node is a safepoint?  Not true for leaf calls and
   // for some macro nodes whose expansion does not have a safepoint on the fast path.
   virtual bool        guaranteed_safepoint()  { return true; }
-  // For macro nodes, the JVMState gets modified during expansion, so when cloning
-  // the node the JVMState must be cloned.
-  virtual void        clone_jvms(Compile* C) { }   // default is not to clone
+  // For macro nodes, the JVMState gets modified during expansion. If calls
+  // use MachConstantBase, it gets modified during matching. So when cloning
+  // the node the JVMState must be cloned. Default is not to clone.
+  virtual void clone_jvms(Compile* C) {
+    if (C->needs_clone_jvms() && jvms() != NULL) {
+      set_jvms(jvms()->clone_deep(C));
+      jvms()->set_map_deep(this);
+    }
+  }
 
   // Returns true if the call may modify n
   virtual bool        may_modify(const TypeOopPtr *t_oop, PhaseTransform *phase);
