@@ -457,6 +457,9 @@ class CommandLineFlags {
   lp64_product(intx, ObjectAlignmentInBytes, 8,                             \
           "Default object alignment in bytes, 8 is minimum")                \
                                                                             \
+  product(bool, AssumeMP, false,                                            \
+          "Instruct the VM to assume multiple processors are available")    \
+                                                                            \
   /* UseMembar is theoretically a temp flag used for memory barrier         \
    * removal testing.  It was supposed to be removed before FCS but has     \
    * been re-added (see 6401008) */                                         \
@@ -1404,6 +1407,10 @@ class CommandLineFlags {
           "How much the GC can expand the eden by while the GC locker  "    \
           "is active (as a percentage)")                                    \
                                                                             \
+  diagnostic(intx, GCLockerRetryAllocationCount, 2,                         \
+          "Number of times to retry allocations when"                       \
+          " blocked by the GC locker")                                      \
+                                                                            \
   develop(bool, UseCMSAdaptiveFreeLists, true,                              \
           "Use Adaptive Free Lists in the CMS generation")                  \
                                                                             \
@@ -1959,6 +1966,10 @@ class CommandLineFlags {
                                                                             \
   product(uintx, InitialRAMFraction, 64,                                    \
           "Fraction (1/n) of real memory used for initial heap size")       \
+                                                                            \
+  develop(uintx, MaxVirtMemFraction, 2,                                     \
+          "Maximum fraction (1/n) of virtual memory used for ergonomically" \
+          "determining maximum heap size")                                  \
                                                                             \
   product(bool, UseAutoGCSelectPolicy, false,                               \
           "Use automatic collection selection policy")                      \
@@ -2517,7 +2528,7 @@ class CommandLineFlags {
           "disable locking assertions (for speed)")                         \
                                                                             \
   product(bool, RangeCheckElimination, true,                                \
-          "Split loop iterations to eliminate range checks")                \
+          "Eliminate range checks")                                         \
                                                                             \
   develop_pd(bool, UncommonNullCast,                                        \
           "track occurrences of null in casts; adjust compiler tactics")    \

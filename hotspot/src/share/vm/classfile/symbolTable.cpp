@@ -677,9 +677,14 @@ oop StringTable::lookup(Symbol* symbol) {
   ResourceMark rm;
   int length;
   jchar* chars = symbol->as_unicode(length);
-  unsigned int hashValue = hash_string(chars, length);
-  int index = the_table()->hash_to_index(hashValue);
-  return the_table()->lookup(index, chars, length, hashValue);
+  return lookup(chars, length);
+}
+
+
+oop StringTable::lookup(jchar* name, int len) {
+  unsigned int hash = hash_string(name, len);
+  int index = the_table()->hash_to_index(hash);
+  return the_table()->lookup(index, name, len, hash);
 }
 
 

@@ -39,8 +39,10 @@ public class ClassMetaspaceSizeInJmapHeap {
     public static void main(String[] args) throws Exception {
         String pid = Integer.toString(ProcessTools.getProcessId());
 
-        ProcessBuilder pb = new ProcessBuilder();
-        pb.command(JDKToolFinder.getJDKTool("jmap"), "-heap",  pid);
+        JDKToolLauncher jmap = JDKToolLauncher.create("jmap")
+                                              .addToolArg("-heap")
+                                              .addToolArg(pid);
+        ProcessBuilder pb = new ProcessBuilder(jmap.getCommand());
 
         File out = new File("ClassMetaspaceSizeInJmapHeap.stdout.txt");
         pb.redirectOutput(out);

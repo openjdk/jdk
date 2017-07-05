@@ -53,19 +53,13 @@ ifneq (, $(filter $(OPENJDK_TARGET_OS), solaris macosx))
 endif
 
 $(SAMPLE_TARGET_DIR)/dtrace/%: $(SAMPLE_SOLARIS_SOURCE_DIR)/dtrace/%
-	$(MKDIR) -p $(@D)
-	$(RM) $@
-	$(CP) $< $@
+	$(call install-file)
 
 $(SAMPLE_TARGET_DIR)/webservices/%: $(SAMPLE_CLOSED_SOURCE_DIR)/webservices/%
-	$(MKDIR) -p $(@D)
-	$(RM) $@
-	$(CP) $< $@
+	$(call install-file)
 
 $(SAMPLE_TARGET_DIR)/%: $(SAMPLE_SOURCE_DIR)/%
-	$(MKDIR) -p $(@D)
-	$(RM) $@
-	$(CP) $< $@
+	$(call install-file)
 
 COPY_FILES += $(SAMPLE_TARGET)
 

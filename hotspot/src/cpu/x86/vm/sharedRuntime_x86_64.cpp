@@ -2315,16 +2315,8 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   __ call(RuntimeAddress(native_func));
 
-    // Either restore the MXCSR register after returning from the JNI Call
-    // or verify that it wasn't changed.
-    if (RestoreMXCSROnJNICalls) {
-      __ ldmxcsr(ExternalAddress(StubRoutines::x86::mxcsr_std()));
-
-    }
-    else if (CheckJNICalls ) {
-      __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::x86::verify_mxcsr_entry())));
-    }
-
+  // Verify or restore cpu control state after JNI call
+  __ restore_cpu_control_state_after_jni();
 
   // Unpack native results.
   switch (ret_type) {
