@@ -124,7 +124,7 @@ public class SecureRandom extends java.util.Random {
     private String algorithm;
 
     // Seed Generator
-    private static volatile SecureRandom seedGenerator = null;
+    private static volatile SecureRandom seedGenerator;
 
     /**
      * Constructs a secure random number generator (RNG) implementing the
@@ -522,10 +522,12 @@ public class SecureRandom extends java.util.Random {
      * @see #setSeed
      */
     public static byte[] getSeed(int numBytes) {
-        if (seedGenerator == null) {
-            seedGenerator = new SecureRandom();
+        SecureRandom seedGen = seedGenerator;
+        if (seedGen == null) {
+            seedGen = new SecureRandom();
+            seedGenerator = seedGen;
         }
-        return seedGenerator.generateSeed(numBytes);
+        return seedGen.generateSeed(numBytes);
     }
 
     /**

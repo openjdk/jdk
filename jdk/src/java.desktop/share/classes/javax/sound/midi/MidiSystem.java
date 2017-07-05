@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 
@@ -179,10 +180,12 @@ public class MidiSystem {
      *         due to resource restrictions
      * @throws IllegalArgumentException if the info object does not represent a
      *         MIDI device installed on the system
+     * @throws NullPointerException if {@code info} is {@code null}
      * @see #getMidiDeviceInfo
      */
     public static MidiDevice getMidiDevice(final MidiDevice.Info info)
             throws MidiUnavailableException {
+        Objects.requireNonNull(info);
         for (final MidiDeviceProvider provider : getMidiDeviceProviders()) {
             if (provider.isDeviceSupported(info)) {
                 return provider.getDevice(info);
@@ -447,11 +450,13 @@ public class MidiSystem {
      * @throws InvalidMidiDataException if the stream does not point to valid
      *         MIDI soundbank data recognized by the system
      * @throws IOException if an I/O error occurred when loading the soundbank
+     * @throws NullPointerException if {@code stream} is {@code null}
      * @see InputStream#markSupported
      * @see InputStream#mark
      */
-    public static Soundbank getSoundbank(InputStream stream)
-        throws InvalidMidiDataException, IOException {
+    public static Soundbank getSoundbank(final InputStream stream)
+            throws InvalidMidiDataException, IOException {
+        Objects.requireNonNull(stream);
 
         SoundbankReader sp = null;
         Soundbank s = null;
@@ -479,9 +484,11 @@ public class MidiSystem {
      * @throws InvalidMidiDataException if the URL does not point to valid MIDI
      *         soundbank data recognized by the system
      * @throws IOException if an I/O error occurred when loading the soundbank
+     * @throws NullPointerException if {@code url} is {@code null}
      */
-    public static Soundbank getSoundbank(URL url)
-        throws InvalidMidiDataException, IOException {
+    public static Soundbank getSoundbank(final URL url)
+            throws InvalidMidiDataException, IOException {
+        Objects.requireNonNull(url);
 
         SoundbankReader sp = null;
         Soundbank s = null;
@@ -509,9 +516,11 @@ public class MidiSystem {
      * @throws InvalidMidiDataException if the {@code File} does not point to
      *         valid MIDI soundbank data recognized by the system
      * @throws IOException if an I/O error occurred when loading the soundbank
+     * @throws NullPointerException if {@code file} is {@code null}
      */
-    public static Soundbank getSoundbank(File file)
-        throws InvalidMidiDataException, IOException {
+    public static Soundbank getSoundbank(final File file)
+            throws InvalidMidiDataException, IOException {
+        Objects.requireNonNull(file);
 
         SoundbankReader sp = null;
         Soundbank s = null;
@@ -556,13 +565,15 @@ public class MidiSystem {
      *         MIDI file data recognized by the system
      * @throws IOException if an I/O exception occurs while accessing the
      *         stream
+     * @throws NullPointerException if {@code stream} is {@code null}
      * @see #getMidiFileFormat(URL)
      * @see #getMidiFileFormat(File)
      * @see InputStream#markSupported
      * @see InputStream#mark
      */
-    public static MidiFileFormat getMidiFileFormat(InputStream stream)
-        throws InvalidMidiDataException, IOException {
+    public static MidiFileFormat getMidiFileFormat(final InputStream stream)
+            throws InvalidMidiDataException, IOException {
+        Objects.requireNonNull(stream);
 
         List<MidiFileReader> providers = getMidiFileReaders();
         MidiFileFormat format = null;
@@ -602,11 +613,13 @@ public class MidiSystem {
      * @throws InvalidMidiDataException if the URL does not point to valid MIDI
      *         file data recognized by the system
      * @throws IOException if an I/O exception occurs while accessing the URL
+     * @throws NullPointerException if {@code url} is {@code null}
      * @see #getMidiFileFormat(InputStream)
      * @see #getMidiFileFormat(File)
      */
-    public static MidiFileFormat getMidiFileFormat(URL url)
-        throws InvalidMidiDataException, IOException {
+    public static MidiFileFormat getMidiFileFormat(final URL url)
+            throws InvalidMidiDataException, IOException {
+        Objects.requireNonNull(url);
 
         List<MidiFileReader> providers = getMidiFileReaders();
         MidiFileFormat format = null;
@@ -646,11 +659,13 @@ public class MidiSystem {
      * @throws InvalidMidiDataException if the {@code File} does not point to
      *         valid MIDI file data recognized by the system
      * @throws IOException if an I/O exception occurs while accessing the file
+     * @throws NullPointerException if {@code file} is {@code null}
      * @see #getMidiFileFormat(InputStream)
      * @see #getMidiFileFormat(URL)
      */
-    public static MidiFileFormat getMidiFileFormat(File file)
-        throws InvalidMidiDataException, IOException {
+    public static MidiFileFormat getMidiFileFormat(final File file)
+            throws InvalidMidiDataException, IOException {
+        Objects.requireNonNull(file);
 
         List<MidiFileReader> providers = getMidiFileReaders();
         MidiFileFormat format = null;
@@ -699,11 +714,13 @@ public class MidiSystem {
      * @throws InvalidMidiDataException if the stream does not point to valid
      *         MIDI file data recognized by the system
      * @throws IOException if an I/O exception occurs while accessing the stream
+     * @throws NullPointerException if {@code stream} is {@code null}
      * @see InputStream#markSupported
      * @see InputStream#mark
      */
-    public static Sequence getSequence(InputStream stream)
-        throws InvalidMidiDataException, IOException {
+    public static Sequence getSequence(final InputStream stream)
+            throws InvalidMidiDataException, IOException {
+        Objects.requireNonNull(stream);
 
         List<MidiFileReader> providers = getMidiFileReaders();
         Sequence sequence = null;
@@ -743,9 +760,11 @@ public class MidiSystem {
      * @throws InvalidMidiDataException if the URL does not point to valid MIDI
      *         file data recognized by the system
      * @throws IOException if an I/O exception occurs while accessing the URL
+     * @throws NullPointerException if {@code url} is {@code null}
      */
-    public static Sequence getSequence(URL url)
-        throws InvalidMidiDataException, IOException {
+    public static Sequence getSequence(final URL url)
+            throws InvalidMidiDataException, IOException {
+        Objects.requireNonNull(url);
 
         List<MidiFileReader> providers = getMidiFileReaders();
         Sequence sequence = null;
@@ -787,9 +806,11 @@ public class MidiSystem {
      * @throws InvalidMidiDataException if the File does not point to valid MIDI
      *         file data recognized by the system
      * @throws IOException if an I/O exception occurs
+     * @throws NullPointerException if {@code file} is {@code null}
      */
-    public static Sequence getSequence(File file)
-        throws InvalidMidiDataException, IOException {
+    public static Sequence getSequence(final File file)
+            throws InvalidMidiDataException, IOException {
+        Objects.requireNonNull(file);
 
         List<MidiFileReader> providers = getMidiFileReaders();
         Sequence sequence = null;
@@ -870,8 +891,10 @@ public class MidiSystem {
      * @param  sequence the sequence for which MIDI file type support is queried
      * @return the set of unique supported file types. If no file types are
      *         supported, returns an array of length 0.
+     * @throws NullPointerException if {@code sequence} is {@code null}
      */
-    public static int[] getMidiFileTypes(Sequence sequence) {
+    public static int[] getMidiFileTypes(final Sequence sequence) {
+        Objects.requireNonNull(sequence);
 
         List<MidiFileWriter> providers = getMidiFileWriters();
         Set<Integer> allTypes = new HashSet<>();
@@ -903,8 +926,11 @@ public class MidiSystem {
      * @param  sequence the sequence for which file writing support is queried
      * @return {@code true} if the file type is supported for this sequence,
      *         otherwise {@code false}
+     * @throws NullPointerException if {@code sequence} is {@code null}
      */
-    public static boolean isFileTypeSupported(int fileType, Sequence sequence) {
+    public static boolean isFileTypeSupported(final int fileType,
+                                              final Sequence sequence) {
+        Objects.requireNonNull(sequence);
 
         List<MidiFileWriter> providers = getMidiFileWriters();
 
@@ -929,10 +955,15 @@ public class MidiSystem {
      * @throws IOException if an I/O exception occurs
      * @throws IllegalArgumentException if the file format is not supported by
      *         the system
+     * @throws NullPointerException if {@code in} or {@code out} are
+     *         {@code null}
      * @see #isFileTypeSupported(int, Sequence)
      * @see #getMidiFileTypes(Sequence)
      */
-    public static int write(Sequence in, int fileType, OutputStream out) throws IOException {
+    public static int write(final Sequence in, final int fileType,
+                            final OutputStream out) throws IOException {
+        Objects.requireNonNull(in);
+        Objects.requireNonNull(out);
 
         List<MidiFileWriter> providers = getMidiFileWriters();
         //$$fb 2002-04-17: Fix for 4635287: Standard MidiFileWriter cannot write empty Sequences
@@ -963,10 +994,15 @@ public class MidiSystem {
      * @throws IOException if an I/O exception occurs
      * @throws IllegalArgumentException if the file type is not supported by the
      *         system
+     * @throws NullPointerException if {@code in} or {@code out} are
+     *         {@code null}
      * @see #isFileTypeSupported(int, Sequence)
      * @see #getMidiFileTypes(Sequence)
      */
-    public static int write(Sequence in, int type, File out) throws IOException {
+    public static int write(final Sequence in, final int type, final File out)
+            throws IOException {
+        Objects.requireNonNull(in);
+        Objects.requireNonNull(out);
 
         List<MidiFileWriter> providers = getMidiFileWriters();
         //$$fb 2002-04-17: Fix for 4635287: Standard MidiFileWriter cannot write empty Sequences

@@ -54,8 +54,8 @@ abstract class AsynchronousSocketChannelImpl
     // protects state, localAddress, and remoteAddress
     protected final Object stateLock = new Object();
 
-    protected volatile InetSocketAddress localAddress = null;
-    protected volatile InetSocketAddress remoteAddress = null;
+    protected volatile InetSocketAddress localAddress;
+    protected volatile InetSocketAddress remoteAddress;
 
     // State, increases monotonically
     static final int ST_UNINITIALIZED = -1;
@@ -78,7 +78,7 @@ abstract class AsynchronousSocketChannelImpl
 
     // close support
     private final ReadWriteLock closeLock = new ReentrantReadWriteLock();
-    private volatile boolean open = true;
+    private volatile boolean closed;
 
     // set true when exclusive binding is on and SO_REUSEADDR is emulated
     private boolean isReuseAddress;
@@ -106,7 +106,7 @@ abstract class AsynchronousSocketChannelImpl
 
     @Override
     public final boolean isOpen() {
-        return open;
+        return !closed;
     }
 
     /**
@@ -135,9 +135,9 @@ abstract class AsynchronousSocketChannelImpl
         // synchronize with any threads initiating asynchronous operations
         closeLock.writeLock().lock();
         try {
-            if (!open)
+            if (closed)
                 return;     // already closed
-            open = false;
+            closed = true;
         } finally {
             closeLock.writeLock().unlock();
         }
