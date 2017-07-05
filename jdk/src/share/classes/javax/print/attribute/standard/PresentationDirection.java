@@ -56,56 +56,56 @@ public final class PresentationDirection extends EnumSyntax
 
     /**
      * Pages are laid out in columns starting at the top left,
-     * proceeeding towards the bottom & right.
+     * proceeeding towards the bottom {@literal &} right.
      */
     public static final PresentationDirection TOBOTTOM_TORIGHT =
         new PresentationDirection(0);
 
     /**
      * Pages are laid out in columns starting at the top right,
-     * proceeeding towards the bottom & left.
+     * proceeeding towards the bottom {@literal &} left.
      */
     public static final PresentationDirection TOBOTTOM_TOLEFT =
         new PresentationDirection(1);
 
     /**
      * Pages are laid out in columns starting at the bottom left,
-     * proceeeding towards the top & right.
+     * proceeeding towards the top {@literal &} right.
      */
     public static final PresentationDirection TOTOP_TORIGHT =
         new PresentationDirection(2);
 
     /**
      * Pages are laid out in columns starting at the bottom right,
-     * proceeeding towards the top & left.
+     * proceeeding towards the top {@literal &} left.
      */
     public static final PresentationDirection TOTOP_TOLEFT =
         new PresentationDirection(3);
 
     /**
      * Pages are laid out in rows starting at the top left,
-     * proceeeding towards the right & bottom.
+     * proceeeding towards the right {@literal &} bottom.
      */
     public static final PresentationDirection TORIGHT_TOBOTTOM =
         new PresentationDirection(4);
 
     /**
      * Pages are laid out in rows starting at the bottom left,
-     * proceeeding towards the right & top.
+     * proceeeding towards the right {@literal &} top.
      */
     public static final PresentationDirection TORIGHT_TOTOP =
         new PresentationDirection(5);
 
     /**
      * Pages are laid out in rows starting at the top right,
-     * proceeeding towards the left & bottom.
+     * proceeeding towards the left {@literal &} bottom.
      */
     public static final PresentationDirection TOLEFT_TOBOTTOM =
         new PresentationDirection(6);
 
     /**
      * Pages are laid out in rows starting at the bottom right,
-     * proceeeding towards the left & top.
+     * proceeeding towards the left {@literal &} top.
      */
     public static final PresentationDirection TOLEFT_TOTOP =
         new PresentationDirection(7);

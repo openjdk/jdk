@@ -73,6 +73,9 @@ import java.util.concurrent.ForkJoinPool;
  *     }
  * }</pre>
  *
+ * <p>Serialization is not supported as there is no intention to serialize
+ * tasks managed by stream ops.
+ *
  * @param <P_IN> Type of elements input to the pipeline
  * @param <P_OUT> Type of elements output from the pipeline
  * @param <R> Type of intermediate result, which may be different from operation
@@ -80,6 +83,7 @@ import java.util.concurrent.ForkJoinPool;
  * @param <K> Type of parent, child and sibling tasks
  * @since 1.8
  */
+@SuppressWarnings("serial")
 abstract class AbstractTask<P_IN, P_OUT, R,
                             K extends AbstractTask<P_IN, P_OUT, R, K>>
         extends CountedCompleter<R> {

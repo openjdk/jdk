@@ -209,7 +209,7 @@ public class DelegatingStream<T> implements Stream<T> {
     }
 
     @Override
-    public <R> R collect(Collector<? super T, R> collector) {
+    public <R, A> R collect(Collector<? super T, A, ? extends R> collector) {
         return delegate.collect(collector);
     }
 

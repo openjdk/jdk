@@ -37,6 +37,8 @@ import java.net.PasswordAuthentication;
 
 public abstract class AuthCacheValue implements Serializable {
 
+    static final long serialVersionUID = 735249334068211611L;
+
     public enum Type {
         Proxy,
         Server

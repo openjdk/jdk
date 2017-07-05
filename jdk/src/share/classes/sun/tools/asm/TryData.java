@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ import java.util.Vector;
  */
 public final
 class TryData {
-    Vector catches = new Vector();
+    Vector<CatchData> catches = new Vector<>();
     Label endLabel = new Label();
 
     /**
@@ -51,7 +51,7 @@ class TryData {
      * Get a label
      */
     public CatchData getCatch(int n) {
-        return (CatchData)catches.elementAt(n);
+        return catches.elementAt(n);
     }
 
     /**
