@@ -44,6 +44,7 @@
 #include <unistd.h>
 #include <dlfcn.h>
 
+#include <sizecalc.h>
 
 static NSScreen* SplashNSScreen()
 {
@@ -99,9 +100,12 @@ char* SplashConvertStringAlloc(const char* in, int* size) {
         goto done;
     }
     inSize = strlen(in);
+    buf = SAFE_SIZE_ARRAY_ALLOC(malloc, inSize, 2);
+    if (!buf) {
+        return NULL;
+    }
     bufSize = inSize*2; // need 2 bytes per char for UCS-2, this is
                         // 2 bytes per source byte max
-    buf = malloc(bufSize);
     out = buf; outSize = bufSize;
     /* linux iconv wants char** source and solaris wants const char**...
        cast to void* */

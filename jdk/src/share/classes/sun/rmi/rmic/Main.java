@@ -879,9 +879,9 @@ public class Main implements sun.rmi.rmic.Constants {
         }
 
         String[] args = new String[3];
-        args[0] = (arg0 != null ? arg0.toString() : "null");
-        args[1] = (arg1 != null ? arg1.toString() : "null");
-        args[2] = (arg2 != null ? arg2.toString() : "null");
+        args[0] = (arg0 != null ? arg0 : "null");
+        args[1] = (arg1 != null ? arg1 : "null");
+        args[2] = (arg2 != null ? arg2 : "null");
 
         return java.text.MessageFormat.format(format, (Object[]) args);
     }

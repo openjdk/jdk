@@ -21,14 +21,15 @@
 package com.sun.org.apache.xml.internal.security.utils;
 
 
-
 import java.io.IOException;
 import java.io.OutputStream;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -60,6 +61,12 @@ public class XMLUtils {
          }
       });
 
+    private static volatile String dsPrefix = "ds";
+    private static volatile String xencPrefix = "xenc";
+
+   private static final java.util.logging.Logger log =
+       java.util.logging.Logger.getLogger(XMLUtils.class.getName());
+
    /**
     * Constructor XMLUtils
     *
@@ -68,6 +75,23 @@ public class XMLUtils {
 
       // we don't allow instantiation
    }
+
+    /**
+     * Set the prefix for the digital signature namespace
+     * @param prefix the new prefix for the digital signature namespace
+     */
+    public static void setDsPrefix(String prefix) {
+        dsPrefix = prefix;
+    }
+
+    /**
+     * Set the prefix for the encryption namespace
+     * @param prefix the new prefix for the encryption namespace
+     */
+    public static void setXencPrefix(String prefix) {
+        xencPrefix = prefix;
+    }
+
    public static Element getNextElement(Node el) {
            while ((el!=null) && (el.getNodeType()!=Node.ELEMENT_NODE)) {
                    el=el.getNextSibling();
@@ -230,9 +254,8 @@ public class XMLUtils {
       return sb.toString();
    }
 
-
-   static  String dsPrefix=null;
    static Map<String, String> namePrefixes=new HashMap<String, String>();
+
    /**
     * Creates an Element in the XML Signature specification namespace.
     *
@@ -261,31 +284,38 @@ public class XMLUtils {
       return doc.createElementNS(Constants.SignatureSpecNS, namePrefix);
    }
 
-   /**
-    * Returns true if the element is in XML Signature namespace and the local
-    * name equals the supplied one.
-    *
-    * @param element
-    * @param localName
-    * @return true if the element is in XML Signature namespace and the local name equals the supplied one
-    */
-   public static boolean elementIsInSignatureSpace(Element element,
-           String localName) {
-      return ElementProxy.checker.isNamespaceElement(element, localName, Constants.SignatureSpecNS);
-   }
+    /**
+     * Returns true if the element is in XML Signature namespace and the local
+     * name equals the supplied one.
+     *
+     * @param element
+     * @param localName
+     * @return true if the element is in XML Signature namespace and the local name equals the supplied one
+     */
+    public static boolean elementIsInSignatureSpace(Element element, String localName) {
+        if (element == null) {
+            return false;
+        }
 
-   /**
-    * Returns true if the element is in XML Encryption namespace and the local
-    * name equals the supplied one.
-    *
-    * @param element
-    * @param localName
-    * @return true if the element is in XML Encryption namespace and the local name equals the supplied one
-    */
-   public static boolean elementIsInEncryptionSpace(Element element,
-           String localName) {
-           return ElementProxy.checker.isNamespaceElement(element, localName, EncryptionConstants.EncryptionSpecNS);
-   }
+        return Constants.SignatureSpecNS.equals(element.getNamespaceURI())
+            && element.getLocalName().equals(localName);
+    }
+
+    /**
+     * Returns true if the element is in XML Encryption namespace and the local
+     * name equals the supplied one.
+     *
+     * @param element
+     * @param localName
+     * @return true if the element is in XML Encryption namespace and the local name equals the supplied one
+     */
+    public static boolean elementIsInEncryptionSpace(Element element, String localName) {
+        if (element == null) {
+            return false;
+        }
+        return EncryptionConstants.EncryptionSpecNS.equals(element.getNamespaceURI())
+            && element.getLocalName().equals(localName);
+    }
 
    /**
     * This method returns the owner document of a particular node.
@@ -504,45 +534,45 @@ public class XMLUtils {
            } while (true);
    }
 
-   /**
-    * @param sibling
-    * @param nodeName
-    * @param number
-    * @return nodes with the constrain
-    */
-   public static Element selectDsNode(Node sibling, String nodeName, int number) {
-        while (sibling!=null) {
-                if (ElementProxy.checker.isNamespaceElement(sibling, nodeName, Constants.SignatureSpecNS )) {
-                        if (number==0){
-                                return (Element)sibling;
-                        }
-                        number--;
+    /**
+     * @param sibling
+     * @param nodeName
+     * @param number
+     * @return nodes with the constrain
+     */
+    public static Element selectDsNode(Node sibling, String nodeName, int number) {
+        while (sibling != null) {
+            if (Constants.SignatureSpecNS.equals(sibling.getNamespaceURI())
+                && sibling.getLocalName().equals(nodeName)) {
+                if (number == 0){
+                    return (Element)sibling;
                 }
-                sibling=sibling.getNextSibling();
+                number--;
+            }
+            sibling = sibling.getNextSibling();
         }
         return null;
-   }
+    }
 
-   /**
-    * @param sibling
-    * @param nodeName
-    * @param number
-    * @return nodes with the constrain
-    */
-
-   public static Element selectXencNode(Node sibling, String nodeName, int number) {
-        while (sibling!=null) {
-                if (ElementProxy.checker.isNamespaceElement(sibling, nodeName, EncryptionConstants.EncryptionSpecNS )) {
-                        if (number==0){
-                                return (Element)sibling;
-                        }
-                        number--;
+    /**
+     * @param sibling
+     * @param nodeName
+     * @param number
+     * @return nodes with the constrain
+     */
+    public static Element selectXencNode(Node sibling, String nodeName, int number) {
+        while (sibling != null) {
+            if (EncryptionConstants.EncryptionSpecNS.equals(sibling.getNamespaceURI())
+                && sibling.getLocalName().equals(nodeName)) {
+                if (number == 0){
+                    return (Element)sibling;
                 }
-                sibling=sibling.getNextSibling();
+                number--;
+            }
+            sibling = sibling.getNextSibling();
         }
         return null;
-   }
-
+    }
 
    /**
     * @param sibling
@@ -581,62 +611,53 @@ public class XMLUtils {
     return (Text)n;
    }
 
-   /**
-    * @param sibling
-    * @param uri
-    * @param nodeName
-    * @param number
-    * @return nodes with the constrain
-    */
-   public static Element selectNode(Node sibling, String uri,String nodeName, int number) {
-        while (sibling!=null) {
-                if (ElementProxy.checker.isNamespaceElement(sibling, nodeName, uri)) {
-                        if (number==0){
-                                return (Element)sibling;
-                        }
-                        number--;
+    /**
+     * @param sibling
+     * @param uri
+     * @param nodeName
+     * @param number
+     * @return nodes with the constrain
+     */
+    public static Element selectNode(Node sibling, String uri, String nodeName, int number) {
+        while (sibling != null) {
+            if (sibling.getNamespaceURI() != null && sibling.getNamespaceURI().equals(uri)
+                && sibling.getLocalName().equals(nodeName)) {
+                if (number == 0){
+                    return (Element)sibling;
                 }
-                sibling=sibling.getNextSibling();
+                number--;
+            }
+            sibling = sibling.getNextSibling();
         }
         return null;
-   }
+    }
 
-   /**
-    * @param sibling
-    * @param nodeName
-    * @return nodes with the constrain
-    */
-   public static Element[] selectDsNodes(Node sibling,String nodeName) {
-     return selectNodes(sibling,Constants.SignatureSpecNS,nodeName);
-   }
-   /**
-    * @param sibling
-    * @param uri
-    * @param nodeName
-    * @return nodes with the constrain
-    */
-    public static Element[] selectNodes(Node sibling,String uri,String nodeName) {
-        int size=20;
-        Element[] a= new Element[size];
-        int curr=0;
-        //List list=new ArrayList();
-        while (sibling!=null) {
-                if (ElementProxy.checker.isNamespaceElement(sibling, nodeName, uri)) {
-                        a[curr++]=(Element)sibling;
-                        if (size<=curr) {
-                                int cursize= size<<2;
-                                Element []cp=new Element[cursize];
-                                System.arraycopy(a,0,cp,0,size);
-                                a=cp;
-                                size=cursize;
-                        }
-                }
-                sibling=sibling.getNextSibling();
+    /**
+     * @param sibling
+     * @param nodeName
+     * @return nodes with the constrain
+     */
+    public static Element[] selectDsNodes(Node sibling, String nodeName) {
+        return selectNodes(sibling,Constants.SignatureSpecNS, nodeName);
+    }
+
+    /**
+     * @param sibling
+     * @param uri
+     * @param nodeName
+     * @return nodes with the constrain
+     */
+     public static Element[] selectNodes(Node sibling, String uri, String nodeName) {
+        List<Element> list = new ArrayList<Element>();
+        while (sibling != null) {
+            if (sibling.getNamespaceURI() != null && sibling.getNamespaceURI().equals(uri)
+                && sibling.getLocalName().equals(nodeName)) {
+                list.add((Element)sibling);
+            }
+            sibling = sibling.getNextSibling();
         }
-        Element []af=new Element[curr];
-        System.arraycopy(a,0,af,0,curr);
-        return af;
-   }
+        return list.toArray(new Element[list.size()]);
+    }
 
    /**
     * @param signatureElement
@@ -694,4 +715,127 @@ public class XMLUtils {
     public static boolean ignoreLineBreaks() {
         return ignoreLineBreaks;
     }
+
+    /**
+     * This method is a tree-search to help prevent against wrapping attacks.
+     * It checks that no two Elements have ID Attributes that match the "value"
+     * argument, if this is the case then "false" is returned. Note that a
+     * return value of "true" does not necessarily mean that a matching Element
+     * has been found, just that no wrapping attack has been detected.
+     */
+    public static boolean protectAgainstWrappingAttack(Node startNode,
+                                                       String value)
+    {
+        Node startParent = startNode.getParentNode();
+        Node processedNode = null;
+        Element foundElement = null;
+
+        String id = value.trim();
+        if (id.charAt(0) == '#') {
+            id = id.substring(1);
+        }
+
+        while (startNode != null) {
+            if (startNode.getNodeType() == Node.ELEMENT_NODE) {
+                Element se = (Element) startNode;
+
+                NamedNodeMap attributes = se.getAttributes();
+                if (attributes != null) {
+                    for (int i = 0; i < attributes.getLength(); i++) {
+                        Attr attr = (Attr)attributes.item(i);
+                        if (attr.isId() && id.equals(attr.getValue())) {
+                            if (foundElement == null) {
+                                // Continue searching to find duplicates
+                                foundElement = attr.getOwnerElement();
+                            } else {
+                                log.log(java.util.logging.Level.FINE, "Multiple elements with the same 'Id' attribute value!");
+                                return false;
+                            }
+                        }
+                    }
+                }
+            }
+
+            processedNode = startNode;
+            startNode = startNode.getFirstChild();
+
+            // no child, this node is done.
+            if (startNode == null) {
+                // close node processing, get sibling
+                startNode = processedNode.getNextSibling();
+            }
+
+            // no more siblings, get parent, all children
+            // of parent are processed.
+            while (startNode == null) {
+                processedNode = processedNode.getParentNode();
+                if (processedNode == startParent) {
+                    return true;
+                }
+                // close parent node processing (processed node now)
+                startNode = processedNode.getNextSibling();
+            }
+        }
+        return true;
+    }
+
+    /**
+     * This method is a tree-search to help prevent against wrapping attacks.
+     * It checks that no other Element than the given "knownElement" argument
+     * has an ID attribute that matches the "value" argument, which is the ID
+     * value of "knownElement". If this is the case then "false" is returned.
+     */
+    public static boolean protectAgainstWrappingAttack(Node startNode,
+                                                       Element knownElement,
+                                                       String value)
+    {
+        Node startParent = startNode.getParentNode();
+        Node processedNode = null;
+
+        String id = value.trim();
+        if (id.charAt(0) == '#') {
+            id = id.substring(1);
+        }
+
+        while (startNode != null) {
+            if (startNode.getNodeType() == Node.ELEMENT_NODE) {
+                Element se = (Element) startNode;
+
+                NamedNodeMap attributes = se.getAttributes();
+                if (attributes != null) {
+                    for (int i = 0; i < attributes.getLength(); i++) {
+                        Attr attr = (Attr)attributes.item(i);
+                        if (attr.isId() && id.equals(attr.getValue())
+                            && se != knownElement)
+                        {
+                            log.log(java.util.logging.Level.FINE, "Multiple elements with the same 'Id' attribute value!");
+                            return false;
+                        }
+                    }
+                }
+            }
+
+            processedNode = startNode;
+            startNode = startNode.getFirstChild();
+
+            // no child, this node is done.
+            if (startNode == null) {
+                // close node processing, get sibling
+                startNode = processedNode.getNextSibling();
+            }
+
+            // no more siblings, get parent, all children
+            // of parent are processed.
+            while (startNode == null) {
+                processedNode = processedNode.getParentNode();
+                if (processedNode == startParent) {
+                    return true;
+                }
+                // close parent node processing (processed node now)
+                startNode = processedNode.getNextSibling();
+            }
+        }
+        return true;
+    }
+
 }

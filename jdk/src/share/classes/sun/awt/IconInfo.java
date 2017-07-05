@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package sun.awt.X11;
+package sun.awt;
 import java.awt.*;
 import java.awt.color.*;
 import java.awt.image.*;
@@ -30,17 +30,17 @@ import sun.awt.image.ToolkitImage;
 import sun.awt.image.ImageRepresentation;
 import java.util.Arrays;
 
-class XIconInfo {
+public class IconInfo {
     /**
-     * Representation of image as an int array
-     * It's being used for _NET_WM_ICON hint
-     * with 32-bit X data model
+     * Representation of image as an int array.
+     * It's used on platforms where icon data
+     * is expected to be in 32-bit format.
      */
     private int[] intIconData;
     /**
-     * Representation of image as an int array
-     * It's being used for _NET_WM_ICON hint
-     * with 64-bit X data model
+     * Representation of image as an long array.
+     * It's used on platforms where icon data
+     * is expected to be in 64-bit format.
      */
     private long[] longIconData;
     /**
@@ -68,7 +68,7 @@ class XIconInfo {
      */
     private int rawLength;
 
-    XIconInfo(int[] intIconData) {
+    public IconInfo(int[] intIconData) {
         this.intIconData =
             (null == intIconData) ? null : Arrays.copyOf(intIconData, intIconData.length);
         this.width = intIconData[0];
@@ -78,7 +78,7 @@ class XIconInfo {
         this.rawLength = width * height + 2;
     }
 
-    XIconInfo(long[] longIconData) {
+    public IconInfo(long[] longIconData) {
         this.longIconData =
         (null == longIconData) ? null : Arrays.copyOf(longIconData, longIconData.length);
         this.width = (int)longIconData[0];
@@ -88,7 +88,7 @@ class XIconInfo {
         this.rawLength = width * height + 2;
     }
 
-    XIconInfo(Image image) {
+    public IconInfo(Image image) {
         this.image = image;
         if (image instanceof ToolkitImage) {
             ImageRepresentation ir = ((ToolkitImage)image).getImageRep();
@@ -107,33 +107,33 @@ class XIconInfo {
     /*
      * It sets size of scaled icon.
      */
-    void setScaledSize(int width, int height) {
+    public void setScaledSize(int width, int height) {
         this.scaledWidth = width;
         this.scaledHeight = height;
         this.rawLength = width * height + 2;
     }
 
-    boolean isValid() {
+    public boolean isValid() {
         return (width > 0 && height > 0);
     }
 
-    int getWidth() {
+    public int getWidth() {
         return width;
     }
 
-    int getHeight() {
+    public int getHeight() {
         return height;
     }
 
     public String toString() {
-        return "XIconInfo[w=" + width + ",h=" + height + ",sw=" + scaledWidth + ",sh=" + scaledHeight + "]";
+        return "IconInfo[w=" + width + ",h=" + height + ",sw=" + scaledWidth + ",sh=" + scaledHeight + "]";
     }
 
-    int getRawLength() {
+    public int getRawLength() {
         return rawLength;
     }
 
-    int[] getIntData() {
+    public int[] getIntData() {
         if (this.intIconData == null) {
             if (this.longIconData != null) {
                 this.intIconData = longArrayToIntArray(longIconData);
@@ -144,7 +144,7 @@ class XIconInfo {
         return this.intIconData;
     }
 
-    long[] getLongData() {
+    public long[] getLongData() {
         if (this.longIconData == null) {
             if (this.intIconData != null) {
                 this.longIconData = intArrayToLongArray(this.intIconData);
@@ -156,7 +156,7 @@ class XIconInfo {
         return this.longIconData;
     }
 
-    Image getImage() {
+    public Image getImage() {
         if (this.image == null) {
             if (this.intIconData != null) {
                 this.image = intArrayToImage(this.intIconData);

@@ -88,6 +88,7 @@ static jclass xorCompClass;
 jint useMitShmExt = CANT_USE_MITSHM;
 jint useMitShmPixmaps = CANT_USE_MITSHM;
 jint forceSharedPixmaps = JNI_FALSE;
+int mitShmPermissionMask = MITSHM_PERM_OWNER;
 
 /* Cached shared image, one for all surface datas. */
 static XImage * cachedXImage;
@@ -118,6 +119,13 @@ jboolean XShared_initIDs(JNIEnv *env, jboolean allowShmPixmaps)
     if (getenv("NO_AWT_MITSHM") == NULL &&
         getenv("NO_J2D_MITSHM") == NULL) {
         char * force;
+        char * permission = getenv("J2D_MITSHM_PERMISSION");
+        if (permission != NULL) {
+            if (strcmp(permission, "common") == 0) {
+                mitShmPermissionMask = MITSHM_PERM_COMMON;
+            }
+        }
+
         TryInitMITShm(env, &useMitShmExt, &useMitShmPixmaps);
 
         if(allowShmPixmaps) {
@@ -537,7 +545,8 @@ XImage* X11SD_CreateSharedImage(X11SDOps *xsdo,
         return NULL;
     }
     shminfo->shmid =
-        shmget(IPC_PRIVATE, height * img->bytes_per_line, IPC_CREAT|0777);
+        shmget(IPC_PRIVATE, height * img->bytes_per_line,
+               IPC_CREAT|mitShmPermissionMask);
     if (shminfo->shmid < 0) {
         J2dRlsTraceLn1(J2D_TRACE_ERROR,
                        "X11SD_SetupSharedSegment shmget has failed: %s",

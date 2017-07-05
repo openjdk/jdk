@@ -47,6 +47,9 @@
 #include <X11/extensions/shmproto.h>
 #endif
 
+#define MITSHM_PERM_COMMON (0666)
+#define MITSHM_PERM_OWNER  (0600)
+
 extern int XShmQueryExtension();
 
 void TryInitMITShm(JNIEnv *env, jint *shmExt, jint *shmPixmaps);

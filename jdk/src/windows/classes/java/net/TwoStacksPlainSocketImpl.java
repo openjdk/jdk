@@ -66,14 +66,23 @@ class TwoStacksPlainSocketImpl extends AbstractPlainSocketImpl
      */
     private int lastfd = -1;
 
+    // true if this socket is exclusively bound
+    private final boolean exclusiveBind;
+
+    // emulates SO_REUSEADDR when exclusiveBind is true
+    private boolean isReuseAddress;
+
     static {
         initProto();
     }
 
-    public TwoStacksPlainSocketImpl() {}
+    public TwoStacksPlainSocketImpl(boolean exclBind) {
+        exclusiveBind = exclBind;
+    }
 
-    public TwoStacksPlainSocketImpl(FileDescriptor fd) {
+    public TwoStacksPlainSocketImpl(FileDescriptor fd, boolean exclBind) {
         this.fd = fd;
+        exclusiveBind = exclBind;
     }
 
     /**
@@ -116,13 +125,33 @@ class TwoStacksPlainSocketImpl extends AbstractPlainSocketImpl
             InetAddressContainer in = new InetAddressContainer();
             socketGetOption(opt, in);
             return in.addr;
+        } else if (opt == SO_REUSEADDR && exclusiveBind) {
+            // SO_REUSEADDR emulated when using exclusive bind
+            return isReuseAddress;
         } else
             return super.getOption(opt);
+    }
+
+    @Override
+    void socketBind(InetAddress address, int port) throws IOException {
+        socketBind(address, port, exclusiveBind);
+    }
+
+    @Override
+    void socketSetOption(int opt, boolean on, Object value)
+        throws SocketException
+    {
+        // SO_REUSEADDR emulated when using exclusive bind
+        if (opt == SO_REUSEADDR && exclusiveBind)
+            isReuseAddress = on;
+        else
+            socketNativeSetOption(opt, on, value);
     }
 
     /**
      * Closes the socket.
      */
+    @Override
     protected void close() throws IOException {
         synchronized(fdLock) {
             if (fd != null || fd1 != null) {
@@ -155,6 +184,7 @@ class TwoStacksPlainSocketImpl extends AbstractPlainSocketImpl
         }
     }
 
+    @Override
     void reset() throws IOException {
         if (fd != null || fd1 != null) {
             socketClose();
@@ -167,6 +197,7 @@ class TwoStacksPlainSocketImpl extends AbstractPlainSocketImpl
     /*
      * Return true if already closed or close is pending
      */
+    @Override
     public boolean isClosedOrPending() {
         /*
          * Lock on fdLock to ensure that we wait if a
@@ -190,7 +221,7 @@ class TwoStacksPlainSocketImpl extends AbstractPlainSocketImpl
     native void socketConnect(InetAddress address, int port, int timeout)
         throws IOException;
 
-    native void socketBind(InetAddress address, int port)
+    native void socketBind(InetAddress address, int port, boolean exclBind)
         throws IOException;
 
     native void socketListen(int count) throws IOException;
@@ -203,7 +234,7 @@ class TwoStacksPlainSocketImpl extends AbstractPlainSocketImpl
 
     native void socketShutdown(int howto) throws IOException;
 
-    native void socketSetOption(int cmd, boolean on, Object value)
+    native void socketNativeSetOption(int cmd, boolean on, Object value)
         throws SocketException;
 
     native int socketGetOption(int opt, Object iaContainerObj) throws SocketException;

@@ -75,23 +75,14 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(AllocatePrefetchStyle, 1);
   }
 
-  if (has_v9()) {
-    assert(ArraycopySrcPrefetchDistance < 4096, "invalid value");
-    if (ArraycopySrcPrefetchDistance >= 4096)
-      ArraycopySrcPrefetchDistance = 4064;
-    assert(ArraycopyDstPrefetchDistance < 4096, "invalid value");
-    if (ArraycopyDstPrefetchDistance >= 4096)
-      ArraycopyDstPrefetchDistance = 4064;
-  } else {
-    if (ArraycopySrcPrefetchDistance > 0) {
-      warning("prefetch instructions are not available on this CPU");
-      FLAG_SET_DEFAULT(ArraycopySrcPrefetchDistance, 0);
-    }
-    if (ArraycopyDstPrefetchDistance > 0) {
-      warning("prefetch instructions are not available on this CPU");
-      FLAG_SET_DEFAULT(ArraycopyDstPrefetchDistance, 0);
-    }
-  }
+  guarantee(VM_Version::has_v9(), "only SPARC v9 is supported");
+
+  assert(ArraycopySrcPrefetchDistance < 4096, "invalid value");
+  if (ArraycopySrcPrefetchDistance >= 4096)
+    ArraycopySrcPrefetchDistance = 4064;
+  assert(ArraycopyDstPrefetchDistance < 4096, "invalid value");
+  if (ArraycopyDstPrefetchDistance >= 4096)
+    ArraycopyDstPrefetchDistance = 4064;
 
   UseSSE = 0; // Only on x86 and x64
 

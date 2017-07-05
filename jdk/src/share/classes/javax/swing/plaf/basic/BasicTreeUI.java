@@ -3827,7 +3827,7 @@ public class BasicTreeUI extends TreeUI
         //
         public void treeNodesChanged(TreeModelEvent e) {
             if(treeState != null && e != null) {
-                TreePath parentPath = e.getTreePath();
+                TreePath parentPath = SwingUtilities2.getTreePath(e, getModel());
                 int[] indices = e.getChildIndices();
                 if (indices == null || indices.length == 0) {
                     // The root has changed
@@ -3882,7 +3882,7 @@ public class BasicTreeUI extends TreeUI
 
                 updateLeadSelectionRow();
 
-                TreePath       path = e.getTreePath();
+                TreePath       path = SwingUtilities2.getTreePath(e, getModel());
 
                 if(treeState.isExpanded(path)) {
                     updateSize();
@@ -3907,7 +3907,7 @@ public class BasicTreeUI extends TreeUI
 
                 updateLeadSelectionRow();
 
-                TreePath       path = e.getTreePath();
+                TreePath       path = SwingUtilities2.getTreePath(e, getModel());
 
                 if(treeState.isExpanded(path) ||
                    treeModel.getChildCount(path.getLastPathComponent()) == 0)
@@ -3921,7 +3921,7 @@ public class BasicTreeUI extends TreeUI
 
                 updateLeadSelectionRow();
 
-                TreePath       pPath = e.getTreePath();
+                TreePath       pPath = SwingUtilities2.getTreePath(e, getModel());
 
                 if (pPath != null) {
                     pPath = pPath.getParentPath();

@@ -142,7 +142,7 @@ class NTLMAuthenticationProxy {
 
     static void finest(Exception e) {
         PlatformLogger logger = HttpURLConnection.getHttpLogger();
-        if (logger.isLoggable(PlatformLogger.FINEST)) {
+        if (logger.isLoggable(PlatformLogger.Level.FINEST)) {
             logger.finest("NTLMAuthenticationProxy: " + e);
         }
     }

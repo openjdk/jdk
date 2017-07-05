@@ -69,6 +69,7 @@ int                             MemTracker::_thread_count = 255;
 volatile jint                   MemTracker::_pooled_recorder_count = 0;
 volatile unsigned long          MemTracker::_processing_generation = 0;
 volatile bool                   MemTracker::_worker_thread_idle = false;
+volatile jint                   MemTracker::_pending_op_count = 0;
 volatile bool                   MemTracker::_slowdown_calling_thread = false;
 debug_only(intx                 MemTracker::_main_thread_tid = 0;)
 NOT_PRODUCT(volatile jint       MemTracker::_pending_recorder_count = 0;)
@@ -337,92 +338,14 @@ void MemTracker::release_thread_recorder(MemRecorder* rec) {
   Atomic::inc(&_pooled_recorder_count);
 }
 
-/*
- * This is the most important method in whole nmt implementation.
- *
- * Create a memory record.
- * 1. When nmt is in single-threaded bootstrapping mode, no lock is needed as VM
- *    still in single thread mode.
- * 2. For all threads other than JavaThread, ThreadCritical is needed
- *    to write to recorders to global recorder.
- * 3. For JavaThreads that are not longer visible by safepoint, also
- *    need to take ThreadCritical and records are written to global
- *    recorders, since these threads are NOT walked by Threads.do_thread().
- * 4. JavaThreads that are running in native state, have to transition
- *    to VM state before writing to per-thread recorders.
- * 5. JavaThreads that are running in VM state do not need any lock and
- *    records are written to per-thread recorders.
- * 6. For a thread has yet to attach VM 'Thread', they need to take
- *    ThreadCritical to write to global recorder.
- *
- *    Important note:
- *    NO LOCK should be taken inside ThreadCritical lock !!!
- */
-void MemTracker::create_memory_record(address addr, MEMFLAGS flags,
-    size_t size, address pc, Thread* thread) {
-  assert(addr != NULL, "Sanity check");
-  if (!shutdown_in_progress()) {
-    // single thread, we just write records direct to global recorder,'
-    // with any lock
-    if (_state == NMT_bootstrapping_single_thread) {
-      assert(_main_thread_tid == os::current_thread_id(), "wrong thread");
-      thread = NULL;
-    } else {
-      if (thread == NULL) {
-          // don't use Thread::current(), since it is possible that
-          // the calling thread has yet to attach to VM 'Thread',
-          // which will result assertion failure
-          thread = ThreadLocalStorage::thread();
-      }
-    }
-
-    if (thread != NULL) {
-      // slow down all calling threads except NMT worker thread, so it
-      // can catch up.
-      if (_slowdown_calling_thread && thread != _worker_thread) {
-        os::yield_all();
-      }
-
-      if (thread->is_Java_thread() && ((JavaThread*)thread)->is_safepoint_visible()) {
-        JavaThread*      java_thread = (JavaThread*)thread;
-        JavaThreadState  state = java_thread->thread_state();
-        if (SafepointSynchronize::safepoint_safe(java_thread, state)) {
-          // JavaThreads that are safepoint safe, can run through safepoint,
-          // so ThreadCritical is needed to ensure no threads at safepoint create
-          // new records while the records are being gathered and the sequence number is changing
-          ThreadCritical tc;
-          create_record_in_recorder(addr, flags, size, pc, java_thread);
-        } else {
-          create_record_in_recorder(addr, flags, size, pc, java_thread);
-        }
-      } else {
-        // other threads, such as worker and watcher threads, etc. need to
-        // take ThreadCritical to write to global recorder
-        ThreadCritical tc;
-        create_record_in_recorder(addr, flags, size, pc, NULL);
-      }
-    } else {
-      if (_state == NMT_bootstrapping_single_thread) {
-        // single thread, no lock needed
-        create_record_in_recorder(addr, flags, size, pc, NULL);
-      } else {
-        // for thread has yet to attach VM 'Thread', we can not use VM mutex.
-        // use native thread critical instead
-        ThreadCritical tc;
-        create_record_in_recorder(addr, flags, size, pc, NULL);
-      }
-    }
-  }
-}
-
 // write a record to proper recorder. No lock can be taken from this method
 // down.
-void MemTracker::create_record_in_recorder(address addr, MEMFLAGS flags,
-    size_t size, address pc, JavaThread* thread) {
+void MemTracker::write_tracking_record(address addr, MEMFLAGS flags,
+    size_t size, jint seq, address pc, JavaThread* thread) {
 
     MemRecorder* rc = get_thread_recorder(thread);
     if (rc != NULL) {
-      rc->record(addr, flags, size, pc);
+      rc->record(addr, flags, size, seq, pc);
     }
 }
 
@@ -487,39 +410,43 @@ void MemTracker::sync() {
         return;
       }
     }
-    _sync_point_skip_count = 0;
     {
       // This method is running at safepoint, with ThreadCritical lock,
       // it should guarantee that NMT is fully sync-ed.
       ThreadCritical tc;
 
-      SequenceGenerator::reset();
+      // We can NOT execute NMT sync-point if there are pending tracking ops.
+      if (_pending_op_count == 0) {
+        SequenceGenerator::reset();
+        _sync_point_skip_count = 0;
 
-      // walk all JavaThreads to collect recorders
-      SyncThreadRecorderClosure stc;
-      Threads::threads_do(&stc);
+        // walk all JavaThreads to collect recorders
+        SyncThreadRecorderClosure stc;
+        Threads::threads_do(&stc);
 
-      _thread_count = stc.get_thread_count();
-      MemRecorder* pending_recorders = get_pending_recorders();
+        _thread_count = stc.get_thread_count();
+        MemRecorder* pending_recorders = get_pending_recorders();
 
-      if (_global_recorder != NULL) {
-        _global_recorder->set_next(pending_recorders);
-        pending_recorders = _global_recorder;
-        _global_recorder = NULL;
+        if (_global_recorder != NULL) {
+          _global_recorder->set_next(pending_recorders);
+          pending_recorders = _global_recorder;
+          _global_recorder = NULL;
+        }
+
+        // see if NMT has too many outstanding recorder instances, it usually
+        // means that worker thread is lagging behind in processing them.
+        if (!AutoShutdownNMT) {
+          _slowdown_calling_thread = (MemRecorder::_instance_count > MAX_RECORDER_THREAD_RATIO * _thread_count);
+        }
+
+        // check _worker_thread with lock to avoid racing condition
+        if (_worker_thread != NULL) {
+          _worker_thread->at_sync_point(pending_recorders, InstanceKlass::number_of_instance_classes());
+        }
+        assert(SequenceGenerator::peek() == 1, "Should not have memory activities during sync-point");
+      } else {
+        _sync_point_skip_count ++;
       }
-
-      // see if NMT has too many outstanding recorder instances, it usually
-      // means that worker thread is lagging behind in processing them.
-      if (!AutoShutdownNMT) {
-        _slowdown_calling_thread = (MemRecorder::_instance_count > MAX_RECORDER_THREAD_RATIO * _thread_count);
-      }
-
-      // check _worker_thread with lock to avoid racing condition
-      if (_worker_thread != NULL) {
-        _worker_thread->at_sync_point(pending_recorders, InstanceKlass::number_of_instance_classes());
-      }
-
-      assert(SequenceGenerator::peek() == 1, "Should not have memory activities during sync-point");
     }
   }
 
@@ -707,4 +634,244 @@ void MemTracker::print_tracker_stats(outputStream* st) {
   }
 }
 #endif
+
+
+// Tracker Implementation
+
+/*
+ * Create a tracker.
+ * This is a fairly complicated constructor, as it has to make two important decisions:
+ *   1) Does it need to take ThreadCritical lock to write tracking record
+ *   2) Does it need to pre-reserve a sequence number for the tracking record
+ *
+ * The rules to determine if ThreadCritical is needed:
+ *   1. When nmt is in single-threaded bootstrapping mode, no lock is needed as VM
+ *      still in single thread mode.
+ *   2. For all threads other than JavaThread, ThreadCritical is needed
+ *      to write to recorders to global recorder.
+ *   3. For JavaThreads that are no longer visible by safepoint, also
+ *      need to take ThreadCritical and records are written to global
+ *      recorders, since these threads are NOT walked by Threads.do_thread().
+ *   4. JavaThreads that are running in safepoint-safe states do not stop
+ *      for safepoints, ThreadCritical lock should be taken to write
+ *      memory records.
+ *   5. JavaThreads that are running in VM state do not need any lock and
+ *      records are written to per-thread recorders.
+ *   6. For a thread has yet to attach VM 'Thread', they need to take
+ *      ThreadCritical to write to global recorder.
+ *
+ *  The memory operations that need pre-reserve sequence numbers:
+ *    The memory operations that "release" memory blocks and the
+ *    operations can fail, need to pre-reserve sequence number. They
+ *    are realloc, uncommit and release.
+ *
+ *  The reason for pre-reserve sequence number, is to prevent race condition:
+ *    Thread 1                      Thread 2
+ *    <release>
+ *                                  <allocate>
+ *                                  <write allocate record>
+ *   <write release record>
+ *   if Thread 2 happens to obtain the memory address Thread 1 just released,
+ *   then NMT can mistakenly report the memory is free.
+ *
+ *  Noticeably, free() does not need pre-reserve sequence number, because the call
+ *  does not fail, so we can alway write "release" record before the memory is actaully
+ *  freed.
+ *
+ *  For realloc, uncommit and release, following coding pattern should be used:
+ *
+ *     MemTracker::Tracker tkr = MemTracker::get_realloc_tracker();
+ *     ptr = ::realloc(...);
+ *     if (ptr == NULL) {
+ *       tkr.record(...)
+ *     } else {
+ *       tkr.discard();
+ *     }
+ *
+ *     MemTracker::Tracker tkr = MemTracker::get_virtual_memory_uncommit_tracker();
+ *     if (uncommit(...)) {
+ *       tkr.record(...);
+ *     } else {
+ *       tkr.discard();
+ *     }
+ *
+ *     MemTracker::Tracker tkr = MemTracker::get_virtual_memory_release_tracker();
+ *     if (release(...)) {
+ *       tkr.record(...);
+ *     } else {
+ *       tkr.discard();
+ *     }
+ *
+ * Since pre-reserved sequence number is only good for the generation that it is acquired,
+ * when there is pending Tracker that reserved sequence number, NMT sync-point has
+ * to be skipped to prevent from advancing generation. This is done by inc and dec
+ * MemTracker::_pending_op_count, when MemTracker::_pending_op_count > 0, NMT sync-point is skipped.
+ * Not all pre-reservation of sequence number will increment pending op count. For JavaThreads
+ * that honor safepoints, safepoint can not occur during the memory operations, so the
+ * pre-reserved sequence number won't cross the generation boundry.
+ */
+MemTracker::Tracker::Tracker(MemoryOperation op, Thread* thr) {
+  _op = NoOp;
+  _seq = 0;
+  if (MemTracker::is_on()) {
+    _java_thread = NULL;
+    _op = op;
+
+    // figure out if ThreadCritical lock is needed to write this operation
+    // to MemTracker
+    if (MemTracker::is_single_threaded_bootstrap()) {
+      thr = NULL;
+    } else if (thr == NULL) {
+      // don't use Thread::current(), since it is possible that
+      // the calling thread has yet to attach to VM 'Thread',
+      // which will result assertion failure
+      thr = ThreadLocalStorage::thread();
+    }
+
+    if (thr != NULL) {
+      // Check NMT load
+      MemTracker::check_NMT_load(thr);
+
+      if (thr->is_Java_thread() && ((JavaThread*)thr)->is_safepoint_visible()) {
+        _java_thread = (JavaThread*)thr;
+        JavaThreadState  state = _java_thread->thread_state();
+        // JavaThreads that are safepoint safe, can run through safepoint,
+        // so ThreadCritical is needed to ensure no threads at safepoint create
+        // new records while the records are being gathered and the sequence number is changing
+        _need_thread_critical_lock =
+          SafepointSynchronize::safepoint_safe(_java_thread, state);
+      } else {
+        _need_thread_critical_lock = true;
+      }
+    } else {
+       _need_thread_critical_lock
+         = !MemTracker::is_single_threaded_bootstrap();
+    }
+
+    // see if we need to pre-reserve sequence number for this operation
+    if (_op == Realloc || _op == Uncommit || _op == Release) {
+      if (_need_thread_critical_lock) {
+        ThreadCritical tc;
+        MemTracker::inc_pending_op_count();
+        _seq = SequenceGenerator::next();
+      } else {
+        // for the threads that honor safepoints, no safepoint can occur
+        // during the lifespan of tracker, so we don't need to increase
+        // pending op count.
+        _seq = SequenceGenerator::next();
+      }
+    }
+  }
+}
+
+void MemTracker::Tracker::discard() {
+  if (MemTracker::is_on() && _seq != 0) {
+    if (_need_thread_critical_lock) {
+      ThreadCritical tc;
+      MemTracker::dec_pending_op_count();
+    }
+    _seq = 0;
+  }
+}
+
+
+void MemTracker::Tracker::record(address old_addr, address new_addr, size_t size,
+  MEMFLAGS flags, address pc) {
+  assert(old_addr != NULL && new_addr != NULL, "Sanity check");
+  assert(_op == Realloc || _op == NoOp, "Wrong call");
+  if (MemTracker::is_on() && NMT_CAN_TRACK(flags) && _op != NoOp) {
+    assert(_seq > 0, "Need pre-reserve sequence number");
+    if (_need_thread_critical_lock) {
+      ThreadCritical tc;
+      // free old address, use pre-reserved sequence number
+      MemTracker::write_tracking_record(old_addr, MemPointerRecord::free_tag(),
+        0, _seq, pc, _java_thread);
+      MemTracker::write_tracking_record(new_addr, flags | MemPointerRecord::malloc_tag(),
+        size, SequenceGenerator::next(), pc, _java_thread);
+      // decrement MemTracker pending_op_count
+      MemTracker::dec_pending_op_count();
+    } else {
+      // free old address, use pre-reserved sequence number
+      MemTracker::write_tracking_record(old_addr, MemPointerRecord::free_tag(),
+        0, _seq, pc, _java_thread);
+      MemTracker::write_tracking_record(new_addr, flags | MemPointerRecord::malloc_tag(),
+        size, SequenceGenerator::next(), pc, _java_thread);
+    }
+    _seq = 0;
+  }
+}
+
+void MemTracker::Tracker::record(address addr, size_t size, MEMFLAGS flags, address pc) {
+  // OOM already?
+  if (addr == NULL) return;
+
+  if (MemTracker::is_on() && NMT_CAN_TRACK(flags) && _op != NoOp) {
+    bool pre_reserved_seq = (_seq != 0);
+    address  pc = CALLER_CALLER_PC;
+    MEMFLAGS orig_flags = flags;
+
+    // or the tagging flags
+    switch(_op) {
+      case Malloc:
+        flags |= MemPointerRecord::malloc_tag();
+        break;
+      case Free:
+        flags = MemPointerRecord::free_tag();
+        break;
+      case Realloc:
+        fatal("Use the other Tracker::record()");
+        break;
+      case Reserve:
+      case ReserveAndCommit:
+        flags |= MemPointerRecord::virtual_memory_reserve_tag();
+        break;
+      case Commit:
+        flags = MemPointerRecord::virtual_memory_commit_tag();
+        break;
+      case Type:
+        flags |= MemPointerRecord::virtual_memory_type_tag();
+        break;
+      case Uncommit:
+        assert(pre_reserved_seq, "Need pre-reserve sequence number");
+        flags = MemPointerRecord::virtual_memory_uncommit_tag();
+        break;
+      case Release:
+        assert(pre_reserved_seq, "Need pre-reserve sequence number");
+        flags = MemPointerRecord::virtual_memory_release_tag();
+        break;
+      case ArenaSize:
+        // a bit of hack here, add a small postive offset to arena
+        // address for its size record, so the size record is sorted
+        // right after arena record.
+        flags = MemPointerRecord::arena_size_tag();
+        addr += sizeof(void*);
+        break;
+      case StackRelease:
+        flags = MemPointerRecord::virtual_memory_release_tag();
+        break;
+      default:
+        ShouldNotReachHere();
+    }
+
+    // write memory tracking record
+    if (_need_thread_critical_lock) {
+      ThreadCritical tc;
+      if (_seq == 0) _seq = SequenceGenerator::next();
+      MemTracker::write_tracking_record(addr, flags, size, _seq, pc, _java_thread);
+      if (_op == ReserveAndCommit) {
+        MemTracker::write_tracking_record(addr, orig_flags | MemPointerRecord::virtual_memory_commit_tag(),
+          size, SequenceGenerator::next(), pc, _java_thread);
+      }
+      if (pre_reserved_seq) MemTracker::dec_pending_op_count();
+    } else {
+      if (_seq == 0) _seq = SequenceGenerator::next();
+      MemTracker::write_tracking_record(addr, flags, size, _seq, pc, _java_thread);
+      if (_op == ReserveAndCommit) {
+        MemTracker::write_tracking_record(addr, orig_flags | MemPointerRecord::virtual_memory_commit_tag(),
+          size, SequenceGenerator::next(), pc, _java_thread);
+      }
+    }
+    _seq = 0;
+  }
+}
 

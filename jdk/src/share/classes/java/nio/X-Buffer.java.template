@@ -551,7 +551,7 @@ public abstract class $Type$Buffer
 
     /**
      * Relative <i>get</i> method.  Reads the $type$ at this buffer's
-     * current position, and then increments the position. </p>
+     * current position, and then increments the position.
      *
      * @return  The $type$ at the buffer's current position
      *
@@ -581,7 +581,7 @@ public abstract class $Type$Buffer
 
     /**
      * Absolute <i>get</i> method.  Reads the $type$ at the given
-     * index. </p>
+     * index.
      *
      * @param  index
      *         The index from which the $type$ will be read
@@ -652,12 +652,13 @@ public abstract class $Type$Buffer
      * <tt>src.get(dst,&nbsp;off,&nbsp;len)</tt> has exactly the same effect as
      * the loop
      *
-     * <pre>
+     * <pre>{@code
      *     for (int i = off; i < off + len; i++)
-     *         dst[i] = src.get(); </pre>
+     *         dst[i] = src.get():
+     * }</pre>
      *
      * except that it first checks that there are sufficient $type$s in
-     * this buffer and it is potentially much more efficient. </p>
+     * this buffer and it is potentially much more efficient.
      *
      * @param  dst
      *         The array into which $type$s are to be written
@@ -738,7 +739,7 @@ public abstract class $Type$Buffer
      *         dst.put(src.get()); </pre>
      *
      * except that it first checks that there is sufficient space in this
-     * buffer and it is potentially much more efficient. </p>
+     * buffer and it is potentially much more efficient.
      *
      * @param  src
      *         The source buffer from which $type$s are to be read;
@@ -788,12 +789,13 @@ public abstract class $Type$Buffer
      * <tt>dst.put(src,&nbsp;off,&nbsp;len)</tt> has exactly the same effect as
      * the loop
      *
-     * <pre>
+     * <pre>{@code
      *     for (int i = off; i < off + len; i++)
-     *         dst.put(a[i]); </pre>
+     *         dst.put(a[i]);
+     * }</pre>
      *
      * except that it first checks that there is sufficient space in this
-     * buffer and it is potentially much more efficient. </p>
+     * buffer and it is potentially much more efficient.
      *
      * @param  src
      *         The array from which $type$s are to be read
@@ -874,12 +876,13 @@ public abstract class $Type$Buffer
      * <tt>dst.put(src,&nbsp;start,&nbsp;end)</tt> has exactly the same effect
      * as the loop
      *
-     * <pre>
+     * <pre>{@code
      *     for (int i = start; i < end; i++)
-     *         dst.put(src.charAt(i)); </pre>
+     *         dst.put(src.charAt(i));
+     * }</pre>
      *
      * except that it first checks that there is sufficient space in this
-     * buffer and it is potentially much more efficient. </p>
+     * buffer and it is potentially much more efficient.
      *
      * @param  src
      *         The string from which $type$s are to be read
@@ -1038,12 +1041,13 @@ public abstract class $Type$Buffer
      * write was incomplete.  The following loop, for example, copies bytes
      * from one channel to another via the buffer <tt>buf</tt>:
      *
-     * <blockquote><pre>
-     * buf.clear();          // Prepare buffer for use
-     * while (in.read(buf) >= 0 || buf.position != 0) {
-     *     buf.flip();
-     *     out.write(buf);
-     *     buf.compact();    // In case of partial write
+     * <blockquote><pre>{@code
+     *   buf.clear();          // Prepare buffer for use
+     *   while (in.read(buf) >= 0 || buf.position != 0) {
+     *       buf.flip();
+     *       out.write(buf);
+     *       buf.compact();    // In case of partial write
+     *   }
      * }</pre></blockquote>
      *
 #end[byte]
@@ -1056,7 +1060,7 @@ public abstract class $Type$Buffer
     public abstract $Type$Buffer compact();
 
     /**
-     * Tells whether or not this $type$ buffer is direct. </p>
+     * Tells whether or not this $type$ buffer is direct.
      *
      * @return  <tt>true</tt> if, and only if, this buffer is direct
      */
@@ -1065,7 +1069,7 @@ public abstract class $Type$Buffer
 #if[!char]
 
     /**
-     * Returns a string summarizing the state of this buffer.  </p>
+     * Returns a string summarizing the state of this buffer.
      *
      * @return  A summary string
      */
@@ -1250,7 +1254,7 @@ public abstract class $Type$Buffer
 
     /**
      * Reads the character at the given index relative to the current
-     * position. </p>
+     * position.
      *
      * @param  index
      *         The index of the character to be read, relative to the position;
@@ -1448,7 +1452,7 @@ public abstract class $Type$Buffer
     }
 
     /**
-     * Modifies this buffer's byte order.  </p>
+     * Modifies this buffer's byte order.
      *
      * @param  bo
      *         The new byte order,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,8 +41,8 @@ import javax.sound.sampled.SourceDataLine;
  *
  * @author Karl Helgason
  */
-public class SoftMixingSourceDataLine extends SoftMixingDataLine implements
-        SourceDataLine {
+public final class SoftMixingSourceDataLine extends SoftMixingDataLine
+        implements SourceDataLine {
 
     private boolean open = false;
 
@@ -72,7 +72,7 @@ public class SoftMixingSourceDataLine extends SoftMixingDataLine implements
             AudioFloatInputStream {
         AudioFloatInputStream ais;
 
-        public NonBlockingFloatInputStream(AudioFloatInputStream ais) {
+        NonBlockingFloatInputStream(AudioFloatInputStream ais) {
             this.ais = ais;
         }
 
@@ -120,7 +120,7 @@ public class SoftMixingSourceDataLine extends SoftMixingDataLine implements
 
     }
 
-    protected SoftMixingSourceDataLine(SoftMixingMixer mixer, DataLine.Info info) {
+    SoftMixingSourceDataLine(SoftMixingMixer mixer, DataLine.Info info) {
         super(mixer, info);
     }
 

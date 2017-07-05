@@ -73,6 +73,9 @@ public class BasicComboBoxEditor implements ComboBoxEditor,FocusListener {
 
         if ( anObject != null )  {
             text = anObject.toString();
+            if (text == null) {
+                text = "";
+            }
             oldValue = anObject;
         } else {
             text = "";

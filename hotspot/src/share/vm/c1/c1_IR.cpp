@@ -506,7 +506,7 @@ ComputeLinearScanOrder::ComputeLinearScanOrder(Compilation* c, BlockBegin* start
   _loop_map(0, 0),          // initialized later with correct size
   _compilation(c)
 {
-  TRACE_LINEAR_SCAN(2, "***** computing linear-scan block order");
+  TRACE_LINEAR_SCAN(2, tty->print_cr("***** computing linear-scan block order"));
 
   init_visited();
   count_edges(start_block, NULL);
@@ -683,7 +683,7 @@ void ComputeLinearScanOrder::clear_non_natural_loops(BlockBegin* start_block) {
 }
 
 void ComputeLinearScanOrder::assign_loop_depth(BlockBegin* start_block) {
-  TRACE_LINEAR_SCAN(3, "----- computing loop-depth and weight");
+  TRACE_LINEAR_SCAN(3, tty->print_cr("----- computing loop-depth and weight"));
   init_visited();
 
   assert(_work_list.is_empty(), "work list must be empty before processing");
@@ -868,7 +868,7 @@ void ComputeLinearScanOrder::append_block(BlockBegin* cur) {
 }
 
 void ComputeLinearScanOrder::compute_order(BlockBegin* start_block) {
-  TRACE_LINEAR_SCAN(3, "----- computing final block order");
+  TRACE_LINEAR_SCAN(3, tty->print_cr("----- computing final block order"));
 
   // the start block is always the first block in the linear scan order
   _linear_scan_order = new BlockList(_num_blocks);

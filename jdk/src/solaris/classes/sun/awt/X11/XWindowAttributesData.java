@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,7 @@
  * questions.
  */
 package sun.awt.X11;
-import java.awt.Image;
-import java.util.ArrayList;
+import sun.awt.IconInfo;
 
 class XWindowAttributesData {
     static int NORMAL           = 0;
@@ -51,7 +50,7 @@ class XWindowAttributesData {
     boolean initialResizability;
     int visibilityState; // updated by native X11 event handling code.
     String title;
-    java.util.List<XIconInfo> icons;
+    java.util.List<IconInfo> icons;
     boolean iconsInherited;
     int decorations;            // for future expansion to be able to
                                 // specify native decorations

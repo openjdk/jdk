@@ -1494,9 +1494,18 @@ public final class Files {
     // lazy loading of default and installed file type detectors
     private static class FileTypeDetectors{
         static final FileTypeDetector defaultFileTypeDetector =
-            sun.nio.fs.DefaultFileTypeDetector.create();
+            createDefaultFileTypeDetector();
         static final List<FileTypeDetector> installeDetectors =
             loadInstalledDetectors();
+
+        // creates the default file type detector
+        private static FileTypeDetector createDefaultFileTypeDetector() {
+            return AccessController
+                .doPrivileged(new PrivilegedAction<FileTypeDetector>() {
+                    @Override public FileTypeDetector run() {
+                        return sun.nio.fs.DefaultFileTypeDetector.create();
+                }});
+        }
 
         // loads all installed file type detectors
         private static List<FileTypeDetector> loadInstalledDetectors() {

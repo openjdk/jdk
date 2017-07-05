@@ -317,7 +317,7 @@ public class KeyStore {
          *     been specified by properties in the domain configuration data.
          *     It is cloned to prevent subsequent modification.
          *
-         * @exception NullPointerExcetion if {@code configuration} or
+         * @exception NullPointerException if {@code configuration} or
          *     {@code protectionParams} is {@code null}
          */
         public DomainLoadStoreParameter(URI configuration,
@@ -2093,7 +2093,7 @@ public class KeyStore {
                              oldException);
                     }
                     try {
-                        return AccessController.doPrivileged(action);
+                        return AccessController.doPrivileged(action, context);
                     } catch (PrivilegedActionException e) {
                         Throwable cause = e.getCause();
                         throw new KeyStoreException

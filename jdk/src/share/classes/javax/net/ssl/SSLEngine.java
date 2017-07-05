@@ -211,7 +211,7 @@ import java.nio.ReadOnlyBufferException;
  * that the source buffer has enough room to hold a record (enlarging if
  * necessary), and then obtain more inbound data.
  *
- * <pre>
+ * <pre>{@code
  *   SSLEngineResult r = engine.unwrap(src, dst);
  *   switch (r.getStatus()) {
  *   BUFFER_OVERFLOW:
@@ -238,7 +238,7 @@ import java.nio.ReadOnlyBufferException;
  *       break;
  *   // other cases: CLOSED, OK.
  *   }
- * </pre>
+ * }</pre>
  *
  * <P>
  * Unlike <code>SSLSocket</code>, all methods of SSLEngine are
@@ -442,7 +442,7 @@ public abstract class SSLEngine {
      * <blockquote><pre>
      * {@link #wrap(ByteBuffer [], int, int, ByteBuffer)
      *     engine.wrap(new ByteBuffer [] { src }, 0, 1, dst);}
-     * </pre</blockquote>
+     * </pre></blockquote>
      *
      * @param   src
      *          a <code>ByteBuffer</code> containing outbound application data
@@ -478,7 +478,7 @@ public abstract class SSLEngine {
      * <blockquote><pre>
      * {@link #wrap(ByteBuffer [], int, int, ByteBuffer)
      *     engine.wrap(srcs, 0, srcs.length, dst);}
-     * </pre</blockquote>
+     * </pre></blockquote>
      *
      * @param   srcs
      *          an array of <code>ByteBuffers</code> containing the
@@ -597,7 +597,7 @@ public abstract class SSLEngine {
      * <blockquote><pre>
      * {@link #unwrap(ByteBuffer, ByteBuffer [], int, int)
      *     engine.unwrap(src, new ByteBuffer [] { dst }, 0, 1);}
-     * </pre</blockquote>
+     * </pre></blockquote>
      *
      * @param   src
      *          a <code>ByteBuffer</code> containing inbound network data.
@@ -633,7 +633,7 @@ public abstract class SSLEngine {
      * <blockquote><pre>
      * {@link #unwrap(ByteBuffer, ByteBuffer [], int, int)
      *     engine.unwrap(src, dsts, 0, dsts.length);}
-     * </pre</blockquote>
+     * </pre></blockquote>
      *
      * @param   src
      *          a <code>ByteBuffer</code> containing inbound network data.

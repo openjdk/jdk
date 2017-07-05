@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,26 +22,12 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package com.sun.corba.se.impl.orbutil;
 
-/**
- * Based on feedback from bug report 4452016, all class loading
- * in the ORB is isolated here.  It is acceptable to use
- * Class.forName only when one is certain that the desired class
- * should come from the core JDK.
- */
-public class ORBClassLoader
-{
-    public static Class loadClass(String className)
-        throws ClassNotFoundException
-    {
-        return ORBClassLoader.getClassLoader().loadClass(className);
-    }
+package sun.misc;
 
-    public static ClassLoader getClassLoader() {
-        if (Thread.currentThread().getContextClassLoader() != null)
-            return Thread.currentThread().getContextClassLoader();
-        else
-            return ClassLoader.getSystemClassLoader();
-    }
+import java.util.zip.ZipFile;
+
+public interface JavaUtilZipFileAccess {
+    public boolean startsWithLocHeader(ZipFile zip);
 }
+

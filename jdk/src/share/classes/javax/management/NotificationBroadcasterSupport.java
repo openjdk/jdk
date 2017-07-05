@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package javax.management;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executor;
 
@@ -288,6 +289,7 @@ public class NotificationBroadcasterSupport implements NotificationEmitter {
             this.handback = handback;
         }
 
+        @Override
         public boolean equals(Object o) {
             if (!(o instanceof ListenerInfo))
                 return false;
@@ -298,6 +300,11 @@ public class NotificationBroadcasterSupport implements NotificationEmitter {
                 return (li.listener == listener && li.filter == filter
                         && li.handback == handback);
         }
+
+        @Override
+        public int hashCode() {
+            return Objects.hashCode(listener);
+        }
     }
 
     private static class WildcardListenerInfo extends ListenerInfo {
@@ -305,9 +312,15 @@ public class NotificationBroadcasterSupport implements NotificationEmitter {
             super(listener, null, null);
         }
 
+        @Override
         public boolean equals(Object o) {
             assert (!(o instanceof WildcardListenerInfo));
             return o.equals(this);
+        }
+
+        @Override
+        public int hashCode() {
+            return super.hashCode();
         }
     }
 

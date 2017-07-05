@@ -68,9 +68,8 @@ public class ObjectContainer extends SignatureElementProxy {
     */
    public void setId(String Id) {
 
-      if ((Id != null)) {
-         this._constructionElement.setAttributeNS(null, Constants._ATT_ID, Id);
-         IdResolver.registerElementById(this._constructionElement, Id);
+      if (Id != null) {
+          setLocalIdAttribute(Constants._ATT_ID, Id);
       }
    }
 

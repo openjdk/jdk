@@ -137,6 +137,14 @@ Java_java_util_zip_ZipFile_getTotal(JNIEnv *env, jclass cls, jlong zfile)
     return zip->total;
 }
 
+JNIEXPORT jboolean JNICALL
+Java_java_util_zip_ZipFile_startsWithLOC(JNIEnv *env, jclass cls, jlong zfile)
+{
+    jzfile *zip = jlong_to_ptr(zfile);
+
+    return zip->locsig;
+}
+
 JNIEXPORT void JNICALL
 Java_java_util_zip_ZipFile_close(JNIEnv *env, jclass cls, jlong zfile)
 {

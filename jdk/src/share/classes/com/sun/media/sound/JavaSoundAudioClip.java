@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,24 +28,18 @@ package com.sun.media.sound;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.BufferedInputStream;
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.applet.AudioClip;
-import java.lang.InterruptedException;
 
 import javax.sound.sampled.AudioSystem;
-import javax.sound.sampled.Mixer;
 import javax.sound.sampled.Clip;
-import javax.sound.sampled.Control;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.DataLine;
 import javax.sound.sampled.SourceDataLine;
 import javax.sound.sampled.LineEvent;
 import javax.sound.sampled.LineListener;
-import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.UnsupportedAudioFileException;
-
 
 import javax.sound.midi.MidiSystem;
 import javax.sound.midi.MidiFileFormat;
@@ -63,7 +57,7 @@ import javax.sound.midi.MetaEventListener;
  * @author Florian Bomers
  */
 
-public class JavaSoundAudioClip implements AudioClip, MetaEventListener, LineListener {
+public final class JavaSoundAudioClip implements AudioClip, MetaEventListener, LineListener {
 
     private static final boolean DEBUG = false;
     private static final int BUFFER_SIZE = 16384; // number of bytes written each time to the source data line
@@ -476,7 +470,7 @@ public class JavaSoundAudioClip implements AudioClip, MetaEventListener, LineLis
      * which allows retrieval of the internal array
      */
     private static class DirectBAOS extends ByteArrayOutputStream {
-        public DirectBAOS() {
+        DirectBAOS() {
             super();
         }
 

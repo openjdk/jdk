@@ -151,7 +151,9 @@ public final class RepIdDelegator
     }
 
     // Constructor used for factory/utility cases
-    public RepIdDelegator() {}
+    public RepIdDelegator() {
+        this(null);
+    }
 
     // Constructor used by getIdFromString.  All non-static
     // RepositoryId methods will use the provided delegate.
@@ -159,7 +161,7 @@ public final class RepIdDelegator
         this.delegate = _delegate;
     }
 
-    private RepositoryId delegate;
+    private final RepositoryId delegate;
 
     public String toString() {
         if (delegate != null)
@@ -173,5 +175,13 @@ public final class RepIdDelegator
             return delegate.equals(obj);
         else
             return super.equals(obj);
+    }
+
+    public int hashCode() {
+        if (delegate != null) {
+            return delegate.hashCode();
+        } else {
+            return super.hashCode();
+        }
     }
 }
