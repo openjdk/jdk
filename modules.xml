@@ -211,6 +211,10 @@
       <to>java.security.sasl</to>
     </export>
     <export>
+      <name>jdk.internal.jimage</name>
+      <to>jdk.dev</to> 
+    </export>
+    <export>
       <name>jdk.internal.org.objectweb.asm</name>
       <to>jdk.jfr</to>
       <to>jdk.scripting.nashorn</to>

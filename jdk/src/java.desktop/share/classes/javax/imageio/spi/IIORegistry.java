@@ -64,10 +64,8 @@ import java.util.ServiceConfigurationError;
  * <code>ImageWriter</code>, <code>ImageTranscoder</code>,
  * <code>ImageInputStream</code>, and <code>ImageOutputStream</code>.
  *
- * <p> Service providers found on the system classpath (typically
- * the <code>lib/ext</code> directory in the Java
- * installation directory) are automatically loaded as soon as this class is
- * instantiated.
+ * Service providers found from the Java platform are automatically
+ * loaded as soon as this class is instantiated.
  *
  * <p> When the <code>registerApplicationClasspathSpis</code> method
  * is called, service provider instances declared in the
@@ -227,9 +225,7 @@ public final class IIORegistry extends ServiceRegistry {
 
     private void registerInstalledProviders() {
         /*
-          We need to load installed providers from the
-          system classpath (typically the <code>lib/ext</code>
-          directory in in the Java installation directory)
+          We need to load installed providers
           in the privileged mode in order to
           be able read corresponding jar files even if
           file read capability is restricted (like the

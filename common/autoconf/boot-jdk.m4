@@ -305,20 +305,6 @@ AC_DEFUN_ONCE([BOOTJDK_SETUP_BOOT_JDK],
     AC_MSG_ERROR([Cannot continue])
   fi
 
-  # Setup proper paths for what we found
-  BOOT_RTJAR="$BOOT_JDK/jre/lib/rt.jar"
-  if test ! -f "$BOOT_RTJAR"; then
-    # On MacOSX it is called classes.jar
-    BOOT_RTJAR="$BOOT_JDK/../Classes/classes.jar"
-    if test -f "$BOOT_RTJAR"; then
-      # Remove the ..
-      BOOT_RTJAR="`cd ${BOOT_RTJAR%/*} && pwd`/${BOOT_RTJAR##*/}"
-    fi
-  fi
-  BOOT_TOOLSJAR="$BOOT_JDK/lib/tools.jar"
-  BOOT_JDK="$BOOT_JDK"
-  AC_SUBST(BOOT_RTJAR)
-  AC_SUBST(BOOT_TOOLSJAR)
   AC_SUBST(BOOT_JDK)
 
   # Setup tools from the Boot JDK.

@@ -64,7 +64,7 @@ public final class JDK13Services {
 
     /**
      * Filename of the properties file for default provider properties. This
-     * file is searched in the subdirectory "lib" of the JRE directory (this
+     * file is searched in the subdirectory "conf" of the JRE directory (this
      * behaviour is hardcoded).
      */
     private static final String PROPERTIES_FILENAME = "sound.properties";

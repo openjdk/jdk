@@ -36,7 +36,7 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
       $(addprefix -I, $(LIBDT_SHMEM_SRC)) \
       -I$(JDK_TOPDIR)/src/jdk.jdwp.agent/share/native/libjdwp/export \
       -I$(JDK_TOPDIR)/src/jdk.jdwp.agent/share/native/include \
-      -I$(JDK_OUTPUTDIR)/gensrc_headers/jdk.jdi \
+      -I$(SUPPORT_OUTPUTDIR)/headers/jdk.jdi \
       #
 
   $(eval $(call SetupNativeCompilation,BUILD_LIBDT_SHMEM, \
@@ -55,17 +55,11 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
           -D "JDK_FNAME=dt_shmem.dll" \
           -D "JDK_INTERNAL_NAME=dt_shmem" \
           -D "JDK_FTYPE=0x2L", \
-      OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/libdt_shmem, \
+      OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libdt_shmem, \
       DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
 
-  JDI_TRANSPORT_LIBRARIES += $(BUILD_LIBDT_SHMEM)
+  TARGETS += $(BUILD_LIBDT_SHMEM)
 
 endif # OPENJDK_TARGET_OS
 
 ################################################################################
-
-jdk.jdi: $(JDI_TRANSPORT_LIBRARIES)
-
-all: jdk.jdi
-
-.PHONY: all jdk.jdi

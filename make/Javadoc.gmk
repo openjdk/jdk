@@ -44,8 +44,8 @@ include NON_CORE_PKGS.gmk
 # Definitions for directories
 #
 
-DOCSDIR := $(OUTPUT_ROOT)/docs
-TEMPDIR := $(OUTPUT_ROOT)/docstemp
+DOCSDIR := $(IMAGES_OUTPUTDIR)/docs
+DOCSTMPDIR = $(SUPPORT_OUTPUTDIR)/docs
 
 HOTSPOT_DOCS_IMPORT_PATH=$(HOTSPOT_OUTPUTDIR)/docs
 
@@ -142,9 +142,8 @@ ALL_SOURCE_DIRS := $(wildcard \
       $(CORBA_TOPDIR)/src/*/share/classes \
       $(JAXP_TOPDIR)/src/*/share/classes \
       $(JAXWS_TOPDIR)/src/*/share/classes \
-      $(JDK_OUTPUTDIR)/gensrc/j* \
-      $(JDK_OUTPUTDIR)/gendocsrc_rmic \
-      $(CORBA_OUTPUTDIR)/gensrc/j* \
+      $(SUPPORT_OUTPUTDIR)/gensrc/j* \
+      $(SUPPORT_OUTPUTDIR)/rmic/j* \
       $(JDK_TOPDIR)/src/*/share/doc/stub \
       ) \
       #
@@ -200,11 +199,6 @@ define JavadocSummary # optionsfile packagesfile
 	@($(ECHO) "# Options (`$(BASENAME) $1`):"; $(SED) -e 's@^@#   @' $1) $(LOG_DEBUG)
 	@($(ECHO) "# Packages (`$(BASENAME) $2`):";$(SED) -e 's@^@#   @' $2) $(LOG_DEBUG)
 endef
-
-#
-# Temporary directory for javadoc creation
-#
-DOCSTMPDIR = $(TEMPDIR)/doctmp
 
 #
 # Different api directories created from root directory
@@ -271,7 +265,6 @@ define COMMON_JAVADOCFLAGS
     $(call OptionOnly,-quiet) ; \
     $(call OptionOnly,-use) ; \
     $(call OptionOnly,-keywords) ; \
-    $(call OptionPair,-Xprofilespath,$(JDK_TOPDIR)/make/profile-rtjar-includes.txt) ; \
     $(call OptionOnly,$(ADDITIONAL_JAVADOCFLAGS))
 endef
 
@@ -668,7 +661,7 @@ ALL_OTHER_TARGETS += jdwpdocs
 JDWP_DOCDIR = $(PLATFORM_DOCSDIR)/jpda/jdwp
 
 jdwpdocs: $(JDWP_DOCDIR)/jdwp-protocol.html
-$(JDWP_DOCDIR)/jdwp-protocol.html : $(JDK_OUTPUTDIR)/gensrc_jdwp_doc/jdwp-protocol.html
+$(JDWP_DOCDIR)/jdwp-protocol.html : $(SUPPORT_OUTPUTDIR)/gensrc/jdk.jdi/jdwp-protocol.html
 	$(MKDIR) -p $(@D)
 	$(RM) $@
 	$(CP) $< $@

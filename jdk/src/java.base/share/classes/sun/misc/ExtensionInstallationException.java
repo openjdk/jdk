@@ -29,9 +29,10 @@ package sun.misc;
  * Exception when installation of an extension has failed for
  * any reason
  *
+ * @deprecated this class will be removed in a future release.
  * @author  Jerome Dochez
  */
-
+@Deprecated
 public class ExtensionInstallationException extends Exception {
 
     static final long serialVersionUID = 3139688306909345924L;

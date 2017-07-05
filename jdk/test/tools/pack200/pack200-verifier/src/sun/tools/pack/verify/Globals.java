@@ -170,7 +170,6 @@ class Globals {
         println("\tjava.home=" + System.getProperty("java.home"));
         println("\tjava.class.version=" + System.getProperty("java.class.version"));
         println("\tjava.class.path=" + System.getProperty("java.class.path"));
-        println("\tjava.ext.dirs=" + System.getProperty("java.ext.dirs"));
         println("\tos.name=" + System.getProperty("os.name"));
         println("\tos.arch=" + System.getProperty("os.arch"));
         println("\tos.version=" + System.getProperty("os.version"));
