@@ -323,6 +323,10 @@ void PerfDataManager::add_item(PerfData* p, bool sampled) {
   }
 }
 
+PerfData* PerfDataManager::find_by_name(const char* name) {
+  return _all->find_by_name(name);
+}
+
 PerfDataList* PerfDataManager::all() {
 
   MutexLocker ml(PerfDataManager_lock);
