@@ -79,4 +79,5 @@ FILES_c = \
 	gtk2_interface.c \
         swing_GTKEngine.c \
         swing_GTKStyle.c \
-        rect.c
+        rect.c \
+	sun_awt_X11_GtkFileDialogPeer.c

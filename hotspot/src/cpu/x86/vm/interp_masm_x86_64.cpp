@@ -264,113 +264,51 @@ void InterpreterMacroAssembler::gen_subtype_check(Register Rsub_klass,
 
 // Java Expression Stack
 
-#ifdef ASSERT
-// Verifies that the stack tag matches.  Must be called before the stack
-// value is popped off the stack.
-void InterpreterMacroAssembler::verify_stack_tag(frame::Tag t) {
-  if (TaggedStackInterpreter) {
-    frame::Tag tag = t;
-    if (t == frame::TagCategory2) {
-      tag = frame::TagValue;
-      Label hokay;
-      cmpptr(Address(rsp, 3*wordSize), (int32_t)tag);
-      jcc(Assembler::equal, hokay);
-      stop("Java Expression stack tag high value is bad");
-      bind(hokay);
-    }
-    Label okay;
-    cmpptr(Address(rsp, wordSize), (int32_t)tag);
-    jcc(Assembler::equal, okay);
-    // Also compare if the stack value is zero, then the tag might
-    // not have been set coming from deopt.
-    cmpptr(Address(rsp, 0), 0);
-    jcc(Assembler::equal, okay);
-    stop("Java Expression stack tag value is bad");
-    bind(okay);
-  }
-}
-#endif // ASSERT
-
 void InterpreterMacroAssembler::pop_ptr(Register r) {
-  debug_only(verify_stack_tag(frame::TagReference));
   pop(r);
-  if (TaggedStackInterpreter) addptr(rsp, 1 * wordSize);
-}
-
-void InterpreterMacroAssembler::pop_ptr(Register r, Register tag) {
-  pop(r);
-  if (TaggedStackInterpreter) pop(tag);
 }
 
 void InterpreterMacroAssembler::pop_i(Register r) {
   // XXX can't use pop currently, upper half non clean
-  debug_only(verify_stack_tag(frame::TagValue));
   movl(r, Address(rsp, 0));
   addptr(rsp, wordSize);
-  if (TaggedStackInterpreter) addptr(rsp, 1 * wordSize);
 }
 
 void InterpreterMacroAssembler::pop_l(Register r) {
-  debug_only(verify_stack_tag(frame::TagCategory2));
   movq(r, Address(rsp, 0));
-  addptr(rsp, 2 * Interpreter::stackElementSize());
+  addptr(rsp, 2 * Interpreter::stackElementSize);
 }
 
 void InterpreterMacroAssembler::pop_f(XMMRegister r) {
-  debug_only(verify_stack_tag(frame::TagValue));
   movflt(r, Address(rsp, 0));
   addptr(rsp, wordSize);
-  if (TaggedStackInterpreter) addptr(rsp, 1 * wordSize);
 }
 
 void InterpreterMacroAssembler::pop_d(XMMRegister r) {
-  debug_only(verify_stack_tag(frame::TagCategory2));
   movdbl(r, Address(rsp, 0));
-  addptr(rsp, 2 * Interpreter::stackElementSize());
+  addptr(rsp, 2 * Interpreter::stackElementSize);
 }
 
 void InterpreterMacroAssembler::push_ptr(Register r) {
-  if (TaggedStackInterpreter) push(frame::TagReference);
-  push(r);
-}
-
-void InterpreterMacroAssembler::push_ptr(Register r, Register tag) {
-  if (TaggedStackInterpreter) push(tag);
   push(r);
 }
 
 void InterpreterMacroAssembler::push_i(Register r) {
-  if (TaggedStackInterpreter) push(frame::TagValue);
   push(r);
 }
 
 void InterpreterMacroAssembler::push_l(Register r) {
-  if (TaggedStackInterpreter) {
-    push(frame::TagValue);
-    subptr(rsp, 1 * wordSize);
-    push(frame::TagValue);
-    subptr(rsp, 1 * wordSize);
-  } else {
-    subptr(rsp, 2 * wordSize);
-  }
+  subptr(rsp, 2 * wordSize);
   movq(Address(rsp, 0), r);
 }
 
 void InterpreterMacroAssembler::push_f(XMMRegister r) {
-  if (TaggedStackInterpreter) push(frame::TagValue);
   subptr(rsp, wordSize);
   movflt(Address(rsp, 0), r);
 }
 
 void InterpreterMacroAssembler::push_d(XMMRegister r) {
-  if (TaggedStackInterpreter) {
-    push(frame::TagValue);
-    subptr(rsp, 1 * wordSize);
-    push(frame::TagValue);
-    subptr(rsp, 1 * wordSize);
-  } else {
-    subptr(rsp, 2 * wordSize);
-  }
+  subptr(rsp, 2 * wordSize);
   movdbl(Address(rsp, 0), r);
 }
 
@@ -407,116 +345,14 @@ void InterpreterMacroAssembler::push(TosState state) {
 }
 
 
-
-
-// Tagged stack helpers for swap and dup
-void InterpreterMacroAssembler::load_ptr_and_tag(int n, Register val,
-                                                 Register tag) {
+// Helpers for swap and dup
+void InterpreterMacroAssembler::load_ptr(int n, Register val) {
   movptr(val, Address(rsp, Interpreter::expr_offset_in_bytes(n)));
-  if (TaggedStackInterpreter) {
-    movptr(tag, Address(rsp, Interpreter::expr_tag_offset_in_bytes(n)));
-  }
 }
 
-void InterpreterMacroAssembler::store_ptr_and_tag(int n, Register val,
-                                                  Register tag) {
+void InterpreterMacroAssembler::store_ptr(int n, Register val) {
   movptr(Address(rsp, Interpreter::expr_offset_in_bytes(n)), val);
-  if (TaggedStackInterpreter) {
-    movptr(Address(rsp, Interpreter::expr_tag_offset_in_bytes(n)), tag);
-  }
 }
-
-
-// Tagged local support
-void InterpreterMacroAssembler::tag_local(frame::Tag tag, int n) {
-  if (TaggedStackInterpreter) {
-    if (tag == frame::TagCategory2) {
-      movptr(Address(r14, Interpreter::local_tag_offset_in_bytes(n+1)),
-           (int32_t)frame::TagValue);
-      movptr(Address(r14, Interpreter::local_tag_offset_in_bytes(n)),
-           (int32_t)frame::TagValue);
-    } else {
-      movptr(Address(r14, Interpreter::local_tag_offset_in_bytes(n)), (int32_t)tag);
-    }
-  }
-}
-
-void InterpreterMacroAssembler::tag_local(frame::Tag tag, Register idx) {
-  if (TaggedStackInterpreter) {
-    if (tag == frame::TagCategory2) {
-      movptr(Address(r14, idx, Address::times_8,
-                  Interpreter::local_tag_offset_in_bytes(1)), (int32_t)frame::TagValue);
-      movptr(Address(r14, idx, Address::times_8,
-                  Interpreter::local_tag_offset_in_bytes(0)), (int32_t)frame::TagValue);
-    } else {
-      movptr(Address(r14, idx, Address::times_8, Interpreter::local_tag_offset_in_bytes(0)),
-           (int32_t)tag);
-    }
-  }
-}
-
-void InterpreterMacroAssembler::tag_local(Register tag, Register idx) {
-  if (TaggedStackInterpreter) {
-    // can only be TagValue or TagReference
-    movptr(Address(r14, idx, Address::times_8, Interpreter::local_tag_offset_in_bytes(0)), tag);
-  }
-}
-
-
-void InterpreterMacroAssembler::tag_local(Register tag, int n) {
-  if (TaggedStackInterpreter) {
-    // can only be TagValue or TagReference
-    movptr(Address(r14, Interpreter::local_tag_offset_in_bytes(n)), tag);
-  }
-}
-
-#ifdef ASSERT
-void InterpreterMacroAssembler::verify_local_tag(frame::Tag tag, int n) {
-  if (TaggedStackInterpreter) {
-     frame::Tag t = tag;
-    if (tag == frame::TagCategory2) {
-      Label nbl;
-      t = frame::TagValue;  // change to what is stored in locals
-      cmpptr(Address(r14, Interpreter::local_tag_offset_in_bytes(n+1)), (int32_t)t);
-      jcc(Assembler::equal, nbl);
-      stop("Local tag is bad for long/double");
-      bind(nbl);
-    }
-    Label notBad;
-    cmpq(Address(r14, Interpreter::local_tag_offset_in_bytes(n)), (int32_t)t);
-    jcc(Assembler::equal, notBad);
-    // Also compare if the local value is zero, then the tag might
-    // not have been set coming from deopt.
-    cmpptr(Address(r14, Interpreter::local_offset_in_bytes(n)), 0);
-    jcc(Assembler::equal, notBad);
-    stop("Local tag is bad");
-    bind(notBad);
-  }
-}
-
-void InterpreterMacroAssembler::verify_local_tag(frame::Tag tag, Register idx) {
-  if (TaggedStackInterpreter) {
-    frame::Tag t = tag;
-    if (tag == frame::TagCategory2) {
-      Label nbl;
-      t = frame::TagValue;  // change to what is stored in locals
-      cmpptr(Address(r14, idx, Address::times_8, Interpreter::local_tag_offset_in_bytes(1)), (int32_t)t);
-      jcc(Assembler::equal, nbl);
-      stop("Local tag is bad for long/double");
-      bind(nbl);
-    }
-    Label notBad;
-    cmpptr(Address(r14, idx, Address::times_8, Interpreter::local_tag_offset_in_bytes(0)), (int32_t)t);
-    jcc(Assembler::equal, notBad);
-    // Also compare if the local value is zero, then the tag might
-    // not have been set coming from deopt.
-    cmpptr(Address(r14, idx, Address::times_8, Interpreter::local_offset_in_bytes(0)), 0);
-    jcc(Assembler::equal, notBad);
-    stop("Local tag is bad");
-    bind(notBad);
-  }
-}
-#endif // ASSERT
 
 
 void InterpreterMacroAssembler::super_call_VM_leaf(address entry_point) {

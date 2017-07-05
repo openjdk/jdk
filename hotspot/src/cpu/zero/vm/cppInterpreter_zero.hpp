@@ -29,10 +29,10 @@
 
  public:
   // Method entries
-  static void normal_entry(methodOop method, intptr_t UNUSED, TRAPS);
-  static void native_entry(methodOop method, intptr_t UNUSED, TRAPS);
-  static void accessor_entry(methodOop method, intptr_t UNUSED, TRAPS);
-  static void empty_entry(methodOop method, intptr_t UNUSED, TRAPS);
+  static int normal_entry(methodOop method, intptr_t UNUSED, TRAPS);
+  static int native_entry(methodOop method, intptr_t UNUSED, TRAPS);
+  static int accessor_entry(methodOop method, intptr_t UNUSED, TRAPS);
+  static int empty_entry(methodOop method, intptr_t UNUSED, TRAPS);
 
  public:
   // Main loop of normal_entry

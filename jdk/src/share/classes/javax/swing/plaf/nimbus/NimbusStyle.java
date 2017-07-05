@@ -38,6 +38,7 @@ import javax.swing.plaf.synth.SynthStyle;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Insets;
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -193,7 +194,7 @@ public final class NimbusStyle extends SynthStyle {
      * UIDefaults which overrides (or supplements) those defaults found in
      * UIManager.
      */
-    private JComponent component;
+    private WeakReference<JComponent> component;
 
     /**
      * Create a new NimbusStyle. Only the prefix must be supplied. At the
@@ -209,7 +210,9 @@ public final class NimbusStyle extends SynthStyle {
      *        should be null otherwise.
      */
     NimbusStyle(String prefix, JComponent c) {
-        this.component = c;
+        if (c != null) {
+            this.component = new WeakReference<JComponent>(c);
+        }
         this.prefix = prefix;
         this.painter = new SynthPainterImpl(this);
     }
@@ -251,9 +254,11 @@ public final class NimbusStyle extends SynthStyle {
         // value is an instance of UIDefaults, then these defaults are used
         // in place of, or in addition to, the defaults in UIManager.
         if (component != null) {
-            Object o = component.getClientProperty("Nimbus.Overrides");
+            // We know component.get() is non-null here, as if the component
+            // were GC'ed, we wouldn't be processing its style.
+            Object o = component.get().getClientProperty("Nimbus.Overrides");
             if (o instanceof UIDefaults) {
-                Object i = component.getClientProperty(
+                Object i = component.get().getClientProperty(
                         "Nimbus.Overrides.InheritDefaults");
                 boolean inherit = i instanceof Boolean ? (Boolean)i : true;
                 UIDefaults d = (UIDefaults)o;
