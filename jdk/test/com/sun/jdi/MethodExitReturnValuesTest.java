@@ -218,7 +218,9 @@ public class MethodExitReturnValuesTest extends TestScaffold {
     private String[] excludes = {
         "javax.*",
         "sun.*",
-        "com.sun.*"};
+        "com.sun.*",
+        "com.oracle.*",
+        "oracle.*"};
 
     static VirtualMachineManager vmm ;
     ClassType targetClass;

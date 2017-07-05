@@ -11,6 +11,10 @@ BEGIN	{
 	    matched++;
 	}
 
+/^[0-9]+ $/	{
+	    matched++;
+	}
+
 	{ totallines++; print $0 }
 
 END	{

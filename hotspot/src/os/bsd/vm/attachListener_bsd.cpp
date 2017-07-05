@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -206,10 +206,15 @@ int BsdAttachListener::init() {
   // put in listen mode, set permissions, and rename into place
   res = ::listen(listener, 5);
   if (res == 0) {
-      RESTARTABLE(::chmod(initial_path, S_IREAD|S_IWRITE), res);
+    RESTARTABLE(::chmod(initial_path, S_IREAD|S_IWRITE), res);
+    if (res == 0) {
+      // make sure the file is owned by the effective user and effective group
+      // (this is the default on linux, but not on mac os)
+      RESTARTABLE(::chown(initial_path, geteuid(), getegid()), res);
       if (res == 0) {
-          res = ::rename(initial_path, path);
+        res = ::rename(initial_path, path);
       }
+    }
   }
   if (res == -1) {
     RESTARTABLE(::close(listener), res);

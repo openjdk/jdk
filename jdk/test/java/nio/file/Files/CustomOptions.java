@@ -28,6 +28,7 @@
  * @author  Brandon Passanisi
  * @library ..
  * @build   CustomOptions PassThroughFileSystem
+ * @run main CustomOptions
  */
 
 import java.io.IOException;

@@ -348,7 +348,13 @@ ifneq ($(PLATFORM), windows)
 	    "        Try setting LANG to 'C'. \n" \
 	    "" >> $(WARNING_FILE) ; \
         fi
+ifeq ($(PLATFORM), macosx)
+	@if [ "$(LANG)" = "" ]; then \
+	  $(ECHO) "ERROR: LANG must be set on Mac OS X. Recommended value is \"C\"" >> $(ERROR_FILE) ; \
+	fi
 endif
+endif
+
 
 ######################################################
 # Check the Windows cygwin version

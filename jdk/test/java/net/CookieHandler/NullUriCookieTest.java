@@ -23,8 +23,9 @@
 
 /*
  * @test
- * @bug 6953455
+ * @bug 6953455 7045655
  * @summary CookieStore.add() cannot handle null URI parameter
+ *     and An empty InMemoryCookieStore should not return true for removeAll
  */
 
 import java.net.CookieManager;
@@ -44,6 +45,11 @@ public class NullUriCookieTest {
     static void checkCookieNullUri() throws Exception {
         //get a cookie store implementation and add a cookie to the store with null URI
         CookieStore cookieStore = (new CookieManager()).getCookieStore();
+        //Check if removeAll() retrurns false on an empty CookieStore
+        if (cookieStore.removeAll()) {
+            fail = true;
+        }
+        checkFail("removeAll on empty store should return false");
         HttpCookie cookie = new HttpCookie("MY_COOKIE", "MY_COOKIE_VALUE");
         cookie.setDomain("foo.com");
         cookieStore.add(null, cookie);
