@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1995-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -278,7 +278,6 @@ class ZipFile implements ZipConstants {
             int size = inflaters.size();
             if (size > 0) {
                 Inflater inf = (Inflater)inflaters.remove(size - 1);
-                inf.reset();
                 return inf;
             } else {
                 return new Inflater(true);
@@ -291,6 +290,7 @@ class ZipFile implements ZipConstants {
      */
     private void releaseInflater(Inflater inf) {
         synchronized (inflaters) {
+            inf.reset();
             inflaters.add(inf);
         }
     }

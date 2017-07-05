@@ -1,5 +1,5 @@
 #
-# Copyright 2005-2007 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -79,7 +79,6 @@ ALL_SETTINGS+=$(call addAltSetting,SLASH_JAVA)
 ALL_SETTINGS+=$(call addRequiredSetting,VARIANT)
 ALL_SETTINGS+=$(call addAltSetting,JDK_DEVTOOLS_DIR)
 ALL_SETTINGS+=$(call addOptionalSetting,ANT_HOME)
-ALL_SETTINGS+=$(call addOptionalSetting,FINDBUGS_HOME)
 ALL_SETTINGS+=$(call addAltSetting,UNIXCOMMAND_PATH)
 ALL_SETTINGS+=$(call addAltSetting,COMPILER_PATH)
 ALL_SETTINGS+=$(call addAltSetting,DEVTOOLS_PATH)
@@ -119,7 +118,6 @@ ifeq ($(PLATFORM),windows)
   ALL_SETTINGS+=$(call addRequiredVersionSetting,LINK_VER)
 endif
 ALL_SETTINGS+=$(call addRequiredVersionSetting,ANT_VER)
-ALL_SETTINGS+=$(call addRequiredVersionSetting,FINDBUGS_VER)
 ALL_SETTINGS+=$(call addRequiredSetting,TEMPDIR)
 
 

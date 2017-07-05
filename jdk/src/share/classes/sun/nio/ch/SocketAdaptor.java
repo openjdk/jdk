@@ -54,15 +54,8 @@ public class SocketAdaptor
     // The channel being adapted
     private final SocketChannelImpl sc;
 
-    // Option adaptor object, created on demand
-    private volatile OptionAdaptor opts = null;
-
     // Timeout "option" value for reads
     private volatile int timeout = 0;
-
-    // Traffic-class/Type-of-service
-    private volatile int trafficClass = 0;
-
 
     // ## super will create a useless impl
     private SocketAdaptor(SocketChannelImpl sc) {
@@ -145,8 +138,6 @@ public class SocketAdaptor
 
     public void bind(SocketAddress local) throws IOException {
         try {
-            if (local == null)
-                local = new InetSocketAddress(0);
             sc.bind(local);
         } catch (Exception x) {
             Net.translateException(x);
@@ -154,27 +145,39 @@ public class SocketAdaptor
     }
 
     public InetAddress getInetAddress() {
-        if (!sc.isConnected())
+        SocketAddress remote = sc.remoteAddress();
+        if (remote == null) {
             return null;
-        return Net.asInetSocketAddress(sc.remoteAddress()).getAddress();
+        } else {
+            return ((InetSocketAddress)remote).getAddress();
+        }
     }
 
     public InetAddress getLocalAddress() {
-        if (!sc.isBound())
-            return new InetSocketAddress(0).getAddress();
-        return Net.asInetSocketAddress(sc.localAddress()).getAddress();
+        if (sc.isOpen()) {
+            SocketAddress local = sc.localAddress();
+            if (local != null)
+                return ((InetSocketAddress)local).getAddress();
+        }
+        return new InetSocketAddress(0).getAddress();
     }
 
     public int getPort() {
-        if (!sc.isConnected())
+        SocketAddress remote = sc.remoteAddress();
+        if (remote == null) {
             return 0;
-        return Net.asInetSocketAddress(sc.remoteAddress()).getPort();
+        } else {
+            return ((InetSocketAddress)remote).getPort();
+        }
     }
 
     public int getLocalPort() {
-        if (!sc.isBound())
+        SocketAddress local = sc.localAddress();
+        if (local == null) {
             return -1;
-        return Net.asInetSocketAddress(sc.localAddress()).getPort();
+        } else {
+            return ((InetSocketAddress)local).getPort();
+        }
     }
 
     private class SocketInputStream
@@ -276,26 +279,60 @@ public class SocketAdaptor
         return os;
     }
 
-    private OptionAdaptor opts() {
-        if (opts == null)
-            opts = new OptionAdaptor(sc);
-        return opts;
+    private void setBooleanOption(SocketOption<Boolean> name, boolean value)
+        throws SocketException
+    {
+        try {
+            sc.setOption(name, value);
+        } catch (IOException x) {
+            Net.translateToSocketException(x);
+        }
+    }
+
+    private void setIntOption(SocketOption<Integer> name, int value)
+        throws SocketException
+    {
+        try {
+            sc.setOption(name, value);
+        } catch (IOException x) {
+            Net.translateToSocketException(x);
+        }
+    }
+
+    private boolean getBooleanOption(SocketOption<Boolean> name) throws SocketException {
+        try {
+            return sc.getOption(name).booleanValue();
+        } catch (IOException x) {
+            Net.translateToSocketException(x);
+            return false;       // keep compiler happy
+        }
+    }
+
+    private int getIntOption(SocketOption<Integer> name) throws SocketException {
+        try {
+            return sc.getOption(name).intValue();
+        } catch (IOException x) {
+            Net.translateToSocketException(x);
+            return -1;          // keep compiler happy
+        }
     }
 
     public void setTcpNoDelay(boolean on) throws SocketException {
-        opts().setTcpNoDelay(on);
+        setBooleanOption(StandardSocketOption.TCP_NODELAY, on);
     }
 
     public boolean getTcpNoDelay() throws SocketException {
-        return opts().getTcpNoDelay();
+        return getBooleanOption(StandardSocketOption.TCP_NODELAY);
     }
 
     public void setSoLinger(boolean on, int linger) throws SocketException {
-        opts().setSoLinger(on, linger);
+        if (!on)
+            linger = -1;
+        setIntOption(StandardSocketOption.SO_LINGER, linger);
     }
 
     public int getSoLinger() throws SocketException {
-        return opts().getSoLinger();
+        return getIntOption(StandardSocketOption.SO_LINGER);
     }
 
     public void sendUrgentData(int data) throws IOException {
@@ -303,11 +340,11 @@ public class SocketAdaptor
     }
 
     public void setOOBInline(boolean on) throws SocketException {
-        opts().setOOBInline(on);
+        setBooleanOption(ExtendedSocketOption.SO_OOBINLINE, on);
     }
 
     public boolean getOOBInline() throws SocketException {
-        return opts().getOOBInline();
+        return getBooleanOption(ExtendedSocketOption.SO_OOBINLINE);
     }
 
     public void setSoTimeout(int timeout) throws SocketException {
@@ -321,48 +358,49 @@ public class SocketAdaptor
     }
 
     public void setSendBufferSize(int size) throws SocketException {
-        opts().setSendBufferSize(size);
+        // size 0 valid for SocketChannel, invalid for Socket
+        if (size <= 0)
+            throw new IllegalArgumentException("Invalid send size");
+        setIntOption(StandardSocketOption.SO_SNDBUF, size);
     }
 
     public int getSendBufferSize() throws SocketException {
-        return opts().getSendBufferSize();
+        return getIntOption(StandardSocketOption.SO_SNDBUF);
     }
 
     public void setReceiveBufferSize(int size) throws SocketException {
-        opts().setReceiveBufferSize(size);
+        // size 0 valid for SocketChannel, invalid for Socket
+        if (size <= 0)
+            throw new IllegalArgumentException("Invalid receive size");
+        setIntOption(StandardSocketOption.SO_RCVBUF, size);
     }
 
     public int getReceiveBufferSize() throws SocketException {
-        return opts().getReceiveBufferSize();
+        return getIntOption(StandardSocketOption.SO_RCVBUF);
     }
 
     public void setKeepAlive(boolean on) throws SocketException {
-        opts().setKeepAlive(on);
+        setBooleanOption(StandardSocketOption.SO_KEEPALIVE, on);
     }
 
     public boolean getKeepAlive() throws SocketException {
-        return opts().getKeepAlive();
+        return getBooleanOption(StandardSocketOption.SO_KEEPALIVE);
     }
 
     public void setTrafficClass(int tc) throws SocketException {
-        opts().setTrafficClass(tc);
-        trafficClass = tc;
+        setIntOption(StandardSocketOption.IP_TOS, tc);
     }
 
     public int getTrafficClass() throws SocketException {
-        int tc = opts().getTrafficClass();
-        if (tc < 0) {
-            tc = trafficClass;
-        }
-        return tc;
+        return getIntOption(StandardSocketOption.IP_TOS);
     }
 
     public void setReuseAddress(boolean on) throws SocketException {
-        opts().setReuseAddress(on);
+        setBooleanOption(StandardSocketOption.SO_REUSEADDR, on);
     }
 
     public boolean getReuseAddress() throws SocketException {
-        return opts().getReuseAddress();
+        return getBooleanOption(StandardSocketOption.SO_REUSEADDR);
     }
 
     public void close() throws IOException {
@@ -402,7 +440,7 @@ public class SocketAdaptor
     }
 
     public boolean isBound() {
-        return sc.isBound();
+        return sc.localAddress() != null;
     }
 
     public boolean isClosed() {

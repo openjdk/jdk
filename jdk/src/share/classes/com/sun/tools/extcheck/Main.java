@@ -1,5 +1,5 @@
 /*
- * Copyright 1998 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,10 @@ import java.io.*;
  */
 
 public final class Main {
-
+    public static final String INSUFFICIENT = "Insufficient number of arguments";
+    public static final String MISSING = "Missing <jar file> argument";
+    public static final String DOES_NOT_EXIST = "Jarfile does not exist: ";
+    public static final String EXTRA = "Extra command line argument: ";
 
     /**
      * Terminates with one of the following codes
@@ -40,26 +43,36 @@ public final class Main {
      *  0 No newer jar file was found
      *  -1 An internal error occurred
      */
-    public static void main(String args[]){
-
-        if (args.length < 1){
-            System.err.println("Usage: extcheck [-verbose] <jar file>");
+    public static void main(String args[]) {
+        try {
+            realMain(args);
+        } catch (Exception ex) {
+            System.err.println(ex.getMessage());
             System.exit(-1);
+        }
+    }
+
+    public static void realMain(String[] args) throws Exception {
+        if (args.length < 1) {
+            usage(INSUFFICIENT);
         }
         int argIndex = 0;
         boolean verboseFlag = false;
-        if (args[argIndex].equals("-verbose")){
+        if (args[argIndex].equals("-verbose")) {
             verboseFlag = true;
             argIndex++;
+            if (argIndex >= args.length) {
+                usage(MISSING);
+            }
         }
         String jarName = args[argIndex];
         argIndex++;
         File jarFile = new File(jarName);
         if (!jarFile.exists()){
-            ExtCheck.error("Jarfile " + jarName + " does not exist");
+            usage(DOES_NOT_EXIST + jarName);
         }
         if (argIndex < args.length) {
-            ExtCheck.error("Extra command line argument :"+args[argIndex]);
+            usage(EXTRA + args[argIndex]);
         }
         ExtCheck jt = ExtCheck.create(jarFile,verboseFlag);
         boolean result = jt.checkInstalledAgainstTarget();
@@ -68,7 +81,10 @@ public final class Main {
         } else {
             System.exit(1);
         }
-
     }
 
+    private static void usage(String msg) throws Exception {
+        throw new Exception(msg + "\nUsage: extcheck [-verbose] <jar file>");
+    }
 }
+

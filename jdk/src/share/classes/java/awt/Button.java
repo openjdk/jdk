@@ -213,8 +213,8 @@ public class Button extends Component implements Accessible {
         }
 
         // This could change the preferred size of the Component.
-        if (testvalid && valid) {
-            invalidate();
+        if (testvalid) {
+            invalidateIfValid();
         }
     }
 

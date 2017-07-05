@@ -139,12 +139,3 @@ Java_sun_nio_ch_SocketChannelImpl_checkConnect(JNIEnv *env, jobject this,
 
     return 0;
 }
-
-JNIEXPORT void JNICALL
-Java_sun_nio_ch_SocketChannelImpl_shutdown(JNIEnv *env, jclass cl,
-                                           jobject fdo, jint how)
-{
-    if (shutdown(fdval(env, fdo), how) == SOCKET_ERROR) {
-        NET_ThrowNew(env, WSAGetLastError(), "shutdown");
-    }
-}

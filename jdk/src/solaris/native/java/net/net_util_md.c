@@ -791,7 +791,7 @@ NET_SetTrafficClass(struct sockaddr *him, int trafficClass) {
 #endif /* AF_INET6 */
 }
 
-jint
+JNIEXPORT jint JNICALL
 NET_GetPortFromSockaddr(struct sockaddr *him) {
 #ifdef AF_INET6
     if (him->sa_family == AF_INET6) {

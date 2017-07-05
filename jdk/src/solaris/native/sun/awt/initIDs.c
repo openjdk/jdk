@@ -26,7 +26,7 @@
 #include "java_awt_Color.h"
 #include "java_awt_Dimension.h"
 #include "java_awt_MenuBar.h"
-#include "java_awt_Label.h"
+//#include "java_awt_Label.h"
 #include "java_awt_FontMetrics.h"
 #include "java_awt_event_MouseEvent.h"
 #include "java_awt_Rectangle.h"

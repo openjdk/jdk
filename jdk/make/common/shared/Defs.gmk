@@ -352,30 +352,6 @@ else
   HOTSPOT_DOCS_IMPORT_PATH :=$(call DirExists,$(HOTSPOT_IMPORT_PATH)/docs,$(PROMOTED_BUILD_BASEDIR)/docs,/NO_DOCS_DIR)
 endif
 
-# PREVIOUS_JDK_FILE: filename of install bundle for previous JDK
-ifdef ALT_PREVIOUS_JDK_FILE
-  PREVIOUS_JDK_FILE  =$(ALT_PREVIOUS_JDK_FILE)
-else
-  PREVIOUS_JDK_FILE = jdk-$(PREVIOUS_JDK_UNDERSCORE_VERSION)-$(PLATFORM)-$(ARCH)$(BUNDLE_FILE_SUFFIX)
-endif
-export PREVIOUS_JDK_FILE
-PREVIOUS_JDK_FILE:=$(call AltCheckSpaces,PREVIOUS_JDK_FILE)
-PREVIOUS_JDK_FILE:=$(call AltCheckValue,PREVIOUS_JDK_FILE)
-
-# PREVIOUS_JRE_FILE: filename of install bundle for previous JRE
-ifdef ALT_PREVIOUS_JRE_FILE
-  PREVIOUS_JRE_FILE  =$(ALT_PREVIOUS_JRE_FILE)
-else
-  PREVIOUS_JRE_FILE = jre-$(PREVIOUS_JDK_UNDERSCORE_VERSION)-$(PLATFORM)-$(ARCH)$(BUNDLE_FILE_SUFFIX)
-endif
-export PREVIOUS_JRE_FILE
-PREVIOUS_JRE_FILE:=$(call AltCheckSpaces,PREVIOUS_JRE_FILE)
-PREVIOUS_JRE_FILE:=$(call AltCheckValue,PREVIOUS_JRE_FILE)
-
-# Set here as shared variables
-PREVIOUS_JRE_BUNDLE = $(PREVIOUS_RELEASE_PATH)/$(PREVIOUS_JRE_FILE)
-PREVIOUS_JDK_BUNDLE = $(PREVIOUS_RELEASE_PATH)/$(PREVIOUS_JDK_FILE)
-
 # These are the same on all platforms but require the above platform include 1st
 
 # BOOTDIR: Bootstrap JDK, previous released JDK.
@@ -389,19 +365,70 @@ export BOOTDIR
 BOOTDIR:=$(call AltCheckSpaces,BOOTDIR)
 BOOTDIR:=$(call AltCheckValue,BOOTDIR)
 
-# PREVIOUS_RELEASE_PATH: path to where previous release bundles are
-ifdef ALT_PREVIOUS_RELEASE_PATH
-  PREVIOUS_RELEASE_PATH :=$(call OptFullPath,$(ALT_PREVIOUS_RELEASE_PATH))
-else
-  PREVIOUS_RELEASE_PATH =$(SLASH_JAVA)/re/jdk/$(PREVIOUS_JDK_VERSION)/archive/fcs/bundles/$(PLATFORM)-$(ARCH)
-endif
-export PREVIOUS_RELEASE_PATH
-PREVIOUS_RELEASE_PATH:=$(call AltCheckSpaces,PREVIOUS_RELEASE_PATH)
-PREVIOUS_RELEASE_PATH:=$(call AltCheckValue,PREVIOUS_RELEASE_PATH)
+# PREVIOUS_FCS_RE_AREA: re path to where previous release binaries/bundles are
+PREVIOUS_FCS_RE_AREA = $(SLASH_JAVA)/re/jdk/$(PREVIOUS_JDK_VERSION)/archive/fcs
 
 # PREVIOUS_RELEASE_IMAGE: Previous install image to compare against
 ifdef ALT_PREVIOUS_RELEASE_IMAGE
+  
+  # Explicit image provided, no bundle access needed
   PREVIOUS_RELEASE_IMAGE :=$(call FullPath,$(ALT_PREVIOUS_RELEASE_IMAGE))
+
+else
+  
+  # PREVIOUS_RELEASE_PATH: path to where previous release bundles are
+  ifdef ALT_PREVIOUS_RELEASE_PATH
+    PREVIOUS_RELEASE_PATH :=$(call OptFullPath,$(ALT_PREVIOUS_RELEASE_PATH))
+  else
+    PREVIOUS_RELEASE_PATH := \
+	$(call DirExists,$(PREVIOUS_FCS_RE_AREA)/bundles/$(PLATFORM)-$(ARCH),,)
+  endif
+
+  # Depending on if we have access to these bundles
+  ifeq ($(PREVIOUS_RELEASE_PATH),)
+    # Use images in re area or BOOTDIR (which is normally the previous release)
+    PREVIOUS_RELEASE_IMAGE := \
+         $(call DirExists,$(PREVIOUS_FCS_RE_AREA)/binaries/$(PLATFORM)-$(ARCH),$(BOOTDIR),)
+  else
+    # Get names of and paths to bundles
+    PREVIOUS_RELEASE_PATH:=$(call AltCheckSpaces,PREVIOUS_RELEASE_PATH)
+    PREVIOUS_RELEASE_PATH:=$(call AltCheckValue,PREVIOUS_RELEASE_PATH)
+    export PREVIOUS_RELEASE_PATH
+  
+    # PREVIOUS_JDK_FILE: filename of install bundle for previous JDK
+    ifdef ALT_PREVIOUS_JDK_FILE
+      PREVIOUS_JDK_FILE  =$(ALT_PREVIOUS_JDK_FILE)
+    else
+      PREVIOUS_JDK_FILE = \
+	  jdk-$(PREVIOUS_JDK_UNDERSCORE_VERSION)-$(PLATFORM)-$(ARCH)$(BUNDLE_FILE_SUFFIX)
+    endif
+    export PREVIOUS_JDK_FILE
+    PREVIOUS_JDK_FILE:=$(call AltCheckSpaces,PREVIOUS_JDK_FILE)
+    PREVIOUS_JDK_FILE:=$(call AltCheckValue,PREVIOUS_JDK_FILE)
+
+    # PREVIOUS_JRE_FILE: filename of install bundle for previous JRE
+    ifdef ALT_PREVIOUS_JRE_FILE
+      PREVIOUS_JRE_FILE  =$(ALT_PREVIOUS_JRE_FILE)
+    else
+      PREVIOUS_JRE_FILE = \
+	  jre-$(PREVIOUS_JDK_UNDERSCORE_VERSION)-$(PLATFORM)-$(ARCH)$(BUNDLE_FILE_SUFFIX)
+    endif
+    export PREVIOUS_JRE_FILE
+    PREVIOUS_JRE_FILE:=$(call AltCheckSpaces,PREVIOUS_JRE_FILE)
+    PREVIOUS_JRE_FILE:=$(call AltCheckValue,PREVIOUS_JRE_FILE)
+   
+    # Paths to these bundles
+    PREVIOUS_JRE_BUNDLE = $(PREVIOUS_RELEASE_PATH)/$(PREVIOUS_JRE_FILE)
+    PREVIOUS_JDK_BUNDLE = $(PREVIOUS_RELEASE_PATH)/$(PREVIOUS_JDK_FILE)
+  endif
+
+endif
+
+# Indicate we are using an image comparison
+ifneq ($(PREVIOUS_RELEASE_IMAGE),)
+    PREVIOUS_RELEASE_PATH = USING-PREVIOUS_RELEASE_IMAGE
+    PREVIOUS_JRE_BUNDLE   = USING-PREVIOUS_RELEASE_IMAGE
+    PREVIOUS_JDK_BUNDLE   = USING-PREVIOUS_RELEASE_IMAGE
 endif
 
 # CACERTS_FILE: if OPENJDK is false and the internal version of the file 
@@ -513,22 +540,16 @@ JDK_CUPS_HEADERS_PATH=$(JDK_DEVTOOLS_DIR)/share/cups/include
   endif
 endif
 
-# Utilities ant and findbugs
-ifeq ($(ANT_HOME),)
-  ANT_HOME := $(call DirExists,/usr/share/ant,$(JDK_DEVTOOLS_DIR)/share/ant/latest,)
+# Utilities ant
+ifeq ($(PLATFORM), windows)
+  ifeq ($(ANT_HOME),)
+    ANT_HOME := $(call DirExists,$(JDK_DEVTOOLS_DIR)/share/ant/latest,,)
+  endif
 endif
 ifeq ($(ANT_HOME),)
   ANT = ant
 else
   ANT = $(ANT_HOME)/bin/ant
-endif
-ifeq ($(FINDBUGS_HOME),)
-  FINDBUGS_HOME := $(call DirExists,/usr/share/findbugs,$(JDK_DEVTOOLS_DIR)/share/findbugs/latest,)
-endif
-ifeq ($(FINDBUGS_HOME),)
-  FINDBUGS = findbugs
-else
-  FINDBUGS = $(FINDBUGS_HOME)/bin/findbugs
 endif
 
 ifdef ALT_COPYRIGHT_YEAR
