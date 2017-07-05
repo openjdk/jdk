@@ -3257,12 +3257,12 @@ void MacroAssembler::eden_allocate(
     if (var_size_in_bytes->is_valid()) {
       // size is unknown at compile time
       cmp(free, var_size_in_bytes);
-      br(Assembler::lessUnsigned, false, Assembler::pn, slow_case); // if there is not enough space go the slow case
+      brx(Assembler::lessUnsigned, false, Assembler::pn, slow_case); // if there is not enough space go the slow case
       delayed()->add(obj, var_size_in_bytes, end);
     } else {
       // size is known at compile time
       cmp(free, con_size_in_bytes);
-      br(Assembler::lessUnsigned, false, Assembler::pn, slow_case); // if there is not enough space go the slow case
+      brx(Assembler::lessUnsigned, false, Assembler::pn, slow_case); // if there is not enough space go the slow case
       delayed()->add(obj, con_size_in_bytes, end);
     }
     // Compare obj with the value at top_addr; if still equal, swap the value of
@@ -3972,6 +3972,14 @@ void MacroAssembler::card_write_barrier_post(Register store_addr, Register new_v
   card_table_write(bs->byte_map_base, tmp, store_addr);
 }
 
+void MacroAssembler::load_mirror(Register mirror, Register method) {
+  const int mirror_offset = in_bytes(Klass::java_mirror_offset());
+  ld_ptr(method, in_bytes(Method::const_offset()), mirror);
+  ld_ptr(mirror, in_bytes(ConstMethod::constants_offset()), mirror);
+  ld_ptr(mirror, ConstantPool::pool_holder_offset_in_bytes(), mirror);
+  ld_ptr(mirror, mirror_offset, mirror);
+}
+
 void MacroAssembler::load_klass(Register src_oop, Register klass) {
   // The number of bytes in this code is used by
   // MachCallDynamicJavaNode::ret_addr_offset()
@@ -4516,18 +4524,10 @@ void MacroAssembler::string_compare(Register str1, Register str2,
   }
 
   // Compare the rest of the characters
-  if (ae == StrIntrinsicNode::UU) {
-    lduh(str1, limit1, chr1);
-  } else {
-    ldub(str1, limit1, chr1);
-  }
+  load_sized_value(Address(str1, limit1), chr1, (ae == StrIntrinsicNode::UU) ? 2 : 1, false);
 
   bind(Lloop);
-  if (ae == StrIntrinsicNode::LL) {
-    ldub(str2, limit2, chr2);
-  } else {
-    lduh(str2, limit2, chr2);
-  }
+  load_sized_value(Address(str2, limit2), chr2, (ae == StrIntrinsicNode::LL) ? 1 : 2, false);
 
   subcc(chr1, chr2, chr1);
   br(Assembler::notZero, false, Assembler::pt, Ldone);
@@ -4539,11 +4539,7 @@ void MacroAssembler::string_compare(Register str1, Register str2,
 
   // annul LDUB if branch is not taken to prevent access past end of string
   br(Assembler::notZero, true, Assembler::pt, Lloop);
-  if (ae == StrIntrinsicNode::UU) {
-    delayed()->lduh(str1, limit2, chr1);
-  } else {
-    delayed()->ldub(str1, limit1, chr1);
-  }
+  delayed()->load_sized_value(Address(str1, limit1), chr1, (ae == StrIntrinsicNode::UU) ? 2 : 1, false);
 
   // If strings are equal up to min length, return the length difference.
   if (ae == StrIntrinsicNode::UU) {
@@ -4563,23 +4559,24 @@ void MacroAssembler::string_compare(Register str1, Register str2,
 
 void MacroAssembler::array_equals(bool is_array_equ, Register ary1, Register ary2,
                                   Register limit, Register tmp, Register result, bool is_byte) {
-  Label Ldone, Lvector, Lloop;
+  Label Ldone, Lloop, Lremaining;
   assert_different_registers(ary1, ary2, limit, tmp, result);
 
   int length_offset  = arrayOopDesc::length_offset_in_bytes();
   int base_offset    = arrayOopDesc::base_offset_in_bytes(is_byte ? T_BYTE : T_CHAR);
+  assert(base_offset % 8 == 0, "Base offset must be 8-byte aligned");
 
   if (is_array_equ) {
     // return true if the same array
     cmp(ary1, ary2);
     brx(Assembler::equal, true, Assembler::pn, Ldone);
-    delayed()->add(G0, 1, result); // equal
+    delayed()->mov(1, result);  // equal
 
     br_null(ary1, true, Assembler::pn, Ldone);
-    delayed()->mov(G0, result);    // not equal
+    delayed()->clr(result);     // not equal
 
     br_null(ary2, true, Assembler::pn, Ldone);
-    delayed()->mov(G0, result);    // not equal
+    delayed()->clr(result);     // not equal
 
     // load the lengths of arrays
     ld(Address(ary1, length_offset), limit);
@@ -4588,81 +4585,77 @@ void MacroAssembler::array_equals(bool is_array_equ, Register ary1, Register ary
     // return false if the two arrays are not equal length
     cmp(limit, tmp);
     br(Assembler::notEqual, true, Assembler::pn, Ldone);
-    delayed()->mov(G0, result);    // not equal
+    delayed()->clr(result);     // not equal
   }
 
   cmp_zero_and_br(Assembler::zero, limit, Ldone, true, Assembler::pn);
-  delayed()->add(G0, 1, result); // zero-length arrays are equal
+  delayed()->mov(1, result); // zero-length arrays are equal
 
   if (is_array_equ) {
     // load array addresses
     add(ary1, base_offset, ary1);
     add(ary2, base_offset, ary2);
+    // set byte count
+    if (!is_byte) {
+      sll(limit, exact_log2(sizeof(jchar)), limit);
+    }
   } else {
     // We have no guarantee that on 64 bit the higher half of limit is 0
     signx(limit);
   }
 
-  if (is_byte) {
-    Label Lskip;
-    // check for trailing byte
-    andcc(limit, 0x1, tmp);
-    br(Assembler::zero, false, Assembler::pt, Lskip);
-    delayed()->nop();
+#ifdef ASSERT
+  // Sanity check for doubleword (8-byte) alignment of ary1 and ary2.
+  // Guaranteed on 64-bit systems (see arrayOopDesc::header_size_in_bytes()).
+  Label Laligned;
+  or3(ary1, ary2, tmp);
+  andcc(tmp, 7, tmp);
+  br_null_short(tmp, Assembler::pn, Laligned);
+  STOP("First array element is not 8-byte aligned.");
+  should_not_reach_here();
+  bind(Laligned);
+#endif
 
-    // compare the trailing byte
-    sub(limit, sizeof(jbyte), limit);
-    ldub(ary1, limit, result);
-    ldub(ary2, limit, tmp);
-    cmp(result, tmp);
-    br(Assembler::notEqual, true, Assembler::pt, Ldone);
-    delayed()->mov(G0, result);    // not equal
-
-    // only one byte?
-    cmp_zero_and_br(zero, limit, Ldone, true, Assembler::pn);
-    delayed()->add(G0, 1, result); // zero-length arrays are equal
-    bind(Lskip);
-  } else if (is_array_equ) {
-    // set byte count
-    sll(limit, exact_log2(sizeof(jchar)), limit);
-  }
-
-  // check for trailing character
-  andcc(limit, 0x2, tmp);
-  br(Assembler::zero, false, Assembler::pt, Lvector);
-  delayed()->nop();
-
-  // compare the trailing char
-  sub(limit, sizeof(jchar), limit);
-  lduh(ary1, limit, result);
-  lduh(ary2, limit, tmp);
-  cmp(result, tmp);
-  br(Assembler::notEqual, true, Assembler::pt, Ldone);
-  delayed()->mov(G0, result);     // not equal
-
-  // only one char?
-  cmp_zero_and_br(zero, limit, Ldone, true, Assembler::pn);
-  delayed()->add(G0, 1, result); // zero-length arrays are equal
-
-  // word by word compare, dont't need alignment check
-  bind(Lvector);
   // Shift ary1 and ary2 to the end of the arrays, negate limit
   add(ary1, limit, ary1);
   add(ary2, limit, ary2);
   neg(limit, limit);
 
-  lduw(ary1, limit, result);
+  // MAIN LOOP
+  // Load and compare array elements of size 'byte_width' until the elements are not
+  // equal or we reached the end of the arrays. If the size of the arrays is not a
+  // multiple of 'byte_width', we simply read over the end of the array, bail out and
+  // compare the remaining bytes below by skipping the garbage bytes.
+  ldx(ary1, limit, result);
   bind(Lloop);
-  lduw(ary2, limit, tmp);
-  cmp(result, tmp);
-  br(Assembler::notEqual, true, Assembler::pt, Ldone);
-  delayed()->mov(G0, result);     // not equal
-  inccc(limit, 2*sizeof(jchar));
-  // annul LDUW if branch is not taken to prevent access past end of array
-  br(Assembler::notZero, true, Assembler::pt, Lloop);
-  delayed()->lduw(ary1, limit, result); // hoisted
+  ldx(ary2, limit, tmp);
+  inccc(limit, 8);
+  // Bail out if we reached the end (but still do the comparison)
+  br(Assembler::positive, false, Assembler::pn, Lremaining);
+  delayed()->cmp(result, tmp);
+  // Check equality of elements
+  brx(Assembler::equal, false, Assembler::pt, target(Lloop));
+  delayed()->ldx(ary1, limit, result);
 
-  add(G0, 1, result); // equals
+  ba(Ldone);
+  delayed()->clr(result); // not equal
+
+  // TAIL COMPARISON
+  // We got here because we reached the end of the arrays. 'limit' is the number of
+  // garbage bytes we may have compared by reading over the end of the arrays. Shift
+  // out the garbage and compare the remaining elements.
+  bind(Lremaining);
+  // Optimistic shortcut: elements potentially including garbage are equal
+  brx(Assembler::equal, true, Assembler::pt, target(Ldone));
+  delayed()->mov(1, result); // equal
+  // Shift 'limit' bytes to the right and compare
+  sll(limit, 3, limit); // bytes to bits
+  srlx(result, limit, result);
+  srlx(tmp, limit, tmp);
+  cmp(result, tmp);
+  clr(result);
+  movcc(Assembler::equal, false, xcc, 1, result);
+
   bind(Ldone);
 }
 
@@ -4774,6 +4767,7 @@ void MacroAssembler::bis_zeroing(Register to, Register count, Register temp, Lab
   assert(UseBlockZeroing && VM_Version::has_block_zeroing(), "only works with BIS zeroing");
   Register end = count;
   int cache_line_size = VM_Version::prefetch_data_size();
+  assert(cache_line_size > 0, "cache line size should be known for this code");
   // Minimum count when BIS zeroing can be used since
   // it needs membar which is expensive.
   int block_zero_size  = MAX2(cache_line_size*3, (int)BlockZeroingLowLimit);
@@ -4852,21 +4846,21 @@ void MacroAssembler::update_byte_crc32(Register crc, Register val, Register tabl
 
 // Reverse byte order of lower 32 bits, assuming upper 32 bits all zeros
 void MacroAssembler::reverse_bytes_32(Register src, Register dst, Register tmp) {
-  srlx(src, 24, dst);
+    srlx(src, 24, dst);
 
-  sllx(src, 32+8, tmp);
-  srlx(tmp, 32+24, tmp);
-  sllx(tmp, 8, tmp);
-  or3(dst, tmp, dst);
+    sllx(src, 32+8, tmp);
+    srlx(tmp, 32+24, tmp);
+    sllx(tmp, 8, tmp);
+    or3(dst, tmp, dst);
 
-  sllx(src, 32+16, tmp);
-  srlx(tmp, 32+24, tmp);
-  sllx(tmp, 16, tmp);
-  or3(dst, tmp, dst);
+    sllx(src, 32+16, tmp);
+    srlx(tmp, 32+24, tmp);
+    sllx(tmp, 16, tmp);
+    or3(dst, tmp, dst);
 
-  sllx(src, 32+24, tmp);
-  srlx(tmp, 32, tmp);
-  or3(dst, tmp, dst);
+    sllx(src, 32+24, tmp);
+    srlx(tmp, 32, tmp);
+    or3(dst, tmp, dst);
 }
 
 void MacroAssembler::movitof_revbytes(Register src, FloatRegister dst, Register tmp1, Register tmp2) {
@@ -5118,3 +5112,176 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len, Regi
   not1(crc);
 }
 
+#define CHUNK_LEN   128          /* 128 x 8B = 1KB */
+#define CHUNK_K1    0x1307a0206  /* reverseBits(pow(x, CHUNK_LEN*8*8*3 - 32) mod P(x)) << 1 */
+#define CHUNK_K2    0x1a0f717c4  /* reverseBits(pow(x, CHUNK_LEN*8*8*2 - 32) mod P(x)) << 1 */
+#define CHUNK_K3    0x0170076fa  /* reverseBits(pow(x, CHUNK_LEN*8*8*1 - 32) mod P(x)) << 1 */
+
+void MacroAssembler::kernel_crc32c(Register crc, Register buf, Register len, Register table) {
+
+  Label L_crc32c_head, L_crc32c_aligned;
+  Label L_crc32c_parallel, L_crc32c_parallel_loop;
+  Label L_crc32c_serial, L_crc32c_x32_loop, L_crc32c_x8, L_crc32c_x8_loop;
+  Label L_crc32c_done, L_crc32c_tail, L_crc32c_return;
+
+  set(ExternalAddress(StubRoutines::crc32c_table_addr()), table);
+
+  cmp_and_br_short(len, 0, Assembler::lessEqual, Assembler::pn, L_crc32c_return);
+
+  // clear upper 32 bits of crc
+  clruwu(crc);
+
+  and3(buf, 7, G4);
+  cmp_and_brx_short(G4, 0, Assembler::equal, Assembler::pt, L_crc32c_aligned);
+
+  mov(8, G1);
+  sub(G1, G4, G4);
+
+  // ------ process the misaligned head (7 bytes or less) ------
+  bind(L_crc32c_head);
+
+  // crc = (crc >>> 8) ^ byteTable[(crc ^ b) & 0xFF];
+  ldub(buf, 0, G1);
+  update_byte_crc32(crc, G1, table);
+
+  inc(buf);
+  dec(len);
+  cmp_and_br_short(len, 0, Assembler::equal, Assembler::pn, L_crc32c_return);
+  dec(G4);
+  cmp_and_br_short(G4, 0, Assembler::greater, Assembler::pt, L_crc32c_head);
+
+  // ------ process the 8-byte-aligned body ------
+  bind(L_crc32c_aligned);
+  nop();
+  cmp_and_br_short(len, 8, Assembler::less, Assembler::pn, L_crc32c_tail);
+
+  // reverse the byte order of lower 32 bits to big endian, and move to FP side
+  movitof_revbytes(crc, F0, G1, G3);
+
+  set(CHUNK_LEN*8*4, G4);
+  cmp_and_br_short(len, G4, Assembler::less, Assembler::pt, L_crc32c_serial);
+
+  // ------ process four 1KB chunks in parallel ------
+  bind(L_crc32c_parallel);
+
+  fzero(FloatRegisterImpl::D, F2);
+  fzero(FloatRegisterImpl::D, F4);
+  fzero(FloatRegisterImpl::D, F6);
+
+  mov(CHUNK_LEN - 1, G4);
+  bind(L_crc32c_parallel_loop);
+  // schedule ldf's ahead of crc32c's to hide the load-use latency
+  ldf(FloatRegisterImpl::D, buf, 0,            F8);
+  ldf(FloatRegisterImpl::D, buf, CHUNK_LEN*8,  F10);
+  ldf(FloatRegisterImpl::D, buf, CHUNK_LEN*16, F12);
+  ldf(FloatRegisterImpl::D, buf, CHUNK_LEN*24, F14);
+  crc32c(F0, F8,  F0);
+  crc32c(F2, F10, F2);
+  crc32c(F4, F12, F4);
+  crc32c(F6, F14, F6);
+  inc(buf, 8);
+  dec(G4);
+  cmp_and_br_short(G4, 0, Assembler::greater, Assembler::pt, L_crc32c_parallel_loop);
+
+  ldf(FloatRegisterImpl::D, buf, 0,            F8);
+  ldf(FloatRegisterImpl::D, buf, CHUNK_LEN*8,  F10);
+  ldf(FloatRegisterImpl::D, buf, CHUNK_LEN*16, F12);
+  crc32c(F0, F8,  F0);
+  crc32c(F2, F10, F2);
+  crc32c(F4, F12, F4);
+
+  inc(buf, CHUNK_LEN*24);
+  ldfl(FloatRegisterImpl::D, buf, G0, F14);  // load in little endian
+  inc(buf, 8);
+
+  prefetch(buf, 0,            Assembler::severalReads);
+  prefetch(buf, CHUNK_LEN*8,  Assembler::severalReads);
+  prefetch(buf, CHUNK_LEN*16, Assembler::severalReads);
+  prefetch(buf, CHUNK_LEN*24, Assembler::severalReads);
+
+  // move to INT side, and reverse the byte order of lower 32 bits to little endian
+  movftoi_revbytes(F0, O4, G1, G4);
+  movftoi_revbytes(F2, O5, G1, G4);
+  movftoi_revbytes(F4, G5, G1, G4);
+
+  // combine the results of 4 chunks
+  set64(CHUNK_K1, G3, G1);
+  xmulx(O4, G3, O4);
+  set64(CHUNK_K2, G3, G1);
+  xmulx(O5, G3, O5);
+  set64(CHUNK_K3, G3, G1);
+  xmulx(G5, G3, G5);
+
+  movdtox(F14, G4);
+  xor3(O4, O5, O5);
+  xor3(G5, O5, O5);
+  xor3(G4, O5, O5);
+
+  // reverse the byte order to big endian, via stack, and move to FP side
+  // TODO: use new revb instruction
+  add(SP, -8, G1);
+  srlx(G1, 3, G1);
+  sllx(G1, 3, G1);
+  stx(O5, G1, G0);
+  ldfl(FloatRegisterImpl::D, G1, G0, F2);  // load in little endian
+
+  crc32c(F6, F2, F0);
+
+  set(CHUNK_LEN*8*4, G4);
+  sub(len, G4, len);
+  cmp_and_br_short(len, G4, Assembler::greaterEqual, Assembler::pt, L_crc32c_parallel);
+  nop();
+  cmp_and_br_short(len, 0, Assembler::equal, Assembler::pt, L_crc32c_done);
+
+  bind(L_crc32c_serial);
+
+  mov(32, G4);
+  cmp_and_br_short(len, G4, Assembler::less, Assembler::pn, L_crc32c_x8);
+
+  // ------ process 32B chunks ------
+  bind(L_crc32c_x32_loop);
+  ldf(FloatRegisterImpl::D, buf, 0, F2);
+  crc32c(F0, F2, F0);
+  ldf(FloatRegisterImpl::D, buf, 8, F2);
+  crc32c(F0, F2, F0);
+  ldf(FloatRegisterImpl::D, buf, 16, F2);
+  crc32c(F0, F2, F0);
+  ldf(FloatRegisterImpl::D, buf, 24, F2);
+  inc(buf, 32);
+  crc32c(F0, F2, F0);
+  dec(len, 32);
+  cmp_and_br_short(len, G4, Assembler::greaterEqual, Assembler::pt, L_crc32c_x32_loop);
+
+  bind(L_crc32c_x8);
+  nop();
+  cmp_and_br_short(len, 8, Assembler::less, Assembler::pt, L_crc32c_done);
+
+  // ------ process 8B chunks ------
+  bind(L_crc32c_x8_loop);
+  ldf(FloatRegisterImpl::D, buf, 0, F2);
+  inc(buf, 8);
+  crc32c(F0, F2, F0);
+  dec(len, 8);
+  cmp_and_br_short(len, 8, Assembler::greaterEqual, Assembler::pt, L_crc32c_x8_loop);
+
+  bind(L_crc32c_done);
+
+  // move to INT side, and reverse the byte order of lower 32 bits to little endian
+  movftoi_revbytes(F0, crc, G1, G3);
+
+  cmp_and_br_short(len, 0, Assembler::equal, Assembler::pt, L_crc32c_return);
+
+  // ------ process the misaligned tail (7 bytes or less) ------
+  bind(L_crc32c_tail);
+
+  // crc = (crc >>> 8) ^ byteTable[(crc ^ b) & 0xFF];
+  ldub(buf, 0, G1);
+  update_byte_crc32(crc, G1, table);
+
+  inc(buf);
+  dec(len);
+  cmp_and_br_short(len, 0, Assembler::greater, Assembler::pt, L_crc32c_tail);
+
+  bind(L_crc32c_return);
+  nop();
+}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ class SimpleScopeDesc : public StackObj {
   int _bci;
 
  public:
-  SimpleScopeDesc(nmethod* code, address pc) {
+  SimpleScopeDesc(CompiledMethod* code, address pc) {
     PcDesc* pc_desc = code->pc_desc_at(pc);
     assert(pc_desc != NULL, "Must be able to find matching PcDesc");
     DebugInfoReadStream buffer(code, pc_desc->scope_decode_offset());
@@ -60,12 +60,12 @@ class SimpleScopeDesc : public StackObj {
 class ScopeDesc : public ResourceObj {
  public:
   // Constructor
-  ScopeDesc(const nmethod* code, int decode_offset, int obj_decode_offset, bool reexecute, bool rethrow_exception, bool return_oop);
+  ScopeDesc(const CompiledMethod* code, int decode_offset, int obj_decode_offset, bool reexecute, bool rethrow_exception, bool return_oop);
 
   // Calls above, giving default value of "serialized_null" to the
   // "obj_decode_offset" argument.  (We don't use a default argument to
   // avoid a .hpp-.hpp dependency.)
-  ScopeDesc(const nmethod* code, int decode_offset, bool reexecute, bool rethrow_exception, bool return_oop);
+  ScopeDesc(const CompiledMethod* code, int decode_offset, bool reexecute, bool rethrow_exception, bool return_oop);
 
   // JVM state
   Method* method()      const { return _method; }
@@ -110,7 +110,7 @@ class ScopeDesc : public ResourceObj {
   GrowableArray<ScopeValue*>* _objects;
 
   // Nmethod information
-  const nmethod* _code;
+  const CompiledMethod* _code;
 
   // Decoding operations
   void decode_body();

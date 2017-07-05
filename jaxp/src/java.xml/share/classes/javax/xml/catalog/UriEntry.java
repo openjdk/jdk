@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,11 @@ final class UriEntry extends BaseEntry {
      */
     public void setName(String name) {
         CatalogMessages.reportNPEOnNull("name", name);
-        this.name = Normalizer.normalizeURI(name);
+        if (name.startsWith(Util.PUBLICID_PREFIX) || name.startsWith(Util.PUBLICID_PREFIX_ALT)) {
+            this.name = Normalizer.normalizePublicId(name);
+        } else {
+            this.name = Normalizer.normalizeURI(name);
+        }
     }
 
     /**
@@ -72,6 +76,7 @@ final class UriEntry extends BaseEntry {
     public String getName() {
         return name;
     }
+
     /**
      * Get the uri attribute.
      * @return The uri attribute value.

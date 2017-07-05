@@ -40,6 +40,7 @@ import static org.testng.Assert.*;
 
 public class JdkInternalMiscUnsafeAccessTestShort {
     static final int ITERS = Integer.getInteger("iters", 1);
+    static final int WEAK_ATTEMPTS = Integer.getInteger("weakAttempts", 10);
 
     static final jdk.internal.misc.Unsafe UNSAFE;
 
@@ -202,5 +203,4 @@ public class JdkInternalMiscUnsafeAccessTestShort {
         }
     }
 }
-
 

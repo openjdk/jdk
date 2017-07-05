@@ -54,7 +54,7 @@ public final class ModuleInfoWriter {
         ClassWriter cw = new ClassWriter(0);
 
         String name = md.name().replace('.', '/') + "/module-info";
-        cw.visit(Opcodes.V1_8, ACC_MODULE, name, null, null, null);
+        cw.visit(Opcodes.V1_9, ACC_MODULE, name, null, null, null);
 
         cw.visitAttribute(new ModuleAttribute(md));
         cw.visitAttribute(new ConcealedPackagesAttribute(md.conceals()));

@@ -35,14 +35,15 @@
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 
 import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.internal.org.objectweb.asm.ClassVisitor;
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.Opcodes;
 import jdk.tools.jlink.internal.plugins.asm.AsmPool.WritableClassPool;
-import jdk.tools.jlink.plugin.Pool;
-import jdk.tools.jlink.plugin.Pool.ModuleData;
+import jdk.tools.jlink.plugin.ModuleEntry;
+import jdk.tools.jlink.plugin.ModulePool;
 
 public class IdentityPluginTest extends AsmPluginTestBase {
 
@@ -56,7 +57,7 @@ public class IdentityPluginTest extends AsmPluginTestBase {
 
     public void test() throws Exception {
         IdentityPlugin asm = new IdentityPlugin();
-        Pool resourcePool = asm.visit(getPool());
+        ModulePool resourcePool = asm.visit(getPool());
         asm.test(getPool(), resourcePool);
     }
 
@@ -64,7 +65,7 @@ public class IdentityPluginTest extends AsmPluginTestBase {
 
         @Override
         public void visit() {
-            for (ModuleData res : getPools().getGlobalPool().getClasses()) {
+            for (ModuleEntry res : getPools().getGlobalPool().getClasses()) {
                 if (res.getPath().endsWith("module-info.class")) {
                     continue;
                 }
@@ -77,7 +78,7 @@ public class IdentityPluginTest extends AsmPluginTestBase {
         }
 
         @Override
-        public void test(Pool inResources, Pool outResources) throws IOException {
+        public void test(ModulePool inResources, ModulePool outResources) throws IOException {
             if (outResources.isEmpty()) {
                 throw new AssertionError("Empty result");
             }
@@ -93,13 +94,17 @@ public class IdentityPluginTest extends AsmPluginTestBase {
                     throw new AssertionError("Class not transformed " + className);
                 }
             }
-            for (ModuleData r : outResources.getContent()) {
+            outResources.entries().forEach(r -> {
                 if (r.getPath().endsWith(".class") && !r.getPath().endsWith("module-info.class")) {
-                    ClassReader reader = new ClassReader(new ByteArrayInputStream(r.getBytes()));
-                    ClassWriter w = new ClassWriter(reader, ClassWriter.COMPUTE_FRAMES);
-                    reader.accept(w, ClassReader.EXPAND_FRAMES);
+                    try {
+                        ClassReader reader = new ClassReader(new ByteArrayInputStream(r.getBytes()));
+                        ClassWriter w = new ClassWriter(reader, ClassWriter.COMPUTE_FRAMES);
+                        reader.accept(w, ClassReader.EXPAND_FRAMES);
+                    } catch (IOException exp) {
+                        throw new UncheckedIOException(exp);
+                    }
                 }
-            }
+            });
         }
 
         @Override

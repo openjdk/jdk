@@ -23,10 +23,13 @@
 
 /*
  * @test
- * @bug 6191390
+ * @bug 6191390 8154328
  * @summary Verify that ActionEvent is received with correct modifiers set.
  * @library ../../../../lib/testlibrary ../
+ * @library /java/awt/patchlib
+ * @build java.desktop/java.awt.Helper
  * @build ExtendedRobot SystemTrayIconHelper
+ * @run main ActionEventTest
  */
 
 import java.awt.Image;
@@ -46,6 +49,7 @@ public class ActionEventTest {
     Image image;
     TrayIcon icon;
     Robot robot;
+    boolean actionPerformed;
 
     public static void main(String[] args) throws Exception {
         if (!SystemTray.isSupported()) {
@@ -82,6 +86,7 @@ public class ActionEventTest {
         icon.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent ae) {
+                actionPerformed = true;
                 int md = ae.getModifiers();
                 int expectedMask = ActionEvent.ALT_MASK | ActionEvent.CTRL_MASK
                         | ActionEvent.SHIFT_MASK;
@@ -102,6 +107,9 @@ public class ActionEventTest {
     }
 
     public void clear() {
+        robot.keyRelease(KeyEvent.VK_ALT);
+        robot.keyRelease(KeyEvent.VK_SHIFT);
+        robot.keyRelease(KeyEvent.VK_CONTROL);
         SystemTray.getSystemTray().remove(icon);
     }
 
@@ -123,10 +131,9 @@ public class ActionEventTest {
         robot.delay(100);
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-        robot.delay(100);
         robot.waitForIdle();
-        robot.keyRelease(KeyEvent.VK_ALT);
-        robot.keyRelease(KeyEvent.VK_SHIFT);
-        robot.keyRelease(KeyEvent.VK_CONTROL);
+        if (!actionPerformed) {
+            robot.delay(500);
+        }
     }
 }

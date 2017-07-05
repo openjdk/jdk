@@ -22,7 +22,7 @@
  */
 package jdk.vm.ci.common;
 
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 
 /**
  * Utilities for operating on raw memory with {@link Unsafe}.

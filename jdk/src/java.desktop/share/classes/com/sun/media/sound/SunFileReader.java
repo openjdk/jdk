@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ import javax.sound.sampled.spi.AudioFileReader;
 abstract class SunFileReader extends AudioFileReader {
 
     @Override
-    public final AudioFileFormat getAudioFileFormat(final InputStream stream)
+    public final StandardFileFormat getAudioFileFormat(final InputStream stream)
             throws UnsupportedAudioFileException, IOException {
         stream.mark(200); // The biggest value which was historically used
         try {
@@ -87,11 +87,11 @@ abstract class SunFileReader extends AudioFileReader {
             throws UnsupportedAudioFileException, IOException {
         stream.mark(200); // The biggest value which was historically used
         try {
-            final AudioFileFormat fileFormat = getAudioFileFormatImpl(stream);
+            final StandardFileFormat format = getAudioFileFormatImpl(stream);
             // we've got everything, the stream is supported and it is at the
             // beginning of the audio data, so return an AudioInputStream
-            return new AudioInputStream(stream, fileFormat.getFormat(),
-                                        fileFormat.getFrameLength());
+            return new AudioInputStream(stream, format.getFormat(),
+                                        format.getLongFrameLength());
         } catch (UnsupportedAudioFileException | EOFException ignored) {
             // stream is unsupported or the header is less than was expected
             stream.reset();
@@ -140,7 +140,7 @@ abstract class SunFileReader extends AudioFileReader {
      *         UnsupportedAudioFileException if the header is less than was
      *         expected
      */
-    abstract AudioFileFormat getAudioFileFormatImpl(InputStream stream)
+    abstract StandardFileFormat getAudioFileFormatImpl(InputStream stream)
             throws UnsupportedAudioFileException, IOException;
 
     // HELPER METHODS

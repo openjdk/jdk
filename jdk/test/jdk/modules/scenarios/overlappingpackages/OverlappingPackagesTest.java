@@ -66,13 +66,7 @@ public class OverlappingPackagesTest {
         }
         Path srcMisc = SRC_DIR.resolve("misc");
         Path modsMisc = MODS_DIR.resolve("misc");
-        assertTrue(CompilerUtils.compile(srcMisc.resolve("sun")
-                                                .resolve("misc")
-                                                .resolve("Unsafe.java"),
-                                         modsMisc,
-                                         "-Xmodule:java.base"));
-        assertTrue(CompilerUtils.compile(srcMisc.resolve("module-info.java"),
-                                         modsMisc));
+        assertTrue(CompilerUtils.compile(srcMisc, modsMisc));
     }
 
     /**
@@ -92,7 +86,7 @@ public class OverlappingPackagesTest {
 
     /**
      * Run the test with "-addmods misc", the misc module has package
-     * sun.misc and so should overlap with the base module.
+     * jdk.internal.misc and so should overlap with the base module.
      */
     public void testOverlapWithBaseModule() throws Exception {
         int exitValue

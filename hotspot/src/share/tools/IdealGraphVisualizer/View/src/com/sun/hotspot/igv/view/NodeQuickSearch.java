@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 package com.sun.hotspot.igv.view;
 
+import com.sun.hotspot.igv.data.InputGraph;
 import com.sun.hotspot.igv.data.InputNode;
 import com.sun.hotspot.igv.data.Properties;
 import com.sun.hotspot.igv.data.Properties.RegexpPropertyMatcher;
@@ -81,62 +82,95 @@ public class NodeQuickSearch implements SearchProvider {
 
         final InputGraphProvider p = LookupHistory.getLast(InputGraphProvider.class);
         if (p != null && p.getGraph() != null) {
-            List<InputNode> matches = null;
-            try {
-                RegexpPropertyMatcher matcher = new RegexpPropertyMatcher(name, value, Pattern.CASE_INSENSITIVE);
-                Properties.PropertySelector<InputNode> selector = new Properties.PropertySelector<>(p.getGraph().getNodes());
-
-                matches = selector.selectMultiple(matcher);
-            } catch (Exception e) {
-                final String msg = e.getMessage();
-                response.addResult(new Runnable() {
-                    @Override
-                        public void run() {
-                            Message desc = new NotifyDescriptor.Message("An exception occurred during the search, "
-                                    + "perhaps due to a malformed query string:\n" + msg,
-                                    NotifyDescriptor.WARNING_MESSAGE);
-                            DialogDisplayer.getDefault().notify(desc);
-                        }
-                    },
-                    "(Error during search)"
-                );
+            InputGraph matchGraph = p.getGraph();
+            // Search the current graph
+            List<InputNode> matches = findMatches(name, value, p.getGraph(), response);
+            if (matches == null) {
+                // See if the it hits in a later graph
+                for (InputGraph graph : p.searchForward()) {
+                    matches = findMatches(name, value, graph, response);
+                    if (matches != null) {
+                        matchGraph = graph;
+                        break;
+                    }
+                }
+            }
+            if (matches == null) {
+                // See if it hits in a earlier graph
+                for (InputGraph graph : p.searchBackward()) {
+                    matches = findMatches(name, value, graph, response);
+                    if (matches != null) {
+                        matchGraph = graph;
+                        break;
+                    }
+                }
             }
 
             if (matches != null) {
                 final Set<InputNode> set = new HashSet<>(matches);
+                final InputGraph theGraph = p.getGraph() != matchGraph ? matchGraph : null;
                 response.addResult(new Runnable() {
                     @Override
-                        public void run() {
-                            final EditorTopComponent comp = EditorTopComponent.getActive();
-                            if (comp != null) {
-                                comp.setSelectedNodes(set);
-                                comp.requestActive();
+                    public void run() {
+                        final EditorTopComponent comp = EditorTopComponent.getActive();
+                        if (comp != null) {
+                            if (theGraph != null) {
+                                comp.getDiagramModel().selectGraph(theGraph);
                             }
+                            comp.setSelectedNodes(set);
+                            comp.requestActive();
                         }
-                    },
-                    "All " + matches.size() + " matching nodes (" + name + "=" + value + ")"
+                    }
+                },
+                        "All " + matches.size() + " matching nodes (" + name + "=" + value + ")" + (theGraph != null ? " in " + theGraph.getName() : "")
                 );
 
                 // Single matches
                 for (final InputNode n : matches) {
                     response.addResult(new Runnable() {
                         @Override
-                            public void run() {
-                                final EditorTopComponent comp = EditorTopComponent.getActive();
-                                if (comp != null) {
-                                    final Set<InputNode> tmpSet = new HashSet<>();
-                                    tmpSet.add(n);
-                                    comp.setSelectedNodes(tmpSet);
-                                    comp.requestActive();
+                        public void run() {
+                            final EditorTopComponent comp = EditorTopComponent.getActive();
+                            if (comp != null) {
+                                final Set<InputNode> tmpSet = new HashSet<>();
+                                tmpSet.add(n);
+                                if (theGraph != null) {
+                                    comp.getDiagramModel().selectGraph(theGraph);
                                 }
+                                comp.setSelectedNodes(tmpSet);
+                                comp.requestActive();
                             }
-                        },
-                        n.getProperties().get(name) + " (" + n.getId() + " " + n.getProperties().get("name") + ")"
+                        }
+                    },
+                            n.getProperties().get(name) + " (" + n.getId() + " " + n.getProperties().get("name") + ")" + (theGraph != null ? " in " + theGraph.getName() : "")
                     );
                 }
             }
         } else {
             System.out.println("no input graph provider!");
         }
+    }
+
+    private List<InputNode> findMatches(String name, String value, InputGraph inputGraph, SearchResponse response) {
+        try {
+            RegexpPropertyMatcher matcher = new RegexpPropertyMatcher(name, value, Pattern.CASE_INSENSITIVE);
+            Properties.PropertySelector<InputNode> selector = new Properties.PropertySelector<>(inputGraph.getNodes());
+            List<InputNode> matches = selector.selectMultiple(matcher);
+            return matches.size() == 0 ? null : matches;
+        } catch (Exception e) {
+            final String msg = e.getMessage();
+            response.addResult(new Runnable() {
+                @Override
+                public void run() {
+                    Message desc = new NotifyDescriptor.Message("An exception occurred during the search, "
+                            + "perhaps due to a malformed query string:\n" + msg,
+                            NotifyDescriptor.WARNING_MESSAGE);
+                    DialogDisplayer.getDefault().notify(desc);
+                }
+            },
+                    "(Error during search)"
+            );
+        }
+        return null;
     }
 }

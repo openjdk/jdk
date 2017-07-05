@@ -61,14 +61,26 @@
                 <attr name="position" intvalue="710"/>
             </file>
         </folder>
+        <folder name="Window">
+            <file name="Tools_hidden"/>
+            <file name="Web_hidden"/>
+            <file name="org-netbeans-modules-tasks-ui-DashboardTopComponent.shadow_hidden"/>
+        </folder>
     </folder>
 
     <folder name="QuickSearch">
+        <file name="Actions_hidden"/>
+        <file name="GoToOption_hidden"/>
+        <file name="GoToSymbol_hidden"/>
+        <file name="GoToType_hidden"/>
+        <file name="Help_hidden"/>
+        <file name="Hudson_hidden"/>
         <folder name="Nodes">
             <attr name="command" stringvalue="n"/>
             <attr name="position" intvalue="0"/>
             <file name="com-sun-hotspot-igv-view-NodeQuickSearch.instance"/>
         </folder>
+        <file name="Projects_hidden"/>
     </folder>
     
     <folder name="QuickSearchShadow">

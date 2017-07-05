@@ -1388,12 +1388,12 @@ instanceKlassHandle SystemDictionary::load_shared_class(instanceKlassHandle ik,
       ik->restore_unshareable_info(loader_data, protection_domain, CHECK_(nh));
     }
 
-    if (log_is_enabled(Info, classload)) {
+    if (log_is_enabled(Info, class, load)) {
       ik()->print_loading_log(LogLevel::Info, loader_data, NULL, NULL);
     }
     // No 'else' here as logging levels are not mutually exclusive
 
-    if (log_is_enabled(Debug, classload)) {
+    if (log_is_enabled(Debug, class, load)) {
       ik()->print_loading_log(LogLevel::Debug, loader_data, NULL, NULL);
     }
 

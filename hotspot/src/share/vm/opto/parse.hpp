@@ -168,7 +168,7 @@ class Parse : public GraphKit {
 
     // Use init_node/init_graph to initialize Blocks.
     // Block() : _live_locals((uintptr_t*)NULL,0) { ShouldNotReachHere(); }
-    Block() : _live_locals(NULL,0) { ShouldNotReachHere(); }
+    Block() : _live_locals() { ShouldNotReachHere(); }
 
    public:
 

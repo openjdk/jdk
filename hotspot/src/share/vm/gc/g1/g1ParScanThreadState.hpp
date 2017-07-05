@@ -27,8 +27,8 @@
 
 #include "gc/g1/dirtyCardQueue.hpp"
 #include "gc/g1/g1CollectedHeap.hpp"
-#include "gc/g1/g1CollectorPolicy.hpp"
 #include "gc/g1/g1OopClosures.hpp"
+#include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1RemSet.hpp"
 #include "gc/g1/g1SATBCardTableModRefBS.hpp"
 #include "gc/shared/ageTable.hpp"

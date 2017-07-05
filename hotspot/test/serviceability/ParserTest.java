@@ -24,6 +24,7 @@
 /*
  * @test
  * @summary Test that the diagnostic command arguemnt parser works
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary /test/lib
  * @build ClassFileInstaller sun.hotspot.WhiteBox sun.hotspot.parser.*
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

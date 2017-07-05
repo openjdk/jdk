@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,49 +23,54 @@
 
 /**
  * @test
- * @bug 4915392
+ * @bug 4915392 8141039
  * @summary test that the getAlgorithm() method works correctly
  * @author Andreas Sterbenz
+ * @run main GetAlgorithm
  */
-
 import java.io.*;
-
 import java.security.*;
+import java.util.Arrays;
+import java.util.List;
 
 public class GetAlgorithm {
 
-    private final static String BASE = System.getProperty("test.src", ".");
+    private static final String BASE = System.getProperty("test.src", ".");
+    private static final String DRBG_CONFIG = "securerandom.drbg.config";
+    private static final String DRBG_CONFIG_VALUE
+            = Security.getProperty(DRBG_CONFIG);
 
     public static void main(String[] args) throws Exception {
-        SecureRandom sr;
-
-        sr = new SecureRandom();
+        SecureRandom sr = new SecureRandom();
         if (sr.getAlgorithm().equals("unknown")) {
             throw new Exception("Unknown: " + sr.getAlgorithm());
         }
 
-        sr = SecureRandom.getInstance("SHA1PRNG");
-        check("SHA1PRNG", sr);
+        for (String mech : new String[]{supportedNativeAlgo(), "SHA1PRNG",
+            "Hash_DRBG", "HMAC_DRBG", "CTR_DRBG"}) {
+            if (!mech.contains("_DRBG")) {
+                check(mech, SecureRandom.getInstance(mech));
+            } else {
+                try {
+                    Security.setProperty(DRBG_CONFIG, mech);
+                    check("DRBG", SecureRandom.getInstance("DRBG"));
+                } finally {
+                    Security.setProperty(DRBG_CONFIG, DRBG_CONFIG_VALUE);
+                }
+            }
+        }
+        check("unknown", new MySecureRandom());
 
-//      OutputStream out = new FileOutputStream("sha1prng.bin");
-//      ObjectOutputStream oout = new ObjectOutputStream(out);
-//      sr.nextInt();
-//      oout.writeObject(sr);
-//      oout.flush();
-//      oout.close();
-
-        sr = new MySecureRandom();
-        check("unknown", sr);
-
-        InputStream in = new FileInputStream(new File(BASE, "sha1prng-old.bin"));
+        InputStream in = new FileInputStream(
+                new File(BASE, "sha1prng-old.bin"));
         ObjectInputStream oin = new ObjectInputStream(in);
-        sr = (SecureRandom)oin.readObject();
+        sr = (SecureRandom) oin.readObject();
         oin.close();
         check("unknown", sr);
 
         in = new FileInputStream(new File(BASE, "sha1prng-new.bin"));
         oin = new ObjectInputStream(in);
-        sr = (SecureRandom)oin.readObject();
+        sr = (SecureRandom) oin.readObject();
         oin.close();
         check("SHA1PRNG", sr);
 
@@ -81,6 +86,19 @@ public class GetAlgorithm {
 
     private static class MySecureRandom extends SecureRandom {
 
+    }
+
+    /**
+     * Find the name of supported native mechanism name for current platform.
+     */
+    private static String supportedNativeAlgo() {
+        String nativeSr = "Windows-PRNG";
+        try {
+            SecureRandom.getInstance(nativeSr);
+        } catch (NoSuchAlgorithmException e) {
+            nativeSr = "NativePRNG";
+        }
+        return nativeSr;
     }
 
 }

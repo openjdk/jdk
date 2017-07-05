@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,17 +25,14 @@
 
 package com.sun.media.sound;
 
-import javax.sound.sampled.AudioFileFormat;
 import javax.sound.sampled.AudioFormat;
-
 
 /**
  * AIFF file format.
  *
  * @author Jan Borgersen
  */
-
-final class AiffFileFormat extends AudioFileFormat {
+final class AiffFileFormat extends StandardFileFormat {
 
     static final int AIFF_MAGIC         = 1179603533;
 
@@ -70,11 +67,8 @@ final class AiffFileFormat extends AudioFileFormat {
     /** FVER chunk size in bytes, inclusive magic and length field */
     private final int fverChunkSize=0;
 
-    AiffFileFormat( AudioFileFormat aff ) {
-        this( aff.getType(), aff.getByteLength(), aff.getFormat(), aff.getFrameLength() );
-    }
-
-    AiffFileFormat(Type type, int byteLength, AudioFormat format, int frameLength) {
+    AiffFileFormat(final Type type, final long byteLength,
+                   final AudioFormat format, final long frameLength) {
         super(type, byteLength, format, frameLength);
     }
 

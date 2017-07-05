@@ -37,7 +37,7 @@
  *                   -XX:+WhiteBoxAPI TestRTMTotalCountIncrRate
  */
 
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 import java.util.List;
 
 import jdk.test.lib.*;

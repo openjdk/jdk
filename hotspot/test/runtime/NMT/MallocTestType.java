@@ -44,7 +44,7 @@ public class MallocTestType {
     WhiteBox wb = WhiteBox.getWhiteBox();
 
     // Grab my own PID
-    String pid = Integer.toString(ProcessTools.getProcessId());
+    String pid = Long.toString(ProcessTools.getProcessId());
     ProcessBuilder pb = new ProcessBuilder();
 
     // Use WB API to alloc and free with the mtTest type

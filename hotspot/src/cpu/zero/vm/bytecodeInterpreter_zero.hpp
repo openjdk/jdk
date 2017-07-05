@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2011 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -43,6 +43,9 @@
   }
   inline void set_method(Method* new_method) {
     _method = new_method;
+  }
+  inline void set_mirror(oop new_mirror) {
+    _mirror = new_mirror;
   }
   inline interpreterState self_link() {
     return _self_link;

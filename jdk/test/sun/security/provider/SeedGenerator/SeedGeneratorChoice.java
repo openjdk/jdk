@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2011, 2016, Oracle and/or its affiliates. All rights
+ * reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +24,9 @@
 
 /*
  * @test
- * @bug 6998583
+ * @bug 6998583 8141039
  * @summary NativeSeedGenerator is making 8192 byte read requests from
  *             entropy pool on each init.
- * @run main SeedGeneratorChoice
  * @run main/othervm -Djava.security.egd=file:/dev/random SeedGeneratorChoice
  * @run main/othervm -Djava.security.egd=file:filename  SeedGeneratorChoice
  */
@@ -39,14 +39,24 @@
  * We should always fall back to the ThreadedSeedGenerator if exceptions
  * are encountered with user defined source of entropy.
  */
-
 import java.security.SecureRandom;
+import java.security.Security;
 
 public class SeedGeneratorChoice {
 
     public static void main(String... arguments) throws Exception {
-        byte[] bytes;
-        SecureRandom prng = SecureRandom.getInstance("SHA1PRNG");
-        bytes = prng.generateSeed(1);
+        for (String mech : new String[]{"SHA1PRNG", "Hash_DRBG", "HMAC_DRBG",
+            "CTR_DRBG"}) {
+
+            SecureRandom prng = null;
+            if (!mech.contains("_DRBG")) {
+                prng = SecureRandom.getInstance(mech);
+            } else {
+                Security.setProperty("securerandom.drbg.config", mech);
+                prng = SecureRandom.getInstance("DRBG");
+            }
+            prng.generateSeed(1);
+        }
     }
+
 }

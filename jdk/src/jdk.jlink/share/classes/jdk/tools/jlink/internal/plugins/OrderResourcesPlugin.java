@@ -36,9 +36,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.ToIntFunction;
 import jdk.tools.jlink.plugin.PluginException;
-import jdk.tools.jlink.plugin.Pool;
-import jdk.tools.jlink.plugin.Pool.ModuleData;
-import jdk.tools.jlink.plugin.Pool.ModuleDataType;
+import jdk.tools.jlink.plugin.ModuleEntry;
+import jdk.tools.jlink.plugin.ModulePool;
 import jdk.tools.jlink.plugin.TransformerPlugin;
 import jdk.tools.jlink.internal.Utils;
 
@@ -62,15 +61,15 @@ public final class OrderResourcesPlugin implements TransformerPlugin {
     }
 
     static class SortWrapper {
-        private final ModuleData resource;
+        private final ModuleEntry resource;
         private final int ordinal;
 
-        SortWrapper(ModuleData resource, int ordinal) {
+        SortWrapper(ModuleEntry resource, int ordinal) {
             this.resource = resource;
             this.ordinal = ordinal;
         }
 
-        ModuleData getResource() {
+        ModuleEntry getResource() {
             return resource;
         }
 
@@ -95,7 +94,7 @@ public final class OrderResourcesPlugin implements TransformerPlugin {
         return path;
     }
 
-    private int getOrdinal(ModuleData resource) {
+    private int getOrdinal(ModuleEntry resource) {
         String path = resource.getPath();
 
         Integer value = orderedPaths.get(stripModule(path));
@@ -126,23 +125,23 @@ public final class OrderResourcesPlugin implements TransformerPlugin {
     }
 
     @Override
-    public void visit(Pool in, Pool out) {
-        in.getContent().stream()
+    public void visit(ModulePool in, ModulePool out) {
+        in.entries()
                 .filter(resource -> resource.getType()
-                        .equals(ModuleDataType.CLASS_OR_RESOURCE))
+                        .equals(ModuleEntry.Type.CLASS_OR_RESOURCE))
                 .map((resource) -> new SortWrapper(resource, getOrdinal(resource)))
                 .sorted(OrderResourcesPlugin::compare)
                 .forEach((wrapper) -> out.add(wrapper.getResource()));
-        in.getContent().stream()
+        in.entries()
                 .filter(other -> !other.getType()
-                        .equals(ModuleDataType.CLASS_OR_RESOURCE))
+                        .equals(ModuleEntry.Type.CLASS_OR_RESOURCE))
                 .forEach((other) -> out.add(other));
     }
 
     @Override
-    public Set<PluginType> getType() {
-        Set<PluginType> set = new HashSet<>();
-        set.add(CATEGORY.SORTER);
+    public Set<Category> getType() {
+        Set<Category> set = new HashSet<>();
+        set.add(Category.SORTER);
 
         return Collections.unmodifiableSet(set);
     }

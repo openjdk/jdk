@@ -287,17 +287,34 @@
  * statelessness requirement, as well as other thread-safety hazards.
  *
  * <p>If the behavioral parameters do have side-effects, unless explicitly
- * stated, there are no guarantees as to the
- * <a href="../concurrent/package-summary.html#MemoryVisibility"><i>visibility</i></a>
- * of those side-effects to other threads, nor are there any guarantees that
- * different operations on the "same" element within the same stream pipeline
- * are executed in the same thread.  Further, the ordering of those effects
- * may be surprising.  Even when a pipeline is constrained to produce a
- * <em>result</em> that is consistent with the encounter order of the stream
- * source (for example, {@code IntStream.range(0,5).parallel().map(x -> x*2).toArray()}
+ * stated, there are no guarantees as to:
+ * <ul>
+ *    <li>the <a href="../concurrent/package-summary.html#MemoryVisibility">
+ *    <i>visibility</i></a> of those side-effects to other threads;</li>
+ *    <li>that different operations on the "same" element within the same stream
+ *    pipeline are executed in the same thread; and</li>
+ *    <li>that behavioral parameters are always invoked, since a stream
+ *    implementation is free to elide operations (or entire stages) from a
+ *    stream pipeline if it can prove that it would not affect the result of the
+ *    computation.
+ *    </li>
+ * </ul>
+ * <p>The ordering of side-effects may be surprising.  Even when a pipeline is
+ * constrained to produce a <em>result</em> that is consistent with the
+ * encounter order of the stream source (for example,
+ * {@code IntStream.range(0,5).parallel().map(x -> x*2).toArray()}
  * must produce {@code [0, 2, 4, 6, 8]}), no guarantees are made as to the order
  * in which the mapper function is applied to individual elements, or in what
  * thread any behavioral parameter is executed for a given element.
+ *
+ * <p>The eliding of side-effects may also be surprising.  With the exception of
+ * terminal operations {@link java.util.stream.Stream#forEach forEach} and
+ * {@link java.util.stream.Stream#forEachOrdered forEachOrdered}, side-effects
+ * of behavioral parameters may not always be executed when the stream
+ * implementation can optimize away the execution of behavioral parameters
+ * without affecting the result of the computation.  (For a specific example
+ * see the API note documented on the {@link java.util.stream.Stream#count count}
+ * operation.)
  *
  * <p>Many computations where one might be tempted to use side effects can be more
  * safely and efficiently expressed without side-effects, such as using

@@ -29,6 +29,7 @@
  * @requires vm.opt.FlightRecorder != true
  * @requires vm.opt.ExplicitGCInvokesConcurrent != true
  * @library /testlibrary /test/lib /
+ * @modules java.base/jdk.internal.misc
  * @modules java.management
  * @build gc.g1.ihop.TestIHOPErgo
  *        gc.g1.ihop.lib.IhopUtils

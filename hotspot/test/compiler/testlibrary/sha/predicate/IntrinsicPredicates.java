@@ -59,14 +59,23 @@ public class IntrinsicPredicates {
     };
 
     public static final BooleanSupplier SHA1_INSTRUCTION_AVAILABLE
-            = new OrPredicate(
-                    new CPUSpecificPredicate("sparc.*", new String[] { "sha1" },null),
-                    new CPUSpecificPredicate("aarch64.*", new String[] { "sha1" },null));
+            = new OrPredicate(new CPUSpecificPredicate("x86.*", new String[] { "sha" },null),
+              new OrPredicate(new CPUSpecificPredicate("amd64.*", new String[] { "sha" },null),
+              new OrPredicate(new CPUSpecificPredicate("i386.*", new String[] { "sha" },null),
+              new OrPredicate(
+                      new CPUSpecificPredicate("sparc.*", new String[] { "sha1" },null),
+                      new CPUSpecificPredicate("aarch64.*", new String[] { "sha1" },null)))));
 
     public static final BooleanSupplier SHA256_INSTRUCTION_AVAILABLE
-            = new OrPredicate(
-                    new CPUSpecificPredicate("sparc.*", new String[] { "sha256" },null),
-                    new CPUSpecificPredicate("aarch64.*", new String[] { "sha256" },null));
+            = new OrPredicate(new CPUSpecificPredicate("x86.*", new String[] { "sha" },null),
+              new OrPredicate(new CPUSpecificPredicate("amd64.*", new String[] { "sha" },null),
+              new OrPredicate(new CPUSpecificPredicate("i386.*", new String[] {
+"sha" },null),
+              new OrPredicate(new CPUSpecificPredicate("x86_64", new String[] { "avx2", "bmi2" }, null),
+              new OrPredicate(new CPUSpecificPredicate("amd64.*", new String[] { "avx2", "bmi2" }, null),
+              new OrPredicate(
+                      new CPUSpecificPredicate("sparc.*", new String[] { "sha256" },null),
+                      new CPUSpecificPredicate("aarch64.*", new String[] { "sha256" },null)))))));
 
     public static final BooleanSupplier SHA512_INSTRUCTION_AVAILABLE
             = new OrPredicate(

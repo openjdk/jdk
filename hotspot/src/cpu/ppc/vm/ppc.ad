@@ -817,6 +817,16 @@ source_hpp %{
 
 source %{
 
+// Should the Matcher clone shifts on addressing modes, expecting them
+// to be subsumed into complex addressing expressions or compute them
+// into registers?
+bool Matcher::clone_address_expressions(AddPNode* m, Matcher::MStack& mstack, VectorSet& address_visited) {
+  return clone_base_plus_offset_address(m, mstack, address_visited);
+}
+
+void Compile::reshape_address(AddPNode* addp) {
+}
+
 // Optimize load-acquire.
 //
 // Check if acquire is unnecessary due to following operation that does
@@ -1380,6 +1390,8 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
     // Save return pc.
     ___(std) std(return_pc, _abi(lr), callers_sp);
   }
+  
+  C->set_frame_complete(cbuf.insts_size());
 }
 #undef ___
 #undef ___stop
@@ -2047,6 +2059,10 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen) {
   return ret_value;  // Per default match rules are supported.
 }
 
+const bool Matcher::has_predicated_vectors(void) {
+  return false;
+}
+
 const int Matcher::float_pressure(int default_pressure_threshold) {
   return default_pressure_threshold;
 }
@@ -2150,11 +2166,6 @@ const int Matcher::float_cmove_cost() { return ConditionalMoveLimit; }
 
 // Power6 requires postalloc expand (see block.cpp for description of postalloc expand).
 const bool Matcher::require_postalloc_expand = true;
-
-// Should the Matcher clone shifts on addressing modes, expecting them to
-// be subsumed into complex addressing expressions or compute them into
-// registers? True for Intel but false for most RISCs.
-const bool Matcher::clone_shift_expressions = false;
 
 // Do we need to mask the count passed to shift instructions or does
 // the cpu only look at the lower 5/6 bits anyway?
@@ -2306,6 +2317,8 @@ RegMask Matcher::modL_proj_mask() {
 const RegMask Matcher::method_handle_invoke_SP_save_mask() {
   return RegMask();
 }
+
+const bool Matcher::convi2l_type_required = true;
 
 %}
 

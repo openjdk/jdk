@@ -277,12 +277,14 @@ invoker_enableInvokeRequests(jthread thread)
 
     JDI_ASSERT(thread);
 
+    debugMonitorEnter(invokerLock);
     request = threadControl_getInvokeRequest(thread);
     if (request == NULL) {
         EXIT_ERROR(AGENT_ERROR_INVALID_THREAD, "getting thread invoke request");
     }
 
     request->available = JNI_TRUE;
+    debugMonitorExit(invokerLock);
 }
 
 jvmtiError
@@ -739,29 +741,20 @@ invoker_completeInvokeRequest(jthread thread)
 }
 
 jboolean
-invoker_isPending(jthread thread)
-{
-    InvokeRequest *request;
-
-    JDI_ASSERT(thread);
-    request = threadControl_getInvokeRequest(thread);
-    if (request == NULL) {
-        EXIT_ERROR(AGENT_ERROR_INVALID_THREAD, "getting thread invoke request");
-    }
-    return request->pending;
-}
-
-jboolean
 invoker_isEnabled(jthread thread)
 {
     InvokeRequest *request;
+    jboolean isEnabled;
 
     JDI_ASSERT(thread);
+    debugMonitorEnter(invokerLock);
     request = threadControl_getInvokeRequest(thread);
     if (request == NULL) {
         EXIT_ERROR(AGENT_ERROR_INVALID_THREAD, "getting thread invoke request");
     }
-    return request->available;
+    isEnabled = request->available;
+    debugMonitorExit(invokerLock);
+    return isEnabled;
 }
 
 void

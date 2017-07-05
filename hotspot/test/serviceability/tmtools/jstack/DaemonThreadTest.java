@@ -25,6 +25,7 @@
  * @test
  * @summary Create daemon and non-deamon threads.
  *          Check the correctness of thread's status from jstack.
+ * @modules java.base/jdk.internal.misc
  * @library /test/lib/share/classes
  * @library ../share
  * @build common.*

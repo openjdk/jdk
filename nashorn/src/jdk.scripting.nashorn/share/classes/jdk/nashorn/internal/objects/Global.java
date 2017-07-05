@@ -2839,6 +2839,7 @@ public final class Global extends Scope {
             sb.append("$Constructor");
 
             final Class<?> funcClass = Class.forName(sb.toString());
+            @SuppressWarnings("deprecation")
             final T res = clazz.cast(funcClass.newInstance());
 
             if (res instanceof ScriptFunction) {
@@ -2866,6 +2867,7 @@ public final class Global extends Scope {
             final String className = PACKAGE_PREFIX + name + "$Prototype";
 
             final Class<?> funcClass = Class.forName(className);
+            @SuppressWarnings("deprecation")
             final ScriptObject res = (ScriptObject) funcClass.newInstance();
 
             res.setIsBuiltin();

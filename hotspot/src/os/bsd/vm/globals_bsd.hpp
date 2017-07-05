@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,15 @@
 //
 // Defines Bsd specific flags. They are not available on other platforms.
 //
-#define RUNTIME_OS_FLAGS(develop, develop_pd, product, product_pd, diagnostic, notproduct, range, constraint) \
+#define RUNTIME_OS_FLAGS(develop, \
+                         develop_pd, \
+                         product, \
+                         product_pd, \
+                         diagnostic, \
+                         notproduct, \
+                         range, \
+                         constraint, \
+                         writeable) \
                                                                                 \
   product(bool, UseOprofile, false,                                             \
         "enable support for Oprofile profiler")                                 \

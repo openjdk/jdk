@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -169,18 +169,18 @@ void FpuStackSim::clear() {
 
 intArray* FpuStackSim::write_state() {
   intArray* res = new intArray(1 + FrameMap::nof_fpu_regs);
-  (*res)[0] = stack_size();
+  res->append(stack_size());
   for (int i = 0; i < FrameMap::nof_fpu_regs; i++) {
-    (*res)[1 + i] = regs_at(i);
+    res->append(regs_at(i));
   }
   return res;
 }
 
 
 void FpuStackSim::read_state(intArray* fpu_stack_state) {
-  _stack_size = (*fpu_stack_state)[0];
+  _stack_size = fpu_stack_state->at(0);
   for (int i = 0; i < FrameMap::nof_fpu_regs; i++) {
-    set_regs_at(i, (*fpu_stack_state)[1 + i]);
+    set_regs_at(i, fpu_stack_state->at(1 + i));
   }
 }
 

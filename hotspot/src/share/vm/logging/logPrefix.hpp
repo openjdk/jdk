@@ -64,6 +64,7 @@ DEBUG_ONLY(size_t Test_log_prefix_prefixer(char* buf, size_t len);)
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, liveness)) \
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, marking)) \
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, metaspace)) \
+  LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, mmu)) \
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, phases)) \
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, phases, start)) \
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, phases, task)) \
@@ -95,9 +96,14 @@ struct LogPrefix : public AllStatic {
 #define LOG_PREFIX(fn, ...) \
 template <> struct LogPrefix<__VA_ARGS__> { \
   static size_t prefix(char* buf, size_t len) { \
-    DEBUG_ONLY(buf[0] = '\0';) \
     size_t ret = fn(buf, len); \
-    assert(ret == strlen(buf), "Length mismatch ret (" SIZE_FORMAT ") != buf length (" SIZE_FORMAT ")", ret, strlen(buf)); \
+    /* Either prefix did fit (strlen(buf) == ret && ret < len) */ \
+    /* or the prefix didn't fit in buffer (ret > len && strlen(buf) < len) */ \
+    assert(ret == 0 || strlen(buf) < len, \
+           "Buffer overrun by prefix function."); \
+    assert(ret == 0 || strlen(buf) == ret || ret >= len, \
+           "Prefix function should return length of prefix written," \
+           " or the intended length of prefix if the buffer was too small."); \
     return ret; \
   } \
 };
