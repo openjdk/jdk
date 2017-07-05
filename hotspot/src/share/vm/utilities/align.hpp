@@ -44,7 +44,7 @@
 
 #define align_up_(size, alignment) (align_down_((size) + align_mask(alignment), (alignment)))
 
-#define is_aligned_(size, alignment) ((size) == (align_up_((size), (alignment))))
+#define is_aligned_(size, alignment) (((size) & align_mask(alignment)) == 0)
 
 // Temporary declaration until this file has been restructured.
 template <typename T>
