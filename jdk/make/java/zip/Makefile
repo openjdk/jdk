@@ -30,7 +30,9 @@ LIBRARY = zip
 PRODUCT = sun
 include $(BUILDDIR)/common/Defs.gmk
 
-ZLIB_VERSION = 1.1.3
+#
+# ZLIB_VERSION is defined in make/common/Defs.gmk
+#
 
 #
 # Files to compile.

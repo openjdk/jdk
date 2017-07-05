@@ -885,7 +885,7 @@ public class ISCII91 extends Charset implements HistoricallyNamedCharset
                         index = ((int)(inputChar) - 0x0900)*2;
                     }
 
-                    if (Surrogate.is(inputChar)) {
+                    if (Character.isSurrogate(inputChar)) {
                         if (sgp.parse(inputChar, sa, sp, sl) < 0)
                             return sgp.error();
                         return sgp.unmappableResult();
@@ -948,7 +948,7 @@ public class ISCII91 extends Charset implements HistoricallyNamedCharset
                         index = ((int)(inputChar) - 0x0900)*2;
                     }
 
-                    if (Surrogate.is(inputChar)) {
+                    if (Character.isSurrogate(inputChar)) {
                         if (sgp.parse(inputChar, src) < 0)
                             return sgp.error();
                         return sgp.unmappableResult();

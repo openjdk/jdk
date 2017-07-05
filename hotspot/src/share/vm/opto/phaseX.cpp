@@ -1622,9 +1622,11 @@ void Node::set_req_X( uint i, Node *n, PhaseIterGVN *igvn ) {
   // old goes dead?
   if( old ) {
     switch (old->outcnt()) {
-    case 0:      // Kill all his inputs, and recursively kill other dead nodes.
+    case 0:
+      // Put into the worklist to kill later. We do not kill it now because the
+      // recursive kill will delete the current node (this) if dead-loop exists
       if (!old->is_top())
-        igvn->remove_dead_node( old );
+        igvn->_worklist.push( old );
       break;
     case 1:
       if( old->is_Store() || old->has_special_unique_user() )

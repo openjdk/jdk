@@ -76,6 +76,7 @@ public class MOAT {
         testCollection(new LinkedBlockingQueue<Integer>(20));
         testCollection(new LinkedBlockingDeque<Integer>(20));
         testCollection(new ConcurrentLinkedQueue<Integer>());
+//         testCollection(new LinkedTransferQueue<Integer>());
         testCollection(new ConcurrentSkipListSet<Integer>());
         testCollection(Arrays.asList(new Integer(42)));
         testCollection(Arrays.asList(1,2,3));
@@ -161,6 +162,7 @@ public class MOAT {
         equal(c.toString(),"[]");
         equal(c.toArray().length, 0);
         equal(c.toArray(new Object[0]).length, 0);
+        check(c.toArray(new Object[]{42})[0] == null);
 
         Object[] a = new Object[1]; a[0] = Boolean.TRUE;
         equal(c.toArray(a), a);

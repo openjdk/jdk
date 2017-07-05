@@ -25,6 +25,7 @@
 
 package sun.nio.fs;
 
+import java.nio.file.attribute.*;
 import java.util.*;
 import java.io.IOException;
 
@@ -113,10 +114,12 @@ class LinuxFileStore
     }
 
     @Override
-    public boolean supportsFileAttributeView(String name) {
+    public boolean supportsFileAttributeView(Class<? extends FileAttributeView> type) {
         // support DosFileAttributeView and UserDefinedAttributeView if extended
         // attributes enabled
-        if (name.equals("dos") || name.equals("user")) {
+        if (type == DosFileAttributeView.class ||
+            type == UserDefinedFileAttributeView.class)
+        {
             // lookup fstypes.properties
             FeatureStatus status = checkIfFeaturePresent("user_xattr");
             if (status == FeatureStatus.PRESENT)
@@ -142,7 +145,15 @@ class LinuxFileStore
             }
             return xattrEnabled;
         }
+        return super.supportsFileAttributeView(type);
+    }
 
+    @Override
+    public boolean supportsFileAttributeView(String name) {
+        if (name.equals("dos"))
+            return supportsFileAttributeView(DosFileAttributeView.class);
+        if (name.equals("user"))
+            return supportsFileAttributeView(UserDefinedFileAttributeView.class);
         return super.supportsFileAttributeView(name);
     }
 

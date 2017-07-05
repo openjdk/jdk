@@ -1231,6 +1231,11 @@ void ReferenceProcessor::preclean_discovered_references(
 
   NOT_PRODUCT(verify_ok_to_handle_reflists());
 
+#ifdef ASSERT
+  bool must_remember_klasses = ClassUnloading && !UseConcMarkSweepGC ||
+                               CMSClassUnloadingEnabled && UseConcMarkSweepGC;
+  RememberKlassesChecker mx(must_remember_klasses);
+#endif
   // Soft references
   {
     TraceTime tt("Preclean SoftReferences", PrintGCDetails && PrintReferenceGC,
