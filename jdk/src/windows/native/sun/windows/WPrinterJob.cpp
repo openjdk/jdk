@@ -639,7 +639,7 @@ static BOOL IsDCPostscript( HDC hDC )
     if( ::ExtEscape( hDC, GETTECHNOLOGY, 0, NULL, MAX_PATH,
                      (LPSTR)szTechnology ) <= 0 )
         return FALSE;
-    strupr( szTechnology );
+    _strupr_s(szTechnology, MAX_PATH);
     if(!strstr( szTechnology, "POSTSCRIPT" ) == NULL )
         return TRUE;
 

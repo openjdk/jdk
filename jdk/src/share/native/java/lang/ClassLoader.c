@@ -331,7 +331,7 @@ Java_java_lang_ClassLoader_00024NativeLibrary_load
     if (handle) {
         const char *onLoadSymbols[] = JNI_ONLOAD_SYMBOLS;
         JNI_OnLoad_t JNI_OnLoad;
-        int i;
+        unsigned int i;
         for (i = 0; i < sizeof(onLoadSymbols) / sizeof(char *); i++) {
             JNI_OnLoad = (JNI_OnLoad_t)
                 JVM_FindLibraryEntry(handle, onLoadSymbols[i]);
@@ -369,7 +369,7 @@ Java_java_lang_ClassLoader_00024NativeLibrary_load
         cause = (*env)->ExceptionOccurred(env);
         if (cause) {
             (*env)->ExceptionClear(env);
-            (*env)->SetLongField(env, this, handleID, (jlong)NULL);
+            (*env)->SetLongField(env, this, handleID, (jlong)0);
             (*env)->Throw(env, cause);
         }
         goto done;
@@ -392,7 +392,7 @@ Java_java_lang_ClassLoader_00024NativeLibrary_unload
     const char *onUnloadSymbols[] = JNI_ONUNLOAD_SYMBOLS;
     void *handle;
     JNI_OnUnload_t JNI_OnUnload;
-    int i;
+    unsigned int i;
 
     if (!initIDs(env))
         return;

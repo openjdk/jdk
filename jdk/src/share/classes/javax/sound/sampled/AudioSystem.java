@@ -63,7 +63,7 @@ import com.sun.media.sound.JDK13Services;
  * <p>Properties can be used to specify the default mixer
  * for specific line types.
  * Both system properties and a properties file are considered.
- * In the Sun reference implementation, the properties file is
+ * In the Oracle reference implementation, the properties file is
  * &quot;lib/sound.properties&quot; in the JRE
  * directory. If a property exists both as a system property and in the
  * properties file, the system property takes precedence. If none is

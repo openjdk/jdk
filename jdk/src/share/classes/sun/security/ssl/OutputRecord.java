@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -343,6 +343,9 @@ class OutputRecord extends ByteArrayOutputStream implements Record {
      * example, Netscape Commerce 1.0 servers.  The V3 message is in the
      * header and the bytes passed as parameter.  This routine translates
      * the V3 message into an equivalent V2 one.
+     *
+     * Note that the translation will strip off all hello extensions as
+     * SSL V2.0 does not support hello extension.
      */
     private void V3toV2ClientHello(byte v3Msg []) throws SSLException {
         int v3SessionIdLenOffset = 2 + 32; // version + nonce
@@ -361,12 +364,21 @@ class OutputRecord extends ByteArrayOutputStream implements Record {
         int v3CipherSpecOffset = v3CipherSpecLenOffset + 2; // skip length
         int v2CipherSpecLen = 0;
         count = 11;
+        boolean containsRenegoInfoSCSV = false;
         for (int i = 0; i < cipherSpecs; i++) {
             byte byte1, byte2;
 
             byte1 = v3Msg[v3CipherSpecOffset++];
             byte2 = v3Msg[v3CipherSpecOffset++];
             v2CipherSpecLen += V3toV2CipherSuite(byte1, byte2);
+            if (!containsRenegoInfoSCSV &&
+                        byte1 == (byte)0x00 && byte2 == (byte)0xFF) {
+                containsRenegoInfoSCSV = true;
+            }
+        }
+
+        if (!containsRenegoInfoSCSV) {
+            v2CipherSpecLen += V3toV2CipherSuite((byte)0x00, (byte)0xFF);
         }
 
         /*
