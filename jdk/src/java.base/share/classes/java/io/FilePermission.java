@@ -532,11 +532,13 @@ public final class FilePermission extends Permission implements Serializable {
      * simple {@code npath} is inside a wildcard {@code npath} if and only if
      * {@code  simple_npath.relativize(wildcard_npath)} is exactly "..",
      * a simple {@code npath} is recursively inside a wildcard {@code npath}
-     * if and only if {@code simple_npath.relativize(wildcard_npath)}
-     * is a series of one or more "..". An invalid {@code FilePermission} does
-     * not imply any object except for itself. An invalid {@code FilePermission}
-     * is not implied by any object except for itself or a {@code FilePermission}
-     * on {@literal "<<ALL FILES>>"} whose actions is a superset of this
+     * if and only if {@code simple_npath.relativize(wildcard_npath)} is a
+     * series of one or more "..". This means "/-" implies "/foo" but not "foo".
+     * <p>
+     * An invalid {@code FilePermission} does not imply any object except for
+     * itself. An invalid {@code FilePermission} is not implied by any object
+     * except for itself or a {@code FilePermission} on
+     * {@literal "<<ALL FILES>>"} whose actions is a superset of this
      * invalid {@code FilePermission}. Even if two {@code FilePermission}
      * are created with the same invalid path, one does not imply the other.
      *

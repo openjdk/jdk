@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -226,7 +226,12 @@ handleSetLength(FD fd, jlong length)
 
     if (fstat64(fd, &sb) == 0 && length > sb.st_blocks*512) {
         RESTARTABLE(fallocate64(fd, 0, 0, length), result);
-        return result;
+        // Return on success or if errno is neither EOPNOTSUPP nor ENOSYS
+        if (result == 0) {
+            return 0;
+        } else if (errno != EOPNOTSUPP && errno != ENOSYS) {
+            return result;
+        }
     }
 #endif
     RESTARTABLE(ftruncate64(fd, length), result);

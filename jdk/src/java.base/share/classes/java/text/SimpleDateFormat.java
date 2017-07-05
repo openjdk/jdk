@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -905,6 +905,7 @@ public class SimpleDateFormat extends DateFormat {
      * @param startDate During parsing, two digit years will be placed in the range
      * <code>startDate</code> to <code>startDate + 100 years</code>.
      * @see #get2DigitYearStart
+     * @throws NullPointerException if {@code startDate} is {@code null}.
      * @since 1.2
      */
     public void set2DigitYearStart(Date startDate) {
@@ -933,7 +934,7 @@ public class SimpleDateFormat extends DateFormat {
      * @param pos the formatting position. On input: an alignment field,
      * if desired. On output: the offsets of the alignment field.
      * @return the formatted date-time string.
-     * @exception NullPointerException if the given {@code date} is {@code null}.
+     * @exception NullPointerException if any of the parameters is {@code null}.
      */
     @Override
     public StringBuffer format(Date date, StringBuffer toAppendTo,

@@ -31,7 +31,7 @@
  * @bug 4392475
  * @library /javax/net/ssl/templates
  * @summary Calling setWantClientAuth(true) disables anonymous suites
- * @run main/othervm AnonCipherWithWantClientAuth
+ * @run main/othervm -Djavax.net.debug=all AnonCipherWithWantClientAuth
  */
 
 import java.io.InputStream;

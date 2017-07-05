@@ -49,7 +49,7 @@ interface B3 extends D3 { void m(); }
 interface C3 extends D3 { void m(); }
 interface D3 { void m() ; }
 
-// B.m, D.m
+// B.m
 interface A4 extends B4, C4 {}
 interface B4 extends D4 { void m(); }
 interface C4 extends D4 {}
@@ -92,7 +92,7 @@ public class StarInheritance {
         Class [] l3 = {B3.class, C3.class};
         test(A3.class.getMethods(), new ArrayList(Arrays.asList(l3)));
 
-        Class [] l4 = {B4.class, D4.class};
+        Class [] l4 = {B4.class};
         test(A4.class.getMethods(), new ArrayList(Arrays.asList(l4)));
     }
 }

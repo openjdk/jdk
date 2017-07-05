@@ -935,12 +935,20 @@ public abstract class SSLContextImpl extends SSLContextSpi {
         }
 
         private static TrustManager[] getTrustManagers() throws Exception {
-            KeyStore ks =
-                TrustManagerFactoryImpl.getCacertsKeyStore("defaultctx");
-
             TrustManagerFactory tmf = TrustManagerFactory.getInstance(
-                TrustManagerFactory.getDefaultAlgorithm());
-            tmf.init(ks);
+                    TrustManagerFactory.getDefaultAlgorithm());
+            if ("SunJSSE".equals(tmf.getProvider().getName())) {
+                // The implementation will load the default KeyStore
+                // automatically.  Cached trust materials may be used
+                // for performance improvement.
+                tmf.init((KeyStore)null);
+            } else {
+                // Use the explicitly specified KeyStore for third party's
+                // TrustManagerFactory implementation.
+                KeyStore ks = TrustStoreManager.getTrustedKeyStore();
+                tmf.init(ks);
+            }
+
             return tmf.getTrustManagers();
         }
 
