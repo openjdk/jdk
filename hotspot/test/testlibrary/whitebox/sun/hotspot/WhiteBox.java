@@ -152,6 +152,8 @@ public class WhiteBox {
   public native void readReservedMemory();
   public native long allocateMetaspace(ClassLoader classLoader, long size);
   public native void freeMetaspace(ClassLoader classLoader, long addr, long size);
+  public native long incMetaspaceCapacityUntilGC(long increment);
+  public native long metaspaceCapacityUntilGC();
 
   // force Young GC
   public native void youngGC();

@@ -342,9 +342,9 @@ bool BitMap::set_union_with_result(BitMap other) {
   bm_word_t* other_map = other.map();
   idx_t size = size_in_words();
   for (idx_t index = 0; index < size; index++) {
-    idx_t temp = map(index) | other_map[index];
-    changed = changed || (temp != map(index));
-    map()[index] = temp;
+    idx_t temp = dest_map[index] | other_map[index];
+    changed = changed || (temp != dest_map[index]);
+    dest_map[index] = temp;
   }
   return changed;
 }
@@ -407,10 +407,10 @@ bool BitMap::is_full() const {
   bm_word_t* word = map();
   idx_t rest = size();
   for (; rest >= (idx_t) BitsPerWord; rest -= BitsPerWord) {
-    if (*word != (bm_word_t) AllBits) return false;
+    if (*word != ~(bm_word_t)0) return false;
     word++;
   }
-  return rest == 0 || (*word | ~right_n_bits((int)rest)) == (bm_word_t) AllBits;
+  return rest == 0 || (*word | ~right_n_bits((int)rest)) == ~(bm_word_t)0;
 }
 
 
@@ -418,10 +418,10 @@ bool BitMap::is_empty() const {
   bm_word_t* word = map();
   idx_t rest = size();
   for (; rest >= (idx_t) BitsPerWord; rest -= BitsPerWord) {
-    if (*word != (bm_word_t) NoBits) return false;
+    if (*word != 0) return false;
     word++;
   }
-  return rest == 0 || (*word & right_n_bits((int)rest)) == (bm_word_t) NoBits;
+  return rest == 0 || (*word & right_n_bits((int)rest)) == 0;
 }
 
 void BitMap::clear_large() {
@@ -441,7 +441,7 @@ bool BitMap::iterate(BitMapClosure* blk, idx_t leftOffset, idx_t rightOffset) {
        offset < rightOffset && index < endIndex;
        offset = (++index) << LogBitsPerWord) {
     idx_t rest = map(index) >> (offset & (BitsPerWord - 1));
-    for (; offset < rightOffset && rest != (bm_word_t)NoBits; offset++) {
+    for (; offset < rightOffset && rest != 0; offset++) {
       if (rest & 1) {
         if (!blk->do_bit(offset)) return false;
         //  resample at each closure application
@@ -468,7 +468,7 @@ void BitMap::init_pop_count_table() {
                                        (intptr_t)  NULL_WORD);
     if (res != NULL_WORD) {
       guarantee( _pop_count_table == (void*) res, "invariant" );
-      FREE_C_HEAP_ARRAY(bm_word_t, table, mtInternal);
+      FREE_C_HEAP_ARRAY(idx_t, table, mtInternal);
     }
   }
 }

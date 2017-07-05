@@ -318,12 +318,18 @@ static bool setImageAndSymbolPath(JNIEnv* env, jobject obj) {
 
   path = (jstring) env->GetStaticObjectField(clazz, imagePath_ID);
   CHECK_EXCEPTION_(false);
+  if (path == NULL) {
+     THROW_NEW_DEBUGGER_EXCEPTION_("Windbg Error: not able to get imagePath field ID!", false);
+  }
   buf = env->GetStringUTFChars(path, &isCopy);
   CHECK_EXCEPTION_(false);
   AutoJavaString imagePath(env, path, buf);
 
   path = (jstring) env->GetStaticObjectField(clazz, symbolPath_ID);
   CHECK_EXCEPTION_(false);
+  if (path == NULL) {
+     THROW_NEW_DEBUGGER_EXCEPTION_("Windbg Error: not able to get symbolPath field ID!", false);
+  }
   buf = env->GetStringUTFChars(path, &isCopy);
   CHECK_EXCEPTION_(false);
   AutoJavaString symbolPath(env, path, buf);
