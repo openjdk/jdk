@@ -93,6 +93,15 @@ WB_ENTRY(jboolean, WB_IsClassAlive(JNIEnv* env, jobject target, jstring name))
   return closure.found();
 WB_END
 
+WB_ENTRY(void, WB_PrintHeapSizes(JNIEnv* env, jobject o)) {
+  CollectorPolicy * p = Universe::heap()->collector_policy();
+  gclog_or_tty->print_cr("Minimum heap "SIZE_FORMAT" Initial heap "
+    SIZE_FORMAT" Maximum heap "SIZE_FORMAT" Min alignment "SIZE_FORMAT" Max alignment "SIZE_FORMAT,
+    p->min_heap_byte_size(), p->initial_heap_byte_size(), p->max_heap_byte_size(),
+    p->min_alignment(), p->max_alignment());
+}
+WB_END
+
 #if INCLUDE_ALL_GCS
 WB_ENTRY(jboolean, WB_G1IsHumongous(JNIEnv* env, jobject o, jobject obj))
   G1CollectedHeap* g1 = G1CollectedHeap::heap();
@@ -386,6 +395,7 @@ static JNINativeMethod methods[] = {
       CC"(Ljava/lang/String;[Lsun/hotspot/parser/DiagnosticCommand;)[Ljava/lang/Object;",
       (void*) &WB_ParseCommandLine
   },
+  {CC"printHeapSizes",     CC"()V",                   (void*)&WB_PrintHeapSizes    },
 #if INCLUDE_ALL_GCS
   {CC"g1InConcurrentMark", CC"()Z",                   (void*)&WB_G1InConcurrentMark},
   {CC"g1IsHumongous",      CC"(Ljava/lang/Object;)Z", (void*)&WB_G1IsHumongous     },
