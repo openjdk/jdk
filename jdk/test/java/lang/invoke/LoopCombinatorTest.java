@@ -28,6 +28,7 @@
  * @bug 8150635
  * @bug 8150956
  * @bug 8150957
+ * @bug 8151179
  * @bug 8152667
  * @bug 8153637
  * @bug 8154751
@@ -146,6 +147,16 @@ public class LoopCombinatorTest {
         assertEquals(120, loop.invoke(new LoopWithVirtuals(), 5));
     }
 
+    @Test
+    public static void testLoopOmitPred() throws Throwable {
+        // construct a loop to calculate factorial that omits a predicate
+        MethodHandle[] counterClause = new MethodHandle[]{null, Fac.MH_inc, null, Fac.MH_fin};
+        MethodHandle[] accumulatorClause = new MethodHandle[]{Fac.MH_one, Fac.MH_mult, Fac.MH_pred, Fac.MH_fin};
+        MethodHandle loop = MethodHandles.loop(counterClause, accumulatorClause);
+        assertEquals(Fac.MT_fac, loop.type());
+        assertEquals(120, loop.invoke(5));
+    }
+
     @DataProvider
     static Object[][] negativeTestData() {
         MethodHandle i0 = MethodHandles.constant(int.class, 0);
@@ -153,7 +164,8 @@ public class LoopCombinatorTest {
         MethodHandle id = MethodHandles.dropArguments(i0, 0, int.class, double.class);
         MethodHandle i3 = MethodHandles.dropArguments(i0, 0, int.class, int.class, int.class);
         List<MethodHandle> inits = Arrays.asList(ii, id, i3);
-        List<Class<?>> ints = Arrays.asList(int.class, int.class, int.class);
+        List<Class<?>> ints3 = Arrays.asList(int.class, int.class, int.class);
+        List<Class<?>> ints4 = Arrays.asList(int.class, int.class, int.class, int.class);
         List<MethodHandle> finis = Arrays.asList(Fac.MH_fin, Fac.MH_inc, Counted.MH_step);
         List<MethodHandle> preds1 = Arrays.asList(null, null, null);
         List<MethodHandle> preds2 = Arrays.asList(null, Fac.MH_fin, null);
@@ -174,7 +186,7 @@ public class LoopCombinatorTest {
                         "clause 0: init and step return types must match: int != void"},
                 {new MethodHandle[][]{{ii}, {id}, {i3}},
                         "found non-effectively identical init parameter type lists: " + inits +
-                                " (common suffix: " + ints + ")"},
+                                " (common suffix: " + ints3 + ")"},
                 {new MethodHandle[][]{{null, Fac.MH_inc, null, Fac.MH_fin}, {null, Fac.MH_inc, null, Fac.MH_inc},
                         {null, Counted.MH_start, null, Counted.MH_step}},
                         "found non-identical finalizer return types: " + finis + " (return type: int)"},
@@ -185,11 +197,11 @@ public class LoopCombinatorTest {
                 {new MethodHandle[][]{{Fac.MH_zero, Fac.MH_inc}, {Fac.MH_one, eek, Fac.MH_pred, Fac.MH_fin},
                         {null, Fac.MH_dot}},
                         "found non-effectively identical parameter type lists:\nstep: " + nesteps +
-                                "\npred: " + nepreds + "\nfini: " + nefinis + " (common parameter sequence: " + ints + ")"},
+                                "\npred: " + nepreds + "\nfini: " + nefinis + " (common parameter sequence: " + ints3 + ")"},
                 {new MethodHandle[][]{{null, LoopWithVirtuals.MH_inc},
                         {LoopWithVirtuals.MH_one, LoopWithVirtuals.MH_mult, LoopWithVirtuals.MH_pred, LoopWithVirtuals.MH_fin}},
                         "found non-effectively identical parameter type lists:\nstep: " + lvsteps +
-                                "\npred: " + lvpreds + "\nfini: " + lvfinis + " (common parameter sequence: " + ints + ")"}
+                                "\npred: " + lvpreds + "\nfini: " + lvfinis + " (common parameter sequence: " + ints4 + ")"}
         };
     }
 
@@ -207,7 +219,7 @@ public class LoopCombinatorTest {
     public static void testLoopNegative(MethodHandle[][] clauses, String expectedMessage) throws Throwable {
         boolean caught = false;
         try {
-            MH_loop.invokeWithArguments(clauses);
+            MH_loop.invokeWithArguments((Object[]) clauses);
         } catch (IllegalArgumentException iae) {
             assertEquals(expectedMessage, iae.getMessage());
             caught = true;
@@ -215,12 +227,100 @@ public class LoopCombinatorTest {
         assertTrue(caught);
     }
 
-    @Test
-    public static void testWhileLoop() throws Throwable {
+    @Test(dataProvider = "whileLoopTestData")
+    public static void testWhileLoop(MethodHandle MH_zero,
+                                     MethodHandle MH_pred,
+                                     MethodHandle MH_step,
+                                     String messageOrNull) throws Throwable {
         // int i = 0; while (i < limit) { ++i; } return i; => limit
-        MethodHandle loop = MethodHandles.whileLoop(While.MH_zero, While.MH_pred, While.MH_step);
-        assertEquals(While.MT_while, loop.type());
-        assertEquals(23, loop.invoke(23));
+        try {
+            MethodHandle loop = MethodHandles.whileLoop(MH_zero, MH_pred, MH_step);
+            assert messageOrNull == null;
+            if (MH_step.type().equals(While.MH_step.type()))
+                assertEquals(While.MT_while, loop.type());
+            assertEquals(MH_step.type().dropParameterTypes(0, 1), loop.type());
+            while (loop.type().parameterCount() > 1)  loop = snip(loop);
+            assertEquals(23, loop.invoke(23));
+        } catch (IllegalArgumentException iae) {
+            assert messageOrNull != null;
+            assertEqualsFIXME(messageOrNull, iae.getMessage());
+        }
+    }
+
+    static void assertEqualsFIXME(String expect, String actual) {
+        if (!expect.equals(actual)) {
+            // just issue a warning
+            System.out.println("*** "+actual+"\n != "+expect);
+        }
+    }
+
+    @DataProvider
+    static Object[][] whileLoopTestData() {
+        MethodHandle
+            zeroI = While.MH_zero,
+            zeroX = snip(zeroI),
+            zeroIB = slap(zeroI, byte.class),
+            predII = While.MH_pred,
+            predIX = snip(predII),
+            predIIB = slap(predII, byte.class),
+            stepII = While.MH_step,
+            stepIX = snip(stepII),
+            stepIIB = slap(stepII, byte.class)
+            ;
+        return new Object[][] {
+            // normal while loop clauses, perhaps with effectively-identical reductions
+            {zeroI, predII, stepII, null},
+            {zeroX, predII, stepII, null},
+            {null, predII, stepII, null},
+            // expanded while loop clauses
+            {zeroIB, predIIB, stepIIB, null},
+            {zeroI, predIIB, stepIIB, null},
+            {null, predIIB, stepIIB, null},
+            {zeroIB, predII, stepIIB, null},
+            {zeroX, predII, stepIIB, null},
+            {null, predII, stepIIB, null},
+            // short step clauses cause errors
+            {zeroI, predII, stepIX, "loop predicate must match: (int,int)boolean != (int)boolean"},
+            {zeroIB, predIX, stepIX, "loop initializer must match: (int,byte)int != ()int"},
+            // bad body type
+            {zeroI, predII, tweak(stepII, -1, char.class), "body function must match: (int,int)char != (char,int,int)char"},
+            {zeroI, predII, tweak(stepII,  0, char.class), "body function must match: (char,int)int != (int,char,int)int"},
+            // bad pred type
+            {zeroI, tweak(predII, -1, char.class), stepII, "loop predicate must match: (int,int)char != (int,int)boolean"},
+            {zeroI, tweak(predII,  0, char.class), stepII, "loop predicate must match: (char,int)boolean != (int,int)boolean"},
+            // bad init type
+            {tweak(zeroI, -1, char.class), predII, stepII, "loop initializer must match: (int)char != (int)int"},
+            {tweak(zeroI,  0, char.class), predII, stepII, "loop initializer must match: (char)int != (int)int"},
+        };
+    }
+
+    // tweak the type of an MH
+    static MethodHandle tweak(MethodHandle mh, int argPos, Class<?> type) {
+        MethodType mt = mh.type();
+        if (argPos == -1)
+            mt = mt.changeReturnType(type);
+        else
+            mt = mt.changeParameterType(argPos, type);
+        return MethodHandles.explicitCastArguments(mh, mt);
+    }
+    // snip off an MH argument, hard-wiring to zero
+    static MethodHandle snip(MethodHandle mh, int argPos) {
+        if (argPos < 0)  return null;  // special case for optional args
+        Class<?> argType = mh.type().parameterType(argPos);
+        Object zero;
+        try {
+            zero = MethodHandles.zero(argType).invoke();
+        } catch (Throwable ex) {
+            throw new AssertionError(ex);
+        }
+        return MethodHandles.insertArguments(mh, argPos, zero);
+    }
+    static MethodHandle snip(MethodHandle mh) {
+        return snip(mh, mh.type().parameterCount()-1);
+    }
+    // slap on an extra type on the end of the MH
+    static MethodHandle slap(MethodHandle mh, Class<?> addType) {
+        return MethodHandles.dropArguments(mh, mh.type().parameterCount(), addType);
     }
 
     @Test
@@ -231,22 +331,42 @@ public class LoopCombinatorTest {
         assertEquals("a", loop.invoke());
     }
 
-    @Test
-    public static void testDoWhileLoop() throws Throwable {
+    @Test(dataProvider = "whileLoopTestData")
+    public static void testDoWhileLoop(MethodHandle MH_zero,
+                                       MethodHandle MH_pred,
+                                       MethodHandle MH_step,
+                                       String messageOrNull) throws Throwable {
         // int i = 0; do { ++i; } while (i < limit); return i; => limit
-        MethodHandle loop = MethodHandles.doWhileLoop(While.MH_zero, While.MH_step, While.MH_pred);
-        assertEquals(While.MT_while, loop.type());
-        assertEquals(23, loop.invoke(23));
+        try {
+            MethodHandle loop = MethodHandles.doWhileLoop(MH_zero, MH_step, MH_pred);
+            assert messageOrNull == null;
+            if (MH_step.type().equals(While.MH_step.type()))
+                assertEquals(While.MT_while, loop.type());
+            assertEquals(MH_step.type().dropParameterTypes(0, 1), loop.type());
+            while (loop.type().parameterCount() > 1)  loop = snip(loop);
+            assertEquals(23, loop.invoke(23));
+        } catch (IllegalArgumentException iae) {
+            assert messageOrNull != null;
+            if (!messageOrNull.equals(iae.getMessage())) {
+                // just issue a warning
+                System.out.println("*** "+messageOrNull+"\n != "+iae.getMessage());
+            }
+        }
     }
 
     @Test
-    public static void testDoWhileNullInit() throws Throwable {
-        While w = new While();
-        int v = 5;
-        MethodHandle loop = MethodHandles.doWhileLoop(null, While.MH_voidBody.bindTo(w), While.MH_voidPred.bindTo(w));
-        assertEquals(While.MT_void, loop.type());
-        loop.invoke(v);
-        assertEquals(v, w.i);
+    public static void testDoWhileBadInit() throws Throwable {
+        boolean caught = false;
+        try {
+            While w = new While();
+            MethodHandle loop = MethodHandles.doWhileLoop(MethodHandles.empty(methodType(char.class)),
+                                                          While.MH_voidBody.bindTo(w),
+                                                          While.MH_voidPred.bindTo(w));
+        } catch (IllegalArgumentException iae) {
+            assertEquals("loop initializer must match: ()char != (int)void", iae.getMessage());
+            caught = true;
+        }
+        assertTrue(caught);
     }
 
     @Test
@@ -260,13 +380,18 @@ public class LoopCombinatorTest {
     }
 
     @Test
-    public static void testWhileNullInit() throws Throwable {
-        While w = new While();
-        int v = 5;
-        MethodHandle loop = MethodHandles.whileLoop(null, While.MH_voidPred.bindTo(w), While.MH_voidBody.bindTo(w));
-        assertEquals(While.MT_void, loop.type());
-        loop.invoke(v);
-        assertEquals(v, w.i);
+    public static void testWhileBadInit() throws Throwable {
+        boolean caught = false;
+        try {
+            While w = new While();
+            MethodHandle loop = MethodHandles.whileLoop(MethodHandles.empty(methodType(void.class, char.class)),
+                                                        While.MH_voidPred.bindTo(w),
+                                                        While.MH_voidBody.bindTo(w));
+        } catch (IllegalArgumentException iae) {
+            assertEquals("loop initializer must match: (char)void != (int)void", iae.getMessage());
+            caught = true;
+        }
+        assertTrue(caught);
     }
 
     @Test
@@ -291,10 +416,26 @@ public class LoopCombinatorTest {
         assertEquals(v, w.i);
     }
 
+    @DataProvider
+    static Object[][] nullArgs() {
+        MethodHandle c = MethodHandles.constant(int.class, 1);
+        return new Object[][]{{null, c}, {c, null}};
+    }
+
+    @Test(dataProvider = "nullArgs", expectedExceptions = NullPointerException.class)
+    public static void testWhileNullArgs(MethodHandle pred, MethodHandle body) {
+        MethodHandles.whileLoop(null, pred, body);
+    }
+
+    @Test(dataProvider = "nullArgs", expectedExceptions = NullPointerException.class)
+    public static void testDoWhileNullArgs(MethodHandle body, MethodHandle pred) {
+        MethodHandles.whileLoop(null, body, pred);
+    }
+
     @Test
     public static void testCountedLoop() throws Throwable {
         // String s = "Lambdaman!"; for (int i = 0; i < 13; ++i) { s = "na " + s; } return s; => a variation on a well known theme
-        MethodHandle fit13 = MethodHandles.constant(int.class, 13);
+        MethodHandle fit13 = MethodHandles.dropArguments(MethodHandles.constant(int.class, 13), 0, String.class);
         MethodHandle loop = MethodHandles.countedLoop(fit13, Counted.MH_start, Counted.MH_step);
         assertEquals(Counted.MT_counted, loop.type());
         assertEquals("na na na na na na na na na na na na na Lambdaman!", loop.invoke("Lambdaman!"));
@@ -303,9 +444,25 @@ public class LoopCombinatorTest {
     @Test
     public static void testCountedLoopVoidInit() throws Throwable {
         MethodHandle fit5 = MethodHandles.constant(int.class, 5);
-        MethodHandle loop = MethodHandles.countedLoop(fit5, MethodHandles.zero(void.class), Counted.MH_printHello);
-        assertEquals(Counted.MT_countedPrinting, loop.type());
-        loop.invoke();
+        for (int i = 0; i < 8; i++) {
+            MethodHandle zero = MethodHandles.zero(void.class);
+            MethodHandle init = fit5;
+            MethodHandle body = Counted.MH_printHello;
+            boolean useNull = (i & 1) != 0, addInitArg = (i & 2) != 0, addBodyArg = (i & 4) != 0;
+            if (useNull)    zero = null;
+            if (addInitArg) init = MethodHandles.dropArguments(init, 0, int.class);
+            if (addBodyArg) body = MethodHandles.dropArguments(body, 1, int.class);
+            System.out.println("testCountedLoopVoidInit i="+i+" : "+Arrays.asList(init, zero, body));
+            MethodHandle loop = MethodHandles.countedLoop(init, zero, body);
+            MethodType expectedType = Counted.MT_countedPrinting;
+            if (addInitArg || addBodyArg)
+                expectedType = expectedType.insertParameterTypes(0, int.class);
+            assertEquals(expectedType, loop.type());
+            if (addInitArg || addBodyArg)
+                loop.invoke(99);
+            else
+                loop.invoke();
+        }
     }
 
     @Test
@@ -327,7 +484,7 @@ public class LoopCombinatorTest {
         loop.invoke();
     }
 
-    @Test
+    @Test(expectedExceptions = NullPointerException.class)
     public static void testCountedLoopNullBody() throws Throwable {
         MethodHandle h5 = MethodHandles.constant(int.class, 5);
         MethodHandle h13 = MethodHandles.constant(int.class, 13);
@@ -336,14 +493,14 @@ public class LoopCombinatorTest {
         assertEquals(13, loop.invoke());
     }
 
-    @Test
+    @Test(expectedExceptions = NullPointerException.class)
     public static void testCountedLoopNullIterations() throws Throwable {
         MethodHandle loop = MethodHandles.countedLoop(null, null, null);
         assertEquals(methodType(void.class), loop.type());
         loop.invoke();
     }
 
-    @Test
+    @Test(expectedExceptions = NullPointerException.class)
     public static void testCountedLoopNullInitAndBody() throws Throwable {
         MethodHandle loop = MethodHandles.countedLoop(MethodHandles.constant(int.class, 5), null, null);
         assertEquals(methodType(void.class), loop.type());
@@ -352,45 +509,63 @@ public class LoopCombinatorTest {
 
     @DataProvider
     static Object[][] countedLoopBodyParameters() {
+        Class<?> V = String.class, I = int.class, A = List.class;
+        // return types are of these forms:
+        //    {count = int(A...), init = V(A...), body = V(V, I, A...)}
         return new Object[][] {
-                {methodType(String.class), methodType(String.class, int.class)},
-                {methodType(String.class, List.class), methodType(String.class, int.class)},
-                {methodType(String.class, List.class), methodType(String.class, int.class, String.class)}
+            // body leads determining A...
+            {methodType(I), methodType(V), methodType(V, V, I)},
+            {methodType(I), methodType(V), methodType(V, V, I, A)},
+            {methodType(I,A), methodType(V), methodType(V, V, I, A)},
+            {methodType(I), methodType(V,A), methodType(V, V, I, A)},
+            // body leads, with void V
+            {methodType(I), methodType(void.class), methodType(void.class, I)},
+            {methodType(I), methodType(void.class), methodType(void.class, I, A)},
+            {methodType(I,A), methodType(void.class), methodType(void.class, I, A)},
+            {methodType(I), methodType(void.class,A), methodType(void.class, I, A)},
+            // count leads determining A..., but only if body drops all A...
+            {methodType(I,A), methodType(V), methodType(V, V, I)},
+            {methodType(I,A), methodType(V,A), methodType(V, V, I)},
+            // count leads, with void V
+            {methodType(I,A), methodType(void.class), methodType(void.class, I)},
+            {methodType(I,A), methodType(void.class,A), methodType(void.class, I)},
         };
     }
 
     @Test(dataProvider = "countedLoopBodyParameters")
-    public static void testCountedLoopBodyParameters(MethodType initType, MethodType bodyType) throws Throwable {
-        MethodHandle loop = MethodHandles.countedLoop(MethodHandles.constant(int.class, 5),
-                MethodHandles.empty(initType), MethodHandles.empty(bodyType));
-        assertEquals(initType, loop.type());
+    public static void testCountedLoopBodyParameters(MethodType countType, MethodType initType, MethodType bodyType) throws Throwable {
+        MethodHandle loop = MethodHandles.countedLoop(
+                MethodHandles.empty(countType),
+                initType == null ? null : MethodHandles.empty(initType),
+                MethodHandles.empty(bodyType));
+        // The rule:  If body takes the minimum number of parameters, then take what countType offers.
+        // The initType has to just roll with whatever the other two agree on.
+        int innerParams = (bodyType.returnType() == void.class ? 1 : 2);
+        MethodType expectType = bodyType.dropParameterTypes(0, innerParams);
+        if (expectType.parameterCount() == 0)
+            expectType = expectType.insertParameterTypes(0, countType.parameterList());
+        assertEquals(expectType, loop.type());
     }
 
-    @DataProvider
-    static Object[][] countedLoopTypes() {
-        return new Object[][]{{void.class}, {int.class}, {Object.class}, {String.class}, {List.class}};
-    }
-
-    @Test(dataProvider = "countedLoopTypes")
-    public static void testCountedLoopBodyParametersNullInit(Class<?> t) throws Throwable {
-        MethodHandle loop = MethodHandles.countedLoop(MethodHandles.constant(int.class, 5), null,
-                MethodHandles.empty(methodType(t, int.class)));
-        assertEquals(methodType(t), loop.type());
-        loop.invoke();
+    @Test(dataProvider = "countedLoopBodyParameters")
+    public static void testCountedLoopBodyParametersNullInit(MethodType countType, MethodType initType, MethodType bodyType) throws Throwable {
+        testCountedLoopBodyParameters(countType, null, bodyType);
     }
 
     @Test
-    public static void testCountedLoopStateDefinedByBody() throws Throwable {
-        MethodHandle loop = MethodHandles.countedLoop(MethodHandles.constant(int.class, 5), null, Counted.MH_stateBody);
+    public static void testCountedLoopStateInitializedToNull() throws Throwable {
+        MethodHandle loop = MethodHandles.countedLoop(MethodHandles.constant(int.class, 5),
+                MethodHandles.empty(methodType(String.class)), Counted.MH_stateBody);
         assertEquals(Counted.MT_bodyDeterminesState, loop.type());
         assertEquals("sssssnull01234", loop.invoke());
     }
 
     @Test
     public static void testCountedLoopArgsDefinedByIterations() throws Throwable {
-        MethodHandle loop = MethodHandles.countedLoop(
-                MethodHandles.dropArguments(MethodHandles.constant(int.class, 3), 0, String.class),
-                null, Counted.MH_append);
+        MethodHandle iterations =
+                MethodHandles.dropArguments(MethodHandles.constant(int.class, 3), 0, String.class);
+        MethodHandle loop = MethodHandles.countedLoop(iterations,
+                MethodHandles.empty(iterations.type().changeReturnType(String.class)), Counted.MH_append);
         assertEquals(Counted.MT_iterationsDefineArgs, loop.type());
         assertEquals("hello012", loop.invoke("hello"));
     }
@@ -420,7 +595,8 @@ public class LoopCombinatorTest {
     @Test
     public static void testCountedLoopEmpty() throws Throwable {
         // for (int i = 0; i < 5; ++i) { /* empty */ }
-        MethodHandle loop = MethodHandles.countedLoop(MethodHandles.constant(int.class, 5), null, null);
+        MethodHandle loop = MethodHandles.countedLoop(MethodHandles.constant(int.class, 5), null,
+                MethodHandles.empty(methodType(void.class, int.class)));
         assertEquals(methodType(void.class), loop.type());
         loop.invoke();
     }
@@ -429,9 +605,43 @@ public class LoopCombinatorTest {
     public static void testCountedRangeLoopEmpty() throws Throwable {
         // for (int i = -5; i < 5; ++i) { /* empty */ }
         MethodHandle loop = MethodHandles.countedLoop(MethodHandles.constant(int.class, -5),
-                MethodHandles.constant(int.class, 5), null, null);
+                MethodHandles.constant(int.class, 5), null, MethodHandles.empty(methodType(void.class, int.class)));
         assertEquals(methodType(void.class), loop.type());
         loop.invoke();
+    }
+
+    @DataProvider
+    static Object[][] countedLoopNegativeData() {
+        MethodHandle dummy = MethodHandles.zero(void.class);
+        MethodHandle one = MethodHandles.constant(int.class, 1);
+        MethodHandle oneString = MethodHandles.dropArguments(one, 0, String.class);
+        MethodHandle oneDouble = MethodHandles.dropArguments(one, 0, double.class);
+        return new Object[][]{
+                {dummy, one, dummy, dummy, String.format("start/end must return int %s, %s", dummy, one)},
+                {one, dummy, dummy, dummy, String.format("start/end must return int %s, %s", one, dummy)},
+                {oneString, oneDouble, dummy, dummy,
+                        String.format("start and end parameter types must match: %s != %s", oneString.type(),
+                                oneDouble.type())},
+                {oneString, oneString, dummy, dummy,
+                        String.format("start/end and init parameter types must match: %s != %s", oneString.type(),
+                                dummy.type())},
+                {one, one, null, dummy, String.format("actual and expected body signatures must match: %s != %s",
+                        dummy.type(), dummy.type().appendParameterTypes(int.class))}
+        };
+    }
+
+    @Test(dataProvider = "countedLoopNegativeData")
+    public static void testCountedLoopNegative(MethodHandle start, MethodHandle end, MethodHandle init,
+                                               MethodHandle body, String msg) {
+        if (true)  return;  //%%%FIXME%%%%
+        boolean caught = false;
+        try {
+            MethodHandles.countedLoop(start, end, init, body);
+        } catch (IllegalArgumentException iae) {
+            assertEquals(msg, iae.getMessage());
+            caught = true;
+        }
+        assertTrue(caught);
     }
 
     @Test
@@ -442,50 +652,106 @@ public class LoopCombinatorTest {
         assertEquals(21, loop.invoke(new Integer[]{1, 2, 3, 4, 5, 6}));
     }
 
-    @Test
-    public static void testIterateReverse() throws Throwable {
-        MethodHandle loop = MethodHandles.iteratedLoop(null, Iterate.MH_reverseInit, Iterate.MH_reverseStep);
-        assertEquals(Iterate.MT_reverse, loop.type());
-        List<String> list = Arrays.asList("a", "b", "c", "d", "e");
-        List<String> reversedList = Arrays.asList("e", "d", "c", "b", "a");
-        assertEquals(reversedList, (List<String>) loop.invoke(list));
+    @DataProvider
+    static Object[][] iteratorInits() {
+        return new Object[][]{{Iterate.MH_iteratorFromList}, {Iterate.MH_iteratorFromIterable}, {null}};
     }
 
-    @Test
-    public static void testIterateLength() throws Throwable {
-        MethodHandle loop = MethodHandles.iteratedLoop(null, Iterate.MH_lengthInit, Iterate.MH_lengthStep);
-        assertEquals(Iterate.MT_length, loop.type());
-        List<Double> list = Arrays.asList(23.0, 148.0, 42.0);
-        assertEquals(list.size(), (int) loop.invoke(list));
+    @Test(dataProvider = "iteratorInits")
+    public static void testIterateReverse(MethodHandle iterator) throws Throwable {
+        // this test uses List as its loop state type; don't try to change that
+        if (iterator != null)
+            iterator = iterator.asType(iterator.type().changeParameterType(0, List.class));
+        for (int i = 0; i < 4; i++) {
+            MethodHandle init = Iterate.MH_reverseInit, body = Iterate.MH_reverseStep;
+            boolean snipInit = (i & 1) != 0, snipBody = (i & 2) != 0;
+            if (snipInit)  init = snip(init);
+            if (snipBody)  body = snip(body);
+            if (!snipInit && snipBody && iterator == null) {
+                // Body does not determine (A...), so the default guy just picks Iterable.
+                // If body insisted on (List), the default guy would adjust himself.
+                // Init has no authority to change the (A...), so must patch init.
+                // All according to plan!
+                init = slap(snip(init), Iterable.class);
+            }
+            System.out.println("testIterateReverse i="+i+" : "+Arrays.asList(iterator, init, body));
+            MethodHandle loop = MethodHandles.iteratedLoop(iterator, init, body);
+            MethodType expectedType = Iterate.MT_reverse;
+            if (iterator == null && i >= 2)
+                expectedType = expectedType.changeParameterType(0, Iterable.class);
+            assertEquals(expectedType, loop.type());
+            List<String> list = Arrays.asList("a", "b", "c", "d", "e");
+            List<String> reversedList = Arrays.asList("e", "d", "c", "b", "a");
+            assertEquals(reversedList, (List<String>) loop.invoke(list));
+        }
     }
 
-    @Test
-    public static void testIterateMap() throws Throwable {
-        MethodHandle loop = MethodHandles.iteratedLoop(null, Iterate.MH_mapInit, Iterate.MH_mapStep);
-        assertEquals(Iterate.MT_map, loop.type());
-        List<String> list = Arrays.asList("Hello", "world", "!");
-        List<String> upList = Arrays.asList("HELLO", "WORLD", "!");
-        assertEquals(upList, (List<String>) loop.invoke(list));
+    @Test(dataProvider = "iteratorInits")
+    public static void testIterateLength(MethodHandle iterator) throws Throwable {
+        MethodHandle body = Iterate.MH_lengthStep;
+        MethodHandle init = Iterate.MH_lengthInit;
+        MethodType expectedType = Iterate.MT_length;
+        int barity = body.type().parameterCount();
+        Class<?> iteratorSource = iterator == null ? null : iterator.type().parameterType(0);
+        if (iterator != null && iteratorSource != body.type().parameterType(barity-1)) {
+            // adjust body to accept the other type
+            body = body.asType(body.type().changeParameterType(barity-1, iteratorSource));
+            init = init.asType(init.type().changeParameterType(0, iteratorSource));
+            expectedType = expectedType.changeParameterType(0, iteratorSource);
+        }
+        for (;; init = snip(init)) {
+            System.out.println("testIterateLength.init = "+init);
+            MethodHandle loop = MethodHandles.iteratedLoop(iterator, init, body);
+            assertEquals(expectedType, loop.type());
+            List<Double> list = Arrays.asList(23.0, 148.0, 42.0);
+            assertEquals(list.size(), (int) loop.invoke(list));
+            if (init == null)  break;
+        }
     }
 
-    @Test
-    public static void testIteratePrint() throws Throwable {
-        MethodHandle loop = MethodHandles.iteratedLoop(null, null, Iterate.MH_printStep);
-        assertEquals(Iterate.MT_print, loop.type());
+    @Test(dataProvider = "iteratorInits")
+    public static void testIterateMap(MethodHandle iterator) throws Throwable {
+        MethodHandle body = Iterate.MH_mapStep;
+        MethodHandle init = Iterate.MH_mapInit;
+        MethodType expectedType = Iterate.MT_map;
+        int barity = body.type().parameterCount();
+        Class<?> iteratorSource = iterator == null ? null : iterator.type().parameterType(0);
+        if (iterator != null && iteratorSource != body.type().parameterType(barity-1)) {
+            // adjust body to accept the other type
+            body = body.asType(body.type().changeParameterType(barity-1, iteratorSource));
+            init = init.asType(init.type().changeParameterType(0, iteratorSource));
+            expectedType = expectedType.changeParameterType(0, iteratorSource);
+        }
+        for (; init != null; init = snip(init)) {
+            System.out.println("testIterateMap.init = "+init);
+            MethodHandle loop = MethodHandles.iteratedLoop(iterator, init, body);
+            assertEquals(expectedType, loop.type());
+            List<String> list = Arrays.asList("Hello", "world", "!");
+            List<String> upList = Arrays.asList("HELLO", "WORLD", "!");
+            assertEquals(upList, (List<String>) loop.invoke(list));
+        }
+    }
+
+    @Test(dataProvider = "iteratorInits")
+    public static void testIteratePrint(MethodHandle iterator) throws Throwable {
+        MethodHandle body = Iterate.MH_printStep;
+        MethodType expectedType = Iterate.MT_print;
+        int barity = body.type().parameterCount();
+        Class<?> iteratorSource = iterator == null ? null : iterator.type().parameterType(0);
+        if (iterator != null && iteratorSource != body.type().parameterType(barity-1)) {
+            // adjust body to accept the other type
+            body = body.asType(body.type().changeParameterType(barity-1, iteratorSource));
+            expectedType = expectedType.changeParameterType(0, iteratorSource);
+        }
+        MethodHandle loop = MethodHandles.iteratedLoop(iterator, null, body);
+        assertEquals(expectedType, loop.type());
         loop.invoke(Arrays.asList("hello", "world"));
     }
 
-    @Test
+    @Test(expectedExceptions = NullPointerException.class)
     public static void testIterateNullBody() {
-        boolean caught = false;
-        try {
-            MethodHandles.iteratedLoop(MethodHandles.empty(methodType(Iterator.class, int.class)),
-                    MethodHandles.identity(int.class), null);
-        } catch (IllegalArgumentException iae) {
-            assertEquals("iterated loop body must not be null", iae.getMessage());
-            caught = true;
-        }
-        assertTrue(caught);
+        MethodHandles.iteratedLoop(MethodHandles.empty(methodType(Iterator.class, int.class)),
+                MethodHandles.identity(int.class), null);
     }
 
     @DataProvider
@@ -500,15 +766,18 @@ public class LoopCombinatorTest {
         try {
             MethodHandles.iteratedLoop(MethodHandles.empty(v), null, MethodHandles.empty(v));
         } catch(IllegalArgumentException iae) {
-            assertEquals("iteratedLoop first argument must have Iterator return type", iae.getMessage());
+            assertEqualsFIXME("iteratedLoop first argument must have Iterator return type", iae.getMessage());
             caught = true;
         }
         assertTrue(caught);
     }
 
-    @Test
-    public static void testIterateVoidInit() throws Throwable {
-        MethodHandle loop = MethodHandles.iteratedLoop(null, Iterate.MH_voidInit, Iterate.MH_printStep);
+    @Test(dataProvider = "iteratorInits")
+    public static void testIterateVoidInit(MethodHandle iterator) throws Throwable {
+        // this test uses List as its loop state type; don't try to change that
+        if (iterator != null)
+            iterator = iterator.asType(iterator.type().changeParameterType(0, List.class));
+        MethodHandle loop = MethodHandles.iteratedLoop(iterator, Iterate.MH_voidInit, Iterate.MH_printStep);
         assertEquals(Iterate.MT_print, loop.type());
         loop.invoke(Arrays.asList("hello", "world"));
     }
@@ -516,60 +785,79 @@ public class LoopCombinatorTest {
     @DataProvider
     static Object[][] iterateParameters() {
         MethodType i = methodType(int.class);
-        MethodType sil_i = methodType(int.class, String.class, int.class, List.class);
+        MethodType sil_v = methodType(void.class, String.class, int.class, List.class);
+        MethodType isl_i = methodType(int.class, int.class, String.class, List.class);
+        MethodType isli_i = methodType(int.class, int.class, String.class, List.class, int.class);
         MethodType sl_v = methodType(void.class, String.class, List.class);
+        MethodType sli_v = methodType(void.class, String.class, List.class, int.class);
         MethodType l_it = methodType(Iterator.class, List.class);
+        MethodType li_i = methodType(int.class, List.class, int.class);
         MethodType li_it = methodType(Iterator.class, List.class, int.class);
+        MethodType il_it = methodType(Iterator.class, int.class, List.class);
         MethodType l_i = methodType(int.class, List.class);
-        MethodType _it = methodType(Iterator.class);
-        MethodType si_i = methodType(int.class, String.class, int.class);
-        MethodType s_i = methodType(int.class, String.class);
         return new Object[][]{
-                {null, null, sl_v},
-                {null, i, sil_i},
-                {null, l_i, sil_i},
-                {l_it, null, sl_v},
-                {l_it, i, sil_i},
-                {li_it, l_i, sil_i},
-                {l_it, null, sil_i},
-                {li_it, null, sl_v},
-                {_it, l_i, si_i},
-                {_it, l_i, s_i}
+                {l_it, null, sl_v, ""},
+                {l_it, l_i, isl_i, ""},
+                {l_it, null, sl_v, ""},
+                {li_it, li_i, isli_i, ""},
+                {il_it, null, sil_v, "inferred first loop argument must inherit from Iterable: int"},
+                {li_it, null, sli_v, ""},
+                {sl_v, null, sl_v, "iteratedLoop first argument must have Iterator return type"},
+                {li_it, l_it, sl_v,
+                        String.format("iterator and init parameter lists must match: %s != %s", li_it, l_it)},
+                {li_it, li_i, isl_i,
+                        String.format("body types (regard parameter types after index 0, and result type) must match: %s != %s",
+                                isl_i, isl_i.dropParameterTypes(0, 1).appendParameterTypes(int.class))}
         };
     }
 
     @Test(dataProvider = "iterateParameters")
-    public static void testIterateParameters(MethodType it, MethodType in, MethodType bo) throws Throwable {
+    public static void testIterateParameters(MethodType it, MethodType in, MethodType bo, String msg) {
+        boolean negative = !msg.isEmpty();
         MethodHandle iterator = it == null ? null : MethodHandles.empty(it);
         MethodHandle init = in == null ? null : MethodHandles.empty(in);
-        MethodHandle loop = MethodHandles.iteratedLoop(iterator, init, MethodHandles.empty(bo));
-        MethodType lt = loop.type();
-        if (it == null && in == null) {
-            assertEquals(bo.dropParameterTypes(0, 1), lt);
-        } else if (it == null) {
-            if (in.parameterCount() == 0) {
-                assertEquals(bo.dropParameterTypes(0, in.returnType() == void.class ? 1 : 2), lt);
-            } else {
-                assertEquals(methodType(bo.returnType(), in.parameterArray()), lt);
+        boolean caught = false;
+        MethodHandle loop = null;
+        try {
+            loop = MethodHandles.iteratedLoop(iterator, init, MethodHandles.empty(bo));
+        } catch (Throwable t) {
+            if (!negative) {
+                throw t;
             }
-        } else if (in == null) {
-            assertEquals(methodType(bo.returnType(), it.parameterArray()), lt);
-        } else if (it.parameterCount() > in.parameterCount()) {
-            assertEquals(methodType(bo.returnType(), it.parameterArray()), lt);
-        } else if (it.parameterCount() < in.parameterCount()) {
-            assertEquals(methodType(bo.returnType(), in.parameterArray()), lt);
+            assertEqualsFIXME(msg, t.getMessage());
+            caught = true;
+        }
+        if (negative) {
+            assertTrue(caught);
         } else {
-            // both it, in present; with equal parameter list lengths
-            assertEquals(it.parameterList(), lt.parameterList());
-            assertEquals(in.parameterList(), lt.parameterList());
-            assertEquals(bo.returnType(), lt.returnType());
+            MethodType lt = loop.type();
+            if (it == null && in == null) {
+                assertEquals(bo.dropParameterTypes(0, 1), lt);
+            } else if (it == null) {
+                if (in.parameterCount() == 0) {
+                    assertEquals(bo.dropParameterTypes(0, in.returnType() == void.class ? 1 : 2), lt);
+                } else {
+                    assertEquals(methodType(bo.returnType(), in.parameterArray()), lt);
+                }
+            } else if (in == null) {
+                assertEquals(methodType(bo.returnType(), it.parameterArray()), lt);
+            } else if (it.parameterCount() > in.parameterCount()) {
+                assertEquals(methodType(bo.returnType(), it.parameterArray()), lt);
+            } else if (it.parameterCount() < in.parameterCount()) {
+                assertEquals(methodType(bo.returnType(), in.parameterArray()), lt);
+            } else {
+                // both it, in present; with equal parameter list lengths
+                assertEquals(it.parameterList(), lt.parameterList());
+                assertEquals(in.parameterList(), lt.parameterList());
+                assertEquals(bo.returnType(), lt.returnType());
+            }
         }
     }
 
     @Test
     public static void testIteratorSubclass() throws Throwable {
         MethodHandle loop = MethodHandles.iteratedLoop(MethodHandles.empty(methodType(BogusIterator.class, List.class)),
-                null, MethodHandles.empty(methodType(void.class, String.class)));
+                null, MethodHandles.empty(methodType(void.class, String.class, List.class)));
         assertEquals(methodType(void.class, List.class), loop.type());
     }
 
@@ -892,7 +1180,7 @@ public class LoopCombinatorTest {
             return arg;
         }
 
-        static String step(int counter, String v, String arg) {
+        static String step(String v, int counter) {
             return "na " + v;
         }
 
@@ -904,15 +1192,15 @@ public class LoopCombinatorTest {
             System.out.print("hello");
         }
 
-        static int addCounter(int counter, int x) {
+        static int addCounter(int x, int counter) {
             return x + counter;
         }
 
-        static String stateBody(int counter, String s) {
+        static String stateBody(String s, int counter) {
             return "s" + s + counter;
         }
 
-        static String append(int counter, String localState, String loopArg) {
+        static String append(String localState, int counter, String loopArg) {
             if (null == localState) {
                 return loopArg + counter;
             }
@@ -922,12 +1210,12 @@ public class LoopCombinatorTest {
         static final Class<Counted> COUNTED = Counted.class;
 
         static final MethodType MT_start = methodType(String.class, String.class);
-        static final MethodType MT_step = methodType(String.class, int.class, String.class, String.class);
+        static final MethodType MT_step = methodType(String.class, String.class, int.class);
         static final MethodType MT_stepUpdateArray = methodType(void.class, int.class, int[].class);
         static final MethodType MT_printHello = methodType(void.class, int.class);
         static final MethodType MT_addCounter = methodType(int.class, int.class, int.class);
-        static final MethodType MT_stateBody = methodType(String.class, int.class, String.class);
-        static final MethodType MT_append = methodType(String.class, int.class, String.class, String.class);
+        static final MethodType MT_stateBody = methodType(String.class, String.class, int.class);
+        static final MethodType MT_append = methodType(String.class, String.class, int.class, String.class);
 
         static final MethodHandle MH_13;
         static final MethodHandle MH_m5;
@@ -984,7 +1272,7 @@ public class LoopCombinatorTest {
             return new ArrayList<>();
         }
 
-        static List<String> reverseStep(String e, List<String> r, List<String> l) {
+        static List<String> reverseStep(List<String> r, String e, List<String> l) {
             r.add(0, e);
             return r;
         }
@@ -993,7 +1281,7 @@ public class LoopCombinatorTest {
             return 0;
         }
 
-        static int lengthStep(Object o, int len, List<Double> l) {
+        static int lengthStep(int len, Object o, List<Double> l) {
             return len + 1;
         }
 
@@ -1001,7 +1289,7 @@ public class LoopCombinatorTest {
             return new ArrayList<>();
         }
 
-        static List<String> mapStep(String e, List<String> r, List<String> l) {
+        static List<String> mapStep(List<String> r, String e, List<String> l) {
             r.add(e.toUpperCase());
             return r;
         }
@@ -1010,8 +1298,16 @@ public class LoopCombinatorTest {
             System.out.print(s);
         }
 
-        static void voidInit() {
+        static void voidInit(List<String> l) {
             // empty
+        }
+
+        static ListIterator<?> iteratorFromList(List<?> l) {
+            return l.listIterator();
+        }
+
+        static Iterator<?> iteratorFromIterable(Iterable<?> l) {
+            return l.iterator();
         }
 
         static final Class<Iterate> ITERATE = Iterate.class;
@@ -1024,12 +1320,15 @@ public class LoopCombinatorTest {
         static final MethodType MT_mapInit = methodType(List.class, List.class);
 
         static final MethodType MT_sumStep = methodType(int.class, int.class, int.class, Integer[].class);
-        static final MethodType MT_reverseStep = methodType(List.class, String.class, List.class, List.class);
-        static final MethodType MT_lengthStep = methodType(int.class, Object.class, int.class, List.class);
-        static final MethodType MT_mapStep = methodType(List.class, String.class, List.class, List.class);
+        static final MethodType MT_reverseStep = methodType(List.class, List.class, String.class, List.class);
+        static final MethodType MT_lengthStep = methodType(int.class, int.class, Object.class, List.class);
+        static final MethodType MT_mapStep = methodType(List.class, List.class, String.class, List.class);
         static final MethodType MT_printStep = methodType(void.class, String.class, List.class);
 
-        static final MethodType MT_voidInit = methodType(void.class);
+        static final MethodType MT_voidInit = methodType(void.class, List.class);
+
+        static final MethodType MT_iteratorFromList = methodType(ListIterator.class, List.class);
+        static final MethodType MT_iteratorFromIterable = methodType(Iterator.class, Iterable.class);
 
         static final MethodHandle MH_sumIterator;
         static final MethodHandle MH_sumInit;
@@ -1046,6 +1345,9 @@ public class LoopCombinatorTest {
         static final MethodHandle MH_mapStep;
 
         static final MethodHandle MH_voidInit;
+
+        static final MethodHandle MH_iteratorFromList;
+        static final MethodHandle MH_iteratorFromIterable;
 
         static final MethodType MT_sum = methodType(int.class, Integer[].class);
         static final MethodType MT_reverse = methodType(List.class, List.class);
@@ -1066,6 +1368,8 @@ public class LoopCombinatorTest {
                 MH_mapStep = LOOKUP.findStatic(ITERATE, "mapStep", MT_mapStep);
                 MH_printStep = LOOKUP.findStatic(ITERATE, "printStep", MT_printStep);
                 MH_voidInit = LOOKUP.findStatic(ITERATE, "voidInit", MT_voidInit);
+                MH_iteratorFromList = LOOKUP.findStatic(ITERATE, "iteratorFromList", MT_iteratorFromList);
+                MH_iteratorFromIterable = LOOKUP.findStatic(ITERATE, "iteratorFromIterable", MT_iteratorFromIterable);
             } catch (Exception e) {
                 throw new ExceptionInInitializerError(e);
             }

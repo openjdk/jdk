@@ -86,13 +86,11 @@ final class NashornBottomLinker implements GuardingDynamicLinker, GuardingTypeCo
     private static final MethodHandle EMPTY_ELEM_SETTER =
             MH.dropArguments(EMPTY_PROP_SETTER, 0, Object.class);
 
-    private static final MethodHandle THROW_NO_SUCH_FUNCTION;
     private static final MethodHandle THROW_STRICT_PROPERTY_SETTER;
     private static final MethodHandle THROW_OPTIMISTIC_UNDEFINED;
 
     static {
         final Lookup lookup = new Lookup(MethodHandles.lookup());
-        THROW_NO_SUCH_FUNCTION = lookup.findOwnStatic("throwNoSuchFunction", Object.class, Object.class, Object.class);
         THROW_STRICT_PROPERTY_SETTER = lookup.findOwnStatic("throwStrictPropertySetter", void.class, Object.class, Object.class);
         THROW_OPTIMISTIC_UNDEFINED = lookup.findOwnStatic("throwOptimisticUndefined", Object.class, int.class);
     }
@@ -130,8 +128,6 @@ final class NashornBottomLinker implements GuardingDynamicLinker, GuardingTypeCo
         if (op != null) {
             final String operand = NashornCallSiteDescriptor.getOperand(desc);
             switch (op) {
-            case CALL_METHOD:
-                return adaptThrower(bindOperand(THROW_NO_SUCH_FUNCTION, operand), desc);
             case GET_METHOD:
             case GET_PROPERTY:
             case GET_ELEMENT: {
@@ -169,11 +165,6 @@ final class NashornBottomLinker implements GuardingDynamicLinker, GuardingTypeCo
         return MethodHandles
                 .dropArguments(handle, paramCount, targetType.parameterList().subList(paramCount, targetType.parameterCount()))
                 .asType(targetType);
-    }
-
-    @SuppressWarnings("unused")
-    private static Object throwNoSuchFunction(final Object self, final Object name) {
-        throw createTypeError(self, name, "no.such.function");
     }
 
     @SuppressWarnings("unused")
@@ -230,7 +221,6 @@ final class NashornBottomLinker implements GuardingDynamicLinker, GuardingTypeCo
         case NEW:
         case CALL:
             throw typeError("not.a.function", "null");
-        case CALL_METHOD:
         case GET_METHOD:
             throw typeError("no.such.function", getArgument(linkRequest), "null");
         case GET_PROPERTY:

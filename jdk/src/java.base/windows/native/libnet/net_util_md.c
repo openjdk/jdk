@@ -203,19 +203,6 @@ NET_ThrowCurrent(JNIEnv *env, char *msg)
 }
 
 void
-NET_ThrowSocketException(JNIEnv *env, char* msg)
-{
-    static jclass cls = NULL;
-    if (cls == NULL) {
-        cls = (*env)->FindClass(env, "java/net/SocketException");
-        CHECK_NULL(cls);
-        cls = (*env)->NewGlobalRef(env, cls);
-        CHECK_NULL(cls);
-    }
-    (*env)->ThrowNew(env, cls, msg);
-}
-
-void
 NET_ThrowByNameWithLastError(JNIEnv *env, const char *name,
                    const char *defaultDetail) {
     char errmsg[255];

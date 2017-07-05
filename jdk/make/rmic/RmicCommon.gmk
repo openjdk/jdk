@@ -37,7 +37,7 @@ else
   RMIC_MAIN_CLASS := sun.rmi.rmic.Main
 endif
 
-RMIC := $(JAVA) $(INTERIM_OVERRIDE_MODULES_ARGS) $(RMIC_MAIN_CLASS)
+RMIC := $(JAVA_SMALL) $(INTERIM_OVERRIDE_MODULES_ARGS) $(RMIC_MAIN_CLASS)
 
 CLASSES_DIR := $(JDK_OUTPUTDIR)/modules
 # NOTE: If the smart javac dependency management is reintroduced, these classes risk

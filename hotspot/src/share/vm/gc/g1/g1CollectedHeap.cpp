@@ -1479,7 +1479,7 @@ void G1CollectedHeap::resize_if_necessary_after_full_collection() {
                               "Capacity: " SIZE_FORMAT "B occupancy: " SIZE_FORMAT "B min_desired_capacity: " SIZE_FORMAT "B (" UINTX_FORMAT " %%)",
                               capacity_after_gc, used_after_gc, minimum_desired_capacity, MinHeapFreeRatio);
 
-    expand(expand_bytes);
+    expand(expand_bytes, _workers);
 
     // No expansion, now see if we want to shrink
   } else if (capacity_after_gc > maximum_desired_capacity) {
@@ -1599,7 +1599,7 @@ HeapWord* G1CollectedHeap::expand_and_allocate(size_t word_size, AllocationConte
                             word_size * HeapWordSize);
 
 
-  if (expand(expand_bytes)) {
+  if (expand(expand_bytes, _workers)) {
     _hrm.verify_optional();
     _verifier->verify_region_sets_optional();
     return attempt_allocation_at_safepoint(word_size,
@@ -1609,7 +1609,7 @@ HeapWord* G1CollectedHeap::expand_and_allocate(size_t word_size, AllocationConte
   return NULL;
 }
 
-bool G1CollectedHeap::expand(size_t expand_bytes, double* expand_time_ms) {
+bool G1CollectedHeap::expand(size_t expand_bytes, WorkGang* pretouch_workers, double* expand_time_ms) {
   size_t aligned_expand_bytes = ReservedSpace::page_align_size_up(expand_bytes);
   aligned_expand_bytes = align_size_up(aligned_expand_bytes,
                                        HeapRegion::GrainBytes);
@@ -1626,7 +1626,7 @@ bool G1CollectedHeap::expand(size_t expand_bytes, double* expand_time_ms) {
   uint regions_to_expand = (uint)(aligned_expand_bytes / HeapRegion::GrainBytes);
   assert(regions_to_expand > 0, "Must expand by at least one region");
 
-  uint expanded_by = _hrm.expand_by(regions_to_expand);
+  uint expanded_by = _hrm.expand_by(regions_to_expand, pretouch_workers);
   if (expand_time_ms != NULL) {
     *expand_time_ms = (os::elapsedTime() - expand_heap_start_time_sec) * MILLIUNITS;
   }
@@ -1927,7 +1927,7 @@ jint G1CollectedHeap::initialize() {
   _cmThread = _cm->cmThread();
 
   // Now expand into the initial heap size.
-  if (!expand(init_byte_size)) {
+  if (!expand(init_byte_size, _workers)) {
     vm_shutdown_during_initialization("Failed to allocate initial heap.");
     return JNI_ENOMEM;
   }
@@ -3165,7 +3165,6 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
 
         assert(_verifier->check_cset_fast_test(), "Inconsistency in the InCSetState table.");
 
-        _cm->note_start_of_gc();
         // We call this after finalize_cset() to
         // ensure that the CSet has been finalized.
         _cm->verify_no_cset_oops();
@@ -3241,7 +3240,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
             // No need for an ergo logging here,
             // expansion_amount() does this when it returns a value > 0.
             double expand_ms;
-            if (!expand(expand_bytes, &expand_ms)) {
+            if (!expand(expand_bytes, _workers, &expand_ms)) {
               // We failed to expand the heap. Cannot do anything about it.
             }
             g1_policy()->phase_times()->record_expand_heap_time(expand_ms);
@@ -3251,7 +3250,6 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
         // We redo the verification but now wrt to the new CSet which
         // has just got initialized after the previous CSet was freed.
         _cm->verify_no_cset_oops();
-        _cm->note_end_of_gc();
 
         // This timing is only used by the ergonomics to handle our pause target.
         // It is unclear why this should not include the full pause. We will

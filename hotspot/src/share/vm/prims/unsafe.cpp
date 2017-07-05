@@ -272,6 +272,31 @@ public:
 
 // Get/PutObject must be special-cased, since it works with handles.
 
+// We could be accessing the referent field in a reference
+// object. If G1 is enabled then we need to register non-null
+// referent with the SATB barrier.
+
+#if INCLUDE_ALL_GCS
+static bool is_java_lang_ref_Reference_access(oop o, jlong offset) {
+  if (offset == java_lang_ref_Reference::referent_offset && o != NULL) {
+    Klass* k = o->klass();
+    if (InstanceKlass::cast(k)->reference_type() != REF_NONE) {
+      assert(InstanceKlass::cast(k)->is_subclass_of(SystemDictionary::Reference_klass()), "sanity");
+      return true;
+    }
+  }
+  return false;
+}
+#endif
+
+static void ensure_satb_referent_alive(oop o, jlong offset, oop v) {
+#if INCLUDE_ALL_GCS
+  if (UseG1GC && v != NULL && is_java_lang_ref_Reference_access(o, offset)) {
+    G1SATBCardTableModRefBS::enqueue(v);
+  }
+#endif
+}
+
 // These functions allow a null base pointer with an arbitrary address.
 // But if the base pointer is non-null, the offset should make some sense.
 // That is, it should be in the range [0, MAX_OBJECT_SIZE].
@@ -286,34 +311,9 @@ UNSAFE_ENTRY(jobject, Unsafe_GetObject(JNIEnv *env, jobject unsafe, jobject obj,
     v = *(oop*)index_oop_from_field_offset_long(p, offset);
   }
 
-  jobject ret = JNIHandles::make_local(env, v);
+  ensure_satb_referent_alive(p, offset, v);
 
-#if INCLUDE_ALL_GCS
-  // We could be accessing the referent field in a reference
-  // object. If G1 is enabled then we need to register non-null
-  // referent with the SATB barrier.
-  if (UseG1GC) {
-    bool needs_barrier = false;
-
-    if (ret != NULL) {
-      if (offset == java_lang_ref_Reference::referent_offset && obj != NULL) {
-        oop o = JNIHandles::resolve(obj);
-        Klass* k = o->klass();
-        if (InstanceKlass::cast(k)->reference_type() != REF_NONE) {
-          assert(InstanceKlass::cast(k)->is_subclass_of(SystemDictionary::Reference_klass()), "sanity");
-          needs_barrier = true;
-        }
-      }
-    }
-
-    if (needs_barrier) {
-      oop referent = JNIHandles::resolve(ret);
-      G1SATBCardTableModRefBS::enqueue(referent);
-    }
-  }
-#endif // INCLUDE_ALL_GCS
-
-  return ret;
+  return JNIHandles::make_local(env, v);
 } UNSAFE_END
 
 UNSAFE_ENTRY(void, Unsafe_PutObject(JNIEnv *env, jobject unsafe, jobject obj, jlong offset, jobject x_h)) {
@@ -343,6 +343,8 @@ UNSAFE_ENTRY(jobject, Unsafe_GetObjectVolatile(JNIEnv *env, jobject unsafe, jobj
   } else {
     (void)const_cast<oop&>(v = *(volatile oop*) addr);
   }
+
+  ensure_satb_referent_alive(p, offset, v);
 
   OrderAccess::acquire();
   return JNIHandles::make_local(env, v);
