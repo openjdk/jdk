@@ -225,15 +225,10 @@ void VM_CGC_Operation::release_and_notify_pending_list_lock() {
 
 void VM_CGC_Operation::doit() {
   TraceCPUTime tcpu(G1Log::finer(), true, gclog_or_tty);
-  GCTraceTime t(_printGCMessage, G1Log::fine(), true, G1CollectedHeap::heap()->gc_timer_cm(), G1CollectedHeap::heap()->concurrent_mark()->concurrent_gc_id());
-  SharedHeap* sh = SharedHeap::heap();
-  // This could go away if CollectedHeap gave access to _gc_is_active...
-  if (sh != NULL) {
-    IsGCActiveMark x;
-    _cl->do_void();
-  } else {
-    _cl->do_void();
-  }
+  G1CollectedHeap* g1h = G1CollectedHeap::heap();
+  GCTraceTime t(_printGCMessage, G1Log::fine(), true, g1h->gc_timer_cm(), g1h->concurrent_mark()->concurrent_gc_id());
+  IsGCActiveMark x;
+  _cl->do_void();
 }
 
 bool VM_CGC_Operation::doit_prologue() {
@@ -244,14 +239,12 @@ bool VM_CGC_Operation::doit_prologue() {
   }
 
   Heap_lock->lock();
-  SharedHeap::heap()->_thread_holds_heap_lock_for_gc = true;
   return true;
 }
 
 void VM_CGC_Operation::doit_epilogue() {
   // Note the relative order of the unlocks must match that in
   // VM_GC_Operation::doit_epilogue()
-  SharedHeap::heap()->_thread_holds_heap_lock_for_gc = false;
   Heap_lock->unlock();
   if (_needs_pll) {
     release_and_notify_pending_list_lock();

@@ -28,6 +28,7 @@
  *
  *  @author Daniel Fuchs
  *
+ *  @modules java.management/sun.management.jmxremote
  *  @run compile -XDignore.symbol.file=true -g LocalRMIServerSocketFactoryTest.java
  *  @run main LocalRMIServerSocketFactoryTest
  */

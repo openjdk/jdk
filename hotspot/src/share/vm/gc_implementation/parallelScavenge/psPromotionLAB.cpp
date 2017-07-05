@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,7 +103,7 @@ void PSPromotionLAB::flush() {
 }
 
 bool PSPromotionLAB::unallocate_object(HeapWord* obj, size_t obj_size) {
-  assert(Universe::heap()->is_in(obj), "Object outside heap");
+  assert(ParallelScavengeHeap::heap()->is_in(obj), "Object outside heap");
 
   if (contains(obj)) {
     HeapWord* object_end = obj + obj_size;
@@ -137,9 +137,7 @@ void PSOldPromotionLAB::flush() {
 #ifdef ASSERT
 
 bool PSYoungPromotionLAB::lab_is_valid(MemRegion lab) {
-  ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
-  assert(heap->kind() == CollectedHeap::ParallelScavengeHeap, "Sanity");
-
+  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   MutableSpace* to_space = heap->young_gen()->to_space();
   MemRegion used = to_space->used_region();
   if (used.contains(lab)) {
@@ -150,10 +148,9 @@ bool PSYoungPromotionLAB::lab_is_valid(MemRegion lab) {
 }
 
 bool PSOldPromotionLAB::lab_is_valid(MemRegion lab) {
-  ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
-  assert(heap->kind() == CollectedHeap::ParallelScavengeHeap, "Sanity");
   assert(_start_array->covered_region().contains(lab), "Sanity");
 
+  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   PSOldGen* old_gen = heap->old_gen();
   MemRegion used = old_gen->object_space()->used_region();
 

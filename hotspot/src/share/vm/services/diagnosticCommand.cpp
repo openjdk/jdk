@@ -32,6 +32,7 @@
 #include "services/diagnosticArgument.hpp"
 #include "services/diagnosticCommand.hpp"
 #include "services/diagnosticFramework.hpp"
+#include "services/writeableFlags.hpp"
 #include "services/heapDumper.hpp"
 #include "services/management.hpp"
 #include "utilities/macros.hpp"
@@ -50,6 +51,7 @@ void DCmdRegistrant::register_dcmds(){
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CommandLineDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<PrintSystemPropertiesDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<PrintVMFlagsDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<SetVMFlagDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<VMDynamicLibrariesDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<VMUptimeDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<SystemGCDCmd>(full_export, true, false));
@@ -62,6 +64,9 @@ void DCmdRegistrant::register_dcmds(){
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<SymboltableDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<StringtableDCmd>(full_export, true, false));
 #endif // INCLUDE_SERVICES
+#if INCLUDE_JVMTI
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JVMTIDataDumpDCmd>(full_export, true, false));
+#endif // INCLUDE_JVMTI
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ThreadDumpDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<RotateGCLogDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ClassLoaderStatsDCmd>(full_export, true, false));
@@ -76,6 +81,7 @@ void DCmdRegistrant::register_dcmds(){
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JMXStartRemoteDCmd>(jmx_agent_export_flags, true,false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JMXStartLocalDCmd>(jmx_agent_export_flags, true,false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JMXStopRemoteDCmd>(jmx_agent_export_flags, true,false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JMXStatusDCmd>(jmx_agent_export_flags, true,false));
 
 }
 
@@ -195,6 +201,46 @@ int PrintVMFlagsDCmd::num_arguments() {
     } else {
       return 0;
     }
+}
+
+SetVMFlagDCmd::SetVMFlagDCmd(outputStream* output, bool heap) :
+                                   DCmdWithParser(output, heap),
+  _flag("flag name", "The name of the flag we want to set",
+        "STRING", true),
+  _value("string value", "The value we want to set", "STRING", false) {
+  _dcmdparser.add_dcmd_argument(&_flag);
+  _dcmdparser.add_dcmd_argument(&_value);
+}
+
+void SetVMFlagDCmd::execute(DCmdSource source, TRAPS) {
+  const char* val = NULL;
+  if (_value.value() != NULL) {
+    val = _value.value();
+  }
+
+  FormatBuffer<80> err_msg("%s", "");
+  int ret = WriteableFlags::set_flag(_flag.value(), val, Flag::MANAGEMENT, err_msg);
+
+  if (ret != WriteableFlags::SUCCESS) {
+    output()->print_cr("%s", err_msg.buffer());
+  }
+}
+
+int SetVMFlagDCmd::num_arguments() {
+  ResourceMark rm;
+  SetVMFlagDCmd* dcmd = new SetVMFlagDCmd(NULL, false);
+  if (dcmd != NULL) {
+    DCmdMark mark(dcmd);
+    return dcmd->_dcmdparser.num_arguments();
+  } else {
+    return 0;
+  }
+}
+
+void JVMTIDataDumpDCmd::execute(DCmdSource source, TRAPS) {
+  if (JvmtiExport::should_post_data_dump()) {
+    JvmtiExport::post_data_dump();
+  }
 }
 
 void PrintSystemPropertiesDCmd::execute(DCmdSource source, TRAPS) {
@@ -661,6 +707,38 @@ void JMXStopRemoteDCmd::execute(DCmdSource source, TRAPS) {
 
     JavaValue result(T_VOID);
     JavaCalls::call_static(&result, ik, vmSymbols::stopRemoteAgent_name(), vmSymbols::void_method_signature(), CHECK);
+}
+
+JMXStatusDCmd::JMXStatusDCmd(outputStream *output, bool heap_allocated) :
+  DCmd(output, heap_allocated) {
+  // do nothing
+}
+
+void JMXStatusDCmd::execute(DCmdSource source, TRAPS) {
+  ResourceMark rm(THREAD);
+  HandleMark hm(THREAD);
+
+  // Load and initialize the sun.management.Agent class
+  // invoke getManagementAgentStatus() method to generate the status info
+  // throw java.lang.NoSuchMethodError if method doesn't exist
+
+  Handle loader = Handle(THREAD, SystemDictionary::java_system_loader());
+  Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::sun_management_Agent(), loader, Handle(), true, CHECK);
+  instanceKlassHandle ik (THREAD, k);
+
+  JavaValue result(T_OBJECT);
+  JavaCalls::call_static(&result, ik, vmSymbols::getAgentStatus_name(), vmSymbols::void_string_signature(), CHECK);
+
+  jvalue* jv = (jvalue*) result.get_value_addr();
+  oop str = (oop) jv->l;
+  if (str != NULL) {
+      char* out = java_lang_String::as_utf8_string(str);
+      if (out) {
+          output()->print_cr("%s", out);
+          return;
+      }
+  }
+  output()->print_cr("Error obtaining management agent status");
 }
 
 VMDynamicLibrariesDCmd::VMDynamicLibrariesDCmd(outputStream *output, bool heap_allocated) :

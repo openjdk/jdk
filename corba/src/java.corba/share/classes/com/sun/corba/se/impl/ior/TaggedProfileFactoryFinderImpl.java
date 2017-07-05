@@ -33,9 +33,6 @@ import com.sun.corba.se.impl.ior.IdentifiableFactoryFinderBase ;
 
 import org.omg.CORBA_2_3.portable.InputStream ;
 
-/**
- * @author
- */
 public class TaggedProfileFactoryFinderImpl extends
     IdentifiableFactoryFinderBase
 {

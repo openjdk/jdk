@@ -44,7 +44,7 @@ import sun.security.util.*;
  * the DNS representation for Internet mail addresses (wpolk.nist.gov
  * instead of wpolk@nist.gov) is not permitted; such identities are to
  * be encoded as rfc822Name.
- * <p>
+ *
  * @author Amit Kapoor
  * @author Hemma Prafullchandra
  */
@@ -186,9 +186,9 @@ public class DNSName implements GeneralNameInterface {
      * domain name comparisons for all present domain functions are done in a
      * case-insensitive manner, assuming an ASCII character set, and a high
      * order zero bit.
-     * <p>
+     *
      * @param inputName to be checked for being constrained
-     * @returns constraint type above
+     * @return constraint type above
      * @throws UnsupportedOperationException if name is not exact match, but narrowing and widening are
      *          not supported for this name type.
      */
@@ -228,7 +228,7 @@ public class DNSName implements GeneralNameInterface {
      * NameConstraints minimum and maximum bounds and for calculating
      * path lengths in name subtrees.
      *
-     * @returns distance of name from root
+     * @return distance of name from root
      * @throws UnsupportedOperationException if not supported for this name type
      */
     public int subtreeDepth() throws UnsupportedOperationException {

@@ -426,6 +426,9 @@ JVM_GetDeclaredClasses(JNIEnv *env, jclass ofClass);
 JNIEXPORT jclass JNICALL
 JVM_GetDeclaringClass(JNIEnv *env, jclass ofClass);
 
+JNIEXPORT jstring JNICALL
+JVM_GetSimpleBinaryName(JNIEnv *env, jclass ofClass);
+
 /* Generics support (JDK 1.5) */
 JNIEXPORT jstring JNICALL
 JVM_GetClassSignature(JNIEnv *env, jclass cls);

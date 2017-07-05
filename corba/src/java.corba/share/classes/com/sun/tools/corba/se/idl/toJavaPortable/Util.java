@@ -534,7 +534,7 @@ public class Util extends com.sun.tools.corba.se.idl.Util
   } // holderName
 
   /**
-   * <d61056>
+   * d61056
    **/
   public static String helperName (SymtabEntry entry, boolean qualifiedName)
   {
@@ -1412,7 +1412,7 @@ public class Util extends com.sun.tools.corba.se.idl.Util
   // <d62023>
   /**
    * @return true if the current setting of corbaLevel is within delta of
-   *    the range min <= corbaLevel <= max
+   *    the range {@code min <= corbaLevel <= max}
    **/
   public static boolean corbaLevel (float min, float max)
   {

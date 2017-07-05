@@ -145,15 +145,15 @@ public abstract class CompoundType extends Type {
 
     /**
      * Return true if this type implements
-     * isIDLEntity() && isException().
+     * {@code isIDLEntity() && isException()}.
      */
     public boolean isIDLEntityException () {
         return isIDLEntity() && isException();
     }
     /**
-     * Return true if isIDLEntity() && !isValueBase()
+     * Return true if {@code isIDLEntity() && !isValueBase()
      * && !isAbstractBase() && !isCORBAObject()
-     * && !isIDLEntityException().
+     * && !isIDLEntityException()}.
      */
     public boolean isBoxed () {
         return (isIDLEntity() && !isValueBase() &&
@@ -1984,7 +1984,7 @@ public abstract class CompoundType extends Type {
         }
 
         /**
-         * Return true if this is NOT a constructor && is not
+         * Return true if this is NOT a constructor {@code &&} is not
          * an attribute.
          */
         public boolean isNormalMethod () {

@@ -2,10 +2,10 @@
 .\" Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
 .\" Title: jdb
 .\" Language: English
-.\" Date: 2013ǯ11��21��
-.\" SectDesc: ���ܥġ���
+.\" Date: 2013年11月21日
+.\" SectDesc: 基本ツール
 .\" Software: JDK 8
-.\" Arch: ����
+.\" Arch: 汎用
 .\"
 .\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 .\"
@@ -28,7 +28,7 @@
 .\" questions.
 .\"
 .pl 99999
-.TH "jdb" "1" "2013ǯ11��21��" "JDK 8" "���ܥġ���"
+.TH "jdb" "1" "2013年11月21日" "JDK 8" "基本ツール"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -49,8 +49,8 @@
 .\" * MAIN CONTENT STARTS HERE *
 .\" -----------------------------------------------------------------
 .SH "NAME"
-jdb \- Java�ץ�åȥե����ࡦ�ץ��������Զ��򸡽Ф���ӽ������ޤ���
-.SH "����"
+jdb \- Javaプラットフォーム・プログラムの不具合を検出および修正します。
+.SH "概要"
 .sp
 .if n \{\
 .RS 4
@@ -64,25 +64,25 @@ jdb \- Java�ץ�åȥե����ࡦ�ץ��������Զ��򸡽Ф���ӽ������ޤ���
 .PP
 \fIoptions\fR
 .RS 4
-���ޥ�ɥ饤�󡦥��ץ���󡣥��ץ����򻲾Ȥ��Ƥ���������
+コマンドライン・オプション。オプションを参照してください。
 .RE
 .PP
 \fIclass\fRname
 .RS 4
-�ǥХå�����ᥤ�󡦥��饹��̾����
+デバッグするメイン・クラスの名前。
 .RE
 .PP
 \fIarguments\fR
 .RS 4
-class��\fImain()\fR�᥽�åɤ��Ϥ�������
+classの\fImain()\fRメソッドに渡す引数。
 .RE
-.SH "����"
+.SH "説明"
 .PP
-Java�ǥХå�(JDB)�ϡ�Java���饹�Ѥδ�ñ�ʥ��ޥ�ɥ饤�󡦥ǥХå��Ǥ���\fIjdb\fR���ޥ�ɤȤ��Υ��ץ�����JDB��ƤӽФ��ޤ���\fIjdb\fR���ޥ�ɤϡ�JDBA (Java Platform Debugger Architecture)����Ū�˼¹Ԥ�����������ޤ��ϥ�⡼�Ȥ�Java���ۥޥ���(JVM)�θ����ȥǥХå���Ԥ����Ȥ��Ǥ��ޤ���Java Platform Debugger Architecture (JDBA)
-(http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/jpda/index\&.html)�򻲾Ȥ��Ƥ���������
-.SS "JDB���å����γ���"
+Javaデバッガ(JDB)は、Javaクラス用の簡単なコマンドライン・デバッガです。\fIjdb\fRコマンドとそのオプションはJDBを呼び出します。\fIjdb\fRコマンドは、JDBA (Java Platform Debugger Architecture)を視覚的に実行し、ローカルまたはリモートのJava仮想マシン(JVM)の検査とデバッグを行うことができます。Java Platform Debugger Architecture (JDBA)
+(http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/jpda/index\&.html)を参照してください。
+.SS "JDBセッションの開始"
 .PP
-JDB���å����򳫻Ϥ���ˤ��͡�����ˡ������ޤ����Ǥ����ˤ˻��Ѥ����Τϡ��ǥХå����륢�ץꥱ�������Υᥤ�󡦥��饹����Ѥ��ơ�JDB���鿷����JVM��ư������ˡ�Ǥ������ޥ�ɥ饤��ǡ�\fIjava\fR���ޥ�ɤΤ�����\fIjdb\fR���ޥ�ɤ����Ϥ��ޤ������Ȥ��С����ץꥱ�������Υᥤ�󡦥��饹��\fIMyClass\fR�ξ��ϡ�JDB�Ķ��ǥǥХå�����Ȥ��˼��Υ��ޥ�ɤ���Ѥ��ޤ���
+JDBセッションを開始するには様々な方法があります。最も頻繁に使用されるのは、デバッグするアプリケーションのメイン・クラスを使用して、JDBから新しいJVMを起動する方法です。コマンドラインで、\fIjava\fRコマンドのかわりに\fIjdb\fRコマンドを入力します。たとえば、アプリケーションのメイン・クラスが\fIMyClass\fRの場合は、JDB環境でデバッグするときに次のコマンドを使用します。
 .sp
 .if n \{\
 .RS 4
@@ -94,9 +94,9 @@ jdb MyClass
 .RE
 .\}
 .PP
-������ˡ�ǵ�ư����ȡ�\fIjdb\fR���ޥ�ɤϡ����ꤵ�줿�ѥ�᡼������Ѥ���2���ܤ�JVM��ƤӽФ��ޤ������ˡ����ꤵ�줿���饹������ɤ��ơ����饹�κǽ��̿���¹Ԥ�������JVM����ߤ����ޤ���
+この方法で起動すると、\fIjdb\fRコマンドは、指定されたパラメータを使用して2つ目のJVMを呼び出します。次に、指定されたクラスをロードして、クラスの最初の命令を実行する前にJVMを停止させます。
 .PP
-\fIjdb\fR���ޥ�ɤΤ⤦1�Ĥλ�����ˡ�ϡ����Ǥ˼¹����JVM��jdb����³���뤳�ȤǤ���\fIjdb\fR���ޥ�ɤ���³����VM�򡢤��μ¹���˵�ư���뤿��ι�ʸ�򼡤˼����ޤ�������ϡ�����ץ��������ǥХå��ѥ饤�֥�������ɤ�����³�μ������ꤷ�ޤ���
+\fIjdb\fRコマンドのもう1つの使用方法は、すでに実行中のJVMにjdbを接続することです。\fIjdb\fRコマンドが接続するVMを、その実行中に起動するための構文を次に示します。これは、インプロセス・デバッグ用ライブラリをロードし、接続の種類を指定します。
 .sp
 .if n \{\
 .RS 4
@@ -108,7 +108,7 @@ java \-agentlib:jdwp=transport=dt_socket,server=y,suspend=n MyClass
 .RE
 .\}
 .PP
-���Υ��ޥ�ɤ���Ѥ��ơ�\fIjdb\fR���ޥ�ɤ�JVM����³�Ǥ��ޤ���
+次のコマンドを使用して、\fIjdb\fRコマンドをJVMに接続できます。
 .sp
 .if n \{\
 .RS 4
@@ -120,36 +120,36 @@ jdb \-attach 8000
 .RE
 .\}
 .PP
-���ξ�硢\fIjdb\fR���ޥ�ɤϿ�����JVM��ư���뤫���˴�¸��JVM����³����뤿�ᡢ\fIjdb\fR���ޥ�ɥ饤���\fIMyClass\fR�����ϻ��ꤷ�ޤ���
+この場合、\fIjdb\fRコマンドは新しいJVMを起動するかわりに既存のJVMに接続されるため、\fIjdb\fRコマンドラインに\fIMyClass\fR引数は指定しません。
 .PP
-�ǥХå���JVM����³����ˤ�¾�ˤ��͡�����ˡ�����ꡢ���٤�\fIjdb\fR���ޥ�ɤǥ��ݡ��Ȥ���Ƥ��ޤ�����³���ץ����ˤĤ��Ƥϡ�Java Platform Debugger Architecture�Υɥ�����Ȥ򻲾Ȥ��Ƥ���������
-.SS "����jdb���ޥ��"
+デバッガをJVMに接続するには他にも様々な方法があり、すべて\fIjdb\fRコマンドでサポートされています。接続オプションについては、Java Platform Debugger Architectureのドキュメントを参照してください。
+.SS "基本jdbコマンド"
 .PP
-����Ū��\fIjdb\fR���ޥ�ɤΰ����򼨤��ޤ���JDB�����ݡ��Ȥ��륳�ޥ�ɤϤ���ʳ��ˤ⤢�ꡢ������\fI\-help\fR���ץ�������Ѥ���ɽ���Ǥ��ޤ���
+基本的な\fIjdb\fRコマンドの一覧を示します。JDBがサポートするコマンドはこれ以外にもあり、それらは\fI\-help\fRオプションを使用して表示できます。
 .PP
-help�ޤ���?
+helpまたは?
 .RS 4
-\fIhelp\fR�ޤ���\fI?\fR���ޥ�ɤϡ�ǧ�����줿���ޥ�ɤΥꥹ�Ȥ˴ʷ���������դ���ɽ�����ޤ���
+\fIhelp\fRまたは\fI?\fRコマンドは、認識されたコマンドのリストに簡潔な説明を付けて表示します。
 .RE
 .PP
 run
 .RS 4
-JDB��ư���ƥ֥졼���ݥ���Ȥ����ꤷ�����Ȥˡ�\fIrun\fR���ޥ�ɤ���Ѥ��ơ��ǥХå����륢�ץꥱ�������μ¹Ԥ򳫻ϤǤ��ޤ���\fIrun\fR���ޥ�ɤϡ���¸��VM����³���Ƥ�����Ȥϰۤʤꡢ�ǥХå����륢�ץꥱ�������\fIjdb\fR���鵯ư�����Ȥ��ˤΤ߻��ѤǤ��ޤ���
+JDBを起動してブレークポイントを設定したあとに、\fIrun\fRコマンドを使用して、デバッグするアプリケーションの実行を開始できます。\fIrun\fRコマンドは、既存のVMに接続している場合とは異なり、デバッグするアプリケーションが\fIjdb\fRから起動したときにのみ使用できます。
 .RE
 .PP
 cont
 .RS 4
-�֥졼���ݥ���ȡ��㳰���ޤ��ϥ��ƥå׼¹Ԥθ�ǡ��ǥХå����륢�ץꥱ�������μ¹Ԥ��³���ޤ���
+ブレークポイント、例外、またはステップ実行の後で、デバッグするアプリケーションの実行を継続します。
 .RE
 .PP
 print
 .RS 4
-Java���֥������Ȥ���ӥץ�ߥƥ����ͤ�ɽ�����ޤ����ץ�ߥƥ��ַ����ѿ��ޤ��ϥե�����ɤξ��ˤϡ��ºݤ��ͤ����Ϥ���ޤ������֥������Ȥξ��ˤϡ�û�����������Ϥ���ޤ������֥������Ȥξܺ٤����������ˡ��õ���ˤϡ�dump���ޥ�ɤ򻲾Ȥ��Ƥ���������
+Javaオブジェクトおよびプリミティブ値を表示します。プリミティブ型の変数またはフィールドの場合には、実際の値が出力されます。オブジェクトの場合には、短い説明が出力されます。オブジェクトの詳細を取得する方法を探すには、dumpコマンドを参照してください。
 .sp
-\fB����:\fR
-���������ѿ���ɽ������ˤϡ��ޤ�Ǥ��륯�饹��\fIjavac \-g\fR���ץ�������Ѥ��ƥ���ѥ��뤵��Ƥ���ɬ�פ�����ޤ���
+\fB注意:\fR
+ローカル変数を表示するには、含んでいるクラスが\fIjavac \-g\fRオプションを使用してコンパイルされている必要があります。
 .sp
-\fIprint\fR���ޥ�ɤϡ����˼����褦�ʡ��᥽�åɸƽФ�����Ѥ�����Τʤɡ�¿���δ�ñ��Java���򥵥ݡ��Ȥ��ޤ���
+\fIprint\fRコマンドは、次に示すような、メソッド呼出しを使用したものなど、多くの簡単なJava式をサポートします。
 .sp
 .if n \{\
 .RS 4
@@ -168,12 +168,12 @@ print new java\&.lang\&.String("Hello")\&.length()
 .PP
 dump
 .RS 4
-�ץ�ߥƥ����ͤξ�硢\fIdump\fR���ޥ�ɤ�\fIprint\fR���ޥ�ɤ�Ʊ��Ǥ������֥������Ȥξ�硢\fIdump\fR���ޥ�ɤǤϡ����֥�����������������Ƥ���ƥե�����ɤθ��ߤ��ͤ����Ϥ���ޤ���static�ե�����ɤ�instance�ե�����ɤ����Ϥ���ޤ���\fIdump\fR���ޥ�ɤǤϡ�\fIprint\fR���ޥ�ɤ�Ʊ���������ݡ��Ȥ���ޤ���
+プリミティブ値の場合、\fIdump\fRコマンドは\fIprint\fRコマンドと同一です。オブジェクトの場合、\fIdump\fRコマンドでは、オブジェクト内に定義されている各フィールドの現在の値が出力されます。staticフィールドとinstanceフィールドが出力されます。\fIdump\fRコマンドでは、\fIprint\fRコマンドと同じ式がサポートされます。
 .RE
 .PP
 threads
 .RS 4
-���߼¹���Υ���åɤ����ɽ�����ޤ�������åɤ��Ȥˡ�̾���ȸ��ߤξ��֡������¾�Υ��ޥ�ɤ˻��ѤǤ��륤��ǥå��������Ϥ���ޤ���������Ǥϡ�����åɡ�����ǥå�����4�Ǥ��ꡢ����åɤ�\fIjava\&.lang\&.Thread\fR�Υ��󥹥��󥹤ǡ�����åɤ�̾����\fImain\fR�Ǥ��ꡢ���߼¹���Ǥ���
+現在実行中のスレッドを一覧表示します。スレッドごとに、名前と現在の状態、および他のコマンドに使用できるインデックスが出力されます。この例では、スレッド・インデックスは4であり、スレッドは\fIjava\&.lang\&.Thread\fRのインスタンスで、スレッドの名前は\fImain\fRであり、現在実行中です。
 .sp
 .if n \{\
 .RS 4
@@ -188,20 +188,20 @@ threads
 .PP
 thread
 .RS 4
-���ߤΥ���åɤˤ��륹��åɤ����򤷤ޤ���¿����\fIjdb\fR���ޥ�ɤϡ����ߤΥ���åɤ�����˴�Ť��Ƽ¹Ԥ���ޤ�������åɤϡ�threads���ޥ�ɤ�������������åɡ�����ǥå����ȤȤ�˻��ꤷ�ޤ���
+現在のスレッドにするスレッドを選択します。多くの\fIjdb\fRコマンドは、現在のスレッドの設定に基づいて実行されます。スレッドは、threadsコマンドで説明したスレッド・インデックスとともに指定します。
 .RE
 .PP
 where
 .RS 4
-��������ꤷ�ʤ���\fIwhere\fR���ޥ�ɤ�¹Ԥ���ȡ����ߤΥ���åɤΥ����å�������פ���ޤ���\fIwhere\fR
-\fIall\fR���ޥ�ɤϡ����ߤΥ���åɡ����롼�פˤ��륹��åɤΥ����å��򤹤٤ƥ���פ��ޤ���\fIwhere\fR
-\fIthreadindex\fR���ޥ�ɤϡ����ꤵ�줿����åɤΥ����å������פ��ޤ���
+引数を指定しないで\fIwhere\fRコマンドを実行すると、現在のスレッドのスタックがダンプされます。\fIwhere\fR
+\fIall\fRコマンドは、現在のスレッド・グループにあるスレッドのスタックをすべてダンプします。\fIwhere\fR
+\fIthreadindex\fRコマンドは、指定されたスレッドのスタックをダンプします。
 .sp
-���ߤΥ���åɤ�(�֥졼���ݥ���Ȥ�\fIsuspend\fR���ޥ�ɤˤ�ä�)���Ǥ��Ƥ�����ϡ����������ѿ��ȥե�����ɤ�\fIprint\fR���ޥ�ɤ�\fIdump\fR���ޥ�ɤ�ɽ���Ǥ��ޤ���\fIup\fR���ޥ�ɤ�\fIdown\fR���ޥ�ɤǡ��ɤΥ����å����ե졼��򸽺ߤΥ����å����ե졼��ˤ��뤫�����֤��Ȥ��Ǥ��ޤ���
+現在のスレッドが(ブレークポイントか\fIsuspend\fRコマンドによって)中断している場合は、ローカル変数とフィールドは\fIprint\fRコマンドと\fIdump\fRコマンドで表示できます。\fIup\fRコマンドと\fIdown\fRコマンドで、どのスタック・フレームを現在のスタック・フレームにするかを選ぶことができます。
 .RE
-.SS "�֥졼���ݥ����"
+.SS "ブレークポイント"
 .PP
-�֥졼���ݥ���Ȥϡ����ֹ�ޤ��ϥ᥽�åɤκǽ��̿���JDB������Ǥ��ޤ���������򼨤��ޤ���
+ブレークポイントは、行番号またはメソッドの最初の命令でJDBに設定できます。次に例を示します。
 .sp
 .RS 4
 .ie n \{\
@@ -211,18 +211,7 @@ where
 .sp -1
 .IP \(bu 2.3
 .\}
-���ޥ��\fIstop at MyClass:22\fR�ϡ�\fIMyClass\fR���ޤޤ�륽�������ե������22���ܤκǽ��̿��˥֥졼���ݥ���Ȥ����ꤷ�ޤ���
-.RE
-.sp
-.RS 4
-.ie n \{\
-\h'-04'\(bu\h'+03'\c
-.\}
-.el \{\
-.sp -1
-.IP \(bu 2.3
-.\}
-���ޥ��\fIstop in java\&.lang\&.String\&.length\fR�ϡ��᥽�å�\fIjava\&.lang\&.String\&.length\fR����Ƭ�˥֥졼���ݥ���Ȥ����ꤷ�ޤ���
+コマンド\fIstop at MyClass:22\fRは、\fIMyClass\fRが含まれるソース・ファイルの22行目の最初の命令にブレークポイントを設定します。
 .RE
 .sp
 .RS 4
@@ -233,106 +222,117 @@ where
 .sp -1
 .IP \(bu 2.3
 .\}
-���ޥ��\fIstop in MyClass\&.<clinit>\fR�ϡ�\fI<clinit>\fR����Ѥ���\fIMyClass\fR����Ū����������ɤ����ꤷ�ޤ���
+コマンド\fIstop in java\&.lang\&.String\&.length\fRは、メソッド\fIjava\&.lang\&.String\&.length\fRの先頭にブレークポイントを設定します。
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+コマンド\fIstop in MyClass\&.<clinit>\fRは、\fI<clinit>\fRを使用して\fIMyClass\fRの静的初期化コードを特定します。
 .RE
 .PP
-�᥽�åɤ������С������ɤ���Ƥ�����ˤϡ��᥽�åɤΰ����η�����ꤷ�ơ��֥졼���ݥ���Ȥ��Ф���Ŭ�ڤʥ᥽�åɤ����򤵤��褦�ˤ���ɬ�פ�����ޤ������Ȥ��С�\fIMyClass\&.myMethod(int,java\&.lang\&.String)\fR�ޤ���\fIMyClass\&.myMethod()\fR�Ȼ��ꤷ�ޤ���
+メソッドがオーバーロードされている場合には、メソッドの引数の型も指定して、ブレークポイントに対して適切なメソッドが選択されるようにする必要があります。たとえば、\fIMyClass\&.myMethod(int,java\&.lang\&.String)\fRまたは\fIMyClass\&.myMethod()\fRと指定します。
 .PP
-\fIclear\fR���ޥ�ɤϡ�\fIclear MyClass:45\fR�Τ褦�ʹ�ʸ����Ѥ��ƥ֥졼���ݥ���Ȥ������ޤ���\fIclear\fR����Ѥ��뤫����������ꤷ�ʤ���\fIstop\fR���ޥ�ɤ���Ѥ���ȡ��������ꤵ��Ƥ��뤹�٤ƤΥ֥졼���ݥ���Ȥ�ɽ������ޤ���\fIcont\fR���ޥ�ɤϼ¹Ԥ��³���ޤ���
-.SS "���ƥå׼¹�"
+\fIclear\fRコマンドは、\fIclear MyClass:45\fRのような構文を使用してブレークポイントを削除します。\fIclear\fRを使用するか、引数を指定しないで\fIstop\fRコマンドを使用すると、現在設定されているすべてのブレークポイントが表示されます。\fIcont\fRコマンドは実行を継続します。
+.SS "ステップ実行"
 .PP
-\fIstep\fR���ޥ�ɤϡ����ߤΥ����å����ե졼��ޤ��ϸƤӽФ��줿�᥽�å���ǡ����ιԤ�¹Ԥ��ޤ���\fInext\fR���ޥ�ɤϡ����ߤΥ����å����ե졼��μ��ιԤ�¹Ԥ��ޤ���
-.SS "�㳰"
+\fIstep\fRコマンドは、現在のスタック・フレームまたは呼び出されたメソッド内で、次の行を実行します。\fInext\fRコマンドは、現在のスタック・フレームの次の行を実行します。
+.SS "例外"
 .PP
-���������Ƥ��륹��åɤθƽФ������å���Τɤ��ˤ�\fIcatch\fRʸ���ʤ������㳰��ȯ������ȡ�JVM���̾�㳰�ȥ졼������Ϥ��ƽ�λ���ޤ�����������JDB�Ķ��Ǽ¹Ԥ��Ƥ�����ϡ���ȿ�Υ���������JDB�����椬���ޤ������ˡ�\fIjdb\fR���ޥ�ɤ���Ѥ����㳰�θ�������Ǥ��ޤ���
+スローしているスレッドの呼出しスタック上のどこにも\fIcatch\fR文がない場合に例外が発生すると、JVMは通常、例外トレースを出力して終了します。ただし、JDB環境で実行している場合は、違反のスロー時にJDBに制御が戻ります。次に、\fIjdb\fRコマンドを使用して例外の原因を診断します。
 .PP
-���Ȥ��С�\fIcatch java\&.io\&.FileNotFoundException\fR�ޤ���\fIcatch\fR
-\fImypackage\&.BigTroubleException\fR�Τ褦��\fIcatch\fR���ޥ�ɤ���Ѥ���ȡ��ǥХå����줿���ץꥱ�������ϡ�¾���㳰�����������줿�Ȥ�����ߤ��ޤ����㳰������Υ��饹�ޤ��ϥ��֥��饹�Υ��󥹥��󥹤ξ��ϡ����ץꥱ���������㳰�����������줿������ߤ��ޤ���
+たとえば、\fIcatch java\&.io\&.FileNotFoundException\fRまたは\fIcatch\fR
+\fImypackage\&.BigTroubleException\fRのように\fIcatch\fRコマンドを使用すると、デバッグされたアプリケーションは、他の例外がスローされたときに停止します。例外が特定のクラスまたはサブクラスのインスタンスの場合は、アプリケーションは例外がスローされた場所で停止します。
 .PP
-\fIignore\fR���ޥ�ɤ���Ѥ���ȡ�������\fIcatch\fR���ޥ�ɤθ��̤�̵���ˤʤ�ޤ���\fIignore\fR���ޥ�ɤǤϡ��ǥХå������JVM��������㳰��̵�뤻�����ǥХå��Τߤ�̵�뤷�ޤ���
-.SH "���ץ����"
+\fIignore\fRコマンドを使用すると、以前の\fIcatch\fRコマンドの効果が無効になります。\fIignore\fRコマンドでは、デバッグされるJVMは特定の例外を無視せず、デバッガのみを無視します。
+.SH "オプション"
 .PP
-���ޥ�ɥ饤���\fIjava\fR���ޥ�ɤΤ�����\fIjdb\fR���ޥ�ɤ���Ѥ����硢\fIjdb\fR���ޥ�ɤϡ�\fI\-D\fR��\fI\-classpath\fR��\fI\-X\fR�ʤɡ�\fIjava\fR���ޥ�ɤ�Ʊ�����Υ��ץ������������ޤ���\fIjdb\fR���ޥ�ɤϡ�����¾�˼��Υꥹ�Ȥˤ��륪�ץ������������ޤ���
+コマンドラインで\fIjava\fRコマンドのかわりに\fIjdb\fRコマンドを使用する場合、\fIjdb\fRコマンドは、\fI\-D\fR、\fI\-classpath\fR、\fI\-X\fRなど、\fIjava\fRコマンドと同じ数のオプションを受け入れます。\fIjdb\fRコマンドは、その他に次のリストにあるオプションを受け入れます。
 .PP
-�ǥХå���Ԥ�JVM�˥ǥХå�����³���뤿������ص������󶡤��뤿��ˡ�����¾�Υ��ץ���󤬥��ݡ��Ȥ���Ƥ��ޤ�����������³�����ؤ˴ؤ���ܺ٤ʥɥ�����Ȥϡ�Java Platform Debugger Architecture (JPDA)
-(http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/jpda/index\&.html)�򻲾Ȥ��Ƥ�������
+デバッグを行うJVMにデバッガを接続するための代替機構を提供するために、その他のオプションがサポートされています。これらの接続の代替に関する詳細なドキュメントは、Java Platform Debugger Architecture (JPDA)
+(http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/jpda/index\&.html)を参照してください
 .PP
 \-help
 .RS 4
-�إ�ס���å�������ɽ�����ޤ���
+ヘルプ・メッセージを表示します。
 .RE
 .PP
 \-sourcepath \fIdir1:dir2: \&. \&. \&.\fR
 .RS 4
-���ꤵ�줿�ѥ�����Ѥ��ơ����������ե�����򸡺����ޤ������Υ��ץ���󤬻��ꤵ��Ƥ��ʤ����ϡ��ǥե���ȡ��ѥ��Υɥå�(\&.)�����Ѥ���ޤ���
+指定されたパスを使用して、ソース・ファイルを検索します。このオプションが指定されていない場合は、デフォルト・パスのドット(\&.)が使用されます。
 .RE
 .PP
 \-attach \fIaddress\fR
 .RS 4
-�ǥե���Ȥ���³��������Ѥ��ơ��¹����JVM�˥ǥХå�����³���ޤ���
+デフォルトの接続機構を使用して、実行中のJVMにデバッガを接続します。
 .RE
 .PP
 \-listen \fIaddress\fR
 .RS 4
-�¹����JVM��ɸ��Υ��ͥ�������Ѥ��ƻ��ꤵ�줿���ɥ쥹����³����Τ��Ե����ޤ���
+実行中のJVMが標準のコネクタを使用して指定されたアドレスに接続するのを待機します。
 .RE
 .PP
 \-launch
 .RS 4
-�ǥХå����륢�ץꥱ��������JDB�ε�ư�夿�����˵�ư���ޤ���\fI\-launch\fR���ץ����ˤ�ꡢ\fIrun\fR���ޥ�ɤ�ɬ�פʤ��ʤ�ޤ����ǥХå����륢�ץꥱ�������ϡ���ư�塢������ץꥱ������󡦥��饹�������ɤ����ľ������ߤ��ޤ������λ����ǡ�ɬ�פʥ֥졼���ݥ���Ȥ����ꤷ��\fIcont\fR���ޥ�ɤ���Ѥ��Ƽ¹Ԥ��³�Ǥ��ޤ���
+デバッグするアプリケーションをJDBの起動後ただちに起動します。\fI\-launch\fRオプションにより、\fIrun\fRコマンドが必要なくなります。デバッグするアプリケーションは、起動後、初期アプリケーション・クラスがロードされる直前に停止します。その時点で、必要なブレークポイントを設定し、\fIcont\fRコマンドを使用して実行を継続できます。
 .RE
 .PP
 \-listconnectors
 .RS 4
-����JVM�����ѤǤ��륳�ͥ��������ɽ�����ޤ���
+このJVMで利用できるコネクタを一覧表示します。
 .RE
 .PP
 \-connect connector\-name:\fIname1=value1\fR
 .RS 4
-����ɽ�����줿�������ͤȻ���Υ��ͥ�������Ѥ��ƥ������å�JVM����³���ޤ���
+一覧表示された引数の値と指定のコネクタを使用してターゲットJVMに接続します。
 .RE
 .PP
 \-dbgtrace [\fIflags\fR]
 .RS 4
-\fIjdb\fR���ޥ�ɤΥǥХå��ξ������Ϥ��ޤ���
+\fIjdb\fRコマンドのデバッグの情報を出力します。
 .RE
 .PP
 \-tclient
 .RS 4
-Java HotSpot VM���饤�������ǥ��ץꥱ��������¹Ԥ��ޤ���
+Java HotSpot VMクライアント内でアプリケーションを実行します。
 .RE
 .PP
 \-tserver
 .RS 4
-Java HotSpot VM�����С���ǥ��ץꥱ��������¹Ԥ��ޤ���
+Java HotSpot VMサーバー内でアプリケーションを実行します。
 .RE
 .PP
 \-J\fIoption\fR
 .RS 4
-JVM��\fIoption\fR���Ϥ��ޤ���option�ˤϡ�Java���ץꥱ�������ư�ġ���Υ�ե���󥹡��ڡ����˵��ܤ���Ƥ��륪�ץ�����1�Ļ��ꤷ�ޤ������Ȥ��С�\fI\-J\-Xms48m\fR�Ȼ��ꤹ��ȡ��������ȥ��åס����꡼��48MB�����ꤵ��ޤ���java(1)�򻲾Ȥ��Ƥ���������
+JVMに\fIoption\fRを渡します。optionには、Javaアプリケーション起動ツールのリファレンス・ページに記載されているオプションを1つ指定します。たとえば、\fI\-J\-Xms48m\fRと指定すると、スタートアップ・メモリーは48MBに設定されます。java(1)を参照してください。
 .RE
-.SH "�ǥХå��оݤΥץ�������ž������륪�ץ����"
+.SH "デバッグ対象のプロセスに転送されるオプション"
 .PP
 \-v \-verbose[:\fIclass\fR|gc|jni]
 .RS 4
-��Ĺ�⡼�ɤˤ��ޤ���
+冗長モードにします。
 .RE
 .PP
 \-D\fIname\fR=\fIvalue\fR
 .RS 4
-�����ƥࡦ�ץ��ѥƥ������ꤷ�ޤ���
+システム・プロパティを設定します。
 .RE
 .PP
 \-classpath \fIdir\fR
 .RS 4
-���饹�򸡺����뤿��Ρ�������Ƕ��ڤäƻ��ꤵ�줿�ǥ��쥯�ȥ�Υꥹ�ȡ�
+クラスを検索するための、コロンで区切って指定されたディレクトリのリスト。
 .RE
 .PP
 \-X\fIoption\fR
 .RS 4
-��ɸ�ॿ�����å�JVM���ץ����Ǥ���
+非標準ターゲットJVMオプションです。
 .RE
-.SH "��Ϣ����"
+.SH "関連項目"
 .sp
 .RS 4
 .ie n \{\

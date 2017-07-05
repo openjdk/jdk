@@ -136,13 +136,6 @@ java/lang/instrument/BootClassPath/BootClassPathTest.sh         macosx-all
 
 ############################################################################
 
-# jdk_management
-
-# 8058492
-java/lang/management/ThreadMXBean/FindDeadlocks.java                                      generic-all
-
-############################################################################
-
 # jdk_jmx
 
 # 8030957
@@ -353,9 +346,6 @@ com/sun/jdi/RedefinePop.sh                                      generic-all
 # 8068645
 com/sun/jdi/CatchPatternTest.sh                                 generic-all
 
-# 8069402
-com/sun/jdi/ConnectedVMs.java					generic-all
-
 # 8067354
 com/sun/jdi/GetLocalVariables4Test.sh				windows-all
 
@@ -380,13 +370,7 @@ sun/tools/jcmd/TestJcmdSanity.java				windows-all
 # 8072131
 sun/tools/jmap/heapconfig/JMapHeapConfigTest.java macosx-all
 
-# 8027668
-sun/tools/jstatd/TestJstatdDefaults.java                generic-all
-sun/tools/jstatd/TestJstatdServer.java                  generic-all
-sun/tools/jstatd/TestJstatdPort.java                    generic-all
-sun/tools/jstatd/TestJstatdPortAndServer.java                    generic-all
-
-# 8046285 8027668
+# 8046285
 sun/tools/jstatd/TestJstatdExternalRegistry.java                generic-all
 
 # 6456333

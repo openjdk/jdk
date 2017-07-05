@@ -30,7 +30,7 @@ import java.util.StringTokenizer;
 /**
  *  This class is the entry point to parse different types of INS URL's.
  *
- *  @Author Hemanth
+ *  @author Hemanth
  */
 
 public class INSURLHandler {

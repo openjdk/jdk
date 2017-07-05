@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2013 SAP AG. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2013, 2015 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,9 +35,9 @@ class Aix {
   friend class os;
 
   // For signal-chaining
-  // highest so far (AIX 5.2) is SIGSAK (63)
+  // highest so far (AIX 5.2 - 6.1) is SIGSAK (63)
 #define MAXSIGNUM 63
-  // length of strings included in the libperfstat structures
+  // Length of strings included in the libperfstat structures.
 #define IDENTIFIER_LENGTH 64
 
   static struct sigaction sigact[MAXSIGNUM]; // saved preinstalled sigactions
@@ -111,22 +111,6 @@ class Aix {
   // (should be LDR_CNTRL DATAPSIZE because stack is allocated on heap by pthread lib)
   static int _stack_page_size;
 
-  // Default shm page size. Read: what page size shared memory will be backed
-  // with if no page size was set explicitly using shmctl(SHM_PAGESIZE).
-  // Should be LDR_CNTRL SHMPSIZE.
-  static size_t _shm_default_page_size;
-
-  // True if sys V shm can be used with 64K pages dynamically.
-  // (via shmctl(.. SHM_PAGESIZE..). Should be true for AIX 53 and
-  // newer / PASE V6R1 and newer. (0 or 1, -1 if not initialized)
-  static int _can_use_64K_pages;
-
-  // True if sys V shm can be used with 16M pages dynamically.
-  // (via shmctl(.. SHM_PAGESIZE..). Only true on AIX 5.3 and
-  // newer, if the system was set up to use 16M pages and the
-  // jvm has enough user rights. (0 or 1, -1 if not initialized)
-  static int _can_use_16M_pages;
-
   static julong available_memory();
   static julong physical_memory() { return _physical_memory; }
   static void initialize_system_info();
@@ -135,20 +119,12 @@ class Aix {
   // one of Aix::on_pase(), Aix::os_version().
   static void initialize_os_info();
 
-  static int commit_memory_impl(char* addr, size_t bytes, bool exec);
-  static int commit_memory_impl(char* addr, size_t bytes,
-                                size_t alignment_hint, bool exec);
-
   // Scan environment for important settings which might effect the
   // VM. Trace out settings. Warn about invalid settings and/or
   // correct them.
   //
   // Must run after os::Aix::initialue_os_info().
   static void scan_environment();
-
-  // Retrieve information about multipage size support. Will initialize
-  // _page_size, _stack_page_size, _can_use_64K_pages/_can_use_16M_pages
-  static void query_multipage_support();
 
   // Initialize libo4 (on PASE) and libperfstat (on AIX). Call this
   // before relying on functions from either lib, e.g. Aix::get_meminfo().
@@ -187,27 +163,8 @@ class Aix {
     return _stack_page_size;
   }
 
-  // default shm page size. Read: what page size shared memory
-  // will be backed with if no page size was set explicitly using shmctl(SHM_PAGESIZE).
-  // Should be LDR_CNTRL SHMPSIZE.
-  static int shm_default_page_size(void) {
-    assert(_shm_default_page_size != -1, "not initialized");
-    return _shm_default_page_size;
-  }
-
-  // Return true if sys V shm can be used with 64K pages dynamically
-  // (via shmctl(.. SHM_PAGESIZE..).
-  static bool can_use_64K_pages () {
-    assert(_can_use_64K_pages != -1,  "not initialized");
-    return _can_use_64K_pages == 1 ? true : false;
-  }
-
-  // Return true if sys V shm can be used with 16M pages dynamically.
-  // (via shmctl(.. SHM_PAGESIZE..).
-  static bool can_use_16M_pages () {
-    assert(_can_use_16M_pages != -1,  "not initialized");
-    return _can_use_16M_pages == 1 ? true : false;
-  }
+  // This is used to scale stack space (guard pages etc.). The name is somehow misleading.
+  static int vm_default_page_size(void ) { return 8*K; }
 
   static address   ucontext_get_pc(const ucontext_t* uc);
   static intptr_t* ucontext_get_sp(ucontext_t* uc);
@@ -267,6 +224,11 @@ class Aix {
   static int os_version () {
     assert(_os_version != -1, "not initialized");
     return _os_version;
+  }
+
+  // Convenience method: returns true if running on PASE V5R4 or older.
+  static bool on_pase_V5R4_or_older() {
+    return on_pase() && os_version() <= 0x0504;
   }
 
   // Convenience method: returns true if running on AIX 5.3 or older.

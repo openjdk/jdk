@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  * @summary test config (0,0,1,0): declared 2-arg in agent class
  * @author Daniel D. Daugherty, Sun Microsystems
  *
+ * @modules java.instrument
  * @run shell ../MakeJAR3.sh InheritAgent0010
  * @run main/othervm -javaagent:InheritAgent0010.jar DummyMain
  */

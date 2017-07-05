@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2013, 2015,Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
 * questions.
 */
 
-import sun.management.ManagementFactoryHelper;
 import com.sun.management.HotSpotDiagnosticMXBean;
 import com.sun.management.VMOption;
 
@@ -31,6 +30,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 import com.oracle.java.testlibrary.*;
+import java.lang.management.ManagementFactory;
 import sun.hotspot.WhiteBox;
 
 class DetermineMaxHeapForCompressedOops {
@@ -43,7 +43,8 @@ class DetermineMaxHeapForCompressedOops {
 class TestUseCompressedOopsErgoTools {
 
   private static long getCompressedClassSpaceSize() {
-    HotSpotDiagnosticMXBean diagnostic = ManagementFactoryHelper.getDiagnosticMXBean();
+    HotSpotDiagnosticMXBean diagnostic =
+        ManagementFactory.getPlatformMXBean(HotSpotDiagnosticMXBean.class);
 
     VMOption option = diagnostic.getVMOption("CompressedClassSpaceSize");
     return Long.parseLong(option.getValue());
@@ -174,4 +175,3 @@ class TestUseCompressedOopsErgoTools {
     return expect(flags, false, false, 0);
   }
 }
-

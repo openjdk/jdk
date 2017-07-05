@@ -171,8 +171,27 @@ static bool is_decipherable_compiled_frame(JavaThread* thread, frame* fr, nmetho
   // Now do we have a useful PcDesc?
   if (pc_desc == NULL ||
       pc_desc->scope_decode_offset() == DebugInformationRecorder::serialized_null) {
-    // No debug information available for this pc
-    // vframeStream would explode if we try and walk the frames.
+    // No debug information is available for this PC.
+    //
+    // vframeStreamCommon::fill_from_frame() will decode the frame depending
+    // on the state of the thread.
+    //
+    // Case #1: If the thread is in Java (state == _thread_in_Java), then
+    // the vframeStreamCommon object will be filled as if the frame were a native
+    // compiled frame. Therefore, no debug information is needed.
+    //
+    // Case #2: If the thread is in any other state, then two steps will be performed:
+    // - if asserts are enabled, found_bad_method_frame() will be called and
+    //   the assert in found_bad_method_frame() will be triggered;
+    // - if asserts are disabled, the vframeStreamCommon object will be filled
+    //   as if it were a native compiled frame.
+    //
+    // Case (2) is similar to the way interpreter frames are processed in
+    // vframeStreamCommon::fill_from_interpreter_frame in case no valid BCI
+    // was found for an interpreted frame. If asserts are enabled, the assert
+    // in found_bad_method_frame() will be triggered. If asserts are disabled,
+    // the vframeStreamCommon object will be filled afterwards as if the
+    // interpreter were at the point of entering into the method.
     return false;
   }
 
@@ -229,9 +248,10 @@ static bool is_decipherable_interpreted_frame(JavaThread* thread,
     // a valid method. Then again we may have caught an interpreter
     // frame in the middle of construction and the bci field is
     // not yet valid.
-
-    *method_p = method;
     if (!method->is_valid_method()) return false;
+    *method_p = method; // If the Method* found is invalid, it is
+                        // ignored by forte_fill_call_trace_given_top().
+                        // So set method_p only if the Method is valid.
 
     address bcp = fr->interpreter_frame_bcp();
     int bci = method->validate_bci_from_bcp(bcp);
@@ -245,18 +265,33 @@ static bool is_decipherable_interpreted_frame(JavaThread* thread,
 }
 
 
-// Determine if 'fr' can be used to find an initial Java frame.
-// Return false if it can not find a fully decipherable Java frame
-// (in other words a frame that isn't safe to use in a vframe stream).
-// Obviously if it can't even find a Java frame false will also be returned.
+// Determine if a Java frame can be found starting with the frame 'fr'.
 //
-// If we find a Java frame decipherable or not then by definition we have
-// identified a method and that will be returned to the caller via method_p.
-// If we can determine a bci that is returned also. (Hmm is it possible
-// to return a method and bci and still return false? )
+// Check the return value of find_initial_Java_frame and the value of
+// 'method_p' to decide on how use the results returned by this method.
 //
-// The initial Java frame we find (if any) is return via initial_frame_p.
+// If 'method_p' is not NULL, an initial Java frame has been found and
+// the stack can be walked starting from that initial frame. In this case,
+// 'method_p' points to the Method that the initial frame belongs to and
+// the initial Java frame is returned in initial_frame_p.
 //
+// find_initial_Java_frame() returns true if a Method has been found (i.e.,
+// 'method_p' is not NULL) and the initial frame that belongs to that Method
+// is decipherable.
+//
+// A frame is considered to be decipherable:
+//
+// - if the frame is a compiled frame and a PCDesc is available;
+//
+// - if the frame is an interpreter frame that is valid or the thread is
+//   state (_thread_in_native || state == _thread_in_vm || state == _thread_blocked).
+//
+// Note that find_initial_Java_frame() can return false even if an initial
+// Java method was found (e.g., there is no PCDesc available for the method).
+//
+// If 'method_p' is NULL, it was not possible to find a Java frame when
+// walking the stack starting from 'fr'. In this case find_initial_Java_frame
+// returns false.
 
 static bool find_initial_Java_frame(JavaThread* thread,
                                     frame* fr,
@@ -275,8 +310,6 @@ static bool find_initial_Java_frame(JavaThread* thread,
   // On the initial call to this method the frame we get may not be
   // recognizable to us. This should only happen if we are in a JRT_LEAF
   // or something called by a JRT_LEAF method.
-
-
 
   frame candidate = *fr;
 
@@ -332,9 +365,11 @@ static bool find_initial_Java_frame(JavaThread* thread,
       nmethod* nm = (nmethod*) candidate.cb();
       *method_p = nm->method();
 
-      // If the frame isn't fully decipherable then the default
-      // value for the bci is a signal that we don't have a bci.
-      // If we have a decipherable frame this bci value will
+      // If the frame is not decipherable, then the value of -1
+      // for the BCI is used to signal that no BCI is available.
+      // Furthermore, the method returns false in this case.
+      //
+      // If a decipherable frame is available, the BCI value will
       // not be used.
 
       *bci_p = -1;
@@ -345,9 +380,9 @@ static bool find_initial_Java_frame(JavaThread* thread,
 
       if (nm->is_native_method()) return true;
 
-      // If it isn't decipherable then we have found a pc that doesn't
-      // have a PCDesc that can get us a bci however we did find
-      // a method
+      // If the frame is not decipherable, then a PC was found
+      // that does not have a PCDesc from which a BCI can be obtained.
+      // Nevertheless, a Method was found.
 
       if (!is_decipherable_compiled_frame(thread, &candidate, nm)) {
         return false;
@@ -356,7 +391,7 @@ static bool find_initial_Java_frame(JavaThread* thread,
       // is_decipherable_compiled_frame may modify candidate's pc
       *initial_frame_p = candidate;
 
-      assert(nm->pc_desc_at(candidate.pc()) != NULL, "if it's decipherable then pc must be valid");
+      assert(nm->pc_desc_at(candidate.pc()) != NULL, "debug information must be available if the frame is decipherable");
 
       return true;
     }
@@ -386,45 +421,22 @@ static void forte_fill_call_trace_given_top(JavaThread* thd,
 
   frame initial_Java_frame;
   Method* method;
-  int bci;
+  int bci = -1; // assume BCI is not available for method
+                // update with correct information if available
   int count;
 
   count = 0;
   assert(trace->frames != NULL, "trace->frames must be non-NULL");
 
-  bool fully_decipherable = find_initial_Java_frame(thd, &top_frame, &initial_Java_frame, &method, &bci);
+  // Walk the stack starting from 'top_frame' and search for an initial Java frame.
+  find_initial_Java_frame(thd, &top_frame, &initial_Java_frame, &method, &bci);
 
-  // The frame might not be walkable but still recovered a method
-  // (e.g. an nmethod with no scope info for the pc)
-
+  // Check if a Java Method has been found.
   if (method == NULL) return;
 
   if (!method->is_valid_method()) {
     trace->num_frames = ticks_GC_active; // -2
     return;
-  }
-
-  // We got a Java frame however it isn't fully decipherable
-  // so it won't necessarily be safe to use it for the
-  // initial frame in the vframe stream.
-
-  if (!fully_decipherable) {
-    // Take whatever method the top-frame decoder managed to scrape up.
-    // We look further at the top frame only if non-safepoint
-    // debugging information is available.
-    count++;
-    trace->num_frames = count;
-    trace->frames[0].method_id = method->find_jmethod_id_or_null();
-    if (!method->is_native()) {
-      trace->frames[0].lineno = bci;
-    } else {
-      trace->frames[0].lineno = -3;
-    }
-
-    if (!initial_Java_frame.safe_for_sender(thd)) return;
-
-    RegisterMap map(thd, false);
-    initial_Java_frame = initial_Java_frame.sender(&map);
   }
 
   vframeStreamForte st(thd, initial_Java_frame, false);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,12 +26,15 @@
  * @bug 4909536
  * @summary Ensure that the Introspector does not retain refs to classes
  * @author Eamonn McManus
+ * @modules java.management
  * @run clean ClassLeakTest
  * @run build ClassLeakTest
  * @run main ClassLeakTest
  */
 
 import java.lang.ref.WeakReference;
+import java.io.File;
+import java.nio.file.Paths;
 import java.net.*;
 import java.util.*;
 
@@ -44,17 +47,16 @@ public class ClassLeakTest {
                            "Standard MBean does not retain a reference to " +
                            "the MBean's class");
 
-        ClassLoader myClassLoader = ClassLeakTest.class.getClassLoader();
-        if (!(myClassLoader instanceof URLClassLoader)) {
-            System.out.println("TEST INVALID: test's class loader is not " +
-                               "a URLClassLoader");
-            System.exit(1);
+
+        String[] cpaths = System.getProperty("test.classes", ".")
+                                .split(File.pathSeparator);
+        URL[] urls = new URL[cpaths.length];
+        for (int i=0; i < cpaths.length; i++) {
+            urls[i] = Paths.get(cpaths[i]).toUri().toURL();
         }
 
-        URLClassLoader myURLClassLoader = (URLClassLoader) myClassLoader;
-        URL[] urls = myURLClassLoader.getURLs();
         PrivateMLet mlet = new PrivateMLet(urls, null, false);
-        Class shadowClass = mlet.loadClass(TestMBean.class.getName());
+        Class<?> shadowClass = mlet.loadClass(TestMBean.class.getName());
         if (shadowClass == TestMBean.class) {
             System.out.println("TEST INVALID: MLet got original " +
                                "TestMBean not shadow");

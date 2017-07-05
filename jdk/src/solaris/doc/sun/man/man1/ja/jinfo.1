@@ -2,10 +2,10 @@
 .\" Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
 .\" Title: jinfo
 .\" Language: English
-.\" Date: 2013ǯ11��21��
-.\" SectDesc: �ȥ�֥륷�塼�ƥ��󥰡��ġ���
+.\" Date: 2013年11月21日
+.\" SectDesc: トラブルシューティング・ツール
 .\" Software: JDK 8
-.\" Arch: ����
+.\" Arch: 汎用
 .\"
 .\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 .\"
@@ -28,7 +28,7 @@
 .\" questions.
 .\"
 .pl 99999
-.TH "jinfo" "1" "2013ǯ11��21��" "JDK 8" "�ȥ�֥륷�塼�ƥ��󥰡��ġ���"
+.TH "jinfo" "1" "2013年11月21日" "JDK 8" "トラブルシューティング・ツール"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -49,8 +49,8 @@
 .\" * MAIN CONTENT STARTS HERE *
 .\" -----------------------------------------------------------------
 .SH "NAME"
-jinfo \- ����������������ޤ������Υ��ޥ�ɤϻŪ�ʤ�Τǡ����ݡ��Ȥ���Ƥ��ޤ���
-.SH "����"
+jinfo \- 構成情報を生成します。このコマンドは試験的なもので、サポートされていません。
+.SH "概要"
 .sp
 .if n \{\
 .RS 4
@@ -82,83 +82,83 @@ jinfo \- ����������������ޤ������Υ��ޥ�ɤϻŪ�ʤ�Τǡ����ݡ��Ȥ���Ƥ��ޤ
 .RE
 .\}
 .PP
-\fI���ץ����\fR
+\fIオプション\fR
 .RS 4
-���ޥ�ɥ饤�󡦥��ץ���󡣥��ץ����򻲾Ȥ��Ƥ���������
+コマンドライン・オプション。オプションを参照してください。
 .RE
 .PP
 \fIpid\fR
 .RS 4
-�������󤬽��Ϥ����ץ�����ID���ץ�������Java�ץ������Ǥ���ɬ�פ�����ޤ����ޥ����Ǽ¹Ԥ��Ƥ���Java�ץ������ΰ������������ˤϡ�jps(1)���ޥ�ɤ���Ѥ��ޤ���
+構成情報が出力されるプロセスID。プロセスはJavaプロセスである必要があります。マシン上で実行しているJavaプロセスの一覧を取得するには、jps(1)コマンドを使用します。
 .RE
 .PP
-\fI�¹Բ�ǽ�ե�����\fR
+\fI実行可能ファイル\fR
 .RS 4
-����������פκ�������Java�¹Բ�ǽ�ե����롣
+コア・ダンプの作成元のJava実行可能ファイル。
 .RE
 .PP
-\fI����\fR
+\fIコア\fR
 .RS 4
-�������󤬽��Ϥ���륳�����ե����롣
+構成情報が出力されるコア・ファイル。
 .RE
 .PP
 \fIremote\-hostname\-or\-IP\fR
 .RS 4
-��⡼�ȡ��ǥХå��������С���\fI�ۥ���̾\fR�ޤ���\fIIP\fR���ɥ쥹��jsadebugd(1)�򻲾Ȥ��Ƥ���������
+リモート・デバッグ・サーバーの\fIホスト名\fRまたは\fIIP\fRアドレス。jsadebugd(1)を参照してください。
 .RE
 .PP
 \fIserver\-id\fR
 .RS 4
-ʣ���ΥǥХå��������С���Ʊ��Υ�⡼�ȡ��ۥ��ȤǼ¹Ԥ��Ƥ�����Ρ����ץ�����ͭ��ID��
+複数のデバッグ・サーバーが同一のリモート・ホストで実行している場合の、オプション固有のID。
 .RE
-.SH "����"
+.SH "説明"
 .PP
-\fIjinfo\fR���ޥ�ɤϡ����ꤵ�줿Java�ץ������䥳�����ե�����ޤ��ϥ�⡼�ȡ��ǥХå��������С���Java�����������Ϥ��ޤ�����������ˤϡ�Java�����ƥࡦ�ץ��ѥƥ���Java���ۥޥ���(JVM)�Υ��ޥ�ɥ饤�󡦥ե饰���ޤޤ�Ƥ��ޤ������ꤵ�줿�ץ�������64�ӥå�JVM��Ǽ¹Ԥ���Ƥ����硢\fI\-J\-d64\fR���ץ�������ꤹ��ɬ�פ������礬����ޤ���������򼨤��ޤ���\fIjinfo\fR
-\fI\-J\-d64 \-sysprops pid\fR��
+\fIjinfo\fRコマンドは、指定されたJavaプロセスやコア・ファイルまたはリモート・デバッグ・サーバーのJava構成情報を出力します。構成情報には、Javaシステム・プロパティとJava仮想マシン(JVM)のコマンドライン・フラグが含まれています。指定されたプロセスが64ビットJVM上で実行されている場合、\fI\-J\-d64\fRオプションを指定する必要がある場合があります。次に例を示します。\fIjinfo\fR
+\fI\-J\-d64 \-sysprops pid\fR。
 .PP
-���Υ桼�ƥ���ƥ��ϥ��ݡ����оݳ��Ǥ��ꡢ�����JDK�Υ�꡼���Ǥ����ѤǤ��ʤ��ʤ��ǽ��������ޤ���\fIdbgeng\&.dll\fR��¸�ߤ��Ƥ��ʤ�Windows�����ƥ�Ǥϡ�Debugging Tools For Windows�򥤥󥹥ȡ��뤷�ʤ��Ȥ����Υġ��뤬�����ư��ޤ���\fIPATH\fR�Ķ��ѿ��ˤϡ��������åȡ��ץ������ˤ�äƻ��Ѥ����jvm\&.dll�ξ�ꡢ�ޤ��ϥ���å��塦����ס��ե����뤬�������줿��꤬�ޤޤ��褦�ˤ��Ƥ������������Ȥ��С�\fIset PATH=%JDK_HOME%\ejre\ebin\eclient;%PATH%\fR�Ǥ���
-.SH "���ץ����"
+このユーティリティはサポート対象外であり、将来のJDKのリリースでは利用できなくなる可能性があります。\fIdbgeng\&.dll\fRが存在していないWindowsシステムでは、Debugging Tools For Windowsをインストールしないとこれらのツールが正常に動作しません。\fIPATH\fR環境変数には、ターゲット・プロセスによって使用されるjvm\&.dllの場所、またはクラッシュ・ダンプ・ファイルが生成された場所が含まれるようにしてください。たとえば、\fIset PATH=%JDK_HOME%\ejre\ebin\eclient;%PATH%\fRです。
+.SH "オプション"
 .PP
 no\-option
 .RS 4
-���ޥ�ɥ饤�󡦥ե饰�򡢥����ƥࡦ�ץ��ѥƥ�̾���ͤΥڥ��ȤȤ�˽��Ϥ��ޤ���
+コマンドライン・フラグを、システム・プロパティ名と値のペアとともに出力します。
 .RE
 .PP
 \-flag \fIname\fR
 .RS 4
-���ꤵ�줿���ޥ�ɥ饤�󡦥ե饰��̾�����ͤ���Ϥ��ޤ���
+指定されたコマンドライン・フラグの名前と値を出力します。
 .RE
 .PP
 \-flag \fI[+|\-]name\fR
 .RS 4
-���ꤵ�줿�֡��뷿�Υ��ޥ�ɥ饤�󡦥ե饰��ͭ���ޤ���̵���ˤ��ޤ���
+指定されたブール型のコマンドライン・フラグを有効または無効にします。
 .RE
 .PP
 \-flag \fIname=value\fR
 .RS 4
-���ꤵ�줿���ޥ�ɥ饤�󡦥ե饰����ꤵ�줿�ͤ����ꤷ�ޤ���
+指定されたコマンドライン・フラグを指定された値に設定します。
 .RE
 .PP
 \-flags
 .RS 4
-JVM���Ϥ���륳�ޥ�ɥ饤�󡦥ե饰����Ϥ��ޤ���
+JVMに渡されるコマンドライン・フラグを出力します。
 .RE
 .PP
 \-sysprops
 .RS 4
-Java�����ƥࡦ�ץ��ѥƥ���̾�����ͤΥڥ��Ȥ��ƽ��Ϥ��ޤ���
+Javaシステム・プロパティを名前と値のペアとして出力します。
 .RE
 .PP
 \-h
 .RS 4
-�إ�ס���å����������Ϥ���ޤ���
+ヘルプ・メッセージが出力されます。
 .RE
 .PP
 \-help
 .RS 4
-�إ�ס���å����������Ϥ���ޤ���
+ヘルプ・メッセージが出力されます。
 .RE
-.SH "��Ϣ����"
+.SH "関連項目"
 .sp
 .RS 4
 .ie n \{\

@@ -166,7 +166,7 @@ public class CDROutputObject extends CorbaOutputObject
      * Write the contents of the CDROutputStream to the specified
      * output stream.  Has the side-effect of pushing any current
      * Message onto the Message list.
-     * @param s The output stream to write to.
+     * @param connection The output stream to write to.
      */
     public void writeTo(CorbaConnection connection)
         throws java.io.IOException

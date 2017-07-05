@@ -42,10 +42,10 @@ public class PhaseCFG extends Phase {
 
   private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
     Type type      = db.lookupType("PhaseCFG");
-    numBlocksField = new CIntField(type.getCIntegerField("_num_blocks"), 0);
+    numBlocksField = new CIntField(type.getCIntegerField("_number_of_blocks"), 0);
     blocksField = type.getAddressField("_blocks");
     bbsField = type.getAddressField("_node_to_block_mapping");
-    brootField = type.getAddressField("_broot");
+    brootField = type.getAddressField("_root_block");
   }
 
   private static CIntField numBlocksField;

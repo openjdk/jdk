@@ -61,7 +61,7 @@ import com.sun.corba.se.impl.protocol.JIDLLocalCRDImpl ;
 * Its characteristics include:
 * <UL>
 * <LI>There is only one OA instance of the TOA.  Its OAId is { "TOA" }</LI>
-* <LI>There is not adapter manager.  The TOA manager ID is fixed.<LI>
+* <LI>There is not adapter manager.  The TOA manager ID is fixed.</LI>
 * <LI>State is the same as ORB state (TBD)</LI>
 * </UL>
 * Other requirements:
@@ -118,7 +118,7 @@ public class TOAImpl extends ObjectAdapterBase implements TOA
     * This will update thread Current, so that subsequent calls to
     * returnServant and removeCurrent from the same thread are for the
     * same request.
-    * @param request is the request containing the rest of the request
+    * @param info is the request containing the rest of the request
     */
     public void getInvocationServant( OAInvocationInfo info )
     {

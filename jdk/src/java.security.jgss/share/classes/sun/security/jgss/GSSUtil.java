@@ -59,6 +59,8 @@ public class GSSUtil {
                 GSSUtil.createOid("1.2.840.113554.1.2.2");
     public static final Oid GSS_KRB5_MECH_OID2 =
                 GSSUtil.createOid("1.3.5.1.5.2");
+    public static final Oid GSS_KRB5_MECH_OID_MS =
+                GSSUtil.createOid("1.2.840.48018.1.2.2");
 
     public static final Oid GSS_SPNEGO_MECH_OID =
                 GSSUtil.createOid("1.3.6.1.5.5.2");
@@ -101,7 +103,8 @@ public class GSSUtil {
 
     public static boolean isKerberosMech(Oid oid) {
         return (GSS_KRB5_MECH_OID.equals(oid) ||
-                GSS_KRB5_MECH_OID2.equals(oid));
+                GSS_KRB5_MECH_OID2.equals(oid) ||
+                GSS_KRB5_MECH_OID_MS.equals(oid));
 
     }
 

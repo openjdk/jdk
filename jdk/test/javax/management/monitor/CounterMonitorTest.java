@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  * @summary Test that the counter monitor, when running in difference mode,
  *          emits a notification every time the threshold is exceeded.
  * @author Luis-Miguel Alventosa, Shanliang JIANG
+ * @modules java.management
  * @run clean CounterMonitorTest
  * @run build CounterMonitorTest
  * @run main CounterMonitorTest

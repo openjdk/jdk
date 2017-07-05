@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ public class MinstTest {
         DemoRun demo;
 
         /* Run demo that uses JVMTI minst agent (no options) */
-        demo = new DemoRun("minst", "exclude=java/*,exclude=javax/*,exclude=com/*,exclude=sun/*" /* options to minst */ );
+        demo = new DemoRun("minst", "exclude=java/*,exclude=javax/*,exclude=com/*,exclude=jdk/*,exclude=sun/*" /* options to minst */ );
         demo.runit(args[0]);
 
         /* Make sure patterns in output look ok */

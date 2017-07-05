@@ -353,7 +353,7 @@ public final class ProviderList {
     /**
      * This method exists for compatibility with JCE only. It will be removed
      * once JCE has been changed to use the replacement method.
-     * @deprecated use getServices(List<ServiceId>) instead
+     * @deprecated use {@code getServices(List<ServiceId>)} instead
      */
     @Deprecated
     public List<Service> getServices(String type, List<String> algorithms) {

@@ -797,7 +797,7 @@ static void cleanup_sharedmem_resources(const char* dirname) {
   // Close the directory and reset the current working directory.
   close_directory_secure_cwd(dirp, saved_cwd_fd);
 
-  FREE_C_HEAP_ARRAY(char, dbuf, mtInternal);
+  FREE_C_HEAP_ARRAY(char, dbuf);
 }
 
 // Make the user specific temporary directory. Returns true if
@@ -1164,9 +1164,9 @@ static void mmap_attach_shared(const char* user, int vmid, PerfMemory::PerfMemor
   // store file, we don't follow them when attaching either.
   //
   if (!is_directory_secure(dirname)) {
-    FREE_C_HEAP_ARRAY(char, dirname, mtInternal);
+    FREE_C_HEAP_ARRAY(char, dirname);
     if (luser != user) {
-      FREE_C_HEAP_ARRAY(char, luser, mtInternal);
+      FREE_C_HEAP_ARRAY(char, luser);
     }
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
               "Process not found");

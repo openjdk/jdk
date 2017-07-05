@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,18 +42,16 @@ private:
   static TimeStamp          _stamp; // Timestamp since vm init done time
 
   // Management klasses
+  static Klass*             _diagnosticCommandImpl_klass;
+  static Klass*             _garbageCollectorExtImpl_klass;
+  static Klass*             _garbageCollectorMXBean_klass;
+  static Klass*             _gcInfo_klass;
+  static Klass*             _managementFactoryHelper_klass;
+  static Klass*             _memoryManagerMXBean_klass;
+  static Klass*             _memoryPoolMXBean_klass;
+  static Klass*             _memoryUsage_klass;
   static Klass*             _sensor_klass;
   static Klass*             _threadInfo_klass;
-  static Klass*             _memoryUsage_klass;
-  static Klass*             _memoryPoolMXBean_klass;
-  static Klass*             _memoryManagerMXBean_klass;
-  static Klass*             _garbageCollectorMXBean_klass;
-  static Klass*             _managementFactory_klass;
-  static Klass*             _garbageCollectorImpl_klass;
-  static Klass*             _diagnosticCommandImpl_klass;
-  static Klass*             _managementFactoryHelper_klass;
-  static Klass*             _gcInfo_klass;
-
   static Klass* load_and_initialize_klass(Symbol* sh, TRAPS);
 
 public:
@@ -93,17 +91,15 @@ public:
   static Klass* java_lang_management_MemoryPoolMXBean_klass(TRAPS);
   static Klass* java_lang_management_MemoryManagerMXBean_klass(TRAPS);
   static Klass* java_lang_management_GarbageCollectorMXBean_klass(TRAPS);
+  static Klass* sun_management_ManagementFactoryHelper_klass(TRAPS)
+      NOT_MANAGEMENT_RETURN_(NULL);
   static Klass* sun_management_Sensor_klass(TRAPS)
       NOT_MANAGEMENT_RETURN_(NULL);
-  static Klass* sun_management_ManagementFactory_klass(TRAPS)
-      NOT_MANAGEMENT_RETURN_(NULL);
-  static Klass* sun_management_GarbageCollectorImpl_klass(TRAPS)
+  static Klass* com_sun_management_internal_GarbageCollectorExtImpl_klass(TRAPS)
       NOT_MANAGEMENT_RETURN_(NULL);
   static Klass* com_sun_management_GcInfo_klass(TRAPS)
       NOT_MANAGEMENT_RETURN_(NULL);
-  static Klass* sun_management_DiagnosticCommandImpl_klass(TRAPS)
-      NOT_MANAGEMENT_RETURN_(NULL);
-  static Klass* sun_management_ManagementFactoryHelper_klass(TRAPS)
+  static Klass* com_sun_management_internal_DiagnosticCommandImpl_klass(TRAPS)
       NOT_MANAGEMENT_RETURN_(NULL);
 
   static instanceOop create_thread_info_instance(ThreadSnapshot* snapshot, TRAPS);

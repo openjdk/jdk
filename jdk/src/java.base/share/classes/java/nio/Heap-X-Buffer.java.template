@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 package java.nio;
 
+import sun.misc.Unsafe;
 
 /**
 #if[rw]
@@ -51,6 +52,16 @@ class Heap$Type$Buffer$RW$
     protected final int offset;
 #end[rw]
     */
+
+#if[byte]
+
+    // Cached unsafe-access object
+    private static final Unsafe unsafe = Bits.unsafe();
+
+    // Cached array base offset
+    private static final long arrayBaseOffset = unsafe.arrayBaseOffset($type$[].class);
+
+#end[byte]
 
     Heap$Type$Buffer$RW$(int cap, int lim) {            // package-private
 #if[rw]
@@ -130,6 +141,12 @@ class Heap$Type$Buffer$RW$
     protected int ix(int i) {
         return i + offset;
     }
+
+#if[byte]
+    private long byteOffset(long i) {
+        return arrayBaseOffset + i + offset;
+    }
+#end[byte]
 
     public $type$ get() {
         return hb[ix(nextGetIndex())];
@@ -256,18 +273,18 @@ class Heap$Type$Buffer$RW$
 #if[rw]
 
     public char getChar() {
-        return Bits.getChar(this, ix(nextGetIndex(2)), bigEndian);
+        return unsafe.getCharUnaligned(hb, byteOffset(nextGetIndex(2)), bigEndian);
     }
 
     public char getChar(int i) {
-        return Bits.getChar(this, ix(checkIndex(i, 2)), bigEndian);
+        return unsafe.getCharUnaligned(hb, byteOffset(checkIndex(i, 2)), bigEndian);
     }
 
 #end[rw]
 
     public $Type$Buffer putChar(char x) {
 #if[rw]
-        Bits.putChar(this, ix(nextPutIndex(2)), x, bigEndian);
+        unsafe.putCharUnaligned(hb, byteOffset(nextPutIndex(2)), x, bigEndian);
         return this;
 #else[rw]
         throw new ReadOnlyBufferException();
@@ -276,7 +293,7 @@ class Heap$Type$Buffer$RW$
 
     public $Type$Buffer putChar(int i, char x) {
 #if[rw]
-        Bits.putChar(this, ix(checkIndex(i, 2)), x, bigEndian);
+        unsafe.putCharUnaligned(hb, byteOffset(checkIndex(i, 2)), x, bigEndian);
         return this;
 #else[rw]
         throw new ReadOnlyBufferException();
@@ -307,18 +324,18 @@ class Heap$Type$Buffer$RW$
 #if[rw]
 
     public short getShort() {
-        return Bits.getShort(this, ix(nextGetIndex(2)), bigEndian);
+        return unsafe.getShortUnaligned(hb, byteOffset(nextGetIndex(2)), bigEndian);
     }
 
     public short getShort(int i) {
-        return Bits.getShort(this, ix(checkIndex(i, 2)), bigEndian);
+        return unsafe.getShortUnaligned(hb, byteOffset(checkIndex(i, 2)), bigEndian);
     }
 
 #end[rw]
 
     public $Type$Buffer putShort(short x) {
 #if[rw]
-        Bits.putShort(this, ix(nextPutIndex(2)), x, bigEndian);
+        unsafe.putShortUnaligned(hb, byteOffset(nextPutIndex(2)), x, bigEndian);
         return this;
 #else[rw]
         throw new ReadOnlyBufferException();
@@ -327,7 +344,7 @@ class Heap$Type$Buffer$RW$
 
     public $Type$Buffer putShort(int i, short x) {
 #if[rw]
-        Bits.putShort(this, ix(checkIndex(i, 2)), x, bigEndian);
+        unsafe.putShortUnaligned(hb, byteOffset(checkIndex(i, 2)), x, bigEndian);
         return this;
 #else[rw]
         throw new ReadOnlyBufferException();
@@ -358,18 +375,18 @@ class Heap$Type$Buffer$RW$
 #if[rw]
 
     public int getInt() {
-        return Bits.getInt(this, ix(nextGetIndex(4)), bigEndian);
+        return unsafe.getIntUnaligned(hb, byteOffset(nextGetIndex(4)), bigEndian);
     }
 
     public int getInt(int i) {
-        return Bits.getInt(this, ix(checkIndex(i, 4)), bigEndian);
+        return unsafe.getIntUnaligned(hb, byteOffset(checkIndex(i, 4)), bigEndian);
     }
 
 #end[rw]
 
     public $Type$Buffer putInt(int x) {
 #if[rw]
-        Bits.putInt(this, ix(nextPutIndex(4)), x, bigEndian);
+        unsafe.putIntUnaligned(hb, byteOffset(nextPutIndex(4)), x, bigEndian);
         return this;
 #else[rw]
         throw new ReadOnlyBufferException();
@@ -378,7 +395,7 @@ class Heap$Type$Buffer$RW$
 
     public $Type$Buffer putInt(int i, int x) {
 #if[rw]
-        Bits.putInt(this, ix(checkIndex(i, 4)), x, bigEndian);
+        unsafe.putIntUnaligned(hb, byteOffset(checkIndex(i, 4)), x, bigEndian);
         return this;
 #else[rw]
         throw new ReadOnlyBufferException();
@@ -409,18 +426,18 @@ class Heap$Type$Buffer$RW$
 #if[rw]
 
     public long getLong() {
-        return Bits.getLong(this, ix(nextGetIndex(8)), bigEndian);
+        return unsafe.getLongUnaligned(hb, byteOffset(nextGetIndex(8)), bigEndian);
     }
 
     public long getLong(int i) {
-        return Bits.getLong(this, ix(checkIndex(i, 8)), bigEndian);
+        return unsafe.getLongUnaligned(hb, byteOffset(checkIndex(i, 8)), bigEndian);
     }
 
 #end[rw]
 
     public $Type$Buffer putLong(long x) {
 #if[rw]
-        Bits.putLong(this, ix(nextPutIndex(8)), x, bigEndian);
+        unsafe.putLongUnaligned(hb, byteOffset(nextPutIndex(8)), x, bigEndian);
         return this;
 #else[rw]
         throw new ReadOnlyBufferException();
@@ -429,7 +446,7 @@ class Heap$Type$Buffer$RW$
 
     public $Type$Buffer putLong(int i, long x) {
 #if[rw]
-        Bits.putLong(this, ix(checkIndex(i, 8)), x, bigEndian);
+        unsafe.putLongUnaligned(hb, byteOffset(checkIndex(i, 8)), x, bigEndian);
         return this;
 #else[rw]
         throw new ReadOnlyBufferException();
@@ -460,18 +477,21 @@ class Heap$Type$Buffer$RW$
 #if[rw]
 
     public float getFloat() {
-        return Bits.getFloat(this, ix(nextGetIndex(4)), bigEndian);
+        int x = unsafe.getIntUnaligned(hb, byteOffset(nextPutIndex(4)), bigEndian);
+        return Float.intBitsToFloat(x);
     }
 
     public float getFloat(int i) {
-        return Bits.getFloat(this, ix(checkIndex(i, 4)), bigEndian);
+        int x = unsafe.getIntUnaligned(hb, byteOffset(checkIndex(i, 4)), bigEndian);
+        return Float.intBitsToFloat(x);
     }
 
 #end[rw]
 
     public $Type$Buffer putFloat(float x) {
 #if[rw]
-        Bits.putFloat(this, ix(nextPutIndex(4)), x, bigEndian);
+        int y = Float.floatToRawIntBits(x);
+        unsafe.putIntUnaligned(hb, byteOffset(nextPutIndex(4)), y, bigEndian);
         return this;
 #else[rw]
         throw new ReadOnlyBufferException();
@@ -480,7 +500,8 @@ class Heap$Type$Buffer$RW$
 
     public $Type$Buffer putFloat(int i, float x) {
 #if[rw]
-        Bits.putFloat(this, ix(checkIndex(i, 4)), x, bigEndian);
+        int y = Float.floatToRawIntBits(x);
+        unsafe.putIntUnaligned(hb, byteOffset(checkIndex(i, 4)), y, bigEndian);
         return this;
 #else[rw]
         throw new ReadOnlyBufferException();
@@ -511,18 +532,21 @@ class Heap$Type$Buffer$RW$
 #if[rw]
 
     public double getDouble() {
-        return Bits.getDouble(this, ix(nextGetIndex(8)), bigEndian);
+        long x = unsafe.getLongUnaligned(hb, byteOffset(nextGetIndex(8)), bigEndian);
+        return Double.longBitsToDouble(x);
     }
 
     public double getDouble(int i) {
-        return Bits.getDouble(this, ix(checkIndex(i, 8)), bigEndian);
+        long x = unsafe.getLongUnaligned(hb, byteOffset(checkIndex(i, 8)), bigEndian);
+        return Double.longBitsToDouble(x);
     }
 
 #end[rw]
 
     public $Type$Buffer putDouble(double x) {
 #if[rw]
-        Bits.putDouble(this, ix(nextPutIndex(8)), x, bigEndian);
+        long y = Double.doubleToRawLongBits(x);
+        unsafe.putLongUnaligned(hb, byteOffset(nextPutIndex(8)), y, bigEndian);
         return this;
 #else[rw]
         throw new ReadOnlyBufferException();
@@ -531,7 +555,8 @@ class Heap$Type$Buffer$RW$
 
     public $Type$Buffer putDouble(int i, double x) {
 #if[rw]
-        Bits.putDouble(this, ix(checkIndex(i, 8)), x, bigEndian);
+        long y = Double.doubleToRawLongBits(x);
+        unsafe.putLongUnaligned(hb, byteOffset(checkIndex(i, 8)), y, bigEndian);
         return this;
 #else[rw]
         throw new ReadOnlyBufferException();

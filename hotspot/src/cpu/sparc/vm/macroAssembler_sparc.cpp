@@ -3019,44 +3019,107 @@ void MacroAssembler::compiler_unlock_object(Register Roop, Register Rmark,
    // past the store that releases the lock.  But TSO is a strong memory model
    // and that particular flavor of barrier is a noop, so we can safely elide it.
    // Note that we use 1-0 locking by default for the inflated case.  We
-   // close the resultant (and rare) race by having contented threads in
+   // close the resultant (and rare) race by having contended threads in
    // monitorenter periodically poll _owner.
-   ld_ptr(Rmark, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner), Rscratch);
-   ld_ptr(Rmark, OM_OFFSET_NO_MONITOR_VALUE_TAG(recursions), Rbox);
-   xor3(Rscratch, G2_thread, Rscratch);
-   orcc(Rbox, Rscratch, Rbox);
-   brx(Assembler::notZero, false, Assembler::pn, done);
-   delayed()->
-   ld_ptr(Rmark, OM_OFFSET_NO_MONITOR_VALUE_TAG(EntryList), Rscratch);
-   ld_ptr(Rmark, OM_OFFSET_NO_MONITOR_VALUE_TAG(cxq), Rbox);
-   orcc(Rbox, Rscratch, G0);
-   if (EmitSync & 65536) {
-      Label LSucc ;
-      brx(Assembler::notZero, false, Assembler::pn, LSucc);
-      delayed()->nop();
-      ba(done);
-      delayed()->st_ptr(G0, Rmark, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner));
 
-      bind(LSucc);
-      st_ptr(G0, Rmark, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner));
-      if (os::is_MP()) { membar (StoreLoad); }
-      ld_ptr(Rmark, OM_OFFSET_NO_MONITOR_VALUE_TAG(succ), Rscratch);
-      andcc(Rscratch, Rscratch, G0);
-      brx(Assembler::notZero, false, Assembler::pt, done);
-      delayed()->andcc(G0, G0, G0);
-      add(Rmark, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner), Rmark);
-      mov(G2_thread, Rscratch);
-      cas_ptr(Rmark, G0, Rscratch);
-      // invert icc.zf and goto done
-      br_notnull(Rscratch, false, Assembler::pt, done);
-      delayed()->cmp(G0, G0);
-      ba(done);
-      delayed()->cmp(G0, 1);
+   if (EmitSync & 1024) {
+     // Emit code to check that _owner == Self
+     // We could fold the _owner test into subsequent code more efficiently
+     // than using a stand-alone check, but since _owner checking is off by
+     // default we don't bother. We also might consider predicating the
+     // _owner==Self check on Xcheck:jni or running on a debug build.
+     ld_ptr(Address(Rmark, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)), Rscratch);
+     orcc(Rscratch, G0, G0);
+     brx(Assembler::notZero, false, Assembler::pn, done);
+     delayed()->nop();
+   }
+
+   if (EmitSync & 512) {
+     // classic lock release code absent 1-0 locking
+     //   m->Owner = null;
+     //   membar #storeload
+     //   if (m->cxq|m->EntryList) == null goto Success
+     //   if (m->succ != null) goto Success
+     //   if CAS (&m->Owner,0,Self) != 0 goto Success
+     //   goto SlowPath
+     ld_ptr(Address(Rmark, OM_OFFSET_NO_MONITOR_VALUE_TAG(recursions)), Rbox);
+     orcc(Rbox, G0, G0);
+     brx(Assembler::notZero, false, Assembler::pn, done);
+     delayed()->nop();
+     st_ptr(G0, Address(Rmark, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
+     if (os::is_MP()) { membar(StoreLoad); }
+     ld_ptr(Address(Rmark, OM_OFFSET_NO_MONITOR_VALUE_TAG(EntryList)), Rscratch);
+     ld_ptr(Address(Rmark, OM_OFFSET_NO_MONITOR_VALUE_TAG(cxq)), Rbox);
+     orcc(Rbox, Rscratch, G0);
+     brx(Assembler::zero, false, Assembler::pt, done);
+     delayed()->
+     ld_ptr(Address(Rmark, OM_OFFSET_NO_MONITOR_VALUE_TAG(succ)), Rscratch);
+     andcc(Rscratch, Rscratch, G0);
+     brx(Assembler::notZero, false, Assembler::pt, done);
+     delayed()->andcc(G0, G0, G0);
+     add(Rmark, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner), Rmark);
+     mov(G2_thread, Rscratch);
+     cas_ptr(Rmark, G0, Rscratch);
+     cmp(Rscratch, G0);
+     // invert icc.zf and goto done
+     brx(Assembler::notZero, false, Assembler::pt, done);
+     delayed()->cmp(G0, G0);
+     br(Assembler::always, false, Assembler::pt, done);
+     delayed()->cmp(G0, 1);
    } else {
-      brx(Assembler::notZero, false, Assembler::pn, done);
-      delayed()->nop();
-      ba(done);
-      delayed()->st_ptr(G0, Rmark, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner));
+     // 1-0 form : avoids CAS and MEMBAR in the common case
+     // Do not bother to ratify that m->Owner == Self.
+     ld_ptr(Address(Rmark, OM_OFFSET_NO_MONITOR_VALUE_TAG(recursions)), Rbox);
+     orcc(Rbox, G0, G0);
+     brx(Assembler::notZero, false, Assembler::pn, done);
+     delayed()->
+     ld_ptr(Address(Rmark, OM_OFFSET_NO_MONITOR_VALUE_TAG(EntryList)), Rscratch);
+     ld_ptr(Address(Rmark, OM_OFFSET_NO_MONITOR_VALUE_TAG(cxq)), Rbox);
+     orcc(Rbox, Rscratch, G0);
+     if (EmitSync & 16384) {
+       // As an optional optimization, if (EntryList|cxq) != null and _succ is null then
+       // we should transfer control directly to the slow-path.
+       // This test makes the reacquire operation below very infrequent.
+       // The logic is equivalent to :
+       //   if (cxq|EntryList) == null : Owner=null; goto Success
+       //   if succ == null : goto SlowPath
+       //   Owner=null; membar #storeload
+       //   if succ != null : goto Success
+       //   if CAS(&Owner,null,Self) != null goto Success
+       //   goto SlowPath
+       brx(Assembler::zero, true, Assembler::pt, done);
+       delayed()->
+       st_ptr(G0, Address(Rmark, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
+       ld_ptr(Address(Rmark, OM_OFFSET_NO_MONITOR_VALUE_TAG(succ)), Rscratch);
+       andcc(Rscratch, Rscratch, G0) ;
+       brx(Assembler::zero, false, Assembler::pt, done);
+       delayed()->orcc(G0, 1, G0);
+       st_ptr(G0, Address(Rmark, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
+     } else {
+       brx(Assembler::zero, false, Assembler::pt, done);
+       delayed()->
+       st_ptr(G0, Address(Rmark, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
+     }
+     if (os::is_MP()) { membar(StoreLoad); }
+     // Check that _succ is (or remains) non-zero
+     ld_ptr(Address(Rmark, OM_OFFSET_NO_MONITOR_VALUE_TAG(succ)), Rscratch);
+     andcc(Rscratch, Rscratch, G0);
+     brx(Assembler::notZero, false, Assembler::pt, done);
+     delayed()->andcc(G0, G0, G0);
+     add(Rmark, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner), Rmark);
+     mov(G2_thread, Rscratch);
+     cas_ptr(Rmark, G0, Rscratch);
+     cmp(Rscratch, G0);
+     // invert icc.zf and goto done
+     // A slightly better v8+/v9 idiom would be the following:
+     //   movrnz Rscratch,1,Rscratch
+     //   ba done
+     //   xorcc Rscratch,1,G0
+     // In v8+ mode the idiom would be valid IFF Rscratch was a G or O register
+     brx(Assembler::notZero, false, Assembler::pt, done);
+     delayed()->cmp(G0, G0);
+     br(Assembler::always, false, Assembler::pt, done);
+     delayed()->cmp(G0, 1);
    }
 
    bind   (LStacked);
@@ -3632,23 +3695,11 @@ static inline void generate_satb_log_enqueue_if_necessary(bool with_frame) {
     if (satb_log_enqueue_with_frame == 0) {
       generate_satb_log_enqueue(with_frame);
       assert(satb_log_enqueue_with_frame != 0, "postcondition.");
-      if (G1SATBPrintStubs) {
-        tty->print_cr("Generated with-frame satb enqueue:");
-        Disassembler::decode((u_char*)satb_log_enqueue_with_frame,
-                             satb_log_enqueue_with_frame_end,
-                             tty);
-      }
     }
   } else {
     if (satb_log_enqueue_frameless == 0) {
       generate_satb_log_enqueue(with_frame);
       assert(satb_log_enqueue_frameless != 0, "postcondition.");
-      if (G1SATBPrintStubs) {
-        tty->print_cr("Generated frameless satb enqueue:");
-        Disassembler::decode((u_char*)satb_log_enqueue_frameless,
-                             satb_log_enqueue_frameless_end,
-                             tty);
-      }
     }
   }
 }
@@ -3841,12 +3892,6 @@ generate_dirty_card_log_enqueue_if_necessary(jbyte* byte_map_base) {
   if (dirty_card_log_enqueue == 0) {
     generate_dirty_card_log_enqueue(byte_map_base);
     assert(dirty_card_log_enqueue != 0, "postcondition.");
-    if (G1SATBPrintStubs) {
-      tty->print_cr("Generated dirty_card enqueue:");
-      Disassembler::decode((u_char*)dirty_card_log_enqueue,
-                           dirty_card_log_enqueue_end,
-                           tty);
-    }
   }
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  * @summary Tests the use of the subject delegation feature in the
  *          RMI connector
  * @author Luis-Miguel Alventosa
+ * @modules java.management/com.sun.jmx.remote.security
  * @run clean SubjectDelegation1Test SimpleStandard SimpleStandardMBean
  * @run build SubjectDelegation1Test SimpleStandard SimpleStandardMBean
  * @run main SubjectDelegation1Test policy11 ok
