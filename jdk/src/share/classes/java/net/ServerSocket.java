@@ -610,7 +610,7 @@ class ServerSocket implements java.io.Closeable {
     /**
      * Returns the binding state of the ServerSocket.
      *
-     * @return true if the ServerSocket succesfuly bound to an address
+     * @return true if the ServerSocket successfully bound to an address
      * @since 1.4
      */
     public boolean isBound() {

@@ -94,10 +94,10 @@ public interface Iterator<E> {
     }
 
     /**
-     * Performs the given action for each remaining element, in the order
-     * elements occur when iterating, until all elements have been processed or
-     * the action throws an exception.  Errors or runtime exceptions thrown by
-     * the action are relayed to the caller.
+     * Performs the given action for each remaining element until all elements
+     * have been processed or the action throws an exception.  Actions are
+     * performed in the order of iteration, if that order is specified.
+     * Exceptions thrown by the action are relayed to the caller.
      *
      * @implSpec
      * <p>The default implementation behaves as if:

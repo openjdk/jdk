@@ -26,7 +26,7 @@ import java.io.*;
 
 /**
  * @test
- * @bug 8010464
+ * @bug 8010464 8027570
  */
 
 public class URLPermissionTest {
@@ -110,6 +110,28 @@ public class URLPermissionTest {
         return new ActionImpliesTest(arg1, arg2, expected);
     }
 
+    static class HashCodeTest extends Test {
+        String arg1, arg2;
+        int hash;
+
+        HashCodeTest(String arg1, String arg2, int hash) {
+            this.arg1 = arg1;
+            this.arg2 = arg2;
+            this.hash = hash;
+        }
+
+        @Override
+        boolean execute() {
+            URLPermission p = new URLPermission(arg1, arg2);
+            int h = p.hashCode();
+            return h == hash;
+        }
+    }
+
+    static HashCodeTest hashtest(String arg1, String arg2, int expected) {
+        return new HashCodeTest(arg1, arg2, expected);
+    }
+
     static class URLEqualityTest extends Test {
         String arg1, arg2;
 
@@ -176,6 +198,11 @@ public class URLPermissionTest {
         extest("http://[foo.com]:99"),
         extest("http://[fec0::X]:99"),
         extest("http:")
+    };
+
+    static Test[] hashTests = {
+        hashtest("http://www.foo.com/path", "GET:X-Foo", 388644203),
+        hashtest("http:*", "*:*", 3255810)
     };
 
     static Test[] pathImplies2 = {
@@ -324,6 +351,17 @@ public class URLPermissionTest {
                 System.out.println ("equality test " + i + " OK");
             }
 
+        }
+
+        for (int i=0; i<hashTests.length; i++) {
+            HashCodeTest test = (HashCodeTest)hashTests[i];
+            boolean result = test.execute();
+            if (!result) {
+                System.out.printf ("test failed: %s %s %d\n", test.arg1, test.arg2, test.hash);
+                failed = true;
+            } else {
+                System.out.println ("hash test " + i + " OK");
+            }
         }
 
         for (int i=0; i<exceptionTests.length; i++) {

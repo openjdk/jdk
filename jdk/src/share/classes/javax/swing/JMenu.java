@@ -495,7 +495,7 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
      * In most cases, the delay is not observed for top level menus
      * or while dragging.  The default for <code>delay</code> is 0.
      * This method is a property of the look and feel code and is used
-     * to manage the idiosyncracies of the various UI implementations.
+     * to manage the idiosyncrasies of the various UI implementations.
      *
      *
      * @return the <code>delay</code> property
@@ -510,7 +510,7 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
      * it's own policy for observing the delay property.  In most cases,
      * the delay is not observed for top level menus or while dragging.
      * This method is a property of the look and feel code and is used
-     * to manage the idiosyncracies of the various UI implementations.
+     * to manage the idiosyncrasies of the various UI implementations.
      *
      * @param       d the number of milliseconds to delay
      * @exception   IllegalArgumentException if <code>d</code>

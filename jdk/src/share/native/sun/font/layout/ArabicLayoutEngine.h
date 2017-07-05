@@ -209,7 +209,7 @@ protected:
      * This method converts the Arabic Presentation Forms in the temp glyph array
      * into actual glyph indices using ArabicOpenTypeLayoutEngine::mapCharsToGlyps.
      *
-     * Input paramters:
+     * Input parameters:
      * @param tempGlyphs - the input presentation forms
      * @param tempCharIndices - the input character index array
      * @param tempGlyphCount - the number of Presentation Froms

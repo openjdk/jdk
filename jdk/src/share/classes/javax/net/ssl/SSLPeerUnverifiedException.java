@@ -46,7 +46,7 @@ class SSLPeerUnverifiedException extends SSLException
 
     /**
      * Constructs an exception reporting that the SSL peer's
-     * identity has not been verifiied.
+     * identity has not been verified.
      *
      * @param reason describes the problem.
      */

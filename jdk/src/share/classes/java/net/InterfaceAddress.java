@@ -56,7 +56,7 @@ public class InterfaceAddress {
     }
 
     /**
-     * Returns an {@code InetAddress} for the brodcast address
+     * Returns an {@code InetAddress} for the broadcast address
      * for this InterfaceAddress.
      * <p>
      * Only IPv4 networks have broadcast address therefore, in the case

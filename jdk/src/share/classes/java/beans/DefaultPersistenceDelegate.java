@@ -273,7 +273,7 @@ public class DefaultPersistenceDelegate extends PersistenceDelegate {
         TableModelListener (the JTable itself in this case) to the supplied
         table model.
 
-        We do not need to explictly add these listeners to the model in an
+        We do not need to explicitly add these listeners to the model in an
         archive as they will be added automatically by, in the above case,
         the JTable's "setModel" method. In some cases, we must specifically
         avoid trying to do this since the listener may be an inner class

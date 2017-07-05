@@ -69,7 +69,7 @@ import java.lang.ref.*;
  * exactly as defined in the HTML document.
  * <p>
  * The modeling of HTML is provided by the class <code>HTMLDocument</code>.
- * Its documention describes the details of how the HTML is modeled.
+ * Its documentation describes the details of how the HTML is modeled.
  * The editing support leverages heavily off of the text package.
  * <p>
  * <dt>
@@ -80,7 +80,7 @@ import java.lang.ref.*;
  * features.
  * <ol>
  *   <li>
- *   The parser is replacable.  The default parser is the Hot Java
+ *   The parser is replaceable.  The default parser is the Hot Java
  *   parser which is DTD based.  A different DTD can be used, or an
  *   entirely different parser can be used.  To change the parser,
  *   reimplement the getParser method.  The default parser is

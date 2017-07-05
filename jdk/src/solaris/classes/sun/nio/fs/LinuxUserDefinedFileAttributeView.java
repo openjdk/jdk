@@ -53,7 +53,7 @@ class LinuxUserDefinedFileAttributeView
         if (name == null)
             throw new NullPointerException("'name' is null");
         name = USER_NAMESPACE + name;
-        byte[] bytes = name.getBytes();
+        byte[] bytes = Util.toBytes(name);
         if (bytes.length > XATTR_NAME_MAX) {
             throw new FileSystemException(file.getPathForExceptionMessage(),
                 null, "'" + name + "' is too big");
@@ -72,7 +72,7 @@ class LinuxUserDefinedFileAttributeView
                 byte[] value = new byte[len];
                 unsafe.copyMemory(null, address+start, value,
                     Unsafe.ARRAY_BYTE_BASE_OFFSET, len);
-                String s = new String(value);
+                String s = Util.toString(value);
                 if (s.startsWith(USER_NAMESPACE)) {
                     s = s.substring(USER_NAMESPACE.length());
                     list.add(s);

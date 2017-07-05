@@ -38,7 +38,7 @@ public class DriverPropertyInfo {
     /**
      * Constructs a <code>DriverPropertyInfo</code> object with a  given
      * name and value.  The <code>description</code> and <code>choices</code>
-     * are intialized to <code>null</code> and <code>required</code> is initialized
+     * are initialized to <code>null</code> and <code>required</code> is initialized
      * to <code>false</code>.
      *
      * @param name the name of the property

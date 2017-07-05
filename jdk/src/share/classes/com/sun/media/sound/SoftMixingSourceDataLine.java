@@ -37,7 +37,7 @@ import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.SourceDataLine;
 
 /**
- * SourceDataLine implemention for the SoftMixingMixer.
+ * SourceDataLine implementation for the SoftMixingMixer.
  *
  * @author Karl Helgason
  */

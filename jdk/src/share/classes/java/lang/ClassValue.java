@@ -692,7 +692,7 @@ public abstract class ClassValue<T> {
 
         /** Remove all stale entries, everywhere. */
         private void removeStaleEntries() {
-            Entry[] cache = getCache();
+            Entry<?>[] cache = getCache();
             removeStaleEntries(cache, 0, cache.length + PROBE_LIMIT - 1);
         }
 

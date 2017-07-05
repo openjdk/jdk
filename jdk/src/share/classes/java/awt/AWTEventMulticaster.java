@@ -998,7 +998,7 @@ public class AWTEventMulticaster implements
      * If a <code>null</code> listener is specified, this method returns an
      * empty array. If the specified listener is not an instance of
      * <code>AWTEventMulticaster</code>, this method returns an array which
-     * contains only the specified listener. If no such listeners are chanined,
+     * contains only the specified listener. If no such listeners are chained,
      * this method returns an empty array.
      *
      * @param l the specified <code>java.util.EventListener</code>

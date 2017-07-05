@@ -330,7 +330,7 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
     /**
      * Sets the state of the button. Note that this method does not
      * trigger an <code>actionEvent</code>.
-     * Call <code>doClick</code> to perform a programatic action change.
+     * Call <code>doClick</code> to perform a programmatic action change.
      *
      * @param b  true if the button is selected, otherwise false
      */
@@ -2928,7 +2928,7 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
          * If there is no selection, but there is
          * a caret, the start and end offsets will be the same.
          *
-         * @return the index into teh text of the end of the selection
+         * @return the index into the text of the end of the selection
          * @since 1.3
          */
         public int getSelectionEnd() {

@@ -119,7 +119,7 @@ public abstract class SnmpMibGroup extends SnmpMibOid
     // needed...
     // For instance, the subclass could provide a generated isNestedArc()
     // method in which the subgroup OID arcs would be hardcoded.
-    // However, the generic approach was prefered because at this time
+    // However, the generic approach was preferred because at this time
     // groups and subgroups are dynamically registered in the MIB.
     //
     /**

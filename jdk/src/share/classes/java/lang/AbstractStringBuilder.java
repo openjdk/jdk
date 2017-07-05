@@ -330,9 +330,9 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
      * characters to be copied is {@code srcEnd-srcBegin}. The
      * characters are copied into the subarray of {@code dst} starting
      * at index {@code dstBegin} and ending at index:
-     * <p><blockquote><pre>
+     * <pre>{@code
      * dstbegin + (srcEnd-srcBegin) - 1
-     * </pre></blockquote>
+     * }</pre>
      *
      * @param      srcBegin   start copying at this offset.
      * @param      srcEnd     stop copying at this offset.
@@ -859,16 +859,16 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
      *
      * <p> An invocation of this method of the form
      *
-     * <blockquote><pre>
-     * sb.subSequence(begin,&nbsp;end)</pre></blockquote>
+     * <pre>{@code
+     * sb.subSequence(begin,&nbsp;end)}</pre>
      *
      * behaves in exactly the same way as the invocation
      *
-     * <blockquote><pre>
-     * sb.substring(begin,&nbsp;end)</pre></blockquote>
+     * <pre>{@code
+     * sb.substring(begin,&nbsp;end)}</pre>
      *
      * This method is provided so that this class can
-     * implement the {@link CharSequence} interface. </p>
+     * implement the {@link CharSequence} interface.
      *
      * @param      start   the start index, inclusive.
      * @param      end     the end index, exclusive.
@@ -1287,9 +1287,9 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
      * Returns the index within this string of the first occurrence of the
      * specified substring. The integer returned is the smallest value
      * <i>k</i> such that:
-     * <blockquote><pre>
+     * <pre>{@code
      * this.toString().startsWith(str, <i>k</i>)
-     * </pre></blockquote>
+     * }</pre>
      * is {@code true}.
      *
      * @param   str   any string.
@@ -1306,10 +1306,10 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
      * Returns the index within this string of the first occurrence of the
      * specified substring, starting at the specified index.  The integer
      * returned is the smallest value {@code k} for which:
-     * <blockquote><pre>
+     * <pre>{@code
      *     k >= Math.min(fromIndex, this.length()) &&
      *                   this.toString().startsWith(str, k)
-     * </pre></blockquote>
+     * }</pre>
      * If no such value of <i>k</i> exists, then -1 is returned.
      *
      * @param   str         the substring for which to search.
@@ -1326,9 +1326,9 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
      * of the specified substring.  The rightmost empty string "" is
      * considered to occur at the index value {@code this.length()}.
      * The returned index is the largest value <i>k</i> such that
-     * <blockquote><pre>
+     * <pre>{@code
      * this.toString().startsWith(str, k)
-     * </pre></blockquote>
+     * }</pre>
      * is true.
      *
      * @param   str   the substring to search for.
@@ -1345,10 +1345,10 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
      * Returns the index within this string of the last occurrence of the
      * specified substring. The integer returned is the largest value <i>k</i>
      * such that:
-     * <blockquote><pre>
+     * <pre>{@code
      *     k <= Math.min(fromIndex, this.length()) &&
      *                   this.toString().startsWith(str, k)
-     * </pre></blockquote>
+     * }</pre>
      * If no such value of <i>k</i> exists, then -1 is returned.
      *
      * @param   str         the substring to search for.

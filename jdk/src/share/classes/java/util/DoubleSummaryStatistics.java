@@ -127,7 +127,7 @@ public class DoubleSummaryStatistics implements DoubleConsumer {
      * numerical sum compared to a simple summation of {@code double}
      * values.
      *
-     * @apiNote Sorting values by increasing absolute magnitude tends to yield
+     * @apiNote Values sorted by increasing absolute magnitude tend to yield
      * more accurate results.
      *
      * @return the sum of values, or zero if none

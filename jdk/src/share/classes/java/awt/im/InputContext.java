@@ -98,7 +98,6 @@ public class InputContext {
      * an input method or keyboard layout has been successfully selected. The
      * following steps are taken until an input method has been selected:
      *
-     * <p>
      * <ul>
      * <li>
      * If the currently selected input method or keyboard layout supports the

@@ -34,7 +34,7 @@ public final class AudioSynthesizerPropertyInfo {
     /**
      * Constructs a <code>AudioSynthesizerPropertyInfo</code> object with a given
      * name and value. The <code>description</code> and <code>choices</code>
-     * are intialized by <code>null</code> values.
+     * are initialized by <code>null</code> values.
      *
      * @param name the name of the property
      * @param value the current value or class used for values.

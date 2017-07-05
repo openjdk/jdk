@@ -203,7 +203,7 @@ public interface GSSCredential extends Cloneable{
      * expire.  A return value of 0 indicates that the credential element is
      * already expired.
      *
-     * @param mech the Oid of the mechanism whose intiator credential element
+     * @param mech the Oid of the mechanism whose initiator credential element
      * should be queried.
      *
      * @throws GSSException containing the following

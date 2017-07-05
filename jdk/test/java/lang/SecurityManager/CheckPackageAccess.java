@@ -57,6 +57,7 @@ public class CheckPackageAccess {
         "com.sun.jmx.",
         "com.sun.media.sound.",
         "com.sun.proxy.",
+        "com.sun.corba.se.",
         "com.sun.org.apache.bcel.internal.",
         "com.sun.org.apache.regexp.internal.",
         "com.sun.org.apache.xerces.internal.",

@@ -27,7 +27,7 @@ package sun.rmi.transport.tcp;
 import java.io.*;
 
 /**
- * MultiplexOutputStream manages sending data over a conection managed
+ * MultiplexOutputStream manages sending data over a connection managed
  * by a ConnectionMultiplexer object.  Data written is buffered until the
  * internal buffer is full or the flush() method is called, at which
  * point it attempts to push a packet of bytes through to the remote
@@ -171,7 +171,7 @@ final class MultiplexOutputStream extends OutputStream {
     }
 
     /**
-     * Take note of more bytes requested by conection at remote endpoint.
+     * Take note of more bytes requested by connection at remote endpoint.
      * @param num number of additional bytes requested
      */
     void request(int num)

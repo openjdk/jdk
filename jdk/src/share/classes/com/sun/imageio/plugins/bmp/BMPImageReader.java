@@ -187,15 +187,24 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
         return 1;
     }
 
+    @Override
     public int getWidth(int imageIndex) throws IOException {
         checkIndex(imageIndex);
-        readHeader();
+        try {
+            readHeader();
+        } catch (IllegalArgumentException e) {
+            throw new IIOException(I18N.getString("BMPImageReader6"), e);
+        }
         return width;
     }
 
     public int getHeight(int imageIndex) throws IOException {
         checkIndex(imageIndex);
-        readHeader();
+        try {
+            readHeader();
+        } catch (IllegalArgumentException e) {
+            throw new IIOException(I18N.getString("BMPImageReader6"), e);
+        }
         return height;
     }
 
@@ -205,7 +214,18 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
         }
     }
 
-    public void readHeader() throws IOException {
+    /**
+     * Process the image header.
+     *
+     * @exception IllegalStateException if source stream is not set.
+     *
+     * @exception IOException if image stream is corrupted.
+     *
+     * @exception IllegalArgumentException if the image stream does not contain
+     *             a BMP image, or if a sample model instance to describe the
+     *             image can not be created.
+     */
+    protected void readHeader() throws IOException, IllegalArgumentException {
         if (gotHeader)
             return;
 
@@ -307,6 +327,9 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
                 case BI_RLE4:  // 4-bit RLE compression
 
                     // Read in the palette
+                    if (bitmapOffset < (size + 14)) {
+                        throw new IIOException(I18N.getString("BMPImageReader7"));
+                    }
                     int numberOfEntries = (int)((bitmapOffset-14-size) / 4);
                     int sizeOfPalette = numberOfEntries * 4;
                     palette = new byte[sizeOfPalette];
@@ -375,7 +398,7 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
                     break;
                 default:
                     throw new
-                        RuntimeException(I18N.getString("BMPImageReader2"));
+                        IIOException(I18N.getString("BMPImageReader2"));
                 }
             } else if (size == 108 || size == 124) {
                 // Windows 4.x BMP
@@ -478,7 +501,7 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
                 }
             } else {
                 throw new
-                    RuntimeException(I18N.getString("BMPImageReader3"));
+                    IIOException(I18N.getString("BMPImageReader3"));
             }
         }
 
@@ -660,7 +683,11 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
     public Iterator getImageTypes(int imageIndex)
       throws IOException {
         checkIndex(imageIndex);
-        readHeader();
+        try {
+            readHeader();
+        } catch (IllegalArgumentException e) {
+            throw new IIOException(I18N.getString("BMPImageReader6"), e);
+        }
         ArrayList list = new ArrayList(1);
         list.add(new ImageTypeSpecifier(originalColorModel,
                                         originalSampleModel));
@@ -675,7 +702,11 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
       throws IOException {
         checkIndex(imageIndex);
         if (metadata == null) {
-            readHeader();
+            try {
+                readHeader();
+            } catch (IllegalArgumentException e) {
+                throw new IIOException(I18N.getString("BMPImageReader6"), e);
+            }
         }
         return metadata;
     }
@@ -686,7 +717,11 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
 
     public boolean isRandomAccessEasy(int imageIndex) throws IOException {
         checkIndex(imageIndex);
-        readHeader();
+        try {
+            readHeader();
+        } catch (IllegalArgumentException e) {
+            throw new IIOException(I18N.getString("BMPImageReader6"), e);
+        }
         return metadata.compression == BI_RGB;
     }
 
@@ -705,7 +740,11 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
             param = getDefaultReadParam();
 
         //read header
-        readHeader();
+        try {
+            readHeader();
+        } catch (IllegalArgumentException e) {
+            throw new IIOException(I18N.getString("BMPImageReader6"), e);
+        }
 
         sourceRegion = new Rectangle(0, 0, 0, 0);
         destinationRegion = new Rectangle(0, 0, 0, 0);
@@ -817,7 +856,7 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
 
             default:
                 throw new
-                    RuntimeException(I18N.getString("BMPImageReader1"));
+                    IIOException(I18N.getString("BMPImageReader1"));
             }
             break;
 
@@ -833,7 +872,7 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
 
             default:
                 throw new
-                    RuntimeException(I18N.getString("BMPImageReader1"));
+                    IIOException(I18N.getString("BMPImageReader1"));
             }
 
             break;
@@ -874,7 +913,7 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
 
             default:
                 throw new
-                    RuntimeException(I18N.getString("BMPImageReader1"));
+                    IIOException(I18N.getString("BMPImageReader1"));
             }
 
         case VERSION_4_8_BIT:
@@ -890,7 +929,7 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
 
             default:
                 throw new
-                    RuntimeException(I18N.getString("BMPImageReader1"));
+                    IIOException(I18N.getString("BMPImageReader1"));
             }
             break;
 

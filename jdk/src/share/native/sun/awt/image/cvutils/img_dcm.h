@@ -28,7 +28,7 @@
  * the macros used by the generic scaleloop function.
  *
  * This implementation can decode the pixel information associated
- * with any Java DirectColorModel object.  This implemenation will
+ * with any Java DirectColorModel object.  This implementation will
  * scale the decoded color components to 8-bit quantities if needed.
  * Another file is provided to optimize DCM parsing when the masks
  * are guaranteed to be at least 8-bits wide.  This implementation

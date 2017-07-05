@@ -234,7 +234,7 @@ public abstract class IIOMetadataFormatImpl implements IIOMetadataFormat {
      * name will be equal to <code>this.getClass().getName() +
      * "Resources"</code>.
      *
-     * @param resourceBaseName a <code>String</code> containg the new
+     * @param resourceBaseName a <code>String</code> containing the new
      * base name.
      *
      * @exception IllegalArgumentException if
@@ -381,7 +381,7 @@ public abstract class IIOMetadataFormatImpl implements IIOMetadataFormat {
      *
      * @param parentName the name of the element that will be the
      * new parent of the element.
-     * @param elementName the name of the element to be addded as a
+     * @param elementName the name of the element to be added as a
      * child.
      *
      * @exception IllegalArgumentException if <code>elementName</code>
@@ -991,7 +991,7 @@ public abstract class IIOMetadataFormatImpl implements IIOMetadataFormat {
 
     /**
      * Returns a <code>String</code> containing a description of the
-     * named element, or <code>null</code>.  The desciption will be
+     * named element, or <code>null</code>.  The description will be
      * localized for the supplied <code>Locale</code> if possible.
      *
      * <p> The default implementation will first locate a
@@ -1129,7 +1129,7 @@ public abstract class IIOMetadataFormatImpl implements IIOMetadataFormat {
 
     /**
      * Returns a <code>String</code> containing a description of the
-     * named attribute, or <code>null</code>.  The desciption will be
+     * named attribute, or <code>null</code>.  The description will be
      * localized for the supplied <code>Locale</code> if possible.
      *
      * <p> The default implementation will first locate a

@@ -94,7 +94,7 @@ public class ShortMessage extends MidiMessage {
     // System real-time messages
 
     /**
-     * Status byte for Timing Clock messagem (0xF8, or 248).
+     * Status byte for Timing Clock message (0xF8, or 248).
      * @see MidiMessage#getStatus
      */
     public static final int TIMING_CLOCK                                = 0xF8; // 248

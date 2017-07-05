@@ -83,7 +83,7 @@ public interface InputMethodRequests {
      * For example, for horizontal left-to-right text (such as English), the
      * location to the left of the left-most character on the last line
      * containing selected text is returned. For vertical top-to-bottom text,
-     * with lines proceding from right to left, the location to the top of the
+     * with lines proceeding from right to left, the location to the top of the
      * left-most line containing selected text is returned.
      *
      * <p>

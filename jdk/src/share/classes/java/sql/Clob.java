@@ -172,7 +172,7 @@ public interface Clob {
      * in the <code>Clob</code> object starting at the position
      * <code>pos</code>.  If the end of the <code>Clob</code> value is reached
      * while writing the given string, then the length of the <code>Clob</code>
-     * value will be increased to accomodate the extra characters.
+     * value will be increased to accommodate the extra characters.
      * <p>
      * <b>Note:</b> If the value specified for <code>pos</code>
      * is greater then the length+1 of the <code>CLOB</code> value then the
@@ -202,7 +202,7 @@ public interface Clob {
      * in the <code>Clob</code> object starting at the position
      * <code>pos</code>.  If the end of the <code>Clob</code> value is reached
      * while writing the given string, then the length of the <code>Clob</code>
-     * value will be increased to accomodate the extra characters.
+     * value will be increased to accommodate the extra characters.
      * <p>
      * <b>Note:</b> If the value specified for <code>pos</code>
      * is greater then the length+1 of the <code>CLOB</code> value then the
@@ -235,7 +235,7 @@ public interface Clob {
      * in the <code>Clob</code> object starting at the position
      * <code>pos</code>.  If the end of the <code>Clob</code> value is reached
      * while writing characters to the stream, then the length of the <code>Clob</code>
-     * value will be increased to accomodate the extra characters.
+     * value will be increased to accommodate the extra characters.
      * <p>
      * <b>Note:</b> If the value specified for <code>pos</code>
      * is greater then the length+1 of the <code>CLOB</code> value then the
@@ -264,7 +264,7 @@ public interface Clob {
      * in the <code>Clob</code> object starting at the position
      * <code>pos</code>.  If the end of the <code>Clob</code> value is reached
      * while writing characters to the stream, then the length of the <code>Clob</code>
-     * value will be increased to accomodate the extra characters.
+     * value will be increased to accommodate the extra characters.
      * <p>
      * <b>Note:</b> If the value specified for <code>pos</code>
      * is greater then the length+1 of the <code>CLOB</code> value then the

@@ -57,7 +57,7 @@ public class ColumnFormat extends OptionFormat {
         // should allow null data statments
 
         if (expression == null) {
-            // current policy is that a data statment must be specified
+            // current policy is that a data statement must be specified
             throw new ParserException("Missing data statement in column " + number);
         }
         if (header == null) {

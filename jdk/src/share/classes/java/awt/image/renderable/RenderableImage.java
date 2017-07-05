@@ -65,7 +65,7 @@ public interface RenderableImage {
      * String constant that can be used to identify a property on
      * a RenderedImage obtained via the createRendering or
      * createScaledRendering methods.  If such a property exists,
-     * the value of the propoery will be a RenderingHints object
+     * the value of the property will be a RenderingHints object
      * specifying which hints were observed in creating the rendering.
      */
      static final String HINTS_OBSERVED = "HINTS_OBSERVED";
@@ -162,7 +162,7 @@ public interface RenderableImage {
      *
      * @param w the width of rendered image in pixels, or 0.
      * @param h the height of rendered image in pixels, or 0.
-     * @param hints a RenderingHints object containg hints.
+     * @param hints a RenderingHints object containing hints.
      * @return a RenderedImage containing the rendered data.
      */
     RenderedImage createScaledRendering(int w, int h, RenderingHints hints);

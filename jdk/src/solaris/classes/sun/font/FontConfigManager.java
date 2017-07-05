@@ -108,10 +108,6 @@ public class FontConfigManager {
     public FontConfigManager() {
     }
 
-    public static String[] getFontConfigNames() {
-        return fontConfigNames;
-    }
-
     /* Called from code that needs to know what are the AA settings
      * that apps using FC would pick up for the default desktop font.
      * Note apps can change the default desktop font. etc, so this
@@ -182,7 +178,6 @@ public class FontConfigManager {
             t0 = System.nanoTime();
         }
 
-        String[] fontConfigNames = FontConfigManager.getFontConfigNames();
         FcCompFont[] fontArr = new FcCompFont[fontConfigNames.length];
 
         for (int i = 0; i< fontArr.length; i++) {

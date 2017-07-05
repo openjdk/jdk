@@ -64,7 +64,7 @@ public class ECFieldF2m implements ECField {
      * field which has 2^{@code m} elements with
      * polynomial basis.
      * The reduction polynomial for this field is based
-     * on {@code rp} whose i-th bit correspondes to
+     * on {@code rp} whose i-th bit corresponds to
      * the i-th coefficient of the reduction polynomial.<p>
      * Note: A valid reduction polynomial is either a
      * trinomial (X^{@code m} + X^{@code k} + 1

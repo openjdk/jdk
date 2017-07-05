@@ -76,7 +76,7 @@ import java.sql.SQLException;
  *     jrs.addRowSet(crs);
  * </pre>
  * In the previous example, <i>crs</i> is a <code>CachedRowSet</code> object that
- * has emplemented the <code>Joinable</code> interface.  In the following example,
+ * has implemented the <code>Joinable</code> interface.  In the following example,
  * <i>crs2</i> has not, so it must supply the match column as an argument to the
  * <code>addRowSet</code> method. This example assumes that column 1 is the match
  * column.
@@ -250,7 +250,7 @@ public interface Joinable {
      * Unsets the designated columns as the match column for this <code>RowSet</code>
      * object.
      *
-     * @param columnIdxes an arrary of <code>int</code> that identifies the indexes
+     * @param columnIdxes an array of <code>int</code> that identifies the indexes
      *     of the columns that are to be unset as match columns
      * @throws SQLException if an invalid column index is designated or if
      *          the designated column was not previously set as a match

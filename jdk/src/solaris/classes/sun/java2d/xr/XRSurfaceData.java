@@ -109,6 +109,7 @@ public abstract class XRSurfaceData extends XSurfaceData {
         return XRSurfaceDataProxy.createProxy(srcData, graphicsConfig);
     }
 
+    @Override
     public void validatePipe(SunGraphics2D sg2d) {
         TextPipe textpipe;
         boolean validated = false;
@@ -117,14 +118,8 @@ public abstract class XRSurfaceData extends XSurfaceData {
          * The textpipe for now can't handle TexturePaint when extra-alpha is
          * specified nore XOR mode
          */
-        if (sg2d.compositeState < SunGraphics2D.COMP_XOR &&
-            (sg2d.paintState < SunGraphics2D.PAINT_TEXTURE ||
-             sg2d.composite == null ||
-             !(sg2d.composite instanceof AlphaComposite) ||
-             ((AlphaComposite) sg2d.composite).getAlpha() == 1.0f))
+        if ((textpipe = getTextPipe(sg2d)) == null)
         {
-            textpipe = xrtextpipe;
-        } else {
             super.validatePipe(sg2d);
             textpipe = sg2d.textpipe;
             validated = true;
@@ -184,13 +179,38 @@ public abstract class XRSurfaceData extends XSurfaceData {
         sg2d.imagepipe = xrDrawImage;
     }
 
-    protected MaskFill getMaskFill(SunGraphics2D sg2d) {
-        if (sg2d.paintState > SunGraphics2D.PAINT_ALPHACOLOR &&
-            !XRPaints.isValid(sg2d))
-        {
-            return null;
+    protected TextPipe getTextPipe(SunGraphics2D sg2d) {
+        boolean supportedPaint = sg2d.compositeState <= SunGraphics2D.COMP_ALPHA
+                && (sg2d.paintState <= SunGraphics2D.PAINT_ALPHACOLOR || sg2d.composite == null);
+
+        boolean supportedCompOp = false;
+        if (sg2d.composite instanceof AlphaComposite) {
+            int compRule = ((AlphaComposite) sg2d.composite).getRule();
+            supportedCompOp = XRUtils.isMaskEvaluated(XRUtils.j2dAlphaCompToXR(compRule))
+                    || (compRule == AlphaComposite.SRC
+                                && sg2d.paintState <= SunGraphics2D.PAINT_ALPHACOLOR);
         }
-        return super.getMaskFill(sg2d);
+
+        return (supportedPaint && supportedCompOp) ? xrtextpipe : null;
+    }
+
+    protected MaskFill getMaskFill(SunGraphics2D sg2d) {
+        AlphaComposite aComp = null;
+        if(sg2d.composite != null
+                && sg2d.composite instanceof AlphaComposite) {
+            aComp = (AlphaComposite) sg2d.composite;
+        }
+
+        boolean supportedPaint = sg2d.paintState <= SunGraphics2D.PAINT_ALPHACOLOR
+                || XRPaints.isValid(sg2d);
+
+        boolean supportedCompOp = false;
+        if(aComp != null) {
+            int rule = aComp.getRule();
+            supportedCompOp = XRUtils.isMaskEvaluated(XRUtils.j2dAlphaCompToXR(rule));
+        }
+
+        return (supportedPaint && supportedCompOp) ?  super.getMaskFill(sg2d) : null;
     }
 
     public RenderLoops getRenderLoops(SunGraphics2D sg2d) {
@@ -395,6 +415,7 @@ public abstract class XRSurfaceData extends XSurfaceData {
 
     boolean transformInUse = false;
     AffineTransform validatedSourceTransform = new AffineTransform();
+    AffineTransform staticSrcTx = null;
     int validatedRepeat = XRUtils.RepeatNone;
     int validatedFilter = XRUtils.FAST;
 
@@ -423,13 +444,24 @@ public abstract class XRSurfaceData extends XSurfaceData {
             }
         } else if (!transformInUse ||
                    (transformInUse && !sxForm.equals(validatedSourceTransform))) {
+
             validatedSourceTransform.setTransform(sxForm.getScaleX(),
                                                   sxForm.getShearY(),
                                                   sxForm.getShearX(),
                                                   sxForm.getScaleY(),
                                                   sxForm.getTranslateX(),
                                                   sxForm.getTranslateY());
-            renderQueue.setPictureTransform(picture, validatedSourceTransform);
+
+            AffineTransform srcTransform = validatedSourceTransform;
+            if(staticSrcTx != null) {
+                // Apply static transform set when used as texture or gradient.
+                // Create a copy to not modify validatedSourceTransform as
+                // this would confuse the validation logic.
+                srcTransform = new AffineTransform(validatedSourceTransform);
+                srcTransform.preConcatenate(staticSrcTx);
+            }
+
+            renderQueue.setPictureTransform(picture, srcTransform);
             transformInUse = true;
         }
 
@@ -547,15 +579,10 @@ public abstract class XRSurfaceData extends XSurfaceData {
     }
 
     public static class XRInternalSurfaceData extends XRSurfaceData {
-        public XRInternalSurfaceData(XRBackend renderQueue, int pictXid,
-                                     AffineTransform transform) {
+        public XRInternalSurfaceData(XRBackend renderQueue, int pictXid) {
           super(renderQueue);
           this.picture = pictXid;
-          this.validatedSourceTransform = transform;
-
-          if (validatedSourceTransform != null) {
-              transformInUse = true;
-          }
+          this.transformInUse = false;
         }
 
         public boolean canSourceSendExposures(int x, int y, int w, int h) {
@@ -676,5 +703,9 @@ public abstract class XRSurfaceData extends XSurfaceData {
 
     public XRGraphicsConfig getGraphicsConfig() {
         return graphicsConfig;
+    }
+
+    public void setStaticSrcTx(AffineTransform staticSrcTx) {
+        this.staticSrcTx = staticSrcTx;
     }
 }

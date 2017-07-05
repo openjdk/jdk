@@ -2814,7 +2814,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
      * these methods will be called very rarely.
      *
      * If _usingPerAppContextComposites is true, we are in "applet"
-     * (eg browser) enviroment and at least one context has selected
+     * (eg browser) environment and at least one context has selected
      * an alternate composite font behaviour.
      * If _usingAlternateComposites is true, we are not in an "applet"
      * environment and the (single) application has selected

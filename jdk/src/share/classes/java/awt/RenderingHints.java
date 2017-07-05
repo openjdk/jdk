@@ -101,7 +101,7 @@ public class RenderingHints
             //     - the integer key of the Key
             // It is theoretically possible for 2 distinct keys to collide
             // along all 3 of those attributes in the context of multiple
-            // class loaders, but that occurence will be extremely rare and
+            // class loaders, but that occurrence will be extremely rare and
             // we account for that possibility below in the recordIdentity
             // method by slightly relaxing our uniqueness guarantees if we
             // end up in that situation.
@@ -729,7 +729,7 @@ public class RenderingHints
      * from one side of a sample to the other.
      * As the image is scaled down, more image pixels have their
      * color samples represented in the resulting output since each
-     * output pixel recieves color information from up to 4 image
+     * output pixel receives color information from up to 4 image
      * pixels.
      *
      * @see #KEY_INTERPOLATION
