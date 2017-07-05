@@ -1,15 +1,14 @@
-# PropertyValueAliases-6.0.0.txt
-# Date: 2010-07-17, 22:44:06 GMT [MD]
+# PropertyValueAliases-6.1.0.txt
+# Date: 2011-12-07, 23:40:57 GMT [MD]
 #
 # Unicode Character Database
-# Copyright (c) 1991-2010 Unicode, Inc.
+# Copyright (c) 1991-2011 Unicode, Inc.
 # For terms of use, see http://www.unicode.org/terms_of_use.html
 # For documentation, see http://www.unicode.org/reports/tr44/
 #
 # This file contains aliases for property values used in the UCD.
 # These names can be used for XML formats of UCD data, for regular-expression
 # property tests, and other programmatic textual descriptions of Unicode data.
-# For information on which properties are normative, see UCD.html.
 #
 # The names may be translated in appropriate environments, and additional
 # aliases may be useful.
@@ -23,7 +22,6 @@
 # property value name is used.
 #
 # Second Field: The second field is an abbreviated name.
-# If there is no abbreviated name available, the field is marked with "n/a".
 #
 # Third Field: The third field is a long name.
 #
@@ -57,61 +55,62 @@
 
 # ASCII_Hex_Digit (AHex)
 
-AHex; N        ; No                               ; F                                ; False
-AHex; Y        ; Yes                              ; T                                ; True
+AHex; N                               ; No                               ; F                                ; False
+AHex; Y                               ; Yes                              ; T                                ; True
 
 # Age (age)
 
-age; n/a       ; 1.1
-age; n/a       ; 2.0
-age; n/a       ; 2.1
-age; n/a       ; 3.0
-age; n/a       ; 3.1
-age; n/a       ; 3.2
-age; n/a       ; 4.0
-age; n/a       ; 4.1
-age; n/a       ; 5.0
-age; n/a       ; 5.1
-age; n/a       ; 5.2
-age; n/a       ; 6.0
-age; n/a       ; unassigned
+age; 1.1                              ; V1_1
+age; 2.0                              ; V2_0
+age; 2.1                              ; V2_1
+age; 3.0                              ; V3_0
+age; 3.1                              ; V3_1
+age; 3.2                              ; V3_2
+age; 4.0                              ; V4_0
+age; 4.1                              ; V4_1
+age; 5.0                              ; V5_0
+age; 5.1                              ; V5_1
+age; 5.2                              ; V5_2
+age; 6.0                              ; V6_0
+age; 6.1                              ; V6_1
+age; NA                               ; Unassigned
 
 # Alphabetic (Alpha)
 
-Alpha; N       ; No                               ; F                                ; False
-Alpha; Y       ; Yes                              ; T                                ; True
+Alpha; N                              ; No                               ; F                                ; False
+Alpha; Y                              ; Yes                              ; T                                ; True
 
 # Bidi_Class (bc)
 
-bc ; AL        ; Arabic_Letter
-bc ; AN        ; Arabic_Number
-bc ; B         ; Paragraph_Separator
-bc ; BN        ; Boundary_Neutral
-bc ; CS        ; Common_Separator
-bc ; EN        ; European_Number
-bc ; ES        ; European_Separator
-bc ; ET        ; European_Terminator
-bc ; L         ; Left_To_Right
-bc ; LRE       ; Left_To_Right_Embedding
-bc ; LRO       ; Left_To_Right_Override
-bc ; NSM       ; Nonspacing_Mark
-bc ; ON        ; Other_Neutral
-bc ; PDF       ; Pop_Directional_Format
-bc ; R         ; Right_To_Left
-bc ; RLE       ; Right_To_Left_Embedding
-bc ; RLO       ; Right_To_Left_Override
-bc ; S         ; Segment_Separator
-bc ; WS        ; White_Space
+bc ; AL                               ; Arabic_Letter
+bc ; AN                               ; Arabic_Number
+bc ; B                                ; Paragraph_Separator
+bc ; BN                               ; Boundary_Neutral
+bc ; CS                               ; Common_Separator
+bc ; EN                               ; European_Number
+bc ; ES                               ; European_Separator
+bc ; ET                               ; European_Terminator
+bc ; L                                ; Left_To_Right
+bc ; LRE                              ; Left_To_Right_Embedding
+bc ; LRO                              ; Left_To_Right_Override
+bc ; NSM                              ; Nonspacing_Mark
+bc ; ON                               ; Other_Neutral
+bc ; PDF                              ; Pop_Directional_Format
+bc ; R                                ; Right_To_Left
+bc ; RLE                              ; Right_To_Left_Embedding
+bc ; RLO                              ; Right_To_Left_Override
+bc ; S                                ; Segment_Separator
+bc ; WS                               ; White_Space
 
 # Bidi_Control (Bidi_C)
 
-Bidi_C; N      ; No                               ; F                                ; False
-Bidi_C; Y      ; Yes                              ; T                                ; True
+Bidi_C; N                             ; No                               ; F                                ; False
+Bidi_C; Y                             ; Yes                              ; T                                ; True
 
 # Bidi_Mirrored (Bidi_M)
 
-Bidi_M; N      ; No                               ; F                                ; False
-Bidi_M; Y      ; Yes                              ; T                                ; True
+Bidi_M; N                             ; No                               ; F                                ; False
+Bidi_M; Y                             ; Yes                              ; T                                ; True
 
 # Bidi_Mirroring_Glyph (bmg)
 
@@ -119,239 +118,286 @@ Bidi_M; Y      ; Yes                              ; T                           
 
 # Block (blk)
 
-blk; n/a       ; Aegean_Numbers
-blk; n/a       ; Alchemical_Symbols
-blk; n/a       ; Alphabetic_Presentation_Forms
-blk; n/a       ; Ancient_Greek_Musical_Notation
-blk; n/a       ; Ancient_Greek_Numbers
-blk; n/a       ; Ancient_Symbols
-blk; n/a       ; Arabic
-blk; n/a       ; Arabic_Presentation_Forms_A      ; Arabic_Presentation_Forms-A
-blk; n/a       ; Arabic_Presentation_Forms_B
-blk; n/a       ; Arabic_Supplement
-blk; n/a       ; Armenian
-blk; n/a       ; Arrows
-blk; n/a       ; Avestan
-blk; n/a       ; Balinese
-blk; n/a       ; Bamum
-blk; n/a       ; Bamum_Supplement
-blk; n/a       ; Basic_Latin                      ; ASCII
-blk; n/a       ; Batak
-blk; n/a       ; Bengali
-blk; n/a       ; Block_Elements
-blk; n/a       ; Bopomofo
-blk; n/a       ; Bopomofo_Extended
-blk; n/a       ; Box_Drawing
-blk; n/a       ; Brahmi
-blk; n/a       ; Braille_Patterns
-blk; n/a       ; Buginese
-blk; n/a       ; Buhid
-blk; n/a       ; Byzantine_Musical_Symbols
-blk; n/a       ; Carian
-blk; n/a       ; Cham
-blk; n/a       ; Cherokee
-blk; n/a       ; CJK_Compatibility
-blk; n/a       ; CJK_Compatibility_Forms
-blk; n/a       ; CJK_Compatibility_Ideographs
-blk; n/a       ; CJK_Compatibility_Ideographs_Supplement
-blk; n/a       ; CJK_Radicals_Supplement
-blk; n/a       ; CJK_Strokes
-blk; n/a       ; CJK_Symbols_And_Punctuation
-blk; n/a       ; CJK_Unified_Ideographs
-blk; n/a       ; CJK_Unified_Ideographs_Extension_A
-blk; n/a       ; CJK_Unified_Ideographs_Extension_B
-blk; n/a       ; CJK_Unified_Ideographs_Extension_C
-blk; n/a       ; CJK_Unified_Ideographs_Extension_D
-blk; n/a       ; Combining_Diacritical_Marks
-blk; n/a       ; Combining_Diacritical_Marks_For_Symbols; Combining_Marks_For_Symbols
-blk; n/a       ; Combining_Diacritical_Marks_Supplement
-blk; n/a       ; Combining_Half_Marks
-blk; n/a       ; Common_Indic_Number_Forms
-blk; n/a       ; Control_Pictures
-blk; n/a       ; Coptic
-blk; n/a       ; Counting_Rod_Numerals
-blk; n/a       ; Cuneiform
-blk; n/a       ; Cuneiform_Numbers_And_Punctuation
-blk; n/a       ; Currency_Symbols
-blk; n/a       ; Cypriot_Syllabary
-blk; n/a       ; Cyrillic
-blk; n/a       ; Cyrillic_Extended_A
-blk; n/a       ; Cyrillic_Extended_B
-blk; n/a       ; Cyrillic_Supplement              ; Cyrillic_Supplementary
-blk; n/a       ; Deseret
-blk; n/a       ; Devanagari
-blk; n/a       ; Devanagari_Extended
-blk; n/a       ; Dingbats
-blk; n/a       ; Domino_Tiles
-blk; n/a       ; Egyptian_Hieroglyphs
-blk; n/a       ; Emoticons
-blk; n/a       ; Enclosed_Alphanumeric_Supplement
-blk; n/a       ; Enclosed_Alphanumerics
-blk; n/a       ; Enclosed_CJK_Letters_And_Months
-blk; n/a       ; Enclosed_Ideographic_Supplement
-blk; n/a       ; Ethiopic
-blk; n/a       ; Ethiopic_Extended
-blk; n/a       ; Ethiopic_Extended_A
-blk; n/a       ; Ethiopic_Supplement
-blk; n/a       ; General_Punctuation
-blk; n/a       ; Geometric_Shapes
-blk; n/a       ; Georgian
-blk; n/a       ; Georgian_Supplement
-blk; n/a       ; Glagolitic
-blk; n/a       ; Gothic
-blk; n/a       ; Greek_And_Coptic                 ; Greek
-blk; n/a       ; Greek_Extended
-blk; n/a       ; Gujarati
-blk; n/a       ; Gurmukhi
-blk; n/a       ; Halfwidth_And_Fullwidth_Forms
-blk; n/a       ; Hangul_Compatibility_Jamo
-blk; n/a       ; Hangul_Jamo
-blk; n/a       ; Hangul_Jamo_Extended_A
-blk; n/a       ; Hangul_Jamo_Extended_B
-blk; n/a       ; Hangul_Syllables
-blk; n/a       ; Hanunoo
-blk; n/a       ; Hebrew
-blk; n/a       ; High_Private_Use_Surrogates
-blk; n/a       ; High_Surrogates
-blk; n/a       ; Hiragana
-blk; n/a       ; Ideographic_Description_Characters
-blk; n/a       ; Imperial_Aramaic
-blk; n/a       ; Inscriptional_Pahlavi
-blk; n/a       ; Inscriptional_Parthian
-blk; n/a       ; IPA_Extensions
-blk; n/a       ; Javanese
-blk; n/a       ; Kaithi
-blk; n/a       ; Kana_Supplement
-blk; n/a       ; Kanbun
-blk; n/a       ; Kangxi_Radicals
-blk; n/a       ; Kannada
-blk; n/a       ; Katakana
-blk; n/a       ; Katakana_Phonetic_Extensions
-blk; n/a       ; Kayah_Li
-blk; n/a       ; Kharoshthi
-blk; n/a       ; Khmer
-blk; n/a       ; Khmer_Symbols
-blk; n/a       ; Lao
-blk; n/a       ; Latin_1_Supplement               ; Latin_1
-blk; n/a       ; Latin_Extended_A
-blk; n/a       ; Latin_Extended_Additional
-blk; n/a       ; Latin_Extended_B
-blk; n/a       ; Latin_Extended_C
-blk; n/a       ; Latin_Extended_D
-blk; n/a       ; Lepcha
-blk; n/a       ; Letterlike_Symbols
-blk; n/a       ; Limbu
-blk; n/a       ; Linear_B_Ideograms
-blk; n/a       ; Linear_B_Syllabary
-blk; n/a       ; Lisu
-blk; n/a       ; Low_Surrogates
-blk; n/a       ; Lycian
-blk; n/a       ; Lydian
-blk; n/a       ; Mahjong_Tiles
-blk; n/a       ; Malayalam
-blk; n/a       ; Mandaic
-blk; n/a       ; Mathematical_Alphanumeric_Symbols
-blk; n/a       ; Mathematical_Operators
-blk; n/a       ; Meetei_Mayek
-blk; n/a       ; Miscellaneous_Mathematical_Symbols_A
-blk; n/a       ; Miscellaneous_Mathematical_Symbols_B
-blk; n/a       ; Miscellaneous_Symbols
-blk; n/a       ; Miscellaneous_Symbols_And_Arrows
-blk; n/a       ; Miscellaneous_Symbols_And_Pictographs
-blk; n/a       ; Miscellaneous_Technical
-blk; n/a       ; Modifier_Tone_Letters
-blk; n/a       ; Mongolian
-blk; n/a       ; Musical_Symbols
-blk; n/a       ; Myanmar
-blk; n/a       ; Myanmar_Extended_A
-blk; n/a       ; New_Tai_Lue
-blk; n/a       ; NKo
-blk; n/a       ; No_Block
-blk; n/a       ; Number_Forms
-blk; n/a       ; Ogham
-blk; n/a       ; Ol_Chiki
-blk; n/a       ; Old_Italic
-blk; n/a       ; Old_Persian
-blk; n/a       ; Old_South_Arabian
-blk; n/a       ; Old_Turkic
-blk; n/a       ; Optical_Character_Recognition
-blk; n/a       ; Oriya
-blk; n/a       ; Osmanya
-blk; n/a       ; Phags_Pa
-blk; n/a       ; Phaistos_Disc
-blk; n/a       ; Phoenician
-blk; n/a       ; Phonetic_Extensions
-blk; n/a       ; Phonetic_Extensions_Supplement
-blk; n/a       ; Playing_Cards
-blk; n/a       ; Private_Use_Area                 ; Private_Use
-blk; n/a       ; Rejang
-blk; n/a       ; Rumi_Numeral_Symbols
-blk; n/a       ; Runic
-blk; n/a       ; Samaritan
-blk; n/a       ; Saurashtra
-blk; n/a       ; Shavian
-blk; n/a       ; Sinhala
-blk; n/a       ; Small_Form_Variants
-blk; n/a       ; Spacing_Modifier_Letters
-blk; n/a       ; Specials
-blk; n/a       ; Sundanese
-blk; n/a       ; Superscripts_And_Subscripts
-blk; n/a       ; Supplemental_Arrows_A
-blk; n/a       ; Supplemental_Arrows_B
-blk; n/a       ; Supplemental_Mathematical_Operators
-blk; n/a       ; Supplemental_Punctuation
-blk; n/a       ; Supplementary_Private_Use_Area_A
-blk; n/a       ; Supplementary_Private_Use_Area_B
-blk; n/a       ; Syloti_Nagri
-blk; n/a       ; Syriac
-blk; n/a       ; Tagalog
-blk; n/a       ; Tagbanwa
-blk; n/a       ; Tags
-blk; n/a       ; Tai_Le
-blk; n/a       ; Tai_Tham
-blk; n/a       ; Tai_Viet
-blk; n/a       ; Tai_Xuan_Jing_Symbols
-blk; n/a       ; Tamil
-blk; n/a       ; Telugu
-blk; n/a       ; Thaana
-blk; n/a       ; Thai
-blk; n/a       ; Tibetan
-blk; n/a       ; Tifinagh
-blk; n/a       ; Transport_And_Map_Symbols
-blk; n/a       ; Ugaritic
-blk; n/a       ; Unified_Canadian_Aboriginal_Syllabics; Canadian_Syllabics
-blk; n/a       ; Unified_Canadian_Aboriginal_Syllabics_Extended
-blk; n/a       ; Vai
-blk; n/a       ; Variation_Selectors
-blk; n/a       ; Variation_Selectors_Supplement
-blk; n/a       ; Vedic_Extensions
-blk; n/a       ; Vertical_Forms
-blk; n/a       ; Yi_Radicals
-blk; n/a       ; Yi_Syllables
-blk; n/a       ; Yijing_Hexagram_Symbols
+blk; Aegean_Numbers                   ; Aegean_Numbers
+blk; Alchemical                       ; Alchemical_Symbols
+blk; Alphabetic_PF                    ; Alphabetic_Presentation_Forms
+blk; Ancient_Greek_Music              ; Ancient_Greek_Musical_Notation
+blk; Ancient_Greek_Numbers            ; Ancient_Greek_Numbers
+blk; Ancient_Symbols                  ; Ancient_Symbols
+blk; Arabic                           ; Arabic
+blk; Arabic_Ext_A                     ; Arabic_Extended_A
+blk; Arabic_Math                      ; Arabic_Mathematical_Alphabetic_Symbols
+blk; Arabic_PF_A                      ; Arabic_Presentation_Forms_A      ; Arabic_Presentation_Forms-A
+blk; Arabic_PF_B                      ; Arabic_Presentation_Forms_B
+blk; Arabic_Sup                       ; Arabic_Supplement
+blk; Armenian                         ; Armenian
+blk; Arrows                           ; Arrows
+blk; ASCII                            ; Basic_Latin
+blk; Avestan                          ; Avestan
+blk; Balinese                         ; Balinese
+blk; Bamum                            ; Bamum
+blk; Bamum_Sup                        ; Bamum_Supplement
+blk; Batak                            ; Batak
+blk; Bengali                          ; Bengali
+blk; Block_Elements                   ; Block_Elements
+blk; Bopomofo                         ; Bopomofo
+blk; Bopomofo_Ext                     ; Bopomofo_Extended
+blk; Box_Drawing                      ; Box_Drawing
+blk; Brahmi                           ; Brahmi
+blk; Braille                          ; Braille_Patterns
+blk; Buginese                         ; Buginese
+blk; Buhid                            ; Buhid
+blk; Byzantine_Music                  ; Byzantine_Musical_Symbols
+blk; Carian                           ; Carian
+blk; Chakma                           ; Chakma
+blk; Cham                             ; Cham
+blk; Cherokee                         ; Cherokee
+blk; CJK                              ; CJK_Unified_Ideographs
+blk; CJK_Compat                       ; CJK_Compatibility
+blk; CJK_Compat_Forms                 ; CJK_Compatibility_Forms
+blk; CJK_Compat_Ideographs            ; CJK_Compatibility_Ideographs
+blk; CJK_Compat_Ideographs_Sup        ; CJK_Compatibility_Ideographs_Supplement
+blk; CJK_Ext_A                        ; CJK_Unified_Ideographs_Extension_A
+blk; CJK_Ext_B                        ; CJK_Unified_Ideographs_Extension_B
+blk; CJK_Ext_C                        ; CJK_Unified_Ideographs_Extension_C
+blk; CJK_Ext_D                        ; CJK_Unified_Ideographs_Extension_D
+blk; CJK_Radicals_Sup                 ; CJK_Radicals_Supplement
+blk; CJK_Strokes                      ; CJK_Strokes
+blk; CJK_Symbols                      ; CJK_Symbols_And_Punctuation
+blk; Compat_Jamo                      ; Hangul_Compatibility_Jamo
+blk; Control_Pictures                 ; Control_Pictures
+blk; Coptic                           ; Coptic
+blk; Counting_Rod                     ; Counting_Rod_Numerals
+blk; Cuneiform                        ; Cuneiform
+blk; Cuneiform_Numbers                ; Cuneiform_Numbers_And_Punctuation
+blk; Currency_Symbols                 ; Currency_Symbols
+blk; Cypriot_Syllabary                ; Cypriot_Syllabary
+blk; Cyrillic                         ; Cyrillic
+blk; Cyrillic_Ext_A                   ; Cyrillic_Extended_A
+blk; Cyrillic_Ext_B                   ; Cyrillic_Extended_B
+blk; Cyrillic_Sup                     ; Cyrillic_Supplement              ; Cyrillic_Supplementary
+blk; Deseret                          ; Deseret
+blk; Devanagari                       ; Devanagari
+blk; Devanagari_Ext                   ; Devanagari_Extended
+blk; Diacriticals                     ; Combining_Diacritical_Marks
+blk; Diacriticals_For_Symbols         ; Combining_Diacritical_Marks_For_Symbols; Combining_Marks_For_Symbols
+blk; Diacriticals_Sup                 ; Combining_Diacritical_Marks_Supplement
+blk; Dingbats                         ; Dingbats
+blk; Domino                           ; Domino_Tiles
+blk; Egyptian_Hieroglyphs             ; Egyptian_Hieroglyphs
+blk; Emoticons                        ; Emoticons
+blk; Enclosed_Alphanum                ; Enclosed_Alphanumerics
+blk; Enclosed_Alphanum_Sup            ; Enclosed_Alphanumeric_Supplement
+blk; Enclosed_CJK                     ; Enclosed_CJK_Letters_And_Months
+blk; Enclosed_Ideographic_Sup         ; Enclosed_Ideographic_Supplement
+blk; Ethiopic                         ; Ethiopic
+blk; Ethiopic_Ext                     ; Ethiopic_Extended
+blk; Ethiopic_Ext_A                   ; Ethiopic_Extended_A
+blk; Ethiopic_Sup                     ; Ethiopic_Supplement
+blk; Geometric_Shapes                 ; Geometric_Shapes
+blk; Georgian                         ; Georgian
+blk; Georgian_Sup                     ; Georgian_Supplement
+blk; Glagolitic                       ; Glagolitic
+blk; Gothic                           ; Gothic
+blk; Greek                            ; Greek_And_Coptic
+blk; Greek_Ext                        ; Greek_Extended
+blk; Gujarati                         ; Gujarati
+blk; Gurmukhi                         ; Gurmukhi
+blk; Half_And_Full_Forms              ; Halfwidth_And_Fullwidth_Forms
+blk; Half_Marks                       ; Combining_Half_Marks
+blk; Hangul                           ; Hangul_Syllables
+blk; Hanunoo                          ; Hanunoo
+blk; Hebrew                           ; Hebrew
+blk; High_PU_Surrogates               ; High_Private_Use_Surrogates
+blk; High_Surrogates                  ; High_Surrogates
+blk; Hiragana                         ; Hiragana
+blk; IDC                              ; Ideographic_Description_Characters
+blk; Imperial_Aramaic                 ; Imperial_Aramaic
+blk; Indic_Number_Forms               ; Common_Indic_Number_Forms
+blk; Inscriptional_Pahlavi            ; Inscriptional_Pahlavi
+blk; Inscriptional_Parthian           ; Inscriptional_Parthian
+blk; IPA_Ext                          ; IPA_Extensions
+blk; Jamo                             ; Hangul_Jamo
+blk; Jamo_Ext_A                       ; Hangul_Jamo_Extended_A
+blk; Jamo_Ext_B                       ; Hangul_Jamo_Extended_B
+blk; Javanese                         ; Javanese
+blk; Kaithi                           ; Kaithi
+blk; Kana_Sup                         ; Kana_Supplement
+blk; Kanbun                           ; Kanbun
+blk; Kangxi                           ; Kangxi_Radicals
+blk; Kannada                          ; Kannada
+blk; Katakana                         ; Katakana
+blk; Katakana_Ext                     ; Katakana_Phonetic_Extensions
+blk; Kayah_Li                         ; Kayah_Li
+blk; Kharoshthi                       ; Kharoshthi
+blk; Khmer                            ; Khmer
+blk; Khmer_Symbols                    ; Khmer_Symbols
+blk; Lao                              ; Lao
+blk; Latin_1_Sup                      ; Latin_1_Supplement               ; Latin_1
+blk; Latin_Ext_A                      ; Latin_Extended_A
+blk; Latin_Ext_Additional             ; Latin_Extended_Additional
+blk; Latin_Ext_B                      ; Latin_Extended_B
+blk; Latin_Ext_C                      ; Latin_Extended_C
+blk; Latin_Ext_D                      ; Latin_Extended_D
+blk; Lepcha                           ; Lepcha
+blk; Letterlike_Symbols               ; Letterlike_Symbols
+blk; Limbu                            ; Limbu
+blk; Linear_B_Ideograms               ; Linear_B_Ideograms
+blk; Linear_B_Syllabary               ; Linear_B_Syllabary
+blk; Lisu                             ; Lisu
+blk; Low_Surrogates                   ; Low_Surrogates
+blk; Lycian                           ; Lycian
+blk; Lydian                           ; Lydian
+blk; Mahjong                          ; Mahjong_Tiles
+blk; Malayalam                        ; Malayalam
+blk; Mandaic                          ; Mandaic
+blk; Math_Alphanum                    ; Mathematical_Alphanumeric_Symbols
+blk; Math_Operators                   ; Mathematical_Operators
+blk; Meetei_Mayek                     ; Meetei_Mayek
+blk; Meetei_Mayek_Ext                 ; Meetei_Mayek_Extensions
+blk; Meroitic_Cursive                 ; Meroitic_Cursive
+blk; Meroitic_Hieroglyphs             ; Meroitic_Hieroglyphs
+blk; Miao                             ; Miao
+blk; Misc_Arrows                      ; Miscellaneous_Symbols_And_Arrows
+blk; Misc_Math_Symbols_A              ; Miscellaneous_Mathematical_Symbols_A
+blk; Misc_Math_Symbols_B              ; Miscellaneous_Mathematical_Symbols_B
+blk; Misc_Pictographs                 ; Miscellaneous_Symbols_And_Pictographs
+blk; Misc_Symbols                     ; Miscellaneous_Symbols
+blk; Misc_Technical                   ; Miscellaneous_Technical
+blk; Modifier_Letters                 ; Spacing_Modifier_Letters
+blk; Modifier_Tone_Letters            ; Modifier_Tone_Letters
+blk; Mongolian                        ; Mongolian
+blk; Music                            ; Musical_Symbols
+blk; Myanmar                          ; Myanmar
+blk; Myanmar_Ext_A                    ; Myanmar_Extended_A
+blk; NB                               ; No_Block
+blk; New_Tai_Lue                      ; New_Tai_Lue
+blk; NKo                              ; NKo
+blk; Number_Forms                     ; Number_Forms
+blk; OCR                              ; Optical_Character_Recognition
+blk; Ogham                            ; Ogham
+blk; Ol_Chiki                         ; Ol_Chiki
+blk; Old_Italic                       ; Old_Italic
+blk; Old_Persian                      ; Old_Persian
+blk; Old_South_Arabian                ; Old_South_Arabian
+blk; Old_Turkic                       ; Old_Turkic
+blk; Oriya                            ; Oriya
+blk; Osmanya                          ; Osmanya
+blk; Phags_Pa                         ; Phags_Pa
+blk; Phaistos                         ; Phaistos_Disc
+blk; Phoenician                       ; Phoenician
+blk; Phonetic_Ext                     ; Phonetic_Extensions
+blk; Phonetic_Ext_Sup                 ; Phonetic_Extensions_Supplement
+blk; Playing_Cards                    ; Playing_Cards
+blk; PUA                              ; Private_Use_Area                 ; Private_Use
+blk; Punctuation                      ; General_Punctuation
+blk; Rejang                           ; Rejang
+blk; Rumi                             ; Rumi_Numeral_Symbols
+blk; Runic                            ; Runic
+blk; Samaritan                        ; Samaritan
+blk; Saurashtra                       ; Saurashtra
+blk; Sharada                          ; Sharada
+blk; Shavian                          ; Shavian
+blk; Sinhala                          ; Sinhala
+blk; Small_Forms                      ; Small_Form_Variants
+blk; Sora_Sompeng                     ; Sora_Sompeng
+blk; Specials                         ; Specials
+blk; Sundanese                        ; Sundanese
+blk; Sundanese_Sup                    ; Sundanese_Supplement
+blk; Sup_Arrows_A                     ; Supplemental_Arrows_A
+blk; Sup_Arrows_B                     ; Supplemental_Arrows_B
+blk; Sup_Math_Operators               ; Supplemental_Mathematical_Operators
+blk; Sup_PUA_A                        ; Supplementary_Private_Use_Area_A
+blk; Sup_PUA_B                        ; Supplementary_Private_Use_Area_B
+blk; Sup_Punctuation                  ; Supplemental_Punctuation
+blk; Super_And_Sub                    ; Superscripts_And_Subscripts
+blk; Syloti_Nagri                     ; Syloti_Nagri
+blk; Syriac                           ; Syriac
+blk; Tagalog                          ; Tagalog
+blk; Tagbanwa                         ; Tagbanwa
+blk; Tags                             ; Tags
+blk; Tai_Le                           ; Tai_Le
+blk; Tai_Tham                         ; Tai_Tham
+blk; Tai_Viet                         ; Tai_Viet
+blk; Tai_Xuan_Jing                    ; Tai_Xuan_Jing_Symbols
+blk; Takri                            ; Takri
+blk; Tamil                            ; Tamil
+blk; Telugu                           ; Telugu
+blk; Thaana                           ; Thaana
+blk; Thai                             ; Thai
+blk; Tibetan                          ; Tibetan
+blk; Tifinagh                         ; Tifinagh
+blk; Transport_And_Map                ; Transport_And_Map_Symbols
+blk; UCAS                             ; Unified_Canadian_Aboriginal_Syllabics; Canadian_Syllabics
+blk; UCAS_Ext                         ; Unified_Canadian_Aboriginal_Syllabics_Extended
+blk; Ugaritic                         ; Ugaritic
+blk; Vai                              ; Vai
+blk; Vedic_Ext                        ; Vedic_Extensions
+blk; Vertical_Forms                   ; Vertical_Forms
+blk; VS                               ; Variation_Selectors
+blk; VS_Sup                           ; Variation_Selectors_Supplement
+blk; Yi_Radicals                      ; Yi_Radicals
+blk; Yi_Syllables                     ; Yi_Syllables
+blk; Yijing                           ; Yijing_Hexagram_Symbols
 
 # Canonical_Combining_Class (ccc)
 
-ccc;   0; NR   ; Not_Reordered
-ccc;   1; OV   ; Overlay
-ccc;   7; NK   ; Nukta
-ccc;   8; KV   ; Kana_Voicing
-ccc;   9; VR   ; Virama
-ccc; 200; ATBL ; Attached_Below_Left
-ccc; 202; ATB  ; Attached_Below
-ccc; 214; ATA  ; Attached_Above
-ccc; 216; ATAR ; Attached_Above_Right
-ccc; 218; BL   ; Below_Left
-ccc; 220; B    ; Below
-ccc; 222; BR   ; Below_Right
-ccc; 224; L    ; Left
-ccc; 226; R    ; Right
-ccc; 228; AL   ; Above_Left
-ccc; 230; A    ; Above
-ccc; 232; AR   ; Above_Right
-ccc; 233; DB   ; Double_Below
-ccc; 234; DA   ; Double_Above
-ccc; 240; IS   ; Iota_Subscript
+ccc;   0; NR                         ; Not_Reordered
+ccc;   1; OV                         ; Overlay
+ccc;   7; NK                         ; Nukta
+ccc;   8; KV                         ; Kana_Voicing
+ccc;   9; VR                         ; Virama
+ccc;  10; CCC10                      ; CCC10
+ccc;  11; CCC11                      ; CCC11
+ccc;  12; CCC12                      ; CCC12
+ccc;  13; CCC13                      ; CCC13
+ccc;  14; CCC14                      ; CCC14
+ccc;  15; CCC15                      ; CCC15
+ccc;  16; CCC16                      ; CCC16
+ccc;  17; CCC17                      ; CCC17
+ccc;  18; CCC18                      ; CCC18
+ccc;  19; CCC19                      ; CCC19
+ccc;  20; CCC20                      ; CCC20
+ccc;  21; CCC21                      ; CCC21
+ccc;  22; CCC22                      ; CCC22
+ccc;  23; CCC23                      ; CCC23
+ccc;  24; CCC24                      ; CCC24
+ccc;  25; CCC25                      ; CCC25
+ccc;  26; CCC26                      ; CCC26
+ccc;  27; CCC27                      ; CCC27
+ccc;  28; CCC28                      ; CCC28
+ccc;  29; CCC29                      ; CCC29
+ccc;  30; CCC30                      ; CCC30
+ccc;  31; CCC31                      ; CCC31
+ccc;  32; CCC32                      ; CCC32
+ccc;  33; CCC33                      ; CCC33
+ccc;  34; CCC34                      ; CCC34
+ccc;  35; CCC35                      ; CCC35
+ccc;  36; CCC36                      ; CCC36
+ccc;  84; CCC84                      ; CCC84
+ccc;  91; CCC91                      ; CCC91
+ccc; 103; CCC103                     ; CCC103
+ccc; 107; CCC107                     ; CCC107
+ccc; 118; CCC118                     ; CCC118
+ccc; 122; CCC122                     ; CCC122
+ccc; 129; CCC129                     ; CCC129
+ccc; 130; CCC130                     ; CCC130
+ccc; 132; CCC133                     ; CCC133
+ccc; 200; ATBL                       ; Attached_Below_Left
+ccc; 202; ATB                        ; Attached_Below
+ccc; 214; ATA                        ; Attached_Above
+ccc; 216; ATAR                       ; Attached_Above_Right
+ccc; 218; BL                         ; Below_Left
+ccc; 220; B                          ; Below
+ccc; 222; BR                         ; Below_Right
+ccc; 224; L                          ; Left
+ccc; 226; R                          ; Right
+ccc; 228; AL                         ; Above_Left
+ccc; 230; A                          ; Above
+ccc; 232; AR                         ; Above_Right
+ccc; 233; DB                         ; Double_Below
+ccc; 234; DA                         ; Double_Above
+ccc; 240; IS                         ; Iota_Subscript
 
 # Case_Folding (cf)
 
@@ -359,53 +405,53 @@ ccc; 240; IS   ; Iota_Subscript
 
 # Case_Ignorable (CI)
 
-CI ; N         ; No                               ; F                                ; False
-CI ; Y         ; Yes                              ; T                                ; True
+CI ; N                                ; No                               ; F                                ; False
+CI ; Y                                ; Yes                              ; T                                ; True
 
 # Cased (Cased)
 
-Cased; N       ; No                               ; F                                ; False
-Cased; Y       ; Yes                              ; T                                ; True
+Cased; N                              ; No                               ; F                                ; False
+Cased; Y                              ; Yes                              ; T                                ; True
 
 # Changes_When_Casefolded (CWCF)
 
-CWCF; N        ; No                               ; F                                ; False
-CWCF; Y        ; Yes                              ; T                                ; True
+CWCF; N                               ; No                               ; F                                ; False
+CWCF; Y                               ; Yes                              ; T                                ; True
 
 # Changes_When_Casemapped (CWCM)
 
-CWCM; N        ; No                               ; F                                ; False
-CWCM; Y        ; Yes                              ; T                                ; True
+CWCM; N                               ; No                               ; F                                ; False
+CWCM; Y                               ; Yes                              ; T                                ; True
 
 # Changes_When_Lowercased (CWL)
 
-CWL; N         ; No                               ; F                                ; False
-CWL; Y         ; Yes                              ; T                                ; True
+CWL; N                                ; No                               ; F                                ; False
+CWL; Y                                ; Yes                              ; T                                ; True
 
 # Changes_When_NFKC_Casefolded (CWKCF)
 
-CWKCF; N       ; No                               ; F                                ; False
-CWKCF; Y       ; Yes                              ; T                                ; True
+CWKCF; N                              ; No                               ; F                                ; False
+CWKCF; Y                              ; Yes                              ; T                                ; True
 
 # Changes_When_Titlecased (CWT)
 
-CWT; N         ; No                               ; F                                ; False
-CWT; Y         ; Yes                              ; T                                ; True
+CWT; N                                ; No                               ; F                                ; False
+CWT; Y                                ; Yes                              ; T                                ; True
 
 # Changes_When_Uppercased (CWU)
 
-CWU; N         ; No                               ; F                                ; False
-CWU; Y         ; Yes                              ; T                                ; True
+CWU; N                                ; No                               ; F                                ; False
+CWU; Y                                ; Yes                              ; T                                ; True
 
 # Composition_Exclusion (CE)
 
-CE ; N         ; No                               ; F                                ; False
-CE ; Y         ; Yes                              ; T                                ; True
+CE ; N                                ; No                               ; F                                ; False
+CE ; Y                                ; Yes                              ; T                                ; True
 
 # Dash (Dash)
 
-Dash; N        ; No                               ; F                                ; False
-Dash; Y        ; Yes                              ; T                                ; True
+Dash; N                               ; No                               ; F                                ; False
+Dash; Y                               ; Yes                              ; T                                ; True
 
 # Decomposition_Mapping (dm)
 
@@ -413,73 +459,73 @@ Dash; Y        ; Yes                              ; T                           
 
 # Decomposition_Type (dt)
 
-dt ; Can       ; Canonical                        ; can
-dt ; Com       ; Compat                           ; com
-dt ; Enc       ; Circle                           ; enc
-dt ; Fin       ; Final                            ; fin
-dt ; Font      ; font
-dt ; Fra       ; Fraction                         ; fra
-dt ; Init      ; Initial                          ; init
-dt ; Iso       ; Isolated                         ; iso
-dt ; Med       ; Medial                           ; med
-dt ; Nar       ; Narrow                           ; nar
-dt ; Nb        ; Nobreak                          ; nb
-dt ; None      ; none
-dt ; Sml       ; Small                            ; sml
-dt ; Sqr       ; Square                           ; sqr
-dt ; Sub       ; sub
-dt ; Sup       ; Super                            ; sup
-dt ; Vert      ; Vertical                         ; vert
-dt ; Wide      ; wide
+dt ; Can                              ; Canonical                        ; can
+dt ; Com                              ; Compat                           ; com
+dt ; Enc                              ; Circle                           ; enc
+dt ; Fin                              ; Final                            ; fin
+dt ; Font                             ; Font                             ; font
+dt ; Fra                              ; Fraction                         ; fra
+dt ; Init                             ; Initial                          ; init
+dt ; Iso                              ; Isolated                         ; iso
+dt ; Med                              ; Medial                           ; med
+dt ; Nar                              ; Narrow                           ; nar
+dt ; Nb                               ; Nobreak                          ; nb
+dt ; None                             ; None                             ; none
+dt ; Sml                              ; Small                            ; sml
+dt ; Sqr                              ; Square                           ; sqr
+dt ; Sub                              ; Sub                              ; sub
+dt ; Sup                              ; Super                            ; sup
+dt ; Vert                             ; Vertical                         ; vert
+dt ; Wide                             ; Wide                             ; wide
 
 # Default_Ignorable_Code_Point (DI)
 
-DI ; N         ; No                               ; F                                ; False
-DI ; Y         ; Yes                              ; T                                ; True
+DI ; N                                ; No                               ; F                                ; False
+DI ; Y                                ; Yes                              ; T                                ; True
 
 # Deprecated (Dep)
 
-Dep; N         ; No                               ; F                                ; False
-Dep; Y         ; Yes                              ; T                                ; True
+Dep; N                                ; No                               ; F                                ; False
+Dep; Y                                ; Yes                              ; T                                ; True
 
 # Diacritic (Dia)
 
-Dia; N         ; No                               ; F                                ; False
-Dia; Y         ; Yes                              ; T                                ; True
+Dia; N                                ; No                               ; F                                ; False
+Dia; Y                                ; Yes                              ; T                                ; True
 
 # East_Asian_Width (ea)
 
-ea ; A         ; Ambiguous
-ea ; F         ; Fullwidth
-ea ; H         ; Halfwidth
-ea ; N         ; Neutral
-ea ; Na        ; Narrow
-ea ; W         ; Wide
+ea ; A                                ; Ambiguous
+ea ; F                                ; Fullwidth
+ea ; H                                ; Halfwidth
+ea ; N                                ; Neutral
+ea ; Na                               ; Narrow
+ea ; W                                ; Wide
 
 # Expands_On_NFC (XO_NFC)
 
-XO_NFC; N      ; No                               ; F                                ; False
-XO_NFC; Y      ; Yes                              ; T                                ; True
+XO_NFC; N                             ; No                               ; F                                ; False
+XO_NFC; Y                             ; Yes                              ; T                                ; True
 
 # Expands_On_NFD (XO_NFD)
 
-XO_NFD; N      ; No                               ; F                                ; False
-XO_NFD; Y      ; Yes                              ; T                                ; True
+XO_NFD; N                             ; No                               ; F                                ; False
+XO_NFD; Y                             ; Yes                              ; T                                ; True
 
 # Expands_On_NFKC (XO_NFKC)
 
-XO_NFKC; N     ; No                               ; F                                ; False
-XO_NFKC; Y     ; Yes                              ; T                                ; True
+XO_NFKC; N                            ; No                               ; F                                ; False
+XO_NFKC; Y                            ; Yes                              ; T                                ; True
 
 # Expands_On_NFKD (XO_NFKD)
 
-XO_NFKD; N     ; No                               ; F                                ; False
-XO_NFKD; Y     ; Yes                              ; T                                ; True
+XO_NFKD; N                            ; No                               ; F                                ; False
+XO_NFKD; Y                            ; Yes                              ; T                                ; True
 
 # Extender (Ext)
 
-Ext; N         ; No                               ; F                                ; False
-Ext; Y         ; Yes                              ; T                                ; True
+Ext; N                                ; No                               ; F                                ; False
+Ext; Y                                ; Yes                              ; T                                ; True
 
 # FC_NFKC_Closure (FC_NFKC)
 
@@ -487,118 +533,118 @@ Ext; Y         ; Yes                              ; T                           
 
 # Full_Composition_Exclusion (Comp_Ex)
 
-Comp_Ex; N     ; No                               ; F                                ; False
-Comp_Ex; Y     ; Yes                              ; T                                ; True
+Comp_Ex; N                            ; No                               ; F                                ; False
+Comp_Ex; Y                            ; Yes                              ; T                                ; True
 
 # General_Category (gc)
 
-gc ; C         ; Other                            # Cc | Cf | Cn | Co | Cs
-gc ; Cc        ; Control                          ; cntrl
-gc ; Cf        ; Format
-gc ; Cn        ; Unassigned
-gc ; Co        ; Private_Use
-gc ; Cs        ; Surrogate
-gc ; L         ; Letter                           # Ll | Lm | Lo | Lt | Lu
-gc ; LC        ; Cased_Letter                     # Ll | Lt | Lu
-gc ; Ll        ; Lowercase_Letter
-gc ; Lm        ; Modifier_Letter
-gc ; Lo        ; Other_Letter
-gc ; Lt        ; Titlecase_Letter
-gc ; Lu        ; Uppercase_Letter
-gc ; M         ; Mark                             # Mc | Me | Mn
-gc ; Mc        ; Spacing_Mark
-gc ; Me        ; Enclosing_Mark
-gc ; Mn        ; Nonspacing_Mark
-gc ; N         ; Number                           # Nd | Nl | No
-gc ; Nd        ; Decimal_Number                   ; digit
-gc ; Nl        ; Letter_Number
-gc ; No        ; Other_Number
-gc ; P         ; Punctuation                      ; punct                            # Pc | Pd | Pe | Pf | Pi | Po | Ps
-gc ; Pc        ; Connector_Punctuation
-gc ; Pd        ; Dash_Punctuation
-gc ; Pe        ; Close_Punctuation
-gc ; Pf        ; Final_Punctuation
-gc ; Pi        ; Initial_Punctuation
-gc ; Po        ; Other_Punctuation
-gc ; Ps        ; Open_Punctuation
-gc ; S         ; Symbol                           # Sc | Sk | Sm | So
-gc ; Sc        ; Currency_Symbol
-gc ; Sk        ; Modifier_Symbol
-gc ; Sm        ; Math_Symbol
-gc ; So        ; Other_Symbol
-gc ; Z         ; Separator                        # Zl | Zp | Zs
-gc ; Zl        ; Line_Separator
-gc ; Zp        ; Paragraph_Separator
-gc ; Zs        ; Space_Separator
+gc ; C                                ; Other                            # Cc | Cf | Cn | Co | Cs
+gc ; Cc                               ; Control                          ; cntrl
+gc ; Cf                               ; Format
+gc ; Cn                               ; Unassigned
+gc ; Co                               ; Private_Use
+gc ; Cs                               ; Surrogate
+gc ; L                                ; Letter                           # Ll | Lm | Lo | Lt | Lu
+gc ; LC                               ; Cased_Letter                     # Ll | Lt | Lu
+gc ; Ll                               ; Lowercase_Letter
+gc ; Lm                               ; Modifier_Letter
+gc ; Lo                               ; Other_Letter
+gc ; Lt                               ; Titlecase_Letter
+gc ; Lu                               ; Uppercase_Letter
+gc ; M                                ; Mark                             ; Combining_Mark                   # Mc | Me | Mn
+gc ; Mc                               ; Spacing_Mark
+gc ; Me                               ; Enclosing_Mark
+gc ; Mn                               ; Nonspacing_Mark
+gc ; N                                ; Number                           # Nd | Nl | No
+gc ; Nd                               ; Decimal_Number                   ; digit
+gc ; Nl                               ; Letter_Number
+gc ; No                               ; Other_Number
+gc ; P                                ; Punctuation                      ; punct                            # Pc | Pd | Pe | Pf | Pi | Po | Ps
+gc ; Pc                               ; Connector_Punctuation
+gc ; Pd                               ; Dash_Punctuation
+gc ; Pe                               ; Close_Punctuation
+gc ; Pf                               ; Final_Punctuation
+gc ; Pi                               ; Initial_Punctuation
+gc ; Po                               ; Other_Punctuation
+gc ; Ps                               ; Open_Punctuation
+gc ; S                                ; Symbol                           # Sc | Sk | Sm | So
+gc ; Sc                               ; Currency_Symbol
+gc ; Sk                               ; Modifier_Symbol
+gc ; Sm                               ; Math_Symbol
+gc ; So                               ; Other_Symbol
+gc ; Z                                ; Separator                        # Zl | Zp | Zs
+gc ; Zl                               ; Line_Separator
+gc ; Zp                               ; Paragraph_Separator
+gc ; Zs                               ; Space_Separator
 
 # Grapheme_Base (Gr_Base)
 
-Gr_Base; N     ; No                               ; F                                ; False
-Gr_Base; Y     ; Yes                              ; T                                ; True
+Gr_Base; N                            ; No                               ; F                                ; False
+Gr_Base; Y                            ; Yes                              ; T                                ; True
 
 # Grapheme_Cluster_Break (GCB)
 
-GCB; CN        ; Control
-GCB; CR        ; CR
-GCB; EX        ; Extend
-GCB; L         ; L
-GCB; LF        ; LF
-GCB; LV        ; LV
-GCB; LVT       ; LVT
-GCB; PP        ; Prepend
-GCB; SM        ; SpacingMark
-GCB; T         ; T
-GCB; V         ; V
-GCB; XX        ; Other
+GCB; CN                               ; Control
+GCB; CR                               ; CR
+GCB; EX                               ; Extend
+GCB; L                                ; L
+GCB; LF                               ; LF
+GCB; LV                               ; LV
+GCB; LVT                              ; LVT
+GCB; PP                               ; Prepend
+GCB; SM                               ; SpacingMark
+GCB; T                                ; T
+GCB; V                                ; V
+GCB; XX                               ; Other
 
 # Grapheme_Extend (Gr_Ext)
 
-Gr_Ext; N      ; No                               ; F                                ; False
-Gr_Ext; Y      ; Yes                              ; T                                ; True
+Gr_Ext; N                             ; No                               ; F                                ; False
+Gr_Ext; Y                             ; Yes                              ; T                                ; True
 
 # Grapheme_Link (Gr_Link)
 
-Gr_Link; N     ; No                               ; F                                ; False
-Gr_Link; Y     ; Yes                              ; T                                ; True
+Gr_Link; N                            ; No                               ; F                                ; False
+Gr_Link; Y                            ; Yes                              ; T                                ; True
 
 # Hangul_Syllable_Type (hst)
 
-hst; L         ; Leading_Jamo
-hst; LV        ; LV_Syllable
-hst; LVT       ; LVT_Syllable
-hst; NA        ; Not_Applicable
-hst; T         ; Trailing_Jamo
-hst; V         ; Vowel_Jamo
+hst; L                                ; Leading_Jamo
+hst; LV                               ; LV_Syllable
+hst; LVT                              ; LVT_Syllable
+hst; NA                               ; Not_Applicable
+hst; T                                ; Trailing_Jamo
+hst; V                                ; Vowel_Jamo
 
 # Hex_Digit (Hex)
 
-Hex; N         ; No                               ; F                                ; False
-Hex; Y         ; Yes                              ; T                                ; True
+Hex; N                                ; No                               ; F                                ; False
+Hex; Y                                ; Yes                              ; T                                ; True
 
 # Hyphen (Hyphen)
 
-Hyphen; N      ; No                               ; F                                ; False
-Hyphen; Y      ; Yes                              ; T                                ; True
+Hyphen; N                             ; No                               ; F                                ; False
+Hyphen; Y                             ; Yes                              ; T                                ; True
 
 # IDS_Binary_Operator (IDSB)
 
-IDSB; N        ; No                               ; F                                ; False
-IDSB; Y        ; Yes                              ; T                                ; True
+IDSB; N                               ; No                               ; F                                ; False
+IDSB; Y                               ; Yes                              ; T                                ; True
 
 # IDS_Trinary_Operator (IDST)
 
-IDST; N        ; No                               ; F                                ; False
-IDST; Y        ; Yes                              ; T                                ; True
+IDST; N                               ; No                               ; F                                ; False
+IDST; Y                               ; Yes                              ; T                                ; True
 
 # ID_Continue (IDC)
 
-IDC; N         ; No                               ; F                                ; False
-IDC; Y         ; Yes                              ; T                                ; True
+IDC; N                                ; No                               ; F                                ; False
+IDC; Y                                ; Yes                              ; T                                ; True
 
 # ID_Start (IDS)
 
-IDS; N         ; No                               ; F                                ; False
-IDS; Y         ; Yes                              ; T                                ; True
+IDS; N                                ; No                               ; F                                ; False
+IDS; Y                                ; Yes                              ; T                                ; True
 
 # ISO_Comment (isc)
 
@@ -606,188 +652,233 @@ IDS; Y         ; Yes                              ; T                           
 
 # Ideographic (Ideo)
 
-Ideo; N        ; No                               ; F                                ; False
-Ideo; Y        ; Yes                              ; T                                ; True
+Ideo; N                               ; No                               ; F                                ; False
+Ideo; Y                               ; Yes                              ; T                                ; True
+
+# Indic_Matra_Category (InMC)
+
+InMC; Bottom                          ; Bottom
+InMC; Bottom_And_Right                ; Bottom_And_Right
+InMC; Invisible                       ; Invisible
+InMC; Left                            ; Left
+InMC; Left_And_Right                  ; Left_And_Right
+InMC; NA                              ; NA
+InMC; Overstruck                      ; Overstruck
+InMC; Right                           ; Right
+InMC; Top                             ; Top
+InMC; Top_And_Bottom                  ; Top_And_Bottom
+InMC; Top_And_Bottom_And_Right        ; Top_And_Bottom_And_Right
+InMC; Top_And_Left                    ; Top_And_Left
+InMC; Top_And_Left_And_Right          ; Top_And_Left_And_Right
+InMC; Top_And_Right                   ; Top_And_Right
+InMC; Visual_Order_Left               ; Visual_Order_Left
+
+# Indic_Syllabic_Category (InSC)
+
+InSC; Avagraha                        ; Avagraha
+InSC; Bindu                           ; Bindu
+InSC; Consonant                       ; Consonant
+InSC; Consonant_Dead                  ; Consonant_Dead
+InSC; Consonant_Final                 ; Consonant_Final
+InSC; Consonant_Head_Letter           ; Consonant_Head_Letter
+InSC; Consonant_Medial                ; Consonant_Medial
+InSC; Consonant_Placeholder           ; Consonant_Placeholder
+InSC; Consonant_Repha                 ; Consonant_Repha
+InSC; Consonant_Subjoined             ; Consonant_Subjoined
+InSC; Modifying_Letter                ; Modifying_Letter
+InSC; Nukta                           ; Nukta
+InSC; Other                           ; Other
+InSC; Register_Shifter                ; Register_Shifter
+InSC; Tone_Letter                     ; Tone_Letter
+InSC; Tone_Mark                       ; Tone_Mark
+InSC; Virama                          ; Virama
+InSC; Visarga                         ; Visarga
+InSC; Vowel                           ; Vowel
+InSC; Vowel_Dependent                 ; Vowel_Dependent
+InSC; Vowel_Independent               ; Vowel_Independent
 
 # Jamo_Short_Name (JSN)
 
 # @missing: 0000..10FFFF; Jamo_Short_Name; <none>
-JSN; A         ; A
-JSN; AE        ; AE
-JSN; B         ; B
-JSN; BB        ; BB
-JSN; BS        ; BS
-JSN; C         ; C
-JSN; D         ; D
-JSN; DD        ; DD
-JSN; E         ; E
-JSN; EO        ; EO
-JSN; EU        ; EU
-JSN; G         ; G
-JSN; GG        ; GG
-JSN; GS        ; GS
-JSN; H         ; H
-JSN; I         ; I
-JSN; J         ; J
-JSN; JJ        ; JJ
-JSN; K         ; K
-JSN; L         ; L
-JSN; LB        ; LB
-JSN; LG        ; LG
-JSN; LH        ; LH
-JSN; LM        ; LM
-JSN; LP        ; LP
-JSN; LS        ; LS
-JSN; LT        ; LT
-JSN; M         ; M
-JSN; N         ; N
-JSN; NG        ; NG
-JSN; NH        ; NH
-JSN; NJ        ; NJ
-JSN; O         ; O
-JSN; OE        ; OE
-JSN; P         ; P
-JSN; R         ; R
-JSN; S         ; S
-JSN; SS        ; SS
-JSN; T         ; T
-JSN; U         ; U
-JSN; WA        ; WA
-JSN; WAE       ; WAE
-JSN; WE        ; WE
-JSN; WEO       ; WEO
-JSN; WI        ; WI
-JSN; YA        ; YA
-JSN; YAE       ; YAE
-JSN; YE        ; YE
-JSN; YEO       ; YEO
-JSN; YI        ; YI
-JSN; YO        ; YO
-JSN; YU        ; YU
+JSN; A                                ; A
+JSN; AE                               ; AE
+JSN; B                                ; B
+JSN; BB                               ; BB
+JSN; BS                               ; BS
+JSN; C                                ; C
+JSN; D                                ; D
+JSN; DD                               ; DD
+JSN; E                                ; E
+JSN; EO                               ; EO
+JSN; EU                               ; EU
+JSN; G                                ; G
+JSN; GG                               ; GG
+JSN; GS                               ; GS
+JSN; H                                ; H
+JSN; I                                ; I
+JSN; J                                ; J
+JSN; JJ                               ; JJ
+JSN; K                                ; K
+JSN; L                                ; L
+JSN; LB                               ; LB
+JSN; LG                               ; LG
+JSN; LH                               ; LH
+JSN; LM                               ; LM
+JSN; LP                               ; LP
+JSN; LS                               ; LS
+JSN; LT                               ; LT
+JSN; M                                ; M
+JSN; N                                ; N
+JSN; NG                               ; NG
+JSN; NH                               ; NH
+JSN; NJ                               ; NJ
+JSN; O                                ; O
+JSN; OE                               ; OE
+JSN; P                                ; P
+JSN; R                                ; R
+JSN; S                                ; S
+JSN; SS                               ; SS
+JSN; T                                ; T
+JSN; U                                ; U
+JSN; WA                               ; WA
+JSN; WAE                              ; WAE
+JSN; WE                               ; WE
+JSN; WEO                              ; WEO
+JSN; WI                               ; WI
+JSN; YA                               ; YA
+JSN; YAE                              ; YAE
+JSN; YE                               ; YE
+JSN; YEO                              ; YEO
+JSN; YI                               ; YI
+JSN; YO                               ; YO
+JSN; YU                               ; YU
 
 # Join_Control (Join_C)
 
-Join_C; N      ; No                               ; F                                ; False
-Join_C; Y      ; Yes                              ; T                                ; True
+Join_C; N                             ; No                               ; F                                ; False
+Join_C; Y                             ; Yes                              ; T                                ; True
 
 # Joining_Group (jg)
 
-jg ; n/a       ; Ain
-jg ; n/a       ; Alaph
-jg ; n/a       ; Alef
-jg ; n/a       ; Beh
-jg ; n/a       ; Beth
-jg ; n/a       ; Burushaski_Yeh_Barree
-jg ; n/a       ; Dal
-jg ; n/a       ; Dalath_Rish
-jg ; n/a       ; E
-jg ; n/a       ; Farsi_Yeh
-jg ; n/a       ; Fe
-jg ; n/a       ; Feh
-jg ; n/a       ; Final_Semkath
-jg ; n/a       ; Gaf
-jg ; n/a       ; Gamal
-jg ; n/a       ; Hah
-jg ; n/a       ; He
-jg ; n/a       ; Heh
-jg ; n/a       ; Heh_Goal
-jg ; n/a       ; Heth
-jg ; n/a       ; Kaf
-jg ; n/a       ; Kaph
-jg ; n/a       ; Khaph
-jg ; n/a       ; Knotted_Heh
-jg ; n/a       ; Lam
-jg ; n/a       ; Lamadh
-jg ; n/a       ; Meem
-jg ; n/a       ; Mim
-jg ; n/a       ; No_Joining_Group
-jg ; n/a       ; Noon
-jg ; n/a       ; Nun
-jg ; n/a       ; Nya
-jg ; n/a       ; Pe
-jg ; n/a       ; Qaf
-jg ; n/a       ; Qaph
-jg ; n/a       ; Reh
-jg ; n/a       ; Reversed_Pe
-jg ; n/a       ; Sad
-jg ; n/a       ; Sadhe
-jg ; n/a       ; Seen
-jg ; n/a       ; Semkath
-jg ; n/a       ; Shin
-jg ; n/a       ; Swash_Kaf
-jg ; n/a       ; Syriac_Waw
-jg ; n/a       ; Tah
-jg ; n/a       ; Taw
-jg ; n/a       ; Teh_Marbuta
-jg ; n/a       ; Teh_Marbuta_Goal                 ; Hamza_On_Heh_Goal
-jg ; n/a       ; Teth
-jg ; n/a       ; Waw
-jg ; n/a       ; Yeh
-jg ; n/a       ; Yeh_Barree
-jg ; n/a       ; Yeh_With_Tail
-jg ; n/a       ; Yudh
-jg ; n/a       ; Yudh_He
-jg ; n/a       ; Zain
-jg ; n/a       ; Zhain
+jg ; Ain                              ; Ain
+jg ; Alaph                            ; Alaph
+jg ; Alef                             ; Alef
+jg ; Beh                              ; Beh
+jg ; Beth                             ; Beth
+jg ; Burushaski_Yeh_Barree            ; Burushaski_Yeh_Barree
+jg ; Dal                              ; Dal
+jg ; Dalath_Rish                      ; Dalath_Rish
+jg ; E                                ; E
+jg ; Farsi_Yeh                        ; Farsi_Yeh
+jg ; Fe                               ; Fe
+jg ; Feh                              ; Feh
+jg ; Final_Semkath                    ; Final_Semkath
+jg ; Gaf                              ; Gaf
+jg ; Gamal                            ; Gamal
+jg ; Hah                              ; Hah
+jg ; He                               ; He
+jg ; Heh                              ; Heh
+jg ; Heh_Goal                         ; Heh_Goal
+jg ; Heth                             ; Heth
+jg ; Kaf                              ; Kaf
+jg ; Kaph                             ; Kaph
+jg ; Khaph                            ; Khaph
+jg ; Knotted_Heh                      ; Knotted_Heh
+jg ; Lam                              ; Lam
+jg ; Lamadh                           ; Lamadh
+jg ; Meem                             ; Meem
+jg ; Mim                              ; Mim
+jg ; No_Joining_Group                 ; No_Joining_Group
+jg ; Noon                             ; Noon
+jg ; Nun                              ; Nun
+jg ; Nya                              ; Nya
+jg ; Pe                               ; Pe
+jg ; Qaf                              ; Qaf
+jg ; Qaph                             ; Qaph
+jg ; Reh                              ; Reh
+jg ; Reversed_Pe                      ; Reversed_Pe
+jg ; Rohingya_Yeh                     ; Rohingya_Yeh
+jg ; Sad                              ; Sad
+jg ; Sadhe                            ; Sadhe
+jg ; Seen                             ; Seen
+jg ; Semkath                          ; Semkath
+jg ; Shin                             ; Shin
+jg ; Swash_Kaf                        ; Swash_Kaf
+jg ; Syriac_Waw                       ; Syriac_Waw
+jg ; Tah                              ; Tah
+jg ; Taw                              ; Taw
+jg ; Teh_Marbuta                      ; Teh_Marbuta
+jg ; Teh_Marbuta_Goal                 ; Hamza_On_Heh_Goal
+jg ; Teth                             ; Teth
+jg ; Waw                              ; Waw
+jg ; Yeh                              ; Yeh
+jg ; Yeh_Barree                       ; Yeh_Barree
+jg ; Yeh_With_Tail                    ; Yeh_With_Tail
+jg ; Yudh                             ; Yudh
+jg ; Yudh_He                          ; Yudh_He
+jg ; Zain                             ; Zain
+jg ; Zhain                            ; Zhain
 
 # Joining_Type (jt)
 
-jt ; C         ; Join_Causing
-jt ; D         ; Dual_Joining
-jt ; L         ; Left_Joining
-jt ; R         ; Right_Joining
-jt ; T         ; Transparent
-jt ; U         ; Non_Joining
+jt ; C                                ; Join_Causing
+jt ; D                                ; Dual_Joining
+jt ; L                                ; Left_Joining
+jt ; R                                ; Right_Joining
+jt ; T                                ; Transparent
+jt ; U                                ; Non_Joining
 
 # Line_Break (lb)
 
-lb ; AI        ; Ambiguous
-lb ; AL        ; Alphabetic
-lb ; B2        ; Break_Both
-lb ; BA        ; Break_After
-lb ; BB        ; Break_Before
-lb ; BK        ; Mandatory_Break
-lb ; CB        ; Contingent_Break
-lb ; CL        ; Close_Punctuation
-lb ; CM        ; Combining_Mark
-lb ; CP        ; Close_Parenthesis
-lb ; CR        ; Carriage_Return
-lb ; EX        ; Exclamation
-lb ; GL        ; Glue
-lb ; H2        ; H2
-lb ; H3        ; H3
-lb ; HY        ; Hyphen
-lb ; ID        ; Ideographic
-lb ; IN        ; Inseparable                      ; Inseperable
-lb ; IS        ; Infix_Numeric
-lb ; JL        ; JL
-lb ; JT        ; JT
-lb ; JV        ; JV
-lb ; LF        ; Line_Feed
-lb ; NL        ; Next_Line
-lb ; NS        ; Nonstarter
-lb ; NU        ; Numeric
-lb ; OP        ; Open_Punctuation
-lb ; PO        ; Postfix_Numeric
-lb ; PR        ; Prefix_Numeric
-lb ; QU        ; Quotation
-lb ; SA        ; Complex_Context
-lb ; SG        ; Surrogate
-lb ; SP        ; Space
-lb ; SY        ; Break_Symbols
-lb ; WJ        ; Word_Joiner
-lb ; XX        ; Unknown
-lb ; ZW        ; ZWSpace
+lb ; AI                               ; Ambiguous
+lb ; AL                               ; Alphabetic
+lb ; B2                               ; Break_Both
+lb ; BA                               ; Break_After
+lb ; BB                               ; Break_Before
+lb ; BK                               ; Mandatory_Break
+lb ; CB                               ; Contingent_Break
+lb ; CJ                               ; Conditional_Japanese_Starter
+lb ; CL                               ; Close_Punctuation
+lb ; CM                               ; Combining_Mark
+lb ; CP                               ; Close_Parenthesis
+lb ; CR                               ; Carriage_Return
+lb ; EX                               ; Exclamation
+lb ; GL                               ; Glue
+lb ; H2                               ; H2
+lb ; H3                               ; H3
+lb ; HL                               ; Hebrew_Letter
+lb ; HY                               ; Hyphen
+lb ; ID                               ; Ideographic
+lb ; IN                               ; Inseparable                      ; Inseperable
+lb ; IS                               ; Infix_Numeric
+lb ; JL                               ; JL
+lb ; JT                               ; JT
+lb ; JV                               ; JV
+lb ; LF                               ; Line_Feed
+lb ; NL                               ; Next_Line
+lb ; NS                               ; Nonstarter
+lb ; NU                               ; Numeric
+lb ; OP                               ; Open_Punctuation
+lb ; PO                               ; Postfix_Numeric
+lb ; PR                               ; Prefix_Numeric
+lb ; QU                               ; Quotation
+lb ; SA                               ; Complex_Context
+lb ; SG                               ; Surrogate
+lb ; SP                               ; Space
+lb ; SY                               ; Break_Symbols
+lb ; WJ                               ; Word_Joiner
+lb ; XX                               ; Unknown
+lb ; ZW                               ; ZWSpace
 
 # Logical_Order_Exception (LOE)
 
-LOE; N         ; No                               ; F                                ; False
-LOE; Y         ; Yes                              ; T                                ; True
+LOE; N                                ; No                               ; F                                ; False
+LOE; Y                                ; Yes                              ; T                                ; True
 
 # Lowercase (Lower)
 
-Lower; N       ; No                               ; F                                ; False
-Lower; Y       ; Yes                              ; T                                ; True
+Lower; N                              ; No                               ; F                                ; False
+Lower; Y                              ; Yes                              ; T                                ; True
 
 # Lowercase_Mapping (lc)
 
@@ -795,19 +886,19 @@ Lower; Y       ; Yes                              ; T                           
 
 # Math (Math)
 
-Math; N        ; No                               ; F                                ; False
-Math; Y        ; Yes                              ; T                                ; True
+Math; N                               ; No                               ; F                                ; False
+Math; Y                               ; Yes                              ; T                                ; True
 
 # NFC_Quick_Check (NFC_QC)
 
-NFC_QC; M      ; Maybe
-NFC_QC; N      ; No
-NFC_QC; Y      ; Yes
+NFC_QC; M                             ; Maybe
+NFC_QC; N                             ; No
+NFC_QC; Y                             ; Yes
 
 # NFD_Quick_Check (NFD_QC)
 
-NFD_QC; N      ; No
-NFD_QC; Y      ; Yes
+NFD_QC; N                             ; No
+NFD_QC; Y                             ; Yes
 
 # NFKC_Casefold (NFKC_CF)
 
@@ -815,14 +906,14 @@ NFD_QC; Y      ; Yes
 
 # NFKC_Quick_Check (NFKC_QC)
 
-NFKC_QC; M     ; Maybe
-NFKC_QC; N     ; No
-NFKC_QC; Y     ; Yes
+NFKC_QC; M                            ; Maybe
+NFKC_QC; N                            ; No
+NFKC_QC; Y                            ; Yes
 
 # NFKD_Quick_Check (NFKD_QC)
 
-NFKD_QC; N     ; No
-NFKD_QC; Y     ; Yes
+NFKD_QC; N                            ; No
+NFKD_QC; Y                            ; Yes
 
 # Name (na)
 
@@ -834,15 +925,15 @@ NFKD_QC; Y     ; Yes
 
 # Noncharacter_Code_Point (NChar)
 
-NChar; N       ; No                               ; F                                ; False
-NChar; Y       ; Yes                              ; T                                ; True
+NChar; N                              ; No                               ; F                                ; False
+NChar; Y                              ; Yes                              ; T                                ; True
 
 # Numeric_Type (nt)
 
-nt ; De        ; Decimal
-nt ; Di        ; Digit
-nt ; None      ; None
-nt ; Nu        ; Numeric
+nt ; De                               ; Decimal
+nt ; Di                               ; Digit
+nt ; None                             ; None
+nt ; Nu                               ; Numeric
 
 # Numeric_Value (nv)
 
@@ -850,186 +941,197 @@ nt ; Nu        ; Numeric
 
 # Other_Alphabetic (OAlpha)
 
-OAlpha; N      ; No                               ; F                                ; False
-OAlpha; Y      ; Yes                              ; T                                ; True
+OAlpha; N                             ; No                               ; F                                ; False
+OAlpha; Y                             ; Yes                              ; T                                ; True
 
 # Other_Default_Ignorable_Code_Point (ODI)
 
-ODI; N         ; No                               ; F                                ; False
-ODI; Y         ; Yes                              ; T                                ; True
+ODI; N                                ; No                               ; F                                ; False
+ODI; Y                                ; Yes                              ; T                                ; True
 
 # Other_Grapheme_Extend (OGr_Ext)
 
-OGr_Ext; N     ; No                               ; F                                ; False
-OGr_Ext; Y     ; Yes                              ; T                                ; True
+OGr_Ext; N                            ; No                               ; F                                ; False
+OGr_Ext; Y                            ; Yes                              ; T                                ; True
 
 # Other_ID_Continue (OIDC)
 
-OIDC; N        ; No                               ; F                                ; False
-OIDC; Y        ; Yes                              ; T                                ; True
+OIDC; N                               ; No                               ; F                                ; False
+OIDC; Y                               ; Yes                              ; T                                ; True
 
 # Other_ID_Start (OIDS)
 
-OIDS; N        ; No                               ; F                                ; False
-OIDS; Y        ; Yes                              ; T                                ; True
+OIDS; N                               ; No                               ; F                                ; False
+OIDS; Y                               ; Yes                              ; T                                ; True
 
 # Other_Lowercase (OLower)
 
-OLower; N      ; No                               ; F                                ; False
-OLower; Y      ; Yes                              ; T                                ; True
+OLower; N                             ; No                               ; F                                ; False
+OLower; Y                             ; Yes                              ; T                                ; True
 
 # Other_Math (OMath)
 
-OMath; N       ; No                               ; F                                ; False
-OMath; Y       ; Yes                              ; T                                ; True
+OMath; N                              ; No                               ; F                                ; False
+OMath; Y                              ; Yes                              ; T                                ; True
 
 # Other_Uppercase (OUpper)
 
-OUpper; N      ; No                               ; F                                ; False
-OUpper; Y      ; Yes                              ; T                                ; True
+OUpper; N                             ; No                               ; F                                ; False
+OUpper; Y                             ; Yes                              ; T                                ; True
 
 # Pattern_Syntax (Pat_Syn)
 
-Pat_Syn; N     ; No                               ; F                                ; False
-Pat_Syn; Y     ; Yes                              ; T                                ; True
+Pat_Syn; N                            ; No                               ; F                                ; False
+Pat_Syn; Y                            ; Yes                              ; T                                ; True
 
 # Pattern_White_Space (Pat_WS)
 
-Pat_WS; N      ; No                               ; F                                ; False
-Pat_WS; Y      ; Yes                              ; T                                ; True
+Pat_WS; N                             ; No                               ; F                                ; False
+Pat_WS; Y                             ; Yes                              ; T                                ; True
 
 # Quotation_Mark (QMark)
 
-QMark; N       ; No                               ; F                                ; False
-QMark; Y       ; Yes                              ; T                                ; True
+QMark; N                              ; No                               ; F                                ; False
+QMark; Y                              ; Yes                              ; T                                ; True
 
 # Radical (Radical)
 
-Radical; N     ; No                               ; F                                ; False
-Radical; Y     ; Yes                              ; T                                ; True
+Radical; N                            ; No                               ; F                                ; False
+Radical; Y                            ; Yes                              ; T                                ; True
 
 # STerm (STerm)
 
-STerm; N       ; No                               ; F                                ; False
-STerm; Y       ; Yes                              ; T                                ; True
+STerm; N                              ; No                               ; F                                ; False
+STerm; Y                              ; Yes                              ; T                                ; True
 
 # Script (sc)
 
-sc ; Arab      ; Arabic
-sc ; Armi      ; Imperial_Aramaic
-sc ; Armn      ; Armenian
-sc ; Avst      ; Avestan
-sc ; Bali      ; Balinese
-sc ; Bamu      ; Bamum
-sc ; Batk      ; Batak
-sc ; Beng      ; Bengali
-sc ; Bopo      ; Bopomofo
-sc ; Brah      ; Brahmi
-sc ; Brai      ; Braille
-sc ; Bugi      ; Buginese
-sc ; Buhd      ; Buhid
-sc ; Cans      ; Canadian_Aboriginal
-sc ; Cari      ; Carian
-sc ; Cham      ; Cham
-sc ; Cher      ; Cherokee
-sc ; Copt      ; Coptic                           ; Qaac
-sc ; Cprt      ; Cypriot
-sc ; Cyrl      ; Cyrillic
-sc ; Deva      ; Devanagari
-sc ; Dsrt      ; Deseret
-sc ; Egyp      ; Egyptian_Hieroglyphs
-sc ; Ethi      ; Ethiopic
-sc ; Geor      ; Georgian
-sc ; Glag      ; Glagolitic
-sc ; Goth      ; Gothic
-sc ; Grek      ; Greek
-sc ; Gujr      ; Gujarati
-sc ; Guru      ; Gurmukhi
-sc ; Hang      ; Hangul
-sc ; Hani      ; Han
-sc ; Hano      ; Hanunoo
-sc ; Hebr      ; Hebrew
-sc ; Hira      ; Hiragana
-sc ; Hrkt      ; Katakana_Or_Hiragana
-sc ; Ital      ; Old_Italic
-sc ; Java      ; Javanese
-sc ; Kali      ; Kayah_Li
-sc ; Kana      ; Katakana
-sc ; Khar      ; Kharoshthi
-sc ; Khmr      ; Khmer
-sc ; Knda      ; Kannada
-sc ; Kthi      ; Kaithi
-sc ; Lana      ; Tai_Tham
-sc ; Laoo      ; Lao
-sc ; Latn      ; Latin
-sc ; Lepc      ; Lepcha
-sc ; Limb      ; Limbu
-sc ; Linb      ; Linear_B
-sc ; Lisu      ; Lisu
-sc ; Lyci      ; Lycian
-sc ; Lydi      ; Lydian
-sc ; Mand      ; Mandaic
-sc ; Mlym      ; Malayalam
-sc ; Mong      ; Mongolian
-sc ; Mtei      ; Meetei_Mayek
-sc ; Mymr      ; Myanmar
-sc ; Nkoo      ; Nko
-sc ; Ogam      ; Ogham
-sc ; Olck      ; Ol_Chiki
-sc ; Orkh      ; Old_Turkic
-sc ; Orya      ; Oriya
-sc ; Osma      ; Osmanya
-sc ; Phag      ; Phags_Pa
-sc ; Phli      ; Inscriptional_Pahlavi
-sc ; Phnx      ; Phoenician
-sc ; Prti      ; Inscriptional_Parthian
-sc ; Rjng      ; Rejang
-sc ; Runr      ; Runic
-sc ; Samr      ; Samaritan
-sc ; Sarb      ; Old_South_Arabian
-sc ; Saur      ; Saurashtra
-sc ; Shaw      ; Shavian
-sc ; Sinh      ; Sinhala
-sc ; Sund      ; Sundanese
-sc ; Sylo      ; Syloti_Nagri
-sc ; Syrc      ; Syriac
-sc ; Tagb      ; Tagbanwa
-sc ; Tale      ; Tai_Le
-sc ; Talu      ; New_Tai_Lue
-sc ; Taml      ; Tamil
-sc ; Tavt      ; Tai_Viet
-sc ; Telu      ; Telugu
-sc ; Tfng      ; Tifinagh
-sc ; Tglg      ; Tagalog
-sc ; Thaa      ; Thaana
-sc ; Thai      ; Thai
-sc ; Tibt      ; Tibetan
-sc ; Ugar      ; Ugaritic
-sc ; Vaii      ; Vai
-sc ; Xpeo      ; Old_Persian
-sc ; Xsux      ; Cuneiform
-sc ; Yiii      ; Yi
-sc ; Zinh      ; Inherited                        ; Qaai
-sc ; Zyyy      ; Common
-sc ; Zzzz      ; Unknown
+sc ; Arab                             ; Arabic
+sc ; Armi                             ; Imperial_Aramaic
+sc ; Armn                             ; Armenian
+sc ; Avst                             ; Avestan
+sc ; Bali                             ; Balinese
+sc ; Bamu                             ; Bamum
+sc ; Batk                             ; Batak
+sc ; Beng                             ; Bengali
+sc ; Bopo                             ; Bopomofo
+sc ; Brah                             ; Brahmi
+sc ; Brai                             ; Braille
+sc ; Bugi                             ; Buginese
+sc ; Buhd                             ; Buhid
+sc ; Cakm                             ; Chakma
+sc ; Cans                             ; Canadian_Aboriginal
+sc ; Cari                             ; Carian
+sc ; Cham                             ; Cham
+sc ; Cher                             ; Cherokee
+sc ; Copt                             ; Coptic                           ; Qaac
+sc ; Cprt                             ; Cypriot
+sc ; Cyrl                             ; Cyrillic
+sc ; Deva                             ; Devanagari
+sc ; Dsrt                             ; Deseret
+sc ; Egyp                             ; Egyptian_Hieroglyphs
+sc ; Ethi                             ; Ethiopic
+sc ; Geor                             ; Georgian
+sc ; Glag                             ; Glagolitic
+sc ; Goth                             ; Gothic
+sc ; Grek                             ; Greek
+sc ; Gujr                             ; Gujarati
+sc ; Guru                             ; Gurmukhi
+sc ; Hang                             ; Hangul
+sc ; Hani                             ; Han
+sc ; Hano                             ; Hanunoo
+sc ; Hebr                             ; Hebrew
+sc ; Hira                             ; Hiragana
+sc ; Hrkt                             ; Katakana_Or_Hiragana
+sc ; Ital                             ; Old_Italic
+sc ; Java                             ; Javanese
+sc ; Kali                             ; Kayah_Li
+sc ; Kana                             ; Katakana
+sc ; Khar                             ; Kharoshthi
+sc ; Khmr                             ; Khmer
+sc ; Knda                             ; Kannada
+sc ; Kthi                             ; Kaithi
+sc ; Lana                             ; Tai_Tham
+sc ; Laoo                             ; Lao
+sc ; Latn                             ; Latin
+sc ; Lepc                             ; Lepcha
+sc ; Limb                             ; Limbu
+sc ; Linb                             ; Linear_B
+sc ; Lisu                             ; Lisu
+sc ; Lyci                             ; Lycian
+sc ; Lydi                             ; Lydian
+sc ; Mand                             ; Mandaic
+sc ; Merc                             ; Meroitic_Cursive
+sc ; Mero                             ; Meroitic_Hieroglyphs
+sc ; Mlym                             ; Malayalam
+sc ; Mong                             ; Mongolian
+sc ; Mtei                             ; Meetei_Mayek
+sc ; Mymr                             ; Myanmar
+sc ; Nkoo                             ; Nko
+sc ; Ogam                             ; Ogham
+sc ; Olck                             ; Ol_Chiki
+sc ; Orkh                             ; Old_Turkic
+sc ; Orya                             ; Oriya
+sc ; Osma                             ; Osmanya
+sc ; Phag                             ; Phags_Pa
+sc ; Phli                             ; Inscriptional_Pahlavi
+sc ; Phnx                             ; Phoenician
+sc ; Plrd                             ; Miao
+sc ; Prti                             ; Inscriptional_Parthian
+sc ; Rjng                             ; Rejang
+sc ; Runr                             ; Runic
+sc ; Samr                             ; Samaritan
+sc ; Sarb                             ; Old_South_Arabian
+sc ; Saur                             ; Saurashtra
+sc ; Shaw                             ; Shavian
+sc ; Shrd                             ; Sharada
+sc ; Sinh                             ; Sinhala
+sc ; Sora                             ; Sora_Sompeng
+sc ; Sund                             ; Sundanese
+sc ; Sylo                             ; Syloti_Nagri
+sc ; Syrc                             ; Syriac
+sc ; Tagb                             ; Tagbanwa
+sc ; Takr                             ; Takri
+sc ; Tale                             ; Tai_Le
+sc ; Talu                             ; New_Tai_Lue
+sc ; Taml                             ; Tamil
+sc ; Tavt                             ; Tai_Viet
+sc ; Telu                             ; Telugu
+sc ; Tfng                             ; Tifinagh
+sc ; Tglg                             ; Tagalog
+sc ; Thaa                             ; Thaana
+sc ; Thai                             ; Thai
+sc ; Tibt                             ; Tibetan
+sc ; Ugar                             ; Ugaritic
+sc ; Vaii                             ; Vai
+sc ; Xpeo                             ; Old_Persian
+sc ; Xsux                             ; Cuneiform
+sc ; Yiii                             ; Yi
+sc ; Zinh                             ; Inherited                        ; Qaai
+sc ; Zyyy                             ; Common
+sc ; Zzzz                             ; Unknown
+
+# Script_Extensions (scx)
+
+# @missing: 0000..10FFFF; Script_Extensions; <script>
 
 # Sentence_Break (SB)
 
-SB ; AT        ; ATerm
-SB ; CL        ; Close
-SB ; CR        ; CR
-SB ; EX        ; Extend
-SB ; FO        ; Format
-SB ; LE        ; OLetter
-SB ; LF        ; LF
-SB ; LO        ; Lower
-SB ; NU        ; Numeric
-SB ; SC        ; SContinue
-SB ; SE        ; Sep
-SB ; SP        ; Sp
-SB ; ST        ; STerm
-SB ; UP        ; Upper
-SB ; XX        ; Other
+SB ; AT                               ; ATerm
+SB ; CL                               ; Close
+SB ; CR                               ; CR
+SB ; EX                               ; Extend
+SB ; FO                               ; Format
+SB ; LE                               ; OLetter
+SB ; LF                               ; LF
+SB ; LO                               ; Lower
+SB ; NU                               ; Numeric
+SB ; SC                               ; SContinue
+SB ; SE                               ; Sep
+SB ; SP                               ; Sp
+SB ; ST                               ; STerm
+SB ; UP                               ; Upper
+SB ; XX                               ; Other
 
 # Simple_Case_Folding (scf)
 
@@ -1049,13 +1151,13 @@ SB ; XX        ; Other
 
 # Soft_Dotted (SD)
 
-SD ; N         ; No                               ; F                                ; False
-SD ; Y         ; Yes                              ; T                                ; True
+SD ; N                                ; No                               ; F                                ; False
+SD ; Y                                ; Yes                              ; T                                ; True
 
 # Terminal_Punctuation (Term)
 
-Term; N        ; No                               ; F                                ; False
-Term; Y        ; Yes                              ; T                                ; True
+Term; N                               ; No                               ; F                                ; False
+Term; Y                               ; Yes                              ; T                                ; True
 
 # Titlecase_Mapping (tc)
 
@@ -1067,13 +1169,13 @@ Term; Y        ; Yes                              ; T                           
 
 # Unified_Ideograph (UIdeo)
 
-UIdeo; N       ; No                               ; F                                ; False
-UIdeo; Y       ; Yes                              ; T                                ; True
+UIdeo; N                              ; No                               ; F                                ; False
+UIdeo; Y                              ; Yes                              ; T                                ; True
 
 # Uppercase (Upper)
 
-Upper; N       ; No                               ; F                                ; False
-Upper; Y       ; Yes                              ; T                                ; True
+Upper; N                              ; No                               ; F                                ; False
+Upper; Y                              ; Yes                              ; T                                ; True
 
 # Uppercase_Mapping (uc)
 
@@ -1081,39 +1183,39 @@ Upper; Y       ; Yes                              ; T                           
 
 # Variation_Selector (VS)
 
-VS ; N         ; No                               ; F                                ; False
-VS ; Y         ; Yes                              ; T                                ; True
+VS ; N                                ; No                               ; F                                ; False
+VS ; Y                                ; Yes                              ; T                                ; True
 
 # White_Space (WSpace)
 
-WSpace; N      ; No                               ; F                                ; False
-WSpace; Y      ; Yes                              ; T                                ; True
+WSpace; N                             ; No                               ; F                                ; False
+WSpace; Y                             ; Yes                              ; T                                ; True
 
 # Word_Break (WB)
 
-WB ; CR        ; CR
-WB ; EX        ; ExtendNumLet
-WB ; Extend    ; Extend
-WB ; FO        ; Format
-WB ; KA        ; Katakana
-WB ; LE        ; ALetter
-WB ; LF        ; LF
-WB ; MB        ; MidNumLet
-WB ; ML        ; MidLetter
-WB ; MN        ; MidNum
-WB ; NL        ; Newline
-WB ; NU        ; Numeric
-WB ; XX        ; Other
+WB ; CR                               ; CR
+WB ; EX                               ; ExtendNumLet
+WB ; Extend                           ; Extend
+WB ; FO                               ; Format
+WB ; KA                               ; Katakana
+WB ; LE                               ; ALetter
+WB ; LF                               ; LF
+WB ; MB                               ; MidNumLet
+WB ; ML                               ; MidLetter
+WB ; MN                               ; MidNum
+WB ; NL                               ; Newline
+WB ; NU                               ; Numeric
+WB ; XX                               ; Other
 
 # XID_Continue (XIDC)
 
-XIDC; N        ; No                               ; F                                ; False
-XIDC; Y        ; Yes                              ; T                                ; True
+XIDC; N                               ; No                               ; F                                ; False
+XIDC; Y                               ; Yes                              ; T                                ; True
 
 # XID_Start (XIDS)
 
-XIDS; N        ; No                               ; F                                ; False
-XIDS; Y        ; Yes                              ; T                                ; True
+XIDS; N                               ; No                               ; F                                ; False
+XIDS; Y                               ; Yes                              ; T                                ; True
 
 # cjkAccountingNumeric (cjkAccountingNumeric)
 

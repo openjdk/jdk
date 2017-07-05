@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ import java.util.Locale;
  * a character's category (lowercase letter, digit, etc.) and for converting
  * characters from uppercase to lowercase and vice versa.
  * <p>
- * Character information is based on the Unicode Standard, version 6.0.0.
+ * Character information is based on the Unicode Standard, version 6.1.0.
  * <p>
  * The methods and data of class {@code Character} are defined by
  * the information in the <i>UnicodeData</i> file that is part of the
@@ -2465,6 +2465,98 @@ class Character implements java.io.Serializable, Comparable<Character> {
                              "CJK UNIFIED IDEOGRAPHS EXTENSION D",
                              "CJKUNIFIEDIDEOGRAPHSEXTENSIOND");
 
+        /**
+         * Constant for the "Arabic Extended-A" Unicode character block.
+         * @since 1.8
+         */
+        public static final UnicodeBlock ARABIC_EXTENDED_A =
+            new UnicodeBlock("ARABIC_EXTENDED_A",
+                             "ARABIC EXTENDED-A",
+                             "ARABICEXTENDED-A");
+
+        /**
+         * Constant for the "Sundanese Supplement" Unicode character block.
+         * @since 1.8
+         */
+        public static final UnicodeBlock SUNDANESE_SUPPLEMENT =
+            new UnicodeBlock("SUNDANESE_SUPPLEMENT",
+                             "SUNDANESE SUPPLEMENT",
+                             "SUNDANESESUPPLEMENT");
+
+        /**
+         * Constant for the "Meetei Mayek Extensions" Unicode character block.
+         * @since 1.8
+         */
+        public static final UnicodeBlock MEETEI_MAYEK_EXTENSIONS =
+            new UnicodeBlock("MEETEI_MAYEK_EXTENSIONS",
+                             "MEETEI MAYEK EXTENSIONS",
+                             "MEETEIMAYEKEXTENSIONS");
+
+        /**
+         * Constant for the "Meroitic Hieroglyphs" Unicode character block.
+         * @since 1.8
+         */
+        public static final UnicodeBlock MEROITIC_HIEROGLYPHS =
+            new UnicodeBlock("MEROITIC_HIEROGLYPHS",
+                             "MEROITIC HIEROGLYPHS",
+                             "MEROITICHIEROGLYPHS");
+
+        /**
+         * Constant for the "Meroitic Cursive" Unicode character block.
+         * @since 1.8
+         */
+        public static final UnicodeBlock MEROITIC_CURSIVE =
+            new UnicodeBlock("MEROITIC_CURSIVE",
+                             "MEROITIC CURSIVE",
+                             "MEROITICCURSIVE");
+
+        /**
+         * Constant for the "Sora Sompeng" Unicode character block.
+         * @since 1.8
+         */
+        public static final UnicodeBlock SORA_SOMPENG =
+            new UnicodeBlock("SORA_SOMPENG",
+                             "SORA SOMPENG",
+                             "SORASOMPENG");
+
+        /**
+         * Constant for the "Chakma" Unicode character block.
+         * @since 1.8
+         */
+        public static final UnicodeBlock CHAKMA =
+            new UnicodeBlock("CHAKMA");
+
+        /**
+         * Constant for the "Sharada" Unicode character block.
+         * @since 1.8
+         */
+        public static final UnicodeBlock SHARADA =
+            new UnicodeBlock("SHARADA");
+
+        /**
+         * Constant for the "Takri" Unicode character block.
+         * @since 1.8
+         */
+        public static final UnicodeBlock TAKRI =
+            new UnicodeBlock("TAKRI");
+
+        /**
+         * Constant for the "Miao" Unicode character block.
+         * @since 1.8
+         */
+        public static final UnicodeBlock MIAO =
+            new UnicodeBlock("MIAO");
+
+        /**
+         * Constant for the "Arabic Mathematical Alphabetic Symbols" Unicode
+         * character block.
+         * @since 1.8
+         */
+        public static final UnicodeBlock ARABIC_MATHEMATICAL_ALPHABETIC_SYMBOLS =
+            new UnicodeBlock("ARABIC_MATHEMATICAL_ALPHABETIC_SYMBOLS",
+                             "ARABIC MATHEMATICAL ALPHABETIC SYMBOLS",
+                             "ARABICMATHEMATICALALPHABETICSYMBOLS");
+
         private static final int blockStarts[] = {
             0x0000,   // 0000..007F; Basic Latin
             0x0080,   // 0080..00FF; Latin-1 Supplement
@@ -2486,6 +2578,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
             0x0800,   // 0800..083F; Samaritan
             0x0840,   // 0840..085F; Mandaic
             0x0860,   //             unassigned
+            0x08A0,   // 08A0..08FF; Arabic Extended-A
             0x0900,   // 0900..097F; Devanagari
             0x0980,   // 0980..09FF; Bengali
             0x0A00,   // 0A00..0A7F; Gurmukhi
@@ -2528,6 +2621,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
             0x1C00,   // 1C00..1C4F; Lepcha
             0x1C50,   // 1C50..1C7F; Ol Chiki
             0x1C80,   //             unassigned
+            0x1CC0,   // 1CC0..1CCF; Sundanese Supplement
             0x1CD0,   // 1CD0..1CFF; Vedic Extensions
             0x1D00,   // 1D00..1D7F; Phonetic Extensions
             0x1D80,   // 1D80..1DBF; Phonetic Extensions Supplement
@@ -2605,7 +2699,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
             0xAA00,   // AA00..AA5F; Cham
             0xAA60,   // AA60..AA7F; Myanmar Extended-A
             0xAA80,   // AA80..AADF; Tai Viet
-            0xAAE0,   //             unassigned
+            0xAAE0,   // AAE0..AAFF; Meetei Mayek Extensions
             0xAB00,   // AB00..AB2F; Ethiopic Extended-A
             0xAB30,   //             unassigned
             0xABC0,   // ABC0..ABFF; Meetei Mayek
@@ -2652,6 +2746,8 @@ class Character implements java.io.Serializable, Comparable<Character> {
             0x10900,  // 10900..1091F; Phoenician
             0x10920,  // 10920..1093F; Lydian
             0x10940,  //               unassigned
+            0x10980,  // 10980..1099F; Meroitic Hieroglyphs
+            0x109A0,  // 109A0..109FF; Meroitic Cursive
             0x10A00,  // 10A00..10A5F; Kharoshthi
             0x10A60,  // 10A60..10A7F; Old South Arabian
             0x10A80,  //               unassigned
@@ -2665,7 +2761,13 @@ class Character implements java.io.Serializable, Comparable<Character> {
             0x10E80,  //               unassigned
             0x11000,  // 11000..1107F; Brahmi
             0x11080,  // 11080..110CF; Kaithi
-            0x110D0,  //               unassigned
+            0x110D0,  // 110D0..110FF; Sora Sompeng
+            0x11100,  // 11100..1114F; Chakma
+            0x11150,  //               unassigned
+            0x11180,  // 11180..111DF; Sharada
+            0x111E0,  //               unassigned
+            0x11680,  // 11680..116CF; Takri
+            0x116D0,  //               unassigned
             0x12000,  // 12000..123FF; Cuneiform
             0x12400,  // 12400..1247F; Cuneiform Numbers and Punctuation
             0x12480,  //               unassigned
@@ -2673,6 +2775,8 @@ class Character implements java.io.Serializable, Comparable<Character> {
             0x13430,  //               unassigned
             0x16800,  // 16800..16A3F; Bamum Supplement
             0x16A40,  //               unassigned
+            0x16F00,  // 16F00..16F9F; Miao
+            0x16FA0,  //               unassigned
             0x1B000,  // 1B000..1B0FF; Kana Supplement
             0x1B100,  //               unassigned
             0x1D000,  // 1D000..1D0FF; Byzantine Musical Symbols
@@ -2684,6 +2788,8 @@ class Character implements java.io.Serializable, Comparable<Character> {
             0x1D380,  //               unassigned
             0x1D400,  // 1D400..1D7FF; Mathematical Alphanumeric Symbols
             0x1D800,  //               unassigned
+            0x1EE00,  // 1EE00..1EEFF; Arabic Mathematical Alphabetic Symbols
+            0x1EF00,  //               unassigned
             0x1F000,  // 1F000..1F02F; Mahjong Tiles
             0x1F030,  // 1F030..1F09F; Domino Tiles
             0x1F0A0,  // 1F0A0..1F0FF; Playing Cards
@@ -2731,6 +2837,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
             SAMARITAN,
             MANDAIC,
             null,
+            ARABIC_EXTENDED_A,
             DEVANAGARI,
             BENGALI,
             GURMUKHI,
@@ -2773,6 +2880,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
             LEPCHA,
             OL_CHIKI,
             null,
+            SUNDANESE_SUPPLEMENT,
             VEDIC_EXTENSIONS,
             PHONETIC_EXTENSIONS,
             PHONETIC_EXTENSIONS_SUPPLEMENT,
@@ -2850,7 +2958,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
             CHAM,
             MYANMAR_EXTENDED_A,
             TAI_VIET,
-            null,
+            MEETEI_MAYEK_EXTENSIONS,
             ETHIOPIC_EXTENDED_A,
             null,
             MEETEI_MAYEK,
@@ -2897,6 +3005,8 @@ class Character implements java.io.Serializable, Comparable<Character> {
             PHOENICIAN,
             LYDIAN,
             null,
+            MEROITIC_HIEROGLYPHS,
+            MEROITIC_CURSIVE,
             KHAROSHTHI,
             OLD_SOUTH_ARABIAN,
             null,
@@ -2910,6 +3020,12 @@ class Character implements java.io.Serializable, Comparable<Character> {
             null,
             BRAHMI,
             KAITHI,
+            SORA_SOMPENG,
+            CHAKMA,
+            null,
+            SHARADA,
+            null,
+            TAKRI,
             null,
             CUNEIFORM,
             CUNEIFORM_NUMBERS_AND_PUNCTUATION,
@@ -2917,6 +3033,8 @@ class Character implements java.io.Serializable, Comparable<Character> {
             EGYPTIAN_HIEROGLYPHS,
             null,
             BAMUM_SUPPLEMENT,
+            null,
+            MIAO,
             null,
             KANA_SUPPLEMENT,
             null,
@@ -2928,6 +3046,8 @@ class Character implements java.io.Serializable, Comparable<Character> {
             COUNTING_ROD_NUMERALS,
             null,
             MATHEMATICAL_ALPHANUMERIC_SYMBOLS,
+            null,
+            ARABIC_MATHEMATICAL_ALPHABETIC_SYMBOLS,
             null,
             MAHJONG_TILES,
             DOMINO_TILES,
@@ -3550,6 +3670,41 @@ class Character implements java.io.Serializable, Comparable<Character> {
         KAITHI,
 
         /**
+         * Unicode script "Meroitic Hieroglyphs".
+         */
+        MEROITIC_HIEROGLYPHS,
+
+        /**
+         * Unicode script "Meroitic Cursive".
+         */
+        MEROITIC_CURSIVE,
+
+        /**
+         * Unicode script "Sora Sompeng".
+         */
+        SORA_SOMPENG,
+
+        /**
+         * Unicode script "Chakma".
+         */
+        CHAKMA,
+
+        /**
+         * Unicode script "Sharada".
+         */
+        SHARADA,
+
+        /**
+         * Unicode script "Takri".
+         */
+        TAKRI,
+
+        /**
+         * Unicode script "Miao".
+         */
+        MIAO,
+
+        /**
          * Unicode script "Unknown".
          */
         UNKNOWN;
@@ -3616,14 +3771,13 @@ class Character implements java.io.Serializable, Comparable<Character> {
             0x0780,   // 0780..07BF; THAANA
             0x07C0,   // 07C0..07FF; NKO
             0x0800,   // 0800..083F; SAMARITAN
-            0x0840,   // 0840..08FF; MANDAIC
+            0x0840,   // 0840..089F; MANDAIC
+            0x08A0,   // 08A0..08FF; ARABIC
             0x0900,   // 0900..0950; DEVANAGARI
             0x0951,   // 0951..0952; INHERITED
             0x0953,   // 0953..0963; DEVANAGARI
             0x0964,   // 0964..0965; COMMON
-            0x0966,   // 0966..096F; DEVANAGARI
-            0x0970,   // 0970..0970; COMMON
-            0x0971,   // 0971..0980; DEVANAGARI
+            0x0966,   // 0966..0980; DEVANAGARI
             0x0981,   // 0981..0A00; BENGALI
             0x0A01,   // 0A01..0A80; GURMUKHI
             0x0A81,   // 0A81..0B00; GUJARATI
@@ -3674,7 +3828,8 @@ class Character implements java.io.Serializable, Comparable<Character> {
             0x1B80,   // 1B80..1BBF; SUNDANESE
             0x1BC0,   // 1BC0..1BFF; BATAK
             0x1C00,   // 1C00..1C4F; LEPCHA
-            0x1C50,   // 1C50..1CCF; OL_CHIKI
+            0x1C50,   // 1C50..1CBF; OL_CHIKI
+            0x1CC0,   // 1CC0..1CCF; SUNDANESE
             0x1CD0,   // 1CD0..1CD2; INHERITED
             0x1CD3,   // 1CD3..1CD3; COMMON
             0x1CD4,   // 1CD4..1CE0; INHERITED
@@ -3682,7 +3837,9 @@ class Character implements java.io.Serializable, Comparable<Character> {
             0x1CE2,   // 1CE2..1CE8; INHERITED
             0x1CE9,   // 1CE9..1CEC; COMMON
             0x1CED,   // 1CED..1CED; INHERITED
-            0x1CEE,   // 1CEE..1CFF; COMMON
+            0x1CEE,   // 1CEE..1CF3; COMMON
+            0x1CF4,   // 1CF4..1CF4; INHERITED
+            0x1CF5,   // 1CF5..1CFF; COMMON
             0x1D00,   // 1D00..1D25; LATIN
             0x1D26,   // 1D26..1D2A; GREEK
             0x1D2B,   // 1D2B..1D2B; CYRILLIC
@@ -3783,7 +3940,8 @@ class Character implements java.io.Serializable, Comparable<Character> {
             0xA980,   // A980..A9FF; JAVANESE
             0xAA00,   // AA00..AA5F; CHAM
             0xAA60,   // AA60..AA7F; MYANMAR
-            0xAA80,   // AA80..AB00; TAI_VIET
+            0xAA80,   // AA80..AADF; TAI_VIET
+            0xAAE0,   // AAE0..AB00; MEETEI_MAYEK
             0xAB01,   // AB01..ABBF; ETHIOPIC
             0xABC0,   // ABC0..ABFF; MEETEI_MAYEK
             0xAC00,   // AC00..D7FB; HANGUL
@@ -3829,7 +3987,9 @@ class Character implements java.io.Serializable, Comparable<Character> {
             0x10800,  // 10800..1083F; CYPRIOT
             0x10840,  // 10840..108FF; IMPERIAL_ARAMAIC
             0x10900,  // 10900..1091F; PHOENICIAN
-            0x10920,  // 10920..109FF; LYDIAN
+            0x10920,  // 10920..1097F; LYDIAN
+            0x10980,  // 10980..1099F; MEROITIC_HIEROGLYPHS
+            0x109A0,  // 109A0..109FF; MEROITIC_CURSIVE
             0x10A00,  // 10A00..10A5F; KHAROSHTHI
             0x10A60,  // 10A60..10AFF; OLD_SOUTH_ARABIAN
             0x10B00,  // 10B00..10B3F; AVESTAN
@@ -3838,10 +3998,15 @@ class Character implements java.io.Serializable, Comparable<Character> {
             0x10C00,  // 10C00..10E5F; OLD_TURKIC
             0x10E60,  // 10E60..10FFF; ARABIC
             0x11000,  // 11000..1107F; BRAHMI
-            0x11080,  // 11080..11FFF; KAITHI
+            0x11080,  // 11080..110CF; KAITHI
+            0x110D0,  // 110D0..110FF; SORA_SOMPENG
+            0x11100,  // 11100..1117F; CHAKMA
+            0x11180,  // 11180..1167F; SHARADA
+            0x11680,  // 11680..116CF; TAKRI
             0x12000,  // 12000..12FFF; CUNEIFORM
             0x13000,  // 13000..167FF; EGYPTIAN_HIEROGLYPHS
             0x16800,  // 16800..16A38; BAMUM
+            0x16F00,  // 16F00..16F9F; MIAO
             0x1B000,  // 1B000..1B000; KATAKANA
             0x1B001,  // 1B001..1CFFF; HIRAGANA
             0x1D000,  // 1D000..1D166; COMMON
@@ -3854,7 +4019,9 @@ class Character implements java.io.Serializable, Comparable<Character> {
             0x1D1AA,  // 1D1AA..1D1AD; INHERITED
             0x1D1AE,  // 1D1AE..1D1FF; COMMON
             0x1D200,  // 1D200..1D2FF; GREEK
-            0x1D300,  // 1D300..1F1FF; COMMON
+            0x1D300,  // 1D300..1EDFF; COMMON
+            0x1EE00,  // 1EE00..1EFFF; ARABIC
+            0x1F000,  // 1F000..1F1FF; COMMON
             0x1F200,  // 1F200..1F200; HIRAGANA
             0x1F201,  // 1F210..1FFFF; COMMON
             0x20000,  // 20000..E0000; HAN
@@ -3927,10 +4094,9 @@ class Character implements java.io.Serializable, Comparable<Character> {
             NKO,
             SAMARITAN,
             MANDAIC,
+            ARABIC,
             DEVANAGARI,
             INHERITED,
-            DEVANAGARI,
-            COMMON,
             DEVANAGARI,
             COMMON,
             DEVANAGARI,
@@ -3985,6 +4151,9 @@ class Character implements java.io.Serializable, Comparable<Character> {
             BATAK,
             LEPCHA,
             OL_CHIKI,
+            SUNDANESE,
+            INHERITED,
+            COMMON,
             INHERITED,
             COMMON,
             INHERITED,
@@ -4094,10 +4263,11 @@ class Character implements java.io.Serializable, Comparable<Character> {
             CHAM,
             MYANMAR,
             TAI_VIET,
+            MEETEI_MAYEK,
             ETHIOPIC,
             MEETEI_MAYEK,
             HANGUL,
-            UNKNOWN,
+            UNKNOWN     ,
             HAN,
             LATIN,
             ARMENIAN,
@@ -4140,6 +4310,8 @@ class Character implements java.io.Serializable, Comparable<Character> {
             IMPERIAL_ARAMAIC,
             PHOENICIAN,
             LYDIAN,
+            MEROITIC_HIEROGLYPHS,
+            MEROITIC_CURSIVE,
             KHAROSHTHI,
             OLD_SOUTH_ARABIAN,
             AVESTAN,
@@ -4149,9 +4321,14 @@ class Character implements java.io.Serializable, Comparable<Character> {
             ARABIC,
             BRAHMI,
             KAITHI,
+            SORA_SOMPENG,
+            CHAKMA,
+            SHARADA,
+            TAKRI,
             CUNEIFORM,
             EGYPTIAN_HIEROGLYPHS,
             BAMUM,
+            MIAO,
             KATAKANA,
             HIRAGANA,
             COMMON,
@@ -4164,6 +4341,8 @@ class Character implements java.io.Serializable, Comparable<Character> {
             INHERITED,
             COMMON,
             GREEK,
+            COMMON,
+            ARABIC,
             COMMON,
             HIRAGANA,
             COMMON,
@@ -4189,6 +4368,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
             aliases.put("BRAH", BRAHMI);
             aliases.put("BUGI", BUGINESE);
             aliases.put("BUHD", BUHID);
+            aliases.put("CAKM", CHAKMA);
             aliases.put("CANS", CANADIAN_ABORIGINAL);
             aliases.put("CARI", CARIAN);
             aliases.put("CHAM", CHAM);
@@ -4231,6 +4411,8 @@ class Character implements java.io.Serializable, Comparable<Character> {
             aliases.put("LYCI", LYCIAN);
             aliases.put("LYDI", LYDIAN);
             aliases.put("MAND", MANDAIC);
+            aliases.put("MERC", MEROITIC_CURSIVE);
+            aliases.put("MERO", MEROITIC_HIEROGLYPHS);
             aliases.put("MLYM", MALAYALAM);
             aliases.put("MONG", MONGOLIAN);
             aliases.put("MTEI", MEETEI_MAYEK);
@@ -4242,6 +4424,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
             aliases.put("ORYA", ORIYA);
             aliases.put("OSMA", OSMANYA);
             aliases.put("PHAG", PHAGS_PA);
+            aliases.put("PLRD", MIAO);
             aliases.put("PHLI", INSCRIPTIONAL_PAHLAVI);
             aliases.put("PHNX", PHOENICIAN);
             aliases.put("PRTI", INSCRIPTIONAL_PARTHIAN);
@@ -4251,12 +4434,15 @@ class Character implements java.io.Serializable, Comparable<Character> {
             aliases.put("SARB", OLD_SOUTH_ARABIAN);
             aliases.put("SAUR", SAURASHTRA);
             aliases.put("SHAW", SHAVIAN);
+            aliases.put("SHRD", SHARADA);
             aliases.put("SINH", SINHALA);
+            aliases.put("SORA", SORA_SOMPENG);
             aliases.put("SUND", SUNDANESE);
             aliases.put("SYLO", SYLOTI_NAGRI);
             aliases.put("SYRC", SYRIAC);
             aliases.put("TAGB", TAGBANWA);
             aliases.put("TALE", TAI_LE);
+            aliases.put("TAKR", TAKRI);
             aliases.put("TALU", NEW_TAI_LUE);
             aliases.put("TAML", TAMIL);
             aliases.put("TAVT", TAI_VIET);

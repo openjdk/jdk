@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -211,6 +211,8 @@ class CharacterData00 extends CharacterData {
             case 0x10C3 : mapChar = 0x2D23; break;
             case 0x10C4 : mapChar = 0x2D24; break;
             case 0x10C5 : mapChar = 0x2D25; break;
+            case 0x10C7 : mapChar = 0x2D27; break;
+            case 0x10CD : mapChar = 0x2D2D; break;
             case 0x1E9E : mapChar = 0x00DF; break;
             case 0x2C62 : mapChar = 0x026B; break;
             case 0x2C63 : mapChar = 0x1D7D; break;
@@ -223,6 +225,7 @@ class CharacterData00 extends CharacterData {
             case 0x2C7F : mapChar = 0x0240; break;
             case 0xA77D : mapChar = 0x1D79; break;
             case 0xA78D : mapChar = 0x0265; break;
+            case 0xA7AA : mapChar = 0x0266; break;
               // default mapChar is already set, so no
               // need to redo it here.
               // default       : mapChar = ch;
@@ -282,6 +285,7 @@ class CharacterData00 extends CharacterData {
             case 0x0251 : mapChar = 0x2C6D; break;
             case 0x0252 : mapChar = 0x2C70; break;
             case 0x0265 : mapChar = 0xA78D; break;
+            case 0x0266 : mapChar = 0xA7AA; break;
             case 0x026B : mapChar = 0x2C62; break;
             case 0x0271 : mapChar = 0x2C6E; break;
             case 0x027D : mapChar = 0x2C64; break;
@@ -327,6 +331,8 @@ class CharacterData00 extends CharacterData {
             case 0x2D23 : mapChar = 0x10C3; break;
             case 0x2D24 : mapChar = 0x10C4; break;
             case 0x2D25 : mapChar = 0x10C5; break;
+            case 0x2D27 : mapChar = 0x10C7; break;
+            case 0x2D2D : mapChar = 0x10CD; break;
               // ch must have a 1:M case mapping, but we
               // can't handle it here. Return ch.
               // since mapChar is already set, no need
@@ -425,6 +431,11 @@ class CharacterData00 extends CharacterData {
                 case 0x2181: retval = 5000; break;        // ROMAN NUMERAL FIVE THOUSAND
                 case 0x2182: retval = 10000; break;       // ROMAN NUMERAL TEN THOUSAND
 
+                case 0x324B: retval = 40; break;
+                case 0x324C: retval = 50; break;
+                case 0x324D: retval = 60; break;
+                case 0x324E: retval = 70; break;
+                case 0x324F: retval = 80; break;
                 case 0x325C: retval = 32; break;
 
                 case 0x325D: retval = 33; break;          // CIRCLED NUMBER THIRTY THREE
@@ -527,6 +538,7 @@ class CharacterData00 extends CharacterData {
                     case 0x0251 : mapChar = 0x2C6D; break;
                     case 0x0252 : mapChar = 0x2C70; break;
                     case 0x0265 : mapChar = 0xA78D; break;
+                    case 0x0266 : mapChar = 0xA7AA; break;
                     case 0x026B : mapChar = 0x2C62; break;
                     case 0x0271 : mapChar = 0x2C6E; break;
                     case 0x027D : mapChar = 0x2C64; break;
@@ -572,6 +584,8 @@ class CharacterData00 extends CharacterData {
                     case 0x2D23 : mapChar = 0x10C3; break;
                     case 0x2D24 : mapChar = 0x10C4; break;
                     case 0x2D25 : mapChar = 0x10C5; break;
+                    case 0x2D27 : mapChar = 0x10C7; break;
+                    case 0x2D2D : mapChar = 0x10CD; break;
                     default       : mapChar = Character.ERROR; break;
                 }
             }

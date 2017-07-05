@@ -25,7 +25,10 @@
 package sun.nio.ch.sctp;
 
 import com.sun.nio.sctp.SctpSocketOption;
+import javax.tools.annotation.GenerateNativeHeader;
 
+/* No native methods here, but the constants are needed in the supporting JNI code */
+@GenerateNativeHeader
 public class SctpStdSocketOption<T>
     implements SctpSocketOption<T>
 {

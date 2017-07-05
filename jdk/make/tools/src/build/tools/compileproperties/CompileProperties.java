@@ -90,6 +90,7 @@ public class CompileProperties {
     private static String outfiles[] ;
     private static String supers[]   ;
     private static int compileCount = 0;
+    private static boolean quiet = false;
 
     private static boolean parseOptions(String args[]) {
         boolean ok = true;
@@ -114,21 +115,21 @@ public class CompileProperties {
                 outfiles[compileCount]  = args[++i];
                 supers[compileCount]    = args[++i];
                 compileCount++;
-            } else if ( "-optionsfile".equals(args[i]) && i+1 < args.length ) {
-                String filename = args[++i];
+            } else if ( args[i].charAt(0) == '@') {
+                String filename = args[i].substring(1);
                 FileInputStream finput = null;
                 byte contents[] = null;
                 try {
                     finput = new FileInputStream(filename);
                     int byteCount = finput.available();
                     if ( byteCount <= 0 ) {
-                        error("The -optionsfile file is empty", null);
+                        error("The @file is empty", null);
                         ok = false;
                     } else {
                         contents = new byte[byteCount];
                         int bytesRead = finput.read(contents);
                         if ( byteCount != bytesRead ) {
-                            error("Cannot read all of -optionsfile file", null);
+                            error("Cannot read all of @file", null);
                             ok = false;
                         }
                     }
@@ -144,7 +145,7 @@ public class CompileProperties {
                         error("cannot close " + filename, e);
                     }
                 }
-                if ( ok = true && contents != null ) {
+                if ( ok && contents != null ) {
                     String tokens[] = (new String(contents)).split("\\s+");
                     if ( tokens.length > 0 ) {
                         ok = parseOptions(tokens);
@@ -163,6 +164,13 @@ public class CompileProperties {
 
     public static void main(String[] args) {
         boolean ok = true;
+        if (args.length >= 1 && args[0].equals("-quiet"))
+        {
+            quiet = true;
+            String[] newargs = new String[args.length-1];
+            System.arraycopy(args, 1, newargs, 0, newargs.length);
+            args = newargs;
+        }
         /* Original usage */
         if (args.length == 2 && args[0].charAt(0) != '-' ) {
             ok = createFile(args[0], args[1], "ListResourceBundle");
@@ -197,18 +205,20 @@ public class CompileProperties {
         System.err.println("usage:");
         System.err.println("    java -jar compileproperties.jar path_to_properties_file path_to_java_output_file [super_class]");
         System.err.println("      -OR-");
-        System.err.println("    java -jar compileproperties.jar {-compile path_to_properties_file path_to_java_output_file super_class} -or- -optionsfile filename");
+        System.err.println("    java -jar compileproperties.jar {-compile path_to_properties_file path_to_java_output_file super_class} -or- @filename");
         System.err.println("");
         System.err.println("Example:");
         System.err.println("    java -jar compileproperties.jar -compile test.properties test.java ListResourceBundle");
-        System.err.println("    java -jar compileproperties.jar -optionsfile option_file");
+        System.err.println("    java -jar compileproperties.jar @option_file");
         System.err.println("option_file contains: -compile test.properties test.java ListResourceBundle");
     }
 
     private static boolean createFile(String propertiesPath, String outputPath,
             String superClass) {
         boolean ok = true;
-        System.out.println("parsing: " + propertiesPath);
+        if (!quiet) {
+            System.out.println("parsing: " + propertiesPath);
+        }
         Properties p = new Properties();
         try {
             p.load(new FileInputStream(propertiesPath));
@@ -221,7 +231,9 @@ public class CompileProperties {
         }
         if ( ok ) {
             String packageName = inferPackageName(propertiesPath, outputPath);
-            System.out.println("inferred package name: " + packageName);
+            if (!quiet) {
+                System.out.println("inferred package name: " + packageName);
+            }
             List<String> sortedKeys = new ArrayList<>();
             for ( Object key : p.keySet() ) {
                 sortedKeys.add((String)key);
@@ -276,7 +288,9 @@ public class CompileProperties {
                     error("IO error close " + outputPath, e);
                 }
             }
-            System.out.println("wrote: " + outputPath);
+            if (!quiet) {
+                System.out.println("wrote: " + outputPath);
+            }
         }
         return ok;
     }

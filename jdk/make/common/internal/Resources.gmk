@@ -153,8 +153,8 @@ strip_prop_options_clean:
 # Strip the properties files
 strip_all_props: $(STRIPPROPERTIES_JARFILE) $(STRIP_PROP_options)
 	@if [ -s $(STRIP_PROP_options) ] ; then \
-          $(ECHO) "$(BOOT_JAVA_CMD) -jar $(STRIPPROPERTIES_JARFILE) -optionsfile $(STRIP_PROP_options)" ; \
-          $(BOOT_JAVA_CMD) -jar $(STRIPPROPERTIES_JARFILE) -optionsfile $(STRIP_PROP_options) ; \
+          $(ECHO) "$(BOOT_JAVA_CMD) -jar $(STRIPPROPERTIES_JARFILE) @$(STRIP_PROP_options)" ; \
+          $(BOOT_JAVA_CMD) -jar $(STRIPPROPERTIES_JARFILE) @$(STRIP_PROP_options) ; \
         fi
 	@$(java-vm-cleanup)
 
@@ -243,8 +243,8 @@ compile_prop_options_clean:
 compile_all_props: $(COMPILEPROPERTIES_JARFILE) $(COMPILE_PROP_options)
 	@if [ `$(CAT) $(COMPILE_PROP_options) | $(WC) -l` -ge 1 ] ; then \
 	  $(MKDIR) -p $(GENSRCDIR); \
-	  $(ECHO) "$(BOOT_JAVA_CMD) -jar $(COMPILEPROPERTIES_JARFILE) -optionsfile $(COMPILE_PROP_options)";\
-	  $(BOOT_JAVA_CMD) -jar $(COMPILEPROPERTIES_JARFILE) -optionsfile $(COMPILE_PROP_options) ; \
+	  $(ECHO) "$(BOOT_JAVA_CMD) -jar $(COMPILEPROPERTIES_JARFILE) @$(COMPILE_PROP_options)";\
+	  $(BOOT_JAVA_CMD) -jar $(COMPILEPROPERTIES_JARFILE) @$(COMPILE_PROP_options) ; \
 	  $(java-vm-cleanup); \
 	fi
 

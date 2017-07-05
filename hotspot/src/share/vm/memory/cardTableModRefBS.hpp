@@ -472,6 +472,9 @@ public:
     return _byte_map + card_index;
   }
 
+  // Print a description of the memory for the barrier set
+  virtual void print_on(outputStream* st) const;
+
   void verify();
   void verify_guard();
 

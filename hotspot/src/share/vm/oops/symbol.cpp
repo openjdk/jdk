@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,15 +29,25 @@
 #include "runtime/os.hpp"
 #include "memory/allocation.inline.hpp"
 
-Symbol::Symbol(const u1* name, int length) : _refcount(0), _length(length) {
+Symbol::Symbol(const u1* name, int length, int refcount) : _refcount(refcount), _length(length) {
   _identity_hash = os::random();
   for (int i = 0; i < _length; i++) {
     byte_at_put(i, name[i]);
   }
 }
 
-void* Symbol::operator new(size_t size, int len) {
-  return (void *) AllocateHeap(object_size(len) * HeapWordSize, "symbol");
+void* Symbol::operator new(size_t sz, int len, TRAPS) {
+  int alloc_size = object_size(len)*HeapWordSize;
+  address res = (address) AllocateHeap(alloc_size, "symbol");
+  DEBUG_ONLY(set_allocation_type(res, ResourceObj::C_HEAP);)
+  return res;
+}
+
+void* Symbol::operator new(size_t sz, int len, Arena* arena, TRAPS) {
+  int alloc_size = object_size(len)*HeapWordSize;
+  address res = (address)arena->Amalloc(alloc_size);
+  DEBUG_ONLY(set_allocation_type(res, ResourceObj::ARENA);)
+  return res;
 }
 
 // ------------------------------------------------------------------
@@ -206,26 +216,5 @@ void Symbol::print_value_on(outputStream* st) const {
   }
 }
 
-void Symbol::increment_refcount() {
-  // Only increment the refcount if positive.  If negative either
-  // overflow has occurred or it is a permanent symbol in a read only
-  // shared archive.
-  if (_refcount >= 0) {
-    Atomic::inc(&_refcount);
-    NOT_PRODUCT(Atomic::inc(&_total_count);)
-  }
-}
-
-void Symbol::decrement_refcount() {
-  if (_refcount >= 0) {
-    Atomic::dec(&_refcount);
-#ifdef ASSERT
-    if (_refcount < 0) {
-      print();
-      assert(false, "reference count underflow for symbol");
-    }
-#endif
-  }
-}
-
+// SymbolTable prints this in its statistics
 NOT_PRODUCT(int Symbol::_total_count = 0;)

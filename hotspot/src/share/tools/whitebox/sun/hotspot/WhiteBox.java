@@ -24,6 +24,7 @@
 
 package sun.hotspot;
 import java.security.BasicPermission;
+import sun.hotspot.parser.DiagnosticCommand;
 
 public class WhiteBox {
 
@@ -67,4 +68,5 @@ public class WhiteBox {
   public native boolean g1IsHumongous(Object o);
   public native long    g1NumFreeRegions();
   public native int     g1RegionSize();
+  public native Object[]    parseCommandLine(String commandline, DiagnosticCommand[] args);
 }

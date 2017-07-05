@@ -1,0 +1,88 @@
+#
+# Copyright (c) 1998, 2002, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+FILES_c = \
+	k_standard.c \
+	k_rem_pio2.c \
+	k_cos.c \
+	k_sin.c \
+	k_tan.c \
+	e_acos.c \
+	e_asin.c \
+	e_atan2.c \
+	e_atanh.c \
+	e_cosh.c \
+	e_exp.c \
+	e_fmod.c \
+	e_hypot.c \
+	e_log.c \
+	e_log10.c \
+	e_pow.c \
+	e_rem_pio2.c \
+	e_remainder.c \
+	e_scalb.c \
+	e_sinh.c \
+	e_sqrt.c \
+	w_acos.c \
+	w_asin.c \
+	w_atan2.c \
+	w_atanh.c \
+	w_cosh.c \
+	w_exp.c \
+	w_fmod.c \
+	w_hypot.c \
+	w_log.c \
+	w_log10.c \
+	w_pow.c \
+	w_remainder.c \
+	w_scalb.c \
+	w_sinh.c \
+	w_sqrt.c \
+	s_atan.c \
+	s_cbrt.c \
+	s_ceil.c \
+	s_copysign.c \
+	s_cos.c \
+	s_expm1.c \
+	s_fabs.c \
+	s_finite.c \
+	s_floor.c \
+	s_frexp.c \
+	s_ilogb.c \
+	s_isnan.c \
+	s_ldexp.c \
+	s_lib_version.c \
+	s_log1p.c \
+	s_logb.c \
+	s_matherr.c \
+	s_modf.c \
+	s_nextafter.c \
+	s_rint.c \
+	s_scalbn.c \
+	s_signgam.c \
+	s_significand.c \
+	s_sin.c \
+	s_tan.c \
+	s_tanh.c
