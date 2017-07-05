@@ -23,6 +23,7 @@
 
 /*
  * @test DeoptimizeMethodTest
+ * @bug 8006683 8007288 8022832
  * @library /testlibrary /testlibrary/whitebox
  * @build DeoptimizeMethodTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
@@ -54,7 +55,7 @@ public class DeoptimizeMethodTest extends CompilerWhiteBoxTest {
     protected void test() throws Exception {
         compile();
         checkCompiled();
-        WHITE_BOX.deoptimizeMethod(method);
+        deoptimize();
         checkNotCompiled();
     }
 }

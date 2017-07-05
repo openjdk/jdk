@@ -87,7 +87,6 @@
 // OptoReg::Bad for not-callee-saved.
 
 
-//------------------------------OopFlow----------------------------------------
 // Structure to pass around
 struct OopFlow : public ResourceObj {
   short *_callees;              // Array mapping register to callee-saved
@@ -119,7 +118,6 @@ struct OopFlow : public ResourceObj {
   OopMap *build_oop_map( Node *n, int max_reg, PhaseRegAlloc *regalloc, int* live );
 };
 
-//------------------------------compute_reach----------------------------------
 // Given reaching-defs for this block start, compute it for this block end
 void OopFlow::compute_reach( PhaseRegAlloc *regalloc, int max_reg, Dict *safehash ) {
 
@@ -177,7 +175,6 @@ void OopFlow::compute_reach( PhaseRegAlloc *regalloc, int max_reg, Dict *safehas
   }
 }
 
-//------------------------------merge------------------------------------------
 // Merge the given flow into the 'this' flow
 void OopFlow::merge( OopFlow *flow, int max_reg ) {
   assert( _b == NULL, "merging into a happy flow" );
@@ -197,14 +194,12 @@ void OopFlow::merge( OopFlow *flow, int max_reg ) {
 
 }
 
-//------------------------------clone------------------------------------------
 void OopFlow::clone( OopFlow *flow, int max_size ) {
   _b = flow->_b;
   memcpy( _callees, flow->_callees, sizeof(short)*max_size);
   memcpy( _defs   , flow->_defs   , sizeof(Node*)*max_size);
 }
 
-//------------------------------make-------------------------------------------
 OopFlow *OopFlow::make( Arena *A, int max_size, Compile* C ) {
   short *callees = NEW_ARENA_ARRAY(A,short,max_size+1);
   Node **defs    = NEW_ARENA_ARRAY(A,Node*,max_size+1);
@@ -215,7 +210,6 @@ OopFlow *OopFlow::make( Arena *A, int max_size, Compile* C ) {
   return flow;
 }
 
-//------------------------------bit twiddlers----------------------------------
 static int get_live_bit( int *live, int reg ) {
   return live[reg>>LogBitsPerInt] &   (1<<(reg&(BitsPerInt-1))); }
 static void set_live_bit( int *live, int reg ) {
@@ -223,7 +217,6 @@ static void set_live_bit( int *live, int reg ) {
 static void clr_live_bit( int *live, int reg ) {
          live[reg>>LogBitsPerInt] &= ~(1<<(reg&(BitsPerInt-1))); }
 
-//------------------------------build_oop_map----------------------------------
 // Build an oopmap from the current flow info
 OopMap *OopFlow::build_oop_map( Node *n, int max_reg, PhaseRegAlloc *regalloc, int* live ) {
   int framesize = regalloc->_framesize;
@@ -412,19 +405,18 @@ OopMap *OopFlow::build_oop_map( Node *n, int max_reg, PhaseRegAlloc *regalloc, i
   return omap;
 }
 
-//------------------------------do_liveness------------------------------------
 // Compute backwards liveness on registers
-static void do_liveness( PhaseRegAlloc *regalloc, PhaseCFG *cfg, Block_List *worklist, int max_reg_ints, Arena *A, Dict *safehash ) {
-  int *live = NEW_ARENA_ARRAY(A, int, (cfg->_num_blocks+1) * max_reg_ints);
-  int *tmp_live = &live[cfg->_num_blocks * max_reg_ints];
-  Node *root = cfg->C->root();
+static void do_liveness(PhaseRegAlloc* regalloc, PhaseCFG* cfg, Block_List* worklist, int max_reg_ints, Arena* A, Dict* safehash) {
+  int* live = NEW_ARENA_ARRAY(A, int, (cfg->number_of_blocks() + 1) * max_reg_ints);
+  int* tmp_live = &live[cfg->number_of_blocks() * max_reg_ints];
+  Node* root = cfg->get_root_node();
   // On CISC platforms, get the node representing the stack pointer  that regalloc
   // used for spills
   Node *fp = NodeSentinel;
   if (UseCISCSpill && root->req() > 1) {
     fp = root->in(1)->in(TypeFunc::FramePtr);
   }
-  memset( live, 0, cfg->_num_blocks * (max_reg_ints<<LogBytesPerInt) );
+  memset(live, 0, cfg->number_of_blocks() * (max_reg_ints << LogBytesPerInt));
   // Push preds onto worklist
   for (uint i = 1; i < root->req(); i++) {
     Block* block = cfg->get_block_for_node(root->in(i));
@@ -549,29 +541,32 @@ static void do_liveness( PhaseRegAlloc *regalloc, PhaseCFG *cfg, Block_List *wor
     // Scan for any missing safepoints.  Happens to infinite loops
     // ala ZKM.jar
     uint i;
-    for( i=1; i<cfg->_num_blocks; i++ ) {
-      Block *b = cfg->_blocks[i];
+    for (i = 1; i < cfg->number_of_blocks(); i++) {
+      Block* block = cfg->get_block(i);
       uint j;
-      for( j=1; j<b->_nodes.size(); j++ )
-        if( b->_nodes[j]->jvms() &&
-            (*safehash)[b->_nodes[j]] == NULL )
+      for (j = 1; j < block->_nodes.size(); j++) {
+        if (block->_nodes[j]->jvms() && (*safehash)[block->_nodes[j]] == NULL) {
            break;
-      if( j<b->_nodes.size() ) break;
+        }
+      }
+      if (j < block->_nodes.size()) {
+        break;
+      }
     }
-    if( i == cfg->_num_blocks )
+    if (i == cfg->number_of_blocks()) {
       break;                    // Got 'em all
+    }
 #ifndef PRODUCT
     if( PrintOpto && Verbose )
       tty->print_cr("retripping live calc");
 #endif
     // Force the issue (expensively): recheck everybody
-    for( i=1; i<cfg->_num_blocks; i++ )
-      worklist->push(cfg->_blocks[i]);
+    for (i = 1; i < cfg->number_of_blocks(); i++) {
+      worklist->push(cfg->get_block(i));
+    }
   }
-
 }
 
-//------------------------------BuildOopMaps-----------------------------------
 // Collect GC mask info - where are all the OOPs?
 void Compile::BuildOopMaps() {
   NOT_PRODUCT( TracePhase t3("bldOopMaps", &_t_buildOopMaps, TimeCompiler); )
@@ -592,12 +587,12 @@ void Compile::BuildOopMaps() {
   OopFlow *free_list = NULL;    // Free, unused
 
   // Array mapping blocks to completed oopflows
-  OopFlow **flows = NEW_ARENA_ARRAY(A, OopFlow*, _cfg->_num_blocks);
-  memset( flows, 0, _cfg->_num_blocks*sizeof(OopFlow*) );
+  OopFlow **flows = NEW_ARENA_ARRAY(A, OopFlow*, _cfg->number_of_blocks());
+  memset( flows, 0, _cfg->number_of_blocks() * sizeof(OopFlow*) );
 
 
   // Do the first block 'by hand' to prime the worklist
-  Block *entry = _cfg->_blocks[1];
+  Block *entry = _cfg->get_block(1);
   OopFlow *rootflow = OopFlow::make(A,max_reg,this);
   // Initialize to 'bottom' (not 'top')
   memset( rootflow->_callees, OptoReg::Bad, max_reg*sizeof(short) );
@@ -623,7 +618,9 @@ void Compile::BuildOopMaps() {
 
     Block *b = worklist.pop();
     // Ignore root block
-    if( b == _cfg->_broot ) continue;
+    if (b == _cfg->get_root_block()) {
+      continue;
+    }
     // Block is already done?  Happens if block has several predecessors,
     // he can get on the worklist more than once.
     if( flows[b->_pre_order] ) continue;

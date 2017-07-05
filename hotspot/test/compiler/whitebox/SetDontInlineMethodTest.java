@@ -23,6 +23,7 @@
 
 /*
  * @test SetDontInlineMethodTest
+ * @bug 8006683 8007288 8022832
  * @library /testlibrary /testlibrary/whitebox
  * @build SetDontInlineMethodTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

@@ -849,9 +849,9 @@ address InterpreterGenerator::generate_CRC32_update_entry() {
     address entry = __ pc();
 
     // rbx,: Method*
-    // rsi: senderSP must preserved for slow path, set SP to it on fast path
-    // rdx: scratch
-    // rdi: scratch
+    // r13: senderSP must preserved for slow path, set SP to it on fast path
+    // c_rarg0: scratch (rdi on non-Win64, rcx on Win64)
+    // c_rarg1: scratch (rsi on non-Win64, rdx on Win64)
 
     Label slow_path;
     // If we need a safepoint check, generate full interpreter entry.
@@ -865,8 +865,8 @@ address InterpreterGenerator::generate_CRC32_update_entry() {
 
     // Load parameters
     const Register crc = rax;  // crc
-    const Register val = rdx;  // source java byte value
-    const Register tbl = rdi;  // scratch
+    const Register val = c_rarg0;  // source java byte value
+    const Register tbl = c_rarg1;  // scratch
 
     // Arguments are reversed on java expression stack
     __ movl(val, Address(rsp,   wordSize)); // byte value
@@ -880,7 +880,7 @@ address InterpreterGenerator::generate_CRC32_update_entry() {
 
     // _areturn
     __ pop(rdi);                // get return address
-    __ mov(rsp, rsi);           // set sp to sender sp
+    __ mov(rsp, r13);           // set sp to sender sp
     __ jmp(rdi);
 
     // generate a vanilla native entry as the slow path
@@ -919,20 +919,24 @@ address InterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractInterpret
     const Register crc = c_rarg0;  // crc
     const Register buf = c_rarg1;  // source java byte array address
     const Register len = c_rarg2;  // length
+    const Register off = len;      // offset (never overlaps with 'len')
 
     // Arguments are reversed on java expression stack
-    __ movl(len,   Address(rsp,   wordSize)); // Length
     // Calculate address of start element
     if (kind == Interpreter::java_util_zip_CRC32_updateByteBuffer) {
       __ movptr(buf, Address(rsp, 3*wordSize)); // long buf
-      __ addptr(buf, Address(rsp, 2*wordSize)); // + offset
+      __ movl2ptr(off, Address(rsp, 2*wordSize)); // offset
+      __ addq(buf, off); // + offset
       __ movl(crc,   Address(rsp, 5*wordSize)); // Initial CRC
     } else {
       __ movptr(buf, Address(rsp, 3*wordSize)); // byte[] array
       __ addptr(buf, arrayOopDesc::base_offset_in_bytes(T_BYTE)); // + header size
-      __ addptr(buf, Address(rsp, 2*wordSize)); // + offset
+      __ movl2ptr(off, Address(rsp, 2*wordSize)); // offset
+      __ addq(buf, off); // + offset
       __ movl(crc,   Address(rsp, 4*wordSize)); // Initial CRC
     }
+    // Can now load 'len' since we're finished with 'off'
+    __ movl(len, Address(rsp, wordSize)); // Length
 
     __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, StubRoutines::updateBytesCRC32()), crc, buf, len);
     // result in rax

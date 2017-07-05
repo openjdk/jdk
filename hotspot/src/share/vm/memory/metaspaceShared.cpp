@@ -52,7 +52,6 @@ void MetaspaceShared::serialize(SerializeClosure* soc) {
   int tag = 0;
   soc->do_tag(--tag);
 
-  assert(!UseCompressedOops, "UseCompressedOops doesn't work with shared archive");
   // Verify the sizes of various metadata in the system.
   soc->do_tag(sizeof(Method));
   soc->do_tag(sizeof(ConstMethod));

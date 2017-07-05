@@ -35,7 +35,7 @@
 #include "memory/specialized_oop_closures.hpp"
 #include "oops/arrayKlass.hpp"
 #include "oops/arrayOop.hpp"
-#include "oops/klass.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/markOop.inline.hpp"
 #include "oops/oop.hpp"
 #include "runtime/atomic.hpp"
@@ -70,7 +70,7 @@ inline markOop oopDesc::cas_set_mark(markOop new_mark, markOop old_mark) {
 
 inline Klass* oopDesc::klass() const {
   if (UseCompressedKlassPointers) {
-    return decode_klass_not_null(_metadata._compressed_klass);
+    return Klass::decode_klass_not_null(_metadata._compressed_klass);
   } else {
     return _metadata._klass;
   }
@@ -79,7 +79,7 @@ inline Klass* oopDesc::klass() const {
 inline Klass* oopDesc::klass_or_null() const volatile {
   // can be NULL in CMS
   if (UseCompressedKlassPointers) {
-    return decode_klass(_metadata._compressed_klass);
+    return Klass::decode_klass(_metadata._compressed_klass);
   } else {
     return _metadata._klass;
   }
@@ -87,7 +87,7 @@ inline Klass* oopDesc::klass_or_null() const volatile {
 
 inline int oopDesc::klass_gap_offset_in_bytes() {
   assert(UseCompressedKlassPointers, "only applicable to compressed klass pointers");
-  return oopDesc::klass_offset_in_bytes() + sizeof(narrowOop);
+  return oopDesc::klass_offset_in_bytes() + sizeof(narrowKlass);
 }
 
 inline Klass** oopDesc::klass_addr() {
@@ -97,9 +97,9 @@ inline Klass** oopDesc::klass_addr() {
   return (Klass**) &_metadata._klass;
 }
 
-inline narrowOop* oopDesc::compressed_klass_addr() {
+inline narrowKlass* oopDesc::compressed_klass_addr() {
   assert(UseCompressedKlassPointers, "only called by compressed klass pointers");
-  return (narrowOop*) &_metadata._compressed_klass;
+  return &_metadata._compressed_klass;
 }
 
 inline void oopDesc::set_klass(Klass* k) {
@@ -107,7 +107,7 @@ inline void oopDesc::set_klass(Klass* k) {
   assert(Universe::is_bootstrapping() || k != NULL, "must be a real Klass*");
   assert(Universe::is_bootstrapping() || k->is_klass(), "not a Klass*");
   if (UseCompressedKlassPointers) {
-    *compressed_klass_addr() = encode_klass_not_null(k);
+    *compressed_klass_addr() = Klass::encode_klass_not_null(k);
   } else {
     *klass_addr() = k;
   }
@@ -127,7 +127,7 @@ inline void oopDesc::set_klass_to_list_ptr(oop k) {
   // This is only to be used during GC, for from-space objects, so no
   // barrier is needed.
   if (UseCompressedKlassPointers) {
-    _metadata._compressed_klass = encode_heap_oop(k);  // may be null (parnew overflow handling)
+    _metadata._compressed_klass = (narrowKlass)encode_heap_oop(k);  // may be null (parnew overflow handling)
   } else {
     _metadata._klass = (Klass*)(address)k;
   }
@@ -136,7 +136,7 @@ inline void oopDesc::set_klass_to_list_ptr(oop k) {
 inline oop oopDesc::list_ptr_from_klass() {
   // This is only to be used during GC, for from-space objects.
   if (UseCompressedKlassPointers) {
-    return decode_heap_oop(_metadata._compressed_klass);
+    return decode_heap_oop((narrowOop)_metadata._compressed_klass);
   } else {
     // Special case for GC
     return (oop)(address)_metadata._klass;
@@ -176,7 +176,6 @@ inline address*  oopDesc::address_field_addr(int offset) const { return (address
 // the right type and inlines the appopriate code).
 
 inline bool oopDesc::is_null(oop obj)       { return obj == NULL; }
-inline bool oopDesc::is_null(Klass* obj)  { return obj == NULL; }
 inline bool oopDesc::is_null(narrowOop obj) { return obj == 0; }
 
 // Algorithm for encoding and decoding oops from 64 bit pointers to 32 bit
@@ -185,9 +184,6 @@ inline bool oopDesc::is_null(narrowOop obj) { return obj == 0; }
 
 inline bool check_obj_alignment(oop obj) {
   return (intptr_t)obj % MinObjAlignmentInBytes == 0;
-}
-inline bool check_klass_alignment(Klass* obj) {
-  return (intptr_t)obj % KlassAlignmentInBytes == 0;
 }
 
 inline narrowOop oopDesc::encode_heap_oop_not_null(oop v) {
@@ -223,39 +219,6 @@ inline oop oopDesc::decode_heap_oop(narrowOop v) {
 
 inline oop oopDesc::decode_heap_oop_not_null(oop v) { return v; }
 inline oop oopDesc::decode_heap_oop(oop v)  { return v; }
-
-// Encoding and decoding for klass field.  It is copied code, but someday
-// might not be the same as oop.
-
-inline narrowOop oopDesc::encode_klass_not_null(Klass* v) {
-  assert(!is_null(v), "klass value can never be zero");
-  assert(check_klass_alignment(v), "Address not aligned");
-  address base = Universe::narrow_klass_base();
-  int    shift = Universe::narrow_klass_shift();
-  uint64_t  pd = (uint64_t)(pointer_delta((void*)v, (void*)base, 1));
-  assert(KlassEncodingMetaspaceMax > pd, "change encoding max if new encoding");
-  uint64_t result = pd >> shift;
-  assert((result & CONST64(0xffffffff00000000)) == 0, "narrow klass pointer overflow");
-  assert(decode_klass(result) == v, "reversibility");
-  return (narrowOop)result;
-}
-
-inline narrowOop oopDesc::encode_klass(Klass* v) {
-  return (is_null(v)) ? (narrowOop)0 : encode_klass_not_null(v);
-}
-
-inline Klass* oopDesc::decode_klass_not_null(narrowOop v) {
-  assert(!is_null(v), "narrow oop value can never be zero");
-  address base = Universe::narrow_klass_base();
-  int    shift = Universe::narrow_klass_shift();
-  Klass* result = (Klass*)(void*)((uintptr_t)base + ((uintptr_t)v << shift));
-  assert(check_klass_alignment(result), err_msg("address not aligned: " PTR_FORMAT, (void*) result));
-  return result;
-}
-
-inline Klass* oopDesc::decode_klass(narrowOop v) {
-  return is_null(v) ? (Klass*)NULL : decode_klass_not_null(v);
-}
 
 // Load an oop out of the Java heap as is without decoding.
 // Called by GC to check for null before decoding.
