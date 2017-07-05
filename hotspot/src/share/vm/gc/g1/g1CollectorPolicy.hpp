@@ -27,6 +27,7 @@
 
 #include "gc/g1/collectionSetChooser.hpp"
 #include "gc/g1/g1Allocator.hpp"
+#include "gc/g1/g1CollectorState.hpp"
 #include "gc/g1/g1MMUTracker.hpp"
 #include "gc/shared/collectorPolicy.hpp"
 
@@ -193,21 +194,12 @@ private:
 
   double _stop_world_start;
 
-  // indicates whether we are in young or mixed GC mode
-  bool _gcs_are_young;
-
   uint _young_list_target_length;
   uint _young_list_fixed_length;
 
   // The max number of regions we can extend the eden by while the GC
   // locker is active. This should be >= _young_list_target_length;
   uint _young_list_max_length;
-
-  bool _last_gc_was_young;
-
-  bool _during_marking;
-  bool _in_marking_window;
-  bool _in_marking_window_im;
 
   SurvRateGroup* _short_lived_surv_rate_group;
   SurvRateGroup* _survivor_surv_rate_group;
@@ -217,10 +209,6 @@ private:
 
   double _reserve_factor;
   uint   _reserve_regions;
-
-  bool during_marking() {
-    return _during_marking;
-  }
 
   enum PredictionConstants {
     TruncatedSeqLength = 10
@@ -363,7 +351,7 @@ public:
   }
 
   double predict_rs_scan_time_ms(size_t card_num) {
-    if (gcs_are_young()) {
+    if (collector_state()->gcs_are_young()) {
       return (double) card_num * get_new_prediction(_cost_per_entry_ms_seq);
     } else {
       return predict_mixed_rs_scan_time_ms(card_num);
@@ -390,7 +378,7 @@ public:
   }
 
   double predict_object_copy_time_ms(size_t bytes_to_copy) {
-    if (_in_marking_window && !_in_marking_window_im) {
+    if (collector_state()->during_concurrent_mark()) {
       return predict_object_copy_time_ms_during_cm(bytes_to_copy);
     } else {
       return (double) bytes_to_copy *
@@ -428,7 +416,7 @@ public:
   double predict_survivor_regions_evac_time();
 
   void cset_regions_freed() {
-    bool propagate = _last_gc_was_young && !_in_marking_window;
+    bool propagate = collector_state()->should_propagate();
     _short_lived_surv_rate_group->all_surviving_words_recorded(propagate);
     _survivor_surv_rate_group->all_surviving_words_recorded(propagate);
     // also call it on any more surv rate groups
@@ -552,33 +540,6 @@ private:
     return _recent_avg_pause_time_ratio;
   }
 
-  // At the end of a pause we check the heap occupancy and we decide
-  // whether we will start a marking cycle during the next pause. If
-  // we decide that we want to do that, we will set this parameter to
-  // true. So, this parameter will stay true between the end of a
-  // pause and the beginning of a subsequent pause (not necessarily
-  // the next one, see the comments on the next field) when we decide
-  // that we will indeed start a marking cycle and do the initial-mark
-  // work.
-  volatile bool _initiate_conc_mark_if_possible;
-
-  // If initiate_conc_mark_if_possible() is set at the beginning of a
-  // pause, it is a suggestion that the pause should start a marking
-  // cycle by doing the initial-mark work. However, it is possible
-  // that the concurrent marking thread is still finishing up the
-  // previous marking cycle (e.g., clearing the next marking
-  // bitmap). If that is the case we cannot start a new cycle and
-  // we'll have to wait for the concurrent marking thread to finish
-  // what it is doing. In this case we will postpone the marking cycle
-  // initiation decision for the next pause. When we eventually decide
-  // to start a cycle, we will set _during_initial_mark_pause which
-  // will stay true until the end of the initial-mark pause and it's
-  // the condition that indicates that a pause is doing the
-  // initial-mark work.
-  volatile bool _during_initial_mark_pause;
-
-  bool _last_young_gc;
-
   // This set of variables tracks the collector efficiency, in order to
   // determine whether we should initiate a new marking.
   double _cur_mark_stop_world_time_ms;
@@ -646,6 +607,8 @@ public:
   virtual CollectorPolicy::Name kind() {
     return CollectorPolicy::G1CollectorPolicyKind;
   }
+
+  G1CollectorState* collector_state();
 
   G1GCPhaseTimes* phase_times() const { return _phase_times; }
 
@@ -786,14 +749,6 @@ public:
   void print_collection_set(HeapRegion* list_head, outputStream* st);
 #endif // !PRODUCT
 
-  bool initiate_conc_mark_if_possible()       { return _initiate_conc_mark_if_possible;  }
-  void set_initiate_conc_mark_if_possible()   { _initiate_conc_mark_if_possible = true;  }
-  void clear_initiate_conc_mark_if_possible() { _initiate_conc_mark_if_possible = false; }
-
-  bool during_initial_mark_pause()      { return _during_initial_mark_pause;  }
-  void set_during_initial_mark_pause()  { _during_initial_mark_pause = true;  }
-  void clear_during_initial_mark_pause(){ _during_initial_mark_pause = false; }
-
   // This sets the initiate_conc_mark_if_possible() flag to start a
   // new cycle, as long as we are not already in one. It's best if it
   // is called during a safepoint when the test whether a cycle is in
@@ -835,13 +790,6 @@ public:
 
   uint young_list_max_length() {
     return _young_list_max_length;
-  }
-
-  bool gcs_are_young() {
-    return _gcs_are_young;
-  }
-  void set_gcs_are_young(bool gcs_are_young) {
-    _gcs_are_young = gcs_are_young;
   }
 
   bool adaptive_young_list_length() {

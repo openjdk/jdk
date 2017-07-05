@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
    @bug 6798062
    @summary Memory Leak on using getFiles of FileSystemView
    @author Pavel Porvatov
+   @modules java.desktop/sun.awt
+            java.desktop/sun.awt.shell
    @run applet/manual=done bug6798062.html
 */
 

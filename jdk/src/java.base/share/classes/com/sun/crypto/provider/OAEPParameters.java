@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,7 +121,7 @@ public final class OAEPParameters extends AlgorithmParametersSpi {
             } else if (data.isContextSpecific((byte) 0x01)) {
                 // mgf algid
                 AlgorithmId val = AlgorithmId.parse(data.data.getDerValue());
-                if (!val.getOID().equals((Object) OID_MGF1)) {
+                if (!val.getOID().equals(OID_MGF1)) {
                     throw new IOException("Only MGF1 mgf is supported");
                 }
                 AlgorithmId params = AlgorithmId.parse(
@@ -144,7 +144,7 @@ public final class OAEPParameters extends AlgorithmParametersSpi {
             } else if (data.isContextSpecific((byte) 0x02)) {
                 // pSource algid
                 AlgorithmId val = AlgorithmId.parse(data.data.getDerValue());
-                if (!val.getOID().equals((Object) OID_PSpecified)) {
+                if (!val.getOID().equals(OID_PSpecified)) {
                     throw new IOException("Wrong OID for pSpecified");
                 }
                 DerInputStream dis = new DerInputStream(val.getEncodedParams());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,8 +40,7 @@
 // actual memory pages are committed on demand.
 //
 // If an application creates and destroys a lot of threads, usually the
-// stack space freed by a thread will soon get reused by new thread
-// (this is especially true in NPTL or LinuxThreads in fixed-stack mode).
+// stack space freed by a thread will soon get reused by new thread.
 // No memory page in _sp_map is wasted.
 //
 // However, it's still possible that we might end up populating &

@@ -26,8 +26,8 @@ package java.awt;
 
 import java.beans.ConstructorProperties;
 import java.io.InputStream;
-import java.net.URL;
 import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.security.PrivilegedExceptionAction;
 import java.util.Hashtable;
 import java.util.Properties;
@@ -261,7 +261,7 @@ public class Cursor implements java.io.Serializable {
      * @throws IllegalArgumentException if the specified cursor type is
      *         invalid
      */
-    static public Cursor getPredefinedCursor(int type) {
+    public static Cursor getPredefinedCursor(int type) {
         if (type < Cursor.DEFAULT_CURSOR || type > Cursor.MOVE_CURSOR) {
             throw new IllegalArgumentException("illegal cursor type");
         }
@@ -286,7 +286,7 @@ public class Cursor implements java.io.Serializable {
      * <code>GraphicsEnvironment.isHeadless</code> returns true
      * @exception AWTException in case of erroneous retrieving of the cursor
      */
-    static public Cursor getSystemCustomCursor(final String name)
+    public static Cursor getSystemCustomCursor(final String name)
         throws AWTException, HeadlessException {
         GraphicsEnvironment.checkHeadless();
         Cursor cursor = systemCustomCursors.get(name);
@@ -330,18 +330,15 @@ public class Cursor implements java.io.Serializable {
             } catch (NumberFormatException nfe) {
                 throw new AWTException("failed to parse hotspot property for cursor: " + name);
             }
-
-            try {
-                final Toolkit toolkit = Toolkit.getDefaultToolkit();
-                final String file = RESOURCE_PREFIX + fileName;
-
-                cursor = AccessController.doPrivileged(
-                        (PrivilegedExceptionAction<Cursor>) () -> {
-                            URL url = Cursor.class.getResource(file);
-                            Image image = toolkit.getImage(url);
-                            return toolkit.createCustomCursor(image, hotPoint,
-                                                              localized);
-                        });
+            final Toolkit toolkit = Toolkit.getDefaultToolkit();
+            final String file = RESOURCE_PREFIX + fileName;
+            final InputStream in = AccessController.doPrivileged(
+                    (PrivilegedAction<InputStream>) () -> {
+                        return Cursor.class.getResourceAsStream(file);
+                    });
+            try (in) {
+                Image image = toolkit.createImage(in.readAllBytes());
+                cursor = toolkit.createCustomCursor(image, hotPoint, localized);
             } catch (Exception e) {
                 throw new AWTException(
                     "Exception: " + e.getClass() + " " + e.getMessage() +
@@ -365,7 +362,7 @@ public class Cursor implements java.io.Serializable {
      *
      * @return the default cursor
      */
-    static public Cursor getDefaultCursor() {
+    public static Cursor getDefaultCursor() {
         return getPredefinedCursor(Cursor.DEFAULT_CURSOR);
     }
 

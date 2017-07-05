@@ -90,7 +90,7 @@ class PSPromotionManager VALUE_OBJ_CLASS_SPEC {
   static PSOldGen* old_gen()         { return _old_gen; }
   static MutableSpace* young_space() { return _young_space; }
 
-  inline static PSPromotionManager* manager_array(int index);
+  inline static PSPromotionManager* manager_array(uint index);
   template <class T> inline void claim_or_forward_internal_depth(T* p);
 
   // On the task queues we push reference locations as well as
@@ -154,7 +154,7 @@ class PSPromotionManager VALUE_OBJ_CLASS_SPEC {
   static void pre_scavenge();
   static bool post_scavenge(YoungGCTracer& gc_tracer);
 
-  static PSPromotionManager* gc_thread_promotion_manager(int index);
+  static PSPromotionManager* gc_thread_promotion_manager(uint index);
   static PSPromotionManager* vm_thread_promotion_manager();
 
   static bool steal_depth(int queue_num, int* seed, StarTask& t);

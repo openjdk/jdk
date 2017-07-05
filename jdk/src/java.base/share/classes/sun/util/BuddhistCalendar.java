@@ -242,12 +242,13 @@ public class BuddhistCalendar extends GregorianCalendar {
             return s;
         }
         p += yearField.length();
-        StringBuilder sb = new StringBuilder(s.substring(0, p));
+        StringBuilder sb = new StringBuilder(s.length() + 10);
+        sb.append(s, 0, p);
         // Skip the year number
         while (Character.isDigit(s.charAt(p++)))
             ;
         int year = internalGet(YEAR) + BUDDHIST_YEAR_OFFSET;
-        sb.append(year).append(s.substring(p - 1));
+        sb.append(year).append(s, p - 1, s.length());
         return sb.toString();
     }
 

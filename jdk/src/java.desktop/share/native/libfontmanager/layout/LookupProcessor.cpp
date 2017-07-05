@@ -175,7 +175,7 @@ LookupProcessor::LookupProcessor(const LETableReference &baseAddress,
   LEReferenceTo<LangSysTable> langSysTable;
     le_uint16 featureCount = 0;
     le_uint16 lookupListCount = 0;
-    le_uint16 requiredFeatureIndex;
+    le_uint16 requiredFeatureIndex = 0xFFFF;
 
     if (LE_FAILURE(success)) {
         return;

@@ -84,11 +84,11 @@ public class PointerLocation {
   }
 
   public boolean isInNewGen() {
-    return ((gen != null) && (gen.level() == 0));
+    return ((gen != null) && (gen == ((GenCollectedHeap)heap).getGen(0)));
   }
 
   public boolean isInOldGen() {
-    return ((gen != null) && (gen.level() == 1));
+    return ((gen != null) && (gen == ((GenCollectedHeap)heap).getGen(1)));
   }
 
   public boolean inOtherGen() {
@@ -207,8 +207,6 @@ public class PointerLocation {
           tty.print("In new generation ");
         } else if (isInOldGen()) {
           tty.print("In old generation ");
-        } else if (gen != null) {
-          tty.print("In Generation " + getGeneration().level());
         } else {
           tty.print("In unknown section of Java heap");
         }

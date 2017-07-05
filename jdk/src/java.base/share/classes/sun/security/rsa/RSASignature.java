@@ -232,7 +232,7 @@ public abstract class RSASignature extends SignatureSpi {
             throw new IOException("SEQUENCE length error");
         }
         AlgorithmId algId = AlgorithmId.parse(values[0]);
-        if (algId.getOID().equals((Object)oid) == false) {
+        if (algId.getOID().equals(oid) == false) {
             throw new IOException("ObjectIdentifier mismatch: "
                 + algId.getOID());
         }

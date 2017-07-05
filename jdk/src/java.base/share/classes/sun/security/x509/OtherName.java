@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -176,7 +176,7 @@ public class OtherName implements GeneralNameInterface {
             return false;
         }
         OtherName otherOther = (OtherName)other;
-        if (!(otherOther.oid.equals((Object)oid))) {
+        if (!(otherOther.oid.equals(oid))) {
             return false;
         }
         GeneralNameInterface otherGNI = null;

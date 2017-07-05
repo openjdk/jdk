@@ -38,7 +38,6 @@
 
 import java.awt.*;
 import java.awt.event.*;
-import sun.awt.SunToolkit;
 import test.java.awt.regtesthelpers.Util;
 
 public class AcceptExtraMouseButtons extends Frame {

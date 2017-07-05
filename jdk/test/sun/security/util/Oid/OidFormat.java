@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,7 +129,7 @@ public class OidFormat {
         os.putOID(oid);
         DerInputStream is = new DerInputStream(os.toByteArray());
         ObjectIdentifier oid2 = is.getOID();
-        if (!oid.equals((Object)oid2)) {
+        if (!oid.equals(oid2)) {
             throw new Exception("Test DER I/O fails: " + oid + " and " + oid2);
         }
     }
@@ -144,7 +144,7 @@ public class OidFormat {
         os.putOID(oid);
         DerInputStream is = new DerInputStream(os.toByteArray());
         ObjectIdentifier oid2 = is.getOID();
-        if (!oid.equals((Object)oid2)) {
+        if (!oid.equals(oid2)) {
             throw new Exception("Test DER I/O fails: " + oid + " and " + oid2);
         }
     }
