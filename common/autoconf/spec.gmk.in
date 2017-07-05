@@ -185,11 +185,12 @@ SUPPORT_HEADLESS:=@SUPPORT_HEADLESS@
 
 # These are the libjvms that we want to build.
 # The java launcher uses the default.
-# The other can be selected by specifying -client -server -kernel -zero or -zeroshark
+# The others can be selected by specifying -client -server -minimal1 -kernel -zero or -zeroshark
 # on the java launcher command line.
 JVM_VARIANTS:=@JVM_VARIANTS@
 JVM_VARIANT_SERVER:=@JVM_VARIANT_SERVER@
 JVM_VARIANT_CLIENT:=@JVM_VARIANT_CLIENT@
+JVM_VARIANT_MINIMAL1:=@JVM_VARIANT_MINIMAL1@
 JVM_VARIANT_KERNEL:=@JVM_VARIANT_KERNEL@
 JVM_VARIANT_ZERO:=@JVM_VARIANT_ZERO@
 JVM_VARIANT_ZEROSHARK:=@JVM_VARIANT_ZEROSHARK@
