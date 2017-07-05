@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ fi
 rm -f jrunscript-fTest.out 2>/dev/null
 ${JRUNSCRIPT} -f ${TESTSRC}/hello.js > jrunscript-fTest.out 2>&1
 
-diff jrunscript-fTest.out ${TESTSRC}/dash-f.out
+$golden_diff jrunscript-fTest.out ${TESTSRC}/dash-f.out
 if [ $? != 0 ]
 then
   echo "Output of jrunscript -f differ from expected output. Failed."
@@ -56,7 +56,7 @@ fi
 rm -f jrunscript-fTest.out 2>/dev/null
 ${JRUNSCRIPT} -l js -f ${TESTSRC}/hello.js > jrunscript-fTest.out 2>&1
 
-diff jrunscript-fTest.out ${TESTSRC}/dash-f.out
+$golden_diff jrunscript-fTest.out ${TESTSRC}/dash-f.out
 if [ $? != 0 ]
 then
   echo "Output of jrunscript -f differ from expected output. Failed."

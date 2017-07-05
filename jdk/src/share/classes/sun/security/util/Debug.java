@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package sun.security.util;
 import java.math.BigInteger;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
+import java.util.Locale;
 
 /**
  * A utility class for debuging.
@@ -262,7 +263,7 @@ public class Debug {
             source = left;
 
             // convert the rest to lower-case characters
-            target.append(source.toString().toLowerCase());
+            target.append(source.toString().toLowerCase(Locale.ENGLISH));
 
             return target.toString();
         }

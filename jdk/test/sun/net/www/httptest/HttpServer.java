@@ -188,6 +188,7 @@ public class HttpServer {
                             sock.configureBlocking (false);
                             sock.register (selector, SelectionKey.OP_READ);
                             nconn ++;
+                            System.out.println("SERVER: new connection. chan[" + sock + "]");
                             if (nconn == maxconn) {
                                 /* deregister */
                                 listenerKey.cancel ();
@@ -197,7 +198,9 @@ public class HttpServer {
                             if (key.isReadable()) {
                                 boolean closed;
                                 SocketChannel chan = (SocketChannel) key.channel();
+                                System.out.println("SERVER: connection readable. chan[" + chan + "]");
                                 if (key.attachment() != null) {
+                                    System.out.println("Server: comsume");
                                     closed = consume (chan);
                                 } else {
                                     closed = read (chan, key);
@@ -375,6 +378,7 @@ public class HttpServer {
 
         synchronized void orderlyCloseChannel (SelectionKey key) throws IOException {
             SocketChannel ch = (SocketChannel)key.channel ();
+            System.out.println("SERVER: orderlyCloseChannel chan[" + ch + "]");
             ch.socket().shutdownOutput();
             key.attach (this);
             clist.add (key);
@@ -382,6 +386,8 @@ public class HttpServer {
 
         synchronized void abortiveCloseChannel (SelectionKey key) throws IOException {
             SocketChannel ch = (SocketChannel)key.channel ();
+            System.out.println("SERVER: abortiveCloseChannel chan[" + ch + "]");
+
             Socket s = ch.socket ();
             s.setSoLinger (true, 0);
             ch.close();

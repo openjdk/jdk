@@ -43,8 +43,9 @@ public class TimeoutTest {
             try {
                 Socket s = server.accept ();
                 while (!finished ()) {
-                    Thread.sleep (2000);
+                    Thread.sleep (1000);
                 }
+                s.close();
             } catch (Exception e) {
             }
         }
@@ -70,9 +71,12 @@ public class TimeoutTest {
             URL url = new URL ("http://127.0.0.1:"+ss.getLocalPort());
             URLConnection urlc = url.openConnection ();
             InputStream is = urlc.getInputStream ();
+            throw new RuntimeException("Should have received timeout");
         } catch (SocketTimeoutException e) {
-            s.done ();
             return;
+        } finally {
+            s.done();
+            ss.close();
         }
     }
 }

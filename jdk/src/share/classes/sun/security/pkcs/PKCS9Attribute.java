@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package sun.security.pkcs;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.security.cert.CertificateException;
+import java.util.Locale;
 import java.util.Date;
 import java.util.Hashtable;
 import sun.security.x509.CertificateExtensions;
@@ -742,7 +743,7 @@ public class PKCS9Attribute implements DerEncoder {
      * the name.
      */
     public static ObjectIdentifier getOID(String name) {
-        return NAME_OID_TABLE.get(name.toLowerCase());
+        return NAME_OID_TABLE.get(name.toLowerCase(Locale.ENGLISH));
     }
 
     /**

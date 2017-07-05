@@ -52,9 +52,10 @@ public class SoTimeout implements Runnable {
         t.start();
 
         Socket s = serverSocket.accept();
+        serverSocket.close();
 
-        // set a 1 second timeout on the socket
-        s.setSoTimeout(1000);
+        // set a 5 second timeout on the socket
+        s.setSoTimeout(5000);
 
         s.getInputStream().read(b, 0, b.length);
         s.close();
@@ -64,7 +65,7 @@ public class SoTimeout implements Runnable {
         // this sequence should complete fairly quickly and if it
         // takes something resembling the the SoTimeout value then
         // we are probably incorrectly blocking and not waking up
-        if (waited > 500) {
+        if (waited > 2000) {
             throw new Exception("shouldn't take " + waited + " to complete");
         }
     }

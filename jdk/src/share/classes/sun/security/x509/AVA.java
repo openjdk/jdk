@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1227,7 +1227,7 @@ class AVAKeyword {
         (String keyword, int standard, Map<String, String> extraKeywordMap)
             throws IOException {
 
-        keyword = keyword.toUpperCase();
+        keyword = keyword.toUpperCase(Locale.ENGLISH);
         if (standard == AVA.RFC2253) {
             if (keyword.startsWith(" ") || keyword.endsWith(" ")) {
                 throw new IOException("Invalid leading or trailing space " +
