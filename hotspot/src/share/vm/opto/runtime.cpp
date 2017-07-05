@@ -945,6 +945,48 @@ const TypeFunc* OptoRuntime::multiplyToLen_Type() {
   return TypeFunc::make(domain, range);
 }
 
+const TypeFunc* OptoRuntime::squareToLen_Type() {
+  // create input type (domain)
+  int num_args      = 4;
+  int argcnt = num_args;
+  const Type** fields = TypeTuple::fields(argcnt);
+  int argp = TypeFunc::Parms;
+  fields[argp++] = TypePtr::NOTNULL;    // x
+  fields[argp++] = TypeInt::INT;        // len
+  fields[argp++] = TypePtr::NOTNULL;    // z
+  fields[argp++] = TypeInt::INT;        // zlen
+  assert(argp == TypeFunc::Parms+argcnt, "correct decoding");
+  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms+argcnt, fields);
+
+  // no result type needed
+  fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms+0] = NULL;
+  const TypeTuple* range = TypeTuple::make(TypeFunc::Parms, fields);
+  return TypeFunc::make(domain, range);
+}
+
+// for mulAdd calls, 2 pointers and 3 ints, returning int
+const TypeFunc* OptoRuntime::mulAdd_Type() {
+  // create input type (domain)
+  int num_args      = 5;
+  int argcnt = num_args;
+  const Type** fields = TypeTuple::fields(argcnt);
+  int argp = TypeFunc::Parms;
+  fields[argp++] = TypePtr::NOTNULL;    // out
+  fields[argp++] = TypePtr::NOTNULL;    // in
+  fields[argp++] = TypeInt::INT;        // offset
+  fields[argp++] = TypeInt::INT;        // len
+  fields[argp++] = TypeInt::INT;        // k
+  assert(argp == TypeFunc::Parms+argcnt, "correct decoding");
+  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms+argcnt, fields);
+
+  // returning carry (int)
+  fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms+0] = TypeInt::INT;
+  const TypeTuple* range = TypeTuple::make(TypeFunc::Parms+1, fields);
+  return TypeFunc::make(domain, range);
+}
+
 
 
 //------------- Interpreter state access for on stack replacement

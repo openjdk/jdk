@@ -32,7 +32,7 @@ import javax.swing.plaf.basic.BasicLabelUI;
 import javax.swing.plaf.ComponentUI;
 
 /**
- * A Motif L&F implementation of LabelUI.
+ * A Motif {@literal L&F} implementation of LabelUI.
  * This merely sets up new default values in MotifLookAndFeel.
  * <p>
  * <strong>Warning:</strong>

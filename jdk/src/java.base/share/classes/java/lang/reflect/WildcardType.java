@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ package java.lang.reflect;
 public interface WildcardType extends Type {
     /**
      * Returns an array of {@code Type} objects representing the  upper
-     * bound(s) of this type variable.  Note that if no upper bound is
+     * bound(s) of this type variable.  If no upper bound is
      * explicitly declared, the upper bound is {@code Object}.
      *
      * <p>For each upper bound B :
@@ -57,7 +57,7 @@ public interface WildcardType extends Type {
 
     /**
      * Returns an array of {@code Type} objects representing the
-     * lower bound(s) of this type variable.  Note that if no lower bound is
+     * lower bound(s) of this type variable.  If no lower bound is
      * explicitly declared, the lower bound is the type of {@code null}.
      * In this case, a zero length array is returned.
      *

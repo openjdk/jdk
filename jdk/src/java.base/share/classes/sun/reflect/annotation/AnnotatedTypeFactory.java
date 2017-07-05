@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -277,8 +277,14 @@ public final class AnnotatedTypeFactory {
 
         @Override
         public AnnotatedType[] getAnnotatedUpperBounds() {
-            if (!hasUpperBounds())
-                return new AnnotatedType[0];
+            if (!hasUpperBounds()) {
+                return new AnnotatedType[] { buildAnnotatedType(Object.class,
+                                                                LocationInfo.BASE_LOCATION,
+                                                                new TypeAnnotation[0],
+                                                                new TypeAnnotation[0],
+                                                                null)
+                                           };
+            }
             return getAnnotatedBounds(getWildcardType().getUpperBounds());
         }
 
