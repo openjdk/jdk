@@ -23,6 +23,10 @@
 
 package jdk.test.lib;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.regex.Pattern;
 
 public class Platform {
@@ -228,7 +232,7 @@ public class Platform {
     public static boolean canPtraceAttachLinux() throws Exception {
 
         // SELinux deny_ptrace:
-        String deny_ptrace = Utils.fileAsString("/sys/fs/selinux/booleans/deny_ptrace");
+        String deny_ptrace = fileAsString("/sys/fs/selinux/booleans/deny_ptrace");
         if (deny_ptrace != null && deny_ptrace.contains("1")) {
             // ptrace will be denied:
             return false;
@@ -239,7 +243,7 @@ public class Platform {
         // 1 - restricted ptrace: a process must be a children of the inferior or user is root
         // 2 - only processes with CAP_SYS_PTRACE may use ptrace or user is root
         // 3 - no attach: no processes may use ptrace with PTRACE_ATTACH
-        String ptrace_scope = Utils.fileAsString("/proc/sys/kernel/yama/ptrace_scope");
+        String ptrace_scope = fileAsString("/proc/sys/kernel/yama/ptrace_scope");
         if (ptrace_scope != null) {
             if (ptrace_scope.startsWith("3")) {
                 return false;
@@ -264,5 +268,11 @@ public class Platform {
         return Pattern.compile(archnameRE, Pattern.CASE_INSENSITIVE)
                       .matcher(osArch)
                       .matches();
+    }
+
+    private static String fileAsString(String filename) throws IOException {
+        Path filePath = Paths.get(filename);
+        if (!Files.exists(filePath)) return null;
+        return new String(Files.readAllBytes(filePath));
     }
 }

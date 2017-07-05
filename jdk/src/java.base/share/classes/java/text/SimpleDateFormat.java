@@ -434,6 +434,7 @@ import sun.util.locale.provider.LocaleProviderAdapter;
  * @see          DateFormat
  * @see          DateFormatSymbols
  * @author       Mark Davis, Chen-Lieh Huang, Alan Liu
+ * @since 1.1
  */
 public class SimpleDateFormat extends DateFormat {
 

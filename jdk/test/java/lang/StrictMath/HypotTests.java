@@ -27,6 +27,7 @@
  * @key randomness
  * @summary Tests for StrictMath.hypot
  * @library /test/lib
+ * @build jdk.test.lib.RandomFactory
  * @build Tests
  * @build FdlibmTranslit
  * @build HypotTests

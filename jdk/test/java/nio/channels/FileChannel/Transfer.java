@@ -26,6 +26,7 @@
  * @summary Test FileChannel.transferFrom and transferTo (use -Dseed=X to set PRNG seed)
  * @library ..
  * @library /test/lib
+ * @build jdk.test.lib.RandomFactory
  * @run testng/timeout=300 Transfer
  * @key randomness
  */

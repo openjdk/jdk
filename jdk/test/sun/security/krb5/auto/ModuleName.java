@@ -27,6 +27,12 @@
  * @summary GSSContext type when jdk.security.jgss is not available
  * @library /test/lib
  * @compile -XDignore.symbol.file ModuleName.java
+ * @build jdk.test.lib.Utils
+ *        jdk.test.lib.Asserts
+ *        jdk.test.lib.JDKToolFinder
+ *        jdk.test.lib.JDKToolLauncher
+ *        jdk.test.lib.Platform
+ *        jdk.test.lib.process.*
  * @run main/othervm ModuleName
  */
 

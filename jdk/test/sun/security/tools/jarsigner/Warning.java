@@ -35,6 +35,8 @@ import java.util.Arrays;
  * @bug 8024302 8026037 8130132
  * @summary warnings, errors and -strict
  * @library /lib/testlibrary /test/lib
+ * @build jdk.test.lib.util.JarUtils
+ * @run main Warning
  */
 public class Warning {
 

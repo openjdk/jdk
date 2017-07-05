@@ -32,6 +32,7 @@ package java.security.cert;
  * validity period.
  *
  * @author Hemma Prafullchandra
+ * @since 1.2
  */
 public class CertificateNotYetValidException extends CertificateException {
 

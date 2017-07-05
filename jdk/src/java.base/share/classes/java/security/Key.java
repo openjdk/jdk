@@ -97,6 +97,7 @@ package java.security;
  * @see Signer
  *
  * @author Benjamin Renaud
+ * @since 1.1
  */
 
 public interface Key extends java.io.Serializable {

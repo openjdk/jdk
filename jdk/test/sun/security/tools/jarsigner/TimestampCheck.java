@@ -68,6 +68,14 @@ import sun.security.x509.X500Name;
  *          java.base/sun.security.tools.keytool
  * @library /lib/testlibrary
  * @library /test/lib
+ * @build jdk.test.lib.util.JarUtils
+ *        jdk.test.lib.SecurityTools
+ *        jdk.test.lib.Utils
+ *        jdk.test.lib.Asserts
+ *        jdk.test.lib.JDKToolFinder
+ *        jdk.test.lib.JDKToolLauncher
+ *        jdk.test.lib.Platform
+ *        jdk.test.lib.process.*
  * @run main/timeout=600 TimestampCheck
  */
 public class TimestampCheck {

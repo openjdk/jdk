@@ -26,7 +26,12 @@
  * @bug 4087295 4785472
  * @library /test/lib
  * @build jdk.test.lib.compiler.CompilerUtils
- * @build jdk.test.lib.process.ProcessTools
+ *        jdk.test.lib.Utils
+ *        jdk.test.lib.Asserts
+ *        jdk.test.lib.JDKToolFinder
+ *        jdk.test.lib.JDKToolLauncher
+ *        jdk.test.lib.Platform
+ *        jdk.test.lib.process.*
  * @build RenamePackageTest
  * @run main RenamePackageTest
  * @summary Enable resolveClass() to accommodate package renaming.
