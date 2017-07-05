@@ -179,4 +179,12 @@ class PSYoungGen : public CHeapObj {
 
   // Space boundary invariant checker
   void space_invariants() PRODUCT_RETURN;
+
+  // Helper for mangling survivor spaces.
+  void mangle_survivors(MutableSpace* s1,
+                        MemRegion s1MR,
+                        MutableSpace* s2,
+                        MemRegion s2MR) PRODUCT_RETURN;
+
+  void record_spaces_top() PRODUCT_RETURN;
 };

@@ -22,7 +22,6 @@
  *
  */
 
-
 // A FreeBlockDictionary is an abstract superclass that will allow
 // a number of alternative implementations in the future.
 class FreeBlockDictionary: public CHeapObj {

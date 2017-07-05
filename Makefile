@@ -74,7 +74,7 @@ include ./make/deploy-rules.gmk
 all::
 	@$(START_ECHO)
 
-all:: openjdk_check sanity all_product_build 
+all:: openjdk_check sanity
 
 ifeq ($(SKIP_FASTDEBUG_BUILD), false)
   all:: fastdebug_build
@@ -87,6 +87,8 @@ endif
 ifneq ($(SKIP_OPENJDK_BUILD), true)
   all:: openjdk_build
 endif
+
+all:: all_product_build 
 
 all:: 
 	@$(FINISH_ECHO)

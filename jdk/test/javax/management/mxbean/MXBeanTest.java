@@ -149,7 +149,7 @@ public class MXBeanTest {
             if (mbai.getName().equals("Ints")
                 && mbai.isReadable() && !mbai.isWritable()
                 && mbai.getDescriptor().getFieldValue("openType")
-                    .equals(new ArrayType(SimpleType.INTEGER, true))
+                    .equals(new ArrayType<int[]>(SimpleType.INTEGER, true))
                 && attrs[0].getType().equals("[I"))
                 success("MBeanAttributeInfo");
             else
