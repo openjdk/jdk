@@ -165,6 +165,10 @@ class JvmtiThreadState : public CHeapObj {
   inline bool is_exception_caught()    { return _exception_caught;  }
   inline void set_exception_detected() { _exception_detected = true;
                                          _exception_caught = false; }
+  inline void clear_exception_detected() {
+    _exception_detected = false;
+    assert(_exception_caught == false, "_exception_caught is out of phase");
+  }
   inline void set_exception_caught()   { _exception_caught = true;
                                          _exception_detected = false; }
 

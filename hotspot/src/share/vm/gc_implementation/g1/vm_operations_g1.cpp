@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,8 +74,9 @@ void VM_G1IncCollectionPause::doit() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   assert(!_should_initiate_conc_mark ||
   ((_gc_cause == GCCause::_gc_locker && GCLockerInvokesConcurrent) ||
-   (_gc_cause == GCCause::_java_lang_system_gc && ExplicitGCInvokesConcurrent)),
-         "only a GC locker or a System.gc() induced GC should start a cycle");
+   (_gc_cause == GCCause::_java_lang_system_gc && ExplicitGCInvokesConcurrent) ||
+    _gc_cause == GCCause::_g1_humongous_allocation),
+         "only a GC locker, a System.gc() or a hum allocation induced GC should start a cycle");
 
   if (_word_size > 0) {
     // An allocation has been requested. So, try to do that first.

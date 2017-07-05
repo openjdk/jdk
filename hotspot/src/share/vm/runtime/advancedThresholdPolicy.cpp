@@ -271,13 +271,10 @@ bool AdvancedThresholdPolicy::should_not_inline(ciEnv* env, ciMethod* callee) {
 }
 
 // Create MDO if necessary.
-void AdvancedThresholdPolicy::create_mdo(methodHandle mh, TRAPS) {
+void AdvancedThresholdPolicy::create_mdo(methodHandle mh, JavaThread* THREAD) {
   if (mh->is_native() || mh->is_abstract() || mh->is_accessor()) return;
   if (mh->method_data() == NULL) {
-    methodOopDesc::build_interpreter_method_data(mh, THREAD);
-    if (HAS_PENDING_EXCEPTION) {
-      CLEAR_PENDING_EXCEPTION;
-    }
+    methodOopDesc::build_interpreter_method_data(mh, CHECK_AND_CLEAR);
   }
 }
 
@@ -426,22 +423,22 @@ CompLevel AdvancedThresholdPolicy::loop_event(methodOop method, CompLevel cur_le
 }
 
 // Update the rate and submit compile
-void AdvancedThresholdPolicy::submit_compile(methodHandle mh, int bci, CompLevel level, TRAPS) {
+void AdvancedThresholdPolicy::submit_compile(methodHandle mh, int bci, CompLevel level, JavaThread* thread) {
   int hot_count = (bci == InvocationEntryBci) ? mh->invocation_count() : mh->backedge_count();
   update_rate(os::javaTimeMillis(), mh());
-  CompileBroker::compile_method(mh, bci, level, mh, hot_count, "tiered", THREAD);
+  CompileBroker::compile_method(mh, bci, level, mh, hot_count, "tiered", thread);
 }
 
 // Handle the invocation event.
 void AdvancedThresholdPolicy::method_invocation_event(methodHandle mh, methodHandle imh,
-                                                      CompLevel level, nmethod* nm, TRAPS) {
+                                                      CompLevel level, nmethod* nm, JavaThread* thread) {
   if (should_create_mdo(mh(), level)) {
-    create_mdo(mh, THREAD);
+    create_mdo(mh, thread);
   }
   if (is_compilation_enabled() && !CompileBroker::compilation_is_in_queue(mh, InvocationEntryBci)) {
     CompLevel next_level = call_event(mh(), level);
     if (next_level != level) {
-      compile(mh, InvocationEntryBci, next_level, THREAD);
+      compile(mh, InvocationEntryBci, next_level, thread);
     }
   }
 }
@@ -449,13 +446,13 @@ void AdvancedThresholdPolicy::method_invocation_event(methodHandle mh, methodHan
 // Handle the back branch event. Notice that we can compile the method
 // with a regular entry from here.
 void AdvancedThresholdPolicy::method_back_branch_event(methodHandle mh, methodHandle imh,
-                                                       int bci, CompLevel level, nmethod* nm, TRAPS) {
+                                                       int bci, CompLevel level, nmethod* nm, JavaThread* thread) {
   if (should_create_mdo(mh(), level)) {
-    create_mdo(mh, THREAD);
+    create_mdo(mh, thread);
   }
   // Check if MDO should be created for the inlined method
   if (should_create_mdo(imh(), level)) {
-    create_mdo(imh, THREAD);
+    create_mdo(imh, thread);
   }
 
   if (is_compilation_enabled()) {
@@ -463,7 +460,7 @@ void AdvancedThresholdPolicy::method_back_branch_event(methodHandle mh, methodHa
     CompLevel max_osr_level = (CompLevel)imh->highest_osr_comp_level();
     // At the very least compile the OSR version
     if (!CompileBroker::compilation_is_in_queue(imh, bci) && next_osr_level != level) {
-      compile(imh, bci, next_osr_level, THREAD);
+      compile(imh, bci, next_osr_level, thread);
     }
 
     // Use loop event as an opportunity to also check if there's been
@@ -502,14 +499,14 @@ void AdvancedThresholdPolicy::method_back_branch_event(methodHandle mh, methodHa
           next_level = CompLevel_full_profile;
         }
         if (cur_level != next_level) {
-          compile(mh, InvocationEntryBci, next_level, THREAD);
+          compile(mh, InvocationEntryBci, next_level, thread);
         }
       }
     } else {
       cur_level = comp_level(imh());
       next_level = call_event(imh(), cur_level);
       if (!CompileBroker::compilation_is_in_queue(imh, bci) && next_level != cur_level) {
-        compile(imh, InvocationEntryBci, next_level, THREAD);
+        compile(imh, InvocationEntryBci, next_level, thread);
       }
     }
   }
