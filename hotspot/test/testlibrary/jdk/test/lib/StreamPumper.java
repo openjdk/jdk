@@ -27,6 +27,11 @@ import java.io.OutputStream;
 import java.io.InputStream;
 import java.io.IOException;
 
+/**
+ * @deprecated This class is deprecated. Use the one from
+ *             {@code <root>/test/lib/share/classes/jdk/test/lib/process}
+ */
+@Deprecated
 public final class StreamPumper implements Runnable {
 
   private static final int BUF_SIZE = 256;

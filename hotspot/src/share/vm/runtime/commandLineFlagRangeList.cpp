@@ -250,6 +250,9 @@ void emit_range_double(const char* /*name*/)    { /* NOP */ }
 void emit_range_intx(const char* name, intx min, intx max) {
   CommandLineFlagRangeList::add(new CommandLineFlagRange_intx(name, min, max));
 }
+void emit_range_uint(const char* name, uint min, uint max) {
+  CommandLineFlagRangeList::add(new CommandLineFlagRange_uint(name, min, max));
+}
 void emit_range_uintx(const char* name, uintx min, uintx max) {
   CommandLineFlagRangeList::add(new CommandLineFlagRange_uintx(name, min, max));
 }
@@ -279,7 +282,7 @@ void emit_range_double(const char* name, double min, double max) {
 // Generate func argument to pass into emit_range_xxx functions
 #define EMIT_RANGE_CHECK(a, b)                               , a, b
 
-#define INITIAL_RANGES_SIZE 320
+#define INITIAL_RANGES_SIZE 379
 GrowableArray<CommandLineFlagRange*>* CommandLineFlagRangeList::_ranges = NULL;
 
 // Check the ranges of all flags that have them

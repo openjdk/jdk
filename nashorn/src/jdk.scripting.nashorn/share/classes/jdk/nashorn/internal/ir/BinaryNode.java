@@ -70,7 +70,9 @@ public final class BinaryNode extends Expression implements Assignment<Expressio
                 TokenType.ASSIGN_DIV,
                 TokenType.ASSIGN_MOD,
                 TokenType.ASSIGN_MUL,
-                TokenType.ASSIGN_SUB
+                TokenType.ASSIGN_SUB,
+                TokenType.SHR,
+                TokenType.ASSIGN_SHR
             })));
 
     /**
@@ -196,9 +198,7 @@ public final class BinaryNode extends Expression implements Assignment<Expressio
                 return Type.CHARSEQUENCE;
             }
             final Type widestOperandType = Type.widest(undefinedToNumber(booleanToInt(lhsType)), undefinedToNumber(booleanToInt(rhsType)));
-            if(widestOperandType == Type.INT) {
-                return Type.LONG;
-            } else if (widestOperandType.isNumeric()) {
+            if (widestOperandType.isNumeric()) {
                 return Type.NUMBER;
             }
             // We pretty much can't know what it will be statically. Must presume OBJECT conservatively, as we can end
@@ -210,7 +210,7 @@ public final class BinaryNode extends Expression implements Assignment<Expressio
         }
         case SHR:
         case ASSIGN_SHR:
-            return Type.LONG;
+            return Type.NUMBER;
         case ASSIGN_SAR:
         case ASSIGN_SHL:
         case BIT_AND:
@@ -238,10 +238,6 @@ public final class BinaryNode extends Expression implements Assignment<Expressio
             final Type rhsType = rhs.getType();
             if(lhsType == Type.BOOLEAN && rhsType == Type.BOOLEAN) {
                 return Type.INT;
-            }
-            final Type widestOperandType = Type.widest(booleanToInt(lhsType), booleanToInt(rhsType));
-            if(widestOperandType == Type.INT) {
-                return Type.LONG;
             }
             return Type.NUMBER;
         }
@@ -564,6 +560,9 @@ public final class BinaryNode extends Expression implements Assignment<Expressio
         final Type widest = getWidestOperationType();
         if(type == null) {
             return widest;
+        }
+        if (tokenType() == TokenType.ASSIGN_SHR || tokenType() == TokenType.SHR) {
+            return type;
         }
         return Type.narrowest(widest, Type.widest(type, Type.widest(lhs.getType(), rhs.getType())));
     }

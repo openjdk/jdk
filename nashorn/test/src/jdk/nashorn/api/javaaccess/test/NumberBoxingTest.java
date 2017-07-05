@@ -70,7 +70,7 @@ public class NumberBoxingTest {
     @Test
     public void accessFieldLongBoxing() throws ScriptException {
         e.eval("var p_long = o.publicLongBox;");
-        assertEquals(o.publicLongBox, e.get("p_long"));
+        assertEquals(o.publicLongBox.longValue(), ((Number) e.get("p_long")).longValue());
         e.eval("o.publicLongBox = 12;");
         assertEquals(Long.valueOf(12), o.publicLongBox);
     }
@@ -78,7 +78,7 @@ public class NumberBoxingTest {
     @Test
     public void accessStaticFieldLongBoxing() throws ScriptException {
         e.eval("var ps_long = SharedObject.publicStaticLongBox;");
-        assertEquals(SharedObject.publicStaticLongBox, e.get("ps_long"));
+        assertEquals(SharedObject.publicStaticLongBox.longValue(), ((Number) e.get("ps_long")).longValue());
         e.eval("SharedObject.publicStaticLongBox = 120;");
         assertEquals(120L, SharedObject.publicStaticLongBox.longValue());
     }
@@ -86,7 +86,7 @@ public class NumberBoxingTest {
     @Test
     public void accessFinalFieldLongBoxing() throws ScriptException {
         e.eval("var pf_long = o.publicFinalLongBox;");
-        assertEquals(o.publicFinalLongBox, e.get("pf_long"));
+        assertEquals(o.publicFinalLongBox.longValue(), ((Number) e.get("pf_long")).longValue());
         e.eval("o.publicFinalLongBox = 120;");
         assertEquals(Long.valueOf(9377333334L), o.publicFinalLongBox);
     }
@@ -94,7 +94,7 @@ public class NumberBoxingTest {
     @Test
     public void accessStaticFinalFieldLongBoxing() throws ScriptException {
         e.eval("var psf_long = SharedObject.publicStaticFinalLong;");
-        assertEquals(SharedObject.publicStaticFinalLong, e.get("psf_long"));
+        assertEquals(SharedObject.publicStaticFinalLong, ((Number) e.get("psf_long")).longValue());
         e.eval("SharedObject.publicStaticFinalLong = 120;");
         assertEquals(8333333333333L, SharedObject.publicStaticFinalLong);
     }

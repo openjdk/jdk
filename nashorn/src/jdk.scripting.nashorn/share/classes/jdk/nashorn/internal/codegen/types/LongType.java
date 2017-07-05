@@ -28,20 +28,11 @@ package jdk.nashorn.internal.codegen.types;
 import static jdk.internal.org.objectweb.asm.Opcodes.L2D;
 import static jdk.internal.org.objectweb.asm.Opcodes.L2I;
 import static jdk.internal.org.objectweb.asm.Opcodes.LADD;
-import static jdk.internal.org.objectweb.asm.Opcodes.LAND;
-import static jdk.internal.org.objectweb.asm.Opcodes.LCMP;
 import static jdk.internal.org.objectweb.asm.Opcodes.LCONST_0;
 import static jdk.internal.org.objectweb.asm.Opcodes.LCONST_1;
 import static jdk.internal.org.objectweb.asm.Opcodes.LLOAD;
-import static jdk.internal.org.objectweb.asm.Opcodes.LMUL;
-import static jdk.internal.org.objectweb.asm.Opcodes.LOR;
 import static jdk.internal.org.objectweb.asm.Opcodes.LRETURN;
-import static jdk.internal.org.objectweb.asm.Opcodes.LSHL;
-import static jdk.internal.org.objectweb.asm.Opcodes.LSHR;
 import static jdk.internal.org.objectweb.asm.Opcodes.LSTORE;
-import static jdk.internal.org.objectweb.asm.Opcodes.LSUB;
-import static jdk.internal.org.objectweb.asm.Opcodes.LUSHR;
-import static jdk.internal.org.objectweb.asm.Opcodes.LXOR;
 import static jdk.nashorn.internal.codegen.CompilerConstants.staticCallNoLookup;
 import static jdk.nashorn.internal.runtime.JSType.UNDEFINED_LONG;
 import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.INVALID_PROGRAM_POINT;
@@ -53,7 +44,7 @@ import jdk.nashorn.internal.runtime.JSType;
 /**
  * Type class: LONG
  */
-class LongType extends BitwiseType {
+class LongType extends Type {
     private static final long serialVersionUID = 1L;
 
     private static final CompilerConstants.Call VALUE_OF = staticCallNoLookup(Long.class, "valueOf", Long.class, long.class);
@@ -79,12 +70,6 @@ class LongType extends BitwiseType {
     @Override
     public char getBytecodeStackType() {
         return 'J';
-    }
-
-    @Override
-    public Type cmp(final MethodVisitor method) {
-        method.visitInsn(LCMP);
-        return INT;
     }
 
     @Override
@@ -149,88 +134,6 @@ class LongType extends BitwiseType {
     }
 
     @Override
-    public Type sub(final MethodVisitor method, final int programPoint) {
-        if(programPoint == INVALID_PROGRAM_POINT) {
-            method.visitInsn(LSUB);
-        } else {
-            method.visitInvokeDynamicInsn("lsub", "(JJ)J", MATHBOOTSTRAP, programPoint);
-        }
-        return LONG;
-    }
-
-    @Override
-    public Type mul(final MethodVisitor method, final int programPoint) {
-        if(programPoint == INVALID_PROGRAM_POINT) {
-            method.visitInsn(LMUL);
-        } else {
-            method.visitInvokeDynamicInsn("lmul", "(JJ)J", MATHBOOTSTRAP, programPoint);
-        }
-        return LONG;
-    }
-
-    @Override
-    public Type div(final MethodVisitor method, final int programPoint) {
-        if (programPoint == INVALID_PROGRAM_POINT) {
-            JSType.DIV_ZERO_LONG.invoke(method);
-        } else {
-            method.visitInvokeDynamicInsn("ldiv", "(JJ)J", MATHBOOTSTRAP, programPoint);
-        }
-        return LONG;
-    }
-
-    @Override
-    public Type rem(final MethodVisitor method, final int programPoint) {
-        if (programPoint == INVALID_PROGRAM_POINT) {
-            JSType.REM_ZERO_LONG.invoke(method);
-        } else {
-            method.visitInvokeDynamicInsn("lrem", "(JJ)J", MATHBOOTSTRAP, programPoint);
-        }
-        return LONG;
-    }
-
-    @Override
-    public Type shr(final MethodVisitor method) {
-        method.visitInsn(LUSHR);
-        return LONG;
-    }
-
-    @Override
-    public Type sar(final MethodVisitor method) {
-        method.visitInsn(LSHR);
-        return LONG;
-    }
-
-    @Override
-    public Type shl(final MethodVisitor method) {
-        method.visitInsn(LSHL);
-        return LONG;
-    }
-
-    @Override
-    public Type and(final MethodVisitor method) {
-        method.visitInsn(LAND);
-        return LONG;
-    }
-
-    @Override
-    public Type or(final MethodVisitor method) {
-        method.visitInsn(LOR);
-        return LONG;
-    }
-
-    @Override
-    public Type xor(final MethodVisitor method) {
-        method.visitInsn(LXOR);
-        return LONG;
-    }
-
-    @Override
-    public Type neg(final MethodVisitor method, final int programPoint) {
-        method.visitInvokeDynamicInsn("lneg", "(J)J", MATHBOOTSTRAP, programPoint);
-        return LONG;
-    }
-
-    @Override
     public void _return(final MethodVisitor method) {
         method.visitInsn(LRETURN);
     }
@@ -245,10 +148,5 @@ class LongType extends BitwiseType {
     public Type loadForcedInitializer(final MethodVisitor method) {
         method.visitInsn(LCONST_0);
         return LONG;
-    }
-
-    @Override
-    public Type cmp(final MethodVisitor method, final boolean isCmpG) {
-        return cmp(method);
     }
 }

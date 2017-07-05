@@ -25,13 +25,14 @@
  * @test
  * @bug 6911951 7150092
  * @summary NTLM should be a supported Java SASL mechanism
- * @modules java.base/sun.misc
+ * @modules java.base/sun.security.util
  *          java.security.sasl
  */
 import java.io.IOException;
 import javax.security.sasl.*;
 import javax.security.auth.callback.*;
 import java.util.*;
+import sun.security.util.HexDumpEncoder;
 
 public class NTLMTest {
 
@@ -311,7 +312,7 @@ public class NTLMTest {
         byte[] response = (clnt.hasInitialResponse()
                 ? clnt.evaluateChallenge(EMPTY) : EMPTY);
         System.out.println("Initial:");
-        new sun.misc.HexDumpEncoder().encodeBuffer(response, System.out);
+        new HexDumpEncoder().encodeBuffer(response, System.out);
         byte[] challenge;
 
         while (!clnt.isComplete() || !srv.isComplete()) {
@@ -319,12 +320,12 @@ public class NTLMTest {
             response = null;
             if (challenge != null) {
                 System.out.println("Challenge:");
-                new sun.misc.HexDumpEncoder().encodeBuffer(challenge, System.out);
+                new HexDumpEncoder().encodeBuffer(challenge, System.out);
                 response = clnt.evaluateChallenge(challenge);
             }
             if (response != null) {
                 System.out.println("Response:");
-                new sun.misc.HexDumpEncoder().encodeBuffer(response, System.out);
+                new HexDumpEncoder().encodeBuffer(response, System.out);
             }
         }
 

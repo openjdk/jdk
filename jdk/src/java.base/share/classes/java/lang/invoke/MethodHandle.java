@@ -420,7 +420,6 @@ mh.invokeExact(System.out, "Hello, world.");
  * @author John Rose, JSR 292 EG
  */
 public abstract class MethodHandle {
-    static { MethodHandleImpl.initStatics(); }
 
     /**
      * Internal marker interface which distinguishes (to the Java compiler)

@@ -26,7 +26,7 @@
 package sun.security.jgss.krb5;
 
 import org.ietf.jgss.*;
-import sun.misc.HexDumpEncoder;
+import sun.security.util.HexDumpEncoder;
 import sun.security.jgss.GSSUtil;
 import sun.security.jgss.GSSCaller;
 import sun.security.jgss.spi.*;
@@ -1415,7 +1415,7 @@ class Krb5Context implements GSSContextSpi {
         @Override
         public String toString() {
             return "Kerberos session key: etype: " + key.getEType() + "\n" +
-                    new sun.misc.HexDumpEncoder().encodeBuffer(key.getBytes());
+                    new HexDumpEncoder().encodeBuffer(key.getBytes());
         }
     }
 

@@ -25,6 +25,7 @@
 
 # @test
 # @bug 6888925
+# @modules java.base/sun.security.util
 # @requires os.family == "windows"
 # @run shell PublicKeyInterop.sh
 # @summary SunMSCAPI's Cipher can't use RSA public keys obtained from other

@@ -304,8 +304,8 @@ public final class StackWalker {
     }
 
     /**
-     * Returns a {@code StackWalker} instance with the given {@ocde options} specifying
-     * the stack frame information it can access. If the given {@ocde options}
+     * Returns a {@code StackWalker} instance with the given {@code options} specifying
+     * the stack frame information it can access. If the given {@code options}
      * is empty, this {@code StackWalker} is configured to skip all
      * {@linkplain Option#SHOW_HIDDEN_FRAMES hidden frames} and no
      * {@linkplain Option#RETAIN_CLASS_REFERENCE class reference} is retained.

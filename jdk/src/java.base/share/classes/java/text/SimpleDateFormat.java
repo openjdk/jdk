@@ -1856,6 +1856,7 @@ public class SimpleDateFormat extends DateFormat {
             if (patternCharIndex == PATTERN_HOUR_OF_DAY1 ||
                 patternCharIndex == PATTERN_HOUR1 ||
                 (patternCharIndex == PATTERN_MONTH && count <= 2) ||
+                (patternCharIndex == PATTERN_MONTH_STANDALONE && count <= 2) ||
                 patternCharIndex == PATTERN_YEAR ||
                 patternCharIndex == PATTERN_WEEK_YEAR) {
                 // It would be good to unify this with the obeyCount logic below,
@@ -1973,6 +1974,20 @@ public class SimpleDateFormat extends DateFormat {
                     if ((index = matchString(text, start, field, map, calb)) > 0) {
                         return index;
                     }
+                }
+                break parsing;
+
+            case PATTERN_MONTH_STANDALONE: // 'L'
+                if (count <= 2) {
+                    // Don't want to parse the month if it is a string
+                    // while pattern uses numeric style: L or LL
+                    //[we computed 'value' above.]
+                    calb.set(Calendar.MONTH, value - 1);
+                    return pos.index;
+                }
+                Map<String, Integer> maps = getDisplayNamesMap(field, locale);
+                if ((index = matchString(text, start, field, maps, calb)) > 0) {
+                    return index;
                 }
                 break parsing;
 

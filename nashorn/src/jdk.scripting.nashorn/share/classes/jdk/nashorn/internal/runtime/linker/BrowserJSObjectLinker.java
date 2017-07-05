@@ -48,19 +48,8 @@ import jdk.nashorn.internal.runtime.JSType;
  * A Dynalink linker to handle web browser built-in JS (DOM etc.) objects.
  */
 final class BrowserJSObjectLinker implements TypeBasedGuardingDynamicLinker {
-    private static ClassLoader extLoader;
-    static {
-        extLoader = BrowserJSObjectLinker.class.getClassLoader();
-        // in case nashorn is loaded as bootstrap!
-        if (extLoader == null) {
-            extLoader = ClassLoader.getSystemClassLoader().getParent();
-        }
-    }
-
     private static final String JSOBJECT_CLASS = "netscape.javascript.JSObject";
-    // not final because this is lazily initialized
-    // when we hit a subclass for the first time.
-    private static volatile Class<?> jsObjectClass;
+    private static final Class<?> jsObjectClass = findBrowserJSObjectClass();
     private final NashornBeansLinker nashornBeansLinker;
 
     BrowserJSObjectLinker(final NashornBeansLinker nashornBeansLinker) {
@@ -73,22 +62,7 @@ final class BrowserJSObjectLinker implements TypeBasedGuardingDynamicLinker {
     }
 
     static boolean canLinkTypeStatic(final Class<?> type) {
-        if (jsObjectClass != null && jsObjectClass.isAssignableFrom(type)) {
-            return true;
-        }
-
-        // check if this class is a subclass of JSObject
-        Class<?> clazz = type;
-        while (clazz != null) {
-            if (clazz.getClassLoader() == extLoader &&
-                clazz.getName().equals(JSOBJECT_CLASS)) {
-                jsObjectClass = clazz;
-                return true;
-            }
-            clazz = clazz.getSuperclass();
-        }
-
-        return false;
+        return jsObjectClass != null && jsObjectClass.isAssignableFrom(type);
     }
 
     private static void checkJSObjectClass() {
@@ -101,13 +75,10 @@ final class BrowserJSObjectLinker implements TypeBasedGuardingDynamicLinker {
         final CallSiteDescriptor desc = request.getCallSiteDescriptor();
         checkJSObjectClass();
 
-        GuardedInvocation inv;
-        if (jsObjectClass.isInstance(self)) {
-            inv = lookup(desc, request, linkerServices);
-            inv = inv.replaceMethods(linkerServices.filterInternalObjects(inv.getInvocation()), inv.getGuard());
-        } else {
-            throw new AssertionError(); // Should never reach here.
-        }
+        assert jsObjectClass.isInstance(self);
+
+        GuardedInvocation inv = lookup(desc, request, linkerServices);
+        inv = inv.replaceMethods(linkerServices.filterInternalObjects(inv.getInvocation()), inv.getGuard());
 
         return Bootstrap.asTypeSafeReturn(inv, linkerServices, desc);
     }
@@ -122,7 +93,7 @@ final class BrowserJSObjectLinker implements TypeBasedGuardingDynamicLinker {
 
         final StandardOperation op = NashornCallSiteDescriptor.getFirstStandardOperation(desc);
         if (op == null) {
-            return null;
+            return inv;
         }
         final String name = NashornCallSiteDescriptor.getOperand(desc);
         switch (op) {
@@ -234,6 +205,20 @@ final class BrowserJSObjectLinker implements TypeBasedGuardingDynamicLinker {
         private static MethodHandle findJSObjectMH_V(final String name, final Class<?> rtype, final Class<?>... types) {
             checkJSObjectClass();
             return MH.findVirtual(MethodHandles.publicLookup(), jsObjectClass, name, MH.type(rtype, types));
+        }
+    }
+
+    private static Class<?> findBrowserJSObjectClass() {
+        ClassLoader extLoader;
+        extLoader = BrowserJSObjectLinker.class.getClassLoader();
+        // in case nashorn is loaded as bootstrap!
+        if (extLoader == null) {
+            extLoader = ClassLoader.getSystemClassLoader().getParent();
+        }
+        try {
+            return Class.forName(JSOBJECT_CLASS, false, extLoader);
+        } catch (final ClassNotFoundException e) {
+            return null;
         }
     }
 }

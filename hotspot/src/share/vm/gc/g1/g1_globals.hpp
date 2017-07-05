@@ -33,9 +33,11 @@
 
 #define G1_FLAGS(develop, develop_pd, product, product_pd, diagnostic, experimental, notproduct, manageable, product_rw, range, constraint) \
                                                                             \
-  product(bool, G1UseAdaptiveIHOP, false,                                   \
-          "Adaptively adjust InitiatingHeapOccupancyPercent from the "      \
-          "initial value.")                                                 \
+  product(bool, G1UseAdaptiveIHOP, true,                                    \
+          "Adaptively adjust the initiating heap occupancy from the "       \
+          "initial value of InitiatingHeapOccupancyPercent. The policy "    \
+          "attempts to start marking in time based on application "         \
+          "behavior.")                                                      \
                                                                             \
   experimental(size_t, G1AdaptiveIHOPNumInitialSamples, 3,                  \
           "How many completed time periods from initial mark to first "     \
@@ -155,6 +157,7 @@
           "Each time the rset update queue increases by this amount "       \
           "activate the next refinement thread if available. "              \
           "Will be selected ergonomically by default.")                     \
+          range(0, max_jint)                                                \
                                                                             \
   product(intx, G1RSetUpdatingPauseTimePercent, 10,                         \
           "A target percentage of time that is allowed to be spend on "     \
@@ -298,6 +301,7 @@
                                                                             \
   product(uintx, G1MixedGCCountTarget, 8,                                   \
           "The target number of mixed GCs after a marking cycle.")          \
+          range(0, max_uintx)                                               \
                                                                             \
   experimental(bool, G1EagerReclaimHumongousObjects, true,                  \
           "Try to reclaim dead large objects at every young GC.")           \

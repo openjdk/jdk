@@ -31,7 +31,7 @@ import java.security.PublicKey;
 import java.util.*;
 import javax.security.auth.x500.X500Principal;
 
-import sun.misc.HexDumpEncoder;
+import sun.security.util.HexDumpEncoder;
 import sun.security.util.Debug;
 import sun.security.util.DerInputStream;
 import sun.security.util.DerValue;

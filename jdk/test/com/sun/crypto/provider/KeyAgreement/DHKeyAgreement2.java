@@ -25,7 +25,6 @@
  * @test
  * @bug 7146728
  * @summary DHKeyAgreement2
- * @modules java.base/sun.misc
  * @author Jan Luehe
  */
 
@@ -37,8 +36,6 @@ import java.security.interfaces.*;
 import javax.crypto.*;
 import javax.crypto.spec.*;
 import javax.crypto.interfaces.*;
-
-import sun.misc.HexDumpEncoder;
 
 /**
  * This test utility executes the Diffie-Hellman key agreement protocol

@@ -65,7 +65,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBINSTRUMENT, \
         -L$(call FindLibDirForModule, java.base)/jli, \
     LDFLAGS_solaris := $(call SET_SHARED_LIBRARY_ORIGIN,/jli) \
         -L$(call FindLibDirForModule, java.base)/jli, \
-    LDFLAGS_macosx := -Xlinker -all_load $(SUPPORT_OUTPUTDIR)/native/java.base/libjli_static.a, \
+    LDFLAGS_macosx := -Wl$(COMMA)-all_load, \
     LDFLAGS_aix := -L$(SUPPORT_OUTPUTDIR)/native/java.base, \
     LDFLAGS_windows := -export:Agent_OnAttach, \
     LIBS := $(JDKLIB_LIBS), \
@@ -74,7 +74,8 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBINSTRUMENT, \
     LIBS_solaris := -ljli $(LIBDL), \
     LIBS_aix := -liconv -ljli_static $(LIBDL), \
     LIBS_macosx := -liconv -framework Cocoa -framework Security \
-        -framework ApplicationServices, \
+        -framework ApplicationServices \
+        $(SUPPORT_OUTPUTDIR)/native/java.base/libjli_static.a, \
     LIBS_windows := $(WIN_JAVA_LIB) advapi32.lib \
         $(SUPPORT_OUTPUTDIR)/native/java.base/jli_static.lib, \
     VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \

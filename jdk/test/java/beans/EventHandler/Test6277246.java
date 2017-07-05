@@ -39,7 +39,7 @@ public class Test6277246 {
             Class container = Class.forName("java.lang.Class");
             Class parameter = Class.forName("java.lang.String");
             Method method = container.getMethod("forName", parameter);
-            Object[] arglist = new Object[] {"sun.misc.BASE64Encoder"};
+            Object[] arglist = new Object[] {"sun.security.x509.X509CertInfo"};
             EventHandler eh = new EventHandler(Test6277246.class, "forName", "", "forName");
             Object object = eh.invoke(null, method, arglist);
             throw new Error((object != null) ? "test failure" : "test error");
