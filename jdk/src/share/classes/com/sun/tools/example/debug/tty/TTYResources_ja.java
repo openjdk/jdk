@@ -201,7 +201,7 @@ public class TTYResources_ja extends java.util.ListResourceBundle {
         {"No class named", "\u540D\u524D''{0}''\u306E\u30AF\u30E9\u30B9\u304C\u3042\u308A\u307E\u305B\u3093"},
         {"No class specified.", "\u30AF\u30E9\u30B9\u304C\u6307\u5B9A\u3055\u308C\u3066\u3044\u307E\u305B\u3093\u3002"},
         {"No classpath specified.", "\u30AF\u30E9\u30B9\u30D1\u30B9\u304C\u6307\u5B9A\u3055\u308C\u3066\u3044\u307E\u305B\u3093\u3002"},
-        {"No code at line", "{1}\u306E\u884C{0,number,integer}\u306B\u30B3\u30FC\u30C9\u304C\u3042\u308A\u307E\u305B\u3093"},
+        {"No code at line", "\u884C{0,number,integer} ({1}\u5185)\u306B\u30B3\u30FC\u30C9\u304C\u3042\u308A\u307E\u305B\u3093"},
         {"No connect specification.", "\u63A5\u7D9A\u304C\u6307\u5B9A\u3055\u308C\u3066\u3044\u307E\u305B\u3093\u3002"},
         {"No connector named:", "\u540D\u524D{0}\u306E\u30B3\u30CD\u30AF\u30BF\u304C\u3042\u308A\u307E\u305B\u3093"},
         {"No current thread", "\u73FE\u5728\u306E\u30B9\u30EC\u30C3\u30C9\u304C\u3042\u308A\u307E\u305B\u3093"},

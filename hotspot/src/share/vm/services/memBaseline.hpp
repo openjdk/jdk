@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -329,6 +329,9 @@ class MemBaseline VALUE_OBJ_CLASS_SPEC {
  private:
   // should not use copy constructor
   MemBaseline(MemBaseline& copy) { ShouldNotReachHere(); }
+
+  // check and block at a safepoint
+  static inline void check_safepoint(JavaThread* thr);
 
  public:
   // create a memory baseline

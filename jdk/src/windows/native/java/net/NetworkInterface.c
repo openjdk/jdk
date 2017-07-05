@@ -123,32 +123,44 @@ MIB_IFROW *getIF(jint index) {
      */
     size = sizeof(MIB_IFTABLE);
     tableP = (MIB_IFTABLE *)malloc(size);
+    if(tableP == NULL)
+        return NULL;
+
     count = GetIfTable(tableP, &size, TRUE);
     if (count == ERROR_INSUFFICIENT_BUFFER || count == ERROR_BUFFER_OVERFLOW) {
-        tableP = (MIB_IFTABLE *)realloc(tableP, size);
+        MIB_IFTABLE* newTableP =  (MIB_IFTABLE *)realloc(tableP, size);
+        if (newTableP == NULL) {
+            free(tableP);
+            return NULL;
+        }
+        tableP = newTableP;
+
         count = GetIfTable(tableP, &size, TRUE);
     }
 
     if (count != NO_ERROR) {
-        if (tableP != NULL)
-            free(tableP);
+        free(tableP);
         return NULL;
     }
 
-    if (tableP != NULL) {
-      ifrowP = tableP->table;
-      for (i=0; i<tableP->dwNumEntries; i++) {
-        /*
-         * Warning the real index is obtained by GetFriendlyIfIndex()
-         */
+    {
+    ifrowP = tableP->table;
+    for (i=0; i<tableP->dwNumEntries; i++) {
+    /*
+     * Warning: the real index is obtained by GetFriendlyIfIndex()
+    */
         ifindex = GetFriendlyIfIndex(ifrowP->dwIndex);
         if (ifindex == index) {
           /*
            * Create a copy of the entry so that we can free the table.
            */
-          ret = (MIB_IFROW *) malloc(sizeof(MIB_IFROW));
-          memcpy(ret, ifrowP, sizeof(MIB_IFROW));
-          break;
+            ret = (MIB_IFROW *) malloc(sizeof(MIB_IFROW));
+            if (ret == NULL) {
+                free(tableP);
+                return NULL;
+            }
+            memcpy(ret, ifrowP, sizeof(MIB_IFROW));
+            break;
         }
 
         /* onto the next interface */
@@ -184,15 +196,25 @@ int enumInterfaces(JNIEnv *env, netif **netifPP)
      */
     size = sizeof(MIB_IFTABLE);
     tableP = (MIB_IFTABLE *)malloc(size);
+    if (tableP == NULL) {
+        JNU_ThrowOutOfMemoryError(env, "Native heap allocation failure");
+        return -1;
+    }
+
     ret = GetIfTable(tableP, &size, TRUE);
     if (ret == ERROR_INSUFFICIENT_BUFFER || ret == ERROR_BUFFER_OVERFLOW) {
-        tableP = (MIB_IFTABLE *)realloc(tableP, size);
+        MIB_IFTABLE * newTableP = (MIB_IFTABLE *)realloc(tableP, size);
+        if (newTableP == NULL) {
+            free(tableP);
+            JNU_ThrowOutOfMemoryError(env, "Native heap allocation failure");
+            return -1;
+        }
+        tableP = newTableP;
         ret = GetIfTable(tableP, &size, TRUE);
     }
 
     if (ret != NO_ERROR) {
-        if (tableP != NULL)
-            free(tableP);
+        free(tableP);
 
         JNU_ThrowByName(env, "java/lang/Error",
                 "IP Helper Library GetIfTable function failed");
@@ -370,10 +392,21 @@ int enumAddresses_win(JNIEnv *env, netif *netifP, netaddr **netaddrPP)
      */
     size = sizeof(MIB_IPADDRTABLE);
     tableP = (MIB_IPADDRTABLE *)malloc(size);
+    if (tableP == NULL) {
+        JNU_ThrowOutOfMemoryError(env, "Native heap allocation failure");
+        return -1;
+    }
 
     ret = GetIpAddrTable(tableP, &size, FALSE);
     if (ret == ERROR_INSUFFICIENT_BUFFER || ret == ERROR_BUFFER_OVERFLOW) {
-        tableP = (MIB_IPADDRTABLE *)realloc(tableP, size);
+        MIB_IPADDRTABLE * newTableP = (MIB_IPADDRTABLE *)realloc(tableP, size);
+        if (newTableP == NULL) {
+            free(tableP);
+            JNU_ThrowOutOfMemoryError(env, "Native heap allocation failure");
+            return -1;
+        }
+        tableP = newTableP;
+
         ret = GetIpAddrTable(tableP, &size, FALSE);
     }
     if (ret != NO_ERROR) {

@@ -80,10 +80,7 @@ class MarkSweep : AllStatic {
   };
 
   class AdjustPointerClosure: public OopsInGenClosure {
-   private:
-    bool _is_root;
    public:
-    AdjustPointerClosure(bool is_root) : _is_root(is_root) {}
     virtual void do_oop(oop* p);
     virtual void do_oop(narrowOop* p);
   };
@@ -146,7 +143,6 @@ class MarkSweep : AllStatic {
   static MarkAndPushClosure   mark_and_push_closure;
   static FollowKlassClosure   follow_klass_closure;
   static FollowStackClosure   follow_stack_closure;
-  static AdjustPointerClosure adjust_root_pointer_closure;
   static AdjustPointerClosure adjust_pointer_closure;
   static AdjustKlassClosure   adjust_klass_closure;
 
@@ -179,12 +175,7 @@ class MarkSweep : AllStatic {
   static void adjust_marks();   // Adjust the pointers in the preserved marks table
   static void restore_marks();  // Restore the marks that we saved in preserve_mark
 
-  template <class T> static inline void adjust_pointer(T* p, bool isroot);
-
-  static void adjust_root_pointer(oop* p)  { adjust_pointer(p, true); }
-  static void adjust_pointer(oop* p)       { adjust_pointer(p, false); }
-  static void adjust_pointer(narrowOop* p) { adjust_pointer(p, false); }
-
+  template <class T> static inline void adjust_pointer(T* p);
 };
 
 class PreservedMark VALUE_OBJ_CLASS_SPEC {

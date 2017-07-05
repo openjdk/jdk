@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 import java.text.*;
 import java.text.spi.*;
 import java.util.*;
+import java.util.spi.*;
 import sun.util.locale.provider.LocaleProviderAdapter;
 
 public class LocaleProviders {
@@ -53,6 +54,10 @@ public class LocaleProviders {
 
             case "bug8001440Test":
                 bug8001440Test();
+                break;
+
+            case "bug8010666Test":
+                bug8010666Test();
                 break;
 
             default:
@@ -102,5 +107,39 @@ public class LocaleProviders {
         Locale locale = Locale.forLanguageTag("th-TH-u-nu-hoge");
         NumberFormat nf = NumberFormat.getInstance(locale);
         String nu = nf.format(1234560);
+    }
+
+    // This test assumes Windows localized language/country display names.
+    static void bug8010666Test() {
+        if (System.getProperty("os.name").startsWith("Windows")) {
+            NumberFormat nf = NumberFormat.getInstance(Locale.US);
+            try {
+                double ver = nf.parse(System.getProperty("os.version")).doubleValue();
+                System.out.printf("Windows version: %.1f\n", ver);
+                if (ver >= 6.0) {
+                    LocaleProviderAdapter lda = LocaleProviderAdapter.getAdapter(LocaleNameProvider.class, Locale.ENGLISH);
+                    LocaleProviderAdapter.Type type = lda.getAdapterType();
+                    if (type == LocaleProviderAdapter.Type.HOST) {
+                        Locale mkmk = Locale.forLanguageTag("mk-MK");
+                        String result = mkmk.getDisplayLanguage(Locale.ENGLISH);
+                        if (!"Macedonian (FYROM)".equals(result)) {
+                            throw new RuntimeException("Windows locale name provider did not return expected localized language name for \"mk\". Returned name was \"" + result + "\"");
+                        }
+                        result = Locale.US.getDisplayLanguage(Locale.ENGLISH);
+                        if (!"English".equals(result)) {
+                            throw new RuntimeException("Windows locale name provider did not return expected localized language name for \"en\". Returned name was \"" + result + "\"");
+                        }
+                        result = Locale.US.getDisplayCountry(Locale.ENGLISH);
+                        if (ver >= 6.1 && !"United States".equals(result)) {
+                            throw new RuntimeException("Windows locale name provider did not return expected localized country name for \"US\". Returned name was \"" + result + "\"");
+                        }
+                    } else {
+                        throw new RuntimeException("Windows Host LocaleProviderAdapter was not selected for English locale.");
+                    }
+                }
+            } catch (ParseException pe) {
+                throw new RuntimeException("Parsing Windows version failed: "+pe.toString());
+            }
+        }
     }
 }

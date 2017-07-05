@@ -218,14 +218,13 @@ public:
 static AlwaysTrueClosure always_true;
 
 void SharedHeap::process_weak_roots(OopClosure* root_closure,
-                                    CodeBlobClosure* code_roots,
-                                    OopClosure* non_root_closure) {
+                                    CodeBlobClosure* code_roots) {
   // Global (weak) JNI handles
   JNIHandles::weak_oops_do(&always_true, root_closure);
 
   CodeCache::blobs_do(code_roots);
-    StringTable::oops_do(root_closure);
-  }
+  StringTable::oops_do(root_closure);
+}
 
 void SharedHeap::set_barrier_set(BarrierSet* bs) {
   _barrier_set = bs;

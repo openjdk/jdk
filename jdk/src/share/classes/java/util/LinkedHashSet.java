@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -167,5 +167,19 @@ public class LinkedHashSet<E>
     public LinkedHashSet(Collection<? extends E> c) {
         super(Math.max(2*c.size(), 11), .75f, true);
         addAll(c);
+    }
+
+    /**
+     * Creates a {@code Spliterator}, over the elements in this set, that
+     * reports {@code SIZED}, {@code DISTINCT} and {@code ORDERED}.
+     * Overriding implementations are expected to document if the
+     * {@code Spliterator} reports any additional and relevant characteristic
+     * values.
+     *
+     * @return a {@code Spliterator} over the elements in this set
+     */
+    @Override
+    public Spliterator<E> spliterator() {
+        return Spliterators.spliterator(this, Spliterator.DISTINCT | Spliterator.ORDERED);
     }
 }

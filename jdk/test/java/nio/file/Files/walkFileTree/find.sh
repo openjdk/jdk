@@ -23,9 +23,9 @@
 
 # @test
 # @bug 4313887 6907737
-# @summary Unit test for walkFileTree method
-# @build CreateFileTree PrintFileTree SkipSiblings TerminateWalk MaxDepth
-# @run shell walk_file_tree.sh
+# @summary Tests that walkFileTree is consistent with the native find program
+# @build CreateFileTree PrintFileTree
+# @run shell find.sh
 
 # if TESTJAVA isn't set then we assume an interactive run.
 
@@ -75,18 +75,6 @@ if [ $? != 0 ];
     diff out1 out2
     if [ $? != 0 ]; then failures=`expr $failures + 1`; fi
   fi
-
-# test SKIP_SIBLINGS
-$JAVA ${TESTVMOPTS} SkipSiblings "$ROOT"
-if [ $? != 0 ]; then failures=`expr $failures + 1`; fi
-
-# test TERMINATE
-$JAVA ${TESTVMOPTS} TerminateWalk "$ROOT"
-if [ $? != 0 ]; then failures=`expr $failures + 1`; fi
-
-# test maxDepth
-$JAVA ${TESTVMOPTS} MaxDepth "$ROOT"
-if [ $? != 0 ]; then failures=`expr $failures + 1`; fi
 
 # clean-up
 rm -r "$ROOT"

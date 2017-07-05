@@ -196,7 +196,6 @@ class ciMethod : public ciMetadata {
   // Analysis and profiling.
   //
   // Usage note: liveness_at_bci and init_vars should be wrapped in ResourceMarks.
-  bool          uses_monitors() const            { return _uses_monitors; } // this one should go away, it has a misleading name
   bool          has_monitor_bytecodes() const    { return _uses_monitors; }
   bool          has_balanced_monitors();
 

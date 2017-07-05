@@ -62,7 +62,7 @@ final class ServerHandshaker extends Handshaker {
     private X509Certificate[]   certs;
     private PrivateKey          privateKey;
 
-    private SecretKey[]       kerberosKeys;
+    private Object              serviceCreds;
 
     // flag to check for clientCertificateVerify message
     private boolean             needClientVerify = false;
@@ -200,7 +200,8 @@ final class ServerHandshaker extends Handshaker {
                             clientRequestedVersion,
                             sslContext.getSecureRandom(),
                             input,
-                            kerberosKeys));
+                            this.getAccSE(),
+                            serviceCreds));
                     break;
                 case K_DHE_RSA:
                 case K_DHE_DSS:
@@ -543,18 +544,15 @@ final class ServerHandshaker extends Handshaker {
 
                         if (subject != null) {
                             // Eliminate dependency on KerberosPrincipal
-                            Set<Principal> principals =
-                                subject.getPrincipals(Principal.class);
-                            if (!principals.contains(localPrincipal)) {
-                                resumingSession = false;
-                                if (debug != null && Debug.isOn("session")) {
-                                    System.out.println("Subject identity" +
-                                                        " is not the same");
-                                }
-                            } else {
+                            if (Krb5Helper.isRelated(subject, localPrincipal)) {
                                 if (debug != null && Debug.isOn("session"))
-                                    System.out.println("Subject identity" +
-                                                        " is same");
+                                    System.out.println("Subject can" +
+                                            " provide creds for princ");
+                            } else {
+                                resumingSession = false;
+                                if (debug != null && Debug.isOn("session"))
+                                    System.out.println("Subject cannot" +
+                                            " provide creds for princ");
                             }
                         } else {
                             resumingSession = false;
@@ -1316,49 +1314,51 @@ final class ServerHandshaker extends Handshaker {
      * @return true if successful, false if not available or invalid
      */
     private boolean setupKerberosKeys() {
-        if (kerberosKeys != null) {
+        if (serviceCreds != null) {
             return true;
         }
         try {
             final AccessControlContext acc = getAccSE();
-            kerberosKeys = AccessController.doPrivileged(
+            serviceCreds = AccessController.doPrivileged(
                 // Eliminate dependency on KerberosKey
-                new PrivilegedExceptionAction<SecretKey[]>() {
+                new PrivilegedExceptionAction<Object>() {
                 @Override
-                public SecretKey[] run() throws Exception {
+                public Object run() throws Exception {
                     // get kerberos key for the default principal
-                    return Krb5Helper.getServerKeys(acc);
+                    return Krb5Helper.getServiceCreds(acc);
                         }});
 
             // check permission to access and use the secret key of the
             // Kerberized "host" service
-            if (kerberosKeys != null && kerberosKeys.length > 0) {
+            if (serviceCreds != null) {
                 if (debug != null && Debug.isOn("handshake")) {
-                    for (SecretKey k: kerberosKeys) {
-                        System.out.println("Using Kerberos key: " +
-                            k);
+                    System.out.println("Using Kerberos creds");
+                }
+                String serverPrincipal =
+                        Krb5Helper.getServerPrincipalName(serviceCreds);
+                if (serverPrincipal != null) {
+                    // When service is bound, we check ASAP. Otherwise,
+                    // will check after client request is received
+                    // in in Kerberos ClientKeyExchange
+                    SecurityManager sm = System.getSecurityManager();
+                    try {
+                        if (sm != null) {
+                            // Eliminate dependency on ServicePermission
+                            sm.checkPermission(Krb5Helper.getServicePermission(
+                                    serverPrincipal, "accept"), acc);
+                        }
+                    } catch (SecurityException se) {
+                        serviceCreds = null;
+                        // Do not destroy keys. Will affect Subject
+                        if (debug != null && Debug.isOn("handshake")) {
+                            System.out.println("Permission to access Kerberos"
+                                    + " secret key denied");
+                        }
+                        return false;
                     }
                 }
-
-                String serverPrincipal =
-                    Krb5Helper.getServerPrincipalName(kerberosKeys[0]);
-                SecurityManager sm = System.getSecurityManager();
-                try {
-                   if (sm != null) {
-                      // Eliminate dependency on ServicePermission
-                      sm.checkPermission(Krb5Helper.getServicePermission(
-                          serverPrincipal, "accept"), acc);
-                   }
-                } catch (SecurityException se) {
-                   kerberosKeys = null;
-                   // %%% destroy keys? or will that affect Subject?
-                   if (debug != null && Debug.isOn("handshake"))
-                      System.out.println("Permission to access Kerberos"
-                                + " secret key denied");
-                   return false;
-                }
             }
-            return (kerberosKeys != null && kerberosKeys.length > 0);
+            return serviceCreds != null;
         } catch (PrivilegedActionException e) {
             // Likely exception here is LoginExceptin
             if (debug != null && Debug.isOn("handshake")) {
