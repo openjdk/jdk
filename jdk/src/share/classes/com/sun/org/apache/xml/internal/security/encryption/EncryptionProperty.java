@@ -101,7 +101,7 @@ public interface EncryptionProperty {
      * @return an <code>Iterator</code> over all the addiitonal encryption
      *   information contained in this class.
      */
-    Iterator getEncryptionInformation();
+    Iterator<Element> getEncryptionInformation();
 
     /**
      * Adds encryption information.

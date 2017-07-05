@@ -38,10 +38,6 @@ AUTO_FILES_JAVA_DIRS =       \
     com/sun/naming/internal  \
     javax/net                \
     javax/script             \
-    javax/security/auth      \
-    javax/security/cert      \
-    javax/security/sasl      \
-    javax/smartcardio        \
     javax/tools              \
     javax/xml
 

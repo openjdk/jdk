@@ -1661,7 +1661,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                         public IOException run() throws Exception {
                             return (IOException)
                                 rememberedException.getClass()
-                                .getConstructor(new Class[] { String.class })
+                                .getConstructor(new Class<?>[] { String.class })
                                 .newInstance(args);
                         }
                     });

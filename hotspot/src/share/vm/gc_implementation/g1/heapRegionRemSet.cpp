@@ -148,7 +148,7 @@ protected:
       CardIdx_t from_card = (CardIdx_t)
           hw_offset >> (CardTableModRefBS::card_shift - LogHeapWordSize);
 
-      assert(0 <= from_card && from_card < HeapRegion::CardsPerRegion,
+      assert(0 <= from_card && (size_t)from_card < HeapRegion::CardsPerRegion,
              "Must be in range.");
       add_card_work(from_card, par);
     }
@@ -639,7 +639,7 @@ void OtherRegionsTable::add_reference(OopOrNarrowOopStar from, int tid) {
         uintptr_t(from_hr->bottom())
           >> CardTableModRefBS::card_shift;
       CardIdx_t card_index = from_card - from_hr_bot_card_index;
-      assert(0 <= card_index && card_index < HeapRegion::CardsPerRegion,
+      assert(0 <= card_index && (size_t)card_index < HeapRegion::CardsPerRegion,
              "Must be in range.");
       if (G1HRRSUseSparseTable &&
           _sparse_table.add_card(from_hrs_ind, card_index)) {
@@ -1066,7 +1066,7 @@ bool OtherRegionsTable::contains_reference_locked(OopOrNarrowOopStar from) const
       uintptr_t(hr->bottom()) >> CardTableModRefBS::card_shift;
     assert(from_card >= hr_bot_card_index, "Inv");
     CardIdx_t card_index = from_card - hr_bot_card_index;
-    assert(0 <= card_index && card_index < HeapRegion::CardsPerRegion,
+    assert(0 <= card_index && (size_t)card_index < HeapRegion::CardsPerRegion,
            "Must be in range.");
     return _sparse_table.contains_card(hr_ind, card_index);
   }
@@ -1191,7 +1191,7 @@ void HeapRegionRemSetIterator::initialize(const HeapRegionRemSet* hrrs) {
   _is = Sparse;
   // Set these values so that we increment to the first region.
   _coarse_cur_region_index = -1;
-  _coarse_cur_region_cur_card = (HeapRegion::CardsPerRegion-1);;
+  _coarse_cur_region_cur_card = (HeapRegion::CardsPerRegion-1);
 
   _cur_region_cur_card = 0;
 
@@ -1270,7 +1270,7 @@ bool HeapRegionRemSetIterator::fine_has_next(size_t& card_index) {
 bool HeapRegionRemSetIterator::fine_has_next() {
   return
     _fine_cur_prt != NULL &&
-    _cur_region_cur_card < (size_t) HeapRegion::CardsPerRegion;
+    _cur_region_cur_card < HeapRegion::CardsPerRegion;
 }
 
 bool HeapRegionRemSetIterator::has_next(size_t& card_index) {

@@ -375,6 +375,7 @@ final class KrbDelegationPermissionCollection extends PermissionCollection
     /*
      * Reads in a Vector of DelegationPermissions and saves them in the perms field.
      */
+    @SuppressWarnings("unchecked")
     private void readObject(ObjectInputStream in) throws IOException,
     ClassNotFoundException {
         // Don't call defaultReadObject()

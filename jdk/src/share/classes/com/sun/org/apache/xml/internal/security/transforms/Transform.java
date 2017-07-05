@@ -25,6 +25,7 @@ import java.io.OutputStream;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.HashMap;
+import java.util.Map;
 import javax.xml.parsers.ParserConfigurationException;
 
 import com.sun.org.apache.xml.internal.security.c14n.CanonicalizationException;
@@ -65,9 +66,9 @@ public final class Transform extends SignatureElementProxy {
     private static boolean alreadyInitialized = false;
 
     /** All available Transform classes are registered here */
-    private static HashMap transformClassHash = null;
+    private static Map<String, Class<?>> transformClassHash = null;
 
-    private static HashMap transformSpiHash = new HashMap();
+    private static Map<String, TransformSpi> transformSpiHash = new HashMap<String, TransformSpi>();
 
     private TransformSpi transformSpi = null;
 
@@ -209,7 +210,7 @@ public final class Transform extends SignatureElementProxy {
      */
     public static void init() {
         if (!alreadyInitialized) {
-            transformClassHash = new HashMap(10);
+            transformClassHash = new HashMap<String,Class<?>>(10);
             // make sure builtin algorithms are all registered first
             com.sun.org.apache.xml.internal.security.Init.init();
             alreadyInitialized = true;
@@ -231,7 +232,7 @@ public final class Transform extends SignatureElementProxy {
         throws AlgorithmAlreadyRegisteredException {
 
         // are we already registered?
-        Class registeredClass = getImplementingClass(algorithmURI);
+        Class<? extends TransformSpi> registeredClass = getImplementingClass(algorithmURI);
         if ((registeredClass != null) ) {
             Object exArgs[] = { algorithmURI, registeredClass };
             throw new AlgorithmAlreadyRegisteredException(
@@ -331,20 +332,21 @@ public final class Transform extends SignatureElementProxy {
      * @param URI
      * @return The name of the class implementing the URI.
      */
-    private static Class getImplementingClass(String URI) {
-        return (Class) transformClassHash.get(URI);
+    @SuppressWarnings("unchecked")
+    private static Class<? extends TransformSpi> getImplementingClass(String URI) {
+        return (Class<? extends TransformSpi>)transformClassHash.get(URI);
     }
 
     private static TransformSpi getTransformSpi(String URI)
         throws InvalidTransformException {
         try {
-            Object value = transformSpiHash.get(URI);
+            TransformSpi value = transformSpiHash.get(URI);
             if (value != null) {
-                return (TransformSpi) value;
+                return value;
             }
-            Class cl = (Class) transformClassHash.get(URI);
+            Class<? extends TransformSpi> cl = getImplementingClass(URI);
             if (cl != null) {
-                TransformSpi tr = (TransformSpi) cl.newInstance();
+                TransformSpi tr = cl.newInstance();
                 transformSpiHash.put(URI, tr);
                 return tr;
             }
