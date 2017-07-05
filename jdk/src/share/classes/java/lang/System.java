@@ -69,7 +69,7 @@ public final class System {
      * corresponds to keyboard input or another input source specified by
      * the host environment or user.
      */
-    public final static InputStream in = nullInputStream();
+    public final static InputStream in = null;
 
     /**
      * The "standard" output stream. This stream is already
@@ -96,7 +96,7 @@ public final class System {
      * @see     java.io.PrintStream#println(java.lang.Object)
      * @see     java.io.PrintStream#println(java.lang.String)
      */
-    public final static PrintStream out = nullPrintStream();
+    public final static PrintStream out = null;
 
     /**
      * The "standard" error output stream. This stream is already
@@ -110,7 +110,7 @@ public final class System {
      * variable <code>out</code>, has been redirected to a file or other
      * destination that is typically not continuously monitored.
      */
-    public final static PrintStream err = nullPrintStream();
+    public final static PrintStream err = null;
 
     /* The security manager for the system.
      */
@@ -1091,26 +1091,6 @@ public final class System {
      * @since      1.2
      */
     public static native String mapLibraryName(String libname);
-
-    /**
-     * The following two methods exist because in, out, and err must be
-     * initialized to null.  The compiler, however, cannot be permitted to
-     * inline access to them, since they are later set to more sensible values
-     * by initializeSystemClass().
-     */
-    private static InputStream nullInputStream() throws NullPointerException {
-        if (currentTimeMillis() > 0) {
-            return null;
-        }
-        throw new NullPointerException();
-    }
-
-    private static PrintStream nullPrintStream() throws NullPointerException {
-        if (currentTimeMillis() > 0) {
-            return null;
-        }
-        throw new NullPointerException();
-    }
 
     /**
      * Initialize the system class.  Called after thread initialization.

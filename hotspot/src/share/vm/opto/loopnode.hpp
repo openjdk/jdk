@@ -626,8 +626,7 @@ public:
     _nodes.map( old_node->_idx, (Node*)((intptr_t)new_node + 1) );
   }
   void lazy_replace( Node *old_node, Node *new_node ) {
-    _igvn.hash_delete(old_node);
-    _igvn.subsume_node( old_node, new_node );
+    _igvn.replace_node( old_node, new_node );
     lazy_update( old_node, new_node );
   }
   void lazy_replace_proj( Node *old_node, Node *new_node ) {

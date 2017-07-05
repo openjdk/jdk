@@ -65,6 +65,9 @@ public class Pread {
             throw new RuntimeException("Expected exception not thrown");
         } catch(IllegalArgumentException e) {
             // Correct result
+        } finally {
+            fc.close();
+            blah.delete();
         }
     }
 
@@ -73,13 +76,18 @@ public class Pread {
         File blah = File.createTempFile("blah2", null);
         blah.deleteOnExit();
         FileOutputStream fos = new FileOutputStream(blah);
-        fos.write(new byte[128]);
-        FileChannel fc = fos.getChannel();
         try {
-            fc.read(ByteBuffer.allocate(256),1);
-            throw new RuntimeException("Expected exception not thrown");
-        } catch(NonReadableChannelException e) {
-            // Correct result
+            fos.write(new byte[128]);
+            FileChannel fc = fos.getChannel();
+            try {
+                fc.read(ByteBuffer.allocate(256),1);
+                throw new RuntimeException("Expected exception not thrown");
+            } catch(NonReadableChannelException e) {
+                // Correct result
+            }
+        } finally {
+            fos.close();
+            blah.delete();
         }
     }
 
@@ -130,6 +138,7 @@ public class Pread {
 
         c.close();
         fis.close();
+        blah.delete();
     }
 
     /**

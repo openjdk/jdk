@@ -80,6 +80,7 @@ public class Read {
 
         c.close();
         fis.close();
+        blah.delete();
     }
 
     /**

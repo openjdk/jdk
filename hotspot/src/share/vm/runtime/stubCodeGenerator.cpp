@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -132,7 +132,6 @@ StubCodeMark::~StubCodeMark() {
   _cdesc->set_end(_cgen->assembler()->pc());
   assert(StubCodeDesc::_list == _cdesc, "expected order on list");
   _cgen->stub_epilog(_cdesc);
-  VTune::register_stub(_cdesc->name(), _cdesc->begin(), _cdesc->end());
   Forte::register_stub(_cdesc->name(), _cdesc->begin(), _cdesc->end());
 
   if (JvmtiExport::should_post_dynamic_code_generated()) {

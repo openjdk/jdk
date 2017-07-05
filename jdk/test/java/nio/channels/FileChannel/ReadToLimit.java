@@ -48,6 +48,7 @@ public class ReadToLimit {
                 throw new Exception("Test failed");
         fc.close();
         fis.close();
+        blah.delete();
     }
 
     /**

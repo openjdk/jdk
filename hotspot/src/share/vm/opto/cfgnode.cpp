@@ -472,9 +472,7 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
             assert( n->req() == 2 &&  n->in(1) != NULL, "Only one data input expected" );
             // Break dead loop data path.
             // Eagerly replace phis with top to avoid phis copies generation.
-            igvn->add_users_to_worklist(n);
-            igvn->hash_delete(n); // Yank from hash before hacking edges
-            igvn->subsume_node(n, top);
+            igvn->replace_node(n, top);
             if( max != outcnt() ) {
               progress = true;
               j = refresh_out_pos(j);
@@ -518,18 +516,17 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         igvn->hash_delete(n); // Remove from worklist before modifying edges
         if( n->is_Phi() ) {   // Collapse all Phis
           // Eagerly replace phis to avoid copies generation.
-          igvn->add_users_to_worklist(n);
-          igvn->hash_delete(n); // Yank from hash before hacking edges
+          Node* in;
           if( cnt == 0 ) {
             assert( n->req() == 1, "No data inputs expected" );
-            igvn->subsume_node(n, parent_ctrl); // replaced by top
+            in = parent_ctrl; // replaced by top
           } else {
             assert( n->req() == 2 &&  n->in(1) != NULL, "Only one data input expected" );
-            Node* in1 = n->in(1);               // replaced by unique input
-            if( n->as_Phi()->is_unsafe_data_reference(in1) )
-              in1 = phase->C->top();            // replaced by top
-            igvn->subsume_node(n, in1);
+            in = n->in(1);               // replaced by unique input
+            if( n->as_Phi()->is_unsafe_data_reference(in) )
+              in = phase->C->top();      // replaced by top
           }
+          igvn->replace_node(n, in);
         }
         else if( n->is_Region() ) { // Update all incoming edges
           assert( !igvn->eqv(n, this), "Must be removed from DefUse edges");
@@ -2127,7 +2124,7 @@ Node *NeverBranchNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     // if it's not there, there's nothing to do.
     Node* fallthru = proj_out(0);
     if (fallthru != NULL) {
-      phase->is_IterGVN()->subsume_node(fallthru, in(0));
+      phase->is_IterGVN()->replace_node(fallthru, in(0));
     }
     return phase->C->top();
   }

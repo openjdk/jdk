@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,10 +81,7 @@ public class PropertyEditorManager {
         if (sm != null) {
             sm.checkPropertiesAccess();
         }
-        PropertyEditorFinder finder = getFinder();
-        synchronized (finder) {
-            finder.register(targetType, editorClass);
-        }
+        getFinder().register(targetType, editorClass);
     }
 
     /**
@@ -95,10 +92,7 @@ public class PropertyEditorManager {
      * The result is null if no suitable editor can be found.
      */
     public static PropertyEditor findEditor(Class<?> targetType) {
-        PropertyEditorFinder finder = getFinder();
-        synchronized (finder) {
-            return finder.find(targetType);
-        }
+        return getFinder().find(targetType);
     }
 
     /**
@@ -110,10 +104,7 @@ public class PropertyEditorManager {
      *         e.g. Sun implementation initially sets to  {"sun.beans.editors"}.
      */
     public static String[] getEditorSearchPath() {
-        PropertyEditorFinder finder = getFinder();
-        synchronized (finder) {
-            return finder.getPackages();
-        }
+        return getFinder().getPackages();
     }
 
     /**
@@ -134,10 +125,7 @@ public class PropertyEditorManager {
         if (sm != null) {
             sm.checkPropertiesAccess();
         }
-        PropertyEditorFinder finder = getFinder();
-        synchronized (finder) {
-            finder.setPackages(path);
-        }
+        getFinder().setPackages(path);
     }
 
     private static PropertyEditorFinder getFinder() {

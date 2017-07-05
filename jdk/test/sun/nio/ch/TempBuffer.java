@@ -54,8 +54,12 @@ public class TempBuffer {
                     blah.deleteOnExit();
                     TempBuffer.initTestFile(blah);
                     RandomAccessFile raf = new RandomAccessFile(blah, "rw");
-                    FileChannel fs = raf.getChannel();
-                    fs.transferTo(0, SIZE, Channels.newChannel(out));
+                    FileChannel fc = raf.getChannel();
+                    try {
+                        fc.transferTo(0, SIZE, Channels.newChannel(out));
+                    } finally {
+                        fc.close();
+                    }
                     out.flush();
                 } catch (IOException ioe) {
                     throw new RuntimeException(ioe);
@@ -69,10 +73,17 @@ public class TempBuffer {
         File blah = File.createTempFile("blah2", null);
         blah.deleteOnExit();
         RandomAccessFile raf = new RandomAccessFile(blah, "rw");
-        FileChannel fs = raf.getChannel();
-        raf.setLength(SIZE);
-        fs.transferFrom(Channels.newChannel(in), 0, SIZE);
-        fs.close();
+        FileChannel fc = raf.getChannel();
+        try {
+            raf.setLength(SIZE);
+            fc.transferFrom(Channels.newChannel(in), 0, SIZE);
+        } finally {
+            fc.close();
+        }
+
+        sourceChannel.close();
+        sinkChannel.close();
+        blah.delete();
     }
 
     private static void initTestFile(File blah) throws IOException {

@@ -34,35 +34,40 @@
 
 import java.awt.*;
 import java.awt.event.*;
-import java.lang.Math;
+
+import sun.awt.SunToolkit;
+
 import test.java.awt.regtesthelpers.Util;
 
 public class LoopRobustness {
-    static int clicks = 0;
+
     final static long TIMEOUT = 5000;
     final static Object LOCK = new Object();
-    static volatile boolean notifyOccur = false;
 
-    public static void main(String [] args)  {
+    public static int clicks = 0;
+    public static volatile boolean notifyOccured = false;
+    public static volatile boolean otherExceptionsCaught = false;
+
+    public static void main(String [] args) throws Exception {
         ThreadGroup mainThreadGroup = Thread.currentThread().getThreadGroup();
 
         long at;
         //wait for a TIMEOUT giving a chance to a new Thread above to accomplish its stuff.
-        synchronized (LoopRobustness.LOCK){
+        synchronized (LoopRobustness.LOCK) {
             new Thread(new TestThreadGroup(mainThreadGroup, "TestGroup"), new Impl()).start();
             at = System.currentTimeMillis();
             try {
-                while(!notifyOccur && System.currentTimeMillis() - at < TIMEOUT) {
+                while (!notifyOccured && (System.currentTimeMillis() - at < TIMEOUT)) {
                     LoopRobustness.LOCK.wait(1000);
                 }
-            } catch(InterruptedException e){
+            } catch (InterruptedException e) {
                 throw new RuntimeException("Test interrupted.", e);
             }
         }
 
-        if( !notifyOccur){
+        if (!notifyOccured) {
             //notify doesn't occur after a reasonable time.
-            throw new RuntimeException("Test failed. Second Thread didn't notify MainThread.");
+            throw new RuntimeException("Test FAILED: second thread hasn't notified MainThread");
         }
 
         //now wait for two clicks
@@ -75,7 +80,10 @@ public class LoopRobustness {
             }
         }
         if (clicks != 2) {
-            throw new RuntimeException("robot should press button twice");
+            throw new RuntimeException("Test FAILED: robot should press button twice");
+        }
+        if (otherExceptionsCaught) {
+            throw new RuntimeException("Test FAILED: unexpected exceptions caught");
         }
     }
 }
@@ -83,18 +91,11 @@ public class LoopRobustness {
 class Impl implements Runnable{
     static Robot robot;
     public void run() {
+        SunToolkit.createNewAppContext();
+
         Button b = new Button("Press me to test the AWT-Event Queue thread");
         Frame lr = new Frame("ROBUST FRAME");
-        /* Must load Toolkit on this thread only, rather then on Main.
-           If load on Main (on the parent ThreadGroup of current ThreadGroup) then
-           EDT will be created on Main thread and supplied with it's own exceptionHandler,
-           which just throws an Exception and terminates current thread.
-           The test implies that EDT is created on the child ThreadGroup (testThreadGroup)
-           which is supplied with its own uncaughtException().
-        */
-        Toolkit.getDefaultToolkit();
         lr.setBounds(100, 100, 300, 100);
-
         b.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
                     LoopRobustness.clicks++;
@@ -107,40 +108,46 @@ class Impl implements Runnable{
 
         try {
             robot = new Robot();
-        } catch(AWTException e){
+        } catch (AWTException e) {
             throw new RuntimeException("Test interrupted.", e);
         }
         Util.waitForIdle(robot);
 
         synchronized (LoopRobustness.LOCK){
             LoopRobustness.LOCK.notify();
-            LoopRobustness.notifyOccur = true;
+            LoopRobustness.notifyOccured = true;
         }
 
         int i = 0;
-        while(i < 2){
+        while (i < 2) {
             robot.mouseMove(b.getLocationOnScreen().x + b.getWidth()/2,
-                            b.getLocationOnScreen().y + b.getHeight()/2 );
+                            b.getLocationOnScreen().y + b.getHeight()/2);
+            Util.waitForIdle(robot);
             robot.mousePress(InputEvent.BUTTON1_MASK);
-            //                robot.delay(10);
+            Util.waitForIdle(robot);
             robot.mouseRelease(InputEvent.BUTTON1_MASK);
+            Util.waitForIdle(robot);
             i++;
-            robot.delay(1000);
         }
     }
 }
 
 class TestThreadGroup extends ThreadGroup {
-    TestThreadGroup(ThreadGroup threadGroup, String name){
+    TestThreadGroup(ThreadGroup threadGroup, String name) {
         super(threadGroup, name);
     }
 
-    public void uncaughtException(Thread exitedThread, Throwable e) {
-        e.printStackTrace();
-        if ((e instanceof ExceptionInInitializerError) || (e instanceof
-                NoClassDefFoundError)){
-            throw new RuntimeException("Test failed: other Exceptions were thrown ", e);
+    public void uncaughtException(Thread thread, Throwable e) {
+        System.out.println("Exception caught: " + e);
+        e.printStackTrace(System.out);
+        System.out.flush();
+        if ((e instanceof ExceptionInInitializerError) ||
+            (e instanceof NoClassDefFoundError))
+        {
+            // These two are expected
+            return;
         }
+        LoopRobustness.otherExceptionsCaught = true;
     }
 }
 

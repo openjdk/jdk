@@ -35,6 +35,7 @@ import java.io.IOException;
 
 public class RegAfterPreClose {
 
+    static final int TEST_ITERATIONS = 300;
     static volatile boolean done;
 
     /**
@@ -96,26 +97,21 @@ public class RegAfterPreClose {
             }
         };
 
-        // schedule test to run for 1 minute
-        Executors.newScheduledThreadPool(1, factory).schedule(new Runnable() {
-            public void run() {
-                done = true;
-                sel.wakeup();
-            }}, 1, TimeUnit.MINUTES);
-
         // create Executor that handles tasks that closes channels
         // "asynchronously" - this creates the conditions to provoke the bug.
-        Executor executor = Executors.newFixedThreadPool(2, factory);
+        ExecutorService executor = Executors.newFixedThreadPool(2, factory);
 
         // submit task that connects to listener
         executor.execute(new Connector(ssc.socket().getLocalPort()));
 
         // loop accepting connections until done (or an IOException is thrown)
-        while (!done) {
+        int remaining = TEST_ITERATIONS;
+        while (remaining > 0) {
             sel.select();
             if (key.isAcceptable()) {
                 SocketChannel sc = ssc.accept();
                 if (sc != null) {
+                    remaining--;
                     sc.configureBlocking(false);
                     sc.register(sel, SelectionKey.OP_READ);
                     executor.execute(new Closer(sc));
@@ -123,5 +119,8 @@ public class RegAfterPreClose {
             }
             sel.selectedKeys().clear();
         }
+        done = true;
+        sel.close();
+        executor.shutdown();
     }
 }
