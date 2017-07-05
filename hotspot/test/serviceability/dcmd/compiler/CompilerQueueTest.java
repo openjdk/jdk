@@ -27,6 +27,7 @@
  * @library ..
  * @build DcmdUtil CompilerQueueTest
  * @run main CompilerQueueTest
+ * @run main/othervm -XX:-TieredCompilation CompilerQueueTest
  * @run main/othervm -Xint CompilerQueueTest
  * @summary Test of diagnostic command Compiler.queue
  */
@@ -87,7 +88,9 @@ public class CompilerQueueTest {
     }
 
     private static void validateMethodLine(String str)  throws Exception {
-        String name = str.substring(19);
+        // Skip until package/class name begins. Trim to remove whitespace that
+        // may differ.
+        String name = str.substring(14).trim();
         int sep = name.indexOf("::");
         if (sep == -1) {
             throw new Exception("Failed dcmd queue, didn't find separator :: in: " + name);

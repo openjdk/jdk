@@ -29,7 +29,7 @@ import sun.reflect.generics.visitor.TypeTreeVisitor;
 
 /** AST that represents the type int. */
 public class IntSignature implements BaseType {
-    private static IntSignature singleton = new IntSignature();
+    private static final IntSignature singleton = new IntSignature();
 
     private IntSignature(){}
 

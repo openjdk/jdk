@@ -35,7 +35,6 @@ import static jdk.nashorn.internal.runtime.arrays.ArrayLikeIterator.reverseArray
 import static jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor.CALLSITE_STRICT;
 
 import java.lang.invoke.MethodHandle;
-import java.lang.invoke.SwitchPoint;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -92,17 +91,6 @@ public final class NativeArray extends ScriptObject implements OptimisticBuiltin
     private static final Object REDUCE_CALLBACK_INVOKER  = new Object();
     private static final Object CALL_CMP                 = new Object();
     private static final Object TO_LOCALE_STRING         = new Object();
-
-    private SwitchPoint     lengthMadeNotWritableSwitchPoint;
-    private PushLinkLogic   pushLinkLogic;
-    private PopLinkLogic    popLinkLogic;
-    private ConcatLinkLogic concatLinkLogic;
-
-    /**
-     * Index for the modification SwitchPoint that triggers when length
-     * becomes not writable
-     */
-    private static final int LENGTH_NOT_WRITABLE_SWITCHPOINT = 0;
 
     /*
      * Constructors.
@@ -271,10 +259,81 @@ public final class NativeArray extends ScriptObject implements OptimisticBuiltin
     @Override
     public Object getLength() {
         final long length = JSType.toUint32(getArray().length());
-        if(length < Integer.MAX_VALUE) {
+        if (length < Integer.MAX_VALUE) {
             return (int)length;
         }
         return length;
+    }
+
+    private boolean defineLength(final long oldLen, final PropertyDescriptor oldLenDesc, final PropertyDescriptor desc, final boolean reject) {
+        // Step 3a
+        if (!desc.has(VALUE)) {
+            return super.defineOwnProperty("length", desc, reject);
+        }
+
+        // Step 3b
+        final PropertyDescriptor newLenDesc = desc;
+
+        // Step 3c and 3d - get new length and convert to long
+        final long newLen = NativeArray.validLength(newLenDesc.getValue(), true);
+
+        // Step 3e
+        newLenDesc.setValue(newLen);
+
+        // Step 3f
+        // increasing array length - just need to set new length value (and attributes if any) and return
+        if (newLen >= oldLen) {
+            return super.defineOwnProperty("length", newLenDesc, reject);
+        }
+
+        // Step 3g
+        if (!oldLenDesc.isWritable()) {
+            if (reject) {
+                throw typeError("property.not.writable", "length", ScriptRuntime.safeToString(this));
+            }
+            return false;
+        }
+
+        // Step 3h and 3i
+        final boolean newWritable = !newLenDesc.has(WRITABLE) || newLenDesc.isWritable();
+        if (!newWritable) {
+            newLenDesc.setWritable(true);
+        }
+
+        // Step 3j and 3k
+        final boolean succeeded = super.defineOwnProperty("length", newLenDesc, reject);
+        if (!succeeded) {
+            return false;
+        }
+
+        // Step 3l
+        // make sure that length is set till the point we can delete the old elements
+        long o = oldLen;
+        while (newLen < o) {
+            o--;
+            final boolean deleteSucceeded = delete(o, false);
+            if (!deleteSucceeded) {
+                newLenDesc.setValue(o + 1);
+                if (!newWritable) {
+                    newLenDesc.setWritable(false);
+                }
+                super.defineOwnProperty("length", newLenDesc, false);
+                if (reject) {
+                    throw typeError("property.not.writable", "length", ScriptRuntime.safeToString(this));
+                }
+                return false;
+            }
+        }
+
+        // Step 3m
+        if (!newWritable) {
+            // make 'length' property not writable
+            final ScriptObject newDesc = Global.newEmptyInstance();
+            newDesc.set(WRITABLE, false, 0);
+            return super.defineOwnProperty("length", newDesc, false);
+        }
+
+        return true;
     }
 
     /**
@@ -290,82 +349,16 @@ public final class NativeArray extends ScriptObject implements OptimisticBuiltin
 
         // Step 2
         // get old length and convert to long
-        long oldLen = NativeArray.validLength(oldLenDesc.getValue(), true);
+        final long oldLen = NativeArray.validLength(oldLenDesc.getValue(), true);
 
         // Step 3
         if ("length".equals(key)) {
             // check for length being made non-writable
+            final boolean result = defineLength(oldLen, oldLenDesc, desc, reject);
             if (desc.has(WRITABLE) && !desc.isWritable()) {
                 setIsLengthNotWritable();
             }
-
-            // Step 3a
-            if (!desc.has(VALUE)) {
-                return super.defineOwnProperty("length", desc, reject);
-            }
-
-            // Step 3b
-            final PropertyDescriptor newLenDesc = desc;
-
-            // Step 3c and 3d - get new length and convert to long
-            final long newLen = NativeArray.validLength(newLenDesc.getValue(), true);
-
-            // Step 3e
-            newLenDesc.setValue(newLen);
-
-            // Step 3f
-            // increasing array length - just need to set new length value (and attributes if any) and return
-            if (newLen >= oldLen) {
-                return super.defineOwnProperty("length", newLenDesc, reject);
-            }
-
-            // Step 3g
-            if (!oldLenDesc.isWritable()) {
-                if (reject) {
-                    throw typeError("property.not.writable", "length", ScriptRuntime.safeToString(this));
-                }
-                return false;
-            }
-
-            // Step 3h and 3i
-            final boolean newWritable = !newLenDesc.has(WRITABLE) || newLenDesc.isWritable();
-            if (!newWritable) {
-                newLenDesc.setWritable(true);
-            }
-
-            // Step 3j and 3k
-            final boolean succeeded = super.defineOwnProperty("length", newLenDesc, reject);
-            if (!succeeded) {
-                return false;
-            }
-
-            // Step 3l
-            // make sure that length is set till the point we can delete the old elements
-            while (newLen < oldLen) {
-                oldLen--;
-                final boolean deleteSucceeded = delete(oldLen, false);
-                if (!deleteSucceeded) {
-                    newLenDesc.setValue(oldLen + 1);
-                    if (!newWritable) {
-                        newLenDesc.setWritable(false);
-                    }
-                    super.defineOwnProperty("length", newLenDesc, false);
-                    if (reject) {
-                        throw typeError("property.not.writable", "length", ScriptRuntime.safeToString(this));
-                    }
-                    return false;
-                }
-            }
-
-            // Step 3m
-            if (!newWritable) {
-                // make 'length' property not writable
-                final ScriptObject newDesc = Global.newEmptyInstance();
-                newDesc.set(WRITABLE, false, 0);
-                return super.defineOwnProperty("length", newDesc, false);
-            }
-
-            return true;
+            return result;
         }
 
         // Step 4a
@@ -441,23 +434,7 @@ public final class NativeArray extends ScriptObject implements OptimisticBuiltin
     @Override
     public void setIsLengthNotWritable() {
         super.setIsLengthNotWritable();
-        /*
-         * Switchpoints are created lazily. If we link any push or pop site,
-         * we need to create the "length made not writable" switchpoint, if it
-         * doesn't exist.
-         *
-         * If the switchpoint already exists, we will find it here, and invalidate
-         * it, invalidating all previous callsites that use it.
-         *
-         * If the switchpoint doesn't exist, no push/pop has been linked so far,
-         * because that would create it too. We invalidate it immediately and the
-         * check link logic for all future callsites will fail immediately at link
-         * time
-         */
-        if (lengthMadeNotWritableSwitchPoint == null) {
-            lengthMadeNotWritableSwitchPoint = new SwitchPoint();
-        }
-        SwitchPoint.invalidateAll(new SwitchPoint[] { lengthMadeNotWritableSwitchPoint });
+        setArray(ArrayData.setIsLengthNotWritable(getArray()));
     }
 
     /**
@@ -494,7 +471,7 @@ public final class NativeArray extends ScriptObject implements OptimisticBuiltin
     @Setter(attributes = Attribute.NOT_ENUMERABLE | Attribute.NOT_CONFIGURABLE)
     public static void length(final Object self, final Object length) {
         if (isArray(self)) {
-            ((ScriptObject) self).setLength(validLength(length, true));
+            ((ScriptObject)self).setLength(validLength(length, true));
         }
     }
 
@@ -1306,10 +1283,13 @@ public final class NativeArray extends ScriptObject implements OptimisticBuiltin
                 // Get only non-missing elements. Missing elements go at the end
                 // of the sorted array. So, just don't copy these to sort input.
                 final ArrayList<Object> src = new ArrayList<>();
-                for (long i = 0; i < len; i = array.nextIndex(i)) {
-                    if (array.has((int) i)) {
-                        src.add(array.getObject((int) i));
+
+                for (final Iterator<Long> iter = array.indexIterator(); iter.hasNext(); ) {
+                    final long index = iter.next();
+                    if (index >= len) {
+                        break;
                     }
+                    src.add(array.getObject((int)index));
                 }
 
                 final Object[] sorted = sort(src.toArray(), comparefn);
@@ -1767,11 +1747,11 @@ public final class NativeArray extends ScriptObject implements OptimisticBuiltin
     @Override
     public SpecializedFunction.LinkLogic getLinkLogic(final Class<? extends LinkLogic> clazz) {
         if (clazz == PushLinkLogic.class) {
-            return pushLinkLogic == null ? new PushLinkLogic(this) : pushLinkLogic;
+            return PushLinkLogic.INSTANCE;
         } else if (clazz == PopLinkLogic.class) {
-            return popLinkLogic == null ? new PopLinkLogic(this) : pushLinkLogic;
+            return PopLinkLogic.INSTANCE;
         } else if (clazz == ConcatLinkLogic.class) {
-            return concatLinkLogic == null ? new ConcatLinkLogic(this) : concatLinkLogic;
+            return ConcatLinkLogic.INSTANCE;
         }
         return null;
     }
@@ -1787,21 +1767,7 @@ public final class NativeArray extends ScriptObject implements OptimisticBuiltin
      * modification switchpoint which is touched when length is written.
      */
     private static abstract class ArrayLinkLogic extends SpecializedFunction.LinkLogic {
-        private final NativeArray array;
-
-        protected ArrayLinkLogic(final NativeArray array) {
-            this.array = array;
-        }
-
-        private SwitchPoint getSwitchPoint() {
-            return array.lengthMadeNotWritableSwitchPoint;
-        }
-
-        private SwitchPoint newSwitchPoint() {
-            assert array.lengthMadeNotWritableSwitchPoint == null;
-            final SwitchPoint sp = new SwitchPoint();
-            array.lengthMadeNotWritableSwitchPoint = sp;
-            return sp;
+        protected ArrayLinkLogic() {
         }
 
         protected static ContinuousArrayData getContinuousArrayData(final Object self) {
@@ -1822,68 +1788,13 @@ public final class NativeArray extends ScriptObject implements OptimisticBuiltin
         public Class<? extends Throwable> getRelinkException() {
             return ClassCastException.class;
         }
-
-        @Override
-        public boolean hasModificationSwitchPoints() {
-            return getSwitchPoint() != null;
-        }
-
-        @Override
-        public boolean hasModificationSwitchPoint(final int index) {
-            assert index == LENGTH_NOT_WRITABLE_SWITCHPOINT;
-            return hasModificationSwitchPoints();
-        }
-
-        @Override
-        public SwitchPoint getOrCreateModificationSwitchPoint(final int index) {
-            assert index == LENGTH_NOT_WRITABLE_SWITCHPOINT;
-            SwitchPoint sp = getSwitchPoint();
-            if (sp == null) {
-                sp = newSwitchPoint();
-            }
-            return sp;
-        }
-
-        @Override
-        public SwitchPoint[] getOrCreateModificationSwitchPoints() {
-            return new SwitchPoint[] { getOrCreateModificationSwitchPoint(LENGTH_NOT_WRITABLE_SWITCHPOINT) };
-        }
-
-        @Override
-        public void invalidateModificationSwitchPoint(final int index) {
-            assert index == LENGTH_NOT_WRITABLE_SWITCHPOINT;
-            invalidateModificationSwitchPoints();
-        }
-
-        @Override
-        public void invalidateModificationSwitchPoints() {
-            final SwitchPoint sp = getSwitchPoint();
-            assert sp != null : "trying to invalidate non-existant modified SwitchPoint";
-            if (!sp.hasBeenInvalidated()) {
-                SwitchPoint.invalidateAll(new SwitchPoint[] { sp });
-            }
-        }
-
-        @Override
-        public boolean hasInvalidatedModificationSwitchPoint(final int index) {
-            assert index == LENGTH_NOT_WRITABLE_SWITCHPOINT;
-            return hasInvalidatedModificationSwitchPoints();
-        }
-
-        @Override
-        public boolean hasInvalidatedModificationSwitchPoints() {
-            final SwitchPoint sp = getSwitchPoint();
-            return sp != null && !sp.hasBeenInvalidated();
-        }
     }
 
     /**
      * This is linker logic for optimistic concatenations
      */
     private static final class ConcatLinkLogic extends ArrayLinkLogic {
-        private ConcatLinkLogic(final NativeArray array) {
-            super(array);
-        }
+        private static final LinkLogic INSTANCE = new ConcatLinkLogic();
 
         @Override
         public boolean canLink(final Object self, final CallSiteDescriptor desc, final LinkRequest request) {
@@ -1915,9 +1826,7 @@ public final class NativeArray extends ScriptObject implements OptimisticBuiltin
      * This is linker logic for optimistic pushes
      */
     private static final class PushLinkLogic extends ArrayLinkLogic {
-        private PushLinkLogic(final NativeArray array) {
-            super(array);
-        }
+        private static final LinkLogic INSTANCE = new PushLinkLogic();
 
         @Override
         public boolean canLink(final Object self, final CallSiteDescriptor desc, final LinkRequest request) {
@@ -1929,9 +1838,7 @@ public final class NativeArray extends ScriptObject implements OptimisticBuiltin
      * This is linker logic for optimistic pops
      */
     private static final class PopLinkLogic extends ArrayLinkLogic {
-        private PopLinkLogic(final NativeArray array) {
-            super(array);
-        }
+        private static final LinkLogic INSTANCE = new PopLinkLogic();
 
         /**
          * We need to check if we are dealing with a continuous non empty array data here,

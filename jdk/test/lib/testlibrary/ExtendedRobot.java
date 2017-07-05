@@ -23,9 +23,6 @@
  * questions.
  */
 
-import sun.awt.ExtendedKeyCodes;
-import sun.awt.SunToolkit;
-
 import java.awt.AWTException;
 import java.awt.Robot;
 import java.awt.GraphicsDevice;
@@ -33,6 +30,7 @@ import java.awt.Toolkit;
 import java.awt.Point;
 import java.awt.MouseInfo;
 import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
 
 /**
  * ExtendedRobot is a subclass of {@link java.awt.Robot}. It provides some convenience methods that are
@@ -178,8 +176,7 @@ public class ExtendedRobot extends Robot {
      *          dispatching thread
      */
     public synchronized void waitForIdle(int delayValue) {
-        SunToolkit.flushPendingEvents();
-        ((SunToolkit) Toolkit.getDefaultToolkit()).realSync();
+        super.waitForIdle();
         delay(delayValue);
     }
 
@@ -382,7 +379,7 @@ public class ExtendedRobot extends Robot {
      * @see     java.awt.event.KeyEvent
      */
     public void type(char c) {
-        type(ExtendedKeyCodes.getExtendedKeyCodeForChar(c));
+        type(KeyEvent.getExtendedKeyCodeForChar(c));
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,13 @@
  * questions.
  */
 
+import com.oracle.java.testlibrary.Utils;
+import java.util.Random;
+
+/**
+ * The class depends on Utils class from testlibrary package.
+ * It uses factory method that obtains random generator.
+ */
 public class Verify {
     public static String throwWord(boolean threw) {
         return (threw ? "threw" : "didn't throw");
@@ -134,7 +141,7 @@ public class Verify {
 
 
     public static class LoadTest {
-        public static java.util.Random rnd = new java.util.Random();
+        public static Random rnd = Utils.getRandomInstance();
         public static int[] values = new int[256];
 
         public static void init() {
@@ -159,7 +166,7 @@ public class Verify {
     }
 
     public static class NonConstantTest {
-        public static java.util.Random rnd = new java.util.Random();
+        public static Random rnd = Utils.getRandomInstance();
         public static int[] values = new int[] { Integer.MAX_VALUE, Integer.MIN_VALUE };
 
         public static void verify(BinaryMethod method) {
@@ -180,7 +187,7 @@ public class Verify {
 
     public static class NonConstantLongTest {
         public static long[] values = { Long.MIN_VALUE, Long.MAX_VALUE, 0, Long.MAX_VALUE - 1831 };
-        public static java.util.Random rnd = new java.util.Random();
+        public static Random rnd = Utils.getRandomInstance();
 
         public static void verify(BinaryLongMethod method) {
             for (int i = 0; i < 50000; ++i) {
@@ -199,7 +206,7 @@ public class Verify {
     }
 
     public static class LoopDependentTest {
-        public static java.util.Random rnd = new java.util.Random();
+        public static Random rnd = Utils.getRandomInstance();
 
         public static void verify(BinaryMethod method) {
             int rnd1 = rnd.nextInt(), rnd2 = rnd.nextInt();

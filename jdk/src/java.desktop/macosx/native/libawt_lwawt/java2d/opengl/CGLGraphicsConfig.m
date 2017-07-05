@@ -72,7 +72,9 @@ OGLGC_DestroyOGLGraphicsConfig(jlong pConfigInfo)
             }
             [pool drain];
             free(ctxinfo);
+            oglc->ctxInfo = NULL;
         }
+        cglinfo->context = NULL;
     }
 
     free(cglinfo);

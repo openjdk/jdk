@@ -70,7 +70,7 @@ public class CatchInlineExceptions {
         if (counter1 != 0) {
             throw new RuntimeException("Failed: counter1(" + counter1  + ") != 0");
         }
-        if (counter2 != counter) {
+        if (counter2 != counter0) {
             throw new RuntimeException("Failed: counter2(" + counter2  + ") != counter0(" + counter0  + ")");
         }
         if (counter2 != counter) {

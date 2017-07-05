@@ -22,15 +22,20 @@
  */
 
 import com.oracle.java.testlibrary.*;
+import sun.hotspot.WhiteBox;
 
 /*
  * @test CheckSegmentedCodeCache
  * @bug 8015774
+ * @library /testlibrary /testlibrary/whitebox
  * @summary "Checks VM options related to the segmented code cache"
- * @library /testlibrary
- * @run main/othervm CheckSegmentedCodeCache
+ * @build CheckSegmentedCodeCache
+ * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ *                              sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI CheckSegmentedCodeCache
  */
 public class CheckSegmentedCodeCache {
+  private static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
   // Code heap names
   private static final String NON_METHOD = "CodeHeap 'non-nmethods'";
   private static final String PROFILED = "CodeHeap 'profiled nmethods'";
@@ -133,8 +138,11 @@ public class CheckSegmentedCodeCache {
     failsWith(pb, "Invalid code heap sizes");
 
     // Fails if not enough space for VM internal code
+    long minUseSpace = WHITE_BOX.getUintxVMFlag("CodeCacheMinimumUseSpace");
+    // minimum size: CodeCacheMinimumUseSpace DEBUG_ONLY(* 3)
+    long minSize = (Platform.isDebugBuild() ? 3 : 1) * minUseSpace;
     pb = ProcessTools.createJavaProcessBuilder("-XX:+SegmentedCodeCache",
-                                               "-XX:ReservedCodeCacheSize=1700K",
+                                               "-XX:ReservedCodeCacheSize=" + minSize,
                                                "-XX:InitialCodeCacheSize=100K");
     failsWith(pb, "Not enough space in non-nmethod code heap to run VM");
   }

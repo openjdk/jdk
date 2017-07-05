@@ -1641,7 +1641,8 @@ void os::jvm_path(char *buf, jint buflen) {
   char* rp = realpath((char *)dlinfo.dli_fname, buf);
   assert(rp != NULL, "error in realpath(): maybe the 'path' argument is too long?");
 
-  strcpy(saved_jvm_path, buf);
+  strncpy(saved_jvm_path, buf, sizeof(saved_jvm_path));
+  saved_jvm_path[sizeof(saved_jvm_path) - 1] = '\0';
 }
 
 void os::print_jni_name_prefix_on(outputStream* st, int args_size) {
@@ -3829,11 +3830,6 @@ jint os::init_2(void) {
   return JNI_OK;
 }
 
-// this is called at the end of vm_initialization
-void os::init_3(void) {
-  return;
-}
-
 // Mark the polling page as unreadable
 void os::make_polling_page_unreadable(void) {
   if (!guard_memory((char*)_polling_page, Aix::page_size())) {
@@ -4135,15 +4131,6 @@ int os::available(int fd, jlong *bytes) {
   }
   *bytes = end - cur;
   return 1;
-}
-
-int os::socket_available(int fd, jint *pbytes) {
-  // Linux doc says EINTR not returned, unlike Solaris
-  int ret = ::ioctl(fd, FIONREAD, pbytes);
-
-  //%% note ioctl can return 0 when successful, JVM_SocketAvailable
-  // is expected to return 0 on failure and 1 on success to the jdk.
-  return (ret < 0) ? 0 : 1;
 }
 
 // Map a block of memory.
