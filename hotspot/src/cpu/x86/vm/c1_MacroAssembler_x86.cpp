@@ -349,13 +349,14 @@ void C1_MacroAssembler::inline_cache_check(Register receiver, Register iCache) {
 }
 
 
-void C1_MacroAssembler::build_frame(int frame_size_in_bytes) {
+void C1_MacroAssembler::build_frame(int frame_size_in_bytes, int bang_size_in_bytes) {
+  assert(bang_size_in_bytes >= frame_size_in_bytes, "stack bang size incorrect");
   // Make sure there is enough stack space for this method's activation.
   // Note that we do this before doing an enter(). This matches the
   // ordering of C2's stack overflow check / rsp decrement and allows
   // the SharedRuntime stack overflow handling to be consistent
   // between the two compilers.
-  generate_stack_overflow_check(frame_size_in_bytes);
+  generate_stack_overflow_check(bang_size_in_bytes);
 
   push(rbp);
 #ifdef TIERED
