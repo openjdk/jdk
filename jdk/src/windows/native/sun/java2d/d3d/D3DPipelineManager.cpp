@@ -117,7 +117,7 @@ HRESULT D3DPipelineManager::InitD3D(void)
 {
     typedef IDirect3D9 * WINAPI FnDirect3DCreate9(UINT SDKVersion);
 
-    hLibD3D9 = ::LoadLibrary(TEXT("d3d9.dll"));
+    hLibD3D9 = JDK_LoadSystemLibrary("d3d9.dll");
     if (hLibD3D9 == NULL) {
         J2dRlsTraceLn(J2D_TRACE_ERROR, "InitD3D: no d3d9.dll");
         return E_FAIL;

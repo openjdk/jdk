@@ -788,6 +788,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
                 .insertParameterTypes(keepPosArgs, arrayType);
         return spreadArguments(target, newType, keepPosArgs, arrayType, arrayLength);
     }
+    // called internally only
     static MethodHandle spreadArgumentsFromPos(MethodHandle target, MethodType newType, int spreadArgPos) {
         int arrayLength = target.type().parameterCount() - spreadArgPos;
         return spreadArguments(target, newType, spreadArgPos, Object[].class, arrayLength);
@@ -849,6 +850,12 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         MethodType ttype = target.type();
         MethodType ftype = filter.type();
         assert(ftype.parameterCount() == 1);
+        MethodHandle result = null;
+        if (AdapterMethodHandle.canCollectArguments(ttype, ftype, pos, false)) {
+            result = AdapterMethodHandle.makeCollectArguments(target, filter, pos, false);
+            if (result != null)  return result;
+        }
+        assert(MethodHandleNatives.workaroundWithoutRicochetFrames());  // this code is deprecated
         MethodType rtype = ttype.changeParameterType(pos, ftype.parameterType(0));
         MethodType gttype = ttype.generic();
         if (ttype != gttype) {
@@ -860,18 +867,11 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
             filter = convertArguments(filter, gftype, ftype, 0);
             ftype = gftype;
         }
-        MethodHandle result = null;
-        if (AdapterMethodHandle.canCollectArguments(ttype, ftype, pos, false)) {
-            result = AdapterMethodHandle.makeCollectArguments(target, filter, pos, false);
-        }
-        if (result == null) {
-            assert(MethodHandleNatives.workaroundWithoutRicochetFrames());  // this code is deprecated
-            if (ftype == ttype) {
+        if (ftype == ttype) {
             // simple unary case
-                result = FilterOneArgument.make(filter, target);
-            } else {
-                result = FilterGeneric.makeArgumentFilter(pos, filter, target);
-            }
+            result = FilterOneArgument.make(filter, target);
+        } else {
+            result = FilterGeneric.makeArgumentFilter(pos, filter, target);
         }
         if (result.type() != rtype)
             result = result.asType(rtype);
@@ -920,7 +920,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
             this.fallback = fallback;
         }
         static boolean preferRicochetFrame(MethodType type) {
-            return (type.parameterCount() >= INVOKES.length || type.hasPrimitives());
+            return true;  // always use RF if available
         }
         static MethodHandle make(MethodHandle test, MethodHandle target, MethodHandle fallback) {
             MethodType type = target.type();
@@ -931,12 +931,13 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
                 MethodHandle invoke = INVOKES[nargs];
                 MethodType gtype = type.generic();
                 assert(invoke.type().dropParameterTypes(0,1) == gtype);
-                MethodHandle gtest = convertArguments(test, gtype.changeReturnType(boolean.class), test.type(), 0);
-                MethodHandle gtarget = convertArguments(target, gtype, type, 0);
-                MethodHandle gfallback = convertArguments(fallback, gtype, type, 0);
+                // Note: convertArguments(...2) avoids interface casts present in convertArguments(...0)
+                MethodHandle gtest = convertArguments(test, gtype.changeReturnType(boolean.class), test.type(), 2);
+                MethodHandle gtarget = convertArguments(target, gtype, type, 2);
+                MethodHandle gfallback = convertArguments(fallback, gtype, type, 2);
                 if (gtest == null || gtarget == null || gfallback == null)  return null;
                 MethodHandle gguard = new GuardWithTest(invoke, gtest, gtarget, gfallback);
-                return convertArguments(gguard, type, gtype, 0);
+                return convertArguments(gguard, type, gtype, 2);
             } else {
                 assert(MethodHandleNatives.workaroundWithoutRicochetFrames());  // this code is deprecated
                 MethodHandle invoke = VARARGS_INVOKE;
@@ -1221,11 +1222,12 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         if (nargs < GuardWithCatch.INVOKES.length) {
             MethodType gtype = type.generic();
             MethodType gcatchType = gtype.insertParameterTypes(0, Throwable.class);
-            MethodHandle gtarget = convertArguments(target, gtype, type, 0);
-            MethodHandle gcatcher = convertArguments(catcher, gcatchType, ctype, 0);
+            // Note: convertArguments(...2) avoids interface casts present in convertArguments(...0)
+            MethodHandle gtarget = convertArguments(target, gtype, type, 2);
+            MethodHandle gcatcher = convertArguments(catcher, gcatchType, ctype, 2);
             MethodHandle gguard = new GuardWithCatch(gtarget, exType, gcatcher);
             if (gtarget == null || gcatcher == null || gguard == null)  return null;
-            return convertArguments(gguard, type, gtype, 0);
+            return convertArguments(gguard, type, gtype, 2);
         } else {
             MethodType gtype = MethodType.genericMethodType(0, true);
             MethodType gcatchType = gtype.insertParameterTypes(0, Throwable.class);
