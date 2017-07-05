@@ -64,6 +64,7 @@
 #include "services/classLoadingService.hpp"
 #include "services/threadService.hpp"
 #include "trace/traceMacros.hpp"
+#include "utilities/align.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/globalDefinitions.hpp"

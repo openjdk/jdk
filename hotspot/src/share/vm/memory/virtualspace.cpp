@@ -29,6 +29,7 @@
 #include "oops/markOop.hpp"
 #include "oops/oop.inline.hpp"
 #include "services/memTracker.hpp"
+#include "utilities/align.hpp"
 
 // ReservedSpace
 

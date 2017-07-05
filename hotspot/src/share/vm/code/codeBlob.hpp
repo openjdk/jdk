@@ -30,6 +30,7 @@
 #include "compiler/oopMap.hpp"
 #include "runtime/frame.hpp"
 #include "runtime/handles.hpp"
+#include "utilities/align.hpp"
 #include "utilities/macros.hpp"
 
 // CodeBlob Types

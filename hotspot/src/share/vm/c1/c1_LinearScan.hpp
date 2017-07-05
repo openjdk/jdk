@@ -31,6 +31,7 @@
 #include "c1/c1_Instruction.hpp"
 #include "c1/c1_LIR.hpp"
 #include "c1/c1_LIRGenerator.hpp"
+#include "utilities/align.hpp"
 #include "utilities/macros.hpp"
 
 class DebugInfoCache;

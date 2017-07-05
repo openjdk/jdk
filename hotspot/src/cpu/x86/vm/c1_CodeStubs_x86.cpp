@@ -30,6 +30,7 @@
 #include "c1/c1_Runtime1.hpp"
 #include "nativeInst_x86.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "utilities/align.hpp"
 #include "utilities/macros.hpp"
 #include "vmreg_x86.inline.hpp"
 #if INCLUDE_ALL_GCS

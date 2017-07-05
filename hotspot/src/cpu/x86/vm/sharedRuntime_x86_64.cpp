@@ -37,6 +37,8 @@
 #include "oops/compiledICHolder.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/vframeArray.hpp"
+#include "utilities/align.hpp"
+#include "vm_version_x86.hpp"
 #include "vmreg_x86.inline.hpp"
 #ifdef COMPILER1
 #include "c1/c1_Runtime1.hpp"
@@ -47,7 +49,6 @@
 #if INCLUDE_JVMCI
 #include "jvmci/jvmciJavaClasses.hpp"
 #endif
-#include "vm_version_x86.hpp"
 
 #define __ masm->
 

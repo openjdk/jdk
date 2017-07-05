@@ -71,6 +71,7 @@
 #include "runtime/signature.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/timer.hpp"
+#include "utilities/align.hpp"
 #include "utilities/copy.hpp"
 
 

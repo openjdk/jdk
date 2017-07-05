@@ -33,6 +33,7 @@
 #include "memory/memRegion.hpp"
 #include "oops/markOop.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "utilities/align.hpp"
 #include "utilities/macros.hpp"
 
 // A space is an abstraction for the "storage units" backing

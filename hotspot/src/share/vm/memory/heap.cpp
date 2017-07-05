@@ -27,6 +27,7 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/os.hpp"
 #include "services/memTracker.hpp"
+#include "utilities/align.hpp"
 
 size_t CodeHeap::header_size() {
   return sizeof(HeapBlock);

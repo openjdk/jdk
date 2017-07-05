@@ -36,6 +36,7 @@
 #include "runtime/perfMemory.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/statSampler.hpp"
+#include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 // Prefix of performance data file.

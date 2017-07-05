@@ -29,6 +29,7 @@
 #include "runtime/atomic.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/thread.hpp"
+#include "utilities/align.hpp"
 #include "utilities/macros.hpp"
 
 MutableSpace::MutableSpace(size_t alignment): ImmutableSpace(), _top(NULL), _alignment(alignment) {

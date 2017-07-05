@@ -39,6 +39,7 @@
 #include "runtime/atomic.hpp"
 #include "runtime/orderAccess.inline.hpp"
 #include "runtime/os.hpp"
+#include "utilities/align.hpp"
 #include "utilities/macros.hpp"
 
 inline void update_barrier_set(void* p, oop v, bool release = false) {

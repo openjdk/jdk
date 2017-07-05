@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "memory/allocation.hpp"
 #include "memory/metachunk.hpp"
+#include "utilities/align.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/debug.hpp"
 

@@ -72,6 +72,7 @@
 #include "runtime/timerTrace.hpp"
 #include "runtime/vm_operations.hpp"
 #include "services/memoryService.hpp"
+#include "utilities/align.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/events.hpp"

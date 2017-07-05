@@ -29,6 +29,7 @@
 #include "code/stubs.hpp"
 #include "interpreter/bytecodes.hpp"
 #include "memory/allocation.hpp"
+#include "utilities/align.hpp"
 
 //
 // For CompiledIC's:

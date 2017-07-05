@@ -96,6 +96,7 @@
 #include "services/threadService.hpp"
 #include "trace/traceMacros.hpp"
 #include "trace/tracing.hpp"
+#include "utilities/align.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"

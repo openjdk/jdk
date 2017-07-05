@@ -27,6 +27,7 @@
 
 #include "memory/allocation.hpp"
 #include "oops/method.hpp"
+#include "utilities/align.hpp"
 
 // A HandlerTableEntry describes an individual entry of a subtable
 // of ExceptionHandlerTable. An entry consists of a pair(bci, pco),

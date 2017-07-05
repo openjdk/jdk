@@ -26,6 +26,7 @@
 #include "gc/parallel/generationSizer.hpp"
 #include "gc/shared/collectorPolicy.hpp"
 #include "runtime/globals_extension.hpp"
+#include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 void GenerationSizer::initialize_alignments() {

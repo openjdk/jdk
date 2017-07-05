@@ -27,6 +27,7 @@
 
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/cardTableModRefBS.inline.hpp"
+#include "utilities/align.hpp"
 
 // Inline functions of BarrierSet, which de-virtualize certain
 // performance-critical calls when the barrier is the most common

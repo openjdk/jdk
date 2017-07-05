@@ -30,6 +30,7 @@
 #include "gc/shared/cardTableModRefBS.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/mutex.hpp"
+#include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 // Sparse remembered set for a heap region (the "owning" region).  Maps

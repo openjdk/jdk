@@ -27,6 +27,7 @@
 
 #include "gc/shared/modRefBarrierSet.hpp"
 #include "oops/oop.hpp"
+#include "utilities/align.hpp"
 
 // This kind of "BarrierSet" allows a "CollectedHeap" to detect and
 // enumerate ref fields that have been modified (since the last

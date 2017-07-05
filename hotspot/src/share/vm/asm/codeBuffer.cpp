@@ -29,6 +29,7 @@
 #include "oops/methodData.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/icache.hpp"
+#include "utilities/align.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/xmlstream.hpp"
 

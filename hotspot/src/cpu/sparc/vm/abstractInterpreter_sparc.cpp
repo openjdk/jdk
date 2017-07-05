@@ -29,6 +29,7 @@
 #include "runtime/arguments.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/synchronizer.hpp"
+#include "utilities/align.hpp"
 #include "utilities/macros.hpp"
 
 

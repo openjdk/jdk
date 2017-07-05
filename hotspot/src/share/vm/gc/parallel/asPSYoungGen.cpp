@@ -32,6 +32,7 @@
 #include "gc/shared/spaceDecorator.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/java.hpp"
+#include "utilities/align.hpp"
 
 ASPSYoungGen::ASPSYoungGen(size_t init_byte_size,
                            size_t minimum_byte_size,

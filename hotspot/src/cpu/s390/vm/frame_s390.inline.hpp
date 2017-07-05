@@ -28,6 +28,7 @@
 
 #include "code/codeCache.hpp"
 #include "code/vmreg.inline.hpp"
+#include "utilities/align.hpp"
 
 // Inline functions for z/Architecture frames:
 

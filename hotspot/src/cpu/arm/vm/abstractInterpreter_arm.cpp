@@ -32,6 +32,7 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/synchronizer.hpp"
+#include "utilities/align.hpp"
 #include "utilities/macros.hpp"
 
 int AbstractInterpreter::BasicType_as_index(BasicType type) {

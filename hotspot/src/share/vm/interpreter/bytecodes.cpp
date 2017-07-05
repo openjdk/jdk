@@ -26,6 +26,7 @@
 #include "interpreter/bytecodes.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/method.hpp"
+#include "utilities/align.hpp"
 #include "utilities/bytes.hpp"
 
 

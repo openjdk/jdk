@@ -41,6 +41,7 @@
 #include "opto/movenode.hpp"
 #include "opto/opcodes.hpp"
 #include "opto/rootnode.hpp"
+#include "utilities/align.hpp"
 
 #ifndef PRODUCT
 void LRG::dump() const {

@@ -28,6 +28,7 @@
 #include "runtime/thread.hpp"
 #include "stack_zero.hpp"
 #include "stack_zero.inline.hpp"
+#include "utilities/align.hpp"
 
 // Inlined causes circular inclusion with thread.hpp
 ZeroStack::ZeroStack()

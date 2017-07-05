@@ -36,6 +36,7 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "utilities/align.hpp"
 #ifdef COMPILER2
 #include "opto/matcher.hpp"
 #endif

@@ -33,6 +33,7 @@
 #include "gc/parallel/psYoungGen.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/prefetch.inline.hpp"
+#include "utilities/align.hpp"
 
 // Checks an individual oop for missing precise marks. Mark
 // may be either dirty or newgen.

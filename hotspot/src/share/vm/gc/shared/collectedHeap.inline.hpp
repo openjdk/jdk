@@ -36,6 +36,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/thread.inline.hpp"
 #include "services/lowMemoryDetector.hpp"
+#include "utilities/align.hpp"
 #include "utilities/copy.hpp"
 
 // Inline allocation implementations.

@@ -26,6 +26,7 @@
 #define SHARE_VM_OOPS_CONSTMETHODOOP_HPP
 
 #include "oops/oop.hpp"
+#include "utilities/align.hpp"
 
 // An ConstMethod represents portions of a Java method which are not written to after
 // the classfile is parsed(*see below).  This part of the method can be shared across

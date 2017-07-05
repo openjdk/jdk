@@ -30,6 +30,7 @@
 #include "memory/virtualspace.hpp"
 #include "logging/log.hpp"
 #include "services/memTracker.hpp"
+#include "utilities/align.hpp"
 #include "utilities/macros.hpp"
 
 // This kind of "BarrierSet" allows a "CollectedHeap" to detect and

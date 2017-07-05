@@ -36,6 +36,7 @@
 #include "runtime/os.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "utilities/align.hpp"
 
 
 void C1_MacroAssembler::inline_cache_check(Register receiver, Register iCache) {

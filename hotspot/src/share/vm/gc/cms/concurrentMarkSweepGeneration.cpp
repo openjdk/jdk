@@ -70,6 +70,7 @@
 #include "runtime/vmThread.hpp"
 #include "services/memoryService.hpp"
 #include "services/runtimeService.hpp"
+#include "utilities/align.hpp"
 #include "utilities/stack.inline.hpp"
 
 // statics

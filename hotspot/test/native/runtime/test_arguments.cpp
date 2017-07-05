@@ -25,6 +25,7 @@
 #include "prims/jvm.h"
 #include "runtime/arguments.hpp"
 #include "unittest.hpp"
+#include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class ArgumentsTest : public ::testing::Test {

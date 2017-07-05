@@ -28,6 +28,7 @@
 #include "runtime/frame.inline.hpp"
 #include "runtime/interfaceSupport.hpp"
 #include "runtime/os.hpp"
+#include "utilities/align.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/vmError.hpp"
 

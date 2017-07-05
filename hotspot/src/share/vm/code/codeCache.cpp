@@ -50,6 +50,7 @@
 #include "runtime/sweeper.hpp"
 #include "services/memoryService.hpp"
 #include "trace/tracing.hpp"
+#include "utilities/align.hpp"
 #include "utilities/vmError.hpp"
 #include "utilities/xmlstream.hpp"
 #ifdef COMPILER1

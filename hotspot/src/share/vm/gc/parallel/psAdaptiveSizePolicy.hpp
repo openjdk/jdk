@@ -29,6 +29,7 @@
 #include "gc/shared/gcCause.hpp"
 #include "gc/shared/gcStats.hpp"
 #include "gc/shared/gcUtil.hpp"
+#include "utilities/align.hpp"
 
 // This class keeps statistical information and computes the
 // optimal free space for both the young and old generation

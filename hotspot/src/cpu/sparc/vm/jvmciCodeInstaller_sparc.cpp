@@ -27,6 +27,7 @@
 #include "jvmci/jvmciJavaClasses.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "utilities/align.hpp"
 #include "vmreg_sparc.inline.hpp"
 
 jint CodeInstaller::pd_next_offset(NativeInstruction* inst, jint pc_offset, Handle method, TRAPS) {

@@ -37,6 +37,7 @@
 #include "oops/oop.hpp"
 #include "oops/typeArrayOop.hpp"
 #include "utilities/accessFlags.hpp"
+#include "utilities/align.hpp"
 #include "utilities/growableArray.hpp"
 
 // A Method represents a Java method.

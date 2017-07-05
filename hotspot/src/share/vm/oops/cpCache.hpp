@@ -29,6 +29,7 @@
 #include "memory/allocation.hpp"
 #include "oops/array.hpp"
 #include "runtime/orderAccess.hpp"
+#include "utilities/align.hpp"
 
 class PSPromotionManager;
 

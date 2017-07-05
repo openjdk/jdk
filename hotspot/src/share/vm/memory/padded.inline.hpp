@@ -27,6 +27,7 @@
 
 #include "memory/allocation.inline.hpp"
 #include "memory/padded.hpp"
+#include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 

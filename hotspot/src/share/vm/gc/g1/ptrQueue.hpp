@@ -26,6 +26,7 @@
 #define SHARE_VM_GC_G1_PTRQUEUE_HPP
 
 #include "memory/allocation.hpp"
+#include "utilities/align.hpp"
 #include "utilities/sizes.hpp"
 
 // There are various techniques that require threads to be able to log

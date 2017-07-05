@@ -24,6 +24,7 @@
 
 #include "misc_aix.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "utilities/align.hpp"
 
 #include <pthread.h>
 #include <unistd.h>

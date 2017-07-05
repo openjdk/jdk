@@ -27,6 +27,7 @@
 
 #include "asm/macroAssembler.hpp"
 #include "code/vmreg.inline.hpp"
+#include "utilities/align.hpp"
 
 // Inline functions for SPARC frames:
 

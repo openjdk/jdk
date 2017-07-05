@@ -32,6 +32,7 @@
 #include "gc/cms/parNewGeneration.hpp"
 #include "gc/shared/gcUtil.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
+#include "utilities/align.hpp"
 #include "utilities/bitMap.inline.hpp"
 
 inline void CMSBitMap::clear_all() {

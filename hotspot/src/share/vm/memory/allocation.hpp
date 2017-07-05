@@ -37,6 +37,11 @@
 
 #include <new>
 
+// The byte alignment to be used by Arena::Amalloc.  See bugid 4169348.
+// Note: this value must be a power of 2
+
+#define ARENA_AMALLOC_ALIGNMENT (2*BytesPerWord)
+
 #define ARENA_ALIGN_M1 (((size_t)(ARENA_AMALLOC_ALIGNMENT)) - 1)
 #define ARENA_ALIGN_MASK (~((size_t)ARENA_ALIGN_M1))
 #define ARENA_ALIGN(x) ((((size_t)(x)) + ARENA_ALIGN_M1) & ARENA_ALIGN_MASK)

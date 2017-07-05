@@ -29,6 +29,7 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/java.hpp"
 #include "services/memTracker.hpp"
+#include "utilities/align.hpp"
 
 void ObjectStartArray::initialize(MemRegion reserved_region) {
   // We're based on the assumption that we use the same

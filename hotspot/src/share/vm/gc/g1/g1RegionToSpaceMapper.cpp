@@ -28,6 +28,7 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/virtualspace.hpp"
 #include "services/memTracker.hpp"
+#include "utilities/align.hpp"
 #include "utilities/bitMap.inline.hpp"
 
 G1RegionToSpaceMapper::G1RegionToSpaceMapper(ReservedSpace rs,

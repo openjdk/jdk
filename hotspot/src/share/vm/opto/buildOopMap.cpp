@@ -34,6 +34,7 @@
 #include "opto/phase.hpp"
 #include "opto/regalloc.hpp"
 #include "opto/rootnode.hpp"
+#include "utilities/align.hpp"
 
 // The functions in this file builds OopMaps after all scheduling is done.
 //
