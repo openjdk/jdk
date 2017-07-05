@@ -3285,9 +3285,6 @@ class CommandLineFlags {
   diagnostic(intx, VerifyGCLevel,     0,                                    \
           "Generation level at which to start +VerifyBefore/AfterGC")       \
                                                                             \
-  develop(uintx, ExitAfterGCNum,   0,                                       \
-          "If non-zero, exit after this GC.")                               \
-                                                                            \
   product(intx, MaxTenuringThreshold,    15,                                \
           "Maximum value for tenuring threshold")                           \
                                                                             \

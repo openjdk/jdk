@@ -1106,7 +1106,8 @@ HeapRegionRemSet::HeapRegionRemSet(G1BlockOffsetSharedArray* bosa,
 void HeapRegionRemSet::setup_remset_size() {
   // Setup sparse and fine-grain tables sizes.
   // table_size = base * (log(region_size / 1M) + 1)
-  int region_size_log_mb = MAX2((int)HeapRegion::LogOfHRGrainBytes - (int)LOG_M, 0);
+  const int LOG_M = 20;
+  int region_size_log_mb = MAX2(HeapRegion::LogOfHRGrainBytes - LOG_M, 0);
   if (FLAG_IS_DEFAULT(G1RSetSparseRegionEntries)) {
     G1RSetSparseRegionEntries = G1RSetSparseRegionEntriesBase * (region_size_log_mb + 1);
   }

@@ -52,14 +52,23 @@ else
 LFLAGS_JSIG += -mt -xnolib
 endif
 
-$(LIBJSIG): $(JSIGSRCDIR)/jsig.c $(LIBJSIG_MAPFILE)
+$(LIBJSIG): $(ADD_GNU_DEBUGLINK) $(FIX_EMPTY_SEC_HDR_FLAGS) $(JSIGSRCDIR)/jsig.c $(LIBJSIG_MAPFILE)
 	@echo Making signal interposition lib...
 	$(QUIETLY) $(CC) $(SYMFLAG) $(ARCHFLAG) $(SHARED_FLAG) $(PICFLAG) \
-                         $(LFLAGS_JSIG) -o $@ $< -ldl
+                         $(LFLAGS_JSIG) -o $@ $(JSIGSRCDIR)/jsig.c -ldl
 	[ -f $(LIBJSIG_G) ] || { ln -s $@ $(LIBJSIG_G); }
 ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
+# gobjcopy crashes on "empty" section headers with the SHF_ALLOC flag set.
+# Clear the SHF_ALLOC flag (if set) from empty section headers.
+# An empty section header has sh_addr == 0 and sh_size == 0.
+# This problem has only been seen on Solaris X64, but we call this tool
+# on all Solaris builds just in case.
+	$(QUIETLY) $(FIX_EMPTY_SEC_HDR_FLAGS) $@
 	$(QUIETLY) $(OBJCOPY) --only-keep-debug $@ $(LIBJSIG_DEBUGINFO)
-	$(QUIETLY) $(OBJCOPY) --add-gnu-debuglink=$(LIBJSIG_DEBUGINFO) $@
+# $(OBJCOPY) --add-gnu-debuglink=... corrupts SUNW_* sections.
+# Use $(ADD_GNU_DEBUGLINK) until a fixed $(OBJCOPY) is available.
+#	$(QUIETLY) $(OBJCOPY) --add-gnu-debuglink=$(LIBJSIG_DEBUGINFO) $@
+	$(QUIETLY) $(ADD_GNU_DEBUGLINK) $(LIBJSIG_DEBUGINFO) $@
   ifeq ($(STRIP_POLICY),all_strip)
 	$(QUIETLY) $(STRIP) $@
   else
