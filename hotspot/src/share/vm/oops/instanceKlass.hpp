@@ -1108,7 +1108,7 @@ public:
 
   // Naming
   const char* signature_name() const;
-  static const jbyte* package_from_name(const Symbol* name, int& length);
+  static Symbol* package_from_name(const Symbol* name, TRAPS);
 
   // GC specific object visitors
   //
@@ -1298,7 +1298,7 @@ public:
   // JSR-292 support
   MemberNameTable* member_names() { return _member_names; }
   void set_member_names(MemberNameTable* member_names) { _member_names = member_names; }
-  bool add_member_name(Handle member_name);
+  oop add_member_name(Handle member_name, bool intern);
 
 public:
   // JVMTI support
