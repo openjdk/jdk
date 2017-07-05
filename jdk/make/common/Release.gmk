@@ -164,7 +164,7 @@ endif # solaris
 ifeq ($(PLATFORM), linux)
   MANBASEDIRS=$(JDK_TOPDIR)/src/linux/doc $(IMPORTDOCDIR)
   MAN1SUBDIR=man
-  JA_DIRNAME=ja_JP.$(JA_SOURCE_ENCODING)
+  JA_DIRNAME=ja_JP.UTF-8
 endif # linux
 
 define copy-man-pages
@@ -190,8 +190,7 @@ for manbase in $(MANBASEDIRS:%=%/$(MAN1SUBDIR)) ; do \
 done
 $(java-vm-cleanup)
 if [ "$(JA_DIRNAME)" != "" ] ; then \
-  $(MV) $1/man/ja $1/man/$(JA_DIRNAME); \
-  $(CD) $1/man && $(LN) -s $(JA_DIRNAME) ja; \
+  $(CD) $1/man && $(RM) ja && $(LN) -s $(JA_DIRNAME) ja; \
 fi
 endef
 
@@ -609,8 +608,8 @@ $(RT_JAR_FILELIST) + $(RES_JAR_FILELIST): \
 	@$(java-vm-cleanup)
 
 # Create the manifest file.
-JAR_MANIFEST_FILE=$(ABS_TEMPDIR)/manifest.tmp
-$(JAR_MANIFEST_FILE): $(MAINMANIFEST) $(BEANMANIFEST)
+RT_JAR_MANIFEST_FILE=$(ABS_TEMPDIR)/rt_manifest.tmp
+$(RT_JAR_MANIFEST_FILE): $(MAINMANIFEST) $(BEANMANIFEST)
 	$(prep-target)
 	$(SED) -e "s#@@RELEASE@@#$(RELEASE)#" 		\
 	       -e "s#@@COMPANY_NAME@@#$(COMPANY_NAME)#" \
@@ -618,21 +617,28 @@ $(JAR_MANIFEST_FILE): $(MAINMANIFEST) $(BEANMANIFEST)
 	$(ECHO) >> $@
 	$(CAT) $(BEANMANIFEST) >> $@
 
+OTHER_JAR_MANIFEST_FILE=$(ABS_TEMPDIR)/other_manifest.tmp
+$(OTHER_JAR_MANIFEST_FILE): $(MAINMANIFEST)
+	$(prep-target)
+	$(SED) -e "s#@@RELEASE@@#$(RELEASE)#" 		\
+	       -e "s#@@COMPANY_NAME@@#$(COMPANY_NAME)#" \
+	       $(MAINMANIFEST) >> $@
+
 # Create resources.jar containing non-class files
 RESOURCES_JAR=$(ABS_TEMPDIR)/resources-orig.jar
-$(RESOURCES_JAR): $(RES_JAR_FILELIST) $(JAR_MANIFEST_FILE)
+$(RESOURCES_JAR): $(RES_JAR_FILELIST) $(OTHER_JAR_MANIFEST_FILE)
 	$(prep-target)
 	$(CD) $(CLASSBINDIR) && \
-	    $(BOOT_JAR_CMD) $(CREATE_JAR_OPTS) $(JAR_MANIFEST_FILE) $@ \
+	    $(BOOT_JAR_CMD) $(CREATE_JAR_OPTS) $(OTHER_JAR_MANIFEST_FILE) $@ \
 	        @$(RES_JAR_FILELIST) $(BOOT_JAR_JFLAGS)
 	@$(CD) $(CLASSBINDIR) && $(java-vm-cleanup)
 
 # Create jsse.jar containing SunJSSE implementation classes
 JSSE_JAR=$(ABS_TEMPDIR)/jsse-orig.jar
-$(JSSE_JAR): $(JAR_MANIFEST_FILE)
+$(JSSE_JAR): $(OTHER_JAR_MANIFEST_FILE)
 	$(prep-target)
 	$(CD) $(CLASSBINDIR) && \
-	    $(BOOT_JAR_CMD) $(CREATE_JAR_OPTS) $(JAR_MANIFEST_FILE) $@ \
+	    $(BOOT_JAR_CMD) $(CREATE_JAR_OPTS) $(OTHER_JAR_MANIFEST_FILE) $@ \
 		$(JSSE_CLASSES_DIRS) $(BOOT_JAR_JFLAGS)
 	@$(CD) $(CLASSBINDIR) && $(java-vm-cleanup)
 
@@ -676,10 +682,10 @@ endif
 
 # Create rt.jar
 RT_JAR=$(ABS_TEMPDIR)/rt-orig.jar
-$(RT_JAR): $(RT_JAR_FILELIST) $(JAR_MANIFEST_FILE)
+$(RT_JAR): $(RT_JAR_FILELIST) $(RT_JAR_MANIFEST_FILE)
 	$(prep-target)
 	$(CD) $(CLASSBINDIR) && \
-	    $(BOOT_JAR_CMD) $(CREATE_JAR_OPTS) $(JAR_MANIFEST_FILE) $@ \
+	    $(BOOT_JAR_CMD) $(CREATE_JAR_OPTS) $(RT_JAR_MANIFEST_FILE) $@ \
 	        @$(RT_JAR_FILELIST) $(BOOT_JAR_JFLAGS)
 	@$(CD) $(CLASSBINDIR) && $(java-vm-cleanup)
 
@@ -1117,6 +1123,10 @@ endef
 MINIMUM_OS_NAME    := $(REQUIRED_OS_NAME)
 MINIMUM_OS_VERSION := $(REQUIRED_OS_VERSION)
 MINIMUM_OS_ARCH    := $(ARCH)
+ALL_SOURCE_TIPS     = $(shell \
+  if [ -f $(SOURCE_TIPS) ] ; then \
+    $(CAT) $(SOURCE_TIPS) ; \
+  fi)
 
 $(JDK_INFO_FILE): FRC
 	$(prep-target)
@@ -1124,6 +1134,7 @@ $(JDK_INFO_FILE): FRC
 	$(call info-file-item, "OS_NAME",      "$(MINIMUM_OS_NAME)")
 	$(call info-file-item, "OS_VERSION",   "$(MINIMUM_OS_VERSION)")
 	$(call info-file-item, "OS_ARCH",      "$(MINIMUM_OS_ARCH)")
+	$(call info-file-item, "SOURCE",       "$(ALL_SOURCE_TIPS)")
 
 # Create release file to identify this image
 identify-image-jdk:: $(JDK_INFO_FILE)
@@ -1134,6 +1145,7 @@ $(JRE_INFO_FILE): FRC
 	$(call info-file-item, "OS_NAME",      "$(MINIMUM_OS_NAME)")
 	$(call info-file-item, "OS_VERSION",   "$(MINIMUM_OS_VERSION)")
 	$(call info-file-item, "OS_ARCH",      "$(MINIMUM_OS_ARCH)")
+	$(call info-file-item, "SOURCE",       "$(ALL_SOURCE_TIPS)")
 
 # Create release file to identify this image
 identify-image-jre:: $(JRE_INFO_FILE)
