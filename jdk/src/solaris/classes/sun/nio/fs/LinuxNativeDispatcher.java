@@ -77,7 +77,7 @@ class LinuxNativeDispatcher extends UnixNativeDispatcher {
     }
 
     private static native int fgetxattr0(int filedes, long nameAddress,
-        long valueAdddress, int valueLen) throws UnixException;
+        long valueAddress, int valueLen) throws UnixException;
 
     /**
      *  fsetxattr(int filedes, const char *name, const void *value, size_t size, int flags);
@@ -94,7 +94,7 @@ class LinuxNativeDispatcher extends UnixNativeDispatcher {
     }
 
     private static native void fsetxattr0(int filedes, long nameAddress,
-        long valueAdddress, int valueLen) throws UnixException;
+        long valueAddress, int valueLen) throws UnixException;
 
     /**
      * fremovexattr(int filedes, const char *name);

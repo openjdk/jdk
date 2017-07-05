@@ -318,7 +318,7 @@ JNIEXPORT void JNICALL Java_Poller_nativeDestroyPoller
 
   ioevent_t *ioeh;
 
-  if (handle < 0 || handle > MAX_HANDLES)
+  if (handle < 0 || handle >= MAX_HANDLES)
     {
       STATE_EXCEPTION("DestroyPoller - handle out of range");
       return;
@@ -366,7 +366,7 @@ JNIEXPORT jint JNICALL Java_Poller_nativeAddFd
   int retval;
   ioevent_t *ioeh;
 
-  if (handle < 0 || handle > MAX_HANDLES)
+  if (handle < 0 || handle >= MAX_HANDLES)
     return STATE_EXCEPTION("AddFd - handle out of range");
 
   ioeh = &IOE_handles[handle];
@@ -459,7 +459,7 @@ jint addfd(JNIEnv *env, ioevent_t *ioeh, jint fd, jshort events)
   return fd;
 }
 
-/*
+/*
  * Class:     Poller
  * Method:    nativeRemoveFd
  * Signature: (II)I
@@ -469,7 +469,7 @@ JNIEXPORT jint JNICALL Java_Poller_nativeRemoveFd
 {
   ioevent_t *ioeh;
 
-  if (handle < 0 || handle > MAX_HANDLES)
+  if (handle < 0 || handle >= MAX_HANDLES)
     return STATE_EXCEPTION("RemoveFd - handle out of range");
 
   ioeh = &IOE_handles[handle];
@@ -576,7 +576,7 @@ JNIEXPORT jint JNICALL Java_Poller_nativeIsMember
   int i;
   ioevent_t *ioeh;
 
-  if (handle < 0 || handle > MAX_HANDLES)
+  if (handle < 0 || handle >= MAX_HANDLES)
     return STATE_EXCEPTION("IsMember - handle out of range");
 
   ioeh = &IOE_handles[handle];
@@ -629,7 +629,7 @@ JNIEXPORT jint JNICALL Java_Poller_nativeWait
   ioevent_t *ioeh;
   jboolean isCopy1,isCopy2;
 
-  if (handle < 0 || handle > MAX_HANDLES)
+  if (handle < 0 || handle >= MAX_HANDLES)
     return STATE_EXCEPTION("nativeWait - handle out of range");
 
   ioeh = &IOE_handles[handle];

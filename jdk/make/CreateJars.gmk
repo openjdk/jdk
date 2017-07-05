@@ -160,11 +160,13 @@ RT_JAR_EXCLUDES += \
     javax/swing/JWindowBeanInfo.class \
     javax/swing/SwingBeanInfoBase.class \
     javax/swing/text/JTextComponentBeanInfo.class \
+    jdk/nio/zipfs \
     META-INF/services/com.sun.jdi.connect.Connector \
     META-INF/services/com.sun.jdi.connect.spi.TransportService \
     META-INF/services/com.sun.tools.attach.spi.AttachProvider \
     META-INF/services/com.sun.tools.xjc.Plugin \
     META-INF/services/sun.net.spi.nameservice.NameServiceDescriptor \
+    META-INF/services/java.nio.file.spi.FileSystemProvider \
     org/relaxng/datatype \
     sun/awt/HKSCS.class \
     sun/awt/motif/X11GB2312.class \
@@ -351,6 +353,16 @@ $(eval $(call SetupArchive,BUILD_CHARSETS_JAR, , \
     EXTRA_FILES := sun/awt/HKSCS.class \
         $(CHARSETS_EXTRA_FILES), \
     JAR := $(IMAGES_OUTPUTDIR)/lib/charsets.jar, \
+    SKIP_METAINF := true, \
+    CHECK_COMPRESS_JAR := true))
+
+##########################################################################################
+
+$(eval $(call SetupArchive,BUILD_ZIPFS_JAR, , \
+    SRCS := $(JDK_OUTPUTDIR)/classes, \
+    INCLUDES := jdk/nio/zipfs, \
+    EXTRA_FILES := META-INF/services/java.nio.file.spi.FileSystemProvider, \
+    JAR := $(IMAGES_OUTPUTDIR)/lib/ext/zipfs.jar, \
     SKIP_METAINF := true, \
     CHECK_COMPRESS_JAR := true))
 
@@ -657,11 +669,6 @@ endif
 #
 $(IMAGES_OUTPUTDIR)/lib/management-agent.jar: $(JDK_TOPDIR)/src/share/classes/sun/management/manifest
 	$(JAR) cfm $@ $<
-
-##########################################################################################
-
-$(IMAGES_OUTPUTDIR)/lib/ext/zipfs.jar: $(JDK_OUTPUTDIR)/demo/nio/zipfs/zipfs.jar
-	$(install-file)
 
 ##########################################################################################
 

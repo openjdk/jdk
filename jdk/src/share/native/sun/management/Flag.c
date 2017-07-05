@@ -97,12 +97,12 @@ Java_sun_management_Flag_getFlags
         return 0;
     }
 
-    if (count == 0) {
+    if (count <= 0) {
         JNU_ThrowIllegalArgumentException(env, 0);
         return 0;
     }
 
-    gsize = count * sizeof(jmmVMGlobal);
+    gsize = (size_t)count * sizeof(jmmVMGlobal);
     globals = (jmmVMGlobal*) malloc(gsize);
     if (globals == NULL) {
         JNU_ThrowOutOfMemoryError(env, 0);

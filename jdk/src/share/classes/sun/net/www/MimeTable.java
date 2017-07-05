@@ -225,39 +225,28 @@ public class MimeTable implements FileNameMap {
     public synchronized void load() {
         Properties entries = new Properties();
         File file = null;
-        try {
-            InputStream is;
-            // First try to load the user-specific table, if it exists
-            String userTablePath =
-                System.getProperty("content.types.user.table");
-            if (userTablePath != null) {
-                file = new File(userTablePath);
-                if (!file.exists()) {
-                    // No user-table, try to load the default built-in table.
-                    file = new File(System.getProperty("java.home") +
-                                    File.separator +
-                                    "lib" +
-                                    File.separator +
-                                    "content-types.properties");
-                }
-            }
-            else {
-                // No user table, try to load the default built-in table.
-                file = new File(System.getProperty("java.home") +
-                                File.separator +
-                                "lib" +
-                                File.separator +
-                                "content-types.properties");
-            }
+        InputStream in;
 
-            is = new BufferedInputStream(new FileInputStream(file));
-            entries.load(is);
-            is.close();
+        // First try to load the user-specific table, if it exists
+        String userTablePath = System.getProperty("content.types.user.table");
+        if (userTablePath != null && (file = new File(userTablePath)).exists()) {
+            try {
+                in = new FileInputStream(file);
+            } catch (FileNotFoundException e) {
+                System.err.println("Warning: " + file.getPath()
+                                   + " mime table not found.");
+                return;
+            }
+        } else {
+            in = MimeTable.class.getResourceAsStream("content-types.properties");
+            if (in == null)
+                throw new InternalError("default mime table not found");
         }
-        catch (IOException e) {
-            System.err.println("Warning: default mime table not found: " +
-                               file.getPath());
-            return;
+
+        try (BufferedInputStream bin = new BufferedInputStream(in)) {
+            entries.load(bin);
+        } catch (IOException e) {
+            System.err.println("Warning: " + e.getMessage());
         }
         parse(entries);
     }
@@ -378,18 +367,6 @@ public class MimeTable implements FileNameMap {
         }
 
         return MimeEntry.UNKNOWN;
-    }
-
-    public synchronized boolean save(String filename) {
-        if (filename == null) {
-            filename = System.getProperty("user.home" +
-                                          File.separator +
-                                          "lib" +
-                                          File.separator +
-                                          "content-types.properties");
-        }
-
-        return saveAsProperties(new File(filename));
     }
 
     public Properties getAsProperties() {

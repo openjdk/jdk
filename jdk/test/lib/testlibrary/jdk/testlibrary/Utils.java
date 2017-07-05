@@ -120,6 +120,26 @@ public final class Utils {
     }
 
     /**
+     * Removes any options specifying which GC to use, for example "-XX:+UseG1GC".
+     * Removes any options matching: -XX:(+/-)Use*GC
+     * Used when a test need to set its own GC version. Then any
+     * GC specified by the framework must first be removed.
+     * @return A copy of given opts with all GC options removed.
+     */
+    private static final Pattern useGcPattern = Pattern.compile("\\-XX\\:[\\+\\-]Use.+GC");
+    public static List<String> removeGcOpts(List<String> opts) {
+        List<String> optsWithoutGC = new ArrayList<String>();
+        for (String opt : opts) {
+            if (useGcPattern.matcher(opt).matches()) {
+                System.out.println("removeGcOpts: removed " + opt);
+            } else {
+                optsWithoutGC.add(opt);
+            }
+        }
+        return optsWithoutGC;
+    }
+
+    /**
      * Splits a string by white space.
      * Works like String.split(), but returns an empty array
      * if the string is null or empty.

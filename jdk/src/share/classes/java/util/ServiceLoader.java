@@ -382,7 +382,7 @@ public final class ServiceLoader<S>
                 return p;
             } catch (Throwable x) {
                 fail(service,
-                     "Provider " + cn + " could not be instantiated: " + x,
+                     "Provider " + cn + " could not be instantiated",
                      x);
             }
             throw new Error();          // This cannot happen

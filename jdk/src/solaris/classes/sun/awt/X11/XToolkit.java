@@ -50,7 +50,8 @@ import sun.awt.*;
 import sun.awt.datatransfer.DataTransferer;
 import sun.font.FontConfigManager;
 import sun.java2d.SunGraphicsEnvironment;
-import sun.misc.PerformanceLogger;
+import sun.misc.*;
+import sun.misc.ThreadGroupUtils;
 import sun.print.PrintJob2D;
 import sun.security.action.GetPropertyAction;
 import sun.security.action.GetBooleanAction;
@@ -254,33 +255,25 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
         } finally {
             awtUnlock();
         }
-        PrivilegedAction<Void> a = new PrivilegedAction<Void>() {
-            public Void run() {
-                ThreadGroup mainTG = Thread.currentThread().getThreadGroup();
-                ThreadGroup parentTG = mainTG.getParent();
-                while (parentTG != null) {
-                    mainTG = parentTG;
-                    parentTG = mainTG.getParent();
-                }
-                Thread shutdownThread = new Thread(mainTG, "XToolkt-Shutdown-Thread") {
-                        public void run() {
-                            XSystemTrayPeer peer = XSystemTrayPeer.getPeerInstance();
-                            if (peer != null) {
-                                peer.dispose();
-                            }
-                            if (xs != null) {
-                                ((XAWTXSettings)xs).dispose();
-                            }
-                            freeXKB();
-                            if (log.isLoggable(PlatformLogger.Level.FINE)) {
-                                dumpPeers();
-                            }
+        PrivilegedAction<Void> a = () -> {
+            Thread shutdownThread = new Thread(ThreadGroupUtils.getRootThreadGroup(), "XToolkt-Shutdown-Thread") {
+                    public void run() {
+                        XSystemTrayPeer peer = XSystemTrayPeer.getPeerInstance();
+                        if (peer != null) {
+                            peer.dispose();
                         }
-                    };
-                shutdownThread.setContextClassLoader(null);
-                Runtime.getRuntime().addShutdownHook(shutdownThread);
-                return null;
-            }
+                        if (xs != null) {
+                            ((XAWTXSettings)xs).dispose();
+                        }
+                        freeXKB();
+                        if (log.isLoggable(PlatformLogger.Level.FINE)) {
+                            dumpPeers();
+                        }
+                    }
+                };
+            shutdownThread.setContextClassLoader(null);
+            Runtime.getRuntime().addShutdownHook(shutdownThread);
+            return null;
         };
         AccessController.doPrivileged(a);
     }
@@ -322,21 +315,13 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
             init();
             XWM.init();
 
-            PrivilegedAction<Thread> action = new PrivilegedAction() {
-                public Thread run() {
-                    ThreadGroup currentTG = Thread.currentThread().getThreadGroup();
-                    ThreadGroup parentTG = currentTG.getParent();
-                    while (parentTG != null) {
-                        currentTG = parentTG;
-                        parentTG = currentTG.getParent();
-                    }
-                    Thread thread = new Thread(currentTG, XToolkit.this, "AWT-XAWT");
-                    thread.setPriority(Thread.NORM_PRIORITY + 1);
-                    thread.setDaemon(true);
-                    return thread;
-                }
-            };
-            toolkitThread = AccessController.doPrivileged(action);
+            toolkitThread = AccessController.doPrivileged((PrivilegedAction<Thread>) () -> {
+                Thread thread = new Thread(ThreadGroupUtils.getRootThreadGroup(), XToolkit.this, "AWT-XAWT");
+                thread.setContextClassLoader(null);
+                thread.setPriority(Thread.NORM_PRIORITY + 1);
+                thread.setDaemon(true);
+                return thread;
+            });
             toolkitThread.start();
         }
     }

@@ -97,6 +97,7 @@
   template(Exit)                                  \
   template(LinuxDllLoad)                          \
   template(RotateGCLog)                           \
+  template(WhiteBoxOperation)                     \
 
 class VM_Operation: public CHeapObj<mtInternal> {
  public:
