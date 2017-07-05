@@ -81,7 +81,7 @@ interface CGICommandHandler {
 /**
  * The CGIHandler class contains methods for executing as a CGI program.
  * The main function interprets the query string as a command of the form
- * "<command>=<parameters>".
+ * "{@code <command>=<parameters>}".
  *
  * This class depends on the CGI 1.0 environment variables being set as
  * properties of the same name in this Java VM.

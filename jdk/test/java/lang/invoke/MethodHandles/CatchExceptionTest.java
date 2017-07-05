@@ -72,12 +72,6 @@ public class CatchExceptionTest {
             final int catchDrops) {
         this.testCase = testCase;
         this.dropped = catchDrops;
-        if (Helper.IS_VERBOSE) {
-            System.out.printf("CatchException::CatchException(%s, isVararg=%b " +
-                            "argsCount=%d catchDrops=%d)%n",
-                    testCase, isVararg, argsCount, catchDrops
-            );
-        }
         MethodHandle thrower = testCase.thrower;
         int throwerLen = thrower.type().parameterCount();
         List<Class<?>> classes;
@@ -97,9 +91,11 @@ public class CatchExceptionTest {
     }
 
     public static void main(String[] args) throws Throwable {
+        System.out.println("classes = " + ARGS_CLASSES);
+
         TestFactory factory = new TestFactory();
         long timeout = Helper.IS_THOROUGH ? 0L : Utils.adjustTimeout(Utils.DEFAULT_TEST_TIMEOUT);
-        // substract vm init time and reserve time for vm exit
+        // subtract vm init time and reserve time for vm exit
         timeout *= 0.9;
         TimeLimitedRunner runner = new TimeLimitedRunner(timeout, 2.0d,
                 () -> {
@@ -131,6 +127,12 @@ public class CatchExceptionTest {
     }
 
     private void runTest() {
+        if (Helper.IS_VERBOSE) {
+            System.out.printf("CatchException(%s, isVararg=%b argsCount=%d " +
+                            "dropped=%d)%n",
+                    testCase, thrower.isVarargsCollector(), argsCount, dropped);
+        }
+
         Helper.clear();
 
         Object[] args = Helper.randomArgs(
@@ -212,10 +214,7 @@ class TestFactory {
             args = 1;
         }
 
-        if (Helper.IS_VERBOSE) {
-            System.out.printf("maxArgs = %d%nmaxDrops = %d%n",
-                    maxArgs, maxDrops);
-        }
+        System.out.printf("maxArgs = %d%nmaxDrops = %d%n", maxArgs, maxDrops);
         constructorSize = TestCase.CONSTRUCTORS.size();
     }
 
@@ -243,7 +242,7 @@ class TestFactory {
 
     /**
      * @return next test from test matrix:
-     * {varArgs, noVarArgs} x TestCase.rtypes x TestCase.THROWABLES x {1, .., maxArgs } x {1, .., maxDrops}
+     * {varArgs, noVarArgs} x TestCase.rtypes x TestCase.THROWABLES x {1, .., maxArgs } x {0, .., maxDrops}
      */
     public CatchExceptionTest nextTest() {
         if (constructor < constructorSize) {
@@ -256,7 +255,7 @@ class TestFactory {
             return null;
         }
         if (dropArgs <= currentMaxDrops) {
-            if (dropArgs == 1) {
+            if (dropArgs == 0) {
                 if (Helper.IS_THOROUGH || Helper.RNG.nextBoolean()) {
                     ++dropArgs;
                     return createTest();
@@ -271,8 +270,8 @@ class TestFactory {
             }
         }
 
-        if (args <= maxArgs) {
-            dropArgs = 1;
+        if (args < maxArgs) {
+            dropArgs = 0;
             currentMaxDrops = Math.min(args, maxDrops);
             ++args;
             return createTest();

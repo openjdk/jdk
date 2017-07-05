@@ -2710,7 +2710,7 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
         }
 
         /**
-         * Returns lowest absolute key (ignoring directonality).
+         * Returns lowest absolute key (ignoring directionality).
          */
         K lowestKey() {
             Comparator<? super K> cmp = m.comparator;
@@ -2722,7 +2722,7 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
         }
 
         /**
-         * Returns highest absolute key (ignoring directonality).
+         * Returns highest absolute key (ignoring directionality).
          */
         K highestKey() {
             Comparator<? super K> cmp = m.comparator;

@@ -30,7 +30,7 @@
  * @run main SpaceUtilizationCheck
  */
 
-import com.oracle.java.testlibrary.*;
+import jdk.test.lib.*;
 
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;

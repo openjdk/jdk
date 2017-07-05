@@ -537,47 +537,65 @@ public class X509CRLImpl extends X509CRL implements DerEncoder {
      */
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("X.509 CRL v" + (version+1) + "\n");
+        sb.append("X.509 CRL v")
+            .append(version+1)
+            .append('\n');
         if (sigAlgId != null)
-            sb.append("Signature Algorithm: " + sigAlgId.toString() +
-                  ", OID=" + (sigAlgId.getOID()).toString() + "\n");
+            sb.append("Signature Algorithm: ")
+                .append(sigAlgId)
+                .append(", OID=")
+                .append(sigAlgId.getOID())
+                .append('\n');
         if (issuer != null)
-            sb.append("Issuer: " + issuer.toString() + "\n");
+            sb.append("Issuer: ")
+                .append(issuer)
+                .append('\n');
         if (thisUpdate != null)
-            sb.append("\nThis Update: " + thisUpdate.toString() + "\n");
+            sb.append("\nThis Update: ")
+                .append(thisUpdate)
+                .append('\n');
         if (nextUpdate != null)
-            sb.append("Next Update: " + nextUpdate.toString() + "\n");
+            sb.append("Next Update: ")
+                .append(nextUpdate)
+                .append('\n');
         if (revokedList.isEmpty())
             sb.append("\nNO certificates have been revoked\n");
         else {
-            sb.append("\nRevoked Certificates: " + revokedList.size());
+            sb.append("\nRevoked Certificates: ")
+                .append(revokedList.size());
             int i = 1;
             for (X509CRLEntry entry: revokedList) {
-                sb.append("\n[" + i++ + "] " + entry.toString());
+                sb.append("\n[")
+                    .append(i++)
+                    .append("] ")
+                    .append(entry);
             }
         }
         if (extensions != null) {
             Collection<Extension> allExts = extensions.getAllExtensions();
             Object[] objs = allExts.toArray();
-            sb.append("\nCRL Extensions: " + objs.length);
+            sb.append("\nCRL Extensions: ")
+                .append(objs.length);
             for (int i = 0; i < objs.length; i++) {
-                sb.append("\n[" + (i+1) + "]: ");
+                sb.append("\n[").append(i+1).append("]: ");
                 Extension ext = (Extension)objs[i];
                 try {
-                   if (OIDMap.getClass(ext.getExtensionId()) == null) {
-                       sb.append(ext.toString());
-                       byte[] extValue = ext.getExtensionValue();
-                       if (extValue != null) {
-                           DerOutputStream out = new DerOutputStream();
-                           out.putOctetString(extValue);
-                           extValue = out.toByteArray();
-                           HexDumpEncoder enc = new HexDumpEncoder();
-                           sb.append("Extension unknown: "
-                                     + "DER encoded OCTET string =\n"
-                                     + enc.encodeBuffer(extValue) + "\n");
-                      }
-                   } else
-                       sb.append(ext.toString()); // sub-class exists
+                    if (OIDMap.getClass(ext.getExtensionId()) == null) {
+                        sb.append(ext);
+                        byte[] extValue = ext.getExtensionValue();
+                        if (extValue != null) {
+                            DerOutputStream out = new DerOutputStream();
+                            out.putOctetString(extValue);
+                            extValue = out.toByteArray();
+                            HexDumpEncoder enc = new HexDumpEncoder();
+                            sb.append("Extension unknown: ")
+                                .append("DER encoded OCTET string =\n")
+                                .append(enc.encodeBuffer(extValue))
+                                .append('\n');
+                        }
+                    } else {
+                        sb.append(ext); // sub-class exists
+                    }
                 } catch (Exception e) {
                     sb.append(", Error parsing this extension");
                 }
@@ -585,10 +603,12 @@ public class X509CRLImpl extends X509CRL implements DerEncoder {
         }
         if (signature != null) {
             HexDumpEncoder encoder = new HexDumpEncoder();
-            sb.append("\nSignature:\n" + encoder.encodeBuffer(signature)
-                      + "\n");
-        } else
+            sb.append("\nSignature:\n")
+                .append(encoder.encodeBuffer(signature))
+                .append('\n');
+        } else {
             sb.append("NOT signed yet\n");
+        }
         return sb.toString();
     }
 

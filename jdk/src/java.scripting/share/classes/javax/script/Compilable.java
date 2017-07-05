@@ -42,7 +42,7 @@ public interface Compilable {
      *
      * @param script The source of the script, represented as a <code>String</code>.
      *
-     * @return An subclass of <code>CompiledScript</code> to be executed later using one
+     * @return An instance of a subclass of <code>CompiledScript</code> to be executed later using one
      * of the <code>eval</code> methods of <code>CompiledScript</code>.
      *
      * @throws ScriptException if compilation fails.
@@ -61,7 +61,7 @@ public interface Compilable {
      *
      * @param script The reader from which the script source is obtained.
      *
-     * @return An implementation of <code>CompiledScript</code> to be executed
+     * @return An instance of a subclass of <code>CompiledScript</code> to be executed
      * later using one of its <code>eval</code> methods of <code>CompiledScript</code>.
      *
      * @throws ScriptException if compilation fails.

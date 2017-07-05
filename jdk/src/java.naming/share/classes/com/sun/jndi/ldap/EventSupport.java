@@ -55,14 +55,14 @@ import javax.naming.ldap.UnsolicitedNotification;
  *<li>The filter (default is "(objectclass=*)").
  *<li>The search controls (default is null SearchControls).
  *<li>The events that the listener is interested in. This is determined by
- * finding out which <tt>NamingListener</tt> interface the listener supports.
+ * finding out which {@code NamingListener} interface the listener supports.
  *</ul>
  *<p>
- *A notifier (<tt>NamingEventNotifier</tt>) is a worker thread that is responsible
+ *A notifier ({@code NamingEventNotifier}) is a worker thread that is responsible
  *for gathering information for generating events requested by its listeners.
  *Each notifier maintains its own list of listeners; these listeners have
  *all made the same registration request (at different times) and implements
- *the same <tt>NamingListener</tt> interfaces.
+ *the same {@code NamingListener} interfaces.
  *<p>
  *For unsolicited listeners, this class maintains a vector, unsolicited.
  *When an unsolicited listener is registered, this class adds itself
@@ -93,7 +93,7 @@ import javax.naming.ldap.UnsolicitedNotification;
  *The notifiers are responsible for gather information for generating events
  *requested by their respective listeners. When a notifier gets sufficient
  *information to generate an event, it creates invokes the
- *appropriate <tt>fireXXXEvent</tt> on this class with the information and list of
+ *appropriate {@code fireXXXEvent} on this class with the information and list of
  *listeners. This causes an event and the list of listeners to be added
  *to the <em>event queue</em>.
  *This class maintains an event queue and a dispatching thread that dequeues
@@ -138,7 +138,7 @@ final class EventSupport {
     }
 
     /**
-     * Adds <tt>l</tt> to list of listeners interested in <tt>nm</tt>.
+     * Adds {@code l} to list of listeners interested in {@code nm}.
      */
     /*
      * Make the add/removeNamingListeners synchronized to:
@@ -173,7 +173,7 @@ final class EventSupport {
     }
 
     /**
-     * Adds <tt>l</tt> to list of listeners interested in <tt>nm</tt>
+     * Adds {@code l} to list of listeners interested in {@code nm}
      * and filter.
      */
     synchronized void addNamingListener(String nm, String filter,
@@ -201,7 +201,7 @@ final class EventSupport {
     }
 
     /**
-     * Removes <tt>l</tt> from all notifiers in this context.
+     * Removes {@code l} from all notifiers in this context.
      */
     synchronized void removeNamingListener(NamingListener l) {
         if (debug) System.err.println("EventSupport removing listener");

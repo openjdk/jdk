@@ -171,17 +171,17 @@ public class CodeBlob extends VMObject {
   public boolean isLockedByVM()         { return false; }
 
   /** OopMap for frame; can return null if none available */
-  public OopMapSet getOopMaps() {
+  public ImmutableOopMapSet getOopMaps() {
     Address oopMapsAddr = oopMapsField.getValue(addr);
     if (oopMapsAddr == null) {
       return null;
     }
-    return new OopMapSet(oopMapsAddr);
+    return new ImmutableOopMapSet(oopMapsAddr);
   }
   // FIXME: not yet implementable
-  //  void set_oop_maps(OopMapSet* p);
+  //  void set_oop_maps(ImmutableOopMapSet* p);
 
-  public OopMap getOopMapForReturnAddress(Address returnAddress, boolean debugging) {
+  public ImmutableOopMap getOopMapForReturnAddress(Address returnAddress, boolean debugging) {
     Address pc = returnAddress;
     if (Assert.ASSERTS_ENABLED) {
       Assert.that(getOopMaps() != null, "nope");
