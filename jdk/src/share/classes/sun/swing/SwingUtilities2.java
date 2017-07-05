@@ -524,55 +524,66 @@ public class SwingUtilities2 {
         }
 
         // If we get here we're not printing
-        AATextInfo info = drawTextAntialiased(c);
-        if (info != null && (g instanceof Graphics2D)) {
+        if (g instanceof Graphics2D) {
+            AATextInfo info = drawTextAntialiased(c);
             Graphics2D g2 = (Graphics2D)g;
-
-            Object oldContrast = null;
-            Object oldAAValue = g2.getRenderingHint(KEY_TEXT_ANTIALIASING);
-            if (info.aaHint != oldAAValue) {
-                g2.setRenderingHint(KEY_TEXT_ANTIALIASING, info.aaHint);
-            } else {
-                oldAAValue = null;
-            }
-            if (info.lcdContrastHint != null) {
-                oldContrast = g2.getRenderingHint(KEY_TEXT_LCD_CONTRAST);
-                if (info.lcdContrastHint.equals(oldContrast)) {
-                    oldContrast = null;
-                } else {
-                    g2.setRenderingHint(KEY_TEXT_LCD_CONTRAST,
-                                        info.lcdContrastHint);
-                }
-            }
 
             boolean needsTextLayout = ((c != null) &&
                 (c.getClientProperty(TextAttribute.NUMERIC_SHAPING) != null));
+
             if (needsTextLayout) {
                 synchronized(charsBufferLock) {
                     int length = syncCharsBuffer(text);
                     needsTextLayout = isComplexLayout(charsBuffer, 0, length);
                 }
             }
-            if (needsTextLayout) {
+
+            if (info != null) {
+                Object oldContrast = null;
+                Object oldAAValue = g2.getRenderingHint(KEY_TEXT_ANTIALIASING);
+                if (info.aaHint != oldAAValue) {
+                    g2.setRenderingHint(KEY_TEXT_ANTIALIASING, info.aaHint);
+                } else {
+                    oldAAValue = null;
+                }
+                if (info.lcdContrastHint != null) {
+                    oldContrast = g2.getRenderingHint(KEY_TEXT_LCD_CONTRAST);
+                    if (info.lcdContrastHint.equals(oldContrast)) {
+                        oldContrast = null;
+                    } else {
+                        g2.setRenderingHint(KEY_TEXT_LCD_CONTRAST,
+                                            info.lcdContrastHint);
+                    }
+                }
+
+                if (needsTextLayout) {
+                    TextLayout layout = createTextLayout(c, text, g2.getFont(),
+                                                    g2.getFontRenderContext());
+                    layout.draw(g2, x, y);
+                } else {
+                    g.drawString(text, x, y);
+                }
+
+                if (oldAAValue != null) {
+                    g2.setRenderingHint(KEY_TEXT_ANTIALIASING, oldAAValue);
+                }
+                if (oldContrast != null) {
+                    g2.setRenderingHint(KEY_TEXT_LCD_CONTRAST, oldContrast);
+                }
+
+                return;
+            }
+
+            if (needsTextLayout){
                 TextLayout layout = createTextLayout(c, text, g2.getFont(),
                                                     g2.getFontRenderContext());
                 layout.draw(g2, x, y);
-            } else {
-                g.drawString(text, x, y);
+                return;
             }
+        }
 
-            if (oldAAValue != null) {
-                g2.setRenderingHint(KEY_TEXT_ANTIALIASING, oldAAValue);
-            }
-            if (oldContrast != null) {
-                g2.setRenderingHint(KEY_TEXT_LCD_CONTRAST, oldContrast);
-            }
-        }
-        else {
-            g.drawString(text, x, y);
-        }
+        g.drawString(text, x, y);
     }
-
 
     /**
      * Draws the string at the specified location underlining the specified

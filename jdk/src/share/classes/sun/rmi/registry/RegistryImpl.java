@@ -38,13 +38,23 @@ import java.rmi.server.ServerNotActiveException;
 import java.rmi.registry.Registry;
 import java.rmi.server.RMIClientSocketFactory;
 import java.rmi.server.RMIServerSocketFactory;
+import java.security.AccessControlContext;
+import java.security.AccessController;
+import java.security.CodeSource;
+import java.security.Policy;
 import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
+import java.security.PermissionCollection;
+import java.security.Permissions;
+import java.security.ProtectionDomain;
 import java.text.MessageFormat;
+import sun.rmi.server.LoaderHandler;
 import sun.rmi.server.UnicastServerRef;
 import sun.rmi.server.UnicastServerRef2;
 import sun.rmi.transport.LiveRef;
 import sun.rmi.transport.ObjectTable;
 import sun.rmi.transport.Target;
+import sun.security.action.GetPropertyAction;
 
 /**
  * A "registry" exists on every node that allows RMI connections to
@@ -325,6 +335,19 @@ public class RegistryImpl extends java.rmi.server.RemoteServer
             URL[] urls = sun.misc.URLClassPath.pathToURLs(envcp);
             ClassLoader cl = new URLClassLoader(urls);
 
+            String codebaseProperty = null;
+            String prop = java.security.AccessController.doPrivileged(
+                new GetPropertyAction("java.rmi.server.codebase"));
+            if (prop != null && prop.trim().length() > 0) {
+                codebaseProperty = prop;
+            }
+            URL[] codebaseURLs = null;
+            if (codebaseProperty != null) {
+                codebaseURLs = sun.misc.URLClassPath.pathToURLs(codebaseProperty);
+            } else {
+                codebaseURLs = new URL[0];
+            }
+
             /*
              * Fix bugid 4242317: Classes defined by this class loader should
              * be annotated with the value of the "java.rmi.server.codebase"
@@ -334,11 +357,19 @@ public class RegistryImpl extends java.rmi.server.RemoteServer
 
             Thread.currentThread().setContextClassLoader(cl);
 
-            int regPort = Registry.REGISTRY_PORT;
-            if (args.length >= 1) {
-                regPort = Integer.parseInt(args[0]);
+            final int regPort = (args.length >= 1) ? Integer.parseInt(args[0])
+                                                   : Registry.REGISTRY_PORT;
+            try {
+                registry = AccessController.doPrivileged(
+                    new PrivilegedExceptionAction<RegistryImpl>() {
+                        public RegistryImpl run() throws RemoteException {
+                            return new RegistryImpl(regPort);
+                        }
+                    }, getAccessControlContext(codebaseURLs));
+            } catch (PrivilegedActionException ex) {
+                throw (RemoteException) ex.getException();
             }
-            registry = new RegistryImpl(regPort);
+
             // prevent registry from exiting
             while (true) {
                 try {
@@ -357,5 +388,49 @@ public class RegistryImpl extends java.rmi.server.RemoteServer
             e.printStackTrace();
         }
         System.exit(1);
+    }
+
+    /**
+     * Generates an AccessControlContext from several URLs.
+     * The approach used here is taken from the similar method
+     * getAccessControlContext() in the sun.applet.AppletPanel class.
+     */
+    private static AccessControlContext getAccessControlContext(URL[] urls) {
+        // begin with permissions granted to all code in current policy
+        PermissionCollection perms = AccessController.doPrivileged(
+            new java.security.PrivilegedAction<PermissionCollection>() {
+                public PermissionCollection run() {
+                    CodeSource codesource = new CodeSource(null,
+                        (java.security.cert.Certificate[]) null);
+                    Policy p = java.security.Policy.getPolicy();
+                    if (p != null) {
+                        return p.getPermissions(codesource);
+                    } else {
+                        return new Permissions();
+                    }
+                }
+            });
+
+        /*
+         * Anyone can connect to the registry and the registry can connect
+         * to and possibly download stubs from anywhere. Downloaded stubs and
+         * related classes themselves are more tightly limited by RMI.
+         */
+        perms.add(new SocketPermission("*", "connect,accept"));
+
+        perms.add(new RuntimePermission("accessClassInPackage.sun.*"));
+
+        // add permissions required to load from codebase URL path
+        LoaderHandler.addPermissionsForURLs(urls, perms, false);
+
+        /*
+         * Create an AccessControlContext that consists of a single
+         * protection domain with only the permissions calculated above.
+         */
+        ProtectionDomain pd = new ProtectionDomain(
+            new CodeSource((urls.length > 0 ? urls[0] : null),
+                (java.security.cert.Certificate[]) null),
+            perms);
+        return new AccessControlContext(new ProtectionDomain[] { pd });
     }
 }
