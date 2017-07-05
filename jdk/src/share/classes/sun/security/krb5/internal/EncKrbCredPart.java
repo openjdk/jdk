@@ -140,7 +140,7 @@ public class EncKrbCredPart {
         if (der.getData().available() > 0) {
             if (((byte) (der.getData().peekByte()) & (byte) 0x1F) == (byte) 0x01) {
                 subDer = der.getData().getDerValue();
-                nonce = new Integer(subDer.getData().getBigInteger().intValue());
+                nonce = subDer.getData().getBigInteger().intValue();
             }
         }
         if (der.getData().available() > 0) {
@@ -149,7 +149,7 @@ public class EncKrbCredPart {
         if (der.getData().available() > 0) {
             if (((byte) (der.getData().peekByte()) & (byte) 0x1F) == (byte) 0x03) {
                 subDer = der.getData().getDerValue();
-                usec = new Integer(subDer.getData().getBigInteger().intValue());
+                usec = subDer.getData().getBigInteger().intValue();
             }
         }
         if (der.getData().available() > 0) {

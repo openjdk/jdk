@@ -1024,7 +1024,7 @@ class Socket implements java.io.Closeable {
             }
             if (linger > 65535)
                 linger = 65535;
-            getImpl().setOption(SocketOptions.SO_LINGER, new Integer(linger));
+            getImpl().setOption(SocketOptions.SO_LINGER, linger);
         }
     }
 
@@ -1140,7 +1140,7 @@ class Socket implements java.io.Closeable {
         if (timeout < 0)
           throw new IllegalArgumentException("timeout can't be negative");
 
-        getImpl().setOption(SocketOptions.SO_TIMEOUT, new Integer(timeout));
+        getImpl().setOption(SocketOptions.SO_TIMEOUT, timeout);
     }
 
     /**
@@ -1196,7 +1196,7 @@ class Socket implements java.io.Closeable {
         }
         if (isClosed())
             throw new SocketException("Socket is closed");
-        getImpl().setOption(SocketOptions.SO_SNDBUF, new Integer(size));
+        getImpl().setOption(SocketOptions.SO_SNDBUF, size);
     }
 
     /**
@@ -1270,7 +1270,7 @@ class Socket implements java.io.Closeable {
         }
         if (isClosed())
             throw new SocketException("Socket is closed");
-        getImpl().setOption(SocketOptions.SO_RCVBUF, new Integer(size));
+        getImpl().setOption(SocketOptions.SO_RCVBUF, size);
     }
 
     /**
@@ -1380,7 +1380,7 @@ class Socket implements java.io.Closeable {
 
         if (isClosed())
             throw new SocketException("Socket is closed");
-        getImpl().setOption(SocketOptions.IP_TOS, new Integer(tc));
+        getImpl().setOption(SocketOptions.IP_TOS, tc);
     }
 
     /**

@@ -439,7 +439,7 @@ final class DigestMD5Client extends DigestMD5Base implements SaslClient {
 
         if (logger.isLoggable(Level.FINE)) {
             logger.log(Level.FINE, "DIGEST61:Raw send size: {0}",
-                new Integer(rawSendSize));
+                rawSendSize);
         }
      }
 

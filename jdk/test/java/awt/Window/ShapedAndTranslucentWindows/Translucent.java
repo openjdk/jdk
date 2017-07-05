@@ -26,7 +26,19 @@ import java.awt.*;
 /*
  * @test
  * @summary Check if translucent window is dragged and resized
-            correctly.
+ *          correctly.
+ *
+ * Test Description: Check if TRANSLUCENT translucency type is supported
+ *      on the current platform. Proceed if they are supported. Create
+ *      a window and apply opacity of 0.3. Drag and resize the window
+ *      using AWT Robot and verify that translucency is not affected.
+ *      Make the window appear on top of a known background. Repeat this
+ *      for Window, Dialog, Frame.
+ * Expected Result: If TRANSLUCENT translucency type is supported, the
+ *      window should show the background. Dragging and resizing
+ *      shouldn't affect the translucency.
+ *
+ * @author mrkam
  * @author Dmitriy Ermashov (dmitriy.ermashov@oracle.com)
  * @library ../../../../lib/testlibrary
  * @build Common ExtendedRobot
@@ -35,8 +47,7 @@ import java.awt.*;
 public class Translucent extends Common {
 
     public static void main(String[] args) throws Exception {
-        if (checkTranslucencyMode(GraphicsDevice.WindowTranslucency.TRANSLUCENT) &&
-            checkTranslucencyMode(GraphicsDevice.WindowTranslucency.PERPIXEL_TRANSPARENT))
+        if (checkTranslucencyMode(GraphicsDevice.WindowTranslucency.TRANSLUCENT))
             for (Class<Window> windowClass: WINDOWS_TO_TEST){
                 new Translucent(windowClass).doTest();
             }
@@ -46,8 +57,10 @@ public class Translucent extends Common {
         super(windowClass, 0.3f);
     }
 
+    @Override
     public void applyShape(){ }
 
+    @Override
     public void doTest() throws Exception{
         super.doTest();
 

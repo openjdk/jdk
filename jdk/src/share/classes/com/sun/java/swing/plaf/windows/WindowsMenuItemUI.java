@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,8 +108,9 @@ public class WindowsMenuItemUI extends BasicMenuItemUI {
 
     static void paintBackground(WindowsMenuItemUIAccessor menuItemUI,
             Graphics g, JMenuItem menuItem, Color bgColor) {
-        assert isVistaPainting();
-        if (isVistaPainting()) {
+        XPStyle xp = XPStyle.getXP();
+        assert isVistaPainting(xp);
+        if (isVistaPainting(xp)) {
             int menuWidth = menuItem.getWidth();
             int menuHeight = menuItem.getHeight();
             if (menuItem.isOpaque()) {
@@ -118,7 +119,6 @@ public class WindowsMenuItemUI extends BasicMenuItemUI {
                 g.fillRect(0,0, menuWidth, menuHeight);
                 g.setColor(oldColor);
             }
-            XPStyle xp = XPStyle.getXP();
             Part part = menuItemUI.getPart(menuItem);
             Skin skin = xp.getSkin(menuItem, part);
             skin.paintSkin(g, 0 , 0,
@@ -170,8 +170,11 @@ public class WindowsMenuItemUI extends BasicMenuItemUI {
      * is it possible that in some theme some Vista parts are not defined while
      * others are?
      */
-    static boolean isVistaPainting() {
-        XPStyle xp = XPStyle.getXP();
+    static boolean isVistaPainting(final XPStyle xp) {
         return xp != null && xp.isSkinDefined(null, Part.MP_POPUPITEM);
+    }
+
+    static boolean isVistaPainting() {
+        return isVistaPainting(XPStyle.getXP());
     }
 }

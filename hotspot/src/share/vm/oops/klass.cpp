@@ -42,6 +42,7 @@
 #include "utilities/stack.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_ALL_GCS
+#include "gc_implementation/g1/g1SATBCardTableModRefBS.hpp"
 #include "gc_implementation/parallelScavenge/psParallelCompact.hpp"
 #include "gc_implementation/parallelScavenge/psPromotionManager.hpp"
 #include "gc_implementation/parallelScavenge/psScavenge.hpp"
@@ -159,7 +160,12 @@ Klass::Klass() {
   _primary_supers[0] = k;
   set_super_check_offset(in_bytes(primary_supers_offset()));
 
-  set_java_mirror(NULL);
+  // The constructor is used from init_self_patching_vtbl_list,
+  // which doesn't zero out the memory before calling the constructor.
+  // Need to set the field explicitly to not hit an assert that the field
+  // should be NULL before setting it.
+  _java_mirror = NULL;
+
   set_modifier_flags(0);
   set_layout_helper(Klass::_lh_neutral_value);
   set_name(NULL);
@@ -383,7 +389,7 @@ bool Klass::is_loader_alive(BoolObjectClosure* is_alive) {
   return mirror_alive;
 }
 
-void Klass::clean_weak_klass_links(BoolObjectClosure* is_alive) {
+void Klass::clean_weak_klass_links(BoolObjectClosure* is_alive, bool clean_alive_klasses) {
   if (!ClassUnloading) {
     return;
   }
@@ -428,7 +434,7 @@ void Klass::clean_weak_klass_links(BoolObjectClosure* is_alive) {
     }
 
     // Clean the implementors list and method data.
-    if (current->oop_is_instance()) {
+    if (clean_alive_klasses && current->oop_is_instance()) {
       InstanceKlass* ik = InstanceKlass::cast(current);
       ik->clean_implementors_list(is_alive);
       ik->clean_method_data(is_alive);
@@ -440,12 +446,18 @@ void Klass::klass_update_barrier_set(oop v) {
   record_modified_oops();
 }
 
-void Klass::klass_update_barrier_set_pre(void* p, oop v) {
-  // This barrier used by G1, where it's used remember the old oop values,
-  // so that we don't forget any objects that were live at the snapshot at
-  // the beginning. This function is only used when we write oops into
-  // Klasses. Since the Klasses are used as roots in G1, we don't have to
-  // do anything here.
+// This barrier is used by G1 to remember the old oop values, so
+// that we don't forget any objects that were live at the snapshot at
+// the beginning. This function is only used when we write oops into Klasses.
+void Klass::klass_update_barrier_set_pre(oop* p, oop v) {
+#if INCLUDE_ALL_GCS
+  if (UseG1GC) {
+    oop obj = *p;
+    if (obj != NULL) {
+      G1SATBCardTableModRefBS::enqueue(obj);
+    }
+  }
+#endif
 }
 
 void Klass::klass_oop_store(oop* p, oop v) {
@@ -456,7 +468,7 @@ void Klass::klass_oop_store(oop* p, oop v) {
   if (always_do_update_barrier) {
     klass_oop_store((volatile oop*)p, v);
   } else {
-    klass_update_barrier_set_pre((void*)p, v);
+    klass_update_barrier_set_pre(p, v);
     *p = v;
     klass_update_barrier_set(v);
   }
@@ -466,7 +478,7 @@ void Klass::klass_oop_store(volatile oop* p, oop v) {
   assert(!Universe::heap()->is_in_reserved((void*)p), "Should store pointer into metadata");
   assert(v == NULL || Universe::heap()->is_in_reserved((void*)v), "Should store pointer to an object");
 
-  klass_update_barrier_set_pre((void*)p, v);
+  klass_update_barrier_set_pre((oop*)p, v); // Cast away volatile.
   OrderAccess::release_store_ptr(p, v);
   klass_update_barrier_set(v);
 }

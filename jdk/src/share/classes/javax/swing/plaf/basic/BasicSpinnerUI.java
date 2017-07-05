@@ -707,7 +707,7 @@ public class BasicSpinnerUI extends SpinnerUI
 
             iterator.first();
             do {
-                Map attrs = iterator.getAttributes();
+                Map<?, ?> attrs = iterator.getAttributes();
 
                 if (attrs != null && attrs.containsKey(field)){
                     int start = iterator.getRunStart(field);

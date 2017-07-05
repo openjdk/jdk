@@ -245,6 +245,7 @@ InstanceKlass::InstanceKlass(int vtable_len,
   set_static_oop_field_count(0);
   set_nonstatic_field_size(0);
   set_is_marked_dependent(false);
+  set_has_unloaded_dependent(false);
   set_init_state(InstanceKlass::allocated);
   set_init_thread(NULL);
   set_reference_type(rt);
@@ -1801,6 +1802,9 @@ jmethodID InstanceKlass::jmethod_id_or_null(Method* method) {
   return id;
 }
 
+int nmethodBucket::decrement() {
+  return Atomic::add(-1, (volatile int *)&_count);
+}
 
 //
 // Walk the list of dependent nmethods searching for nmethods which
@@ -1815,7 +1819,7 @@ int InstanceKlass::mark_dependent_nmethods(DepChange& changes) {
     nmethod* nm = b->get_nmethod();
     // since dependencies aren't removed until an nmethod becomes a zombie,
     // the dependency list may contain nmethods which aren't alive.
-    if (nm->is_alive() && !nm->is_marked_for_deoptimization() && nm->check_dependency_on(changes)) {
+    if (b->count() > 0 && nm->is_alive() && !nm->is_marked_for_deoptimization() && nm->check_dependency_on(changes)) {
       if (TraceDependencies) {
         ResourceMark rm;
         tty->print_cr("Marked for deoptimization");
@@ -1832,6 +1836,43 @@ int InstanceKlass::mark_dependent_nmethods(DepChange& changes) {
   return found;
 }
 
+void InstanceKlass::clean_dependent_nmethods() {
+  assert_locked_or_safepoint(CodeCache_lock);
+
+  if (has_unloaded_dependent()) {
+    nmethodBucket* b = _dependencies;
+    nmethodBucket* last = NULL;
+    while (b != NULL) {
+      assert(b->count() >= 0, err_msg("bucket count: %d", b->count()));
+
+      nmethodBucket* next = b->next();
+
+      if (b->count() == 0) {
+        if (last == NULL) {
+          _dependencies = next;
+        } else {
+          last->set_next(next);
+        }
+        delete b;
+        // last stays the same.
+      } else {
+        last = b;
+      }
+
+      b = next;
+    }
+    set_has_unloaded_dependent(false);
+  }
+#ifdef ASSERT
+  else {
+    // Verification
+    for (nmethodBucket* b = _dependencies; b != NULL; b = b->next()) {
+      assert(b->count() >= 0, err_msg("bucket count: %d", b->count()));
+      assert(b->count() != 0, "empty buckets need to be cleaned");
+    }
+  }
+#endif
+}
 
 //
 // Add an nmethodBucket to the list of dependencies for this nmethod.
@@ -1866,13 +1907,10 @@ void InstanceKlass::remove_dependent_nmethod(nmethod* nm) {
   nmethodBucket* last = NULL;
   while (b != NULL) {
     if (nm == b->get_nmethod()) {
-      if (b->decrement() == 0) {
-        if (last == NULL) {
-          _dependencies = b->next();
-        } else {
-          last->set_next(b->next());
-        }
-        delete b;
+      int val = b->decrement();
+      guarantee(val >= 0, err_msg("Underflow: %d", val));
+      if (val == 0) {
+        set_has_unloaded_dependent(true);
       }
       return;
     }
@@ -1911,6 +1949,10 @@ bool InstanceKlass::is_dependent_nmethod(nmethod* nm) {
   nmethodBucket* b = _dependencies;
   while (b != NULL) {
     if (nm == b->get_nmethod()) {
+#ifdef ASSERT
+      int count = b->count();
+      assert(count >= 0, err_msg("count shouldn't be negative: %d", count));
+#endif
       return true;
     }
     b = b->next();
@@ -2209,7 +2251,7 @@ int InstanceKlass::oop_update_pointers(ParCompactionManager* cm, oop obj) {
 #endif // INCLUDE_ALL_GCS
 
 void InstanceKlass::clean_implementors_list(BoolObjectClosure* is_alive) {
-  assert(is_loader_alive(is_alive), "this klass should be live");
+  assert(class_loader_data()->is_alive(is_alive), "this klass should be live");
   if (is_interface()) {
     if (ClassUnloading) {
       Klass* impl = implementor();

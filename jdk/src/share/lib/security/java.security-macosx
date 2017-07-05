@@ -211,6 +211,7 @@ package.access=sun.,\
                jdk.internal.,\
                jdk.nashorn.internal.,\
                jdk.nashorn.tools.,\
+               com.sun.activation.registries.,\
                apple.
 
 #
@@ -257,6 +258,7 @@ package.definition=sun.,\
                    jdk.internal.,\
                    jdk.nashorn.internal.,\
                    jdk.nashorn.tools.,\
+                   com.sun.activation.registries.,\
                    apple.
 
 #

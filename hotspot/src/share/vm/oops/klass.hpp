@@ -553,7 +553,10 @@ class Klass : public Metadata {
   // The is_alive closure passed in depends on the Garbage Collector used.
   bool is_loader_alive(BoolObjectClosure* is_alive);
 
-  static void clean_weak_klass_links(BoolObjectClosure* is_alive);
+  static void clean_weak_klass_links(BoolObjectClosure* is_alive, bool clean_alive_klasses = true);
+  static void clean_subklass_tree(BoolObjectClosure* is_alive) {
+    clean_weak_klass_links(is_alive, false /* clean_alive_klasses */);
+  }
 
   // iterators
   virtual int oop_oop_iterate(oop obj, ExtendedOopClosure* blk) = 0;
@@ -660,7 +663,7 @@ class Klass : public Metadata {
  private:
   // barriers used by klass_oop_store
   void klass_update_barrier_set(oop v);
-  void klass_update_barrier_set_pre(void* p, oop v);
+  void klass_update_barrier_set_pre(oop* p, oop v);
 };
 
 #endif // SHARE_VM_OOPS_KLASS_HPP
