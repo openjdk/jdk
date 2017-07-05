@@ -38,49 +38,49 @@ import com.sun.codemodel.internal.util.ClassNameComparator;
  */
 public class JMethod extends JGenerifiableImpl implements JDeclaration, JAnnotatable {
 
-    /**
-     * Modifiers for this method
-     */
-    private JMods mods;
+        /**
+         * Modifiers for this method
+         */
+        private JMods mods;
 
-    /**
-     * Return type for this method
-     */
-    private JType type = null;
+        /**
+         * Return type for this method
+         */
+        private JType type = null;
 
-    /**
-     * Name of this method
-     */
-    private String name = null;
+        /**
+         * Name of this method
+         */
+        private String name = null;
 
-    /**
-     * List of parameters for this method's declaration
-     */
-    private final List<JVar> params = new ArrayList<JVar>();
+        /**
+         * List of parameters for this method's declaration
+         */
+        private final List<JVar> params = new ArrayList<JVar>();
 
-    /**
-     * Set of exceptions that this method may throw.
+        /**
+         * Set of exceptions that this method may throw.
      * A set instance lazily created.
-     */
-    private Set<JClass> _throws;
+         */
+        private Set<JClass> _throws;
 
-    /**
-     * JBlock of statements that makes up the body this method
-     */
-    private JBlock body = null;
+        /**
+         * JBlock of statements that makes up the body this method
+         */
+        private JBlock body = null;
 
-    private JDefinedClass outer;
+        private JDefinedClass outer;
 
-    /**
-     * javadoc comments for this JMethod
-     */
-    private JDocComment jdoc = null;
+        /**
+         * javadoc comments for this JMethod
+         */
+        private JDocComment jdoc = null;
 
-    /**
-     * Variable parameter for this method's varargs declaration
-     * introduced in J2SE 1.5
-     */
-    private JVar varParam = null;
+        /**
+         * Variable parameter for this method's varargs declaration
+         * introduced in J2SE 1.5
+         */
+        private JVar varParam = null;
 
     /**
      * Annotations on this variable. Lazily created.
@@ -88,9 +88,9 @@ public class JMethod extends JGenerifiableImpl implements JDeclaration, JAnnotat
     private List<JAnnotationUse> annotations = null;
 
 
-    private boolean isConstructor() {
-        return type == null;
-    }
+        private boolean isConstructor() {
+                return type == null;
+        }
 
     /** To set the default value for the
      *  annotation member
@@ -98,40 +98,40 @@ public class JMethod extends JGenerifiableImpl implements JDeclaration, JAnnotat
     private JExpression defaultValue = null;
 
 
-    /**
-     * JMethod constructor
-     *
-     * @param mods
-     *        Modifiers for this method's declaration
-     *
-     * @param type
-     *        Return type for the method
-     *
-     * @param name
-     *        Name of this method
-     */
-    JMethod(JDefinedClass outer, int mods, JType type, String name) {
-        this.mods = JMods.forMethod(mods);
-        this.type = type;
-        this.name = name;
-        this.outer = outer;
-    }
+        /**
+         * JMethod constructor
+         *
+         * @param mods
+         *        Modifiers for this method's declaration
+         *
+         * @param type
+         *        Return type for the method
+         *
+         * @param name
+         *        Name of this method
+         */
+        JMethod(JDefinedClass outer, int mods, JType type, String name) {
+                this.mods = JMods.forMethod(mods);
+                this.type = type;
+                this.name = name;
+                this.outer = outer;
+        }
 
-    /**
-     * Constructor constructor
-     *
-     * @param mods
-     *        Modifiers for this constructor's declaration
-     *
-     * @param _class
-     *        JClass containing this constructor
-     */
-    JMethod(int mods, JDefinedClass _class) {
-        this.mods = JMods.forMethod(mods);
-        this.type = null;
-        this.name = _class.name();
-        this.outer = _class;
-    }
+        /**
+         * Constructor constructor
+         *
+         * @param mods
+         *        Modifiers for this constructor's declaration
+         *
+         * @param _class
+         *        JClass containing this constructor
+         */
+        JMethod(int mods, JDefinedClass _class) {
+                this.mods = JMods.forMethod(mods);
+                this.type = null;
+                this.name = _class.name();
+                this.outer = _class;
+        }
 
     private Set<JClass> getThrows() {
         if(_throws==null)
@@ -139,56 +139,56 @@ public class JMethod extends JGenerifiableImpl implements JDeclaration, JAnnotat
         return _throws;
     }
 
-    /**
-     * Add an exception to the list of exceptions that this
-     * method may throw.
-     *
-     * @param exception
-     *        Name of an exception that this method may throw
-     */
-    public JMethod _throws(JClass exception) {
+        /**
+         * Add an exception to the list of exceptions that this
+         * method may throw.
+         *
+         * @param exception
+         *        Name of an exception that this method may throw
+         */
+        public JMethod _throws(JClass exception) {
         getThrows().add(exception);
-        return this;
-    }
+                return this;
+        }
 
-    public JMethod _throws(Class exception) {
-        return _throws(outer.owner().ref(exception));
-    }
+        public JMethod _throws(Class exception) {
+                return _throws(outer.owner().ref(exception));
+        }
 
-    /**
-     * Add the specified variable to the list of parameters
-     * for this method signature.
-     *
-     * @param type
-     *        JType of the parameter being added
-     *
-     * @param name
-     *        Name of the parameter being added
-     *
-     * @return New parameter variable
-     */
-    public JVar param(int mods, JType type, String name) {
-        JVar v = new JVar(JMods.forVar(mods), type, name, null);
-        params.add(v);
-        return v;
-    }
+        /**
+         * Add the specified variable to the list of parameters
+         * for this method signature.
+         *
+         * @param type
+         *        JType of the parameter being added
+         *
+         * @param name
+         *        Name of the parameter being added
+         *
+         * @return New parameter variable
+         */
+        public JVar param(int mods, JType type, String name) {
+                JVar v = new JVar(JMods.forVar(mods), type, name, null);
+                params.add(v);
+                return v;
+        }
 
-    public JVar param(JType type, String name) {
-        return param(JMod.NONE, type, name);
-    }
+        public JVar param(JType type, String name) {
+                return param(JMod.NONE, type, name);
+        }
 
-    public JVar param(int mods, Class type, String name) {
-        return param(mods, outer.owner()._ref(type), name);
-    }
+        public JVar param(int mods, Class type, String name) {
+                return param(mods, outer.owner()._ref(type), name);
+        }
 
-    public JVar param(Class type, String name) {
-        return param(outer.owner()._ref(type), name);
-    }
+        public JVar param(Class type, String name) {
+                return param(outer.owner()._ref(type), name);
+        }
 
-    /**
-     * @see #varParam(JType, String)
-     */
-    public JVar varParam(Class type, String name) {
+        /**
+         * @see #varParam(JType, String)
+         */
+        public JVar varParam(Class type, String name) {
         return varParam(outer.owner()._ref(type),name);
     }
 
@@ -210,24 +210,24 @@ public class JMethod extends JGenerifiableImpl implements JDeclaration, JAnnotat
      *      method signature.
      */
     public JVar varParam(JType type, String name) {
-        if (!hasVarArgs()) {
+                if (!hasVarArgs()) {
 
             varParam =
-                new JVar(
-                    JMods.forVar(JMod.NONE),
-                    type.array(),
-                    name,
-                    null);
-            return varParam;
-        } else {
-            throw new IllegalStateException(
-                "Cannot have two varargs in a method,\n"
-                    + "Check if varParam method of JMethod is"
-                    + " invoked more than once");
+                                new JVar(
+                                        JMods.forVar(JMod.NONE),
+                                        type.array(),
+                                        name,
+                                        null);
+                        return varParam;
+                } else {
+                        throw new IllegalStateException(
+                                "Cannot have two varargs in a method,\n"
+                                        + "Check if varParam method of JMethod is"
+                                        + " invoked more than once");
+
+                }
 
         }
-
-    }
 
     /**
      * Adds an annotation to this variable.
@@ -256,17 +256,17 @@ public class JMethod extends JGenerifiableImpl implements JDeclaration, JAnnotat
         return TypedAnnotationWriter.create(clazz,this);
     }
 
-    /**
-     * Check if there are any varargs declared
-     * for this method signature.
-     */
-    public boolean hasVarArgs() {
-        return this.varParam!=null;
-    }
+        /**
+         * Check if there are any varargs declared
+         * for this method signature.
+         */
+        public boolean hasVarArgs() {
+                return this.varParam!=null;
+        }
 
-    public String name() {
-        return name;
-    }
+        public String name() {
+                return name;
+        }
 
     /**
      * Changes the name of the method.
@@ -276,11 +276,11 @@ public class JMethod extends JGenerifiableImpl implements JDeclaration, JAnnotat
     }
 
     /**
-     * Returns the return type.
-     */
-    public JType type() {
-        return type;
-    }
+         * Returns the return type.
+         */
+        public JType type() {
+                return type;
+        }
 
     /**
      * Overrides the return type.
@@ -290,72 +290,72 @@ public class JMethod extends JGenerifiableImpl implements JDeclaration, JAnnotat
     }
 
     /**
-     * Returns all the parameter types in an array.
-     * @return
-     *      If there's no parameter, an empty array will be returned.
-     */
-    public JType[] listParamTypes() {
-        JType[] r = new JType[params.size()];
-        for (int i = 0; i < r.length; i++)
-            r[i] = params.get(i).type();
-        return r;
-    }
+         * Returns all the parameter types in an array.
+         * @return
+         *      If there's no parameter, an empty array will be returned.
+         */
+        public JType[] listParamTypes() {
+                JType[] r = new JType[params.size()];
+                for (int i = 0; i < r.length; i++)
+                        r[i] = params.get(i).type();
+                return r;
+        }
 
-    /**
-     * Returns  the varags parameter type.
-     * @return
-     * If there's no vararg parameter type, null will be returned.
-     */
-    public JType listVarParamType() {
-        if (varParam != null)
-            return varParam.type();
-        else
-            return null;
-    }
+        /**
+         * Returns  the varags parameter type.
+         * @return
+         * If there's no vararg parameter type, null will be returned.
+         */
+        public JType listVarParamType() {
+                if (varParam != null)
+                        return varParam.type();
+                else
+                        return null;
+        }
 
-    /**
-     * Returns all the parameters in an array.
-     * @return
-     *      If there's no parameter, an empty array will be returned.
-     */
-    public JVar[] listParams() {
-        return params.toArray(new JVar[params.size()]);
-    }
+        /**
+         * Returns all the parameters in an array.
+         * @return
+         *      If there's no parameter, an empty array will be returned.
+         */
+        public JVar[] listParams() {
+                return params.toArray(new JVar[params.size()]);
+        }
 
-    /**
-     * Returns the variable parameter
-     * @return
-     *      If there's no parameter, null will be returned.
-     */
-    public JVar listVarParam() {
-        return varParam;
-    }
+        /**
+         * Returns the variable parameter
+         * @return
+         *      If there's no parameter, null will be returned.
+         */
+        public JVar listVarParam() {
+                return varParam;
+        }
 
-    /**
-     * Returns true if the method has the specified signature.
-     */
-    public boolean hasSignature(JType[] argTypes) {
-        JVar[] p = listParams();
-        if (p.length != argTypes.length)
-            return false;
+        /**
+         * Returns true if the method has the specified signature.
+         */
+        public boolean hasSignature(JType[] argTypes) {
+                JVar[] p = listParams();
+                if (p.length != argTypes.length)
+                        return false;
 
-        for (int i = 0; i < p.length; i++)
-            if (!p[i].type().equals(argTypes[i]))
-                return false;
+                for (int i = 0; i < p.length; i++)
+                        if (!p[i].type().equals(argTypes[i]))
+                                return false;
 
-        return true;
-    }
+                return true;
+        }
 
-    /**
-     * Get the block that makes up body of this method
-     *
-     * @return Body of method
-     */
-    public JBlock body() {
-        if (body == null)
-            body = new JBlock();
-        return body;
-    }
+        /**
+         * Get the block that makes up body of this method
+         *
+         * @return Body of method
+         */
+        public JBlock body() {
+                if (body == null)
+                        body = new JBlock();
+                return body;
+        }
 
     /**
      * Specify the default value for this annotation member
@@ -367,37 +367,37 @@ public class JMethod extends JGenerifiableImpl implements JDeclaration, JAnnotat
         this.defaultValue = value;
     }
 
-    /**
-     * Creates, if necessary, and returns the class javadoc for this
-     * JDefinedClass
-     *
-     * @return JDocComment containing javadocs for this class
-     */
-    public JDocComment javadoc() {
-        if (jdoc == null)
-            jdoc = new JDocComment(owner());
-        return jdoc;
-    }
+        /**
+         * Creates, if necessary, and returns the class javadoc for this
+         * JDefinedClass
+         *
+         * @return JDocComment containing javadocs for this class
+         */
+        public JDocComment javadoc() {
+                if (jdoc == null)
+                        jdoc = new JDocComment(owner());
+                return jdoc;
+        }
 
-    public void declare(JFormatter f) {
-        if (jdoc != null)
-            f.g(jdoc);
+        public void declare(JFormatter f) {
+                if (jdoc != null)
+                        f.g(jdoc);
 
         if (annotations != null){
             for (JAnnotationUse a : annotations)
                 f.g(a).nl();
         }
 
-        // declare the generics parameters
-        super.declare(f);
+                // declare the generics parameters
+                super.declare(f);
 
-        f.g(mods);
-        if (!isConstructor())
-            f.g(type);
-        f.id(name).p('(').i();
+                f.g(mods);
+                if (!isConstructor())
+                        f.g(type);
+                f.id(name).p('(').i();
         // when parameters are printed in new lines, we want them to be indented.
         // there's a good chance no newlines happen, too, but just in case it does.
-        boolean first = true;
+                boolean first = true;
         for (JVar var : params) {
             if (!first)
                 f.p(',');
@@ -406,33 +406,33 @@ public class JMethod extends JGenerifiableImpl implements JDeclaration, JAnnotat
             f.b(var);
             first = false;
         }
-        if (hasVarArgs()) {
-            if (!first)
-                f.p(',');
-            f.g(varParam.type().elementType());
-            f.p("... ");
-            f.id(varParam.name());
-        }
+                if (hasVarArgs()) {
+                        if (!first)
+                                f.p(',');
+                        f.g(varParam.type().elementType());
+                        f.p("... ");
+                        f.id(varParam.name());
+                }
 
-        f.o().p(')');
-        if (_throws!=null && !_throws.isEmpty()) {
-            f.nl().i().p("throws").g(_throws).nl().o();
-        }
+                f.o().p(')');
+                if (_throws!=null && !_throws.isEmpty()) {
+                        f.nl().i().p("throws").g(_throws).nl().o();
+                }
 
         if (defaultValue != null) {
             f.p("default ");
             f.g(defaultValue);
         }
-        if (body != null) {
-            f.s(body);
-        } else if (
-            !outer.isInterface() && !outer.isAnnotationTypeDeclaration() && !mods.isAbstract() && !mods.isNative()) {
-            // Print an empty body for non-native, non-abstract methods
-            f.s(new JBlock());
-        } else {
-            f.p(';').nl();
+                if (body != null) {
+                        f.s(body);
+                } else if (
+                        !outer.isInterface() && !outer.isAnnotationTypeDeclaration() && !mods.isAbstract() && !mods.isNative()) {
+                        // Print an empty body for non-native, non-abstract methods
+                        f.s(new JBlock());
+                } else {
+                        f.p(';').nl();
+                }
         }
-    }
 
     /**
      * @return
@@ -447,10 +447,10 @@ public class JMethod extends JGenerifiableImpl implements JDeclaration, JAnnotat
      * @deprecated use {@link #mods()}
      */
     public JMods getMods() {
-        return mods;
-    }
+                return mods;
+        }
 
-    protected JCodeModel owner() {
-        return outer.owner();
-    }
+        protected JCodeModel owner() {
+                return outer.owner();
+        }
 }

@@ -76,7 +76,7 @@ public final class Document {
 
     Document(XmlSerializer out) {
         this.out = out;
-        for( DatatypeWriter dw : DatatypeWriter.BUILDIN )
+        for( DatatypeWriter dw : DatatypeWriter.BUILTIN )
             datatypeWriters.put(dw.getType(),dw);
     }
 

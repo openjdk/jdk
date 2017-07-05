@@ -1,109 +1,88 @@
-'\" t
-.\"
-.\" Copyright 2000-2006 Sun Microsystems, Inc.  All Rights Reserved.
-.\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
-.\"
-.\" This code is free software; you can redistribute it and/or modify it
-.\" under the terms of the GNU General Public License version 2 only, as
-.\" published by the Free Software Foundation.
-.\"
-.\" This code is distributed in the hope that it will be useful, but WITHOUT
-.\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-.\" FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-.\" version 2 for more details (a copy is included in the LICENSE file that
-.\" accompanied this code).
-.\"
-.\" You should have received a copy of the GNU General Public License version
-.\" 2 along with this work; if not, write to the Free Software Foundation,
-.\" Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
-.\"
-.\" Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
-.\" CA 95054 USA or visit www.sun.com if you need additional information or
-.\" have any questions.
-.\"
-.\" `
-'\"macro stdmacro
-.TH extcheck 1 "2006 Ç¯ 9 ·î 4 Æü" "Java SE 6" "¥æ¡¼¥¶¡¼¥³¥Ş¥ó¥É"
-.SH "Ì¾Á°"
-extcheck \- jar ¤Î¶¥¹ç¸¡½Ğ¥æ¡¼¥Æ¥£¥ê¥Æ¥£
+." Copyright 2002-2006 Sun Microsystems, Inc.  All Rights Reserved.
+." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+."
+." This code is free software; you can redistribute it and/or modify it
+." under the terms of the GNU General Public License version 2 only, as
+." published by the Free Software Foundation.
+."
+." This code is distributed in the hope that it will be useful, but WITHOUT
+." ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+." FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+." version 2 for more details (a copy is included in the LICENSE file that
+." accompanied this code).
+."
+." You should have received a copy of the GNU General Public License version
+." 2 along with this work; if not, write to the Free Software Foundation,
+." Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+."
+." Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+." CA 95054 USA or visit www.sun.com if you need additional information or
+." have any questions.
+."
+.TH extcheck 1 "04 May 2009"
+." Generated from HTML by html2man (author: Eric Armstrong)
+
+.LP
+.SH "åå‰"
+extcheck \- jar ã®ç«¶åˆæ¤œå‡ºãƒ¦ãƒ¼ãƒ†ã‚£ãƒªãƒ†ã‚£ãƒ¼
+.LP
+.RS 3
+
+.LP
+.LP
+\f3extcheck\fP ã¯ã€ã‚¿ãƒ¼ã‚²ãƒƒãƒˆã® jar ãƒ•ã‚¡ã‚¤ãƒ«ã¨ç¾åœ¨ã‚¤ãƒ³ã‚¹ãƒˆãƒ¼ãƒ«ã•ã‚Œã¦ã„ã‚‹æ‹¡å¼µæ©Ÿèƒ½ã® jar ãƒ•ã‚¡ã‚¤ãƒ«é–“ã®ãƒãƒ¼ã‚¸ãƒ§ãƒ³ã®ç«¶åˆã‚’æ¤œå‡ºã—ã¾ã™ã€‚
+.LP
+.RE
+.SH "å½¢å¼"
+.LP
+
+.LP
+.nf
+\f3
+.fl
+extcheck [ \-verbose ] targetfile.jar
+.fl
+\fP
+.fi
+
+.LP
+.SH "èª¬æ˜"
 .LP
 
 .LP
 .LP
-\f3extcheck\fP ¤Ï¡¢¥¿¡¼¥²¥Ã¥È¤Î jar ¥Õ¥¡¥¤¥ë¤È¸½ºß¥¤¥ó¥¹¥È¡¼¥ë¤µ¤ì¤Æ¤¤¤ë³ÈÄ¥µ¡Ç½¤Î jar ¥Õ¥¡¥¤¥ë´Ö¤Î¥Ğ¡¼¥¸¥ç¥ó¤Î¶¥¹ç¤ò¸¡½Ğ¤·¤Ş¤¹¡£
+\f3extcheck\fP ãƒ¦ãƒ¼ãƒ†ã‚£ãƒªãƒ†ã‚£ãƒ¼ã¯ã€æŒ‡å®šã•ã‚ŒãŸ Jar ãƒ•ã‚¡ã‚¤ãƒ«ã®ã‚¿ã‚¤ãƒˆãƒ«ãŠã‚ˆã³ãƒãƒ¼ã‚¸ãƒ§ãƒ³ãŒ Java(TM) 2 SDK ã«ã‚¤ãƒ³ã‚¹ãƒˆãƒ¼ãƒ«ã•ã‚Œã¦ã„ã‚‹æ‹¡å¼µæ©Ÿèƒ½ã¨ç«¶åˆã—ã¦ã„ãªã„ã‹ã‚’ãƒã‚§ãƒƒã‚¯ã—ã¾ã™ã€‚æ‹¡å¼µæ©Ÿèƒ½ã‚’ã‚¤ãƒ³ã‚¹ãƒˆãƒ¼ãƒ«ã™ã‚‹å‰ã«ã€ã“ã®ãƒ¦ãƒ¼ãƒ†ã‚£ãƒªãƒ†ã‚£ãƒ¼ã‚’ä½¿ã£ã¦ã€ãƒãƒ¼ã‚¸ãƒ§ãƒ³ãŒåŒã˜ã‹ã€ã‚ˆã‚Šæ–°ã—ã„æ‹¡å¼µæ©Ÿèƒ½ãŒã™ã§ã«ã‚¤ãƒ³ã‚¹ãƒˆãƒ¼ãƒ«ã•ã‚Œã¦ã„ãªã„ã‹ã©ã†ã‹ã‚’èª¿ã¹ã‚‹ã“ã¨ãŒã§ãã¾ã™ã€‚
 .LP
-.SH "·Á¼°"
-.B extcheck 
-[ 
-.B \-verbose 
-] 
-.B targetfile.jar
-.SH "µ¡Ç½ÀâÌÀ"
-.IX "jar conflict detection utility" "" "jar conflict detection utility \(em \fLextcheck\fP"
-.IX "extcheck" "" "\fLextcheck\fP \(em jar conflict detection utility"
-.B extcheck 
-¥æ¡¼¥Æ¥£¥ê¥Æ¥£¤Ï¡¢»ØÄê¤µ¤ì¤¿
-.B jar
-¥Õ¥¡¥¤¥ë¤Î¥¿¥¤¥È¥ë¤ª¤è¤Ó¥Ğ¡¼¥¸¥ç¥ó¤¬ Java(TM) SDK 
-¥½¥Õ¥È¥¦¥§¥¢¤Ë¥¤¥ó¥¹¥È¡¼¥ë¤µ¤ì¤Æ¤¤¤ë³ÈÄ¥µ¡Ç½¤È¶¥¹ç¤·¤Æ¤¤¤Ê¤¤¤«¤ò
-¸¡ºº¤·¤Ş¤¹¡£
-³ÈÄ¥µ¡Ç½¤ò¥¤¥ó¥¹¥È¡¼¥ë¤¹¤ëÁ°¤Ë¡¢¤³¤Î¥æ¡¼¥Æ¥£¥ê¥Æ¥£¤ò»È¤Ã¤Æ¡¢
-¥Ğ¡¼¥¸¥ç¥ó¤¬Æ±¤¸¤«¡¢
-¤è¤ê¿·¤·¤¤³ÈÄ¥µ¡Ç½¤¬¤¹¤Ç¤Ë¥¤¥ó¥¹¥È¡¼¥ë¤µ¤ì¤Æ¤¤¤Ê¤¤¤«¤É¤¦¤«¤òÄ´¤Ù¤ë
-¤³¤È¤¬¤Ç¤­¤Ş¤¹¡£
 .LP
-.B extcheck
-¥æ¡¼¥Æ¥£¥ê¥Æ¥£¤Ï¡¢
-.I targetfile.jar
-¥Õ¥¡¥¤¥ë¤Î¥Ş¥Ë¥Õ¥§¥¹¥ÈÆâ¤Î¥Ø¥Ã¥À
-.I Specification-title 
-¤ª¤è¤Ó 
-.I Specification-version
-¤ò¡¢³ÈÄ¥µ¡Ç½¥Ç¥£¥ì¥¯¥È¥êÆâ¤Ë¸½ºß¥¤¥ó¥¹¥È¡¼¥ë¤µ¤ì¤Æ¤¤¤ë¤¹¤Ù¤Æ¤Î jar 
-¥Õ¥¡¥¤¥ëÆâ¤ÎÂĞ±ş¤¹¤ë¥Ø¥Ã¥À¤ÈÈæ³Ó¤·¤Ş¤¹¡£
-¥Ç¥Õ¥©¥ë¥È¤Ç¤Ï¡¢³ÈÄ¥µ¡Ç½¥Ç¥£¥ì¥¯¥È¥ê¤Ï¡¢
-.I jre/lib/ext
-¤Ç¤¹¡£
-.B extcheck 
-¥æ¡¼¥Æ¥£¥ê¥Æ¥£¤Ï¡¢
-.I java.lang.Package.isCompatibleWith
-¥á¥½¥Ã¥É¤ÈÆ±ÍÍ¤ÎÊıË¡¤Ç¥Ğ¡¼¥¸¥ç¥óÈÖ¹æ¤òÈæ³Ó¤·¤Ş¤¹¡£
+\f3extcheck\fP ãƒ¦ãƒ¼ãƒ†ã‚£ãƒªãƒ†ã‚£ãƒ¼ã¯ã€\f2targetfile.jar\fP ãƒ•ã‚¡ã‚¤ãƒ«ã®ãƒãƒ‹ãƒ•ã‚§ã‚¹ãƒˆå†…ã®ãƒ˜ãƒƒãƒ€ãƒ¼ \f2Specification\-title\fP ãŠã‚ˆã³ \f2Specification\-version\fP ã‚’ã€æ‹¡å¼µæ©Ÿèƒ½ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªå†…ã«ç¾åœ¨ã‚¤ãƒ³ã‚¹ãƒˆãƒ¼ãƒ«ã•ã‚Œã¦ã„ã‚‹ã™ã¹ã¦ã® Jar ãƒ•ã‚¡ã‚¤ãƒ«å†…ã®å¯¾å¿œã™ã‚‹ãƒ˜ãƒƒãƒ€ãƒ¼ã¨æ¯”è¼ƒã—ã¾ã™ã€‚ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆã§ã¯ã€æ‹¡å¼µæ©Ÿèƒ½ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªã¯ã€\f2jre/lib/ext\fP ã§ã™ã€‚\f3extcheck\fP ãƒ¦ãƒ¼ãƒ†ã‚£ãƒªãƒ†ã‚£ãƒ¼ã¯ã€\f2java.lang.Package.isCompatibleWith\fP ãƒ¡ã‚½ãƒƒãƒ‰ã¨åŒæ§˜ã®æ–¹æ³•ã§ãƒãƒ¼ã‚¸ãƒ§ãƒ³ç•ªå·ã‚’æ¯”è¼ƒã—ã¾ã™ã€‚
 .LP
-¶¥¹ç¤¬¸¡½Ğ¤µ¤ì¤Ê¤¤¾ì¹ç¡¢¥ê¥¿¡¼¥ó¥³¡¼¥É¤Ï
-.I 0 ¤Ç¤¹¡£
 .LP
-³ÈÄ¥µ¡Ç½¥Ç¥£¥ì¥¯¥È¥êÆâ¤Î 
-.B jar 
-¥Õ¥¡¥¤¥ë¤Î¥Ş¥Ë¥Õ¥§¥¹¥È¤Ë¡¢Æ±°ì¤Î 
-.I Specification-title¡¢
-¤ª¤è¤ÓÆ±°ì¤Ş¤¿¤Ï¤è¤ê¿·¤·¤¤ 
-.I Specification-version 
-ÈÖ¹æ¤¬¤¢¤ë¾ì¹ç¡¢¥¼¥í¤Ç¤Ê¤¤¥¨¥é¡¼
-¥³¡¼¥É¤¬ÊÖ¤µ¤ì¤Ş¤¹¡£
-.I targetfile.jar 
-¤Î¥Ş¥Ë¥Õ¥§¥¹¥È¤Ë 
-.I Specification-title 
-¤Ş¤¿¤Ï 
-.I Specification-version 
-Â°À­¤¬¤Ê¤¤¾ì¹ç¤â¡¢¥¼¥í¤Ç¤Ê¤¤¥¨¥é¡¼¥³¡¼¥É¤¬ÊÖ¤µ¤ì¤Ş¤¹¡£
-.SH "¥ª¥×¥·¥ç¥ó"
-°Ê²¼¤Î¥ª¥×¥·¥ç¥ó¤¬»ØÄê¤Ç¤­¤Ş¤¹¡£
-.TP 15
-.B -verbose
-³ÈÄ¥µ¡Ç½¥Ç¥£¥ì¥¯¥È¥êÆâ¤Î
-.B jar
-¥Õ¥¡¥¤¥ë¤ò¡¢¸¡ºº»ş¤Ë°ìÍ÷É½¼¨¤·¤Ş¤¹¡£¤Ş¤¿¡¢¥¿¡¼¥²¥Ã¥È 
-.B jar
-¥Õ¥¡¥¤¥ë¤Î¥Ş¥Ë¥Õ¥§¥¹¥È¤ÎÂ°À­¡¢¤ª¤è¤Ó¶¥¹ç¤¹¤ë
-.B jar
-¥Õ¥¡¥¤¥ë¤Ë¤Ä¤¤¤Æ¤âÊó¹ğ¤·¤Ş¤¹¡£
-.TP 15
-.BI \-J "option"
-.I option
-¤ò Java ²¾ÁÛ¥Ş¥·¥ó¤ËÅÏ¤·¤Ş¤¹¡£¤³¤³¤Ç¡¢
-.I option
-¤Ï¡¢Java ¥¢¥×¥ê¥±¡¼¥·¥ç¥óµ¯Æ°¥×¥í¥°¥é¥à java(1) ¤Î¥Ş¥Ë¥å¥¢¥ë¥Ú¡¼¥¸¤Ç
-ÀâÌÀ¤µ¤ì¤Æ¤¤¤ë¥ª¥×¥·¥ç¥ó¤Î 1 ¤Ä¤Ç¤¹¡£¤¿¤È¤¨¤Ğ¡¢-J-Xms48m
-¤Ï¡¢µ¯Æ°»ş¤Ë»ÈÍÑ¤¹¤ë¥á¥â¥ê¤ò 48M ¥Ğ¥¤¥È¤ËÀßÄê¤·¤Ş¤¹¡£
-.SH "´ØÏ¢¹àÌÜ"
-.BR jar (1)
+ç«¶åˆãŒæ¤œå‡ºã•ã‚Œãªã„å ´åˆã®ãƒªã‚¿ãƒ¼ãƒ³ã‚³ãƒ¼ãƒ‰ã¯ \f20\fP ã§ã™ã€‚
+.LP
+.LP
+æ‹¡å¼µæ©Ÿèƒ½ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªå†…ã®ã„ãšã‚Œã‹ã® jar ãƒ•ã‚¡ã‚¤ãƒ«ã®ãƒãƒ‹ãƒ•ã‚§ã‚¹ãƒˆã«ã€åŒä¸€ã® \f2Specification\-title\fPã€ãŠã‚ˆã³åŒä¸€ã¾ãŸã¯ã‚ˆã‚Šæ–°ã—ã„ \f2Specification\-version\fP ç•ªå·ãŒã‚ã‚‹å ´åˆã¯ã€ã‚¼ãƒ­ã§ãªã„ã‚¨ãƒ©ãƒ¼ã‚³ãƒ¼ãƒ‰ãŒè¿”ã•ã‚Œã¾ã™ã€‚\f2targetfile.jar\fP ã®ãƒãƒ‹ãƒ•ã‚§ã‚¹ãƒˆã« \f2Specification\-title\fP ã¾ãŸã¯ \f2Specification\-version\fP å±æ€§ãŒãªã„å ´åˆã‚‚ã€ã‚¼ãƒ­ã§ãªã„ã‚¨ãƒ©ãƒ¼ã‚³ãƒ¼ãƒ‰ãŒè¿”ã•ã‚Œã¾ã™ã€‚
+.LP
+.SH "ã‚ªãƒ—ã‚·ãƒ§ãƒ³"
+.LP
+
+.LP
+.RS 3
+.TP 3
+\-verbose 
+æ‹¡å¼µæ©Ÿèƒ½ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªå†…ã® Jar ãƒ•ã‚¡ã‚¤ãƒ«ã‚’ã€ãƒã‚§ãƒƒã‚¯æ™‚ã«ä¸€è¦§è¡¨ç¤ºã—ã¾ã™ã€‚ã¾ãŸã€ã‚¿ãƒ¼ã‚²ãƒƒãƒˆ jar ãƒ•ã‚¡ã‚¤ãƒ«ã®ãƒãƒ‹ãƒ•ã‚§ã‚¹ãƒˆã®å±æ€§ã€ãŠã‚ˆã³ç«¶åˆã™ã‚‹ jar ãƒ•ã‚¡ã‚¤ãƒ«ã«ã¤ã„ã¦ã‚‚å ±å‘Šã—ã¾ã™ã€‚ 
+.TP 3
+\-Joption 
+Java ä»®æƒ³ãƒã‚·ãƒ³ã« \f2option\fP ã‚’æ¸¡ã—ã¾ã™ã€‚ \f2option\fP ã«ã¯ã€java(1)ã®ãƒªãƒ•ã‚¡ãƒ¬ãƒ³ã‚¹ãƒšãƒ¼ã‚¸ã«è¨˜è¼‰ã•ã‚Œã¦ã„ã‚‹ã‚ªãƒ—ã‚·ãƒ§ãƒ³ã‚’ 1 ã¤æŒ‡å®šã—ã¾ã™ã€‚ãŸã¨ãˆã°ã€\f3\-J\-Xms48m\fP ã¨æŒ‡å®šã™ã‚‹ã¨ã€ã‚¹ã‚¿ãƒ¼ãƒˆã‚¢ãƒƒãƒ—ãƒ¡ãƒ¢ãƒªãƒ¼ã¯ 48M ãƒã‚¤ãƒˆã«è¨­å®šã•ã‚Œã¾ã™ã€‚ 
+.RE
+
+.LP
+.SH "é–¢é€£é …ç›®"
+.LP
+
+.LP
+.LP
+jar(1)
+.LP
+
+.LP
+ 

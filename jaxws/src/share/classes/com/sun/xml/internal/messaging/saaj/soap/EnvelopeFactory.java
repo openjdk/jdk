@@ -23,9 +23,9 @@
  * have any questions.
  */
 /*
- * $Id: EnvelopeFactory.java,v 1.24 2006/01/27 12:49:26 vj135062 Exp $
- * $Revision: 1.24 $
- * $Date: 2006/01/27 12:49:26 $
+ *
+ *
+ *
  */
 
 
@@ -55,7 +55,7 @@ import com.sun.xml.internal.messaging.saaj.util.transform.EfficientStreamingTran
  */
 public class EnvelopeFactory {
 
-    protected static Logger
+    protected static final Logger
         log = Logger.getLogger(LogDomainConstants.SOAP_DOMAIN,
         "com.sun.xml.internal.messaging.saaj.soap.LocalStrings");
 

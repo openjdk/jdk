@@ -112,7 +112,7 @@ class Surrogate {
 
         public Parser() { }
 
-        private int character;                // UCS-4
+        private int character;          // UCS-4
         private CoderResult error = CoderResult.UNDERFLOW;
         private boolean isPair;
 

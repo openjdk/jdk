@@ -145,6 +145,7 @@ public interface JClassContainer {
      *      newly created Annotation Type Declaration
      * @exception JClassAlreadyExistsException
      *      When the specified class/interface was already created.
+
      */
     public JDefinedClass _annotationTypeDeclaration(String name) throws JClassAlreadyExistsException;
 
@@ -156,6 +157,7 @@ public interface JClassContainer {
      *      newly created Enum
      * @exception JClassAlreadyExistsException
      *      When the specified class/interface was already created.
+
      */
     public JDefinedClass _enum (String name) throws JClassAlreadyExistsException;
 

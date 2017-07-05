@@ -23,9 +23,9 @@
  * have any questions.
  */
 /*
- * $Id: CDATAImpl.java,v 1.19 2006/01/27 12:49:34 vj135062 Exp $
- * $Revision: 1.19 $
- * $Date: 2006/01/27 12:49:34 $
+ *
+ *
+ *
  */
 
 
@@ -43,7 +43,7 @@ public class CDATAImpl
     extends com.sun.org.apache.xerces.internal.dom.CDATASectionImpl
     implements javax.xml.soap.Text {
 
-    protected static Logger log =
+    protected static final Logger log =
         Logger.getLogger(LogDomainConstants.SOAP_IMPL_DOMAIN,
                          "com.sun.xml.internal.messaging.saaj.soap.impl.LocalStrings");
 

@@ -95,6 +95,11 @@ public abstract class RenderingEngine {
      * <pre>
      *     java -Dsun.java2d.renderer=&lt;classname&gt;
      * </pre>
+     *
+     * If no specific {@code RenderingEngine} is specified on the command
+     * or Ductus renderer is specified, it will attempt loading the
+     * sun.dc.DuctusRenderingEngine class using Class.forName as a fastpath;
+     * if not found, use the ServiceLoader.
      * If no specific {@code RenderingEngine} is specified on the command
      * line then the last one returned by enumerating all subclasses of
      * {@code RenderingEngine} known to the ServiceLoader is used.
@@ -115,9 +120,21 @@ public abstract class RenderingEngine {
         reImpl = (RenderingEngine)
             AccessController.doPrivileged(new PrivilegedAction() {
                 public Object run() {
+                    final String ductusREClass = "sun.dc.DuctusRenderingEngine";
                     String reClass =
-                        System.getProperty("sun.java2d.renderer",
-                                           "sun.dc.DuctusRenderingEngine");
+                        System.getProperty("sun.java2d.renderer", ductusREClass);
+                    if (reClass.equals(ductusREClass)) {
+                        try {
+                            Class cls = Class.forName(ductusREClass);
+                            return cls.newInstance();
+                        } catch (ClassNotFoundException x) {
+                            // not found
+                        } catch (IllegalAccessException x) {
+                            // should not reach here
+                        } catch (InstantiationException x) {
+                            // should not reach here
+                        }
+                    }
 
                     ServiceLoader<RenderingEngine> reLoader =
                         ServiceLoader.loadInstalled(RenderingEngine.class);

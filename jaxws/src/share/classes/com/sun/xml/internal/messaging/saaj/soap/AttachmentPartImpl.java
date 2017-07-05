@@ -70,7 +70,7 @@ import javax.xml.soap.*;
  */
 public class AttachmentPartImpl extends AttachmentPart {
 
-    protected static Logger log =
+    protected static final Logger log =
         Logger.getLogger(LogDomainConstants.SOAP_DOMAIN,
                          "com.sun.xml.internal.messaging.saaj.soap.LocalStrings");
 
