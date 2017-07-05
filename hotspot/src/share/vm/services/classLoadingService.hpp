@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@ public:
 
   static bool get_verbose() { return TraceClassLoading; }
   static bool set_verbose(bool verbose);
-  static void reset_trace_class_unloading();
+  static void reset_trace_class_unloading() NOT_MANAGEMENT_RETURN;
 
   static jlong loaded_class_count() {
     return _classes_loaded_count->get_value() + _shared_classes_loaded_count->get_value();
@@ -102,13 +102,16 @@ public:
     return (UsePerfData ? _class_methods_size->get_value() : -1);
   }
 
-  static void notify_class_loaded(InstanceKlass* k, bool shared_class);
+  static void notify_class_loaded(InstanceKlass* k, bool shared_class)
+      NOT_MANAGEMENT_RETURN;
   // All unloaded classes are non-shared
-  static void notify_class_unloaded(InstanceKlass* k);
+  static void notify_class_unloaded(InstanceKlass* k) NOT_MANAGEMENT_RETURN;
   static void add_class_method_size(int size) {
+#if INCLUDE_MANAGEMENT
     if (UsePerfData) {
       _class_methods_size->inc(size);
     }
+#endif // INCLUDE_MANAGEMENT
   }
 };
 

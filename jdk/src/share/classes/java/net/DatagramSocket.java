@@ -105,7 +105,7 @@ class DatagramSocket implements java.io.Closeable {
      * Connects this socket to a remote socket address (IP address + port number).
      * Binds socket if not already bound.
      * <p>
-     * @param   addr    The remote address.
+     * @param   address The remote address.
      * @param   port    The remote port
      * @throws  SocketException if binding the socket fails.
      */

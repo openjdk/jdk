@@ -142,8 +142,11 @@ void JavaCT_DrawGlyphVector
     // get our baseline transform and font
     CGContextRef cgRef = qsdo->cgRef;
     CGAffineTransform ctmText = CGContextGetTextMatrix(cgRef);
-    //CGFontRef cgFont = CGContextGetFont(cgRef);
 
+    /* Save and restore of graphics context is done before the iteration.  
+       This seems to work using our test case (see bug ID 7158350) so we are restoring it at
+       the end of the for loop.  If we find out that save/restore outside the loop
+       doesn't work on all cases then we will move the Save/Restore inside the loop.*/
     CGContextSaveGState(cgRef);
     CGAffineTransform invTx = CGAffineTransformInvert(strike->fTx);
 
@@ -210,13 +213,9 @@ void JavaCT_DrawGlyphVector
         pt.x += advances[i].width;
         pt.y += advances[i].height;
 
-        // reset the font on the context after striking a unicode with CoreText
-        if (uniChar != 0)
-        {
-           // CGContextSetFont(cgRef, cgFont);
-            CGContextSaveGState(cgRef);
-        }
     }
+    // reset the font on the context after striking a unicode with CoreText
+    CGContextRestoreGState(cgRef);
 }
 
 // Using the Quartz Surface Data context, draw a hot-substituted character run

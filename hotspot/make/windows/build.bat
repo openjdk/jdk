@@ -1,6 +1,6 @@
 @echo off
 REM
-REM Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+REM Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
 REM DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 REM
 REM This code is free software; you can redistribute it and/or modify it

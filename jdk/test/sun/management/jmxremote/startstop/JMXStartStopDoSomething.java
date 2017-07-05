@@ -21,17 +21,27 @@
  * questions.
  */
 
-import java.io.RandomAccessFile;
+import java.io.File;
 
 public class JMXStartStopDoSomething {
 
+    private static final String lockFileName = "JMXStartStop.lck";
 
-    public void doSomething(){
+    public static void doSomething() {
         try {
-            for (int i=0; i < 10; ++i) {
-                RandomAccessFile f = new RandomAccessFile("/dev/null","r");
-                int n = f.read();
-                f.close();
+            File lockFile = new File(lockFileName);
+            lockFile.createNewFile();
+
+            while(lockFile.exists()) {
+                long datetime = lockFile.lastModified();
+                long epoch = System.currentTimeMillis()/1000;
+
+                // Don't allow test app to run more than an hour
+                if (epoch - datetime > 3600) {
+                    System.err.println("Lock is too old. Aborting");
+                    return;
+                }
+                Thread.sleep(1);
             }
 
         } catch (Throwable e) {
@@ -41,12 +51,7 @@ public class JMXStartStopDoSomething {
 
     public static void main(String args[]) throws Exception {
         System.err.println("main enter");
-        int count = 1;
-        while(count > 0) {
-            JMXStartStopDoSomething p = new JMXStartStopDoSomething();
-            p.doSomething();
-            Thread.sleep(1);
-        }
-        // System.err.println("main exit");
+        doSomething();
+        System.err.println("main exit");
     }
 }

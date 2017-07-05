@@ -48,7 +48,7 @@ public interface ConnectionPoolDataSource  extends CommonDataSource {
    *         connection to the database that this
    *         <code>ConnectionPoolDataSource</code> object represents
    * @exception SQLException if a database access error occurs
-   * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+   * @exception java.sql.SQLFeatureNotSupportedException if the JDBC driver does not support
    * this method
    * @since 1.4
    */
@@ -64,7 +64,7 @@ public interface ConnectionPoolDataSource  extends CommonDataSource {
    *         connection to the database that this
    *         <code>ConnectionPoolDataSource</code> object represents
    * @exception SQLException if a database access error occurs
-   * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+   * @exception java.sql.SQLFeatureNotSupportedException if the JDBC driver does not support
    * this method
    * @since 1.4
    */

@@ -46,6 +46,7 @@ public interface WindbgDebugger extends JVMDebugger {
     throws DebuggerException;
   public WindbgAddress readAddress(long address) throws DebuggerException;
   public WindbgAddress readCompOopAddress(long address) throws DebuggerException;
+  public WindbgAddress readCompKlassAddress(long address) throws DebuggerException;
   public WindbgOopHandle readOopHandle(long address) throws DebuggerException;
   public WindbgOopHandle readCompOopHandle(long address) throws DebuggerException;
 

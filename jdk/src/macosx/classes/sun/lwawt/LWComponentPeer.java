@@ -123,7 +123,7 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
     //   private volatile boolean paintPending;
     private volatile boolean isLayouting;
 
-    private D delegate = null;
+    private final D delegate;
     private Container delegateContainer;
     private Component delegateDropTarget;
     private final Object dropTargetLock = new Object();
@@ -132,6 +132,11 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
     private CDropTarget fDropTarget = null;
 
     private final PlatformComponent platformComponent;
+
+    /**
+     * Character with reasonable value between the minimum width and maximum.
+     */
+    static final char WIDE_CHAR = '0';
 
     private final class DelegateContainer extends Container {
         {
@@ -267,9 +272,7 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
     }
 
     protected final D getDelegate() {
-        synchronized (getStateLock()) {
-            return delegate;
-        }
+        return delegate;
     }
 
     protected Component getDelegateFocusOwner() {
@@ -698,25 +701,22 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
     }
 
     @Override
-    public FontMetrics getFontMetrics(Font f) {
+    public FontMetrics getFontMetrics(final Font f) {
         // Borrow the metrics from the top-level window
 //        return getWindowPeer().getFontMetrics(f);
         // Obtain the metrics from the offscreen window where this peer is
         // mostly drawn to.
         // TODO: check for "use platform metrics" settings
-        Graphics g = getWindowPeer().getGraphics();
-        try {
-            if (g != null) {
+        final Graphics g = getOnscreenGraphics();
+        if (g != null) {
+            try {
                 return g.getFontMetrics(f);
-            } else {
-                synchronized (getDelegateLock()) {
-                    return delegateContainer.getFontMetrics(f);
-                }
-            }
-        } finally {
-            if (g != null) {
+            } finally {
                 g.dispose();
             }
+        }
+        synchronized (getDelegateLock()) {
+            return delegateContainer.getFontMetrics(f);
         }
     }
 
@@ -847,31 +847,46 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
     }
 
     /**
-     * Should be overridden in subclasses to forward the request
-     * to the Swing helper component, if required.
+     * Determines the preferred size of the component. By default forwards the
+     * request to the Swing helper component. Should be overridden in subclasses
+     * if required.
      */
     @Override
     public Dimension getPreferredSize() {
-        // It looks like a default implementation for all toolkits
-        return getMinimumSize();
+        final Dimension size;
+        synchronized (getDelegateLock()) {
+            size = getDelegate().getPreferredSize();
+        }
+        return validateSize(size);
     }
 
-    /*
-     * Should be overridden in subclasses to forward the request
-     * to the Swing helper component.
+    /**
+     * Determines the minimum size of the component. By default forwards the
+     * request to the Swing helper component. Should be overridden in subclasses
+     * if required.
      */
     @Override
     public Dimension getMinimumSize() {
-        D delegate = getDelegate();
-
-        if (delegate == null) {
-            // Is it a correct default value?
-            return getBounds().getSize();
-        } else {
-            synchronized (getDelegateLock()) {
-                return delegate.getMinimumSize();
-            }
+        final Dimension size;
+        synchronized (getDelegateLock()) {
+            size = getDelegate().getMinimumSize();
         }
+        return validateSize(size);
+    }
+
+    /**
+     * In some situations delegates can return empty minimum/preferred size.
+     * (For example: empty JLabel, etc), but awt components never should be
+     * empty. In the XPeers or WPeers we use some magic constants, but here we
+     * try to use something more useful,
+     */
+    private Dimension validateSize(final Dimension size) {
+        if (size.width == 0 || size.height == 0) {
+            final FontMetrics fm = getFontMetrics(getFont());
+            size.width = fm.charWidth(WIDE_CHAR);
+            size.height = fm.getHeight();
+        }
+        return size;
     }
 
     @Override

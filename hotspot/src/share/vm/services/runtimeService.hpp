@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,15 +53,15 @@ public:
   static double last_application_time_sec()    { return _app_timer.seconds(); }
 
   // callbacks
-  static void record_safepoint_begin();
-  static void record_safepoint_synchronized();
-  static void record_safepoint_end();
-  static void record_application_start();
+  static void record_safepoint_begin() NOT_MANAGEMENT_RETURN;
+  static void record_safepoint_synchronized() NOT_MANAGEMENT_RETURN;
+  static void record_safepoint_end() NOT_MANAGEMENT_RETURN;
+  static void record_application_start() NOT_MANAGEMENT_RETURN;
 
   // interruption events
-  static void record_interrupted_before_count();
-  static void record_interrupted_during_count();
-  static void record_thread_interrupt_signaled_count();
+  static void record_interrupted_before_count() NOT_MANAGEMENT_RETURN;
+  static void record_interrupted_during_count() NOT_MANAGEMENT_RETURN;
+  static void record_thread_interrupt_signaled_count() NOT_MANAGEMENT_RETURN;
 };
 
 #endif // SHARE_VM_SERVICES_RUNTIMESERVICE_HPP

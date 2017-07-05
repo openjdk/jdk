@@ -58,5 +58,3 @@ public:
                                   Register recv, Register method_temp,
                                   Register temp2, Register temp3,
                                   bool for_compiler_entry);
-
-  static void trace_method_handle(MacroAssembler* _masm, const char* adaptername) PRODUCT_RETURN;

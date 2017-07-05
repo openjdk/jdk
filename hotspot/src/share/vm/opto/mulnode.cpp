@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -598,20 +598,6 @@ Node *AndLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   Node* in1 = in(1);
   uint op = in1->Opcode();
-
-  // Masking sign bits off of an integer?  Do an unsigned integer to
-  // long load.
-  // NOTE: This check must be *before* we try to convert the AndLNode
-  // to an AndINode and commute it with ConvI2LNode because
-  // 0xFFFFFFFFL masks the whole integer and we get a sign extension,
-  // which is wrong.
-  if (op == Op_ConvI2L && in1->in(1)->Opcode() == Op_LoadI && mask == CONST64(0x00000000FFFFFFFF)) {
-    Node* load = in1->in(1);
-    return new (phase->C) LoadUI2LNode(load->in(MemNode::Control),
-                                          load->in(MemNode::Memory),
-                                          load->in(MemNode::Address),
-                                          load->adr_type());
-  }
 
   // Are we masking a long that was converted from an int with a mask
   // that fits in 32-bits?  Commute them and use an AndINode.  Don't

@@ -27,6 +27,7 @@ package sun.java2d.xr;
 
 import java.awt.*;
 import java.awt.geom.*;
+import java.awt.image.*;
 
 import sun.java2d.*;
 import sun.java2d.loops.*;
@@ -45,8 +46,8 @@ public class XRDrawImage extends DrawImage {
         SurfaceData srcData = dstData.getSourceSurfaceData(img,
                 SunGraphics2D.TRANSFORM_GENERIC, sg.imageComp, bgColor);
 
-        if (srcData != null && !isBgOperation(srcData, bgColor))  { // TODO: Do we bail out on bgBlits?
-        //      && srcData instanceof XRSurfaceData) {
+        if (srcData != null && !isBgOperation(srcData, bgColor)
+                && interpType <= AffineTransformOp.TYPE_BILINEAR) {
             SurfaceType srcType = srcData.getSurfaceType();
             SurfaceType dstType = dstData.getSurfaceType();
 

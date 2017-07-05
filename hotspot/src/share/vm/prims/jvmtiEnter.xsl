@@ -1,6 +1,6 @@
 <?xml version="1.0"?> 
 <!--
- Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,8 @@
   <xsl:call-template name="sourceHeader"/>
   <xsl:text>
 # include "precompiled.hpp"
+# include "utilities/macros.hpp"
+#if INCLUDE_JVMTI
 # include "prims/jvmtiEnter.hpp"
 # include "prims/jvmtiRawMonitor.hpp"
 # include "prims/jvmtiUtil.hpp"
@@ -247,6 +249,7 @@ struct jvmtiInterface_1_ jvmti</xsl:text>
 
   <xsl:text>
 };
+#endif // INCLUDE_JVMTI
 </xsl:text>
 </xsl:template>
 
@@ -469,7 +472,7 @@ static jvmtiError JNICALL
 </xsl:text>
 
   <xsl:if test="not(contains(@jkernel,'yes'))">
-  <xsl:text>&#xA;#ifdef JVMTI_KERNEL &#xA;</xsl:text>
+  <xsl:text>&#xA;#if !INCLUDE_JVMTI &#xA;</xsl:text>
   <xsl:text>  return JVMTI_ERROR_NOT_AVAILABLE; &#xA;</xsl:text>
   <xsl:text>#else &#xA;</xsl:text>
   </xsl:if>
@@ -596,7 +599,7 @@ static jvmtiError JNICALL
 </xsl:text>
 
   <xsl:if test="not(contains(@jkernel,'yes'))">
-  <xsl:text>#endif // JVMTI_KERNEL&#xA;</xsl:text>
+  <xsl:text>#endif // INCLUDE_JVMTI&#xA;</xsl:text>
   </xsl:if>
 
   <xsl:text>}&#xA;</xsl:text>

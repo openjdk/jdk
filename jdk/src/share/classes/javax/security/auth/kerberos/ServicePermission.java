@@ -259,7 +259,6 @@ public final class ServicePermission extends Permission
      * Always returns present actions in the following order:
      * initiate, accept.
      */
-
     public String getActions() {
         if (actions == null)
             actions = getActions(this.mask);
@@ -280,7 +279,6 @@ public final class ServicePermission extends Permission
      * @return a new PermissionCollection object suitable for storing
      * ServicePermissions.
      */
-
     public PermissionCollection newPermissionCollection() {
         return new KrbServicePermissionCollection();
     }
@@ -290,7 +288,6 @@ public final class ServicePermission extends Permission
      *
      * @return the actions mask.
      */
-
     int getMask() {
         return mask;
     }
@@ -301,7 +298,6 @@ public final class ServicePermission extends Permission
      * @param action the action string
      * @return the action mask
      */
-
     private static int getMask(String action) {
 
         if (action == null) {
@@ -468,12 +464,11 @@ final class KrbServicePermissionCollection extends PermissionCollection
      * Check and see if this collection of permissions implies the permissions
      * expressed in "permission".
      *
-     * @param p the Permission object to compare
+     * @param permission the Permission object to compare
      *
      * @return true if "permission" is a proper subset of a permission in
      * the collection, false if not.
      */
-
     public boolean implies(Permission permission) {
         if (! (permission instanceof ServicePermission))
                 return false;
@@ -517,7 +512,6 @@ final class KrbServicePermissionCollection extends PermissionCollection
      * @exception SecurityException - if this PermissionCollection object
      *                                has been marked readonly
      */
-
     public void add(Permission permission) {
         if (! (permission instanceof ServicePermission))
             throw new IllegalArgumentException("invalid permission: "+
@@ -584,8 +578,9 @@ final class KrbServicePermissionCollection extends PermissionCollection
      * Reads in a Vector of ServicePermissions and saves them in the perms field.
      */
     @SuppressWarnings("unchecked")
-    private void readObject(ObjectInputStream in) throws IOException,
-    ClassNotFoundException {
+    private void readObject(ObjectInputStream in)
+        throws IOException, ClassNotFoundException
+    {
         // Don't call defaultReadObject()
 
         // Read in serialized fields

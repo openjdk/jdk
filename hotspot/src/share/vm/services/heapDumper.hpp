@@ -76,9 +76,9 @@ class HeapDumper : public StackObj {
   // returns error message (resource allocated), or NULL if no error
   char* error_as_C_string() const;
 
-  static void dump_heap()    KERNEL_RETURN;
+  static void dump_heap()    NOT_SERVICES_RETURN;
 
-  static void dump_heap_from_oome()    KERNEL_RETURN;
+  static void dump_heap_from_oome()    NOT_SERVICES_RETURN;
 };
 
 #endif // SHARE_VM_SERVICES_HEAPDUMPER_HPP

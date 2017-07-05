@@ -48,7 +48,9 @@ class   TypeD;
 class   TypeF;
 class   TypeInt;
 class   TypeLong;
-class   TypeNarrowOop;
+class   TypeNarrowPtr;
+class     TypeNarrowOop;
+class     TypeNarrowKlass;
 class   TypeAry;
 class   TypeTuple;
 class   TypeVect;
@@ -81,6 +83,7 @@ public:
     Long,                       // Long integer range (lo-hi)
     Half,                       // Placeholder half of doubleword
     NarrowOop,                  // Compressed oop pointer
+    NarrowKlass,                // Compressed klass pointer
 
     Tuple,                      // Method signature or object layout
     Array,                      // Array types
@@ -229,6 +232,7 @@ public:
   // Returns true if this pointer points at memory which contains a
   // compressed oop references.
   bool is_ptr_to_narrowoop() const;
+  bool is_ptr_to_narrowklass() const;
 
   // Convenience access
   float getf() const;
@@ -252,6 +256,8 @@ public:
   const TypeRawPtr *is_rawptr() const;           // Asserts is rawptr
   const TypeNarrowOop  *is_narrowoop() const;    // Java-style GC'd pointer
   const TypeNarrowOop  *isa_narrowoop() const;   // Returns NULL if not oop ptr type
+  const TypeNarrowKlass *is_narrowklass() const; // compressed klass pointer
+  const TypeNarrowKlass *isa_narrowklass() const;// Returns NULL if not oop ptr type
   const TypeOopPtr   *isa_oopptr() const;        // Returns NULL if not oop ptr type
   const TypeOopPtr   *is_oopptr() const;         // Java-style GC'd pointer
   const TypeInstPtr  *isa_instptr() const;       // Returns NULL if not InstPtr
@@ -277,6 +283,10 @@ public:
   // Returns this compressed pointer or the equivalent compressed version
   // of this pointer type.
   const TypeNarrowOop* make_narrowoop() const;
+
+  // Returns this compressed klass pointer or the equivalent
+  // compressed version of this pointer type.
+  const TypeNarrowKlass* make_narrowklass() const;
 
   // Special test for register pressure heuristic
   bool is_floatingpoint() const;        // True if Float or Double base type
@@ -670,7 +680,7 @@ class TypeVectY : public TypeVect {
 // Otherwise the _base will indicate which subset of pointers is affected,
 // and the class will be inherited from.
 class TypePtr : public Type {
-  friend class TypeNarrowOop;
+  friend class TypeNarrowPtr;
 public:
   enum PTR { TopPTR, AnyNull, Constant, Null, NotNull, BotPTR, lastPTR };
 protected:
@@ -781,6 +791,7 @@ protected:
   // Does the type exclude subclasses of the klass?  (Inexact == polymorphic.)
   bool          _klass_is_exact;
   bool          _is_ptr_to_narrowoop;
+  bool          _is_ptr_to_narrowklass;
 
   // If not InstanceTop or InstanceBot, indicates that this is
   // a particular instance of this type which is distinct.
@@ -825,6 +836,7 @@ public:
   // Returns true if this pointer points at memory which contains a
   // compressed oop references.
   bool is_ptr_to_narrowoop_nv() const { return _is_ptr_to_narrowoop; }
+  bool is_ptr_to_narrowklass_nv() const { return _is_ptr_to_narrowklass; }
 
   bool is_known_instance()       const { return _instance_id > 0; }
   int  instance_id()             const { return _instance_id; }
@@ -1122,22 +1134,21 @@ public:
 #endif
 };
 
-//------------------------------TypeNarrowOop----------------------------------
-// A compressed reference to some kind of Oop.  This type wraps around
-// a preexisting TypeOopPtr and forwards most of it's operations to
-// the underlying type.  It's only real purpose is to track the
-// oopness of the compressed oop value when we expose the conversion
-// between the normal and the compressed form.
-class TypeNarrowOop : public Type {
+class TypeNarrowPtr : public Type {
 protected:
   const TypePtr* _ptrtype; // Could be TypePtr::NULL_PTR
 
-  TypeNarrowOop( const TypePtr* ptrtype): Type(NarrowOop),
-    _ptrtype(ptrtype) {
+  TypeNarrowPtr(TYPES t, const TypePtr* ptrtype): _ptrtype(ptrtype),
+                                                  Type(t) {
     assert(ptrtype->offset() == 0 ||
            ptrtype->offset() == OffsetBot ||
            ptrtype->offset() == OffsetTop, "no real offsets");
   }
+
+  virtual const TypeNarrowPtr *isa_same_narrowptr(const Type *t) const = 0;
+  virtual const TypeNarrowPtr *is_same_narrowptr(const Type *t) const = 0;
+  virtual const TypeNarrowPtr *make_same_narrowptr(const TypePtr *t) const = 0;
+  virtual const TypeNarrowPtr *make_hash_same_narrowptr(const TypePtr *t) const = 0;
 public:
   virtual bool eq( const Type *t ) const;
   virtual int  hash() const;             // Type specific hashing
@@ -1153,19 +1164,89 @@ public:
 
   virtual bool empty(void) const;        // TRUE if type is vacuous
 
+  // returns the equivalent ptr type for this compressed pointer
+  const TypePtr *get_ptrtype() const {
+    return _ptrtype;
+  }
+
+#ifndef PRODUCT
+  virtual void dump2( Dict &d, uint depth, outputStream *st ) const;
+#endif
+};
+
+//------------------------------TypeNarrowOop----------------------------------
+// A compressed reference to some kind of Oop.  This type wraps around
+// a preexisting TypeOopPtr and forwards most of it's operations to
+// the underlying type.  It's only real purpose is to track the
+// oopness of the compressed oop value when we expose the conversion
+// between the normal and the compressed form.
+class TypeNarrowOop : public TypeNarrowPtr {
+protected:
+  TypeNarrowOop( const TypePtr* ptrtype): TypeNarrowPtr(NarrowOop, ptrtype) {
+  }
+
+  virtual const TypeNarrowPtr *isa_same_narrowptr(const Type *t) const {
+    return t->isa_narrowoop();
+  }
+
+  virtual const TypeNarrowPtr *is_same_narrowptr(const Type *t) const {
+    return t->is_narrowoop();
+  }
+
+  virtual const TypeNarrowPtr *make_same_narrowptr(const TypePtr *t) const {
+    return new TypeNarrowOop(t);
+  }
+
+  virtual const TypeNarrowPtr *make_hash_same_narrowptr(const TypePtr *t) const {
+    return (const TypeNarrowPtr*)((new TypeNarrowOop(t))->hashcons());
+  }
+
+public:
+
   static const TypeNarrowOop *make( const TypePtr* type);
 
   static const TypeNarrowOop* make_from_constant(ciObject* con, bool require_constant = false) {
     return make(TypeOopPtr::make_from_constant(con, require_constant));
   }
 
-  // returns the equivalent ptr type for this compressed pointer
-  const TypePtr *get_ptrtype() const {
-    return _ptrtype;
-  }
-
   static const TypeNarrowOop *BOTTOM;
   static const TypeNarrowOop *NULL_PTR;
+
+#ifndef PRODUCT
+  virtual void dump2( Dict &d, uint depth, outputStream *st ) const;
+#endif
+};
+
+//------------------------------TypeNarrowKlass----------------------------------
+// A compressed reference to klass pointer.  This type wraps around a
+// preexisting TypeKlassPtr and forwards most of it's operations to
+// the underlying type.
+class TypeNarrowKlass : public TypeNarrowPtr {
+protected:
+  TypeNarrowKlass( const TypePtr* ptrtype): TypeNarrowPtr(NarrowKlass, ptrtype) {
+  }
+
+  virtual const TypeNarrowPtr *isa_same_narrowptr(const Type *t) const {
+    return t->isa_narrowklass();
+  }
+
+  virtual const TypeNarrowPtr *is_same_narrowptr(const Type *t) const {
+    return t->is_narrowklass();
+  }
+
+  virtual const TypeNarrowPtr *make_same_narrowptr(const TypePtr *t) const {
+    return new TypeNarrowKlass(t);
+  }
+
+  virtual const TypeNarrowPtr *make_hash_same_narrowptr(const TypePtr *t) const {
+    return (const TypeNarrowPtr*)((new TypeNarrowKlass(t))->hashcons());
+  }
+
+public:
+  static const TypeNarrowKlass *make( const TypePtr* type);
+
+  // static const TypeNarrowKlass *BOTTOM;
+  static const TypeNarrowKlass *NULL_PTR;
 
 #ifndef PRODUCT
   virtual void dump2( Dict &d, uint depth, outputStream *st ) const;
@@ -1216,6 +1297,14 @@ public:
 inline bool Type::is_ptr_to_narrowoop() const {
 #ifdef _LP64
   return (isa_oopptr() != NULL && is_oopptr()->is_ptr_to_narrowoop_nv());
+#else
+  return false;
+#endif
+}
+
+inline bool Type::is_ptr_to_narrowklass() const {
+#ifdef _LP64
+  return (isa_oopptr() != NULL && is_oopptr()->is_ptr_to_narrowklass_nv());
 #else
   return false;
 #endif
@@ -1346,6 +1435,15 @@ inline const TypeNarrowOop *Type::isa_narrowoop() const {
   return (_base == NarrowOop) ? (TypeNarrowOop*)this : NULL;
 }
 
+inline const TypeNarrowKlass *Type::is_narrowklass() const {
+  assert(_base == NarrowKlass, "Not a narrow oop" ) ;
+  return (TypeNarrowKlass*)this;
+}
+
+inline const TypeNarrowKlass *Type::isa_narrowklass() const {
+  return (_base == NarrowKlass) ? (TypeNarrowKlass*)this : NULL;
+}
+
 inline const TypeMetadataPtr *Type::is_metadataptr() const {
   // MetadataPtr is the first and CPCachePtr the last
   assert(_base == MetadataPtr, "Not a metadata pointer" ) ;
@@ -1367,7 +1465,8 @@ inline const TypeKlassPtr *Type::is_klassptr() const {
 
 inline const TypePtr* Type::make_ptr() const {
   return (_base == NarrowOop) ? is_narrowoop()->get_ptrtype() :
-                                (isa_ptr() ? is_ptr() : NULL);
+    ((_base == NarrowKlass) ? is_narrowklass()->get_ptrtype() :
+     (isa_ptr() ? is_ptr() : NULL));
 }
 
 inline const TypeOopPtr* Type::make_oopptr() const {
@@ -1377,6 +1476,11 @@ inline const TypeOopPtr* Type::make_oopptr() const {
 inline const TypeNarrowOop* Type::make_narrowoop() const {
   return (_base == NarrowOop) ? is_narrowoop() :
                                 (isa_ptr() ? TypeNarrowOop::make(is_ptr()) : NULL);
+}
+
+inline const TypeNarrowKlass* Type::make_narrowklass() const {
+  return (_base == NarrowKlass) ? is_narrowklass() :
+                                (isa_ptr() ? TypeNarrowKlass::make(is_ptr()) : NULL);
 }
 
 inline bool Type::is_floatingpoint() const {

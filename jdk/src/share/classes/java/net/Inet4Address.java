@@ -177,7 +177,6 @@ class Inet4Address extends InetAddress {
      * a loopback address; or false otherwise.
      * @since 1.4
      */
-    private static final int loopback = 2130706433; /* 127.0.0.1 */
     public boolean isLoopbackAddress() {
         /* 127.x.x.x */
         byte[] byteAddr = getAddress();

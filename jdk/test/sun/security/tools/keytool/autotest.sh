@@ -58,24 +58,18 @@ case "$OS" in
     LIBNAME="/usr/lib/mps/libsoftokn3.so"
     ;;
   Linux )
-    ARCH=`uname -m`
     FS="/"
-    case "$ARCH" in
-      i[3-6]86 )
+    ${TESTJAVA}${FS}bin${FS}java -XshowSettings:properties -version 2> allprop
+    cat allprop | grep os.arch | grep 64
+    if [ "$?" != "0" ]; then
         LIBNAME=`find_one \
             "/usr/lib/libsoftokn3.so" \
             "/usr/lib/i386-linux-gnu/nss/libsoftokn3.so"`
-        ;;
-      x86_64 )
+    else
         LIBNAME=`find_one \
             "/usr/lib64/libsoftokn3.so" \
             "/usr/lib/x86_64-linux-gnu/nss/libsoftokn3.so"`
-        ;;
-      * )
-        echo "Will not run test on: Linux ${ARCH}"
-        exit 0;
-        ;;
-    esac
+    fi
     ;;
   * )
     echo "Will not run test on: ${OS}"

@@ -178,7 +178,6 @@ public final class DelegationPermission extends BasicPermission
      *
      * @return a hash code value for this object.
      */
-
     public int hashCode() {
         return getName().hashCode();
     }
@@ -278,12 +277,11 @@ final class KrbDelegationPermissionCollection extends PermissionCollection
      * Check and see if this collection of permissions implies the permissions
      * expressed in "permission".
      *
-     * @param p the Permission object to compare
+     * @param permission the Permission object to compare
      *
      * @return true if "permission" is a proper subset of a permission in
      * the collection, false if not.
      */
-
     public boolean implies(Permission permission) {
         if (! (permission instanceof DelegationPermission))
                 return false;
@@ -310,7 +308,6 @@ final class KrbDelegationPermissionCollection extends PermissionCollection
      * @exception SecurityException - if this PermissionCollection object
      *                                has been marked readonly
      */
-
     public void add(Permission permission) {
         if (! (permission instanceof DelegationPermission))
             throw new IllegalArgumentException("invalid permission: "+
@@ -329,7 +326,6 @@ final class KrbDelegationPermissionCollection extends PermissionCollection
      *
      * @return an enumeration of all the DelegationPermission objects.
      */
-
     public Enumeration<Permission> elements() {
         // Convert Iterator into Enumeration
         synchronized (this) {
@@ -376,8 +372,9 @@ final class KrbDelegationPermissionCollection extends PermissionCollection
      * Reads in a Vector of DelegationPermissions and saves them in the perms field.
      */
     @SuppressWarnings("unchecked")
-    private void readObject(ObjectInputStream in) throws IOException,
-    ClassNotFoundException {
+    private void readObject(ObjectInputStream in)
+        throws IOException, ClassNotFoundException
+    {
         // Don't call defaultReadObject()
 
         // Read in serialized fields

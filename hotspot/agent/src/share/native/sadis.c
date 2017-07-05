@@ -46,7 +46,7 @@
 
 #else
 
-#include <strings.h>
+#include <string.h>
 #include <dlfcn.h>
 #include <link.h>
 

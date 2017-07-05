@@ -53,6 +53,8 @@ public class Universe {
 
   private static AddressField narrowOopBaseField;
   private static CIntegerField narrowOopShiftField;
+  private static AddressField narrowKlassBaseField;
+  private static CIntegerField narrowKlassShiftField;
 
   static {
     VM.registerVMInitializedObserver(new Observer() {
@@ -86,6 +88,8 @@ public class Universe {
 
     narrowOopBaseField = type.getAddressField("_narrow_oop._base");
     narrowOopShiftField = type.getCIntegerField("_narrow_oop._shift");
+    narrowKlassBaseField = type.getAddressField("_narrow_klass._base");
+    narrowKlassShiftField = type.getCIntegerField("_narrow_klass._shift");
   }
 
   public Universe() {
@@ -110,6 +114,19 @@ public class Universe {
   public static int getNarrowOopShift() {
     return (int)narrowOopShiftField.getValue();
   }
+
+  public static long getNarrowKlassBase() {
+    if (narrowKlassBaseField.getValue() == null) {
+      return 0;
+    } else {
+      return narrowKlassBaseField.getValue().minus(null);
+    }
+  }
+
+  public static int getNarrowKlassShift() {
+    return (int)narrowKlassShiftField.getValue();
+  }
+
 
   /** Returns "TRUE" iff "p" points into the allocated area of the heap. */
   public boolean isIn(Address p) {

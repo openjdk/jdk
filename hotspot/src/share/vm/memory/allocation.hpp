@@ -27,6 +27,7 @@
 
 #include "runtime/globals.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/macros.hpp"
 #ifdef COMPILER1
 #include "c1/c1_globals.hpp"
 #endif
@@ -157,7 +158,15 @@ enum MemoryType {
 
 typedef unsigned short MEMFLAGS;
 
+#if INCLUDE_NMT
+
 extern bool NMT_track_callsite;
+
+#else
+
+const bool NMT_track_callsite = false;
+
+#endif // INCLUDE_NMT
 
 // debug build does not inline
 #if defined(_DEBUG_)

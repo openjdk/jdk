@@ -798,7 +798,7 @@ public class MLet extends java.net.URLClassLoader
       * Allows the m-let to perform any operations it needs before being unregistered
       * by the MBean server.
       *
-      * @exception java.langException This exception should be caught
+      * @exception java.lang.Exception This exception should be caught
       * by the MBean server and re-thrown as an
       * MBeanRegistrationException.
       */
