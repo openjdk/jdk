@@ -32,7 +32,6 @@ import static jdk.nashorn.internal.codegen.Condition.LE;
 import static jdk.nashorn.internal.codegen.Condition.LT;
 import static jdk.nashorn.internal.codegen.Condition.NE;
 
-import jdk.nashorn.internal.codegen.Label;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.BinaryNode;
 import jdk.nashorn.internal.ir.Node;

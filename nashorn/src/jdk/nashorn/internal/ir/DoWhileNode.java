@@ -63,11 +63,11 @@ public class DoWhileNode extends WhileNode {
 
     @Override
     public Node accept(final NodeVisitor visitor) {
-        if (visitor.enter(this) != null) {
+        if (visitor.enterDoWhileNode(this) != null) {
             body = (Block)body.accept(visitor);
             test = test.accept(visitor);
 
-            return visitor.leave(this);
+            return visitor.leaveDoWhileNode(this);
         }
 
         return this;

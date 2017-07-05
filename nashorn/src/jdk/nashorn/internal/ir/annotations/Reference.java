@@ -33,7 +33,6 @@ import java.lang.annotation.RetentionPolicy;
  * AST traversal and cloning. Cloning currently as a rule uses
  * existingOrSame for references and otherwise existingOrCopy
  * <p>
- * TODO this could probably be automated using the @Reference annotation.
  */
 
 @Retention(value=RetentionPolicy.RUNTIME)

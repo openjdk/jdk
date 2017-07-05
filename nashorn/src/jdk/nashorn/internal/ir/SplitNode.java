@@ -108,10 +108,10 @@ public class SplitNode extends Node {
         visitor.setCurrentMethodEmitter(getMethodEmitter());
 
         try {
-            if (visitor.enter(this) != null) {
+            if (visitor.enterSplitNode(this) != null) {
                 body = body.accept(visitor);
 
-                return visitor.leave(this);
+                return visitor.leaveSplitNode(this);
             }
         } finally {
             visitor.setCurrentCompileUnit(saveCompileUnit);

@@ -39,6 +39,7 @@ class NMTDCmd: public DCmdWithParser {
   DCmdArgument<bool>  _summary_diff;
   DCmdArgument<bool>  _detail_diff;
   DCmdArgument<bool>  _shutdown;
+  DCmdArgument<bool>  _auto_shutdown;
 #ifndef PRODUCT
   DCmdArgument<bool>  _debug;
 #endif

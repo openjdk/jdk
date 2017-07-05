@@ -7,18 +7,15 @@
 ## @compile T.java
 ## @run shell Test6929067.sh
 ##
-
+set -x
 if [ "${TESTSRC}" = "" ]
-then TESTSRC=.
-fi
-
-if [ "${TESTJAVA}" = "" ]
 then
-  PARENT=`dirname \`which java\``
-  TESTJAVA=`dirname ${PARENT}`
-  echo "TESTJAVA not set, selecting " ${TESTJAVA}
-  echo "If this is incorrect, try setting the variable manually."
+  TESTSRC=${PWD}
+  echo "TESTSRC not set.  Using "${TESTSRC}" as default"
 fi
+echo "TESTSRC=${TESTSRC}"
+## Adding common setup Variables for running shell tests.
+. ${TESTSRC}/../../test_env.sh
 
 # set platform-dependent variables
 OS=`uname -s`
@@ -107,7 +104,7 @@ then
 fi
 
 
-LD_LIBRARY_PATH=.:${TESTJAVA}/jre/lib/${ARCH}/${VMTYPE}:/usr/lib:$LD_LIBRARY_PATH
+LD_LIBRARY_PATH=.:${COMPILEJAVA}/jre/lib/${ARCH}/${VMTYPE}:/usr/lib:$LD_LIBRARY_PATH
 export LD_LIBRARY_PATH
 
 cp ${TESTSRC}${FS}invoke.c .
@@ -115,15 +112,16 @@ cp ${TESTSRC}${FS}invoke.c .
 # Copy the result of our @compile action:
 cp ${TESTCLASSES}${FS}T.class .
 
-${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} -fullversion
-
 echo "Architecture: ${ARCH}"
 echo "Compilation flag: ${COMP_FLAG}"
 echo "VM type: ${VMTYPE}"
+# Note pthread may not be found thus invoke creation will fail to be created.
+# Check to ensure you have a /usr/lib/libpthread.so if you don't please look
+# for /usr/lib/`uname -m`-linux-gnu version ensure to add that path to below compilation.
 
 gcc -DLINUX ${COMP_FLAG} -o invoke \
-  -I${TESTJAVA}/include -I${TESTJAVA}/include/linux \
-  -L${TESTJAVA}/jre/lib/${ARCH}/${VMTYPE} \
+  -I${COMPILEJAVA}/include -I${COMPILEJAVA}/include/linux \
+  -L${COMPILEJAVA}/jre/lib/${ARCH}/${VMTYPE} \
   -ljvm -lpthread invoke.c
 
 ./invoke

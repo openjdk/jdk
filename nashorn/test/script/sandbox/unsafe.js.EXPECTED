@@ -1,4 +1,0 @@
-java.security.AccessControlException: access denied ("java.lang.RuntimePermission" "accessClassInPackage.sun.misc")
-java.security.AccessControlException: access denied ("java.lang.RuntimePermission" "accessClassInPackage.sun.misc")
-java.security.AccessControlException: access denied ("java.lang.RuntimePermission" "accessClassInPackage.sun")
-java.security.AccessControlException: access denied ("java.lang.RuntimePermission" "getClassLoader")

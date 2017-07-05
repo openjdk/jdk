@@ -57,8 +57,8 @@ public class EmptyNode extends Node {
 
     @Override
     public Node accept(final NodeVisitor visitor) {
-        if (visitor.enter(this) != null) {
-            return visitor.leave(this);
+        if (visitor.enterEmptyNode(this) != null) {
+            return visitor.leaveEmptyNode(this);
         }
         return this;
     }
