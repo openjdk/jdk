@@ -1,0 +1,98 @@
+/*
+ * Copyright 1997-2004 Sun Microsystems, Inc.  All Rights Reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Sun designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Sun in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+ * CA 95054 USA or visit www.sun.com if you need additional information or
+ * have any questions.
+ */
+
+package com.sun.java.swing.plaf.windows;
+
+import java.awt.*;
+import javax.swing.plaf.*;
+import javax.swing.plaf.basic.*;
+import javax.swing.*;
+import javax.swing.border.*;
+
+
+
+/**
+ * Windows icon for a minimized window on the desktop.
+ * <p>
+ * <strong>Warning:</strong>
+ * Serialized objects of this class will not be compatible with
+ * future Swing releases.  The current serialization support is appropriate
+ * for short term storage or RMI between applications running the same
+ * version of Swing.  A future release of Swing will provide support for
+ * long term persistence.
+ */
+public class WindowsDesktopIconUI extends BasicDesktopIconUI {
+    private int width;
+
+    public static ComponentUI createUI(JComponent c) {
+        return new WindowsDesktopIconUI();
+    }
+
+    public void installDefaults() {
+        super.installDefaults();
+        width = UIManager.getInt("DesktopIcon.width");
+    }
+
+    public void installUI(JComponent c)   {
+        super.installUI(c);
+
+        c.setOpaque(XPStyle.getXP() == null);
+    }
+
+    // Uninstall the listeners added by the WindowsInternalFrameTitlePane
+    public void uninstallUI(JComponent c) {
+        WindowsInternalFrameTitlePane thePane =
+                                        (WindowsInternalFrameTitlePane)iconPane;
+        super.uninstallUI(c);
+        thePane.uninstallListeners();
+    }
+
+    protected void installComponents() {
+        iconPane = new WindowsInternalFrameTitlePane(frame);
+        desktopIcon.setLayout(new BorderLayout());
+        desktopIcon.add(iconPane, BorderLayout.CENTER);
+
+        if (XPStyle.getXP() != null) {
+            desktopIcon.setBorder(null);
+        }
+    }
+
+    public Dimension getPreferredSize(JComponent c) {
+        // Windows desktop icons can not be resized.  Therefore, we should
+        // always return the minimum size of the desktop icon. See
+        // getMinimumSize(JComponent c).
+        return getMinimumSize(c);
+    }
+
+    /**
+     * Windows desktop icons are restricted to a width of 160 pixels by
+     * default.  This value is retrieved by the DesktopIcon.width property.
+     */
+    public Dimension getMinimumSize(JComponent c) {
+        Dimension dim = super.getMinimumSize(c);
+        dim.width = width;
+        return dim;
+    }
+}

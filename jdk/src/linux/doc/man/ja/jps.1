@@ -1,0 +1,207 @@
+'\" t
+.\"
+.\" Copyright 2004-2006 Sun Microsystems, Inc.  All Rights Reserved.
+.\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+.\"
+.\" This code is free software; you can redistribute it and/or modify it
+.\" under the terms of the GNU General Public License version 2 only, as
+.\" published by the Free Software Foundation.
+.\"
+.\" This code is distributed in the hope that it will be useful, but WITHOUT
+.\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+.\" FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+.\" version 2 for more details (a copy is included in the LICENSE file that
+.\" accompanied this code).
+.\"
+.\" You should have received a copy of the GNU General Public License version
+.\" 2 along with this work; if not, write to the Free Software Foundation,
+.\" Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+.\"
+.\" Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+.\" CA 95054 USA or visit www.sun.com if you need additional information or
+.\" have any questions.
+.\"
+.\" 
+.TH jps 1 "2006 年 9 月 4 日" "Java SE 6" "ユーザーコマンド"
+.SH 名前
+jps \- Java 仮想マシンプロセスステータスツール
+.\"
+.SH 形式
+.B jps 
+.BI [ options ] 
+.BI [ hostid ] 
+.LP
+.SH パラメータ
+.if t .TP 20
+.if n .TP 15
+.I options
+コマンド行オプション。
+.if t .TP 20
+.if n .TP 15
+.I hostid
+プロセスレポートを生成するホストのホスト識別子。
+.I hostid
+には、通信プロトコル、ポート番号、およびその他固有の実装データを示すオプションコンポーネントを含めることができます。
+.SH 機能説明
+.B jps
+ツールは、ターゲットシステム上の計測機構付き HotSpot Java 仮想マシン (JVM) をリストします。このツールは、アクセス権がある JVM 上の情報だけを報告します。
+.LP
+ホスト ID を指定せずに
+.B jps
+が実行された場合は、ローカルホスト上の計測機構付き JVM を探します。ホスト ID が指定された場合は、指定されたホスト上の JVM を、指定されたプロトコルとポートを使用して探します。
+.B jstatd 
+プロセスがターゲットホスト上で稼動していることが前提となります。
+.LP
+.B jps 
+コマンドは、ターゲットシステム上で見つかった計測機構付き JVM のそれぞれについて、ローカル VM 識別子 (lvmid) を報告します。lvmid は、一般に、オペレーティングシステムの JVM プロセスのプロセス識別子ですが、必ずしもそうとは限りません。オプションが指定されなかった場合、
+.B jps 
+は各 Java アプリケーションの lvmid の後に短い形式のアプリケーションのクラス名または jar ファイル名を続けてリストします。短い形式のクラス名または JAR ファイル名では、クラスのパッケージ情報や JAR ファイルのパス情報は省かれます。
+.LP
+.B jps 
+コマンドは java 起動ツールを使用して、クラス名と main メソッドに渡された引数を探します。ターゲット JVM がカスタム起動ツールで起動された場合、クラス名 (または JAR ファイル名) と main メソッドに渡された引数は入手できません。この場合、
+.B jps 
+コマンドは、クラス名または JAR ファイル名と main メソッドの引数として、Unknown という文字列を出力します。
+.LP
+.B jps
+コマンドによって生成される JVM のリストは、コマンドを実行した主体に許可されているアクセス権によって制限されることがあります。このコマンドは、オペレーティングシステム固有のアクセス制御機構に従って、主体がアクセス権を持っている JVM だけをリストします。
+.LP
+注 - このユーティリティはサポートされていないため、JDK の将来のバージョンでは使用できない可能性があります。現在、Windows 98 および Windows ME プラットフォームでは使用できません。
+.SH オプション
+.B jps 
+コマンドは、コマンド出力を変更する多数のオプションをサポートしています。これらのオプションは、将来、変更または削除されることがあります。
+.if t .TP 20
+.if n .TP 15
+.BI \-q
+クラス名、JAR ファイル名、および main メソッドに渡された引数の出力を抑制して、ローカル VM 識別子のリストだけを生成します。
+.if t .TP 20
+.if n .TP 15
+.BI \-m
+main メソッドに渡された引数を出力します。埋め込み JVM の場合、出力は NULL になることがあります。
+.if t .TP 20
+.if n .TP 15
+.BI \-l
+アプリケーションの main クラスのフルパッケージ名、またはアプリケーションの JAR ファイルのフルパス名を出力します。
+.if t .TP 20
+.if n .TP 15
+.BI \-v
+JVM に渡された引数を出力します。
+.if t .TP 20
+.if n .TP 15
+.BI \-V
+フラグファイル (.hotspotrc ファイル、または -XX:Flags=<filename> 引数によって指定されたファイル) を通じて JVM に渡された引数を出力します。
+.if t .TP 20
+.if n .TP 15
+.BI \-J "option"
+.B jps 
+によって呼び出された java 起動ツールにオプションを渡します。
+たとえば、-J-Xms48m は、起動メモリを 48M バイトに設定します。Java で作成された下層の VM 実行アプリケーションにオプションを渡すのが、\-J の一般的規則です。
+.SH ホスト識別子
+ホスト識別子 (hostid) は、ターゲットシステムを示す文字列です。hostid 文字列の構文は、URI の構文とほぼ同じです。
+.LP
+.RS
+.ft 3
+.nf
+[protocol:][[//]hostname][:port][/servername]
+.fi
+.ft 1
+.RE
+.if t .TP 20
+.if n .TP 15
+.B protocol
+通信プロトコル。protocol が省かれ、hostname が指定されなかった場合、デフォルトのプロトコルは、プラットフォームに固有の最適化されたローカルプロトコルです。protocol が省かれ、hostname が指定された場合、デフォルトのプロトコルは rmi です。
+.if t .TP 20
+.if n .TP 15
+.I hostname
+ターゲットホストを示すホスト名または IP アドレス。hostname が省かれた場合、ターゲットホストはローカルホストです。
+.if t .TP 20
+.if n .TP 15
+.I port
+リモートサーバーと通信するためのデフォルトポート。hostname が省かれるか、protocol が最適化されたローカルプロトコルを指定している場合、port は無視されます。そうでない場合、port パラメータの扱いは、実装に固有です。デフォルトの rmi プロトコルの場合、port はリモートホスト上の rmiregistry のポート番号を示します。port が省かれ、protocol が rmi を示す場合は、デフォルトの rmiregistry ポート (1099) が使用されます。
+.if t .TP 20
+.if n .TP 15
+.I servername
+このパラメータの取り扱いは、実装によって異なります。最適化されたローカルプロトコルの場合、このフィールドは無視されます。rmi プロトコルの場合、このパラメータは、リモートホスト上の RMI リモートオブジェクトの名前を表す文字列です。
+.B jstatd
+コマンドの \-n オプションを参照してください。
+.SH 出力形式
+jps コマンドの出力は、次のパターンに従います。
+.LP
+.RS
+.ft 3
+.nf
+lvmid [ [ classname | JARfilename | "Unknown"] [ arg* ] [ jvmarg* ] ]
+.fi
+.ft 1
+.RE
+.LP
+出力トークンはすべて、空白で区切られます。埋め込まれた空白を含む arg があると、引数を実際の位置パラメータにマップするときにあいまいさが生じます。
+.LP
+注 - 将来のリリースで形式が変更される可能性があるので、
+.B jps 
+の出力を解析するスクリプトは書かない方がよいでしょう。jps 出力を解析するスクリプトを書く場合は、このツールの将来のリリースでは修正が必要になることを予想しておいてください。
+.SH 使用例
+このセクションでは、
+.B jps 
+コマンドの例を示します。
+.LP
+ローカルホスト上の計測機構付き JVM をリストする:
+.LP
+.RS
+.ft 3
+.nf
+jps
+18027 Java2Demo.JAR
+18032 jps
+18005 jstat
+.fi
+.ft 1
+.RE
+.TP
+リモートホスト上の計測機構付き JVM をリストする:
+.LP
+この例では、jstat サーバーとその内部 RMI レジストリまたは個別の外部 rmiregistry プロセスがリモートホストのデフォルトポート (ポート 1099) で実行していることを前提としています。また、ローカルホストはリモートホストにアクセスするための適切なアクセス権を持っているものとします。また、この例には、長い形式のクラス名または JAR ファイル名を出力するための -l オプションが含まれています。
+.LP
+.RS
+.ft 3
+.nf
+jps -l remote.domain
+3002 /opt/j2sdk1.5.0/demo/jfc/Java2D/Java2Demo.JAR
+2857 sun.tools.jstatd.jstatd
+.fi
+.ft 1
+.RE
+.LP
+RMI レジストリ用にデフォルト以外のポートを使用するリモートホスト上の計測機構付き Java 仮想マシンをリストする:
+.LP
+この例では、jstatd サーバーがリモートホスト上で実行していて、内部 RMI レジストリがポート 2002 にバインドされていることを前提としています。また、この例では、リストされる各 Java アプリケーションの main メソッドに渡された引数を含めるために、-m オプションを使用しています。
+.LP
+.RS
+.ft 3
+.nf
+jps -m remote.domain:2002
+3002 /opt/j2sdk1.5.0/demo/jfc/Java2D/Java2Demo.JAR
+3102 sun.tools.jstatd.jstatd -p 2002
+.fi
+.ft 1
+.RE
+.SH 関連項目
+.LP
+.RS 3
+.TP 2
+*
+java \- Java アプリケーション起動プログラム
+.TP 2
+*
+jstat \- Java 仮想マシン統計監視ツール
+.TP 2
+*
+jstatd \- 仮想マシン jstat デーモン
+.TP 2
+*
+rmiregistry \- Java リモートオブジェクトレジストリ
+.RE
+
+.LP
+
+.LP
+ 

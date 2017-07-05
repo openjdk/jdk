@@ -1,0 +1,115 @@
+#
+# Copyright 2007 Sun Microsystems, Inc.  All Rights Reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Sun designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Sun in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+# CA 95054 USA or visit www.sun.com if you need additional information or
+# have any questions.
+#
+
+include $(BUILDDIR)/common/Release.gmk
+
+#
+# Include these extra attributes for now, should probably take out.
+#
+JCE_MANIFEST_FILE    = $(TEMPDIR)/manifest.mf
+$(JCE_MANIFEST_FILE): $(MAINMANIFEST)
+	$(prep-target)
+	( $(SED) "s/@@RELEASE@@/$(RELEASE)/" $(MAINMANIFEST); \
+	    $(ECHO) "Extension-Name: javax.crypto"; \
+	    $(ECHO) "Implementation-Vendor-Id: com.sun"; ) > $@
+
+README-MAKEFILE_WARNING = \
+    "\nPlease read make/javax/crypto/Makefile for further build instructions."
+
+define no-source-warning
+	@$(ECHO) "\n***JCE sources are not available, skipping build.***" \
+	    $(README-MAKEFILE_WARNING)
+endef
+
+ifndef OPENJDK
+
+PREBUILT_DIR = $(BUILDDIR)/closed/tools/crypto
+
+define build-warning
+	@$(ECHO) "\n***JCE in JDK builds require special tools/procedures.***" \
+	    $(README-MAKEFILE_WARNING)
+endef
+
+#
+# Location for JCE codesigning key.
+#
+SIGNING_KEY_DIR    = /security/ws/JCE-signing/src
+SIGNING_KEYSTORE   = $(SIGNING_KEY_DIR)/KeyStore.jks
+SIGNING_PASSPHRASE = $(SIGNING_KEY_DIR)/passphrase.txt
+SIGNING_ALIAS      = jce_rsa
+
+#
+# Defines for signing/obfuscating the various jar files.
+#
+
+define presign
+    @if [ ! -f $(SIGNING_KEYSTORE) -o ! -f $(SIGNING_PASSPHRASE) ]; then \
+	$(ECHO) "\n$(SIGNING_KEYSTORE): Signing mechanism *NOT* available..." \
+	    $(README-MAKEFILE_WARNING); \
+	exit 2; \
+    fi
+endef
+
+define sign-target
+	$(BOOT_JARSIGNER_CMD) -keystore $(SIGNING_KEYSTORE) \
+	    $@ $(SIGNING_ALIAS) < $(SIGNING_PASSPHRASE)
+	@$(ECHO) "\nJar codesigning finished."
+endef
+
+RELEASE_DIR = $(OUTPUTDIR)/jce-release
+
+define release-warning
+	@$(ECHO) \
+	    "\n***The jar files built by the \"release\" target must***" \
+	    "\n***still be checked into the closed workspace!     ***" \
+	    $(README-MAKEFILE_WARNING)
+endef
+
+#
+# Convenience macro for steps needed to sign a jar file.
+#
+define sign-file
+	$(presign)
+	$(install-file)
+	$(sign-target)
+	@$(java-vm-cleanup)
+endef
+
+#
+# Location for the Obfuscation product.  JDK currently has
+# the requirement that we obfuscate our JCE jars.
+#
+OBFUSCATOR = /security/tools/bin/obfus
+OBFUS_DIR = $(TEMPDIR)/obfus
+
+define preobfus
+    @if [ ! -f $(OBFUSCATOR) ]; then \
+	$(ECHO) "\n$(OBFUSCATOR): Obfuscator *NOT* available..." \
+	    $(README-MAKEFILE_WARNING); \
+	exit 2; \
+    fi
+endef
+
+endif  # !OPENJDK

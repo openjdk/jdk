@@ -1,0 +1,180 @@
+'\" t
+.\"
+.\" Copyright 2004-2006 Sun Microsystems, Inc.  All Rights Reserved.
+.\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+.\"
+.\" This code is free software; you can redistribute it and/or modify it
+.\" under the terms of the GNU General Public License version 2 only, as
+.\" published by the Free Software Foundation.
+.\"
+.\" This code is distributed in the hope that it will be useful, but WITHOUT
+.\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+.\" FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+.\" version 2 for more details (a copy is included in the LICENSE file that
+.\" accompanied this code).
+.\"
+.\" You should have received a copy of the GNU General Public License version
+.\" 2 along with this work; if not, write to the Free Software Foundation,
+.\" Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+.\"
+.\" Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+.\" CA 95054 USA or visit www.sun.com if you need additional information or
+.\" have any questions.
+.\" 
+.\"
+.\" 
+.TH apt 1 "2006 年 9 月 4 日" "Java SE 6" "ユーザーコマンド"
+.SH "名前"
+apt \- 注釈処理ツール
+.\"
+.SH "形式"
+.B apt 
+.BI [\-classpath " classpath"]
+.BI [\-sourcepath " sourcepath"]
+.BI [\-d " directory"]
+.BI [\-s " directory"]
+.BI [\-factorypath " path"]
+.BI [\-factory " class"]
+.B [\-print]
+.B [\-nocompile]
+.B [\-Akey[=val] ...]
+.BI [javac option]
+.BI sourcefiles
+.BI [@files]
+.SH "パラメータ" 
+オプションは任意の順序で使用できます。特定のオプションに適用される
+パラメータについては、後述の「オプション」を参照してください。
+.if t .TP 20
+.if n .TP 15
+.I sourcefiles
+処理される 0 個以上のソースファイル。
+.if t .TP 20
+.if n .TP 15
+.I @files
+ソースファイルまたはその他のオプションをリストする 1 個以上のファイル。
+.SH "機能説明"
+注釈処理ツール
+.B apt 
+には、プログラム注釈を処理するための一連の
+新しいリフレクション API とインフラストラクチャサポートが含まれています。
+.B apt 
+のリフレクション API では、プログラム構造のビューが、
+ビルド時のソースベースの読み取り専用として用意されています。
+これらのリフレクション API は、総称型の追加後に、
+Java(TM) プログラミング言語の型システムを
+わかりやすくモデル化できるように設計されました。
+はじめに、
+.B apt 
+は注釈プロセッサを実行します。この注釈プロセッサでは、
+新規のソースコードおよびその他のファイルを生成します。
+次に、オリジナルのソースファイルと生成したソースファイルの両方をコンパイルし、
+開発を容易にします。ツールと対話するためのリフレクション API と
+その他の API は、
+.B com.sun.mirror 
+のサブパッケージです。
+.LP
+.B apt 
+によるツールの操作方法と開発手順についての詳細は、
+http://java.sun.com/javase/6/docs/technotes/guides/apt/GettingStarted.html
+の「Getting Started with apt」を参照してください。
+.LP
+.TP 3
+注: 
+\f2apt\fP\f2 の機能\fPは標準の注釈処理インフラストラクチャに組み込まれました。この標準のインフラストラクチャは、今では \f2javac\fP ツール [
+.na
+\f2Solaris と Linux\fP の場合: 
+.fi
+http://java.sun.com/javase/6/docs/technotes/tools/solaris/javac.html] [
+.na
+\f2Windows\fP の場合: 
+.fi
+http://java.sun.com/javase/6/docs/technotes/tools/windows/javac.html] の一部となり、すべての Java コンパイラで使用できるように標準化されています。この新しいインフラストラクチャは、Java プラットフォームの一部となった言語モデルと注釈処理 API に依存しています。新しい注釈プロセッサの開発は、この新しい API と \f2javac\fP ツールに基づいて行うことをお勧めします。
+.LP
+.SH "オプション"
+.SS apt 固有のオプション
+.if t .TP 20
+.if n .TP 15
+.BI \-s " dir"
+プロセッサが生成するソースファイルが配置されるディレクトリルートを
+指定します。ファイルはパッケージのネームスペースに従って、
+サブディレクトリに配置されます。
+.if t .TP 20
+.if n .TP 15
+.BI \-nocompile
+ソースファイルをクラスファイルにコンパイルしません。
+.if t .TP 20
+.if n .TP 15
+.BI \-print
+指定した型のテキスト表現を出力します。
+注釈処理やコンパイルは実行しません。
+.if t .TP 20
+.if n .TP 15
+.BI \-A[key[=val]]
+注釈プロセッサに渡されるオプション。
+.B apt 
+は、これらのオプションを直接解釈しませんが、個別のプロセッサ
+によって使用可能になります。
+.if t .TP 20
+.if n .TP 15
+.BI \-factorypath " path" 
+注釈プロセッサファクトリを検索する場所を指定します。
+このオプションを使用する場合、ファクトリの検索に
+クラスパスは使用されません。
+.if t .TP 20
+.if n .TP 15
+.BI \-factory " classname"
+使用する注釈プロセッサファクトリの名前。
+デフォルトの検出処理はバイパスされます。
+.SS javac と共有されるオプション
+.if t .TP 20
+.if n .TP 15
+.BI \-d " dir"
+プロセッサおよび 
+.B javac 
+が生成したクラスファイルを配置する場所を指定します。
+.if t .TP 20
+.if n .TP 15
+.BI \-cp " path " \fLまたは\fP \fL\-classpath " path"
+ユーザクラスファイルおよび注釈プロセッサファクトリを検索する場所を
+指定します。
+.B \-factorypath 
+を指定した場合、ファクトリの検索にクラスパスは使用されません。
+.LP
+javac のオプションについては、
+.BR javac(1) 
+のマニュアルページを参照してください。
+.SH 注意事項
+.LP
+\f2apt\fP の機能は、\f2javac\fP が提供するようになった標準の注釈処理インフラストラクチャに組み込まれました。\f2apt\fP とその関連 API のサポートは、JDK の将来のリリースで打ち切られる可能性があります。
+.LP
+.SH "関連項目"
+.LP
+.RS 3
+.TP 2
+*
+javac: [
+.na
+\f2Solaris と Linux\fP の場合: 
+.fi
+http://java.sun.com/javase/6/docs/technotes/tools/solaris/javac.html] 
+[ \f2Windows\fP の場合: 
+.fi
+http://java.sun.com/javase/6/docs/technotes/tools/windows/javac.html] 
+.TP 2
+*
+java: [
+.na
+\f2Solaris\fP の場合: 
+.fi
+http://java.sun.com/javase/6/docs/technotes/tools/solaris/java.html] [
+.na
+\f2Linux\fP の場合: 
+.fi
+http://java.sun.com/javase/6/docs/technotes/tools/linux/java.html] 
+[ \f2Windows\fP の場合: 
+.fi
+http://java.sun.com/javase/6/docs/technotes/tools/windows/java.html] 
+.RE
+
+.LP
+ 

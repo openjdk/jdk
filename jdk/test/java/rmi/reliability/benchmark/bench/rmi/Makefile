@@ -1,0 +1,102 @@
+#
+# Copyright 2000-2002 Sun Microsystems, Inc.  All Rights Reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+# CA 95054 USA or visit www.sun.com if you need additional information or
+# have any questions.
+#
+
+#
+#
+#
+# RMI benchmarks makefile
+#
+
+BUILD_DIR = ../..
+JAVA_FILES = BenchServer.java \
+	BenchServerImpl.java \
+	BooleanArrayCalls.java \
+	BooleanCalls.java \
+	ByteArrayCalls.java \
+	ByteCalls.java \
+	CharArrayCalls.java \
+	CharCalls.java \
+	ClassLoading.java \
+	DoubleArrayCalls.java \
+	DoubleCalls.java \
+	ExceptionCalls.java \
+	ExportObjs.java \
+	FloatArrayCalls.java \
+	FloatCalls.java \
+	IntArrayCalls.java \
+	IntCalls.java \
+	LongArrayCalls.java \
+	LongCalls.java \
+	Main.java \
+	NullCalls.java \
+	ObjArrayCalls.java \
+	ObjTreeCalls.java \
+	ProxyArrayCalls.java \
+	RemoteObjArrayCalls.java \
+	ShortArrayCalls.java \
+	ShortCalls.java \
+	SmallObjTreeCalls.java \
+	TheTerminator.java
+REMOTE_CLASSES = bench.rmi.BenchServerImpl \
+	bench.rmi.BooleanArrayCalls.ServerImpl \
+	bench.rmi.BooleanCalls.ServerImpl \
+	bench.rmi.ByteArrayCalls.ServerImpl \
+	bench.rmi.ByteCalls.ServerImpl \
+	bench.rmi.CharArrayCalls.ServerImpl \
+	bench.rmi.CharCalls.ServerImpl \
+	bench.rmi.DoubleArrayCalls.ServerImpl \
+	bench.rmi.DoubleCalls.ServerImpl \
+	bench.rmi.ExceptionCalls.ServerImpl \
+	bench.rmi.ExportObjs.RemoteObj \
+	bench.rmi.IntCalls.ServerImpl \
+	bench.rmi.NullCalls.ServerImpl \
+	bench.rmi.FloatArrayCalls.ServerImpl \
+	bench.rmi.FloatCalls.ServerImpl \
+	bench.rmi.IntArrayCalls.ServerImpl \
+	bench.rmi.LongArrayCalls.ServerImpl \
+	bench.rmi.LongCalls.ServerImpl \
+	bench.rmi.ObjArrayCalls.ServerImpl \
+	bench.rmi.ObjTreeCalls.ServerImpl \
+	bench.rmi.ProxyArrayCalls.ServerImpl \
+	bench.rmi.RemoteObjArrayCalls.ServerImpl \
+	bench.rmi.RemoteObjArrayCalls.RemoteObj \
+	bench.rmi.ShortArrayCalls.ServerImpl \
+	bench.rmi.ShortCalls.ServerImpl \
+	bench.rmi.SmallObjTreeCalls.ServerImpl 
+
+all: .classes altroot.dir
+
+.classes: $(JAVA_FILES)
+	javac -d $(BUILD_DIR) $(JAVA_FILES)
+	rmic -d $(BUILD_DIR) $(REMOTE_CLASSES)
+	touch .classes
+
+altroot.dir:
+	cd altroot ; $(MAKE)
+
+altroot.clean:
+	cd altroot ; $(MAKE) clean
+
+clean: altroot.clean
+	rm -f *.class .classes
+
