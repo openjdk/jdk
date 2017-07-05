@@ -46,7 +46,7 @@ public class CharToByteUnicode extends CharToByteConverter {
     protected int byteOrder = UNKNOWN;
 
     public CharToByteUnicode() {
-        String enc = (String) java.security.AccessController.doPrivileged(
+        String enc = java.security.AccessController.doPrivileged(
            new sun.security.action.GetPropertyAction("sun.io.unicode.encoding",
                                                           "UnicodeBig"));
         if (enc.equals("UnicodeBig"))

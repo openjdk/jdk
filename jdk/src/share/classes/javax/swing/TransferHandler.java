@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -625,6 +625,69 @@ public class TransferHandler implements Serializable {
      */
     protected TransferHandler() {
         this(null);
+    }
+
+
+    /**
+     * image for the {@code startDrag} method
+     *
+     * @see java.awt.dnd.DragGestureEvent#startDrag(Cursor dragCursor, Image dragImage, Point imageOffset, Transferable transferable, DragSourceListener dsl)
+     */
+    private  Image dragImage;
+
+    /**
+     * anchor offset for the {@code startDrag} method
+     *
+     * @see java.awt.dnd.DragGestureEvent#startDrag(Cursor dragCursor, Image dragImage, Point imageOffset, Transferable transferable, DragSourceListener dsl)
+     */
+    private  Point dragImageOffset;
+
+    /**
+     * Sets the drag image parameter. The image has to be prepared
+     * for rendering by the moment of the call. The image is stored
+     * by reference because of some performance reasons.
+     *
+     * @param img an image to drag
+     */
+    public void setDragImage(Image img) {
+        dragImage = img;
+    }
+
+    /**
+     * Returns the drag image. If there is no image to drag,
+     * the returned value is {@code null}.
+     *
+     * @return the reference to the drag image
+     */
+    public Image getDragImage() {
+        return dragImage;
+    }
+
+    /**
+     * Sets an anchor offset for the image to drag.
+     * It can not be {@code null}.
+     *
+     * @param p a {@code Point} object that corresponds
+     * to coordinates of an anchor offset of the image
+     * relative to the upper left corner of the image
+     */
+    public void setDragImageOffset(Point p) {
+        dragImageOffset = new Point(p);
+    }
+
+    /**
+     * Returns an anchor offset for the image to drag.
+     *
+     * @return a {@code Point} object that corresponds
+     * to coordinates of an anchor offset of the image
+     * relative to the upper left corner of the image.
+     * The point {@code (0,0)} returns by default.
+     */
+    public Point getDragImageOffset() {
+        if (dragImageOffset == null) {
+            return new Point(0,0);
+        }
+        return new Point(dragImageOffset);
     }
 
     /**
@@ -1522,7 +1585,12 @@ public class TransferHandler implements Serializable {
                 scrolls = c.getAutoscrolls();
                 c.setAutoscrolls(false);
                 try {
-                    dge.startDrag(null, t, this);
+                    Image im = th.getDragImage();
+                    if (im == null) {
+                        dge.startDrag(null, t, this);
+                    } else {
+                        dge.startDrag(null, im, th.getDragImageOffset(), t, this);
+                    }
                     return;
                 } catch (RuntimeException re) {
                     c.setAutoscrolls(scrolls);
