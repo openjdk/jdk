@@ -1081,11 +1081,6 @@ void nmethod::fix_oop_relocations(address begin, address end, bool initialize_im
       metadata_Relocation* reloc = iter.metadata_reloc();
       reloc->fix_metadata_relocation();
     }
-
-    // There must not be any interfering patches or breakpoints.
-    assert(!(iter.type() == relocInfo::breakpoint_type
-             && iter.breakpoint_reloc()->active()),
-           "no active breakpoint");
   }
 }
 
