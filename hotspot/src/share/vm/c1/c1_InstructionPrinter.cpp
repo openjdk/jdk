@@ -57,6 +57,8 @@ const char* InstructionPrinter::cond_name(If::Condition cond) {
     case If::leq: return "<=";
     case If::gtr: return ">";
     case If::geq: return ">=";
+    case If::aeq: return "|>=|";
+    case If::beq: return "|<=|";
   }
   ShouldNotReachHere();
   return NULL;
@@ -181,6 +183,11 @@ void InstructionPrinter::print_indexed(AccessIndexed* indexed) {
   output()->put('[');
   print_value(indexed->index());
   output()->put(']');
+  if (indexed->length() != NULL) {
+    output()->put('(');
+    print_value(indexed->length());
+    output()->put(')');
+  }
 }
 
 
@@ -373,6 +380,7 @@ void InstructionPrinter::do_Constant(Constant* x) {
 void InstructionPrinter::do_LoadField(LoadField* x) {
   print_field(x);
   output()->print(" (%c)", type2char(x->field()->type()->basic_type()));
+  output()->print(" %s", x->field()->name()->as_utf8());
 }
 
 
@@ -381,6 +389,7 @@ void InstructionPrinter::do_StoreField(StoreField* x) {
   output()->print(" := ");
   print_value(x->value());
   output()->print(" (%c)", type2char(x->field()->type()->basic_type()));
+  output()->print(" %s", x->field()->name()->as_utf8());
 }
 
 
@@ -393,6 +402,9 @@ void InstructionPrinter::do_ArrayLength(ArrayLength* x) {
 void InstructionPrinter::do_LoadIndexed(LoadIndexed* x) {
   print_indexed(x);
   output()->print(" (%c)", type2char(x->elt_type()));
+  if (x->check_flag(Instruction::NeedsRangeCheckFlag)) {
+    output()->print(" [rc]");
+  }
 }
 
 
@@ -401,6 +413,9 @@ void InstructionPrinter::do_StoreIndexed(StoreIndexed* x) {
   output()->print(" := ");
   print_value(x->value());
   output()->print(" (%c)", type2char(x->elt_type()));
+  if (x->check_flag(Instruction::NeedsRangeCheckFlag)) {
+    output()->print(" [rc]");
+  }
 }
 
 void InstructionPrinter::do_NegateOp(NegateOp* x) {
@@ -843,6 +858,25 @@ void InstructionPrinter::do_UnsafePrefetchRead(UnsafePrefetchRead* x) {
   output()->put(')');
 }
 
+void InstructionPrinter::do_RangeCheckPredicate(RangeCheckPredicate* x) {
+
+  if (x->x() != NULL && x->y() != NULL) {
+    output()->print("if ");
+    print_value(x->x());
+    output()->print(" %s ", cond_name(x->cond()));
+    print_value(x->y());
+    output()->print(" then deoptimize!");
+  } else {
+    output()->print("always deoptimize!");
+  }
+}
+
+void InstructionPrinter::do_Assert(Assert* x) {
+  output()->print("assert ");
+  print_value(x->x());
+  output()->print(" %s ", cond_name(x->cond()));
+  print_value(x->y());
+}
 
 void InstructionPrinter::do_UnsafePrefetchWrite(UnsafePrefetchWrite* x) {
   print_unsafe_object_op(x, "UnsafePrefetchWrite");

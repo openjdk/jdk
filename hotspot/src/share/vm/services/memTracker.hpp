@@ -86,13 +86,13 @@ class MemTracker : AllStatic {
 
    static inline void set_autoShutdown(bool value) { }
    static void shutdown(ShutdownReason reason) { }
-   static inline bool shutdown_in_progress() {  }
+   static inline bool shutdown_in_progress() { return false; }
    static bool print_memory_usage(BaselineOutputer& out, size_t unit,
-            bool summary_only = true) { }
+            bool summary_only = true) { return false; }
    static bool compare_memory_usage(BaselineOutputer& out, size_t unit,
-            bool summary_only = true) { }
+            bool summary_only = true) { return false; }
 
-   static bool wbtest_wait_for_data_merge() { }
+   static bool wbtest_wait_for_data_merge() { return false; }
 
    static inline void sync() { }
    static inline void thread_exiting(JavaThread* thread) { }
