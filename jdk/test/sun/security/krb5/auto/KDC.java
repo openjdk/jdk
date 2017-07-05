@@ -236,80 +236,82 @@ public class KDC {
     }
 
     /**
-     * Writes or appends KDC keys into a keytab. See doc for writeMultiKtab.
+     * Writes or appends keys into a keytab.
+     * <p>
+     * Attention: This is the most basic one of a series of methods below on
+     * keytab creation or modification. All these methods reference krb5.conf
+     * settings. If you need to modify krb5.conf or switch to another krb5.conf
+     * later, please call <code>Config.refresh()</code> again. For example:
+     * <pre>
+     * kdc.writeKtab("/etc/kdc/ktab", true);  // Config is initialized,
+     * System.setProperty("java.security.krb5.conf", "/home/mykrb5.conf");
+     * Config.refresh();
+     * </pre>
+     * Inside this method there are 2 places krb5.conf is used:
+     * <ol>
+     * <li> (Fatal) Generating keys: EncryptionKey.acquireSecretKeys
+     * <li> (Has workaround) Creating PrincipalName
+     * </ol>
+     * @param tab the keytab file name
      * @param append true if append, otherwise, overwrite.
+     * @param names the names to write into, write all if names is empty
      */
-    private static void writeKtab0(String tab, boolean append, KDC... kdcs)
+    public void writeKtab(String tab, boolean append, String... names)
             throws IOException, KrbException {
         KeyTab ktab = append ? KeyTab.getInstance(tab) : KeyTab.create(tab);
-        for (KDC kdc: kdcs) {
-            for (String name : kdc.passwords.keySet()) {
-                char[] pass = kdc.passwords.get(name);
-                int kvno = 0;
-                if (Character.isDigit(pass[pass.length-1])) {
-                    kvno = pass[pass.length-1] - '0';
-                }
-                ktab.addEntry(new PrincipalName(name,
-                        name.indexOf('/') < 0 ?
-                            PrincipalName.KRB_NT_UNKNOWN :
-                            PrincipalName.KRB_NT_SRV_HST),
-                            pass,
-                            kvno,
-                            true);
+        Iterable<String> entries =
+                (names.length != 0) ? Arrays.asList(names): passwords.keySet();
+        for (String name : entries) {
+            char[] pass = passwords.get(name);
+            int kvno = 0;
+            if (Character.isDigit(pass[pass.length-1])) {
+                kvno = pass[pass.length-1] - '0';
             }
+            ktab.addEntry(new PrincipalName(name,
+                    name.indexOf('/') < 0 ?
+                        PrincipalName.KRB_NT_UNKNOWN :
+                        PrincipalName.KRB_NT_SRV_HST),
+                        pass,
+                        kvno,
+                        true);
         }
         ktab.save();
     }
 
     /**
      * Writes all principals' keys from multiple KDCs into one keytab file.
-     * Note that the keys for the krbtgt principals will not be written.
-     * <p>
-     * Attention: This method references krb5.conf settings. If you need to
-     * setup krb5.conf later, please call <code>Config.refresh()</code> after
-     * the new setting. For example:
-     * <pre>
-     * KDC.writeKtab("/etc/kdc/ktab", kdc);  // Config is initialized,
-     * System.setProperty("java.security.krb5.conf", "/home/mykrb5.conf");
-     * Config.refresh();
-     * </pre>
-     *
-     * Inside this method there are 2 places krb5.conf is used:
-     * <ol>
-     * <li> (Fatal) Generating keys: EncryptionKey.acquireSecretKeys
-     * <li> (Has workaround) Creating PrincipalName
-     * </ol>
-     * @param tab The keytab filename to write to.
      * @throws java.io.IOException for any file output error
      * @throws sun.security.krb5.KrbException for any realm and/or principal
      *         name error.
      */
     public static void writeMultiKtab(String tab, KDC... kdcs)
             throws IOException, KrbException {
-        writeKtab0(tab, false, kdcs);
+        KeyTab.create(tab).save();      // Empty the old keytab
+        appendMultiKtab(tab, kdcs);
     }
 
     /**
      * Appends all principals' keys from multiple KDCs to one keytab file.
-     * See writeMultiKtab for details.
      */
     public static void appendMultiKtab(String tab, KDC... kdcs)
             throws IOException, KrbException {
-        writeKtab0(tab, true, kdcs);
+        for (KDC kdc: kdcs) {
+            kdc.writeKtab(tab, true);
+        }
     }
 
     /**
      * Write a ktab for this KDC.
      */
     public void writeKtab(String tab) throws IOException, KrbException {
-        KDC.writeMultiKtab(tab, this);
+        writeKtab(tab, false);
     }
 
     /**
      * Appends keys in this KDC to a ktab.
      */
     public void appendKtab(String tab) throws IOException, KrbException {
-        KDC.appendMultiKtab(tab, this);
+        writeKtab(tab, true);
     }
 
     /**

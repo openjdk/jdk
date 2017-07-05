@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2004, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -35,4 +35,4 @@ JSTAT="${TESTJAVA}/bin/jstat"
 
 # run with -Xcomp as jstat may complete too quickly to assure
 # that compilation occurs.
-${JSTAT} -J-XX:+UsePerfData -J-Xcomp -printcompilation 0 2>&1 | awk -f ${TESTSRC}/printCompilationOutput1.awk
+${JSTAT} -J-XX:+UsePerfData -J-Duser.language=en -J-Xcomp -printcompilation 0 2>&1 | awk -f ${TESTSRC}/printCompilationOutput1.awk

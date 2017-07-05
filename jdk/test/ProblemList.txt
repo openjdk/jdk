@@ -212,7 +212,7 @@ java/io/File/MaxPathLength.java                                 windows-all
 # 7076644
 java/io/File/Basic.java                                         windows-all
 
-# Test needs AWT window server, does not work headless
+# 7145435 - Test needs AWT window server, does not work headless
 java/io/Serializable/resolveClass/deserializeButton/run.sh      macosx-all
 
 ############################################################################
@@ -224,9 +224,6 @@ java/nio/channels/Selector/Wakeup.java                          windows-all
 
 # 7052549
 java/nio/channels/FileChannel/ReleaseOnCloseDeadlock.java 	windows-all
-
-# 6963118
-java/nio/channels/Selector/Wakeup.java                          windows-all
 
 # 7133499, 7133497
 java/nio/channels/AsyncCloseAndInterrupt.java                   macosx-all
@@ -258,9 +255,6 @@ java/rmi/registry/readTest/readTest.sh				windows-all
 ############################################################################
 
 # jdk_security
-
-# 7145024
-sun/security/ssl/com/sun/net/ssl/internal/ssl/GenSSLConfigs/main.java	solaris-all
 
 # 7147060
 com/sun/org/apache/xml/internal/security/transforms/ClassLoaderTest.java	generic-all
@@ -304,9 +298,6 @@ sun/security/ssl/sanity/interop/ClientJSSEServerJSSE.java       generic-all
 
 # 7079203 sun/security/tools/keytool/printssl.sh fails on solaris with timeout
 sun/security/tools/keytool/printssl.sh                          solaris-all
-
-# 7081817
-sun/security/provider/certpath/X509CertPath/IllegalCertiticates.java    generic-all
 
 # 7041639, Solaris DSA keypair generation bug (Note: jdk_util also affected)
 java/security/KeyPairGenerator/SolarisShortDSA.java             solaris-all

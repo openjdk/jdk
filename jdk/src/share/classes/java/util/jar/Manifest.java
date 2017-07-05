@@ -400,6 +400,8 @@ public class Manifest implements Cloneable {
         public byte peek() throws IOException {
             if (pos == count)
                 fill();
+            if (pos == count)
+                return -1; // nothing left in buffer
             return buf[pos];
         }
 
