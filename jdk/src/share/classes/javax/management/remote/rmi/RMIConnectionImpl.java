@@ -1613,7 +1613,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
 
     /**
      * Construct a new IOException with a nested exception.
-     * The nested exception is set only if JDK >= 1.4
+     * The nested exception is set only if JDK {@literal >= 1.4}
      */
     private static IOException newIOException(String message,
                                               Throwable cause) {

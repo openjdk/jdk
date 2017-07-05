@@ -275,18 +275,11 @@ BUILD_LIBRARIES += $(BUILD_LIBINSTRUMENT)
 ##########################################################################################
 
 BUILD_LIBMANAGEMENT_SRC := $(JDK_TOPDIR)/src/share/native/sun/management \
-    $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/sun/management \
-    $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/com/sun/management
+    $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/sun/management
 
 BUILD_LIBMANAGEMENT_EXCLUDES :=
 
 BUILD_LIBMANAGEMENT_CFLAGS := -I$(JDK_TOPDIR)/src/share/native/sun/management
-
-ifneq ($(OPENJDK_TARGET_OS), windows)
-  BUILD_LIBMANAGEMENT_EXCLUDES += OperatingSystem_md.c
-else
-  BUILD_LIBMANAGEMENT_EXCLUDES += UnixOperatingSystem_md.c
-endif
 
 ifneq ($(OPENJDK_TARGET_OS), solaris)
   BUILD_LIBMANAGEMENT_EXCLUDES += SolarisOperatingSystem.c

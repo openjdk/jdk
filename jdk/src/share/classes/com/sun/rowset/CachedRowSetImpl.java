@@ -541,7 +541,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
         if (rowSetWriter != null) {
             Class<?> c = rowSetWriter.getClass();
             if (c != null) {
-                Class[] theInterfaces = c.getInterfaces();
+                Class<?>[] theInterfaces = c.getInterfaces();
                 for (int i = 0; i < theInterfaces.length; i++) {
                     if ((theInterfaces[i].getName()).indexOf("TransactionalWriter") > 0) {
                         tXWriter = true;

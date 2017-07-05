@@ -192,7 +192,7 @@ abstract class InitialToken extends Krb5Token {
 
                 if (krbCredMessage.length > 0x0000ffff)
                     throw new GSSException(GSSException.FAILURE, -1,
-                        "Incorrect messsage length");
+                        "Incorrect message length");
 
                 writeLittleEndian(krbCredMessage.length, temp);
                 checksumBytes[pos++] = temp[0];

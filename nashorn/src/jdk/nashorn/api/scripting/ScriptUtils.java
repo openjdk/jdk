@@ -25,11 +25,17 @@
 
 package jdk.nashorn.api.scripting;
 
+import java.lang.invoke.MethodHandle;
+import jdk.internal.dynalink.beans.StaticClass;
+import jdk.internal.dynalink.linker.LinkerServices;
+import jdk.nashorn.internal.runtime.linker.Bootstrap;
+import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.ScriptFunction;
+import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 
 /**
- * Utilities that are to be called from script code
+ * Utilities that are to be called from script code.
  */
 public final class ScriptUtils {
     private ScriptUtils() {}
@@ -71,4 +77,96 @@ public final class ScriptUtils {
         return func.makeSynchronizedFunction(sync);
     }
 
+    /**
+     * Make a script object mirror on given object if needed.
+     *
+     * @param obj object to be wrapped
+     * @return wrapped object
+     */
+    public static Object wrap(final Object obj) {
+        if (obj instanceof ScriptObject) {
+            return ScriptObjectMirror.wrap(obj, Context.getGlobal());
+        }
+
+        return obj;
+    }
+
+    /**
+     * Unwrap a script object mirror if needed.
+     *
+     * @param obj object to be unwrapped
+     * @return unwrapped object
+     */
+    public static Object unwrap(final Object obj) {
+        if (obj instanceof ScriptObjectMirror) {
+            return ScriptObjectMirror.unwrap(obj, Context.getGlobal());
+        }
+
+        return obj;
+    }
+
+    /**
+     * Wrap an array of object to script object mirrors if needed.
+     *
+     * @param args array to be unwrapped
+     * @return wrapped array
+     */
+    public static Object[] wrapArray(final Object[] args) {
+        if (args == null || args.length == 0) {
+            return args;
+        }
+
+        return ScriptObjectMirror.wrapArray(args, Context.getGlobal());
+    }
+
+    /**
+     * Unwrap an array of script object mirrors if needed.
+     *
+     * @param args array to be unwrapped
+     * @return unwrapped array
+     */
+    public static Object[] unwrapArray(final Object[] args) {
+        if (args == null || args.length == 0) {
+            return args;
+        }
+
+        return ScriptObjectMirror.unwrapArray(args, Context.getGlobal());
+    }
+
+    /**
+     * Convert the given object to the given type.
+     *
+     * @param obj object to be converted
+     * @param type destination type to convert to
+     * @return converted object
+     */
+    public static Object convert(final Object obj, final Object type) {
+        if (obj == null) {
+            return null;
+        }
+
+        final Class<?> clazz;
+        if (type instanceof Class) {
+            clazz = (Class<?>)type;
+        } else if (type instanceof StaticClass) {
+            clazz = ((StaticClass)type).getRepresentedClass();
+        } else {
+            throw new IllegalArgumentException("type expected");
+        }
+
+        final LinkerServices linker = Bootstrap.getLinkerServices();
+        final MethodHandle converter = linker.getTypeConverter(obj.getClass(),  clazz);
+        if (converter == null) {
+            // no supported conversion!
+            throw new UnsupportedOperationException("conversion not supported");
+        }
+
+        try {
+            return converter.invoke(obj);
+        } catch (final RuntimeException | Error e) {
+            throw e;
+        } catch (final Throwable t) {
+            throw new RuntimeException(t);
+        }
+    }
 }

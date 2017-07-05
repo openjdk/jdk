@@ -799,7 +799,7 @@ public class DescriptorSupport
      * the given object is also a Descriptor, and if the two Descriptors have
      * the same field names (possibly differing in case) and the same
      * associated values.  The respective values for a field in the two
-     * Descriptors are equal if the following conditions hold:</p>
+     * Descriptors are equal if the following conditions hold:
      *
      * <ul>
      * <li>If one value is null then the other must be too.</li>
@@ -871,7 +871,6 @@ public class DescriptorSupport
      * done on the <i>"export"</i> field.
      * <P>
      * Otherwise this implementation returns false if:
-     * <P>
      * <UL>
      * <LI> name and descriptorType fieldNames are not defined, or
      * null, or empty, or not String
@@ -879,14 +878,14 @@ public class DescriptorSupport
      * are null or not String
      * <LI> persistPeriod, currencyTimeLimit, lastUpdatedTimeStamp,
      * lastReturnedTimeStamp if defined, are null, or not a Numeric
-     * String or not a Numeric Value >= -1
+     * String or not a Numeric Value {@literal >= -1}
      * <LI> log fieldName, if defined, is null, or not a Boolean or
      * not a String with value "t", "f", "true", "false". These String
      * values must not be case sensitive.
      * <LI> visibility fieldName, if defined, is null, or not a
-     * Numeric String or a not Numeric Value >= 1 and &lt;= 4
+     * Numeric String or a not Numeric Value {@literal >= 1 and <= 4}
      * <LI> severity fieldName, if defined, is null, or not a Numeric
-     * String or not a Numeric Value >= 0 and &lt;= 6<br>
+     * String or not a Numeric Value {@literal >= 0 and <= 6}<br>
      * <LI> persistPolicy fieldName, if defined, is null, or not one of
      * the following strings:<br>
      *   "OnUpdate", "OnTimer", "NoMoreOftenThan", "OnUnregister", "Always",
@@ -1270,8 +1269,8 @@ public class DescriptorSupport
     }
 
     /**
-     * Returns <pv>a human readable string representing the
-     * descriptor</pv>.  The string will be in the format of
+     * Returns a human readable string representing the
+     * descriptor.  The string will be in the format of
      * "fieldName=fieldValue,fieldName2=fieldValue2,..."<br>
      *
      * If there are no fields in the descriptor, then an empty String

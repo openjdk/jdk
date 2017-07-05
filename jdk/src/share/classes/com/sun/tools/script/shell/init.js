@@ -806,7 +806,7 @@ function XSLTransform(inp, style, out) {
         out = arguments[2];
         break;
     default:
-        println("XSL tranform requires 2 or 3 arguments");
+        println("XSL transform requires 2 or 3 arguments");
         return;
     }
 

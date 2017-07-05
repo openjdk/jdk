@@ -33,6 +33,8 @@ import java.io.IOException;
 
 public class TestInterfaces {
 
+    static final boolean isWindows = System.getProperty("os.name").startsWith("Windows");
+
     public static void main(String args[]) throws Exception {
         int failures = 0;
 
@@ -84,6 +86,10 @@ public class TestInterfaces {
                         + " " + ioe.getMessage());
                 continue;
             }
+
+            // JDK-8022963, Skip (Windows) Teredo Tunneling seudo-Interface
+            if (isWindows && ni.getDisplayName().contains("Teredo"))
+                continue;
 
             NetworkInterface curr = soc.getNetworkInterface();
             if (!curr.equals(ni)) {
