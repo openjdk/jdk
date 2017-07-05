@@ -3431,6 +3431,9 @@ void SharedRuntime::generate_deopt_blob() {
   ResourceMark rm;
   // setup code generation tools
   int pad = VerifyThread ? 512 : 0;// Extra slop space for more verify code
+  if (UseStackBanging) {
+    pad += StackShadowPages*16 + 32;
+  }
 #ifdef _LP64
   CodeBuffer buffer("deopt_blob", 2100+pad, 512);
 #else
@@ -3650,6 +3653,9 @@ void SharedRuntime::generate_uncommon_trap_blob() {
   ResourceMark rm;
   // setup code generation tools
   int pad = VerifyThread ? 512 : 0;
+  if (UseStackBanging) {
+    pad += StackShadowPages*16 + 32;
+  }
 #ifdef _LP64
   CodeBuffer buffer("uncommon_trap_blob", 2700+pad, 512);
 #else

@@ -54,9 +54,12 @@ public class PaintSetEnabledDeadlock extends Frame {
             Util.clickOnComp(frame.button, robot);
         }
 
-        frame.panel.stop();
+        boolean ret = frame.panel.stop();
         frame.dispose();
 
+        if (!ret) {
+            throw new RuntimeException("Test failed!");
+        }
         System.out.println("Test passed.");
     }
 
@@ -140,17 +143,19 @@ class TestPanel extends Panel implements Runnable {
         }
     }
 
-    public void stop() {
+    public boolean stop() {
         active = false;
         try {
-            synchronized (sync) {
-                sync.notify();
-            }
-            synchronized (thread) {
-                thread.wait();
+            sync();
+            thread.join(1000);
+            if (thread.isAlive()) {
+                thread.interrupt();
+                return false;
             }
         } catch (InterruptedException ex) {
+            return false;
         }
+        return true;
     }
 
     public void draw() {
