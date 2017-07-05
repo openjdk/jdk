@@ -112,7 +112,7 @@ bool MethodHandles::spot_check_entry_names() {
 // MethodHandles::generate_adapters
 //
 void MethodHandles::generate_adapters() {
-  if (!EnableMethodHandles || SystemDictionary::MethodHandle_klass() == NULL)  return;
+  if (!EnableInvokeDynamic || SystemDictionary::MethodHandle_klass() == NULL)  return;
 
   assert(_adapter_code == NULL, "generate only once");
 
@@ -143,7 +143,7 @@ void MethodHandlesAdapterGenerator::generate() {
 
 void MethodHandles::set_enabled(bool z) {
   if (_enabled != z) {
-    guarantee(z && EnableMethodHandles, "can only enable once, and only if -XX:+EnableMethodHandles");
+    guarantee(z && EnableInvokeDynamic, "can only enable once, and only if -XX:+EnableInvokeDynamic");
     _enabled = z;
   }
 }
@@ -2579,7 +2579,6 @@ static JNINativeMethod methods[] = {
   {CC"getMembers",              CC"("CLS""STRG""STRG"I"CLS"I["MEM")I",  FN_PTR(MHN_getMembers)}
 };
 
-// More entry points specifically for EnableInvokeDynamic.
 // FIXME: Remove methods2 after AllowTransitionalJSR292 is removed.
 static JNINativeMethod methods2[] = {
   {CC"registerBootstrap",       CC"("CLS MH")V",                FN_PTR(MHN_registerBootstrap)},
@@ -2618,10 +2617,8 @@ static void hack_signatures(JNINativeMethod* methods, jint num_methods, const ch
 JVM_ENTRY(void, JVM_RegisterMethodHandleMethods(JNIEnv *env, jclass MHN_class)) {
   assert(MethodHandles::spot_check_entry_names(), "entry enum is OK");
 
-  // note: this explicit warning-producing stuff will be replaced by auto-detection of the JSR 292 classes
-
-  if (!EnableMethodHandles) {
-    warning("JSR 292 method handles are disabled in this JVM.  Use -XX:+UnlockExperimentalVMOptions -XX:+EnableMethodHandles to enable.");
+  if (!EnableInvokeDynamic) {
+    warning("JSR 292 is disabled in this JVM.  Use -XX:+UnlockDiagnosticVMOptions -XX:+EnableInvokeDynamic to enable.");
     return;  // bind nothing
   }
 
@@ -2700,11 +2697,6 @@ JVM_ENTRY(void, JVM_RegisterMethodHandleMethods(JNIEnv *env, jclass MHN_class)) 
 
     MethodHandles::generate_adapters();
     MethodHandles::set_enabled(true);
-  }
-
-  if (!EnableInvokeDynamic) {
-    warning("JSR 292 invokedynamic is disabled in this JVM.  Use -XX:+UnlockExperimentalVMOptions -XX:+EnableInvokeDynamic to enable.");
-    return;  // bind nothing
   }
 
   if (AllowTransitionalJSR292) {

@@ -65,8 +65,8 @@ VcVersion=VC9
 
 !elseif "$(MSC_VER)" == "1600"
 
-# for compatibility - we don't yet have a ProjectCreator for VC10
-VcVersion=VC9
+VcVersion=VC10
+ProjectFile=jvm.vcxproj
 
 !else
 
