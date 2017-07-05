@@ -43,7 +43,7 @@ extern "C" {
 
 // PathString is used as:
 //  - the underlying value for a SystemProperty
-//  - the path portion of an -Xpatch module/path pair
+//  - the path portion of an --patch-module module/path pair
 //  - the string that represents the system boot class path, Arguments::_system_boot_class_path.
 class PathString : public CHeapObj<mtArguments> {
  protected:
@@ -107,13 +107,13 @@ class PathString : public CHeapObj<mtArguments> {
   }
 };
 
-// ModuleXPatchPath records the module/path pair as specified to -Xpatch.
-class ModuleXPatchPath : public CHeapObj<mtInternal> {
+// ModulePatchPath records the module/path pair as specified to --patch-module.
+class ModulePatchPath : public CHeapObj<mtInternal> {
 private:
   char* _module_name;
   PathString* _path;
 public:
-  ModuleXPatchPath(const char* module_name, const char* path) {
+  ModulePatchPath(const char* module_name, const char* path) {
     assert(module_name != NULL && path != NULL, "Invalid module name or path value");
     size_t len = strlen(module_name) + 1;
     _module_name = AllocateHeap(len, mtInternal);
@@ -121,7 +121,7 @@ public:
     _path =  new PathString(path);
   }
 
-  ~ModuleXPatchPath() {
+  ~ModulePatchPath() {
     if (_module_name != NULL) {
       FreeHeap(_module_name);
       _module_name = NULL;
@@ -157,6 +157,10 @@ class SystemProperty : public PathString {
   bool internal() const               { return _internal; }
   SystemProperty* next() const        { return _next; }
   void set_next(SystemProperty* next) { _next = next; }
+
+  bool is_readable() const {
+    return !_internal || strcmp(_key, "jdk.boot.class.path.append") == 0;
+  }
 
   // A system property should only have its value set
   // via an external interface if it is a writeable property.
@@ -325,6 +329,21 @@ class Arguments : AllStatic {
     arg_in_range   = 0
   };
 
+  enum PropertyAppendable {
+    AppendProperty,
+    AddProperty
+  };
+
+  enum PropertyWriteable {
+    WriteableProperty,
+    UnwriteableProperty
+  };
+
+  enum PropertyInternal {
+    InternalProperty,
+    ExternalProperty
+  };
+
  private:
 
   // a pointer to the flags file name if it is specified
@@ -348,18 +367,18 @@ class Arguments : AllStatic {
   static SystemProperty *_java_class_path;
   static SystemProperty *_jdk_boot_class_path_append;
 
-  // -Xpatch:module=<file>(<pathsep><file>)*
+  // --patch-module=module=<file>(<pathsep><file>)*
   // Each element contains the associated module name, path
-  // string pair as specified to -Xpatch.
-  static GrowableArray<ModuleXPatchPath*>* _xpatchprefix;
+  // string pair as specified to --patch-module.
+  static GrowableArray<ModulePatchPath*>* _patch_mod_prefix;
 
   // The constructed value of the system class path after
   // argument processing and JVMTI OnLoad additions via
   // calls to AddToBootstrapClassLoaderSearch.  This is the
   // final form before ClassLoader::setup_bootstrap_search().
-  // Note: since -Xpatch is a module name/path pair, the system
-  // boot class path string no longer contains the "prefix" to
-  // the boot class path base piece as it did when
+  // Note: since --patch-module is a module name/path pair, the
+  // system boot class path string no longer contains the "prefix"
+  // to the boot class path base piece as it did when
   // -Xbootclasspath/p was supported.
   static PathString *_system_boot_class_path;
 
@@ -462,7 +481,13 @@ class Arguments : AllStatic {
   static vfprintf_hook_t  _vfprintf_hook;
 
   // System properties
-  static bool add_property(const char* prop);
+  static bool add_property(const char* prop, PropertyWriteable writeable=WriteableProperty,
+                           PropertyInternal internal=ExternalProperty);
+
+  static bool create_property(const char* prop_name, const char* prop_value, PropertyInternal internal);
+  static bool create_numbered_property(const char* prop_base_name, const char* prop_value, unsigned int count);
+
+  static int process_patch_mod_option(const char* patch_mod_tail, bool* patch_mod_javabase);
 
   // Miscellaneous system property setter
   static bool append_to_addmods_property(const char* module_name);
@@ -500,7 +525,7 @@ class Arguments : AllStatic {
   static jint parse_vm_init_args(const JavaVMInitArgs *java_tool_options_args,
                                  const JavaVMInitArgs *java_options_args,
                                  const JavaVMInitArgs *cmd_line_args);
-  static jint parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* xpatch_javabase, Flag::Flags origin);
+  static jint parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_mod_javabase, Flag::Flags origin);
   static jint finalize_vm_init_args();
   static bool is_bad_option(const JavaVMOption* option, jboolean ignore, const char* option_type);
 
@@ -708,15 +733,19 @@ class Arguments : AllStatic {
   // Property List manipulation
   static void PropertyList_add(SystemProperty *element);
   static void PropertyList_add(SystemProperty** plist, SystemProperty *element);
-  static void PropertyList_add(SystemProperty** plist, const char* k, const char* v);
-  static void PropertyList_unique_add(SystemProperty** plist, const char* k, const char* v) {
-    PropertyList_unique_add(plist, k, v, false);
-  }
-  static void PropertyList_unique_add(SystemProperty** plist, const char* k, const char* v, jboolean append);
+  static void PropertyList_add(SystemProperty** plist, const char* k, const char* v, bool writeable, bool internal);
+
+  static void PropertyList_unique_add(SystemProperty** plist, const char* k, const char* v,
+                                      PropertyAppendable append, PropertyWriteable writeable,
+                                      PropertyInternal internal);
   static const char* PropertyList_get_value(SystemProperty* plist, const char* key);
+  static const char* PropertyList_get_readable_value(SystemProperty* plist, const char* key);
   static int  PropertyList_count(SystemProperty* pl);
+  static int  PropertyList_readable_count(SystemProperty* pl);
   static const char* PropertyList_get_key_at(SystemProperty* pl,int index);
   static char* PropertyList_get_value_at(SystemProperty* pl,int index);
+
+  static bool is_internal_module_property(const char* option);
 
   // Miscellaneous System property value getter and setters.
   static void set_dll_dir(const char *value) { _sun_boot_library_path->set_value(value); }
@@ -725,7 +754,7 @@ class Arguments : AllStatic {
   static void set_ext_dirs(char *value)     { _ext_dirs = os::strdup_check_oom(value); }
 
   // Set up the underlying pieces of the system boot class path
-  static void add_xpatchprefix(const char *module_name, const char *path, bool* xpatch_javabase);
+  static void add_patch_mod_prefix(const char *module_name, const char *path, bool* patch_mod_javabase);
   static void set_sysclasspath(const char *value, bool has_jimage) {
     // During start up, set by os::set_boot_path()
     assert(get_sysclasspath() == NULL, "System boot class path previously set");
@@ -737,7 +766,7 @@ class Arguments : AllStatic {
     _jdk_boot_class_path_append->append_value(value);
   }
 
-  static GrowableArray<ModuleXPatchPath*>* get_xpatchprefix() { return _xpatchprefix; }
+  static GrowableArray<ModulePatchPath*>* get_patch_mod_prefix() { return _patch_mod_prefix; }
   static char* get_sysclasspath() { return _system_boot_class_path->value(); }
   static char* get_jdk_boot_class_path_append() { return _jdk_boot_class_path_append->value(); }
   static bool has_jimage() { return _has_jimage; }

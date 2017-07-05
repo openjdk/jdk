@@ -305,7 +305,7 @@ AC_DEFUN_ONCE([BOOTJDK_SETUP_BOOT_JDK],
   BOOT_JDK_SOURCETARGET="-source 8 -target 8"
   AC_SUBST(BOOT_JDK_SOURCETARGET)
 
-  ADD_JVM_ARG_IF_OK([-Xpatch:foo=bar], dummy, [$JAVA])
+  ADD_JVM_ARG_IF_OK([--patch-module foo=bar], dummy, [$JAVA])
   AC_MSG_CHECKING([if Boot JDK supports modules])
   if test "x$JVM_ARG_OK" = "xtrue"; then
     AC_MSG_RESULT([yes])
