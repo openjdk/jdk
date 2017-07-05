@@ -82,6 +82,7 @@
                 _JVM_EnableCompiler
                 _JVM_Exit
                 _JVM_FillInStackTrace
+                _JVM_FindClassFromCaller
                 _JVM_FindClassFromClass
                 _JVM_FindClassFromClassLoader
                 _JVM_FindClassFromBootLoader
@@ -115,7 +116,6 @@
                 _JVM_GetClassDeclaredMethods
                 _JVM_GetClassFieldsCount
                 _JVM_GetClassInterfaces
-                _JVM_GetClassLoader
                 _JVM_GetClassMethodsCount
                 _JVM_GetClassModifiers
                 _JVM_GetClassName

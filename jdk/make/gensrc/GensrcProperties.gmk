@@ -23,132 +23,81 @@
 # questions.
 #
 
-# All .properties files to be compiled are appended to this variable.
-ALL_COMPILED_PROPSOURCES :=
-# All generated .java files from compilation are appended to this variable.
-ALL_COMPILED_PROPJAVAS :=
-# The (very long) command line for compilation, stored in a file, prior to use.
-COMPILE_PROPCMDLINE :=
+# This file defines macros that sets up rules for generating java classes
+# from resource bundle properties files.
 
-define add_properties_to_compile
-  # $1 is the name of the properties group
-  # $2 is the files belonging to this group
-  # $3 is the super class for the generated java file.
+################################################################################
+# Helper macro for SetupCopy-zh_HK.
+define SetupOneCopy-zh_HK
+  $1_$2_TARGET := $$(patsubst $(JDK_TOPDIR)/src/$(MODULE)/share/classes/%, \
+      $(JDK_OUTPUTDIR)/gensrc/$(MODULE)/%, \
+      $$(subst _zh_TW,_zh_HK, $2))
 
-  # Convert <root>/jdk/src/<module>/share/classes/sun/util/resources/CurrencyNames_sv.properties
-  # to <build>/jdk/gensrc/<module/sun/util/resources/CurrencyNames_sv.java
-  $1_PROPJAVAS := $$(patsubst $(JDK_TOPDIR)/src/%.properties, \
-      $(JDK_OUTPUTDIR)/gensrc/%.java, \
-      $$(subst /share/classes,, \
-      $$(subst /$(OPENJDK_TARGET_OS_API_DIR)/classes,, \
-      $$(subst /$(OPENJDK_TARGET_OS)/classes,, $2))))
+  $$($1_$2_TARGET): $2
+	$(MKDIR) -p $$(@D)
+	$(CAT) $$< | $(SED) -e '/class/s/_zh_TW/_zh_HK/' > $$@
 
-  # Accumulate all found properties files.
-  ALL_COMPILED_PROPSOURCES += $2
+  $1 += $$($1_$2_TARGET)
+endef
 
-  # Generate the list of to be created java files.
-  ALL_COMPILED_PROPJAVAS += $$($1_PROPJAVAS)
+################################################################################
+# Creates rules for copying zh_TW resources to zh_HK.
+# Param 1 - Variable to add targets to
+# Param 2 - Files to copy from
+define SetupCopy-zh_HK
+  $$(foreach f, $2, $$(eval $$(call SetupOneCopy-zh_HK,$1,$$f)))
+endef
 
-  # Now generate a sequence of 
-  # "-compile ...CurrencyNames_sv.properties ...CurrencyNames_sv.java ListResourceBundle"
+################################################################################
+# Creates a rule that runs CompileProperties on a set of properties files.
+# Param 1 - Variable to add targets to, must not contain space
+# Param 2 - Properties files to process
+# Param 3 - The super class for the generated classes
+define SetupCompileProperties
+  $1_SRCS := $2
+  $1_CLASS := $3
+
+  # Convert .../src/<module>/share/classes/com/sun/tools/javac/resources/javac_zh_CN.properties
+  # to .../langtools/gensrc/<module>/com/sun/tools/javac/resources/javac_zh_CN.java
+  # Strip away prefix and suffix, leaving for example only: 
+  # "<module>/share/classes/com/sun/tools/javac/resources/javac_zh_CN"
+  $1_JAVAS := $$(patsubst $(JDK_TOPDIR)/src/%, \
+      $(JDK_OUTPUTDIR)/gensrc/%, \
+      $$(patsubst %.properties, %.java, \
+      $$(subst /share/classes,, $$($1_SRCS))))
+
+  # Generate the package dirs for the to be generated java files. Sort to remove
+  # duplicates.
+  $1_DIRS := $$(sort $$(dir $$($1_JAVAS)))
+
+  # Now generate a sequence of:
+  # "-compile ...javac_zh_CN.properties ...javac_zh_CN.java java.util.ListResourceBundle"
   # suitable to be fed into the CompileProperties command.
-  COMPILE_PROPCMDLINE += $$(subst _SPACE_,$(SPACE),$$(join $$(addprefix -compile_SPACE_, $2), \
-      $$(addsuffix _SPACE_$(strip $3), \
-      $$(addprefix _SPACE_, $$($1_PROPJAVAS)))))
+  $1_CMDLINE := $$(subst _SPACE_, $(SPACE), \
+      $$(join $$(addprefix -compile_SPACE_, $$($1_SRCS)), \
+      $$(addsuffix _SPACE_$$($1_CLASS), \
+      $$(addprefix _SPACE_, $$($1_JAVAS)))))
+
+  $1_TARGET := $(JDK_OUTPUTDIR)/gensrc/$(MODULE)/_the.$1.done
+  $1_CMDLINE_FILE := $(JDK_OUTPUTDIR)/gensrc/$(MODULE)/_the.$1.cmdline
+
+  # Now setup the rule for the generation of the resource bundles.
+  $$($1_TARGET): $$($1_SRCS) $$($1_JAVAS) $(BUILD_TOOLS_JDK)
+	$(MKDIR) -p $$(@D) $$($1_DIRS)
+	$(ECHO) Compiling $$(words $$($1_SRCS)) properties into resource bundles for $(MODULE)
+	$(RM) $$($1_CMDLINE_FILE)
+	$$(call ListPathsSafely,$1_CMDLINE,\n, >> $$($1_CMDLINE_FILE))
+	$(TOOL_COMPILEPROPERTIES) -quiet @$$($1_CMDLINE_FILE)
+	$(TOUCH) $$@
+
+  $$($1_JAVAS): $$($1_SRCS)
+
+  # Create zh_HK versions of all zh_TW files created above
+  $$(eval $$(call SetupCopy-zh_HK,$1_HK,$$(filter %_zh_TW.java, $$($1_JAVAS))))
+  # The zh_HK copy must wait for the compile properties tool to run
+  $$($1_HK): $$($1_TARGET)
+
+  $1 += $$($1_JAVAS) $$($1_TARGET) $$($1_HK)
 endef
 
 ################################################################################
-# Some packages have properties that need to be converted to java source files.
-COMPILE_PROP_SRC_FILES := \
-    $(filter %.properties, $(call CacheFind, \
-        $(JDK_TOPDIR)/src/java.desktop/share/classes/com/sun/accessibility/internal/resources \
-        $(JDK_TOPDIR)/src/java.desktop/share/classes/com/sun/java/swing/plaf/motif/resources \
-        $(JDK_TOPDIR)/src/java.desktop/share/classes/com/sun/java/swing/plaf/windows/resources \
-        $(JDK_TOPDIR)/src/java.desktop/share/classes/com/sun/swing/internal/plaf/basic/resources \
-        $(JDK_TOPDIR)/src/java.desktop/share/classes/com/sun/swing/internal/plaf/metal/resources \
-        $(JDK_TOPDIR)/src/java.desktop/share/classes/com/sun/swing/internal/plaf/synth/resources \
-        $(JDK_TOPDIR)/src/jdk.jdi/share/classes/com/sun/tools/jdi/resources \
-        $(JDK_TOPDIR)/src/java.desktop/share/classes/sun/awt/resources \
-        $(JDK_TOPDIR)/src/java.base/share/classes/sun/launcher/resources \
-        $(JDK_TOPDIR)/src/java.management/share/classes/sun/management/resources \
-        $(JDK_TOPDIR)/src/java.desktop/share/classes/sun/print/resources \
-        $(JDK_TOPDIR)/src/jdk.dev/share/classes/sun/tools/jar/resources \
-        $(JDK_TOPDIR)/src/java.logging/share/classes/sun/util/logging/resources)) \
-    #
-
-ifeq ($(OPENJDK_TARGET_OS), macosx)
-  COMPILE_PROP_SRC_FILES += \
-      $(filter %.properties, $(call CacheFind, \
-          $(JDK_TOPDIR)/src/java.desktop/macosx/classes/com/apple/laf/resources \
-          $(JDK_TOPDIR)/src/java.desktop/macosx/classes/sun/awt/resources)) \
-      #
-endif
-
-ifeq ($(OPENJDK_TARGET_OS), windows)
-  COMPILE_PROP_SRC_FILES += \
-      $(filter %.properties, $(call CacheFind, \
-          $(JDK_TOPDIR)/src/java.desktop/windows/classes/sun/awt/windows)) \
-      #
-else # ! windows
-  COMPILE_PROP_SRC_FILES += \
-      $(filter %.properties, $(call CacheFind, \
-          $(JDK_TOPDIR)/src/java.desktop/share/classes/com/sun/java/swing/plaf/gtk/resources)) \
-      #
-endif
-
-$(eval $(call add_properties_to_compile,LIST_RESOURCE_BUNDLE, \
-    $(COMPILE_PROP_SRC_FILES), ListResourceBundle))
-
-# sun/util/resources
-$(eval $(call add_properties_to_compile,SUN_UTIL, \
-    $(filter %.properties, \
-        $(call CacheFind, $(JDK_TOPDIR)/src/java.base/share/classes/sun/util/resources) \
-        $(call CacheFind, $(JDK_TOPDIR)/src/jdk.localedata/share/classes/sun/util/resources)), \
-    sun.util.resources.LocaleNamesBundle))
-
-################################################################################
-# Now setup the rule for the generation of the resource bundles.
-$(JDK_OUTPUTDIR)/gensrc/_the.compiled_properties: $(ALL_COMPILED_PROPSOURCES) $(BUILD_TOOLS_JDK)
-        # Generate all output directories in advance since the build tool does not do that...
-	$(MKDIR) -p $(sort $(dir $(ALL_COMPILED_PROPJAVAS)))
-	$(ECHO) Compiling $(words $(ALL_COMPILED_PROPSOURCES)) properties into resource bundles
-	$(call ListPathsSafely,COMPILE_PROPCMDLINE,\n, >> $(JDK_OUTPUTDIR)/gensrc/_the.cmdline)
-	$(TOOL_COMPILEPROPERTIES) -quiet @$(JDK_OUTPUTDIR)/gensrc/_the.cmdline
-	$(TOUCH) $@
-
-$(ALL_COMPILED_PROPJAVAS): $(JDK_OUTPUTDIR)/gensrc/_the.compiled_properties
-
-################################################################################
-# Some zh_HK resources are just copies of zh_TW
-
-define convert_tw_to_hk
-  $(MKDIR) -p $(@D)
-  $(CAT) $< | $(SED) -e '/class/s/_zh_TW/_zh_HK/' > $@
-endef
-
-# Some are copies of existing sources
-$(JDK_OUTPUTDIR)/gensrc/java.desktop/%_zh_HK.java: \
-    $(JDK_TOPDIR)/src/java.desktop/share/classes/%_zh_TW.java
-	$(call convert_tw_to_hk)
-
-$(JDK_OUTPUTDIR)/gensrc/java.base/%_zh_HK.java: \
-    $(JDK_TOPDIR)/src/java.base/share/classes/%_zh_TW.java
-	$(call convert_tw_to_hk)
-
-# Others are copies of sources generated by this makefile
-$(JDK_OUTPUTDIR)/gensrc/%_zh_HK.java: $(JDK_OUTPUTDIR)/gensrc/%_zh_TW.java
-	$(call convert_tw_to_hk)
-
-# The existing sources
-ZH_HK_JAVA := java.desktop/sun/applet/resources/MsgAppletViewer_zh_HK.java \
-    java.base/sun/misc/resources/Messages_zh_HK.java \
-    java.base/sun/security/util/AuthResources_zh_HK.java \
-    java.base/sun/security/util/Resources_zh_HK.java
-
-ZH_HK_JAVA_FILES := $(addprefix $(JDK_OUTPUTDIR)/gensrc/, $(ZH_HK_JAVA)) \
-    $(filter-out $(JDK_OUTPUTDIR)/gensrc/jdk.localedata/sun/util/resources/zh/%, \
-    $(subst _zh_TW,_zh_HK,$(filter %_zh_TW.java, $(ALL_COMPILED_PROPJAVAS))))
-
-################################################################################
-
-GENSRC_PROPERTIES := $(ALL_COMPILED_PROPJAVAS) $(ZH_HK_JAVA_FILES)
