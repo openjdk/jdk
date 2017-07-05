@@ -44,6 +44,7 @@ package javax.swing;
  *
  *
  * @author Amy Fowler
+ * @since 1.2
  */
 public interface WindowConstants
 {

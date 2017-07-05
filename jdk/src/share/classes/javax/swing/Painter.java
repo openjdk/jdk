@@ -59,6 +59,7 @@ import java.awt.Graphics2D;
  * <p>This interface makes no guarantees of threadsafety.</p>
  *
  * @author rbair
+ * @since 1.7
  */
 public interface Painter<T> {
     /**

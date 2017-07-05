@@ -23,7 +23,6 @@
 
 import com.sun.tools.attach.VirtualMachine;
 import com.sun.tools.attach.AttachNotSupportedException;
-import java.util.Properties;
 import java.io.File;
 import jdk.testlibrary.OutputAnalyzer;
 import jdk.testlibrary.ProcessTools;
@@ -34,7 +33,7 @@ import jdk.testlibrary.ProcessThread;
  * @bug 6173612 6273707 6277253 6335921 6348630 6342019 6381757
  * @summary Basic unit tests for the VM attach mechanism.
  * @library /lib/testlibrary
- * @run build jdk.testlibrary.* Application Shutdown
+ * @run build jdk.testlibrary.* Application
  * @run main PermissionTest
  *
  * Unit test for Attach API -
@@ -51,20 +50,17 @@ public class PermissionTest {
      * 4. Shut down the Application.
      */
     public static void main(String args[]) throws Throwable {
-        final String pidFile ="TestPermission.Application.pid";
         ProcessThread processThread = null;
-        RunnerUtil.ProcessInfo info = null;
         try {
-            processThread = RunnerUtil.startApplication(pidFile);
-            info = RunnerUtil.readProcessInfo(pidFile);
-            runTests(info.pid);
+            processThread = RunnerUtil.startApplication();
+            runTests(processThread.getPid());
         } catch (Throwable t) {
             System.out.println("TestPermission got unexpected exception: " + t);
             t.printStackTrace();
             throw t;
         } finally {
             // Make sure the Application process is stopped.
-            RunnerUtil.stopApplication(info.shutdownPort, processThread);
+            RunnerUtil.stopApplication(processThread);
         }
     }
 
@@ -72,7 +68,7 @@ public class PermissionTest {
      * Runs the actual test the nested class TestMain.
      * The test is run in a separate process because we need to add to the classpath.
      */
-    private static void runTests(int pid) throws Throwable {
+    private static void runTests(long pid) throws Throwable {
         final String sep = File.separator;
 
         // Need to add jdk/lib/tools.jar to classpath.
@@ -88,7 +84,7 @@ public class PermissionTest {
             "-Djava.security.manager",
             String.format("-Djava.security.policy=%sjava.policy.deny", testSrc),
             "PermissionTest$TestMain",
-            Integer.toString(pid),
+            Long.toString(pid),
             "true" };
         OutputAnalyzer output = ProcessTools.executeTestJvm(args);
         output.shouldHaveExitValue(0);
@@ -100,7 +96,7 @@ public class PermissionTest {
             "-Djava.security.manager",
             String.format("-Djava.security.policy=%sjava.policy.allow", testSrc),
             "PermissionTest$TestMain",
-            Integer.toString(pid),
+            Long.toString(pid),
             "false" };
         output = ProcessTools.executeTestJvm(args);
         output.shouldHaveExitValue(0);

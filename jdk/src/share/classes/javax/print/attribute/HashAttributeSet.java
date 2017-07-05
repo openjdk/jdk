@@ -48,13 +48,13 @@ public class HashAttributeSet implements AttributeSet, Serializable {
      * or a subinterface thereof.
      * @serial
      */
-    private Class myInterface;
+    private Class<?> myInterface;
 
     /*
      * A HashMap used by the implementation.
      * The serialised form doesn't include this instance variable.
      */
-    private transient HashMap attrMap = new HashMap();
+    private transient HashMap<Class<?>, Attribute> attrMap = new HashMap<>();
 
     /**
      * Write the instance to a stream (ie serialize the object)
@@ -82,7 +82,7 @@ public class HashAttributeSet implements AttributeSet, Serializable {
         throws ClassNotFoundException, IOException {
 
         s.defaultReadObject();
-        attrMap = new HashMap();
+        attrMap = new HashMap<>();
         int count = s.readInt();
         Attribute attr;
         for (int i = 0; i < count; i++) {
@@ -274,10 +274,9 @@ public class HashAttributeSet implements AttributeSet, Serializable {
      *     Attribute Attribute}.
      */
     public Attribute get(Class<?> category) {
-        return (Attribute)
-            attrMap.get(AttributeSetUtilities.
-                        verifyAttributeCategory(category,
-                                                Attribute.class));
+        return attrMap.get(AttributeSetUtilities.
+                           verifyAttributeCategory(category,
+                                                   Attribute.class));
     }
 
     /**

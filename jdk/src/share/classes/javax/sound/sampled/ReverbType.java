@@ -25,46 +25,41 @@
 
 package javax.sound.sampled;
 
-
 /**
- * The <code>ReverbType</code> class provides methods for
- * accessing various reverberation settings to be applied to
- * an audio signal.
+ * The {@code ReverbType} class provides methods for accessing various
+ * reverberation settings to be applied to an audio signal.
  * <p>
- * Reverberation simulates the reflection of sound off of
- * the walls, ceiling, and floor of a room.  Depending on
- * the size of the room, and how absorbent or reflective the materials in the
- * room's surfaces are, the sound might bounce around for a
- * long time before dying away.
+ * Reverberation simulates the reflection of sound off of the walls, ceiling,
+ * and floor of a room. Depending on the size of the room, and how absorbent or
+ * reflective the materials in the room's surfaces are, the sound might bounce
+ * around for a long time before dying away.
  * <p>
- * The reverberation parameters provided by <code>ReverbType</code> consist
- * of the delay time and intensity of early reflections, the delay time and
- * intensity of late reflections, and an overall decay time.
- * Early reflections are the initial individual low-order reflections of the
- * direct signal off the surfaces in the room.
- * The late Reflections are the dense, high-order reflections that characterize
- * the room's reverberation.
- * The delay times for the start of these two reflection types give the listener
- * a sense of the overall size and complexity of the room's shape and contents.
- * The larger the room, the longer the reflection delay times.
- * The early and late reflections' intensities define the gain (in decibels) of the reflected
- * signals as compared to the direct signal.  These intensities give the
- * listener an impression of the absorptive nature of the surfaces and objects
- * in the room.
+ * The reverberation parameters provided by {@code ReverbType} consist of the
+ * delay time and intensity of early reflections, the delay time and intensity
+ * of late reflections, and an overall decay time. Early reflections are the
+ * initial individual low-order reflections of the direct signal off the
+ * surfaces in the room. The late Reflections are the dense, high-order
+ * reflections that characterize the room's reverberation. The delay times for
+ * the start of these two reflection types give the listener a sense of the
+ * overall size and complexity of the room's shape and contents. The larger the
+ * room, the longer the reflection delay times. The early and late reflections'
+ * intensities define the gain (in decibels) of the reflected signals as
+ * compared to the direct signal. These intensities give the listener an
+ * impression of the absorptive nature of the surfaces and objects in the room.
  * The decay time defines how long the reverberation takes to exponentially
- * decay until it is no longer perceptible ("effective zero").
- * The larger and less absorbent the surfaces, the longer the decay time.
+ * decay until it is no longer perceptible ("effective zero"). The larger and
+ * less absorbent the surfaces, the longer the decay time.
  * <p>
- * The set of parameters defined here may not include all aspects of reverberation
- * as specified by some systems.  For example, the Midi Manufacturer's Association
- * (MMA) has an Interactive Audio Special Interest Group (IASIG), which has a
- * 3-D Working Group that has defined a Level 2 Spec (I3DL2).  I3DL2
- * supports filtering of reverberation and
- * control of reverb density.  These properties are not included in the JavaSound 1.0
- * definition of a reverb control.  In such a case, the implementing system
- * should either extend the defined reverb control to include additional
- * parameters, or else interpret the system's additional capabilities in a way that fits
- * the model described here.
+ * The set of parameters defined here may not include all aspects of
+ * reverberation as specified by some systems. For example, the Midi
+ * Manufacturer's Association (MMA) has an Interactive Audio Special Interest
+ * Group (IASIG), which has a 3-D Working Group that has defined a Level 2 Spec
+ * (I3DL2). I3DL2 supports filtering of reverberation and control of reverb
+ * density. These properties are not included in the JavaSound 1.0 definition of
+ * a reverb control. In such a case, the implementing system should either
+ * extend the defined reverb control to include additional parameters, or else
+ * interpret the system's additional capabilities in a way that fits the model
+ * described here.
  * <p>
  * If implementing JavaSound on a I3DL2-compliant device:
  * <ul>
@@ -72,8 +67,8 @@ package javax.sound.sampled;
  * <li>Density parameters are set to midway between minimum and maximum
  * </ul>
  * <p>
- * The following table shows what parameter values an implementation might use for a
- * representative set of reverberation settings.
+ * The following table shows what parameter values an implementation might use
+ * for a representative set of reverberation settings.
  * <p>
  *
  * <b>Reverberation Types and Parameters</b>
@@ -142,7 +137,7 @@ package javax.sound.sampled;
 public class ReverbType {
 
     /**
-     * Descriptive name of the reverb type..
+     * Descriptive name of the reverb type.
      */
     private String name;
 
@@ -167,20 +162,25 @@ public class ReverbType {
     private float lateReflectionIntensity;
 
     /**
-     * Total decay time
+     * Total decay time.
      */
     private int decayTime;
-
 
     /**
      * Constructs a new reverb type that has the specified reverberation
      * parameter values.
-     * @param name the name of the new reverb type, or a zero-length <code>String</code>
-     * @param earlyReflectionDelay the new type's early reflection delay time in microseconds
-     * @param earlyReflectionIntensity the new type's early reflection intensity in dB
-     * @param lateReflectionDelay the new type's late reflection delay time in microseconds
-     * @param lateReflectionIntensity the new type's late reflection intensity in dB
-     * @param decayTime the new type's decay time in microseconds
+     *
+     * @param  name the name of the new reverb type, or a zero-length
+     *         {@code String}
+     * @param  earlyReflectionDelay the new type's early reflection delay time
+     *         in microseconds
+     * @param  earlyReflectionIntensity the new type's early reflection
+     *         intensity in dB
+     * @param  lateReflectionDelay the new type's late reflection delay time in
+     *         microseconds
+     * @param  lateReflectionIntensity the new type's late reflection intensity
+     *         in dB
+     * @param  decayTime the new type's decay time in microseconds
      */
     protected ReverbType(String name, int earlyReflectionDelay, float earlyReflectionIntensity, int lateReflectionDelay, float lateReflectionIntensity, int decayTime) {
 
@@ -192,9 +192,9 @@ public class ReverbType {
         this.decayTime = decayTime;
     }
 
-
     /**
      * Obtains the name of this reverb type.
+     *
      * @return the name of this reverb type
      * @since 1.5
      */
@@ -202,89 +202,88 @@ public class ReverbType {
             return name;
     }
 
-
     /**
-     * Returns the early reflection delay time in microseconds.
-     * This is the amount of time between when the direct signal is
-     * heard and when the first early reflections are heard.
-     * @return  early reflection delay time for this reverb type, in microseconds
+     * Returns the early reflection delay time in microseconds. This is the
+     * amount of time between when the direct signal is heard and when the first
+     * early reflections are heard.
+     *
+     * @return early reflection delay time for this reverb type, in microseconds
      */
     public final int getEarlyReflectionDelay() {
         return earlyReflectionDelay;
     }
 
-
     /**
-     * Returns the early reflection intensity in decibels.
-     * This is the amplitude attenuation of the first early reflections
-     * relative to the direct signal.
-     * @return  early reflection intensity for this reverb type, in dB
+     * Returns the early reflection intensity in decibels. This is the amplitude
+     * attenuation of the first early reflections relative to the direct signal.
+     *
+     * @return early reflection intensity for this reverb type, in dB
      */
     public final float getEarlyReflectionIntensity() {
         return earlyReflectionIntensity;
     }
 
-
     /**
-     * Returns the late reflection delay time in microseconds.
-     * This is the amount of time between when the first early reflections
-     * are heard and when the first late reflections are heard.
-     * @return  late reflection delay time for this reverb type, in microseconds
+     * Returns the late reflection delay time in microseconds. This is the
+     * amount of time between when the first early reflections are heard and
+     * when the first late reflections are heard.
+     *
+     * @return late reflection delay time for this reverb type, in microseconds
      */
     public final int getLateReflectionDelay() {
         return lateReflectionDelay;
     }
 
-
     /**
-     * Returns the late reflection intensity in decibels.
-     * This is the amplitude attenuation of the first late reflections
-     * relative to the direct signal.
-     * @return  late reflection intensity for this reverb type, in dB
+     * Returns the late reflection intensity in decibels. This is the amplitude
+     * attenuation of the first late reflections relative to the direct signal.
+     *
+     * @return late reflection intensity for this reverb type, in dB
      */
     public final float getLateReflectionIntensity() {
         return lateReflectionIntensity;
     }
 
-
     /**
-     * Obtains the decay time, which is the amount of time over which the
-     * late reflections attenuate to effective zero.  The effective zero
-     * value is implementation-dependent.
-     * @return  the decay time of the late reflections, in microseconds
+     * Obtains the decay time, which is the amount of time over which the late
+     * reflections attenuate to effective zero. The effective zero value is
+     * implementation-dependent.
+     *
+     * @return the decay time of the late reflections, in microseconds
      */
     public final int getDecayTime() {
         return decayTime;
     }
 
-
     /**
      * Indicates whether the specified object is equal to this reverb type,
-     * returning <code>true</code> if the objects are identical.
-     * @param obj the reference object with which to compare
-     * @return <code>true</code> if this reverb type is the same as
-     * <code>obj</code>; <code>false</code> otherwise
+     * returning {@code true} if the objects are identical.
+     *
+     * @param  obj the reference object with which to compare
+     * @return {@code true} if this reverb type is the same as {@code obj};
+     *         {@code false} otherwise
      */
+    @Override
     public final boolean equals(Object obj) {
         return super.equals(obj);
     }
 
-
     /**
      * Finalizes the hashcode method.
      */
+    @Override
     public final int hashCode() {
         return super.hashCode();
     }
 
-
     /**
-     * Provides a <code>String</code> representation of the reverb type,
-     * including its name and its parameter settings.
-     * The exact contents of the string may vary between implementations of
-     * Java Sound.
+     * Provides a {@code String} representation of the reverb type, including
+     * its name and its parameter settings. The exact contents of the string may
+     * vary between implementations of Java Sound.
+     *
      * @return reverberation type name and description
      */
+    @Override
     public final String toString() {
 
         //$$fb2001-07-20: fix for bug 4385060: The "name" attribute of class "ReverbType" is not accessible.
@@ -295,5 +294,4 @@ public class ReverbType {
                 " ns, late reflection intensity " + lateReflectionIntensity +
                 " dB, decay time " +  decayTime);
     }
-
-} // class ReverbType
+}

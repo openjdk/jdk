@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ public class BeanContextServiceAvailableEvent extends BeanContextEvent {
      * @param bcs The context in which the service has become available
      * @param sc A <code>Class</code> reference to the newly available service
      */
-    public BeanContextServiceAvailableEvent(BeanContextServices bcs, Class sc) {
+    public BeanContextServiceAvailableEvent(BeanContextServices bcs, Class<?> sc) {
         super((BeanContext)bcs);
 
         serviceClass = sc;
@@ -65,13 +65,13 @@ public class BeanContextServiceAvailableEvent extends BeanContextEvent {
      * Gets the service class that is the subject of this notification.
      * @return A <code>Class</code> reference to the newly available service
      */
-    public Class getServiceClass() { return serviceClass; }
+    public Class<?> getServiceClass() { return serviceClass; }
 
     /**
      * Gets the list of service dependent selectors.
      * @return the current selectors available from the service
      */
-    public Iterator getCurrentServiceSelectors() {
+    public Iterator<?> getCurrentServiceSelectors() {
         return ((BeanContextServices)getSource()).getCurrentServiceSelectors(serviceClass);
     }
 
@@ -82,5 +82,5 @@ public class BeanContextServiceAvailableEvent extends BeanContextEvent {
     /**
      * A <code>Class</code> reference to the newly available service
      */
-    protected Class                      serviceClass;
+    protected Class<?>                   serviceClass;
 }

@@ -102,7 +102,7 @@ public abstract class JavaLazyReadObject extends JavaHeapObject {
         if ((id & ~Snapshot.SMALL_ID_MASK) == 0) {
             return new Integer((int)id);
         } else {
-            return new Long(id);
+            return id;
         }
     }
 

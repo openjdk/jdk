@@ -62,7 +62,7 @@ import javax.print.attribute.standard.Sides;
 public class PSStreamPrintService extends StreamPrintService
     implements SunPrinterJobService {
 
-    private static final Class[] suppAttrCats = {
+    private static final Class<?>[] suppAttrCats = {
         Chromaticity.class,
         Copies.class,
         Fidelity.class,
@@ -108,7 +108,7 @@ public class PSStreamPrintService extends StreamPrintService
         return new PSStreamPrintJob(this);
     }
 
-    public boolean usesClass(Class c) {
+    public boolean usesClass(Class<?> c) {
         return (c == sun.print.PSPrinterJob.class);
     }
 
@@ -137,7 +137,9 @@ public class PSStreamPrintService extends StreamPrintService
             throw new IllegalArgumentException("Not a PrintServiceAttribute");
         }
         if (category == ColorSupported.class) {
-            return (T)ColorSupported.SUPPORTED;
+            @SuppressWarnings("unchecked")
+            T tmp = (T)ColorSupported.SUPPORTED;
+            return tmp;
         } else {
             return null;
         }
@@ -161,7 +163,7 @@ public class PSStreamPrintService extends StreamPrintService
 
 
     public Class<?>[] getSupportedAttributeCategories() {
-        Class []cats = new Class[suppAttrCats.length];
+        Class<?>[] cats = new Class<?>[suppAttrCats.length];
         System.arraycopy(suppAttrCats, 0, cats, 0, cats.length);
         return cats;
     }
@@ -401,7 +403,7 @@ public class PSStreamPrintService extends StreamPrintService
             throw new IllegalArgumentException(flavor +
                                                " is an unsupported flavor");
         }
-        Class category = attr.getCategory();
+        Class<? extends Attribute> category = attr.getCategory();
         if (!isAttributeCategorySupported(category)) {
             return false;
         }

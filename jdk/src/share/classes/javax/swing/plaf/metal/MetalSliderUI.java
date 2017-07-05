@@ -53,13 +53,42 @@ import javax.swing.plaf.*;
 @SuppressWarnings("serial") // Same-version serialization only
 public class MetalSliderUI extends BasicSliderUI {
 
+    /**
+     * The buffer of a tick.
+     */
     protected final int TICK_BUFFER = 4;
+
+    /**
+     * The value of the property {@code JSlider.isFilled}.
+     * By default, {@code false} if the property is not set,
+     * {@code true} for Ocean theme.
+     */
     protected boolean filledSlider = false;
+
     // NOTE: these next five variables are currently unused.
+    /**
+     * The color of a thumb
+     */
     protected static Color thumbColor;
+
+    /**
+     * The color of highlighting.
+     */
     protected static Color highlightColor;
+
+    /**
+     * The color of dark shadow.
+     */
     protected static Color darkShadowColor;
+
+    /**
+     * The width of a track.
+     */
     protected static int trackWidth;
+
+    /**
+     * The length of a tick.
+     */
     protected static int tickLength;
     private int safeLength;
 
@@ -80,13 +109,24 @@ public class MetalSliderUI extends BasicSliderUI {
     private static Icon SAFE_HORIZ_THUMB_ICON;
     private static Icon SAFE_VERT_THUMB_ICON;
 
-
+    /**
+     * Property for {@code JSlider.isFilled}.
+     */
     protected final String SLIDER_FILL = "JSlider.isFilled";
 
+    /**
+     * Constructs a {@code MetalSliderUI} instance.
+     *
+     * @param c a component
+     * @return a {@code MetalSliderUI} instance
+     */
     public static ComponentUI createUI(JComponent c)    {
         return new MetalSliderUI();
     }
 
+    /**
+     * Constructs a {@code MetalSliderUI} instance.
+     */
     public MetalSliderUI() {
         super( null );
     }
@@ -126,10 +166,19 @@ public class MetalSliderUI extends BasicSliderUI {
         prepareFilledSliderField();
     }
 
+    /**
+     * Constructs {@code MetalPropertyListener}.
+     *
+     * @param slider a {@code JSlider}
+     * @return the {@code MetalPropertyListener}
+     */
     protected PropertyChangeListener createPropertyChangeListener( JSlider slider ) {
         return new MetalPropertyListener();
     }
 
+    /**
+     * {@code PropertyListener} for {@code JSlider.isFilled}.
+     */
     protected class MetalPropertyListener extends BasicSliderUI.PropertyChangeHandler {
         public void propertyChange( PropertyChangeEvent e ) {  // listen for slider fill
             super.propertyChange( e );
@@ -485,6 +534,8 @@ public class MetalSliderUI extends BasicSliderUI {
 
     /**
      * Returns the shorter dimension of the track.
+     *
+     * @return the shorter dimension of the track
      */
     protected int getTrackWidth() {
         // This strange calculation is here to keep the
@@ -504,6 +555,8 @@ public class MetalSliderUI extends BasicSliderUI {
     /**
      * Returns the longer dimension of the slide bar.  (The slide bar is only the
      * part that runs directly under the thumb)
+     *
+     * @return the longer dimension of the slide bar
      */
     protected int getTrackLength() {
         if ( slider.getOrientation() == JSlider.HORIZONTAL ) {
@@ -514,6 +567,8 @@ public class MetalSliderUI extends BasicSliderUI {
 
     /**
      * Returns the amount that the thumb goes past the slide bar.
+     *
+     * @return the amount that the thumb goes past the slide bar
      */
     protected int getThumbOverhang() {
         return (int)(getThumbSize().getHeight()-getTrackWidth())/2;

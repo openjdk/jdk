@@ -117,18 +117,18 @@ class MimeType implements Serializable, Cloneable {
     /**
      * Parameter map entry.
      */
-    private class ParameterMapEntry implements Map.Entry {
+    private class ParameterMapEntry implements Map.Entry<String, String> {
         private int myIndex;
         public ParameterMapEntry(int theIndex) {
             myIndex = theIndex;
         }
-        public Object getKey(){
+        public String getKey(){
             return myPieces[myIndex];
         }
-        public Object getValue(){
+        public String getValue(){
             return myPieces[myIndex+1];
         }
-        public Object setValue (Object value) {
+        public String setValue (String value) {
             throw new UnsupportedOperationException();
         }
         public boolean equals(Object o) {
@@ -145,12 +145,12 @@ class MimeType implements Serializable, Cloneable {
     /**
      * Parameter map entry set iterator.
      */
-    private class ParameterMapEntrySetIterator implements Iterator {
+    private class ParameterMapEntrySetIterator implements Iterator<Map.Entry<String, String>> {
         private int myIndex = 2;
         public boolean hasNext() {
             return myIndex < myPieces.length;
         }
-        public Object next() {
+        public Map.Entry<String, String> next() {
             if (hasNext()) {
                 ParameterMapEntry result = new ParameterMapEntry (myIndex);
                 myIndex += 2;
@@ -167,8 +167,8 @@ class MimeType implements Serializable, Cloneable {
     /**
      * Parameter map entry set.
      */
-    private class ParameterMapEntrySet extends AbstractSet {
-        public Iterator iterator() {
+    private class ParameterMapEntrySet extends AbstractSet<Map.Entry<String, String>> {
+        public Iterator<Map.Entry<String, String>> iterator() {
             return new ParameterMapEntrySetIterator();
         }
         public int size() {
@@ -179,8 +179,8 @@ class MimeType implements Serializable, Cloneable {
     /**
      * Parameter map.
      */
-    private class ParameterMap extends AbstractMap {
-        public Set entrySet() {
+    private class ParameterMap extends AbstractMap<String, String> {
+        public Set<Map.Entry<String, String>> entrySet() {
             if (myEntrySet == null) {
                 myEntrySet = new ParameterMapEntrySet();
             }
@@ -234,7 +234,7 @@ class MimeType implements Serializable, Cloneable {
      *
      * @return  Parameter map for this MIME type object.
      */
-    public Map getParameterMap() {
+    public Map<String, String> getParameterMap() {
         if (myParameterMap == null) {
             myParameterMap = new ParameterMap();
         }
@@ -548,7 +548,7 @@ class MimeType implements Serializable, Cloneable {
         }
         LexicalAnalyzer theLexer = new LexicalAnalyzer (s);
         int theLexemeType;
-        Vector thePieces = new Vector();
+        Vector<String> thePieces = new Vector<>();
         boolean mediaTypeIsText = false;
         boolean parameterNameIsCharset = false;
 
@@ -623,7 +623,7 @@ class MimeType implements Serializable, Cloneable {
 
         // Save the pieces. Parameters are not in ascending order yet.
         int n = thePieces.size();
-        myPieces = (String[]) thePieces.toArray (new String [n]);
+        myPieces = thePieces.toArray (new String [n]);
 
         // Sort the parameters into ascending order using an insertion sort.
         int i, j;

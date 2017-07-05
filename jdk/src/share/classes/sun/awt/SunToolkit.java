@@ -850,22 +850,30 @@ public abstract class SunToolkit extends Toolkit
 
     private int checkResolutionVariant(Image img, int w, int h, ImageObserver o) {
         ToolkitImage rvImage = getResolutionVariant(img);
+        int rvw = getRVSize(w);
+        int rvh = getRVSize(h);
         // Ignore the resolution variant in case of error
         return (rvImage == null || rvImage.hasError()) ? 0xFFFF :
-                checkImage(rvImage, 2 * w, 2 * h, MultiResolutionToolkitImage.
+                checkImage(rvImage, rvw, rvh, MultiResolutionToolkitImage.
                                 getResolutionVariantObserver(
-                                        img, o, w, h, 2 * w, 2 * h));
+                                        img, o, w, h, rvw, rvh, true));
     }
 
     private boolean prepareResolutionVariant(Image img, int w, int h,
             ImageObserver o) {
 
         ToolkitImage rvImage = getResolutionVariant(img);
+        int rvw = getRVSize(w);
+        int rvh = getRVSize(h);
         // Ignore the resolution variant in case of error
         return rvImage == null || rvImage.hasError() || prepareImage(
-                rvImage, 2 * w, 2 * h,
+                rvImage, rvw, rvh,
                 MultiResolutionToolkitImage.getResolutionVariantObserver(
-                        img, o, w, h, 2 * w, 2 * h));
+                        img, o, w, h, rvw, rvh, true));
+    }
+
+    private static int getRVSize(int size){
+        return size == -1 ? -1 : 2 * size;
     }
 
     private static ToolkitImage getResolutionVariant(Image image) {

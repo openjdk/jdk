@@ -91,8 +91,8 @@ public class ObjectView extends ComponentView  {
         String classname = (String) attr.getAttribute(HTML.Attribute.CLASSID);
         try {
             ReflectUtil.checkPackageAccess(classname);
-            Class c = Class.forName(classname, true,Thread.currentThread().
-                                    getContextClassLoader());
+            Class<?> c = Class.forName(classname, true,Thread.currentThread().
+                                       getContextClassLoader());
             Object o = c.newInstance();
             if (o instanceof Component) {
                 Component comp = (Component) o;
@@ -125,7 +125,7 @@ public class ObjectView extends ComponentView  {
      * &lt;object&gt; element.
      */
     private void setParameters(Component comp, AttributeSet attr) {
-        Class k = comp.getClass();
+        Class<?> k = comp.getClass();
         BeanInfo bi;
         try {
             bi = Introspector.getBeanInfo(k);
@@ -145,7 +145,7 @@ public class ObjectView extends ComponentView  {
                     // read-only property. ignore
                     return;     // for now
                 }
-                Class[] params = writer.getParameterTypes();
+                Class<?>[] params = writer.getParameterTypes();
                 if (params.length != 1) {
                     // zero or more than one argument, ignore
                     return;     // for now

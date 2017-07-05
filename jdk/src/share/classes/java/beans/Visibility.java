@@ -34,6 +34,8 @@ package java.beans;
  * This interface is for expert developers, and is not needed
  * for normal simple beans.  To avoid confusing end-users we
  * avoid using getXXX setXXX design patterns for these methods.
+ *
+ * @since 1.1
  */
 
 public interface Visibility {

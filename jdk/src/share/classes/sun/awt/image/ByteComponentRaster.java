@@ -885,15 +885,31 @@ public class ByteComponentRaster extends SunWritableRaster {
             }
         }
 
+        if ((long)minX - sampleModelTranslateX < 0 ||
+            (long)minY - sampleModelTranslateY < 0) {
+
+            throw new RasterFormatException("Incorrect origin/translate: (" +
+                    minX + ", " + minY + ") / (" +
+                    sampleModelTranslateX + ", " + sampleModelTranslateY + ")");
+        }
+
         // we can be sure that width and height are greater than 0
         if (scanlineStride < 0 ||
-            scanlineStride > (Integer.MAX_VALUE / height) ||
-            scanlineStride > data.length)
+            scanlineStride > (Integer.MAX_VALUE / height))
         {
             // integer overflow
             throw new RasterFormatException("Incorrect scanline stride: "
                     + scanlineStride);
         }
+
+        if (height > 1 || minY - sampleModelTranslateY > 0) {
+            // buffer should contain at least one scanline
+            if (scanlineStride > data.length) {
+                throw new RasterFormatException("Incorrect scanline stride: "
+                        + scanlineStride);
+            }
+        }
+
         int lastScanOffset = (height - 1) * scanlineStride;
 
         if (pixelStride < 0 ||

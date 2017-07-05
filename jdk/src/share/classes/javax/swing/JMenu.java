@@ -108,6 +108,7 @@ import java.lang.ref.WeakReference;
  * @see JSeparator
  * @see JMenuBar
  * @see JPopupMenu
+ * @since 1.2
  */
 @SuppressWarnings("serial")
 public class JMenu extends JMenuItem implements Accessible,MenuElement

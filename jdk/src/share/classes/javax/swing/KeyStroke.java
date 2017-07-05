@@ -60,6 +60,7 @@ import java.awt.event.KeyEvent;
  *
  * @author Arnaud Weber
  * @author David Mendenhall
+ * @since 1.2
  */
 @SuppressWarnings("serial") // Same-version serialization only
 public class KeyStroke extends AWTKeyStroke {

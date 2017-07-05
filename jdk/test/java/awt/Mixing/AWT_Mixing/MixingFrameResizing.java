@@ -29,6 +29,7 @@ import java.awt.event.InputEvent;
 import javax.swing.JFrame;
 import javax.swing.SpringLayout;
 import javax.swing.SwingUtilities;
+import test.java.awt.regtesthelpers.Util;
 
 /**
  * AWT/Swing overlapping test.
@@ -40,6 +41,8 @@ import javax.swing.SwingUtilities;
 @bug 6777370
 @summary Issues when resizing the JFrame with HW components
 @author sergey.grinev@oracle.com: area=awt.mixing
+@library ../../regtesthelpers
+@build Util
 @run main MixingFrameResizing
  */
 public class MixingFrameResizing extends OverlappingTestBase {
@@ -77,7 +80,7 @@ public class MixingFrameResizing extends OverlappingTestBase {
             });
         } catch (Exception e) {
             e.printStackTrace();
-            System.exit(1);
+            throw new RuntimeException("Where is frame?");
         }
         Robot robot = Util.createRobot();
         robot.setAutoDelay(ROBOT_DELAY/2);
