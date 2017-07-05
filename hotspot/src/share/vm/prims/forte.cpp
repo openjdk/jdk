@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -234,9 +234,8 @@ static bool is_decipherable_interpreted_frame(JavaThread* thread,
     *method_p = method;
     if (!method->is_valid_method()) return false;
 
-    intptr_t bcx = fr->interpreter_frame_bcx();
-
-    int      bci = method->validate_bci_from_bcx(bcx);
+    address bcp = fr->interpreter_frame_bcp();
+    int bci = method->validate_bci_from_bcp(bcp);
 
     // note: bci is set to -1 if not a valid bci
     *bci_p = bci;

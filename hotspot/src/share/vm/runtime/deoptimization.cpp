@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "code/codeCache.hpp"
 #include "code/debugInfoRec.hpp"
 #include "code/nmethod.hpp"
 #include "code/pcDesc.hpp"
@@ -50,44 +51,6 @@
 #include "runtime/vframe_hp.hpp"
 #include "utilities/events.hpp"
 #include "utilities/xmlstream.hpp"
-#ifdef TARGET_ARCH_x86
-# include "vmreg_x86.inline.hpp"
-#endif
-#ifdef TARGET_ARCH_sparc
-# include "vmreg_sparc.inline.hpp"
-#endif
-#ifdef TARGET_ARCH_zero
-# include "vmreg_zero.inline.hpp"
-#endif
-#ifdef TARGET_ARCH_arm
-# include "vmreg_arm.inline.hpp"
-#endif
-#ifdef TARGET_ARCH_ppc
-# include "vmreg_ppc.inline.hpp"
-#endif
-#ifdef COMPILER2
-#ifdef TARGET_ARCH_MODEL_x86_32
-# include "adfiles/ad_x86_32.hpp"
-#endif
-#ifdef TARGET_ARCH_MODEL_x86_64
-# include "adfiles/ad_x86_64.hpp"
-#endif
-#ifdef TARGET_ARCH_MODEL_sparc
-# include "adfiles/ad_sparc.hpp"
-#endif
-#ifdef TARGET_ARCH_MODEL_zero
-# include "adfiles/ad_zero.hpp"
-#endif
-#ifdef TARGET_ARCH_MODEL_arm
-# include "adfiles/ad_arm.hpp"
-#endif
-#ifdef TARGET_ARCH_MODEL_ppc_32
-# include "adfiles/ad_ppc_32.hpp"
-#endif
-#ifdef TARGET_ARCH_MODEL_ppc_64
-# include "adfiles/ad_ppc_64.hpp"
-#endif
-#endif // COMPILER2
 
 PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
 

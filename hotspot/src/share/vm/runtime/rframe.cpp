@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "code/codeCache.hpp"
 #include "interpreter/interpreter.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"

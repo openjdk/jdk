@@ -65,21 +65,6 @@
 #include "utilities/histogram.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/vmError.hpp"
-#ifdef TARGET_ARCH_x86
-# include "vm_version_x86.hpp"
-#endif
-#ifdef TARGET_ARCH_sparc
-# include "vm_version_sparc.hpp"
-#endif
-#ifdef TARGET_ARCH_zero
-# include "vm_version_zero.hpp"
-#endif
-#ifdef TARGET_ARCH_arm
-# include "vm_version_arm.hpp"
-#endif
-#ifdef TARGET_ARCH_ppc
-# include "vm_version_ppc.hpp"
-#endif
 #if INCLUDE_ALL_GCS
 #include "gc_implementation/concurrentMarkSweep/concurrentMarkSweepThread.hpp"
 #include "gc_implementation/parallelScavenge/psScavenge.hpp"
