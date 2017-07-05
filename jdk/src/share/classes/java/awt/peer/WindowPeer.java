@@ -110,12 +110,11 @@ public interface WindowPeer extends ContainerPeer {
     void setOpaque(boolean isOpaque);
 
     /**
-     * Updates the native part of non-opaque window using
-     * the given image with color+alpha values for each pixel.
+     * Updates the native part of non-opaque window.
      *
      * @see Window#setBackground(Color)
      */
-    void updateWindow(BufferedImage backBuffer);
+    void updateWindow();
 
     /**
      * Instructs the peer to update the position of the security warning.

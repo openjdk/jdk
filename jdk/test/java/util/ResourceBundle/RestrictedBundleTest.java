@@ -23,6 +23,7 @@
 /**
  * @test
  * @bug 4126805
+ * @ignore until 6842022 is resolved
  * @run applet RestrictedBundleTest.html
  * @summary I was able to reproduce this bug with 1.2b2, but not with the current 1.2
  * build.  It appears that it was fixed by changes to the class-loading mechanism,

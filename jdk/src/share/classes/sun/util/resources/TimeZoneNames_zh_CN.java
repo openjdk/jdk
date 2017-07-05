@@ -171,6 +171,8 @@ public final class TimeZoneNames_zh_CN extends TimeZoneNamesBundle {
                                       "\u7279\u9c81\u514b\u590f\u4ee4\u65f6", "TRUST"};
         String ULAT[]= new String[] {"\u5e93\u4f26\u65f6\u95f4", "ULAT",
                                      "\u5e93\u4f26\u590f\u4ee4\u65f6", "ULAST"};
+        String WART[] = new String[] {"\u963f\u6839\u5ef7\u65f6\u95f4", "WART",
+                                      "\u963f\u6839\u5ef7\u590f\u4ee4\u65f6", "WARST"};
         String WAT[] = new String[] {"\u897f\u975e\u65f6\u95f4", "WAT",
                                      "\u897f\u975e\u590f\u4ee4\u65f6", "WAST"};
         String WET[] = new String[] {"\u897f\u6b27\u65f6\u95f4", "WET",
@@ -296,7 +298,7 @@ public final class TimeZoneNames_zh_CN extends TimeZoneNamesBundle {
             {"America/Argentina/Rio_Gallegos", AGT},
             {"America/Argentina/Salta", AGT},
             {"America/Argentina/San_Juan", AGT},
-            {"America/Argentina/San_Luis", AGT},
+            {"America/Argentina/San_Luis", WART},
             {"America/Argentina/Tucuman", AGT},
             {"America/Argentina/Ushuaia", AGT},
             {"America/Aruba", AST},

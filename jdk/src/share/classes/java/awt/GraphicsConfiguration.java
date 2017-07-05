@@ -436,7 +436,7 @@ public abstract class GraphicsConfiguration {
     }
 
     /**
-     * Returns whether this GraphicsConfiguration supports
+     * Returns whether this {@code GraphicsConfiguration} supports
      * the {@link GraphicsDevice.WindowTranslucency#PERPIXEL_TRANSLUCENT
      * PERPIXEL_TRANSLUCENT} kind of translucency.
      *

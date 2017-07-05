@@ -677,6 +677,14 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
         int button=0;
         boolean wheel_mouse = false;
         int lbutton = xbe.get_button();
+        /*
+         * Ignore the buttons above 20 due to the bit limit for
+         * InputEvent.BUTTON_DOWN_MASK.
+         * One more bit is reserved for FIRST_HIGH_BIT.
+         */
+        if (lbutton > SunToolkit.MAX_BUTTONS_SUPPORTED) {
+            return;
+        }
         int type = xev.get_type();
         when = xbe.get_time();
         long jWhen = XToolkit.nowMillisUTC_offset(when);
@@ -795,8 +803,9 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
         //this doesn't work for extra buttons because Xsystem is sending state==0 for every extra button event.
         // we can't correct it in MouseEvent class as we done it with modifiers, because exact type (DRAG|MOVE)
         // should be passed from XWindow.
-        //TODO: eliminate it with some other value obtained w/o AWTLock.
-        for (int i = 0; i < XToolkit.getNumMouseButtons(); i++){
+        final int buttonsNumber = ((SunToolkit)(Toolkit.getDefaultToolkit())).getNumberOfButtons();
+
+        for (int i = 0; i < buttonsNumber; i++){
             // TODO : here is the bug in WM: extra buttons doesn't have state!=0 as they should.
             if ((i != 4) && (i != 5)) {
                 mouseKeyState = mouseKeyState | (xme.get_state() & XConstants.buttonsMask[i]);
@@ -1343,15 +1352,20 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
         setSizeHints(flags, x, y, width, height);
     }
 
-      void validateSurface() {
+    void validateSurface() {
         if ((width != oldWidth) || (height != oldHeight)) {
-            SurfaceData oldData = surfaceData;
-            if (oldData != null) {
-                surfaceData = graphicsConfig.createSurfaceData(this);
-                oldData.invalidate();
-            }
+            doValidateSurface();
+
             oldWidth = width;
             oldHeight = height;
+        }
+    }
+
+    final void doValidateSurface() {
+        SurfaceData oldData = surfaceData;
+        if (oldData != null) {
+            surfaceData = graphicsConfig.createSurfaceData(this);
+            oldData.invalidate();
         }
     }
 

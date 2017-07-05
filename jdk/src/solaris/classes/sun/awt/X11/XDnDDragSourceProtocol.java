@@ -96,7 +96,7 @@ class XDnDDragSourceProtocol extends XDragSourceProtocol {
                 action_count++;
             }
 
-            XToolkit.WITH_XERROR_HANDLER(XWM.VerifyChangePropertyHandler);
+            XToolkit.WITH_XERROR_HANDLER(XErrorHandler.VerifyChangePropertyHandler.getInstance());
             XDnDConstants.XA_XdndActionList.setAtomData(window,
                                                         XAtom.XA_ATOM,
                                                         data, action_count);
@@ -117,7 +117,7 @@ class XDnDDragSourceProtocol extends XDragSourceProtocol {
         try {
             Native.put(data, formats);
 
-            XToolkit.WITH_XERROR_HANDLER(XWM.VerifyChangePropertyHandler);
+            XToolkit.WITH_XERROR_HANDLER(XErrorHandler.VerifyChangePropertyHandler.getInstance());
             XDnDConstants.XA_XdndTypeList.setAtomData(window,
                                                       XAtom.XA_ATOM,
                                                       data, formats.length);
@@ -195,7 +195,7 @@ class XDnDDragSourceProtocol extends XDragSourceProtocol {
             new WindowPropertyGetter(window, XDnDConstants.XA_XdndAware, 0, 1,
                                      false, XConstants.AnyPropertyType);
 
-        int status = wpg1.execute(XToolkit.IgnoreBadWindowHandler);
+        int status = wpg1.execute(XErrorHandler.IgnoreBadWindowHandler.getInstance());
 
         if (status == XConstants.Success &&
             wpg1.getData() != 0 && wpg1.getActualType() == XAtom.XA_ATOM) {
@@ -215,7 +215,7 @@ class XDnDDragSourceProtocol extends XDragSourceProtocol {
                                              0, 1, false, XAtom.XA_WINDOW);
 
                 try {
-                    status = wpg2.execute(XToolkit.IgnoreBadWindowHandler);
+                    status = wpg2.execute(XErrorHandler.IgnoreBadWindowHandler.getInstance());
 
                     if (status == XConstants.Success &&
                         wpg2.getData() != 0 &&
@@ -233,7 +233,7 @@ class XDnDDragSourceProtocol extends XDragSourceProtocol {
                                                  0, 1, false, XAtom.XA_WINDOW);
 
                     try {
-                        status = wpg3.execute(XToolkit.IgnoreBadWindowHandler);
+                        status = wpg3.execute(XErrorHandler.IgnoreBadWindowHandler.getInstance());
 
                         if (status != XConstants.Success ||
                             wpg3.getData() == 0 ||
@@ -249,7 +249,7 @@ class XDnDDragSourceProtocol extends XDragSourceProtocol {
                                                          XConstants.AnyPropertyType);
 
                             try {
-                                status = wpg4.execute(XToolkit.IgnoreBadWindowHandler);
+                                status = wpg4.execute(XErrorHandler.IgnoreBadWindowHandler.getInstance());
 
                                 if (status != XConstants.Success ||
                                     wpg4.getData() == 0 ||

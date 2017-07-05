@@ -646,4 +646,6 @@ static native String XSetLocaleModifiers(String modifier_list);
         String javaVersion = XToolkit.getSystemProperty("java.version");
         return javaVersion != null && javaVersion.contains("internal");
     }
+
+    static native void PrintXErrorEvent(long display, long event_ptr);
 }

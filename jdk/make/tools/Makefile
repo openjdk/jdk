@@ -51,8 +51,11 @@ SUBDIRS =                   \
   makeclasslist             \
   strip_properties          \
   spp                       \
-  swing-nimbus              \
   CharsetMapping
+
+ifndef DISABLE_NIMBUS
+  SUBDIRS += swing-nimbus
+endif
 
 all build clean clobber::
 	$(SUBDIRS-loop)

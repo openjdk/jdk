@@ -478,21 +478,22 @@ public class Win32ShellFolderManager2 extends ShellFolderManager {
 
         public <T> T invoke(Callable<T> task) {
             try {
-                T result;
                 if (Thread.currentThread() == comThread) {
                     // if it's already called from the COM
                     // thread, we don't need to delegate the task
-                    result = task.call();
+                    return task.call();
                 } else {
-                    Future<T> future = submit(task);
-                    try {
-                        result = future.get();
-                    } catch (InterruptedException e) {
-                        result = null;
-                        future.cancel(true);
+                    while (true) {
+                        Future<T> future = submit(task);
+
+                        try {
+                            return future.get();
+                        } catch (InterruptedException e) {
+                            // Repeat the attempt
+                            future.cancel(true);
+                        }
                     }
                 }
-                return result;
             } catch (Exception e) {
                 Throwable cause = (e instanceof ExecutionException) ? e.getCause() : e;
                 if (cause instanceof RuntimeException) {
