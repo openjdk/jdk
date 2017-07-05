@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,6 +59,8 @@ class WRobotPeer extends WObjectPeer implements RobotPeer
         return getRGBPixelImpl(x, y);
     }
     public native int getRGBPixelImpl(int x, int y);
+
+    public native int getNumberOfButtons();
 
     public int [] getRGBPixels(Rectangle bounds) {
         int pixelArray[] = new int[bounds.width*bounds.height];

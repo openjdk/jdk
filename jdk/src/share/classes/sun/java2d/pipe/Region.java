@@ -28,6 +28,7 @@ package sun.java2d.pipe;
 import java.awt.Rectangle;
 import java.awt.Shape;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.RectangularShape;
 
 /**
  * This class encapsulates a definition of a two dimensional region which
@@ -63,11 +64,28 @@ public class Region {
     static final int INIT_SIZE = 50;
     static final int GROW_SIZE = 50;
 
-    static final Region EMPTY_REGION = new Region(0, 0, 0, 0);
-    static final Region WHOLE_REGION = new Region(Integer.MIN_VALUE,
-                                                  Integer.MIN_VALUE,
-                                                  Integer.MAX_VALUE,
-                                                  Integer.MAX_VALUE);
+    /**
+     * Immutable Region.
+     */
+    private static final class ImmutableRegion extends Region {
+        protected ImmutableRegion(int lox, int loy, int hix, int hiy) {
+            super(lox, loy, hix, hiy);
+        }
+
+        // Override all the methods that mutate the object
+        public void appendSpans(sun.java2d.pipe.SpanIterator si) {}
+        public void setOutputArea(java.awt.Rectangle r) {}
+        public void setOutputAreaXYWH(int x, int y, int w, int h) {}
+        public void setOutputArea(int[] box) {}
+        public void setOutputAreaXYXY(int lox, int loy, int hix, int hiy) {}
+    }
+
+    public static final Region EMPTY_REGION = new ImmutableRegion(0, 0, 0, 0);
+    public static final Region WHOLE_REGION = new ImmutableRegion(
+            Integer.MIN_VALUE,
+            Integer.MIN_VALUE,
+            Integer.MAX_VALUE,
+            Integer.MAX_VALUE);
 
     int lox;
     int loy;
@@ -113,7 +131,7 @@ public class Region {
         return newv;
     }
 
-    private Region(int lox, int loy, int hix, int hiy) {
+    protected Region(int lox, int loy, int hix, int hiy) {
         this.lox = lox;
         this.loy = loy;
         this.hix = hix;
@@ -194,6 +212,13 @@ public class Region {
     public static Region getInstance(Region devBounds, boolean normalize,
                                      Shape s, AffineTransform at)
     {
+        // Optimize for empty shapes to avoid involving the SpanIterator
+        if (s instanceof RectangularShape &&
+                ((RectangularShape)s).isEmpty())
+        {
+            return EMPTY_REGION;
+        }
+
         int box[] = new int[4];
         ShapeSpanIterator sr = new ShapeSpanIterator(normalize);
         try {
@@ -1206,7 +1231,7 @@ public class Region {
             return false;
         }
         if (r.lox != this.lox || r.loy != this.loy ||
-            r.hiy != this.hiy || r.hiy != this.hiy)
+            r.hix != this.hix || r.hiy != this.hiy)
         {
             return false;
         }

@@ -1621,6 +1621,7 @@ javax/swing/plaf/basic/BasicToolBarSeparatorUI
 sun/font/FontDesignMetrics$MetricsKey
 java/applet/Applet
 java/awt/Panel
+com/sun/awt/AWTUtilities
 javax/swing/KeyboardManager$ComponentKeyStrokePair
 sun/awt/im/InputMethodContext
 java/awt/im/spi/InputMethodContext

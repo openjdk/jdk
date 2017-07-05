@@ -1972,6 +1972,21 @@ public abstract class SunToolkit extends Toolkit
         AWTAutoShutdown.getInstance().dumpPeers(aLog);
     }
 
+    private static Boolean sunAwtDisableMixing = null;
+
+    /**
+     * Returns the value of "sun.awt.disableMixing" property. Default
+     * value is {@code false}.
+     */
+    public synchronized static boolean getSunAwtDisableMixing() {
+        if (sunAwtDisableMixing == null) {
+            sunAwtDisableMixing = Boolean.valueOf(
+                    AccessController.doPrivileged(
+                        new GetBooleanAction("sun.awt.disableMixing")));
+        }
+        return sunAwtDisableMixing.booleanValue();
+    }
+
     /**
      * Returns true if the native GTK libraries are available.  The
      * default implementation returns false, but UNIXToolkit overrides this
@@ -2008,26 +2023,12 @@ class PostEventQueue {
     /*
      * Continually post pending AWTEvents to the Java EventQueue.
      */
-    public void flush() {
-        if (queueHead != null) {
-            EventQueueItem tempQueue;
-            /*
-             * We have to execute the loop inside the synchronized block
-             * to ensure that the flush is completed before a new event
-             * can be posted to this queue.
-             */
-            synchronized (this) {
-                tempQueue = queueHead;
-                queueHead = queueTail = null;
-                /*
-                 * If this PostEventQueue is flushed in parallel on two
-                 * different threads tempQueue will be null for one of them.
-                 */
-                while (tempQueue != null) {
-                    eventQueue.postEvent(tempQueue.event);
-                    tempQueue = tempQueue.next;
-                }
-            }
+    public synchronized void flush() {
+        EventQueueItem tempQueue = queueHead;
+        queueHead = queueTail = null;
+        while (tempQueue != null) {
+            eventQueue.postEvent(tempQueue.event);
+            tempQueue = tempQueue.next;
         }
     }
 

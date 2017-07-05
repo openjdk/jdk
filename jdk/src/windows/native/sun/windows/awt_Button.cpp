@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
  * have any questions.
  */
 
-#include <jni.h>
+#include "awt.h"
 
 #include "awt_Object.h"    /* wop_pDataID */
 #include "awt_Toolkit.h"
@@ -106,7 +106,7 @@ AwtButton* AwtButton::Create(jobject self, jobject parent)
         if (label == NULL) {
             labelStr = L"";
         } else {
-            labelStr = env->GetStringChars(label, JNI_FALSE);
+            labelStr = JNU_GetStringPlatformChars(env, label, JNI_FALSE);
         }
         style = 0;
 
@@ -128,7 +128,7 @@ AwtButton* AwtButton::Create(jobject self, jobject parent)
         c->m_backgroundColorSet = TRUE;  // suppress inheriting parent's color
         c->UpdateBackground(env, target);
         if (label != NULL)
-            env->ReleaseStringChars(label, labelStr);
+            JNU_ReleaseStringPlatformChars(env, label, labelStr);
     } catch (...) {
         env->DeleteLocalRef(target);
         if (label != NULL)

@@ -228,7 +228,7 @@ public class Choice extends Component implements ItemSelectable, Accessible {
         pItems.insertElementAt(item, index);
         ChoicePeer peer = (ChoicePeer)this.peer;
         if (peer != null) {
-            peer.addItem(item, index);
+            peer.add(item, index);
         }
         // no selection or selection shifted up
         if (selectedIndex < 0 || selectedIndex >= index) {

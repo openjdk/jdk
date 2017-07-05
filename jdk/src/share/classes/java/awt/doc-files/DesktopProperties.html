@@ -1,5 +1,5 @@
 <!--
- Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -63,6 +63,11 @@ here, and their value types.
 <td valign="TOP"><A href=#awt.font.desktophints>awt.font.desktophints</A</td>
 <td valign="TOP"><a href="../../util/Map.html">java.util.Map<a/></td>
 <td valign="TOP">Font smoothing (text antialiasing) settings.<a/></td>
+</tr>
+<tr>
+<td valign="TOP"><A href=#"sun.awt.enableExtraMouseButtons">sun.awt.enableExtraMouseButtons</A</td>
+<td valign="TOP"><a href="../../lang/Boolean.html">java.lang.Boolean<a/></td>
+<td valign="TOP">Controls if mouse events from extra buttons are to be generated or not<a/></td>
 </tr>
 </table>
 <p>
@@ -219,5 +224,50 @@ So to determine if there are per-device settings it is sufficient to
 determine that there is a non-null return for any screen device using
 the per-device property name.
 </ul>
+<h2>Mouse Functionality</h2>
+<b>Desktop Property: <A name="sun.awt.enableExtraMouseButtons">"sun.awt.enableExtraMouseButtons"</A></b>
+<p>
+This property determines if events from extra mouse buttons (if they are exist and are
+enabled by the underlying operating system) are allowed to be processed and posted into
+{@code EventQueue}.
+<br>
+The value could be changed by passing "sun.awt.enableExtraMouseButtons"
+property value into java before application starts. This could be done with the following command:
+<pre>
+java -Dsun.awt.enableExtraMouseButtons=false Application
+</pre>
+Once set on application startup, it is impossible to change this value after.
+<br>
+Current value could also be queried using getDesktopProperty("sun.awt.enableExtraMouseButtons")
+method.
+<br>
+If the property is set to {@code true} then 
+<ul>
+<li> it is still legal to create {@code MouseEvent} objects with
+standard buttons and, if the mouse has more
+then three buttons, it is also legal to use buttons from the range started
+from 0 up to {@link java.awt.MouseInfo#getNumberOfButtons() getNumberOfButtons()}.
+
+<li> it is legal to use standard button masks when using {@code Robot.mousePress()}
+and {@code Robot.mouseRelease()} methods and, if the mouse has more then three buttons,
+it is also legal to use masks for existing extended mouse buttons.
+That way, if there are more then three buttons on the mouse then it is allowed to
+use button masks corresponding to the buttons 
+in the range from 1 up to {@link java.awt.MouseInfo#getNumberOfButtons() getNumberOfButtons()}
+</ul>
+<br>
+If the property is set to {@code false} then 
+<ul>
+<li> it is legal to create {@code MouseEvent} objects with standard buttons 
+only: {@code NOBUTTON}, {@code BUTTON1}, {@code BUTTON2} and
+{@code BUTTON3}
+<li> it is legal to use standard button masks only:
+{@code InputEvent.BUTTON1_DOWN_MASK}, {@code InputEvent.BUTTON2_DOWN_MASK},
+{@code InputEvent.BUTTON3_DOWN_MASK}
+</ul>
+
+This property should be used when there is no need in listening mouse events fired as a result of
+activity with extra mouse button.
+By default this property is set to {@code true}.
 </body>
 </html>

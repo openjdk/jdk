@@ -65,8 +65,10 @@ import java.applet.Applet;
 
 import sun.security.action.GetPropertyAction;
 import sun.awt.AppContext;
+import sun.awt.AWTAccessor;
 import sun.awt.ConstrainableGraphics;
 import sun.awt.SubRegionShowable;
+import sun.awt.SunToolkit;
 import sun.awt.WindowClosingListener;
 import sun.awt.CausedFocusEvent;
 import sun.awt.EmbeddedFrame;
@@ -758,21 +760,25 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * The shape set with the applyCompoundShape() method. It uncludes the result
      * of the HW/LW mixing related shape computation. It may also include
      * the user-specified shape of the component.
+     * The 'null' value means the component has normal shape (or has no shape at all)
+     * and applyCompoundShape() will skip the following shape identical to normal.
      */
     private transient Region compoundShape = null;
+
+    /*
+     * Represents the shape of this lightweight component to be cut out from
+     * heavyweight components should they intersect. Possible values:
+     *    1. null - consider the shape rectangular
+     *    2. EMPTY_REGION - nothing gets cut out (children still get cut out)
+     *    3. non-empty - this shape gets cut out.
+     */
+    private transient Region mixingCutoutRegion = null;
 
     /*
      * Indicates whether addNotify() is complete
      * (i.e. the peer is created).
      */
     private transient boolean isAddNotifyComplete = false;
-
-    private static final PropertyChangeListener opaquePropertyChangeListener =
-        new PropertyChangeListener() {
-            public void propertyChange(java.beans.PropertyChangeEvent evt) {
-                ((Component)evt.getSource()).mixOnOpaqueChanging();
-            }
-        };
 
     /**
      * Should only be used in subclass getBounds to check that part of bounds
@@ -791,6 +797,39 @@ public abstract class Component implements ImageObserver, MenuContainer,
             if (boundsOp == ComponentPeer.DEFAULT_OPERATION) {
                 boundsOp = op;
             }
+    }
+
+    static {
+        AWTAccessor.setComponentAccessor(new AWTAccessor.ComponentAccessor() {
+            public void setMixingCutoutShape(Component comp, Shape shape) {
+                Region region = shape == null ?  null :
+                    Region.getInstance(shape, null);
+
+                synchronized (comp.getTreeLock()) {
+                    boolean needShowing = false;
+                    boolean needHiding = false;
+
+                    if (!comp.isNonOpaqueForMixing()) {
+                        needHiding = true;
+                    }
+
+                    comp.mixingCutoutRegion = region;
+
+                    if (!comp.isNonOpaqueForMixing()) {
+                        needShowing = true;
+                    }
+
+                    if (comp.isMixingNeeded()) {
+                        if (needHiding) {
+                            comp.mixOnHiding(comp.isLightweight());
+                        }
+                        if (needShowing) {
+                            comp.mixOnShowing();
+                        }
+                    }
+                }
+            }
+        });
     }
 
     /**
@@ -1306,7 +1345,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
                 enabled = true;
                 ComponentPeer peer = this.peer;
                 if (peer != null) {
-                    peer.enable();
+                    peer.setEnabled(true);
                     if (visible) {
                         updateCursorImmediately();
                     }
@@ -1355,7 +1394,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
                 }
                 ComponentPeer peer = this.peer;
                 if (peer != null) {
-                    peer.disable();
+                    peer.setEnabled(false);
                     if (visible) {
                         updateCursorImmediately();
                     }
@@ -1447,7 +1486,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
                 mixOnShowing();
                 ComponentPeer peer = this.peer;
                 if (peer != null) {
-                    peer.show();
+                    peer.setVisible(true);
                     createHierarchyEvents(HierarchyEvent.HIERARCHY_CHANGED,
                                           this, parent,
                                           HierarchyEvent.SHOWING_CHANGED,
@@ -1517,7 +1556,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
                 }
                 ComponentPeer peer = this.peer;
                 if (peer != null) {
-                    peer.hide();
+                    peer.setVisible(false);
                     createHierarchyEvents(HierarchyEvent.HIERARCHY_CHANGED,
                                           this, parent,
                                           HierarchyEvent.SHOWING_CHANGED,
@@ -2414,7 +2453,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
         if (dim == null || !(isPreferredSizeSet() || isValid())) {
             synchronized (getTreeLock()) {
                 prefSize = (peer != null) ?
-                    peer.preferredSize() :
+                    peer.getPreferredSize() :
                     getMinimumSize();
                 dim = prefSize;
             }
@@ -2484,7 +2523,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
         if (dim == null || !(isMinimumSizeSet() || isValid())) {
             synchronized (getTreeLock()) {
                 minSize = (peer != null) ?
-                    peer.minimumSize() :
+                    peer.getMinimumSize() :
                     size();
                 dim = minSize;
             }
@@ -3171,7 +3210,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
     private Insets getInsets_NoClientCode() {
         ComponentPeer peer = this.peer;
         if (peer instanceof ContainerPeer) {
-            return (Insets)((ContainerPeer)peer).insets().clone();
+            return (Insets)((ContainerPeer)peer).getInsets().clone();
         }
         return new Insets(0, 0, 0, 0);
     }
@@ -6643,7 +6682,6 @@ public abstract class Component implements ImageObserver, MenuContainer,
             }
 
             if (!isAddNotifyComplete) {
-                addPropertyChangeListener("opaque", opaquePropertyChangeListener);
                 mixOnShowing();
             }
 
@@ -6722,7 +6760,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
 
                 // Hide peer first to stop system events such as cursor moves.
                 if (visible) {
-                    p.hide();
+                    p.setVisible(false);
                 }
 
                 peer = null; // Stop peer updates.
@@ -6735,9 +6773,11 @@ public abstract class Component implements ImageObserver, MenuContainer,
                 p.dispose();
 
                 mixOnHiding(isLightweight);
-                removePropertyChangeListener("opaque", opaquePropertyChangeListener);
 
                 isAddNotifyComplete = false;
+                // Nullifying compoundShape means that the component has normal shape
+                // (or has no shape at all).
+                this.compoundShape = null;
             }
 
             if (hierarchyListener != null ||
@@ -9401,10 +9441,9 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * Null-layout of the container or absence of the container mean
      * the bounds of the component are final and can be trusted.
      */
-    private boolean areBoundsValid() {
+    final boolean areBoundsValid() {
         Container cont = getContainer();
-        return cont == null || cont.isValid()
-            || cont.getLayout() == null;
+        return cont == null || cont.isValid() || cont.getLayout() == null;
     }
 
     /**
@@ -9413,6 +9452,14 @@ public abstract class Component implements ImageObserver, MenuContainer,
      */
     void applyCompoundShape(Region shape) {
         checkTreeLock();
+
+        if (!areBoundsValid()) {
+            if (mixingLog.isLoggable(Level.FINE)) {
+                mixingLog.fine("this = " + this + "; areBoundsValid = " + areBoundsValid());
+            }
+            return;
+        }
+
         if (!isLightweight()) {
             ComponentPeer peer = getPeer();
             if (peer != null) {
@@ -9422,22 +9469,31 @@ public abstract class Component implements ImageObserver, MenuContainer,
                 // with some incorrect Region object with loX being
                 // greater than the hiX for instance.
                 if (shape.isEmpty()) {
-                    shape = Region.getInstanceXYWH(0, 0, 0, 0);
+                    shape = Region.EMPTY_REGION;
                 }
+
 
                 // Note: the shape is not really copied/cloned. We create
                 // the Region object ourselves, so there's no any possibility
                 // to modify the object outside of the mixing code.
-                this.compoundShape = shape;
-
-                if (areBoundsValid()) {
+                // Nullifying compoundShape means that the component has normal shape
+                // (or has no shape at all).
+                if (shape.equals(getNormalShape())) {
+                    if (this.compoundShape == null) {
+                        return;
+                    }
+                    this.compoundShape = null;
+                    peer.applyShape(null);
+                } else {
+                    if (shape.equals(getAppliedShape())) {
+                        return;
+                    }
+                    this.compoundShape = shape;
                     Point compAbsolute = getLocationOnWindow();
-
                     if (mixingLog.isLoggable(Level.FINER)) {
                         mixingLog.fine("this = " + this +
-                            "; compAbsolute=" + compAbsolute + "; shape=" + shape);
+                                "; compAbsolute=" + compAbsolute + "; shape=" + shape);
                     }
-
                     peer.applyShape(shape.getTranslatedRegion(-compAbsolute.x, -compAbsolute.y));
                 }
             }
@@ -9460,7 +9516,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
         Point curLocation = getLocation();
 
         for (Container parent = getContainer();
-                parent != null;
+                parent != null && !(parent instanceof Window);
                 parent = parent.getContainer())
         {
             curLocation.x += parent.getX();
@@ -9486,7 +9542,28 @@ public abstract class Component implements ImageObserver, MenuContainer,
             );
     }
 
-    private int getSiblingIndexAbove() {
+    /**
+     * Returns the "opaque shape" of the component.
+     *
+     * The opaque shape of a lightweight components is the actual shape that
+     * needs to be cut off of the heavyweight components in order to mix this
+     * lightweight component correctly with them.
+     *
+     * The method is overriden in the java.awt.Container to handle non-opaque
+     * containers containing opaque children.
+     *
+     * See 6637655 for details.
+     */
+    Region getOpaqueShape() {
+        checkTreeLock();
+        if (mixingCutoutRegion != null) {
+            return mixingCutoutRegion;
+        } else {
+            return getNormalShape();
+        }
+    }
+
+    final int getSiblingIndexAbove() {
         checkTreeLock();
         Container parent = getContainer();
         if (parent == null) {
@@ -9498,7 +9575,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
         return nextAbove < 0 ? -1 : nextAbove;
     }
 
-    private int getSiblingIndexBelow() {
+    final int getSiblingIndexBelow() {
         checkTreeLock();
         Container parent = getContainer();
         if (parent == null) {
@@ -9508,6 +9585,11 @@ public abstract class Component implements ImageObserver, MenuContainer,
         int nextBelow = parent.getComponentZOrder(this) + 1;
 
         return nextBelow >= parent.getComponentCount() ? -1 : nextBelow;
+    }
+
+    final boolean isNonOpaqueForMixing() {
+        return mixingCutoutRegion != null &&
+            mixingCutoutRegion.isEmpty();
     }
 
     private Region calculateCurrentShape() {
@@ -9532,8 +9614,8 @@ public abstract class Component implements ImageObserver, MenuContainer,
                      * implementation of the Container class.
                      */
                     Component c = cont.getComponent(index);
-                    if (c.isLightweight() && c.isShowing() && c.isOpaque()) {
-                        s = s.getDifference(c.getNormalShape());
+                    if (c.isLightweight() && c.isShowing()) {
+                        s = s.getDifference(c.getOpaqueShape());
                     }
                 }
 
@@ -9558,6 +9640,9 @@ public abstract class Component implements ImageObserver, MenuContainer,
     void applyCurrentShape() {
         checkTreeLock();
         if (!areBoundsValid()) {
+            if (mixingLog.isLoggable(Level.FINE)) {
+                mixingLog.fine("this = " + this + "; areBoundsValid = " + areBoundsValid());
+            }
             return; // Because applyCompoundShape() ignores such components anyway
         }
         if (mixingLog.isLoggable(Level.FINE)) {
@@ -9576,16 +9661,54 @@ public abstract class Component implements ImageObserver, MenuContainer,
         applyCompoundShape(getAppliedShape().getDifference(s));
     }
 
+    private final void applyCurrentShapeBelowMe() {
+        checkTreeLock();
+        Container parent = getContainer();
+        if (parent != null && parent.isShowing()) {
+            // First, reapply shapes of my siblings
+            parent.recursiveApplyCurrentShape(getSiblingIndexBelow());
+
+            // Second, if my container is non-opaque, reapply shapes of siblings of my container
+            Container parent2 = parent.getContainer();
+            while (!parent.isOpaque() && parent2 != null) {
+                parent2.recursiveApplyCurrentShape(parent.getSiblingIndexBelow());
+
+                parent = parent2;
+                parent2 = parent.getContainer();
+            }
+        }
+    }
+
+    final void subtractAndApplyShapeBelowMe() {
+        checkTreeLock();
+        Container parent = getContainer();
+        if (parent != null && isShowing()) {
+            Region opaqueShape = getOpaqueShape();
+
+            // First, cut my siblings
+            parent.recursiveSubtractAndApplyShape(opaqueShape, getSiblingIndexBelow());
+
+            // Second, if my container is non-opaque, cut siblings of my container
+            Container parent2 = parent.getContainer();
+            while (!parent.isOpaque() && parent2 != null) {
+                parent2.recursiveSubtractAndApplyShape(opaqueShape, parent.getSiblingIndexBelow());
+
+                parent = parent2;
+                parent2 = parent.getContainer();
+            }
+        }
+    }
+
     void mixOnShowing() {
         synchronized (getTreeLock()) {
             if (mixingLog.isLoggable(Level.FINE)) {
                 mixingLog.fine("this = " + this);
             }
+            if (!isMixingNeeded()) {
+                return;
+            }
             if (isLightweight()) {
-                Container parent = getContainer();
-                if (parent != null && isShowing() && isOpaque()) {
-                    parent.recursiveSubtractAndApplyShape(getNormalShape(), getSiblingIndexBelow());
-                }
+                subtractAndApplyShapeBelowMe();
             } else {
                 applyCurrentShape();
             }
@@ -9599,12 +9722,12 @@ public abstract class Component implements ImageObserver, MenuContainer,
             if (mixingLog.isLoggable(Level.FINE)) {
                 mixingLog.fine("this = " + this + "; isLightweight = " + isLightweight);
             }
+            if (!isMixingNeeded()) {
+                return;
+            }
             if (isLightweight) {
-                Container parent = getContainer();
-                if (parent != null) {
-                    parent.recursiveApplyCurrentShape(getSiblingIndexBelow());
-                }
-            } //XXX: else applyNormalShape() ???
+                applyCurrentShapeBelowMe();
+            }
         }
     }
 
@@ -9613,11 +9736,11 @@ public abstract class Component implements ImageObserver, MenuContainer,
             if (mixingLog.isLoggable(Level.FINE)) {
                 mixingLog.fine("this = " + this);
             }
+            if (!isMixingNeeded()) {
+                return;
+            }
             if (isLightweight()) {
-                Container parent = getContainer();
-                if (parent != null) {
-                    parent.recursiveApplyCurrentShape(parent.getComponentZOrder(this));
-                }
+                applyCurrentShapeBelowMe();
             } else {
                 applyCurrentShape();
             }
@@ -9633,11 +9756,13 @@ public abstract class Component implements ImageObserver, MenuContainer,
                 mixingLog.fine("this = " + this +
                     "; oldZorder=" + oldZorder + "; newZorder=" + newZorder + "; parent=" + parent);
             }
-
+            if (!isMixingNeeded()) {
+                return;
+            }
             if (isLightweight()) {
                 if (becameHigher) {
-                    if (parent != null && isShowing() && isOpaque()) {
-                        parent.recursiveSubtractAndApplyShape(getNormalShape(), getSiblingIndexBelow(), oldZorder);
+                    if (parent != null && isShowing()) {
+                        parent.recursiveSubtractAndApplyShape(getOpaqueShape(), getSiblingIndexBelow(), oldZorder);
                     }
                 } else {
                     if (parent != null) {
@@ -9653,8 +9778,8 @@ public abstract class Component implements ImageObserver, MenuContainer,
 
                         for (int index = oldZorder; index < newZorder; index++) {
                             Component c = parent.getComponent(index);
-                            if (c.isLightweight() && c.isShowing() && c.isOpaque()) {
-                                shape = shape.getDifference(c.getNormalShape());
+                            if (c.isLightweight() && c.isShowing()) {
+                                shape = shape.getDifference(c.getOpaqueShape());
                             }
                         }
                         applyCompoundShape(shape);
@@ -9664,20 +9789,41 @@ public abstract class Component implements ImageObserver, MenuContainer,
         }
     }
 
-    void mixOnOpaqueChanging() {
-        if (mixingLog.isLoggable(Level.FINE)) {
-            mixingLog.fine("this = " + this);
-        }
-        if (isOpaque()) {
-            mixOnShowing();
-        } else {
-            mixOnHiding(isLightweight());
-        }
-    }
-
     void mixOnValidating() {
         // This method gets overriden in the Container. Obviously, a plain
         // non-container components don't need to handle validation.
+    }
+
+    final boolean isMixingNeeded() {
+        if (SunToolkit.getSunAwtDisableMixing()) {
+            if (mixingLog.isLoggable(Level.FINEST)) {
+                mixingLog.finest("this = " + this + "; Mixing disabled via sun.awt.disableMixing");
+            }
+            return false;
+        }
+        if (!areBoundsValid()) {
+            if (mixingLog.isLoggable(Level.FINE)) {
+                mixingLog.fine("this = " + this + "; areBoundsValid = " + areBoundsValid());
+            }
+            return false;
+        }
+        Window window = getContainingWindow();
+        if (window != null) {
+            if (!window.hasHeavyweightDescendants() || !window.hasLightweightDescendants()) {
+                if (mixingLog.isLoggable(Level.FINE)) {
+                    mixingLog.fine("containing window = " + window +
+                            "; has h/w descendants = " + window.hasHeavyweightDescendants() +
+                            "; has l/w descendants = " + window.hasLightweightDescendants());
+                }
+                return false;
+            }
+        } else {
+            if (mixingLog.isLoggable(Level.FINE)) {
+                mixingLog.finest("this = " + this + "; containing window is null");
+            }
+            return false;
+        }
+        return true;
     }
 
     // ****************** END OF MIXING CODE ********************************

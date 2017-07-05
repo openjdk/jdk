@@ -30,20 +30,6 @@
 #ifndef _COMCTL32UTIL_H
 #define _COMCTL32UTIL_H
 
-
-/*
- * comctl32.dll version 6 subclassing - taken from PlatformSDK/Include/commctrl.h
- */
-typedef LRESULT (CALLBACK *SUBCLASSPROC)(HWND hWnd, UINT uMsg, WPARAM wParam, \
-    LPARAM lParam, UINT_PTR uIdSubclass, DWORD_PTR dwRefData);
-
-typedef BOOL (WINAPI *PFNSETWINDOWSUBCLASS)(HWND hWnd, SUBCLASSPROC pfnSubclass, UINT_PTR uIdSubclass, \
-    DWORD_PTR dwRefData);
-typedef BOOL (WINAPI *PFNREMOVEWINDOWSUBCLASS)(HWND hWnd, SUBCLASSPROC pfnSubclass, \
-    UINT_PTR uIdSubclass);
-
-typedef LRESULT (WINAPI *PFNDEFSUBCLASSPROC)(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-
 class ComCtl32Util
 {
     public:
@@ -52,21 +38,8 @@ class ComCtl32Util
             return theInstance;
         }
 
-        // loads comctl32.dll and checks if required routines are available
-        // called from AwtToolkit::AwtToolkit()
         void InitLibraries();
-        // unloads comctl32.dll
-        // called from AwtToolkit::Dispose()
-        void FreeLibraries();
 
-        //-- comctl32.dll version 6 subclassing API --//
-
-        INLINE BOOL IsNewSubclassing() {
-            return m_bNewSubclassing;
-        }
-
-        // if comctl32.dll version 6 is used returns NULL, otherwise
-        // returns default window proc
         WNDPROC SubclassHWND(HWND hwnd, WNDPROC _WindowProc);
         // DefWindowProc is the same as returned from SubclassHWND
         void UnsubclassHWND(HWND hwnd, WNDPROC _WindowProc, WNDPROC _DefWindowProc);
@@ -76,19 +49,6 @@ class ComCtl32Util
     private:
         ComCtl32Util();
         ~ComCtl32Util();
-
-        HMODULE hModComCtl32;
-
-        PFNSETWINDOWSUBCLASS m_lpfnSetWindowSubclass;
-        PFNREMOVEWINDOWSUBCLASS m_lpfnRemoveWindowSubclass;
-        PFNDEFSUBCLASSPROC m_lpfnDefSubclassProc;
-
-        typedef BOOL (WINAPI * InitCommonControlsExType)(const LPINITCOMMONCONTROLSEX lpInitCtrls);
-        InitCommonControlsExType fn_InitCommonControlsEx;
-
-        void InitCommonControls();
-
-        BOOL m_bNewSubclassing;
 
         // comctl32.dll version 6 window proc
         static LRESULT CALLBACK SharedWindowProc(HWND hwnd, UINT message,

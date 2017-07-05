@@ -25,17 +25,7 @@
 
 package sun.misc;
 
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.Hashtable;
-import java.util.NoSuchElementException;
-import java.util.Stack;
-import java.util.Set;
-import java.util.HashSet;
-import java.util.StringTokenizer;
-import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.*;
 import java.util.jar.JarFile;
 import sun.misc.JarIndex;
 import sun.misc.InvalidJarIndexException;
@@ -52,12 +42,7 @@ import java.net.URLConnection;
 import java.net.HttpURLConnection;
 import java.net.URLStreamHandler;
 import java.net.URLStreamHandlerFactory;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.InputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.security.AccessController;
 import java.security.AccessControlException;
 import java.security.CodeSigner;
@@ -100,6 +85,9 @@ public class URLClassPath {
     /* The jar protocol handler to use when creating new URLs */
     private URLStreamHandler jarHandler;
 
+    /* Whether this URLClassLoader has been closed yet */
+    private boolean closed = false;
+
     /**
      * Creates a new URLClassPath for the given URLs. The URLs will be
      * searched in the order specified for classes and resources. A URL
@@ -122,6 +110,22 @@ public class URLClassPath {
 
     public URLClassPath(URL[] urls) {
         this(urls, null);
+    }
+
+    public synchronized List<IOException> closeLoaders() {
+        if (closed) {
+            return Collections.emptyList();
+        }
+        List<IOException> result = new LinkedList<IOException>();
+        for (Loader loader : loaders) {
+            try {
+                loader.close();
+            } catch (IOException e) {
+                result.add (e);
+            }
+        }
+        closed = true;
+        return result;
     }
 
     /**
@@ -293,6 +297,9 @@ public class URLClassPath {
      * if the specified index is out of range.
      */
      private synchronized Loader getLoader(int index) {
+        if (closed) {
+            return null;
+        }
          // Expand URL search path until the request can be satisfied
          // or the URL stack is empty.
         while (loaders.size() < index + 1) {
@@ -453,7 +460,7 @@ public class URLClassPath {
      * Inner class used to represent a loader of resources and classes
      * from a base URL.
      */
-    private static class Loader {
+    private static class Loader implements Closeable {
         private final URL base;
 
         /*
@@ -545,6 +552,12 @@ public class URLClassPath {
         }
 
         /*
+         * close this loader and release all resources
+         * method overridden in sub-classes
+         */
+        public void close () throws IOException {}
+
+        /*
          * Returns the local class path for this loader, or null if none.
          */
         URL[] getClassPath() throws IOException {
@@ -562,6 +575,7 @@ public class URLClassPath {
         private MetaIndex metaIndex;
         private URLStreamHandler handler;
         private HashMap<URL, Loader> lmap;
+        private boolean closed = false;
 
         /*
          * Creates a new JarLoader for the specified URL referring to
@@ -601,6 +615,17 @@ public class URLClassPath {
                 if (metaIndex == null) {
                     ensureOpen();
                 }
+            }
+        }
+
+        @Override
+        public void close () throws IOException {
+            // closing is synchronized at higher level
+            if (!closed) {
+                closed = true;
+                // in case not already open.
+                ensureOpen();
+                jar.close();
             }
         }
 

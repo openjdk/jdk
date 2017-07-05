@@ -78,6 +78,7 @@ public class OverlappingButtons
                 {
                     public void actionPerformed(java.awt.event.ActionEvent e) {
                         p.setComponentZOrder(light, 0);
+                        f.validate();
                         testSeq = testSeq + "0";
                     }
                 }
@@ -87,6 +88,7 @@ public class OverlappingButtons
                 {
                     public void actionPerformed(java.awt.event.ActionEvent e) {
                         p.setComponentZOrder(heavy, 0);
+                        f.validate();
                         testSeq = testSeq + "1";
                     }
                 }
