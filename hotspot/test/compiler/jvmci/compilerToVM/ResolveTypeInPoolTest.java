@@ -41,6 +41,7 @@
  * @run main/othervm -Xbootclasspath/a:.
  *                   -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *                   -Djvmci.Compiler=null
  *                   compiler.jvmci.compilerToVM.ResolveTypeInPoolTest
  */
 

@@ -28,6 +28,7 @@ package jdk.incubator.http.internal.common;
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.stream.Stream;
+import java.util.Objects;
 
 // Each stream has one of these for input. Each Http2Connection has one
 // for output. Can be used blocking or asynchronously.
@@ -38,32 +39,8 @@ public class Queue<T> implements ExceptionallyCloseable  {
     private volatile boolean closed = false;
     private volatile Throwable exception = null;
     private Runnable callback;
-    private boolean forceCallback;
+    private boolean callbackDisabled = false;
     private int waiters; // true if someone waiting
-
-    public synchronized void putAll(T[] objs) throws IOException {
-        if (closed) {
-            throw new IOException("stream closed");
-        }
-        boolean wasEmpty = q.isEmpty();
-
-        for (T obj : objs) {
-            q.add(obj);
-        }
-
-        if (waiters > 0) {
-            notifyAll();
-        }
-
-        if (wasEmpty || forceCallback) {
-            forceCallback = false;
-            if (callback != null) {
-                // Note: calling callback while holding the lock is
-                // dangerous and may lead to deadlocks.
-                callback.run();
-           }
-        }
-    }
 
     public synchronized int size() {
         return q.size();
@@ -81,17 +58,30 @@ public class Queue<T> implements ExceptionallyCloseable  {
         }
 
         q.add(obj);
+
         if (waiters > 0) {
             notifyAll();
         }
 
-        if (q.size() == 1 || forceCallback) {
-            forceCallback = false;
-            if (callback != null) {
-                // Note: calling callback while holding the lock is
-                // dangerous and may lead to deadlocks.
-                callback.run();
-            }
+        if (callbackDisabled) {
+            return;
+        }
+
+        if (q.size() > 0 && callback != null) {
+            // Note: calling callback while holding the lock is
+            // dangerous and may lead to deadlocks.
+            callback.run();
+        }
+    }
+
+    public synchronized void disableCallback() {
+        callbackDisabled = true;
+    }
+
+    public synchronized void enableCallback() {
+        callbackDisabled = false;
+        while (q.size() > 0) {
+            callback.run();
         }
     }
 
@@ -100,8 +90,9 @@ public class Queue<T> implements ExceptionallyCloseable  {
      * the Queue was empty.
      */
     public synchronized void registerPutCallback(Runnable callback) {
+        Objects.requireNonNull(callback);
         this.callback = callback;
-        if (callback != null && q.size() > 0) {
+        if (q.size() > 0) {
             // Note: calling callback while holding the lock is
             // dangerous and may lead to deadlocks.
             callback.run();
@@ -167,12 +158,10 @@ public class Queue<T> implements ExceptionallyCloseable  {
     }
 
     public synchronized void pushback(T v) {
-        forceCallback = true;
         q.addFirst(v);
     }
 
     public synchronized void pushbackAll(T[] v) {
-        forceCallback = true;
         for (int i=v.length-1; i>=0; i--) {
             q.addFirst(v[i]);
         }

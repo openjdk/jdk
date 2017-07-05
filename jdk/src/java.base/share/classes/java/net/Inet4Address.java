@@ -36,7 +36,7 @@ import java.io.ObjectStreamException;
  * and <a href="http://www.ietf.org/rfc/rfc2365.txt"><i>RFC&nbsp;2365:
  * Administratively Scoped IP Multicast</i></a>
  *
- * <h3> <A NAME="format">Textual representation of IP addresses</a> </h3>
+ * <h3> <a id="format">Textual representation of IP addresses</a> </h3>
  *
  * Textual representation of IPv4 address used as input to methods
  * takes one of the following forms:
