@@ -1871,7 +1871,8 @@ void ciTypeFlow::Block::print_value_on(outputStream* st) const {
 // ------------------------------------------------------------------
 // ciTypeFlow::Block::print_on
 void ciTypeFlow::Block::print_on(outputStream* st) const {
-  if ((Verbose || WizardMode)) {
+  if ((Verbose || WizardMode) && (limit() >= 0)) {
+    // Don't print 'dummy' blocks (i.e. blocks with limit() '-1')
     outer()->method()->print_codes_on(start(), limit(), st);
   }
   st->print_cr("  ====================================================  ");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -362,7 +362,16 @@ public class ObjectHeap {
         if (klass.equals(compiledICHolderKlassHandle))  return new CompiledICHolder(handle, this);
         if (klass.equals(methodDataKlassHandle))        return new MethodData(handle, this);
       }
-      if (klass.equals(instanceKlassKlassHandle))       return new InstanceKlass(handle, this);
+      if (klass.equals(instanceKlassKlassHandle)) {
+          InstanceKlass ik = new InstanceKlass(handle, this);
+          if (ik.getName().asString().equals("java/lang/Class")) {
+              // We would normally do this using the vtable style
+              // lookup but since it's not used for these currently
+              // it's simpler to just check for the name.
+              return new InstanceMirrorKlass(handle, this);
+          }
+          return ik;
+      }
       if (klass.equals(objArrayKlassKlassHandle))       return new ObjArrayKlass(handle, this);
       if (klass.equals(typeArrayKlassKlassHandle))      return new TypeArrayKlass(handle, this);
 

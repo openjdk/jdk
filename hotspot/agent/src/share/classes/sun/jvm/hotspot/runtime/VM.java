@@ -839,20 +839,18 @@ public class VM {
   }
 
   private void readSystemProperties() {
-     final InstanceKlass systemKls = getSystemDictionary().getSystemKlass();
-     systemKls.iterate(new DefaultOopVisitor() {
-                               ObjectReader objReader = new ObjectReader();
-                               public void doOop(sun.jvm.hotspot.oops.OopField field, boolean isVMField) {
-                                  if (field.getID().getName().equals("props")) {
-                                     try {
-                                        sysProps = (Properties) objReader.readObject(field.getValue(systemKls.getJavaMirror()));
-                                     } catch (Exception e) {
-                                        if (Assert.ASSERTS_ENABLED) {
-                                           e.printStackTrace();
-                                        }
-                                     }
-                                  }
-                               }
-                        }, false);
+    final InstanceKlass systemKls = getSystemDictionary().getSystemKlass();
+    systemKls.iterateStaticFields(new DefaultOopVisitor() {
+        ObjectReader objReader = new ObjectReader();
+        public void doOop(sun.jvm.hotspot.oops.OopField field, boolean isVMField) {
+          if (field.getID().getName().equals("props")) {
+            try {
+              sysProps = (Properties) objReader.readObject(field.getValue(getObj()));
+            } catch (Exception e) {
+              e.printStackTrace();
+            }
+          }
+        }
+      });
   }
 }
