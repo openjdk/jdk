@@ -33,6 +33,14 @@ grant codeBase "jrt:/jdk.crypto.ucrypto" {
         permission java.io.FilePermission "${java.home}/conf/security/ucrypto-solaris.cfg", "read";
 };
 
+grant codeBase "jrt:/java.sql" {
+        permission java.security.AllPermission;
+};
+
+grant codeBase "jrt:/java.sql.rowset" {
+        permission java.security.AllPermission;
+};
+
 grant codeBase "jrt:/jdk.crypto.ec" {
         permission java.lang.RuntimePermission "accessClassInPackage.sun.security.*";
         permission java.lang.RuntimePermission "loadLibrary.sunec";

@@ -31,7 +31,6 @@ import java.util.Locale;
 public class JVMCIError extends Error {
 
     private static final long serialVersionUID = 531632331813456233L;
-    private final ArrayList<String> context = new ArrayList<>();
 
     public static RuntimeException unimplemented() {
         throw new JVMCIError("unimplemented");
@@ -101,27 +100,6 @@ public class JVMCIError extends Error {
         super(cause);
     }
 
-    /**
-     * This constructor creates a {@link JVMCIError} and adds all the
-     * {@linkplain #addContext(String) context} of another {@link JVMCIError}.
-     *
-     * @param e the original {@link JVMCIError}
-     */
-    public JVMCIError(JVMCIError e) {
-        super(e);
-        context.addAll(e.context);
-    }
-
-    @Override
-    public String toString() {
-        StringBuilder str = new StringBuilder();
-        str.append(super.toString());
-        for (String s : context) {
-            str.append("\n\tat ").append(s);
-        }
-        return str.toString();
-    }
-
     private static String format(String msg, Object... args) {
         if (args != null) {
             // expand Iterable parameters into a list representation
@@ -136,14 +114,5 @@ public class JVMCIError extends Error {
             }
         }
         return String.format(Locale.ENGLISH, msg, args);
-    }
-
-    public JVMCIError addContext(String newContext) {
-        this.context.add(newContext);
-        return this;
-    }
-
-    public JVMCIError addContext(String name, Object obj) {
-        return addContext(format("%s: %s", name, obj));
     }
 }

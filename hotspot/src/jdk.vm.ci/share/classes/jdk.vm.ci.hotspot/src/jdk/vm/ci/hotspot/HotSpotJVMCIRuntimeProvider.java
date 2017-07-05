@@ -24,15 +24,12 @@ package jdk.vm.ci.hotspot;
 
 import java.io.OutputStream;
 
+import jdk.internal.misc.Unsafe;
 import jdk.vm.ci.common.JVMCIError;
-import jdk.vm.ci.meta.JVMCIMetaAccessContext;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.runtime.JVMCIRuntime;
-import jdk.internal.misc.Unsafe;
-
-//JaCoCo Exclude
 
 /**
  * Configuration information for the HotSpot JVMCI runtime.
@@ -69,8 +66,6 @@ public interface HotSpotJVMCIRuntimeProvider extends JVMCIRuntime {
      * @return the {@link ResolvedJavaType} corresponding to {@code javaClass}
      */
     ResolvedJavaType fromClass(Class<?> clazz);
-
-    JVMCIMetaAccessContext getMetaAccessContext();
 
     /**
      * The offset from the origin of an array to the first element.

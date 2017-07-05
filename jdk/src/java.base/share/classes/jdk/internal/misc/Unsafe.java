@@ -90,9 +90,9 @@ public final class Unsafe {
      *
      * (It may assist compilers to make the local variable {@code final}.)
      *
-     * @throws  SecurityException  if a security manager exists and its
-     *          {@code checkPropertiesAccess} method doesn't allow
-     *          access to the system properties.
+     * @throws  SecurityException if the class loader of the caller
+     *          class is not in the system domain in which all permissions
+     *          are granted.
      */
     @CallerSensitive
     public static Unsafe getUnsafe() {

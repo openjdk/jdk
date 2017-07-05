@@ -33,24 +33,27 @@ import jdk.test.lib.jittester.Type;
 import jdk.test.lib.jittester.TypeList;
 
 public class TypeKlass extends Type {
-
-    private TypeKlass parent;
-    private HashSet<String> parentsList;
-    private HashSet<String> childrenList;
+    private TypeKlass parentKlass;
+    private final HashSet<String> parentsList;
+    private final HashSet<String> childrenList;
     private final HashSet<Symbol> symbolsSet;
+    private int flags;
+
     public static final int NONE = 0x00;
     public static final int FINAL = 0x01;
     public static final int INTERFACE = 0x02;
     public static final int ABSTRACT = 0x04;
-    private int flags = NONE;
+
 
     public TypeKlass(String name) {
-        this(name, 0);
+        this(name, NONE);
     }
 
     public TypeKlass(String name, int flags) {
         super(name);
         this.flags = flags;
+        parentsList = new HashSet<>();
+        childrenList = new HashSet<>();
         symbolsSet = new HashSet<>();
     }
 
@@ -76,39 +79,27 @@ public class TypeKlass extends Type {
 
     @Override
     protected void exportSymbols() {
-        symbolsSet.stream().forEach(symbol -> {
-            SymbolTable.add(symbol);
-        });
+        symbolsSet.stream().forEach(SymbolTable::add);
     }
 
     public void setParent(TypeKlass p) {
-        parent = p;
+        parentKlass = p;
     }
 
     public void addParent(String p) {
-        if (parentsList == null) {
-            parentsList = new HashSet<>();
-        }
         parentsList.add(p);
     }
 
     public void addChild(String c) {
-        if (childrenList == null) {
-            childrenList = new HashSet<>();
-        }
         childrenList.add(c);
     }
 
     protected void removeParent(String p) {
-        if (parentsList != null) {
-            parentsList.remove(p);
-        }
+        parentsList.remove(p);
     }
 
     protected void removeChild(String c) {
-        if (childrenList != null) {
-            childrenList.remove(c);
-        }
+        childrenList.remove(c);
     }
 
     public HashSet<String> getParentsNames() {
@@ -131,37 +122,27 @@ public class TypeKlass extends Type {
 
     public TreeSet<TypeKlass> getAllParents() {
         TreeSet<TypeKlass> result = new TreeSet<>();
-        if (parentsList != null) {
-            for (String parentName : parentsList) {
-                Type _parentKlass = TypeList.find(new TypeKlass(parentName));
-                if (_parentKlass != null) {
-                    try {
-                        TypeKlass parentKlass = (TypeKlass) _parentKlass;
-                        result.add(parentKlass);
-                        result.addAll(parentKlass.getAllParents());
-                    } catch (Exception e) {
-                    }
-                }
-            }
-        }
+        parentsList.stream()
+                .map(TypeList::find)
+                .filter(parentKlass -> parentKlass != null)
+                .map(parentKlass -> (TypeKlass) parentKlass)
+                .forEach(parentKlass -> {
+                    result.add(parentKlass);
+                    result.addAll(parentKlass.getAllParents());
+        });
         return result;
     }
 
     public TreeSet<TypeKlass> getAllChildren() {
         TreeSet<TypeKlass> r = new TreeSet<>();
-        if (childrenList != null) {
-            for (String childName : childrenList) {
-                Type _childKlass = TypeList.find(new TypeKlass(childName));
-                if (_childKlass != null) {
-                    try {
-                        TypeKlass childKlass = (TypeKlass) _childKlass;
-                        r.add(childKlass);
-                        r.addAll(childKlass.getAllChildren());
-                    } catch (Exception e) {
-                    }
-                }
-            }
-        }
+        childrenList.stream()
+                .map(TypeList::find)
+                .filter(childKlass -> childKlass != null)
+                .map(childKlass -> (TypeKlass) childKlass)
+                .forEach(childKlass -> {
+                    r.add(childKlass);
+                    r.addAll(childKlass.getAllChildren());
+        });
         return r;
     }
 
@@ -179,8 +160,11 @@ public class TypeKlass extends Type {
     // we cannot guarantee that no exception will occur.
     @Override
     public boolean canExplicitlyCastTo(Type t) {
+        if (equals(t)) {
+            return true;
+        }
         if (t instanceof TypeKlass && !ProductionParams.disableDowncasts.value()) {
-            return equals(t) || getAllChildren().contains(t);
+            return getAllChildren().contains(t);
         }
 
         return false;
@@ -204,5 +188,9 @@ public class TypeKlass extends Type {
 
     public boolean isInterface() {
         return (flags & INTERFACE) > 0;
+    }
+
+    public TypeKlass getParent() {
+        return parentKlass;
     }
 }

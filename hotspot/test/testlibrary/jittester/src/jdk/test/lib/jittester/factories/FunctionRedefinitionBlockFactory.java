@@ -34,7 +34,7 @@ import jdk.test.lib.jittester.functions.FunctionInfo;
 import jdk.test.lib.jittester.functions.FunctionRedefinitionBlock;
 import jdk.test.lib.jittester.types.TypeKlass;
 
-class FunctionRedefinitionBlockFactory extends Factory {
+class FunctionRedefinitionBlockFactory extends Factory<FunctionRedefinitionBlock> {
     private final int statementLimit;
     private final int operatorLimit;
     private final long complexityLimit;
@@ -53,7 +53,7 @@ class FunctionRedefinitionBlockFactory extends Factory {
     }
 
     @Override
-    public IRNode produce() throws ProductionFailedException {
+    public FunctionRedefinitionBlock produce() throws ProductionFailedException {
         ArrayList<IRNode> content = new ArrayList<>();
         if (functionSet.size() > 0) {
             long funcComplexity = complexityLimit / functionSet.size();

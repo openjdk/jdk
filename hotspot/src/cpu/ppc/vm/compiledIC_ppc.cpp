@@ -178,10 +178,15 @@ void CompiledStaticCall::set_to_interpreted(methodHandle callee, address entry) 
   NativeMovConstReg* method_holder = nativeMovConstReg_at(stub + IC_pos_in_java_to_interp_stub);
   NativeJump*        jump          = nativeJump_at(method_holder->next_instruction_address());
 
-  assert(method_holder->data() == 0 || method_holder->data() == (intptr_t)callee(),
+#ifdef ASSERT
+  // read the value once
+  volatile intptr_t data = method_holder->data();
+  volatile address destination = jump->jump_destination();
+  assert(data == 0 || data == (intptr_t)callee(),
          "a) MT-unsafe modification of inline cache");
-  assert(jump->jump_destination() == (address)-1 || jump->jump_destination() == entry,
+  assert(destination == (address)-1 || destination == entry,
          "b) MT-unsafe modification of inline cache");
+#endif
 
   // Update stub.
   method_holder->set_data((intptr_t)callee());

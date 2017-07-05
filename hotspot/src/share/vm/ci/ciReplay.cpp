@@ -823,7 +823,7 @@ class CompileReplay : public StackObj {
         int value = atoi(string_value);
         java_mirror->short_field_put(fd.offset(), value);
       } else if (strcmp(field_signature, "Z") == 0) {
-        int value = atol(string_value);
+        int value = atoi(string_value);
         java_mirror->bool_field_put(fd.offset(), value);
       } else if (strcmp(field_signature, "J") == 0) {
         jlong value;

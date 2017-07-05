@@ -37,30 +37,30 @@ public class BoxPrimitiveDataProvider {
         LinkedList<Object[]> cfgSet = new LinkedList<>();
         // Boolean testing
         cfgSet.add(
-                new Object[]{JavaConstant.forBoolean(true), CONSTANT_REFLECTION_PROVIDER.forObject((Boolean) true)});
+                        new Object[]{JavaConstant.forBoolean(true), CONSTANT_REFLECTION_PROVIDER.forObject(true)});
         cfgSet.add(new Object[]{JavaConstant.forBoolean(false),
-                CONSTANT_REFLECTION_PROVIDER.forObject((Boolean) false)});
+                        CONSTANT_REFLECTION_PROVIDER.forObject(false)});
         // Boxed boolean testing (returns null)
-        cfgSet.add(new Object[]{CONSTANT_REFLECTION_PROVIDER.forObject((Boolean) true), null});
-        cfgSet.add(new Object[]{CONSTANT_REFLECTION_PROVIDER.forObject((Boolean) false), null});
+        cfgSet.add(new Object[]{CONSTANT_REFLECTION_PROVIDER.forObject(true), null});
+        cfgSet.add(new Object[]{CONSTANT_REFLECTION_PROVIDER.forObject(false), null});
         for (byte number : new byte[]{-128, 0, 1, 127}) {
             // Integer primitives testing
             cfgSet.add(new Object[]{JavaConstant.forByte(number),
-                    CONSTANT_REFLECTION_PROVIDER.forObject(Byte.valueOf(number))});
+                            CONSTANT_REFLECTION_PROVIDER.forObject(Byte.valueOf(number))});
             cfgSet.add(new Object[]{JavaConstant.forShort(number),
-                    CONSTANT_REFLECTION_PROVIDER.forObject(Short.valueOf(number))});
+                            CONSTANT_REFLECTION_PROVIDER.forObject(Short.valueOf(number))});
             cfgSet.add(new Object[]{JavaConstant.forInt(number),
-                    CONSTANT_REFLECTION_PROVIDER.forObject(Integer.valueOf(number))});
+                            CONSTANT_REFLECTION_PROVIDER.forObject(Integer.valueOf(number))});
             cfgSet.add(new Object[]{JavaConstant.forLong(number),
-                    CONSTANT_REFLECTION_PROVIDER.forObject(Long.valueOf(number))});
+                            CONSTANT_REFLECTION_PROVIDER.forObject(Long.valueOf(number))});
             if (number >= 0) {
                 cfgSet.add(new Object[]{JavaConstant.forChar((char) number),
-                        CONSTANT_REFLECTION_PROVIDER.forObject(Character.valueOf((char) number))});
+                                CONSTANT_REFLECTION_PROVIDER.forObject(Character.valueOf((char) number))});
             }
             // Float and Double variables are not cached,
             // so the tested method returns "null" on them
-            cfgSet.add(new Object[]{JavaConstant.forFloat((float) number), null});
-            cfgSet.add(new Object[]{JavaConstant.forDouble((double) number), null});
+            cfgSet.add(new Object[]{JavaConstant.forFloat(number), null});
+            cfgSet.add(new Object[]{JavaConstant.forDouble(number), null});
             // Boxed primitives testing (return null)
             cfgSet.add(new Object[]{CONSTANT_REFLECTION_PROVIDER.forObject(Byte.valueOf(number)), null});
             cfgSet.add(new Object[]{CONSTANT_REFLECTION_PROVIDER.forObject(Short.valueOf(number)), null});
@@ -78,7 +78,7 @@ public class BoxPrimitiveDataProvider {
         // Non-primitives testing
         cfgSet.add(new Object[]{CONSTANT_REFLECTION_PROVIDER.forObject(DUMMY_CLASS_INSTANCE.objectField), null});
         cfgSet.add(new Object[]{CONSTANT_REFLECTION_PROVIDER.forObject(DUMMY_CLASS_INSTANCE.booleanArrayWithValues),
-                null});
+                        null});
         // Null testing
         cfgSet.add(new Object[]{JavaConstant.NULL_POINTER, null});
         cfgSet.add(new Object[]{null, null});
