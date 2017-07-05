@@ -1336,9 +1336,16 @@ class SecurityManager {
      *             top-level windows; <code>false</code> otherwise.
      * @exception  NullPointerException if the <code>window</code> argument is
      *             <code>null</code>.
+     * @deprecated The dependency on {@code AWTPermission} creates an
+     *             impediment to future modularization of the Java platform.
+     *             Users of this method should instead invoke
+     *             {@link #checkPermission} directly.
+     *             This method will be changed in a future release to check
+     *             the permission {@code java.security.AllPermission}.
      * @see        java.awt.Window
      * @see        #checkPermission(java.security.Permission) checkPermission
      */
+    @Deprecated
     public boolean checkTopLevelWindow(Object window) {
         if (window == null) {
             throw new NullPointerException("window can't be null");
@@ -1398,8 +1405,15 @@ class SecurityManager {
      * @since   JDK1.1
      * @exception  SecurityException  if the calling thread does not have
      *             permission to access the system clipboard.
+     * @deprecated The dependency on {@code AWTPermission} creates an
+     *             impediment to future modularization of the Java platform.
+     *             Users of this method should instead invoke
+     *             {@link #checkPermission} directly.
+     *             This method will be changed in a future release to check
+     *             the permission {@code java.security.AllPermission}.
      * @see        #checkPermission(java.security.Permission) checkPermission
      */
+    @Deprecated
     public void checkSystemClipboardAccess() {
         Permission perm = SecurityConstants.AWT.ACCESS_CLIPBOARD_PERMISSION;
         if (perm == null) {
@@ -1427,8 +1441,15 @@ class SecurityManager {
      * @since   JDK1.1
      * @exception  SecurityException  if the calling thread does not have
      *             permission to access the AWT event queue.
+     * @deprecated The dependency on {@code AWTPermission} creates an
+     *             impediment to future modularization of the Java platform.
+     *             Users of this method should instead invoke
+     *             {@link #checkPermission} directly.
+     *             This method will be changed in a future release to check
+     *             the permission {@code java.security.AllPermission}.
      * @see        #checkPermission(java.security.Permission) checkPermission
      */
+    @Deprecated
     public void checkAwtEventQueueAccess() {
         Permission perm = SecurityConstants.AWT.CHECK_AWT_EVENTQUEUE_PERMISSION;
         if (perm == null) {
