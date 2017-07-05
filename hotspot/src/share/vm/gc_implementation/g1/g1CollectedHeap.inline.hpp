@@ -134,7 +134,7 @@ G1CollectedHeap::dirty_young_block(HeapWord* start, size_t word_size) {
   assert(containing_hr->is_in(end - 1), "it should also contain end - 1");
 
   MemRegion mr(start, end);
-  ((CardTableModRefBS*)_g1h->barrier_set())->dirty(mr);
+  g1_barrier_set()->dirty(mr);
 }
 
 inline RefToScanQueue* G1CollectedHeap::task_queue(int i) const {
