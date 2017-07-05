@@ -354,9 +354,16 @@ public class InstanceKlass extends Klass {
   public boolean   getIsMarkedDependent()   { return                isMarkedDependent.getValue(this) != 0; }
   public long      getVtableLen()           { return                vtableLen.getValue(this); }
   public long      getItableLen()           { return                itableLen.getValue(this); }
-  public Symbol    getGenericSignature()    { return                getConstants().getSymbolAt(genericSignatureIndex.getValue(this)); }
   public long      majorVersion()           { return                majorVersion.getValue(this); }
   public long      minorVersion()           { return                minorVersion.getValue(this); }
+  public Symbol    getGenericSignature()    {
+    long index = genericSignatureIndex.getValue(this);
+    if (index != 0) {
+      return getConstants().getSymbolAt(index);
+    } else {
+      return null;
+    }
+  }
 
   // "size helper" == instance size in words
   public long getSizeHelper() {

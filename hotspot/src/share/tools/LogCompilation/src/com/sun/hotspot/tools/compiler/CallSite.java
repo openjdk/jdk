@@ -106,10 +106,12 @@ public class CallSite {
                         " (" + getMethod().getBytes() + " bytes) " + getReason());
             }
         }
+        stream.printf(" (end time: %6.4f", getTimeStamp());
         if (getEndNodes() > 0) {
-            stream.printf(" (end time: %6.4f nodes: %d live: %d)", getTimeStamp(), getEndNodes(), getEndLiveNodes());
+            stream.printf(" nodes: %d live: %d", getEndNodes(), getEndLiveNodes());
         }
-        stream.println("");
+        stream.println(")");
+
         if (getReceiver() != null) {
             emit(stream, indent + 4);
             //                 stream.println("type profile " + method.holder + " -> " + receiver + " (" +
