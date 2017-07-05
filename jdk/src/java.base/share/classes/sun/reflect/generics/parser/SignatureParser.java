@@ -135,7 +135,7 @@ public class SignatureParser {
 
     /**
      * Static factory method. Produces a parser instance.
-     * @return an instance of <tt>SignatureParser</tt>
+     * @return an instance of {@code SignatureParser}
      */
     public static SignatureParser make() {
         return new SignatureParser();

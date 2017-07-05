@@ -1,14 +1,16 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.    Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE.    See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -19,7 +21,6 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
 #ifndef LIBJIMAGE_IMAGEFILE_HPP
@@ -145,52 +146,52 @@ class ImageFileReader; // forward declaration
 // Manage image file string table.
 class ImageStrings {
 private:
-  u1* _data; // Data bytes for strings.
-  u4 _size; // Number of bytes in the string table.
+    u1* _data; // Data bytes for strings.
+    u4 _size;  // Number of bytes in the string table.
 public:
-  enum {
-    // Not found result from find routine.
-    NOT_FOUND = -1,
-    // Prime used to generate hash for Perfect Hashing.
-    HASH_MULTIPLIER = 0x01000193
-  };
+    enum {
+        // Not found result from find routine.
+        NOT_FOUND = -1,
+        // Prime used to generate hash for Perfect Hashing.
+        HASH_MULTIPLIER = 0x01000193
+    };
 
-  ImageStrings(u1* data, u4 size) : _data(data), _size(size) {}
+    ImageStrings(u1* data, u4 size) : _data(data), _size(size) {}
 
-  // Return the UTF-8 string beginning at offset.
-  inline const char* get(u4 offset) const {
-    assert(offset < _size && "offset exceeds string table size");
-    return (const char*)(_data + offset);
-  }
+    // Return the UTF-8 string beginning at offset.
+    inline const char* get(u4 offset) const {
+        assert(offset < _size && "offset exceeds string table size");
+        return (const char*)(_data + offset);
+    }
 
-  // Compute the Perfect Hashing hash code for the supplied UTF-8 string.
-  inline static u4 hash_code(const char* string) {
-    return hash_code(string, HASH_MULTIPLIER);
-  }
+    // Compute the Perfect Hashing hash code for the supplied UTF-8 string.
+    inline static u4 hash_code(const char* string) {
+        return hash_code(string, HASH_MULTIPLIER);
+    }
 
-  // Compute the Perfect Hashing hash code for the supplied string, starting at seed.
-  static s4 hash_code(const char* string, s4 seed);
+    // Compute the Perfect Hashing hash code for the supplied string, starting at seed.
+    static s4 hash_code(const char* string, s4 seed);
 
-  // Match up a string in a perfect hash table.  Result still needs validation
-  // for precise match.
-  static s4 find(Endian* endian, const char* name, s4* redirect, u4 length);
+    // Match up a string in a perfect hash table.    Result still needs validation
+    // for precise match.
+    static s4 find(Endian* endian, const char* name, s4* redirect, u4 length);
 
-  // Test to see if UTF-8 string begins with the start UTF-8 string.  If so,
-  // return non-NULL address of remaining portion of string.  Otherwise, return
-  // NULL.  Used to test sections of a path without copying from image string
-  // table.
-  static const char* starts_with(const char* string, const char* start);
+    // Test to see if UTF-8 string begins with the start UTF-8 string.  If so,
+    // return non-NULL address of remaining portion of string.  Otherwise, return
+    // NULL.    Used to test sections of a path without copying from image string
+    // table.
+    static const char* starts_with(const char* string, const char* start);
 
-  // Test to see if UTF-8 string begins with start char.  If so, return non-NULL
-  // address of remaining portion of string.  Otherwise, return NULL.  Used
-  // to test a character of a path without copying.
-  inline static const char* starts_with(const char* string, const char ch) {
-    return *string == ch ? string + 1 : NULL;
-  }
+    // Test to see if UTF-8 string begins with start char.  If so, return non-NULL
+    // address of remaining portion of string.  Otherwise, return NULL.  Used
+    // to test a character of a path without copying.
+    inline static const char* starts_with(const char* string, const char ch) {
+        return *string == ch ? string + 1 : NULL;
+    }
 };
 
-// Manage image file location attribute data.  Within an image, a location's
-// attributes are compressed into a stream of bytes.  An attribute stream is
+// Manage image file location attribute data.    Within an image, a location's
+// attributes are compressed into a stream of bytes.    An attribute stream is
 // composed of individual attribute sequences.  Each attribute sequence begins with
 // a header byte containing the attribute 'kind' (upper 5 bits of header) and the
 // 'length' less 1 (lower 3 bits of header) of bytes that follow containing the
@@ -208,91 +209,91 @@ public:
 //
 // Notes:
 //  - Even though ATTRIBUTE_END is used to mark the end of the attribute stream,
-//    streams will contain zero byte values to represent lesser significant bits.
-//    Thus, detecting a zero byte is not sufficient to detect the end of an attribute
-//    stream.
+//      streams will contain zero byte values to represent lesser significant bits.
+//      Thus, detecting a zero byte is not sufficient to detect the end of an attribute
+//      stream.
 //  - ATTRIBUTE_OFFSET represents the number of bytes from the beginning of the region
-//    storing the resources.  Thus, in an image this represents the number of bytes
-//    after the index.
+//      storing the resources.  Thus, in an image this represents the number of bytes
+//      after the index.
 //  - Currently, compressed resources are represented by having a non-zero
-//    ATTRIBUTE_COMPRESSED value.  This represents the number of bytes stored in the
-//    image, and the value of ATTRIBUTE_UNCOMPRESSED represents number of bytes of the
-//    inflated resource in memory. If the ATTRIBUTE_COMPRESSED is zero then the value
-//    of ATTRIBUTE_UNCOMPRESSED represents both the number of bytes in the image and
-//    in memory.  In the future, additional compression techniques will be used and
-//    represented differently.
+//      ATTRIBUTE_COMPRESSED value.  This represents the number of bytes stored in the
+//      image, and the value of ATTRIBUTE_UNCOMPRESSED represents number of bytes of the
+//      inflated resource in memory. If the ATTRIBUTE_COMPRESSED is zero then the value
+//      of ATTRIBUTE_UNCOMPRESSED represents both the number of bytes in the image and
+//      in memory.  In the future, additional compression techniques will be used and
+//      represented differently.
 //  - Package strings include trailing slash and extensions include prefix period.
 //
 class ImageLocation {
 public:
-  enum {
-    ATTRIBUTE_END,          // End of attribute stream marker
-    ATTRIBUTE_MODULE,       // String table offset of module name
-    ATTRIBUTE_PARENT,       // String table offset of resource path parent
-    ATTRIBUTE_BASE,         // String table offset of resource path base
-    ATTRIBUTE_EXTENSION,    // String table offset of resource path extension
-    ATTRIBUTE_OFFSET,       // Container byte offset of resource
-    ATTRIBUTE_COMPRESSED,   // In image byte size of the compressed resource
-    ATTRIBUTE_UNCOMPRESSED, // In memory byte size of the uncompressed resource
-    ATTRIBUTE_COUNT         // Number of attribute kinds
-  };
+    enum {
+        ATTRIBUTE_END,                  // End of attribute stream marker
+        ATTRIBUTE_MODULE,               // String table offset of module name
+        ATTRIBUTE_PARENT,               // String table offset of resource path parent
+        ATTRIBUTE_BASE,                 // String table offset of resource path base
+        ATTRIBUTE_EXTENSION,        // String table offset of resource path extension
+        ATTRIBUTE_OFFSET,               // Container byte offset of resource
+        ATTRIBUTE_COMPRESSED,       // In image byte size of the compressed resource
+        ATTRIBUTE_UNCOMPRESSED, // In memory byte size of the uncompressed resource
+        ATTRIBUTE_COUNT                 // Number of attribute kinds
+    };
 
 private:
-  // Values of inflated attributes.
-  u8 _attributes[ATTRIBUTE_COUNT];
+    // Values of inflated attributes.
+    u8 _attributes[ATTRIBUTE_COUNT];
 
-  // Return the attribute value number of bytes.
-  inline static u1 attribute_length(u1 data) {
-    return (data & 0x7) + 1;
-  }
-
-  // Return the attribute kind.
-  inline static u1 attribute_kind(u1 data) {
-    u1 kind = data >> 3;
-    assert(kind < ATTRIBUTE_COUNT && "invalid attribute kind");
-    return kind;
-  }
-
-  // Return the attribute length.
-  inline static u8 attribute_value(u1* data, u1 n) {
-    assert(0 < n && n <= 8 && "invalid attribute value length");
-    u8 value = 0;
-    // Most significant bytes first.
-    for (u1 i = 0; i < n; i++) {
-      value <<= 8;
-      value |= data[i];
+    // Return the attribute value number of bytes.
+    inline static u1 attribute_length(u1 data) {
+        return (data & 0x7) + 1;
     }
-    return value;
-  }
+
+    // Return the attribute kind.
+    inline static u1 attribute_kind(u1 data) {
+        u1 kind = data >> 3;
+        assert(kind < ATTRIBUTE_COUNT && "invalid attribute kind");
+        return kind;
+    }
+
+    // Return the attribute length.
+    inline static u8 attribute_value(u1* data, u1 n) {
+        assert(0 < n && n <= 8 && "invalid attribute value length");
+        u8 value = 0;
+        // Most significant bytes first.
+        for (u1 i = 0; i < n; i++) {
+            value <<= 8;
+            value |= data[i];
+        }
+        return value;
+    }
 
 public:
-  ImageLocation() {
-    clear_data();
-  }
+    ImageLocation() {
+        clear_data();
+    }
 
-  ImageLocation(u1* data) {
-    clear_data();
-    set_data(data);
-  }
+    ImageLocation(u1* data) {
+        clear_data();
+        set_data(data);
+    }
 
-  // Inflates the attribute stream into individual values stored in the long
-  // array _attributes. This allows an attribute value to be quickly accessed by
-  // direct indexing. Unspecified values default to zero.
-  void set_data(u1* data);
+    // Inflates the attribute stream into individual values stored in the long
+    // array _attributes. This allows an attribute value to be quickly accessed by
+    // direct indexing. Unspecified values default to zero.
+    void set_data(u1* data);
 
-  // Zero all attribute values.
-  void clear_data();
+    // Zero all attribute values.
+    void clear_data();
 
-  // Retrieve an attribute value from the inflated array.
-  inline u8 get_attribute(u1 kind) const {
-    assert(ATTRIBUTE_END < kind && kind < ATTRIBUTE_COUNT && "invalid attribute kind");
-    return _attributes[kind];
-  }
+    // Retrieve an attribute value from the inflated array.
+    inline u8 get_attribute(u1 kind) const {
+        assert(ATTRIBUTE_END < kind && kind < ATTRIBUTE_COUNT && "invalid attribute kind");
+        return _attributes[kind];
+    }
 
-  // Retrieve an attribute string value from the inflated array.
-  inline const char* get_attribute(u4 kind, const ImageStrings& strings) const {
-    return strings.get((u4)get_attribute(kind));
-  }
+    // Retrieve an attribute string value from the inflated array.
+    inline const char* get_attribute(u4 kind, const ImageStrings& strings) const {
+        return strings.get((u4)get_attribute(kind));
+    }
 };
 
 //
@@ -306,133 +307,133 @@ public:
 // padding for hash table lookup.)
 //
 // Format:
-//    Count of package to module entries
-//    Count of module to package entries
-//    Perfect Hash redirect table[Count of package to module entries]
-//    Package to module entries[Count of package to module entries]
-//        Offset to package name in string table
-//        Offset to module name in string table
-//    Perfect Hash redirect table[Count of module to package entries]
-//    Module to package entries[Count of module to package entries]
-//        Offset to module name in string table
-//        Count of packages in module
-//        Offset to first package in packages table
-//    Packages[]
-//        Offset to package name in string table
+//      Count of package to module entries
+//      Count of module to package entries
+//      Perfect Hash redirect table[Count of package to module entries]
+//      Package to module entries[Count of package to module entries]
+//          Offset to package name in string table
+//          Offset to module name in string table
+//      Perfect Hash redirect table[Count of module to package entries]
+//      Module to package entries[Count of module to package entries]
+//          Offset to module name in string table
+//          Count of packages in module
+//          Offset to first package in packages table
+//      Packages[]
+//          Offset to package name in string table
 //
 // Manage the image module meta data.
 class ImageModuleData {
-  class Header {
-  private:
-    u4 _ptm_count;      // Count of package to module entries
-    u4 _mtp_count;      // Count of module to package entries
-  public:
-    inline u4 ptm_count(Endian* endian) const { return endian->get(_ptm_count); }
-    inline u4 mtp_count(Endian* endian) const { return endian->get(_mtp_count); }
-  };
+    class Header {
+    private:
+        u4 _ptm_count;          // Count of package to module entries
+        u4 _mtp_count;          // Count of module to package entries
+    public:
+        inline u4 ptm_count(Endian* endian) const { return endian->get(_ptm_count); }
+        inline u4 mtp_count(Endian* endian) const { return endian->get(_mtp_count); }
+    };
 
-  // Hashtable entry
-  class HashData {
-  private:
-    u4 _name_offset;    // Name offset in string table
-  public:
-    inline s4 name_offset(Endian* endian) const { return endian->get(_name_offset); }
-  };
+    // Hashtable entry
+    class HashData {
+    private:
+        u4 _name_offset;        // Name offset in string table
+    public:
+        inline s4 name_offset(Endian* endian) const { return endian->get(_name_offset); }
+    };
 
-  // Package to module hashtable entry
-  class PTMData : public HashData {
-  private:
-    u4 _module_name_offset; // Module name offset in string table
-  public:
-    inline s4 module_name_offset(Endian* endian) const { return endian->get(_module_name_offset); }
-  };
+    // Package to module hashtable entry
+    class PTMData : public HashData {
+    private:
+        u4 _module_name_offset; // Module name offset in string table
+    public:
+        inline s4 module_name_offset(Endian* endian) const { return endian->get(_module_name_offset); }
+    };
 
-  // Module to package hashtable entry
-  class MTPData : public HashData {
-  private:
-    u4 _package_count;     // Number of packages in module
-    u4 _package_offset;    // Offset in package list
-  public:
-    inline u4 package_count(Endian* endian)  const { return endian->get(_package_count); }
-    inline u4 package_offset(Endian* endian) const { return endian->get(_package_offset); }
-  };
+    // Module to package hashtable entry
+    class MTPData : public HashData {
+    private:
+        u4 _package_count;       // Number of packages in module
+        u4 _package_offset;      // Offset in package list
+    public:
+        inline u4 package_count(Endian* endian)  const { return endian->get(_package_count); }
+        inline u4 package_offset(Endian* endian) const { return endian->get(_package_offset); }
+    };
 
-  const ImageFileReader* _image_file; // Source image file
-  Endian* _endian;                    // Endian handler
-  ImageStrings _strings;              // Image file strings
-  u1* _data;                          // Module data resource data
-  u8 _data_size;                      // Size of resource data
-  Header* _header;                    // Module data header
-  s4* _ptm_redirect;                  // Package to module hashtable redirect
-  PTMData* _ptm_data;                 // Package to module data
-  s4* _mtp_redirect;                  // Module to packages hashtable redirect
-  MTPData* _mtp_data;                 // Module to packages data
-  s4* _mtp_packages;                  // Package data (name offsets)
+    const ImageFileReader* _image_file; // Source image file
+    Endian* _endian;       // Endian handler
+    ImageStrings _strings; // Image file strings
+    u1* _data;             // Module data resource data
+    u8 _data_size;         // Size of resource data
+    Header* _header;       // Module data header
+    s4* _ptm_redirect;     // Package to module hashtable redirect
+    PTMData* _ptm_data;    // Package to module data
+    s4* _mtp_redirect;     // Module to packages hashtable redirect
+    MTPData* _mtp_data;    // Module to packages data
+    s4* _mtp_packages;     // Package data (name offsets)
 
-  // Return a string from the string table.
-  inline const char* get_string(u4 offset) {
-    return _strings.get(offset);
-  }
+    // Return a string from the string table.
+    inline const char* get_string(u4 offset) {
+        return _strings.get(offset);
+    }
 
-  inline u4 mtp_package(u4 index) {
-    return _endian->get(_mtp_packages[index]);
-  }
+    inline u4 mtp_package(u4 index) {
+        return _endian->get(_mtp_packages[index]);
+    }
 
 public:
-  ImageModuleData(const ImageFileReader* image_file, const char* module_data_name);
-  ~ImageModuleData();
+    ImageModuleData(const ImageFileReader* image_file, const char* module_data_name);
+    ~ImageModuleData();
 
-  // Return the name of the module data resource.
-  static void module_data_name(char* buffer, const char* image_file_name);
+    // Return the name of the module data resource.
+    static void module_data_name(char* buffer, const char* image_file_name);
 
-  // Return the module in which a package resides.  Returns NULL if not found.
-  const char* package_to_module(const char* package_name);
+    // Return the module in which a package resides.    Returns NULL if not found.
+    const char* package_to_module(const char* package_name);
 
-  // Returns all the package names in a module in a NULL terminated array.
-  // Returns NULL if module not found.
-  const char** module_to_packages(const char* module_name);
+    // Returns all the package names in a module in a NULL terminated array.
+    // Returns NULL if module not found.
+    const char** module_to_packages(const char* module_name);
 };
 
 // Image file header, starting at offset 0.
 class ImageHeader {
 private:
-  u4 _magic;           // Image file marker
-  u4 _version;         // Image file major version number
-  u4 _flags;           // Image file flags
-  u4 _resource_count;  // Number of resources in file
-  u4 _table_length;    // Number of slots in index tables
-  u4 _locations_size;  // Number of bytes in attribute table
-  u4 _strings_size;    // Number of bytes in string table
+    u4 _magic;          // Image file marker
+    u4 _version;        // Image file major version number
+    u4 _flags;          // Image file flags
+    u4 _resource_count; // Number of resources in file
+    u4 _table_length;   // Number of slots in index tables
+    u4 _locations_size; // Number of bytes in attribute table
+    u4 _strings_size;   // Number of bytes in string table
 
 public:
-  u4 magic() const { return _magic; }
-  u4 magic(Endian* endian) const { return endian->get(_magic); }
-  void set_magic(Endian* endian, u4 magic) { return endian->set(_magic, magic); }
+    u4 magic() const { return _magic; }
+    u4 magic(Endian* endian) const { return endian->get(_magic); }
+    void set_magic(Endian* endian, u4 magic) { return endian->set(_magic, magic); }
 
-  u4 major_version(Endian* endian) const { return endian->get(_version) >> 16; }
-  u4 minor_version(Endian* endian) const { return endian->get(_version) & 0xFFFF; }
-  void set_version(Endian* endian, u4 major_version, u4 minor_version) {
-    return endian->set(_version, major_version << 16 | minor_version);
-  }
+    u4 major_version(Endian* endian) const { return endian->get(_version) >> 16; }
+    u4 minor_version(Endian* endian) const { return endian->get(_version) & 0xFFFF; }
+    void set_version(Endian* endian, u4 major_version, u4 minor_version) {
+        return endian->set(_version, major_version << 16 | minor_version);
+    }
 
-  u4 flags(Endian* endian) const { return endian->get(_flags); }
-  void set_flags(Endian* endian, u4 value) { return endian->set(_flags, value); }
+    u4 flags(Endian* endian) const { return endian->get(_flags); }
+    void set_flags(Endian* endian, u4 value) { return endian->set(_flags, value); }
 
-  u4 resource_count(Endian* endian) const { return endian->get(_resource_count); }
-  void set_resource_count(Endian* endian, u4 count) { return endian->set(_resource_count, count); }
+    u4 resource_count(Endian* endian) const { return endian->get(_resource_count); }
+    void set_resource_count(Endian* endian, u4 count) { return endian->set(_resource_count, count); }
 
-  u4 table_length(Endian* endian) const { return endian->get(_table_length); }
-  void set_table_length(Endian* endian, u4 count) { return endian->set(_table_length, count); }
+    u4 table_length(Endian* endian) const { return endian->get(_table_length); }
+    void set_table_length(Endian* endian, u4 count) { return endian->set(_table_length, count); }
 
-  u4 locations_size(Endian* endian) const { return endian->get(_locations_size); }
-  void set_locations_size(Endian* endian, u4 size) { return endian->set(_locations_size, size); }
+    u4 locations_size(Endian* endian) const { return endian->get(_locations_size); }
+    void set_locations_size(Endian* endian, u4 size) { return endian->set(_locations_size, size); }
 
-  u4 strings_size(Endian* endian) const { return endian->get(_strings_size); }
-  void set_strings_size(Endian* endian, u4 size) { return endian->set(_strings_size, size); }
+    u4 strings_size(Endian* endian) const { return endian->get(_strings_size); }
+    void set_strings_size(Endian* endian, u4 size) { return endian->set(_strings_size, size); }
 };
 
-// Max path length limit independent of platform.  Windows max path is 1024,
-// other platforms use 4096.  The JCK fails several tests when 1024 is used.
+// Max path length limit independent of platform.    Windows max path is 1024,
+// other platforms use 4096.    The JCK fails several tests when 1024 is used.
 #define IMAGE_MAX_PATH 4096
 
 class ImageFileReader;
@@ -441,29 +442,29 @@ class ImageFileReader;
 // to share an open image.
 class ImageFileReaderTable {
 private:
-  const static u4 _growth = 8;   // Growth rate of the table
-  u4 _count;                     // Number of entries in the table
-  u4 _max;                       // Maximum number of entries allocated
-  ImageFileReader** _table;      // Growable array of entries
+    const static u4 _growth = 8; // Growth rate of the table
+    u4 _count;                   // Number of entries in the table
+    u4 _max;                     // Maximum number of entries allocated
+    ImageFileReader** _table;    // Growable array of entries
 
 public:
-  ImageFileReaderTable();
-  ~ImageFileReaderTable();
+    ImageFileReaderTable();
+    ~ImageFileReaderTable();
 
-  // Return the number of entries.
-  inline u4 count() { return _count; }
+    // Return the number of entries.
+    inline u4 count() { return _count; }
 
-  // Return the ith entry from the table.
-  inline ImageFileReader* get(u4 i) { return _table[i]; }
+    // Return the ith entry from the table.
+    inline ImageFileReader* get(u4 i) { return _table[i]; }
 
-  // Add a new image entry to the table.
-  void add(ImageFileReader* image);
+    // Add a new image entry to the table.
+    void add(ImageFileReader* image);
 
-  // Remove an image entry from the table.
-  void remove(ImageFileReader* image);
+    // Remove an image entry from the table.
+    void remove(ImageFileReader* image);
 
-  // Determine if image entry is in table.
-  bool contains(ImageFileReader* image);
+    // Determine if image entry is in table.
+    bool contains(ImageFileReader* image);
 };
 
 // Manage the image file.
@@ -473,176 +474,176 @@ public:
 // index is then memory mapped to allow load on demand and sharing.  The
 // -XX:+MemoryMapImage flag determines if the entire file is loaded (server use.)
 // An image can be used by Hotspot and multiple reference points in the JDK, thus
-// it is desirable to share a reader.  To accomodate sharing, a share table is
+// it is desirable to share a reader.    To accomodate sharing, a share table is
 // defined (see ImageFileReaderTable in imageFile.cpp)  To track the number of
 // uses, ImageFileReader keeps a use count (_use).  Use is incremented when
-// 'opened' by reference point and decremented when 'closed'.  Use of zero
+// 'opened' by reference point and decremented when 'closed'.    Use of zero
 // leads the ImageFileReader to be actually closed and discarded.
 class ImageFileReader {
 private:
-  // Manage a number of image files such that an image can be shared across
-  // multiple uses (ex. loader.)
-  static ImageFileReaderTable _reader_table;
+    // Manage a number of image files such that an image can be shared across
+    // multiple uses (ex. loader.)
+    static ImageFileReaderTable _reader_table;
 
-  char* _name;         // Name of image
-  s4 _use;             // Use count
-  int _fd;             // File descriptor
-  Endian* _endian;     // Endian handler
-  u8 _file_size;       // File size in bytes
-  ImageHeader _header; // Image header
-  size_t _index_size;  // Total size of index
-  u1* _index_data;     // Raw index data
-  s4* _redirect_table; // Perfect hash redirect table
-  u4* _offsets_table;  // Location offset table
-  u1* _location_bytes; // Location attributes
-  u1* _string_bytes;   // String table
-  ImageModuleData *module_data;   // The ImageModuleData for this image
+    char* _name;         // Name of image
+    s4 _use;             // Use count
+    int _fd;             // File descriptor
+    Endian* _endian;     // Endian handler
+    u8 _file_size;       // File size in bytes
+    ImageHeader _header; // Image header
+    size_t _index_size;  // Total size of index
+    u1* _index_data;     // Raw index data
+    s4* _redirect_table; // Perfect hash redirect table
+    u4* _offsets_table;  // Location offset table
+    u1* _location_bytes; // Location attributes
+    u1* _string_bytes;   // String table
+    ImageModuleData *module_data;       // The ImageModuleData for this image
 
-  ImageFileReader(const char* name, bool big_endian);
-  ~ImageFileReader();
+    ImageFileReader(const char* name, bool big_endian);
+    ~ImageFileReader();
 
-  // Compute number of bytes in image file index.
-  inline size_t index_size() {
-    return sizeof(ImageHeader) +
-      table_length() * sizeof(u4) * 2 + locations_size() + strings_size();
-  }
+    // Compute number of bytes in image file index.
+    inline size_t index_size() {
+        return sizeof(ImageHeader) +
+            table_length() * sizeof(u4) * 2 + locations_size() + strings_size();
+    }
 
 public:
-  enum {
-    // Image file marker.
-    IMAGE_MAGIC = 0xCAFEDADA,
-    // Endian inverted Image file marker.
-    IMAGE_MAGIC_INVERT = 0xDADAFECA,
-    // Image file major version number.
-    MAJOR_VERSION = 1,
-    // Image file minor version number.
-    MINOR_VERSION = 0
-  };
+    enum {
+        // Image file marker.
+        IMAGE_MAGIC = 0xCAFEDADA,
+        // Endian inverted Image file marker.
+        IMAGE_MAGIC_INVERT = 0xDADAFECA,
+        // Image file major version number.
+        MAJOR_VERSION = 1,
+        // Image file minor version number.
+        MINOR_VERSION = 0
+    };
 
-  // Open an image file, reuse structure if file already open.
-  static ImageFileReader* open(const char* name, bool big_endian = Endian::is_big_endian());
+    // Open an image file, reuse structure if file already open.
+    static ImageFileReader* open(const char* name, bool big_endian = Endian::is_big_endian());
 
-  // Close an image file if the file is not in use elsewhere.
-  static void close(ImageFileReader *reader);
+    // Close an image file if the file is not in use elsewhere.
+    static void close(ImageFileReader *reader);
 
-  // Return an id for the specifed ImageFileReader.
-  static u8 readerToID(ImageFileReader *reader);
+    // Return an id for the specifed ImageFileReader.
+    static u8 readerToID(ImageFileReader *reader);
 
-  // Validate the image id.
-  static bool idCheck(u8 id);
+    // Validate the image id.
+    static bool idCheck(u8 id);
 
-  // Return an id for the specifed ImageFileReader.
-  static ImageFileReader* idToReader(u8 id);
+    // Return an id for the specifed ImageFileReader.
+    static ImageFileReader* idToReader(u8 id);
 
-  // Open image file for read access.
-  bool open();
+    // Open image file for read access.
+    bool open();
 
-  // Close image file.
-  void close();
+    // Close image file.
+    void close();
 
-  // Read directly from the file.
-  bool read_at(u1* data, u8 size, u8 offset) const;
+    // Read directly from the file.
+    bool read_at(u1* data, u8 size, u8 offset) const;
 
-  inline Endian* endian() const { return _endian; }
+    inline Endian* endian() const { return _endian; }
 
-  // Retrieve name of image file.
-  inline const char* name() const {
-    return _name;
-  }
+    // Retrieve name of image file.
+    inline const char* name() const {
+        return _name;
+    }
 
-  // Retrieve size of image file.
-  inline u8 file_size() const {
-    return _file_size;
-  }
+    // Retrieve size of image file.
+    inline u8 file_size() const {
+        return _file_size;
+    }
 
-  // Return first address of index data.
-  inline u1* get_index_address() const {
-    return _index_data;
-  }
+    // Return first address of index data.
+    inline u1* get_index_address() const {
+        return _index_data;
+    }
 
-  // Return first address of resource data.
-  inline u1* get_data_address() const {
-    return _index_data + _index_size;
-  }
+    // Return first address of resource data.
+    inline u1* get_data_address() const {
+        return _index_data + _index_size;
+    }
 
-  // Get the size of the index data.
-  size_t get_index_size() const {
-    return _index_size;
-  }
+    // Get the size of the index data.
+    size_t get_index_size() const {
+        return _index_size;
+    }
 
-  inline u4 table_length() const {
-    return _header.table_length(_endian);
-  }
+    inline u4 table_length() const {
+        return _header.table_length(_endian);
+    }
 
-  inline u4 locations_size() const {
-    return _header.locations_size(_endian);
-  }
+    inline u4 locations_size() const {
+        return _header.locations_size(_endian);
+    }
 
-  inline u4 strings_size()const  {
-    return _header.strings_size(_endian);
-  }
+    inline u4 strings_size()const    {
+        return _header.strings_size(_endian);
+    }
 
-  inline u4* offsets_table() const {
-    return _offsets_table;
-  }
+    inline u4* offsets_table() const {
+        return _offsets_table;
+    }
 
-  // Increment use count.
-  inline void inc_use() {
-    _use++;
-  }
+    // Increment use count.
+    inline void inc_use() {
+        _use++;
+    }
 
-  // Decrement use count.
-  inline bool dec_use() {
-    return --_use == 0;
-  }
+    // Decrement use count.
+    inline bool dec_use() {
+        return --_use == 0;
+    }
 
-  // Return a string table accessor.
-  inline const ImageStrings get_strings() const {
-    return ImageStrings(_string_bytes, _header.strings_size(_endian));
-  }
+    // Return a string table accessor.
+    inline const ImageStrings get_strings() const {
+        return ImageStrings(_string_bytes, _header.strings_size(_endian));
+    }
 
-  // Return location attribute stream at offset.
-  inline u1* get_location_offset_data(u4 offset) const {
-    assert((u4)offset < _header.locations_size(_endian) &&
-              "offset exceeds location attributes size");
-    return offset != 0 ? _location_bytes + offset : NULL;
-  }
+    // Return location attribute stream at offset.
+    inline u1* get_location_offset_data(u4 offset) const {
+        assert((u4)offset < _header.locations_size(_endian) &&
+                            "offset exceeds location attributes size");
+        return offset != 0 ? _location_bytes + offset : NULL;
+    }
 
-  // Return location attribute stream for location i.
-  inline u1* get_location_data(u4 index) const {
-    return get_location_offset_data(get_location_offset(index));
-  }
+    // Return location attribute stream for location i.
+    inline u1* get_location_data(u4 index) const {
+        return get_location_offset_data(get_location_offset(index));
+    }
 
-  // Return the location offset for index.
-  inline u4 get_location_offset(u4 index) const {
-    assert((u4)index < _header.table_length(_endian) &&
-              "index exceeds location count");
-    return _endian->get(_offsets_table[index]);
-  }
+    // Return the location offset for index.
+    inline u4 get_location_offset(u4 index) const {
+        assert((u4)index < _header.table_length(_endian) &&
+                            "index exceeds location count");
+        return _endian->get(_offsets_table[index]);
+    }
 
-  // Find the location attributes associated with the path.  Returns true if
-  // the location is found, false otherwise.
-  bool find_location(const char* path, ImageLocation& location) const;
+    // Find the location attributes associated with the path.    Returns true if
+    // the location is found, false otherwise.
+    bool find_location(const char* path, ImageLocation& location) const;
 
-  // Find the location index and size associated with the path.
-  // Returns the location index and size if the location is found,
-  // ImageFileReader::NOT_FOUND otherwise.
-  u4 find_location_index(const char* path, u8 *size) const;
+    // Find the location index and size associated with the path.
+    // Returns the location index and size if the location is found,
+    // ImageFileReader::NOT_FOUND otherwise.
+    u4 find_location_index(const char* path, u8 *size) const;
 
-  // Assemble the location path.
-  void location_path(ImageLocation& location, char* path, size_t max) const;
+    // Assemble the location path.
+    void location_path(ImageLocation& location, char* path, size_t max) const;
 
-  // Verify that a found location matches the supplied path.
-  bool verify_location(ImageLocation& location, const char* path) const;
+    // Verify that a found location matches the supplied path.
+    bool verify_location(ImageLocation& location, const char* path) const;
 
-  // Return the resource for the supplied location index.
-  void get_resource(u4 index, u1* uncompressed_data) const;
+    // Return the resource for the supplied location index.
+    void get_resource(u4 index, u1* uncompressed_data) const;
 
-  // Return the resource for the supplied path.
-  void get_resource(ImageLocation& location, u1* uncompressed_data) const;
+    // Return the resource for the supplied path.
+    void get_resource(ImageLocation& location, u1* uncompressed_data) const;
 
-  // Return the ImageModuleData for this image
-  ImageModuleData * get_image_module_data();
+    // Return the ImageModuleData for this image
+    ImageModuleData * get_image_module_data();
 
 };
 #endif // LIBJIMAGE_IMAGEFILE_HPP
