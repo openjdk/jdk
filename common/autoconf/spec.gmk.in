@@ -175,7 +175,7 @@ VERSION_NUMBER_FOUR_POSITIONS := @VERSION_NUMBER_FOUR_POSITIONS@
 VERSION_STRING := @VERSION_STRING@
 # The short version string, without trailing zeroes and just PRE, if present.
 VERSION_SHORT := @VERSION_SHORT@
-# The Java specification version. It usually equals to the major version number.
+# The Java specification version. It usually equals the major version number.
 VERSION_SPECIFICATION := @VERSION_MAJOR@
 # A GA version is defined by the PRE string being empty. Rather than testing for
 # that, this variable defines it with true/false.
@@ -243,9 +243,6 @@ USE_PRECOMPILED_HEADER := @USE_PRECOMPILED_HEADER@
 
 # Only build headless support or not
 ENABLE_HEADLESS_ONLY := @ENABLE_HEADLESS_ONLY@
-
-# Legacy support
-USE_NEW_HOTSPOT_BUILD:=@USE_NEW_HOTSPOT_BUILD@
 
 # JDK_OUTPUTDIR specifies where a working jvm is built.
 # You can run $(JDK_OUTPUTDIR)/bin/java
