@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -163,7 +163,7 @@ class MotifDnDConstants {
         XlibWrapper.XGrabServer(newDisplay);
 
         try {
-            XlibWrapper.XSetCloseDownMode(newDisplay, (int)XConstants.RetainPermanent);
+            XlibWrapper.XSetCloseDownMode(newDisplay, XConstants.RetainPermanent);
 
             XSetWindowAttributes xwa = new XSetWindowAttributes();
 
@@ -435,7 +435,7 @@ class MotifDnDConstants {
 
         if (formats.length > 0) {
             // Make a defensive copy.
-            formats = (long[])formats.clone();
+            formats = formats.clone();
 
             Arrays.sort(formats);
         }

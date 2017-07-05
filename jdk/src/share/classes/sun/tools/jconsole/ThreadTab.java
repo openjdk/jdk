@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -311,7 +311,7 @@ class ThreadTab extends Tab implements ActionListener, DocumentListener, ListSel
         ThreadJList list = (ThreadJList)ev.getSource();
         final JTextArea textArea = list.textArea;
 
-        Long selected = (Long)list.getSelectedValue();
+        Long selected = list.getSelectedValue();
         if (selected == null) {
             if (lastSelected != -1) {
                 selected = lastSelected;

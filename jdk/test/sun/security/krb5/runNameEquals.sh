@@ -66,6 +66,10 @@ case "$OS" in
         fi
     fi
     ;;
+  AIX )
+    PATHSEP=":"
+    FILESEP="/"
+    ;;
   CYGWIN* )
     PATHSEP=";"
     FILESEP="/"

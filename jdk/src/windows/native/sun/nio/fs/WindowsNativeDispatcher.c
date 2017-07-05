@@ -111,65 +111,70 @@ Java_sun_nio_fs_WindowsNativeDispatcher_initIDs(JNIEnv* env, jclass this)
     HMODULE h;
 
     clazz = (*env)->FindClass(env, "sun/nio/fs/WindowsNativeDispatcher$FirstFile");
-    if (clazz == NULL) {
-        return;
-    }
+    CHECK_NULL(clazz);
     findFirst_handle = (*env)->GetFieldID(env, clazz, "handle", "J");
+    CHECK_NULL(findFirst_handle);
     findFirst_name = (*env)->GetFieldID(env, clazz, "name", "Ljava/lang/String;");
+    CHECK_NULL(findFirst_name);
     findFirst_attributes = (*env)->GetFieldID(env, clazz, "attributes", "I");
+    CHECK_NULL(findFirst_attributes);
 
     clazz = (*env)->FindClass(env, "sun/nio/fs/WindowsNativeDispatcher$FirstStream");
-    if (clazz == NULL) {
-        return;
-    }
+    CHECK_NULL(clazz);
     findStream_handle = (*env)->GetFieldID(env, clazz, "handle", "J");
+    CHECK_NULL(findStream_handle);
     findStream_name = (*env)->GetFieldID(env, clazz, "name", "Ljava/lang/String;");
+    CHECK_NULL(findStream_name);
 
     clazz = (*env)->FindClass(env, "sun/nio/fs/WindowsNativeDispatcher$VolumeInformation");
-    if (clazz == NULL) {
-        return;
-    }
+    CHECK_NULL(clazz);
     volumeInfo_fsName = (*env)->GetFieldID(env, clazz, "fileSystemName", "Ljava/lang/String;");
+    CHECK_NULL(volumeInfo_fsName);
     volumeInfo_volName = (*env)->GetFieldID(env, clazz, "volumeName", "Ljava/lang/String;");
+    CHECK_NULL(volumeInfo_volName);
     volumeInfo_volSN = (*env)->GetFieldID(env, clazz, "volumeSerialNumber", "I");
+    CHECK_NULL(volumeInfo_volSN);
     volumeInfo_flags = (*env)->GetFieldID(env, clazz, "flags", "I");
+    CHECK_NULL(volumeInfo_flags);
 
     clazz = (*env)->FindClass(env, "sun/nio/fs/WindowsNativeDispatcher$DiskFreeSpace");
-    if (clazz == NULL) {
-        return;
-    }
+    CHECK_NULL(clazz);
     diskSpace_bytesAvailable = (*env)->GetFieldID(env, clazz, "freeBytesAvailable", "J");
+    CHECK_NULL(diskSpace_bytesAvailable);
     diskSpace_totalBytes = (*env)->GetFieldID(env, clazz, "totalNumberOfBytes", "J");
+    CHECK_NULL(diskSpace_totalBytes);
     diskSpace_totalFree = (*env)->GetFieldID(env, clazz, "totalNumberOfFreeBytes", "J");
+    CHECK_NULL(diskSpace_totalFree);
 
     clazz = (*env)->FindClass(env, "sun/nio/fs/WindowsNativeDispatcher$Account");
-    if (clazz == NULL) {
-        return;
-    }
+    CHECK_NULL(clazz);
     account_domain = (*env)->GetFieldID(env, clazz, "domain", "Ljava/lang/String;");
+    CHECK_NULL(account_domain);
     account_name = (*env)->GetFieldID(env, clazz, "name", "Ljava/lang/String;");
+    CHECK_NULL(account_name);
     account_use = (*env)->GetFieldID(env, clazz, "use", "I");
+    CHECK_NULL(account_use);
 
     clazz = (*env)->FindClass(env, "sun/nio/fs/WindowsNativeDispatcher$AclInformation");
-    if (clazz == NULL) {
-        return;
-    }
+    CHECK_NULL(clazz);
     aclInfo_aceCount = (*env)->GetFieldID(env, clazz, "aceCount", "I");
+    CHECK_NULL(aclInfo_aceCount);
 
     clazz = (*env)->FindClass(env, "sun/nio/fs/WindowsNativeDispatcher$CompletionStatus");
-    if (clazz == NULL) {
-        return;
-    }
+    CHECK_NULL(clazz);
     completionStatus_error = (*env)->GetFieldID(env, clazz, "error", "I");
+    CHECK_NULL(completionStatus_error);
     completionStatus_bytesTransferred = (*env)->GetFieldID(env, clazz, "bytesTransferred", "I");
+    CHECK_NULL(completionStatus_bytesTransferred);
     completionStatus_completionKey = (*env)->GetFieldID(env, clazz, "completionKey", "J");
+    CHECK_NULL(completionStatus_completionKey);
 
     clazz = (*env)->FindClass(env, "sun/nio/fs/WindowsNativeDispatcher$BackupResult");
-    if (clazz == NULL) {
-        return;
-    }
+    CHECK_NULL(clazz);
     backupResult_bytesTransferred = (*env)->GetFieldID(env, clazz, "bytesTransferred", "I");
+    CHECK_NULL(backupResult_bytesTransferred);
     backupResult_context = (*env)->GetFieldID(env, clazz, "context", "J");
+    CHECK_NULL(backupResult_context);
 
     // get handle to kernel32
     if (GetModuleHandleExW((GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |

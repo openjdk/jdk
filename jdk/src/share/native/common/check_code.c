@@ -90,6 +90,41 @@
 #include "classfile_constants.h"
 #include "opcodes.in_out"
 
+/* On AIX malloc(0) and calloc(0, ...) return a NULL pointer, which is legal,
+ * but the code here does not handles it. So we wrap the methods and return non-NULL
+ * pointers even if we allocate 0 bytes.
+ */
+#ifdef _AIX
+static int aix_dummy;
+static void* aix_malloc(size_t len) {
+  if (len == 0) {
+    return &aix_dummy;
+  }
+  return malloc(len);
+}
+
+static void* aix_calloc(size_t n, size_t size) {
+  if (n == 0) {
+    return &aix_dummy;
+  }
+  return calloc(n, size);
+}
+
+static void aix_free(void* p) {
+  if (p == &aix_dummy) {
+    return;
+  }
+  free(p);
+}
+
+#undef malloc
+#undef calloc
+#undef free
+#define malloc aix_malloc
+#define calloc aix_calloc
+#define free aix_free
+#endif
+
 #ifdef __APPLE__
 /* use setjmp/longjmp versions that do not save/restore the signal mask */
 #define setjmp _setjmp

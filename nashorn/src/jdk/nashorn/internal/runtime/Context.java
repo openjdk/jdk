@@ -37,7 +37,6 @@ import java.io.PrintWriter;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Modifier;
-import java.util.concurrent.atomic.AtomicLong;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.AccessControlContext;
@@ -48,7 +47,7 @@ import java.security.Permissions;
 import java.security.PrivilegedAction;
 import java.security.ProtectionDomain;
 import java.util.Map;
-
+import java.util.concurrent.atomic.AtomicLong;
 import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.internal.org.objectweb.asm.util.CheckClassAdapter;
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
@@ -648,6 +647,19 @@ public final class Context {
                 bottomClazz = bottomClazz.getComponentType();
             }
             checkPackageAccess(sm, bottomClazz.getName());
+        }
+    }
+
+    /**
+     * Checks that the given package name can be accessed from no permissions context.
+     *
+     * @param pkgName package name
+     * @throw SecurityException if not accessible
+     */
+    public static void checkPackageAccess(final String pkgName) {
+        final SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            checkPackageAccess(sm, pkgName.endsWith(".")? pkgName : pkgName + ".");
         }
     }
 

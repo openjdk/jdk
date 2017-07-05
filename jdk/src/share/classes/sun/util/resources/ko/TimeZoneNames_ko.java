@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -578,7 +578,7 @@ public final class TimeZoneNames_ko extends TimeZoneNamesBundle {
             {"Asia/Almaty", new String[] {"\uc54c\ub9c8\uc544\ud0c0 \uc2dc\uac04", "ALMT",
                                           "\uc54c\ub9c8\uc544\ud0c0 \uc77c\uad11\uc808\uc57d\uc2dc\uac04", "ALMST",
                                           "\uC54C\uB9C8\uC544\uD0C0 \uD45C\uC900\uC2DC", "ALMT"}},
-            {"Asia/Amman", ARAST},
+            {"Asia/Amman", EET},
             {"Asia/Anadyr", new String[] {"\uc544\ub098\ub514\ub974 \uc2dc\uac04", "ANAT",
                                           "\uc544\ub098\ub514\ub974 \uc77c\uad11\uc808\uc57d\uc2dc\uac04", "ANAST",
                                           "\uC544\uB098\uB514\uB9AC \uD45C\uC900\uC2DC", "ANAT"}},

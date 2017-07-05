@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -285,7 +285,7 @@ public class XBaseWindow {
         params.putIfNull(BOUNDS, new Rectangle(DEF_LOCATION, DEF_LOCATION, MIN_SIZE, MIN_SIZE));
         params.putIfNull(DEPTH, Integer.valueOf((int)XConstants.CopyFromParent));
         params.putIfNull(VISUAL, Long.valueOf(XConstants.CopyFromParent));
-        params.putIfNull(VISUAL_CLASS, Integer.valueOf((int)XConstants.InputOnly));
+        params.putIfNull(VISUAL_CLASS, Integer.valueOf(XConstants.InputOnly));
         params.putIfNull(VALUE_MASK, Long.valueOf(XConstants.CWEventMask));
         Rectangle bounds = (Rectangle)params.get(BOUNDS);
         bounds.width = Math.max(MIN_SIZE, bounds.width);
@@ -544,7 +544,7 @@ public class XBaseWindow {
             }
             flags |= XUtilConstants.PWinGravity;
             hints.set_flags(flags);
-            hints.set_win_gravity((int)XConstants.NorthWestGravity);
+            hints.set_win_gravity(XConstants.NorthWestGravity);
             if (insLog.isLoggable(PlatformLogger.Level.FINER)) {
                 insLog.finer("Setting hints, resulted flags " + XlibWrapper.hintsToString(flags) +
                              ", values " + hints);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -248,7 +248,7 @@ public final class KeychainStore extends KeyStoreSpi {
             if (((KeyEntry)entry).chain == null) {
                 return null;
             } else {
-                return (Certificate[])((KeyEntry)entry).chain.clone();
+                return ((KeyEntry)entry).chain.clone();
             }
         } else {
             return null;
@@ -365,7 +365,7 @@ public final class KeychainStore extends KeyStoreSpi {
                         throw new KeyStoreException("Certificate chain does not validate");
                     }
 
-                    entry.chain = (Certificate[])chain.clone();
+                    entry.chain = chain.clone();
                     entry.chainRefs = new long[entry.chain.length];
                 }
 
@@ -429,7 +429,7 @@ public final class KeychainStore extends KeyStoreSpi {
 
             if ((chain != null) &&
                 (chain.length != 0)) {
-                entry.chain = (Certificate[])chain.clone();
+                entry.chain = chain.clone();
                 entry.chainRefs = new long[entry.chain.length];
             }
 
@@ -1122,7 +1122,7 @@ public final class KeychainStore extends KeyStoreSpi {
             throw uke;
         }
 
-        return ((byte[])key);
+        return key;
     }
 
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,7 +120,7 @@ class SynchronizedStatement extends Statement {
             LocalMember localfield = new LocalMember(0, clazz, 0, returnType,
                                                    idFinallyReturnValue);
             ctx.declare(env, localfield);
-            env.debugOutput("Assigning return slot to " + localfield.number);
+            Environment.debugOutput("Assigning return slot to " + localfield.number);
         }
 
         LocalMember f1 = new LocalMember(where, clazz, 0, Type.tObject, null);

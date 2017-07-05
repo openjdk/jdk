@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,7 @@ import javax.swing.tree.TreePath;
  * @author Ray Ryan
  * @author Scott Violet
  */
+@SuppressWarnings("serial") // Same-version serialization only
 public class TreeModelEvent extends EventObject {
     /** Path to the parent of the nodes that have changed. */
     protected TreePath  path;

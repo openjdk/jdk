@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -280,11 +280,11 @@ public class ProcessPath {
     /* Clipping macros for drawing and filling algorithms */
     private static float CLIP(float a1, float b1, float a2, float b2,
                               double t) {
-        return (float)(b1 + (double)(t - a1)*(b2 - b1) / (a2 - a1));
+        return (float)(b1 + (t - a1)*(b2 - b1) / (a2 - a1));
     }
 
     private static int CLIP(int a1, int b1, int a2, int b2, double t) {
-        return (int)(b1 + (double)(t - a1)*(b2 - b1) / (a2 - a1));
+        return (int)(b1 + (t - a1)*(b2 - b1) / (a2 - a1));
     }
 
 

@@ -72,7 +72,7 @@ public:
   bool has_read_region_opt() { return false; }
 
 
-  // These operations should assert false unless the correponding operation
+  // These operations should assert false unless the corresponding operation
   // above returns true.
   void read_ref_array(MemRegion mr) {
     assert(false, "can't call");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,6 +60,7 @@ import java.io.Serializable;
  * @author Tom Santos
  * @author Mark Davidson
  */
+@SuppressWarnings("serial") // Same-version serialization only
 public class BasicComboPopup extends JPopupMenu implements ComboPopup {
     // An empty ListMode, this is used when the UI changes to allow
     // the JList to be gc'ed.

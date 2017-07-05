@@ -206,32 +206,6 @@ public class VM {
         return pageAlignDirectMemory;
     }
 
-    // A user-settable boolean to determine whether ClassLoader.loadClass should
-    // accept array syntax.  This value may be changed during VM initialization
-    // via the system property "sun.lang.ClassLoader.allowArraySyntax".
-    //
-    // The default for 1.5 is "true", array syntax is allowed.  In 1.6, the
-    // default will be "false".  The presence of this system property to
-    // control array syntax allows applications the ability to preview this new
-    // behaviour.
-    //
-    private static boolean defaultAllowArraySyntax = false;
-    private static boolean allowArraySyntax = defaultAllowArraySyntax;
-
-    // The allowArraySyntax boolean is initialized during system initialization
-    // in the saveAndRemoveProperties method.
-    //
-    // It is initialized based on the value of the system property
-    // "sun.lang.ClassLoader.allowArraySyntax".  If the system property is not
-    // provided, the default for 1.5 is "true".  In 1.6, the default will be
-    // "false".  If the system property is provided, then the value of
-    // allowArraySyntax will be equal to "true" if Boolean.parseBoolean()
-    // returns "true".   Otherwise, the field will be set to "false".
-    //
-    public static boolean allowArraySyntax() {
-        return allowArraySyntax;
-    }
-
     /**
      * Returns true if the given class loader is in the system domain
      * in which all permissions are granted.
@@ -295,14 +269,6 @@ public class VM {
         s = (String)props.remove("sun.nio.PageAlignDirectMemory");
         if ("true".equals(s))
             pageAlignDirectMemory = true;
-
-        // Set a boolean to determine whether ClassLoader.loadClass accepts
-        // array syntax.  This value is controlled by the system property
-        // "sun.lang.ClassLoader.allowArraySyntax".
-        s = props.getProperty("sun.lang.ClassLoader.allowArraySyntax");
-        allowArraySyntax = (s == null
-                               ? defaultAllowArraySyntax
-                               : Boolean.parseBoolean(s));
 
         // Remove other private system properties
         // used by java.lang.Integer.IntegerCache

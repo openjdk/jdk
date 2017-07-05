@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1181,7 +1181,7 @@ public abstract class IIOMetadataFormatImpl implements IIOMetadataFormat {
 
     private ObjectValue getObjectValue(String elementName) {
         Element element = getElement(elementName);
-        ObjectValue objv = (ObjectValue)element.objectValue;
+        ObjectValue objv = element.objectValue;
         if (objv == null) {
             throw new IllegalArgumentException("No object within element " +
                                                elementName + "!");
@@ -1191,7 +1191,7 @@ public abstract class IIOMetadataFormatImpl implements IIOMetadataFormat {
 
     public int getObjectValueType(String elementName) {
         Element element = getElement(elementName);
-        ObjectValue objv = (ObjectValue)element.objectValue;
+        ObjectValue objv = element.objectValue;
         if (objv == null) {
             return VALUE_NONE;
         }

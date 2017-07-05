@@ -1833,6 +1833,18 @@ JVM_ENTRY(void, jmm_SetVMGlobal(JNIEnv *env, jstring flag_name, jvalue new_value
     succeed = CommandLineFlags::intxAtPut(name, &ivalue, Flag::MANAGEMENT);
   } else if (flag->is_uintx()) {
     uintx uvalue = (uintx)new_value.j;
+
+    if (strncmp(name, "MaxHeapFreeRatio", 17) == 0) {
+      FormatBuffer<80> err_msg("");
+      if (!Arguments::verify_MaxHeapFreeRatio(err_msg, uvalue)) {
+        THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), err_msg.buffer());
+      }
+    } else if (strncmp(name, "MinHeapFreeRatio", 17) == 0) {
+      FormatBuffer<80> err_msg("");
+      if (!Arguments::verify_MinHeapFreeRatio(err_msg, uvalue)) {
+        THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), err_msg.buffer());
+      }
+    }
     succeed = CommandLineFlags::uintxAtPut(name, &uvalue, Flag::MANAGEMENT);
   } else if (flag->is_uint64_t()) {
     uint64_t uvalue = (uint64_t)new_value.j;

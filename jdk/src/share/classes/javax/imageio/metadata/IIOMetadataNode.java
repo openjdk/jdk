@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ import org.w3c.dom.UserDataHandler;
 
 
 class IIODOMException extends DOMException {
+    private static final long serialVersionUID = -4369510142067447468L;
 
     public IIODOMException(short code, String message) {
         super(code, message);

@@ -28,7 +28,7 @@
  * @author Dana Burns
  * @library ../testlibrary
  * @build TestLibrary
- * @run main DefaultRegistryPort
+ * @run main/othervm DefaultRegistryPort
  */
 
 /*

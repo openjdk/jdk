@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -382,7 +382,7 @@ public class HashAttributeSet implements AttributeSet, Serializable {
         return
            attribute != null &&
            attribute instanceof Attribute &&
-           attribute.equals(attrMap.get(((Attribute)attribute).getCategory()));
+           attribute.equals(attrMap.get(attribute.getCategory()));
     }
 
     /**

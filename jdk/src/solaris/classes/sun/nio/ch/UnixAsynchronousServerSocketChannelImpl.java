@@ -148,7 +148,7 @@ class UnixAsynchronousServerSocketChannelImpl
                 synchronized (updateLock) {
                     acceptPending = true;
                 }
-                port.startPoll(fdVal, Port.POLLIN);
+                port.startPoll(fdVal, Net.POLLIN);
                 return;
             }
 
@@ -299,7 +299,7 @@ class UnixAsynchronousServerSocketChannelImpl
                 }
 
                 // register for connections
-                port.startPoll(fdVal, Port.POLLIN);
+                port.startPoll(fdVal, Net.POLLIN);
                 return result;
             }
         } catch (Throwable x) {
