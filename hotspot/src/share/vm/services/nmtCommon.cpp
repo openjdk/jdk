@@ -41,6 +41,7 @@ const char* NMTUtil::_memory_type_names[] = {
   "Test",
   "Tracing",
   "Logging",
+  "Arguments",
   "Unknown"
 };
 

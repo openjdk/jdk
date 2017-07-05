@@ -98,6 +98,7 @@ void LogTagSet::write(LogLevelType level, const char* fmt, ...) {
 const size_t vwrite_buffer_size = 512;
 
 void LogTagSet::vwrite(LogLevelType level, const char* fmt, va_list args) {
+  assert(level >= LogLevel::First && level <= LogLevel::Last, "Log level:%d is incorrect", level);
   char buf[vwrite_buffer_size];
   va_list saved_args;           // For re-format on buf overflow.
   va_copy(saved_args, args);

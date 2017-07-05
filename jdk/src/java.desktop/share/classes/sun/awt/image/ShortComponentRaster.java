@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import java.awt.image.RasterFormatException;
 import java.awt.image.SampleModel;
 import java.awt.image.ComponentSampleModel;
 import java.awt.image.SinglePixelPackedSampleModel;
-import java.awt.image.DataBuffer;
 import java.awt.image.DataBufferUShort;
 import java.awt.Rectangle;
 import java.awt.Point;
@@ -94,7 +93,7 @@ public class ShortComponentRaster extends SunWritableRaster {
      */
     public ShortComponentRaster(SampleModel sampleModel, Point origin) {
         this(sampleModel,
-             sampleModel.createDataBuffer(),
+             (DataBufferUShort) sampleModel.createDataBuffer(),
              new Rectangle(origin.x,
                            origin.y,
                            sampleModel.getWidth(),
@@ -115,8 +114,9 @@ public class ShortComponentRaster extends SunWritableRaster {
      * @param origin          The Point that specifies the origin.
      */
     public ShortComponentRaster(SampleModel sampleModel,
-                                   DataBuffer dataBuffer,
-                                   Point origin) {
+                                DataBufferUShort dataBuffer,
+                                Point origin)
+    {
         this(sampleModel,
              dataBuffer,
              new Rectangle(origin.x,
@@ -146,28 +146,22 @@ public class ShortComponentRaster extends SunWritableRaster {
      * @param parent          The parent (if any) of this raster.
      */
     public ShortComponentRaster(SampleModel sampleModel,
-                                   DataBuffer dataBuffer,
-                                   Rectangle aRegion,
-                                   Point origin,
-                                   ShortComponentRaster parent) {
-
+                                DataBufferUShort dataBuffer,
+                                Rectangle aRegion,
+                                Point origin,
+                                ShortComponentRaster parent)
+    {
         super(sampleModel, dataBuffer, aRegion, origin, parent);
         this.maxX = minX + width;
         this.maxY = minY + height;
 
-        if(!(dataBuffer instanceof DataBufferUShort)) {
-            throw new RasterFormatException("ShortComponentRasters must have "+
-                                            "short DataBuffers");
-        }
-
-        DataBufferUShort dbus = (DataBufferUShort)dataBuffer;
-        this.data = stealData(dbus, 0);
-        if (dbus.getNumBanks() != 1) {
+        this.data = stealData(dataBuffer, 0);
+        if (dataBuffer.getNumBanks() != 1) {
             throw new
                 RasterFormatException("DataBuffer for ShortComponentRasters"+
                                       " must only have 1 bank.");
         }
-        int dbOffset = dbus.getOffset();
+        int dbOffset = dataBuffer.getOffset();
 
         if (sampleModel instanceof ComponentSampleModel) {
             ComponentSampleModel csm = (ComponentSampleModel)sampleModel;
@@ -758,7 +752,7 @@ public class ShortComponentRaster extends SunWritableRaster {
         int deltaY = y0 - y;
 
         return new ShortComponentRaster(sm,
-                                       dataBuffer,
+                                       (DataBufferUShort) dataBuffer,
                                        new Rectangle(x0, y0, width, height),
                                        new Point(sampleModelTranslateX+deltaX,
                                                  sampleModelTranslateY+deltaY),

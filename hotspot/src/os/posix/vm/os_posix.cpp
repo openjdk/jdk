@@ -181,6 +181,10 @@ int os::log_vsnprintf(char* buf, size_t len, const char* fmt, va_list args) {
     return vsnprintf(buf, len, fmt, args);
 }
 
+int os::fileno(FILE* fp) {
+  return ::fileno(fp);
+}
+
 void os::Posix::print_load_average(outputStream* st) {
   st->print("load average:");
   double loadavg[3];

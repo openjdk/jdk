@@ -26,7 +26,6 @@
 package sun.security.ssl;
 
 import java.io.PrintStream;
-import java.security.AccessController;
 import java.util.Locale;
 
 import sun.security.util.HexDumpEncoder;
@@ -46,8 +45,7 @@ public class Debug {
     private static String args;
 
     static {
-        args = java.security.AccessController.doPrivileged(
-            new GetPropertyAction("javax.net.debug", ""));
+        args = GetPropertyAction.getProperty("javax.net.debug", "");
         args = args.toLowerCase(Locale.ENGLISH);
         if (args.equals("help")) {
             Help();
@@ -184,8 +182,7 @@ public class Debug {
      */
     static boolean getBooleanProperty(String propName, boolean defaultValue) {
         // if set, require value of either true or false
-        String b = AccessController.doPrivileged(
-                new GetPropertyAction(propName));
+        String b = GetPropertyAction.getProperty(propName);
         if (b == null) {
             return defaultValue;
         } else if (b.equalsIgnoreCase("false")) {

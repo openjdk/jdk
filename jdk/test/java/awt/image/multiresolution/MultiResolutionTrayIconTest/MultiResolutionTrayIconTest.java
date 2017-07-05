@@ -24,8 +24,7 @@
 
 /*
   @test
-  @bug 8150176
-  @ignore 8150176
+  @bug 8150176 8151773
   @summary Check if correct resolution variant is used for tray icon.
   @author a.stepanov
   @run applet/manual=yesno MultiResolutionTrayIconTest.html

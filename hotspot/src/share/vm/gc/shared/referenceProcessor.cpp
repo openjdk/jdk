@@ -1090,6 +1090,15 @@ bool ReferenceProcessor::discover_reference(oop obj, ReferenceType rt) {
   return true;
 }
 
+bool ReferenceProcessor::has_discovered_references() {
+  for (uint i = 0; i < _max_num_q * number_of_subclasses_of_ref(); i++) {
+    if (!_discovered_refs[i].is_empty()) {
+      return true;
+    }
+  }
+  return false;
+}
+
 // Preclean the discovered references by removing those
 // whose referents are alive, and by marking from those that
 // are not active. These lists can be handled here

@@ -29,6 +29,7 @@ import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.Set;
 
 public class Main {
@@ -40,7 +41,8 @@ public class Main {
         validate(Main.class.getModule().getDescriptor());
 
         // read m1/module-info.class
-        FileSystem fs = FileSystems.newFileSystem(URI.create("jrt:/"), null);
+        FileSystem fs = FileSystems.newFileSystem(URI.create("jrt:/"),
+                                                  Collections.emptyMap());
         Path path = fs.getPath("/", "modules", "m1", "module-info.class");
         validate(ModuleDescriptor.read(Files.newInputStream(path)));
     }

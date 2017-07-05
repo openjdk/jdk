@@ -26,10 +26,11 @@
 #define SHARE_VM_INTERPRETER_BYTECODES_HPP
 
 #include "memory/allocation.hpp"
-#include "utilities/top.hpp"
 
 // Bytecodes specifies all bytecodes used in the VM and
 // provides utility functions to get bytecode attributes.
+
+class Method;
 
 // NOTE: replicated in SA in vm/agent/sun/jvm/hotspot/interpreter/Bytecodes.java
 class Bytecodes: AllStatic {
@@ -256,6 +257,7 @@ class Bytecodes: AllStatic {
 
     _fast_aputfield       ,
     _fast_bputfield       ,
+    _fast_zputfield       ,
     _fast_cputfield       ,
     _fast_dputfield       ,
     _fast_fputfield       ,

@@ -335,10 +335,6 @@ com/sun/jdi/CatchPatternTest.sh                                 8068645 generic-
 
 com/sun/jdi/GetLocalVariables4Test.sh                           8067354 windows-all
 
-com/sun/jdi/InterfaceMethodsTest.java				8152586 generic-all
-
-com/sun/jdi/InvokeTest.java					8152586 generic-all
-
 ############################################################################
 
 # jdk_util

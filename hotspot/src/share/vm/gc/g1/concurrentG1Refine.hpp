@@ -65,18 +65,24 @@ class ConcurrentG1Refine: public CHeapObj<mtGC> {
   size_t _green_zone;
   size_t _yellow_zone;
   size_t _red_zone;
-
-  size_t _thread_threshold_step;
-
-  double _predictor_sigma;
+  size_t _min_yellow_zone_size;
 
   // We delay the refinement of 'hot' cards using the hot card cache.
   G1HotCardCache _hot_card_cache;
 
-  // Reset the threshold step value based of the current zone boundaries.
-  void reset_threshold_step();
+  ConcurrentG1Refine(G1CollectedHeap* g1h,
+                     size_t green_zone,
+                     size_t yellow_zone,
+                     size_t red_zone,
+                     size_t min_yellow_zone_size);
 
-  ConcurrentG1Refine(G1CollectedHeap* g1h, const G1Predictions* predictions);
+  // Update green/yellow/red zone values based on how well goals are being met.
+  void update_zones(double update_rs_time,
+                    size_t update_rs_processed_buffers,
+                    double goal_ms);
+
+  // Update thread thresholds to account for updated zone values.
+  void update_thread_thresholds();
 
  public:
   ~ConcurrentG1Refine();
@@ -88,9 +94,7 @@ class ConcurrentG1Refine: public CHeapObj<mtGC> {
   void init(G1RegionToSpaceMapper* card_counts_storage);
   void stop();
 
-  void adjust(double update_rs_time, double update_rs_processed_buffers, double goal_ms);
-
-  void reinitialize_threads();
+  void adjust(double update_rs_time, size_t update_rs_processed_buffers, double goal_ms);
 
   // Iterate over all concurrent refinement threads
   void threads_do(ThreadClosure *tc);
@@ -105,17 +109,9 @@ class ConcurrentG1Refine: public CHeapObj<mtGC> {
 
   void print_worker_threads_on(outputStream* st) const;
 
-  void set_green_zone(size_t x)  { _green_zone = x;  }
-  void set_yellow_zone(size_t x) { _yellow_zone = x; }
-  void set_red_zone(size_t x)    { _red_zone = x;    }
-
   size_t green_zone() const      { return _green_zone;  }
   size_t yellow_zone() const     { return _yellow_zone; }
   size_t red_zone() const        { return _red_zone;    }
-
-  uint worker_thread_num() const { return _n_worker_threads; }
-
-  size_t thread_threshold_step() const { return _thread_threshold_step; }
 
   G1HotCardCache* hot_card_cache() { return &_hot_card_cache; }
 

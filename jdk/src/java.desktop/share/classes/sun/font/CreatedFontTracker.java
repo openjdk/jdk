@@ -36,7 +36,6 @@ import java.util.concurrent.TimeUnit;
 
 import sun.awt.AppContext;
 import sun.awt.util.ThreadGroupUtils;
-import sun.misc.ManagedLocalsThread;
 
 public class CreatedFontTracker {
 
@@ -122,8 +121,8 @@ public class CreatedFontTracker {
                      * Make its parent the top-level thread group.
                      */
                     ThreadGroup rootTG = ThreadGroupUtils.getRootThreadGroup();
-                    t = new ManagedLocalsThread(rootTG,
-                                                TempFileDeletionHook::runHooks);
+                    t = new Thread(rootTG, TempFileDeletionHook::runHooks,
+                                   "TempFontFileDeleter", 0, false);
                     /* Set context class loader to null in order to avoid
                      * keeping a strong reference to an application classloader.
                      */

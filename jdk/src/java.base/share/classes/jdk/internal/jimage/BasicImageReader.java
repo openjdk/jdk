@@ -183,7 +183,9 @@ public class BasicImageReader implements AutoCloseable {
     }
 
     public static void releaseByteBuffer(ByteBuffer buffer) {
-        ImageBufferCache.releaseBuffer(buffer);
+        if (!MAP_ALL) {
+            ImageBufferCache.releaseBuffer(buffer);
+        }
     }
 
     public String getName() {

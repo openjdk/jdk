@@ -26,8 +26,6 @@
 package jdk;
 
 import java.math.BigInteger;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -35,6 +33,7 @@ import java.util.stream.Collectors;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import sun.security.action.GetPropertyAction;
 
 /**
  * A representation of the JDK version-string which contains a version
@@ -274,12 +273,7 @@ public final class Version
      */
     public static Version current() {
         if (current == null) {
-            current = parse(AccessController.doPrivileged(
-                new PrivilegedAction<>() {
-                    public String run() {
-                        return System.getProperty("java.version");
-                    }
-                }));
+            current = parse(GetPropertyAction.getProperty("java.version"));
         }
         return current;
     }

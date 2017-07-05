@@ -297,7 +297,13 @@ public final class Byte extends Number implements Comparable<Byte> {
      *
      * @param value     the value to be represented by the
      *                  {@code Byte}.
+     *
+     * @deprecated
+     * It is rarely appropriate to use this constructor. The static factory
+     * {@link #valueOf(byte)} is generally a better choice, as it is
+     * likely to yield significantly better space and time performance.
      */
+    @Deprecated(since="9")
     public Byte(byte value) {
         this.value = value;
     }
@@ -311,10 +317,16 @@ public final class Byte extends Number implements Comparable<Byte> {
      *
      * @param s         the {@code String} to be converted to a
      *                  {@code Byte}
-     * @throws           NumberFormatException If the {@code String}
+     * @throws          NumberFormatException if the {@code String}
      *                  does not contain a parsable {@code byte}.
-     * @see        java.lang.Byte#parseByte(java.lang.String, int)
+     *
+     * @deprecated
+     * It is rarely appropriate to use this constructor.
+     * Use {@link #parseByte(String)} to convert a string to a
+     * {@code byte} primitive, or use {@link #valueOf(String)}
+     * to convert a string to a {@code Byte} object.
      */
+    @Deprecated(since="9")
     public Byte(String s) throws NumberFormatException {
         this.value = parseByte(s, 10);
     }

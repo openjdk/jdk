@@ -37,24 +37,14 @@ class StackFrameInfo implements StackFrame {
     private final static JavaLangInvokeAccess jlInvokeAccess =
         SharedSecrets.getJavaLangInvokeAccess();
 
-    // -XX:+MemberNameInStackFrame will initialize MemberName and all other fields;
-    // otherwise, VM will set the hidden fields (injected by the VM).
-    // -XX:+MemberNameInStackFrame is temporary to enable performance measurement
-    //
-    // Footprint improvement: MemberName::clazz and MemberName::name
-    // can replace StackFrameInfo::declaringClass and StackFrameInfo::methodName
-    // Currently VM sets StackFrameInfo::methodName instead of expanding MemberName::name
+    // Footprint improvement: MemberName::clazz can replace
+    // StackFrameInfo::declaringClass.
 
     final StackWalker walker;
     final Class<?> declaringClass;
     final Object memberName;
-    final int bci;
-
-    // methodName, fileName, and lineNumber will be lazily set by the VM
-    // when first requested.
-    private String methodName;
-    private String fileName = null;     // default for unavailable filename
-    private int    lineNumber = -1;     // default for unavailable lineNumber
+    final short bci;
+    private volatile StackTraceElement ste;
 
     /*
      * Create StackFrameInfo for StackFrameTraverser and LiveStackFrameTraverser
@@ -78,77 +68,53 @@ class StackFrameInfo implements StackFrame {
         return declaringClass;
     }
 
-    // Call the VM to set methodName, lineNumber, and fileName
-    private synchronized void ensureMethodInfoInitialized() {
-        if (methodName == null) {
-            setMethodInfo();
-        }
-    }
-
     @Override
     public String getMethodName() {
-        ensureMethodInfoInitialized();
-        return methodName;
+        return jlInvokeAccess.getName(memberName);
     }
 
     @Override
-    public Optional<String> getFileName() {
-        ensureMethodInfoInitialized();
-        return fileName != null ? Optional.of(fileName) : Optional.empty();
+    public final Optional<String> getFileName() {
+        StackTraceElement ste = toStackTraceElement();
+        return ste.getFileName() != null ? Optional.of(ste.getFileName()) : Optional.empty();
     }
 
     @Override
-    public OptionalInt getLineNumber() {
-        ensureMethodInfoInitialized();
-        return lineNumber > 0 ? OptionalInt.of(lineNumber) : OptionalInt.empty();
+    public final OptionalInt getLineNumber() {
+        StackTraceElement ste = toStackTraceElement();
+        return ste.getLineNumber() > 0 ? OptionalInt.of(ste.getLineNumber()) : OptionalInt.empty();
     }
 
     @Override
-    public boolean isNativeMethod() {
-        ensureMethodInfoInitialized();
-        return lineNumber == -2;
+    public final boolean isNativeMethod() {
+        StackTraceElement ste = toStackTraceElement();
+        return ste.isNativeMethod();
     }
 
     @Override
     public String toString() {
-        ensureMethodInfoInitialized();
-        // similar format as StackTraceElement::toString
-        if (isNativeMethod()) {
-            return getClassName() + "." + getMethodName() + "(Native Method)";
-        } else {
-            // avoid allocating Optional objects
-            return getClassName() + "." + getMethodName() +
-                "(" + (fileName != null ? fileName : "Unknown Source") +
-                      (lineNumber > 0 ? ":" + lineNumber : " bci:" + bci) + ")";
-        }
+        StackTraceElement ste = toStackTraceElement();
+        return ste.toString();
     }
 
     /**
-     * Lazily initialize method name, file name, line number
+     * Fill in the fields of the given StackTraceElement
      */
-    private native void setMethodInfo();
-
-    /**
-     * Fill in source file name and line number of the given StackFrame array.
-     */
-    static native void fillInStackFrames(int startIndex,
-                                         Object[] stackframes,
-                                         int fromIndex, int toIndex);
+    private native void toStackTraceElement0(StackTraceElement ste);
 
     @Override
     public StackTraceElement toStackTraceElement() {
-        ensureMethodInfoInitialized();
-
-        Module module = declaringClass.getModule();
-        String moduleName = module.isNamed() ? module.getName() : null;
-        String moduleVersion = null;
-        if (module.isNamed() && module.getDescriptor().version().isPresent()) {
-            moduleVersion = module.getDescriptor().version().get().toString();
+        StackTraceElement s = ste;
+        if (s == null) {
+            synchronized (this) {
+                s = ste;
+                if (s == null) {
+                    s = new StackTraceElement();
+                    toStackTraceElement0(s);
+                    ste = s;
+                }
+            }
         }
-        return new StackTraceElement(moduleName, moduleVersion,
-                                     getClassName(), getMethodName(),
-                                     fileName,
-                                     lineNumber);
+        return s;
     }
-
 }

@@ -29,8 +29,6 @@
 #include "runtime/basicLock.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/perfData.hpp"
-#include "utilities/top.hpp"
-
 
 class ObjectMonitor;
 

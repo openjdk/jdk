@@ -1019,9 +1019,8 @@ public class FileChannelImpl
         if (!propertyChecked) {
             synchronized (FileChannelImpl.class) {
                 if (!propertyChecked) {
-                    String value = AccessController.doPrivileged(
-                        new GetPropertyAction(
-                            "sun.nio.ch.disableSystemWideOverlappingFileLockCheck"));
+                    String value = GetPropertyAction.getProperty(
+                            "sun.nio.ch.disableSystemWideOverlappingFileLockCheck");
                     isSharedFileLockTable = ((value == null) || value.equals("false"));
                     propertyChecked = true;
                 }

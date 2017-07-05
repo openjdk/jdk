@@ -919,7 +919,14 @@ class JNI_ArgumentPusherVaArg : public JNI_ArgumentPusher {
  protected:
   va_list _ap;
 
-  inline void get_bool()   { _arguments->push_int(va_arg(_ap, jint)); } // bool is coerced to int when using va_arg
+  inline void get_bool()   {
+    // Normalize boolean arguments from native code by converting 1-255 to JNI_TRUE and
+    // 0 to JNI_FALSE.  Boolean return values from native are normalized the same in
+    // TemplateInterpreterGenerator::generate_result_handler_for and
+    // SharedRuntime::generate_native_wrapper.
+    jboolean b = va_arg(_ap, jint);
+    _arguments->push_int((jint)(b == 0 ? JNI_FALSE : JNI_TRUE));
+  }
   inline void get_char()   { _arguments->push_int(va_arg(_ap, jint)); } // char is coerced to int when using va_arg
   inline void get_short()  { _arguments->push_int(va_arg(_ap, jint)); } // short is coerced to int when using va_arg
   inline void get_byte()   { _arguments->push_int(va_arg(_ap, jint)); } // byte is coerced to int when using va_arg
@@ -960,9 +967,17 @@ class JNI_ArgumentPusherVaArg : public JNI_ArgumentPusher {
       while ( 1 ) {
         switch ( fingerprint & parameter_feature_mask ) {
           case bool_parm:
+            get_bool();
+            break;
           case char_parm:
+            get_char();
+            break;
           case short_parm:
+            get_short();
+            break;
           case byte_parm:
+            get_byte();
+            break;
           case int_parm:
             get_int();
             break;
@@ -996,7 +1011,14 @@ class JNI_ArgumentPusherArray : public JNI_ArgumentPusher {
  protected:
   const jvalue *_ap;
 
-  inline void get_bool()   { _arguments->push_int((jint)(_ap++)->z); }
+  inline void get_bool()   {
+    // Normalize boolean arguments from native code by converting 1-255 to JNI_TRUE and
+    // 0 to JNI_FALSE.  Boolean return values from native are normalized the same in
+    // TemplateInterpreterGenerator::generate_result_handler_for and
+    // SharedRuntime::generate_native_wrapper.
+    jboolean b = (_ap++)->z;
+    _arguments->push_int((jint)(b == 0 ? JNI_FALSE : JNI_TRUE));
+  }
   inline void get_char()   { _arguments->push_int((jint)(_ap++)->c); }
   inline void get_short()  { _arguments->push_int((jint)(_ap++)->s); }
   inline void get_byte()   { _arguments->push_int((jint)(_ap++)->b); }
@@ -2188,6 +2210,7 @@ JNI_QUICK_ENTRY(void, jni_Set##Result##Field(JNIEnv *env, jobject obj, jfieldID 
     field_value.unionType = value; \
     o = JvmtiExport::jni_SetField_probe_nh(thread, obj, o, k, fieldID, false, SigType, (jvalue *)&field_value); \
   } \
+  if (SigType == 'Z') { value = ((jboolean)value) & 1; } \
   o->Fieldname##_field_put(offset, value); \
   ReturnProbe; \
 JNI_END
@@ -2387,6 +2410,7 @@ JNI_ENTRY(void, jni_SetStatic##Result##Field(JNIEnv *env, jclass clazz, jfieldID
     field_value.unionType = value; \
     JvmtiExport::jni_SetField_probe(thread, NULL, NULL, id->holder(), fieldID, true, SigType, (jvalue *)&field_value); \
   } \
+  if (SigType == 'Z') { value = ((jboolean)value) & 1; } \
   id->holder()->java_mirror()-> Fieldname##_field_put (id->offset(), value); \
   ReturnProbe;\
 JNI_END

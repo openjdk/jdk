@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -232,7 +232,7 @@ public final class JavaSoundAudioClip implements AudioClip, MetaEventListener, L
         } else if (sequencer != null) {
             try {
                 sequencerloop = false;
-                sequencer.addMetaEventListener(this);
+                sequencer.removeMetaEventListener(this);
                 sequencer.stop();
             } catch (Exception e3) {
                 if (Printer.err) e3.printStackTrace();

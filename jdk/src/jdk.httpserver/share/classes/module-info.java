@@ -25,8 +25,7 @@
 
 module jdk.httpserver {
     requires java.logging;
-    // 8153372
-    requires jdk.unsupported;
+
     exports com.sun.net.httpserver;
     exports com.sun.net.httpserver.spi;
     uses com.sun.net.httpserver.spi.HttpServerProvider;

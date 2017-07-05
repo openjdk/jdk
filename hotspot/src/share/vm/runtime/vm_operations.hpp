@@ -29,7 +29,6 @@
 #include "memory/allocation.hpp"
 #include "oops/oop.hpp"
 #include "runtime/thread.hpp"
-#include "utilities/top.hpp"
 #include "code/codeCache.hpp"
 
 // The following classes are used for operations
