@@ -107,6 +107,7 @@ struct _JPLISAgent {
     jboolean                mNativeMethodPrefixAdded;     /* indicates if can_set_native_method_prefix capability has been added */
     char const *            mAgentClassName;        /* agent class name */
     char const *            mOptionsString;         /* -javaagent options string */
+    const char *            mJarfile;               /* agent jar file name */
 };
 
 /*

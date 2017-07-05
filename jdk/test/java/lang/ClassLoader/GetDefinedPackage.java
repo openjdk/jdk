@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,21 +23,35 @@
 
 /*
  * @test
- * @bug 4302966
- * @modules jdk.localedata
- * @summary In Czech Republic first day of week is Monday not Sunday
+ * @bug 8165346
+ * @summary Basic test for ClassLoader::getDefinedPackage
  */
 
-import java.util.Calendar;
-import java.util.Locale;
+public class GetDefinedPackage {
+    public static void main(String... args) {
+        TestClassLoader loader = new TestClassLoader();
+        Package pkg = loader.getDefinedPackage(TestClassLoader.PKG_NAME);
+        if (pkg == null) {
+            throw new RuntimeException("package foo not found");
+        }
 
-public class Bug4302966 {
+        try {
+            loader.getDefinedPackage(null);
+            throw new RuntimeException("NullPointerException not thrown");
+        } catch (NullPointerException e) {
+        }
+    }
 
-    public static void main(String[] args) {
-        Calendar czechCalendar = Calendar.getInstance(new Locale("cs"));
-        int firstDayOfWeek = czechCalendar.getFirstDayOfWeek();
-        if (firstDayOfWeek != Calendar.MONDAY) {
-            throw new RuntimeException();
+    static class TestClassLoader extends ClassLoader {
+        public static final String PKG_NAME = "foo";
+
+        public TestClassLoader() {
+            super();
+            definePackage(PKG_NAME);
+        }
+
+        public Package definePackage(String name) {
+            return definePackage(name, null, null, null, null, null, null, null);
         }
     }
 }

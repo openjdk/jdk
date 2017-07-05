@@ -334,11 +334,15 @@ final class StringConcatHelper {
     /**
      * Instantiates the String with given buffer and coder
      * @param buf     buffer to use
+     * @param index   remaining index
      * @param coder   coder to use
      * @return String resulting string
      */
-    static String newString(byte[] buf, byte coder) {
+    static String newString(byte[] buf, int index, byte coder) {
         // Use the private, non-copying constructor (unsafe!)
+        if (index != 0) {
+            throw new InternalError("Storage is not completely initialized, " + index + " bytes left");
+        }
         return new String(buf, coder);
     }
 

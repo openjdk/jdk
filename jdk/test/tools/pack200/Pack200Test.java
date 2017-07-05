@@ -21,23 +21,20 @@
  * questions.
  */
 
+ /*
+  * @test
+  * @bug 6521334 6712743 8007902 8151901
+  * @summary test general packer/unpacker functionality
+  *          using native and java unpackers
+  * @compile -XDignore.symbol.file Utils.java Pack200Test.java
+  * @run main/othervm/timeout=1200 -Xmx1280m -Xshare:off Pack200Test
+  */
 
 import java.util.*;
 import java.io.*;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
 import java.util.jar.*;
-
- /*
-  * @test
-  * @bug 6521334 6712743 8007902
-  * @key intermittent
-  * @summary check for memory leaks, test general packer/unpacker functionality\
-  *          using native and java unpackers
-  * @compile -XDignore.symbol.file Utils.java Pack200Test.java
-  * @run main/othervm/timeout=1200 -Xmx1280m -Xshare:off Pack200Test
-  * @author ksrini
-  */
 
 /**
  * Tests the packing/unpacking via the APIs.
@@ -48,6 +45,9 @@ public class Pack200Test {
     static final MemoryMXBean mmxbean = ManagementFactory.getMemoryMXBean();
     static final long m0 = getUsedMemory();
     static final int LEAK_TOLERANCE = 21000; // OS and GC related variations.
+    // enable leak checks only if required, GC charecteristics vary on
+    // platforms and this may not yield consistent results
+    static final boolean LEAK_CHECK = Boolean.getBoolean("Pack200Test.enableLeakCheck");
 
     /** Creates a new instance of Pack200Test */
     private Pack200Test() {}
@@ -60,9 +60,11 @@ public class Pack200Test {
     }
 
     private static void leakCheck() throws Exception {
+        if (!LEAK_CHECK)
+            return;
         long diff = getUsedMemory() - m0;
         System.out.println("  Info: memory diff = " + diff + "K");
-        if ( diff  > LEAK_TOLERANCE) {
+        if (diff > LEAK_TOLERANCE) {
             throw new Exception("memory leak detected " + diff);
         }
     }
@@ -126,7 +128,7 @@ public class Pack200Test {
     /**
      * @param args the command line arguments
      */
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws Exception {
         // select the jars carefully, adding more jars will increase the
         // testing time, especially for jprt.
         jarList.add(Utils.createRtJar());
