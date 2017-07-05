@@ -266,7 +266,7 @@ public class BasicGraphicsUtils
             return null;
         }
 
-        Icon icon = (Icon) b.getIcon();
+        Icon icon = b.getIcon();
         String text = b.getText();
 
         Font font = b.getFont();
@@ -277,7 +277,7 @@ public class BasicGraphicsUtils
         Rectangle viewR = new Rectangle(Short.MAX_VALUE, Short.MAX_VALUE);
 
         SwingUtilities.layoutCompoundLabel(
-            (JComponent) b, fm, text, icon,
+            b, fm, text, icon,
             b.getVerticalAlignment(), b.getHorizontalAlignment(),
             b.getVerticalTextPosition(), b.getHorizontalTextPosition(),
             viewR, iconR, textR, (text == null ? 0 : textIconGap)

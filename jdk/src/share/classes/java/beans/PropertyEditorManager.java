@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package java.beans;
 
+import com.sun.beans.WeakCache;
 import sun.beans.editors.*;
 
 /**
@@ -55,32 +56,30 @@ import sun.beans.editors.*;
 public class PropertyEditorManager {
 
     /**
-     * Register an editor class to be used to edit values of
-     * a given target class.
+     * Registers an editor class to edit values of the given target class.
+     * If the editor class is {@code null},
+     * then any existing definition will be removed.
+     * Thus this method can be used to cancel the registration.
+     * The registration is canceled automatically
+     * if either the target or editor class is unloaded.
+     * <p>
+     * If there is a security manager, its {@code checkPropertiesAccess}
+     * method is called. This could result in a {@linkplain SecurityException}.
      *
-     * <p>First, if there is a security manager, its <code>checkPropertiesAccess</code>
-     * method is called. This could result in a SecurityException.
+     * @param targetType   the class object of the type to be edited
+     * @param editorClass  the class object of the editor class
+     * @throws SecurityException  if a security manager exists and
+     *                            its {@code checkPropertiesAccess} method
+     *                            doesn't allow setting of system properties
      *
-     * @param targetType the Class object of the type to be edited
-     * @param editorClass the Class object of the editor class.  If
-     *     this is null, then any existing definition will be removed.
-     * @exception  SecurityException  if a security manager exists and its
-     *             <code>checkPropertiesAccess</code> method doesn't allow setting
-     *              of system properties.
      * @see SecurityManager#checkPropertiesAccess
      */
-
-    public static void registerEditor(Class<?> targetType, Class<?> editorClass) {
+    public static synchronized void registerEditor(Class<?> targetType, Class<?> editorClass) {
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPropertiesAccess();
         }
-        initialize();
-        if (editorClass == null) {
-            registry.remove(targetType);
-        } else {
-            registry.put(targetType, editorClass);
-        }
+        registry.put(targetType, editorClass);
     }
 
     /**
@@ -90,10 +89,8 @@ public class PropertyEditorManager {
      * @return An editor object for the given target class.
      * The result is null if no suitable editor can be found.
      */
-
     public static synchronized PropertyEditor findEditor(Class<?> targetType) {
-        initialize();
-        Class editorClass = (Class)registry.get(targetType);
+        Class editorClass = registry.get(targetType);
         if (editorClass != null) {
             try {
                 Object o = editorClass.newInstance();
@@ -143,10 +140,7 @@ public class PropertyEditorManager {
      *         e.g. Sun implementation initially sets to  {"sun.beans.editors"}.
      */
     public static synchronized String[] getEditorSearchPath() {
-        // Return a copy of the searchPath.
-        String result[] = new String[searchPath.length];
-        System.arraycopy(searchPath, 0, result, 0, searchPath.length);
-        return result;
+        return searchPath.clone();
     }
 
     /**
@@ -162,23 +156,22 @@ public class PropertyEditorManager {
      *              of system properties.
      * @see SecurityManager#checkPropertiesAccess
      */
-
-    public static synchronized void setEditorSearchPath(String path[]) {
+    public static synchronized void setEditorSearchPath(String[] path) {
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPropertiesAccess();
         }
-        if (path == null) {
-            path = new String[0];
-        }
-        searchPath = path;
+        searchPath = (path != null)
+                ? path.clone()
+                : EMPTY;
     }
 
-    private static synchronized void initialize() {
-        if (registry != null) {
-            return;
-        }
-        registry = new java.util.Hashtable();
+    private static String[] searchPath = { "sun.beans.editors" };
+    private static final String[] EMPTY = {};
+    private static final WeakCache<Class<?>, Class<?>> registry;
+
+    static {
+        registry = new WeakCache<Class<?>, Class<?>>();
         registry.put(Byte.TYPE, ByteEditor.class);
         registry.put(Short.TYPE, ShortEditor.class);
         registry.put(Integer.TYPE, IntegerEditor.class);
@@ -187,7 +180,4 @@ public class PropertyEditorManager {
         registry.put(Float.TYPE, FloatEditor.class);
         registry.put(Double.TYPE, DoubleEditor.class);
     }
-
-    private static String[] searchPath = { "sun.beans.editors" };
-    private static java.util.Hashtable registry;
 }

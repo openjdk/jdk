@@ -156,18 +156,17 @@ final class LegacyLayoutFocusTraversalPolicy
     }
 }
 
-final class CompareTabOrderComparator implements Comparator {
+final class CompareTabOrderComparator implements Comparator<Component> {
     private final DefaultFocusManager defaultFocusManager;
 
     CompareTabOrderComparator(DefaultFocusManager defaultFocusManager) {
         this.defaultFocusManager = defaultFocusManager;
     }
 
-    public int compare(Object o1, Object o2) {
+    public int compare(Component o1, Component o2) {
         if (o1 == o2) {
             return 0;
         }
-        return (defaultFocusManager.compareTabOrder((Component)o1,
-                                                    (Component)o2)) ? -1 : 1;
+        return (defaultFocusManager.compareTabOrder(o1, o2)) ? -1 : 1;
     }
 }

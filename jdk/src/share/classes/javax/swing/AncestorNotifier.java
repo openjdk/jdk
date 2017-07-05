@@ -62,7 +62,7 @@ class AncestorNotifier implements ComponentListener, PropertyChangeListener, Ser
     }
 
     AncestorListener[] getAncestorListeners() {
-        return (AncestorListener[])listenerList.getListeners(AncestorListener.class);
+        return listenerList.getListeners(AncestorListener.class);
     }
 
     /**

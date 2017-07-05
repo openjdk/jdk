@@ -96,7 +96,7 @@ public class WindowsDesktopManager extends DefaultDesktopManager
             }
         } catch (PropertyVetoException e) {}
         if (f != currentFrame) {
-            currentFrameRef = new WeakReference(f);
+            currentFrameRef = new WeakReference<JInternalFrame>(f);
         }
     }
 

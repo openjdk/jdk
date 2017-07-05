@@ -25,6 +25,7 @@
 package javax.swing.text;
 
 import java.util.*;
+import java.util.List;
 import java.awt.*;
 import javax.swing.SwingUtilities;
 import javax.swing.event.DocumentEvent;
@@ -58,7 +59,7 @@ public class AsyncBoxView extends View {
      */
     public AsyncBoxView(Element elem, int axis) {
         super(elem);
-        stats = new ArrayList();
+        stats = new ArrayList<ChildState>();
         this.axis = axis;
         locator = new ChildLocator();
         flushTask = new FlushTask();
@@ -197,7 +198,7 @@ public class AsyncBoxView extends View {
     protected ChildState getChildState(int index) {
         synchronized(stats) {
             if ((index >= 0) && (index < stats.size())) {
-                return (ChildState) stats.get(index);
+                return stats.get(index);
             }
             return null;
         }
@@ -357,7 +358,7 @@ public class AsyncBoxView extends View {
         synchronized(stats) {
             // remove the replaced state records
             for (int i = 0; i < length; i++) {
-                ChildState cs = (ChildState)stats.remove(offset);
+                ChildState cs = stats.remove(offset);
                 float csSpan = cs.getMajorSpan();
 
                 cs.getChildView().setParent(null);
@@ -863,7 +864,7 @@ public class AsyncBoxView extends View {
     /**
      * The children and their layout statistics.
      */
-    java.util.List stats;
+    List<ChildState> stats;
 
     /**
      * Current span along the major axis.  This
@@ -1110,7 +1111,7 @@ public class AsyncBoxView extends View {
          */
         int updateChildOffsets(float targetOffset) {
             int n = getViewCount();
-            int targetIndex = n - 1;;
+            int targetIndex = n - 1;
             int pos = lastValidOffset.getChildView().getStartOffset();
             int startIndex = getViewIndex(pos, Position.Bias.Forward);
             float start = lastValidOffset.getMajorOffset();
@@ -1394,7 +1395,6 @@ public class AsyncBoxView extends View {
         private float min;
         private float pref;
         private float max;
-        private float align;
         private boolean minorValid;
 
         // major axis

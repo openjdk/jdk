@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-1999 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,7 @@ package java.util;
  */
 
 public class TooManyListenersException extends Exception {
+    private static final long serialVersionUID = 5074640544770687831L;
 
     /**
      * Constructs a TooManyListenersException with no detail message.

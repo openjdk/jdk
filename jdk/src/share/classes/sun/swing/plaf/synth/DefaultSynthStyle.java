@@ -44,7 +44,7 @@ import javax.swing.plaf.*;
  * @author Scott Violet
  */
 public class DefaultSynthStyle extends SynthStyle implements Cloneable {
-    private static final Object PENDING = new String("Pending");
+    private static final String PENDING = "Pending";
 
     /**
      * Should the component be opaque?
@@ -690,8 +690,8 @@ public class DefaultSynthStyle extends SynthStyle implements Cloneable {
         StateInfo[] states = getStateInfo();
         if (states != null) {
             buf.append("states[");
-            for (int i = 0; i < states.length; i++) {
-                buf.append(states[i].toString()).append(',');
+            for (StateInfo state : states) {
+                buf.append(state.toString()).append(',');
             }
             buf.append(']').append(',');
         }
@@ -888,7 +888,7 @@ public class DefaultSynthStyle extends SynthStyle implements Cloneable {
          * Returns the number of states that are similar between the
          * ComponentState this StateInfo represents and val.
          */
-        private final int getMatchCount(int val) {
+        private int getMatchCount(int val) {
             // This comes from BigInteger.bitCnt
             val &= state;
             val -= (0xaaaaaaaa & val) >>> 1;

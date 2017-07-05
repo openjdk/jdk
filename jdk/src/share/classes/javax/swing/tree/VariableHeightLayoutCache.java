@@ -56,7 +56,7 @@ public class VariableHeightLayoutCache extends AbstractLayoutCache {
      * The array of nodes that are currently visible, in the order they
      * are displayed.
      */
-    private Vector            visibleNodes;
+    private Vector<Object> visibleNodes;
 
     /**
      * This is set to true if one of the entries has an invalid size.
@@ -79,20 +79,20 @@ public class VariableHeightLayoutCache extends AbstractLayoutCache {
     /**
      * Maps from <code>TreePath</code> to a <code>TreeStateNode</code>.
      */
-    private Hashtable         treePathMapping;
+    private Hashtable<TreePath, TreeStateNode> treePathMapping;
 
     /**
      * A stack of stacks.
      */
-    private Stack             tempStacks;
+    private Stack<Stack<TreePath>> tempStacks;
 
 
     public VariableHeightLayoutCache() {
         super();
-        tempStacks = new Stack();
-        visibleNodes = new Vector();
+        tempStacks = new Stack<Stack<TreePath>>();
+        visibleNodes = new Vector<Object>();
         boundsBuffer = new Rectangle();
-        treePathMapping = new Hashtable();
+        treePathMapping = new Hashtable<TreePath, TreeStateNode>();
     }
 
     /**
@@ -704,7 +704,7 @@ public class VariableHeightLayoutCache extends AbstractLayoutCache {
      * return null, if you to create a node use getNodeForPath.
      */
     private TreeStateNode getMapping(TreePath path) {
-        return (TreeStateNode)treePathMapping.get(path);
+        return treePathMapping.get(path);
     }
 
     /**
@@ -824,13 +824,13 @@ public class VariableHeightLayoutCache extends AbstractLayoutCache {
             }
 
             // Check all the parent paths, until a match is found.
-            Stack                paths;
+            Stack<TreePath> paths;
 
             if(tempStacks.size() == 0) {
-                paths = new Stack();
+                paths = new Stack<TreePath>();
             }
             else {
-                paths = (Stack)tempStacks.pop();
+                paths = tempStacks.pop();
             }
 
             try {
@@ -843,7 +843,7 @@ public class VariableHeightLayoutCache extends AbstractLayoutCache {
                         // Found a match, create entries for all paths in
                         // paths.
                         while(node != null && paths.size() > 0) {
-                            path = (TreePath)paths.pop();
+                            path = paths.pop();
                             node.getLoadedChildren(shouldCreate);
 
                             int            childIndex = treeModel.

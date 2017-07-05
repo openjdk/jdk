@@ -343,8 +343,7 @@ public class DefaultBoundedRangeModel implements BoundedRangeModel, Serializable
      * @since 1.4
      */
     public ChangeListener[] getChangeListeners() {
-        return (ChangeListener[])listenerList.getListeners(
-                ChangeListener.class);
+        return listenerList.getListeners(ChangeListener.class);
     }
 
 

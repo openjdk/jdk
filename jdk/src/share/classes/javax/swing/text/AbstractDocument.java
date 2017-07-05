@@ -123,15 +123,15 @@ public abstract class AbstractDocument implements Document, Serializable {
 
         if (defaultI18NProperty == null) {
             // determine default setting for i18n support
-            Object o = java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedAction() {
-                    public Object run() {
+            String o = java.security.AccessController.doPrivileged(
+                new java.security.PrivilegedAction<String>() {
+                    public String run() {
                         return System.getProperty(I18NProperty);
                     }
                 }
             );
             if (o != null) {
-                defaultI18NProperty = Boolean.valueOf((String)o);
+                defaultI18NProperty = Boolean.valueOf(o);
             } else {
                 defaultI18NProperty = Boolean.FALSE;
             }
@@ -163,7 +163,7 @@ public abstract class AbstractDocument implements Document, Serializable {
      */
     public Dictionary<Object,Object> getDocumentProperties() {
         if (documentProperties == null) {
-            documentProperties = new Hashtable(2);
+            documentProperties = new Hashtable<Object, Object>(2);
         }
         return documentProperties;
     }
@@ -467,8 +467,7 @@ public abstract class AbstractDocument implements Document, Serializable {
      * @since 1.4
      */
     public DocumentListener[] getDocumentListeners() {
-        return (DocumentListener[])listenerList.getListeners(
-                DocumentListener.class);
+        return listenerList.getListeners(DocumentListener.class);
     }
 
     /**
@@ -508,8 +507,7 @@ public abstract class AbstractDocument implements Document, Serializable {
      * @since 1.4
      */
     public UndoableEditListener[] getUndoableEditListeners() {
-        return (UndoableEditListener[])listenerList.getListeners(
-                UndoableEditListener.class);
+        return listenerList.getListeners(UndoableEditListener.class);
     }
 
     /**
@@ -610,7 +608,7 @@ public abstract class AbstractDocument implements Document, Serializable {
             DefaultDocumentEvent chng =
                     new DefaultDocumentEvent(offs, len, DocumentEvent.EventType.REMOVE);
 
-            boolean isComposedTextElement = false;
+            boolean isComposedTextElement;
             // Check whether the position of interest is the composed text
             isComposedTextElement = Utilities.isComposedTextElement(this, offs);
 
@@ -1051,7 +1049,7 @@ public abstract class AbstractDocument implements Document, Serializable {
         byte levels[] = calculateBidiLevels( firstPStart, lastPEnd );
 
 
-        Vector newElements = new Vector();
+        Vector<Element> newElements = new Vector<Element>();
 
         // Calculate the first span of characters in the affected range with
         // the same bidi level.  If this level is the same as the level of the
@@ -1831,7 +1829,6 @@ public abstract class AbstractDocument implements Document, Serializable {
                     }
                     out.println("["+contentStr+"]");
                 } catch (BadLocationException e) {
-                        ;
                 }
 
             } else {
@@ -2460,7 +2457,7 @@ public abstract class AbstractDocument implements Document, Serializable {
             if(nchildren == 0)
                 return null;
 
-            Vector tempVector = new Vector(nchildren);
+            Vector<AbstractElement> tempVector = new Vector<AbstractElement>(nchildren);
 
             for(int counter = 0; counter < nchildren; counter++)
                 tempVector.addElement(children[counter]);
@@ -2749,7 +2746,7 @@ public abstract class AbstractDocument implements Document, Serializable {
             // if the number of changes gets too great, start using
             // a hashtable for to locate the change for a given element.
             if ((changeLookup == null) && (edits.size() > 10)) {
-                changeLookup = new Hashtable();
+                changeLookup = new Hashtable<Element, ElementChange>();
                 int n = edits.size();
                 for (int i = 0; i < n; i++) {
                     Object o = edits.elementAt(i);
@@ -2918,7 +2915,7 @@ public abstract class AbstractDocument implements Document, Serializable {
          */
         public DocumentEvent.ElementChange getChange(Element elem) {
             if (changeLookup != null) {
-                return (DocumentEvent.ElementChange) changeLookup.get(elem);
+                return changeLookup.get(elem);
             }
             int n = edits.size();
             for (int i = 0; i < n; i++) {
@@ -2937,7 +2934,7 @@ public abstract class AbstractDocument implements Document, Serializable {
 
         private int offset;
         private int length;
-        private Hashtable changeLookup;
+        private Hashtable<Element, ElementChange> changeLookup;
         private DocumentEvent.EventType type;
 
     }

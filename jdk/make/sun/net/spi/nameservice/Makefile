@@ -23,10 +23,6 @@
 # have any questions.
 #
 
-#
-# Makefile for building com/sun
-#
-
 BUILDDIR = ../../../..
 include $(BUILDDIR)/common/Defs.gmk
 
