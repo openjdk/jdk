@@ -615,6 +615,10 @@ bool PSScavenge::invoke_no_policy() {
     gc_task_manager()->print_task_time_stamps();
   }
 
+#ifdef TRACESPINNING
+  ParallelTaskTerminator::print_termination_counts();
+#endif
+
   return !promotion_failure_occurred;
 }
 

@@ -30,7 +30,7 @@ class CardTableModRefBarrierSet;
 class HRInto_G1RemSet;
 class ConcurrentG1Refine;
 
-class G1RemSet {
+class G1RemSet: public CHeapObj {
 protected:
   G1CollectedHeap* _g1;
 

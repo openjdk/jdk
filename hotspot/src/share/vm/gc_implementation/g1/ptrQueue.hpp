@@ -29,7 +29,7 @@
 
 class PtrQueueSet;
 
-class PtrQueue: public CHeapObj {
+class PtrQueue VALUE_OBJ_CLASS_SPEC {
 
 protected:
   // The ptr queue set to which this queue belongs.
@@ -130,7 +130,7 @@ public:
 // In particular, the individual queues allocate buffers from this shared
 // set, and return completed buffers to the set.
 // All these variables are are protected by the TLOQ_CBL_mon. XXX ???
-class PtrQueueSet: public CHeapObj {
+class PtrQueueSet VALUE_OBJ_CLASS_SPEC {
 
 protected:
 

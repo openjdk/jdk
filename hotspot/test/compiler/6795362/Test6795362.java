@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,49 +19,30 @@
  * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
- *
  */
 
-/*
+/**
  * @test
- * @bug 6775880
- * @summary EA +DeoptimizeALot: assert(mon_info->owner()->is_locked(),"object must be locked now")
- * @compile -source 1.4 -target 1.4 Test.java
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -Xbatch -XX:+DoEscapeAnalysis -XX:+DeoptimizeALot -XX:CompileCommand=exclude,java.lang.AbstractStringBuilder::append Test
+ * @bug 6795362
+ * @summary 32bit server compiler leads to wrong results on solaris-x86
+ *
+ * @run main/othervm -Xcomp -XX:CompileOnly=Test6795362.sub Test6795362
  */
 
-public class Test {
+public class Test6795362 {
+    public static void main(String[] args)
+    {
+        sub();
 
-  int cnt;
-  int b[];
-  String s;
-
-  String test() {
-    String res="";
-    for (int i=0; i < cnt; i++) {
-      if (i != 0) {
-        res = res +".";
-      }
-      res = res + b[i];
+        if (var_bad != 0)
+            throw new InternalError(var_bad + " != 0");
     }
-    return res;
-  }
 
-  public static void main(String[] args) {
-    Test t = new Test();
-    t.cnt = 3;
-    t.b = new int[3];
-    t.b[0] = 0;
-    t.b[1] = 1;
-    t.b[2] = 2;
-    int j=0;
-    t.s = "";
-    for (int i=0; i<10001; i++) {
-      t.s = "c";
-      t.s = t.test();
+    static long var_bad = -1L;
+
+    static void sub()
+    {
+        var_bad >>= 65;
+        var_bad /= 65;
     }
-    System.out.println("After s=" + t.s);
-  }
 }
-
-
