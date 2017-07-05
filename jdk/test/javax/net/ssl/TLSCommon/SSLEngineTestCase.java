@@ -27,7 +27,9 @@ import javax.net.ssl.SNIMatcher;
 import javax.net.ssl.SNIServerName;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLEngineResult;
+import javax.net.ssl.SSLEngineResult.HandshakeStatus;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.TrustManagerFactory;
@@ -57,19 +59,21 @@ abstract public class SSLEngineTestCase {
     public enum Ciphers {
 
         /**
-         * Ciphers supported by the tested SSLEngine without those with kerberos
-         * authentication.
+         * Ciphers supported by the tested SSLEngine without those with
+         * kerberos authentication.
          */
         SUPPORTED_NON_KRB_CIPHERS(SSLEngineTestCase.SUPPORTED_NON_KRB_CIPHERS,
                 "Supported non kerberos"),
         /**
-         * Ciphers supported by the tested SSLEngine without those with kerberos
-         * authentication and without those with SHA256 ans SHA384.
+         * Ciphers supported by the tested SSLEngine without those with
+         * kerberos authentication and without those with SHA256 ans SHA384.
          */
-        SUPPORTED_NON_KRB_NON_SHA_CIPHERS(SSLEngineTestCase.SUPPORTED_NON_KRB_NON_SHA_CIPHERS,
+        SUPPORTED_NON_KRB_NON_SHA_CIPHERS(
+                SSLEngineTestCase.SUPPORTED_NON_KRB_NON_SHA_CIPHERS,
                 "Supported non kerberos non SHA256 and SHA384"),
         /**
-         * Ciphers supported by the tested SSLEngine with kerberos authentication.
+         * Ciphers supported by the tested SSLEngine with kerberos
+         * authentication.
          */
         SUPPORTED_KRB_CIPHERS(SSLEngineTestCase.SUPPORTED_KRB_CIPHERS,
                 "Supported kerberos"),
@@ -147,13 +151,13 @@ abstract public class SSLEngineTestCase {
             = System.getProperty("test.src", ".") + FS + PATH_TO_STORES
             + FS + TRUST_STORE_FILE;
 
+    // Need an enhancement to use none-static mutable global variables.
     private static ByteBuffer net;
-    private static ByteBuffer netReplicatedClient;
-    private static ByteBuffer netReplicatedServer;
-    private static final int MAX_HANDSHAKE_LOOPS = 100;
-    private static final String EXCHANGE_MSG_SENT = "Hello, peer!";
     private static boolean doUnwrapForNotHandshakingStatus;
     private static boolean endHandshakeLoop = false;
+
+    private static final int MAX_HANDSHAKE_LOOPS = 100;
+    private static final String EXCHANGE_MSG_SENT = "Hello, peer!";
     private static final String TEST_SRC = System.getProperty("test.src", ".");
     private static final String KTAB_FILENAME = "krb5.keytab.data";
     private static final String KRB_REALM = "TEST.REALM";
@@ -179,11 +183,13 @@ abstract public class SSLEngineTestCase {
             List<String> supportedCiphersList = new LinkedList<>();
             for (String cipher : allSupportedCiphers) {
                 if (!cipher.contains("KRB5")
-                        && !cipher.contains("TLS_EMPTY_RENEGOTIATION_INFO_SCSV")) {
+                    && !cipher.contains("TLS_EMPTY_RENEGOTIATION_INFO_SCSV")) {
+
                     supportedCiphersList.add(cipher);
                 }
             }
-            SUPPORTED_NON_KRB_CIPHERS = supportedCiphersList.toArray(new String[0]);
+            SUPPORTED_NON_KRB_CIPHERS =
+                    supportedCiphersList.toArray(new String[0]);
         } catch (Exception ex) {
             throw new Error("Unexpected issue", ex);
         }
@@ -220,7 +226,7 @@ abstract public class SSLEngineTestCase {
             List<String> supportedCiphersList = new LinkedList<>();
             for (String cipher : allSupportedCiphers) {
                 if (cipher.contains("KRB5")
-                        && !cipher.contains("TLS_EMPTY_RENEGOTIATION_INFO_SCSV")) {
+                    && !cipher.contains("TLS_EMPTY_RENEGOTIATION_INFO_SCSV")) {
                     supportedCiphersList.add(cipher);
                 }
             }
@@ -240,11 +246,12 @@ abstract public class SSLEngineTestCase {
             List<String> enabledCiphersList = new LinkedList<>();
             for (String cipher : enabledCiphers) {
                 if (!cipher.contains("anon") && !cipher.contains("KRB5")
-                        && !cipher.contains("TLS_EMPTY_RENEGOTIATION_INFO_SCSV")) {
+                    && !cipher.contains("TLS_EMPTY_RENEGOTIATION_INFO_SCSV")) {
                     enabledCiphersList.add(cipher);
                 }
             }
-            ENABLED_NON_KRB_NOT_ANON_CIPHERS = enabledCiphersList.toArray(new String[0]);
+            ENABLED_NON_KRB_NOT_ANON_CIPHERS =
+                    enabledCiphersList.toArray(new String[0]);
         } catch (Exception ex) {
             throw new Error("Unexpected issue", ex);
         }
@@ -300,10 +307,10 @@ abstract public class SSLEngineTestCase {
      * Wraps data with the specified engine.
      *
      * @param engine        - SSLEngine that wraps data.
-     * @param wrapper       - Set wrapper id, e.g. "server" of "client". Used for
-     *                      logging only.
-     * @param maxPacketSize - Max packet size to check that MFLN extension works
-     *                      or zero for no check.
+     * @param wrapper       - Set wrapper id, e.g. "server" of "client".
+     *                        Used for logging only.
+     * @param maxPacketSize - Max packet size to check that MFLN extension
+     *                        works or zero for no check.
      * @param app           - Buffer with data to wrap.
      * @return - Buffer with wrapped data.
      * @throws SSLException - thrown on engine errors.
@@ -319,13 +326,13 @@ abstract public class SSLEngineTestCase {
      * Wraps data with the specified engine.
      *
      * @param engine        - SSLEngine that wraps data.
-     * @param wrapper       - Set wrapper id, e.g. "server" of "client". Used for
-     *                      logging only.
-     * @param maxPacketSize - Max packet size to check that MFLN extension works
-     *                      or zero for no check.
+     * @param wrapper       - Set wrapper id, e.g. "server" of "client".
+     *                        Used for logging only.
+     * @param maxPacketSize - Max packet size to check that MFLN extension
+     *                        works or zero for no check.
      * @param app           - Buffer with data to wrap.
-     * @param result        - Array which first element will be used to output wrap
-     *                      result object.
+     * @param result        - Array which first element will be used to
+     *                        output wrap result object.
      * @return - Buffer with wrapped data.
      * @throws SSLException - thrown on engine errors.
      */
@@ -341,10 +348,10 @@ abstract public class SSLEngineTestCase {
      * Wraps data with the specified engine.
      *
      * @param engine        - SSLEngine that wraps data.
-     * @param wrapper       - Set wrapper id, e.g. "server" of "client". Used for
-     *                      logging only.
-     * @param maxPacketSize - Max packet size to check that MFLN extension works
-     *                      or zero for no check.
+     * @param wrapper       - Set wrapper id, e.g. "server" of "client".
+     *                        Used for logging only.
+     * @param maxPacketSize - Max packet size to check that MFLN extension
+     *                        works or zero for no check.
      * @param app           - Buffer with data to wrap.
      * @param wantedStatus  - Specifies expected result status of wrapping.
      * @return - Buffer with wrapped data.
@@ -362,14 +369,14 @@ abstract public class SSLEngineTestCase {
      * Wraps data with the specified engine.
      *
      * @param engine        - SSLEngine that wraps data.
-     * @param wrapper       - Set wrapper id, e.g. "server" of "client". Used for
-     *                      logging only.
-     * @param maxPacketSize - Max packet size to check that MFLN extension works
-     *                      or zero for no check.
+     * @param wrapper       - Set wrapper id, e.g. "server" of "client".
+     *                        Used for logging only.
+     * @param maxPacketSize - Max packet size to check that MFLN extension
+     *                        works or zero for no check.
      * @param app           - Buffer with data to wrap.
      * @param wantedStatus  - Specifies expected result status of wrapping.
-     * @param result        - Array which first element will be used to output wrap
-     *                      result object.
+     * @param result        - Array which first element will be used to output
+     *                        wrap result object.
      * @return - Buffer with wrapped data.
      * @throws SSLException - thrown on engine errors.
      */
@@ -409,9 +416,9 @@ abstract public class SSLEngineTestCase {
      * @throws SSLException - thrown on engine errors.
      */
     public static ByteBuffer doUnWrap(SSLEngine engine, String unwrapper,
-                                      ByteBuffer net)
-            throws SSLException {
-        return doUnWrap(engine, unwrapper, net, SSLEngineResult.Status.OK, null);
+            ByteBuffer net) throws SSLException {
+        return doUnWrap(engine, unwrapper,
+                net, SSLEngineResult.Status.OK, null);
     }
 
     /**
@@ -427,26 +434,25 @@ abstract public class SSLEngineTestCase {
      * @throws SSLException - thrown on engine errors.
      */
     public static ByteBuffer doUnWrap(SSLEngine engine, String unwrapper,
-                                      ByteBuffer net, SSLEngineResult[] result)
-            throws SSLException {
-        return doUnWrap(engine, unwrapper, net, SSLEngineResult.Status.OK, result);
+            ByteBuffer net, SSLEngineResult[] result) throws SSLException {
+        return doUnWrap(engine, unwrapper,
+                net, SSLEngineResult.Status.OK, result);
     }
 
     /**
      * Unwraps data with the specified engine.
      *
      * @param engine       - SSLEngine that unwraps data.
-     * @param unwrapper    - Set unwrapper id, e.g. "server" of "client". Used for
-     *                     logging only.
+     * @param unwrapper    - Set unwrapper id, e.g. "server" of "client".
+     *                     Used for logging only.
      * @param net          - Buffer with data to unwrap.
      * @param wantedStatus - Specifies expected result status of wrapping.
      * @return - Buffer with unwrapped data.
      * @throws SSLException - thrown on engine errors.
      */
     public static ByteBuffer doUnWrap(SSLEngine engine, String unwrapper,
-                                      ByteBuffer net,
-                                      SSLEngineResult.Status wantedStatus)
-            throws SSLException {
+            ByteBuffer net,
+            SSLEngineResult.Status wantedStatus) throws SSLException {
         return doUnWrap(engine, unwrapper, net, wantedStatus, null);
     }
 
@@ -454,25 +460,23 @@ abstract public class SSLEngineTestCase {
      * Unwraps data with the specified engine.
      *
      * @param engine       - SSLEngine that unwraps data.
-     * @param unwrapper    - Set unwrapper id, e.g. "server" of "client". Used for
-     *                     logging only.
+     * @param unwrapper    - Set unwrapper id, e.g. "server" of "client".
+     *                       Used for logging only.
      * @param net          - Buffer with data to unwrap.
      * @param wantedStatus - Specifies expected result status of wrapping.
-     * @param result       - Array which first element will be used to output wrap
-     *                     result object.
+     * @param result       - Array which first element will be used to output
+     *                       wrap result object.
      * @return - Buffer with unwrapped data.
      * @throws SSLException - thrown on engine errors.
      */
     public static ByteBuffer doUnWrap(SSLEngine engine, String unwrapper,
-                                      ByteBuffer net,
-                                      SSLEngineResult.Status wantedStatus,
-                                      SSLEngineResult[] result)
-            throws SSLException {
-        ByteBuffer app = ByteBuffer.allocate(engine.getSession()
-                .getApplicationBufferSize());
+            ByteBuffer net, SSLEngineResult.Status wantedStatus,
+            SSLEngineResult[] result) throws SSLException {
+
+        ByteBuffer app = ByteBuffer.allocate(
+                engine.getSession().getApplicationBufferSize());
         int length = net.remaining();
-        System.out.println(unwrapper + " unwrapping "
-                + length + " bytes...");
+        System.out.println(unwrapper + " unwrapping " + length + " bytes...");
         SSLEngineResult r = engine.unwrap(net, app);
         app.flip();
         System.out.println(unwrapper + " handshake status is "
@@ -491,13 +495,14 @@ abstract public class SSLEngineTestCase {
      * @param clientEngine  - Client SSLEngine.
      * @param serverEngine  - Server SSLEngine.
      * @param maxPacketSize - Maximum packet size for MFLN of zero for no limit.
-     * @param mode          - Handshake mode according to {@link HandshakeMode} enum.
+     * @param mode          - Handshake mode according to
+     *                        {@link HandshakeMode} enum.
      * @throws SSLException - thrown on engine errors.
      */
     public static void doHandshake(SSLEngine clientEngine,
-                                   SSLEngine serverEngine,
-                                   int maxPacketSize, HandshakeMode mode)
-            throws SSLException {
+        SSLEngine serverEngine,
+        int maxPacketSize, HandshakeMode mode) throws SSLException {
+
         doHandshake(clientEngine, serverEngine, maxPacketSize, mode, false);
     }
 
@@ -507,19 +512,20 @@ abstract public class SSLEngineTestCase {
      *
      * @param clientEngine          - Client SSLEngine.
      * @param serverEngine          - Server SSLEngine.
-     * @param maxPacketSize         - Maximum packet size for MFLN of zero for no limit.
-     * @param mode                  - Handshake mode according to {@link HandshakeMode} enum.
+     * @param maxPacketSize         - Maximum packet size for MFLN of zero
+     *                                for no limit.
+     * @param mode                  - Handshake mode according to
+     *                                {@link HandshakeMode} enum.
      * @param enableReplicatedPacks - Set {@code true} to enable replicated
-     *                              packet sending.
+     *                                packet sending.
      * @throws SSLException - thrown on engine errors.
      */
     public static void doHandshake(SSLEngine clientEngine,
-                                   SSLEngine serverEngine, int maxPacketSize,
-                                   HandshakeMode mode,
-                                   boolean enableReplicatedPacks)
-            throws SSLException {
-        System.out.println("================================================="
-                + "===========");
+            SSLEngine serverEngine, int maxPacketSize,
+            HandshakeMode mode,
+            boolean enableReplicatedPacks) throws SSLException {
+
+        System.out.println("=============================================");
         System.out.println("Starting handshake " + mode.name());
         int loop = 0;
         if (maxPacketSize < 0) {
@@ -561,18 +567,16 @@ abstract public class SSLEngineTestCase {
             if (++loop > MAX_HANDSHAKE_LOOPS) {
                 throw new Error("Too much loops for handshaking");
             }
-            System.out.println("==============================================");
-            System.out.println("Handshake loop " + loop);
-            SSLEngineResult.HandshakeStatus clientHSStatus
-                    = clientEngine.getHandshakeStatus();
-            SSLEngineResult.HandshakeStatus serverHSStatus
-                    = serverEngine.getHandshakeStatus();
-            System.out.println("Client handshake status "
-                    + clientHSStatus.name());
-            System.out.println("Server handshake status "
-                    + serverHSStatus.name());
+            System.out.println("============================================");
+            System.out.println("Handshake loop " + loop + ": round 1");
+            System.out.println("==========================");
             handshakeProcess(firstEngine, secondEngine, maxPacketSize,
                     enableReplicatedPacks);
+            if (endHandshakeLoop) {
+                break;
+            }
+            System.out.println("Handshake loop " + loop + ": round 2");
+            System.out.println("==========================");
             handshakeProcess(secondEngine, firstEngine, maxPacketSize,
                     enableReplicatedPacks);
         }
@@ -596,15 +600,15 @@ abstract public class SSLEngineTestCase {
             sender = "Client";
             reciever = "Server";
             excMsgSent += " Client.";
-        } else if (toEngine.getUseClientMode() && !fromEngine.getUseClientMode()) {
+        } else if (toEngine.getUseClientMode() &&
+                !fromEngine.getUseClientMode()) {
             sender = "Server";
             reciever = "Client";
             excMsgSent += " Server.";
         } else {
             throw new Error("Test issue: both engines are in the same mode");
         }
-        System.out.println("================================================="
-                + "===========");
+        System.out.println("=============================================");
         System.out.println("Trying to send application data from " + sender
                 + " to " + reciever);
         ByteBuffer clientAppSent
@@ -643,20 +647,24 @@ abstract public class SSLEngineTestCase {
         if (fromEngine.getUseClientMode() && !toEngine.getUseClientMode()) {
             from = "Client";
             to = "Server";
-        } else if (toEngine.getUseClientMode() && !fromEngine.getUseClientMode()) {
+        } else if (toEngine.getUseClientMode() &&
+                !fromEngine.getUseClientMode()) {
             from = "Server";
             to = "Client";
         } else {
             throw new Error("Both engines are in the same mode");
         }
-        System.out.println("=========================================================");
-        System.out.println("Trying to close engines from " + from + " to " + to);
+        System.out.println("=============================================");
+        System.out.println(
+                "Trying to close engines from " + from + " to " + to);
         // Sending close outbound request to peer
         fromEngine.closeOutbound();
-        app = ByteBuffer.allocate(fromEngine.getSession().getApplicationBufferSize());
+        app = ByteBuffer.allocate(
+                fromEngine.getSession().getApplicationBufferSize());
         net = doWrap(fromEngine, from, 0, app, SSLEngineResult.Status.CLOSED);
         doUnWrap(toEngine, to, net, SSLEngineResult.Status.CLOSED);
-        app = ByteBuffer.allocate(fromEngine.getSession().getApplicationBufferSize());
+        app = ByteBuffer.allocate(
+                fromEngine.getSession().getApplicationBufferSize());
         net = doWrap(toEngine, to, 0, app, SSLEngineResult.Status.CLOSED);
         doUnWrap(fromEngine, from, net, SSLEngineResult.Status.CLOSED);
         if (!toEngine.isInboundDone()) {
@@ -665,7 +673,8 @@ abstract public class SSLEngineTestCase {
         }
         // Executing close inbound
         fromEngine.closeInbound();
-        app = ByteBuffer.allocate(fromEngine.getSession().getApplicationBufferSize());
+        app = ByteBuffer.allocate(
+                fromEngine.getSession().getApplicationBufferSize());
         net = doWrap(fromEngine, from, 0, app, SSLEngineResult.Status.CLOSED);
         doUnWrap(toEngine, to, net, SSLEngineResult.Status.CLOSED);
         if (!toEngine.isOutboundDone()) {
@@ -712,7 +721,8 @@ abstract public class SSLEngineTestCase {
                 runTests(Ciphers.SUPPORTED_KRB_CIPHERS);
                 break;
             default:
-                throw new Error("Test error: unexpected test mode: " + TEST_MODE);
+                throw new Error(
+                        "Test error: unexpected test mode: " + TEST_MODE);
         }
     }
 
@@ -743,28 +753,36 @@ abstract public class SSLEngineTestCase {
     }
 
     /**
-     * Returns SSLContext with TESTED_SECURITY_PROTOCOL protocol and sets up keys.
+     * Returns SSLContext with TESTED_SECURITY_PROTOCOL protocol and
+     * sets up keys.
      *
-     * @return - SSLContext with a protocol specified by TESTED_SECURITY_PROTOCOL.
+     * @return - SSLContext with a protocol specified by
+     *           TESTED_SECURITY_PROTOCOL.
      */
     public static SSLContext getContext() {
         try {
-            java.security.Security.setProperty("jdk.tls.disabledAlgorithms", "");
-            java.security.Security.setProperty("jdk.certpath.disabledAlgorithms", "");
+            java.security.Security.setProperty(
+                    "jdk.tls.disabledAlgorithms", "");
+            java.security.Security.setProperty(
+                    "jdk.certpath.disabledAlgorithms", "");
             KeyStore ks = KeyStore.getInstance("JKS");
             KeyStore ts = KeyStore.getInstance("JKS");
             char[] passphrase = PASSWD.toCharArray();
-            try (FileInputStream keyFileStream = new FileInputStream(KEY_FILE_NAME)) {
+            try (FileInputStream keyFileStream =
+                    new FileInputStream(KEY_FILE_NAME)) {
                 ks.load(keyFileStream, passphrase);
             }
-            try (FileInputStream trustFileStream = new FileInputStream(TRUST_FILE_NAME)) {
+            try (FileInputStream trustFileStream =
+                    new FileInputStream(TRUST_FILE_NAME)) {
                 ts.load(trustFileStream, passphrase);
             }
             KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
             kmf.init(ks, passphrase);
-            TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
+            TrustManagerFactory tmf =
+                    TrustManagerFactory.getInstance("SunX509");
             tmf.init(ts);
-            SSLContext sslCtx = SSLContext.getInstance(TESTED_SECURITY_PROTOCOL);
+            SSLContext sslCtx =
+                    SSLContext.getInstance(TESTED_SECURITY_PROTOCOL);
             sslCtx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
             return sslCtx;
         } catch (KeyStoreException | IOException | NoSuchAlgorithmException |
@@ -791,7 +809,8 @@ abstract public class SSLEngineTestCase {
     }
 
     /**
-     * Sets up and starts kerberos KDC server if SSLEngineTestCase.TEST_MODE is "krb".
+     * Sets up and starts kerberos KDC server if
+     * SSLEngineTestCase.TEST_MODE is "krb".
      */
     public static void setUpAndStartKDCIfNeeded() {
         if (TEST_MODE.equals("krb")) {
@@ -806,7 +825,9 @@ abstract public class SSLEngineTestCase {
      * @param useSNI  - flag used to enable or disable using SNI extension.
      *                Needed for Kerberos.
      */
-    public static SSLEngine getClientSSLEngine(SSLContext context, boolean useSNI) {
+    public static SSLEngine getClientSSLEngine(
+            SSLContext context, boolean useSNI) {
+
         SSLEngine clientEngine = context.createSSLEngine(HOST, 80);
         clientEngine.setUseClientMode(true);
         if (useSNI) {
@@ -827,7 +848,9 @@ abstract public class SSLEngineTestCase {
      * @param useSNI  - flag used to enable or disable using SNI extension.
      *                Needed for Kerberos.
      */
-    public static SSLEngine getServerSSLEngine(SSLContext context, boolean useSNI) {
+    public static SSLEngine getServerSSLEngine(
+            SSLContext context, boolean useSNI) {
+
         SSLEngine serverEngine = context.createSSLEngine();
         serverEngine.setUseClientMode(false);
         if (useSNI) {
@@ -860,18 +883,20 @@ abstract public class SSLEngineTestCase {
     protected int testSomeCiphers(Ciphers ciphers) {
         int failedNum = 0;
         String description = ciphers.description;
-        System.out.println("==================================================="
-                + "=========");
+        System.out.println("===============================================");
         System.out.println(description + " ciphers testing");
-        System.out.println("==================================================="
-                + "=========");
+        System.out.println("===========================================");
         for (String cs : ciphers.ciphers) {
-            System.out.println("-----------------------------------------------"
-                    + "-------------");
+            System.out.println("---------------------------------------");
             System.out.println("Testing cipher suite " + cs);
-            System.out.println("-----------------------------------------------"
-                    + "-------------");
+            System.out.println("---------------------------------------");
             Throwable error = null;
+
+            // Reset global mutable static variables
+            net = null;
+            doUnwrapForNotHandshakingStatus = false;
+            endHandshakeLoop = false;
+
             try {
                 testOneCipher(cs);
             } catch (Throwable t) {
@@ -894,8 +919,9 @@ abstract public class SSLEngineTestCase {
                 case UNSUPPORTED_CIPHERS:
                     if (error == null) {
                         System.out.println("Test Failed: " + cs);
-                        System.err.println("Test for " + cs + " should have thrown"
-                                + " IllegalArgumentException, but it has not!");
+                        System.err.println("Test for " + cs +
+                                " should have thrown " +
+                                "IllegalArgumentException, but it has not!");
                         failedNum++;
                     } else if (!(error instanceof IllegalArgumentException)) {
                         System.out.println("Test Failed: " + cs);
@@ -911,6 +937,7 @@ abstract public class SSLEngineTestCase {
                             + ciphers.name());
             }
         }
+
         return failedNum;
     }
 
@@ -919,20 +946,20 @@ abstract public class SSLEngineTestCase {
      *
      * @param wrapingEngine         - Engine that is expected to wrap data.
      * @param unwrapingEngine       - Engine that is expected to unwrap data.
-     * @param maxPacketSize         - Maximum packet size for MFLN of zero for no limit.
+     * @param maxPacketSize         - Maximum packet size for MFLN of zero
+     *                                for no limit.
      * @param enableReplicatedPacks - Set {@code true} to enable replicated
-     *                              packet sending.
+     *                                packet sending.
      * @throws SSLException - thrown on engine errors.
      */
     private static void handshakeProcess(SSLEngine wrapingEngine,
-                                         SSLEngine unwrapingEngine,
-                                         int maxPacketSize,
-                                         boolean enableReplicatedPacks)
-            throws SSLException {
-        SSLEngineResult.HandshakeStatus wrapingHSStatus = wrapingEngine
-                .getHandshakeStatus();
-        SSLEngineResult.HandshakeStatus unwrapingHSStatus = unwrapingEngine
-                .getHandshakeStatus();
+            SSLEngine unwrapingEngine,
+            int maxPacketSize,
+            boolean enableReplicatedPacks) throws SSLException {
+
+        HandshakeStatus wrapingHSStatus = wrapingEngine.getHandshakeStatus();
+        HandshakeStatus unwrapingHSStatus =
+                unwrapingEngine.getHandshakeStatus();
         SSLEngineResult r;
         String wrapper, unwrapper;
         if (wrapingEngine.getUseClientMode()
@@ -946,6 +973,13 @@ abstract public class SSLEngineTestCase {
         } else {
             throw new Error("Both engines are in the same mode");
         }
+        System.out.println(
+                wrapper + " handshake (wrap) status " + wrapingHSStatus);
+        System.out.println(
+                unwrapper + " handshake (unwrap) status " + unwrapingHSStatus);
+
+        ByteBuffer netReplicatedClient = null;
+        ByteBuffer netReplicatedServer = null;
         switch (wrapingHSStatus) {
             case NEED_WRAP:
                 if (enableReplicatedPacks) {
@@ -960,9 +994,11 @@ abstract public class SSLEngineTestCase {
                         }
                     }
                 }
-                ByteBuffer app = ByteBuffer.allocate(wrapingEngine.getSession()
-                        .getApplicationBufferSize());
+                ByteBuffer app = ByteBuffer.allocate(
+                        wrapingEngine.getSession().getApplicationBufferSize());
                 net = doWrap(wrapingEngine, wrapper, maxPacketSize, app);
+                wrapingHSStatus = wrapingEngine.getHandshakeStatus();
+                // No break, falling into unwrapping.
             case NOT_HANDSHAKING:
                 switch (unwrapingHSStatus) {
                     case NEED_TASK:
@@ -970,12 +1006,12 @@ abstract public class SSLEngineTestCase {
                     case NEED_UNWRAP:
                         doUnWrap(unwrapingEngine, unwrapper, net);
                         if (enableReplicatedPacks) {
-                            System.out.println("Unwrapping replicated packet...");
+                            System.out.println(unwrapper +
+                                    " unwrapping replicated packet...");
                             if (unwrapingEngine.getHandshakeStatus()
-                                    .equals(SSLEngineResult.HandshakeStatus.NEED_TASK)) {
+                                    .equals(HandshakeStatus.NEED_TASK)) {
                                 runDelegatedTasks(unwrapingEngine);
                             }
-                            runDelegatedTasks(unwrapingEngine);
                             ByteBuffer netReplicated;
                             if (unwrapingEngine.getUseClientMode()) {
                                 netReplicated = netReplicatedClient;
@@ -983,7 +1019,8 @@ abstract public class SSLEngineTestCase {
                                 netReplicated = netReplicatedServer;
                             }
                             if (netReplicated != null) {
-                                doUnWrap(unwrapingEngine, unwrapper, netReplicated);
+                                doUnWrap(unwrapingEngine,
+                                        unwrapper, netReplicated);
                             } else {
                                 net.flip();
                                 doUnWrap(unwrapingEngine, unwrapper, net);
@@ -994,15 +1031,39 @@ abstract public class SSLEngineTestCase {
                         break;
                     case NOT_HANDSHAKING:
                         if (doUnwrapForNotHandshakingStatus) {
+                            System.out.println("Not handshake status unwrap");
                             doUnWrap(unwrapingEngine, unwrapper, net);
                             doUnwrapForNotHandshakingStatus = false;
                             break;
                         } else {
-                            endHandshakeLoop = true;
+                            if (wrapingHSStatus ==
+                                        HandshakeStatus.NOT_HANDSHAKING) {
+                                System.out.println("Handshake is completed");
+                                endHandshakeLoop = true;
+                            }
                         }
                         break;
+                    case NEED_WRAP:
+                        SSLSession session = unwrapingEngine.getSession();
+                        int bufferSize = session.getApplicationBufferSize();
+                        ByteBuffer b = ByteBuffer.allocate(bufferSize);
+                        net = doWrap(unwrapingEngine,
+                                        unwrapper, maxPacketSize, b);
+                        unwrapingHSStatus =
+                                unwrapingEngine.getHandshakeStatus();
+                        if ((wrapingHSStatus ==
+                                    HandshakeStatus.NOT_HANDSHAKING) &&
+                            (unwrapingHSStatus ==
+                                    HandshakeStatus.NOT_HANDSHAKING)) {
+
+                            System.out.println("Handshake is completed");
+                            endHandshakeLoop = true;
+                        }
+
+                        break;
                     default:
-                        throw new Error("Unexpected unwraping engine handshake status "
+                        throw new Error(
+                                "Unexpected unwraping engine handshake status "
                                 + unwrapingHSStatus.name());
                 }
                 break;
@@ -1027,8 +1088,8 @@ abstract public class SSLEngineTestCase {
         while ((runnable = engine.getDelegatedTask()) != null) {
             runnable.run();
         }
-        SSLEngineResult.HandshakeStatus hs = engine.getHandshakeStatus();
-        if (hs == SSLEngineResult.HandshakeStatus.NEED_TASK) {
+        HandshakeStatus hs = engine.getHandshakeStatus();
+        if (hs == HandshakeStatus.NEED_TASK) {
             throw new Error("Handshake shouldn't need additional tasks.");
         }
     }

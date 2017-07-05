@@ -160,6 +160,10 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
     final int methodDataOopTrapHistoryOffset = getFieldOffset("MethodData::_trap_hist._array[0]", Integer.class, "u1");
     final int methodDataIRSizeOffset = getFieldOffset("MethodData::_jvmci_ir_size", Integer.class, "int");
 
+    final int methodDataDecompiles = getFieldOffset("MethodData::_nof_decompiles", Integer.class, "uint");
+    final int methodDataOverflowRecompiles = getFieldOffset("MethodData::_nof_overflow_recompiles", Integer.class, "uint");
+    final int methodDataOverflowTraps = getFieldOffset("MethodData::_nof_overflow_traps", Integer.class, "uint");
+
     final int nmethodCompLevelOffset = getFieldOffset("nmethod::_comp_level", Integer.class, "int");
 
     final int compilationLevelNone = getConstant("CompLevel_none", Integer.class);

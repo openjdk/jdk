@@ -373,7 +373,13 @@ Zone	Indian/Cocos	6:27:40	-	LMT	1900
 # commencing at 2.00 am on Sunday 1st November, 2015 and ending at
 # 3.00 am on Sunday 17th January, 2016.
 
-# From Paul Eggert (2015-09-01):
+# From Raymond Kumar (2016-10-04):
+# http://www.fiji.gov.fj/Media-Center/Press-Releases/DAYLIGHT-SAVING-STARTS-ON-6th-NOVEMBER,-2016.aspx
+# "Fiji's daylight savings will begin on Sunday, 6 November 2016, when
+# clocks go forward an hour at 2am to 3am....  Daylight Saving will
+# end at 3.00am on Sunday 15th January 2017."
+
+# From Paul Eggert (2016-10-03):
 # For now, guess DST from 02:00 the first Sunday in November to
 # 03:00 the third Sunday in January.  Although ad hoc, it matches
 # transitions since late 2014 and seems more likely to match future

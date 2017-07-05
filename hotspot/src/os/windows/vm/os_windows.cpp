@@ -784,7 +784,7 @@ void os::set_native_thread_name(const char *name) {
 
   __try {
     RaiseException (MS_VC_EXCEPTION, 0, sizeof(info)/sizeof(DWORD), (const ULONG_PTR*)&info );
-  } __except(EXCEPTION_CONTINUE_EXECUTION) {}
+  } __except(EXCEPTION_EXECUTE_HANDLER) {}
 }
 
 bool os::distribute_processes(uint length, uint* distribution) {

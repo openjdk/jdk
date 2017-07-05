@@ -37,7 +37,7 @@ public class ExtLoadedImplTest {
 
         try {
             RMID.removeLog();
-            rmid = RMID.createRMID();
+            rmid = RMID.createRMIDOnEphemeralPort();
             rmid.start();
             Properties p = new Properties();
             p.put("java.security.policy",
