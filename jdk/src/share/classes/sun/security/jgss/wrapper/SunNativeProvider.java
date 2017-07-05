@@ -90,6 +90,10 @@ public final class SunNativeProvider extends Provider {
                                     "libgssapi_krb5.so",
                                     "libgssapi_krb5.so.2",
                                 };
+                            } else if (osname.startsWith("Mac OS X")) {
+                                gssLibs = new String[]{
+                                    "/usr/lib/sasl2/libgssapiv2.2.so",
+                                };
                             }
                         } else {
                             gssLibs = new String[]{ defaultLib };

@@ -189,7 +189,7 @@ public class UnicastServerRef extends UnicastRef
                                boolean permanent)
         throws RemoteException
     {
-        Class implClass = impl.getClass();
+        Class<?> implClass = impl.getClass();
         Remote stub;
 
         try {
@@ -327,7 +327,7 @@ public class UnicastServerRef extends UnicastRef
             // marshal return value
             try {
                 ObjectOutput out = call.getResultStream(true);
-                Class rtype = method.getReturnType();
+                Class<?> rtype = method.getReturnType();
                 if (rtype != void.class) {
                     marshalValue(rtype, result, out);
                 }
@@ -537,7 +537,7 @@ public class UnicastServerRef extends UnicastRef
         HashToMethod_Maps() {}
 
         protected Map<Long,Method> computeValue(Class<?> remoteClass) {
-            Map<Long,Method> map = new HashMap<Long,Method>();
+            Map<Long,Method> map = new HashMap<>();
             for (Class<?> cl = remoteClass;
                  cl != null;
                  cl = cl.getSuperclass())

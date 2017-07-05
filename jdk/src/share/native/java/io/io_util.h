@@ -25,11 +25,22 @@
 
 #include "jni.h"
 #include "jni_util.h"
+#ifdef MACOSX
+char* convertToNFDIfNeeded(const char *origPath, char *buf, size_t bufsize);
+#endif
 
 extern jfieldID IO_fd_fdID;
 extern jfieldID IO_handle_fdID;
 
-#if !defined(O_DSYNC) || !defined(O_SYNC)
+#ifdef _ALLBSD_SOURCE
+#include <fcntl.h>
+#ifndef O_SYNC
+#define O_SYNC  O_FSYNC
+#endif
+#ifndef O_DSYNC
+#define O_DSYNC O_FSYNC
+#endif
+#elif !defined(O_DSYNC) || !defined(O_SYNC)
 #define O_SYNC  (0x0800)
 #define O_DSYNC (0x2000)
 #endif
@@ -77,6 +88,35 @@ void throwFileNotFoundException(JNIEnv *env, jstring path);
  * declares a unique variable.
  */
 
+#ifdef MACOSX
+
+#define WITH_PLATFORM_STRING(env, strexp, var)                                \
+    if (1) {                                                                  \
+        const char *var;                                                      \
+        jstring _##var##str = (strexp);                                       \
+        if (_##var##str == NULL) {                                            \
+            JNU_ThrowNullPointerException((env), NULL);                       \
+            goto _##var##end;                                                 \
+        }                                                                     \
+        const char *temp_var = JNU_GetStringPlatformChars((env), _##var##str, NULL);      \
+        if (temp_var == NULL) goto _##var##end;                               \
+        char buf[MAXPATHLEN];                                                 \
+        var = convertToNFDIfNeeded(temp_var, buf, sizeof(buf));
+
+#define WITH_FIELD_PLATFORM_STRING(env, object, id, var)                      \
+    WITH_PLATFORM_STRING(env,                                                 \
+                         ((object == NULL)                                    \
+                          ? NULL                                              \
+                          : (*(env))->GetObjectField((env), (object), (id))), \
+                        var)
+
+#define END_PLATFORM_STRING(env, var)                                         \
+        JNU_ReleaseStringPlatformChars(env, _##var##str, temp_var);           \
+    _##var##end: ;                                                            \
+    } else ((void)NULL)
+
+#else
+
 #define WITH_PLATFORM_STRING(env, strexp, var)                                \
     if (1) {                                                                  \
         const char *var;                                                      \
@@ -99,6 +139,9 @@ void throwFileNotFoundException(JNIEnv *env, jstring path);
         JNU_ReleaseStringPlatformChars(env, _##var##str, var);                \
     _##var##end: ;                                                            \
     } else ((void)NULL)
+
+#endif
+
 
 /* Macros for transforming Java Strings into native Unicode strings.
  * Works analogously to WITH_PLATFORM_STRING.

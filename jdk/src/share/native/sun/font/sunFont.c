@@ -24,7 +24,6 @@
  */
 
 #include "stdlib.h"
-#include "malloc.h"
 #include "string.h"
 #include "gdefs.h"
 #include "jlong.h"

@@ -43,7 +43,7 @@ fi
 # set platform-dependent variables
 OS=`uname -s`
 case "$OS" in
-  SunOS | Linux )
+  SunOS | Linux | Darwin )
     NULL=/dev/null
     FS="/"
     ;;
@@ -65,7 +65,7 @@ esac
 ${TESTJAVA}${FS}bin${FS}keytool > temp_file_40875602475 2> ${NULL}
 grep MissingResourceException temp_file_40875602475
 
-if [ $? -eq 0 ]; then 
+if [ $? -eq 0 ]; then
     exit 1
 fi
 

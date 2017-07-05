@@ -227,7 +227,7 @@ public final class ExecPermission extends Permission
         extends PermissionCollection
         implements java.io.Serializable
     {
-        private Vector permissions;
+        private Vector<Permission> permissions;
 
         private static final long serialVersionUID = -3352558508888368273L;
 
@@ -235,7 +235,7 @@ public final class ExecPermission extends Permission
          * Create an empty ExecPermissionCollection.
          */
         public ExecPermissionCollection() {
-            permissions = new Vector();
+            permissions = new Vector<>();
         }
 
         /**
@@ -274,10 +274,10 @@ public final class ExecPermission extends Permission
             if (! (permission instanceof ExecPermission))
                 return false;
 
-            Enumeration e = permissions.elements();
+            Enumeration<Permission> e = permissions.elements();
 
             while (e.hasMoreElements()) {
-                ExecPermission x = (ExecPermission) e.nextElement();
+                ExecPermission x = (ExecPermission)e.nextElement();
                 if (x.implies(permission)) {
                     return true;
                 }
@@ -291,7 +291,7 @@ public final class ExecPermission extends Permission
          *
          * @return an enumeration of all the ExecPermission objects.
          */
-        public Enumeration elements()
+        public Enumeration<Permission> elements()
         {
             return permissions.elements();
         }

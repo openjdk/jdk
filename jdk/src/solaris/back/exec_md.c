@@ -30,7 +30,7 @@
 #include "sys.h"
 #include "util.h"
 
-#ifdef LINUX
+#if defined(LINUX) || defined(_ALLBSD_SOURCE)
   /* Linux */
   #define FORK() fork()
 #else

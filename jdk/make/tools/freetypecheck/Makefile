@@ -47,12 +47,15 @@ else
   FT_OPTIONS  = $(CFLAGS)
   FT_LD_OPTIONS = -L$(FREETYPE_LIB_PATH)
   # Add runtime lib search path to ensure test will be runnable
-  ifeq ($(PLATFORM), linux)
-    FT_LD_OPTIONS += -Wl,-rpath -Wl,$(FREETYPE_LIB_PATH)
-  else # other unix
-    FT_LD_OPTIONS += -R $(FREETYPE_LIB_PATH)
+  ifeq ($(PLATFORM), solaris)
+    FT_LD_OPTIONS += -R $(FREETYPE_LIB_PATH) -lfreetype
+  else
+    ifeq ($(PLATFORM), macosx)
+      FT_LD_OPTIONS += -lfreetype -lz
+    else # linux
+      FT_LD_OPTIONS += -Wl,-rpath -Wl,$(FREETYPE_LIB_PATH) -lfreetype
+    endif
   endif
-  FT_LD_OPTIONS += -lfreetype
 endif
 FT_OPTIONS += -I$(FREETYPE_HEADERS_PATH)
 FT_OPTIONS += -I$(FREETYPE_HEADERS_PATH)/freetype2

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,9 @@
 #ifndef JAVA_MD_H
 #define JAVA_MD_H
 
+/*
+ * This file contains common defines and includes for Solaris, Linux and MacOSX.
+ */
 #include <limits.h>
 #include <unistd.h>
 #include <sys/param.h>
@@ -40,23 +43,25 @@
 #define MAXNAMELEN              PATH_MAX
 #endif
 
-#ifdef HAVE_GETHRTIME
 /*
- * Support for doing cheap, accurate interval timing.
- */
-#include <sys/time.h>
-#define CounterGet()              (gethrtime()/1000)
-#define Counter2Micros(counts)    (counts)
-#else
-#define CounterGet()              (0)
-#define Counter2Micros(counts)    (1)
-#endif /* HAVE_GETHRTIME */
-
-/*
- * Function prototypes.
+ * Common function prototypes and sundries.
  */
 char *LocateJRE(manifest_info *info);
 void ExecJRE(char *jre, char **argv);
 int UnsetEnv(char *name);
+char *FindExecName(char *program);
+const char *SetExecname(char **argv);
+const char *GetExecName();
+static jboolean GetJVMPath(const char *jrepath, const char *jvmtype,
+                           char *jvmpath, jint jvmpathsize, const char * arch,
+                           int bitsWanted);
+static jboolean GetJREPath(char *path, jint pathsize, const char * arch,
+                           jboolean speculative);
 
-#endif
+#ifdef MACOSX
+#include "java_md_macosx.h"
+#else  /* !MACOSX */
+#include "java_md_solinux.h"
+#endif /* MACOSX */
+
+#endif /* JAVA_MD_H */

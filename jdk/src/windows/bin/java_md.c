@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -171,7 +171,8 @@ GetArchPath(int nbits)
 void
 CreateExecutionEnvironment(int *pargc, char ***pargv,
                            char *jrepath, jint so_jrepath,
-                           char *jvmpath, jint so_jvmpath) {
+                           char *jvmpath, jint so_jvmpath,
+                           char *jvmcfg,  jint so_jvmcfg) {
     char * jvmtype;
     int i = 0;
     int running = CURRENT_DATA_MODEL;
@@ -200,8 +201,11 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
         exit(2);
     }
 
+    JLI_Snprintf(jvmcfg, so_jvmcfg, "%s%slib%s%s%sjvm.cfg",
+        jrepath, FILESEP, FILESEP, (char*)GetArch(), FILESEP);
+
     /* Find the specified JVM type */
-    if (ReadKnownVMs(jrepath, (char*)GetArch(), JNI_FALSE) < 1) {
+    if (ReadKnownVMs(jvmcfg, JNI_FALSE) < 1) {
         JLI_ReportErrorMessage(CFG_ERROR7);
         exit(1);
     }
@@ -1323,3 +1327,33 @@ void AWTPreloadStop() {
 }
 
 #endif /* ENABLE_AWT_PRELOAD */
+
+int
+JVMInit(InvocationFunctions* ifn, jlong threadStackSize,
+        int argc, char **argv,
+        int mode, char *what, int ret)
+{
+    ShowSplashScreen();
+    return ContinueInNewThread(ifn, threadStackSize, argc, argv, mode, what, ret);
+}
+
+void
+PostJVMInit(JNIEnv *env, jstring mainClass, JavaVM *vm)
+{
+    // stubbed out for windows and *nixes.
+}
+
+void
+RegisterThread()
+{
+    // stubbed out for windows and *nixes.
+}
+
+/*
+ * on windows, we return a false to indicate this option is not applicable
+ */
+jboolean
+ProcessPlatformOption(const char *arg)
+{
+    return JNI_FALSE;
+}

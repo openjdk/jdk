@@ -24,7 +24,7 @@
  */
 
 #include "BufImgSurfaceData.h"
-#include "malloc.h"
+#include <stdlib.h>
 
 #include "sun_awt_image_BufImgSurfaceData.h"
 

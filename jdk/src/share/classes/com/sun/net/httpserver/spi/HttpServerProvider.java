@@ -76,7 +76,7 @@ public abstract class HttpServerProvider {
      *
      * @throws  SecurityException
      *          If a security manager has been installed and it denies
-     *          {@link RuntimePermission}{@code("httpServerProvider")}
+     *          {@link RuntimePermission}{@code ("httpServerProvider")}
      */
     protected HttpServerProvider() {
         SecurityManager sm = System.getSecurityManager();
