@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 8007294
+ * @bug 8146999
  * @summary ReduceFieldZeroing doesn't check for dependent load and can lead to incorrect execution
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+AlwaysIncrementalInline -XX:-UseOnStackReplacement -XX:-BackgroundCompilation Test8007294
  *
@@ -82,6 +83,7 @@ public class Test8007294 {
             }
         }
         for (int i = 0; i < 20000; i++) {
+            test2(0);  // pollute profile
             int res = test2(1);
             if (res != 2) {
                 System.out.println("FAILED test2 = " + res);

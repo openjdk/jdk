@@ -32,9 +32,9 @@ import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.SourceDataLine;
 
 /**
- * <code>AudioSynthesizer</code> is a <code>Synthesizer</code>
- * which renders it's output audio into <code>SourceDataLine</code>
- * or <code>AudioInputStream</code>.
+ * {@code AudioSynthesizer} is a {@code Synthesizer}
+ * which renders it's output audio into {@code SourceDataLine}
+ * or {@code AudioInputStream}.
  *
  * @see MidiSystem#getSynthesizer
  * @see Synthesizer
@@ -59,7 +59,7 @@ public interface AudioSynthesizer extends Synthesizer {
      * Gets information about the possible properties for the synthesizer.
      *
      * @param info a proposed list of tag/value pairs that will be sent on open.
-     * @return an array of <code>AudioSynthesizerPropertyInfo</code> objects
+     * @return an array of {@code AudioSynthesizerPropertyInfo} objects
      * describing possible properties. This array may be an empty array if
      * no properties are required.
      */
@@ -68,7 +68,7 @@ public interface AudioSynthesizer extends Synthesizer {
 
     /**
      * Opens the synthesizer and starts rendering audio into
-     * <code>SourceDataLine</code>.
+     * {@code SourceDataLine}.
      *
      * <p>An application opening a synthesizer explicitly with this call
      * has to close the synthesizer by calling {@link #close}. This is
@@ -77,13 +77,13 @@ public interface AudioSynthesizer extends Synthesizer {
      *
      * <p>Note that some synthesizers, once closed, cannot be reopened.
      * Attempts to reopen such a synthesizer will always result in
-     * a <code>MidiUnavailableException</code>.
+     * a {@code MidiUnavailableException}.
      *
-     * @param line which <code>AudioSynthesizer</code> writes output audio into.
-     * If <code>line</code> is null, then line from system default mixer is used.
-     * @param info a <code>Map<String,Object></code> object containing
+     * @param line which {@code AudioSynthesizer} writes output audio into.
+     * If {@code line} is null, then line from system default mixer is used.
+     * @param info a {@code Map<String,Object>} object containing
      * properties for additional configuration supported by synthesizer.
-     * If <code>info</code> is null then default settings are used.
+     * If {@code info} is null then default settings are used.
      *
      * @throws MidiUnavailableException thrown if the synthesizer cannot be
      * opened due to resource restrictions.
@@ -98,7 +98,7 @@ public interface AudioSynthesizer extends Synthesizer {
 
     /**
      * Opens the synthesizer and renders audio into returned
-     * <code>AudioInputStream</code>.
+     * {@code AudioInputStream}.
      *
      * <p>An application opening a synthesizer explicitly with this call
      * has to close the synthesizer by calling {@link #close}. This is
@@ -107,13 +107,13 @@ public interface AudioSynthesizer extends Synthesizer {
      *
      * <p>Note that some synthesizers, once closed, cannot be reopened.
      * Attempts to reopen such a synthesizer will always result in
-     * a <code>MidiUnavailableException<code>.
+     * a {@code MidiUnavailableException}.
      *
-     * @param targetFormat specifies the <code>AudioFormat</code>
-     * used in returned <code>AudioInputStream</code>.
-     * @param info a <code>Map<String,Object></code> object containing
+     * @param targetFormat specifies the {@code AudioFormat}
+     * used in returned {@code AudioInputStream}.
+     * @param info a {@code Map<String,Object>} object containing
      * properties for additional configuration supported by synthesizer.
-     * If <code>info</code> is null then default settings are used.
+     * If {@code info} is null then default settings are used.
      *
      * @throws MidiUnavailableException thrown if the synthesizer cannot be
      * opened due to resource restrictions.

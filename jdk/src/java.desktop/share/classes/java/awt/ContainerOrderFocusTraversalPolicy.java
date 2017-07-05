@@ -33,18 +33,18 @@ import sun.util.logging.PlatformLogger;
  * of child Components in a Container. From a particular focus cycle root, the
  * policy makes a pre-order traversal of the Component hierarchy, and traverses
  * a Container's children according to the ordering of the array returned by
- * <code>Container.getComponents()</code>. Portions of the hierarchy that are
+ * {@code Container.getComponents()}. Portions of the hierarchy that are
  * not visible and displayable will not be searched.
  * <p>
  * By default, ContainerOrderFocusTraversalPolicy implicitly transfers focus
  * down-cycle. That is, during normal forward focus traversal, the Component
  * traversed after a focus cycle root will be the focus-cycle-root's default
  * Component to focus. This behavior can be disabled using the
- * <code>setImplicitDownCycleTraversal</code> method.
+ * {@code setImplicitDownCycleTraversal} method.
  * <p>
  * By default, methods of this class will return a Component only if it is
  * visible, displayable, enabled, and focusable. Subclasses can modify this
- * behavior by overriding the <code>accept</code> method.
+ * behavior by overriding the {@code accept} method.
  * <p>
  * This policy takes into account <a
  * href="doc-files/FocusSpec.html#FocusTraversalPolicyProviders">focus traversal
@@ -193,7 +193,7 @@ public class ContainerOrderFocusTraversalPolicy extends FocusTraversalPolicy
      * focus down-cycle. That is, during normal forward focus traversal, the
      * Component traversed after a focus cycle root will be the focus-cycle-
      * root's default Component to focus. This behavior can be disabled using
-     * the <code>setImplicitDownCycleTraversal</code> method.
+     * the {@code setImplicitDownCycleTraversal} method.
      * <p>
      * If aContainer is <a href="doc-files/FocusSpec.html#FocusTraversalPolicyProviders">focus
      * traversal policy provider</a>, the focus is always transferred down-cycle.
@@ -519,7 +519,7 @@ public class ContainerOrderFocusTraversalPolicy extends FocusTraversalPolicy
      * Returns the default Component to focus. This Component will be the first
      * to receive focus when traversing down into a new focus traversal cycle
      * rooted at aContainer. The default implementation of this method
-     * returns the same Component as <code>getFirstComponent</code>.
+     * returns the same Component as {@code getFirstComponent}.
      *
      * @param aContainer the focus cycle root or focus traversal policy provider whose default
      *        Component is to be returned
@@ -534,12 +534,12 @@ public class ContainerOrderFocusTraversalPolicy extends FocusTraversalPolicy
 
     /**
      * Sets whether this ContainerOrderFocusTraversalPolicy transfers focus
-     * down-cycle implicitly. If <code>true</code>, during normal forward focus
+     * down-cycle implicitly. If {@code true}, during normal forward focus
      * traversal, the Component traversed after a focus cycle root will be the
-     * focus-cycle-root's default Component to focus. If <code>false</code>,
+     * focus-cycle-root's default Component to focus. If {@code false},
      * the next Component in the focus traversal cycle rooted at the specified
      * focus cycle root will be traversed instead. The default value for this
-     * property is <code>true</code>.
+     * property is {@code true}.
      *
      * @param implicitDownCycleTraversal whether this
      *        ContainerOrderFocusTraversalPolicy transfers focus down-cycle
@@ -553,9 +553,9 @@ public class ContainerOrderFocusTraversalPolicy extends FocusTraversalPolicy
 
     /**
      * Returns whether this ContainerOrderFocusTraversalPolicy transfers focus
-     * down-cycle implicitly. If <code>true</code>, during normal forward focus
+     * down-cycle implicitly. If {@code true}, during normal forward focus
      * traversal, the Component traversed after a focus cycle root will be the
-     * focus-cycle-root's default Component to focus. If <code>false</code>,
+     * focus-cycle-root's default Component to focus. If {@code false},
      * the next Component in the focus traversal cycle rooted at the specified
      * focus cycle root will be traversed instead.
      *
@@ -575,8 +575,8 @@ public class ContainerOrderFocusTraversalPolicy extends FocusTraversalPolicy
      *
      * @param aComponent the Component whose fitness as a focus owner is to
      *        be tested
-     * @return <code>true</code> if aComponent is visible, displayable,
-     *         enabled, and focusable; <code>false</code> otherwise
+     * @return {@code true} if aComponent is visible, displayable,
+     *         enabled, and focusable; {@code false} otherwise
      */
     protected boolean accept(Component aComponent) {
         if (!aComponent.canBeFocusOwner()) {

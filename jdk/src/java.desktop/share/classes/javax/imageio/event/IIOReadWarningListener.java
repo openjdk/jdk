@@ -29,15 +29,15 @@ import java.util.EventListener;
 import javax.imageio.ImageReader;
 
 /**
- * An interface used by <code>ImageReader</code> implementations to
+ * An interface used by {@code ImageReader} implementations to
  * notify callers of their image and thumbnail reading methods of
  * warnings (non-fatal errors).  Fatal errors cause the relevant
- * read method to throw an <code>IIOException</code>.
+ * read method to throw an {@code IIOException}.
  *
- * <p> Localization is handled by associating a <code>Locale</code>
- * with each <code>IIOReadWarningListener</code> as it is registered
- * with an <code>ImageReader</code>.  It is up to the
- * <code>ImageReader</code> to provide localized messages.
+ * <p> Localization is handled by associating a {@code Locale}
+ * with each {@code IIOReadWarningListener} as it is registered
+ * with an {@code ImageReader}.  It is up to the
+ * {@code ImageReader} to provide localized messages.
  *
  * @see javax.imageio.ImageReader#addIIOReadWarningListener
  * @see javax.imageio.ImageReader#removeIIOReadWarningListener
@@ -51,8 +51,8 @@ public interface IIOReadWarningListener extends EventListener {
      * may choose to display a dialog, print the warning to the console,
      * ignore the warning, or take any other action it chooses.
      *
-     * @param source the <code>ImageReader</code> object calling this method.
-     * @param warning a <code>String</code> containing the warning.
+     * @param source the {@code ImageReader} object calling this method.
+     * @param warning a {@code String} containing the warning.
      */
     void warningOccurred(ImageReader source, String warning);
 }

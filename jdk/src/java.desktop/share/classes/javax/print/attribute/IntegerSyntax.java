@@ -69,9 +69,9 @@ public abstract class IntegerSyntax implements Serializable, Cloneable {
      * @param  upperBound  Upper bound.
      *
      * @exception  IllegalArgumentException
-     *     (Unchecked exception) Thrown if <CODE>value</CODE> is less than
-     *     <CODE>lowerBound</CODE> or greater than
-     *     <CODE>upperBound</CODE>.
+     *     (Unchecked exception) Thrown if {@code value} is less than
+     *     {@code lowerBound} or greater than
+     *     {@code upperBound}.
      */
     protected IntegerSyntax(int value, int lowerBound, int upperBound) {
         if (lowerBound > value || value > upperBound) {
@@ -95,17 +95,17 @@ public abstract class IntegerSyntax implements Serializable, Cloneable {
      * object. To be equivalent, all of the following conditions must be true:
      * <OL TYPE=1>
      * <LI>
-     * <CODE>object</CODE> is not null.
+     * {@code object} is not null.
      * <LI>
-     * <CODE>object</CODE> is an instance of class IntegerSyntax.
+     * {@code object} is an instance of class IntegerSyntax.
      * <LI>
-     * This integer attribute's value and <CODE>object</CODE>'s value are
+     * This integer attribute's value and {@code object}'s value are
      * equal.
      * </OL>
      *
      * @param  object  Object to compare to.
      *
-     * @return  True if <CODE>object</CODE> is equivalent to this integer
+     * @return  True if {@code object} is equivalent to this integer
      *          attribute, false otherwise.
      */
     public boolean equals(Object object) {

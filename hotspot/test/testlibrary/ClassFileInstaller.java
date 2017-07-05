@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,7 @@
  * questions.
  */
 
+import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -42,6 +43,9 @@ public class ClassFileInstaller {
             // Convert dotted class name to a path to a class file
             String pathName = arg.replace('.', '/').concat(".class");
             InputStream is = cl.getResourceAsStream(pathName);
+            if (is == null) {
+                throw new FileNotFoundException(pathName);
+            }
 
             // Create the class file's package directory
             Path p = Paths.get(pathName);

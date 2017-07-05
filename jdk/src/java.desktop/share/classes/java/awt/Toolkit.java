@@ -69,7 +69,7 @@ import javax.accessibility.AccessibilityProvider;
 /**
  * This class is the abstract superclass of all actual
  * implementations of the Abstract Window Toolkit. Subclasses of
- * the <code>Toolkit</code> class are used to bind the various components
+ * the {@code Toolkit} class are used to bind the various components
  * to particular native toolkit implementations.
  * <p>
  * Many GUI events may be delivered to user
@@ -82,8 +82,8 @@ import javax.accessibility.AccessibilityProvider;
  * limited to:
  * <ul>
  * <li>Scrolling to a specified position.
- * <br>For example, calling <code>ScrollPane.setScrollPosition</code>
- *     and then <code>getScrollPosition</code> may return an incorrect
+ * <br>For example, calling {@code ScrollPane.setScrollPosition}
+ *     and then {@code getScrollPosition} may return an incorrect
  *     value if the original request has not yet been processed.
  *
  * <li>Moving the focus from one component to another.
@@ -94,25 +94,25 @@ import javax.accessibility.AccessibilityProvider;
  * Tutorial</a>.
  *
  * <li>Making a top-level container visible.
- * <br>Calling <code>setVisible(true)</code> on a <code>Window</code>,
- *     <code>Frame</code> or <code>Dialog</code> may occur
+ * <br>Calling {@code setVisible(true)} on a {@code Window},
+ *     {@code Frame} or {@code Dialog} may occur
  *     asynchronously.
  *
  * <li>Setting the size or location of a top-level container.
- * <br>Calls to <code>setSize</code>, <code>setBounds</code> or
- *     <code>setLocation</code> on a <code>Window</code>,
- *     <code>Frame</code> or <code>Dialog</code> are forwarded
+ * <br>Calls to {@code setSize}, {@code setBounds} or
+ *     {@code setLocation} on a {@code Window},
+ *     {@code Frame} or {@code Dialog} are forwarded
  *     to the underlying window management system and may be
  *     ignored or modified.  See {@link java.awt.Window} for
  *     more information.
  * </ul>
  * <p>
  * Most applications should not call any of the methods in this
- * class directly. The methods defined by <code>Toolkit</code> are
+ * class directly. The methods defined by {@code Toolkit} are
  * the "glue" that joins the platform-independent classes in the
- * <code>java.awt</code> package with their counterparts in
- * <code>java.awt.peer</code>. Some methods defined by
- * <code>Toolkit</code> query the native operating system directly.
+ * {@code java.awt} package with their counterparts in
+ * {@code java.awt.peer}. Some methods defined by
+ * {@code Toolkit} query the native operating system directly.
  *
  * @author      Sami Shaio
  * @author      Arthur van Hoff
@@ -247,8 +247,8 @@ public abstract class Toolkit {
     /**
      * Gets the size of the screen.  On systems with multiple displays, the
      * primary display is used.  Multi-screen aware display dimensions are
-     * available from <code>GraphicsConfiguration</code> and
-     * <code>GraphicsDevice</code>.
+     * available from {@code GraphicsConfiguration} and
+     * {@code GraphicsDevice}.
      * @return    the size of this toolkit's screen, in pixels.
      * @exception HeadlessException if GraphicsEnvironment.isHeadless()
      * returns true
@@ -271,7 +271,7 @@ public abstract class Toolkit {
 
     /**
      * Gets the insets of the screen.
-     * @param     gc a <code>GraphicsConfiguration</code>
+     * @param     gc a {@code GraphicsConfiguration}
      * @return    the insets of this toolkit's screen, in pixels.
      * @exception HeadlessException if GraphicsEnvironment.isHeadless()
      * returns true
@@ -291,14 +291,14 @@ public abstract class Toolkit {
     /**
      * Determines the color model of this toolkit's screen.
      * <p>
-     * <code>ColorModel</code> is an abstract class that
+     * {@code ColorModel} is an abstract class that
      * encapsulates the ability to translate between the
      * pixel values of an image and its red, green, blue,
      * and alpha components.
      * <p>
      * This toolkit method is called by the
-     * <code>getColorModel</code> method
-     * of the <code>Component</code> class.
+     * {@code getColorModel} method
+     * of the {@code Component} class.
      * @return    the color model of this toolkit's screen.
      * @exception HeadlessException if GraphicsEnvironment.isHeadless()
      * returns true
@@ -332,8 +332,8 @@ public abstract class Toolkit {
      * Gets the screen device metrics for rendering of the font.
      * @param     font   a font
      * @return    the screen metrics of the specified font in this toolkit
-     * @deprecated  As of JDK version 1.2, replaced by the <code>Font</code>
-     *          method <code>getLineMetrics</code>.
+     * @deprecated  As of JDK version 1.2, replaced by the {@code Font}
+     *          method {@code getLineMetrics}.
      * @see java.awt.font.LineMetrics
      * @see java.awt.Font#getLineMetrics
      * @see java.awt.GraphicsEnvironment#getScreenDevices
@@ -606,22 +606,22 @@ public abstract class Toolkit {
      * with the same filename to the same returned Image.
      * <p>
      * Since the mechanism required to facilitate this sharing of
-     * <code>Image</code> objects may continue to hold onto images
+     * {@code Image} objects may continue to hold onto images
      * that are no longer in use for an indefinite period of time,
      * developers are encouraged to implement their own caching of
      * images by using the {@link #createImage(java.lang.String) createImage}
      * variant wherever available.
      * If the image data contained in the specified file changes,
-     * the <code>Image</code> object returned from this method may
+     * the {@code Image} object returned from this method may
      * still contain stale information which was loaded from the
      * file after a prior call.
      * Previously loaded image data can be manually discarded by
      * calling the {@link Image#flush flush} method on the
-     * returned <code>Image</code>.
+     * returned {@code Image}.
      * <p>
      * This method first checks if there is a security manager installed.
      * If so, the method calls the security manager's
-     * <code>checkRead</code> method with the file specified to ensure
+     * {@code checkRead} method with the file specified to ensure
      * that the access to the image is allowed.
      * @param     filename   the name of a file containing pixel data
      *                         in a recognized file format.
@@ -641,27 +641,27 @@ public abstract class Toolkit {
      * with the same URL to the same returned Image.
      * <p>
      * Since the mechanism required to facilitate this sharing of
-     * <code>Image</code> objects may continue to hold onto images
+     * {@code Image} objects may continue to hold onto images
      * that are no longer in use for an indefinite period of time,
      * developers are encouraged to implement their own caching of
      * images by using the {@link #createImage(java.net.URL) createImage}
      * variant wherever available.
      * If the image data stored at the specified URL changes,
-     * the <code>Image</code> object returned from this method may
+     * the {@code Image} object returned from this method may
      * still contain stale information which was fetched from the
      * URL after a prior call.
      * Previously loaded image data can be manually discarded by
      * calling the {@link Image#flush flush} method on the
-     * returned <code>Image</code>.
+     * returned {@code Image}.
      * <p>
      * This method first checks if there is a security manager installed.
      * If so, the method calls the security manager's
-     * <code>checkPermission</code> method with the
+     * {@code checkPermission} method with the
      * url.openConnection().getPermission() permission to ensure
      * that the access to the image is allowed. For compatibility
      * with pre-1.2 security managers, if the access is denied with
-     * <code>FilePermission</code> or <code>SocketPermission</code>,
-     * the method throws the <code>SecurityException</code>
+     * {@code FilePermission} or {@code SocketPermission},
+     * the method throws the {@code SecurityException}
      * if the corresponding 1.1-style SecurityManager.checkXXX method
      * also denies permission.
      * @param     url   the URL to use in fetching the pixel data.
@@ -681,7 +681,7 @@ public abstract class Toolkit {
      * <p>
      * This method first checks if there is a security manager installed.
      * If so, the method calls the security manager's
-     * <code>checkRead</code> method with the specified file to ensure
+     * {@code checkRead} method with the specified file to ensure
      * that the image creation is allowed.
      * @param     filename   the name of a file containing pixel data
      *                         in a recognized file format.
@@ -700,12 +700,12 @@ public abstract class Toolkit {
      * <p>
      * This method first checks if there is a security manager installed.
      * If so, the method calls the security manager's
-     * <code>checkPermission</code> method with the
+     * {@code checkPermission} method with the
      * url.openConnection().getPermission() permission to ensure
      * that the image creation is allowed. For compatibility
      * with pre-1.2 security managers, if the access is denied with
-     * <code>FilePermission</code> or <code>SocketPermission</code>,
-     * the method throws <code>SecurityException</code>
+     * {@code FilePermission} or {@code SocketPermission},
+     * the method throws {@code SecurityException}
      * if the corresponding 1.1-style SecurityManager.checkXXX method
      * also denies permission.
      * @param     url   the URL to use in fetching the pixel data.
@@ -722,7 +722,7 @@ public abstract class Toolkit {
      * Prepares an image for rendering.
      * <p>
      * If the values of the width and height arguments are both
-     * <code>-1</code>, this method prepares the image for rendering
+     * {@code -1}, this method prepares the image for rendering
      * on the default screen; otherwise, this method prepares an image
      * for rendering on the default screen at the specified width and height.
      * <p>
@@ -730,23 +730,23 @@ public abstract class Toolkit {
      * and an appropriately scaled screen representation of the image is
      * generated.
      * <p>
-     * This method is called by components <code>prepareImage</code>
+     * This method is called by components {@code prepareImage}
      * methods.
      * <p>
      * Information on the flags returned by this method can be found
-     * with the definition of the <code>ImageObserver</code> interface.
+     * with the definition of the {@code ImageObserver} interface.
 
      * @param     image      the image for which to prepare a
      *                           screen representation.
      * @param     width      the width of the desired screen
-     *                           representation, or <code>-1</code>.
+     *                           representation, or {@code -1}.
      * @param     height     the height of the desired screen
-     *                           representation, or <code>-1</code>.
-     * @param     observer   the <code>ImageObserver</code>
+     *                           representation, or {@code -1}.
+     * @param     observer   the {@code ImageObserver}
      *                           object to be notified as the
      *                           image is being prepared.
-     * @return    <code>true</code> if the image has already been
-     *                 fully prepared; <code>false</code> otherwise.
+     * @return    {@code true} if the image has already been
+     *                 fully prepared; {@code false} otherwise.
      * @see       java.awt.Component#prepareImage(java.awt.Image,
      *                 java.awt.image.ImageObserver)
      * @see       java.awt.Component#prepareImage(java.awt.Image,
@@ -761,30 +761,30 @@ public abstract class Toolkit {
      * being prepared for display.
      * <p>
      * If the values of the width and height arguments are both
-     * <code>-1</code>, this method returns the construction status of
+     * {@code -1}, this method returns the construction status of
      * a screen representation of the specified image in this toolkit.
      * Otherwise, this method returns the construction status of a
      * scaled representation of the image at the specified width
      * and height.
      * <p>
      * This method does not cause the image to begin loading.
-     * An application must call <code>prepareImage</code> to force
+     * An application must call {@code prepareImage} to force
      * the loading of an image.
      * <p>
-     * This method is called by the component's <code>checkImage</code>
+     * This method is called by the component's {@code checkImage}
      * methods.
      * <p>
      * Information on the flags returned by this method can be found
-     * with the definition of the <code>ImageObserver</code> interface.
+     * with the definition of the {@code ImageObserver} interface.
      * @param     image   the image whose status is being checked.
      * @param     width   the width of the scaled version whose status is
-     *                 being checked, or <code>-1</code>.
+     *                 being checked, or {@code -1}.
      * @param     height  the height of the scaled version whose status
-     *                 is being checked, or <code>-1</code>.
-     * @param     observer   the <code>ImageObserver</code> object to be
+     *                 is being checked, or {@code -1}.
+     * @param     observer   the {@code ImageObserver} object to be
      *                 notified as the image is being prepared.
      * @return    the bitwise inclusive <strong>OR</strong> of the
-     *                 <code>ImageObserver</code> flags for the
+     *                 {@code ImageObserver} flags for the
      *                 image data that is currently available.
      * @see       java.awt.Toolkit#prepareImage(java.awt.Image,
      *                 int, int, java.awt.image.ImageObserver)
@@ -840,17 +840,17 @@ public abstract class Toolkit {
                                       int imagelength);
 
     /**
-     * Gets a <code>PrintJob</code> object which is the result of initiating
+     * Gets a {@code PrintJob} object which is the result of initiating
      * a print operation on the toolkit's platform.
      * <p>
      * Each actual implementation of this method should first check if there
      * is a security manager installed. If there is, the method should call
-     * the security manager's <code>checkPrintJobAccess</code> method to
+     * the security manager's {@code checkPrintJobAccess} method to
      * ensure initiation of a print operation is allowed. If the default
-     * implementation of <code>checkPrintJobAccess</code> is used (that is,
+     * implementation of {@code checkPrintJobAccess} is used (that is,
      * that method is not overriden), then this results in a call to the
-     * security manager's <code>checkPermission</code> method with a <code>
-     * RuntimePermission("queuePrintJob")</code> permission.
+     * security manager's {@code checkPermission} method with a
+     * {@code RuntimePermission("queuePrintJob")} permission.
      *
      * @param   frame the parent of the print dialog. May not be null.
      * @param   jobtitle the title of the PrintJob. A null title is equivalent
@@ -862,7 +862,7 @@ public abstract class Toolkit {
      *          takes JobAttributes and PageAttributes objects. This object
      *          may be updated to reflect the user's job choices on exit. May
      *          be null.
-     * @return  a <code>PrintJob</code> object, or <code>null</code> if the
+     * @return  a {@code PrintJob} object, or {@code null} if the
      *          user cancelled the print job.
      * @throws  NullPointerException if frame is null
      * @throws  SecurityException if this thread is not allowed to initiate a
@@ -876,17 +876,17 @@ public abstract class Toolkit {
                                          Properties props);
 
     /**
-     * Gets a <code>PrintJob</code> object which is the result of initiating
+     * Gets a {@code PrintJob} object which is the result of initiating
      * a print operation on the toolkit's platform.
      * <p>
      * Each actual implementation of this method should first check if there
      * is a security manager installed. If there is, the method should call
-     * the security manager's <code>checkPrintJobAccess</code> method to
+     * the security manager's {@code checkPrintJobAccess} method to
      * ensure initiation of a print operation is allowed. If the default
-     * implementation of <code>checkPrintJobAccess</code> is used (that is,
+     * implementation of {@code checkPrintJobAccess} is used (that is,
      * that method is not overriden), then this results in a call to the
-     * security manager's <code>checkPermission</code> method with a <code>
-     * RuntimePermission("queuePrintJob")</code> permission.
+     * security manager's {@code checkPermission} method with a
+     * {@code RuntimePermission("queuePrintJob")} permission.
      *
      * @param   frame the parent of the print dialog. May not be null.
      * @param   jobtitle the title of the PrintJob. A null title is equivalent
@@ -900,7 +900,7 @@ public abstract class Toolkit {
      *          job. The attributes will be updated to reflect the user's
      *          choices as outlined in the PageAttributes documentation. May be
      *          null.
-     * @return  a <code>PrintJob</code> object, or <code>null</code> if the
+     * @return  a {@code PrintJob} object, or {@code null} if the
      *          user cancelled the print job.
      * @throws  NullPointerException if frame is null
      * @throws  IllegalArgumentException if pageAttributes specifies differing
@@ -952,20 +952,20 @@ public abstract class Toolkit {
      * applications which use native clipboard facilities.
      * <p>
      * In addition to any and all default formats text returned by the system
-     * Clipboard's <code>getTransferData()</code> method is available in the
+     * Clipboard's {@code getTransferData()} method is available in the
      * following flavors:
      * <ul>
      * <li>DataFlavor.stringFlavor</li>
      * <li>DataFlavor.plainTextFlavor (<b>deprecated</b>)</li>
      * </ul>
-     * As with <code>java.awt.datatransfer.StringSelection</code>, if the
-     * requested flavor is <code>DataFlavor.plainTextFlavor</code>, or an
+     * As with {@code java.awt.datatransfer.StringSelection}, if the
+     * requested flavor is {@code DataFlavor.plainTextFlavor}, or an
      * equivalent flavor, a Reader is returned. <b>Note:</b> The behavior of
-     * the system Clipboard's <code>getTransferData()</code> method for <code>
-     * DataFlavor.plainTextFlavor</code>, and equivalent DataFlavors, is
-     * inconsistent with the definition of <code>DataFlavor.plainTextFlavor
-     * </code>. Because of this, support for <code>
-     * DataFlavor.plainTextFlavor</code>, and equivalent flavors, is
+     * the system Clipboard's {@code getTransferData()} method for
+     * {@code DataFlavor.plainTextFlavor}, and equivalent DataFlavors, is
+     * inconsistent with the definition of {@code DataFlavor.plainTextFlavor}.
+     * Because of this, support for
+     * {@code DataFlavor.plainTextFlavor}, and equivalent flavors, is
      * <b>deprecated</b>.
      * <p>
      * Each actual implementation of this method should first check if there
@@ -990,37 +990,37 @@ public abstract class Toolkit {
 
     /**
      * Gets the singleton instance of the system selection as a
-     * <code>Clipboard</code> object. This allows an application to read and
+     * {@code Clipboard} object. This allows an application to read and
      * modify the current, system-wide selection.
      * <p>
      * An application is responsible for updating the system selection whenever
      * the user selects text, using either the mouse or the keyboard.
      * Typically, this is implemented by installing a
-     * <code>FocusListener</code> on all <code>Component</code>s which support
-     * text selection, and, between <code>FOCUS_GAINED</code> and
-     * <code>FOCUS_LOST</code> events delivered to that <code>Component</code>,
-     * updating the system selection <code>Clipboard</code> when the selection
-     * changes inside the <code>Component</code>. Properly updating the system
+     * {@code FocusListener} on all {@code Component}s which support
+     * text selection, and, between {@code FOCUS_GAINED} and
+     * {@code FOCUS_LOST} events delivered to that {@code Component},
+     * updating the system selection {@code Clipboard} when the selection
+     * changes inside the {@code Component}. Properly updating the system
      * selection ensures that a Java application will interact correctly with
      * native applications and other Java applications running simultaneously
-     * on the system. Note that <code>java.awt.TextComponent</code> and
-     * <code>javax.swing.text.JTextComponent</code> already adhere to this
+     * on the system. Note that {@code java.awt.TextComponent} and
+     * {@code javax.swing.text.JTextComponent} already adhere to this
      * policy. When using these classes, and their subclasses, developers need
      * not write any additional code.
      * <p>
-     * Some platforms do not support a system selection <code>Clipboard</code>.
-     * On those platforms, this method will return <code>null</code>. In such a
+     * Some platforms do not support a system selection {@code Clipboard}.
+     * On those platforms, this method will return {@code null}. In such a
      * case, an application is absolved from its responsibility to update the
-     * system selection <code>Clipboard</code> as described above.
+     * system selection {@code Clipboard} as described above.
      * <p>
      * Each actual implementation of this method should first check if there
      * is a security manager installed. If there is, the method should call
      * the security manager's {@link SecurityManager#checkPermission
      * checkPermission} method to check {@code AWTPermission("accessClipboard")}.
      *
-     * @return the system selection as a <code>Clipboard</code>, or
-     *         <code>null</code> if the native platform does not support a
-     *         system selection <code>Clipboard</code>
+     * @return the system selection as a {@code Clipboard}, or
+     *         {@code null} if the native platform does not support a
+     *         system selection {@code Clipboard}
      * @exception HeadlessException if GraphicsEnvironment.isHeadless()
      *            returns true
      *
@@ -1050,13 +1050,13 @@ public abstract class Toolkit {
      * key for menu shortcuts.
      * <p>
      * Menu shortcuts, which are embodied in the
-     * <code>MenuShortcut</code> class, are handled by the
-     * <code>MenuBar</code> class.
+     * {@code MenuShortcut} class, are handled by the
+     * {@code MenuBar} class.
      * <p>
-     * By default, this method returns <code>Event.CTRL_MASK</code>.
+     * By default, this method returns {@code Event.CTRL_MASK}.
      * Toolkit implementations should override this method if the
      * <b>Control</b> key isn't the correct key for accelerators.
-     * @return    the modifier mask on the <code>Event</code> class
+     * @return    the modifier mask on the {@code Event} class
      *                 that is used for menu shortcuts on this toolkit.
      * @exception HeadlessException if GraphicsEnvironment.isHeadless()
      * returns true
@@ -1083,7 +1083,7 @@ public abstract class Toolkit {
      * @param  keyCode the key code
      * @return {@code true} if the given key is currently in its "on" state;
      *          otherwise {@code false}
-     * @exception java.lang.IllegalArgumentException if <code>keyCode</code>
+     * @exception java.lang.IllegalArgumentException if {@code keyCode}
      * is not one of the valid key codes
      * @exception java.lang.UnsupportedOperationException if the host system doesn't
      * allow getting the state of this key programmatically, or if the keyboard
@@ -1119,7 +1119,7 @@ public abstract class Toolkit {
      *
      * @param  keyCode the key code
      * @param  on the state of the key
-     * @exception java.lang.IllegalArgumentException if <code>keyCode</code>
+     * @exception java.lang.IllegalArgumentException if {@code keyCode}
      * is not one of the valid key codes
      * @exception java.lang.UnsupportedOperationException if the host system doesn't
      * allow setting the state of this key programmatically, or if the keyboard
@@ -1163,7 +1163,7 @@ public abstract class Toolkit {
      * @param cursor the image to display when the cursor is activated
      * @param hotSpot the X and Y of the large cursor's hot spot; the
      *   hotSpot values must be less than the Dimension returned by
-     *   <code>getBestCursorSize</code>
+     *   {@code getBestCursorSize}
      * @param     name a localized description of the cursor, for Java Accessibility use
      * @exception IndexOutOfBoundsException if the hotSpot values are outside
      *   the bounds of the cursor
@@ -1252,10 +1252,10 @@ public abstract class Toolkit {
 
     /**
      * Returns whether Toolkit supports this state for
-     * <code>Frame</code>s.  This method tells whether the <em>UI
+     * {@code Frame}s.  This method tells whether the <em>UI
      * concept</em> of, say, maximization or iconification is
      * supported.  It will always return false for "compound" states
-     * like <code>Frame.ICONIFIED|Frame.MAXIMIZED_VERT</code>.
+     * like {@code Frame.ICONIFIED|Frame.MAXIMIZED_VERT}.
      * In other words, the rule of thumb is that only queries with a
      * single frame state constant as an argument are meaningful.
      * <p>Note that supporting a given concept is a platform-
@@ -1280,11 +1280,11 @@ public abstract class Toolkit {
      * </ul>
      *
      * @param state one of named frame state constants.
-     * @return <code>true</code> is this frame state is supported by
-     *     this Toolkit implementation, <code>false</code> otherwise.
+     * @return {@code true} is this frame state is supported by
+     *     this Toolkit implementation, {@code false} otherwise.
      * @exception HeadlessException
-     *     if <code>GraphicsEnvironment.isHeadless()</code>
-     *     returns <code>true</code>.
+     *     if {@code GraphicsEnvironment.isHeadless()}
+     *     returns {@code true}.
      * @see java.awt.Window#addWindowStateListener
      * @since   1.4
      */
@@ -1431,7 +1431,7 @@ public abstract class Toolkit {
      * {@link SecurityManager#checkPermission checkPermission} method
      * is called to check {@code AWTPermission("accessEventQueue")}.
      *
-     * @return    the <code>EventQueue</code> object
+     * @return    the {@code EventQueue} object
      * @throws  SecurityException
      *          if a security manager is set and it denies access to
      *          the {@code EventQueue}
@@ -1446,10 +1446,10 @@ public abstract class Toolkit {
     }
 
     /**
-     * Gets the application's or applet's <code>EventQueue</code>
+     * Gets the application's or applet's {@code EventQueue}
      * instance, without checking access.  For security reasons,
-     * this can only be called from a <code>Toolkit</code> subclass.
-     * @return the <code>EventQueue</code> object
+     * this can only be called from a {@code Toolkit} subclass.
+     * @return the {@code EventQueue} object
      */
     protected abstract EventQueue getSystemEventQueueImpl();
 
@@ -1664,8 +1664,8 @@ public abstract class Toolkit {
      * Returns whether the always-on-top mode is supported by this toolkit.
      * To detect whether the always-on-top mode is supported for a
      * particular Window, use {@link Window#isAlwaysOnTopSupported}.
-     * @return <code>true</code>, if current toolkit supports the always-on-top mode,
-     *     otherwise returns <code>false</code>
+     * @return {@code true}, if current toolkit supports the always-on-top mode,
+     *     otherwise returns {@code false}
      * @see Window#isAlwaysOnTopSupported
      * @see Window#setAlwaysOnTop(boolean)
      * @since 1.6
@@ -1677,12 +1677,12 @@ public abstract class Toolkit {
     /**
      * Returns whether the given modality type is supported by this toolkit. If
      * a dialog with unsupported modality type is created, then
-     * <code>Dialog.ModalityType.MODELESS</code> is used instead.
+     * {@code Dialog.ModalityType.MODELESS} is used instead.
      *
      * @param modalityType modality type to be checked for support by this toolkit
      *
-     * @return <code>true</code>, if current toolkit supports given modality
-     *     type, <code>false</code> otherwise
+     * @return {@code true}, if current toolkit supports given modality
+     *     type, {@code false} otherwise
      *
      * @see java.awt.Dialog.ModalityType
      * @see java.awt.Dialog#getModalityType
@@ -1695,12 +1695,12 @@ public abstract class Toolkit {
     /**
      * Returns whether the given modal exclusion type is supported by this
      * toolkit. If an unsupported modal exclusion type property is set on a window,
-     * then <code>Dialog.ModalExclusionType.NO_EXCLUDE</code> is used instead.
+     * then {@code Dialog.ModalExclusionType.NO_EXCLUDE} is used instead.
      *
      * @param modalExclusionType modal exclusion type to be checked for support by this toolkit
      *
-     * @return <code>true</code>, if current toolkit supports given modal exclusion
-     *     type, <code>false</code> otherwise
+     * @return {@code true}, if current toolkit supports given modal exclusion
+     *     type, {@code false} otherwise
      *
      * @see java.awt.Dialog.ModalExclusionType
      * @see java.awt.Window#getModalExclusionType
@@ -1739,16 +1739,16 @@ public abstract class Toolkit {
 
     /**
      * Adds an AWTEventListener to receive all AWTEvents dispatched
-     * system-wide that conform to the given <code>eventMask</code>.
+     * system-wide that conform to the given {@code eventMask}.
      * <p>
-     * First, if there is a security manager, its <code>checkPermission</code>
+     * First, if there is a security manager, its {@code checkPermission}
      * method is called with an
-     * <code>AWTPermission("listenToAllAWTEvents")</code> permission.
+     * {@code AWTPermission("listenToAllAWTEvents")} permission.
      * This may result in a SecurityException.
      * <p>
-     * <code>eventMask</code> is a bitmask of event types to receive.
+     * {@code eventMask} is a bitmask of event types to receive.
      * It is constructed by bitwise OR-ing together the event masks
-     * defined in <code>AWTEvent</code>.
+     * defined in {@code AWTEvent}.
      * <p>
      * Note:  event listener use is not recommended for normal
      * application use, but are intended solely to support special
@@ -1761,7 +1761,7 @@ public abstract class Toolkit {
      * @param    eventMask  the bitmask of event types to receive
      * @throws SecurityException
      *        if a security manager exists and its
-     *        <code>checkPermission</code> method doesn't allow the operation.
+     *        {@code checkPermission} method doesn't allow the operation.
      * @see      #removeAWTEventListener
      * @see      #getAWTEventListeners
      * @see      SecurityManager#checkPermission
@@ -1815,9 +1815,9 @@ public abstract class Toolkit {
     /**
      * Removes an AWTEventListener from receiving dispatched AWTEvents.
      * <p>
-     * First, if there is a security manager, its <code>checkPermission</code>
+     * First, if there is a security manager, its {@code checkPermission}
      * method is called with an
-     * <code>AWTPermission("listenToAllAWTEvents")</code> permission.
+     * {@code AWTPermission("listenToAllAWTEvents")} permission.
      * This may result in a SecurityException.
      * <p>
      * Note:  event listener use is not recommended for normal
@@ -1830,7 +1830,7 @@ public abstract class Toolkit {
      * @param    listener   the event listener.
      * @throws SecurityException
      *        if a security manager exists and its
-     *        <code>checkPermission</code> method doesn't allow the operation.
+     *        {@code checkPermission} method doesn't allow the operation.
      * @see      #addAWTEventListener
      * @see      #getAWTEventListeners
      * @see      SecurityManager#checkPermission
@@ -1884,23 +1884,23 @@ public abstract class Toolkit {
         return calls[ci];
     }
     /**
-     * Returns an array of all the <code>AWTEventListener</code>s
+     * Returns an array of all the {@code AWTEventListener}s
      * registered on this toolkit.
      * If there is a security manager, its {@code checkPermission}
      * method is called with an
      * {@code AWTPermission("listenToAllAWTEvents")} permission.
      * This may result in a SecurityException.
      * Listeners can be returned
-     * within <code>AWTEventListenerProxy</code> objects, which also contain
+     * within {@code AWTEventListenerProxy} objects, which also contain
      * the event mask for the given listener.
      * Note that listener objects
      * added multiple times appear only once in the returned array.
      *
-     * @return all of the <code>AWTEventListener</code>s or an empty
+     * @return all of the {@code AWTEventListener}s or an empty
      *         array if no listeners are currently registered
      * @throws SecurityException
      *        if a security manager exists and its
-     *        <code>checkPermission</code> method doesn't allow the operation.
+     *        {@code checkPermission} method doesn't allow the operation.
      * @see      #addAWTEventListener
      * @see      #removeAWTEventListener
      * @see      SecurityManager#checkPermission
@@ -1932,7 +1932,7 @@ public abstract class Toolkit {
     }
 
     /**
-     * Returns an array of all the <code>AWTEventListener</code>s
+     * Returns an array of all the {@code AWTEventListener}s
      * registered on this toolkit which listen to all of the event
      * types specified in the {@code eventMask} argument.
      * If there is a security manager, its {@code checkPermission}
@@ -1940,19 +1940,19 @@ public abstract class Toolkit {
      * {@code AWTPermission("listenToAllAWTEvents")} permission.
      * This may result in a SecurityException.
      * Listeners can be returned
-     * within <code>AWTEventListenerProxy</code> objects, which also contain
+     * within {@code AWTEventListenerProxy} objects, which also contain
      * the event mask for the given listener.
      * Note that listener objects
      * added multiple times appear only once in the returned array.
      *
      * @param  eventMask the bitmask of event types to listen for
-     * @return all of the <code>AWTEventListener</code>s registered
+     * @return all of the {@code AWTEventListener}s registered
      *         on this toolkit for the specified
      *         event types, or an empty array if no such listeners
      *         are currently registered
      * @throws SecurityException
      *        if a security manager exists and its
-     *        <code>checkPermission</code> method doesn't allow the operation.
+     *        {@code checkPermission} method doesn't allow the operation.
      * @see      #addAWTEventListener
      * @see      #removeAWTEventListener
      * @see      SecurityManager#checkPermission
@@ -2167,9 +2167,9 @@ public abstract class Toolkit {
      * The style field of the input method highlight is ignored. The map
      * returned is unmodifiable.
      * @param highlight input method highlight
-     * @return style attribute map, or <code>null</code>
+     * @return style attribute map, or {@code null}
      * @exception HeadlessException if
-     *     <code>GraphicsEnvironment.isHeadless</code> returns true
+     *     {@code GraphicsEnvironment.isHeadless} returns true
      * @see       java.awt.GraphicsEnvironment#isHeadless
      * @since 1.3
      */

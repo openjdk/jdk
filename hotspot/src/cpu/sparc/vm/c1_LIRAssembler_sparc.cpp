@@ -1805,9 +1805,7 @@ void LIR_Assembler::fpop() {
 
 void LIR_Assembler::intrinsic_op(LIR_Code code, LIR_Opr value, LIR_Opr thread, LIR_Opr dest, LIR_Op* op) {
   switch (code) {
-    case lir_sin:
-    case lir_tan:
-    case lir_cos: {
+    case lir_tan: {
       assert(thread->is_valid(), "preserve the thread object for performance reasons");
       assert(dest->as_double_reg() == F0, "the result will be in f0/f1");
       break;

@@ -34,7 +34,7 @@ import java.net.URI;
 
 
 /**
- * Concrete implementation of the interface <code>DesktopPeer</code> for
+ * Concrete implementation of the interface {@code DesktopPeer} for
  * the Windows platform.
  *
  * @see DesktopPeer

@@ -50,7 +50,7 @@ import com.sun.imageio.plugins.common.ReaderUtil;
 /** This class is the Java Image IO plugin reader for WBMP images.
  *  It may subsample the image, clip the image,
  *  and shift the decoded image origin if the proper decoding parameter
- *  are set in the provided <code>WBMPImageReadParam</code>.
+ *  are set in the provided {@code WBMPImageReadParam}.
  */
 public class WBMPImageReader extends ImageReader {
     /** The input stream where reads from */
@@ -69,8 +69,8 @@ public class WBMPImageReader extends ImageReader {
 
     private WBMPMetadata metadata;
 
-    /** Constructs <code>WBMPImageReader</code> from the provided
-     *  <code>ImageReaderSpi</code>.
+    /** Constructs {@code WBMPImageReader} from the provided
+     *  {@code ImageReaderSpi}.
      */
     public WBMPImageReader(ImageReaderSpi originator) {
         super(originator);

@@ -2470,4 +2470,8 @@ void ObjectMonitor::verify() {
 
 void ObjectMonitor::print() {
 }
+
+void ObjectMonitor_test() {
+  ObjectMonitor::sanity_checks();
+}
 #endif

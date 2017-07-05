@@ -116,14 +116,14 @@ public class PSPrinterJob extends RasterPrinterJob {
  /* Class Constants */
 
     /**
-     * Passed to the <code>setFillMode</code>
+     * Passed to the {@code setFillMode}
      * method this value forces fills to be
      * done using the even-odd fill rule.
      */
     protected static final int FILL_EVEN_ODD = 1;
 
     /**
-     * Passed to the <code>setFillMode</code>
+     * Passed to the {@code setFillMode}
      * method this value forces fills to be
      * done using the non-zero winding rule.
      */
@@ -294,14 +294,14 @@ public class PSPrinterJob extends RasterPrinterJob {
    /**
     * This string holds the PostScript operator to
     * be used to fill a path. It can be changed
-    * by the <code>setFillMode</code> method.
+    * by the {@code setFillMode} method.
     */
     private String mFillOpStr = WINDING_FILL_STR;
 
    /**
     * This string holds the PostScript operator to
     * be used to clip to a path. It can be changed
-    * by the <code>setFillMode</code> method.
+    * by the {@code setFillMode} method.
     */
     private String mClipOpStr = WINDING_CLIP_STR;
 
@@ -876,14 +876,14 @@ public class PSPrinterJob extends RasterPrinterJob {
 
    /**
      * Convert the 24 bit BGR image buffer represented by
-     * <code>image</code> to PostScript. The image is drawn at
-     * <code>(destX, destY)</code> in device coordinates.
+     * {@code image} to PostScript. The image is drawn at
+     * {@code (destX, destY)} in device coordinates.
      * The image is scaled into a square of size
-     * specified by <code>destWidth</code> and
-     * <code>destHeight</code>. The portion of the
+     * specified by {@code destWidth} and
+     * {@code destHeight}. The portion of the
      * source image copied into that square is specified
-     * by <code>srcX</code>, <code>srcY</code>,
-     * <code>srcWidth</code>, and srcHeight.
+     * by {@code srcX}, {@code srcY},
+     * {@code srcWidth}, and srcHeight.
      */
     protected void drawImageBGR(byte[] bgrData,
                                    float destX, float destY,
@@ -1026,14 +1026,14 @@ public class PSPrinterJob extends RasterPrinterJob {
 
     /**
      * Examine the metrics captured by the
-     * <code>PeekGraphics</code> instance and
+     * {@code PeekGraphics} instance and
      * if capable of directly converting this
      * print job to the printer's control language
      * or the native OS's graphics primitives, then
-     * return a <code>PSPathGraphics</code> to perform
+     * return a {@code PSPathGraphics} to perform
      * that conversion. If there is not an object
      * capable of the conversion then return
-     * <code>null</code>. Returning <code>null</code>
+     * {@code null}. Returning {@code null}
      * causes the print job to be rasterized.
      */
 
@@ -1349,8 +1349,8 @@ public class PSPrinterJob extends RasterPrinterJob {
      }
     /**
      * Set the current path rule to be either
-     * <code>FILL_EVEN_ODD</code> (using the
-     * even-odd file rule) or <code>FILL_WINDING</code>
+     * {@code FILL_EVEN_ODD} (using the
+     * even-odd file rule) or {@code FILL_WINDING}
      * (using the non-zero winding rule.)
      */
     protected void setFillMode(int fillRule) {
@@ -1375,7 +1375,7 @@ public class PSPrinterJob extends RasterPrinterJob {
 
     /**
      * Set the printer's current color to be that
-     * defined by <code>color</code>
+     * defined by {@code color}
      */
     protected void setColor(Color color) {
         mLastColor = color;
@@ -1418,7 +1418,7 @@ public class PSPrinterJob extends RasterPrinterJob {
 
     /**
      * Generate PostScript to move the current pen
-     * position to <code>(x, y)</code>.
+     * position to {@code (x, y)}.
      */
     protected void moveTo(float x, float y) {
 
@@ -1437,7 +1437,7 @@ public class PSPrinterJob extends RasterPrinterJob {
     }
     /**
      * Generate PostScript to draw a line from the
-     * current pen position to <code>(x, y)</code>.
+     * current pen position to {@code (x, y)}.
      */
     protected void lineTo(float x, float y) {
 
@@ -1861,7 +1861,7 @@ public class PSPrinterJob extends RasterPrinterJob {
     }
 
        /**
-        * Given a Java2D <code>PathIterator</code> instance,
+        * Given a Java2D {@code PathIterator} instance,
         * this method translates that into a PostScript path..
         */
         void convertToPSPath(PathIterator pathIter) {
@@ -1926,7 +1926,7 @@ public class PSPrinterJob extends RasterPrinterJob {
         }
 
     /*
-     * Fill the path defined by <code>pathIter</code>
+     * Fill the path defined by {@code pathIter}
      * with the specified color.
      * The path is provided in current user space.
      */

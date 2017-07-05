@@ -27,6 +27,7 @@ package com.sun.media.sound;
 
 import java.io.BufferedInputStream;
 import java.io.DataInputStream;
+import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -51,6 +52,9 @@ abstract class SunFileReader extends AudioFileReader {
         stream.mark(200); // The biggest value which was historically used
         try {
             return getAudioFileFormatImpl(stream);
+        } catch (final EOFException ignored) {
+            // the header is less than was expected
+            throw new UnsupportedAudioFileException();
         } finally {
             stream.reset();
         }
@@ -61,6 +65,9 @@ abstract class SunFileReader extends AudioFileReader {
             throws UnsupportedAudioFileException, IOException {
         try (InputStream is = url.openStream()) {
             return getAudioFileFormatImpl(new BufferedInputStream(is));
+        } catch (final EOFException ignored) {
+            // the header is less than was expected
+            throw new UnsupportedAudioFileException();
         }
     }
 
@@ -69,6 +76,9 @@ abstract class SunFileReader extends AudioFileReader {
             throws UnsupportedAudioFileException, IOException {
         try (InputStream is = new FileInputStream(file)) {
             return getAudioFileFormatImpl(new BufferedInputStream(is));
+        } catch (final EOFException ignored) {
+            // the header is less than was expected
+            throw new UnsupportedAudioFileException();
         }
     }
 
@@ -82,9 +92,10 @@ abstract class SunFileReader extends AudioFileReader {
             // beginning of the audio data, so return an AudioInputStream
             return new AudioInputStream(stream, fileFormat.getFormat(),
                                         fileFormat.getFrameLength());
-        } catch (final UnsupportedAudioFileException e) {
+        } catch (UnsupportedAudioFileException | EOFException ignored) {
+            // stream is unsupported or the header is less than was expected
             stream.reset();
-            throw e;
+            throw new UnsupportedAudioFileException();
         }
     }
 
@@ -125,6 +136,9 @@ abstract class SunFileReader extends AudioFileReader {
      * @throws UnsupportedAudioFileException if the stream does not point to
      *         valid audio file data recognized by the system
      * @throws IOException if an I/O exception occurs
+     * @throws EOFException is used incorrectly by our readers instead of
+     *         UnsupportedAudioFileException if the header is less than was
+     *         expected
      */
     abstract AudioFileFormat getAudioFileFormatImpl(InputStream stream)
             throws UnsupportedAudioFileException, IOException;

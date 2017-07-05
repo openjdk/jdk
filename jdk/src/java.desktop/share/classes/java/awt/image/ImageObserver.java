@@ -55,24 +55,24 @@ public interface ImageObserver {
      * of the x, y, width, and height arguments depends on the contents
      * of the infoflags argument.
      * <p>
-     * The <code>infoflags</code> argument should be the bitwise inclusive
-     * <b>OR</b> of the following flags: <code>WIDTH</code>,
-     * <code>HEIGHT</code>, <code>PROPERTIES</code>, <code>SOMEBITS</code>,
-     * <code>FRAMEBITS</code>, <code>ALLBITS</code>, <code>ERROR</code>,
-     * <code>ABORT</code>.
+     * The {@code infoflags} argument should be the bitwise inclusive
+     * <b>OR</b> of the following flags: {@code WIDTH},
+     * {@code HEIGHT}, {@code PROPERTIES}, {@code SOMEBITS},
+     * {@code FRAMEBITS}, {@code ALLBITS}, {@code ERROR},
+     * {@code ABORT}.
      *
      * @param     img   the image being observed.
      * @param     infoflags   the bitwise inclusive OR of the following
-     *               flags:  <code>WIDTH</code>, <code>HEIGHT</code>,
-     *               <code>PROPERTIES</code>, <code>SOMEBITS</code>,
-     *               <code>FRAMEBITS</code>, <code>ALLBITS</code>,
-     *               <code>ERROR</code>, <code>ABORT</code>.
+     *               flags:  {@code WIDTH}, {@code HEIGHT},
+     *               {@code PROPERTIES}, {@code SOMEBITS},
+     *               {@code FRAMEBITS}, {@code ALLBITS},
+     *               {@code ERROR}, {@code ABORT}.
      * @param     x   the <i>x</i> coordinate.
      * @param     y   the <i>y</i> coordinate.
      * @param     width    the width.
      * @param     height   the height.
-     * @return    <code>false</code> if the infoflags indicate that the
-     *            image is completely loaded; <code>true</code> otherwise.
+     * @return    {@code false} if the infoflags indicate that the
+     *            image is completely loaded; {@code true} otherwise.
      *
      * @see #WIDTH
      * @see #HEIGHT

@@ -33,7 +33,7 @@ import javax.imageio.spi.ServiceRegistry;
  * A superinterface for functionality common to all Image I/O service
  * provider interfaces (SPIs).  For more information on service
  * provider classes, see the class comment for the
- * <code>IIORegistry</code> class.
+ * {@code IIORegistry} class.
  *
  * @see IIORegistry
  * @see javax.imageio.spi.ImageReaderSpi
@@ -45,30 +45,30 @@ import javax.imageio.spi.ServiceRegistry;
 public abstract class IIOServiceProvider implements RegisterableService {
 
     /**
-     * A <code>String</code> to be returned from
-     * <code>getVendorName</code>, initially <code>null</code>.
-     * Constructors should set this to a non-<code>null</code> value.
+     * A {@code String} to be returned from
+     * {@code getVendorName}, initially {@code null}.
+     * Constructors should set this to a non-{@code null} value.
      */
     protected String vendorName;
 
     /**
-     * A <code>String</code> to be returned from
-     * <code>getVersion</code>, initially null.  Constructors should
-     * set this to a non-<code>null</code> value.
+     * A {@code String} to be returned from
+     * {@code getVersion}, initially null.  Constructors should
+     * set this to a non-{@code null} value.
      */
     protected String version;
 
     /**
-     * Constructs an <code>IIOServiceProvider</code> with a given
+     * Constructs an {@code IIOServiceProvider} with a given
      * vendor name and version identifier.
      *
      * @param vendorName the vendor name.
      * @param version a version identifier.
      *
-     * @exception IllegalArgumentException if <code>vendorName</code>
-     * is <code>null</code>.
-     * @exception IllegalArgumentException if <code>version</code>
-     * is <code>null</code>.
+     * @exception IllegalArgumentException if {@code vendorName}
+     * is {@code null}.
+     * @exception IllegalArgumentException if {@code version}
+     * is {@code null}.
      */
     public IIOServiceProvider(String vendorName,
                               String version) {
@@ -83,11 +83,11 @@ public abstract class IIOServiceProvider implements RegisterableService {
     }
 
     /**
-     * Constructs a blank <code>IIOServiceProvider</code>.  It is up
+     * Constructs a blank {@code IIOServiceProvider}.  It is up
      * to the subclass to initialize instance variables and/or
      * override method implementations in order to ensure that the
-     * <code>getVendorName</code> and <code>getVersion</code> methods
-     * will return non-<code>null</code> values.
+     * {@code getVendorName} and {@code getVersion} methods
+     * will return non-{@code null} values.
      */
     public IIOServiceProvider() {
     }
@@ -95,7 +95,7 @@ public abstract class IIOServiceProvider implements RegisterableService {
     /**
      * A callback that will be called exactly once after the Spi class
      * has been instantiated and registered in a
-     * <code>ServiceRegistry</code>.  This may be used to verify that
+     * {@code ServiceRegistry}.  This may be used to verify that
      * the environment is suitable for this service, for example that
      * native libraries can be loaded.  If the service cannot function
      * in the environment where it finds itself, it should deregister
@@ -112,7 +112,7 @@ public abstract class IIOServiceProvider implements RegisterableService {
 
     /**
      * A callback that will be whenever the Spi class has been
-     * deregistered from a <code>ServiceRegistry</code>.
+     * deregistered from a {@code ServiceRegistry}.
      *
      * <p> Only the registry should call this method.
      *
@@ -130,9 +130,9 @@ public abstract class IIOServiceProvider implements RegisterableService {
      * it is not localized.
      *
      * <p> The default implementation returns the value of the
-     * <code>vendorName</code> instance variable.
+     * {@code vendorName} instance variable.
      *
-     * @return a non-<code>null</code> <code>String</code> containing
+     * @return a non-{@code null String} containing
      * the name of the vendor.
      */
     public String getVendorName() {
@@ -147,9 +147,9 @@ public abstract class IIOServiceProvider implements RegisterableService {
      * is not localized.
      *
      * <p> The default implementation returns the value of the
-     * <code>version</code> instance variable.
+     * {@code version} instance variable.
      *
-     * @return a non-<code>null</code> <code>String</code> containing
+     * @return a non-{@code null String} containing
      * the version of this service provider.
      */
     public String getVersion() {
@@ -160,12 +160,12 @@ public abstract class IIOServiceProvider implements RegisterableService {
      * Returns a brief, human-readable description of this service
      * provider and its associated implementation.  The resulting
      * string should be localized for the supplied
-     * <code>Locale</code>, if possible.
+     * {@code Locale}, if possible.
      *
-     * @param locale a <code>Locale</code> for which the return value
+     * @param locale a {@code Locale} for which the return value
      * should be localized.
      *
-     * @return a <code>String</code> containing a description of this
+     * @return a {@code String} containing a description of this
      * service provider.
      */
     public abstract String getDescription(Locale locale);

@@ -39,8 +39,8 @@ import javax.print.attribute.PrintServiceAttribute;
  * in  given printer state.
  * <P>
  * <B>IPP Compatibility:</B> The category name returned by
- * <CODE>getName()</CODE> is the IPP attribute name.  The enumeration's
- * integer value is the IPP enum value.  The <code>toString()</code> method
+ * {@code getName()} is the IPP attribute name.  The enumeration's
+ * integer value is the IPP enum value.  The {@code toString()} method
  * returns the IPP string representation of the attribute value.
  *
  * @author  Alan Kaminsky
@@ -130,7 +130,7 @@ implements PrintServiceAttribute {
      * Get the name of the category of which this attribute value is an
      * instance.
      * <P>
-     * For class PrinterState, the category name is <CODE>"printer-state"</CODE>.
+     * For class PrinterState, the category name is {@code "printer-state"}.
      *
      * @return  Attribute category name.
      */

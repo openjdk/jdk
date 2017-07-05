@@ -25,6 +25,7 @@
 
 package com.sun.media.sound;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -131,7 +132,8 @@ public final class SoftMidiAudioFileReader extends SunFileReader {
         stream.mark(200);
         try {
             return getAudioInputStream(MidiSystem.getSequence(stream));
-        } catch (final InvalidMidiDataException ignored) {
+        } catch (InvalidMidiDataException | EOFException ignored) {
+            // stream is unsupported or the header is less than was expected
             stream.reset();
             throw new UnsupportedAudioFileException();
         }

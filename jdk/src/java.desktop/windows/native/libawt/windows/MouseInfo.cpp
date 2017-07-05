@@ -33,12 +33,12 @@
 extern "C" {
 
 /*
- * Class:     sun_awt_DefaultMouseInfoPeer
+ * Class:     sun_awt_windows_WMouseInfoPeer
  * Method:    isWindowUnderMouse
  * Signature: (Ljava/awt/Window)Z
  */
 JNIEXPORT jboolean JNICALL
-Java_sun_awt_DefaultMouseInfoPeer_isWindowUnderMouse(JNIEnv *env, jclass cls,
+Java_sun_awt_windows_WMouseInfoPeer_isWindowUnderMouse(JNIEnv *env, jclass cls,
                                                         jobject window)
 {
     POINT pt;
@@ -73,12 +73,12 @@ Java_sun_awt_DefaultMouseInfoPeer_isWindowUnderMouse(JNIEnv *env, jclass cls,
 }
 
 /*
- * Class:     sun_awt_DefaultMouseInfoPeer
+ * Class:     sun_awt_windows_WMouseInfoPeer
  * Method:    fillPointWithCoords
  * Signature: (Ljava/awt/Point)I
  */
 JNIEXPORT jint JNICALL
-Java_sun_awt_DefaultMouseInfoPeer_fillPointWithCoords(JNIEnv *env, jclass cls, jobject point)
+Java_sun_awt_windows_WMouseInfoPeer_fillPointWithCoords(JNIEnv *env, jclass cls, jobject point)
 {
     static jclass pointClass = NULL;
     static jfieldID xID, yID;
@@ -95,7 +95,8 @@ Java_sun_awt_DefaultMouseInfoPeer_fillPointWithCoords(JNIEnv *env, jclass cls, j
         env->DeleteLocalRef(pointClassLocal);
     }
 
-    int screen = AwtWin32GraphicsDevice::GetDefaultDeviceIndex();
+    HMONITOR monitor = MonitorFromPoint(pt, MONITOR_DEFAULTTOPRIMARY);
+    int screen = AwtWin32GraphicsDevice::GetScreenFromHMONITOR(monitor);
     Devices::InstanceAccess devices;
     AwtWin32GraphicsDevice *device = devices->GetDevice(screen);
 

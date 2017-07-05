@@ -514,7 +514,7 @@ final class Renderer implements PathConsumer2D, MarlinConst {
     Renderer(final RendererContext rdrCtx) {
         this.rdrCtx = rdrCtx;
 
-        this.edges = new OffHeapArray(rdrCtx, INITIAL_EDGES_CAPACITY); // 96K
+        this.edges = new OffHeapArray(rdrCtx.cleanerObj, INITIAL_EDGES_CAPACITY); // 96K
 
         this.curve = rdrCtx.curve;
 

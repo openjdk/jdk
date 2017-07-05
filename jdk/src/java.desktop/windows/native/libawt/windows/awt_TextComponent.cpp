@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,6 +129,7 @@ AwtTextComponent* AwtTextComponent::Create(jobject peer, jobject parent, BOOL is
                          scroll_style = WS_HSCROLL | ES_AUTOHSCROLL | ES_AUTOVSCROLL;
                          break;
                      case java_awt_TextArea_SCROLLBARS_BOTH:
+                     default:
                          scroll_style = WS_VSCROLL | WS_HSCROLL |
                              ES_AUTOVSCROLL | ES_AUTOHSCROLL;
                          break;

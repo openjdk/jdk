@@ -2987,32 +2987,6 @@ class StubGenerator: public StubCodeGenerator {
       __ ret(0);
     }
     {
-      StubCodeMark mark(this, "StubRoutines", "sin");
-      StubRoutines::_intrinsic_sin = (double (*)(double)) __ pc();
-
-      __ subq(rsp, 8);
-      __ movdbl(Address(rsp, 0), xmm0);
-      __ fld_d(Address(rsp, 0));
-      __ trigfunc('s');
-      __ fstp_d(Address(rsp, 0));
-      __ movdbl(xmm0, Address(rsp, 0));
-      __ addq(rsp, 8);
-      __ ret(0);
-    }
-    {
-      StubCodeMark mark(this, "StubRoutines", "cos");
-      StubRoutines::_intrinsic_cos = (double (*)(double)) __ pc();
-
-      __ subq(rsp, 8);
-      __ movdbl(Address(rsp, 0), xmm0);
-      __ fld_d(Address(rsp, 0));
-      __ trigfunc('c');
-      __ fstp_d(Address(rsp, 0));
-      __ movdbl(xmm0, Address(rsp, 0));
-      __ addq(rsp, 8);
-      __ ret(0);
-    }
-    {
       StubCodeMark mark(this, "StubRoutines", "tan");
       StubRoutines::_intrinsic_tan = (double (*)(double)) __ pc();
 
@@ -3752,7 +3726,7 @@ class StubGenerator: public StubCodeGenerator {
     const Register to = c_rarg1; // destination array address
     const Register key = c_rarg2; // key array address
     const Register counter = c_rarg3; // counter byte array initialized from counter array address
-    // and left with the results of the last encryption block
+                                      // and updated with the incremented counter in the end
 #ifndef _WIN64
     const Register len_reg = c_rarg4;
     const Register saved_encCounter_start = c_rarg5;
@@ -3967,8 +3941,8 @@ class StubGenerator: public StubCodeGenerator {
         __ addptr(pos, AESBlockSize);
         __ subptr(len_reg, AESBlockSize);
         __ jmp(L_singleBlockLoopTop[k]);
-      __ BIND(L_processTail_insr[k]);
-        __ addptr(pos, len_reg);
+      __ BIND(L_processTail_insr[k]);                               // Process the tail part of the input array
+        __ addptr(pos, len_reg);                                    // 1. Insert bytes from src array into xmm_from0 register
         __ testptr(len_reg, 8);
         __ jcc(Assembler::zero, L_processTail_4_insr[k]);
           __ subptr(pos,8);
@@ -3993,11 +3967,11 @@ class StubGenerator: public StubCodeGenerator {
           __ pinsrb(xmm_from0, Address(from, pos), 0);
         __ BIND(L_processTail_exit_insr[k]);
 
-        __ movdqu(Address(saved_encCounter_start, 0), xmm_result0);
-        __ pxor(xmm_result0, xmm_from0);
+        __ movdqu(Address(saved_encCounter_start, 0), xmm_result0);  // 2. Perform pxor of the encrypted counter and plaintext Bytes.
+        __ pxor(xmm_result0, xmm_from0);                             //    Also the encrypted counter is saved for next invocation.
 
         __ testptr(len_reg, 8);
-        __ jcc(Assembler::zero, L_processTail_4_extr[k]);
+        __ jcc(Assembler::zero, L_processTail_4_extr[k]);            // 3. Extract bytes from xmm_result0 into the dest. array
           __ pextrq(Address(to, pos), xmm_result0, 0);
           __ psrldq(xmm_result0, 8);
           __ addptr(pos, 8);
@@ -4654,6 +4628,92 @@ class StubGenerator: public StubCodeGenerator {
 
   }
 
+  address generate_libmSin() {
+    address start = __ pc();
+
+    const XMMRegister x0 = xmm0;
+    const XMMRegister x1 = xmm1;
+    const XMMRegister x2 = xmm2;
+    const XMMRegister x3 = xmm3;
+
+    const XMMRegister x4 = xmm4;
+    const XMMRegister x5 = xmm5;
+    const XMMRegister x6 = xmm6;
+    const XMMRegister x7 = xmm7;
+
+    const Register tmp1 = r8;
+    const Register tmp2 = r9;
+    const Register tmp3 = r10;
+    const Register tmp4 = r11;
+
+    BLOCK_COMMENT("Entry:");
+    __ enter(); // required for proper stackwalking of RuntimeStub frame
+
+#ifdef _WIN64
+    // save the xmm registers which must be preserved 6-7
+    __ subptr(rsp, 4 * wordSize);
+    __ movdqu(Address(rsp, 0), xmm6);
+    __ movdqu(Address(rsp, 2 * wordSize), xmm7);
+#endif
+    __ fast_sin(x0, x1, x2, x3, x4, x5, x6, x7, rax, rbx, rcx, rdx, tmp1, tmp2, tmp3, tmp4);
+
+#ifdef _WIN64
+    // restore xmm regs belonging to calling function
+    __ movdqu(xmm6, Address(rsp, 0));
+    __ movdqu(xmm7, Address(rsp, 2 * wordSize));
+    __ addptr(rsp, 4 * wordSize);
+#endif
+
+    __ leave(); // required for proper stackwalking of RuntimeStub frame
+    __ ret(0);
+
+    return start;
+
+  }
+
+  address generate_libmCos() {
+    address start = __ pc();
+
+    const XMMRegister x0 = xmm0;
+    const XMMRegister x1 = xmm1;
+    const XMMRegister x2 = xmm2;
+    const XMMRegister x3 = xmm3;
+
+    const XMMRegister x4 = xmm4;
+    const XMMRegister x5 = xmm5;
+    const XMMRegister x6 = xmm6;
+    const XMMRegister x7 = xmm7;
+
+    const Register tmp1 = r8;
+    const Register tmp2 = r9;
+    const Register tmp3 = r10;
+    const Register tmp4 = r11;
+
+    BLOCK_COMMENT("Entry:");
+    __ enter(); // required for proper stackwalking of RuntimeStub frame
+
+#ifdef _WIN64
+    // save the xmm registers which must be preserved 6-7
+    __ subptr(rsp, 4 * wordSize);
+    __ movdqu(Address(rsp, 0), xmm6);
+    __ movdqu(Address(rsp, 2 * wordSize), xmm7);
+#endif
+    __ fast_cos(x0, x1, x2, x3, x4, x5, x6, x7, rax, rcx, rdx, tmp1, tmp2, tmp3, tmp4);
+
+#ifdef _WIN64
+    // restore xmm regs belonging to calling function
+    __ movdqu(xmm6, Address(rsp, 0));
+    __ movdqu(xmm7, Address(rsp, 2 * wordSize));
+    __ addptr(rsp, 4 * wordSize);
+#endif
+
+    __ leave(); // required for proper stackwalking of RuntimeStub frame
+    __ ret(0);
+
+    return start;
+
+  }
+
 #undef __
 #define __ masm->
 
@@ -4849,6 +4909,12 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::_dexp = generate_libmExp();
       StubRoutines::_dlog = generate_libmLog();
       StubRoutines::_dpow = generate_libmPow();
+      if (UseLibmSinIntrinsic) {
+        StubRoutines::_dsin = generate_libmSin();
+      }
+      if (UseLibmCosIntrinsic) {
+        StubRoutines::_dcos = generate_libmCos();
+      }
     }
   }
 

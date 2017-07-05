@@ -32,7 +32,7 @@ import java.awt.geom.Rectangle2D;
 import java.awt.color.ColorSpace;
 
 /**
- * The <code>Color</code> class is used to encapsulate colors in the default
+ * The {@code Color} class is used to encapsulate colors in the default
  * sRGB color space or colors in arbitrary color spaces identified by a
  * {@link ColorSpace}.  Every color has an implicit alpha value of 1.0 or
  * an explicit one provided in the constructor.  The alpha value
@@ -41,8 +41,8 @@ import java.awt.color.ColorSpace;
  * An alpha value of 1.0 or 255 means that the color is completely
  * opaque and an alpha value of 0 or 0.0 means that the color is
  * completely transparent.
- * When constructing a <code>Color</code> with an explicit alpha or
- * getting the color/alpha components of a <code>Color</code>, the color
+ * When constructing a {@code Color} with an explicit alpha or
+ * getting the color/alpha components of a {@code Color}, the color
  * components are never premultiplied by the alpha component.
  * <p>
  * The default color space for the Java 2D(tm) API is sRGB, a proposed
@@ -210,11 +210,11 @@ public class Color implements Paint, java.io.Serializable {
     int value;
 
     /**
-     * The color value in the default sRGB <code>ColorSpace</code> as
-     * <code>float</code> components (no alpha).
-     * If <code>null</code> after object construction, this must be an
+     * The color value in the default sRGB {@code ColorSpace} as
+     * {@code float} components (no alpha).
+     * If {@code null} after object construction, this must be an
      * sRGB color constructed with 8-bit precision, so compute from the
-     * <code>int</code> color value.
+     * {@code int} color value.
      * @serial
      * @see #getRGBColorComponents
      * @see #getRGBComponents
@@ -222,11 +222,11 @@ public class Color implements Paint, java.io.Serializable {
     private float frgbvalue[] = null;
 
     /**
-     * The color value in the native <code>ColorSpace</code> as
-     * <code>float</code> components (no alpha).
-     * If <code>null</code> after object construction, this must be an
+     * The color value in the native {@code ColorSpace} as
+     * {@code float} components (no alpha).
+     * If {@code null} after object construction, this must be an
      * sRGB color constructed with 8-bit precision, so compute from the
-     * <code>int</code> color value.
+     * {@code int} color value.
      * @serial
      * @see #getRGBColorComponents
      * @see #getRGBComponents
@@ -234,9 +234,9 @@ public class Color implements Paint, java.io.Serializable {
     private float fvalue[] = null;
 
     /**
-     * The alpha value as a <code>float</code> component.
-     * If <code>frgbvalue</code> is <code>null</code>, this is not valid
-     * data, so compute from the <code>int</code> color value.
+     * The alpha value as a {@code float} component.
+     * If {@code frgbvalue} is {@code null}, this is not valid
+     * data, so compute from the {@code int} color value.
      * @serial
      * @see #getRGBComponents
      * @see #getComponents
@@ -244,7 +244,7 @@ public class Color implements Paint, java.io.Serializable {
     private float falpha = 0.0f;
 
     /**
-     * The <code>ColorSpace</code>.  If <code>null</code>, then it's
+     * The {@code ColorSpace}.  If {@code null}, then it's
      * default is sRGB.
      * @serial
      * @see #getColor
@@ -313,9 +313,9 @@ public class Color implements Paint, java.io.Serializable {
     }
 
     /**
-     * Checks the color <code>float</code> components supplied for
+     * Checks the color {@code float} components supplied for
      * validity.
-     * Throws an <code>IllegalArgumentException</code> if the value is out
+     * Throws an {@code IllegalArgumentException} if the value is out
      * of range.
      * @param r the Red component
      * @param g the Green component
@@ -354,8 +354,8 @@ public class Color implements Paint, java.io.Serializable {
      * available for a given output device.
      * Alpha is defaulted to 255.
      *
-     * @throws IllegalArgumentException if <code>r</code>, <code>g</code>
-     *        or <code>b</code> are outside of the range
+     * @throws IllegalArgumentException if {@code r}, {@code g}
+     *        or {@code b} are outside of the range
      *        0 to 255, inclusive
      * @param r the red component
      * @param g the green component
@@ -373,8 +373,8 @@ public class Color implements Paint, java.io.Serializable {
      * Creates an sRGB color with the specified red, green, blue, and alpha
      * values in the range (0 - 255).
      *
-     * @throws IllegalArgumentException if <code>r</code>, <code>g</code>,
-     *        <code>b</code> or <code>a</code> are outside of the range
+     * @throws IllegalArgumentException if {@code r}, {@code g},
+     *        {@code b} or {@code a} are outside of the range
      *        0 to 255, inclusive
      * @param r the red component
      * @param g the green component
@@ -418,12 +418,12 @@ public class Color implements Paint, java.io.Serializable {
      * Creates an sRGB color with the specified combined RGBA value consisting
      * of the alpha component in bits 24-31, the red component in bits 16-23,
      * the green component in bits 8-15, and the blue component in bits 0-7.
-     * If the <code>hasalpha</code> argument is <code>false</code>, alpha
+     * If the {@code hasalpha} argument is {@code false}, alpha
      * is defaulted to 255.
      *
      * @param rgba the combined RGBA components
-     * @param hasalpha <code>true</code> if the alpha bits are valid;
-     *        <code>false</code> otherwise
+     * @param hasalpha {@code true} if the alpha bits are valid;
+     *        {@code false} otherwise
      * @see java.awt.image.ColorModel#getRGBdefault
      * @see #getRed
      * @see #getGreen
@@ -446,8 +446,8 @@ public class Color implements Paint, java.io.Serializable {
      * match given the color space available for a particular output
      * device.
      *
-     * @throws IllegalArgumentException if <code>r</code>, <code>g</code>
-     *        or <code>b</code> are outside of the range
+     * @throws IllegalArgumentException if {@code r}, {@code g}
+     *        or {@code b} are outside of the range
      *        0.0 to 1.0, inclusive
      * @param r the red component
      * @param g the green component
@@ -473,8 +473,8 @@ public class Color implements Paint, java.io.Serializable {
      * alpha values in the range (0.0 - 1.0).  The actual color
      * used in rendering depends on finding the best match given the
      * color space available for a particular output device.
-     * @throws IllegalArgumentException if <code>r</code>, <code>g</code>
-     *        <code>b</code> or <code>a</code> are outside of the range
+     * @throws IllegalArgumentException if {@code r}, {@code g}
+     *        {@code b} or {@code a} are outside of the range
      *        0.0 to 1.0, inclusive
      * @param r the red component
      * @param g the green component
@@ -497,19 +497,19 @@ public class Color implements Paint, java.io.Serializable {
     }
 
     /**
-     * Creates a color in the specified <code>ColorSpace</code>
-     * with the color components specified in the <code>float</code>
+     * Creates a color in the specified {@code ColorSpace}
+     * with the color components specified in the {@code float}
      * array and the specified alpha.  The number of components is
-     * determined by the type of the <code>ColorSpace</code>.  For
+     * determined by the type of the {@code ColorSpace}.  For
      * example, RGB requires 3 components, but CMYK requires 4
      * components.
-     * @param cspace the <code>ColorSpace</code> to be used to
+     * @param cspace the {@code ColorSpace} to be used to
      *                  interpret the components
      * @param components an arbitrary number of color components
-     *                      that is compatible with the <code>ColorSpace</code>
+     *                      that is compatible with the {@code ColorSpace}
      * @param alpha alpha value
      * @throws IllegalArgumentException if any of the values in the
-     *         <code>components</code> array or <code>alpha</code> is
+     *         {@code components} array or {@code alpha} is
      *         outside of the range 0.0 to 1.0
      * @see #getComponents
      * @see #getColorComponents
@@ -592,7 +592,7 @@ public class Color implements Paint, java.io.Serializable {
      * (Bits 24-31 are alpha, 16-23 are red, 8-15 are green, 0-7 are
      * blue).
      * @return the RGB value of the color in the default sRGB
-     *         <code>ColorModel</code>.
+     *         {@code ColorModel}.
      * @see java.awt.image.ColorModel#getRGBdefault
      * @see #getRed
      * @see #getGreen
@@ -606,19 +606,19 @@ public class Color implements Paint, java.io.Serializable {
     private static final double FACTOR = 0.7;
 
     /**
-     * Creates a new <code>Color</code> that is a brighter version of this
-     * <code>Color</code>.
+     * Creates a new {@code Color} that is a brighter version of this
+     * {@code Color}.
      * <p>
      * This method applies an arbitrary scale factor to each of the three RGB
-     * components of this <code>Color</code> to create a brighter version
-     * of this <code>Color</code>.
+     * components of this {@code Color} to create a brighter version
+     * of this {@code Color}.
      * The {@code alpha} value is preserved.
-     * Although <code>brighter</code> and
-     * <code>darker</code> are inverse operations, the results of a
+     * Although {@code brighter} and
+     * {@code darker} are inverse operations, the results of a
      * series of invocations of these two methods might be inconsistent
      * because of rounding errors.
-     * @return     a new <code>Color</code> object that is
-     *                 a brighter version of this <code>Color</code>
+     * @return     a new {@code Color} object that is
+     *                 a brighter version of this {@code Color}
      *                 with the same {@code alpha} value.
      * @see        java.awt.Color#darker
      * @since      1.0
@@ -649,19 +649,19 @@ public class Color implements Paint, java.io.Serializable {
     }
 
     /**
-     * Creates a new <code>Color</code> that is a darker version of this
-     * <code>Color</code>.
+     * Creates a new {@code Color} that is a darker version of this
+     * {@code Color}.
      * <p>
      * This method applies an arbitrary scale factor to each of the three RGB
-     * components of this <code>Color</code> to create a darker version of
-     * this <code>Color</code>.
+     * components of this {@code Color} to create a darker version of
+     * this {@code Color}.
      * The {@code alpha} value is preserved.
-     * Although <code>brighter</code> and
-     * <code>darker</code> are inverse operations, the results of a series
+     * Although {@code brighter} and
+     * {@code darker} are inverse operations, the results of a series
      * of invocations of these two methods might be inconsistent because
      * of rounding errors.
-     * @return  a new <code>Color</code> object that is
-     *                    a darker version of this <code>Color</code>
+     * @return  a new {@code Color} object that is
+     *                    a darker version of this {@code Color}
      *                    with the same {@code alpha} value.
      * @see        java.awt.Color#brighter
      * @since      1.0
@@ -674,7 +674,7 @@ public class Color implements Paint, java.io.Serializable {
     }
 
     /**
-     * Computes the hash code for this <code>Color</code>.
+     * Computes the hash code for this {@code Color}.
      * @return     a hash code value for this object.
      * @since      1.0
      */
@@ -684,15 +684,15 @@ public class Color implements Paint, java.io.Serializable {
 
     /**
      * Determines whether another object is equal to this
-     * <code>Color</code>.
+     * {@code Color}.
      * <p>
-     * The result is <code>true</code> if and only if the argument is not
-     * <code>null</code> and is a <code>Color</code> object that has the same
+     * The result is {@code true} if and only if the argument is not
+     * {@code null} and is a {@code Color} object that has the same
      * red, green, blue, and alpha values as this object.
      * @param       obj   the object to test for equality with this
-     *                          <code>Color</code>
-     * @return      <code>true</code> if the objects are the same;
-     *                             <code>false</code> otherwise.
+     *                          {@code Color}
+     * @return      {@code true} if the objects are the same;
+     *                             {@code false} otherwise.
      * @since   1.0
      */
     public boolean equals(Object obj) {
@@ -700,25 +700,25 @@ public class Color implements Paint, java.io.Serializable {
     }
 
     /**
-     * Returns a string representation of this <code>Color</code>. This
+     * Returns a string representation of this {@code Color}. This
      * method is intended to be used only for debugging purposes.  The
      * content and format of the returned string might vary between
      * implementations. The returned string might be empty but cannot
-     * be <code>null</code>.
+     * be {@code null}.
      *
-     * @return  a string representation of this <code>Color</code>.
+     * @return  a string representation of this {@code Color}.
      */
     public String toString() {
         return getClass().getName() + "[r=" + getRed() + ",g=" + getGreen() + ",b=" + getBlue() + "]";
     }
 
     /**
-     * Converts a <code>String</code> to an integer and returns the
-     * specified opaque <code>Color</code>. This method handles string
+     * Converts a {@code String} to an integer and returns the
+     * specified opaque {@code Color}. This method handles string
      * formats that are used to represent octal and hexadecimal numbers.
-     * @param      nm a <code>String</code> that represents
+     * @param      nm a {@code String} that represents
      *                            an opaque color as a 24-bit integer
-     * @return     the new <code>Color</code> object.
+     * @return     the new {@code Color} object.
      * @see        java.lang.Integer#decode
      * @exception  NumberFormatException  if the specified string cannot
      *                      be interpreted as a decimal,
@@ -736,13 +736,13 @@ public class Color implements Paint, java.io.Serializable {
      * <p>
      * The argument is treated as the name of a system property to
      * be obtained. The string value of this property is then interpreted
-     * as an integer which is then converted to a <code>Color</code>
+     * as an integer which is then converted to a {@code Color}
      * object.
      * <p>
      * If the specified property is not found or could not be parsed as
-     * an integer then <code>null</code> is returned.
+     * an integer then {@code null} is returned.
      * @param    nm the name of the color property
-     * @return   the <code>Color</code> converted from the system
+     * @return   the {@code Color} converted from the system
      *          property.
      * @see      java.lang.System#getProperty(java.lang.String)
      * @see      java.lang.Integer#getInteger(java.lang.String)
@@ -758,16 +758,16 @@ public class Color implements Paint, java.io.Serializable {
      * <p>
      * The first argument is treated as the name of a system property to
      * be obtained. The string value of this property is then interpreted
-     * as an integer which is then converted to a <code>Color</code>
+     * as an integer which is then converted to a {@code Color}
      * object.
      * <p>
      * If the specified property is not found or cannot be parsed as
-     * an integer then the <code>Color</code> specified by the second
+     * an integer then the {@code Color} specified by the second
      * argument is returned instead.
      * @param    nm the name of the color property
-     * @param    v    the default <code>Color</code>
-     * @return   the <code>Color</code> converted from the system
-     *          property, or the specified <code>Color</code>.
+     * @param    v    the default {@code Color}
+     * @return   the {@code Color} converted from the system
+     *          property, or the specified {@code Color}.
      * @see      java.lang.System#getProperty(java.lang.String)
      * @see      java.lang.Integer#getInteger(java.lang.String)
      * @see      java.awt.Color#Color(int)
@@ -787,16 +787,16 @@ public class Color implements Paint, java.io.Serializable {
      * <p>
      * The first argument is treated as the name of a system property to
      * be obtained. The string value of this property is then interpreted
-     * as an integer which is then converted to a <code>Color</code>
+     * as an integer which is then converted to a {@code Color}
      * object.
      * <p>
      * If the specified property is not found or could not be parsed as
-     * an integer then the integer value <code>v</code> is used instead,
-     * and is converted to a <code>Color</code> object.
+     * an integer then the integer value {@code v} is used instead,
+     * and is converted to a {@code Color} object.
      * @param    nm  the name of the color property
      * @param    v   the default color value, as an integer
-     * @return   the <code>Color</code> converted from the system
-     *          property or the <code>Color</code> converted from
+     * @return   the {@code Color} converted from the system
+     *          property or the {@code Color} converted from
      *          the specified integer.
      * @see      java.lang.System#getProperty(java.lang.String)
      * @see      java.lang.Integer#getInteger(java.lang.String)
@@ -813,19 +813,19 @@ public class Color implements Paint, java.io.Serializable {
      * Converts the components of a color, as specified by the HSB
      * model, to an equivalent set of values for the default RGB model.
      * <p>
-     * The <code>saturation</code> and <code>brightness</code> components
+     * The {@code saturation} and {@code brightness} components
      * should be floating-point values between zero and one
-     * (numbers in the range 0.0-1.0).  The <code>hue</code> component
+     * (numbers in the range 0.0-1.0).  The {@code hue} component
      * can be any floating-point number.  The floor of this number is
      * subtracted from it to create a fraction between 0 and 1.  This
      * fractional number is then multiplied by 360 to produce the hue
      * angle in the HSB color model.
      * <p>
-     * The integer that is returned by <code>HSBtoRGB</code> encodes the
+     * The integer that is returned by {@code HSBtoRGB} encodes the
      * value of a color in bits 0-23 of an integer value that is the same
      * format used by the method {@link #getRGB() getRGB}.
      * This integer can be supplied as an argument to the
-     * <code>Color</code> constructor that takes a single integer argument.
+     * {@code Color} constructor that takes a single integer argument.
      * @param     hue   the hue component of the color
      * @param     saturation   the saturation of the color
      * @param     brightness   the brightness of the color
@@ -887,15 +887,15 @@ public class Color implements Paint, java.io.Serializable {
      * model, to an equivalent set of values for hue, saturation, and
      * brightness that are the three components of the HSB model.
      * <p>
-     * If the <code>hsbvals</code> argument is <code>null</code>, then a
+     * If the {@code hsbvals} argument is {@code null}, then a
      * new array is allocated to return the result. Otherwise, the method
-     * returns the array <code>hsbvals</code>, with the values put into
+     * returns the array {@code hsbvals}, with the values put into
      * that array.
      * @param     r   the red component of the color
      * @param     g   the green component of the color
      * @param     b   the blue component of the color
      * @param     hsbvals  the array used to return the
-     *                     three HSB values, or <code>null</code>
+     *                     three HSB values, or {@code null}
      * @return    an array of three elements containing the hue, saturation,
      *                     and brightness (in that order), of the color with
      *                     the indicated red, green, and blue components.
@@ -942,12 +942,12 @@ public class Color implements Paint, java.io.Serializable {
     }
 
     /**
-     * Creates a <code>Color</code> object based on the specified values
+     * Creates a {@code Color} object based on the specified values
      * for the HSB color model.
      * <p>
-     * The <code>s</code> and <code>b</code> components should be
+     * The {@code s} and {@code b} components should be
      * floating-point values between zero and one
-     * (numbers in the range 0.0-1.0).  The <code>h</code> component
+     * (numbers in the range 0.0-1.0).  The {@code h} component
      * can be any floating-point number.  The floor of this number is
      * subtracted from it to create a fraction between 0 and 1.  This
      * fractional number is then multiplied by 360 to produce the hue
@@ -955,7 +955,7 @@ public class Color implements Paint, java.io.Serializable {
      * @param  h   the hue component
      * @param  s   the saturation of the color
      * @param  b   the brightness of the color
-     * @return  a <code>Color</code> object with the specified hue,
+     * @return  a {@code Color} object with the specified hue,
      *                                 saturation, and brightness.
      * @since   1.0
      */
@@ -964,16 +964,16 @@ public class Color implements Paint, java.io.Serializable {
     }
 
     /**
-     * Returns a <code>float</code> array containing the color and alpha
-     * components of the <code>Color</code>, as represented in the default
+     * Returns a {@code float} array containing the color and alpha
+     * components of the {@code Color}, as represented in the default
      * sRGB color space.
-     * If <code>compArray</code> is <code>null</code>, an array of length
+     * If {@code compArray} is {@code null}, an array of length
      * 4 is created for the return value.  Otherwise,
-     * <code>compArray</code> must have length 4 or greater,
+     * {@code compArray} must have length 4 or greater,
      * and it is filled in with the components and returned.
      * @param compArray an array that this method fills with
      *                  color and alpha components and returns
-     * @return the RGBA components in a <code>float</code> array.
+     * @return the RGBA components in a {@code float} array.
      */
     public float[] getRGBComponents(float[] compArray) {
         float[] f;
@@ -997,15 +997,15 @@ public class Color implements Paint, java.io.Serializable {
     }
 
     /**
-     * Returns a <code>float</code> array containing only the color
-     * components of the <code>Color</code>, in the default sRGB color
-     * space.  If <code>compArray</code> is <code>null</code>, an array of
+     * Returns a {@code float} array containing only the color
+     * components of the {@code Color}, in the default sRGB color
+     * space.  If {@code compArray} is {@code null}, an array of
      * length 3 is created for the return value.  Otherwise,
-     * <code>compArray</code> must have length 3 or greater, and it is
+     * {@code compArray} must have length 3 or greater, and it is
      * filled in with the components and returned.
      * @param compArray an array that this method fills with color
      *          components and returns
-     * @return the RGB components in a <code>float</code> array.
+     * @return the RGB components in a {@code float} array.
      */
     public float[] getRGBColorComponents(float[] compArray) {
         float[] f;
@@ -1027,19 +1027,19 @@ public class Color implements Paint, java.io.Serializable {
     }
 
     /**
-     * Returns a <code>float</code> array containing the color and alpha
-     * components of the <code>Color</code>, in the
-     * <code>ColorSpace</code> of the <code>Color</code>.
-     * If <code>compArray</code> is <code>null</code>, an array with
+     * Returns a {@code float} array containing the color and alpha
+     * components of the {@code Color}, in the
+     * {@code ColorSpace} of the {@code Color}.
+     * If {@code compArray} is {@code null}, an array with
      * length equal to the number of components in the associated
-     * <code>ColorSpace</code> plus one is created for
-     * the return value.  Otherwise, <code>compArray</code> must have at
+     * {@code ColorSpace} plus one is created for
+     * the return value.  Otherwise, {@code compArray} must have at
      * least this length and it is filled in with the components and
      * returned.
      * @param compArray an array that this method fills with the color and
-     *          alpha components of this <code>Color</code> in its
-     *          <code>ColorSpace</code> and returns
-     * @return the color and alpha components in a <code>float</code>
+     *          alpha components of this {@code Color} in its
+     *          {@code ColorSpace} and returns
+     * @return the color and alpha components in a {@code float}
      *          array.
      */
     public float[] getComponents(float[] compArray) {
@@ -1060,19 +1060,19 @@ public class Color implements Paint, java.io.Serializable {
     }
 
     /**
-     * Returns a <code>float</code> array containing only the color
-     * components of the <code>Color</code>, in the
-     * <code>ColorSpace</code> of the <code>Color</code>.
-     * If <code>compArray</code> is <code>null</code>, an array with
+     * Returns a {@code float} array containing only the color
+     * components of the {@code Color}, in the
+     * {@code ColorSpace} of the {@code Color}.
+     * If {@code compArray} is {@code null}, an array with
      * length equal to the number of components in the associated
-     * <code>ColorSpace</code> is created for
-     * the return value.  Otherwise, <code>compArray</code> must have at
+     * {@code ColorSpace} is created for
+     * the return value.  Otherwise, {@code compArray} must have at
      * least this length and it is filled in with the components and
      * returned.
      * @param compArray an array that this method fills with the color
-     *          components of this <code>Color</code> in its
-     *          <code>ColorSpace</code> and returns
-     * @return the color components in a <code>float</code> array.
+     *          components of this {@code Color} in its
+     *          {@code ColorSpace} and returns
+     * @return the color components in a {@code float} array.
      */
     public float[] getColorComponents(float[] compArray) {
         if (fvalue == null)
@@ -1091,19 +1091,19 @@ public class Color implements Paint, java.io.Serializable {
     }
 
     /**
-     * Returns a <code>float</code> array containing the color and alpha
-     * components of the <code>Color</code>, in the
-     * <code>ColorSpace</code> specified by the <code>cspace</code>
-     * parameter.  If <code>compArray</code> is <code>null</code>, an
+     * Returns a {@code float} array containing the color and alpha
+     * components of the {@code Color}, in the
+     * {@code ColorSpace} specified by the {@code cspace}
+     * parameter.  If {@code compArray} is {@code null}, an
      * array with length equal to the number of components in
-     * <code>cspace</code> plus one is created for the return value.
-     * Otherwise, <code>compArray</code> must have at least this
+     * {@code cspace} plus one is created for the return value.
+     * Otherwise, {@code compArray} must have at least this
      * length, and it is filled in with the components and returned.
-     * @param cspace a specified <code>ColorSpace</code>
+     * @param cspace a specified {@code ColorSpace}
      * @param compArray an array that this method fills with the
-     *          color and alpha components of this <code>Color</code> in
-     *          the specified <code>ColorSpace</code> and returns
-     * @return the color and alpha components in a <code>float</code>
+     *          color and alpha components of this {@code Color} in
+     *          the specified {@code ColorSpace} and returns
+     * @return the color and alpha components in a {@code float}
      *          array.
      */
     public float[] getComponents(ColorSpace cspace, float[] compArray) {
@@ -1136,19 +1136,19 @@ public class Color implements Paint, java.io.Serializable {
     }
 
     /**
-     * Returns a <code>float</code> array containing only the color
-     * components of the <code>Color</code> in the
-     * <code>ColorSpace</code> specified by the <code>cspace</code>
-     * parameter. If <code>compArray</code> is <code>null</code>, an array
+     * Returns a {@code float} array containing only the color
+     * components of the {@code Color} in the
+     * {@code ColorSpace} specified by the {@code cspace}
+     * parameter. If {@code compArray} is {@code null}, an array
      * with length equal to the number of components in
-     * <code>cspace</code> is created for the return value.  Otherwise,
-     * <code>compArray</code> must have at least this length, and it is
+     * {@code cspace} is created for the return value.  Otherwise,
+     * {@code compArray} must have at least this length, and it is
      * filled in with the components and returned.
-     * @param cspace a specified <code>ColorSpace</code>
+     * @param cspace a specified {@code ColorSpace}
      * @param compArray an array that this method fills with the color
-     *          components of this <code>Color</code> in the specified
-     *          <code>ColorSpace</code>
-     * @return the color components in a <code>float</code> array.
+     *          components of this {@code Color} in the specified
+     *          {@code ColorSpace}
+     * @return the color components in a {@code float} array.
      */
     public float[] getColorComponents(ColorSpace cspace, float[] compArray) {
         if (cs == null) {
@@ -1175,8 +1175,8 @@ public class Color implements Paint, java.io.Serializable {
     }
 
     /**
-     * Returns the <code>ColorSpace</code> of this <code>Color</code>.
-     * @return this <code>Color</code> object's <code>ColorSpace</code>.
+     * Returns the {@code ColorSpace} of this {@code Color}.
+     * @return this {@code Color} object's {@code ColorSpace}.
      */
     public ColorSpace getColorSpace() {
         if (cs == null) {
@@ -1221,9 +1221,9 @@ public class Color implements Paint, java.io.Serializable {
     }
 
     /**
-     * Returns the transparency mode for this <code>Color</code>.  This is
-     * required to implement the <code>Paint</code> interface.
-     * @return this <code>Color</code> object's transparency mode.
+     * Returns the transparency mode for this {@code Color}.  This is
+     * required to implement the {@code Paint} interface.
+     * @return this {@code Color} object's transparency mode.
      * @see Paint
      * @see Transparency
      * @see #createContext

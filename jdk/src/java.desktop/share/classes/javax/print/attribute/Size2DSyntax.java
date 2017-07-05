@@ -172,13 +172,13 @@ public abstract class Size2DSyntax implements Serializable, Cloneable {
      * @param  x
      *     Value (micrometers) to convert.
      * @param  units
-     *     Unit conversion factor, e.g. {@link #INCH <CODE>INCH</CODE>} or
-     *     {@link #MM <CODE>MM</CODE>}.
+     *     Unit conversion factor, e.g. {@link #INCH INCH} or
+     *     {@link #MM MM}.
      *
-     * @return  The value of <CODE>x</CODE> converted to the desired units.
+     * @return  The value of {@code x} converted to the desired units.
      *
      * @exception  IllegalArgumentException
-     *     (unchecked exception) Thrown if <CODE>units</CODE> < 1.
+     *     (unchecked exception) Thrown if {@code units} < 1.
      */
     private static float convertFromMicrometers(int x, int units) {
         if (units < 1) {
@@ -238,8 +238,8 @@ public abstract class Size2DSyntax implements Serializable, Cloneable {
 
     /**
      * Returns a string version of this two-dimensional size attribute in the
-     * given units. The string takes the form <CODE>"<I>X</I>x<I>Y</I>
-     * <I>U</I>"</CODE>, where <I>X</I> is the X dimension, <I>Y</I> is the Y
+     * given units. The string takes the form <code>"<I>X</I>x<I>Y</I>
+     * <I>U</I>"</code>, where <I>X</I> is the X dimension, <I>Y</I> is the Y
      * dimension, and <I>U</I> is the units name. The values are displayed in
      * floating point.
      *
@@ -273,20 +273,20 @@ public abstract class Size2DSyntax implements Serializable, Cloneable {
      * be true:
      * <OL TYPE=1>
      * <LI>
-     * <CODE>object</CODE> is not null.
+     * {@code object} is not null.
      * <LI>
-     * <CODE>object</CODE> is an instance of class Size2DSyntax.
+     * {@code object} is an instance of class Size2DSyntax.
      * <LI>
-     * This attribute's X dimension is equal to <CODE>object</CODE>'s X
+     * This attribute's X dimension is equal to {@code object}'s X
      * dimension.
      * <LI>
-     * This attribute's Y dimension is equal to <CODE>object</CODE>'s Y
+     * This attribute's Y dimension is equal to {@code object}'s Y
      * dimension.
      * </OL>
      *
      * @param  object  Object to compare to.
      *
-     * @return  True if <CODE>object</CODE> is equivalent to this
+     * @return  True if {@code object} is equivalent to this
      *          two-dimensional size attribute, false otherwise.
      */
     public boolean equals(Object object) {
@@ -306,7 +306,7 @@ public abstract class Size2DSyntax implements Serializable, Cloneable {
 
     /**
      * Returns a string version of this two-dimensional size attribute. The
-     * string takes the form <CODE>"<I>X</I>x<I>Y</I> um"</CODE>, where
+     * string takes the form <code>"<I>X</I>x<I>Y</I> um"</code>, where
      * <I>X</I> is the X dimension and <I>Y</I> is the Y dimension.
      * The values are reported in the internal units of micrometers.
      */

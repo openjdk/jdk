@@ -127,7 +127,7 @@ final class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
         int end = target.getSelectionEnd();
         // Fix for 5100200
         // Restoring Motif behaviour
-        // Since the end position of the selected text can be greater then the length of the text,
+        // Since the end position of the selected text can be greater than the length of the text,
         // so we should set caret to max position of the text
         setCaretPosition(Math.min(end, text.length()));
         if (end > start) {

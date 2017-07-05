@@ -29,6 +29,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 
 import jdk.vm.ci.common.JVMCIError;
+import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.Option;
 import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.LocationIdentity;
 import jdk.vm.ci.meta.MetaAccessProvider;
@@ -40,11 +41,6 @@ import jdk.vm.ci.meta.ResolvedJavaType;
  * Represents a field in a HotSpot type.
  */
 class HotSpotResolvedJavaFieldImpl implements HotSpotResolvedJavaField, HotSpotProxified {
-
-    /**
-     * Mark well-known stable fields as such.
-     */
-    private static final boolean ImplicitStableValues = HotSpotJVMCIRuntime.getBooleanProperty("ImplicitStableValues", true);
 
     private final HotSpotResolvedObjectTypeImpl holder;
     private final String name;
@@ -198,7 +194,7 @@ class HotSpotResolvedJavaFieldImpl implements HotSpotResolvedJavaField, HotSpotP
             return true;
         }
         assert getAnnotation(Stable.class) == null;
-        if (ImplicitStableValues && isImplicitStableField()) {
+        if (Option.ImplicitStableValues.getBoolean() && isImplicitStableField()) {
             return true;
         }
         return false;

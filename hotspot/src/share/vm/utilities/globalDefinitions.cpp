@@ -357,6 +357,11 @@ size_t lcm(size_t a, size_t b) {
 }
 
 #ifndef PRODUCT
+// For unit testing only
+class GlobalDefinitions {
+public:
+  static void test_globals();
+};
 
 void GlobalDefinitions::test_globals() {
   intptr_t page_sizes[] = { os::vm_page_size(), 4096, 8192, 65536, 2*1024*1024 };
@@ -382,6 +387,10 @@ void GlobalDefinitions::test_globals() {
     assert(clamp_address_in_page(a_page - 2*page_size - 1, a_page, page_size) == a_page, "incorrect");
     assert(clamp_address_in_page(a_page - 5*page_size - 1, a_page, page_size) == a_page, "incorrect");
   }
+}
+
+void GlobalDefinitions_test() {
+  GlobalDefinitions::test_globals();
 }
 
 #endif // PRODUCT

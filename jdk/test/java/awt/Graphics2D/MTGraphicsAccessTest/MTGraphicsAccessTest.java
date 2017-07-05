@@ -23,7 +23,7 @@
 
 /*
   @test
-  @bug 5089429 6982632
+  @bug 5089429 6982632 8145808
   @summary Checks that we don't crash if rendering operations and state
   changes are performed on a graphics context from different threads.
 
@@ -34,6 +34,7 @@
 import java.awt.*;
 import java.awt.image.*;
 import java.awt.geom.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class MTGraphicsAccessTest {
 
@@ -46,7 +47,7 @@ public class MTGraphicsAccessTest {
     static long testRunTime;
 
     volatile boolean done;
-    volatile int stillRunning;
+    AtomicInteger stillRunning = new AtomicInteger(0);
     volatile int numexceptions;
 
     Graphics2D sharedGraphics;
@@ -108,7 +109,7 @@ public class MTGraphicsAccessTest {
 
         mysleep(testRunTime);
         done = true;
-        while (stillRunning > 0) { mysleep(500); }
+        while (stillRunning.get() > 0) { mysleep(500); }
 
         if (numexceptions == 0) {
             System.err.println("Test passed");
@@ -187,7 +188,7 @@ public class MTGraphicsAccessTest {
         Runnable testRunnable;
 
         public TesterThread(Runnable testRunnable) {
-            stillRunning++;
+            stillRunning.incrementAndGet();
             this.testRunnable = testRunnable;
         }
 
@@ -203,7 +204,7 @@ public class MTGraphicsAccessTest {
                     }
                 }
             } finally {
-                stillRunning--;
+                stillRunning.decrementAndGet();
             }
         }
     }

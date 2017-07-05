@@ -33,16 +33,16 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * A set of <code>Object</code>s with pairwise orderings between them.
- * The <code>iterator</code> method provides the elements in
+ * A set of {@code Object}s with pairwise orderings between them.
+ * The {@code iterator} method provides the elements in
  * topologically sorted order.  Elements participating in a cycle
  * are not returned.
  *
- * Unlike the <code>SortedSet</code> and <code>SortedMap</code>
+ * Unlike the {@code SortedSet} and {@code SortedMap}
  * interfaces, which require their elements to implement the
- * <code>Comparable</code> interface, this class receives ordering
- * information via its <code>setOrdering</code> and
- * <code>unsetPreference</code> methods.  This difference is due to
+ * {@code Comparable} interface, this class receives ordering
+ * information via its {@code setOrdering} and
+ * {@code unsetPreference} methods.  This difference is due to
  * the fact that the relevant ordering between elements is unlikely to
  * be inherent in the elements themselves; rather, it is set
  * dynamically accoring to application policy.  For example, in a
@@ -64,7 +64,7 @@ class PartiallyOrderedSet<E> extends AbstractSet<E> {
     private Set<E> nodes = poNodes.keySet();
 
     /**
-     * Constructs a <code>PartiallyOrderedSet</code>.
+     * Constructs a {@code PartiallyOrderedSet}.
      */
     public PartiallyOrderedSet() {}
 
@@ -79,15 +79,15 @@ class PartiallyOrderedSet<E> extends AbstractSet<E> {
     /**
      * Returns an iterator over the elements contained in this
      * collection, with an ordering that respects the orderings set
-     * by the <code>setOrdering</code> method.
+     * by the {@code setOrdering} method.
      */
     public Iterator<E> iterator() {
         return new PartialOrderIterator<>(poNodes.values().iterator());
     }
 
     /**
-     * Adds an <code>Object</code> to this
-     * <code>PartiallyOrderedSet</code>.
+     * Adds an {@code Object} to this
+     * {@code PartiallyOrderedSet}.
      */
     public boolean add(E o) {
         if (nodes.contains(o)) {
@@ -100,8 +100,8 @@ class PartiallyOrderedSet<E> extends AbstractSet<E> {
     }
 
     /**
-     * Removes an <code>Object</code> from this
-     * <code>PartiallyOrderedSet</code>.
+     * Removes an {@code Object} from this
+     * {@code PartiallyOrderedSet}.
      */
     public boolean remove(Object o) {
         DigraphNode<E> node = poNodes.get(o);
@@ -124,8 +124,8 @@ class PartiallyOrderedSet<E> extends AbstractSet<E> {
      * sequence than the second node.  If a prior ordering existed
      * between the nodes in the opposite order, it is removed.
      *
-     * @return <code>true</code> if no prior ordering existed
-     * between the nodes, <code>false</code>otherwise.
+     * @return {@code true} if no prior ordering existed
+     * between the nodes, {@code false} otherwise.
      */
     public boolean setOrdering(E first, E second) {
         DigraphNode<E> firstPONode = poNodes.get(first);
@@ -149,7 +149,7 @@ class PartiallyOrderedSet<E> extends AbstractSet<E> {
     }
 
     /**
-     * Returns <code>true</code> if an ordering exists between two
+     * Returns {@code true} if an ordering exists between two
      * nodes.
      */
     public boolean hasOrdering(E preferred, E other) {

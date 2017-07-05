@@ -136,7 +136,7 @@ private:
 #ifndef PRODUCT
   static void test(const char* json, bool valid);
 public:
-  static bool test();
+  static void test();
 #endif
 };
 

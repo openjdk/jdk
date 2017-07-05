@@ -104,11 +104,11 @@ public class Region {
     }
 
     /**
-     * Adds the dimension <code>dim</code> to the coordinate
-     * <code>start</code> with appropriate clipping.  If
-     * <code>dim</code> is non-positive then the method returns
+     * Adds the dimension {@code dim} to the coordinate
+     * {@code start} with appropriate clipping.  If
+     * {@code dim} is non-positive then the method returns
      * the start coordinate.  If the sum overflows an integer
-     * data type then the method returns <code>Integer.MAX_VALUE</code>.
+     * data type then the method returns {@code Integer.MAX_VALUE}.
      */
     public static int dimAdd(int start, int dim) {
         if (dim <= 0) return start;
@@ -179,9 +179,9 @@ public class Region {
      *
      * @param s a non-null Shape object specifying the geometry enclosing
      *          the pixels of interest
-     * @param at an optional <code>AffineTransform</code> to be applied to the
+     * @param at an optional {@code AffineTransform} to be applied to the
      *          coordinates as they are returned in the iteration, or
-     *          <code>null</code> if untransformed coordinates are desired
+     *          {@code null} if untransformed coordinates are desired
      */
     public static Region getInstance(Shape s, AffineTransform at) {
         return getInstance(WHOLE_REGION, false, s, at);
@@ -205,9 +205,9 @@ public class Region {
      *          clip the geometry to
      * @param s a non-null Shape object specifying the geometry enclosing
      *          the pixels of interest
-     * @param at an optional <code>AffineTransform</code> to be applied to the
+     * @param at an optional {@code AffineTransform} to be applied to the
      *          coordinates as they are returned in the iteration, or
-     *          <code>null</code> if untransformed coordinates are desired
+     *          {@code null} if untransformed coordinates are desired
      */
     public static Region getInstance(Region devBounds,
                                      Shape s, AffineTransform at)
@@ -238,9 +238,9 @@ public class Region {
      *          normalization
      * @param s a non-null Shape object specifying the geometry enclosing
      *          the pixels of interest
-     * @param at an optional <code>AffineTransform</code> to be applied to the
+     * @param at an optional {@code AffineTransform} to be applied to the
      *          coordinates as they are returned in the iteration, or
-     *          <code>null</code> if untransformed coordinates are desired
+     *          {@code null} if untransformed coordinates are desired
      */
     public static Region getInstance(Region devBounds, boolean normalize,
                                      Shape s, AffineTransform at)
@@ -363,7 +363,7 @@ public class Region {
      * Sets the rectangle of interest for storing and returning
      * region bands.  The rectangle is specified in x, y, width, height
      * format and appropriate clipping is performed as per the method
-     * <code>dimAdd</code>.
+     * {@code dimAdd}.
      * <p>
      * This method can also be used to initialize a simple rectangular
      * region.
@@ -637,7 +637,7 @@ public class Region {
      * object with the specified Region object.
      * <p>
      * If {@code A} and {@code B} are both Region Objects and
-     * <code>C = A.getIntersection(B);</code> then a point will
+     * {@code C = A.getIntersection(B);} then a point will
      * be contained in {@code C} iff it is contained in both
      * {@code A} and {@code B}.
      * <p>
@@ -666,7 +666,7 @@ public class Region {
      * object with the specified Region object.
      * <p>
      * If {@code A} and {@code B} are both Region Objects and
-     * <code>C = A.getUnion(B);</code> then a point will
+     * {@code C = A.getUnion(B);} then a point will
      * be contained in {@code C} iff it is contained in either
      * {@code A} or {@code B}.
      * <p>
@@ -693,7 +693,7 @@ public class Region {
      * specified Region object subtracted from this object.
      * <p>
      * If {@code A} and {@code B} are both Region Objects and
-     * <code>C = A.getDifference(B);</code> then a point will
+     * {@code C = A.getDifference(B);} then a point will
      * be contained in {@code C} iff it is contained in
      * {@code A} but not contained in {@code B}.
      * <p>
@@ -717,7 +717,7 @@ public class Region {
      * object with the specified Region object.
      * <p>
      * If {@code A} and {@code B} are both Region Objects and
-     * <code>C = A.getExclusiveOr(B);</code> then a point will
+     * {@code C = A.getExclusiveOr(B);} then a point will
      * be contained in {@code C} iff it is contained in either
      * {@code A} or {@code B}, but not if it is contained in both.
      * <p>

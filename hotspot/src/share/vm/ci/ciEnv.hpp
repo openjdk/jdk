@@ -32,11 +32,9 @@
 #include "code/dependencies.hpp"
 #include "code/exceptionHandlerTable.hpp"
 #include "compiler/oopMap.hpp"
-#include "compiler/compilerDirectives.hpp"
 #include "runtime/thread.hpp"
 
 class CompileTask;
-class DirectiveSet;
 
 // ciEnv
 //
@@ -372,7 +370,6 @@ public:
                        AbstractCompiler*         compiler,
                        bool                      has_unsafe_access,
                        bool                      has_wide_vectors,
-                       DirectiveSet*             directives,
                        RTMState                  rtm_state = NoRTM);
 
 

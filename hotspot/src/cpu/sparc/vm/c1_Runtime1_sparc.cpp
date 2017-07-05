@@ -435,7 +435,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
 
           __ tlab_allocate(O0_obj, G1_obj_size, 0, G3_t1, slow_path);
 
-          __ initialize_object(O0_obj, G5_klass, G1_obj_size, 0, G3_t1, G4_t2);
+          __ initialize_object(O0_obj, G5_klass, G1_obj_size, 0, G3_t1, G4_t2, /* is_tlab_allocated */ true);
           __ verify_oop(O0_obj);
           __ mov(O0, I0);
           __ ret();
@@ -447,7 +447,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
           __ eden_allocate(O0_obj, G1_obj_size, 0, G3_t1, G4_t2, slow_path);
           __ incr_allocated_bytes(G1_obj_size, G3_t1, G4_t2);
 
-          __ initialize_object(O0_obj, G5_klass, G1_obj_size, 0, G3_t1, G4_t2);
+          __ initialize_object(O0_obj, G5_klass, G1_obj_size, 0, G3_t1, G4_t2, /* is_tlab_allocated */ false);
           __ verify_oop(O0_obj);
           __ mov(O0, I0);
           __ ret();
@@ -542,7 +542,9 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
           __ ldub(klass_lh, G3_t1, klass_lh_header_size_offset);
           __ sub(G1_arr_size, G3_t1, O1_t2);  // body length
           __ add(O0_obj, G3_t1, G3_t1);       // body start
-          __ initialize_body(G3_t1, O1_t2);
+          if (!ZeroTLAB) {
+            __ initialize_body(G3_t1, O1_t2);
+          }
           __ verify_oop(O0_obj);
           __ retl();
           __ delayed()->nop();

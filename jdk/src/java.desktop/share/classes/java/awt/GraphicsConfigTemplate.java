@@ -28,14 +28,14 @@ package java.awt;
 import java.io.*;
 
 /**
- * The <code>GraphicsConfigTemplate</code> class is used to obtain a valid
+ * The {@code GraphicsConfigTemplate} class is used to obtain a valid
  * {@link GraphicsConfiguration}.  A user instantiates one of these
  * objects and then sets all non-default attributes as desired.  The
  * {@link GraphicsDevice#getBestConfiguration} method found in the
  * {@link GraphicsDevice} class is then called with this
- * <code>GraphicsConfigTemplate</code>.  A valid
- * <code>GraphicsConfiguration</code> is returned that meets or exceeds
- * what was requested in the <code>GraphicsConfigTemplate</code>.
+ * {@code GraphicsConfigTemplate}.  A valid
+ * {@code GraphicsConfiguration} is returned that meets or exceeds
+ * what was requested in the {@code GraphicsConfigTemplate}.
  * @see GraphicsDevice
  * @see GraphicsConfiguration
  *
@@ -56,15 +56,15 @@ public abstract class GraphicsConfigTemplate implements Serializable {
 
     /**
      * Value used for "Enum" (Integer) type.  States that this
-     * feature is required for the <code>GraphicsConfiguration</code>
+     * feature is required for the {@code GraphicsConfiguration}
      * object.  If this feature is not available, do not select the
-     * <code>GraphicsConfiguration</code> object.
+     * {@code GraphicsConfiguration} object.
      */
     public static final int REQUIRED    = 1;
 
     /**
      * Value used for "Enum" (Integer) type.  States that this
-     * feature is desired for the <code>GraphicsConfiguration</code>
+     * feature is desired for the {@code GraphicsConfiguration}
      * object.  A selection with this feature is preferred over a
      * selection that does not include this feature, although both
      * selections can be considered valid matches.
@@ -74,7 +74,7 @@ public abstract class GraphicsConfigTemplate implements Serializable {
     /**
      * Value used for "Enum" (Integer) type.  States that this
      * feature is not necessary for the selection of the
-     * <code>GraphicsConfiguration</code> object.  A selection
+     * {@code GraphicsConfiguration} object.  A selection
      * without this feature is preferred over a selection that
      * includes this feature since it is not used.
      */
@@ -82,10 +82,10 @@ public abstract class GraphicsConfigTemplate implements Serializable {
 
     /**
      * Returns the "best" configuration possible that passes the
-     * criteria defined in the <code>GraphicsConfigTemplate</code>.
-     * @param gc the array of <code>GraphicsConfiguration</code>
+     * criteria defined in the {@code GraphicsConfigTemplate}.
+     * @param gc the array of {@code GraphicsConfiguration}
      * objects to choose from.
-     * @return a <code>GraphicsConfiguration</code> object that is
+     * @return a {@code GraphicsConfiguration} object that is
      * the best configuration possible.
      * @see GraphicsConfiguration
      */
@@ -93,15 +93,15 @@ public abstract class GraphicsConfigTemplate implements Serializable {
       getBestConfiguration(GraphicsConfiguration[] gc);
 
     /**
-     * Returns a <code>boolean</code> indicating whether or
-     * not the specified <code>GraphicsConfiguration</code> can be
+     * Returns a {@code boolean} indicating whether or
+     * not the specified {@code GraphicsConfiguration} can be
      * used to create a drawing surface that supports the indicated
      * features.
-     * @param gc the <code>GraphicsConfiguration</code> object to test
-     * @return <code>true</code> if this
-     * <code>GraphicsConfiguration</code> object can be used to create
+     * @param gc the {@code GraphicsConfiguration} object to test
+     * @return {@code true} if this
+     * {@code GraphicsConfiguration} object can be used to create
      * surfaces that support the indicated features;
-     * <code>false</code> if the <code>GraphicsConfiguration</code> can
+     * {@code false} if the {@code GraphicsConfiguration} can
      * not be used to create a drawing surface usable by this Java(tm)
      * API.
      */

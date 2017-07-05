@@ -35,7 +35,7 @@ import sun.awt.image.SurfaceManager;
 
 
 /**
- * The abstract class <code>Image</code> is the superclass of all
+ * The abstract class {@code Image} is the superclass of all
  * classes that represent graphical images. The image must be
  * obtained in a platform-specific manner.
  *
@@ -57,17 +57,17 @@ public abstract class Image {
      * Priority for accelerating this image.  Subclasses are free to
      * set different default priorities and applications are free to
      * set the priority for specific images via the
-     * <code>setAccelerationPriority(float)</code> method.
+     * {@code setAccelerationPriority(float)} method.
      * @since 1.5
      */
     protected float accelerationPriority = .5f;
 
     /**
      * Determines the width of the image. If the width is not yet known,
-     * this method returns <code>-1</code> and the specified
-     * <code>ImageObserver</code> object is notified later.
+     * this method returns {@code -1} and the specified
+     * {@code ImageObserver} object is notified later.
      * @param     observer   an object waiting for the image to be loaded.
-     * @return    the width of this image, or <code>-1</code>
+     * @return    the width of this image, or {@code -1}
      *                   if the width is not yet known.
      * @see       java.awt.Image#getHeight
      * @see       java.awt.image.ImageObserver
@@ -76,10 +76,10 @@ public abstract class Image {
 
     /**
      * Determines the height of the image. If the height is not yet known,
-     * this method returns <code>-1</code> and the specified
-     * <code>ImageObserver</code> object is notified later.
+     * this method returns {@code -1} and the specified
+     * {@code ImageObserver} object is notified later.
      * @param     observer   an object waiting for the image to be loaded.
-     * @return    the height of this image, or <code>-1</code>
+     * @return    the height of this image, or {@code -1}
      *                   if the height is not yet known.
      * @see       java.awt.Image#getWidth
      * @see       java.awt.image.ImageObserver
@@ -112,13 +112,13 @@ public abstract class Image {
      * <p>
      * Individual property names are defined by the various image
      * formats. If a property is not defined for a particular image, this
-     * method returns the <code>UndefinedProperty</code> object.
+     * method returns the {@code UndefinedProperty} object.
      * <p>
      * If the properties for this image are not yet known, this method
-     * returns <code>null</code>, and the <code>ImageObserver</code>
+     * returns {@code null}, and the {@code ImageObserver}
      * object is notified later.
      * <p>
-     * The property name <code>"comment"</code> should be used to store
+     * The property name {@code "comment"} should be used to store
      * an optional comment which can be presented to the application as a
      * description of the image, its source, or its author.
      * @param       name   a property name.
@@ -131,25 +131,25 @@ public abstract class Image {
     public abstract Object getProperty(String name, ImageObserver observer);
 
     /**
-     * The <code>UndefinedProperty</code> object should be returned whenever a
+     * The {@code UndefinedProperty} object should be returned whenever a
      * property which was not defined for a particular image is fetched.
      */
     public static final Object UndefinedProperty = new Object();
 
     /**
      * Creates a scaled version of this image.
-     * A new <code>Image</code> object is returned which will render
-     * the image at the specified <code>width</code> and
-     * <code>height</code> by default.  The new <code>Image</code> object
+     * A new {@code Image} object is returned which will render
+     * the image at the specified {@code width} and
+     * {@code height} by default.  The new {@code Image} object
      * may be loaded asynchronously even if the original source image
      * has already been loaded completely.
      *
      * <p>
      *
-     * If either <code>width</code>
-     * or <code>height</code> is a negative number then a value is
+     * If either {@code width}
+     * or {@code height} is a negative number then a value is
      * substituted to maintain the aspect ratio of the original image
-     * dimensions. If both <code>width</code> and <code>height</code>
+     * dimensions. If both {@code width} and {@code height}
      * are negative, then the original image dimensions are used.
      *
      * @param width the width to which to scale the image.
@@ -157,8 +157,8 @@ public abstract class Image {
      * @param hints flags to indicate the type of algorithm to use
      * for image resampling.
      * @return     a scaled version of the image.
-     * @exception IllegalArgumentException if <code>width</code>
-     *             or <code>height</code> is zero.
+     * @exception IllegalArgumentException if {@code width}
+     *             or {@code height} is zero.
      * @see        java.awt.Image#SCALE_DEFAULT
      * @see        java.awt.Image#SCALE_FAST
      * @see        java.awt.Image#SCALE_SMOOTH
@@ -200,8 +200,8 @@ public abstract class Image {
 
     /**
      * Use the image scaling algorithm embodied in the
-     * <code>ReplicateScaleFilter</code> class.
-     * The <code>Image</code> object is free to substitute a different filter
+     * {@code ReplicateScaleFilter} class.
+     * The {@code Image} object is free to substitute a different filter
      * that performs the same algorithm yet integrates more efficiently
      * into the imaging infrastructure supplied by the toolkit.
      * @see        java.awt.image.ReplicateScaleFilter
@@ -274,11 +274,11 @@ public abstract class Image {
      * size on the given GraphicsConfiguration, so although the object
      * may be acceleratable in general, it
      * does not have that capability on this GraphicsConfiguration.
-     * @param gc a <code>GraphicsConfiguration</code> object.  A value of null
+     * @param gc a {@code GraphicsConfiguration} object.  A value of null
      * for this parameter will result in getting the image capabilities
-     * for the default <code>GraphicsConfiguration</code>.
-     * @return an <code>ImageCapabilities</code> object that contains
-     * the capabilities of this <code>Image</code> on the specified
+     * for the default {@code GraphicsConfiguration}.
+     * @return an {@code ImageCapabilities} object that contains
+     * the capabilities of this {@code Image} on the specified
      * GraphicsConfiguration.
      * @see java.awt.image.VolatileImage#getCapabilities()
      * VolatileImage.getCapabilities()
@@ -313,7 +313,7 @@ public abstract class Image {
      * means that this Image should never be accelerated.  Other values
      * are used simply to determine acceleration priority relative to other
      * Images.
-     * @throws IllegalArgumentException if <code>priority</code> is less
+     * @throws IllegalArgumentException if {@code priority} is less
      * than zero or greater than 1.
      * @since 1.5
      */

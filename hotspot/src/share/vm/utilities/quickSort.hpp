@@ -124,14 +124,6 @@ class QuickSort : AllStatic {
       inner_sort<T, C, false>(array, length, comparator);
     }
   }
-
-  // for unit testing
-#ifndef PRODUCT
-  static void print_array(const char* prefix, int* array, int length);
-  static bool compare_arrays(int* actual, int* expected, int length);
-  template <class C> static bool sort_and_compare(int* arrayToSort, int* expectedResult, int length, C comparator, bool idempotent = false);
-  static void test_quick_sort();
-#endif
 };
 
 

@@ -284,7 +284,8 @@ define SetupLogging
     WRAPPER_SHELL := $$(BASH) $$(SRC_ROOT)/common/bin/shell-tracer.sh $$(if $$(findstring yes,$$(IS_GNU_TIME)),$$(TIME),-) $$(OUTPUT_ROOT)/build-trace-time.log $$(SHELL)
     SHELL := $$(warning $$(if $$@,Building $$@,Running shell command) $$(if $$<, (from $$<))$$(if $$?, ($$(wordlist 1, 20, $$?) $$(if $$(wordlist 21, 22, $$?), ... [in total $$(words $$?) files]) newer)))$$(WRAPPER_SHELL)
   endif
-  # Never remove warning messages; this is just for completeness
+  # The warn level can never be turned off
+  LogWarn = $$(info $$(strip $$1))
   LOG_WARN :=
   ifneq ($$(findstring $$(LOG_LEVEL), info debug trace),)
     LogInfo = $$(info $$(strip $$1))
@@ -372,7 +373,10 @@ endef
 # Make directory without forking mkdir if not needed
 # 1: List of directories to create
 MakeDir = \
-    $(strip $(if $(wildcard $1), , $(shell $(MKDIR) -p $1)))
+    $(strip \
+        $(eval MakeDir_dirs_to_make := $(strip $(foreach d, $1, $(if $(wildcard $d), , $d)))) \
+        $(if $(MakeDir_dirs_to_make), $(shell $(MKDIR) -p $(MakeDir_dirs_to_make))) \
+    )
 
 ################################################################################
 # Assign a variable only if it is empty
@@ -678,22 +682,29 @@ DependOnVariableHelper = \
 DependOnVariable = \
     $(call DependOnVariableHelper,$(strip $1),$(strip $2))
 
+# LogCmdlines is only intended to be used by ExecuteWithLog
+ifeq ($(LOG_CMDLINES), true)
+  LogCmdlines = $(info $(strip $1))
+else
+  LogCmdlines =
+endif
+
 ################################################################################
-# Failure logging support macros. These are supposed to be used by the Setup*
-# compilation macros.
+# ExecuteWithLog will run a command and log the output appropriately. This is
+# meant to be used by commands that do "real" work, like a compilation.
+# The output is stored in a specified log file, which is displayed at the end
+# of the build in case of failure. The  command line itself is stored in a file,
+# and also logged to stdout if the LOG=cmdlines option has been given.
 #
-# LogFailures will run a command and store a copy of output in a specified file.
-# If the command succeeds, the file is deleted, otherwise it is moved to the
-# failure-logs directory.
-# Param 1 - The base name of the log file / command line file
-# Param 2 - A compact but representative name to describe this command
-# Param 3 - Command to run
-LogFailures = \
-  ( $(ECHO) '$3' > $1.cmdline  && \
-      ( $3 > >($(TEE) $1.log) 2> >($(TEE) $1.log >&2) || \
-      (exitcode=$(DOLLAR)$(DOLLAR)? && \
-      $(CP) $1.log $(MAKESUPPORT_OUTPUTDIR)/failure-logs/$(strip $2).log && \
-      exit $(DOLLAR)$(DOLLAR)exitcode) ) )
+# Param 1 - The path to base the name of the log file / command line file on
+# Param 2 - The command to run
+ExecuteWithLog = \
+  $(call LogCmdlines, Exececuting: [$(strip $2)]) \
+  $(call WriteFile, $2, $(strip $1).cmdline) \
+  ( $(strip $2) > >($(TEE) $(strip $1).log) 2> >($(TEE) $(strip $1).log >&2) || \
+      ( exitcode=$(DOLLAR)? && \
+      $(CP) $(strip $1).log $(MAKESUPPORT_OUTPUTDIR)/failure-logs/$(subst /,_,$(patsubst $(BUILD_OUTPUT)/%,%,$(strip $1))).log && \
+      exit $(DOLLAR)exitcode ) )
 
 ################################################################################
 # Find lib dir for module

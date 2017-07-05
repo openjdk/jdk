@@ -55,7 +55,7 @@ import javax.print.attribute.PrintJobAttribute;
  * with {@link JobMediaSheetsSupported JobMediaSheetsSupported}.
  * <P>
  * <B>IPP Compatibility:</B> The integer value gives the IPP integer value. The
- * category name returned by <CODE>getName()</CODE> gives the IPP attribute
+ * category name returned by {@code getName()} gives the IPP attribute
  * name.
  *
  * @see JobMediaSheetsSupported
@@ -78,7 +78,7 @@ public class JobMediaSheets extends IntegerSyntax
      * @param  value  Integer value.
      *
      * @exception  IllegalArgumentException
-     *   (Unchecked exception) Thrown if <CODE>value</CODE> is less than 0.
+     *   (Unchecked exception) Thrown if {@code value} is less than 0.
      */
     public JobMediaSheets(int value) {
         super (value, 0, Integer.MAX_VALUE);
@@ -90,17 +90,17 @@ public class JobMediaSheets extends IntegerSyntax
      * be true:
      * <OL TYPE=1>
      * <LI>
-     * <CODE>object</CODE> is not null.
+     * {@code object} is not null.
      * <LI>
-     * <CODE>object</CODE> is an instance of class JobMediaSheets.
+     * {@code object} is an instance of class JobMediaSheets.
      * <LI>
-     * This job media sheets attribute's value and <CODE>object</CODE>'s
+     * This job media sheets attribute's value and {@code object}'s
      * value are equal.
      * </OL>
      *
      * @param  object  Object to compare to.
      *
-     * @return  True if <CODE>object</CODE> is equivalent to this job media
+     * @return  True if {@code object} is equivalent to this job media
      *          sheets attribute, false otherwise.
      */
     public boolean equals(Object object) {
@@ -126,7 +126,7 @@ public class JobMediaSheets extends IntegerSyntax
      * instance.
      * <P>
      * For class JobMediaSheets and any vendor-defined subclasses, the
-     * category name is <CODE>"job-media-sheets"</CODE>.
+     * category name is {@code "job-media-sheets"}.
      *
      * @return  Attribute category name.
      */

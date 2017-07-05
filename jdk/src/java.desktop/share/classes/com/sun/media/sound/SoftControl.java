@@ -25,7 +25,7 @@
 package com.sun.media.sound;
 
 /**
- * <code>SoftControl</code> are the basic controls
+ * {@code SoftControl} are the basic controls
  * used for control-rate processing.
  *
  * @author Karl Helgason

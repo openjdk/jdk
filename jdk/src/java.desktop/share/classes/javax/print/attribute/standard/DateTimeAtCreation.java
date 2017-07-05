@@ -45,7 +45,7 @@ import javax.print.attribute.PrintJobAttribute;
  * <P>
  * <B>IPP Compatibility:</B> The information needed to construct an IPP
  * "date-time-at-creation" attribute can be obtained as described above. The
- * category name returned by <CODE>getName()</CODE> gives the IPP attribute
+ * category name returned by {@code getName()} gives the IPP attribute
  * name.
  *
  * @author  Alan Kaminsky
@@ -62,7 +62,7 @@ public final class DateTimeAtCreation   extends DateTimeSyntax
      * @param  dateTime  {@link java.util.Date Date} value.
      *
      * @exception  NullPointerException
-     *     (unchecked exception) Thrown if <CODE>dateTime</CODE> is null.
+     *     (unchecked exception) Thrown if {@code dateTime} is null.
      */
     public DateTimeAtCreation(Date dateTime) {
         super (dateTime);
@@ -74,17 +74,17 @@ public final class DateTimeAtCreation   extends DateTimeSyntax
      * must be true:
      * <OL TYPE=1>
      * <LI>
-     * <CODE>object</CODE> is not null.
+     * {@code object} is not null.
      * <LI>
-     * <CODE>object</CODE> is an instance of class DateTimeAtCreation.
+     * {@code object} is an instance of class DateTimeAtCreation.
      * <LI>
      * This date-time at creation attribute's {@link java.util.Date Date} value
-     * and <CODE>object</CODE>'s {@link java.util.Date Date} value are equal.
+     * and {@code object}'s {@link java.util.Date Date} value are equal.
      * </OL>
      *
      * @param  object  Object to compare to.
      *
-     * @return  True if <CODE>object</CODE> is equivalent to this date-time
+     * @return  True if {@code object} is equivalent to this date-time
      *          at creation attribute, false otherwise.
      */
     public boolean equals(Object object) {
@@ -111,7 +111,7 @@ public final class DateTimeAtCreation   extends DateTimeSyntax
      * instance.
      * <P>
      * For class DateTimeAtCreation, the category name is
-     * <CODE>"date-time-at-creation"</CODE>.
+     * {@code "date-time-at-creation"}.
      *
      * @return  Attribute category name.
      */

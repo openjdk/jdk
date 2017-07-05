@@ -362,9 +362,9 @@ public class TIFFIFD extends TIFFDirectory {
             offsets.add(f);
         }
 
+        List<TIFFField> byteCounts = new ArrayList<>();
         if (offsets.size() > 0) {
             // StripByteCounts
-            List<TIFFField> byteCounts = new ArrayList<>();
             f = getTIFFField(BaselineTIFFTagSet.TAG_STRIP_BYTE_COUNTS);
             if (f != null) {
                 if (f.getCount() != count) {
@@ -413,6 +413,12 @@ public class TIFFIFD extends TIFFDirectory {
                         ("JPEGInterchangeFormat data out of stream");
                 }
             }
+        }
+
+        // Ensure there is at least a data pointer for JPEG interchange format or
+        // both data offsets and byte counts for other compression types.
+        if (jpegOffset == null && (offsets.size() == 0 || byteCounts.size() == 0)) {
+            throw new IIOException("Insufficient data offsets or byte counts");
         }
 
         // JPEGQTables - one 64-byte table for each offset.
@@ -480,14 +486,16 @@ public class TIFFIFD extends TIFFDirectory {
                 stream.skipBytes(4);
                 continue;
             }
-            int count = (int)stream.readUnsignedInt();
+            long longCount = stream.readUnsignedInt();
 
             // Get the associated TIFFTag.
             TIFFTag tag = getTag(tagNumber, tagSetList);
 
-            // Ignore unknown fields.
+            // Ignore unknown fields, fields with unknown type, and fields
+            // with count out of int range.
             if((tag == null && ignoreUnknownFields)
-                || (tag != null && !tag.isDataTypeOK(type))) {
+                || (tag != null && !tag.isDataTypeOK(type))
+                || longCount > Integer.MAX_VALUE) {
                 // Skip the value/offset so as to leave the stream
                 // position at the start of the next IFD entry.
                 stream.skipBytes(4);
@@ -495,6 +503,8 @@ public class TIFFIFD extends TIFFDirectory {
                 // Continue with the next IFD entry.
                 continue;
             }
+
+            int count = (int)longCount;
 
             if (tag == null) {
                 tag = new TIFFTag(TIFFTag.UNKNOWN_TAG_NAME, tagNumber,
@@ -518,7 +528,14 @@ public class TIFFIFD extends TIFFDirectory {
                 }
             }
 
-            int size = count*sizeOfType;
+            long longSize = longCount*sizeOfType;
+            if (longSize > Integer.MAX_VALUE) {
+                // Continue with the next IFD entry.
+                stream.skipBytes(4);
+                continue;
+            }
+            int size = (int)longSize;
+
             if (size > 4 || tag.isIFDPointer()) {
                 // The IFD entry value is a pointer to the actual field value.
                 long offset = stream.readUnsignedInt();

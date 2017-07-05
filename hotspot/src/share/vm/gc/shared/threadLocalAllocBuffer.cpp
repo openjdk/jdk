@@ -105,7 +105,7 @@ void ThreadLocalAllocBuffer::accumulate_statistics() {
 // an illusion of a contiguous Eden and optionally retires the tlab.
 // Waste accounting should be done in caller as appropriate; see,
 // for example, clear_before_allocation().
-void ThreadLocalAllocBuffer::make_parsable(bool retire) {
+void ThreadLocalAllocBuffer::make_parsable(bool retire, bool zap) {
   if (end() != NULL) {
     invariants();
 
@@ -113,7 +113,7 @@ void ThreadLocalAllocBuffer::make_parsable(bool retire) {
       myThread()->incr_allocated_bytes(used_bytes());
     }
 
-    CollectedHeap::fill_with_object(top(), hard_end(), retire);
+    CollectedHeap::fill_with_object(top(), hard_end(), retire && zap);
 
     if (retire || ZeroTLAB) {  // "Reset" the TLAB
       set_start(NULL);

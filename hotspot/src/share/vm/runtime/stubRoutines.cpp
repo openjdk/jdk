@@ -155,6 +155,10 @@ address StubRoutines::_vectorizedMismatch = NULL;
 address StubRoutines::_dexp = NULL;
 address StubRoutines::_dlog = NULL;
 address StubRoutines::_dpow = NULL;
+address StubRoutines::_dsin = NULL;
+address StubRoutines::_dcos = NULL;
+address StubRoutines::_dlibm_sin_cos_huge = NULL;
+address StubRoutines::_dlibm_reduce_pi04l = NULL;
 
 double (* StubRoutines::_intrinsic_log10 )(double) = NULL;
 double (* StubRoutines::_intrinsic_sin   )(double) = NULL;

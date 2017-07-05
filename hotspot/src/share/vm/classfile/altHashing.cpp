@@ -300,4 +300,8 @@ void AltHashing::test_alt_hash() {
   testMurmur3_32_ByteArray();
   testEquivalentHashes();
 }
+
+void AltHashing_test() {
+  AltHashing::test_alt_hash();
+}
 #endif // PRODUCT
