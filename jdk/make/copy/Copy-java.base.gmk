@@ -183,7 +183,7 @@ DEF_POLICY_DST := $(LIB_DST_DIR)/security/default.policy
 
 DEF_POLICY_SRC_LIST := $(DEF_POLICY_SRC)
 
-ifeq ($(OPENJDK_TARGET_OS), windows)
+ifneq ($(filter $(OPENJDK_TARGET_OS), windows solaris), )
   DEF_POLICY_SRC_LIST += $(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS)/lib/security/default.policy
 endif
 

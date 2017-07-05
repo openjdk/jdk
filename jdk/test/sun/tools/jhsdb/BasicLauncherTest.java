@@ -40,6 +40,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Arrays;
+import java.util.Optional;
 import jdk.testlibrary.JDKToolLauncher;
 import jdk.testlibrary.Utils;
 import jdk.testlibrary.OutputAnalyzer;
@@ -106,12 +107,45 @@ public class BasicLauncherTest {
         }
     }
 
+    public static void launchJStack() throws IOException {
+
+        if (Platform.isOSX()) {
+            // Coredump stackwalking is not implemented for Darwin
+            System.out.println("This test is not expected to work on OS X. Skipping");
+            return;
+        }
+
+        System.out.println("Starting LingeredApp");
+        try {
+            theApp = LingeredApp.startApp(Arrays.asList("-Xmx256m"));
+
+            System.out.println("Starting jstack against " + theApp.getPid());
+            JDKToolLauncher launcher = createSALauncher();
+
+            launcher.addToolArg("jstack");
+            launcher.addToolArg("--pid=" + Long.toString(theApp.getPid()));
+
+            ProcessBuilder processBuilder = new ProcessBuilder(launcher.getCommand());
+            OutputAnalyzer output = ProcessTools.executeProcess(processBuilder);;
+            output.shouldContain("No deadlocks found");
+            output.shouldNotContain("illegal bci");
+            output.shouldNotContain("AssertionFailure");
+            output.shouldHaveExitValue(0);
+
+        } catch (Exception ex) {
+            throw new RuntimeException("Test ERROR " + ex, ex);
+        } finally {
+            LingeredApp.stopApp(theApp);
+        }
+    }
+
     /**
      *
      * @param vmArgs  - vm and java arguments to launch test app
      * @return exit code of tool
      */
-    public static void launch(String expectedMessage, List<String> toolArgs)
+    public static void launch(String expectedMessage,
+                 Optional<String> unexpectedMessage, List<String> toolArgs)
         throws IOException {
 
         System.out.println("Starting LingeredApp");
@@ -131,6 +165,7 @@ public class BasicLauncherTest {
             processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT);
             OutputAnalyzer output = ProcessTools.executeProcess(processBuilder);;
             output.shouldContain(expectedMessage);
+            unexpectedMessage.ifPresent(output::shouldNotContain);
             output.shouldHaveExitValue(0);
 
         } catch (Exception ex) {
@@ -140,20 +175,12 @@ public class BasicLauncherTest {
         }
     }
 
-    public static void launch(String expectedMessage, String... toolArgs)
+    public static void launch(String expectedMessage,
+                              String unexpectedMessage, String... toolArgs)
         throws IOException {
 
-        launch(expectedMessage, Arrays.asList(toolArgs));
-    }
-
-    public static void launchNotOSX(String expectedMessage, String... toolArgs)
-        throws IOException {
-
-        if (Platform.isOSX()) {
-            // Coredump stackwalking is not implemented for Darwin
-            System.out.println("This test is not expected to work on OS X. Skipping");
-            return;
-        }
+        launch(expectedMessage, Optional.ofNullable(unexpectedMessage),
+                                                       Arrays.asList(toolArgs));
     }
 
     public static void testHeapDump() throws IOException {
@@ -164,7 +191,7 @@ public class BasicLauncherTest {
         }
         dump.deleteOnExit();
 
-        launch("heap written to", "jmap",
+        launch("heap written to", null, "jmap",
                "--binaryheap", "--dumpfile=" + dump.getAbsolutePath());
 
         assertTrue(dump.exists() && dump.isFile(),
@@ -182,11 +209,12 @@ public class BasicLauncherTest {
 
         launchCLHSDB();
 
-        launch("compiler detected", "jmap", "--clstats");
-        launchNotOSX("No deadlocks found", "jstack");
-        launch("compiler detected", "jmap");
-        launch("Java System Properties", "jinfo");
-        launch("java.threads", "jsnap");
+        launch("compiler detected", null, "jmap", "--clstats");
+        launchJStack();
+        launch("compiler detected", null, "jmap");
+        launch("Java System Properties",
+               "System Properties info not available", "jinfo");
+        launch("java.threads", null, "jsnap");
 
         testHeapDump();
 

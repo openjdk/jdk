@@ -657,7 +657,6 @@ class XPStyle {
 
         protected void paintToImage(Component c, Image image, Graphics g,
                                     int w, int h, Object[] args) {
-            boolean accEnabled = false;
             Skin skin = (Skin)args[0];
             Part part = skin.part;
             State state = (State)args[1];
@@ -668,6 +667,8 @@ class XPStyle {
                 c = skin.component;
             }
             BufferedImage bi = (BufferedImage)image;
+            w = bi.getWidth();
+            h = bi.getHeight();
 
             WritableRaster raster = bi.getRaster();
             DataBufferInt dbi = (DataBufferInt)raster.getDataBuffer();

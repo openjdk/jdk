@@ -22,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package com.sun.media.sound;
 
 /**
@@ -43,10 +44,12 @@ public final class SoftLimiter implements SoftAudioProcessor {
     SoftAudioBuffer bufferRout;
     float controlrate;
 
+    @Override
     public void init(float samplerate, float controlrate) {
         this.controlrate = controlrate;
     }
 
+    @Override
     public void setInput(int pin, SoftAudioBuffer input) {
         if (pin == 0)
             bufferL = input;
@@ -54,6 +57,7 @@ public final class SoftLimiter implements SoftAudioProcessor {
             bufferR = input;
     }
 
+    @Override
     public void setOutput(int pin, SoftAudioBuffer output) {
         if (pin == 0)
             bufferLout = output;
@@ -61,16 +65,19 @@ public final class SoftLimiter implements SoftAudioProcessor {
             bufferRout = output;
     }
 
+    @Override
     public void setMixMode(boolean mix) {
         this.mix = mix;
     }
 
+    @Override
     public void globalParameterControlChange(int[] slothpath, long param,
-            long value) {
+                                             long value) {
     }
 
     double silentcounter = 0;
 
+    @Override
     public void processAudio() {
         if (this.bufferL.isSilent()
                 && (this.bufferR == null || this.bufferR.isSilent())) {
@@ -186,6 +193,7 @@ public final class SoftLimiter implements SoftAudioProcessor {
         gain = newgain;
     }
 
+    @Override
     public void processControlLogic() {
     }
 }

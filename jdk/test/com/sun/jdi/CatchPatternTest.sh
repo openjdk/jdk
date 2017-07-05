@@ -87,7 +87,12 @@ dojdbCmds()
    cmd stop in ${classname}.partTwo
    runToBkpt
    cmd ignore uncaught java.lang.Throwable
-   cmd catch all java.lang.I*
+   # Instead of matching java.lang.I* we use two more specific
+   # patterns here. The reason is to avoid matching IncompatibleClassChangeError
+   # (or the subclass NoSuchMethodError) thrown by the
+   # java.lang.invoke infrastructure.
+   cmd catch all java.lang.Il*
+   cmd catch all java.lang.Ind*
    cmd cont
    cmd cont
    cmd cont

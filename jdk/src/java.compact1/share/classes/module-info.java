@@ -23,6 +23,9 @@
  * questions.
  */
 
+/**
+ * Aggregates {@code java.base}, {@code java.logging}, and {@code java.scripting}.
+ */
 module java.compact1 {
     requires public java.logging;
     requires public java.scripting;

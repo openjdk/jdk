@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,11 @@ public class LocaleCategory {
 
     public static void main(String[] args) {
         Locale reservedLocale = Locale.getDefault();
+        if (TestUtils.hasSpecialVariant(reservedLocale)) {
+            System.out.println("Skipping this test because locale is " + reservedLocale);
+            return;
+        }
+
         try {
             Locale.Builder builder = new Locale.Builder();
 

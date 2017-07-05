@@ -84,7 +84,7 @@ public abstract class Control {
         /**
          * Type name.
          */
-        private String name;
+        private final String name;
 
         /**
          * Constructs a new control type with the name specified. The name

@@ -28,7 +28,7 @@ package com.sun.media.sound;
 import javax.sound.sampled.Clip;
 
 /**
- * Interface for Clip objects that close themselves automatically
+ * Interface for Clip objects that close themselves automatically.
  *
  * @author Florian Bomers
  */

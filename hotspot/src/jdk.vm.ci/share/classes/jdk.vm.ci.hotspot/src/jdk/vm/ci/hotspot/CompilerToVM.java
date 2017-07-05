@@ -265,9 +265,10 @@ final class CompilerToVM {
     native HotSpotResolvedObjectTypeImpl resolveTypeInPool(HotSpotConstantPool constantPool, int cpi) throws LinkageError;
 
     /**
-     * Looks up and attempts to resolve the {@code JVM_CONSTANT_Field} entry for at index {@code cpi} in
-     * {@code constantPool}. For some opcodes, checks are performed that require the {@code method}
-     * that contains {@code opcode} to be specified. The values returned in {@code info} are:
+     * Looks up and attempts to resolve the {@code JVM_CONSTANT_Field} entry for at index
+     * {@code cpi} in {@code constantPool}. For some opcodes, checks are performed that require the
+     * {@code method} that contains {@code opcode} to be specified. The values returned in
+     * {@code info} are:
      *
      * <pre>
      *     [(int) flags,   // only valid if field is resolved
@@ -556,20 +557,18 @@ final class CompilerToVM {
     native HotSpotResolvedJavaMethodImpl getResolvedJavaMethod(Object base, long displacement);
 
     /**
-     * Read a HotSpot ConstantPool* value from the memory location described by {@code base} plus
-     * {@code displacement} and return the {@link HotSpotConstantPool} wrapping it. This method does
-     * no checking that the memory location actually contains a valid pointer and may crash the VM
-     * if an invalid location is provided. If the {@code base} is null then {@code displacement} is
-     * used by itself. If {@code base} is a {@link HotSpotResolvedJavaMethodImpl},
-     * {@link HotSpotConstantPool} or {@link HotSpotResolvedObjectTypeImpl} then the metaspace
-     * pointer is fetched from that object and added to {@code displacement}. Any other non-null
-     * object type causes an {@link IllegalArgumentException} to be thrown.
+     * Gets the {@code ConstantPool*} associated with {@code object} and returns a
+     * {@link HotSpotConstantPool} wrapping it.
      *
-     * @param base an object to read from or null
-     * @param displacement
-     * @return null or the resolved method for this location
+     * @param object a {@link HotSpotResolvedJavaMethodImpl} or
+     *            {@link HotSpotResolvedObjectTypeImpl} object
+     * @return a {@link HotSpotConstantPool} wrapping the {@code ConstantPool*} associated with
+     *         {@code object}
+     * @throws NullPointerException if {@code object == null}
+     * @throws IllegalArgumentException if {@code object} is neither a
+     *             {@link HotSpotResolvedJavaMethodImpl} nor a {@link HotSpotResolvedObjectTypeImpl}
      */
-    native HotSpotConstantPool getConstantPool(Object base, long displacement);
+    native HotSpotConstantPool getConstantPool(Object object);
 
     /**
      * Read a HotSpot Klass* value from the memory location described by {@code base} plus

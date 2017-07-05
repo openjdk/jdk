@@ -27,14 +27,13 @@ package com.sun.media.sound;
 
 import java.util.Vector;
 
+import javax.sound.sampled.BooleanControl;
+import javax.sound.sampled.CompoundControl;
 import javax.sound.sampled.Control;
+import javax.sound.sampled.FloatControl;
 import javax.sound.sampled.Line;
 import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.Port;
-import javax.sound.sampled.BooleanControl;
-import javax.sound.sampled.CompoundControl;
-import javax.sound.sampled.FloatControl;
-
 
 /**
  * A Mixer which only provides Ports.
@@ -43,7 +42,6 @@ import javax.sound.sampled.FloatControl;
  */
 final class PortMixer extends AbstractMixer {
 
-    // CONSTANTS
     private static final int SRC_UNKNOWN      = 0x01;
     private static final int SRC_MICROPHONE   = 0x02;
     private static final int SRC_LINE_IN      = 0x03;
@@ -56,15 +54,13 @@ final class PortMixer extends AbstractMixer {
     private static final int DST_LINE_OUT     = 0x0400;
     private static final int DST_MASK         = 0xFF00;
 
-    // INSTANCE VARIABLES
-    private Port.Info[] portInfos;
+    private final Port.Info[] portInfos;
     // cache of instantiated ports
     private PortMixerPort[] ports;
 
     // instance ID of the native implementation
     private long id = 0;
 
-    // CONSTRUCTOR
     PortMixer(PortMixerProvider.PortMixerInfo portMixerInfo) {
         // pass in Line.Info, mixer, controls
         super(portMixerInfo,              // Mixer.Info
@@ -121,9 +117,7 @@ final class PortMixer extends AbstractMixer {
         if (Printer.trace) Printer.trace("<< PortMixer: constructor completed");
     }
 
-
-    // ABSTRACT MIXER: ABSTRACT METHOD IMPLEMENTATIONS
-
+    @Override
     public Line getLine(Line.Info info) throws LineUnavailableException {
         Line.Info fullInfo = getLineInfo(info);
 
@@ -137,7 +131,7 @@ final class PortMixer extends AbstractMixer {
         throw new IllegalArgumentException("Line unsupported: " + info);
     }
 
-
+    @Override
     public int getMaxLines(Line.Info info) {
         Line.Info fullInfo = getLineInfo(info);
 
@@ -153,7 +147,7 @@ final class PortMixer extends AbstractMixer {
         return 0;
     }
 
-
+    @Override
     protected void implOpen() throws LineUnavailableException {
         if (Printer.trace) Printer.trace(">> PortMixer: implOpen (id="+id+")");
 
@@ -163,6 +157,7 @@ final class PortMixer extends AbstractMixer {
         if (Printer.trace) Printer.trace("<< PortMixer: implOpen succeeded.");
     }
 
+    @Override
     protected void implClose() {
         if (Printer.trace) Printer.trace(">> PortMixer: implClose");
 
@@ -181,10 +176,10 @@ final class PortMixer extends AbstractMixer {
         if (Printer.trace) Printer.trace("<< PortMixer: implClose succeeded");
     }
 
+    @Override
     protected void implStart() {}
+    @Override
     protected void implStop() {}
-
-    // IMPLEMENTATION HELPERS
 
     private Port.Info getPortInfo(int portIndex, int type) {
         switch (type) {
@@ -223,8 +218,6 @@ final class PortMixer extends AbstractMixer {
         return id;
     }
 
-    // INNER CLASSES
-
     /**
      * Private inner class representing a Port for the PortMixer.
      */
@@ -234,7 +227,6 @@ final class PortMixer extends AbstractMixer {
         private final int portIndex;
         private long id;
 
-        // CONSTRUCTOR
         private PortMixerPort(Port.Info info,
                               PortMixer mixer,
                               int portIndex) {
@@ -242,11 +234,6 @@ final class PortMixer extends AbstractMixer {
             if (Printer.trace) Printer.trace("PortMixerPort CONSTRUCTOR: info: " + info);
             this.portIndex = portIndex;
         }
-
-
-        // ABSTRACT METHOD IMPLEMENTATIONS
-
-        // ABSTRACT LINE
 
         void implOpen() throws LineUnavailableException {
             if (Printer.trace) Printer.trace(">> PortMixerPort: implOpen().");
@@ -286,7 +273,6 @@ final class PortMixer extends AbstractMixer {
             controls = new Control[0];
         }
 
-
         void implClose() {
             if (Printer.trace) Printer.trace(">> PortMixerPort: implClose()");
             // get rid of controls
@@ -294,9 +280,8 @@ final class PortMixer extends AbstractMixer {
             if (Printer.trace) Printer.trace("<< PortMixerPort: implClose() succeeded");
         }
 
-        // METHOD OVERRIDES
-
         // this is very similar to open(AudioFormat, int) in AbstractDataLine...
+        @Override
         public void open() throws LineUnavailableException {
             synchronized (mixer) {
                 // if the line is not currently open, try to open it with this format and buffer size
@@ -321,6 +306,7 @@ final class PortMixer extends AbstractMixer {
         }
 
         // this is very similar to close() in AbstractDataLine...
+        @Override
         public void close() {
             synchronized (mixer) {
                 if (isOpen()) {
@@ -342,7 +328,7 @@ final class PortMixer extends AbstractMixer {
     } // class PortMixerPort
 
     /**
-     * Private inner class representing a BooleanControl for PortMixerPort
+     * Private inner class representing a BooleanControl for PortMixerPort.
      */
     private static final class BoolCtrl extends BooleanControl {
         // the handle to the native control function
@@ -360,7 +346,6 @@ final class PortMixer extends AbstractMixer {
             return new BCT(name);
         }
 
-
         private BoolCtrl(long controlID, String name) {
             this(controlID, createType(name));
         }
@@ -370,12 +355,14 @@ final class PortMixer extends AbstractMixer {
             this.controlID = controlID;
         }
 
+        @Override
         public void setValue(boolean value) {
             if (!closed) {
                 nControlSetIntValue(controlID, value?1:0);
             }
         }
 
+        @Override
         public boolean getValue() {
             if (!closed) {
                 // never use any cached values
@@ -386,7 +373,7 @@ final class PortMixer extends AbstractMixer {
         }
 
         /**
-         * inner class for custom types
+         * inner class for custom types.
          */
         private static final class BCT extends BooleanControl.Type {
             private BCT(String name) {
@@ -396,7 +383,7 @@ final class PortMixer extends AbstractMixer {
     }
 
     /**
-     * Private inner class representing a CompoundControl for PortMixerPort
+     * Private inner class representing a CompoundControl for PortMixerPort.
      */
     private static final class CompCtrl extends CompoundControl {
         private CompCtrl(String name, Control[] controls) {
@@ -404,7 +391,7 @@ final class PortMixer extends AbstractMixer {
         }
 
         /**
-         * inner class for custom compound control types
+         * inner class for custom compound control types.
          */
         private static final class CCT extends CompoundControl.Type {
             private CCT(String name) {
@@ -414,7 +401,7 @@ final class PortMixer extends AbstractMixer {
     }
 
     /**
-     * Private inner class representing a BooleanControl for PortMixerPort
+     * Private inner class representing a BooleanControl for PortMixerPort.
      */
     private static final class FloatCtrl extends FloatControl {
         // the handle to the native control function
@@ -446,12 +433,14 @@ final class PortMixer extends AbstractMixer {
             this.controlID = controlID;
         }
 
+        @Override
         public void setValue(float value) {
             if (!closed) {
                 nControlSetFloatValue(controlID, value);
             }
         }
 
+        @Override
         public float getValue() {
             if (!closed) {
                 // never use any cached values
@@ -462,7 +451,7 @@ final class PortMixer extends AbstractMixer {
         }
 
         /**
-         * inner class for custom types
+         * inner class for custom types.
          */
         private static final class FCT extends FloatControl.Type {
             private FCT(String name) {
@@ -472,7 +461,7 @@ final class PortMixer extends AbstractMixer {
     }
 
     /**
-     * Private inner class representing a port info
+     * Private inner class representing a port info.
      */
     private static final class PortInfo extends Port.Info {
         private PortInfo(String name, boolean isSource) {

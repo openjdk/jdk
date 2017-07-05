@@ -26,7 +26,8 @@
 # @bug 4700857 6997928 7079486
 # @summary tests for Locale.getDefault(Locale.Category) and
 #    Locale.setDefault(Locale.Category, Locale)
-# @build LocaleCategory
+# @library /java/text/testlib
+# @build LocaleCategory TestUtils
 # @run shell/timeout=600 LocaleCategory.sh
 
 if [ "${TESTSRC}" = "" ]
@@ -46,7 +47,9 @@ then
   echo "TESTCLASSES not set.  Test cannot execute.  Failed."
   exit 1
 fi
+
 echo "TESTCLASSES=${TESTCLASSES}"
+echo "TESTCLASSPATH=${TESTCLASSPATH}"
 echo "CLASSPATH=${CLASSPATH}"
 
 # set platform-dependent variables
@@ -69,7 +72,7 @@ esac
 # test user.xxx.display user.xxx.format properties
 
 # run
-RUNCMD="${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} -classpath ${TESTCLASSES} -Duser.language.display=ja -Duser.language.format=zh LocaleCategory"
+RUNCMD="${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} -classpath ${TESTCLASSPATH} -Duser.language.display=ja -Duser.language.format=zh LocaleCategory"
 
 echo ${RUNCMD}
 ${RUNCMD}
@@ -85,7 +88,7 @@ fi
 # test user.xxx properties overriding user.xxx.display/format
 
 # run
-RUNCMD="${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} -classpath ${TESTCLASSES} -Duser.language=en -Duser.language.display=ja -Duser.language.format=zh LocaleCategory"
+RUNCMD="${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} -classpath ${TESTCLASSPATH} -Duser.language=en -Duser.language.display=ja -Duser.language.format=zh LocaleCategory"
 
 echo ${RUNCMD}
 ${RUNCMD}

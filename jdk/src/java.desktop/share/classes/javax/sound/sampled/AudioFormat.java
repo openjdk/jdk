@@ -223,7 +223,7 @@ public class AudioFormat {
                        boolean bigEndian, Map<String, Object> properties) {
         this(encoding, sampleRate, sampleSizeInBits, channels,
              frameSize, frameRate, bigEndian);
-        this.properties = new HashMap<String, Object>(properties);
+        this.properties = new HashMap<>(properties);
     }
 
     /**
@@ -592,7 +592,7 @@ public class AudioFormat {
         /**
          * Encoding name.
          */
-        private String name;
+        private final String name;
 
         /**
          * Constructs a new encoding.

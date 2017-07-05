@@ -29,8 +29,6 @@ import javax.sound.midi.MidiUnavailableException;
 import javax.sound.midi.Receiver;
 import javax.sound.midi.Transmitter;
 
-
-
 /** MidiDevice that can use reference counting for open/close.
  * This interface is intended to be used by MidiSystem.getTransmitter() and
  * MidiSystem.getReceiver().
@@ -42,11 +40,11 @@ public interface ReferenceCountingDevice {
      * This method is similar to MidiDevice.getReceiver(). However, by calling this one,
      * the device is opened implicitly. This is needed by MidiSystem.getReceiver().
      */
-    public Receiver getReceiverReferenceCounting() throws MidiUnavailableException;
+    Receiver getReceiverReferenceCounting() throws MidiUnavailableException;
 
     /** Retrieve a Transmitter that opens the device implicitly.
      * This method is similar to MidiDevice.getTransmitter(). However, by calling this one,
      * the device is opened implicitly. This is needed by MidiSystem.getTransmitter().
      */
-    public Transmitter getTransmitterReferenceCounting() throws MidiUnavailableException;
+    Transmitter getTransmitterReferenceCounting() throws MidiUnavailableException;
 }
