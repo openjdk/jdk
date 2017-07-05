@@ -1,8 +1,9 @@
 /*
- * security policy used activation groups
+ * security policy used by activation groups
  */
 
 grant {
-  // test needs to communicate with the activation system
+  permission java.io.FilePermission "..${/}..${/}test.props", "read";
   permission java.net.SocketPermission "*:1024-", "connect,accept,listen";
+  permission java.util.PropertyPermission "test.*", "read";
 };

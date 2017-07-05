@@ -1154,6 +1154,11 @@ public class BasicBigDecimal extends Basic {
         test("%.5f", "0.99960", val);
         test("%.6f", "0.999600", val);
 
+        val = new BigDecimal(BigInteger.ZERO, 6);
+        test("%.4f", "0.0000", val);
+
+        val = new BigDecimal(BigInteger.ZERO, -6);
+        test("%.4f", "0.0000", val);
 
 
 
