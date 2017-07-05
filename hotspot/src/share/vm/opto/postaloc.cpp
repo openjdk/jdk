@@ -263,20 +263,6 @@ int PhaseChaitin::elide_copy( Node *n, int k, Block *current_block, Node_List &v
   // intermediate copies might be illegal, i.e., value is stored down to stack
   // then reloaded BUT survives in a register the whole way.
   Node *val = skip_copies(n->in(k));
-
-  if (val == x && nk_idx != 0 &&
-      regnd[nk_reg] != NULL && regnd[nk_reg] != x &&
-      _lrg_map.live_range_id(x) == _lrg_map.live_range_id(regnd[nk_reg])) {
-    // When rematerialzing nodes and stretching lifetimes, the
-    // allocator will reuse the original def for multidef LRG instead
-    // of the current reaching def because it can't know it's safe to
-    // do so.  After allocation completes if they are in the same LRG
-    // then it should use the current reaching def instead.
-    n->set_req(k, regnd[nk_reg]);
-    blk_adjust += yank_if_dead(val, current_block, &value, &regnd);
-    val = skip_copies(n->in(k));
-  }
-
   if (val == x) return blk_adjust; // No progress?
 
   int n_regs = RegMask::num_registers(val->ideal_reg());
@@ -380,6 +366,94 @@ bool PhaseChaitin::eliminate_copy_of_constant(Node* val, Node* n,
     return true;
   }
   return false;
+}
+
+// The algorithms works as follows:
+// We traverse the block top to bottom. possibly_merge_multidef() is invoked for every input edge k
+// of the instruction n. We check to see if the input is a multidef lrg. If it is, we record the fact that we've
+// seen a definition (coming as an input) and add that fact to the reg2defuse array. The array maps registers to their
+// current reaching definitions (we track only multidefs though). With each definition we also associate the first
+// instruction we saw use it. If we encounter the situation when we observe an def (an input) that is a part of the
+// same lrg but is different from the previous seen def we merge the two with a MachMerge node and substitute
+// all the uses that we've seen so far to use the merge. After that we keep replacing the new defs in the same lrg
+// as they get encountered with the merge node and keep adding these defs to the merge inputs.
+void PhaseChaitin::merge_multidefs() {
+  Compile::TracePhase tp("mergeMultidefs", &timers[_t_mergeMultidefs]);
+  ResourceMark rm;
+  // Keep track of the defs seen in registers and collect their uses in the block.
+  RegToDefUseMap reg2defuse(_max_reg, _max_reg, RegDefUse());
+  for (uint i = 0; i < _cfg.number_of_blocks(); i++) {
+    Block* block = _cfg.get_block(i);
+    for (uint j = 1; j < block->number_of_nodes(); j++) {
+      Node* n = block->get_node(j);
+      if (n->is_Phi()) continue;
+      for (uint k = 1; k < n->req(); k++) {
+        j += possibly_merge_multidef(n, k, block, reg2defuse);
+      }
+      // Null out the value produced by the instruction itself, since we're only interested in defs
+      // implicitly defined by the uses. We are actually interested in tracking only redefinitions
+      // of the multidef lrgs in the same register. For that matter it's enough to track changes in
+      // the base register only and ignore other effects of multi-register lrgs and fat projections.
+      // It is also ok to ignore defs coming from singledefs. After an implicit overwrite by one of
+      // those our register is guaranteed to be used by another lrg and we won't attempt to merge it.
+      uint lrg = _lrg_map.live_range_id(n);
+      if (lrg > 0 && lrgs(lrg).is_multidef()) {
+        OptoReg::Name reg = lrgs(lrg).reg();
+        reg2defuse.at(reg).clear();
+      }
+    }
+    // Clear reg->def->use tracking for the next block
+    for (int j = 0; j < reg2defuse.length(); j++) {
+      reg2defuse.at(j).clear();
+    }
+  }
+}
+
+int PhaseChaitin::possibly_merge_multidef(Node *n, uint k, Block *block, RegToDefUseMap& reg2defuse) {
+  int blk_adjust = 0;
+
+  uint lrg = _lrg_map.live_range_id(n->in(k));
+  if (lrg > 0 && lrgs(lrg).is_multidef()) {
+    OptoReg::Name reg = lrgs(lrg).reg();
+
+    Node* def = reg2defuse.at(reg).def();
+    if (def != NULL && lrg == _lrg_map.live_range_id(def) && def != n->in(k)) {
+      // Same lrg but different node, we have to merge.
+      MachMergeNode* merge;
+      if (def->is_MachMerge()) { // is it already a merge?
+        merge = def->as_MachMerge();
+      } else {
+        merge = new MachMergeNode(def);
+
+        // Insert the merge node into the block before the first use.
+        uint use_index = block->find_node(reg2defuse.at(reg).first_use());
+        block->insert_node(merge, use_index++);
+
+        // Let the allocator know about the new node, use the same lrg
+        _lrg_map.extend(merge->_idx, lrg);
+        blk_adjust++;
+
+        // Fixup all the uses (there is at least one) that happened between the first
+        // use and before the current one.
+        for (; use_index < block->number_of_nodes(); use_index++) {
+          Node* use = block->get_node(use_index);
+          if (use == n) {
+            break;
+          }
+          use->replace_edge(def, merge);
+        }
+      }
+      if (merge->find_edge(n->in(k)) == -1) {
+        merge->add_req(n->in(k));
+      }
+      n->set_req(k, merge);
+    }
+
+    // update the uses
+    reg2defuse.at(reg).update(n->in(k), n);
+  }
+
+  return blk_adjust;
 }
 
 
