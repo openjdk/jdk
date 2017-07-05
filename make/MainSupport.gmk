@@ -41,6 +41,15 @@ define RunTests
 	    JOBS=$(JOBS) $1) || true
 endef
 
+define CleanDocs
+	@$(PRINTF) "Cleaning docs ..."
+	@$(PRINTF) "\n" $(LOG_DEBUG)
+	$(RM) -r $(SUPPORT_OUTPUTDIR)/docs
+	$(RM) -r $(SUPPORT_OUTPUTDIR)/javadoc
+	$(RM) -r $(IMAGES_OUTPUTDIR)/docs
+	@$(PRINTF) " done\n"
+endef
+
 # Cleans the dir given as $1
 define CleanDir
 	@$(PRINTF) "Cleaning $(strip $1) build artifacts ..."
@@ -96,15 +105,6 @@ define Clean-include
 	@$(PRINTF) "Cleaning include $(if $1,for $(strip $1) )..."
 	@$(PRINTF) "\n" $(LOG_DEBUG)
 	$(RM) -r $(SUPPORT_OUTPUTDIR)/modules_include/$(strip $1)
-	@$(PRINTF) " done\n"
-endef
-
-define Clean-docs
-	@$(PRINTF) "Cleaning docs ..."
-	@$(PRINTF) "\n" $(LOG_DEBUG)
-	$(RM) -r $(SUPPORT_OUTPUTDIR)/docs
-	$(RM) -r $(IMAGES_OUTPUTDIR)/docs
-	$(RM) $(OUTPUT_ROOT)/bundles/jdk-*-docs.zip
 	@$(PRINTF) " done\n"
 endef
 
