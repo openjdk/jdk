@@ -119,7 +119,7 @@ endif
 # we want to release it.  If we build it here,
 # the SDK makefiles will copy it over and put it into
 # the created image.
-BUILD_WIN_SA = 0
+BUILD_WIN_SA = 1
 ifneq ($(ALT_BUILD_WIN_SA),)
   BUILD_WIN_SA = $(ALT_BUILD_WIN_SA)
 endif

@@ -538,6 +538,7 @@ CMSCollector::CMSCollector(ConcurrentMarkSweepGeneration* cmsGen,
   _survivor_chunk_capacity(0), // -- ditto --
   _survivor_chunk_index(0),    // -- ditto --
   _ser_pmc_preclean_ovflw(0),
+  _ser_kac_preclean_ovflw(0),
   _ser_pmc_remark_ovflw(0),
   _par_pmc_remark_ovflw(0),
   _ser_kac_ovflw(0),
@@ -1960,6 +1961,7 @@ void CMSCollector::do_compaction_work(bool clear_all_soft_refs) {
 
   ref_processor()->set_enqueuing_is_done(false);
   ref_processor()->enable_discovery();
+  ref_processor()->setup_policy(clear_all_soft_refs);
   // If an asynchronous collection finishes, the _modUnionTable is
   // all clear.  If we are assuming the collection from an asynchronous
   // collection, clear the _modUnionTable.
@@ -2382,6 +2384,9 @@ void CMSCollector::collect_in_foreground(bool clear_all_soft_refs) {
       GenCollectedHeap::heap()->total_collections() >= VerifyGCStartAt) {
     Universe::verify(true);
   }
+
+  // Snapshot the soft reference policy to be used in this collection cycle.
+  ref_processor()->setup_policy(clear_all_soft_refs);
 
   bool init_mark_was_synchronous = false; // until proven otherwise
   while (_collectorState != Idling) {
@@ -4388,10 +4393,10 @@ size_t CMSCollector::preclean_work(bool clean_refs, bool clean_survivor) {
     CMSPrecleanRefsYieldClosure yield_cl(this);
     assert(rp->span().equals(_span), "Spans should be equal");
     CMSKeepAliveClosure keep_alive(this, _span, &_markBitMap,
-                                   &_markStack);
+                                   &_markStack, true /* preclean */);
     CMSDrainMarkingStackClosure complete_trace(this,
-                                  _span, &_markBitMap, &_markStack,
-                                  &keep_alive);
+                                   _span, &_markBitMap, &_markStack,
+                                   &keep_alive, true /* preclean */);
 
     // We don't want this step to interfere with a young
     // collection because we don't want to take CPU
@@ -4590,11 +4595,11 @@ size_t CMSCollector::preclean_mod_union_table(
     if (!dirtyRegion.is_empty()) {
       assert(numDirtyCards > 0, "consistency check");
       HeapWord* stop_point = NULL;
+      stopTimer();
+      CMSTokenSyncWithLocks ts(true, gen->freelistLock(),
+                               bitMapLock());
+      startTimer();
       {
-        stopTimer();
-        CMSTokenSyncWithLocks ts(true, gen->freelistLock(),
-                                 bitMapLock());
-        startTimer();
         verify_work_stacks_empty();
         verify_overflow_empty();
         sample_eden();
@@ -4611,10 +4616,6 @@ size_t CMSCollector::preclean_mod_union_table(
         assert((CMSPermGenPrecleaningEnabled && (gen == _permGen)) ||
                (_collectorState == AbortablePreclean && should_abort_preclean()),
                "Unparsable objects should only be in perm gen.");
-
-        stopTimer();
-        CMSTokenSyncWithLocks ts(true, bitMapLock());
-        startTimer();
         _modUnionTable.mark_range(MemRegion(stop_point, dirtyRegion.end()));
         if (should_abort_preclean()) {
           break; // out of preclean loop
@@ -4852,17 +4853,19 @@ void CMSCollector::checkpointRootsFinalWork(bool asynch,
   // recurrence of that condition.
   assert(_markStack.isEmpty(), "No grey objects");
   size_t ser_ovflw = _ser_pmc_remark_ovflw + _ser_pmc_preclean_ovflw +
-                     _ser_kac_ovflw;
+                     _ser_kac_ovflw        + _ser_kac_preclean_ovflw;
   if (ser_ovflw > 0) {
     if (PrintCMSStatistics != 0) {
       gclog_or_tty->print_cr("Marking stack overflow (benign) "
-        "(pmc_pc="SIZE_FORMAT", pmc_rm="SIZE_FORMAT", kac="SIZE_FORMAT")",
+        "(pmc_pc="SIZE_FORMAT", pmc_rm="SIZE_FORMAT", kac="SIZE_FORMAT
+        ", kac_preclean="SIZE_FORMAT")",
         _ser_pmc_preclean_ovflw, _ser_pmc_remark_ovflw,
-        _ser_kac_ovflw);
+        _ser_kac_ovflw, _ser_kac_preclean_ovflw);
     }
     _markStack.expand();
     _ser_pmc_remark_ovflw = 0;
     _ser_pmc_preclean_ovflw = 0;
+    _ser_kac_preclean_ovflw = 0;
     _ser_kac_ovflw = 0;
   }
   if (_par_pmc_remark_ovflw > 0 || _par_kac_ovflw > 0) {
@@ -5675,40 +5678,29 @@ void CMSCollector::refProcessingWork(bool asynch, bool clear_all_soft_refs) {
 
   ResourceMark rm;
   HandleMark   hm;
-  ReferencePolicy* soft_ref_policy;
-
-  assert(!ref_processor()->enqueuing_is_done(), "Enqueuing should not be complete");
-  // Process weak references.
-  if (clear_all_soft_refs) {
-    soft_ref_policy = new AlwaysClearPolicy();
-  } else {
-#ifdef COMPILER2
-    soft_ref_policy = new LRUMaxHeapPolicy();
-#else
-    soft_ref_policy = new LRUCurrentHeapPolicy();
-#endif // COMPILER2
-  }
-  verify_work_stacks_empty();
 
   ReferenceProcessor* rp = ref_processor();
   assert(rp->span().equals(_span), "Spans should be equal");
+  assert(!rp->enqueuing_is_done(), "Enqueuing should not be complete");
+  // Process weak references.
+  rp->setup_policy(clear_all_soft_refs);
+  verify_work_stacks_empty();
+
   CMSKeepAliveClosure cmsKeepAliveClosure(this, _span, &_markBitMap,
-                                          &_markStack);
+                                          &_markStack, false /* !preclean */);
   CMSDrainMarkingStackClosure cmsDrainMarkingStackClosure(this,
                                 _span, &_markBitMap, &_markStack,
-                                &cmsKeepAliveClosure);
+                                &cmsKeepAliveClosure, false /* !preclean */);
   {
     TraceTime t("weak refs processing", PrintGCDetails, false, gclog_or_tty);
     if (rp->processing_is_mt()) {
       CMSRefProcTaskExecutor task_executor(*this);
-      rp->process_discovered_references(soft_ref_policy,
-                                        &_is_alive_closure,
+      rp->process_discovered_references(&_is_alive_closure,
                                         &cmsKeepAliveClosure,
                                         &cmsDrainMarkingStackClosure,
                                         &task_executor);
     } else {
-      rp->process_discovered_references(soft_ref_policy,
-                                        &_is_alive_closure,
+      rp->process_discovered_references(&_is_alive_closure,
                                         &cmsKeepAliveClosure,
                                         &cmsDrainMarkingStackClosure,
                                         NULL);
@@ -6163,8 +6155,8 @@ void CMSCollector::verify_ok_to_terminate() const {
 #endif
 
 size_t CMSCollector::block_size_using_printezis_bits(HeapWord* addr) const {
-  assert(_markBitMap.isMarked(addr) && _markBitMap.isMarked(addr + 1),
-         "missing Printezis mark?");
+   assert(_markBitMap.isMarked(addr) && _markBitMap.isMarked(addr + 1),
+          "missing Printezis mark?");
   HeapWord* nextOneAddr = _markBitMap.getNextMarkedWordAddress(addr + 2);
   size_t size = pointer_delta(nextOneAddr + 1, addr);
   assert(size == CompactibleFreeListSpace::adjustObjectSize(size),
@@ -8302,8 +8294,29 @@ void CMSKeepAliveClosure::do_oop(oop obj) {
       }
     )
     if (simulate_overflow || !_mark_stack->push(obj)) {
-      _collector->push_on_overflow_list(obj);
-      _collector->_ser_kac_ovflw++;
+      if (_concurrent_precleaning) {
+        // We dirty the overflown object and let the remark
+        // phase deal with it.
+        assert(_collector->overflow_list_is_empty(), "Error");
+        // In the case of object arrays, we need to dirty all of
+        // the cards that the object spans. No locking or atomics
+        // are needed since no one else can be mutating the mod union
+        // table.
+        if (obj->is_objArray()) {
+          size_t sz = obj->size();
+          HeapWord* end_card_addr =
+            (HeapWord*)round_to((intptr_t)(addr+sz), CardTableModRefBS::card_size);
+          MemRegion redirty_range = MemRegion(addr, end_card_addr);
+          assert(!redirty_range.is_empty(), "Arithmetical tautology");
+          _collector->_modUnionTable.mark_range(redirty_range);
+        } else {
+          _collector->_modUnionTable.mark(addr);
+        }
+        _collector->_ser_kac_preclean_ovflw++;
+      } else {
+        _collector->push_on_overflow_list(obj);
+        _collector->_ser_kac_ovflw++;
+      }
     }
   }
 }
@@ -8400,6 +8413,8 @@ const char* CMSExpansionCause::to_string(CMSExpansionCause::Cause cause) {
 void CMSDrainMarkingStackClosure::do_void() {
   // the max number to take from overflow list at a time
   const size_t num = _mark_stack->capacity()/4;
+  assert(!_concurrent_precleaning || _collector->overflow_list_is_empty(),
+         "Overflow list should be NULL during concurrent phases");
   while (!_mark_stack->isEmpty() ||
          // if stack is empty, check the overflow list
          _collector->take_from_overflow_list(num, _mark_stack)) {
