@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1369,6 +1369,23 @@ public final class LocalDate
         if (daysToAdd == 0) {
             return this;
         }
+        long dom = day + daysToAdd;
+        if (dom > 0) {
+            if (dom <= 28) {
+                return new LocalDate(year, month, (int) dom);
+            } else if (dom <= 59) { // 59th Jan is 28th Feb, 59th Feb is 31st Mar
+                long monthLen = lengthOfMonth();
+                if (dom <= monthLen) {
+                    return new LocalDate(year, month, (int) dom);
+                } else if (month < 12) {
+                    return new LocalDate(year, month + 1, (int) (dom - monthLen));
+                } else {
+                    YEAR.checkValidValue(year + 1);
+                    return new LocalDate(year + 1, 1, (int) (dom - monthLen));
+                }
+            }
+        }
+
         long mjDay = Math.addExact(toEpochDay(), daysToAdd);
         return LocalDate.ofEpochDay(mjDay);
     }

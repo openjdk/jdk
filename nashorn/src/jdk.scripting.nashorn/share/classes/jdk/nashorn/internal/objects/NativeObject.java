@@ -776,7 +776,7 @@ public final class NativeObject {
         final MethodType getterType = MethodType.methodType(Object.class, clazz);
         final MethodType setterType = MethodType.methodType(Object.class, clazz, Object.class);
 
-        final GuardingDynamicLinker linker = BeansLinker.getLinkerForClass(clazz);
+        final GuardingDynamicLinker linker = Bootstrap.getBeanLinkerForClass(clazz);
 
         final List<AccessorProperty> properties = new ArrayList<>(propertyNames.size() + methodNames.size());
         for(final String methodName: methodNames) {

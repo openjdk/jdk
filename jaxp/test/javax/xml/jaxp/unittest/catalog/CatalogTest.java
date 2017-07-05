@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,14 +27,13 @@ import javax.xml.catalog.CatalogFeatures;
 import javax.xml.catalog.CatalogFeatures.Feature;
 import javax.xml.catalog.CatalogManager;
 import javax.xml.catalog.CatalogResolver;
+import javax.xml.catalog.CatalogUriResolver;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
-import static jaxp.library.JAXPTestUtilities.getPathByClassName;
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
-import org.w3c.dom.Element;
 import org.xml.sax.Attributes;
 import org.xml.sax.ErrorHandler;
 import org.xml.sax.SAXException;
@@ -42,11 +41,65 @@ import org.xml.sax.XMLReader;
 import org.xml.sax.ext.DefaultHandler2;
 
 /*
- * @bug 8081248
+ * @bug 8081248, 8144966, 8146606
  * @summary Tests basic Catalog functions.
  */
 
 public class CatalogTest {
+    /*
+       @bug 8146606
+       Verifies that the resulting systemId does not contain duplicate slashes
+    */
+    public void testRewriteSystem() {
+        String catalog = getClass().getResource("rewriteCatalog.xml").getFile();
+
+        try {
+            CatalogResolver resolver = CatalogManager.catalogResolver(CatalogFeatures.defaults(), catalog);
+            String actualSystemId = resolver.resolveEntity(null, "http://remote.com/dtd/book.dtd").getSystemId();
+            Assert.assertTrue(!actualSystemId.contains("//"), "result contains duplicate slashes");
+        } catch (Exception e) {
+            Assert.fail(e.getMessage());
+        }
+
+    }
+
+    /*
+       @bug 8146606
+       Verifies that the resulting systemId does not contain duplicate slashes
+    */
+    public void testRewriteUri() {
+        String catalog = getClass().getResource("rewriteCatalog.xml").getFile();
+
+        try {
+
+            CatalogUriResolver resolver = CatalogManager.catalogUriResolver(CatalogFeatures.defaults(), catalog);
+            String actualSystemId = resolver.resolve("http://remote.com/import/import.xsl", null).getSystemId();
+            Assert.assertTrue(!actualSystemId.contains("//"), "result contains duplicate slashes");
+        } catch (Exception e) {
+            Assert.fail(e.getMessage());
+        }
+    }
+
+    /*
+       @bug 8144966
+       Verifies that passing null as CatalogFeatures will result in a NPE.
+    */
+    @Test(expectedExceptions = NullPointerException.class)
+    public void testFeatureNull() {
+        CatalogResolver resolver = CatalogManager.catalogResolver(null, "");
+
+    }
+
+    /*
+       @bug 8144966
+       Verifies that passing null as the path will result in a NPE.
+    */
+    @Test(expectedExceptions = NullPointerException.class)
+    public void testPathNull() {
+        String path = null;
+        CatalogResolver resolver = CatalogManager.catalogResolver(CatalogFeatures.defaults(), path);
+    }
+
     /*
        Tests basic catalog feature by using a CatalogResolver instance to
     resolve a DTD reference to a locally specified DTD file. If the resolution
@@ -61,7 +114,7 @@ public class CatalogTest {
         }
         String url = getClass().getResource(xml).getFile();
         try {
-            CatalogResolver cr = CatalogManager.catalogResolver(null, catalog);
+            CatalogResolver cr = CatalogManager.catalogResolver(CatalogFeatures.defaults(), catalog);
             XMLReader reader = saxParser.getXMLReader();
             reader.setEntityResolver(cr);
             MyHandler handler = new MyHandler(saxParser);
@@ -84,7 +137,7 @@ public class CatalogTest {
 
         String test = "testInvalidCatalog";
         try {
-            CatalogResolver resolver = CatalogManager.catalogResolver(null, catalog);
+            CatalogResolver resolver = CatalogManager.catalogResolver(CatalogFeatures.defaults(), catalog);
             String actualSystemId = resolver.resolveEntity(null, "http://remote/xml/dtd/sys/alice/docAlice.dtd").getSystemId();
         } catch (Exception e) {
             String msg = e.getMessage();

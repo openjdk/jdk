@@ -25,7 +25,6 @@
 
 package sun.jvmstat.perfdata.monitor;
 
-import sun.misc.Perf;
 import sun.jvmstat.monitor.*;
 import java.util.*;
 import java.io.*;

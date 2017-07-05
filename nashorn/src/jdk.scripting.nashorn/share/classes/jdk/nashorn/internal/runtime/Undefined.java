@@ -94,6 +94,9 @@ public final class Undefined extends DefaultPropertyAccess {
      */
     public static GuardedInvocation lookup(final CallSiteDescriptor desc) {
         final StandardOperation op = NashornCallSiteDescriptor.getFirstStandardOperation(desc);
+        if (op == null) {
+            return null;
+        }
         switch (op) {
         case CALL:
         case NEW:

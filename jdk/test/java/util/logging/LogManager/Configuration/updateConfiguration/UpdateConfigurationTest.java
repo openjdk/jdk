@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -209,8 +209,9 @@ public class UpdateConfigurationTest {
                     + barChild.getParent() +"\n\texpected: " + barRef.get());
         }
         Reference<? extends Logger> ref2;
-        int max = 3;
+        int max = 10;
         barChild = null;
+        System.gc();
         while ((ref2 = queue.poll()) == null) {
             System.gc();
             Thread.sleep(100);
@@ -276,24 +277,27 @@ public class UpdateConfigurationTest {
                     }
                 });
 
-                // Now we need to forget the child, so that loggers are released,
-                // and so that we can run the test with the next configuration...
-
-                fooChild = null;
-                System.out.println("Setting fooChild to: " + fooChild);
-                while ((ref2 = queue.poll()) == null) {
-                    System.gc();
-                    Thread.sleep(1000);
+                if (suppressed == null) {
+                    // Now we need to forget the child, so that loggers are released,
+                    // and so that we can run the test with the next configuration...
+                    // No need to do that if failed!=null however, as the first
+                    // ref might not have been cleared yet and failing here would
+                    // hide the original failure.
+                    fooChild = null;
+                    System.out.println("Setting fooChild to: " + fooChild);
+                    while ((ref2 = queue.poll()) == null) {
+                        System.gc();
+                        Thread.sleep(1000);
+                    }
+                    if (ref2 != fooRef) {
+                        throw new RuntimeException("Unexpected reference: "
+                                + ref2 +"\n\texpected: " + fooRef);
+                    }
+                    if (ref2.get() != null) {
+                        throw new RuntimeException("Referent not cleared: " + ref2.get());
+                    }
+                    System.out.println("Got fooRef after reset(), fooChild is " + fooChild);
                 }
-                if (ref2 != fooRef) {
-                    throw new RuntimeException("Unexpected reference: "
-                            + ref2 +"\n\texpected: " + fooRef);
-                }
-                if (ref2.get() != null) {
-                    throw new RuntimeException("Referent not cleared: " + ref2.get());
-                }
-                System.out.println("Got fooRef after reset(), fooChild is " + fooChild);
-
             }
         }
         if (failed != null) {

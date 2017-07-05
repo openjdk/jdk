@@ -48,6 +48,7 @@ import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 import jdk.nashorn.internal.runtime.doubleconv.DoubleConversion;
+import jdk.nashorn.internal.runtime.linker.NashornGuards;
 import jdk.nashorn.internal.runtime.linker.PrimitiveLookup;
 
 /**
@@ -315,7 +316,7 @@ public final class NativeNumber extends ScriptObject {
      * @return Link to be invoked at call site.
      */
     public static GuardedInvocation lookupPrimitive(final LinkRequest request, final Object receiver) {
-        return PrimitiveLookup.lookupPrimitive(request, Number.class, new NativeNumber(((Number)receiver).doubleValue()), WRAPFILTER, PROTOFILTER);
+        return PrimitiveLookup.lookupPrimitive(request, NashornGuards.getNumberGuard(), new NativeNumber(((Number)receiver).doubleValue()), WRAPFILTER, PROTOFILTER);
     }
 
     @SuppressWarnings("unused")

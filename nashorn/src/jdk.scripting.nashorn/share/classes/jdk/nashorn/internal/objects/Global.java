@@ -1133,6 +1133,8 @@ public final class Global extends Scope {
             return NativeNumber.lookupPrimitive(request, self);
         } else if (self instanceof Boolean) {
             return NativeBoolean.lookupPrimitive(request, self);
+        } else if (self instanceof Symbol) {
+            return NativeSymbol.lookupPrimitive(request, self);
         }
         throw new IllegalArgumentException("Unsupported primitive: " + self);
     }

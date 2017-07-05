@@ -61,6 +61,9 @@ class PlainSocketImpl extends AbstractPlainSocketImpl
         if (!name.equals(ExtendedSocketOptions.SO_FLOW_SLA)) {
             super.setOption(name, value);
         } else {
+            if (getSocket() == null || !flowSupported()) {
+                throw new UnsupportedOperationException("unsupported option");
+            }
             if (isClosedOrPending()) {
                 throw new SocketException("Socket closed");
             }
@@ -74,6 +77,9 @@ class PlainSocketImpl extends AbstractPlainSocketImpl
     protected <T> T getOption(SocketOption<T> name) throws IOException {
         if (!name.equals(ExtendedSocketOptions.SO_FLOW_SLA)) {
             return super.getOption(name);
+        }
+        if (getSocket() == null || !flowSupported()) {
+            throw new UnsupportedOperationException("unsupported option");
         }
         if (isClosedOrPending()) {
             throw new SocketException("Socket closed");

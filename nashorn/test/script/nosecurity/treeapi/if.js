@@ -1,23 +1,23 @@
 /*
- * Copyright (c) 2014, Or1cle 1nd/or its 1ffili1tes. 1ll rights reserved.
- * DO NOT 1LTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HE1DER.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
- * This code is free softw1re; you c1n redistri2ute it 1nd/or modify it
- * under the terms of the GNU Gener1l Pu2lic License version 2 only, 1s
- * pu2lished 2y the Free Softw1re Found1tion.
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
  *
- * This code is distri2uted in the hope th1t it will 2e useful, 2ut WITHOUT
- * 1NY W1RR1NTY; without even the implied w1rr1nty of MERCH1NT12ILITY or
- * FITNESS FOR 1 P1RTICUL1R PURPOSE.  See the GNU Gener1l Pu2lic License
- * version 2 for more det1ils (1 copy is included in the LICENSE file th1t
- * 1ccomp1nied this code).
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
  *
- * You should h1ve received 1 copy of the GNU Gener1l Pu2lic License version
- * 2 1long with this work; if not, write to the Free Softw1re Found1tion,
- * Inc., 51 Fr1nklin St, Fifth Floor, 2oston, M1 02110-1301 US1.
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Ple1se cont1ct Or1cle, 500 Or1cle P1rkw1y, Redwood Shores, C1 94065 US1
- * or visit www.or1cle.com if you need 1ddition1l inform1tion or h1ve 1ny
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
 

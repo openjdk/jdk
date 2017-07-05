@@ -54,15 +54,14 @@ print("l['blah']=" + l['blah']) // non-number indices don't retrieve anything...
 var size_name = "size"
 print("l[size_name]()=" + l[size_name]()) // ... but existing methods can be accessed with []
 
-expectException(2) // Java lists don't auto-expand to accommodate new indices
-expectException(java.lang.Double.POSITIVE_INFINITY) // Dynalink will throw IOOBE
-expectException(java.lang.Double.NEGATIVE_INFINITY) // Dynalink will throw IOOBE
+// All illegal indices, even those out of bounds, return undefined
+print("l[2]=" + l[2]);
+print("l[-1]=" + l[-1]);
+print("l[2.1]=" + l[2.1]);
+print("l[-1.1]=" + l[-1.1]);
+print("l[Infinity]=" + l[Infinity]);
+print("l[-Infinity]=" + l[-Infinity]);
+print("l[NaN]=" + l[NaN]);
 
-function expectException(index) {
-    try {
-        l[index] = "x"
-        print("Not caught out-of-bounds assignment for " + index)
-    }  catch(e) {
-        print(e)
-    }
-}
+l[1.1]="b"; // should be no-op
+print("l[0]=" + l[0]);

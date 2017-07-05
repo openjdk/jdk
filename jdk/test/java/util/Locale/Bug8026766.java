@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2001, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,23 +21,25 @@
  * questions.
  */
 
-package sun.misc;
-
-import java.io.File;
-import java.io.FilenameFilter;
-
-/**
- * This class checks that only jar and zip files are included in the file list.
- * This class is used in extension installation support (ExtensionDependency).
- *
- * @deprecated this class will be removed in a future release.
- * @author  Michael Colburn
+/*
+ * @test
+ * @bug 8026766
+ * @summary Confirm that LanguageRange.toString() returns an expected result.
+ * @run main Bug8026766
  */
-@Deprecated
-public class JarFilter implements FilenameFilter {
 
-    public boolean accept(File dir, String name) {
-        String lower = name.toLowerCase();
-        return lower.endsWith(".jar") || lower.endsWith(".zip");
+import java.util.Locale.LanguageRange;
+
+public class Bug8026766 {
+
+    public static void main(String[] args) {
+        LanguageRange lr1 = new LanguageRange("ja", 1.0);
+        LanguageRange lr2 = new LanguageRange("fr", 0.0);
+
+        if (!lr1.toString().equals("ja") ||
+            !lr2.toString().equals("fr;q=0.0")) {
+            throw new RuntimeException("LanguageRange.toString() returned an unexpected result.");
+        }
     }
+
 }
