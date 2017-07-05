@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -344,7 +344,7 @@ final class P11Cipher extends CipherSpi {
     private void implInit(int opmode, Key key, byte[] iv,
             SecureRandom random)
             throws InvalidKeyException, InvalidAlgorithmParameterException {
-        cancelOperation();
+        reset(true);
         if (fixedKeySize != -1 && key.getEncoded().length != fixedKeySize) {
             throw new InvalidKeyException("Key size is invalid");
         }
@@ -404,23 +404,26 @@ final class P11Cipher extends CipherSpi {
         if (initialized == false) {
             return;
         }
-        initialized = false;
+
         if ((session == null) || (token.explicitCancel == false)) {
             return;
         }
-        // cancel operation by finishing it
-        int bufLen = doFinalLength(0);
-        byte[] buffer = new byte[bufLen];
         try {
-            if (encrypt) {
-                token.p11.C_EncryptFinal(session.id(), 0, buffer, 0, bufLen);
+            if (session.hasObjects() == false) {
+                session = token.killSession(session);
+                return;
             } else {
-                token.p11.C_DecryptFinal(session.id(), 0, buffer, 0, bufLen);
+                // cancel operation by finishing it
+                int bufLen = doFinalLength(0);
+                byte[] buffer = new byte[bufLen];
+                if (encrypt) {
+                    token.p11.C_EncryptFinal(session.id(), 0, buffer, 0, bufLen);
+                } else {
+                    token.p11.C_DecryptFinal(session.id(), 0, buffer, 0, bufLen);
+                }
             }
         } catch (PKCS11Exception e) {
             throw new ProviderException("Cancel failed", e);
-        } finally {
-            reset();
         }
     }
 
@@ -483,7 +486,9 @@ final class P11Cipher extends CipherSpi {
     }
 
     // reset the states to the pre-initialized values
-    private void reset() {
+    private void reset(boolean doCancel) {
+        if (doCancel) cancelOperation();
+
         initialized = false;
         bytesBuffered = 0;
         padBufferLen = 0;
@@ -610,7 +615,7 @@ final class P11Cipher extends CipherSpi {
                 throw (ShortBufferException)
                         (new ShortBufferException().initCause(e));
             }
-            reset();
+            reset(false);
             throw new ProviderException("update() failed", e);
         }
     }
@@ -728,7 +733,7 @@ final class P11Cipher extends CipherSpi {
                 throw (ShortBufferException)
                         (new ShortBufferException().initCause(e));
             }
-            reset();
+            reset(false);
             throw new ProviderException("update() failed", e);
         }
     }
@@ -740,6 +745,7 @@ final class P11Cipher extends CipherSpi {
         if (outLen < requiredOutLen) {
             throw new ShortBufferException();
         }
+        boolean doCancel = true;
         try {
             ensureInitialized();
             int k = 0;
@@ -753,7 +759,12 @@ final class P11Cipher extends CipherSpi {
                 }
                 k += token.p11.C_EncryptFinal(session.id(),
                         0, out, (outOfs + k), (outLen - k));
+                doCancel = false;
             } else {
+                // Special handling to match SunJCE provider behavior
+                if (bytesBuffered == 0 && padBufferLen == 0) {
+                    return 0;
+                }
                 if (paddingObj != null) {
                     if (padBufferLen != 0) {
                         k = token.p11.C_DecryptUpdate(session.id(), 0,
@@ -762,20 +773,24 @@ final class P11Cipher extends CipherSpi {
                     }
                     k += token.p11.C_DecryptFinal(session.id(), 0, padBuffer, k,
                             padBuffer.length - k);
+                    doCancel = false;
+
                     int actualPadLen = paddingObj.unpad(padBuffer, k);
                     k -= actualPadLen;
                     System.arraycopy(padBuffer, 0, out, outOfs, k);
                 } else {
                     k = token.p11.C_DecryptFinal(session.id(), 0, out, outOfs,
                             outLen);
+                    doCancel = false;
                 }
             }
             return k;
         } catch (PKCS11Exception e) {
+            doCancel = false;
             handleException(e);
             throw new ProviderException("doFinal() failed", e);
         } finally {
-            reset();
+            reset(doCancel);
         }
     }
 
@@ -788,6 +803,7 @@ final class P11Cipher extends CipherSpi {
             throw new ShortBufferException();
         }
 
+        boolean doCancel = true;
         try {
             ensureInitialized();
 
@@ -818,7 +834,13 @@ final class P11Cipher extends CipherSpi {
                 }
                 k += token.p11.C_EncryptFinal(session.id(),
                         outAddr, outArray, (outOfs + k), (outLen - k));
+                doCancel = false;
             } else {
+                // Special handling to match SunJCE provider behavior
+                if (bytesBuffered == 0 && padBufferLen == 0) {
+                    return 0;
+                }
+
                 if (paddingObj != null) {
                     if (padBufferLen != 0) {
                         k = token.p11.C_DecryptUpdate(session.id(),
@@ -828,6 +850,8 @@ final class P11Cipher extends CipherSpi {
                     }
                     k += token.p11.C_DecryptFinal(session.id(),
                             0, padBuffer, k, padBuffer.length - k);
+                    doCancel = false;
+
                     int actualPadLen = paddingObj.unpad(padBuffer, k);
                     k -= actualPadLen;
                     outArray = padBuffer;
@@ -835,6 +859,7 @@ final class P11Cipher extends CipherSpi {
                 } else {
                     k = token.p11.C_DecryptFinal(session.id(),
                             outAddr, outArray, outOfs, outLen);
+                    doCancel = false;
                 }
             }
             if ((!encrypt && paddingObj != null) ||
@@ -846,10 +871,11 @@ final class P11Cipher extends CipherSpi {
             }
             return k;
         } catch (PKCS11Exception e) {
+            doCancel = false;
             handleException(e);
             throw new ProviderException("doFinal() failed", e);
         } finally {
-            reset();
+            reset(doCancel);
         }
     }
 

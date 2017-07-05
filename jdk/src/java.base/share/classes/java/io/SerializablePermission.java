@@ -40,7 +40,7 @@ import java.util.StringTokenizer;
  * The target name is the name of the Serializable permission (see below).
  *
  * <P>
- * The following table lists all the possible SerializablePermission target names,
+ * The following table lists the standard {@code SerializablePermission} target names,
  * and for each provides a description of what the permission allows
  * and a discussion of the risks of granting code the permission.
  *
@@ -71,6 +71,13 @@ import java.util.StringTokenizer;
  *   <td>This is dangerous because malicious code
  * can replace the actual object with one which has incorrect or
  * malignant data.</td>
+ * </tr>
+ *
+ * <tr>
+ *   <td>serialFilter</td>
+ *   <td>Setting a filter for ObjectInputStreams.</td>
+ *   <td>Code could remove a configured filter and remove protections
+ *       already established.</td>
  * </tr>
  *
  * </table>

@@ -1596,6 +1596,10 @@ public:
   product(bool, AlwaysPreTouch, false,                                      \
           "Force all freshly committed pages to be pre-touched")            \
                                                                             \
+  product(size_t, PreTouchParallelChunkSize, 1 * G,                         \
+          "Per-thread chunk size for parallel memory pre-touch.")           \
+          range(1, SIZE_MAX / 2)                                            \
+                                                                            \
   product_pd(size_t, CMSYoungGenPerWorker,                                  \
           "The maximum size of young gen chosen by default per GC worker "  \
           "thread available")                                               \

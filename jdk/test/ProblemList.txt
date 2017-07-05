@@ -136,6 +136,8 @@ java/lang/instrument/BootClassPath/BootClassPathTest.sh         8072130 macosx-a
 
 java/lang/instrument/DaemonThread/TestDaemonThread.java         8161225 generic-all
 
+java/lang/instrument/DaemonThread/TestDaemonThread.java         8167001 generic-all
+
 java/lang/management/MemoryMXBean/Pending.java                  8158837 generic-all
 java/lang/management/MemoryMXBean/PendingAllGC.sh               8158760 generic-all
 
@@ -274,8 +276,6 @@ com/sun/jdi/sde/SourceDebugExtensionTest.java                   8158066 windows-
 # jdk_util
 
 java/util/spi/ResourceBundleControlProvider/UserDefaultControlTest.java 8062512 generic-all
-
-java/util/Arrays/ParallelPrefix.java                            8080165,8085982 generic-all
 
 java/util/BitSet/BitSetStreamTest.java                          8079538 generic-all
 
