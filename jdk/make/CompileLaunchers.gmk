@@ -428,7 +428,7 @@ ifeq ($(USE_EXTERNAL_LIBZ), true)
   UNPACKEXE_CFLAGS := -DSYSTEM_ZLIB
   UNPACKEXE_ZIPOBJS := -lz
 else
-  UNPACKEXE_CFLAGS := -I$(JDK_TOPDIR)/src/share/native/java/util/zip/zlib-1.2.5
+  UNPACKEXE_CFLAGS := -I$(JDK_TOPDIR)/src/share/native/java/util/zip/zlib-1.2.8
   UNPACKEXE_ZIPOBJS := $(JDK_OUTPUTDIR)/objs/libzip/zcrc32$(OBJ_SUFFIX) \
       $(JDK_OUTPUTDIR)/objs/libzip/deflate$(OBJ_SUFFIX) \
       $(JDK_OUTPUTDIR)/objs/libzip/trees$(OBJ_SUFFIX) \
@@ -440,11 +440,6 @@ else
       $(JDK_OUTPUTDIR)/objs/libzip/inftrees$(OBJ_SUFFIX) \
       $(JDK_OUTPUTDIR)/objs/libzip/inffast$(OBJ_SUFFIX)
 
-endif
-
-ifeq ($(OPENJDK_TARGET_CPU_ARCH), sparc)
-  UNPACKEXE_CFLAGS += -xregs=no%appl
-  UNPACKEXE_LDFLAGS_solaris += -xmemalign=4s
 endif
 
 UNPACKEXE_LANG := C
