@@ -57,7 +57,7 @@ public abstract class ContinuousArrayData extends ArrayData {
     }
 
     /**
-     * Check if we can put one more element at the end of this continous
+     * Check if we can put one more element at the end of this continuous
      * array without reallocating, or if we are overwriting an already
      * allocated element
      *

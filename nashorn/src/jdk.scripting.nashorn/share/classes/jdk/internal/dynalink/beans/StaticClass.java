@@ -84,6 +84,7 @@
 package jdk.internal.dynalink.beans;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 /**
  * Object that represents the static facet of a class (its static methods, properties, and fields, as well as
@@ -106,8 +107,7 @@ public class StaticClass implements Serializable {
     private final Class<?> clazz;
 
     /*private*/ StaticClass(final Class<?> clazz) {
-        clazz.getClass(); // NPE check
-        this.clazz = clazz;
+        this.clazz = Objects.requireNonNull(clazz);
     }
 
     /**

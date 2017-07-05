@@ -722,8 +722,12 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
     public void defineOwnProperty(final int index, final Object value) {
         assert isValidArrayIndex(index) : "invalid array index";
         final long longIndex = ArrayIndex.toLongIndex(index);
-        doesNotHaveEnsureDelete(longIndex, getArray().length(), false);
-        setArray(getArray().ensure(longIndex).set(index,value, false));
+        final long oldLength = getArray().length();
+        if (longIndex >= oldLength) {
+            setArray(getArray().ensure(longIndex));
+            doesNotHaveEnsureDelete(longIndex, oldLength, false);
+        }
+        setArray(getArray().set(index,value, false));
     }
 
     private void checkIntegerKey(final String key) {

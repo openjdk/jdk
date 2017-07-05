@@ -68,11 +68,10 @@ public class ProviderTest {
         String testClasses = System.getProperty("test.classes", "") + sep;
         String jdkLib = System.getProperty("test.jdk", ".") + sep + "lib" + sep;
 
-        // Need to add SimpleProvider.jar and tools.jar to classpath.
+        // Need to add SimpleProvider.jar to classpath.
         String classpath =
                 testClassPath + File.pathSeparator +
-                testClasses + "SimpleProvider.jar" + File.pathSeparator +
-                jdkLib + "tools.jar";
+                testClasses + "SimpleProvider.jar";
 
         String[] args = {
                 "-classpath",

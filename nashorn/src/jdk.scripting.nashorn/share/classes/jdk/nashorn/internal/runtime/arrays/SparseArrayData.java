@@ -135,10 +135,17 @@ class SparseArrayData extends ArrayData {
 
     @Override
     public ArrayData ensure(final long safeIndex) {
+        // Usually #ensure only needs to be called if safeIndex is greater or equal current length.
+        // SparseArrayData is an exception as an index smaller than our current length may still
+        // exceed the underlying ArrayData's capacity. Because of this, SparseArrayData invokes
+        // its ensure method internally in various places where other ArrayData subclasses don't,
+        // making it safe for outside uses to only call ensure(safeIndex) if safeIndex >= length.
         if (safeIndex < maxDenseLength && underlying.length() <= safeIndex) {
             underlying = underlying.ensure(safeIndex);
         }
-        setLength(Math.max(safeIndex + 1, length()));
+        if (safeIndex >= length()) {
+            setLength(safeIndex + 1);
+        }
         return this;
     }
 

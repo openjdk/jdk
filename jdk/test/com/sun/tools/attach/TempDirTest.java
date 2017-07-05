@@ -120,10 +120,8 @@ public class TempDirTest {
     private static void launchTests(long pid, Path clientTmpDir) throws Throwable {
         final String sep = File.separator;
 
-        // Need to add jdk/lib/tools.jar to classpath.
         String classpath =
-            System.getProperty("test.class.path", "") + File.pathSeparator +
-            System.getProperty("test.jdk", ".") + sep + "lib" + sep + "tools.jar";
+            System.getProperty("test.class.path", "");
 
         String[] tmpDirArg = null;
         if (clientTmpDir != null) {
