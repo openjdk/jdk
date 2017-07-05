@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8160986
+ * @bug 8160986 8174845 8176883
  * @summary Bad rendering of Swing UI controls with Metal L&F on HiDPI display
  * @run main/manual MetalHiDPIIconsTest
  */
@@ -56,6 +56,8 @@ public class MetalHiDPIIconsTest {
             + "  - JCheckBox\n"
             + "  - JComboBox\n"
             + "  - JScrollPane (vertical and horizontal scroll bars)\n"
+            + "  - JRadioButtonMenuItem\n"
+            + "  - JCheckBoxMenuItem\n"
             + "and others...\n\n"
             + "If so, press PASS, else press FAIL.\n";
 

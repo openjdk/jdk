@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1064,11 +1064,7 @@ public final class String
             if (!isLatin1()) {  // utf16 str and latin1 abs can never be "equal"
                 return false;
             }
-            for (int i = 0; i < len; i++) {
-                if ((char)(v1[i] & 0xff) != StringUTF16.getChar(v2, i)) {
-                    return false;
-                }
-            }
+            return StringUTF16.contentEquals(v1, v2, len);
         }
         return true;
     }
@@ -1120,10 +1116,8 @@ public final class String
                 }
             }
         } else {
-            for (int i = 0; i < n; i++) {
-                if (StringUTF16.getChar(val, i) != cs.charAt(i)) {
-                    return false;
-                }
+            if (!StringUTF16.contentEquals(val, cs, n)) {
+                return false;
             }
         }
         return true;
@@ -1734,6 +1728,9 @@ public final class String
         if (tgtCount == 0) {
             return fromIndex;
         }
+        if (tgtCount > srcCount) {
+            return -1;
+        }
         if (srcCoder == tgtCoder) {
             return srcCoder == LATIN1
                 ? StringLatin1.indexOf(src, srcCount, tgt, tgtCount, fromIndex)
@@ -1792,7 +1789,7 @@ public final class String
      * is the string being searched for.
      *
      * @param   src         the characters being searched.
-     * @param   srcCoder  coder handles the mapping between bytes/chars
+     * @param   srcCoder    coder handles the mapping between bytes/chars
      * @param   srcCount    count of the source string.
      * @param   tgt         the characters being searched for.
      * @param   fromIndex   the index to begin searching from.
@@ -1807,11 +1804,11 @@ public final class String
          * consistency, don't check for null str.
          */
         int rightIndex = srcCount - tgtCount;
-        if (fromIndex < 0) {
-            return -1;
-        }
         if (fromIndex > rightIndex) {
             fromIndex = rightIndex;
+        }
+        if (fromIndex < 0) {
+            return -1;
         }
         /* Empty string always matches. */
         if (tgtCount == 0) {
@@ -1825,31 +1822,8 @@ public final class String
         if (srcCoder == LATIN1) {    // && tgtCoder == UTF16
             return -1;
         }
-                                     // srcCoder == UTF16 && tgtCoder == LATIN1
-        int min = tgtCount - 1;
-        int i = min + fromIndex;
-        int strLastIndex = tgtCount - 1;
-
-        char strLastChar = (char)(tgt[strLastIndex] & 0xff);
-    startSearchForLastChar:
-        while (true) {
-            while (i >= min && StringUTF16.getChar(src, i) != strLastChar) {
-                i--;
-            }
-            if (i < min) {
-                return -1;
-            }
-            int j = i - 1;
-            int start = j - strLastIndex;
-            int k = strLastIndex - 1;
-            while (j > start) {
-                if (StringUTF16.getChar(src, j--) != (tgt[k--] & 0xff)) {
-                    i--;
-                    continue startSearchForLastChar;
-                }
-            }
-            return start + 1;
-        }
+        // srcCoder == UTF16 && tgtCoder == LATIN1
+        return StringUTF16.lastIndexOfLatin1(src, srcCount, tgt, tgtCount, fromIndex);
     }
 
     /**
@@ -2235,23 +2209,23 @@ public final class String
      *     <th>Limit</th>
      *     <th>Result</th>
      * </tr>
-     * <tr><td align=center>:</td>
-     *     <td align=center>2</td>
+     * <tr><td style="text-align:center">:</td>
+     *     <td style="text-align:center">2</td>
      *     <td>{@code { "boo", "and:foo" }}</td></tr>
-     * <tr><td align=center>:</td>
-     *     <td align=center>5</td>
+     * <tr><td style="text-align:center">:</td>
+     *     <td style="text-align:center">5</td>
      *     <td>{@code { "boo", "and", "foo" }}</td></tr>
-     * <tr><td align=center>:</td>
-     *     <td align=center>-2</td>
+     * <tr><td style="text-align:center">:</td>
+     *     <td style="text-align:center">-2</td>
      *     <td>{@code { "boo", "and", "foo" }}</td></tr>
-     * <tr><td align=center>o</td>
-     *     <td align=center>5</td>
+     * <tr><td style="text-align:center">o</td>
+     *     <td style="text-align:center">5</td>
      *     <td>{@code { "b", "", ":and:f", "", "" }}</td></tr>
-     * <tr><td align=center>o</td>
-     *     <td align=center>-2</td>
+     * <tr><td style="text-align:center">o</td>
+     *     <td style="text-align:center">-2</td>
      *     <td>{@code { "b", "", ":and:f", "", "" }}</td></tr>
-     * <tr><td align=center>o</td>
-     *     <td align=center>0</td>
+     * <tr><td style="text-align:center">o</td>
+     *     <td style="text-align:center">0</td>
      *     <td>{@code { "b", "", ":and:f" }}</td></tr>
      * </table></blockquote>
      *
@@ -2357,9 +2331,9 @@ public final class String
      *  <th>Regex</th>
      *  <th>Result</th>
      * </tr>
-     * <tr><td align=center>:</td>
+     * <tr><td style="text-align:center">:</td>
      *     <td>{@code { "boo", "and", "foo" }}</td></tr>
-     * <tr><td align=center>o</td>
+     * <tr><td style="text-align:center">o</td>
      *     <td>{@code { "b", "", ":and:f" }}</td></tr>
      * </table></blockquote>
      *
@@ -2672,7 +2646,6 @@ public final class String
      * point</a> is passed through uninterpreted.
      *
      * @return an IntStream of char values from this sequence
-     * @since 9
      */
     @Override
     public IntStream chars() {
@@ -2692,7 +2665,6 @@ public final class String
      * {@code int} values which are then passed to the stream.
      *
      * @return an IntStream of Unicode code points from this sequence
-     * @since 9
      */
     @Override
     public IntStream codePoints() {
@@ -3080,7 +3052,8 @@ public final class String
      */
     static void checkIndex(int index, int length) {
         if (index < 0 || index >= length) {
-            throw new StringIndexOutOfBoundsException("index " + index);
+            throw new StringIndexOutOfBoundsException("index " + index +
+                                                      ",length " + length);
         }
     }
 
@@ -3118,7 +3091,7 @@ public final class String
      *          If {@code begin} is negative, {@code begin} is greater than
      *          {@code end}, or {@code end} is greater than {@code length}.
      */
-    private static void checkBoundsBeginEnd(int begin, int end, int length) {
+    static void checkBoundsBeginEnd(int begin, int end, int length) {
         if (begin < 0 || begin > end || end > length) {
             throw new StringIndexOutOfBoundsException(
                 "begin " + begin + ", end " + end + ", length " + length);
