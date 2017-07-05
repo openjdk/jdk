@@ -552,6 +552,10 @@ void LIR_Assembler::emit_op1(LIR_Op1* op) {
       monitor_address(op->in_opr()->as_constant_ptr()->as_jint(), op->result_opr());
       break;
 
+    case lir_unwind:
+      unwind_op(op->in_opr());
+      break;
+
     default:
       Unimplemented();
       break;
@@ -707,8 +711,7 @@ void LIR_Assembler::emit_op2(LIR_Op2* op) {
       break;
 
     case lir_throw:
-    case lir_unwind:
-      throw_op(op->in_opr1(), op->in_opr2(), op->info(), op->code() == lir_unwind);
+      throw_op(op->in_opr1(), op->in_opr2(), op->info());
       break;
 
     default:

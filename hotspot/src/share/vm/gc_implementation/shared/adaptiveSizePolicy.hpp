@@ -1,5 +1,5 @@
 /*
- * Copyright 2004-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2004-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 // Forward decls
 class elapsedTimer;
+class CollectorPolicy;
 
 class AdaptiveSizePolicy : public CHeapObj {
  friend class GCAdaptivePolicyCounters;
@@ -75,13 +76,16 @@ class AdaptiveSizePolicy : public CHeapObj {
 
   // This is a hint for the heap:  we've detected that gc times
   // are taking longer than GCTimeLimit allows.
-  bool _gc_time_limit_exceeded;
-  // Use for diagnostics only.  If UseGCTimeLimit is false,
+  bool _gc_overhead_limit_exceeded;
+  // Use for diagnostics only.  If UseGCOverheadLimit is false,
   // this variable is still set.
-  bool _print_gc_time_limit_would_be_exceeded;
+  bool _print_gc_overhead_limit_would_be_exceeded;
   // Count of consecutive GC that have exceeded the
   // GC time limit criterion.
-  uint _gc_time_limit_count;
+  uint _gc_overhead_limit_count;
+  // This flag signals that GCTimeLimit is being exceeded
+  // but may not have done so for the required number of consequetive
+  // collections.
 
   // Minor collection timers used to determine both
   // pause and interval times for collections.
@@ -406,22 +410,21 @@ class AdaptiveSizePolicy : public CHeapObj {
   // Most heaps will choose to throw an OutOfMemoryError when
   // this occurs but it is up to the heap to request this information
   // of the policy
-  bool gc_time_limit_exceeded() {
-    return _gc_time_limit_exceeded;
+  bool gc_overhead_limit_exceeded() {
+    return _gc_overhead_limit_exceeded;
   }
-  void set_gc_time_limit_exceeded(bool v) {
-    _gc_time_limit_exceeded = v;
-  }
-  bool print_gc_time_limit_would_be_exceeded() {
-    return _print_gc_time_limit_would_be_exceeded;
-  }
-  void set_print_gc_time_limit_would_be_exceeded(bool v) {
-    _print_gc_time_limit_would_be_exceeded = v;
+  void set_gc_overhead_limit_exceeded(bool v) {
+    _gc_overhead_limit_exceeded = v;
   }
 
-  uint gc_time_limit_count() { return _gc_time_limit_count; }
-  void reset_gc_time_limit_count() { _gc_time_limit_count = 0; }
-  void inc_gc_time_limit_count() { _gc_time_limit_count++; }
+  // Tests conditions indicate the GC overhead limit is being approached.
+  bool gc_overhead_limit_near() {
+    return gc_overhead_limit_count() >=
+        (AdaptiveSizePolicyGCTimeLimitThreshold - 1);
+  }
+  uint gc_overhead_limit_count() { return _gc_overhead_limit_count; }
+  void reset_gc_overhead_limit_count() { _gc_overhead_limit_count = 0; }
+  void inc_gc_overhead_limit_count() { _gc_overhead_limit_count++; }
   // accessors for flags recording the decisions to resize the
   // generations to meet the pause goal.
 
@@ -435,6 +438,16 @@ class AdaptiveSizePolicy : public CHeapObj {
   int decrease_for_footprint() const { return _decrease_for_footprint; }
   int decide_at_full_gc() { return _decide_at_full_gc; }
   void set_decide_at_full_gc(int v) { _decide_at_full_gc = v; }
+
+  // Check the conditions for an out-of-memory due to excessive GC time.
+  // Set _gc_overhead_limit_exceeded if all the conditions have been met.
+  void check_gc_overhead_limit(size_t young_live,
+                               size_t eden_live,
+                               size_t max_old_gen_size,
+                               size_t max_eden_size,
+                               bool   is_full_gc,
+                               GCCause::Cause gc_cause,
+                               CollectorPolicy* collector_policy);
 
   // Printing support
   virtual bool print_adaptive_size_policy_on(outputStream* st) const;
