@@ -50,13 +50,24 @@ public class CalendarNameProviderImpl extends CalendarNameProvider implements Av
 
     @Override
     public String getDisplayName(String calendarType, int field, int value, int style, Locale locale) {
+        return getDisplayNameImpl(calendarType, field, value, style, locale, false);
+    }
+
+    public String getCldrDisplayName(String calendarType, int field, int value, int style, Locale locale) {
+        return getDisplayNameImpl(calendarType, field, value, style, locale, true);
+    }
+
+    public String getDisplayNameImpl(String calendarType, int field, int value, int style, Locale locale, boolean cldr) {
         String name = null;
-        String key = getResourceKey(calendarType, field, style);
+        String key = getResourceKey(calendarType, field, style, cldr);
         if (key != null) {
             String[] strings = LocaleProviderAdapter.forType(type).getLocaleResources(locale).getCalendarNames(key);
             if (strings != null && strings.length > 0) {
                 if (field == DAY_OF_WEEK || field == YEAR) {
                     --value;
+                }
+                if (value < 0 || value >= strings.length) {
+                    return null;
                 }
                 name = strings[value];
                 // If name is empty in standalone, try its `format' style.
@@ -76,24 +87,32 @@ public class CalendarNameProviderImpl extends CalendarNameProvider implements Av
         SHORT_STANDALONE, LONG_FORMAT, LONG_STANDALONE,
         NARROW_FORMAT, NARROW_STANDALONE
     };
+
     @Override
     public Map<String, Integer> getDisplayNames(String calendarType, int field, int style, Locale locale) {
         Map<String, Integer> names;
         if (style == ALL_STYLES) {
-            names = getDisplayNamesImpl(calendarType, field, SHORT_FORMAT, locale);
+            names = getDisplayNamesImpl(calendarType, field, SHORT_FORMAT, locale, false);
             for (int st : REST_OF_STYLES) {
-                names.putAll(getDisplayNamesImpl(calendarType, field, st, locale));
+                names.putAll(getDisplayNamesImpl(calendarType, field, st, locale, false));
             }
         } else {
             // specific style
-            names = getDisplayNamesImpl(calendarType, field, style, locale);
+            names = getDisplayNamesImpl(calendarType, field, style, locale, false);
         }
         return names.isEmpty() ? null : names;
     }
 
+    // NOTE: This method should be used ONLY BY JSR 310 classes.
+    public Map<String, Integer> getCldrDisplayNames(String calendarType, int field, int style, Locale locale) {
+        Map<String, Integer> names;
+        names = getDisplayNamesImpl(calendarType, field, style, locale, true);
+        return names.isEmpty() ? null : names;
+    }
+
     private Map<String, Integer> getDisplayNamesImpl(String calendarType, int field,
-                                                     int style, Locale locale) {
-        String key = getResourceKey(calendarType, field, style);
+                                                     int style, Locale locale, boolean cldr) {
+        String key = getResourceKey(calendarType, field, style, cldr);
         Map<String, Integer> map = new TreeMap<>(LengthBasedComparator.INSTANCE);
         if (key != null) {
             String[] strings = LocaleProviderAdapter.forType(type).getLocaleResources(locale).getCalendarNames(key);
@@ -201,7 +220,7 @@ public class CalendarNameProviderImpl extends CalendarNameProvider implements Av
         return false;
     }
 
-    private String getResourceKey(String type, int field, int style) {
+    private String getResourceKey(String type, int field, int style, boolean cldr) {
         int baseStyle = getBaseStyle(style);
         boolean isStandalone = (style != baseStyle);
 
@@ -210,6 +229,10 @@ public class CalendarNameProviderImpl extends CalendarNameProvider implements Av
         }
         boolean isNarrow = (baseStyle == NARROW_FORMAT);
         StringBuilder key = new StringBuilder();
+        // If cldr is true, use prefix "cldr.".
+        if (cldr) {
+            key.append("cldr.");
+        }
         switch (field) {
         case ERA:
             if (type != null) {
@@ -222,6 +245,11 @@ public class CalendarNameProviderImpl extends CalendarNameProvider implements Av
                 // due to historical reasons. (JRE DateFormatSymbols.getEras returns
                 // abbreviations while other getShort*() return abbreviations.)
                 if (this.type == LocaleProviderAdapter.Type.JRE) {
+                    if (cldr) {
+                        if (baseStyle == LONG) {
+                            key.append("long.");
+                        }
+                    }
                     if (baseStyle == SHORT) {
                         key.append("short.");
                     }

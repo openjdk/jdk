@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -272,7 +272,7 @@ package java.sql;
    * Otherwise, it calls the <code>SQLData.writeSQL</code>
    * method of the given object, which
    * writes the object's attributes to the stream.
-   * The implementation of the method <code>SQLData.writeSQ</code>
+   * The implementation of the method <code>SQLData.writeSQL</code>
    * calls the appropriate <code>SQLOutput</code> writer method(s)
    * for writing each of the object's attributes in order.
    * The attributes must be read from an <code>SQLInput</code>
@@ -433,5 +433,43 @@ package java.sql;
    */
   void writeSQLXML(SQLXML x) throws SQLException;
 
+  //--------------------------JDBC 4.2 -----------------------------
+
+  /**
+   * Writes to the stream the data contained in the given object. The
+   * object will be converted to the specified targetSqlType
+   * before being sent to the stream.
+   *<p>
+   * When the {@code object} is {@code null}, this
+   * method writes an SQL {@code NULL} to the stream.
+   * <p>
+   * If the object has a custom mapping (is of a class implementing the
+   * interface {@code SQLData}),
+   * the JDBC driver should call the method {@code SQLData.writeSQL} to
+   * write it to the SQL data stream.
+   * If, on the other hand, the object is of a class implementing
+   * {@code Ref}, {@code Blob}, {@code Clob},  {@code NClob},
+   *  {@code Struct}, {@code java.net.URL},
+   * or {@code Array}, the driver should pass it to the database as a
+   * value of the corresponding SQL type.
+   *<P>
+   * The default implementation will throw {@code SQLFeatureNotSupportedException}
+   *
+   * @param x the object containing the input parameter value
+   * @param targetSqlType the SQL type to be sent to the database.
+   * @exception SQLException if a database access error occurs  or
+   *            if the Java Object specified by x is an InputStream
+   *            or Reader object and the value of the scale parameter is less
+   *            than zero
+   * @exception SQLFeatureNotSupportedException if
+   * the JDBC driver does not support this data type
+   * @see JDBCType
+   * @see SQLType
+   * @since 1.8
+   */
+  default void writeObject(Object x, SQLType targetSqlType) throws SQLException {
+        throw new SQLFeatureNotSupportedException();
+  }
 
 }
+

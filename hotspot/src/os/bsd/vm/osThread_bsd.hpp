@@ -49,6 +49,11 @@
   // (e.g. pthread_kill).
   pthread_t _pthread_id;
 
+  // This is the "thread_id" from struct thread_identifier_info. According to a
+  // comment in thread_info.h, this is a "system-wide unique 64-bit thread id".
+  // The value is used by SA to correlate threads.
+  uint64_t _unique_thread_id;
+
   sigset_t _caller_sigmask; // Caller's signal mask
 
  public:
@@ -75,6 +80,10 @@
   }
   void set_pthread_id(pthread_t tid) {
     _pthread_id = tid;
+  }
+
+  void set_unique_thread_id(uint64_t id) {
+    _unique_thread_id = id;
   }
 
   // ***************************************************************

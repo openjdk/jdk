@@ -59,19 +59,20 @@
  */
 package test.java.time.format;
 
-import java.time.format.*;
-
 import static java.time.temporal.ChronoField.DAY_OF_MONTH;
 import static java.time.temporal.ChronoField.DAY_OF_WEEK;
 import static java.time.temporal.ChronoField.DAY_OF_YEAR;
 import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.fail;
 
 import java.text.ParsePosition;
-import java.time.format.DateTimeBuilder;
-import java.time.temporal.TemporalField;
 import java.time.format.DateTimeFormatter;
+import java.time.format.SignStyle;
+import java.time.temporal.Queries;
+import java.time.temporal.TemporalAccessor;
+import java.time.temporal.TemporalField;
 
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -94,8 +95,8 @@ public class TestNumberParser extends AbstractTestPrinterParser {
     @Test(dataProvider="error")
     public void test_parse_error(TemporalField field, int min, int max, SignStyle style, String text, int pos, Class<?> expected) {
         try {
-            getFormatter(field, min, max, style).parseToBuilder(text, new ParsePosition(pos));
-            assertTrue(false);
+            getFormatter(field, min, max, style).parseUnresolved(text, new ParsePosition(pos));
+            fail();
         } catch (RuntimeException ex) {
             assertTrue(expected.isInstance(ex));
         }
@@ -170,13 +171,15 @@ public class TestNumberParser extends AbstractTestPrinterParser {
             // hacky, to reserve space
             dtf = builder.appendValue(DAY_OF_YEAR, subsequentWidth).toFormatter(locale).withSymbols(symbols);
         }
-        DateTimeBuilder dtb = dtf.parseToBuilder(text, ppos);
+        TemporalAccessor parsed = dtf.parseUnresolved(text, ppos);
         if (ppos.getErrorIndex() != -1) {
             assertEquals(ppos.getErrorIndex(), expectedPos);
         } else {
             assertTrue(subsequentWidth >= 0);
             assertEquals(ppos.getIndex(), expectedPos + subsequentWidth);
-            assertEquals(dtb.getLong(DAY_OF_MONTH), expectedValue);
+            assertEquals(parsed.getLong(DAY_OF_MONTH), expectedValue);
+            assertEquals(parsed.query(Queries.chronology()), null);
+            assertEquals(parsed.query(Queries.zoneId()), null);
         }
     }
 
@@ -188,13 +191,15 @@ public class TestNumberParser extends AbstractTestPrinterParser {
             // hacky, to reserve space
             dtf = builder.appendValue(DAY_OF_YEAR, subsequentWidth).toFormatter(locale).withSymbols(symbols);
         }
-        DateTimeBuilder dtb = dtf.parseToBuilder(text, ppos);
+        TemporalAccessor parsed = dtf.parseUnresolved(text, ppos);
         if (ppos.getErrorIndex() != -1) {
             assertEquals(ppos.getErrorIndex(), expectedPos);
         } else {
             assertTrue(subsequentWidth >= 0);
             assertEquals(ppos.getIndex(), expectedPos + subsequentWidth);
-            assertEquals(dtb.getLong(DAY_OF_WEEK), expectedValue);
+            assertEquals(parsed.getLong(DAY_OF_WEEK), expectedValue);
+            assertEquals(parsed.query(Queries.chronology()), null);
+            assertEquals(parsed.query(Queries.zoneId()), null);
         }
     }
 
@@ -302,12 +307,14 @@ public class TestNumberParser extends AbstractTestPrinterParser {
     @Test(dataProvider="parseSignsStrict")
     public void test_parseSignsStrict(String input, int min, int max, SignStyle style, int parseLen, Integer parseVal) throws Exception {
         ParsePosition pos = new ParsePosition(0);
-        DateTimeBuilder dtb = getFormatter(DAY_OF_MONTH, min, max, style).parseToBuilder(input, pos);
+        TemporalAccessor parsed = getFormatter(DAY_OF_MONTH, min, max, style).parseUnresolved(input, pos);
         if (pos.getErrorIndex() != -1) {
             assertEquals(pos.getErrorIndex(), parseLen);
         } else {
             assertEquals(pos.getIndex(), parseLen);
-            assertEquals(dtb.getLong(DAY_OF_MONTH), (long)parseVal);
+            assertEquals(parsed.getLong(DAY_OF_MONTH), (long)parseVal);
+            assertEquals(parsed.query(Queries.chronology()), null);
+            assertEquals(parsed.query(Queries.zoneId()), null);
         }
     }
 
@@ -410,12 +417,14 @@ public class TestNumberParser extends AbstractTestPrinterParser {
     public void test_parseSignsLenient(String input, int min, int max, SignStyle style, int parseLen, Integer parseVal) throws Exception {
         setStrict(false);
         ParsePosition pos = new ParsePosition(0);
-        DateTimeBuilder dtb = getFormatter(DAY_OF_MONTH, min, max, style).parseToBuilder(input, pos);
+        TemporalAccessor parsed = getFormatter(DAY_OF_MONTH, min, max, style).parseUnresolved(input, pos);
         if (pos.getErrorIndex() != -1) {
             assertEquals(pos.getErrorIndex(), parseLen);
         } else {
             assertEquals(pos.getIndex(), parseLen);
-            assertEquals(dtb.getLong(DAY_OF_MONTH), (long)parseVal);
+            assertEquals(parsed.getLong(DAY_OF_MONTH), (long)parseVal);
+            assertEquals(parsed.query(Queries.chronology()), null);
+            assertEquals(parsed.query(Queries.zoneId()), null);
         }
     }
 
@@ -499,12 +508,14 @@ public class TestNumberParser extends AbstractTestPrinterParser {
     public void test_parseDigitsLenient(String input, int min, int max, SignStyle style, int parseLen, Integer parseVal) throws Exception {
         setStrict(false);
         ParsePosition pos = new ParsePosition(0);
-        DateTimeBuilder dtb = getFormatter(DAY_OF_MONTH, min, max, style).parseToBuilder(input, pos);
+        TemporalAccessor parsed = getFormatter(DAY_OF_MONTH, min, max, style).parseUnresolved(input, pos);
         if (pos.getErrorIndex() != -1) {
             assertEquals(pos.getErrorIndex(), parseLen);
         } else {
             assertEquals(pos.getIndex(), parseLen);
-            assertEquals(dtb.getLong(DAY_OF_MONTH), (long)parseVal);
+            assertEquals(parsed.getLong(DAY_OF_MONTH), (long)parseVal);
+            assertEquals(parsed.query(Queries.chronology()), null);
+            assertEquals(parsed.query(Queries.zoneId()), null);
         }
     }
 
@@ -534,13 +545,15 @@ public class TestNumberParser extends AbstractTestPrinterParser {
         DateTimeFormatter f = builder
                 .appendValue(MONTH_OF_YEAR, 1, 2, SignStyle.NORMAL)
                 .appendValue(DAY_OF_MONTH, 2).toFormatter(locale).withSymbols(symbols);
-        DateTimeBuilder dtb = f.parseToBuilder(input, pos);
+        TemporalAccessor parsed = f.parseUnresolved(input, pos);
         if (pos.getErrorIndex() != -1) {
             assertEquals(pos.getErrorIndex(), parseLen);
         } else {
             assertEquals(pos.getIndex(), parseLen);
-            assertEquals(dtb.getLong(MONTH_OF_YEAR), (long) parseMonth);
-            assertEquals(dtb.getLong(DAY_OF_MONTH), (long) parsedDay);
+            assertEquals(parsed.getLong(MONTH_OF_YEAR), (long) parseMonth);
+            assertEquals(parsed.getLong(DAY_OF_MONTH), (long) parsedDay);
+            assertEquals(parsed.query(Queries.chronology()), null);
+            assertEquals(parsed.query(Queries.zoneId()), null);
         }
     }
 

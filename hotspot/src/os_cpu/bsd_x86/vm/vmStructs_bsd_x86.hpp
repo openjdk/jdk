@@ -35,17 +35,16 @@
   /* Threads (NOTE: incomplete) */                                                                                                   \
   /******************************/                                                                                                   \
   nonstatic_field(OSThread,                      _thread_id,                                      OSThread::thread_id_t)             \
-  nonstatic_field(OSThread,                      _pthread_id,                                     pthread_t)
+  nonstatic_field(OSThread,                      _unique_thread_id,                               uint64_t)
 
 
 #define VM_TYPES_OS_CPU(declare_type, declare_toplevel_type, declare_oop_type, declare_integer_type, declare_unsigned_integer_type, declare_c1_toplevel_type, declare_c2_type, declare_c2_toplevel_type) \
                                                                           \
   /**********************/                                                \
-  /* Posix Thread IDs   */                                                \
+  /* Thread IDs         */                                                \
   /**********************/                                                \
                                                                           \
-  declare_unsigned_integer_type(OSThread::thread_id_t)                    \
-  declare_unsigned_integer_type(pthread_t)
+  declare_unsigned_integer_type(OSThread::thread_id_t)
 
 #define VM_INT_CONSTANTS_OS_CPU(declare_constant, declare_preprocessor_constant, declare_c1_constant, declare_c2_constant, declare_c2_preprocessor_constant)
 

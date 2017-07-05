@@ -98,7 +98,7 @@ public class TCKLocalizedFieldPrinter extends AbstractTestPrinterParser {
                 = new DateTimeFormatterBuilder().appendPattern(pattern);
         LocalDate date = LocalDate.of(2012, 7, 20);
 
-        String result = b.toFormatter(locale).print(date);
+        String result = b.toFormatter(locale).format(date);
         assertEquals(result, expected, "Wrong output for pattern '" + pattern + "'.");
     }
 
