@@ -1,5 +1,5 @@
 #
-# Copyright 1996-2007 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 1996-2009 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,7 @@ ifeq ($(PLATFORM), windows)
   endif
 endif
 
-SUBDIRS = other action util tools jgss krb5 smartcardio $(PKCS11) \
+SUBDIRS = ec other action util tools jgss krb5 smartcardio $(PKCS11) \
           $(JGSS_WRAPPER) $(MSCAPI)
 
 all build clean clobber::

@@ -29,7 +29,7 @@
  *  @author jjh
  *
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter
- *  @run compile -g -source 1.5 -target 1.5 VarargsTest.java
+ *  @run compile -g VarargsTest.java
  *  @run main VarargsTest
  */
 import com.sun.jdi.*;
