@@ -28,7 +28,7 @@
  * @author Valerie Peng
  * @library ..
  * @key randomness
- * @modules jdk.crypto.pkcs11
+ * @modules jdk.crypto.token
  * @run main/othervm TestSymmCiphersNoPad
  * @run main/othervm TestSymmCiphersNoPad sm
  */

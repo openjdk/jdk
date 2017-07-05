@@ -847,7 +847,8 @@ C2V_VMENTRY(jint, installCode, (JNIEnv *jniEnv, jobject, jobject target, jobject
   JVMCICompiler* compiler = JVMCICompiler::instance(CHECK_JNI_ERR);
 
   TraceTime install_time("installCode", JVMCICompiler::codeInstallTimer());
-  CodeInstaller installer;
+  bool is_immutable_PIC = HotSpotCompiledCode::isImmutablePIC(compiled_code_handle) > 0;
+  CodeInstaller installer(is_immutable_PIC);
   JVMCIEnv::CodeInstallResult result = installer.install(compiler, target_handle, compiled_code_handle, cb, installed_code_handle, speculation_log_handle, CHECK_0);
 
   if (PrintCodeCacheOnCompilation) {
@@ -905,7 +906,7 @@ C2V_VMENTRY(jint, getMetadata, (JNIEnv *jniEnv, jobject, jobject target, jobject
 
   CodeMetadata code_metadata;
   CodeBlob *cb = NULL;
-  CodeInstaller installer;
+  CodeInstaller installer(true /* immutable PIC compilation */);
 
   JVMCIEnv::CodeInstallResult result = installer.gather_metadata(target_handle, compiled_code_handle, code_metadata, CHECK_0);
   if (result != JVMCIEnv::ok) {
@@ -941,7 +942,16 @@ C2V_VMENTRY(jint, getMetadata, (JNIEnv *jniEnv, jobject, jobject target, jobject
     HotSpotMetaData::set_oopMaps(metadata_handle, oopMapArrayHandle());
   }
 
-  HotSpotMetaData::set_metadata(metadata_handle, NULL);
+  AOTOopRecorder* recorder = code_metadata.get_oop_recorder();
+
+  int nr_meta_strings = recorder->nr_meta_strings();
+  objArrayHandle metadataArrayHandle = oopFactory::new_objectArray(nr_meta_strings, CHECK_(JVMCIEnv::cache_full));
+  for (int i = 0; i < nr_meta_strings; ++i) {
+    const char* element = recorder->meta_element(i);
+    Handle java_string = java_lang_String::create_from_str(element, CHECK_(JVMCIEnv::cache_full));
+    metadataArrayHandle->obj_at_put(i, java_string());
+  }
+  HotSpotMetaData::set_metadata(metadata_handle, metadataArrayHandle());
 
   ExceptionHandlerTable* handler = code_metadata.get_exception_table();
   int table_size = handler->size_in_bytes();
@@ -1493,6 +1503,15 @@ C2V_VMENTRY(int, methodDataProfileDataSize, (JNIEnv*, jobject, jlong metaspace_m
   THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(), err_msg("Invalid profile data position %d", position));
 C2V_END
 
+C2V_VMENTRY(jlong, getFingerprint, (JNIEnv*, jobject, jlong metaspace_klass))
+  Klass *k = CompilerToVM::asKlass(metaspace_klass);
+  if (k->is_instance_klass()) {
+    return InstanceKlass::cast(k)->get_stored_fingerprint();
+  } else {
+    return 0;
+  }
+C2V_END
+
 C2V_VMENTRY(int, interpreterFrameSize, (JNIEnv*, jobject, jobject bytecode_frame_handle))
   if (bytecode_frame_handle == NULL) {
     THROW_0(vmSymbols::java_lang_NullPointerException());
@@ -1621,6 +1640,7 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "writeDebugOutput",                             CC "([BII)V",                                                                         FN_PTR(writeDebugOutput)},
   {CC "flushDebugOutput",                             CC "()V",                                                                             FN_PTR(flushDebugOutput)},
   {CC "methodDataProfileDataSize",                    CC "(JI)I",                                                                           FN_PTR(methodDataProfileDataSize)},
+  {CC "getFingerprint",                               CC "(J)J",                                                                            FN_PTR(getFingerprint)},
   {CC "interpreterFrameSize",                         CC "(" BYTECODE_FRAME ")I",                                                           FN_PTR(interpreterFrameSize)},
   {CC "compileToBytecode",                            CC "(" OBJECT ")V",                                                                   FN_PTR(compileToBytecode)},
 };

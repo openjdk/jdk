@@ -32,7 +32,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Supplier;
 
 
 /**
@@ -58,11 +57,12 @@ public final class ModuleUtils {
 
             URI uri = URI.create("module:/" + name);
 
-            Supplier<ModuleReader> supplier = () -> {
-                throw new UnsupportedOperationException();
+            ModuleReference mref = new ModuleReference(descriptor, uri) {
+                @Override
+                public ModuleReader open() {
+                    throw new UnsupportedOperationException();
+                }
             };
-
-            ModuleReference mref = new ModuleReference(descriptor, uri, supplier);
 
             namesToReference.put(name, mref);
         }

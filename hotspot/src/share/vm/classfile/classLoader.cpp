@@ -504,7 +504,7 @@ ClassFileStream* ClassPathImageEntry::open_stream(const char* name, TRAPS) {
 
     if (pkg_name != NULL) {
       if (!Universe::is_module_initialized()) {
-        location = (*JImageFindResource)(_jimage, "java.base", get_jimage_version_string(), name, &size);
+        location = (*JImageFindResource)(_jimage, JAVA_BASE_NAME, get_jimage_version_string(), name, &size);
 #if INCLUDE_CDS
         // CDS uses the boot class loader to load classes whose packages are in
         // modules defined for other class loaders.  So, for now, get their module
@@ -751,6 +751,21 @@ void ClassLoader::setup_patch_mod_entries() {
   }
 }
 
+// Determine whether the module has been patched via the command-line
+// option --patch-module
+bool ClassLoader::is_in_patch_mod_entries(Symbol* module_name) {
+  if (_patch_mod_entries != NULL && _patch_mod_entries->is_nonempty()) {
+    int table_len = _patch_mod_entries->length();
+    for (int i = 0; i < table_len; i++) {
+      ModuleClassPathList* patch_mod = _patch_mod_entries->at(i);
+      if (module_name->fast_compare(patch_mod->module_name()) == 0) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 void ClassLoader::setup_search_path(const char *class_path, bool bootstrap_search) {
   int len = (int)strlen(class_path);
   int end = 0;
@@ -771,8 +786,8 @@ void ClassLoader::setup_search_path(const char *class_path, bool bootstrap_searc
     // what the base or core piece of the boot loader search is.  Either a java runtime
     // image is present or this is an exploded module build situation.
     if (set_base_piece) {
-      assert(string_ends_with(path, MODULES_IMAGE_NAME) || string_ends_with(path, "java.base"),
-             "Incorrect boot loader search path, no java runtime image or java.base exploded build");
+      assert(string_ends_with(path, MODULES_IMAGE_NAME) || string_ends_with(path, JAVA_BASE_NAME),
+             "Incorrect boot loader search path, no java runtime image or " JAVA_BASE_NAME " exploded build");
       struct stat st;
       if (os::stat(path, &st) == 0) {
         // Directory found
@@ -1141,7 +1156,7 @@ void ClassLoader::initialize_module_loader_map(JImageFile* jimage) {
 
   ResourceMark rm;
   jlong size;
-  JImageLocationRef location = (*JImageFindResource)(jimage, "java.base", get_jimage_version_string(), MODULE_LOADER_MAP, &size);
+  JImageLocationRef location = (*JImageFindResource)(jimage, JAVA_BASE_NAME, get_jimage_version_string(), MODULE_LOADER_MAP, &size);
   if (location == 0) {
     vm_exit_during_initialization(
       "Cannot find ModuleLoaderMap location from modules jimage.", NULL);
@@ -1764,15 +1779,16 @@ void classLoader_init1() {
 
 // Complete the ClassPathEntry setup for the boot loader
 void ClassLoader::classLoader_init2(TRAPS) {
-  // Create the moduleEntry for java.base
-  create_javabase();
-
   // Setup the list of module/path pairs for --patch-module processing
   // This must be done after the SymbolTable is created in order
   // to use fast_compare on module names instead of a string compare.
   if (Arguments::get_patch_mod_prefix() != NULL) {
     setup_patch_mod_entries();
   }
+
+  // Create the ModuleEntry for java.base (must occur after setup_patch_mod_entries
+  // to successfully determine if java.base has been patched)
+  create_javabase();
 
   // Setup the initial java.base/path pair for the exploded build entries.
   // As more modules are defined during module system initialization, more
@@ -1823,7 +1839,7 @@ void ClassLoader::create_javabase() {
     MutexLocker ml(Module_lock, THREAD);
     ModuleEntry* jb_module = null_cld_modules->locked_create_entry_or_null(Handle(NULL), vmSymbols::java_base(), NULL, NULL, null_cld);
     if (jb_module == NULL) {
-      vm_exit_during_initialization("Unable to create ModuleEntry for java.base");
+      vm_exit_during_initialization("Unable to create ModuleEntry for " JAVA_BASE_NAME);
     }
     ModuleEntryTable::set_javabase_moduleEntry(jb_module);
   }

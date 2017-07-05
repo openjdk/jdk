@@ -23,7 +23,7 @@
 
 /*
  * @test jdk.vm.ci.hotspot.test.HotSpotConstantReflectionProviderTest
- * @requires (vm.simpleArch == "x64" | vm.simpleArch == "sparcv9" | vm.simpleArch == "aarch64")
+ * @requires vm.jvmci
  * @modules jdk.vm.ci/jdk.vm.ci.runtime
  *          jdk.vm.ci/jdk.vm.ci.meta
  *          jdk.vm.ci/jdk.vm.ci.hotspot

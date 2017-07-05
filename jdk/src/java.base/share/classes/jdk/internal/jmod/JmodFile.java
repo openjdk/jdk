@@ -31,7 +31,10 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Iterator;
+import java.util.Arrays;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -70,12 +73,13 @@ public class JmodFile implements AutoCloseable {
      * JMOD sections
      */
     public static enum Section {
-        NATIVE_LIBS("native"),
-        NATIVE_CMDS("bin"),
         CLASSES("classes"),
         CONFIG("conf"),
         HEADER_FILES("include"),
-        MAN_PAGES("man");
+        LEGAL_NOTICES("legal"),
+        MAN_PAGES("man"),
+        NATIVE_LIBS("native"),
+        NATIVE_CMDS("bin");
 
         private final String jmodDir;
         private Section(String jmodDir) {
@@ -87,7 +91,6 @@ public class JmodFile implements AutoCloseable {
          * this section
          */
         public String jmodDir() { return jmodDir; }
-
     }
 
     /**
@@ -109,7 +112,7 @@ public class JmodFile implements AutoCloseable {
             }
 
             this.zipEntry = e;
-            this.section = section(name);
+            this.section = section(name.substring(0, i));
             this.name = name.substring(i+1);
         }
 
@@ -143,26 +146,21 @@ public class JmodFile implements AutoCloseable {
             return section.jmodDir() + "/" + name;
         }
 
+        /*
+         * A map from the jmodDir name to Section
+         */
+        static final Map<String, Section> NAME_TO_SECTION =
+            Arrays.stream(Section.values())
+                  .collect(Collectors.toMap(Section::jmodDir, Function.identity()));
+
         static Section section(String name) {
-            int i = name.indexOf('/');
-            String s = name.substring(0, i);
-            switch (s) {
-                case "native":
-                    return Section.NATIVE_LIBS;
-                case "bin":
-                    return Section.NATIVE_CMDS;
-                case "classes":
-                    return Section.CLASSES;
-                case "conf":
-                    return Section.CONFIG;
-                case "include":
-                    return Section.HEADER_FILES;
-                case "man":
-                    return Section.MAN_PAGES;
-                default:
-                    throw new IllegalArgumentException("invalid section: " + s);
+            if (!NAME_TO_SECTION.containsKey(name)) {
+                throw new IllegalArgumentException("invalid section: " + name);
+
             }
+            return NAME_TO_SECTION.get(name);
         }
+
     }
 
     private final Path file;

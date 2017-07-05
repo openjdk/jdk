@@ -24,7 +24,7 @@
 /**
  * @test
  * @library /lib/testlibrary
- * @modules java.base/jdk.internal.misc
+ * @modules java.base/jdk.internal.module
  *          jdk.compiler
  * @build ModuleReaderTest CompilerUtils JarUtils
  * @run testng ModuleReaderTest
@@ -53,7 +53,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.spi.ToolProvider;
 
-import jdk.internal.misc.SharedSecrets;
+import jdk.internal.module.ModulePath;
 
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
@@ -216,9 +216,7 @@ public class ModuleReaderTest {
      */
     void test(Path mp) throws IOException {
 
-        ModuleFinder finder = SharedSecrets.getJavaLangModuleAccess()
-            .newModulePath(Runtime.version(), true, mp);
-
+        ModuleFinder finder = new ModulePath(Runtime.version(), true, mp);
         ModuleReference mref = finder.find(TEST_MODULE).get();
         ModuleReader reader = mref.open();
 

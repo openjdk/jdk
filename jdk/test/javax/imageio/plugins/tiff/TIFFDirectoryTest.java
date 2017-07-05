@@ -154,7 +154,7 @@ public class TIFFDirectoryTest {
             "must return null TIFFField");
 
         long offset = 4L;
-        long a[] = {Long.MIN_VALUE, 0, Long.MAX_VALUE};
+        long a[] = {0, Integer.MAX_VALUE, (1 << 32) - 1};
         int v = 100500;
         TIFFField
                 f1 = new TIFFField(tag1, type, offset, d),

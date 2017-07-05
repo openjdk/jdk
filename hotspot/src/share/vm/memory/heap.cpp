@@ -275,6 +275,13 @@ void* CodeHeap::find_start(void* p) const {
   return h->allocated_space();
 }
 
+CodeBlob* CodeHeap::find_blob_unsafe(void* start) const {
+  CodeBlob* result = (CodeBlob*)CodeHeap::find_start(start);
+  if (result != NULL && result->blob_contains((address)start)) {
+    return result;
+  }
+  return NULL;
+}
 
 size_t CodeHeap::alignment_unit() const {
   // this will be a power of two

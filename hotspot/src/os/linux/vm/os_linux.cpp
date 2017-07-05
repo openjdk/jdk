@@ -218,9 +218,6 @@ bool os::have_special_privileges() {
   #endif
 #endif
 
-// Cpu architecture string
-static char cpu_arch[] = HOTSPOT_LIB_ARCH;
-
 
 // pid_t gettid()
 //
@@ -263,7 +260,7 @@ void os::init_system_properties_values() {
   //
   // Obtain the JAVA_HOME value from the location of libjvm.so.
   // This library should be located at:
-  // <JAVA_HOME>/jre/lib/<arch>/{client|server}/libjvm.so.
+  // <JAVA_HOME>/lib/{client|server}/libjvm.so.
   //
   // If "/jre/lib/" appears at the right place in the path, then we
   // assume libjvm.so is installed in a JDK and we use this path.
@@ -329,11 +326,7 @@ void os::init_system_properties_values() {
     if (pslash != NULL) {
       pslash = strrchr(buf, '/');
       if (pslash != NULL) {
-        *pslash = '\0';          // Get rid of /<arch>.
-        pslash = strrchr(buf, '/');
-        if (pslash != NULL) {
-          *pslash = '\0';        // Get rid of /lib.
-        }
+        *pslash = '\0';        // Get rid of /lib.
       }
     }
     Arguments::set_java_home(buf);
@@ -360,9 +353,9 @@ void os::init_system_properties_values() {
     // That's +1 for the colon and +1 for the trailing '\0'.
     char *ld_library_path = (char *)NEW_C_HEAP_ARRAY(char,
                                                      strlen(v) + 1 +
-                                                     sizeof(SYS_EXT_DIR) + sizeof("/lib/") + strlen(cpu_arch) + sizeof(DEFAULT_LIBPATH) + 1,
+                                                     sizeof(SYS_EXT_DIR) + sizeof("/lib/") + sizeof(DEFAULT_LIBPATH) + 1,
                                                      mtInternal);
-    sprintf(ld_library_path, "%s%s" SYS_EXT_DIR "/lib/%s:" DEFAULT_LIBPATH, v, v_colon, cpu_arch);
+    sprintf(ld_library_path, "%s%s" SYS_EXT_DIR "/lib:" DEFAULT_LIBPATH, v, v_colon);
     Arguments::set_library_path(ld_library_path);
     FREE_C_HEAP_ARRAY(char, ld_library_path);
   }
@@ -2310,7 +2303,7 @@ void os::jvm_path(char *buf, jint buflen) {
 
   if (Arguments::sun_java_launcher_is_altjvm()) {
     // Support for the java launcher's '-XXaltjvm=<path>' option. Typical
-    // value for buf is "<JAVA_HOME>/jre/lib/<arch>/<vmtype>/libjvm.so".
+    // value for buf is "<JAVA_HOME>/jre/lib/<vmtype>/libjvm.so".
     // If "/jre/lib/" appears at the right place in the string, then
     // assume we are installed in a JDK and we're done. Otherwise, check
     // for a JAVA_HOME environment variable and fix up the path so it
@@ -2346,9 +2339,9 @@ void os::jvm_path(char *buf, jint buflen) {
         len = strlen(buf);
         assert(len < buflen, "Ran out of buffer room");
         jrelib_p = buf + len;
-        snprintf(jrelib_p, buflen-len, "/jre/lib/%s", cpu_arch);
+        snprintf(jrelib_p, buflen-len, "/jre/lib");
         if (0 != access(buf, F_OK)) {
-          snprintf(jrelib_p, buflen-len, "/lib/%s", cpu_arch);
+          snprintf(jrelib_p, buflen-len, "/lib");
         }
 
         if (0 == access(buf, F_OK)) {

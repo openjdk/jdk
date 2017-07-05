@@ -223,7 +223,7 @@ public class MultiPageImageTIFFFieldTest {
         ImageReader reader = getTIFFReader();
 
         ImageInputStream s = ImageIO.createImageInputStream(new File(FILENAME));
-        reader.setInput(s, false, true);
+        reader.setInput(s, false, false);
 
         int ni = reader.getNumImages(true);
         check(ni == 2, "invalid number of images");

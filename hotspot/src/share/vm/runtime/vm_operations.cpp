@@ -26,7 +26,6 @@
 #include "classfile/symbolTable.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
-#include "code/codeCacheExtensions.hpp"
 #include "compiler/compileBroker.hpp"
 #include "gc/shared/isGCActiveMark.hpp"
 #include "logging/log.hpp"
@@ -390,7 +389,6 @@ volatile bool VM_Exit::_vm_exited = false;
 Thread * VM_Exit::_shutdown_thread = NULL;
 
 int VM_Exit::set_vm_exited() {
-  CodeCacheExtensions::complete_step(CodeCacheExtensionsSteps::LastStep);
 
   Thread * thr_cur = Thread::current();
 

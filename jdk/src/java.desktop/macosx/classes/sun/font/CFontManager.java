@@ -141,12 +141,24 @@ public final class CFontManager extends SunFontManager {
         }
     }
 
-    protected void registerFontsInDir(String dirName, boolean useJavaRasterizer, int fontRank, boolean defer, boolean resolveSymLinks) {
-        loadNativeDirFonts(dirName);
+    protected void registerFontsInDir(final String dirName, boolean useJavaRasterizer,
+                                      int fontRank, boolean defer, boolean resolveSymLinks) {
+
+        String[] files = AccessController.doPrivileged((PrivilegedAction<String[]>) () -> {
+            return new File(dirName).list(getTrueTypeFilter());
+        });
+
+        if (files == null) {
+           return;
+        } else {
+            for (String f : files) {
+                loadNativeDirFonts(dirName+File.separator+f);
+            }
+        }
         super.registerFontsInDir(dirName, useJavaRasterizer, fontRank, defer, resolveSymLinks);
     }
 
-    private native void loadNativeDirFonts(String dirName);
+    private native void loadNativeDirFonts(String fontPath);
     private native void loadNativeFonts();
 
     void registerFont(String fontName, String fontFamilyName) {

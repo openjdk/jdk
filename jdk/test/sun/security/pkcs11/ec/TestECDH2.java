@@ -29,7 +29,7 @@
  * @library ..
  * @library ../../../../java/security/testlibrary
  * @modules java.base/sun.security.util
- *          jdk.crypto.pkcs11
+ *          jdk.crypto.token
  * @compile -XDignore.symbol.file TestECDH2.java
  * @run main/othervm TestECDH2
  * @run main/othervm TestECDH2 sm
