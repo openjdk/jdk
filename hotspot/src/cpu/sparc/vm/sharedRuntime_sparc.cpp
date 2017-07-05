@@ -2541,7 +2541,7 @@ nmethod *SharedRuntime::generate_dtrace_nmethod(
     in_sig_bt[i++] = bt;  // Collect remaining bits of signature
     out_sig_bt[total_c_args++] = bt;
     if( bt == T_OBJECT) {
-      symbolOop s = ss.as_symbol_or_null();
+      Symbol* s = ss.as_symbol_or_null();
       if (s == vmSymbols::java_lang_String()) {
         total_strings++;
         out_sig_bt[total_c_args-1] = T_ADDRESS;

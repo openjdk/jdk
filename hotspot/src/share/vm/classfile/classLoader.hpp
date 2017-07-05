@@ -280,7 +280,7 @@ class ClassLoader: AllStatic {
   }
 
   // Load individual .class file
-  static instanceKlassHandle load_classfile(symbolHandle h_name, TRAPS);
+  static instanceKlassHandle load_classfile(Symbol* h_name, TRAPS);
 
   // If the specified package has been loaded by the system, then returns
   // the name of the directory or ZIP file that the package was loaded from.

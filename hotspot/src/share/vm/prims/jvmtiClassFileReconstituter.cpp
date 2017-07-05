@@ -461,11 +461,11 @@ void JvmtiClassFileReconstituter::write_method_info(methodHandle method) {
 // JVMSpec|     attribute_info attributes[attributes_count];
 void JvmtiClassFileReconstituter::write_class_attributes() {
   u2 inner_classes_length = inner_classes_attribute_length();
-  symbolHandle generic_signature(thread(), ikh()->generic_signature());
+  Symbol* generic_signature = ikh()->generic_signature();
   typeArrayHandle anno(thread(), ikh()->class_annotations());
 
   int attr_count = 0;
-  if (generic_signature() != NULL) {
+  if (generic_signature != NULL) {
     ++attr_count;
   }
   if (ikh()->source_file_name() != NULL) {
@@ -483,8 +483,8 @@ void JvmtiClassFileReconstituter::write_class_attributes() {
 
   write_u2(attr_count);
 
-  if (generic_signature() != NULL) {
-    write_signature_attribute(symbol_to_cpool_index(generic_signature()));
+  if (generic_signature != NULL) {
+    write_signature_attribute(symbol_to_cpool_index(generic_signature));
   }
   if (ikh()->source_file_name() != NULL) {
     write_source_file_attribute();
@@ -609,8 +609,7 @@ address JvmtiClassFileReconstituter::writeable_address(size_t size) {
 }
 
 void JvmtiClassFileReconstituter::write_attribute_name_index(const char* name) {
-  unsigned int hash_ignored;
-  symbolOop sym = SymbolTable::lookup_only(name, (int)strlen(name), hash_ignored);
+  TempNewSymbol sym = SymbolTable::probe(name, (int)strlen(name));
   assert(sym != NULL, "attribute name symbol not found");
   u2 attr_name_index = symbol_to_cpool_index(sym);
   assert(attr_name_index != 0, "attribute name symbol not in constant pool");

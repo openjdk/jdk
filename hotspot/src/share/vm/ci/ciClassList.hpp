@@ -60,7 +60,6 @@ class    ciReturnAddress;
 class    ciKlass;
 class     ciInstanceKlass;
 class     ciMethodKlass;
-class     ciSymbolKlass;
 class     ciArrayKlass;
 class       ciObjArrayKlass;
 class       ciTypeArrayKlass;
@@ -112,7 +111,6 @@ friend class ciReturnAddress;          \
 friend class ciKlass;                  \
 friend class ciInstanceKlass;          \
 friend class ciMethodKlass;            \
-friend class ciSymbolKlass;            \
 friend class ciArrayKlass;             \
 friend class ciObjArrayKlass;          \
 friend class ciTypeArrayKlass;         \

@@ -96,9 +96,6 @@ private:
   static HeapWord* misccode_end;
   static HeapWord* shared_end;
 
-  // List of klassOops whose vtbl entries are used to patch others.
-  static void**        _vtbl_list;
-
   // Performance Counters
   GenerationCounters*  _gen_counters;
   CSpaceCounters*      _space_counters;
@@ -153,32 +150,25 @@ public:
   VirtualSpace*           mc_space()       { return &_mc_vs; }
   ContiguousSpace* unshared_space() const { return _the_space; }
 
-  static bool inline is_shared(const oopDesc* p) {
-    return (HeapWord*)p >= shared_bottom && (HeapWord*)p < shared_end;
+  static bool inline is_shared(const void* p) {
+    return p >= shared_bottom && p < shared_end;
   }
   // RedefineClasses note: this tester is used to check residence of
   // the specified oop in the shared readonly space and not whether
   // the oop is readonly.
-  static bool inline is_shared_readonly(const oopDesc* p) {
-    return (HeapWord*)p >= readonly_bottom && (HeapWord*)p < readonly_end;
+  static bool inline is_shared_readonly(const void* p) {
+    return p >= readonly_bottom && p < readonly_end;
   }
   // RedefineClasses note: this tester is used to check residence of
   // the specified oop in the shared readwrite space and not whether
   // the oop is readwrite.
-  static bool inline is_shared_readwrite(const oopDesc* p) {
-    return (HeapWord*)p >= readwrite_bottom && (HeapWord*)p < readwrite_end;
+  static bool inline is_shared_readwrite(const void* p) {
+    return p >= readwrite_bottom && p < readwrite_end;
   }
 
-  bool is_in_unshared(const void* p) const {
-    return OneContigSpaceCardGeneration::is_in(p);
-  }
-
-  bool is_in_shared(const void* p) const {
-   return p >= shared_bottom && p < shared_end;
-   }
-
+  // Checks if the pointer is either in unshared space or in shared space
   inline bool is_in(const void* p) const {
-    return is_in_unshared(p) || is_in_shared(p);
+    return OneContigSpaceCardGeneration::is_in(p) || is_shared(p);
   }
 
   inline PermanentGenerationSpec* spec() const { return _spec; }
@@ -236,6 +226,9 @@ public:
                                       void** vtable,
                                       char** md_top, char* md_end,
                                       char** mc_top, char* mc_end);
+  static void* find_matching_vtbl_ptr(void** vtbl_list,
+                                      void* new_vtable_start,
+                                      void* obj);
 
   void verify(bool allow_dirty);
 

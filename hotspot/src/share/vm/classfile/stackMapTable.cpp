@@ -184,8 +184,7 @@ VerificationType StackMapReader::parse_verification_type(u1* flags, TRAPS) {
       _stream->stackmap_format_error("bad class index", THREAD);
       return VerificationType::bogus_type();
     }
-    return VerificationType::reference_type(
-      symbolHandle(THREAD, _cp->klass_name_at(class_index)));
+    return VerificationType::reference_type(_cp->klass_name_at(class_index));
   }
   if (tag == ITEM_UninitializedThis) {
     if (flags != NULL) {
