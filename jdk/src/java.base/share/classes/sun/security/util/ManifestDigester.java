@@ -110,7 +110,7 @@ public class ManifestDigester {
     public ManifestDigester(byte bytes[])
     {
         rawBytes = bytes;
-        entries = new HashMap<String, Entry>();
+        entries = new HashMap<>();
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
 

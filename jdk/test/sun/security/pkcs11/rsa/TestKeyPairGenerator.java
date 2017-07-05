@@ -24,10 +24,13 @@
 /**
  * @test
  * @bug 4856966
- * @summary Verify that the RSA KeyPairGenerator works
+ * @summary Verify that the RSA KeyPairGenerator works (use -Dseed=X to set PRNG seed)
  * @author Andreas Sterbenz
  * @library ..
+ * @library /lib/testlibrary
+ * @build jdk.testlibrary.*
  * @run main/othervm TestKeyPairGenerator
+ * @key intermittent randomness
  */
 
 import java.io.*;
@@ -105,7 +108,7 @@ public class TestKeyPairGenerator extends PKCS11Test {
         int[] keyLengths = {512, 512, 1024};
         BigInteger[] pubExps = {null, BigInteger.valueOf(3), null};
         KeyPair[] keyPairs = new KeyPair[3];
-        new Random().nextBytes(data);
+        RandomFactory.getRandom().nextBytes(data);
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA", provider);
         for (int i = 0; i < keyLengths.length; i++) {
             int len = keyLengths[i];

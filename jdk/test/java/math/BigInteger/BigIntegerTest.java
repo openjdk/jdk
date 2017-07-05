@@ -23,11 +23,14 @@
 
 /*
  * @test
- * @library ..
- * @bug 4181191 4161971 4227146 4194389 4823171 4624738 4812225 4837946 4026465 8074460
+ * @library /lib/testlibrary/
+ * @build jdk.testlibrary.*
+ * @run main BigIntegerTest
+ * @bug 4181191 4161971 4227146 4194389 4823171 4624738 4812225 4837946 4026465 8074460 8078672
  * @summary tests methods in BigInteger (use -Dseed=X to set PRNG seed)
  * @run main/timeout=400 BigIntegerTest
  * @author madbot
+ * @key randomness
  */
 
 import java.io.File;
@@ -36,6 +39,7 @@ import java.io.FileOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.math.BigInteger;
+import java.util.Random;
 
 /**
  * This is a simple test class created to ensure that the results
@@ -86,7 +90,7 @@ public class BigIntegerTest {
 
     static final int SIZE = 1000; // numbers per batch
 
-    private static RandomSeed rndSeed = new RandomSeed(false);
+    private static Random random = RandomFactory.getRandom();
 
     static boolean failure = false;
 
@@ -98,7 +102,7 @@ public class BigIntegerTest {
         int arrayLength = 23;
         int halfLength = arrayLength/2;
         byte[] array = new byte[arrayLength];
-        rndSeed.getRandom().nextBytes(array);
+        random.nextBytes(array);
 
         int[][] offLen = new int[][] { // offset, length, num exceptions
             {-1, arrayLength, 1},                         // negative offset
@@ -162,7 +166,7 @@ public class BigIntegerTest {
         }
 
         byte[] magNonZeroLength = new byte[42];
-        rndSeed.getRandom().nextBytes(magNonZeroLength);
+        random.nextBytes(magNonZeroLength);
         for (int signum = -1; signum <= 1; signum++) {
             BigInteger bi = new BigInteger(signum, magNonZeroLength, 0, 0);
             if (bi.compareTo(BigInteger.ZERO) != 0) {
@@ -175,13 +179,13 @@ public class BigIntegerTest {
 
         for (int i = 0; i < SIZE; i++) {
             // create reference value via a different code path from those tested
-            BigInteger reference = new BigInteger(2 + rndSeed.getRandom().nextInt(336), 4, rndSeed.getRandom());
+            BigInteger reference = new BigInteger(2 + random.nextInt(336), 4, random);
 
             byte[] refArray = reference.toByteArray();
             int refLen = refArray.length;
-            int factor = rndSeed.getRandom().nextInt(5);
-            int objLen = refArray.length + factor*rndSeed.getRandom().nextInt(refArray.length) + 1;
-            int offset = rndSeed.getRandom().nextInt(objLen - refLen);
+            int factor = random.nextInt(5);
+            int objLen = refArray.length + factor*random.nextInt(refArray.length) + 1;
+            int offset = random.nextInt(objLen - refLen);
             byte[] objArray = new byte[objLen];
             System.arraycopy(refArray, 0, objArray, offset, refLen);
 
@@ -192,7 +196,7 @@ public class BigIntegerTest {
                 failCount++;
             }
 
-            boolean isNegative = rndSeed.getRandom().nextBoolean();
+            boolean isNegative = random.nextBoolean();
             BigInteger signMag = new BigInteger(isNegative ? -1 : 1, objArray, offset, refLen);
             if (signMag.compareTo(isNegative ? reference.negate() : reference) != 0) {
                 System.err.println("Sign-magnitude BigInteger not equal for offset " +
@@ -209,7 +213,7 @@ public class BigIntegerTest {
 
         for (int i=0; i<SIZE; i++) {
             // Test identity x^power == x*x*x ... *x
-            int power = rndSeed.getRandom().nextInt(6) + 2;
+            int power = random.nextInt(6) + 2;
             BigInteger x = fetchNumber(order);
             BigInteger y = x.pow(power);
             BigInteger z = x;
@@ -310,12 +314,12 @@ public class BigIntegerTest {
         for (int i=0; i<SIZE; i++) {
             BigInteger x = fetchNumber(BITS_KARATSUBA - 32 - 1);
             BigInteger u = base.add(x);
-            int a = 1 + rndSeed.getRandom().nextInt(31);
+            int a = 1 + random.nextInt(31);
             BigInteger w = u.shiftLeft(a);
 
             BigInteger y = fetchNumber(BITS_KARATSUBA - 32 - 1);
             BigInteger v = base.add(y);
-            int b = 1 + rndSeed.getRandom().nextInt(32);
+            int b = 1 + random.nextInt(32);
             BigInteger z = v.shiftLeft(b);
 
             BigInteger multiplyResult = u.multiply(v).shiftLeft(a + b);
@@ -364,7 +368,7 @@ public class BigIntegerTest {
         for (int i=0; i<SIZE; i++) {
             BigInteger x = fetchNumber(BITS_KARATSUBA_SQUARE - 32 - 1);
             BigInteger u = base.add(x);
-            int a = 1 + rndSeed.getRandom().nextInt(31);
+            int a = 1 + random.nextInt(31);
             BigInteger w = u.shiftLeft(a);
 
             BigInteger squareResult = u.multiply(u).shiftLeft(2*a);
@@ -382,7 +386,7 @@ public class BigIntegerTest {
         for (int i=0; i<SIZE; i++) {
             BigInteger x = fetchNumber(BITS_TOOM_COOK_SQUARE - 32 - 1);
             BigInteger u = base.add(x);
-            int a = 1 + rndSeed.getRandom().nextInt(31);
+            int a = 1 + random.nextInt(31);
             BigInteger w = u.shiftLeft(a);
 
             BigInteger squareResult = u.multiply(u).shiftLeft(2*a);
@@ -416,20 +420,20 @@ public class BigIntegerTest {
 
         BigInteger base = BigInteger.ONE.shiftLeft(BITS_BURNIKEL_ZIEGLER + BITS_BURNIKEL_ZIEGLER_OFFSET - 33);
         for (int i=0; i<SIZE; i++) {
-            BigInteger addend = new BigInteger(BITS_BURNIKEL_ZIEGLER + BITS_BURNIKEL_ZIEGLER_OFFSET - 34, rndSeed.getRandom());
+            BigInteger addend = new BigInteger(BITS_BURNIKEL_ZIEGLER + BITS_BURNIKEL_ZIEGLER_OFFSET - 34, random);
             BigInteger v = base.add(addend);
 
-            BigInteger u = v.multiply(BigInteger.valueOf(2 + rndSeed.getRandom().nextInt(Short.MAX_VALUE - 1)));
+            BigInteger u = v.multiply(BigInteger.valueOf(2 + random.nextInt(Short.MAX_VALUE - 1)));
 
-            if(rndSeed.getRandom().nextBoolean()) {
+            if(random.nextBoolean()) {
                 u = u.negate();
             }
-            if(rndSeed.getRandom().nextBoolean()) {
+            if(random.nextBoolean()) {
                 v = v.negate();
             }
 
-            int a = BITS_BURNIKEL_ZIEGLER_OFFSET + rndSeed.getRandom().nextInt(16);
-            int b = 1 + rndSeed.getRandom().nextInt(16);
+            int a = BITS_BURNIKEL_ZIEGLER_OFFSET + random.nextInt(16);
+            int b = 1 + random.nextInt(16);
             BigInteger w = u.multiply(BigInteger.ONE.shiftLeft(a));
             BigInteger z = v.multiply(BigInteger.ONE.shiftLeft(b));
 
@@ -451,7 +455,7 @@ public class BigIntegerTest {
         int failCount = 0;
 
         for (int i=0; i<SIZE*10; i++) {
-            int x = rndSeed.getRandom().nextInt();
+            int x = random.nextInt();
             BigInteger bigX = BigInteger.valueOf((long)x);
             int bit = (x < 0 ? 0 : 1);
             int tmp = x, bitCount = 0;
@@ -472,7 +476,7 @@ public class BigIntegerTest {
         int failCount = 0;
 
         for (int i=0; i<SIZE*10; i++) {
-            int x = rndSeed.getRandom().nextInt();
+            int x = random.nextInt();
             BigInteger bigX = BigInteger.valueOf((long)x);
             int signBit = (x < 0 ? 0x80000000 : 0);
             int tmp = x, bitLength, j;
@@ -576,7 +580,7 @@ public class BigIntegerTest {
 
         for (int i=0; i<100; i++) {
             BigInteger x = fetchNumber(order);
-            int n = Math.abs(rndSeed.getRandom().nextInt()%200);
+            int n = Math.abs(random.nextInt()%200);
 
             if (!x.shiftLeft(n).equals
                 (x.multiply(BigInteger.valueOf(2L).pow(n))))
@@ -643,8 +647,8 @@ public class BigIntegerTest {
 
         // Generic string conversion.
         for (int i=0; i<100; i++) {
-            byte xBytes[] = new byte[Math.abs(rndSeed.getRandom().nextInt())%100+1];
-            rndSeed.getRandom().nextBytes(xBytes);
+            byte xBytes[] = new byte[Math.abs(random.nextInt())%100+1];
+            random.nextBytes(xBytes);
             BigInteger x = new BigInteger(xBytes);
 
             for (int radix=Character.MIN_RADIX; radix < Character.MAX_RADIX; radix++) {
@@ -668,7 +672,7 @@ public class BigIntegerTest {
 
             for (int bits = upper; bits >= lower; bits--) {
                 for (int i = 0; i < 50; i++) {
-                    BigInteger x = BigInteger.ONE.shiftLeft(bits - 1).or(new BigInteger(bits - 2, rndSeed.getRandom()));
+                    BigInteger x = BigInteger.ONE.shiftLeft(bits - 1).or(new BigInteger(bits - 2, random));
 
                     for (int radix = Character.MIN_RADIX; radix < Character.MAX_RADIX; radix++) {
                         String result = x.toString(radix);
@@ -765,9 +769,9 @@ public class BigIntegerTest {
         int failCount = 0;
 
         for (int i=0; i<10; i++) {
-            BigInteger m = new BigInteger(100, 5, rndSeed.getRandom());
+            BigInteger m = new BigInteger(100, 5, random);
             while(m.compareTo(BigInteger.ONE) != 1)
-                m = new BigInteger(100, 5, rndSeed.getRandom());
+                m = new BigInteger(100, 5, random);
             BigInteger exp = m.subtract(BigInteger.ONE);
             BigInteger base = fetchNumber(order).abs();
             while(base.compareTo(m) != -1)
@@ -827,7 +831,7 @@ public class BigIntegerTest {
 
         // Test consistency
         for(int i=0; i<10; i++) {
-            p1 = BigInteger.probablePrime(100, rndSeed.getRandom());
+            p1 = BigInteger.probablePrime(100, random);
             if (!p1.isProbablePrime(100)) {
                 System.err.println("Consistency "+p1.toString(16));
                 failCount++;
@@ -868,7 +872,7 @@ public class BigIntegerTest {
         // Numbers of the form (6k+1)(12k+1)(18k+1) are Carmichael numbers if
         // each of the factors is prime
         int found = 0;
-        BigInteger f1 = new BigInteger(40, 100, rndSeed.getRandom());
+        BigInteger f1 = new BigInteger(40, 100, random);
         while (found < NUM_CARMICHAELS_TO_TEST) {
             BigInteger k = null;
             BigInteger f2, f3;
@@ -895,8 +899,8 @@ public class BigIntegerTest {
 
         // Test some composites that are products of 2 primes
         for (int i=0; i<50; i++) {
-            p1 = BigInteger.probablePrime(100, rndSeed.getRandom());
-            p2 = BigInteger.probablePrime(100, rndSeed.getRandom());
+            p1 = BigInteger.probablePrime(100, random);
+            p2 = BigInteger.probablePrime(100, random);
             c1 = p1.multiply(p2);
             if (c1.isProbablePrime(100)) {
                 System.err.println("Composite failed "+c1.toString(16));
@@ -905,8 +909,8 @@ public class BigIntegerTest {
         }
 
         for (int i=0; i<4; i++) {
-            p1 = BigInteger.probablePrime(600, rndSeed.getRandom());
-            p2 = BigInteger.probablePrime(600, rndSeed.getRandom());
+            p1 = BigInteger.probablePrime(600, random);
+            p2 = BigInteger.probablePrime(600, random);
             c1 = p1.multiply(p2);
             if (c1.isProbablePrime(100)) {
                 System.err.println("Composite failed "+c1.toString(16));
@@ -961,7 +965,7 @@ public class BigIntegerTest {
         // Next, pick some large primes, use nextProbablePrime to find the
         // next one, and make sure there are no primes in between
         for (int i=0; i<100; i+=10) {
-            p1 = BigInteger.probablePrime(50 + i, rndSeed.getRandom());
+            p1 = BigInteger.probablePrime(50 + i, random);
             p2 = p1.add(ONE);
             p3 = p1.nextProbablePrime();
             while(p2.compareTo(p3) < 0) {
@@ -1026,7 +1030,7 @@ public class BigIntegerTest {
         }
 
         for(int i=0; i<10; i++) {
-            BigInteger b1 = fetchNumber(rndSeed.getRandom().nextInt(100));
+            BigInteger b1 = fetchNumber(random.nextInt(100));
             BigInteger b2 = null;
             File f = new File("serialtest");
             try (FileOutputStream fos = new FileOutputStream(f)) {
@@ -1060,8 +1064,6 @@ public class BigIntegerTest {
      *
      */
     public static void main(String[] args) throws Exception {
-        System.out.println("Random number generator seed = " + rndSeed.getSeed());
-
         // Some variables for sizing test numbers in bits
         int order1 = ORDER_MEDIUM;
         int order2 = ORDER_SMALL;
@@ -1133,8 +1135,8 @@ public class BigIntegerTest {
      * If order is less than 2, order is changed to 2.
      */
     private static BigInteger fetchNumber(int order) {
-        boolean negative = rndSeed.getRandom().nextBoolean();
-        int numType = rndSeed.getRandom().nextInt(7);
+        boolean negative = random.nextBoolean();
+        int numType = random.nextInt(7);
         BigInteger result = null;
         if (order < 2) order = 2;
 
@@ -1158,14 +1160,14 @@ public class BigIntegerTest {
                 break;
 
             case 3: // One bit in number
-                result = BigInteger.ONE.shiftLeft(rndSeed.getRandom().nextInt(order));
+                result = BigInteger.ONE.shiftLeft(random.nextInt(order));
                 break;
 
             case 4: // Random bit density
                 byte[] val = new byte[(order+7)/8];
-                int iterations = rndSeed.getRandom().nextInt(order);
+                int iterations = random.nextInt(order);
                 for (int i=0; i<iterations; i++) {
-                    int bitIdx = rndSeed.getRandom().nextInt(order);
+                    int bitIdx = random.nextInt(order);
                     val[bitIdx/8] |= 1 << (bitIdx%8);
                 }
                 result = new BigInteger(1, val);
@@ -1173,9 +1175,9 @@ public class BigIntegerTest {
             case 5: // Runs of consecutive ones and zeros
                 result = ZERO;
                 int remaining = order;
-                int bit = rndSeed.getRandom().nextInt(2);
+                int bit = random.nextInt(2);
                 while (remaining > 0) {
-                    int runLength = Math.min(remaining, rndSeed.getRandom().nextInt(order));
+                    int runLength = Math.min(remaining, random.nextInt(order));
                     result = result.shiftLeft(runLength);
                     if (bit > 0)
                         result = result.add(ONE.shiftLeft(runLength).subtract(ONE));
@@ -1185,7 +1187,7 @@ public class BigIntegerTest {
                 break;
 
             default: // random bits
-                result = new BigInteger(order, rndSeed.getRandom());
+                result = new BigInteger(order, random);
         }
 
         if (negative)

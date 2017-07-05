@@ -28,6 +28,7 @@
  * @run build GetXSpace
  * @run shell GetXSpace.sh
  * @summary Basic functionality of File.get-X-Space methods.
+ * @key randomness
  */
 
 import java.io.BufferedReader;

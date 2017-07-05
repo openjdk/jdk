@@ -29,17 +29,17 @@ import java.security.Principal;
 import sun.security.x509.X500Name;
 
 /**
- * <p> This class represents an X.500 <code>Principal</code>.
+ * This class represents an X.500 {@code Principal}.
  * X500Principals have names such as,
  * "CN=Duke, OU=JavaSoft, O=Sun Microsystems, C=US"
  * (RFC 1779 style).
  *
- * <p> Principals such as this <code>X500Principal</code>
- * may be associated with a particular <code>Subject</code>
- * to augment that <code>Subject</code> with an additional
- * identity.  Refer to the <code>Subject</code> class for more information
+ * <p> Principals such as this {@code X500Principal}
+ * may be associated with a particular {@code Subject}
+ * to augment that {@code Subject} with an additional
+ * identity.  Refer to the {@code Subject} class for more information
  * on how to achieve this.  Authorization decisions can then be based upon
- * the Principals associated with a <code>Subject</code>.
+ * the Principals associated with a {@code Subject}.
  *
  * @see java.security.Principal
  * @see javax.security.auth.Subject
@@ -76,14 +76,12 @@ public class X500Principal implements Principal, java.io.Serializable {
      * such as "CN=Duke, OU=JavaSoft, O=Sun Microsystems, C=US"
      * (RFC 1779 style).
      *
-     * <p>
-     *
      * @param name the X.500 name
      *
-     * @exception NullPointerException if the <code>name</code>
-     *                  is <code>null</code>. <p>
+     * @exception NullPointerException if the {@code name}
+     *                  is {@code null}.
      *
-     * @exception IllegalArgumentException if the <code>name</code>
+     * @exception IllegalArgumentException if the {@code name}
      *                  is improperly specified.
      */
     public X500Principal(String name) {
@@ -100,38 +98,32 @@ public class X500Principal implements Principal, java.io.Serializable {
     }
 
     /**
-     * Return the Unix username for this <code>X500Principal</code>.
+     * Return the Unix username for this {@code X500Principal}.
      *
-     * <p>
-     *
-     * @return the Unix username for this <code>X500Principal</code>
+     * @return the Unix username for this {@code X500Principal}
      */
     public String getName() {
         return thisX500Name.getName();
     }
 
     /**
-     * Return a string representation of this <code>X500Principal</code>.
+     * Return a string representation of this {@code X500Principal}.
      *
-     * <p>
-     *
-     * @return a string representation of this <code>X500Principal</code>.
+     * @return a string representation of this {@code X500Principal}.
      */
     public String toString() {
         return thisX500Name.toString();
     }
 
     /**
-     * Compares the specified Object with this <code>X500Principal</code>
+     * Compares the specified Object with this {@code X500Principal}
      * for equality.
      *
-     * <p>
-     *
      * @param o Object to be compared for equality with this
-     *          <code>X500Principal</code>.
+     *          {@code X500Principal}.
      *
      * @return true if the specified Object is equal to this
-     *          <code>X500Principal</code>.
+     *          {@code X500Principal}.
      */
     public boolean equals(Object o) {
         if (o == null)
@@ -159,11 +151,9 @@ public class X500Principal implements Principal, java.io.Serializable {
     }
 
     /**
-     * Return a hash code for this <code>X500Principal</code>.
+     * Return a hash code for this {@code X500Principal}.
      *
-     * <p>
-     *
-     * @return a hash code for this <code>X500Principal</code>.
+     * @return a hash code for this {@code X500Principal}.
      */
     public int hashCode() {
         return thisX500Name.hashCode();

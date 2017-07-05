@@ -125,7 +125,7 @@ public final class NativePRNG extends SecureRandomSpi {
      */
     private static RandomIO initIO(final Variant v) {
         return AccessController.doPrivileged(
-            new PrivilegedAction<RandomIO>() {
+            new PrivilegedAction<>() {
                 @Override
                 public RandomIO run() {
 
@@ -440,7 +440,7 @@ public final class NativePRNG extends SecureRandomSpi {
                 if (seedOutInitialized == false) {
                     seedOutInitialized = true;
                     seedOut = AccessController.doPrivileged(
-                            new PrivilegedAction<OutputStream>() {
+                            new PrivilegedAction<>() {
                         @Override
                         public OutputStream run() {
                             try {

@@ -25,6 +25,7 @@
  * @bug 4802340
  * @summary Testing force(), load() isLoaded() of zero len MBB
  * @run main/othervm ZeroMap
+ * @key randomness
  */
 
 import java.io.*;

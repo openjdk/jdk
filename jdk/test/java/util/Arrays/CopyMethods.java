@@ -26,6 +26,7 @@
  * @bug     4655503
  * @summary Test for array cloning and slicing methods.
  * @author  John Rose
+ * @key randomness
  */
 
 import java.util.*;

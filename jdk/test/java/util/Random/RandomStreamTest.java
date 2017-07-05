@@ -47,6 +47,7 @@ import static org.testng.Assert.*;
  * @run testng RandomStreamTest
  * @summary test stream methods on Random
  * @author Brian Goetz
+ * @key randomness
  */
 public class RandomStreamTest {
 

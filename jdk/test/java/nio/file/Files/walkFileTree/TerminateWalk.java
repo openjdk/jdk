@@ -27,6 +27,7 @@
  * @library ../..
  * @compile TerminateWalk.java CreateFileTree.java
  * @run main TerminateWalk
+ * @key randomness
  */
 
 import java.nio.file.*;

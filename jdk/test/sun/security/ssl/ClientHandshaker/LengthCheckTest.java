@@ -27,6 +27,7 @@
  * @summary Vectors and fixed length fields should be verified
  *          for allowed sizes.
  * @run main/othervm LengthCheckTest
+ * @key randomness
  */
 
 /**

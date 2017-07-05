@@ -26,6 +26,7 @@
  * @bug 4815057 4839277
  * @summary basic test of SHA1withDSA and RawDSA signing/verifying
  * @author Andreas Sterbenz
+ * @key randomness
  */
 
 import java.io.*;

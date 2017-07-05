@@ -22,11 +22,12 @@
  */
 
 /**
- * @test %I% %E%
+ * @test
  * @bug 4898461 6604496
  * @summary basic test for symmetric ciphers with padding
  * @author Valerie Peng
  * @library ..
+ * @key randomness
  */
 import java.io.*;
 import java.nio.*;

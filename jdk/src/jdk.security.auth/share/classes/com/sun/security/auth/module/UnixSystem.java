@@ -26,9 +26,8 @@
 package com.sun.security.auth.module;
 
 /**
- * <p> This class implementation retrieves and makes available Unix
+ * This class implementation retrieves and makes available Unix
  * UID/GID/groups information for the current user.
- *
  */
 @jdk.Exported
 public class UnixSystem {
@@ -41,7 +40,7 @@ public class UnixSystem {
     protected long[] groups;
 
     /**
-     * Instantiate a <code>UnixSystem</code> and load
+     * Instantiate a {@code UnixSystem} and load
      * the native library to access the underlying system information.
      */
     public UnixSystem() {
@@ -52,8 +51,6 @@ public class UnixSystem {
     /**
      * Get the username for the current Unix user.
      *
-     * <p>
-     *
      * @return the username for the current Unix user.
      */
     public String getUsername() {
@@ -62,8 +59,6 @@ public class UnixSystem {
 
     /**
      * Get the UID for the current Unix user.
-     *
-     * <p>
      *
      * @return the UID for the current Unix user.
      */
@@ -74,8 +69,6 @@ public class UnixSystem {
     /**
      * Get the GID for the current Unix user.
      *
-     * <p>
-     *
      * @return the GID for the current Unix user.
      */
     public long getGid() {
@@ -84,8 +77,6 @@ public class UnixSystem {
 
     /**
      * Get the supplementary groups for the current Unix user.
-     *
-     * <p>
      *
      * @return the supplementary groups for the current Unix user.
      */

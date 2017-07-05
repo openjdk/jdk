@@ -25,6 +25,7 @@
  * @test
  * @bug 6449335
  * @summary MSCAPI's PRNG is too slow
+ * @key randomness
  */
 
 import java.security.SecureRandom;

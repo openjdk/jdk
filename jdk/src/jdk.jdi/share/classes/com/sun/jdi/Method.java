@@ -49,7 +49,7 @@ public interface Method extends TypeComponent, Locatable, Comparable<Method> {
      * This type name is always available even if
      * the type has not yet been created or loaded.
      *
-     * @return a String containing the return type name.
+     * @return a {@code String} containing the return type name.
      */
     String returnTypeName();
 
@@ -60,8 +60,8 @@ public interface Method extends TypeComponent, Locatable, Comparable<Method> {
      * Note: if the return type of this method is a reference type (class,
      * interface, or array) and it has not been created or loaded
      * by the declaring type's class loader - that is,
-     * {@link TypeComponent#declaringType <CODE>declaringType()</CODE>}
-     * <CODE>.classLoader()</CODE>,
+     * {@link TypeComponent#declaringType declaringType()}
+     * {@code .classLoader()},
      * then ClassNotLoadedException will be thrown.
      * Also, a reference type may have been loaded but not yet prepared,
      * in which case the type will be returned
@@ -93,7 +93,6 @@ public interface Method extends TypeComponent, Locatable, Comparable<Method> {
      * as specified at compile-time.
      * If the formal parameter was declared with an ellipsis, then
      * it is represented as an array of the type before the ellipsis.
-     *
      */
     List<String> argumentTypeNames();
 
@@ -105,8 +104,8 @@ public interface Method extends TypeComponent, Locatable, Comparable<Method> {
      * is a reference type (class, interface, or array)
      * and it has not been created or loaded
      * by the declaring type's class loader - that is,
-     * {@link TypeComponent#declaringType <CODE>declaringType()</CODE>}
-     * <CODE>.classLoader()</CODE>,
+     * {@link TypeComponent#declaringType declaringType()}
+     * {@code .classLoader()},
      * then ClassNotLoadedException will be thrown.
      * Also, a reference type may have been loaded but not yet prepared,
      * in which case the list will be returned
@@ -132,16 +131,16 @@ public interface Method extends TypeComponent, Locatable, Comparable<Method> {
     /**
      * Determine if this method is abstract.
      *
-     * @return <code>true</code> if the method is declared abstract;
-     * false otherwise.
+     * @return {@code true} if the method is declared abstract;
+     * {@code false} otherwise.
      */
     boolean isAbstract();
 
     /**
      * Determine if this method is a default method
      *
-     * @return <code>true</code> if the method is declared default;
-     * false otherwise
+     * @return {@code true} if the method is declared default;
+     * {@code false} otherwise.
      *
      * @since 1.8
      */
@@ -152,24 +151,24 @@ public interface Method extends TypeComponent, Locatable, Comparable<Method> {
     /**
      * Determine if this method is synchronized.
      *
-     * @return <code>true</code> if the method is declared synchronized;
-     * false otherwise.
+     * @return {@code true} if the method is declared synchronized;
+     * {@code false} otherwise.
      */
     boolean isSynchronized();
 
     /**
      * Determine if this method is native.
      *
-     * @return <code>true</code> if the method is declared native;
-     * false otherwise.
+     * @return {@code true} if the method is declared native;
+     * {@code false} otherwise.
      */
     boolean isNative();
 
     /**
      * Determine if this method accepts a variable number of arguments.
      *
-     * @return <code>true</code> if the method accepts a variable number
-     * of arguments, false otherwise.
+     * @return {@code true} if the method accepts a variable number
+     * of arguments, {@code false} otherwise.
      *
      * @since 1.5
      */
@@ -180,8 +179,8 @@ public interface Method extends TypeComponent, Locatable, Comparable<Method> {
      * methods are defined in
      * <cite>The Java&trade; Language Specification</cite>.
      *
-     * @return <code>true</code> if the method is a bridge method,
-     * false otherwise.
+     * @return {@code true} if the method is a bridge method,
+     * {@code false} otherwise.
      *
      * @since 1.5
      */
@@ -190,23 +189,23 @@ public interface Method extends TypeComponent, Locatable, Comparable<Method> {
     /**
      * Determine if this method is a constructor.
      *
-     * @return <code>true</code> if the method is a constructor;
-     * false otherwise.
+     * @return {@code true} if the method is a constructor;
+     * {@code false} otherwise.
      */
     boolean isConstructor();
 
     /**
      * Determine if this method is a static initializer.
      *
-     * @return <code>true</code> if the method is a static initializer;
-     * false otherwise.
+     * @return {@code true} if the method is a static initializer;
+     * {@code false} otherwise.
      */
     boolean isStaticInitializer();
 
     /**
      * Determine if this method is obsolete.
      *
-     * @return <code>true</code> if this method has been made obsolete by a
+     * @return {@code true} if this method has been made obsolete by a
      * {@link VirtualMachine#redefineClasses} operation.
      *
      * @since 1.4
@@ -218,7 +217,7 @@ public interface Method extends TypeComponent, Locatable, Comparable<Method> {
      * each executable source line in this method.
      * <P>
      * This method is equivalent to
-     * <code>allLineLocations(vm.getDefaultStratum(),null)</code> -
+     * {@code allLineLocations(vm.getDefaultStratum(),null)} -
      * see {@link #allLineLocations(String,String)}
      * for more information.
      *
@@ -252,16 +251,16 @@ public interface Method extends TypeComponent, Locatable, Comparable<Method> {
      * (see {@link Location} for a description of strata).
      *
      * @param stratum The stratum to retrieve information from
-     * or <code>null</code> for the {@link ReferenceType#defaultStratum()}
+     * or {@code null} for the {@link ReferenceType#defaultStratum()}
      *
      * @param sourceName Return locations only within this
-     * source file or <code>null</code> to return locations.
+     * source file or {@code null} to return locations.
      *
      * @return a List of all source line {@link Location} objects.
      *
      * @throws AbsentInformationException if there is no line
      * number information for this (non-native, non-abstract)
-     * method.  Or if <i>sourceName</i> is non-<code>null</code>
+     * method.  Or if <i>sourceName</i> is non-{@code null}
      * and source name information is not present.
      *
      * @since 1.4
@@ -274,8 +273,8 @@ public interface Method extends TypeComponent, Locatable, Comparable<Method> {
      * that map to the given line number.
      * <P>
      * This method is equivalent to
-     * <code>locationsOfLine(vm.getDefaultStratum(), null,
-     * lineNumber)</code> -
+     * {@code locationsOfLine(vm.getDefaultStratum(), null,
+     * lineNumber)} -
      * see {@link
      * #locationsOfLine(java.lang.String,java.lang.String,int)}
      * for more information.
@@ -320,7 +319,7 @@ public interface Method extends TypeComponent, Locatable, Comparable<Method> {
      *
      * @throws AbsentInformationException if there is no line
      * number information for this method.
-     * Or if <i>sourceName</i> is non-<code>null</code>
+     * Or if <i>sourceName</i> is non-{@code null}
      * and source name information is not present.
      *
      * @since 1.4
@@ -436,7 +435,7 @@ public interface Method extends TypeComponent, Locatable, Comparable<Method> {
     /**
      * Returns the hash code value for this Method.
      *
-     * @return the integer hash code
+     * @return the integer hash code.
      */
     int hashCode();
 }

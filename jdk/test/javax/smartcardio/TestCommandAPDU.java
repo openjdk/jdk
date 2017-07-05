@@ -26,6 +26,7 @@
  * @bug 6293767
  * @summary Test for the CommandAPDU class
  * @author Andreas Sterbenz
+ * @key randomness
  */
 
 import java.util.*;
