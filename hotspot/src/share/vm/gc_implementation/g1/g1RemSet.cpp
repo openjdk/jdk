@@ -29,6 +29,7 @@
 #include "gc_implementation/g1/g1BlockOffsetTable.inline.hpp"
 #include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
 #include "gc_implementation/g1/g1CollectorPolicy.hpp"
+#include "gc_implementation/g1/g1GCPhaseTimes.hpp"
 #include "gc_implementation/g1/g1OopClosures.inline.hpp"
 #include "gc_implementation/g1/g1RemSet.inline.hpp"
 #include "gc_implementation/g1/heapRegionSeq.inline.hpp"
@@ -224,7 +225,7 @@ void G1RemSet::scanRS(OopsInHeapRegionClosure* oc, int worker_i) {
   assert( _cards_scanned != NULL, "invariant" );
   _cards_scanned[worker_i] = scanRScl.cards_done();
 
-  _g1p->record_scan_rs_time(worker_i, scan_rs_time_sec * 1000.0);
+  _g1p->phase_times()->record_scan_rs_time(worker_i, scan_rs_time_sec * 1000.0);
 }
 
 // Closure used for updating RSets and recording references that
@@ -276,7 +277,7 @@ void G1RemSet::updateRS(DirtyCardQueue* into_cset_dcq, int worker_i) {
     guarantee(cl.n() == 0, "Card table should be clean.");
   }
 
-  _g1p->record_update_rs_time(worker_i, (os::elapsedTime() - start) * 1000.0);
+  _g1p->phase_times()->record_update_rs_time(worker_i, (os::elapsedTime() - start) * 1000.0);
 }
 
 class CountRSSizeClosure: public HeapRegionClosure {
@@ -390,13 +391,13 @@ void G1RemSet::oops_into_collection_set_do(OopsInHeapRegionClosure* oc,
   if (G1UseParallelRSetUpdating || (worker_i == 0)) {
     updateRS(&into_cset_dcq, worker_i);
   } else {
-    _g1p->record_update_rs_processed_buffers(worker_i, 0.0);
-    _g1p->record_update_rs_time(worker_i, 0.0);
+    _g1p->phase_times()->record_update_rs_processed_buffers(worker_i, 0.0);
+    _g1p->phase_times()->record_update_rs_time(worker_i, 0.0);
   }
   if (G1UseParallelRSetScanning || (worker_i == 0)) {
     scanRS(oc, worker_i);
   } else {
-    _g1p->record_scan_rs_time(worker_i, 0.0);
+    _g1p->phase_times()->record_scan_rs_time(worker_i, 0.0);
   }
 
   // We now clear the cached values of _cset_rs_update_cl for this worker
