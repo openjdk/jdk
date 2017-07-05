@@ -25,9 +25,13 @@
 #------------------------------------------------------------------------
 # CC, CXX & AS
 
-CXX = g++
-CC  = gcc
-AS  = $(CC) -c
+# If a SPEC is not set already, then use these defaults.
+ifeq ($(SPEC),)
+  CXX = g++
+  CC  = gcc
+  AS  = $(CC) -c
+  MCS = /usr/ccs/bin/mcs
+endif
 
 Compiler = gcc
 
@@ -193,5 +197,3 @@ DEBUG_CFLAGS += $(DEBUG_CFLAGS/$(BUILDARCH))
 ifeq ($(DEBUG_CFLAGS/$(BUILDARCH)),) 
 DEBUG_CFLAGS += -gstabs 
 endif 
-
-MCS = /usr/ccs/bin/mcs

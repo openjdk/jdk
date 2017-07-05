@@ -134,6 +134,8 @@ ALL_SETTINGS+=$(call addOptionalSetting,USE_HOTSPOT_INTERPRETER_MODE)
 ALL_SETTINGS+=$(call addOptionalSetting,PEDANTIC)
 ALL_SETTINGS+=$(call addOptionalSetting,DEV_ONLY)
 ALL_SETTINGS+=$(call addOptionalSetting,NO_DOCS)
+ALL_SETTINGS+=$(call addOptionalSetting,NO_DEMOS)
+ALL_SETTINGS+=$(call addOptionalSetting,NO_SAMPLES)
 ALL_SETTINGS+=$(call addOptionalSetting,NO_IMAGES)
 ALL_SETTINGS+=$(call addOptionalSetting,TOOLS_ONLY)
 ALL_SETTINGS+=$(call addOptionalSetting,INSANE)
@@ -263,4 +265,3 @@ ifdef OPENJDK
   ALL_SETTINGS+=$(call addAltSetting,PREVIOUS_JRE_FILE)
   ALL_SETTINGS+=$(call addAltSetting,PREVIOUS_RELEASE_IMAGE)
 endif
-
