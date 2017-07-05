@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,8 +56,11 @@ public class ResolverConfigurationImpl
     // Parse /etc/resolv.conf to get the values for a particular
     // keyword.
     //
-    private LinkedList resolvconf(String keyword, int maxperkeyword, int maxkeywords) {
-        LinkedList ll = new LinkedList();
+    private LinkedList<String> resolvconf(String keyword,
+                                          int maxperkeyword,
+                                          int maxkeywords)
+    {
+        LinkedList<String> ll = new LinkedList<>();
 
         try {
             BufferedReader in =
@@ -99,8 +102,8 @@ public class ResolverConfigurationImpl
         return ll;
     }
 
-    private LinkedList searchlist;
-    private LinkedList nameservers;
+    private LinkedList<String> searchlist;
+    private LinkedList<String> nameservers;
 
 
     // Load DNS configuration from OS
@@ -118,9 +121,9 @@ public class ResolverConfigurationImpl
 
         // get the name servers from /etc/resolv.conf
         nameservers =
-            (LinkedList)java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedAction() {
-                    public Object run() {
+            java.security.AccessController.doPrivileged(
+                new java.security.PrivilegedAction<LinkedList<String>>() {
+                    public LinkedList<String> run() {
                         // typically MAXNS is 3 but we've picked 5 here
                         // to allow for additional servers if required.
                         return resolvconf("nameserver", 1, 5);
@@ -137,15 +140,15 @@ public class ResolverConfigurationImpl
 
     // obtain search list or local domain
 
-    private LinkedList getSearchList() {
+    private LinkedList<String> getSearchList() {
 
-        LinkedList sl;
+        LinkedList<String> sl;
 
         // first try the search keyword in /etc/resolv.conf
 
-        sl = (LinkedList)java.security.AccessController.doPrivileged(
-                 new java.security.PrivilegedAction() {
-                    public Object run() {
+        sl = java.security.AccessController.doPrivileged(
+                 new java.security.PrivilegedAction<LinkedList<String>>() {
+                    public LinkedList<String> run() {
                         LinkedList ll;
 
                         // first try search keyword (max 6 domains)
@@ -177,10 +180,10 @@ public class ResolverConfigurationImpl
 
         // try domain keyword in /etc/resolv.conf
 
-        sl = (LinkedList)java.security.AccessController.doPrivileged(
-                 new java.security.PrivilegedAction() {
-                    public Object run() {
-                        LinkedList ll;
+        sl = java.security.AccessController.doPrivileged(
+                 new java.security.PrivilegedAction<LinkedList<String>>() {
+                    public LinkedList<String> run() {
+                        LinkedList<String> ll;
 
                         ll = resolvconf("domain", 1, 1);
                         if (ll.size() > 0) {
@@ -197,7 +200,7 @@ public class ResolverConfigurationImpl
         // no local domain so try fallback (RPC) domain or
         // hostname
 
-        sl = new LinkedList();
+        sl = new LinkedList<>();
         String domain = fallbackDomain0();
         if (domain != null && domain.length() > 0) {
             sl.add(domain);
@@ -213,7 +216,7 @@ public class ResolverConfigurationImpl
         opts = new OptionsImpl();
     }
 
-    public List searchlist() {
+    public List<String> searchlist() {
         synchronized (lock) {
             loadConfig();
 
@@ -222,7 +225,7 @@ public class ResolverConfigurationImpl
         }
     }
 
-    public List nameservers() {
+    public List<String> nameservers() {
         synchronized (lock) {
             loadConfig();
 

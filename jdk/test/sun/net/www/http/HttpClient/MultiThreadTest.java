@@ -100,11 +100,12 @@ public class MultiThreadTest extends Thread {
             }
         } catch (Exception e) {
             throw new RuntimeException (e.getMessage());
-        }
-        synchronized (threadlock) {
-            threadCounter --;
-            if (threadCounter == 0) {
-                threadlock.notifyAll();
+        } finally {
+            synchronized (threadlock) {
+                threadCounter --;
+                if (threadCounter == 0) {
+                    threadlock.notifyAll();
+                }
             }
         }
     }

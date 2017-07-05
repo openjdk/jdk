@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -35,22 +35,26 @@
 . ${TESTSRC}/../common/CommonSetup.sh
 . ${TESTSRC}/../common/ApplicationSetup.sh
 
-# Start application (send output to shutdown.port)
+# Start application and use PORTFILE for coordination
 PORTFILE="${TESTCLASSES}"/shutdown.port
-startApplication \
-    -classpath "${TESTCLASSES}" SimpleApplication "${PORTFILE}"
+startApplication SimpleApplication "${PORTFILE}"
+
+# all return statuses are checked in this test
+set +e
 
 failed=0
 
 # normal
-$JSTACK $pid 2>&1
+$JSTACK $appJavaPid 2>&1
 if [ $? != 0 ]; then failed=1; fi
 
 # long
-$JSTACK -l $pid 2>&1
+$JSTACK -l $appJavaPid 2>&1
 if [ $? != 0 ]; then failed=1; fi
 
-stopApplication ShutdownSimpleApplication "${PORTFILE}"
+set -e
+
+stopApplication "${PORTFILE}"
+waitForApplication
  
 exit $failed
-

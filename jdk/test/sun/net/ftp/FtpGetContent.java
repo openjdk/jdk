@@ -391,6 +391,10 @@ public class FtpGetContent {
             done = true;
         }
 
+        synchronized boolean done() {
+            return done;
+        }
+
         synchronized public void setPortEnabled(boolean ok) {
             portEnabled = ok;
         }
@@ -431,12 +435,13 @@ public class FtpGetContent {
         public void run() {
             try {
                 Socket client;
-                while (!done) {
+                while (!done()) {
                     client = server.accept();
                     (new FtpServerHandler(client)).start();
                 }
-                server.close();
             } catch(Exception e) {
+            } finally {
+                try { server.close(); } catch (IOException unused) {}
             }
         }
     }
@@ -463,18 +468,13 @@ public class FtpGetContent {
                 bytesRead = stream.read(buffer);
             }
             stream.close();
-            server.terminate();
-            server.interrupt();
             if (totalBytes != filesize)
                 throw new RuntimeException("wrong file size!");
         } catch (IOException e) {
-            try {
-                server.terminate();
-                server.interrupt();
-            } catch (Exception e2) {
-            }
             throw new RuntimeException(e.getMessage());
+        } finally {
+            server.terminate();
+            server.server.close();
         }
     }
-
 }

@@ -26,18 +26,9 @@
 package java.util;
 
 /**
- * Linked list implementation of the {@code List} interface.  Implements all
- * optional list operations, and permits all elements (including
- * {@code null}).  In addition to implementing the {@code List} interface,
- * the {@code LinkedList} class provides uniformly named methods to
- * {@code get}, {@code remove} and {@code insert} an element at the
- * beginning and end of the list.  These operations allow linked lists to be
- * used as a stack, {@linkplain Queue queue}, or {@linkplain Deque
- * double-ended queue}.
- *
- * <p>The class implements the {@code Deque} interface, providing
- * first-in-first-out queue operations for {@code add},
- * {@code poll}, along with other stack and deque operations.
+ * Linked list implementation of the {@link List} and {@link Deque} interfaces.
+ * Implements all optional operations, and permits all elements (including
+ * {@code null}).
  *
  * <p>All of the operations perform as could be expected for a doubly-linked
  * list.  Operations that index into the list will traverse the list from

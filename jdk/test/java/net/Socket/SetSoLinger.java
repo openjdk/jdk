@@ -30,36 +30,24 @@
 
 import java.net.*;
 
-public class SetSoLinger implements Runnable {
-    static ServerSocket ss;
-    static InetAddress addr;
-    static int port;
+public class SetSoLinger {
+    static final int LINGER = 65546;
 
     public static void main(String args[]) throws Exception {
-        boolean      error = true;
-        int          linger = 65546;
-        int          value = 0;
-        addr = InetAddress.getLocalHost();
-        ss = new ServerSocket(0);
-        port = ss.getLocalPort();
+        int value;
+        InetAddress addr = InetAddress.getLocalHost();
+        ServerSocket ss = new ServerSocket(0);
+        int port = ss.getLocalPort();
 
-        Thread t = new Thread(new SetSoLinger());
-        t.start();
+        Socket s = new Socket(addr, port);
         Socket soc = ss.accept();
-        soc.setSoLinger(true, linger);
+        soc.setSoLinger(true, LINGER);
         value = soc.getSoLinger();
         soc.close();
+        s.close();
+        ss.close();
 
         if(value != 65535)
             throw new RuntimeException("Failed. Value not properly reduced.");
     }
-
-    public void run() {
-        try {
-            Socket s = new Socket(addr, port);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
 }

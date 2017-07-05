@@ -109,8 +109,11 @@ public class ResendPostBody {
                 while (!finished()) {
                     Thread.sleep (1000);
                 }
+                out.close();
             } catch (Exception e) {
                 System.err.println ("Server Exception: " + e);
+            } finally {
+                try { server.close(); } catch (IOException unused) {}
             }
         }
     }
@@ -134,7 +137,7 @@ public class ResendPostBody {
 
     public void execute () throws Exception {
 
-     byte b[] = "X=ABCDEFGHZZZ".getBytes();
+        byte b[] = "X=ABCDEFGHZZZ".getBytes();
 
         ss = new ServerSocket (0);
         server = new Server (ss);
@@ -163,8 +166,9 @@ public class ResendPostBody {
         /* Read the response */
 
         int resp = conURL.getResponseCode ();
+        server.setFinished (true);
+
         if (resp != 200)
             throw new RuntimeException ("Response code was not 200: " + resp);
-      server.setFinished (true);
   }
 }

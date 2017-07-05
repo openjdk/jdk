@@ -27,25 +27,25 @@
  * @summary  test to see if timeout hangs
  * @run main/timeout=15 DatagramTimeout
  */
-import java.net.*;
-import java.io.*;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.SocketTimeoutException;
 
 public class DatagramTimeout {
-
-    public static ServerSocket sock;
-
     public static void main(String[] args) throws Exception {
         boolean success = false;
+        DatagramSocket sock = new DatagramSocket();
+
         try {
-            DatagramSocket sock;
             DatagramPacket p;
             byte[] buffer = new byte[50];
             p = new DatagramPacket(buffer, buffer.length);
-            sock = new DatagramSocket(2333);
             sock.setSoTimeout(2);
             sock.receive(p);
         } catch (SocketTimeoutException e) {
             success = true;
+        } finally {
+            sock.close();
         }
         if (!success)
             throw new RuntimeException("Socket timeout failure.");
