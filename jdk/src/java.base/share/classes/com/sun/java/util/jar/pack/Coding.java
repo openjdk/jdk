@@ -662,7 +662,7 @@ class Coding implements Comparable<Coding>, CodingMethod, Histogram.BitMetric {
         return lg;
     }
 
-    static private final byte[] byteBitWidths = new byte[0x100];
+    private static final byte[] byteBitWidths = new byte[0x100];
     static {
         for (int b = 0; b < byteBitWidths.length; b++) {
             byteBitWidths[b] = (byte) ceil_lg2(b + 1);

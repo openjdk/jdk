@@ -1522,7 +1522,7 @@ void GraphKit::pre_barrier(bool do_load,
       g1_write_barrier_pre(do_load, obj, adr, adr_idx, val, val_type, pre_val, bt);
       break;
 
-    case BarrierSet::CardTableModRef:
+    case BarrierSet::CardTableForRS:
     case BarrierSet::CardTableExtension:
     case BarrierSet::ModRef:
       break;
@@ -1539,7 +1539,7 @@ bool GraphKit::can_move_pre_barrier() const {
     case BarrierSet::G1SATBCTLogging:
       return true; // Can move it if no safepoint
 
-    case BarrierSet::CardTableModRef:
+    case BarrierSet::CardTableForRS:
     case BarrierSet::CardTableExtension:
     case BarrierSet::ModRef:
       return true; // There is no pre-barrier
@@ -1565,7 +1565,7 @@ void GraphKit::post_barrier(Node* ctl,
       g1_write_barrier_post(store, obj, adr, adr_idx, val, bt, use_precise);
       break;
 
-    case BarrierSet::CardTableModRef:
+    case BarrierSet::CardTableForRS:
     case BarrierSet::CardTableExtension:
       write_barrier_post(store, obj, adr, adr_idx, val, use_precise);
       break;
@@ -3791,7 +3791,7 @@ void GraphKit::write_barrier_post(Node* oop_store,
   Node* cast = __ CastPX(__ ctrl(), adr);
 
   // Divide by card size
-  assert(Universe::heap()->barrier_set()->kind() == BarrierSet::CardTableModRef,
+  assert(Universe::heap()->barrier_set()->is_a(BarrierSet::CardTableModRef),
          "Only one we handle so far.");
   Node* card_offset = __ URShiftX( cast, __ ConI(CardTableModRefBS::card_shift) );
 

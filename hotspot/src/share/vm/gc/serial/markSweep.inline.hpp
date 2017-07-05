@@ -26,37 +26,12 @@
 #define SHARE_VM_GC_SERIAL_MARKSWEEP_INLINE_HPP
 
 #include "gc/serial/markSweep.hpp"
-#include "gc/shared/collectedHeap.hpp"
-#include "oops/instanceClassLoaderKlass.inline.hpp"
-#include "oops/instanceKlass.inline.hpp"
-#include "oops/instanceMirrorKlass.inline.hpp"
-#include "oops/instanceRefKlass.inline.hpp"
+#include "memory/universe.hpp"
 #include "oops/markOop.inline.hpp"
-#include "oops/objArrayKlass.inline.hpp"
-#include "utilities/macros.hpp"
-#include "utilities/stack.inline.hpp"
+#include "oops/oop.inline.hpp"
 #if INCLUDE_ALL_GCS
-#include "gc/g1/g1StringDedup.hpp"
 #include "gc/g1/g1MarkSweep.hpp"
 #endif // INCLUDE_ALL_GCS
-
-inline void MarkSweep::mark_object(oop obj) {
-#if INCLUDE_ALL_GCS
-  if (G1StringDedup::is_enabled()) {
-    // We must enqueue the object before it is marked
-    // as we otherwise can't read the object's age.
-    G1StringDedup::enqueue_from_mark(obj);
-  }
-#endif
-  // some marks may contain information we need to preserve so we store them away
-  // and overwrite the mark.  We'll restore it at the end of markSweep.
-  markOop mark = obj->mark();
-  obj->set_mark(markOopDesc::prototype()->set_marked());
-
-  if (mark->must_be_preserved(obj)) {
-    preserve_mark(obj, mark);
-  }
-}
 
 inline bool MarkSweep::is_archive_object(oop object) {
 #if INCLUDE_ALL_GCS
@@ -65,51 +40,6 @@ inline bool MarkSweep::is_archive_object(oop object) {
 #else
   return false;
 #endif
-}
-
-inline void MarkSweep::follow_klass(Klass* klass) {
-  oop op = klass->klass_holder();
-  MarkSweep::mark_and_push(&op);
-}
-
-inline void MarkSweep::follow_object(oop obj) {
-  assert(obj->is_gc_marked(), "should be marked");
-
-  obj->ms_follow_contents();
-}
-
-template <class T> inline void MarkSweep::follow_root(T* p) {
-  assert(!Universe::heap()->is_in_reserved(p),
-         "roots shouldn't be things within the heap");
-  T heap_oop = oopDesc::load_heap_oop(p);
-  if (!oopDesc::is_null(heap_oop)) {
-    oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
-    if (!obj->mark()->is_marked() &&
-        !is_archive_object(obj)) {
-      mark_object(obj);
-      follow_object(obj);
-    }
-  }
-  follow_stack();
-}
-
-template <class T> inline void MarkSweep::mark_and_push(T* p) {
-//  assert(Universe::heap()->is_in_reserved(p), "should be in object space");
-  T heap_oop = oopDesc::load_heap_oop(p);
-  if (!oopDesc::is_null(heap_oop)) {
-    oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
-    if (!obj->mark()->is_marked() &&
-        !is_archive_object(obj)) {
-      mark_object(obj);
-      _marking_stack.push(obj);
-    }
-  }
-}
-
-void MarkSweep::push_objarray(oop obj, size_t index) {
-  ObjArrayTask task(obj, index);
-  assert(task.is_valid(), "bad ObjArrayTask");
-  _objarray_stack.push(task);
 }
 
 inline int MarkSweep::adjust_pointers(oop obj) {
@@ -137,10 +67,6 @@ template <class T> inline void MarkSweep::adjust_pointer(T* p) {
       }
     }
   }
-}
-
-template <class T> inline void MarkSweep::KeepAliveClosure::do_oop_work(T* p) {
-  mark_and_push(p);
 }
 
 #endif // SHARE_VM_GC_SERIAL_MARKSWEEP_INLINE_HPP

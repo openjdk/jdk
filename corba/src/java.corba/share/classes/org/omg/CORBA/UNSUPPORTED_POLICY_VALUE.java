@@ -26,8 +26,8 @@
 package org.omg.CORBA;
 
 /**
- * A <tt>PolicyErrorCode</tt> which would be filled if the value
- * requested for the <tt>Policy</tt> is of a
+ * A {@code PolicyErrorCode} which would be filled if the value
+ * requested for the {@code Policy} is of a
  * valid type and within the valid range for that type, but this valid value
  * is not currently supported.
  *

@@ -296,6 +296,8 @@ class LibraryCallKit : public GraphKit {
   Node* get_table_from_crc32c_class(ciInstanceKlass *crc32c_class);
   bool inline_updateBytesCRC32C();
   bool inline_updateDirectByteBufferCRC32C();
+  bool inline_updateBytesAdler32();
+  bool inline_updateByteBufferAdler32();
   bool inline_multiplyToLen();
   bool inline_squareToLen();
   bool inline_mulAdd();
@@ -698,6 +700,11 @@ bool LibraryCallKit::try_to_inline(int predicate) {
     return inline_updateBytesCRC32C();
   case vmIntrinsics::_updateDirectByteBufferCRC32C:
     return inline_updateDirectByteBufferCRC32C();
+
+  case vmIntrinsics::_updateBytesAdler32:
+    return inline_updateBytesAdler32();
+  case vmIntrinsics::_updateByteBufferAdler32:
+    return inline_updateByteBufferAdler32();
 
   case vmIntrinsics::_profileBoolean:
     return inline_profileBoolean();
@@ -5542,6 +5549,87 @@ bool LibraryCallKit::inline_updateDirectByteBufferCRC32C() {
   Node* call = make_runtime_call(RC_LEAF, OptoRuntime::updateBytesCRC32C_Type(),
                                  stubAddr, stubName, TypePtr::BOTTOM,
                                  crc, src_start, length, table_start);
+  Node* result = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
+  set_result(result);
+  return true;
+}
+
+//------------------------------inline_updateBytesAdler32----------------------
+//
+// Calculate Adler32 checksum for byte[] array.
+// int java.util.zip.Adler32.updateBytes(int crc, byte[] buf, int off, int len)
+//
+bool LibraryCallKit::inline_updateBytesAdler32() {
+  assert(UseAdler32Intrinsics, "Adler32 Instrinsic support need"); // check if we actually need to check this flag or check a different one
+  assert(callee()->signature()->size() == 4, "updateBytes has 4 parameters");
+  assert(callee()->holder()->is_loaded(), "Adler32 class must be loaded");
+  // no receiver since it is static method
+  Node* crc     = argument(0); // type: int
+  Node* src     = argument(1); // type: oop
+  Node* offset  = argument(2); // type: int
+  Node* length  = argument(3); // type: int
+
+  const Type* src_type = src->Value(&_gvn);
+  const TypeAryPtr* top_src = src_type->isa_aryptr();
+  if (top_src  == NULL || top_src->klass()  == NULL) {
+    // failed array check
+    return false;
+  }
+
+  // Figure out the size and type of the elements we will be copying.
+  BasicType src_elem = src_type->isa_aryptr()->klass()->as_array_klass()->element_type()->basic_type();
+  if (src_elem != T_BYTE) {
+    return false;
+  }
+
+  // 'src_start' points to src array + scaled offset
+  Node* src_start = array_element_address(src, offset, src_elem);
+
+  // We assume that range check is done by caller.
+  // TODO: generate range check (offset+length < src.length) in debug VM.
+
+  // Call the stub.
+  address stubAddr = StubRoutines::updateBytesAdler32();
+  const char *stubName = "updateBytesAdler32";
+
+  Node* call = make_runtime_call(RC_LEAF, OptoRuntime::updateBytesAdler32_Type(),
+                                 stubAddr, stubName, TypePtr::BOTTOM,
+                                 crc, src_start, length);
+  Node* result = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
+  set_result(result);
+  return true;
+}
+
+//------------------------------inline_updateByteBufferAdler32---------------
+//
+// Calculate Adler32 checksum for DirectByteBuffer.
+// int java.util.zip.Adler32.updateByteBuffer(int crc, long buf, int off, int len)
+//
+bool LibraryCallKit::inline_updateByteBufferAdler32() {
+  assert(UseAdler32Intrinsics, "Adler32 Instrinsic support need"); // check if we actually need to check this flag or check a different one
+  assert(callee()->signature()->size() == 5, "updateByteBuffer has 4 parameters and one is long");
+  assert(callee()->holder()->is_loaded(), "Adler32 class must be loaded");
+  // no receiver since it is static method
+  Node* crc     = argument(0); // type: int
+  Node* src     = argument(1); // type: long
+  Node* offset  = argument(3); // type: int
+  Node* length  = argument(4); // type: int
+
+  src = ConvL2X(src);  // adjust Java long to machine word
+  Node* base = _gvn.transform(new CastX2PNode(src));
+  offset = ConvI2X(offset);
+
+  // 'src_start' points to src array + scaled offset
+  Node* src_start = basic_plus_adr(top(), base, offset);
+
+  // Call the stub.
+  address stubAddr = StubRoutines::updateBytesAdler32();
+  const char *stubName = "updateBytesAdler32";
+
+  Node* call = make_runtime_call(RC_LEAF, OptoRuntime::updateBytesAdler32_Type(),
+                                 stubAddr, stubName, TypePtr::BOTTOM,
+                                 crc, src_start, length);
+
   Node* result = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
   set_result(result);
   return true;

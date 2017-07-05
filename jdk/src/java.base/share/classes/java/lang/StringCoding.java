@@ -52,9 +52,9 @@ class StringCoding {
     private StringCoding() { }
 
     /** The cached coders for each thread */
-    private final static ThreadLocal<SoftReference<StringDecoder>> decoder =
+    private static final ThreadLocal<SoftReference<StringDecoder>> decoder =
         new ThreadLocal<>();
-    private final static ThreadLocal<SoftReference<StringEncoder>> encoder =
+    private static final ThreadLocal<SoftReference<StringEncoder>> encoder =
         new ThreadLocal<>();
 
     private static boolean warnUnsupportedCharset = true;

@@ -184,7 +184,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     /**
      * This mask is used to obtain the value of an int as if it were unsigned.
      */
-    final static long LONG_MASK = 0xffffffffL;
+    static final long LONG_MASK = 0xffffffffL;
 
     /**
      * This constant limits {@code mag.length} of BigIntegers to the supported
@@ -1212,7 +1212,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     /**
      * Initialize static constant array when class is loaded.
      */
-    private final static int MAX_CONSTANT = 16;
+    private static final int MAX_CONSTANT = 16;
     private static BigInteger posConst[] = new BigInteger[MAX_CONSTANT+1];
     private static BigInteger negConst[] = new BigInteger[MAX_CONSTANT+1];
 

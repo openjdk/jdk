@@ -35,7 +35,7 @@ private:
   // We encode the value of the heap region type so the generation can be
   // determined quickly. The tag is split into two parts:
   //
-  //   major type (young, humongous)                         : top N-1 bits
+  //   major type (young, old, humongous, archive)           : top N-1 bits
   //   minor type (eden / survivor, starts / cont hum, etc.) : bottom 1 bit
   //
   // If there's need to increase the number of minor types in the

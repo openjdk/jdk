@@ -76,7 +76,7 @@ public abstract class CalendarSystem {
 
     /////////////////////// Calendar Factory Methods /////////////////////////
 
-    private volatile static boolean initialized = false;
+    private static volatile boolean initialized = false;
 
     // Map of calendar names and calendar class names
     private static ConcurrentMap<String, String> names;
@@ -118,7 +118,7 @@ public abstract class CalendarSystem {
         }
     }
 
-    private final static Gregorian GREGORIAN_INSTANCE = new Gregorian();
+    private static final Gregorian GREGORIAN_INSTANCE = new Gregorian();
 
     /**
      * Returns the singleton instance of the <code>Gregorian</code>

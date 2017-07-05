@@ -37,9 +37,9 @@ public class ByteBuffer {
     protected byte elementData[];
 
     /**
-     * The number of valid components in this <tt>ByteBuffer</tt> object.
-     * Components <tt>elementData[0]</tt> through
-     * <tt>elementData[elementCount-1]</tt> are the actual items.
+     * The number of valid components in this {@code ByteBuffer} object.
+     * Components {@code elementData[0]} through
+     * {@code elementData[elementCount-1]} are the actual items.
      *
      * @serial
      */
@@ -88,7 +88,7 @@ public class ByteBuffer {
 
     /**
      * Constructs an empty ByteBuffer so that its internal data array
-     * has size <tt>10</tt> and its standard capacity increment is
+     * has size {@code 10} and its standard capacity increment is
      * zero.
      */
     public ByteBuffer() {
@@ -99,7 +99,7 @@ public class ByteBuffer {
      * Trims the capacity of this ByteBuffer to be the ByteBuffer's current
      * size. If the capacity of this cector is larger than its current
      * size, then the capacity is changed to equal the size by replacing
-     * its internal data array, kept in the field <tt>elementData</tt>,
+     * its internal data array, kept in the field {@code elementData},
      * with a smaller one. An application can use this operation to
      * minimize the storage of a ByteBuffer.
      */
@@ -138,7 +138,7 @@ public class ByteBuffer {
      * Returns the current capacity of this ByteBuffer.
      *
      * @return  the current capacity (the length of its internal
-     *          data arary, kept in the field <tt>elementData</tt>
+     *          data arary, kept in the field {@code elementData}
      *          of this ByteBuffer.
      */
     public int capacity() {
@@ -157,9 +157,9 @@ public class ByteBuffer {
     /**
      * Tests if this ByteBuffer has no components.
      *
-     * @return  <code>true</code> if and only if this ByteBuffer has
+     * @return  {@code true} if and only if this ByteBuffer has
      *          no components, that is, its size is zero;
-     *          <code>false</code> otherwise.
+     *          {@code false} otherwise.
      */
     public boolean isEmpty() {
         return elementCount == 0;

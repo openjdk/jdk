@@ -218,7 +218,7 @@ final class Histogram {
         return sum;
     }
 
-    static private
+    private static
     double round(double x, double scale) {
         return Math.round(x * scale) / scale;
     }

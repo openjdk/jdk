@@ -721,6 +721,6 @@ abstract class AbstractPlainSocketImpl extends SocketImpl
     abstract void socketSendUrgentData(int data)
         throws IOException;
 
-    public final static int SHUT_RD = 0;
-    public final static int SHUT_WR = 1;
+    public static final int SHUT_RD = 0;
+    public static final int SHUT_WR = 1;
 }

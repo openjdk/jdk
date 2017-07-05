@@ -35,7 +35,7 @@ public final class BasicImageWriter {
     public static final String BOOT_NAME = "bootmodules";
     public static final String BOOT_IMAGE_NAME = BOOT_NAME + IMAGE_EXT;
 
-    private final static int RETRY_LIMIT = 1000;
+    private static final int RETRY_LIMIT = 1000;
 
     private ByteOrder byteOrder;
     private ImageStringsWriter strings;

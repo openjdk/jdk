@@ -47,7 +47,7 @@ package sun.util.locale.provider;
  * @author             Helena Shih, Mark Davis
  */
 final class CollationRules {
-    final static String DEFAULTRULES =
+    static final String DEFAULTRULES =
         "" // no FRENCH accent order by default, add in French Delta
         // IGNORABLES (up to first < character)
         // COMPLETELY IGNORE format characters

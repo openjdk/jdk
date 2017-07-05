@@ -47,14 +47,14 @@ import java.util.Map;
  */
 public class DrainFindDeadlockTest {
     private LogManager mgr = LogManager.getLogManager();
-    private final static int MAX_ITERATIONS = 100;
+    private static final int MAX_ITERATIONS = 100;
 
     // Get a ThreadMXBean so we can check for deadlock.  N.B. this may
     // not be supported on all platforms, which means we will have to
     // resort to the traditional test timeout method. However, if
     // we have the support we'll get the deadlock details if one
     // is detected.
-    private final static ThreadMXBean threadMXBean =
+    private static final ThreadMXBean threadMXBean =
             ManagementFactory.getThreadMXBean();
     private final boolean threadMXBeanDeadlockSupported =
             threadMXBean.isSynchronizerUsageSupported();

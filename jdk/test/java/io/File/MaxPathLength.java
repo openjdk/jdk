@@ -39,7 +39,7 @@ public class MaxPathLength {
                  "areallylongfilenamethatsforsur";
     private static boolean isWindows = false;
 
-    private final static int MAX_LENGTH = 256;
+    private static final int MAX_LENGTH = 256;
 
     private static int counter = 0;
 

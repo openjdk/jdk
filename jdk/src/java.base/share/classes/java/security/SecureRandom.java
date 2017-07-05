@@ -424,7 +424,7 @@ public class SecureRandom extends java.util.Random {
      *
      * @see #getSeed
      */
-    synchronized public void setSeed(byte[] seed) {
+    public synchronized void setSeed(byte[] seed) {
         secureRandomSpi.engineSetSeed(seed);
     }
 
@@ -465,7 +465,7 @@ public class SecureRandom extends java.util.Random {
      * @param bytes the array to be filled in with random bytes.
      */
     @Override
-    synchronized public void nextBytes(byte[] bytes) {
+    public synchronized void nextBytes(byte[] bytes) {
         secureRandomSpi.engineNextBytes(bytes);
     }
 
@@ -484,7 +484,7 @@ public class SecureRandom extends java.util.Random {
      * of pseudo-random bits (right justified, with leading zeros).
      */
     @Override
-    final protected int next(int numBits) {
+    protected final int next(int numBits) {
         int numBytes = (numBits+7)/8;
         byte[] b = new byte[numBytes];
         int next = 0;

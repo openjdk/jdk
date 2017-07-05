@@ -47,11 +47,11 @@ import java.util.logging.Logger;
  */
 public class ResourceBundleSearchTest {
 
-    private final static boolean DEBUG = false;
-    private final static String LOGGER_PREFIX = "myLogger.";
+    private static final boolean DEBUG = false;
+    private static final String LOGGER_PREFIX = "myLogger.";
     private static int loggerNum = 0;
-    private final static String PROP_RB_NAME = "ClassPathTestBundle";
-    private final static String TCCL_TEST_BUNDLE = "ContextClassLoaderTestBundle";
+    private static final String PROP_RB_NAME = "ClassPathTestBundle";
+    private static final String TCCL_TEST_BUNDLE = "ContextClassLoaderTestBundle";
 
     private static int numPass = 0;
     private static int numFail = 0;

@@ -26,7 +26,6 @@
 #include "code/compiledIC.hpp"
 #include "code/nmethod.hpp"
 #include "code/scopeDesc.hpp"
-#include "compiler/compilerOracle.hpp"
 #include "interpreter/interpreter.hpp"
 #include "oops/methodData.hpp"
 #include "oops/method.hpp"

@@ -69,7 +69,7 @@ public enum Wrapper {
                 "0x"+Integer.toHexString(format));
     }
 
-    private static abstract class Format {
+    private abstract static class Format {
         static final int SLOT_SHIFT = 0, SIZE_SHIFT = 2, KIND_SHIFT = 12;
         static final int
                 SIGNED   = (-1) << KIND_SHIFT,

@@ -38,7 +38,7 @@ import java.util.logging.Logger;
  */
 public class IndirectlyLoadABundle {
 
-    private final static String rbName = "CallerSearchableResource";
+    private static final String rbName = "CallerSearchableResource";
 
     public boolean loadAndTest() throws Throwable {
         // Make sure we can find it via the URLClassLoader
