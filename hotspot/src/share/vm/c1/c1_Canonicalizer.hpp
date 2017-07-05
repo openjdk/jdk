@@ -51,6 +51,7 @@ class Canonicalizer: InstructionVisitor {
 
  public:
   Canonicalizer(Compilation* c, Value x, int bci) : _compilation(c), _canonical(x), _bci(bci) {
+    NOT_PRODUCT(x->set_printable_bci(bci));
     if (CanonicalizeNodes) x->visit(this);
   }
   Value canonical() const                        { return _canonical; }

@@ -1915,7 +1915,7 @@ void Matcher::find_shared( Node *n ) {
         set_dontcare(n);
         break;
       case Op_Jump:
-        mstack.push(n->in(1), Visit);         // Switch Value
+        mstack.push(n->in(1), Pre_Visit);     // Switch Value (could be shared)
         mstack.push(n->in(0), Pre_Visit);     // Visit Control input
         continue;                             // while (mstack.is_nonempty())
       case Op_StrComp:

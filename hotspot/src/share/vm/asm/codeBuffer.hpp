@@ -362,10 +362,8 @@ class CodeBuffer: public StackObj {
   // helper for CodeBuffer::expand()
   void take_over_code_from(CodeBuffer* cs);
 
-#ifdef ASSERT
   // ensure sections are disjoint, ordered, and contained in the blob
-  bool verify_section_allocation();
-#endif
+  void verify_section_allocation();
 
   // copies combined relocations to the blob, returns bytes copied
   // (if target is null, it is a dry run only, just for sizing)
@@ -393,7 +391,7 @@ class CodeBuffer: public StackObj {
     assert(code_start != NULL, "sanity");
     initialize_misc("static buffer");
     initialize(code_start, code_size);
-    assert(verify_section_allocation(), "initial use of buffer OK");
+    verify_section_allocation();
   }
 
   // (2) CodeBuffer referring to pre-allocated CodeBlob.
@@ -544,6 +542,9 @@ class CodeBuffer: public StackObj {
   address transform_address(const CodeBuffer &cb, address addr) const;
 
   void block_comment(intptr_t offset, const char * comment) PRODUCT_RETURN;
+
+  // Log a little info about section usage in the CodeBuffer
+  void log_section_sizes(const char* name);
 
 #ifndef PRODUCT
  public:
