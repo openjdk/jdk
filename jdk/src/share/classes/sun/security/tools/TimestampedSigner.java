@@ -275,7 +275,8 @@ public final class TimestampedSigner extends ContentSigner {
             URIName uri;
             for (int i = 0; i < derValue.length; i++) {
                 description = new AccessDescription(derValue[i]);
-                if (description.getAccessMethod().equals(AD_TIMESTAMPING_Id)) {
+                if (description.getAccessMethod()
+                        .equals((Object)AD_TIMESTAMPING_Id)) {
                     location = description.getAccessLocation();
                     if (location.getType() == GeneralNameInterface.NAME_URI) {
                         uri = (URIName) location.getName();
@@ -351,7 +352,7 @@ public final class TimestampedSigner extends ContentSigner {
         }
         if (!Arrays.equals(tst.getHashedMessage(), digest)) {
             throw new IOException("Digest octets changed in timestamp token");
-        };
+        }
 
         BigInteger replyNonce = tst.getNonce();
         if (replyNonce == null && nonce != null) {
@@ -374,7 +375,7 @@ public final class TimestampedSigner extends ContentSigner {
                     throw new CertificateException(
                     "Certificate is not valid for timestamping");
                 }
-                List keyPurposes = cert.getExtendedKeyUsage();
+                List<String> keyPurposes = cert.getExtendedKeyUsage();
                 if (keyPurposes == null ||
                         ! keyPurposes.contains(KP_TIMESTAMPING_OID)) {
                     throw new CertificateException(

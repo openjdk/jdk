@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,13 +41,10 @@ import java.security.cert.X509Certificate;
 import java.security.cert.CertificateException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.*;
-import java.math.*;
 
 import java.security.AlgorithmParameters;
-import java.security.spec.AlgorithmParameterSpec;
 import javax.crypto.spec.PBEParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
-import javax.crypto.spec.SecretKeySpec;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.SecretKey;
 import javax.crypto.Cipher;
@@ -222,7 +219,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
     public Key engineGetKey(String alias, char[] password)
         throws NoSuchAlgorithmException, UnrecoverableKeyException
     {
-        KeyEntry entry = entries.get(alias.toLowerCase());
+        KeyEntry entry = entries.get(alias.toLowerCase(Locale.ENGLISH));
         Key key = null;
 
         if (entry == null) {
@@ -299,7 +296,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
      * <i>key entry</i> without a certificate chain).
      */
     public Certificate[] engineGetCertificateChain(String alias) {
-        KeyEntry entry = entries.get(alias.toLowerCase());
+        KeyEntry entry = entries.get(alias.toLowerCase(Locale.ENGLISH));
         if (entry != null) {
             if (entry.chain == null) {
                 return null;
@@ -327,7 +324,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
      * does not contain a certificate.
      */
     public Certificate engineGetCertificate(String alias) {
-        KeyEntry entry = entries.get(alias.toLowerCase());
+        KeyEntry entry = entries.get(alias.toLowerCase(Locale.ENGLISH));
         if (entry != null) {
             if (entry.chain == null) {
                 return null;
@@ -348,7 +345,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
      * not exist
      */
     public Date engineGetCreationDate(String alias) {
-        KeyEntry entry = entries.get(alias.toLowerCase());
+        KeyEntry entry = entries.get(alias.toLowerCase(Locale.ENGLISH));
         if (entry != null) {
             return new Date(entry.date.getTime());
         } else {
@@ -412,15 +409,13 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
             // set the keyId to current date
             entry.keyId = ("Time " + (entry.date).getTime()).getBytes("UTF8");
             // set the alias
-            entry.alias = alias.toLowerCase();
+            entry.alias = alias.toLowerCase(Locale.ENGLISH);
 
             // add the entry
-            entries.put(alias.toLowerCase(), entry);
+            entries.put(alias.toLowerCase(Locale.ENGLISH), entry);
         } catch (Exception nsae) {
-            KeyStoreException ke = new KeyStoreException("Key protection " +
-                                        " algorithm not found: " + nsae);
-            ke.initCause(nsae);
-            throw ke;
+            throw new KeyStoreException("Key protection " +
+                       " algorithm not found: " + nsae, nsae);
         }
     }
 
@@ -456,10 +451,8 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
         try {
             new EncryptedPrivateKeyInfo(key);
         } catch (IOException ioe) {
-            KeyStoreException ke = new KeyStoreException("Private key is not"
-                        + " stored as PKCS#8 EncryptedPrivateKeyInfo: " + ioe);
-            ke.initCause(ioe);
-            throw ke;
+            throw new KeyStoreException("Private key is not stored"
+                    + " as PKCS#8 EncryptedPrivateKeyInfo: " + ioe, ioe);
         }
 
         KeyEntry entry = new KeyEntry();
@@ -472,7 +465,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
             // Won't happen
         }
         // set the alias
-        entry.alias = alias.toLowerCase();
+        entry.alias = alias.toLowerCase(Locale.ENGLISH);
 
         entry.protectedPrivKey = key.clone();
         if (chain != null) {
@@ -480,7 +473,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
         }
 
         // add the entry
-        entries.put(alias.toLowerCase(), entry);
+        entries.put(alias.toLowerCase(Locale.ENGLISH), entry);
     }
 
 
@@ -513,11 +506,8 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
            algParams = AlgorithmParameters.getInstance(algorithm);
            algParams.init(paramSpec);
         } catch (Exception e) {
-           IOException ioe =
-                new IOException("getAlgorithmParameters failed: " +
-                                e.getMessage());
-           ioe.initCause(e);
-           throw ioe;
+           throw new IOException("getAlgorithmParameters failed: " +
+                                 e.getMessage(), e);
         }
         return algParams;
     }
@@ -544,11 +534,8 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                 algParams.init(params.toByteArray());
             }
         } catch (Exception e) {
-           IOException ioe =
-                new IOException("parseAlgParameters failed: " +
-                                e.getMessage());
-           ioe.initCause(e);
-           throw ioe;
+           throw new IOException("parseAlgParameters failed: " +
+                                 e.getMessage(), e);
         }
         return algParams;
     }
@@ -565,10 +552,8 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
             SecretKeyFactory skFac = SecretKeyFactory.getInstance("PBE");
             skey = skFac.generateSecret(keySpec);
         } catch (Exception e) {
-           IOException ioe = new IOException("getSecretKey failed: " +
-                                        e.getMessage());
-           ioe.initCause(e);
-           throw ioe;
+           throw new IOException("getSecretKey failed: " +
+                                 e.getMessage(), e);
         }
         return skey;
     }
@@ -633,7 +618,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
     public synchronized void engineSetCertificateEntry(String alias,
         Certificate cert) throws KeyStoreException
     {
-        KeyEntry entry = entries.get(alias.toLowerCase());
+        KeyEntry entry = entries.get(alias.toLowerCase(Locale.ENGLISH));
         if (entry != null) {
             throw new KeyStoreException("Cannot overwrite own certificate");
         } else
@@ -650,7 +635,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
     public synchronized void engineDeleteEntry(String alias)
         throws KeyStoreException
     {
-        entries.remove(alias.toLowerCase());
+        entries.remove(alias.toLowerCase(Locale.ENGLISH));
     }
 
     /**
@@ -670,7 +655,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
      * @return true if the alias exists, false otherwise
      */
     public boolean engineContainsAlias(String alias) {
-        return entries.containsKey(alias.toLowerCase());
+        return entries.containsKey(alias.toLowerCase(Locale.ENGLISH));
     }
 
     /**
@@ -690,7 +675,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
      * <i>key entry</i>, false otherwise.
      */
     public boolean engineIsKeyEntry(String alias) {
-        KeyEntry entry = entries.get(alias.toLowerCase());
+        KeyEntry entry = entries.get(alias.toLowerCase(Locale.ENGLISH));
         if (entry != null) {
             return true;
         } else {
@@ -826,9 +811,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
             md.update(data);
             digest = md.digest();
         } catch (Exception e) {
-            IOException ioe = new IOException("generateHash failed: " + e);
-            ioe.initCause(e);
-            throw ioe;
+            throw new IOException("generateHash failed: " + e, e);
         }
         return digest;
     }
@@ -866,9 +849,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
             bytes.write(macData.getEncoded());
             mData = bytes.toByteArray();
         } catch (Exception e) {
-            IOException ioe = new IOException("calculateMac failed: " + e);
-            ioe.initCause(e);
-            throw ioe;
+            throw new IOException("calculateMac failed: " + e, e);
         }
         return mData;
     }
@@ -1149,10 +1130,8 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
             encryptedData = cipher.doFinal(data);
 
         } catch (Exception e) {
-            IOException ioe = new IOException("Failed to encrypt" +
-                                " safe contents entry: " + e);
-            ioe.initCause(e);
-            throw ioe;
+            throw new IOException("Failed to encrypt" +
+                    " safe contents entry: " + e, e);
         }
 
         // create EncryptedContentInfo
@@ -1220,7 +1199,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
         ContentInfo authSafe = new ContentInfo(s);
         ObjectIdentifier contentType = authSafe.getContentType();
 
-        if (contentType.equals(ContentInfo.DATA_OID)) {
+        if (contentType.equals((Object)ContentInfo.DATA_OID)) {
            authSafeData = authSafe.getData();
         } else /* signed data */ {
            throw new IOException("public key protected PKCS12 not supported");
@@ -1246,7 +1225,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
             safeContents = new ContentInfo(sci);
             contentType = safeContents.getContentType();
             safeContentsData = null;
-            if (contentType.equals(ContentInfo.DATA_OID)) {
+            if (contentType.equals((Object)ContentInfo.DATA_OID)) {
                 safeContentsData = safeContents.getData();
             } else if (contentType.equals(ContentInfo.ENCRYPTED_DATA_OID)) {
                 if (password == null) {
@@ -1280,10 +1259,8 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                     safeContentsData = cipher.doFinal(safeContentsData);
 
                 } catch (Exception e) {
-                    IOException ioe = new IOException("failed to decrypt safe"
-                                        + " contents entry: " + e);
-                    ioe.initCause(e);
-                    throw ioe;
+                    throw new IOException("failed to decrypt safe"
+                            + " contents entry: " + e, e);
                 }
             } else {
                 throw new IOException("public key protected PKCS12" +
@@ -1297,7 +1274,8 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
         if (password != null && s.available() > 0) {
            MacData macData = new MacData(s);
            try {
-                String algName = macData.getDigestAlgName().toUpperCase();
+                String algName =
+                        macData.getDigestAlgName().toUpperCase(Locale.ENGLISH);
                 if (algName.equals("SHA")  ||
                     algName.equals("SHA1") ||
                     algName.equals("SHA-1")) {
@@ -1319,10 +1297,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                                         " integrity checking");
                 }
            } catch (Exception e) {
-                IOException ioe =
-                        new IOException("Integrity check failed: " + e);
-                ioe.initCause(e);
-                throw ioe;
+                throw new IOException("Integrity check failed: " + e, e);
            }
         }
 
@@ -1402,12 +1377,12 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                                         + bagValue.tag);
             }
             bagValue = bagValue.data.getDerValue();
-            if (bagId.equals(PKCS8ShroudedKeyBag_OID)) {
+            if (bagId.equals((Object)PKCS8ShroudedKeyBag_OID)) {
                 KeyEntry kEntry = new KeyEntry();
                 kEntry.protectedPrivKey = bagValue.toByteArray();
                 bagItem = kEntry;
                 privateKeyCount++;
-            } else if (bagId.equals(CertBag_OID)) {
+            } else if (bagId.equals((Object)CertBag_OID)) {
                 DerInputStream cs = new DerInputStream(bagValue.toByteArray());
                 DerValue[] certValues = cs.getSequence(2);
                 ObjectIdentifier certId = certValues[0].getOID();
@@ -1453,9 +1428,9 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                         throw new IOException("Attribute " + attrId +
                                 " should have a value " + e.getMessage());
                     }
-                    if (attrId.equals(PKCS9FriendlyName_OID)) {
+                    if (attrId.equals((Object)PKCS9FriendlyName_OID)) {
                         alias = valSet[0].getBMPString();
-                    } else if (attrId.equals(PKCS9LocalKeyId_OID)) {
+                    } else if (attrId.equals((Object)PKCS9LocalKeyId_OID)) {
                         keyId = valSet[0].getOctetString();
                     } else {
                         // log error message for "unknown attr"
@@ -1505,7 +1480,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                 if (alias == null)
                    alias = getUnfriendlyName();
                 entry.alias = alias;
-                entries.put(alias.toLowerCase(), entry);
+                entries.put(alias.toLowerCase(Locale.ENGLISH), entry);
             } else if (bagItem instanceof X509Certificate) {
                 X509Certificate cert = (X509Certificate)bagItem;
                 // Insert a localKeyID for the corresponding cert

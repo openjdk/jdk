@@ -27,6 +27,7 @@
  * @summary Basic known answer test for ECDH
  * @author Andreas Sterbenz
  * @library ..
+ * @library ../../../../java/security/testlibrary
  */
 
 import java.io.*;
@@ -59,7 +60,7 @@ public class TestECDH extends PKCS11Test {
             System.out.println("Provider does not support ECDH, skipping");
             return;
         }
-        Security.insertProviderAt(p, 1);
+        Providers.setAt(p, 1);
 
         if (false) {
             KeyPairGenerator kpg = KeyPairGenerator.getInstance("EC", p);

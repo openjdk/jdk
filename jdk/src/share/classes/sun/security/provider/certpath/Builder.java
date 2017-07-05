@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -153,6 +153,7 @@ public abstract class Builder {
             if (debug != null) {
                 debug.println("Builder.distance(): Names are different types");
             }
+            return incomparable;
         case GeneralNameInterface.NAME_SAME_TYPE:
             if (debug != null) {
                 debug.println("Builder.distance(): Names are same type but " +
@@ -306,8 +307,8 @@ public abstract class Builder {
         SubjectAlternativeNameExtension altNameExt =
             certImpl.getSubjectAlternativeNameExtension();
         if (altNameExt != null) {
-            GeneralNames altNames =
-                (GeneralNames)altNameExt.get(altNameExt.SUBJECT_NAME);
+            GeneralNames altNames = altNameExt.get(
+                    SubjectAlternativeNameExtension.SUBJECT_NAME);
             /* see if any alternative name matches target */
             if (altNames != null) {
                 for (int j = 0, n = altNames.size(); j < n; j++) {
@@ -343,10 +344,10 @@ public abstract class Builder {
                 + String.valueOf(constraints));
         }
         /* reduce permitted by excluded */
-        GeneralSubtrees permitted = (GeneralSubtrees)
-            constraints.get(constraints.PERMITTED_SUBTREES);
-        GeneralSubtrees excluded = (GeneralSubtrees)
-            constraints.get(constraints.EXCLUDED_SUBTREES);
+        GeneralSubtrees permitted =
+                constraints.get(NameConstraintsExtension.PERMITTED_SUBTREES);
+        GeneralSubtrees excluded =
+                constraints.get(NameConstraintsExtension.EXCLUDED_SUBTREES);
         if (permitted != null) {
             permitted.reduce(excluded);
         }

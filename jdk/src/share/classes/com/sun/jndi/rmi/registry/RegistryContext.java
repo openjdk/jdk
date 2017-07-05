@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ import javax.naming.spi.NamingManager;
 
 public class RegistryContext implements Context, Referenceable {
 
-    private Hashtable environment;
+    private Hashtable<String, Object> environment;
     private Registry registry;
     private String host;
     private int port;
@@ -67,10 +67,13 @@ public class RegistryContext implements Context, Referenceable {
      * Cloning of "env" is handled by caller; see comments within
      * RegistryContextFactory.getObjectInstance(), for example.
      */
-    public RegistryContext(String host, int port, Hashtable env)
+    @SuppressWarnings("unchecked")
+    public RegistryContext(String host, int port, Hashtable<?, ?> env)
             throws NamingException
     {
-        environment = ((env == null) ? new Hashtable(5) : env);
+        environment = (env == null)
+                      ? new Hashtable<String, Object>(5)
+                      : (Hashtable<String, Object>) env;
         if (environment.get(SECURITY_MGR) != null) {
             installSecurityMgr();
         }
@@ -93,8 +96,9 @@ public class RegistryContext implements Context, Referenceable {
      * won't close the other).
      */
     // %%% Alternatively, this could be done with a clone() method.
+    @SuppressWarnings("unchecked") // clone()
     RegistryContext(RegistryContext ctx) {
-        environment = (Hashtable)ctx.environment.clone();
+        environment = (Hashtable<String, Object>)ctx.environment.clone();
         registry = ctx.registry;
         host = ctx.host;
         port = ctx.port;
@@ -195,7 +199,8 @@ public class RegistryContext implements Context, Referenceable {
         rename(new CompositeName(name), new CompositeName(newName));
     }
 
-    public NamingEnumeration list(Name name)    throws NamingException {
+    public NamingEnumeration<NameClassPair> list(Name name) throws
+            NamingException {
         if (!name.isEmpty()) {
             throw (new InvalidNameException(
                     "RegistryContext: can only list \"\""));
@@ -208,11 +213,12 @@ public class RegistryContext implements Context, Referenceable {
         }
     }
 
-    public NamingEnumeration list(String name) throws NamingException {
+    public NamingEnumeration<NameClassPair> list(String name) throws
+            NamingException {
         return list(new CompositeName(name));
     }
 
-    public NamingEnumeration listBindings(Name name)
+    public NamingEnumeration<Binding> listBindings(Name name)
             throws NamingException
     {
         if (!name.isEmpty()) {
@@ -227,7 +233,8 @@ public class RegistryContext implements Context, Referenceable {
         }
     }
 
-    public NamingEnumeration listBindings(String name) throws NamingException {
+    public NamingEnumeration<Binding> listBindings(String name) throws
+            NamingException {
         return listBindings(new CompositeName(name));
     }
 
@@ -290,8 +297,9 @@ public class RegistryContext implements Context, Referenceable {
         return environment.put(propName, propVal);
     }
 
-    public Hashtable getEnvironment() throws NamingException {
-        return (Hashtable)environment.clone();
+    @SuppressWarnings("unchecked") // clone()
+    public Hashtable<String, Object> getEnvironment() throws NamingException {
+        return (Hashtable<String, Object>)environment.clone();
     }
 
     public void close() {
@@ -483,11 +491,9 @@ class AtomicNameParser implements NameParser {
 
 
 /**
- * An enumeration of name / class-name pairs.  Since we don't know anything
- * about the classes, each class name is returned as the generic
- * "java.lang.Object".
+ * An enumeration of name / class-name pairs.
  */
-class NameClassPairEnumeration implements NamingEnumeration {
+class NameClassPairEnumeration implements NamingEnumeration<NameClassPair> {
     private final String[] names;
     private int nextName;       // index into "names"
 
@@ -500,7 +506,7 @@ class NameClassPairEnumeration implements NamingEnumeration {
         return (nextName < names.length);
     }
 
-    public Object next() throws NamingException {
+    public NameClassPair next() throws NamingException {
         if (!hasMore()) {
             throw (new java.util.NoSuchElementException());
         }
@@ -518,7 +524,7 @@ class NameClassPairEnumeration implements NamingEnumeration {
         return hasMore();
     }
 
-    public Object nextElement() {
+    public NameClassPair nextElement() {
         try {
             return next();
         } catch (NamingException e) {   // should never happen
@@ -541,7 +547,7 @@ class NameClassPairEnumeration implements NamingEnumeration {
  * requested.  The problem with that approach is that Binding.getObject()
  * cannot throw NamingException.
  */
-class BindingEnumeration implements NamingEnumeration {
+class BindingEnumeration implements NamingEnumeration<Binding> {
     private RegistryContext ctx;
     private final String[] names;
     private int nextName;       // index into "names"
@@ -564,7 +570,7 @@ class BindingEnumeration implements NamingEnumeration {
         return (nextName < names.length);
     }
 
-    public Object next() throws NamingException {
+    public Binding next() throws NamingException {
         if (!hasMore()) {
             throw (new java.util.NoSuchElementException());
         }
@@ -584,7 +590,7 @@ class BindingEnumeration implements NamingEnumeration {
         return hasMore();
     }
 
-    public Object nextElement() {
+    public Binding nextElement() {
         try {
             return next();
         } catch (NamingException e) {

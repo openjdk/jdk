@@ -28,9 +28,7 @@ package java.security;
 import java.io.IOException;
 import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.Hashtable;
-import java.util.Vector;
 import java.lang.reflect.*;
 import java.security.cert.*;
 
@@ -247,19 +245,19 @@ implements java.io.Serializable
             }
         }
         try {
-            Class pc = p.getClass();
+            Class<?> pc = p.getClass();
 
             if (name == null && actions == null) {
                 try {
-                    Constructor c = pc.getConstructor(PARAMS0);
+                    Constructor<?> c = pc.getConstructor(PARAMS0);
                     return (Permission)c.newInstance(new Object[] {});
                 } catch (NoSuchMethodException ne) {
                     try {
-                        Constructor c = pc.getConstructor(PARAMS1);
+                        Constructor<?> c = pc.getConstructor(PARAMS1);
                         return (Permission) c.newInstance(
                               new Object[] { name});
                     } catch (NoSuchMethodException ne1) {
-                        Constructor c = pc.getConstructor(PARAMS2);
+                        Constructor<?> c = pc.getConstructor(PARAMS2);
                         return (Permission) c.newInstance(
                               new Object[] { name, actions });
                     }
@@ -267,16 +265,16 @@ implements java.io.Serializable
             } else {
                 if (name != null && actions == null) {
                     try {
-                        Constructor c = pc.getConstructor(PARAMS1);
+                        Constructor<?> c = pc.getConstructor(PARAMS1);
                         return (Permission) c.newInstance(
                               new Object[] { name});
                     } catch (NoSuchMethodException ne) {
-                        Constructor c = pc.getConstructor(PARAMS2);
+                        Constructor<?> c = pc.getConstructor(PARAMS2);
                         return (Permission) c.newInstance(
                               new Object[] { name, actions });
                     }
                 } else {
-                    Constructor c = pc.getConstructor(PARAMS2);
+                    Constructor<?> c = pc.getConstructor(PARAMS2);
                     return (Permission) c.newInstance(
                           new Object[] { name, actions });
                 }

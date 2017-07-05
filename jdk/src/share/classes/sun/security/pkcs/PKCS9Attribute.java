@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -320,11 +320,11 @@ public class PKCS9Attribute implements DerEncoder {
         {new Byte(DerValue.tag_Sequence)}     // SignatureTimestampToken
     };
 
-    private static final Class[] VALUE_CLASSES = new Class[18];
+    private static final Class<?>[] VALUE_CLASSES = new Class<?>[18];
 
     static {
         try {
-            Class str = Class.forName("[Ljava.lang.String;");
+            Class<?> str = Class.forName("[Ljava.lang.String;");
 
             VALUE_CLASSES[0] = null;  // not used
             VALUE_CLASSES[1] = str;   // EMailAddress

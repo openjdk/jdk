@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package com.sun.jndi.url.rmi;
 
 import java.util.Hashtable;
-import java.rmi.registry.LocateRegistry;
 
 import javax.naming.*;
 import javax.naming.spi.ResolveResult;
@@ -48,7 +47,7 @@ import com.sun.jndi.rmi.registry.RegistryContext;
  */
 public class rmiURLContext extends GenericURLContext {
 
-    public rmiURLContext(Hashtable env) {
+    public rmiURLContext(Hashtable<?,?> env) {
         super(env);
     }
 
@@ -57,7 +56,7 @@ public class rmiURLContext extends GenericURLContext {
      * RMI registry, and returns the atomic object name as the
      * remaining name.
      */
-    protected ResolveResult getRootURLContext(String url, Hashtable env)
+    protected ResolveResult getRootURLContext(String url, Hashtable<?,?> env)
             throws NamingException
     {
         if (!url.startsWith("rmi:")) {

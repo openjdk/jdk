@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,15 +26,8 @@
 package sun.security.timestamp;
 
 import java.io.IOException;
-import java.math.BigInteger;
 import sun.security.pkcs.PKCS7;
-import sun.security.pkcs.PKCS9Attribute;
-import sun.security.pkcs.PKCS9Attributes;
-import sun.security.pkcs.ParsingException;
-import sun.security.pkcs.SignerInfo;
 import sun.security.util.DerValue;
-import sun.security.x509.AlgorithmId;
-import sun.security.x509.X500Name;
 
 /**
  * This class provides the response corresponding to a timestamp request,
@@ -376,9 +369,11 @@ public class TSResponse {
         }
     }
 
-final static class TimestampException extends IOException {
-    TimestampException(String message) {
-        super(message);
+    final static class TimestampException extends IOException {
+        private static final long serialVersionUID = -1631631794891940953L;
+
+        TimestampException(String message) {
+            super(message);
+        }
     }
-}
 }

@@ -58,7 +58,10 @@ class LinuxWatchService
         try {
             ifd = inotifyInit();
         } catch (UnixException x) {
-            throw new IOException(x.errorString());
+            String msg = (x.errno() == EMFILE) ?
+                "User limit of inotify instances reached or too many open files" :
+                x.errorString();
+            throw new IOException(msg);
         }
 
         // configure inotify to be non-blocking
