@@ -22,6 +22,7 @@
  */
 package jdk.vm.ci.amd64;
 
+import static jdk.vm.ci.code.MemoryBarriers.LOAD_LOAD;
 import static jdk.vm.ci.code.MemoryBarriers.LOAD_STORE;
 import static jdk.vm.ci.code.MemoryBarriers.STORE_STORE;
 import static jdk.vm.ci.code.Register.SPECIAL;
@@ -220,7 +221,7 @@ public class AMD64 extends Architecture {
     private final AMD64Kind largestKind;
 
     public AMD64(EnumSet<CPUFeature> features, EnumSet<Flag> flags) {
-        super("AMD64", AMD64Kind.QWORD, ByteOrder.LITTLE_ENDIAN, true, allRegisters, LOAD_STORE | STORE_STORE, 1, 8);
+        super("AMD64", AMD64Kind.QWORD, ByteOrder.LITTLE_ENDIAN, true, allRegisters, LOAD_LOAD | LOAD_STORE | STORE_STORE, 1, 8);
         this.features = features;
         this.flags = flags;
         assert features.contains(CPUFeature.SSE2) : "minimum config for x64";

@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Copyright 1999-2004 The Apache Software Foundation.
@@ -17,15 +16,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/*
- * $Id: SimpleResultTreeImpl.java,v 1.2.4.1 2005/09/06 10:09:25 pvedula Exp $
- */
+
 package com.sun.org.apache.xalan.internal.xsltc.dom;
 
 import com.sun.org.apache.xalan.internal.xsltc.DOM;
 import com.sun.org.apache.xalan.internal.xsltc.StripFilter;
 import com.sun.org.apache.xalan.internal.xsltc.TransletException;
-
 import com.sun.org.apache.xml.internal.dtm.Axis;
 import com.sun.org.apache.xml.internal.dtm.DTM;
 import com.sun.org.apache.xml.internal.dtm.DTMAxisIterator;
@@ -1013,5 +1009,13 @@ public class SimpleResultTreeImpl extends EmptySerializer implements DOM, DTM
 
     public void migrateTo(DTMManager manager)
     {
+    }
+
+    public void release()
+    {
+        if (_documentID != 0) {
+            _dtmManager.release(this, true);
+            _documentID = 0;
+        }
     }
 }

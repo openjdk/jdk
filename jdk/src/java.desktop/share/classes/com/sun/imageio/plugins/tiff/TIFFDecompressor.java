@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,7 +81,7 @@ import com.sun.imageio.plugins.common.SimpleCMYKColorSpace;
  *
  * <p> Decompressors may be written with various levels of complexity.
  * The most complex decompressors will override the
- * <code>decode</code> method, and will perform all the work of
+ * {@code decode} method, and will perform all the work of
  * decoding, subsampling, offsetting, clipping, and format conversion.
  * This approach may be the most efficient, since it is possible to
  * avoid the use of extra image buffers, and it may be possible to
@@ -89,35 +89,35 @@ import com.sun.imageio.plugins.common.SimpleCMYKColorSpace;
  * the destination.
  *
  * <p> Less ambitious decompressors may override the
- * <code>decodeRaw</code> method, which is responsible for
+ * {@code decodeRaw} method, which is responsible for
  * decompressing the entire tile or strip into a byte array (or other
  * appropriate datatype).  The default implementation of
- * <code>decode</code> will perform all necessary setup of buffers,
- * call <code>decodeRaw</code> to perform the actual decoding, perform
+ * {@code decode} will perform all necessary setup of buffers,
+ * call {@code decodeRaw} to perform the actual decoding, perform
  * subsampling, and copy the results into the final destination image.
  * Where possible, it will pass the real image buffer to
- * <code>decodeRaw</code> in order to avoid making an extra copy.
+ * {@code decodeRaw} in order to avoid making an extra copy.
  *
  * <p> Slightly more ambitious decompressors may override
- * <code>decodeRaw</code>, but avoid writing pixels that will be
+ * {@code decodeRaw}, but avoid writing pixels that will be
  * discarded in the subsampling phase.
  */
 public abstract class TIFFDecompressor {
 
     /**
-     * The <code>ImageReader</code> calling this
-     * <code>TIFFDecompressor</code>.
+     * The {@code ImageReader} calling this
+     * {@code TIFFDecompressor}.
      */
     protected ImageReader reader;
 
     /**
-     * The <code>IIOMetadata</code> object containing metadata for the
+     * The {@code IIOMetadata} object containing metadata for the
      * current image.
      */
     protected IIOMetadata metadata;
 
     /**
-     * The value of the <code>PhotometricInterpretation</code> tag.
+     * The value of the {@code PhotometricInterpretation} tag.
      * Legal values are {@link
      * BaselineTIFFTagSet#PHOTOMETRIC_INTERPRETATION_WHITE_IS_ZERO },
      * {@link
@@ -135,7 +135,7 @@ public abstract class TIFFDecompressor {
     protected int photometricInterpretation;
 
     /**
-     * The value of the <code>Compression</code> tag. Legal values are
+     * The value of the {@code Compression} tag. Legal values are
      * {@link BaselineTIFFTagSet#COMPRESSION_NONE}, {@link
      * BaselineTIFFTagSet#COMPRESSION_CCITT_RLE}, {@link
      * BaselineTIFFTagSet#COMPRESSION_CCITT_T_4}, {@link
@@ -151,23 +151,23 @@ public abstract class TIFFDecompressor {
     protected int compression;
 
     /**
-     * <code>true</code> if the image is encoded using separate planes.
+     * {@code true} if the image is encoded using separate planes.
      */
     protected boolean planar;
 
     /**
-     * The value of the <code>SamplesPerPixel</code> tag.
+     * The value of the {@code SamplesPerPixel} tag.
      */
     protected int samplesPerPixel;
 
     /**
-     * The value of the <code>BitsPerSample</code> tag.
+     * The value of the {@code BitsPerSample} tag.
      *
      */
     protected int[] bitsPerSample;
 
     /**
-     * The value of the <code>SampleFormat</code> tag.  Legal values
+     * The value of the {@code SampleFormat} tag.  Legal values
      * are {@link BaselineTIFFTagSet#SAMPLE_FORMAT_UNSIGNED_INTEGER},
      * {@link BaselineTIFFTagSet#SAMPLE_FORMAT_SIGNED_INTEGER}, {@link
      * BaselineTIFFTagSet#SAMPLE_FORMAT_FLOATING_POINT}, {@link
@@ -178,7 +178,7 @@ public abstract class TIFFDecompressor {
         new int[] {BaselineTIFFTagSet.SAMPLE_FORMAT_UNSIGNED_INTEGER};
 
     /**
-     * The value of the <code>ExtraSamples</code> tag.  Legal values
+     * The value of the {@code ExtraSamples} tag.  Legal values
      * are {@link BaselineTIFFTagSet#EXTRA_SAMPLES_UNSPECIFIED},
      * {@link BaselineTIFFTagSet#EXTRA_SAMPLES_ASSOCIATED_ALPHA},
      * {@link BaselineTIFFTagSet#EXTRA_SAMPLES_UNASSOCIATED_ALPHA},
@@ -187,7 +187,7 @@ public abstract class TIFFDecompressor {
     protected int[] extraSamples;
 
     /**
-     * The value of the <code>ColorMap</code> tag.
+     * The value of the {@code ColorMap} tag.
      *
      */
     protected char[] colorMap;
@@ -195,20 +195,20 @@ public abstract class TIFFDecompressor {
     // Region of input stream containing the data
 
     /**
-     * The <code>ImageInputStream</code> containing the TIFF source
+     * The {@code ImageInputStream} containing the TIFF source
      * data.
      */
     protected ImageInputStream stream;
 
     /**
-     * The offset in the source <code>ImageInputStream</code> of the
+     * The offset in the source {@code ImageInputStream} of the
      * start of the data to be decompressed.
      */
     protected long offset;
 
     /**
      * The number of bytes of data from the source
-     * <code>ImageInputStream</code> to be decompressed.
+     * {@code ImageInputStream} to be decompressed.
      */
     protected int byteCount;
 
@@ -244,15 +244,15 @@ public abstract class TIFFDecompressor {
     // Subsampling to be performed
 
     /**
-     * The source X offset used, along with <code>dstXOffset</code>
-     * and <code>subsampleX</code>, to map between horizontal source
+     * The source X offset used, along with {@code dstXOffset}
+     * and {@code subsampleX}, to map between horizontal source
      * and destination pixel coordinates.
      */
     protected int sourceXOffset;
 
     /**
      * The horizontal destination offset used, along with
-     * <code>sourceXOffset</code> and <code>subsampleX</code>, to map
+     * {@code sourceXOffset} and {@code subsampleX}, to map
      * between horizontal source and destination pixel coordinates.
      * See the comment for {@link #sourceXOffset sourceXOffset} for
      * the mapping equations.
@@ -260,15 +260,15 @@ public abstract class TIFFDecompressor {
     protected int dstXOffset;
 
     /**
-     * The source Y offset used, along with <code>dstYOffset</code>
-     * and <code>subsampleY</code>, to map between vertical source and
+     * The source Y offset used, along with {@code dstYOffset}
+     * and {@code subsampleY}, to map between vertical source and
      * destination pixel coordinates.
      */
     protected int sourceYOffset;
 
     /**
      * The vertical destination offset used, along with
-     * <code>sourceYOffset</code> and <code>subsampleY</code>, to map
+     * {@code sourceYOffset} and {@code subsampleY}, to map
      * between horizontal source and destination pixel coordinates.
      * See the comment for {@link #sourceYOffset sourceYOffset} for
      * the mapping equations.
@@ -305,7 +305,7 @@ public abstract class TIFFDecompressor {
     // Destination for decodeRaw
 
     /**
-     * A <code>BufferedImage</code> for the <code>decodeRaw</code>
+     * A {@code BufferedImage} for the {@code decodeRaw}
      * method to write into.
      */
     protected BufferedImage rawImage;
@@ -345,15 +345,15 @@ public abstract class TIFFDecompressor {
      * The X coordinate of the upper-left source pixel that will
      * actually be copied into the destination image, taking into
      * account all subsampling, offsetting, and clipping.  That is,
-     * the pixel at (<code>activeSrcMinX</code>,
-     * <code>activeSrcMinY</code>) is to be copied into the
-     * destination pixel at (<code>dstMinX</code>,
-     * <code>dstMinY</code>).
+     * the pixel at ({@code activeSrcMinX},
+     * {@code activeSrcMinY}) is to be copied into the
+     * destination pixel at ({@code dstMinX},
+     * {@code dstMinY}).
      *
      * <p> The pixels in the source region to be copied are
-     * those with X coordinates of the form <code>activeSrcMinX +
-     * k*subsampleX</code>, where <code>k</code> is an integer such
-     * that <code>0 &le; k &lt; dstWidth</code>.
+     * those with X coordinates of the form {@code activeSrcMinX +
+     * k*subsampleX}, where {@code k} is an integer such
+     * that {@code 0 &le; k &lt; dstWidth}.
      */
     protected int activeSrcMinX;
 
@@ -363,9 +363,9 @@ public abstract class TIFFDecompressor {
      * all subsampling, offsetting, and clipping.
      *
      * <p> The pixels in the source region to be copied are
-     * those with Y coordinates of the form <code>activeSrcMinY +
-     * k*subsampleY</code>, where <code>k</code> is an integer such
-     * that <code>0 &le; k &lt; dstHeight</code>.
+     * those with Y coordinates of the form {@code activeSrcMinY +
+     * k*subsampleY}, where {@code k} is an integer such
+     * that {@code 0 &le; k &lt; dstHeight}.
      */
     protected int activeSrcMinY;
 
@@ -375,7 +375,7 @@ public abstract class TIFFDecompressor {
      * susbampling, offsetting, and clipping.
      *
      * <p> The active source width will always be equal to
-     * <code>(dstWidth - 1)*subsampleX + 1</code>.
+     * {@code (dstWidth - 1)*subsampleX + 1}.
      */
     protected int activeSrcWidth;
 
@@ -385,13 +385,13 @@ public abstract class TIFFDecompressor {
      * susbampling, offsetting, and clipping.
      *
      * <p> The active source height will always be equal to
-     * <code>(dstHeight - 1)*subsampleY + 1</code>.
+     * {@code (dstHeight - 1)*subsampleY + 1}.
      */
     protected int activeSrcHeight;
 
     /**
-     * A <code>TIFFColorConverter</code> object describing the color space of
-     * the encoded pixel data, or <code>null</code>.
+     * A {@code TIFFColorConverter} object describing the color space of
+     * the encoded pixel data, or {@code null}.
      */
     protected TIFFColorConverter colorConverter;
 
@@ -420,13 +420,13 @@ public abstract class TIFFDecompressor {
     // to exactly those dest pixels that are present in the source region.
 
     /**
-     * Create a <code>PixelInterleavedSampleModel</code> for use in creating
-     * an <code>ImageTypeSpecifier</code>.  Its dimensions will be 1x1 and
+     * Create a {@code PixelInterleavedSampleModel} for use in creating
+     * an {@code ImageTypeSpecifier}.  Its dimensions will be 1x1 and
      * it will have ascending band offsets as {0, 1, 2, ..., numBands}.
      *
      * @param dataType The data type (DataBuffer.TYPE_*).
      * @param numBands The number of bands.
-     * @return A <code>PixelInterleavedSampleModel</code>.
+     * @return A {@code PixelInterleavedSampleModel}.
      */
     static SampleModel createInterleavedSM(int dataType,
                                            int numBands) {
@@ -443,8 +443,8 @@ public abstract class TIFFDecompressor {
     }
 
     /**
-     * Create a <code>ComponentColorModel</code> for use in creating
-     * an <code>ImageTypeSpecifier</code>.
+     * Create a {@code ComponentColorModel} for use in creating
+     * an {@code ImageTypeSpecifier}.
      */
     // This code was copied from javax.imageio.ImageTypeSpecifier.
     static ColorModel createComponentCM(ColorSpace colorSpace,
@@ -518,8 +518,8 @@ public abstract class TIFFDecompressor {
     }
 
     /**
-     * Return the number of bits occupied by <code>dataType</code>
-     * which must be one of the <code>DataBuffer</code> <code>TYPE</code>s.
+     * Return the number of bits occupied by {@code dataType}
+     * which must be one of the {@code DataBuffer} {@code TYPE}s.
      */
     private static int getDataTypeSize(int dataType) throws IIOException {
         int dataTypeSize = 0;
@@ -578,7 +578,7 @@ public abstract class TIFFDecompressor {
     }
 
     /**
-     * Determines whether the <code>DataBuffer</code> is filled without
+     * Determines whether the {@code DataBuffer} is filled without
      * any interspersed padding bits.
      */
     private static boolean isDataBufferBitContiguous(SampleModel sm)
@@ -678,8 +678,8 @@ public abstract class TIFFDecompressor {
     }
 
     /**
-     * Reformats bit-discontiguous data into the <code>DataBuffer</code>
-     * of the supplied <code>WritableRaster</code>.
+     * Reformats bit-discontiguous data into the {@code DataBuffer}
+     * of the supplied {@code WritableRaster}.
      */
     private static void reformatDiscontiguousData(byte[] buf,
                                                   int stride,
@@ -715,21 +715,21 @@ public abstract class TIFFDecompressor {
 
     /**
      * A utility method that returns an
-     * <code>ImageTypeSpecifier</code> suitable for decoding an image
+     * {@code ImageTypeSpecifier} suitable for decoding an image
      * with the given parameters.
      *
      * @param photometricInterpretation the value of the
-     * <code>PhotometricInterpretation</code> field.
-     * @param compression the value of the <code>Compression</code> field.
+     * {@code PhotometricInterpretation} field.
+     * @param compression the value of the {@code Compression} field.
      * @param samplesPerPixel the value of the
-     * <code>SamplesPerPixel</code> field.
-     * @param bitsPerSample the value of the <code>BitsPerSample</code> field.
-     * @param sampleFormat the value of the <code>SampleFormat</code> field.
-     * @param extraSamples the value of the <code>ExtraSamples</code> field.
-     * @param colorMap the value of the <code>ColorMap</code> field.
+     * {@code SamplesPerPixel} field.
+     * @param bitsPerSample the value of the {@code BitsPerSample} field.
+     * @param sampleFormat the value of the {@code SampleFormat} field.
+     * @param extraSamples the value of the {@code ExtraSamples} field.
+     * @param colorMap the value of the {@code ColorMap} field.
      *
-     * @return a suitable <code>ImageTypeSpecifier</code>, or
-     * <code>null</code> if it is not possible to create one.
+     * @return a suitable {@code ImageTypeSpecifier}, or
+     * {@code null} if it is not possible to create one.
      */
     public static ImageTypeSpecifier
         getRawImageTypeSpecifier(int photometricInterpretation,
@@ -1216,26 +1216,26 @@ public abstract class TIFFDecompressor {
     }
 
     /**
-     * Sets the value of the <code>reader</code> field.
+     * Sets the value of the {@code reader} field.
      *
-     * <p> If this method is called, the <code>beginDecoding</code>
+     * <p> If this method is called, the {@code beginDecoding}
      * method must be called prior to calling any of the decode
      * methods.
      *
-     * @param reader the current <code>ImageReader</code>.
+     * @param reader the current {@code ImageReader}.
      */
     public void setReader(ImageReader reader) {
         this.reader = reader;
     }
 
     /**
-     * Sets the value of the <code>metadata</code> field.
+     * Sets the value of the {@code metadata} field.
      *
-     * <p> If this method is called, the <code>beginDecoding</code>
+     * <p> If this method is called, the {@code beginDecoding}
      * method must be called prior to calling any of the decode
      * methods.
      *
-     * @param metadata the <code>IIOMetadata</code> object for the
+     * @param metadata the {@code IIOMetadata} object for the
      * image being read.
      */
     public void setMetadata(IIOMetadata metadata) {
@@ -1243,10 +1243,10 @@ public abstract class TIFFDecompressor {
     }
 
     /**
-     * Sets the value of the <code>photometricInterpretation</code>
+     * Sets the value of the {@code photometricInterpretation}
      * field.
      *
-     * <p> If this method is called, the <code>beginDecoding</code>
+     * <p> If this method is called, the {@code beginDecoding}
      * method must be called prior to calling any of the decode
      * methods.
      *
@@ -1258,9 +1258,9 @@ public abstract class TIFFDecompressor {
     }
 
     /**
-     * Sets the value of the <code>compression</code> field.
+     * Sets the value of the {@code compression} field.
      *
-     * <p> If this method is called, the <code>beginDecoding</code>
+     * <p> If this method is called, the {@code beginDecoding}
      * method must be called prior to calling any of the decode
      * methods.
      *
@@ -1271,13 +1271,13 @@ public abstract class TIFFDecompressor {
     }
 
     /**
-     * Sets the value of the <code>planar</code> field.
+     * Sets the value of the {@code planar} field.
      *
-     * <p> If this method is called, the <code>beginDecoding</code>
+     * <p> If this method is called, the {@code beginDecoding}
      * method must be called prior to calling any of the decode
      * methods.
      *
-     * @param planar <code>true</code> if the image to be decoded is
+     * @param planar {@code true} if the image to be decoded is
      * stored in planar format.
      */
     public void setPlanar(boolean planar) {
@@ -1285,9 +1285,9 @@ public abstract class TIFFDecompressor {
     }
 
     /**
-     * Sets the value of the <code>samplesPerPixel</code> field.
+     * Sets the value of the {@code samplesPerPixel} field.
      *
-     * <p> If this method is called, the <code>beginDecoding</code>
+     * <p> If this method is called, the {@code beginDecoding}
      * method must be called prior to calling any of the decode
      * methods.
      *
@@ -1299,9 +1299,9 @@ public abstract class TIFFDecompressor {
     }
 
     /**
-     * Sets the value of the <code>bitsPerSample</code> field.
+     * Sets the value of the {@code bitsPerSample} field.
      *
-     * <p> If this method is called, the <code>beginDecoding</code>
+     * <p> If this method is called, the {@code beginDecoding}
      * method must be called prior to calling any of the decode
      * methods.
      *
@@ -1314,9 +1314,9 @@ public abstract class TIFFDecompressor {
     }
 
     /**
-     * Sets the value of the <code>sampleFormat</code> field.
+     * Sets the value of the {@code sampleFormat} field.
      *
-     * <p> If this method is called, the <code>beginDecoding</code>
+     * <p> If this method is called, the {@code beginDecoding}
      * method must be called prior to calling any of the decode
      * methods.
      *
@@ -1330,9 +1330,9 @@ public abstract class TIFFDecompressor {
     }
 
     /**
-     * Sets the value of the <code>extraSamples</code> field.
+     * Sets the value of the {@code extraSamples} field.
      *
-     * <p> If this method is called, the <code>beginDecoding</code>
+     * <p> If this method is called, the {@code beginDecoding}
      * method must be called prior to calling any of the decode
      * methods.
      *
@@ -1346,14 +1346,14 @@ public abstract class TIFFDecompressor {
     }
 
     /**
-     * Sets the value of the <code>colorMap</code> field.
+     * Sets the value of the {@code colorMap} field.
      *
-     * <p> If this method is called, the <code>beginDecoding</code>
+     * <p> If this method is called, the {@code beginDecoding}
      * method must be called prior to calling any of the decode
      * methods.
      *
      * @param colorMap the color map to apply to the source data,
-     * as an array of <code>char</code>s.
+     * as an array of {@code char}s.
      */
     public void setColorMap(char[] colorMap) {
         this.colorMap = colorMap == null ?
@@ -1361,22 +1361,22 @@ public abstract class TIFFDecompressor {
     }
 
     /**
-     * Sets the value of the <code>stream</code> field.
+     * Sets the value of the {@code stream} field.
      *
-     * <p> If this method is called, the <code>beginDecoding</code>
+     * <p> If this method is called, the {@code beginDecoding}
      * method must be called prior to calling any of the decode
      * methods.
      *
-     * @param stream the <code>ImageInputStream</code> to be read.
+     * @param stream the {@code ImageInputStream} to be read.
      */
     public void setStream(ImageInputStream stream) {
         this.stream = stream;
     }
 
     /**
-     * Sets the value of the <code>offset</code> field.
+     * Sets the value of the {@code offset} field.
      *
-     * <p> If this method is called, the <code>beginDecoding</code>
+     * <p> If this method is called, the {@code beginDecoding}
      * method must be called prior to calling any of the decode
      * methods.
      *
@@ -1388,9 +1388,9 @@ public abstract class TIFFDecompressor {
     }
 
     /**
-     * Sets the value of the <code>byteCount</code> field.
+     * Sets the value of the {@code byteCount} field.
      *
-     * <p> If this method is called, the <code>beginDecoding</code>
+     * <p> If this method is called, the {@code beginDecoding}
      * method must be called prior to calling any of the decode
      * methods.
      *
@@ -1403,9 +1403,9 @@ public abstract class TIFFDecompressor {
     // Region of the file image represented in the stream
 
     /**
-     * Sets the value of the <code>srcMinX</code> field.
+     * Sets the value of the {@code srcMinX} field.
      *
-     * <p> If this method is called, the <code>beginDecoding</code>
+     * <p> If this method is called, the {@code beginDecoding}
      * method must be called prior to calling any of the decode
      * methods.
      *
@@ -1418,9 +1418,9 @@ public abstract class TIFFDecompressor {
     }
 
     /**
-     * Sets the value of the <code>srcMinY</code> field.
+     * Sets the value of the {@code srcMinY} field.
      *
-     * <p> If this method is called, the <code>beginDecoding</code>
+     * <p> If this method is called, the {@code beginDecoding}
      * method must be called prior to calling any of the decode
      * methods.
      *
@@ -1433,9 +1433,9 @@ public abstract class TIFFDecompressor {
     }
 
     /**
-     * Sets the value of the <code>srcWidth</code> field.
+     * Sets the value of the {@code srcWidth} field.
      *
-     * <p> If this method is called, the <code>beginDecoding</code>
+     * <p> If this method is called, the {@code beginDecoding}
      * method must be called prior to calling any of the decode
      * methods.
      *
@@ -1447,9 +1447,9 @@ public abstract class TIFFDecompressor {
     }
 
     /**
-     * Sets the value of the <code>srcHeight</code> field.
+     * Sets the value of the {@code srcHeight} field.
      *
-     * <p> If this method is called, the <code>beginDecoding</code>
+     * <p> If this method is called, the {@code beginDecoding}
      * method must be called prior to calling any of the decode
      * methods.
      *
@@ -1463,9 +1463,9 @@ public abstract class TIFFDecompressor {
     // First source pixel to be read
 
     /**
-     * Sets the value of the <code>sourceXOffset</code> field.
+     * Sets the value of the {@code sourceXOffset} field.
      *
-     * <p> If this method is called, the <code>beginDecoding</code>
+     * <p> If this method is called, the {@code beginDecoding}
      * method must be called prior to calling any of the decode
      * methods.
      *
@@ -1477,9 +1477,9 @@ public abstract class TIFFDecompressor {
     }
 
     /**
-     * Sets the value of the <code>dstXOffset</code> field.
+     * Sets the value of the {@code dstXOffset} field.
      *
-     * <p> If this method is called, the <code>beginDecoding</code>
+     * <p> If this method is called, the {@code beginDecoding}
      * method must be called prior to calling any of the decode
      * methods.
      *
@@ -1491,9 +1491,9 @@ public abstract class TIFFDecompressor {
     }
 
     /**
-     * Sets the value of the <code>sourceYOffset</code>.
+     * Sets the value of the {@code sourceYOffset}.
      *
-     * <p> If this method is called, the <code>beginDecoding</code>
+     * <p> If this method is called, the {@code beginDecoding}
      * method must be called prior to calling any of the decode
      * methods.
      *
@@ -1505,9 +1505,9 @@ public abstract class TIFFDecompressor {
     }
 
     /**
-     * Sets the value of the <code>dstYOffset</code> field.
+     * Sets the value of the {@code dstYOffset} field.
      *
-     * <p> If this method is called, the <code>beginDecoding</code>
+     * <p> If this method is called, the {@code beginDecoding}
      * method must be called prior to calling any of the decode
      * methods.
      *
@@ -1521,15 +1521,15 @@ public abstract class TIFFDecompressor {
     // Subsampling to be performed
 
     /**
-     * Sets the value of the <code>subsampleX</code> field.
+     * Sets the value of the {@code subsampleX} field.
      *
-     * <p> If this method is called, the <code>beginDecoding</code>
+     * <p> If this method is called, the {@code beginDecoding}
      * method must be called prior to calling any of the decode
      * methods.
      *
      * @param subsampleX the horizontal subsampling factor.
      *
-     * @throws IllegalArgumentException if <code>subsampleX</code> is
+     * @throws IllegalArgumentException if {@code subsampleX} is
      * less than or equal to 0.
      */
     public void setSubsampleX(int subsampleX) {
@@ -1540,15 +1540,15 @@ public abstract class TIFFDecompressor {
     }
 
     /**
-     * Sets the value of the <code>subsampleY</code> field.
+     * Sets the value of the {@code subsampleY} field.
      *
-     * <p> If this method is called, the <code>beginDecoding</code>
+     * <p> If this method is called, the {@code beginDecoding}
      * method must be called prior to calling any of the decode
      * methods.
      *
      * @param subsampleY the vertical subsampling factor.
      *
-     * @throws IllegalArgumentException if <code>subsampleY</code> is
+     * @throws IllegalArgumentException if {@code subsampleY} is
      * less than or equal to 0.
      */
     public void setSubsampleY(int subsampleY) {
@@ -1561,13 +1561,13 @@ public abstract class TIFFDecompressor {
     // Band subsetting/rearrangement
 
     /**
-     * Sets the value of the <code>sourceBands</code> field.
+     * Sets the value of the {@code sourceBands} field.
      *
-     * <p> If this method is called, the <code>beginDecoding</code>
+     * <p> If this method is called, the {@code beginDecoding}
      * method must be called prior to calling any of the decode
      * methods.
      *
-     * @param sourceBands an array of <code>int</code>s
+     * @param sourceBands an array of {@code int}s
      * specifying the source bands to be read.
      */
     public void setSourceBands(int[] sourceBands) {
@@ -1576,13 +1576,13 @@ public abstract class TIFFDecompressor {
     }
 
     /**
-     * Sets the value of the <code>destinationBands</code> field.
+     * Sets the value of the {@code destinationBands} field.
      *
-     * <p> If this method is called, the <code>beginDecoding</code>
+     * <p> If this method is called, the {@code beginDecoding}
      * method must be called prior to calling any of the decode
      * methods.
      *
-     * @param destinationBands an array of <code>int</code>s
+     * @param destinationBands an array of {@code int}s
      * specifying the destination bands to be written.
      */
     public void setDestinationBands(int[] destinationBands) {
@@ -1593,22 +1593,22 @@ public abstract class TIFFDecompressor {
     // Destination image and region
 
     /**
-     * Sets the value of the <code>image</code> field.
+     * Sets the value of the {@code image} field.
      *
-     * <p> If this method is called, the <code>beginDecoding</code>
+     * <p> If this method is called, the {@code beginDecoding}
      * method must be called prior to calling any of the decode
      * methods.
      *
-     * @param image the destination <code>BufferedImage</code>.
+     * @param image the destination {@code BufferedImage}.
      */
     public void setImage(BufferedImage image) {
         this.image = image;
     }
 
     /**
-     * Sets the value of the <code>dstMinX</code> field.
+     * Sets the value of the {@code dstMinX} field.
      *
-     * <p> If this method is called, the <code>beginDecoding</code>
+     * <p> If this method is called, the {@code beginDecoding}
      * method must be called prior to calling any of the decode
      * methods.
      *
@@ -1620,9 +1620,9 @@ public abstract class TIFFDecompressor {
     }
 
     /**
-     * Sets the value of the <code>dstMinY</code> field.
+     * Sets the value of the {@code dstMinY} field.
      *
-     * <p> If this method is called, the <code>beginDecoding</code>
+     * <p> If this method is called, the {@code beginDecoding}
      * method must be called prior to calling any of the decode
      * methods.
      *
@@ -1634,9 +1634,9 @@ public abstract class TIFFDecompressor {
     }
 
     /**
-     * Sets the value of the <code>dstWidth</code> field.
+     * Sets the value of the {@code dstWidth} field.
      *
-     * <p> If this method is called, the <code>beginDecoding</code>
+     * <p> If this method is called, the {@code beginDecoding}
      * method must be called prior to calling any of the decode
      * methods.
      *
@@ -1647,9 +1647,9 @@ public abstract class TIFFDecompressor {
     }
 
     /**
-     * Sets the value of the <code>dstHeight</code> field.
+     * Sets the value of the {@code dstHeight} field.
      *
-     * <p> If this method is called, the <code>beginDecoding</code>
+     * <p> If this method is called, the {@code beginDecoding}
      * method must be called prior to calling any of the decode
      * methods.
      *
@@ -1662,9 +1662,9 @@ public abstract class TIFFDecompressor {
     // Active source region
 
     /**
-     * Sets the value of the <code>activeSrcMinX</code> field.
+     * Sets the value of the {@code activeSrcMinX} field.
      *
-     * <p> If this method is called, the <code>beginDecoding</code>
+     * <p> If this method is called, the {@code beginDecoding}
      * method must be called prior to calling any of the decode
      * methods.
      *
@@ -1676,9 +1676,9 @@ public abstract class TIFFDecompressor {
     }
 
     /**
-     * Sets the value of the <code>activeSrcMinY</code> field.
+     * Sets the value of the {@code activeSrcMinY} field.
      *
-     * <p> If this method is called, the <code>beginDecoding</code>
+     * <p> If this method is called, the {@code beginDecoding}
      * method must be called prior to calling any of the decode
      * methods.
      *
@@ -1690,9 +1690,9 @@ public abstract class TIFFDecompressor {
     }
 
     /**
-     * Sets the value of the <code>activeSrcWidth</code> field.
+     * Sets the value of the {@code activeSrcWidth} field.
      *
-     * <p> If this method is called, the <code>beginDecoding</code>
+     * <p> If this method is called, the {@code beginDecoding}
      * method must be called prior to calling any of the decode
      * methods.
      *
@@ -1703,9 +1703,9 @@ public abstract class TIFFDecompressor {
     }
 
     /**
-     * Sets the value of the <code>activeSrcHeight</code> field.
+     * Sets the value of the {@code activeSrcHeight} field.
      *
-     * <p> If this method is called, the <code>beginDecoding</code>
+     * <p> If this method is called, the {@code beginDecoding}
      * method must be called prior to calling any of the decode
      * methods.
      *
@@ -1716,23 +1716,23 @@ public abstract class TIFFDecompressor {
     }
 
     /**
-     * Sets the <code>TIFFColorConverter</code> object describing the color
+     * Sets the {@code TIFFColorConverter} object describing the color
      * space of the encoded data in the input stream.  If no
-     * <code>TIFFColorConverter</code> is set, no conversion will be performed.
+     * {@code TIFFColorConverter} is set, no conversion will be performed.
      *
-     * @param colorConverter a <code>TIFFColorConverter</code> object, or
-     * <code>null</code>.
+     * @param colorConverter a {@code TIFFColorConverter} object, or
+     * {@code null}.
      */
     public void setColorConverter(TIFFColorConverter colorConverter) {
         this.colorConverter = colorConverter;
     }
 
     /**
-     * Returns an <code>ImageTypeSpecifier</code> describing an image
+     * Returns an {@code ImageTypeSpecifier} describing an image
      * whose underlying data array has the same format as the raw
      * source pixel data.
      *
-     * @return an <code>ImageTypeSpecifier</code>.
+     * @return an {@code ImageTypeSpecifier}.
      */
     public ImageTypeSpecifier getRawImageType() {
         ImageTypeSpecifier its =
@@ -1747,18 +1747,18 @@ public abstract class TIFFDecompressor {
     }
 
     /**
-     * Creates a <code>BufferedImage</code> whose underlying data
+     * Creates a {@code BufferedImage} whose underlying data
      * array will be suitable for holding the raw decoded output of
-     * the <code>decodeRaw</code> method.
+     * the {@code decodeRaw} method.
      *
      * <p> The default implementation calls
-     * <code>getRawImageType</code>, and calls the resulting
-     * <code>ImageTypeSpecifier</code>'s
-     * <code>createBufferedImage</code> method.
+     * {@code getRawImageType}, and calls the resulting
+     * {@code ImageTypeSpecifier}'s
+     * {@code createBufferedImage} method.
      *
-     * @return a <code>BufferedImage</code> whose underlying data
+     * @return a {@code BufferedImage} whose underlying data
      * array has the same format as the raw source pixel data, or
-     * <code>null</code> if it is not possible to create such an
+     * {@code null} if it is not possible to create such an
      * image.
      */
     public BufferedImage createRawImage() {
@@ -1811,22 +1811,22 @@ public abstract class TIFFDecompressor {
     }
 
     /**
-     * Decodes the source data into the provided <code>byte</code>
-     * array <code>b</code>, starting at the offset given by
-     * <code>dstOffset</code>.  Each pixel occupies
-     * <code>bitsPerPixel</code> bits, with no padding between pixels.
-     * Scanlines are separated by <code>scanlineStride</code>
-     * <code>byte</code>s.
+     * Decodes the source data into the provided {@code byte}
+     * array {@code b}, starting at the offset given by
+     * {@code dstOffset}.  Each pixel occupies
+     * {@code bitsPerPixel} bits, with no padding between pixels.
+     * Scanlines are separated by {@code scanlineStride}
+     * {@code byte}s.
      *
-     * @param b a <code>byte</code> array to be written.
-     * @param dstOffset the starting offset in <code>b</code> to be
+     * @param b a {@code byte} array to be written.
+     * @param dstOffset the starting offset in {@code b} to be
      * written.
      * @param bitsPerPixel the number of bits for each pixel.
-     * @param scanlineStride the number of <code>byte</code>s to
+     * @param scanlineStride the number of {@code byte}s to
      * advance between that starting pixels of each scanline.
      *
      * @throws IOException if an error occurs reading from the source
-     * <code>ImageInputStream</code>.
+     * {@code ImageInputStream}.
      */
     public abstract void decodeRaw(byte[] b,
                                    int dstOffset,
@@ -1834,25 +1834,25 @@ public abstract class TIFFDecompressor {
                                    int scanlineStride) throws IOException;
 
     /**
-     * Decodes the source data into the provided <code>short</code>
-     * array <code>s</code>, starting at the offset given by
-     * <code>dstOffset</code>.  Each pixel occupies
-     * <code>bitsPerPixel</code> bits, with no padding between pixels.
-     * Scanlines are separated by <code>scanlineStride</code>
-     * <code>short</code>s
+     * Decodes the source data into the provided {@code short}
+     * array {@code s}, starting at the offset given by
+     * {@code dstOffset}.  Each pixel occupies
+     * {@code bitsPerPixel} bits, with no padding between pixels.
+     * Scanlines are separated by {@code scanlineStride}
+     * {@code short}s
      *
-     * <p> The default implementation calls <code>decodeRaw(byte[] b,
-     * ...)</code> and copies the resulting data into <code>s</code>.
+     * <p> The default implementation calls {@code decodeRaw(byte[] b,
+     * ...)} and copies the resulting data into {@code s}.
      *
-     * @param s a <code>short</code> array to be written.
-     * @param dstOffset the starting offset in <code>s</code> to be
+     * @param s a {@code short} array to be written.
+     * @param dstOffset the starting offset in {@code s} to be
      * written.
      * @param bitsPerPixel the number of bits for each pixel.
-     * @param scanlineStride the number of <code>short</code>s to
+     * @param scanlineStride the number of {@code short}s to
      * advance between that starting pixels of each scanline.
      *
      * @throws IOException if an error occurs reading from the source
-     * <code>ImageInputStream</code>.
+     * {@code ImageInputStream}.
      */
     public void decodeRaw(short[] s,
                           int dstOffset,
@@ -1891,25 +1891,25 @@ public abstract class TIFFDecompressor {
     }
 
     /**
-     * Decodes the source data into the provided <code>int</code>
-     * array <code>i</code>, starting at the offset given by
-     * <code>dstOffset</code>.  Each pixel occupies
-     * <code>bitsPerPixel</code> bits, with no padding between pixels.
-     * Scanlines are separated by <code>scanlineStride</code>
-     * <code>int</code>s.
+     * Decodes the source data into the provided {@code int}
+     * array {@code i}, starting at the offset given by
+     * {@code dstOffset}.  Each pixel occupies
+     * {@code bitsPerPixel} bits, with no padding between pixels.
+     * Scanlines are separated by {@code scanlineStride}
+     * {@code int}s.
      *
-     * <p> The default implementation calls <code>decodeRaw(byte[] b,
-     * ...)</code> and copies the resulting data into <code>i</code>.
+     * <p> The default implementation calls {@code decodeRaw(byte[] b,
+     * ...)} and copies the resulting data into {@code i}.
      *
-     * @param i an <code>int</code> array to be written.
-     * @param dstOffset the starting offset in <code>i</code> to be
+     * @param i an {@code int} array to be written.
+     * @param dstOffset the starting offset in {@code i} to be
      * written.
      * @param bitsPerPixel the number of bits for each pixel.
-     * @param scanlineStride the number of <code>int</code>s to
+     * @param scanlineStride the number of {@code int}s to
      * advance between that starting pixels of each scanline.
      *
      * @throws IOException if an error occurs reading from the source
-     * <code>ImageInputStream</code>.
+     * {@code ImageInputStream}.
      */
     public void decodeRaw(int[] i,
                           int dstOffset,
@@ -1953,25 +1953,25 @@ public abstract class TIFFDecompressor {
     }
 
     /**
-     * Decodes the source data into the provided <code>float</code>
-     * array <code>f</code>, starting at the offset given by
-     * <code>dstOffset</code>.  Each pixel occupies
-     * <code>bitsPerPixel</code> bits, with no padding between pixels.
-     * Scanlines are separated by <code>scanlineStride</code>
-     * <code>float</code>s.
+     * Decodes the source data into the provided {@code float}
+     * array {@code f}, starting at the offset given by
+     * {@code dstOffset}.  Each pixel occupies
+     * {@code bitsPerPixel} bits, with no padding between pixels.
+     * Scanlines are separated by {@code scanlineStride}
+     * {@code float}s.
      *
-     * <p> The default implementation calls <code>decodeRaw(byte[] b,
-     * ...)</code> and copies the resulting data into <code>f</code>.
+     * <p> The default implementation calls {@code decodeRaw(byte[] b,
+     * ...)} and copies the resulting data into {@code f}.
      *
-     * @param f a <code>float</code> array to be written.
-     * @param dstOffset the starting offset in <code>f</code> to be
+     * @param f a {@code float} array to be written.
+     * @param dstOffset the starting offset in {@code f} to be
      * written.
      * @param bitsPerPixel the number of bits for each pixel.
-     * @param scanlineStride the number of <code>float</code>s to
+     * @param scanlineStride the number of {@code float}s to
      * advance between that starting pixels of each scanline.
      *
      * @throws IOException if an error occurs reading from the source
-     * <code>ImageInputStream</code>.
+     * {@code ImageInputStream}.
      */
     public void decodeRaw(float[] f,
                           int dstOffset,
@@ -2017,25 +2017,25 @@ public abstract class TIFFDecompressor {
     }
 
     /**
-     * Decodes the source data into the provided <code>double</code>
-     * array <code>f</code>, starting at the offset given by
-     * <code>dstOffset</code>.  Each pixel occupies
-     * <code>bitsPerPixel</code> bits, with no padding between pixels.
-     * Scanlines are separated by <code>scanlineStride</code>
-     * <code>double</code>s.
+     * Decodes the source data into the provided {@code double}
+     * array {@code f}, starting at the offset given by
+     * {@code dstOffset}.  Each pixel occupies
+     * {@code bitsPerPixel} bits, with no padding between pixels.
+     * Scanlines are separated by {@code scanlineStride}
+     * {@code double}s.
      *
-     * <p> The default implementation calls <code>decodeRaw(byte[] b,
-     * ...)</code> and copies the resulting data into <code>f</code>.
+     * <p> The default implementation calls {@code decodeRaw(byte[] b,
+     * ...)} and copies the resulting data into {@code f}.
      *
-     * @param f a <code>double</code> array to be written.
-     * @param dstOffset the starting offset in <code>f</code> to be
+     * @param f a {@code double} array to be written.
+     * @param dstOffset the starting offset in {@code f} to be
      * written.
      * @param bitsPerPixel the number of bits for each pixel.
-     * @param scanlineStride the number of <code>double</code>s to
+     * @param scanlineStride the number of {@code double}s to
      * advance between that starting pixels of each scanline.
      *
      * @throws IOException if an error occurs reading from the source
-     * <code>ImageInputStream</code>.
+     * {@code ImageInputStream}.
      */
     public void decodeRaw(double[] d,
                           int dstOffset,
@@ -2104,16 +2104,16 @@ public abstract class TIFFDecompressor {
 
     /**
      * This routine is called prior to a sequence of calls to the
-     * <code>decode</code> method, in order to allow any necessary
+     * {@code decode} method, in order to allow any necessary
      * tables or other structures to be initialized based on metadata
      * values.  This routine is guaranteed to be called any time the
      * metadata values have changed.
      *
      * <p> The default implementation computes tables used by the
-     * <code>decode</code> method to rescale components to different
+     * {@code decode} method to rescale components to different
      * bit depths.  Thus, if this method is overridden, it is
-     * important for the subclass method to call <code>super()</code>,
-     * unless it overrides <code>decode</code> as well.
+     * important for the subclass method to call {@code super()},
+     * unless it overrides {@code decode} as well.
      */
     public void beginDecoding() {
         // Note: This method assumes that sourceBands, destinationBands,
@@ -2242,35 +2242,35 @@ public abstract class TIFFDecompressor {
 
     /**
      * Decodes the input bit stream (located in the
-     * <code>ImageInputStream</code> <code>stream</code>, at offset
-     * <code>offset</code>, and continuing for <code>byteCount</code>
-     * bytes) into the output <code>BufferedImage</code>
-     * <code>image</code>.
+     * {@code ImageInputStream} {@code stream}, at offset
+     * {@code offset}, and continuing for {@code byteCount}
+     * bytes) into the output {@code BufferedImage}
+     * {@code image}.
      *
      * <p> The default implementation analyzes the destination image
      * to determine if it is suitable as the destination for the
-     * <code>decodeRaw</code> method.  If not, a suitable image is
-     * created.  Next, <code>decodeRaw</code> is called to perform the
+     * {@code decodeRaw} method.  If not, a suitable image is
+     * created.  Next, {@code decodeRaw} is called to perform the
      * actual decoding, and the results are copied into the
      * destination image if necessary.  Subsampling and offsetting are
      * performed automatically.
      *
      * <p> The precise responsibilities of this routine are as
      * follows.  The input bit stream is defined by the instance
-     * variables <code>stream</code>, <code>offset</code>, and
-     * <code>byteCount</code>.  These bits contain the data for the
-     * region of the source image defined by <code>srcMinX</code>,
-     * <code>srcMinY</code>, <code>srcWidth</code>, and
-     * <code>srcHeight</code>.
+     * variables {@code stream}, {@code offset}, and
+     * {@code byteCount}.  These bits contain the data for the
+     * region of the source image defined by {@code srcMinX},
+     * {@code srcMinY}, {@code srcWidth}, and
+     * {@code srcHeight}.
      *
      * <p> The source data is required to be subsampling, starting at
-     * the <code>sourceXOffset</code>th column and including
-     * every <code>subsampleX</code>th pixel thereafter (and similarly
-     * for <code>sourceYOffset</code> and
-     * <code>subsampleY</code>).
+     * the {@code sourceXOffset}th column and including
+     * every {@code subsampleX}th pixel thereafter (and similarly
+     * for {@code sourceYOffset} and
+     * {@code subsampleY}).
      *
      * <p> Pixels are copied into the destination with an addition shift of
-     * (<code>dstXOffset</code>, <code>dstYOffset</code>).  The complete
+     * ({@code dstXOffset}, {@code dstYOffset}).  The complete
      * set of formulas relating the source and destination coordinate spaces
      * are:
      *
@@ -2279,9 +2279,9 @@ public abstract class TIFFDecompressor {
      * dy = (sy - sourceYOffset)/subsampleY + dstYOffset;
      * </pre>
      *
-     * Only source pixels such that <code>(sx - sourceXOffset) %
-     * subsampleX == 0</code> and <code>(sy - sourceYOffset) %
-     * subsampleY == 0</code> are copied.
+     * Only source pixels such that {@code (sx - sourceXOffset) %
+     * subsampleX == 0} and {@code (sy - sourceYOffset) %
+     * subsampleY == 0} are copied.
      *
      * <p> The inverse mapping, from destination to source coordinates,
      * is one-to-one:
@@ -2292,9 +2292,9 @@ public abstract class TIFFDecompressor {
      * </pre>
      *
      * <p> The region of the destination image to be updated is given
-     * by the instance variables <code>dstMinX</code>,
-     * <code>dstMinY</code>, <code>dstWidth</code>, and
-     * <code>dstHeight</code>.
+     * by the instance variables {@code dstMinX},
+     * {@code dstMinY}, {@code dstWidth}, and
+     * {@code dstHeight}.
      *
      * <p> It is possible that not all of the source data being read
      * will contribute to the destination image.  For example, the
@@ -2303,32 +2303,32 @@ public abstract class TIFFDecompressor {
      * convenience, the bounds of the active source region (that is,
      * the region of the strip or tile being read that actually
      * contributes to the destination image, taking clipping into
-     * account) are available as <code>activeSrcMinX</code>,
-     * <code>activeSrcMinY</code>, <code>activeSrcWidth</code> and
-     * <code>activeSrcHeight</code>.  Thus, the source pixel at
-     * (<code>activeSrcMinX</code>, <code>activeSrcMinY</code>) will
-     * map to the destination pixel (<code>dstMinX</code>,
-     * <code>dstMinY</code>).
+     * account) are available as {@code activeSrcMinX},
+     * {@code activeSrcMinY}, {@code activeSrcWidth} and
+     * {@code activeSrcHeight}.  Thus, the source pixel at
+     * ({@code activeSrcMinX}, {@code activeSrcMinY}) will
+     * map to the destination pixel ({@code dstMinX},
+     * {@code dstMinY}).
      *
      * <p> The sequence of source bands given by
-     * <code>sourceBands</code> are to be copied into the sequence of
+     * {@code sourceBands} are to be copied into the sequence of
      * bands in the destination given by
-     * <code>destinationBands</code>.
+     * {@code destinationBands}.
      *
      * <p> Some standard tag information is provided the instance
-     * variables <code>photometricInterpretation</code>,
-     * <code>compression</code>, <code>samplesPerPixel</code>,
-     * <code>bitsPerSample</code>, <code>sampleFormat</code>,
-     * <code>extraSamples</code>, and <code>colorMap</code>.
+     * variables {@code photometricInterpretation},
+     * {@code compression}, {@code samplesPerPixel},
+     * {@code bitsPerSample}, {@code sampleFormat},
+     * {@code extraSamples}, and {@code colorMap}.
      *
      * <p> In practice, unless there is a significant performance
      * advantage to be gained by overriding this routine, most users
      * will prefer to use the default implementation of this routine,
-     * and instead override the <code>decodeRaw</code> and/or
-     * <code>getRawImageType</code> methods.
+     * and instead override the {@code decodeRaw} and/or
+     * {@code getRawImageType} methods.
      *
      * @exception IOException if an error occurs in
-     * <code>decodeRaw</code>.
+     * {@code decodeRaw}.
      */
     public void decode() throws IOException {
         byte[] byteData = null;

@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Copyright 2001-2004 The Apache Software Foundation.
@@ -17,15 +16,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/*
- * $Id: WithParam.java,v 1.2.4.1 2005/09/12 11:38:01 pvedula Exp $
- */
 
 package com.sun.org.apache.xalan.internal.xsltc.compiler;
 
+import com.sun.org.apache.bcel.internal.generic.ALOAD;
+import com.sun.org.apache.bcel.internal.generic.ASTORE;
+import com.sun.org.apache.bcel.internal.generic.CHECKCAST;
 import com.sun.org.apache.bcel.internal.generic.ConstantPoolGen;
+import com.sun.org.apache.bcel.internal.generic.INVOKEINTERFACE;
 import com.sun.org.apache.bcel.internal.generic.INVOKEVIRTUAL;
 import com.sun.org.apache.bcel.internal.generic.InstructionList;
+import com.sun.org.apache.bcel.internal.generic.LocalVariableGen;
 import com.sun.org.apache.bcel.internal.generic.PUSH;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.ClassGenerator;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.ErrorMsg;
@@ -58,6 +59,11 @@ final class WithParam extends Instruction {
      * Parameter's default value.
      */
     private Expression _select;
+
+    /**
+     * Reference to JVM variable holding temporary result tree.
+     */
+    private LocalVariableGen _domAdapter;
 
     /**
      * %OPT% This is set to true when the WithParam is used in a CallTemplate
@@ -164,8 +170,13 @@ final class WithParam extends Instruction {
             _select.startIterator(classGen, methodGen);
         }
         // If not, compile result tree from parameter body if present.
+        // Store result tree into local variable for releasing it later
         else if (hasContents()) {
+            final InstructionList il = methodGen.getInstructionList();
             compileResultTree(classGen, methodGen);
+            _domAdapter = methodGen.addLocalVariable2("@" + _escapedName, Type.ResultTree.toJCType(), il.getEnd());
+            il.append(DUP);
+            il.append(new ASTORE(_domAdapter.getIndex()));
         }
         // If neither are present then store empty string in parameter slot
         else {
@@ -208,4 +219,26 @@ final class WithParam extends Instruction {
                                                      ADD_PARAMETER_SIG)));
         il.append(POP); // cleanup stack
     }
+
+    /**
+     * Release the compiled result tree.
+     */
+    public void releaseResultTree(ClassGenerator classGen, MethodGenerator methodGen) {
+        if (_domAdapter != null) {
+            final ConstantPoolGen cpg = classGen.getConstantPool();
+            final InstructionList il = methodGen.getInstructionList();
+            if (classGen.getStylesheet().callsNodeset() && classGen.getDOMClass().equals(MULTI_DOM_CLASS)) {
+                final int removeDA = cpg.addMethodref(MULTI_DOM_CLASS, "removeDOMAdapter", "(" + DOM_ADAPTER_SIG + ")V");
+                il.append(methodGen.loadDOM());
+                il.append(new CHECKCAST(cpg.addClass(MULTI_DOM_CLASS)));
+                il.append(new ALOAD(_domAdapter.getIndex()));
+                il.append(new CHECKCAST(cpg.addClass(DOM_ADAPTER_CLASS)));
+                il.append(new INVOKEVIRTUAL(removeDA));
+            }
+            final int release = cpg.addInterfaceMethodref(DOM_IMPL_CLASS, "release", "()V");
+            il.append(new ALOAD(_domAdapter.getIndex()));
+            il.append(new INVOKEINTERFACE(release, 1));
+            _domAdapter = null;
+         }
+     }
 }

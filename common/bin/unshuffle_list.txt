@@ -1293,12 +1293,8 @@ jdk/src/jdk.crypto.pkcs11/windows/native/libj2pkcs11/j2secmod_md.c : jdk/src/win
 jdk/src/jdk.crypto.pkcs11/windows/native/libj2pkcs11/j2secmod_md.h : jdk/src/windows/native/sun/security/pkcs11/j2secmod_md.h
 jdk/src/jdk.crypto.pkcs11/windows/native/libj2pkcs11/p11_md.c : jdk/src/windows/native/sun/security/pkcs11/wrapper/p11_md.c
 jdk/src/jdk.crypto.pkcs11/windows/native/libj2pkcs11/p11_md.h : jdk/src/windows/native/sun/security/pkcs11/wrapper/p11_md.h
-jdk/src/jdk.deploy.osx/macosx/classes/com/apple/concurrent/package.html : jdk/src/macosx/classes/com/apple/concurrent/package.html
-jdk/src/jdk.deploy.osx/macosx/classes/com/apple/concurrent : jdk/src/macosx/classes/com/apple/concurrent
-jdk/src/jdk.deploy.osx/macosx/native/libosx/CFileManager.m : jdk/src/macosx/native/com/apple/eio/CFileManager.m
-jdk/src/jdk.deploy.osx/macosx/native/libosx/Dispatch.m : jdk/src/macosx/native/com/apple/concurrent/Dispatch.m
-jdk/src/jdk.deploy.osx/macosx/native/libosx/JavaAppLauncher.m : jdk/src/macosx/native/apple/launcher/JavaAppLauncher.m
-jdk/src/jdk.deploy.osx/macosx/native/libosx/KeystoreImpl.m : jdk/src/macosx/native/apple/security/KeystoreImpl.m
+jdk/src/java.desktop/macosx/native/libosx/CFileManager.m : jdk/src/macosx/native/com/apple/eio/CFileManager.m
+jdk/src/java.base/macosx/native/libosxsecurity/KeystoreImpl.m : jdk/src/macosx/native/apple/security/KeystoreImpl.m
 jdk/src/jdk.hprof.agent/share/classes/com/sun/demo/jvmti/hprof : jdk/src/share/classes/com/sun/demo/jvmti/hprof
 jdk/src/jdk.httpserver/share/classes/com/sun/net/httpserver : jdk/src/share/classes/com/sun/net/httpserver
 jdk/src/jdk.httpserver/share/classes/sun/net/httpserver : jdk/src/share/classes/sun/net/httpserver

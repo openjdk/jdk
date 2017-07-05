@@ -297,7 +297,8 @@ hotspot_compiler_3 = \
   compiler/types/ \
   compiler/uncommontrap/ \
   compiler/unsafe/ \
-  -compiler/intrinsics/bmi/verifycode \
+  -compiler/intrinsics/adler32 \
+  -compiler/intrinsics/bmi \
   -compiler/intrinsics/mathexact \
   -compiler/intrinsics/multiplytolen \
   -compiler/intrinsics/sha \

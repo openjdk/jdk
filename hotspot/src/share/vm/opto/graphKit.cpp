@@ -1179,8 +1179,10 @@ Node* GraphKit::load_array_length(Node* array) {
 // Helper function to do a NULL pointer check.  Returned value is
 // the incoming address with NULL casted away.  You are allowed to use the
 // not-null value only if you are control dependent on the test.
+#ifndef PRODUCT
 extern int explicit_null_checks_inserted,
            explicit_null_checks_elided;
+#endif
 Node* GraphKit::null_check_common(Node* value, BasicType type,
                                   // optional arguments for variations:
                                   bool assert_null,
@@ -1193,7 +1195,7 @@ Node* GraphKit::null_check_common(Node* value, BasicType type,
     value = cast_not_null(value);   // Make it appear to be non-null (4962416).
     return value;
   }
-  explicit_null_checks_inserted++;
+  NOT_PRODUCT(explicit_null_checks_inserted++);
 
   // Construct NULL check
   Node *chk = NULL;
@@ -1233,7 +1235,7 @@ Node* GraphKit::null_check_common(Node* value, BasicType type,
         // See if the type is contained in NULL_PTR.
         // If so, then the value is already null.
         if (t->higher_equal(TypePtr::NULL_PTR)) {
-          explicit_null_checks_elided++;
+          NOT_PRODUCT(explicit_null_checks_elided++);
           return value;           // Elided null assert quickly!
         }
       } else {
@@ -1242,7 +1244,7 @@ Node* GraphKit::null_check_common(Node* value, BasicType type,
         // type.  In other words, "value" was not-null.
         if (t->meet(TypePtr::NULL_PTR) != t->remove_speculative()) {
           // same as: if (!TypePtr::NULL_PTR->higher_equal(t)) ...
-          explicit_null_checks_elided++;
+          NOT_PRODUCT(explicit_null_checks_elided++);
           return value;           // Elided null check quickly!
         }
       }
@@ -1282,7 +1284,7 @@ Node* GraphKit::null_check_common(Node* value, BasicType type,
         set_control(cfg);
         Node *res = cast_not_null(value);
         set_control(oldcontrol);
-        explicit_null_checks_elided++;
+        NOT_PRODUCT(explicit_null_checks_elided++);
         return res;
       }
       cfg = IfNode::up_one_dom(cfg, /*linear_only=*/ true);
@@ -1326,15 +1328,18 @@ Node* GraphKit::null_check_common(Node* value, BasicType type,
     IfNode* iff = create_and_map_if(control(), tst, ok_prob, COUNT_UNKNOWN);
     Node* null_true = _gvn.transform( new IfFalseNode(iff));
     set_control(      _gvn.transform( new IfTrueNode(iff)));
-    if (null_true == top())
+#ifndef PRODUCT
+    if (null_true == top()) {
       explicit_null_checks_elided++;
+    }
+#endif
     (*null_control) = null_true;
   } else {
     BuildCutout unless(this, tst, ok_prob);
     // Check for optimizer eliding test at parse time
     if (stopped()) {
       // Failure not possible; do not bother making uncommon trap.
-      explicit_null_checks_elided++;
+      NOT_PRODUCT(explicit_null_checks_elided++);
     } else if (assert_null) {
       uncommon_trap(reason,
                     Deoptimization::Action_make_not_entrant,
@@ -3149,6 +3154,19 @@ Node* GraphKit::insert_mem_bar_volatile(int opcode, int alias_idx, Node* precede
   return membar;
 }
 
+void GraphKit::insert_store_load_for_barrier() {
+  Node* mem = reset_memory();
+  MemBarNode* mb = MemBarNode::make(C, Op_MemBarVolatile, Compile::AliasIdxBot);
+  mb->init_req(TypeFunc::Control, control());
+  mb->init_req(TypeFunc::Memory, mem);
+  Node* membar = _gvn.transform(mb);
+  set_control(_gvn.transform(new ProjNode(membar, TypeFunc::Control)));
+  Node* newmem = _gvn.transform(new ProjNode(membar, TypeFunc::Memory));
+  set_all_memory(mem);
+  set_memory(newmem, Compile::AliasIdxRaw);
+}
+
+
 //------------------------------shared_lock------------------------------------
 // Emit locking code.
 FastLockNode* GraphKit::shared_lock(Node* obj) {
@@ -3840,7 +3858,7 @@ void GraphKit::write_barrier_post(Node* oop_store,
   BasicType bt = T_BYTE;
 
   if (UseConcMarkSweepGC && UseCondCardMark) {
-    insert_mem_bar(Op_MemBarVolatile);   // StoreLoad barrier
+    insert_store_load_for_barrier();
     __ sync_kit(this);
   }
 
@@ -4280,8 +4298,7 @@ void GraphKit::g1_write_barrier_post(Node* oop_store,
 
         __ if_then(card_val, BoolTest::ne, young_card); {
           sync_kit(ideal);
-          // Use Op_MemBarVolatile to achieve the effect of a StoreLoad barrier.
-          insert_mem_bar(Op_MemBarVolatile, oop_store);
+          insert_store_load_for_barrier();
           __ sync_kit(this);
 
           Node* card_val_reload = __ load(__ ctrl(), card_adr, TypeInt::INT, T_BYTE, Compile::AliasIdxRaw);

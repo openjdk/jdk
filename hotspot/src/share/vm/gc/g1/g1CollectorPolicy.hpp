@@ -471,7 +471,7 @@ public:
   // Check the current value of the young list RSet lengths and
   // compare it against the last prediction. If the current value is
   // higher, recalculate the young list target length prediction.
-  void revise_young_list_target_length_if_necessary();
+  void revise_young_list_target_length_if_necessary(size_t rs_lengths);
 
   // This should be called after the heap is resized.
   void record_new_heap_size(uint new_number_of_regions);

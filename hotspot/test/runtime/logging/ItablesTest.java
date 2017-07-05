@@ -49,7 +49,6 @@ public class ItablesTest {
             output.shouldContain("invokespecial resolved method: caller-class:ClassB");
             output.shouldContain("invokespecial selected method: resolved-class:ClassB");
             output.shouldContain("invokeinterface selected method: receiver-class");
-            output.shouldContain("Resolving: klass: ");
             output.shouldHaveExitValue(0);
 
             pb = ProcessTools.createJavaProcessBuilder("-Xlog:itables=trace", "ItablesVtableTest");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,66 +28,86 @@
  * @requires (os.simpleArch == "x64" | os.simpleArch == "sparcv9" | os.simpleArch == "aarch64")
  * @library /testlibrary /test/lib /
  * @compile ../common/CompilerToVMHelper.java
- * @build compiler.jvmci.compilerToVM.ResolveConstantInPoolTest
- * @run main ClassFileInstaller jdk.vm.ci.hotspot.CompilerToVMHelper
- * @run main/othervm -Xbootclasspath/a:.
- *                   -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
+ * @build sun.hotspot.WhiteBox
+ *        compiler.jvmci.compilerToVM.ResolveConstantInPoolTest
+ * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ *                              sun.hotspot.WhiteBox$WhiteBoxPermission
+ *                              jdk.vm.ci.hotspot.CompilerToVMHelper
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:+WhiteBoxAPI -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
  *                   compiler.jvmci.compilerToVM.ResolveConstantInPoolTest
  */
 
 package compiler.jvmci.compilerToVM;
 
+import compiler.jvmci.compilerToVM.ConstantPoolTestsHelper.DummyClasses;
+import compiler.jvmci.compilerToVM.ConstantPoolTestCase.ConstantTypes;
+import static compiler.jvmci.compilerToVM.ConstantPoolTestCase.ConstantTypes.*;
+import compiler.jvmci.compilerToVM.ConstantPoolTestCase.Validator;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.util.HashMap;
 import java.util.Map;
-import jdk.vm.ci.hotspot.CompilerToVMHelper;
 import jdk.test.lib.Asserts;
-import sun.reflect.ConstantPool;
+import jdk.vm.ci.hotspot.CompilerToVMHelper;
+import jdk.vm.ci.meta.ConstantPool;
 
 /**
- * Test for {@code compiler.jvmci.CompilerToVM.resolveConstantInPool} method
+ * Test for {@code jdk.vm.ci.hotspot.CompilerToVM.resolveConstantInPool} method
  */
 public class ResolveConstantInPoolTest {
 
+    private static final String NOT_NULL_MSG
+            = "Object returned by resolveConstantInPool method should not be null";
+
     public static void main(String[] args) throws Exception {
-        Map<ConstantPoolTestsHelper.ConstantTypes,
-                ConstantPoolTestCase.Validator> typeTests = new HashMap<>(2);
-        typeTests.put(ConstantPoolTestsHelper.ConstantTypes.CONSTANT_METHODHANDLE,
-                ResolveConstantInPoolTest::validateMethodHandle);
-        typeTests.put(ConstantPoolTestsHelper.ConstantTypes.CONSTANT_METHODTYPE,
-                ResolveConstantInPoolTest::validateMethodType);
+        Map<ConstantTypes, Validator> typeTests = new HashMap<>();
+        typeTests.put(CONSTANT_METHODHANDLE, ResolveConstantInPoolTest::validateMethodHandle);
+        typeTests.put(CONSTANT_METHODTYPE, ResolveConstantInPoolTest::validateMethodType);
         ConstantPoolTestCase testCase = new ConstantPoolTestCase(typeTests);
+        testCase.test();
+        // The next "Class.forName" and repeating "testCase.test()"
+        // are here for the following reason.
+        // The first test run is without dummy class initialization,
+        // which means no constant pool cache exists.
+        // The second run is with initialized class (with constant pool cache available).
+        // Some CompilerToVM methods require different input
+        // depending on whether CP cache exists or not.
+        for (DummyClasses dummy : DummyClasses.values()) {
+            Class.forName(dummy.klass.getName());
+        }
         testCase.test();
     }
 
-    private static void validateMethodHandle(
-            jdk.vm.ci.meta.ConstantPool constantPoolCTVM,
-            ConstantPool constantPoolSS,
-            ConstantPoolTestsHelper.DummyClasses dummyClass, int index) {
-        Object constantInPool = CompilerToVMHelper
-                .resolveConstantInPool(constantPoolCTVM, index);
+    private static void validateMethodHandle(ConstantPool constantPoolCTVM,
+                                             ConstantTypes cpType,
+                                             DummyClasses dummyClass,
+                                             int index) {
+        Object constantInPool = CompilerToVMHelper.resolveConstantInPool(constantPoolCTVM, index);
+        String msg = String.format("%s for index %d", NOT_NULL_MSG, index);
+        Asserts.assertNotNull(constantInPool, msg);
         if (!(constantInPool instanceof MethodHandle)) {
-            String msg = String.format(
-                    "Wrong constant pool entry accessed by index"
-                            + " %d: %s, but should be subclass of %s",
-                    index + 1, constantInPool.getClass(),
-                    MethodHandle.class.getName());
+            msg = String.format("Wrong constant pool entry accessed by index"
+                                        + " %d: %s, but should be subclass of %s",
+                                index,
+                                constantInPool.getClass(),
+                                MethodHandle.class.getName());
             throw new AssertionError(msg);
         }
     }
 
-    private static void validateMethodType(
-            jdk.vm.ci.meta.ConstantPool constantPoolCTVM,
-            ConstantPool constantPoolSS,
-            ConstantPoolTestsHelper.DummyClasses dummyClass, int index) {
-        Object constantInPool = CompilerToVMHelper
-                .resolveConstantInPool(constantPoolCTVM, index);
+    private static void validateMethodType(ConstantPool constantPoolCTVM,
+                                           ConstantTypes cpType,
+                                           DummyClasses dummyClass,
+                                           int index) {
+        Object constantInPool = CompilerToVMHelper.resolveConstantInPool(constantPoolCTVM, index);
+        String msg = String.format("%s for index %d", NOT_NULL_MSG, index);
+        Asserts.assertNotNull(constantInPool, msg);
         Class mtToVerify = constantInPool.getClass();
         Class mtToRefer = MethodType.class;
-        String msg = String.format("Wrong %s accessed by constant pool index"
-                            + " %d: %s, but should be %s", "method type class",
-                            index, mtToVerify, mtToRefer);
+        msg = String.format("Wrong method type class accessed by"
+                                    + " constant pool index %d",
+                            index);
         Asserts.assertEQ(mtToRefer, mtToVerify, msg);
     }
 }

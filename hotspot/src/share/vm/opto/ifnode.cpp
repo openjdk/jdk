@@ -40,7 +40,9 @@
 // Optimization - Graph Style
 
 
+#ifndef PRODUCT
 extern int explicit_null_checks_elided;
+#endif
 
 //=============================================================================
 //------------------------------Value------------------------------------------
@@ -1504,24 +1506,28 @@ Node* IfNode::search_identical(int dist) {
   Node* prev_dom = this;
   int op = Opcode();
   // Search up the dominator tree for an If with an identical test
-  while( dom->Opcode() != op    ||  // Not same opcode?
+  while (dom->Opcode() != op    ||  // Not same opcode?
          dom->in(1)    != in(1) ||  // Not same input 1?
          (req() == 3 && dom->in(2) != in(2)) || // Not same input 2?
-         prev_dom->in(0) != dom ) { // One path of test does not dominate?
-    if( dist < 0 ) return NULL;
+         prev_dom->in(0) != dom) {  // One path of test does not dominate?
+    if (dist < 0) return NULL;
 
     dist--;
     prev_dom = dom;
-    dom = up_one_dom( dom );
-    if( !dom ) return NULL;
+    dom = up_one_dom(dom);
+    if (!dom) return NULL;
   }
 
   // Check that we did not follow a loop back to ourselves
-  if( this == dom )
+  if (this == dom) {
     return NULL;
+  }
 
-  if( dist > 2 )              // Add to count of NULL checks elided
+#ifndef PRODUCT
+  if (dist > 2) { // Add to count of NULL checks elided
     explicit_null_checks_elided++;
+  }
+#endif
 
   return prev_dom;
 }

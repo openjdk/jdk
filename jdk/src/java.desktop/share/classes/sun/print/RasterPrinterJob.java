@@ -791,12 +791,15 @@ public abstract class RasterPrinterJob extends PrinterJob {
             return page;
         }
 
-        final GraphicsConfiguration gc =
-            GraphicsEnvironment.getLocalGraphicsEnvironment().
-            getDefaultScreenDevice().getDefaultConfiguration();
-        Rectangle bounds = gc.getBounds();
-        int x = bounds.x+bounds.width/3;
-        int y = bounds.y+bounds.height/3;
+        GraphicsConfiguration grCfg = null;
+        Window w = KeyboardFocusManager.getCurrentKeyboardFocusManager().getActiveWindow();
+        if (w != null) {
+            grCfg = w.getGraphicsConfiguration();
+        } else {
+            grCfg = GraphicsEnvironment.getLocalGraphicsEnvironment().
+                        getDefaultScreenDevice().getDefaultConfiguration();
+        }
+        final GraphicsConfiguration gc = grCfg;
 
         PrintService service = java.security.AccessController.doPrivileged(
                                new java.security.PrivilegedAction<PrintService>() {
@@ -814,9 +817,39 @@ public abstract class RasterPrinterJob extends PrinterJob {
             return null;
         }
 
+        // we position the dialog a little beyond the upper-left corner of the window
+        // which is consistent with the NATIVE page dialog
+        Rectangle gcBounds = gc.getBounds();
+        int x = gcBounds.x+50;
+        int y = gcBounds.y+50;
         ServiceDialog pageDialog = new ServiceDialog(gc, x, y, service,
                                        DocFlavor.SERVICE_FORMATTED.PAGEABLE,
                                        attributes, (Frame)null);
+        Rectangle dlgBounds = pageDialog.getBounds();
+
+        // if portion of dialog is not within the gc boundary
+        if (!gcBounds.contains(dlgBounds)) {
+            // check if dialog exceed window bounds at left or bottom
+            // Then position the dialog by moving it by the amount it exceeds
+            // the window bounds
+            // If it results in dialog moving beyond the window bounds at top/left
+            // then position it at window top/left
+            if (dlgBounds.x + dlgBounds.width > gcBounds.x + gcBounds.width) {
+                if ((gcBounds.x + gcBounds.width - dlgBounds.width) > gcBounds.x) {
+                    x = (gcBounds.x + gcBounds.width) - dlgBounds.width;
+                } else {
+                    x = gcBounds.x;
+                }
+            }
+            if (dlgBounds.y + dlgBounds.height > gcBounds.y + gcBounds.height) {
+                if ((gcBounds.y + gcBounds.height - dlgBounds.height) > gcBounds.y) {
+                    y = (gcBounds.y + gcBounds.height) - dlgBounds.height;
+                } else {
+                    y = gcBounds.y;
+                }
+            }
+            pageDialog.setBounds(x, y, dlgBounds.width, dlgBounds.height);
+        }
         pageDialog.show();
 
         if (pageDialog.getStatus() == ServiceDialog.APPROVE) {
@@ -893,9 +926,15 @@ public abstract class RasterPrinterJob extends PrinterJob {
          * We raise privilege when we put up the dialog, to avoid
          * the "warning applet window" banner.
          */
-        final GraphicsConfiguration gc =
-            GraphicsEnvironment.getLocalGraphicsEnvironment().
-            getDefaultScreenDevice().getDefaultConfiguration();
+        GraphicsConfiguration grCfg = null;
+        Window w = KeyboardFocusManager.getCurrentKeyboardFocusManager().getActiveWindow();
+        if (w != null) {
+            grCfg = w.getGraphicsConfiguration();
+        } else {
+            grCfg = GraphicsEnvironment.getLocalGraphicsEnvironment().
+                        getDefaultScreenDevice().getDefaultConfiguration();
+        }
+        final GraphicsConfiguration gc = grCfg;
 
         PrintService service = java.security.AccessController.doPrivileged(
                                new java.security.PrivilegedAction<PrintService>() {
@@ -940,9 +979,10 @@ public abstract class RasterPrinterJob extends PrinterJob {
             }
         }
 
-        Rectangle bounds = gc.getBounds();
-        int x = bounds.x+bounds.width/3;
-        int y = bounds.y+bounds.height/3;
+        // we position the dialog a little beyond the upper-left corner of the window
+        // which is consistent with the NATIVE print dialog
+        int x = 50;
+        int y = 50;
         PrintService newService;
         // temporarily add an attribute pointing back to this job.
         PrinterJobWrapper jobWrapper = new PrinterJobWrapper(this);

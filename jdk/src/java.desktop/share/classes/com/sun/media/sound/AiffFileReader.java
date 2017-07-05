@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,11 @@
 package com.sun.media.sound;
 
 import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
 import javax.sound.sampled.AudioFileFormat;
+import javax.sound.sampled.AudioFileFormat.Type;
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.UnsupportedAudioFileException;
@@ -49,11 +49,6 @@ public final class AiffFileReader extends SunFileReader {
             throws UnsupportedAudioFileException, IOException {
         DataInputStream dis = new DataInputStream(stream);
 
-        // assumes a stream at the beginning of the file which has already
-        // passed the magic number test...
-        // leaves the input stream at the beginning of the audio data
-        int fileRead = 0;
-        int dataLength = 0;
         AudioFormat format = null;
 
         // Read the magic number
@@ -65,9 +60,9 @@ public final class AiffFileReader extends SunFileReader {
             throw new UnsupportedAudioFileException("not an AIFF file");
         }
 
+        int frameLength = 0;
         int length = dis.readInt();
         int iffType = dis.readInt();
-        fileRead += 12;
 
         int totallength;
         if(length <= 0 ) {
@@ -91,7 +86,6 @@ public final class AiffFileReader extends SunFileReader {
             // Read the chunk name
             int chunkName = dis.readInt();
             int chunkLen = dis.readInt();
-            fileRead += 8;
 
             int chunkRead = 0;
 
@@ -112,7 +106,13 @@ public final class AiffFileReader extends SunFileReader {
                 if (channels <= 0) {
                     throw new UnsupportedAudioFileException("Invalid number of channels");
                 }
-                dis.readInt(); // numSampleFrames
+                frameLength = dis.readInt(); // numSampleFrames
+                if (frameLength < 0) {
+                    // AiffFileFormat uses int, unlike AIS which uses long
+                    //TODO this (negative) value should be passed as long to AIS
+                    frameLength = AudioSystem.NOT_SPECIFIED;
+                }
+
                 int sampleSizeInBits = dis.readUnsignedShort();
                 if (sampleSizeInBits < 1 || sampleSizeInBits > 32) {
                     throw new UnsupportedAudioFileException("Invalid AIFF/COMM sampleSize");
@@ -149,38 +149,17 @@ public final class AiffFileReader extends SunFileReader {
                 break;
             case AiffFileFormat.SSND_MAGIC:
                 // Data chunk.
-                // we are getting *weird* numbers for chunkLen sometimes;
-                // this really should be the size of the data chunk....
-                int dataOffset = dis.readInt();
-                int blocksize = dis.readInt();
+                int dataOffset = dis.readInt(); // for now unused in javasound
+                int blocksize = dis.readInt();  // for now unused in javasound
                 chunkRead += 8;
-
-                // okay, now we are done reading the header.  we need to set the size
-                // of the data segment.  we know that sometimes the value we get for
-                // the chunksize is absurd.  this is the best i can think of:if the
-                // value seems okay, use it.  otherwise, we get our value of
-                // length by assuming that everything left is the data segment;
-                // its length should be our original length (for all AIFF data chunks)
-                // minus what we've read so far.
-                // $$kk: we should be able to get length for the data chunk right after
-                // we find "SSND."  however, some aiff files give *weird* numbers.  what
-                // is going on??
-
-                if (chunkLen < length) {
-                    dataLength = chunkLen - chunkRead;
-                } else {
-                    // $$kk: 11.03.98: this seems dangerous!
-                    dataLength = length - (fileRead + chunkRead);
-                }
                 ssndFound = true;
                 break;
             } // switch
-            fileRead += chunkRead;
             // skip the remainder of this chunk
             if (!ssndFound) {
                 int toSkip = chunkLen - chunkRead;
                 if (toSkip > 0) {
-                    fileRead += dis.skipBytes(toSkip);
+                    dis.skipBytes(toSkip);
                 }
             }
         } // while
@@ -188,36 +167,12 @@ public final class AiffFileReader extends SunFileReader {
         if (format == null) {
             throw new UnsupportedAudioFileException("missing COMM chunk");
         }
-        AudioFileFormat.Type type = aifc?AudioFileFormat.Type.AIFC:AudioFileFormat.Type.AIFF;
+        Type type = aifc ? Type.AIFC : Type.AIFF;
 
-        return new AiffFileFormat(type, totallength, format, dataLength / format.getFrameSize());
+        return new AiffFileFormat(type, totallength, format, frameLength);
     }
 
     // HELPER METHODS
-    /** write_ieee_extended(DataOutputStream dos, double f) throws IOException {
-     * Extended precision IEEE floating-point conversion routine.
-     * @argument DataOutputStream
-     * @argument double
-     * @return void
-     * @exception IOException
-     */
-    private void write_ieee_extended(DataOutputStream dos, double f) throws IOException {
-
-        int exponent = 16398;
-        double highMantissa = f;
-
-        // For now write the integer portion of f
-        // $$jb: 03.30.99: stay in synch with JMF on this!!!!
-        while (highMantissa < 44000) {
-            highMantissa *= 2;
-            exponent--;
-        }
-        dos.writeShort(exponent);
-        dos.writeInt( ((int) highMantissa) << 16);
-        dos.writeInt(0); // low Mantissa
-    }
-
-
     /**
      * read_ieee_extended
      * Extended precision IEEE floating-point conversion routine.
