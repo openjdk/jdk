@@ -982,6 +982,16 @@ public class WToolkit extends SunToolkit implements Runnable {
         return areExtraMouseButtonsEnabled;
     }
 
+    private native synchronized int getNumberOfButtonsImpl();
+
+    @Override
+    public int getNumberOfButtons(){
+        if (numberOfButtons == 0) {
+            numberOfButtons = getNumberOfButtonsImpl();
+        }
+        return (numberOfButtons > MAX_BUTTONS_SUPPORTED)? MAX_BUTTONS_SUPPORTED : numberOfButtons;
+    }
+
     @Override
     public boolean isWindowOpacitySupported() {
         // supported in Win2K and later
