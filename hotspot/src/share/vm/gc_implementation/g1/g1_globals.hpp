@@ -299,17 +299,16 @@
           "Percentage (0-100) of the heap size to use as maximum "          \
           "young gen size.")                                                \
                                                                             \
-  develop(uintx, G1OldCSetRegionLiveThresholdPercent, 95,                   \
+  develop(uintx, G1OldCSetRegionLiveThresholdPercent, 90,                   \
           "Threshold for regions to be added to the collection set. "       \
           "Regions with more live bytes that this will not be collected.")  \
                                                                             \
-  develop(uintx, G1OldReclaimableThresholdPercent, 1,                       \
-          "Threshold for the remaining old reclaimable bytes, expressed "   \
-          "as a percentage of the heap size. If the old reclaimable bytes " \
-          "are under this we will not collect them with more mixed GCs.")   \
+  product(uintx, G1HeapWastePercent, 5,                                     \
+          "Amount of space, expressed as a percentage of the heap size, "   \
+          "that G1 is willing not to collect to avoid expensive GCs.")      \
                                                                             \
-  develop(uintx, G1MaxMixedGCNum, 4,                                        \
-          "The maximum desired number of mixed GCs after a marking cycle.") \
+  product(uintx, G1MixedGCCountTarget, 4,                                   \
+          "The target number of mixed GCs after a marking cycle.")          \
                                                                             \
   develop(uintx, G1OldCSetRegionThresholdPercent, 10,                       \
           "An upper bound for the number of old CSet regions expressed "    \
