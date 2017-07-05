@@ -279,6 +279,11 @@ public final class Signal {
         public void handle(Signal sig) {
             throw new UnsupportedOperationException("invoking native signal handle not supported");
         }
+
+        public String toString() {
+            return this == SIG_DFL ? "SIG_DFL" :
+                    (this == SIG_IGN ? "SIG_IGN" : super.toString());
+        }
     }
 
 }

@@ -54,6 +54,7 @@ public class OptionsTest {
         Test.create(StandardSocketOptions.SO_SNDBUF, Integer.valueOf(10 * 100)),
         Test.create(StandardSocketOptions.SO_RCVBUF, Integer.valueOf(8 * 100)),
         Test.create(StandardSocketOptions.SO_REUSEADDR, Boolean.FALSE),
+        Test.create(StandardSocketOptions.SO_REUSEPORT, Boolean.FALSE),
         Test.create(StandardSocketOptions.SO_LINGER, Integer.valueOf(80)),
         Test.create(StandardSocketOptions.IP_TOS, Integer.valueOf(100))
     };
@@ -61,6 +62,7 @@ public class OptionsTest {
     static Test[] serverSocketTests = new Test[] {
         Test.create(StandardSocketOptions.SO_RCVBUF, Integer.valueOf(8 * 100)),
         Test.create(StandardSocketOptions.SO_REUSEADDR, Boolean.FALSE),
+        Test.create(StandardSocketOptions.SO_REUSEPORT, Boolean.FALSE),
         Test.create(StandardSocketOptions.IP_TOS, Integer.valueOf(100))
     };
 
@@ -68,6 +70,7 @@ public class OptionsTest {
         Test.create(StandardSocketOptions.SO_SNDBUF, Integer.valueOf(10 * 100)),
         Test.create(StandardSocketOptions.SO_RCVBUF, Integer.valueOf(8 * 100)),
         Test.create(StandardSocketOptions.SO_REUSEADDR, Boolean.FALSE),
+        Test.create(StandardSocketOptions.SO_REUSEPORT, Boolean.FALSE),
         Test.create(StandardSocketOptions.IP_TOS, Integer.valueOf(100))
     };
 
@@ -97,15 +100,19 @@ public class OptionsTest {
             Socket c = new Socket("127.0.0.1", srv.getLocalPort());
             Socket s = srv.accept();
         ) {
+            Set<SocketOption<?>> options = c.supportedOptions();
+            boolean reuseport = options.contains(StandardSocketOptions.SO_REUSEPORT);
             for (int i=0; i<socketTests.length; i++) {
                 Test test = socketTests[i];
-                c.setOption((SocketOption)test.option, test.testValue);
-                Object getval = c.getOption((SocketOption)test.option);
-                Object legacyget = legacyGetOption(Socket.class, c,test.option);
-                if (!getval.equals(legacyget)) {
-                    Formatter f = new Formatter();
-                    f.format("S Err %d: %s/%s", i, getval, legacyget);
-                    throw new RuntimeException(f.toString());
+                if (!(test.option == StandardSocketOptions.SO_REUSEPORT && !reuseport)) {
+                    c.setOption((SocketOption)test.option, test.testValue);
+                    Object getval = c.getOption((SocketOption)test.option);
+                    Object legacyget = legacyGetOption(Socket.class, c,test.option);
+                    if (!getval.equals(legacyget)) {
+                        Formatter f = new Formatter();
+                        f.format("S Err %d: %s/%s", i, getval, legacyget);
+                        throw new RuntimeException(f.toString());
+                    }
                 }
             }
         }
@@ -115,15 +122,19 @@ public class OptionsTest {
         try (
             DatagramSocket c = new DatagramSocket(0);
         ) {
+            Set<SocketOption<?>> options = c.supportedOptions();
+            boolean reuseport = options.contains(StandardSocketOptions.SO_REUSEPORT);
             for (int i=0; i<dgSocketTests.length; i++) {
                 Test test = dgSocketTests[i];
-                c.setOption((SocketOption)test.option, test.testValue);
-                Object getval = c.getOption((SocketOption)test.option);
-                Object legacyget = legacyGetOption(DatagramSocket.class, c,test.option);
-                if (!getval.equals(legacyget)) {
-                    Formatter f = new Formatter();
-                    f.format("DG Err %d: %s/%s", i, getval, legacyget);
-                    throw new RuntimeException(f.toString());
+                if (!(test.option == StandardSocketOptions.SO_REUSEPORT && !reuseport)) {
+                    c.setOption((SocketOption)test.option, test.testValue);
+                    Object getval = c.getOption((SocketOption)test.option);
+                    Object legacyget = legacyGetOption(DatagramSocket.class, c,test.option);
+                    if (!getval.equals(legacyget)) {
+                        Formatter f = new Formatter();
+                        f.format("DG Err %d: %s/%s", i, getval, legacyget);
+                        throw new RuntimeException(f.toString());
+                    }
                 }
             }
         }
@@ -151,17 +162,21 @@ public class OptionsTest {
         try (
             ServerSocket c = new ServerSocket(0);
         ) {
+            Set<SocketOption<?>> options = c.supportedOptions();
+            boolean reuseport = options.contains(StandardSocketOptions.SO_REUSEPORT);
             for (int i=0; i<serverSocketTests.length; i++) {
                 Test test = serverSocketTests[i];
-                c.setOption((SocketOption)test.option, test.testValue);
-                Object getval = c.getOption((SocketOption)test.option);
-                Object legacyget = legacyGetOption(
-                    ServerSocket.class, c, test.option
-                );
-                if (!getval.equals(legacyget)) {
-                    Formatter f = new Formatter();
-                    f.format("SS Err %d: %s/%s", i, getval, legacyget);
-                    throw new RuntimeException(f.toString());
+                if (!(test.option == StandardSocketOptions.SO_REUSEPORT && !reuseport)) {
+                    c.setOption((SocketOption)test.option, test.testValue);
+                    Object getval = c.getOption((SocketOption)test.option);
+                    Object legacyget = legacyGetOption(
+                        ServerSocket.class, c, test.option
+                    );
+                    if (!getval.equals(legacyget)) {
+                        Formatter f = new Formatter();
+                        f.format("SS Err %d: %s/%s", i, getval, legacyget);
+                        throw new RuntimeException(f.toString());
+                    }
                 }
             }
         }
@@ -174,6 +189,8 @@ public class OptionsTest {
     {
         if (type.equals(Socket.class)) {
             Socket socket = (Socket)s;
+            Set<SocketOption<?>> options = socket.supportedOptions();
+            boolean reuseport = options.contains(StandardSocketOptions.SO_REUSEPORT);
 
             if (option.equals(StandardSocketOptions.SO_KEEPALIVE)) {
                 return Boolean.valueOf(socket.getKeepAlive());
@@ -183,6 +200,8 @@ public class OptionsTest {
                 return Integer.valueOf(socket.getReceiveBufferSize());
             } else if (option.equals(StandardSocketOptions.SO_REUSEADDR)) {
                 return Boolean.valueOf(socket.getReuseAddress());
+            } else if (option.equals(StandardSocketOptions.SO_REUSEPORT) && reuseport) {
+                return Boolean.valueOf(socket.getOption(StandardSocketOptions.SO_REUSEPORT));
             } else if (option.equals(StandardSocketOptions.SO_LINGER)) {
                 return Integer.valueOf(socket.getSoLinger());
             } else if (option.equals(StandardSocketOptions.IP_TOS)) {
@@ -194,10 +213,15 @@ public class OptionsTest {
             }
         } else if  (type.equals(ServerSocket.class)) {
             ServerSocket socket = (ServerSocket)s;
+            Set<SocketOption<?>> options = socket.supportedOptions();
+            boolean reuseport = options.contains(StandardSocketOptions.SO_REUSEPORT);
+
             if (option.equals(StandardSocketOptions.SO_RCVBUF)) {
                 return Integer.valueOf(socket.getReceiveBufferSize());
             } else if (option.equals(StandardSocketOptions.SO_REUSEADDR)) {
                 return Boolean.valueOf(socket.getReuseAddress());
+            } else if (option.equals(StandardSocketOptions.SO_REUSEPORT) && reuseport) {
+                return Boolean.valueOf(socket.getOption(StandardSocketOptions.SO_REUSEPORT));
             } else if (option.equals(StandardSocketOptions.IP_TOS)) {
                 return Integer.valueOf(jdk.net.Sockets.getOption(
                     socket, StandardSocketOptions.IP_TOS));
@@ -206,6 +230,8 @@ public class OptionsTest {
             }
         } else if  (type.equals(DatagramSocket.class)) {
             DatagramSocket socket = (DatagramSocket)s;
+            Set<SocketOption<?>> options = socket.supportedOptions();
+            boolean reuseport = options.contains(StandardSocketOptions.SO_REUSEPORT);
 
             if (option.equals(StandardSocketOptions.SO_SNDBUF)) {
                 return Integer.valueOf(socket.getSendBufferSize());
@@ -213,6 +239,8 @@ public class OptionsTest {
                 return Integer.valueOf(socket.getReceiveBufferSize());
             } else if (option.equals(StandardSocketOptions.SO_REUSEADDR)) {
                 return Boolean.valueOf(socket.getReuseAddress());
+            } else if (option.equals(StandardSocketOptions.SO_REUSEPORT) && reuseport) {
+                return Boolean.valueOf(socket.getOption(StandardSocketOptions.SO_REUSEPORT));
             } else if (option.equals(StandardSocketOptions.IP_TOS)) {
                 return Integer.valueOf(socket.getTrafficClass());
             } else {
@@ -221,6 +249,8 @@ public class OptionsTest {
 
         } else if  (type.equals(MulticastSocket.class)) {
             MulticastSocket socket = (MulticastSocket)s;
+            Set<SocketOption<?>> options = socket.supportedOptions();
+            boolean reuseport = options.contains(StandardSocketOptions.SO_REUSEPORT);
 
             if (option.equals(StandardSocketOptions.SO_SNDBUF)) {
                 return Integer.valueOf(socket.getSendBufferSize());
@@ -228,6 +258,8 @@ public class OptionsTest {
                 return Integer.valueOf(socket.getReceiveBufferSize());
             } else if (option.equals(StandardSocketOptions.SO_REUSEADDR)) {
                 return Boolean.valueOf(socket.getReuseAddress());
+            } else if (option.equals(StandardSocketOptions.SO_REUSEPORT) && reuseport) {
+                return Boolean.valueOf(socket.getOption(StandardSocketOptions.SO_REUSEPORT));
             } else if (option.equals(StandardSocketOptions.IP_TOS)) {
                 return Integer.valueOf(socket.getTrafficClass());
             } else if (option.equals(StandardSocketOptions.IP_MULTICAST_IF)) {

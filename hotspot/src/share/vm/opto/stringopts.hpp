@@ -97,6 +97,9 @@ class PhaseStringOpts : public Phase {
   // Returns the length of a constant string
   int get_constant_length(GraphKit& kit, Node* str);
 
+  // Returns the value array of a constant string
+  ciTypeArray* get_constant_value(GraphKit& kit, Node* str);
+
   // Clean up any leftover nodes
   void record_dead_node(Node* node);
   void remove_dead_nodes();

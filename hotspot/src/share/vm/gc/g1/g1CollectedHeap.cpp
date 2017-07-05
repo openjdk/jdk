@@ -1290,8 +1290,7 @@ bool G1CollectedHeap::do_full_collection(bool explicit_gc,
       ref_processor_cm()->verify_no_references_recorded();
 
       // Abandon current iterations of concurrent marking and concurrent
-      // refinement, if any are in progress. We have to do this before
-      // wait_until_scan_finished() below.
+      // refinement, if any are in progress.
       concurrent_mark()->abort();
 
       // Make sure we'll choose a new allocation region afterwards.
@@ -2148,8 +2147,8 @@ public:
   virtual bool doHeapRegion(HeapRegion* hr) {
     unsigned region_gc_time_stamp = hr->get_gc_time_stamp();
     if (_gc_time_stamp != region_gc_time_stamp) {
-      log_info(gc, verify)("Region " HR_FORMAT " has GC time stamp = %d, expected %d", HR_FORMAT_PARAMS(hr),
-                           region_gc_time_stamp, _gc_time_stamp);
+      log_error(gc, verify)("Region " HR_FORMAT " has GC time stamp = %d, expected %d", HR_FORMAT_PARAMS(hr),
+                            region_gc_time_stamp, _gc_time_stamp);
       _failures = true;
     }
     return false;
@@ -2848,7 +2847,7 @@ G1HeapSummary G1CollectedHeap::create_g1_heap_summary() {
     (g1_policy()->young_list_target_length() * HeapRegion::GrainBytes) - survivor_used_bytes;
 
   VirtualSpaceSummary heap_summary = create_heap_space_summary();
-  return G1HeapSummary(heap_summary, used(), eden_used_bytes, eden_capacity_bytes, survivor_used_bytes);
+  return G1HeapSummary(heap_summary, used(), eden_used_bytes, eden_capacity_bytes, survivor_used_bytes, num_regions());
 }
 
 G1EvacSummary G1CollectedHeap::create_g1_evac_summary(G1EvacStats* stats) {
@@ -5186,8 +5185,8 @@ public:
   NoYoungRegionsClosure() : _success(true) { }
   bool doHeapRegion(HeapRegion* r) {
     if (r->is_young()) {
-      log_info(gc, verify)("Region [" PTR_FORMAT ", " PTR_FORMAT ") tagged as young",
-                           p2i(r->bottom()), p2i(r->end()));
+      log_error(gc, verify)("Region [" PTR_FORMAT ", " PTR_FORMAT ") tagged as young",
+                            p2i(r->bottom()), p2i(r->end()));
       _success = false;
     }
     return false;

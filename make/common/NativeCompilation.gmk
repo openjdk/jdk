@@ -651,12 +651,15 @@ define SetupNativeCompilationBody
 
       $$($1_RES): $$($1_VERSIONINFO_RESOURCE) $$($1_RES_VARDEPS_FILE)
 		$$(call LogInfo, Compiling resource $$(notdir $$($1_VERSIONINFO_RESOURCE)) (for $$(notdir $$($1_TARGET))))
+		$$(call MakeDir, $$(@D) $$($1_OBJECT_DIR))
 		$$(call ExecuteWithLog, $$@, \
 		    $$($1_RC) $$($1_RC_FLAGS) $$($1_SYSROOT_CFLAGS) $(CC_OUT_OPTION)$$@ \
 		    $$($1_VERSIONINFO_RESOURCE))
                 # Windows RC compiler does not support -showIncludes, so we mis-use CL for this.
-		$$($1_CC) $$($1_RC_FLAGS) $$($1_SYSROOT_CFLAGS) -showIncludes -nologo -TC \
-		    $(CC_OUT_OPTION)$$($1_RES_DEP).obj $$($1_VERSIONINFO_RESOURCE) > $$($1_RES_DEP).raw 2>&1 || true ; \
+		$$(call ExecuteWithLog, $$($1_RES_DEP).obj, \
+		    $$($1_CC) $$($1_RC_FLAGS) $$($1_SYSROOT_CFLAGS) -showIncludes -nologo -TC \
+		    $(CC_OUT_OPTION)$$($1_RES_DEP).obj -P -Fi$$($1_RES_DEP).pp \
+		    $$($1_VERSIONINFO_RESOURCE)) > $$($1_RES_DEP).raw 2>&1 || true ; \
 		$(ECHO) $$($1_RES): \\ > $$($1_RES_DEP) ; \
 		$(SED) $(WINDOWS_SHOWINCLUDE_SED_PATTERN) $$($1_RES_DEP).raw >> $$($1_RES_DEP) ; \
 		$(SED) $(DEPENDENCY_TARGET_SED_PATTERN) $$($1_RES_DEP) > $$($1_RES_DEP_TARGETS)
@@ -670,7 +673,7 @@ define SetupNativeCompilationBody
         $1_REAL_MAPFILE := $$($1_OBJECT_DIR)/mapfile
 
         $$($1_REAL_MAPFILE) : $$($1_MAPFILE) $$($1_REORDER)
-		$$(MKDIR) -p $$(@D)
+		$$(call MakeDir, $$(@D))
 		$$(CP) $$($1_MAPFILE) $$@.tmp
 		$$(SED) -e 's=OUTPUTDIR=$$($1_OBJECT_DIR)=' $$($1_REORDER) >> $$@.tmp
 		$$(MV) $$@.tmp $$@
@@ -768,7 +771,10 @@ define SetupNativeCompilationBody
       $1_EXTRA_LDFLAGS += "-implib:$$($1_OBJECT_DIR)/$$($1_LIBRARY).lib"
     endif
 
-    $1_EXTRA_LIBS += $(GLOBAL_LIBS)
+    # Create loadmap on AIX. Helps in diagnosing some problems.
+    ifneq ($(COMPILER_BINDCMD_FILE_FLAG),)
+      $1_EXTRA_LDFLAGS += $(COMPILER_BINDCMD_FILE_FLAG)$$($1_OBJECT_DIR)/$$($1_NOSUFFIX).loadmap
+    endif
 
     $1_VARDEPS := $$($1_LD) $$($1_SYSROOT_LDFLAGS) $$($1_LDFLAGS) $$($1_EXTRA_LDFLAGS) \
         $$($1_LIBS) $$($1_EXTRA_LIBS) $$($1_CREATE_DEBUGINFO_CMDS) \
@@ -846,8 +852,6 @@ define SetupNativeCompilationBody
 
   ifneq (,$$($1_PROGRAM))
     # A executable binary has been specified, setup the target for it.
-    $1_EXTRA_LIBS += $(GLOBAL_LIBS)
-
     $1_VARDEPS := $$($1_LD) $$($1_SYSROOT_LDFLAGS) $$($1_LDFLAGS) $$($1_EXTRA_LDFLAGS) \
         $$($1_LIBS) $$($1_EXTRA_LIBS) $$($1_MT) \
         $$($1_CODESIGN) $$($1_CREATE_DEBUGINFO_CMDS) $$($1_MANIFEST_VERSION) \
