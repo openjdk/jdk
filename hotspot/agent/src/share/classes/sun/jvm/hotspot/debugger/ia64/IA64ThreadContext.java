@@ -25,6 +25,7 @@
 package sun.jvm.hotspot.debugger.ia64;
 
 import sun.jvm.hotspot.debugger.*;
+import sun.jvm.hotspot.debugger.cdbg.*;
 
 /** Specifies the thread context on ia64 platform; only a sub-portion
     of the context is guaranteed to be present on all operating
@@ -170,6 +171,10 @@ public abstract class IA64ThreadContext implements ThreadContext {
 
   public long getRegister(int index) {
     return data[index];
+  }
+
+  public CFrame getTopFrame(Debugger dbg) {
+    return null;
   }
 
   /** This can't be implemented in this class since we would have to

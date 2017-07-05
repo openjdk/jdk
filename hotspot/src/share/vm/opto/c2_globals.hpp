@@ -353,26 +353,8 @@
   develop(bool, StressRecompilation, false,                                 \
           "Recompile each compiled method without subsuming loads or escape analysis.") \
                                                                             \
-  /* controls for tier 1 compilations */                                    \
-                                                                            \
-  develop(bool, Tier1CountInvocations, true,                                \
-          "Generate code, during tier 1, to update invocation counter")     \
-                                                                            \
-  product(intx, Tier1Inline, false,                                         \
-          "enable inlining during tier 1")                                  \
-                                                                            \
-  product(intx, Tier1MaxInlineSize, 8,                                      \
-          "maximum bytecode size of a method to be inlined, during tier 1") \
-                                                                            \
-  product(intx, Tier1FreqInlineSize, 35,                                    \
-          "max bytecode size of a frequent method to be inlined, tier 1")   \
-                                                                            \
   develop(intx, ImplicitNullCheckThreshold, 3,                              \
           "Don't do implicit null checks if NPE's in a method exceeds limit") \
-                                                                            \
- /* controls for loop optimization */                                       \
-  product(intx, Tier1LoopOptsCount, 0,                                      \
-          "Set level of loop optimization for tier 1 compiles")             \
                                                                             \
   product(intx, LoopOptsCount, 43,                                          \
           "Set level of loop optimization for tier 1 compiles")             \
@@ -505,6 +487,116 @@
                                                                             \
   product(bool, BlockLayoutRotateLoops, true,                               \
           "Allow back branches to be fall throughs in the block layour")    \
+                                                                            \
+  develop(bool, InlineReflectionGetCallerClass, true,                       \
+          "inline sun.reflect.Reflection.getCallerClass(), known to be part "\
+          "of base library DLL")                                            \
+                                                                            \
+  develop(bool, InlineObjectCopy, true,                                     \
+          "inline Object.clone and Arrays.copyOf[Range] intrinsics")        \
+                                                                            \
+  develop(bool, SpecialStringCompareTo, true,                               \
+          "special version of string compareTo")                            \
+                                                                            \
+  develop(bool, SpecialStringIndexOf, true,                                 \
+          "special version of string indexOf")                              \
+                                                                            \
+  develop(bool, SpecialStringEquals, true,                                  \
+          "special version of string equals")                               \
+                                                                            \
+  develop(bool, SpecialArraysEquals, true,                                  \
+          "special version of Arrays.equals(char[],char[])")                \
+                                                                            \
+  develop(bool, BailoutToInterpreterForThrows, false,                       \
+          "Compiled methods which throws/catches exceptions will be "       \
+          "deopt and intp.")                                                \
+                                                                            \
+  develop(bool, ConvertCmpD2CmpF, true,                                     \
+          "Convert cmpD to cmpF when one input is constant in float range") \
+                                                                            \
+  develop(bool, ConvertFloat2IntClipping, true,                             \
+          "Convert float2int clipping idiom to integer clipping")           \
+                                                                            \
+  develop(bool, Use24BitFPMode, true,                                       \
+          "Set 24-bit FPU mode on a per-compile basis ")                    \
+                                                                            \
+  develop(bool, Use24BitFP, true,                                           \
+          "use FP instructions that produce 24-bit precise results")        \
+                                                                            \
+  develop(bool, MonomorphicArrayCheck, true,                                \
+          "Uncommon-trap array store checks that require full type check")  \
+                                                                            \
+  notproduct(bool, TracePhaseCCP, false,                                    \
+          "Print progress during Conditional Constant Propagation")         \
+                                                                            \
+  develop(bool, PrintDominators, false,                                     \
+          "Print out dominator trees for GVN")                              \
+                                                                            \
+  notproduct(bool, TraceSpilling, false,                                    \
+          "Trace spilling")                                                 \
+                                                                            \
+  notproduct(bool, TraceTypeProfile, false,                                 \
+          "Trace type profile")                                             \
+                                                                            \
+  develop(bool, PoisonOSREntry, true,                                       \
+           "Detect abnormal calls to OSR code")                             \
+                                                                            \
+  product(bool, UseCondCardMark, false,                                     \
+          "Check for already marked card before updating card table")       \
+                                                                            \
+  develop(bool, SoftMatchFailure, trueInProduct,                            \
+          "If the DFA fails to match a node, print a message and bail out") \
+                                                                            \
+  develop(bool, InlineAccessors, true,                                      \
+          "inline accessor methods (get/set)")                              \
+                                                                            \
+  product(intx, TypeProfileMajorReceiverPercent, 90,                        \
+          "% of major receiver type to all profiled receivers")             \
+                                                                            \
+  notproduct(bool, TimeCompiler2, false,                                    \
+          "detailed time the compiler (requires +TimeCompiler)")            \
+                                                                            \
+  diagnostic(bool, PrintIntrinsics, false,                                  \
+          "prints attempted and successful inlining of intrinsics")         \
+                                                                            \
+  diagnostic(ccstrlist, DisableIntrinsic, "",                               \
+          "do not expand intrinsics whose (internal) names appear here")    \
+                                                                            \
+  develop(bool, StressReflectiveCode, false,                                \
+          "Use inexact types at allocations, etc., to test reflection")     \
+                                                                            \
+  diagnostic(bool, DebugInlinedCalls, true,                                 \
+         "If false, restricts profiled locations to the root method only")  \
+                                                                            \
+  notproduct(bool, VerifyLoopOptimizations, false,                          \
+          "verify major loop optimizations")                                \
+                                                                            \
+  diagnostic(bool, ProfileDynamicTypes, true,                               \
+          "do extra type profiling and use it more aggressively")           \
+                                                                            \
+  develop(bool, TraceIterativeGVN, false,                                   \
+          "Print progress during Iterative Global Value Numbering")         \
+                                                                            \
+  develop(bool, VerifyIterativeGVN, false,                                  \
+          "Verify Def-Use modifications during sparse Iterative Global "    \
+          "Value Numbering")                                                \
+                                                                            \
+  notproduct(bool, TraceCISCSpill, false,                                   \
+          "Trace allocators use of cisc spillable instructions")            \
+                                                                            \
+  product(bool, SplitIfBlocks, true,                                        \
+          "Clone compares and control flow through merge points to fold "   \
+          "some branches")                                                  \
+                                                                            \
+  develop(intx, FreqCountInvocations,  1,                                   \
+          "Scaling factor for branch frequencies (deprecated)")             \
+                                                                            \
+  product(intx, AliasLevel,     3,                                          \
+          "0 for no aliasing, 1 for oop/field/static/array split, "         \
+          "2 for class split, 3 for unique instances")                      \
+                                                                            \
+  develop(bool, VerifyAliases, false,                                       \
+          "perform extra checks on the results of alias analysis")          \
 
 C2_FLAGS(DECLARE_DEVELOPER_FLAG, DECLARE_PD_DEVELOPER_FLAG, DECLARE_PRODUCT_FLAG, DECLARE_PD_PRODUCT_FLAG, DECLARE_DIAGNOSTIC_FLAG, DECLARE_EXPERIMENTAL_FLAG, DECLARE_NOTPRODUCT_FLAG)
 
