@@ -32,10 +32,18 @@ class WindowDimensions {
     private Insets insets;
     private boolean isClientSizeSet;
 
+    /**
+     * If isClient is true, the bounds represent the client window area.
+     * Otherwise, they represent the entire window area, with the insets included
+     */
     public WindowDimensions(int x, int y, int width, int height, boolean isClient) {
         this(new Rectangle(x, y, width, height), null, isClient);
     }
 
+    /**
+     * If isClient is true, the bounds represent the client window area.
+     * Otherwise, they represent the entire window area, with the insets included
+     */
     public WindowDimensions(Rectangle rec, Insets ins, boolean isClient) {
         if (rec == null) {
             throw new IllegalArgumentException("Client bounds can't be null");
@@ -46,10 +54,18 @@ class WindowDimensions {
         setInsets(ins);
     }
 
+    /**
+     * If isClient is true, the bounds represent the client window area.
+     * Otherwise, they represent the entire window area, with the insets included
+     */
     public WindowDimensions(Point loc, Dimension size, Insets in, boolean isClient) {
         this(new Rectangle(loc, size), in, isClient);
     }
 
+    /**
+     * If isClient is true, the bounds represent the client window area.
+     * Otherwise, they represent the entire window area, with the insets included
+     */
     public WindowDimensions(Rectangle bounds, boolean isClient) {
         this(bounds, null, isClient);
     }

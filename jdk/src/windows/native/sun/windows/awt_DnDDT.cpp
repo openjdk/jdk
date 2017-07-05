@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,11 +30,8 @@
 #include "awt_Toolkit.h"
 #include "java_awt_dnd_DnDConstants.h"
 #include "sun_awt_windows_WDropTargetContextPeer.h"
-#include "awt_dlls.h"
 #include "awt_Container.h"
 
-#include <stdio.h>
-#include <stdlib.h>
 #include <memory.h>
 #include <shellapi.h>
 
@@ -555,8 +552,7 @@ jobject AwtDropTarget::GetData(jlong fmt) {
             break;
         }
         case TYMED_FILE: {
-            jobject local = JNU_NewStringPlatform(env, (LPCTSTR)
-                                                  stgmedium.lpszFileName);
+            jobject local = JNU_NewStringPlatform(env, stgmedium.lpszFileName);
             jstring fileName = (jstring)env->NewGlobalRef(local);
             env->DeleteLocalRef(local);
 

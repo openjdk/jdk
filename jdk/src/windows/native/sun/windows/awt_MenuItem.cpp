@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  * have any questions.
  */
 
+#include "awt.h"
 #include "awt_MenuItem.h"
 #include "awt_Menu.h"
 #include "awt_MenuBar.h"
@@ -70,7 +71,6 @@ jmethodID AwtMenuItem::getDefaultFontMID;
 LANGID AwtMenuItem::m_idLang = LOWORD(GetKeyboardLayout(0));
 UINT AwtMenuItem::m_CodePage =
     AwtMenuItem::LangToCodePage(AwtMenuItem::m_idLang);
-BOOL AwtMenuItem::m_isWin95 = IS_WIN95;
 BOOL AwtMenuItem::sm_rtl = PRIMARYLANGID(GetInputLanguage()) == LANG_ARABIC ||
                            PRIMARYLANGID(GetInputLanguage()) == LANG_HEBREW;
 BOOL AwtMenuItem::sm_rtlReadingOrder =
@@ -150,7 +150,7 @@ BOOL AwtMenuItem::CheckMenuCreation(JNIEnv *env, jobject self, HMENU hMenu)
         jobject createError = NULL;
         if (dw == ERROR_OUTOFMEMORY)
         {
-            jstring errorMsg = env->NewStringUTF("too many menu handles");
+            jstring errorMsg = JNU_NewStringPlatform(env, L"too many menu handles");
             createError = JNU_NewObjectByName(env, "java/lang/OutOfMemoryError",
                                                    "(Ljava/lang/String;)V",
                                                    errorMsg);
@@ -435,16 +435,7 @@ void AwtMenuItem::DrawItem(DRAWITEMSTRUCT& drawInfo)
     if (drawInfo.itemID != m_Id)
         return;
 
-    /* Fixed bug 4349969. Since the problem occurs on Windows 98 and not on
-       Windows NT, the fix is to check for Windows 95/98 and to check if the
-       handle to the menu of the item to be drawn is the same as the handle to the
-       menu of the menu object. If they're not the same, just return and don't do
-       the drawing.
-    */
-    if ( IS_WIN95 && drawInfo.hwndItem != (HWND)this->m_menuContainer->GetHMenu()) {
-        return;
-    } else
-        DrawSelf(drawInfo);
+    DrawSelf(drawInfo);
 }
 
 void AwtMenuItem::MeasureSelf(HDC hDC, MEASUREITEMSTRUCT& measureInfo)
@@ -802,8 +793,9 @@ BOOL AwtMenuItem::IsSeparator() {
     jobject jitem = GetTarget(env);
     jstring label  =
         (jstring)(env)->GetObjectField(jitem, AwtMenuItem::labelID);
-    LPWSTR labelW = TO_WSTRING(label);
+    LPCWSTR labelW = JNU_GetStringPlatformChars(env, label, NULL);
     BOOL isSeparator = (labelW && (wcscmp(labelW, L"-") == 0));
+    JNU_ReleaseStringPlatformChars(env, label, labelW);
 
     env->DeleteLocalRef(label);
     env->DeleteLocalRef(jitem);

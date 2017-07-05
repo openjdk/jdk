@@ -268,7 +268,7 @@ public class MenuItem extends MenuComponent implements Accessible {
         enabled = true;
         MenuItemPeer peer = (MenuItemPeer)this.peer;
         if (peer != null) {
-            peer.enable();
+            peer.setEnabled(true);
         }
     }
 
@@ -294,7 +294,7 @@ public class MenuItem extends MenuComponent implements Accessible {
         enabled = false;
         MenuItemPeer peer = (MenuItemPeer)this.peer;
         if (peer != null) {
-            peer.disable();
+            peer.setEnabled(false);
         }
     }
 

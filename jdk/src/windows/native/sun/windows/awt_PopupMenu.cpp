@@ -234,11 +234,13 @@ void AwtPopupMenu::Enable(BOOL isEnabled)
         jobject jitem = item->GetTarget(env);
         BOOL bItemEnabled = isEnabled && (jboolean)env->GetBooleanField(jitem,
             AwtMenuItem::enabledID);
-        LPWSTR labelW = TO_WSTRING((jstring)env->GetObjectField(jitem,
-            AwtMenuItem::labelID));
-        if (labelW != NULL && wcscmp(labelW,L"-") != 0) {
+        jstring labelStr = static_cast<jstring>(env->GetObjectField(jitem, AwtMenuItem::labelID));
+        LPCWSTR labelStrW = JNU_GetStringPlatformChars(env, labelStr, NULL);
+        if (labelStrW  && wcscmp(labelStrW, L"-") != 0) {
             item->Enable(bItemEnabled);
         }
+        JNU_ReleaseStringPlatformChars(env, labelStr, labelStrW);
+        env->DeleteLocalRef(labelStr);
         env->DeleteLocalRef(jitem);
     }
     env->DeleteLocalRef(target);
