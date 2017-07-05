@@ -27,7 +27,6 @@ package sun.java2d.xr;
 
 import java.awt.*;
 import java.awt.geom.*;
-
 import sun.awt.SunToolkit;
 import sun.java2d.SunGraphics2D;
 import sun.java2d.loops.*;
@@ -38,6 +37,9 @@ import sun.java2d.pipe.ShapeDrawPipe;
 import sun.java2d.pipe.SpanIterator;
 import sun.java2d.pipe.ShapeSpanIterator;
 import sun.java2d.pipe.LoopPipe;
+
+import static sun.java2d.xr.XRUtils.clampToShort;
+import static sun.java2d.xr.XRUtils.clampToUShort;
 
 /**
  * XRender provides only accalerated rectangles. To emulate higher "order"
@@ -70,17 +72,16 @@ public class XRRenderer implements PixelDrawPipe, PixelFillPipe, ShapeDrawPipe {
 
     public void drawLine(SunGraphics2D sg2d, int x1, int y1, int x2, int y2) {
         Region compClip = sg2d.getCompClip();
-        int transX1 = x1 + sg2d.transX;
-        int transY1 = y1 + sg2d.transY;
-        int transX2 = x2 + sg2d.transX;
-        int transY2 = y2 + sg2d.transY;
+        int transX1 = Region.clipAdd(x1, sg2d.transX);
+        int transY1 = Region.clipAdd(y1, sg2d.transY);
+        int transX2 = Region.clipAdd(x2, sg2d.transX);
+        int transY2 = Region.clipAdd(y2, sg2d.transY);
 
         // Non clipped fast path
         if (compClip.contains(transX1, transY1)
                 && compClip.contains(transX2, transY2)) {
+            SunToolkit.awtLock();
             try {
-                SunToolkit.awtLock();
-
                 validateSurface(sg2d);
                 tileManager.addLine(transX1, transY1, transX2, transY2);
                 tileManager.fillMask((XRSurfaceData) sg2d.surfaceData);
@@ -115,20 +116,40 @@ public class XRRenderer implements PixelDrawPipe, PixelFillPipe, ShapeDrawPipe {
         draw(sg2d, new Polygon(xpoints, ypoints, npoints));
     }
 
-    public synchronized void fillRect(SunGraphics2D sg2d,
-                                      int x, int y, int width, int height) {
+    public void fillRect(SunGraphics2D sg2d, int x, int y, int width, int height) {
+        x = Region.clipAdd(x, sg2d.transX);
+        y = Region.clipAdd(y, sg2d.transY);
+
+        /*
+         * Limit x/y to signed short, width/height to unsigned short,
+         * to match the X11 coordinate limits for rectangles.
+         * Correct width/height in case x/y have been modified by clipping.
+         */
+        if (x > Short.MAX_VALUE || y > Short.MAX_VALUE) {
+            return;
+        }
+
+        int x2 = Region.dimAdd(x, width);
+        int y2 = Region.dimAdd(y, height);
+
+        if (x2 < Short.MIN_VALUE || y2 < Short.MIN_VALUE) {
+            return;
+        }
+
+        x = clampToShort(x);
+        y = clampToShort(y);
+        width = clampToUShort(x2 - x);
+        height = clampToUShort(y2 - y);
+
+        if (width == 0 || height == 0) {
+            return;
+        }
+
         SunToolkit.awtLock();
         try {
             validateSurface(sg2d);
-
-            XRSurfaceData xrsd = (XRSurfaceData) sg2d.surfaceData;
-
-            x += sg2d.transform.getTranslateX();
-            y += sg2d.transform.getTranslateY();
-
             tileManager.addRect(x, y, width, height);
-            tileManager.fillMask(xrsd);
-
+            tileManager.fillMask((XRSurfaceData) sg2d.surfaceData);
         } finally {
             SunToolkit.awtUnlock();
         }

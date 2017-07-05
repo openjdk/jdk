@@ -292,7 +292,7 @@ const char * JvmtiTrace::get_class_name(oop k_mirror) {
   if (k_oop == NULL) {
     return "INVALID";
   }
-  return Klass::cast(k_oop)->external_name();
+  return k_oop->external_name();
 }
 
 #endif /*JVMTI_TRACE */

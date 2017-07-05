@@ -332,4 +332,59 @@ public class MethodData extends Metadata {
   public int currentMileage() {
     return 20000;
   }
+
+  public void dumpReplayData(PrintStream out) {
+    Method method = getMethod();
+    Klass holder = method.getMethodHolder();
+    out.print("ciMethodData " +
+              holder.getName().asString() + " " +
+              OopUtilities.escapeString(method.getName().asString()) + " " +
+              method.getSignature().asString() + " " +
+              "2" + " " +
+              currentMileage());
+    byte[] orig = orig();
+    out.print(" orig " + orig.length);
+    for (int i = 0; i < orig.length; i++) {
+      out.print(" " + (orig[i] & 0xff));
+    }
+
+    long[] data = data();
+    out.print(" data " +  data.length);
+    for (int i = 0; i < data.length; i++) {
+      out.print(" 0x" + Long.toHexString(data[i]));
+    }
+    int count = 0;
+    for (int round = 0; round < 2; round++) {
+      if (round == 1) out.print(" oops " + count);
+      ProfileData pdata = firstData();
+      for ( ; isValid(pdata); pdata = nextData(pdata)) {
+        if (pdata instanceof ReceiverTypeData) {
+          ReceiverTypeData vdata = (ReceiverTypeData)pdata;
+          for (int i = 0; i < vdata.rowLimit(); i++) {
+            Klass k = vdata.receiver(i);
+            if (k != null) {
+              if (round == 0) count++;
+              else out.print(" " +
+                             (dpToDi(vdata.dp() +
+                              vdata.cellOffset(vdata.receiverCellIndex(i))) / cellSize) + " " +
+                             k.getName().asString());
+            }
+          }
+        } else if (pdata instanceof VirtualCallData) {
+          VirtualCallData vdata = (VirtualCallData)pdata;
+          for (int i = 0; i < vdata.rowLimit(); i++) {
+            Klass k = vdata.receiver(i);
+            if (k != null) {
+              if (round == 0) count++;
+              else out.print(" " +
+                             (dpToDi(vdata.dp() +
+                              vdata.cellOffset(vdata.receiverCellIndex(i))) / cellSize) + " " +
+                             k.getName().asString());
+            }
+          }
+        }
+      }
+    }
+    out.println();
+  }
 }

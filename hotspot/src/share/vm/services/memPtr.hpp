@@ -165,7 +165,7 @@ public:
     return (flags & (otArena | tag_size)) == otArena;
   }
 
-  inline static bool is_arena_size_record(MEMFLAGS flags) {
+  inline static bool is_arena_memory_record(MEMFLAGS flags) {
     return (flags & (otArena | tag_size)) == (otArena | tag_size);
   }
 
@@ -256,8 +256,8 @@ public:
   }
 
   // if this record records a size information of an arena
-  inline bool is_arena_size_record() const {
-    return is_arena_size_record(_flags);
+  inline bool is_arena_memory_record() const {
+    return is_arena_memory_record(_flags);
   }
 
   // if this pointer represents an address to an arena object
@@ -266,8 +266,8 @@ public:
   }
 
   // if this record represents a size information of specific arena
-  inline bool is_size_record_of_arena(const MemPointerRecord* arena_rc) {
-    assert(is_arena_size_record(), "not size record");
+  inline bool is_memory_record_of_arena(const MemPointerRecord* arena_rc) {
+    assert(is_arena_memory_record(), "not size record");
     assert(arena_rc->is_arena_record(), "not arena record");
     return (arena_rc->addr() + sizeof(void*)) == addr();
   }

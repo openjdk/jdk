@@ -39,7 +39,7 @@ static GrowableArray<Handle>*  _preserved_oop_stack  = NULL;
 static GrowableArray<markOop>* _preserved_mark_stack = NULL;
 
 static void enable_biased_locking(Klass* k) {
-  Klass::cast(k)->set_prototype_header(markOopDesc::biased_locking_prototype());
+  k->set_prototype_header(markOopDesc::biased_locking_prototype());
 }
 
 class VM_EnableBiasedLocking: public VM_Operation {
@@ -149,7 +149,7 @@ static BiasedLocking::Condition revoke_bias(oop obj, bool allow_rebias, bool is_
     if (TraceBiasedLocking) {
       ResourceMark rm;
       tty->print_cr("  (Skipping revocation of object of type %s because it's no longer biased)",
-                    Klass::cast(obj->klass())->external_name());
+                    obj->klass()->external_name());
     }
     return BiasedLocking::NOT_BIASED;
   }
@@ -161,7 +161,7 @@ static BiasedLocking::Condition revoke_bias(oop obj, bool allow_rebias, bool is_
   if (TraceBiasedLocking && (Verbose || !is_bulk)) {
     ResourceMark rm;
     tty->print_cr("Revoking bias of object " INTPTR_FORMAT " , mark " INTPTR_FORMAT " , type %s , prototype header " INTPTR_FORMAT " , allow rebias %d , requesting thread " INTPTR_FORMAT,
-                  (intptr_t) obj, (intptr_t) mark, Klass::cast(obj->klass())->external_name(), (intptr_t) Klass::cast(obj->klass())->prototype_header(), (allow_rebias ? 1 : 0), (intptr_t) requesting_thread);
+                  (intptr_t) obj, (intptr_t) mark, obj->klass()->external_name(), (intptr_t) obj->klass()->prototype_header(), (allow_rebias ? 1 : 0), (intptr_t) requesting_thread);
   }
 
   JavaThread* biased_thread = mark->biased_locker();
@@ -326,7 +326,7 @@ static BiasedLocking::Condition bulk_revoke_or_rebias_at_safepoint(oop o,
     tty->print_cr("* Beginning bulk revocation (kind == %s) because of object "
                   INTPTR_FORMAT " , mark " INTPTR_FORMAT " , type %s",
                   (bulk_rebias ? "rebias" : "revoke"),
-                  (intptr_t) o, (intptr_t) o->mark(), Klass::cast(o->klass())->external_name());
+                  (intptr_t) o, (intptr_t) o->mark(), o->klass()->external_name());
   }
 
   jlong cur_time = os::javaTimeMillis();
@@ -334,7 +334,7 @@ static BiasedLocking::Condition bulk_revoke_or_rebias_at_safepoint(oop o,
 
 
   Klass* k_o = o->klass();
-  Klass* klass = Klass::cast(k_o);
+  Klass* klass = k_o;
 
   if (bulk_rebias) {
     // Use the epoch in the klass of the object to implicitly revoke
@@ -546,7 +546,7 @@ BiasedLocking::Condition BiasedLocking::revoke_and_rebias(Handle obj, bool attem
       return BIAS_REVOKED;
     }
   } else if (mark->has_bias_pattern()) {
-    Klass* k = Klass::cast(obj->klass());
+    Klass* k = obj->klass();
     markOop prototype_header = k->prototype_header();
     if (!prototype_header->has_bias_pattern()) {
       // This object has a stale bias from before the bulk revocation
@@ -590,7 +590,7 @@ BiasedLocking::Condition BiasedLocking::revoke_and_rebias(Handle obj, bool attem
   if (heuristics == HR_NOT_BIASED) {
     return NOT_BIASED;
   } else if (heuristics == HR_SINGLE_REVOKE) {
-    Klass *k = Klass::cast(obj->klass());
+    Klass *k = obj->klass();
     markOop prototype_header = k->prototype_header();
     if (mark->biased_locker() == THREAD &&
         prototype_header->bias_epoch() == mark->bias_epoch()) {

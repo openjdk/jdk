@@ -63,6 +63,11 @@ const char* ciSymbol::as_utf8() {
   return s->as_utf8();
 }
 
+// The text of the symbol as a null-terminated C string.
+const char* ciSymbol::as_quoted_ascii() {
+  GUARDED_VM_QUICK_ENTRY(return get_symbol()->as_quoted_ascii();)
+}
+
 // ------------------------------------------------------------------
 // ciSymbol::base
 const jbyte* ciSymbol::base() {

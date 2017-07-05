@@ -334,7 +334,7 @@ bool Parse::can_not_compile_call_site(ciMethod *dest_method, ciInstanceKlass* kl
     return true;
   }
 
-  assert(dest_method->will_link(method()->holder(), klass, bc()), "dest_method: typeflow responsibility");
+  assert(dest_method->is_loaded(), "dest_method: typeflow responsibility");
   return false;
 }
 

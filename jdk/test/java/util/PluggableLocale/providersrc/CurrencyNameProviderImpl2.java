@@ -32,7 +32,8 @@ import java.util.spi.*;
 import com.foobar.Utils;
 
 public class CurrencyNameProviderImpl2 extends CurrencyNameProvider {
-    static Locale[] avail = {new Locale("ja", "JP", "tokyo")};
+    static Locale[] avail = {new Locale("ja", "JP", "tokyo"),
+                             new Locale("ja", "JP", "osaka"), };
     public Locale[] getAvailableLocales() {
         return avail;
     }
@@ -43,8 +44,12 @@ public class CurrencyNameProviderImpl2 extends CurrencyNameProvider {
             throw new IllegalArgumentException("locale is not supported: "+locale);
         }
 
-        if (c.equals("JPY") && Utils.supportsLocale(avail[0], locale)) {
-            return "JPY-tokyo";
+        if (c.equals("JPY")) {
+            if (Utils.supportsLocale(avail[0], locale)) {
+                return "JPY-tokyo";
+            } else if (Utils.supportsLocale(avail[1], locale)) {
+                return "JPY-osaka";
+            }
         }
         return null;
     }
@@ -55,8 +60,12 @@ public class CurrencyNameProviderImpl2 extends CurrencyNameProvider {
             throw new IllegalArgumentException("locale is not supported: "+locale);
         }
 
-        if (c.equals("JPY") && Utils.supportsLocale(avail[0], locale)) {
-            return "JPY-tokyo";
+        if (c.equals("JPY")) {
+            if (Utils.supportsLocale(avail[0], locale)) {
+                return "JPY-tokyo";
+            } else if (Utils.supportsLocale(avail[1], locale)) {
+                return "JPY-osaka";
+            }
         }
         return null;
     }
