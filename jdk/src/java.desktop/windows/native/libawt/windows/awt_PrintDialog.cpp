@@ -248,6 +248,11 @@ Java_sun_awt_windows_WPrintDialogPeer__1show(JNIEnv *env, jobject peer)
       pd.lpfnPrintHook = (LPPRINTHOOKPROC)PrintDialogHookProc;
       pd.lpfnSetupHook = (LPSETUPHOOKPROC)PrintDialogHookProc;
       pd.Flags |= PD_ENABLESETUPHOOK | PD_ENABLEPRINTHOOK;
+      HWND parent = AwtPrintControl::getParentID(env, control);
+      if (parent != NULL && ::IsWindow(parent)) {
+          // Windows native modality is requested (used by JavaFX).
+          pd.hwndOwner = parent;
+      }
       /*
           Fix for 6488834.
           To disable Win32 native parent modality we have to set
@@ -255,7 +260,7 @@ Java_sun_awt_windows_WPrintDialogPeer__1show(JNIEnv *env, jobject peer)
           parentless dialogs we use NULL to show them in the taskbar,
           and for all other dialogs AwtToolkit's HWND is used.
       */
-      if (awtParent != NULL)
+      else if (awtParent != NULL)
       {
           pd.hwndOwner = AwtToolkit::GetInstance().GetHWnd();
       }

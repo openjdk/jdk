@@ -22,17 +22,16 @@
  */
 
 /**
- *  @test
- *  @bug 6230699
- *  @summary Test ThreadReference.ownedMonitorsAndFrames()
- *  @bug 6701700
- *  @summary MonitorInfo objects aren't invalidated when the owning thread is resumed
- *  @author Swamy Venkataramanappa
+ * @test
+ * @bug 6230699
+ * @summary Test ThreadReference.ownedMonitorsAndFrames()
+ * @bug 6701700
+ * @summary MonitorInfo objects aren't invalidated when the owning thread is resumed
+ * @author Swamy Venkataramanappa
  *
- *  @modules jdk.jdi
- *  @run build TestScaffold VMConnection TargetListener TargetAdapter
- *  @run compile -g MonitorFrameInfo.java
- *  @run driver MonitorFrameInfo
+ * @run build TestScaffold VMConnection TargetListener TargetAdapter
+ * @run compile -g MonitorFrameInfo.java
+ * @run driver MonitorFrameInfo
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

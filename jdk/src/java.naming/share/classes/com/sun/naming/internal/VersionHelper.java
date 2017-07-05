@@ -176,7 +176,7 @@ public final class VersionHelper {
     InputStream getResourceAsStream(Class<?> c, String name) {
         PrivilegedAction<InputStream> act = () -> {
             try {
-                java.lang.reflect.Module m = c.getModule();
+                Module m = c.getModule();
                 return c.getModule().getResourceAsStream(resolveName(c,name));
              } catch (IOException x) {
                  return null;
