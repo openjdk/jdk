@@ -114,8 +114,12 @@ VARIANT_TEXT=Tiered
 # Define HOTSPOT_VM_DISTRO based on settings in make/openjdk_distro
 # or make/hotspot_distro.
 !ifndef HOTSPOT_VM_DISTRO
+!ifndef OPENJDK
 !if exists($(WorkSpace)\src\closed)
 !include $(WorkSpace)\make\hotspot_distro
+!else
+!include $(WorkSpace)\make\openjdk_distro
+!endif
 !else
 !include $(WorkSpace)\make\openjdk_distro
 !endif

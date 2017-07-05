@@ -136,7 +136,7 @@ void PLABStats::log_sizing(size_t calculated_words, size_t net_desired_words) {
 
 // Calculates plab size for current number of gc worker threads.
 size_t PLABStats::desired_plab_sz(uint no_of_gc_workers) {
-  return MAX2(min_size(), (size_t)align_object_size(_desired_net_plab_sz / no_of_gc_workers));
+  return (size_t)align_object_size(MIN2(MAX2(min_size(), _desired_net_plab_sz / no_of_gc_workers), max_size()));
 }
 
 // Compute desired plab size for one gc worker thread and latch result for later
@@ -175,14 +175,9 @@ void PLABStats::adjust_desired_plab_sz() {
   size_t recent_plab_sz = used / target_refills;
   // Take historical weighted average
   _filter.sample(recent_plab_sz);
-  // Clip from above and below, and align to object boundary
-  size_t new_plab_sz = MAX2(min_size(), (size_t)_filter.average());
-  new_plab_sz = MIN2(max_size(), new_plab_sz);
-  new_plab_sz = align_object_size(new_plab_sz);
-  // Latch the result
-  _desired_net_plab_sz = new_plab_sz;
+  _desired_net_plab_sz = MAX2(min_size(), (size_t)_filter.average());
 
-  log_sizing(recent_plab_sz, new_plab_sz);
+  log_sizing(recent_plab_sz, _desired_net_plab_sz);
 
   reset();
 }

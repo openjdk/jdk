@@ -84,9 +84,7 @@ void SpaceMangler::mangle_unused_area_complete() {
 void SpaceMangler::mangle_region(MemRegion mr) {
   assert(ZapUnusedHeapArea, "Mangling should not be in use");
 #ifdef ASSERT
-  log_develop_trace(gc)("Mangling [" PTR_FORMAT " to " PTR_FORMAT ")", p2i(mr.start()), p2i(mr.end()));
   Copy::fill_to_words(mr.start(), mr.word_size(), badHeapWord);
-  log_develop_trace(gc)("Mangling done.");
 #endif
 }
 

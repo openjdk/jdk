@@ -37,7 +37,7 @@ import java.util.Objects;
 
 import jdk.internal.misc.SharedSecrets;
 import jdk.internal.misc.JavaLangAccess;
-import sun.reflect.ReflectionFactory;
+import jdk.internal.reflect.ReflectionFactory;
 
 public final class AnnotationSupport {
     private static final JavaLangAccess LANG_ACCESS = SharedSecrets.getJavaLangAccess();
