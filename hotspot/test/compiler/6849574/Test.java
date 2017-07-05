@@ -1,5 +1,5 @@
 /*
- * Copyright 2001 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,39 +22,23 @@
  *
  */
 
-package sun.jvm.hotspot.code;
+/**
+ * @test
+ * @bug 6849574
+ * @summary VM crash using NonBlockingHashMap (high_scale_lib)
+ *
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+VerifyBeforeGC Test
+ */
 
-import java.io.*;
+import java.util.concurrent.atomic.*;
 
-public class MonitorValue {
-  private ScopeValue owner;
-  private Location   basicLock;
-  private boolean    eliminated;
+public class Test extends Thread {
 
-  // FIXME: not useful yet
-  //  MonitorValue(ScopeValue* owner, Location basic_lock);
-
-  public MonitorValue(DebugInfoReadStream stream) {
-    basicLock = new Location(stream);
-    owner     = ScopeValue.readFrom(stream);
-    eliminated= stream.readBoolean();
-  }
-
-  public ScopeValue owner()     { return owner; }
-  public Location   basicLock() { return basicLock; }
-  public boolean   eliminated() { return eliminated; }
-
-  // FIXME: not yet implementable
-  //  void write_on(DebugInfoWriteStream* stream);
-
-  public void printOn(PrintStream tty) {
-    tty.print("monitor{");
-    owner().printOn(tty);
-    tty.print(",");
-    basicLock().printOn(tty);
-    tty.print("}");
-    if (eliminated) {
-      tty.print(" (eliminated)");
+    public static void main(String[] args) {
+        AtomicReferenceArray a = new AtomicReferenceArray(10000);
+        for (int i = 0; i < 100000; i++) {
+            a.getAndSet(9999, new Object());
+            if (i > 99990) System.gc();
+        }
     }
-  }
 }
