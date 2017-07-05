@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2012, 2012 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,18 @@
  * questions.
  */
 
+/*
+ * @test
+ * @bug 5030265
+ * @compile  -XDignore.symbol.file UnicodeTest.java
+ * @run main/othervm UnicodeTest
+ * @summary Verify that the J2RE can handle all legal Unicode characters
+ *          in class names unless limited by the file system encoding
+ *          or the encoding used for command line arguments.
+ * @author Norbert Lindenberg, ksrini
+ */
 
 /*
- *
- *
- * Used by UnicodeTest.sh.
- *
  * This class creates Java source files using Unicode characters
  * that test the limits of what's possible
  * - in situations where the platform encoding imposes limits
@@ -35,38 +41,126 @@
  *   (file system access in UTF-8 locales and on Windows 2000++,
  *    jar file contents)
  *
- * @author Norbert Lindenberg
+ * This test needs to be run in othervm as the locale is reset.
  */
 
-
-
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
 import java.nio.charset.Charset;
 import java.util.Locale;
 
-public class UnicodeTest {
+public class UnicodeTest extends TestHelper {
+    static final File UnicodeTestSrc        = new File("UnicodeTest-src");
+    static final File UnicodeTestClasses    = new File("UnicodeTest-classes");
+    static final String UnicodeTestJarName  = "UnicodeTest" + JAR_FILE_EXT;
+    static final File UnicodeTestJar        = new File(UnicodeTestJarName);
+    static final File SolarisUnicodeTestJar = new File(TEST_SOURCES_DIR,
+                                                       UnicodeTestJarName);
 
-    public static void main(String[] args) throws Exception {
+    /*
+     * the main method is a port of the shell based test to a java, this
+     * eliminates the need for MKS on windows, thus we can rely on consistent
+     * results regardless of the shell being used.
+     */
+    public static void main(String... args) throws Exception {
+        System.out.println("creating test source files");
+        UnicodeTestSrc.mkdirs();
+        UnicodeTestClasses.mkdirs();
+        String classname = generateSources();
+        File javaFile = new File(UnicodeTestSrc, classname + JAVA_FILE_EXT);
+        System.out.println("building test apps");
+        compile("-encoding", "UTF-8",
+                "-sourcepath", UnicodeTestSrc.getAbsolutePath(),
+                "-d", UnicodeTestClasses.getAbsolutePath(),
+                javaFile.getAbsolutePath());
 
+        createJar("-cvfm", UnicodeTestJar.getAbsolutePath(),
+                  new File(UnicodeTestSrc, "MANIFEST.MF").getAbsolutePath(),
+                  "-C", UnicodeTestClasses.getAbsolutePath(), ".");
+
+        if (!UnicodeTestJar.exists()) {
+            throw new Error("failed to create " + UnicodeTestJar.getAbsolutePath());
+        }
+
+        System.out.println("running test app using class file");
+        TestResult tr = doExec(javaCmd,
+                        "-cp", UnicodeTestClasses.getAbsolutePath(), classname);
+        if (!tr.isOK()) {
+            System.out.println(tr);
+            throw new RuntimeException("test fails");
+        }
+
+        System.out.println("delete generated files with non-ASCII names");
+        recursiveDelete(UnicodeTestSrc);
+        recursiveDelete(UnicodeTestClasses);
+
+        /*
+         * test in whatever the default locale is
+         */
+        runJarTests();
+
+        /*
+         * if the Japanese locale is available, test in that locale as well
+         */
+        if (setLocale(Locale.JAPANESE)) {
+            runJarTests();
+        }
+
+       /*
+        * if we can switch to a C locale, then test whether jar files with
+        * non-ASCII characters in the manifest still work in this crippled
+        * environment
+        */
+        if (setLocale(Locale.ENGLISH)) {
+            runJarTests();
+        }
+        // thats it we are outta here
+    }
+
+    static void runJarTests() {
+        System.out.println("running test app using newly built jar file in " +
+                Locale.getDefault());
+        runTest(UnicodeTestJar);
+
+        System.out.println("running test app using jar file " +
+                "(built with Solaris UTF-8 locale) in " + Locale.getDefault());
+        runTest(SolarisUnicodeTestJar);
+    }
+
+    static void runTest(File testJar) {
+        TestResult tr = doExec(javaCmd, "-jar", testJar.getAbsolutePath());
+        if (!tr.isOK()) {
+            System.out.println(tr);
+            throw new RuntimeException("test fails");
+        }
+    }
+
+    static boolean setLocale(Locale desired) {
+        if (Locale.getDefault().equals(desired)) {
+            return true;  // already set nothing more
+        }
+        for (Locale l : Locale.getAvailableLocales()) {
+            if (l == desired) {
+                Locale.setDefault(l);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    static String generateSources() throws Exception {
         String commandLineClassNameSuffix = commandLineClassNameSuffix();
         String commandLineClassName = "ClassA" + commandLineClassNameSuffix;
-        String manifestClassName;
-        if (hasUnicodeFileSystem()) {
-            manifestClassName = "ClassB" + unicode;
-        } else {
-            manifestClassName = "ClassB" + commandLineClassNameSuffix;
-        }
+        String manifestClassName = "ClassB" +
+                (hasUnicodeFileSystem() ? unicode : commandLineClassNameSuffix);
 
         generateSource(commandLineClassName, manifestClassName);
         generateSource(manifestClassName, commandLineClassName);
         generateManifest(manifestClassName);
-
-        System.out.println(commandLineClassName);
+        return commandLineClassName;
     }
 
-    private static final String fileSeparator = System.getProperty("file.separator");
-    private static final String osName = System.getProperty("os.name");
     private static final String defaultEncoding = Charset.defaultCharset().name();
 
     // language names taken from java.util.Locale.getDisplayLanguage for the respective language
@@ -132,12 +226,7 @@ public class UnicodeTest {
             { "tis-620",        thai,           null            },
         };
 
-        int column;
-        if (osName.startsWith("Windows")) {
-            column = 2;
-        } else {
-            column = 1;
-        }
+        int column = isWindows ? 2 : 1;
         for (int i = 0; i < names.length; i++) {
              if (names[i][0].equalsIgnoreCase(defaultEncoding)) {
                  return names[i][column];
@@ -147,17 +236,12 @@ public class UnicodeTest {
     }
 
     private static boolean hasUnicodeFileSystem() {
-        if (osName.startsWith("Windows")) {
-            return ! osName.startsWith("Windows 9") &&
-                   ! osName.equals("Windows Me");
-        } else {
-            return defaultEncoding.equalsIgnoreCase("UTF-8");
-        }
+        return (isWindows) ? true : defaultEncoding.equalsIgnoreCase("UTF-8");
     }
 
     private static void generateSource(String thisClass, String otherClass) throws Exception {
-        String fileName = "UnicodeTest-src" + fileSeparator + thisClass + ".java";
-        OutputStreamWriter out = new OutputStreamWriter(new FileOutputStream(fileName), "UTF-8");
+        File file = new File(UnicodeTestSrc, thisClass + JAVA_FILE_EXT);
+        OutputStreamWriter out = new OutputStreamWriter(new FileOutputStream(file), "UTF-8");
         out.write("public class " + thisClass + " {\n");
         out.write("    public static void main(String[] args) {\n");
         out.write("        if (!" + otherClass + "." + otherClass.toLowerCase() + "().equals(\"" + otherClass + "\")) {\n");
@@ -172,8 +256,8 @@ public class UnicodeTest {
     }
 
     private static void generateManifest(String mainClass) throws Exception {
-        String fileName = "UnicodeTest-src" + fileSeparator + "MANIFEST.MF";
-        FileOutputStream out = new FileOutputStream(fileName);
+        File file = new File(UnicodeTestSrc, "MANIFEST.MF");
+        FileOutputStream out = new FileOutputStream(file);
         out.write("Manifest-Version: 1.0\n".getBytes("UTF-8"));
         // Header lines are limited to 72 bytes.
         // The manifest spec doesn't say we have to break at character boundaries,

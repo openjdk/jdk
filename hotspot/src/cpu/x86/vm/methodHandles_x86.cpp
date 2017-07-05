@@ -2364,23 +2364,19 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
 
       // grab another temp
       Register rsi_temp = rsi;
-      { if (rsi_temp == saved_last_sp)  __ push(saved_last_sp); }
-      // (preceding push must be done after argslot address is taken!)
-#define UNPUSH_RSI \
-      { if (rsi_temp == saved_last_sp)  __ pop(saved_last_sp); }
 
       // arx_argslot points both to the array and to the first output arg
       vmarg = Address(rax_argslot, 0);
 
       // Get the array value.
-      Register  rsi_array       = rsi_temp;
+      Register  rdi_array       = rdi_temp;
       Register  rdx_array_klass = rdx_temp;
       BasicType elem_type = ek_adapter_opt_spread_type(ek);
       int       elem_slots = type2size[elem_type];  // 1 or 2
       int       array_slots = 1;  // array is always a T_OBJECT
       int       length_offset   = arrayOopDesc::length_offset_in_bytes();
       int       elem0_offset    = arrayOopDesc::base_offset_in_bytes(elem_type);
-      __ movptr(rsi_array, vmarg);
+      __ movptr(rdi_array, vmarg);
 
       Label L_array_is_empty, L_insert_arg_space, L_copy_args, L_args_done;
       if (length_can_be_zero) {
@@ -2391,12 +2387,30 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
           __ testl(rbx_temp, rbx_temp);
           __ jcc(Assembler::notZero, L_skip);
         }
-        __ testptr(rsi_array, rsi_array);
-        __ jcc(Assembler::zero, L_array_is_empty);
+        __ testptr(rdi_array, rdi_array);
+        __ jcc(Assembler::notZero, L_skip);
+
+        // If 'rsi' contains the 'saved_last_sp' (this is only the
+        // case in a 32-bit version of the VM) we have to save 'rsi'
+        // on the stack because later on (at 'L_array_is_empty') 'rsi'
+        // will be overwritten.
+        { if (rsi_temp == saved_last_sp)  __ push(saved_last_sp); }
+        // Also prepare a handy macro which restores 'rsi' if required.
+#define UNPUSH_RSI                                                      \
+        { if (rsi_temp == saved_last_sp)  __ pop(saved_last_sp); }
+
+        __ jmp(L_array_is_empty);
         __ bind(L_skip);
       }
-      __ null_check(rsi_array, oopDesc::klass_offset_in_bytes());
-      __ load_klass(rdx_array_klass, rsi_array);
+      __ null_check(rdi_array, oopDesc::klass_offset_in_bytes());
+      __ load_klass(rdx_array_klass, rdi_array);
+
+      // Save 'rsi' if required (see comment above).  Do this only
+      // after the null check such that the exception handler which is
+      // called in the case of a null pointer exception will not be
+      // confused by the extra value on the stack (it expects the
+      // return pointer on top of the stack)
+      { if (rsi_temp == saved_last_sp)  __ push(saved_last_sp); }
 
       // Check the array type.
       Register rbx_klass = rbx_temp;
@@ -2404,18 +2418,18 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
       load_klass_from_Class(_masm, rbx_klass);
 
       Label ok_array_klass, bad_array_klass, bad_array_length;
-      __ check_klass_subtype(rdx_array_klass, rbx_klass, rdi_temp, ok_array_klass);
+      __ check_klass_subtype(rdx_array_klass, rbx_klass, rsi_temp, ok_array_klass);
       // If we get here, the type check failed!
       __ jmp(bad_array_klass);
       __ BIND(ok_array_klass);
 
       // Check length.
       if (length_constant >= 0) {
-        __ cmpl(Address(rsi_array, length_offset), length_constant);
+        __ cmpl(Address(rdi_array, length_offset), length_constant);
       } else {
         Register rbx_vminfo = rbx_temp;
         load_conversion_vminfo(_masm, rbx_vminfo, rcx_amh_conversion);
-        __ cmpl(rbx_vminfo, Address(rsi_array, length_offset));
+        __ cmpl(rbx_vminfo, Address(rdi_array, length_offset));
       }
       __ jcc(Assembler::notEqual, bad_array_length);
 
@@ -2427,9 +2441,9 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
         __ lea(rdx_argslot_limit, Address(rax_argslot, Interpreter::stackElementSize));
         // 'stack_move' is negative number of words to insert
         // This number already accounts for elem_slots.
-        Register rdi_stack_move = rdi_temp;
-        load_stack_move(_masm, rdi_stack_move, rcx_recv, true);
-        __ cmpptr(rdi_stack_move, 0);
+        Register rsi_stack_move = rsi_temp;
+        load_stack_move(_masm, rsi_stack_move, rcx_recv, true);
+        __ cmpptr(rsi_stack_move, 0);
         assert(stack_move_unit() < 0, "else change this comparison");
         __ jcc(Assembler::less, L_insert_arg_space);
         __ jcc(Assembler::equal, L_copy_args);
@@ -2440,12 +2454,12 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
         __ jmp(L_args_done);  // no spreading to do
         __ BIND(L_insert_arg_space);
         // come here in the usual case, stack_move < 0 (2 or more spread arguments)
-        Register rsi_temp = rsi_array;  // spill this
-        insert_arg_slots(_masm, rdi_stack_move,
-                         rax_argslot, rbx_temp, rsi_temp);
+        Register rdi_temp = rdi_array;  // spill this
+        insert_arg_slots(_masm, rsi_stack_move,
+                         rax_argslot, rbx_temp, rdi_temp);
         // reload the array since rsi was killed
         // reload from rdx_argslot_limit since rax_argslot is now decremented
-        __ movptr(rsi_array, Address(rdx_argslot_limit, -Interpreter::stackElementSize));
+        __ movptr(rdi_array, Address(rdx_argslot_limit, -Interpreter::stackElementSize));
       } else if (length_constant >= 1) {
         int new_slots = (length_constant * elem_slots) - array_slots;
         insert_arg_slots(_masm, new_slots * stack_move_unit(),
@@ -2468,16 +2482,16 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
       if (length_constant == -1) {
         // [rax_argslot, rdx_argslot_limit) is the area we are inserting into.
         // Array element [0] goes at rdx_argslot_limit[-wordSize].
-        Register rsi_source = rsi_array;
-        __ lea(rsi_source, Address(rsi_array, elem0_offset));
+        Register rdi_source = rdi_array;
+        __ lea(rdi_source, Address(rdi_array, elem0_offset));
         Register rdx_fill_ptr = rdx_argslot_limit;
         Label loop;
         __ BIND(loop);
         __ addptr(rdx_fill_ptr, -Interpreter::stackElementSize * elem_slots);
         move_typed_arg(_masm, elem_type, true,
-                       Address(rdx_fill_ptr, 0), Address(rsi_source, 0),
-                       rbx_temp, rdi_temp);
-        __ addptr(rsi_source, type2aelembytes(elem_type));
+                       Address(rdx_fill_ptr, 0), Address(rdi_source, 0),
+                       rbx_temp, rsi_temp);
+        __ addptr(rdi_source, type2aelembytes(elem_type));
         __ cmpptr(rdx_fill_ptr, rax_argslot);
         __ jcc(Assembler::above, loop);
       } else if (length_constant == 0) {
@@ -2488,8 +2502,8 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
         for (int index = 0; index < length_constant; index++) {
           slot_offset -= Interpreter::stackElementSize * elem_slots;  // fill backward
           move_typed_arg(_masm, elem_type, true,
-                         Address(rax_argslot, slot_offset), Address(rsi_array, elem_offset),
-                         rbx_temp, rdi_temp);
+                         Address(rax_argslot, slot_offset), Address(rdi_array, elem_offset),
+                         rbx_temp, rsi_temp);
           elem_offset += type2aelembytes(elem_type);
         }
       }
