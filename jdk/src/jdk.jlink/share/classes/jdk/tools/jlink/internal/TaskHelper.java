@@ -718,13 +718,13 @@ public final class TaskHelper {
     static Layer createPluginsLayer(List<Path> paths) {
 
         Path[] dirs = paths.toArray(new Path[0]);
-        ModuleFinder finder = new ModulePath(Runtime.version(), true, dirs);
+        ModuleFinder finder = ModulePath.of(Runtime.version(), true, dirs);
         Configuration bootConfiguration = Layer.boot().configuration();
         try {
             Configuration cf = bootConfiguration
-                .resolveRequiresAndUses(ModuleFinder.of(),
-                                        finder,
-                                        Collections.emptySet());
+                .resolveAndBind(ModuleFinder.of(),
+                                finder,
+                                Collections.emptySet());
             ClassLoader scl = ClassLoader.getSystemClassLoader();
             return Layer.boot().defineModulesWithOneLoader(cf, scl);
         } catch (Exception ex) {
