@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -170,6 +170,19 @@ abstract class IntPipeline<E_IN>
         return Nodes.intBuilder(exactSizeIfKnown);
     }
 
+    private <U> Stream<U> mapToObj(IntFunction<? extends U> mapper, int opFlags) {
+        return new ReferencePipeline.StatelessOp<Integer, U>(this, StreamShape.INT_VALUE, opFlags) {
+            @Override
+            Sink<Integer> opWrapSink(int flags, Sink<U> sink) {
+                return new Sink.ChainedInt<U>(sink) {
+                    @Override
+                    public void accept(int t) {
+                        downstream.accept(mapper.apply(t));
+                    }
+                };
+            }
+        };
+    }
 
     // IntStream
 
@@ -187,8 +200,7 @@ abstract class IntPipeline<E_IN>
 
     @Override
     public final LongStream asLongStream() {
-        return new LongPipeline.StatelessOp<Integer>(this, StreamShape.INT_VALUE,
-                                                     StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT) {
+        return new LongPipeline.StatelessOp<Integer>(this, StreamShape.INT_VALUE, 0) {
             @Override
             Sink<Integer> opWrapSink(int flags, Sink<Long> sink) {
                 return new Sink.ChainedInt<Long>(sink) {
@@ -203,8 +215,7 @@ abstract class IntPipeline<E_IN>
 
     @Override
     public final DoubleStream asDoubleStream() {
-        return new DoublePipeline.StatelessOp<Integer>(this, StreamShape.INT_VALUE,
-                                                       StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT) {
+        return new DoublePipeline.StatelessOp<Integer>(this, StreamShape.INT_VALUE, 0) {
             @Override
             Sink<Integer> opWrapSink(int flags, Sink<Double> sink) {
                 return new Sink.ChainedInt<Double>(sink) {
@@ -219,7 +230,7 @@ abstract class IntPipeline<E_IN>
 
     @Override
     public final Stream<Integer> boxed() {
-        return mapToObj(Integer::valueOf);
+        return mapToObj(Integer::valueOf, 0);
     }
 
     @Override
@@ -242,18 +253,7 @@ abstract class IntPipeline<E_IN>
     @Override
     public final <U> Stream<U> mapToObj(IntFunction<? extends U> mapper) {
         Objects.requireNonNull(mapper);
-        return new ReferencePipeline.StatelessOp<Integer, U>(this, StreamShape.INT_VALUE,
-                                                             StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT) {
-            @Override
-            Sink<Integer> opWrapSink(int flags, Sink<U> sink) {
-                return new Sink.ChainedInt<U>(sink) {
-                    @Override
-                    public void accept(int t) {
-                        downstream.accept(mapper.apply(t));
-                    }
-                };
-            }
-        };
+        return mapToObj(mapper, StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT);
     }
 
     @Override

@@ -21,6 +21,7 @@
  * questions.
  */
 
+import org.jtregext.GuiTestListener;
 import com.sun.swingset3.demos.combobox.ComboBoxDemo;
 import static org.testng.AssertJUnit.*;
 import org.testng.annotations.Test;
@@ -28,7 +29,7 @@ import org.netbeans.jemmy.ClassReference;
 import org.netbeans.jemmy.operators.JComboBoxOperator;
 import org.netbeans.jemmy.operators.JFrameOperator;
 import static com.sun.swingset3.demos.combobox.ComboBoxDemo.*;
-import static org.jemmy2ext.JemmyExt.captureDebugInfoOnFail;
+import org.testng.annotations.Listeners;
 
 /*
  * @test
@@ -37,12 +38,13 @@ import static org.jemmy2ext.JemmyExt.captureDebugInfoOnFail;
  *          each value of each ComboBox.
  *
  * @library /sanity/client/lib/jemmy/src
- * @library /sanity/client/lib/Jemmy2Ext/src
+ * @library /sanity/client/lib/Extensions/src
  * @library /sanity/client/lib/SwingSet3/src
  * @build org.jemmy2ext.JemmyExt
  * @build com.sun.swingset3.demos.combobox.ComboBoxDemo
  * @run testng ComboBoxDemoTest
  */
+@Listeners(GuiTestListener.class)
 public class ComboBoxDemoTest {
 
     private static enum ComboBoxInfo {
@@ -61,14 +63,13 @@ public class ComboBoxDemoTest {
 
     @Test
     public void test() throws Exception {
-        captureDebugInfoOnFail(() -> {
-            new ClassReference(ComboBoxDemo.class.getCanonicalName()).startApplication();
 
-            JFrameOperator frame = new JFrameOperator(DEMO_TITLE);
-            for (ComboBoxInfo comboBoxInfo : ComboBoxInfo.values()) {
-                comboBoxChecker(frame, comboBoxInfo);
-            }
-        });
+        new ClassReference(ComboBoxDemo.class.getCanonicalName()).startApplication();
+
+        JFrameOperator frame = new JFrameOperator(DEMO_TITLE);
+        for (ComboBoxInfo comboBoxInfo : ComboBoxInfo.values()) {
+            comboBoxChecker(frame, comboBoxInfo);
+        }
     }
 
     private void comboBoxChecker(JFrameOperator jfo, ComboBoxInfo comboBoxInfo) {

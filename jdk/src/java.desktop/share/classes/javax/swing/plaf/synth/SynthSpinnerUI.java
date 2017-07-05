@@ -131,7 +131,6 @@ public class SynthSpinnerUI extends BasicSpinnerUI
                 installKeyboardActions();
             }
         }
-        context.dispose();
     }
 
 
@@ -151,7 +150,6 @@ public class SynthSpinnerUI extends BasicSpinnerUI
         SynthContext context = getContext(spinner, ENABLED);
 
         style.uninstallDefaults(context);
-        context.dispose();
         style = null;
     }
 
@@ -301,7 +299,6 @@ public class SynthSpinnerUI extends BasicSpinnerUI
         context.getPainter().paintSpinnerBackground(context,
                           g, 0, 0, c.getWidth(), c.getHeight());
         paint(context, g);
-        context.dispose();
     }
 
 
@@ -319,7 +316,6 @@ public class SynthSpinnerUI extends BasicSpinnerUI
         SynthContext context = getContext(c);
 
         paint(context, g);
-        context.dispose();
     }
 
     /**

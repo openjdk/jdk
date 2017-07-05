@@ -124,13 +124,11 @@ public class SynthMenuItemUI extends BasicMenuItemUI implements
                 installKeyboardActions();
             }
         }
-        context.dispose();
 
         SynthContext accContext = getContext(mi, Region.MENU_ITEM_ACCELERATOR,
                                              ENABLED);
 
         accStyle = SynthLookAndFeel.updateStyle(accContext, this);
-        accContext.dispose();
     }
 
     /**
@@ -140,13 +138,11 @@ public class SynthMenuItemUI extends BasicMenuItemUI implements
     protected void uninstallDefaults() {
         SynthContext context = getContext(menuItem, ENABLED);
         style.uninstallDefaults(context);
-        context.dispose();
         style = null;
 
         SynthContext accContext = getContext(menuItem,
                                      Region.MENU_ITEM_ACCELERATOR, ENABLED);
         accStyle.uninstallDefaults(accContext);
-        accContext.dispose();
         accStyle = null;
 
         super.uninstallDefaults();
@@ -218,8 +214,6 @@ public class SynthMenuItemUI extends BasicMenuItemUI implements
                 defaultTextIconGap, acceleratorDelimiter,
                 MenuItemLayoutHelper.useCheckAndArrow(menuItem),
                 getPropertyPrefix());
-        context.dispose();
-        accContext.dispose();
         return value;
     }
 
@@ -243,7 +237,6 @@ public class SynthMenuItemUI extends BasicMenuItemUI implements
         SynthLookAndFeel.update(context, g);
         paintBackground(context, g, c);
         paint(context, g);
-        context.dispose();
     }
 
     /**
@@ -260,7 +253,6 @@ public class SynthMenuItemUI extends BasicMenuItemUI implements
         SynthContext context = getContext(c);
 
         paint(context, g);
-        context.dispose();
     }
 
     /**
@@ -280,7 +272,6 @@ public class SynthMenuItemUI extends BasicMenuItemUI implements
         Icon arrowIcon = style.getIcon(context, prefix + ".arrowIcon");
         SynthGraphicsUtils.paint(context, accContext, g, checkIcon, arrowIcon,
               acceleratorDelimiter, defaultTextIconGap, getPropertyPrefix());
-        accContext.dispose();
     }
 
     void paintBackground(SynthContext context, Graphics g, JComponent c) {

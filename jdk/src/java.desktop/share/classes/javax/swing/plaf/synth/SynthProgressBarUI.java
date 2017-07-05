@@ -118,7 +118,6 @@ public class SynthProgressBarUI extends BasicProgressBarUI
         }
         minBarSize = (Dimension)style.get(context, "ProgressBar.minBarSize");
         glowWidth = style.getInt(context, "ProgressBar.glowWidth", 0);
-        context.dispose();
     }
 
     /**
@@ -129,7 +128,6 @@ public class SynthProgressBarUI extends BasicProgressBarUI
         SynthContext context = getContext(progressBar, ENABLED);
 
         style.uninstallDefaults(context);
-        context.dispose();
         style = null;
     }
 
@@ -160,7 +158,6 @@ public class SynthProgressBarUI extends BasicProgressBarUI
             SynthContext context = getContext(c);
             Font font = context.getStyle().getFont(context);
             FontMetrics metrics = progressBar.getFontMetrics(font);
-            context.dispose();
             return (height - metrics.getAscent() - metrics.getDescent()) / 2 +
                     metrics.getAscent();
         }
@@ -216,7 +213,6 @@ public class SynthProgressBarUI extends BasicProgressBarUI
                           g, 0, 0, c.getWidth(), c.getHeight(),
                           progressBar.getOrientation());
         paint(context, g);
-        context.dispose();
     }
 
     /**
@@ -233,7 +229,6 @@ public class SynthProgressBarUI extends BasicProgressBarUI
         SynthContext context = getContext(c);
 
         paint(context, g);
-        context.dispose();
     }
 
     /**

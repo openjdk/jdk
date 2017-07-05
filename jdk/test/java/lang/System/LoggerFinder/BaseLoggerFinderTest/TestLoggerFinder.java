@@ -30,6 +30,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 import java.lang.System.Logger;
+import java.lang.reflect.Module;
 
 /**
  * What our test provider needs to implement.
@@ -176,6 +177,6 @@ public interface TestLoggerFinder {
         }
     }
 
-    public Logger getLogger(String name, Class<?> caller);
-    public Logger getLocalizedLogger(String name, ResourceBundle bundle, Class<?> caller);
+    public Logger getLogger(String name, Module caller);
+    public Logger getLocalizedLogger(String name, ResourceBundle bundle, Module caller);
 }

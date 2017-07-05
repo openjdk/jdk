@@ -54,7 +54,7 @@ class MultiExchange {
 
     final static int DEFAULT_MAX_ATTEMPTS = 5;
     final static int max_attempts = Utils.getIntegerNetProperty(
-            "sun.net.httpclient.redirects.retrylimit", DEFAULT_MAX_ATTEMPTS
+            "java.net.httpclient.redirects.retrylimit", DEFAULT_MAX_ATTEMPTS
     );
 
     private final List<HeaderFilter> filters;
@@ -187,8 +187,7 @@ class MultiExchange {
     public CompletableFuture<HttpResponseImpl> responseAsync(Void v) {
         CompletableFuture<HttpResponseImpl> cf;
         if (++attempts > max_attempts) {
-            cf = new CompletableFuture<>();
-            cf.completeExceptionally(new IOException("Too many retries"));
+            cf = CompletableFuture.failedFuture(new IOException("Too many retries"));
         } else {
             if (currentreq.timeval() != 0) {
                 // set timer
@@ -241,7 +240,6 @@ class MultiExchange {
      * completed exceptionally.
      */
     private CompletableFuture<HttpResponseImpl> getExceptionalCF(Throwable t) {
-        CompletableFuture<HttpResponseImpl> error = new CompletableFuture<>();
         if ((t instanceof CompletionException) || (t instanceof ExecutionException)) {
             if (t.getCause() != null) {
                 t = t.getCause();
@@ -250,8 +248,7 @@ class MultiExchange {
         if (cancelled && t instanceof IOException) {
             t = new HttpTimeoutException("request timed out");
         }
-        error.completeExceptionally(t);
-        return error;
+        return CompletableFuture.failedFuture(t);
     }
 
     <T> T responseBody(HttpResponse.BodyProcessor<T> processor) {

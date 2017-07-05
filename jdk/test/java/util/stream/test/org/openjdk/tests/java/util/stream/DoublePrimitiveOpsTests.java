@@ -27,11 +27,18 @@ import org.testng.annotations.Test;
 
 import java.util.Arrays;
 import java.util.Random;
+import java.util.Spliterator;
 import java.util.stream.DoubleStream;
 import java.util.stream.LongStream;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertTrue;
 
+/**
+ * @test
+ * @bug 8153293
+ */
 @Test
 public class DoublePrimitiveOpsTests {
 
@@ -40,6 +47,13 @@ public class DoublePrimitiveOpsTests {
     public void testUnBox() {
         double sum = Arrays.asList(1.0, 2.0, 3.0, 4.0, 5.0).stream().mapToDouble(i -> i).reduce(0.0, Double::sum);
         assertEquals(sum, 1.0 + 2.0 + 3.0 + 4.0 + 5.0);
+    }
+
+    public void testFlags() {
+        assertTrue(LongStream.range(1, 10).asDoubleStream().boxed().spliterator()
+                      .hasCharacteristics(Spliterator.SORTED));
+        assertFalse(DoubleStream.of(1, 10).boxed().spliterator()
+                      .hasCharacteristics(Spliterator.SORTED));
     }
 
     public void testToArray() {
@@ -69,6 +83,22 @@ public class DoublePrimitiveOpsTests {
         {
             double[] array =  Arrays.stream(content).parallel().sorted().toArray();
             assertEquals(array, sortedContent);
+        }
+    }
+
+    public void testSortDistinct() {
+        {
+            double[] range = LongStream.range(0, 10).asDoubleStream().toArray();
+
+            assertEquals(LongStream.range(0, 10).asDoubleStream().sorted().distinct().toArray(), range);
+            assertEquals(LongStream.range(0, 10).asDoubleStream().parallel().sorted().distinct().toArray(), range);
+
+            double[] data = {5, 3, 1, 1, 5, Double.NaN, 3, 9, Double.POSITIVE_INFINITY,
+                             Double.NEGATIVE_INFINITY, 2, 9, 1, 0, 8, Double.NaN, -0.0};
+            double[] expected = {Double.NEGATIVE_INFINITY, -0.0, 0, 1, 2, 3, 5, 8, 9,
+                                 Double.POSITIVE_INFINITY, Double.NaN};
+            assertEquals(DoubleStream.of(data).sorted().distinct().toArray(), expected);
+            assertEquals(DoubleStream.of(data).parallel().sorted().distinct().toArray(), expected);
         }
     }
 

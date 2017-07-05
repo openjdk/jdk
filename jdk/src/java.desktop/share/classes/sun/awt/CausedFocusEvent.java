@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,17 +27,18 @@ package sun.awt;
 
 import java.awt.event.FocusEvent;
 import java.awt.Component;
+import java.io.ObjectStreamException;
+import java.lang.reflect.Field;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
 /**
- * This class represents FocusEvents with a known "cause" - reason why this event happened. It can
- * be mouse press, traversal, activation, and so on - all causes are described as Cause enum. The
- * event with the cause can be constructed in two ways - explicitly through constructor of
- * CausedFocusEvent class or implicitly, by calling appropriate requestFocusXXX method with "cause"
- * parameter. The default cause is UNKNOWN.
+ * This class exists for deserialization compatibility only.
  */
-@SuppressWarnings("serial")
-public class CausedFocusEvent extends FocusEvent {
-    public enum Cause {
+class CausedFocusEvent extends FocusEvent {
+    private static final long serialVersionUID = -3647309088427840738L;
+
+    private enum Cause {
         UNKNOWN,
         MOUSE_EVENT,
         TRAVERSAL,
@@ -51,39 +52,82 @@ public class CausedFocusEvent extends FocusEvent {
         NATIVE_SYSTEM,
         ACTIVATION,
         CLEAR_GLOBAL_FOCUS_OWNER,
-        RETARGETED
+        RETARGETED;
     };
+
+    @SuppressWarnings("serial")
+    private static final Component dummy = new Component(){};
 
     private final Cause cause;
 
-    public Cause getCause() {
-        return cause;
-    }
-
-    public String toString() {
-        return "java.awt.FocusEvent[" + super.paramString() + ",cause=" + cause + "] on " + getSource();
-    }
-
-    public CausedFocusEvent(Component source, int id, boolean temporary,
+    private CausedFocusEvent(Component source, int id, boolean temporary,
                             Component opposite, Cause cause) {
         super(source, id, temporary, opposite);
-        if (cause == null) {
-            cause = Cause.UNKNOWN;
-        }
-        this.cause = cause;
+        throw new IllegalStateException();
     }
 
-    /**
-     * Retargets the original focus event to the new target.  If the
-     * original focus event is CausedFocusEvent, it remains such and
-     * cause is copied.  Otherwise, new CausedFocusEvent is created,
-     * with cause as RETARGETED.
-     * @return retargeted event, or null if e is null
-     */
-    public static FocusEvent retarget(FocusEvent e, Component newSource) {
-        if (e == null) return null;
+    Object readResolve() throws ObjectStreamException {
+        FocusEvent.Cause newCause;
+        switch (cause) {
+            case UNKNOWN:
+                newCause = FocusEvent.Cause.UNKNOWN;
+                break;
+            case MOUSE_EVENT:
+                newCause = FocusEvent.Cause.MOUSE_EVENT;
+                break;
+            case TRAVERSAL:
+                newCause = FocusEvent.Cause.TRAVERSAL;
+                break;
+            case TRAVERSAL_UP:
+                newCause = FocusEvent.Cause.TRAVERSAL_UP;
+                break;
+            case TRAVERSAL_DOWN:
+                newCause = FocusEvent.Cause.TRAVERSAL_DOWN;
+                break;
+            case TRAVERSAL_FORWARD:
+                newCause = FocusEvent.Cause.TRAVERSAL_FORWARD;
+                break;
+            case TRAVERSAL_BACKWARD:
+                newCause = FocusEvent.Cause.TRAVERSAL_BACKWARD;
+                break;
+            case ROLLBACK:
+                newCause = FocusEvent.Cause.ROLLBACK;
+                break;
+            case NATIVE_SYSTEM:
+                newCause = FocusEvent.Cause.UNEXPECTED;
+                break;
+            case ACTIVATION:
+                newCause = FocusEvent.Cause.ACTIVATION;
+                break;
+            case CLEAR_GLOBAL_FOCUS_OWNER:
+                newCause = FocusEvent.Cause.CLEAR_GLOBAL_FOCUS_OWNER;
+                break;
+            default:
+                newCause = FocusEvent.Cause.UNKNOWN;
+        }
 
-        return new CausedFocusEvent(newSource, e.getID(), e.isTemporary(), e.getOppositeComponent(),
-                                    (e instanceof CausedFocusEvent) ? ((CausedFocusEvent)e).getCause() : Cause.RETARGETED);
+        FocusEvent focusEvent = new FocusEvent(dummy, getID(), isTemporary(),
+                        getOppositeComponent(), newCause);
+        focusEvent.setSource(null);
+        try {
+            final Field consumedField = FocusEvent.class.getField("consumed");
+            AccessController.doPrivileged(new PrivilegedAction<Object>() {
+                @Override
+                public Object run() {
+                    consumedField.setAccessible(true);
+                    try {
+                        consumedField.set(focusEvent, consumed);
+                    } catch (IllegalAccessException e) {
+                    }
+                    return null;
+                }
+            });
+        } catch (NoSuchFieldException e) {
+        }
+
+        AWTAccessor.AWTEventAccessor accessor =
+                                           AWTAccessor.getAWTEventAccessor();
+        accessor.setBData(focusEvent, accessor.getBData(this));
+        return focusEvent;
     }
 }

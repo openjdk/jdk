@@ -30,7 +30,7 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.ResourceBundle;
 import java.util.Set;
-
+import java.lang.reflect.Module;
 import jdk.internal.logger.BootstrapLogger;
 import jdk.internal.logger.LazyLoggers;
 
@@ -69,7 +69,7 @@ public class BootstrapLoggerAPIsTest {
         }
 
         final Logger LOGGER =
-                LazyLoggers.getLogger("foo.bar", Thread.class);
+                LazyLoggers.getLogger("foo.bar", Thread.class.getModule());
         final sun.util.logging.PlatformLogger.Level PLATFORM_LEVEL =
                 sun.util.logging.PlatformLogger.Level.SEVERE;
         final MyResources BUNDLE = new MyResources();

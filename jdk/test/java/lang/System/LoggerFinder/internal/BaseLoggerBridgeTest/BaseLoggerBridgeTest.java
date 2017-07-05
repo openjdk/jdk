@@ -47,6 +47,7 @@ import java.lang.System.LoggerFinder;
 import java.lang.System.Logger;
 import java.lang.System.Logger.Level;
 import java.util.stream.Stream;
+import java.lang.reflect.Module;
 
 /**
  * @test
@@ -209,8 +210,6 @@ public class BaseLoggerBridgeTest {
                 return Arrays.deepToString(toArray(false));
             }
 
-
-
             @Override
             public boolean equals(Object obj) {
                 return obj instanceof LogEvent
@@ -342,15 +341,15 @@ public class BaseLoggerBridgeTest {
 
         }
 
-        public Logger getLogger(String name, Class<?> caller);
-        public Logger getLocalizedLogger(String name, ResourceBundle bundle, Class<?> caller);
+        public Logger getLogger(String name, Module caller);
+        public Logger getLocalizedLogger(String name, ResourceBundle bundle, Module caller);
     }
 
     public static class BaseLoggerFinder extends LoggerFinder implements TestLoggerFinder {
         static final RuntimePermission LOGGERFINDER_PERMISSION =
                 new RuntimePermission("loggerFinder");
         @Override
-        public Logger getLogger(String name, Class<?> caller) {
+        public Logger getLogger(String name, Module caller) {
             SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
                 sm.checkPermission(LOGGERFINDER_PERMISSION);
@@ -375,7 +374,7 @@ public class BaseLoggerBridgeTest {
         }
     }
 
-    static Logger getLogger(String name, Class<?> caller) {
+    static Logger getLogger(String name, Module caller) {
         boolean old = allowAll.get().get();
         allowAccess.get().set(true);
         try {
@@ -465,7 +464,7 @@ public class BaseLoggerBridgeTest {
 
         TestLoggerFinder.LoggerImpl appSink = null;
         try {
-            appSink = TestLoggerFinder.LoggerImpl.class.cast(provider.getLogger("foo", BaseLoggerBridgeTest.class));
+            appSink = TestLoggerFinder.LoggerImpl.class.cast(provider.getLogger("foo", BaseLoggerBridgeTest.class.getModule()));
             if (!hasRequiredPermissions) {
                 throw new RuntimeException("Managed to obtain a system logger without permission");
             }
@@ -480,7 +479,7 @@ public class BaseLoggerBridgeTest {
             boolean old = allowControl.get().get();
             allowControl.get().set(true);
             try {
-                appSink = TestLoggerFinder.LoggerImpl.class.cast(provider.getLogger("foo", BaseLoggerBridgeTest.class));
+                appSink = TestLoggerFinder.LoggerImpl.class.cast(provider.getLogger("foo", BaseLoggerBridgeTest.class.getModule()));
             } finally {
                 allowControl.get().set(old);
             }
@@ -489,7 +488,7 @@ public class BaseLoggerBridgeTest {
 
         TestLoggerFinder.LoggerImpl sysSink = null;
         try {
-            sysSink = TestLoggerFinder.LoggerImpl.class.cast(provider.getLogger("foo", Thread.class));
+            sysSink = TestLoggerFinder.LoggerImpl.class.cast(provider.getLogger("foo", Thread.class.getModule()));
             if (!hasRequiredPermissions) {
                 throw new RuntimeException("Managed to obtain a system logger without permission");
             }
@@ -527,13 +526,13 @@ public class BaseLoggerBridgeTest {
 
         Logger sysLogger1 = null;
         try {
-            sysLogger1 = getLogger("foo", Thread.class);
+            sysLogger1 = getLogger("foo", Thread.class.getModule());
             loggerDescMap.put(sysLogger1,
-                    "jdk.internal.logger.LazyLoggers.getLogger(\"foo\", Thread.class)");
+                    "jdk.internal.logger.LazyLoggers.getLogger(\"foo\", Thread.class.getModule())");
 
             if (!hasRequiredPermissions) {
                 // check that the provider would have thrown an exception
-                provider.getLogger("foo", Thread.class);
+                provider.getLogger("foo", Thread.class.getModule());
                 throw new RuntimeException("Managed to obtain a system logger without permission");
             }
         } catch (AccessControlException acx) {
@@ -572,8 +571,8 @@ public class BaseLoggerBridgeTest {
 
         Logger sysLogger2 = null;
         try {
-            sysLogger2 = provider.getLocalizedLogger("foo", loggerBundle, Thread.class);
-            loggerDescMap.put(sysLogger2, "provider.getLocalizedLogger(\"foo\", loggerBundle, Thread.class)");
+            sysLogger2 = provider.getLocalizedLogger("foo", loggerBundle, Thread.class.getModule());
+            loggerDescMap.put(sysLogger2, "provider.getLocalizedLogger(\"foo\", loggerBundle, Thread.class.getModule())");
             if (!hasRequiredPermissions) {
                 throw new RuntimeException("Managed to obtain a system logger without permission");
             }
