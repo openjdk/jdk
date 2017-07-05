@@ -24,8 +24,7 @@
 /* @test
  * @bug 4607272 6842687 6878369 6944810 7023403
  * @summary Unit test for AsynchronousSocketChannel(use -Dseed=X to set PRNG seed)
- * @library /lib/testlibrary/
- * @build jdk.testlibrary.*
+ * @library /test/lib
  * @run main Basic -skipSlowConnectTest
  * @key randomness intermittent
  */
@@ -40,7 +39,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
-import jdk.testlibrary.RandomFactory;
+import jdk.test.lib.RandomFactory;
 
 public class Basic {
     private static final Random RAND = RandomFactory.getRandom();

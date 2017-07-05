@@ -26,14 +26,13 @@
  * @bug 6890872 8168882
  * @summary keytool -printcert to recognize signed jar files
  * @library /test/lib
- * @library /lib/testlibrary
  */
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import jdk.test.lib.SecurityTools;
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.testlibrary.JarUtils;
+import jdk.test.lib.util.JarUtils;
 
 public class ReadJar {
 

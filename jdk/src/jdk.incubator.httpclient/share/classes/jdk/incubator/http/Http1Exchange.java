@@ -55,7 +55,7 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
     final HttpConnection connection;
     final HttpClientImpl client;
     final Executor executor;
-    final ByteBuffer buffer; // used for receiving
+    volatile ByteBuffer buffer; // used for receiving
 
     @Override
     public String toString() {
@@ -74,7 +74,7 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
         this.client = exchange.client();
         this.executor = exchange.executor();
         this.operations = new LinkedList<>();
-        this.buffer = exchange.getBuffer();
+        this.buffer = Utils.EMPTY_BYTEBUFFER;
         if (connection != null) {
             this.connection = connection;
         } else {
@@ -157,7 +157,9 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
         try {
             response = new Http1Response<>(connection, this);
             response.readHeaders();
-            return response.response();
+            Response r = response.response();
+            buffer = response.getBuffer();
+            return r;
         } catch (Throwable t) {
             connection.close();
             throw t;
@@ -213,7 +215,9 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
         return MinimalFuture.supply( () -> {
             response = new Http1Response<>(connection, Http1Exchange.this);
             response.readHeaders();
-            return response.response();
+            Response r = response.response();
+            buffer = response.getBuffer();
+            return r;
         }, executor);
     }
 
