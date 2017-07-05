@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
  *          java.rmi/sun.rmi.server
  *          java.rmi/sun.rmi.transport
  *          java.rmi/sun.rmi.transport.tcp
- * @build TestLibrary REGISTRY RegistryRunner
+ * @build TestLibrary RegistryVM RegistryRunner
  * @run main/othervm DeadCachedConnection
  */
 
@@ -100,7 +100,7 @@ public class DeadCachedConnection {
 
     public static int makeRegistry(int port) {
         try {
-            subreg = REGISTRY.createREGISTRY(System.out, System.err, "", port);
+            subreg = RegistryVM.createRegistryVM(System.out, System.err, "", port);
             subreg.start();
             int regPort = subreg.getPort();
             System.out.println("Starting registry on port " + regPort);
@@ -113,11 +113,11 @@ public class DeadCachedConnection {
         return -1;
     }
 
-    private static REGISTRY subreg = null;
+    private static RegistryVM subreg = null;
 
     public static void killRegistry() throws InterruptedException {
         if (subreg != null) {
-            subreg.shutdown();
+            subreg.cleanup();
             subreg = null;
         }
     }

@@ -102,26 +102,26 @@ JNIEXPORT jint JNICALL Java_jdk_internal_jline_WindowsTerminal_getConsoleOutputC
 
 JNIEXPORT jint JNICALL Java_jdk_internal_jline_WindowsTerminal_getWindowsTerminalWidth
   (JNIEnv *, jobject) {
-    HANDLE hStdIn;
-    if ((hStdIn = GetStdHandle(STD_INPUT_HANDLE)) == INVALID_HANDLE_VALUE) {
+    HANDLE hStdOut;
+    if ((hStdOut = GetStdHandle(STD_OUTPUT_HANDLE)) == INVALID_HANDLE_VALUE) {
         return -1;
     }
     CONSOLE_SCREEN_BUFFER_INFO info;
-    if (! GetConsoleScreenBufferInfo(hStdIn, &info)) {
+    if (! GetConsoleScreenBufferInfo(hStdOut, &info)) {
         return -1;
     }
-    return info.dwSize.X;
+    return info.srWindow.Right - info.srWindow.Left;
 }
 
 JNIEXPORT jint JNICALL Java_jdk_internal_jline_WindowsTerminal_getWindowsTerminalHeight
   (JNIEnv *, jobject) {
-    HANDLE hStdIn;
-    if ((hStdIn = GetStdHandle(STD_INPUT_HANDLE)) == INVALID_HANDLE_VALUE) {
+    HANDLE hStdOut;
+    if ((hStdOut = GetStdHandle(STD_OUTPUT_HANDLE)) == INVALID_HANDLE_VALUE) {
         return -1;
     }
     CONSOLE_SCREEN_BUFFER_INFO info;
-    if (! GetConsoleScreenBufferInfo(hStdIn, &info)) {
+    if (! GetConsoleScreenBufferInfo(hStdOut, &info)) {
         return -1;
     }
-    return info.dwSize.Y;
+    return info.srWindow.Bottom - info.srWindow.Top + 1;
 }

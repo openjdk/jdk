@@ -20,13 +20,14 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package test.java.time.format;
-
 /*
  * @test
+ * @modules jdk.localedata
  * @bug 8146750
  * @summary Test Narrow and NarrowStandalone month names are retrieved correctly.
  */
+package test.java.time.format;
+
 import static org.testng.Assert.assertEquals;
 
 import java.time.DayOfWeek;

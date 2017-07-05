@@ -53,7 +53,7 @@ static jboolean purgeOutstandingICMP(JNIEnv *env, jint fd)
             break;
         }
         if (recvfrom(fd, buf, 1, MSG_PEEK,
-                         (struct sockaddr *)&rmtaddr, &addrlen) != SOCKET_ERROR) {
+                     &rmtaddr.sa, &addrlen) != SOCKET_ERROR) {
             break;
         }
         if (WSAGetLastError() != WSAECONNRESET) {
@@ -61,7 +61,7 @@ static jboolean purgeOutstandingICMP(JNIEnv *env, jint fd)
             break;
         }
 
-        recvfrom(fd, buf, 1, 0,  (struct sockaddr *)&rmtaddr, &addrlen);
+        recvfrom(fd, buf, 1, 0, &rmtaddr.sa, &addrlen);
         got_icmp = JNI_TRUE;
     }
 
@@ -134,14 +134,13 @@ JNIEXPORT jint JNICALL Java_java_net_DualStackPlainDatagramSocketImpl_socketCrea
 JNIEXPORT void JNICALL Java_java_net_DualStackPlainDatagramSocketImpl_socketBind
   (JNIEnv *env, jclass clazz, jint fd, jobject iaObj, jint port, jboolean exclBind) {
     SOCKETADDRESS sa;
-    int rv;
-    int sa_len = sizeof(sa);
+    int rv, sa_len = 0;
 
-    if (NET_InetAddressToSockaddr(env, iaObj, port, (struct sockaddr *)&sa,
+    if (NET_InetAddressToSockaddr(env, iaObj, port, &sa,
                                  &sa_len, JNI_TRUE) != 0) {
         return;
     }
-    rv = NET_WinBind(fd, (struct sockaddr *)&sa, sa_len, exclBind);
+    rv = NET_WinBind(fd, &sa, sa_len, exclBind);
 
     if (rv == SOCKET_ERROR) {
         if (WSAGetLastError() == WSAEACCES) {
@@ -159,17 +158,15 @@ JNIEXPORT void JNICALL Java_java_net_DualStackPlainDatagramSocketImpl_socketBind
 JNIEXPORT void JNICALL Java_java_net_DualStackPlainDatagramSocketImpl_socketConnect
   (JNIEnv *env, jclass clazz, jint fd, jobject iaObj, jint port) {
     SOCKETADDRESS sa;
-    int rv;
-    int sa_len = sizeof(sa);
+    int rv, sa_len = 0, t = TRUE;
     DWORD x1, x2; /* ignored result codes */
-    int t = TRUE;
 
-    if (NET_InetAddressToSockaddr(env, iaObj, port, (struct sockaddr *)&sa,
+    if (NET_InetAddressToSockaddr(env, iaObj, port, &sa,
                                    &sa_len, JNI_TRUE) != 0) {
         return;
     }
 
-    rv = connect(fd, (struct sockaddr *)&sa, sa_len);
+    rv = connect(fd, &sa.sa, sa_len);
     if (rv == SOCKET_ERROR) {
         NET_ThrowNew(env, WSAGetLastError(), "connect");
         return;
@@ -192,7 +189,7 @@ JNIEXPORT void JNICALL Java_java_net_DualStackPlainDatagramSocketImpl_socketDisc
     int t = FALSE;
 
     memset(&sa, 0, sa_len);
-    connect(fd, (struct sockaddr *)&sa, sa_len);
+    connect(fd, &sa.sa, sa_len);
 
     /* see comment in socketCreate */
     WSAIoctl(fd, SIO_UDP_CONNRESET, &t, sizeof(t), &x1, sizeof(x1), &x2, 0, 0);
@@ -219,7 +216,7 @@ JNIEXPORT jint JNICALL Java_java_net_DualStackPlainDatagramSocketImpl_socketLoca
     SOCKETADDRESS sa;
     int len = sizeof(sa);
 
-    if (getsockname(fd, (struct sockaddr *)&sa, &len) == SOCKET_ERROR) {
+    if (getsockname(fd, &sa.sa, &len) == SOCKET_ERROR) {
         NET_ThrowNew(env, WSAGetLastError(), "getsockname");
         return -1;
     }
@@ -238,12 +235,12 @@ JNIEXPORT jobject JNICALL Java_java_net_DualStackPlainDatagramSocketImpl_socketL
     jobject iaObj;
     int port;
 
-    if (getsockname(fd, (struct sockaddr *)&sa, &len) == SOCKET_ERROR) {
+    if (getsockname(fd, &sa.sa, &len) == SOCKET_ERROR) {
         NET_ThrowNew(env, WSAGetLastError(), "Error getting socket name");
         return NULL;
     }
 
-    iaObj = NET_SockaddrToInetAddress(env, (struct sockaddr *)&sa, &port);
+    iaObj = NET_SockaddrToInetAddress(env, &sa, &port);
     return iaObj;
 }
 
@@ -316,7 +313,7 @@ JNIEXPORT jint JNICALL Java_java_net_DualStackPlainDatagramSocketImpl_socketRece
 
         /* receive the packet */
         rv = recvfrom(fd, fullPacket, packetBufferLen, flags,
-                    (struct sockaddr *)&sa, &sa_len);
+                      &sa.sa, &sa_len);
 
         if (rv == SOCKET_ERROR && (WSAGetLastError() == WSAECONNRESET)) {
             /* An icmp port unreachable - we must receive this as Windows
@@ -383,15 +380,13 @@ JNIEXPORT jint JNICALL Java_java_net_DualStackPlainDatagramSocketImpl_socketRece
          */
         packetAddress = (*env)->GetObjectField(env, dpObj, dp_addressID);
         if (packetAddress != NULL) {
-            if (!NET_SockaddrEqualsInetAddress(env, (struct sockaddr *)&sa,
-                                               packetAddress)) {
+            if (!NET_SockaddrEqualsInetAddress(env, &sa, packetAddress)) {
                 /* force a new InetAddress to be created */
                 packetAddress = NULL;
             }
         }
         if (packetAddress == NULL) {
-            packetAddress = NET_SockaddrToInetAddress(env, (struct sockaddr *)&sa,
-                                                      &port);
+            packetAddress = NET_SockaddrToInetAddress(env, &sa, &port);
             if (packetAddress != NULL) {
                 /* stuff the new Inetaddress into the packet */
                 (*env)->SetObjectField(env, dpObj, dp_addressID, packetAddress);
@@ -422,20 +417,18 @@ JNIEXPORT void JNICALL Java_java_net_DualStackPlainDatagramSocketImpl_socketSend
   (JNIEnv *env, jclass clazz, jint fd, jbyteArray data, jint offset, jint length,
      jobject iaObj, jint port, jboolean connected) {
     SOCKETADDRESS sa;
-    int sa_len = sizeof(sa);
-    SOCKETADDRESS *sap = &sa;
+    int rv, sa_len = 0;
+    struct sockaddr *sap = 0;
     char BUF[MAX_BUFFER_LEN];
     char *fullPacket;
-    int rv;
 
-    if (connected) {
-        sap = 0; /* arg to sendto () null in this case */
-        sa_len = 0;
-    } else {
-        if (NET_InetAddressToSockaddr(env, iaObj, port, (struct sockaddr *)&sa,
-                                       &sa_len, JNI_TRUE) != 0) {
+    // if already connected, sap arg to sendto() is null
+    if (!connected) {
+        if (NET_InetAddressToSockaddr(env, iaObj, port, &sa,
+                                      &sa_len, JNI_TRUE) != 0) {
             return;
         }
+        sap = &sa.sa;
     }
 
     if (length > MAX_BUFFER_LEN) {
@@ -456,7 +449,7 @@ JNIEXPORT void JNICALL Java_java_net_DualStackPlainDatagramSocketImpl_socketSend
 
     (*env)->GetByteArrayRegion(env, data, offset, length,
                                (jbyte *)fullPacket);
-    rv = sendto(fd, fullPacket, length, 0, (struct sockaddr *)sap, sa_len);
+    rv = sendto(fd, fullPacket, length, 0, sap, sa_len);
     if (rv == SOCKET_ERROR) {
         if (rv == -1) {
             NET_ThrowNew(env, WSAGetLastError(), "Datagram send failed");

@@ -288,8 +288,7 @@ define add_native_source
         $$($1_$(notdir $2)_OPTIMIZATION)), )
       $1_$2_VARDEPS := $$($1_$(notdir $2)_CFLAGS) $$($1_$(notdir $2)_CXXFLAGS) \
           $$($1_$(notdir $2)_OPT_CFLAGS) $$($1_$(notdir $2)_OPT_CXXFLAGS)
-      $1_$2_VARDEPS_FILE := $$(call DependOnVariable, $1_$2_VARDEPS, \
-          $$(patsubst %$(OBJ_SUFFIX),%.vardeps,$$($1_$2_OBJ)))
+      $1_$2_VARDEPS_FILE := $$(call DependOnVariable, $1_$2_VARDEPS, $$($1_$2_OBJ).vardeps)
     endif
 
     $$($1_$2_OBJ) : $2 $$($1_COMPILE_VARDEPS_FILE) $$($1_$2_VARDEPS_FILE) | $$($1_BUILD_INFO)
