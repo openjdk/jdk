@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 5045306 6356004
+ * @bug 5045306 6356004 6993490
  * @library ../../httptest/
  * @build HttpCallback HttpServer HttpTransaction
  * @run main/othervm B5045306
@@ -32,7 +32,6 @@
 
 import java.net.*;
 import java.io.*;
-import java.nio.channels.*;
 import java.lang.management.*;
 
 /* Part 1:
@@ -164,6 +163,14 @@ class SimpleHttpTransaction implements HttpCallback
                     failed = true;
 
                 trans.setResponseHeader ("Content-length", Integer.toString(0));
+
+                 /* Force the server to not respond for more that the timeout
+                  * set by the keepalive cleaner (5000 millis). This ensures the
+                  * timeout is correctly resets the default read timeout,
+                  * infinity. See 6993490. */
+                System.out.println("server sleeping...");
+                try {Thread.sleep(6000); } catch (InterruptedException e) {}
+
                 trans.sendResponse(200, "OK");
             } else if(path.equals("/part2")) {
                 System.out.println("Call to /part2");

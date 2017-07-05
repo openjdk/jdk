@@ -63,3 +63,5 @@ define_pd_global(intx, PreInflateSpin,           10);
 
 define_pd_global(bool, RewriteBytecodes,     true);
 define_pd_global(bool, RewriteFrequentPairs, true);
+
+define_pd_global(bool, UseMembar,            false);

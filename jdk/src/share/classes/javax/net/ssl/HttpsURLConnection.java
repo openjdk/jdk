@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -188,19 +188,8 @@ class HttpsURLConnection extends HttpURLConnection
      * <p>
      * The default implementation will deny such connections.
      */
-    private static HostnameVerifier defaultHostnameVerifier;
-
-    /**
-     * Initialize the default <code>HostnameVerifier</code>.
-     */
-    static {
-        try {
-            defaultHostnameVerifier =
-                new sun.net.www.protocol.https.DefaultHostnameVerifier();
-        } catch (NoClassDefFoundError e) {
-            defaultHostnameVerifier = new DefaultHostnameVerifier();
-        }
-    }
+    private static HostnameVerifier defaultHostnameVerifier =
+                                        new DefaultHostnameVerifier();
 
     /*
      * The initial default <code>HostnameVerifier</code>.  Should be

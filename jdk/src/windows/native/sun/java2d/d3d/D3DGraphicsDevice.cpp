@@ -36,22 +36,6 @@ extern jobject CreateDisplayMode(JNIEnv* env, jint width, jint height,
 extern void addDisplayMode(JNIEnv* env, jobject arrayList, jint width,
                            jint height, jint bitDepth, jint refreshRate);
 
-void InitD3D(void *pReturn)
-{
-    J2dTraceLn(J2D_TRACE_INFO, "InitD3D");
-
-    jboolean *pRet = (jboolean *)pReturn;
-
-    D3DPipelineManager *pMgr = D3DPipelineManager::CreateInstance();
-    if (pMgr == NULL) {
-        J2dTraceLn(J2D_TRACE_ERROR, "InitD3D: could not create or init d3d");
-        *pRet = JNI_FALSE;
-    } else {
-        J2dTraceLn(J2D_TRACE_INFO, "InitD3D: successfully initialized d3d");
-        *pRet = JNI_TRUE;
-    }
-}
-
 extern "C" {
 /*
  * Class:     sun_java2d_d3d_D3DGraphicsDevice
@@ -63,8 +47,8 @@ JNIEXPORT jboolean JNICALL Java_sun_java2d_d3d_D3DGraphicsDevice_initD3D
 {
     J2dTraceLn(J2D_TRACE_INFO, "D3DGD_initD3D");
 
-    jboolean result = JNI_FALSE;
-    AwtToolkit::GetInstance().InvokeFunction(InitD3D, &result);
+    jboolean result = D3DInitializer::GetInstance().EnsureInited()
+                      ? JNI_TRUE : JNI_FALSE;
     J2dTraceLn1(J2D_TRACE_INFO, "D3DGD_initD3D: result=%x", result);
     return result;
 }

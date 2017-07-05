@@ -51,6 +51,92 @@ static jboolean GetJVMPath(const char *jrepath, const char *jvmtype,
 static jboolean GetJREPath(char *path, jint pathsize);
 static void EnsureJreInstallation(const char *jrepath);
 
+/* We supports warmup for UI stack that is performed in parallel
+ * to VM initialization.
+ * This helps to improve startup of UI application as warmup phase
+ * might be long due to initialization of OS or hardware resources.
+ * It is not CPU bound and therefore it does not interfere with VM init.
+ * Obviously such warmup only has sense for UI apps and therefore it needs
+ * to be explicitly requested by passing -Dsun.awt.warmup=true property
+ * (this is always the case for plugin/javaws).
+ *
+ * Implementation launches new thread after VM starts and use it to perform
+ * warmup code (platform dependent).
+ * This thread is later reused as AWT toolkit thread as graphics toolkit
+ * often assume that they are used from the same thread they were launched on.
+ *
+ * At the moment we only support warmup for D3D. It only possible on windows
+ * and only if other flags do not prohibit this (e.g. OpenGL support requested).
+ */
+#undef ENABLE_AWT_PRELOAD
+#ifndef JAVA_ARGS /* turn off AWT preloading for javac, jar, etc */
+    #define ENABLE_AWT_PRELOAD
+#endif
+
+#ifdef ENABLE_AWT_PRELOAD
+/* "AWT was preloaded" flag;
+ * turned on by AWTPreload().
+ */
+int awtPreloaded = 0;
+
+/* Calls a function with the name specified
+ * the function must be int(*fn)(void).
+ */
+int AWTPreload(const char *funcName);
+/* stops AWT preloading */
+void AWTPreloadStop();
+
+/* D3D preloading */
+/* -1: not initialized; 0: OFF, 1: ON */
+int awtPreloadD3D = -1;
+/* command line parameter to swith D3D preloading on */
+#define PARAM_PRELOAD_D3D "-Dsun.awt.warmup"
+/* D3D/OpenGL management parameters */
+#define PARAM_NODDRAW "-Dsun.java2d.noddraw"
+#define PARAM_D3D "-Dsun.java2d.d3d"
+#define PARAM_OPENGL "-Dsun.java2d.opengl"
+/* funtion in awt.dll (src/windows/native/sun/java2d/d3d/D3DPipelineManager.cpp) */
+#define D3D_PRELOAD_FUNC "preloadD3D"
+
+
+/* Extracts value of a parameter with the specified name
+ * from command line argument (returns pointer in the argument).
+ * Returns NULL if the argument does not contains the parameter.
+ * e.g.:
+ * GetParamValue("theParam", "theParam=value") returns pointer to "value".
+ */
+const char * GetParamValue(const char *paramName, const char *arg) {
+    int nameLen = JLI_StrLen(paramName);
+    if (JLI_StrNCmp(paramName, arg, nameLen) == 0) {
+        /* arg[nameLen] is valid (may contain final NULL) */
+        if (arg[nameLen] == '=') {
+            return arg + nameLen + 1;
+        }
+    }
+    return NULL;
+}
+
+/* Checks if commandline argument contains property specified
+ * and analyze it as boolean property (true/false).
+ * Returns -1 if the argument does not contain the parameter;
+ * Returns 1 if the argument contains the parameter and its value is "true";
+ * Returns 0 if the argument contains the parameter and its value is "false".
+ */
+int GetBoolParamValue(const char *paramName, const char *arg) {
+    const char * paramValue = GetParamValue(paramName, arg);
+    if (paramValue != NULL) {
+        if (JLI_StrCaseCmp(paramValue, "true") == 0) {
+            return 1;
+        }
+        if (JLI_StrCaseCmp(paramValue, "false") == 0) {
+            return 0;
+        }
+    }
+    return -1;
+}
+#endif /* ENABLE_AWT_PRELOAD */
+
+
 static jboolean _isjavaw = JNI_FALSE;
 
 
@@ -132,6 +218,30 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
         exit(4);
     }
     /* If we got here, jvmpath has been correctly initialized. */
+
+    /* Check if we need preload AWT */
+#ifdef ENABLE_AWT_PRELOAD
+    argv = *pargv;
+    for (i = 0; i < *pargc ; i++) {
+        /* Tests the "turn on" parameter only if not set yet. */
+        if (awtPreloadD3D < 0) {
+            if (GetBoolParamValue(PARAM_PRELOAD_D3D, argv[i]) == 1) {
+                awtPreloadD3D = 1;
+            }
+        }
+        /* Test parameters which can disable preloading if not already disabled. */
+        if (awtPreloadD3D != 0) {
+            if (GetBoolParamValue(PARAM_NODDRAW, argv[i]) == 1
+                || GetBoolParamValue(PARAM_D3D, argv[i]) == 0
+                || GetBoolParamValue(PARAM_OPENGL, argv[i]) == 1)
+            {
+                awtPreloadD3D = 0;
+                /* no need to test the rest of the parameters */
+                break;
+            }
+        }
+    }
+#endif /* ENABLE_AWT_PRELOAD */
 }
 
 
@@ -208,7 +318,7 @@ EnsureJreInstallation(const char* jrepath)
     struct stat s;
 
     /* Make sure the jrepath contains something */
-    if (jrepath[0] == NULL) {
+    if ((void*)jrepath[0] == NULL) {
         return;
     }
     /* 32 bit windows only please */
@@ -540,7 +650,7 @@ JLI_ReportErrorMessageSys(const char *fmt, ...)
         /* get the length of the string we need */
         int len = mlen =  _vscprintf(fmt, vl) + 1;
         if (freeit) {
-           mlen += JLI_StrLen(errtext);
+           mlen += (int)JLI_StrLen(errtext);
         }
 
         message = (char *)JLI_MemAlloc(mlen);
@@ -997,7 +1107,6 @@ ExecJRE(char *jre, char **argv) {
 
         exit(exitCode);
     }
-
 }
 
 /*
@@ -1087,6 +1196,40 @@ ContinueInNewThread0(int (JNICALL *continuation)(void *), jlong stack_size, void
                              0,
                              &thread_id);
     }
+
+    /* AWT preloading (AFTER main thread start) */
+#ifdef ENABLE_AWT_PRELOAD
+    /* D3D preloading */
+    if (awtPreloadD3D != 0) {
+        char *envValue;
+        /* D3D routines checks env.var J2D_D3D if no appropriate
+         * command line params was specified
+         */
+        envValue = getenv("J2D_D3D");
+        if (envValue != NULL && JLI_StrCaseCmp(envValue, "false") == 0) {
+            awtPreloadD3D = 0;
+        }
+        /* Test that AWT preloading isn't disabled by J2D_D3D_PRELOAD env.var */
+        envValue = getenv("J2D_D3D_PRELOAD");
+        if (envValue != NULL && JLI_StrCaseCmp(envValue, "false") == 0) {
+            awtPreloadD3D = 0;
+        }
+        if (awtPreloadD3D < 0) {
+            /* If awtPreloadD3D is still undefined (-1), test
+             * if it is turned on by J2D_D3D_PRELOAD env.var.
+             * By default it's turned OFF.
+             */
+            awtPreloadD3D = 0;
+            if (envValue != NULL && JLI_StrCaseCmp(envValue, "true") == 0) {
+                awtPreloadD3D = 1;
+            }
+         }
+    }
+    if (awtPreloadD3D) {
+        AWTPreload(D3D_PRELOAD_FUNC);
+    }
+#endif /* ENABLE_AWT_PRELOAD */
+
     if (thread_handle) {
       WaitForSingleObject(thread_handle, INFINITE);
       GetExitCodeThread(thread_handle, &rslt);
@@ -1094,6 +1237,13 @@ ContinueInNewThread0(int (JNICALL *continuation)(void *), jlong stack_size, void
     } else {
       rslt = continuation(args);
     }
+
+#ifdef ENABLE_AWT_PRELOAD
+    if (awtPreloaded) {
+        AWTPreloadStop();
+    }
+#endif /* ENABLE_AWT_PRELOAD */
+
     return rslt;
 }
 
@@ -1140,3 +1290,98 @@ InitLauncher(boolean javaw)
     _isjavaw = javaw;
     JLI_SetTraceLauncher();
 }
+
+
+/* ============================== */
+/* AWT preloading */
+#ifdef ENABLE_AWT_PRELOAD
+
+typedef int FnPreloadStart(void);
+typedef void FnPreloadStop(void);
+static FnPreloadStop *fnPreloadStop = NULL;
+static HMODULE hPreloadAwt = NULL;
+
+/*
+ * Starts AWT preloading
+ */
+int AWTPreload(const char *funcName)
+{
+    int result = -1;
+    /* load AWT library once (if several preload function should be called) */
+    if (hPreloadAwt == NULL) {
+        /* awt.dll is not loaded yet */
+        char libraryPath[MAXPATHLEN];
+        int jrePathLen = 0;
+        HMODULE hJava = NULL;
+        HMODULE hVerify = NULL;
+
+        while (1) {
+            /* awt.dll depends on jvm.dll & java.dll;
+             * jvm.dll is already loaded, so we need only java.dll;
+             * java.dll depends on MSVCRT lib & verify.dll.
+             */
+            if (!GetJREPath(libraryPath, MAXPATHLEN)) {
+                break;
+            }
+
+            /* save path length */
+            jrePathLen = JLI_StrLen(libraryPath);
+
+            /* load msvcrt 1st */
+            LoadMSVCRT();
+
+            /* load verify.dll */
+            JLI_StrCat(libraryPath, "\\bin\\verify.dll");
+            hVerify = LoadLibrary(libraryPath);
+            if (hVerify == NULL) {
+                break;
+            }
+
+            /* restore jrePath */
+            libraryPath[jrePathLen] = 0;
+            /* load java.dll */
+            JLI_StrCat(libraryPath, "\\bin\\" JAVA_DLL);
+            hJava = LoadLibrary(libraryPath);
+            if (hJava == NULL) {
+                break;
+            }
+
+            /* restore jrePath */
+            libraryPath[jrePathLen] = 0;
+            /* load awt.dll */
+            JLI_StrCat(libraryPath, "\\bin\\awt.dll");
+            hPreloadAwt = LoadLibrary(libraryPath);
+            if (hPreloadAwt == NULL) {
+                break;
+            }
+
+            /* get "preloadStop" func ptr */
+            fnPreloadStop = (FnPreloadStop *)GetProcAddress(hPreloadAwt, "preloadStop");
+
+            break;
+        }
+    }
+
+    if (hPreloadAwt != NULL) {
+        FnPreloadStart *fnInit = (FnPreloadStart *)GetProcAddress(hPreloadAwt, funcName);
+        if (fnInit != NULL) {
+            /* don't forget to stop preloading */
+            awtPreloaded = 1;
+
+            result = fnInit();
+        }
+    }
+
+    return result;
+}
+
+/*
+ * Terminates AWT preloading
+ */
+void AWTPreloadStop() {
+    if (fnPreloadStop != NULL) {
+        fnPreloadStop();
+    }
+}
+
+#endif /* ENABLE_AWT_PRELOAD */

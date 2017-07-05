@@ -25,6 +25,7 @@
 
 package java.nio;
 
+import java.io.FileDescriptor;
 import sun.misc.Unsafe;
 
 
@@ -71,26 +72,26 @@ public abstract class MappedByteBuffer
     // for optimization purposes, it's easier to do it the other way around.
     // This works because DirectByteBuffer is a package-private class.
 
-    // Volatile to make sure that the finalization thread sees the current
-    // value of this so that a region is not accidentally unmapped again later.
-    volatile boolean isAMappedBuffer;                   // package-private
+    // For mapped buffers, a FileDescriptor that may be used for mapping
+    // operations if valid; null if the buffer is not mapped.
+    private final FileDescriptor fd;
 
     // This should only be invoked by the DirectByteBuffer constructors
     //
     MappedByteBuffer(int mark, int pos, int lim, int cap, // package-private
-                     boolean mapped)
+                     FileDescriptor fd)
     {
         super(mark, pos, lim, cap);
-        isAMappedBuffer = mapped;
+        this.fd = fd;
     }
 
     MappedByteBuffer(int mark, int pos, int lim, int cap) { // package-private
         super(mark, pos, lim, cap);
-        isAMappedBuffer = false;
+        this.fd = null;
     }
 
     private void checkMapped() {
-        if (!isAMappedBuffer)
+        if (fd == null)
             // Can only happen if a luser explicitly casts a direct byte buffer
             throw new UnsupportedOperationException();
     }
@@ -191,13 +192,12 @@ public abstract class MappedByteBuffer
         checkMapped();
         if ((address != 0) && (capacity() != 0)) {
             long offset = mappingOffset();
-            force0(mappingAddress(offset), mappingLength(offset));
+            force0(fd, mappingAddress(offset), mappingLength(offset));
         }
         return this;
     }
 
     private native boolean isLoaded0(long address, long length, int pageCount);
     private native void load0(long address, long length);
-    private native void force0(long address, long length);
-
+    private native void force0(FileDescriptor fd, long address, long length);
 }

@@ -116,14 +116,26 @@
         jint Y0 = (fY0) >> MDP_PREC;                                        \
         jint X1 = (fX1) >> MDP_PREC;                                        \
         jint Y1 = (fY1) >> MDP_PREC;                                        \
-        /* Handling lines having just one pixel                           */\
-        if (((X0^X1) | (Y0^Y1)) == 0) {                                     \
-            if (checkBounds &&                                              \
-                (hnd->dhnd->yMin > Y0  ||                                   \
-                 hnd->dhnd->yMax <= Y0 ||                                   \
-                 hnd->dhnd->xMin > X0  ||                                   \
-                 hnd->dhnd->xMax <= X0)) break;                             \
+        jint res;                                                           \
                                                                             \
+        /* Checking bounds and clipping if necessary */                     \
+        if (checkBounds) {                                                  \
+            TESTANDCLIP(hnd->dhnd->yMin, hnd->dhnd->yMax, Y0, X0, Y1, X1,   \
+                        jint, res);                                         \
+            if (res == CRES_INVISIBLE) break;                               \
+            TESTANDCLIP(hnd->dhnd->yMin, hnd->dhnd->yMax, Y1, X1, Y0, X0,   \
+                        jint, res);                                         \
+            if (res == CRES_INVISIBLE) break;                               \
+            TESTANDCLIP(hnd->dhnd->xMin, hnd->dhnd->xMax, X0, Y0, X1, Y1,   \
+                        jint, res);                                         \
+            if (res == CRES_INVISIBLE) break;                               \
+            TESTANDCLIP(hnd->dhnd->xMin, hnd->dhnd->xMax, X1, Y1, X0, Y0,   \
+                        jint, res);                                         \
+            if (res == CRES_INVISIBLE) break;                               \
+        }                                                                   \
+                                                                            \
+        /* Handling lines having just one pixel      */                     \
+        if (((X0^X1) | (Y0^Y1)) == 0) {                                     \
             if (pixelInfo[0] == 0) {                                        \
                 pixelInfo[0] = 1;                                           \
                 pixelInfo[1] = X0;                                          \
@@ -140,18 +152,11 @@
             break;                                                          \
         }                                                                   \
                                                                             \
-        if (!checkBounds ||                                                 \
-            (hnd->dhnd->yMin <= Y0  &&                                      \
-             hnd->dhnd->yMax > Y0 &&                                        \
-             hnd->dhnd->xMin <= X0  &&                                      \
-             hnd->dhnd->xMax > X0))                                         \
+        if (pixelInfo[0] &&                                                 \
+            ((pixelInfo[1] == X0 && pixelInfo[2] == Y0) ||                  \
+            (pixelInfo[3] == X0 && pixelInfo[4] == Y0)))                    \
         {                                                                   \
-                if (pixelInfo[0] &&                                         \
-                    ((pixelInfo[1] == X0 && pixelInfo[2] == Y0) ||          \
-                     (pixelInfo[3] == X0 && pixelInfo[4] == Y0)))           \
-                {                                                           \
-                    hnd->dhnd->pDrawPixel(hnd->dhnd, X0, Y0);               \
-                }                                                           \
+            hnd->dhnd->pDrawPixel(hnd->dhnd, X0, Y0);                       \
         }                                                                   \
                                                                             \
         hnd->dhnd->pDrawLine(hnd->dhnd, X0, Y0, X1, Y1);                    \
@@ -170,14 +175,6 @@
         if ((pixelInfo[1] == X1 && pixelInfo[2] == Y1) ||                   \
             (pixelInfo[3] == X1 && pixelInfo[4] == Y1))                     \
         {                                                                   \
-            if (checkBounds &&                                              \
-                (hnd->dhnd->yMin > Y1  ||                                   \
-                 hnd->dhnd->yMax <= Y1 ||                                   \
-                 hnd->dhnd->xMin > X1  ||                                   \
-                 hnd->dhnd->xMax <= X1)) {                                  \
-                break;                                                      \
-            }                                                               \
-                                                                            \
             hnd->dhnd->pDrawPixel(hnd->dhnd, X1, Y1);                       \
         }                                                                   \
         pixelInfo[3] = X1;                                                  \

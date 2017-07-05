@@ -3311,7 +3311,6 @@ extern "C" {
   }
 }
 
-
 // this is called _after_ the global arguments have been parsed
 jint os::init_2(void) {
   // Allocate a single page and mark it as readable for safepoint polling
@@ -3388,6 +3387,21 @@ jint os::init_2(void) {
   if (stack_commit_size < default_reserve_size) {
     // If stack_commit_size == 0, we want this too
     actual_reserve_size = default_reserve_size;
+  }
+
+  // Check minimum allowable stack size for thread creation and to initialize
+  // the java system classes, including StackOverflowError - depends on page
+  // size.  Add a page for compiler2 recursion in main thread.
+  // Add in 2*BytesPerWord times page size to account for VM stack during
+  // class initialization depending on 32 or 64 bit VM.
+  size_t min_stack_allowed =
+            (size_t)(StackYellowPages+StackRedPages+StackShadowPages+
+            2*BytesPerWord COMPILER2_PRESENT(+1)) * os::vm_page_size();
+  if (actual_reserve_size < min_stack_allowed) {
+    tty->print_cr("\nThe stack size specified is too small, "
+                  "Specify at least %dk",
+                  min_stack_allowed / K);
+    return JNI_ERR;
   }
 
   JavaThread::set_stack_size_at_create(stack_commit_size);
@@ -3992,7 +4006,7 @@ void Parker::park(bool isAbsolute, jlong time) {
   if (time < 0) { // don't wait
     return;
   }
-  else if (time == 0) {
+  else if (time == 0 && !isAbsolute) {
     time = INFINITE;
   }
   else if  (isAbsolute) {

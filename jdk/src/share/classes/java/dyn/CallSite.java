@@ -25,56 +25,26 @@
 
 package java.dyn;
 
-import sun.dyn.Access;
-import sun.dyn.MemberName;
-import sun.dyn.CallSiteImpl;
+import sun.dyn.*;
+import java.util.Collection;
 
 /**
- * A {@code CallSite} reifies an {@code invokedynamic} instruction from bytecode,
- * and controls its linkage.
- * Every linked {@code CallSite} object corresponds to a distinct instance
- * of the {@code invokedynamic} instruction, and vice versa.
+ * A {@code CallSite} is a holder for a variable {@link MethodHandle},
+ * which is called its {@code target}.
+ * Every call to a {@code CallSite} is delegated to the site's current target.
  * <p>
- * Every linked {@code CallSite} object has one state variable,
- * a {@link MethodHandle} reference called the {@code target}.
- * This reference is never null.  Though it can change its value
- * successive values must always have exactly the {@link MethodType method type}
- * called for by the bytecodes of the associated {@code invokedynamic} instruction
+ * A call site is initially created in an <em>unlinked</em> state,
+ * which is distinguished by a null target variable.
+ * Before the call site may be invoked (and before certain other
+ * operations are attempted), the call site must be linked to
+ * a non-null target.
  * <p>
- * It is the responsibility of each class's
- * {@link Linkage#registerBootstrapMethod(Class, MethodHandle) bootstrap method}
- * to produce call sites which have been pre-linked to an initial target method.
- * The required {@link MethodType type} for the target method is a parameter
- * to each bootstrap method call.
- * <p>
- * The bootstrap method may elect to produce call sites of a
- * language-specific subclass of {@code CallSite}.  In such a case,
- * the subclass may claim responsibility for initializing its target to
- * a non-null value, by overriding {@link #initialTarget}.
- * <p>
- * An {@code invokedynamic} instruction which has not yet been executed
- * is said to be <em>unlinked</em>.  When an unlinked call site is executed,
- * the containing class's bootstrap method is called to manufacture a call site,
- * for the instruction.  If the bootstrap method does not assign a non-null
- * value to the new call site's target variable, the method {@link #initialTarget}
- * is called to produce the new call site's first target method.
- * <p>
- * A freshly-created {@code CallSite} object is not yet in a linked state.
- * An unlinked {@code CallSite} object reports null for its {@code callerClass}.
- * When the JVM receives a {@code CallSite} object from a bootstrap method,
- * it first ensures that its target is non-null and of the correct type.
- * The JVM then links the {@code CallSite} object to the call site instruction,
- * enabling the {@code callerClass} to return the class in which the instruction occurs.
- * <p>
- * Next, the JVM links the instruction to the {@code CallSite}, at which point
- * any further execution of the {@code invokedynamic} instruction implicitly
- * invokes the current target of the {@code CallSite} object.
- * After this two-way linkage, both the instruction and the {@code CallSite}
- * object are said to be linked.
- * <p>
- * This state of linkage continues until the method containing the
- * dynamic call site is garbage collected, or the dynamic call site
- * is invalidated by an explicit request.
+ * A call site may be <em>relinked</em> by changing its target.
+ * The new target must be non-null and must have the same
+ * {@linkplain MethodHandle#type() type}
+ * as the previous target.
+ * Thus, though a call site can be relinked to a series of
+ * successive targets, it cannot change its type.
  * <p>
  * Linkage happens once in the lifetime of any given {@code CallSite} object.
  * Because of call site invalidation, this linkage can be repeated for
@@ -87,6 +57,10 @@ import sun.dyn.CallSiteImpl;
  * Here is a sample use of call sites and bootstrap methods which links every
  * dynamic call site to print its arguments:
 <blockquote><pre><!-- see indy-demo/src/PrintArgsDemo.java -->
+&#064;BootstrapMethod(value=PrintArgsDemo.class, name="bootstrapDynamic")
+static void test() throws Throwable {
+    InvokeDynamic.baz("baz arg", 2, 3.14);
+}
 private static void printArgs(Object... args) {
   System.out.println(java.util.Arrays.deepToString(args));
 }
@@ -96,17 +70,16 @@ static {
   Class thisClass = lookup.lookupClass();  // (who am I?)
   printArgs = lookup.findStatic(thisClass,
       "printArgs", MethodType.methodType(void.class, Object[].class));
-  Linkage.registerBootstrapMethod("bootstrapDynamic");
 }
 private static CallSite bootstrapDynamic(Class caller, String name, MethodType type) {
   // ignore caller and name, but match the type:
   return new CallSite(MethodHandles.collectArguments(printArgs, type));
 }
 </pre></blockquote>
- * @see Linkage#registerBootstrapMethod(java.lang.Class, java.dyn.MethodHandle)
  * @author John Rose, JSR 292 EG
  */
 public class CallSite
+    implements MethodHandleProvider
 {
     private static final Access IMPL_TOKEN = Access.getToken();
 
@@ -209,6 +182,7 @@ public class CallSite
      * {@code InvokeDynamicBootstrapError}, which in turn causes the
      * linkage of the {@code invokedynamic} instruction to terminate
      * abnormally.
+     * @deprecated transitional form defined in EDR but removed in PFD
      */
     protected MethodHandle initialTarget(Class<?> callerClass, String name, MethodType type) {
         throw new InvokeDynamicBootstrapError("target must be initialized before call site is linked: "+name+type);
@@ -278,16 +252,44 @@ public class CallSite
      */
     @Override
     public String toString() {
-        StringBuilder buf = new StringBuilder("CallSite#");
-        buf.append(hashCode());
-        if (!isLinked())
-            buf.append("[unlinked]");
-        else
-            buf.append("[")
-                .append("from ").append(vmmethod.getDeclaringClass().getName())
-                .append(" : ").append(getTarget().type())
-                .append(" => ").append(getTarget())
-                .append("]");
-        return buf.toString();
+        return "CallSite"+(target == null ? "" : target.type());
     }
+
+    /**
+     * <em>PROVISIONAL API, WORK IN PROGRESS:</em>
+     * Produce a method handle equivalent to an invokedynamic instruction
+     * which has been linked to this call site.
+     * <p>If this call site is a {@link ConstantCallSite}, this method
+     * simply returns the call site's target, since that will not change.
+     * <p>Otherwise, this method is equivalent to the following code:
+     * <p><blockquote><pre>
+     * MethodHandle getTarget, invoker, result;
+     * getTarget = MethodHandles.lookup().bind(this, "getTarget", MethodType.methodType(MethodHandle.class));
+     * invoker = MethodHandles.exactInvoker(this.type());
+     * result = MethodHandles.foldArguments(invoker, getTarget)
+     * </pre></blockquote>
+     * @return a method handle which always invokes this call site's current target
+     */
+    public final MethodHandle dynamicInvoker() {
+        if (this instanceof ConstantCallSite)
+            return getTarget();  // will not change dynamically
+        MethodHandle getTarget = MethodHandleImpl.bindReceiver(IMPL_TOKEN, GET_TARGET, this);
+        MethodHandle invoker = MethodHandles.exactInvoker(this.type());
+        return MethodHandles.foldArguments(invoker, getTarget);
+    }
+    private static final MethodHandle GET_TARGET;
+    static {
+        try {
+            GET_TARGET = MethodHandles.Lookup.IMPL_LOOKUP.
+                findVirtual(CallSite.class, "getTarget", MethodType.methodType(MethodHandle.class));
+        } catch (NoAccessException ignore) {
+            throw new InternalError();
+        }
+    }
+
+    /** Implementation of {@link MethodHandleProvider} which returns {@code this.dynamicInvoker()}. */
+    public final MethodHandle asMethodHandle() { return dynamicInvoker(); }
+
+    /** Implementation of {@link MethodHandleProvider}, which returns {@code this.dynamicInvoker().asType(type)}. */
+    public final MethodHandle asMethodHandle(MethodType type) { return dynamicInvoker().asType(type); }
 }

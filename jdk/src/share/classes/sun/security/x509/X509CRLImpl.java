@@ -764,6 +764,15 @@ public class X509CRLImpl extends X509CRL implements DerEncoder {
     }
 
     /**
+     * Gets the signature AlgorithmId from the CRL.
+     *
+     * @return the signature AlgorithmId
+     */
+    public AlgorithmId getSigAlgId() {
+        return sigAlgId;
+    }
+
+    /**
      * return the AuthorityKeyIdentifier, if any.
      *
      * @returns AuthorityKeyIdentifier or null

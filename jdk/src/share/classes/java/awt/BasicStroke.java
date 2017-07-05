@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
  */
 
 package java.awt;
+
+import java.beans.ConstructorProperties;
 
 /**
  * The <code>BasicStroke</code> class defines a basic set of rendering
@@ -183,6 +185,7 @@ public class BasicStroke implements Stroke {
      *         <code>dash</code> is zero
      * @throws IllegalArgumentException if dash lengths are all zero.
      */
+    @ConstructorProperties({ "lineWidth", "endCap", "lineJoin", "miterLimit", "dashArray", "dashPhase" })
     public BasicStroke(float width, int cap, int join, float miterlimit,
                        float dash[], float dash_phase) {
         if (width < 0.0f) {

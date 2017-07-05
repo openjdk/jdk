@@ -72,7 +72,7 @@ inflate_file(int fd, zentry *entry, int *size_out)
     if (entry->how == STORED) {
         *(char *)((size_t)in + entry->csize) = '\0';
         if (size_out) {
-            *size_out = entry->csize;
+            *size_out = (int)entry->csize;
         }
         return (in);
     } else if (entry->how == DEFLATED) {
@@ -103,7 +103,7 @@ inflate_file(int fd, zentry *entry, int *size_out)
             return (NULL);
         }
         if (size_out) {
-            *size_out = entry->isize;
+            *size_out = (int)entry->isize;
         }
         return (out);
     } else
@@ -317,7 +317,7 @@ find_file(int fd, zentry *entry, const char *file_name)
          * manifest.  If so, build the entry record from the data found in
          * the header located and return success.
          */
-        if (CENNAM(p) == JLI_StrLen(file_name) &&
+        if ((size_t)CENNAM(p) == JLI_StrLen(file_name) &&
           memcmp((p + CENHDR), file_name, JLI_StrLen(file_name)) == 0) {
             if (lseek(fd, base_offset + CENOFF(p), SEEK_SET) < (off_t)0) {
                 free(buffer);
@@ -606,8 +606,5 @@ JLI_ManifestIterate(const char *jarfile, attribute_closure ac, void *user_data)
     }
     free(mp);
     close(fd);
-    if (rc == 0)
-        return (0);
-    else
-        return (-2);
+    return (rc == 0) ? 0 : -2;
 }

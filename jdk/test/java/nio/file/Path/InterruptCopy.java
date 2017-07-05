@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4313887
+ * @bug 4313887 6993267
  * @summary Unit test for Sun-specific ExtendedCopyOption.INTERRUPTIBLE option
  * @library ..
  * @run main/othervm -XX:-UseVMInterruptibleIO InterruptCopy
@@ -36,8 +36,9 @@ import com.sun.nio.file.ExtendedCopyOption;
 
 public class InterruptCopy {
 
-    private static final long FILE_SIZE_TO_COPY = 512 * 1024 * 1024;
+    private static final long FILE_SIZE_TO_COPY = 512L * 1024L * 1024L;
     private static final int DELAY_IN_MS = 500;
+    private static final int DURATION_MAX_IN_MS = 5000;
 
     public static void main(String[] args) throws Exception {
         Path dir = TestUtil.createTemporaryDirectory();
@@ -81,20 +82,27 @@ public class InterruptCopy {
         try {
             // copy source to target in main thread, interrupting it after a delay
             final Thread me = Thread.currentThread();
-            pool.schedule(new Runnable() {
+            Future<?> wakeup = pool.schedule(new Runnable() {
                 public void run() {
                     me.interrupt();
                 }}, DELAY_IN_MS, TimeUnit.MILLISECONDS);
             System.out.println("Copying file...");
             try {
+                long start = System.currentTimeMillis();
                 source.copyTo(target, ExtendedCopyOption.INTERRUPTIBLE);
-                throw new RuntimeException("Copy completed (this is not expected)");
+                long duration = System.currentTimeMillis() - start;
+                if (duration > DURATION_MAX_IN_MS)
+                    throw new RuntimeException("Copy was not interrupted");
             } catch (IOException e) {
                 boolean interrupted = Thread.interrupted();
                 if (!interrupted)
                     throw new RuntimeException("Interrupt status was not set");
                 System.out.println("Copy failed (this is expected)");
             }
+            try {
+                wakeup.get();
+            } catch (InterruptedException ignore) { }
+            Thread.interrupted();
 
             // copy source to target via task in thread pool, interrupting it after
             // a delay using cancel(true)
@@ -113,7 +121,6 @@ public class InterruptCopy {
             System.out.println("Copy cancelled.");
         } finally {
             pool.shutdown();
-            pool.awaitTermination(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
         }
     }
 }

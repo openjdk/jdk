@@ -247,6 +247,10 @@ class methodOopDesc : public oopDesc {
     return constMethod()->stackmap_data();
   }
 
+  void set_stackmap_data(typeArrayOop sd) {
+    constMethod()->set_stackmap_data(sd);
+  }
+
   // exception handler table
   typeArrayOop exception_table() const
                                    { return constMethod()->exception_table(); }

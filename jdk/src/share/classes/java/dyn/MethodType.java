@@ -40,24 +40,37 @@ import static sun.dyn.MemberName.newIllegalArgumentException;
  * returned by a method handle, or the arguments and return type passed
  * and expected  by a method handle caller.  Method types must be properly
  * matched between a method handle and all its callers,
- * and the JVM's operations enforce this matching at all times.
+ * and the JVM's operations enforce this matching at, specifically
+ * during calls to {@link MethodHandle#invokeExact}
+ * and {@link MethodHandle#invokeGeneric}, and during execution
+ * of {@code invokedynamic} instructions.
  * <p>
  * The structure is a return type accompanied by any number of parameter types.
- * The types (primitive, void, and reference) are represented by Class objects.
+ * The types (primitive, {@code void}, and reference) are represented by {@link Class} objects.
+ * (For ease of exposition, we treat {@code void} as if it were a type.
+ * In fact, it denotes the absence of a return type.)
  * <p>
- * All instances of <code>MethodType</code> are immutable.
+ * All instances of {@code MethodType} are immutable.
  * Two instances are completely interchangeable if they compare equal.
  * Equality depends on pairwise correspondence of the return and parameter types and on nothing else.
  * <p>
  * This type can be created only by factory methods.
  * All factory methods may cache values, though caching is not guaranteed.
  * <p>
- * Note: Like classes and strings, method types can be represented directly
- * as constants to be loaded by {@code ldc} bytecodes.
+ * {@code MethodType} objects are sometimes derived from bytecode instructions
+ * such as {@code invokedynamic}, specifically from the type descriptor strings associated
+ * with the instructions in a class file's constant pool.
+ * When this occurs, any classes named in the descriptor strings must be loaded.
+ * (But they need not be initialized.)
+ * This loading may occur at any time before the {@code MethodType} object is first derived.
+ * <p>
+ * Like classes and strings, method types can be represented directly
+ * in a class file's constant pool as constants to be loaded by {@code ldc} bytecodes.
+ * Loading such a constant causes its component classes to be loaded as necessary.
  * @author John Rose, JSR 292 EG
  */
 public final
-class MethodType {
+class MethodType implements java.lang.reflect.Type {
     private final Class<?>   rtype;
     private final Class<?>[] ptypes;
     private MethodTypeForm form; // erased form, plus cached data about primitives
@@ -636,11 +649,11 @@ class MethodType {
 
     /** Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[])}.
      * Find or create an instance of the given method type.
-     * Any class or interface name embedded in the signature string
+     * Any class or interface name embedded in the descriptor string
      * will be resolved by calling {@link ClassLoader#loadClass(java.lang.String)}
      * on the given loader (or if it is null, on the system class loader).
      * <p>
-     * Note that it is possible to build method types which cannot be
+     * Note that it is possible to encounter method types which cannot be
      * constructed by this method, because their component types are
      * not all reachable from a common class loader.
      * <p>
@@ -662,8 +675,11 @@ class MethodType {
     }
 
     /**
-     * Create a bytecode signature representation of the type.
-     * Note that this is not a strict inverse of
+     * Create a bytecode descriptor representation of the method type.
+     * <p>
+     * Note that this is not a strict inverse of {@link #fromMethodDescriptorString}.
+     * Two distinct classes which share a common name but have different class loaders
+     * will appear identical when viewed within descriptor strings.
      * <p>
      * This method is included for the benfit of applications that must
      * generate bytecodes that process method handles and invokedynamic.

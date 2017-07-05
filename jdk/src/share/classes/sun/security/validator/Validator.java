@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package sun.security.validator;
 
 import java.util.*;
 
+import java.security.AlgorithmConstraints;
 import java.security.KeyStore;
 import java.security.cert.*;
 
@@ -232,16 +233,44 @@ public abstract class Validator {
     public final X509Certificate[] validate(X509Certificate[] chain,
             Collection<X509Certificate> otherCerts, Object parameter)
             throws CertificateException {
-        chain = engineValidate(chain, otherCerts, parameter);
+        return validate(chain, otherCerts, null, parameter);
+    }
+
+    /**
+     * Validate the given certificate chain.
+     *
+     * @param chain the target certificate chain
+     * @param otherCerts a Collection of additional X509Certificates that
+     *        could be helpful for path building (or null)
+     * @param constraints algorithm constraints for certification path
+     *        processing
+     * @param parameter an additional parameter with variant specific meaning.
+     *        Currently, it is only defined for TLS_SERVER variant validators,
+     *        where it must be non null and the name of the TLS key exchange
+     *        algorithm being used (see JSSE X509TrustManager specification).
+     *        In the future, it could be used to pass in a PKCS#7 object for
+     *        code signing to check time stamps.
+     * @return a non-empty chain that was used to validate the path. The
+     *        end entity cert is at index 0, the trust anchor at index n-1.
+     */
+    public final X509Certificate[] validate(X509Certificate[] chain,
+                Collection<X509Certificate> otherCerts,
+                AlgorithmConstraints constraints,
+                Object parameter) throws CertificateException {
+        chain = engineValidate(chain, otherCerts, constraints, parameter);
+
         // omit EE extension check if EE cert is also trust anchor
         if (chain.length > 1) {
             endEntityChecker.check(chain[0], parameter);
         }
+
         return chain;
     }
 
     abstract X509Certificate[] engineValidate(X509Certificate[] chain,
-        Collection<X509Certificate> otherCerts, Object parameter) throws CertificateException;
+                Collection<X509Certificate> otherCerts,
+                AlgorithmConstraints constraints,
+                Object parameter) throws CertificateException;
 
     /**
      * Returns an immutable Collection of the X509Certificates this instance

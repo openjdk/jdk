@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
  * @bug 4495742
  * @summary Add non-blocking SSL/TLS functionality, usable with any
  *      I/O abstraction
+ * @ignore JSSE supported cipher suites are changed with CR 6916074,
+ *     need to update this test case in JDK 7 soon
  *
  * This is intended to test many of the basic API calls to the SSLEngine
  * interface.  This doesn't really exercise much of the SSL code.

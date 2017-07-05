@@ -101,8 +101,7 @@ class TenuredGeneration: public OneContigSpaceCardGeneration {
 
   virtual void update_gc_stats(int level, bool full);
 
-  virtual bool promotion_attempt_is_safe(size_t max_promoted_in_bytes,
-    bool younger_handles_promotion_failure) const;
+  virtual bool promotion_attempt_is_safe(size_t max_promoted_in_bytes) const;
 
   void verify_alloc_buffers_clean();
 };
