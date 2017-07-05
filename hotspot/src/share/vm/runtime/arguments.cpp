@@ -375,53 +375,17 @@ static SpecialFlag const special_jvm_flags[] = {
   // -------------- Deprecated Flags --------------
   // --- Non-alias flags - sorted by obsolete_in then expired_in:
   { "MaxGCMinorPauseMillis",        JDK_Version::jdk(8), JDK_Version::undefined(), JDK_Version::undefined() },
-  { "AutoGCSelectPauseMillis",      JDK_Version::jdk(9), JDK_Version::undefined(), JDK_Version::jdk(10) },
-  { "UseAutoGCSelectPolicy",        JDK_Version::jdk(9), JDK_Version::undefined(), JDK_Version::jdk(10) },
-  { "UseParNewGC",                  JDK_Version::jdk(9), JDK_Version::undefined(), JDK_Version::jdk(10) },
-  { "ExplicitGCInvokesConcurrentAndUnloadsClasses", JDK_Version::jdk(9), JDK_Version::undefined(), JDK_Version::jdk(10) },
-  { "ConvertSleepToYield",          JDK_Version::jdk(9), JDK_Version::jdk(10),     JDK_Version::jdk(11) },
-  { "ConvertYieldToSleep",          JDK_Version::jdk(9), JDK_Version::jdk(10),     JDK_Version::jdk(11) },
 
   // --- Deprecated alias flags (see also aliased_jvm_flags) - sorted by obsolete_in then expired_in:
   { "DefaultMaxRAMFraction",        JDK_Version::jdk(8), JDK_Version::undefined(), JDK_Version::undefined() },
   { "CreateMinidumpOnCrash",        JDK_Version::jdk(9), JDK_Version::undefined(), JDK_Version::undefined() },
-  { "CMSMarkStackSizeMax",          JDK_Version::jdk(9), JDK_Version::undefined(), JDK_Version::jdk(10) },
-  { "CMSMarkStackSize",             JDK_Version::jdk(9), JDK_Version::undefined(), JDK_Version::jdk(10) },
-  { "G1MarkStackSize",              JDK_Version::jdk(9), JDK_Version::undefined(), JDK_Version::jdk(10) },
-  { "ParallelMarkingThreads",       JDK_Version::jdk(9), JDK_Version::undefined(), JDK_Version::jdk(10) },
-  { "ParallelCMSThreads",           JDK_Version::jdk(9), JDK_Version::undefined(), JDK_Version::jdk(10) },
 
   // -------------- Obsolete Flags - sorted by expired_in --------------
-  { "UseOldInlining",                JDK_Version::undefined(), JDK_Version::jdk(9), JDK_Version::jdk(10) },
-  { "SafepointPollOffset",           JDK_Version::undefined(), JDK_Version::jdk(9), JDK_Version::jdk(10) },
-  { "UseBoundThreads",               JDK_Version::undefined(), JDK_Version::jdk(9), JDK_Version::jdk(10) },
-  { "DefaultThreadPriority",         JDK_Version::undefined(), JDK_Version::jdk(9), JDK_Version::jdk(10) },
-  { "NoYieldsInMicrolock",           JDK_Version::undefined(), JDK_Version::jdk(9), JDK_Version::jdk(10) },
-  { "BackEdgeThreshold",             JDK_Version::undefined(), JDK_Version::jdk(9), JDK_Version::jdk(10) },
-  { "UseNewReflection",              JDK_Version::undefined(), JDK_Version::jdk(9), JDK_Version::jdk(10) },
-  { "ReflectionWrapResolutionErrors",JDK_Version::undefined(), JDK_Version::jdk(9), JDK_Version::jdk(10) },
-  { "VerifyReflectionBytecodes",     JDK_Version::undefined(), JDK_Version::jdk(9), JDK_Version::jdk(10) },
-  { "AutoShutdownNMT",               JDK_Version::undefined(), JDK_Version::jdk(9), JDK_Version::jdk(10) },
-  { "NmethodSweepFraction",          JDK_Version::undefined(), JDK_Version::jdk(9), JDK_Version::jdk(10) },
-  { "NmethodSweepCheckInterval",     JDK_Version::undefined(), JDK_Version::jdk(9), JDK_Version::jdk(10) },
-  { "CodeCacheMinimumFreeSpace",     JDK_Version::undefined(), JDK_Version::jdk(9), JDK_Version::jdk(10) },
-#ifndef ZERO
-  { "UseFastAccessorMethods",        JDK_Version::undefined(), JDK_Version::jdk(9), JDK_Version::jdk(10) },
-  { "UseFastEmptyMethods",           JDK_Version::undefined(), JDK_Version::jdk(9), JDK_Version::jdk(10) },
-#endif // ZERO
-  { "UseCompilerSafepoints",         JDK_Version::undefined(), JDK_Version::jdk(9), JDK_Version::jdk(10) },
-  { "AdaptiveSizePausePolicy",       JDK_Version::undefined(), JDK_Version::jdk(9), JDK_Version::jdk(10) },
-  { "ParallelGCRetainPLAB",          JDK_Version::undefined(), JDK_Version::jdk(9), JDK_Version::jdk(10) },
-  { "ThreadSafetyMargin",            JDK_Version::undefined(), JDK_Version::jdk(9), JDK_Version::jdk(10) },
-  { "LazyBootClassLoader",           JDK_Version::undefined(), JDK_Version::jdk(9), JDK_Version::jdk(10) },
-  { "StarvationMonitorInterval",     JDK_Version::undefined(), JDK_Version::jdk(9), JDK_Version::jdk(10) },
-  { "PreInflateSpin",                JDK_Version::undefined(), JDK_Version::jdk(9), JDK_Version::jdk(10) },
-  { "JNIDetachReleasesMonitors",     JDK_Version::undefined(), JDK_Version::jdk(9), JDK_Version::jdk(10) },
-  { "UseAltSigs",                    JDK_Version::undefined(), JDK_Version::jdk(9), JDK_Version::jdk(10) },
-  { "SegmentedHeapDumpThreshold",    JDK_Version::undefined(), JDK_Version::jdk(9), JDK_Version::jdk(10) },
-  { "PrintOopAddress",               JDK_Version::undefined(), JDK_Version::jdk(9), JDK_Version::jdk(10) },
-  { "PermSize",                      JDK_Version::undefined(), JDK_Version::jdk(8), JDK_Version::jdk(10) },
-  { "MaxPermSize",                   JDK_Version::undefined(), JDK_Version::jdk(8), JDK_Version::jdk(10) },
+  { "ConvertSleepToYield",           JDK_Version::jdk(9),      JDK_Version::jdk(10), JDK_Version::jdk(11) },
+  { "ConvertYieldToSleep",           JDK_Version::jdk(9),      JDK_Version::jdk(10), JDK_Version::jdk(11) },
+  { "MinSleepInterval",              JDK_Version::jdk(9),      JDK_Version::jdk(10), JDK_Version::jdk(11) },
+  { "PermSize",                      JDK_Version::undefined(), JDK_Version::jdk(8),  JDK_Version::undefined() },
+  { "MaxPermSize",                   JDK_Version::undefined(), JDK_Version::jdk(8),  JDK_Version::undefined() },
 
 #ifdef TEST_VERIFY_SPECIAL_JVM_FLAGS
   { "dep > obs",                    JDK_Version::jdk(9), JDK_Version::jdk(8), JDK_Version::undefined() },
@@ -444,11 +408,6 @@ typedef struct {
 
 static AliasedFlag const aliased_jvm_flags[] = {
   { "DefaultMaxRAMFraction",    "MaxRAMFraction"    },
-  { "CMSMarkStackSizeMax",      "MarkStackSizeMax"  },
-  { "CMSMarkStackSize",         "MarkStackSize"     },
-  { "G1MarkStackSize",          "MarkStackSize"     },
-  { "ParallelMarkingThreads",   "ConcGCThreads"     },
-  { "ParallelCMSThreads",       "ConcGCThreads"     },
   { "CreateMinidumpOnCrash",    "CreateCoredumpOnCrash" },
   { NULL, NULL}
 };
@@ -1547,7 +1506,6 @@ void Arguments::set_parnew_gc_flags() {
   assert(!UseSerialGC && !UseParallelOldGC && !UseParallelGC && !UseG1GC,
          "control point invariant");
   assert(UseConcMarkSweepGC, "CMS is expected to be on here");
-  assert(UseParNewGC, "ParNew should always be used with CMS");
 
   if (FLAG_IS_DEFAULT(ParallelGCThreads)) {
     FLAG_SET_DEFAULT(ParallelGCThreads, Abstract_VM_Version::parallel_worker_threads());
@@ -1588,7 +1546,6 @@ void Arguments::set_parnew_gc_flags() {
 void Arguments::set_cms_and_parnew_gc_flags() {
   assert(!UseSerialGC && !UseParallelOldGC && !UseParallelGC, "Error");
   assert(UseConcMarkSweepGC, "CMS is expected to be on here");
-  assert(UseParNewGC, "ParNew should always be used with CMS");
 
   // Turn off AdaptiveSizePolicy by default for cms until it is complete.
   disable_adaptive_size_policy("UseConcMarkSweepGC");
@@ -1728,16 +1685,6 @@ size_t Arguments::max_heap_for_compressed_oops() {
   NOT_LP64(ShouldNotReachHere(); return 0);
 }
 
-bool Arguments::should_auto_select_low_pause_collector() {
-  if (UseAutoGCSelectPolicy &&
-      !FLAG_IS_DEFAULT(MaxGCPauseMillis) &&
-      (MaxGCPauseMillis <= AutoGCSelectPauseMillis)) {
-    log_trace(gc)("Automatic selection of the low pause collector based on pause goal of %d (ms)", (int) MaxGCPauseMillis);
-    return true;
-  }
-  return false;
-}
-
 void Arguments::set_use_compressed_oops() {
 #ifndef ZERO
 #ifdef _LP64
@@ -1841,16 +1788,7 @@ void Arguments::select_compilation_mode_ergonomically() {
 void Arguments::select_gc_ergonomically() {
 #if INCLUDE_ALL_GCS
   if (os::is_server_class_machine()) {
-    if (!UseAutoGCSelectPolicy) {
-       FLAG_SET_ERGO_IF_DEFAULT(bool, UseG1GC, true);
-    } else {
-      if (should_auto_select_low_pause_collector()) {
-        FLAG_SET_ERGO_IF_DEFAULT(bool, UseConcMarkSweepGC, true);
-        FLAG_SET_ERGO_IF_DEFAULT(bool, UseParNewGC, true);
-      } else {
-        FLAG_SET_ERGO_IF_DEFAULT(bool, UseParallelGC, true);
-      }
-    }
+    FLAG_SET_ERGO_IF_DEFAULT(bool, UseG1GC, true);
   } else {
     FLAG_SET_ERGO_IF_DEFAULT(bool, UseSerialGC, true);
   }
@@ -1859,7 +1797,6 @@ void Arguments::select_gc_ergonomically() {
   UNSUPPORTED_OPTION(UseParallelGC);
   UNSUPPORTED_OPTION(UseParallelOldGC);
   UNSUPPORTED_OPTION(UseConcMarkSweepGC);
-  UNSUPPORTED_OPTION(UseParNewGC);
   FLAG_SET_ERGO_IF_DEFAULT(bool, UseSerialGC, true);
 #endif // INCLUDE_ALL_GCS
 }
@@ -2073,7 +2010,6 @@ void Arguments::set_gc_specific_flags() {
   if (!ClassUnloading) {
     FLAG_SET_CMDLINE(bool, CMSClassUnloadingEnabled, false);
     FLAG_SET_CMDLINE(bool, ClassUnloadingWithConcurrentMark, false);
-    FLAG_SET_CMDLINE(bool, ExplicitGCInvokesConcurrentAndUnloadsClasses, false);
   }
 #endif // INCLUDE_ALL_GCS
 }
@@ -2425,18 +2361,6 @@ bool Arguments::check_gc_consistency() {
                 "Conflicting collector combinations in option list; "
                 "please refer to the release notes for the combinations "
                 "allowed\n");
-    return false;
-  }
-
-  if (UseConcMarkSweepGC && !UseParNewGC) {
-    jio_fprintf(defaultStream::error_stream(),
-        "It is not possible to combine the DefNew young collector with the CMS collector.\n");
-    return false;
-  }
-
-  if (UseParNewGC && !UseConcMarkSweepGC) {
-    jio_fprintf(defaultStream::error_stream(),
-        "It is not possible to combine the ParNew young collector with any collector other than CMS.\n");
     return false;
   }
 
@@ -3724,11 +3648,6 @@ jint Arguments::finalize_vm_init_args() {
         }
       }
     }
-  }
-
-  if (UseConcMarkSweepGC && FLAG_IS_DEFAULT(UseParNewGC) && !UseParNewGC) {
-    // CMS can only be used with ParNew
-    FLAG_SET_ERGO(bool, UseParNewGC, true);
   }
 
   if (!check_vm_args_consistency()) {
