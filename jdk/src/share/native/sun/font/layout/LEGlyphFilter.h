@@ -62,7 +62,7 @@ public:
      *
      * @internal
      */
-    virtual le_bool accept(LEGlyphID glyph) const = 0;
+    virtual le_bool accept(LEGlyphID glyph, LEErrorCode &success) const = 0;
 };
 #endif  /* U_HIDE_INTERNAL_API */
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -342,6 +342,13 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argc */
             JLI_ReportExceptionDescription(env); \
             ret = (CEL_return_value); \
             LEAVE(); \
+        } \
+    } while (JNI_FALSE)
+
+#define CHECK_EXCEPTION_RETURN(CER_return_value) \
+    do { \
+        if ((*env)->ExceptionOccurred(env)) { \
+            return CER_return_value; \
         } \
     } while (JNI_FALSE)
 
@@ -1233,8 +1240,9 @@ LoadMainClass(JNIEnv *env, int mode, char *name)
                 "checkAndLoadMain",
                 "(ZILjava/lang/String;)Ljava/lang/Class;"));
 
-    str = NewPlatformString(env, name);
-    result = (*env)->CallStaticObjectMethod(env, cls, mid, USE_STDERR, mode, str);
+    NULL_CHECK0(str = NewPlatformString(env, name));
+    NULL_CHECK0(result = (*env)->CallStaticObjectMethod(env, cls, mid,
+                                                        USE_STDERR, mode, str));
 
     if (JLI_IsTraceLauncher()) {
         end   = CounterGet();
@@ -1480,7 +1488,7 @@ ShowSettings(JNIEnv *env, char *optString)
     NULL_CHECK(cls);
     NULL_CHECK(showSettingsID = (*env)->GetStaticMethodID(env, cls,
             "showSettings", "(ZLjava/lang/String;JJJZ)V"));
-    joptString = (*env)->NewStringUTF(env, optString);
+    NULL_CHECK(joptString = (*env)->NewStringUTF(env, optString));
     (*env)->CallStaticVoidMethod(env, cls, showSettingsID,
                                  USE_STDERR,
                                  joptString,
@@ -1521,31 +1529,35 @@ PrintUsage(JNIEnv* env, jboolean doXUsage)
     NULL_CHECK(printHelp = (*env)->GetStaticMethodID(env, cls,
                                         "printHelpMessage", "(Z)V"));
 
-    jprogname = (*env)->NewStringUTF(env, _program_name);
+    NULL_CHECK(jprogname = (*env)->NewStringUTF(env, _program_name));
 
     /* Initialize the usage message with the usual preamble */
     (*env)->CallStaticVoidMethod(env, cls, initHelp, jprogname);
+    CHECK_EXCEPTION_RETURN();
 
 
     /* Assemble the other variant part of the usage */
     if ((knownVMs[0].flag == VM_KNOWN) ||
         (knownVMs[0].flag == VM_IF_SERVER_CLASS)) {
-      vm1 = (*env)->NewStringUTF(env, knownVMs[0].name);
-      vm2 =  (*env)->NewStringUTF(env, knownVMs[0].name+1);
+      NULL_CHECK(vm1 = (*env)->NewStringUTF(env, knownVMs[0].name));
+      NULL_CHECK(vm2 =  (*env)->NewStringUTF(env, knownVMs[0].name+1));
       (*env)->CallStaticVoidMethod(env, cls, vmSelect, vm1, vm2);
+      CHECK_EXCEPTION_RETURN();
     }
     for (i=1; i<knownVMsCount; i++) {
       if (knownVMs[i].flag == VM_KNOWN) {
-        vm1 =  (*env)->NewStringUTF(env, knownVMs[i].name);
-        vm2 =  (*env)->NewStringUTF(env, knownVMs[i].name+1);
+        NULL_CHECK(vm1 =  (*env)->NewStringUTF(env, knownVMs[i].name));
+        NULL_CHECK(vm2 =  (*env)->NewStringUTF(env, knownVMs[i].name+1));
         (*env)->CallStaticVoidMethod(env, cls, vmSelect, vm1, vm2);
+        CHECK_EXCEPTION_RETURN();
       }
     }
     for (i=1; i<knownVMsCount; i++) {
       if (knownVMs[i].flag == VM_ALIASED_TO) {
-        vm1 =  (*env)->NewStringUTF(env, knownVMs[i].name);
-        vm2 =  (*env)->NewStringUTF(env, knownVMs[i].alias+1);
+        NULL_CHECK(vm1 =  (*env)->NewStringUTF(env, knownVMs[i].name));
+        NULL_CHECK(vm2 =  (*env)->NewStringUTF(env, knownVMs[i].alias+1));
         (*env)->CallStaticVoidMethod(env, cls, vmSynonym, vm1, vm2);
+        CHECK_EXCEPTION_RETURN();
       }
     }
 
@@ -1558,8 +1570,9 @@ PrintUsage(JNIEnv* env, jboolean doXUsage)
         defaultVM = knownVMs[0].server_class+1;
       }
 
-      vm1 =  (*env)->NewStringUTF(env, defaultVM);
+      NULL_CHECK(vm1 =  (*env)->NewStringUTF(env, defaultVM));
       (*env)->CallStaticVoidMethod(env, cls, vmErgo, isServerClassMachine,  vm1);
+      CHECK_EXCEPTION_RETURN();
     }
 
     /* Complete the usage message and print to stderr*/

@@ -985,13 +985,45 @@ final class CipherSuite implements Comparable<CipherSuite> {
         //  ID           Key Exchange   Cipher     A  obs  suprt  PRF
         //  ======       ============   =========  =  ===  =====  ========
 
-
-        // Placeholder for cipher suites in GCM mode.
+        // Suite B compliant cipher suites, see RFC 6460.
         //
-        // For better compatibility and interoperability, we decrease the
-        // priority of cipher suites in GCM mode for a while as GCM
-        // technologies mature in the industry.  Eventually we'll move
-        // the GCM suites here.
+        // Note that, at present this provider is not Suite B compliant. The
+        // preference order of the GCM cipher suites does not follow the spec
+        // of RFC 6460.  In this section, only two cipher suites are listed
+        // so that applications can make use of Suite-B compliant cipher
+        // suite firstly.
+        add("TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
+            0xc02c, --p, K_ECDHE_ECDSA, B_AES_256_GCM, T, max, tls12, P_SHA384);
+        add("TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
+            0xc02b, --p, K_ECDHE_ECDSA, B_AES_128_GCM, T, max, tls12, P_SHA256);
+
+        // AES_256(GCM)
+        add("TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
+            0xc030, --p, K_ECDHE_RSA,   B_AES_256_GCM, T, max, tls12, P_SHA384);
+        add("TLS_RSA_WITH_AES_256_GCM_SHA384",
+            0x009d, --p, K_RSA,         B_AES_256_GCM, T, max, tls12, P_SHA384);
+        add("TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384",
+            0xc02e, --p, K_ECDH_ECDSA,  B_AES_256_GCM, T, max, tls12, P_SHA384);
+        add("TLS_ECDH_RSA_WITH_AES_256_GCM_SHA384",
+            0xc032, --p, K_ECDH_RSA,    B_AES_256_GCM, T, max, tls12, P_SHA384);
+        add("TLS_DHE_RSA_WITH_AES_256_GCM_SHA384",
+            0x009f, --p, K_DHE_RSA,     B_AES_256_GCM, T, max, tls12, P_SHA384);
+        add("TLS_DHE_DSS_WITH_AES_256_GCM_SHA384",
+            0x00a3, --p, K_DHE_DSS,     B_AES_256_GCM, T, max, tls12, P_SHA384);
+
+        // AES_128(GCM)
+        add("TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
+            0xc02f, --p, K_ECDHE_RSA,   B_AES_128_GCM, T, max, tls12, P_SHA256);
+        add("TLS_RSA_WITH_AES_128_GCM_SHA256",
+            0x009c, --p, K_RSA,         B_AES_128_GCM, T, max, tls12, P_SHA256);
+        add("TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256",
+            0xc02d, --p, K_ECDH_ECDSA,  B_AES_128_GCM, T, max, tls12, P_SHA256);
+        add("TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256",
+            0xc031, --p, K_ECDH_RSA,    B_AES_128_GCM, T, max, tls12, P_SHA256);
+        add("TLS_DHE_RSA_WITH_AES_128_GCM_SHA256",
+            0x009e, --p, K_DHE_RSA,     B_AES_128_GCM, T, max, tls12, P_SHA256);
+        add("TLS_DHE_DSS_WITH_AES_128_GCM_SHA256",
+            0x00a2, --p, K_DHE_DSS,     B_AES_128_GCM, T, max, tls12, P_SHA256);
 
         // AES_256(CBC)
         add("TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384",
@@ -1066,50 +1098,6 @@ final class CipherSuite implements Comparable<CipherSuite> {
             0xC002, --p, K_ECDH_ECDSA,  B_RC4_128, N);
         add("TLS_ECDH_RSA_WITH_RC4_128_SHA",
             0xC00C, --p, K_ECDH_RSA,    B_RC4_128, N);
-
-        // Cipher suites in GCM mode, see RFC 5288/5289.
-        //
-        // We may increase the priority of cipher suites in GCM mode when
-        // GCM technologies become mature in the industry.
-
-        // Suite B compliant cipher suites, see RFC 6460.
-        //
-        // Note that, at present this provider is not Suite B compliant. The
-        // preference order of the GCM cipher suites does not follow the spec
-        // of RFC 6460.
-        add("TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
-            0xc02c, --p, K_ECDHE_ECDSA, B_AES_256_GCM, T, max, tls12, P_SHA384);
-        add("TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
-            0xc02b, --p, K_ECDHE_ECDSA, B_AES_128_GCM, T, max, tls12, P_SHA256);
-
-        // AES_256(GCM)
-        add("TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
-            0xc030, --p, K_ECDHE_RSA,   B_AES_256_GCM, T, max, tls12, P_SHA384);
-        add("TLS_RSA_WITH_AES_256_GCM_SHA384",
-            0x009d, --p, K_RSA,         B_AES_256_GCM, T, max, tls12, P_SHA384);
-        add("TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384",
-            0xc02e, --p, K_ECDH_ECDSA,  B_AES_256_GCM, T, max, tls12, P_SHA384);
-        add("TLS_ECDH_RSA_WITH_AES_256_GCM_SHA384",
-            0xc032, --p, K_ECDH_RSA,    B_AES_256_GCM, T, max, tls12, P_SHA384);
-        add("TLS_DHE_RSA_WITH_AES_256_GCM_SHA384",
-            0x009f, --p, K_DHE_RSA,     B_AES_256_GCM, T, max, tls12, P_SHA384);
-        add("TLS_DHE_DSS_WITH_AES_256_GCM_SHA384",
-            0x00a3, --p, K_DHE_DSS,     B_AES_256_GCM, T, max, tls12, P_SHA384);
-
-        // AES_128(GCM)
-        add("TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
-            0xc02f, --p, K_ECDHE_RSA,   B_AES_128_GCM, T, max, tls12, P_SHA256);
-        add("TLS_RSA_WITH_AES_128_GCM_SHA256",
-            0x009c, --p, K_RSA,         B_AES_128_GCM, T, max, tls12, P_SHA256);
-        add("TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256",
-            0xc02d, --p, K_ECDH_ECDSA,  B_AES_128_GCM, T, max, tls12, P_SHA256);
-        add("TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256",
-            0xc031, --p, K_ECDH_RSA,    B_AES_128_GCM, T, max, tls12, P_SHA256);
-        add("TLS_DHE_RSA_WITH_AES_128_GCM_SHA256",
-            0x009e, --p, K_DHE_RSA,     B_AES_128_GCM, T, max, tls12, P_SHA256);
-        add("TLS_DHE_DSS_WITH_AES_128_GCM_SHA256",
-            0x00a2, --p, K_DHE_DSS,     B_AES_128_GCM, T, max, tls12, P_SHA256);
-        // End of cipher suites in GCM mode.
 
         // 3DES_EDE
         add("TLS_ECDHE_ECDSA_WITH_3DES_EDE_CBC_SHA",

@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "ci/ciReplay.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "code/exceptionHandlerTable.hpp"
 #include "code/nmethod.hpp"
@@ -647,6 +648,7 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
                   _printer(IdealGraphPrinter::printer()),
 #endif
                   _congraph(NULL),
+                  _replay_inline_data(NULL),
                   _late_inlines(comp_arena(), 2, 0, NULL),
                   _string_late_inlines(comp_arena(), 2, 0, NULL),
                   _boxing_late_inlines(comp_arena(), 2, 0, NULL),
@@ -680,6 +682,10 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
   }
   set_print_assembly(print_opto_assembly);
   set_parsed_irreducible_loop(false);
+
+  if (method()->has_option("ReplayInline")) {
+    _replay_inline_data = ciReplay::load_inline_data(method(), entry_bci(), ci_env->comp_level());
+  }
 #endif
   set_print_inlining(PrintInlining || method()->has_option("PrintInlining") NOT_PRODUCT( || PrintOptoInlining));
   set_print_intrinsics(PrintIntrinsics || method()->has_option("PrintIntrinsics"));
@@ -849,6 +855,15 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
 #endif
 
   NOT_PRODUCT( verify_barriers(); )
+
+  // Dump compilation data to replay it.
+  if (method()->has_option("DumpReplay")) {
+    env()->dump_replay_data(_compile_id);
+  }
+  if (method()->has_option("DumpInline") && (ilt() != NULL)) {
+    env()->dump_inline_data(_compile_id);
+  }
+
   // Now that we know the size of all the monitors we can add a fixed slot
   // for the original deopt pc.
 
@@ -938,6 +953,7 @@ Compile::Compile( ciEnv* ci_env,
     _dead_node_list(comp_arena()),
     _dead_node_count(0),
     _congraph(NULL),
+    _replay_inline_data(NULL),
     _number_of_mh_late_inlines(0),
     _inlining_progress(false),
     _inlining_incrementally(false),
@@ -3754,6 +3770,16 @@ void Compile::dump_inlining() {
     for (int i = 0; i < _print_inlining_list->length(); i++) {
       tty->print(_print_inlining_list->adr_at(i)->ss()->as_string());
     }
+  }
+}
+
+// Dump inlining replay data to the stream.
+// Don't change thread state and acquire any locks.
+void Compile::dump_inline_data(outputStream* out) {
+  InlineTree* inl_tree = ilt();
+  if (inl_tree != NULL) {
+    out->print(" inline %d", inl_tree->count());
+    inl_tree->dump_replay_data(out);
   }
 }
 

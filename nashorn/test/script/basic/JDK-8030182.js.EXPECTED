@@ -1,0 +1,3 @@
+Error: Strange...
+	at func (test/script/basic/JDK-8030182.js:32)
+	at <program> (test/script/basic/JDK-8030182.js:43)

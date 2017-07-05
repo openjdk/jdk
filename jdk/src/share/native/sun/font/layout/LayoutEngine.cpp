@@ -156,7 +156,7 @@ public:
     CanonMarkFilter(const LEReferenceTo<GlyphDefinitionTableHeader> &gdefTable, LEErrorCode &success);
     virtual ~CanonMarkFilter();
 
-    virtual le_bool accept(LEGlyphID glyph) const;
+    virtual le_bool accept(LEGlyphID glyph, LEErrorCode &success) const;
 };
 
 CanonMarkFilter::CanonMarkFilter(const LEReferenceTo<GlyphDefinitionTableHeader> &gdefTable, LEErrorCode &success)
@@ -169,9 +169,8 @@ CanonMarkFilter::~CanonMarkFilter()
     // nothing to do?
 }
 
-le_bool CanonMarkFilter::accept(LEGlyphID glyph) const
+le_bool CanonMarkFilter::accept(LEGlyphID glyph, LEErrorCode &success) const
 {
-  LEErrorCode success = LE_NO_ERROR;
   le_int32 glyphClass = classDefTable->getGlyphClass(classDefTable, glyph, success);
   if(LE_FAILURE(success)) return false;
   return glyphClass != 0;
@@ -207,7 +206,7 @@ LayoutEngine::LayoutEngine(const LEFontInstance *fontInstance,
     fGlyphStorage = new LEGlyphStorage();
     if (fGlyphStorage == NULL) {
         success = LE_MEMORY_ALLOCATION_ERROR;
-}
+    }
 }
 
 le_int32 LayoutEngine::getGlyphCount() const
@@ -263,7 +262,9 @@ le_int32 LayoutEngine::characterProcessing(const LEUnicode chars[], le_int32 off
       return count;
     }
 
-    LEReferenceTo<GlyphSubstitutionTableHeader> canonGSUBTable((GlyphSubstitutionTableHeader *) CanonShaping::glyphSubstitutionTable);
+    LEReferenceTo<GlyphSubstitutionTableHeader> canonGSUBTable(LETableReference::kStaticData,
+                                                               (GlyphSubstitutionTableHeader *) CanonShaping::glyphSubstitutionTable,
+                                                               CanonShaping::glyphSubstitutionTableLen);
     LETag scriptTag  = OpenTypeLayoutEngine::getScriptTag(fScriptCode);
     LETag langSysTag = OpenTypeLayoutEngine::getLangSysTag(fLanguageCode);
     le_int32 i, dir = 1, out = 0, outCharCount = count;
@@ -300,7 +301,7 @@ le_int32 LayoutEngine::characterProcessing(const LEUnicode chars[], le_int32 off
 
           CanonShaping::reorderMarks(&chars[offset], count, rightToLeft, reordered, fakeGlyphStorage);
           inChars = reordered;
-                }
+        }
 
         fakeGlyphStorage.allocateAuxData(success);
 
@@ -323,7 +324,8 @@ le_int32 LayoutEngine::characterProcessing(const LEUnicode chars[], le_int32 off
           LE_DELETE_ARRAY(reordered);
         }
 
-        outCharCount = canonGSUBTable->process(canonGSUBTable, fakeGlyphStorage, rightToLeft, scriptTag, langSysTag, (const GlyphDefinitionTableHeader*)NULL, substitutionFilter, canonFeatureMap, canonFeatureMapCount, FALSE, success);
+        const LEReferenceTo<GlyphDefinitionTableHeader>  noGDEF; // empty gdef header
+        outCharCount = canonGSUBTable->process(canonGSUBTable, fakeGlyphStorage, rightToLeft, scriptTag, langSysTag, noGDEF, substitutionFilter, canonFeatureMap, canonFeatureMapCount, FALSE, success);
 
         if (LE_FAILURE(success)) {
             delete substitutionFilter;
@@ -403,10 +405,13 @@ void LayoutEngine::positionGlyphs(LEGlyphStorage &glyphStorage, float x, float y
         LEPoint advance;
 
         glyphStorage.setPosition(i, x, y, success);
+        _LETRACE("g#%-4d (%.2f, %.2f)", i, x, y);
 
         fFontInstance->getGlyphAdvance(glyphStorage[i], advance);
         x += advance.fX;
         y += advance.fY;
+
+
     }
 
     glyphStorage.setPosition(glyphCount, x, y, success);
@@ -424,7 +429,7 @@ void LayoutEngine::adjustGlyphPositions(const LEUnicode chars[], le_int32 offset
         return;
     }
 
-    LEReferenceTo<GlyphDefinitionTableHeader> gdefTable((GlyphDefinitionTableHeader *) CanonShaping::glyphDefinitionTable,
+    LEReferenceTo<GlyphDefinitionTableHeader> gdefTable(LETableReference::kStaticData, (GlyphDefinitionTableHeader *) CanonShaping::glyphDefinitionTable,
                                                         CanonShaping::glyphDefinitionTableLen);
     CanonMarkFilter filter(gdefTable, success);
 
@@ -464,9 +469,10 @@ void LayoutEngine::adjustMarkGlyphs(LEGlyphStorage &glyphStorage, LEGlyphFilter 
         glyphStorage.getGlyphPosition(p + 1, next, ignore, success);
 
         xAdvance = next - prev;
+        _LETRACE("p#%d (%.2f,%.2f)", p, xAdvance, 0);
         glyphStorage.adjustPosition(p, xAdjust, 0, success);
 
-        if (markFilter->accept(glyphStorage[p])) {
+        if (markFilter->accept(glyphStorage[p], success)) {
             xAdjust -= xAdvance;
         }
 
@@ -506,9 +512,13 @@ void LayoutEngine::adjustMarkGlyphs(const LEUnicode chars[], le_int32 charCount,
         glyphStorage.getGlyphPosition(p + 1, next, ignore, success);
 
         xAdvance = next - prev;
+
+        _LETRACE("p#%d (%.2f,%.2f)", p, xAdvance, 0);
+
+
         glyphStorage.adjustPosition(p, xAdjust, 0, success);
 
-        if (markFilter->accept(chars[c])) {
+        if (markFilter->accept(chars[c], success)) {
             xAdjust -= xAdvance;
         }
 
@@ -662,8 +672,10 @@ LayoutEngine *LayoutEngine::layoutEngineFactory(const LEFontInstance *fontInstan
             break;
         }
     } else {
-        MorphTableHeader2 *morxTable = (MorphTableHeader2 *)fontInstance->getFontTable(morxTableTag);
-        if (morxTable != NULL && SWAPL(morxTable->version)==0x00020000) {
+        LEReferenceTo<MorphTableHeader2> morxTable(fontInstance, morxTableTag, success);
+        if (LE_SUCCESS(success) &&
+            morxTable.isValid() &&
+            SWAPL(morxTable->version)==0x00020000) {
             result = new GXLayoutEngine2(fontInstance, scriptCode, languageCode, morxTable, typoFlags, success);
         } else {
           LEReferenceTo<MorphTableHeader> mortTable(fontInstance, mortTableTag, success);
@@ -686,21 +698,20 @@ LayoutEngine *LayoutEngine::layoutEngineFactory(const LEFontInstance *fontInstan
                         break;
                     }
 
-            case arabScriptCode:
-            //case hebrScriptCode:
-                result = new UnicodeArabicOpenTypeLayoutEngine(fontInstance, scriptCode, languageCode, typoFlags, success);
-                break;
+                case arabScriptCode:
+                  result = new UnicodeArabicOpenTypeLayoutEngine(fontInstance, scriptCode, languageCode, typoFlags, success);
+                  break;
 
-            //case hebrScriptCode:
-            //    return new HebrewOpenTypeLayoutEngine(fontInstance, scriptCode, languageCode, typoFlags);
+                  //case hebrScriptCode:
+                  //    return new HebrewOpenTypeLayoutEngine(fontInstance, scriptCode, languageCode, typoFlags);
 
-            case thaiScriptCode:
-                result = new ThaiLayoutEngine(fontInstance, scriptCode, languageCode, typoFlags, success);
-                break;
+                case thaiScriptCode:
+                  result = new ThaiLayoutEngine(fontInstance, scriptCode, languageCode, typoFlags, success);
+                  break;
 
-            case hangScriptCode:
-                result = new HangulOpenTypeLayoutEngine(fontInstance, scriptCode, languageCode, typoFlags, success);
-                break;
+                case hangScriptCode:
+                  result = new HangulOpenTypeLayoutEngine(fontInstance, scriptCode, languageCode, typoFlags, success);
+                  break;
 
                     default:
                         result = new LayoutEngine(fontInstance, scriptCode, languageCode, typoFlags, success);
@@ -711,9 +722,9 @@ LayoutEngine *LayoutEngine::layoutEngineFactory(const LEFontInstance *fontInstan
     }
 
     if (result && LE_FAILURE(success)) {
-                delete result;
-                result = NULL;
-        }
+      delete result;
+      result = NULL;
+    }
 
     if (result == NULL) {
         success = LE_MEMORY_ALLOCATION_ERROR;

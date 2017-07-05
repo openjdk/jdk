@@ -568,4 +568,3 @@ inline LEGlyphID &LEGlyphStorage::operator[](le_int32 glyphIndex) const
 
 U_NAMESPACE_END
 #endif
-

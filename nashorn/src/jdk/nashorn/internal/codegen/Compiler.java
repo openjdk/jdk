@@ -85,6 +85,8 @@ public final class Compiler {
 
     private Source source;
 
+    private String sourceName;
+
     private final Map<String, byte[]> bytecode;
 
     private final Set<CompileUnit> compileUnits;
@@ -267,6 +269,7 @@ public final class Compiler {
                 append('$').
                 append(safeSourceName(functionNode.getSource()));
         this.source = functionNode.getSource();
+        this.sourceName = functionNode.getSourceName();
         this.scriptName = sb.toString();
     }
 
@@ -573,7 +576,7 @@ public final class Compiler {
     }
 
     private CompileUnit initCompileUnit(final String unitClassName, final long initialWeight) {
-        final ClassEmitter classEmitter = new ClassEmitter(env, source.getName(), unitClassName, strict);
+        final ClassEmitter classEmitter = new ClassEmitter(env, sourceName, unitClassName, strict);
         final CompileUnit  compileUnit  = new CompileUnit(unitClassName, classEmitter, initialWeight);
 
         classEmitter.begin();

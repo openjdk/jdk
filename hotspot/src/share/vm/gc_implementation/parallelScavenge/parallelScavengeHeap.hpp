@@ -184,8 +184,6 @@ class ParallelScavengeHeap : public CollectedHeap {
   void accumulate_statistics_all_tlabs();
   void resize_all_tlabs();
 
-  size_t unsafe_max_alloc();
-
   bool supports_tlab_allocation() const { return true; }
 
   size_t tlab_capacity(Thread* thr) const;

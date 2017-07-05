@@ -3971,40 +3971,6 @@ jclass find_class_from_class_loader(JNIEnv* env, Symbol* name, jboolean init, Ha
 }
 
 
-// Internal SQE debugging support ///////////////////////////////////////////////////////////
-
-#ifndef PRODUCT
-
-extern "C" {
-  JNIEXPORT jboolean JNICALL JVM_AccessVMBooleanFlag(const char* name, jboolean* value, jboolean is_get);
-  JNIEXPORT jboolean JNICALL JVM_AccessVMIntFlag(const char* name, jint* value, jboolean is_get);
-  JNIEXPORT void JNICALL JVM_VMBreakPoint(JNIEnv *env, jobject obj);
-}
-
-JVM_LEAF(jboolean, JVM_AccessVMBooleanFlag(const char* name, jboolean* value, jboolean is_get))
-  JVMWrapper("JVM_AccessBoolVMFlag");
-  return is_get ? CommandLineFlags::boolAt((char*) name, (bool*) value) : CommandLineFlags::boolAtPut((char*) name, (bool*) value, Flag::INTERNAL);
-JVM_END
-
-JVM_LEAF(jboolean, JVM_AccessVMIntFlag(const char* name, jint* value, jboolean is_get))
-  JVMWrapper("JVM_AccessVMIntFlag");
-  intx v;
-  jboolean result = is_get ? CommandLineFlags::intxAt((char*) name, &v) : CommandLineFlags::intxAtPut((char*) name, &v, Flag::INTERNAL);
-  *value = (jint)v;
-  return result;
-JVM_END
-
-
-JVM_ENTRY(void, JVM_VMBreakPoint(JNIEnv *env, jobject obj))
-  JVMWrapper("JVM_VMBreakPoint");
-  oop the_obj = JNIHandles::resolve(obj);
-  BREAKPOINT;
-JVM_END
-
-
-#endif
-
-
 // Method ///////////////////////////////////////////////////////////////////////////////////////////
 
 JVM_ENTRY(jobject, JVM_InvokeMethod(JNIEnv *env, jobject method, jobject obj, jobjectArray args0))

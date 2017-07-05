@@ -53,21 +53,24 @@ import javax.naming.*;
 
 final class VersionHelper12 extends VersionHelper {
 
-    private boolean getSystemPropsFailed = false;
-
-    VersionHelper12() {} // Disallow external from creating one of these.
+    // Disallow external from creating one of these.
+    VersionHelper12() {
+    }
 
     public Class<?> loadClass(String className) throws ClassNotFoundException {
-        ClassLoader cl = getContextClassLoader();
-        return Class.forName(className, true, cl);
+        return loadClass(className, getContextClassLoader());
     }
 
     /**
-      * Package private.
-      */
+     * Package private.
+     *
+     * This internal method is used with Thread Context Class Loader (TCCL),
+     * please don't expose this method as public.
+     */
     Class<?> loadClass(String className, ClassLoader cl)
         throws ClassNotFoundException {
-        return Class.forName(className, true, cl);
+        Class<?> cls = Class.forName(className, true, cl);
+        return cls;
     }
 
     /**
@@ -75,13 +78,13 @@ final class VersionHelper12 extends VersionHelper {
      * @param codebase A non-null, space-separated list of URL strings.
      */
     public Class<?> loadClass(String className, String codebase)
-        throws ClassNotFoundException, MalformedURLException {
-        ClassLoader cl;
+            throws ClassNotFoundException, MalformedURLException {
 
         ClassLoader parent = getContextClassLoader();
-        cl = URLClassLoader.newInstance(getUrlArray(codebase), parent);
+        ClassLoader cl =
+                 URLClassLoader.newInstance(getUrlArray(codebase), parent);
 
-        return Class.forName(className, true, cl);
+        return loadClass(className, cl);
     }
 
     String getJndiProperty(final int i) {
@@ -99,16 +102,12 @@ final class VersionHelper12 extends VersionHelper {
     }
 
     String[] getJndiProperties() {
-        if (getSystemPropsFailed) {
-            return null;        // after one failure, don't bother trying again
-        }
         Properties sysProps = AccessController.doPrivileged(
             new PrivilegedAction<Properties>() {
                 public Properties run() {
                     try {
                         return System.getProperties();
                     } catch (SecurityException e) {
-                        getSystemPropsFailed = true;
                         return null;
                     }
                 }
@@ -173,16 +172,31 @@ final class VersionHelper12 extends VersionHelper {
         return new InputStreamEnumeration(urls);
     }
 
+    /**
+     * Package private.
+     *
+     * This internal method returns Thread Context Class Loader (TCCL),
+     * if null, returns the system Class Loader.
+     *
+     * Please don't expose this method as public.
+     */
     ClassLoader getContextClassLoader() {
+
         return AccessController.doPrivileged(
             new PrivilegedAction<ClassLoader>() {
                 public ClassLoader run() {
-                    return Thread.currentThread().getContextClassLoader();
+                    ClassLoader loader =
+                            Thread.currentThread().getContextClassLoader();
+                    if (loader == null) {
+                        // Don't use bootstrap class loader directly!
+                        loader = ClassLoader.getSystemClassLoader();
+                    }
+
+                    return loader;
                 }
             }
         );
     }
-
 
     /**
      * Given an enumeration of URLs, an instance of this class represents

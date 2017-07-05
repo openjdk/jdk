@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,13 +20,15 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 /*
-    @test
-    @summary test ISO639-2 language codes
-    @compile -encoding ascii -source 5 Bug4175998Test.java
-    @run main Bug4175998Test
-    @bug 4175998
-*/
+ * @test
+ * @summary test ISO639-2 language codes
+ * @compile -encoding ascii Bug4175998Test.java
+ * @run main Bug4175998Test
+ * @bug 4175998
+ */
+
 /*
  *
  *
@@ -731,7 +733,7 @@ pol pol Polish
 pon pon Pohnpeian
 por por Portuguese
 pra pra Prakrit languages
-pro pro Provençal, Old (to 1500)
+pro pro Proven\u00E7al, Old (to 1500)
 pus pus Pushto
 qaa-qtz qaa-qtz Reserved for local use
 que que Quechua

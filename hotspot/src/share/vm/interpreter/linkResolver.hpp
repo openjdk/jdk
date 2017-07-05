@@ -124,7 +124,7 @@ class LinkResolver: AllStatic {
   friend class klassItable;
 
  private:
-  static void lookup_method_in_klasses          (methodHandle& result, KlassHandle klass, Symbol* name, Symbol* signature, bool checkpolymorphism, TRAPS);
+  static void lookup_method_in_klasses          (methodHandle& result, KlassHandle klass, Symbol* name, Symbol* signature, bool checkpolymorphism, bool in_imethod_resolve, TRAPS);
   static void lookup_instance_method_in_klasses (methodHandle& result, KlassHandle klass, Symbol* name, Symbol* signature, TRAPS);
   static void lookup_method_in_interfaces       (methodHandle& result, KlassHandle klass, Symbol* name, Symbol* signature, TRAPS);
   static void lookup_polymorphic_method         (methodHandle& result, KlassHandle klass, Symbol* name, Symbol* signature,

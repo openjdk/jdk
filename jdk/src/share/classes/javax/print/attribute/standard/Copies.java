@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,17 +44,17 @@ import javax.print.attribute.PrintJobAttribute;
  * <LI>
  * SINGLE_DOCUMENT -- The result will be <I>n</I> copies of a single output
  * document comprising all the input docs.
- * <P>
+ *
  * <LI>
  * SINGLE_DOCUMENT_NEW_SHEET -- The result will be <I>n</I> copies of a single
  * output document comprising all the input docs, and the first impression of
  * each input doc will always start on a new media sheet.
- * <P>
+ *
  * <LI>
  * SEPARATE_DOCUMENTS_UNCOLLATED_COPIES -- The result will be <I>n</I> copies of
  * the first input document, followed by <I>n</I> copies of the second input
  * document, . . . followed by <I>n</I> copies of the last input document.
- * <P>
+ *
  * <LI>
  * SEPARATE_DOCUMENTS_COLLATED_COPIES -- The result will be the first input
  * document, the second input document, . . . the last input document, the group
@@ -64,7 +64,6 @@ import javax.print.attribute.PrintJobAttribute;
  * <B>IPP Compatibility:</B> The integer value gives the IPP integer value. The
  * category name returned by <CODE>getName()</CODE> gives the IPP attribute
  * name.
- * <P>
  *
  * @author  David Mendenhall
  * @author  Alan Kamihensky

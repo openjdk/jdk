@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /**
  * @test
  * @test 4422738
- * @compile -source 1.4 InvalidParameters.java
+ * @compile InvalidParameters.java
  * @run main InvalidParameters
  * @summary Make sure PKIXParameters(Set) and setTrustAnchors() detects invalid
  *          parameters and throws correct exceptions
@@ -64,12 +64,14 @@ public class InvalidParameters {
         } catch (NullPointerException npe) { }
 
         // make sure Set of invalid objects throws ClassCastException
+        @SuppressWarnings("unchecked") // Knowingly do something bad
+        Set<TrustAnchor> badSet = (Set<TrustAnchor>) (Set) Collections.singleton(new String());
         try {
-            PKIXParameters p = new PKIXParameters(Collections.singleton(new String()));
+            PKIXParameters p = new PKIXParameters(badSet);
             throw new Exception("should have thrown ClassCastException");
         } catch (ClassCastException cce) { }
         try {
-            params.setTrustAnchors(Collections.singleton(new String()));
+            params.setTrustAnchors(badSet);
             throw new Exception("should have thrown ClassCastException");
         } catch (ClassCastException cce) { }
     }

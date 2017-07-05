@@ -324,8 +324,6 @@ AC_DEFUN_ONCE([BOOTJDK_SETUP_BOOT_JDK_ARGUMENTS],
     fi
     # When is adding -client something that speeds up the JVM?
     # ADD_JVM_ARG_IF_OK([-client],boot_jdk_jvmargs,[$JAVA])
-    ADD_JVM_ARG_IF_OK([-XX:PermSize=32m],boot_jdk_jvmargs,[$JAVA])
-    ADD_JVM_ARG_IF_OK([-XX:MaxPermSize=160m],boot_jdk_jvmargs,[$JAVA])
     ADD_JVM_ARG_IF_OK([-XX:ThreadStackSize=$STACK_SIZE],boot_jdk_jvmargs,[$JAVA])
     # Disable special log output when a debug build is used as Boot JDK...
     ADD_JVM_ARG_IF_OK([-XX:-PrintVMOptions -XX:-UnlockDiagnosticVMOptions -XX:-LogVMOutput],boot_jdk_jvmargs,[$JAVA])
