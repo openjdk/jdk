@@ -121,11 +121,3 @@ compare-image-clobber:
 
 .PHONY: jdk jdk-build jdk-clobber jdk-sanity 
 
-# FIXUP: Old j2se target names
-j2se-build: jdk-build
-j2se-clobber:: jdk-clobber
-j2se-sanity:: jdk-sanity
-j2se: jdk
-
-.PHONY: j2se j2se-build j2se-clobber j2se-sanity 
-
