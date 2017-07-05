@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -32,9 +32,9 @@ $(eval $(call SetupLauncher,pack200, \
 # The order of the object files on the link command line affects the size of the resulting
 # binary (at least on linux) which causes the size to differ between old and new build.
 
-UNPACKEXE_SRC := $(JDK_TOPDIR)/src/jdk.runtime/share/native/common-unpack \
-    $(JDK_TOPDIR)/src/jdk.runtime/share/native/unpack200
-UNPACKEXE_CFLAGS := -I$(JDK_TOPDIR)/src/jdk.runtime/share/native/common-unpack \
+UNPACKEXE_SRC := $(JDK_TOPDIR)/src/jdk.pack200/share/native/common-unpack \
+    $(JDK_TOPDIR)/src/jdk.pack200/share/native/unpack200
+UNPACKEXE_CFLAGS := -I$(JDK_TOPDIR)/src/jdk.pack200/share/native/common-unpack \
     -I$(JDK_TOPDIR)/src/java.base/share/native/libjava \
     -I$(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/native/libjava
 
@@ -79,6 +79,9 @@ $(eval $(call SetupNativeCompilation,BUILD_UNPACKEXE, \
     CFLAGS_linux := -fPIC, \
     CFLAGS_solaris := -KPIC, \
     CFLAGS_macosx := -fPIC, \
+    DISABLED_WARNINGS_gcc := sign-compare unused-result format-nonliteral \
+        format-security parentheses, \
+    DISABLED_WARNINGS_microsoft := 4267 4018, \
     MAPFILE := $(UNPACK_MAPFILE),\
     LDFLAGS := $(UNPACKEXE_ZIPOBJS) \
         $(LDFLAGS_JDKEXE) $(LDFLAGS_CXX_JDK) \
@@ -96,7 +99,7 @@ $(eval $(call SetupNativeCompilation,BUILD_UNPACKEXE, \
         -D "JDK_INTERNAL_NAME=unpack200" \
         -D "JDK_FTYPE=0x1L", \
     DEBUG_SYMBOLS := true, \
-    MANIFEST := $(JDK_TOPDIR)/src/jdk.runtime/windows/native/unpack200/unpack200_proto.exe.manifest))
+    MANIFEST := $(JDK_TOPDIR)/src/jdk.pack200/windows/native/unpack200/unpack200_proto.exe.manifest))
 
 ifneq ($(USE_EXTERNAL_LIBZ), true)
 

@@ -216,7 +216,16 @@ final class Parsed implements TemporalAccessor {
             return (R) (date != null ? LocalDate.from(date) : null);
         } else if (query == TemporalQueries.localTime()) {
             return (R) time;
-        } else if (query == TemporalQueries.zone() || query == TemporalQueries.offset()) {
+        } else if (query == TemporalQueries.offset()) {
+            Long offsetSecs = fieldValues.get(OFFSET_SECONDS);
+            if (offsetSecs != null) {
+                return (R) ZoneOffset.ofTotalSeconds(offsetSecs.intValue());
+            }
+            if (zone instanceof ZoneOffset) {
+                return (R)zone;
+            }
+            return query.queryFrom(this);
+        } else if (query == TemporalQueries.zone()) {
             return query.queryFrom(this);
         } else if (query == TemporalQueries.precision()) {
             return null;  // not a complete date/time

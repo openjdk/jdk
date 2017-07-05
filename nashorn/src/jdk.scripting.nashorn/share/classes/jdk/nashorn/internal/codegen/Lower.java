@@ -45,6 +45,7 @@ import jdk.nashorn.internal.ir.BreakNode;
 import jdk.nashorn.internal.ir.CallNode;
 import jdk.nashorn.internal.ir.CaseNode;
 import jdk.nashorn.internal.ir.CatchNode;
+import jdk.nashorn.internal.ir.DebuggerNode;
 import jdk.nashorn.internal.ir.ContinueNode;
 import jdk.nashorn.internal.ir.EmptyNode;
 import jdk.nashorn.internal.ir.Expression;
@@ -181,6 +182,15 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> implements Lo
     @Override
     public boolean enterContinueNode(final ContinueNode continueNode) {
         addStatement(continueNode);
+        return false;
+    }
+
+    @Override
+    public boolean enterDebuggerNode(final DebuggerNode debuggerNode) {
+        final int line = debuggerNode.getLineNumber();
+        final long token = debuggerNode.getToken();
+        final int finish = debuggerNode.getFinish();
+        addStatement(new ExpressionStatement(line, token, finish, new RuntimeNode(token, finish, RuntimeNode.Request.DEBUGGER, new ArrayList<Expression>())));
         return false;
     }
 

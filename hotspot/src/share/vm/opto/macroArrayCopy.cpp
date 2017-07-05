@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "opto/arraycopynode.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "opto/convertnode.hpp"
 #include "opto/graphKit.hpp"
@@ -519,7 +520,7 @@ Node* PhaseMacroExpand::generate_arraycopy(ArrayCopyNode *ac, AllocateArrayNode*
     // Test S[] against D[], not S against D, because (probably)
     // the secondary supertype cache is less busy for S[] than S.
     // This usually only matters when D is an interface.
-    Node* not_subtype_ctrl = ac->is_arraycopy_validated() ? top() :
+    Node* not_subtype_ctrl = (ac->is_arraycopy_validated() || ac->is_copyof_validated() || ac->is_copyofrange_validated()) ? top() :
       Phase::gen_subtype_check(src_klass, dest_klass, ctrl, mem, &_igvn);
     // Plug failing path into checked_oop_disjoint_arraycopy
     if (not_subtype_ctrl != top()) {
