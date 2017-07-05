@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,9 +32,6 @@ import java.io.IOException;
 
 import java.util.Hashtable;
 import java.util.Map;
-import java.util.Set;
-import java.util.HashSet;
-import java.util.Collections;
 
 import sun.awt.AppContext;
 import sun.awt.SunToolkit;
@@ -45,7 +42,7 @@ import sun.awt.datatransfer.DataTransferer;
 /**
  * A class which interfaces with the X11 selection service.
  */
-public class XSelection {
+public final class XSelection {
 
     /* Maps atoms to XSelection instances. */
     private static final Hashtable<XAtom, XSelection> table = new Hashtable<XAtom, XSelection>();
@@ -69,8 +66,6 @@ public class XSelection {
             XToolkit.awtUnlock();
         }
     }
-    /* The selection timeout. */
-    private static long SELECTION_TIMEOUT = UNIXToolkit.getDatatransferTimeout();
 
     /* The PropertyNotify event handler for incremental data transfer. */
     private static final XEventDispatcher incrementalTransferHandler =
@@ -84,11 +79,6 @@ public class XSelection {
 
     /* The X atom for the underlying selection. */
     private final XAtom selectionAtom;
-    /*
-     * XClipboard.run() is to be called when we lose ownership.
-     * XClipbioard.checkChange() is to be called when tracking changes of flavors.
-     */
-    private final XClipboard clipboard;
 
     /*
      * Owner-related variables - protected with synchronized (this).
@@ -109,17 +99,8 @@ public class XSelection {
     private long ownershipTime = 0;
     // True if we are the owner of this selection.
     private boolean isOwner;
-    // The property in which the owner should place requested targets
-    // when tracking changes of available data flavors (practically targets).
-    private volatile XAtom targetsPropertyAtom;
-    // A set of these property atoms.
-    private static volatile Set targetsPropertyAtoms;
-    // The flag used not to call XConvertSelection() if the previous SelectionNotify
-    // has not been processed by checkChange().
-    private volatile boolean isSelectionNotifyProcessed;
-    // Time of calling XConvertSelection().
-    private long convertSelectionTime;
-
+    private OwnershipListener ownershipListener = null;
+    private final Object stateLock = new Object();
 
     static {
         XToolkit.addEventDispatcher(XWindow.getXAWTRootWindow().getWindow(),
@@ -141,12 +122,11 @@ public class XSelection {
      * @param clpbrd the corresponding clipoboard
      * @exception NullPointerException if atom is <code>null</code>.
      */
-    public XSelection(XAtom atom, XClipboard clpbrd) {
+    public XSelection(XAtom atom) {
         if (atom == null) {
             throw new NullPointerException("Null atom");
         }
         selectionAtom = atom;
-        clipboard = clpbrd;
         table.put(selectionAtom, this);
     }
 
@@ -154,25 +134,9 @@ public class XSelection {
         return selectionAtom;
     }
 
-    void initializeSelectionForTrackingChanges() {
-        targetsPropertyAtom = XAtom.get("XAWT_TARGETS_OF_SELECTION:" + selectionAtom.getName());
-        if (targetsPropertyAtoms == null) {
-            targetsPropertyAtoms = Collections.synchronizedSet(new HashSet(2));
-        }
-        targetsPropertyAtoms.add(Long.valueOf(targetsPropertyAtom.getAtom()));
-        // for XConvertSelection() to be called for the first time in getTargetsDelayed()
-        isSelectionNotifyProcessed = true;
-    }
-
-    void deinitializeSelectionForTrackingChanges() {
-        if (targetsPropertyAtoms != null && targetsPropertyAtom != null) {
-            targetsPropertyAtoms.remove(Long.valueOf(targetsPropertyAtom.getAtom()));
-        }
-        isSelectionNotifyProcessed = false;
-    }
-
     public synchronized boolean setOwner(Transferable contents, Map formatMap,
-                                         long[] formats, long time) {
+                                         long[] formats, long time)
+    {
         long owner = XWindow.getXAWTRootWindow().getWindow();
         long selection = selectionAtom.getAtom();
 
@@ -192,15 +156,12 @@ public class XSelection {
             XlibWrapper.XSetSelectionOwner(XToolkit.getDisplay(),
                                            selection, owner, time);
             if (XlibWrapper.XGetSelectionOwner(XToolkit.getDisplay(),
-                                               selection) != owner) {
-
+                                               selection) != owner)
+            {
                 reset();
                 return false;
             }
-            isOwner = true;
-            if (clipboard != null) {
-                clipboard.checkChangeHere(contents);
-            }
+            setOwnerProp(true);
             return true;
         } finally {
             XToolkit.awtUnlock();
@@ -217,7 +178,7 @@ public class XSelection {
             do {
                 DataTransferer.getInstance().processDataConversionRequests();
                 XToolkit.awtLockWait(250);
-            } while (propertyGetter == dataGetter && System.currentTimeMillis() < startTime + SELECTION_TIMEOUT);
+            } while (propertyGetter == dataGetter && System.currentTimeMillis() < startTime + UNIXToolkit.getDatatransferTimeout());
         } finally {
             XToolkit.awtUnlock();
         }
@@ -232,11 +193,9 @@ public class XSelection {
             throw new Error("UNIMPLEMENTED");
         }
 
-        long[] formats = null;
+        long[] targets = null;
 
         synchronized (lock) {
-            SELECTION_TIMEOUT = UNIXToolkit.getDatatransferTimeout();
-
             WindowPropertyGetter targetsGetter =
                 new WindowPropertyGetter(XWindow.getXAWTRootWindow().getWindow(),
                                          selectionPropertyAtom, 0, MAX_LENGTH,
@@ -267,23 +226,25 @@ public class XSelection {
                 } finally {
                     XToolkit.awtUnlock();
                 }
-                formats = getFormats(targetsGetter);
+                targets = getFormats(targetsGetter);
             } finally {
                 targetsGetter.dispose();
             }
         }
-        return formats;
+        return targets;
     }
 
-    private static long[] getFormats(WindowPropertyGetter targetsGetter) {
+    static long[] getFormats(WindowPropertyGetter targetsGetter) {
         long[] formats = null;
 
         if (targetsGetter.isExecuted() && !targetsGetter.isDisposed() &&
                 (targetsGetter.getActualType() == XAtom.XA_ATOM ||
                  targetsGetter.getActualType() == XDataTransferer.TARGETS_ATOM.getAtom()) &&
-                targetsGetter.getActualFormat() == 32) {
-
-            int count = (int)targetsGetter.getNumberOfItems();
+                targetsGetter.getActualFormat() == 32)
+        {
+            // we accept property with TARGETS type to be compatible with old jdks
+            // see 6607163
+            int count = targetsGetter.getNumberOfItems();
             if (count > 0) {
                 long atoms = targetsGetter.getData();
                 formats = new long[count];
@@ -295,26 +256,6 @@ public class XSelection {
         }
 
         return formats != null ? formats : new long[0];
-    }
-
-    // checkChange() will be called on SelectionNotify
-    void getTargetsDelayed() {
-        XToolkit.awtLock();
-        try {
-            long curTime = System.currentTimeMillis();
-            if (isSelectionNotifyProcessed || curTime >= convertSelectionTime + SELECTION_TIMEOUT) {
-                convertSelectionTime = curTime;
-                XlibWrapper.XConvertSelection(XToolkit.getDisplay(),
-                                              getSelectionAtom().getAtom(),
-                                              XDataTransferer.TARGETS_ATOM.getAtom(),
-                                              targetsPropertyAtom.getAtom(),
-                                              XWindow.getXAWTRootWindow().getWindow(),
-                                              XlibWrapper.CurrentTime);
-                isSelectionNotifyProcessed = false;
-            }
-        } finally {
-            XToolkit.awtUnlock();
-        }
     }
 
     /*
@@ -329,8 +270,6 @@ public class XSelection {
         byte[] data = null;
 
         synchronized (lock) {
-            SELECTION_TIMEOUT = UNIXToolkit.getDatatransferTimeout();
-
             WindowPropertyGetter dataGetter =
                 new WindowPropertyGetter(XWindow.getXAWTRootWindow().getWindow(),
                                          selectionPropertyAtom, 0, MAX_LENGTH,
@@ -379,7 +318,7 @@ public class XSelection {
                                               dataGetter.getActualFormat());
                     }
 
-                    int count = (int)dataGetter.getNumberOfItems();
+                    int count = dataGetter.getNumberOfItems();
 
                     if (count <= 0) {
                         throw new IOException("INCR data is missed.");
@@ -455,7 +394,7 @@ public class XSelection {
                                                       incrDataGetter.getActualFormat());
                             }
 
-                            count = (int)incrDataGetter.getNumberOfItems();
+                            count = incrDataGetter.getNumberOfItems();
 
                             if (count == 0) {
                                 break;
@@ -489,7 +428,7 @@ public class XSelection {
                                               dataGetter.getActualFormat());
                     }
 
-                    int count = (int)dataGetter.getNumberOfItems();
+                    int count = dataGetter.getNumberOfItems();
                     if (count > 0) {
                         data = new byte[count];
                         long ptr = dataGetter.getData();
@@ -511,11 +450,14 @@ public class XSelection {
         return isOwner;
     }
 
-    public void lostOwnership() {
-        isOwner = false;
-        if (clipboard != null) {
-            clipboard.run();
-        }
+    // To be MT-safe this method should be called under awtLock.
+    private void setOwnerProp(boolean f) {
+        isOwner = f;
+        fireOwnershipChanges(isOwner);
+    }
+
+    private void lostOwnership() {
+        setOwnerProp(false);
     }
 
     public synchronized void reset() {
@@ -595,125 +537,39 @@ public class XSelection {
 
     private void handleSelectionRequest(XSelectionRequestEvent xsre) {
         long property = xsre.get_property();
-        long requestor = xsre.get_requestor();
-        long requestTime = xsre.get_time();
-        long format = xsre.get_target();
-        int dataFormat = 0;
+        final long requestor = xsre.get_requestor();
+        final long requestTime = xsre.get_time();
+        final long format = xsre.get_target();
         boolean conversionSucceeded = false;
 
         if (ownershipTime != 0 &&
-            (requestTime == XlibWrapper.CurrentTime ||
-             requestTime >= ownershipTime)) {
-
-            property = xsre.get_property();
-
+            (requestTime == XlibWrapper.CurrentTime || requestTime >= ownershipTime))
+        {
             // Handle MULTIPLE requests as per ICCCM.
             if (format == XDataTransferer.MULTIPLE_ATOM.getAtom()) {
-                // The property cannot be 0 for a MULTIPLE request.
-                if (property != 0) {
-                    // First retrieve the list of requested targets.
-                    WindowPropertyGetter wpg =
-                        new WindowPropertyGetter(requestor, XAtom.get(property), 0,
-                                                 MAX_LENGTH, false,
-                                                 XlibWrapper.AnyPropertyType);
-                    try {
-                        wpg.execute();
-
-                        if (wpg.getActualFormat() == 32 &&
-                            (wpg.getNumberOfItems() % 2) == 0) {
-                            long count = wpg.getNumberOfItems() / 2;
-                            long pairsPtr = wpg.getData();
-                            boolean writeBack = false;
-                            for (int i = 0; i < count; i++) {
-                                long target = Native.getLong(pairsPtr, 2*i);
-                                long prop = Native.getLong(pairsPtr, 2*i + 1);
-
-                                if (!convertAndStore(requestor, target, prop)) {
-                                    // To report failure, we should replace the
-                                    // target atom with 0 in the MULTIPLE property.
-                                    Native.putLong(pairsPtr, 2*i, 0);
-                                    writeBack = true;
-                                }
-                            }
-                            if (writeBack) {
-                                XToolkit.awtLock();
-                                try {
-                                    XlibWrapper.XChangeProperty(XToolkit.getDisplay(), requestor,
-                                                                property,
-                                                                wpg.getActualType(),
-                                                                wpg.getActualFormat(),
-                                                                XlibWrapper.PropModeReplace,
-                                                                wpg.getData(),
-                                                                wpg.getNumberOfItems());
-                                } finally {
-                                    XToolkit.awtUnlock();
-                                }
-                            }
-                            conversionSucceeded = true;
-                        }
-                    } finally {
-                        wpg.dispose();
-                    }
-                }
+                conversionSucceeded = handleMultipleRequest(requestor, property);
             } else {
-
                 // Support for obsolete clients as per ICCCM.
-                if (property == 0) {
+                if (property == XlibWrapper.None) {
                     property = format;
                 }
 
                 if (format == XDataTransferer.TARGETS_ATOM.getAtom()) {
-                    long nativeDataPtr = 0;
-                    int count = 0;
-                    dataFormat = 32;
-
-                    // Use a local copy to avoid synchronization.
-                    long[] formatsLocal = formats;
-
-                    if (formatsLocal == null) {
-                        throw new IllegalStateException("Not an owner.");
-                    }
-
-                    count = formatsLocal.length;
-
-                    try {
-                        if (count > 0) {
-                            nativeDataPtr = Native.allocateLongArray(count);
-                            Native.put(nativeDataPtr, formatsLocal);
-                        }
-
-                        conversionSucceeded = true;
-
-                        XToolkit.awtLock();
-                        try {
-                            XlibWrapper.XChangeProperty(XToolkit.getDisplay(), requestor,
-                                                        property, format, dataFormat,
-                                                        XlibWrapper.PropModeReplace,
-                                                        nativeDataPtr, count);
-                        } finally {
-                            XToolkit.awtUnlock();
-                        }
-                    } finally {
-                        if (nativeDataPtr != 0) {
-                            XlibWrapper.unsafe.freeMemory(nativeDataPtr);
-                            nativeDataPtr = 0;
-                        }
-                    }
+                    conversionSucceeded = handleTargetsRequest(property, requestor);
                 } else {
-                    conversionSucceeded = convertAndStore(requestor, format,
-                                                          property);
+                    conversionSucceeded = convertAndStore(requestor, format, property);
                 }
             }
         }
 
         if (!conversionSucceeded) {
-            // Zero property indicates conversion failure.
-            property = 0;
+            // None property indicates conversion failure.
+            property = XlibWrapper.None;
         }
 
         XSelectionEvent xse = new XSelectionEvent();
         try {
-            xse.set_type((int)XlibWrapper.SelectionNotify);
+            xse.set_type(XlibWrapper.SelectionNotify);
             xse.set_send_event(true);
             xse.set_requestor(requestor);
             xse.set_selection(selectionAtom.getAtom());
@@ -733,40 +589,123 @@ public class XSelection {
         }
     }
 
-    private static void checkChange(XSelectionEvent xse) {
-        if (targetsPropertyAtoms == null || targetsPropertyAtoms.isEmpty()) {
-            // We are not tracking changes.
-            return;
+    private boolean handleMultipleRequest(final long requestor, long property) {
+        if (XlibWrapper.None == property) {
+            // The property cannot be None for a MULTIPLE request.
+            return false;
         }
 
-        long propertyAtom = xse.get_property();
-        long[] formats = null;
+        boolean conversionSucceeded = false;
 
-        if (propertyAtom == XlibWrapper.None) {
-            // We threat None property atom as "empty selection".
-            formats = new long[0];
-        } else if (!targetsPropertyAtoms.contains(Long.valueOf(propertyAtom))) {
-            return;
-        } else {
-            WindowPropertyGetter targetsGetter =
-                new WindowPropertyGetter(XWindow.getXAWTRootWindow().getWindow(),
-                                         XAtom.get(propertyAtom), 0, MAX_LENGTH,
-                                         true, XlibWrapper.AnyPropertyType);
+        // First retrieve the list of requested targets.
+        WindowPropertyGetter wpg =
+                new WindowPropertyGetter(requestor, XAtom.get(property),
+                                         0, MAX_LENGTH, false,
+                                         XlibWrapper.AnyPropertyType);
+        try {
+            wpg.execute();
+
+            if (wpg.getActualFormat() == 32 && (wpg.getNumberOfItems() % 2) == 0) {
+                final long count = wpg.getNumberOfItems() / 2;
+                final long pairsPtr = wpg.getData();
+                boolean writeBack = false;
+
+                for (int i = 0; i < count; i++) {
+                    long target = Native.getLong(pairsPtr, 2 * i);
+                    long prop = Native.getLong(pairsPtr, 2 * i + 1);
+
+                    if (!convertAndStore(requestor, target, prop)) {
+                        // To report failure, we should replace the
+                        // target atom with 0 in the MULTIPLE property.
+                        Native.putLong(pairsPtr, 2 * i, 0);
+                        writeBack = true;
+                    }
+                }
+                if (writeBack) {
+                    XToolkit.awtLock();
+                    try {
+                        XlibWrapper.XChangeProperty(XToolkit.getDisplay(),
+                                                    requestor,
+                                                    property,
+                                                    wpg.getActualType(),
+                                                    wpg.getActualFormat(),
+                                                    XlibWrapper.PropModeReplace,
+                                                    wpg.getData(),
+                                                    wpg.getNumberOfItems());
+                    } finally {
+                        XToolkit.awtUnlock();
+                    }
+                }
+                conversionSucceeded = true;
+            }
+        } finally {
+            wpg.dispose();
+        }
+
+        return conversionSucceeded;
+    }
+
+    private boolean handleTargetsRequest(long property, long requestor)
+            throws IllegalStateException
+    {
+        boolean conversionSucceeded = false;
+        // Use a local copy to avoid synchronization.
+        long[] formatsLocal = formats;
+
+        if (formatsLocal == null) {
+            throw new IllegalStateException("Not an owner.");
+        }
+
+        long nativeDataPtr = 0;
+
+        try {
+            final int count = formatsLocal.length;
+            final int dataFormat = 32;
+
+            if (count > 0) {
+                nativeDataPtr = Native.allocateLongArray(count);
+                Native.put(nativeDataPtr, formatsLocal);
+            }
+
+            conversionSucceeded = true;
+
+            XToolkit.awtLock();
             try {
-                targetsGetter.execute();
-                formats = getFormats(targetsGetter);
+                XlibWrapper.XChangeProperty(XToolkit.getDisplay(), requestor,
+                                            property, XAtom.XA_ATOM, dataFormat,
+                                            XlibWrapper.PropModeReplace,
+                                            nativeDataPtr, count);
             } finally {
-                targetsGetter.dispose();
+                XToolkit.awtUnlock();
+            }
+        } finally {
+            if (nativeDataPtr != 0) {
+                XlibWrapper.unsafe.freeMemory(nativeDataPtr);
+                nativeDataPtr = 0;
             }
         }
+        return conversionSucceeded;
+    }
 
-        XAtom selectionAtom = XAtom.get(xse.get_selection());
-        XSelection selection = getSelection(selectionAtom);
-        if (selection != null) {
-            selection.isSelectionNotifyProcessed = true;
-            if (selection.clipboard != null) {
-                selection.clipboard.checkChange(formats);
-            }
+    private void fireOwnershipChanges(final boolean isOwner) {
+        OwnershipListener l = null;
+        synchronized (stateLock) {
+            l = ownershipListener;
+        }
+        if (null != l) {
+            l.ownershipChanged(isOwner);
+        }
+    }
+
+    void registerOwershipListener(OwnershipListener l) {
+        synchronized (stateLock) {
+            ownershipListener = l;
+        }
+    }
+
+    void unregisterOwnershipListener() {
+        synchronized (stateLock) {
+            ownershipListener = null;
         }
     }
 
@@ -774,10 +713,9 @@ public class XSelection {
         public void dispatchEvent(XEvent ev) {
             switch (ev.get_type()) {
             case XlibWrapper.SelectionNotify: {
-                XSelectionEvent xse = ev.get_xselection();
-                checkChange(xse);
                 XToolkit.awtLock();
                 try {
+                    XSelectionEvent xse = ev.get_xselection();
                     // Ignore the SelectionNotify event if it is not the response to our last request.
                     if (propertyGetter != null && xse.get_time() == lastRequestServerTime) {
                         // The property will be None in case of convertion failure.

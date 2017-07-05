@@ -39,8 +39,6 @@
 
 jfieldID fos_fd; /* id for jobject 'fd' in java.io.FileOutputStream */
 
-jfieldID fos_append;
-
 /**************************************************************
  * static methods to store field ID's in initializers
  */
@@ -49,7 +47,6 @@ JNIEXPORT void JNICALL
 Java_java_io_FileOutputStream_initIDs(JNIEnv *env, jclass fosClass) {
     fos_fd =
         (*env)->GetFieldID(env, fosClass, "fd", "Ljava/io/FileDescriptor;");
-    fos_append = (*env)->GetFieldID(env, fosClass, "append", "Z");
 }
 
 /**************************************************************
@@ -57,45 +54,20 @@ Java_java_io_FileOutputStream_initIDs(JNIEnv *env, jclass fosClass) {
  */
 
 JNIEXPORT void JNICALL
-Java_java_io_FileOutputStream_open(JNIEnv *env, jobject this, jstring path) {
-    fileOpen(env, this, path, fos_fd, O_WRONLY | O_CREAT | O_TRUNC);
-}
-
-JNIEXPORT void JNICALL
-Java_java_io_FileOutputStream_openAppend(JNIEnv *env, jobject this, jstring path) {
-    fileOpen(env, this, path, fos_fd, O_WRONLY | O_CREAT | O_APPEND);
+Java_java_io_FileOutputStream_open(JNIEnv *env, jobject this,
+                                   jstring path, jboolean append) {
+    fileOpen(env, this, path, fos_fd,
+             O_WRONLY | O_CREAT | (append ? O_APPEND : O_TRUNC));
 }
 
 JNIEXPORT void JNICALL
 Java_java_io_FileOutputStream_write(JNIEnv *env, jobject this, jint byte) {
-    jboolean append = (*env)->GetBooleanField(env, this, fos_append);
-    FD fd = GET_FD(this, fos_fd);
-    if (fd == -1) {
-        JNU_ThrowIOException(env, "Stream Closed");
-        return;
-    }
-    if (append == JNI_TRUE) {
-        if (IO_Lseek(fd, 0L, SEEK_END) == -1) {
-            JNU_ThrowIOExceptionWithLastError(env, "Append failed");
-        }
-    }
     writeSingle(env, this, byte, fos_fd);
 }
 
 JNIEXPORT void JNICALL
 Java_java_io_FileOutputStream_writeBytes(JNIEnv *env,
     jobject this, jbyteArray bytes, jint off, jint len) {
-    jboolean append = (*env)->GetBooleanField(env, this, fos_append);
-    FD fd = GET_FD(this, fos_fd);
-    if (fd == -1) {
-        JNU_ThrowIOException(env, "Stream Closed");
-        return;
-    }
-    if (append == JNI_TRUE) {
-        if (IO_Lseek(fd, 0L, SEEK_END) == -1) {
-            JNU_ThrowIOExceptionWithLastError(env, "Append failed");
-        }
-    }
     writeBytes(env, this, bytes, off, len, fos_fd);
 }
 

@@ -107,6 +107,7 @@ endif # PLATFORM
 
 ifeq ($(PLATFORM), windows)
 	EXTRA_LIBS = advapi32.lib \
+		     comctl32.lib \
 		     user32.lib
 
 	JAVALIB =

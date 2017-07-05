@@ -28,6 +28,12 @@
 # not contain rules.
 #
 
+ifdef OPENJDK
+  ifneq ($(OPENJDK),true)
+    x:=$(error "OPENJDK (if defined) can only be set to true")
+  endif
+endif
+
 # Define absolute paths to TOPDIRs
 ABS_CONTROL_TOPDIR:=$(call OptFullPath,"$(CONTROL_TOPDIR)")
 ABS_LANGTOOLS_TOPDIR:=$(call OptFullPath,"$(LANGTOOLS_TOPDIR)")
@@ -96,10 +102,8 @@ ifndef BUILD_JDK
 endif
 ifeq ($(JDK_SRC_AVAILABLE),true)
   JDK_CLOSED_SRC_AVAILABLE := $(call MkExists,$(JDK_TOPDIR)/src/closed)
-  ifndef OPENJDK
-    ifeq ($(JDK_CLOSED_SRC_AVAILABLE),false)
-      OPENJDK = true
-    endif
+  ifeq ($(JDK_CLOSED_SRC_AVAILABLE),false)
+    OPENJDK = true
   endif
 endif
 
@@ -150,8 +154,8 @@ ifdef OPENJDK
   SKIP_OPENJDK_BUILD = true
 else
   ifndef SKIP_OPENJDK_BUILD
-    SKIP_OPENJDK_BUILD = false
-    # FIXUP: until freetype fixed on linux and solaris rmi build fixed
+    #SKIP_OPENJDK_BUILD = false
+    # Until 6675289 is resolved, or this feature is removed.
     SKIP_OPENJDK_BUILD = true
   endif
 endif

@@ -29,7 +29,8 @@ import java.lang.ref.ReferenceQueue;
 
 
 /**
- * A hashtable-based <tt>Map</tt> implementation with <em>weak keys</em>.
+ * Hash table based implementation of the <tt>Map</tt> interface, with
+ * <em>weak keys</em>.
  * An entry in a <tt>WeakHashMap</tt> will automatically be removed when
  * its key is no longer in ordinary use.  More precisely, the presence of a
  * mapping for a given key will not prevent the key from being discarded by the
@@ -181,7 +182,7 @@ public class WeakHashMap<K,V>
      *
      * @see ConcurrentModificationException
      */
-    volatile int modCount;
+    int modCount;
 
     @SuppressWarnings("unchecked")
     private Entry<K,V>[] newTable(int n) {

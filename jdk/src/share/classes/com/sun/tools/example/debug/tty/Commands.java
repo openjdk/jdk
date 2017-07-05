@@ -157,16 +157,16 @@ class Commands {
         buf.append(method.name());
         buf.append("(");
 
-        List args = method.argumentTypeNames();
+        List<String> args = method.argumentTypeNames();
         int lastParam = args.size() - 1;
         // output param types except for the last
         for (int ii = 0; ii < lastParam; ii++) {
-            buf.append((String)args.get(ii));
+            buf.append(args.get(ii));
             buf.append(", ");
         }
         if (lastParam >= 0) {
             // output the last param
-            String lastStr = (String)args.get(lastParam);
+            String lastStr = args.get(lastParam);
             if (method.isVarArgs()) {
                 // lastParam is an array.  Replace the [] with ...
                 buf.append(lastStr.substring(0, lastStr.length() - 2));
@@ -180,12 +180,11 @@ class Commands {
     }
 
     void commandConnectors(VirtualMachineManager vmm) {
-        Iterator iter = vmm.allConnectors().iterator();
-        if (iter.hasNext()) {
+        Collection<Connector> ccs = vmm.allConnectors();
+        if (ccs.isEmpty()) {
             MessageOutput.println("Connectors available");
         }
-        while (iter.hasNext()) {
-            Connector cc = (Connector)iter.next();
+        for (Connector cc : ccs) {
             String transportName =
                 cc.transport() == null ? "null" : cc.transport().name();
             MessageOutput.println();
@@ -193,10 +192,7 @@ class Commands {
                                   new Object [] {cc.name(), transportName});
             MessageOutput.println("Connector description", cc.description());
 
-            Iterator argIter = cc.defaultArguments().values().iterator();
-            if (argIter.hasNext()) {
-                while (argIter.hasNext()) {
-                    Connector.Argument aa = (Connector.Argument)argIter.next();
+            for (Connector.Argument aa : cc.defaultArguments().values()) {
                     MessageOutput.println();
 
                     boolean requiredArgument = aa.mustSpecify();
@@ -215,16 +211,12 @@ class Commands {
 
                 }
             }
-        }
 
     }
 
     void commandClasses() {
-        List list = Env.vm().allClasses();
-
         StringBuffer classList = new StringBuffer();
-        for (int i = 0 ; i < list.size() ; i++) {
-            ReferenceType refType = (ReferenceType)list.get(i);
+        for (ReferenceType refType : Env.vm().allClasses()) {
             classList.append(refType.name());
             classList.append("\n");
         }
@@ -232,7 +224,7 @@ class Commands {
     }
 
     void commandClass(StringTokenizer t) {
-        List list = Env.vm().allClasses();
+        List<ReferenceType> list = Env.vm().allClasses();
 
         if (!t.hasMoreTokens()) {
             MessageOutput.println("No class specified.");
@@ -265,51 +257,31 @@ class Commands {
                 superclass = showAll ? superclass.superclass() : null;
             }
 
-            List interfaces = showAll ? clazz.allInterfaces()
-                                      : clazz.interfaces();
-            Iterator iter = interfaces.iterator();
-            while (iter.hasNext()) {
-                InterfaceType interfaze = (InterfaceType)iter.next();
+            List<InterfaceType> interfaces =
+                showAll ? clazz.allInterfaces() : clazz.interfaces();
+            for (InterfaceType interfaze : interfaces) {
                 MessageOutput.println("implements:", interfaze.name());
             }
 
-            List subs = clazz.subclasses();
-            iter = subs.iterator();
-            while (iter.hasNext()) {
-                ClassType sub = (ClassType)iter.next();
+            for (ClassType sub : clazz.subclasses()) {
                 MessageOutput.println("subclass:", sub.name());
             }
-            List nested = clazz.nestedTypes();
-            iter = nested.iterator();
-            while (iter.hasNext()) {
-                ReferenceType nest = (ReferenceType)iter.next();
+            for (ReferenceType nest : clazz.nestedTypes()) {
                 MessageOutput.println("nested:", nest.name());
             }
         } else if (type instanceof InterfaceType) {
             InterfaceType interfaze = (InterfaceType)type;
             MessageOutput.println("Interface:", interfaze.name());
-            List supers = interfaze.superinterfaces();
-            Iterator iter = supers.iterator();
-            while (iter.hasNext()) {
-                InterfaceType superinterface = (InterfaceType)iter.next();
+            for (InterfaceType superinterface : interfaze.superinterfaces()) {
                 MessageOutput.println("extends:", superinterface.name());
             }
-            List subs = interfaze.subinterfaces();
-            iter = subs.iterator();
-            while (iter.hasNext()) {
-                InterfaceType sub = (InterfaceType)iter.next();
+            for (InterfaceType sub : interfaze.subinterfaces()) {
                 MessageOutput.println("subinterface:", sub.name());
             }
-            List implementors = interfaze.implementors();
-            iter = implementors.iterator();
-            while (iter.hasNext()) {
-                ClassType implementor = (ClassType)iter.next();
+            for (ClassType implementor : interfaze.implementors()) {
                 MessageOutput.println("implementor:", implementor.name());
             }
-            List nested = interfaze.nestedTypes();
-            iter = nested.iterator();
-            while (iter.hasNext()) {
-                ReferenceType nest = (ReferenceType)iter.next();
+            for (ReferenceType nest : interfaze.nestedTypes()) {
                 MessageOutput.println("nested:", nest.name());
             }
         } else {  // array type
@@ -327,10 +299,8 @@ class Commands {
         String idClass = t.nextToken();
         ReferenceType cls = Env.getReferenceTypeFromToken(idClass);
         if (cls != null) {
-            List methods = cls.allMethods();
             StringBuffer methodsList = new StringBuffer();
-            for (int i = 0; i < methods.size(); i++) {
-                Method method = (Method)methods.get(i);
+            for (Method method : cls.allMethods()) {
                 methodsList.append(method.declaringType().name());
                 methodsList.append(" ");
                 methodsList.append(typedName(method));
@@ -351,11 +321,10 @@ class Commands {
         String idClass = t.nextToken();
         ReferenceType cls = Env.getReferenceTypeFromToken(idClass);
         if (cls != null) {
-            List fields = cls.allFields();
-            List visible = cls.visibleFields();
+            List<Field> fields = cls.allFields();
+            List<Field> visible = cls.visibleFields();
             StringBuffer fieldsList = new StringBuffer();
-            for (int i = 0; i < fields.size(); i++) {
-                Field field = (Field)fields.get(i);
+            for (Field field : fields) {
                 String s;
                 if (!visible.contains(field)) {
                     s = MessageOutput.format("list field typename and name hidden",
@@ -386,7 +355,7 @@ class Commands {
         int maxIdLength = 0;
         int maxNameLength = 0;
         while (threadIter.hasNext()) {
-            ThreadReference thr = (ThreadReference)threadIter.next();
+            ThreadReference thr = threadIter.next();
             maxIdLength = Math.max(maxIdLength,
                                    Env.description(thr).length());
             maxNameLength = Math.max(maxNameLength,
@@ -395,7 +364,7 @@ class Commands {
 
         threadIter = new ThreadIterator(tg);
         while (threadIter.hasNext()) {
-            ThreadReference thr = (ThreadReference)threadIter.next();
+            ThreadReference thr = threadIter.next();
             if (thr.threadGroup() == null) {
                 continue;
             }
@@ -588,9 +557,7 @@ class Commands {
     private List<ThreadReference> allThreads(ThreadGroupReference group) {
         List<ThreadReference> list = new ArrayList<ThreadReference>();
         list.addAll(group.threads());
-        Iterator iter = group.threadGroups().iterator();
-        while (iter.hasNext()) {
-            ThreadGroupReference child = (ThreadGroupReference)iter.next();
+        for (ThreadGroupReference child : group.threadGroups()) {
             list.addAll(allThreads(child));
         }
         return list;
@@ -641,10 +608,7 @@ class Commands {
          * if so, it gets removed here.
          */
          EventRequestManager mgr = Env.vm().eventRequestManager();
-         List requests = mgr.stepRequests();
-         Iterator iter = requests.iterator();
-         while (iter.hasNext()) {
-             StepRequest request = (StepRequest)iter.next();
+         for (StepRequest request : mgr.stepRequests()) {
              if (request.thread().equals(thread)) {
                  mgr.deleteEventRequest(request);
                  break;
@@ -768,9 +732,7 @@ class Commands {
         boolean noExceptions = true;
 
         // Print a listing of the catch patterns currently in place
-        Iterator iter = Env.specList.eventRequestSpecs().iterator();
-        while (iter.hasNext()) {
-            EventRequestSpec spec = (EventRequestSpec)iter.next();
+        for (EventRequestSpec spec : Env.specList.eventRequestSpecs()) {
             if (spec instanceof ExceptionSpec) {
                 if (noExceptions) {
                     noExceptions = false;
@@ -928,7 +890,7 @@ class Commands {
     }
 
     private void dumpStack(ThreadInfo threadInfo, boolean showPC) {
-        List stack = null;
+        List<StackFrame> stack = null;
         try {
             stack = threadInfo.getStack();
         } catch (IncompatibleThreadStateException e) {
@@ -940,7 +902,7 @@ class Commands {
         } else {
             int nFrames = stack.size();
             for (int i = threadInfo.getCurrentFrameIndex(); i < nFrames; i++) {
-                StackFrame frame = (StackFrame)stack.get(i);
+                StackFrame frame = stack.get(i);
                 dumpFrame (i, showPC, frame);
             }
         }
@@ -956,7 +918,7 @@ class Commands {
 
         long lineNumber = loc.lineNumber();
         String methodInfo = null;
-        if (meth instanceof Method && ((Method)meth).isNative()) {
+        if (meth.isNative()) {
             methodInfo = MessageOutput.format("native method");
         } else if (lineNumber != -1) {
             try {
@@ -994,9 +956,7 @@ class Commands {
         } else {
             String token = t.nextToken();
             if (token.toLowerCase().equals("all")) {
-                Iterator iter = ThreadInfo.threads().iterator();
-                while (iter.hasNext()) {
-                    ThreadInfo threadInfo = (ThreadInfo)iter.next();
+                for (ThreadInfo threadInfo : ThreadInfo.threads()) {
                     MessageOutput.println("Thread:",
                                           threadInfo.getThread().name());
                     dumpStack(threadInfo, showPC);
@@ -1051,9 +1011,7 @@ class Commands {
         boolean noBreakpoints = true;
 
         // Print set breakpoints
-        Iterator iter = Env.specList.eventRequestSpecs().iterator();
-        while (iter.hasNext()) {
-            EventRequestSpec spec = (EventRequestSpec)iter.next();
+        for (EventRequestSpec spec : Env.specList.eventRequestSpecs()) {
             if (spec instanceof BreakpointSpec) {
                 if (noBreakpoints) {
                     noBreakpoints = false;
@@ -1075,7 +1033,7 @@ class Commands {
 
     protected BreakpointSpec parseBreakpointSpec(StringTokenizer t,
                                              String atForm, String inForm) {
-        EventRequestSpec breakpoint = null;
+        BreakpointSpec breakpoint = null;
         try {
             String token = t.nextToken(":( \t\n\r");
 
@@ -1149,7 +1107,7 @@ class Commands {
             printBreakpointCommandUsage(atForm, inForm);
             return null;
         }
-        return (BreakpointSpec)breakpoint;
+        return breakpoint;
     }
 
     private void resolveNow(EventRequestSpec spec) {
@@ -1209,8 +1167,8 @@ class Commands {
         }
     }
 
-    private List<EventRequestSpec> parseWatchpointSpec(StringTokenizer t) {
-        List<EventRequestSpec> list = new ArrayList<EventRequestSpec>();
+    private List<WatchpointSpec> parseWatchpointSpec(StringTokenizer t) {
+        List<WatchpointSpec> list = new ArrayList<WatchpointSpec>();
         boolean access = false;
         boolean modification = false;
         int suspendPolicy = EventRequest.SUSPEND_ALL;
@@ -1242,7 +1200,7 @@ class Commands {
         fieldName = fieldName.substring(dot+1);
 
         try {
-            EventRequestSpec spec;
+            WatchpointSpec spec;
             if (access) {
                 spec = Env.specList.createAccessWatchpoint(className,
                                                            fieldName);
@@ -1269,9 +1227,8 @@ class Commands {
             return;
         }
 
-        Iterator iter = parseWatchpointSpec(t).iterator();
-        while (iter.hasNext()) {
-            resolveNow((WatchpointSpec)iter.next());
+        for (WatchpointSpec spec : parseWatchpointSpec(t)) {
+            resolveNow(spec);
         }
     }
 
@@ -1281,9 +1238,7 @@ class Commands {
             return;
         }
 
-        Iterator iter = parseWatchpointSpec(t).iterator();
-        while (iter.hasNext()) {
-            WatchpointSpec spec = (WatchpointSpec)iter.next();
+        for (WatchpointSpec spec : parseWatchpointSpec(t)) {
             if (Env.specList.delete(spec)) {
                 MessageOutput.println("Removed:", spec.toString());
             } else {
@@ -1482,7 +1437,7 @@ class Commands {
                     lineno = n.intValue();
                 } catch (java.text.ParseException jtpe) {
                     // It isn't -- see if it's a method name.
-                        List meths = refType.methodsByName(id);
+                        List<Method> meths = refType.methodsByName(id);
                         if (meths == null || meths.size() == 0) {
                             MessageOutput.println("is not a valid line number or method name for",
                                                   new Object [] {id, refType.name()});
@@ -1492,7 +1447,7 @@ class Commands {
                                                   new Object [] {id, refType.name()});
                             return;
                         }
-                        loc = ((Method)meths.get(0)).location();
+                        loc = meths.get(0).location();
                         lineno = loc.lineNumber();
                 }
             }
@@ -1539,14 +1494,11 @@ class Commands {
             try {
                 ReferenceType refType = Env.getReferenceTypeFromToken(idClass);
                 if (refType != null) {
-                    List lines = null;
+                    List<Location> lines = null;
                     if (idMethod == null) {
                         lines = refType.allLineLocations();
                     } else {
-                        List methods = refType.allMethods();
-                        Iterator iter = methods.iterator();
-                        while (iter.hasNext()) {
-                            Method method = (Method)iter.next();
+                        for (Method method : refType.allMethods()) {
                             if (method.name().equals(idMethod)) {
                                 lines = method.allLineLocations();
                             }
@@ -1555,9 +1507,7 @@ class Commands {
                             MessageOutput.println("is not a valid method name", idMethod);
                         }
                     }
-                    Iterator iter = lines.iterator();
-                    while (iter.hasNext()) {
-                        Location line = (Location)iter.next();
+                    for (Location line : lines) {
                         MessageOutput.printDirectln(line.toString());// Special case: use printDirectln()
                     }
                 } else {
@@ -1620,21 +1570,19 @@ class Commands {
                 MessageOutput.println("No local variables");
                 return;
             }
-            Map values = frame.getValues(vars);
+            Map<LocalVariable, Value> values = frame.getValues(vars);
 
             MessageOutput.println("Method arguments:");
-            for (Iterator it = vars.iterator(); it.hasNext(); ) {
-                LocalVariable var = (LocalVariable)it.next();
+            for (LocalVariable var : vars) {
                 if (var.isArgument()) {
-                    Value val = (Value)values.get(var);
+                    Value val = values.get(var);
                     printVar(var, val);
                 }
             }
             MessageOutput.println("Local variables:");
-            for (Iterator it = vars.iterator(); it.hasNext(); ) {
-                LocalVariable var = (LocalVariable)it.next();
+            for (LocalVariable var : vars) {
                 if (!var.isArgument()) {
-                    Value val = (Value)values.get(var);
+                    Value val = values.get(var);
                     printVar(var, val);
                 }
             }
@@ -1647,9 +1595,8 @@ class Commands {
 
     private void dump(ObjectReference obj, ReferenceType refType,
                       ReferenceType refTypeBase) {
-        for (Iterator it = refType.fields().iterator(); it.hasNext(); ) {
+        for (Field field : refType.fields()) {
             StringBuffer o = new StringBuffer();
-            Field field = (Field)it.next();
             o.append("    ");
             if (!refType.equals(refTypeBase)) {
                 o.append(refType.name());
@@ -1666,14 +1613,13 @@ class Commands {
                 dump(obj, sup, refTypeBase);
             }
         } else if (refType instanceof InterfaceType) {
-            List sups = ((InterfaceType)refType).superinterfaces();
-            for (Iterator it = sups.iterator(); it.hasNext(); ) {
-                dump(obj, (ReferenceType)it.next(), refTypeBase);
+            for (InterfaceType sup : ((InterfaceType)refType).superinterfaces()) {
+                dump(obj, sup, refTypeBase);
             }
         } else {
             /* else refType is an instanceof ArrayType */
             if (obj instanceof ArrayReference) {
-                for (Iterator it = ((ArrayReference)obj).getValues().iterator();
+                for (Iterator<Value> it = ((ArrayReference)obj).getValues().iterator();
                      it.hasNext(); ) {
                     MessageOutput.printDirect(it.next().toString());// Special case: use printDirect()
                     if (it.hasNext()) {
@@ -1770,13 +1716,11 @@ class Commands {
                                           new Object [] {owner.name(),
                                                          new Integer (object.entryCount())});
                 }
-                List waiters = object.waitingThreads();
+                List<ThreadReference> waiters = object.waitingThreads();
                 if (waiters.size() == 0) {
                     MessageOutput.println("No waiters");
                 } else {
-                    Iterator iter = waiters.iterator();
-                    while (iter.hasNext()) {
-                        ThreadReference waiter = (ThreadReference)iter.next();
+                    for (ThreadReference waiter : waiters) {
                         MessageOutput.println("Waiting thread:", waiter.name());
                     }
                 }
@@ -1800,13 +1744,11 @@ class Commands {
         ThreadReference thread = threadInfo.getThread();
         try {
             MessageOutput.println("Monitor information for thread", thread.name());
-            List owned = thread.ownedMonitors();
+            List<ObjectReference> owned = thread.ownedMonitors();
             if (owned.size() == 0) {
                 MessageOutput.println("No monitors owned");
             } else {
-                Iterator iter = owned.iterator();
-                while (iter.hasNext()) {
-                    ObjectReference monitor = (ObjectReference)iter.next();
+                for (ObjectReference monitor : owned) {
                     MessageOutput.println("Owned monitor:", monitor.toString());
                 }
             }
@@ -1833,9 +1775,7 @@ class Commands {
         }
         String token = t.nextToken();
         if (token.toLowerCase().equals("all")) {
-            Iterator iter = ThreadInfo.threads().iterator();
-            while (iter.hasNext()) {
-                ThreadInfo threadInfo = (ThreadInfo)iter.next();
+            for (ThreadInfo threadInfo : ThreadInfo.threads()) {
                 printThreadLockInfo(threadInfo);
             }
         } else {
@@ -1930,14 +1870,12 @@ class Commands {
 
     void commandSave(final StringTokenizer t) { // Undocumented command: useful for testing.
         if (!t.hasMoreTokens()) {
-            Set keys = Env.getSaveKeys();
-            Iterator iter = keys.iterator();
-            if (!iter.hasNext()) {
+            Set<String> keys = Env.getSaveKeys();
+            if (keys.isEmpty()) {
                 MessageOutput.println("No saved values");
                 return;
             }
-            while (iter.hasNext()) {
-                String key = (String)iter.next();
+            for (String key : keys) {
                 Value value = Env.getSavedValue(key);
                 if ((value instanceof ObjectReference) &&
                     ((ObjectReference)value).isCollected()) {
@@ -1976,7 +1914,7 @@ class Commands {
         // Overloading is not handled here.
         String methodName = t.nextToken();
 
-        List classes = Env.vm().classesByName(className);
+        List<ReferenceType> classes = Env.vm().classesByName(className);
         // TO DO: handle multiple classes found
         if (classes.size() == 0) {
             if (className.indexOf('.') < 0) {
@@ -1987,17 +1925,14 @@ class Commands {
             return;
         }
 
-        ReferenceType rt = (ReferenceType)classes.get(0);
+        ReferenceType rt = classes.get(0);
         if (!(rt instanceof ClassType)) {
             MessageOutput.println("not a class", className);
             return;
         }
 
         byte[] bytecodes = null;
-        List list = rt.methodsByName(methodName);
-        Iterator iter = list.iterator();
-        while (iter.hasNext()) {
-            Method method = (Method)iter.next();
+        for (Method method : rt.methodsByName(methodName)) {
             if (!method.isAbstract()) {
                 bytecodes = method.bytecodes();
                 break;
@@ -2047,7 +1982,7 @@ class Commands {
             MessageOutput.println("Specify classes to redefine");
         } else {
             String className = t.nextToken();
-            List classes = Env.vm().classesByName(className);
+            List<ReferenceType> classes = Env.vm().classesByName(className);
             if (classes.size() == 0) {
                 MessageOutput.println("No class named", className);
                 return;
@@ -2057,7 +1992,7 @@ class Commands {
                 return;
             }
             Env.setSourcePath(Env.getSourcePath());
-            ReferenceType refType = (ReferenceType)classes.get(0);
+            ReferenceType refType = classes.get(0);
             if (!t.hasMoreTokens()) {
                 MessageOutput.println("Specify file name for class", className);
                 return;
@@ -2074,7 +2009,8 @@ class Commands {
                              new Object [] {fileName, exc.toString()});
                 return;
             }
-            Map<ReferenceType, byte[]> map = new HashMap<ReferenceType, byte[]>();
+            Map<ReferenceType, byte[]> map
+                = new HashMap<ReferenceType, byte[]>();
             map.put(refType, bytes);
             try {
                 Env.vm().redefineClasses(map);

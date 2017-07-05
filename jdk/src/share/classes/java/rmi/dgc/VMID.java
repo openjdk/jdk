@@ -136,9 +136,9 @@ public final class VMID implements java.io.Serializable {
         /*
          * Get the local host's IP address.
          */
-        byte[] addr = (byte[]) java.security.AccessController.doPrivileged(
-            new PrivilegedAction() {
-            public Object run() {
+        byte[] addr = java.security.AccessController.doPrivileged(
+            new PrivilegedAction<byte[]>() {
+            public byte[] run() {
                 try {
                     return InetAddress.getLocalHost().getAddress();
                 } catch (Exception e) {

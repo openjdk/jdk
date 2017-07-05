@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -225,6 +225,8 @@ BOOL AwtComponent::m_QueryNewPaletteCalled = FALSE;
 
 CriticalSection windowMoveLock;
 BOOL windowMoveLockHeld = FALSE;
+
+int AwtComponent::sm_wheelRotationAmount = 0;
 
 /************************************************************************
  * AwtComponent methods
@@ -2074,6 +2076,8 @@ MsgRouting AwtComponent::WmSetFocus(HWND hWndLostFocus)
         sm_realFocusOpposite = NULL;
     }
 
+    sm_wheelRotationAmount = 0;
+
     SendFocusEvent(java_awt_event_FocusEvent_FOCUS_GAINED, hWndLostFocus);
 
     return mrDoDefault;
@@ -2105,6 +2109,7 @@ MsgRouting AwtComponent::WmKillFocus(HWND hWndGotFocus)
     }
 
     sm_focusOwner = NULL;
+    sm_wheelRotationAmount = 0;
 
     SendFocusEvent(java_awt_event_FocusEvent_FOCUS_LOST, hWndGotFocus);
     return mrDoDefault;
@@ -2190,8 +2195,11 @@ AwtComponent::AwtSetFocus()
         DWORD fgProcessID;
         ::GetWindowThreadProcessId(fgWindow, &fgProcessID);
 
-        if (fgProcessID != ::GetCurrentProcessId()) {
-            // fix for 6458497.  we shouldn't request focus if it is out of our application.
+        if (fgProcessID != ::GetCurrentProcessId()
+            && !AwtToolkit::GetInstance().IsEmbedderProcessId(fgProcessID))
+        {
+            // fix for 6458497.  we shouldn't request focus if it is out of both
+            // our and embedder process.
             return FALSE;
         }
     }
@@ -2619,9 +2627,13 @@ MsgRouting AwtComponent::WmMouseWheel(UINT flags, int x, int y,
     BOOL result;
     UINT platformLines;
 
+    sm_wheelRotationAmount += wheelRotation;
+
     // AWT interprets wheel rotation differently than win32, so we need to
     // decode wheel amount.
-    jint newWheelRotation = wheelRotation / (-1 * WHEEL_DELTA);
+    jint roundedWheelRotation = sm_wheelRotationAmount / (-1 * WHEEL_DELTA);
+    jdouble preciseWheelRotation = (jdouble) wheelRotation / (-1 * WHEEL_DELTA);
+
     MSG msg;
 
     if (IS_WIN95 && !IS_WIN98) {
@@ -2654,7 +2666,9 @@ MsgRouting AwtComponent::WmMouseWheel(UINT flags, int x, int y,
 
     SendMouseWheelEvent(java_awt_event_MouseEvent_MOUSE_WHEEL, TimeHelper::getMessageTimeUTC(),
                         eventPt.x, eventPt.y, GetJavaModifiers(), 0, 0, scrollType,
-                        scrollLines, newWheelRotation, &msg);
+                        scrollLines, roundedWheelRotation, preciseWheelRotation, &msg);
+
+    sm_wheelRotationAmount %= WHEEL_DELTA;
     return mrConsume;
 }
 
@@ -4986,8 +5000,8 @@ void
 AwtComponent::SendMouseWheelEvent(jint id, jlong when, jint x, jint y,
                                   jint modifiers, jint clickCount,
                                   jboolean popupTrigger, jint scrollType,
-                                  jint scrollAmount, jint wheelRotation,
-                                  MSG *pMsg)
+                                  jint scrollAmount, jint roundedWheelRotation,
+                                  jdouble preciseWheelRotation, MSG *pMsg)
 {
     /* Code based not so loosely on AwtComponent::SendMouseEvent */
     JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
@@ -5015,7 +5029,7 @@ AwtComponent::SendMouseWheelEvent(jint id, jlong when, jint x, jint y,
     if (mouseWheelEventConst == NULL) {
         mouseWheelEventConst =
             env->GetMethodID(mouseWheelEventCls, "<init>",
-                           "(Ljava/awt/Component;IJIIIIZIII)V");
+                           "(Ljava/awt/Component;IJIIIIIIZIIID)V");
         DASSERT(mouseWheelEventConst);
     }
     if (env->EnsureLocalCapacity(2) < 0) {
@@ -5023,14 +5037,16 @@ AwtComponent::SendMouseWheelEvent(jint id, jlong when, jint x, jint y,
     }
     jobject target = GetTarget(env);
     DTRACE_PRINTLN("creating MWE in JNI");
+
     jobject mouseWheelEvent = env->NewObject(mouseWheelEventCls,
                                              mouseWheelEventConst,
                                              target,
                                              id, when, modifiers,
                                              x+insets.left, y+insets.top,
+                                             0, 0,
                                              clickCount, popupTrigger,
                                              scrollType, scrollAmount,
-                                             wheelRotation);
+                                             roundedWheelRotation, preciseWheelRotation);
     if (safe_ExceptionOccurred(env)) {
         env->ExceptionDescribe();
         env->ExceptionClear();
@@ -5400,6 +5416,7 @@ void AwtComponent::UnlinkObjects()
     if (m_peerObject) {
         env->SetLongField(m_peerObject, AwtComponent::hwndID, 0);
         JNI_SET_PDATA(m_peerObject, static_cast<PDATA>(NULL));
+        JNI_SET_DESTROYED(m_peerObject);
         env->DeleteGlobalRef(m_peerObject);
         m_peerObject = NULL;
     }
@@ -5408,7 +5425,13 @@ void AwtComponent::UnlinkObjects()
 void AwtComponent::Enable(BOOL bEnable)
 {
     sm_suppressFocusAndActivation = TRUE;
+
+    if (bEnable && IsTopLevel()) {
+        // we should not enable blocked toplevels
+        bEnable = !::IsWindow(AwtWindow::GetModalBlocker(GetHWnd()));
+    }
     ::EnableWindow(GetHWnd(), bEnable);
+
     sm_suppressFocusAndActivation = FALSE;
     CriticalSection::Lock l(GetLock());
     VerifyState();
