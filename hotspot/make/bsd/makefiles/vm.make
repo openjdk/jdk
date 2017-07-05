@@ -337,9 +337,6 @@ include $(MAKEFILES_DIR)/jsig.make
 # Serviceability agent
 include $(MAKEFILES_DIR)/saproc.make
 
-# Whitebox testing API
-include $(MAKEFILES_DIR)/wb.make
-
 #----------------------------------------------------------------------
 
 ifeq ($(OS_VENDOR), Darwin)
@@ -347,10 +344,10 @@ $(LIBJVM).dSYM: $(LIBJVM)
 	dsymutil $(LIBJVM)
 
 # no libjvm_db for macosx
-build: $(LIBJVM) $(LAUNCHER) $(LIBJSIG) $(BUILDLIBSAPROC) dtraceCheck $(LIBJVM).dSYM $(WB_JAR)
+build: $(LIBJVM) $(LAUNCHER) $(LIBJSIG) $(BUILDLIBSAPROC) dtraceCheck $(LIBJVM).dSYM
 	echo "Doing vm.make build:"
 else
-build: $(LIBJVM) $(LAUNCHER) $(LIBJSIG) $(LIBJVM_DB) $(BUILDLIBSAPROC) $(WB_JAR)
+build: $(LIBJVM) $(LAUNCHER) $(LIBJSIG) $(LIBJVM_DB) $(BUILDLIBSAPROC)
 endif
 
 install: install_jvm install_jsig install_saproc
