@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@
 
 class CHeapObj {
  public:
-  void* operator new(size_t size);
+  void* operator new(size_t size) throw();
   void  operator delete(void* p);
   void* new_array(size_t size);
 };
@@ -53,7 +53,7 @@ class CHeapObj {
 
 class ValueObj {
  public:
-  void* operator new(size_t size);
+  void* operator new(size_t size) throw();
   void operator delete(void* p);
 };
 
@@ -61,7 +61,7 @@ class ValueObj {
 
 class AllStatic {
  public:
-  void* operator new(size_t size);
+  void* operator new(size_t size) throw();
   void operator delete(void* p);
 };
 
@@ -70,7 +70,7 @@ class AllStatic {
 // Linked list of raw memory chunks
 class Chunk: public CHeapObj {
  public:
-  void* operator new(size_t size, size_t length);
+  void* operator new(size_t size, size_t length) throw();
   void  operator delete(void* p, size_t length);
   Chunk(size_t length);
 

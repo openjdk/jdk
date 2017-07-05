@@ -55,6 +55,7 @@ static void fail(const char *msg, va_list ap) {
               " shared archive file.\n");
   jio_vfprintf(defaultStream::error_stream(), msg, ap);
   jio_fprintf(defaultStream::error_stream(), "\n");
+  // Do not change the text of the below message because some tests check for it.
   vm_exit_during_initialization("Unable to use shared archive.", NULL);
 }
 
