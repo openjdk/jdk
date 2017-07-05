@@ -34,8 +34,6 @@ import javax.swing.*;
 
 import java.io.*;
 
-import sun.awt.SunToolkit;
-
 public class bug4530474 {
 
     private static final Color TEST_COLOR = Color.BLUE;
@@ -43,7 +41,6 @@ public class bug4530474 {
 
     public static void main(String args[]) throws Exception {
 
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
         final Robot robot = new Robot();
         robot.setAutoDelay(50);
 
@@ -55,7 +52,8 @@ public class bug4530474 {
             }
         });
 
-        toolkit.realSync();
+        robot.waitForIdle();
+        robot.delay(500);
 
         SwingUtilities.invokeAndWait(new Runnable() {
 

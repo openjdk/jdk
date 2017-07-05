@@ -112,8 +112,10 @@ public class OutputAnalyzerTest {
         }
 
         String stdoutPattern = "[a]";
+        String stdoutByLinePattern = "a*";
         String stderrPattern = "[b]";
         String nonExistingPattern = "[c]";
+        String byLinePattern = "[ab]*";
 
         // Should match
         try {
@@ -146,6 +148,19 @@ public class OutputAnalyzerTest {
                     "stderrShouldMatch() failed to throw exception");
         } catch (RuntimeException e) {
             // expected
+        }
+
+        if (output.shouldMatchByLine(byLinePattern) != 1) {
+            throw new Exception("shouldMatchByLine() should find one line");
+        }
+        try {
+            output.shouldMatchByLine(nonExistingPattern);
+            throw new Exception("shouldMatchByLine() failed to throw exception");
+        } catch (RuntimeException e) {
+            // expected
+        }
+        if (output.stdoutShouldMatchByLine(stdoutByLinePattern) != 1) {
+            throw new Exception("stdoutShouldMatchByLine() should find one line");
         }
 
         // Should not match

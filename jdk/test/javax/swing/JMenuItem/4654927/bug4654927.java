@@ -36,7 +36,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.InputEvent;
 import java.util.concurrent.Callable;
-import sun.awt.SunToolkit;
 
 public class bug4654927 {
 
@@ -51,7 +50,6 @@ public class bug4654927 {
         }
 
         UIManager.setLookAndFeel(systemLAF);
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
         Robot robot = new Robot();
         robot.setAutoDelay(10);
 
@@ -61,20 +59,20 @@ public class bug4654927 {
                 createAndShowUI();
             }
         });
-        toolkit.realSync();
+        robot.waitForIdle();
 
         // test mouse press
         Point point = Util.getCenterPoint(menu);
         robot.mouseMove(point.x, point.y);
         robot.mousePress(InputEvent.BUTTON1_MASK);
         robot.mouseRelease(InputEvent.BUTTON1_MASK);
-        toolkit.realSync();
+        robot.waitForIdle();
 
         point = Util.getCenterPoint(menuItem);
         robot.mouseMove(point.x, point.y);
         robot.mousePress(InputEvent.BUTTON1_MASK);
         robot.mouseRelease(InputEvent.BUTTON1_MASK);
-        toolkit.realSync();
+        robot.waitForIdle();
 
         if (!isMenuItemShowing()) {
             throw new RuntimeException("Popup is unexpectedly closed");
@@ -107,12 +105,12 @@ public class bug4654927 {
         // close menu
         robot.mousePress(InputEvent.BUTTON1_MASK);
         robot.mouseRelease(InputEvent.BUTTON1_MASK);
-        toolkit.realSync();
+        robot.waitForIdle();
 
         robot.mousePress(InputEvent.BUTTON1_MASK);
         Util.glide(robot, x0, y0, x1, y1);
         robot.mouseRelease(InputEvent.BUTTON1_MASK);
-        toolkit.realSync();
+        robot.waitForIdle();
 
         if (!isMenuItemShowing()) {
             throw new RuntimeException("Popup is unexpectedly closed");

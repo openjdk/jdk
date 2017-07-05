@@ -154,7 +154,7 @@ public class TrueTypeFont extends FileFont {
     /* number of table entries in the directory/offsets table */
     int numTables;
 
-    /* The contents of the the directory/offsets table */
+    /* The contents of the directory/offsets table */
     DirectoryEntry []tableDirectory;
 
 //     protected byte []gposTable = null;
@@ -228,7 +228,7 @@ public class TrueTypeFont extends FileFont {
             return false; /* useNatives is false */
         } else if (nativeNames instanceof String) {
             String name = (String)nativeNames;
-            /* Don't do do this for Latin fonts */
+            /* Don't do this for Latin fonts */
             if (name.indexOf("8859") > 0) {
                 checkedNatives = true;
                 return false;

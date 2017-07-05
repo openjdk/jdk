@@ -183,7 +183,7 @@ public final class WToolkit extends SunToolkit implements Runnable {
     /**
      * Initializes the Toolkit for use in an embedded environment.
      *
-     * @return true if the the initialization succeeded; false if it failed.
+     * @return true if the initialization succeeded; false if it failed.
      *         The function will fail if the Toolkit was already initialized.
      * @since 1.3
      */

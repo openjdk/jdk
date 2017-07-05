@@ -505,7 +505,7 @@ public class Rdn implements Serializable, Comparable<Object> {
      *
      * @param val The non-null object to be escaped.
      * @return Escaped string value.
-     * @throws ClassCastException if val is is not a String or byte array.
+     * @throws ClassCastException if val is not a String or byte array.
      */
     public static String escapeValue(Object val) {
         return (val instanceof byte[])

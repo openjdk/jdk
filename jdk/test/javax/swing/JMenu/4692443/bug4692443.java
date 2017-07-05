@@ -35,7 +35,6 @@ import javax.swing.*;
 import javax.swing.event.*;
 import java.awt.event.*;
 import java.awt.*;
-import sun.awt.SunToolkit;
 
 public class bug4692443 {
 
@@ -56,29 +55,23 @@ public class bug4692443 {
             }
         });
 
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
-        toolkit.realSync();
+        robo.waitForIdle();
 
-        try {
-                robo = new Robot();
-            } catch (AWTException e) {
-                throw new RuntimeException("Robot could not be created");
-            }
-            int altKey = java.awt.event.KeyEvent.VK_ALT;
-            robo.setAutoDelay(100);
-            Util.hitMnemonics(robo, KeyEvent.VK_F); // Enter File menu
-            robo.keyPress(KeyEvent.VK_S);  // Enter submenu
-            robo.keyRelease(KeyEvent.VK_S);
-            robo.keyPress(KeyEvent.VK_O); // Launch "One" action
-            robo.keyRelease(KeyEvent.VK_O);
-            robo.keyPress(KeyEvent.VK_M); // Launch "One" action
-            robo.keyRelease(KeyEvent.VK_M);
+        int altKey = java.awt.event.KeyEvent.VK_ALT;
+        robo.setAutoDelay(100);
+        Util.hitMnemonics(robo, KeyEvent.VK_F); // Enter File menu
+        robo.keyPress(KeyEvent.VK_S);  // Enter submenu
+        robo.keyRelease(KeyEvent.VK_S);
+        robo.keyPress(KeyEvent.VK_O); // Launch "One" action
+        robo.keyRelease(KeyEvent.VK_O);
+        robo.keyPress(KeyEvent.VK_M); // Launch "One" action
+        robo.keyRelease(KeyEvent.VK_M);
 
-            toolkit.realSync();
+        robo.waitForIdle();
 
-            if (!passed) {
-                throw new RuntimeException("Test failed.");
-            }
+        if (!passed) {
+            throw new RuntimeException("Test failed.");
+        }
 
     }
 

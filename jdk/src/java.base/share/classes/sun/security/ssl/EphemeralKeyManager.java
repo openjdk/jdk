@@ -41,7 +41,7 @@ final class EphemeralKeyManager {
 
     /*
      * Current cached RSA KeyPairs. Elements are never null.
-     * Indexed via the the constants above.
+     * Indexed via the constants above.
      */
     private final EphemeralKeyPair[] keys = new EphemeralKeyPair[] {
         new EphemeralKeyPair(null),

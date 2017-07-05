@@ -2187,7 +2187,7 @@ public class FtpClient extends sun.net.ftp.FtpClient {
             return resp.get(0).substring(4);
         }
         // on multiple lines answers, like the ones above, remove 1st and last
-        // line, concat the the others.
+        // line, concat the others.
         StringBuilder sb = new StringBuilder();
         for (int i = 1; i < resp.size() - 1; i++) {
             sb.append(resp.get(i).substring(3));

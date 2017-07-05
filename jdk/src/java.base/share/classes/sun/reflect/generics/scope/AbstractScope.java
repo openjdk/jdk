@@ -29,7 +29,6 @@ import java.lang.reflect.GenericDeclaration;
 import java.lang.reflect.TypeVariable;
 
 
-
 /**
  * Abstract superclass for lazy scope objects, used when building
  * factories for generic information repositories.
@@ -49,7 +48,7 @@ public abstract class AbstractScope<D extends GenericDeclaration>
     /**
      * Constructor. Takes a reflective object whose scope the newly
      * constructed instance will represent.
-     * @param D - A generic declaration whose scope the newly
+     * @param decl - A generic declaration whose scope the newly
      * constructed instance will represent
      */
     protected AbstractScope(D decl){ recvr = decl;}
@@ -63,7 +62,7 @@ public abstract class AbstractScope<D extends GenericDeclaration>
 
     /** This method must be implemented by any concrete subclass.
      * It must return the enclosing scope of this scope. If this scope
-     * is a top-level scope, an instance of  DummyScope must be returned.
+     * is a top-level scope, an instance of DummyScope must be returned.
      * @return The enclosing scope of this scope
      */
     protected abstract Scope computeEnclosingScope();
@@ -72,13 +71,13 @@ public abstract class AbstractScope<D extends GenericDeclaration>
      * Accessor for the enclosing scope, which is computed lazily and cached.
      * @return the enclosing scope
      */
-    protected Scope getEnclosingScope(){
-        Scope enclosingScope = this.enclosingScope;
-        if (enclosingScope == null) {
-            enclosingScope = computeEnclosingScope();
-            this.enclosingScope = enclosingScope;
+    protected Scope getEnclosingScope() {
+        Scope value = enclosingScope;
+        if (value == null) {
+            value = computeEnclosingScope();
+            enclosingScope = value;
         }
-        return enclosingScope;
+        return value;
     }
 
     /**

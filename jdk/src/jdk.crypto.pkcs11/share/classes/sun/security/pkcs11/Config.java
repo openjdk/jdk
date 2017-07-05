@@ -584,16 +584,24 @@ final class Config {
     }
 
     private String parseLine() throws IOException {
-        String s = parseWord();
+        // allow quoted string as part of line
+        String s = null;
         while (true) {
             int token = nextToken();
             if ((token == TT_EOL) || (token == TT_EOF)) {
                 break;
             }
-            if (token != TT_WORD) {
+            if (token != TT_WORD && token != '\"') {
                 throw excToken("Unexpected value");
             }
-            s = s + " " + st.sval;
+            if (s == null) {
+                s = st.sval;
+            } else {
+                s = s + " " + st.sval;
+            }
+        }
+        if (s == null) {
+            throw excToken("Unexpected empty line");
         }
         return s;
     }
@@ -653,7 +661,9 @@ final class Config {
     //
 
     private String parseLibrary(String keyword) throws IOException {
-        String lib = parseStringEntry(keyword);
+        checkDup(keyword);
+        parseEquals();
+        String lib = parseLine();
         lib = expand(lib);
         int i = lib.indexOf("/$ISA/");
         if (i != -1) {

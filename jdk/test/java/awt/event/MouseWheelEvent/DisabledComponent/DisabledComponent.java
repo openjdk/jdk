@@ -24,9 +24,9 @@
 /*
   @test
   @bug 6847958
-  @library ../../../regtesthelpers
   @summary MouseWheel event is getting triggered for the disabled Textarea in jdk7 b60 pit build.
   @author Dmitry Cherepanov: area=awt.event
+  @library ../../../regtesthelpers
   @build Util
   @run main DisabledComponent
 */
@@ -39,8 +39,6 @@
 
 import java.awt.*;
 import java.awt.event.*;
-
-import sun.awt.SunToolkit;
 
 import test.java.awt.regtesthelpers.Util;
 
@@ -72,21 +70,21 @@ public class DisabledComponent
                 }
             };
 
+        Robot robot = new Robot();
+
 
         list.addMouseWheelListener(listener);
         textArea.addMouseWheelListener(listener);
 
         frame.setVisible(true);
-        ((SunToolkit)Toolkit.getDefaultToolkit()).realSync();
-
-        Robot robot = new Robot();
+        robot.waitForIdle();
 
         // point and wheel on the list
         Util.pointOnComp(list, robot);
-        ((SunToolkit)Toolkit.getDefaultToolkit()).realSync();
+        robot.waitForIdle();
 
         robot.mouseWheel(2);
-        ((SunToolkit)Toolkit.getDefaultToolkit()).realSync();
+        robot.waitForIdle();
 
         // disable the text area
         System.err.println(" disable text area ");
@@ -95,10 +93,10 @@ public class DisabledComponent
 
         // point and wheel on the text area
         Util.pointOnComp(textArea, robot);
-        ((SunToolkit)Toolkit.getDefaultToolkit()).realSync();
+        robot.waitForIdle();
 
         robot.mouseWheel(2);
-        ((SunToolkit)Toolkit.getDefaultToolkit()).realSync();
+        robot.waitForIdle();
 
         if (!passed) {
             throw new RuntimeException(" wrong wheel events ");

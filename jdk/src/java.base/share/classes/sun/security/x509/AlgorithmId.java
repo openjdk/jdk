@@ -39,7 +39,7 @@ import sun.security.util.*;
  * algorithm type, and may also be used in other cases.  Equivalence is
  * defined according to OID and (where relevant) parameters.
  *
- * <P>Subclasses may be used, for example when when the algorithm ID has
+ * <P>Subclasses may be used, for example when the algorithm ID has
  * associated parameters which some code (e.g. code using public keys) needs
  * to have parsed.  Two examples of such algorithms are Diffie-Hellman key
  * exchange, and the Digital Signature Standard Algorithm (DSS/DSA).
