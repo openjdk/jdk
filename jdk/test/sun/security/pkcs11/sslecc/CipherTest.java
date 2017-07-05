@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ import java.util.concurrent.*;
 
 import java.security.*;
 import java.security.cert.*;
-import java.security.cert.Certificate;
 
 import javax.net.ssl.*;
 
@@ -60,6 +59,8 @@ public class CipherTest {
     static SecureRandom secureRandom;
 
     private static PeerFactory peerFactory;
+
+    static final CountDownLatch clientCondition = new CountDownLatch(1);
 
     static abstract class Server implements Runnable {
 
@@ -313,6 +314,10 @@ public class CipherTest {
             }
             threads[i].start();
         }
+
+        // The client threads are ready.
+        clientCondition.countDown();
+
         try {
             for (int i = 0; i < THREADS; i++) {
                 threads[i].join();
@@ -367,6 +372,10 @@ public class CipherTest {
                 try {
                     runTest(params);
                     System.out.println("Passed " + params);
+                } catch (SocketTimeoutException ste) {
+                    System.out.println("The client connects to the server timeout, "
+                            + "so ignore the test.");
+                    break;
                 } catch (Exception e) {
                     cipherTest.setFailed();
                     System.out.println("** Failed " + params + "**");

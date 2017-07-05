@@ -29,10 +29,14 @@ package sun.applet;
  * An applet security exception.
  *
  * @author      Arthur van Hoff
+ *
+ * @deprecated The Applet API is deprecated. See the
+ * <a href="../../java/applet/package-summary.html"> java.applet package
+ * documentation</a> for further information.
  */
 @SuppressWarnings("serial") // JDK implementation class
-public
-class AppletIllegalArgumentException extends IllegalArgumentException {
+@Deprecated(since = "9")
+public class AppletIllegalArgumentException extends IllegalArgumentException {
     private String key = null;
 
     public AppletIllegalArgumentException(String key) {

@@ -18,6 +18,12 @@ grant {
   // test needs to use java to exec an rmiregistry
   permission java.io.FilePermission "${java.home}${/}bin${/}-", "execute";
 
-  // test needs to communicate with this its registry
+  // test needs to communicate with its registry
   permission java.net.SocketPermission "*:1024-", "connect,accept,listen";
+
+  permission java.util.PropertyPermission "java.security.policy", "read";
+  permission java.util.PropertyPermission "java.security.manager", "read";
+
+  // used by TestLibrary to determine extra commandline properties
+  permission java.io.FilePermission "..${/}..${/}test.props", "read";
 };

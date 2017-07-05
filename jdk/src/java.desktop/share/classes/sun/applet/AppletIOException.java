@@ -31,10 +31,14 @@ import java.io.IOException;
  * An applet IO exception.
  *
  * @author      Koji Uno
+ *
+ * @deprecated The Applet API is deprecated. See the
+ * <a href="../../java/applet/package-summary.html"> java.applet package
+ * documentation</a> for further information.
  */
 @SuppressWarnings("serial") // JDK implementation class
-public
-class AppletIOException extends IOException {
+@Deprecated(since = "9")
+public class AppletIOException extends IOException {
     private String key = null;
     private Object msgobj = null;
 

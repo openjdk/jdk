@@ -22,7 +22,7 @@
  */
 
 /* @test
-   @bug 4213164
+   @bug 4213164 8172253
    @summary setIfModifiedSince mehtod in HttpURLConnection sometimes fails
    */
 import java.util.*;
@@ -88,7 +88,7 @@ public class SetIfModifiedSince implements Runnable {
      //url = new URL(args[0]);
      url = new URL("http://localhost:" + String.valueOf(port) +
                    "/anything");
-     con = (HttpURLConnection)url.openConnection();
+     con = (HttpURLConnection)url.openConnection(Proxy.NO_PROXY);
 
      con.setIfModifiedSince(date.getTime());
      con.connect();

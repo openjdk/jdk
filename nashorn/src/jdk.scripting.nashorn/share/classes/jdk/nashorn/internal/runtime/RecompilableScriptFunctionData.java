@@ -28,6 +28,8 @@ package jdk.nashorn.internal.runtime;
 import static jdk.nashorn.internal.lookup.Lookup.MH;
 
 import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -100,7 +102,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
      * reparsed from source, or a soft reference to a {@code FunctionNode} for other functions (it is safe
      * to be cleared as they can be reparsed).
      */
-    private volatile Object cachedAst;
+    private volatile transient Object cachedAst;
 
     /** Token of this function within the source. */
     private final long token;
@@ -289,6 +291,9 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
         if (this.source == null && this.installer == null) {
             this.source    = src;
             this.installer = inst;
+            for (final RecompilableScriptFunctionData nested : nestedFunctions.values()) {
+                nested.initTransients(src, inst);
+            }
         } else if (this.source != src || !this.installer.isCompatibleWith(inst)) {
             // Existing values must be same as those passed as parameters
             throw new IllegalArgumentException();
@@ -424,7 +429,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
         } else if (lCachedAst instanceof SerializedAst) {
             final SerializedAst serializedAst = (SerializedAst)lCachedAst;
             // Even so, are we also softly caching the AST?
-            final FunctionNode cachedFn = serializedAst.cachedAst.get();
+            final FunctionNode cachedFn = serializedAst.cachedAst == null ? null : serializedAst.cachedAst.get();
             if (cachedFn != null) {
                 // Yes we are - this is fast
                 return cloneSymbols(cachedFn);
@@ -492,9 +497,11 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
      * we're using this tuple instead to also keep a deserialized AST around in memory to cut down on
      * deserialization costs.
      */
-    private static class SerializedAst {
+    private static class SerializedAst implements Serializable {
         private final byte[] serializedAst;
-        private volatile Reference<FunctionNode> cachedAst;
+        private volatile transient Reference<FunctionNode> cachedAst;
+
+        private static final long serialVersionUID = 1L;
 
         SerializedAst(final FunctionNode fn, final Reference<FunctionNode> cachedAst) {
             this.serializedAst = AstSerializer.serialize(fn);
@@ -1038,8 +1045,20 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
         return true;
     }
 
+    private void writeObject(final ObjectOutputStream out) throws IOException {
+        final Object localCachedAst = cachedAst;
+        out.defaultWriteObject();
+        // We need to persist SerializedAst for split functions as they can't reparse the source code.
+        if (localCachedAst instanceof SerializedAst) {
+            out.writeObject(localCachedAst);
+        } else {
+            out.writeObject(null);
+        }
+    }
+
     private void readObject(final java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
         in.defaultReadObject();
+        cachedAst = in.readObject();
         createLogger();
     }
 

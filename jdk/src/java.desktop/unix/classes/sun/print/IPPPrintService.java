@@ -1053,15 +1053,8 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
             // of setting it, it is a safe assumption to just always
             // include SheetCollate as supported attribute.
 
-            /*
-               In Linux, we use Postscript for rendering but Linux still
-               has issues in propagating Postscript-embedded setpagedevice
-               setting like collation.  Therefore, we temporarily exclude
-               Linux.
-            */
-            if (!PrintServiceLookupProvider.isLinux()) {
-                catList.add(SheetCollate.class);
-            }
+            catList.add(SheetCollate.class);
+
         }
 
         // With the assumption that  Chromaticity is equivalent to

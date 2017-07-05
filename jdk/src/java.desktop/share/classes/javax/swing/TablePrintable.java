@@ -380,6 +380,12 @@ class TablePrintable implements Printable {
         // print the current section of the table
         g2d.translate(-clip.x, -clip.y);
         g2d.clip(clip);
+
+        // set a property so that BasicTableUI#paint can know JTable printMode
+        // is FIT_WIDTH since TablePrintable.printMode is not accessible from BasicTableUI
+        if (printMode == JTable.PrintMode.FIT_WIDTH) {
+            table.putClientProperty("Table.printMode", JTable.PrintMode.FIT_WIDTH);
+        }
         table.print(g2d);
 
         // restore the original transform and clip
@@ -407,8 +413,18 @@ class TablePrintable implements Printable {
         for(int visrow = rMin; visrow < rMax; visrow++) {
             rowHeight += table.getRowHeight(visrow);
         }
-        g2d.drawRect(0, 0, visibleBounds.width, hclip.height + rowHeight);
+        // If PrintMode is FIT_WIDTH, then draw rect for entire column width while
+        // printing irrespective of how many columns are visible in console
+        if (printMode == JTable.PrintMode.FIT_WIDTH) {
+            g2d.drawRect(0, 0, clip.width, hclip.height + rowHeight);
+        } else {
+            g2d.drawRect(0, 0, visibleBounds.width, hclip.height + rowHeight);
+        }
 
+        // clear the property
+        if (printMode == JTable.PrintMode.FIT_WIDTH) {
+            table.putClientProperty("Table.printMode", null);
+        }
         // dispose the graphics copy
         g2d.dispose();
 
@@ -534,5 +550,4 @@ class TablePrintable implements Printable {
         } while (clip.width + colWidth <= pw);
 
     }
-
 }
