@@ -26,7 +26,7 @@
   @bug 6852592
   @summary invalidate() must stop when it encounters a validate root
   @author anthony.petrov@sun.com
-  @run main InvalidateMustRespectValidateRoots
+  @run main/othervm -Djava.awt.smartInvalidate=true InvalidateMustRespectValidateRoots
 */
 
 import javax.swing.*;

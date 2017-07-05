@@ -273,9 +273,9 @@ public class CallSite {
             Object binding;
             info = maybeReBox(info);
             if (info == null) {
-                binding = bootstrapMethod.invokeGeneric(caller, name, type);
+                binding = bootstrapMethod.invoke(caller, name, type);
             } else if (!info.getClass().isArray()) {
-                binding = bootstrapMethod.invokeGeneric(caller, name, type, info);
+                binding = bootstrapMethod.invoke(caller, name, type, info);
             } else {
                 Object[] argv = (Object[]) info;
                 maybeReBoxElements(argv);
@@ -283,10 +283,10 @@ public class CallSite {
                     throw new BootstrapMethodError("too many bootstrap method arguments");
                 MethodType bsmType = bootstrapMethod.type();
                 if (bsmType.parameterCount() == 4 && bsmType.parameterType(3) == Object[].class)
-                    binding = bootstrapMethod.invokeGeneric(caller, name, type, argv);
+                    binding = bootstrapMethod.invoke(caller, name, type, argv);
                 else
                     binding = MethodHandles.spreadInvoker(bsmType, 3)
-                        .invokeGeneric(bootstrapMethod, caller, name, type, argv);
+                        .invoke(bootstrapMethod, caller, name, type, argv);
             }
             //System.out.println("BSM for "+name+type+" => "+binding);
             if (binding instanceof CallSite) {

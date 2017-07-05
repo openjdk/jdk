@@ -31,7 +31,7 @@ import java.io.IOException;
 import java.io.EOFException;
 import java.io.File;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Enumeration;
@@ -141,7 +141,7 @@ class ZipFile implements ZipConstants, Closeable {
      * @since 1.3
      */
     public ZipFile(File file, int mode) throws IOException {
-        this(file, mode, StandardCharset.UTF_8);
+        this(file, mode, StandardCharsets.UTF_8);
     }
 
     /**

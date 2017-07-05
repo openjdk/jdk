@@ -2362,8 +2362,15 @@ methodOop SystemDictionary::find_method_handle_invoke(Symbol* name,
       spe = invoke_method_table()->find_entry(index, hash, signature, name_id);
       if (spe == NULL)
         spe = invoke_method_table()->add_entry(index, hash, signature, name_id);
-      if (spe->property_oop() == NULL)
+      if (spe->property_oop() == NULL) {
         spe->set_property_oop(m());
+        // Link m to his method type, if it is suitably generic.
+        oop mtform = java_lang_invoke_MethodType::form(mt());
+        if (mtform != NULL && mt() == java_lang_invoke_MethodTypeForm::erasedType(mtform)
+            && java_lang_invoke_MethodTypeForm::vmlayout_offset_in_bytes() > 0) {
+          java_lang_invoke_MethodTypeForm::init_vmlayout(mtform, m());
+        }
+      }
     } else {
       non_cached_result = m;
     }

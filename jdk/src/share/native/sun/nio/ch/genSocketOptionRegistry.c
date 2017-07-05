@@ -63,7 +63,7 @@ int main(int argc, const char* argv[]) {
     out("// AUTOMATICALLY GENERATED FILE - DO NOT EDIT                                  ");
     out("package sun.nio.ch;                                                            ");
     out("import java.net.SocketOption;                                                  ");
-    out("import java.net.StandardSocketOption;                                          ");
+    out("import java.net.StandardSocketOptions;                                         ");
     out("import java.net.ProtocolFamily;                                                ");
     out("import java.net.StandardProtocolFamily;                                        ");
     out("import java.util.Map;                                                          ");
@@ -73,7 +73,7 @@ int main(int argc, const char* argv[]) {
     out("    private static class RegistryKey {                                         ");
     out("        private final SocketOption<?> name;                                    ");
     out("        private final ProtocolFamily family;                                   ");
-    out("        RegistryKey(SocketOption<?> name, ProtocolFamily family) {                ");
+    out("        RegistryKey(SocketOption<?> name, ProtocolFamily family) {             ");
     out("            this.name = name;                                                  ");
     out("            this.family = family;                                              ");
     out("        }                                                                      ");
@@ -95,23 +95,23 @@ int main(int argc, const char* argv[]) {
     out("            Map<RegistryKey,OptionKey> map =                                   ");
     out("                new HashMap<RegistryKey,OptionKey>();                          ");
 
-    emit_unspec("StandardSocketOption.SO_BROADCAST", SOL_SOCKET, SO_BROADCAST);
-    emit_unspec("StandardSocketOption.SO_KEEPALIVE", SOL_SOCKET, SO_KEEPALIVE);
-    emit_unspec("StandardSocketOption.SO_LINGER",    SOL_SOCKET, SO_LINGER);
-    emit_unspec("StandardSocketOption.SO_SNDBUF",    SOL_SOCKET, SO_SNDBUF);
-    emit_unspec("StandardSocketOption.SO_RCVBUF",    SOL_SOCKET, SO_RCVBUF);
-    emit_unspec("StandardSocketOption.SO_REUSEADDR", SOL_SOCKET, SO_REUSEADDR);
-    emit_unspec("StandardSocketOption.TCP_NODELAY",  IPPROTO_TCP, TCP_NODELAY);
+    emit_unspec("StandardSocketOptions.SO_BROADCAST", SOL_SOCKET, SO_BROADCAST);
+    emit_unspec("StandardSocketOptions.SO_KEEPALIVE", SOL_SOCKET, SO_KEEPALIVE);
+    emit_unspec("StandardSocketOptions.SO_LINGER",    SOL_SOCKET, SO_LINGER);
+    emit_unspec("StandardSocketOptions.SO_SNDBUF",    SOL_SOCKET, SO_SNDBUF);
+    emit_unspec("StandardSocketOptions.SO_RCVBUF",    SOL_SOCKET, SO_RCVBUF);
+    emit_unspec("StandardSocketOptions.SO_REUSEADDR", SOL_SOCKET, SO_REUSEADDR);
+    emit_unspec("StandardSocketOptions.TCP_NODELAY",  IPPROTO_TCP, TCP_NODELAY);
 
-    emit_inet("StandardSocketOption.IP_TOS",            IPPROTO_IP,     IP_TOS);
-    emit_inet("StandardSocketOption.IP_MULTICAST_IF",   IPPROTO_IP,     IP_MULTICAST_IF);
-    emit_inet("StandardSocketOption.IP_MULTICAST_TTL",  IPPROTO_IP,     IP_MULTICAST_TTL);
-    emit_inet("StandardSocketOption.IP_MULTICAST_LOOP", IPPROTO_IP,     IP_MULTICAST_LOOP);
+    emit_inet("StandardSocketOptions.IP_TOS",            IPPROTO_IP,     IP_TOS);
+    emit_inet("StandardSocketOptions.IP_MULTICAST_IF",   IPPROTO_IP,     IP_MULTICAST_IF);
+    emit_inet("StandardSocketOptions.IP_MULTICAST_TTL",  IPPROTO_IP,     IP_MULTICAST_TTL);
+    emit_inet("StandardSocketOptions.IP_MULTICAST_LOOP", IPPROTO_IP,     IP_MULTICAST_LOOP);
 
 #ifdef AF_INET6
-    emit_inet6("StandardSocketOption.IP_MULTICAST_IF",   IPPROTO_IPV6,  IPV6_MULTICAST_IF);
-    emit_inet6("StandardSocketOption.IP_MULTICAST_TTL",  IPPROTO_IPV6,  IPV6_MULTICAST_HOPS);
-    emit_inet6("StandardSocketOption.IP_MULTICAST_LOOP", IPPROTO_IPV6,  IPV6_MULTICAST_LOOP);
+    emit_inet6("StandardSocketOptions.IP_MULTICAST_IF",   IPPROTO_IPV6,  IPV6_MULTICAST_IF);
+    emit_inet6("StandardSocketOptions.IP_MULTICAST_TTL",  IPPROTO_IPV6,  IPV6_MULTICAST_HOPS);
+    emit_inet6("StandardSocketOptions.IP_MULTICAST_LOOP", IPPROTO_IPV6,  IPV6_MULTICAST_LOOP);
 #endif
 
     emit_unspec("ExtendedSocketOption.SO_OOBINLINE", SOL_SOCKET, SO_OOBINLINE);

@@ -105,16 +105,16 @@ abstract class AbstractPoller implements Runnable {
         Set<WatchEvent.Kind<?>> eventSet = new HashSet<>(events.length);
         for (WatchEvent.Kind<?> event: events) {
             // standard events
-            if (event == StandardWatchEventKind.ENTRY_CREATE ||
-                event == StandardWatchEventKind.ENTRY_MODIFY ||
-                event == StandardWatchEventKind.ENTRY_DELETE)
+            if (event == StandardWatchEventKinds.ENTRY_CREATE ||
+                event == StandardWatchEventKinds.ENTRY_MODIFY ||
+                event == StandardWatchEventKinds.ENTRY_DELETE)
             {
                 eventSet.add(event);
                 continue;
             }
 
             // OVERFLOW is ignored
-            if (event == StandardWatchEventKind.OVERFLOW) {
+            if (event == StandardWatchEventKinds.OVERFLOW) {
                 if (events.length == 1)
                     throw new IllegalArgumentException("No events to register");
                 continue;

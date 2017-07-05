@@ -55,7 +55,7 @@ import com.sun.nio.sctp.SctpChannel;
 import com.sun.nio.sctp.SctpSocketOption;
 import sun.nio.ch.PollArrayWrapper;
 import sun.nio.ch.SelChImpl;
-import static com.sun.nio.sctp.SctpStandardSocketOption.*;
+import static com.sun.nio.sctp.SctpStandardSocketOptions.*;
 import static sun.nio.ch.SctpResultContainer.SEND_FAILED;
 import static sun.nio.ch.SctpResultContainer.ASSOCIATION_CHANGED;
 import static sun.nio.ch.SctpResultContainer.PEER_ADDRESS_CHANGED;

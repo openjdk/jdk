@@ -24,7 +24,7 @@
  */
 
 /* @test
- * @summary unit tests for java.lang.invoke.MethodHandle.invokeGeneric
+ * @summary unit tests for java.lang.invoke.MethodHandle.invoke
  * @compile -target 7 InvokeGenericTest.java
  * @run junit/othervm test.java.lang.invoke.InvokeGenericTest
  */
@@ -51,6 +51,10 @@ public class InvokeGenericTest {
     static {
         String vstr = System.getProperty("test.java.lang.invoke.InvokeGenericTest.verbosity");
         if (vstr != null)  verbosity = Integer.parseInt(vstr);
+    }
+
+    public static void main(String... av) throws Throwable {
+        new InvokeGenericTest().testFirst();
     }
 
     @Test
@@ -103,7 +107,7 @@ public class InvokeGenericTest {
     void startTest(String name) {
         if (testName != null)  printCounts();
         if (verbosity >= 1)
-            System.out.println(name);
+            System.out.println("["+name+"]");
         posTests = negTests = 0;
         testName = name;
     }
@@ -350,6 +354,30 @@ public class InvokeGenericTest {
         String[] args = { "one", "two" };
         MethodHandle mh = callable(Object.class, String.class);
         Object res; List resl;
+        res = resl = (List) mh.invoke((String)args[0], (Object)args[1]);
+        //System.out.println(res);
+        assertEquals(Arrays.asList(args), res);
+    }
+
+    @Test
+    public void testSimplePrims() throws Throwable {
+        startTest("testSimplePrims");
+        countTest();
+        int[] args = { 1, 2 };
+        MethodHandle mh = callable(Object.class, Object.class);
+        Object res; List resl;
+        res = resl = (List) mh.invoke(args[0], args[1]);
+        //System.out.println(res);
+        assertEquals(Arrays.toString(args), res.toString());
+    }
+
+    @Test
+    public void testAlternateName() throws Throwable {
+        startTest("testAlternateName");
+        countTest();
+        String[] args = { "one", "two" };
+        MethodHandle mh = callable(Object.class, String.class);
+        Object res; List resl;
         res = resl = (List) mh.invokeGeneric((String)args[0], (Object)args[1]);
         //System.out.println(res);
         assertEquals(Arrays.asList(args), res);
@@ -388,24 +416,24 @@ public class InvokeGenericTest {
         try {
             switch (args.length) {
             case 0:
-                junk = target.invokeGeneric(); break;
+                junk = target.invoke(); break;
             case 1:
-                junk = target.invokeGeneric(args[0]); break;
+                junk = target.invoke(args[0]); break;
             case 2:
-                junk = target.invokeGeneric(args[0], args[1]); break;
+                junk = target.invoke(args[0], args[1]); break;
             case 3:
-                junk = target.invokeGeneric(args[0], args[1], args[2]); break;
+                junk = target.invoke(args[0], args[1], args[2]); break;
             case 4:
-                junk = target.invokeGeneric(args[0], args[1], args[2], args[3]); break;
+                junk = target.invoke(args[0], args[1], args[2], args[3]); break;
             default:
                 junk = target.invokeWithArguments(args); break;
             }
         } catch (WrongMethodTypeException ex) {
             return;
         } catch (Exception ex) {
-            throw new RuntimeException("wrong exception calling "+target+target.type()+" on "+Arrays.asList(args)+" : "+ex);
+            throw new RuntimeException("wrong exception calling "+target+" on "+Arrays.asList(args), ex);
         }
-        throw new RuntimeException("bad success calling "+target+target.type()+" on "+Arrays.asList(args));
+        throw new RuntimeException("bad success calling "+target+" on "+Arrays.asList(args));
     }
 
     /** Make a list of all combinations of the given types, with the given arities.
@@ -451,7 +479,7 @@ public class InvokeGenericTest {
         startTest("testReferenceConversions");
         toString_MH = LOOKUP.
             findVirtual(Object.class, "toString", MethodType.methodType(String.class));
-        String[] args = { "one", "two" };
+        Object[] args = { "one", "two" };
         for (MethodType type : allMethodTypes(2, Object.class, String.class, RandomInterface.class)) {
             testReferenceConversions(type, args);
         }
@@ -463,7 +491,7 @@ public class InvokeGenericTest {
         MethodHandle tsdrop = MethodHandles.dropArguments(toString_MH, 1, type.parameterList());
         mh = MethodHandles.foldArguments(tsdrop, mh);
         mh = mh.asType(type);
-        Object res = mh.invokeGeneric((String)args[0], (Object)args[1]);
+        Object res = mh.invoke((String)args[0], (Object)args[1]);
         //System.out.println(res);
         assertEquals(Arrays.asList(args).toString(), res);
     }
@@ -473,10 +501,10 @@ public class InvokeGenericTest {
     public void testBoxConversions() throws Throwable {
         startTest("testBoxConversions");
         countTest();
-        Integer[] args = { 1, 2 };
+        Object[] args = { 1, 2 };
         MethodHandle mh = callable(Object.class, int.class);
         Object res; List resl;
-        res = resl = (List) mh.invokeGeneric((int)args[0], (Object)args[1]);
+        res = resl = (List) mh.invoke((int)args[0], (Object)args[1]);
         //System.out.println(res);
         assertEquals(Arrays.asList(args), res);
     }

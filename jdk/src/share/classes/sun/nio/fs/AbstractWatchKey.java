@@ -42,8 +42,8 @@ abstract class AbstractWatchKey implements WatchKey {
     /**
      * Special event to signal overflow
      */
-    static final Event<Void> OVERFLOW_EVENT =
-        new Event<Void>(StandardWatchEventKind.OVERFLOW, null);
+    static final Event<Object> OVERFLOW_EVENT =
+        new Event<Object>(StandardWatchEventKinds.OVERFLOW, null);
 
     /**
      * Possible key states
@@ -103,14 +103,14 @@ abstract class AbstractWatchKey implements WatchKey {
      */
     @SuppressWarnings("unchecked")
     final void signalEvent(WatchEvent.Kind<?> kind, Object context) {
-        boolean isModify = (kind == StandardWatchEventKind.ENTRY_MODIFY);
+        boolean isModify = (kind == StandardWatchEventKinds.ENTRY_MODIFY);
         synchronized (this) {
             int size = events.size();
             if (size > 0) {
                 // if the previous event is an OVERFLOW event or this is a
                 // repeated event then we simply increment the counter
                 WatchEvent<?> prev = events.get(size-1);
-                if ((prev.kind() == StandardWatchEventKind.OVERFLOW) ||
+                if ((prev.kind() == StandardWatchEventKinds.OVERFLOW) ||
                     ((kind == prev.kind() &&
                      Objects.equals(context, prev.context()))))
                 {
@@ -124,7 +124,7 @@ abstract class AbstractWatchKey implements WatchKey {
                     if (isModify) {
                         WatchEvent<?> ev = lastModifyEvents.get(context);
                         if (ev != null) {
-                            assert ev.kind() == StandardWatchEventKind.ENTRY_MODIFY;
+                            assert ev.kind() == StandardWatchEventKinds.ENTRY_MODIFY;
                             ((Event<?>)ev).increment();
                             return;
                         }
@@ -138,7 +138,7 @@ abstract class AbstractWatchKey implements WatchKey {
                 // if the list has reached the limit then drop pending events
                 // and queue an OVERFLOW event
                 if (size >= MAX_EVENT_LIST_SIZE) {
-                    kind = StandardWatchEventKind.OVERFLOW;
+                    kind = StandardWatchEventKinds.OVERFLOW;
                     isModify = false;
                     context = null;
                 }
@@ -149,7 +149,7 @@ abstract class AbstractWatchKey implements WatchKey {
                 new Event<Object>((WatchEvent.Kind<Object>)kind, context);
             if (isModify) {
                 lastModifyEvents.put(context, ev);
-            } else if (kind == StandardWatchEventKind.OVERFLOW) {
+            } else if (kind == StandardWatchEventKinds.OVERFLOW) {
                 // drop all pending events
                 events.clear();
                 lastModifyEvents.clear();
