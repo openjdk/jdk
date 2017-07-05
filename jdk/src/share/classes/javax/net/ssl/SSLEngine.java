@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -329,7 +329,7 @@ import java.nio.ReadOnlyBufferException;
  * is saved.  All future delegated tasks will be processed using this
  * context:  that is, all access control decisions will be made using the
  * context captured at engine creation.
- * <P>
+ *
  * <HR>
  *
  * <B>Concurrency Notes</B>:
@@ -345,7 +345,7 @@ import java.nio.ReadOnlyBufferException;
  *      out-of-order, unexpected or fatal results may occur.
  * <P>
  *      For example:
- * <P>
+ *
  *      <pre>
  *              synchronized (outboundLock) {
  *                  sslEngine.wrap(src, dst);

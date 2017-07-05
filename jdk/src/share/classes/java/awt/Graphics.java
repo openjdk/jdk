@@ -39,7 +39,7 @@ import java.text.AttributedCharacterIterator;
  * A <code>Graphics</code> object encapsulates state information needed
  * for the basic rendering operations that Java supports.  This
  * state information includes the following properties:
- * <p>
+ *
  * <ul>
  * <li>The <code>Component</code> object on which to draw.
  * <li>A translation origin for rendering and clipping coordinates.
@@ -63,7 +63,7 @@ import java.text.AttributedCharacterIterator;
  * <p>
  * The graphics pen hangs down and to the right from the path it traverses.
  * This has the following implications:
- * <p><ul>
+ * <ul>
  * <li>If you draw a figure that covers a given rectangle, that
  * figure occupies one extra row of pixels on the right and bottom edges
  * as compared to filling a figure that is bounded by that same rectangle.
@@ -136,7 +136,7 @@ public abstract class Graphics {
      * interpreted in the coordinate system of the original
      * <code>Graphics</code> object. The new graphics context is
      * identical to the original, except in two respects:
-     * <p>
+     *
      * <ul>
      * <li>
      * The new graphics context is translated by (<i>x</i>,&nbsp;<i>y</i>).

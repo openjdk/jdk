@@ -22,10 +22,10 @@
  */
 /*
  * @test
- * @bug 7200306
- * @run main/othervm/timeout=250 TestDSAKeyLength
+ * @bug 7200306 8029158
  * @summary verify that P11Signature impl will error out when initialized
  * with unsupported key sizes
+ * @library ..
  */
 
 
@@ -40,6 +40,11 @@ public class TestDSAKeyLength extends PKCS11Test {
     }
 
     public void main(Provider provider) throws Exception {
+        if (isNSS(provider) && getNSSVersion() >= 3.14) {
+            System.out.println("Skip testing NSS " + getNSSVersion());
+            return;
+        }
+
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("DSA", "SUN");
         kpg.initialize(2048, new SecureRandom());
         KeyPair pair = kpg.generateKeyPair();

@@ -228,8 +228,8 @@ public final class PrivateCredentialPermission extends Permission {
      * <p>
      *
      * This method returns true if:
-     * <p><ul>
-     * <li> <i>p</i> is an instanceof PrivateCredentialPermission and <p>
+     * <ul>
+     * <li> <i>p</i> is an instanceof PrivateCredentialPermission and
      * <li> the target name for <i>p</i> is implied by this object's
      *          target name.  For example:
      * <pre>

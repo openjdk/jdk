@@ -53,7 +53,8 @@
 extern int XShmQueryExtension();
 
 void TryInitMITShm(JNIEnv *env, jint *shmExt, jint *shmPixmaps);
-jboolean TryXShmAttach(JNIEnv *env, Display *display, XShmSegmentInfo *shminfo);
+void resetXShmAttachFailed();
+jboolean isXShmAttachFailed();
 
 #endif /* MITSHM */
 

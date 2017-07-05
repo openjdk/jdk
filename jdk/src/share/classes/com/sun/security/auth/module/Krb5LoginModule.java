@@ -916,8 +916,7 @@ public class Krb5LoginModule implements LoginModule {
                 char[] tmpPassword = ((PasswordCallback)
                                       callbacks[0]).getPassword();
                 if (tmpPassword == null) {
-                    // treat a NULL password as an empty password
-                    tmpPassword = new char[0];
+                    throw new LoginException("No password provided");
                 }
                 password = new char[tmpPassword.length];
                 System.arraycopy(tmpPassword, 0,

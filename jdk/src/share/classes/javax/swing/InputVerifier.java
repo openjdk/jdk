@@ -47,7 +47,7 @@ import java.util.*;
  * either by clicking in it or by pressing TAB. However, if another string
  * is entered in the first text field, then the user will be unable to
  * transfer focus to the second text field.
- * <p>
+ *
  * <pre>
  * import java.awt.*;
  * import java.util.*;
