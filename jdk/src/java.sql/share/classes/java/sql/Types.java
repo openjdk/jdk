@@ -30,6 +30,8 @@ package java.sql;
  * SQL types, called JDBC types.
  * <p>
  * This class is never instantiated.
+ *
+ * @since 1.1
  */
 public class Types {
 
