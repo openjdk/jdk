@@ -27,6 +27,7 @@
 #include "code/codeCache.hpp"
 #include "compiler/compileBroker.hpp"
 #include "oops/metadata.hpp"
+#include "prims/jvmtiImpl.hpp"
 #include "runtime/synchronizer.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/growableArray.hpp"
@@ -48,6 +49,7 @@ MetadataOnStackMark::MetadataOnStackMark() {
   Threads::metadata_do(Metadata::mark_on_stack);
   CodeCache::alive_nmethods_do(nmethod::mark_on_stack);
   CompileBroker::mark_on_stack();
+  JvmtiCurrentBreakpoints::metadata_do(Metadata::mark_on_stack);
 }
 
 MetadataOnStackMark::~MetadataOnStackMark() {
