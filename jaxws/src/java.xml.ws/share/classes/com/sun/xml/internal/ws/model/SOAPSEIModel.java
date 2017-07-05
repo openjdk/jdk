@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,8 @@ import javax.xml.namespace.QName;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Creates SOAP specific RuntimeModel
@@ -40,6 +42,8 @@ import java.util.Set;
  * @author Vivek Pandey
  */
 public class SOAPSEIModel extends AbstractSEIModelImpl {
+
+        private final Lock lock = new ReentrantLock();
 
     public SOAPSEIModel(WebServiceFeatureList features) {
         super(features);
@@ -72,15 +76,22 @@ public class SOAPSEIModel extends AbstractSEIModelImpl {
 
     public Set<QName> getKnownHeaders() {
         Set<QName> headers = new HashSet<QName>();
-        for (JavaMethodImpl method : getJavaMethods()) {
-            // fill in request headers
-            Iterator<ParameterImpl> params = method.getRequestParameters().iterator();
-            fillHeaders(params, headers, Mode.IN);
+
+        try{
+                lock.lock();
+            for (JavaMethodImpl method : getJavaMethods()) {
+             // fill in request headers
+             Iterator<ParameterImpl> params = method.getRequestParameters().iterator();
+             fillHeaders(params, headers, Mode.IN);
 
             // fill in response headers
-            params = method.getResponseParameters().iterator();
-            fillHeaders(params, headers, Mode.OUT);
-        }
+             params = method.getResponseParameters().iterator();
+             fillHeaders(params, headers, Mode.OUT);
+                          }
+        }finally
+        {
+                lock.unlock();
+         }
         return headers;
     }
 
