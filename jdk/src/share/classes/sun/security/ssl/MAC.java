@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -172,10 +172,10 @@ final class MAC {
          * when there are only 2^8 sequence numbers left.
          */
         return (block != null && mac != null &&
-                block[0] == 0xFF && block[1] == 0xFF &&
-                block[2] == 0xFF && block[3] == 0xFF &&
-                block[4] == 0xFF && block[5] == 0xFF &&
-                block[6] == 0xFF);
+                block[0] == (byte)0xFF && block[1] == (byte)0xFF &&
+                block[2] == (byte)0xFF && block[3] == (byte)0xFF &&
+                block[4] == (byte)0xFF && block[5] == (byte)0xFF &&
+                block[6] == (byte)0xFF);
     }
 
     /*
@@ -192,7 +192,7 @@ final class MAC {
          * only 2^48 sequence numbers left.
          */
         return (block != null && mac != null &&
-                block[0] == 0xFF && block[1] == 0xFF);
+                block[0] == (byte)0xFF && block[1] == (byte)0xFF);
     }
 
     // increment the sequence number in the block array

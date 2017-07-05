@@ -1326,7 +1326,7 @@ public class DefaultCaret extends Rectangle implements Caret, FocusListener, Mou
         if ( ! SwingUtilities2.canCurrentEventAccessSystemClipboard() ) {
             return;
         }
-        if (this.dot != this.mark && component != null) {
+        if (this.dot != this.mark && component != null && component.hasFocus()) {
             Clipboard clip = getSystemSelection();
             if (clip != null) {
                 String selectedText;
