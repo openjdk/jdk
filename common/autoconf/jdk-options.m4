@@ -251,21 +251,31 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_DEBUG_SYMBOLS],
       fi
     fi
 
-    ENABLE_DEBUG_SYMBOLS=true
-    ZIP_DEBUGINFO_FILES=true
-    DEBUG_BINARIES=true
+    COMPILE_WITH_DEBUG_SYMBOLS=true
+    COPY_DEBUG_SYMBOLS=true
+    ZIP_EXTERNAL_DEBUG_SYMBOLS=true
+
+    # Hotspot legacy support, not relevant with COPY_DEBUG_SYMBOLS=true
+    DEBUG_BINARIES=false
     STRIP_POLICY=min_strip
+    
   elif test "x$NATIVE_DEBUG_SYMBOLS" = xnone; then
-    ENABLE_DEBUG_SYMBOLS=false
-    ZIP_DEBUGINFO_FILES=false
+    COMPILE_WITH_DEBUG_SYMBOLS=false
+    COPY_DEBUG_SYMBOLS=false
+    ZIP_EXTERNAL_DEBUG_SYMBOLS=false
+
     DEBUG_BINARIES=false
     STRIP_POLICY=no_strip
   elif test "x$NATIVE_DEBUG_SYMBOLS" = xinternal; then
-    ENABLE_DEBUG_SYMBOLS=false  # -g option only
-    ZIP_DEBUGINFO_FILES=false
+    COMPILE_WITH_DEBUG_SYMBOLS=true
+    COPY_DEBUG_SYMBOLS=false
+    ZIP_EXTERNAL_DEBUG_SYMBOLS=false
+
+    # Hotspot legacy support, will turn on -g when COPY_DEBUG_SYMBOLS=false
     DEBUG_BINARIES=true
     STRIP_POLICY=no_strip
     STRIP=""
+    
   elif test "x$NATIVE_DEBUG_SYMBOLS" = xexternal; then
 
     if test "x$OPENJDK_TARGET_OS" = xsolaris || test "x$OPENJDK_TARGET_OS" = xlinux; then
@@ -276,9 +286,12 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_DEBUG_SYMBOLS],
       fi
     fi
 
-    ENABLE_DEBUG_SYMBOLS=true
-    ZIP_DEBUGINFO_FILES=false
-    DEBUG_BINARIES=true
+    COMPILE_WITH_DEBUG_SYMBOLS=true
+    COPY_DEBUG_SYMBOLS=true
+    ZIP_EXTERNAL_DEBUG_SYMBOLS=false
+
+    # Hotspot legacy support, not relevant with COPY_DEBUG_SYMBOLS=true
+    DEBUG_BINARIES=false
     STRIP_POLICY=min_strip
   else
     AC_MSG_ERROR([Allowed native debug symbols are: none, internal, external, zipped])
@@ -294,11 +307,13 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_DEBUG_SYMBOLS],
   BASIC_DEPRECATED_ARG_ENABLE(zip-debug-info, zip_debug_info,
                               [Please use --with-native-debug-symbols=zipped .])
 
-  AC_SUBST(NATIVE_DEBUG_SYMBOLS)
+  AC_SUBST(COMPILE_WITH_DEBUG_SYMBOLS)
+  AC_SUBST(COPY_DEBUG_SYMBOLS)
+  AC_SUBST(ZIP_EXTERNAL_DEBUG_SYMBOLS)
+
+  # Legacy values
   AC_SUBST(DEBUG_BINARIES)
   AC_SUBST(STRIP_POLICY)
-  AC_SUBST(ENABLE_DEBUG_SYMBOLS)
-  AC_SUBST(ZIP_DEBUGINFO_FILES)
 ])
 
 ################################################################################
