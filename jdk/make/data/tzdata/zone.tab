@@ -306,8 +306,7 @@ MX	+2313-10625	America/Mazatlan	Mountain Time - S Baja, Nayarit, Sinaloa
 MX	+2838-10605	America/Chihuahua	Mexican Mountain Time - Chihuahua away from US border
 MX	+2934-10425	America/Ojinaga	US Mountain Time - Chihuahua near US border
 MX	+2904-11058	America/Hermosillo	Mountain Standard Time - Sonora
-MX	+3232-11701	America/Tijuana	US Pacific Time - Baja California near US border
-MX	+3018-11452	America/Santa_Isabel	Mexican Pacific Time - Baja California away from US border
+MX	+3232-11701	America/Tijuana	US Pacific Time - Baja California state
 MX	+2048-10515	America/Bahia_Banderas	Mexican Central Time - Bahia de Banderas
 MY	+0310+10142	Asia/Kuala_Lumpur	peninsular Malaysia
 MY	+0133+11020	Asia/Kuching	Sabah & Sarawak
@@ -437,10 +436,10 @@ US	+394421-1045903	America/Denver	Mountain Time
 US	+433649-1161209	America/Boise	Mountain Time - south Idaho & east Oregon
 US	+332654-1120424	America/Phoenix	Mountain Standard Time - Arizona (except Navajo)
 US	+340308-1181434	America/Los_Angeles	Pacific Time
-US	+550737-1313435	America/Metlakatla	Pacific Standard Time - Annette Island, Alaska
 US	+611305-1495401	America/Anchorage	Alaska Time
 US	+581807-1342511	America/Juneau	Alaska Time - Alaska panhandle
 US	+571035-1351807	America/Sitka	Alaska Time - southeast Alaska panhandle
+US	+550737-1313435	America/Metlakatla	Alaska Time - Annette Island
 US	+593249-1394338	America/Yakutat	Alaska Time - Alaska panhandle neck
 US	+643004-1652423	America/Nome	Alaska Time - west Alaska
 US	+515248-1763929	America/Adak	Aleutian Islands

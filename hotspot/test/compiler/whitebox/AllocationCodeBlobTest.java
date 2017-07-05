@@ -92,33 +92,36 @@ public class AllocationCodeBlobTest {
 
     private void test() {
         System.out.printf("type %s%n", type);
-        long start = getUsage();
-        long addr = WHITE_BOX.allocateCodeBlob(SIZE, type.id);
-        Asserts.assertNE(0, addr, "allocation failed");
 
+        // Measure the code cache usage after allocate/free.
+        long start = getUsage();
+        long addr1 = WHITE_BOX.allocateCodeBlob(SIZE, type.id);
         long firstAllocation = getUsage();
+        WHITE_BOX.freeCodeBlob(addr1);
+        long firstFree = getUsage();
+        long addr2 = WHITE_BOX.allocateCodeBlob(SIZE, type.id);
+        long secondAllocation = getUsage();
+        WHITE_BOX.freeCodeBlob(addr2);
+
+        // The following code may trigger resolving of invokedynamic
+        // instructions and therefore method handle intrinsic creation
+        // in the code cache. Make sure this is executed after measuring
+        // the code cache usage.
+        Asserts.assertNE(0, addr1, "first allocation failed");
+        Asserts.assertNE(0, addr2, "second allocation failed");
         Asserts.assertLTE(start + SIZE, firstAllocation,
                 "allocation should increase memory usage: "
                 + start + " + " + SIZE + " <= " + firstAllocation);
-
-        WHITE_BOX.freeCodeBlob(addr);
-        long firstFree = getUsage();
         Asserts.assertLTE(firstFree, firstAllocation,
                 "free shouldn't increase memory usage: "
                 + firstFree + " <= " + firstAllocation);
-
-        addr = WHITE_BOX.allocateCodeBlob(SIZE, type.id);
-        Asserts.assertNE(0, addr, "allocation failed");
-
-        long secondAllocation = getUsage();
         Asserts.assertEQ(firstAllocation, secondAllocation);
 
-        WHITE_BOX.freeCodeBlob(addr);
         System.out.println("allocating till possible...");
         ArrayList<Long> blobs = new ArrayList<>();
         int size = (int) (CODE_CACHE_SIZE >> 7);
-        while ((addr = WHITE_BOX.allocateCodeBlob(size, type.id)) != 0) {
-            blobs.add(addr);
+        while ((addr1 = WHITE_BOX.allocateCodeBlob(size, type.id)) != 0) {
+            blobs.add(addr1);
         }
         for (Long blob : blobs) {
             WHITE_BOX.freeCodeBlob(blob);

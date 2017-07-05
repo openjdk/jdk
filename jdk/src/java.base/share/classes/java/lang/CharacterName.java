@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,38 +29,56 @@ import java.io.DataInputStream;
 import java.io.InputStream;
 import java.lang.ref.SoftReference;
 import java.util.Arrays;
+import java.util.Locale;
 import java.util.zip.InflaterInputStream;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
 class CharacterName {
 
-    private static SoftReference<byte[]> refStrPool;
-    private static int[][] lookup;
+    private static SoftReference<CharacterName> refCharName;
 
-    private static synchronized byte[] initNamePool() {
-        byte[] strPool = null;
-        if (refStrPool != null && (strPool = refStrPool.get()) != null)
-            return strPool;
-        DataInputStream dis = null;
-        try {
-            dis = new DataInputStream(new InflaterInputStream(
-                AccessController.doPrivileged(new PrivilegedAction<>()
-                {
-                    public InputStream run() {
-                        return getClass().getResourceAsStream("uniName.dat");
-                    }
-                })));
+    // codepoint -> bkIndex -> lookup -> offset/len
+    private final byte[] strPool;
+    private final int[] lookup;      // code point -> offset/len in strPool
+    private final int[] bkIndices;   // code point -> lookup index
 
-            lookup = new int[(Character.MAX_CODE_POINT + 1) >> 8][];
+    // name -> hash -> hsIndices -> cpEntries -> code point
+    private final int[] cpEntries;   // code points that have name in strPool
+    private final int[] hsIndices;   // chain heads, hash indices into "cps"
+
+    private CharacterName()  {
+        try (DataInputStream dis = new DataInputStream(new InflaterInputStream(
+            AccessController.doPrivileged(new PrivilegedAction<>() {
+                public InputStream run() {
+                    return getClass().getResourceAsStream("uniName.dat");
+                }
+            })))) {
+
             int total = dis.readInt();
+            int bkNum = dis.readInt();
+            int cpNum = dis.readInt();
             int cpEnd = dis.readInt();
             byte ba[] = new byte[cpEnd];
+            lookup = new int[bkNum * 256];
+            bkIndices = new int[(Character.MAX_CODE_POINT + 1) >> 8];
+            strPool = new byte[total - cpEnd];
+            cpEntries = new int[cpNum * 3];
+            hsIndices = new int[(cpNum / 2) | 1];
+            Arrays.fill(bkIndices, -1);
+            Arrays.fill(hsIndices, -1);
             dis.readFully(ba);
+            dis.readFully(strPool);
 
             int nameOff = 0;
             int cpOff = 0;
             int cp = 0;
+            int bk = -1;
+            int prevBk = -1;   // prev bkNo;
+            int idx = 0;
+            int next = -1;
+            int hash = 0;
+            int hsh = 0;
             do {
                 int len = ba[cpOff++] & 0xff;
                 if (len == 0) {
@@ -72,37 +90,91 @@ class CharacterName {
                 }  else {
                     cp++;
                 }
+                // cp -> name
                 int hi = cp >> 8;
-                if (lookup[hi] == null) {
-                    lookup[hi] = new int[0x100];
+                if (prevBk != hi) {
+                    bk++;
+                    bkIndices[hi] = bk;
+                    prevBk = hi;
                 }
-                lookup[hi][cp&0xff] = (nameOff << 8) | len;
+                lookup[(bk << 8) + (cp & 0xff)] = (nameOff << 8) | len;
+                // name -> cp
+                hash = hashN(strPool, nameOff, len);
+                hsh = (hash & 0x7fffffff) % hsIndices.length;
+                next = hsIndices[hsh];
+                hsIndices[hsh] = idx;
+                idx = addCp(idx, hash, next, cp);
                 nameOff += len;
             } while (cpOff < cpEnd);
-            strPool = new byte[total - cpEnd];
-            dis.readFully(strPool);
-            refStrPool = new SoftReference<>(strPool);
         } catch (Exception x) {
             throw new InternalError(x.getMessage(), x);
-        } finally {
-            try {
-                if (dis != null)
-                    dis.close();
-            } catch (Exception xx) {}
         }
-        return strPool;
     }
 
-    public static String get(int cp) {
-        byte[] strPool = null;
-        if (refStrPool == null || (strPool = refStrPool.get()) == null)
-            strPool = initNamePool();
+    private static final int hashN(byte[] a, int off, int len) {
+        int h = 1;
+        while (len-- > 0) {
+            h = 31 * h + a[off++];
+        }
+        return h;
+    }
+
+    private int addCp(int idx, int hash, int next, int cp) {
+        cpEntries[idx++] = hash;
+        cpEntries[idx++] = next;
+        cpEntries[idx++] = cp;
+        return idx;
+    }
+
+    private int getCpHash(int idx) { return cpEntries[idx]; }
+    private int getCpNext(int idx) { return cpEntries[idx + 1]; }
+    private int getCp(int idx)  { return cpEntries[idx + 2]; }
+
+    public static CharacterName getInstance() {
+        SoftReference<CharacterName> ref = refCharName;
+        CharacterName cname = null;
+        if (ref == null || (cname = ref.get()) == null) {
+            cname = new CharacterName();
+            refCharName = new SoftReference<>(cname);
+        }
+        return cname;
+    }
+
+    public String getName(int cp) {
         int off = 0;
-        if (lookup[cp>>8] == null ||
-            (off = lookup[cp>>8][cp&0xff]) == 0)
+        int bk = bkIndices[cp >> 8];
+        if (bk == -1 || (off = lookup[(bk << 8) + (cp & 0xff)]) == 0)
             return null;
         @SuppressWarnings("deprecation")
         String result = new String(strPool, 0, off >>> 8, off & 0xff);  // ASCII
         return result;
+    }
+
+    public int getCodePoint(String name) {
+        byte[] bname = name.getBytes(java.nio.charset.StandardCharsets.ISO_8859_1);
+        int hsh = hashN(bname, 0, bname.length);
+        int idx = hsIndices[(hsh & 0x7fffffff) % hsIndices.length];
+        while (idx != -1) {
+            if (getCpHash(idx) == hsh) {
+                int cp = getCp(idx);
+                int off = -1;
+                int bk = bkIndices[cp >> 8];
+                if (bk != -1 && (off = lookup[(bk << 8) + (cp & 0xff)]) != 0) {
+                    int len = off & 0xff;
+                    off = off >>> 8;
+                    if (bname.length == len) {
+                        int i = 0;
+                        while (i < len && bname[i] == strPool[off++]) {
+                            i++;
+                        }
+                        if (i == len) {
+                            return cp;
+                        }
+                    }
+                 }
+            }
+            idx = getCpNext(idx);
+        }
+        return -1;
     }
 }

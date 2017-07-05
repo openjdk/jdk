@@ -27,9 +27,9 @@ package sun.net.www.http;
 
 import java.io.*;
 
-import sun.misc.InnocuousThread;
 import sun.net.ProgressSource;
 import sun.net.www.MeteredStream;
+import jdk.internal.misc.InnocuousThread;
 
 /**
  * A stream that has the property of being able to be kept alive for
