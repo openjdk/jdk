@@ -27,6 +27,7 @@ package sun.awt.X11;
 import java.awt.*;
 import java.awt.event.InputEvent;
 import java.awt.event.MouseEvent;
+import java.awt.event.KeyEvent;
 import java.awt.datatransfer.Clipboard;
 import java.awt.dnd.DragSource;
 import java.awt.dnd.DragGestureListener;
@@ -61,6 +62,10 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
     private static Logger keyEventLog = Logger.getLogger("sun.awt.X11.kye.XToolkit");
     private static final Logger backingStoreLog = Logger.getLogger("sun.awt.X11.backingStore.XToolkit");
 
+    //There is 400 ms is set by default on Windows and 500 by default on KDE and GNOME.
+    //We use the same hardcoded constant.
+    private final static int AWT_MULTICLICK_DEFAULT_TIME = 500;
+
     static final boolean PRIMARY_LOOP = false;
     static final boolean SECONDARY_LOOP = true;
 
@@ -73,6 +78,25 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
 
     // Dynamic Layout Resize client code setting
     protected static boolean dynamicLayoutSetting = false;
+
+    //Is it allowed to generate events assigned to extra mouse buttons.
+    //Set to true by default.
+    private static boolean areExtraMouseButtonsEnabled = true;
+
+    /**
+     * Number of buttons.
+     * By default it's taken from the system. If system value does not
+     * fit into int type range, use our own MAX_BUTTONS_SUPPORT value.
+     */
+    private static int numberOfButtons = 0;
+
+    /* XFree standard mention 24 buttons as maximum:
+     * http://www.xfree86.org/current/mouse.4.html
+     * We workaround systems supporting more than 24 buttons.
+     * Otherwise, we have to use long type values as masks
+     * which leads to API change.
+     */
+    private static int MAX_BUTTONS_SUPPORT = 24;
 
     /**
      * True when the x settings have been loaded.
@@ -273,6 +297,9 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
 
             arrowCursor = XlibWrapper.XCreateFontCursor(XToolkit.getDisplay(),
                 XCursorFontConstants.XC_arrow);
+            areExtraMouseButtonsEnabled = Boolean.parseBoolean(System.getProperty("sun.awt.enableExtraMouseButtons", "true"));
+            //set system property if not yet assigned
+            System.setProperty("sun.awt.enableExtraMouseButtons", ""+areExtraMouseButtonsEnabled);
         } finally {
             awtUnlock();
         }
@@ -1080,6 +1107,19 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
     public Map mapInputMethodHighlight(InputMethodHighlight highlight)     {
         return XInputMethod.mapInputMethodHighlight(highlight);
     }
+    @Override
+    public boolean getLockingKeyState(int key) {
+        if (! (key == KeyEvent.VK_CAPS_LOCK || key == KeyEvent.VK_NUM_LOCK ||
+               key == KeyEvent.VK_SCROLL_LOCK || key == KeyEvent.VK_KANA_LOCK)) {
+            throw new IllegalArgumentException("invalid key for Toolkit.getLockingKeyState");
+        }
+        awtLock();
+        try {
+            return getModifierState( key );
+        } finally {
+            awtUnlock();
+        }
+    }
 
     public  Clipboard getSystemClipboard() {
         SecurityManager security = System.getSecurityManager();
@@ -1216,7 +1256,6 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
                 String multiclick_time_query = XlibWrapper.XGetDefault(XToolkit.getDisplay(), "*", "multiClickTime");
                 if (multiclick_time_query != null) {
                     awt_multiclick_time = (int)Long.parseLong(multiclick_time_query);
-    //             awt_multiclick_time = XtGetMultiClickTime(awt_display);
                 } else {
                     multiclick_time_query = XlibWrapper.XGetDefault(XToolkit.getDisplay(),
                                                                     "OpenWindows", "MultiClickTimeout");
@@ -1226,20 +1265,19 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
                            milliseconds */
                         awt_multiclick_time = (int)Long.parseLong(multiclick_time_query) * 100;
                     } else {
-                        awt_multiclick_time = 200;
-    //                 awt_multiclick_time = XtGetMultiClickTime(awt_display);
+                        awt_multiclick_time = AWT_MULTICLICK_DEFAULT_TIME;
                     }
                 }
             } catch (NumberFormatException nf) {
-                awt_multiclick_time = 200;
+                awt_multiclick_time = AWT_MULTICLICK_DEFAULT_TIME;
             } catch (NullPointerException npe) {
-                awt_multiclick_time = 200;
+                awt_multiclick_time = AWT_MULTICLICK_DEFAULT_TIME;
             }
         } finally {
             awtUnlock();
         }
         if (awt_multiclick_time == 0) {
-            awt_multiclick_time = 200;
+            awt_multiclick_time = AWT_MULTICLICK_DEFAULT_TIME;
         }
     }
 
@@ -1383,10 +1421,15 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
         }
     }
 
-    private int getNumMouseButtons() {
+    public static int getNumMouseButtons() {
         awtLock();
         try {
-            return XlibWrapper.XGetPointerMapping(XToolkit.getDisplay(), 0, 0);
+            if (numberOfButtons == 0) {
+                numberOfButtons = Math.min(
+                    XlibWrapper.XGetPointerMapping(XToolkit.getDisplay(), 0, 0),
+                    MAX_BUTTONS_SUPPORT);
+            }
+            return numberOfButtons;
         } finally {
             awtUnlock();
         }
@@ -1538,6 +1581,66 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
                 return 0;
             }
             return code;
+        } finally {
+            awtUnlock();
+        }
+    }
+    static boolean getModifierState( int jkc ) {
+        int iKeyMask = 0;
+        long ks = XKeysym.javaKeycode2Keysym( jkc );
+        int  kc = XlibWrapper.XKeysymToKeycode(getDisplay(), ks);
+        if (kc == 0) {
+            return false;
+        }
+        awtLock();
+        try {
+            XModifierKeymap modmap = new XModifierKeymap(
+                 XlibWrapper.XGetModifierMapping(getDisplay()));
+
+            int nkeys = modmap.get_max_keypermod();
+
+            long map_ptr = modmap.get_modifiermap();
+            for( int k = 0; k < 8; k++ ) {
+                for (int i = 0; i < nkeys; ++i) {
+                    int keycode = Native.getUByte(map_ptr, k * nkeys + i);
+                    if (keycode == 0) {
+                        continue; // ignore zero keycode
+                    }
+                    if (kc == keycode) {
+                        iKeyMask = 1 << k;
+                        break;
+                    }
+                }
+                if( iKeyMask != 0 ) {
+                    break;
+                }
+            }
+            XlibWrapper.XFreeModifiermap(modmap.pData);
+            if (iKeyMask == 0 ) {
+                return false;
+            }
+            // Now we know to which modifier is assigned the keycode
+            // correspondent to the keysym correspondent to the java
+            // keycode. We are going to check a state of this modifier.
+            // If a modifier is a weird one, we cannot help it.
+            long window = 0;
+            try{
+                // get any application window
+                window = ((Long)(winMap.firstKey())).longValue();
+            }catch(NoSuchElementException nex) {
+                // get root window
+                window = getDefaultRootWindow();
+            }
+            boolean res = XlibWrapper.XQueryPointer(getDisplay(), window,
+                                            XlibWrapper.larg1, //root
+                                            XlibWrapper.larg2, //child
+                                            XlibWrapper.larg3, //root_x
+                                            XlibWrapper.larg4, //root_y
+                                            XlibWrapper.larg5, //child_x
+                                            XlibWrapper.larg6, //child_y
+                                            XlibWrapper.larg7);//mask
+            int mask = Native.getInt(XlibWrapper.larg7);
+            return ((mask & iKeyMask) != 0);
         } finally {
             awtUnlock();
         }
@@ -2166,4 +2269,8 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
     }
 
     public static native void setNoisyXErrorHandler();
+
+    public boolean areExtraMouseButtonsEnabled() throws HeadlessException {
+        return areExtraMouseButtonsEnabled;
+    }
 }

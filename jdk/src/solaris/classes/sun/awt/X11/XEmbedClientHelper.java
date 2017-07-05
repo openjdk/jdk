@@ -31,6 +31,9 @@ import sun.awt.SunToolkit;
 import java.awt.Component;
 import java.awt.Container;
 
+import sun.awt.X11GraphicsConfig;
+import sun.awt.X11GraphicsDevice;
+
 /**
  * Helper class implementing XEmbed protocol handling routines(client side)
  * Window which wants to participate in a protocol should create an instance,
@@ -39,20 +42,34 @@ import java.awt.Container;
 public class XEmbedClientHelper extends XEmbedHelper implements XEventDispatcher {
     private static final Logger xembedLog = Logger.getLogger("sun.awt.X11.xembed.XEmbedClientHelper");
 
-    private XEmbeddedFramePeer embedded;
+    private XEmbeddedFramePeer embedded; // XEmbed client
+    private long server; // XEmbed server
+
     private boolean active;
-    private long server;
     private boolean applicationActive;
 
     XEmbedClientHelper() {
         super();
     }
 
-    void install(XEmbeddedFramePeer embedded) {
-        this.embedded = embedded;
+    void setClient(XEmbeddedFramePeer client) {
+        if (xembedLog.isLoggable(Level.FINE)) {
+            xembedLog.fine("XEmbed client: " + client);
+        }
+        if (embedded != null) {
+            XToolkit.removeEventDispatcher(embedded.getWindow(), this);
+            active = false;
+        }
+        embedded = client;
+        if (embedded != null) {
+            XToolkit.addEventDispatcher(embedded.getWindow(), this);
+        }
+    }
 
-        if (xembedLog.isLoggable(Level.FINE)) xembedLog.fine("Installing xembedder on " + embedded);
-        XToolkit.addEventDispatcher(embedded.getWindow(), this);
+    void install() {
+        if (xembedLog.isLoggable(Level.FINE)) {
+            xembedLog.fine("Installing xembedder on " + embedded);
+        }
         long[] info = new long[] { XEMBED_VERSION, XEMBED_MAPPED };
         long data = Native.card32ToData(info);
         try {
@@ -155,7 +172,24 @@ public class XEmbedClientHelper extends XEmbedHelper implements XEventDispatcher
     }
     public void handleReparentNotify(XEvent xev) {
         XReparentEvent re = xev.get_xreparent();
-        server = re.get_parent();
+        long newParent = re.get_parent();
+        if (active) {
+            // unregister accelerators, etc. for old parent
+            embedded.notifyStopped();
+            // check if newParent is a root window
+            X11GraphicsConfig gc = (X11GraphicsConfig)embedded.getGraphicsConfiguration();
+            X11GraphicsDevice gd = (X11GraphicsDevice)gc.getDevice();
+            if ((newParent == XlibUtil.getRootWindow(gd.getScreen())) ||
+                (newParent == XToolkit.getDefaultRootWindow()))
+            {
+                // reparenting to root means XEmbed termination
+                active = false;
+            } else {
+                // continue XEmbed with a new parent
+                server = newParent;
+                embedded.notifyStarted();
+            }
+        }
     }
     boolean requestFocus() {
         if (active && embedded.focusAllowedFor()) {
@@ -201,12 +235,16 @@ public class XEmbedClientHelper extends XEmbedHelper implements XEventDispatcher
     }
 
     void registerAccelerator(AWTKeyStroke stroke, int id) {
-        long sym = getX11KeySym(stroke);
-        long mods = getX11Mods(stroke);
-        sendMessage(server, XEMBED_REGISTER_ACCELERATOR, id, sym, mods);
+        if (active) {
+            long sym = getX11KeySym(stroke);
+            long mods = getX11Mods(stroke);
+            sendMessage(server, XEMBED_REGISTER_ACCELERATOR, id, sym, mods);
+        }
     }
     void unregisterAccelerator(int id) {
-        sendMessage(server, XEMBED_UNREGISTER_ACCELERATOR, id, 0, 0);
+        if (active) {
+            sendMessage(server, XEMBED_UNREGISTER_ACCELERATOR, id, 0, 0);
+        }
     }
 
     long getX11KeySym(AWTKeyStroke stroke) {

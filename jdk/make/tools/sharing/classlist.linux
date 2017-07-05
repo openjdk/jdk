@@ -1718,6 +1718,7 @@ javax/swing/plaf/basic/BasicToolBarSeparatorUI
 sun/awt/color/CMM
 java/applet/Applet
 java/awt/Panel
+com/sun/awt/AWTUtilities
 javax/swing/KeyboardManager$ComponentKeyStrokePair
 sun/awt/EmbeddedFrame
 sun/awt/im/InputMethodContext

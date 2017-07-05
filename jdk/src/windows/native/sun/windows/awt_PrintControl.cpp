@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,16 +108,13 @@ BOOL AwtPrintControl::FindPrinter(jstring printerName, LPBYTE pPrinterEnum,
 {
     JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
 
-    BOOL nt = IS_NT;
     DWORD cReturned = 0;
 
     if (pPrinterEnum == NULL) {
         // Compute size of buffer
         DWORD cbNeeded = 0;
-        if (nt) {
-            ::EnumPrinters(PRINTER_ENUM_LOCAL | PRINTER_ENUM_CONNECTIONS,
+        ::EnumPrinters(PRINTER_ENUM_LOCAL | PRINTER_ENUM_CONNECTIONS,
                            NULL, 2, NULL, 0, &cbNeeded, &cReturned);
-        }
         ::EnumPrinters(PRINTER_ENUM_LOCAL,
                        NULL, 5, NULL, 0, pcbBuf, &cReturned);
         if (cbNeeded > (*pcbBuf)) {
@@ -139,65 +136,63 @@ BOOL AwtPrintControl::FindPrinter(jstring printerName, LPBYTE pPrinterEnum,
     // doesn't support port searches. So, if the user has specified the
     // printer name as "LPT1:" (even though this is actually a port
     // name), we won't find the printer here.
-    if (nt) {
-        if (!::EnumPrinters(PRINTER_ENUM_LOCAL | PRINTER_ENUM_CONNECTIONS,
-                            NULL, 4, pPrinterEnum, cbBuf, &dummyWord, &cReturned)) {
-            return FALSE;
-        }
+    if (!::EnumPrinters(PRINTER_ENUM_LOCAL | PRINTER_ENUM_CONNECTIONS,
+                        NULL, 4, pPrinterEnum, cbBuf, &dummyWord, &cReturned)) {
+        return FALSE;
+    }
 
-        for (DWORD i = 0; i < cReturned; i++) {
-            PRINTER_INFO_4 *info4 = (PRINTER_INFO_4 *)
-                (pPrinterEnum + i * sizeof(PRINTER_INFO_4));
-            if (info4->pPrinterName != NULL &&
-                _tcsicmp(lpcPrinterName, info4->pPrinterName) == 0) {
+    for (DWORD i = 0; i < cReturned; i++) {
+        PRINTER_INFO_4 *info4 = (PRINTER_INFO_4 *)
+            (pPrinterEnum + i * sizeof(PRINTER_INFO_4));
+        if (info4->pPrinterName != NULL &&
+            _tcsicmp(lpcPrinterName, info4->pPrinterName) == 0) {
 
-                // Fix for BugTraq Id 4281380.
-                // Get the port name since some drivers may require
-                // this name to be passed to ::DeviceCapabilities().
-                HANDLE hPrinter = NULL;
-                if (::OpenPrinter(info4->pPrinterName, &hPrinter, NULL)) {
-                    // Fix for BugTraq Id 4286812.
-                    // Some drivers don't support PRINTER_INFO_5.
-                    // In this case we try PRINTER_INFO_2, and if that
-                    // isn't supported as well return NULL port name.
-                    try {
-                        if (AwtPrintControl::IsSupportedLevel(hPrinter, 5)) {
-                            VERIFY(::GetPrinter(hPrinter, 5, pPrinterEnum, cbBuf,
-                                                &dummyWord));
-                            PRINTER_INFO_5 *info5 = (PRINTER_INFO_5 *)pPrinterEnum;
-                            *foundPrinter = info5->pPrinterName;
-                            // pPortName may specify multiple ports. We only want one.
-                            *foundPort = (info5->pPortName != NULL)
-                                ? _tcstok(info5->pPortName, TEXT(",")) : NULL;
-                        } else if (AwtPrintControl::IsSupportedLevel(hPrinter, 2)) {
-                            VERIFY(::GetPrinter(hPrinter, 2, pPrinterEnum, cbBuf,
-                                                &dummyWord));
-                            PRINTER_INFO_2 *info2 = (PRINTER_INFO_2 *)pPrinterEnum;
-                            *foundPrinter = info2->pPrinterName;
-                            // pPortName may specify multiple ports. We only want one.
-                            *foundPort = (info2->pPortName != NULL)
-                                ? _tcstok(info2->pPortName, TEXT(",")) : NULL;
-                        } else {
-                            *foundPrinter = info4->pPrinterName;
-                            // We failed to determine port name for the found printer.
-                            *foundPort = NULL;
-                        }
-                    } catch (std::bad_alloc&) {
-                        VERIFY(::ClosePrinter(hPrinter));
-                        throw;
+            // Fix for BugTraq Id 4281380.
+            // Get the port name since some drivers may require
+            // this name to be passed to ::DeviceCapabilities().
+            HANDLE hPrinter = NULL;
+            if (::OpenPrinter(info4->pPrinterName, &hPrinter, NULL)) {
+                // Fix for BugTraq Id 4286812.
+                // Some drivers don't support PRINTER_INFO_5.
+                // In this case we try PRINTER_INFO_2, and if that
+                // isn't supported as well return NULL port name.
+                try {
+                    if (AwtPrintControl::IsSupportedLevel(hPrinter, 5)) {
+                        VERIFY(::GetPrinter(hPrinter, 5, pPrinterEnum, cbBuf,
+                                            &dummyWord));
+                        PRINTER_INFO_5 *info5 = (PRINTER_INFO_5 *)pPrinterEnum;
+                        *foundPrinter = info5->pPrinterName;
+                        // pPortName may specify multiple ports. We only want one.
+                        *foundPort = (info5->pPortName != NULL)
+                            ? _tcstok(info5->pPortName, TEXT(",")) : NULL;
+                    } else if (AwtPrintControl::IsSupportedLevel(hPrinter, 2)) {
+                        VERIFY(::GetPrinter(hPrinter, 2, pPrinterEnum, cbBuf,
+                                            &dummyWord));
+                        PRINTER_INFO_2 *info2 = (PRINTER_INFO_2 *)pPrinterEnum;
+                        *foundPrinter = info2->pPrinterName;
+                        // pPortName may specify multiple ports. We only want one.
+                        *foundPort = (info2->pPortName != NULL)
+                            ? _tcstok(info2->pPortName, TEXT(",")) : NULL;
+                    } else {
+                        *foundPrinter = info4->pPrinterName;
+                        // We failed to determine port name for the found printer.
+                        *foundPort = NULL;
                     }
-
+                } catch (std::bad_alloc&) {
                     VERIFY(::ClosePrinter(hPrinter));
-
-                    return TRUE;
+                    throw;
                 }
 
-                return FALSE;
+                VERIFY(::ClosePrinter(hPrinter));
+
+                return TRUE;
             }
+
+            return FALSE;
         }
     }
 
-    // We still haven't found the printer, or we're using 95/98.
+    // We still haven't found the printer, /* or we're using 95/98. */
     // PRINTER_INFO_5 supports both printer name and port name, so
     // we'll test both. On NT, PRINTER_ENUM_LOCAL means just local
     // printers. This is what we want, because we already tested all
@@ -213,28 +208,17 @@ BOOL AwtPrintControl::FindPrinter(jstring printerName, LPBYTE pPrinterEnum,
     for (DWORD i = 0; i < cReturned; i++) {
         PRINTER_INFO_5 *info5 = (PRINTER_INFO_5 *)
             (pPrinterEnum + i * sizeof(PRINTER_INFO_5));
-        if (nt) {
-            // pPortName can specify multiple ports. Test them one at
-            // a time.
-            if (info5->pPortName != NULL) {
-                LPTSTR port = _tcstok(info5->pPortName, TEXT(","));
-                while (port != NULL) {
-                    if (_tcsicmp(lpcPrinterName, port) == 0) {
-                        *foundPrinter = info5->pPrinterName;
-                        *foundPort = port;
-                        return TRUE;
-                    }
-                    port = _tcstok(NULL, TEXT(","));
+        // pPortName can specify multiple ports. Test them one at
+        // a time.
+        if (info5->pPortName != NULL) {
+            LPTSTR port = _tcstok(info5->pPortName, TEXT(","));
+            while (port != NULL) {
+                if (_tcsicmp(lpcPrinterName, port) == 0) {
+                    *foundPrinter = info5->pPrinterName;
+                    *foundPort = port;
+                    return TRUE;
                 }
-            }
-        } else {
-            if ((info5->pPrinterName != NULL &&
-                 _tcsicmp(lpcPrinterName, info5->pPrinterName) == 0) ||
-                (info5->pPortName != NULL &&
-                 _tcsicmp(lpcPrinterName, info5->pPortName) == 0)) {
-                *foundPrinter = info5->pPrinterName;
-                *foundPort = info5->pPortName;
-                return TRUE;
+                port = _tcstok(NULL, TEXT(","));
             }
         }
     }
@@ -400,13 +384,11 @@ BOOL AwtPrintControl::CreateDevModeAndDevNames(PRINTDLG *ppd,
         }
 
         // Create DEVNAMES.
-        if (IS_NT) {
-            if (pPortName != NULL) {
-                info2->pPortName = pPortName;
-            } else if (info2->pPortName != NULL) {
-                // pPortName may specify multiple ports. We only want one.
-                info2->pPortName = _tcstok(info2->pPortName, TEXT(","));
-            }
+        if (pPortName != NULL) {
+            info2->pPortName = pPortName;
+        } else if (info2->pPortName != NULL) {
+            // pPortName may specify multiple ports. We only want one.
+            info2->pPortName = _tcstok(info2->pPortName, TEXT(","));
         }
 
         size_t lenDriverName = ((info2->pDriverName != NULL)

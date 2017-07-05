@@ -33,6 +33,7 @@ import java.util.TimeZone;
 import java.util.Date;
 
 import java.lang.NullPointerException;  // for javadoc
+import java.util.Locale;
 
 /**
  * An HttpCookie object represents an http cookie, which carries state
@@ -1058,8 +1059,7 @@ public final class HttpCookie implements Cloneable {
         if (assignor != null) {
             assignor.assign(cookie, attrName, attrValue);
         } else {
-            // must be an error
-            throw new IllegalArgumentException("Illegal cookie attribute");
+            // Ignore the attribute as per RFC 2965
         }
     }
 
@@ -1097,7 +1097,7 @@ public final class HttpCookie implements Cloneable {
     static {
             cDateFormats = new SimpleDateFormat[COOKIE_DATE_FORMATS.length];
             for (int i = 0; i < COOKIE_DATE_FORMATS.length; i++) {
-                cDateFormats[i] = new SimpleDateFormat(COOKIE_DATE_FORMATS[i]);
+                cDateFormats[i] = new SimpleDateFormat(COOKIE_DATE_FORMATS[i], Locale.US);
                 cDateFormats[i].setTimeZone(TimeZone.getTimeZone("GMT"));
             }
     }

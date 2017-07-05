@@ -107,8 +107,9 @@ import java.io.IOException;
  * </ul>
  * </blockquote>
  *
- * <p>The implementation conforms to RFC 2965, section 3.3.
+ * <p>The implementation conforms to <a href="http://www.ietf.org/rfc/rfc2965.txt">RFC 2965</a>, section 3.3.
  *
+ * @see CookiePolicy
  * @author Edward Wang
  * @since 1.6
  */

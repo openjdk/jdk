@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -580,18 +580,10 @@ HKL getDefaultKeyboardLayout() {
     DWORD cbHKL = 16;
     LPTSTR end;
 
-    if (IS_NT) {
-        ret = ::RegOpenKeyEx(HKEY_CURRENT_USER, TEXT("Keyboard Layout\\Preload"), NULL, KEY_READ, &hKey);
-    } else {
-        ret = ::RegOpenKeyEx(HKEY_CURRENT_USER, TEXT("keyboard layout\\preload\\1"), NULL, KEY_READ, &hKey);
-    }
+    ret = ::RegOpenKeyEx(HKEY_CURRENT_USER, TEXT("Keyboard Layout\\Preload"), NULL, KEY_READ, &hKey);
 
     if (ret == ERROR_SUCCESS) {
-        if (IS_NT) {
-            ret = ::RegQueryValueEx(hKey, TEXT("1"), 0, 0, szHKL, &cbHKL);
-        } else {
-            ret = ::RegQueryValueEx(hKey, NULL, 0, 0, szHKL, &cbHKL);
-        }
+        ret = ::RegQueryValueEx(hKey, TEXT("1"), 0, 0, szHKL, &cbHKL);
 
         if (ret == ERROR_SUCCESS) {
             hkl = reinterpret_cast<HKL>(static_cast<INT_PTR>(

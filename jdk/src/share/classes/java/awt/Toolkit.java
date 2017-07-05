@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1995-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2549,5 +2549,38 @@ public abstract class Toolkit {
                 }
             }
         }
+    }
+
+    /**
+    * Reports whether events from extra mouse buttons are allowed to be processed and posted into
+    * {@code EventQueue}.
+    * <br>
+    * To change the returned value it is necessary to set the {@code sun.awt.enableExtraMouseButtons}
+    * property before the {@code Toolkit} class initialization. This setting could be done on the application
+    * startup by the following command:
+    * <pre>
+    * java -Dsun.awt.enableExtraMouseButtons=false Application
+    * </pre>
+    * Alternatively, the property could be set in the application by using the following code:
+    * <pre>
+    * System.setProperty("sun.awt.enableExtraMouseButtons", "true");
+    * </pre>
+    * before the {@code Toolkit} class initialization.
+    * If not set by the time of the {@code Toolkit} class initialization, this property will be
+    * initialized with {@code true}.
+    * Changing this value after the {@code Toolkit} class initialization will have no effect.
+    * <p>
+    * The current value could be queried by using the
+    * {@code System.getProperty("sun.awt.enableExtraMouseButtons")} method.
+    * @exception HeadlessException if GraphicsEnvironment.isHeadless() returns true
+    * @return {@code true} if events from extra mouse buttons are allowed to be processed and posted;
+    *         {@code false} otherwise
+    * @see System#getProperty(String propertyName)
+    * @see System#setProperty(String propertyName, String value)
+    * @see java.awt.EventQueue
+    * @since 1.7
+     */
+    public boolean areExtraMouseButtonsEnabled() throws HeadlessException {
+        return Toolkit.getDefaultToolkit().areExtraMouseButtonsEnabled();
     }
 }

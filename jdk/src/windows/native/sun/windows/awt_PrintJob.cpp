@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  * have any questions.
  */
 
+#include "awt.h"
 #include <math.h>
 #include <windef.h>
 #include <wtypes.h>
@@ -30,10 +31,9 @@
 #include <commdlg.h>
 #include <winspool.h>
 
-#include "awt.h"
-#include "awt_dlls.h"
 #include "awt_Toolkit.h"
 #include "awt_Component.h"
+#include "awt_Dialog.h"
 #include "awt_Font.h"
 #include "awt_PrintDialog.h"
 #include "awt_PrintControl.h"
@@ -422,7 +422,7 @@ Java_sun_awt_windows_WPageDialogPeer__1show(JNIEnv *env, jobject peer)
      */
     if (AwtPrintControl::getPrintHDMode(env, self) == NULL ||
         AwtPrintControl::getPrintHDName(env,self) == NULL) {
-        (void)AwtCommDialog::PageSetupDlg(&setup);
+        (void)::PageSetupDlg(&setup);
         /* check if hDevMode and hDevNames are set.
          * If both are null, then there is no default printer.
          */
@@ -460,7 +460,7 @@ Java_sun_awt_windows_WPageDialogPeer__1show(JNIEnv *env, jobject peer)
 
     AwtDialog::CheckInstallModalHook();
 
-    BOOL ret = AwtCommDialog::PageSetupDlg(&setup);
+    BOOL ret = ::PageSetupDlg(&setup);
     if (ret) {
 
         jobject paper = getPaper(env, page);
@@ -733,7 +733,7 @@ Java_sun_awt_windows_WPrinterJob_validatePaper(JNIEnv *env, jobject self,
         pd.lStructSize = sizeof(PRINTDLG);
         pd.Flags = PD_RETURNDEFAULT | PD_RETURNDC;
 
-        if (AwtCommDialog::PrintDlg(&pd)) {
+        if (::PrintDlg(&pd)) {
             printDC = pd.hDC;
             hDevMode = pd.hDevMode;
             hDevNames = pd.hDevNames;
@@ -1838,10 +1838,6 @@ JNIEXPORT jboolean JNICALL Java_sun_awt_windows_WPrinterJob_selectStylePen
 (JNIEnv *env, jobject self, jlong printDC, jlong cap, jlong join, jfloat width,
  jint red, jint green, jint blue) {
 
-  /* End cap and line join styles are not supported in Win 9x. */
-  if (IS_WIN95)
-    return JNI_FALSE;
-
   TRY;
 
   LOGBRUSH logBrush;
@@ -1879,23 +1875,13 @@ JNIEXPORT jboolean JNICALL Java_sun_awt_windows_WPrinterJob_setFont
 {
     jboolean didSetFont = JNI_FALSE;
 
-    if (IS_NT) {
-        didSetFont = jFontToWFontW(env, (HDC)printDC,
+    didSetFont = jFontToWFontW(env, (HDC)printDC,
                                fontName,
                                fontSize,
                                isBold,
                                isItalic,
                                rotation,
                                awScale);
-    } else {
-        didSetFont = jFontToWFontA(env, (HDC)printDC,
-                               fontName,
-                               fontSize,
-                               isBold,
-                               isItalic,
-                               rotation,
-                               awScale);
-    }
 
     return didSetFont;
 }
@@ -1919,7 +1905,7 @@ static jboolean jFontToWFontA(JNIEnv *env, HDC printDC, jstring fontName,
 
     memset(&matchedLogFont, 0, sizeof(matchedLogFont));
 
-    WCHAR* name = TO_WSTRING(fontName);
+    LPCWSTR fontNameW = JNU_GetStringPlatformChars(env, fontName, NULL);
 
 
     /* Some fontnames of Non-ASCII fonts like 'MS Minchou' are themselves
@@ -1928,14 +1914,14 @@ static jboolean jFontToWFontA(JNIEnv *env, HDC printDC, jstring fontName,
      */
     int maxlen = static_cast<int>(sizeof(lf.lfFaceName)) - 1;
     // maxlen is int due to cbMultiByte parameter is int
-    int destLen = WideCharToMultiByte(CP_ACP,   // convert to ASCII code page
-                                      0,        // flags
-                                      name,     // Unicode string
-                                      -1,  // Unicode length is calculated automatically
+    int destLen = WideCharToMultiByte(CP_ACP,        // convert to ASCII code page
+                                      0,             // flags
+                                      fontNameW,     // Unicode string
+                                      -1,            // Unicode length is calculated automatically
                                       lf.lfFaceName, // Put ASCII string here
-                                      maxlen, // max len
-                                      NULL, // default handling of unmappables
-                                      NULL);// do not care if def char is used
+                                      maxlen,        // max len
+                                      NULL,          // default handling of unmappables
+                                      NULL);         // do not care if def char is used
 
     /* If WideCharToMultiByte succeeded then the number
      * of bytes it copied into the face name buffer will
@@ -2018,8 +2004,9 @@ static jboolean jFontToWFontA(JNIEnv *env, HDC printDC, jstring fontName,
         } else {
             foundFont = false;
         }
-
     }
+
+    JNU_ReleaseStringPlatformChars(env, fontName, fontNameW);
 
     return foundFont ? JNI_TRUE : JNI_FALSE;
 }
@@ -2043,26 +2030,28 @@ static jboolean jFontToWFontW(JNIEnv *env, HDC printDC, jstring fontName,
 
     memset(&matchedLogFont, 0, sizeof(matchedLogFont));
 
+    LPCWSTR fontNameW = JNU_GetStringPlatformChars(env, fontName, NULL);
+
     /* Describe the GDI fonts we want enumerated. We
      * simply supply the java font name and let GDI
      * do the matching. If the java font name is
      * longer than the GDI maximum font lenght then
      * we can't convert the font.
      */
-    WCHAR* name = TO_WSTRING(fontName);
-    size_t nameLen = wcslen(name);
-
+    size_t nameLen = wcslen(fontNameW);
     if (nameLen < (sizeof(lf.lfFaceName) / sizeof(lf.lfFaceName[0]))) {
 
-        wcscpy(lf.lfFaceName, name);
+        wcscpy(lf.lfFaceName, fontNameW);
 
         lf.lfCharSet = DEFAULT_CHARSET;
         lf.lfPitchAndFamily = 0;
 
-        foundFont = !EnumFontFamiliesExW((HDC)printDC, &lf,
+        foundFont = !::EnumFontFamiliesEx((HDC)printDC, &lf,
                                         (FONTENUMPROCW) fontEnumProcW,
                                         (LPARAM) &matchedLogFont, 0);
     }
+
+    JNU_ReleaseStringPlatformChars(env, fontName, fontNameW);
 
     if (!foundFont) {
         return JNI_FALSE;
@@ -2100,7 +2089,7 @@ static jboolean jFontToWFontW(JNIEnv *env, HDC printDC, jstring fontName,
 
     //Debug: dumpLogFont(&matchedLogFont);
 
-    HFONT font = CreateFontIndirectW(&matchedLogFont);
+    HFONT font = ::CreateFontIndirect(&matchedLogFont);
     if (font == NULL) {
         return JNI_FALSE;
     }
@@ -2123,7 +2112,7 @@ static jboolean jFontToWFontW(JNIEnv *env, HDC printDC, jstring fontName,
         GetTextMetrics(printDC, &tm);
         avgWidth = tm.tmAveCharWidth;
         matchedLogFont.lfWidth = (LONG)((fabs)(avgWidth*awScale));
-        font = CreateFontIndirectW(&matchedLogFont);
+        font = ::CreateFontIndirect(&matchedLogFont);
         if (font == NULL) {
             return JNI_FALSE;
         }
@@ -2230,14 +2219,11 @@ JNIEXPORT jint JNICALL Java_sun_awt_windows_WPrinterJob_getGDIAdvance
     (JNIEnv *env, jobject self, jlong printDC, jstring text)
 {
     SIZE size;
-    LPWSTR wText = TO_WSTRING(text);
+    LPCWSTR wText = JNU_GetStringPlatformChars(env, text, NULL);
     size_t strLen = wcslen(wText);
     BOOL ok = GetTextExtentPoint32((HDC)printDC, wText, (int)strLen, &size);
-    if (ok) {
-        return size.cx;
-    } else {
-        return 0;
-    }
+    JNU_ReleaseStringPlatformChars(env, text, wText);
+    return ok ? size.cx : 0;
 }
 
 
@@ -2288,7 +2274,7 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_WPrinterJob_textOut
     long posX = ROUND_TO_LONG(x);
     long posY = ROUND_TO_LONG(y);
     int flags = (glyphCodes !=0) ? ETO_GLYPH_INDEX : 0;
-    LPWSTR wText = TO_WSTRING(text);
+    LPCWSTR wText = JNU_GetStringPlatformChars(env, text, NULL);
 
     int *advances = NULL, *xadvances = NULL, *xyadvances = NULL;
     BOOL useYAdvances = FALSE;
@@ -2359,7 +2345,7 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_WPrinterJob_textOut
         *inxyAdvances = 0;
     }
 
-    if (useYAdvances && IS_WIN2000) {
+    if (useYAdvances) {
         advances = xyadvances;
         flags |= J2D_ETO_PDY;
     } else {
@@ -2371,7 +2357,7 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_WPrinterJob_textOut
         env->ReleaseFloatArrayElements(positions, glyphPos, JNI_ABORT);
     }
 
-    BOOL drawn = ::ExtTextOutW( (HDC)printDC,
+    BOOL drawn = ::ExtTextOut((HDC)printDC,
                     posX, posY,     // starting position for the text
                     flags,          // glyphCodes?, y advances?
                     NULL,           // optional clipping-opaquing rectangle
@@ -2385,6 +2371,8 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_WPrinterJob_textOut
     if (xyadvances != NULL) {
         free(xyadvances);
     }
+
+    JNU_ReleaseStringPlatformChars(env, text, wText);
 }
 
 /**
@@ -2968,7 +2956,7 @@ static HDC getDefaultPrinterDC(JNIEnv *env, jobject printerJob) {
     pd.lStructSize = sizeof(PRINTDLG);
     pd.Flags = PD_RETURNDEFAULT | PD_RETURNDC;
 
-    if (AwtCommDialog::PrintDlg(&pd)) {
+    if (::PrintDlg(&pd)) {
         printDC = pd.hDC;
 
         /* Find out how many copies the driver can do, and use driver's

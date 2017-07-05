@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,17 +31,27 @@
 // This file should stand independent of AWT and should ultimately be
 // put into its own DLL.
 #include <awt.h>
-#endif
+#else
+// Include jni_util.h first, so JNU_* macros can be redefined
+#include "jni_util.h"
+// Borrow some macros from awt.h
+#define JNU_NewStringPlatform(env, x) env->NewString(reinterpret_cast<jchar*>(x), static_cast<jsize>(_tcslen(x)))
+#define JNU_GetStringPlatformChars(env, x, y) reinterpret_cast<LPCWSTR>(env->GetStringChars(x, y))
+#define JNU_ReleaseStringPlatformChars(env, x, y) env->ReleaseStringChars(x, reinterpret_cast<const jchar*>(y))
+#endif // DEBUG
 
 #include <windows.h>
 #include <shlobj.h>
 #include <shellapi.h>
-#include "jni_util.h"
 #include "jlong.h"
 #include "alloc.h"
 
 #include "stdhdrs.h"
-#include "UnicowsLoader.h"
+
+// Copy from shlguid.h which is no longer in PlatformSDK
+#ifndef DEFINE_SHLGUID
+#define DEFINE_SHLGUID(name, l, w1, w2) DEFINE_GUID(name, l, w1, w2, 0xC0, 0, 0, 0, 0, 0, 0, 0x46)
+#endif
 
 // {93F2F68C-1D1B-11d3-A30E-00C04F79ABD1}
 DEFINE_GUID(IID_IShellFolder2, 0x93f2f68c, 0x1d1b, 0x11d3, 0xa3, 0xe, 0x0, 0xc0, 0x4f, 0x79, 0xab, 0xd1);
@@ -86,13 +96,15 @@ static jfieldID FID_folderType;
 static IMalloc* pMalloc;
 static IShellFolder* pDesktop;
 
-static BOOL isXP;
-
-// copied from awt.h, because it is not included in release
-#if defined (WIN32)
-    #define IS_WINVISTA (!(::GetVersion() & 0x80000000) && LOBYTE(LOWORD(::GetVersion())) >= 6)
-#else
-    #define IS_WINVISTA FALSE
+// Some macros from awt.h, because it is not included in release
+#ifndef IS_WIN2000
+#define IS_WIN2000 (LOBYTE(LOWORD(::GetVersion())) >= 5)
+#endif
+#ifndef IS_WINXP
+#define IS_WINXP ((IS_WIN2000 && HIBYTE(LOWORD(::GetVersion())) >= 1) || LOBYTE(LOWORD(::GetVersion())) > 5)
+#endif
+#ifndef IS_WINVISTA
+#define IS_WINVISTA (!(::GetVersion() & 0x80000000) && LOBYTE(LOWORD(::GetVersion())) >= 6)
 #endif
 
 
@@ -103,7 +115,6 @@ static BOOL initShellProcs()
     static HMODULE libShell32 = NULL;
     static HMODULE libUser32 = NULL;
     static HMODULE libComCtl32 = NULL;
-    static HMODULE libUnicows = UnicowsLoader::GetModuleHandle();
     // If already initialized, return TRUE
     if (libShell32 != NULL && libUser32 != NULL) {
         return TRUE;
@@ -130,7 +141,7 @@ static BOOL initShellProcs()
 
     // Set up procs - libShell32
         fn_FindExecutable = (FindExecutableType)GetProcAddress(
-                (libUnicows ? libUnicows : libShell32), "FindExecutableW");
+                libShell32, "FindExecutableW");
     if (fn_FindExecutable == NULL) {
         return FALSE;
     }
@@ -140,7 +151,7 @@ static BOOL initShellProcs()
         return FALSE;
     }
         fn_SHGetFileInfo = (SHGetFileInfoType)GetProcAddress(
-                (libUnicows ? libUnicows : libShell32), "SHGetFileInfoW");
+                libShell32, "SHGetFileInfoW");
     if (fn_SHGetFileInfo == NULL) {
         return FALSE;
     }
@@ -154,7 +165,7 @@ static BOOL initShellProcs()
         return FALSE;
     }
         fn_SHGetPathFromIDList = (SHGetPathFromIDListType)GetProcAddress(
-                (libUnicows ? libUnicows : libShell32), "SHGetPathFromIDListW");
+                libShell32, "SHGetPathFromIDListW");
     if (fn_SHGetPathFromIDList == NULL) {
         return FALSE;
     }
@@ -181,19 +192,19 @@ static BOOL initShellProcs()
 static jstring jstringFromSTRRET(JNIEnv* env, LPITEMIDLIST pidl, STRRET* pStrret) {
     switch (pStrret->uType) {
         case STRRET_CSTR :
-            return JNU_NewStringPlatform(env, pStrret->cStr);
+            return JNU_NewStringPlatform(env, reinterpret_cast<const char*>(pStrret->cStr));
         case STRRET_OFFSET :
             // Note : this may need to be WCHAR instead
             return JNU_NewStringPlatform(env,
                                          (CHAR*)pidl + pStrret->uOffset);
         case STRRET_WSTR :
-            return env->NewString(pStrret->pOleStr,
+            return env->NewString(reinterpret_cast<const jchar*>(pStrret->pOleStr),
                 static_cast<jsize>(wcslen(pStrret->pOleStr)));
     }
     return NULL;
 }
 // restoring the original definition
-#define JNU_NewStringPlatform(env, x) env->NewString(x, static_cast<jsize>(_tcslen(x)))
+#define JNU_NewStringPlatform(env, x) env->NewString(reinterpret_cast<jchar*>(x), static_cast<jsize>(_tcslen(x)))
 
 /*
  * Class:     sun_awt_shell_Win32ShellFolder2
@@ -212,13 +223,6 @@ JNIEXPORT void JNICALL Java_sun_awt_shell_Win32ShellFolder2_initIDs
     MID_relativePIDL = env->GetMethodID(cls, "setRelativePIDL", "(J)V");
     FID_displayName = env->GetFieldID(cls, "displayName", "Ljava/lang/String;");
     FID_folderType = env->GetFieldID(cls, "folderType", "Ljava/lang/String;");
-
-    // Find out if we are on XP or later
-    long version = GetVersion();
-    isXP = (!(version & 0x80000000) &&
-            (LOBYTE(LOWORD(version)) == 5 &&
-             HIBYTE(LOWORD(version)) >= 1) ||
-            LOBYTE(LOWORD(version)) > 5);
 }
 
 static IShellIcon* getIShellIcon(IShellFolder* pIShellFolder) {
@@ -669,46 +673,24 @@ JNIEXPORT jlong JNICALL Java_sun_awt_shell_Win32ShellFolder2_getLinkLocation
     if (!CoInit(doCoUninit)) {
         return 0;
     }
-    if (IS_NT) {
-        IShellLinkW* psl;
-        hres = ::CoCreateInstance(CLSID_ShellLink, NULL, CLSCTX_INPROC_SERVER, IID_IShellLinkW, (LPVOID *)&psl);
+    IShellLinkW* psl;
+    hres = ::CoCreateInstance(CLSID_ShellLink, NULL, CLSCTX_INPROC_SERVER, IID_IShellLinkW, (LPVOID *)&psl);
+    if (SUCCEEDED(hres)) {
+        IPersistFile* ppf;
+        hres = psl->QueryInterface(IID_IPersistFile, (void**)&ppf);
         if (SUCCEEDED(hres)) {
-            IPersistFile* ppf;
-            hres = psl->QueryInterface(IID_IPersistFile, (void**)&ppf);
+            hres = ppf->Load(wstr, STGM_READ);
             if (SUCCEEDED(hres)) {
-                hres = ppf->Load(wstr, STGM_READ);
-                if (SUCCEEDED(hres)) {
-                    if (resolve) {
-                        hres = psl->Resolve(NULL, 0);
-                        // Ignore failure
-                    }
-                    pidl = (LPITEMIDLIST)NULL;
-                    hres = psl->GetIDList(&pidl);
+                if (resolve) {
+                    hres = psl->Resolve(NULL, 0);
+                    // Ignore failure
                 }
-                ppf->Release();
+                pidl = (LPITEMIDLIST)NULL;
+                hres = psl->GetIDList(&pidl);
             }
-            psl->Release();
+            ppf->Release();
         }
-    } else {
-        IShellLinkA* psl;
-        hres = ::CoCreateInstance(CLSID_ShellLink, NULL, CLSCTX_INPROC_SERVER, IID_IShellLinkA, (LPVOID *)&psl);
-        if (SUCCEEDED(hres)) {
-            IPersistFile* ppf;
-            hres = psl->QueryInterface(IID_IPersistFile, (void**)&ppf);
-            if (SUCCEEDED(hres)) {
-                hres = ppf->Load(wstr, STGM_READ);
-                if (SUCCEEDED(hres)) {
-                    if (resolve) {
-                        hres = psl->Resolve(NULL, 0);
-                        // Ignore failure
-                    }
-                    pidl = (LPITEMIDLIST)NULL;
-                    hres = psl->GetIDList(&pidl);
-                }
-                ppf->Release();
-            }
-            psl->Release();
-        }
+        psl->Release();
     }
     if (doCoUninit) {
         ::CoUninitialize();
@@ -742,10 +724,10 @@ JNIEXPORT jlong JNICALL Java_sun_awt_shell_Win32ShellFolder2_parseDisplayName0
     int nLength = env->GetStringLength(jname);
     jchar* wszPath = new jchar[nLength + 1];
     const jchar* strPath = env->GetStringChars(jname, NULL);
-    wcsncpy(wszPath, strPath, nLength);
+    wcsncpy(reinterpret_cast<LPWSTR>(wszPath), reinterpret_cast<LPCWSTR>(strPath), nLength);
     wszPath[nLength] = 0;
     HRESULT res = pIShellFolder->ParseDisplayName(NULL, NULL,
-                        const_cast<jchar*>(wszPath), NULL, &pIDL, NULL);
+                        reinterpret_cast<LPWSTR>(wszPath), NULL, &pIDL, NULL);
     if (res != S_OK) {
         JNU_ThrowIOException(env, "Could not parse name");
         pIDL = 0;
@@ -804,7 +786,7 @@ JNIEXPORT jstring JNICALL Java_sun_awt_shell_Win32ShellFolder2_getExecutableType
     (JNIEnv* env, jobject folder, jstring path)
 {
     TCHAR szBuf[MAX_PATH];
-    LPCTSTR szPath = (LPCTSTR)JNU_GetStringPlatformChars(env, path, NULL);
+    LPCTSTR szPath = JNU_GetStringPlatformChars(env, path, NULL);
     if (szPath == NULL) {
         return NULL;
     }
@@ -827,7 +809,7 @@ JNIEXPORT jlong JNICALL Java_sun_awt_shell_Win32ShellFolder2_getIcon
 {
     HICON hIcon = NULL;
     SHFILEINFO fileInfo;
-    LPCTSTR pathStr = (LPCTSTR)JNU_GetStringPlatformChars(env, absolutePath, NULL);
+    LPCTSTR pathStr = JNU_GetStringPlatformChars(env, absolutePath, NULL);
     if (fn_SHGetFileInfo(pathStr, 0L, &fileInfo, sizeof(fileInfo),
                          SHGFI_ICON | (getLargeIcon ? 0 : SHGFI_SMALLICON)) != 0) {
         hIcon = fileInfo.hIcon;
@@ -890,52 +872,27 @@ JNIEXPORT jlong JNICALL Java_sun_awt_shell_Win32ShellFolder2_extractIcon
     }
 
     HRESULT hres;
-    if (IS_NT) {
-        IExtractIconW* pIcon;
-        hres = pIShellFolder->GetUIObjectOf(NULL, 1, const_cast<LPCITEMIDLIST*>(&pidl),
+    IExtractIconW* pIcon;
+    hres = pIShellFolder->GetUIObjectOf(NULL, 1, const_cast<LPCITEMIDLIST*>(&pidl),
                                         IID_IExtractIconW, NULL, (void**)&pIcon);
+    if (SUCCEEDED(hres)) {
+        WCHAR szBuf[MAX_PATH];
+        INT index;
+        UINT flags;
+        hres = pIcon->GetIconLocation(GIL_FORSHELL, szBuf, MAX_PATH, &index, &flags);
         if (SUCCEEDED(hres)) {
-            WCHAR szBuf[MAX_PATH];
-            INT index;
-            UINT flags;
-            hres = pIcon->GetIconLocation(GIL_FORSHELL, szBuf, MAX_PATH, &index, &flags);
+            HICON hIconLarge;
+            hres = pIcon->Extract(szBuf, index, &hIconLarge, &hIcon, (16 << 16) + 32);
             if (SUCCEEDED(hres)) {
-                HICON hIconLarge;
-                hres = pIcon->Extract(szBuf, index, &hIconLarge, &hIcon, (16 << 16) + 32);
-                if (SUCCEEDED(hres)) {
-                    if (getLargeIcon) {
-                        fn_DestroyIcon((HICON)hIcon);
-                        hIcon = hIconLarge;
-                    } else {
-                        fn_DestroyIcon((HICON)hIconLarge);
-                    }
+                if (getLargeIcon) {
+                    fn_DestroyIcon((HICON)hIcon);
+                    hIcon = hIconLarge;
+                } else {
+                    fn_DestroyIcon((HICON)hIconLarge);
                 }
             }
-            pIcon->Release();
         }
-    } else {
-        IExtractIconA* pIcon;
-        hres = pIShellFolder->GetUIObjectOf(NULL, 1, const_cast<LPCITEMIDLIST*>(&pidl),
-                                        IID_IExtractIconA, NULL, (void**)&pIcon);
-        if (SUCCEEDED(hres)) {
-            CHAR szBuf[MAX_PATH];
-            INT index;
-            UINT flags;
-            hres = pIcon->GetIconLocation(GIL_FORSHELL, szBuf, MAX_PATH, &index, &flags);
-            if (SUCCEEDED(hres)) {
-                HICON hIconLarge;
-                hres = pIcon->Extract(szBuf, index, &hIconLarge, &hIcon, (16 << 16) + 32);
-                if (SUCCEEDED(hres)) {
-                    if (getLargeIcon) {
-                        fn_DestroyIcon((HICON)hIcon);
-                        hIcon = hIconLarge;
-                    } else {
-                        fn_DestroyIcon((HICON)hIconLarge);
-                    }
-                }
-            }
-            pIcon->Release();
-        }
+        pIcon->Release();
     }
     if (doCoUninit) {
         ::CoUninitialize();
@@ -987,7 +944,7 @@ JNIEXPORT jintArray JNICALL Java_sun_awt_shell_Win32ShellFolder2_getIconBits
             // XP supports alpha in some icons, and depending on device.
             // This should take precedence over the icon mask bits.
             BOOL hasAlpha = FALSE;
-            if (isXP) {
+            if (IS_WINXP) {
                 for (int i = 0; i < nBits; i++) {
                     if ((colorBits[i] & 0xff000000) != 0) {
                         hasAlpha = TRUE;
@@ -1127,9 +1084,9 @@ JNIEXPORT jlong JNICALL Java_sun_awt_shell_Win32ShellFolder2_getIconResource
     (JNIEnv* env, jclass cls, jstring libName, jint iconID,
      jint cxDesired, jint cyDesired, jboolean useVGAColors)
 {
-    HINSTANCE libHandle = LoadLibrary(env->GetStringChars(libName, NULL));
+    HINSTANCE libHandle = LoadLibrary(JNU_GetStringPlatformChars(env, libName, NULL));
     if (libHandle != NULL) {
-        UINT fuLoad = (useVGAColors && !isXP) ? LR_VGACOLOR : 0;
+        UINT fuLoad = (useVGAColors && !IS_WINXP) ? LR_VGACOLOR : 0;
         return ptr_to_jlong(LoadImage(libHandle, MAKEINTRESOURCE(iconID),
                                       IMAGE_ICON, cxDesired, cyDesired,
                                       fuLoad));
