@@ -463,6 +463,7 @@ void nmethod::init_defaults() {
   _has_unsafe_access          = 0;
   _has_method_handle_invokes  = 0;
   _lazy_critical_native       = 0;
+  _has_wide_vectors           = 0;
   _marked_for_deoptimization  = 0;
   _lock_count                 = 0;
   _stack_traversal_mark       = 0;
@@ -700,7 +701,9 @@ nmethod::nmethod(
     // then print the requested information
     if (PrintNativeNMethods) {
       print_code();
-      oop_maps->print();
+      if (oop_maps != NULL) {
+        oop_maps->print();
+      }
     }
     if (PrintRelocations) {
       print_relocations();
@@ -1472,9 +1475,7 @@ void nmethod::flush_dependencies(BoolObjectClosure* is_alive) {
 
 
 // If this oop is not live, the nmethod can be unloaded.
-bool nmethod::can_unload(BoolObjectClosure* is_alive,
-                         OopClosure* keep_alive,
-                         oop* root, bool unloading_occurred) {
+bool nmethod::can_unload(BoolObjectClosure* is_alive, oop* root, bool unloading_occurred) {
   assert(root != NULL, "just checking");
   oop obj = *root;
   if (obj == NULL || is_alive->do_object_b(obj)) {
@@ -1583,8 +1584,7 @@ void nmethod::post_compiled_method_unload() {
 // GC to unload an nmethod if it contains otherwise unreachable
 // oops.
 
-void nmethod::do_unloading(BoolObjectClosure* is_alive,
-                           OopClosure* keep_alive, bool unloading_occurred) {
+void nmethod::do_unloading(BoolObjectClosure* is_alive, bool unloading_occurred) {
   // Make sure the oop's ready to receive visitors
   assert(!is_zombie() && !is_unloaded(),
          "should not call follow on zombie or unloaded nmethod");
@@ -1672,7 +1672,7 @@ void nmethod::do_unloading(BoolObjectClosure* is_alive,
                   (r->oop_addr() >= oops_begin() && r->oop_addr() < oops_end()),
              "oop must be found in exactly one place");
       if (r->oop_is_immediate() && r->oop_value() != NULL) {
-        if (can_unload(is_alive, keep_alive, r->oop_addr(), unloading_occurred)) {
+        if (can_unload(is_alive, r->oop_addr(), unloading_occurred)) {
           return;
         }
       }
@@ -1684,7 +1684,7 @@ void nmethod::do_unloading(BoolObjectClosure* is_alive,
   // Scopes
   for (oop* p = oops_begin(); p < oops_end(); p++) {
     if (*p == Universe::non_oop_word())  continue;  // skip non-oops
-    if (can_unload(is_alive, keep_alive, p, unloading_occurred)) {
+    if (can_unload(is_alive, p, unloading_occurred)) {
       return;
     }
   }
@@ -2669,7 +2669,7 @@ ScopeDesc* nmethod::scope_desc_in(address begin, address end) {
   return NULL;
 }
 
-void nmethod::print_nmethod_labels(outputStream* stream, address block_begin) {
+void nmethod::print_nmethod_labels(outputStream* stream, address block_begin) const {
   if (block_begin == entry_point())             stream->print_cr("[Entry Point]");
   if (block_begin == verified_entry_point())    stream->print_cr("[Verified Entry Point]");
   if (block_begin == exception_begin())         stream->print_cr("[Exception Handler]");

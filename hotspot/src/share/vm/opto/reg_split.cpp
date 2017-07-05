@@ -646,7 +646,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
           // create a new phi node and insert it into the block
           // type is taken from left over pointer to a predecessor
           assert(n3,"No non-NULL reaching DEF for a Phi");
-          phi = new (C, b->num_preds()) PhiNode(b->head(), n3->bottom_type());
+          phi = new (C) PhiNode(b->head(), n3->bottom_type());
           // initialize the Reaches entry for this LRG
           Reachblock[slidx] = phi;
 

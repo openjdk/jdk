@@ -347,7 +347,11 @@ inline void Assembler::sub(Register s1, RegisterOrConstant s2, Register d, int o
 inline void Assembler::swap(    Register s1, Register s2, Register d) { v9_dep();  emit_long( op(ldst_op) | rd(d) | op3(swap_op3) | rs1(s1) | rs2(s2) ); }
 inline void Assembler::swap(    Register s1, int simm13a, Register d) { v9_dep();  emit_data( op(ldst_op) | rd(d) | op3(swap_op3) | rs1(s1) | immed(true) | simm(simm13a, 13)); }
 
-inline void Assembler::swap(    Address& a, Register d, int offset ) { relocate(a.rspec(offset)); swap(  a.base(), a.disp() + offset, d ); }
+inline void Assembler::swap(    Address& a, Register d, int offset ) {
+  relocate(a.rspec(offset));
+  if (a.has_index()) { assert(offset == 0, ""); swap( a.base(), a.index(), d         ); }
+  else               {                          swap( a.base(), a.disp() + offset, d ); }
+}
 
 
 // Use the right loads/stores for the platform

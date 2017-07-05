@@ -230,6 +230,7 @@ void ConcurrentMarkSweepThread::print_on(outputStream* st) const {
 void ConcurrentMarkSweepThread::print_all_on(outputStream* st) {
   if (_cmst != NULL) {
     _cmst->print_on(st);
+    st->cr();
   }
   if (_collector != NULL) {
     AbstractWorkGang* gang = _collector->conc_workers();

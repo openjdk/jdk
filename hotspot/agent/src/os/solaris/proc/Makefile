@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2002, 2009, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
 #   sparcv9:  Build the 64 bit sparcv9 version in ./sparcv9
 #   i386:     Build the 32 bit i386 version in ./i386
 
-.PHONY: sparc sparcv9 i386
+.PHONY: sparc sparcv9 i386 amd64
 
 ARCH_ORIG = $(shell uname -p)
 
@@ -36,12 +36,19 @@ RM     := /usr/bin/rm
 MKDIRS := /usr/bin/mkdir -p
 
 CLASSES_DIR = ../../../../build/classes
+SAPROC_INCLUDES=-I${JAVA_HOME}/include -I${JAVA_HOME}/include/solaris
+SADIS=../../../share/native/sadis.c
 
 ifeq "$(ARCH_ORIG)" "i386"
  ALL_TARGET = i386 $(filter amd64,$(shell isalist))
 else
  ALL_TARGET = sparc sparcv9
 endif
+
+CFLAGS/i386   =
+CFLAGS/amd64  = -xarch=amd64
+CFLAGS/sparc  = -xarch=v8
+CFLAGS/sparv9 = -xarch=v9
 
 all:: $(ALL_TARGET)
 
@@ -51,34 +58,13 @@ javahomecheck::
 	  exit 1 ; \
         fi
 
-i386:: javahomecheck
+i386 amd64 sparc sparcv9:: javahomecheck
 	$(MKDIRS) $@
-	@javah -classpath $(CLASSES_DIR) -jni sun.jvm.hotspot.debugger.proc.ProcDebuggerLocal
-	CC -G -KPIC -I${JAVA_HOME}/include -I${JAVA_HOME}/include/solaris saproc.cpp \
-           -M mapfile -o $@/libsaproc.so -ldemangle
-	CC -o $@/libsaproc_audit.so -G -Kpic -z defs saproc_audit.cpp -lmapmalloc -ldl -lc 
-
-amd64:: javahomecheck
-	$(MKDIRS) $@
-	@javah -classpath $(CLASSES_DIR) -jni sun.jvm.hotspot.debugger.proc.ProcDebuggerLocal
-	CC -G -KPIC -xarch=amd64 -I${JAVA_HOME}/include -I${JAVA_HOME}/include/solaris saproc.cpp \
-           -M mapfile -o $@/libsaproc.so -ldemangle
-	CC -xarch=amd64 -o $@/libsaproc_audit.so -G -Kpic -z defs saproc_audit.cpp -lmapmalloc -ldl -lc 
-
-sparc:: javahomecheck
-	$(MKDIRS) $@
-	@javah -classpath $(CLASSES_DIR) -jni sun.jvm.hotspot.debugger.proc.ProcDebuggerLocal
-	CC -G -KPIC -xarch=v8  -I${JAVA_HOME}/include -I${JAVA_HOME}/include/solaris saproc.cpp \
-           -M mapfile -o $@/libsaproc.so -ldemangle
-	CC -xarch=v8 -o $@/libsaproc_audit.so -G -Kpic -z defs saproc_audit.cpp -lmapmalloc -ldl -lc 
-
-sparcv9:: javahomecheck
-	$(MKDIRS) $@
-	@javah -classpath $(CLASSES_DIR) -jni sun.jvm.hotspot.debugger.proc.ProcDebuggerLocal
-	CC -G -KPIC -xarch=v9 -I${JAVA_HOME}/include -I${JAVA_HOME}/include/solaris saproc.cpp \
-           -M mapfile -o $@/libsaproc.so -ldemangle
-	CC -xarch=v9 -o $@/libsaproc_audit.so -G -Kpic -z defs saproc_audit.cpp -lmapmalloc -ldl -lc 
+	@$(JAVA_HOME)/bin/javah -classpath $(CLASSES_DIR) -d $@ -jni sun.jvm.hotspot.asm.Disassembler sun.jvm.hotspot.debugger.proc.ProcDebuggerLocal
+	CC $(CFLAGS/$@) -c -g -Kpic ${SAPROC_INCLUDES} -I$@ saproc.cpp -o $@/saproc.o
+	cc $(CFLAGS/$@) -c -g -Kpic ${SAPROC_INCLUDES} -I$@ $(SADIS) -o $@/sadis.o
+	CC $(CFLAGS/$@) -g -G -Kpic $@/saproc.o $@/sadis.o -M mapfile -o $@/libsaproc.so -ldemangle
+	CC $(CFLAGS/$@) -o $@/libsaproc_audit.so -G -Kpic -z defs saproc_audit.cpp -lmapmalloc -ldl -lc 
 
 clean::
-	$(RM) -rf sun_jvm_hotspot_debugger_proc_ProcDebuggerLocal.h
-	$(RM) -rf sparc sparcv9 i386
+	$(RM) -rf sparc sparcv9 i386 amd64

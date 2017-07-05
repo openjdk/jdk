@@ -104,7 +104,7 @@ static Node *transform_int_divide( PhaseGVN *phase, Node *dividend, jint divisor
     // division by +/- 1
     if (!d_pos) {
       // Just negate the value
-      q = new (phase->C, 3) SubINode(phase->intcon(0), dividend);
+      q = new (phase->C) SubINode(phase->intcon(0), dividend);
     }
   } else if ( is_power_of_2(d) ) {
     // division by +/- a power of 2
@@ -141,18 +141,18 @@ static Node *transform_int_divide( PhaseGVN *phase, Node *dividend, jint divisor
       // (-2+3)>>2 becomes 0, etc.
 
       // Compute 0 or -1, based on sign bit
-      Node *sign = phase->transform(new (phase->C, 3) RShiftINode(dividend, phase->intcon(N - 1)));
+      Node *sign = phase->transform(new (phase->C) RShiftINode(dividend, phase->intcon(N - 1)));
       // Mask sign bit to the low sign bits
-      Node *round = phase->transform(new (phase->C, 3) URShiftINode(sign, phase->intcon(N - l)));
+      Node *round = phase->transform(new (phase->C) URShiftINode(sign, phase->intcon(N - l)));
       // Round up before shifting
-      dividend = phase->transform(new (phase->C, 3) AddINode(dividend, round));
+      dividend = phase->transform(new (phase->C) AddINode(dividend, round));
     }
 
     // Shift for division
-    q = new (phase->C, 3) RShiftINode(dividend, phase->intcon(l));
+    q = new (phase->C) RShiftINode(dividend, phase->intcon(l));
 
     if (!d_pos) {
-      q = new (phase->C, 3) SubINode(phase->intcon(0), phase->transform(q));
+      q = new (phase->C) SubINode(phase->intcon(0), phase->transform(q));
     }
   } else {
     // Attempt the jint constant divide -> multiply transform found in
@@ -164,33 +164,33 @@ static Node *transform_int_divide( PhaseGVN *phase, Node *dividend, jint divisor
     jint shift_const;
     if (magic_int_divide_constants(d, magic_const, shift_const)) {
       Node *magic = phase->longcon(magic_const);
-      Node *dividend_long = phase->transform(new (phase->C, 2) ConvI2LNode(dividend));
+      Node *dividend_long = phase->transform(new (phase->C) ConvI2LNode(dividend));
 
       // Compute the high half of the dividend x magic multiplication
-      Node *mul_hi = phase->transform(new (phase->C, 3) MulLNode(dividend_long, magic));
+      Node *mul_hi = phase->transform(new (phase->C) MulLNode(dividend_long, magic));
 
       if (magic_const < 0) {
-        mul_hi = phase->transform(new (phase->C, 3) RShiftLNode(mul_hi, phase->intcon(N)));
-        mul_hi = phase->transform(new (phase->C, 2) ConvL2INode(mul_hi));
+        mul_hi = phase->transform(new (phase->C) RShiftLNode(mul_hi, phase->intcon(N)));
+        mul_hi = phase->transform(new (phase->C) ConvL2INode(mul_hi));
 
         // The magic multiplier is too large for a 32 bit constant. We've adjusted
         // it down by 2^32, but have to add 1 dividend back in after the multiplication.
         // This handles the "overflow" case described by Granlund and Montgomery.
-        mul_hi = phase->transform(new (phase->C, 3) AddINode(dividend, mul_hi));
+        mul_hi = phase->transform(new (phase->C) AddINode(dividend, mul_hi));
 
         // Shift over the (adjusted) mulhi
         if (shift_const != 0) {
-          mul_hi = phase->transform(new (phase->C, 3) RShiftINode(mul_hi, phase->intcon(shift_const)));
+          mul_hi = phase->transform(new (phase->C) RShiftINode(mul_hi, phase->intcon(shift_const)));
         }
       } else {
         // No add is required, we can merge the shifts together.
-        mul_hi = phase->transform(new (phase->C, 3) RShiftLNode(mul_hi, phase->intcon(N + shift_const)));
-        mul_hi = phase->transform(new (phase->C, 2) ConvL2INode(mul_hi));
+        mul_hi = phase->transform(new (phase->C) RShiftLNode(mul_hi, phase->intcon(N + shift_const)));
+        mul_hi = phase->transform(new (phase->C) ConvL2INode(mul_hi));
       }
 
       // Get a 0 or -1 from the sign of the dividend.
       Node *addend0 = mul_hi;
-      Node *addend1 = phase->transform(new (phase->C, 3) RShiftINode(dividend, phase->intcon(N-1)));
+      Node *addend1 = phase->transform(new (phase->C) RShiftINode(dividend, phase->intcon(N-1)));
 
       // If the divisor is negative, swap the order of the input addends;
       // this has the effect of negating the quotient.
@@ -200,7 +200,7 @@ static Node *transform_int_divide( PhaseGVN *phase, Node *dividend, jint divisor
 
       // Adjust the final quotient by subtracting -1 (adding 1)
       // from the mul_hi.
-      q = new (phase->C, 3) SubINode(addend0, addend1);
+      q = new (phase->C) SubINode(addend0, addend1);
     }
   }
 
@@ -259,7 +259,7 @@ static Node* long_by_long_mulhi(PhaseGVN* phase, Node* dividend, jlong magic_con
   // no need to synthesize it in ideal nodes.
   if (Matcher::has_match_rule(Op_MulHiL)) {
     Node* v = phase->longcon(magic_const);
-    return new (phase->C, 3) MulHiLNode(dividend, v);
+    return new (phase->C) MulHiLNode(dividend, v);
   }
 
   // Taken from Hacker's Delight, Fig. 8-2. Multiply high signed.
@@ -285,11 +285,11 @@ static Node* long_by_long_mulhi(PhaseGVN* phase, Node* dividend, jlong magic_con
   const int N = 64;
 
   // Dummy node to keep intermediate nodes alive during construction
-  Node* hook = new (phase->C, 4) Node(4);
+  Node* hook = new (phase->C) Node(4);
 
   // u0 = u & 0xFFFFFFFF;  u1 = u >> 32;
-  Node* u0 = phase->transform(new (phase->C, 3) AndLNode(dividend, phase->longcon(0xFFFFFFFF)));
-  Node* u1 = phase->transform(new (phase->C, 3) RShiftLNode(dividend, phase->intcon(N / 2)));
+  Node* u0 = phase->transform(new (phase->C) AndLNode(dividend, phase->longcon(0xFFFFFFFF)));
+  Node* u1 = phase->transform(new (phase->C) RShiftLNode(dividend, phase->intcon(N / 2)));
   hook->init_req(0, u0);
   hook->init_req(1, u1);
 
@@ -298,29 +298,29 @@ static Node* long_by_long_mulhi(PhaseGVN* phase, Node* dividend, jlong magic_con
   Node* v1 = phase->longcon(magic_const >> (N / 2));
 
   // w0 = u0*v0;
-  Node* w0 = phase->transform(new (phase->C, 3) MulLNode(u0, v0));
+  Node* w0 = phase->transform(new (phase->C) MulLNode(u0, v0));
 
   // t = u1*v0 + (w0 >> 32);
-  Node* u1v0 = phase->transform(new (phase->C, 3) MulLNode(u1, v0));
-  Node* temp = phase->transform(new (phase->C, 3) URShiftLNode(w0, phase->intcon(N / 2)));
-  Node* t    = phase->transform(new (phase->C, 3) AddLNode(u1v0, temp));
+  Node* u1v0 = phase->transform(new (phase->C) MulLNode(u1, v0));
+  Node* temp = phase->transform(new (phase->C) URShiftLNode(w0, phase->intcon(N / 2)));
+  Node* t    = phase->transform(new (phase->C) AddLNode(u1v0, temp));
   hook->init_req(2, t);
 
   // w1 = t & 0xFFFFFFFF;
-  Node* w1 = phase->transform(new (phase->C, 3) AndLNode(t, phase->longcon(0xFFFFFFFF)));
+  Node* w1 = phase->transform(new (phase->C) AndLNode(t, phase->longcon(0xFFFFFFFF)));
   hook->init_req(3, w1);
 
   // w2 = t >> 32;
-  Node* w2 = phase->transform(new (phase->C, 3) RShiftLNode(t, phase->intcon(N / 2)));
+  Node* w2 = phase->transform(new (phase->C) RShiftLNode(t, phase->intcon(N / 2)));
 
   // w1 = u0*v1 + w1;
-  Node* u0v1 = phase->transform(new (phase->C, 3) MulLNode(u0, v1));
-  w1         = phase->transform(new (phase->C, 3) AddLNode(u0v1, w1));
+  Node* u0v1 = phase->transform(new (phase->C) MulLNode(u0, v1));
+  w1         = phase->transform(new (phase->C) AddLNode(u0v1, w1));
 
   // return u1*v1 + w2 + (w1 >> 32);
-  Node* u1v1  = phase->transform(new (phase->C, 3) MulLNode(u1, v1));
-  Node* temp1 = phase->transform(new (phase->C, 3) AddLNode(u1v1, w2));
-  Node* temp2 = phase->transform(new (phase->C, 3) RShiftLNode(w1, phase->intcon(N / 2)));
+  Node* u1v1  = phase->transform(new (phase->C) MulLNode(u1, v1));
+  Node* temp1 = phase->transform(new (phase->C) AddLNode(u1v1, w2));
+  Node* temp2 = phase->transform(new (phase->C) RShiftLNode(w1, phase->intcon(N / 2)));
 
   // Remove the bogus extra edges used to keep things alive
   PhaseIterGVN* igvn = phase->is_IterGVN();
@@ -332,7 +332,7 @@ static Node* long_by_long_mulhi(PhaseGVN* phase, Node* dividend, jlong magic_con
     }
   }
 
-  return new (phase->C, 3) AddLNode(temp1, temp2);
+  return new (phase->C) AddLNode(temp1, temp2);
 }
 
 
@@ -355,7 +355,7 @@ static Node *transform_long_divide( PhaseGVN *phase, Node *dividend, jlong divis
     // division by +/- 1
     if (!d_pos) {
       // Just negate the value
-      q = new (phase->C, 3) SubLNode(phase->longcon(0), dividend);
+      q = new (phase->C) SubLNode(phase->longcon(0), dividend);
     }
   } else if ( is_power_of_2_long(d) ) {
 
@@ -394,18 +394,18 @@ static Node *transform_long_divide( PhaseGVN *phase, Node *dividend, jlong divis
       // (-2+3)>>2 becomes 0, etc.
 
       // Compute 0 or -1, based on sign bit
-      Node *sign = phase->transform(new (phase->C, 3) RShiftLNode(dividend, phase->intcon(N - 1)));
+      Node *sign = phase->transform(new (phase->C) RShiftLNode(dividend, phase->intcon(N - 1)));
       // Mask sign bit to the low sign bits
-      Node *round = phase->transform(new (phase->C, 3) URShiftLNode(sign, phase->intcon(N - l)));
+      Node *round = phase->transform(new (phase->C) URShiftLNode(sign, phase->intcon(N - l)));
       // Round up before shifting
-      dividend = phase->transform(new (phase->C, 3) AddLNode(dividend, round));
+      dividend = phase->transform(new (phase->C) AddLNode(dividend, round));
     }
 
     // Shift for division
-    q = new (phase->C, 3) RShiftLNode(dividend, phase->intcon(l));
+    q = new (phase->C) RShiftLNode(dividend, phase->intcon(l));
 
     if (!d_pos) {
-      q = new (phase->C, 3) SubLNode(phase->longcon(0), phase->transform(q));
+      q = new (phase->C) SubLNode(phase->longcon(0), phase->transform(q));
     }
   } else if ( !Matcher::use_asm_for_ldiv_by_con(d) ) { // Use hardware DIV instruction when
                                                        // it is faster than code generated below.
@@ -425,17 +425,17 @@ static Node *transform_long_divide( PhaseGVN *phase, Node *dividend, jlong divis
         // The magic multiplier is too large for a 64 bit constant. We've adjusted
         // it down by 2^64, but have to add 1 dividend back in after the multiplication.
         // This handles the "overflow" case described by Granlund and Montgomery.
-        mul_hi = phase->transform(new (phase->C, 3) AddLNode(dividend, mul_hi));
+        mul_hi = phase->transform(new (phase->C) AddLNode(dividend, mul_hi));
       }
 
       // Shift over the (adjusted) mulhi
       if (shift_const != 0) {
-        mul_hi = phase->transform(new (phase->C, 3) RShiftLNode(mul_hi, phase->intcon(shift_const)));
+        mul_hi = phase->transform(new (phase->C) RShiftLNode(mul_hi, phase->intcon(shift_const)));
       }
 
       // Get a 0 or -1 from the sign of the dividend.
       Node *addend0 = mul_hi;
-      Node *addend1 = phase->transform(new (phase->C, 3) RShiftLNode(dividend, phase->intcon(N-1)));
+      Node *addend1 = phase->transform(new (phase->C) RShiftLNode(dividend, phase->intcon(N-1)));
 
       // If the divisor is negative, swap the order of the input addends;
       // this has the effect of negating the quotient.
@@ -445,7 +445,7 @@ static Node *transform_long_divide( PhaseGVN *phase, Node *dividend, jlong divis
 
       // Adjust the final quotient by subtracting -1 (adding 1)
       // from the mul_hi.
-      q = new (phase->C, 3) SubLNode(addend0, addend1);
+      q = new (phase->C) SubLNode(addend0, addend1);
     }
   }
 
@@ -735,7 +735,7 @@ Node *DivFNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   assert( frexp((double)reciprocal, &exp) == 0.5, "reciprocal should be power of 2" );
 
   // return multiplication by the reciprocal
-  return (new (phase->C, 3) MulFNode(in(1), phase->makecon(TypeF::make(reciprocal))));
+  return (new (phase->C) MulFNode(in(1), phase->makecon(TypeF::make(reciprocal))));
 }
 
 //=============================================================================
@@ -829,7 +829,7 @@ Node *DivDNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   assert( frexp(reciprocal, &exp) == 0.5, "reciprocal should be power of 2" );
 
   // return multiplication by the reciprocal
-  return (new (phase->C, 3) MulDNode(in(1), phase->makecon(TypeD::make(reciprocal))));
+  return (new (phase->C) MulDNode(in(1), phase->makecon(TypeD::make(reciprocal))));
 }
 
 //=============================================================================
@@ -856,7 +856,7 @@ Node *ModINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if( !ti->is_con() ) return NULL;
   jint con = ti->get_con();
 
-  Node *hook = new (phase->C, 1) Node(1);
+  Node *hook = new (phase->C) Node(1);
 
   // First, special check for modulo 2^k-1
   if( con >= 0 && con < max_jint && is_power_of_2(con+1) ) {
@@ -876,24 +876,24 @@ Node *ModINode::Ideal(PhaseGVN *phase, bool can_reshape) {
       hook->init_req(0, x);       // Add a use to x to prevent him from dying
       // Generate code to reduce X rapidly to nearly 2^k-1.
       for( int i = 0; i < trip_count; i++ ) {
-        Node *xl = phase->transform( new (phase->C, 3) AndINode(x,divisor) );
-        Node *xh = phase->transform( new (phase->C, 3) RShiftINode(x,phase->intcon(k)) ); // Must be signed
-        x = phase->transform( new (phase->C, 3) AddINode(xh,xl) );
+        Node *xl = phase->transform( new (phase->C) AndINode(x,divisor) );
+        Node *xh = phase->transform( new (phase->C) RShiftINode(x,phase->intcon(k)) ); // Must be signed
+        x = phase->transform( new (phase->C) AddINode(xh,xl) );
         hook->set_req(0, x);
       }
 
       // Generate sign-fixup code.  Was original value positive?
       // int hack_res = (i >= 0) ? divisor : 1;
-      Node *cmp1 = phase->transform( new (phase->C, 3) CmpINode( in(1), phase->intcon(0) ) );
-      Node *bol1 = phase->transform( new (phase->C, 2) BoolNode( cmp1, BoolTest::ge ) );
-      Node *cmov1= phase->transform( new (phase->C, 4) CMoveINode(bol1, phase->intcon(1), divisor, TypeInt::POS) );
+      Node *cmp1 = phase->transform( new (phase->C) CmpINode( in(1), phase->intcon(0) ) );
+      Node *bol1 = phase->transform( new (phase->C) BoolNode( cmp1, BoolTest::ge ) );
+      Node *cmov1= phase->transform( new (phase->C) CMoveINode(bol1, phase->intcon(1), divisor, TypeInt::POS) );
       // if( x >= hack_res ) x -= divisor;
-      Node *sub  = phase->transform( new (phase->C, 3) SubINode( x, divisor ) );
-      Node *cmp2 = phase->transform( new (phase->C, 3) CmpINode( x, cmov1 ) );
-      Node *bol2 = phase->transform( new (phase->C, 2) BoolNode( cmp2, BoolTest::ge ) );
+      Node *sub  = phase->transform( new (phase->C) SubINode( x, divisor ) );
+      Node *cmp2 = phase->transform( new (phase->C) CmpINode( x, cmov1 ) );
+      Node *bol2 = phase->transform( new (phase->C) BoolNode( cmp2, BoolTest::ge ) );
       // Convention is to not transform the return value of an Ideal
       // since Ideal is expected to return a modified 'this' or a new node.
-      Node *cmov2= new (phase->C, 4) CMoveINode(bol2, x, sub, TypeInt::INT);
+      Node *cmov2= new (phase->C) CMoveINode(bol2, x, sub, TypeInt::INT);
       // cmov2 is now the mod
 
       // Now remove the bogus extra edges used to keep things alive
@@ -916,7 +916,7 @@ Node *ModINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   jint pos_con = (con >= 0) ? con : -con;
 
   // integer Mod 1 is always 0
-  if( pos_con == 1 ) return new (phase->C, 1) ConINode(TypeInt::ZERO);
+  if( pos_con == 1 ) return new (phase->C) ConINode(TypeInt::ZERO);
 
   int log2_con = -1;
 
@@ -929,7 +929,7 @@ Node *ModINode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
     // See if this can be masked, if the dividend is non-negative
     if( dti && dti->_lo >= 0 )
-      return ( new (phase->C, 3) AndINode( in(1), phase->intcon( pos_con-1 ) ) );
+      return ( new (phase->C) AndINode( in(1), phase->intcon( pos_con-1 ) ) );
   }
 
   // Save in(1) so that it cannot be changed or deleted
@@ -944,12 +944,12 @@ Node *ModINode::Ideal(PhaseGVN *phase, bool can_reshape) {
     Node *mult = NULL;
 
     if( log2_con >= 0 )
-      mult = phase->transform( new (phase->C, 3) LShiftINode( divide, phase->intcon( log2_con ) ) );
+      mult = phase->transform( new (phase->C) LShiftINode( divide, phase->intcon( log2_con ) ) );
     else
-      mult = phase->transform( new (phase->C, 3) MulINode( divide, phase->intcon( pos_con ) ) );
+      mult = phase->transform( new (phase->C) MulINode( divide, phase->intcon( pos_con ) ) );
 
     // Finally, subtract the multiplied divided value from the original
-    result = new (phase->C, 3) SubINode( in(1), mult );
+    result = new (phase->C) SubINode( in(1), mult );
   }
 
   // Now remove the bogus extra edges used to keep things alive
@@ -1027,7 +1027,7 @@ Node *ModLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if( !tl->is_con() ) return NULL;
   jlong con = tl->get_con();
 
-  Node *hook = new (phase->C, 1) Node(1);
+  Node *hook = new (phase->C) Node(1);
 
   // Expand mod
   if( con >= 0 && con < max_jlong && is_power_of_2_long(con+1) ) {
@@ -1049,24 +1049,24 @@ Node *ModLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       hook->init_req(0, x);       // Add a use to x to prevent him from dying
       // Generate code to reduce X rapidly to nearly 2^k-1.
       for( int i = 0; i < trip_count; i++ ) {
-        Node *xl = phase->transform( new (phase->C, 3) AndLNode(x,divisor) );
-        Node *xh = phase->transform( new (phase->C, 3) RShiftLNode(x,phase->intcon(k)) ); // Must be signed
-        x = phase->transform( new (phase->C, 3) AddLNode(xh,xl) );
+        Node *xl = phase->transform( new (phase->C) AndLNode(x,divisor) );
+        Node *xh = phase->transform( new (phase->C) RShiftLNode(x,phase->intcon(k)) ); // Must be signed
+        x = phase->transform( new (phase->C) AddLNode(xh,xl) );
         hook->set_req(0, x);    // Add a use to x to prevent him from dying
       }
 
       // Generate sign-fixup code.  Was original value positive?
       // long hack_res = (i >= 0) ? divisor : CONST64(1);
-      Node *cmp1 = phase->transform( new (phase->C, 3) CmpLNode( in(1), phase->longcon(0) ) );
-      Node *bol1 = phase->transform( new (phase->C, 2) BoolNode( cmp1, BoolTest::ge ) );
-      Node *cmov1= phase->transform( new (phase->C, 4) CMoveLNode(bol1, phase->longcon(1), divisor, TypeLong::LONG) );
+      Node *cmp1 = phase->transform( new (phase->C) CmpLNode( in(1), phase->longcon(0) ) );
+      Node *bol1 = phase->transform( new (phase->C) BoolNode( cmp1, BoolTest::ge ) );
+      Node *cmov1= phase->transform( new (phase->C) CMoveLNode(bol1, phase->longcon(1), divisor, TypeLong::LONG) );
       // if( x >= hack_res ) x -= divisor;
-      Node *sub  = phase->transform( new (phase->C, 3) SubLNode( x, divisor ) );
-      Node *cmp2 = phase->transform( new (phase->C, 3) CmpLNode( x, cmov1 ) );
-      Node *bol2 = phase->transform( new (phase->C, 2) BoolNode( cmp2, BoolTest::ge ) );
+      Node *sub  = phase->transform( new (phase->C) SubLNode( x, divisor ) );
+      Node *cmp2 = phase->transform( new (phase->C) CmpLNode( x, cmov1 ) );
+      Node *bol2 = phase->transform( new (phase->C) BoolNode( cmp2, BoolTest::ge ) );
       // Convention is to not transform the return value of an Ideal
       // since Ideal is expected to return a modified 'this' or a new node.
-      Node *cmov2= new (phase->C, 4) CMoveLNode(bol2, x, sub, TypeLong::LONG);
+      Node *cmov2= new (phase->C) CMoveLNode(bol2, x, sub, TypeLong::LONG);
       // cmov2 is now the mod
 
       // Now remove the bogus extra edges used to keep things alive
@@ -1089,7 +1089,7 @@ Node *ModLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   jlong pos_con = (con >= 0) ? con : -con;
 
   // integer Mod 1 is always 0
-  if( pos_con == 1 ) return new (phase->C, 1) ConLNode(TypeLong::ZERO);
+  if( pos_con == 1 ) return new (phase->C) ConLNode(TypeLong::ZERO);
 
   int log2_con = -1;
 
@@ -1102,7 +1102,7 @@ Node *ModLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
     // See if this can be masked, if the dividend is non-negative
     if( dtl && dtl->_lo >= 0 )
-      return ( new (phase->C, 3) AndLNode( in(1), phase->longcon( pos_con-1 ) ) );
+      return ( new (phase->C) AndLNode( in(1), phase->longcon( pos_con-1 ) ) );
   }
 
   // Save in(1) so that it cannot be changed or deleted
@@ -1117,12 +1117,12 @@ Node *ModLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     Node *mult = NULL;
 
     if( log2_con >= 0 )
-      mult = phase->transform( new (phase->C, 3) LShiftLNode( divide, phase->intcon( log2_con ) ) );
+      mult = phase->transform( new (phase->C) LShiftLNode( divide, phase->intcon( log2_con ) ) );
     else
-      mult = phase->transform( new (phase->C, 3) MulLNode( divide, phase->longcon( pos_con ) ) );
+      mult = phase->transform( new (phase->C) MulLNode( divide, phase->longcon( pos_con ) ) );
 
     // Finally, subtract the multiplied divided value from the original
-    result = new (phase->C, 3) SubLNode( in(1), mult );
+    result = new (phase->C) SubLNode( in(1), mult );
   }
 
   // Now remove the bogus extra edges used to keep things alive
@@ -1277,9 +1277,9 @@ DivModINode* DivModINode::make(Compile* C, Node* div_or_mod) {
   assert(n->Opcode() == Op_DivI || n->Opcode() == Op_ModI,
          "only div or mod input pattern accepted");
 
-  DivModINode* divmod = new (C, 3) DivModINode(n->in(0), n->in(1), n->in(2));
-  Node*        dproj  = new (C, 1) ProjNode(divmod, DivModNode::div_proj_num);
-  Node*        mproj  = new (C, 1) ProjNode(divmod, DivModNode::mod_proj_num);
+  DivModINode* divmod = new (C) DivModINode(n->in(0), n->in(1), n->in(2));
+  Node*        dproj  = new (C) ProjNode(divmod, DivModNode::div_proj_num);
+  Node*        mproj  = new (C) ProjNode(divmod, DivModNode::mod_proj_num);
   return divmod;
 }
 
@@ -1289,9 +1289,9 @@ DivModLNode* DivModLNode::make(Compile* C, Node* div_or_mod) {
   assert(n->Opcode() == Op_DivL || n->Opcode() == Op_ModL,
          "only div or mod input pattern accepted");
 
-  DivModLNode* divmod = new (C, 3) DivModLNode(n->in(0), n->in(1), n->in(2));
-  Node*        dproj  = new (C, 1) ProjNode(divmod, DivModNode::div_proj_num);
-  Node*        mproj  = new (C, 1) ProjNode(divmod, DivModNode::mod_proj_num);
+  DivModLNode* divmod = new (C) DivModLNode(n->in(0), n->in(1), n->in(2));
+  Node*        dproj  = new (C) ProjNode(divmod, DivModNode::div_proj_num);
+  Node*        mproj  = new (C) ProjNode(divmod, DivModNode::mod_proj_num);
   return divmod;
 }
 
@@ -1306,7 +1306,7 @@ Node *DivModINode::match( const ProjNode *proj, const Matcher *match ) {
     assert(proj->_con == mod_proj_num, "must be div or mod projection");
     rm = match->modI_proj_mask();
   }
-  return new (match->C, 1)MachProjNode(this, proj->_con, rm, ideal_reg);
+  return new (match->C)MachProjNode(this, proj->_con, rm, ideal_reg);
 }
 
 
@@ -1321,5 +1321,5 @@ Node *DivModLNode::match( const ProjNode *proj, const Matcher *match ) {
     assert(proj->_con == mod_proj_num, "must be div or mod projection");
     rm = match->modL_proj_mask();
   }
-  return new (match->C, 1)MachProjNode(this, proj->_con, rm, ideal_reg);
+  return new (match->C)MachProjNode(this, proj->_con, rm, ideal_reg);
 }

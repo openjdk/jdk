@@ -125,46 +125,46 @@ int CompileLog::identify(ciBaseObject* obj) {
     ciMetadata* mobj = obj->as_metadata();
     if (mobj->is_klass()) {
       ciKlass* klass = mobj->as_klass();
-    begin_elem("klass id='%d'", id);
-    name(klass->name());
-    if (!klass->is_loaded()) {
-      print(" unloaded='1'");
-    } else {
-      print(" flags='%d'", klass->modifier_flags());
-    }
-    end_elem();
+      begin_elem("klass id='%d'", id);
+      name(klass->name());
+      if (!klass->is_loaded()) {
+        print(" unloaded='1'");
+      } else {
+        print(" flags='%d'", klass->modifier_flags());
+      }
+      end_elem();
     } else if (mobj->is_method()) {
       ciMethod* method = mobj->as_method();
-    ciSignature* sig = method->signature();
-    // Pre-identify items that we will need!
-    identify(sig->return_type());
-    for (int i = 0; i < sig->count(); i++) {
-      identify(sig->type_at(i));
-    }
-    begin_elem("method id='%d' holder='%d'",
-               id, identify(method->holder()));
-    name(method->name());
-    print(" return='%d'", identify(sig->return_type()));
-    if (sig->count() > 0) {
-      print(" arguments='");
+      ciSignature* sig = method->signature();
+      // Pre-identify items that we will need!
+      identify(sig->return_type());
       for (int i = 0; i < sig->count(); i++) {
-        print((i == 0) ? "%d" : " %d", identify(sig->type_at(i)));
+        identify(sig->type_at(i));
       }
-      print("'");
-    }
-    if (!method->is_loaded()) {
-      print(" unloaded='1'");
-    } else {
-      print(" flags='%d'", (jchar) method->flags().as_int());
-      // output a few metrics
-      print(" bytes='%d'", method->code_size());
-      method->log_nmethod_identity(this);
-      //print(" count='%d'", method->invocation_count());
-      //int bec = method->backedge_count();
-      //if (bec != 0)  print(" backedge_count='%d'", bec);
-      print(" iicount='%d'", method->interpreter_invocation_count());
-    }
-    end_elem();
+      begin_elem("method id='%d' holder='%d'",
+          id, identify(method->holder()));
+      name(method->name());
+      print(" return='%d'", identify(sig->return_type()));
+      if (sig->count() > 0) {
+        print(" arguments='");
+        for (int i = 0; i < sig->count(); i++) {
+          print((i == 0) ? "%d" : " %d", identify(sig->type_at(i)));
+        }
+        print("'");
+      }
+      if (!method->is_loaded()) {
+        print(" unloaded='1'");
+      } else {
+        print(" flags='%d'", (jchar) method->flags().as_int());
+        // output a few metrics
+        print(" bytes='%d'", method->code_size());
+        method->log_nmethod_identity(this);
+        //print(" count='%d'", method->invocation_count());
+        //int bec = method->backedge_count();
+        //if (bec != 0)  print(" backedge_count='%d'", bec);
+        print(" iicount='%d'", method->interpreter_invocation_count());
+      }
+      end_elem();
     } else if (mobj->is_type()) {
       BasicType type = mobj->as_type()->basic_type();
       elem("type id='%d' name='%s'", id, type2name(type));
