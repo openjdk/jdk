@@ -1273,7 +1273,11 @@ public class ScriptFunction extends ScriptObject {
         // a new zeroth element that is set to bindName value.
         final MethodType methodType = methodHandle.type();
         final int parameterCount = methodType.parameterCount();
-        final boolean isVarArg = parameterCount > 0 && methodType.parameterType(parameterCount - 1).isArray();
+
+        if (parameterCount < 2) {
+            return methodHandle; // method does not have enough parameters
+        }
+        final boolean isVarArg = methodType.parameterType(parameterCount - 1).isArray();
 
         if (isVarArg) {
             return MH.filterArguments(methodHandle, 1, MH.insertArguments(ADD_ZEROTH_ELEMENT, 1, bindName));

@@ -76,7 +76,7 @@ import sun.security.util.Debug;
  * {@code g} parameters. If the modulus size is not one of the above
  * values, the <i>Sun</i> provider creates a new set of parameters. Other
  * providers might have precomputed parameter sets for more than just the
- * three modulus sizes mentioned above. Still others might not have a list of
+ * modulus sizes mentioned above. Still others might not have a list of
  * precomputed parameters at all and instead always create new parameter sets.
  *
  * <li><b>Algorithm-Specific Initialization</b>
@@ -393,7 +393,7 @@ public abstract class KeyPairGenerator extends KeyPairGeneratorSpi {
      * of randomness.
      * (If none of the installed providers supply an implementation of
      * {@code SecureRandom}, a system-provided source of randomness is
-     * used.).
+     * used.)
      *
      * <p>This concrete method has been added to this previously-defined
      * abstract class.

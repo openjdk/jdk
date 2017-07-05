@@ -112,7 +112,6 @@ public class MOAT {
         testCollection(Arrays.asList(1,2,3));
         testCollection(nCopies(25,1));
         testImmutableList(nCopies(25,1));
-        testImmutableList(unmodifiableList(Arrays.asList(1,2,3)));
 
         testMap(new HashMap<Integer,Integer>());
         testMap(new LinkedHashMap<Integer,Integer>());
@@ -133,6 +132,20 @@ public class MOAT {
         testMap(Collections.synchronizedMap(new HashMap<Integer,Integer>()));
         testMap(Collections.synchronizedSortedMap(new TreeMap<Integer,Integer>()));
         testMap(Collections.synchronizedNavigableMap(new TreeMap<Integer,Integer>()));
+
+        // Unmodifiable wrappers
+        testImmutableSet(unmodifiableSet(new HashSet<>(Arrays.asList(1,2,3))));
+        testImmutableList(unmodifiableList(Arrays.asList(1,2,3)));
+        testImmutableMap(unmodifiableMap(Collections.singletonMap(1,2)));
+        testCollMutatorsAlwaysThrow(unmodifiableSet(new HashSet<>(Arrays.asList(1,2,3))));
+        testCollMutatorsAlwaysThrow(unmodifiableSet(Collections.emptySet()));
+        testEmptyCollMutatorsAlwaysThrow(unmodifiableSet(Collections.emptySet()));
+        testListMutatorsAlwaysThrow(unmodifiableList(Arrays.asList(1,2,3)));
+        testListMutatorsAlwaysThrow(unmodifiableList(Collections.emptyList()));
+        testEmptyListMutatorsAlwaysThrow(unmodifiableList(Collections.emptyList()));
+        testMapMutatorsAlwaysThrow(unmodifiableMap(Collections.singletonMap(1,2)));
+        testMapMutatorsAlwaysThrow(unmodifiableMap(Collections.emptyMap()));
+        testEmptyMapMutatorsAlwaysThrow(unmodifiableMap(Collections.emptyMap()));
 
         // Empty collections
         final List<Integer> emptyArray = Arrays.asList(new Integer[]{});
@@ -196,6 +209,8 @@ public class MOAT {
 
         // Immutable List
         testEmptyList(List.of());
+        testListMutatorsAlwaysThrow(List.of());
+        testEmptyListMutatorsAlwaysThrow(List.of());
         for (List<Integer> list : Arrays.asList(
                 List.<Integer>of(),
                 List.of(1),
@@ -211,10 +226,13 @@ public class MOAT {
                 List.of(integerArray))) {
             testCollection(list);
             testImmutableList(list);
+            testListMutatorsAlwaysThrow(list);
         }
 
         // Immutable Set
         testEmptySet(Set.of());
+        testCollMutatorsAlwaysThrow(Set.of());
+        testEmptyCollMutatorsAlwaysThrow(Set.of());
         for (Set<Integer> set : Arrays.asList(
                 Set.<Integer>of(),
                 Set.of(1),
@@ -230,6 +248,7 @@ public class MOAT {
                 Set.of(integerArray))) {
             testCollection(set);
             testImmutableSet(set);
+            testCollMutatorsAlwaysThrow(set);
         }
 
         // Immutable Map
@@ -241,6 +260,8 @@ public class MOAT {
         }
 
         testEmptyMap(Map.of());
+        testMapMutatorsAlwaysThrow(Map.of());
+        testEmptyMapMutatorsAlwaysThrow(Map.of());
         for (Map<Integer,Integer> map : Arrays.asList(
                 Map.<Integer,Integer>of(),
                 Map.of(1, 101),
@@ -256,6 +277,7 @@ public class MOAT {
                 Map.ofEntries(ea))) {
             testMap(map);
             testImmutableMap(map);
+            testMapMutatorsAlwaysThrow(map);
         }
     }
 
@@ -356,6 +378,93 @@ public class MOAT {
                    () -> { ListIterator<Integer> it = c.listIterator();
                            it.next();
                            it.remove(); });
+    }
+
+    /**
+     * Test that calling a mutator always throws UOE, even if the mutator
+     * wouldn't actually do anything, given its arguments.
+     *
+     * @param c the collection instance to test
+     */
+    private static void testCollMutatorsAlwaysThrow(Collection<Integer> c) {
+        THROWS(UnsupportedOperationException.class,
+                () -> c.addAll(Collections.emptyList()),
+                () -> c.remove(ABSENT_VALUE),
+                () -> c.removeAll(Collections.emptyList()),
+                () -> c.removeIf(x -> false),
+                () -> c.retainAll(c));
+    }
+
+    /**
+     * Test that calling a mutator always throws UOE, even if the mutator
+     * wouldn't actually do anything on an empty collection.
+     *
+     * @param c the collection instance to test, must be empty
+     */
+    private static void testEmptyCollMutatorsAlwaysThrow(Collection<Integer> c) {
+        if (! c.isEmpty()) {
+            fail("collection is not empty");
+        }
+        THROWS(UnsupportedOperationException.class,
+                () -> c.clear());
+    }
+
+    /**
+     * As above, for a list.
+     *
+     * @param c the list instance to test
+     */
+    private static void testListMutatorsAlwaysThrow(List<Integer> c) {
+        testCollMutatorsAlwaysThrow(c);
+        THROWS(UnsupportedOperationException.class,
+                () -> c.addAll(0, Collections.emptyList()));
+    }
+
+    /**
+     * As above, for an empty list.
+     *
+     * @param c the list instance to test, must be empty
+     */
+    private static void testEmptyListMutatorsAlwaysThrow(List<Integer> c) {
+        if (! c.isEmpty()) {
+            fail("list is not empty");
+        }
+        testEmptyCollMutatorsAlwaysThrow(c);
+        THROWS(UnsupportedOperationException.class,
+                () -> c.replaceAll(x -> x),
+                () -> c.sort(null));
+    }
+
+    /**
+     * As above, for a map.
+     *
+     * @param m the map instance to test
+     */
+    private static void testMapMutatorsAlwaysThrow(Map<Integer,Integer> m) {
+        THROWS(UnsupportedOperationException.class,
+                () -> m.compute(ABSENT_VALUE, (k, v) -> null),
+                () -> m.computeIfAbsent(ABSENT_VALUE, k -> null),
+                () -> m.computeIfPresent(ABSENT_VALUE, (k, v) -> null),
+                () -> m.merge(ABSENT_VALUE, 0, (k, v) -> null),
+                () -> m.putAll(Collections.emptyMap()),
+                () -> m.remove(ABSENT_VALUE),
+                () -> m.remove(ABSENT_VALUE, 0),
+                () -> m.replace(ABSENT_VALUE, 0),
+                () -> m.replace(ABSENT_VALUE, 0, 1));
+    }
+
+    /**
+     * As above, for an empty map.
+     *
+     * @param map the map instance to test, must be empty
+     */
+    private static void testEmptyMapMutatorsAlwaysThrow(Map<Integer,Integer> m) {
+        if (! m.isEmpty()) {
+            fail("map is not empty");
+        }
+        THROWS(UnsupportedOperationException.class,
+                () -> m.clear(),
+                () -> m.replaceAll((k, v) -> v));
     }
 
     private static void clear(Collection<Integer> c) {
