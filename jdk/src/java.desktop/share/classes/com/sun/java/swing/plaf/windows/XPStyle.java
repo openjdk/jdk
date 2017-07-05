@@ -479,6 +479,7 @@ class XPStyle {
 
         private final String string;
         private Dimension size = null;
+        private boolean switchStates = false;
 
         Skin(Component component, Part part) {
             this(component, part, null);
@@ -511,6 +512,14 @@ class XPStyle {
                 part.getControlName(null), part.getValue(),
                 0, boundingWidth, boundingHeight);
             return (insets != null) ? insets : new Insets(0, 0, 0, 0);
+        }
+
+        boolean haveToSwitchStates() {
+            return switchStates;
+        }
+
+        void switchStates(boolean b) {
+            switchStates = b;
         }
 
         private int getWidth(State state) {
@@ -689,7 +698,7 @@ class XPStyle {
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     static class GlyphButton extends JButton {
-        private Skin skin;
+        protected Skin skin;
 
         public GlyphButton(Component parent, Part part) {
             XPStyle xp = getXP();

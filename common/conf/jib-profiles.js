@@ -401,6 +401,8 @@ var getJibProfilesCommon = function (input, data) {
     common.boot_jdk_home = input.get("boot_jdk", "home_path") + "/jdk"
         + common.boot_jdk_subdirpart
         + (input.build_os == "macosx" ? ".jdk/Contents/Home" : "");
+    common.boot_jdk_platform = input.build_os + "-"
+        + (input.build_cpu == "x86" ? "i586" : input.build_cpu);
 
     return common;
 };
@@ -832,9 +834,6 @@ var getJibProfilesProfiles = function (input, common, data) {
  */
 var getJibProfilesDependencies = function (input, common) {
 
-    var boot_jdk_platform = input.build_os + "-"
-        + (input.build_cpu == "x86" ? "i586" : input.build_cpu);
-
     var devkit_platform_revisions = {
         linux_x64: "gcc4.9.2-OEL6.4+1.1",
         macosx_x64: "Xcode6.3-MacOSX10.9+1.0",
@@ -853,9 +852,9 @@ var getJibProfilesDependencies = function (input, common) {
             server: "javare",
             module: "jdk",
             revision: common.boot_jdk_revision,
-            checksum_file: boot_jdk_platform + "/MD5_VALUES",
-            file: boot_jdk_platform + "/jdk-" + common.boot_jdk_revision
-                + "-" + boot_jdk_platform + ".tar.gz",
+            checksum_file: common.boot_jdk_platform + "/MD5_VALUES",
+            file: common.boot_jdk_platform + "/jdk-" + common.boot_jdk_revision
+                + "-" + common.boot_jdk_platform + ".tar.gz",
             configure_args: "--with-boot-jdk=" + common.boot_jdk_home,
             environment_path: common.boot_jdk_home + "/bin"
         },

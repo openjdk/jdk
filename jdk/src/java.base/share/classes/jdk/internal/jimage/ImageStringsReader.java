@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,8 @@ import java.util.Objects;
  */
 public class ImageStringsReader implements ImageStrings {
     public static final int HASH_MULTIPLIER = 0x01000193;
+    public static final int POSITIVE_MASK = 0x7FFFFFFF;
+
     private final BasicImageReader reader;
 
     ImageStringsReader(BasicImageReader reader) {
@@ -54,40 +56,60 @@ public class ImageStringsReader implements ImageStrings {
         throw new InternalError("Can not add strings at runtime");
     }
 
-    private static int hashCode(byte[] bytes, int offset, int count, int seed) {
-        Objects.requireNonNull(bytes);
+    public static int hashCode(String s) {
+        return hashCode(s, HASH_MULTIPLIER);
+    }
 
-        if (offset < 0 || count < 0 || offset > bytes.length - count) {
-            throw new IndexOutOfBoundsException("offset=" + offset + ", count=" + count);
+    public static int hashCode(String s, int seed) {
+        return unmaskedHashCode(s, seed) & POSITIVE_MASK;
+    }
+
+    public static int hashCode(String module, String name) {
+        return hashCode(module, name, HASH_MULTIPLIER);
+    }
+
+    public static int hashCode(String module, String name, int seed) {
+        seed = unmaskedHashCode("/", seed);
+        seed = unmaskedHashCode(module, seed);
+        seed = unmaskedHashCode("/", seed);
+        seed = unmaskedHashCode(name, seed);
+        return seed & POSITIVE_MASK;
+    }
+
+    public static int unmaskedHashCode(String s, int seed) {
+        int slen = s.length();
+        byte[] buffer = null;
+
+        for (int i = 0; i < slen; i++) {
+            char ch = s.charAt(i);
+            int uch = ch & 0xFFFF;
+
+            if ((uch & ~0x7F) != 0) {
+                if (buffer == null) {
+                    buffer = new byte[8];
+                }
+                int mask = ~0x3F;
+                int n = 0;
+
+                do {
+                    buffer[n++] = (byte)(0x80 | (uch & 0x3F));
+                    uch >>= 6;
+                    mask >>= 1;
+                } while ((uch & mask) != 0);
+
+                buffer[n] = (byte)((mask << 1) | uch);
+
+                do {
+                    seed = (seed * HASH_MULTIPLIER) ^ (buffer[n--] & 0xFF);
+                } while (0 <= n);
+            } else if (uch == 0) {
+                seed = (seed * HASH_MULTIPLIER) ^ (0xC0);
+                seed = (seed * HASH_MULTIPLIER) ^ (0x80);
+            } else {
+                seed = (seed * HASH_MULTIPLIER) ^ (uch);
+            }
         }
-
-        int limit = offset + count;
-
-        if (limit < 0 || limit > bytes.length) {
-            throw new IndexOutOfBoundsException("limit=" + limit);
-        }
-
-        for (int i = offset; i < limit; i++) {
-            seed = (seed * HASH_MULTIPLIER) ^ (bytes[i] & 0xFF);
-        }
-
-        return seed & 0x7FFFFFFF;
-    }
-
-    public static int hashCode(byte[] bytes, int seed) {
-        return hashCode(bytes, 0, bytes.length, seed);
-    }
-
-    public static int hashCode(byte[] bytes) {
-        return hashCode(bytes, 0, bytes.length, HASH_MULTIPLIER);
-    }
-
-    public static int hashCode(String string, int seed) {
-        return hashCode(mutf8FromString(string), seed);
-    }
-
-    public static int hashCode(String string) {
-        return hashCode(mutf8FromString(string), HASH_MULTIPLIER);
+        return seed;
     }
 
     static int charsFromMUTF8Length(byte[] bytes, int offset, int count) {
@@ -179,7 +201,7 @@ public class ImageStringsReader implements ImageStrings {
         throw new InternalError("No terminating zero byte for modified UTF-8 byte sequence");
     }
 
-    static void charsFromByteBuffer(char chars[], ByteBuffer buffer) {
+    static void charsFromByteBuffer(char[] chars, ByteBuffer buffer) {
         int j = 0;
 
         while(buffer.hasRemaining()) {
@@ -228,10 +250,12 @@ public class ImageStringsReader implements ImageStrings {
         return new String(chars);
     }
 
-    static int mutf8FromCharsLength(char chars[]) {
+    static int mutf8FromStringLength(String s) {
         int length = 0;
+        int slen = s.length();
 
-        for (char ch : chars) {
+        for (int i = 0; i < slen; i++) {
+            char ch = s.charAt(i);
             int uch = ch & 0xFFFF;
 
             if ((uch & ~0x7F) != 0) {
@@ -255,14 +279,19 @@ public class ImageStringsReader implements ImageStrings {
         return length;
     }
 
-    static void mutf8FromChars(byte[] bytes, int offset, char chars[]) {
+    static void mutf8FromString(byte[] bytes, int offset, String s) {
         int j = offset;
-        byte[] buffer = new byte[8];
+        byte[] buffer = null;
+        int slen = s.length();
 
-        for (char ch : chars) {
+        for (int i = 0; i < slen; i++) {
+            char ch = s.charAt(i);
             int uch = ch & 0xFFFF;
 
             if ((uch & ~0x7F) != 0) {
+                if (buffer == null) {
+                    buffer = new byte[8];
+                }
                 int mask = ~0x3F;
                 int n = 0;
 
@@ -287,10 +316,9 @@ public class ImageStringsReader implements ImageStrings {
     }
 
     public static byte[] mutf8FromString(String string) {
-        char[] chars = string.toCharArray();
-        int length = mutf8FromCharsLength(chars);
+        int length = mutf8FromStringLength(string);
         byte[] bytes = new byte[length];
-        mutf8FromChars(bytes, 0, chars);
+        mutf8FromString(bytes, 0, string);
 
         return bytes;
     }
