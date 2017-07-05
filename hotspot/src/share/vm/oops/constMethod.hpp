@@ -469,7 +469,7 @@ public:
   }
 
   // Copy annotations from other ConstMethod
-  void copy_annotations_from(ConstMethod* cm);
+  void copy_annotations_from(ClassLoaderData* loader_data, ConstMethod* cm, TRAPS);
 
   // byte codes
   void    set_code(address code) {

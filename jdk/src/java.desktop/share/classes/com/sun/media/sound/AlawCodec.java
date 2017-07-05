@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,25 +30,26 @@ import java.util.Objects;
 import java.util.Vector;
 
 import javax.sound.sampled.AudioFormat;
+import javax.sound.sampled.AudioFormat.Encoding;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.spi.FormatConversionProvider;
 
 /**
  * A-law encodes linear data, and decodes a-law data to linear data.
  *
  * @author Kara Kytle
  */
-public final class AlawCodec extends SunCodec {
+public final class AlawCodec extends FormatConversionProvider {
 
     /* Tables used for A-law decoding */
 
     private static final byte[] ALAW_TABH = new byte[256];
     private static final byte[] ALAW_TABL = new byte[256];
 
-    private static final AudioFormat.Encoding[] alawEncodings = { AudioFormat.Encoding.ALAW, AudioFormat.Encoding.PCM_SIGNED };
-
-    private static final short seg_end [] = {0xFF, 0x1FF, 0x3FF,
-                                             0x7FF, 0xFFF, 0x1FFF, 0x3FFF, 0x7FFF};
+    private static final short seg_end[] = {
+            0xFF, 0x1FF, 0x3FF, 0x7FF, 0xFFF, 0x1FFF, 0x3FFF, 0x7FFF
+    };
 
     /**
      * Initializes the decode tables.
@@ -73,13 +74,14 @@ public final class AlawCodec extends SunCodec {
         }
     }
 
+    @Override
+    public AudioFormat.Encoding[] getSourceEncodings() {
+        return new Encoding[]{Encoding.ALAW, Encoding.PCM_SIGNED};
+    }
 
-    /**
-     * Constructs a new ALAW codec object.
-     */
-    public AlawCodec() {
-
-        super(alawEncodings, alawEncodings);
+    @Override
+    public AudioFormat.Encoding[] getTargetEncodings() {
+        return getSourceEncodings();
     }
 
     @Override

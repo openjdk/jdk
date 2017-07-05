@@ -3768,10 +3768,21 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   SystemDictionary::compute_java_system_loader(CHECK_(JNI_ERR));
 
 #if INCLUDE_JVMCI
-  if (EnableJVMCI && UseJVMCICompiler && (!UseInterpreter || !BackgroundCompilation)) {
-    // 8145270: Force initialization of JVMCI runtime otherwise requests for blocking
-    // compilations via JVMCI will not actually block until JVMCI is initialized.
-    JVMCIRuntime::force_initialization(CHECK_JNI_ERR);
+  if (EnableJVMCI) {
+    // Initialize JVMCI eagerly if JVMCIPrintProperties is enabled.
+    // The JVMCI Java initialization code will read this flag and
+    // do the printing if it's set.
+    bool init = JVMCIPrintProperties;
+
+    if (!init) {
+      // 8145270: Force initialization of JVMCI runtime otherwise requests for blocking
+      // compilations via JVMCI will not actually block until JVMCI is initialized.
+      init = UseJVMCICompiler && (!UseInterpreter || !BackgroundCompilation);
+    }
+
+    if (init) {
+      JVMCIRuntime::force_initialization(CHECK_JNI_ERR);
+    }
   }
 #endif
 

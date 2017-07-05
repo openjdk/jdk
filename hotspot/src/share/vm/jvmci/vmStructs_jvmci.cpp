@@ -169,6 +169,8 @@
   nonstatic_field(JVMCIEnv,                    _task,                                         CompileTask*)                          \
   nonstatic_field(JVMCIEnv,                    _jvmti_can_hotswap_or_post_breakpoint,         bool)                                  \
                                                                                                                                      \
+  nonstatic_field(InvocationCounter,           _counter,                                      unsigned int)                          \
+                                                                                                                                     \
   nonstatic_field(Klass,                       _secondary_super_cache,                        Klass*)                                \
   nonstatic_field(Klass,                       _secondary_supers,                             Array<Klass*>*)                        \
   nonstatic_field(Klass,                       _super,                                        Klass*)                                \
@@ -199,13 +201,34 @@
   volatile_nonstatic_field(Method,             _code,                                         CompiledMethod*)                       \
   volatile_nonstatic_field(Method,             _from_compiled_entry,                          address)                               \
                                                                                                                                      \
+  nonstatic_field(MethodCounters,              _nmethod_age,                                  int)                                   \
+  nonstatic_field(MethodCounters,              _interpreter_invocation_limit,                 int)                                   \
+  nonstatic_field(MethodCounters,              _interpreter_backward_branch_limit,            int)                                   \
+  nonstatic_field(MethodCounters,              _interpreter_profile_limit,                    int)                                   \
+  nonstatic_field(MethodCounters,              _invoke_mask,                                  int)                                   \
+  nonstatic_field(MethodCounters,              _backedge_mask,                                int)                                   \
+  nonstatic_field(MethodCounters,              _interpreter_invocation_count,                 int)                                   \
+  nonstatic_field(MethodCounters,              _interpreter_throwout_count,                   u2)                                    \
+  JVMTI_ONLY(nonstatic_field(MethodCounters,   _number_of_breakpoints,                        u2))                                   \
   nonstatic_field(MethodCounters,              _invocation_counter,                           InvocationCounter)                     \
   nonstatic_field(MethodCounters,              _backedge_counter,                             InvocationCounter)                     \
                                                                                                                                      \
   nonstatic_field(MethodData,                  _size,                                         int)                                   \
+  nonstatic_field(MethodData,                  _method,                                       Method*)                               \
   nonstatic_field(MethodData,                  _data_size,                                    int)                                   \
   nonstatic_field(MethodData,                  _data[0],                                      intptr_t)                              \
+  nonstatic_field(MethodData,                  _parameters_type_data_di,                      int)                                   \
+  nonstatic_field(MethodData,                  _nof_decompiles,                               uint)                                  \
+  nonstatic_field(MethodData,                  _nof_overflow_recompiles,                      uint)                                  \
+  nonstatic_field(MethodData,                  _nof_overflow_traps,                           uint)                                  \
   nonstatic_field(MethodData,                  _trap_hist._array[0],                          u1)                                    \
+  nonstatic_field(MethodData,                  _eflags,                                       intx)                                  \
+  nonstatic_field(MethodData,                  _arg_local,                                    intx)                                  \
+  nonstatic_field(MethodData,                  _arg_stack,                                    intx)                                  \
+  nonstatic_field(MethodData,                  _arg_returned,                                 intx)                                  \
+  nonstatic_field(MethodData,                  _tenure_traps,                                 uint)                                  \
+  nonstatic_field(MethodData,                  _invoke_mask,                                  int)                                   \
+  nonstatic_field(MethodData,                  _backedge_mask,                                int)                                   \
   nonstatic_field(MethodData,                  _jvmci_ir_size,                                int)                                   \
                                                                                                                                      \
   nonstatic_field(nmethod,                     _verified_entry_point,                         address)                               \
@@ -290,6 +313,7 @@
   declare_toplevel_type(ExceptionTableElement)                            \
   declare_toplevel_type(Flag)                                             \
   declare_toplevel_type(Flag*)                                            \
+  declare_toplevel_type(InvocationCounter)                                \
   declare_toplevel_type(JVMCIEnv)                                         \
   declare_toplevel_type(LocalVariableTableElement)                        \
   declare_toplevel_type(narrowKlass)                                      \
@@ -688,7 +712,6 @@
   declare_constant(VM_Version::sun4v_m)                                   \
   declare_constant(VM_Version::blk_init_instructions_m)                   \
   declare_constant(VM_Version::fmaf_instructions_m)                       \
-  declare_constant(VM_Version::fmau_instructions_m)                       \
   declare_constant(VM_Version::sparc64_family_m)                          \
   declare_constant(VM_Version::M_family_m)                                \
   declare_constant(VM_Version::T_family_m)                                \

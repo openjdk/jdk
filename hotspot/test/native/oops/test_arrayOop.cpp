@@ -43,47 +43,47 @@ static bool check_max_length_overflow(BasicType type) {
   return (julong) (size_t) bytes == bytes;
 }
 
-TEST(arrayOopDesc, boolean) {
+TEST_VM(arrayOopDesc, boolean) {
   ASSERT_PRED1(check_max_length_overflow, T_BOOLEAN);
 }
 
-TEST(arrayOopDesc, char) {
+TEST_VM(arrayOopDesc, char) {
   ASSERT_PRED1(check_max_length_overflow, T_CHAR);
 }
 
-TEST(arrayOopDesc, float) {
+TEST_VM(arrayOopDesc, float) {
   ASSERT_PRED1(check_max_length_overflow, T_FLOAT);
 }
 
-TEST(arrayOopDesc, double) {
+TEST_VM(arrayOopDesc, double) {
   ASSERT_PRED1(check_max_length_overflow, T_DOUBLE);
 }
 
-TEST(arrayOopDesc, byte) {
+TEST_VM(arrayOopDesc, byte) {
   ASSERT_PRED1(check_max_length_overflow, T_BYTE);
 }
 
-TEST(arrayOopDesc, short) {
+TEST_VM(arrayOopDesc, short) {
   ASSERT_PRED1(check_max_length_overflow, T_SHORT);
 }
 
-TEST(arrayOopDesc, int) {
+TEST_VM(arrayOopDesc, int) {
   ASSERT_PRED1(check_max_length_overflow, T_INT);
 }
 
-TEST(arrayOopDesc, long) {
+TEST_VM(arrayOopDesc, long) {
   ASSERT_PRED1(check_max_length_overflow, T_LONG);
 }
 
-TEST(arrayOopDesc, object) {
+TEST_VM(arrayOopDesc, object) {
   ASSERT_PRED1(check_max_length_overflow, T_OBJECT);
 }
 
-TEST(arrayOopDesc, array) {
+TEST_VM(arrayOopDesc, array) {
   ASSERT_PRED1(check_max_length_overflow, T_ARRAY);
 }
 
-TEST(arrayOopDesc, narrowOop) {
+TEST_VM(arrayOopDesc, narrowOop) {
   ASSERT_PRED1(check_max_length_overflow, T_NARROWOOP);
 }
 // T_VOID and T_ADDRESS are not supported by max_array_length()

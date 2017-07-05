@@ -1449,6 +1449,11 @@ public class LogManager {
                 h.close();
             } catch (Exception ex) {
                 // Problems closing a handler?  Keep going...
+            } catch (Error e) {
+                // ignore Errors while shutting down
+                if (globalHandlersState != STATE_SHUTDOWN) {
+                    throw e;
+                }
             }
         }
     }

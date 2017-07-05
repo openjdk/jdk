@@ -104,9 +104,9 @@ import sun.security.util.SecurityConstants;
  * class or resource itself.
  *
  * <p> Class loaders that support concurrent loading of classes are known as
- * <em>parallel capable</em> class loaders and are required to register
- * themselves at their class initialization time by invoking the
- * {@link
+ * <em>{@linkplain #isParallelCapable() parallel capable}</em> class loaders and
+ * are required to register themselves at their class initialization time by
+ * invoking the {@link
  * #registerAsParallelCapable <tt>ClassLoader.registerAsParallelCapable</tt>}
  * method. Note that the <tt>ClassLoader</tt> class is registered as parallel
  * capable by default. However, its subclasses still need to register themselves
@@ -1437,7 +1437,7 @@ public abstract class ClassLoader {
     }
 
     /**
-     * Registers the caller as parallel capable.
+     * Registers the caller as {@linkplain #isParallelCapable() parallel capable}.
      * The registration succeeds if and only if all of the following
      * conditions are met:
      * <ol>
@@ -1448,8 +1448,10 @@ public abstract class ClassLoader {
      * <p>Note that once a class loader is registered as parallel capable, there
      * is no way to change it back.</p>
      *
-     * @return  true if the caller is successfully registered as
-     *          parallel capable and false if otherwise.
+     * @return  {@code true} if the caller is successfully registered as
+     *          parallel capable and {@code false} if otherwise.
+     *
+     * @see #isParallelCapable()
      *
      * @since   1.7
      */
@@ -1458,6 +1460,22 @@ public abstract class ClassLoader {
         Class<? extends ClassLoader> callerClass =
             Reflection.getCallerClass().asSubclass(ClassLoader.class);
         return ParallelLoaders.register(callerClass);
+    }
+
+    /**
+     * Returns {@code true} if this class loader is
+     * {@linkplain #registerAsParallelCapable parallel capable}, otherwise
+     * {@code false}.
+     *
+     * @return  {@code true} if this class loader is parallel capable,
+     *          otherwise {@code false}.
+     *
+     * @see #registerAsParallelCapable()
+     *
+     * @since   9
+     */
+    public final boolean isParallelCapable() {
+        return ParallelLoaders.isRegistered(this.getClass());
     }
 
     /**
@@ -1662,6 +1680,15 @@ public abstract class ClassLoader {
      * examined until the VM is almost fully initialized. Code that executes
      * this method during startup should take care not to cache the return
      * value until the system is fully initialized.
+     *
+     * <p> The class path used by the built-in system class loader is determined
+     * by the system property "{@code java.class.path}" during early
+     * initialization of the VM. If the system property is not defined,
+     * or its value is an empty string, then there is no class path
+     * when the initial module is a module on the application module path,
+     * i.e. <em>a named module</em>. If the initial module is not on
+     * the application module path then the class path defaults to
+     * the current working directory.
      *
      * @return  The system <tt>ClassLoader</tt> for delegation
      *

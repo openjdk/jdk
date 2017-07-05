@@ -142,8 +142,8 @@ public abstract class KeyboardFocusManagerPeerImpl implements KeyboardFocusManag
     }
 
     // WARNING: Don't call it on the Toolkit thread.
-    public static boolean requestFocusFor(Component target, FocusEvent.Cause cause) {
-        return AWTAccessor.getComponentAccessor().requestFocus(target, cause);
+    public static void requestFocusFor(Component target, FocusEvent.Cause cause) {
+        AWTAccessor.getComponentAccessor().requestFocus(target, cause);
     }
 
     // WARNING: Don't call it on the Toolkit thread.

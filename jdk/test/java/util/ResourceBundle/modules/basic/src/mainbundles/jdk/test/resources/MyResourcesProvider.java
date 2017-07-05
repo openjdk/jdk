@@ -62,9 +62,7 @@ public class MyResourcesProvider extends AbstractResourceBundleProvider {
 
     @Override
     protected String toBundleName(String baseName, Locale locale) {
-        // The resource bundle for Locale.JAPAN is loccated at jdk.test.resources
-        // in module "asiabundles".
-        String name = locale.equals(Locale.JAPAN) ? baseName : addRegion(baseName);
+        String name = addRegion(baseName);
         return Control.getControl(Control.FORMAT_DEFAULT).toBundleName(name, locale);
     }
 

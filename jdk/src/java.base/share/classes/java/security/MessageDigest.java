@@ -26,13 +26,8 @@
 package java.security;
 
 import java.util.*;
-import java.lang.*;
-import java.io.IOException;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
-import java.io.InputStream;
-import java.io.ByteArrayInputStream;
-import java.security.InvalidKeyException;
 import java.nio.ByteBuffer;
 
 import sun.security.util.Debug;
@@ -163,16 +158,20 @@ public abstract class MessageDigest extends MessageDigestSpi {
      * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
      * for information about standard algorithm names.
      *
-     * @return a Message Digest object that implements the specified algorithm.
+     * @return a {@code MessageDigest} object that implements the
+     *         specified algorithm
      *
-     * @exception NoSuchAlgorithmException if no Provider supports a
-     *          MessageDigestSpi implementation for the
-     *          specified algorithm.
+     * @throws NoSuchAlgorithmException if no {@code Provider} supports a
+     *         {@code MessageDigestSpi} implementation for the
+     *         specified algorithm
+     *
+     * @throws NullPointerException if {@code algorithm} is {@code null}
      *
      * @see Provider
      */
     public static MessageDigest getInstance(String algorithm)
     throws NoSuchAlgorithmException {
+        Objects.requireNonNull(algorithm, "null algorithm name");
         try {
             MessageDigest md;
             Object[] objs = Security.getImpl(algorithm, "MessageDigest",
@@ -216,23 +215,27 @@ public abstract class MessageDigest extends MessageDigestSpi {
      *
      * @param provider the name of the provider.
      *
-     * @return a MessageDigest object that implements the specified algorithm.
+     * @return a {@code MessageDigest} object that implements the
+     *         specified algorithm
      *
-     * @exception NoSuchAlgorithmException if a MessageDigestSpi
-     *          implementation for the specified algorithm is not
-     *          available from the specified provider.
+     * @throws IllegalArgumentException if the provider name is {@code null}
+     *         or empty
      *
-     * @exception NoSuchProviderException if the specified provider is not
-     *          registered in the security provider list.
+     * @throws NoSuchAlgorithmException if a {@code MessageDigestSpi}
+     *         implementation for the specified algorithm is not
+     *         available from the specified provider
      *
-     * @exception IllegalArgumentException if the provider name is null
-     *          or empty.
+     * @throws NoSuchProviderException if the specified provider is not
+     *         registered in the security provider list
+     *
+     * @throws NullPointerException if {@code algorithm} is {@code null}
      *
      * @see Provider
      */
     public static MessageDigest getInstance(String algorithm, String provider)
         throws NoSuchAlgorithmException, NoSuchProviderException
     {
+        Objects.requireNonNull(algorithm, "null algorithm name");
         if (provider == null || provider.length() == 0)
             throw new IllegalArgumentException("missing provider");
         Object[] objs = Security.getImpl(algorithm, "MessageDigest", provider);
@@ -265,13 +268,17 @@ public abstract class MessageDigest extends MessageDigestSpi {
      *
      * @param provider the provider.
      *
-     * @return a MessageDigest object that implements the specified algorithm.
+     * @return a {@code MessageDigest} object that implements the
+     *         specified algorithm
      *
-     * @exception NoSuchAlgorithmException if a MessageDigestSpi
-     *          implementation for the specified algorithm is not available
-     *          from the specified Provider object.
+     * @throws IllegalArgumentException if the specified provider is
+     *         {@code null}
      *
-     * @exception IllegalArgumentException if the specified provider is null.
+     * @throws NoSuchAlgorithmException if a {@code MessageDigestSpi}
+     *         implementation for the specified algorithm is not available
+     *         from the specified {@code Provider} object
+     *
+     * @throws NullPointerException if {@code algorithm} is {@code null}
      *
      * @see Provider
      *
@@ -281,6 +288,7 @@ public abstract class MessageDigest extends MessageDigestSpi {
                                             Provider provider)
         throws NoSuchAlgorithmException
     {
+        Objects.requireNonNull(algorithm, "null algorithm name");
         if (provider == null)
             throw new IllegalArgumentException("missing provider");
         Object[] objs = Security.getImpl(algorithm, "MessageDigest", provider);
