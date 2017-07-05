@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@
 //     ...                        | monitor block size
 //    [monitors              ]   /
 //    [monitor block size    ]
-//    [byte code index/pointr]                   = bcx()                bcx_offset
+//    [byte code pointer     ]                   = bcp()                bcp_offset
 //    [pointer to locals     ]                   = locals()             locals_offset
 //    [constant pool cache   ]                   = cache()              cache_offset
 //    [methodData            ]                   = mdp()                mdx_offset
@@ -111,11 +111,11 @@
     // outgoing sp before a call to an invoked method
     interpreter_frame_last_sp_offset                 = interpreter_frame_sender_sp_offset - 1,
     interpreter_frame_method_offset                  = interpreter_frame_last_sp_offset - 1,
-    interpreter_frame_mdx_offset                     = interpreter_frame_method_offset - 1,
-    interpreter_frame_cache_offset                   = interpreter_frame_mdx_offset - 1,
+    interpreter_frame_mdp_offset                     = interpreter_frame_method_offset - 1,
+    interpreter_frame_cache_offset                   = interpreter_frame_mdp_offset - 1,
     interpreter_frame_locals_offset                  = interpreter_frame_cache_offset - 1,
-    interpreter_frame_bcx_offset                     = interpreter_frame_locals_offset - 1,
-    interpreter_frame_initial_sp_offset              = interpreter_frame_bcx_offset - 1,
+    interpreter_frame_bcp_offset                     = interpreter_frame_locals_offset - 1,
+    interpreter_frame_initial_sp_offset              = interpreter_frame_bcp_offset - 1,
 
     interpreter_frame_monitor_block_top_offset       = interpreter_frame_initial_sp_offset,
     interpreter_frame_monitor_block_bottom_offset    = interpreter_frame_initial_sp_offset,

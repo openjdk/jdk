@@ -44,28 +44,5 @@ inline VMReg SpecialRegisterImpl::as_VMReg() {
   return VMRegImpl::as_VMReg((encoding()) + ConcreteRegisterImpl::max_cnd);
 }
 
-inline bool VMRegImpl::is_Register() {
-  return (unsigned int)value() < (unsigned int)ConcreteRegisterImpl::max_gpr;
-}
-
-inline bool VMRegImpl::is_FloatRegister() {
-  return value() >= ConcreteRegisterImpl::max_gpr &&
-         value() < ConcreteRegisterImpl::max_fpr;
-}
-
-inline Register VMRegImpl::as_Register() {
-  assert(is_Register() && is_even(value()), "even-aligned GPR name");
-  return ::as_Register(value()>>1);
-}
-
-inline FloatRegister VMRegImpl::as_FloatRegister() {
-  assert(is_FloatRegister() && is_even(value()), "must be");
-  return ::as_FloatRegister((value() - ConcreteRegisterImpl::max_gpr) >> 1);
-}
-
-inline bool VMRegImpl::is_concrete() {
-  assert(is_reg(), "must be");
-  return is_even(value());
-}
 
 #endif // CPU_PPC_VM_VMREG_PPC_INLINE_HPP

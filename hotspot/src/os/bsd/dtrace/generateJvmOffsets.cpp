@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -202,11 +202,11 @@ int generateJvmOffsets(GEN_variant gen_variant) {
   GEN_VALUE(OFFSET_interpreter_frame_method, 2 * pointer_size);     /* L2 in saved window */
   GEN_VALUE(OFFSET_interpreter_frame_sender_sp, 13 * pointer_size); /* I5 in saved window */
   // Fake value for consistency. It is not going to be used.
-  GEN_VALUE(OFFSET_interpreter_frame_bcx_offset, 0xFFFF);
+  GEN_VALUE(OFFSET_interpreter_frame_bcp_offset, 0xFFFF);
 #elif defined(i386) || defined(__i386) || defined(__amd64)
   GEN_VALUE(OFFSET_interpreter_frame_sender_sp, -1 * pointer_size);
   GEN_VALUE(OFFSET_interpreter_frame_method, -3 * pointer_size);
-  GEN_VALUE(OFFSET_interpreter_frame_bcx_offset, -7 * pointer_size);
+  GEN_VALUE(OFFSET_interpreter_frame_bcp_offset, -7 * pointer_size);
 #endif
 
   GEN_OFFS(Klass, _name);
