@@ -114,7 +114,11 @@ final class JavaAdapterClassLoader {
             @Override
             public Class<?> loadClass(final String name, final boolean resolve) throws ClassNotFoundException {
                 try {
-                    Context.checkPackageAccess(name);
+                    final int i = name.lastIndexOf('.');
+                    if(i != -1){
+                        final String pkgName = name.substring(0,i);
+                        Context.checkPackageAccess(pkgName);
+                    }
                     return super.loadClass(name, resolve);
                 } catch (final SecurityException se) {
                     // we may be implementing an interface or extending a class that was

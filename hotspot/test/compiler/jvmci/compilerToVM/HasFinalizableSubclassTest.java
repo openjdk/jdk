@@ -31,7 +31,8 @@
  * @modules jdk.internal.vm.ci/jdk.vm.ci.hotspot
  * @build jdk.internal.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
- *                  compiler.jvmci.compilerToVM.HasFinalizableSubclassTest
+ *                   -Djvmci.Compiler=null
+ *                   compiler.jvmci.compilerToVM.HasFinalizableSubclassTest
  */
 
 package compiler.jvmci.compilerToVM;

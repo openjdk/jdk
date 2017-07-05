@@ -52,7 +52,7 @@ class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
     private boolean isWebSocket;
     private AccessControlContext acc;
     private final Duration duration;
-    private final HttpClient.Version version;
+    private final Optional<HttpClient.Version> version;
 
     /**
      * Creates an HttpRequestImpl from the given builder.
@@ -128,8 +128,8 @@ class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
         this.authority = authority;
         this.secure = false;
         this.expectContinue = false;
-        this.duration = null; // block TODO: fix
-        this.version = client.version(); // TODO: ??
+        this.duration = null;
+        this.version = Optional.of(client.version());
     }
 
     /**
@@ -191,12 +191,6 @@ class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
     @Override
     public boolean expectContinue() { return expectContinue; }
 
-    public boolean requestHttp2() {
-        return version.equals(HttpClient.Version.HTTP_2);
-    }
-
-//    AccessControlContext getAccessControlContext() { return acc; }
-
     InetSocketAddress proxy(HttpClientImpl client) {
         ProxySelector ps = client.proxy().orElse(null);
         if (ps == null) {
@@ -254,7 +248,7 @@ class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
     HttpHeadersImpl getSystemHeaders() { return systemHeaders; }
 
     @Override
-    public HttpClient.Version version() { return version; }
+    public Optional<HttpClient.Version> version() { return version; }
 
     void addSystemHeader(String name, String value) {
         systemHeaders.addHeader(name, value);

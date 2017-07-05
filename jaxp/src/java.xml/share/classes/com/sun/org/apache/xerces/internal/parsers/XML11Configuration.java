@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -506,7 +506,8 @@ public class XML11Configuration extends ParserConfigurationSettings
             EXTERNAL_PARAMETER_ENTITIES,
             PARSER_SETTINGS,
             XMLConstants.FEATURE_SECURE_PROCESSING,
-            XMLConstants.USE_CATALOG
+            XMLConstants.USE_CATALOG,
+            JdkXmlUtils.RESET_SYMBOL_TABLE
         };
         addRecognizedFeatures(recognizedFeatures);
         // set state for default features
@@ -532,6 +533,7 @@ public class XML11Configuration extends ParserConfigurationSettings
         fFeatures.put(PARSER_SETTINGS, Boolean.TRUE);
         fFeatures.put(XMLConstants.FEATURE_SECURE_PROCESSING, Boolean.TRUE);
         fFeatures.put(XMLConstants.USE_CATALOG, JdkXmlUtils.USE_CATALOG_DEFAULT);
+        fFeatures.put(JdkXmlUtils.RESET_SYMBOL_TABLE, JdkXmlUtils.RESET_SYMBOL_TABLE_DEFAULT);
 
         // add default recognized properties
         final String[] recognizedProperties =
@@ -1585,11 +1587,12 @@ public class XML11Configuration extends ParserConfigurationSettings
 
 
     /**
-     * Reset the symbol table if it wasn't provided during construction
-     * and its not the first time when parse is called after initialization
+     * Reset the symbol table if it wasn't provided during construction,
+     * its not the first time when parse is called after initialization
+     * and RESET_SYMBOL_TABLE feature is set to true
      */
     private void resetSymbolTable() {
-        if (!fSymbolTableProvided) {
+        if (fFeatures.get(JdkXmlUtils.RESET_SYMBOL_TABLE) && !fSymbolTableProvided) {
             if (fSymbolTableJustInitialized) {
                 // Skip symbol table reallocation for the first parsing process
                 fSymbolTableJustInitialized = false;
