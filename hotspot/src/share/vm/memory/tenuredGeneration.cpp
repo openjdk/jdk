@@ -419,29 +419,16 @@ void TenuredGeneration::retire_alloc_buffers_before_full_gc() {}
 void TenuredGeneration::verify_alloc_buffers_clean() {}
 #endif // SERIALGC
 
-bool TenuredGeneration::promotion_attempt_is_safe(
-    size_t max_promotion_in_bytes,
-    bool younger_handles_promotion_failure) const {
-
-  bool result = max_contiguous_available() >= max_promotion_in_bytes;
-
-  if (younger_handles_promotion_failure && !result) {
-    result = max_contiguous_available() >=
-      (size_t) gc_stats()->avg_promoted()->padded_average();
-    if (PrintGC && Verbose && result) {
-      gclog_or_tty->print_cr("TenuredGeneration::promotion_attempt_is_safe"
-                  " contiguous_available: " SIZE_FORMAT
-                  " avg_promoted: " SIZE_FORMAT,
-                  max_contiguous_available(),
-                  gc_stats()->avg_promoted()->padded_average());
-    }
-  } else {
-    if (PrintGC && Verbose) {
-      gclog_or_tty->print_cr("TenuredGeneration::promotion_attempt_is_safe"
-                  " contiguous_available: " SIZE_FORMAT
-                  " promotion_in_bytes: " SIZE_FORMAT,
-                  max_contiguous_available(), max_promotion_in_bytes);
-    }
+bool TenuredGeneration::promotion_attempt_is_safe(size_t max_promotion_in_bytes) const {
+  size_t available = max_contiguous_available();
+  size_t av_promo  = (size_t)gc_stats()->avg_promoted()->padded_average();
+  bool   res = (available >= av_promo) || (available >= max_promotion_in_bytes);
+  if (PrintGC && Verbose) {
+    gclog_or_tty->print_cr(
+      "Tenured: promo attempt is%s safe: available("SIZE_FORMAT") %s av_promo("SIZE_FORMAT"),"
+      "max_promo("SIZE_FORMAT")",
+      res? "":" not", available, res? ">=":"<",
+      av_promo, max_promotion_in_bytes);
   }
-  return result;
+  return res;
 }

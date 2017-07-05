@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug     4959889
+ * @bug     4959889 6992968
  * @summary Basic unit test of memory management testing:
  *          1) setCollectionUsageThreshold() and getCollectionUsageThreshold()
  *          2) test notification emitted for two different memory pools.
@@ -34,8 +34,10 @@
  * @run main/timeout=300 CollectionUsageThreshold
  */
 
+import java.lang.Thread.*;
 import java.lang.management.*;
 import java.util.*;
+import java.util.concurrent.*;
 import javax.management.*;
 import javax.management.openmbean.CompositeData;
 
@@ -51,6 +53,12 @@ public class CollectionUsageThreshold {
     private static final int THRESHOLD = 10;
     private static Checker checker;
     private static int numGCs = 0;
+
+    // semaphore to signal the arrival of a low memory notification
+    private static Semaphore signals = new Semaphore(0);
+    // barrier for the main thread to wait until the checker thread
+    // finishes checking the low memory notification result
+    private static CyclicBarrier barrier = new CyclicBarrier(2);
 
     static class PoolRecord {
         private MemoryPoolMXBean pool;
@@ -98,10 +106,9 @@ public class CollectionUsageThreshold {
                 }
                 pr.addNotification(minfo);
                 synchronized (this) {
+                    System.out.println("notifying the checker thread to check result");
                     numNotifs++;
-                    if (numNotifs > 0 && (numNotifs % EXPECTED_NUM_POOLS) == 0) {
-                        checker.goCheckResult();
-                    }
+                    signals.release();
                 }
             }
         }
@@ -134,6 +141,9 @@ public class CollectionUsageThreshold {
         }
 
         try {
+            // This test creates a checker thread responsible for checking
+            // the low memory notifications.  It blocks until a permit
+            // from the signals semaphore is available.
             checker = new Checker("Checker thread");
             checker.setDaemon(true);
             checker.start();
@@ -148,9 +158,18 @@ public class CollectionUsageThreshold {
             NotificationEmitter emitter = (NotificationEmitter) mm;
             emitter.addNotificationListener(listener, null, null);
 
+            // The main thread invokes GC to trigger the VM to perform
+            // low memory detection and then waits until the checker thread
+            // finishes its work to check for a low-memory notification.
+            //
+            // At GC time, VM will issue low-memory notification and invoke
+            // the listener which will release a permit to the signals semaphore.
+            // When the checker thread acquires the permit and finishes
+            // checking the low-memory notification, it will also call
+            // barrier.await() to signal the main thread to resume its work.
             for (int i = 0; i < NUM_GCS; i++) {
                 invokeGC();
-                checker.waitForCheckResult();
+                barrier.await();
             }
         } finally {
             // restore the default
@@ -166,6 +185,7 @@ public class CollectionUsageThreshold {
 
     }
 
+
     private static void invokeGC() {
         System.out.println("Calling System.gc()");
         numGCs++;
@@ -180,8 +200,6 @@ public class CollectionUsageThreshold {
     }
 
     static class Checker extends Thread {
-        private Object lock = new Object();
-        private Object go = new Object();
         private boolean checkerReady = false;
         private int waiters = 0;
         private boolean readyToCheck = false;
@@ -190,83 +208,48 @@ public class CollectionUsageThreshold {
         };
         public void run() {
             while (true) {
-                synchronized (lock) {
-                    checkerReady = true;
-                    try {
-                        lock.wait();
-                    } catch (InterruptedException e) {
-                        // ignore
-                    }
+                try {
+                    signals.acquire(EXPECTED_NUM_POOLS);
                     checkResult();
-                    checkerReady = false;
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                } catch (BrokenBarrierException e) {
+                    throw new RuntimeException(e);
                 }
             }
         }
-        private void checkResult() {
+        private void checkResult() throws InterruptedException, BrokenBarrierException {
             for (PoolRecord pr : result.values()) {
                 if (pr.getListenerInvokedCount() != numGCs) {
-                    throw new RuntimeException("Listeners invoked count = " +
+                    fail("Listeners invoked count = " +
                          pr.getListenerInvokedCount() + " expected to be " +
                          numGCs);
                 }
                 if (pr.getNotifCount() != numGCs) {
-                    throw new RuntimeException("Notif Count = " +
+                    fail("Notif Count = " +
                          pr.getNotifCount() + " expected to be " +
                          numGCs);
                 }
 
                 long count = pr.getPool().getCollectionUsageThresholdCount();
                 if (count != numGCs) {
-                    throw new RuntimeException("CollectionUsageThresholdCount = " +
+                    fail("CollectionUsageThresholdCount = " +
                          count + " expected to be " + numGCs);
                 }
                 if (!pr.getPool().isCollectionUsageThresholdExceeded()) {
-                    throw new RuntimeException("isCollectionUsageThresholdExceeded" +
+                    fail("isCollectionUsageThresholdExceeded" +
                          " expected to be true");
                 }
             }
-            synchronized (go) {
-                // wait until the main thread is waiting for notification
-                while (waiters == 0) {
-                    try {
-                        go.wait(50);
-                    } catch (InterruptedException e) {
-                        // ignore
-                    }
-                }
-
-                System.out.println(Thread.currentThread().getName() +
-                    " notifying main thread to continue - result checking finished");
-                go.notify();
-            }
-        }
-        public void goCheckResult() {
-            System.out.println(Thread.currentThread().getName() +
-                " notifying to check result");
-            synchronized (lock) {
-                while (!checkerReady) {
-                    try {
-                        lock.wait(50);
-                    } catch (InterruptedException e) {
-                        // ignore
-                    }
-                }
-                lock.notify();
-            }
+            // wait until the main thread is waiting for notification
+            barrier.await();
+            System.out.println("notifying main thread to continue - result checking finished");
         }
 
-        public void waitForCheckResult() {
-            System.out.println(Thread.currentThread().getName() +
-                " waiting for result checking finishes");
-            synchronized (go) {
-                waiters++;
-                try {
-                    go.wait();
-                } catch (InterruptedException e) {
-                    // ignore
-                }
-                waiters--;
-            }
+        private void fail(String msg) {
+            // reset the barrier to cause BrokenBarrierException to avoid hanging
+            barrier.reset();
+            throw new RuntimeException(msg);
         }
     }
 }

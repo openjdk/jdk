@@ -44,13 +44,14 @@ import java.io.ObjectInputStream;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
-import java.util.Hashtable;
 import java.util.Locale;
 import java.util.Map;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import java.util.SimpleTimeZone;
 import java.util.TimeZone;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import sun.util.calendar.CalendarUtils;
 import sun.util.calendar.ZoneInfoFile;
 import sun.util.resources.LocaleData;
@@ -503,14 +504,14 @@ public class SimpleDateFormat extends DateFormat {
     /**
      * Cache to hold the DateTimePatterns of a Locale.
      */
-    private static Hashtable<String,String[]> cachedLocaleData
-        = new Hashtable<String,String[]>(3);
+    private static final ConcurrentMap<String, String[]> cachedLocaleData
+        = new ConcurrentHashMap<String, String[]>(3);
 
     /**
      * Cache NumberFormat instances with Locale key.
      */
-    private static Hashtable<Locale,NumberFormat> cachedNumberFormatData
-        = new Hashtable<Locale,NumberFormat>(3);
+    private static final ConcurrentMap<Locale, NumberFormat> cachedNumberFormatData
+        = new ConcurrentHashMap<Locale, NumberFormat>(3);
 
     /**
      * The Locale used to instantiate this
@@ -579,7 +580,7 @@ public class SimpleDateFormat extends DateFormat {
 
         initializeCalendar(locale);
         this.pattern = pattern;
-        this.formatData = DateFormatSymbols.getInstance(locale);
+        this.formatData = DateFormatSymbols.getInstanceRef(locale);
         this.locale = locale;
         initialize(locale);
     }
@@ -632,9 +633,9 @@ public class SimpleDateFormat extends DateFormat {
                 dateTimePatterns = r.getStringArray("DateTimePatterns");
             }
             /* update cache */
-            cachedLocaleData.put(key, dateTimePatterns);
+            cachedLocaleData.putIfAbsent(key, dateTimePatterns);
         }
-        formatData = DateFormatSymbols.getInstance(loc);
+        formatData = DateFormatSymbols.getInstanceRef(loc);
         if ((timeStyle >= 0) && (dateStyle >= 0)) {
             Object[] dateTimeArgs = {dateTimePatterns[timeStyle],
                                      dateTimePatterns[dateStyle + 4]};
@@ -665,7 +666,7 @@ public class SimpleDateFormat extends DateFormat {
             numberFormat.setGroupingUsed(false);
 
             /* update cache */
-            cachedNumberFormatData.put(loc, numberFormat);
+            cachedNumberFormatData.putIfAbsent(loc, numberFormat);
         }
         numberFormat = (NumberFormat) numberFormat.clone();
 
@@ -897,7 +898,7 @@ public class SimpleDateFormat extends DateFormat {
      * so we can call it from readObject().
      */
     private void initializeDefaultCentury() {
-        calendar.setTime( new Date() );
+        calendar.setTimeInMillis(System.currentTimeMillis());
         calendar.add( Calendar.YEAR, -80 );
         parseAmbiguousDatesAsAfter(calendar.getTime());
     }
@@ -921,7 +922,7 @@ public class SimpleDateFormat extends DateFormat {
      * @since 1.2
      */
     public void set2DigitYearStart(Date startDate) {
-        parseAmbiguousDatesAsAfter(startDate);
+        parseAmbiguousDatesAsAfter(new Date(startDate.getTime()));
     }
 
     /**
@@ -934,7 +935,7 @@ public class SimpleDateFormat extends DateFormat {
      * @since 1.2
      */
     public Date get2DigitYearStart() {
-        return defaultCenturyStart;
+        return (Date) defaultCenturyStart.clone();
     }
 
     /**

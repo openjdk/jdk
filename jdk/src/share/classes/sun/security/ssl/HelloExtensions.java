@@ -50,7 +50,8 @@ import javax.net.ssl.SSLProtocolException;
  *
  *  . UnknownExtension: used to represent all parsed extensions that we do not
  *      explicitly support.
- *  . ServerNameExtension: partially implemented server_name extension.
+ *  . ServerNameExtension: the server_name extension.
+ *  . SignatureAlgorithmsExtension: the signature_algorithms extension.
  *  . SupportedEllipticCurvesExtension: the ECC supported curves extension.
  *  . SupportedEllipticPointFormatsExtension: the ECC supported point formats
  *      (compressed/uncompressed) extension.
@@ -78,6 +79,8 @@ final class HelloExtensions {
             HelloExtension extension;
             if (extType == ExtensionType.EXT_SERVER_NAME) {
                 extension = new ServerNameExtension(s, extlen);
+            } else if (extType == ExtensionType.EXT_SIGNATURE_ALGORITHMS) {
+                extension = new SignatureAlgorithmsExtension(s, extlen);
             } else if (extType == ExtensionType.EXT_ELLIPTIC_CURVES) {
                 extension = new SupportedEllipticCurvesExtension(s, extlen);
             } else if (extType == ExtensionType.EXT_EC_POINT_FORMATS) {
@@ -266,31 +269,102 @@ final class UnknownExtension extends HelloExtension {
     }
 
     public String toString() {
-        return "Unsupported extension " + type + ", data: " + Debug.toString(data);
+        return "Unsupported extension " + type + ", data: " +
+            Debug.toString(data);
     }
 }
 
 /*
- * Support for the server_name extension is incomplete. Parsing is implemented
- * so that we get nicer debug output, but we neither send it nor do we do
- * act on it if we receive it.
+ * [RFC4366] To facilitate secure connections to servers that host multiple
+ * 'virtual' servers at a single underlying network address, clients MAY
+ * include an extension of type "server_name" in the (extended) client hello.
+ * The "extension_data" field of this extension SHALL contain "ServerNameList"
+ * where:
+ *
+ *     struct {
+ *         NameType name_type;
+ *         select (name_type) {
+ *             case host_name: HostName;
+ *         } name;
+ *     } ServerName;
+ *
+ *     enum {
+ *         host_name(0), (255)
+ *     } NameType;
+ *
+ *     opaque HostName<1..2^16-1>;
+ *
+ *     struct {
+ *         ServerName server_name_list<1..2^16-1>
+ *     } ServerNameList;
  */
 final class ServerNameExtension extends HelloExtension {
 
     final static int NAME_HOST_NAME = 0;
 
     private List<ServerName> names;
+    private int listLength;     // ServerNameList length
+
+    ServerNameExtension(List<String> hostnames) throws IOException {
+        super(ExtensionType.EXT_SERVER_NAME);
+
+        listLength = 0;
+        names = new ArrayList<ServerName>(hostnames.size());
+        for (String hostname : hostnames) {
+            if (hostname != null && hostname.length() != 0) {
+                // we only support DNS hostname now.
+                ServerName serverName =
+                        new ServerName(NAME_HOST_NAME, hostname);
+                names.add(serverName);
+                listLength += serverName.length;
+            }
+        }
+
+        // As we only support DNS hostname now, the hostname list must
+        // not contain more than one hostname
+        if (names.size() > 1) {
+            throw new SSLProtocolException(
+                    "The ServerNameList MUST NOT contain more than " +
+                    "one name of the same name_type");
+        }
+
+        // We only need to add "server_name" extension in ClientHello unless
+        // we support SNI in server side in the future. It is possible that
+        // the SNI is empty in ServerHello. As we don't support SNI in
+        // ServerHello now, we will throw exception for empty list for now.
+        if (listLength == 0) {
+            throw new SSLProtocolException(
+                    "The ServerNameList cannot be empty");
+        }
+    }
 
     ServerNameExtension(HandshakeInStream s, int len)
             throws IOException {
         super(ExtensionType.EXT_SERVER_NAME);
-        names = new ArrayList<ServerName>();
-        while (len > 0) {
-            ServerName name = new ServerName(s);
-            names.add(name);
-            len -= name.length + 2;
+
+        int remains = len;
+        if (len >= 2) {    // "server_name" extension in ClientHello
+            listLength = s.getInt16();     // ServerNameList length
+            if (listLength == 0 || listLength + 2 != len) {
+                throw new SSLProtocolException(
+                        "Invalid " + type + " extension");
+            }
+
+            remains -= 2;
+            names = new ArrayList<ServerName>();
+            while (remains > 0) {
+                ServerName name = new ServerName(s);
+                names.add(name);
+                remains -= name.length;
+
+                // we may need to check the duplicated ServerName type
+            }
+        } else if (len == 0) {     // "server_name" extension in ServerHello
+            listLength = 0;
+            names = Collections.<ServerName>emptyList();
         }
-        if (len != 0) {
+
+        if (remains != 0) {
             throw new SSLProtocolException("Invalid server_name extension");
         }
     }
@@ -301,10 +375,19 @@ final class ServerNameExtension extends HelloExtension {
         final byte[] data;
         final String hostname;
 
+        ServerName(int type, String hostname) throws IOException {
+            this.type = type;                       // NameType
+            this.hostname = hostname;
+            this.data = hostname.getBytes("UTF8");  // HostName
+            this.length = data.length + 3;          // NameType: 1 byte
+                                                    // HostName length: 2 bytes
+        }
+
         ServerName(HandshakeInStream s) throws IOException {
-            length = s.getInt16();      // ServerNameList length
             type = s.getInt8();         // NameType
             data = s.getBytes16();      // HostName (length read in getBytes16)
+            length = data.length + 3;   // NameType: 1 byte
+                                        // HostName length: 2 bytes
             if (type == NAME_HOST_NAME) {
                 hostname = new String(data, "UTF8");
             } else {
@@ -322,15 +405,29 @@ final class ServerNameExtension extends HelloExtension {
     }
 
     int length() {
-        throw new RuntimeException("not yet supported");
+        return listLength == 0 ? 4 : 6 + listLength;
     }
 
     void send(HandshakeOutStream s) throws IOException {
-        throw new RuntimeException("not yet supported");
+        s.putInt16(type.id);
+        s.putInt16(listLength + 2);
+        if (listLength != 0) {
+            s.putInt16(listLength);
+
+            for (ServerName name : names) {
+                s.putInt8(name.type);           // NameType
+                s.putBytes16(name.data);        // HostName
+            }
+        }
     }
 
     public String toString() {
-        return "Unsupported extension " + type + ", " + names.toString();
+        StringBuffer buffer = new StringBuffer();
+        for (ServerName name : names) {
+            buffer.append("[" + name + "]");
+        }
+
+        return "Extension " + type + ", server_name: " + buffer;
     }
 }
 
@@ -523,7 +620,8 @@ final class SupportedEllipticPointFormatsExtension extends HelloExtension {
     final static int FMT_ANSIX962_COMPRESSED_CHAR2 = 2;
 
     static final HelloExtension DEFAULT =
-        new SupportedEllipticPointFormatsExtension(new byte[] {FMT_UNCOMPRESSED});
+        new SupportedEllipticPointFormatsExtension(
+            new byte[] {FMT_UNCOMPRESSED});
 
     private final byte[] formats;
 
@@ -664,4 +762,106 @@ final class RenegotiationInfoExtension extends HelloExtension {
                     Debug.toString(renegotiated_connection));
     }
 
+}
+
+/*
+ * [RFC5246] The client uses the "signature_algorithms" extension to
+ * indicate to the server which signature/hash algorithm pairs may be
+ * used in digital signatures.  The "extension_data" field of this
+ * extension contains a "supported_signature_algorithms" value.
+ *
+ *     enum {
+ *         none(0), md5(1), sha1(2), sha224(3), sha256(4), sha384(5),
+ *         sha512(6), (255)
+ *     } HashAlgorithm;
+ *
+ *     enum { anonymous(0), rsa(1), dsa(2), ecdsa(3), (255) }
+ *       SignatureAlgorithm;
+ *
+ *     struct {
+ *           HashAlgorithm hash;
+ *           SignatureAlgorithm signature;
+ *     } SignatureAndHashAlgorithm;
+ *
+ *     SignatureAndHashAlgorithm
+ *       supported_signature_algorithms<2..2^16-2>;
+ */
+final class SignatureAlgorithmsExtension extends HelloExtension {
+
+    private Collection<SignatureAndHashAlgorithm> algorithms;
+    private int algorithmsLen;  // length of supported_signature_algorithms
+
+    SignatureAlgorithmsExtension(
+            Collection<SignatureAndHashAlgorithm> signAlgs) {
+
+        super(ExtensionType.EXT_SIGNATURE_ALGORITHMS);
+
+        algorithms = new ArrayList<SignatureAndHashAlgorithm>(signAlgs);
+        algorithmsLen =
+            SignatureAndHashAlgorithm.sizeInRecord() * algorithms.size();
+    }
+
+    SignatureAlgorithmsExtension(HandshakeInStream s, int len)
+                throws IOException {
+        super(ExtensionType.EXT_SIGNATURE_ALGORITHMS);
+
+        algorithmsLen = s.getInt16();
+        if (algorithmsLen == 0 || algorithmsLen + 2 != len) {
+            throw new SSLProtocolException("Invalid " + type + " extension");
+        }
+
+        algorithms = new ArrayList<SignatureAndHashAlgorithm>();
+        int remains = algorithmsLen;
+        int sequence = 0;
+        while (remains > 1) {   // needs at least two bytes
+            int hash = s.getInt8();         // hash algorithm
+            int signature = s.getInt8();    // signature algorithm
+
+            SignatureAndHashAlgorithm algorithm =
+                SignatureAndHashAlgorithm.valueOf(hash, signature, ++sequence);
+            algorithms.add(algorithm);
+            remains -= 2;  // one byte for hash, one byte for signature
+        }
+
+        if (remains != 0) {
+            throw new SSLProtocolException("Invalid server_name extension");
+        }
+    }
+
+    Collection<SignatureAndHashAlgorithm> getSignAlgorithms() {
+        return algorithms;
+    }
+
+    @Override
+    int length() {
+        return 6 + algorithmsLen;
+    }
+
+    @Override
+    void send(HandshakeOutStream s) throws IOException {
+        s.putInt16(type.id);
+        s.putInt16(algorithmsLen + 2);
+        s.putInt16(algorithmsLen);
+
+        for (SignatureAndHashAlgorithm algorithm : algorithms) {
+            s.putInt8(algorithm.getHashValue());      // HashAlgorithm
+            s.putInt8(algorithm.getSignatureValue()); // SignatureAlgorithm
+        }
+    }
+
+    @Override
+    public String toString() {
+        StringBuffer buffer = new StringBuffer();
+        boolean opened = false;
+        for (SignatureAndHashAlgorithm signAlg : algorithms) {
+            if (opened) {
+                buffer.append(", " + signAlg.getAlgorithmName());
+            } else {
+                buffer.append(signAlg.getAlgorithmName());
+                opened = true;
+            }
+        }
+
+        return "Extension " + type + ", signature_algorithms: " + buffer;
+    }
 }

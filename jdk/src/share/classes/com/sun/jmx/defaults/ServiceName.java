@@ -76,9 +76,9 @@ public class ServiceName {
     /**
      * The vendor of the JMX specification implemented by this product.
      * <BR>
-     * The value is <CODE>Sun Microsystems</CODE>.
+     * The value is <CODE>Oracle Corporation</CODE>.
      */
-    public static final String JMX_SPEC_VENDOR = "Sun Microsystems";
+    public static final String JMX_SPEC_VENDOR = "Oracle Corporation";
 
     /**
      * The name of this product implementing the  JMX specification.
@@ -91,7 +91,7 @@ public class ServiceName {
      * The name of the vendor of this product implementing the
      * JMX specification.
      * <BR>
-     * The value is <CODE>Sun Microsystems</CODE>.
+     * The value is <CODE>Oracle Corporation</CODE>.
      */
-    public static final String JMX_IMPL_VENDOR = "Sun Microsystems";
+    public static final String JMX_IMPL_VENDOR = "Oracle Corporation";
 }

@@ -28,7 +28,8 @@
 #include "WindowsFlags.h"
 
 BOOL      accelReset;         // reset registry 2d acceleration settings
-BOOL      useD3D;             // d3d enabled flag
+BOOL      useD3D = TRUE;      // d3d enabled flag
+                              // initially is TRUE to allow D3D preloading
 BOOL      forceD3DUsage;      // force d3d on or off
 jboolean  g_offscreenSharing; // JAWT accelerated surface sharing
 BOOL      checkRegistry;      // Diagnostic tool: outputs 2d registry settings

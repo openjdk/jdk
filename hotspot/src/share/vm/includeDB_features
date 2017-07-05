@@ -184,6 +184,13 @@ jvmtiImpl.hpp                           stackValueCollection.hpp
 jvmtiImpl.hpp                           systemDictionary.hpp
 jvmtiImpl.hpp                           vm_operations.hpp
 
+jvmtiRawMonitor.cpp                     interfaceSupport.hpp
+jvmtiRawMonitor.cpp                     jvmtiRawMonitor.hpp
+jvmtiRawMonitor.cpp                     thread.hpp
+
+jvmtiRawMonitor.hpp                     growableArray.hpp
+jvmtiRawMonitor.hpp                     objectMonitor.hpp
+
 jvmtiTagMap.cpp                         biasedLocking.hpp
 jvmtiTagMap.cpp                         javaCalls.hpp
 jvmtiTagMap.cpp                         jniHandles.hpp

@@ -186,6 +186,9 @@ public class DefaultTableCellRenderer extends JLabel
      */
     public Component getTableCellRendererComponent(JTable table, Object value,
                           boolean isSelected, boolean hasFocus, int row, int column) {
+        if (table == null) {
+            return this;
+        }
 
         Color fg = null;
         Color bg = null;

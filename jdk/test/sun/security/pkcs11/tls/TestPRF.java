@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,14 +93,17 @@ public class TestPRF extends PKCS11Test {
                 System.out.print(".");
                 n++;
 
-                KeyGenerator kg = KeyGenerator.getInstance("SunTlsPrf", provider);
+                KeyGenerator kg =
+                    KeyGenerator.getInstance("SunTlsPrf", provider);
                 SecretKey inKey;
                 if (secret == null) {
                     inKey = null;
                 } else {
                     inKey = new SecretKeySpec(secret, "Generic");
                 }
-                TlsPrfParameterSpec spec = new TlsPrfParameterSpec(inKey, label, seed, length);
+                TlsPrfParameterSpec spec =
+                    new TlsPrfParameterSpec(inKey, label, seed, length,
+                        null, -1, -1);
                 SecretKey key;
                 try {
                     kg.init(spec);
@@ -109,7 +112,8 @@ public class TestPRF extends PKCS11Test {
                     if (secret == null) {
                         // This fails on Solaris, but since we never call this
                         // API for this case in JSSE, ignore the failure.
-                        // (SunJSSE uses the CKM_TLS_KEY_AND_MAC_DERIVE mechanism)
+                        // (SunJSSE uses the CKM_TLS_KEY_AND_MAC_DERIVE
+                        // mechanism)
                         System.out.print("X");
                         continue;
                     }

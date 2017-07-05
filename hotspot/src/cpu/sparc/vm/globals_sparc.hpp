@@ -62,3 +62,5 @@ define_pd_global(intx, PreInflateSpin,       40);  // Determined by running desi
 
 define_pd_global(bool, RewriteBytecodes,     true);
 define_pd_global(bool, RewriteFrequentPairs, true);
+
+define_pd_global(bool, UseMembar,            false);

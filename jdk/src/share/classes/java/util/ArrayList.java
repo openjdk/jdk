@@ -176,6 +176,11 @@ public class ArrayList<E> extends AbstractList<E>
      * @param minCapacity the desired minimum capacity
      */
     public void ensureCapacity(int minCapacity) {
+        if (minCapacity > 0)
+            ensureCapacityInternal(minCapacity);
+    }
+
+    private void ensureCapacityInternal(int minCapacity) {
         modCount++;
         // overflow-conscious code
         if (minCapacity - elementData.length > 0)
@@ -403,7 +408,7 @@ public class ArrayList<E> extends AbstractList<E>
      * @return <tt>true</tt> (as specified by {@link Collection#add})
      */
     public boolean add(E e) {
-        ensureCapacity(size + 1);  // Increments modCount!!
+        ensureCapacityInternal(size + 1);  // Increments modCount!!
         elementData[size++] = e;
         return true;
     }
@@ -420,7 +425,7 @@ public class ArrayList<E> extends AbstractList<E>
     public void add(int index, E element) {
         rangeCheckForAdd(index);
 
-        ensureCapacity(size + 1);  // Increments modCount!!
+        ensureCapacityInternal(size + 1);  // Increments modCount!!
         System.arraycopy(elementData, index, elementData, index + 1,
                          size - index);
         elementData[index] = element;
@@ -524,7 +529,7 @@ public class ArrayList<E> extends AbstractList<E>
     public boolean addAll(Collection<? extends E> c) {
         Object[] a = c.toArray();
         int numNew = a.length;
-        ensureCapacity(size + numNew);  // Increments modCount
+        ensureCapacityInternal(size + numNew);  // Increments modCount
         System.arraycopy(a, 0, elementData, size, numNew);
         size += numNew;
         return numNew != 0;
@@ -550,7 +555,7 @@ public class ArrayList<E> extends AbstractList<E>
 
         Object[] a = c.toArray();
         int numNew = a.length;
-        ensureCapacity(size + numNew);  // Increments modCount
+        ensureCapacityInternal(size + numNew);  // Increments modCount
 
         int numMoved = size - index;
         if (numMoved > 0)

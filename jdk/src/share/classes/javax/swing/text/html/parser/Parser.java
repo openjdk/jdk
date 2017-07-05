@@ -1470,7 +1470,7 @@ class Parser implements DTDConstants {
      */
     public String parseDTDMarkup() throws IOException {
 
-        StringBuffer strBuff = new StringBuffer();
+        StringBuilder strBuff = new StringBuilder();
         ch = readCh();
         while(true) {
             switch (ch) {

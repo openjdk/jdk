@@ -30,7 +30,6 @@ import java.text.*;
 import java.text.AttributedCharacterIterator.Attribute;
 import java.util.*;
 import javax.swing.*;
-import javax.swing.text.*;
 
 /**
  * <code>InternationalFormatter</code> extends <code>DefaultFormatter</code>,
@@ -875,7 +874,6 @@ public class InternationalFormatter extends DefaultFormatter {
                     (f instanceof AttributedCharacterIterator.Attribute)) {
             AttributedCharacterIterator.Attribute field =
                                    (AttributedCharacterIterator.Attribute)f;
-            int index = 0;
 
             iterator.first();
             while (iterator.getIndex() < start) {

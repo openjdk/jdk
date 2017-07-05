@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 package com.sun.corba.se.spi.orb ;
 
 import java.util.StringTokenizer ;
+import java.util.Arrays ;
 
 import java.lang.reflect.Array ;
 
@@ -446,7 +447,7 @@ public abstract class OperationFactory {
         public String toString() {
             return "sequenceAction(separator=\"" + sep +
                 "\",actions=" +
-                ObjectUtility.compactObjectToString(actions) + ")" ;
+                Arrays.toString(actions) + ")" ;
         }
     }
 
@@ -533,7 +534,7 @@ public abstract class OperationFactory {
 
         public String toString() {
             return "mapSequenceAction(" +
-                ObjectUtility.compactObjectToString(op) + ")" ;
+                Arrays.toString(op) + ")" ;
         }
     }
 

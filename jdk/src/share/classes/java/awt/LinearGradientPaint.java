@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,10 @@
 package java.awt;
 
 import java.awt.geom.AffineTransform;
-import java.awt.geom.NoninvertibleTransformException;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.ColorModel;
+import java.beans.ConstructorProperties;
 
 /**
  * The {@code LinearGradientPaint} class provides a way to fill
@@ -271,6 +271,7 @@ public final class LinearGradientPaint extends MultipleGradientPaint {
      * or a {@code fractions} value is less than 0.0 or greater than 1.0,
      * or the {@code fractions} are not provided in strictly increasing order
      */
+    @ConstructorProperties({ "startPoint", "endPoint", "fractions", "colors", "cycleMethod", "colorSpace", "transform" })
     public LinearGradientPaint(Point2D start, Point2D end,
                                float[] fractions, Color[] colors,
                                CycleMethod cycleMethod,

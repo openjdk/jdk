@@ -32,6 +32,7 @@
 #include <io.h>
 #include "nio.h"
 #include "nio_util.h"
+#include "jlong.h"
 
 
 /**************************************************************
@@ -440,4 +441,16 @@ Java_sun_nio_ch_FileDispatcherImpl_closeByHandle(JNIEnv *env, jclass clazz,
                                              jlong fd)
 {
     closeFile(env, fd);
+}
+
+JNIEXPORT jlong JNICALL
+Java_sun_nio_ch_FileDispatcherImpl_duplicateHandle(JNIEnv *env, jclass this, jlong hFile)
+{
+    HANDLE hProcess = GetCurrentProcess();
+    HANDLE hResult;
+    BOOL res = DuplicateHandle(hProcess, hFile, hProcess, &hResult, 0, FALSE,
+                               DUPLICATE_SAME_ACCESS);
+    if (res == 0)
+       JNU_ThrowIOExceptionWithLastError(env, "DuplicateHandle failed");
+    return ptr_to_jlong(hResult);
 }

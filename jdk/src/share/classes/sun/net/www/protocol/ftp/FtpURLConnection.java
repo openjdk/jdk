@@ -46,6 +46,7 @@ import java.net.ProxySelector;
 import java.util.StringTokenizer;
 import java.util.Iterator;
 import java.security.Permission;
+import sun.net.NetworkClient;
 import sun.net.www.MessageHeader;
 import sun.net.www.MeteredStream;
 import sun.net.www.URLConnection;
@@ -102,11 +103,11 @@ public class FtpURLConnection extends URLConnection {
     static final int BIN = 2;
     static final int DIR = 3;
     int type = NONE;
-    /* Redefine timeouts from java.net.URLConnection as we nee -1 to mean
+    /* Redefine timeouts from java.net.URLConnection as we need -1 to mean
      * not set. This is to ensure backward compatibility.
      */
-    private int connectTimeout = -1;
-    private int readTimeout = -1;
+    private int connectTimeout = NetworkClient.DEFAULT_CONNECT_TIMEOUT;;
+    private int readTimeout = NetworkClient.DEFAULT_READ_TIMEOUT;;
 
     /**
      * For FTP URLs we need to have a special InputStream because we
