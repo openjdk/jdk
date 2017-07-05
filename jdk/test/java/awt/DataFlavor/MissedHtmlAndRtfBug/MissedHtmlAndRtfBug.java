@@ -22,7 +22,6 @@
  */
 
 /*
-  @test
   @bug 8005932
   @summary Java 7 on mac os x only provides text clipboard formats
   @author mikhail.cherkasov@oracle.com
@@ -30,10 +29,9 @@
   @library ../../regtesthelpers/process
   @build Util
   @build ProcessResults ProcessCommunicator
-
-
   @run applet/othervm MissedHtmlAndRtfBug.html
 */
+
 import java.awt.*;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.event.*;

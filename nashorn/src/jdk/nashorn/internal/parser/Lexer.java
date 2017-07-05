@@ -648,7 +648,7 @@ public class Lexer extends Scanner {
      *
      * @return The converted digit or -1 if invalid.
      */
-    private static int convertDigit(final char ch, final int base) {
+    protected static int convertDigit(final char ch, final int base) {
         int digit;
 
         if ('0' <= ch && ch <= '9') {
@@ -666,40 +666,51 @@ public class Lexer extends Scanner {
 
 
     /**
-     * Get the value of a numeric sequence.
+     * Get the value of a hexadecimal numeric sequence.
      *
-     * @param base  Numeric base.
-     * @param max   Maximum number of digits.
-     * @param skip  Skip over escape first.
-     * @param check Tells whether to throw error if a digit is invalid for the given base.
-     * @param type  Type of token to report against.
-     *
+     * @param length Number of digits.
+     * @param type   Type of token to report against.
      * @return Value of sequence or < 0 if no digits.
      */
-    private int valueOfSequence(final int base, final int max, final boolean skip, final boolean check, final TokenType type) {
-        assert base == 16 || base == 8 : "base other than 16 or 8";
-        final boolean isHex = base == 16;
-        final int shift = isHex ? 4 : 3;
+    private int hexSequence(final int length, final TokenType type) {
         int value = 0;
 
-        if (skip) {
-            skip(2);
-        }
-
-        for (int i = 0; i < max; i++) {
-            final int digit = convertDigit(ch0, base);
+        for (int i = 0; i < length; i++) {
+            final int digit = convertDigit(ch0, 16);
 
             if (digit == -1) {
-                if (check) {
-                    error(Lexer.message("invalid." + (isHex ? "hex" : "octal")), type, position, limit);
-                }
+                error(Lexer.message("invalid.hex"), type, position, limit);
                 return i == 0 ? -1 : value;
             }
 
-            value = value << shift | digit;
+            value = digit | value << 4;
             skip(1);
         }
 
+        return value;
+    }
+
+    /**
+     * Get the value of an octal numeric sequence. This parses up to 3 digits with a maximum value of 255.
+     *
+     * @return Value of sequence.
+     */
+    private int octalSequence() {
+        int value = 0;
+
+        for (int i = 0; i < 3; i++) {
+            final int digit = convertDigit(ch0, 8);
+
+            if (digit == -1) {
+                break;
+            }
+            value = digit | value << 3;
+            skip(1);
+
+            if (i == 1 && value >= 32) {
+                break;
+            }
+        }
         return value;
     }
 
@@ -724,7 +735,8 @@ public class Lexer extends Scanner {
         while (!atEOF() && position < end && !isEOL(ch0)) {
             // If escape character.
             if (ch0 == '\\' && ch1 == 'u') {
-                final int ch = valueOfSequence(16, 4, true, true, TokenType.IDENT);
+                skip(2);
+                final int ch = hexSequence(4, TokenType.IDENT);
                 if (isWhitespace((char)ch)) {
                     return null;
                 }
@@ -815,7 +827,7 @@ public class Lexer extends Scanner {
                     }
                     reset(afterSlash);
                     // Octal sequence.
-                    final int ch = valueOfSequence(8, 3, false, false, STRING);
+                    final int ch = octalSequence();
 
                     if (ch < 0) {
                         sb.append('\\');
@@ -862,7 +874,7 @@ public class Lexer extends Scanner {
                     break;
                 case 'x': {
                     // Hex sequence.
-                    final int ch = valueOfSequence(16, 2, false, true, STRING);
+                    final int ch = hexSequence(2, STRING);
 
                     if (ch < 0) {
                         sb.append('\\');
@@ -874,7 +886,7 @@ public class Lexer extends Scanner {
                     break;
                 case 'u': {
                     // Unicode sequence.
-                    final int ch = valueOfSequence(16, 4, false, true, STRING);
+                    final int ch = hexSequence(4, STRING);
 
                     if (ch < 0) {
                         sb.append('\\');
@@ -907,8 +919,9 @@ public class Lexer extends Scanner {
 
     /**
      * Scan over a string literal.
+     * @param add true if we nare not just scanning but should actually modify the token stream
      */
-    private void scanString(final boolean add) {
+    protected void scanString(final boolean add) {
         // Type of string.
         TokenType type = STRING;
         // Record starting quote.
@@ -925,6 +938,9 @@ public class Lexer extends Scanner {
             if (ch0 == '\\') {
                 type = ESCSTRING;
                 skip(1);
+                if (! isEscapeCharacter(ch0)) {
+                    error(Lexer.message("invalid.escape.char"), STRING, position, limit);
+                }
                 if (isEOL(ch0)) {
                     // Multiline string literal
                     skipEOL(false);
@@ -979,6 +995,16 @@ public class Lexer extends Scanner {
     }
 
     /**
+     * Is the given character a valid escape char after "\" ?
+     *
+     * @param ch character to be checked
+     * @return if the given character is valid after "\"
+     */
+    protected boolean isEscapeCharacter(final char ch) {
+        return true;
+    }
+
+    /**
      * Convert string to number.
      *
      * @param valueString  String to convert.
@@ -1024,7 +1050,7 @@ public class Lexer extends Scanner {
     /**
      * Scan a number.
      */
-    private void scanNumber() {
+    protected void scanNumber() {
         // Record beginning of number.
         final int start = position;
         // Assume value is a decimal.
@@ -1088,6 +1114,10 @@ public class Lexer extends Scanner {
 
                 type = FLOATING;
             }
+        }
+
+        if (Character.isJavaIdentifierStart(ch0)) {
+            error(Lexer.message("missing.space.after.number"), type, position, 1);
         }
 
         // Add number token.
@@ -1178,7 +1208,8 @@ public class Lexer extends Scanner {
 
         // Make sure first character is valid start character.
         if (ch0 == '\\' && ch1 == 'u') {
-            final int ch = valueOfSequence(16, 4, true, true, TokenType.IDENT);
+            skip(2);
+            final int ch = hexSequence(4, TokenType.IDENT);
 
             if (!Character.isJavaIdentifierStart(ch)) {
                 error(Lexer.message("illegal.identifier.character"), TokenType.IDENT, start, position);
@@ -1191,7 +1222,8 @@ public class Lexer extends Scanner {
         // Make sure remaining characters are valid part characters.
         while (!atEOF()) {
             if (ch0 == '\\' && ch1 == 'u') {
-                final int ch = valueOfSequence(16, 4, true, true, TokenType.IDENT);
+                skip(2);
+                final int ch = hexSequence(4, TokenType.IDENT);
 
                 if (!Character.isJavaIdentifierPart(ch)) {
                     error(Lexer.message("illegal.identifier.character"), TokenType.IDENT, start, position);
@@ -1583,7 +1615,13 @@ public class Lexer extends Scanner {
         return null;
     }
 
-    private static String message(final String msgId, final String... args) {
+    /**
+     * Get the correctly localized error message for a given message id format arguments
+     * @param msgId message id
+     * @param args  format arguments
+     * @return message
+     */
+    protected static String message(final String msgId, final String... args) {
         return ECMAErrors.getMessage("lexer.error." + msgId, args);
     }
 

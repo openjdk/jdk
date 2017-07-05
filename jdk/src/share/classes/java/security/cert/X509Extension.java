@@ -84,12 +84,12 @@ public interface X509Extension {
      *
      * Here is sample code to get a Set of critical extensions from an
      * X509Certificate and print the OIDs:
-     * <pre><code>
+     * <pre>{@code
      * X509Certificate cert = null;
      * try (InputStream inStrm = new FileInputStream("DER-encoded-Cert")) {
      *     CertificateFactory cf = CertificateFactory.getInstance("X.509");
      *     cert = (X509Certificate)cf.generateCertificate(inStrm);
-     * }<p>
+     * }
      *
      * Set<String> critSet = cert.getCriticalExtensionOIDs();
      * if (critSet != null && !critSet.isEmpty()) {
@@ -98,7 +98,7 @@ public interface X509Extension {
      *         System.out.println(oid);
      *     }
      * }
-     * </code></pre>
+     * }</pre>
      * @return a Set (or an empty Set if none are marked critical) of
      * the extension OID strings for extensions that are marked critical.
      * If there are no extensions present at all, then this method returns

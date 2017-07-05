@@ -36,7 +36,7 @@ import com.sun.jndi.ldap.BerEncoder;
  * at which it invokes search operations.
  * <p>
  * The following code sample shows how the class may be used:
- * <pre>
+ * <pre>{@code
  *
  *     // Open an LDAP association
  *     LdapContext ctx = new InitialLdapContext();
@@ -89,13 +89,13 @@ import com.sun.jndi.ldap.BerEncoder;
  *     ctx.close();
  *     ...
  *
- * </pre>
+ * } </pre>
  * <p>
  * This class implements the LDAPv3 Control for paged-results as defined in
  * <a href="http://www.ietf.org/rfc/rfc2696.txt">RFC 2696</a>.
  *
  * The control's value has the following ASN.1 definition:
- * <pre>
+ * <pre>{@code
  *
  *     realSearchControlValue ::= SEQUENCE {
  *         size      INTEGER (0..maxInt),
@@ -104,7 +104,7 @@ import com.sun.jndi.ldap.BerEncoder;
  *         cookie    OCTET STRING
  *     }
  *
- * </pre>
+ * }</pre>
  *
  * @since 1.5
  * @see PagedResultsResponseControl

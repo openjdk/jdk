@@ -1210,8 +1210,7 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg, Register Object) 
     st_ptr(mark_reg, lock_addr, BasicLock::displaced_header_offset_in_bytes());
     // compare and exchange object_addr, markOop | 1, stack address of basicLock
     assert(mark_addr.disp() == 0, "cas must take a zero displacement");
-    casx_under_lock(mark_addr.base(), mark_reg, temp_reg,
-      (address)StubRoutines::Sparc::atomic_memory_operation_lock_addr());
+    cas_ptr(mark_addr.base(), mark_reg, temp_reg);
 
     // if the compare and exchange succeeded we are done (we saw an unlocked object)
     cmp_and_brx_short(mark_reg, temp_reg, Assembler::equal, Assembler::pt, done);
@@ -1291,8 +1290,7 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg) {
     // we expect to see the stack address of the basicLock in case the
     // lock is still a light weight lock (lock_reg)
     assert(mark_addr.disp() == 0, "cas must take a zero displacement");
-    casx_under_lock(mark_addr.base(), lock_reg, displaced_header_reg,
-      (address)StubRoutines::Sparc::atomic_memory_operation_lock_addr());
+    cas_ptr(mark_addr.base(), lock_reg, displaced_header_reg);
     cmp(lock_reg, displaced_header_reg);
     brx(Assembler::equal, true, Assembler::pn, done);
     delayed()->st_ptr(G0, lockobj_addr);  // free entry

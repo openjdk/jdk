@@ -253,22 +253,22 @@ public interface Mixer extends Line {
         /**
          * Mixer name.
          */
-        private /*final*/ String name;
+        private final String name;
 
         /**
          * Mixer vendor.
          */
-        private /*final*/ String vendor;
+        private final String vendor;
 
         /**
          * Mixer description.
          */
-        private /*final*/ String description;
+        private final String description;
 
         /**
          * Mixer version.
          */
-        private /*final*/ String version;
+        private final String version;
 
         /**
          * Constructs a mixer's info object, passing it the given

@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
+import javax.xml.XMLConstants;
 import javax.xml.parsers.ParserConfigurationException;
 
 import com.sun.org.apache.xml.internal.security.algorithms.SignatureAlgorithm;
@@ -186,8 +187,10 @@ public class SignedInfo extends Manifest {
                 javax.xml.parsers.DocumentBuilderFactory dbf =
                     javax.xml.parsers.DocumentBuilderFactory.newInstance();
                 dbf.setNamespaceAware(true);
+                dbf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING,
+                               Boolean.TRUE);
                 javax.xml.parsers.DocumentBuilder db = dbf.newDocumentBuilder();
-                org.w3c.dom.Document newdoc =
+                Document newdoc =
                     db.parse(new ByteArrayInputStream(this._c14nizedBytes));
                 Node imported =
                     this._doc.importNode(newdoc.getDocumentElement(), true);

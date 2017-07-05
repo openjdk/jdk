@@ -122,9 +122,7 @@ static int file_open(const char* path, int flag) {
 }
 
 static int file_close(int fd) {
-    int ret;
-    RESTARTABLE(close(fd), ret);
-    return ret;
+    return close(fd);
 }
 
 static int file_read(int fd, char* buf, int len) {

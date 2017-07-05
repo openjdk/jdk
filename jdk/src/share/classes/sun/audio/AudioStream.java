@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,7 @@
 package sun.audio;
 
 import java.io.InputStream;
-import java.io.DataInputStream;
 import java.io.FilterInputStream;
-import java.io.ByteArrayInputStream;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 
@@ -41,13 +39,13 @@ import javax.sound.midi.*;
  */
 
 
-public class AudioStream extends FilterInputStream {
+public final class AudioStream extends FilterInputStream {
 
     // AudioContainerInputStream acis;
-    protected AudioInputStream ais = null;
-    protected AudioFormat format = null;
-    protected MidiFileFormat midiformat = null;
-    protected InputStream stream = null;
+    AudioInputStream ais = null;
+    AudioFormat format = null;
+    MidiFileFormat midiformat = null;
+    InputStream stream = null;
 
 
     /*

@@ -38,6 +38,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.Provider;
 import java.util.*;
+import javax.xml.XMLConstants;
 import javax.xml.crypto.*;
 import javax.xml.crypto.dsig.*;
 import javax.xml.crypto.dom.DOMCryptoContext;
@@ -124,9 +125,13 @@ public final class DOMRetrievalMethod extends DOMStructure
         // get here node
         here = rmElem.getAttributeNodeNS(null, "URI");
 
+        boolean secVal = Utils.secureValidation(context);
+
         // get Transforms, if specified
         List transforms = new ArrayList();
         Element transformsElem = DOMUtils.getFirstChildElement(rmElem);
+
+        int transformCount = 0;
         if (transformsElem != null) {
             Element transformElem =
                 DOMUtils.getFirstChildElement(transformsElem);
@@ -134,6 +139,17 @@ public final class DOMRetrievalMethod extends DOMStructure
                 transforms.add
                     (new DOMTransform(transformElem, context, provider));
                 transformElem = DOMUtils.getNextSiblingElement(transformElem);
+
+                transformCount++;
+                if (secVal &&
+                    (transformCount > DOMReference.MAXIMUM_TRANSFORM_COUNT))
+                {
+                    String error = "A maxiumum of " +
+                                   DOMReference.MAXIMUM_TRANSFORM_COUNT +
+                                   " transforms per Reference are allowed" +
+                                   " with secure validation";
+                    throw new MarshalException(error);
+                }
             }
         }
         if (transforms.isEmpty()) {
@@ -214,6 +230,21 @@ public final class DOMRetrievalMethod extends DOMStructure
         } catch (Exception e) {
             throw new URIReferenceException(e);
         }
+
+        // guard against RetrievalMethod loops
+        if ((data instanceof NodeSetData) && Utils.secureValidation(context)) {
+            NodeSetData nsd = (NodeSetData)data;
+            Iterator i = nsd.iterator();
+            if (i.hasNext()) {
+                Node root = (Node)i.next();
+                if ("RetrievalMethod".equals(root.getLocalName())) {
+                    throw new URIReferenceException(
+                        "It is forbidden to have one RetrievalMethod point " +
+                        "to another when secure validation is enabled");
+                }
+            }
+        }
+
         return data;
     }
 
@@ -224,6 +255,8 @@ public final class DOMRetrievalMethod extends DOMStructure
             ApacheData data = (ApacheData) dereference(context);
             DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
             dbf.setNamespaceAware(true);
+            dbf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING,
+                           Boolean.TRUE);
             DocumentBuilder db = dbf.newDocumentBuilder();
             Document doc = db.parse(new ByteArrayInputStream
                 (data.getXMLSignatureInput().getBytes()));

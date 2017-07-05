@@ -39,13 +39,13 @@
 HBITMAP BitmapUtil::CreateTransparencyMaskFromARGB(int width, int height, int* imageData)
 {
     //Scan lines should be aligned to word boundary
-    int bufLength = ((width + 15) / 16 * 2) * height;//buf length (bytes)
+    if (!IS_SAFE_SIZE_ADD(width, 15)) return NULL;
+    char* buf = SAFE_SIZE_NEW_ARRAY2(char, (width + 15) / 16 * 2, height);
+    if (buf == NULL) return NULL;
     int* srcPos = imageData;
-    char* buf = new char[bufLength];
     char* bufPos = buf;
     int tmp = 0;
     int cbit = 0x80;
-    if (buf == NULL) return NULL;
     for (int i = 0; i < height; i++) {
         for (int j = 0; j < width; j++) {
             //cbit is shifted right for every pixel
@@ -251,8 +251,12 @@ HRGN BitmapUtil::BitmapToRgn(HBITMAP hBitmap)
             reinterpret_cast<BITMAPINFO*>(&bi), DIB_RGB_COLORS);
 
     /* reserving memory for the worst case */
-    RGNDATA * pRgnData = (RGNDATA *) safe_Malloc(sizeof(RGNDATAHEADER) +
-            sizeof(RECT) * (width / 2 + 1) * height);
+    if (!IS_SAFE_SIZE_MUL(width / 2 + 1, height)) {
+        throw std::bad_alloc();
+    }
+    RGNDATA * pRgnData = (RGNDATA *) SAFE_SIZE_STRUCT_ALLOC(safe_Malloc,
+            sizeof(RGNDATAHEADER),
+            sizeof(RECT), (width / 2 + 1) * height);
     RGNDATAHEADER * pRgnHdr = (RGNDATAHEADER *) pRgnData;
     pRgnHdr->dwSize = sizeof(RGNDATAHEADER);
     pRgnHdr->iType = RDH_RECTANGLES;

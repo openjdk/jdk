@@ -612,7 +612,7 @@ public class NulFile {
             try {
                 File.createTempFile(prefix, suffix, directory);
             } catch (IOException ex) {
-                if ("Unable to create temporary file".equals(ex.getMessage()))
+                if (ExceptionMsg.equals(ex.getMessage()))
                     exceptionThrown = true;
             }
         }

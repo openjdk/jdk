@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ package com.sun.media.sound;
  *
  * @author Karl Helgason
  */
-public class SoftLimiter implements SoftAudioProcessor {
+public final class SoftLimiter implements SoftAudioProcessor {
 
     float lastmax = 0;
     float gain = 1;

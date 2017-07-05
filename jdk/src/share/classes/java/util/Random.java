@@ -372,7 +372,7 @@ class Random implements java.io.Serializable {
      * range {@code 0.0f} (inclusive) to {@code 1.0f} (exclusive), is
      * pseudorandomly generated and returned. All 2<font
      * size="-1"><sup>24</sup></font> possible {@code float} values
-     * of the form <i>m&nbsp;x&nbsp</i>2<font
+     * of the form <i>m&nbsp;x&nbsp;</i>2<font
      * size="-1"><sup>-24</sup></font>, where <i>m</i> is a positive
      * integer less than 2<font size="-1"><sup>24</sup> </font>, are
      * produced with (approximately) equal probability.

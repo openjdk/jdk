@@ -64,7 +64,7 @@ import java.util.Iterator;
  * those developing custom file system implementations. Methods may be added to
  * this interface in future releases. </p>
  *
- * <a name="interop"><h4>Accessing Files</h4></a>
+ * <h4>Accessing Files</h4>
  * <p> Paths may be used with the {@link Files} class to operate on files,
  * directories, and other types of files. For example, suppose we want a {@link
  * java.io.BufferedReader} to read text from a file "{@code access.log}". The
@@ -87,7 +87,7 @@ import java.util.Iterator;
  * addition, the {@link #toFile toFile} method is useful to construct a {@code
  * File} from the {@code String} representation of a {@code Path}.
  *
- * <h4>Concurrency</h4></a>
+ * <h4>Concurrency</h4>
  * <p> Implementations of this interface are immutable and safe for use by
  * multiple concurrent threads.
  *

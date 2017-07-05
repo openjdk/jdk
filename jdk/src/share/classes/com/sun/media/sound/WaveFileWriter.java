@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ import javax.sound.sampled.AudioSystem;
  *
  * @author Jan Borgersen
  */
-public class WaveFileWriter extends SunFileWriter {
+public final class WaveFileWriter extends SunFileWriter {
 
     // magic numbers
     static  final int RIFF_MAGIC = 1380533830;
@@ -74,18 +74,10 @@ public class WaveFileWriter extends SunFileWriter {
     static final int WAVE_FORMAT_SX7383    = 0x1C07;
 
     /**
-     * WAVE type
-     */
-    private static final AudioFileFormat.Type waveTypes[] = {
-        AudioFileFormat.Type.WAVE
-    };
-
-
-    /**
      * Constructs a new WaveFileWriter object.
      */
     public WaveFileWriter() {
-        super(waveTypes);
+        super(new AudioFileFormat.Type[]{AudioFileFormat.Type.WAVE});
     }
 
 

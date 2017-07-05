@@ -70,6 +70,9 @@ le_uint32 SinglePositioningFormat1Subtable::process(const LEReferenceTo<SinglePo
 {
     LEGlyphID glyph = glyphIterator->getCurrGlyphID();
     le_int32 coverageIndex = getGlyphCoverage(base, glyph, success);
+    if (LE_FAILURE(success)) {
+        return 0;
+    }
 
     if (coverageIndex >= 0) {
         valueRecord.adjustPosition(SWAPW(valueFormat), (const char *) this, *glyphIterator, fontInstance);
@@ -84,6 +87,9 @@ le_uint32 SinglePositioningFormat2Subtable::process(const LEReferenceTo<SinglePo
 {
     LEGlyphID glyph = glyphIterator->getCurrGlyphID();
     le_int16 coverageIndex = (le_int16) getGlyphCoverage(base, glyph, success);
+    if (LE_FAILURE(success)) {
+        return 0;
+    }
 
     if (coverageIndex >= 0) {
         valueRecordArray[0].adjustPosition(coverageIndex, SWAPW(valueFormat), (const char *) this, *glyphIterator, fontInstance);

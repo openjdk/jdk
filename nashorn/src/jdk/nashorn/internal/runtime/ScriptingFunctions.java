@@ -221,10 +221,9 @@ public final class ScriptingFunctions {
         final String err = errBuffer.toString();
 
         // Set globals for secondary results.
-        final boolean isStrict = global.isStrictContext();
-        global.set(OUT_NAME, out, isStrict);
-        global.set(ERR_NAME, err, isStrict);
-        global.set(EXIT_NAME, exit, isStrict);
+        global.set(OUT_NAME, out, false);
+        global.set(ERR_NAME, err, false);
+        global.set(EXIT_NAME, exit, false);
 
         // Propagate exception if present.
         for (int i = 0; i < exception.length; i++) {

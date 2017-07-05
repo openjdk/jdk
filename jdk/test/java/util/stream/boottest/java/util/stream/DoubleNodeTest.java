@@ -48,7 +48,7 @@ public class DoubleNodeTest extends OpTestCase {
             List<Node<Double>> nodes = new ArrayList<>();
 
             nodes.add(Nodes.node(array));
-            nodes.add(degenerateTree(Spliterators.iteratorFromSpliterator(Arrays.spliterator(array))));
+            nodes.add(degenerateTree(Spliterators.iterator(Arrays.spliterator(array))));
             nodes.add(tree(toList(array), l -> Nodes.node(toDoubleArray(l))));
             nodes.add(fill(array, Nodes.doubleBuilder(array.length)));
             nodes.add(fill(array, Nodes.doubleBuilder()));
@@ -122,12 +122,12 @@ public class DoubleNodeTest extends OpTestCase {
 
     @Test(dataProvider = "nodes")
     public void testAsArray(double[] array, Node.OfDouble n) {
-        assertEquals(n.asDoubleArray(), array);
+        assertEquals(n.asPrimitiveArray(), array);
     }
 
     @Test(dataProvider = "nodes")
     public void testFlattenAsArray(double[] array, Node.OfDouble n) {
-        assertEquals(Nodes.flattenDouble(n).asDoubleArray(), array);
+        assertEquals(Nodes.flattenDouble(n).asPrimitiveArray(), array);
     }
 
     @Test(dataProvider = "nodes")

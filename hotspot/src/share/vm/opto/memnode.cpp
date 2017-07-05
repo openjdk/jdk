@@ -2930,7 +2930,9 @@ MemBarNode* MemBarNode::make(Compile* C, int opcode, int atp, Node* pn) {
 Node *MemBarNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if (remove_dead_region(phase, can_reshape)) return this;
   // Don't bother trying to transform a dead node
-  if (in(0) && in(0)->is_top())  return NULL;
+  if (in(0) && in(0)->is_top()) {
+    return NULL;
+  }
 
   // Eliminate volatile MemBars for scalar replaced objects.
   if (can_reshape && req() == (Precedent+1)) {
@@ -2939,6 +2941,14 @@ Node *MemBarNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     if ((opc == Op_MemBarAcquire || opc == Op_MemBarVolatile)) {
       // Volatile field loads and stores.
       Node* my_mem = in(MemBarNode::Precedent);
+      // The MembarAquire may keep an unused LoadNode alive through the Precedent edge
+      if ((my_mem != NULL) && (opc == Op_MemBarAcquire) && (my_mem->outcnt() == 1)) {
+        assert(my_mem->unique_out() == this, "sanity");
+        phase->hash_delete(this);
+        del_req(Precedent);
+        phase->is_IterGVN()->_worklist.push(my_mem); // remove dead node later
+        my_mem = NULL;
+      }
       if (my_mem != NULL && my_mem->is_Mem()) {
         const TypeOopPtr* t_oop = my_mem->in(MemNode::Address)->bottom_type()->isa_oopptr();
         // Check for scalar replaced object reference.
@@ -4384,7 +4394,7 @@ static void verify_memory_slice(const MergeMemNode* m, int alias_idx, Node* n) {
   }
 }
 #else // !ASSERT
-#define verify_memory_slice(m,i,n) (0)  // PRODUCT version is no-op
+#define verify_memory_slice(m,i,n) (void)(0)  // PRODUCT version is no-op
 #endif
 
 
