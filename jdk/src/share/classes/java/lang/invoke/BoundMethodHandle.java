@@ -155,7 +155,7 @@ class BoundMethodHandle extends MethodHandle {
     }
 
     @Override
-    public String toString() {
+    String debugString() {
         return addTypeString(baseName(), this);
     }
 

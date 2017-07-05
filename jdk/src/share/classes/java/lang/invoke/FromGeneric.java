@@ -260,7 +260,7 @@ class FromGeneric {
         protected final MethodHandle target;   // (any**N) => R
 
         @Override
-        public String toString() {
+        String debugString() {
             return addTypeString(target, this);
         }
 
