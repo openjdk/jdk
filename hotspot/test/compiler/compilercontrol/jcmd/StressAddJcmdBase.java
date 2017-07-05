@@ -32,74 +32,99 @@ import jdk.test.lib.TimeLimitedRunner;
 import jdk.test.lib.Utils;
 import pool.PoolHelper;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public abstract class StressAddJcmdBase {
     private static final int DIRECTIVES_AMOUNT = Integer.getInteger(
             "compiler.compilercontrol.jcmd.StressAddJcmdBase.directivesAmount",
-            1000);
-    private static final int DIRECTIVE_FILES = Integer.getInteger(
-            "compiler.compilercontrol.jcmd.StressAddJcmdBase.directiveFiles",
-            5);
+            200);
+    private static final int TIMEOUT = Integer.getInteger(
+            "compiler.compilercontrol.jcmd.StressAddJcmdBase.timeout",
+            30);
     private static final List<MethodDescriptor> DESCRIPTORS = new PoolHelper()
             .getAllMethods().stream()
                     .map(pair -> AbstractTestBase
                             .getValidMethodDescriptor(pair.first))
                     .collect(Collectors.toList());
+    private static final String DIRECTIVE_FILE = "directives.json";
+    private static final List<String> VM_OPTIONS = new ArrayList<>();
+    private static final Random RANDOM = Utils.getRandomInstance();
+
+    static {
+        VM_OPTIONS.add("-Xmixed");
+        VM_OPTIONS.add("-XX:+UnlockDiagnosticVMOptions");
+        VM_OPTIONS.add("-XX:+LogCompilation");
+        VM_OPTIONS.add("-XX:CompilerDirectivesLimit=1001");
+    }
 
     /**
      * Performs test
      */
     public void test() {
-        List<String> commands = prepareCommands();
-        Executor executor = new TimeLimitedExecutor(commands);
+        HugeDirectiveUtil.createHugeFile(DESCRIPTORS, DIRECTIVE_FILE,
+                DIRECTIVES_AMOUNT);
+        Executor executor = new TimeLimitedExecutor();
         List<OutputAnalyzer> outputAnalyzers = executor.execute();
         outputAnalyzers.get(0).shouldHaveExitValue(0);
     }
 
     /**
-     * Makes connection to the test VM
+     * Makes connection to the test VM and performs a diagnostic command
      *
-     * @param pid      a pid of the VM under test
-     * @param commands a list of jcmd commands to be executed
+     * @param pid a pid of the VM under test
      * @return true if the test should continue invocation of this method
      */
-    protected abstract boolean makeConnection(int pid, List<String> commands);
+    protected abstract boolean makeConnection(int pid);
 
     /**
      * Finish test executions
      */
     protected void finish() { }
 
-    private List<String> prepareCommands() {
-        String[] files = new String[DIRECTIVE_FILES];
-        for (int i = 0; i < DIRECTIVE_FILES; i++) {
-            files[i] = "directives" + i + ".json";
-            HugeDirectiveUtil.createHugeFile(DESCRIPTORS, files[i],
-                    DIRECTIVES_AMOUNT);
+    protected String nextCommand() {
+        int i = RANDOM.nextInt(JcmdCommand.values().length);
+        JcmdCommand jcmdCommand = JcmdCommand.values()[i];
+        switch (jcmdCommand) {
+            case ADD:
+                return jcmdCommand.command + " " + DIRECTIVE_FILE;
+            case PRINT:
+            case CLEAR:
+            case REMOVE:
+                return jcmdCommand.command;
+            default:
+                throw new Error("TESTBUG: incorrect command: " + jcmdCommand);
         }
-        return Stream.of(files)
-                .map(file -> "Compiler.directives_add " + file)
-                .collect(Collectors.toList());
+    }
+
+    private enum JcmdCommand {
+        ADD("Compiler.directives_add"),
+        PRINT("Compiler.directives_print"),
+        CLEAR("Compiler.directives_clear"),
+        REMOVE("Compiler.directives_remove");
+
+        public final String command;
+
+        JcmdCommand(String command) {
+            this.command = command;
+        }
     }
 
     private class TimeLimitedExecutor extends Executor {
-        private final List<String> jcmdCommands;
-
-        public TimeLimitedExecutor(List<String> jcmdCommands) {
+        public TimeLimitedExecutor() {
             /* There are no need to check the state */
-            super(true, null, null, jcmdCommands);
-            this.jcmdCommands = jcmdCommands;
+            super(true, VM_OPTIONS, null, null);
         }
 
         @Override
         protected OutputAnalyzer[] executeJCMD(int pid) {
             TimeLimitedRunner runner = new TimeLimitedRunner(
-                    Utils.DEFAULT_TEST_TIMEOUT,
+                    TimeUnit.SECONDS.toMillis(TIMEOUT),
                     Utils.TIMEOUT_FACTOR,
-                    () -> makeConnection(pid, jcmdCommands));
+                    () -> makeConnection(pid));
             try {
                 runner.call();
             } catch (Exception e) {

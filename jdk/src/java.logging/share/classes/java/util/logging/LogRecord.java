@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,8 +33,7 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.time.Clock;
 import java.util.function.Predicate;
-
-import static jdk.internal.logger.SimpleConsoleLogger.isFilteredFrame;
+import static jdk.internal.logger.SurrogateLogger.isFilteredFrame;
 
 /**
  * LogRecord objects are used to pass logging requests between

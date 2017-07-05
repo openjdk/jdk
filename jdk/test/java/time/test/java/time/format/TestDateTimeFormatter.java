@@ -79,19 +79,24 @@ import java.time.YearMonth;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import java.time.chrono.Chronology;
 import java.time.chrono.ThaiBuddhistChronology;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DecimalStyle;
 import java.time.format.SignStyle;
+import java.time.format.TextStyle;
+import java.time.temporal.Temporal;
 import java.time.temporal.TemporalAccessor;
 import java.util.Locale;
 import java.util.function.Function;
 
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 /**
  * Test DateTimeFormatter.
+ * @bug 8085887
  */
 @Test
 public class TestDateTimeFormatter {
@@ -194,6 +199,77 @@ public class TestDateTimeFormatter {
         String msg = temporal.toString();
         assertTrue(msg.contains("2010-06-30"), msg);
         assertTrue(msg.contains("11:30:56"), msg);
+    }
+
+    @DataProvider(name="nozone_exception_cases")
+    Object[][] exceptionCases() {
+        return new Object[][] {
+                {LocalDateTime.of(2000, 1, 1, 1, 1), "z", "ZoneId"},
+                {OffsetDateTime.of(2000, 1, 1, 3, 3, 3, 0, ZoneOffset.ofTotalSeconds(60)), "z", "ZoneId"},
+        };
+    }
+
+    // Test cases that should throw an exception with a cogent message
+    // containing the Type being queried and the Temporal being queried.
+    @Test(dataProvider="nozone_exception_cases")
+    public void test_throws_message(Temporal temporal, String pattern, String queryName) {
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern(pattern);
+        try {
+            fmt.format(temporal);
+            fail("Format using \"" + pattern + "\" with " +
+                    temporal + " should have failed");
+        } catch (DateTimeException dte) {
+            String msg = dte.getMessage();
+            // Verify message contains the type that is missing and the temporal value
+            assertTrue(msg.contains(queryName),
+                    String.format("\"%s\" missing from %s", queryName, msg));
+            String s = temporal.toString();
+            assertTrue(msg.contains(s),
+                    String.format("\"%s\" missing from %s", s, msg));
+        }
+
+    }
+
+    // Test cases that should throw an exception with a cogent message when missing the Chronology
+    @Test
+    public void test_throws_message_chrono() {
+        Chronology chrono = ThaiBuddhistChronology.INSTANCE;
+        DateTimeFormatter fmt = new DateTimeFormatterBuilder().appendZoneId().toFormatter()
+                .withChronology(chrono);
+        LocalTime now = LocalTime.now();
+        try {
+            fmt.format(now);
+            fail("Format using appendZoneId() should have failed");
+        } catch (DateTimeException dte) {
+            String msg = dte.getMessage();
+            // Verify message contains the type that is missing and the temporal value
+            assertTrue(msg.contains("ZoneId"),
+                    String.format("\"%s\" missing from %s", "ZoneId", msg));
+            assertTrue(msg.contains(chrono.toString()),
+                    String.format("\"%s\" missing from %s", chrono.toString(), msg));
+        }
+
+    }
+
+    // Test cases that should throw an exception with a cogent message when missing the ZoneId
+    @Test
+    public void test_throws_message_zone() {
+        ZoneId zone = ZoneId.of("Pacific/Honolulu");
+        DateTimeFormatter fmt = new DateTimeFormatterBuilder().appendChronologyId().toFormatter()
+                .withZone(zone);
+        LocalTime now = LocalTime.now();
+        try {
+            fmt.format(now);
+            fail("Format using appendChronologyId() should have failed");
+        } catch (DateTimeException dte) {
+            String msg = dte.getMessage();
+            // Verify message contains the type that is missing and the temporal value
+            assertTrue(msg.contains("Chronology"),
+                    String.format("\"%s\" missing from %s", "Chronology", msg));
+            assertTrue(msg.contains(zone.toString()),
+                    String.format("\"%s\" missing from %s", zone.toString(), msg));
+        }
+
     }
 
 }

@@ -59,11 +59,13 @@
  */
 package tck.java.time.format;
 
+import static java.time.format.DateTimeFormatter.BASIC_ISO_DATE;
 import static java.time.temporal.ChronoField.DAY_OF_MONTH;
 import static java.time.temporal.ChronoField.HOUR_OF_DAY;
 import static java.time.temporal.ChronoField.MINUTE_OF_HOUR;
 import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
 import static java.time.temporal.ChronoField.NANO_OF_SECOND;
+import static java.time.temporal.ChronoField.OFFSET_SECONDS;
 import static java.time.temporal.ChronoField.YEAR;
 import static org.testng.Assert.assertEquals;
 
@@ -73,6 +75,7 @@ import java.time.YearMonth;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
+import java.time.format.DateTimeParseException;
 import java.time.format.SignStyle;
 import java.time.format.TextStyle;
 import java.time.temporal.Temporal;
@@ -339,6 +342,18 @@ public class TCKDateTimeFormatterBuilder {
                 {"+HH", 2, 0, 45, "+02"},
                 {"+HH", 2, 30, 45, "+02"},
 
+                {"+HHmm", 2, 0, 0, "+02"},
+                {"+HHmm", -2, 0, 0, "-02"},
+                {"+HHmm", 2, 30, 0, "+0230"},
+                {"+HHmm", 2, 0, 45, "+02"},
+                {"+HHmm", 2, 30, 45, "+0230"},
+
+                {"+HH:mm", 2, 0, 0, "+02"},
+                {"+HH:mm", -2, 0, 0, "-02"},
+                {"+HH:mm", 2, 30, 0, "+02:30"},
+                {"+HH:mm", 2, 0, 45, "+02"},
+                {"+HH:mm", 2, 30, 45, "+02:30"},
+
                 {"+HHMM", 2, 0, 0, "+0200"},
                 {"+HHMM", -2, 0, 0, "-0200"},
                 {"+HHMM", 2, 30, 0, "+0230"},
@@ -374,6 +389,20 @@ public class TCKDateTimeFormatterBuilder {
                 {"+HH:MM:SS", 2, 30, 0, "+02:30:00"},
                 {"+HH:MM:SS", 2, 0, 45, "+02:00:45"},
                 {"+HH:MM:SS", 2, 30, 45, "+02:30:45"},
+
+                {"+HHmmss", 2, 0, 0, "+02"},
+                {"+HHmmss", -2, 0, 0, "-02"},
+                {"+HHmmss", 2, 30, 0, "+0230"},
+                {"+HHmmss", 2, 0, 45, "+020045"},
+                {"+HHmmss", 2, 30, 45, "+023045"},
+
+                {"+HH:mm:ss", 2, 0, 0, "+02"},
+                {"+HH:mm:ss", -2, 0, 0, "-02"},
+                {"+HH:mm:ss", 2, 30, 0, "+02:30"},
+                {"+HH:mm:ss", 2, 0, 45, "+02:00:45"},
+                {"+HH:mm:ss", 2, 30, 45, "+02:30:45"},
+
+
         };
     }
 
@@ -876,6 +905,84 @@ public class TCKDateTimeFormatterBuilder {
         assertEquals(pp.getIndex(), 4);
         assertEquals(parsed.getLong(HOUR_OF_DAY), 12L);
         assertEquals(parsed.getLong(MINUTE_OF_HOUR), 30L);
+    }
+
+    @DataProvider(name="lenientOffsetParseData")
+    Object[][] data_lenient_offset_parse() {
+        return new Object[][] {
+            {"+HH", "+01", 3600},
+            {"+HH", "+0101", 3660},
+            {"+HH", "+010101", 3661},
+            {"+HH", "+01", 3600},
+            {"+HH", "+01:01", 3660},
+            {"+HH", "+01:01:01", 3661},
+            {"+HHmm", "+01", 3600},
+            {"+HHmm", "+0101", 3660},
+            {"+HHmm", "+010101", 3661},
+            {"+HH:mm", "+01", 3600},
+            {"+HH:mm", "+01:01", 3660},
+            {"+HH:mm", "+01:01:01", 3661},
+            {"+HHMM", "+01", 3600},
+            {"+HHMM", "+0101", 3660},
+            {"+HHMM", "+010101", 3661},
+            {"+HH:MM", "+01", 3600},
+            {"+HH:MM", "+01:01", 3660},
+            {"+HH:MM", "+01:01:01", 3661},
+            {"+HHMMss", "+01", 3600},
+            {"+HHMMss", "+0101", 3660},
+            {"+HHMMss", "+010101", 3661},
+            {"+HH:MM:ss", "+01", 3600},
+            {"+HH:MM:ss", "+01:01", 3660},
+            {"+HH:MM:ss", "+01:01:01", 3661},
+            {"+HHMMSS", "+01", 3600},
+            {"+HHMMSS", "+0101", 3660},
+            {"+HHMMSS", "+010101", 3661},
+            {"+HH:MM:SS", "+01", 3600},
+            {"+HH:MM:SS", "+01:01", 3660},
+            {"+HH:MM:SS", "+01:01:01", 3661},
+            {"+HHmmss", "+01", 3600},
+            {"+HHmmss", "+0101", 3660},
+            {"+HHmmss", "+010101", 3661},
+            {"+HH:mm:ss", "+01", 3600},
+            {"+HH:mm:ss", "+01:01", 3660},
+            {"+HH:mm:ss", "+01:01:01", 3661},
+        };
+    }
+
+    @Test(dataProvider="lenientOffsetParseData")
+    public void test_lenient_offset_parse_1(String pattern, String offset, int offsetSeconds) {
+        assertEquals(new DateTimeFormatterBuilder().parseLenient().appendOffset(pattern, "Z").toFormatter().parse(offset).get(OFFSET_SECONDS),
+                     offsetSeconds);
+    }
+
+    @Test
+    public void test_lenient_offset_parse_2() {
+        assertEquals(new DateTimeFormatterBuilder().parseLenient().appendOffsetId().toFormatter().parse("+01").get(OFFSET_SECONDS),
+                     3600);
+    }
+
+    @Test(expectedExceptions=DateTimeParseException.class)
+    public void test_strict_appendOffsetId() {
+        assertEquals(new DateTimeFormatterBuilder().appendOffsetId().toFormatter().parse("+01").get(OFFSET_SECONDS),
+                     3600);
+    }
+
+    @Test(expectedExceptions=DateTimeParseException.class)
+    public void test_strict_appendOffset_1() {
+        assertEquals(new DateTimeFormatterBuilder().appendOffset("+HH:MM:ss", "Z").toFormatter().parse("+01").get(OFFSET_SECONDS),
+                     3600);
+    }
+
+    @Test(expectedExceptions=DateTimeParseException.class)
+    public void test_strict_appendOffset_2() {
+        assertEquals(new DateTimeFormatterBuilder().appendOffset("+HHMMss", "Z").toFormatter().parse("+01").get(OFFSET_SECONDS),
+                     3600);
+    }
+
+    @Test
+    public void test_basic_iso_date() {
+        assertEquals(BASIC_ISO_DATE.parse("20021231+01").get(OFFSET_SECONDS), 3600);
+        assertEquals(BASIC_ISO_DATE.parse("20021231+0101").get(OFFSET_SECONDS), 3660);
     }
 
 }

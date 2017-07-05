@@ -1484,17 +1484,6 @@ void PSParallelCompact::fill_dense_prefix_end(SpaceId id)
 }
 
 void
-PSParallelCompact::clear_source_region(HeapWord* beg_addr, HeapWord* end_addr)
-{
-  RegionData* const beg_ptr = _summary_data.addr_to_region_ptr(beg_addr);
-  HeapWord* const end_aligned_up = _summary_data.region_align_up(end_addr);
-  RegionData* const end_ptr = _summary_data.addr_to_region_ptr(end_aligned_up);
-  for (RegionData* cur = beg_ptr; cur < end_ptr; ++cur) {
-    cur->set_source_region(0);
-  }
-}
-
-void
 PSParallelCompact::summarize_space(SpaceId id, bool maximum_compaction)
 {
   assert(id < last_space_id, "id out of range");

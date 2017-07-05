@@ -138,9 +138,15 @@ void SimpleThresholdPolicy::initialize() {
     FLAG_SET_DEFAULT(CICompilerCount, 3);
   }
   int count = CICompilerCount;
+#ifdef _LP64
+  // On 64-bit systems, scale the number of compiler threads with
+  // the number of cores available on the system. Scaling is not
+  // performed on 32-bit systems because it can lead to exhaustion
+  // of the virtual memory address space available to the JVM.
   if (CICompilerCountPerCPU) {
     count = MAX2(log2_intptr(os::active_processor_count()), 1) * 3 / 2;
   }
+#endif
   set_c1_count(MAX2(count / 3, 1));
   set_c2_count(MAX2(count - c1_count(), 1));
   FLAG_SET_ERGO(intx, CICompilerCount, c1_count() + c2_count());
