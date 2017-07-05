@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -16,9 +16,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  *
  */
 
@@ -27,12 +27,26 @@
 // Note that the mark is not a real oop but just a word.
 // It is placed in the oop hierarchy for historical reasons.
 //
-// Bit-format of an object header (most significant first):
+// Bit-format of an object header (most significant first, big endian layout below):
 //
-//  32 bits: unused:0  hash:25 age:4 biased_lock:1 lock:2
-//  64 bits: unused:24 hash:31 cms:2 age:4 biased_lock:1 lock:2
-//           unused:20 size:35 cms:2 age:4 biased_lock:1 lock:2 (if cms
-//                                                               free chunk)
+//  32 bits:
+//  --------
+//             hash:25 ------------>| age:4    biased_lock:1 lock:2 (normal object)
+//             JavaThread*:23 epoch:2 age:4    biased_lock:1 lock:2 (biased object)
+//             size:32 ------------------------------------------>| (CMS free block)
+//             PromotedObject*:29 ---------->| promo_bits:3 ----->| (CMS promoted object)
+//
+//  64 bits:
+//  --------
+//  unused:25 hash:31 -->| unused:1   age:4    biased_lock:1 lock:2 (normal object)
+//  JavaThread*:54 epoch:2 unused:1   age:4    biased_lock:1 lock:2 (biased object)
+//  PromotedObject*:61 --------------------->| promo_bits:3 ----->| (CMS promoted object)
+//  size:64 ----------------------------------------------------->| (CMS free block)
+//
+//  unused:25 hash:31 -->| cms_free:1 age:4    biased_lock:1 lock:2 (COOPs && normal object)
+//  JavaThread*:54 epoch:2 cms_free:1 age:4    biased_lock:1 lock:2 (COOPs && biased object)
+//  narrowOop:32 unused:24 cms_free:1 unused:4 promo_bits:3 ----->| (COOPs && CMS promoted object)
+//  unused:21 size:35 -->| cms_free:1 unused:7 ------------------>| (COOPs && CMS free block)
 //
 //  - hash contains the identity hash value: largest value is
 //    31 bits, see os::random().  Also, 64-bit vm's require
@@ -61,8 +75,9 @@
 //    significant fraction of the eden semispaces and were not
 //    promoted promptly, causing an increase in the amount of copying
 //    performed. The runtime system aligns all JavaThread* pointers to
-//    a very large value (currently 128 bytes) to make room for the
-//    age bits when biased locking is enabled.
+//    a very large value (currently 128 bytes (32bVM) or 256 bytes (64bVM))
+//    to make room for the age bits & the epoch bits (used in support of
+//    biased locking), and for the CMS "freeness" bit in the 64bVM (+COOPs).
 //
 //    [JavaThread* | epoch | age | 1 | 01]       lock is biased toward given thread
 //    [0           | epoch | age | 1 | 01]       lock is anonymously biased
