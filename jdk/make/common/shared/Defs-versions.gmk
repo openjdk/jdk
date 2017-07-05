@@ -120,10 +120,10 @@ ifeq ($(PLATFORM), solaris)
   else
     REQUIRED_FREE_SPACE       = 1040000
   endif
-  REQUIRED_COMPILER_NAME      = Sun Studio 12
-  REQUIRED_COMPILER_VERSION   = SS12
+  REQUIRED_COMPILER_NAME      = Sun Studio 12 Update 1
+  REQUIRED_COMPILER_VERSION   = SS12u1
   ifeq ($(CC_VERSION),sun)
-    REQUIRED_CC_VER           = 5.9
+    REQUIRED_CC_VER           = 5.10
   endif
   ifeq ($(CC_VERSION),gcc)
     REQUIRED_CC_VER           = 3.4.3
@@ -145,7 +145,7 @@ ifeq ($(PLATFORM), linux)
     REQUIRED_CC_VER           = 4.3.0
   endif
   ifeq ($(CC_VERSION),sun)
-    REQUIRED_CC_VER           = 5.9
+    REQUIRED_CC_VER           = 5.10
   endif
 endif
 
