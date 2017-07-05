@@ -62,7 +62,6 @@
 package java.time.temporal;
 
 import java.time.DateTimeException;
-import java.time.ZoneId;
 import java.time.chrono.Chronology;
 import java.time.format.ResolverStyle;
 import java.util.Locale;
@@ -338,6 +337,13 @@ public interface TemporalField {
      * complete {@code LocalDate}. The resolve method will remove all three
      * fields from the map before returning the {@code LocalDate}.
      * <p>
+     * A partially complete temporal is used to allow the chronology and zone
+     * to be queried. In general, only the chronology will be needed.
+     * Querying items other than the zone or chronology is undefined and
+     * must not be relied on.
+     * The behavior of other methods such as {@code get}, {@code getLong},
+     * {@code range} and {@code isSupported} is unpredictable and the results undefined.
+     * <p>
      * If resolution should be possible, but the data is invalid, the resolver
      * style should be used to determine an appropriate level of leniency, which
      * may require throwing a {@code DateTimeException} or {@code ArithmeticException}.
@@ -350,16 +356,14 @@ public interface TemporalField {
      * instances that can produce a date, such as {@code EPOCH_DAY}.
      * <p>
      * Not all {@code TemporalAccessor} implementations are accepted as return values.
-     * Implementations must accept {@code ChronoLocalDate}, {@code ChronoLocalDateTime},
-     * {@code ChronoZonedDateTime} and {@code LocalTime}.
-     * <p>
-     * The zone is not normally required for resolution, but is provided for completeness.
+     * Implementations that call this method must accept {@code ChronoLocalDate},
+     * {@code ChronoLocalDateTime}, {@code ChronoZonedDateTime} and {@code LocalTime}.
      * <p>
      * The default implementation must return null.
      *
      * @param fieldValues  the map of fields to values, which can be updated, not null
-     * @param chronology  the effective chronology, not null
-     * @param zone  the effective zone, not null
+     * @param partialTemporal  the partially complete temporal to query for zone and
+     *  chronology; querying for other things is undefined and not recommended, not null
      * @param resolverStyle  the requested type of resolve, not null
      * @return the resolved temporal object; null if resolving only
      *  changed the map, or no resolve occurred
@@ -368,8 +372,9 @@ public interface TemporalField {
      *  by querying a field on the temporal without first checking if it is supported
      */
     default TemporalAccessor resolve(
-            Map<TemporalField, Long> fieldValues, Chronology chronology,
-            ZoneId zone, ResolverStyle resolverStyle) {
+            Map<TemporalField, Long> fieldValues,
+            TemporalAccessor partialTemporal,
+            ResolverStyle resolverStyle) {
         return null;
     }
 

@@ -188,13 +188,8 @@ void awt_freeParsedRaster(RasterS_t *rasterP, int freeRasterP);
 
 void awt_freeParsedImage(BufImageS_t *imageP, int freeImageP);
 
-int awt_getPixelByte(JNIEnv *env, int band, RasterS_t *rasterP,
-                     unsigned char *bufferP);
-int awt_setPixelByte(JNIEnv *env, int band, RasterS_t *rasterP,
-                     unsigned char *bufferP);
-int awt_getPixelShort(JNIEnv *env, int band, RasterS_t *rasterP,
-                     unsigned short *bufferP);
-int awt_setPixelShort(JNIEnv *env, int band, RasterS_t *rasterP,
-                      unsigned short *bufferP);
+int awt_getPixels(JNIEnv *env, RasterS_t *rasterP, void *bufferP);
+
+int awt_setPixels(JNIEnv *env, RasterS_t *rasterP, void *bufferP);
 
 #endif /* AWT_PARSE_IMAGE_H */

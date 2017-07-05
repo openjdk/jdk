@@ -38,9 +38,10 @@ import jdk.nashorn.internal.runtime.linker.InvokeByName;
 public interface GlobalObject {
     /**
      * Is this global of the given Context?
+     * @param ctxt the context
      * @return true if this global belongs to the given Context
      */
-    public boolean isOfContext(Context context);
+    public boolean isOfContext(final Context ctxt);
 
     /**
      * Does this global belong to a strict Context?

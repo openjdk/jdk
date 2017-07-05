@@ -42,6 +42,7 @@ package com.sun.jdi;
  * @since  1.3
  */
 
+@jdk.Exported
 public interface LocalVariable extends Mirror, Comparable<LocalVariable> {
 
     /**

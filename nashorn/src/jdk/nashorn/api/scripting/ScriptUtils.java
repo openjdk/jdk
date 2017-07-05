@@ -25,6 +25,7 @@
 
 package jdk.nashorn.api.scripting;
 
+import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 
 /**
@@ -57,4 +58,17 @@ public final class ScriptUtils {
     public static String format(final String format, final Object[] args) {
         return Formatter.format(format, args);
     }
+
+    /**
+     * Create a wrapper function that calls {@code func} synchronized on {@code sync} or, if that is undefined,
+     * {@code self}. Used to implement "sync" function in resources/mozilla_compat.js.
+     *
+     * @param func the function to invoke
+     * @param sync the object to synchronize on
+     * @return a synchronizing wrapper function
+     */
+    public static Object makeSynchronizedFunction(final ScriptFunction func, final Object sync) {
+        return func.makeSynchronizedFunction(sync);
+    }
+
 }

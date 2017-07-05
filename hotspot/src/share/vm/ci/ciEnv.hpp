@@ -452,6 +452,7 @@ public:
 
   // Dump the compilation replay data for the ciEnv to the stream.
   void dump_replay_data(outputStream* out);
+  void dump_replay_data_unsafe(outputStream* out);
 };
 
 #endif // SHARE_VM_CI_CIENV_HPP

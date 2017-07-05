@@ -138,9 +138,10 @@ static bool check_compiled_frame(JavaThread* thread) {
 
 
 #define gen(env, var, type_func_gen, c_func, fancy_jump, pass_tls, save_arg_regs, return_pc) \
-  var = generate_stub(env, type_func_gen, CAST_FROM_FN_PTR(address, c_func), #var, fancy_jump, pass_tls, save_arg_regs, return_pc)
+  var = generate_stub(env, type_func_gen, CAST_FROM_FN_PTR(address, c_func), #var, fancy_jump, pass_tls, save_arg_regs, return_pc); \
+  if (var == NULL) { return false; }
 
-void OptoRuntime::generate(ciEnv* env) {
+bool OptoRuntime::generate(ciEnv* env) {
 
   generate_exception_blob();
 
@@ -158,7 +159,7 @@ void OptoRuntime::generate(ciEnv* env) {
   gen(env, _multianewarrayN_Java           , multianewarrayN_Type         , multianewarrayN_C               ,    0 , true , false, false);
   gen(env, _g1_wb_pre_Java                 , g1_wb_pre_Type               , SharedRuntime::g1_wb_pre        ,    0 , false, false, false);
   gen(env, _g1_wb_post_Java                , g1_wb_post_Type              , SharedRuntime::g1_wb_post       ,    0 , false, false, false);
-  gen(env, _complete_monitor_locking_Java  , complete_monitor_enter_Type  , SharedRuntime::complete_monitor_locking_C      ,    0 , false, false, false);
+  gen(env, _complete_monitor_locking_Java  , complete_monitor_enter_Type  , SharedRuntime::complete_monitor_locking_C, 0, false, false, false);
   gen(env, _rethrow_Java                   , rethrow_Type                 , rethrow_C                       ,    2 , true , false, true );
 
   gen(env, _slow_arraycopy_Java            , slow_arraycopy_Type          , SharedRuntime::slow_arraycopy_C ,    0 , false, false, false);
@@ -168,7 +169,7 @@ void OptoRuntime::generate(ciEnv* env) {
   gen(env, _zap_dead_Java_locals_Java      , zap_dead_locals_Type         , zap_dead_Java_locals_C          ,    0 , false, true , false );
   gen(env, _zap_dead_native_locals_Java    , zap_dead_locals_Type         , zap_dead_native_locals_C        ,    0 , false, true , false );
 # endif
-
+  return true;
 }
 
 #undef gen
@@ -976,30 +977,36 @@ JRT_ENTRY_NO_ASYNC(address, OptoRuntime::handle_exception_C_helper(JavaThread* t
   address handler_address = NULL;
 
   Handle exception(thread, thread->exception_oop());
+  address pc = thread->exception_pc();
+
+  // Clear out the exception oop and pc since looking up an
+  // exception handler can cause class loading, which might throw an
+  // exception and those fields are expected to be clear during
+  // normal bytecode execution.
+  thread->clear_exception_oop_and_pc();
 
   if (TraceExceptions) {
-    trace_exception(exception(), thread->exception_pc(), "");
+    trace_exception(exception(), pc, "");
   }
+
   // for AbortVMOnException flag
   NOT_PRODUCT(Exceptions::debug_check_abort(exception));
 
-  #ifdef ASSERT
-    if (!(exception->is_a(SystemDictionary::Throwable_klass()))) {
-      // should throw an exception here
-      ShouldNotReachHere();
-    }
-  #endif
-
+#ifdef ASSERT
+  if (!(exception->is_a(SystemDictionary::Throwable_klass()))) {
+    // should throw an exception here
+    ShouldNotReachHere();
+  }
+#endif
 
   // new exception handling: this method is entered only from adapters
   // exceptions from compiled java methods are handled in compiled code
   // using rethrow node
 
-  address pc = thread->exception_pc();
   nm = CodeCache::find_nmethod(pc);
   assert(nm != NULL, "No NMethod found");
   if (nm->is_native_method()) {
-    fatal("Native mathod should not have path to exception handling");
+    fatal("Native method should not have path to exception handling");
   } else {
     // we are switching to old paradigm: search for exception handler in caller_frame
     // instead in exception handler of caller_frame.sender()
@@ -1346,7 +1353,8 @@ static void trace_exception(oop exception_oop, address exception_pc, const char*
   tty->print(" in ");
   CodeBlob* blob = CodeCache::find_blob(exception_pc);
   if (blob->is_nmethod()) {
-    ((nmethod*)blob)->method()->print_value();
+    nmethod* nm = blob->as_nmethod_or_null();
+    nm->method()->print_value();
   } else if (blob->is_runtime_stub()) {
     tty->print("<runtime-stub>");
   } else {

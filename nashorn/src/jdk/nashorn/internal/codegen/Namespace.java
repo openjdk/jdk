@@ -81,7 +81,7 @@ public class Namespace {
                 final int count = counter + 1;
                 namespaceDirectory.put(base, count);
 
-                return base + "$" + count;
+                return base + '-' + count;
             }
         }
 

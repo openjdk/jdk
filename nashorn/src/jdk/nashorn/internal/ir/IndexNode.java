@@ -25,7 +25,6 @@
 
 package jdk.nashorn.internal.ir;
 
-import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 
@@ -46,12 +45,12 @@ public final class IndexNode extends BaseNode {
      * @param index   index for access
      */
     public IndexNode(final long token, final int finish, final Expression base, final Expression index) {
-        super(token, finish, base, false, false);
+        super(token, finish, base, false);
         this.index = index;
     }
 
-    private IndexNode(final IndexNode indexNode, final Expression base, final Expression index, final boolean isFunction, final boolean hasCallSiteType) {
-        super(indexNode, base, isFunction, hasCallSiteType);
+    private IndexNode(final IndexNode indexNode, final Expression base, final Expression index, final boolean isFunction) {
+        super(indexNode, base, isFunction);
         this.index = index;
     }
 
@@ -68,13 +67,6 @@ public final class IndexNode extends BaseNode {
     @Override
     public void toString(final StringBuilder sb) {
         final boolean needsParen = tokenType().needsParens(base.tokenType(), true);
-
-        if (hasCallSiteType()) {
-            sb.append('{');
-            final String desc = getType().getDescriptor();
-            sb.append(desc.charAt(desc.length() - 1) == ';' ? "O" : getType().getDescriptor());
-            sb.append('}');
-        }
 
         if (needsParen) {
             sb.append('(');
@@ -103,7 +95,7 @@ public final class IndexNode extends BaseNode {
         if (this.base == base) {
             return this;
         }
-        return new IndexNode(this, base, index, isFunction(), hasCallSiteType());
+        return new IndexNode(this, base, index, isFunction());
     }
 
     /**
@@ -115,7 +107,7 @@ public final class IndexNode extends BaseNode {
         if(this.index == index) {
             return this;
         }
-        return new IndexNode(this, base, index, isFunction(), hasCallSiteType());
+        return new IndexNode(this, base, index, isFunction());
     }
 
     @Override
@@ -123,14 +115,7 @@ public final class IndexNode extends BaseNode {
         if (isFunction()) {
             return this;
         }
-        return new IndexNode(this, base, index, true, hasCallSiteType());
-    }
-
-    @Override
-    public IndexNode setType(final TemporarySymbols ts, final LexicalContext lc, final Type type) {
-        logTypeChange(type);
-        final IndexNode newIndexNode = (IndexNode)setSymbol(lc, getSymbol().setTypeOverrideShared(type, ts));
-        return new IndexNode(newIndexNode, base, index, isFunction(), true);
+        return new IndexNode(this, base, index, true);
     }
 
 }

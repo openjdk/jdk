@@ -31,6 +31,8 @@
 
 package sun.security.krb5.internal;
 
+import sun.misc.IOUtils;
+
 import java.io.*;
 import java.net.*;
 
@@ -100,17 +102,15 @@ class TCPClient extends NetClient {
             return null;
         }
 
-        byte data[] = new byte[len];
-        count = readFully(data, len);
-        if (count != len) {
+        try {
+            return IOUtils.readFully(in, len, true);
+        } catch (IOException ioe) {
             if (Krb5.DEBUG) {
                 System.out.println(
                     ">>>DEBUG: TCPClient could not read complete packet (" +
                     len + "/" + count + ")");
             }
             return null;
-        } else {
-            return data;
         }
     }
 

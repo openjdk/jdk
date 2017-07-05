@@ -100,7 +100,7 @@ import java.util.Objects;
  * <i>de facto</i> world calendar.
  * <p>
  * The fields are defined as follows:
- * <p><ul>
+ * <ul>
  * <li>era - There are two eras, 'Current Era' (CE) and 'Before Current Era' (BCE).
  * <li>year-of-era - The year-of-era is the same as the proleptic-year for the current CE era.
  *  For the BCE era before the ISO epoch the year increases from 1 upwards as time goes backwards.
@@ -113,14 +113,14 @@ import java.util.Objects;
  * <li>day-of-year - There are 365 days in a standard ISO year and 366 in a leap year.
  *  The days are numbered from 1 to 365 or 1 to 366.
  * <li>leap-year - Leap years occur every 4 years, except where the year is divisble by 100 and not divisble by 400.
- * </ul><p>
+ * </ul>
  *
  * @implSpec
  * This class is immutable and thread-safe.
  *
  * @since 1.8
  */
-public final class IsoChronology extends Chronology implements Serializable {
+public final class IsoChronology extends AbstractChronology implements Serializable {
 
     /**
      * Singleton instance of the ISO chronology.

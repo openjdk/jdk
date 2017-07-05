@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package sun.invoke.util;
 
 import java.lang.reflect.Modifier;
 import static java.lang.reflect.Modifier.*;
+import sun.reflect.Reflection;
 
 /**
  * This class centralizes information about the JVM's linkage access control.
@@ -140,7 +141,17 @@ public class VerifyAccess {
     }
 
     static boolean isPublicSuperClass(Class<?> defc, Class<?> lookupClass) {
-        return isPublic(defc.getModifiers()) && defc.isAssignableFrom(lookupClass);
+        return isPublic(getClassModifiers(defc)) && defc.isAssignableFrom(lookupClass);
+    }
+
+    static int getClassModifiers(Class<?> c) {
+        // This would return the mask stored by javac for the source-level modifiers.
+        //   return c.getModifiers();
+        // But what we need for JVM access checks are the actual bits from the class header.
+        // ...But arrays and primitives are synthesized with their own odd flags:
+        if (c.isArray() || c.isPrimitive())
+            return c.getModifiers();
+        return Reflection.getClassAccessFlags(c);
     }
 
     /**
@@ -159,7 +170,7 @@ public class VerifyAccess {
         if (allowedModes == 0)  return false;
         assert((allowedModes & PUBLIC) != 0 &&
                (allowedModes & ~(ALL_ACCESS_MODES|PACKAGE_ALLOWED)) == 0);
-        int mods = refc.getModifiers();
+        int mods = getClassModifiers(refc);
         if (isPublic(mods))
             return true;
         if ((allowedModes & PACKAGE_ALLOWED) != 0 &&

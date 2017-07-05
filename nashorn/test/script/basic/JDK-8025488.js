@@ -40,4 +40,4 @@ MyError.prototype.toString = function() {
 }
 
 var e = new MyError(); 
-print(e.stack);
+print(e.stack.replace(/\\/g, '/'));

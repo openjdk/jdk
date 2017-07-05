@@ -965,14 +965,12 @@ void ciReplay::initialize(ciMethod* m) {
     tty->cr();
   } else {
     EXCEPTION_CONTEXT;
-    MethodCounters* mcs = method->method_counters();
     // m->_instructions_size = rec->instructions_size;
     m->_instructions_size = -1;
     m->_interpreter_invocation_count = rec->interpreter_invocation_count;
     m->_interpreter_throwout_count = rec->interpreter_throwout_count;
-    if (mcs == NULL) {
-      mcs = Method::build_method_counters(method, CHECK_AND_CLEAR);
-    }
+    MethodCounters* mcs = method->get_method_counters(CHECK_AND_CLEAR);
+    guarantee(mcs != NULL, "method counters allocation failed");
     mcs->invocation_counter()->_counter = rec->invocation_counter;
     mcs->backedge_counter()->_counter = rec->backedge_counter;
   }

@@ -119,7 +119,7 @@ public class KrbCred {
         return credMessg;
     }
 
-         // Used in InitialToken, key always NULL_KEY
+    // Used in InitialToken, NULL_KEY might be used
     public KrbCred(byte[] asn1Message, EncryptionKey key)
         throws KrbException, IOException {
 
@@ -127,6 +127,9 @@ public class KrbCred {
 
         ticket = credMessg.tickets[0];
 
+        if (credMessg.encPart.getEType() == 0) {
+            key = EncryptionKey.NULL_KEY;
+        }
         byte[] temp = credMessg.encPart.decrypt(key,
             KeyUsage.KU_ENC_KRB_CRED_PART);
         byte[] plainText = credMessg.encPart.reset(temp);

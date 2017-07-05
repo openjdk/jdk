@@ -59,6 +59,9 @@ public abstract class ScriptFunction extends ScriptObject {
     /** Method handle for name getter for this ScriptFunction */
     public static final MethodHandle G$NAME = findOwnMH("G$name", Object.class, Object.class);
 
+    /** Method handle used for implementing sync() in mozilla_compat */
+    public static final MethodHandle INVOKE_SYNC = findOwnMH("invokeSync", Object.class, ScriptFunction.class, Object.class, Object.class, Object[].class);
+
     /** Method handle for allocate function for this ScriptFunction */
     static final MethodHandle ALLOCATE = findOwnMH("allocate", Object.class);
 
@@ -301,6 +304,14 @@ public abstract class ScriptFunction extends ScriptObject {
     public abstract void setPrototype(Object prototype);
 
     /**
+     * Create a function that invokes this function synchronized on {@code sync} or the self object
+     * of the invocation.
+     * @param sync the Object to synchronize on, or undefined
+     * @return synchronized function
+     */
+    public abstract ScriptFunction makeSynchronizedFunction(Object sync);
+
+    /**
      * Return the most appropriate invoke handle if there are specializations
      * @param type most specific method type to look for invocation with
      * @param args args for trampoline invocation
@@ -326,7 +337,7 @@ public abstract class ScriptFunction extends ScriptObject {
      * @param self self reference
      * @return bound invoke handle
      */
-    public final MethodHandle getBoundInvokeHandle(final ScriptObject self) {
+    public final MethodHandle getBoundInvokeHandle(final Object self) {
         return MH.bindTo(bindToCalleeIfNeeded(data.getGenericInvoker()), self);
     }
 
@@ -612,6 +623,15 @@ public abstract class ScriptFunction extends ScriptObject {
         System.arraycopy(src, 0, result, 1, src.length);
         result[0] = value;
         return result;
+    }
+
+    @SuppressWarnings("unused")
+    private static Object invokeSync(final ScriptFunction func, final Object sync, final Object self, final Object... args)
+            throws Throwable {
+        final Object syncObj = sync == UNDEFINED ? self : sync;
+        synchronized (syncObj) {
+            return func.invoke(self, args);
+        }
     }
 
     private static MethodHandle findOwnMH(final String name, final Class<?> rtype, final Class<?>... types) {

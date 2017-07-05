@@ -100,6 +100,7 @@ import java.time.temporal.JulianFields;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalAmount;
 import java.time.temporal.TemporalField;
+import java.time.temporal.TemporalQueries;
 import java.time.temporal.TemporalQuery;
 import java.time.temporal.TemporalUnit;
 import java.time.temporal.UnsupportedTemporalTypeException;
@@ -476,13 +477,13 @@ public class TCKYearMonth extends AbstractDateTimeTest {
     @DataProvider(name="query")
     Object[][] data_query() {
         return new Object[][] {
-                {TEST_2008_06, TemporalQuery.chronology(), IsoChronology.INSTANCE},
-                {TEST_2008_06, TemporalQuery.zoneId(), null},
-                {TEST_2008_06, TemporalQuery.precision(), ChronoUnit.MONTHS},
-                {TEST_2008_06, TemporalQuery.zone(), null},
-                {TEST_2008_06, TemporalQuery.offset(), null},
-                {TEST_2008_06, TemporalQuery.localDate(), null},
-                {TEST_2008_06, TemporalQuery.localTime(), null},
+                {TEST_2008_06, TemporalQueries.chronology(), IsoChronology.INSTANCE},
+                {TEST_2008_06, TemporalQueries.zoneId(), null},
+                {TEST_2008_06, TemporalQueries.precision(), ChronoUnit.MONTHS},
+                {TEST_2008_06, TemporalQueries.zone(), null},
+                {TEST_2008_06, TemporalQueries.offset(), null},
+                {TEST_2008_06, TemporalQueries.localDate(), null},
+                {TEST_2008_06, TemporalQueries.localTime(), null},
         };
     }
 
@@ -768,7 +769,7 @@ public class TCKYearMonth extends AbstractDateTimeTest {
     }
 
     @Test(dataProvider="plus_long_TemporalUnit")
-    public void test_plus_long_TemporalUnit(YearMonth base, long amount, TemporalUnit unit, YearMonth expectedYearMonth, Class expectedEx) {
+    public void test_plus_long_TemporalUnit(YearMonth base, long amount, TemporalUnit unit, YearMonth expectedYearMonth, Class<?> expectedEx) {
         if (expectedEx == null) {
             assertEquals(base.plus(amount, unit), expectedYearMonth);
         } else {
@@ -820,7 +821,7 @@ public class TCKYearMonth extends AbstractDateTimeTest {
     }
 
     @Test(dataProvider="plus_TemporalAmount")
-    public void test_plus_TemporalAmount(YearMonth base, TemporalAmount temporalAmount, YearMonth expectedYearMonth, Class expectedEx) {
+    public void test_plus_TemporalAmount(YearMonth base, TemporalAmount temporalAmount, YearMonth expectedYearMonth, Class<?> expectedEx) {
         if (expectedEx == null) {
             assertEquals(base.plus(temporalAmount), expectedYearMonth);
         } else {
@@ -983,7 +984,7 @@ public class TCKYearMonth extends AbstractDateTimeTest {
     }
 
     @Test(dataProvider="minus_long_TemporalUnit")
-    public void test_minus_long_TemporalUnit(YearMonth base, long amount, TemporalUnit unit, YearMonth expectedYearMonth, Class expectedEx) {
+    public void test_minus_long_TemporalUnit(YearMonth base, long amount, TemporalUnit unit, YearMonth expectedYearMonth, Class<?> expectedEx) {
         if (expectedEx == null) {
             assertEquals(base.minus(amount, unit), expectedYearMonth);
         } else {
@@ -1035,7 +1036,7 @@ public class TCKYearMonth extends AbstractDateTimeTest {
     }
 
     @Test(dataProvider="minus_TemporalAmount")
-    public void test_minus_TemporalAmount(YearMonth base, TemporalAmount temporalAmount, YearMonth expectedYearMonth, Class expectedEx) {
+    public void test_minus_TemporalAmount(YearMonth base, TemporalAmount temporalAmount, YearMonth expectedYearMonth, Class<?> expectedEx) {
         if (expectedEx == null) {
             assertEquals(base.minus(temporalAmount), expectedYearMonth);
         } else {

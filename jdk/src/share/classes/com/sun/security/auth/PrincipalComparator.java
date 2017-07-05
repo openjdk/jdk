@@ -50,6 +50,7 @@ package com.sun.security.auth;
  * @see java.security.Principal
  * @see javax.security.auth.Subject
  */
+@jdk.Exported
 public interface PrincipalComparator {
     /**
      * Check if the specified <code>Subject</code> is implied by

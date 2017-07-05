@@ -65,7 +65,17 @@ public final class DebugLogger {
         } else {
             this.logger = Logging.getLogger(loggerName);
         }
-        this.isEnabled = logger.getLevel() != Level.OFF;
+        assert logger != null;
+        this.isEnabled = getLevel() != Level.OFF;
+    }
+
+    /**
+     * Do not currently support chaining this with parent logger. Logger level null
+     * means disabled
+     * @return level
+     */
+    private Level getLevel() {
+        return logger.getLevel() == null ? Level.OFF : logger.getLevel();
     }
 
     /**
@@ -126,7 +136,7 @@ public final class DebugLogger {
      * @return true if level is above the given one
      */
     public boolean levelAbove(final Level level) {
-        return logger.getLevel().intValue() > level.intValue();
+        return getLevel().intValue() > level.intValue();
     }
 
     /**

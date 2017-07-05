@@ -68,4 +68,10 @@ public interface CodeInstaller<T> {
      * @return unique script id
      */
     public long getUniqueScriptId();
+
+    /**
+     * Get next unique eval id
+     * @return unique eval id
+     */
+    public long getUniqueEvalId();
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -135,9 +135,10 @@ class CipherBlockChaining extends FeedbackCipher  {
      * @param plainLen the length of the input data
      * @param cipher the buffer for the result
      * @param cipherOffset the offset in <code>cipher</code>
+     * @return the length of the encrypted data
      */
-    void encrypt(byte[] plain, int plainOffset, int plainLen,
-                 byte[] cipher, int cipherOffset)
+    int encrypt(byte[] plain, int plainOffset, int plainLen,
+                byte[] cipher, int cipherOffset)
     {
         int i;
         int endIndex = plainOffset + plainLen;
@@ -150,6 +151,7 @@ class CipherBlockChaining extends FeedbackCipher  {
             embeddedCipher.encryptBlock(k, 0, cipher, cipherOffset);
             System.arraycopy(cipher, cipherOffset, r, 0, blockSize);
         }
+        return plainLen;
     }
 
     /**
@@ -174,13 +176,14 @@ class CipherBlockChaining extends FeedbackCipher  {
      * @param cipherLen the length of the input data
      * @param plain the buffer for the result
      * @param plainOffset the offset in <code>plain</code>
+     * @return the length of the decrypted data
      *
      * @exception IllegalBlockSizeException if input data whose length does
      * not correspond to the embedded cipher's block size is passed to the
      * embedded cipher
      */
-    void decrypt(byte[] cipher, int cipherOffset, int cipherLen,
-                 byte[] plain, int plainOffset)
+    int decrypt(byte[] cipher, int cipherOffset, int cipherLen,
+                byte[] plain, int plainOffset)
     {
         int i;
         byte[] cipherOrig=null;
@@ -195,7 +198,6 @@ class CipherBlockChaining extends FeedbackCipher  {
             // the plaintext result.
             cipherOrig = cipher.clone();
         }
-
         for (; cipherOffset < endIndex;
              cipherOffset += blockSize, plainOffset += blockSize) {
             embeddedCipher.decryptBlock(cipher, cipherOffset, k, 0);
@@ -208,5 +210,6 @@ class CipherBlockChaining extends FeedbackCipher  {
                 System.arraycopy(cipherOrig, cipherOffset, r, 0, blockSize);
             }
         }
+        return cipherLen;
     }
 }

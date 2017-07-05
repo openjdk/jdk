@@ -132,6 +132,7 @@ class InstructionPrinter: public InstructionVisitor {
   virtual void do_UnsafePrefetchRead (UnsafePrefetchRead*  x);
   virtual void do_UnsafePrefetchWrite(UnsafePrefetchWrite* x);
   virtual void do_ProfileCall    (ProfileCall*     x);
+  virtual void do_ProfileReturnType (ProfileReturnType*  x);
   virtual void do_ProfileInvoke  (ProfileInvoke*   x);
   virtual void do_RuntimeCall    (RuntimeCall*     x);
   virtual void do_MemBar         (MemBar*          x);

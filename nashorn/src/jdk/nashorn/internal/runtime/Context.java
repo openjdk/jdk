@@ -139,6 +139,11 @@ public final class Context {
         public long getUniqueScriptId() {
             return context.getUniqueScriptId();
         }
+
+        @Override
+        public long getUniqueEvalId() {
+            return context.getUniqueEvalId();
+        }
     }
 
     /** Is Context global debug mode enabled ? */
@@ -238,10 +243,14 @@ public final class Context {
     /** Unique id for script. Used only when --loader-per-compile=false */
     private final AtomicLong uniqueScriptId;
 
+    /** Unique id for 'eval' */
+    private final AtomicLong uniqueEvalId;
+
     private static final ClassLoader myLoader = Context.class.getClassLoader();
     private static final StructureLoader sharedLoader;
 
-    /*package-private*/ ClassLoader getSharedLoader() {
+    /*package-private*/ @SuppressWarnings("static-method")
+    ClassLoader getSharedLoader() {
         return sharedLoader;
     }
 
@@ -320,6 +329,7 @@ public final class Context {
             this.uniqueScriptId = new AtomicLong();
         }
         this.errors    = errors;
+        this.uniqueEvalId = new AtomicLong();
 
         // if user passed -classpath option, make a class loader with that and set it as
         // thread context class loader so that script can access classes from that path.
@@ -625,11 +635,11 @@ public final class Context {
      * @param clazz Class object
      * @throw SecurityException if not accessible
      */
-    public static void checkPackageAccess(final Class clazz) {
+    public static void checkPackageAccess(final Class<?> clazz) {
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
-            Class bottomClazz = clazz;
-            while(bottomClazz.isArray()) {
+            Class<?> bottomClazz = clazz;
+            while (bottomClazz.isArray()) {
                 bottomClazz = bottomClazz.getComponentType();
             }
             checkPackageAccess(sm, bottomClazz.getName());
@@ -664,7 +674,7 @@ public final class Context {
      * @param clazz Class object
      * @return true if package is accessible, false otherwise
      */
-    private static boolean isAccessiblePackage(final Class clazz) {
+    private static boolean isAccessiblePackage(final Class<?> clazz) {
         try {
             checkPackageAccess(clazz);
             return true;
@@ -838,7 +848,7 @@ public final class Context {
         return Context.getContextTrusted();
     }
 
-    private URL getResourceURL(final String resName) throws IOException {
+    private URL getResourceURL(final String resName) {
         // try the classPathLoader if we have and then
         // try the appLoader if non-null.
         if (classPathLoader != null) {
@@ -952,6 +962,10 @@ public final class Context {
                     return new ScriptLoader(appLoader, Context.this);
                 }
              }, CREATE_LOADER_ACC_CTXT);
+    }
+
+    private long getUniqueEvalId() {
+        return uniqueEvalId.getAndIncrement();
     }
 
     private long getUniqueScriptId() {

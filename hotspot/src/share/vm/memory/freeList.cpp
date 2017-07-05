@@ -25,7 +25,6 @@
 #include "precompiled.hpp"
 #include "memory/freeBlockDictionary.hpp"
 #include "memory/freeList.hpp"
-#include "memory/metablock.hpp"
 #include "memory/metachunk.hpp"
 #include "memory/sharedHeap.hpp"
 #include "runtime/globals.hpp"

@@ -33,6 +33,7 @@ import java.lang.invoke.MethodType;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
+import jdk.internal.dynalink.support.NameCodec;
 
 import jdk.nashorn.internal.codegen.Compiler;
 import jdk.nashorn.internal.codegen.CompilerConstants;
@@ -52,7 +53,7 @@ import jdk.nashorn.internal.parser.TokenType;
 public final class RecompilableScriptFunctionData extends ScriptFunctionData {
 
     /** FunctionNode with the code for this ScriptFunction */
-    private volatile FunctionNode functionNode;
+    private FunctionNode functionNode;
 
     /** Source from which FunctionNode was parsed. */
     private final Source source;
@@ -64,7 +65,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
     private final PropertyMap allocatorMap;
 
     /** Code installer used for all further recompilation/specialization of this ScriptFunction */
-    private volatile CodeInstaller<ScriptEnvironment> installer;
+    private CodeInstaller<ScriptEnvironment> installer;
 
     /** Name of class where allocator function resides */
     private final String allocatorClassName;
@@ -100,9 +101,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
      * @param allocatorMap       allocator map to seed instances with, when constructing
      */
     public RecompilableScriptFunctionData(final FunctionNode functionNode, final CodeInstaller<ScriptEnvironment> installer, final String allocatorClassName, final PropertyMap allocatorMap) {
-        super(functionNode.isAnonymous() ?
-                "" :
-                functionNode.getIdent().getName(),
+        super(functionName(functionNode),
               functionNode.getParameters().size(),
               functionNode.isStrict(),
               false,
@@ -139,6 +138,20 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
         return sb.toString() + super.toString();
     }
 
+    private static String functionName(final FunctionNode fn) {
+        if (fn.isAnonymous()) {
+            return "";
+        } else {
+            final FunctionNode.Kind kind = fn.getKind();
+            if (kind == FunctionNode.Kind.GETTER || kind == FunctionNode.Kind.SETTER) {
+                final String name = NameCodec.decode(fn.getIdent().getName());
+                return name.substring(4); // 4 is "get " or "set "
+            } else {
+                return fn.getIdent().getName();
+            }
+        }
+    }
+
     private static long tokenFor(final FunctionNode fn) {
         final int  position   = Token.descPosition(fn.getFirstToken());
         final int  length     = Token.descPosition(fn.getLastToken()) - position + Token.descLength(fn.getLastToken());
@@ -165,7 +178,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
     }
 
     @Override
-    protected void ensureCodeGenerated() {
+    protected synchronized void ensureCodeGenerated() {
          if (!code.isEmpty()) {
              return; // nothing to do, we have code, at least some.
          }
@@ -323,7 +336,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData {
     }
 
     @Override
-    MethodHandle getBestInvoker(final MethodType callSiteType, final Object[] args) {
+    synchronized MethodHandle getBestInvoker(final MethodType callSiteType, final Object[] args) {
         final MethodType runtimeType = runtimeType(callSiteType, args);
         assert runtimeType.parameterCount() == callSiteType.parameterCount();
 
