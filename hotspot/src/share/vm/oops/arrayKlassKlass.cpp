@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,27 +127,6 @@ int arrayKlassKlass::oop_update_pointers(ParCompactionManager* cm, oop obj) {
     ak->vtable()->oop_update_pointers(cm);
   }
   return klassKlass::oop_update_pointers(cm, obj);
-}
-
-int
-arrayKlassKlass::oop_update_pointers(ParCompactionManager* cm, oop obj,
-                                     HeapWord* beg_addr, HeapWord* end_addr) {
-  assert(obj->is_klass(), "must be klass");
-  arrayKlass* ak = arrayKlass::cast(klassOop(obj));
-
-  oop* p;
-  p = ak->adr_component_mirror();
-  PSParallelCompact::adjust_pointer(p, beg_addr, end_addr);
-  p = ak->adr_lower_dimension();
-  PSParallelCompact::adjust_pointer(p, beg_addr, end_addr);
-  p = ak->adr_higher_dimension();
-  PSParallelCompact::adjust_pointer(p, beg_addr, end_addr);
-
-  {
-    HandleMark hm;
-    ak->vtable()->oop_update_pointers(cm, beg_addr, end_addr);
-  }
-  return klassKlass::oop_update_pointers(cm, obj, beg_addr, end_addr);
 }
 #endif // SERIALGC
 

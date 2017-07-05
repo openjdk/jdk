@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -491,10 +491,11 @@ Compilation::Compilation(AbstractCompiler* compiler, ciEnv* env, ciMethod* metho
       // to start profiling on its own.
       _method->ensure_method_data();
     }
-  } else if (is_profiling() && _would_profile) {
+  } else if (is_profiling()) {
     ciMethodData *md = method->method_data_or_null();
-    assert(md != NULL, "Sanity");
-    md->set_would_profile(_would_profile);
+    if (md != NULL) {
+      md->set_would_profile(_would_profile);
+    }
   }
 }
 

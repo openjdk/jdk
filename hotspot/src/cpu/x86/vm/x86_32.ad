@@ -12629,16 +12629,16 @@ instruct rep_stos(eCXRegI cnt, eDIRegP base, eAXRegI zero, Universe dummy, eFlag
   ins_pipe( pipe_slow );
 %}
 
-instruct string_compare(eDIRegP str1, eCXRegI cnt1, eSIRegP str2, eBXRegI cnt2,
-                        eAXRegI result, regXD tmp1, regXD tmp2, eFlagsReg cr) %{
+instruct string_compare(eDIRegP str1, eCXRegI cnt1, eSIRegP str2, eDXRegI cnt2,
+                        eAXRegI result, regXD tmp1, eFlagsReg cr) %{
   match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
-  effect(TEMP tmp1, TEMP tmp2, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL cr);
+  effect(TEMP tmp1, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL cr);
 
-  format %{ "String Compare $str1,$cnt1,$str2,$cnt2 -> $result   // KILL $tmp1, $tmp2" %}
+  format %{ "String Compare $str1,$cnt1,$str2,$cnt2 -> $result   // KILL $tmp1" %}
   ins_encode %{
     __ string_compare($str1$$Register, $str2$$Register,
                       $cnt1$$Register, $cnt2$$Register, $result$$Register,
-                      $tmp1$$XMMRegister, $tmp2$$XMMRegister);
+                      $tmp1$$XMMRegister);
   %}
   ins_pipe( pipe_slow );
 %}

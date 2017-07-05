@@ -48,9 +48,15 @@ int init(){
     }
     dlerror(); /* Clear errors */
     gnome_vfs_init = (GNOME_VFS_INIT_TYPE*)dlsym(vfs_handle, "gnome_vfs_init");
+    if (gnome_vfs_init == NULL){
+#ifdef INTERNAL_BUILD
+        fprintf(stderr, "dlsym( gnome_vfs_init) returned NULL\n");
+#endif
+        return 0;
+    }
     if ((errmsg = dlerror()) != NULL) {
 #ifdef INTERNAL_BUILD
-        fprintf(stderr, "can not find symble gnome_vfs_init\n");
+        fprintf(stderr, "can not find symbol gnome_vfs_init %s \n", errmsg);
 #endif
         return 0;
     }
