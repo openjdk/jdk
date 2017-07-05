@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2008, 2009, 2010 Red Hat, Inc.
+ * Copyright 2008, 2009, 2010, 2011 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -218,6 +218,7 @@ void SharkCompiler::compile_method(ciEnv*    env,
 
 nmethod* SharkCompiler::generate_native_wrapper(MacroAssembler* masm,
                                                 methodHandle    target,
+                                                int             compile_id,
                                                 BasicType*      arg_types,
                                                 BasicType       return_type) {
   assert(is_initialized(), "should be");
@@ -241,6 +242,7 @@ nmethod* SharkCompiler::generate_native_wrapper(MacroAssembler* masm,
 
   // Return the nmethod for installation in the VM
   return nmethod::new_native_nmethod(target,
+                                     compile_id,
                                      masm->code(),
                                      0,
                                      0,

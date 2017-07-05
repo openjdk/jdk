@@ -244,12 +244,6 @@ class constantPoolOopDesc : public oopDesc {
     *int_at_addr(which) = ((jint) name_and_type_index<<16) | bootstrap_specifier_index;
   }
 
-  void invoke_dynamic_trans_at_put(int which, int bootstrap_method_index, int name_and_type_index) {
-    tag_at_put(which, JVM_CONSTANT_InvokeDynamicTrans);
-    *int_at_addr(which) = ((jint) name_and_type_index<<16) | bootstrap_method_index;
-    assert(AllowTransitionalJSR292, "");
-  }
-
   // Temporary until actual use
   void unresolved_string_at_put(int which, Symbol* s) {
     release_tag_at_put(which, JVM_CONSTANT_UnresolvedString);
@@ -570,15 +564,11 @@ class constantPoolOopDesc : public oopDesc {
   };
   int invoke_dynamic_bootstrap_method_ref_index_at(int which) {
     assert(tag_at(which).is_invoke_dynamic(), "Corrupted constant pool");
-    if (tag_at(which).value() == JVM_CONSTANT_InvokeDynamicTrans)
-      return extract_low_short_from_int(*int_at_addr(which));
     int op_base = invoke_dynamic_operand_base(which);
     return operands()->short_at(op_base + _indy_bsm_offset);
   }
   int invoke_dynamic_argument_count_at(int which) {
     assert(tag_at(which).is_invoke_dynamic(), "Corrupted constant pool");
-    if (tag_at(which).value() == JVM_CONSTANT_InvokeDynamicTrans)
-      return 0;
     int op_base = invoke_dynamic_operand_base(which);
     int argc = operands()->short_at(op_base + _indy_argc_offset);
     DEBUG_ONLY(int end_offset = op_base + _indy_argv_offset + argc;
