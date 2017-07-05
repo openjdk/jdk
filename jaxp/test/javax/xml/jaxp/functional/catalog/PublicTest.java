@@ -92,4 +92,3 @@ public class PublicTest {
         return catalogResolver(CATALOG_PUBLIC);
     }
 }
-

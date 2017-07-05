@@ -78,28 +78,21 @@ public final class DefaultImageBuilder implements ImageBuilder {
         private final List<String> args;
         private final Set<String> modules;
 
-        public DefaultExecutableImage(Path home, Set<String> modules) {
-            this(home, modules, createArgs(home));
-        }
-
-        private DefaultExecutableImage(Path home, Set<String> modules,
-                List<String> args) {
+        DefaultExecutableImage(Path home, Set<String> modules) {
             Objects.requireNonNull(home);
-            Objects.requireNonNull(args);
             if (!Files.exists(home)) {
                 throw new IllegalArgumentException("Invalid image home");
             }
             this.home = home;
             this.modules = Collections.unmodifiableSet(modules);
-            this.args = Collections.unmodifiableList(args);
+            this.args = createArgs(home);
         }
 
         private static List<String> createArgs(Path home) {
             Objects.requireNonNull(home);
-            List<String> javaArgs = new ArrayList<>();
-            javaArgs.add(home.resolve("bin").
-                    resolve(getJavaProcessName()).toString());
-            return javaArgs;
+            Path binDir = home.resolve("bin");
+            String java = Files.exists(binDir.resolve("java"))? "java" : "java.exe";
+            return List.of(binDir.resolve(java).toString());
         }
 
         @Override
@@ -130,6 +123,7 @@ public final class DefaultImageBuilder implements ImageBuilder {
     private final Path root;
     private final Path mdir;
     private final Set<String> modules = new HashSet<>();
+    private String targetOsName;
 
     /**
      * Default image builder constructor.
@@ -171,6 +165,11 @@ public final class DefaultImageBuilder implements ImageBuilder {
     @Override
     public void storeFiles(ResourcePool files) {
         try {
+            // populate release properties up-front. targetOsName
+            // field is assigned from there and used elsewhere.
+            Properties release = releaseProperties(files);
+            Path bin = root.resolve("bin");
+
             files.entries().forEach(f -> {
                 if (!f.type().equals(ResourcePoolEntry.Type.CLASS_OR_RESOURCE)) {
                     try {
@@ -186,11 +185,11 @@ public final class DefaultImageBuilder implements ImageBuilder {
                     modules.add(m.name());
                 }
             });
-            storeFiles(modules, releaseProperties(files));
+
+            storeFiles(modules, release);
 
             if (Files.getFileStore(root).supportsFileAttributeView(PosixFileAttributeView.class)) {
                 // launchers in the bin directory need execute permission
-                Path bin = root.resolve("bin");
                 if (Files.isDirectory(bin)) {
                     Files.list(bin)
                             .filter(f -> !f.toString().endsWith(".diz"))
@@ -208,7 +207,11 @@ public final class DefaultImageBuilder implements ImageBuilder {
                 }
             }
 
-            prepareApplicationFiles(files, modules);
+            // If native files are stripped completely, <root>/bin dir won't exist!
+            // So, don't bother generating launcher scripts.
+            if (Files.isDirectory(bin)) {
+                 prepareApplicationFiles(files, modules);
+            }
         } catch (IOException ex) {
             throw new PluginException(ex);
         }
@@ -225,6 +228,11 @@ public final class DefaultImageBuilder implements ImageBuilder {
             desc.osArch().ifPresent(s -> props.setProperty("OS_ARCH", s));
             props.setProperty("JAVA_VERSION", System.getProperty("java.version"));
         });
+
+        this.targetOsName = props.getProperty("OS_NAME");
+        if (this.targetOsName == null) {
+            throw new PluginException("TargetPlatform attribute is missing for java.base module");
+        }
 
         Optional<ResourcePoolEntry> release = pool.findEntry("/java.base/release");
         if (release.isPresent()) {
@@ -373,7 +381,7 @@ public final class DefaultImageBuilder implements ImageBuilder {
         Files.createLink(dstFile, target);
     }
 
-    private static String nativeDir(String filename) {
+    private String nativeDir(String filename) {
         if (isWindows()) {
             if (filename.endsWith(".dll") || filename.endsWith(".diz")
                     || filename.endsWith(".pdb") || filename.endsWith(".map")) {
@@ -386,8 +394,8 @@ public final class DefaultImageBuilder implements ImageBuilder {
         }
     }
 
-    private static boolean isWindows() {
-        return System.getProperty("os.name").startsWith("Windows");
+    private boolean isWindows() {
+        return targetOsName.startsWith("Windows");
     }
 
     /**
@@ -452,12 +460,10 @@ public final class DefaultImageBuilder implements ImageBuilder {
         }
     }
 
-    private static String getJavaProcessName() {
-        return isWindows() ? "java.exe" : "java";
-    }
-
     public static ExecutableImage getExecutableImage(Path root) {
-        if (Files.exists(root.resolve("bin").resolve(getJavaProcessName()))) {
+        Path binDir = root.resolve("bin");
+        if (Files.exists(binDir.resolve("java")) ||
+            Files.exists(binDir.resolve("java.exe"))) {
             return new DefaultExecutableImage(root, retrieveModules(root));
         }
         return null;

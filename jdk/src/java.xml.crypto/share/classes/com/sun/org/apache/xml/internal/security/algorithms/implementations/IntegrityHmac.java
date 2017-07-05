@@ -150,7 +150,7 @@ public abstract class IntegrityHmac extends SignatureAlgorithmSpi {
             this.macAlgorithm.init(secretKey);
         } catch (InvalidKeyException ex) {
             // reinstantiate Mac object to work around bug in JDK
-            // see: http://bugs.sun.com/view_bug.do?bug_id=4953555
+            // see: http://bugs.java.com/view_bug.do?bug_id=4953555
             Mac mac = this.macAlgorithm;
             try {
                 this.macAlgorithm = Mac.getInstance(macAlgorithm.getAlgorithm());

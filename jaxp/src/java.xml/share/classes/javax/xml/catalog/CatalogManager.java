@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,17 +77,6 @@ public final class CatalogManager {
     }
 
     /**
-     * Creates an instance of a {@code CatalogUriResolver} using the specified catalog.
-     *
-     * @param catalog the catalog instance
-     * @return an instance of a {@code CatalogResolver}
-     */
-    public static CatalogUriResolver catalogUriResolver(Catalog catalog) {
-        if (catalog == null) CatalogMessages.reportNPEOnNull("catalog", null);
-        return new CatalogUriResolverImpl(catalog);
-    }
-
-    /**
      * Creates an instance of a {@code CatalogResolver} using the specified feature
      * settings and path to one or more catalog files.
      * <p>
@@ -114,34 +103,5 @@ public final class CatalogManager {
     public static CatalogResolver catalogResolver(CatalogFeatures features, String... paths) {
         Catalog catalog = catalog(features, paths);
         return new CatalogResolverImpl(catalog);
-    }
-
-    /**
-     * Creates an instance of a {@code CatalogUriResolver} using the specified
-     * feature settings and path to one or more catalog files.
-     * <p>
-     * If {@code paths} is empty, system property {@code javax.xml.catalog.files}
-     * will be read to locate the initial list of catalog files.
-     * <p>
-     * If more than one catalog files are specified through the paths argument or
-     * {@code javax.xml.catalog.files} property, the first entry is considered
-     * the main catalog, while others are treated as alternative catalogs after
-     * those referenced by the {@code nextCatalog} elements in the main catalog.
-     * <p>
-     * As specified in
-     * <a href="https://www.oasis-open.org/committees/download.php/14809/xml-catalogs.html#s.res.fail">
-     * XML Catalogs, OASIS Standard V1.1</a>, invalid path entries will be ignored.
-     * No error will be reported. In case all entries are invalid, the resolver
-     * will return as no mapping is found.
-     *
-     * @param features the catalog features
-     * @param paths the path(s) to one or more catalogs
-     *
-     * @return an instance of a {@code CatalogUriResolver}
-     * @throws CatalogException If an error occurs while parsing the catalog
-     */
-    public static CatalogUriResolver catalogUriResolver(CatalogFeatures features, String... paths) {
-        Catalog catalog = catalog(features, paths);
-        return new CatalogUriResolverImpl(catalog);
     }
 }

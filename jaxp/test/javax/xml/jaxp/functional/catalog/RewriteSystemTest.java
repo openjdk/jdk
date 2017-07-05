@@ -95,4 +95,3 @@ public class RewriteSystemTest {
         return catalogResolver("rewriteSystem.xml");
     }
 }
-

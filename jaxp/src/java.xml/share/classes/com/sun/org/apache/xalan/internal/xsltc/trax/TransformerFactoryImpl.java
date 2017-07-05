@@ -51,10 +51,11 @@ import java.util.Vector;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import javax.xml.XMLConstants;
+import javax.xml.catalog.CatalogException;
 import javax.xml.catalog.CatalogFeatures;
 import javax.xml.catalog.CatalogFeatures.Feature;
 import javax.xml.catalog.CatalogManager;
-import javax.xml.catalog.CatalogUriResolver;
+import javax.xml.catalog.CatalogResolver;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 import javax.xml.transform.ErrorListener;
@@ -241,7 +242,7 @@ public class TransformerFactoryImpl
     // type checking
     private Map<String, Class> _xsltcExtensionFunctions;
 
-    CatalogUriResolver _catalogUriResolver;
+    CatalogResolver _catalogUriResolver;
     CatalogFeatures _catalogFeatures;
     CatalogFeatures.Builder cfBuilder = CatalogFeatures.builder();
     // Catalog features
@@ -634,7 +635,7 @@ public class TransformerFactoryImpl
         }
 
         // Inefficient, but array is small
-        for (int i = 0; i < features.length; i++) {
+        for (int i =0; i < features.length; i++) {
             if (name.equals(features[i])) {
                 return true;
             }
@@ -923,7 +924,7 @@ public class TransformerFactoryImpl
             String transletClassName = getTransletBaseName(source);
 
             if (_packageName != null)
-                transletClassName = _packageName + "." + transletClassName;
+               transletClassName = _packageName + "." + transletClassName;
 
             if (_jarFileName != null)
                 bytecodes = getBytecodesFromJar(source, transletClassName);
@@ -1327,7 +1328,7 @@ public class TransformerFactoryImpl
             if (source == null && _catalogFiles != null &&
                     _xmlFeatures.getFeature(JdkXmlFeatures.XmlFeature.USE_CATALOG)) {
                 if (_catalogUriResolver == null) {
-                    _catalogUriResolver = CatalogManager.catalogUriResolver(_catalogFeatures);
+                    _catalogUriResolver = CatalogManager.catalogResolver(_catalogFeatures);
                 }
                 source = _catalogUriResolver.resolve(href, context);
             }
@@ -1338,6 +1339,10 @@ public class TransformerFactoryImpl
         catch (TransformerException e) {
             // should catch it when the resolver explicitly throws the exception
             final ErrorMsg msg = new ErrorMsg(ErrorMsg.INVALID_URI_ERR, href + "\n" + e.getMessage(), this);
+            xsltc.getParser().reportError(Constants.FATAL, msg);
+        }
+        catch (CatalogException e) {
+            final ErrorMsg msg = new ErrorMsg(ErrorMsg.CATALOG_EXCEPTION, href + "\n" + e.getMessage(), this);
             xsltc.getParser().reportError(Constants.FATAL, msg);
         }
 

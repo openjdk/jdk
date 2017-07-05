@@ -64,4 +64,3 @@ public class CatalogReferCircularityTest {
                 { "catalogReferCircle-left.xml" } };
     }
 }
-
