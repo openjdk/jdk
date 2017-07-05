@@ -31,7 +31,7 @@
  *
  *  @run build TestScaffold VMConnection TargetAdapter TargetListener
  *  @run compile -g InstanceFilter.java
- *  @run main/othervm InstanceFilter
+ *  @run driver InstanceFilter
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

@@ -72,16 +72,16 @@ class SessionId
     public String toString ()
     {
         int             len = sessionId.length;
-        StringBuffer    s = new StringBuffer (10 + 2 * len);
+        StringBuilder    sb = new StringBuilder (10 + 2 * len);
 
-        s.append ("{");
+        sb.append("{");
         for (int i = 0; i < len; i++) {
-            s.append (0x0ff & sessionId [i]);
+            sb.append(0x0ff & sessionId[i]);
             if (i != (len - 1))
-                s.append (", ");
+                sb.append (", ");
         }
-        s.append ("}");
-        return s.toString ();
+        sb.append("}");
+        return sb.toString ();
     }
 
 

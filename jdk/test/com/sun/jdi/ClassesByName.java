@@ -34,7 +34,7 @@
  *  @summary ClassesByName verifies that all the classes in the
  *  loaded class list can be found with classesByName..
  *
- *  @run main ClassesByName HelloWorld
+ *  @run driver ClassesByName HelloWorld
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

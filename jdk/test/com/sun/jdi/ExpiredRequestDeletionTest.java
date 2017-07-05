@@ -31,7 +31,7 @@
  *
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter
  *  @run compile -g ExpiredRequestDeletionTest.java
- *  @run main ExpiredRequestDeletionTest
+ *  @run driver ExpiredRequestDeletionTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

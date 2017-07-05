@@ -532,7 +532,7 @@ class DigestAuthentication extends AuthenticationInfo {
         }
         byte[] digest = md.digest();
 
-        StringBuffer res = new StringBuffer(digest.length * 2);
+        StringBuilder res = new StringBuilder(digest.length * 2);
         for (int i = 0; i < digest.length; i++) {
             int hashchar = ((digest[i] >>> 4) & 0xf);
             res.append(charArray[hashchar]);

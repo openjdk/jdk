@@ -1269,7 +1269,7 @@ public class PSPrinterJob extends RasterPrinterJob {
                     CharsetString cs = acs[i];
                     CharsetEncoder fontCS = cs.fontDescriptor.encoder;
 
-                    StringBuffer nativeStr = new StringBuffer();
+                    StringBuilder nativeStr = new StringBuilder();
                     byte[] strSeg = new byte[cs.length * 2];
                     int len = 0;
                     try {

@@ -104,7 +104,7 @@ class NameImpl {
         String endQuote;
         boolean start = true;
         boolean one = false;
-        StringBuffer answer = new StringBuffer(len);
+        StringBuilder answer = new StringBuilder(len);
 
         while (i < len) {
             // handle quoted strings

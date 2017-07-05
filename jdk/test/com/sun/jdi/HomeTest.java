@@ -30,7 +30,7 @@
  *
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter
  *  @run compile -g HomeTest.java
- *  @run main HomeTest
+ *  @run driver HomeTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.connect.*;

@@ -41,9 +41,9 @@ class Krb5Util {
         String krbPrinc = name.getKrbName();
         int atIndex = krbPrinc.indexOf('@');
         String realm = krbPrinc.substring(atIndex + 1);
-        StringBuffer buf = new StringBuffer("krbtgt/");
-        buf.append(realm).append('@').append(realm);
-        return buf.toString();
+        StringBuilder sb = new StringBuilder("krbtgt/");
+        sb.append(realm).append('@').append(realm);
+        return sb.toString();
     }
 
     // Perform the Service Permission check using the specified

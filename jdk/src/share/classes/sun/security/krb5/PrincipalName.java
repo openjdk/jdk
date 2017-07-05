@@ -480,7 +480,7 @@ public class PrincipalName implements Cloneable {
     }
 
     public String getPrincipalNameAsString() {
-        StringBuffer temp = new StringBuffer(nameStrings[0]);
+        StringBuilder temp = new StringBuilder(nameStrings[0]);
         for (int i = 1; i < nameStrings.length; i++)
             temp.append(nameStrings[i]);
         return temp.toString();
@@ -521,7 +521,7 @@ public class PrincipalName implements Cloneable {
 
     public String getSalt() {
         if (salt == null) {
-            StringBuffer salt = new StringBuffer();
+            StringBuilder salt = new StringBuilder();
             salt.append(nameRealm.toString());
             for (int i = 0; i < nameStrings.length; i++) {
                 salt.append(nameStrings[i]);
@@ -532,7 +532,7 @@ public class PrincipalName implements Cloneable {
     }
 
     public String toString() {
-        StringBuffer str = new StringBuffer();
+        StringBuilder str = new StringBuilder();
         for (int i = 0; i < nameStrings.length; i++) {
             if (i > 0)
                 str.append("/");
@@ -544,7 +544,7 @@ public class PrincipalName implements Cloneable {
     }
 
     public String getNameString() {
-        StringBuffer str = new StringBuffer();
+        StringBuilder str = new StringBuilder();
         for (int i = 0; i < nameStrings.length; i++) {
             if (i > 0)
                 str.append("/");

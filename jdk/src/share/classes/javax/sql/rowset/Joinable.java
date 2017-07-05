@@ -129,6 +129,7 @@ import java.sql.SQLException;
  *
  * @see JoinRowSet
  * @author  Jonathan Bruce
+ * @since 1.5
  */
 public interface Joinable {
 

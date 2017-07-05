@@ -210,16 +210,16 @@ public class StandardTextSource extends TextSource {
   }
 
   public String toString(boolean withContext) {
-    StringBuffer buf = new StringBuffer(super.toString());
-    buf.append("[start:");
-    buf.append(start);
-    buf.append(", len:" );
-    buf.append(len);
-    buf.append(", cstart:");
-    buf.append(cstart);
-    buf.append(", clen:" );
-    buf.append(clen);
-    buf.append(", chars:\"");
+    StringBuilder sb = new StringBuilder(super.toString());
+    sb.append("[start:");
+    sb.append(start);
+    sb.append(", len:" );
+    sb.append(len);
+    sb.append(", cstart:");
+    sb.append(cstart);
+    sb.append(", clen:" );
+    sb.append(clen);
+    sb.append(", chars:\"");
     int chStart, chLimit;
     if (withContext == WITH_CONTEXT) {
         chStart = cstart;
@@ -231,23 +231,23 @@ public class StandardTextSource extends TextSource {
     }
     for (int i = chStart; i < chLimit; ++i) {
       if (i > chStart) {
-        buf.append(" ");
+        sb.append(" ");
       }
-      buf.append(Integer.toHexString(chars[i]));
+      sb.append(Integer.toHexString(chars[i]));
     }
-    buf.append("\"");
-    buf.append(", level:");
-    buf.append(level);
-    buf.append(", flags:");
-    buf.append(flags);
-    buf.append(", font:");
-    buf.append(font);
-    buf.append(", frc:");
-    buf.append(frc);
-    buf.append(", cm:");
-    buf.append(cm);
-    buf.append("]");
+    sb.append("\"");
+    sb.append(", level:");
+    sb.append(level);
+    sb.append(", flags:");
+    sb.append(flags);
+    sb.append(", font:");
+    sb.append(font);
+    sb.append(", frc:");
+    sb.append(frc);
+    sb.append(", cm:");
+    sb.append(cm);
+    sb.append("]");
 
-    return buf.toString();
+    return sb.toString();
   }
 }

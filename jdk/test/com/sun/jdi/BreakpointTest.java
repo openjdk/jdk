@@ -30,7 +30,7 @@
  *
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter
  *  @run compile -g BreakpointTest.java
- *  @run main BreakpointTest
+ *  @run driver BreakpointTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

@@ -228,11 +228,11 @@ static inline Node* addP_of_X2P(PhaseGVN *phase,
                                 Node* dispX,
                                 bool negate = false) {
   if (negate) {
-    dispX = new (phase->C) SubXNode(phase->MakeConX(0), phase->transform(dispX));
+    dispX = new SubXNode(phase->MakeConX(0), phase->transform(dispX));
   }
-  return new (phase->C) AddPNode(phase->C->top(),
-                                 phase->transform(new (phase->C) CastX2PNode(base)),
-                                 phase->transform(dispX));
+  return new AddPNode(phase->C->top(),
+                      phase->transform(new CastX2PNode(base)),
+                      phase->transform(dispX));
 }
 
 Node *CastX2PNode::Ideal(PhaseGVN *phase, bool can_reshape) {

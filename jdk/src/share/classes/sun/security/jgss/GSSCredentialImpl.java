@@ -636,29 +636,29 @@ public class GSSCredentialImpl implements ExtendedGSSCredential {
         }
 
         GSSCredentialSpi element = null;
-        StringBuffer buffer = new StringBuffer("[GSSCredential: ");
+        StringBuilder sb = new StringBuilder("[GSSCredential: ");
         Object[] elements = hashtable.entrySet().toArray();
         for (int i = 0; i < elements.length; i++) {
             try {
-                buffer.append('\n');
+                sb.append('\n');
                 element = (GSSCredentialSpi)
                     ((Map.Entry)elements[i]).getValue();
-                buffer.append(element.getName());
-                buffer.append(' ');
-                buffer.append(element.getMechanism());
-                buffer.append(element.isInitiatorCredential() ?
-                              " Initiate" : "");
-                buffer.append(element.isAcceptorCredential() ?
-                              " Accept" : "");
-                buffer.append(" [");
-                buffer.append(element.getClass());
-                buffer.append(']');
+                sb.append(element.getName());
+                sb.append(' ');
+                sb.append(element.getMechanism());
+                sb.append(element.isInitiatorCredential() ?
+                          " Initiate" : "");
+                sb.append(element.isAcceptorCredential() ?
+                          " Accept" : "");
+                sb.append(" [");
+                sb.append(element.getClass());
+                sb.append(']');
             } catch (GSSException e) {
                 // skip to next element
             }
         }
-        buffer.append(']');
-        return buffer.toString();
+        sb.append(']');
+        return sb.toString();
     }
 
     static class SearchKey {

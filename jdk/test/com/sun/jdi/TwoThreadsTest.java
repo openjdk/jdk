@@ -30,7 +30,7 @@
  *
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter
  *  @run compile -g TwoThreadsTest.java
- *  @run main TwoThreadsTest
+ *  @run driver TwoThreadsTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

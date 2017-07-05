@@ -162,7 +162,7 @@ public final class WaveExtensibleFileReader extends AudioFileReader {
             0x0010, 0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71);
 
     private String decodeChannelMask(long channelmask) {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         long m = 1;
         for (int i = 0; i < allchannelnames.length; i++) {
             if ((channelmask & m) != 0L) {
