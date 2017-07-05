@@ -694,7 +694,7 @@ void CardTableModRefBS::verify_region(MemRegion mr,
     if (failed) {
       if (!failures) {
         tty->cr();
-        tty->print_cr("== CT verification failed: ["PTR_FORMAT","PTR_FORMAT"]");
+        tty->print_cr("== CT verification failed: ["PTR_FORMAT","PTR_FORMAT"]", start, end);
         tty->print_cr("==   %sexpecting value: %d",
                       (val_equals) ? "" : "not ", val);
         failures = true;

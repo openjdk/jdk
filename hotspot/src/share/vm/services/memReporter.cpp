@@ -419,7 +419,7 @@ void BaselineTTYOutputer::virtual_memory_callsite(address pc, size_t reserved_am
       _output->print_cr("[" PTR_FORMAT "] %s+0x%x", pc, buf, offset);
       _output->print("%28s", " ");
     } else {
-      _output->print("[" PTR_FORMAT "]%18s", " ");
+      _output->print("[" PTR_FORMAT "]%18s", pc, " ");
     }
 
     _output->print_cr("(mmap: reserved=%d%s, committed=%d%s)",
@@ -596,7 +596,7 @@ void BaselineTTYOutputer::diff_virtual_memory_callsite(address pc,
         _output->print_cr("[" PTR_FORMAT "] %s+0x%x", pc, buf, offset);
         _output->print("%28s", " ");
       } else {
-        _output->print("[" PTR_FORMAT "]%18s", " ");
+        _output->print("[" PTR_FORMAT "]%18s", pc, " ");
       }
     }
 
