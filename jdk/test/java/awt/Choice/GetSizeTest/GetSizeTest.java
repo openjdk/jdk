@@ -22,6 +22,7 @@
  */
 /*
   @test
+  @key headful
   @bug 4255631
   @summary Solaris: Size returned by Choice.getSize() does not match actual size
   @author Andrei Dmitriev : area=Choice

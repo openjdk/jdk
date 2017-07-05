@@ -1596,8 +1596,12 @@ void PhaseMacroExpand::expand_allocate_common(
         // All nodes that depended on the InitializeNode for control
         // and memory must now depend on the MemBarNode that itself
         // depends on the InitializeNode
-        _igvn.replace_node(init_ctrl, ctrl);
-        _igvn.replace_node(init_mem, mem);
+        if (init_ctrl != NULL) {
+          _igvn.replace_node(init_ctrl, ctrl);
+        }
+        if (init_mem != NULL) {
+          _igvn.replace_node(init_mem, mem);
+        }
       }
     }
 

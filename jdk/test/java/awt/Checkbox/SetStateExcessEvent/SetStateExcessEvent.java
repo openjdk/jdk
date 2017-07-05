@@ -29,6 +29,7 @@ import java.awt.Robot;
 
 /**
  * @test
+ * @key headful
  * @bug 8074500
  * @summary Checkbox.setState() call should not post ItemEvent
  * @author Sergey Bylokhov

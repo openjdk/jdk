@@ -26,9 +26,14 @@
  * @bug 8068909
  * @key regression
  * @summary test that string optimizations produce code, that doesn't lead to a crash.
- * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement TestOptimizeStringConcat
+ *
+ * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement
+ *                   compiler.stringopts.TestOptimizeStringConcat
  * @author axel.siebenborn@sap.com
  */
+
+package compiler.stringopts;
+
 public class TestOptimizeStringConcat {
 
     static boolean checkArgumentSyntax(String value, String allowedchars, String notallowedchars, String logmsg) {

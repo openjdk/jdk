@@ -24,6 +24,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 4908142
  * @summary JList doesn't handle search function appropriately
  * @author Andrey Pikalev

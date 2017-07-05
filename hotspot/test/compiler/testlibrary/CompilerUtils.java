@@ -23,10 +23,12 @@
 
 package compiler.testlibrary;
 
+import java.util.Arrays;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Platform;
-import java.util.stream.IntStream;
 import sun.hotspot.WhiteBox;
+
+import java.util.stream.IntStream;
 
 public class CompilerUtils {
 
@@ -59,5 +61,15 @@ public class CompilerUtils {
             }
         }
         return new int[0];
+    }
+
+    /**
+     * Returns maximum compilation level available
+     * @return an int value representing maximum compilation level available
+     */
+    public static int getMaxCompilationLevel() {
+        return Arrays.stream(getAvailableCompilationLevels())
+                .max()
+                .getAsInt();
     }
 }

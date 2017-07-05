@@ -25,7 +25,9 @@
  * Portions Copyright (c) 2012 IBM Corporation
  */
 
-/* @test 1.1 2012/04/19
+/*
+ * @test
+ * @key headful
  * @bug 7055065
  * @summary NullPointerException when sorting JTable with empty cell
  * @author Jonathan Lu

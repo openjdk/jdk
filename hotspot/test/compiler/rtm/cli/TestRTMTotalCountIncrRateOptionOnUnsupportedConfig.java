@@ -22,11 +22,6 @@
  *
  */
 
-import jdk.test.lib.cli.predicate.AndPredicate;
-import jdk.test.lib.cli.predicate.NotPredicate;
-import compiler.testlibrary.rtm.predicate.SupportedCPU;
-import compiler.testlibrary.rtm.predicate.SupportedVM;
-
 /**
  * @test
  * @bug 8031320
@@ -35,13 +30,21 @@ import compiler.testlibrary.rtm.predicate.SupportedVM;
  * @library /testlibrary /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @build TestRTMTotalCountIncrRateOptionOnUnsupportedConfig
+ *
+ * @build compiler.rtm.cli.TestRTMTotalCountIncrRateOptionOnUnsupportedConfig
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI
- *                   TestRTMTotalCountIncrRateOptionOnUnsupportedConfig
+ *                   compiler.rtm.cli.TestRTMTotalCountIncrRateOptionOnUnsupportedConfig
  */
+
+package compiler.rtm.cli;
+
+import compiler.testlibrary.rtm.predicate.SupportedCPU;
+import compiler.testlibrary.rtm.predicate.SupportedVM;
+import jdk.test.lib.cli.predicate.AndPredicate;
+import jdk.test.lib.cli.predicate.NotPredicate;
 
 public class TestRTMTotalCountIncrRateOptionOnUnsupportedConfig
         extends RTMGenericCommandLineOptionTest {

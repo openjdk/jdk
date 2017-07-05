@@ -21,11 +21,13 @@
  * questions.
  */
 
-/* @test
-   @bug 8041725
-   @summary JList selection colors are not UIResource instances in Nimbus L&F
-   @author Anton Litvinov
-*/
+/*
+ * @test
+ * @key headful
+ * @bug 8041725
+ * @summary JList selection colors are not UIResource instances in Nimbus L&F
+ * @author Anton Litvinov
+ */
 
 import java.awt.*;
 import javax.swing.*;

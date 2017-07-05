@@ -28,6 +28,7 @@
 #include "code/oopRecorder.hpp"
 #include "code/relocInfo.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/macros.hpp"
 
 class CodeStrings;
 class PhaseCFG;
@@ -633,24 +634,7 @@ class CodeBuffer: public StackObj {
 
 
   // The following header contains architecture-specific implementations
-#ifdef TARGET_ARCH_x86
-# include "codeBuffer_x86.hpp"
-#endif
-#ifdef TARGET_ARCH_sparc
-# include "codeBuffer_sparc.hpp"
-#endif
-#ifdef TARGET_ARCH_zero
-# include "codeBuffer_zero.hpp"
-#endif
-#ifdef TARGET_ARCH_arm
-# include "codeBuffer_arm.hpp"
-#endif
-#ifdef TARGET_ARCH_ppc
-# include "codeBuffer_ppc.hpp"
-#endif
-#ifdef TARGET_ARCH_aarch64
-# include "codeBuffer_aarch64.hpp"
-#endif
+#include CPU_HEADER(codeBuffer)
 
 };
 

@@ -1668,9 +1668,13 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
         __ lwz(Rscratch3, in_bytes(MethodData::backedge_mask_offset()), Rmdo);
         __ addi(Rscratch2, Rscratch2, increment);
         __ stw(Rscratch2, mdo_bc_offs, Rmdo);
-        __ and_(Rscratch3, Rscratch2, Rscratch3);
-        __ bne(CCR0, Lforward);
-        __ b(Loverflow);
+        if (UseOnStackReplacement) {
+          __ and_(Rscratch3, Rscratch2, Rscratch3);
+          __ bne(CCR0, Lforward);
+          __ b(Loverflow);
+        } else {
+          __ b(Lforward);
+        }
       }
 
       // If there's no MDO, increment counter in method.
@@ -1680,9 +1684,12 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
       __ lwz(Rscratch3, in_bytes(MethodCounters::backedge_mask_offset()), R4_counters);
       __ addi(Rscratch2, Rscratch2, increment);
       __ stw(Rscratch2, mo_bc_offs, R4_counters);
-      __ and_(Rscratch3, Rscratch2, Rscratch3);
-      __ bne(CCR0, Lforward);
-
+      if (UseOnStackReplacement) {
+        __ and_(Rscratch3, Rscratch2, Rscratch3);
+        __ bne(CCR0, Lforward);
+      } else {
+        __ b(Lforward);
+      }
       __ bind(Loverflow);
 
       // Notify point for loop, pass branch bytecode.

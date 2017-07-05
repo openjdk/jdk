@@ -24,6 +24,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 8049617
  * @summary Check whether a modal Dialog created with a null Frame
  *          constructor receives focus; whether its components receive focus

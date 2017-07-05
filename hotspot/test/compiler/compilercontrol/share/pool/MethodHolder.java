@@ -21,7 +21,7 @@
  * questions.
  */
 
-package pool;
+package compiler.compilercontrol.share.pool;
 
 import jdk.test.lib.Pair;
 

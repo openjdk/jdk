@@ -25,10 +25,11 @@
  * @test
  * @bug 8155612
  * @summary Aarch64: vector nodes need to support misaligned offset
- * @run main/othervm -XX:-BackgroundCompilation TestVectorUnalignedOffset
  *
+ * @run main/othervm -XX:-BackgroundCompilation compiler.vectorization.TestVectorUnalignedOffset
  */
 
+package compiler.vectorization;
 
 public class TestVectorUnalignedOffset {
 

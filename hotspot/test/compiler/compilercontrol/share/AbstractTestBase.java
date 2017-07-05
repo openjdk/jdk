@@ -25,8 +25,8 @@ package compiler.compilercontrol.share;
 
 import compiler.compilercontrol.share.method.MethodDescriptor;
 import compiler.compilercontrol.share.method.MethodGenerator;
+import compiler.compilercontrol.share.pool.PoolHelper;
 import jdk.test.lib.Pair;
-import pool.PoolHelper;
 
 import java.lang.reflect.Executable;
 import java.util.List;

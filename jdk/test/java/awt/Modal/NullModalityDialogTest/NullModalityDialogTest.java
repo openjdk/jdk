@@ -29,6 +29,7 @@ import static jdk.testlibrary.Asserts.*;
 
 /*
  * @test
+ * @key headful
  * @bug 8047367
  * @summary Check whether a Dialog set with null modality type
  *          behaves like a modeless dialog

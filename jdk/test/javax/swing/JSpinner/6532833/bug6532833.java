@@ -21,7 +21,9 @@
  * questions.
  */
 
-/* @test
+/*
+ * @test
+ * @key headful
  * @bug 6532833 7077259
  * @summary PIT: Metal LAF - The right side border is not shown for the Spinner after the removing the buttons
  * @author Pavel Porvatov

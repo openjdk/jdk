@@ -43,8 +43,8 @@
 
 package compiler.jvmci.compilerToVM;
 
-import jdk.vm.ci.runtime.JVMCI;
 import jdk.test.lib.Asserts;
+import jdk.vm.ci.runtime.JVMCI;
 
 import java.lang.reflect.Method;
 

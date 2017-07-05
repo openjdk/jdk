@@ -21,11 +21,13 @@
  * questions.
  */
 
-/* @test
-   @bug 7171812
-   @summary [macosx] Views keep scrolling back to the drag position after DnD
-   @author Alexander Zuev
-   @run main bug7171812
+/*
+ * @test
+ * @key headful
+ * @bug 7171812
+ * @summary [macosx] Views keep scrolling back to the drag position after DnD
+ * @author Alexander Zuev
+ * @run main bug7171812
  */
 
 import java.awt.*;

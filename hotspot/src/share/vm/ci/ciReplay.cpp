@@ -490,7 +490,8 @@ class CompileReplay : public StackObj {
     int comp_level = parse_int(comp_level_label);
     // old version w/o comp_level
     if (had_error() && (error_message() == comp_level_label)) {
-      comp_level = CompLevel_full_optimization;
+      // use highest available tier
+      comp_level = TieredCompilation ? TieredStopAtLevel : CompLevel_highest_tier;
     }
     if (!is_valid_comp_level(comp_level)) {
       return;

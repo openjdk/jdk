@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 4846413
  * @summary Checks if No tooltip modification when no KeyStroke modifier
  * @library ../../regtesthelpers

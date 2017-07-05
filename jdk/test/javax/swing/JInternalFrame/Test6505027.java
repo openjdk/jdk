@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 6505027
  * @summary Tests focus problem inside internal frame
  * @author Sergey Malenkov

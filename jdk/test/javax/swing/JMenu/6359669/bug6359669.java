@@ -20,14 +20,16 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-/* @test
-   @bug 6359669
-   @summary REGRESSION: Submenu does not work if populated in PopupMenuListener.popupMenuWillBecomeVisible
-   @author Alexander Potochkin
-   @library ../../../../lib/testlibrary
-   @build ExtendedRobot
-   @run main bug6359669
-*/
+/*
+ * @test
+ * @key headful
+ * @bug 6359669
+ * @summary REGRESSION: Submenu does not work if populated in PopupMenuListener.popupMenuWillBecomeVisible
+ * @author Alexander Potochkin
+ * @library ../../../../lib/testlibrary
+ * @build ExtendedRobot
+ * @run main bug6359669
+ */
 
 import javax.swing.*;
 import javax.swing.event.PopupMenuListener;

@@ -21,13 +21,15 @@
  * questions.
  */
 
-/* @test
-   @bug 7123767
-   @summary Wrong tooltip location in Multi-Monitor configurations
-   @author Vladislav Karnaukhov
-   @modules java.desktop/sun.awt
-   @run main bug7123767
-*/
+/*
+ * @test
+ * @key headful
+ * @bug 7123767
+ * @summary Wrong tooltip location in Multi-Monitor configurations
+ * @author Vladislav Karnaukhov
+ * @modules java.desktop/sun.awt
+ * @run main bug7123767
+ */
 
 import javax.swing.*;
 import javax.swing.plaf.metal.MetalLookAndFeel;

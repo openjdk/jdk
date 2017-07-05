@@ -550,7 +550,7 @@
   declare_function(os::javaTimeNanos)                                     \
                                                                           \
   declare_function(Deoptimization::fetch_unroll_info)                     \
-  COMPILER2_PRESENT(declare_function(Deoptimization::uncommon_trap))      \
+  declare_function(Deoptimization::uncommon_trap)                         \
   declare_function(Deoptimization::unpack_frames)                         \
                                                                           \
   declare_function(JVMCIRuntime::new_instance) \
@@ -591,31 +591,31 @@
 #endif // INCLUDE_ALL_GCS
 
 
-#ifdef TARGET_OS_FAMILY_linux
+#ifdef LINUX
 
 #define VM_ADDRESSES_OS(declare_address, declare_preprocessor_address, declare_function) \
   declare_preprocessor_address("RTLD_DEFAULT", RTLD_DEFAULT)
 
-#endif // TARGET_OS_FAMILY_linux
+#endif
 
 
-#ifdef TARGET_OS_FAMILY_bsd
+#ifdef BSD
 
 #define VM_ADDRESSES_OS(declare_address, declare_preprocessor_address, declare_function) \
   declare_preprocessor_address("RTLD_DEFAULT", RTLD_DEFAULT)
 
-#endif // TARGET_OS_FAMILY_bsd
+#endif
 
-
+// AARCH64 is defined in closed port, too. TARGET_ARCH_aarch64 is not.
 #ifdef TARGET_ARCH_aarch64
 
 #define VM_STRUCTS_CPU(nonstatic_field, static_field, unchecked_nonstatic_field, volatile_nonstatic_field, nonproduct_nonstatic_field, c2_nonstatic_field, unchecked_c1_static_field, unchecked_c2_static_field) \
   volatile_nonstatic_field(JavaFrameAnchor, _last_Java_fp, intptr_t*)
 
-#endif // TARGET_ARCH_aarch64
+#endif
 
 
-#ifdef TARGET_ARCH_x86
+#ifdef X86
 
 #define VM_STRUCTS_CPU(nonstatic_field, static_field, unchecked_nonstatic_field, volatile_nonstatic_field, nonproduct_nonstatic_field, c2_nonstatic_field, unchecked_c1_static_field, unchecked_c2_static_field) \
   volatile_nonstatic_field(JavaFrameAnchor, _last_Java_fp, intptr_t*)
@@ -661,10 +661,10 @@
   declare_preprocessor_constant("VM_Version::CPU_AVX512VL", CPU_AVX512VL) \
   declare_preprocessor_constant("VM_Version::CPU_SHA", CPU_SHA)
 
-#endif // TARGET_ARCH_x86
+#endif
 
 
-#ifdef TARGET_ARCH_sparc
+#ifdef SPARC
 
 #define VM_STRUCTS_CPU(nonstatic_field, static_field, unchecked_nonstatic_field, volatile_nonstatic_field, nonproduct_nonstatic_field, c2_nonstatic_field, unchecked_c1_static_field, unchecked_c2_static_field) \
   volatile_nonstatic_field(JavaFrameAnchor, _flags, int)
@@ -694,7 +694,7 @@
   declare_constant(VM_Version::sha256_instruction_m)                      \
   declare_constant(VM_Version::sha512_instruction_m)
 
-#endif // TARGET_ARCH_sparc
+#endif
 
 
 /*

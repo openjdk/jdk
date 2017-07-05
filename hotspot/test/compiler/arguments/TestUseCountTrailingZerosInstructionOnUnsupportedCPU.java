@@ -26,21 +26,21 @@
  * @bug 8031321
  * @summary Verify processing of UseCountTrailingZerosInstruction option
  *          on CPU without TZCNT instruction (BMI1 feature) support.
- * @library /testlibrary /test/lib
+ * @library /testlibrary /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @build TestUseCountTrailingZerosInstructionOnUnsupportedCPU
- *        BMIUnsupportedCPUTest
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
- *                              sun.hotspot.WhiteBox$WhiteBoxPermission
+ *
+ * @build compiler.arguments.TestUseCountTrailingZerosInstructionOnUnsupportedCPU
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI
- *                   TestUseCountTrailingZerosInstructionOnUnsupportedCPU
+ *                   compiler.arguments.TestUseCountTrailingZerosInstructionOnUnsupportedCPU
  */
 
-import sun.hotspot.cpuinfo.CPUInfo;
-import jdk.test.lib.*;
-import jdk.test.lib.cli.*;
+package compiler.arguments;
+
+import jdk.test.lib.cli.CommandLineOptionTest;
 
 public class TestUseCountTrailingZerosInstructionOnUnsupportedCPU
         extends BMIUnsupportedCPUTest {

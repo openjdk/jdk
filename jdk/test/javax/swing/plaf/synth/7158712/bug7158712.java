@@ -21,12 +21,14 @@
  * questions.
  */
 
-/* @test
-   @bug 7158712
-   @summary Synth Property "ComboBox.popupInsets" is ignored
-   @library ../../../regtesthelpers
-   @author Pavel Porvatov
-*/
+/*
+ * @test
+ * @key headful
+ * @bug 7158712
+ * @summary Synth Property "ComboBox.popupInsets" is ignored
+ * @library ../../../regtesthelpers
+ * @author Pavel Porvatov
+ */
 
 import javax.swing.*;
 import javax.swing.plaf.basic.BasicComboPopup;

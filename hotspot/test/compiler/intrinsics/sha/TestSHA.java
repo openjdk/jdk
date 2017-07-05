@@ -27,25 +27,57 @@
  * @bug 8035968
  * @summary C2 support for SHA on SPARC
  *
- * @run main/othervm/timeout=600 -Xbatch -Dalgorithm=SHA-1   TestSHA
- * @run main/othervm/timeout=600 -Xbatch -Dalgorithm=SHA-224 TestSHA
- * @run main/othervm/timeout=600 -Xbatch -Dalgorithm=SHA-256 TestSHA
- * @run main/othervm/timeout=600 -Xbatch -Dalgorithm=SHA-384 TestSHA
- * @run main/othervm/timeout=600 -Xbatch -Dalgorithm=SHA-512 TestSHA
+ * @run main/othervm/timeout=600 -Xbatch
+ *      -Dalgorithm=SHA-1
+ *      compiler.intrinsics.sha.TestSHA
+ * @run main/othervm/timeout=600 -Xbatch
+ *      -Dalgorithm=SHA-224
+ *      compiler.intrinsics.sha.TestSHA
+ * @run main/othervm/timeout=600 -Xbatch
+ *      -Dalgorithm=SHA-256
+ *      compiler.intrinsics.sha.TestSHA
+ * @run main/othervm/timeout=600 -Xbatch
+ *      -Dalgorithm=SHA-384
+ *      compiler.intrinsics.sha.TestSHA
+ * @run main/othervm/timeout=600 -Xbatch
+ *      -Dalgorithm=SHA-512
+ *      compiler.intrinsics.sha.TestSHA
  *
- * @run main/othervm/timeout=600 -Xbatch -Dalgorithm=SHA-1   -Doffset=1 TestSHA
- * @run main/othervm/timeout=600 -Xbatch -Dalgorithm=SHA-224 -Doffset=1 TestSHA
- * @run main/othervm/timeout=600 -Xbatch -Dalgorithm=SHA-256 -Doffset=1 TestSHA
- * @run main/othervm/timeout=600 -Xbatch -Dalgorithm=SHA-384 -Doffset=1 TestSHA
- * @run main/othervm/timeout=600 -Xbatch -Dalgorithm=SHA-512 -Doffset=1 TestSHA
+ * @run main/othervm/timeout=600 -Xbatch
+ *      -Dalgorithm=SHA-1   -Doffset=1
+ *      compiler.intrinsics.sha.TestSHA
+ * @run main/othervm/timeout=600 -Xbatch
+ *      -Dalgorithm=SHA-224 -Doffset=1
+ *      compiler.intrinsics.sha.TestSHA
+ * @run main/othervm/timeout=600 -Xbatch
+ *      -Dalgorithm=SHA-256 -Doffset=1
+ *      compiler.intrinsics.sha.TestSHA
+ * @run main/othervm/timeout=600 -Xbatch
+ *      -Dalgorithm=SHA-384 -Doffset=1
+ *      compiler.intrinsics.sha.TestSHA
+ * @run main/othervm/timeout=600 -Xbatch
+ *      -Dalgorithm=SHA-512 -Doffset=1
+ *      compiler.intrinsics.sha.TestSHA
  *
- * @run main/othervm/timeout=600 -Xbatch -Dalgorithm=SHA-1   -Dalgorithm2=SHA-256 TestSHA
- * @run main/othervm/timeout=600 -Xbatch -Dalgorithm=SHA-1   -Dalgorithm2=SHA-512 TestSHA
- * @run main/othervm/timeout=600 -Xbatch -Dalgorithm=SHA-256 -Dalgorithm2=SHA-512 TestSHA
+ * @run main/othervm/timeout=600 -Xbatch
+ *      -Dalgorithm=SHA-1   -Dalgorithm2=SHA-256
+ *      compiler.intrinsics.sha.TestSHA
+ * @run main/othervm/timeout=600 -Xbatch
+ *      -Dalgorithm=SHA-1   -Dalgorithm2=SHA-512
+ *      compiler.intrinsics.sha.TestSHA
+ * @run main/othervm/timeout=600 -Xbatch
+ *      -Dalgorithm=SHA-256 -Dalgorithm2=SHA-512
+ *      compiler.intrinsics.sha.TestSHA
  *
- * @run main/othervm/timeout=600 -Xbatch -Dalgorithm=SHA-1   -Dalgorithm2=MD5     TestSHA
- * @run main/othervm/timeout=600 -Xbatch -Dalgorithm=MD5     -Dalgorithm2=SHA-1   TestSHA
+ * @run main/othervm/timeout=600 -Xbatch
+ *      -Dalgorithm=SHA-1   -Dalgorithm2=MD5
+ *      compiler.intrinsics.sha.TestSHA
+ * @run main/othervm/timeout=600 -Xbatch
+ *      -Dalgorithm=MD5     -Dalgorithm2=SHA-1
+ *      compiler.intrinsics.sha.TestSHA
  */
+
+package compiler.intrinsics.sha;
 
 import java.security.MessageDigest;
 import java.util.Arrays;
@@ -70,7 +102,7 @@ public class TestSHA {
         }
     }
 
-    static void testSHA(String provider, String algorithm, int msgSize,
+    public static void testSHA(String provider, String algorithm, int msgSize,
                         int offset, int iters, int warmupIters) throws Exception {
         System.out.println("provider = " + provider);
         System.out.println("algorithm = " + algorithm);

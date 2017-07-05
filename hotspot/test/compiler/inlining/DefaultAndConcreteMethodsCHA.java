@@ -26,18 +26,21 @@
  * @bug 8031695
  * @summary CHA ignores default methods during analysis leading to incorrect code generation
  *
- * @run main/othervm -Xbatch DefaultAndConcreteMethodsCHA
+ * @run main/othervm -Xbatch compiler.inlining.DefaultAndConcreteMethodsCHA
  */
-interface I {
-    default int m() { return 0; }
-}
 
-class A implements I {}
-
-class C extends A { }
-class D extends A { public int m() { return 1; } }
+package compiler.inlining;
 
 public class DefaultAndConcreteMethodsCHA {
+    interface I {
+        default int m() { return 0; }
+    }
+
+    static class A implements I {}
+
+    static class C extends A { }
+    static class D extends A { public int m() { return 1; } }
+
     public static int test(A obj) {
         return obj.m();
     }

@@ -23,6 +23,8 @@
 
 package compiler.testlibrary.uncommontrap;
 
+import jdk.test.lib.Asserts;
+
 import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -32,8 +34,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
 import java.util.regex.Pattern;
-
-import jdk.test.lib.Asserts;
 
 /**
  * Utility tool aimed to verify presence or absence of specified uncommon trap

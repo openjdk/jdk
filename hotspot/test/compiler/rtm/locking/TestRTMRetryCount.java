@@ -29,21 +29,28 @@
  * @library /testlibrary /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @build TestRTMRetryCount
+ * @build compiler.rtm.locking.TestRTMRetryCount
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
- *                   -XX:+WhiteBoxAPI TestRTMRetryCount
+ *                   -XX:+WhiteBoxAPI
+ *                   compiler.rtm.locking.TestRTMRetryCount
  */
 
-import java.util.List;
+package compiler.rtm.locking;
 
-import jdk.test.lib.*;
-import jdk.test.lib.cli.CommandLineOptionTest;
-import jdk.test.lib.cli.predicate.AndPredicate;
-import compiler.testlibrary.rtm.*;
+import compiler.testlibrary.rtm.BusyLock;
+import compiler.testlibrary.rtm.CompilableTest;
+import compiler.testlibrary.rtm.RTMLockingStatistics;
+import compiler.testlibrary.rtm.RTMTestBase;
 import compiler.testlibrary.rtm.predicate.SupportedCPU;
 import compiler.testlibrary.rtm.predicate.SupportedVM;
+import jdk.test.lib.Asserts;
+import jdk.test.lib.OutputAnalyzer;
+import jdk.test.lib.cli.CommandLineOptionTest;
+import jdk.test.lib.cli.predicate.AndPredicate;
+
+import java.util.List;
 
 /**
  * Test verifies that RTMRetryCount option actually affects amount of

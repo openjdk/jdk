@@ -21,7 +21,9 @@
  * questions.
  */
 
-/* @test
+/*
+ * @test
+ * @key headful
  * @bug 8048110
  * @summary Using tables in JTextPane leads to infinite loop in FlowLayout.layoutRow
  * @author Dmitry Markov

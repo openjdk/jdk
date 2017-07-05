@@ -25,13 +25,14 @@
  * @test
  * @bug 8026844
  * @summary Test decrementExact
- * @library /testlibrary
+ * @library /testlibrary /
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @compile DecExactLTest.java Verify.java
- * @run main DecExactLTest
  *
+ * @run main compiler.intrinsics.mathexact.DecExactLTest
  */
+
+package compiler.intrinsics.mathexact;
 
 public class DecExactLTest {
     public static long[] values = {1, 1, 1, 1};

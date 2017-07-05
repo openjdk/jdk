@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 8133864
  * @summary  Wrong display, when the document I18n properties is true.
  * @author Semyon Sadetsky

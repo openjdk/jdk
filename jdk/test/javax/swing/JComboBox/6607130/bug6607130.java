@@ -21,7 +21,9 @@
  * questions.
  */
 
-/* @test
+/*
+ * @test
+ * @key headful
  * @bug 6607130
  * @summary Checks that JComboBox cell editor is hidden if the same
  *          item is selected with keyboard.

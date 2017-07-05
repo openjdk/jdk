@@ -114,8 +114,11 @@ JDK_PKGS = jdk \
 
 JACCESSAPI_PKGS = com.sun.java.accessibility.util
 
+JSOBJECT_PKGS = netscape.javascript
+
 # non-core packages in rt.jar
 NON_CORE_PKGS = $(DOMAPI_PKGS) \
+    $(JSOBJECT_PKGS) \
     $(MGMT_PKGS) \
     $(JAAS_PKGS) \
     $(JGSS_PKGS) \

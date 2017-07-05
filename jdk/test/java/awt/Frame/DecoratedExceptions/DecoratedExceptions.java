@@ -25,6 +25,7 @@ import java.awt.*;
 
 /*
  * @test
+ * @key headful
  * @summary An attempt to set non-trivial background, shape, or translucency
  *          to a decorated toplevel should end with an exception.
  * @author Dmitriy Ermashov (dmitriy.ermashov@oracle.com)

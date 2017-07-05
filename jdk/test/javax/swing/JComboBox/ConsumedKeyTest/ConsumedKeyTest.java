@@ -27,6 +27,7 @@ import java.awt.event.KeyEvent;
 
 /*
   @test
+  @key headful
   @bug 8031485 8058193
   @summary Combo box consuming escape and enter key events
   @author Petr Pchelko

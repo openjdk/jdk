@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 4330357
  * @summary Tests that real editor in JTree cleans up after editing was stopped
  * @library ../../regtesthelpers

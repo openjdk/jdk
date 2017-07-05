@@ -98,7 +98,7 @@ template <> void DCmdArgument<jlong>::parse_value(const char* str,
     strncpy(buf, str, len);
     buf[len] = '\0';
     Exceptions::fthrow(THREAD_AND_LOCATION, vmSymbols::java_lang_IllegalArgumentException(),
-      "Integer parsing error in command argument '%s'. Could not parse: %s.", _name, buf);
+      "Integer parsing error in command argument '%s'. Could not parse: %s.\n", _name, buf);
   }
 }
 
@@ -132,7 +132,7 @@ template <> void DCmdArgument<bool>::parse_value(const char* str,
       strncpy(buf, str, len);
       buf[len] = '\0';
       Exceptions::fthrow(THREAD_AND_LOCATION, vmSymbols::java_lang_IllegalArgumentException(),
-        "Boolean parsing error in command argument '%s'. Could not parse: %s.", _name, buf);
+        "Boolean parsing error in command argument '%s'. Could not parse: %s.\n", _name, buf);
     }
   }
 }
@@ -183,13 +183,13 @@ template <> void DCmdArgument<NanoTimeArgument>::parse_value(const char* str,
                                                  size_t len, TRAPS) {
   if (str == NULL) {
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
-              "Integer parsing error nanotime value: syntax error, value is null");
+              "Integer parsing error nanotime value: syntax error, value is null\n");
   }
 
   int argc = sscanf(str, JLONG_FORMAT, &_value._time);
   if (argc != 1) {
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
-              "Integer parsing error nanotime value: syntax error");
+              "Integer parsing error nanotime value: syntax error\n");
   }
   size_t idx = 0;
   while(idx < len && isdigit(str[idx])) {
@@ -199,7 +199,7 @@ template <> void DCmdArgument<NanoTimeArgument>::parse_value(const char* str,
     // only accept missing unit if the value is 0
     if (_value._time != 0) {
       THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
-                "Integer parsing error nanotime value: unit required");
+                "Integer parsing error nanotime value: unit required\n");
     } else {
       _value._nanotime = 0;
       strcpy(_value._unit, "ns");
@@ -207,7 +207,7 @@ template <> void DCmdArgument<NanoTimeArgument>::parse_value(const char* str,
     }
   } else if(len - idx > 2) {
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
-              "Integer parsing error nanotime value: illegal unit");
+              "Integer parsing error nanotime value: illegal unit\n");
   } else {
     strncpy(_value._unit, &str[idx], len - idx);
     /*Write an extra null termination. This is safe because _value._unit
@@ -234,7 +234,7 @@ template <> void DCmdArgument<NanoTimeArgument>::parse_value(const char* str,
     _value._nanotime = _value._time * 24 * 60 * 60 * 1000 * 1000 * 1000;
   } else {
      THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
-               "Integer parsing error nanotime value: illegal unit");
+               "Integer parsing error nanotime value: illegal unit\n");
   }
 }
 
@@ -280,12 +280,11 @@ template <> void DCmdArgument<MemorySizeArgument>::parse_value(const char* str,
                                                   size_t len, TRAPS) {
   if (str == NULL) {
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
-               "Parsing error memory size value: syntax error, value is null");
+               "Parsing error memory size value: syntax error, value is null\n");
   }
-
   if (*str == '-') {
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
-               "Parsing error memory size value: negative values not allowed");
+               "Parsing error memory size value: negative values not allowed\n");
   }
   int res = sscanf(str, UINT64_FORMAT "%c", &_value._val, &_value._multiplier);
   if (res == 2) {
@@ -310,7 +309,7 @@ template <> void DCmdArgument<MemorySizeArgument>::parse_value(const char* str,
      _value._size = _value._val;
    } else {
      THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
-               "Parsing error memory size value: invalid value");
+               "Parsing error memory size value: invalid value\n");
    }
 }
 

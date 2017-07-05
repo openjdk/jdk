@@ -20,13 +20,17 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-/* @test
-   @bug 4171437
-   @library ../../regtesthelpers
-   @build Util
-   @author Georges Saab
-   @run main bug4171437
-*/
+
+/*
+ * @test
+ * @key headful
+ * @bug 4171437
+ * @library ../../regtesthelpers
+ * @build Util
+ * @author Georges Saab
+ * @run main bug4171437
+ */
+
 import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
