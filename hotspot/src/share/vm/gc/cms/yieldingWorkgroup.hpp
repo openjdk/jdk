@@ -176,7 +176,7 @@ public:
   GangWorker* allocate_worker(uint which);
 
   // Run a task; returns when the task is done, or the workers yield,
-  // or the task is aborted, or the work gang is terminated via stop().
+  // or the task is aborted.
   // A task that has been yielded can be continued via this same interface
   // by using the same task repeatedly as the argument to the call.
   // It is expected that the YieldingFlexibleGangTask carries the appropriate

@@ -324,7 +324,8 @@ private:
   // explicitly started if:
   // (a) cause == _gc_locker and +GCLockerInvokesConcurrent, or
   // (b) cause == _java_lang_system_gc and +ExplicitGCInvokesConcurrent.
-  // (c) cause == _g1_humongous_allocation
+  // (c) cause == _dcmd_gc_run and +ExplicitGCInvokesConcurrent.
+  // (d) cause == _g1_humongous_allocation
   bool should_do_concurrent_full_gc(GCCause::Cause cause);
 
   // Keeps track of how many "old marking cycles" (i.e., Full GCs or

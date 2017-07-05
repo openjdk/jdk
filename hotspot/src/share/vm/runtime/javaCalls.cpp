@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -179,9 +179,9 @@ void JavaCalls::call_virtual(JavaValue* result, KlassHandle spec_klass, Symbol* 
   CallInfo callinfo;
   Handle receiver = args->receiver();
   KlassHandle recvrKlass(THREAD, receiver.is_null() ? (Klass*)NULL : receiver->klass());
+  LinkInfo link_info(spec_klass, name, signature, KlassHandle(), /*check_access*/false);
   LinkResolver::resolve_virtual_call(
-          callinfo, receiver, recvrKlass, spec_klass, name, signature,
-          KlassHandle(), false, true, CHECK);
+          callinfo, receiver, recvrKlass, link_info, true, CHECK);
   methodHandle method = callinfo.selected_method();
   assert(method.not_null(), "should have thrown exception");
 
@@ -216,7 +216,8 @@ void JavaCalls::call_virtual(JavaValue* result, Handle receiver, KlassHandle spe
 
 void JavaCalls::call_special(JavaValue* result, KlassHandle klass, Symbol* name, Symbol* signature, JavaCallArguments* args, TRAPS) {
   CallInfo callinfo;
-  LinkResolver::resolve_special_call(callinfo, klass, name, signature, KlassHandle(), false, CHECK);
+  LinkInfo link_info(klass, name, signature, KlassHandle(), /*check_access*/false);
+  LinkResolver::resolve_special_call(callinfo, link_info, CHECK);
   methodHandle method = callinfo.selected_method();
   assert(method.not_null(), "should have thrown exception");
 
@@ -250,7 +251,8 @@ void JavaCalls::call_special(JavaValue* result, Handle receiver, KlassHandle kla
 
 void JavaCalls::call_static(JavaValue* result, KlassHandle klass, Symbol* name, Symbol* signature, JavaCallArguments* args, TRAPS) {
   CallInfo callinfo;
-  LinkResolver::resolve_static_call(callinfo, klass, name, signature, KlassHandle(), false, true, CHECK);
+  LinkInfo link_info(klass, name, signature, KlassHandle(), /*check_access*/false);
+  LinkResolver::resolve_static_call(callinfo, link_info, true, CHECK);
   methodHandle method = callinfo.selected_method();
   assert(method.not_null(), "should have thrown exception");
 
