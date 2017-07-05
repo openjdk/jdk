@@ -78,6 +78,7 @@ protected:
   }
 
   virtual Node* find_previous_arraycopy(PhaseTransform* phase, Node* ld_alloc, Node*& mem, bool can_see_stored_value) const { return NULL; }
+  static bool check_if_adr_maybe_raw(Node* adr);
 
 public:
   // Helpers for the optimizer.  Documented in memnode.cpp.

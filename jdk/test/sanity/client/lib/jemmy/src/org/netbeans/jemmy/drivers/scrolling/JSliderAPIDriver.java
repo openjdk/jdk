@@ -66,20 +66,15 @@ public class JSliderAPIDriver extends AbstractScrollDriver {
         if (adj.getScrollDirection() == ScrollAdjuster.DECREASE_SCROLL_DIRECTION) {
             newValue = (scroll.getValue() > scroll.getMinimum()
                     + getUnitIncrement(scroll))
-                    ? scroll.getValue() - getUnitIncrement(scroll)
-                    : scroll.getMinimum();
+                            ? scroll.getValue() - getUnitIncrement(scroll)
+                            : scroll.getMinimum();
+            scroll.setValue(newValue);
         } else if (adj.getScrollDirection() == ScrollAdjuster.INCREASE_SCROLL_DIRECTION) {
             newValue = (scroll.getValue() < scroll.getMaximum()
                     - getUnitIncrement(scroll))
-                    ? scroll.getValue() + getUnitIncrement(scroll)
-                    : scroll.getMaximum();
-        }
-        setValue(oper, newValue);
-    }
-
-    private void setValue(ComponentOperator oper, int value) {
-        if (value != -1) {
-            ((JSliderOperator) oper).setValue(value);
+                            ? scroll.getValue() + getUnitIncrement(scroll)
+                            : scroll.getMaximum();
+            scroll.setValue(newValue);
         }
     }
 
@@ -96,15 +91,16 @@ public class JSliderAPIDriver extends AbstractScrollDriver {
         if (adj.getScrollDirection() == ScrollAdjuster.DECREASE_SCROLL_DIRECTION) {
             newValue = (scroll.getValue() > scroll.getMinimum()
                     + getBlockIncrement(scroll))
-                    ? scroll.getValue() - getBlockIncrement(scroll)
-                    : scroll.getMinimum();
+                            ? scroll.getValue() - getBlockIncrement(scroll)
+                            : scroll.getMinimum();
+            scroll.setValue(newValue);
         } else if (adj.getScrollDirection() == ScrollAdjuster.INCREASE_SCROLL_DIRECTION) {
             newValue = (scroll.getValue() < scroll.getMaximum()
                     - getBlockIncrement(scroll))
-                    ? scroll.getValue() + getBlockIncrement(scroll)
-                    : scroll.getMaximum();
+                            ? scroll.getValue() + getBlockIncrement(scroll)
+                            : scroll.getMaximum();
+            scroll.setValue(newValue);
         }
-        setValue(oper, newValue);
     }
 
     @Override
