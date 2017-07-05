@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,8 +36,9 @@ bool HeapRegionType::is_valid(Tag tag) {
     case OldTag:
     case ArchiveTag:
       return true;
+    default:
+      return false;
   }
-  return false;
 }
 
 const char* HeapRegionType::get_str() const {
@@ -50,10 +51,10 @@ const char* HeapRegionType::get_str() const {
     case ContinuesHumongousTag: return "HUMC";
     case OldTag:                return "OLD";
     case ArchiveTag:            return "ARC";
+    default:
+      ShouldNotReachHere();
+      return NULL; // keep some compilers happy
   }
-  ShouldNotReachHere();
-  // keep some compilers happy
-  return NULL;
 }
 
 const char* HeapRegionType::get_short_str() const {
@@ -66,10 +67,10 @@ const char* HeapRegionType::get_short_str() const {
     case ContinuesHumongousTag: return "HC";
     case OldTag:                return "O";
     case ArchiveTag:            return "A";
+    default:
+      ShouldNotReachHere();
+      return NULL; // keep some compilers happy
   }
-  ShouldNotReachHere();
-  // keep some compilers happy
-  return NULL;
 }
 
 G1HeapRegionTraceType::Type HeapRegionType::get_trace_type() {
@@ -82,8 +83,8 @@ G1HeapRegionTraceType::Type HeapRegionType::get_trace_type() {
     case ContinuesHumongousTag: return G1HeapRegionTraceType::ContinuesHumongous;
     case OldTag:                return G1HeapRegionTraceType::Old;
     case ArchiveTag:            return G1HeapRegionTraceType::Archive;
+    default:
+      ShouldNotReachHere();
+      return G1HeapRegionTraceType::Free; // keep some compilers happy
   }
-  ShouldNotReachHere();
-  // keep some compilers happy
-  return G1HeapRegionTraceType::Free;
 }

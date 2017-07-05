@@ -1129,6 +1129,8 @@ Handle SharedRuntime::find_callee_info_helper(JavaThread* thread,
                                               : Bytecodes::_invokevirtual;
           }
           break;
+        default:
+          break;
       }
     }
   } else {
@@ -1379,7 +1381,7 @@ methodHandle SharedRuntime::resolve_sub_helper(JavaThread *thread,
     // which may happen when multiply alive nmethod (tiered compilation)
     // will be supported.
     if (!callee_method->is_old() &&
-        (callee == NULL || callee->is_in_use() && (callee_method->code() == callee))) {
+        (callee == NULL || (callee->is_in_use() && callee_method->code() == callee))) {
 #ifdef ASSERT
       // We must not try to patch to jump to an already unloaded method.
       if (dest_entry_point != 0) {
@@ -3168,4 +3170,3 @@ frame SharedRuntime::look_for_reserved_stack_annotated_method(JavaThread* thread
   }
   return activation;
 }
-

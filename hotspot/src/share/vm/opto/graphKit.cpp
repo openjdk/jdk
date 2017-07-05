@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -584,6 +584,8 @@ void GraphKit::builtin_throw(Deoptimization::DeoptReason reason, Node* arg) {
         ex_obj = env()->ClassCastException_instance();
       }
       break;
+    default:
+      break;
     }
     if (failing()) { stop(); return; }  // exception allocation might fail
     if (ex_obj != NULL) {
@@ -821,7 +823,7 @@ static bool should_reexecute_implied_by_bytecode(JVMState *jvms, bool is_anewarr
   if (cur_method != NULL && cur_bci != InvocationEntryBci) {
     Bytecodes::Code code = cur_method->java_code_at_bci(cur_bci);
     return Interpreter::bytecode_should_reexecute(code) ||
-           is_anewarray && code == Bytecodes::_multianewarray;
+           (is_anewarray && code == Bytecodes::_multianewarray);
     // Reexecute _multianewarray bytecode which was replaced with
     // sequence of [a]newarray. See Parse::do_multianewarray().
     //
@@ -1106,6 +1108,7 @@ bool GraphKit::compute_stack_effects(int& inputs, int& depth) {
   case Bytecodes::_aload_0:   assert(inputs == 0 && outputs == 1, ""); break;
   case Bytecodes::_return:    assert(inputs == 0 && outputs == 0, ""); break;
   case Bytecodes::_drem:      assert(inputs == 4 && outputs == 2, ""); break;
+  default:                    break;
   }
 #endif //ASSERT
 
@@ -1500,7 +1503,7 @@ Node* GraphKit::make_load(Node* ctl, Node* adr, const Type* t, BasicType bt,
     ld = LoadNode::make(_gvn, ctl, mem, adr, adr_type, t, bt, mo, control_dependency, unaligned, mismatched);
   }
   ld = _gvn.transform(ld);
-  if ((bt == T_OBJECT) && C->do_escape_analysis() || C->eliminate_boxing()) {
+  if (((bt == T_OBJECT) && C->do_escape_analysis()) || C->eliminate_boxing()) {
     // Improve graph before escape analysis and boxing elimination.
     record_for_igvn(ld);
   }
@@ -2024,14 +2027,14 @@ void GraphKit::uncommon_trap(int trap_request,
   case Deoptimization::Action_make_not_entrant:
     C->set_trap_can_recompile(true);
     break;
-#ifdef ASSERT
   case Deoptimization::Action_none:
   case Deoptimization::Action_make_not_compilable:
     break;
   default:
+#ifdef ASSERT
     fatal("unknown action %d: %s", action, Deoptimization::trap_action_name(action));
-    break;
 #endif
+    break;
   }
 
   if (TraceOptoParse) {

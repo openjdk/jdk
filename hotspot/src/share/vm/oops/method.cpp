@@ -550,6 +550,9 @@ bool Method::compute_has_loops_flag() {
       case Bytecodes::_jsr_w:
         if( bcs.dest_w() < bcs.next_bci() ) _access_flags.set_has_loops();
         break;
+
+      default:
+        break;
     }
   }
   _access_flags.set_loops_flag_init();
@@ -1390,7 +1393,10 @@ methodHandle Method::clone_with_new_data(methodHandle m, u_char* new_code, int n
   ConstMethod* newcm = newm->constMethod();
   int new_const_method_size = newm->constMethod()->size();
 
-  memcpy(newm(), m(), sizeof(Method));
+  // This works because the source and target are both Methods. Some compilers
+  // (e.g., clang) complain that the target vtable pointer will be stomped,
+  // so cast away newm()'s and m()'s Methodness.
+  memcpy((void*)newm(), (void*)m(), sizeof(Method));
 
   // Create shallow copy of ConstMethod.
   memcpy(newcm, m->constMethod(), sizeof(ConstMethod));
@@ -1513,6 +1519,8 @@ void Method::init_intrinsic_id() {
       klass_id = vmSymbols::VM_SYMBOL_ENUM_NAME(java_lang_Math);
       id = vmIntrinsics::find_id(klass_id, name_id, sig_id, flags);
       break;
+    default:
+      break;
     }
     break;
 
@@ -1523,6 +1531,9 @@ void Method::init_intrinsic_id() {
     id = MethodHandles::signature_polymorphic_name_id(method_holder(), name());
     if (is_static() != MethodHandles::is_signature_polymorphic_static(id))
       id = vmIntrinsics::_none;
+    break;
+
+  default:
     break;
   }
 

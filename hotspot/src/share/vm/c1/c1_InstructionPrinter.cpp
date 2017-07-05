@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,9 +59,10 @@ const char* InstructionPrinter::cond_name(If::Condition cond) {
     case If::geq: return ">=";
     case If::aeq: return "|>=|";
     case If::beq: return "|<=|";
+    default:
+      ShouldNotReachHere();
+      return NULL;
   }
-  ShouldNotReachHere();
-  return NULL;
 }
 
 
@@ -102,8 +103,8 @@ const char* InstructionPrinter::op_name(Bytecodes::Code op) {
     case Bytecodes::_lor  : return "|";
     case Bytecodes::_ixor : // fall through
     case Bytecodes::_lxor : return "^";
+    default               : return Bytecodes::name(op);
   }
-  return Bytecodes::name(op);
 }
 
 

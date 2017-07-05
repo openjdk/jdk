@@ -182,8 +182,9 @@ MallocSite* MallocSiteTable::lookup_or_add(const NativeCallStack& key, size_t* b
 MallocSite* MallocSiteTable::malloc_site(size_t bucket_idx, size_t pos_idx) {
   assert(bucket_idx < table_size, "Invalid bucket index");
   MallocSiteHashtableEntry* head = _table[bucket_idx];
-  for (size_t index = 0; index < pos_idx && head != NULL;
-    index ++, head = (MallocSiteHashtableEntry*)head->next());
+  for (size_t index = 0;
+       index < pos_idx && head != NULL;
+       index++, head = (MallocSiteHashtableEntry*)head->next()) {}
   assert(head != NULL, "Invalid position index");
   return head->data();
 }
@@ -256,5 +257,3 @@ void MallocSiteTable::AccessLock::exclusiveLock() {
   }
   _lock_state = ExclusiveLock;
 }
-
-

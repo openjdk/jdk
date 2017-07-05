@@ -890,6 +890,8 @@ void JvmtiClassFileReconstituter::copy_bytecodes(const methodHandle& mh,
         }
         break;
         }
+      default:
+        break;
       }
     }
 

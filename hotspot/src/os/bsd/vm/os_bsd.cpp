@@ -1564,7 +1564,7 @@ void* os::dll_lookup(void* handle, const char* name) {
 
 int _print_dll_info_cb(const char * name, address base_address, address top_address, void * param) {
   outputStream * out = (outputStream *) param;
-  out->print_cr(PTR_FORMAT " \t%s", base_address, name);
+  out->print_cr(INTPTR_FORMAT " \t%s", (intptr_t)base_address, name);
   return 0;
 }
 
@@ -2118,9 +2118,9 @@ void bsd_wrap_code(char* base, size_t size) {
 
 static void warn_fail_commit_memory(char* addr, size_t size, bool exec,
                                     int err) {
-  warning("INFO: os::commit_memory(" PTR_FORMAT ", " SIZE_FORMAT
-          ", %d) failed; error='%s' (errno=%d)", addr, size, exec,
-          os::errno_name(err), err);
+  warning("INFO: os::commit_memory(" INTPTR_FORMAT ", " SIZE_FORMAT
+          ", %d) failed; error='%s' (errno=%d)", (intptr_t)addr, size, exec,
+           os::errno_name(err), err);
 }
 
 // NOTE: Bsd kernel does not really reserve the pages for us.
@@ -3630,12 +3630,12 @@ bool os::find(address addr, outputStream* st) {
   Dl_info dlinfo;
   memset(&dlinfo, 0, sizeof(dlinfo));
   if (dladdr(addr, &dlinfo) != 0) {
-    st->print(PTR_FORMAT ": ", addr);
+    st->print(INTPTR_FORMAT ": ", (intptr_t)addr);
     if (dlinfo.dli_sname != NULL && dlinfo.dli_saddr != NULL) {
       st->print("%s+%#x", dlinfo.dli_sname,
-                addr - (intptr_t)dlinfo.dli_saddr);
+                (uint)((uintptr_t)addr - (uintptr_t)dlinfo.dli_saddr));
     } else if (dlinfo.dli_fbase != NULL) {
-      st->print("<offset %#x>", addr - (intptr_t)dlinfo.dli_fbase);
+      st->print("<offset %#x>", (uint)((uintptr_t)addr - (uintptr_t)dlinfo.dli_fbase));
     } else {
       st->print("<absolute address>");
     }
@@ -3643,7 +3643,7 @@ bool os::find(address addr, outputStream* st) {
       st->print(" in %s", dlinfo.dli_fname);
     }
     if (dlinfo.dli_fbase != NULL) {
-      st->print(" at " PTR_FORMAT, dlinfo.dli_fbase);
+      st->print(" at " INTPTR_FORMAT, (intptr_t)dlinfo.dli_fbase);
     }
     st->cr();
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1910,7 +1910,7 @@ int PhaseIdealLoop::stride_of_possible_iv(Node* iff) {
   }
   BoolNode* bl = iff->in(1)->as_Bool();
   Node* cmp = bl->in(1);
-  if (!cmp || cmp->Opcode() != Op_CmpI && cmp->Opcode() != Op_CmpU) {
+  if (!cmp || (cmp->Opcode() != Op_CmpI && cmp->Opcode() != Op_CmpU)) {
     return 0;
   }
   // Must have an invariant operand

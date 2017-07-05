@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -208,7 +208,7 @@ int IdealLoopTree::is_invariant_addition(Node* n, PhaseIdealLoop *phase) {
 // inv1 - (x + inv2)  =>  ( inv1 - inv2) - x
 //
 Node* IdealLoopTree::reassociate_add_sub(Node* n1, PhaseIdealLoop *phase) {
-  if (!n1->is_Add() && !n1->is_Sub() || n1->outcnt() == 0) return NULL;
+  if ((!n1->is_Add() && !n1->is_Sub()) || n1->outcnt() == 0) return NULL;
   if (is_invariant(n1)) return NULL;
   int inv1_idx = is_invariant_addition(n1, phase);
   if (!inv1_idx) return NULL;
@@ -729,8 +729,8 @@ bool IdealLoopTree::policy_unroll(PhaseIdealLoop *phase) {
   // After unroll limit will be adjusted: new_limit = limit-stride.
   // Bailout if adjustment overflow.
   const TypeInt* limit_type = phase->_igvn.type(limit_n)->is_int();
-  if (stride_con > 0 && ((limit_type->_hi - stride_con) >= limit_type->_hi) ||
-      stride_con < 0 && ((limit_type->_lo - stride_con) <= limit_type->_lo))
+  if ((stride_con > 0 && ((limit_type->_hi - stride_con) >= limit_type->_hi)) ||
+      (stride_con < 0 && ((limit_type->_lo - stride_con) <= limit_type->_lo)))
     return false;  // overflow
 
   // Adjust body_size to determine if we unroll or not
@@ -1413,7 +1413,7 @@ void PhaseIdealLoop::do_unroll( IdealLoopTree *loop, Node_List &old_new, bool ad
     loop->dump_head();
   }
 
-  if (C->do_vector_loop() && (PrintOpto && VerifyLoopOptimizations || TraceLoopOpts)) {
+  if (C->do_vector_loop() && (PrintOpto && (VerifyLoopOptimizations || TraceLoopOpts))) {
     Arena* arena = Thread::current()->resource_area();
     Node_Stack stack(arena, C->live_nodes() >> 2);
     Node_List rpo_list;
@@ -1516,8 +1516,8 @@ void PhaseIdealLoop::do_unroll( IdealLoopTree *loop, Node_List &old_new, bool ad
         limit = new Opaque2Node( C, limit );
         register_new_node( limit, opaq_ctrl );
       }
-      if (stride_con > 0 && (java_subtract(limit_type->_lo, stride_con) < limit_type->_lo) ||
-          stride_con < 0 && (java_subtract(limit_type->_hi, stride_con) > limit_type->_hi)) {
+      if ((stride_con > 0 && (java_subtract(limit_type->_lo, stride_con) < limit_type->_lo)) ||
+          (stride_con < 0 && (java_subtract(limit_type->_hi, stride_con) > limit_type->_hi))) {
         // No underflow.
         new_limit = new SubINode(limit, stride);
       } else {
@@ -1652,7 +1652,7 @@ void PhaseIdealLoop::do_unroll( IdealLoopTree *loop, Node_List &old_new, bool ad
   loop->record_for_igvn();
 
 #ifndef PRODUCT
-  if (C->do_vector_loop() && (PrintOpto && VerifyLoopOptimizations || TraceLoopOpts)) {
+  if (C->do_vector_loop() && (PrintOpto && (VerifyLoopOptimizations || TraceLoopOpts))) {
     tty->print("\nnew loop after unroll\n");       loop->dump_head();
     for (uint i = 0; i < loop->_body.size(); i++) {
       loop->_body.at(i)->dump();

@@ -100,8 +100,6 @@ template <class T, MEMFLAGS F> bool RehashableHashtable<T, F>::check_rehash_tabl
   return false;
 }
 
-template <class T, MEMFLAGS F> juint RehashableHashtable<T, F>::_seed = 0;
-
 // Create a new table and using alternate hash code, populate the new table
 // with the existing elements.   This can be used to change the hash code
 // and could in the future change the size of the table.
@@ -207,7 +205,7 @@ template <MEMFLAGS F> void BasicHashtable<F>::copy_table(char** top, char* end) 
       if (*top + entry_size() > end) {
         report_out_of_shared_space(SharedMiscData);
       }
-      *p = (BasicHashtableEntry<F>*)memcpy(*top, *p, entry_size());
+      *p = (BasicHashtableEntry<F>*)memcpy(*top, (void*)*p, entry_size());
       *top += entry_size();
     }
   }
@@ -287,7 +285,7 @@ template <MEMFLAGS F> void BasicHashtable<F>::copy_buckets(char** top, char* end
   if (*top + len > end) {
     report_out_of_shared_space(SharedMiscData);
   }
-  _buckets = (HashtableBucket<F>*)memcpy(*top, _buckets, len);
+  _buckets = (HashtableBucket<F>*)memcpy(*top, (void*)_buckets, len);
   *top += len;
 }
 

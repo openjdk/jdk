@@ -505,7 +505,7 @@ Klass* jniCheck::validate_class(JavaThread* thr, jclass clazz, bool allow_primit
 
   Klass* k = java_lang_Class::as_Klass(mirror);
   // Make allowances for primitive classes ...
-  if (!(k != NULL || allow_primitive && java_lang_Class::is_primitive(mirror))) {
+  if (!(k != NULL || (allow_primitive && java_lang_Class::is_primitive(mirror)))) {
     ReportJNIFatalError(thr, fatal_class_not_a_class);
   }
   return k;

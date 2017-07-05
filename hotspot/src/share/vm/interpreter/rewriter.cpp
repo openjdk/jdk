@@ -140,6 +140,9 @@ void Rewriter::rewrite_Object_init(methodHandle method, TRAPS) {
         THROW_MSG(vmSymbols::java_lang_IncompatibleClassChangeError(),
                   "can't overwrite local 0 in Object.<init>");
         break;
+
+      default:
+        break;
     }
   }
 }
@@ -467,6 +470,8 @@ void Rewriter::scan_method(Method* method, bool reverse, bool* invokespecial_err
         case Bytecodes::_jsr_w          : nof_jsrs++;                   break;
         case Bytecodes::_monitorenter   : // fall through
         case Bytecodes::_monitorexit    : has_monitor_bytecodes = true; break;
+
+        default: break;
       }
     }
   }

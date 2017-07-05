@@ -1380,7 +1380,7 @@ void VM_Version::get_processor_features() {
 #endif
     log->cr();
     log->print("Allocation");
-    if (AllocatePrefetchStyle <= 0 || UseSSE == 0 && !supports_3dnow_prefetch()) {
+    if (AllocatePrefetchStyle <= 0 || (UseSSE == 0 && !supports_3dnow_prefetch())) {
       log->print_cr(": no prefetching");
     } else {
       log->print(" prefetching: ");

@@ -1738,7 +1738,7 @@ int ConstantPool::copy_cpool_bytes(int cpool_size,
     assert(size + ent_size <= cpool_size, "Size mismatch");
 
     *bytes = tag;
-    DBG(printf("#%03hd tag=%03hd, ", idx, tag));
+    DBG(printf("#%03hd tag=%03hd, ", (short)idx, (short)tag));
     switch(tag) {
       case JVM_CONSTANT_Invalid: {
         DBG(printf("JVM_CONSTANT_Invalid"));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -662,9 +662,13 @@ BoolNode* PhaseIdealLoop::rc_predicate(IdealLoopTree *loop, Node* ctrl,
   if (offset && (!offset->is_Con() || offset->get_int() != 0)){
     max_idx_expr = new AddINode(max_idx_expr, offset);
     register_new_node(max_idx_expr, ctrl);
-    if (TraceLoopPredicate)
-      if (offset->is_Con()) predString->print("+ %d ", offset->get_int());
-      else predString->print("+ offset ");
+    if (TraceLoopPredicate) {
+      if (offset->is_Con()) {
+        predString->print("+ %d ", offset->get_int());
+      } else {
+        predString->print("+ offset ");
+      }
+    }
   }
 
   CmpUNode* cmp = new CmpUNode(max_idx_expr, range);

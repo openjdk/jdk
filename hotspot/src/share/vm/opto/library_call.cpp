@@ -1991,6 +1991,8 @@ LibraryCallKit::generate_min_max(vmIntrinsics::ID id, Node* x0, Node* y0) {
       case BoolTest::gt:          // x > y
       case BoolTest::ge:          // x >= y
         return (want_max ? xvalue : yvalue);
+      default:
+        break;
       }
     }
   }
@@ -2623,6 +2625,8 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
       // Repackage the long as a pointer.
       val = ConvL2X(val);
       val = _gvn.transform(new CastX2PNode(val));
+      break;
+    default:
       break;
     }
 
@@ -6183,6 +6187,8 @@ bool LibraryCallKit::inline_aescrypt_Block(vmIntrinsics::ID id) {
     stubAddr = StubRoutines::aescrypt_decryptBlock();
     stubName = "aescrypt_decryptBlock";
     break;
+  default:
+    break;
   }
   if (stubAddr == NULL) return false;
 
@@ -6249,6 +6255,8 @@ bool LibraryCallKit::inline_cipherBlockChaining_AESCrypt(vmIntrinsics::ID id) {
   case vmIntrinsics::_cipherBlockChaining_decryptAESCrypt:
     stubAddr = StubRoutines::cipherBlockChaining_decryptAESCrypt();
     stubName = "cipherBlockChaining_decryptAESCrypt";
+    break;
+  default:
     break;
   }
   if (stubAddr == NULL) return false;

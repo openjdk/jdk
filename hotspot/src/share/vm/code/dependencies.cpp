@@ -272,6 +272,8 @@ void Dependencies::assert_common_3(DepType dept,
   case exclusive_concrete_methods_2:
     swap = (x->ident() > x2->ident() && x->as_metadata()->as_method()->holder() != ctxk);
     break;
+  default:
+    break;
   }
   if (swap) { ciBaseObject* t = x; x = x2; x2 = t; }
 
@@ -420,7 +422,7 @@ void Dependencies::sort_all_deps() {
       case 1: deps->sort(sort_dep_value_arg_1, 1); break;
       case 2: deps->sort(sort_dep_value_arg_2, 2); break;
       case 3: deps->sort(sort_dep_value_arg_3, 3); break;
-      default: ShouldNotReachHere();
+      default: ShouldNotReachHere(); break;
       }
     }
     return;
@@ -434,7 +436,7 @@ void Dependencies::sort_all_deps() {
     case 1: deps->sort(sort_dep_arg_1, 1); break;
     case 2: deps->sort(sort_dep_arg_2, 2); break;
     case 3: deps->sort(sort_dep_arg_3, 3); break;
-    default: ShouldNotReachHere();
+    default: ShouldNotReachHere(); break;
     }
   }
 }
@@ -466,8 +468,9 @@ ciKlass* Dependencies::ctxk_encoded_as_null(DepType dept, ciBaseObject* x) {
   case unique_concrete_method:
   case exclusive_concrete_methods_2:
     return x->as_metadata()->as_method()->holder();
+  default:
+    return NULL;  // let NULL be NULL
   }
-  return NULL;  // let NULL be NULL
 }
 
 Klass* Dependencies::ctxk_encoded_as_null(DepType dept, Metadata* x) {
@@ -480,8 +483,9 @@ Klass* Dependencies::ctxk_encoded_as_null(DepType dept, Metadata* x) {
   case exclusive_concrete_methods_2:
     assert(x->is_method(), "sanity");
     return ((Method*)x)->method_holder();
+  default:
+    return NULL;  // let NULL be NULL
   }
-  return NULL;  // let NULL be NULL
 }
 
 void Dependencies::encode_content_bytes() {
@@ -1459,7 +1463,7 @@ bool Dependencies::is_concrete_method(Method* m, Klass * k) {
   //     overpass clause is false if k == NULL, implies return true if
   //     answer depends on overpass clause.
   return ! ( m == NULL || m -> is_static() || m -> is_abstract() ||
-             m->is_overpass() && k != NULL && k -> is_abstract() );
+             (m->is_overpass() && k != NULL && k -> is_abstract()) );
 }
 
 
@@ -1863,6 +1867,8 @@ void DepChange::print() {
       } else {
         tty->print_cr("  context interface = %s", k->external_name());
       }
+      break;
+    default:
       break;
     }
   }

@@ -521,9 +521,9 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     // Loop node may have only one input because entry path
     // is removed in PhaseIdealLoop::Dominators().
     assert(!this->is_Loop() || cnt_orig <= 3, "Loop node should have 3 or less inputs");
-    if (this->is_Loop() && (del_it == LoopNode::EntryControl ||
-                            del_it == 0 && is_unreachable_region(phase)) ||
-       !this->is_Loop() && has_phis && is_unreachable_region(phase)) {
+    if ((this->is_Loop() && (del_it == LoopNode::EntryControl ||
+                             (del_it == 0 && is_unreachable_region(phase)))) ||
+        (!this->is_Loop() && has_phis && is_unreachable_region(phase))) {
       // Yes,  the region will be removed during the next step below.
       // Cut the backedge input and remove phis since no data paths left.
       // We don't cut outputs to other nodes here since we need to put them
@@ -1689,8 +1689,8 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       bool is_loop = (r->is_Loop() && r->req() == 3);
       // Then, check if there is a data loop when phi references itself directly
       // or through other data nodes.
-      if (is_loop && !uin->eqv_uncast(in(LoopNode::EntryControl)) ||
-         !is_loop && is_unsafe_data_reference(uin)) {
+      if ((is_loop && !uin->eqv_uncast(in(LoopNode::EntryControl))) ||
+          (!is_loop && is_unsafe_data_reference(uin))) {
         // Break this data loop to avoid creation of a dead loop.
         if (can_reshape) {
           return top;

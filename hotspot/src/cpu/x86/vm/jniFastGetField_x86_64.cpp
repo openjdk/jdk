@@ -121,7 +121,8 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
     case T_CHAR:    slow_case_addr = jni_GetCharField_addr();    break;
     case T_SHORT:   slow_case_addr = jni_GetShortField_addr();   break;
     case T_INT:     slow_case_addr = jni_GetIntField_addr();     break;
-    case T_LONG:    slow_case_addr = jni_GetLongField_addr();
+    case T_LONG:    slow_case_addr = jni_GetLongField_addr();    break;
+    default:                                                     break;
   }
   // tail call
   __ jump (ExternalAddress(slow_case_addr));
@@ -215,7 +216,8 @@ address JNI_FastGetField::generate_fast_get_float_field0(BasicType type) {
   address slow_case_addr = NULL;
   switch (type) {
     case T_FLOAT:     slow_case_addr = jni_GetFloatField_addr();  break;
-    case T_DOUBLE:    slow_case_addr = jni_GetDoubleField_addr();
+    case T_DOUBLE:    slow_case_addr = jni_GetDoubleField_addr(); break;
+    default:                                                      break;
   }
   // tail call
   __ jump (ExternalAddress(slow_case_addr));

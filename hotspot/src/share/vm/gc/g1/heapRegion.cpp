@@ -893,4 +893,3 @@ void G1ContiguousSpace::initialize(MemRegion mr, bool clear_space, bool mangle_s
   set_saved_mark_word(NULL);
   reset_bot();
 }
-

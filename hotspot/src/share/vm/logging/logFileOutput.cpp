@@ -191,7 +191,7 @@ bool LogFileOutput::parse_options(const char* options, outputStream* errstream) 
       success = Arguments::atojulong(value_str, &value);
       if (!success || (value > SIZE_MAX)) {
         errstream->print_cr("Invalid option: %s must be in range [0, "
-                            SIZE_FORMAT "]", FileSizeOptionKey, SIZE_MAX);
+                            SIZE_FORMAT "]", FileSizeOptionKey, (size_t)SIZE_MAX);
         success = false;
         break;
       }
@@ -436,4 +436,3 @@ void LogFileOutput::describe(outputStream *out) {
              byte_size_in_proper_unit(_rotate_size),
              proper_unit_for_byte_size(_rotate_size));
 }
-

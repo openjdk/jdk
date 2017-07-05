@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,8 +39,8 @@ int VectorNode::opcode(int sopc, BasicType bt) {
     case T_CHAR:
     case T_SHORT:     return Op_AddVS;
     case T_INT:       return Op_AddVI;
+    default:          ShouldNotReachHere(); return 0;
     }
-    ShouldNotReachHere();
   case Op_AddL:
     assert(bt == T_LONG, "must be");
     return Op_AddVL;
@@ -57,8 +57,8 @@ int VectorNode::opcode(int sopc, BasicType bt) {
     case T_CHAR:
     case T_SHORT:  return Op_SubVS;
     case T_INT:    return Op_SubVI;
+    default:       ShouldNotReachHere(); return 0;
     }
-    ShouldNotReachHere();
   case Op_SubL:
     assert(bt == T_LONG, "must be");
     return Op_SubVL;
@@ -75,8 +75,8 @@ int VectorNode::opcode(int sopc, BasicType bt) {
     case T_CHAR:
     case T_SHORT:  return Op_MulVS;
     case T_INT:    return Op_MulVI;
+    default:       ShouldNotReachHere(); return 0;
     }
-    ShouldNotReachHere();
   case Op_MulL:
     assert(bt == T_LONG, "must be");
     return Op_MulVL;
@@ -123,8 +123,8 @@ int VectorNode::opcode(int sopc, BasicType bt) {
     case T_CHAR:
     case T_SHORT:  return Op_LShiftVS;
     case T_INT:    return Op_LShiftVI;
+      default:       ShouldNotReachHere(); return 0;
     }
-    ShouldNotReachHere();
   case Op_LShiftL:
     assert(bt == T_LONG, "must be");
     return Op_LShiftVL;
@@ -135,8 +135,8 @@ int VectorNode::opcode(int sopc, BasicType bt) {
     case T_BYTE:   return Op_RShiftVB;
     case T_SHORT:  return Op_RShiftVS;
     case T_INT:    return Op_RShiftVI;
+    default:       ShouldNotReachHere(); return 0;
     }
-    ShouldNotReachHere();
   case Op_RShiftL:
     assert(bt == T_LONG, "must be");
     return Op_RShiftVL;
@@ -151,8 +151,8 @@ int VectorNode::opcode(int sopc, BasicType bt) {
                              // a short value into int value with sign
                              // extension before a shift.
     case T_INT:    return Op_URShiftVI;
+    default:       ShouldNotReachHere(); return 0;
     }
-    ShouldNotReachHere();
   case Op_URShiftL:
     assert(bt == T_LONG, "must be");
     return Op_URShiftVL;
@@ -183,8 +183,10 @@ int VectorNode::opcode(int sopc, BasicType bt) {
   case Op_StoreF:
   case Op_StoreD:
     return Op_StoreVector;
+
+  default:
+    return 0; // Unimplemented
   }
-  return 0; // Unimplemented
 }
 
 // Also used to check if the code generator
@@ -208,8 +210,9 @@ bool VectorNode::is_shift(Node* n) {
   case Op_URShiftI:
   case Op_URShiftL:
     return true;
+  default:
+    return false;
   }
-  return false;
 }
 
 // Check if input is loop invariant vector.
@@ -223,8 +226,9 @@ bool VectorNode::is_invariant_vector(Node* n) {
   case Op_ReplicateF:
   case Op_ReplicateD:
     return true;
+  default:
+    return false;
   }
-  return false;
 }
 
 // [Start, end) half-open range defining which operands are vectors
@@ -333,10 +337,10 @@ VectorNode* VectorNode::make(int opc, Node* n1, Node* n2, uint vlen, BasicType b
   case Op_AndV: return new AndVNode(n1, n2, vt);
   case Op_OrV:  return new OrVNode (n1, n2, vt);
   case Op_XorV: return new XorVNode(n1, n2, vt);
+  default:
+    fatal("Missed vector creation for '%s'", NodeClassNames[vopc]);
+    return NULL;
   }
-  fatal("Missed vector creation for '%s'", NodeClassNames[vopc]);
-  return NULL;
-
 }
 
 VectorNode* VectorNode::make(int opc, Node* n1, Node* n2, Node* n3, uint vlen, BasicType bt) {
@@ -347,9 +351,10 @@ VectorNode* VectorNode::make(int opc, Node* n1, Node* n2, Node* n3, uint vlen, B
   switch (vopc) {
   case Op_FmaVD: return new FmaVDNode(n1, n2, n3, vt);
   case Op_FmaVF: return new FmaVFNode(n1, n2, n3, vt);
+  default:
+    fatal("Missed vector creation for '%s'", NodeClassNames[vopc]);
+    return NULL;
   }
-  fatal("Missed vector creation for '%s'", NodeClassNames[vopc]);
-  return NULL;
 }
 
 // Scalar promotion
@@ -372,9 +377,10 @@ VectorNode* VectorNode::scalar2vector(Node* s, uint vlen, const Type* opd_t) {
     return new ReplicateFNode(s, vt);
   case T_DOUBLE:
     return new ReplicateDNode(s, vt);
+  default:
+    fatal("Type '%s' is not supported for vectors", type2name(bt));
+    return NULL;
   }
-  fatal("Type '%s' is not supported for vectors", type2name(bt));
-  return NULL;
 }
 
 VectorNode* VectorNode::shift_count(Node* shift, Node* cnt, uint vlen, BasicType bt) {
@@ -390,9 +396,10 @@ VectorNode* VectorNode::shift_count(Node* shift, Node* cnt, uint vlen, BasicType
   case Op_URShiftI:
   case Op_URShiftL:
     return new RShiftCntVNode(cnt, vt);
+  default:
+    fatal("Missed vector creation for '%s'", NodeClassNames[shift->Opcode()]);
+    return NULL;
   }
-  fatal("Missed vector creation for '%s'", NodeClassNames[shift->Opcode()]);
-  return NULL;
 }
 
 // Return initial Pack node. Additional operands added with add_opd() calls.
@@ -413,9 +420,10 @@ PackNode* PackNode::make(Node* s, uint vlen, BasicType bt) {
     return new PackFNode(s, vt);
   case T_DOUBLE:
     return new PackDNode(s, vt);
+  default:
+    fatal("Type '%s' is not supported for vectors", type2name(bt));
+    return NULL;
   }
-  fatal("Type '%s' is not supported for vectors", type2name(bt));
-  return NULL;
 }
 
 // Create a binary tree form for Packs. [lo, hi) (half-open) range
@@ -426,7 +434,6 @@ PackNode* PackNode::binary_tree_pack(int lo, int hi) {
     PackNode* pk = PackNode::make(in(lo), 2, vect_type()->element_basic_type());
     pk->add_opd(in(lo+1));
     return pk;
-
   } else {
     int mid = lo + ct/2;
     PackNode* n1 = binary_tree_pack(lo,  mid);
@@ -449,10 +456,11 @@ PackNode* PackNode::binary_tree_pack(int lo, int hi) {
       return new PackDNode(n1, n2, TypeVect::make(T_DOUBLE, 2));
     case T_DOUBLE:
       return new Pack2DNode(n1, n2, TypeVect::make(T_DOUBLE, 2));
+    default:
+      fatal("Type '%s' is not supported for vectors", type2name(bt));
+      return NULL;
     }
-    fatal("Type '%s' is not supported for vectors", type2name(bt));
   }
-  return NULL;
 }
 
 // Return the vector version of a scalar load node.
@@ -492,9 +500,10 @@ Node* ExtractNode::make(Node* v, uint position, BasicType bt) {
     return new ExtractFNode(v, pos);
   case T_DOUBLE:
     return new ExtractDNode(v, pos);
+  default:
+    fatal("Type '%s' is not supported for vectors", type2name(bt));
+    return NULL;
   }
-  fatal("Type '%s' is not supported for vectors", type2name(bt));
-  return NULL;
 }
 
 int ReductionNode::opcode(int opc, BasicType bt) {
@@ -556,9 +565,10 @@ ReductionNode* ReductionNode::make(int opc, Node *ctrl, Node* n1, Node* n2, Basi
   case Op_MulReductionVL: return new MulReductionVLNode(ctrl, n1, n2);
   case Op_MulReductionVF: return new MulReductionVFNode(ctrl, n1, n2);
   case Op_MulReductionVD: return new MulReductionVDNode(ctrl, n1, n2);
+  default:
+    fatal("Missed vector creation for '%s'", NodeClassNames[vopc]);
+    return NULL;
   }
-  fatal("Missed vector creation for '%s'", NodeClassNames[vopc]);
-  return NULL;
 }
 
 bool ReductionNode::implemented(int opc, uint vlen, BasicType bt) {
@@ -570,4 +580,3 @@ bool ReductionNode::implemented(int opc, uint vlen, BasicType bt) {
   }
   return false;
 }
-

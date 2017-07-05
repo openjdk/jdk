@@ -682,6 +682,8 @@ bool VM_GetOrSetLocal::check_slot_type(javaVFrame* jvf) {
   case T_ARRAY:
     slot_type = T_OBJECT;
     break;
+  default:
+    break;
   };
   if (_type != slot_type) {
     _result = JVMTI_ERROR_TYPE_MISMATCH;
