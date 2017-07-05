@@ -313,13 +313,18 @@ JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* t
     // normal bytecode execution.
     thread->clear_exception_oop_and_pc();
 
-    continuation = SharedRuntime::compute_compiled_exc_handler(cm, pc, exception, false, false);
+    bool recursive_exception = false;
+    continuation = SharedRuntime::compute_compiled_exc_handler(cm, pc, exception, false, false, recursive_exception);
     // If an exception was thrown during exception dispatch, the exception oop may have changed
     thread->set_exception_oop(exception());
     thread->set_exception_pc(pc);
 
     // the exception cache is used only by non-implicit exceptions
-    if (continuation != NULL && !SharedRuntime::deopt_blob()->contains(continuation)) {
+    // Update the exception cache only when there didn't happen
+    // another exception during the computation of the compiled
+    // exception handler. Checking for exception oop equality is not
+    // sufficient because some exceptions are pre-allocated and reused.
+    if (continuation != NULL && !recursive_exception && !SharedRuntime::deopt_blob()->contains(continuation)) {
       cm->add_handler_for_exception_and_pc(exception, pc, continuation);
     }
   }

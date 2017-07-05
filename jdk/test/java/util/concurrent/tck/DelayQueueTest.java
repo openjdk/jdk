@@ -121,10 +121,8 @@ public class DelayQueueTest extends JSR166TestCase {
         }
 
         public boolean equals(Object other) {
-            return equals((NanoDelay)other);
-        }
-        public boolean equals(NanoDelay other) {
-            return other.trigger == trigger;
+            return (other instanceof NanoDelay) &&
+                this.trigger == ((NanoDelay)other).trigger;
         }
 
         // suppress [overrides] javac warning

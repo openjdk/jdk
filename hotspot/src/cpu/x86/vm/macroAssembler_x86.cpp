@@ -8131,8 +8131,7 @@ void MacroAssembler::has_negatives(Register ary1, Register len,
     jmp(FALSE_LABEL);
 
     clear_vector_masking();   // closing of the stub context for programming mask registers
-  }
-  else {
+  } else {
     movl(result, len); // copy
 
     if (UseAVX == 2 && UseSSE >= 2) {
@@ -8169,8 +8168,7 @@ void MacroAssembler::has_negatives(Register ary1, Register len,
       bind(COMPARE_TAIL); // len is zero
       movl(len, result);
       // Fallthru to tail compare
-    }
-    else if (UseSSE42Intrinsics) {
+    } else if (UseSSE42Intrinsics) {
       // With SSE4.2, use double quad vector compare
       Label COMPARE_WIDE_VECTORS, COMPARE_TAIL;
 
@@ -10748,7 +10746,10 @@ void MacroAssembler::char_array_compress(Register src, Register dst, Register le
   // save length for return
   push(len);
 
+  // 8165287: EVEX version disabled for now, needs to be refactored as
+  // it is returning incorrect results.
   if ((UseAVX > 2) && // AVX512
+    0 &&
     VM_Version::supports_avx512vlbw() &&
     VM_Version::supports_bmi2()) {
 
@@ -11067,10 +11068,11 @@ void MacroAssembler::byte_array_inflate(Register src, Register dst, Register len
 
       bind(below_threshold);
       bind(copy_new_tail);
-      if (UseAVX > 2) {
+      if ((UseAVX > 2) &&
+        VM_Version::supports_avx512vlbw() &&
+        VM_Version::supports_bmi2()) {
         movl(tmp2, len);
-      }
-      else {
+      } else {
         movl(len, tmp2);
       }
       andl(tmp2, 0x00000007);

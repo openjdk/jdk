@@ -41,10 +41,9 @@ import org.testng.annotations.Test;
 import org.testng.annotations.DataProvider;
 
 import static org.testng.Assert.fail;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertSame;
+import static org.testng.Assert.assertTrue;
 
 public class EmptyNavigableSet {
 

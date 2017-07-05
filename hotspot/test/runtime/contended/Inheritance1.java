@@ -49,20 +49,11 @@ import jdk.internal.vm.annotation.Contended;
  */
 public class Inheritance1 {
 
-    private static final Unsafe U;
+    private static final Unsafe U = Unsafe.getUnsafe();
     private static int ADDRESS_SIZE;
     private static int HEADER_SIZE;
 
     static {
-        // steal Unsafe
-        try {
-            Field unsafe = Unsafe.class.getDeclaredField("theUnsafe");
-            unsafe.setAccessible(true);
-            U = (Unsafe) unsafe.get(null);
-        } catch (NoSuchFieldException | IllegalAccessException e) {
-            throw new IllegalStateException(e);
-        }
-
         // When running with CompressedOops on 64-bit platform, the address size
         // reported by Unsafe is still 8, while the real reference fields are 4 bytes long.
         // Try to guess the reference field size with this naive trick.

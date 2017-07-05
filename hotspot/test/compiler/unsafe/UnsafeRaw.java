@@ -35,7 +35,6 @@ package compiler.unsafe;
 
 import jdk.internal.misc.Unsafe;
 import jdk.test.lib.Utils;
-import jdk.test.lib.unsafe.UnsafeHelper;
 
 import java.util.Random;
 
@@ -82,7 +81,7 @@ public class UnsafeRaw {
   }
 
   public static void main(String[] args) throws Exception {
-    Unsafe unsafe = UnsafeHelper.getUnsafe();
+    Unsafe unsafe = Unsafe.getUnsafe();
     final int array_size = 128;
     final int element_size = 4;
     final int magic = 0x12345678;

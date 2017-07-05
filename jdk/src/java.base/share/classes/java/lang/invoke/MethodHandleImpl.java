@@ -1689,8 +1689,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
             NF_tryFinally = new NamedFunction(MethodHandleImpl.class
                     .getDeclaredMethod("tryFinally", MethodHandle.class, MethodHandle.class, Object[].class));
             NF_loop = new NamedFunction(MethodHandleImpl.class
-                    .getDeclaredMethod("loop", BasicType[].class, MethodHandle[].class, MethodHandle[].class,
-                            MethodHandle[].class, MethodHandle[].class, Object[].class));
+                    .getDeclaredMethod("loop", BasicType[].class, LoopClauses.class, Object[].class));
             NF_throwException = new NamedFunction(MethodHandleImpl.class
                     .getDeclaredMethod("throwException", Throwable.class));
             NF_profileBoolean = new NamedFunction(MethodHandleImpl.class
@@ -1794,12 +1793,13 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
         MethodHandle collectArgs = varargsArray(type.parameterCount()).asType(varargsType);
         MethodHandle unboxResult = unboxResultHandle(tloop);
 
-        BoundMethodHandle.SpeciesData data = BoundMethodHandle.speciesData_LLLLLL();
+        LoopClauses clauseData =
+                new LoopClauses(new MethodHandle[][]{toArray(init), toArray(step), toArray(pred), toArray(fini)});
+        BoundMethodHandle.SpeciesData data = BoundMethodHandle.speciesData_LLL();
         BoundMethodHandle mh;
         try {
-            mh = (BoundMethodHandle) data.constructor().invokeBasic(type, form, (Object) toArray(init),
-                    (Object) toArray(step), (Object) toArray(pred), (Object) toArray(fini), (Object) collectArgs,
-                    (Object) unboxResult);
+            mh = (BoundMethodHandle) data.constructor().invokeBasic(type, form, (Object) clauseData,
+                    (Object) collectArgs, (Object) unboxResult);
         } catch (Throwable ex) {
             throw uncaughtException(ex);
         }
@@ -1818,23 +1818,20 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
      * {@code t12}):
      * <blockquote><pre>{@code
      *  loop=Lambda(a0:L,a1:L)=>{
-     *    t2:L=BoundMethodHandle$Species_L6.argL0(a0:L);             // array of init method handles
-     *    t3:L=BoundMethodHandle$Species_L6.argL1(a0:L);             // array of step method handles
-     *    t4:L=BoundMethodHandle$Species_L6.argL2(a0:L);             // array of pred method handles
-     *    t5:L=BoundMethodHandle$Species_L6.argL3(a0:L);             // array of fini method handles
-     *    t6:L=BoundMethodHandle$Species_L6.argL4(a0:L);             // helper handle to box the arguments into an Object[]
-     *    t7:L=BoundMethodHandle$Species_L6.argL5(a0:L);             // helper handle to unbox the result
-     *    t8:L=MethodHandle.invokeBasic(t6:L,a1:L);                  // box the arguments into an Object[]
-     *    t9:L=MethodHandleImpl.loop(null,t2:L,t3:L,t4:L,t5:L,t6:L); // call the loop executor
-     *    t10:L=MethodHandle.invokeBasic(t7:L,t9:L);t10:L}           // unbox the result; return the result
+     *    t2:L=BoundMethodHandle$Species_L3.argL0(a0:L);    // LoopClauses holding init, step, pred, fini handles
+     *    t3:L=BoundMethodHandle$Species_L3.argL1(a0:L);    // helper handle to box the arguments into an Object[]
+     *    t4:L=BoundMethodHandle$Species_L3.argL2(a0:L);    // helper handle to unbox the result
+     *    t5:L=MethodHandle.invokeBasic(t3:L,a1:L);         // box the arguments into an Object[]
+     *    t6:L=MethodHandleImpl.loop(null,t2:L,t3:L);       // call the loop executor
+     *    t7:L=MethodHandle.invokeBasic(t4:L,t6:L);t7:L}    // unbox the result; return the result
      * }</pre></blockquote>
      * <p>
-     * {@code argL0} through {@code argL3} are the arrays of init, step, pred, and fini method handles.
-     * {@code argL4} and {@code argL5} are auxiliary method handles: {@code argL2} boxes arguments and wraps them into
-     * {@code Object[]} ({@code ValueConversions.array()}), and {@code argL3} unboxes the result if necessary
+     * {@code argL0} is a LoopClauses instance holding, in a 2-dimensional array, the init, step, pred, and fini method
+     * handles. {@code argL1} and {@code argL2} are auxiliary method handles: {@code argL1} boxes arguments and wraps
+     * them into {@code Object[]} ({@code ValueConversions.array()}), and {@code argL2} unboxes the result if necessary
      * ({@code ValueConversions.unbox()}).
      * <p>
-     * Having {@code t6} and {@code t7} passed in via a BMH and not hardcoded in the lambda form allows to share lambda
+     * Having {@code t3} and {@code t4} passed in via a BMH and not hardcoded in the lambda form allows to share lambda
      * forms among loop combinators with the same basic type.
      * <p>
      * The above template is instantiated by using the {@link LambdaFormEditor} to replace the {@code null} argument to
@@ -1845,15 +1842,12 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
     private static LambdaForm makeLoopForm(MethodType basicType, BasicType[] localVarTypes) {
         MethodType lambdaType = basicType.invokerType();
 
-        final int THIS_MH = 0;  // the BMH_LLLLLL
+        final int THIS_MH = 0;  // the BMH_LLL
         final int ARG_BASE = 1; // start of incoming arguments
         final int ARG_LIMIT = ARG_BASE + basicType.parameterCount();
 
         int nameCursor = ARG_LIMIT;
-        final int GET_INITS = nameCursor++;
-        final int GET_STEPS = nameCursor++;
-        final int GET_PREDS = nameCursor++;
-        final int GET_FINIS = nameCursor++;
+        final int GET_CLAUSE_DATA = nameCursor++;
         final int GET_COLLECT_ARGS = nameCursor++;
         final int GET_UNBOX_RESULT = nameCursor++;
         final int BOXED_ARGS = nameCursor++;
@@ -1864,14 +1858,11 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
         if (lform == null) {
             Name[] names = arguments(nameCursor - ARG_LIMIT, lambdaType);
 
-            BoundMethodHandle.SpeciesData data = BoundMethodHandle.speciesData_LLLLLL();
+            BoundMethodHandle.SpeciesData data = BoundMethodHandle.speciesData_LLL();
             names[THIS_MH] = names[THIS_MH].withConstraint(data);
-            names[GET_INITS] = new Name(data.getterFunction(0), names[THIS_MH]);
-            names[GET_STEPS] = new Name(data.getterFunction(1), names[THIS_MH]);
-            names[GET_PREDS] = new Name(data.getterFunction(2), names[THIS_MH]);
-            names[GET_FINIS] = new Name(data.getterFunction(3), names[THIS_MH]);
-            names[GET_COLLECT_ARGS] = new Name(data.getterFunction(4), names[THIS_MH]);
-            names[GET_UNBOX_RESULT] = new Name(data.getterFunction(5), names[THIS_MH]);
+            names[GET_CLAUSE_DATA] = new Name(data.getterFunction(0), names[THIS_MH]);
+            names[GET_COLLECT_ARGS] = new Name(data.getterFunction(1), names[THIS_MH]);
+            names[GET_UNBOX_RESULT] = new Name(data.getterFunction(2), names[THIS_MH]);
 
             // t_{i}:L=MethodHandle.invokeBasic(collectArgs:L,a1:L,...);
             MethodType collectArgsType = basicType.changeReturnType(Object.class);
@@ -1881,10 +1872,10 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
             System.arraycopy(names, ARG_BASE, args, 1, ARG_LIMIT - ARG_BASE);
             names[BOXED_ARGS] = new Name(makeIntrinsic(invokeBasic, Intrinsic.LOOP), args);
 
-            // t_{i+1}:L=MethodHandleImpl.loop(localTypes:L,inits:L,steps:L,preds:L,finis:L,t_{i}:L);
+            // t_{i+1}:L=MethodHandleImpl.loop(localTypes:L,clauses:L,t_{i}:L);
             Object[] lArgs =
                     new Object[]{null, // placeholder for BasicType[] localTypes - will be added by LambdaFormEditor
-                            names[GET_INITS], names[GET_STEPS], names[GET_PREDS], names[GET_FINIS], names[BOXED_ARGS]};
+                            names[GET_CLAUSE_DATA], names[BOXED_ARGS]};
             names[LOOP] = new Name(NF_loop, lArgs);
 
             // t_{i+2}:I=MethodHandle.invokeBasic(unbox:L,t_{i+1}:L);
@@ -1900,22 +1891,52 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
         return lform.editor().noteLoopLocalTypesForm(BOXED_ARGS, localVarTypes);
     }
 
+    static class LoopClauses {
+        @Stable final MethodHandle[][] clauses;
+        LoopClauses(MethodHandle[][] clauses) {
+            assert clauses.length == 4;
+            this.clauses = clauses;
+        }
+        @Override
+        public String toString() {
+            StringBuffer sb = new StringBuffer("LoopClauses -- ");
+            for (int i = 0; i < 4; ++i) {
+                if (i > 0) {
+                    sb.append("       ");
+                }
+                sb.append('<').append(i).append(">: ");
+                MethodHandle[] hs = clauses[i];
+                for (int j = 0; j < hs.length; ++j) {
+                    if (j > 0) {
+                        sb.append("          ");
+                    }
+                    sb.append('*').append(j).append(": ").append(hs[j]).append('\n');
+                }
+            }
+            sb.append(" --\n");
+            return sb.toString();
+        }
+    }
 
     /**
      * Intrinsified during LambdaForm compilation
      * (see {@link InvokerBytecodeGenerator#emitLoop(int)}).
      */
     @LambdaForm.Hidden
-    static Object loop(BasicType[] localTypes, MethodHandle[] init, MethodHandle[] step, MethodHandle[] pred,
-                       MethodHandle[] fini, Object... av) throws Throwable {
+    static Object loop(BasicType[] localTypes, LoopClauses clauseData, Object... av) throws Throwable {
+        final MethodHandle[] init = clauseData.clauses[0];
+        final MethodHandle[] step = clauseData.clauses[1];
+        final MethodHandle[] pred = clauseData.clauses[2];
+        final MethodHandle[] fini = clauseData.clauses[3];
         int varSize = (int) Stream.of(init).filter(h -> h.type().returnType() != void.class).count();
         int nArgs = init[0].type().parameterCount();
         Object[] varsAndArgs = new Object[varSize + nArgs];
         for (int i = 0, v = 0; i < init.length; ++i) {
-            if (init[i].type().returnType() == void.class) {
-                init[i].asFixedArity().invokeWithArguments(av);
+            MethodHandle ih = init[i];
+            if (ih.type().returnType() == void.class) {
+                ih.invokeWithArguments(av);
             } else {
-                varsAndArgs[v++] = init[i].asFixedArity().invokeWithArguments(av);
+                varsAndArgs[v++] = ih.invokeWithArguments(av);
             }
         }
         System.arraycopy(av, 0, varsAndArgs, varSize, nArgs);
@@ -1926,12 +1947,12 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
                 MethodHandle s = step[i];
                 MethodHandle f = fini[i];
                 if (s.type().returnType() == void.class) {
-                    s.asFixedArity().invokeWithArguments(varsAndArgs);
+                    s.invokeWithArguments(varsAndArgs);
                 } else {
-                    varsAndArgs[v++] = s.asFixedArity().invokeWithArguments(varsAndArgs);
+                    varsAndArgs[v++] = s.invokeWithArguments(varsAndArgs);
                 }
-                if (!(boolean) p.asFixedArity().invokeWithArguments(varsAndArgs)) {
-                    return f.asFixedArity().invokeWithArguments(varsAndArgs);
+                if (!(boolean) p.invokeWithArguments(varsAndArgs)) {
+                    return f.invokeWithArguments(varsAndArgs);
                 }
             }
         }
@@ -2122,14 +2143,13 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
         Throwable t = null;
         Object r = null;
         try {
-            // Use asFixedArity() to avoid unnecessary boxing of last argument for VarargsCollector case.
-            r = target.asFixedArity().invokeWithArguments(av);
+            r = target.invokeWithArguments(av);
         } catch (Throwable thrown) {
             t = thrown;
             throw t;
         } finally {
             Object[] args = target.type().returnType() == void.class ? prepend(av, t) : prepend(av, t, r);
-            r = cleanup.asFixedArity().invokeWithArguments(args);
+            r = cleanup.invokeWithArguments(args);
         }
         return r;
     }

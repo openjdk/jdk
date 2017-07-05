@@ -83,6 +83,7 @@ void G1RootProcessor::evacuate_roots(G1EvacuationRootClosures* closures, uint wo
   }
 
   process_vm_roots(closures, phase_times, worker_i);
+  process_string_table_roots(closures, phase_times, worker_i);
 
   {
     // Now the CM ref_processor roots.
@@ -191,17 +192,32 @@ public:
 
 void G1RootProcessor::process_all_roots(OopClosure* oops,
                                         CLDClosure* clds,
-                                        CodeBlobClosure* blobs) {
+                                        CodeBlobClosure* blobs,
+                                        bool process_string_table) {
   AllRootsClosures closures(oops, clds);
 
   process_java_roots(&closures, NULL, 0);
   process_vm_roots(&closures, NULL, 0);
 
-  if (!_process_strong_tasks.is_task_claimed(G1RP_PS_CodeCache_oops_do)) {
-    CodeCache::blobs_do(blobs);
+  if (process_string_table) {
+    process_string_table_roots(&closures, NULL, 0);
   }
+  process_code_cache_roots(blobs, NULL, 0);
 
   _process_strong_tasks.all_tasks_completed(n_workers());
+}
+
+void G1RootProcessor::process_all_roots(OopClosure* oops,
+                                        CLDClosure* clds,
+                                        CodeBlobClosure* blobs) {
+  process_all_roots(oops, clds, blobs, true);
+}
+
+void G1RootProcessor::process_all_roots_no_string_table(OopClosure* oops,
+                                                        CLDClosure* clds,
+                                                        CodeBlobClosure* blobs) {
+  assert(!ClassUnloading, "Should only be used when class unloading is disabled");
+  process_all_roots(oops, clds, blobs, false);
 }
 
 void G1RootProcessor::process_java_roots(G1RootClosures* closures,
@@ -280,14 +296,23 @@ void G1RootProcessor::process_vm_roots(G1RootClosures* closures,
       SystemDictionary::roots_oops_do(strong_roots, weak_roots);
     }
   }
+}
 
-  {
-    G1GCParPhaseTimesTracker x(phase_times, G1GCPhaseTimes::StringTableRoots, worker_i);
-    // All threads execute the following. A specific chunk of buckets
-    // from the StringTable are the individual tasks.
-    if (weak_roots != NULL) {
-      StringTable::possibly_parallel_oops_do(weak_roots);
-    }
+void G1RootProcessor::process_string_table_roots(G1RootClosures* closures,
+                                                 G1GCPhaseTimes* phase_times,
+                                                 uint worker_i) {
+  assert(closures->weak_oops() != NULL, "Should only be called when all roots are processed");
+  G1GCParPhaseTimesTracker x(phase_times, G1GCPhaseTimes::StringTableRoots, worker_i);
+  // All threads execute the following. A specific chunk of buckets
+  // from the StringTable are the individual tasks.
+  StringTable::possibly_parallel_oops_do(closures->weak_oops());
+}
+
+void G1RootProcessor::process_code_cache_roots(CodeBlobClosure* code_closure,
+                                               G1GCPhaseTimes* phase_times,
+                                               uint worker_i) {
+  if (!_process_strong_tasks.is_task_claimed(G1RP_PS_CodeCache_oops_do)) {
+    CodeCache::blobs_do(code_closure);
   }
 }
 
