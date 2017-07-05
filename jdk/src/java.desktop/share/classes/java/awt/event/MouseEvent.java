@@ -733,6 +733,7 @@ public class MouseEvent extends InputEvent {
      * @see InputEvent#getMaskForButton(int)
      * @since 1.6
      */
+    @SuppressWarnings("deprecation")
     public MouseEvent(Component source, int id, long when, int modifiers,
                       int x, int y, int xAbs, int yAbs,
                       int clickCount, boolean popupTrigger, int button)
@@ -943,6 +944,7 @@ public class MouseEvent extends InputEvent {
      * @see InputEvent#getModifiersExText(int)
      * @since 1.4
      */
+    @SuppressWarnings("deprecation")
     public static String getMouseModifiersText(int modifiers) {
         StringBuilder buf = new StringBuilder();
         if ((modifiers & InputEvent.ALT_MASK) != 0) {
@@ -1007,6 +1009,7 @@ public class MouseEvent extends InputEvent {
      *
      * @return a string identifying the event and its attributes
      */
+    @SuppressWarnings("deprecation")
     public String paramString() {
         StringBuilder str = new StringBuilder(80);
 
@@ -1066,6 +1069,7 @@ public class MouseEvent extends InputEvent {
      * Sets new modifiers by the old ones.
      * Also sets button.
      */
+    @SuppressWarnings("deprecation")
     private void setNewModifiers() {
         if ((modifiers & BUTTON1_MASK) != 0) {
             modifiers |= BUTTON1_DOWN_MASK;
@@ -1120,6 +1124,7 @@ public class MouseEvent extends InputEvent {
     /**
      * Sets old modifiers by the new ones.
      */
+    @SuppressWarnings("deprecation")
     private void setOldModifiers() {
         if (id == MOUSE_PRESSED
             || id == MOUSE_RELEASED
@@ -1168,6 +1173,7 @@ public class MouseEvent extends InputEvent {
      * Sets new modifiers by the old ones.
      * @serial
      */
+    @SuppressWarnings("deprecation")
     private void readObject(ObjectInputStream s)
       throws IOException, ClassNotFoundException {
         s.defaultReadObject();

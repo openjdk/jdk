@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,7 +92,7 @@ public abstract class AbstractProcessor implements Processor {
      * same set of strings as the annotation.  If the class is not so
      * annotated, an empty set is returned.
      *
-     * If the {@link ProcessingEvironment#getSourceVersion source
+     * If the {@link ProcessingEnvironment#getSourceVersion source
      * version} does not support modules, in other words if it is less
      * than or equal to {@link SourceVersion#RELEASE_8 RELEASE_8},
      * then any leading {@link Processor#getSupportedAnnotationTypes
