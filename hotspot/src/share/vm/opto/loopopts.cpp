@@ -1939,8 +1939,8 @@ bool PhaseIdealLoop::has_use_internal_to_set( Node* n, VectorSet& vset, IdealLoo
 
 //------------------------------ clone_for_use_outside_loop -------------------------------------
 // clone "n" for uses that are outside of loop
-void PhaseIdealLoop::clone_for_use_outside_loop( IdealLoopTree *loop, Node* n, Node_List& worklist ) {
-
+int PhaseIdealLoop::clone_for_use_outside_loop( IdealLoopTree *loop, Node* n, Node_List& worklist ) {
+  int cloned = 0;
   assert(worklist.size() == 0, "should be empty");
   for (DUIterator_Fast jmax, j = n->fast_outs(jmax); j < jmax; j++) {
     Node* use = n->fast_out(j);
@@ -1960,6 +1960,7 @@ void PhaseIdealLoop::clone_for_use_outside_loop( IdealLoopTree *loop, Node* n, N
     // clone "n" and insert it between the inputs of "n" and the use outside the loop
     Node* n_clone = n->clone();
     _igvn.replace_input_of(use, j, n_clone);
+    cloned++;
     Node* use_c;
     if (!use->is_Phi()) {
       use_c = has_ctrl(use) ? get_ctrl(use) : use->in(0);
@@ -1977,6 +1978,7 @@ void PhaseIdealLoop::clone_for_use_outside_loop( IdealLoopTree *loop, Node* n, N
     }
 #endif
   }
+  return cloned;
 }
 
 
@@ -2495,6 +2497,7 @@ bool PhaseIdealLoop::partial_peel( IdealLoopTree *loop, Node_List &old_new ) {
 
   // Evacuate nodes in peel region into the not_peeled region if possible
   uint new_phi_cnt = 0;
+  uint cloned_for_outside_use = 0;
   for (i = 0; i < peel_list.size();) {
     Node* n = peel_list.at(i);
 #if !defined(PRODUCT)
@@ -2513,8 +2516,7 @@ bool PhaseIdealLoop::partial_peel( IdealLoopTree *loop, Node_List &old_new ) {
           // if not pinned and not a load (which maybe anti-dependent on a store)
           // and not a CMove (Matcher expects only bool->cmove).
           if ( n->in(0) == NULL && !n->is_Load() && !n->is_CMove() ) {
-            clone_for_use_outside_loop( loop, n, worklist );
-
+            cloned_for_outside_use += clone_for_use_outside_loop( loop, n, worklist );
             sink_list.push(n);
             peel     >>= n->_idx; // delete n from peel set.
             not_peel <<= n->_idx; // add n to not_peel set.
@@ -2551,6 +2553,12 @@ bool PhaseIdealLoop::partial_peel( IdealLoopTree *loop, Node_List &old_new ) {
     // Inhibit more partial peeling on this loop
     assert(!head->is_partial_peel_loop(), "not partial peeled");
     head->mark_partial_peel_failed();
+    if (cloned_for_outside_use > 0) {
+      // Terminate this round of loop opts because
+      // the graph outside this loop was changed.
+      C->set_major_progress();
+      return true;
+    }
     return false;
   }
 
