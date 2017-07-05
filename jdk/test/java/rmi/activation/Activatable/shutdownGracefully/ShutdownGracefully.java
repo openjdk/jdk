@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4183169
+ * @bug 4183169 8032050
  * @summary Minor problem with the way ReliableLog handles IOExceptions.
  *
  * @author Laird Dornin; code borrowed from Ann Wollrath
@@ -36,6 +36,7 @@
 import java.rmi.activation.*;
 import java.rmi.*;
 import java.util.Properties;
+import java.util.concurrent.TimeoutException;
 
 /**
  * The test creates an rmid with a special security manager.  After
@@ -51,7 +52,7 @@ import java.util.Properties;
  * (after that time, the test will fail).
  */
 public class ShutdownGracefully
-    extends Activatable implements Runnable, RegisteringActivatable
+    extends Activatable implements RegisteringActivatable
 {
     private static RegisteringActivatable registering = null;
 
@@ -61,6 +62,8 @@ public class ShutdownGracefully
 
         RMID rmid = null;
 
+        // Save exception if there is a exception or expected behavior
+        Exception exception = null;
         System.err.println("\nRegression test for bug/rfe 4183169\n");
 
         try {
@@ -132,101 +135,37 @@ public class ShutdownGracefully
             desc = new ActivationDesc(secondGroupID,
                 "ShutdownGracefully", null, null);
 
+            /*
+             * registration request is expected to be failed. succeeded case
+             * should be recorded. And raise error after clean up  rmid.
+             */
             try {
                 registering = (RegisteringActivatable)
                     Activatable.register(desc);
-
-                System.err.println("second activate and deactivate " +
-                                   "object via method call");
+                System.err.println("The registration request succeeded unexpectedly");
+                exception = new RuntimeException("The registration request succeeded unexpectedly");
             } catch (ActivationException e) {
                 System.err.println("received exception from registration " +
                                    "call that should have failed...");
-            }
-
-            /*
-             * no longer needed because the security manager
-             * throws an exception during snapshot
-             */
-            /*
-            try {
-                registering.shutdown();
-
-                System.err.println("received exception from remote " +
-                                   "call that should have failed...");
-            } catch (RemoteException e) {
-            }
-            */
-
-        } catch (Exception e) {
-            TestLibrary.bomb("\nfailure: unexpected exception ", e);
-        } finally {
-            try {
-                Thread.sleep(4000);
-            } catch (InterruptedException e) {
-            }
-
-            registering = null;
-
-            // Need to make sure that rmid goes away by itself
-            JavaVM rmidProcess = rmid;
-            if (rmidProcess != null) {
+                // Need wait rmid process terminates.
                 try {
-                    Runnable waitThread =
-                        new ShutdownDetectThread(rmidProcess);
-
-                    synchronized (waitThread) {
-                        (new Thread(waitThread)).start();
-                        waitThread.wait(SHUTDOWN_TIMEOUT);
-                        System.err.println("rmid has shutdown");
-
-                        if (!rmidDone) {
-                            // ensure that this rmid does not infect
-                            // other tests.
-                            rmidProcess.destroy();
-                            TestLibrary.bomb("rmid did not shutdown " +
-                                             "gracefully in time");
-                        }
-                    }
-                } catch (Exception e) {
-                    TestLibrary.bomb("exception waiting for rmid " +
-                                     "to shut down");
+                    int exitCode = rmid.waitFor(SHUTDOWN_TIMEOUT);
+                    System.err.println("RMID has exited gracefully with exitcode:" + exitCode);
+                    rmid = null;
+                } catch (TimeoutException te) {
+                    System.err.println("RMID process has not exited in given time");
+                    exception = te;
                 }
             }
-            // else rmid should be down
+        } catch (Exception e) {
+            System.err.println("Exception thrown:" + e);
+            exception = e;
+        } finally {
+            if (rmid != null)
+                rmid.destroy();
         }
-
-        System.err.println
-            ("\nsuccess: ShutdownGracefully test passed ");
-    }
-
-    private static boolean rmidDone = false;
-
-    /**
-     * class that waits for rmid to exit
-     */
-    private static class ShutdownDetectThread implements Runnable {
-        private JavaVM rmidProcess = null;
-
-        ShutdownDetectThread(JavaVM rmidProcess) {
-            this.rmidProcess = rmidProcess;
-        }
-        public void run() {
-            System.err.println("waiting for rmid to shutdown");
-
-            try {
-                rmidProcess.waitFor();
-            } catch (InterruptedException e) {
-                // should not happen
-            }
-
-            synchronized (this) {
-                // notify parent thread when rmid has exited
-                this.notify();
-                rmidDone = true;
-            }
-
-            RMID.removeLog();
-        }
+        if (exception != null)
+            TestLibrary.bomb("\nexception thrown in test: ", exception);
     }
 
     /**
@@ -240,23 +179,12 @@ public class ShutdownGracefully
     }
 
     /**
-     * Spawns a thread to deactivate the object.
+     * Deactivates the object. We need to unexport forcibly because this call
+     * in-progress on this object, which is the same object that we are trying
+     * to deactivate.
      */
     public void shutdown() throws Exception {
-        (new Thread(this, "ShutdownGracefully")).start();
-    }
-
-    /**
-     * Thread to deactivate object. First attempts to make object
-     * inactive (via the inactive method).  If that fails (the
-     * object may still have pending/executing calls), then
-     * unexport the object forcibly.
-     */
-    public void run() {
-        try {
-            Thread.sleep(50 * 1000);
-        } catch (InterruptedException e) {
-        }
+        Activatable.unexportObject(this, true);
         ActivationLibrary.deactivate(this, getID());
     }
 }

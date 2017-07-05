@@ -29,6 +29,9 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.StringTokenizer;
 import java.io.ByteArrayOutputStream;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+
 import sun.util.logging.PlatformLogger;
 
 /**
@@ -44,6 +47,14 @@ import sun.util.logging.PlatformLogger;
  */
 
 class WindowsPreferences extends AbstractPreferences{
+
+    static {
+        PrivilegedAction<Void> load = () -> {
+            System.loadLibrary("prefs");
+            return null;
+        };
+        AccessController.doPrivileged(load);
+    }
 
     /**
      * Logger for error messages

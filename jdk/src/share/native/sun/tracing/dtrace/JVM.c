@@ -287,9 +287,9 @@ Java_sun_tracing_dtrace_JVM_defineClass0(
 
     if (name != NULL) {
         int i;
-        int len = (*env)->GetStringUTFLength(env, name);
+        jsize len = (*env)->GetStringUTFLength(env, name);
         int unicode_len = (*env)->GetStringLength(env, name);
-        if (len >= sizeof(buf)) {
+        if (len >= (jsize)sizeof(buf)) {
             utfName = malloc(len + 1);
             if (utfName == NULL) {
                 goto free_body;

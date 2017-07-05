@@ -220,6 +220,7 @@ class ClearedAllSoftRefs : public StackObj {
 };
 
 class GenCollectorPolicy : public CollectorPolicy {
+friend class TestGenCollectorPolicy;
  protected:
   size_t _min_gen0_size;
   size_t _initial_gen0_size;

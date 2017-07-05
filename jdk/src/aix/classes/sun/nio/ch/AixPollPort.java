@@ -107,6 +107,7 @@ final class AixPollPort
     private final ArrayBlockingQueue<Event> queue;
     private final Event NEED_TO_POLL = new Event(null, 0);
     private final Event EXECUTE_TASK_OR_SHUTDOWN = new Event(null, 0);
+    private final Event CONTINUE_AFTER_CTL_EVENT = new Event(null, 0);
 
     // encapsulates a pollset control event for a file descriptor
     static class ControlEvent {
@@ -342,7 +343,11 @@ final class AixPollPort
 
                             // To emulate one shot semantic we need to remove
                             // the file descriptor here.
-                            pollsetCtl(pollset, PS_DELETE, fd, 0);
+                            if (fd != sp[0] && fd != ctlSp[0]) {
+                                synchronized (controlQueue) {
+                                    pollsetCtl(pollset, PS_DELETE, fd, 0);
+                                }
+                            }
 
                             // wakeup
                             if (fd == sp[0]) {
@@ -350,10 +355,6 @@ final class AixPollPort
                                     // no more wakeups so drain pipe
                                     drain1(sp[0]);
                                 }
-
-                                // This is the only file descriptor without
-                                // one shot semantic => register it again.
-                                pollsetCtl(pollset, PS_ADD, sp[0], Net.POLLIN);
 
                                 // queue special event if there are more events
                                 // to handle.
@@ -368,12 +369,12 @@ final class AixPollPort
                             if (fd == ctlSp[0]) {
                                 synchronized (controlQueue) {
                                     drain1(ctlSp[0]);
-                                    // This file descriptor does not have
-                                    // one shot semantic => register it again.
-                                    pollsetCtl(pollset, PS_ADD, ctlSp[0], Net.POLLIN);
                                     processControlQueue();
                                 }
-                                continue;
+                                if (n > 0) {
+                                    continue;
+                                }
+                                return CONTINUE_AFTER_CTL_EVENT;
                             }
 
                             PollableChannel channel = fdToChannel.get(fd);
@@ -428,6 +429,11 @@ final class AixPollPort
                             }
                         }
                     } catch (InterruptedException x) {
+                        continue;
+                    }
+
+                    // contine after we processed a control event
+                    if (ev == CONTINUE_AFTER_CTL_EVENT) {
                         continue;
                     }
 

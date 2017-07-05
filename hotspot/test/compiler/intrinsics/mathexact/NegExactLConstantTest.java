@@ -26,7 +26,7 @@
  * @bug 8026844
  * @summary Test constant negExact
  * @compile NegExactLConstantTest.java Verify.java
- * @run main NegExactLConstantTest -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseMathExactIntrinsics
+ * @run main NegExactLConstantTest
  *
  */
 

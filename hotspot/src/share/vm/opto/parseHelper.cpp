@@ -222,7 +222,7 @@ void Parse::emit_guard_for_new(ciInstanceKlass* klass) {
 
   Node* init_thread_offset = _gvn.MakeConX(in_bytes(InstanceKlass::init_thread_offset()));
   Node* adr_node = basic_plus_adr(kls, kls, init_thread_offset);
-  Node* init_thread = make_load(NULL, adr_node, TypeRawPtr::BOTTOM, T_ADDRESS);
+  Node* init_thread = make_load(NULL, adr_node, TypeRawPtr::BOTTOM, T_ADDRESS, MemNode::unordered);
   Node *tst   = Bool( CmpP( init_thread, cur_thread), BoolTest::eq);
   IfNode* iff = create_and_map_if(control(), tst, PROB_ALWAYS, COUNT_UNKNOWN);
   set_control(IfTrue(iff));
@@ -232,7 +232,7 @@ void Parse::emit_guard_for_new(ciInstanceKlass* klass) {
   adr_node = basic_plus_adr(kls, kls, init_state_offset);
   // Use T_BOOLEAN for InstanceKlass::_init_state so the compiler
   // can generate code to load it as unsigned byte.
-  Node* init_state = make_load(NULL, adr_node, TypeInt::UBYTE, T_BOOLEAN);
+  Node* init_state = make_load(NULL, adr_node, TypeInt::UBYTE, T_BOOLEAN, MemNode::unordered);
   Node* being_init = _gvn.intcon(InstanceKlass::being_initialized);
   tst   = Bool( CmpI( init_state, being_init), BoolTest::eq);
   iff = create_and_map_if(control(), tst, PROB_ALWAYS, COUNT_UNKNOWN);
@@ -354,13 +354,13 @@ void Parse::increment_and_test_invocation_counter(int limit) {
   Node *counters_node = makecon(adr_type);
   Node* adr_iic_node = basic_plus_adr(counters_node, counters_node,
     MethodCounters::interpreter_invocation_counter_offset_in_bytes());
-  Node* cnt = make_load(ctrl, adr_iic_node, TypeInt::INT, T_INT, adr_type);
+  Node* cnt = make_load(ctrl, adr_iic_node, TypeInt::INT, T_INT, adr_type, MemNode::unordered);
 
   test_counter_against_threshold(cnt, limit);
 
   // Add one to the counter and store
   Node* incr = _gvn.transform(new (C) AddINode(cnt, _gvn.intcon(1)));
-  store_to_memory( ctrl, adr_iic_node, incr, T_INT, adr_type );
+  store_to_memory(ctrl, adr_iic_node, incr, T_INT, adr_type, MemNode::unordered);
 }
 
 //----------------------------method_data_addressing---------------------------
@@ -392,9 +392,9 @@ void Parse::increment_md_counter_at(ciMethodData* md, ciProfileData* data, ByteS
   Node* adr_node = method_data_addressing(md, data, counter_offset, idx, stride);
 
   const TypePtr* adr_type = _gvn.type(adr_node)->is_ptr();
-  Node* cnt  = make_load(NULL, adr_node, TypeInt::INT, T_INT, adr_type);
+  Node* cnt  = make_load(NULL, adr_node, TypeInt::INT, T_INT, adr_type, MemNode::unordered);
   Node* incr = _gvn.transform(new (C) AddINode(cnt, _gvn.intcon(DataLayout::counter_increment)));
-  store_to_memory(NULL, adr_node, incr, T_INT, adr_type );
+  store_to_memory(NULL, adr_node, incr, T_INT, adr_type, MemNode::unordered);
 }
 
 //--------------------------test_for_osr_md_counter_at-------------------------
@@ -402,7 +402,7 @@ void Parse::test_for_osr_md_counter_at(ciMethodData* md, ciProfileData* data, By
   Node* adr_node = method_data_addressing(md, data, counter_offset);
 
   const TypePtr* adr_type = _gvn.type(adr_node)->is_ptr();
-  Node* cnt  = make_load(NULL, adr_node, TypeInt::INT, T_INT, adr_type);
+  Node* cnt  = make_load(NULL, adr_node, TypeInt::INT, T_INT, adr_type, MemNode::unordered);
 
   test_counter_against_threshold(cnt, limit);
 }
@@ -412,9 +412,9 @@ void Parse::set_md_flag_at(ciMethodData* md, ciProfileData* data, int flag_const
   Node* adr_node = method_data_addressing(md, data, DataLayout::flags_offset());
 
   const TypePtr* adr_type = _gvn.type(adr_node)->is_ptr();
-  Node* flags = make_load(NULL, adr_node, TypeInt::BYTE, T_BYTE, adr_type);
+  Node* flags = make_load(NULL, adr_node, TypeInt::BYTE, T_BYTE, adr_type, MemNode::unordered);
   Node* incr = _gvn.transform(new (C) OrINode(flags, _gvn.intcon(flag_constant)));
-  store_to_memory(NULL, adr_node, incr, T_BYTE, adr_type);
+  store_to_memory(NULL, adr_node, incr, T_BYTE, adr_type, MemNode::unordered);
 }
 
 //----------------------------profile_taken_branch-----------------------------

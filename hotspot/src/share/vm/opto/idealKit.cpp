@@ -359,25 +359,25 @@ Node* IdealKit::load(Node* ctl,
   Node* mem = memory(adr_idx);
   Node* ld;
   if (require_atomic_access && bt == T_LONG) {
-    ld = LoadLNode::make_atomic(C, ctl, mem, adr, adr_type, t);
+    ld = LoadLNode::make_atomic(C, ctl, mem, adr, adr_type, t, MemNode::unordered);
   } else {
-    ld = LoadNode::make(_gvn, ctl, mem, adr, adr_type, t, bt);
+    ld = LoadNode::make(_gvn, ctl, mem, adr, adr_type, t, bt, MemNode::unordered);
   }
   return transform(ld);
 }
 
 Node* IdealKit::store(Node* ctl, Node* adr, Node *val, BasicType bt,
-                                int adr_idx,
-                                bool require_atomic_access) {
-  assert(adr_idx != Compile::AliasIdxTop, "use other store_to_memory factory" );
+                      int adr_idx,
+                      MemNode::MemOrd mo, bool require_atomic_access) {
+  assert(adr_idx != Compile::AliasIdxTop, "use other store_to_memory factory");
   const TypePtr* adr_type = NULL;
   debug_only(adr_type = C->get_adr_type(adr_idx));
   Node *mem = memory(adr_idx);
   Node* st;
   if (require_atomic_access && bt == T_LONG) {
-    st = StoreLNode::make_atomic(C, ctl, mem, adr, adr_type, val);
+    st = StoreLNode::make_atomic(C, ctl, mem, adr, adr_type, val, mo);
   } else {
-    st = StoreNode::make(_gvn, ctl, mem, adr, adr_type, val, bt);
+    st = StoreNode::make(_gvn, ctl, mem, adr, adr_type, val, bt, mo);
   }
   st = transform(st);
   set_memory(st, adr_idx);

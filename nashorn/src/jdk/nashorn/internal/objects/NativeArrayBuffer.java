@@ -57,7 +57,7 @@ final class NativeArrayBuffer extends ScriptObject {
     }
 
     protected NativeArrayBuffer(final byte[] byteArray, final Global global) {
-        super(global.getArrayBufferPrototype(), global.getArrayBufferMap());
+        super(global.getArrayBufferPrototype(), getInitialMap());
         this.buffer = byteArray;
     }
 

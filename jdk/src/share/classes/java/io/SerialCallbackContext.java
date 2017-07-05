@@ -60,7 +60,7 @@ final class SerialCallbackContext {
         return desc;
     }
 
-    private void checkAndSetUsed() throws NotActiveException {
+    public void checkAndSetUsed() throws NotActiveException {
         if (thread != Thread.currentThread()) {
              throw new NotActiveException(
               "not in readObject invocation or fields already read");
