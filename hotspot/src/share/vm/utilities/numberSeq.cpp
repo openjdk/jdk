@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -154,6 +154,10 @@ TruncatedSeq::TruncatedSeq(int length, double alpha):
   _sequence = NEW_C_HEAP_ARRAY(double, _length);
   for (int i = 0; i < _length; ++i)
     _sequence[i] = 0.0;
+}
+
+TruncatedSeq::~TruncatedSeq() {
+  FREE_C_HEAP_ARRAY(double, _sequence);
 }
 
 void TruncatedSeq::add(double val) {
