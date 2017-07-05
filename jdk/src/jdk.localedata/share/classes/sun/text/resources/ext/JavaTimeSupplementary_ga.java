@@ -284,6 +284,8 @@ public class JavaTimeSupplementary_ga extends OpenListResourceBundle {
                 sharedAmPmMarkers },
             { "roc.narrow.AmPmMarkers",
                 sharedNarrowAmPmMarkers },
+            { "timezone.gmtFormat",
+                "MAG{0}" },
         };
     }
 }

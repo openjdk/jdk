@@ -38,6 +38,8 @@ import java.net.URL;
 
 import java.security.KeyStore;
 
+import java.security.Provider;
+import java.security.Security;
 import java.security.cert.X509Certificate;
 import java.text.Collator;
 
@@ -46,6 +48,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Properties;
+import java.util.ServiceLoader;
 
 import sun.security.util.PropertyExpander;
 
@@ -209,6 +212,7 @@ public class KeyStoreUtil {
 
     /**
      * Prepends matched options from a pre-configured options file.
+     *
      * @param tool the name of the tool, can be "keytool" or "jarsigner"
      * @param file the pre-configured options file
      * @param c1 the name of the command, with the "-" prefix,
@@ -258,5 +262,69 @@ public class KeyStoreUtil {
             result.addAll(Arrays.asList(args));
             return result.toArray(new String[result.size()]);
         }
+    }
+
+    /**
+     * Loads a security provider as a service.
+     *
+     * @param provName the name
+     * @param arg optional arg
+     * @throws IllegalArgumentException if no provider matches the name
+     */
+    public static void loadProviderByName(String provName, String arg) {
+        Provider loaded = Security.getProvider(provName);
+        if (loaded != null) {
+            if (arg != null) {
+                loaded = loaded.configure(arg);
+                Security.addProvider(loaded);
+            }
+            return;
+        }
+        for (Provider p : ServiceLoader.load(Provider.class,
+                ClassLoader.getSystemClassLoader())) {
+            if (p.getName().equals(provName)) {
+                if (arg != null) {
+                    p = p.configure(arg);
+                }
+                Security.addProvider(p);
+                return;
+            }
+        }
+        throw new IllegalArgumentException("No provider found");
+    }
+
+    /**
+     * Loads a security provider by a fully-qualified class name.
+     *
+     * @param provClass the class name
+     * @param arg optional arg
+     * @param cl optional class loader
+     * @throws IllegalArgumentException if no provider matches the class name
+     * @throws ClassCastException if the class has not extended Provider
+     */
+    public static void loadProviderByClass(
+            String provClass, String arg, ClassLoader cl) {
+
+        // For compatibility, SunPKCS11 and OracleUcrypto can still be
+        // loadable with -providerClass.
+        if (provClass.equals("sun.security.pkcs11.SunPKCS11")) {
+            loadProviderByName("SunPKCS11", arg);
+            return;
+        } else if (provClass.equals("com.oracle.security.crypto.UcryptoProvider")) {
+            loadProviderByName("OracleUcrypto", arg);
+            return;
+        }
+
+        Provider prov;
+        try {
+            Class<?> clazz = Class.forName(provClass, false, cl);
+            prov = (Provider) clazz.getConstructor().newInstance();
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalArgumentException(e);
+        }
+        if (arg != null) {
+            prov = prov.configure(arg);
+        }
+        Security.addProvider(prov);
     }
 }

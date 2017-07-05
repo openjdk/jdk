@@ -501,11 +501,24 @@ ClassLoaderData::~ClassLoaderData() {
   }
 }
 
-/**
- * Returns true if this class loader data is for the platform class loader.
- */
+// Returns true if this class loader data is for the system class loader.
+bool ClassLoaderData::is_system_class_loader_data() const {
+  return SystemDictionary::is_system_class_loader(class_loader());
+}
+
+// Returns true if this class loader data is for the platform class loader.
 bool ClassLoaderData::is_platform_class_loader_data() const {
   return SystemDictionary::is_platform_class_loader(class_loader());
+}
+
+// Returns true if this class loader data is one of the 3 builtin
+// (boot, application/system or platform) class loaders. Note, the
+// builtin loaders are not freed by a GC.
+bool ClassLoaderData::is_builtin_class_loader_data() const {
+  Handle classLoaderHandle = class_loader();
+  return (is_the_null_class_loader_data() ||
+          SystemDictionary::is_system_class_loader(classLoaderHandle) ||
+          SystemDictionary::is_platform_class_loader(classLoaderHandle));
 }
 
 Metaspace* ClassLoaderData::metaspace_non_null() {
@@ -957,12 +970,6 @@ bool ClassLoaderDataGraph::do_unloading(BoolObjectClosure* is_alive_closure,
   data = _head;
   while (data != NULL) {
     if (data->is_alive(is_alive_closure)) {
-      if (data->packages_defined()) {
-        data->packages()->purge_all_package_exports();
-      }
-      if (data->modules_defined()) {
-        data->modules()->purge_all_module_reads();
-      }
       // clean metaspace
       if (walk_all_metadata) {
         data->classes_do(InstanceKlass::purge_previous_versions);
@@ -990,6 +997,23 @@ bool ClassLoaderDataGraph::do_unloading(BoolObjectClosure* is_alive_closure,
   }
 
   if (seen_dead_loader) {
+    // Walk a ModuleEntry's reads and a PackageEntry's exports lists
+    // to determine if there are modules on those lists that are now
+    // dead and should be removed.  A module's life cycle is equivalent
+    // to its defining class loader's life cycle.  Since a module is
+    // considered dead if its class loader is dead, these walks must
+    // occur after each class loader's aliveness is determined.
+    data = _head;
+    while (data != NULL) {
+      if (data->packages_defined()) {
+        data->packages()->purge_all_package_exports();
+      }
+      if (data->modules_defined()) {
+        data->modules()->purge_all_module_reads();
+      }
+      data = data->next();
+    }
+
     post_class_unload_events();
   }
 
