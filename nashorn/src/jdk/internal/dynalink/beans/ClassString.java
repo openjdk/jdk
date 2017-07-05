@@ -112,10 +112,6 @@ final class ClassString {
         this(type.parameterArray());
     }
 
-    Class<?>[] getClasses() {
-        return classes;
-    }
-
     @Override
     public boolean equals(Object other) {
         if(!(other instanceof ClassString)) {

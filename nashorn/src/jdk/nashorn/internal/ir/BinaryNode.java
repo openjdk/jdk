@@ -99,6 +99,7 @@ public final class BinaryNode extends Expression implements Assignment<Expressio
         case DIV:
         case MOD:
         case MUL:
+        case SUB:
         case ASSIGN_DIV:
         case ASSIGN_MOD:
         case ASSIGN_MUL:

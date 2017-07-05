@@ -27,6 +27,8 @@ package java.lang;
 
 import java.io.*;
 import java.util.concurrent.TimeUnit;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
 /* java.lang.Process subclass in the UNIX environment.
  *
@@ -46,11 +48,65 @@ final class UNIXProcess extends Process {
     private DeferredCloseInputStream stdout_inner_stream;
     private InputStream stderr_stream;
 
+    private static enum LaunchMechanism {
+        FORK(1),
+        POSIX_SPAWN(2);
+
+        private int value;
+        LaunchMechanism(int x) {value = x;}
+    };
+
+    /* On Solaris, the default is to spawn */
+    private static final LaunchMechanism launchMechanism;
+    private static byte[] helperpath;
+
+    private static byte[] toCString(String s) {
+        if (s == null)
+            return null;
+        byte[] bytes = s.getBytes();
+        byte[] result = new byte[bytes.length + 1];
+        System.arraycopy(bytes, 0,
+                         result, 0,
+                         bytes.length);
+        result[result.length-1] = (byte)0;
+        return result;
+    }
+
+    static {
+        launchMechanism = AccessController.doPrivileged(
+                new PrivilegedAction<LaunchMechanism>()
+        {
+            public LaunchMechanism run() {
+                String javahome = System.getProperty("java.home");
+                String osArch = System.getProperty("os.arch");
+                if (osArch.equals("x86")) {
+                    osArch = "i386";
+                } else if (osArch.equals("x86_64")) {
+                    osArch = "amd64";
+                }
+
+                helperpath = toCString(javahome + "/lib/" + osArch + "/jspawnhelper");
+                String s = System.getProperty(
+                    "jdk.lang.Process.launchMechanism", "posix_spawn");
+
+                try {
+                    return LaunchMechanism.valueOf(s.toUpperCase());
+                } catch (IllegalArgumentException e) {
+                    throw new Error(s + " is not a supported " +
+                        "process launch mechanism on this platform.");
+                }
+            }
+        });
+    }
+
     /* this is for the reaping thread */
     private native int waitForProcessExit(int pid);
 
     /**
-     * Create a process using fork(2) and exec(2).
+     * Create a process. Depending on the mode flag, this is done by
+     * one of the following mechanisms.
+     * - fork(2) and exec(2)
+     * - posix_spawn(2)
      *
      * @param std_fds array of file descriptors.  Indexes 0, 1, and
      *        2 correspond to standard input, standard output and
@@ -62,7 +118,8 @@ final class UNIXProcess extends Process {
      *        if and only if it is <em>not</em> -1 on output.
      * @return the pid of the subprocess
      */
-    private native int forkAndExec(byte[] prog,
+    private native int forkAndExec(int mode, byte[] helperpath,
+                                   byte[] prog,
                                    byte[] argBlock, int argc,
                                    byte[] envBlock, int envc,
                                    byte[] dir,
@@ -77,7 +134,9 @@ final class UNIXProcess extends Process {
                 final int[] std_fds,
                 final boolean redirectErrorStream)
     throws IOException {
-        pid = forkAndExec(prog,
+        pid = forkAndExec(launchMechanism.value,
+                          helperpath,
+                          prog,
                           argBlock, argc,
                           envBlock, envc,
                           dir,

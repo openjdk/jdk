@@ -98,7 +98,7 @@ import javax.xml.transform.Source;
  * or, to set the result value from SAX events:
  * <pre>
  *   SAXResult saxResult = sqlxml.setResult(SAXResult.class);
- *   ContentHandler contentHandler = saxResult.getXMLReader().getContentHandler();
+ *   ContentHandler contentHandler = saxResult.getHandler();
  *   contentHandler.startDocument();
  *   // set the XML elements and attributes into the result
  *   contentHandler.endDocument();

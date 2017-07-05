@@ -34,6 +34,7 @@
  */
 
 package java.util.concurrent;
+import java.io.Serializable;
 import java.util.AbstractCollection;
 import java.util.AbstractMap;
 import java.util.AbstractSet;
@@ -44,11 +45,15 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.NavigableMap;
 import java.util.NavigableSet;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.SortedMap;
+import java.util.SortedSet;
 import java.util.Spliterator;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.BiConsumer;
@@ -66,12 +71,13 @@ import java.util.function.Function;
  * {@code containsKey}, {@code get}, {@code put} and
  * {@code remove} operations and their variants.  Insertion, removal,
  * update, and access operations safely execute concurrently by
- * multiple threads.  Iterators are <i>weakly consistent</i>, returning
- * elements reflecting the state of the map at some point at or since
- * the creation of the iterator.  They do <em>not</em> throw {@link
- * java.util.ConcurrentModificationException ConcurrentModificationException},
- * and may proceed concurrently with other operations. Ascending key ordered
- * views and their iterators are faster than descending ones.
+ * multiple threads.
+ *
+ * <p>Iterators and spliterators are
+ * <a href="package-summary.html#Weakly"><i>weakly consistent</i></a>.
+ *
+ * <p>Ascending key ordered views and their iterators are faster than
+ * descending ones.
  *
  * <p>All {@code Map.Entry} pairs returned by methods in this class
  * and its views represent snapshots of mappings at the time they were
@@ -108,9 +114,7 @@ import java.util.function.Function;
  * @since 1.6
  */
 public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
-    implements ConcurrentNavigableMap<K,V>,
-               Cloneable,
-               java.io.Serializable {
+    implements ConcurrentNavigableMap<K,V>, Cloneable, Serializable {
     /*
      * This class implements a tree-like two-dimensionally linked skip
      * list in which the index levels are represented in separate
@@ -1412,6 +1416,8 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
     /**
      * Saves this map to a stream (that is, serializes it).
      *
+     * @param s the stream
+     * @throws java.io.IOException if an I/O error occurs
      * @serialData The key (Object) and value (Object) for each
      * key-value mapping represented by the map, followed by
      * {@code null}. The key-value mappings are emitted in key-order
@@ -1436,6 +1442,10 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
 
     /**
      * Reconstitutes this map from a stream (that is, deserializes it).
+     * @param s the stream
+     * @throws ClassNotFoundException if the class of a serialized object
+     *         could not be found
+     * @throws java.io.IOException if an I/O error occurs
      */
     @SuppressWarnings("unchecked")
     private void readObject(final java.io.ObjectInputStream s)
@@ -1795,8 +1805,18 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
 
     /**
      * Returns a {@link NavigableSet} view of the keys contained in this map.
-     * The set's iterator returns the keys in ascending order.
-     * The set is backed by the map, so changes to the map are
+     *
+     * <p>The set's iterator returns the keys in ascending order.
+     * The set's spliterator additionally reports {@link Spliterator#CONCURRENT},
+     * {@link Spliterator#NONNULL}, {@link Spliterator#SORTED} and
+     * {@link Spliterator#ORDERED}, with an encounter order that is ascending
+     * key order.  The spliterator's comparator (see
+     * {@link java.util.Spliterator#getComparator()}) is {@code null} if
+     * the map's comparator (see {@link #comparator()}) is {@code null}.
+     * Otherwise, the spliterator's comparator is the same as or imposes the
+     * same total ordering as the map's comparator.
+     *
+     * <p>The set is backed by the map, so changes to the map are
      * reflected in the set, and vice-versa.  The set supports element
      * removal, which removes the corresponding mapping from the map,
      * via the {@code Iterator.remove}, {@code Set.remove},
@@ -1804,11 +1824,8 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
      * operations.  It does not support the {@code add} or {@code addAll}
      * operations.
      *
-     * <p>The view's {@code iterator} is a "weakly consistent" iterator that
-     * will never throw {@link java.util.ConcurrentModificationException
-     * ConcurrentModificationException}, and guarantees to traverse elements
-     * as they existed upon construction of the iterator, and may (but is not
-     * guaranteed to) reflect any modifications subsequent to construction.
+     * <p>The view's iterators and spliterators are
+     * <a href="package-summary.html#Weakly"><i>weakly consistent</i></a>.
      *
      * <p>This method is equivalent to method {@code navigableKeySet}.
      *
@@ -1826,9 +1843,13 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
 
     /**
      * Returns a {@link Collection} view of the values contained in this map.
-     * The collection's iterator returns the values in ascending order
-     * of the corresponding keys.
-     * The collection is backed by the map, so changes to the map are
+     * <p>The collection's iterator returns the values in ascending order
+     * of the corresponding keys. The collections's spliterator additionally
+     * reports {@link Spliterator#CONCURRENT}, {@link Spliterator#NONNULL} and
+     * {@link Spliterator#ORDERED}, with an encounter order that is ascending
+     * order of the corresponding keys.
+     *
+     * <p>The collection is backed by the map, so changes to the map are
      * reflected in the collection, and vice-versa.  The collection
      * supports element removal, which removes the corresponding
      * mapping from the map, via the {@code Iterator.remove},
@@ -1836,11 +1857,8 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
      * {@code retainAll} and {@code clear} operations.  It does not
      * support the {@code add} or {@code addAll} operations.
      *
-     * <p>The view's {@code iterator} is a "weakly consistent" iterator that
-     * will never throw {@link java.util.ConcurrentModificationException
-     * ConcurrentModificationException}, and guarantees to traverse elements
-     * as they existed upon construction of the iterator, and may (but is not
-     * guaranteed to) reflect any modifications subsequent to construction.
+     * <p>The view's iterators and spliterators are
+     * <a href="package-summary.html#Weakly"><i>weakly consistent</i></a>.
      */
     public Collection<V> values() {
         Values<V> vs = values;
@@ -1849,8 +1867,14 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
 
     /**
      * Returns a {@link Set} view of the mappings contained in this map.
-     * The set's iterator returns the entries in ascending key order.
-     * The set is backed by the map, so changes to the map are
+     *
+     * <p>The set's iterator returns the entries in ascending key order.  The
+     * set's spliterator additionally reports {@link Spliterator#CONCURRENT},
+     * {@link Spliterator#NONNULL}, {@link Spliterator#SORTED} and
+     * {@link Spliterator#ORDERED}, with an encounter order that is ascending
+     * key order.
+     *
+     * <p>The set is backed by the map, so changes to the map are
      * reflected in the set, and vice-versa.  The set supports element
      * removal, which removes the corresponding mapping from the map,
      * via the {@code Iterator.remove}, {@code Set.remove},
@@ -1858,15 +1882,12 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
      * operations.  It does not support the {@code add} or
      * {@code addAll} operations.
      *
-     * <p>The view's {@code iterator} is a "weakly consistent" iterator that
-     * will never throw {@link java.util.ConcurrentModificationException
-     * ConcurrentModificationException}, and guarantees to traverse elements
-     * as they existed upon construction of the iterator, and may (but is not
-     * guaranteed to) reflect any modifications subsequent to construction.
+     * <p>The view's iterators and spliterators are
+     * <a href="package-summary.html#Weakly"><i>weakly consistent</i></a>.
      *
-     * <p>The {@code Map.Entry} elements returned by
-     * {@code iterator.next()} do <em>not</em> support the
-     * {@code setValue} operation.
+     * <p>The {@code Map.Entry} elements traversed by the {@code iterator}
+     * or {@code spliterator} do <em>not</em> support the {@code setValue}
+     * operation.
      *
      * @return a set view of the mappings contained in this map,
      *         sorted in ascending key order
@@ -2548,8 +2569,7 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
      * @serial include
      */
     static final class SubMap<K,V> extends AbstractMap<K,V>
-        implements ConcurrentNavigableMap<K,V>, Cloneable,
-                   java.io.Serializable {
+        implements ConcurrentNavigableMap<K,V>, Cloneable, Serializable {
         private static final long serialVersionUID = -7647078645895051609L;
 
         /** Underlying map */
@@ -3180,6 +3200,7 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
             public long estimateSize() {
                 return Long.MAX_VALUE;
             }
+
         }
 
         final class SubMapValueIterator extends SubMapIter<V> {
@@ -3434,7 +3455,8 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
         }
 
         public int characteristics() {
-            return Spliterator.CONCURRENT | Spliterator.NONNULL;
+            return Spliterator.CONCURRENT | Spliterator.ORDERED |
+                Spliterator.NONNULL;
         }
     }
 
@@ -3528,8 +3550,17 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
         }
 
         public final Comparator<Map.Entry<K,V>> getComparator() {
-            return comparator == null ? null :
-                Map.Entry.comparingByKey(comparator);
+            // Adapt or create a key-based comparator
+            if (comparator != null) {
+                return Map.Entry.comparingByKey(comparator);
+            }
+            else {
+                return (Comparator<Map.Entry<K,V>> & Serializable) (e1, e2) -> {
+                    @SuppressWarnings("unchecked")
+                    Comparable<? super K> k1 = (Comparable<? super K>) e1.getKey();
+                    return k1.compareTo(e2.getKey());
+                };
+            }
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -458,7 +458,7 @@ public final class RSAPadding {
     private void mgf1(byte[] seed, int seedOfs, int seedLen,
             byte[] out, int outOfs, int maskLen)  throws BadPaddingException {
         byte[] C = new byte[4]; // 32 bit counter
-        byte[] digest = new byte[20]; // 20 bytes is length of SHA-1 digest
+        byte[] digest = new byte[mgfMd.getDigestLength()];
         while (maskLen > 0) {
             mgfMd.update(seed, seedOfs, seedLen);
             mgfMd.update(C);

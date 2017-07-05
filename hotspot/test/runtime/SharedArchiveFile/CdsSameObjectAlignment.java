@@ -84,8 +84,7 @@ public class CdsSameObjectAlignment {
             // there is a chance such reservation will fail
             // If it does, it is NOT considered a failure of the feature,
             // rather a possible expected outcome, though not likely
-            output.shouldContain(
-                "Unable to reserve shared space at required address");
+            output.shouldContain("Could not allocate metaspace at a compatible address");
             output.shouldHaveExitValue(1);
         }
     }
