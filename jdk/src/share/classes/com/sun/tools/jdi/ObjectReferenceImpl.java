@@ -110,7 +110,7 @@ public class ObjectReferenceImpl extends ValueImpl
     public boolean vmNotSuspended(VMAction action) {
         // make sure that cache and listener management are synchronized
         synchronized (vm.state()) {
-            if (cache != null && (vm.traceFlags & vm.TRACE_OBJREFS) != 0) {
+            if (cache != null && (vm.traceFlags & VirtualMachine.TRACE_OBJREFS) != 0) {
                 vm.printTrace("Clearing temporary cache for " + description());
             }
             disableCache();
@@ -163,8 +163,8 @@ public class ObjectReferenceImpl extends ValueImpl
     public Value getValue(Field sig) {
         List<Field> list = new ArrayList<Field>(1);
         list.add(sig);
-        Map map = getValues(list);
-        return(Value)map.get(sig);
+        Map<Field, Value> map = getValues(list);
+        return map.get(sig);
     }
 
     public Map<Field,Value> getValues(List<? extends Field> theFields) {
@@ -487,7 +487,7 @@ public class ObjectReferenceImpl extends ValueImpl
                 info = JDWP.ObjectReference.MonitorInfo.process(vm, this);
                 if (local != null) {
                     local.monitorInfo = info;
-                    if ((vm.traceFlags & vm.TRACE_OBJREFS) != 0) {
+                    if ((vm.traceFlags & VirtualMachine.TRACE_OBJREFS) != 0) {
                         vm.printTrace("ObjectReference " + uniqueID() +
                                       " temporarily caching monitor info");
                     }

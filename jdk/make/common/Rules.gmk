@@ -239,7 +239,7 @@ classes : $(CLASSES_INIT) .delete.classlist .compile.classlist
 	    $(CAT) $<.filtered; \
 	    $(ECHO) "# Running javac: $$numfiles files; in $(CURDIR)"; \
 	    $(ECHO) $(JAVAC_CMD) -sourcepath "$(SOURCEPATH)" -d $(CLASSDESTDIR) @$<.filtered; \
-	    $(JAVAC_CMD) -sourcepath "$(SOURCEPATH)" -d $(CLASSDESTDIR) @$<.filtered; \
+	    $(JAVAC_CMD) -sourcepath "$(SOURCEPATH)" -d $(CLASSDESTDIR) @$<.filtered && \
 	    $(ECHO) "# javac finished"; \
 	  fi
 	@$(java-vm-cleanup)

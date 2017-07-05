@@ -130,16 +130,16 @@ public class FormatData_bg extends ListResourceBundle {
             },
             { "DateTimePatterns",
                 new String[] {
-                    "HH:mm:ss z", // full time pattern
+                    "HH:mm:ss zzzz", // full time pattern
                     "HH:mm:ss z", // long time pattern
-                    "H:mm:ss", // medium time pattern
-                    "H:mm", // short time pattern
-                    "EEEE, yyyy, MMMM d", // full date pattern
-                    "EEEE, yyyy, MMMM d", // long date pattern
-                    "yyyy-M-d", // medium date pattern
-                    "yy-M-d", // short date pattern
+                    "HH:mm:ss", // medium time pattern
+                    "HH:mm", // short time pattern
+                    "dd MMMM y, EEEE", // full date pattern
+                    "dd MMMM y", // long date pattern
+                    "dd.MM.yyyy", // medium date pattern
+                    "dd.MM.yy", // short date pattern
                     "{1} {0}" // date-time pattern
-                }
+                             }
             },
             { "DateTimePatternChars", "GanjkHmsSEDFwWxhKzZ" },
         };

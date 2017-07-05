@@ -33,6 +33,7 @@ package com.sun.jdi;
  */
 public class AbsentInformationException extends Exception
 {
+    private static final long serialVersionUID = 4988939309582416373L;
     public AbsentInformationException()
     {
         super();

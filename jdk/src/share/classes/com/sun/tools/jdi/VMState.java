@@ -34,7 +34,7 @@ class VMState {
     private final VirtualMachineImpl vm;
 
     // Listeners
-    private final List<WeakReference> listeners = new ArrayList<WeakReference>(); // synchronized (this)
+    private final List<WeakReference<VMListener>> listeners = new ArrayList<WeakReference<VMListener>>(); // synchronized (this)
     private boolean notifyingListeners = false;  // synchronized (this)
 
     /*
@@ -129,7 +129,7 @@ class VMState {
      */
     synchronized void thaw(ThreadReference resumingThread) {
         if (cache != null) {
-            if ((vm.traceFlags & vm.TRACE_OBJREFS) != 0) {
+            if ((vm.traceFlags & VirtualMachine.TRACE_OBJREFS) != 0) {
                 vm.printTrace("Clearing VM suspended cache");
             }
             disableCache();
@@ -142,10 +142,10 @@ class VMState {
             // Prevent recursion
             notifyingListeners = true;
 
-            Iterator iter = listeners.iterator();
+            Iterator<WeakReference<VMListener>> iter = listeners.iterator();
             while (iter.hasNext()) {
-                WeakReference ref = (WeakReference)iter.next();
-                VMListener listener = (VMListener)ref.get();
+                WeakReference<VMListener> ref = iter.next();
+                VMListener listener = ref.get();
                 if (listener != null) {
                     boolean keep = true;
                     switch (action.id()) {
@@ -178,9 +178,9 @@ class VMState {
     }
 
     synchronized void removeListener(VMListener listener) {
-        Iterator iter = listeners.iterator();
+        Iterator<WeakReference<VMListener>> iter = listeners.iterator();
         while (iter.hasNext()) {
-            WeakReference ref = (WeakReference)iter.next();
+            WeakReference<VMListener> ref = iter.next();
             if (listener.equals(ref.get())) {
                 iter.remove();
                 break;
@@ -202,7 +202,7 @@ class VMState {
                                         process(vm).threads);
                 if (local != null) {
                     local.threads = threads;
-                    if ((vm.traceFlags & vm.TRACE_OBJREFS) != 0) {
+                    if ((vm.traceFlags & VirtualMachine.TRACE_OBJREFS) != 0) {
                         vm.printTrace("Caching all threads (count = " +
                                       threads.size() + ") while VM suspended");
                     }
@@ -229,7 +229,7 @@ class VMState {
                                        process(vm).groups);
                 if (local != null) {
                     local.groups = groups;
-                    if ((vm.traceFlags & vm.TRACE_OBJREFS) != 0) {
+                    if ((vm.traceFlags & VirtualMachine.TRACE_OBJREFS) != 0) {
                         vm.printTrace(
                           "Caching top level thread groups (count = " +
                           groups.size() + ") while VM suspended");

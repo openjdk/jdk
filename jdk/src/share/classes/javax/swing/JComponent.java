@@ -2109,7 +2109,8 @@ public abstract class JComponent extends Container implements Serializable,
     private void registerWithKeyboardManager(boolean onlyIfNew) {
         InputMap inputMap = getInputMap(WHEN_IN_FOCUSED_WINDOW, false);
         KeyStroke[] strokes;
-        Hashtable<KeyStroke, KeyStroke> registered = (Hashtable)getClientProperty
+        Hashtable<KeyStroke, KeyStroke> registered =
+                (Hashtable<KeyStroke, KeyStroke>)getClientProperty
                                 (WHEN_IN_FOCUSED_WINDOW_BINDINGS);
 
         if (inputMap != null) {
@@ -2161,14 +2162,15 @@ public abstract class JComponent extends Container implements Serializable,
      * <code>WHEN_IN_FOCUSED_WINDOW</code> <code>KeyStroke</code> bindings.
      */
     private void unregisterWithKeyboardManager() {
-        Hashtable registered = (Hashtable)getClientProperty
+        Hashtable<KeyStroke, KeyStroke> registered =
+                (Hashtable<KeyStroke, KeyStroke>)getClientProperty
                                 (WHEN_IN_FOCUSED_WINDOW_BINDINGS);
 
         if (registered != null && registered.size() > 0) {
-            Enumeration keys = registered.keys();
+            Enumeration<KeyStroke> keys = registered.keys();
 
             while (keys.hasMoreElements()) {
-                KeyStroke ks = (KeyStroke)keys.nextElement();
+                KeyStroke ks = keys.nextElement();
                 unregisterWithKeyboardManager(ks);
             }
         }
@@ -3469,6 +3471,7 @@ public abstract class JComponent extends Container implements Serializable,
         }
     }
 
+    @SuppressWarnings("serial")
     static class KeyboardState implements Serializable {
         private static final Object keyCodesKey =
             JComponent.KeyboardState.class;
@@ -4125,13 +4128,13 @@ public abstract class JComponent extends Container implements Serializable,
             if (!getFlag(FOCUS_TRAVERSAL_KEYS_FORWARD_SET)) {
                 super.setFocusTraversalKeys(KeyboardFocusManager.
                                             FORWARD_TRAVERSAL_KEYS,
-                                            (Set)value);
+                                            (Set<AWTKeyStroke>)value);
             }
         } else if (propertyName == "focusTraversalKeysBackward") {
             if (!getFlag(FOCUS_TRAVERSAL_KEYS_BACKWARD_SET)) {
                 super.setFocusTraversalKeys(KeyboardFocusManager.
                                             BACKWARD_TRAVERSAL_KEYS,
-                                            (Set)value);
+                                            (Set<AWTKeyStroke>)value);
             }
         } else {
             throw new IllegalArgumentException("property \""+
@@ -4188,6 +4191,7 @@ public abstract class JComponent extends Container implements Serializable,
      *
      * @return true if this component is lightweight
      */
+    @SuppressWarnings("deprecation")
     public static boolean isLightweightComponent(Component c) {
         return c.getPeer() instanceof LightweightPeer;
     }

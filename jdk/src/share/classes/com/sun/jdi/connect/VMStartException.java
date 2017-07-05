@@ -36,6 +36,7 @@ package com.sun.jdi.connect;
  */
 public class VMStartException extends Exception
 {
+    private static final long serialVersionUID = 6408644824640801020L;
     Process process;
 
     public VMStartException(Process process) {

@@ -362,7 +362,7 @@ public abstract class MethodImpl extends TypeComponentImpl
         int argSize = arguments.size();
 
         JNITypeParser parser = new JNITypeParser(signature());
-        List signatures = parser.argumentSignatures();
+        List<String> signatures = parser.argumentSignatures();
 
         if (signatures.size() != argSize) {
             throw new IllegalArgumentException("Invalid argument count: expected " +

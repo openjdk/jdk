@@ -365,6 +365,7 @@ public abstract class XMLSignatureFactory {
      * @throws ClassCastException if any of the <code>objects</code> are not of
      *    type <code>XMLObject</code>
      */
+    @SuppressWarnings("rawtypes")
     public abstract XMLSignature newXMLSignature(SignedInfo si, KeyInfo ki,
         List objects, String id, String signatureValueId);
 
@@ -398,6 +399,7 @@ public abstract class XMLSignatureFactory {
      *    compliant
      * @throws NullPointerException if <code>dm</code> is <code>null</code>
      */
+    @SuppressWarnings("rawtypes")
     public abstract Reference newReference(String uri, DigestMethod dm,
         List transforms, String type, String id);
 
@@ -428,6 +430,7 @@ public abstract class XMLSignatureFactory {
      * @throws NullPointerException if <code>dm</code> or
      *    <code>digestValue</code> is <code>null</code>
      */
+    @SuppressWarnings("rawtypes")
     public abstract Reference newReference(String uri, DigestMethod dm,
         List transforms, String type, String id, byte[] digestValue);
 
@@ -470,6 +473,7 @@ public abstract class XMLSignatureFactory {
      *    <code>appliedTransforms</code> or <code>result</code> is
      *    <code>null</code>
      */
+    @SuppressWarnings("rawtypes")
     public abstract Reference newReference(String uri, DigestMethod dm,
         List appliedTransforms, Data result, List transforms, String type,
         String id);
@@ -489,6 +493,7 @@ public abstract class XMLSignatureFactory {
      * @throws NullPointerException if any of the parameters
      *    are <code>null</code>
      */
+    @SuppressWarnings("rawtypes")
     public abstract SignedInfo newSignedInfo(CanonicalizationMethod cm,
         SignatureMethod sm, List references);
 
@@ -507,6 +512,7 @@ public abstract class XMLSignatureFactory {
      * @throws NullPointerException if <code>cm</code>, <code>sm</code>, or
      *    <code>references</code> are <code>null</code>
      */
+    @SuppressWarnings("rawtypes")
     public abstract SignedInfo newSignedInfo(CanonicalizationMethod cm,
         SignatureMethod sm, List references, String id);
 
@@ -524,6 +530,7 @@ public abstract class XMLSignatureFactory {
      * @throws ClassCastException if <code>content</code> contains any
      *    entries that are not of type {@link XMLStructure}
      */
+    @SuppressWarnings("rawtypes")
     public abstract XMLObject newXMLObject(List content, String id,
         String mimeType, String encoding);
 
@@ -540,6 +547,7 @@ public abstract class XMLSignatureFactory {
      * @throws ClassCastException if <code>references</code> contains any
      *    entries that are not of type {@link Reference}
      */
+    @SuppressWarnings("rawtypes")
     public abstract Manifest newManifest(List references);
 
     /**
@@ -556,6 +564,7 @@ public abstract class XMLSignatureFactory {
      * @throws ClassCastException if <code>references</code> contains any
      *    entries that are not of type {@link Reference}
      */
+    @SuppressWarnings("rawtypes")
     public abstract Manifest newManifest(List references, String id);
 
     /**
@@ -574,6 +583,7 @@ public abstract class XMLSignatureFactory {
      * @throws ClassCastException if <code>content</code> contains any
      *    entries that are not of type {@link XMLStructure}
      */
+    @SuppressWarnings("rawtypes")
     public abstract SignatureProperty newSignatureProperty
         (List content, String target, String id);
 
@@ -592,6 +602,7 @@ public abstract class XMLSignatureFactory {
      * @throws ClassCastException if <code>properties</code> contains any
      *    entries that are not of type {@link SignatureProperty}
      */
+    @SuppressWarnings("rawtypes")
     public abstract SignatureProperties newSignatureProperties
         (List properties, String id);
 

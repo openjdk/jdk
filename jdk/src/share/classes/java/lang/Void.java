@@ -40,7 +40,8 @@ class Void {
      * The {@code Class} object representing the pseudo-type corresponding to
      * the keyword {@code void}.
      */
-    public static final Class<Void> TYPE = Class.getPrimitiveClass("void");
+    @SuppressWarnings("unchecked")
+    public static final Class<Void> TYPE = (Class<Void>) Class.getPrimitiveClass("void");
 
     /*
      * The Void class cannot be instantiated.

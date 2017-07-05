@@ -84,6 +84,7 @@ class WChoicePeer extends WComponentPeer implements ChoicePeer {
 
     native void create(WComponentPeer parent);
 
+    @SuppressWarnings("deprecation")
     void initialize() {
         Choice opt = (Choice)target;
         int itemCount = opt.getItemCount();
@@ -116,6 +117,7 @@ class WChoicePeer extends WComponentPeer implements ChoicePeer {
         super.initialize();
     }
 
+    @SuppressWarnings("deprecation")
     protected void disposeImpl() {
         // TODO: we should somehow reset the listener when the choice
         // is moved to another toplevel without destroying its peer.
