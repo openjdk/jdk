@@ -27,7 +27,6 @@ package sun.tools.attach;
 import com.sun.tools.attach.VirtualMachine;
 import com.sun.tools.attach.VirtualMachineDescriptor;
 import com.sun.tools.attach.AttachNotSupportedException;
-import com.sun.tools.attach.spi.AttachProvider;
 import java.io.IOException;
 
 /*

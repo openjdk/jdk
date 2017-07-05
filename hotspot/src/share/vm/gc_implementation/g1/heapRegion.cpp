@@ -540,19 +540,15 @@ void HeapRegion::add_strong_code_root(nmethod* nm) {
   hrrs->add_strong_code_root(nm);
 }
 
+void HeapRegion::add_strong_code_root_locked(nmethod* nm) {
+  assert_locked_or_safepoint(CodeCache_lock);
+  HeapRegionRemSet* hrrs = rem_set();
+  hrrs->add_strong_code_root_locked(nm);
+}
+
 void HeapRegion::remove_strong_code_root(nmethod* nm) {
   HeapRegionRemSet* hrrs = rem_set();
   hrrs->remove_strong_code_root(nm);
-}
-
-void HeapRegion::migrate_strong_code_roots() {
-  assert(in_collection_set(), "only collection set regions");
-  assert(!isHumongous(),
-          err_msg("humongous region "HR_FORMAT" should not have been added to collection set",
-                  HR_FORMAT_PARAMS(this)));
-
-  HeapRegionRemSet* hrrs = rem_set();
-  hrrs->migrate_strong_code_roots();
 }
 
 void HeapRegion::strong_code_roots_do(CodeBlobClosure* blk) const {

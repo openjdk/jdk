@@ -26,261 +26,43 @@ import java.sql.Date;
 import java.time.Instant;
 import java.time.LocalDate;
 import static org.testng.Assert.*;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+import util.BaseTest;
 
-public class DateTests {
+public class DateTests extends BaseTest {
 
-    public DateTests() {
-    }
-
-    @BeforeClass
-    public static void setUpClass() throws Exception {
-    }
-
-    @AfterClass
-    public static void tearDownClass() throws Exception {
-    }
-
-    @BeforeMethod
-    public void setUpMethod() throws Exception {
-    }
-
-    @AfterMethod
-    public void tearDownMethod() throws Exception {
-    }
-
-    /**
+    /*
      * Validate an IllegalArgumentException is thrown for an invalid Date string
      */
-    @Test(expectedExceptions = IllegalArgumentException.class)
-    public void testInvalid_year() throws Exception {
-        String expResult = "20009-11-01";
-        Date.valueOf(expResult);
+    @Test(dataProvider = "invalidDateValues",
+            expectedExceptions = IllegalArgumentException.class)
+    public void test(String d) throws Exception {
+        Date.valueOf(d);
     }
 
-    /**
-     * Validate an IllegalArgumentException is thrown for an invalid Date string
-     */
-    @Test(expectedExceptions = IllegalArgumentException.class)
-    public void testInvalid_year2() throws Exception {
-        String expResult = "09-11-01";
-        Date.valueOf(expResult);
-    }
-
-    /**
-     * Validate an IllegalArgumentException is thrown for an invalid Date string
-     */
-    @Test(expectedExceptions = IllegalArgumentException.class)
-    public void testInvalid_year3() throws Exception {
-        String expResult = "-11-01";
-        Date.valueOf(expResult);
-    }
-
-    /**
-     * Validate an IllegalArgumentException is thrown for an invalid Date string
-     */
-    @Test(expectedExceptions = IllegalArgumentException.class)
-    public void testInvalid_month() throws Exception {
-        String expResult = "2009-111-01";
-        Date.valueOf(expResult);
-    }
-
-    /**
-     * Validate an IllegalArgumentException is thrown for an invalid Date string
-     */
-    @Test(expectedExceptions = IllegalArgumentException.class)
-    public void testInvalid_month3() throws Exception {
-        String expResult = "2009--01";
-        Date.valueOf(expResult);
-    }
-
-    /**
-     * Validate an IllegalArgumentException is thrown for an invalid Date string
-     */
-    @Test(expectedExceptions = IllegalArgumentException.class)
-    public void testInvalid_month4() throws Exception {
-        String expResult = "2009-13-01";
-        Date.valueOf(expResult);
-    }
-
-    /**
-     * Validate an IllegalArgumentException is thrown for an invalid Date string
-     */
-    @Test(expectedExceptions = IllegalArgumentException.class)
-    public void testInvalid_day() throws Exception {
-        String expResult = "2009-11-011";
-        Date.valueOf(expResult);
-    }
-
-    /**
-     * Validate an IllegalArgumentException is thrown for an invalid Date string
-     */
-    @Test(expectedExceptions = IllegalArgumentException.class)
-    public void testInvalid_day3() throws Exception {
-        String expResult = "2009-11-";
-        Date.valueOf(expResult);
-    }
-
-    /**
-     * Validate an IllegalArgumentException is thrown for an invalid Date string
-     */
-    @Test(expectedExceptions = IllegalArgumentException.class)
-    public void testInvalid_day4() throws Exception {
-        String expResult = "2009-11-00";
-        Date.valueOf(expResult);
-    }
-
-    /**
-     * Validate an IllegalArgumentException is thrown for an invalid Date string
-     */
-    @Test(expectedExceptions = IllegalArgumentException.class)
-    public void testInvalid_day5() throws Exception {
-        String expResult = "2009-11-33";
-        Date.valueOf(expResult);
-    }
-
-    /**
-     * Validate an IllegalArgumentException is thrown for an invalid Date string
-     */
-    @Test(expectedExceptions = IllegalArgumentException.class)
-    public void testInvalid_valueOf() throws Exception {
-        String expResult = "--";
-        Date.valueOf(expResult);
-    }
-
-    /**
-     * Validate an IllegalArgumentException is thrown for an invalid Date string
-     */
-    @Test(expectedExceptions = IllegalArgumentException.class)
-    public void testInvalid_valueOf2() throws Exception {
-        String expResult = "";
-        Date.valueOf(expResult);
-    }
-
-    /**
-     * Validate an IllegalArgumentException is thrown for an invalid Date string
-     */
-    @Test(expectedExceptions = IllegalArgumentException.class)
-    public void testInvalid_valueOf3() throws Exception {
-        String expResult = null;
-        Date.valueOf(expResult);
-    }
-
-    /**
-     * Validate an IllegalArgumentException is thrown for an invalid Date string
-     */
-    @Test(expectedExceptions = IllegalArgumentException.class)
-    public void testInvalid_valueOf4() throws Exception {
-        String expResult = "-";
-        Date.valueOf(expResult);
-    }
-
-    /**
-     * Validate an IllegalArgumentException is thrown for an invalid Date string
-     */
-    @Test(expectedExceptions = IllegalArgumentException.class)
-    public void testInvalid_valueOf5() throws Exception {
-        String expResult = "2009";
-        Date.valueOf(expResult);
-    }
-
-    /**
-     * Validate an IllegalArgumentException is thrown for an invalid Date string
-     */
-    @Test(expectedExceptions = IllegalArgumentException.class)
-    public void testInvalid_valueOf6() throws Exception {
-        String expResult = "2009-01";
-        Date.valueOf(expResult);
-    }
-
-    /**
-     * Validate an IllegalArgumentException is thrown for an invalid Date string
-     */
-    @Test(expectedExceptions = IllegalArgumentException.class)
-    public void testInvalid_valueOf7() throws Exception {
-        String expResult = "---";
-        Date.valueOf(expResult);
-    }
-
-    /**
-     * Validate an IllegalArgumentException is thrown for an invalid Date string
-     */
-    @Test(expectedExceptions = IllegalArgumentException.class)
-    public void testInvalid_valueOf8() throws Exception {
-        String expResult = "2009-13--1";
-        Date.valueOf(expResult);
-    }
-
-    /**
-     * Validate an IllegalArgumentException is thrown for an invalid Date string
-     */
-    @Test(expectedExceptions = IllegalArgumentException.class)
-    public void testInvalid_valueOf10() {
-        String expResult = "1900-1-0";
-        Date.valueOf(expResult);
-    }
-
-    /**
+    /*
      * Test that a date created from a date string is equal to the value
      * returned from toString()
      */
-    @Test
-    public void test_valueOf() {
-        String expResult = "2009-08-30";
-        Date d = Date.valueOf(expResult);
-        assertEquals(expResult, d.toString());
+    @Test(dataProvider = "validDateValues")
+    public void test00(String d, String expectedD) {
+        Date d1 = Date.valueOf(d);
+        Date d2 = Date.valueOf(expectedD);
+        assertTrue(d1.equals(d2) && d2.equals(d1)
+                && d1.toString().equals(expectedD), "Error d1 != d2");
     }
 
-    /**
-     * Test that two dates, one with lead 0s omitted for month are equal
-     */
-    @Test
-    public void testValid_month_single_digit() {
-        String testDate = "2009-1-01";
-        String expResult = "2009-01-01";
-        Date d = Date.valueOf(testDate);
-        Date d2 = Date.valueOf(expResult);
-        assertEquals(d, d2);
-    }
-
-    /**
-     * Test that two dates, one with lead 0s omitted for day are equal
-     */
-    @Test
-    public void testValid_day_single_digit() {
-        String testDate = "2009-11-1";
-        String expResult = "2009-11-01";
-        Date d = Date.valueOf(testDate);
-        Date d2 = Date.valueOf(expResult);
-        assertEquals(d, d2);
-    }
-
-    /**
-     * Test that two dates, one with lead 0s omitted for month and day are equal
-     */
-    @Test
-    public void testValid_month_day_single_digit() {
-        String testDate = "2009-1-1";
-        String expResult = "2009-01-01";
-        Date d = Date.valueOf(testDate);
-        Date d2 = Date.valueOf(expResult);
-        assertEquals(d, d2);
-    }
-
-    /**
+    /*
      * Validate that a Date.after() returns false when same date is compared
      */
     @Test
-    public void test1() {
+    public void test01() {
         Date d = Date.valueOf("1961-08-30");
         assertFalse(d.after(d), "Error d.after(d) = true");
     }
 
-    /**
+    /*
      * Validate that a Date.after() returns true when later date is compared to
      * earlier date
      */
@@ -291,7 +73,7 @@ public class DateTests {
         assertTrue(d2.after(d), "Error d2.after(d) = false");
     }
 
-    /**
+    /*
      * Validate that a Date.after() returns false when earlier date is compared
      * to later date
      */
@@ -302,7 +84,7 @@ public class DateTests {
         assertFalse(d.after(d2), "Error d.after(d2) = true");
     }
 
-    /**
+    /*
      * Validate that a Date.after() returns false when date compared to another
      * date created from the original date
      */
@@ -314,7 +96,7 @@ public class DateTests {
         assertFalse(d2.after(d), "Error d2.after(d) = true");
     }
 
-    /**
+    /*
      * Validate that a Date.before() returns false when same date is compared
      */
     @Test
@@ -323,7 +105,7 @@ public class DateTests {
         assertFalse(d.before(d), "Error d.before(d) = true");
     }
 
-    /**
+    /*
      * Validate that a Date.before() returns true when earlier date is compared
      * to later date
      */
@@ -334,7 +116,7 @@ public class DateTests {
         assertTrue(d.before(d2), "Error d.before(d2) = false");
     }
 
-    /**
+    /*
      * Validate that a Date.before() returns false when later date is compared
      * to earlier date
      */
@@ -345,7 +127,7 @@ public class DateTests {
         assertFalse(d2.before(d), "Error d2.before(d) = true");
     }
 
-    /**
+    /*
      * Validate that a Date.before() returns false when date compared to another
      * date created from the original date
      */
@@ -357,7 +139,7 @@ public class DateTests {
         assertFalse(d2.before(d), "Error d2.before(d) = true");
     }
 
-    /**
+    /*
      * Validate that a Date.compareTo returns 0 when both Date objects are the
      * same
      */
@@ -367,7 +149,7 @@ public class DateTests {
         assertTrue(d.compareTo(d) == 0, "Error d.compareTo(d) !=0");
     }
 
-    /**
+    /*
      * Validate that a Date.compareTo returns 0 when both Date objects represent
      * the same date
      */
@@ -378,7 +160,7 @@ public class DateTests {
         assertTrue(d.compareTo(d2) == 0, "Error d.compareTo(d2) !=0");
     }
 
-    /**
+    /*
      * Validate that a Date.compareTo returns -1 when comparing a date to a
      * later date
      */
@@ -389,7 +171,7 @@ public class DateTests {
         assertTrue(d.compareTo(d2) == -1, "Error d.compareTo(d2) != -1");
     }
 
-    /**
+    /*
      * Validate that a Date.compareTo returns 1 when comparing a date to an
      * earlier date
      */
@@ -400,7 +182,7 @@ public class DateTests {
         assertTrue(d2.compareTo(d) == 1, "Error d.compareTo(d2) != 1");
     }
 
-    /**
+    /*
      * Validate that a Date made from a LocalDate are equal
      */
     @Test
@@ -411,7 +193,7 @@ public class DateTests {
         assertTrue(d.equals(d2), "Error d != d2");
     }
 
-    /**
+    /*
      * Validate that a Date LocalDate value, made from a LocalDate are equal
      */
     @Test
@@ -422,7 +204,7 @@ public class DateTests {
                 "Error LocalDate values are not equal");
     }
 
-    /**
+    /*
      * Validate an NPE occurs when a null LocalDate is passed to valueOf
      */
     @Test(expectedExceptions = NullPointerException.class)
@@ -431,7 +213,7 @@ public class DateTests {
         Date.valueOf(ld);
     }
 
-    /**
+    /*
      * Validate an UnsupportedOperationException occurs when toInstant() is
      * called
      */
@@ -441,7 +223,7 @@ public class DateTests {
         Instant instant = d.toInstant();
     }
 
-    /**
+    /*
      * Validate that two Date objects are equal when one is created from the
      * toString() of the other
      */
@@ -452,7 +234,7 @@ public class DateTests {
         assertTrue(d.equals(d2) && d2.equals(d), "Error d != d2");
     }
 
-    /**
+    /*
      * Validate that two Date values one created using valueOf and another via a
      * constructor are equal
      */
@@ -464,7 +246,7 @@ public class DateTests {
         assertTrue(d.equals(d2), "Error d != d2");
     }
 
-    /**
+    /*
      * Validate that two Date values one created using getTime() of the other
      * are equal
      */
@@ -476,7 +258,7 @@ public class DateTests {
         assertTrue(d.equals(d2), "Error d != d2");
     }
 
-    /**
+    /*
      * Validate that a Date value is equal to itself
      */
     @Test
@@ -486,7 +268,7 @@ public class DateTests {
         assertTrue(d.equals(d), "Error d != d");
     }
 
-    /**
+    /*
      * Validate an IllegalArgumentException is thrown for calling getHours
      */
     @Test(expectedExceptions = IllegalArgumentException.class)
@@ -495,7 +277,7 @@ public class DateTests {
         d.getHours();
     }
 
-    /**
+    /*
      * Validate an IllegalArgumentException is thrown for calling getMinutes
      */
     @Test(expectedExceptions = IllegalArgumentException.class)
@@ -504,7 +286,7 @@ public class DateTests {
         d.getMinutes();
     }
 
-    /**
+    /*
      * Validate an IllegalArgumentException is thrown for calling getSeconds
      */
     @Test(expectedExceptions = IllegalArgumentException.class)
@@ -513,7 +295,7 @@ public class DateTests {
         d.getSeconds();
     }
 
-    /**
+    /*
      * Validate an IllegalArgumentException is thrown for calling setHours
      */
     @Test(expectedExceptions = IllegalArgumentException.class)
@@ -522,7 +304,7 @@ public class DateTests {
         d.setHours(8);
     }
 
-    /**
+    /*
      * Validate an IllegalArgumentException is thrown for calling setMinutes
      */
     @Test(expectedExceptions = IllegalArgumentException.class)
@@ -531,12 +313,61 @@ public class DateTests {
         d.setMinutes(0);
     }
 
-    /**
+    /*
      * Validate an IllegalArgumentException is thrown for calling setSeconds
      */
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void test26() throws Exception {
         Date d = Date.valueOf("1961-08-30");
         d.setSeconds(0);
+    }
+
+    /*
+     * DataProvider used to provide Date which are not valid and are used
+     * to validate that an IllegalArgumentException will be thrown from the
+     * valueOf method
+     */
+    @DataProvider(name = "invalidDateValues")
+    private Object[][] invalidDateValues() {
+        return new Object[][]{
+            {"20009-11-01"},
+            {"09-11-01"},
+            {"-11-01"},
+            {"2009-111-01"},
+            {"2009--01"},
+            {"2009-13-01"},
+            {"2009-11-011"},
+            {"2009-11-"},
+            {"2009-11-00"},
+            {"2009-11-33"},
+            {"--"},
+            {""},
+            {null},
+            {"-"},
+            {"2009"},
+            {"2009-01"},
+            {"---"},
+            {"2009-13--1"},
+            {"1900-1-0"},
+            {"2009-01-01 10:50:01"},
+            {"1996-12-10 12:26:19.1"},
+            {"10:50:01"}
+        };
+    }
+
+    /*
+     * DataProvider used to provide Dates which are  valid and are used
+     * to validate that an IllegalArgumentException will not be thrown from the
+     * valueOf method and the corect value from toString() is returned
+     */
+    @DataProvider(name = "validDateValues")
+    private Object[][] validDateValues() {
+        return new Object[][]{
+            {"2009-08-30", "2009-08-30"},
+            {"2009-01-8", "2009-01-08"},
+            {"2009-1-01", "2009-01-01"},
+            {"2009-1-1", "2009-01-01"}
+
+        };
     }
 }
