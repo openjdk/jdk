@@ -33,7 +33,7 @@ CHARACTERDATA = $(JDK_TOPDIR)/make/data/characterdata
 UNICODEDATA = $(JDK_TOPDIR)/make/data/unicodedata
 
 define SetupCharacterData
-  $(JDK_OUTPUTDIR)/gensrc/java/lang/$1.java: $(CHARACTERDATA)/$1.java.template $(BUILD_TOOLS)
+  $(JDK_OUTPUTDIR)/gensrc/java.base/java/lang/$1.java: $(CHARACTERDATA)/$1.java.template $(BUILD_TOOLS_JDK)
 	$(MKDIR) -p $$(@D)
 	$(ECHO) $(LOG_INFO) Generating $1.java
 	$(TOOL_GENERATECHARACTER) $2 \
@@ -41,10 +41,10 @@ define SetupCharacterData
 	    -spec $(UNICODEDATA)/UnicodeData.txt \
 	    -specialcasing $(UNICODEDATA)/SpecialCasing.txt \
 	    -proplist $(UNICODEDATA)/PropList.txt \
-	    -o $(JDK_OUTPUTDIR)/gensrc/java/lang/$1.java -string \
+	    -o $(JDK_OUTPUTDIR)/gensrc/java.base/java/lang/$1.java -string \
 	    -usecharforbyte $3
 
-  GENSRC_CHARACTERDATA += $(JDK_OUTPUTDIR)/gensrc/java/lang/$1.java
+  GENSRC_CHARACTERDATA += $(JDK_OUTPUTDIR)/gensrc/java.base/java/lang/$1.java
 endef
 
 $(eval $(call SetupCharacterData,CharacterDataLatin1, , -latin1 8))
@@ -54,11 +54,12 @@ $(eval $(call SetupCharacterData,CharacterData02, -plane 2, 11 4 1))
 $(eval $(call SetupCharacterData,CharacterData0E, -plane 14, 11 4 1))
 
 # Copy two Java files that need no preprocessing.
-$(JDK_OUTPUTDIR)/gensrc/java/lang/%.java: $(CHARACTERDATA)/%.java.template
+$(JDK_OUTPUTDIR)/gensrc/java.base/java/lang/%.java: $(CHARACTERDATA)/%.java.template
 	$(ECHO) $(LOG_INFO) Generating $(@F)
 	$(call install-file)
 
-GENSRC_CHARACTERDATA += $(JDK_OUTPUTDIR)/gensrc/java/lang/CharacterDataUndefined.java \
-    $(JDK_OUTPUTDIR)/gensrc/java/lang/CharacterDataPrivateUse.java
+GENSRC_CHARACTERDATA += $(JDK_OUTPUTDIR)/gensrc/java.base/java/lang/CharacterDataUndefined.java \
+    $(JDK_OUTPUTDIR)/gensrc/java.base/java/lang/CharacterDataPrivateUse.java
+GENSRC_JAVA_BASE += $(GENSRC_CHARACTERDATA)
 
-$(GENSRC_CHARACTERDATA): $(BUILD_TOOLS)
+$(GENSRC_CHARACTERDATA): $(BUILD_TOOLS_JDK)

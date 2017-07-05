@@ -1,0 +1,147 @@
+#
+# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+include LauncherCommon.gmk
+
+ifndef BUILD_HEADLESS_ONLY
+  $(eval $(call SetupLauncher,policytool, \
+      -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) "sun.security.tools.policytool.PolicyTool"$(COMMA) }',, \
+      $(XLIBS)))
+endif
+
+$(eval $(call SetupLauncher,pack200, \
+    -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) "com.sun.java.util.jar.pack.Driver"$(COMMA) }'))
+
+################################################################################
+# The order of the object files on the link command line affects the size of the resulting
+# binary (at least on linux) which causes the size to differ between old and new build.
+
+UNPACKEXE_SRC := $(JDK_TOPDIR)/src/jdk.runtime/share/native/common-unpack \
+    $(JDK_TOPDIR)/src/jdk.runtime/share/native/unpack200
+UNPACKEXE_CFLAGS := -I$(JDK_TOPDIR)/src/jdk.runtime/share/native/common-unpack \
+    -I$(JDK_TOPDIR)/src/java.base/share/native/libjava \
+    -I$(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_API_DIR)/native/libjava
+
+ifeq ($(USE_EXTERNAL_LIBZ), true)
+  UNPACKEXE_CFLAGS += -DSYSTEM_ZLIB
+  UNPACKEXE_ZIPOBJS := -lz
+else
+  UNPACKEXE_CFLAGS += -I$(JDK_TOPDIR)/src/java.base/share/native/libzip/zlib-1.2.8
+  UNPACKEXE_ZIPOBJS := $(JDK_OUTPUTDIR)/objs/libzip/zcrc32$(OBJ_SUFFIX) \
+      $(JDK_OUTPUTDIR)/objs/libzip/deflate$(OBJ_SUFFIX) \
+      $(JDK_OUTPUTDIR)/objs/libzip/trees$(OBJ_SUFFIX) \
+      $(JDK_OUTPUTDIR)/objs/libzip/zadler32$(OBJ_SUFFIX) \
+      $(JDK_OUTPUTDIR)/objs/libzip/compress$(OBJ_SUFFIX) \
+      $(JDK_OUTPUTDIR)/objs/libzip/zutil$(OBJ_SUFFIX) \
+      $(JDK_OUTPUTDIR)/objs/libzip/inflate$(OBJ_SUFFIX) \
+      $(JDK_OUTPUTDIR)/objs/libzip/infback$(OBJ_SUFFIX) \
+      $(JDK_OUTPUTDIR)/objs/libzip/inftrees$(OBJ_SUFFIX) \
+      $(JDK_OUTPUTDIR)/objs/libzip/inffast$(OBJ_SUFFIX)
+
+endif
+
+UNPACKEXE_LANG := C
+ifeq ($(OPENJDK_TARGET_OS), solaris)
+  UNPACKEXE_LANG := C++
+endif
+UNPACKEXE_DEBUG_SYMBOLS := true
+# On windows, unpack200 is linked completely differently to all other
+# executables, using the compiler with the compiler arguments.
+# It's also linked incrementally, producing a .ilk file that needs to
+# be kept away.
+ifeq ($(OPENJDK_TARGET_OS), windows)
+  BUILD_UNPACKEXE_LDEXE := $(CC)
+  EXE_OUT_OPTION_save := $(EXE_OUT_OPTION)
+  EXE_OUT_OPTION := -Fe
+  # With the current way unpack200 is built, debug symbols aren't supported
+  # anyway.
+  UNPACKEXE_DEBUG_SYMBOLS :=
+endif
+
+# The linker on older SuSE distros (e.g. on SLES 10) complains with:
+# "Invalid version tag `SUNWprivate_1.1'. Only anonymous version tag is allowed in executable."
+# if feeded with a version script which contains named tags.
+ifeq ($(USING_BROKEN_SUSE_LD), yes)
+  UNPACK_MAPFILE = $(JDK_TOPDIR)/make/mapfiles/libunpack/mapfile-vers-unpack200.anonymous
+else
+  UNPACK_MAPFILE = $(JDK_TOPDIR)/make/mapfiles/libunpack/mapfile-vers-unpack200
+endif
+
+$(eval $(call SetupNativeCompilation,BUILD_UNPACKEXE, \
+    SRC := $(UNPACKEXE_SRC), \
+    LANG := $(UNPACKEXE_LANG), \
+    OPTIMIZATION := LOW, \
+    CFLAGS := $(UNPACKEXE_CFLAGS) $(CXXFLAGS_JDKEXE) \
+        -DFULL, \
+    CFLAGS_release := -DPRODUCT, \
+    CFLAGS_linux := -fPIC, \
+    CFLAGS_solaris := -KPIC, \
+    CFLAGS_macosx := -fPIC, \
+    MAPFILE := $(UNPACK_MAPFILE),\
+    LDFLAGS := $(UNPACKEXE_ZIPOBJS), \
+    LDFLAGS_windows := $(CXXFLAGS_JDKEXE), \
+    LDFLAGS_posix := $(LDFLAGS_JDKEXE) $(LDFLAGS_CXX_JDK) \
+        $(call SET_SHARED_LIBRARY_NAME,$(LIBRARY_PREFIX)unpack$(SHARED_LIBRARY_SUFFIX)) \
+        $(call SET_SHARED_LIBRARY_ORIGIN), \
+    LDFLAGS_linux := -lc, \
+    LDFLAGS_solaris := $(UNPACKEXE_LDFLAGS_solaris) -lc, \
+    LDFLAGS_SUFFIX := $(LIBCXX), \
+    OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/unpackexe$(OUTPUT_SUBDIR), \
+    OUTPUT_DIR := $(JDK_OUTPUTDIR)/objs/unpackexe$(OUTPUT_SUBDIR), \
+    PROGRAM := unpack200, \
+    VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
+    RC_FLAGS := $(RC_FLAGS) \
+        -D "JDK_FNAME=unpack200.exe" \
+        -D "JDK_INTERNAL_NAME=unpack200" \
+        -D "JDK_FTYPE=0x1L", \
+    DEBUG_SYMBOLS := $(UNPACKEXE_DEBUG_SYMBOLS), \
+    MANIFEST := $(JDK_TOPDIR)/src/jdk.runtime/windows/native/unpack200/unpack200_proto.exe.manifest))
+
+ifeq ($(OPENJDK_TARGET_OS), windows)
+  EXE_OUT_OPTION := $(EXE_OUT_OPTION_save)
+endif
+
+ifneq ($(USE_EXTERNAL_LIBZ), true)
+
+  $(BUILD_UNPACKEXE): $(UNPACKEXE_ZIPOBJS)
+
+endif
+
+# Build into object dir and copy executable afterwards to avoid .ilk file in
+# image. The real fix would be clean up linking of unpack200 using
+# -link -incremental:no
+# like all other launchers.
+$(JDK_OUTPUTDIR)/bin$(OUTPUT_SUBDIR)/unpack200$(EXE_SUFFIX): $(BUILD_UNPACKEXE)
+	$(call install-file)
+
+LAUNCHERS += $(JDK_OUTPUTDIR)/bin$(OUTPUT_SUBDIR)/unpack200$(EXE_SUFFIX)
+
+################################################################################
+
+jdk.runtime: $(LAUNCHERS)
+
+all: jdk.runtime
+
+.PHONY: all jdk.runtime

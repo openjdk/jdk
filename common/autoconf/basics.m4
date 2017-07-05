@@ -759,6 +759,32 @@ AC_DEFUN([BASIC_CHECK_MAKE_VERSION],
   fi
 ])
 
+AC_DEFUN([BASIC_CHECK_MAKE_OUTPUT_SYNC],
+[
+  # Check if make supports the output sync option and if so, setup using it.
+  AC_MSG_CHECKING([if make --output-sync is supported])
+  if $MAKE --version -O > /dev/null 2>&1; then
+    OUTPUT_SYNC_SUPPORTED=true
+    AC_MSG_RESULT([yes])
+    AC_MSG_CHECKING([for output-sync value])
+    AC_ARG_WITH([output-sync], [AS_HELP_STRING([--with-output-sync],
+      [set make output sync type if supported by make. @<:@recurse@:>@])],
+      [OUTPUT_SYNC=$with_output_sync])
+    if test "x$OUTPUT_SYNC" = "x"; then
+      OUTPUT_SYNC=none
+    fi
+    AC_MSG_RESULT([$OUTPUT_SYNC])
+    if ! $MAKE --version -O$OUTPUT_SYNC > /dev/null 2>&1; then
+      AC_MSG_ERROR([Make did not the support the value $OUTPUT_SYNC as output sync type.])
+    fi
+  else
+    OUTPUT_SYNC_SUPPORTED=false
+    AC_MSG_RESULT([no])
+  fi
+  AC_SUBST(OUTPUT_SYNC_SUPPORTED)
+  AC_SUBST(OUTPUT_SYNC)
+])
+
 # Goes looking for a usable version of GNU make.
 AC_DEFUN([BASIC_CHECK_GNU_MAKE],
 [
@@ -805,6 +831,8 @@ AC_DEFUN([BASIC_CHECK_GNU_MAKE],
   MAKE=$FOUND_MAKE
   AC_SUBST(MAKE)
   AC_MSG_NOTICE([Using GNU make 3.81 (or later) at $FOUND_MAKE (version: $MAKE_VERSION_STRING)])
+
+  BASIC_CHECK_MAKE_OUTPUT_SYNC
 ])
 
 AC_DEFUN([BASIC_CHECK_FIND_DELETE],
