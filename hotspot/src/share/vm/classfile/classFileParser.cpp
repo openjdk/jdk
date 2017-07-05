@@ -1082,12 +1082,36 @@ typeArrayHandle ClassFileParser::parse_fields(Symbol* class_name,
 
   int num_injected = 0;
   InjectedField* injected = JavaClasses::get_injected(class_name, &num_injected);
+  int total_fields = length + num_injected;
 
-  // Tuples of shorts [access, name index, sig index, initial value index, byte offset, generic signature index]
-  typeArrayOop new_fields = oopFactory::new_permanent_shortArray((length + num_injected) * FieldInfo::field_slots, CHECK_(nullHandle));
-  typeArrayHandle fields(THREAD, new_fields);
+  // The field array starts with tuples of shorts
+  // [access, name index, sig index, initial value index, byte offset].
+  // A generic signature slot only exists for field with generic
+  // signature attribute. And the access flag is set with
+  // JVM_ACC_FIELD_HAS_GENERIC_SIGNATURE for that field. The generic
+  // signature slots are at the end of the field array and after all
+  // other fields data.
+  //
+  //   f1: [access, name index, sig index, initial value index, low_offset, high_offset]
+  //   f2: [access, name index, sig index, initial value index, low_offset, high_offset]
+  //       ...
+  //   fn: [access, name index, sig index, initial value index, low_offset, high_offset]
+  //       [generic signature index]
+  //       [generic signature index]
+  //       ...
+  //
+  // Allocate a temporary resource array for field data. For each field,
+  // a slot is reserved in the temporary array for the generic signature
+  // index. After parsing all fields, the data are copied to a permanent
+  // array and any unused slots will be discarded.
+  ResourceMark rm(THREAD);
+  u2* fa = NEW_RESOURCE_ARRAY_IN_THREAD(
+             THREAD, u2, total_fields * (FieldInfo::field_slots + 1));
 
   typeArrayHandle field_annotations;
+  // The generic signature slots start after all other fields' data.
+  int generic_signature_slot = total_fields * FieldInfo::field_slots;
+  int num_generic_signature = 0;
   for (int n = 0; n < length; n++) {
     cfs->guarantee_more(8, CHECK_(nullHandle));  // access_flags, name_index, descriptor_index, attributes_count
 
@@ -1135,14 +1159,19 @@ typeArrayHandle ClassFileParser::parse_fields(Symbol* class_name,
       if (is_synthetic) {
         access_flags.set_is_synthetic();
       }
+      if (generic_signature_index != 0) {
+        access_flags.set_field_has_generic_signature();
+        fa[generic_signature_slot] = generic_signature_index;
+        generic_signature_slot ++;
+        num_generic_signature ++;
+      }
     }
 
-    FieldInfo* field = FieldInfo::from_field_array(fields(), n);
+    FieldInfo* field = FieldInfo::from_field_array(fa, n);
     field->initialize(access_flags.as_short(),
                       name_index,
                       signature_index,
                       constantvalue_index,
-                      generic_signature_index,
                       0);
 
     BasicType type = cp->basic_type_for_signature_at(signature_index);
@@ -1155,8 +1184,8 @@ typeArrayHandle ClassFileParser::parse_fields(Symbol* class_name,
     field->set_offset(atype);
   }
 
+  int index = length;
   if (num_injected != 0) {
-    int index = length;
     for (int n = 0; n < num_injected; n++) {
       // Check for duplicates
       if (injected[n].may_be_java) {
@@ -1164,7 +1193,7 @@ typeArrayHandle ClassFileParser::parse_fields(Symbol* class_name,
         Symbol* signature = injected[n].signature();
         bool duplicate = false;
         for (int i = 0; i < length; i++) {
-          FieldInfo* f = FieldInfo::from_field_array(fields(), i);
+          FieldInfo* f = FieldInfo::from_field_array(fa, i);
           if (name      == cp->symbol_at(f->name_index()) &&
               signature == cp->symbol_at(f->signature_index())) {
             // Symbol is desclared in Java so skip this one
@@ -1179,11 +1208,10 @@ typeArrayHandle ClassFileParser::parse_fields(Symbol* class_name,
       }
 
       // Injected field
-      FieldInfo* field = FieldInfo::from_field_array(fields(), index);
+      FieldInfo* field = FieldInfo::from_field_array(fa, index);
       field->initialize(JVM_ACC_FIELD_INTERNAL,
                         injected[n].name_index,
                         injected[n].signature_index,
-                        0,
                         0,
                         0);
 
@@ -1197,17 +1225,27 @@ typeArrayHandle ClassFileParser::parse_fields(Symbol* class_name,
       field->set_offset(atype);
       index++;
     }
+  }
 
-    if (index < length + num_injected) {
-      // sometimes injected fields already exist in the Java source so
-      // the fields array could be too long.  In that case trim the
-      // fields array.
-      new_fields = oopFactory::new_permanent_shortArray(index * FieldInfo::field_slots, CHECK_(nullHandle));
-      for (int i = 0; i < index * FieldInfo::field_slots; i++) {
-        new_fields->short_at_put(i, fields->short_at(i));
-      }
-      fields = new_fields;
+  // Now copy the fields' data from the temporary resource array.
+  // Sometimes injected fields already exist in the Java source so
+  // the fields array could be too long.  In that case the
+  // fields array is trimed. Also unused slots that were reserved
+  // for generic signature indexes are discarded.
+  typeArrayOop new_fields = oopFactory::new_permanent_shortArray(
+    index * FieldInfo::field_slots + num_generic_signature,
+    CHECK_(nullHandle));
+  typeArrayHandle fields(THREAD, new_fields);
+  {
+    int i = 0;
+    for (; i < index * FieldInfo::field_slots; i++) {
+      new_fields->short_at_put(i, fa[i]);
     }
+    for (int j = total_fields * FieldInfo::field_slots;
+         j < generic_signature_slot; j++) {
+      new_fields->short_at_put(i++, fa[j]);
+    }
+    assert(i == new_fields->length(), "");
   }
 
   if (_need_verify && length > 1) {
