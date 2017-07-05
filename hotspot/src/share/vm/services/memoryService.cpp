@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@
 #include "memory/generationSpec.hpp"
 #include "memory/heap.hpp"
 #include "memory/memRegion.hpp"
-#include "memory/permGen.hpp"
 #include "memory/tenuredGeneration.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/javaCalls.hpp"
@@ -45,13 +44,11 @@
 #include "services/memoryService.hpp"
 #include "utilities/growableArray.hpp"
 #ifndef SERIALGC
-#include "gc_implementation/concurrentMarkSweep/cmsPermGen.hpp"
 #include "gc_implementation/concurrentMarkSweep/concurrentMarkSweepGeneration.hpp"
 #include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
 #include "gc_implementation/parNew/parNewGeneration.hpp"
 #include "gc_implementation/parallelScavenge/parallelScavengeHeap.hpp"
 #include "gc_implementation/parallelScavenge/psOldGen.hpp"
-#include "gc_implementation/parallelScavenge/psPermGen.hpp"
 #include "gc_implementation/parallelScavenge/psYoungGen.hpp"
 #include "services/g1MemoryPool.hpp"
 #include "services/psMemoryPool.hpp"
@@ -160,25 +157,6 @@ void MemoryService::add_gen_collected_heap_info(GenCollectedHeap* heap) {
 
   add_generation_memory_pool(heap->get_gen(minor), _major_gc_manager, _minor_gc_manager);
   add_generation_memory_pool(heap->get_gen(major), _major_gc_manager);
-
-  PermGen::Name name = policy->permanent_generation()->name();
-  switch (name) {
-    case PermGen::MarkSweepCompact: {
-      CompactingPermGenGen* perm_gen = (CompactingPermGenGen*) heap->perm_gen();
-      add_compact_perm_gen_memory_pool(perm_gen, _major_gc_manager);
-      break;
-    }
-#ifndef SERIALGC
-    case PermGen::ConcurrentMarkSweep: {
-      CMSPermGenGen* cms_gen = (CMSPermGenGen*) heap->perm_gen();
-      add_cms_perm_gen_memory_pool(cms_gen, _major_gc_manager);
-      break;
-    }
-#endif // SERIALGC
-    default:
-      guarantee(false, "Unrecognized perm generation");
-        break;
-  }
 }
 
 #ifndef SERIALGC
@@ -194,7 +172,6 @@ void MemoryService::add_parallel_scavenge_heap_info(ParallelScavengeHeap* heap) 
 
   add_psYoung_memory_pool(heap->young_gen(), _major_gc_manager, _minor_gc_manager);
   add_psOld_memory_pool(heap->old_gen(), _major_gc_manager);
-  add_psPerm_memory_pool(heap->perm_gen(), _major_gc_manager);
 }
 
 void MemoryService::add_g1_heap_info(G1CollectedHeap* g1h) {
@@ -207,7 +184,6 @@ void MemoryService::add_g1_heap_info(G1CollectedHeap* g1h) {
 
   add_g1YoungGen_memory_pool(g1h, _major_gc_manager, _minor_gc_manager);
   add_g1OldGen_memory_pool(g1h, _major_gc_manager);
-  add_g1PermGen_memory_pool(g1h, _major_gc_manager);
 }
 #endif // SERIALGC
 
@@ -349,45 +325,8 @@ void MemoryService::add_generation_memory_pool(Generation* gen,
   }
 }
 
-void MemoryService::add_compact_perm_gen_memory_pool(CompactingPermGenGen* perm_gen,
-                                                     MemoryManager* mgr) {
-  PermanentGenerationSpec* spec = perm_gen->spec();
-  size_t max_size = spec->max_size() - spec->read_only_size() - spec->read_write_size();
-  MemoryPool* pool = add_space(perm_gen->unshared_space(),
-                               "Perm Gen",
-                                false, /* is_heap */
-                                max_size,
-                                true   /* support_usage_threshold */);
-  mgr->add_pool(pool);
-  if (UseSharedSpaces) {
-    pool = add_space(perm_gen->ro_space(),
-                     "Perm Gen [shared-ro]",
-                     false, /* is_heap */
-                     spec->read_only_size(),
-                     true   /* support_usage_threshold */);
-    mgr->add_pool(pool);
-
-    pool = add_space(perm_gen->rw_space(),
-                     "Perm Gen [shared-rw]",
-                     false, /* is_heap */
-                     spec->read_write_size(),
-                     true   /* support_usage_threshold */);
-    mgr->add_pool(pool);
-  }
-}
 
 #ifndef SERIALGC
-void MemoryService::add_cms_perm_gen_memory_pool(CMSPermGenGen* cms_gen,
-                                                 MemoryManager* mgr) {
-
-  MemoryPool* pool = add_cms_space(cms_gen->cmsSpace(),
-                                   "CMS Perm Gen",
-                                   false, /* is_heap */
-                                   cms_gen->reserved().byte_size(),
-                                   true   /* support_usage_threshold */);
-  mgr->add_pool(pool);
-}
-
 void MemoryService::add_psYoung_memory_pool(PSYoungGen* gen, MemoryManager* major_mgr, MemoryManager* minor_mgr) {
   assert(major_mgr != NULL && minor_mgr != NULL, "Should have two managers");
 
@@ -421,15 +360,6 @@ void MemoryService::add_psOld_memory_pool(PSOldGen* gen, MemoryManager* mgr) {
   _pools_list->append(old_gen);
 }
 
-void MemoryService::add_psPerm_memory_pool(PSPermGen* gen, MemoryManager* mgr) {
-  PSGenerationPool* perm_gen = new PSGenerationPool(gen,
-                                                    "PS Perm Gen",
-                                                    MemoryPool::NonHeap,
-                                                    true /* support_usage_threshold */);
-  mgr->add_pool(perm_gen);
-  _pools_list->append(perm_gen);
-}
-
 void MemoryService::add_g1YoungGen_memory_pool(G1CollectedHeap* g1h,
                                                MemoryManager* major_mgr,
                                                MemoryManager* minor_mgr) {
@@ -453,39 +383,6 @@ void MemoryService::add_g1OldGen_memory_pool(G1CollectedHeap* g1h,
   G1OldGenPool* old_gen = new G1OldGenPool(g1h);
   mgr->add_pool(old_gen);
   _pools_list->append(old_gen);
-}
-
-void MemoryService::add_g1PermGen_memory_pool(G1CollectedHeap* g1h,
-                                              MemoryManager* mgr) {
-  assert(mgr != NULL, "should have one manager");
-
-  CompactingPermGenGen* perm_gen = (CompactingPermGenGen*) g1h->perm_gen();
-  PermanentGenerationSpec* spec = perm_gen->spec();
-  size_t max_size = spec->max_size() - spec->read_only_size()
-                                     - spec->read_write_size();
-  MemoryPool* pool = add_space(perm_gen->unshared_space(),
-                               "G1 Perm Gen",
-                               false, /* is_heap */
-                               max_size,
-                               true   /* support_usage_threshold */);
-  mgr->add_pool(pool);
-
-  // in case we support CDS in G1
-  if (UseSharedSpaces) {
-    pool = add_space(perm_gen->ro_space(),
-                     "G1 Perm Gen [shared-ro]",
-                     false, /* is_heap */
-                     spec->read_only_size(),
-                     true   /* support_usage_threshold */);
-    mgr->add_pool(pool);
-
-    pool = add_space(perm_gen->rw_space(),
-                     "G1 Perm Gen [shared-rw]",
-                     false, /* is_heap */
-                     spec->read_write_size(),
-                     true   /* support_usage_threshold */);
-    mgr->add_pool(pool);
-  }
 }
 #endif // SERIALGC
 
@@ -605,7 +502,7 @@ bool MemoryService::set_verbose(bool verbose) {
 }
 
 Handle MemoryService::create_MemoryUsage_obj(MemoryUsage usage, TRAPS) {
-  klassOop k = Management::java_lang_management_MemoryUsage_klass(CHECK_NH);
+  Klass* k = Management::java_lang_management_MemoryUsage_klass(CHECK_NH);
   instanceKlassHandle ik(THREAD, k);
 
   instanceHandle obj = ik->allocate_instance_handle(CHECK_NH);

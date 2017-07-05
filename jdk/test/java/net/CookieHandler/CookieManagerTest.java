@@ -26,7 +26,7 @@
  * @summary Unit test for java.net.CookieManager
  * @bug 6244040
  * @library ../../../sun/net/www/httptest/
- * @build HttpCallback HttpServer ClosedChannelList HttpTransaction
+ * @build HttpCallback TestHttpServer ClosedChannelList HttpTransaction
  * @run main/othervm -ea CookieManagerTest
  * @author Edward Wang
  */
@@ -38,7 +38,7 @@ import sun.net.www.MessageHeader;
 
 public class CookieManagerTest {
     static CookieHttpTransaction httpTrans;
-    static HttpServer server;
+    static TestHttpServer server;
 
     public static void main(String[] args) throws Exception {
         startHttpServer();
@@ -52,7 +52,7 @@ public class CookieManagerTest {
     public static void startHttpServer() {
         try {
             httpTrans = new CookieHttpTransaction();
-            server = new HttpServer(httpTrans, 1, 1, 0);
+            server = new TestHttpServer(httpTrans, 1, 1, 0);
         } catch (IOException e) {
             e.printStackTrace();
         }

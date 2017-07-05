@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,16 +55,16 @@ class MethodHandles: AllStatic {
   static void expand_MemberName(Handle mname, int suppress, TRAPS);  // expand defc/name/type if missing
   static Handle new_MemberName(TRAPS);  // must be followed by init_MemberName
   static oop init_MemberName(oop mname_oop, oop target_oop); // compute vmtarget/vmindex from target
-  static oop init_method_MemberName(oop mname_oop, methodOop m, bool do_dispatch,
-                                    klassOop receiver_limit);
-  static oop init_field_MemberName(oop mname_oop, klassOop field_holder,
+  static oop init_method_MemberName(oop mname_oop, Method* m, bool do_dispatch,
+                                    Klass* receiver_limit);
+  static oop init_field_MemberName(oop mname_oop, Klass* field_holder,
                                    AccessFlags mods, oop type, oop name,
                                    intptr_t offset, bool is_setter = false);
   static Handle init_method_MemberName(oop mname_oop, CallInfo& info, TRAPS);
   static Handle init_field_MemberName(oop mname_oop, FieldAccessInfo& info, TRAPS);
-  static int method_ref_kind(methodOop m, bool do_dispatch_if_possible = true);
-  static int find_MemberNames(klassOop k, Symbol* name, Symbol* sig,
-                              int mflags, klassOop caller,
+  static int method_ref_kind(Method* m, bool do_dispatch_if_possible = true);
+  static int find_MemberNames(Klass* k, Symbol* name, Symbol* sig,
+                              int mflags, Klass* caller,
                               int skip, objArrayOop results);
   // bit values for suppress argument to expand_MemberName:
   enum { _suppress_defc = 1, _suppress_name = 2, _suppress_type = 4 };
@@ -116,13 +116,13 @@ class MethodHandles: AllStatic {
   static Symbol* signature_polymorphic_intrinsic_name(vmIntrinsics::ID iid);
   static int signature_polymorphic_intrinsic_ref_kind(vmIntrinsics::ID iid);
 
-  static vmIntrinsics::ID signature_polymorphic_name_id(klassOop klass, Symbol* name);
+  static vmIntrinsics::ID signature_polymorphic_name_id(Klass* klass, Symbol* name);
   static vmIntrinsics::ID signature_polymorphic_name_id(Symbol* name);
   static bool is_signature_polymorphic_name(Symbol* name) {
     return signature_polymorphic_name_id(name) != vmIntrinsics::_none;
   }
-  static bool is_method_handle_invoke_name(klassOop klass, Symbol* name);
-  static bool is_signature_polymorphic_name(klassOop klass, Symbol* name) {
+  static bool is_method_handle_invoke_name(Klass* klass, Symbol* name);
+  static bool is_signature_polymorphic_name(Klass* klass, Symbol* name) {
     return signature_polymorphic_name_id(klass, name) != vmIntrinsics::_none;
   }
 

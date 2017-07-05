@@ -574,26 +574,25 @@ public class Introspector {
             // replace existing property descriptor
             // only if we have types to resolve
             // in the context of this.beanClass
-            try {
-                String name = pd.getName();
-                Method read = pd.getReadMethod();
-                Method write = pd.getWriteMethod();
-                boolean cls = true;
-                if (read != null) cls = cls && read.getGenericReturnType() instanceof Class;
-                if (write != null) cls = cls && write.getGenericParameterTypes()[0] instanceof Class;
-                if (pd instanceof IndexedPropertyDescriptor) {
-                    IndexedPropertyDescriptor ipd = (IndexedPropertyDescriptor)pd;
-                    Method readI = ipd.getIndexedReadMethod();
-                    Method writeI = ipd.getIndexedWriteMethod();
-                    if (readI != null) cls = cls && readI.getGenericReturnType() instanceof Class;
-                    if (writeI != null) cls = cls && writeI.getGenericParameterTypes()[1] instanceof Class;
-                    if (!cls) {
-                        pd = new IndexedPropertyDescriptor(this.beanClass, name, read, write, readI, writeI);
-                    }
-                } else if (!cls) {
-                    pd = new PropertyDescriptor(this.beanClass, name, read, write);
+            Method read = pd.getReadMethod();
+            Method write = pd.getWriteMethod();
+            boolean cls = true;
+            if (read != null) cls = cls && read.getGenericReturnType() instanceof Class;
+            if (write != null) cls = cls && write.getGenericParameterTypes()[0] instanceof Class;
+            if (pd instanceof IndexedPropertyDescriptor) {
+                IndexedPropertyDescriptor ipd = (IndexedPropertyDescriptor) pd;
+                Method readI = ipd.getIndexedReadMethod();
+                Method writeI = ipd.getIndexedWriteMethod();
+                if (readI != null) cls = cls && readI.getGenericReturnType() instanceof Class;
+                if (writeI != null) cls = cls && writeI.getGenericParameterTypes()[1] instanceof Class;
+                if (!cls) {
+                    pd = new IndexedPropertyDescriptor(ipd);
+                    pd.updateGenericsFor(this.beanClass);
                 }
-            } catch ( IntrospectionException e ) {
+            }
+            else if (!cls) {
+                pd = new PropertyDescriptor(pd);
+                pd.updateGenericsFor(this.beanClass);
             }
         }
         list.add(pd);

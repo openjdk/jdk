@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -126,7 +126,7 @@ public class SOQL extends Tool {
       for (int i = 0; i < klasses.length; i++) {
          out.print(klasses[i].getName().asString().replace('/', '.'));
          out.print(" @");
-         out.println(klasses[i].getHandle());
+         out.println(klasses[i].getAddress());
       }
    }
 
@@ -150,7 +150,8 @@ public class SOQL extends Tool {
             }
 
             // list immediate fields only
-            int numFields = klass.getJavaFieldsCount();
+            U2Array fields = klass.getFields();
+            int numFields = (int) fields.length();
             ConstantPool cp = klass.getConstants();
             out.println("fields");
             if (numFields != 0) {

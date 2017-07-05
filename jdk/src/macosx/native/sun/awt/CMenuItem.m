@@ -70,6 +70,18 @@ AWT_ASSERT_APPKIT_THREAD;
     JNIEnv *env = [ThreadUtilities getJNIEnv];
 JNF_COCOA_ENTER(env);
 
+    // If we are called as a result of user pressing a shorcut, do nothing,
+    // because AVTView has already sent corresponding key event to the Java 
+    // layer from performKeyEquivalent
+    NSEvent *currEvent = [[NSApplication sharedApplication] currentEvent];
+    if ([currEvent type] == NSKeyDown) {
+        NSString *menuKey = [sender keyEquivalent];
+        NSString *eventKey = [currEvent characters];
+        if ([menuKey isEqualToString:eventKey]) {
+            return;
+        }
+    }
+
     if (fIsCheckbox) {
         static JNF_CLASS_CACHE(jc_CCheckboxMenuItem, "sun/lwawt/macosx/CCheckboxMenuItem");
         static JNF_MEMBER_CACHE(jm_ckHandleAction, jc_CCheckboxMenuItem, "handleAction", "(Z)V");
@@ -83,14 +95,8 @@ JNF_COCOA_ENTER(env);
         static JNF_CLASS_CACHE(jc_CMenuItem, "sun/lwawt/macosx/CMenuItem");
         static JNF_MEMBER_CACHE(jm_handleAction, jc_CMenuItem, "handleAction", "(JI)V"); // AWT_THREADING Safe (event)
 
-        NSEvent *currEvent = [[NSApplication sharedApplication] currentEvent];
         NSUInteger modifiers = [currEvent modifierFlags];
-        jint javaModifiers = 0;
-
-        if ((modifiers & NSCommandKeyMask) != 0)   javaModifiers |= java_awt_Event_META_MASK;
-        if ((modifiers & NSShiftKeyMask) != 0)     javaModifiers |= java_awt_Event_SHIFT_MASK;
-        if ((modifiers & NSControlKeyMask) != 0)   javaModifiers |= java_awt_Event_CTRL_MASK;
-        if ((modifiers & NSAlternateKeyMask) != 0) javaModifiers |= java_awt_Event_ALT_MASK;
+        jint javaModifiers = NsKeyModifiersToJavaModifiers(modifiers, NO);
 
         JNFCallVoidMethod(env, fPeer, jm_handleAction, UTC(currEvent), javaModifiers); // AWT_THREADING Safe (event)
     }
@@ -117,10 +123,7 @@ AWT_ASSERT_NOT_APPKIT_THREAD;
             modifiers &= ~java_awt_event_KeyEvent_SHIFT_MASK;
         }
 
-        if ((modifiers & java_awt_event_KeyEvent_SHIFT_MASK) != 0) modifierMask |= NSShiftKeyMask;
-        if ((modifiers & java_awt_event_KeyEvent_CTRL_MASK) != 0)  modifierMask |= NSControlKeyMask;
-        if ((modifiers & java_awt_event_KeyEvent_ALT_MASK) != 0)   modifierMask |= NSAlternateKeyMask;
-        if ((modifiers & java_awt_event_KeyEvent_META_MASK) != 0)  modifierMask |= NSCommandKeyMask;
+        modifierMask = JavaModifiersToNsKeyModifiers(modifiers, NO);
     }
 
     [JNFRunLoop performOnMainThreadWaiting:YES withBlock:^(){

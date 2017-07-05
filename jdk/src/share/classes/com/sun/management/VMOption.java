@@ -178,7 +178,7 @@ public class VMOption {
         return "VM option: " + getName() +
                " value: " + value + " " +
                " origin: " + origin + " " +
-               (writeable ? "(read-only)" : "(read-write)");
+               (writeable ? "(read-write)" : "(read-only)");
     }
 
     /**

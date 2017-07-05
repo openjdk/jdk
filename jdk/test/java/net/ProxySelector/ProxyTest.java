@@ -26,7 +26,7 @@
  * @bug 4696512
  * @summary HTTP client: Improve proxy server configuration and selection
  * @library ../../../sun/net/www/httptest/
- * @build ClosedChannelList HttpServer HttpTransaction HttpCallback
+ * @build ClosedChannelList TestHttpServer HttpTransaction HttpCallback
  * @compile ProxyTest.java
  * @run main/othervm -Dhttp.proxyHost=inexistant -Dhttp.proxyPort=8080 ProxyTest
  */
@@ -36,7 +36,7 @@ import java.io.*;
 import java.util.ArrayList;
 
 public class ProxyTest implements HttpCallback {
-    static HttpServer server;
+    static TestHttpServer server;
 
     public ProxyTest() {
     }
@@ -74,7 +74,7 @@ public class ProxyTest implements HttpCallback {
             throw new RuntimeException("Default ProxySelector is null");
         ProxySelector.setDefault(new MyProxySelector());
         try {
-            server = new HttpServer (new ProxyTest(), 1, 10, 0);
+            server = new TestHttpServer (new ProxyTest(), 1, 10, 0);
             URL url = new URL("http://localhost:"+server.getLocalPort());
             System.out.println ("client opening connection to: " + url);
             HttpURLConnection urlc = (HttpURLConnection)url.openConnection ();

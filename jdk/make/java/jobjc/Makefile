@@ -62,15 +62,22 @@ $(STABLE_METADATA_FILES): stabilize
 ABS_OUTPUTDIR=$(realpath $(OUTPUTDIR))
 ABS_STABLE_GEN_DIR=$(realpath $(STABLE_GEN_DIR))
 
+# How to run ant
+ifdef LANGTOOLS_DIST
+  ANT_CMD = $(ANT)
+else
+  ANT_CMD = $(ANT_WITH_IMPORT)
+endif
+
 $(BUILT_DYLIB) $(BUILT_JAR): $(STABLE_METADATA_FILES) $(CORE_SRC) $(GENERATOR_SRC) $(ADDITIONS_SRC) $(BUILD_SRC)
 	@echo JObjC dylib or jar out of data wrt FRAMEWORKS '(' $(FRAMEWORKS) ')' or JObjC source '(' core, generator, additions, build ')'
 	@echo Running ant with java_home set to ${ALT_BOOTDIR}
-	(cd $(SRCDIR); OBJROOT="$(ABS_OUTPUTDIR)/JObjC.build" DSTROOT="$(ABS_OUTPUTDIR)/JObjC.dst" JAVA_HOME=${ALT_BOOTDIR} STABLE_GEN_DIR="$(ABS_STABLE_GEN_DIR)" /usr/bin/ant -verbose all)
+	(cd $(SRCDIR); OBJROOT="$(ABS_OUTPUTDIR)/JObjC.build" DSTROOT="$(ABS_OUTPUTDIR)/JObjC.dst" JAVA_HOME=${ALT_BOOTDIR} STABLE_GEN_DIR="$(ABS_STABLE_GEN_DIR)" $(ANT_CMD) -verbose all)
 
 all: $(BUILD_DYLIB) $(BUILT_JAR)
 	$(CP) $(BUILT_DYLIB) $(LIB_LOCATION)/libJObjC.dylib
 
 clean clobber::
-	(cd $(SRCDIR); export OBJROOT=$(OUTPUTDIR)/JObjC.build; export DSTROOT=$(OUTPUTDIR)/JObjC.dst; /usr/bin/ant clean)
+	(cd $(SRCDIR); export OBJROOT=$(OUTPUTDIR)/JObjC.build; export DSTROOT=$(OUTPUTDIR)/JObjC.dst; $(ANT_CMD) clean)
 
 endif

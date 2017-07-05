@@ -335,8 +335,8 @@ public final class OCSP {
     static class NetworkFailureException extends CertPathValidatorException {
         private static final long serialVersionUID = 0l;
 
-        private NetworkFailureException(IOException ioe) {
-            super(ioe);
+        NetworkFailureException(Throwable t) {
+            super(t);
         }
 
         @Override

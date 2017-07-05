@@ -34,7 +34,7 @@ import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.types.*;
 import sun.jvm.hotspot.utilities.*;
 
-public class ConstMethod extends Oop {
+public class ConstMethod extends VMObject {
   static {
     VM.registerVMInitializedObserver(new Observer() {
         public void update(Observable o, Object data) {
@@ -50,18 +50,18 @@ public class ConstMethod extends Oop {
   private static int HAS_EXCEPTION_TABLE;
 
   private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
-    Type type                  = db.lookupType("constMethodOopDesc");
-    constants                  = new OopField(type.getOopField("_constants"), 0);
+    Type type                  = db.lookupType("ConstMethod");
+    constants                  = new MetadataField(type.getAddressField("_constants"), 0);
     constMethodSize            = new CIntField(type.getCIntegerField("_constMethod_size"), 0);
     flags                      = new ByteField(type.getJByteField("_flags"), 0);
 
     // enum constants for flags
-    HAS_LINENUMBER_TABLE      = db.lookupIntConstant("constMethodOopDesc::_has_linenumber_table").intValue();
-    HAS_CHECKED_EXCEPTIONS     = db.lookupIntConstant("constMethodOopDesc::_has_checked_exceptions").intValue();
-    HAS_LOCALVARIABLE_TABLE   = db.lookupIntConstant("constMethodOopDesc::_has_localvariable_table").intValue();
-    HAS_EXCEPTION_TABLE       = db.lookupIntConstant("constMethodOopDesc::_has_exception_table").intValue();
+    HAS_LINENUMBER_TABLE      = db.lookupIntConstant("ConstMethod::_has_linenumber_table").intValue();
+    HAS_CHECKED_EXCEPTIONS     = db.lookupIntConstant("ConstMethod::_has_checked_exceptions").intValue();
+    HAS_LOCALVARIABLE_TABLE   = db.lookupIntConstant("ConstMethod::_has_localvariable_table").intValue();
+    HAS_EXCEPTION_TABLE       = db.lookupIntConstant("ConstMethod::_has_exception_table").intValue();
 
-    // Size of Java bytecodes allocated immediately after constMethodOop.
+    // Size of Java bytecodes allocated immediately after ConstMethod*.
     codeSize                   = new CIntField(type.getCIntegerField("_code_size"), 0);
     nameIndex                  = new CIntField(type.getCIntegerField("_name_index"), 0);
     signatureIndex             = new CIntField(type.getCIntegerField("_signature_index"), 0);
@@ -81,12 +81,12 @@ public class ConstMethod extends Oop {
     exceptionTableElementSize = type.getSize();
   }
 
-  ConstMethod(OopHandle handle, ObjectHeap heap) {
-    super(handle, heap);
+  public ConstMethod(Address addr) {
+    super(addr);
   }
 
   // Fields
-  private static OopField  constants;
+  private static MetadataField constants;
   private static CIntField constMethodSize;
   private static ByteField flags;
   private static CIntField codeSize;
@@ -104,8 +104,8 @@ public class ConstMethod extends Oop {
 
   public Method getMethod() {
     InstanceKlass ik = (InstanceKlass)getConstants().getPoolHolder();
-    ObjArray methods = ik.getMethods();
-    return (Method)methods.getObjAt(getIdNum());
+    MethodArray methods = ik.getMethods();
+    return methods.at((int)getIdNum());
   }
 
   // Accessors for declared fields
@@ -157,7 +157,7 @@ public class ConstMethod extends Oop {
 
   /** Get a bytecode or breakpoint at the given bci */
   public int getBytecodeOrBPAt(int bci) {
-    return getHandle().getJByteAt(bytecodeOffset + bci) & 0xFF;
+    return getAddress().getJByteAt(bytecodeOffset + bci) & 0xFF;
   }
 
   public byte getBytecodeByteArg(int bci) {
@@ -215,23 +215,21 @@ public class ConstMethod extends Oop {
      for( int i=0; i < bc.length; i++ )
      {
         long offs = bytecodeOffset + i;
-        bc[i] = getHandle().getJByteAt( offs );
+        bc[i] = getAddress().getJByteAt( offs );
      }
      return bc;
   }
 
-  public long getObjectSize() {
-    return getConstMethodSize() * getHeap().getOopSize();
+  public long getSize() {
+    return getConstMethodSize();
   }
 
   public void printValueOn(PrintStream tty) {
-    tty.print("ConstMethod " + getName().asString() + getSignature().asString() + "@" + getHandle());
+    tty.print("ConstMethod " + getName().asString() + getSignature().asString() + "@" + getAddress());
   }
 
-  public void iterateFields(OopVisitor visitor, boolean doVMFields) {
-    super.iterateFields(visitor, doVMFields);
-    if (doVMFields) {
-      visitor.doOop(constants, true);
+  public void iterateFields(MetadataVisitor visitor) {
+    visitor.doMetadata(constants, true);
       visitor.doCInt(constMethodSize, true);
       visitor.doByte(flags, true);
       visitor.doCInt(codeSize, true);
@@ -240,7 +238,6 @@ public class ConstMethod extends Oop {
       visitor.doCInt(genericSignatureIndex, true);
       visitor.doCInt(codeSize, true);
     }
-  }
 
   // Accessors
 
@@ -266,7 +263,7 @@ public class ConstMethod extends Oop {
       // The line numbers are a short array of 2-tuples [start_pc, line_number].
       // Not necessarily sorted and not necessarily one-to-one.
       CompressedLineNumberReadStream stream =
-        new CompressedLineNumberReadStream(getHandle(), (int) offsetOfCompressedLineNumberTable());
+        new CompressedLineNumberReadStream(getAddress(), (int) offsetOfCompressedLineNumberTable());
       while (stream.readPair()) {
         if (stream.bci() == bci) {
           // perfect match
@@ -290,7 +287,7 @@ public class ConstMethod extends Oop {
     }
     int len = getLineNumberTableLength();
     CompressedLineNumberReadStream stream =
-      new CompressedLineNumberReadStream(getHandle(), (int) offsetOfCompressedLineNumberTable());
+      new CompressedLineNumberReadStream(getAddress(), (int) offsetOfCompressedLineNumberTable());
     LineNumberTableElement[] ret = new LineNumberTableElement[len];
 
     for (int idx = 0; idx < len; idx++) {
@@ -316,7 +313,7 @@ public class ConstMethod extends Oop {
     LocalVariableTableElement[] ret = new LocalVariableTableElement[getLocalVariableTableLength()];
     long offset = offsetOfLocalVariableTable();
     for (int i = 0; i < ret.length; i++) {
-      ret[i] = new LocalVariableTableElement(getHandle(), offset);
+      ret[i] = new LocalVariableTableElement(getAddress(), offset);
       offset += localVariableTableElementSize;
     }
     return ret;
@@ -333,7 +330,7 @@ public class ConstMethod extends Oop {
     ExceptionTableElement[] ret = new ExceptionTableElement[getExceptionTableLength()];
     long offset = offsetOfExceptionTable();
     for (int i = 0; i < ret.length; i++) {
-      ret[i] = new ExceptionTableElement(getHandle(), offset);
+      ret[i] = new ExceptionTableElement(getAddress(), offset);
       offset += exceptionTableElementSize;
     }
     return ret;
@@ -350,7 +347,7 @@ public class ConstMethod extends Oop {
     CheckedExceptionElement[] ret = new CheckedExceptionElement[getCheckedExceptionsLength()];
     long offset = offsetOfCheckedExceptions();
     for (int i = 0; i < ret.length; i++) {
-      ret[i] = new CheckedExceptionElement(getHandle(), offset);
+      ret[i] = new CheckedExceptionElement(getAddress(), offset);
       offset += checkedExceptionElementSize;
     }
     return ret;
@@ -370,14 +367,14 @@ public class ConstMethod extends Oop {
     return bytecodeOffset + getCodeSize();
   }
 
-  // Offset of start of compressed line number table (see methodOop.hpp)
+  // Offset of start of compressed line number table (see method.hpp)
   private long offsetOfCompressedLineNumberTable() {
     return offsetOfCodeEnd() + (isNative() ? 2 * VM.getVM().getAddressSize() : 0);
   }
 
-  // Offset of last short in methodOop
+  // Offset of last short in Method*
   private long offsetOfLastU2Element() {
-    return getObjectSize() - 2;
+    return getSize() * VM.getVM().getObjectHeap().getOopSize() - 2;
   }
 
   private long offsetOfCheckedExceptionsLength() {
@@ -386,7 +383,7 @@ public class ConstMethod extends Oop {
 
   private int getCheckedExceptionsLength() {
     if (hasCheckedExceptions()) {
-      return (int) getHandle().getCIntegerAt(offsetOfCheckedExceptionsLength(), 2, true);
+      return (int) getAddress().getCIntegerAt(offsetOfCheckedExceptionsLength(), 2, true);
     } else {
       return 0;
     }
@@ -407,7 +404,7 @@ public class ConstMethod extends Oop {
     int len = 0;
     if (hasLineNumberTable()) {
       CompressedLineNumberReadStream stream =
-        new CompressedLineNumberReadStream(getHandle(), (int) offsetOfCompressedLineNumberTable());
+        new CompressedLineNumberReadStream(getAddress(), (int) offsetOfCompressedLineNumberTable());
       while (stream.readPair()) {
         len += 1;
       }
@@ -417,7 +414,7 @@ public class ConstMethod extends Oop {
 
   private int getLocalVariableTableLength() {
     if (hasLocalVariableTable()) {
-      return (int) getHandle().getCIntegerAt(offsetOfLocalVariableTableLength(), 2, true);
+      return (int) getAddress().getCIntegerAt(offsetOfLocalVariableTableLength(), 2, true);
     } else {
       return 0;
     }
@@ -450,7 +447,7 @@ public class ConstMethod extends Oop {
 
   private int getExceptionTableLength() {
     if (hasExceptionTable()) {
-      return (int) getHandle().getCIntegerAt(offsetOfExceptionTableLength(), 2, true);
+      return (int) getAddress().getCIntegerAt(offsetOfExceptionTableLength(), 2, true);
     } else {
       return 0;
     }

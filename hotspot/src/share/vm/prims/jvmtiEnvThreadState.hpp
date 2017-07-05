@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -151,7 +151,7 @@ public:
   // and reset _breakpoint_posted and _single_stepping_posted.
   // _breakpoint_posted and _single_stepping_posted are only cleared
   // here.
-  void compare_and_set_current_location(methodOop method, address location, jvmtiEvent event);
+  void compare_and_set_current_location(Method* method, address location, jvmtiEvent event);
 
   void clear_current_location() { set_current_location((jmethodID)NULL, 0); }
 

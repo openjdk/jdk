@@ -25,7 +25,7 @@
  * @bug 4920526
  * @summary Needs per connection proxy support for URLs
  * @library ../../../sun/net/www/httptest/
- * @build ClosedChannelList HttpServer HttpTransaction HttpCallback
+ * @build ClosedChannelList TestHttpServer HttpTransaction HttpCallback
  * @compile PerConnectionProxy.java
  * @run main/othervm -Dhttp.proxyHost=inexistant -Dhttp.proxyPort=8080 PerConnectionProxy
  */
@@ -35,7 +35,7 @@ import java.io.*;
 import sun.net.www.*;
 
 public class PerConnectionProxy implements HttpCallback {
-    static HttpServer server;
+    static TestHttpServer server;
 
     public void request (HttpTransaction req) {
         req.setResponseEntityBody ("Hello .");
@@ -48,7 +48,7 @@ public class PerConnectionProxy implements HttpCallback {
 
     public static void main(String[] args) {
         try {
-            server = new HttpServer (new PerConnectionProxy(), 1, 10, 0);
+            server = new TestHttpServer (new PerConnectionProxy(), 1, 10, 0);
             ProxyServer pserver = new ProxyServer(InetAddress.getByName("localhost"), server.getLocalPort());
             // start proxy server
             new Thread(pserver).start();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 package sun.jvm.hotspot.oops;
 
+import sun.jvm.hotspot.runtime.VMObject;
 import sun.jvm.hotspot.debugger.*;
 
 // The class for an C int field simply provides access to the value.
@@ -39,7 +40,10 @@ public class CIntField extends Field {
   private boolean isUnsigned;
 
   public long getValue(Oop obj) {
-    return obj.getHandle().getCIntegerAt(getOffset(), size, isUnsigned);
+    return getValue(obj.getHandle());
+  }
+  public long getValue(VMObject obj) {
+    return getValue(obj.getAddress());
   }
   public long getValue(Address addr) {
     return addr.getCIntegerAt(getOffset(), size, isUnsigned);

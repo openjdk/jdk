@@ -93,8 +93,8 @@ protected:
   Stack<markOop, mtGC> _preserved_marks_of_objs;
 
   // Promotion failure handling
-  OopClosure *_promo_failure_scan_stack_closure;
-  void set_promo_failure_scan_stack_closure(OopClosure *scan_stack_closure) {
+  ExtendedOopClosure *_promo_failure_scan_stack_closure;
+  void set_promo_failure_scan_stack_closure(ExtendedOopClosure *scan_stack_closure) {
     _promo_failure_scan_stack_closure = scan_stack_closure;
   }
 

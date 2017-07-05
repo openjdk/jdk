@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -266,16 +266,12 @@ inline void CMSCollector::icms_wait() {
 
 inline void CMSCollector::save_sweep_limits() {
   _cmsGen->save_sweep_limit();
-  _permGen->save_sweep_limit();
 }
 
 inline bool CMSCollector::is_dead_obj(oop obj) const {
   HeapWord* addr = (HeapWord*)obj;
   assert((_cmsGen->cmsSpace()->is_in_reserved(addr)
-          && _cmsGen->cmsSpace()->block_is_obj(addr))
-         ||
-         (_permGen->cmsSpace()->is_in_reserved(addr)
-          && _permGen->cmsSpace()->block_is_obj(addr)),
+          && _cmsGen->cmsSpace()->block_is_obj(addr)),
          "must be object");
   return  should_unload_classes() &&
           _collectorState == Sweeping &&
@@ -451,6 +447,14 @@ inline void Par_MarkFromRootsClosure::do_yield_check() {
       _yield) {
     do_yield_work();
   }
+}
+
+inline void PushOrMarkClosure::do_yield_check() {
+  _parent->do_yield_check();
+}
+
+inline void Par_PushOrMarkClosure::do_yield_check() {
+  _parent->do_yield_check();
 }
 
 // Return value of "true" indicates that the on-going preclean

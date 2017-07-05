@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 #define SHARE_VM_RUNTIME_SIMPLETHRESHOLDPOLICY_HPP
 
 #include "code/nmethod.hpp"
-#include "oops/methodDataOop.hpp"
+#include "oops/methodData.hpp"
 #include "runtime/compilationPolicy.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -38,8 +38,8 @@ class SimpleThresholdPolicy : public CompilationPolicy {
 
   // Check if the counter is big enough and set carry (effectively infinity).
   inline void set_carry_if_necessary(InvocationCounter *counter);
-  // Set carry flags in the counters (in methodOop and MDO).
-  inline void handle_counter_overflow(methodOop method);
+  // Set carry flags in the counters (in Method* and MDO).
+  inline void handle_counter_overflow(Method* method);
   // Call and loop predicates determine whether a transition to a higher compilation
   // level should be performed (pointers to predicate functions are passed to common_TF().
   // Predicates also take compiler load into account.
@@ -47,14 +47,14 @@ class SimpleThresholdPolicy : public CompilationPolicy {
   bool call_predicate(int i, int b, CompLevel cur_level);
   bool loop_predicate(int i, int b, CompLevel cur_level);
   // Common transition function. Given a predicate determines if a method should transition to another level.
-  CompLevel common(Predicate p, methodOop method, CompLevel cur_level);
+  CompLevel common(Predicate p, Method* method, CompLevel cur_level);
   // Transition functions.
   // call_event determines if a method should be compiled at a different
   // level with a regular invocation entry.
-  CompLevel call_event(methodOop method, CompLevel cur_level);
+  CompLevel call_event(Method* method, CompLevel cur_level);
   // loop_event checks if a method should be OSR compiled at a different
   // level.
-  CompLevel loop_event(methodOop method, CompLevel cur_level);
+  CompLevel loop_event(Method* method, CompLevel cur_level);
   void print_counters(const char* prefix, methodHandle mh);
 protected:
   int c1_count() const     { return _c1_count; }
@@ -72,7 +72,7 @@ protected:
   virtual void submit_compile(methodHandle mh, int bci, CompLevel level, JavaThread* thread);
   // Simple methods are as good being compiled with C1 as C2.
   // This function tells if it's such a function.
-  inline bool is_trivial(methodOop method);
+  inline bool is_trivial(Method* method);
 
   // Predicate helpers are used by .*_predicate() methods as well as others.
   // They check the given counter values, multiplied by the scale against the thresholds.
@@ -80,7 +80,7 @@ protected:
   template<CompLevel level> static inline bool loop_predicate_helper(int i, int b, double scale);
 
   // Get a compilation level for a given method.
-  static CompLevel comp_level(methodOop method) {
+  static CompLevel comp_level(Method* method) {
     nmethod *nm = method->code();
     if (nm != NULL && nm->is_in_use()) {
       return (CompLevel)nm->comp_level();
@@ -100,15 +100,15 @@ public:
   }
   virtual CompLevel initial_compile_level() { return MIN2((CompLevel)TieredStopAtLevel, CompLevel_initial_compile); }
   virtual void do_safepoint_work() { }
-  virtual void delay_compilation(methodOop method) { }
-  virtual void disable_compilation(methodOop method) { }
+  virtual void delay_compilation(Method* method) { }
+  virtual void disable_compilation(Method* method) { }
   virtual void reprofile(ScopeDesc* trap_scope, bool is_osr);
   virtual nmethod* event(methodHandle method, methodHandle inlinee,
                          int branch_bci, int bci, CompLevel comp_level, nmethod* nm, JavaThread* thread);
   // Select task is called by CompileBroker. We should return a task or NULL.
   virtual CompileTask* select_task(CompileQueue* compile_queue);
   // Tell the runtime if we think a given method is adequately profiled.
-  virtual bool is_mature(methodOop method);
+  virtual bool is_mature(Method* method);
   // Initialize: set compiler thread count
   virtual void initialize();
   virtual bool should_not_inline(ciEnv* env, ciMethod* callee) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -634,26 +634,54 @@ public class CommandProcessor {
                 } else {
                     String s = t.nextToken();
                     if (s.equals("-a")) {
-                        HeapVisitor iterator = new DefaultHeapVisitor() {
-                                public boolean doObj(Oop obj) {
-                                    if (obj instanceof MethodData) {
-                                        Method m = ((MethodData)obj).getMethod();
-                                        out.println("MethodData " + obj.getHandle() + " for " +
+                        SystemDictionary sysDict = VM.getVM().getSystemDictionary();
+                        sysDict.allClassesDo(new SystemDictionary.ClassVisitor() {
+                                public void visit(Klass k) {
+                                    if (k instanceof InstanceKlass) {
+                                        MethodArray methods = ((InstanceKlass)k).getMethods();
+                                        for (int i = 0; i < methods.length(); i++) {
+                                            Method m = methods.at(i);
+                                            MethodData mdo = m.getMethodData();
+                                            if (mdo != null) {
+                                                out.println("MethodData " + mdo.getAddress() + " for " +
                                                     "method " + m.getMethodHolder().getName().asString() + "." +
                                                     m.getName().asString() +
-                                                    m.getSignature().asString() + "@" + m.getHandle());
-                                        ((MethodData)obj).printDataOn(out);
+                                                            m.getSignature().asString() + "@" + m.getAddress());
+                                                mdo.printDataOn(out);
                                     }
-                                    return false;
                                 }
-                            };
-                        VM.getVM().getObjectHeap().iteratePerm(iterator);
+                                    }
+                                }
+                            }
+                            );
                     } else {
                         Address a = VM.getVM().getDebugger().parseAddress(s);
-                        OopHandle handle = a.addOffsetToAsOopHandle(0);
-                        MethodData mdo = (MethodData)VM.getVM().getObjectHeap().newOop(handle);
+                        MethodData mdo = (MethodData) Metadata.instantiateWrapperFor(a);
                         mdo.printDataOn(out);
                     }
+                }
+            }
+        },
+        new Command("printall", "printall", false) {
+            // Print every MDO in the heap or the one referenced by expression.
+            public void doit(Tokens t) {
+                if (t.countTokens() != 0) {
+                    usage();
+                } else {
+                    SystemDictionary sysDict = VM.getVM().getSystemDictionary();
+                    sysDict.allClassesDo(new SystemDictionary.ClassVisitor() {
+                            public void visit(Klass k) {
+                                if (k instanceof InstanceKlass && ((InstanceKlass)k).getConstants().getCache() != null) {
+                                    MethodArray methods = ((InstanceKlass)k).getMethods();
+                                    for (int i = 0; i < methods.length(); i++) {
+                                        Method m = methods.at(i);
+                                        HTMLGenerator gen = new HTMLGenerator(false);
+                                        out.println(gen.genHTML(m));
+                                    }
+                                }
+                            }
+                        }
+                        );
                 }
             }
         },
@@ -1229,7 +1257,7 @@ public class CommandProcessor {
                             }
                         };
                     VM.getVM().getObjectHeap().iterateRaw(iterator);
-                } else if (type.equals("heap") || type.equals("perm")) {
+                } else if (type.equals("heap")) {
                     HeapVisitor iterator = new DefaultHeapVisitor() {
                             public boolean doObj(Oop obj) {
                                 int index = 0;
@@ -1246,11 +1274,7 @@ public class CommandProcessor {
                                 return false;
                             }
                         };
-                    if (type.equals("heap")) {
                         VM.getVM().getObjectHeap().iterate(iterator);
-                    } else {
-                        VM.getVM().getObjectHeap().iteratePerm(iterator);
-                    }
                 } else if (type.equals("codecache")) {
                     CodeCacheVisitor v = new CodeCacheVisitor() {
                             public void prologue(Address start, Address end) {

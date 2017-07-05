@@ -1070,8 +1070,7 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
             return null;
         try {
             UniqueIdentity id = (UniqueIdentity)info.get(
-                                 CertificateIssuerUniqueIdentity.NAME
-                            + DOT + CertificateIssuerUniqueIdentity.ID);
+                                 X509CertInfo.ISSUER_ID);
             if (id == null)
                 return null;
             else
@@ -1091,8 +1090,7 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
             return null;
         try {
             UniqueIdentity id = (UniqueIdentity)info.get(
-                                 CertificateSubjectUniqueIdentity.NAME
-                            + DOT + CertificateSubjectUniqueIdentity.ID);
+                                 X509CertInfo.SUBJECT_ID);
             if (id == null)
                 return null;
             else

@@ -199,7 +199,6 @@ void PSPromotionManager::drain_stacks_depth(bool totally_drain) {
   assert(heap->kind() == CollectedHeap::ParallelScavengeHeap, "Sanity");
   MutableSpace* to_space = heap->young_gen()->to_space();
   MutableSpace* old_space = heap->old_gen()->object_space();
-  MutableSpace* perm_space = heap->perm_gen()->object_space();
 #endif /* ASSERT */
 
   OopStarTaskQueue* const tq = claimed_stack_depth();
@@ -318,11 +317,11 @@ oop PSPromotionManager::oop_promotion_failed(oop obj, markOop obj_mark) {
     obj = obj->forwardee();
   }
 
-#ifdef DEBUG
+#ifndef PRODUCT
   if (TraceScavenge) {
     gclog_or_tty->print_cr("{%s %s 0x%x (%d)}",
                            "promotion-failure",
-                           obj->blueprint()->internal_name(),
+                           obj->klass()->internal_name(),
                            obj, obj->size());
 
   }

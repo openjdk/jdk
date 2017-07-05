@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,8 +47,6 @@ public class GenerationFactory {
   private static synchronized void initialize(TypeDataBase db) {
     ctor = new VirtualConstructor(db);
 
-    ctor.addMapping("CompactingPermGenGen", CompactingPermGenGen.class);
-    ctor.addMapping("CMSPermGenGen", CMSPermGenGen.class);
     ctor.addMapping("DefNewGeneration", DefNewGeneration.class);
     ctor.addMapping("ParNewGeneration", ParNewGeneration.class);
     ctor.addMapping("TenuredGeneration", TenuredGeneration.class);

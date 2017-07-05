@@ -27,7 +27,7 @@
 
 #include "classfile/verificationType.hpp"
 #include "classfile/verifier.hpp"
-#include "oops/methodOop.hpp"
+#include "oops/method.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/signature.hpp"
 #include "utilities/exceptions.hpp"
