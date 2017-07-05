@@ -28,8 +28,12 @@
  * @summary Check effectiveness of RemoveOnCancelPolicy
  */
 
-import java.util.concurrent.*;
 import java.util.Random;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Simple timer cancellation test. Submits tasks to a scheduled executor
@@ -60,7 +64,7 @@ public class BasicCancelTest {
             equal(tpe.getActiveCount(), 0);
             equal(tpe.getPoolSize(), 0);
             equal(tpe.getTaskCount(), tpe.getCompletedTaskCount());
-            check(tpe.awaitTermination(0, TimeUnit.SECONDS));
+            check(tpe.awaitTermination(0L, TimeUnit.SECONDS));
         } catch (Throwable t) { unexpected(t); }
     }
 

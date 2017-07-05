@@ -21,19 +21,14 @@
  * questions.
  */
 
-import java.io.ByteArrayOutputStream;
-import java.io.OutputStream;
 import java.io.PrintStream;
-import java.lang.reflect.Array;
-import java.lang.reflect.Field;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.BooleanSupplier;
-import java.lang.System.Logger;
-import java.lang.System.Logger.Level;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
-import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Array;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.System.Logger;
+import java.lang.System.Logger.Level;
 import java.security.AllPermission;
 import java.security.CodeSource;
 import java.security.Permission;
@@ -41,6 +36,7 @@ import java.security.PermissionCollection;
 import java.security.Permissions;
 import java.security.Policy;
 import java.security.ProtectionDomain;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -56,25 +52,17 @@ import jdk.internal.logger.LazyLoggers;
             Tests the behavior of bootstrap loggers (and SimpleConsoleLoggers
  *          too).
  * @modules java.base/jdk.internal.logger
+ * @build BootstrapLoggerUtils LogStream
  * @run main/othervm BootstrapLoggerTest NO_SECURITY
  * @run main/othervm BootstrapLoggerTest SECURE
  * @run main/othervm/timeout=120 BootstrapLoggerTest SECURE_AND_WAIT
  */
 public class BootstrapLoggerTest {
 
-    static final Method awaitPending;
     static final Method isAlive;
-    static final Field isBooted;
     static final Field logManagerInitialized;
     static {
         try {
-            isBooted = BootstrapLogger.class.getDeclaredField("isBooted");
-            isBooted.setAccessible(true);
-            // private reflection hook that allows us to test wait until all
-            // the tasks pending in the BootstrapExecutor are finished.
-            awaitPending = BootstrapLogger.class
-                    .getDeclaredMethod("awaitPendingTasks");
-            awaitPending.setAccessible(true);
             // private reflection hook that allows us to test whether
             // the BootstrapExecutor is alive.
             isAlive = BootstrapLogger.class
@@ -87,43 +75,6 @@ public class BootstrapLoggerTest {
             logManagerInitialized.setAccessible(true);
         } catch (Exception ex) {
             throw new ExceptionInInitializerError(ex);
-        }
-    }
-
-    static void awaitPending() {
-        try {
-            awaitPending.invoke(null);
-        } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
-            ex.printStackTrace(LogStream.err);
-        }
-    }
-
-    /**
-     * We use an instance of this class to check what the logging system has
-     * printed on System.err.
-     */
-    public static class LogStream extends OutputStream {
-
-        final static PrintStream err = System.err;
-        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-
-        public LogStream() {
-            super();
-        }
-
-        @Override
-        public synchronized void write(int b) {
-            baos.write(b);
-            err.write(b);
-        }
-
-        public String drain() {
-            awaitPending();
-            synchronized(this) {
-                String txt = baos.toString();
-                baos.reset();
-                return txt;
-            }
         }
     }
 
@@ -142,7 +93,7 @@ public class BootstrapLoggerTest {
 
         // private reflection hook that allows us to simulate a non booted VM
         final AtomicBoolean vmBooted = new AtomicBoolean(false);
-        isBooted.set(null,(BooleanSupplier) () -> vmBooted.get());
+        BootstrapLoggerUtils.setBootedHook(() -> vmBooted.get());
 
         // We  replace System.err to check the messages that have been logged
         // by the JUL ConsoleHandler and default SimpleConsoleLogger

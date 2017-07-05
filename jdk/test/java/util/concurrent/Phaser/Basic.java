@@ -39,13 +39,19 @@
  * @author Chris Hegarty
  */
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
+import java.lang.management.ManagementFactory;
+import java.lang.management.ThreadInfo;
+import java.lang.management.ThreadMXBean;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.concurrent.Phaser;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
-import static java.util.concurrent.TimeUnit.*;
 
 public class Basic {
 
@@ -86,25 +92,30 @@ public class Basic {
     //----------------------------------------------------------------
     // Mechanism to get all test threads into "running" mode.
     //----------------------------------------------------------------
-    private static Phaser atTheStartingGate = new Phaser(3);
+    private static Phaser startingGate = new Phaser(3);
 
     private static void toTheStartingGate() {
         try {
-            boolean expectNextPhase = false;
-            if (atTheStartingGate.getUnarrivedParties() == 1) {
-                expectNextPhase = true;
+            boolean expectNextPhase = (startingGate.getUnarrivedParties() == 1);
+            int phase = startingGate.getPhase();
+            equal(phase, startingGate.arrive());
+            int awaitPhase;
+            for (boolean interrupted = false;;) {
+                try {
+                    awaitPhase = startingGate.awaitAdvanceInterruptibly
+                        (phase, 30, SECONDS);
+                    if (interrupted) Thread.currentThread().interrupt();
+                    break;
+                } catch (InterruptedException ie) {
+                    interrupted = true;
+                }
             }
-            int phase = atTheStartingGate.getPhase();
-            equal(phase, atTheStartingGate.arrive());
-            int awaitPhase = atTheStartingGate.awaitAdvanceInterruptibly
-                (phase, 30, SECONDS);
             if (expectNextPhase) check(awaitPhase == phase + 1);
             else check(awaitPhase == phase || awaitPhase == phase + 1);
-
             pass();
         } catch (Throwable t) {
             unexpected(t);
-           // reset(atTheStartingGate);
+            // reset(startingGate);
             throw new Error(t);
         }
     }
@@ -210,12 +221,23 @@ public class Basic {
             public void remove() {throw new UnsupportedOperationException();}};
     }
 
-    private static void realMain(String[] args) throws Throwable {
+    static class SimpleTimer {
+        long startTime = System.nanoTime();
+        long elapsedMillis() {
+            long now = System.nanoTime();
+            long elapsed = NANOSECONDS.toMillis(now - startTime);
+            startTime = now;
+            return elapsed;
+        }
+        void printElapsed() { System.out.println(elapsedMillis() + " ms"); }
+    }
 
+    private static void realMain(String[] args) throws Throwable {
+        SimpleTimer timer = new SimpleTimer();
         Thread.currentThread().setName("mainThread");
 
         //----------------------------------------------------------------
-        // Normal use
+        System.out.print("Normal use: ");
         //----------------------------------------------------------------
         try {
             Phaser phaser = new Phaser(3);
@@ -243,9 +265,10 @@ public class Basic {
                 equal(phaser.getArrivedParties(), 0);
             }
         } catch (Throwable t) { unexpected(t); }
+        timer.printElapsed();
 
         //----------------------------------------------------------------
-        // One thread interrupted
+        System.out.print("One thread interrupted: ");
         //----------------------------------------------------------------
         try {
             Phaser phaser = new Phaser(3);
@@ -268,9 +291,10 @@ public class Basic {
                 phase++;
             }
         } catch (Throwable t) { unexpected(t); }
+        timer.printElapsed();
 
         //----------------------------------------------------------------
-        // Phaser is terminated while threads are waiting
+        System.out.print("Phaser is terminated while threads are waiting: ");
         //----------------------------------------------------------------
         try {
             for (int i = 0; i < 10; i++) {
@@ -291,9 +315,10 @@ public class Basic {
                 equal(phaser.getArrivedParties(), arrivedParties);
             }
         } catch (Throwable t) { unexpected(t); }
+        timer.printElapsed();
 
         //----------------------------------------------------------------
-        // Adds new unarrived parties to this phaser
+        System.out.print("Adds new unarrived parties to this phaser: ");
         //----------------------------------------------------------------
         try {
             Phaser phaser = new Phaser(1);
@@ -301,7 +326,7 @@ public class Basic {
             LinkedList<Arriver> arriverList = new LinkedList<Arriver>();
             int phase = phaser.getPhase();
             for (int i = 1; i < 5; i++) {
-                atTheStartingGate = new Phaser(1+(3*i));
+                startingGate = new Phaser(1+(3*i));
                 check(phaser.getPhase() == phase);
                 // register 3 more
                 phaser.register(); phaser.register(); phaser.register();
@@ -323,32 +348,34 @@ public class Basic {
                 arriverList.clear();
                 phase++;
             }
-            atTheStartingGate = new Phaser(3);
+            startingGate = new Phaser(3);
         } catch (Throwable t) { unexpected(t); }
+        timer.printElapsed();
 
         //----------------------------------------------------------------
-        // One thread timed out
+        System.out.print("One thread timed out: ");
         //----------------------------------------------------------------
         try {
             Phaser phaser = new Phaser(3);
             Iterator<Arriver> arrivers = arriverIterator(phaser);
-            for (long timeout : new long[] { 0L, 5L }) {
-                for (int i = 0; i < 2; i++) {
-                    Awaiter a1 = awaiter(phaser, timeout, SECONDS); a1.start();
-                    Arriver a2 = arrivers.next();                   a2.start();
-                    toTheStartingGate();
-                    a1.join();
-                    checkResult(a1, TimeoutException.class);
-                    phaser.arrive();
-                    a2.join();
-                    checkResult(a2, null);
-                    check(!phaser.isTerminated());
-                }
+            for (long timeout : new long[] { 0L, 12L }) {
+                Awaiter a1 = awaiter(phaser, timeout, MILLISECONDS);
+                a1.start();
+                Arriver a2 = arrivers.next();
+                a2.start();
+                toTheStartingGate();
+                a1.join();
+                checkResult(a1, TimeoutException.class);
+                phaser.arrive();
+                a2.join();
+                checkResult(a2, null);
+                check(!phaser.isTerminated());
             }
         } catch (Throwable t) { unexpected(t); }
+        timer.printElapsed();
 
         //----------------------------------------------------------------
-        // Barrier action completed normally
+        System.out.print("Barrier action completed normally: ");
         //----------------------------------------------------------------
         try {
             final AtomicInteger count = new AtomicInteger(0);
@@ -390,15 +417,43 @@ public class Basic {
                     checkTerminated(phaser);
             }
         } catch (Throwable t) { unexpected(t); }
+        timer.printElapsed();
 
     }
 
     //--------------------- Infrastructure ---------------------------
+
+    /**
+     * A debugging tool to print stack traces of most threads, as jstack does.
+     * Uninteresting threads are filtered out.
+     */
+    static void dumpTestThreads() {
+        ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean();
+        System.err.println("------ stacktrace dump start ------");
+        for (ThreadInfo info : threadMXBean.dumpAllThreads(true, true)) {
+            String name = info.getThreadName();
+            if ("Signal Dispatcher".equals(name))
+                continue;
+            if ("Reference Handler".equals(name)
+                && info.getLockName().startsWith("java.lang.ref.Reference$Lock"))
+                continue;
+            if ("Finalizer".equals(name)
+                && info.getLockName().startsWith("java.lang.ref.ReferenceQueue$Lock"))
+                continue;
+            if ("process reaper".equals(name))
+                continue;
+            if (name != null && name.startsWith("ForkJoinPool.commonPool-worker"))
+                continue;
+            System.err.print(info);
+        }
+        System.err.println("------ stacktrace dump end ------");
+    }
+
     static volatile int passed = 0, failed = 0;
     static void pass() {passed++;}
     static void fail() {failed++; Thread.dumpStack();}
     static void fail(String msg) {System.out.println(msg); fail();}
-    static void unexpected(Throwable t) {failed++; t.printStackTrace();}
+    static void unexpected(Throwable t) {failed++; t.printStackTrace(); dumpTestThreads();}
     static void check(boolean cond) {if (cond) pass(); else fail();}
     static void equal(Object x, Object y) {
         if (x == null ? y == null : x.equals(y)) pass();

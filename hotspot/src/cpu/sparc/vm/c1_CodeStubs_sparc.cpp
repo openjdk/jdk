@@ -94,8 +94,10 @@ void PredicateFailedStub::emit_code(LIR_Assembler* ce) {
 void CounterOverflowStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
   __ set(_bci, G4);
+  Metadata *m = _method->as_constant_ptr()->as_metadata();
+  __ set_metadata_constant(m, G5);
   __ call(Runtime1::entry_for(Runtime1::counter_overflow_id), relocInfo::runtime_call_type);
-  __ delayed()->mov_or_nop(_method->as_register(), G5);
+  __ delayed()->nop();
   ce->add_call_info_here(_info);
   ce->verify_oop_map(_info);
 

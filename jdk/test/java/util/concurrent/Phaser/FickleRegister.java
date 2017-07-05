@@ -37,9 +37,9 @@
  * @run main FickleRegister 300
  */
 
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.*;
+import java.util.ArrayList;
+import java.util.concurrent.Phaser;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class FickleRegister {
     final AtomicLong count = new AtomicLong(0);

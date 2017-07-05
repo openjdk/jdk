@@ -38,13 +38,17 @@
  * @summary multiple threads using a single lock
  */
 
-import java.util.concurrent.*;
-import java.util.concurrent.locks.*;
-import java.util.*;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
+import java.util.SplittableRandom;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.locks.ReentrantLock;
 
 public final class SimpleReentrantLockLoops {
     static final ExecutorService pool = Executors.newCachedThreadPool();
-    static final LoopHelpers.SimpleRandom rng = new LoopHelpers.SimpleRandom();
+    static final SplittableRandom rnd = new SplittableRandom();
     static boolean print = false;
     static int iters = 1000000;
 
@@ -66,12 +70,12 @@ public final class SimpleReentrantLockLoops {
             }
         }
         pool.shutdown();
-        if (! pool.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS))
+        if (! pool.awaitTermination(60L, SECONDS))
             throw new Error();
     }
 
     static final class ReentrantLockLoop implements Runnable {
-        private int v = rng.next();
+        private int v = rnd.nextInt();
         private volatile int result = 17;
         private final ReentrantLock lock = new ReentrantLock();
         private final LoopHelpers.BarrierTimer timer = new LoopHelpers.BarrierTimer();

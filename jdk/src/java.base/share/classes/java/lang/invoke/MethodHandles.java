@@ -3463,7 +3463,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      *   return zip;
      * }
      * // assume MH_initZip, MH_zipPred, and MH_zipStep are handles to the above methods
-     * MethodHandle loop = MethodHandles.doWhileLoop(MH_initZip, MH_zipPred, MH_zipStep);
+     * MethodHandle loop = MethodHandles.doWhileLoop(MH_initZip, MH_zipStep, MH_zipPred);
      * List<String> a = Arrays.asList("a", "b", "c", "d");
      * List<String> b = Arrays.asList("e", "f", "g", "h");
      * List<String> zipped = Arrays.asList("a", "e", "b", "f", "c", "g", "d", "h");
@@ -3602,7 +3602,8 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * String start(String arg) { return arg; }
      * String step(int counter, String v, String arg) { return "na " + v; }
      * // assume MH_start and MH_step are handles to the two methods above
-     * MethodHandle loop = MethodHandles.countedLoop(13, MH_start, MH_step);
+     * MethodHandle fit13 = MethodHandles.constant(int.class, 13);
+     * MethodHandle loop = MethodHandles.countedLoop(fit13, MH_start, MH_step);
      * assertEquals("na na na na na na na na na na na na na Lambdaman!", loop.invoke("Lambdaman!"));
      * }</pre></blockquote>
      *
@@ -3742,11 +3743,11 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * @apiNote Example:
      * <blockquote><pre>{@code
      * // reverse a list
-     * List<String> reverseStep(String e, List<String> r) {
+     * List<String> reverseStep(String e, List<String> r, List<String> l) {
      *   r.add(0, e);
      *   return r;
      * }
-     * List<String> newArrayList() { return new ArrayList<>(); }
+     * List<String> newArrayList(List<String> l) { return new ArrayList<>(); }
      * // assume MH_reverseStep, MH_newArrayList are handles to the above methods
      * MethodHandle loop = MethodHandles.iteratedLoop(null, MH_newArrayList, MH_reverseStep);
      * List<String> list = Arrays.asList("a", "b", "c", "d", "e");

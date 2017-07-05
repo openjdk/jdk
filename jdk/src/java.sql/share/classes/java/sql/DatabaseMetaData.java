@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3684,4 +3684,19 @@ public interface DatabaseMetaData extends Wrapper {
         return false;
     }
 
+    // JDBC 4.3
+
+    /**
+     * Retrieves whether this database supports sharding.
+     * @implSpec
+     * The default implementation will return {@code false}
+     *
+     * @return {@code true} if this database supports sharding;
+     *         {@code false} otherwise
+     * @exception SQLException if a database access error occurs
+     * @since 1.9
+     */
+    default boolean supportsSharding() throws SQLException {
+        return false;
+    }
 }

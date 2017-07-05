@@ -38,9 +38,12 @@
  * be kept alive to service a delayed task waiting in the queue.
  */
 
-import java.util.concurrent.*;
-import static java.util.concurrent.TimeUnit.*;
-import java.util.concurrent.atomic.*;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class ThreadRestarts {
     public static void main(String[] args) throws Exception {
@@ -60,7 +63,8 @@ public class ThreadRestarts {
             MILLISECONDS.sleep(100L);
         } finally {
             stpe.shutdownNow();
-            stpe.awaitTermination(Long.MAX_VALUE, MILLISECONDS);
+            if (!stpe.awaitTermination(60L, SECONDS))
+                throw new AssertionError("timed out");
         }
         if (ctf.count.get() > 1)
             throw new AssertionError(

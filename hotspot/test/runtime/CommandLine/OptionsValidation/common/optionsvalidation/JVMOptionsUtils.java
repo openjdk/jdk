@@ -27,6 +27,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -49,6 +50,8 @@ public class JVMOptionsUtils {
     /* Used to start the JVM with the same type as current */
     static String VMType;
 
+    private static Map<String, JVMOption> optionsAsMap;
+
     static {
         if (Platform.isServer()) {
             VMType = "-server";
@@ -61,6 +64,84 @@ public class JVMOptionsUtils {
         } else {
             VMType = null;
         }
+    }
+
+    public static boolean fitsRange(String optionName, BigDecimal number) throws Exception {
+        JVMOption option;
+        String minRangeString = null;
+        String maxRangeString = null;
+        boolean fits = true;
+
+        if (optionsAsMap == null) {
+            optionsAsMap = getOptionsWithRangeAsMap();
+        }
+
+        option = optionsAsMap.get(optionName);
+        if (option != null) {
+            minRangeString = option.getMin();
+            if (minRangeString != null) {
+                fits = (number.compareTo(new BigDecimal(minRangeString)) >= 0);
+            }
+            maxRangeString = option.getMax();
+            if (maxRangeString != null) {
+                fits &= (number.compareTo(new BigDecimal(maxRangeString)) <= 0);
+            }
+        }
+
+        return fits;
+    }
+
+    public static boolean fitsRange(String optionName, String number) throws Exception {
+        String lowerCase = number.toLowerCase();
+        String multiplier = "1";
+        if (lowerCase.endsWith("k")) {
+            multiplier = "1024";
+            lowerCase = lowerCase.substring(0, lowerCase.length()-1);
+        } else if (lowerCase.endsWith("m")) {
+            multiplier = "1048576"; //1024*1024
+            lowerCase = lowerCase.substring(0, lowerCase.length()-1);
+        } else if (lowerCase.endsWith("g")) {
+            multiplier = "1073741824"; //1024*1024*1024
+            lowerCase = lowerCase.substring(0, lowerCase.length()-1);
+        } else if (lowerCase.endsWith("t")) {
+            multiplier = "1099511627776"; //1024*1024*1024*1024
+            lowerCase = lowerCase.substring(0, lowerCase.length()-1);
+        }
+        BigDecimal valueBig = new BigDecimal(lowerCase);
+        BigDecimal multiplierBig = new BigDecimal(multiplier);
+        return fitsRange(optionName, valueBig.multiply(multiplierBig));
+    }
+
+    public static String getMinOptionRange(String optionName) throws Exception {
+        JVMOption option;
+        String minRange = null;
+
+        if (optionsAsMap == null) {
+            optionsAsMap = getOptionsWithRangeAsMap();
+        }
+
+        option = optionsAsMap.get(optionName);
+        if (option != null) {
+            minRange = option.getMin();
+        }
+
+        return minRange;
+    }
+
+    public static String getMaxOptionRange(String optionName) throws Exception {
+        JVMOption option;
+        String maxRange = null;
+
+        if (optionsAsMap == null) {
+            optionsAsMap = getOptionsWithRangeAsMap();
+        }
+
+        option = optionsAsMap.get(optionName);
+        if (option != null) {
+            maxRange = option.getMax();
+        }
+
+        return maxRange;
     }
 
     /**
@@ -78,6 +159,13 @@ public class JVMOptionsUtils {
 
         if (name.startsWith("CMS")) {
             option.addPrepend("-XX:+UseConcMarkSweepGC");
+        }
+
+        if (name.startsWith("Shared")) {
+            option.addPrepend("-XX:+UnlockDiagnosticVMOptions");
+            String fileName = "Test" + name + ".jsa";
+            option.addPrepend("-XX:SharedArchiveFile=" + fileName);
+            option.addPrepend("-Xshare:dump");
         }
 
         switch (name) {
@@ -112,7 +200,6 @@ public class JVMOptionsUtils {
                 /* Do nothing */
                 break;
         }
-
     }
 
     /**

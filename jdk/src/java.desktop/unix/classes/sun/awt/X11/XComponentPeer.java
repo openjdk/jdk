@@ -158,7 +158,9 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
         XComponentPeer newPeer = (XComponentPeer)newNativeParent;
         XToolkit.awtLock();
         try {
-            XlibWrapper.XReparentWindow(XToolkit.getDisplay(), getWindow(), newPeer.getContentWindow(), x, y);
+            XlibWrapper.XReparentWindow(XToolkit.getDisplay(),
+                                        getWindow(), newPeer.getContentWindow(),
+                                        scaleUp(x), scaleUp(y));
             parentWindow = newPeer;
         } finally {
             XToolkit.awtUnlock();
@@ -1394,6 +1396,12 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
             XToolkit.awtLock();
             try {
                 if (shape != null) {
+
+                    int scale = getScale();
+                    if (scale != 1) {
+                        shape = shape.getScaledRegion(scale, scale);
+                    }
+
                     XlibWrapper.SetRectangularShape(
                             XToolkit.getDisplay(),
                             getWindow(),

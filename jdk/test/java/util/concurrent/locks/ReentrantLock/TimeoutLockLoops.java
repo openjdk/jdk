@@ -33,27 +33,26 @@
 
 /*
  * @test
- * @bug 4486658 5031862
+ * @bug 4486658 5031862 8140471
  * @run main TimeoutLockLoops
  * @summary Checks for responsiveness of locks to timeouts.
- * Runs under the assumption that ITERS computations require more than
- * TIMEOUT msecs to complete, which seems to be a safe assumption for
- * another decade.
  */
 
-import java.util.concurrent.*;
-import java.util.concurrent.locks.*;
-import java.util.*;
+import java.util.SplittableRandom;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantLock;
 
 public final class TimeoutLockLoops {
     static final ExecutorService pool = Executors.newCachedThreadPool();
-    static final LoopHelpers.SimpleRandom rng = new LoopHelpers.SimpleRandom();
+    static final SplittableRandom rnd = new SplittableRandom();
     static boolean print = false;
-    static final int ITERS = Integer.MAX_VALUE;
-    static final long TIMEOUT = 100;
+    static final long TIMEOUT = 10;
 
     public static void main(String[] args) throws Exception {
-        int maxThreads = 100;
+        int maxThreads = 8;
         if (args.length > 0)
             maxThreads = Integer.parseInt(args[0]);
 
@@ -62,21 +61,20 @@ public final class TimeoutLockLoops {
         for (int i = 1; i <= maxThreads; i += (i+1) >>> 1) {
             System.out.print("Threads: " + i);
             new ReentrantLockLoop(i).test();
-            Thread.sleep(10);
         }
         pool.shutdown();
-        if (! pool.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS))
+        if (! pool.awaitTermination(60L, TimeUnit.SECONDS))
             throw new Error();
     }
 
     static final class ReentrantLockLoop implements Runnable {
-        private int v = rng.next();
-        private volatile boolean completed;
+        private int v = rnd.nextInt();
         private volatile int result = 17;
         private final ReentrantLock lock = new ReentrantLock();
         private final LoopHelpers.BarrierTimer timer = new LoopHelpers.BarrierTimer();
         private final CyclicBarrier barrier;
         private final int nthreads;
+        private volatile Throwable fail = null;
         ReentrantLockLoop(int nthreads) {
             this.nthreads = nthreads;
             barrier = new CyclicBarrier(nthreads+1, timer);
@@ -89,7 +87,7 @@ public final class TimeoutLockLoops {
                 lock.unlock();
             }
             barrier.await();
-            Thread.sleep(TIMEOUT);
+            Thread.sleep(rnd.nextInt(5));
             while (!lock.tryLock()); // Jam lock
             //            lock.lock();
             barrier.await();
@@ -99,11 +97,10 @@ public final class TimeoutLockLoops {
                 System.out.println("\t " + secs + "s run time");
             }
 
-            if (completed)
-                throw new Error("Some thread completed instead of timing out");
             int r = result;
             if (r == 0) // avoid overoptimization
                 System.out.println("useless result: " + r);
+            if (fail != null) throw new RuntimeException(fail);
         }
 
         public final void run() {
@@ -111,15 +108,8 @@ public final class TimeoutLockLoops {
                 barrier.await();
                 int sum = v;
                 int x = 17;
-                int n = ITERS;
                 final ReentrantLock lock = this.lock;
-                for (;;) {
-                    if (x != 0) {
-                        if (n-- <= 0)
-                            break;
-                    }
-                    if (!lock.tryLock(TIMEOUT, TimeUnit.MILLISECONDS))
-                        break;
+                while (lock.tryLock(TIMEOUT, TimeUnit.MILLISECONDS)) {
                     try {
                         v = x = LoopHelpers.compute1(v);
                     }
@@ -128,14 +118,12 @@ public final class TimeoutLockLoops {
                     }
                     sum += LoopHelpers.compute2(x);
                 }
-                if (n <= 0)
-                    completed = true;
                 barrier.await();
                 result += sum;
             }
-            catch (Exception ex) {
-                ex.printStackTrace();
-                return;
+            catch (Throwable ex) {
+                fail = ex;
+                throw new RuntimeException(ex);
             }
         }
     }

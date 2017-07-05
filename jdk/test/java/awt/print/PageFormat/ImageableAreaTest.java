@@ -45,7 +45,7 @@ import javax.swing.table.TableModel;
 
 /**
  * @test
- * @bug 8044444
+ * @bug 8044444 8081491
  * @summary The output's 'Page-n' footer does not show completely
  * @author Alexandr Scherbatiy
  * @run main/manual ImageableAreaTest
@@ -58,11 +58,13 @@ public class ImageableAreaTest {
             @Override
             public void run() {
 
+
                 createAndShowTestDialog(
                         "1. Press the Print Table button\n"
                         + " Java print dialog should appear.\n"
                         + "2. Press the Print button on the Java Print dialog.\n"
-                        + "2. Check that the page number is correctly printed.\n"
+                        + "3. Check that the page number is correctly printed.\n"
+                        + "4. Check only the visible part of the table is printed.\n"
                         + "If so, press PASS, else press FAIL.",
                         "Page number is not correctly printed!",
                         ImageableAreaTest::printWithJavaPrintDialog);
@@ -71,24 +73,47 @@ public class ImageableAreaTest {
                         "1. Press the Print Table button\n"
                         + " The table should be printed without the print dialog.\n"
                         + "2. Check that the page number is correctly printed.\n"
+                        + "3. Check only the visible part of the table is printed.\n"
                         + "If so, press PASS, else press FAIL.",
                         "Page number is not correctly printed!",
                         ImageableAreaTest::printWithoutPrintDialog);
+
+
 
                 createAndShowTestDialog(
                         "1. Press the Print Table button\n"
                         + " Java print dialog should appear.\n"
                         + "2. Press the Print button on the Java Print dialog.\n"
                         + "3. Check that the table has about half size of the printed page\n"
+                        + "4. Check only the visible part of the table is printed.\n"
                         + "If so, press PASS, else press FAIL.",
                         "Custom imageable area is not correctly printed!",
                         ImageableAreaTest::printWithCustomImageareaSize);
+
+                createAndShowTestDialog(
+                        "1. Press the Print Table button\n"
+                        + " Java print dialog should appear.\n"
+                        + "2. Press the Print button on the Java Print dialog.\n"
+                        + "3. Check that the rows with different height is printed.\n"
+                        + "4. Check only the visible part of the table is printed.\n"
+                        + "If so, press PASS, else press FAIL.",
+                        "Row with different height is not correctly printed!",
+                        ImageableAreaTest::printDifferentRowHeight);
+
+                createAndShowTestDialog(
+                        "1. Press the Print Table button\n"
+                        + " Java print dialog should appear.\n"
+                        + "2. Press the Print button on the Java Print dialog.\n"
+                        + "3. Check that the only 1 row is shown & printed.\n"
+                        + "If so, press PASS, else press FAIL.",
+                        "Only 1 Row is not correctly printed!",
+                        ImageableAreaTest::printOneRowWithJavaPrintDialog);
             }
         });
     }
 
     private static void printWithJavaPrintDialog() {
-        final JTable table = createAuthorTable(42);
+        final JTable table = createAuthorTable(50);
         Printable printable = table.getPrintable(
                 JTable.PrintMode.NORMAL,
                 new MessageFormat("Author Table"),
@@ -110,7 +135,7 @@ public class ImageableAreaTest {
 
     private static void printWithoutPrintDialog() {
 
-        final JTable table = createAuthorTable(42);
+        final JTable table = createAuthorTable(50);
         PrintRequestAttributeSet pras
                 = new HashPrintRequestAttributeSet();
         pras.add(new Copies(1));
@@ -129,6 +154,50 @@ public class ImageableAreaTest {
 
         } catch (Exception e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    private static void printDifferentRowHeight() {
+        final JTable table = createAuthorTable(50);
+        table.setRowHeight(15, table.getRowHeight(15)+10);
+        Printable printable = table.getPrintable(
+                JTable.PrintMode.NORMAL,
+                new MessageFormat("Author Table"),
+                new MessageFormat("Page - {0}"));
+
+        PrinterJob job = PrinterJob.getPrinterJob();
+        job.setPrintable(printable);
+
+        boolean printAccepted = job.printDialog();
+        if (printAccepted) {
+            try {
+                job.print();
+                closeFrame();
+            } catch (PrinterException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+    }
+
+    private static void printOneRowWithJavaPrintDialog() {
+        final JTable table = createAuthorTable(1);
+        Printable printable = table.getPrintable(
+                JTable.PrintMode.NORMAL,
+                new MessageFormat("Author Table"),
+                new MessageFormat("Page - {0}"));
+
+        PrinterJob job = PrinterJob.getPrinterJob();
+        job.setPrintable(printable);
+
+        boolean printAccepted = job.printDialog();
+        if (printAccepted) {
+            try {
+                job.print();
+                closeFrame();
+            } catch (PrinterException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 
