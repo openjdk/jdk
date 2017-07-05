@@ -92,15 +92,15 @@ class SignatureHandlerGenerator : public SignatureHandlerGeneratorBase {
 
  public:
   SignatureHandlerGenerator(methodHandle method, CodeBuffer* buffer)
-    : SignatureHandlerGeneratorBase(method, (ffi_cif *) buffer->code_end()),
+    : SignatureHandlerGeneratorBase(method, (ffi_cif *) buffer->insts_end()),
       _cb(buffer) {
-    _cb->set_code_end((address) (cif() + 1));
+    _cb->set_insts_end((address) (cif() + 1));
   }
 
  private:
   void push(intptr_t value) {
-    intptr_t *dst = (intptr_t *) _cb->code_end();
-    _cb->set_code_end((address) (dst + 1));
+    intptr_t *dst = (intptr_t *) _cb->insts_end();
+    _cb->set_insts_end((address) (dst + 1));
     *dst = value;
   }
 };

@@ -64,7 +64,7 @@ inline bool LinearScanWalker::pd_init_regs_for_alloc(Interval* cur) {
     _first_reg = pd_first_callee_saved_reg;
     _last_reg = pd_last_callee_saved_reg;
     return true;
-  } else if (cur->type() == T_INT || cur->type() == T_LONG || cur->type() == T_OBJECT) {
+  } else if (cur->type() == T_INT || cur->type() == T_LONG || cur->type() == T_OBJECT || cur->type() == T_ADDRESS) {
     _first_reg = pd_first_cpu_reg;
     _last_reg = pd_last_allocatable_cpu_reg;
     return true;

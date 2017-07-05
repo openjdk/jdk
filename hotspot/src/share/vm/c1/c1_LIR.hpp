@@ -280,7 +280,7 @@ class LIR_OprDesc: public CompilationResourceObj {
     , int_type      = 1 << type_shift
     , long_type     = 2 << type_shift
     , object_type   = 3 << type_shift
-    , pointer_type  = 4 << type_shift
+    , address_type  = 4 << type_shift
     , float_type    = 5 << type_shift
     , double_type   = 6 << type_shift
   };
@@ -303,6 +303,7 @@ class LIR_OprDesc: public CompilationResourceObj {
       case T_BYTE:
       case T_SHORT:
       case T_INT:
+      case T_ADDRESS:
       case T_OBJECT:
       case T_ARRAY:
         return single_size;
@@ -456,6 +457,7 @@ inline LIR_OprDesc::OprType as_OprType(BasicType type) {
   case T_DOUBLE:   return LIR_OprDesc::double_type;
   case T_OBJECT:
   case T_ARRAY:    return LIR_OprDesc::object_type;
+  case T_ADDRESS:  return LIR_OprDesc::address_type;
   case T_ILLEGAL:  // fall through
   default: ShouldNotReachHere(); return LIR_OprDesc::unknown_type;
   }
@@ -468,6 +470,7 @@ inline BasicType as_BasicType(LIR_OprDesc::OprType t) {
   case LIR_OprDesc::float_type:   return T_FLOAT;
   case LIR_OprDesc::double_type:  return T_DOUBLE;
   case LIR_OprDesc::object_type:  return T_OBJECT;
+  case LIR_OprDesc::address_type: return T_ADDRESS;
   case LIR_OprDesc::unknown_type: // fall through
   default: ShouldNotReachHere();  return T_ILLEGAL;
   }
@@ -550,8 +553,24 @@ class LIR_OprFact: public AllStatic {
 
   static LIR_Opr illegalOpr;
 
-  static LIR_Opr single_cpu(int reg)            { return (LIR_Opr)(intptr_t)((reg  << LIR_OprDesc::reg1_shift) |                                     LIR_OprDesc::int_type    | LIR_OprDesc::cpu_register | LIR_OprDesc::single_size); }
-  static LIR_Opr single_cpu_oop(int reg)        { return (LIR_Opr)(intptr_t)((reg  << LIR_OprDesc::reg1_shift) |                                     LIR_OprDesc::object_type | LIR_OprDesc::cpu_register | LIR_OprDesc::single_size); }
+  static LIR_Opr single_cpu(int reg) {
+    return (LIR_Opr)(intptr_t)((reg  << LIR_OprDesc::reg1_shift) |
+                               LIR_OprDesc::int_type             |
+                               LIR_OprDesc::cpu_register         |
+                               LIR_OprDesc::single_size);
+  }
+  static LIR_Opr single_cpu_oop(int reg) {
+    return (LIR_Opr)(intptr_t)((reg  << LIR_OprDesc::reg1_shift) |
+                               LIR_OprDesc::object_type          |
+                               LIR_OprDesc::cpu_register         |
+                               LIR_OprDesc::single_size);
+  }
+  static LIR_Opr single_cpu_address(int reg) {
+    return (LIR_Opr)(intptr_t)((reg  << LIR_OprDesc::reg1_shift) |
+                               LIR_OprDesc::address_type         |
+                               LIR_OprDesc::cpu_register         |
+                               LIR_OprDesc::single_size);
+  }
   static LIR_Opr double_cpu(int reg1, int reg2) {
     LP64_ONLY(assert(reg1 == reg2, "must be identical"));
     return (LIR_Opr)(intptr_t)((reg1 << LIR_OprDesc::reg1_shift) |
@@ -628,6 +647,14 @@ class LIR_OprFact: public AllStatic {
       case T_INT:
         res = (LIR_Opr)(intptr_t)((index << LIR_OprDesc::data_shift) |
                                   LIR_OprDesc::int_type              |
+                                  LIR_OprDesc::cpu_register          |
+                                  LIR_OprDesc::single_size           |
+                                  LIR_OprDesc::virtual_mask);
+        break;
+
+      case T_ADDRESS:
+        res = (LIR_Opr)(intptr_t)((index << LIR_OprDesc::data_shift) |
+                                  LIR_OprDesc::address_type          |
                                   LIR_OprDesc::cpu_register          |
                                   LIR_OprDesc::single_size           |
                                   LIR_OprDesc::virtual_mask);
@@ -717,6 +744,13 @@ class LIR_OprFact: public AllStatic {
       case T_INT:
         res = (LIR_Opr)(intptr_t)((index << LIR_OprDesc::data_shift) |
                                   LIR_OprDesc::int_type              |
+                                  LIR_OprDesc::stack_value           |
+                                  LIR_OprDesc::single_size);
+        break;
+
+      case T_ADDRESS:
+        res = (LIR_Opr)(intptr_t)((index << LIR_OprDesc::data_shift) |
+                                  LIR_OprDesc::address_type          |
                                   LIR_OprDesc::stack_value           |
                                   LIR_OprDesc::single_size);
         break;
