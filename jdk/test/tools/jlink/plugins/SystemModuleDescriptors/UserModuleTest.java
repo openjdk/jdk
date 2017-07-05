@@ -22,13 +22,20 @@
  */
 
 import java.io.File;
+import java.io.IOException;
+import java.lang.module.ModuleDescriptor;
+import java.lang.reflect.Layer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Set;
+import java.util.spi.ToolProvider;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import jdk.testlibrary.FileUtils;
+
 import static jdk.testlibrary.ProcessTools.*;
 
 
@@ -38,6 +45,7 @@ import static org.testng.Assert.*;
 
 /**
  * @test
+ * @bug 8142968 8173381
  * @library /lib/testlibrary
  * @modules jdk.compiler jdk.jlink
  * @build UserModuleTest CompilerUtils jdk.testlibrary.FileUtils jdk.testlibrary.ProcessTools
@@ -50,8 +58,9 @@ public class UserModuleTest {
 
     private static final Path SRC_DIR = Paths.get(TEST_SRC, "src");
     private static final Path MODS_DIR = Paths.get("mods");
+    private static final Path JMODS_DIR = Paths.get("jmods");
+
     private static final Path IMAGE = Paths.get("image");
-    private static final Path JMODS = Paths.get(JAVA_HOME, "jmods");
     private static final String MAIN_MID = "m1/p1.Main";
 
     // the names of the modules in this test
@@ -59,7 +68,7 @@ public class UserModuleTest {
 
 
     private static boolean hasJmods() {
-        if (!Files.exists(JMODS)) {
+        if (!Files.exists(Paths.get(JAVA_HOME, "jmods"))) {
             System.err.println("Test skipped. NO jmods directory");
             return false;
         }
@@ -75,25 +84,17 @@ public class UserModuleTest {
 
         for (String mn : modules) {
             Path msrc = SRC_DIR.resolve(mn);
-            assertTrue(CompilerUtils.compile(msrc, MODS_DIR, "--module-source-path", SRC_DIR.toString()));
+            assertTrue(CompilerUtils.compile(msrc, MODS_DIR,
+                "--module-source-path", SRC_DIR.toString()));
         }
 
         if (Files.exists(IMAGE)) {
             FileUtils.deleteFileTreeUnchecked(IMAGE);
         }
 
-        createImage(IMAGE, "java.base", "m1", "m3");
-    }
+        createImage(IMAGE, "m1", "m3");
 
-    private void createImage(Path outputDir, String... modules) throws Throwable {
-        Path jlink = Paths.get(JAVA_HOME, "bin", "jlink");
-        String mp = JMODS.toString() + File.pathSeparator + MODS_DIR.toString();
-        assertTrue(executeProcess(jlink.toString(), "--output", outputDir.toString(),
-                        "--add-modules", Arrays.stream(modules).collect(Collectors.joining(",")),
-                        "--module-path", mp)
-                        .outputTo(System.out)
-                        .errorTo(System.out)
-                        .getExitValue() == 0);
+        createJmods("m1", "m4");
     }
 
     /*
@@ -120,9 +121,9 @@ public class UserModuleTest {
 
         Path java = IMAGE.resolve("bin").resolve("java");
         assertTrue(executeProcess(java.toString(), "-m", "m3/p3.Main")
-            .outputTo(System.out)
-            .errorTo(System.out)
-            .getExitValue() == 0);
+                        .outputTo(System.out)
+                        .errorTo(System.out)
+                        .getExitValue() == 0);
     }
 
     /*
@@ -150,12 +151,114 @@ public class UserModuleTest {
     public void testDedupSet() throws Throwable {
         if (!hasJmods()) return;
 
-        Path dir = Paths.get("newImage");
-        createImage(dir, "java.base", "m1", "m2", "m3", "m4");
+        Path dir = Paths.get("dedupSetTest");
+        createImage(dir, "m1", "m2", "m3", "m4");
         Path java = dir.resolve("bin").resolve("java");
         assertTrue(executeProcess(java.toString(), "-m", MAIN_MID)
                         .outputTo(System.out)
                         .errorTo(System.out)
                         .getExitValue() == 0);
+    }
+
+    private void createJmods(String... modules) throws IOException {
+        // use the same target platform as in java.base
+        ModuleDescriptor md = Layer.boot().findModule("java.base").get()
+                                   .getDescriptor();
+        String osName = md.osName().get();
+        String osArch = md.osArch().get();
+
+        // create JMOD files
+        Files.createDirectories(JMODS_DIR);
+        Stream.of(modules).forEach(mn ->
+            assertTrue(jmod("create",
+                "--class-path", MODS_DIR.resolve(mn).toString(),
+                "--os-name", osName,
+                "--os-arch", osArch,
+                "--main-class", mn.replace('m', 'p') + ".Main",
+                JMODS_DIR.resolve(mn + ".jmod").toString()) == 0)
+        );
+    }
+
+
+    /**
+     * Verify the module descriptor if package p4.dummy is excluded at link time.
+     */
+    @Test
+    public void testModulePackagesAttribute() throws Throwable {
+        if (!hasJmods()) return;
+
+        // create an image using JMOD files
+        Path dir = Paths.get("packagesTest");
+        String mp = Paths.get(JAVA_HOME, "jmods").toString() +
+            File.pathSeparator + JMODS_DIR.toString();
+
+        Set<String> modules = Set.of("m1", "m4");
+        assertTrue(JLINK_TOOL.run(System.out, System.out,
+            "--output", dir.toString(),
+            "--exclude-resources", "m4/p4/dummy/*",
+            "--add-modules", modules.stream().collect(Collectors.joining(",")),
+            "--module-path", mp) == 0);
+
+        // verify ModuleDescriptor
+        Path java = dir.resolve("bin").resolve("java");
+        assertTrue(executeProcess(java.toString(),
+                        "--add-modules=m1", "-m", "m4")
+            .outputTo(System.out)
+            .errorTo(System.out)
+            .getExitValue() == 0);
+    }
+
+    /**
+     * Verify the plugin to retain ModuleTarget attribute
+     */
+    @Test
+    public void testRetainModuleTarget() throws Throwable {
+        if (!hasJmods()) return;
+
+        // create an image using JMOD files
+        Path dir = Paths.get("retainModuleTargetTest");
+        String mp = Paths.get(JAVA_HOME, "jmods").toString() +
+            File.pathSeparator + JMODS_DIR.toString();
+
+        Set<String> modules = Set.of("m1", "m4");
+        assertTrue(JLINK_TOOL.run(System.out, System.out,
+            "--output", dir.toString(),
+            "--system-modules", "retainModuleTarget",
+            "--exclude-resources", "m4/p4/dummy/*",
+            "--add-modules", modules.stream().collect(Collectors.joining(",")),
+            "--module-path", mp) == 0);
+
+        // verify ModuleDescriptor
+        Path java = dir.resolve("bin").resolve("java");
+        assertTrue(executeProcess(java.toString(),
+                        "--add-modules=m1", "-m", "m4", "retainModuleTarget")
+            .outputTo(System.out)
+            .errorTo(System.out)
+            .getExitValue() == 0);
+    }
+
+    static final ToolProvider JLINK_TOOL = ToolProvider.findFirst("jlink")
+        .orElseThrow(() ->
+            new RuntimeException("jlink tool not found")
+        );
+
+    static final ToolProvider JMOD_TOOL = ToolProvider.findFirst("jmod")
+        .orElseThrow(() ->
+            new RuntimeException("jmod tool not found")
+        );
+
+    static final String MODULE_PATH = Paths.get(JAVA_HOME, "jmods").toString()
+        + File.pathSeparator + MODS_DIR.toString();
+
+    private void createImage(Path outputDir, String... modules) throws Throwable {
+        assertTrue(JLINK_TOOL.run(System.out, System.out,
+            "--output", outputDir.toString(),
+            "--add-modules", Arrays.stream(modules).collect(Collectors.joining(",")),
+            "--module-path", MODULE_PATH) == 0);
+    }
+
+    private static int jmod(String... options) {
+        System.out.println("jmod " + Arrays.asList(options));
+        return JMOD_TOOL.run(System.out, System.out, options);
     }
 }

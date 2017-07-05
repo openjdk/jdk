@@ -135,5 +135,6 @@ JLI_List JLI_List_split(const char *str, char sep);
 
 void JLI_InitArgProcessing(jboolean isJava, jboolean disableArgFile);
 JLI_List JLI_PreprocessArg(const char *arg);
+jboolean JLI_AddArgsFromEnvVar(JLI_List args, const char *var_name);
 
 #endif  /* _JLI_UTIL_H */

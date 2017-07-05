@@ -222,6 +222,8 @@ public class CatalogFileInputTest extends CatalogSupportBase {
         String catalogUri = getClass().getResource("catalog_invalid.xml").toExternalForm();
         return new Object[][]{
             {catalogUri, "-//W3C//DTD XHTML 1.0 Strict//EN",
+                "The catalog is invalid, attempting to match the public entry shall return null."},
+            {"file:/../../..", "-//W3C//DTD XHTML 1.0 Strict//EN",
                 "The catalog is invalid, attempting to match the public entry shall return null."}
         };
     }
@@ -239,7 +241,6 @@ public class CatalogFileInputTest extends CatalogSupportBase {
         return new Object[][]{
             {""},
             {"file:a/b\\c"},
-            {"file:/../../.."},
             {"c:/te:t"},
             {"c:/te?t"},
             {"c/te*t"},

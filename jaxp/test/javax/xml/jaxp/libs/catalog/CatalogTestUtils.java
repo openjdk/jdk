@@ -69,12 +69,6 @@ final class CatalogTestUtils {
     private static final String JAXP_PROPS = "jaxp.properties";
     private static final String JAXP_PROPS_BAK = JAXP_PROPS + ".bak";
 
-    /*
-     * Force using slash as File separator as we always use cygwin to test in
-     * Windows platform.
-     */
-    private static final String FILE_SEP = "/";
-
     private CatalogTestUtils() { }
 
     /* ********** create resolver ********** */
@@ -133,11 +127,14 @@ final class CatalogTestUtils {
     /* ********** jaxp.properties ********** */
 
     /*
-     * Generates the jaxp.properties with the specified content.
+     * Generates jaxp.properties with the specified content,
+     * takes a backup if possible.
      */
     static void generateJAXPProps(String content) throws IOException {
         Path filePath = getJAXPPropsPath();
         Path bakPath = filePath.resolveSibling(JAXP_PROPS_BAK);
+        System.out.println("Creating new file " + filePath +
+            ", saving old version to " + bakPath + ".");
         if (Files.exists(filePath) && !Files.exists(bakPath)) {
             Files.move(filePath, bakPath);
         }
@@ -146,14 +143,16 @@ final class CatalogTestUtils {
     }
 
     /*
-     * Deletes the jaxp.properties.
+     * Deletes jaxp.properties, restoring backup if possible.
      */
     static void deleteJAXPProps() throws IOException {
         Path filePath = getJAXPPropsPath();
+        Path bakPath = filePath.resolveSibling(JAXP_PROPS_BAK);
+        System.out.println("Removing file " + filePath +
+                ", restoring old version from " + bakPath + ".");
         Files.delete(filePath);
-        Path bakFilePath = filePath.resolveSibling(JAXP_PROPS_BAK);
-        if (Files.exists(bakFilePath)) {
-            Files.move(bakFilePath, filePath);
+        if (Files.exists(bakPath)) {
+            Files.move(bakPath, filePath);
         }
     }
 

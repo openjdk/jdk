@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.spi.CalendarNameProvider;
+import sun.util.calendar.CalendarSystem;
+import sun.util.calendar.Era;
 
 /**
  * Concrete implementation of the  {@link java.util.spi.CalendarDataProvider
@@ -75,7 +77,21 @@ public class CalendarNameProviderImpl extends CalendarNameProvider implements Av
                 if (field == DAY_OF_WEEK || field == YEAR) {
                     --value;
                 }
-                if (value < 0 || value >= strings.length) {
+                if (value < 0 || value > strings.length) {
+                    return null;
+                } else if (value == strings.length) {
+                    if (field == ERA && "japanese".equals(calendarType)) {
+                        // get the supplemental era, if any, specified through
+                        // the property "jdk.calendar.japanese.supplemental.era"
+                        // which is always the last element.
+                        Era[] jeras = CalendarSystem.forName("japanese").getEras();
+                        if (jeras.length == value) {
+                            Era supEra = jeras[value - 1]; // 0-based index
+                            return style == LONG ?
+                                supEra.getName() :
+                                supEra.getAbbreviation();
+                        }
+                    }
                     return null;
                 }
                 name = strings[value];
