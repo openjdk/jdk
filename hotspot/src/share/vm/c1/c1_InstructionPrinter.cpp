@@ -855,4 +855,20 @@ void InstructionPrinter::do_RuntimeCall(RuntimeCall* x) {
   output()->put(')');
 }
 
+void InstructionPrinter::do_MemBar(MemBar* x) {
+  if (os::is_MP()) {
+    LIR_Code code = x->code();
+    switch (code) {
+      case lir_membar_acquire   : output()->print("membar_acquire"); break;
+      case lir_membar_release   : output()->print("membar_release"); break;
+      case lir_membar           : output()->print("membar"); break;
+      case lir_membar_loadload  : output()->print("membar_loadload"); break;
+      case lir_membar_storestore: output()->print("membar_storestore"); break;
+      case lir_membar_loadstore : output()->print("membar_loadstore"); break;
+      case lir_membar_storeload : output()->print("membar_storeload"); break;
+      default                   : ShouldNotReachHere(); break;
+    }
+  }
+}
+
 #endif // PRODUCT
