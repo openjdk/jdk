@@ -32,10 +32,6 @@ import java.util.function.Function;
 import jdk.tools.jlink.plugin.Plugin;
 import jdk.tools.jlink.plugin.Plugin.PluginType;
 
-/**
- *
- * @author jdenise
- */
 public class Utils {
 
     private Utils() {}
