@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,31 +21,12 @@
  * questions.
  */
 
+/* used by PrintTouchedMethods.java */
+public class TestLogTouchedMethods {
+  public static void main(String[] args) {
+    new TestLogTouchedMethods().methodA();
+  }
 
-/* @test
- * @bug 5012882 6299047
- * @summary Test jvmti hprof
- *
- * @compile -g:source HelloWorld.java ../DemoRun.java
- * @build HeapDumpTest
- * @run main HeapDumpTest HelloWorld
- */
-
-public class HeapDumpTest {
-
-    public static void main(String args[]) throws Exception {
-        DemoRun hprof;
-
-        /* Run JVMTI hprof agent with heap=dump */
-        hprof = new DemoRun("hprof", "heap=dump,file=heapdump.txt");
-        hprof.runit(args[0]);
-
-        /* Make sure patterns in output look ok */
-        if (hprof.output_contains("ERROR")) {
-            throw new RuntimeException("Test failed - ERROR seen in output");
-        }
-
-        /* Must be a pass. */
-        System.out.println("Test passed - cleanly terminated");
-    }
+  public void methodA() {} // called
+  public void methodB() {} // this should not be called
 }
