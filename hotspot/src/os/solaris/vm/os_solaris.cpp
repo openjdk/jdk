@@ -1013,15 +1013,6 @@ extern "C" void breakpoint() {
   // use debugger to set breakpoint here
 }
 
-// Returns an estimate of the current stack pointer. Result must be guaranteed to
-// point into the calling threads stack, and be no lower than the current stack
-// pointer.
-address os::current_stack_pointer() {
-  volatile int dummy;
-  address sp = (address)&dummy + 8;     // %%%% need to confirm if this is right
-  return sp;
-}
-
 static thread_t main_thread;
 
 // Thread start routine for all new Java threads

@@ -1,0 +1,364 @@
+<?xml version='1.0'?>
+<!--
+ Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+
+ This code is free software; you can redistribute it and/or modify it
+ under the terms of the GNU General Public License version 2 only, as
+ published by the Free Software Foundation.  Oracle designates this
+ particular file as subject to the "Classpath" exception as provided
+ by Oracle in the LICENSE file that accompanied this code.
+
+ This code is distributed in the hope that it will be useful, but WITHOUT
+ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ version 2 for more details (a copy is included in the LICENSE file that
+ accompanied this code).
+
+ You should have received a copy of the GNU General Public License version
+ 2 along with this work; if not, write to the Free Software Foundation,
+ Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+
+ Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ or visit www.oracle.com if you need additional information or have any
+ questions.
+-->
+
+<!-- XML Schema schema for XML Schemas: Part 2: Datatypes -->
+<!--
+	This file is fed to XSOM to build schema components for built-in datatypes.
+	This file is *NOT* for validating the source schema files.
+-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+        targetNamespace="http://www.w3.org/2001/XMLSchema"
+        version="Id: datatypes.xsd,v 1.52 2001/04/27 11:49:21 ht Exp "
+        elementFormDefault="qualified"
+        blockDefault="#all"
+        xml:lang="en">
+
+  <xs:simpleType name="string" >
+    <xs:restriction base="xs:anySimpleType">
+      <xs:whiteSpace value="preserve" />
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="boolean" >
+    <xs:restriction base="xs:anySimpleType">
+      <xs:whiteSpace value="collapse" fixed="true"
+        />
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="float" >
+    <xs:restriction base="xs:anySimpleType">
+      <xs:whiteSpace value="collapse" fixed="true"
+        />
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="double" >
+    <xs:restriction base="xs:anySimpleType">
+      <xs:whiteSpace value="collapse"  fixed="true"
+        />
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="decimal" >
+    <xs:restriction base="xs:anySimpleType">
+      <xs:whiteSpace value="collapse"  fixed="true"
+        />
+    </xs:restriction>
+   </xs:simpleType>
+
+   <xs:simpleType name="duration" >
+    <xs:restriction base="xs:anySimpleType">
+      <xs:whiteSpace value="collapse"  fixed="true"
+        />
+    </xs:restriction>
+   </xs:simpleType>
+
+ <xs:simpleType name="dateTime" >
+    <xs:restriction base="xs:anySimpleType">
+      <xs:whiteSpace value="collapse"  fixed="true"
+        />
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="time" >
+    <xs:restriction base="xs:anySimpleType">
+      <xs:whiteSpace value="collapse"  fixed="true"
+        />
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="date" >
+    <xs:restriction base="xs:anySimpleType">
+      <xs:whiteSpace value="collapse"  fixed="true"
+        />
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="gYearMonth" >
+    <xs:restriction base="xs:anySimpleType">
+      <xs:whiteSpace value="collapse"  fixed="true"
+        />
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="gYear" >
+    <xs:restriction base="xs:anySimpleType">
+      <xs:whiteSpace value="collapse"  fixed="true"
+        />
+    </xs:restriction>
+  </xs:simpleType>
+
+ <xs:simpleType name="gMonthDay" >
+    <xs:restriction base="xs:anySimpleType">
+         <xs:whiteSpace value="collapse" fixed="true"
+                />
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="gDay" >
+    <xs:restriction base="xs:anySimpleType">
+         <xs:whiteSpace value="collapse"  fixed="true"
+                />
+    </xs:restriction>
+  </xs:simpleType>
+
+ <xs:simpleType name="gMonth" >
+    <xs:restriction base="xs:anySimpleType">
+         <xs:whiteSpace value="collapse"  fixed="true"
+                />
+    </xs:restriction>
+  </xs:simpleType>
+
+   <xs:simpleType name="hexBinary" >
+    <xs:restriction base="xs:anySimpleType">
+      <xs:whiteSpace value="collapse" fixed="true"
+        />
+    </xs:restriction>
+   </xs:simpleType>
+ 
+ <xs:simpleType name="base64Binary" >
+    <xs:restriction base="xs:anySimpleType">
+      <xs:whiteSpace value="collapse" fixed="true"
+        />
+    </xs:restriction>
+   </xs:simpleType>
+
+   <xs:simpleType name="anyURI" >
+    <xs:restriction base="xs:anySimpleType">
+      <xs:whiteSpace value="collapse"  fixed="true"
+        />
+    </xs:restriction>
+   </xs:simpleType>
+
+  <xs:simpleType name="QName" >
+    <xs:restriction base="xs:anySimpleType">
+      <xs:whiteSpace value="collapse"  fixed="true"
+        />
+    </xs:restriction>
+  </xs:simpleType>
+
+   <xs:simpleType name="NOTATION" >
+    <xs:restriction base="xs:anySimpleType">
+      <xs:whiteSpace value="collapse"  fixed="true"
+        />
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="normalizedString" >
+    <xs:restriction base="xs:string">
+      <xs:whiteSpace value="replace"
+        />
+    </xs:restriction>
+  </xs:simpleType>
+  
+  <xs:simpleType name="token" >
+    <xs:restriction base="xs:normalizedString">
+      <xs:whiteSpace value="collapse" />
+    </xs:restriction>
+  </xs:simpleType>
+  
+  <xs:simpleType name="language" >
+    <xs:restriction base="xs:token">
+      <xs:pattern
+        value="([a-zA-Z]{2}|[iI]-[a-zA-Z]+|[xX]-[a-zA-Z]{1,8})(-[a-zA-Z]{1,8})*"
+                >
+        <xs:annotation>
+          <xs:documentation
+                source="http://www.w3.org/TR/REC-xml#NT-LanguageID">
+            pattern specifies the content of section 2.12 of XML 1.0e2
+            and RFC 1766
+          </xs:documentation>
+        </xs:annotation>
+      </xs:pattern>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="IDREFS" >
+    <xs:restriction>
+      <xs:simpleType>
+        <xs:list itemType="xs:IDREF"/>    
+      </xs:simpleType>
+        <xs:minLength value="1" />
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="ENTITIES" >
+    <xs:restriction>
+      <xs:simpleType>
+        <xs:list itemType="xs:ENTITY"/>
+      </xs:simpleType>
+        <xs:minLength value="1" />
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="NMTOKEN" >
+    <xs:restriction base="xs:token">
+      <xs:pattern value="\c+" >
+        <xs:annotation>
+          <xs:documentation
+                source="http://www.w3.org/TR/REC-xml#NT-Nmtoken">
+            pattern matches production 7 from the XML spec
+          </xs:documentation>
+        </xs:annotation>
+      </xs:pattern>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="NMTOKENS" >
+    <xs:restriction>
+      <xs:simpleType>
+        <xs:list itemType="xs:NMTOKEN"/>
+      </xs:simpleType>
+        <xs:minLength value="1" />
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="Name" >
+    <xs:restriction base="xs:token">
+      <xs:pattern value="\i\c*" >
+        <xs:annotation>
+          <xs:documentation
+                        source="http://www.w3.org/TR/REC-xml#NT-Name">
+            pattern matches production 5 from the XML spec
+          </xs:documentation>
+        </xs:annotation>
+      </xs:pattern>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="NCName" >
+    <xs:restriction base="xs:Name">
+      <xs:pattern value="[\i-[:]][\c-[:]]*" >
+        <xs:annotation>
+          <xs:documentation
+                source="http://www.w3.org/TR/REC-xml-names/#NT-NCName">
+            pattern matches production 4 from the Namespaces in XML spec
+          </xs:documentation>
+        </xs:annotation>
+      </xs:pattern>
+    </xs:restriction>
+  </xs:simpleType>
+
+   <xs:simpleType name="ID" >
+    <xs:restriction base="xs:NCName"/>
+   </xs:simpleType>
+
+   <xs:simpleType name="IDREF" >
+    <xs:restriction base="xs:NCName"/>
+   </xs:simpleType>
+
+   <xs:simpleType name="ENTITY" >
+    <xs:restriction base="xs:NCName"/>
+   </xs:simpleType>
+
+  <xs:simpleType name="integer" >
+    <xs:restriction base="xs:decimal">
+      <xs:fractionDigits value="0" fixed="true" />
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="nonPositiveInteger" >
+    <xs:restriction base="xs:integer">
+      <xs:maxInclusive value="0" />
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="negativeInteger" >
+    <xs:restriction base="xs:nonPositiveInteger">
+      <xs:maxInclusive value="-1" />
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="long" >
+    <xs:restriction base="xs:integer">
+      <xs:minInclusive value="-9223372036854775808" />
+      <xs:maxInclusive value="9223372036854775807" />
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="int" >
+    <xs:restriction base="xs:long">
+      <xs:minInclusive value="-2147483648" />
+      <xs:maxInclusive value="2147483647" />
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="short" >
+    <xs:restriction base="xs:int">
+      <xs:minInclusive value="-32768" />
+      <xs:maxInclusive value="32767" />
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="byte" >
+    <xs:restriction base="xs:short">
+      <xs:minInclusive value="-128" />
+      <xs:maxInclusive value="127" />
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="nonNegativeInteger" >
+    <xs:restriction base="xs:integer">
+      <xs:minInclusive value="0" />
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="unsignedLong" >
+    <xs:restriction base="xs:nonNegativeInteger">
+      <xs:maxInclusive value="18446744073709551615"
+        />
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="unsignedInt" >
+    <xs:restriction base="xs:unsignedLong">
+      <xs:maxInclusive value="4294967295"
+        />
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="unsignedShort" >
+    <xs:restriction base="xs:unsignedInt">
+      <xs:maxInclusive value="65535" />
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="unsignedByte" >
+    <xs:restriction base="xs:unsignedShort">
+      <xs:maxInclusive value="255" />
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="positiveInteger" >
+    <xs:restriction base="xs:nonNegativeInteger">
+      <xs:minInclusive value="1" />
+    </xs:restriction>
+  </xs:simpleType>
+
+
+</xs:schema>
+

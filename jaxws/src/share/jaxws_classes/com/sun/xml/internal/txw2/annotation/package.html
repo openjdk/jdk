@@ -1,0 +1,51 @@
+<!--
+ Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+
+ This code is free software; you can redistribute it and/or modify it
+ under the terms of the GNU General Public License version 2 only, as
+ published by the Free Software Foundation.  Oracle designates this
+ particular file as subject to the "Classpath" exception as provided
+ by Oracle in the LICENSE file that accompanied this code.
+
+ This code is distributed in the hope that it will be useful, but WITHOUT
+ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ version 2 for more details (a copy is included in the LICENSE file that
+ accompanied this code).
+
+ You should have received a copy of the GNU General Public License version
+ 2 along with this work; if not, write to the Free Software Foundation,
+ Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+
+ Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ or visit www.oracle.com if you need additional information or have any
+ questions.
+-->
+
+<html>
+
+
+<body>
+  <p>
+    Defines a set of annotations that can be used on TypedXmlWriter interfaces.
+
+  <h3>Package-level Annotation</h3>
+  <p>
+    {@link XmlNamespace} can be used on a package to designate the namespace URI for the
+    whole package.
+
+  <h3>Interface Annotation</h3>
+  <p>
+    {@link XmlElement} can be used on TypedXmlWriter-derived interfaces to associate
+    a tag name to that interface.
+
+  <h3>Method Annotations</h3>
+  <p>
+    {@link XmlElement}, {@link XmlAttribute}, or {@link XmlValue} can be used on a method
+    declared on a TypedXmLWriter-derived interface. Those annotations are mutually-exclusive.
+    See their javadoc for details. If none of the above three annotations are specified,
+    {@link XmlElement} is assumed.
+
+</body>
+</html>
