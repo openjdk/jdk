@@ -30,6 +30,7 @@
 #include "jvm.h"
 #include "jni_util.h"
 #include "io_util.h"
+#include "io_util_md.h"
 #include <windows.h>
 #include <io.h>
 
@@ -467,26 +468,6 @@ Java_java_lang_ProcessImpl_closeHandle(JNIEnv *env, jclass ignored, jlong handle
     return (jboolean) CloseHandle((HANDLE) handle);
 }
 
-/**
- * Returns a copy of the Unicode characters of a string. Fow now this
- * function doesn't handle long path names and other issues.
- */
-static WCHAR* getPath(JNIEnv *env, jstring ps) {
-    WCHAR *pathbuf = NULL;
-    const jchar *chars = (*(env))->GetStringChars(env, ps, NULL);
-    if (chars != NULL) {
-        size_t pathlen = wcslen(chars);
-        pathbuf = (WCHAR*)malloc((pathlen + 6) * sizeof(WCHAR));
-        if (pathbuf == NULL) {
-            JNU_ThrowOutOfMemoryError(env, NULL);
-        } else {
-            wcscpy(pathbuf, chars);
-        }
-        (*env)->ReleaseStringChars(env, ps, chars);
-    }
-    return pathbuf;
-}
-
 JNIEXPORT jlong JNICALL
 Java_java_lang_ProcessImpl_openForAtomicAppend(JNIEnv *env, jclass ignored, jstring path)
 {
@@ -495,7 +476,7 @@ Java_java_lang_ProcessImpl_openForAtomicAppend(JNIEnv *env, jclass ignored, jstr
     const DWORD disposition = OPEN_ALWAYS;
     const DWORD flagsAndAttributes = FILE_ATTRIBUTE_NORMAL;
     HANDLE h;
-    WCHAR *pathbuf = getPath(env, path);
+    WCHAR *pathbuf = pathToNTPath(env, path, JNI_FALSE);
     if (pathbuf == NULL) {
         /* Exception already pending */
         return -1;

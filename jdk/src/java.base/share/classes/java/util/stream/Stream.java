@@ -988,6 +988,21 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
     }
 
     /**
+     * Returns a sequential {@code Stream} containing a single element, if
+     * non-null, otherwise returns an empty {@code Stream}.
+     *
+     * @param t the single element
+     * @param <T> the type of stream elements
+     * @return a stream with a single element if the specified element
+     *         is non-null, otherwise an empty stream
+     * @since 1.9
+     */
+    public static<T> Stream<T> ofNullable(T t) {
+        return t == null ? Stream.empty()
+                         : StreamSupport.stream(new Streams.StreamBuilderImpl<>(t), false);
+    }
+
+    /**
      * Returns a sequential ordered stream whose elements are the specified values.
      *
      * @param <T> the type of stream elements

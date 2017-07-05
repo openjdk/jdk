@@ -26,7 +26,7 @@
 package com.sun.tools.internal.xjc.model.nav;
 
 import com.sun.codemodel.internal.JType;
-import com.sun.tools.internal.xjc.model.Aspect;
+import com.sun.tools.internal.xjc.outline.Aspect;
 import com.sun.tools.internal.xjc.outline.Outline;
 
 /**

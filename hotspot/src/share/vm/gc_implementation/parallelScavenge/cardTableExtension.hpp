@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ class CardTableExtension : public CardTableModRefBS {
   };
 
   CardTableExtension(MemRegion whole_heap) :
-    CardTableModRefBS(whole_heap) { }
+    CardTableModRefBS(whole_heap, BarrierSet::CardTableModRef) { }
 
   // Too risky for the 4/10/02 putback
   // BarrierSet::Name kind() { return BarrierSet::CardTableExtension; }

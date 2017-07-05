@@ -33,7 +33,7 @@ import com.sun.codemodel.internal.JVar;
 import com.sun.codemodel.internal.JConditional;
 import com.sun.codemodel.internal.JExpr;
 import com.sun.codemodel.internal.JExpression;
-import com.sun.tools.internal.xjc.model.Aspect;
+import com.sun.tools.internal.xjc.outline.Aspect;
 import com.sun.tools.internal.xjc.outline.FieldOutline;
 import com.sun.tools.internal.xjc.outline.FieldAccessor;
 import com.sun.tools.internal.xjc.model.CElementInfo;

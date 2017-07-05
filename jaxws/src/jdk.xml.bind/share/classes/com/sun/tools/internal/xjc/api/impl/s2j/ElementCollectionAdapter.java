@@ -40,7 +40,7 @@ import com.sun.codemodel.internal.JForEach;
 import com.sun.codemodel.internal.JType;
 import com.sun.codemodel.internal.JVar;
 import com.sun.tools.internal.xjc.model.CElementInfo;
-import static com.sun.tools.internal.xjc.model.Aspect.EXPOSED;
+import static com.sun.tools.internal.xjc.outline.Aspect.EXPOSED;
 import com.sun.tools.internal.xjc.outline.FieldAccessor;
 import com.sun.tools.internal.xjc.outline.FieldOutline;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,8 +56,8 @@ import static java.lang.annotation.RetentionPolicy.*;
  *        simple type.
  * <pre>
  *     // Examples
- *     &#64;XmlAttribute List&lt;Integer> items; //legal
- *     &#64;XmlAttribute List&lt;Bar> foo; // illegal if Bar does not map to a schema simple type
+ *     &#64;XmlAttribute List&lt;Integer&gt; items; //legal
+ *     &#64;XmlAttribute List&lt;Bar&gt; foo; // illegal if Bar does not map to a schema simple type
  * </pre>
  *   </li>
  *   <li> If the type of the field or the property is a non
@@ -80,7 +80,6 @@ import static java.lang.annotation.RetentionPolicy.*;
  *            {@link XmlInlineBinaryData},
  *            {@link javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter}.</li>
  * </ul>
- * </p>
  *
  * <p> <b>Example 1: </b>Map a JavaBean property to an XML attribute.</p>
  * <pre>
@@ -91,12 +90,12 @@ import static java.lang.annotation.RetentionPolicy.*;
  *         public void setPrice(java.math.BigDecimal ) {...};
  *     }
  *
- *     &lt;!-- Example: XML Schema fragment -->
- *     &lt;xs:complexType name="USPrice">
- *       &lt;xs:sequence>
- *       &lt;/xs:sequence>
- *       &lt;xs:attribute name="price" type="xs:decimal"/>
- *     &lt;/xs:complexType>
+ *     &lt;!-- Example: XML Schema fragment --&gt;
+ *     &lt;xs:complexType name="USPrice"&gt;
+ *       &lt;xs:sequence&gt;
+ *       &lt;/xs:sequence&gt;
+ *       &lt;xs:attribute name="price" type="xs:decimal"/&gt;
+ *     &lt;/xs:complexType&gt;
  * </pre>
  *
  * <p> <b>Example 2: </b>Map a JavaBean property to an XML attribute with anonymous type.</p>
@@ -107,17 +106,17 @@ import static java.lang.annotation.RetentionPolicy.*;
  *     // Example: Code fragment
  *     class Foo {
  *         ...
- *         &#64;XmlAttribute List&lt;Integer> items;
+ *         &#64;XmlAttribute List&lt;Integer&gt; items;
  *     }
  *
- *     &lt;!-- Example: XML Schema fragment -->
- *     &lt;xs:complexType name="foo">
+ *     &lt;!-- Example: XML Schema fragment --&gt;
+ *     &lt;xs:complexType name="foo"&gt;
  *       ...
- *       &lt;xs:attribute name="items">
- *         &lt;xs:simpleType>
- *           &lt;xs:list itemType="xs:int"/>
- *         &lt;/xs:simpleType>
- *     &lt;/xs:complexType>
+ *       &lt;xs:attribute name="items"&gt;
+ *         &lt;xs:simpleType&gt;
+ *           &lt;xs:list itemType="xs:int"/&gt;
+ *         &lt;/xs:simpleType&gt;
+ *     &lt;/xs:complexType&gt;
  *
  * </pre>
  * @author Sekhar Vajjhala, Sun Microsystems, Inc.

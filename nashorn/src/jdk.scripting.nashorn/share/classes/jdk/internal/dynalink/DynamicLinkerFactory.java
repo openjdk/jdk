@@ -97,6 +97,8 @@ import jdk.internal.dynalink.beans.BeansLinker;
 import jdk.internal.dynalink.linker.GuardingDynamicLinker;
 import jdk.internal.dynalink.linker.GuardingTypeConverterFactory;
 import jdk.internal.dynalink.linker.LinkRequest;
+import jdk.internal.dynalink.linker.LinkerServices;
+import jdk.internal.dynalink.linker.MethodHandleTransformer;
 import jdk.internal.dynalink.linker.MethodTypeConversionStrategy;
 import jdk.internal.dynalink.support.AutoDiscovery;
 import jdk.internal.dynalink.support.BottomGuardingDynamicLinker;
@@ -132,6 +134,7 @@ public class DynamicLinkerFactory {
     private int unstableRelinkThreshold = DEFAULT_UNSTABLE_RELINK_THRESHOLD;
     private GuardedInvocationFilter prelinkFilter;
     private MethodTypeConversionStrategy autoConversionStrategy;
+    private MethodHandleTransformer internalObjectsFilter;
 
     /**
      * Sets the class loader for automatic discovery of available linkers. If not set explicitly, then the thread
@@ -284,6 +287,15 @@ public class DynamicLinkerFactory {
     }
 
     /**
+     * Sets a method handle transformer that is supposed to act as the implementation of this linker factory's linkers'
+     * services {@link LinkerServices#filterInternalObjects(java.lang.invoke.MethodHandle)} method.
+     * @param internalObjectsFilter a method handle transformer filtering out internal objects, or null.
+     */
+    public void setInternalObjectsFilter(final MethodHandleTransformer internalObjectsFilter) {
+        this.internalObjectsFilter = internalObjectsFilter;
+    }
+
+    /**
      * Creates a new dynamic linker consisting of all the prioritized, autodiscovered, and fallback linkers as well as
      * the pre-link filter.
      *
@@ -350,8 +362,8 @@ public class DynamicLinkerFactory {
         }
 
         return new DynamicLinker(new LinkerServicesImpl(new TypeConverterFactory(typeConverters,
-                autoConversionStrategy), composite), prelinkFilter, runtimeContextArgCount, syncOnRelink,
-                unstableRelinkThreshold);
+                autoConversionStrategy), composite, internalObjectsFilter), prelinkFilter, runtimeContextArgCount,
+                syncOnRelink, unstableRelinkThreshold);
     }
 
     private static ClassLoader getThreadContextClassLoader() {
