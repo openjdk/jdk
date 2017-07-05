@@ -13,7 +13,18 @@
        Porter, 1980, An algorithm for suffix stripping, Program, Vol. 14,
        no. 3, pp 130-137,
 
-   See also http://www.tartarus.org/~martin/PorterStemmer
+   http://www.tartarus.org/~martin/PorterStemmer
+
+   The software is completely free for any purpose, unless notes at the head
+   of the program text indicates otherwise (which is rare). In any case,
+   the notes about licensing are never more restrictive than the BSD License.
+
+   In every case where the software is not written by me (Martin Porter),
+   this licensing arrangement has been endorsed by the contributor, and it is
+   therefore unnecessary to ask the contributor again to confirm it.
+
+   I have not asked any contributors (or their employers, if they have them)
+   for proofs that they have the right to distribute their software in this way.
 
    History:
 
