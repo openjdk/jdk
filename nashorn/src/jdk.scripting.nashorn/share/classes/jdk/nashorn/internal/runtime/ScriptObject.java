@@ -969,7 +969,7 @@ public abstract class ScriptObject implements PropertyAccess {
             final UserAccessorProperty uc = (UserAccessorProperty)oldProperty;
             final int slot = uc.getSlot();
 
-            assert uc.getCurrentType() == Object.class;
+            assert uc.getLocalType() == Object.class;
             if (slot >= spillLength) {
                 uc.setAccessors(this, getMap(), new UserAccessorProperty.Accessors(getter, setter));
             } else {

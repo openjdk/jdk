@@ -1400,8 +1400,13 @@ public class HTMLDocument extends DefaultStyledDocument {
             Element parent = elem.getParentElement();
 
             if (parent != null) {
+                // If we are going to insert the string into the body
+                // section, it is necessary to set the corrsponding flag.
+                if (HTML.Tag.BODY.name.equals(parent.getName())) {
+                    insertInBody = true;
+                }
                 int offset = elem.getEndOffset();
-                if (offset > getLength()) {
+                if (offset > (getLength() + 1)) {
                     offset--;
                 }
                 else if (elem.isLeaf() && getText(offset - 1, 1).
@@ -1409,6 +1414,10 @@ public class HTMLDocument extends DefaultStyledDocument {
                     offset--;
                 }
                 insertHTML(parent, offset, htmlText, false);
+                // Cleanup the flag, if any.
+                if (insertInBody) {
+                    insertInBody = false;
+                }
             }
         }
     }
@@ -1845,6 +1854,11 @@ public class HTMLDocument extends DefaultStyledDocument {
     static String MAP_PROPERTY = "__MAP__";
 
     private static char[] NEWLINE;
+
+    /**
+     * Indicates that direct insertion to body section takes place.
+     */
+    private boolean insertInBody = false;
 
     /**
      * I18N property key.
@@ -2610,7 +2624,9 @@ public class HTMLDocument extends DefaultStyledDocument {
                     // Assume content should be added.
                     foundInsertTag(false);
                     foundInsertTag = true;
-                    inParagraph = impliedP = true;
+                    // If content is added directly to the body, it should
+                    // be wrapped by p-implied.
+                    inParagraph = impliedP = !insertInBody;
                 }
                 if (data.length >= 1) {
                     addContent(data, 0, data.length);

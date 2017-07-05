@@ -33,7 +33,7 @@ import java.io.IOException;
  * @summary Tests path operations for zip provider.
  *
  * @run main PathOps
- * @run main/othervm/policy=test.policy.readonly PathOps
+ * @run main/othervm/java.security.policy=test.policy.readonly PathOps
  */
 
 public class PathOps {

@@ -117,7 +117,7 @@ final class TypeEvaluator {
         }
 
         final Property property      = find.getProperty();
-        final Class<?> propertyClass = property.getCurrentType();
+        final Class<?> propertyClass = property.getType();
         if (propertyClass == null) {
             // propertyClass == null means its value is Undefined. It is probably not initialized yet, so we won't make
             // a type assumption yet.
