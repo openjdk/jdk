@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -209,7 +209,7 @@ class BufferBlob: public CodeBlob {
   BufferBlob(const char* name, int size);
   BufferBlob(const char* name, int size, CodeBuffer* cb);
 
-  void* operator new(size_t s, unsigned size);
+  void* operator new(size_t s, unsigned size) throw();
 
  public:
   // Creation
@@ -283,7 +283,7 @@ class RuntimeStub: public CodeBlob {
     bool        caller_must_gc_arguments
   );
 
-  void* operator new(size_t s, unsigned size);
+  void* operator new(size_t s, unsigned size) throw();
 
  public:
   // Creation
@@ -321,7 +321,7 @@ class SingletonBlob: public CodeBlob {
   friend class VMStructs;
 
  protected:
-  void* operator new(size_t s, unsigned size);
+  void* operator new(size_t s, unsigned size) throw();
 
  public:
    SingletonBlob(
