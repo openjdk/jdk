@@ -99,9 +99,9 @@ ifdef ALT_DROPS_DIR
   DROPS_DIR = $(ALT_DROPS_DIR)
 else
   ifdef ALT_JDK_DEVTOOLS_DIR
-    DROPS_DIR = $(ALT_JDK_DEVTOOLS_DIR)/share/jdk7-drops
+    DROPS_DIR = $(ALT_JDK_DEVTOOLS_DIR)/share/jdk8-drops
   else
-    DROPS_DIR = $(_SLASHJAVA)/devtools/share/jdk7-drops
+    DROPS_DIR = $(_SLASHJAVA)/devtools/share/jdk8-drops
   endif
 endif
 
