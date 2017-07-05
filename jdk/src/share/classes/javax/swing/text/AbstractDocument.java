@@ -1367,7 +1367,7 @@ public abstract class AbstractDocument implements Document, Serializable {
             currWriter = Thread.currentThread();
             numWriters = 1;
         } catch (InterruptedException e) {
-            throw new Error("Interrupted attempt to aquire write lock");
+            throw new Error("Interrupted attempt to acquire write lock");
         }
     }
 
@@ -1409,7 +1409,7 @@ public abstract class AbstractDocument implements Document, Serializable {
             }
             numReaders += 1;
         } catch (InterruptedException e) {
-            throw new Error("Interrupted attempt to aquire read lock");
+            throw new Error("Interrupted attempt to acquire read lock");
         }
     }
 

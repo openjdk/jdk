@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,9 @@
   @summary The size returned by SecurityWarning.getSize() should not be zero
   @author anthony.petrov@sun.com: area=awt.toplevel
   @library ../../../../java/awt/regtesthelpers
-  @build Util
-  @run main GetSizeShouldNotReturnZero
+  @build Util CustomSecurityManager CopyClassFile
+  @run main CopyClassFile CustomSecurityManager bootcp/
+  @run main/othervm/secure=CustomSecurityManager -Xbootclasspath/a:bootcp GetSizeShouldNotReturnZero
 */
 
 /**
@@ -37,11 +38,10 @@
  * summary: The size returned by SecurityWarning.getSize() should not be zero
  */
 
-import java.awt.*;
-import java.awt.event.*;
-import java.security.Permission;
-import test.java.awt.regtesthelpers.Util;
 import com.sun.awt.SecurityWarning;
+import test.java.awt.regtesthelpers.Util;
+
+import java.awt.*;
 
 public class GetSizeShouldNotReturnZero
 {
@@ -55,21 +55,6 @@ public class GetSizeShouldNotReturnZero
         };
         Sysout.createDialog( );
         Sysout.printInstructions( instructions );
-
-
-        // Install the security manager so that all subsequently created
-        // windows display the security warning.
-        System.setSecurityManager(new SecurityManager() {
-
-            @Override
-            public void checkPermission(Permission perm) {
-            }
-
-            @Override
-            public boolean checkTopLevelWindow(Object window) {
-                return false;
-            }
-        });
 
         Frame f = new Frame();
         f.setSize(100, 100);
@@ -85,7 +70,6 @@ public class GetSizeShouldNotReturnZero
         }
         pass();
     }//End  init()
-
 
 
     /*****************************************************

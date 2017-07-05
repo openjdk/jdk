@@ -225,7 +225,7 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
 
 
     /**
-     * Returns the name of the L&F class that renders this component.
+     * Returns the name of the L&amp;F class that renders this component.
      *
      * @return the string "MenuUI"
      * @see JComponent#getUIClassID
@@ -490,7 +490,7 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
     /**
      * Returns the suggested delay, in milliseconds, before submenus
      * are popped up or down.
-     * Each look and feel (L&F) may determine its own policy for
+     * Each look and feel (L&amp;F) may determine its own policy for
      * observing the <code>delay</code> property.
      * In most cases, the delay is not observed for top level menus
      * or while dragging.  The default for <code>delay</code> is 0.
@@ -506,7 +506,7 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
 
     /**
      * Sets the suggested delay before the menu's <code>PopupMenu</code>
-     * is popped up or down.  Each look and feel (L&F) may determine
+     * is popped up or down.  Each look and feel (L&amp;F) may determine
      * it's own policy for observing the delay property.  In most cases,
      * the delay is not observed for top level menus or while dragging.
      * This method is a property of the look and feel code and is used
@@ -676,7 +676,7 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
      * @param pos an integer specifying the position at which to add the
      *               new menu item
      * @exception IllegalArgumentException when the value of
-     *                  <code>pos</code> < 0
+     *                  <code>pos</code> &lt; 0
      */
     public void insert(String s, int pos) {
         if (pos < 0) {
@@ -695,7 +695,7 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
      *               new <code>JMenuitem</code>
      * @return the new menu item
      * @exception IllegalArgumentException if the value of
-     *                  <code>pos</code> < 0
+     *                  <code>pos</code> &lt; 0
      */
     public JMenuItem insert(JMenuItem mi, int pos) {
         if (pos < 0) {
@@ -714,7 +714,7 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
      * @param pos an integer specifying the position at which to add the
      *               new menu item
      * @exception IllegalArgumentException if the value of
-     *                  <code>pos</code> < 0
+     *                  <code>pos</code> &lt; 0
      */
     public JMenuItem insert(Action a, int pos) {
         if (pos < 0) {
@@ -735,7 +735,7 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
      * @param       index an integer specifying the position at which to
      *                    insert the menu separator
      * @exception   IllegalArgumentException if the value of
-     *                       <code>index</code> < 0
+     *                       <code>index</code> &lt; 0
      */
     public void insertSeparator(int index) {
         if (index < 0) {
@@ -754,7 +754,7 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
      *
      * @param pos    an integer specifying the position
      * @exception   IllegalArgumentException if the value of
-     *                       <code>pos</code> < 0
+     *                       <code>pos</code> &lt; 0
      * @return  the menu item at the specified position; or <code>null</code>
      *          if the item as the specified position is not a menu item
      */
@@ -811,7 +811,7 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
      *
      * @param       pos the position of the item to be removed
      * @exception   IllegalArgumentException if the value of
-     *                       <code>pos</code> < 0, or if <code>pos</code>
+     *                       <code>pos</code> &lt; 0, or if <code>pos</code>
      *                       is greater than the number of menu items
      */
     public void remove(int pos) {

@@ -30,13 +30,6 @@
  */
 
 TESTNAME = "kaleidoscope";
-WAIT = 4000;
-
-var Paint                = Java.type("javafx.scene.paint.Paint");
-var Canvas               = Java.type("javafx.scene.canvas.Canvas");
-var BorderPane           = Java.type("javafx.scene.layout.BorderPane");
-var StackPane            = Java.type("javafx.scene.layout.StackPane");
-var StrokeLineCap        = Java.type("javafx.scene.shape.StrokeLineCap");
         
 var WIDTH = 800;
 var HEIGHT = 600;
@@ -56,26 +49,28 @@ var d=new Array(6);
 var r,e;
 var fade;
 var prv_x,prv_y,prv_x2,prv_y2;
+var isFrameRendered = false;
 
 function renderFrame() {
-	a=0.2*angle;
-	b=0.7*angle;
-	r=0;
-	fade=32;
-	for(var i=0;i<6;i++)
-		{
-		c[i]=1.0/(i+1)/2;
-		d[i]=1.0/(i+1)/2;
-		}
-	radius=Math.round((WIDTH+HEIGHT)/8);
-	e=radius*0.2;
-	p_x=Math.round(WIDTH/2);
-	p_y=Math.round(HEIGHT/2);
-	x=(radius*c[0])*Math.cos(a*d[1])+(radius*c[2])*Math.sin(a*d[3])+(radius*c[4])*Math.sin(a*d[5]);
-	y=(radius*c[5])*Math.sin(a*d[4])+(radius*c[3])*Math.cos(a*d[2])+(radius*c[1])*Math.cos(a*d[0]);
-    for (i = 0; i < 800; i++) {
-        anim();
+	if (!isFrameRendered) {
+        a=0.2*angle;
+		b=0.7*angle;
+		r=0;
+		fade=32;
+		for(var i=0;i<6;i++)
+			{
+			c[i]=1.0/(i+1)/2;
+			d[i]=1.0/(i+1)/2;
+			}
+		radius=Math.round((WIDTH+HEIGHT)/8);
+		e=radius*0.2;
+		p_x=Math.round(WIDTH/2);
+		p_y=Math.round(HEIGHT/2);
+		x=(radius*c[0])*Math.cos(a*d[1])+(radius*c[2])*Math.sin(a*d[3])+(radius*c[4])*Math.sin(a*d[5]);
+		y=(radius*c[5])*Math.sin(a*d[4])+(radius*c[3])*Math.cos(a*d[2])+(radius*c[1])*Math.cos(a*d[0]);
+        isFrameRendered = true;
     }
+    anim();
 }
 
 function anim() {
@@ -154,9 +149,19 @@ function draw_line(x,y,x1,y1,x2,y2) {
 
 var stack = new StackPane();
 var pane = new BorderPane();
-
 pane.setCenter(canvas);
 stack.getChildren().add(pane);
 $STAGE.scene = new Scene(stack);
-renderFrame();
-checkImageAndExit();
+var frame = 0;
+var timer = new AnimationTimerExtend() {
+    handle: function handle(now) {
+        if (frame < 800) {
+            renderFrame();
+            frame++;
+        } else {
+            checkImageAndExit();
+            timer.stop();
+        }
+    }
+};
+timer.start();

@@ -770,7 +770,7 @@ public interface RelationServiceMBean {
      * @param relationId  relation id
      *
      * @return a HashMap mapping:
-     * <P> ObjectName -> ArrayList of String (role
+     * <P> ObjectName {@literal ->} ArrayList of String (role
      * names)
      *
      * @exception IllegalArgumentException  if null parameter

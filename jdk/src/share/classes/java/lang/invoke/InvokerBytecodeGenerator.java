@@ -275,7 +275,7 @@ class InvokerBytecodeGenerator {
      */
     private void classFilePrologue() {
         cw = new ClassWriter(ClassWriter.COMPUTE_MAXS + ClassWriter.COMPUTE_FRAMES);
-        cw.visit(Opcodes.V1_6, Opcodes.ACC_PUBLIC + Opcodes.ACC_FINAL + Opcodes.ACC_SUPER, className, null, superName, null);
+        cw.visit(Opcodes.V1_8, Opcodes.ACC_PUBLIC + Opcodes.ACC_FINAL + Opcodes.ACC_SUPER, className, null, superName, null);
         cw.visitSource(sourceFile, null);
 
         String invokerDesc = invokerType.toMethodDescriptorString();
@@ -646,7 +646,8 @@ class InvokerBytecodeGenerator {
         // invocation
         if (member.isMethod()) {
             mtype = member.getMethodType().toMethodDescriptorString();
-            mv.visitMethodInsn(refKindOpcode(refKind), cname, mname, mtype);
+            mv.visitMethodInsn(refKindOpcode(refKind), cname, mname, mtype,
+                               member.getDeclaringClass().isInterface());
         } else {
             mtype = MethodType.toFieldDescriptorString(member.getFieldType());
             mv.visitFieldInsn(refKindOpcode(refKind), cname, mname, mtype);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
 /* package */ final class InnerClassLambdaMetafactory extends AbstractValidatingLambdaMetafactory {
     private static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
-    private static final int CLASSFILE_VERSION = 51;
+    private static final int CLASSFILE_VERSION = 52;
     private static final String METHOD_DESCRIPTOR_VOID = Type.getMethodDescriptor(Type.VOID_TYPE);
     private static final String JAVA_LANG_OBJECT = "java/lang/Object";
     private static final String NAME_CTOR = "<init>";
@@ -465,7 +465,9 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
             convertArgumentTypes(methodType);
 
             // Invoke the method we want to forward to
-            visitMethodInsn(invocationOpcode(), implMethodClassName, implMethodName, implMethodDesc);
+            visitMethodInsn(invocationOpcode(), implMethodClassName,
+                            implMethodName, implMethodDesc,
+                            implDefiningClass.isInterface());
 
             // Convert the return value (if any) and return it
             // Note: if adapting from non-void to void, the 'return'

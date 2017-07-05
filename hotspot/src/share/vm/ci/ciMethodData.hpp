@@ -77,7 +77,9 @@ public:
   static ciKlass* valid_ciklass(intptr_t k) {
     if (!TypeEntries::is_type_none(k) &&
         !TypeEntries::is_type_unknown(k)) {
-      return (ciKlass*)TypeEntries::klass_part(k);
+      ciKlass* res = (ciKlass*)TypeEntries::klass_part(k);
+      assert(res != NULL, "invalid");
+      return res;
     } else {
       return NULL;
     }

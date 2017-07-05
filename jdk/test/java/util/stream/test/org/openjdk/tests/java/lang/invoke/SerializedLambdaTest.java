@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,14 +56,18 @@ import static org.testng.Assert.fail;
  */
 @Test
 public class SerializedLambdaTest {
+    public static final int REPS = 50;
+
     @SuppressWarnings("unchecked")
     private<T> void assertSerial(T p, Consumer<T> asserter) throws IOException, ClassNotFoundException {
         asserter.accept(p);
 
-        byte[] bytes = serialize(p);
-        assertTrue(bytes.length > 0);
+        for (int i=0; i<REPS; i++) {
+            byte[] bytes = serialize(p);
+            assertTrue(bytes.length > 0);
 
-        asserter.accept((T) deserialize(bytes));
+            asserter.accept((T) deserialize(bytes));
+        }
     }
 
     private void assertNotSerial(Predicate<String> p, Consumer<Predicate<String>> asserter)

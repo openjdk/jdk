@@ -195,7 +195,7 @@ import java.util.Map;
  * represents an ObjectName with two keys.  The name of each key
  * contains six characters, of which the first and last are spaces.
  * The value associated with the key <code>"&nbsp;key1&nbsp;"</code>
- * also begins and ends with a space.</p>
+ * also begins and ends with a space.
  *
  * <p>In addition to the restrictions on characters spelt out above,
  * no part of an ObjectName may contain a newline character
@@ -665,7 +665,7 @@ public class ObjectName implements Comparable<ObjectName>, QueryExp {
      * Construct an ObjectName from a domain and a Hashtable.
      *
      * @param domain Domain of the ObjectName.
-     * @param props  Map containing couples <i>key</i> -> <i>value</i>.
+     * @param props  Map containing couples <i>key</i> {@literal ->} <i>value</i>.
      *
      * @exception MalformedObjectNameException The <code>domain</code>
      * contains an illegal character, or one of the keys or values in
@@ -1549,7 +1549,7 @@ public class ObjectName implements Comparable<ObjectName>, QueryExp {
      * <li>a comma and an
      * asterisk (<code>,*</code>) for an ObjectName that is a property
      * list pattern with at least one key.
-     * </ul></p>
+     * </ul>
      *
      * @return The canonical form of the name.
      */

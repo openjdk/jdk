@@ -95,10 +95,12 @@ public class RemappingSignatureAdapter extends SignatureVisitor {
 
     @Override
     public void visitInnerClassType(String name) {
+        String remappedOuter = remapper.mapType(className) + '$';
         className = className + '$' + name;
         String remappedName = remapper.mapType(className);
-        v.visitInnerClassType(remappedName.substring(remappedName
-                .lastIndexOf('$') + 1));
+        int index = remappedName.startsWith(remappedOuter) ? remappedOuter
+                .length() : remappedName.lastIndexOf('$') + 1;
+        v.visitInnerClassType(remappedName.substring(index));
     }
 
     @Override

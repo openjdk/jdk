@@ -2306,8 +2306,7 @@ public class RelationService extends NotificationBroadcasterSupport
      * @param relationId  relation id
      *
      * @return a HashMap mapping:
-     * <P> ObjectName -> ArrayList of String (role
-     * names)
+     * <P> ObjectName {@literal ->} ArrayList of String (role names)
      *
      * @exception IllegalArgumentException  if null parameter
      * @exception RelationNotFoundException  if no relation for given

@@ -25,6 +25,7 @@
  * @test
  * @bug 6371401
  * @summary Tests of shiftLeft and shiftRight on Integer.MIN_VALUE
+ * @run main/othervm -Xmx512m ExtremeShiftingTests
  * @author Joseph D. Darcy
  */
 import java.math.BigInteger;

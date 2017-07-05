@@ -1820,7 +1820,7 @@ public class ForkJoinPool extends AbstractExecutorService {
                         }
                     }
                     for (;;) { // help stealer or descend to its stealer
-                        ForkJoinTask[] a; int b;
+                        ForkJoinTask<?>[] a; int b;
                         if (subtask.status < 0)     // surround probes with
                             continue restart;       //   consistency checks
                         if ((b = v.base) - v.top < 0 && (a = v.array) != null) {

@@ -200,6 +200,13 @@ Java_sun_management_VMManagementImpl_getStartupTime
                                            JMM_JVM_INIT_DONE_TIME_MS);
 }
 
+JNIEXPORT jlong JNICALL
+Java_sun_management_VMManagementImpl_getUptime0
+  (JNIEnv *env, jobject dummy)
+{
+    return jmm_interface->GetLongAttribute(env, NULL, JMM_JVM_UPTIME_MS);
+}
+
 JNIEXPORT jboolean JNICALL
 Java_sun_management_VMManagementImpl_isThreadContentionMonitoringEnabled
   (JNIEnv *env, jobject dummy)
