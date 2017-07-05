@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -233,107 +233,166 @@ void AwtPrintControl::initIDs(JNIEnv *env, jclass cls)
     TRY;
 
     jclass cls = env->FindClass("sun/awt/windows/WPrinterJob");
+    CHECK_NULL(cls);
 
     AwtPrintControl::dialogOwnerPeerID =
       env->GetFieldID(cls, "dialogOwnerPeer", "Ljava/awt/peer/ComponentPeer;");
+    DASSERT(AwtPrintControl::dialogOwnerPeerID != NULL);
+    CHECK_NULL(AwtPrintControl::dialogOwnerPeerID);
+
     AwtPrintControl::getPrintDCID = env->GetMethodID(cls, "getPrintDC", "()J");
+    DASSERT(AwtPrintControl::getPrintDCID != NULL);
+    CHECK_NULL(AwtPrintControl::getPrintDCID);
+
     AwtPrintControl::setPrintDCID =
         env->GetMethodID(cls, "setPrintDC", "(J)V");
+    DASSERT(AwtPrintControl::setPrintDCID != NULL);
+    CHECK_NULL(AwtPrintControl::setPrintDCID);
+
     AwtPrintControl::getDevmodeID = env->GetMethodID(cls, "getDevMode", "()J");
+    DASSERT(AwtPrintControl::getDevmodeID != NULL);
+    CHECK_NULL(AwtPrintControl::getDevmodeID);
+
     AwtPrintControl::setDevmodeID =
         env->GetMethodID(cls, "setDevMode", "(J)V");
+    DASSERT(AwtPrintControl::setDevmodeID != NULL);
+    CHECK_NULL(AwtPrintControl::setDevmodeID);
+
     AwtPrintControl::getDevnamesID =
         env->GetMethodID(cls, "getDevNames", "()J");
+    DASSERT(AwtPrintControl::getDevnamesID != NULL);
+    CHECK_NULL(AwtPrintControl::getDevnamesID);
+
     AwtPrintControl::setDevnamesID =
         env->GetMethodID(cls, "setDevNames", "(J)V");
+    DASSERT(AwtPrintControl::setDevnamesID != NULL);
+    CHECK_NULL(AwtPrintControl::setDevnamesID);
+
     AwtPrintControl::driverDoesMultipleCopiesID =
       env->GetFieldID(cls, "driverDoesMultipleCopies", "Z");
+    DASSERT(AwtPrintControl::driverDoesMultipleCopiesID != NULL);
+    CHECK_NULL(AwtPrintControl::driverDoesMultipleCopiesID);
+
     AwtPrintControl::driverDoesCollationID =
       env->GetFieldID(cls, "driverDoesCollation", "Z");
+    DASSERT(AwtPrintControl::driverDoesCollationID != NULL);
+    CHECK_NULL(AwtPrintControl::driverDoesCollationID);
+
     AwtPrintControl::getCopiesID =
       env->GetMethodID(cls, "getCopiesAttrib", "()I");
+    DASSERT(AwtPrintControl::getCopiesID != NULL);
+    CHECK_NULL(AwtPrintControl::getCopiesID);
+
     AwtPrintControl::getCollateID =
       env->GetMethodID(cls, "getCollateAttrib","()I");
+    DASSERT(AwtPrintControl::getCollateID != NULL);
+    CHECK_NULL(AwtPrintControl::getCollateID);
+
     AwtPrintControl::getOrientID =
       env->GetMethodID(cls, "getOrientAttrib", "()I");
+    DASSERT(AwtPrintControl::getOrientID != NULL);
+    CHECK_NULL(AwtPrintControl::getOrientID);
+
     AwtPrintControl::getFromPageID =
       env->GetMethodID(cls, "getFromPageAttrib", "()I");
+    DASSERT(AwtPrintControl::getFromPageID != NULL);
+    CHECK_NULL(AwtPrintControl::getFromPageID);
+
     AwtPrintControl::getToPageID =
       env->GetMethodID(cls, "getToPageAttrib", "()I");
+    DASSERT(AwtPrintControl::getToPageID != NULL);
+    CHECK_NULL(AwtPrintControl::getToPageID);
+
     AwtPrintControl::getMinPageID =
       env->GetMethodID(cls, "getMinPageAttrib", "()I");
+    DASSERT(AwtPrintControl::getMinPageID != NULL);
+    CHECK_NULL(AwtPrintControl::getMinPageID);
+
     AwtPrintControl::getMaxPageID =
       env->GetMethodID(cls, "getMaxPageAttrib", "()I");
+    DASSERT(AwtPrintControl::getMaxPageID != NULL);
+    CHECK_NULL(AwtPrintControl::getMaxPageID);
+
     AwtPrintControl::getDestID =
       env->GetMethodID(cls, "getDestAttrib", "()Z");
+    DASSERT(AwtPrintControl::getDestID != NULL);
+    CHECK_NULL(AwtPrintControl::getDestID);
+
     AwtPrintControl::getQualityID =
       env->GetMethodID(cls, "getQualityAttrib", "()I");
+    DASSERT(AwtPrintControl::getQualityID != NULL);
+    CHECK_NULL(AwtPrintControl::getQualityID);
+
     AwtPrintControl::getColorID =
       env->GetMethodID(cls, "getColorAttrib", "()I");
+    DASSERT(AwtPrintControl::getColorID != NULL);
+    CHECK_NULL(AwtPrintControl::getColorID);
+
     AwtPrintControl::getSidesID =
       env->GetMethodID(cls, "getSidesAttrib", "()I");
+    DASSERT(AwtPrintControl::getSidesID != NULL);
+    CHECK_NULL(AwtPrintControl::getSidesID);
+
     AwtPrintControl::getPrinterID =
       env->GetMethodID(cls, "getPrinterAttrib", "()Ljava/lang/String;");
+    DASSERT(AwtPrintControl::getPrinterID != NULL);
+    CHECK_NULL(AwtPrintControl::getPrinterID);
+
     AwtPrintControl::getWin32MediaID =
         env->GetMethodID(cls, "getWin32MediaAttrib", "()[I");
+    DASSERT(AwtPrintControl::getWin32MediaID != NULL);
+    CHECK_NULL(AwtPrintControl::getWin32MediaID);
+
     AwtPrintControl::setWin32MediaID =
       env->GetMethodID(cls, "setWin32MediaAttrib", "(III)V");
+    DASSERT(AwtPrintControl::setWin32MediaID != NULL);
+    CHECK_NULL(AwtPrintControl::setWin32MediaID);
+
     AwtPrintControl::getWin32MediaTrayID =
         env->GetMethodID(cls, "getMediaTrayAttrib", "()I");
+    DASSERT(AwtPrintControl::getWin32MediaTrayID != NULL);
+    CHECK_NULL(AwtPrintControl::getWin32MediaTrayID);
+
     AwtPrintControl::setWin32MediaTrayID =
       env->GetMethodID(cls, "setMediaTrayAttrib", "(I)V");
+    DASSERT(AwtPrintControl::setWin32MediaTrayID != NULL);
+    CHECK_NULL(AwtPrintControl::setWin32MediaTrayID);
+
     AwtPrintControl::getSelectID =
       env->GetMethodID(cls, "getSelectAttrib", "()I");
+    DASSERT(AwtPrintControl::getSelectID != NULL);
+    CHECK_NULL(AwtPrintControl::getSelectID);
+
     AwtPrintControl::getPrintToFileEnabledID =
       env->GetMethodID(cls, "getPrintToFileEnabled", "()Z");
+    DASSERT(AwtPrintControl::getPrintToFileEnabledID != NULL);
+    CHECK_NULL(AwtPrintControl::getPrintToFileEnabledID);
 
     AwtPrintControl::setNativeAttID =
       env->GetMethodID(cls, "setNativeAttributes", "(III)V");
+    DASSERT(AwtPrintControl::setNativeAttID != NULL);
+    CHECK_NULL(AwtPrintControl::setNativeAttID);
 
     AwtPrintControl::setRangeCopiesID =
       env->GetMethodID(cls, "setRangeCopiesAttribute", "(IIZI)V");
+    DASSERT(AwtPrintControl::setRangeCopiesID != NULL);
+    CHECK_NULL(AwtPrintControl::setRangeCopiesID);
+
     AwtPrintControl::setResID =
       env->GetMethodID(cls, "setResolutionDPI", "(II)V");
+    DASSERT(AwtPrintControl::setResID != NULL);
+    CHECK_NULL(AwtPrintControl::setResID);
 
     AwtPrintControl::setPrinterID =
       env->GetMethodID(cls, "setPrinterNameAttrib", "(Ljava/lang/String;)V");
+    DASSERT(AwtPrintControl::setPrinterID != NULL);
+    CHECK_NULL(AwtPrintControl::setPrinterID);
 
     AwtPrintControl::setJobAttributesID =
         env->GetMethodID(cls, "setJobAttributes",
         "(Ljavax/print/attribute/PrintRequestAttributeSet;IISSSSSSS)V");
-
-    DASSERT(AwtPrintControl::driverDoesMultipleCopiesID != NULL);
-    DASSERT(AwtPrintControl::getPrintDCID != NULL);
-    DASSERT(AwtPrintControl::setPrintDCID != NULL);
-    DASSERT(AwtPrintControl::getDevmodeID != NULL);
-    DASSERT(AwtPrintControl::setDevmodeID != NULL);
-    DASSERT(AwtPrintControl::getDevnamesID != NULL);
-    DASSERT(AwtPrintControl::setDevnamesID != NULL);
-    DASSERT(AwtPrintControl::driverDoesCollationID != NULL);
-    DASSERT(AwtPrintControl::getWin32MediaID != NULL);
-    DASSERT(AwtPrintControl::setWin32MediaID != NULL);
-    DASSERT(AwtPrintControl::getWin32MediaTrayID != NULL);
-    DASSERT(AwtPrintControl::setWin32MediaTrayID != NULL);
-    DASSERT(AwtPrintControl::setRangeCopiesID != NULL);
-    DASSERT(AwtPrintControl::setResID != NULL);
-    DASSERT(AwtPrintControl::setNativeAttID != NULL);
-    DASSERT(AwtPrintControl::dialogOwnerPeerID != NULL);
-    DASSERT(AwtPrintControl::getCopiesID != NULL);
-    DASSERT(AwtPrintControl::getOrientID != NULL);
-    DASSERT(AwtPrintControl::getPrinterID != NULL);
-    DASSERT(AwtPrintControl::getCollateID != NULL);
-    DASSERT(AwtPrintControl::getFromPageID != NULL);
-    DASSERT(AwtPrintControl::getToPageID != NULL);
-    DASSERT(AwtPrintControl::getMinPageID != NULL);
-    DASSERT(AwtPrintControl::getMaxPageID != NULL);
-    DASSERT(AwtPrintControl::getDestID != NULL);
-    DASSERT(AwtPrintControl::getQualityID != NULL);
-    DASSERT(AwtPrintControl::getColorID != NULL);
-    DASSERT(AwtPrintControl::getSidesID != NULL);
-    DASSERT(AwtPrintControl::getSelectID != NULL);
-    DASSERT(AwtPrintControl::getPrintToFileEnabledID != NULL);
     DASSERT(AwtPrintControl::setJobAttributesID != NULL);
-
+    CHECK_NULL(AwtPrintControl::setJobAttributesID);
 
     CATCH_BAD_ALLOC;
 }
@@ -606,6 +665,10 @@ BOOL AwtPrintControl::InitPrintDialog(JNIEnv *env,
 
         LPTSTR getName = (LPTSTR)JNU_GetStringPlatformChars(env,
                                                       printerName, NULL);
+        if (getName == NULL) {
+            env->DeleteLocalRef(printerName);
+            throw std::bad_alloc();
+        }
 
         BOOL samePrinter = FALSE;
 
@@ -652,6 +715,7 @@ BOOL AwtPrintControl::InitPrintDialog(JNIEnv *env,
                     if (portName != NULL) {
                       free(portName);
                     }
+                    env->DeleteLocalRef(printerName);
                     return FALSE;
                 }
 
@@ -664,11 +728,13 @@ BOOL AwtPrintControl::InitPrintDialog(JNIEnv *env,
                 if (portName != NULL) {
                   free(portName);
                 }
+                env->DeleteLocalRef(printerName);
                 return FALSE;
             }
 
             delete [] buffer;
         }
+        env->DeleteLocalRef(printerName);
         // PrintDlg may change the values of hDevMode and hDevNames so we
         // re-initialize our saved handles.
         AwtPrintControl::setPrintHDMode(env, printCtrl, NULL);

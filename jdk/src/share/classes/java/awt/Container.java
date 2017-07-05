@@ -263,6 +263,16 @@ public class Container extends Component {
                     boolean ignoreEnabled) {
                 return cont.findComponentAt(x, y, ignoreEnabled);
             }
+
+            @Override
+            public void startLWModal(Container cont) {
+                cont.startLWModal();
+            }
+
+            @Override
+            public void stopLWModal(Container cont) {
+                cont.stopLWModal();
+            }
         });
     }
 

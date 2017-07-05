@@ -67,7 +67,7 @@ case "$OS" in
     ;;
 esac
 
-${TESTJAVA}${FILESEP}bin${FILESEP}keytool \
+${TESTJAVA}${FILESEP}bin${FILESEP}keytool ${TESTTOOLVMOPTS} \
         -list -v \
         -keystore ${TESTSRC}${FILESEP}CloneKeyAskPassword.jks \
         -storepass test123

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,6 +118,7 @@ public final class SoftEnvelopeGenerator implements SoftProcess {
         return null;
     }
 
+    @SuppressWarnings("fallthrough")
     public void processControlLogic() {
         for (int i = 0; i < used_count; i++) {
 
@@ -170,6 +171,7 @@ public final class SoftEnvelopeGenerator implements SoftProcess {
                         this.delay[i][0] / 1200.0) / control_time);
                 if (stage_ix[i] < 0)
                     stage_ix[i] = 0;
+                // Fallthrough
             case EG_DELAY:
                 if (stage_ix[i] == 0) {
                     double attack = this.attack[i][0];

@@ -754,7 +754,6 @@ class Properties extends Hashtable<Object,Object> {
      * <p>
      * After the entries have been written, the output stream is flushed.
      * The output stream remains open after this method returns.
-     * <p>
      *
      * @param   writer      an output character stream writer.
      * @param   comments   a description of the property list.
@@ -802,7 +801,7 @@ class Properties extends Hashtable<Object,Object> {
      * <p>
      * After the entries have been written, the output stream is flushed.
      * The output stream remains open after this method returns.
-     * <p>
+     *
      * @param   out      an output stream.
      * @param   comments   a description of the property list.
      * @exception  IOException if writing this property list to the specified

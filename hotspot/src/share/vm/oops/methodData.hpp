@@ -1012,6 +1012,11 @@ public:
   static ByteSize argument_type_offset(int i) {
     return in_ByteSize(argument_type_local_offset(i) * DataLayout::cell_size);
   }
+
+  static ByteSize return_only_size() {
+    return ReturnTypeEntry::size() + in_ByteSize(header_cell_count() * DataLayout::cell_size);
+  }
+
 };
 
 // CallTypeData
@@ -2143,7 +2148,6 @@ private:
 
   static bool profile_jsr292(methodHandle m, int bci);
   static int profile_arguments_flag();
-  static bool profile_arguments_jsr292_only();
   static bool profile_all_arguments();
   static bool profile_arguments_for_invoke(methodHandle m, int bci);
   static int profile_return_flag();
@@ -2442,6 +2446,7 @@ public:
 
   static bool profile_parameters_for_method(methodHandle m);
   static bool profile_arguments();
+  static bool profile_arguments_jsr292_only();
   static bool profile_return();
   static bool profile_parameters();
   static bool profile_return_jsr292_only();

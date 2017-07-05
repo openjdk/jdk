@@ -112,11 +112,11 @@ size_t ASPSYoungGen::available_for_contraction() {
     size_t result = policy->eden_increment_aligned_down(max_contraction);
     size_t result_aligned = align_size_down(result, gen_alignment);
     if (PrintAdaptiveSizePolicy && Verbose) {
-      gclog_or_tty->print_cr("ASPSYoungGen::available_for_contraction: %d K",
+      gclog_or_tty->print_cr("ASPSYoungGen::available_for_contraction: " SIZE_FORMAT " K",
         result_aligned/K);
-      gclog_or_tty->print_cr("  max_contraction %d K", max_contraction/K);
-      gclog_or_tty->print_cr("  eden_avail %d K", eden_avail/K);
-      gclog_or_tty->print_cr("  gen_avail %d K", gen_avail/K);
+      gclog_or_tty->print_cr("  max_contraction " SIZE_FORMAT " K", max_contraction/K);
+      gclog_or_tty->print_cr("  eden_avail " SIZE_FORMAT " K", eden_avail/K);
+      gclog_or_tty->print_cr("  gen_avail " SIZE_FORMAT " K", gen_avail/K);
     }
     return result_aligned;
   }

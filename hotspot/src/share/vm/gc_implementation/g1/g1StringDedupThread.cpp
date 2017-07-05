@@ -73,42 +73,60 @@ void G1StringDedupThread::run() {
 
     // Wait for the queue to become non-empty
     G1StringDedupQueue::wait();
-
-    // Include this thread in safepoints
-    stsJoin();
-
-    stat.mark_exec();
-
-    // Process the queue
-    for (;;) {
-      oop java_string = G1StringDedupQueue::pop();
-      if (java_string == NULL) {
-        break;
-      }
-
-      G1StringDedupTable::deduplicate(java_string, stat);
-
-      // Safepoint this thread if needed
-      if (stsShouldYield()) {
-        stat.mark_block();
-        stsYield(NULL);
-        stat.mark_unblock();
-      }
+    if (_should_terminate) {
+      break;
     }
 
-    G1StringDedupTable::trim_entry_cache();
+    {
+      // Include thread in safepoints
+      SuspendibleThreadSetJoiner sts;
 
-    stat.mark_done();
+      stat.mark_exec();
 
-    // Print statistics
-    total_stat.add(stat);
-    print(gclog_or_tty, stat, total_stat);
+      // Process the queue
+      for (;;) {
+        oop java_string = G1StringDedupQueue::pop();
+        if (java_string == NULL) {
+          break;
+        }
 
-    // Exclude this thread from safepoints
-    stsLeave();
+        G1StringDedupTable::deduplicate(java_string, stat);
+
+        // Safepoint this thread if needed
+        if (sts.should_yield()) {
+          stat.mark_block();
+          sts.yield();
+          stat.mark_unblock();
+        }
+      }
+
+      G1StringDedupTable::trim_entry_cache();
+
+      stat.mark_done();
+
+      // Print statistics
+      total_stat.add(stat);
+      print(gclog_or_tty, stat, total_stat);
+    }
   }
 
-  ShouldNotReachHere();
+  terminate();
+}
+
+void G1StringDedupThread::stop() {
+  {
+    MonitorLockerEx ml(Terminator_lock);
+    _thread->_should_terminate = true;
+  }
+
+  G1StringDedupQueue::cancel_wait();
+
+  {
+    MonitorLockerEx ml(Terminator_lock);
+    while (!_thread->_has_terminated) {
+      ml.wait();
+    }
+  }
 }
 
 void G1StringDedupThread::print(outputStream* st, const G1StringDedupStat& last_stat, const G1StringDedupStat& total_stat) {
