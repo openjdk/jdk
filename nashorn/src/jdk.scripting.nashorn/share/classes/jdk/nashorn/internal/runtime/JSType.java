@@ -40,8 +40,10 @@ import jdk.nashorn.api.scripting.JSObject;
 import jdk.nashorn.internal.codegen.CompilerConstants.Call;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.objects.Global;
+import jdk.nashorn.internal.objects.NativeSymbol;
 import jdk.nashorn.internal.parser.Lexer;
 import jdk.nashorn.internal.runtime.arrays.ArrayLikeIterator;
+import jdk.nashorn.internal.runtime.doubleconv.DoubleConversion;
 import jdk.nashorn.internal.runtime.linker.Bootstrap;
 
 /**
@@ -67,7 +69,10 @@ public enum JSType {
     OBJECT("object"),
 
     /** The function type */
-    FUNCTION("function");
+    FUNCTION("function"),
+
+    /** The symbol type */
+    SYMBOL("symbol");
 
     /** The type name as returned by ECMAScript "typeof" operator*/
     private final String typeName;
@@ -311,6 +316,10 @@ public enum JSType {
             return JSType.NUMBER;
         }
 
+        if (obj instanceof Symbol) {
+            return JSType.SYMBOL;
+        }
+
         if (obj == ScriptRuntime.UNDEFINED) {
             return JSType.UNDEFINED;
         }
@@ -351,6 +360,10 @@ public enum JSType {
 
         if (obj == ScriptRuntime.UNDEFINED) {
             return JSType.UNDEFINED;
+        }
+
+        if (obj instanceof Symbol) {
+            return JSType.SYMBOL;
         }
 
         return JSType.OBJECT;
@@ -469,9 +482,10 @@ public enum JSType {
     public static boolean isPrimitive(final Object obj) {
         return obj == null ||
                obj == ScriptRuntime.UNDEFINED ||
-               obj instanceof Boolean ||
+               isString(obj) ||
                obj instanceof Number ||
-               isString(obj);
+               obj instanceof Boolean ||
+               obj instanceof Symbol;
     }
 
    /**
@@ -613,6 +627,15 @@ public enum JSType {
     }
 
     /**
+     * See ES6 #7.1.14
+     * @param obj key object
+     * @return property key
+     */
+    public static Object toPropertyKey(final Object obj) {
+        return obj instanceof Symbol ? obj : toStringImpl(obj, false);
+    }
+
+    /**
      * If obj is an instance of {@link ConsString} cast to CharSequence, else return
      * result of {@link #toString(Object)}.
      *
@@ -687,7 +710,7 @@ public enum JSType {
             return "NaN";
         }
 
-        return NumberToString.stringFor(num);
+        return DoubleConversion.toShortestString(num);
     }
 
     /**
@@ -786,7 +809,9 @@ public enum JSType {
      * @return a number
      */
     public static double toNumberForEq(final Object obj) {
-        return obj == null ? Double.NaN : toNumber(obj);
+        // we are not able to detect Symbol objects from codegen, so we need to
+        // handle them here to avoid throwing an error in toNumber conversion.
+        return obj == null || obj instanceof Symbol || obj instanceof NativeSymbol ? Double.NaN : toNumber(obj);
     }
 
     /**
@@ -1403,6 +1428,13 @@ public enum JSType {
             return obj.toString();
         }
 
+        if (obj instanceof Symbol) {
+            if (safe) {
+                return obj.toString();
+            }
+            throw typeError("symbol.to.string");
+        }
+
         if (safe && obj instanceof ScriptObject) {
             final ScriptObject sobj = (ScriptObject)obj;
             final Global gobj = Context.getGlobal();
@@ -1913,6 +1945,10 @@ public enum JSType {
 
         if (obj instanceof Undefined) {
             return Double.NaN;
+        }
+
+        if (obj instanceof Symbol) {
+            throw typeError("symbol.to.number");
         }
 
         return toNumber(toPrimitive(obj, Number.class));

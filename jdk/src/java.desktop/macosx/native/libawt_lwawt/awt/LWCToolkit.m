@@ -740,7 +740,7 @@ Java_sun_lwawt_macosx_LWCToolkit_initAppkit
     JNF_COCOA_EXIT(env)
 }
 
-JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
+JNIEXPORT jint JNICALL DEF_JNI_OnLoad(JavaVM *vm, void *reserved) {
     OSXAPP_SetJavaVM(vm);
 
     // We need to let Foundation know that this is a multithreaded application, if it isn't already.

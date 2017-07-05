@@ -30,7 +30,8 @@
 #include "runtime/java.hpp"
 
 ConcurrentG1Refine::ConcurrentG1Refine(G1CollectedHeap* g1h) :
-  _threads(NULL), _n_threads(0),
+  _threads(NULL),
+  _sample_thread(NULL),
   _hot_card_cache(g1h)
 {
   // Ergonomically select initial concurrent refinement parameters
@@ -58,12 +59,10 @@ ConcurrentG1Refine* ConcurrentG1Refine::create(G1CollectedHeap* g1h, CardTableEn
     return NULL;
   }
   cg1r->_n_worker_threads = thread_num();
-  // We need one extra thread to do the young gen rset size sampling.
-  cg1r->_n_threads = cg1r->_n_worker_threads + 1;
 
   cg1r->reset_threshold_step();
 
-  cg1r->_threads = NEW_C_HEAP_ARRAY_RETURN_NULL(ConcurrentG1RefineThread*, cg1r->_n_threads, mtGC);
+  cg1r->_threads = NEW_C_HEAP_ARRAY_RETURN_NULL(ConcurrentG1RefineThread*, cg1r->_n_worker_threads, mtGC);
   if (cg1r->_threads == NULL) {
     *ecode = JNI_ENOMEM;
     vm_shutdown_during_initialization("Could not allocate an array for ConcurrentG1RefineThread");
@@ -73,7 +72,7 @@ ConcurrentG1Refine* ConcurrentG1Refine::create(G1CollectedHeap* g1h, CardTableEn
   uint worker_id_offset = DirtyCardQueueSet::num_par_ids();
 
   ConcurrentG1RefineThread *next = NULL;
-  for (uint i = cg1r->_n_threads - 1; i != UINT_MAX; i--) {
+  for (uint i = cg1r->_n_worker_threads - 1; i != UINT_MAX; i--) {
     ConcurrentG1RefineThread* t = new ConcurrentG1RefineThread(cg1r, next, refine_closure, worker_id_offset, i);
     assert(t != NULL, "Conc refine should have been created");
     if (t->osthread() == NULL) {
@@ -86,6 +85,14 @@ ConcurrentG1Refine* ConcurrentG1Refine::create(G1CollectedHeap* g1h, CardTableEn
     cg1r->_threads[i] = t;
     next = t;
   }
+
+  cg1r->_sample_thread = new G1YoungRemSetSamplingThread();
+  if (cg1r->_sample_thread->osthread() == NULL) {
+    *ecode = JNI_ENOMEM;
+    vm_shutdown_during_initialization("Could not create G1YoungRemSetSamplingThread");
+    return NULL;
+  }
+
   *ecode = JNI_OK;
   return cg1r;
 }
@@ -103,44 +110,36 @@ void ConcurrentG1Refine::init(G1RegionToSpaceMapper* card_counts_storage) {
 }
 
 void ConcurrentG1Refine::stop() {
-  if (_threads != NULL) {
-    for (uint i = 0; i < _n_threads; i++) {
-      _threads[i]->stop();
-    }
+  for (uint i = 0; i < _n_worker_threads; i++) {
+    _threads[i]->stop();
   }
+  _sample_thread->stop();
 }
 
 void ConcurrentG1Refine::reinitialize_threads() {
   reset_threshold_step();
-  if (_threads != NULL) {
-    for (uint i = 0; i < _n_threads; i++) {
-      _threads[i]->initialize();
-    }
+  for (uint i = 0; i < _n_worker_threads; i++) {
+    _threads[i]->initialize();
   }
 }
 
 ConcurrentG1Refine::~ConcurrentG1Refine() {
-  if (_threads != NULL) {
-    for (uint i = 0; i < _n_threads; i++) {
-      delete _threads[i];
-    }
-    FREE_C_HEAP_ARRAY(ConcurrentG1RefineThread*, _threads);
+  for (uint i = 0; i < _n_worker_threads; i++) {
+    delete _threads[i];
   }
+  FREE_C_HEAP_ARRAY(ConcurrentG1RefineThread*, _threads);
+
+  delete _sample_thread;
 }
 
 void ConcurrentG1Refine::threads_do(ThreadClosure *tc) {
-  if (_threads != NULL) {
-    for (uint i = 0; i < _n_threads; i++) {
-      tc->do_thread(_threads[i]);
-    }
-  }
+  worker_threads_do(tc);
+  tc->do_thread(_sample_thread);
 }
 
 void ConcurrentG1Refine::worker_threads_do(ThreadClosure * tc) {
-  if (_threads != NULL) {
-    for (uint i = 0; i < worker_thread_num(); i++) {
-      tc->do_thread(_threads[i]);
-    }
+  for (uint i = 0; i < worker_thread_num(); i++) {
+    tc->do_thread(_threads[i]);
   }
 }
 
@@ -149,12 +148,10 @@ uint ConcurrentG1Refine::thread_num() {
 }
 
 void ConcurrentG1Refine::print_worker_threads_on(outputStream* st) const {
-  for (uint i = 0; i < _n_threads; ++i) {
+  for (uint i = 0; i < _n_worker_threads; ++i) {
     _threads[i]->print_on(st);
     st->cr();
   }
-}
-
-ConcurrentG1RefineThread * ConcurrentG1Refine::sampling_thread() const {
-  return _threads[worker_thread_num()];
+  _sample_thread->print_on(st);
+  st->cr();
 }

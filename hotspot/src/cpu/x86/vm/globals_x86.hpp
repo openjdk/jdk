@@ -91,6 +91,8 @@ define_pd_global(size_t, CMSYoungGenPerWorker, 64*M);  // default max size of CM
 
 define_pd_global(uintx, TypeProfileLevel, 111);
 
+define_pd_global(bool, CompactStrings, true);
+
 define_pd_global(bool, PreserveFramePointer, false);
 
 #define ARCH_FLAGS(develop, product, diagnostic, experimental, notproduct, range, constraint) \

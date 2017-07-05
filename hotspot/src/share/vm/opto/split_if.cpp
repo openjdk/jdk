@@ -451,8 +451,8 @@ void PhaseIdealLoop::do_split_if( Node *iff ) {
 
   // Replace both uses of 'new_iff' with Regions merging True/False
   // paths.  This makes 'new_iff' go dead.
-  Node *old_false, *old_true;
-  Node *new_false, *new_true;
+  Node *old_false = NULL, *old_true = NULL;
+  Node *new_false = NULL, *new_true = NULL;
   for (DUIterator_Last j2min, j2 = iff->last_outs(j2min); j2 >= j2min; --j2) {
     Node *ifp = iff->last_out(j2);
     assert( ifp->Opcode() == Op_IfFalse || ifp->Opcode() == Op_IfTrue, "" );

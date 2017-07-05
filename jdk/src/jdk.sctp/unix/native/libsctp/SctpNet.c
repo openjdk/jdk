@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ static jmethodID isaCtrID = 0;
 static const char* nativeSctpLib = "libsctp.so.1";
 static jboolean funcsLoaded = JNI_FALSE;
 
-JNIEXPORT jint JNICALL JNI_OnLoad
+JNIEXPORT jint JNICALL DEF_JNI_OnLoad
   (JavaVM *vm, void *reserved) {
     return JNI_VERSION_1_2;
 }

@@ -29,11 +29,23 @@
 #include "memory/allocation.hpp"
 #include "utilities/debug.hpp"
 
-// Keeps track of the GC work and decides when it is OK to do GC work
+// Two major user controls over G1 behavior are setting a pause time goal (MaxGCPauseMillis),
+// over a time slice (GCPauseIntervalMillis). This defines the Minimum Mutator
+// Utilisation (MMU) goal.
+//
+// * Definitions *
+// Mutator Utilisation:
+// - for a given time slice duration "ts",
+// - mutator utilisation is the following fraction:
+//     non_gc_time / ts
+//
+// Minimum Mutator Utilisation (MMU):
+// - the worst mutator utilisation across all time slices.
+//
+// G1MMUTracker keeps track of the GC work and decides when it is OK to do GC work
 // and for how long so that the MMU invariants are maintained.
-
-/***** ALL TIMES ARE IN SECS!!!!!!! *****/
-
+//
+// ***** ALL TIMES ARE IN SECS!!!!!!! *****
 // this is the "interface"
 class G1MMUTracker: public CHeapObj<mtGC> {
 protected:

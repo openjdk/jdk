@@ -30,10 +30,11 @@
 
 package jdk.vm.ci.runtime.test;
 
-import jdk.vm.ci.meta.*;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.JavaType;
 
-import org.junit.*;
+import org.junit.Test;
 
 /**
  * Tests for {@link JavaType}.

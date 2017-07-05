@@ -62,9 +62,9 @@ public class PermissionTest {
     }
 
     @Test
-    public void allChildrenWithPermission() {
+    public void descendantsWithPermission() {
         Policy.setPolicy(new TestPolicy(new RuntimePermission("manageProcess")));
-        currentHndl.allChildren();
+        currentHndl.descendants();
     }
 
     @Test
@@ -122,7 +122,7 @@ public class PermissionTest {
 
     @Test(groups = { "NoManageProcessPermission" }, expectedExceptions = SecurityException.class)
     public void noPermissionAllChildren() {
-        currentHndl.allChildren();
+        currentHndl.descendants();
     }
 
     @Test(groups = { "NoManageProcessPermission" }, expectedExceptions = SecurityException.class)

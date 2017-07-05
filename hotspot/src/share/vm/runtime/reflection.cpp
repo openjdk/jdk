@@ -330,7 +330,7 @@ arrayOop Reflection::reflect_new_array(oop element_mirror, jint length, TRAPS) {
     return TypeArrayKlass::cast(tak)->allocate(length, THREAD);
   } else {
     Klass* k = java_lang_Class::as_Klass(element_mirror);
-    if (k->oop_is_array() && ArrayKlass::cast(k)->dimension() >= MAX_DIM) {
+    if (k->is_array_klass() && ArrayKlass::cast(k)->dimension() >= MAX_DIM) {
       THROW_0(vmSymbols::java_lang_IllegalArgumentException());
     }
     return oopFactory::new_objArray(k, length, THREAD);
@@ -366,7 +366,7 @@ arrayOop Reflection::reflect_new_multi_array(oop element_mirror, typeArrayOop di
     klass = basic_type_mirror_to_arrayklass(element_mirror, CHECK_NULL);
   } else {
     klass = java_lang_Class::as_Klass(element_mirror);
-    if (klass->oop_is_array()) {
+    if (klass->is_array_klass()) {
       int k_dim = ArrayKlass::cast(klass)->dimension();
       if (k_dim + len > MAX_DIM) {
         THROW_0(vmSymbols::java_lang_IllegalArgumentException());
@@ -387,7 +387,7 @@ oop Reflection::array_component_type(oop mirror, TRAPS) {
   }
 
   Klass* klass = java_lang_Class::as_Klass(mirror);
-  if (!klass->oop_is_array()) {
+  if (!klass->is_array_klass()) {
     return NULL;
   }
 
@@ -395,14 +395,14 @@ oop Reflection::array_component_type(oop mirror, TRAPS) {
 #ifdef ASSERT
   oop result2 = NULL;
   if (ArrayKlass::cast(klass)->dimension() == 1) {
-    if (klass->oop_is_typeArray()) {
+    if (klass->is_typeArray_klass()) {
       result2 = basic_type_arrayklass_to_mirror(klass, CHECK_NULL);
     } else {
       result2 = ObjArrayKlass::cast(klass)->element_klass()->java_mirror();
     }
   } else {
     Klass* lower_dim = ArrayKlass::cast(klass)->lower_dimension();
-    assert(lower_dim->oop_is_array(), "just checking");
+    assert(lower_dim->is_array_klass(), "just checking");
     result2 = lower_dim->java_mirror();
   }
   assert(result == result2, "results must be consistent");
@@ -495,7 +495,7 @@ bool Reflection::verify_field_access(Klass* current_class,
   }
 
   Klass* host_class = current_class;
-  while (host_class->oop_is_instance() &&
+  while (host_class->is_instance_klass() &&
          InstanceKlass::cast(host_class)->is_anonymous()) {
     Klass* next_host_class = InstanceKlass::cast(host_class)->host_klass();
     if (next_host_class == NULL)  break;
@@ -612,7 +612,7 @@ oop get_mirror_from_signature(methodHandle method, SignatureStream* ss, TRAPS) {
 }
 
 
-objArrayHandle Reflection::get_parameter_types(methodHandle method, int parameter_count, oop* return_type, TRAPS) {
+objArrayHandle Reflection::get_parameter_types(const methodHandle& method, int parameter_count, oop* return_type, TRAPS) {
   // Allocate array holding parameter types (java.lang.Class instances)
   objArrayOop m = oopFactory::new_objArray(SystemDictionary::Class_klass(), parameter_count, CHECK_(objArrayHandle()));
   objArrayHandle mirrors (THREAD, m);
@@ -635,7 +635,7 @@ objArrayHandle Reflection::get_parameter_types(methodHandle method, int paramete
   return mirrors;
 }
 
-objArrayHandle Reflection::get_exception_types(methodHandle method, TRAPS) {
+objArrayHandle Reflection::get_exception_types(const methodHandle& method, TRAPS) {
   return method->resolved_checked_exceptions(THREAD);
 }
 
@@ -647,11 +647,9 @@ Handle Reflection::new_type(Symbol* signature, KlassHandle k, TRAPS) {
     return Handle(THREAD, Universe::java_mirror(type));
   }
 
-  oop loader = InstanceKlass::cast(k())->class_loader();
-  oop protection_domain = k()->protection_domain();
   Klass* result = SystemDictionary::resolve_or_fail(signature,
-                                    Handle(THREAD, loader),
-                                    Handle(THREAD, protection_domain),
+                                    Handle(THREAD, k->class_loader()),
+                                    Handle(THREAD, k->protection_domain()),
                                     true, CHECK_(Handle()));
 
   if (TraceClassResolution) {
@@ -663,7 +661,7 @@ Handle Reflection::new_type(Symbol* signature, KlassHandle k, TRAPS) {
 }
 
 
-oop Reflection::new_method(methodHandle method, bool for_constant_pool_access, TRAPS) {
+oop Reflection::new_method(const methodHandle& method, bool for_constant_pool_access, TRAPS) {
   // Allow sun.reflect.ConstantPool to refer to <clinit> methods as java.lang.reflect.Methods.
   assert(!method()->is_initializer() ||
          (for_constant_pool_access && method()->is_static()),
@@ -726,7 +724,7 @@ oop Reflection::new_method(methodHandle method, bool for_constant_pool_access, T
 }
 
 
-oop Reflection::new_constructor(methodHandle method, TRAPS) {
+oop Reflection::new_constructor(const methodHandle& method, TRAPS) {
   assert(method()->is_initializer(), "should call new_method instead");
 
   instanceKlassHandle  holder (THREAD, method->method_holder());
@@ -824,7 +822,7 @@ oop Reflection::new_parameter(Handle method, int index, Symbol* sym,
 }
 
 
-methodHandle Reflection::resolve_interface_call(instanceKlassHandle klass, methodHandle method,
+methodHandle Reflection::resolve_interface_call(instanceKlassHandle klass, const methodHandle& method,
                                                 KlassHandle recv_klass, Handle receiver, TRAPS) {
   assert(!method.is_null() , "method should not be null");
 
@@ -839,7 +837,7 @@ methodHandle Reflection::resolve_interface_call(instanceKlassHandle klass, metho
 }
 
 
-oop Reflection::invoke(instanceKlassHandle klass, methodHandle reflected_method,
+oop Reflection::invoke(instanceKlassHandle klass, const methodHandle& reflected_method,
                        Handle receiver, bool override, objArrayHandle ptypes,
                        BasicType rtype, objArrayHandle args, bool is_method_invoke, TRAPS) {
   ResourceMark rm(THREAD);

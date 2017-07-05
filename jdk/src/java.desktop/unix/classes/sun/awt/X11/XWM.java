@@ -31,7 +31,7 @@
 package sun.awt.X11;
 
 import sun.awt.IconInfo;
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 import java.awt.Insets;
 import java.awt.Frame;
 import java.awt.Rectangle;

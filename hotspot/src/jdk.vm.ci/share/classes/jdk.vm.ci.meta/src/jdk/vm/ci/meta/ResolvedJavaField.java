@@ -22,8 +22,8 @@
  */
 package jdk.vm.ci.meta;
 
-import java.lang.annotation.*;
-import java.lang.reflect.*;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Modifier;
 
 /**
  * Represents a reference to a resolved Java field. Fields, like methods and types, are resolved

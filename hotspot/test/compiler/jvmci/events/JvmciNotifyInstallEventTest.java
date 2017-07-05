@@ -61,8 +61,9 @@ import jdk.vm.ci.hotspot.HotSpotVMEventListener;
 import jdk.vm.ci.code.CompilationResult;
 import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.hotspot.HotSpotCodeCacheProvider;
+import jdk.vm.ci.hotspot.HotSpotCompilationRequest;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
-import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethodImpl;
+import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
 
 public class JvmciNotifyInstallEventTest implements HotSpotVMEventListener {
     private static final String METHOD_NAME = "testMethod";
@@ -99,17 +100,18 @@ public class JvmciNotifyInstallEventTest implements HotSpotVMEventListener {
         } catch (NoSuchMethodException e) {
             throw new Error("TEST BUG: Can't find " + METHOD_NAME, e);
         }
-        HotSpotResolvedJavaMethodImpl method = CTVMUtilities
+        HotSpotResolvedJavaMethod method = CTVMUtilities
                 .getResolvedMethod(SimpleClass.class, testMethod);
         CompilationResult compResult = new CompilationResult(METHOD_NAME);
+        HotSpotCompilationRequest compRequest = new HotSpotCompilationRequest(method, -1, 0L);
         // to pass sanity check of default -1
         compResult.setTotalFrameSize(0);
-        codeCache.installMethod(method, compResult, /* jvmciEnv = */ 0L,
+        codeCache.installCode(compRequest, compResult, /* installedCode = */ null, /* speculationLog = */ null,
                 /* isDefault = */ false);
         Asserts.assertEQ(gotInstallNotification, 1,
                 "Got unexpected event count after 1st install attempt");
         // since "empty" compilation result is ok, a second attempt should be ok
-        codeCache.installMethod(method, compResult, /* jvmciEnv = */ 0L,
+        codeCache.installCode(compRequest, compResult, /* installedCode = */ null, /* speculationLog = */ null,
                 /* isDefault = */ false);
         Asserts.assertEQ(gotInstallNotification, 2,
                 "Got unexpected event count after 2nd install attempt");

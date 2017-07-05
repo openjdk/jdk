@@ -483,15 +483,6 @@ int LIR_Assembler::emit_deopt_handler() {
   return offset;
 }
 
-
-// This is the fast version of java.lang.String.compare; it has not
-// OSR-entry and therefore, we generate a slow version for OSR's
-void LIR_Assembler::emit_string_compare(LIR_Opr arg0, LIR_Opr arg1, LIR_Opr dst, CodeEmitInfo* info)  {
-  __ mov(r2, (address)__FUNCTION__);
-  __ call_Unimplemented();
-}
-
-
 void LIR_Assembler::add_debug_info_for_branch(address adr, CodeEmitInfo* info) {
   _masm->code_section()->relocate(adr, relocInfo::poll_type);
   int pc_offset = code_offset();

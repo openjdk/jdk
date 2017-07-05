@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@
 #include "asm/assembler.hpp"
 #include "utilities/macros.hpp"
 #include "runtime/rtmLocking.hpp"
-
 
 // MacroAssembler extends Assembler by frequently used macros.
 //
@@ -1212,32 +1211,50 @@ public:
   // clear memory of size 'cnt' qwords, starting at 'base'.
   void clear_mem(Register base, Register cnt, Register rtmp);
 
+#ifdef COMPILER2
+  void string_indexof_char(Register str1, Register cnt1, Register ch, Register result,
+                           XMMRegister vec1, XMMRegister vec2, XMMRegister vec3, Register tmp);
+
   // IndexOf strings.
   // Small strings are loaded through stack if they cross page boundary.
   void string_indexof(Register str1, Register str2,
                       Register cnt1, Register cnt2,
                       int int_cnt2,  Register result,
-                      XMMRegister vec, Register tmp);
+                      XMMRegister vec, Register tmp,
+                      int ae);
 
   // IndexOf for constant substrings with size >= 8 elements
   // which don't need to be loaded through stack.
   void string_indexofC8(Register str1, Register str2,
                       Register cnt1, Register cnt2,
                       int int_cnt2,  Register result,
-                      XMMRegister vec, Register tmp);
+                      XMMRegister vec, Register tmp,
+                      int ae);
 
     // Smallest code: we don't need to load through stack,
     // check string tail.
 
+  // helper function for string_compare
+  void load_next_elements(Register elem1, Register elem2, Register str1, Register str2,
+                          Address::ScaleFactor scale, Address::ScaleFactor scale1,
+                          Address::ScaleFactor scale2, Register index, int ae);
   // Compare strings.
   void string_compare(Register str1, Register str2,
                       Register cnt1, Register cnt2, Register result,
-                      XMMRegister vec1);
+                      XMMRegister vec1, int ae);
 
-  // Compare char[] arrays.
-  void char_arrays_equals(bool is_array_equ, Register ary1, Register ary2,
-                          Register limit, Register result, Register chr,
-                          XMMRegister vec1, XMMRegister vec2);
+  // Search for Non-ASCII character (Negative byte value) in a byte array,
+  // return true if it has any and false otherwise.
+  void has_negatives(Register ary1, Register len,
+                     Register result, Register tmp1,
+                     XMMRegister vec1, XMMRegister vec2);
+
+  // Compare char[] or byte[] arrays.
+  void arrays_equals(bool is_array_equ, Register ary1, Register ary2,
+                     Register limit, Register result, Register chr,
+                     XMMRegister vec1, XMMRegister vec2, bool is_char);
+
+#endif
 
   // Fill primitive arrays
   void generate_fill(BasicType t, bool aligned,
@@ -1331,6 +1348,15 @@ public:
   // Fold 8-bit data
   void fold_8bit_crc32(Register crc, Register table, Register tmp);
   void fold_8bit_crc32(XMMRegister crc, Register table, XMMRegister xtmp, Register tmp);
+
+  // Compress char[] array to byte[].
+  void char_array_compress(Register src, Register dst, Register len,
+                           XMMRegister tmp1, XMMRegister tmp2, XMMRegister tmp3,
+                           XMMRegister tmp4, Register tmp5, Register result);
+
+  // Inflate byte[] array to char[].
+  void byte_array_inflate(Register src, Register dst, Register len,
+                          XMMRegister tmp1, Register tmp2);
 
 #undef VIRTUAL
 

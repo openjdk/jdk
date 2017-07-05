@@ -39,6 +39,10 @@ import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
+/**
+ * @test
+ * @run testng jdk.nashorn.api.javaaccess.test.ConsStringTest
+ */
 @SuppressWarnings("javadoc")
 public class ConsStringTest {
     private static ScriptEngine e = null;

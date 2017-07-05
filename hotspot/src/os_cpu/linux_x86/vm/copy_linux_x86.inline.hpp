@@ -30,7 +30,7 @@ static void pd_conjoint_words(HeapWord* from, HeapWord* to, size_t count) {
   (void)memmove(to, from, count * HeapWordSize);
 #else
   // Includes a zero-count check.
-  intx temp;
+  intx temp = 0;
   __asm__ volatile("        testl   %6,%6         ;"
                    "        jz      7f            ;"
                    "        cmpl    %4,%5         ;"
@@ -88,7 +88,7 @@ static void pd_disjoint_words(HeapWord* from, HeapWord* to, size_t count) {
   }
 #else
   // Includes a zero-count check.
-  intx temp;
+  intx temp = 0;
   __asm__ volatile("        testl   %6,%6       ;"
                    "        jz      3f          ;"
                    "        cmpl    $32,%6      ;"
@@ -145,7 +145,7 @@ static void pd_conjoint_bytes(void* from, void* to, size_t count) {
   (void)memmove(to, from, count);
 #else
   // Includes a zero-count check.
-  intx temp;
+  intx temp = 0;
   __asm__ volatile("        testl   %6,%6          ;"
                    "        jz      13f            ;"
                    "        cmpl    %4,%5          ;"
