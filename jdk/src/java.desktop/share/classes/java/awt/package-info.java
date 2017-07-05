@@ -35,10 +35,10 @@
  * components can fire. See AWTEvent for a description of the AWT event model.
  * <p>
  * A container is a component that can contain components and other containers.
- * A con tainer can also have a layout manager that controls the visual
- * placement of components in the container. The AWT package contains several
- * layout manager classes and an interface for building your own layout manager.
- * See Container and LayoutManager for more information.
+ * A container can also have a layout manager that controls the visual placement
+ * of components in the container. The AWT package contains several layout
+ * manager classes and an interface for building your own layout manager. See
+ * Container and LayoutManager for more information.
  * <p>
  * Each {@code Component} object is limited in its maximum size and its location
  * because the values are stored as an integer. Also, a platform may further
@@ -54,6 +54,8 @@
  * <ul>
  *     <li><a href="doc-files/FocusSpec.html">The AWT Focus Subsystem</a>
  *     <li><a href="doc-files/Modality.html">The AWT Modality</a>
+ *     <li><a href="{@docRoot}/../specs/AWT_Native_Interface.html">
+ *                  The Java AWT Native Interface (JAWT)</a>
  * </ul>
  *
  * @since 1.0

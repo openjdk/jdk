@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 8016846 8024341 8071479 8145006
  * @summary Unit tests stream and lambda-based methods on Pattern and Matcher
- * @library ../stream/bootlib
+ * @library /lib/testlibrary/bootlib
  * @build java.base/java.util.stream.OpTestCase
  * @run testng/othervm PatternStreamTest
  */

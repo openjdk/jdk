@@ -454,12 +454,12 @@ public abstract class AtomicLongFieldUpdater<T> {
 
         public final boolean compareAndSet(T obj, long expect, long update) {
             accessCheck(obj);
-            return U.compareAndSwapLong(obj, offset, expect, update);
+            return U.compareAndSetLong(obj, offset, expect, update);
         }
 
         public final boolean weakCompareAndSet(T obj, long expect, long update) {
             accessCheck(obj);
-            return U.compareAndSwapLong(obj, offset, expect, update);
+            return U.compareAndSetLong(obj, offset, expect, update);
         }
 
         public final void set(T obj, long newValue) {

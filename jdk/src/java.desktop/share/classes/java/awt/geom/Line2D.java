@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -618,7 +618,7 @@ public abstract class Line2D implements Shape, Cloneable {
      *           specified line segment
      * @param y2 the Y coordinate of the end point of the
      *           specified line segment
-     * @return {@code <true>} if this line segment and the specified line segment
+     * @return {@code true} if this line segment and the specified line segment
      *                  intersect each other; {@code false} otherwise.
      * @since 1.2
      */
