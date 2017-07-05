@@ -5474,8 +5474,6 @@ void G1CollectedHeap::set_refine_cte_cl_concurrency(bool concurrent) {
   _refine_cte_cl->set_concurrent(concurrent);
 }
 
-#ifdef ASSERT
-
 bool G1CollectedHeap::is_in_closed_subset(const void* p) const {
   HeapRegion* hr = heap_region_containing(p);
   if (hr == NULL) {
@@ -5484,7 +5482,6 @@ bool G1CollectedHeap::is_in_closed_subset(const void* p) const {
     return hr->is_in(p);
   }
 }
-#endif // ASSERT
 
 class VerifyRegionListsClosure : public HeapRegionClosure {
 private:
