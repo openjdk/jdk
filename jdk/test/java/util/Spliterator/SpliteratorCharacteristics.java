@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8020156 8020009 8022326 8012913 8024405 8024408
+ * @bug 8020156 8020009 8022326 8012913 8024405 8024408 8071477
  * @run testng SpliteratorCharacteristics
  */
 
@@ -58,6 +58,57 @@ import static org.testng.Assert.*;
 
 @Test
 public class SpliteratorCharacteristics {
+
+    public void testSpliteratorFromCharSequence() {
+        class CharSequenceImpl implements CharSequence {
+            final String s;
+
+            public CharSequenceImpl(String s) {
+                this.s = s;
+            }
+
+            @Override
+            public int length() {
+                return s.length();
+            }
+
+            @Override
+            public char charAt(int index) {
+                return s.charAt(index);
+            }
+
+            @Override
+            public CharSequence subSequence(int start, int end) {
+                return s.subSequence(start, end);
+            }
+
+            @Override
+            public String toString() {
+                return s;
+            }
+        }
+
+        CharSequence cs = "A";
+        Spliterator.OfInt s = cs.chars().spliterator();
+        assertCharacteristics(s, Spliterator.IMMUTABLE | Spliterator.ORDERED |
+                                 Spliterator.SIZED | Spliterator.SUBSIZED);
+        assertHasNotCharacteristics(s, Spliterator.CONCURRENT);
+        s = cs.codePoints().spliterator();
+        assertCharacteristics(s, Spliterator.IMMUTABLE | Spliterator.ORDERED);
+        assertHasNotCharacteristics(s, Spliterator.CONCURRENT);
+
+        for (CharSequence c : Arrays.asList(new CharSequenceImpl("A"),
+                                             new StringBuilder("A"),
+                                             new StringBuffer("A"))) {
+            s = cs.chars().spliterator();
+            assertCharacteristics(s, Spliterator.ORDERED |
+                                     Spliterator.SIZED | Spliterator.SUBSIZED);
+            assertHasNotCharacteristics(s, Spliterator.CONCURRENT);
+            s = cs.codePoints().spliterator();
+            assertCharacteristics(s, Spliterator.ORDERED);
+            assertHasNotCharacteristics(s, Spliterator.CONCURRENT);
+        }
+    }
 
     public void testSpliteratorFromCollection() {
         List<Integer> l = Arrays.asList(1, 2, 3, 4);

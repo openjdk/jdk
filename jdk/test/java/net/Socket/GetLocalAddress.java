@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4106601 8026245
+ * @bug 4106601 8026245 8071424
  * @run main/othervm GetLocalAddress
  * @run main/othervm -Djava.net.preferIPv4Stack=true GetLocalAddress
  * @run main/othervm -Djava.net.preferIPv6Addresses=true GetLocalAddress
@@ -39,6 +39,8 @@ public class GetLocalAddress implements Runnable {
     static int port;
 
     public static void main(String args[]) throws Exception {
+        testBindNull();
+
         boolean      error = true;
         int          linger = 65546;
         int          value = 0;
@@ -66,4 +68,18 @@ public class GetLocalAddress implements Runnable {
         }
     }
 
+    static void testBindNull() throws Exception {
+        try (Socket soc = new Socket()) {
+            soc.bind(null);
+            if (!soc.isBound())
+                throw new RuntimeException(
+                    "should be bound after bind(null)");
+            if (soc.getLocalPort() <= 0)
+                throw new RuntimeException(
+                   "bind(null) failed, local port: " + soc.getLocalPort());
+            if (soc.getLocalAddress() == null)
+                 throw new RuntimeException(
+                   "bind(null) failed, local address is null");
+        }
+    }
 }

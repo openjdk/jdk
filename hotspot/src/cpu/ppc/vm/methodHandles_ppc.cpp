@@ -172,15 +172,15 @@ void MethodHandles::jump_to_lambda_form(MacroAssembler* _masm,
 
   // Load the invoker, as MH -> MH.form -> LF.vmentry
   __ verify_oop(recv);
-  __ load_heap_oop_not_null(method_temp, NONZERO(java_lang_invoke_MethodHandle::form_offset_in_bytes()), recv);
+  __ load_heap_oop_not_null(method_temp, NONZERO(java_lang_invoke_MethodHandle::form_offset_in_bytes()), recv, temp2);
   __ verify_oop(method_temp);
-  __ load_heap_oop_not_null(method_temp, NONZERO(java_lang_invoke_LambdaForm::vmentry_offset_in_bytes()), method_temp);
+  __ load_heap_oop_not_null(method_temp, NONZERO(java_lang_invoke_LambdaForm::vmentry_offset_in_bytes()), method_temp, temp2);
   __ verify_oop(method_temp);
-  // the following assumes that a Method* is normally compressed in the vmtarget field:
+  // The following assumes that a Method* is normally compressed in the vmtarget field:
   __ ld(method_temp, NONZERO(java_lang_invoke_MemberName::vmtarget_offset_in_bytes()), method_temp);
 
   if (VerifyMethodHandles && !for_compiler_entry) {
-    // make sure recv is already on stack
+    // Make sure recv is already on stack.
     __ ld(temp2, in_bytes(Method::const_offset()), method_temp);
     __ load_sized_value(temp2, in_bytes(ConstMethod::size_of_parameters_offset()), temp2,
                         sizeof(u2), /*is_signed*/ false);
@@ -259,8 +259,9 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
   }
 
   if (TraceMethodHandles) {
-    if (tmp_mh != noreg)
+    if (tmp_mh != noreg) {
       __ mr(R23_method_handle, tmp_mh);  // make stub happy
+    }
     trace_method_handle_interpreter_entry(_masm, iid);
   }
 
@@ -332,7 +333,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
       if (VerifyMethodHandles && iid != vmIntrinsics::_linkToInterface) {
         Label L_ok;
         Register temp2_defc = temp2;
-        __ load_heap_oop_not_null(temp2_defc, NONZERO(java_lang_invoke_MemberName::clazz_offset_in_bytes()), member_reg);
+        __ load_heap_oop_not_null(temp2_defc, NONZERO(java_lang_invoke_MemberName::clazz_offset_in_bytes()), member_reg, temp3);
         load_klass_from_Class(_masm, temp2_defc, temp3, temp4);
         __ verify_klass_ptr(temp2_defc);
         __ check_klass_subtype(temp1_recv_klass, temp2_defc, temp3, temp4, L_ok);
@@ -407,7 +408,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
       }
 
       Register temp2_intf = temp2;
-      __ load_heap_oop_not_null(temp2_intf, NONZERO(java_lang_invoke_MemberName::clazz_offset_in_bytes()), member_reg);
+      __ load_heap_oop_not_null(temp2_intf, NONZERO(java_lang_invoke_MemberName::clazz_offset_in_bytes()), member_reg, temp3);
       load_klass_from_Class(_masm, temp2_intf, temp3, temp4);
       __ verify_klass_ptr(temp2_intf);
 
@@ -464,7 +465,7 @@ void trace_method_handle_stub(const char* adaptername,
                  strstr(adaptername, "linkTo") == NULL);    // static linkers don't have MH
   const char* mh_reg_name = has_mh ? "R23_method_handle" : "G23";
   tty->print_cr("MH %s %s="INTPTR_FORMAT " sp=" INTPTR_FORMAT,
-                adaptername, mh_reg_name, (intptr_t) mh, (intptr_t) entry_sp);
+                adaptername, mh_reg_name, (intptr_t) mh, entry_sp);
 
   if (Verbose) {
     tty->print_cr("Registers:");
@@ -535,23 +536,22 @@ void MethodHandles::trace_method_handle(MacroAssembler* _masm, const char* adapt
 
   BLOCK_COMMENT("trace_method_handle {");
 
-  int nbytes_save = 10 * 8;             // 10 volatile gprs
-  __ save_LR_CR(R0);
-  __ mr(R0, R1_SP);                     // saved_sp
-  assert(Assembler::is_simm(-nbytes_save, 16), "Overwriting R0");
-  // Push_frame_reg_args only uses R0 if nbytes_save is wider than 16 bit.
-  __ push_frame_reg_args(nbytes_save, R0);
-  __ save_volatile_gprs(R1_SP, frame::abi_reg_args_size); // Except R0.
+  const Register tmp = R11; // Will be preserved.
+  const int nbytes_save = 11*8; // volatile gprs except R0
+  __ save_volatile_gprs(R1_SP, -nbytes_save); // except R0
+  __ save_LR_CR(tmp); // save in old frame
 
-  __ load_const(R3_ARG1, (address)adaptername);
+  __ mr(R5_ARG3, R1_SP);     // saved_sp
+  __ push_frame_reg_args(nbytes_save, tmp);
+
+  __ load_const_optimized(R3_ARG1, (address)adaptername, tmp);
   __ mr(R4_ARG2, R23_method_handle);
-  __ mr(R5_ARG3, R0);        // saved_sp
   __ mr(R6_ARG4, R1_SP);
   __ call_VM_leaf(CAST_FROM_FN_PTR(address, trace_method_handle_stub));
 
-  __ restore_volatile_gprs(R1_SP, 112); // Except R0.
   __ pop_frame();
-  __ restore_LR_CR(R0);
+  __ restore_LR_CR(tmp);
+  __ restore_volatile_gprs(R1_SP, -nbytes_save); // except R0
 
   BLOCK_COMMENT("} trace_method_handle");
 }

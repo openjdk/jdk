@@ -28,9 +28,7 @@ include LibCommon.gmk
 ################################################################################
 
 LIBJAAS_MAPFILE :=
-ifneq ($(OPENJDK_TARGET_OS), solaris)
-  LIBJAAS_EXCLUDE_FILES := Solaris.c
-else
+ifeq ($(OPENJDK_TARGET_OS), solaris)
   # only on solaris...wonder why
   LIBJAAS_MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libjaas/mapfile-vers
 endif
@@ -43,7 +41,7 @@ endif
 $(eval $(call SetupNativeCompilation,BUILD_LIBJAAS, \
     LIBRARY := $(LIBJAAS_NAME), \
     OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
-    SRC := $(JDK_TOPDIR)/src/jdk.security.auth/$(OPENJDK_TARGET_OS_TYPE)/native/libjaas, \
+    SRC := $(call FindSrcDirsForLib, jdk.security.auth, jaas), \
     LANG := C, \
     OPTIMIZATION := LOW, \
     CFLAGS := $(CFLAGS_JDKLIB) -I$(SUPPORT_OUTPUTDIR)/headers/jdk.security.auth, \
@@ -53,7 +51,6 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJAAS, \
     LDFLAGS_windows := netapi32.lib user32.lib mpr.lib advapi32.lib, \
     LDFLAGS_SUFFIX_windows := $(LDFLAGS_JDKLIB_SUFFIX), \
     LDFLAGS_SUFFIX_solaris := -lc, \
-    EXCLUDE_FILES := $(LIBJAAS_EXCLUDE_FILES), \
     VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
     RC_FLAGS := $(RC_FLAGS) \
         -D "JDK_FNAME=$(LIBJAAS_NAME).dll" \

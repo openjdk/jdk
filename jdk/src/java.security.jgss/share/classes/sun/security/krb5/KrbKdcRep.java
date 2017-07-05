@@ -62,7 +62,8 @@ abstract class KrbKdcRep {
             throw new KrbApErrException(Krb5.KRB_AP_ERR_MODIFIED);
         }
 
-        for (int i = 1; i < 6; i++) {
+        // We allow KDC to return a non-forwardable ticket if request has -f
+        for (int i = 2; i < 6; i++) {
             if (req.reqBody.kdcOptions.get(i) !=
                    rep.encKDCRepPart.flags.get(i)) {
                 if (Krb5.DEBUG) {
