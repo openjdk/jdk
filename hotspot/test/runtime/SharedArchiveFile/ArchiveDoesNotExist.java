@@ -33,7 +33,7 @@
  * @run main ArchiveDoesNotExist
  */
 
-import com.oracle.java.testlibrary.*;
+import jdk.test.lib.*;
 import java.io.File;
 
 public class ArchiveDoesNotExist {

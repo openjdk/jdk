@@ -42,6 +42,7 @@ const char *NodeClassNames[] = {
   "VecD",
   "VecX",
   "VecY",
+  "VecZ",
   "_last_machine_leaf",
 #include "classes.hpp"
   "_last_class_name",

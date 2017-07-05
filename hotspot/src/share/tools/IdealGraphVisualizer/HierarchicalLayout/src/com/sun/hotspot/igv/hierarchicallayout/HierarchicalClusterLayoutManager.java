@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,17 +44,21 @@ import com.sun.hotspot.igv.layout.Vertex;
  */
 public class HierarchicalClusterLayoutManager implements LayoutManager {
 
-    private OldHierarchicalLayoutManager.Combine combine;
-    private LayoutManager subManager = new OldHierarchicalLayoutManager(combine);
-    private LayoutManager manager = new OldHierarchicalLayoutManager(combine, 150);
+    private HierarchicalLayoutManager.Combine combine;
+    private LayoutManager subManager = new HierarchicalLayoutManager(combine);
+    private LayoutManager manager = new HierarchicalLayoutManager(combine);
     private static final boolean TRACE = false;
 
-    public HierarchicalClusterLayoutManager(OldHierarchicalLayoutManager.Combine combine) {
+    public HierarchicalClusterLayoutManager(HierarchicalLayoutManager.Combine combine) {
         this.combine = combine;
     }
 
     public void doLayout(LayoutGraph graph) {
         doLayout(graph, new HashSet<Vertex>(), new HashSet<Vertex>(), new HashSet<Link>());
+    }
+
+    public void doLayout(LayoutGraph graph, Set<? extends Link> importantLinks) {
+        doLayout(graph);
     }
 
     public void setSubManager(LayoutManager manager) {
@@ -116,7 +120,7 @@ public class HierarchicalClusterLayoutManager implements LayoutManager {
 
         for (Vertex v : graph.getVertices()) {
             Cluster c = v.getCluster();
-            assert c != null;
+            assert c != null : "Cluster of vertex " + v + " is null!";
             clusterNodes.get(c).addSubNode(v);
         }
 
@@ -130,9 +134,9 @@ public class HierarchicalClusterLayoutManager implements LayoutManager {
             Cluster toCluster = toVertex.getCluster();
 
             Port samePort = null;
-            if (combine == OldHierarchicalLayoutManager.Combine.SAME_INPUTS) {
+            if (combine == HierarchicalLayoutManager.Combine.SAME_INPUTS) {
                 samePort = toPort;
-            } else if (combine == OldHierarchicalLayoutManager.Combine.SAME_OUTPUTS) {
+            } else if (combine == HierarchicalLayoutManager.Combine.SAME_OUTPUTS) {
                 samePort = fromPort;
             }
 
@@ -196,7 +200,7 @@ public class HierarchicalClusterLayoutManager implements LayoutManager {
 
         for (Cluster c : cluster) {
             ClusterNode n = clusterNodes.get(c);
-            subManager.doLayout(new LayoutGraph(n.getSubEdges(), n.getSubNodes()), clusterInputSlotSet.get(c), clusterOutputSlotSet.get(c), new HashSet<Link>());
+            subManager.doLayout(new LayoutGraph(n.getSubEdges(), n.getSubNodes()), new HashSet<Link>());
             n.updateSize();
         }
 
@@ -206,7 +210,7 @@ public class HierarchicalClusterLayoutManager implements LayoutManager {
             ((ClusterNode) v).setRoot(true);
         }
 
-        manager.doLayout(new LayoutGraph(clusterEdges, clusterNodeSet), new HashSet<Vertex>(), new HashSet<Vertex>(), interClusterEdges);
+        manager.doLayout(new LayoutGraph(clusterEdges, clusterNodeSet), interClusterEdges);
 
         for (Cluster c : cluster) {
             ClusterNode n = clusterNodes.get(c);

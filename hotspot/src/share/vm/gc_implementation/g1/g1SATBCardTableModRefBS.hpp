@@ -153,6 +153,11 @@ class G1SATBCardTableLoggingModRefBS: public G1SATBCardTableModRefBS {
     return ReservedSpace::allocation_align_size_up(number_of_slots);
   }
 
+  // Returns how many bytes of the heap a single byte of the Card Table corresponds to.
+  static size_t heap_map_factor() {
+    return CardTableModRefBS::card_size;
+  }
+
   G1SATBCardTableLoggingModRefBS(MemRegion whole_heap);
 
   virtual void initialize() { }

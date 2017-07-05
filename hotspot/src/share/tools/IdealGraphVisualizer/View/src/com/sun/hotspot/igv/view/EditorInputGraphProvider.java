@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,8 @@
 package com.sun.hotspot.igv.view;
 
 import com.sun.hotspot.igv.data.InputGraph;
-import com.sun.hotspot.igv.data.services.InputGraphProvider;
 import com.sun.hotspot.igv.data.InputNode;
+import com.sun.hotspot.igv.data.services.InputGraphProvider;
 import java.util.Set;
 
 /**
@@ -35,18 +35,19 @@ import java.util.Set;
  */
 public class EditorInputGraphProvider implements InputGraphProvider {
 
-    public InputGraph getGraph() {
-        EditorTopComponent e = EditorTopComponent.getActive();
-        if (e == null) {
-            return null;
-        }
-        return e.getDiagramModel().getGraphToView();
+    private EditorTopComponent editor;
+
+    public EditorInputGraphProvider(EditorTopComponent editor) {
+        this.editor = editor;
     }
 
+    @Override
+    public InputGraph getGraph() {
+        return editor.getDiagramModel().getGraphToView();
+    }
+
+    @Override
     public void setSelectedNodes(Set<InputNode> nodes) {
-        EditorTopComponent e = EditorTopComponent.getActive();
-        if (e != null) {
-            e.setSelectedNodes(nodes);
-        }
+        editor.setSelectedNodes(nodes);
     }
 }

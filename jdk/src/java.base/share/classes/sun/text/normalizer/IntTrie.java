@@ -58,7 +58,7 @@ public class IntTrie extends Trie
     * trie.</p>
     * @param inputStream file input stream to a ICU data file, containing
     *                    the trie
-    * @param dataManipulate object which provides methods to parse the char
+    * @param datamanipulate object which provides methods to parse the char
     *                        data
     * @throws IOException thrown when data reading fails
     * @draft 2.1

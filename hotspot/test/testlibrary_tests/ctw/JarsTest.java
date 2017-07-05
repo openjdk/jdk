@@ -30,7 +30,7 @@
  *          java.compiler
  *          java.management
  *          jdk.jvmstat/sun.jvmstat.monitor
- * @build ClassFileInstaller com.oracle.java.testlibrary.* sun.hotspot.tools.ctw.CompileTheWorld sun.hotspot.WhiteBox Foo Bar
+ * @build ClassFileInstaller jdk.test.lib.* sun.hotspot.tools.ctw.CompileTheWorld sun.hotspot.WhiteBox Foo Bar
  * @run main ClassFileInstaller sun.hotspot.WhiteBox Foo Bar
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main JarsTest prepare
@@ -40,7 +40,7 @@
  * @author igor.ignatyev@oracle.com
  */
 
-import com.oracle.java.testlibrary.OutputAnalyzer;
+import jdk.test.lib.OutputAnalyzer;
 
 public class JarsTest extends CtwTest {
     private static final String[] SHOULD_CONTAIN

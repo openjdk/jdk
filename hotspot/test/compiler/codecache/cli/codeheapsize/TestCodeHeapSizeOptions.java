@@ -22,7 +22,7 @@
  */
 package codeheapsize;
 
-import com.oracle.java.testlibrary.Platform;
+import jdk.test.lib.Platform;
 import common.CodeCacheCLITestBase;
 import common.CodeCacheCLITestCase;
 import sun.hotspot.code.BlobType;
@@ -36,7 +36,7 @@ import java.util.EnumSet;
  *          java.compiler
  *          java.management
  *          jdk.jvmstat/sun.jvmstat.monitor
- * @build TestCodeHeapSizeOptions com.oracle.java.testlibrary.* codeheapsize.*
+ * @build TestCodeHeapSizeOptions jdk.test.lib.* codeheapsize.*
  *        common.*
  * @run main/timeout=240 codeheapsize.TestCodeHeapSizeOptions
  */

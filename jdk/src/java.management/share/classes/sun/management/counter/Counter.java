@@ -63,7 +63,7 @@ public interface Counter extends java.io.Serializable {
     public Object getValue();
 
     /**
-     * Returns <tt>true</tt> if this counter is an internal counter.
+     * Returns {@code true} if this counter is an internal counter.
      */
     public boolean isInternal();
 

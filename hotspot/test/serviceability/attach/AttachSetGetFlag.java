@@ -31,7 +31,7 @@
  *          java.management
  *          jdk.attach/sun.tools.attach
  *          jdk.jvmstat/sun.jvmstat.monitor
- * @build com.oracle.java.testlibrary.* AttachSetGetFlag
+ * @build jdk.test.lib.* AttachSetGetFlag
  * @run driver AttachSetGetFlag
  */
 
@@ -45,9 +45,9 @@ import java.nio.file.Paths;
 
 import sun.tools.attach.HotSpotVirtualMachine;
 
-import com.oracle.java.testlibrary.Asserts;
-import com.oracle.java.testlibrary.Platform;
-import com.oracle.java.testlibrary.ProcessTools;
+import jdk.test.lib.Asserts;
+import jdk.test.lib.Platform;
+import jdk.test.lib.ProcessTools;
 import com.sun.tools.attach.VirtualMachine;
 
 public class AttachSetGetFlag {

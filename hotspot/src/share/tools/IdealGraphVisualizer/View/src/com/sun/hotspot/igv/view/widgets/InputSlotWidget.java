@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 package com.sun.hotspot.igv.view.widgets;
 
+import com.sun.hotspot.igv.graph.Figure;
 import com.sun.hotspot.igv.graph.InputSlot;
 import com.sun.hotspot.igv.view.DiagramScene;
 import java.awt.Point;
@@ -40,14 +41,25 @@ public class InputSlotWidget extends SlotWidget {
     public InputSlotWidget(InputSlot slot, DiagramScene scene, Widget parent, FigureWidget fw) {
         super(slot, scene, parent, fw);
         inputSlot = slot;
-        init();
-        getFigureWidget().getLeftWidget().addChild(this);
+        //init();
+        //getFigureWidget().getLeftWidget().addChild(this);
+        Point p = inputSlot.getRelativePosition();
+        p.x -= this.calculateClientArea().width / 2;
+        p.y += Figure.SLOT_START;
+        this.setPreferredLocation(p);
     }
 
     public InputSlot getInputSlot() {
         return inputSlot;
     }
 
+    @Override
+    protected int calculateSlotWidth() {
+        List<InputSlot> slots = getSlot().getFigure().getInputSlots();
+        assert slots.contains(getSlot());
+        return calculateWidth(slots.size());
+    }
+/*
     protected Point calculateRelativeLocation() {
         if (getFigureWidget().getBounds() == null) {
             return new Point(0, 0);
@@ -57,5 +69,5 @@ public class InputSlotWidget extends SlotWidget {
         List<InputSlot> slots = inputSlot.getFigure().getInputSlots();
         assert slots.contains(inputSlot);
         return new Point((int) x, (int) (calculateRelativeY(slots.size(), slots.indexOf(inputSlot))));
-    }
+    }*/
 }

@@ -336,7 +336,7 @@ public final class LdapName implements Name {
      * characters:
      *<ul>
      *<li>leading and trailing whitespace
-     *<li><pre>, = + < > # ; " \</pre>
+     *<li><pre>{@literal , = + < > # ; " \}</pre>
      *</ul>
      * If the value is a byte array, it is converted to hex
      * notation (such as "#CEB1DF80").

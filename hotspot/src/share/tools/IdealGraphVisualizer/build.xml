@@ -5,4 +5,12 @@
 <project name="IdealGraphVisualizer" basedir=".">
     <description>Builds the module suite IdealGraphVisualizer.</description>
     <import file="nbproject/build-impl.xml"/>
+    
+    <target name="build-launchers" depends="suite.build-launchers">
+        <!-- Drop memory presets (-Xms, -Xmx) from default_options of packaged builds and let the executing VM choose reasonable defaults -->
+        <replaceregexp file="${build.launcher.dir}/etc/${app.name}.conf" byline="true" match="^default_options=.*" replace='default_options="--branding idealgraphvisualizer"' />
+    </target>
+    
+    <!-- Local (environment-specific) extensions/modifications to the build -->
+    <import file="build-local.xml" optional="true" />
 </project>

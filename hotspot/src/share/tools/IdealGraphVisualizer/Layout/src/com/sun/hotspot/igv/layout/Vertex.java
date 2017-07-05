@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,6 @@ import java.awt.Point;
  */
 public interface Vertex extends Comparable<Vertex> {
 
-    public Cluster getCluster();
-
     public Dimension getSize();
 
     public Point getPosition();
@@ -41,4 +39,6 @@ public interface Vertex extends Comparable<Vertex> {
     public void setPosition(Point p);
 
     public boolean isRoot();
+
+    public Cluster getCluster();
 }

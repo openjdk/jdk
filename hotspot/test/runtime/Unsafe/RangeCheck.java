@@ -30,7 +30,7 @@
  *          java.management
  */
 
-import com.oracle.java.testlibrary.*;
+import jdk.test.lib.*;
 import sun.misc.Unsafe;
 
 public class RangeCheck {

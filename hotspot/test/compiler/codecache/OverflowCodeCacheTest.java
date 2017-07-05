@@ -29,7 +29,7 @@ import java.util.ArrayList;
 import sun.hotspot.WhiteBox;
 import sun.hotspot.code.BlobType;
 import sun.hotspot.code.CodeBlob;
-import com.oracle.java.testlibrary.Asserts;
+import jdk.test.lib.Asserts;
 
 /*
  * @test OverflowCodeCacheTest

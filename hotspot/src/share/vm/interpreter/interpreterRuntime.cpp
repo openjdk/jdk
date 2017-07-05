@@ -1326,6 +1326,8 @@ IRT_ENTRY(void, InterpreterRuntime::member_name_arg_or_null(JavaThread* thread, 
       member_name_oop = java_lang_invoke_DirectMethodHandle::member(member_name_oop);
     }
     thread->set_vm_result(member_name_oop);
+  } else {
+    thread->set_vm_result(NULL);
   }
 IRT_END
 #endif // INCLUDE_JVMTI

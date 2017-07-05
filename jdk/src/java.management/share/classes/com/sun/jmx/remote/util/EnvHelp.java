@@ -55,17 +55,17 @@ import javax.management.remote.JMXConnectorServer;
 public class EnvHelp {
 
     /**
-     * <p>Name of the attribute that specifies a default class loader
+     * Name of the attribute that specifies a default class loader
      * object.
-     * The value associated with this attribute is a ClassLoader object</p>
+     * The value associated with this attribute is a ClassLoader object.
      */
     private static final String DEFAULT_CLASS_LOADER =
         JMXConnectorFactory.DEFAULT_CLASS_LOADER;
 
     /**
-     * <p>Name of the attribute that specifies a default class loader
-     *    ObjectName.
-     * The value associated with this attribute is an ObjectName object</p>
+     * Name of the attribute that specifies a default class loader
+     * ObjectName.
+     * The value associated with this attribute is an ObjectName object.
      */
     private static final String DEFAULT_CLASS_LOADER_NAME =
         JMXConnectorServerFactory.DEFAULT_CLASS_LOADER_NAME;
@@ -74,7 +74,6 @@ public class EnvHelp {
      * Get the Connector Server default class loader.
      * <p>
      * Returns:
-     * <p>
      * <ul>
      * <li>
      *     The ClassLoader object found in <var>env</var> for
@@ -114,6 +113,7 @@ public class EnvHelp {
      *     <code>jmx.remote.default.class.loader.name</code> is specified
      *     but <var>mbs</var> is null.
      * </li>
+     * </ul>
      * @exception InstanceNotFoundException if
      * <code>jmx.remote.default.class.loader.name</code> is specified
      * and the ClassLoader MBean is not found in <var>mbs</var>.
@@ -172,7 +172,6 @@ public class EnvHelp {
      * Get the Connector Client default class loader.
      * <p>
      * Returns:
-     * <p>
      * <ul>
      * <li>
      *     The ClassLoader object found in <var>env</var> for
@@ -232,7 +231,7 @@ public class EnvHelp {
     /**
      * Returns the cause field of a {@code Throwable} object.
      * The cause field can be got only if <var>t</var> has an
-     * {@link Throwable#getCause()} method (JDK Version >= 1.4)
+     * {@link Throwable#getCause()} method (JDK Version {@literal >=} 1.4)
      * @param t {@code Throwable} on which the cause must be set.
      * @return the cause if getCause() succeeded and the got value is not
      * null, otherwise return the <var>t</var>.
@@ -254,7 +253,7 @@ public class EnvHelp {
 
 
     /**
-     * <p>Name of the attribute that specifies the size of a notification
+     * Name of the attribute that specifies the size of a notification
      * buffer for a connector server. The default value is 1000.
      */
     public static final String BUFFER_SIZE_PROPERTY =
@@ -316,10 +315,10 @@ public class EnvHelp {
     }
 
     /**
-     * <p>Name of the attribute that specifies the maximum number of
-     * notifications that a client will fetch from its server.. The
+     * Name of the attribute that specifies the maximum number of
+     * notifications that a client will fetch from its server. The
      * value associated with this attribute should be an
-     * <code>Integer</code> object.  The default value is 1000.</p>
+     * {@code Integer} object.  The default value is 1000.
      */
     public static final String MAX_FETCH_NOTIFS =
         "jmx.remote.x.notification.fetch.max";
@@ -334,10 +333,10 @@ public class EnvHelp {
     }
 
     /**
-     * <p>Name of the attribute that specifies the timeout for a
+     * Name of the attribute that specifies the timeout for a
      * client to fetch notifications from its server. The value
      * associated with this attribute should be a <code>Long</code>
-     * object.  The default value is 60000 milliseconds.</p>
+     * object.  The default value is 60000 milliseconds.
      */
     public static final String FETCH_TIMEOUT =
         "jmx.remote.x.notification.fetch.timeout";
@@ -351,11 +350,12 @@ public class EnvHelp {
     }
 
     /**
-     * <p>Name of the attribute that specifies an object that will check
+     * Name of the attribute that specifies an object that will check
      * accesses to add/removeNotificationListener and also attempts to
      * receive notifications.  The value associated with this attribute
      * should be a <code>NotificationAccessController</code> object.
-     * The default value is null.</p>
+     * The default value is null.
+     * <p>
      * This field is not public because of its com.sun dependency.
      */
     public static final String NOTIF_ACCESS_CONTROLLER =
@@ -630,9 +630,9 @@ public class EnvHelp {
     }
 
     /**
-     * <p>Name of the attribute that specifies the timeout to keep a
+     * Name of the attribute that specifies the timeout to keep a
      * server side connection after answering last client request.
-     * The default value is 120000 milliseconds.</p>
+     * The default value is 120000 milliseconds.
      */
     public static final String SERVER_CONNECTION_TIMEOUT =
         "jmx.remote.x.server.connection.timeout";
@@ -646,9 +646,9 @@ public class EnvHelp {
     }
 
     /**
-     * <p>Name of the attribute that specifies the period in
-     * millisecond for a client to check its connection.  The default
-     * value is 60000 milliseconds.</p>
+     * Name of the attribute that specifies the period in
+     * millisecond for a client to check its connection. The default
+     * value is 60000 milliseconds.
      */
     public static final String CLIENT_CONNECTION_CHECK_PERIOD =
         "jmx.remote.x.client.connection.check.period";
@@ -741,13 +741,13 @@ public class EnvHelp {
     }
 
     /**
-     * <p>Name of the attribute that specifies whether a connector server
+     * Name of the attribute that specifies whether a connector server
      * should not prevent the VM from exiting
      */
     public static final String JMX_SERVER_DAEMON = "jmx.remote.x.daemon";
 
     /**
-     * Returns true if {@value SERVER_DAEMON} is specified in the {@code env}
+     * Returns true if {@value JMX_SERVER_DAEMON} is specified in the {@code env}
      * as a key and its value is a String and it is equal to true ignoring case.
      *
      * @param env

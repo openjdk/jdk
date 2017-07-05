@@ -30,7 +30,7 @@
  *          java.management
  * @run main ObjectAlignment
  */
-import com.oracle.java.testlibrary.*;
+import jdk.test.lib.*;
 
 public class ObjectAlignment {
 

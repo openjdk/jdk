@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,7 @@ public class BlockWidget extends Widget {
         g.setColor(titleColor);
         g.setFont(titleFont);
 
-        String s = "B" + blockNode.toString();
+        String s = "B" + blockNode.getName();
         Rectangle2D r1 = g.getFontMetrics().getStringBounds(s, g);
         g.drawString(s, r.x + 5, r.y + (int) r1.getHeight());
         g.setStroke(old);

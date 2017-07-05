@@ -66,6 +66,7 @@
 #include "runtime/vmThread.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/stack.inline.hpp"
+#include "utilities/taskqueue.inline.hpp"
 
 size_t G1CollectedHeap::_humongous_object_threshold_in_words = 0;
 
@@ -1083,11 +1084,9 @@ void G1CollectedHeap::clear_rsets_post_compaction() {
 class RebuildRSOutOfRegionClosure: public HeapRegionClosure {
   G1CollectedHeap*   _g1h;
   UpdateRSOopClosure _cl;
-  int                _worker_i;
 public:
-  RebuildRSOutOfRegionClosure(G1CollectedHeap* g1, int worker_i = 0) :
+  RebuildRSOutOfRegionClosure(G1CollectedHeap* g1, uint worker_i = 0) :
     _cl(g1->g1_rem_set(), worker_i),
-    _worker_i(worker_i),
     _g1h(g1)
   { }
 
@@ -1166,6 +1165,7 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
   SvcGCMarker sgcm(SvcGCMarker::FULL);
   ResourceMark rm;
 
+  G1Log::update_level();
   print_heap_before_gc();
   trace_heap_before_gc(gc_tracer);
 
@@ -1877,37 +1877,42 @@ jint G1CollectedHeap::initialize() {
   // Carve out the G1 part of the heap.
 
   ReservedSpace g1_rs = heap_rs.first_part(max_byte_size);
+  size_t page_size = UseLargePages ? os::large_page_size() : os::vm_page_size();
   G1RegionToSpaceMapper* heap_storage =
     G1RegionToSpaceMapper::create_mapper(g1_rs,
                                          g1_rs.size(),
-                                         UseLargePages ? os::large_page_size() : os::vm_page_size(),
+                                         page_size,
                                          HeapRegion::GrainBytes,
                                          1,
                                          mtJavaHeap);
+  os::trace_page_sizes("G1 Heap", collector_policy()->min_heap_byte_size(),
+                       max_byte_size, page_size,
+                       heap_rs.base(),
+                       heap_rs.size());
   heap_storage->set_mapping_changed_listener(&_listener);
 
   // Create storage for the BOT, card table, card counts table (hot card cache) and the bitmaps.
   G1RegionToSpaceMapper* bot_storage =
     create_aux_memory_mapper("Block offset table",
                              G1BlockOffsetSharedArray::compute_size(g1_rs.size() / HeapWordSize),
-                             G1BlockOffsetSharedArray::N_bytes);
+                             G1BlockOffsetSharedArray::heap_map_factor());
 
   ReservedSpace cardtable_rs(G1SATBCardTableLoggingModRefBS::compute_size(g1_rs.size() / HeapWordSize));
   G1RegionToSpaceMapper* cardtable_storage =
     create_aux_memory_mapper("Card table",
                              G1SATBCardTableLoggingModRefBS::compute_size(g1_rs.size() / HeapWordSize),
-                             G1BlockOffsetSharedArray::N_bytes);
+                             G1SATBCardTableLoggingModRefBS::heap_map_factor());
 
   G1RegionToSpaceMapper* card_counts_storage =
     create_aux_memory_mapper("Card counts table",
-                             G1BlockOffsetSharedArray::compute_size(g1_rs.size() / HeapWordSize),
-                             G1BlockOffsetSharedArray::N_bytes);
+                             G1CardCounts::compute_size(g1_rs.size() / HeapWordSize),
+                             G1CardCounts::heap_map_factor());
 
   size_t bitmap_size = CMBitMap::compute_size(g1_rs.size());
   G1RegionToSpaceMapper* prev_bitmap_storage =
-    create_aux_memory_mapper("Prev Bitmap", bitmap_size, CMBitMap::mark_distance());
+    create_aux_memory_mapper("Prev Bitmap", bitmap_size, CMBitMap::heap_map_factor());
   G1RegionToSpaceMapper* next_bitmap_storage =
-    create_aux_memory_mapper("Next Bitmap", bitmap_size, CMBitMap::mark_distance());
+    create_aux_memory_mapper("Next Bitmap", bitmap_size, CMBitMap::heap_map_factor());
 
   _hrm.initialize(heap_storage, prev_bitmap_storage, next_bitmap_storage, bot_storage, cardtable_storage, card_counts_storage);
   g1_barrier_set()->initialize(cardtable_storage);
@@ -3039,7 +3044,7 @@ void G1CollectedHeap::verify(bool silent, VerifyOption vo) {
       assert(UseDynamicNumberOfGCThreads ||
         workers()->active_workers() == workers()->total_workers(),
         "If not dynamic should be using all the workers");
-      int n_workers = workers()->active_workers();
+      uint n_workers = workers()->active_workers();
       set_par_threads(n_workers);
       workers()->run_task(&task);
       set_par_threads(0);
@@ -3577,9 +3582,9 @@ void G1CollectedHeap::print_taskqueue_stats(outputStream* const st) const {
   print_taskqueue_stats_hdr(st);
 
   TaskQueueStats totals;
-  const int n = workers()->total_workers();
-  for (int i = 0; i < n; ++i) {
-    st->print("%3d ", i); task_queue(i)->stats.print(st); st->cr();
+  const uint n = workers()->total_workers();
+  for (uint i = 0; i < n; ++i) {
+    st->print("%3u ", i); task_queue(i)->stats.print(st); st->cr();
     totals += task_queue(i)->stats;
   }
   st->print_raw("tot "); totals.print(st); st->cr();
@@ -3588,8 +3593,8 @@ void G1CollectedHeap::print_taskqueue_stats(outputStream* const st) const {
 }
 
 void G1CollectedHeap::reset_taskqueue_stats() {
-  const int n = workers()->total_workers();
-  for (int i = 0; i < n; ++i) {
+  const uint n = workers()->total_workers();
+  for (uint i = 0; i < n; ++i) {
     task_queue(i)->stats.reset();
   }
 }
@@ -3648,6 +3653,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
   SvcGCMarker sgcm(SvcGCMarker::MINOR);
   ResourceMark rm;
 
+  G1Log::update_level();
   print_heap_before_gc();
   trace_heap_before_gc(_gc_tracer_stw);
 
@@ -4318,7 +4324,7 @@ public:
 
   ParallelTaskTerminator* terminator() { return &_terminator; }
 
-  virtual void set_for_termination(int active_workers) {
+  virtual void set_for_termination(uint active_workers) {
     _root_processor->set_num_workers(active_workers);
     terminator()->reset_for_reuse(active_workers);
     _n_workers = active_workers;
@@ -4997,13 +5003,13 @@ private:
   G1CollectedHeap*   _g1h;
   RefToScanQueueSet* _queues;
   FlexibleWorkGang*  _workers;
-  int                _active_workers;
+  uint               _active_workers;
 
 public:
   G1STWRefProcTaskExecutor(G1CollectedHeap* g1h,
-                        FlexibleWorkGang* workers,
-                        RefToScanQueueSet *task_queues,
-                        int n_workers) :
+                           FlexibleWorkGang* workers,
+                           RefToScanQueueSet *task_queues,
+                           uint n_workers) :
     _g1h(g1h),
     _queues(task_queues),
     _workers(workers),
@@ -5136,7 +5142,7 @@ protected:
   uint _n_workers;
 
 public:
-  G1ParPreserveCMReferentsTask(G1CollectedHeap* g1h,int workers, RefToScanQueueSet *task_queues) :
+  G1ParPreserveCMReferentsTask(G1CollectedHeap* g1h, uint workers, RefToScanQueueSet *task_queues) :
     AbstractGangTask("ParPreserveCMReferents"),
     _g1h(g1h),
     _queues(task_queues),
