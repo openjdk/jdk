@@ -1428,7 +1428,7 @@ PSParallelCompact::compute_dense_prefix(const SpaceId id,
                   "space_cap=" SIZE_FORMAT,
                   space_live, space_used,
                   space_capacity);
-    tty->print_cr("dead_wood_limiter(%6.4f, %d)=%6.4f "
+    tty->print_cr("dead_wood_limiter(%6.4f, " SIZE_FORMAT ")=%6.4f "
                   "dead_wood_max=" SIZE_FORMAT " dead_wood_limit=" SIZE_FORMAT,
                   density, min_percent_free, limiter,
                   dead_wood_max, dead_wood_limit);
@@ -2106,7 +2106,8 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
         gclog_or_tty->print_cr(" collection: %d ",
                        heap->total_collections());
         if (Verbose) {
-          gclog_or_tty->print("old_gen_capacity: %d young_gen_capacity: %d",
+          gclog_or_tty->print("old_gen_capacity: " SIZE_FORMAT
+            " young_gen_capacity: " SIZE_FORMAT,
             old_gen->capacity_in_bytes(), young_gen->capacity_in_bytes());
         }
       }
@@ -2559,7 +2560,7 @@ void PSParallelCompact::enqueue_region_draining_tasks(GCTaskQueue* q,
 
   if (TraceParallelOldGCCompactionPhase) {
     if (Verbose && (fillable_regions & 7) != 0) gclog_or_tty->cr();
-    gclog_or_tty->print_cr("%u initially fillable regions", fillable_regions);
+    gclog_or_tty->print_cr(SIZE_FORMAT " initially fillable regions", fillable_regions);
   }
 }
 

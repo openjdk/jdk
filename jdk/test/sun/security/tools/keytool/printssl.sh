@@ -62,7 +62,7 @@ ${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} -Dtest.src=$TESTSRC PrintSSL | (
           echo "Server not started"
           exit 2
       else
-          ${TESTJAVA}${FS}bin${FS}keytool -printcert -sslserver localhost:$PORT
+          ${TESTJAVA}${FS}bin${FS}keytool ${TESTTOOLVMOPTS} -printcert -sslserver localhost:$PORT
       fi
 )
 status=$?
