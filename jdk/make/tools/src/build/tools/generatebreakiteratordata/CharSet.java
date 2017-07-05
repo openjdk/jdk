@@ -39,6 +39,7 @@
 
 package build.tools.generatebreakiteratordata;
 
+import java.util.Arrays;
 import java.util.Hashtable;
 
 /**
@@ -701,7 +702,14 @@ class CharSet {
      * the exact same characters as this one
      */
     public boolean equals(Object that) {
-        return (that instanceof CharSet) && chars.equals(((CharSet)that).chars);
+        return (that instanceof CharSet) && Arrays.equals(chars, ((CharSet)that).chars);
+    }
+
+    /**
+     * Returns the hash code for this set of characters
+     */
+    public int hashCode() {
+       return Arrays.hashCode(chars);
     }
 
     /**

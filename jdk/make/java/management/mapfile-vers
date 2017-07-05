@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,10 @@ SUNWprivate_1.1 {
 	    Java_com_sun_management_UnixOperatingSystem_getTotalSwapSpaceSize;
 	    Java_com_sun_management_UnixOperatingSystem_initialize;
 	    Java_sun_management_ClassLoadingImpl_setVerboseClass;
+            Java_sun_management_DiagnosticCommandImpl_executeDiagnosticCommand;
+            Java_sun_management_DiagnosticCommandImpl_getDiagnosticCommands;
+            Java_sun_management_DiagnosticCommandImpl_getDiagnosticCommandInfo;
+	    Java_sun_management_DiagnosticCommandImpl_setNotificationEnabled;
 	    Java_sun_management_FileSystemImpl_isAccessUserOnly0;
 	    Java_sun_management_Flag_getAllFlagNames;
 	    Java_sun_management_Flag_getFlags;

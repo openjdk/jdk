@@ -5,6 +5,8 @@
 # (2)Added 2 new codepoints (KS X 1001:1998)
 #     0xA2E6	0x20AC	# EURO Sign
 #     0xA2E7	0x00AE	# Registered Sign
+# (3) KS X 1001:2002
+#     0xA2E8	0x327E  # CIRCLED KOREAN CHARACTER JUEUI (Postal Code Mark)
 #
 0x00	0x0000
 0x01	0x0001
@@ -295,6 +297,7 @@
 #
 0xA2E6	0x20AC	# EURO Sign
 0xA2E7	0x00AE	# Registered Sign
+0xA2E8	0x327E  # CIRCLED KOREAN CHARACTER JUEUI
 #
 0xA2E0	0x2116	# NUMERO SIGN
 0xA2E1	0x33C7	# SQUARE CO

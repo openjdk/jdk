@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,20 +129,6 @@ public final class P11Util {
         System.arraycopy(b1, 0, b, 0, b1.length);
         System.arraycopy(b2, 0, b, b1.length, b2.length);
         return b;
-    }
-
-    // trim leading (most significant) zeroes from the result
-    static byte[] trimZeroes(byte[] b) {
-        int i = 0;
-        while ((i < b.length - 1) && (b[i] == 0)) {
-            i++;
-        }
-        if (i == 0) {
-            return b;
-        }
-        byte[] t = new byte[b.length - i];
-        System.arraycopy(b, i, t, 0, t.length);
-        return t;
     }
 
     public static byte[] getMagnitude(BigInteger bi) {
