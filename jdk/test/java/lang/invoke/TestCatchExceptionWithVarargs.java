@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,14 +24,18 @@
 /*
  * @test
  * @bug 8019184
- * @library /lib/testlibrary /lib/testlibrary/jsr292
+ * @library /lib/testlibrary /java/lang/invoke/common
  * @summary MethodHandles.catchException() fails when methods have 8 args + varargs
  * @run main TestCatchExceptionWithVarargs
  */
 
-import com.oracle.testlibrary.jsr292.CodeCacheOverflowProcessor;
-import java.util.*;
-import java.lang.invoke.*;
+import test.java.lang.invoke.lib.CodeCacheOverflowProcessor;
+
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
+import java.util.LinkedList;
+import java.util.List;
 
 public class TestCatchExceptionWithVarargs {
 
@@ -48,14 +52,16 @@ public class TestCatchExceptionWithVarargs {
 
     public static Object target(Object... a) throws Exception {
         if (a[0] != firstArg) {
-            throw new AssertionError("first argument different than expected: " + a[0] + " != " + firstArg);
+            throw new AssertionError("first argument different than expected: "
+                    + a[0] + " != " + firstArg);
         }
         throw new MyException();
     }
 
     public static Object handler(Object... a) {
         if (a[0] != firstArg) {
-            throw new AssertionError("first argument different than expected: " + a[0] + " != " + firstArg);
+            throw new AssertionError("first argument different than expected: "
+                    + a[0] + " != " + firstArg);
         }
         return a[0];
     }
@@ -83,20 +89,27 @@ public class TestCatchExceptionWithVarargs {
         for (int i = 1; i < MAX_MH_ARITY - 1; i++) {
             ptypes.add(0, Object.class);
 
-            MethodHandle targetWithArgs = target.asType(MethodType.methodType(Object.class, ptypes));
-            MethodHandle handlerWithArgs = handler.asType(MethodType.methodType(Object.class, ptypes));
-            handlerWithArgs = MethodHandles.dropArguments(handlerWithArgs, 0, MyException.class);
+            MethodHandle targetWithArgs = target.asType(
+                    MethodType.methodType(Object.class, ptypes));
+            MethodHandle handlerWithArgs = handler.asType(
+                    MethodType.methodType(Object.class, ptypes));
+            handlerWithArgs = MethodHandles.dropArguments(
+                    handlerWithArgs, 0, MyException.class);
 
-            MethodHandle gwc1 = MethodHandles.catchException(targetWithArgs, MyException.class, handlerWithArgs);
+            MethodHandle gwc1 = MethodHandles.catchException(
+                    targetWithArgs, MyException.class, handlerWithArgs);
 
             // The next line throws an IllegalArgumentException if there is a bug.
-            MethodHandle gwc2 = MethodHandles.catchException(gwc1, MyException.class, handlerWithArgs);
+            MethodHandle gwc2 = MethodHandles.catchException(
+                    gwc1, MyException.class, handlerWithArgs);
 
             // This is only to verify that the method handles can actually be invoked and do the right thing.
             firstArg = new Object();
-            Object o = gwc2.asSpreader(Object[].class, ptypes.size() - 1).invoke(firstArg, new Object[i]);
+            Object o = gwc2.asSpreader(Object[].class, ptypes.size() - 1)
+                           .invoke(firstArg, new Object[i]);
             if (o != firstArg) {
-                throw new AssertionError("return value different than expected: " + o + " != " + firstArg);
+                throw new AssertionError("return value different than expected: "
+                        + o + " != " + firstArg);
             }
         }
     }
