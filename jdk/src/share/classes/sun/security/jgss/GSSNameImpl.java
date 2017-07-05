@@ -257,6 +257,10 @@ public class GSSNameImpl implements GSSName {
                               ((0xFF & bytes[pos++]) << 16) |
                               ((0xFF & bytes[pos++]) << 8) |
                               (0xFF & bytes[pos++]));
+        if (pos > bytes.length - mechPortionLen) {
+            throw new GSSExceptionImpl(GSSException.BAD_NAME,
+                    "Exported name mech name is corrupted!");
+        }
         byte[] mechPortion = new byte[mechPortionLen];
         System.arraycopy(bytes, pos, mechPortion, 0, mechPortionLen);
 

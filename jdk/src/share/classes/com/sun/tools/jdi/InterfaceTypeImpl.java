@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.Iterator;
 import java.util.Collections;
+import java.util.Set;
 import java.lang.ref.SoftReference;
 
 public class InterfaceTypeImpl extends ReferenceTypeImpl
@@ -80,7 +81,8 @@ public class InterfaceTypeImpl extends ReferenceTypeImpl
         return implementors;
     }
 
-    void addVisibleMethods(Map<String, Method> methodMap) {
+    @Override
+    void addVisibleMethods(Map<String, Method> methodMap, Set<InterfaceType> seenInterfaces) {
         /*
          * Add methods from
          * parent types first, so that the methods in this class will
@@ -88,7 +90,10 @@ public class InterfaceTypeImpl extends ReferenceTypeImpl
          */
 
         for (InterfaceType interfaze : superinterfaces()) {
-            ((InterfaceTypeImpl)interfaze).addVisibleMethods(methodMap);
+            if (!seenInterfaces.contains(interfaze)) {
+                ((InterfaceTypeImpl)interfaze).addVisibleMethods(methodMap, seenInterfaces);
+                seenInterfaces.add(interfaze);
+            }
         }
 
         addToMethodMap(methodMap, methods());

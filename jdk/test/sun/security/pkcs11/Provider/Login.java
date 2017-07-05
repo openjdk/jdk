@@ -87,8 +87,6 @@ public class Login extends PKCS11Test {
         password = new char[] { 't', 'e', 's', 't', '1', '2' };
 
         Security.setProperty("auth.login.defaultCallbackHandler", "");
-        ap.setCallbackHandler
-                (new com.sun.security.auth.callback.DialogCallbackHandler());
         ap.setCallbackHandler(new PasswordCallbackHandler());
         ap.login(new Subject(), null);
         System.out.println("test " + testnum++ + " passed");

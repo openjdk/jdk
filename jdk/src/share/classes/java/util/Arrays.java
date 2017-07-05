@@ -1002,7 +1002,7 @@ public class Arrays {
             (p = ForkJoinPool.getCommonPoolParallelism()) == 1)
             TimSort.sort(a, 0, n, NaturalOrder.INSTANCE, null, 0, 0);
         else
-            new ArraysParallelSortHelpers.FJObject.Sorter<T>
+            new ArraysParallelSortHelpers.FJObject.Sorter<>
                 (null, a,
                  (T[])Array.newInstance(a.getClass().getComponentType(), n),
                  0, n, 0, ((g = n / (p << 2)) <= MIN_ARRAY_SORT_GRAN) ?
@@ -1061,7 +1061,7 @@ public class Arrays {
             (p = ForkJoinPool.getCommonPoolParallelism()) == 1)
             TimSort.sort(a, fromIndex, toIndex, NaturalOrder.INSTANCE, null, 0, 0);
         else
-            new ArraysParallelSortHelpers.FJObject.Sorter<T>
+            new ArraysParallelSortHelpers.FJObject.Sorter<>
                 (null, a,
                  (T[])Array.newInstance(a.getClass().getComponentType(), n),
                  fromIndex, n, 0, ((g = n / (p << 2)) <= MIN_ARRAY_SORT_GRAN) ?
@@ -1110,7 +1110,7 @@ public class Arrays {
             (p = ForkJoinPool.getCommonPoolParallelism()) == 1)
             TimSort.sort(a, 0, n, cmp, null, 0, 0);
         else
-            new ArraysParallelSortHelpers.FJObject.Sorter<T>
+            new ArraysParallelSortHelpers.FJObject.Sorter<>
                 (null, a,
                  (T[])Array.newInstance(a.getClass().getComponentType(), n),
                  0, n, 0, ((g = n / (p << 2)) <= MIN_ARRAY_SORT_GRAN) ?
@@ -1171,7 +1171,7 @@ public class Arrays {
             (p = ForkJoinPool.getCommonPoolParallelism()) == 1)
             TimSort.sort(a, fromIndex, toIndex, cmp, null, 0, 0);
         else
-            new ArraysParallelSortHelpers.FJObject.Sorter<T>
+            new ArraysParallelSortHelpers.FJObject.Sorter<>
                 (null, a,
                  (T[])Array.newInstance(a.getClass().getComponentType(), n),
                  fromIndex, n, 0, ((g = n / (p << 2)) <= MIN_ARRAY_SORT_GRAN) ?
@@ -4587,7 +4587,7 @@ public class Arrays {
         if (a.length != 0 && bufLen <= 0)
             bufLen = Integer.MAX_VALUE;
         StringBuilder buf = new StringBuilder(bufLen);
-        deepToString(a, buf, new HashSet<Object[]>());
+        deepToString(a, buf, new HashSet<>());
         return buf.toString();
     }
 

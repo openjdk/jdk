@@ -539,10 +539,10 @@ void MultiplicativeExpression() :
 }
 
 void UnaryExpression() :
-{}
+{Token tok;}
 {
-  ( "+" | "-" ) UnaryExpression()
-                        { throw new ParseException("operation not yet supported"); }
+  ( tok = "+" | tok = "-" ) UnaryExpression()
+                { push( LValue.operation(vm, tok, pop(), frameGetter) ); }
 |
   PreIncrementExpression()
 |
@@ -566,10 +566,10 @@ void PreDecrementExpression() :
 }
 
 void UnaryExpressionNotPlusMinus() :
-{}
+{Token tok;}
 {
-  ( "~" | "!" ) UnaryExpression()
-                        { throw new ParseException("operation not yet supported"); }
+  ( tok = "~" | tok = "!" ) UnaryExpression()
+                { push( LValue.operation(vm, tok, pop(), frameGetter) ); }
 |
   LOOKAHEAD( CastLookahead() )
   CastExpression()

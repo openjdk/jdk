@@ -481,12 +481,8 @@ public class LogRecord implements java.io.Serializable {
         }
         out.writeInt(parameters.length);
         // Write string values for the parameters.
-        for (int i = 0; i < parameters.length; i++) {
-            if (parameters[i] == null) {
-                out.writeObject(null);
-            } else {
-                out.writeObject(parameters[i].toString());
-            }
+        for (Object parameter : parameters) {
+            out.writeObject(Objects.toString(parameter, null));
         }
     }
 

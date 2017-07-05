@@ -258,8 +258,8 @@ public class PriorityQueue<E> extends AbstractQueue<E>
             a = Arrays.copyOf(a, a.length, Object[].class);
         int len = a.length;
         if (len == 1 || this.comparator != null)
-            for (int i = 0; i < len; i++)
-                if (a[i] == null)
+            for (Object e : a)
+                if (e == null)
                     throw new NullPointerException();
         this.queue = a;
         this.size = a.length;
@@ -809,7 +809,7 @@ public class PriorityQueue<E> extends AbstractQueue<E>
      * @since 1.8
      */
     public final Spliterator<E> spliterator() {
-        return new PriorityQueueSpliterator<E>(this, 0, -1, 0);
+        return new PriorityQueueSpliterator<>(this, 0, -1, 0);
     }
 
     static final class PriorityQueueSpliterator<E> implements Spliterator<E> {
@@ -843,8 +843,8 @@ public class PriorityQueue<E> extends AbstractQueue<E>
         public PriorityQueueSpliterator<E> trySplit() {
             int hi = getFence(), lo = index, mid = (lo + hi) >>> 1;
             return (lo >= mid) ? null :
-                new PriorityQueueSpliterator<E>(pq, lo, index = mid,
-                                                expectedModCount);
+                new PriorityQueueSpliterator<>(pq, lo, index = mid,
+                                               expectedModCount);
         }
 
         @SuppressWarnings("unchecked")

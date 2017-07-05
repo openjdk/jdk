@@ -46,9 +46,6 @@
  *            b. LD_LIBRARY_PATH32 is ignored if set
  *   5. no extra symlink exists on Solaris ie.
  *      jre/lib/$arch/libjvm.so -> client/libjvm.so
- *   6. Since 32-bit Solaris is no longer supported we continue to ensure that
- *      the appropriate paths are ignored or used, additionally we also test to
- *      ensure the 64-bit isadir exists and contains appropriate links.
  * TODO:
  *      a. perhaps we need to add a test to audit all environment variables are
  *         in pristine condition after the launch, there may be a few that the
@@ -57,17 +54,10 @@
  */
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.nio.file.DirectoryStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import static java.nio.file.LinkOption.*;
-import java.util.regex.Pattern;
-
 
 public class ExecutionEnvironment extends TestHelper {
     static final String LD_LIBRARY_PATH    = TestHelper.isMacOSX
@@ -269,56 +259,6 @@ public class ExecutionEnvironment extends TestHelper {
         if (symLink.exists()) {
             throw new RuntimeException("symlink exists " + symLink.getAbsolutePath());
         }
-    }
-
-    /*
-     * verify if all the symlinks in the images are created correctly,
-     * only on solaris, this test works only on images.
-     */
-    @Test
-    void testSymLinks() throws Exception {
-        if (!isSolaris)
-            return;
-        verifySymLinks(JAVA_BIN);
-        verifySymLinks(JAVA_JRE_BIN);
-    }
-    // exclude non-consequential binaries or scripts co-packaged in other
-    // build phases
-    private final String excludeRE =
-            ".*jvisualvm.*" +
-            "|.*javaws.*" +
-            "|.*ControlPanel.*" +
-            "|.*java-rmi.cgi" +
-            "|.*jcontrol.*";
-    private final Pattern symlinkExcludes = Pattern.compile(excludeRE);
-
-    private void verifySymLinks(String bindir) throws IOException {
-        File binDir = new File(bindir);
-        System.err.println("verifying links in: " + bindir);
-        File isaDir = new File(binDir, getArch()).getAbsoluteFile();
-        if (!isaDir.exists()) {
-            throw new RuntimeException("dir: " + isaDir + " does not exist");
-        }
-        try (DirectoryStream<Path> ds = Files.newDirectoryStream(binDir.toPath())) {
-            for (Path p : ds) {
-                if (symlinkExcludes.matcher(p.toString()).matches() ||
-                        Files.isDirectory(p, NOFOLLOW_LINKS)) {
-                    continue;
-                }
-                Path link = new File(isaDir, p.getFileName().toString()).toPath();
-                if (Files.isSymbolicLink(link)) {
-                    Path target = Files.readSymbolicLink(link);
-                    if (target.startsWith("..") && p.endsWith(target.getFileName())) {
-                        // System.out.println(target + " OK");
-                        continue;
-                    }
-                    System.err.println("target:" + target);
-                    System.err.println("file:" + p);
-                }
-                throw new RuntimeException("could not find link to " + p);
-            }
-        }
-
     }
     public static void main(String... args) throws Exception {
         if (isWindows) {

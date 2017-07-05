@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,9 +47,7 @@ import sun.security.util.Debug;
 import sun.security.x509.AccessDescription;
 import sun.security.x509.AuthorityInfoAccessExtension;
 import static sun.security.x509.PKIXExtensions.*;
-import sun.security.x509.PolicyMappingsExtension;
 import sun.security.x509.X500Name;
-import sun.security.x509.X509CertImpl;
 import sun.security.x509.AuthorityKeyIdentifierExtension;
 
 /**
@@ -672,32 +670,16 @@ class ForwardBuilder extends Builder {
         currState.untrustedChecker.check(cert, Collections.<String>emptySet());
 
         /*
-         * check for looping - abort a loop if
-         * ((we encounter the same certificate twice) AND
-         * ((policyMappingInhibited = true) OR (no policy mapping
-         * extensions can be found between the occurrences of the same
-         * certificate)))
+         * check for looping - abort a loop if we encounter the same
+         * certificate twice
          */
         if (certPathList != null) {
-            boolean policyMappingFound = false;
             for (X509Certificate cpListCert : certPathList) {
-                X509CertImpl cpListCertImpl = X509CertImpl.toImpl(cpListCert);
-                PolicyMappingsExtension policyMappingsExt
-                    = cpListCertImpl.getPolicyMappingsExtension();
-                if (policyMappingsExt != null) {
-                    policyMappingFound = true;
-                }
-                if (debug != null) {
-                    debug.println("policyMappingFound = " + policyMappingFound);
-                }
                 if (cert.equals(cpListCert)) {
-                    if ((buildParams.policyMappingInhibited()) ||
-                        (!policyMappingFound)) {
-                        if (debug != null) {
-                            debug.println("loop detected!!");
-                        }
-                        throw new CertPathValidatorException("loop detected");
+                    if (debug != null) {
+                        debug.println("loop detected!!");
                     }
+                    throw new CertPathValidatorException("loop detected");
                 }
             }
         }
