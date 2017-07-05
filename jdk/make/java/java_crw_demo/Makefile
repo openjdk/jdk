@@ -48,11 +48,6 @@ FILES_c = java_crw_demo.c
 OTHER_INCLUDES = -I$(SRCDIR)
 
 #
-# This removes all asserts in the optimized version
-#
-CPPFLAGS_OPT += -DNDEBUG
-
-#
 # Library to compile.
 #
 include $(BUILDDIR)/common/Library.gmk
