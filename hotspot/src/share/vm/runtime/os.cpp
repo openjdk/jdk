@@ -633,10 +633,10 @@ void  os::free(void *memblock) {
       *q = (u_char)freeBlockPad;
     }
     if (PrintMalloc && tty != NULL)
-      fprintf(stderr, "os::free " SIZE_FORMAT " bytes --> " PTR_FORMAT "\n", size, memblock);
+      fprintf(stderr, "os::free " SIZE_FORMAT " bytes --> " PTR_FORMAT "\n", size, (uintptr_t)memblock);
   } else if (PrintMalloc && tty != NULL) {
     // tty->print_cr("os::free %p", memblock);
-    fprintf(stderr, "os::free " PTR_FORMAT "\n", memblock);
+    fprintf(stderr, "os::free " PTR_FORMAT "\n", (uintptr_t)memblock);
   }
 #endif
   ::free((char*)memblock - space_before);

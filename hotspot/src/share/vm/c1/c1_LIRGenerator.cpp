@@ -1559,9 +1559,7 @@ void LIRGenerator::do_StoreField(StoreField* x) {
                 (info ? new CodeEmitInfo(info) : NULL));
   }
 
-  if (is_volatile) {
-    assert(!needs_patching && x->is_loaded(),
-           "how do we know it's volatile if it's not loaded");
+  if (is_volatile && !needs_patching) {
     volatile_field_store(value.result(), address, info);
   } else {
     LIR_PatchCode patch_code = needs_patching ? lir_patch_normal : lir_patch_none;
@@ -1627,9 +1625,7 @@ void LIRGenerator::do_LoadField(LoadField* x) {
     address = generate_address(object.result(), x->offset(), field_type);
   }
 
-  if (is_volatile) {
-    assert(!needs_patching && x->is_loaded(),
-           "how do we know it's volatile if it's not loaded");
+  if (is_volatile && !needs_patching) {
     volatile_field_load(address, reg, info);
   } else {
     LIR_PatchCode patch_code = needs_patching ? lir_patch_normal : lir_patch_none;
@@ -2516,7 +2512,7 @@ void LIRGenerator::do_Invoke(Invoke* x) {
       __ load(new LIR_Address(tmp, call_site_offset, T_OBJECT), tmp);
 
       // Load target MethodHandle from CallSite object.
-      __ load(new LIR_Address(tmp, java_dyn_CallSite::target_offset_in_bytes(), T_OBJECT), receiver);
+      __ load(new LIR_Address(tmp, java_lang_invoke_CallSite::target_offset_in_bytes(), T_OBJECT), receiver);
 
       __ call_dynamic(target, receiver, result_register,
                       SharedRuntime::get_resolve_opt_virtual_call_stub(),
