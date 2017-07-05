@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,7 +115,7 @@ import org.xml.sax.*;
  *      &lt;<font color=red>url</font>&gt;jdbc:thin:oracle&lt;<font color=red>/url</font>&gt;
  *      &lt;<font color=red>sync-provider</font>&gt;
  *              &lt;<font color=red>sync-provider-name</font>&gt;.com.rowset.provider.RIOptimisticProvider&lt;<font color=red>/sync-provider-name</font>&gt;
- *              &lt;<font color=red>sync-provider-vendor</font>&gt;Sun Microsystems&lt;<font color=red>/sync-provider-vendor</font>&gt;
+ *              &lt;<font color=red>sync-provider-vendor</font>&gt;Oracle Corporation&lt;<font color=red>/sync-provider-vendor</font>&gt;
  *              &lt;<font color=red>sync-provider-version</font>&gt;1.0&lt;<font color=red>/sync-provider-name</font>&gt;
  *              &lt;<font color=red>sync-provider-grade</font>&gt;LOW&lt;<font color=red>/sync-provider-grade</font>&gt;
  *              &lt;<font color=red>data-source-lock</font>&gt;NONE&lt;<font color=red>/data-source-lock</font>&gt;
@@ -489,7 +489,7 @@ public interface WebRowSet extends CachedRowSet {
      * tags and their valid values for a <code>WebRowSet</code> implementation.
      */
     public static String PUBLIC_XML_SCHEMA =
-        "--//Sun Microsystems, Inc.//XSD Schema//EN";
+        "--//Oracle Corporation//XSD Schema//EN";
 
     /**
      * The URL for the XML Schema definition file that defines the XML tags and

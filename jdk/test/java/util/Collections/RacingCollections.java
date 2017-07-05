@@ -235,6 +235,7 @@ public class RacingCollections {
             new ArrayList<Queue<Integer>>(newConcurrentDeques());
         list.add(new LinkedBlockingQueue<Integer>(10));
         list.add(new LinkedTransferQueue<Integer>());
+        list.add(new ConcurrentLinkedQueue<Integer>());
         return list;
     }
 
@@ -248,6 +249,7 @@ public class RacingCollections {
     private static List<Deque<Integer>> newConcurrentDeques() {
         List<Deque<Integer>> list = new ArrayList<Deque<Integer>>();
         list.add(new LinkedBlockingDeque<Integer>(10));
+        list.add(new ConcurrentLinkedDeque<Integer>());
         return list;
     }
 

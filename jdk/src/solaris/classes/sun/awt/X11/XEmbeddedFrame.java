@@ -28,8 +28,11 @@ package sun.awt.X11;
 import sun.awt.EmbeddedFrame;
 import java.awt.*;
 import java.awt.AWTKeyStroke;
+import java.util.logging.Logger;
 
 public class XEmbeddedFrame extends EmbeddedFrame {
+
+    private static final Logger log = Logger.getLogger(XEmbeddedFrame.class.getName());
 
     long handle;
     public XEmbeddedFrame() {
@@ -70,6 +73,21 @@ public class XEmbeddedFrame extends EmbeddedFrame {
         this(handle, supportsXEmbed, false);
     }
 
+    /*
+     * The method shouldn't be called in case of active XEmbed.
+     */
+    public boolean traverseIn(boolean direction) {
+        XEmbeddedFramePeer peer = (XEmbeddedFramePeer)getPeer();
+        if (peer != null) {
+            if (peer.supportsXEmbed() && peer.isXEmbedActive()) {
+                log.fine("The method shouldn't be called when XEmbed is active!");
+            } else {
+                return super.traverseIn(direction);
+            }
+        }
+        return false;
+    }
+
     protected boolean traverseOut(boolean direction) {
         XEmbeddedFramePeer xefp = (XEmbeddedFramePeer) getPeer();
         if (direction == FORWARD) {
@@ -79,6 +97,20 @@ public class XEmbeddedFrame extends EmbeddedFrame {
             xefp.traverseOutBackward();
         }
         return true;
+    }
+
+    /*
+     * The method shouldn't be called in case of active XEmbed.
+     */
+    public void synthesizeWindowActivation(boolean doActivate) {
+        XEmbeddedFramePeer peer = (XEmbeddedFramePeer)getPeer();
+        if (peer != null) {
+            if (peer.supportsXEmbed() && peer.isXEmbedActive()) {
+                log.fine("The method shouldn't be called when XEmbed is active!");
+            } else {
+                peer.synthesizeFocusInOut(doActivate);
+            }
+        }
     }
 
     public void registerAccelerator(AWTKeyStroke stroke) {

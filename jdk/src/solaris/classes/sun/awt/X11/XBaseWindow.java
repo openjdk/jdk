@@ -705,12 +705,8 @@ public class XBaseWindow {
             throw new IllegalStateException("Attempt to resize uncreated window");
         }
         insLog.fine("Setting bounds on " + this + " to (" + x + ", " + y + "), " + width + "x" + height);
-        if (width <= 0) {
-            width = 1;
-        }
-        if (height <= 0) {
-            height = 1;
-        }
+        width = Math.max(MIN_SIZE, width);
+        height = Math.max(MIN_SIZE, height);
         XToolkit.awtLock();
         try {
              XlibWrapper.XMoveResizeWindow(XToolkit.getDisplay(), getWindow(), x,y,width,height);

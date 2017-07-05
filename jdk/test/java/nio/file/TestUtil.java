@@ -44,15 +44,10 @@ public class TestUtil {
         return createTemporaryDirectory(System.getProperty("java.io.tmpdir"));
     }
 
-    static void removeAll(Path dir) {
+    static void removeAll(Path dir) throws IOException {
         Files.walkFileTree(dir, new FileVisitor<Path>() {
             @Override
-            public FileVisitResult preVisitDirectory(Path dir) {
-                return FileVisitResult.CONTINUE;
-            }
-            @Override
-            public FileVisitResult preVisitDirectoryFailed(Path dir, IOException exc) {
-                System.err.format("Error occured accessing directory %s\n", dir, exc);
+            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
                 return FileVisitResult.CONTINUE;
             }
             @Override

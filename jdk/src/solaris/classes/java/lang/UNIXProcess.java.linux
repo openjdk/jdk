@@ -176,7 +176,13 @@ final class UNIXProcess extends Process {
             }});
     }
 
-    synchronized void processExited(int exitcode) {
+    void processExited(int exitcode) {
+        synchronized (this) {
+            this.exitcode = exitcode;
+            hasExited = true;
+            notifyAll();
+        }
+
         if (stdout instanceof ProcessPipeInputStream)
             ((ProcessPipeInputStream) stdout).processExited();
 
@@ -185,10 +191,6 @@ final class UNIXProcess extends Process {
 
         if (stdin instanceof ProcessPipeOutputStream)
             ((ProcessPipeOutputStream) stdin).processExited();
-
-        this.exitcode = exitcode;
-        hasExited = true;
-        notifyAll();
     }
 
     public OutputStream getOutputStream() {
