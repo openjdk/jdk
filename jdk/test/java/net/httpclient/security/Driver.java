@@ -23,10 +23,12 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 8087112
  * @library /lib/testlibrary/
+ * @modules java.httpclient
+ *          jdk.httpserver
  * @build jdk.testlibrary.SimpleSSLContext jdk.testlibrary.Utils
  * @compile ../../../../com/sun/net/httpserver/LogFilter.java
  * @compile ../../../../com/sun/net/httpserver/FileServerHandler.java
@@ -43,11 +45,14 @@
  * The tests are in Security.java and port number supplied in -Dport.number
  * and -Dport.number1 for tests that require a second free port
  */
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.io.*;
-import java.net.*;
 
 import jdk.testlibrary.OutputAnalyzer;
 import jdk.testlibrary.Utils;

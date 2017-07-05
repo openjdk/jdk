@@ -834,6 +834,13 @@ class MacroAssembler: public Assembler {
                           Register tc0, Register tc1, Register tc2, Register tc3);
   void kernel_crc32_1byte(Register crc, Register buf, Register len, Register table,
                           Register t0,  Register t1,  Register t2,  Register t3);
+  void kernel_crc32_1word_vpmsumd(Register crc, Register buf, Register len, Register table,
+                          Register constants, Register barretConstants,
+                          Register t0,  Register t1, Register t2, Register t3, Register t4);
+  void kernel_crc32_1word_aligned(Register crc, Register buf, Register len,
+                          Register constants, Register barretConstants,
+                          Register t0, Register t1, Register t2);
+
   void kernel_crc32_singleByte(Register crc, Register buf, Register len, Register table, Register tmp);
 
   //

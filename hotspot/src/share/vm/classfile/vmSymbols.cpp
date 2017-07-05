@@ -355,6 +355,8 @@ bool vmIntrinsics::preserves_state(vmIntrinsics::ID id) {
   case vmIntrinsics::_updateBytesCRC32:
   case vmIntrinsics::_updateByteBufferCRC32:
   case vmIntrinsics::_vectorizedMismatch:
+  case vmIntrinsics::_fmaD:
+  case vmIntrinsics::_fmaF:
     return true;
   default:
     return false;
@@ -388,6 +390,8 @@ bool vmIntrinsics::can_trap(vmIntrinsics::ID id) {
   case vmIntrinsics::_updateBytesCRC32:
   case vmIntrinsics::_updateByteBufferCRC32:
   case vmIntrinsics::_vectorizedMismatch:
+  case vmIntrinsics::_fmaD:
+  case vmIntrinsics::_fmaF:
     return false;
   default:
     return true;
@@ -535,6 +539,10 @@ bool vmIntrinsics::is_disabled_by_flags(vmIntrinsics::ID id) {
   case vmIntrinsics::_floatToIntBits:
   case vmIntrinsics::_doubleToLongBits:
     if (!InlineMathNatives) return true;
+    break;
+  case vmIntrinsics::_fmaD:
+  case vmIntrinsics::_fmaF:
+    if (!InlineMathNatives || !UseFMA) return true;
     break;
   case vmIntrinsics::_arraycopy:
     if (!InlineArrayCopy) return true;

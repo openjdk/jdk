@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -266,11 +266,14 @@ void AwtDragSource::_DoDragDrop(void* param) {
 
     dragSource->Signal();
 
+    AwtToolkit &toolkit = AwtToolkit::GetInstance();
+    toolkit.isInDoDragDropLoop = TRUE;
     res = ::DoDragDrop(dragSource,
                        dragSource,
                        convertActionsToDROPEFFECT(dragSource->m_actions),
                        &effects
           );
+    toolkit.isInDoDragDropLoop = FALSE;
 
     if (effects == DROPEFFECT_NONE && dragSource->m_dwPerformedDropEffect != DROPEFFECT_NONE) {
         effects = dragSource->m_dwPerformedDropEffect;
@@ -626,6 +629,7 @@ ULONG __stdcall AwtDragSource::Release() {
  */
 
 HRESULT __stdcall  AwtDragSource::QueryContinueDrag(BOOL fEscapeKeyPressed, DWORD grfKeyState) {
+    AwtToolkit::GetInstance().eventNumber++;
     TRY;
 
     JNIEnv* env       = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
@@ -681,6 +685,7 @@ HRESULT __stdcall  AwtDragSource::QueryContinueDrag(BOOL fEscapeKeyPressed, DWOR
  */
 
 HRESULT __stdcall  AwtDragSource::GiveFeedback(DWORD dwEffect) {
+    AwtToolkit::GetInstance().eventNumber++;
     TRY;
 
     JNIEnv* env       = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
@@ -760,6 +765,7 @@ HRESULT __stdcall  AwtDragSource::GiveFeedback(DWORD dwEffect) {
 
 HRESULT __stdcall AwtDragSource::GetData(FORMATETC __RPC_FAR *pFormatEtc,
                                          STGMEDIUM __RPC_FAR *pmedium) {
+    AwtToolkit::GetInstance().eventNumber++;
     TRY;
     STGMEDIUM *pPicMedia = PictureDragHelper::FindData(*pFormatEtc);
     if (NULL != pPicMedia) {
@@ -934,6 +940,7 @@ HRESULT __stdcall AwtDragSource::GetData(FORMATETC __RPC_FAR *pFormatEtc,
 
 HRESULT __stdcall AwtDragSource::GetDataHere(FORMATETC __RPC_FAR *pFormatEtc,
                                              STGMEDIUM __RPC_FAR *pmedium) {
+    AwtToolkit::GetInstance().eventNumber++;
     TRY;
 
     if (pmedium->pUnkForRelease != (IUnknown *)NULL) {
@@ -1036,6 +1043,7 @@ HRESULT __stdcall AwtDragSource::GetDataHere(FORMATETC __RPC_FAR *pFormatEtc,
  */
 
 HRESULT __stdcall  AwtDragSource::QueryGetData(FORMATETC __RPC_FAR *pFormatEtc) {
+    AwtToolkit::GetInstance().eventNumber++;
     TRY;
 
     return MatchFormatEtc(pFormatEtc, (FORMATETC *)NULL);
@@ -1049,6 +1057,7 @@ HRESULT __stdcall  AwtDragSource::QueryGetData(FORMATETC __RPC_FAR *pFormatEtc) 
  */
 
 HRESULT __stdcall  AwtDragSource::GetCanonicalFormatEtc(FORMATETC __RPC_FAR *pFormatEtcIn, FORMATETC __RPC_FAR *pFormatEtcOut) {
+    AwtToolkit::GetInstance().eventNumber++;
     TRY;
 
     HRESULT   res = MatchFormatEtc(pFormatEtcIn, (FORMATETC *)NULL);
@@ -1069,6 +1078,7 @@ HRESULT __stdcall  AwtDragSource::GetCanonicalFormatEtc(FORMATETC __RPC_FAR *pFo
  */
 
 HRESULT __stdcall AwtDragSource::SetData(FORMATETC __RPC_FAR *pFormatEtc, STGMEDIUM __RPC_FAR *pmedium, BOOL fRelease) {
+    AwtToolkit::GetInstance().eventNumber++;
     if (pFormatEtc->cfFormat == CF_PERFORMEDDROPEFFECT && pmedium->tymed == TYMED_HGLOBAL) {
         m_dwPerformedDropEffect = *(DWORD*)::GlobalLock(pmedium->hGlobal);
         ::GlobalUnlock(pmedium->hGlobal);
@@ -1091,6 +1101,7 @@ HRESULT __stdcall AwtDragSource::SetData(FORMATETC __RPC_FAR *pFormatEtc, STGMED
  */
 
 HRESULT __stdcall  AwtDragSource::EnumFormatEtc(DWORD dwDirection, IEnumFORMATETC *__RPC_FAR *ppenumFormatEtc) {
+    AwtToolkit::GetInstance().eventNumber++;
     TRY;
 
     *ppenumFormatEtc = new ADSIEnumFormatEtc(this);
@@ -1104,6 +1115,7 @@ HRESULT __stdcall  AwtDragSource::EnumFormatEtc(DWORD dwDirection, IEnumFORMATET
  */
 
 HRESULT __stdcall  AwtDragSource::DAdvise(FORMATETC __RPC_FAR *pFormatEtc, DWORD advf, IAdviseSink __RPC_FAR *pAdvSink, DWORD __RPC_FAR *pdwConnection) {
+    AwtToolkit::GetInstance().eventNumber++;
     return E_NOTIMPL;
 }
 
@@ -1112,6 +1124,7 @@ HRESULT __stdcall  AwtDragSource::DAdvise(FORMATETC __RPC_FAR *pFormatEtc, DWORD
  */
 
 HRESULT __stdcall  AwtDragSource::DUnadvise(DWORD dwConnection) {
+    AwtToolkit::GetInstance().eventNumber++;
     return OLE_E_ADVISENOTSUPPORTED;
 }
 
@@ -1120,6 +1133,7 @@ HRESULT __stdcall  AwtDragSource::DUnadvise(DWORD dwConnection) {
  */
 
 HRESULT __stdcall  AwtDragSource::EnumDAdvise(IEnumSTATDATA __RPC_FAR *__RPC_FAR *ppenumAdvise) {
+    AwtToolkit::GetInstance().eventNumber++;
     return OLE_E_ADVISENOTSUPPORTED;
 }
 
@@ -1127,7 +1141,7 @@ const UINT AwtDragSource::PROCESS_ID_FORMAT =
     ::RegisterClipboardFormat(TEXT("_SUNW_JAVA_AWT_PROCESS_ID"));
 
 HRESULT __stdcall AwtDragSource::GetProcessId(FORMATETC __RPC_FAR *pFormatEtc, STGMEDIUM __RPC_FAR *pmedium) {
-
+    AwtToolkit::GetInstance().eventNumber++;
     if ((pFormatEtc->tymed & TYMED_HGLOBAL) == 0) {
         return DV_E_TYMED;
     } else if (pFormatEtc->lindex != -1) {

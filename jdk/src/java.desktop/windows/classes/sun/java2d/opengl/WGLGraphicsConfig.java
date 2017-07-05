@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,8 +54,6 @@ import sun.java2d.pipe.hw.ContextCapabilities;
 import static sun.java2d.opengl.OGLContext.OGLContextCaps.*;
 import static sun.java2d.opengl.WGLSurfaceData.*;
 import sun.java2d.opengl.OGLContext.OGLContextCaps;
-import sun.java2d.pipe.hw.AccelDeviceEventListener;
-import sun.java2d.pipe.hw.AccelDeviceEventNotifier;
 import sun.java2d.windows.GDIWindowSurfaceData;
 
 public class WGLGraphicsConfig
@@ -92,8 +90,7 @@ public class WGLGraphicsConfig
         // add a record to the Disposer so that we destroy the native
         // WGLGraphicsConfigInfo data when this object goes away
         Disposer.addRecord(disposerReferent,
-                           new WGLGCDisposerRecord(pConfigInfo,
-                                                   device.getScreen()));
+                           new WGLGCDisposerRecord(pConfigInfo));
     }
 
     public Object getProxyKey() {
@@ -198,27 +195,10 @@ public class WGLGraphicsConfig
 
     private static class WGLGCDisposerRecord implements DisposerRecord {
         private long pCfgInfo;
-        private int screen;
-        public WGLGCDisposerRecord(long pCfgInfo, int screen) {
+        public WGLGCDisposerRecord(long pCfgInfo) {
             this.pCfgInfo = pCfgInfo;
         }
         public void dispose() {
-            OGLRenderQueue rq = OGLRenderQueue.getInstance();
-            rq.lock();
-            try {
-                rq.flushAndInvokeNow(new Runnable() {
-                    public void run() {
-                        AccelDeviceEventNotifier.
-                            eventOccured(screen,
-                                AccelDeviceEventNotifier.DEVICE_RESET);
-                        AccelDeviceEventNotifier.
-                            eventOccured(screen,
-                                AccelDeviceEventNotifier.DEVICE_DISPOSED);
-                    }
-                });
-            } finally {
-                rq.unlock();
-            }
             if (pCfgInfo != 0) {
                 OGLRenderQueue.disposeGraphicsConfig(pCfgInfo);
                 pCfgInfo = 0;
@@ -454,15 +434,5 @@ public class WGLGraphicsConfig
     @Override
     public ContextCapabilities getContextCapabilities() {
         return oglCaps;
-    }
-
-    @Override
-    public void addDeviceEventListener(AccelDeviceEventListener l) {
-        AccelDeviceEventNotifier.addListener(l, screen.getScreen());
-    }
-
-    @Override
-    public void removeDeviceEventListener(AccelDeviceEventListener l) {
-        AccelDeviceEventNotifier.removeListener(l);
     }
 }

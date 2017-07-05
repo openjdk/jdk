@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,8 +56,6 @@ import sun.java2d.pipe.hw.AccelTypedVolatileImage;
 import sun.java2d.pipe.hw.ContextCapabilities;
 import static sun.java2d.opengl.OGLSurfaceData.*;
 import static sun.java2d.opengl.OGLContext.OGLContextCaps.*;
-import sun.java2d.pipe.hw.AccelDeviceEventListener;
-import sun.java2d.pipe.hw.AccelDeviceEventNotifier;
 
 import sun.lwawt.LWComponentPeer;
 import sun.lwawt.macosx.CPlatformView;
@@ -405,17 +403,6 @@ public final class CGLGraphicsConfig extends CGraphicsConfig
     @Override
     public ContextCapabilities getContextCapabilities() {
         return oglCaps;
-    }
-
-    @Override
-    public void addDeviceEventListener(AccelDeviceEventListener l) {
-        int displayID = getDevice().getCGDisplayID();
-        AccelDeviceEventNotifier.addListener(l, displayID);
-    }
-
-    @Override
-    public void removeDeviceEventListener(AccelDeviceEventListener l) {
-        AccelDeviceEventNotifier.removeListener(l);
     }
 
     @Override

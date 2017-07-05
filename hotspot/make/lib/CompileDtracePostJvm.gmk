@@ -180,7 +180,7 @@ ifeq ($(call check-jvm-feature, dtrace), true)
 
     $(eval $(call SetupNativeCompilation, BUILD_LIBJVM_DTRACE, \
         LIBRARY := jvm_dtrace, \
-        OUTPUT_DIR := $(LIBJVM_DTRACE_OUTPUTDIR), \
+        OUTPUT_DIR := $(JVM_LIB_OUTPUTDIR), \
         SRC := $(HOTSPOT_TOPDIR)/src/os/solaris/dtrace, \
         INCLUDE_FILES := jvm_dtrace.c, \
         CFLAGS := -m64 -G -mt -KPIC, \
@@ -197,7 +197,7 @@ ifeq ($(call check-jvm-feature, dtrace), true)
     # the old build.
     $(eval $(call SetupNativeCompilation, BUILD_LIBJVM_DB, \
         LIBRARY := jvm_db, \
-        OUTPUT_DIR := $(LIBJVM_DB_OUTPUTDIR), \
+        OUTPUT_DIR := $(JVM_LIB_OUTPUTDIR), \
         SRC := $(HOTSPOT_TOPDIR)/src/os/solaris/dtrace, \
         INCLUDE_FILES := libjvm_db.c, \
         CFLAGS := -I$(JVM_VARIANT_OUTPUTDIR)/gensrc -I$(DTRACE_SUPPORT_DIR) \

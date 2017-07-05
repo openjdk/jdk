@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -225,7 +225,7 @@ protected:
   size_t max_survivor_size() const          { return _max_survivor_size; }
 
   bool supports_inline_contig_alloc() const { return true; }
-  HeapWord** top_addr() const;
+  HeapWord* volatile* top_addr() const;
   HeapWord** end_addr() const;
 
   // Thread-local allocation buffers

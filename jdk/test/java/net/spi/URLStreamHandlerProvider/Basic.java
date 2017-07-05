@@ -21,11 +21,19 @@
  * questions.
  */
 
-import java.io.*;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.Reader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.SequenceInputStream;
+import java.io.StringWriter;
+import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -46,6 +54,7 @@ import static java.util.Arrays.asList;
  * @test
  * @bug 8064924
  * @modules java.compiler
+ *          jdk.compiler
  * @summary Basic test for URLStreamHandlerProvider
  * @library /lib/testlibrary
  * @build jdk.testlibrary.FileUtils jdk.testlibrary.JDKToolFinder

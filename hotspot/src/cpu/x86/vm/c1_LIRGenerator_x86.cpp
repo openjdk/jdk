@@ -152,7 +152,7 @@ LIR_Address* LIRGenerator::generate_address(LIR_Opr base, LIR_Opr index,
   assert(base->is_register(), "must be");
   if (index->is_constant()) {
     return new LIR_Address(base,
-                           (index->as_constant_ptr()->as_jint() << shift) + disp,
+                           ((intx)(index->as_constant_ptr()->as_jint()) << shift) + disp,
                            type);
   } else {
     return new LIR_Address(base, index, (LIR_Address::Scale)shift, disp, type);
@@ -168,7 +168,7 @@ LIR_Address* LIRGenerator::emit_array_address(LIR_Opr array_opr, LIR_Opr index_o
   if (index_opr->is_constant()) {
     int elem_size = type2aelembytes(type);
     addr = new LIR_Address(array_opr,
-                           offset_in_bytes + index_opr->as_jint() * elem_size, type);
+                           offset_in_bytes + (intx)(index_opr->as_jint()) * elem_size, type);
   } else {
 #ifdef _LP64
     if (index_opr->type() == T_INT) {
@@ -804,6 +804,32 @@ void LIRGenerator::do_CompareAndSwap(Intrinsic* x, ValueType* type) {
     // Seems to be precise
     post_barrier(addr, val.result());
   }
+}
+
+void LIRGenerator::do_FmaIntrinsic(Intrinsic* x) {
+  assert(x->number_of_arguments() == 3, "wrong type");
+  assert(UseFMA, "Needs FMA instructions support.");
+  LIRItem value(x->argument_at(0), this);
+  LIRItem value1(x->argument_at(1), this);
+  LIRItem value2(x->argument_at(2), this);
+
+  value2.set_destroys_register();
+
+  value.load_item();
+  value1.load_item();
+  value2.load_item();
+
+  LIR_Opr calc_input = value.result();
+  LIR_Opr calc_input1 = value1.result();
+  LIR_Opr calc_input2 = value2.result();
+  LIR_Opr calc_result = rlock_result(x);
+
+  switch (x->id()) {
+  case vmIntrinsics::_fmaD:   __ fmad(calc_input, calc_input1, calc_input2, calc_result); break;
+  case vmIntrinsics::_fmaF:   __ fmaf(calc_input, calc_input1, calc_input2, calc_result); break;
+  default:                    ShouldNotReachHere();
+  }
+
 }
 
 

@@ -271,6 +271,14 @@ public class Desktop {
         }
     }
 
+    private void checkEventsProcessingPermission() {
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            sm.checkPermission(new RuntimePermission(
+                    "canProcessApplicationEvents"));
+        }
+    }
+
     /**
      * Returns the {@code Desktop} instance of the current
      * desktop context. On some platforms the Desktop API may not be
@@ -662,7 +670,7 @@ public class Desktop {
      *
      * @throws SecurityException if a security manager exists and it
      * denies the
-     * {@code AWTPermission("showWindowWithoutWarningBanner")}
+     * {@code RuntimePermission("canProcessApplicationEvents")}
      * permission
      *
      * @see java.awt.desktop.AppForegroundListener
@@ -674,7 +682,7 @@ public class Desktop {
      * @since 9
      */
     public void addAppEventListener(final SystemEventListener listener) {
-        checkAWTPermission();
+        checkEventsProcessingPermission();
         peer.addAppEventListener(listener);
     }
 
@@ -689,7 +697,7 @@ public class Desktop {
      *
      * @throws SecurityException if a security manager exists and it
      * denies the
-     * {@code AWTPermission("showWindowWithoutWarningBanner")}
+     * {@code RuntimePermission("canProcessApplicationEvents")}
      * permission
      *
      * @see java.awt.desktop.AppForegroundListener
@@ -701,7 +709,7 @@ public class Desktop {
      * @since 9
      */
     public void removeAppEventListener(final SystemEventListener listener) {
-        checkAWTPermission();
+        checkEventsProcessingPermission();
         peer.removeAppEventListener(listener);
     }
 
@@ -716,7 +724,7 @@ public class Desktop {
      *
      * @throws SecurityException if a security manager exists and it
      * denies the
-     * {@code AWTPermission("showWindowWithoutWarningBanner")}
+     * {@code RuntimePermission("canProcessApplicationEvents")}
      * permission
      * @throws UnsupportedOperationException if the current platform
      * does not support the {@link Desktop.Action#APP_ABOUT} action
@@ -724,7 +732,7 @@ public class Desktop {
      * @since 9
      */
     public void setAboutHandler(final AboutHandler aboutHandler) {
-        checkAWTPermission();
+        checkEventsProcessingPermission();
         checkActionSupport(Action.APP_ABOUT);
         peer.setAboutHandler(aboutHandler);
     }
@@ -741,14 +749,13 @@ public class Desktop {
      *
      * @throws SecurityException if a security manager exists and it
      * denies the
-     * {@code AWTPermission("showWindowWithoutWarningBanner")}
-     * permission
+     * {@code RuntimePermission("canProcessApplicationEvents")} permission
      * @throws UnsupportedOperationException if the current platform
      * does not support the {@link Desktop.Action#APP_PREFERENCES} action
      * @since 9
      */
     public void setPreferencesHandler(final PreferencesHandler preferencesHandler) {
-        checkAWTPermission();
+        checkEventsProcessingPermission();
         checkActionSupport(Action.APP_PREFERENCES);
         peer.setPreferencesHandler(preferencesHandler);
     }
@@ -770,7 +777,7 @@ public class Desktop {
      * @throws SecurityException if a security manager exists and its
      * {@link java.lang.SecurityManager#checkRead(java.lang.String)}
      * method denies read access to the files, or it denies the
-     * {@code AWTPermission("showWindowWithoutWarningBanner")}
+     * {@code RuntimePermission("canProcessApplicationEvents")}
      * permission, or the calling thread is not allowed to create a
      * subprocess
      * @throws UnsupportedOperationException if the current platform
@@ -778,7 +785,7 @@ public class Desktop {
      * @since 9
      */
     public void setOpenFileHandler(final OpenFilesHandler openFileHandler) {
-        checkAWTPermission();
+        checkEventsProcessingPermission();
         checkExec();
         checkRead();
         checkActionSupport(Action.APP_OPEN_FILE);
@@ -800,12 +807,14 @@ public class Desktop {
      * @param printFileHandler handler
      * @throws SecurityException if a security manager exists and its
      * {@link java.lang.SecurityManager#checkPrintJobAccess()} method denies
-     * the permission to print.
+     * the permission to print or it denies the
+     * {@code RuntimePermission("canProcessApplicationEvents")} permission
      * @throws UnsupportedOperationException if the current platform
      * does not support the {@link Desktop.Action#APP_PRINT_FILE} action
      * @since 9
      */
     public void setPrintFileHandler(final PrintFilesHandler printFileHandler) {
+        checkEventsProcessingPermission();
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPrintJobAccess();
@@ -832,7 +841,7 @@ public class Desktop {
      *
      * @param openURIHandler handler
      *
-     * {@code AWTPermission("showWindowWithoutWarningBanner")}
+     * {@code RuntimePermission("canProcessApplicationEvents")}
      * permission, or the calling thread is not allowed to create a
      * subprocess
      * @throws UnsupportedOperationException if the current platform
@@ -840,7 +849,7 @@ public class Desktop {
      * @since 9
      */
     public void setOpenURIHandler(final OpenURIHandler openURIHandler) {
-        checkAWTPermission();
+        checkEventsProcessingPermission();
         checkExec();
         checkActionSupport(Action.APP_OPEN_URI);
         peer.setOpenURIHandler(openURIHandler);
@@ -856,12 +865,14 @@ public class Desktop {
      * asked to quit
      *
      * @throws SecurityException if a security manager exists and it
-     * will not allow the caller to invoke {@code System.exit}
+     * will not allow the caller to invoke {@code System.exit} or it denies the
+     * {@code RuntimePermission("canProcessApplicationEvents")} permission
      * @throws UnsupportedOperationException if the current platform
      * does not support the {@link Desktop.Action#APP_QUIT_HANDLER} action
      * @since 9
      */
     public void setQuitHandler(final QuitHandler quitHandler) {
+        checkEventsProcessingPermission();
         checkQuitPermission();
         checkActionSupport(Action.APP_QUIT_HANDLER);
         peer.setQuitHandler(quitHandler);
@@ -874,13 +885,15 @@ public class Desktop {
      * @param strategy the way this application should be shutdown
      *
      * @throws SecurityException if a security manager exists and it
-     * will not allow the caller to invoke {@code System.exit}
+     * will not allow the caller to invoke {@code System.exit} or it denies the
+     * {@code RuntimePermission("canProcessApplicationEvents")} permission
      * @throws UnsupportedOperationException if the current platform
      * does not support the {@link Desktop.Action#APP_QUIT_STRATEGY} action
      * @see QuitStrategy
      * @since 9
      */
     public void setQuitStrategy(final QuitStrategy strategy) {
+        checkEventsProcessingPermission();
         checkQuitPermission();
         checkActionSupport(Action.APP_QUIT_STRATEGY);
         peer.setQuitStrategy(strategy);
@@ -901,13 +914,15 @@ public class Desktop {
      * effectively "kill -KILL" your application.
      *
      * @throws SecurityException if a security manager exists and it
-     * will not allow the caller to invoke {@code System.exit}
+     * will not allow the caller to invoke {@code System.exit} or it denies the
+     * {@code RuntimePermission("canProcessApplicationEvents")} permission
      * @throws UnsupportedOperationException if the current platform
      * does not support the {@link Desktop.Action#APP_SUDDEN_TERMINATION} action
      * @see #disableSuddenTermination()
      * @since 9
      */
     public void enableSuddenTermination() {
+        checkEventsProcessingPermission();
         checkQuitPermission();
         checkActionSupport(Action.APP_SUDDEN_TERMINATION);
         peer.enableSuddenTermination();
@@ -920,13 +935,15 @@ public class Desktop {
      * may not be terminated without notification.
      *
      * @throws SecurityException if a security manager exists and it
-     * will not allow the caller to invoke {@code System.exit}
+     * will not allow the caller to invoke {@code System.exit} or it denies the
+     * {@code RuntimePermission("canProcessApplicationEvents")} permission
      * @throws UnsupportedOperationException if the current platform
      * does not support the {@link Desktop.Action#APP_SUDDEN_TERMINATION} action
      * @see #enableSuddenTermination()
      * @since 9
      */
     public void disableSuddenTermination() {
+        checkEventsProcessingPermission();
         checkQuitPermission();
         checkActionSupport(Action.APP_SUDDEN_TERMINATION);
         peer.disableSuddenTermination();
@@ -938,13 +955,13 @@ public class Desktop {
      * @param allWindows if all windows of this application should be moved to
      * the foreground, or only the foremost one
      * @throws SecurityException if a security manager exists and it denies the
-     * {@code AWTPermission("showWindowWithoutWarningBanner")} permission.
+     * {@code RuntimePermission("canProcessApplicationEvents")} permission.
      * @throws UnsupportedOperationException if the current platform
      * does not support the {@link Desktop.Action#APP_REQUEST_FOREGROUND} action
      * @since 9
      */
     public void requestForeground(final boolean allWindows) {
-        checkAWTPermission();
+        checkEventsProcessingPermission();
         checkActionSupport(Action.APP_REQUEST_FOREGROUND);
         peer.requestForeground(allWindows);
     }
@@ -957,13 +974,13 @@ public class Desktop {
      * and registered in the Info.plist with CFBundleHelpBookFolder
      *
      * @throws SecurityException if a security manager exists and it denies the
-     * {@code AWTPermission("showWindowWithoutWarningBanner")} permission.
+     * {@code RuntimePermission("canProcessApplicationEvents")} permission.
      * @throws UnsupportedOperationException if the current platform
      * does not support the {@link Desktop.Action#APP_HELP_VIEWER} action
      * @since 9
      */
     public void openHelpViewer() {
-        checkAWTPermission();
+        checkEventsProcessingPermission();
         checkActionSupport(Action.APP_HELP_VIEWER);
         peer.openHelpViewer();
     }
@@ -975,13 +992,13 @@ public class Desktop {
      *
      * @param menuBar to use when no other frames are active
      * @throws SecurityException if a security manager exists and it denies the
-     * {@code AWTPermission("showWindowWithoutWarningBanner")} permission.
+     * {@code RuntimePermission("canProcessApplicationEvents")} permission.
      * @throws UnsupportedOperationException if the current platform
      * does not support the {@link Desktop.Action#APP_MENU_BAR} action
      * @since 9
      */
     public void setDefaultMenuBar(final JMenuBar menuBar) {
-        checkAWTPermission();
+        checkEventsProcessingPermission();
         checkActionSupport(Action.APP_MENU_BAR);
         peer.setDefaultMenuBar(menuBar);
     }

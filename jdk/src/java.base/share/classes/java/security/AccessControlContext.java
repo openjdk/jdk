@@ -27,7 +27,9 @@ package java.security;
 
 import java.util.ArrayList;
 import java.util.List;
+
 import sun.security.util.Debug;
+import sun.security.util.FilePermCompat;
 import sun.security.util.SecurityConstants;
 
 
@@ -175,7 +177,7 @@ public final class AccessControlContext {
 
     /**
      * package private to allow calls from ProtectionDomain without performing
-     * the security check for {@linkplain SecurityConstants.CREATE_ACC_PERMISSION}
+     * the security check for {@linkplain SecurityConstants#CREATE_ACC_PERMISSION}
      * permission
      */
     AccessControlContext(AccessControlContext acc,
@@ -253,7 +255,8 @@ public final class AccessControlContext {
                 if (perms[i].getClass() == AllPermission.class) {
                     parent = null;
                 }
-                tmp[i] = perms[i];
+                // Add altPath into permission for compatibility.
+                tmp[i] = FilePermCompat.newPermPlusAltPath(perms[i]);
             }
         }
 
@@ -443,7 +446,7 @@ public final class AccessControlContext {
         }
 
         for (int i=0; i< context.length; i++) {
-            if (context[i] != null &&  !context[i].implies(perm)) {
+            if (context[i] != null && !context[i].impliesWithAltFilePerm(perm)) {
                 if (dumpDebug) {
                     debug.println("access denied " + perm);
                 }

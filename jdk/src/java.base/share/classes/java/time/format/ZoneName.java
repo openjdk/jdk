@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,8 @@
 package java.time.format;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
 
 /**
  * A helper class to map a zone name to metazone and back to the
@@ -335,6 +332,7 @@ class ZoneName {
         "America/Eirunepe", "Amazon", "America/Manaus",
         "Africa/Nairobi", "Africa_Eastern", "Africa/Nairobi",
         "Asia/Yakutsk", "Yakutsk", "Asia/Yakutsk",
+        "Asia/Yangon", "Myanmar", "Asia/Rangoon",
         "America/Goose_Bay", "Atlantic", "America/Halifax",
         "Africa/Maseru", "Africa_Southern", "Africa/Johannesburg",
         "America/Swift_Current", "America_Central", "America/Chicago",
@@ -770,6 +768,7 @@ class ZoneName {
         "America/Indianapolis", "America/Indiana/Indianapolis",
         "Europe/Belfast", "Europe/London",
         "America/Kralendijk", "America/Curacao",
+        "Asia/Rangoon", "Asia/Yangon",
     };
 
     private static final Map<String, String> zidToMzone = new HashMap<>();

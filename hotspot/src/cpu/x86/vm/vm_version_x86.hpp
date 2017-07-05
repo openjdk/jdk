@@ -74,7 +74,8 @@ class VM_Version : public Abstract_VM_Version {
                         : 1,
                ssse3    : 1,
                cid      : 1,
-                        : 2,
+                        : 1,
+               fma      : 1,
                cmpxchg16: 1,
                         : 4,
                dca      : 1,
@@ -289,6 +290,7 @@ protected:
 #define CPU_AVX512BW ((uint64_t)UCONST64(0x100000000)) // enums are limited to 31 bit
 #define CPU_AVX512VL ((uint64_t)UCONST64(0x200000000)) // EVEX instructions with smaller vector length
 #define CPU_SHA ((uint64_t)UCONST64(0x400000000))      // SHA instructions
+#define CPU_FMA ((uint64_t)UCONST64(0x800000000))      // FMA instructions
 
   enum Extended_Family {
     // AMD
@@ -522,6 +524,8 @@ protected:
         result |= CPU_SHA;
       if(_cpuid_info.ext_cpuid1_ecx.bits.lzcnt_intel != 0)
         result |= CPU_LZCNT;
+      if (_cpuid_info.std_cpuid1_ecx.bits.fma != 0)
+        result |= CPU_FMA;
       // for Intel, ecx.bits.misalignsse bit (bit 8) indicates support for prefetchw
       if (_cpuid_info.ext_cpuid1_ecx.bits.misalignsse != 0) {
         result |= CPU_3DNOW_PREFETCH;
@@ -726,6 +730,7 @@ public:
   static bool supports_avx256only() { return (supports_avx2() && !supports_evex()); }
   static bool supports_avxonly()    { return ((supports_avx2() || supports_avx()) && !supports_evex()); }
   static bool supports_sha()        { return (_features & CPU_SHA) != 0; }
+  static bool supports_fma()        { return (_features & CPU_FMA) != 0; }
   // Intel features
   static bool is_intel_family_core() { return is_intel() &&
                                        extended_cpu_family() == CPU_FAMILY_INTEL_CORE; }
