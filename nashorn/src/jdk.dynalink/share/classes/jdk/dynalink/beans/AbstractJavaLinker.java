@@ -790,7 +790,7 @@ abstract class AbstractJavaLinker implements GuardingDynamicLinker {
      */
     @SuppressWarnings("unused")
     private Object getPropertyGetterHandle(final Object id) {
-        return propertyGetters.get(id);
+        return propertyGetters.get(String.valueOf(id));
     }
 
     // Type is MethodHandle(BeanLinker, MethodType, LinkerServices, Object, String, Object), of which the two "Object"

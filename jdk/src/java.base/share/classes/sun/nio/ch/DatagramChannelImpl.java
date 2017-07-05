@@ -58,8 +58,8 @@ class DatagramChannelImpl
     private final ProtocolFamily family;
 
     // IDs of native threads doing reads and writes, for signalling
-    private volatile long readerThread = 0;
-    private volatile long writerThread = 0;
+    private volatile long readerThread;
+    private volatile long writerThread;
 
     // Cached InetAddress and port for unconnected DatagramChannels
     // used by receive0

@@ -31,7 +31,6 @@ import java.lang.ref.WeakReference;
 import java.util.concurrent.atomic.AtomicInteger;
 import static sun.java2d.marlin.ArrayCache.*;
 import sun.java2d.marlin.MarlinRenderingEngine.NormalizingPathIterator;
-import static sun.java2d.marlin.MarlinUtils.getCallerInfo;
 import static sun.java2d.marlin.MarlinUtils.logInfo;
 
 /**
@@ -39,7 +38,6 @@ import static sun.java2d.marlin.MarlinUtils.logInfo;
  */
 final class RendererContext implements MarlinConst {
 
-    private static final String className = RendererContext.class.getName();
     // RendererContext creation counter
     private static final AtomicInteger contextCount = new AtomicInteger(1);
     // RendererContext statistics
@@ -214,8 +212,7 @@ final class RendererContext implements MarlinConst {
         }
 
         if (doLogOverSize) {
-            logInfo("getDirtyByteArray[oversize]: length=\t" + length
-                    + "\tfrom=\t" + getCallerInfo(className));
+            logInfo("getDirtyByteArray[oversize]: length=\t" + length);
         }
 
         return new byte[length];
@@ -254,7 +251,7 @@ final class RendererContext implements MarlinConst {
         if (doLogWidenArray) {
             logInfo("widenDirtyByteArray[" + res.length + "]: usedSize=\t"
                     + usedSize + "\tlength=\t" + length + "\tneeded length=\t"
-                    + needSize + "\tfrom=\t" + getCallerInfo(className));
+                    + needSize);
         }
         return res;
     }
@@ -275,8 +272,7 @@ final class RendererContext implements MarlinConst {
         }
 
         if (doLogOverSize) {
-            logInfo("getIntArray[oversize]: length=\t" + length + "\tfrom=\t"
-                    + getCallerInfo(className));
+            logInfo("getIntArray[oversize]: length=\t" + length);
         }
 
         return new int[length];
@@ -306,7 +302,7 @@ final class RendererContext implements MarlinConst {
         if (doLogWidenArray) {
             logInfo("widenIntArray[" + res.length + "]: usedSize=\t"
                     + usedSize + "\tlength=\t" + length + "\tneeded length=\t"
-                    + needSize + "\tfrom=\t" + getCallerInfo(className));
+                    + needSize);
         }
         return res;
     }
@@ -338,8 +334,7 @@ final class RendererContext implements MarlinConst {
         }
 
         if (doLogOverSize) {
-            logInfo("getDirtyIntArray[oversize]: length=\t" + length
-                    + "\tfrom=\t" + getCallerInfo(className));
+            logInfo("getDirtyIntArray[oversize]: length=\t" + length);
         }
 
         return new int[length];
@@ -369,7 +364,7 @@ final class RendererContext implements MarlinConst {
         if (doLogWidenArray) {
             logInfo("widenDirtyIntArray[" + res.length + "]: usedSize=\t"
                     + usedSize + "\tlength=\t" + length + "\tneeded length=\t"
-                    + needSize + "\tfrom=\t" + getCallerInfo(className));
+                    + needSize);
         }
         return res;
     }
@@ -399,8 +394,7 @@ final class RendererContext implements MarlinConst {
         }
 
         if (doLogOverSize) {
-            logInfo("getDirtyFloatArray[oversize]: length=\t" + length
-                    + "\tfrom=\t" + getCallerInfo(className));
+            logInfo("getDirtyFloatArray[oversize]: length=\t" + length);
         }
 
         return new float[length];
@@ -430,7 +424,7 @@ final class RendererContext implements MarlinConst {
         if (doLogWidenArray) {
             logInfo("widenDirtyFloatArray[" + res.length + "]: usedSize=\t"
                     + usedSize + "\tlength=\t" + length + "\tneeded length=\t"
-                    + needSize + "\tfrom=\t" + getCallerInfo(className));
+                    + needSize);
         }
         return res;
     }

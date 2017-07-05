@@ -25,8 +25,8 @@
 
 package java.lang;
 
-import sun.misc.FloatingDecimal;
-import sun.misc.DoubleConsts;
+import jdk.internal.math.FloatingDecimal;
+import jdk.internal.math.DoubleConsts;
 import jdk.internal.HotSpotIntrinsicCandidate;
 
 /**
