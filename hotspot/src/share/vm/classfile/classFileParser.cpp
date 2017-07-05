@@ -170,7 +170,6 @@ void ClassFileParser::parse_constant_pool_entries(constantPoolHandle cp, int len
           ShouldNotReachHere();
         }
         break;
-      case JVM_CONSTANT_InvokeDynamicTrans :  // this tag appears only in old classfiles
       case JVM_CONSTANT_InvokeDynamic :
         {
           if (_major_version < Verifier::INVOKEDYNAMIC_MAJOR_VERSION) {
@@ -186,14 +185,6 @@ void ClassFileParser::parse_constant_pool_entries(constantPoolHandle cp, int len
           cfs->guarantee_more(5, CHECK);  // bsm_index, nt, tag/access_flags
           u2 bootstrap_specifier_index = cfs->get_u2_fast();
           u2 name_and_type_index = cfs->get_u2_fast();
-          if (tag == JVM_CONSTANT_InvokeDynamicTrans) {
-            if (!AllowTransitionalJSR292)
-              classfile_parse_error(
-                "This JVM does not support transitional InvokeDynamic tag %u in class file %s",
-                tag, CHECK);
-            cp->invoke_dynamic_trans_at_put(index, bootstrap_specifier_index, name_and_type_index);
-            break;
-          }
           if (_max_bootstrap_specifier_index < (int) bootstrap_specifier_index)
             _max_bootstrap_specifier_index = (int) bootstrap_specifier_index;  // collect for later
           cp->invoke_dynamic_at_put(index, bootstrap_specifier_index, name_and_type_index);
@@ -492,7 +483,6 @@ constantPoolHandle ClassFileParser::parse_constant_pool(TRAPS) {
               ref_index, CHECK_(nullHandle));
         }
         break;
-      case JVM_CONSTANT_InvokeDynamicTrans :
       case JVM_CONSTANT_InvokeDynamic :
         {
           int name_and_type_ref_index = cp->invoke_dynamic_name_and_type_ref_index_at(index);
@@ -501,14 +491,6 @@ constantPoolHandle ClassFileParser::parse_constant_pool(TRAPS) {
                          "Invalid constant pool index %u in class file %s",
                          name_and_type_ref_index,
                          CHECK_(nullHandle));
-          if (tag == JVM_CONSTANT_InvokeDynamicTrans) {
-            int bootstrap_method_ref_index = cp->invoke_dynamic_bootstrap_method_ref_index_at(index);
-            check_property(valid_cp_range(bootstrap_method_ref_index, length) &&
-                           cp->tag_at(bootstrap_method_ref_index).is_method_handle(),
-                           "Invalid constant pool index %u in class file %s",
-                           bootstrap_method_ref_index,
-                           CHECK_(nullHandle));
-          }
           // bootstrap specifier index must be checked later, when BootstrapMethods attr is available
           break;
         }
@@ -578,6 +560,7 @@ constantPoolHandle ClassFileParser::parse_constant_pool(TRAPS) {
         }
         break;
       }
+      case JVM_CONSTANT_InvokeDynamic:
       case JVM_CONSTANT_Fieldref:
       case JVM_CONSTANT_Methodref:
       case JVM_CONSTANT_InterfaceMethodref: {
@@ -2783,7 +2766,6 @@ void ClassFileParser::java_lang_invoke_MethodHandle_fix_pre(constantPoolHandle c
     }
   }
 
-  if (AllowTransitionalJSR292 && word_sig_index == 0)  return;
   if (word_sig_index == 0)
     THROW_MSG(vmSymbols::java_lang_VirtualMachineError(),
               "missing I or J signature (for vmentry) in java.lang.invoke.MethodHandle");
@@ -2823,7 +2805,6 @@ void ClassFileParser::java_lang_invoke_MethodHandle_fix_pre(constantPoolHandle c
     }
   }
 
-  if (AllowTransitionalJSR292 && !found_vmentry)  return;
   if (!found_vmentry)
     THROW_MSG(vmSymbols::java_lang_VirtualMachineError(),
               "missing vmentry byte field in java.lang.invoke.MethodHandle");
@@ -3192,15 +3173,6 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
 
     // adjust the vmentry field declaration in java.lang.invoke.MethodHandle
     if (EnableInvokeDynamic && class_name == vmSymbols::java_lang_invoke_MethodHandle() && class_loader.is_null()) {
-      java_lang_invoke_MethodHandle_fix_pre(cp, fields, &fac, CHECK_(nullHandle));
-    }
-    if (AllowTransitionalJSR292 &&
-        EnableInvokeDynamic && class_name == vmSymbols::java_dyn_MethodHandle() && class_loader.is_null()) {
-      java_lang_invoke_MethodHandle_fix_pre(cp, fields, &fac, CHECK_(nullHandle));
-    }
-    if (AllowTransitionalJSR292 &&
-        EnableInvokeDynamic && class_name == vmSymbols::sun_dyn_MethodHandleImpl() && class_loader.is_null()) {
-      // allow vmentry field in MethodHandleImpl also
       java_lang_invoke_MethodHandle_fix_pre(cp, fields, &fac, CHECK_(nullHandle));
     }
 

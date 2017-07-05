@@ -959,12 +959,6 @@ MethodHandleCompiler::make_invoke(methodOop m, vmIntrinsics::ID iid,
   if (m == NULL) {
     // Get the intrinsic methodOop.
     m = vmIntrinsics::method_for(iid);
-    if (m == NULL && iid == vmIntrinsics::_checkSpreadArgument && AllowTransitionalJSR292) {
-      m = vmIntrinsics::method_for(vmIntrinsics::_checkSpreadArgument_TRANS);
-      if (m == NULL)
-        // sun.dyn.MethodHandleImpl not found, look for java.dyn.MethodHandleNatives:
-        m = vmIntrinsics::method_for(vmIntrinsics::_checkSpreadArgument_TRANS2);
-    }
     if (m == NULL) {
       ArgToken zero;
       lose(vmIntrinsics::name_at(iid), CHECK_(zero));
