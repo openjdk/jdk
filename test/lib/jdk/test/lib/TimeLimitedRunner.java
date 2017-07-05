@@ -21,7 +21,7 @@
  * questions.
  */
 
-package jdk.test.lib.wrappers;
+package jdk.test.lib;
 
 import java.util.Objects;
 import java.util.concurrent.Callable;
