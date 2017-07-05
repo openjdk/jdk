@@ -1652,6 +1652,10 @@
       <name>jdk.internal.jline.console.history</name>
       <to>jdk.scripting.nashorn.shell</to>
     </export>
+    <export>
+      <name>jdk.internal.jline.internal</name>
+      <to>jdk.scripting.nashorn.shell</to>
+    </export>
   </module>
   <module>
     <name>jdk.jartool</name>
@@ -1818,7 +1822,9 @@
     <name>jdk.scripting.nashorn.shell</name>
     <depend>java.base</depend>
     <depend>jdk.scripting.nashorn</depend>
-    <depend>jdk.internal.le</depend>
+    <depend>jdk.internal.le</depend> <!-- jline -->
+    <depend>java.desktop</depend> <!-- EditPad -->
+    <depend>java.compiler</depend> <!-- java package completion -->
   </module>
   <module>
     <name>jdk.sctp</name>

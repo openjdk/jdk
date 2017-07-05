@@ -28,7 +28,7 @@ import java.net.URL;
 
 /**
  * When an applet is first created, an applet stub is attached to it
- * using the applet's <code>setStub</code> method. This stub
+ * using the applet's {@code setStub} method. This stub
  * serves as the interface between the applet and the browser
  * environment or applet viewer environment in which the application
  * is running.
@@ -40,11 +40,11 @@ import java.net.URL;
 public interface AppletStub {
     /**
      * Determines if the applet is active. An applet is active just
-     * before its <code>start</code> method is called. It becomes
-     * inactive just before its <code>stop</code> method is called.
+     * before its {@code start} method is called. It becomes
+     * inactive just before its {@code stop} method is called.
      *
-     * @return  <code>true</code> if the applet is active;
-     *          <code>false</code> otherwise.
+     * @return  {@code true} if the applet is active;
+     *          {@code false} otherwise.
      */
     boolean isActive();
 
@@ -85,12 +85,12 @@ public interface AppletStub {
      * &lt;/applet&gt;
      * </pre></blockquote>
      * <p>
-     * then a call to <code>getParameter("Color")</code> returns the
-     * value <code>"blue"</code>.
+     * then a call to {@code getParameter("Color")} returns the
+     * value {@code "blue"}.
      *
      * @param   name   a parameter name.
      * @return  the value of the named parameter,
-     * or <tt>null</tt> if not set.
+     * or {@code null} if not set.
      */
     String getParameter(String name);
 

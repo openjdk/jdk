@@ -54,28 +54,28 @@ import java.io.PrintStream;
  * <p> The BoxLayout manager is constructed with an axis parameter that
  * specifies the type of layout that will be done. There are four choices:
  *
- * <blockquote><b><tt>X_AXIS</tt></b> - Components are laid out horizontally
+ * <blockquote><b>{@code X_AXIS}</b> - Components are laid out horizontally
  * from left to right.</blockquote>
  *
- * <blockquote><b><tt>Y_AXIS</tt></b> - Components are laid out vertically
+ * <blockquote><b>{@code Y_AXIS}</b> - Components are laid out vertically
  * from top to bottom.</blockquote>
  *
- * <blockquote><b><tt>LINE_AXIS</tt></b> - Components are laid out the way
+ * <blockquote><b>{@code LINE_AXIS}</b> - Components are laid out the way
  * words are laid out in a line, based on the container's
- * <tt>ComponentOrientation</tt> property. If the container's
- * <tt>ComponentOrientation</tt> is horizontal then components are laid out
+ * {@code ComponentOrientation} property. If the container's
+ * {@code ComponentOrientation} is horizontal then components are laid out
  * horizontally, otherwise they are laid out vertically.  For horizontal
- * orientations, if the container's <tt>ComponentOrientation</tt> is left to
+ * orientations, if the container's {@code ComponentOrientation} is left to
  * right then components are laid out left to right, otherwise they are laid
  * out right to left. For vertical orientations components are always laid out
  * from top to bottom.</blockquote>
  *
- * <blockquote><b><tt>PAGE_AXIS</tt></b> - Components are laid out the way
+ * <blockquote><b>{@code PAGE_AXIS}</b> - Components are laid out the way
  * text lines are laid out on a page, based on the container's
- * <tt>ComponentOrientation</tt> property. If the container's
- * <tt>ComponentOrientation</tt> is horizontal then components are laid out
+ * {@code ComponentOrientation} property. If the container's
+ * {@code ComponentOrientation} is horizontal then components are laid out
  * vertically, otherwise they are laid out horizontally.  For horizontal
- * orientations, if the container's <tt>ComponentOrientation</tt> is left to
+ * orientations, if the container's {@code ComponentOrientation} is left to
  * right then components are laid out left to right, otherwise they are laid
  * out right to left.&nbsp; For vertical orientations components are always
  * laid out from top to bottom.</blockquote>
@@ -102,10 +102,10 @@ import java.io.PrintStream;
  * BoxLayout attempts to make all components in the column
  * as wide as the widest component.
  * If that fails, it aligns them horizontally
- * according to their X alignments.  For <code>PAGE_AXIS</code> layout,
+ * according to their X alignments.  For {@code PAGE_AXIS} layout,
  * horizontal alignment is done based on the leading edge of the component.
  * In other words, an X alignment value of 0.0 means the left edge of a
- * component if the container's <code>ComponentOrientation</code> is left to
+ * component if the container's {@code ComponentOrientation} is left to
  * right and it means the right edge of the component otherwise.
  * <p>
  * Instead of using BoxLayout directly, many programs use the Box class.
@@ -125,7 +125,7 @@ import java.io.PrintStream;
  * appropriate for short term storage or RMI between applications running
  * the same version of Swing.  As of 1.4, support for long term storage
  * of all JavaBeans&trade;
- * has been added to the <code>java.beans</code> package.
+ * has been added to the {@code java.beans} package.
  * Please see {@link java.beans.XMLEncoder}.
  *
  * @see Box
@@ -152,14 +152,14 @@ public class BoxLayout implements LayoutManager2, Serializable {
     /**
      * Specifies that components should be laid out in the direction of
      * a line of text as determined by the target container's
-     * <code>ComponentOrientation</code> property.
+     * {@code ComponentOrientation} property.
      */
     public static final int LINE_AXIS = 2;
 
     /**
      * Specifies that components should be laid out in the direction that
      * lines flow across a page as determined by the target container's
-     * <code>ComponentOrientation</code> property.
+     * {@code ComponentOrientation} property.
      */
     public static final int PAGE_AXIS = 3;
 
@@ -169,12 +169,10 @@ public class BoxLayout implements LayoutManager2, Serializable {
      *
      * @param target  the container that needs to be laid out
      * @param axis  the axis to lay out components along. Can be one of:
-     *              <code>BoxLayout.X_AXIS</code>,
-     *              <code>BoxLayout.Y_AXIS</code>,
-     *              <code>BoxLayout.LINE_AXIS</code> or
-     *              <code>BoxLayout.PAGE_AXIS</code>
+     *              {@code BoxLayout.X_AXIS, BoxLayout.Y_AXIS,
+     *              BoxLayout.LINE_AXIS} or {@code BoxLayout.PAGE_AXIS}
      *
-     * @exception AWTError  if the value of <code>axis</code> is invalid
+     * @exception AWTError  if the value of {@code axis} is invalid
      */
     @ConstructorProperties({"target", "axis"})
     public BoxLayout(Container target, int axis) {
@@ -192,10 +190,8 @@ public class BoxLayout implements LayoutManager2, Serializable {
      *
      * @param target  the container that needs to be laid out
      * @param axis  the axis to lay out components along. Can be one of:
-     *              <code>BoxLayout.X_AXIS</code>,
-     *              <code>BoxLayout.Y_AXIS</code>,
-     *              <code>BoxLayout.LINE_AXIS</code> or
-     *              <code>BoxLayout.PAGE_AXIS</code>
+     *              {@code BoxLayout.X_AXIS, BoxLayout.Y_AXIS,
+     *              BoxLayout.LINE_AXIS} or {@code BoxLayout.PAGE_AXIS}
      *
      * @param dbg  the stream to which debugging messages should be sent,
      *   null if none
@@ -219,10 +215,8 @@ public class BoxLayout implements LayoutManager2, Serializable {
     /**
      * Returns the axis that was used to lay out components.
      * Returns one of:
-     * <code>BoxLayout.X_AXIS</code>,
-     * <code>BoxLayout.Y_AXIS</code>,
-     * <code>BoxLayout.LINE_AXIS</code> or
-     * <code>BoxLayout.PAGE_AXIS</code>
+     * {@code BoxLayout.X_AXIS, BoxLayout.Y_AXIS,
+     * BoxLayout.LINE_AXIS} or {@code BoxLayout.PAGE_AXIS}
      *
      * @return the axis that was used to lay out components
      *

@@ -34,14 +34,18 @@ import java.net.DatagramSocket;
 import java.security.Security;
 
 public class MaxRetries {
+
+    static int idlePort = -1;
+
     public static void main(String[] args)
             throws Exception {
 
         System.setProperty("sun.security.krb5.debug", "true");
         new OneKDC(null).writeJAASConf();
 
-        // An idle UDP socket to revent PortUnreachableException
-        DatagramSocket ds = new DatagramSocket(33333);
+        // An idle UDP socket to prevent PortUnreachableException
+        DatagramSocket ds = new DatagramSocket();
+        idlePort = ds.getLocalPort();
 
         System.setProperty("java.security.krb5.conf", "alternative-krb5.conf");
 
@@ -200,7 +204,7 @@ public class MaxRetries {
                     fw.write("    kdc_timeout = " + BadKdc.toReal(value*1000) + "\n");
                 }
                 // Add a bad KDC as the first candidate
-                fw.write("    kdc = localhost:33333\n");
+                fw.write("    kdc = localhost:" + idlePort + "\n");
             }
             fw.write(s + "\n");
         }

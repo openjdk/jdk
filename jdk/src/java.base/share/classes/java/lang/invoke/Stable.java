@@ -51,7 +51,7 @@ import java.lang.annotation.*;
  * If the field is an array type, then both the field value and
  * all the components of the field value (if the field value is non-null)
  * are indicated to be stable.
- * If the field type is an array type with rank {@code N &gt; 1},
+ * If the field type is an array type with rank {@code N > 1},
  * then each component of the field value (if the field value is non-null),
  * is regarded as a stable array of rank {@code N-1}.
  * <p>

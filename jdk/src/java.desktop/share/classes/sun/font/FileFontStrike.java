@@ -420,14 +420,13 @@ public class FileFontStrike extends PhysicalStrike {
 
     /* The following method is called from CompositeStrike as a special case.
      */
-    private static final int SLOTZEROMAX = 0xffffff;
     int getSlot0GlyphImagePtrs(int[] glyphCodes, long[] images, int len) {
 
         int convertedCnt = 0;
 
         for (int i=0; i<len; i++) {
             int glyphCode = glyphCodes[i];
-            if (glyphCode >= SLOTZEROMAX) {
+            if (glyphCode >>> 24 != 0) {
                 return convertedCnt;
             } else {
                 convertedCnt++;

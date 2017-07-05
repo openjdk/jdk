@@ -32,9 +32,9 @@ import java.nio.file.*;
 import java.nio.file.DirectoryStream.Filter;
 import java.nio.file.attribute.*;
 import java.util.*;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.StandardOpenOption.*;
 import static java.nio.file.StandardCopyOption.*;
-
 
 /**
  *
@@ -180,7 +180,7 @@ class ZipPath implements Path {
     public URI toUri() {
         try {
             return new URI("jar",
-                           zfs.getZipFile().toUri() +
+                           decodeUri(zfs.getZipFile().toUri().toString()) +
                            "!" +
                            zfs.getString(toAbsolutePath().path),
                            null);
@@ -866,4 +866,57 @@ class ZipPath implements Path {
             }
         }
     }
+
+    private static int decode(char c) {
+        if ((c >= '0') && (c <= '9'))
+            return c - '0';
+        if ((c >= 'a') && (c <= 'f'))
+            return c - 'a' + 10;
+        if ((c >= 'A') && (c <= 'F'))
+            return c - 'A' + 10;
+        assert false;
+        return -1;
+    }
+
+    // to avoid double escape
+    static String decodeUri(String s) {
+        if (s == null)
+            return s;
+        int n = s.length();
+        if (n == 0)
+            return s;
+        if (s.indexOf('%') < 0)
+            return s;
+
+        StringBuilder sb = new StringBuilder(n);
+        byte[] bb = new byte[n];
+        boolean betweenBrackets = false;
+
+        for (int i = 0; i < n;) {
+            char c = s.charAt(i);
+            if (c == '[') {
+                betweenBrackets = true;
+            } else if (betweenBrackets && c == ']') {
+                betweenBrackets = false;
+            }
+            if (c != '%' || betweenBrackets ) {
+                sb.append(c);
+                i++;
+                continue;
+            }
+            int nb = 0;
+            while (c == '%') {
+                assert (n - i >= 2);
+                bb[nb++] = (byte)(((decode(s.charAt(++i)) & 0xf) << 4) |
+                                  (decode(s.charAt(++i)) & 0xf));
+                if (++i >= n) {
+                    break;
+                }
+                c = s.charAt(i);
+            }
+            sb.append(new String(bb, 0, nb, UTF_8));
+        }
+        return sb.toString();
+    }
+
 }

@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 4922568
+ * @bug 4922568 8133015
  * @run main/othervm -Djava.net.preferIPv4Stack=true IsHostReachableBug
  * @summary  isReachable returns true for IPv6
  */
