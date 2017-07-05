@@ -109,6 +109,7 @@ struct JvmtiCachedClassFileData;
 
 class InstanceKlass: public Klass {
   friend class VMStructs;
+  friend class JVMCIVMStructs;
   friend class ClassFileParser;
   friend class CompileReplay;
 

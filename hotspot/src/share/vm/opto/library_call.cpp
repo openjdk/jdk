@@ -201,6 +201,7 @@ class LibraryCallKit : public GraphKit {
     return generate_method_call(method_id, true, false);
   }
   Node * load_field_from_object(Node * fromObj, const char * fieldName, const char * fieldTypeString, bool is_exact, bool is_static, ciInstanceKlass * fromKls);
+  Node * field_address_from_object(Node * fromObj, const char * fieldName, const char * fieldTypeString, bool is_exact, bool is_static, ciInstanceKlass * fromKls);
 
   Node* make_string_method_node(int opcode, Node* str1_start, Node* cnt1, Node* str2_start, Node* cnt2, StrIntrinsicNode::ArgEnc ae);
   bool inline_string_compareTo(StrIntrinsicNode::ArgEnc ae);
@@ -230,8 +231,6 @@ class LibraryCallKit : public GraphKit {
   bool inline_math_negateExactL();
   bool inline_math_subtractExactI(bool is_decrement);
   bool inline_math_subtractExactL(bool is_decrement);
-  bool inline_pow();
-  Node* finish_pow_exp(Node* result, Node* x, Node* y, const TypeFunc* call_type, address funcAddr, const char* funcName);
   bool inline_min_max(vmIntrinsics::ID id);
   bool inline_notify(vmIntrinsics::ID id);
   Node* generate_min_max(vmIntrinsics::ID id, Node* x, Node* y);
@@ -285,7 +284,9 @@ class LibraryCallKit : public GraphKit {
   bool inline_Class_cast();
   bool inline_aescrypt_Block(vmIntrinsics::ID id);
   bool inline_cipherBlockChaining_AESCrypt(vmIntrinsics::ID id);
+  bool inline_counterMode_AESCrypt(vmIntrinsics::ID id);
   Node* inline_cipherBlockChaining_AESCrypt_predicate(bool decrypting);
+  Node* inline_counterMode_AESCrypt_predicate();
   Node* get_key_start_from_aescrypt_object(Node* aescrypt_object);
   Node* get_original_key_start_from_aescrypt_object(Node* aescrypt_object);
   bool inline_ghash_processBlocks();
@@ -312,9 +313,12 @@ class LibraryCallKit : public GraphKit {
   bool inline_mulAdd();
   bool inline_montgomeryMultiply();
   bool inline_montgomerySquare();
+  bool inline_vectorizedMismatch();
 
   bool inline_profileBoolean();
   bool inline_isCompileConstant();
+
+  bool inline_deoptimize();
 };
 
 //---------------------------make_vm_intrinsic----------------------------
@@ -696,6 +700,9 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_cipherBlockChaining_decryptAESCrypt:
     return inline_cipherBlockChaining_AESCrypt(intrinsic_id());
 
+  case vmIntrinsics::_counterMode_AESCrypt:
+    return inline_counterMode_AESCrypt(intrinsic_id());
+
   case vmIntrinsics::_sha_implCompress:
   case vmIntrinsics::_sha2_implCompress:
   case vmIntrinsics::_sha5_implCompress:
@@ -717,6 +724,9 @@ bool LibraryCallKit::try_to_inline(int predicate) {
     return inline_montgomeryMultiply();
   case vmIntrinsics::_montgomerySquare:
     return inline_montgomerySquare();
+
+  case vmIntrinsics::_vectorizedMismatch:
+    return inline_vectorizedMismatch();
 
   case vmIntrinsics::_ghash_processBlocks:
     return inline_ghash_processBlocks();
@@ -750,6 +760,9 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_hasNegatives:
     return inline_hasNegatives();
 
+  case vmIntrinsics::_deoptimize:
+    return inline_deoptimize();
+
   default:
     // If you get here, it may be that someone has added a new intrinsic
     // to the list in vmSymbols.hpp without implementing it here.
@@ -777,6 +790,8 @@ Node* LibraryCallKit::try_to_predicate(int predicate) {
     return inline_cipherBlockChaining_AESCrypt_predicate(false);
   case vmIntrinsics::_cipherBlockChaining_decryptAESCrypt:
     return inline_cipherBlockChaining_AESCrypt_predicate(true);
+  case vmIntrinsics::_counterMode_AESCrypt:
+    return inline_counterMode_AESCrypt_predicate();
   case vmIntrinsics::_digestBase_implCompressMB:
     return inline_digestBase_implCompressMB_predicate(predicate);
 
@@ -1709,243 +1724,6 @@ bool LibraryCallKit::inline_trig(vmIntrinsics::ID id) {
   return true;
 }
 
-Node* LibraryCallKit::finish_pow_exp(Node* result, Node* x, Node* y, const TypeFunc* call_type, address funcAddr, const char* funcName) {
-  //-------------------
-  //result=(result.isNaN())? funcAddr():result;
-  // Check: If isNaN() by checking result!=result? then either trap
-  // or go to runtime
-  Node* cmpisnan = _gvn.transform(new CmpDNode(result, result));
-  // Build the boolean node
-  Node* bolisnum = _gvn.transform(new BoolNode(cmpisnan, BoolTest::eq));
-
-  if (!too_many_traps(Deoptimization::Reason_intrinsic)) {
-    { BuildCutout unless(this, bolisnum, PROB_STATIC_FREQUENT);
-      // The pow or exp intrinsic returned a NaN, which requires a call
-      // to the runtime.  Recompile with the runtime call.
-      uncommon_trap(Deoptimization::Reason_intrinsic,
-                    Deoptimization::Action_make_not_entrant);
-    }
-    return result;
-  } else {
-    // If this inlining ever returned NaN in the past, we compile a call
-    // to the runtime to properly handle corner cases
-
-    IfNode* iff = create_and_xform_if(control(), bolisnum, PROB_STATIC_FREQUENT, COUNT_UNKNOWN);
-    Node* if_slow = _gvn.transform(new IfFalseNode(iff));
-    Node* if_fast = _gvn.transform(new IfTrueNode(iff));
-
-    if (!if_slow->is_top()) {
-      RegionNode* result_region = new RegionNode(3);
-      PhiNode*    result_val = new PhiNode(result_region, Type::DOUBLE);
-
-      result_region->init_req(1, if_fast);
-      result_val->init_req(1, result);
-
-      set_control(if_slow);
-
-      const TypePtr* no_memory_effects = NULL;
-      Node* rt = make_runtime_call(RC_LEAF, call_type, funcAddr, funcName,
-                                   no_memory_effects,
-                                   x, top(), y, y ? top() : NULL);
-      Node* value = _gvn.transform(new ProjNode(rt, TypeFunc::Parms+0));
-#ifdef ASSERT
-      Node* value_top = _gvn.transform(new ProjNode(rt, TypeFunc::Parms+1));
-      assert(value_top == top(), "second value must be top");
-#endif
-
-      result_region->init_req(2, control());
-      result_val->init_req(2, value);
-      set_control(_gvn.transform(result_region));
-      return _gvn.transform(result_val);
-    } else {
-      return result;
-    }
-  }
-}
-
-//------------------------------inline_pow-------------------------------------
-// Inline power instructions, if possible.
-bool LibraryCallKit::inline_pow() {
-  // Pseudocode for pow
-  // if (y == 2) {
-  //   return x * x;
-  // } else {
-  //   if (x <= 0.0) {
-  //     long longy = (long)y;
-  //     if ((double)longy == y) { // if y is long
-  //       if (y + 1 == y) longy = 0; // huge number: even
-  //       result = ((1&longy) == 0)?-DPow(abs(x), y):DPow(abs(x), y);
-  //     } else {
-  //       result = NaN;
-  //     }
-  //   } else {
-  //     result = DPow(x,y);
-  //   }
-  //   if (result != result)?  {
-  //     result = uncommon_trap() or runtime_call();
-  //   }
-  //   return result;
-  // }
-
-  Node* x = round_double_node(argument(0));
-  Node* y = round_double_node(argument(2));
-
-  Node* result = NULL;
-
-  Node*   const_two_node = makecon(TypeD::make(2.0));
-  Node*   cmp_node       = _gvn.transform(new CmpDNode(y, const_two_node));
-  Node*   bool_node      = _gvn.transform(new BoolNode(cmp_node, BoolTest::eq));
-  IfNode* if_node        = create_and_xform_if(control(), bool_node, PROB_STATIC_INFREQUENT, COUNT_UNKNOWN);
-  Node*   if_true        = _gvn.transform(new IfTrueNode(if_node));
-  Node*   if_false       = _gvn.transform(new IfFalseNode(if_node));
-
-  RegionNode* region_node = new RegionNode(3);
-  region_node->init_req(1, if_true);
-
-  Node* phi_node = new PhiNode(region_node, Type::DOUBLE);
-  // special case for x^y where y == 2, we can convert it to x * x
-  phi_node->init_req(1, _gvn.transform(new MulDNode(x, x)));
-
-  // set control to if_false since we will now process the false branch
-  set_control(if_false);
-
-  if (!too_many_traps(Deoptimization::Reason_intrinsic)) {
-    // Short form: skip the fancy tests and just check for NaN result.
-    result = _gvn.transform(new PowDNode(C, control(), x, y));
-  } else {
-    // If this inlining ever returned NaN in the past, include all
-    // checks + call to the runtime.
-
-    // Set the merge point for If node with condition of (x <= 0.0)
-    // There are four possible paths to region node and phi node
-    RegionNode *r = new RegionNode(4);
-    Node *phi = new PhiNode(r, Type::DOUBLE);
-
-    // Build the first if node: if (x <= 0.0)
-    // Node for 0 constant
-    Node *zeronode = makecon(TypeD::ZERO);
-    // Check x:0
-    Node *cmp = _gvn.transform(new CmpDNode(x, zeronode));
-    // Check: If (x<=0) then go complex path
-    Node *bol1 = _gvn.transform(new BoolNode( cmp, BoolTest::le ));
-    // Branch either way
-    IfNode *if1 = create_and_xform_if(control(),bol1, PROB_STATIC_INFREQUENT, COUNT_UNKNOWN);
-    // Fast path taken; set region slot 3
-    Node *fast_taken = _gvn.transform(new IfFalseNode(if1));
-    r->init_req(3,fast_taken); // Capture fast-control
-
-    // Fast path not-taken, i.e. slow path
-    Node *complex_path = _gvn.transform(new IfTrueNode(if1));
-
-    // Set fast path result
-    Node *fast_result = _gvn.transform(new PowDNode(C, control(), x, y));
-    phi->init_req(3, fast_result);
-
-    // Complex path
-    // Build the second if node (if y is long)
-    // Node for (long)y
-    Node *longy = _gvn.transform(new ConvD2LNode(y));
-    // Node for (double)((long) y)
-    Node *doublelongy= _gvn.transform(new ConvL2DNode(longy));
-    // Check (double)((long) y) : y
-    Node *cmplongy= _gvn.transform(new CmpDNode(doublelongy, y));
-    // Check if (y isn't long) then go to slow path
-
-    Node *bol2 = _gvn.transform(new BoolNode( cmplongy, BoolTest::ne ));
-    // Branch either way
-    IfNode *if2 = create_and_xform_if(complex_path,bol2, PROB_STATIC_INFREQUENT, COUNT_UNKNOWN);
-    Node* ylong_path = _gvn.transform(new IfFalseNode(if2));
-
-    Node *slow_path = _gvn.transform(new IfTrueNode(if2));
-
-    // Calculate DPow(abs(x), y)*(1 & (long)y)
-    // Node for constant 1
-    Node *conone = longcon(1);
-    // 1& (long)y
-    Node *signnode= _gvn.transform(new AndLNode(conone, longy));
-
-    // A huge number is always even. Detect a huge number by checking
-    // if y + 1 == y and set integer to be tested for parity to 0.
-    // Required for corner case:
-    // (long)9.223372036854776E18 = max_jlong
-    // (double)(long)9.223372036854776E18 = 9.223372036854776E18
-    // max_jlong is odd but 9.223372036854776E18 is even
-    Node* yplus1 = _gvn.transform(new AddDNode(y, makecon(TypeD::make(1))));
-    Node *cmpyplus1= _gvn.transform(new CmpDNode(yplus1, y));
-    Node *bolyplus1 = _gvn.transform(new BoolNode( cmpyplus1, BoolTest::eq ));
-    Node* correctedsign = NULL;
-    if (ConditionalMoveLimit != 0) {
-      correctedsign = _gvn.transform(CMoveNode::make(NULL, bolyplus1, signnode, longcon(0), TypeLong::LONG));
-    } else {
-      IfNode *ifyplus1 = create_and_xform_if(ylong_path,bolyplus1, PROB_FAIR, COUNT_UNKNOWN);
-      RegionNode *r = new RegionNode(3);
-      Node *phi = new PhiNode(r, TypeLong::LONG);
-      r->init_req(1, _gvn.transform(new IfFalseNode(ifyplus1)));
-      r->init_req(2, _gvn.transform(new IfTrueNode(ifyplus1)));
-      phi->init_req(1, signnode);
-      phi->init_req(2, longcon(0));
-      correctedsign = _gvn.transform(phi);
-      ylong_path = _gvn.transform(r);
-      record_for_igvn(r);
-    }
-
-    // zero node
-    Node *conzero = longcon(0);
-    // Check (1&(long)y)==0?
-    Node *cmpeq1 = _gvn.transform(new CmpLNode(correctedsign, conzero));
-    // Check if (1&(long)y)!=0?, if so the result is negative
-    Node *bol3 = _gvn.transform(new BoolNode( cmpeq1, BoolTest::ne ));
-    // abs(x)
-    Node *absx=_gvn.transform(new AbsDNode(x));
-    // abs(x)^y
-    Node *absxpowy = _gvn.transform(new PowDNode(C, control(), absx, y));
-    // -abs(x)^y
-    Node *negabsxpowy = _gvn.transform(new NegDNode (absxpowy));
-    // (1&(long)y)==1?-DPow(abs(x), y):DPow(abs(x), y)
-    Node *signresult = NULL;
-    if (ConditionalMoveLimit != 0) {
-      signresult = _gvn.transform(CMoveNode::make(NULL, bol3, absxpowy, negabsxpowy, Type::DOUBLE));
-    } else {
-      IfNode *ifyeven = create_and_xform_if(ylong_path,bol3, PROB_FAIR, COUNT_UNKNOWN);
-      RegionNode *r = new RegionNode(3);
-      Node *phi = new PhiNode(r, Type::DOUBLE);
-      r->init_req(1, _gvn.transform(new IfFalseNode(ifyeven)));
-      r->init_req(2, _gvn.transform(new IfTrueNode(ifyeven)));
-      phi->init_req(1, absxpowy);
-      phi->init_req(2, negabsxpowy);
-      signresult = _gvn.transform(phi);
-      ylong_path = _gvn.transform(r);
-      record_for_igvn(r);
-    }
-    // Set complex path fast result
-    r->init_req(2, ylong_path);
-    phi->init_req(2, signresult);
-
-    static const jlong nan_bits = CONST64(0x7ff8000000000000);
-    Node *slow_result = makecon(TypeD::make(*(double*)&nan_bits)); // return NaN
-    r->init_req(1,slow_path);
-    phi->init_req(1,slow_result);
-
-    // Post merge
-    set_control(_gvn.transform(r));
-    record_for_igvn(r);
-    result = _gvn.transform(phi);
-  }
-
-  result = finish_pow_exp(result, x, y, OptoRuntime::Math_DD_D_Type(), CAST_FROM_FN_PTR(address, SharedRuntime::dpow), "POW");
-
-  // control from finish_pow_exp is now input to the region node
-  region_node->set_req(2, control());
-  // the result from finish_pow_exp is now input to the phi node
-  phi_node->init_req(2, result);
-  set_control(_gvn.transform(region_node));
-  record_for_igvn(region_node);
-  set_result(_gvn.transform(phi_node));
-
-  C->set_has_split_ifs(true); // Has chance for split-if optimization
-  return true;
-}
-
 //------------------------------runtime_math-----------------------------
 bool LibraryCallKit::runtime_math(const TypeFunc* call_type, address funcAddr, const char* funcName) {
   assert(call_type == OptoRuntime::Math_DD_D_Type() || call_type == OptoRuntime::Math_D_D_Type(),
@@ -1996,8 +1774,10 @@ bool LibraryCallKit::inline_math_native(vmIntrinsics::ID id) {
     return StubRoutines::dexp() != NULL ?
       runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dexp(),  "dexp") :
       runtime_math(OptoRuntime::Math_D_D_Type(), FN_PTR(SharedRuntime::dexp),  "EXP");
-  case vmIntrinsics::_dpow:   return Matcher::has_match_rule(Op_PowD)   ? inline_pow()    :
-    runtime_math(OptoRuntime::Math_DD_D_Type(), FN_PTR(SharedRuntime::dpow),  "POW");
+  case vmIntrinsics::_dpow:
+    return StubRoutines::dpow() != NULL ?
+      runtime_math(OptoRuntime::Math_DD_D_Type(), StubRoutines::dpow(), "dpow") :
+      runtime_math(OptoRuntime::Math_DD_D_Type(), FN_PTR(SharedRuntime::dpow),  "POW");
 #undef FN_PTR
 
    // These intrinsics are not yet correctly implemented
@@ -5576,6 +5356,50 @@ bool LibraryCallKit::inline_montgomerySquare() {
   return true;
 }
 
+//-------------inline_vectorizedMismatch------------------------------
+bool LibraryCallKit::inline_vectorizedMismatch() {
+  assert(UseVectorizedMismatchIntrinsic, "not implementated on this platform");
+
+  address stubAddr = StubRoutines::vectorizedMismatch();
+  if (stubAddr == NULL) {
+    return false; // Intrinsic's stub is not implemented on this platform
+  }
+  const char* stubName = "vectorizedMismatch";
+  int size_l = callee()->signature()->size();
+  assert(callee()->signature()->size() == 8, "vectorizedMismatch has 6 parameters");
+
+  Node* obja = argument(0);
+  Node* aoffset = argument(1);
+  Node* objb = argument(3);
+  Node* boffset = argument(4);
+  Node* length = argument(6);
+  Node* scale = argument(7);
+
+  const Type* a_type = obja->Value(&_gvn);
+  const Type* b_type = objb->Value(&_gvn);
+  const TypeAryPtr* top_a = a_type->isa_aryptr();
+  const TypeAryPtr* top_b = b_type->isa_aryptr();
+  if (top_a == NULL || top_a->klass() == NULL ||
+    top_b == NULL || top_b->klass() == NULL) {
+    // failed array check
+    return false;
+  }
+
+  Node* call;
+  jvms()->set_should_reexecute(true);
+
+  Node* obja_adr = make_unsafe_address(obja, aoffset);
+  Node* objb_adr = make_unsafe_address(objb, boffset);
+
+  call = make_runtime_call(RC_LEAF,
+    OptoRuntime::vectorizedMismatch_Type(),
+    stubAddr, stubName, TypePtr::BOTTOM,
+    obja_adr, objb_adr, length, scale);
+
+  Node* result = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
+  set_result(result);
+  return true;
+}
 
 /**
  * Calculate CRC32 for byte.
@@ -5962,6 +5786,39 @@ Node * LibraryCallKit::load_field_from_object(Node * fromObj, const char * field
   return loadedField;
 }
 
+Node * LibraryCallKit::field_address_from_object(Node * fromObj, const char * fieldName, const char * fieldTypeString,
+                                                 bool is_exact = true, bool is_static = false,
+                                                 ciInstanceKlass * fromKls = NULL) {
+  if (fromKls == NULL) {
+    const TypeInstPtr* tinst = _gvn.type(fromObj)->isa_instptr();
+    assert(tinst != NULL, "obj is null");
+    assert(tinst->klass()->is_loaded(), "obj is not loaded");
+    assert(!is_exact || tinst->klass_is_exact(), "klass not exact");
+    fromKls = tinst->klass()->as_instance_klass();
+  }
+  else {
+    assert(is_static, "only for static field access");
+  }
+  ciField* field = fromKls->get_field_by_name(ciSymbol::make(fieldName),
+    ciSymbol::make(fieldTypeString),
+    is_static);
+
+  assert(field != NULL, "undefined field");
+  assert(!field->is_volatile(), "not defined for volatile fields");
+
+  if (is_static) {
+    const TypeInstPtr* tip = TypeInstPtr::make(fromKls->java_mirror());
+    fromObj = makecon(tip);
+  }
+
+  // Next code  copied from Parse::do_get_xxx():
+
+  // Compute address and memory type.
+  int offset = field->offset_in_bytes();
+  Node *adr = basic_plus_adr(fromObj, fromObj, offset);
+
+  return adr;
+}
 
 //------------------------------inline_aescrypt_Block-----------------------
 bool LibraryCallKit::inline_aescrypt_Block(vmIntrinsics::ID id) {
@@ -6128,6 +5985,90 @@ bool LibraryCallKit::inline_cipherBlockChaining_AESCrypt(vmIntrinsics::ID id) {
   return true;
 }
 
+//------------------------------inline_counterMode_AESCrypt-----------------------
+bool LibraryCallKit::inline_counterMode_AESCrypt(vmIntrinsics::ID id) {
+  assert(UseAES, "need AES instruction support");
+  if (!UseAESCTRIntrinsics) return false;
+
+  address stubAddr = NULL;
+  const char *stubName = NULL;
+  if (id == vmIntrinsics::_counterMode_AESCrypt) {
+    stubAddr = StubRoutines::counterMode_AESCrypt();
+    stubName = "counterMode_AESCrypt";
+  }
+  if (stubAddr == NULL) return false;
+
+  Node* counterMode_object = argument(0);
+  Node* src = argument(1);
+  Node* src_offset = argument(2);
+  Node* len = argument(3);
+  Node* dest = argument(4);
+  Node* dest_offset = argument(5);
+
+  // (1) src and dest are arrays.
+  const Type* src_type = src->Value(&_gvn);
+  const Type* dest_type = dest->Value(&_gvn);
+  const TypeAryPtr* top_src = src_type->isa_aryptr();
+  const TypeAryPtr* top_dest = dest_type->isa_aryptr();
+  assert(top_src != NULL && top_src->klass() != NULL &&
+         top_dest != NULL && top_dest->klass() != NULL, "args are strange");
+
+  // checks are the responsibility of the caller
+  Node* src_start = src;
+  Node* dest_start = dest;
+  if (src_offset != NULL || dest_offset != NULL) {
+    assert(src_offset != NULL && dest_offset != NULL, "");
+    src_start = array_element_address(src, src_offset, T_BYTE);
+    dest_start = array_element_address(dest, dest_offset, T_BYTE);
+  }
+
+  // if we are in this set of code, we "know" the embeddedCipher is an AESCrypt object
+  // (because of the predicated logic executed earlier).
+  // so we cast it here safely.
+  // this requires a newer class file that has this array as littleEndian ints, otherwise we revert to java
+  Node* embeddedCipherObj = load_field_from_object(counterMode_object, "embeddedCipher", "Lcom/sun/crypto/provider/SymmetricCipher;", /*is_exact*/ false);
+  if (embeddedCipherObj == NULL) return false;
+  // cast it to what we know it will be at runtime
+  const TypeInstPtr* tinst = _gvn.type(counterMode_object)->isa_instptr();
+  assert(tinst != NULL, "CTR obj is null");
+  assert(tinst->klass()->is_loaded(), "CTR obj is not loaded");
+  ciKlass* klass_AESCrypt = tinst->klass()->as_instance_klass()->find_klass(ciSymbol::make("com/sun/crypto/provider/AESCrypt"));
+  assert(klass_AESCrypt->is_loaded(), "predicate checks that this class is loaded");
+  ciInstanceKlass* instklass_AESCrypt = klass_AESCrypt->as_instance_klass();
+  const TypeKlassPtr* aklass = TypeKlassPtr::make(instklass_AESCrypt);
+  const TypeOopPtr* xtype = aklass->as_instance_type();
+  Node* aescrypt_object = new CheckCastPPNode(control(), embeddedCipherObj, xtype);
+  aescrypt_object = _gvn.transform(aescrypt_object);
+  // we need to get the start of the aescrypt_object's expanded key array
+  Node* k_start = get_key_start_from_aescrypt_object(aescrypt_object);
+  if (k_start == NULL) return false;
+  // similarly, get the start address of the r vector
+  Node* obj_counter = load_field_from_object(counterMode_object, "counter", "[B", /*is_exact*/ false);
+  if (obj_counter == NULL) return false;
+  Node* cnt_start = array_element_address(obj_counter, intcon(0), T_BYTE);
+
+  Node* saved_encCounter = load_field_from_object(counterMode_object, "encryptedCounter", "[B", /*is_exact*/ false);
+  if (saved_encCounter == NULL) return false;
+  Node* saved_encCounter_start = array_element_address(saved_encCounter, intcon(0), T_BYTE);
+  Node* used = field_address_from_object(counterMode_object, "used", "I", /*is_exact*/ false);
+
+  Node* ctrCrypt;
+  if (Matcher::pass_original_key_for_aes()) {
+    // no SPARC version for AES/CTR intrinsics now.
+    return false;
+  }
+  // Call the stub, passing src_start, dest_start, k_start, r_start and src_len
+  ctrCrypt = make_runtime_call(RC_LEAF|RC_NO_FP,
+                               OptoRuntime::counterMode_aescrypt_Type(),
+                               stubAddr, stubName, TypePtr::BOTTOM,
+                               src_start, dest_start, k_start, cnt_start, len, saved_encCounter_start, used);
+
+  // return cipher length (int)
+  Node* retvalue = _gvn.transform(new ProjNode(ctrCrypt, TypeFunc::Parms));
+  set_result(retvalue);
+  return true;
+}
+
 //------------------------------get_key_start_from_aescrypt_object-----------------------
 Node * LibraryCallKit::get_key_start_from_aescrypt_object(Node *aescrypt_object) {
   Node* objAESCryptKey = load_field_from_object(aescrypt_object, "K", "[I", /*is_exact*/ false);
@@ -6207,6 +6148,48 @@ Node* LibraryCallKit::inline_cipherBlockChaining_AESCrypt_predicate(bool decrypt
 
   record_for_igvn(region);
   return _gvn.transform(region);
+}
+
+//----------------------------inline_counterMode_AESCrypt_predicate----------------------------
+// Return node representing slow path of predicate check.
+// the pseudo code we want to emulate with this predicate is:
+// for encryption:
+//    if (embeddedCipherObj instanceof AESCrypt) do_intrinsic, else do_javapath
+// for decryption:
+//    if ((embeddedCipherObj instanceof AESCrypt) && (cipher!=plain)) do_intrinsic, else do_javapath
+//    note cipher==plain is more conservative than the original java code but that's OK
+//
+
+Node* LibraryCallKit::inline_counterMode_AESCrypt_predicate() {
+  // The receiver was checked for NULL already.
+  Node* objCTR = argument(0);
+
+  // Load embeddedCipher field of CipherBlockChaining object.
+  Node* embeddedCipherObj = load_field_from_object(objCTR, "embeddedCipher", "Lcom/sun/crypto/provider/SymmetricCipher;", /*is_exact*/ false);
+
+  // get AESCrypt klass for instanceOf check
+  // AESCrypt might not be loaded yet if some other SymmetricCipher got us to this compile point
+  // will have same classloader as CipherBlockChaining object
+  const TypeInstPtr* tinst = _gvn.type(objCTR)->isa_instptr();
+  assert(tinst != NULL, "CTRobj is null");
+  assert(tinst->klass()->is_loaded(), "CTRobj is not loaded");
+
+  // we want to do an instanceof comparison against the AESCrypt class
+  ciKlass* klass_AESCrypt = tinst->klass()->as_instance_klass()->find_klass(ciSymbol::make("com/sun/crypto/provider/AESCrypt"));
+  if (!klass_AESCrypt->is_loaded()) {
+    // if AESCrypt is not even loaded, we never take the intrinsic fast path
+    Node* ctrl = control();
+    set_control(top()); // no regular fast path
+    return ctrl;
+  }
+
+  ciInstanceKlass* instklass_AESCrypt = klass_AESCrypt->as_instance_klass();
+  Node* instof = gen_instanceof(embeddedCipherObj, makecon(TypeKlassPtr::make(instklass_AESCrypt)));
+  Node* cmp_instof = _gvn.transform(new CmpINode(instof, intcon(1)));
+  Node* bool_instof = _gvn.transform(new BoolNode(cmp_instof, BoolTest::ne));
+  Node* instof_false = generate_guard(bool_instof, NULL, PROB_MIN);
+
+  return instof_false; // even if it is NULL
 }
 
 //------------------------------inline_ghash_processBlocks
@@ -6572,5 +6555,14 @@ bool LibraryCallKit::inline_profileBoolean() {
 bool LibraryCallKit::inline_isCompileConstant() {
   Node* n = argument(0);
   set_result(n->is_Con() ? intcon(1) : intcon(0));
+  return true;
+}
+
+bool LibraryCallKit::inline_deoptimize() {
+  assert(WhiteBoxAPI, "");
+  PreserveReexecuteState preexecs(this);
+  jvms()->set_should_reexecute(false);
+  uncommon_trap(Deoptimization::Reason_intrinsic,
+                Deoptimization::Action_none);
   return true;
 }

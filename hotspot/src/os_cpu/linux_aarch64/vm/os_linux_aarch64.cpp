@@ -109,7 +109,7 @@ char* os::non_memory_address_word() {
 void os::initialize_thread(Thread *thr) {
 }
 
-address os::Linux::ucontext_get_pc(ucontext_t * uc) {
+address os::Linux::ucontext_get_pc(const ucontext_t * uc) {
 #ifdef BUILTIN_SIM
   return (address)uc->uc_mcontext.gregs[REG_PC];
 #else
@@ -125,7 +125,7 @@ void os::Linux::ucontext_set_pc(ucontext_t * uc, address pc) {
 #endif
 }
 
-intptr_t* os::Linux::ucontext_get_sp(ucontext_t * uc) {
+intptr_t* os::Linux::ucontext_get_sp(const ucontext_t * uc) {
 #ifdef BUILTIN_SIM
   return (intptr_t*)uc->uc_mcontext.gregs[REG_SP];
 #else
@@ -133,7 +133,7 @@ intptr_t* os::Linux::ucontext_get_sp(ucontext_t * uc) {
 #endif
 }
 
-intptr_t* os::Linux::ucontext_get_fp(ucontext_t * uc) {
+intptr_t* os::Linux::ucontext_get_fp(const ucontext_t * uc) {
 #ifdef BUILTIN_SIM
   return (intptr_t*)uc->uc_mcontext.gregs[REG_FP];
 #else
@@ -147,7 +147,7 @@ intptr_t* os::Linux::ucontext_get_fp(ucontext_t * uc) {
 // frames. Currently we don't do that on Linux, so it's the same as
 // os::fetch_frame_from_context().
 ExtendedPC os::Linux::fetch_frame_from_ucontext(Thread* thread,
-  ucontext_t* uc, intptr_t** ret_sp, intptr_t** ret_fp) {
+  const ucontext_t* uc, intptr_t** ret_sp, intptr_t** ret_fp) {
 
   assert(thread != NULL, "just checking");
   assert(ret_sp != NULL, "just checking");
@@ -156,11 +156,11 @@ ExtendedPC os::Linux::fetch_frame_from_ucontext(Thread* thread,
   return os::fetch_frame_from_context(uc, ret_sp, ret_fp);
 }
 
-ExtendedPC os::fetch_frame_from_context(void* ucVoid,
+ExtendedPC os::fetch_frame_from_context(const void* ucVoid,
                     intptr_t** ret_sp, intptr_t** ret_fp) {
 
   ExtendedPC  epc;
-  ucontext_t* uc = (ucontext_t*)ucVoid;
+  const ucontext_t* uc = (const ucontext_t*)ucVoid;
 
   if (uc != NULL) {
     epc = ExtendedPC(os::Linux::ucontext_get_pc(uc));
@@ -176,7 +176,7 @@ ExtendedPC os::fetch_frame_from_context(void* ucVoid,
   return epc;
 }
 
-frame os::fetch_frame_from_context(void* ucVoid) {
+frame os::fetch_frame_from_context(const void* ucVoid) {
   intptr_t* sp;
   intptr_t* fp;
   ExtendedPC epc = fetch_frame_from_context(ucVoid, &sp, &fp);
@@ -330,11 +330,10 @@ JVM_handle_linux_signal(int sig,
       address addr = (address) info->si_addr;
 
       // check if fault address is within thread stack
-      if (addr < thread->stack_base() &&
-          addr >= thread->stack_base() - thread->stack_size()) {
+      if (thread->on_local_stack(addr)) {
         // stack overflow
-        if (thread->in_stack_yellow_zone(addr)) {
-          thread->disable_stack_yellow_zone();
+        if (thread->in_stack_yellow_reserved_zone(addr)) {
+          thread->disable_stack_yellow_reserved_zone();
           if (thread->thread_state() == _thread_in_Java) {
             // Throw a stack overflow exception.  Guard pages will be reenabled
             // while unwinding the stack.
@@ -591,10 +590,10 @@ size_t os::current_stack_size() {
 /////////////////////////////////////////////////////////////////////////////
 // helper functions for fatal error handler
 
-void os::print_context(outputStream *st, void *context) {
+void os::print_context(outputStream *st, const void *context) {
   if (context == NULL) return;
 
-  ucontext_t *uc = (ucontext_t*)context;
+  const ucontext_t *uc = (const ucontext_t*)context;
   st->print_cr("Registers:");
 #ifdef BUILTIN_SIM
   st->print(  "RAX=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_RAX]);
@@ -643,10 +642,10 @@ void os::print_context(outputStream *st, void *context) {
   print_hex_dump(st, pc - 32, pc + 32, sizeof(char));
 }
 
-void os::print_register_info(outputStream *st, void *context) {
+void os::print_register_info(outputStream *st, const void *context) {
   if (context == NULL) return;
 
-  ucontext_t *uc = (ucontext_t*)context;
+  const ucontext_t *uc = (const ucontext_t*)context;
 
   st->print_cr("Register to memory mapping:");
   st->cr();

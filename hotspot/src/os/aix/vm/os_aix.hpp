@@ -55,15 +55,12 @@ class Aix {
   // -1 = uninitialized, 0 = AIX, 1 = OS/400 (PASE)
   static int _on_pase;
 
-  // -1 = uninitialized, otherwise 16 bit number:
+  // 0 = uninitialized, otherwise 16 bit number:
   //  lower 8 bit - minor version
   //  higher 8 bit - major version
   //  For AIX, e.g. 0x0601 for AIX 6.1
   //  for OS/400 e.g. 0x0504 for OS/400 V5R4
-  static int _os_version;
-
-  // 4 Byte kernel version: Version, Release, Tech Level, Service Pack.
-  static unsigned int _os_kernel_version;
+  static uint32_t _os_version;
 
   // -1 = uninitialized,
   //  0 - SPEC1170 not requested (XPG_SUS_ENV is OFF or not set)
@@ -126,8 +123,8 @@ class Aix {
   static int vm_default_page_size(void ) { return 8*K; }
 
   static address   ucontext_get_pc(const ucontext_t* uc);
-  static intptr_t* ucontext_get_sp(ucontext_t* uc);
-  static intptr_t* ucontext_get_fp(ucontext_t* uc);
+  static intptr_t* ucontext_get_sp(const ucontext_t* uc);
+  static intptr_t* ucontext_get_fp(const ucontext_t* uc);
   // Set PC into context. Needed for continuation after signal.
   static void ucontext_set_pc(ucontext_t* uc, address pc);
 
@@ -175,32 +172,31 @@ class Aix {
     return _on_pase ? false : true;
   }
 
-  // -1 = uninitialized, otherwise 16 bit number:
+  // Get 4 byte AIX kernel version number:
+  // highest 2 bytes: Version, Release
+  // if available: lowest 2 bytes: Tech Level, Service Pack.
+  static uint32_t os_version() {
+    assert(_os_version != 0, "not initialized");
+    return _os_version;
+  }
+
+  // 0 = uninitialized, otherwise 16 bit number:
   // lower 8 bit - minor version
   // higher 8 bit - major version
   // For AIX, e.g. 0x0601 for AIX 6.1
   // for OS/400 e.g. 0x0504 for OS/400 V5R4
-  static int os_version () {
-    assert(_os_version != -1, "not initialized");
-    return _os_version;
-  }
-
-  // Get 4 byte AIX kernel version number:
-  // highest 2 bytes: Version, Release
-  // if available: lowest 2 bytes: Tech Level, Service Pack.
-  static unsigned int os_kernel_version() {
-    if (_os_kernel_version) return _os_kernel_version;
-    return os_version() << 16;
+  static int os_version_short() {
+    return os_version() >> 16;
   }
 
   // Convenience method: returns true if running on PASE V5R4 or older.
   static bool on_pase_V5R4_or_older() {
-    return on_pase() && os_version() <= 0x0504;
+    return on_pase() && os_version_short() <= 0x0504;
   }
 
   // Convenience method: returns true if running on AIX 5.3 or older.
   static bool on_aix_53_or_older() {
-    return on_aix() && os_version() <= 0x0503;
+    return on_aix() && os_version_short() <= 0x0503;
   }
 
   // Returns true if we run in SPEC1170 compliant mode (XPG_SUS_ENV=ON).

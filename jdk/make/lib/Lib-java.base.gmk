@@ -49,7 +49,7 @@ ifeq ($(STATIC_BUILD), true)
   JAVA_BASE_EXPORT_SYMBOL_FILE := $(SUPPORT_OUTPUTDIR)/modules_libs/java.base/java.base.symbols
 
   $(JAVA_BASE_EXPORT_SYMBOL_FILE): $(JAVA_BASE_EXPORT_SYMBOLS_SRC)
-	$(ECHO) $(LOG_INFO) "Generating java.base.symbols file"
+	$(call LogInfo, Generating java.base.symbols file)
 	$(CAT) $^ > $@
 
   # The individual symbol files is generated when the respective lib is built

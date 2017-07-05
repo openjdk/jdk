@@ -143,4 +143,151 @@ private:
   static int findType(const char* typeName);
 };
 
+// This utility macro quotes the passed string
+#define QUOTE(x) #x
+
+//--------------------------------------------------------------------------------
+// VMStructEntry macros
+//
+
+// This macro generates a VMStructEntry line for a nonstatic field
+#define GENERATE_NONSTATIC_VM_STRUCT_ENTRY(typeName, fieldName, type)              \
+ { QUOTE(typeName), QUOTE(fieldName), QUOTE(type), 0, offset_of(typeName, fieldName), NULL },
+
+// This macro generates a VMStructEntry line for a static field
+#define GENERATE_STATIC_VM_STRUCT_ENTRY(typeName, fieldName, type)                 \
+ { QUOTE(typeName), QUOTE(fieldName), QUOTE(type), 1, 0, &typeName::fieldName },
+
+// This macro generates a VMStructEntry line for a static pointer volatile field,
+// e.g.: "static ObjectMonitor * volatile gBlockList;"
+#define GENERATE_STATIC_PTR_VOLATILE_VM_STRUCT_ENTRY(typeName, fieldName, type)    \
+ { QUOTE(typeName), QUOTE(fieldName), QUOTE(type), 1, 0, (void *)&typeName::fieldName },
+
+// This macro generates a VMStructEntry line for an unchecked
+// nonstatic field, in which the size of the type is also specified.
+// The type string is given as NULL, indicating an "opaque" type.
+#define GENERATE_UNCHECKED_NONSTATIC_VM_STRUCT_ENTRY(typeName, fieldName, size)    \
+  { QUOTE(typeName), QUOTE(fieldName), NULL, 0, offset_of(typeName, fieldName), NULL },
+
+// This macro generates a VMStructEntry line for an unchecked
+// static field, in which the size of the type is also specified.
+// The type string is given as NULL, indicating an "opaque" type.
+#define GENERATE_UNCHECKED_STATIC_VM_STRUCT_ENTRY(typeName, fieldName, size)       \
+ { QUOTE(typeName), QUOTE(fieldName), NULL, 1, 0, (void*) &typeName::fieldName },
+
+// This macro generates the sentinel value indicating the end of the list
+#define GENERATE_VM_STRUCT_LAST_ENTRY() \
+ { NULL, NULL, NULL, 0, 0, NULL }
+
+// This macro checks the type of a VMStructEntry by comparing pointer types
+#define CHECK_NONSTATIC_VM_STRUCT_ENTRY(typeName, fieldName, type)                 \
+ {typeName *dummyObj = NULL; type* dummy = &dummyObj->fieldName;                   \
+  assert(offset_of(typeName, fieldName) < sizeof(typeName), "Illegal nonstatic struct entry, field offset too large"); }
+
+// This macro checks the type of a volatile VMStructEntry by comparing pointer types
+#define CHECK_VOLATILE_NONSTATIC_VM_STRUCT_ENTRY(typeName, fieldName, type)        \
+ {typedef type dummyvtype; typeName *dummyObj = NULL; volatile dummyvtype* dummy = &dummyObj->fieldName; }
+
+// This macro checks the type of a static VMStructEntry by comparing pointer types
+#define CHECK_STATIC_VM_STRUCT_ENTRY(typeName, fieldName, type)                    \
+ {type* dummy = &typeName::fieldName; }
+
+// This macro checks the type of a static pointer volatile VMStructEntry by comparing pointer types,
+// e.g.: "static ObjectMonitor * volatile gBlockList;"
+#define CHECK_STATIC_PTR_VOLATILE_VM_STRUCT_ENTRY(typeName, fieldName, type)       \
+ {type volatile * dummy = &typeName::fieldName; }
+
+// This macro ensures the type of a field and its containing type are
+// present in the type table. The assertion string is shorter than
+// preferable because (incredibly) of a bug in Solstice NFS client
+// which seems to prevent very long lines from compiling. This assertion
+// means that an entry in VMStructs::localHotSpotVMStructs[] was not
+// found in VMStructs::localHotSpotVMTypes[].
+#define ENSURE_FIELD_TYPE_PRESENT(typeName, fieldName, type)                       \
+ { assert(findType(QUOTE(typeName)) != 0, "type \"" QUOTE(typeName) "\" not found in type table"); \
+   assert(findType(QUOTE(type)) != 0, "type \"" QUOTE(type) "\" not found in type table"); }
+
+// This is a no-op macro for unchecked fields
+#define CHECK_NO_OP(a, b, c)
+
+
+//--------------------------------------------------------------------------------
+// VMTypeEntry macros
+//
+
+#define GENERATE_VM_TYPE_ENTRY(type, superclass) \
+ { QUOTE(type), QUOTE(superclass), 0, 0, 0, sizeof(type) },
+
+#define GENERATE_TOPLEVEL_VM_TYPE_ENTRY(type) \
+ { QUOTE(type), NULL,              0, 0, 0, sizeof(type) },
+
+#define GENERATE_OOP_VM_TYPE_ENTRY(type) \
+ { QUOTE(type), NULL,              1, 0, 0, sizeof(type) },
+
+#define GENERATE_INTEGER_VM_TYPE_ENTRY(type) \
+ { QUOTE(type), NULL,              0, 1, 0, sizeof(type) },
+
+#define GENERATE_UNSIGNED_INTEGER_VM_TYPE_ENTRY(type) \
+ { QUOTE(type), NULL,              0, 1, 1, sizeof(type) },
+
+#define GENERATE_VM_TYPE_LAST_ENTRY() \
+ { NULL, NULL, 0, 0, 0, 0 }
+
+#define CHECK_VM_TYPE_ENTRY(type, superclass) \
+ { type* dummyObj = NULL; superclass* dummySuperObj = dummyObj; }
+
+#define CHECK_VM_TYPE_NO_OP(a)
+#define CHECK_SINGLE_ARG_VM_TYPE_NO_OP(a)
+
+
+//--------------------------------------------------------------------------------
+// VMIntConstantEntry macros
+//
+
+#define GENERATE_VM_INT_CONSTANT_ENTRY(name) \
+ { QUOTE(name), (int32_t) name },
+
+#define GENERATE_VM_INT_CONSTANT_WITH_VALUE_ENTRY(name, value) \
+ { (name), (int32_t)(value) },
+
+#define GENERATE_PREPROCESSOR_VM_INT_CONSTANT_ENTRY(name, value) \
+ { name, (int32_t) value },
+
+// This macro generates the sentinel value indicating the end of the list
+#define GENERATE_VM_INT_CONSTANT_LAST_ENTRY() \
+ { NULL, 0 }
+
+
+//--------------------------------------------------------------------------------
+// VMLongConstantEntry macros
+//
+
+#define GENERATE_VM_LONG_CONSTANT_ENTRY(name) \
+  { QUOTE(name), name },
+
+#define GENERATE_PREPROCESSOR_VM_LONG_CONSTANT_ENTRY(name, value) \
+  { name, value },
+
+// This macro generates the sentinel value indicating the end of the list
+#define GENERATE_VM_LONG_CONSTANT_LAST_ENTRY() \
+ { NULL, 0 }
+
+
+//--------------------------------------------------------------------------------
+// VMAddressEntry macros
+//
+
+#define GENERATE_VM_ADDRESS_ENTRY(name) \
+  { QUOTE(name), (void*) (name) },
+
+#define GENERATE_PREPROCESSOR_VM_ADDRESS_ENTRY(name, value) \
+  { name, (void*) (value) },
+
+#define GENERATE_VM_FUNCTION_ENTRY(name) \
+  { QUOTE(name), CAST_FROM_FN_PTR(void*, &(name)) },
+
+// This macro generates the sentinel value indicating the end of the list
+#define GENERATE_VM_ADDRESS_LAST_ENTRY() \
+ { NULL, NULL }
+
 #endif // SHARE_VM_RUNTIME_VMSTRUCTS_HPP

@@ -1526,7 +1526,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
 
     /**
      * {@inheritDoc}
-     * @since 1.9
+     * @since 9
      */
     @Override
     public IntStream chars() {
@@ -1543,7 +1543,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
 
     /**
      * {@inheritDoc}
-     * @since 1.9
+     * @since 9
      */
     @Override
     public IntStream codePoints() {

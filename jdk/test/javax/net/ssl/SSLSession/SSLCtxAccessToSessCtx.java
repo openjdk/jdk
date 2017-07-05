@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import java.io.*;
 import java.net.*;
 import javax.net.ssl.*;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.security.KeyStore;
 
 public class SSLCtxAccessToSessCtx  {
@@ -63,7 +64,7 @@ public class SSLCtxAccessToSessCtx  {
     /*
      * Is the server ready to serve?
      */
-    volatile static boolean serverReady = false;
+    AtomicInteger serverReady = new AtomicInteger(1);   // only one port now
 
     /*
      * Turn on SSL debugging?
@@ -89,12 +90,13 @@ public class SSLCtxAccessToSessCtx  {
 
         SSLServerSocket sslServerSocket =
             (SSLServerSocket) sslssf.createServerSocket(serverPort);
-        serverPorts[createdPorts++] = sslServerSocket.getLocalPort();
+        int slot = createdPorts.getAndIncrement();
+        serverPorts[slot] = sslServerSocket.getLocalPort();
 
         /*
          * Signal Client, we're ready for his connect.
          */
-        serverReady = true;
+        serverReady.getAndDecrement();
         int read = 0;
         SSLSocket sslSocket = (SSLSocket) sslServerSocket.accept();
         InputStream sslIS = sslSocket.getInputStream();
@@ -121,7 +123,7 @@ public class SSLCtxAccessToSessCtx  {
         /*
          * Wait for server to get started.
          */
-        while (!serverReady) {
+        while (serverReady.get() > 0) {
             Thread.sleep(50);
         }
         /*
@@ -151,8 +153,8 @@ public class SSLCtxAccessToSessCtx  {
      * The remainder is just support stuff
      */
 
-    volatile int serverPorts[] = new int[]{0};
-    volatile int createdPorts = 0;
+    int serverPorts[] = new int[]{0};           // only one port at present
+    AtomicInteger createdPorts = new AtomicInteger(0);
     static SSLServerSocketFactory sslssf;
     static SSLSocketFactory sslsf;
     static SSLContext sslctx;
@@ -255,14 +257,20 @@ public class SSLCtxAccessToSessCtx  {
                          */
                         System.err.println("Server died...");
                         e.printStackTrace();
-                        serverReady = true;
+                        serverReady.set(0);
                         serverException = e;
                     }
                 }
             };
             serverThread.start();
         } else {
-            doServerSide(port);
+            try {
+                doServerSide(port);
+            } catch (Exception e) {
+                serverException = e;
+            } finally {
+                serverReady.set(0);
+            }
         }
     }
 
@@ -284,7 +292,11 @@ public class SSLCtxAccessToSessCtx  {
             };
             clientThread.start();
         } else {
-            doClientSide();
+            try {
+                doClientSide();
+            } catch (Exception e) {
+                clientException = e;
+            }
         }
     }
 }

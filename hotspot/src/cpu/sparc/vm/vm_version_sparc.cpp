@@ -30,12 +30,12 @@
 #include "runtime/stubCodeGenerator.hpp"
 #include "vm_version_sparc.hpp"
 
-int VM_Version::_features = VM_Version::unknown_m;
-const char* VM_Version::_features_str = "";
 unsigned int VM_Version::_L2_data_cache_line_size = 0;
 
 void VM_Version::initialize() {
-  _features = determine_features();
+  assert(_features != 0, "System pre-initialization is not complete.");
+  guarantee(VM_Version::has_v9(), "only SPARC v9 is supported");
+
   PrefetchCopyIntervalInBytes = prefetch_copy_interval_in_bytes();
   PrefetchScanIntervalInBytes = prefetch_scan_interval_in_bytes();
   PrefetchFieldsAhead         = prefetch_fields_ahead();
@@ -59,8 +59,6 @@ void VM_Version::initialize() {
     warning("BIS instructions are not available on this CPU");
     FLAG_SET_DEFAULT(AllocatePrefetchStyle, 1);
   }
-
-  guarantee(VM_Version::has_v9(), "only SPARC v9 is supported");
 
   UseSSE = 0; // Only on x86 and x64
 
@@ -213,7 +211,7 @@ void VM_Version::initialize() {
                (!has_hardware_fsmuld() ? ", no-fsmuld" : ""));
 
   // buf is started with ", " or is empty
-  _features_str = os::strdup(strlen(buf) > 2 ? buf + 2 : buf);
+  _features_string = os::strdup(strlen(buf) > 2 ? buf + 2 : buf);
 
   // UseVIS is set to the smallest of what hardware supports and what
   // the command line requires.  I.e., you cannot set UseVIS to 3 on
@@ -260,6 +258,11 @@ void VM_Version::initialize() {
       warning("AES intrinsics are not available on this CPU");
       FLAG_SET_DEFAULT(UseAESIntrinsics, false);
     }
+  }
+
+  if (UseAESCTRIntrinsics) {
+    warning("AES/CTR intrinsics are not available on this CPU");
+    FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
   }
 
   // GHASH/GCM intrinsics
@@ -356,6 +359,11 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseCRC32Intrinsics, false);
   }
 
+  if (UseVectorizedMismatchIntrinsic) {
+    warning("UseVectorizedMismatchIntrinsic specified, but not available on this CPU.");
+    FLAG_SET_DEFAULT(UseVectorizedMismatchIntrinsic, false);
+  }
+
   if (FLAG_IS_DEFAULT(ContendedPaddingWidth) &&
     (cache_line_size > ContendedPaddingWidth))
     ContendedPaddingWidth = cache_line_size;
@@ -402,7 +410,7 @@ void VM_Version::initialize() {
 }
 
 void VM_Version::print_features() {
-  tty->print_cr("Version:%s", cpu_features());
+  tty->print_cr("Version:%s", _features);
 }
 
 int VM_Version::determine_features() {
@@ -438,7 +446,7 @@ int VM_Version::determine_features() {
   return features;
 }
 
-static int saved_features = 0;
+static uint64_t saved_features = 0;
 
 void VM_Version::allow_all() {
   saved_features = _features;

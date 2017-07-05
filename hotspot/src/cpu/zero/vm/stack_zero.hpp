@@ -40,7 +40,7 @@ class ZeroStack {
  public:
   ZeroStack()
     : _base(NULL), _top(NULL), _sp(NULL) {
-    _shadow_pages_size = StackShadowPages * os::vm_page_size();
+    _shadow_pages_size = JavaThread::stack_shadow_zone_size();
   }
 
   bool needs_setup() const {

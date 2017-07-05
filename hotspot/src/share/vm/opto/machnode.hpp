@@ -885,15 +885,27 @@ protected:
   virtual uint cmp( const Node &n ) const;
   virtual uint size_of() const; // Size is bigger
 public:
-  ciMethod* _method;             // Method being direct called
-  int        _bci;               // Byte Code index of call byte code
-  bool       _optimized_virtual; // Tells if node is a static call or an optimized virtual
-  bool       _method_handle_invoke;   // Tells if the call has to preserve SP
-  MachCallJavaNode() : MachCallNode() {
+  ciMethod* _method;                 // Method being direct called
+  bool      _override_symbolic_info; // Override symbolic call site info from bytecode
+  int       _bci;                    // Byte Code index of call byte code
+  bool      _optimized_virtual;      // Tells if node is a static call or an optimized virtual
+  bool      _method_handle_invoke;   // Tells if the call has to preserve SP
+  MachCallJavaNode() : MachCallNode(), _override_symbolic_info(false) {
     init_class_id(Class_MachCallJava);
   }
 
   virtual const RegMask &in_RegMask(uint) const;
+
+  int resolved_method_index(CodeBuffer &cbuf) const {
+    if (_override_symbolic_info) {
+      // Attach corresponding Method* to the call site, so VM can use it during resolution
+      // instead of querying symbolic info from bytecode.
+      assert(_method != NULL, "method should be set");
+      assert(_method->constant_encoding()->is_method(), "should point to a Method");
+      return cbuf.oop_recorder()->find_index(_method->constant_encoding());
+    }
+    return 0; // Use symbolic info from bytecode (resolved_method == NULL).
+  }
 
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;

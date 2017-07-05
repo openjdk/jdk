@@ -590,7 +590,7 @@ public class ThreadInfo {
      * @return {@code true} if the thread is a daemon thread,
      *         {@code false} otherwise.
      * @see Thread#isDaemon
-     * @since 1.9
+     * @since 9
      */
     public boolean isDaemon() {
          return daemon;
@@ -602,7 +602,7 @@ public class ThreadInfo {
      *
      * @return The priority of the thread associated with this
      *         {@code ThreadInfo}.
-     * @since 1.9
+     * @since 9
      */
     public int getPriority() {
          return priority;

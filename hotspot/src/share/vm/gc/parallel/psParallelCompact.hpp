@@ -966,7 +966,6 @@ class PSParallelCompact : AllStatic {
   static ParallelCompactData  _summary_data;
   static IsAliveClosure       _is_alive_closure;
   static SpaceInfo            _space_info[last_space_id];
-  static bool                 _print_phases;
   static AdjustPointerClosure _adjust_pointer_closure;
   static AdjustKlassClosure   _adjust_klass_closure;
 
@@ -989,13 +988,10 @@ class PSParallelCompact : AllStatic {
 
   static void initialize_space_info();
 
-  // Return true if details about individual phases should be printed.
-  static inline bool print_phases();
-
   // Clear the marking bitmap and summary data that cover the specified space.
   static void clear_data_covering_space(SpaceId id);
 
-  static void pre_compact(PreGCValues* pre_gc_values);
+  static void pre_compact();
   static void post_compact();
 
   // Mark live objects
@@ -1069,7 +1065,7 @@ class PSParallelCompact : AllStatic {
   // Adjust addresses in roots.  Does not adjust addresses in heap.
   static void adjust_roots();
 
-  DEBUG_ONLY(static void write_block_fill_histogram(outputStream* const out);)
+  DEBUG_ONLY(static void write_block_fill_histogram();)
 
   // Move objects to new locations.
   static void compact_perm(ParCompactionManager* cm);
@@ -1258,10 +1254,6 @@ inline bool PSParallelCompact::mark_obj(oop obj) {
 
 inline bool PSParallelCompact::is_marked(oop obj) {
   return mark_bitmap()->is_marked(obj);
-}
-
-inline bool PSParallelCompact::print_phases() {
-  return _print_phases;
 }
 
 inline double PSParallelCompact::normal_distribution(double density) {

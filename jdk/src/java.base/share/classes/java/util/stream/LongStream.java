@@ -327,7 +327,7 @@ public interface LongStream extends BaseStream<Long, LongStream> {
      *                  predicate to apply to elements to determine the longest
      *                  prefix of elements.
      * @return the new stream
-     * @since 1.9
+     * @since 9
      */
     default LongStream takeWhile(LongPredicate predicate) {
         Objects.requireNonNull(predicate);
@@ -394,7 +394,7 @@ public interface LongStream extends BaseStream<Long, LongStream> {
      *                  predicate to apply to elements to determine the longest
      *                  prefix of elements.
      * @return the new stream
-     * @since 1.9
+     * @since 9
      */
     default LongStream dropWhile(LongPredicate predicate) {
         Objects.requireNonNull(predicate);

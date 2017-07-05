@@ -31,7 +31,8 @@
 #include "utilities/stack.inline.hpp"
 
 G1ParCopyHelper::G1ParCopyHelper(G1CollectedHeap* g1,  G1ParScanThreadState* par_scan_state) :
-  G1ParClosureSuper(g1, par_scan_state),
+  _g1(g1),
+  _par_scan_state(par_scan_state),
   _worker_id(par_scan_state->worker_id()),
   _scanned_klass(NULL),
   _cm(_g1->concurrent_mark())

@@ -31,12 +31,11 @@ NIMBUS_GENSRC_DIR = $(SUPPORT_OUTPUTDIR)/gensrc/java.desktop/javax/swing/plaf/ni
 NIMBUS_SKIN_FILE = $(JDK_TOPDIR)/src/java.desktop/share/classes/javax/swing/plaf/nimbus/skin.laf
 
 $(SUPPORT_OUTPUTDIR)/gensrc/java.desktop/_the.generated_nimbus: $(NIMBUS_SKIN_FILE) $(BUILD_TOOLS_JDK)
+	$(call LogInfo, Generating Nimbus source files)
 	$(MKDIR) -p $(@D)
-	$(ECHO) "Generating Nimbus source files"
-	$(TOOL_GENERATENIMBUS) $(LOG_INFO) \
+	$(TOOL_GENERATENIMBUS) $(LOG_DEBUG) \
 	    -skinFile $(NIMBUS_SKIN_FILE) -buildDir $(SUPPORT_OUTPUTDIR)/gensrc/java.desktop \
 	    -packagePrefix $(NIMBUS_PACKAGE).nimbus -lafName Nimbus
-	$(ECHO) $(LOG_INFO) "Finished generating Nimbus source files"
 	$(TOUCH) $@
 
 GENSRC_SWING_NIMBUS := $(SUPPORT_OUTPUTDIR)/gensrc/java.desktop/_the.generated_nimbus

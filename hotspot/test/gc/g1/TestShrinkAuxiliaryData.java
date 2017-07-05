@@ -49,7 +49,7 @@ public class TestShrinkAuxiliaryData {
         "-XX:+UseG1GC",
         "-XX:G1HeapRegionSize=" + REGION_SIZE,
         "-XX:-ExplicitGCInvokesConcurrent",
-        "-XX:+PrintGCDetails",
+        "-Xlog:gc=debug",
         "-XX:+UnlockDiagnosticVMOptions",
         "-XX:+WhiteBoxAPI",
         "-Xbootclasspath/a:.",

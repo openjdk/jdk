@@ -33,7 +33,7 @@ import java.security.ProviderException;
  * object of this class indicates that a function call to the underlying
  * native calls returned a value not equal to CRYPTO_SUCCESS.
  *
- * @since 1.9
+ * @since 9
  */
 public final class UcryptoException extends ProviderException {
 

@@ -2643,7 +2643,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   Label no_reguard;
   __ ld(G2_thread, JavaThread::stack_guard_state_offset(), G3_scratch);
-  __ cmp_and_br_short(G3_scratch, JavaThread::stack_guard_yellow_disabled, Assembler::notEqual, Assembler::pt, no_reguard);
+  __ cmp_and_br_short(G3_scratch, JavaThread::stack_guard_yellow_reserved_disabled, Assembler::notEqual, Assembler::pt, no_reguard);
 
     save_native_result(masm, ret_type, stack_slots);
   __ call(CAST_FROM_FN_PTR(address, SharedRuntime::reguard_yellow_pages));
@@ -2936,7 +2936,7 @@ void SharedRuntime::generate_deopt_blob() {
   int pad = VerifyThread ? 512 : 0;// Extra slop space for more verify code
 #ifdef ASSERT
   if (UseStackBanging) {
-    pad += StackShadowPages*16 + 32;
+    pad += (JavaThread::stack_shadow_zone_size() / os::vm_page_size())*16 + 32;
   }
 #endif
 #if INCLUDE_JVMCI
@@ -3225,7 +3225,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
   int pad = VerifyThread ? 512 : 0;
 #ifdef ASSERT
   if (UseStackBanging) {
-    pad += StackShadowPages*16 + 32;
+    pad += (JavaThread::stack_shadow_zone_size() / os::vm_page_size())*16 + 32;
   }
 #endif
 #ifdef _LP64

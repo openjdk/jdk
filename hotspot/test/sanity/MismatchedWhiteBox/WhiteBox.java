@@ -29,7 +29,7 @@
  * @library /testlibrary
  * @compile WhiteBox.java
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI sun.hotspot.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:-CheckIntrinsics sun.hotspot.WhiteBox
  */
 
 package sun.hotspot;

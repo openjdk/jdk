@@ -33,8 +33,11 @@ import static jdk.internal.org.objectweb.asm.Opcodes.ALOAD;
 import static jdk.internal.org.objectweb.asm.Opcodes.RETURN;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 
+import java.lang.invoke.CallSite;
+import java.lang.invoke.ConstantCallSite;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
 import java.security.AccessController;
 import java.security.CodeSigner;
@@ -43,15 +46,18 @@ import java.security.Permissions;
 import java.security.PrivilegedAction;
 import java.security.ProtectionDomain;
 import java.security.SecureClassLoader;
+import java.util.Objects;
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.Opcodes;
 import jdk.internal.org.objectweb.asm.Type;
 import jdk.internal.org.objectweb.asm.commons.InstructionAdapter;
+import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.runtime.Context;
+import jdk.nashorn.internal.runtime.ECMAException;
+import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
-import jdk.nashorn.internal.runtime.Undefined;
 
 /**
  * Provides static utility services to generated Java adapter classes.
@@ -64,50 +70,47 @@ public final class JavaAdapterServices {
     }
 
     /**
-     * Given a JS script function, binds it to null JS "this", and adapts its parameter types, return types, and arity
-     * to the specified type and arity. This method is public mainly for implementation reasons, so the adapter classes
-     * can invoke it from their constructors that take a ScriptFunction in its first argument to obtain the method
-     * handles for their abstract method implementations.
-     * @param fn the script function
-     * @param type the method type it has to conform to
-     * @return the appropriately adapted method handle for invoking the script function.
+     * Given a script function used as a delegate for a SAM adapter, figure out
+     * the right object to use as its "this" when called.
+     * @param delegate the delegate function
+     * @param global the current global of the adapter
+     * @return either the passed global, or UNDEFINED if the function is strict.
      */
-    public static MethodHandle getHandle(final ScriptFunction fn, final MethodType type) {
-        // JS "this" will be global object or undefined depending on if 'fn' is strict or not
-        return bindAndAdaptHandle(fn, fn.isStrict()? ScriptRuntime.UNDEFINED : Context.getGlobal(), type);
+    public static Object getCallThis(final ScriptFunction delegate, final Object global) {
+        return delegate.isStrict() ? ScriptRuntime.UNDEFINED : global;
     }
 
     /**
-     * Given a JS script object, retrieves a function from it by name, binds it to the script object as its "this", and
-     * adapts its parameter types, return types, and arity to the specified type and arity. This method is public mainly
-     * for implementation reasons, so the adapter classes can invoke it from their constructors that take a Object
-     * in its first argument to obtain the method handles for their method implementations.
-     * @param obj the script obj
-     * @param name the name of the property that contains the function
-     * @param type the method type it has to conform to
-     * @return the appropriately adapted method handle for invoking the script function, or null if the value of the
-     * property is either null or undefined, or "toString" was requested as the name, but the object doesn't directly
-     * define it but just inherits it through prototype.
+     * Throws a "not.an.object" type error. Used when the delegate passed to the
+     * adapter constructor is not a script object.
+     * @param obj the object that is not a script object.
      */
-    public static MethodHandle getHandle(final Object obj, final String name, final MethodType type) {
-        if (! (obj instanceof ScriptObject)) {
-            throw typeError("not.an.object", ScriptRuntime.safeToString(obj));
-        }
+    public static void notAnObject(final Object obj) {
+        throw typeError("not.an.object", ScriptRuntime.safeToString(obj));
+    }
 
-        final ScriptObject sobj = (ScriptObject)obj;
-        // Since every JS Object has a toString, we only override "String toString()" it if it's explicitly specified
-        if ("toString".equals(name) && !sobj.hasOwnProperty("toString")) {
+    /**
+     * Checks if the passed object, which is supposed to be a callee retrieved
+     * through applying the GET_METHOD_PROPERTY operation on the delegate, is
+     * a ScriptFunction, or null or undefined. These are the only allowed values
+     * for adapter method implementations, so in case it is neither, it throws
+     * a type error. Note that this restriction is somewhat artificial; as the
+     * CALL dynamic operation could invoke any Nashorn callable. We are
+     * restricting adapters to actual ScriptFunction objects for now though.
+     * @param callee the callee to check
+     * @param name the name of the function
+     * @return the callee cast to a ScriptFunction, or null if it was null or undefined.
+     * @throws ECMAException representing a JS TypeError with "not.a.function"
+     * message if the passed callee is neither a script function, nor null, nor
+     * undefined.
+     */
+    public static ScriptFunction checkFunction(final Object callee, final String name) {
+        if (callee instanceof ScriptFunction) {
+            return (ScriptFunction)callee;
+        } else if (JSType.nullOrUndefined(callee)) {
             return null;
         }
-
-        final Object fnObj = sobj.get(name);
-        if (fnObj instanceof ScriptFunction) {
-            return bindAndAdaptHandle((ScriptFunction)fnObj, sobj, type);
-        } else if(fnObj == null || fnObj instanceof Undefined) {
-            return null;
-        } else {
-            throw typeError("not.a.function", name);
-        }
+        throw typeError("not.a.function.value", name, ScriptRuntime.safeToString(callee));
     }
 
     /**
@@ -116,8 +119,8 @@ public final class JavaAdapterServices {
      * static initializers.
      * @return the thread-local JS object used to define methods for the class being initialized.
      */
-    public static Object getClassOverrides() {
-        final Object overrides = classOverrides.get();
+    public static ScriptObject getClassOverrides() {
+        final ScriptObject overrides = classOverrides.get();
         assert overrides != null;
         return overrides;
     }
@@ -135,27 +138,57 @@ public final class JavaAdapterServices {
     }
 
     /**
-     * Set the current global scope
-     * @param global the global scope
+     * Set the current global scope to that of the adapter global
+     * @param adapterGlobal the adapter's global scope
+     * @return a Runnable that when invoked restores the previous global
      */
-    public static void setGlobal(final Object global) {
-        Context.setGlobal((ScriptObject)global);
+    public static Runnable setGlobal(final ScriptObject adapterGlobal) {
+        final Global currentGlobal = Context.getGlobal();
+        if (adapterGlobal != currentGlobal) {
+            Context.setGlobal(adapterGlobal);
+            return ()->Context.setGlobal(currentGlobal);
+        }
+        return ()->{};
     }
 
     /**
-     * Get the current global scope
+     * Get the current non-null global scope
      * @return the current global scope
+     * @throws NullPointerException if the current global scope is null.
      */
-    public static Object getGlobal() {
-        return Context.getGlobal();
+    public static ScriptObject getNonNullGlobal() {
+        return Objects.requireNonNull(Context.getGlobal(), "Current global is null");
+    }
+
+    /**
+     * Returns true if the object has its own toString function. Used
+     * when implementing toString for adapters. Since every JS Object has a
+     * toString function, we only override "String toString()" in adapters if
+     * it is explicitly specified and not inherited from a prototype.
+     * @param sobj the object
+     * @return true if the object has its own toString function.
+     */
+    public static boolean hasOwnToString(final ScriptObject sobj) {
+        // NOTE: we could just use ScriptObject.hasOwnProperty("toString"), but
+        // its logic is more complex and this is what it boils down to with a
+        // fixed "toString" argument.
+        return sobj.getMap().findProperty("toString") != null;
+    }
+
+    /**
+     * Delegate to {@link Bootstrap#bootstrap(Lookup, String, MethodType, int)}.
+     * @param lookup MethodHandle lookup.
+     * @param opDesc Dynalink dynamic operation descriptor.
+     * @param type   Method type.
+     * @param flags  flags for call type, trace/profile etc.
+     * @return CallSite with MethodHandle to appropriate method or null if not found.
+     */
+    public static CallSite bootstrap(final Lookup lookup, final String opDesc, final MethodType type, final int flags) {
+        return Bootstrap.bootstrap(lookup, opDesc, type, flags);
     }
 
     static void setClassOverrides(final ScriptObject overrides) {
         classOverrides.set(overrides);
-    }
-
-    private static MethodHandle bindAndAdaptHandle(final ScriptFunction fn, final Object self, final MethodType type) {
-        return Bootstrap.getLinkerServices().asType(ScriptObject.pairArguments(fn.getBoundInvokeHandle(self), type, false), type);
     }
 
     private static MethodHandle createNoPermissionsInvoker() {
@@ -203,16 +236,6 @@ public final class JavaAdapterServices {
     }
 
     /**
-     * Returns a method handle used to convert a return value from a delegate method (always Object) to the expected
-     * Java return type.
-     * @param returnType the return type
-     * @return the converter for the expected return type
-     */
-    public static MethodHandle getObjectConverter(final Class<?> returnType) {
-        return Bootstrap.getLinkerServices().getTypeConverter(Object.class, returnType);
-    }
-
-    /**
      * Invoked when returning Object from an adapted method to filter out internal Nashorn objects that must not be seen
      * by the callers. Currently only transforms {@code ConsString} into {@code String} and transforms {@code ScriptObject} into {@code ScriptObjectMirror}.
      * @param obj the return value
@@ -233,13 +256,39 @@ public final class JavaAdapterServices {
     }
 
     /**
-     * Invoked to convert a return value of a delegate function to String. It is similar to
-     * {@code JSType.toString(Object)}, except it doesn't handle StaticClass specially, and it returns null for null
-     * input instead of the string "null".
-     * @param obj the return value.
-     * @return the String value of the return value
+     * Returns a new {@link RuntimeException} wrapping the passed throwable.
+     * Makes generated bytecode smaller by doing an INVOKESTATIC to this method
+     * rather than the NEW/DUP_X1/SWAP/INVOKESPECIAL &lt;init&gt; sequence.
+     * @param t the original throwable to wrap
+     * @return a newly created runtime exception wrapping the passed throwable.
      */
-    public static String toString(final Object obj) {
-        return JavaArgumentConverters.toString(obj);
+    public static RuntimeException wrapThrowable(final Throwable t) {
+        return new RuntimeException(t);
+    }
+
+    /**
+     * Creates and returns a new {@link UnsupportedOperationException}. Makes
+     * generated bytecode smaller by doing INVOKESTATIC to this method rather
+     * than the NEW/DUP/INVOKESPECIAL &lt;init&gt; sequence.
+     * @return a newly created {@link UnsupportedOperationException}.
+     */
+    public static UnsupportedOperationException unsupported() {
+        return new UnsupportedOperationException();
+    }
+
+    /**
+     * A bootstrap method used to collect invocation arguments into an Object array.
+     * for variable arity invocation.
+     * @param lookup the adapter's lookup (not used).
+     * @param name the call site name (not used).
+     * @param type the method type
+     * @return a method that takes the input parameters and packs them into a
+     * newly allocated Object array.
+     */
+    public static CallSite createArrayBootstrap(final MethodHandles.Lookup lookup, final String name, final MethodType type) {
+        return new ConstantCallSite(
+                MethodHandles.identity(Object[].class)
+                .asCollector(Object[].class, type.parameterCount())
+                .asType(type));
     }
 }

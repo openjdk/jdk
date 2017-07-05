@@ -31,6 +31,7 @@ import java.lang.reflect.Method;
  *   in com.sun.org.apache.xerces.internal.impl.dv.xs.PrecisionDecimalDV$XPrecisionDecimal.
  *   Since that method is private the test unfortunately needs to use reflection
  *   to invoke the method.
+ * @modules java.xml/com.sun.org.apache.xerces.internal.impl.dv.xs
  * @run main XPrecisionDecimalToString
  * @author Daniel Fuchs
  */

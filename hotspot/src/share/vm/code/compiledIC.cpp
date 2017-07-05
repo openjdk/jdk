@@ -434,7 +434,7 @@ void CompiledIC::set_to_monomorphic(CompiledICInfo& info) {
       InlineCacheBuffer::create_transition_stub(this, info.cached_metadata(), info.entry());
     } else {
       if (is_optimized()) {
-      set_ic_destination(info.entry());
+        set_ic_destination(info.entry());
       } else {
         set_ic_destination_and_value(info.entry(), info.cached_metadata());
       }

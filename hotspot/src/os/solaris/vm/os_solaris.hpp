@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -130,15 +130,15 @@ class Solaris {
   static address handler_start, handler_end; // start and end pc of thr_sighndlrinfo
 
   static bool valid_stack_address(Thread* thread, address sp);
-  static bool valid_ucontext(Thread* thread, ucontext_t* valid, ucontext_t* suspect);
-  static ucontext_t* get_valid_uc_in_signal_handler(Thread* thread,
-                                                    ucontext_t* uc);
+  static bool valid_ucontext(Thread* thread, const ucontext_t* valid, const ucontext_t* suspect);
+  static const ucontext_t* get_valid_uc_in_signal_handler(Thread* thread,
+                                                    const ucontext_t* uc);
 
-  static ExtendedPC  ucontext_get_ExtendedPC(ucontext_t* uc);
-  static intptr_t*   ucontext_get_sp(ucontext_t* uc);
+  static ExtendedPC  ucontext_get_ExtendedPC(const ucontext_t* uc);
+  static intptr_t*   ucontext_get_sp(const ucontext_t* uc);
   // ucontext_get_fp() is only used by Solaris X86 (see note below)
-  static intptr_t*   ucontext_get_fp(ucontext_t* uc);
-  static address    ucontext_get_pc(ucontext_t* uc);
+  static intptr_t*   ucontext_get_fp(const ucontext_t* uc);
+  static address    ucontext_get_pc(const ucontext_t* uc);
   static void ucontext_set_pc(ucontext_t* uc, address pc);
 
   // For Analyzer Forte AsyncGetCallTrace profiling support:
@@ -147,8 +147,10 @@ class Solaris {
   // We should have different declarations of this interface in
   // os_solaris_i486.hpp and os_solaris_sparc.hpp, but that file
   // provides extensions to the os class and not the Solaris class.
-  static ExtendedPC fetch_frame_from_ucontext(Thread* thread, ucontext_t* uc,
+  static ExtendedPC fetch_frame_from_ucontext(Thread* thread, const ucontext_t* uc,
                                               intptr_t** ret_sp, intptr_t** ret_fp);
+
+  static bool get_frame_at_stack_banging_point(JavaThread* thread, ucontext_t* uc, frame* fr);
 
   static void hotspot_sigmask(Thread* thread);
 

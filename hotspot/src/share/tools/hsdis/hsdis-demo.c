@@ -66,7 +66,7 @@ int main(int ac, char** av) {
   printf("...And now for something completely different:\n");
   void *start = (void*) &main;
   void *end = (void*) &end_of_file;
-#if defined(__ia64) || defined(__powerpc__)
+#if defined(__ia64) || (defined(__powerpc__) && !defined(ABI_ELFv2))
   /* On IA64 and PPC function pointers are pointers to function descriptors */
   start = *((void**)start);
   end = *((void**)end);

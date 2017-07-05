@@ -112,7 +112,7 @@ public interface Enumeration<E> {
      *
      * @return an Iterator representing the remaining elements of this Enumeration
      *
-     * @since 1.9
+     * @since 9
      */
     default Iterator<E> asIterator() {
         return new Iterator<>() {

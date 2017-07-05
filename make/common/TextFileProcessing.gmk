@@ -35,12 +35,12 @@ endif
 # param 4 = the target file name (possibly with a partial path)
 define SetupSingleTextFileForProcessing
   $(strip $3)/$(strip $4): $2 $$($1_VARDEPS_FILE)
-	$(ECHO) $(LOG_INFO) "Processing $(strip $4)"
-	$(MKDIR) -p '$$(@D)'
-	$(RM) '$$@' '$$@.includes.tmp' '$$@.replacements.tmp'
-	$$($1_INCLUDES_COMMAND_LINE) < '$$<' > '$$@.includes.tmp'
-	$$($1_REPLACEMENTS_COMMAND_LINE) < '$$@.includes.tmp' > '$$@.replacements.tmp'
-	$(RM) '$$@.includes.tmp'
+	$$(call LogInfo, Processing $(strip $4))
+	$$(call MakeDir, $$(@D))
+	$(RM) '$$@' '$$@.includes.tmp' '$$@.replacements.tmp' ; \
+	$$($1_INCLUDES_COMMAND_LINE) < '$$<' > '$$@.includes.tmp' ; \
+	$$($1_REPLACEMENTS_COMMAND_LINE) < '$$@.includes.tmp' > '$$@.replacements.tmp' ; \
+	$(RM) '$$@.includes.tmp' ; \
 	$(MV) '$$@.replacements.tmp' '$$@'
 
   $1 += $(strip $3)/$(strip $4)

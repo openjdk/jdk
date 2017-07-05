@@ -1338,7 +1338,7 @@ class DatagramSocket implements java.io.Closeable {
      *
      * @throws NullPointerException if name is {@code null}
      *
-     * @since 1.9
+     * @since 9
      */
     public <T> DatagramSocket setOption(SocketOption<T> name, T value)
         throws IOException
@@ -1368,7 +1368,7 @@ class DatagramSocket implements java.io.Closeable {
      *         {@link java.net.StandardSocketOptions StandardSocketOptions}
      *         do not require any security permission.
      *
-     * @since 1.9
+     * @since 9
      */
     public <T> T getOption(SocketOption<T> name) throws IOException {
         return getImpl().getOption(name);
@@ -1386,7 +1386,7 @@ class DatagramSocket implements java.io.Closeable {
      * @return A set of the socket options supported by this socket. This set
      *        may be empty if the socket's DatagramSocketImpl cannot be created.
      *
-     * @since 1.9
+     * @since 9
      */
     public Set<SocketOption<?>> supportedOptions() {
         synchronized(DatagramSocket.class) {

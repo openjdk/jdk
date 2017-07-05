@@ -358,6 +358,19 @@ Symbol* MethodHandles::signature_polymorphic_intrinsic_name(vmIntrinsics::ID iid
   return 0;
 }
 
+Bytecodes::Code MethodHandles::signature_polymorphic_intrinsic_bytecode(vmIntrinsics::ID id) {
+  switch(id) {
+    case vmIntrinsics::_linkToVirtual:   return Bytecodes::_invokevirtual;
+    case vmIntrinsics::_linkToInterface: return Bytecodes::_invokeinterface;
+    case vmIntrinsics::_linkToStatic:    return Bytecodes::_invokestatic;
+    case vmIntrinsics::_linkToSpecial:   return Bytecodes::_invokespecial;
+    case vmIntrinsics::_invokeBasic:     return Bytecodes::_invokehandle;
+    default:
+      fatal("unexpected id: (%d) %s", (uint)id, vmIntrinsics::name_at(id));
+      return Bytecodes::_illegal;
+  }
+}
+
 int MethodHandles::signature_polymorphic_intrinsic_ref_kind(vmIntrinsics::ID iid) {
   switch (iid) {
   case vmIntrinsics::_invokeBasic:      return 0;

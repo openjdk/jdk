@@ -86,8 +86,10 @@ public:
 };
 
 // Add back base class for metadata
-class G1ParCopyHelper : public G1ParClosureSuper {
+class G1ParCopyHelper : public OopClosure {
 protected:
+  G1CollectedHeap* _g1;
+  G1ParScanThreadState* _par_scan_state;
   uint _worker_id;              // Cache value from par_scan_state.
   Klass* _scanned_klass;
   ConcurrentMark* _cm;
@@ -121,17 +123,15 @@ enum G1Mark {
   G1MarkPromotedFromRoot
 };
 
-template <G1Barrier barrier, G1Mark do_mark_object>
+template <G1Barrier barrier, G1Mark do_mark_object, bool use_ext>
 class G1ParCopyClosure : public G1ParCopyHelper {
 public:
   G1ParCopyClosure(G1CollectedHeap* g1, G1ParScanThreadState* par_scan_state) :
-      G1ParCopyHelper(g1, par_scan_state) {
-    assert(ref_processor() == NULL, "sanity");
-  }
+      G1ParCopyHelper(g1, par_scan_state) { }
 
-  template <class T> void do_oop_nv(T* p);
-  virtual void do_oop(oop* p)       { do_oop_nv(p); }
-  virtual void do_oop(narrowOop* p) { do_oop_nv(p); }
+  template <class T> void do_oop_work(T* p);
+  virtual void do_oop(oop* p)       { do_oop_work(p); }
+  virtual void do_oop(narrowOop* p) { do_oop_work(p); }
 };
 
 class G1KlassScanClosure : public KlassClosure {
@@ -144,20 +144,15 @@ class G1KlassScanClosure : public KlassClosure {
   void do_klass(Klass* klass);
 };
 
-class FilterIntoCSClosure: public ExtendedOopClosure {
+class FilterIntoCSClosure: public OopClosure {
   G1CollectedHeap* _g1;
   OopClosure* _oc;
-  DirtyCardToOopClosure* _dcto_cl;
 public:
-  FilterIntoCSClosure(  DirtyCardToOopClosure* dcto_cl,
-                        G1CollectedHeap* g1,
-                        OopClosure* oc) :
-    _dcto_cl(dcto_cl), _g1(g1), _oc(oc) { }
+  FilterIntoCSClosure(G1CollectedHeap* g1, OopClosure* oc) : _g1(g1), _oc(oc) { }
 
-  template <class T> void do_oop_nv(T* p);
-  virtual void do_oop(oop* p)        { do_oop_nv(p); }
-  virtual void do_oop(narrowOop* p)  { do_oop_nv(p); }
-  bool apply_to_weak_ref_discovered_field() { return true; }
+  template <class T> void do_oop_work(T* p);
+  virtual void do_oop(oop* p)        { do_oop_work(p); }
+  virtual void do_oop(narrowOop* p)  { do_oop_work(p); }
 };
 
 class FilterOutOfRegionClosure: public ExtendedOopClosure {
@@ -206,43 +201,43 @@ public:
 // during an evacuation pause) to record cards containing
 // pointers into the collection set.
 
-class G1Mux2Closure : public ExtendedOopClosure {
+class G1Mux2Closure : public OopClosure {
   OopClosure* _c1;
   OopClosure* _c2;
 public:
   G1Mux2Closure(OopClosure *c1, OopClosure *c2);
-  template <class T> void do_oop_nv(T* p);
-  virtual void do_oop(oop* p)        { do_oop_nv(p); }
-  virtual void do_oop(narrowOop* p)  { do_oop_nv(p); }
+  template <class T> void do_oop_work(T* p);
+  virtual void do_oop(oop* p)        { do_oop_work(p); }
+  virtual void do_oop(narrowOop* p)  { do_oop_work(p); }
 };
 
 // A closure that returns true if it is actually applied
 // to a reference
 
-class G1TriggerClosure : public ExtendedOopClosure {
+class G1TriggerClosure : public OopClosure {
   bool _triggered;
 public:
   G1TriggerClosure();
   bool triggered() const { return _triggered; }
-  template <class T> void do_oop_nv(T* p);
-  virtual void do_oop(oop* p)        { do_oop_nv(p); }
-  virtual void do_oop(narrowOop* p)  { do_oop_nv(p); }
+  template <class T> void do_oop_work(T* p);
+  virtual void do_oop(oop* p)        { do_oop_work(p); }
+  virtual void do_oop(narrowOop* p)  { do_oop_work(p); }
 };
 
 // A closure which uses a triggering closure to determine
 // whether to apply an oop closure.
 
-class G1InvokeIfNotTriggeredClosure: public ExtendedOopClosure {
+class G1InvokeIfNotTriggeredClosure: public OopClosure {
   G1TriggerClosure* _trigger_cl;
   OopClosure* _oop_cl;
 public:
   G1InvokeIfNotTriggeredClosure(G1TriggerClosure* t, OopClosure* oc);
-  template <class T> void do_oop_nv(T* p);
-  virtual void do_oop(oop* p)        { do_oop_nv(p); }
-  virtual void do_oop(narrowOop* p)  { do_oop_nv(p); }
+  template <class T> void do_oop_work(T* p);
+  virtual void do_oop(oop* p)        { do_oop_work(p); }
+  virtual void do_oop(narrowOop* p)  { do_oop_work(p); }
 };
 
-class G1UpdateRSOrPushRefOopClosure: public ExtendedOopClosure {
+class G1UpdateRSOrPushRefOopClosure: public OopClosure {
   G1CollectedHeap* _g1;
   G1RemSet* _g1_rem_set;
   HeapRegion* _from;
@@ -268,11 +263,9 @@ public:
     return result;
   }
 
-  bool apply_to_weak_ref_discovered_field() { return true; }
-
-  template <class T> void do_oop_nv(T* p);
-  virtual void do_oop(narrowOop* p) { do_oop_nv(p); }
-  virtual void do_oop(oop* p)       { do_oop_nv(p); }
+  template <class T> void do_oop_work(T* p);
+  virtual void do_oop(narrowOop* p) { do_oop_work(p); }
+  virtual void do_oop(oop* p)       { do_oop_work(p); }
 };
 
 #endif // SHARE_VM_GC_G1_G1OOPCLOSURES_HPP

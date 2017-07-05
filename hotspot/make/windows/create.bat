@@ -1,6 +1,6 @@
 @echo off
 REM
-REM Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+REM Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
 REM DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 REM
 REM This code is free software; you can redistribute it and/or modify it
@@ -116,10 +116,48 @@ goto usage
 if not "%HOTSPOTMKSHOME%" == "" goto makedir
 if exist c:\cygwin\bin set HOTSPOTMKSHOME=c:\cygwin\bin
 if not "%HOTSPOTMKSHOME%" == "" goto makedir
+if exist c:\cygwin64\bin set HOTSPOTMKSHOME=c:\cygwin64\bin
+if not "%HOTSPOTMKSHOME%" == "" goto makedir
 echo Warning: please set variable HOTSPOTMKSHOME to place where 
 echo          your MKS/Cygwin installation is
 echo.
 goto usage
+
+:generatefiles
+if NOT EXIST %HotSpotBuildSpace%\%1\generated mkdir %HotSpotBuildSpace%\%1\generated
+copy %HotSpotWorkSpace%\make\windows\projectfiles\%1\* %HotSpotBuildSpace%\%1\generated > NUL
+
+REM force regneration of ProjectFile
+if exist %ProjectFile% del %ProjectFile%
+
+echo -- %1 --
+echo # Generated file!                                                        >    %HotSpotBuildSpace%\%1\local.make
+echo # Changing a variable below and then deleting %ProjectFile% will cause  >>    %HotSpotBuildSpace%\%1\local.make
+echo # %ProjectFile% to be regenerated with the new values.  Changing the    >>    %HotSpotBuildSpace%\%1\local.make
+echo # version requires rerunning create.bat.                                >>    %HotSpotBuildSpace%\%1\local.make
+echo.                                      >>    %HotSpotBuildSpace%\%1\local.make
+echo Variant=%1			           >>    %HotSpotBuildSpace%\%1\local.make
+echo WorkSpace=%HotSpotWorkSpace%   	   >>    %HotSpotBuildSpace%\%1\local.make
+echo HOTSPOTWORKSPACE=%HotSpotWorkSpace%   >>    %HotSpotBuildSpace%\%1\local.make
+echo HOTSPOTBUILDROOT=%HotSpotBuildRoot%   >>    %HotSpotBuildSpace%\%1\local.make
+echo HOTSPOTBUILDSPACE=%HotSpotBuildSpace% >>    %HotSpotBuildSpace%\%1\local.make
+echo HOTSPOTJDKDIST=%HotSpotJDKDist%       >>    %HotSpotBuildSpace%\%1\local.make
+echo ARCH=%ARCH%                           >>    %HotSpotBuildSpace%\%1\local.make
+echo BUILDARCH=%BUILDARCH%                 >>    %HotSpotBuildSpace%\%1\local.make
+echo Platform_arch=%Platform_arch%         >>    %HotSpotBuildSpace%\%1\local.make
+echo Platform_arch_model=%Platform_arch_model% >>    %HotSpotBuildSpace%\%1\local.make
+echo MSC_VER=%MSC_VER% 			   >>    %HotSpotBuildSpace%\%1\local.make
+
+for /D %%j in (debug, fastdebug, product) do (
+  if NOT EXIST %HotSpotBuildSpace%\%1\%%j mkdir %HotSpotBuildSpace%\%1\%%j
+)
+
+pushd %HotSpotBuildSpace%\%1\generated
+nmake /nologo
+popd
+
+goto :eof
+
 
 :makedir
 echo NOTE: Using the following settings:
@@ -127,50 +165,13 @@ echo   HotSpotWorkSpace=%HotSpotWorkSpace%
 echo   HotSpotBuildSpace=%HotSpotBuildSpace%
 echo   HotSpotJDKDist=%HotSpotJDKDist%
 
-
-REM This is now safe to do.
-:copyfiles
-for /D %%i in (compiler1, compiler2, tiered ) do (
-if NOT EXIST %HotSpotBuildSpace%\%%i\generated mkdir %HotSpotBuildSpace%\%%i\generated
-copy %HotSpotWorkSpace%\make\windows\projectfiles\%%i\* %HotSpotBuildSpace%\%%i\generated > NUL
-)
-
-REM force regneration of ProjectFile
-if exist %ProjectFile% del %ProjectFile%
-
-for /D %%i in (compiler1, compiler2, tiered ) do (
-echo -- %%i --
-echo # Generated file!                                                        >    %HotSpotBuildSpace%\%%i\local.make
-echo # Changing a variable below and then deleting %ProjectFile% will cause  >>    %HotSpotBuildSpace%\%%i\local.make
-echo # %ProjectFile% to be regenerated with the new values.  Changing the    >>    %HotSpotBuildSpace%\%%i\local.make
-echo # version requires rerunning create.bat.                                >>    %HotSpotBuildSpace%\%%i\local.make
-echo.                                      >>    %HotSpotBuildSpace%\%%i\local.make
-echo Variant=%%i			   >>    %HotSpotBuildSpace%\%%i\local.make
-echo WorkSpace=%HotSpotWorkSpace%   	   >>    %HotSpotBuildSpace%\%%i\local.make
-echo HOTSPOTWORKSPACE=%HotSpotWorkSpace%   >>    %HotSpotBuildSpace%\%%i\local.make
-echo HOTSPOTBUILDROOT=%HotSpotBuildRoot%   >>    %HotSpotBuildSpace%\%%i\local.make
-echo HOTSPOTBUILDSPACE=%HotSpotBuildSpace% >>    %HotSpotBuildSpace%\%%i\local.make
-echo HOTSPOTJDKDIST=%HotSpotJDKDist%       >>    %HotSpotBuildSpace%\%%i\local.make
-echo ARCH=%ARCH%                           >>    %HotSpotBuildSpace%\%%i\local.make
-echo BUILDARCH=%BUILDARCH%                 >>    %HotSpotBuildSpace%\%%i\local.make
-echo Platform_arch=%Platform_arch%         >>    %HotSpotBuildSpace%\%%i\local.make
-echo Platform_arch_model=%Platform_arch_model% >>    %HotSpotBuildSpace%\%%i\local.make
-echo MSC_VER=%MSC_VER% 			   >>    %HotSpotBuildSpace%\%%i\local.make
-
-for /D %%j in (debug, fastdebug, product) do (
-if NOT EXIST %HotSpotBuildSpace%\%%i\%%j mkdir %HotSpotBuildSpace%\%%i\%%j
-)
-
-pushd %HotSpotBuildSpace%\%%i\generated
-nmake /nologo
-popd
-
-)
+echo COPYFILES %BUILDARCH%
+call :generatefiles compiler1
+call :generatefiles tiered
 
 pushd %HotSpotBuildRoot%
-
-REM It doesn't matter which variant we use here, "compiler1" is as good as any of the others - we need the common variables
-nmake /nologo /F %HotSpotWorkSpace%/make/windows/projectfiles/common/Makefile LOCAL_MAKE=%HotSpotBuildSpace%\compiler1\local.make %ProjectFile%
+REM It doesn't matter which variant we use here, "tiered" is as good as any of the others - we need the common variables
+nmake /nologo /F %HotSpotWorkSpace%/make/windows/projectfiles/common/Makefile LOCAL_MAKE=%HotSpotBuildSpace%\tiered\local.make %ProjectFile%
 
 popd
 

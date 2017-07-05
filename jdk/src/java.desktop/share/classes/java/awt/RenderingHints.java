@@ -965,7 +965,7 @@ public class RenderingHints
      * <li>{@link #VALUE_RESOLUTION_VARIANT_SIZE_FIT}
      * <li>{@link #VALUE_RESOLUTION_VARIANT_DPI_FIT}
      * </ul>
-     * @since 1.9
+     * @since 9
      */
     public static final Key KEY_RESOLUTION_VARIANT =
         SunHints.KEY_RESOLUTION_VARIANT;
@@ -976,7 +976,7 @@ public class RenderingHints
      * of the platform
      *
      * @see #KEY_RESOLUTION_VARIANT
-     * @since 1.9
+     * @since 9
      */
     public static final Object VALUE_RESOLUTION_VARIANT_DEFAULT =
         SunHints.VALUE_RESOLUTION_VARIANT_DEFAULT;
@@ -986,7 +986,7 @@ public class RenderingHints
      * is always used.
      *
      * @see #KEY_RESOLUTION_VARIANT
-     * @since 1.9
+     * @since 9
      */
     public static final Object VALUE_RESOLUTION_VARIANT_BASE =
         SunHints.VALUE_RESOLUTION_VARIANT_BASE;
@@ -997,7 +997,7 @@ public class RenderingHints
      * context.
      *
      * @see #KEY_RESOLUTION_VARIANT
-     * @since 1.9
+     * @since 9
      */
     public static final Object VALUE_RESOLUTION_VARIANT_SIZE_FIT =
         SunHints.VALUE_RESOLUTION_VARIANT_SIZE_FIT;
@@ -1007,7 +1007,7 @@ public class RenderingHints
      * chosen based only on the DPI of the screen.
      *
      * @see #KEY_RESOLUTION_VARIANT
-     * @since 1.9
+     * @since 9
      */
     public static final Object VALUE_RESOLUTION_VARIANT_DPI_FIT =
         SunHints.VALUE_RESOLUTION_VARIANT_DPI_FIT;

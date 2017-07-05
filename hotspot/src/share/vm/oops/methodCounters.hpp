@@ -32,6 +32,7 @@
 
 class MethodCounters: public MetaspaceObj {
  friend class VMStructs;
+ friend class JVMCIVMStructs;
  private:
   int               _interpreter_invocation_count; // Count of times invoked (reused as prev_event_count in tiered)
   u2                _interpreter_throwout_count; // Count of times method was exited via exception while interpreting

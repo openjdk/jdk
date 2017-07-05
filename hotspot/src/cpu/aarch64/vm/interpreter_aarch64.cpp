@@ -27,9 +27,9 @@
 #include "asm/macroAssembler.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/interpreter.hpp"
-#include "interpreter/interpreterGenerator.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "interpreter/interp_masm.hpp"
+#include "interpreter/templateInterpreterGenerator.hpp"
 #include "interpreter/templateTable.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/methodData.hpp"
@@ -123,7 +123,7 @@ address AbstractInterpreterGenerator::generate_slow_signature_handler() {
 // Various method entries
 //
 
-address InterpreterGenerator::generate_math_entry(AbstractInterpreter::MethodKind kind) {
+address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::MethodKind kind) {
   // rmethod: Method*
   // r13: sender sp
   // esp: args
@@ -202,7 +202,7 @@ address InterpreterGenerator::generate_math_entry(AbstractInterpreter::MethodKin
   // static jdouble dexp(jdouble x);
   // static jdouble dpow(jdouble x, jdouble y);
 
-void InterpreterGenerator::generate_transcendental_entry(AbstractInterpreter::MethodKind kind, int fpargs) {
+void TemplateInterpreterGenerator::generate_transcendental_entry(AbstractInterpreter::MethodKind kind, int fpargs) {
   address fn;
   switch (kind) {
   case Interpreter::java_lang_math_sin :
@@ -229,6 +229,7 @@ void InterpreterGenerator::generate_transcendental_entry(AbstractInterpreter::Me
     break;
   default:
     ShouldNotReachHere();
+    fn = NULL;  // unreachable
   }
   const int gpargs = 0, rtype = 3;
   __ mov(rscratch1, fn);
@@ -237,7 +238,7 @@ void InterpreterGenerator::generate_transcendental_entry(AbstractInterpreter::Me
 
 // Abstract method entry
 // Attempt to execute abstract method. Throw exception
-address InterpreterGenerator::generate_abstract_entry(void) {
+address TemplateInterpreterGenerator::generate_abstract_entry(void) {
   // rmethod: Method*
   // r13: sender SP
 

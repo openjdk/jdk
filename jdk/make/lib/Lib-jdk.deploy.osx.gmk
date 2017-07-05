@@ -57,7 +57,7 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
           -framework SystemConfiguration \
           $(JDKLIB_LIBS), \
       OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libosx, \
-      DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
+  ))
 
   TARGETS += $(BUILD_LIBOSX)
 

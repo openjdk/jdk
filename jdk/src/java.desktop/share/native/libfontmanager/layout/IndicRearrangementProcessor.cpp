@@ -76,11 +76,11 @@ ByteOffset IndicRearrangementProcessor::processStateEntry(LEGlyphStorage &glyphS
     }
 
     if (flags & irfMarkFirst) {
-        firstGlyph = (le_uint32)currGlyph;
+        firstGlyph = currGlyph;
     }
 
     if (flags & irfMarkLast) {
-        lastGlyph = (le_uint32)currGlyph;
+        lastGlyph = currGlyph;
     }
 
     doRearrangementAction(glyphStorage, (IndicRearrangementVerb) (flags & irfVerbMask), success);
@@ -118,7 +118,7 @@ void IndicRearrangementProcessor::doRearrangementAction(LEGlyphStorage &glyphSto
         if (firstGlyph == lastGlyph) break;
         if (firstGlyph + 1 < firstGlyph) {
             success = LE_INDEX_OUT_OF_BOUNDS_ERROR;
-        break;
+            break;
         }
         a = glyphStorage[firstGlyph];
         ia = glyphStorage.getCharIndex(firstGlyph, success);

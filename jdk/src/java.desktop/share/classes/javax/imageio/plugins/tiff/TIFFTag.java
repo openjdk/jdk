@@ -40,7 +40,7 @@ import java.util.TreeMap;
  * tiff stream are defined in the {@link BaselineTIFFTagSet
  * BaselineTIFFTagSet} class.
  *
- * @since 1.9
+ * @since 9
  * @see   BaselineTIFFTagSet
  * @see   TIFFField
  * @see   TIFFTagSet

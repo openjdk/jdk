@@ -698,7 +698,7 @@ reg_class ctr_reg(SR_CTR);
 // ----------------------------
 
 reg_class flt_reg(
-/*F0*/              // scratch
+  F0,
   F1,
   F2,
   F3,
@@ -735,7 +735,7 @@ reg_class flt_reg(
 // Double precision float registers have virtual `high halves' that
 // are needed by the allocator.
 reg_class dbl_reg(
-/*F0,  F0_H*/     // scratch
+  F0,  F0_H,
   F1,  F1_H,
   F2,  F2_H,
   F3,  F3_H,
@@ -1040,8 +1040,6 @@ source_hpp %{ // Header information of the source block.
 //---<  Used for optimization in Compile::Shorten_branches  >---
 //--------------------------------------------------------------
 
-const uint trampoline_stub_size     =  6 * BytesPerInstWord;
-
 class CallStubImpl {
 
  public:
@@ -1053,7 +1051,7 @@ class CallStubImpl {
   // This doesn't need to be accurate to the byte, but it
   // must be larger than or equal to the real size of the stub.
   static uint size_call_trampoline() {
-    return trampoline_stub_size;
+    return MacroAssembler::trampoline_stub_size;
   }
 
   // number of relocations needed by a call trampoline stub
@@ -1079,46 +1077,10 @@ source %{
 //   branch via CTR (LR/link still points to the call-site above)
 
 void CallStubImpl::emit_trampoline_stub(MacroAssembler &_masm, int destination_toc_offset, int insts_call_instruction_offset) {
-  // Start the stub.
-  address stub = __ start_a_stub(Compile::MAX_stubs_size/2);
+  address stub = __ emit_trampoline_stub(destination_toc_offset, insts_call_instruction_offset);
   if (stub == NULL) {
-    ciEnv::current()->record_failure("CodeCache is full");
-    return;
+    ciEnv::current()->record_out_of_memory_failure();
   }
-
-  // For java_to_interp stubs we use R11_scratch1 as scratch register
-  // and in call trampoline stubs we use R12_scratch2. This way we
-  // can distinguish them (see is_NativeCallTrampolineStub_at()).
-  Register reg_scratch = R12_scratch2;
-
-  // Create a trampoline stub relocation which relates this trampoline stub
-  // with the call instruction at insts_call_instruction_offset in the
-  // instructions code-section.
-  __ relocate(trampoline_stub_Relocation::spec(__ code()->insts()->start() + insts_call_instruction_offset));
-  const int stub_start_offset = __ offset();
-
-  // Now, create the trampoline stub's code:
-  // - load the TOC
-  // - load the call target from the constant pool
-  // - call
-  __ calculate_address_from_global_toc(reg_scratch, __ method_toc());
-  __ ld_largeoffset_unchecked(reg_scratch, destination_toc_offset, reg_scratch, false);
-  __ mtctr(reg_scratch);
-  __ bctr();
-
-  const address stub_start_addr = __ addr_at(stub_start_offset);
-
-  // FIXME: Assert that the trampoline stub can be identified and patched.
-
-  // Assert that the encoded destination_toc_offset can be identified and that it is correct.
-  assert(destination_toc_offset == NativeCallTrampolineStub_at(stub_start_addr)->destination_toc_offset(),
-         "encoded offset into the constant pool must match");
-  // Trampoline_stub_size should be good.
-  assert((uint)(__ offset() - stub_start_offset) <= trampoline_stub_size, "should be good size");
-  assert(is_NativeCallTrampolineStub_at(stub_start_addr), "doesn't look like a trampoline");
-
-  // End the stub.
-  __ end_a_stub();
 }
 
 //=============================================================================
@@ -1156,6 +1118,10 @@ EmitCallOffsets emit_call_with_trampoline_stub(MacroAssembler &_masm, address en
   if (!Compile::current()->in_scratch_emit_size()) {
     // Put the entry point as a constant into the constant pool.
     const address entry_point_toc_addr   = __ address_constant(entry_point, RelocationHolder::none);
+    if (entry_point_toc_addr == NULL) {
+      ciEnv::current()->record_out_of_memory_failure();
+      return offsets;
+    }
     const int     entry_point_toc_offset = __ offset_to_method_toc(entry_point_toc_addr);
 
     // Emit the trampoline stub which will be related to the branch-and-link below.
@@ -1308,7 +1274,7 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
     // insert the code of generate_stack_overflow_check(), see
     // assembler.cpp for some illuminative comments.
     const int page_size = os::vm_page_size();
-    int bang_end = StackShadowPages * page_size;
+    int bang_end = JavaThread::stack_shadow_zone_size();
 
     // This is how far the previous frame's stack banging extended.
     const int bang_end_safe = bang_end;
@@ -2474,6 +2440,10 @@ encode %{
       // Create a non-oop constant, no relocation needed.
       // If it is an IC, it has a virtual_call_Relocation.
       const_toc_addr = __ long_constant((jlong)$src$$constant);
+      if (const_toc_addr == NULL) {
+        ciEnv::current()->record_out_of_memory_failure();
+        return;
+      }
 
       // Get the constant's TOC offset.
       toc_offset = __ offset_to_method_toc(const_toc_addr);
@@ -2495,6 +2465,10 @@ encode %{
       // Create a non-oop constant, no relocation needed.
       // If it is an IC, it has a virtual_call_Relocation.
       const_toc_addr = __ long_constant((jlong)$src$$constant);
+      if (const_toc_addr == NULL) {
+        ciEnv::current()->record_out_of_memory_failure();
+        return;
+      }
 
       // Get the constant's TOC offset.
       const int toc_offset = __ offset_to_method_toc(const_toc_addr);
@@ -2631,6 +2605,10 @@ encode %{
         const_toc_addr = __ long_constant((jlong)$src$$constant);
       }
 
+      if (const_toc_addr == NULL) {
+        ciEnv::current()->record_out_of_memory_failure();
+        return;
+      }
       // Get the constant's TOC offset.
       toc_offset = __ offset_to_method_toc(const_toc_addr);
     }
@@ -2660,6 +2638,10 @@ encode %{
         const_toc_addr = __ long_constant((jlong)$src$$constant);
       }
 
+      if (const_toc_addr == NULL) {
+        ciEnv::current()->record_out_of_memory_failure();
+        return;
+      }
       // Get the constant's TOC offset.
       const int toc_offset = __ offset_to_method_toc(const_toc_addr);
       // Store the toc offset of the constant.
@@ -3408,13 +3390,19 @@ encode %{
 
         // Put the entry point as a constant into the constant pool.
         const address entry_point_toc_addr   = __ address_constant(entry_point, RelocationHolder::none);
+        if (entry_point_toc_addr == NULL) {
+          ciEnv::current()->record_out_of_memory_failure();
+          return;
+        }
         const int     entry_point_toc_offset = __ offset_to_method_toc(entry_point_toc_addr);
+
 
         // Emit the trampoline stub which will be related to the branch-and-link below.
         CallStubImpl::emit_trampoline_stub(_masm, entry_point_toc_offset, start_offset);
         if (ciEnv::current()->failing()) { return; } // Code cache may be full.
-        __ relocate(_optimized_virtual ?
-                    relocInfo::opt_virtual_call_type : relocInfo::static_call_type);
+        int method_index = resolved_method_index(cbuf);
+        __ relocate(_optimized_virtual ? opt_virtual_call_Relocation::spec(method_index)
+                                       : static_call_Relocation::spec(method_index));
       }
 
       // The real call.
@@ -3433,76 +3421,6 @@ encode %{
     }
   %}
 
-  // Emit a method handle call.
-  //
-  // Method handle calls from compiled to compiled are going thru a
-  // c2i -> i2c adapter, extending the frame for their arguments. The
-  // caller however, returns directly to the compiled callee, that has
-  // to cope with the extended frame. We restore the original frame by
-  // loading the callers sp and adding the calculated framesize.
-  enc_class enc_java_handle_call(method meth) %{
-    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
-
-    MacroAssembler _masm(&cbuf);
-    address entry_point = (address)$meth$$method;
-
-    // Remember the offset not the address.
-    const int start_offset = __ offset();
-    // The trampoline stub.
-    if (!ra_->C->in_scratch_emit_size()) {
-      // No entry point given, use the current pc.
-      // Make sure branch fits into
-      if (entry_point == 0) entry_point = __ pc();
-
-      // Put the entry point as a constant into the constant pool.
-      const address entry_point_toc_addr   = __ address_constant(entry_point, RelocationHolder::none);
-      const int     entry_point_toc_offset = __ offset_to_method_toc(entry_point_toc_addr);
-
-      // Emit the trampoline stub which will be related to the branch-and-link below.
-      CallStubImpl::emit_trampoline_stub(_masm, entry_point_toc_offset, start_offset);
-      if (ra_->C->env()->failing()) { return; } // Code cache may be full.
-      assert(_optimized_virtual, "methodHandle call should be a virtual call");
-      __ relocate(relocInfo::opt_virtual_call_type);
-    }
-
-    // The real call.
-    // Note: At this point we do not have the address of the trampoline
-    // stub, and the entry point might be too far away for bl, so __ pc()
-    // serves as dummy and the bl will be patched later.
-    cbuf.set_insts_mark();
-    __ bl(__ pc());  // Emits a relocation.
-
-    assert(_method, "execute next statement conditionally");
-    // The stub for call to interpreter.
-    address stub = CompiledStaticCall::emit_to_interp_stub(cbuf);
-    if (stub == NULL) {
-      ciEnv::current()->record_failure("CodeCache is full");
-      return;
-    }
-
-    // Restore original sp.
-    __ ld(R11_scratch1, 0, R1_SP); // Load caller sp.
-    const long framesize = ra_->C->frame_slots() << LogBytesPerInt;
-    unsigned int bytes = (unsigned int)framesize;
-    long offset = Assembler::align_addr(bytes, frame::alignment_in_bytes);
-    if (Assembler::is_simm(-offset, 16)) {
-      __ addi(R1_SP, R11_scratch1, -offset);
-    } else {
-      __ load_const_optimized(R12_scratch2, -offset);
-      __ add(R1_SP, R11_scratch1, R12_scratch2);
-    }
-#ifdef ASSERT
-  __ ld(R12_scratch2, 0, R1_SP); // Load from unextended_sp.
-  __ cmpd(CCR0, R11_scratch1, R12_scratch2);
-  __ asm_assert_eq("backlink changed", 0x8000);
-#endif
-    // If fails should store backlink before unextending.
-
-    if (ra_->C->env()->failing()) {
-      return;
-    }
-  %}
-
   // Second node of expanded dynamic call - the call.
   enc_class enc_java_dynamic_call_sched(method meth) %{
     // TODO: PPC port $archOpcode(ppc64Opcode_bl);
@@ -3513,6 +3431,10 @@ encode %{
       // Create a call trampoline stub for the given method.
       const address entry_point = !($meth$$method) ? 0 : (address)$meth$$method;
       const address entry_point_const = __ address_constant(entry_point, RelocationHolder::none);
+      if (entry_point_const == NULL) {
+        ciEnv::current()->record_out_of_memory_failure();
+        return;
+      }
       const int entry_point_const_toc_offset = __ offset_to_method_toc(entry_point_const);
       CallStubImpl::emit_trampoline_stub(_masm, entry_point_const_toc_offset, __ offset());
       if (ra_->C->env()->failing()) { return; } // Code cache may be full.
@@ -3530,8 +3452,8 @@ encode %{
       const address virtual_call_oop_addr = __ addr_at(virtual_call_oop_addr_offset);
       assert(MacroAssembler::is_load_const_from_method_toc_at(virtual_call_oop_addr),
              "should be load from TOC");
-
-      __ relocate(virtual_call_Relocation::spec(virtual_call_oop_addr));
+      int method_index = resolved_method_index(cbuf);
+      __ relocate(virtual_call_Relocation::spec(virtual_call_oop_addr, method_index));
     }
 
     // At this point I do not have the address of the trampoline stub,
@@ -3564,6 +3486,7 @@ encode %{
     call->_jvmadj            = _jvmadj;
     call->_in_rms            = _in_rms;
     call->_nesting           = _nesting;
+    call->_override_symbolic_info = _override_symbolic_info;
 
     // New call needs all inputs of old call.
     // Req...
@@ -3620,7 +3543,11 @@ encode %{
       address virtual_call_meta_addr = __ pc();
       // Load a clear inline cache.
       AddressLiteral empty_ic((address) Universe::non_oop_word());
-      __ load_const_from_method_toc(ic_reg, empty_ic, Rtoc);
+      bool success = __ load_const_from_method_toc(ic_reg, empty_ic, Rtoc, /*fixed_size*/ true);
+      if (!success) {
+        ciEnv::current()->record_out_of_memory_failure();
+        return;
+      }
       // CALL to fixup routine.  Fixup routine uses ScopeDesc info
       // to determine who we intended to call.
       __ relocate(virtual_call_Relocation::spec(virtual_call_meta_addr));
@@ -3676,7 +3603,11 @@ encode %{
     __ calculate_address_from_global_toc(Rtoc, __ method_toc());
     // Put entry, env, toc into the constant pool, this needs up to 3 constant
     // pool entries; call_c_using_toc will optimize the call.
-    __ call_c_using_toc(fd, relocInfo::runtime_call_type, Rtoc);
+    bool success = __ call_c_using_toc(fd, relocInfo::runtime_call_type, Rtoc);
+    if (!success) {
+      ciEnv::current()->record_out_of_memory_failure();
+      return;
+    }
 #endif
 
     // Check the ret_addr_offset.
@@ -6263,6 +6194,10 @@ instruct loadConF(regF dst, immF src, iRegLdst toc) %{
   ins_encode %{
     // TODO: PPC port $archOpcode(ppc64Opcode_lfs);
     address float_address = __ float_constant($src$$constant);
+    if (float_address == NULL) {
+      ciEnv::current()->record_out_of_memory_failure();
+      return;
+    }
     __ lfs($dst$$FloatRegister, __ offset_to_method_toc(float_address), $toc$$Register);
   %}
   ins_pipe(pipe_class_memory);
@@ -6284,6 +6219,10 @@ instruct loadConFComp(regF dst, immF src, iRegLdst toc) %{
     FloatRegister Rdst    = $dst$$FloatRegister;
     Register Rtoc         = $toc$$Register;
     address float_address = __ float_constant($src$$constant);
+    if (float_address == NULL) {
+      ciEnv::current()->record_out_of_memory_failure();
+      return;
+    }
     int offset            = __ offset_to_method_toc(float_address);
     int hi = (offset + (1<<15))>>16;
     int lo = offset - hi * (1<<16);
@@ -6318,7 +6257,12 @@ instruct loadConD(regD dst, immD src, iRegLdst toc) %{
   size(4);
   ins_encode %{
     // TODO: PPC port $archOpcode(ppc64Opcode_lfd);
-    int offset =  __ offset_to_method_toc(__ double_constant($src$$constant));
+    address float_address = __ double_constant($src$$constant);
+    if (float_address == NULL) {
+      ciEnv::current()->record_out_of_memory_failure();
+      return;
+    }
+    int offset =  __ offset_to_method_toc(float_address);
     __ lfd($dst$$FloatRegister, offset, $toc$$Register);
   %}
   ins_pipe(pipe_class_memory);
@@ -6340,7 +6284,11 @@ instruct loadConDComp(regD dst, immD src, iRegLdst toc) %{
     FloatRegister Rdst    = $dst$$FloatRegister;
     Register      Rtoc    = $toc$$Register;
     address float_address = __ double_constant($src$$constant);
-    int offset            = __ offset_to_method_toc(float_address);
+    if (float_address == NULL) {
+      ciEnv::current()->record_out_of_memory_failure();
+      return;
+    }
+    int offset = __ offset_to_method_toc(float_address);
     int hi = (offset + (1<<15))>>16;
     int lo = offset - hi * (1<<16);
 
@@ -10949,16 +10897,16 @@ instruct partialSubtypeCheck(iRegPdst result, iRegP_N2P subklass, iRegP_N2P supe
 
 // inlined locking and unlocking
 
-instruct cmpFastLock(flagsReg crx, iRegPdst oop, iRegPdst box, iRegPdst tmp1, iRegPdst tmp2, iRegPdst tmp3) %{
+instruct cmpFastLock(flagsReg crx, iRegPdst oop, iRegPdst box, iRegPdst tmp1, iRegPdst tmp2) %{
   match(Set crx (FastLock oop box));
-  effect(TEMP tmp1, TEMP tmp2, TEMP tmp3);
+  effect(TEMP tmp1, TEMP tmp2);
   predicate(!Compile::current()->use_rtm());
 
-  format %{ "FASTLOCK  $oop, $box, $tmp1, $tmp2, $tmp3" %}
+  format %{ "FASTLOCK  $oop, $box, $tmp1, $tmp2" %}
   ins_encode %{
     // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     __ compiler_fast_lock_object($crx$$CondRegister, $oop$$Register, $box$$Register,
-                                 $tmp3$$Register, $tmp1$$Register, $tmp2$$Register,
+                                 $tmp1$$Register, $tmp2$$Register, /*tmp3*/ R0,
                                  UseBiasedLocking && !UseOptoBiasInlining);
     // If locking was successfull, crx should indicate 'EQ'.
     // The compiler generates a branch to the runtime call to
@@ -10977,7 +10925,7 @@ instruct cmpFastLock_tm(flagsReg crx, iRegPdst oop, rarg2RegP box, iRegPdst tmp1
   ins_encode %{
     // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     __ compiler_fast_lock_object($crx$$CondRegister, $oop$$Register, $box$$Register,
-                                 $tmp3$$Register, $tmp1$$Register, $tmp2$$Register,
+                                 $tmp1$$Register, $tmp2$$Register, $tmp3$$Register,
                                  /*Biased Locking*/ false,
                                  _rtm_counters, _stack_rtm_counters,
                                  ((Method*)(ra_->C->method()->constant_encoding()))->method_data(),
@@ -10998,7 +10946,7 @@ instruct cmpFastUnlock(flagsReg crx, iRegPdst oop, iRegPdst box, iRegPdst tmp1, 
   ins_encode %{
     // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     __ compiler_fast_unlock_object($crx$$CondRegister, $oop$$Register, $box$$Register,
-                                   $tmp3$$Register, $tmp1$$Register, $tmp2$$Register,
+                                   $tmp1$$Register, $tmp2$$Register, $tmp3$$Register,
                                    UseBiasedLocking && !UseOptoBiasInlining,
                                    false);
     // If unlocking was successfull, crx should indicate 'EQ'.
@@ -11017,7 +10965,7 @@ instruct cmpFastUnlock_tm(flagsReg crx, iRegPdst oop, iRegPdst box, iRegPdst tmp
   ins_encode %{
     // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     __ compiler_fast_unlock_object($crx$$CondRegister, $oop$$Register, $box$$Register,
-                                   $tmp3$$Register, $tmp1$$Register, $tmp2$$Register,
+                                   $tmp1$$Register, $tmp2$$Register, $tmp3$$Register,
                                    /*Biased Locking*/ false, /*TM*/ true);
     // If unlocking was successfull, crx should indicate 'EQ'.
     // The compiler generates a branch to the runtime call to
@@ -11790,7 +11738,6 @@ instruct safePoint_poll_conPollAddr(rscratch2RegP poll) %{
 instruct CallStaticJavaDirect(method meth) %{
   match(CallStaticJava);
   effect(USE meth);
-  predicate(!((CallStaticJavaNode*)n)->is_method_handle_invoke());
   ins_cost(CALL_COST);
 
   ins_num_consts(3 /* up to 3 patchable constants: inline cache, 2 call targets. */);
@@ -11798,20 +11745,6 @@ instruct CallStaticJavaDirect(method meth) %{
   format %{ "CALL,static $meth \t// ==> " %}
   size(4);
   ins_encode( enc_java_static_call(meth) );
-  ins_pipe(pipe_class_call);
-%}
-
-// Schedulable version of call static node.
-instruct CallStaticJavaDirectHandle(method meth) %{
-  match(CallStaticJava);
-  effect(USE meth);
-  predicate(((CallStaticJavaNode*)n)->is_method_handle_invoke());
-  ins_cost(CALL_COST);
-
-  ins_num_consts(3 /* up to 3 patchable constants: inline cache, 2 call targets. */);
-
-  format %{ "CALL,static $meth \t// ==> " %}
-  ins_encode( enc_java_handle_call(meth) );
   ins_pipe(pipe_class_call);
 %}
 

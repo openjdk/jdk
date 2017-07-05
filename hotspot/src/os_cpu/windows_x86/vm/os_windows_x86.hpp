@@ -66,7 +66,7 @@
 
 #ifdef AMD64
 #define PLATFORM_PRINT_NATIVE_STACK 1
-static bool platform_print_native_stack(outputStream* st, void* context,
+static bool platform_print_native_stack(outputStream* st, const void* context,
                                         char *buf, int buf_size);
 #endif
 

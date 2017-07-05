@@ -25,7 +25,7 @@
 /*
  * @test
  * @bug 8136421
- * @requires (os.simpleArch == "x64" | os.simpleArch == "sparcv9") & os.arch != "aarch64"
+ * @requires (os.simpleArch == "x64" | os.simpleArch == "sparcv9" | os.simpleArch == "aarch64")
  * @summary Testing compiler.jvmci.CompilerToVM.resolveTypeInPool method
  * @library /testlibrary /test/lib /
  * @compile ../common/CompilerToVMHelper.java
