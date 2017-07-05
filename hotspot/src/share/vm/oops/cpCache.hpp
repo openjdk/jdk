@@ -377,14 +377,21 @@ class ConstantPoolCache: public MetaspaceObj {
   debug_only(friend class ClassVerifier;)
 
   // Constructor
-  ConstantPoolCache(int length) : _length(length), _constant_pool(NULL) {
+  ConstantPoolCache(int length, const intStack& inverse_index_map,
+                    const intStack& invokedynamic_references_map) :
+                                        _length(length), _constant_pool(NULL) {
+    initialize(inverse_index_map, invokedynamic_references_map);
     for (int i = 0; i < length; i++) {
       assert(entry_at(i)->is_f1_null(), "Failed to clear?");
     }
   }
 
+  // Initialization
+  void initialize(const intArray& inverse_index_map, const intArray& invokedynamic_references_map);
  public:
-  static ConstantPoolCache* allocate(ClassLoaderData* loader_data, int length, TRAPS);
+  static ConstantPoolCache* allocate(ClassLoaderData* loader_data, int length,
+                                     const intStack& inverse_index_map,
+                                     const intStack& invokedynamic_references_map, TRAPS);
   bool is_constantPoolCache() const { return true; }
 
   int length() const                             { return _length; }
@@ -405,9 +412,6 @@ class ConstantPoolCache: public MetaspaceObj {
   friend class ConstantPoolCacheEntry;
 
  public:
-  // Initialization
-  void initialize(intArray& inverse_index_map, intArray& invokedynamic_references_map);
-
   // Accessors
   void set_constant_pool(ConstantPool* pool)   { _constant_pool = pool; }
   ConstantPool* constant_pool() const          { return _constant_pool; }
