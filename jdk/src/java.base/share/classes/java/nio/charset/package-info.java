@@ -74,10 +74,10 @@
  *
  * <p> Support for new charsets can be made available via the
  * interface defined in the {@link
- * java.nio.charset.spi.CharsetProvider} class in the <tt>{@link
- * java.nio.charset.spi}</tt> package.
+ * java.nio.charset.spi.CharsetProvider} class in the {@link
+ * java.nio.charset.spi} package.
  *
- * <p> Unless otherwise noted, passing a <tt>null</tt> argument to a
+ * <p> Unless otherwise noted, passing a {@code null} argument to a
  * constructor or method in any class or interface in this package
  * will cause a {@link java.lang.NullPointerException
  * NullPointerException} to be thrown.

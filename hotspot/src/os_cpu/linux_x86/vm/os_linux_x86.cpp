@@ -623,11 +623,6 @@ size_t os::Linux::min_stack_allowed  = 64 * K;
 size_t os::Linux::min_stack_allowed  =  (48 DEBUG_ONLY(+4))*K;
 #endif // AMD64
 
-// Test if pthread library can support variable thread stack size.
-bool os::Linux::supports_variable_stack_size() {
-  return true;
-}
-
 // return default stack size for thr_type
 size_t os::Linux::default_stack_size(os::ThreadType thr_type) {
   // default stack size (compiler thread needs larger stack)

@@ -94,7 +94,7 @@ bool CompiledIC::is_icholder_call_site(virtual_call_Relocation* call_site) {
 
 const int IC_pos_in_java_to_interp_stub = 8;
 #define __ _masm.
-void CompiledStaticCall::emit_to_interp_stub(CodeBuffer &cbuf) {
+address CompiledStaticCall::emit_to_interp_stub(CodeBuffer &cbuf) {
 #ifdef COMPILER2
   // Get the mark within main instrs section which is set to the address of the call.
   address call_addr = cbuf.insts_mark();
@@ -106,8 +106,7 @@ void CompiledStaticCall::emit_to_interp_stub(CodeBuffer &cbuf) {
   // Start the stub.
   address stub = __ start_a_stub(CompiledStaticCall::to_interp_stub_size());
   if (stub == NULL) {
-    Compile::current()->env()->record_out_of_memory_failure();
-    return;
+    return NULL; // CodeCache is full
   }
 
   // For java_to_interp stubs we use R11_scratch1 as scratch register
@@ -149,6 +148,7 @@ void CompiledStaticCall::emit_to_interp_stub(CodeBuffer &cbuf) {
 
  // End the stub.
   __ end_a_stub();
+  return stub;
 #else
   ShouldNotReachHere();
 #endif

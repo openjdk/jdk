@@ -96,10 +96,10 @@ import jdk.internal.HotSpotIntrinsicCandidate;
  * capacity values:
  *
  * <blockquote>
- *     <tt>0</tt> <tt>&lt;=</tt>
- *     <i>mark</i> <tt>&lt;=</tt>
- *     <i>position</i> <tt>&lt;=</tt>
- *     <i>limit</i> <tt>&lt;=</tt>
+ *     {@code 0} {@code <=}
+ *     <i>mark</i> {@code <=}
+ *     <i>position</i> {@code <=}
+ *     <i>limit</i> {@code <=}
  *     <i>capacity</i>
  * </blockquote>
  *
@@ -229,7 +229,7 @@ public abstract class Buffer {
      *         The new buffer's capacity, in $type$s
      *
      * @throws  IllegalArgumentException
-     *          If the <tt>capacity</tt> is a negative integer
+     *          If the {@code capacity} is a negative integer
      */
     static IllegalArgumentException createCapacityException(int capacity) {
         assert capacity < 0 : "capacity expected to be negative";
@@ -266,7 +266,7 @@ public abstract class Buffer {
      * @return  This buffer
      *
      * @throws  IllegalArgumentException
-     *          If the preconditions on <tt>newPosition</tt> do not hold
+     *          If the preconditions on {@code newPosition} do not hold
      */
     public Buffer position(int newPosition) {
         if (newPosition > limit | newPosition < 0)
@@ -319,7 +319,7 @@ public abstract class Buffer {
      * @return  This buffer
      *
      * @throws  IllegalArgumentException
-     *          If the preconditions on <tt>newLimit</tt> do not hold
+     *          If the preconditions on {@code newLimit} do not hold
      */
     public Buffer limit(int newLimit) {
         if (newLimit > capacity | newLimit < 0)
@@ -468,7 +468,7 @@ public abstract class Buffer {
      * Tells whether there are any elements between the current position and
      * the limit.
      *
-     * @return  <tt>true</tt> if, and only if, there is at least one element
+     * @return  {@code true} if, and only if, there is at least one element
      *          remaining in this buffer
      */
     public final boolean hasRemaining() {
@@ -478,7 +478,7 @@ public abstract class Buffer {
     /**
      * Tells whether or not this buffer is read-only.
      *
-     * @return  <tt>true</tt> if, and only if, this buffer is read-only
+     * @return  {@code true} if, and only if, this buffer is read-only
      */
     public abstract boolean isReadOnly();
 
@@ -486,11 +486,11 @@ public abstract class Buffer {
      * Tells whether or not this buffer is backed by an accessible
      * array.
      *
-     * <p> If this method returns <tt>true</tt> then the {@link #array() array}
+     * <p> If this method returns {@code true} then the {@link #array() array}
      * and {@link #arrayOffset() arrayOffset} methods may safely be invoked.
      * </p>
      *
-     * @return  <tt>true</tt> if, and only if, this buffer
+     * @return  {@code true} if, and only if, this buffer
      *          is backed by an array and is not read-only
      *
      * @since 1.6
@@ -529,7 +529,7 @@ public abstract class Buffer {
      * element of the buffer&nbsp;&nbsp;<i>(optional operation)</i>.
      *
      * <p> If this buffer is backed by an array then buffer position <i>p</i>
-     * corresponds to array index <i>p</i>&nbsp;+&nbsp;<tt>arrayOffset()</tt>.
+     * corresponds to array index <i>p</i>&nbsp;+&nbsp;{@code arrayOffset()}.
      *
      * <p> Invoke the {@link #hasArray hasArray} method before invoking this
      * method in order to ensure that this buffer has an accessible backing
@@ -552,7 +552,7 @@ public abstract class Buffer {
      * Tells whether or not this buffer is
      * <a href="ByteBuffer.html#direct"><i>direct</i></a>.
      *
-     * @return  <tt>true</tt> if, and only if, this buffer is direct
+     * @return  {@code true} if, and only if, this buffer is direct
      *
      * @since 1.6
      */
