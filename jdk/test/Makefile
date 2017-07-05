@@ -518,7 +518,6 @@ jdk_other: $(call TestDirs, \
 	  jdk/asm \
 	  com/sun/org/apache/xerces \
           com/sun/corba \
-	  com/sun/servicetag \
 	  com/sun/tracing \
 	  sun/usagetracker)
 	$(call RunAgentvmBatch)

@@ -29,33 +29,21 @@
 #
 
 if [ "${TESTSRC}" = "" ]
-  then TESTSRC=.
-fi
-
-if [ "${TESTJAVA}" = "" ]
 then
-  PARENT=`dirname \`which java\``
-  TESTJAVA=`dirname ${PARENT}`
-  printf "TESTJAVA not set, selecting " ${TESTJAVA}
-  printf "  If this is incorrect, try setting the variable manually.\n"
+  TESTSRC=${PWD}
+  echo "TESTSRC not set.  Using "${TESTSRC}" as default"
 fi
-
+echo "TESTSRC=${TESTSRC}"
+## Adding common setup Variables for running shell tests.
+. ${TESTSRC}/../../test_env.sh
 
 OS=`uname -s`
 case "$OS" in
-  SunOS | Linux | Darwin )
-    FS="/"
-    ;;
   Windows_* | CYGWIN_* )
     printf "Not testing libjsig.so on Windows. PASSED.\n "
     exit 0
     ;;
-  * )
-    printf "Not testing libjsig.so on unrecognised system. PASSED.\n "
-    exit 0
-    ;;
 esac
-
 
 JAVA=${TESTJAVA}${FS}bin${FS}java
 
@@ -97,7 +85,7 @@ case $ARCH in
   ;; 
 esac
 
-LIBJSIG=${TESTJAVA}${FS}jre${FS}lib${FS}${ARCH}${FS}libjsig.so
+LIBJSIG=${COMPILEJAVA}${FS}jre${FS}lib${FS}${ARCH}${FS}libjsig.so
 
 # If libjsig and binary do not match, skip test.
 

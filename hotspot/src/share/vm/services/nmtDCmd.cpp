@@ -49,6 +49,9 @@ NMTDCmd::NMTDCmd(outputStream* output,
   _shutdown("shutdown", "request runtime to shutdown itself and free the " \
             "memory used by runtime.",
             "BOOLEAN", false, "false"),
+  _auto_shutdown("autoShutdown", "automatically shutdown itself under "    \
+            "stress situation",
+            "BOOLEAN", true, "true"),
 #ifndef PRODUCT
   _debug("debug", "print tracker statistics. Debug only, not thread safe", \
             "BOOLEAN", false, "false"),
@@ -61,6 +64,7 @@ NMTDCmd::NMTDCmd(outputStream* output,
   _dcmdparser.add_dcmd_option(&_summary_diff);
   _dcmdparser.add_dcmd_option(&_detail_diff);
   _dcmdparser.add_dcmd_option(&_shutdown);
+  _dcmdparser.add_dcmd_option(&_auto_shutdown);
 #ifndef PRODUCT
   _dcmdparser.add_dcmd_option(&_debug);
 #endif
@@ -84,17 +88,19 @@ void NMTDCmd::execute(TRAPS) {
   }
 
   int nopt = 0;
-  if(_summary.is_set() && _summary.value()) { ++nopt; }
-  if(_detail.is_set() && _detail.value()) { ++nopt; }
-  if(_baseline.is_set() && _baseline.value()) { ++nopt; }
-  if(_summary_diff.is_set() && _summary_diff.value()) { ++nopt; }
-  if(_detail_diff.is_set() && _detail_diff.value()) { ++nopt; }
-  if(_shutdown.is_set() && _shutdown.value()) { ++nopt; }
+  if (_summary.is_set() && _summary.value()) { ++nopt; }
+  if (_detail.is_set() && _detail.value()) { ++nopt; }
+  if (_baseline.is_set() && _baseline.value()) { ++nopt; }
+  if (_summary_diff.is_set() && _summary_diff.value()) { ++nopt; }
+  if (_detail_diff.is_set() && _detail_diff.value()) { ++nopt; }
+  if (_shutdown.is_set() && _shutdown.value()) { ++nopt; }
+  if (_auto_shutdown.is_set()) { ++nopt; }
+
 #ifndef PRODUCT
-  if(_debug.is_set() && _debug.value()) { ++nopt; }
+  if (_debug.is_set() && _debug.value()) { ++nopt; }
 #endif
 
-  if(nopt > 1) {
+  if (nopt > 1) {
       output()->print_cr("At most one of the following option can be specified: " \
         "summary, detail, baseline, summary.diff, detail.diff, shutdown"
 #ifndef PRODUCT
@@ -156,6 +162,8 @@ void NMTDCmd::execute(TRAPS) {
     MemTracker::shutdown(MemTracker::NMT_shutdown_user);
     output()->print_cr("Shutdown is in progress, it will take a few moments to " \
       "completely shutdown");
+  } else if (_auto_shutdown.is_set()) {
+    MemTracker::set_autoShutdown(_auto_shutdown.value());
   } else {
     ShouldNotReachHere();
     output()->print_cr("Unknown command");

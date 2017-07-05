@@ -568,36 +568,6 @@ class CoreProductConfig extends ProductConfig {
     }
 }
 
-class KernelDebugConfig extends GenericDebugConfig {
-    String getOptFlag() {
-        return getCI().getNoOptFlag();
-    }
-
-    KernelDebugConfig() {
-        initNames("kernel", "debug", "jvm.dll");
-        init(getIncludes(), getDefines());
-    }
-}
-
-
-class KernelFastDebugConfig extends GenericDebugConfig {
-    String getOptFlag() {
-        return getCI().getOptFlag();
-    }
-
-    KernelFastDebugConfig() {
-        initNames("kernel", "fastdebug", "jvm.dll");
-        init(getIncludes(), getDefines());
-    }
-}
-
-
-class KernelProductConfig extends ProductConfig {
-    KernelProductConfig() {
-        initNames("kernel", "product", "jvm.dll");
-        init(getIncludes(), getDefines());
-    }
-}
 
 abstract class CompilerInterface {
     abstract Vector getBaseCompilerFlags(Vector defines, Vector includes, String outDir);

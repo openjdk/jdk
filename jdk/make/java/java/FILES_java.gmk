@@ -209,6 +209,7 @@ JAVA_JAVA_java = \
             sun/util/locale/provider/CalendarDataProviderImpl.java \
             sun/util/locale/provider/CalendarDataUtility.java \
             sun/util/locale/provider/CalendarNameProviderImpl.java \
+            sun/util/locale/provider/CalendarProviderImpl.java \
             sun/util/locale/provider/CollationRules.java \
             sun/util/locale/provider/CollatorProviderImpl.java \
             sun/util/locale/provider/CurrencyNameProviderImpl.java \
@@ -232,6 +233,7 @@ JAVA_JAVA_java = \
             sun/util/locale/provider/SPILocaleProviderAdapter.java \
             sun/util/locale/provider/TimeZoneNameProviderImpl.java \
             sun/util/locale/provider/TimeZoneNameUtility.java \
+	sun/util/spi/CalendarProvider.java \
     java/util/LocaleISOData.java \
         sun/util/cldr/CLDRLocaleProviderAdapter.java \
     java/util/MissingResourceException.java \

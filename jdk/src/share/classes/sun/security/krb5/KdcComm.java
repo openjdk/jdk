@@ -138,7 +138,7 @@ public final class KdcComm {
 
         int timeout = -1;
         int max_retries = -1;
-        int udf_pref_limit = -1;
+        int udp_pref_limit = -1;
 
         try {
             Config cfg = Config.getInstance();
@@ -147,7 +147,7 @@ public final class KdcComm {
             temp = cfg.get("libdefaults", "max_retries");
             max_retries = parsePositiveIntString(temp);
             temp = cfg.get("libdefaults", "udp_preference_limit");
-            udf_pref_limit = parsePositiveIntString(temp);
+            udp_pref_limit = parsePositiveIntString(temp);
         } catch (Exception exc) {
            // ignore any exceptions; use default values
            if (DEBUG) {
@@ -159,7 +159,14 @@ public final class KdcComm {
         defaultKdcTimeout = timeout > 0 ? timeout : 30*1000; // 30 seconds
         defaultKdcRetryLimit =
                 max_retries > 0 ? max_retries : Krb5.KDC_RETRY_LIMIT;
-        defaultUdpPrefLimit = udf_pref_limit;
+
+        if (udp_pref_limit < 0) {
+            defaultUdpPrefLimit = Krb5.KDC_DEFAULT_UDP_PREF_LIMIT;
+        } else if (udp_pref_limit > Krb5.KDC_HARD_UDP_LIMIT) {
+            defaultUdpPrefLimit = Krb5.KDC_HARD_UDP_LIMIT;
+        } else {
+            defaultUdpPrefLimit = udp_pref_limit;
+        }
 
         KdcAccessibility.reset();
     }

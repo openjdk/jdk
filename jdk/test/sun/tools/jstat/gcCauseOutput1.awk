@@ -11,7 +11,7 @@ BEGIN	{
 	    headerlines=0; datalines=0; totallines=0
 	}
 
-/^  S0     S1     E      O      P     YGC     YGCT    FGC    FGCT     GCT    LGCC                 GCC                 $/	{
+/^  S0     S1     E      O      M     YGC     YGCT    FGC    FGCT     GCT    LGCC                 GCC                 $/	{
 	    headerlines++;
 	}
 
