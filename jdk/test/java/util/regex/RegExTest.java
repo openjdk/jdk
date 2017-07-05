@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,11 +32,11 @@
  * 6358731 6178785 6284152 6231989 6497148 6486934 6233084 6504326 6635133
  * 6350801 6676425 6878475 6919132 6931676 6948903 6990617 7014645 7039066
  * 7067045 7014640 7189363 8007395 8013252 8013254 8012646 8023647 6559590
- * 8027645 8035076 8039124 8035975 8074678
+ * 8027645 8035076 8039124 8035975 8074678 6854417
  * @library /lib/testlibrary
  * @build jdk.testlibrary.*
  * @run main RegExTest
- * @key intermittent randomness
+ * @key randomness
  */
 
 import java.util.function.Function;
@@ -3554,15 +3554,26 @@ public class RegExTest {
             // Create a short pattern to search for
             int patternLength = generator.nextInt(7) + 4;
             StringBuffer patternBuffer = new StringBuffer(patternLength);
-            for (int x=0; x<patternLength; x++) {
-                int ch = baseCharacter + generator.nextInt(26);
-                if (Character.isSupplementaryCodePoint(ch)) {
-                    patternBuffer.append(Character.toChars(ch));
-                } else {
-                    patternBuffer.append((char)ch);
+            String pattern;
+            retry: for (;;) {
+                for (int x=0; x<patternLength; x++) {
+                    int ch = baseCharacter + generator.nextInt(26);
+                    if (Character.isSupplementaryCodePoint(ch)) {
+                        patternBuffer.append(Character.toChars(ch));
+                    } else {
+                        patternBuffer.append((char)ch);
+                    }
                 }
+                pattern = patternBuffer.toString();
+
+                // Avoid patterns that start and end with the same substring
+                // See JDK-6854417
+                for (int x=1; x <patternLength; x++) {
+                    if (pattern.startsWith(pattern.substring(x)))
+                        continue retry;
+                }
+                break;
             }
-            String pattern =  patternBuffer.toString();
             Pattern p = Pattern.compile(pattern);
 
             // Create a buffer with random ASCII chars that does

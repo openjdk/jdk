@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -137,12 +137,7 @@ public class RenderableImageProducer implements ImageProducer, Runnable {
         addConsumer(ic);
         // Need to build a runnable object for the Thread.
         String name = "RenderableImageProducer Thread";
-        Thread thread;
-        if (System.getSecurityManager() == null) {
-            thread = new Thread(this, name);
-        } else {
-            thread = new ManagedLocalsThread(this);
-        }
+        Thread thread = new ManagedLocalsThread(this, name);
         thread.start();
     }
 

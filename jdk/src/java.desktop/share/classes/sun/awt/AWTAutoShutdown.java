@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ import java.util.Map;
 import java.util.Set;
 
 import sun.awt.util.ThreadGroupUtils;
-import sun.misc.InnocuousThread;
+import sun.misc.ManagedLocalsThread;
 import sun.util.logging.PlatformLogger;
 
 /**
@@ -336,14 +336,9 @@ public final class AWTAutoShutdown implements Runnable {
      */
     private void activateBlockerThread() {
         AccessController.doPrivileged((PrivilegedAction<Thread>) () -> {
-            Thread thread;
             String name = "AWT-Shutdown";
-            if (System.getSecurityManager() == null) {
-                thread = new Thread(ThreadGroupUtils.getRootThreadGroup(), this,
-                                    name);
-            } else {
-                thread = new InnocuousThread(this, name);
-            }
+            Thread thread = new ManagedLocalsThread(
+                    ThreadGroupUtils.getRootThreadGroup(), this, name);
             thread.setContextClassLoader(null);
             thread.setDaemon(false);
             blockerThread = thread;

@@ -2040,7 +2040,7 @@ static final class Finished extends HandshakeMessage {
      */
     boolean verify(HandshakeHash handshakeHash, int sender, SecretKey master) {
         byte[] myFinished = getFinished(handshakeHash, sender, master);
-        return Arrays.equals(myFinished, verifyData);
+        return MessageDigest.isEqual(myFinished, verifyData);
     }
 
     /*

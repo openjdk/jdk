@@ -1,6 +1,5 @@
-
 /*
- * Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +23,7 @@
 
 /**
  * @test
- * @bug 6945564 6959267 7033561 7070436 7198195
+ * @bug 6945564 6959267 7033561 7070436 7198195 8032446
  * @summary  Check that the j.l.Character.UnicodeScript
  */
 

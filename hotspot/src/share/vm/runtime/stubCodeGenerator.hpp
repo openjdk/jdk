@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,14 +67,14 @@ class StubCodeDesc: public CHeapObj<mtCode> {
   static StubCodeDesc* desc_for_index(int);      // returns the code descriptor for the index or NULL
   static const char*   name_for(address pc);     // returns the name of the code containing pc or NULL
 
-  StubCodeDesc(const char* group, const char* name, address begin) {
+  StubCodeDesc(const char* group, const char* name, address begin, address end = NULL) {
     assert(name != NULL, "no name specified");
     _next           = _list;
     _group          = group;
     _name           = name;
     _index          = ++_count; // (never zero)
     _begin          = begin;
-    _end            = NULL;
+    _end            = end;
     _list           = this;
   };
 

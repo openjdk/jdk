@@ -54,7 +54,7 @@ endif
 # Src_Dirs_V is everything in src/share/vm/*, plus the right os/*/vm and cpu/*/vm
 # The adfiles directory contains ad_<arch>.[ch]pp.
 # The jvmtifiles directory contains jvmti*.[ch]pp
-Src_Dirs_V += $(GENERATED)/adfiles $(GENERATED)/jvmtifiles $(GENERATED)/tracefiles
+Src_Dirs_V += $(GENERATED)/adfiles $(GENERATED)/jvmtifiles $(GENERATED)/tracefiles $(GENERATED)/extensions
 VPATH += $(Src_Dirs_V:%=%:)
 
 # set INCLUDES for C preprocessor.
@@ -161,6 +161,8 @@ CORE_PATHS+=$(shell if [ -d $(HS_ALT_SRC)/share/vm/jfr ]; then \
   fi)
 endif
 
+CORE_PATHS+=$(GENERATED)/extensions
+
 COMPILER1_PATHS := $(call altsrc,$(HS_COMMON_SRC)/share/vm/c1)
 COMPILER1_PATHS += $(HS_COMMON_SRC)/share/vm/c1
 
@@ -207,6 +209,8 @@ ifeq ($(Platform_arch_model), x86_64)
 Src_Files_EXCLUDE += \*x86_32\*
 endif
 
+Src_Files_BASE += \*.c \*.cpp \*.s 
+
 # Alternate vm.make
 # This has to be included here to allow changes to the source
 # directories and excluded files before they are expanded
@@ -216,13 +220,13 @@ endif
 # Locate all source files in the given directory, excluding files in Src_Files_EXCLUDE.
 define findsrc
 	$(notdir $(shell find $(1)/. ! -name . -prune \
-		-a \( -name \*.c -o -name \*.cpp -o -name \*.s \) \
+		-a \( -name DUMMY $(addprefix -o -name ,$(Src_Files_BASE)) \) \
 		-a ! \( -name DUMMY $(addprefix -o -name ,$(Src_Files_EXCLUDE)) \)))
 endef
 
 Src_Files := $(foreach e,$(Src_Dirs),$(call findsrc,$(e)))
 
-Obj_Files = $(sort $(addsuffix .o,$(basename $(Src_Files))))
+Obj_Files = $(sort $(addsuffix .o,$(basename $(Src_Files))) $(EXTENDED_JVM_OBJ_FILES))
 
 JVM_OBJ_FILES = $(Obj_Files)
 
@@ -244,10 +248,16 @@ VMDEF_PAT  = ^_ZTV
 VMDEF_PAT := ^gHotSpotVM|$(VMDEF_PAT)
 VMDEF_PAT := ^UseSharedSpaces$$|$(VMDEF_PAT)
 VMDEF_PAT := ^_ZN9Arguments17SharedArchivePathE$$|$(VMDEF_PAT)
+ifneq ($(VMDEF_PAT_EXT),)
+  VMDEF_PAT := $(VMDEF_PAT_EXT)|$(VMDEF_PAT)
+endif        
 
-vm.def: $(Res_Files) $(Obj_Files)
+vm.def: $(Res_Files) $(Obj_Files) $(VM_DEF_EXT)
 	$(QUIETLY) $(NM) --defined-only $(Obj_Files) | sort -k3 -u | \
 	awk '$$3 ~ /$(VMDEF_PAT)/ { print "\t" $$3 ";" }' > $@
+ifneq ($(VM_DEF_EXT),)
+	cat $(VM_DEF_EXT) >> $@
+endif        
 
 mapfile_ext:
 	rm -f $@

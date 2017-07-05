@@ -37,7 +37,6 @@ SUNWprivate_1.1 {
 		Java_sun_awt_image_DataBufferNative_getElem;
 		Java_sun_awt_image_DataBufferNative_setElem;
 		Java_java_awt_image_ColorModel_initIDs;
-		Java_java_awt_image_ComponentSampleModel_initIDs;
 		Java_java_awt_image_IndexColorModel_initIDs;
 		Java_java_awt_image_Kernel_initIDs;
 		Java_java_awt_image_Raster_initIDs;
@@ -89,7 +88,6 @@ SUNWprivate_1.1 {
 		Java_java_awt_Choice_initIDs;
 		Java_java_awt_Dimension_initIDs;
 		Java_java_awt_event_MouseEvent_initIDs;
-		Java_java_awt_image_DataBufferInt_initIDs;
 		Java_java_awt_image_SinglePixelPackedSampleModel_initIDs;
 		Java_java_awt_Rectangle_initIDs;
 		Java_sun_awt_image_BufImgSurfaceData_initIDs;

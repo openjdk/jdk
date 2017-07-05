@@ -32,6 +32,9 @@ import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
 import java.util.Arrays;
+import java.util.Objects;
+
+import jdk.internal.HotSpotIntrinsicCandidate;
 
 class ISO_8859_1
     extends Charset
@@ -147,9 +150,16 @@ class ISO_8859_1
 
         private final Surrogate.Parser sgp = new Surrogate.Parser();
 
-        // JVM may replace this method with intrinsic code.
+        // Method possible replaced with a compiler intrinsic.
         private static int encodeISOArray(char[] sa, int sp,
-                                          byte[] da, int dp, int len)
+                                          byte[] da, int dp, int len) {
+            encodeISOArrayCheck(sa, sp, da, dp, len);
+            return implEncodeISOArray(sa, sp, da, dp, len);
+        }
+
+        @HotSpotIntrinsicCandidate
+        private static int implEncodeISOArray(char[] sa, int sp,
+                                              byte[] da, int dp, int len)
         {
             int i = 0;
             for (; i < len; i++) {
@@ -159,6 +169,34 @@ class ISO_8859_1
                 da[dp++] = (byte)c;
             }
             return i;
+        }
+
+        private static void encodeISOArrayCheck(char[] sa, int sp,
+                                                byte[] da, int dp, int len) {
+            if (len <= 0) {
+                return;  // not an error because encodeISOArrayImpl won't execute if len <= 0
+            }
+
+            Objects.requireNonNull(sa);
+            Objects.requireNonNull(da);
+
+            if (sp < 0 || sp >= sa.length) {
+                throw new ArrayIndexOutOfBoundsException(sp);
+            }
+
+            if (dp < 0 || dp >= da.length) {
+                throw new ArrayIndexOutOfBoundsException(dp);
+            }
+
+            int endIndexSP = sp + len - 1;
+            if (endIndexSP < 0 || endIndexSP >= sa.length) {
+                throw new ArrayIndexOutOfBoundsException(endIndexSP);
+            }
+
+            int endIndexDP = dp + len - 1;
+            if (endIndexDP < 0 || endIndexDP >= da.length) {
+                throw new ArrayIndexOutOfBoundsException(endIndexDP);
+            }
         }
 
         private CoderResult encodeArrayLoop(CharBuffer src,

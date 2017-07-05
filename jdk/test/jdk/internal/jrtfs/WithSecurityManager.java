@@ -55,7 +55,8 @@ public class WithSecurityManager {
             FileSystems.getFileSystem(URI.create("jrt:/"));
             if (!allow) throw new RuntimeException("access not expected");
         } catch (SecurityException se) {
-            if (allow) throw new RuntimeException("access expected");
+            if (allow)
+                throw se;
         }
 
         // check FileSystems.newFileSystem
@@ -63,7 +64,8 @@ public class WithSecurityManager {
             FileSystems.newFileSystem(URI.create("jrt:/"), null);
             if (!allow) throw new RuntimeException("access not expected");
         } catch (SecurityException se) {
-            if (allow) throw new RuntimeException("access expected");
+            if (allow)
+                throw se;
         }
 
         // check Paths.get
@@ -71,7 +73,8 @@ public class WithSecurityManager {
             Paths.get(URI.create("jrt:/java.base/java/lang/Object.class"));
             if (!allow) throw new RuntimeException("access not expected");
         } catch (SecurityException se) {
-            if (allow) throw new RuntimeException("access expected");
+            if (allow)
+                throw se;
         }
     }
 }

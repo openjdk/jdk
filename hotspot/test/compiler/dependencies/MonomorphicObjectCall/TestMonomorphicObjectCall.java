@@ -34,6 +34,7 @@ import jdk.test.lib.*;
  * @library /testlibrary
  * @modules java.base/sun.misc
  *          java.management
+ *          java.base/jdk.internal
  * @compile -XDignore.symbol.file java/lang/Object.java TestMonomorphicObjectCall.java
  * @run main TestMonomorphicObjectCall
  */

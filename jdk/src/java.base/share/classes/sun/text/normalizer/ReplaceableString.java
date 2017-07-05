@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,8 @@
 
 /*
  *******************************************************************************
- * (C) Copyright IBM Corp. 1996-2005 - All Rights Reserved                     *
- *                                                                             *
- * The original version of this source code and documentation is copyrighted   *
- * and owned by IBM, These materials are provided under terms of a License     *
- * Agreement between IBM and Sun. This technology is protected by multiple     *
- * US and International patents. This notice and attribution to IBM may not    *
- * to removed.                                                                 *
+ * Copyright (C) 1996-2009, International Business Machines Corporation and    *
+ * others. All Rights Reserved.                                                *
  *******************************************************************************
  */
 
@@ -51,7 +46,7 @@ package sun.text.normalizer;
  * @author Alan Liu
  * @stable ICU 2.0
  */
-public class ReplaceableString implements Replaceable {
+class ReplaceableString implements Replaceable {
 
     private StringBuffer buf;
 
@@ -64,7 +59,6 @@ public class ReplaceableString implements Replaceable {
         buf = new StringBuffer(str);
     }
 
-    //// for StringPrep
     /**
      * Construct a new object using <code>buf</code> for internal
      * storage.  The contents of <code>buf</code> at the time of
@@ -98,7 +92,6 @@ public class ReplaceableString implements Replaceable {
         return buf.charAt(offset);
     }
 
-    //// for StringPrep
     /**
      * Copies characters from this object into the destination
      * character array.  The first character to be copied is at index
@@ -118,6 +111,8 @@ public class ReplaceableString implements Replaceable {
      * @stable ICU 2.0
      */
     public void getChars(int srcStart, int srcLimit, char dst[], int dstStart) {
-        Utility.getChars(buf, srcStart, srcLimit, dst, dstStart);
+        if (srcStart != srcLimit) {
+            buf.getChars(srcStart, srcLimit, dst, dstStart);
+        }
     }
 }
