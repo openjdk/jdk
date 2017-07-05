@@ -28,12 +28,12 @@ package javax.naming;
 import java.util.Enumeration;
 
 /**
- * The <tt>Name</tt> interface represents a generic name -- an ordered
+ * The {@code Name} interface represents a generic name -- an ordered
  * sequence of components.  It can be a composite name (names that
  * span multiple namespaces), or a compound name (names that are
  * used within individual hierarchical naming systems).
  *
- * <p> There can be different implementations of <tt>Name</tt>; for example,
+ * <p> There can be different implementations of {@code Name}; for example,
  * composite names, URLs, or namespace-specific compound names.
  *
  * <p> The components of a name are numbered.  The indexes of a name
@@ -46,7 +46,7 @@ import java.util.Enumeration;
  * value for a parameter that is a name or a name component.
  * Likewise, methods that return a name or name component never return null.
  *
- * <p> An instance of a <tt>Name</tt> may not be synchronized against
+ * <p> An instance of a {@code Name} may not be synchronized against
  * concurrent multithreaded access if that access is not read-only.
  *
  * @author Rosanna Lee
@@ -82,7 +82,7 @@ public interface Name
      * Returns a negative integer, zero, or a positive integer as this
      * name is less than, equal to, or greater than the given name.
      *
-     * <p> As with <tt>Object.equals()</tt>, the notion of ordering for names
+     * <p> As with {@code Object.equals()}, the notion of ordering for names
      * depends on the class that implements this interface.
      * For example, the ordering may be
      * based on lexicographical ordering of the name components.
@@ -93,7 +93,7 @@ public interface Name
      * @param   obj the non-null object to compare against.
      * @return  a negative integer, zero, or a positive integer as this name
      *          is less than, equal to, or greater than the given name
-     * @throws  ClassCastException if obj is not a <tt>Name</tt> of a
+     * @throws  ClassCastException if obj is not a {@code Name} of a
      *          type that may be compared with this name
      *
      * @see Comparable#compareTo(Object)
@@ -170,23 +170,23 @@ public interface Name
 
     /**
      * Determines whether this name starts with a specified prefix.
-     * A name <tt>n</tt> is a prefix if it is equal to
-     * <tt>getPrefix(n.size())</tt>.
+     * A name {@code n} is a prefix if it is equal to
+     * {@code getPrefix(n.size())}.
      *
      * @param n
      *          the name to check
-     * @return  true if <tt>n</tt> is a prefix of this name, false otherwise
+     * @return  true if {@code n} is a prefix of this name, false otherwise
      */
     public boolean startsWith(Name n);
 
     /**
      * Determines whether this name ends with a specified suffix.
-     * A name <tt>n</tt> is a suffix if it is equal to
-     * <tt>getSuffix(size()-n.size())</tt>.
+     * A name {@code n} is a suffix if it is equal to
+     * {@code getSuffix(size()-n.size())}.
      *
      * @param n
      *          the name to check
-     * @return  true if <tt>n</tt> is a suffix of this name, false otherwise
+     * @return  true if {@code n} is a suffix of this name, false otherwise
      */
     public boolean endsWith(Name n);
 
@@ -197,7 +197,7 @@ public interface Name
      *          the components to add
      * @return  the updated name (not a new one)
      *
-     * @throws  InvalidNameException if <tt>suffix</tt> is not a valid name,
+     * @throws  InvalidNameException if {@code suffix} is not a valid name,
      *          or if the addition of the components would violate the syntax
      *          rules of this name
      */
@@ -219,7 +219,7 @@ public interface Name
      *
      * @throws  ArrayIndexOutOfBoundsException
      *          if posn is outside the specified range
-     * @throws  InvalidNameException if <tt>n</tt> is not a valid name,
+     * @throws  InvalidNameException if {@code n} is not a valid name,
      *          or if the addition of the components would violate the syntax
      *          rules of this name
      */
@@ -232,7 +232,7 @@ public interface Name
      *          the component to add
      * @return  the updated name (not a new one)
      *
-     * @throws  InvalidNameException if adding <tt>comp</tt> would violate
+     * @throws  InvalidNameException if adding {@code comp} would violate
      *          the syntax rules of this name
      */
     public Name add(String comp) throws InvalidNameException;
@@ -252,7 +252,7 @@ public interface Name
      *
      * @throws  ArrayIndexOutOfBoundsException
      *          if posn is outside the specified range
-     * @throws  InvalidNameException if adding <tt>comp</tt> would violate
+     * @throws  InvalidNameException if adding {@code comp} would violate
      *          the syntax rules of this name
      */
     public Name add(int posn, String comp) throws InvalidNameException;

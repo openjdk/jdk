@@ -27,6 +27,7 @@
  * @summary Test that the jmx.monitor.error.runtime monitor notification
  *          is emitted when getAttribute throws ReflectionException.
  * @author Luis-Miguel Alventosa
+ * @key intermittent
  * @modules java.management
  * @run clean ReflectionExceptionTest MBeanServerBuilderImpl
  *            MBeanServerForwarderInvocationHandler

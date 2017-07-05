@@ -37,13 +37,13 @@ package java.lang.management;
  * that can be obtained by calling
  * the {@link ManagementFactory#getMemoryPoolMXBeans} method or
  * from the {@link ManagementFactory#getPlatformMBeanServer
- * platform <tt>MBeanServer</tt>} method.
+ * platform MBeanServer} method.
  *
- * <p>The <tt>ObjectName</tt> for uniquely identifying the MXBean for
- * a memory pool within an <tt>MBeanServer</tt> is:
+ * <p>The {@code ObjectName} for uniquely identifying the MXBean for
+ * a memory pool within an {@code MBeanServer} is:
  * <blockquote>
  *    {@link ManagementFactory#MEMORY_POOL_MXBEAN_DOMAIN_TYPE
- *    <tt>java.lang:type=MemoryPool</tt>}<tt>,name=</tt><i>pool's name</i>
+ *    java.lang:type=MemoryPool}{@code ,name=}<i>pool's name</i>
  * </blockquote>
  *
  * It can be obtained by calling the
@@ -236,7 +236,7 @@ package java.lang.management;
  *       Usage threshold notification will be emitted by {@link MemoryMXBean}.
  *       When the Java virtual machine detects that the memory usage of
  *       a memory pool has reached or exceeded the usage threshold
- *       the virtual machine will trigger the <tt>MemoryMXBean</tt> to emit an
+ *       the virtual machine will trigger the {@code MemoryMXBean} to emit an
  *       {@link MemoryNotificationInfo#MEMORY_THRESHOLD_EXCEEDED
  *       usage threshold exceeded notification}.
  *       Another usage threshold exceeded notification will not be
@@ -250,7 +250,7 @@ package java.lang.management;
  *       listener notifies another thread to perform the actual action
  *       such as to redistribute outstanding tasks, stop receiving tasks,
  *       or resume receiving tasks.
- *       The <tt>handleNotification</tt> method should be designed to
+ *       The {@code handleNotification} method should be designed to
  *       do a very minimal amount of work and return without delay to avoid
  *       causing delay in delivering subsequent notifications.  Time-consuming
  *       actions should be performed by a separate thread.
@@ -290,7 +290,7 @@ package java.lang.management;
  *       </pre>
  * <hr>
  *       <p>
- *       There is no guarantee about when the <tt>MemoryMXBean</tt> will emit
+ *       There is no guarantee about when the {@code MemoryMXBean} will emit
  *       a threshold notification and when the notification will be delivered.
  *       When a notification listener is invoked, the memory usage of
  *       the memory pool may have crossed the usage threshold more
@@ -374,8 +374,8 @@ public interface MemoryPoolMXBean extends PlatformManagedObject {
      *
      * <p>
      * <b>MBeanServer access</b>:<br>
-     * The mapped type of <tt>MemoryType</tt> is <tt>String</tt>
-     * and the value is the name of the <tt>MemoryType</tt>.
+     * The mapped type of {@code MemoryType} is {@code String}
+     * and the value is the name of the {@code MemoryType}.
      *
      * @return the type of this memory pool.
      */
@@ -383,7 +383,7 @@ public interface MemoryPoolMXBean extends PlatformManagedObject {
 
     /**
      * Returns an estimate of the memory usage of this memory pool.
-     * This method returns <tt>null</tt>
+     * This method returns {@code null}
      * if this memory pool is not valid (i.e. no longer exists).
      *
      * <p>
@@ -399,11 +399,11 @@ public interface MemoryPoolMXBean extends PlatformManagedObject {
      *
      * <p>
      * <b>MBeanServer access</b>:<br>
-     * The mapped type of <tt>MemoryUsage</tt> is
-     * <tt>CompositeData</tt> with attributes as specified in
+     * The mapped type of {@code MemoryUsage} is
+     * {@code CompositeData} with attributes as specified in
      * {@link MemoryUsage#from MemoryUsage}.
      *
-     * @return a {@link MemoryUsage} object; or <tt>null</tt> if
+     * @return a {@link MemoryUsage} object; or {@code null} if
      * this pool not valid.
      */
     public MemoryUsage getUsage();
@@ -411,17 +411,17 @@ public interface MemoryPoolMXBean extends PlatformManagedObject {
     /**
      * Returns the peak memory usage of this memory pool since the
      * Java virtual machine was started or since the peak was reset.
-     * This method returns <tt>null</tt>
+     * This method returns {@code null}
      * if this memory pool is not valid (i.e. no longer exists).
      *
      * <p>
      * <b>MBeanServer access</b>:<br>
-     * The mapped type of <tt>MemoryUsage</tt> is
-     * <tt>CompositeData</tt> with attributes as specified in
+     * The mapped type of {@code MemoryUsage} is
+     * {@code CompositeData} with attributes as specified in
      * {@link MemoryUsage#from MemoryUsage}.
      *
      * @return a {@link MemoryUsage} object representing the peak
-     * memory usage; or <tt>null</tt> if this pool is not valid.
+     * memory usage; or {@code null} if this pool is not valid.
      *
      */
     public MemoryUsage getPeakUsage();
@@ -441,9 +441,9 @@ public interface MemoryPoolMXBean extends PlatformManagedObject {
      * machine.  A memory pool becomes invalid once the Java virtual
      * machine removes it from the memory system.
      *
-     * @return <tt>true</tt> if the memory pool is valid in the running
+     * @return {@code true} if the memory pool is valid in the running
      *              Java virtual machine;
-     *         <tt>false</tt> otherwise.
+     *         {@code false} otherwise.
      */
     public boolean isValid();
 
@@ -451,7 +451,7 @@ public interface MemoryPoolMXBean extends PlatformManagedObject {
      * Returns the name of memory managers that manages this memory pool.
      * Each memory pool will be managed by at least one memory manager.
      *
-     * @return an array of <tt>String</tt> objects, each is the name of
+     * @return an array of {@code String} objects, each is the name of
      * a memory manager managing this memory pool.
      */
     public String[] getMemoryManagerNames();
@@ -472,7 +472,7 @@ public interface MemoryPoolMXBean extends PlatformManagedObject {
     public long getUsageThreshold();
 
     /**
-     * Sets the threshold of this memory pool to the given <tt>threshold</tt>
+     * Sets the threshold of this memory pool to the given {@code threshold}
      * value if this memory pool supports the usage threshold.
      * The usage threshold crossing checking is enabled in this memory pool
      * if the threshold is set to a positive value.
@@ -481,7 +481,7 @@ public interface MemoryPoolMXBean extends PlatformManagedObject {
      *
      * @param threshold the new threshold value in bytes. Must be non-negative.
      *
-     * @throws IllegalArgumentException if <tt>threshold</tt> is negative
+     * @throws IllegalArgumentException if {@code threshold} is negative
      *         or greater than the maximum amount of memory for
      *         this memory pool if defined.
      *
@@ -501,9 +501,9 @@ public interface MemoryPoolMXBean extends PlatformManagedObject {
      * Tests if the memory usage of this memory pool
      * reaches or exceeds its usage threshold value.
      *
-     * @return <tt>true</tt> if the memory usage of
+     * @return {@code true} if the memory usage of
      * this memory pool reaches or exceeds the threshold value;
-     * <tt>false</tt> otherwise.
+     * {@code false} otherwise.
      *
      * @throws UnsupportedOperationException if this memory pool
      *         does not support a usage threshold.
@@ -525,8 +525,8 @@ public interface MemoryPoolMXBean extends PlatformManagedObject {
     /**
      * Tests if this memory pool supports usage threshold.
      *
-     * @return <tt>true</tt> if this memory pool supports usage threshold;
-     * <tt>false</tt> otherwise.
+     * @return {@code true} if this memory pool supports usage threshold;
+     * {@code false} otherwise.
      */
     public boolean isUsageThresholdSupported();
 
@@ -547,7 +547,7 @@ public interface MemoryPoolMXBean extends PlatformManagedObject {
 
     /**
      * Sets the collection usage threshold of this memory pool to
-     * the given <tt>threshold</tt> value.
+     * the given {@code threshold} value.
      * When this threshold is set to positive, the Java virtual machine
      * will check the memory usage at its best appropriate time after it has
      * expended effort in recycling unused objects in this memory pool.
@@ -560,7 +560,7 @@ public interface MemoryPoolMXBean extends PlatformManagedObject {
      * @param threshold the new collection usage threshold value in bytes.
      *              Must be non-negative.
      *
-     * @throws IllegalArgumentException if <tt>threshold</tt> is negative
+     * @throws IllegalArgumentException if {@code threshold} is negative
      *         or greater than the maximum amount of memory for
      *         this memory pool if defined.
      *
@@ -585,10 +585,10 @@ public interface MemoryPoolMXBean extends PlatformManagedObject {
      * machine to perform any garbage collection other than its normal
      * automatic memory management.
      *
-     * @return <tt>true</tt> if the memory usage of this memory pool
+     * @return {@code true} if the memory usage of this memory pool
      * reaches or exceeds the collection usage threshold value
      * in the most recent collection;
-     * <tt>false</tt> otherwise.
+     * {@code false} otherwise.
      *
      * @throws UnsupportedOperationException if this memory pool
      *         does not support a usage threshold.
@@ -617,27 +617,27 @@ public interface MemoryPoolMXBean extends PlatformManagedObject {
      * This method does not request the Java virtual
      * machine to perform any garbage collection other than its normal
      * automatic memory management.
-     * This method returns <tt>null</tt> if the Java virtual
+     * This method returns {@code null} if the Java virtual
      * machine does not support this method.
      *
      * <p>
      * <b>MBeanServer access</b>:<br>
-     * The mapped type of <tt>MemoryUsage</tt> is
-     * <tt>CompositeData</tt> with attributes as specified in
+     * The mapped type of {@code MemoryUsage} is
+     * {@code CompositeData} with attributes as specified in
      * {@link MemoryUsage#from MemoryUsage}.
      *
      * @return a {@link MemoryUsage} representing the memory usage of
      * this memory pool after the Java virtual machine most recently
      * expended effort in recycling unused objects;
-     * <tt>null</tt> if this method is not supported.
+     * {@code null} if this method is not supported.
      */
     public MemoryUsage getCollectionUsage();
 
     /**
      * Tests if this memory pool supports a collection usage threshold.
      *
-     * @return <tt>true</tt> if this memory pool supports the
-     * collection usage threshold; <tt>false</tt> otherwise.
+     * @return {@code true} if this memory pool supports the
+     * collection usage threshold; {@code false} otherwise.
      */
     public boolean isCollectionUsageThresholdSupported();
 }

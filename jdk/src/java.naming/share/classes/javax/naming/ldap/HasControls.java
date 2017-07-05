@@ -60,10 +60,10 @@ import javax.naming.NamingException;
 public interface HasControls {
 
     /**
-      * Retrieves an array of <tt>Control</tt>s from the object that
+      * Retrieves an array of {@code Control}s from the object that
       * implements this interface. It is null if there are no controls.
       *
-      * @return A possibly null array of <tt>Control</tt> objects.
+      * @return A possibly null array of {@code Control} objects.
       * @throws NamingException If cannot return controls due to an error.
       */
     public Control[] getControls() throws NamingException;

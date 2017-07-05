@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,6 +65,8 @@ public abstract class SSLContextImpl extends SSLContextSpi {
     // DTLS cookie exchange manager
     private HelloCookieManager helloCookieManager;
 
+    private StatusResponseManager statusResponseManager;
+
     SSLContextImpl() {
         ephemeralKeyManager = new EphemeralKeyManager();
         clientCache = new SSLSessionContextImpl();
@@ -88,6 +90,7 @@ public abstract class SSLContextImpl extends SSLContextSpi {
             }
         }
         trustManager = chooseTrustManager(tm);
+        statusResponseManager = new StatusResponseManager();
 
         if (sr == null) {
             secureRandom = JsseJce.getSecureRandom();
@@ -254,6 +257,10 @@ public abstract class SSLContextImpl extends SSLContextSpi {
     HelloCookieManager getHelloCookieManager(SecureRandom secureRandom) {
         throw new UnsupportedOperationException(
                 "Cookie exchange applies to DTLS only");
+    }
+
+    StatusResponseManager getStatusResponseManager() {
+        return statusResponseManager;
     }
 
     abstract SSLParameters getDefaultServerSSLParams();

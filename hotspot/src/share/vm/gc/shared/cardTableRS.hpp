@@ -25,7 +25,7 @@
 #ifndef SHARE_VM_GC_SHARED_CARDTABLERS_HPP
 #define SHARE_VM_GC_SHARED_CARDTABLERS_HPP
 
-#include "gc/shared/cardTableModRefBS.hpp"
+#include "gc/shared/cardTableModRefBSForCTRS.hpp"
 #include "gc/shared/genRemSet.hpp"
 #include "memory/memRegion.hpp"
 
@@ -42,16 +42,16 @@ class CardTableRS: public GenRemSet {
   friend class ClearNoncleanCardWrapper;
 
   static jbyte clean_card_val() {
-    return CardTableModRefBS::clean_card;
+    return CardTableModRefBSForCTRS::clean_card;
   }
 
   static intptr_t clean_card_row() {
-    return CardTableModRefBS::clean_card_row;
+    return CardTableModRefBSForCTRS::clean_card_row;
   }
 
   static bool
   card_is_dirty_wrt_gen_iter(jbyte cv) {
-    return CardTableModRefBS::card_is_dirty_wrt_gen_iter(cv);
+    return CardTableModRefBSForCTRS::card_is_dirty_wrt_gen_iter(cv);
   }
 
   CardTableModRefBSForCTRS* _ct_bs;
@@ -61,17 +61,17 @@ class CardTableRS: public GenRemSet {
   void verify_space(Space* s, HeapWord* gen_start);
 
   enum ExtendedCardValue {
-    youngergen_card   = CardTableModRefBS::CT_MR_BS_last_reserved + 1,
+    youngergen_card   = CardTableModRefBSForCTRS::CT_MR_BS_last_reserved + 1,
     // These are for parallel collection.
     // There are three P (parallel) youngergen card values.  In general, this
     // needs to be more than the number of generations (including the perm
     // gen) that might have younger_refs_do invoked on them separately.  So
     // if we add more gens, we have to add more values.
-    youngergenP1_card  = CardTableModRefBS::CT_MR_BS_last_reserved + 2,
-    youngergenP2_card  = CardTableModRefBS::CT_MR_BS_last_reserved + 3,
-    youngergenP3_card  = CardTableModRefBS::CT_MR_BS_last_reserved + 4,
+    youngergenP1_card  = CardTableModRefBSForCTRS::CT_MR_BS_last_reserved + 2,
+    youngergenP2_card  = CardTableModRefBSForCTRS::CT_MR_BS_last_reserved + 3,
+    youngergenP3_card  = CardTableModRefBSForCTRS::CT_MR_BS_last_reserved + 4,
     cur_youngergen_and_prev_nonclean_card =
-      CardTableModRefBS::CT_MR_BS_last_reserved + 5
+      CardTableModRefBSForCTRS::CT_MR_BS_last_reserved + 5
   };
 
   // An array that contains, for each generation, the card table value last
@@ -107,7 +107,7 @@ public:
   // *** GenRemSet functions.
   CardTableRS* as_CardTableRS() { return this; }
 
-  CardTableModRefBS* ct_bs() { return _ct_bs; }
+  CardTableModRefBSForCTRS* ct_bs() { return _ct_bs; }
 
   // Override.
   void prepare_for_younger_refs_iterate(bool parallel);
@@ -147,7 +147,7 @@ public:
   void invalidate_or_clear(Generation* old_gen);
 
   static uintx ct_max_alignment_constraint() {
-    return CardTableModRefBS::ct_max_alignment_constraint();
+    return CardTableModRefBSForCTRS::ct_max_alignment_constraint();
   }
 
   jbyte* byte_for(void* p)     { return _ct_bs->byte_for(p); }

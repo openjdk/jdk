@@ -52,6 +52,8 @@
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.inline.hpp"
 #include "runtime/biasedLocking.hpp"
+#include "runtime/commandLineFlagConstraintList.hpp"
+#include "runtime/commandLineFlagRangeList.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/fprofiler.hpp"
 #include "runtime/frame.inline.hpp"
@@ -2739,6 +2741,9 @@ void JavaThread::metadata_do(void f(Metadata*)) {
     if (ct->env() != NULL) {
       ct->env()->metadata_do(f);
     }
+    if (ct->task() != NULL) {
+      ct->task()->metadata_do(f);
+    }
   }
 }
 
@@ -3319,8 +3324,15 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   jint ergo_result = Arguments::apply_ergo();
   if (ergo_result != JNI_OK) return ergo_result;
 
-  // Final check of all arguments after ergonomics which may change values.
-  if (!CommandLineFlags::check_all_ranges_and_constraints()) {
+  // Final check of all ranges after ergonomics which may change values.
+  if (!CommandLineFlagRangeList::check_ranges()) {
+    return JNI_EINVAL;
+  }
+
+  // Final check of all 'AfterErgo' constraints after ergonomics which may change values.
+  bool constraint_result = CommandLineFlagConstraintList::check_constraints(CommandLineFlagConstraint::AfterErgo);
+  Arguments::post_after_ergo_constraint_check(constraint_result);
+  if (!constraint_result) {
     return JNI_EINVAL;
   }
 

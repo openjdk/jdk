@@ -89,6 +89,9 @@ class VMError : public StackObj {
   static void print_stack_trace(outputStream* st, JavaThread* jt,
                                 char* buf, int buflen, bool verbose = false);
 
+  static const char* gc_mode();
+  static void print_oom_reasons(outputStream* st);
+
   // accessor
   const char* message() const    { return _message; }
   const char* detail_msg() const { return _detail_msg; }

@@ -26,27 +26,27 @@
 package javax.naming.event;
 
 /**
-  * Specifies the method that a listener of a <tt>NamingEvent</tt>
-  * with event type of <tt>OBJECT_CHANGED</tt> must implement.
+  * Specifies the method that a listener of a {@code NamingEvent}
+  * with event type of {@code OBJECT_CHANGED} must implement.
   *<p>
-  * An <tt>OBJECT_CHANGED</tt> event type is fired when (the contents of)
+  * An {@code OBJECT_CHANGED} event type is fired when (the contents of)
   * an object has changed. This might mean that its attributes have been modified,
   * added, or removed, and/or that the object itself has been replaced.
   * How the object has changed can be determined by examining the
-  * <tt>NamingEvent</tt>'s old and new bindings.
+  * {@code NamingEvent}'s old and new bindings.
   *<p>
-  * A listener interested in <tt>OBJECT_CHANGED</tt> event types must:
+  * A listener interested in {@code OBJECT_CHANGED} event types must:
   *<ol>
   *
-  *<li>Implement this interface and its method (<tt>objectChanged()</tt>)
-  *<li>Implement <tt>NamingListener.namingExceptionThrown()</tt> so that
+  *<li>Implement this interface and its method ({@code objectChanged()})
+  *<li>Implement {@code NamingListener.namingExceptionThrown()} so that
   * it will be notified of exceptions thrown while attempting to
   * collect information about the events.
-  *<li>Register with the source using the source's <tt>addNamingListener()</tt>
+  *<li>Register with the source using the source's {@code addNamingListener()}
   *    method.
   *</ol>
   * A listener that wants to be notified of namespace change events
-  * should also implement the <tt>NamespaceChangeListener</tt>
+  * should also implement the {@code NamespaceChangeListener}
   * interface.
   *
   * @author Rosanna Lee
@@ -64,8 +64,8 @@ public interface ObjectChangeListener extends NamingListener {
      * Called when an object has been changed.
      *<p>
      * The binding of the changed object can be obtained using
-     * <tt>evt.getNewBinding()</tt>. Its old binding (before the change)
-     * can be obtained using <tt>evt.getOldBinding()</tt>.
+     * {@code evt.getNewBinding()}. Its old binding (before the change)
+     * can be obtained using {@code evt.getOldBinding()}.
      * @param evt The nonnull naming event.
      * @see NamingEvent#OBJECT_CHANGED
      */

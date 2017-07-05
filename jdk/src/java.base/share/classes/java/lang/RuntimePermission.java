@@ -172,9 +172,8 @@ import java.util.StringTokenizer;
  * <tr>
  *   <td>modifyThread</td>
  *   <td>Modification of threads, e.g., via calls to Thread
- * <tt>interrupt</tt>, <tt>stop</tt>, <tt>suspend</tt>,
- * <tt>resume</tt>, <tt>setDaemon</tt>, <tt>setPriority</tt>,
- * <tt>setName</tt> and <tt>setUncaughtExceptionHandler</tt>
+ * {@code interrupt, stop, suspend, resume, setDaemon, setPriority,
+ * setName} and {@code setUncaughtExceptionHandler}
  * methods</td>
  * <td>This allows an attacker to modify the behaviour of
  * any thread in the system.</td>

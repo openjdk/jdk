@@ -35,13 +35,13 @@ package java.lang.management;
  * that can be obtained by calling
  * the {@link ManagementFactory#getCompilationMXBean} method or
  * from the {@link ManagementFactory#getPlatformMBeanServer
- * platform <tt>MBeanServer</tt>} method.
+ * platform MBeanServer} method.
  *
- * <p>The <tt>ObjectName</tt> for uniquely identifying the MXBean for
+ * <p>The {@code ObjectName} for uniquely identifying the MXBean for
  * the compilation system within an MBeanServer is:
  * <blockquote>
  *  {@link ManagementFactory#COMPILATION_MXBEAN_NAME
- *         <tt>java.lang:type=Compilation</tt>}
+ *         java.lang:type=Compilation}
  * </blockquote>
  *
  * It can be obtained by calling the
@@ -68,8 +68,8 @@ public interface CompilationMXBean extends PlatformManagedObject {
      * Tests if the Java virtual machine supports the monitoring of
      * compilation time.
      *
-     * @return <tt>true</tt> if the monitoring of compilation time is
-     * supported ; <tt>false</tt> otherwise.
+     * @return {@code true} if the monitoring of compilation time is
+     * supported; {@code false} otherwise.
      */
     public boolean isCompilationTimeMonitoringSupported();
 

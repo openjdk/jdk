@@ -147,7 +147,7 @@ public interface MechanismFactory {
      * <p>
      * An exported name will generally be passed in using this method.
      *
-     * @param nameBytes the bytes describing this entity to the mechanism
+     * @param name the bytes describing this entity to the mechanism
      * @param nameType an Oid serving as a clue as to how the mechanism should
      * interpret the nameStr
      * @throws GSSException if any of the errors described in RFC 2743 for

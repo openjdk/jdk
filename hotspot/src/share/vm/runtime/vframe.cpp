@@ -148,8 +148,7 @@ void javaVFrame::print_locked_object_class_name(outputStream* st, Handle obj, co
   if (obj.not_null()) {
     st->print("\t- %s <" INTPTR_FORMAT "> ", lock_state, (address)obj());
     if (obj->klass() == SystemDictionary::Class_klass()) {
-      Klass* target_klass = java_lang_Class::as_Klass(obj());
-      st->print_cr("(a java.lang.Class for %s)", InstanceKlass::cast(target_klass)->external_name());
+      st->print_cr("(a java.lang.Class for %s)", java_lang_Class::as_external_name(obj()));
     } else {
       Klass* k = obj->klass();
       st->print_cr("(a %s)", k->external_name());

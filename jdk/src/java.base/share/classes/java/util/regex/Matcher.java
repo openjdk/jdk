@@ -63,7 +63,7 @@ import java.util.stream.StreamSupport;
  *
  * <p> A matcher finds matches in a subset of its input called the
  * <i>region</i>. By default, the region contains all of the matcher's input.
- * The region can be modified via the{@link #region region} method and queried
+ * The region can be modified via the {@link #region region} method and queried
  * via the {@link #regionStart regionStart} and {@link #regionEnd regionEnd}
  * methods. The way that the region boundaries interact with some pattern
  * constructs can be changed. See {@link #useAnchoringBounds
@@ -1639,15 +1639,15 @@ public final class Matcher implements MatchResult {
      */
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("java.util.regex.Matcher");
-        sb.append("[pattern=" + pattern());
-        sb.append(" region=");
-        sb.append(regionStart() + "," + regionEnd());
-        sb.append(" lastmatch=");
+        sb.append("java.util.regex.Matcher")
+                .append("[pattern=").append(pattern())
+                .append(" region=")
+                .append(regionStart()).append(',').append(regionEnd())
+                .append(" lastmatch=");
         if ((first >= 0) && (group() != null)) {
             sb.append(group());
         }
-        sb.append("]");
+        sb.append(']');
         return sb.toString();
     }
 

@@ -28,7 +28,7 @@ package java.util.prefs;
 import java.io.NotSerializableException;
 
 /**
- * An event emitted by a <tt>Preferences</tt> node to indicate that
+ * An event emitted by a {@code Preferences} node to indicate that
  * a preference has been added, removed or has had its value changed.<p>
  *
  * Note, that although PreferenceChangeEvent inherits Serializable interface
@@ -52,18 +52,18 @@ public class PreferenceChangeEvent extends java.util.EventObject {
     private String key;
 
     /**
-     * New value for preference, or <tt>null</tt> if it was removed.
+     * New value for preference, or {@code null} if it was removed.
      *
      * @serial
      */
     private String newValue;
 
     /**
-     * Constructs a new <code>PreferenceChangeEvent</code> instance.
+     * Constructs a new {@code PreferenceChangeEvent} instance.
      *
      * @param node  The Preferences node that emitted the event.
      * @param key  The key of the preference that was changed.
-     * @param newValue  The new value of the preference, or <tt>null</tt>
+     * @param newValue  The new value of the preference, or {@code null}
      *                  if the preference is being removed.
      */
     public PreferenceChangeEvent(Preferences node, String key,
@@ -94,7 +94,7 @@ public class PreferenceChangeEvent extends java.util.EventObject {
     /**
      * Returns the new value for the preference.
      *
-     * @return  The new value for the preference, or <tt>null</tt> if the
+     * @return  The new value for the preference, or {@code null} if the
      *          preference was removed.
      */
     public String getNewValue() {

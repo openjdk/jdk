@@ -65,7 +65,7 @@ public abstract class ControlFactory {
       * Without this mechanism, the provider would be returning
       * controls that only contained data in BER encoded format.
       *<p>
-      * Typically, <tt>ctl</tt> is a "basic" control containing
+      * Typically, {@code ctl} is a "basic" control containing
       * BER encoded data. The factory is used to create a specialized
       * control implementation, usually by decoding the BER encoded data,
       * that provides methods to access that data in a type-safe and friendly
@@ -80,14 +80,14 @@ public abstract class ControlFactory {
       * it is the only intended factory and that no other control factories
       * should be tried. This might happen, for example, if the BER data
       * in the control does not match what is expected of a control with
-      * the given OID. Since this method throws <tt>NamingException</tt>,
+      * the given OID. Since this method throws {@code NamingException},
       * any other internally generated exception that should be propagated
-      * must be wrapped inside a <tt>NamingException</tt>.
+      * must be wrapped inside a {@code NamingException}.
       *
       * @param ctl A non-null control.
       *
       * @return A possibly null Control.
-      * @exception NamingException If <tt>ctl</tt> contains invalid data that prevents it
+      * @exception NamingException If {@code ctl} contains invalid data that prevents it
       * from being used to create a control. A factory should only throw
       * an exception if it knows how to produce the control (identified by the OID)
       * but is unable to because of, for example invalid BER data.
@@ -100,14 +100,14 @@ public abstract class ControlFactory {
       * The following rule is used to create the control:
       *<ul>
       * <li> Use the control factories specified in
-      *    the <tt>LdapContext.CONTROL_FACTORIES</tt> property of the
+      *    the {@code LdapContext.CONTROL_FACTORIES} property of the
       *    environment, and of the provider resource file associated with
-      *    <tt>ctx</tt>, in that order.
+      *    {@code ctx}, in that order.
       *    The value of this property is a colon-separated list of factory
       *    class names that are tried in order, and the first one that succeeds
       *    in creating the control is the one used.
       *    If none of the factories can be loaded,
-      *    return <code>ctl</code>.
+      *    return {@code ctl}.
       *    If an exception is encountered while creating the control, the
       *    exception is passed up to the caller.
       *</ul>
@@ -119,9 +119,9 @@ public abstract class ControlFactory {
       * @param ctx The possibly null context in which the control is being created.
       * If null, no such information is available.
       * @param env The possibly null environment of the context. This is used
-      * to find the value of the <tt>LdapContext.CONTROL_FACTORIES</tt> property.
-      * @return A control object created using <code>ctl</code>; or
-      *         <code>ctl</code> if a control object cannot be created using
+      * to find the value of the {@code LdapContext.CONTROL_FACTORIES} property.
+      * @return A control object created using {@code ctl}; or
+      *         {@code ctl} if a control object cannot be created using
       *         the algorithm described above.
       * @exception NamingException if a naming exception was encountered
       *         while attempting to create the control object.
@@ -129,7 +129,7 @@ public abstract class ControlFactory {
       *         exception, it is propagated up to the caller.
       * If an error was encountered while loading
       * and instantiating the factory and object classes, the exception
-      * is wrapped inside a <tt>NamingException</tt> and then rethrown.
+      * is wrapped inside a {@code NamingException} and then rethrown.
       */
     public static Control getControlInstance(Control ctl, Context ctx,
                                              Hashtable<?,?> env)

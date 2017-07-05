@@ -32,7 +32,7 @@ import javax.crypto.spec.*;
 
 /**
  * This class implements the CMS DESede KeyWrap algorithm as defined
- * in <a href=http://www.w3.org/TR/xmlenc-core/#sec-Alg-SymmetricKeyWrap>
+ * in <a href=http://www.w3.org/TR/xmlenc-core/#sec-Alg-SymmetricKeyWrap></a>
  * "XML Encryption Syntax and Processing" section 5.6.2
  * "CMS Triple DES Key Wrap".
  * Note: only <code>CBC</code> mode and <code>NoPadding</code> padding
@@ -159,9 +159,8 @@ public final class DESedeWrapCipher extends CipherSpi {
     /**
      * Initializes this cipher with a key and a source of randomness.
      *
-     * <p>The cipher only supports the following two operation modes:<b>
-     * Cipher.WRAP_MODE, and <b>
-     * Cipher.UNWRAP_MODE.
+     * <p>The cipher only supports the following two operation modes:
+     * {@code Cipher.WRAP_MODE}, and {@code Cipher.UNWRAP_MODE}.
      * <p>For modes other than the above two, UnsupportedOperationException
      * will be thrown.
      * <p>If this cipher requires an initialization vector (IV), it will get
@@ -192,9 +191,8 @@ public final class DESedeWrapCipher extends CipherSpi {
      * Initializes this cipher with a key, a set of algorithm parameters,
      * and a source of randomness.
      *
-     * <p>The cipher only supports the following two operation modes:<b>
-     * Cipher.WRAP_MODE, and <b>
-     * Cipher.UNWRAP_MODE.
+     * <p>The cipher only supports the following two operation modes:
+     * {@code Cipher.WRAP_MODE}, and {@code Cipher.UNWRAP_MODE}.
      * <p>For modes other than the above two, UnsupportedOperationException
      * will be thrown.
      * <p>If this cipher requires an initialization vector (IV), it will get
@@ -252,9 +250,8 @@ public final class DESedeWrapCipher extends CipherSpi {
      * Initializes this cipher with a key, a set of algorithm parameters,
      * and a source of randomness.
      *
-     * <p>The cipher only supports the following two operation modes:<b>
-     * Cipher.WRAP_MODE, and <b>
-     * Cipher.UNWRAP_MODE.
+     * <p>The cipher only supports the following two operation modes:
+     * {@code Cipher.WRAP_MODE}, and {@code Cipher.UNWRAP_MODE}.
      * <p>For modes other than the above two, UnsupportedOperationException
      * will be thrown.
      * <p>If this cipher requires an initialization vector (IV), it will get
@@ -360,15 +357,15 @@ public final class DESedeWrapCipher extends CipherSpi {
      * current Cipher.engineInit(...) implementation,
      * IllegalStateException will always be thrown upon invocation.
      *
-     * @param in the input buffer.
-     * @param inOffset the offset in <code>in</code> where the input
+     * @param input the input buffer.
+     * @param inputOffset the offset in {@code input} where the input
      * starts.
-     * @param inLen the input length.
-     * @param out the buffer for the result.
-     * @param outOffset the ofset in <code>out</code> where the result
+     * @param inputLen the input length.
+     * @param output the buffer for the result.
+     * @param outputOffset the ofset in {@code output} where the result
      * is stored.
      *
-     * @return the number of bytes stored in <code>out</code>.
+     * @return the number of bytes stored in {@code out}.
      *
      * @exception IllegalStateException upon invocation of this method.
      */

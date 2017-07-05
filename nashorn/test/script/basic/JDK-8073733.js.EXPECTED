@@ -1,0 +1,3 @@
+TypeError: func is not a function
+TypeError: obj.foo is not a function
+TypeError: func is not a function

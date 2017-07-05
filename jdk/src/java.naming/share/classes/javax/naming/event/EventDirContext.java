@@ -42,17 +42,17 @@ import javax.naming.directory.SearchControls;
  * satisfy the filter.  However, there might be limitations in the extent
  * to which this can be supported by the service provider and underlying
  * protocol/service.  If the caller submits a filter that cannot be
- * supported in this way, <tt>addNamingListener()</tt> throws an
- * <tt>InvalidSearchFilterException</tt>.
+ * supported in this way, {@code addNamingListener()} throws an
+ * {@code InvalidSearchFilterException}.
  *<p>
- * See <tt>EventContext</tt> for a description of event source
+ * See {@code EventContext} for a description of event source
  * and target, and information about listener registration/deregistration
  * that are also applicable to methods in this interface.
  * See the
  * <a href=package-summary.html#THREADING>package description</a>
  * for information on threading issues.
  *<p>
- * A <tt>SearchControls</tt> or array object
+ * A {@code SearchControls} or array object
  * passed as a parameter to any method is owned by the caller.
  * The service provider will not modify the object or keep a reference to it.
  *
@@ -64,15 +64,15 @@ import javax.naming.directory.SearchControls;
 public interface EventDirContext extends EventContext, DirContext {
     /**
      * Adds a listener for receiving naming events fired
-     * when objects identified by the search filter <tt>filter</tt> at
+     * when objects identified by the search filter {@code filter} at
      * the object named by target are modified.
      * <p>
      * The scope, returningObj flag, and returningAttributes flag from
-     * the search controls <tt>ctls</tt> are used to control the selection
+     * the search controls {@code ctls} are used to control the selection
      * of objects that the listener is interested in,
      * and determines what information is returned in the eventual
-     * <tt>NamingEvent</tt> object. Note that the requested
-     * information to be returned might not be present in the <tt>NamingEvent</tt>
+     * {@code NamingEvent} object. Note that the requested
+     * information to be returned might not be present in the {@code NamingEvent}
      * object if they are unavailable or could not be obtained by the
      * service provider or service.
      *
@@ -91,9 +91,9 @@ public interface EventDirContext extends EventContext, DirContext {
 
     /**
      * Adds a listener for receiving naming events fired when
-     * objects identified by the search filter <tt>filter</tt> at the
+     * objects identified by the search filter {@code filter} at the
      * object named by the string target name are modified.
-     * See the overload that accepts a <tt>Name</tt> for details of
+     * See the overload that accepts a {@code Name} for details of
      * how this method behaves.
      *
      * @param target The nonnull string name of the object resolved relative to this context.
@@ -111,14 +111,14 @@ public interface EventDirContext extends EventContext, DirContext {
 
     /**
      * Adds a listener for receiving naming events fired
-     * when objects identified by the search filter <tt>filter</tt> and
+     * when objects identified by the search filter {@code filter} and
      * filter arguments at the object named by the target are modified.
      * The scope, returningObj flag, and returningAttributes flag from
-     * the search controls <tt>ctls</tt> are used to control the selection
+     * the search controls {@code ctls} are used to control the selection
      * of objects that the listener is interested in,
      * and determines what information is returned in the eventual
-     * <tt>NamingEvent</tt> object.  Note that the requested
-     * information to be returned might not be present in the <tt>NamingEvent</tt>
+     * {@code NamingEvent} object.  Note that the requested
+     * information to be returned might not be present in the {@code NamingEvent}
      * object if they are unavailable or could not be obtained by the
      * service provider or service.
      *
@@ -138,10 +138,10 @@ public interface EventDirContext extends EventContext, DirContext {
 
     /**
      * Adds a listener for receiving naming events fired when
-     * objects identified by the search filter <tt>filter</tt>
+     * objects identified by the search filter {@code filter}
      * and filter arguments at the
      * object named by the string target name are modified.
-     * See the overload that accepts a <tt>Name</tt> for details of
+     * See the overload that accepts a {@code Name} for details of
      * how this method behaves.
      *
      * @param target The nonnull string name of the object resolved relative to this context.

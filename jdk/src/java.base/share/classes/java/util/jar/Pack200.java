@@ -95,7 +95,7 @@ import java.io.IOException;
  * the file encoded with Pack200 and further compressed with gzip. Please
  * refer to the Java Deployment Guide for techniques and details.
  * <p>
- * Unless otherwise noted, passing a <tt>null</tt> argument to a constructor or
+ * Unless otherwise noted, passing a {@code null} argument to a constructor or
  * method in this class will cause a {@link NullPointerException} to be thrown.
  *
  * @author John Rose
@@ -109,7 +109,7 @@ public abstract class Pack200 {
     /**
      * Obtain new instance of a class that implements Packer.
      * <ul>
-     * <li><p>If the system property <tt>java.util.jar.Pack200.Packer</tt>
+     * <li><p>If the system property {@code java.util.jar.Pack200.Packer}
      * is defined, then the value is taken to be the fully-qualified name
      * of a concrete implementation class, which must implement Packer.
      * This class is loaded and instantiated.  If this process fails
@@ -135,7 +135,7 @@ public abstract class Pack200 {
     /**
      * Obtain new instance of a class that implements Unpacker.
      * <ul>
-     * <li><p>If the system property <tt>java.util.jar.Pack200.Unpacker</tt>
+     * <li><p>If the system property {@code java.util.jar.Pack200.Unpacker}
      * is defined, then the value is taken to be the fully-qualified
      * name of a concrete implementation class, which must implement Unpacker.
      * The class is loaded and instantiated.  If this process fails
@@ -220,7 +220,7 @@ public abstract class Pack200 {
      *    If the input JAR-files contains a 1.6 class file, then the pack file
      * version will be set to 1.6.
      * <p>
-     * Note: Unless otherwise noted, passing a <tt>null</tt> argument to a
+     * Note: Unless otherwise noted, passing a {@code null} argument to a
      * constructor or method in this class will cause a {@link NullPointerException}
      * to be thrown.
      *
@@ -367,7 +367,7 @@ public abstract class Pack200 {
          * {@link #STRIP}, and {@link #PASS}.
          * <p>
          * The string {@link #ERROR} means that the pack operation
-         * as a whole will fail, with an exception of type <code>IOException</code>.
+         * as a whole will fail, with an exception of type {@code IOException}.
          * The string
          * {@link #STRIP} means that the attribute will be dropped.
          * The string
@@ -391,7 +391,7 @@ public abstract class Pack200 {
          * using the layout language specified in the JSR 200 specification.
          * <p>
          * For example, the effect of this option is built in:
-         * <code>pack.class.attribute.SourceFile=RUH</code>.
+         * {@code pack.class.attribute.SourceFile=RUH}.
          * <p>
          * The special strings {@link #ERROR}, {@link #STRIP}, and {@link #PASS} are
          * also allowed, with the same meaning as {@link #UNKNOWN_ATTRIBUTE}.
@@ -399,21 +399,21 @@ public abstract class Pack200 {
          * refused, stripped, or passed bitwise (with no class compression).
          * <p>
          * Code like this might be used to support attributes for JCOV:
-         * <pre><code>
+         * <pre>{@code
          *     Map p = packer.properties();
          *     p.put(CODE_ATTRIBUTE_PFX+"CoverageTable",       "NH[PHHII]");
          *     p.put(CODE_ATTRIBUTE_PFX+"CharacterRangeTable", "NH[PHPOHIIH]");
          *     p.put(CLASS_ATTRIBUTE_PFX+"SourceID",           "RUH");
          *     p.put(CLASS_ATTRIBUTE_PFX+"CompilationID",      "RUH");
-         * </code></pre>
+         * }</pre>
          * <p>
          * Code like this might be used to strip debugging attributes:
-         * <pre><code>
+         * <pre>{@code
          *     Map p = packer.properties();
          *     p.put(CODE_ATTRIBUTE_PFX+"LineNumberTable",    STRIP);
          *     p.put(CODE_ATTRIBUTE_PFX+"LocalVariableTable", STRIP);
          *     p.put(CLASS_ATTRIBUTE_PFX+"SourceFile",        STRIP);
-         * </code></pre>
+         * }</pre>
          */
         String CLASS_ATTRIBUTE_PFX      = "pack.class.attribute.";
 
@@ -421,7 +421,7 @@ public abstract class Pack200 {
          * When concatenated with a field attribute name,
          * indicates the format of that attribute.
          * For example, the effect of this option is built in:
-         * <code>pack.field.attribute.Deprecated=</code>.
+         * {@code pack.field.attribute.Deprecated=}.
          * The special strings {@link #ERROR}, {@link #STRIP}, and
          * {@link #PASS} are also allowed.
          * @see #CLASS_ATTRIBUTE_PFX
@@ -432,7 +432,7 @@ public abstract class Pack200 {
          * When concatenated with a method attribute name,
          * indicates the format of that attribute.
          * For example, the effect of this option is built in:
-         * <code>pack.method.attribute.Exceptions=NH[RCH]</code>.
+         * {@code pack.method.attribute.Exceptions=NH[RCH]}.
          * The special strings {@link #ERROR}, {@link #STRIP}, and {@link #PASS}
          * are also allowed.
          * @see #CLASS_ATTRIBUTE_PFX
@@ -443,7 +443,7 @@ public abstract class Pack200 {
          * When concatenated with a code attribute name,
          * indicates the format of that attribute.
          * For example, the effect of this option is built in:
-         * <code>pack.code.attribute.LocalVariableTable=NH[PHOHRUHRSHH]</code>.
+         * {@code pack.code.attribute.LocalVariableTable=NH[PHOHRUHRSHH]}.
          * The special strings {@link #ERROR}, {@link #STRIP}, and {@link #PASS}
          * are also allowed.
          * @see #CLASS_ATTRIBUTE_PFX
@@ -527,9 +527,9 @@ public abstract class Pack200 {
          * <p>
          * Implementation specific properties are prefixed with a
          * package name associated with the implementor, beginning
-         * with <tt>com.</tt> or a similar prefix.
-         * All property names beginning with <tt>pack.</tt> and
-         * <tt>unpack.</tt> are reserved for use by this API.
+         * with {@code com.} or a similar prefix.
+         * All property names beginning with {@code pack.} and
+         * {@code unpack.} are reserved for use by this API.
          * <p>
          * Unknown properties may be ignored or rejected with an
          * unspecified error, and invalid entries may cause an
@@ -575,10 +575,10 @@ public abstract class Pack200 {
      * using {@link #newUnpacker}.
      * <p>
      * Every JAR file produced by this engine will include the string
-     * "<tt>PACK200</tt>" as a zip file comment.
+     * "{@code PACK200}" as a zip file comment.
      * This allows a deployer to detect if a JAR archive was packed and unpacked.
      * <p>
-     * Note: Unless otherwise noted, passing a <tt>null</tt> argument to a
+     * Note: Unless otherwise noted, passing a {@code null} argument to a
      * constructor or method in this class will cause a {@link NullPointerException}
      * to be thrown.
      * <p>
@@ -641,9 +641,9 @@ public abstract class Pack200 {
          * <p>
          * Implementation specific properties are prefixed with a
          * package name associated with the implementor, beginning
-         * with <tt>com.</tt> or a similar prefix.
-         * All property names beginning with <tt>pack.</tt> and
-         * <tt>unpack.</tt> are reserved for use by this API.
+         * with {@code com.} or a similar prefix.
+         * All property names beginning with {@code pack.} and
+         * {@code unpack.} are reserved for use by this API.
          * <p>
          * Unknown properties may be ignored or rejected with an
          * unspecified error, and invalid entries may cause an

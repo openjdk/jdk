@@ -48,7 +48,7 @@ public class LoginConfigImpl extends Configuration {
      * A new instance of LoginConfigImpl must be created for each login request
      * since it's only used by a single (caller, mech) pair
      * @param caller defined in GSSUtil as CALLER_XXX final fields
-     * @param oid defined in GSSUtil as XXX_MECH_OID final fields
+     * @param mech defined in GSSUtil as XXX_MECH_OID final fields
      */
     public LoginConfigImpl(GSSCaller caller, Oid mech) {
 

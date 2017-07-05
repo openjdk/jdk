@@ -223,7 +223,7 @@ public interface Collector<T, A, R> {
      * Perform the final transformation from the intermediate accumulation type
      * {@code A} to the final result type {@code R}.
      *
-     * <p>If the characteristic {@code IDENTITY_TRANSFORM} is
+     * <p>If the characteristic {@code IDENTITY_FINISH} is
      * set, this function may be presumed to be an identity transform with an
      * unchecked cast from {@code A} to {@code R}.
      *

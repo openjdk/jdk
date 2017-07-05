@@ -49,7 +49,7 @@ public class UnsolicitedNotificationEvent extends java.util.EventObject {
     private UnsolicitedNotification notice;
 
     /**
-     * Constructs a new instance of <tt>UnsolicitedNotificationEvent</tt>.
+     * Constructs a new instance of {@code UnsolicitedNotificationEvent}.
      *
      * @param src The non-null source that fired the event.
      * @param notice The non-null unsolicited notification.
@@ -71,10 +71,10 @@ public class UnsolicitedNotificationEvent extends java.util.EventObject {
     }
 
     /**
-     * Invokes the <tt>notificationReceived()</tt> method on
+     * Invokes the {@code notificationReceived()} method on
      * a listener using this event.
      * @param listener The non-null listener on which to invoke
-     * <tt>notificationReceived</tt>.
+     *        {@code notificationReceived}.
      */
     public void dispatch(UnsolicitedNotificationListener listener) {
         listener.notificationReceived(this);
