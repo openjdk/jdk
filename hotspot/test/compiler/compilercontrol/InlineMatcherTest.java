@@ -24,6 +24,7 @@
 /*
  * @test InlineMatcherTest
  * @bug 8074095
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary /test/lib
  * @build sun.hotspot.WhiteBox
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

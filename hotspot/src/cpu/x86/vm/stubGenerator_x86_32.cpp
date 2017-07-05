@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,21 +62,6 @@ const int FPU_CNTRL_WRD_MASK = 0xFFFF;
 
 // -------------------------------------------------------------------------------------------------------------------------
 // Stub Code definitions
-
-static address handle_unsafe_access() {
-  JavaThread* thread = JavaThread::current();
-  address pc  = thread->saved_exception_pc();
-  // pc is the instruction which we must emulate
-  // doing a no-op is fine:  return garbage from the load
-  // therefore, compute npc
-  address npc = Assembler::locate_next_instruction(pc);
-
-  // request an async exception
-  thread->set_pending_unsafe_access_error();
-
-  // return address of next instruction to execute
-  return npc;
-}
 
 class StubGenerator: public StubCodeGenerator {
  private:
@@ -618,27 +603,6 @@ class StubGenerator: public StubCodeGenerator {
     __ addptr(rsp, wordSize * 2);
 
     __ ret(0);
-
-    return start;
-  }
-
-
-  //---------------------------------------------------------------------------
-  // The following routine generates a subroutine to throw an asynchronous
-  // UnknownError when an unsafe access gets a fault that could not be
-  // reasonably prevented by the programmer.  (Example: SIGBUS/OBJERR.)
-  address generate_handler_for_unsafe_access() {
-    StubCodeMark mark(this, "StubRoutines", "handler_for_unsafe_access");
-    address start = __ pc();
-
-    __ push(0);                       // hole for return address-to-be
-    __ pusha();                       // push registers
-    Address next_pc(rsp, RegisterImpl::number_of_registers * BytesPerWord);
-    BLOCK_COMMENT("call handle_unsafe_access");
-    __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, handle_unsafe_access)));
-    __ movptr(next_pc, rax);          // stuff next address
-    __ popa();
-    __ ret(0);                        // jump to next address
 
     return start;
   }
@@ -2092,25 +2056,6 @@ class StubGenerator: public StubCodeGenerator {
                                entry_checkcast_arraycopy);
   }
 
-  void generate_math_stubs() {
-    {
-      StubCodeMark mark(this, "StubRoutines", "log10");
-      StubRoutines::_intrinsic_log10 = (double (*)(double)) __ pc();
-
-      __ fld_d(Address(rsp, 4));
-      __ flog10();
-      __ ret(0);
-    }
-    {
-      StubCodeMark mark(this, "StubRoutines", "tan");
-      StubRoutines::_intrinsic_tan = (double (*)(double)) __ pc();
-
-      __ fld_d(Address(rsp, 4));
-      __ trigfunc('t');
-      __ ret(0);
-    }
-  }
-
   // AES intrinsic stubs
   enum {AESBlockSize = 16};
 
@@ -3533,6 +3478,31 @@ class StubGenerator: public StubCodeGenerator {
 
  }
 
+ address generate_libmLog10() {
+   address start = __ pc();
+
+   const XMMRegister x0 = xmm0;
+   const XMMRegister x1 = xmm1;
+   const XMMRegister x2 = xmm2;
+   const XMMRegister x3 = xmm3;
+
+   const XMMRegister x4 = xmm4;
+   const XMMRegister x5 = xmm5;
+   const XMMRegister x6 = xmm6;
+   const XMMRegister x7 = xmm7;
+
+   const Register tmp = rbx;
+
+   BLOCK_COMMENT("Entry:");
+   __ enter(); // required for proper stackwalking of RuntimeStub frame
+   __ fast_log10(x0, x1, x2, x3, x4, x5, x6, x7, rax, rcx, rdx, tmp);
+   __ leave(); // required for proper stackwalking of RuntimeStub frame
+   __ ret(0);
+
+   return start;
+
+ }
+
  address generate_libmPow() {
    address start = __ pc();
 
@@ -3622,6 +3592,44 @@ class StubGenerator: public StubCodeGenerator {
    BLOCK_COMMENT("Entry:");
    __ enter(); // required for proper stackwalking of RuntimeStub frame
    __ fast_cos(x0, x1, x2, x3, x4, x5, x6, x7, rax, rcx, rdx, tmp);
+   __ leave(); // required for proper stackwalking of RuntimeStub frame
+   __ ret(0);
+
+   return start;
+
+ }
+
+ address generate_libm_tan_cot_huge() {
+   address start = __ pc();
+
+   const XMMRegister x0 = xmm0;
+   const XMMRegister x1 = xmm1;
+
+   BLOCK_COMMENT("Entry:");
+   __ libm_tancot_huge(x0, x1, rax, rcx, rdx, rbx, rsi, rdi, rbp, rsp);
+
+   return start;
+
+ }
+
+ address generate_libmTan() {
+   address start = __ pc();
+
+   const XMMRegister x0 = xmm0;
+   const XMMRegister x1 = xmm1;
+   const XMMRegister x2 = xmm2;
+   const XMMRegister x3 = xmm3;
+
+   const XMMRegister x4 = xmm4;
+   const XMMRegister x5 = xmm5;
+   const XMMRegister x6 = xmm6;
+   const XMMRegister x7 = xmm7;
+
+   const Register tmp = rbx;
+
+   BLOCK_COMMENT("Entry:");
+   __ enter(); // required for proper stackwalking of RuntimeStub frame
+   __ fast_tan(x0, x1, x2, x3, x4, x5, x6, x7, rax, rcx, rdx, tmp);
    __ leave(); // required for proper stackwalking of RuntimeStub frame
    __ ret(0);
 
@@ -3821,9 +3829,6 @@ class StubGenerator: public StubCodeGenerator {
     // These are currently used by Solaris/Intel
     StubRoutines::_atomic_xchg_entry            = generate_atomic_xchg();
 
-    StubRoutines::_handler_for_unsafe_access_entry =
-      generate_handler_for_unsafe_access();
-
     // platform dependent
     create_control_words();
 
@@ -3852,23 +3857,24 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::_crc32c_table_addr = (address)StubRoutines::x86::_crc32c_table;
       StubRoutines::_updateBytesCRC32C = generate_updateBytesCRC32C(supports_clmul);
     }
-    if (VM_Version::supports_sse2()) {
+    if (VM_Version::supports_sse2() && UseLibmIntrinsic) {
+      StubRoutines::x86::_L_2il0floatpacket_0_adr = (address)StubRoutines::x86::_L_2il0floatpacket_0;
+      StubRoutines::x86::_Pi4Inv_adr = (address)StubRoutines::x86::_Pi4Inv;
+      StubRoutines::x86::_Pi4x3_adr = (address)StubRoutines::x86::_Pi4x3;
+      StubRoutines::x86::_Pi4x4_adr = (address)StubRoutines::x86::_Pi4x4;
+      StubRoutines::x86::_ones_adr = (address)StubRoutines::x86::_ones;
       StubRoutines::_dexp = generate_libmExp();
       StubRoutines::_dlog = generate_libmLog();
+      StubRoutines::_dlog10 = generate_libmLog10();
       StubRoutines::_dpow = generate_libmPow();
-      if (UseLibmSinIntrinsic || UseLibmCosIntrinsic) {
-        StubRoutines::_dlibm_reduce_pi04l = generate_libm_reduce_pi04l();
-        StubRoutines::_dlibm_sin_cos_huge = generate_libm_sin_cos_huge();
-      }
-      if (UseLibmSinIntrinsic) {
-        StubRoutines::_dsin = generate_libmSin();
-      }
-      if (UseLibmCosIntrinsic) {
-        StubRoutines::_dcos = generate_libmCos();
-      }
+      StubRoutines::_dlibm_reduce_pi04l = generate_libm_reduce_pi04l();
+      StubRoutines::_dlibm_sin_cos_huge = generate_libm_sin_cos_huge();
+      StubRoutines::_dsin = generate_libmSin();
+      StubRoutines::_dcos = generate_libmCos();
+      StubRoutines::_dlibm_tan_cot_huge = generate_libm_tan_cot_huge();
+      StubRoutines::_dtan = generate_libmTan();
     }
   }
-
 
   void generate_all() {
     // Generates all stubs and initializes the entry points
@@ -3887,8 +3893,6 @@ class StubGenerator: public StubCodeGenerator {
 
     // arraycopy stubs used by compilers
     generate_arraycopy_stubs();
-
-    generate_math_stubs();
 
     // don't bother generating these AES intrinsic stubs unless global flag is set
     if (UseAESIntrinsics) {

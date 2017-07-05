@@ -366,6 +366,23 @@ AC_DEFUN([PLATFORM_SETUP_LEGACY_VARS_HELPER],
   fi
   AC_SUBST(OPENJDK_$1_OS_EXPORT_DIR)
 
+  # The new version string in JDK 9 also defined new naming of OS and ARCH for bundles
+  # Macosx is osx and x86_64 is x64
+  if test "x$OPENJDK_$1_OS" = xmacosx; then
+    OPENJDK_$1_OS_BUNDLE="osx"
+  else
+    OPENJDK_$1_OS_BUNDLE="$OPENJDK_TARGET_OS"
+  fi
+  if test "x$OPENJDK_$1_CPU" = xx86_64; then
+    OPENJDK_$1_CPU_BUNDLE="x64"
+  else
+    OPENJDK_$1_CPU_BUNDLE="$OPENJDK_$1_CPU"
+  fi
+  OPENJDK_$1_BUNDLE_PLATFORM="${OPENJDK_$1_OS_BUNDLE}-${OPENJDK_$1_CPU_BUNDLE}"
+  AC_SUBST(OPENJDK_$1_OS_BUNDLE)
+  AC_SUBST(OPENJDK_$1_CPU_BUNDLE)
+  AC_SUBST(OPENJDK_$1_BUNDLE_PLATFORM)
+
   if test "x$OPENJDK_$1_CPU_BITS" = x64; then
     A_LP64="LP64:="
     # -D_LP64=1 is only set on linux and mac. Setting on windows causes diff in

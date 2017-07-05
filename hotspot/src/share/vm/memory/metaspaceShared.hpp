@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,11 +43,11 @@
 // for the x64 platform
 #define DEFAULT_VTBL_COMMON_CODE_SIZE   (1*K) // conservative size of the "common_code" for the x64 platform
 
-#define DEFAULT_SHARED_READ_WRITE_SIZE  (NOT_LP64(8*M) LP64_ONLY(10*M))
+#define DEFAULT_SHARED_READ_WRITE_SIZE  (NOT_LP64(9*M) LP64_ONLY(10*M))
 #define MIN_SHARED_READ_WRITE_SIZE      (NOT_LP64(7*M) LP64_ONLY(10*M))
 
-#define DEFAULT_SHARED_READ_ONLY_SIZE   (NOT_LP64(8*M) LP64_ONLY(10*M))
-#define MIN_SHARED_READ_ONLY_SIZE       (NOT_LP64(8*M) LP64_ONLY(9*M))
+#define DEFAULT_SHARED_READ_ONLY_SIZE   (NOT_LP64(9*M) LP64_ONLY(10*M))
+#define MIN_SHARED_READ_ONLY_SIZE       (NOT_LP64(9*M) LP64_ONLY(10*M))
 
 // the MIN_SHARED_MISC_DATA_SIZE and MIN_SHARED_MISC_CODE_SIZE estimates are based on
 // the sizes required for dumping the archive using the default classlist. The sizes
@@ -193,7 +193,8 @@ class MetaspaceShared : AllStatic {
                                       void** vtable,
                                       char** md_top, char* md_end,
                                       char** mc_top, char* mc_end);
-  static void serialize(SerializeClosure* sc);
+  static void serialize(SerializeClosure* sc, GrowableArray<MemRegion> *string_space,
+                        size_t* space_size);
 
   static MetaspaceSharedStats* stats() {
     return &_stats;

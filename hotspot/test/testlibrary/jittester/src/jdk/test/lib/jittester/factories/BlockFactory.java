@@ -33,7 +33,7 @@ import jdk.test.lib.jittester.Switch;
 import jdk.test.lib.jittester.SymbolTable;
 import jdk.test.lib.jittester.Type;
 import jdk.test.lib.jittester.TypeList;
-import jdk.test.lib.jittester.TypeUtil;
+import jdk.test.lib.jittester.utils.TypeUtil;
 import jdk.test.lib.jittester.loops.DoWhile;
 import jdk.test.lib.jittester.loops.For;
 import jdk.test.lib.jittester.loops.While;

@@ -46,7 +46,7 @@ public class VirtualAllocTestType {
     long reserveSize = 256 * 1024;
     long addr;
 
-    String pid = Integer.toString(ProcessTools.getProcessId());
+    String pid = Long.toString(ProcessTools.getProcessId());
     ProcessBuilder pb = new ProcessBuilder();
 
     addr = wb.NMTReserveMemory(reserveSize);

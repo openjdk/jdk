@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -361,6 +361,9 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
   case vmIntrinsics::_getCallerClass:
     if (SystemDictionary::reflect_CallerSensitive_klass() == NULL) return false;
     break;
+  case vmIntrinsics::_onSpinWait:
+    if (!Matcher::match_rule_supported(Op_OnSpinWait)) return false;
+    break;
   case vmIntrinsics::_hashCode:
   case vmIntrinsics::_identityHashCode:
   case vmIntrinsics::_getClass:
@@ -406,22 +409,6 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
   case vmIntrinsics::_putLong:
   case vmIntrinsics::_putFloat:
   case vmIntrinsics::_putDouble:
-  case vmIntrinsics::_getByte_raw:
-  case vmIntrinsics::_getShort_raw:
-  case vmIntrinsics::_getChar_raw:
-  case vmIntrinsics::_getInt_raw:
-  case vmIntrinsics::_getLong_raw:
-  case vmIntrinsics::_getFloat_raw:
-  case vmIntrinsics::_getDouble_raw:
-  case vmIntrinsics::_getAddress_raw:
-  case vmIntrinsics::_putByte_raw:
-  case vmIntrinsics::_putShort_raw:
-  case vmIntrinsics::_putChar_raw:
-  case vmIntrinsics::_putInt_raw:
-  case vmIntrinsics::_putLong_raw:
-  case vmIntrinsics::_putFloat_raw:
-  case vmIntrinsics::_putDouble_raw:
-  case vmIntrinsics::_putAddress_raw:
   case vmIntrinsics::_getObjectVolatile:
   case vmIntrinsics::_getBooleanVolatile:
   case vmIntrinsics::_getByteVolatile:
@@ -542,7 +529,7 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
   case vmIntrinsics::_updateByteBufferAdler32:
   case vmIntrinsics::_profileBoolean:
   case vmIntrinsics::_isCompileConstant:
-  case vmIntrinsics::_Objects_checkIndex:
+  case vmIntrinsics::_Preconditions_checkIndex:
     break;
   default:
     return false;

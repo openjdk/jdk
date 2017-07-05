@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ import com.sun.hotspot.igv.graph.Connection;
 import com.sun.hotspot.igv.graph.Figure;
 import com.sun.hotspot.igv.graph.InputSlot;
 import com.sun.hotspot.igv.graph.OutputSlot;
+import com.sun.hotspot.igv.util.StringUtils;
 import com.sun.hotspot.igv.view.DiagramScene;
 import java.awt.*;
 import java.awt.geom.Line2D;
@@ -148,7 +149,7 @@ public class LineWidget extends Widget implements PopupMenuProvider {
     private String generateToolTipText(List<Connection> conn) {
         StringBuilder sb = new StringBuilder();
         for (Connection c : conn) {
-            sb.append(c.getToolTipText());
+            sb.append(StringUtils.escapeHTML(c.getToolTipText()));
             sb.append("<br>");
         }
         return sb.toString();

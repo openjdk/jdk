@@ -417,9 +417,26 @@ public:
   static const Type* get_typeflow_type(ciType* type);
 
   static const Type* make_from_constant(ciConstant constant,
-                                        bool require_constant = false);
+                                        bool require_constant = false,
+                                        int stable_dimension = 0,
+                                        bool is_narrow = false,
+                                        bool is_autobox_cache = false);
 
-  static const Type* make_constant(ciField* field, Node* obj);
+  static const Type* make_constant_from_field(ciInstance* holder,
+                                              int off,
+                                              bool is_unsigned_load,
+                                              BasicType loadbt);
+
+  static const Type* make_constant_from_field(ciField* field,
+                                              ciInstance* holder,
+                                              BasicType loadbt,
+                                              bool is_unsigned_load);
+
+  static const Type* make_constant_from_array_element(ciArray* array,
+                                                      int off,
+                                                      int stable_dimension,
+                                                      BasicType loadbt,
+                                                      bool is_unsigned_load);
 
   // Speculative type helper methods. See TypePtr.
   virtual const TypePtr* speculative() const                                  { return NULL; }

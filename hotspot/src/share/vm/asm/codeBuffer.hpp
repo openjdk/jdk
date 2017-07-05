@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -468,9 +468,11 @@ class CodeBuffer: public StackObj {
   // construction.
   void initialize(csize_t code_size, csize_t locs_size);
 
-  CodeSection* consts()            { return &_consts; }
-  CodeSection* insts()             { return &_insts; }
-  CodeSection* stubs()             { return &_stubs; }
+  CodeSection* consts() { return &_consts; }
+  CodeSection* insts() { return &_insts; }
+  CodeSection* stubs() { return &_stubs; }
+
+  const CodeSection* insts() const { return &_insts; }
 
   // present sections in order; return NULL at end; consts is #0, etc.
   CodeSection* code_section(int n) {
@@ -547,7 +549,7 @@ class CodeBuffer: public StackObj {
 
   // Combined offset (relative to start of first section) of given
   // section, as eventually found in the final CodeBlob.
-  csize_t total_offset_of(CodeSection* cs) const;
+  csize_t total_offset_of(const CodeSection* cs) const;
 
   // allocated size of all relocation data, including index, rounded up
   csize_t total_relocation_size() const;

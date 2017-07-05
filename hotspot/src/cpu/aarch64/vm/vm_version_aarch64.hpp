@@ -40,6 +40,10 @@ protected:
   static int _revision;
   static int _stepping;
 
+  struct PsrInfo {
+    uint32_t dczid_el0;
+  };
+  static PsrInfo _psr_info;
   static void get_processor_features();
 
 public:
@@ -83,6 +87,17 @@ public:
   static int cpu_model2()                     { return _model2; }
   static int cpu_variant()                    { return _variant; }
   static int cpu_revision()                   { return _revision; }
+  static ByteSize dczid_el0_offset() { return byte_offset_of(PsrInfo, dczid_el0); }
+  static bool is_zva_enabled() {
+    // Check the DZP bit (bit 4) of dczid_el0 is zero
+    // and block size (bit 0~3) is not zero.
+    return ((_psr_info.dczid_el0 & 0x10) == 0 &&
+            (_psr_info.dczid_el0 & 0xf) != 0);
+  }
+  static int zva_length() {
+    assert(is_zva_enabled(), "ZVA not available");
+    return 4 << (_psr_info.dczid_el0 & 0xf);
+  }
 };
 
 #endif // CPU_AARCH64_VM_VM_VERSION_AARCH64_HPP

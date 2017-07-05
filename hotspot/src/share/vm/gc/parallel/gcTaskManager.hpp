@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -370,6 +370,7 @@ private:
   Monitor*                  _monitor;           // Notification of changes.
   SynchronizedGCTaskQueue*  _queue;             // Queue of tasks.
   GCTaskThread**            _thread;            // Array of worker threads.
+  uint                      _created_workers;   // Number of workers created.
   uint                      _active_workers;    // Number of active workers.
   uint                      _busy_workers;      // Number of busy workers.
   uint                      _blocking_worker;   // The worker that's blocking.
@@ -381,6 +382,8 @@ private:
   NoopGCTask*               _noop_task;         // The NoopGCTask instance.
   WaitHelper                _wait_helper;       // Used by inactive worker
   volatile uint             _idle_workers;      // Number of idled workers
+  uint*                     _processor_assignment; // Worker to cpu mappings. May
+                                                   // be used lazily
 public:
   // Factory create and destroy methods.
   static GCTaskManager* create(uint workers) {
@@ -546,6 +549,13 @@ protected:
   uint active_workers() const {
     return _active_workers;
   }
+  uint created_workers() const {
+    return _created_workers;
+  }
+  // Create a GC worker and install into GCTaskManager
+  GCTaskThread* install_worker(uint worker_id);
+  // Add GC workers as needed.
+  void add_workers(bool initializing);
 };
 
 //

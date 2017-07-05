@@ -27,6 +27,7 @@
  * @test
  * @summary class p1.c1 defined in m1 tries to access p2.c2 defined in unnamed module.
  * @library /testlibrary /test/lib
+ * @modules java.base/jdk.internal.misc
  * @modules java.base/jdk.internal.module
  * @compile myloaders/MyDiffClassLoader.java
  * @compile p2/c2.java
@@ -91,7 +92,7 @@ public class DiffCL_Umod {
      // Resolves "m1"
      Configuration cf = Layer.boot()
              .configuration()
-             .resolveRequires(finder, ModuleFinder.empty(), Set.of("m1"));
+             .resolveRequires(finder, ModuleFinder.of(), Set.of("m1"));
 
      MyDiffClassLoader.loader1 = new MyDiffClassLoader();
      MyDiffClassLoader.loader2 = new MyDiffClassLoader();
@@ -140,7 +141,7 @@ public class DiffCL_Umod {
      // Resolves "m1"
      Configuration cf = Layer.boot()
              .configuration()
-             .resolveRequires(finder, ModuleFinder.empty(), Set.of("m1"));
+             .resolveRequires(finder, ModuleFinder.of(), Set.of("m1"));
 
      MyDiffClassLoader.loader1 = new MyDiffClassLoader();
      MyDiffClassLoader.loader2 = new MyDiffClassLoader();
@@ -189,7 +190,7 @@ public class DiffCL_Umod {
      // Resolves "m1"
      Configuration cf = Layer.boot()
              .configuration()
-             .resolveRequires(finder, ModuleFinder.empty(), Set.of("m1"));
+             .resolveRequires(finder, ModuleFinder.of(), Set.of("m1"));
 
      MyDiffClassLoader.loader1 = new MyDiffClassLoader();
      MyDiffClassLoader.loader2 = new MyDiffClassLoader();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2015, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -536,6 +536,15 @@ public:
     msr(0b011, 0b0100, 0b0100, 0b001, zr);
   }
 
+  // DCZID_EL0: op1 == 011
+  //            CRn == 0000
+  //            CRm == 0000
+  //            op2 == 111
+  inline void get_dczid_el0(Register reg)
+  {
+    mrs(0b011, 0b0000, 0b0000, 0b111, reg);
+  }
+
   // idiv variant which deals with MINLONG as dividend and -1 as divisor
   int corrected_idivl(Register result, Register ra, Register rb,
                       bool want_remainder, Register tmp = rscratch1);
@@ -769,6 +778,8 @@ public:
   void load_klass(Register dst, Register src);
   void store_klass(Register dst, Register src);
   void cmp_klass(Register oop, Register trial_klass, Register tmp);
+
+  void load_mirror(Register dst, Register method);
 
   void load_heap_oop(Register dst, Address src);
 
@@ -1183,6 +1194,20 @@ public:
   void arrays_equals(Register a1, Register a2,
                      Register result, Register cnt1,
                      int elem_size, bool is_string);
+
+  void fill_words(Register base, Register cnt, Register value);
+  void zero_words(Register base, u_int64_t cnt);
+  void zero_words(Register base, Register cnt);
+  void block_zero(Register base, Register cnt, bool is_large = false);
+
+  void byte_array_inflate(Register src, Register dst, Register len,
+                          FloatRegister vtmp1, FloatRegister vtmp2,
+                          FloatRegister vtmp3, Register tmp4);
+
+  void char_array_compress(Register src, Register dst, Register len,
+                           FloatRegister tmp1Reg, FloatRegister tmp2Reg,
+                           FloatRegister tmp3Reg, FloatRegister tmp4Reg,
+                           Register result);
 
   void encode_iso_array(Register src, Register dst,
                         Register len, Register result,

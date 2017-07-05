@@ -62,7 +62,7 @@ private:
   void initialize_from(fieldDescriptor* fd);
 
 public:
-  ciFlags flags() { return _flags; }
+  ciFlags flags() const { return _flags; }
 
   // Of which klass is this field a member?
   //
@@ -89,13 +89,13 @@ public:
   //
   //   In that case the declared holder of f would be B and
   //   the canonical holder of f would be A.
-  ciInstanceKlass* holder() { return _holder; }
+  ciInstanceKlass* holder() const { return _holder; }
 
   // Name of this field?
-  ciSymbol* name() { return _name; }
+  ciSymbol* name() const { return _name; }
 
   // Signature of this field?
-  ciSymbol* signature() { return _signature; }
+  ciSymbol* signature() const { return _signature; }
 
   // Of what type is this field?
   ciType* type() { return (_type == NULL) ? compute_type() : _type; }
@@ -107,13 +107,13 @@ public:
   int size_in_bytes() { return type2aelembytes(layout_type()); }
 
   // What is the offset of this field?
-  int offset() {
+  int offset() const {
     assert(_offset >= 1, "illegal call to offset()");
     return _offset;
   }
 
   // Same question, explicit units.  (Fields are aligned to the byte level.)
-  int offset_in_bytes() {
+  int offset_in_bytes() const {
     return offset();
   }
 
@@ -127,31 +127,27 @@ public:
   //
   // Clarification: A field is considered constant if:
   //   1. The field is both static and final
-  //   2. The canonical holder of the field has undergone
-  //      static initialization.
-  //   3. The field is not one of the special static/final
+  //   2. The field is not one of the special static/final
   //      non-constant fields.  These are java.lang.System.in
   //      and java.lang.System.out.  Abomination.
   //
   // A field is also considered constant if it is marked @Stable
   // and is non-null (or non-zero, if a primitive).
-  // For non-static fields, the null/zero check must be
-  // arranged by the user, as constant_value().is_null_or_zero().
-  bool is_constant() { return _is_constant; }
+  //
+  // A user should also check the field value (constant_value().is_valid()), since
+  // constant fields of non-initialized classes don't have values yet.
+  bool is_constant() const { return _is_constant; }
 
-  // Get the constant value of this field.
-  ciConstant constant_value() {
-    assert(is_static() && is_constant(), "illegal call to constant_value()");
-    return _constant_value;
+  // Get the constant value of the static field.
+  ciConstant constant_value();
+
+  bool is_static_constant() {
+    return is_static() && is_constant() && constant_value().is_valid();
   }
 
   // Get the constant value of non-static final field in the given
   // object.
-  ciConstant constant_value_of(ciObject* object) {
-    assert(!is_static() && is_constant(), "only if field is non-static constant");
-    assert(object->is_instance(), "must be instance");
-    return object->as_instance()->field_value(this);
-  }
+  ciConstant constant_value_of(ciObject* object);
 
   // Check for link time errors.  Accessing a field from a
   // certain class via a certain bytecode may or may not be legal.
@@ -165,14 +161,14 @@ public:
                  Bytecodes::Code bc);
 
   // Java access flags
-  bool is_public      () { return flags().is_public(); }
-  bool is_private     () { return flags().is_private(); }
-  bool is_protected   () { return flags().is_protected(); }
-  bool is_static      () { return flags().is_static(); }
-  bool is_final       () { return flags().is_final(); }
-  bool is_stable      () { return flags().is_stable(); }
-  bool is_volatile    () { return flags().is_volatile(); }
-  bool is_transient   () { return flags().is_transient(); }
+  bool is_public      () const { return flags().is_public(); }
+  bool is_private     () const { return flags().is_private(); }
+  bool is_protected   () const { return flags().is_protected(); }
+  bool is_static      () const { return flags().is_static(); }
+  bool is_final       () const { return flags().is_final(); }
+  bool is_stable      () const { return flags().is_stable(); }
+  bool is_volatile    () const { return flags().is_volatile(); }
+  bool is_transient   () const { return flags().is_transient(); }
 
   bool is_call_site_target() {
     ciInstanceKlass* callsite_klass = CURRENT_ENV->CallSite_klass();

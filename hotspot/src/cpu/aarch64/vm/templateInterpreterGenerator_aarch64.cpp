@@ -759,18 +759,13 @@ void TemplateInterpreterGenerator::lock_method() {
 
   // get synchronization object
   {
-    const int mirror_offset = in_bytes(Klass::java_mirror_offset());
     Label done;
     __ ldrw(r0, access_flags);
     __ tst(r0, JVM_ACC_STATIC);
     // get receiver (assume this is frequent case)
     __ ldr(r0, Address(rlocals, Interpreter::local_offset_in_bytes(0)));
     __ br(Assembler::EQ, done);
-    __ ldr(r0, Address(rmethod, Method::const_offset()));
-    __ ldr(r0, Address(r0, ConstMethod::constants_offset()));
-    __ ldr(r0, Address(r0,
-                           ConstantPool::pool_holder_offset_in_bytes()));
-    __ ldr(r0, Address(r0, mirror_offset));
+    __ load_mirror(r0, rmethod);
 
 #ifdef ASSERT
     {
@@ -807,16 +802,16 @@ void TemplateInterpreterGenerator::lock_method() {
 void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   // initialize fixed part of activation frame
   if (native_call) {
-    __ sub(esp, sp, 12 *  wordSize);
+    __ sub(esp, sp, 14 *  wordSize);
     __ mov(rbcp, zr);
-    __ stp(esp, zr, Address(__ pre(sp, -12 * wordSize)));
+    __ stp(esp, zr, Address(__ pre(sp, -14 * wordSize)));
     // add 2 zero-initialized slots for native calls
-    __ stp(zr, zr, Address(sp, 10 * wordSize));
+    __ stp(zr, zr, Address(sp, 12 * wordSize));
   } else {
-    __ sub(esp, sp, 10 *  wordSize);
+    __ sub(esp, sp, 12 *  wordSize);
     __ ldr(rscratch1, Address(rmethod, Method::const_offset()));      // get ConstMethod
     __ add(rbcp, rscratch1, in_bytes(ConstMethod::codes_offset())); // get codebase
-    __ stp(esp, rbcp, Address(__ pre(sp, -10 * wordSize)));
+    __ stp(esp, rbcp, Address(__ pre(sp, -12 * wordSize)));
   }
 
   if (ProfileInterpreter) {
@@ -825,22 +820,26 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
     __ cbz(rscratch1, method_data_continue);
     __ lea(rscratch1, Address(rscratch1, in_bytes(MethodData::data_offset())));
     __ bind(method_data_continue);
-    __ stp(rscratch1, rmethod, Address(sp, 4 * wordSize));  // save Method* and mdp (method data pointer)
+    __ stp(rscratch1, rmethod, Address(sp, 6 * wordSize));  // save Method* and mdp (method data pointer)
   } else {
-    __ stp(zr, rmethod, Address(sp, 4 * wordSize));        // save Method* (no mdp)
+    __ stp(zr, rmethod, Address(sp, 6 * wordSize));        // save Method* (no mdp)
   }
+
+  // Get mirror and store it in the frame as GC root for this Method*
+  __ load_mirror(rscratch1, rmethod);
+  __ stp(rscratch1, zr, Address(sp, 4 * wordSize));
 
   __ ldr(rcpool, Address(rmethod, Method::const_offset()));
   __ ldr(rcpool, Address(rcpool, ConstMethod::constants_offset()));
   __ ldr(rcpool, Address(rcpool, ConstantPool::cache_offset_in_bytes()));
   __ stp(rlocals, rcpool, Address(sp, 2 * wordSize));
 
-  __ stp(rfp, lr, Address(sp, 8 * wordSize));
-  __ lea(rfp, Address(sp, 8 * wordSize));
+  __ stp(rfp, lr, Address(sp, 10 * wordSize));
+  __ lea(rfp, Address(sp, 10 * wordSize));
 
   // set sender sp
   // leave last_sp as null
-  __ stp(zr, r13, Address(sp, 6 * wordSize));
+  __ stp(zr, r13, Address(sp, 8 * wordSize));
 
   // Move SP out of the way
   if (! native_call) {
@@ -1242,15 +1241,11 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // pass mirror handle if static call
   {
     Label L;
-    const int mirror_offset = in_bytes(Klass::java_mirror_offset());
     __ ldrw(t, Address(rmethod, Method::access_flags_offset()));
     __ tst(t, JVM_ACC_STATIC);
     __ br(Assembler::EQ, L);
     // get mirror
-    __ ldr(t, Address(rmethod, Method::const_offset()));
-    __ ldr(t, Address(t, ConstMethod::constants_offset()));
-    __ ldr(t, Address(t, ConstantPool::pool_holder_offset_in_bytes()));
-    __ ldr(t, Address(t, mirror_offset));
+    __ load_mirror(t, rmethod);
     // copy mirror into activation frame
     __ str(t, Address(rfp, frame::interpreter_frame_oop_temp_offset * wordSize));
     // pass handle to mirror

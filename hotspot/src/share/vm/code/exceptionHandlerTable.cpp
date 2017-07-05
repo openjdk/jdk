@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,9 +65,9 @@ ExceptionHandlerTable::ExceptionHandlerTable(int initial_size) {
 }
 
 
-ExceptionHandlerTable::ExceptionHandlerTable(const nmethod* nm) {
-  _table  = (HandlerTableEntry*)nm->handler_table_begin();
-  _length = nm->handler_table_size() / sizeof(HandlerTableEntry);
+ExceptionHandlerTable::ExceptionHandlerTable(const CompiledMethod* cm) {
+  _table  = (HandlerTableEntry*)cm->handler_table_begin();
+  _length = cm->handler_table_size() / sizeof(HandlerTableEntry);
   _size   = 0; // no space allocated by ExeptionHandlerTable!
 }
 
@@ -98,9 +98,9 @@ void ExceptionHandlerTable::add_subtable(
 }
 
 
-void ExceptionHandlerTable::copy_to(nmethod* nm) {
-  assert(size_in_bytes() == nm->handler_table_size(), "size of space allocated in nmethod incorrect");
-  copy_bytes_to(nm->handler_table_begin());
+void ExceptionHandlerTable::copy_to(CompiledMethod* cm) {
+  assert(size_in_bytes() == cm->handler_table_size(), "size of space allocated in compiled method incorrect");
+  copy_bytes_to(cm->handler_table_begin());
 }
 
 void ExceptionHandlerTable::copy_bytes_to(address addr) {

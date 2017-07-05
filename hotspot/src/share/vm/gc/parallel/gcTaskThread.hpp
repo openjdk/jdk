@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,13 +48,13 @@ private:
 
   bool _is_working;                     // True if participating in GC tasks
 
- public:
   // Factory create and destroy methods.
   static GCTaskThread* create(GCTaskManager* manager,
                               uint           which,
                               uint           processor_id) {
     return new GCTaskThread(manager, which, processor_id);
   }
+ public:
   static void destroy(GCTaskThread* manager) {
     if (manager != NULL) {
       delete manager;
@@ -65,8 +65,6 @@ private:
     return true;
   }
   virtual void run();
-  // Methods.
-  void start();
 
   void print_task_time_stamps();
 

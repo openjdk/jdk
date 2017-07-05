@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -281,10 +281,11 @@ void AbstractInterpreter::layout_activation(Method* method,
   // Llast_SP will be same as SP as there is no adapter space
   *interpreter_frame->register_addr(Llast_SP)    = (intptr_t) interpreter_frame->sp() - STACK_BIAS;
   *interpreter_frame->register_addr(LcpoolCache) = (intptr_t) method->constants()->cache();
+  // save the mirror in the interpreter frame
+  *interpreter_frame->interpreter_frame_mirror_addr() = method->method_holder()->java_mirror();
 #ifdef FAST_DISPATCH
   *interpreter_frame->register_addr(IdispatchTables) = (intptr_t) Interpreter::dispatch_table();
 #endif
-
 
 #ifdef ASSERT
   BasicObjectLock* mp = (BasicObjectLock*)monitors;

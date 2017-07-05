@@ -354,6 +354,7 @@ void ModuleEntryTable::patch_javabase_entries(Handle module_handle) {
     Thread* THREAD = Thread::current();
     KlassHandle kh(THREAD, k);
     java_lang_Class::fixup_module_field(kh, module_handle);
+    k->class_loader_data()->dec_keep_alive();
   }
 
   delete java_lang_Class::fixup_module_field_list();

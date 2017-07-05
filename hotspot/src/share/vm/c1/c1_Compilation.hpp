@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,12 +53,9 @@ class C1_MacroAssembler;
 class CFGPrinter;
 typedef LIR_OprDesc* LIR_Opr;
 
-
-define_array(BasicTypeArray, BasicType)
-define_stack(BasicTypeList, BasicTypeArray)
-
-define_array(ExceptionInfoArray, ExceptionInfo*)
-define_stack(ExceptionInfoList,  ExceptionInfoArray)
+typedef GrowableArray<BasicType> BasicTypeArray;
+typedef GrowableArray<BasicType> BasicTypeList;
+typedef GrowableArray<ExceptionInfo*> ExceptionInfoList;
 
 class Compilation: public StackObj {
   friend class CompilationResourceObj;

@@ -44,18 +44,9 @@ class Range;
 
 typedef GrowableArray<Interval*> IntervalArray;
 typedef GrowableArray<Interval*> IntervalList;
-
-define_array(IntervalsArray, IntervalList*)
-define_stack(IntervalsList, IntervalsArray)
-
-define_array(OopMapArray, OopMap*)
-define_stack(OopMapList, OopMapArray)
-
-define_array(ScopeValueArray, ScopeValue*)
-
-define_array(LIR_OpListArray, LIR_OpList*);
-define_stack(LIR_OpListStack, LIR_OpListArray);
-
+typedef GrowableArray<IntervalList*> IntervalsList;
+typedef GrowableArray<ScopeValue*> ScopeValueArray;
+typedef GrowableArray<LIR_OpList*> LIR_OpListStack;
 
 enum IntervalUseKind {
   // priority of use kinds must be ascending
@@ -67,9 +58,6 @@ enum IntervalUseKind {
   firstValidKind = 1,
   lastValidKind = 3
 };
-define_array(UseKindArray, IntervalUseKind)
-define_stack(UseKindStack, UseKindArray)
-
 
 enum IntervalKind {
   fixedKind = 0,  // interval pre-colored by LIR_Generator
@@ -152,8 +140,8 @@ class LinearScan : public CompilationResourceObj {
 
   LIR_OpArray               _lir_ops;           // mapping from LIR_Op id to LIR_Op node
   BlockBeginArray           _block_of_op;       // mapping from LIR_Op id to the BlockBegin containing this instruction
-  BitMap                    _has_info;          // bit set for each LIR_Op id that has a CodeEmitInfo
-  BitMap                    _has_call;          // bit set for each LIR_Op id that destroys all caller save registers
+  ResourceBitMap            _has_info;          // bit set for each LIR_Op id that has a CodeEmitInfo
+  ResourceBitMap            _has_call;          // bit set for each LIR_Op id that destroys all caller save registers
   BitMap2D                  _interval_in_loop;  // bit set for each virtual register that is contained in each loop
 
   // cached debug info to prevent multiple creation of same object
@@ -619,7 +607,7 @@ class Interval : public CompilationResourceObj {
   void   add_range(int from, int to);
   Interval* split(int split_pos);
   Interval* split_from_start(int split_pos);
-  void remove_first_use_pos()                    { _use_pos_and_kinds.truncate(_use_pos_and_kinds.length() - 2); }
+  void remove_first_use_pos()                    { _use_pos_and_kinds.trunc_to(_use_pos_and_kinds.length() - 2); }
 
   // test intersection
   bool   covers(int op_id, LIR_OpVisitState::OprMode mode) const;

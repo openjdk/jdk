@@ -30,6 +30,7 @@
  * @requires vm.opt.UseCompressedOops != false
  * @summary Verify that starting the VM with a small heap works
  * @library /testlibrary /test/lib
+ * @modules java.base/jdk.internal.misc
  * @modules java.management/sun.management
  * @ignore 8076621
  * @build TestSmallHeap

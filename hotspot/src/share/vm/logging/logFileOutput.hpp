@@ -83,6 +83,7 @@ class LogFileOutput : public LogFileStreamOutput {
   virtual ~LogFileOutput();
   virtual bool initialize(const char* options, outputStream* errstream);
   virtual int write(const LogDecorations& decorations, const char* msg);
+  virtual int write(LogMessageBuffer::Iterator msg_iterator);
   virtual void force_rotate();
 
   virtual const char* name() const {

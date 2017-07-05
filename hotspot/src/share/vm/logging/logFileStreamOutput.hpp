@@ -42,8 +42,11 @@ class LogFileStreamOutput : public LogOutput {
     }
   }
 
+  int write_decorations(const LogDecorations& decorations);
+
  public:
-  virtual int write(const LogDecorations &decorations, const char* msg);
+  virtual int write(const LogDecorations& decorations, const char* msg);
+  virtual int write(LogMessageBuffer::Iterator msg_iterator);
 };
 
 class LogStdoutOutput : public LogFileStreamOutput {

@@ -24,8 +24,8 @@
 
 #include "precompiled.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
-#include "gc/g1/g1CollectorPolicy.hpp"
 #include "gc/g1/g1CollectionSet.hpp"
+#include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1YoungRemSetSamplingThread.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
@@ -74,23 +74,19 @@ void G1YoungRemSetSamplingThread::stop_service() {
 void G1YoungRemSetSamplingThread::sample_young_list_rs_lengths() {
   SuspendibleThreadSetJoiner sts;
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
-  G1CollectorPolicy* g1p = g1h->g1_policy();
+  G1Policy* g1p = g1h->g1_policy();
+  G1CollectionSet* g1cs = g1h->collection_set();
   if (g1p->adaptive_young_list_length()) {
     int regions_visited = 0;
-    HeapRegion* hr = g1h->young_list()->first_region();
+    HeapRegion* hr = g1cs->inc_head();
     size_t sampled_rs_lengths = 0;
 
     while (hr != NULL) {
       size_t rs_length = hr->rem_set()->occupied();
       sampled_rs_lengths += rs_length;
 
-      // The current region may not yet have been added to the
-      // incremental collection set (it gets added when it is
-      // retired as the current allocation region).
-      if (hr->in_collection_set()) {
-        // Update the collection set policy information for this region
-        g1h->collection_set()->update_young_region_prediction(hr, rs_length);
-      }
+      // Update the collection set policy information for this region
+      g1cs->update_young_region_prediction(hr, rs_length);
 
       ++regions_visited;
 
@@ -99,12 +95,13 @@ void G1YoungRemSetSamplingThread::sample_young_list_rs_lengths() {
         if (sts.should_yield()) {
           sts.yield();
           // A gc may have occurred and our sampling data is stale and further
-          // traversal of the young list is unsafe
+          // traversal of the collection set is unsafe
           return;
         }
         regions_visited = 0;
       }
-      hr = hr->get_next_young_region();
+      assert(hr == g1cs->inc_tail() || hr->next_in_collection_set() != NULL, "next should only be null at tail of icset");
+      hr = hr->next_in_collection_set();
     }
     g1p->revise_young_list_target_length_if_necessary(sampled_rs_lengths);
   }

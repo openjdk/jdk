@@ -27,11 +27,12 @@ import compiler.whitebox.CompilerWhiteBoxTest;
  * @test MakeMethodNotCompilableTest
  * @bug 8012322 8006683 8007288 8022832
  * @library /testlibrary /test/lib /
+ * @modules java.base/jdk.internal.misc
  * @modules java.management
  * @build MakeMethodNotCompilableTest
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
- *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI  -Xmixed MakeMethodNotCompilableTest
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ *                                sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xmixed -XX:-UseCounterDecay MakeMethodNotCompilableTest
  * @summary testing of WB::makeMethodNotCompilable()
  * @author igor.ignatyev@oracle.com
  */
@@ -39,8 +40,8 @@ public class MakeMethodNotCompilableTest extends CompilerWhiteBoxTest {
     private int bci;
     public static void main(String[] args) throws Exception {
         String directive =
-                "[{ match:\"*SimpleTestCase$Helper.*\", BackgroundCompilation: false }, " +
-                " { match:\"*.*\", inline:\"-*SimpleTestCase$Helper.*\"}]";
+                "[{ match:\"*SimpleTestCaseHelper.*\", BackgroundCompilation: false }, " +
+                " { match:\"*.*\", inline:\"-*SimpleTestCaseHelper.*\"}]";
         if (WHITE_BOX.addCompilerDirective(directive) != 2) {
             throw new RuntimeException("Could not add directive");
         }
@@ -227,7 +228,7 @@ public class MakeMethodNotCompilableTest extends CompilerWhiteBoxTest {
         return false;
     }
 
-    private int getBci() {
+    private int getBci() throws Exception {
         compile();
         checkCompiled();
         int result = WHITE_BOX.getMethodEntryBci(method);
