@@ -163,10 +163,87 @@ public final class ProcessTools {
 
     // Reporting
     StringBuilder cmdLine = new StringBuilder();
-    for (String cmd : args)
-        cmdLine.append(cmd).append(' ');
+    for (String cmd : args) {
+      cmdLine.append(cmd).append(' ');
+    }
     System.out.println("Command line: [" + cmdLine.toString() + "]");
 
     return new ProcessBuilder(args.toArray(new String[args.size()]));
+  }
+
+  /**
+   * Executes a test jvm process, waits for it to finish and returns the process output.
+   * The default jvm options from jtreg, test.vm.opts and test.java.opts, are added.
+   * The java from the test.jdk is used to execute the command.
+   *
+   * The command line will be like:
+   * {test.jdk}/bin/java {test.vm.opts} {test.java.opts} cmds
+   *
+   * @param cmds User specifed arguments.
+   * @return The output from the process.
+   */
+  public static OutputAnalyzer executeTestJvm(String... cmds) throws Throwable {
+    ProcessBuilder pb = createJavaProcessBuilder(Utils.addTestJavaOpts(cmds));
+    return executeProcess(pb);
+  }
+
+  /**
+   * Executes a process, waits for it to finish and returns the process output.
+   * @param pb The ProcessBuilder to execute.
+   * @return The output from the process.
+   */
+  public static OutputAnalyzer executeProcess(ProcessBuilder pb) throws Throwable {
+    OutputAnalyzer output = null;
+    try {
+      output = new OutputAnalyzer(pb.start());
+      return output;
+    } catch (Throwable t) {
+      System.out.println("executeProcess() failed: " + t);
+      throw t;
+    } finally {
+      System.out.println(getProcessLog(pb, output));
+    }
+  }
+
+  /**
+   * Executes a process, waits for it to finish and returns the process output.
+   * @param cmds The command line to execute.
+   * @return The output from the process.
+   */
+  public static OutputAnalyzer executeProcess(String... cmds) throws Throwable {
+    return executeProcess(new ProcessBuilder(cmds));
+  }
+
+  /**
+   * Used to log command line, stdout, stderr and exit code from an executed process.
+   * @param pb The executed process.
+   * @param output The output from the process.
+   */
+  public static String getProcessLog(ProcessBuilder pb, OutputAnalyzer output) {
+    String stderr = output == null ? "null" : output.getStderr();
+    String stdout = output == null ? "null" : output.getStdout();
+    String exitValue = output == null ? "null": Integer.toString(output.getExitValue());
+    StringBuilder logMsg = new StringBuilder();
+    final String nl = System.getProperty("line.separator");
+    logMsg.append("--- ProcessLog ---" + nl);
+    logMsg.append("cmd: " + getCommandLine(pb) + nl);
+    logMsg.append("exitvalue: " + exitValue + nl);
+    logMsg.append("stderr: " + stderr + nl);
+    logMsg.append("stdout: " + stdout + nl);
+    return logMsg.toString();
+  }
+
+  /**
+   * @return The full command line for the ProcessBuilder.
+   */
+  public static String getCommandLine(ProcessBuilder pb) {
+    if (pb == null) {
+      return "null";
+    }
+    StringBuilder cmd = new StringBuilder();
+    for (String s : pb.command()) {
+      cmd.append(s).append(" ");
+    }
+    return cmd.toString().trim();
   }
 }
