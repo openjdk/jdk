@@ -1368,6 +1368,26 @@ public:
 
   // Raw conversion:
   static ID for_raw_conversion(BasicType src, BasicType dest);
+
+  // The methods below provide information related to compiling intrinsics.
+
+  // (1) Information needed by the C1 compiler.
+
+  static bool preserves_state(vmIntrinsics::ID id);
+  static bool can_trap(vmIntrinsics::ID id);
+
+  // (2) Information needed by the C2 compiler.
+
+  // Returns true if the intrinsic for method 'method' will perform a virtual dispatch.
+  static bool does_virtual_dispatch(vmIntrinsics::ID id);
+  // A return value larger than 0 indicates that the intrinsic for method
+  // 'method' requires predicated logic.
+  static int predicates_needed(vmIntrinsics::ID id);
+
+  // Returns true if an intrinsic is disabled by command-line flags and
+  // false otherwise. Implements functionality common to the C1
+  // and the C2 compiler.
+  static bool is_disabled_by_flags(vmIntrinsics::ID id);
 };
 
 #endif // SHARE_VM_CLASSFILE_VMSYMBOLS_HPP

@@ -29,7 +29,8 @@
  * @bug 8043758
  * @summary Datagram Transport Layer Security (DTLS)
  * @compile DTLSOverDatagram.java
- * @run main/othervm NoMacInitialClientHello
+ * @run main/othervm -Djdk.tls.client.enableStatusRequestExtension=false
+ *      NoMacInitialClientHello
  */
 
 import java.net.DatagramPacket;

@@ -34,13 +34,13 @@ package java.io;
  *
  * <p>Whether or not a file is available or may be created depends upon the
  * underlying platform.  Some platforms, in particular, allow a file to be
- * opened for writing by only one <tt>FileWriter</tt> (or other file-writing
+ * opened for writing by only one {@code FileWriter} (or other file-writing
  * object) at a time.  In such situations the constructors in this class
  * will fail if the file involved is already open.
  *
- * <p><code>FileWriter</code> is meant for writing streams of characters.
+ * <p>{@code FileWriter} is meant for writing streams of characters.
  * For writing streams of raw bytes, consider using a
- * <code>FileOutputStream</code>.
+ * {@code FileOutputStream}.
  *
  * @see OutputStreamWriter
  * @see FileOutputStream
@@ -68,7 +68,7 @@ public class FileWriter extends OutputStreamWriter {
      * indicating whether or not to append the data written.
      *
      * @param fileName  String The system-dependent filename.
-     * @param append    boolean if <code>true</code>, then data will be written
+     * @param append    boolean if {@code true}, then data will be written
      *                  to the end of the file rather than the beginning.
      * @throws IOException  if the named file exists but is a directory rather
      *                  than a regular file, does not exist but cannot be
@@ -92,11 +92,11 @@ public class FileWriter extends OutputStreamWriter {
 
     /**
      * Constructs a FileWriter object given a File object. If the second
-     * argument is <code>true</code>, then bytes will be written to the end
+     * argument is {@code true}, then bytes will be written to the end
      * of the file rather than the beginning.
      *
      * @param file  a File object to write to
-     * @param     append    if <code>true</code>, then bytes will be written
+     * @param     append    if {@code true}, then bytes will be written
      *                      to the end of the file rather than the beginning
      * @throws IOException  if the file exists but is a directory rather than
      *                  a regular file, does not exist but cannot be created,

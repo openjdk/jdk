@@ -29,6 +29,7 @@
 # 
 #  @author Jim Holmlund
 # 
+#  @key intermittent
 #  @modules jdk.jdi
 #  @run build TestScaffold VMConnection TargetListener TargetAdapter
 #  @run shell MixedSuspendTest.sh

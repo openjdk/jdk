@@ -94,7 +94,7 @@ public abstract class OutputStream implements Closeable, Flushable {
      * <p>
      * If <code>off</code> is negative, or <code>len</code> is negative, or
      * <code>off+len</code> is greater than the length of the array
-     * <code>b</code>, then an <tt>IndexOutOfBoundsException</tt> is thrown.
+     * {@code b}, then an {@code IndexOutOfBoundsException} is thrown.
      *
      * @param      b     the data.
      * @param      off   the start offset in the data.

@@ -21,11 +21,18 @@
  * questions.
  */
 
+import java.io.IOException;
 import java.net.URISyntaxException;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
+
+import jdk.testlibrary.Asserts;
+import jdk.testlibrary.Utils;
+import jdk.test.lib.apps.LingeredApp;
 import sun.jvmstat.monitor.MonitorException;
 import sun.jvmstat.monitor.MonitoredHost;
 import sun.jvmstat.monitor.MonitoredVm;
+import sun.jvmstat.monitor.MonitoredVmUtil;
 import sun.jvmstat.monitor.VmIdentifier;
 
 /**
@@ -33,41 +40,41 @@ import sun.jvmstat.monitor.VmIdentifier;
  * @test
  * @bug 6672135
  * @summary setInterval() for local MonitoredHost and local MonitoredVm
- * @author Tomas Hurka
  * @modules jdk.jvmstat/sun.jvmstat.monitor
- * @run main/othervm -XX:+UsePerfData CR6672135
+ * @library /lib/testlibrary
+ * @library /../../test/lib/share/classes
+ * @build jdk.testlibrary.*
+ * @build jdk.test.lib.apps.*
+ * @run main TestPollingInterval
  */
-public class CR6672135 {
+public class TestPollingInterval {
 
     private static final int INTERVAL = 2000;
 
-    public static void main(String[] args) {
-        int vmInterval;
-        int hostInterval;
-
+    public static void main(String[] args) throws IOException,
+            MonitorException, URISyntaxException {
+        LingeredApp app = null;
         try {
+            List<String> vmArgs = new ArrayList<String>();
+            vmArgs.add("-XX:+UsePerfData");
+            vmArgs.addAll(Utils.getVmOptions());
+            app = LingeredApp.startApp(vmArgs);
+
             MonitoredHost localHost = MonitoredHost.getMonitoredHost("localhost");
-            Set vms = localHost.activeVms();
-            Integer vmInt =  (Integer) vms.iterator().next();
-            String uriString = "//" + vmInt + "?mode=r"; // NOI18N
+            String uriString = "//" + app.getPid() + "?mode=r"; // NOI18N
             VmIdentifier vmId = new VmIdentifier(uriString);
             MonitoredVm vm = localHost.getMonitoredVm(vmId);
+            System.out.println("Monitored vm command line: " + MonitoredVmUtil.commandLine(vm));
 
             vm.setInterval(INTERVAL);
             localHost.setInterval(INTERVAL);
-            vmInterval = vm.getInterval();
-            hostInterval = localHost.getInterval();
-        } catch (Exception ex) {
-            throw new Error ("Test failed",ex);
-        }
-        System.out.println("VM "+vmInterval);
-        if (vmInterval != INTERVAL) {
-            throw new Error("Test failed");
-        }
-        System.out.println("Host "+hostInterval);
-        if (hostInterval != INTERVAL) {
-            throw new Error("Test failed");
-        }
-    }
-}
 
+            Asserts.assertEquals(vm.getInterval(), INTERVAL, "Monitored vm interval should be equal the test value");
+            Asserts.assertEquals(localHost.getInterval(), INTERVAL, "Monitored host interval should be equal the test value");
+        } finally {
+            LingeredApp.stopApp(app);
+        }
+
+    }
+
+}

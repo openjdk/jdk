@@ -138,7 +138,7 @@ final class SliceOps {
                             skip, limit, size);
                 }
                 else {
-                    // @@@ OOMEs will occur for LongStream.longs().filter(i -> true).limit(n)
+                    // @@@ OOMEs will occur for LongStream.range(0, Long.MAX_VALUE).filter(i -> true).limit(n)
                     //     regardless of the value of n
                     //     Need to adjust the target size of splitting for the
                     //     SliceTask from say (size / k) to say min(size / k, 1 << 14)

@@ -137,9 +137,9 @@ import java.util.Properties;
  * of the original compound name.
  *
  *<h1>Multithreaded Access</h1>
- * A <tt>CompoundName</tt> instance is not synchronized against concurrent
+ * A {@code CompoundName} instance is not synchronized against concurrent
  * multithreaded access. Multiple threads trying to access and modify a
- * <tt>CompoundName</tt> should lock the object.
+ * {@code CompoundName} should lock the object.
  *
  * @author Rosanna Lee
  * @author Scott Seligman
@@ -194,7 +194,7 @@ public class CompoundName implements Name {
       *                 this compound name.  See class description for
       *                 contents of properties.
       * @exception      InvalidNameException If 'n' violates the syntax specified
-      *                 by <code>syntax</code>.
+      *                 by {@code syntax}.
       */
     public CompoundName(String n, Properties syntax) throws InvalidNameException {
         if (syntax == null) {
@@ -549,9 +549,9 @@ public class CompoundName implements Name {
 
     /**
      * Overridden to avoid implementation dependency.
-     * @serialData The syntax <tt>Properties</tt>, followed by
-     * the number of components (an <tt>int</tt>), and the individual
-     * components (each a <tt>String</tt>).
+     * @serialData The syntax {@code Properties}, followed by
+     * the number of components (an {@code int}), and the individual
+     * components (each a {@code String}).
      */
     private void writeObject(java.io.ObjectOutputStream s)
             throws java.io.IOException {

@@ -28,6 +28,7 @@
 #  @bug 4507088
 #  @summary TTY: Add a comment delimiter to the jdb command set
 #  @author Tim Bell
+#  @key intermittent
 #  @run shell CommandCommentDelimiter.sh
 #
 

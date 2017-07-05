@@ -291,7 +291,7 @@ public interface LongStream extends BaseStream<Long, LongStream> {
      *
      * <p>Independent of whether this stream is ordered or unordered if all
      * elements of this stream match the given predicate then this operation
-     * takes all elements (the result is the same is the input), or if no
+     * takes all elements (the result is the same as the input), or if no
      * elements of the stream match the given predicate then no elements are
      * taken (the result is an empty stream).
      *
@@ -327,6 +327,7 @@ public interface LongStream extends BaseStream<Long, LongStream> {
      *                  predicate to apply to elements to determine the longest
      *                  prefix of elements.
      * @return the new stream
+     * @since 1.9
      */
     default LongStream takeWhile(LongPredicate predicate) {
         Objects.requireNonNull(predicate);
@@ -359,7 +360,7 @@ public interface LongStream extends BaseStream<Long, LongStream> {
      * elements of this stream match the given predicate then this operation
      * drops all elements (the result is an empty stream), or if no elements of
      * the stream match the given predicate then no elements are dropped (the
-     * result is the same is the input).
+     * result is the same as the input).
      *
      * <p>This is a <a href="package-summary.html#StreamOps">stateful
      * intermediate operation</a>.
@@ -393,6 +394,7 @@ public interface LongStream extends BaseStream<Long, LongStream> {
      *                  predicate to apply to elements to determine the longest
      *                  prefix of elements.
      * @return the new stream
+     * @since 1.9
      */
     default LongStream dropWhile(LongPredicate predicate) {
         Objects.requireNonNull(predicate);

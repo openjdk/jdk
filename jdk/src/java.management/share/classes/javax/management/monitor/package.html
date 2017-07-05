@@ -41,20 +41,20 @@ questions.
       <p id="complex">The value being monitored can be a simple value
       contained within a complex type. For example, the {@link
       java.lang.management.MemoryMXBean MemoryMXBean} defined in
-      <tt>java.lang.management</tt> has an attribute
-      <tt>HeapMemoryUsage</tt> of type {@link
+      {@code java.lang.management} has an attribute
+      {@code HeapMemoryUsage} of type {@link
       java.lang.management.MemoryUsage MemoryUsage}. To monitor the
-      amount of <i>used</i> memory, described by the <tt>used</tt>
-      property of <tt>MemoryUsage</tt>, you could monitor
-      "<tt>HeapMemoryUsage.used</tt>". That string would be the
+      amount of <i>used</i> memory, described by the {@code used}
+      property of {@code MemoryUsage}, you could monitor
+      "{@code HeapMemoryUsage.used}". That string would be the
       argument to {@link
       javax.management.monitor.MonitorMBean#setObservedAttribute(String)
       setObservedAttribute}.</p>
 
-      <p>The rules used to interpret an <tt>ObservedAttribute</tt> like
-      <tt>"HeapMemoryUsage.used"</tt> are as follows. Suppose the string is
-      <i>A.e</i> (so <i>A</i> would be <tt>"HeapMemoryUsage"</tt> and <i>e</i>
-      would be <tt>"used"</tt> in the example).</p>
+      <p>The rules used to interpret an {@code ObservedAttribute} like
+      {@code "HeapMemoryUsage.used"} are as follows. Suppose the string is
+      <i>A.e</i> (so <i>A</i> would be {@code "HeapMemoryUsage"} and <i>e</i>
+      would be {@code "used"} in the example).</p>
 
       <p>First the value of the attribute <i>A</i> is obtained. Call it
       <i>v</i>. A value <i>x</i> is extracted from <i>v</i> as follows:</p>
@@ -65,49 +65,49 @@ questions.
       CompositeData} and if <i>v</i>.{@link
       javax.management.openmbean.CompositeData#get(String) get}(<i>e</i>)
       returns a value then <i>x</i> is that value.</li>
-      <li>If <i>v</i> is an array and <i>e</i> is the string <tt>"length"</tt>
+      <li>If <i>v</i> is an array and <i>e</i> is the string {@code "length"}
       then <i>x</i> is the length of the array.</li>
       
       <li>If the above rules do not produce a value, and if introspection, as
       if by calling {@link java.beans.Introspector#getBeanInfo(Class) 
       Introspector.getBeanInfo}, for the class of <i>v</i> 
-      (<i>v</i>.<tt>getClass()</tt>) identifies a property with the name 
+      (<i>v</i>.{@code getClass()}) identifies a property with the name 
       <i>e</i>, then <i>x</i> is the result of reading the property value. </li>
       
       </ul>
 
       <p>The third rule means for example that if the attribute
-      <tt>HeapMemoryUsage</tt> is a <tt>MemoryUsage</tt>, monitoring
-      <tt>"HeapMemoryUsage.used"</tt> will obtain the observed value by
-      calling <tt>MemoryUsage.getUsed()</tt>.</p>
+      {@code HeapMemoryUsage} is a {@code MemoryUsage}, monitoring
+      {@code "HeapMemoryUsage.used"} will obtain the observed value by
+      calling {@code MemoryUsage.getUsed()}.</p>
 
-      <p>If the <tt>ObservedAttribute</tt> contains more than one period,
-      for example <tt>"ConnectionPool.connectionStats.length"</tt>, then the
+      <p>If the {@code ObservedAttribute} contains more than one period,
+      for example {@code "ConnectionPool.connectionStats.length"}, then the
       above rules are applied iteratively. Here, <i>v</i> would initially be
-      the value of the attribute <tt>ConnectionPool</tt>, and <i>x</i> would
+      the value of the attribute {@code ConnectionPool}, and <i>x</i> would
       be derived by applying the above rules with <i>e</i> equal to
-      <tt>"connectionStats"</tt>. Then <i>v</i> would be set to this <i>x</i>
+      {@code "connectionStats"}. Then <i>v</i> would be set to this <i>x</i>
       and a new <i>x</i> derived by applying the rules again with <i>e</i>
-      equal to <tt>"length"</tt>.</p>
+      equal to {@code "length"}.</p>
 
       <p>Although it is recommended that attribute names be valid Java
       identifiers, it is possible for an attribute to be called
-      <tt>HeapMemoryUsage.used</tt>. This means that an
-      <tt>ObservedAttribute</tt> that is <tt>HeapMemoryUsage.used</tt>
+      {@code HeapMemoryUsage.used}. This means that an
+      {@code ObservedAttribute} that is {@code HeapMemoryUsage.used}
       could mean that the value to observe is either an attribute of that
-      name, or the property <tt>used</tt> within an attribute called
-      <tt>HeapMemoryUsage</tt>. So for compatibility reasons, when the
-      <tt>ObservedAttribute</tt> contains a period (<tt>.</tt>), the monitor
+      name, or the property {@code used} within an attribute called
+      {@code HeapMemoryUsage}. So for compatibility reasons, when the
+      {@code ObservedAttribute} contains a period ({@code .}), the monitor
       will check whether an attribute exists whose name is the full
-      <tt>ObservedAttribute</tt> string (<tt>HeapMemoryUsage.used</tt> in the
+      {@code ObservedAttribute} string ({@code HeapMemoryUsage.used} in the
       example). It does this by calling {@link
       javax.management.MBeanServer#getMBeanInfo(javax.management.ObjectName)
       getMBeanInfo} for the observed MBean and looking for a contained {@link
       javax.management.MBeanAttributeInfo MBeanAttributeInfo} with the given
       name. If one is found, then that is what is monitored. If more than one
       MBean is being observed, the behavior is unspecified if some of them have
-      a <tt>HeapMemoryUsage.used</tt> attribute and others do not. An
-      implementation may therefore call <tt>getMBeanInfo</tt> on just one of
+      a {@code HeapMemoryUsage.used} attribute and others do not. An
+      implementation may therefore call {@code getMBeanInfo} on just one of
       the MBeans in this case. The behavior is also unspecified if the result
       of the check changes while the monitor is active.</p>
 

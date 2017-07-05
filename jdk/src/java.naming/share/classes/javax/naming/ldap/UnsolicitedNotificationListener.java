@@ -28,20 +28,20 @@ package javax.naming.ldap;
 import javax.naming.event.NamingListener;
 
 /**
- * This interface is for handling <tt>UnsolicitedNotificationEvent</tt>.
+ * This interface is for handling {@code UnsolicitedNotificationEvent}.
  * "Unsolicited notification" is defined in
  * <A HREF="http://www.ietf.org/rfc/rfc2251.txt">RFC 2251</A>.
  * It allows the server to send unsolicited notifications to the client.
- * A <tt>UnsolicitedNotificationListener</tt> must:
+ * A {@code UnsolicitedNotificationListener} must:
  *<ol>
  * <li>Implement this interface and its method
- * <li>Implement <tt>NamingListener.namingExceptionThrown()</tt> so
+ * <li>Implement {@code NamingListener.namingExceptionThrown()} so
  * that it will be notified of exceptions thrown while attempting to
  * collect unsolicited notification events.
- * <li>Register with the context using one of the <tt>addNamingListener()</tt>
- * methods from <tt>EventContext</tt> or <tt>EventDirContext</tt>.
- * Only the <tt>NamingListener</tt> argument of these methods are applicable;
- * the rest are ignored for a <tt>UnsolicitedNotificationListener</tt>.
+ * <li>Register with the context using one of the {@code addNamingListener()}
+ * methods from {@code EventContext} or {@code EventDirContext}.
+ * Only the {@code NamingListener} argument of these methods are applicable;
+ * the rest are ignored for a {@code UnsolicitedNotificationListener}.
  * (These arguments might be applicable to the listener if it implements
  * other listener interfaces).
  *</ol>

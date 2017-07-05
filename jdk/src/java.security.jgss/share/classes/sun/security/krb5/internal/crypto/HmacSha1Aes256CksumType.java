@@ -95,7 +95,7 @@ public class HmacSha1Aes256CksumType extends CksumType {
      * @param data the data.
      * @param size the length of data.
      * @param key the key used to encrypt the checksum.
-     * @param checksum
+     * @param checksum the checksum.
      * @return true if verification is successful.
      */
     public boolean verifyKeyedChecksum(byte[] data, int size,
