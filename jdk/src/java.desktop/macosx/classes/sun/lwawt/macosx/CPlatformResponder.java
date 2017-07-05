@@ -265,9 +265,8 @@ final class CPlatformResponder {
 
     static class DeltaAccumulator {
 
-        static final double MIN_THRESHOLD = 0.1;
-        static final double MAX_THRESHOLD = 0.5;
         double accumulatedDelta;
+        boolean accumulate;
 
         int getRoundedDelta(double delta, int scrollPhase) {
 
@@ -278,25 +277,23 @@ final class CPlatformResponder {
                     roundDelta = delta > 0 ? 1 : -1;
                 }
             } else { // trackpad
-                boolean begin = scrollPhase == NSEvent.SCROLL_PHASE_BEGAN;
-                boolean end = scrollPhase == NSEvent.SCROLL_MASK_PHASE_ENDED
-                        || scrollPhase == NSEvent.SCROLL_MASK_PHASE_CANCELLED;
-
-                if (begin) {
+                if (scrollPhase == NSEvent.SCROLL_PHASE_BEGAN) {
                     accumulatedDelta = 0;
+                    accumulate = true;
                 }
+                else if (scrollPhase == NSEvent.SCROLL_PHASE_MOMENTUM_BEGAN) {
+                    accumulate = true;
+                }
+                if (accumulate) {
 
-                accumulatedDelta += delta;
+                    accumulatedDelta += delta;
 
-                double absAccumulatedDelta = Math.abs(accumulatedDelta);
-                if (absAccumulatedDelta > MAX_THRESHOLD) {
                     roundDelta = (int) Math.round(accumulatedDelta);
-                    accumulatedDelta -= roundDelta;
-                }
 
-                if (end) {
-                    if (roundDelta == 0 && absAccumulatedDelta > MIN_THRESHOLD) {
-                        roundDelta = accumulatedDelta > 0 ? 1 : -1;
+                    accumulatedDelta -= roundDelta;
+
+                    if (scrollPhase == NSEvent.SCROLL_PHASE_ENDED) {
+                        accumulate = false;
                     }
                 }
             }

@@ -15,9 +15,9 @@ import static org.testng.Assert.*;
  * @test
  * @bug     8139587
  * @summary Check backward compatibility of StackTraceElementCompositeData
- * @modules java.management/sun.management
- * @run testng CompatibilityTest
  * @author  Jaroslav Bachorik
+ *
+ * @run testng CompatibilityTest
  */
 
 public class CompatibilityTest {
@@ -70,3 +70,4 @@ public class CompatibilityTest {
         assertNull(ste.getModuleVersion());
     }
 }
+

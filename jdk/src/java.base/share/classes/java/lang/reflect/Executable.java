@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -551,12 +551,18 @@ public abstract class Executable extends AccessibleObject
 
         Annotation[][] result = parseParameterAnnotations(parameterAnnotations);
 
-        if (result.length != numParameters)
-            handleParameterNumberMismatch(result.length, numParameters);
+        if (result.length != numParameters &&
+            handleParameterNumberMismatch(result.length, numParameters)) {
+            Annotation[][] tmp = new Annotation[result.length+1][];
+            // Shift annotations down one to account for an implicit leading parameter
+            System.arraycopy(result, 0, tmp, 1, result.length);
+            tmp[0] = new Annotation[0];
+            result = tmp;
+        }
         return result;
     }
 
-    abstract void handleParameterNumberMismatch(int resultLength, int numParameters);
+    abstract boolean handleParameterNumberMismatch(int resultLength, int numParameters);
 
     /**
      * {@inheritDoc}

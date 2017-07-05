@@ -28,7 +28,7 @@
  *                             ClassLoadingMXBean.getTotalLoadedClassCount()
  *                             ClassLoadingMXBean.getUnloadedClassCount()
  * @author  Alexei Guibadoulline
- * @modules java.management
+ *
  * @run main/othervm LoadCounts
  */
 
