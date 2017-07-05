@@ -387,13 +387,12 @@ void HeapRegion::par_clear() {
   ct_bs->clear(MemRegion(bottom(), end()));
 }
 
-// <PREDICTION>
 void HeapRegion::calc_gc_efficiency() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
-  _gc_efficiency = (double) garbage_bytes() /
-                            g1h->predict_region_elapsed_time_ms(this, false);
+  G1CollectorPolicy* g1p = g1h->g1_policy();
+  _gc_efficiency = (double) reclaimable_bytes() /
+                            g1p->predict_region_elapsed_time_ms(this, false);
 }
-// </PREDICTION>
 
 void HeapRegion::set_startsHumongous(HeapWord* new_top, HeapWord* new_end) {
   assert(!isHumongous(), "sanity / pre-condition");

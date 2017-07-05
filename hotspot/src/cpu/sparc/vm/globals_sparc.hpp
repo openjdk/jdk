@@ -56,14 +56,15 @@ define_pd_global(intx, InlineSmallCode,       1500);
 // Stack slots are 2X larger in LP64 than in the 32 bit VM.
 define_pd_global(intx, ThreadStackSize,       1024);
 define_pd_global(intx, VMThreadStackSize,     1024);
+define_pd_global(intx, StackShadowPages, 10 DEBUG_ONLY(+1));
 #else
 define_pd_global(intx, ThreadStackSize,       512);
 define_pd_global(intx, VMThreadStackSize,     512);
+define_pd_global(intx, StackShadowPages, 3 DEBUG_ONLY(+1));
 #endif
 
 define_pd_global(intx, StackYellowPages, 2);
 define_pd_global(intx, StackRedPages, 1);
-define_pd_global(intx, StackShadowPages, 3 DEBUG_ONLY(+1));
 
 define_pd_global(intx, PreInflateSpin,       40);  // Determined by running design center
 

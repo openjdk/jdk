@@ -82,7 +82,7 @@ jlong DTraceJSDT::activate(
 
   int handle = pd_activate((void*)probes,
     module_name, providers_count, providers);
-  if (handle <= 0) {
+  if (handle < 0) {
     delete probes;
     THROW_MSG_0(vmSymbols::java_lang_RuntimeException(),
       "Unable to register DTrace probes (internal error).");

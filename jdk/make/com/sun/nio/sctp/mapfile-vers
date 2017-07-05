@@ -25,30 +25,30 @@
 
 SUNWprivate_1.1 {
 	global:
-		Java_sun_nio_ch_SctpNet_init;
-		Java_sun_nio_ch_SctpNet_socket0;
-		Java_sun_nio_ch_SctpNet_bindx;
-		Java_sun_nio_ch_SctpNet_branch0;
-		Java_sun_nio_ch_SctpNet_listen0;
-		Java_sun_nio_ch_SctpNet_connect0;
-		Java_sun_nio_ch_SctpNet_close0;
-		Java_sun_nio_ch_SctpNet_preClose0;
-		Java_sun_nio_ch_SctpNet_getLocalAddresses0;
-		Java_sun_nio_ch_SctpNet_getRemoteAddresses0;
-		Java_sun_nio_ch_SctpNet_getPrimAddrOption0;
-		Java_sun_nio_ch_SctpNet_setPrimAddrOption0;
-		Java_sun_nio_ch_SctpNet_setPeerPrimAddrOption0;
-		Java_sun_nio_ch_SctpNet_getInitMsgOption0;
-		Java_sun_nio_ch_SctpNet_setInitMsgOption0;
-		Java_sun_nio_ch_SctpNet_getIntOption0;
-		Java_sun_nio_ch_SctpNet_setIntOption0;
-		Java_sun_nio_ch_SctpNet_shutdown0;
-		Java_sun_nio_ch_SctpChannelImpl_initIDs;
-		Java_sun_nio_ch_SctpChannelImpl_checkConnect;
-		Java_sun_nio_ch_SctpChannelImpl_receive0;
-		Java_sun_nio_ch_SctpChannelImpl_send0;
-		Java_sun_nio_ch_SctpServerChannelImpl_initIDs;
-		Java_sun_nio_ch_SctpServerChannelImpl_accept0;
+		Java_sun_nio_ch_sctp_SctpNet_init;
+		Java_sun_nio_ch_sctp_SctpNet_socket0;
+		Java_sun_nio_ch_sctp_SctpNet_bindx;
+		Java_sun_nio_ch_sctp_SctpNet_branch0;
+		Java_sun_nio_ch_sctp_SctpNet_listen0;
+		Java_sun_nio_ch_sctp_SctpNet_connect0;
+		Java_sun_nio_ch_sctp_SctpNet_close0;
+		Java_sun_nio_ch_sctp_SctpNet_preClose0;
+		Java_sun_nio_ch_sctp_SctpNet_getLocalAddresses0;
+		Java_sun_nio_ch_sctp_SctpNet_getRemoteAddresses0;
+		Java_sun_nio_ch_sctp_SctpNet_getPrimAddrOption0;
+		Java_sun_nio_ch_sctp_SctpNet_setPrimAddrOption0;
+		Java_sun_nio_ch_sctp_SctpNet_setPeerPrimAddrOption0;
+		Java_sun_nio_ch_sctp_SctpNet_getInitMsgOption0;
+		Java_sun_nio_ch_sctp_SctpNet_setInitMsgOption0;
+		Java_sun_nio_ch_sctp_SctpNet_getIntOption0;
+		Java_sun_nio_ch_sctp_SctpNet_setIntOption0;
+		Java_sun_nio_ch_sctp_SctpNet_shutdown0;
+		Java_sun_nio_ch_sctp_SctpChannelImpl_initIDs;
+		Java_sun_nio_ch_sctp_SctpChannelImpl_checkConnect;
+		Java_sun_nio_ch_sctp_SctpChannelImpl_receive0;
+		Java_sun_nio_ch_sctp_SctpChannelImpl_send0;
+		Java_sun_nio_ch_sctp_SctpServerChannelImpl_initIDs;
+		Java_sun_nio_ch_sctp_SctpServerChannelImpl_accept0;
                 JNI_OnLoad;
 	local:
 		*;

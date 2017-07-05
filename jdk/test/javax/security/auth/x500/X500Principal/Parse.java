@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7024771
+ * @bug 7024771 7024604
  * @summary various X500Principal DN parsing tests
  */
 
@@ -32,12 +32,18 @@ import javax.security.auth.x500.X500Principal;
 public class Parse {
 
     private static TestCase[] testCases = {
-        new TestCase("CN=prefix\\<>suffix", false)
+        new TestCase("CN=prefix\\<>suffix", false),
+        new TestCase("OID.1=value", false),
+        new TestCase("oid.1=value", false),
+        new TestCase("OID.1.2=value", true),
+        new TestCase("oid.1.2=value", true),
+        new TestCase("1=value", false),
+        new TestCase("1.2=value", true)
     };
 
     public static void main(String args[]) throws Exception {
-        for (int i = 0; i < testCases.length; i++) {
-            testCases[i].run();
+        for (TestCase testCase : testCases) {
+            testCase.run();
         }
         System.out.println("Test completed ok.");
     }

@@ -211,7 +211,7 @@ public class ZipFileSystemProvider extends FileSystemProvider {
     public <V extends FileAttributeView> V
         getFileAttributeView(Path path, Class<V> type, LinkOption... options)
     {
-        return (V)ZipFileAttributeView.get(toZipPath(path), type);
+        return ZipFileAttributeView.get(toZipPath(path), type);
     }
 
     @Override

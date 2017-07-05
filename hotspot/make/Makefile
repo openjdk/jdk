@@ -402,7 +402,6 @@ $(EXPORT_INCLUDE_DIR)/%: $(HS_ALT_SRC)/share/vm/jfr/agent/%
 	$(install-file)
 else
 $(EXPORT_INCLUDE_DIR)/jfr.h:
-	
 endif
 
 # Doc files (jvmti.html)
@@ -448,12 +447,18 @@ $(JDK_IMAGE_DIR)/jre/lib/rt.jar:
 	 ($(CD) $(JDK_IMAGE_DIR) && $(TAR) -xf -)
 
 test_jdk:
-  ifneq ($(ZERO_BUILD), true)
     ifeq ($(ARCH_DATA_MODEL), 32)
-	$(JDK_IMAGE_DIR)/bin/java -client -version
+      ifneq ($(ZERO_BUILD), true)
+	$(JDK_IMAGE_DIR)/bin/java -d32 -client -Xinternalversion
+	$(JDK_IMAGE_DIR)/bin/java -d32 -client -version
+      endif
+	$(JDK_IMAGE_DIR)/bin/java -d32 -server -Xinternalversion
+	$(JDK_IMAGE_DIR)/bin/java -d32 -server -version
     endif
-  endif
-	$(JDK_IMAGE_DIR)/bin/java -server -version
+    ifeq ($(ARCH_DATA_MODEL), 64)
+	$(JDK_IMAGE_DIR)/bin/java -d64 -server -Xinternalversion
+	$(JDK_IMAGE_DIR)/bin/java -d64 -server -version
+    endif
 
 copy_product_jdk::
 	$(RM) -r $(JDK_IMAGE_DIR)
@@ -545,6 +550,7 @@ SLASH_JAVA.desc            = Root of all build tools, e.g. /java or J:
 OUTPUTDIR.desc             = Output directory, default is build/<osname>
 BOOTDIR.desc               = JDK used to compile agent java source and test with
 JDK_IMPORT_PATH.desc       = Promoted JDK to copy for 'create_jdk'
+JDK_IMAGE_DIR.desc         = Directory to place JDK to copy
 EXPORT_PATH.desc           = Directory to place files to export for JDK build
 
 # Make variables to print out (description and value)
@@ -553,6 +559,7 @@ VARIABLE_PRINTVAL_LIST +=       \
     OUTPUTDIR                   \
     BOOTDIR                     \
     JDK_IMPORT_PATH             \
+    JDK_IMAGE_DIR               \
     EXPORT_PATH
 
 # Make variables that should refer to directories that exist

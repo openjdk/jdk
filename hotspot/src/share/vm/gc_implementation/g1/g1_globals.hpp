@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -297,7 +297,23 @@
                                                                             \
   develop(uintx, G1DefaultMaxNewGenPercent, 80,                             \
           "Percentage (0-100) of the heap size to use as maximum "          \
-          "young gen size.")
+          "young gen size.")                                                \
+                                                                            \
+  develop(uintx, G1OldCSetRegionLiveThresholdPercent, 95,                   \
+          "Threshold for regions to be added to the collection set. "       \
+          "Regions with more live bytes that this will not be collected.")  \
+                                                                            \
+  develop(uintx, G1OldReclaimableThresholdPercent, 1,                       \
+          "Threshold for the remaining old reclaimable bytes, expressed "   \
+          "as a percentage of the heap size. If the old reclaimable bytes " \
+          "are under this we will not collect them with more mixed GCs.")   \
+                                                                            \
+  develop(uintx, G1MaxMixedGCNum, 4,                                        \
+          "The maximum desired number of mixed GCs after a marking cycle.") \
+                                                                            \
+  develop(uintx, G1OldCSetRegionThresholdPercent, 10,                       \
+          "An upper bound for the number of old CSet regions expressed "    \
+          "as a percentage of the heap size.")
 
 G1_FLAGS(DECLARE_DEVELOPER_FLAG, DECLARE_PD_DEVELOPER_FLAG, DECLARE_PRODUCT_FLAG, DECLARE_PD_PRODUCT_FLAG, DECLARE_DIAGNOSTIC_FLAG, DECLARE_EXPERIMENTAL_FLAG, DECLARE_NOTPRODUCT_FLAG, DECLARE_MANAGEABLE_FLAG, DECLARE_PRODUCT_RW_FLAG)
 

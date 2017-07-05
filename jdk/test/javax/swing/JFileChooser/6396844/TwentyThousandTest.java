@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,28 +26,29 @@
  * @bug 6396844
  * @summary Tests memory leak for 20000 files
  * @author Sergey Malenkov
- * @run main/othervm/timeout=1000 -mx256m TwentyThousandTest
+ * @library ../../regtesthelpers
+ * @build Util
+ * @run main/othervm/timeout=1000 -mx128m TwentyThousandTest
  */
 
+import sun.java2d.Disposer;
+import sun.java2d.DisposerRecord;
+
 import javax.swing.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.awt.event.HierarchyEvent;
+import java.awt.event.HierarchyListener;
 import java.io.File;
 import java.io.FileWriter;
 
-public class TwentyThousandTest implements ActionListener, Runnable {
+public class TwentyThousandTest {
 
     private static final int FILES = 20000;
-    private static final int ATTEMPTS = 100;
+    private static final int ATTEMPTS = 20;
     private static final int INTERVAL = 100;
 
-    private static final boolean ALWAYS_NEW_INSTANCE = false;
-    private static final boolean UPDATE_UI_EACH_INTERVAL = true;
-    private static final boolean AUTO_CLOSE_DIALOG = true;
-
-    private static JFileChooser CHOOSER;
-
     private static String tmpDir;
+
+    private static volatile boolean disposerComplete;
 
     public static void main(String[] args) throws Exception {
         tmpDir = System.getProperty("java.io.tmpdir");
@@ -77,15 +78,13 @@ public class TwentyThousandTest implements ActionListener, Runnable {
 
             System.out.println("Do " + ATTEMPTS + " attempts for " + laf.getClassName());
 
-            for ( int i = 0; i < ATTEMPTS; i++ ) {
+            for (int i = 0; i < ATTEMPTS; i++) {
                 System.out.print(i + " ");
 
                 doAttempt();
             }
 
             System.out.println();
-
-            CHOOSER = null;
         }
 
         System.out.println("Removing " + FILES + " files");
@@ -94,7 +93,7 @@ public class TwentyThousandTest implements ActionListener, Runnable {
             getTempFile(i).delete();
         }
 
-        System.out.println( "Test passed successfully" );
+        System.out.println("Test passed successfully");
     }
 
     private static File getTempFile(int i) {
@@ -104,48 +103,55 @@ public class TwentyThousandTest implements ActionListener, Runnable {
     private static void doAttempt() throws Exception {
         SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {
-                if ( ALWAYS_NEW_INSTANCE || ( CHOOSER == null ) )
-                    CHOOSER = new JFileChooser(tmpDir);
+                final JFileChooser chooser = new JFileChooser(tmpDir);
 
-                if ( UPDATE_UI_EACH_INTERVAL )
-                    CHOOSER.updateUI();
+                chooser.updateUI();
 
-                if ( AUTO_CLOSE_DIALOG ) {
-                    Thread t = new Thread( new TwentyThousandTest( CHOOSER ) );
-                    t.start();
-                    CHOOSER.showOpenDialog( null );
-                } else {
-                    CHOOSER.showOpenDialog( null );
-                }
+                // Postpone JFileChooser closing until it becomes visible
+                chooser.addHierarchyListener(new HierarchyListener() {
+                    @Override
+                    public void hierarchyChanged(HierarchyEvent e) {
+                        if ((e.getChangeFlags() & HierarchyEvent.SHOWING_CHANGED) != 0) {
+                            if (chooser.isShowing()) {
+                                Thread thread = new Thread(new Runnable() {
+                                    public void run() {
+                                        try {
+                                            Thread.sleep(INTERVAL);
+
+                                            // Close JFileChooser
+                                            SwingUtilities.invokeLater(new Runnable() {
+                                                public void run() {
+                                                    chooser.cancelSelection();
+                                                }
+                                            });
+                                        } catch (InterruptedException e) {
+                                            throw new RuntimeException(e);
+                                        }
+                                    }
+                                });
+
+                                thread.start();
+                            }
+                        }
+                    }
+                });
+
+                chooser.showOpenDialog(null);
             }
         });
 
-        // Allow to collect garbage by GC
-        Thread.sleep(1000);
-
-        System.gc();
-    }
-
-    private final JFileChooser chooser;
-
-    TwentyThousandTest( JFileChooser chooser ) {
-        this.chooser = chooser;
-    }
-
-    public void run() {
-        while ( !this.chooser.isShowing() ) {
-            try {
-                Thread.sleep( 30 );
-            } catch ( InterruptedException exception ) {
-                exception.printStackTrace();
+        DisposerRecord disposerRecord = new DisposerRecord() {
+            public void dispose() {
+                disposerComplete = true;
             }
-        }
-        Timer timer = new Timer( INTERVAL, this );
-        timer.setRepeats( false );
-        timer.start();
-    }
+        };
 
-    public void actionPerformed( ActionEvent event ) {
-        this.chooser.cancelSelection();
+        disposerComplete = false;
+
+        Disposer.addRecord(new Object(), disposerRecord);
+
+        while (!disposerComplete) {
+            Util.generateOOME();
+        }
     }
 }

@@ -67,7 +67,7 @@ abstract class AbstractPollSelectorImpl
         this.channelOffset = offset;
     }
 
-    void putEventOps(SelectionKeyImpl sk, int ops) {
+    public void putEventOps(SelectionKeyImpl sk, int ops) {
         synchronized (closeLock) {
             if (closed)
                 throw new ClosedSelectorException();

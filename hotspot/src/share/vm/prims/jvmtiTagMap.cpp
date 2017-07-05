@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2999,7 +2999,8 @@ inline bool VM_HeapWalkOperation::iterate_over_object(oop o) {
     char type = field->field_type();
     if (!is_primitive_field_type(type)) {
       oop fld_o = o->obj_field(field->field_offset());
-      if (fld_o != NULL) {
+      // ignore any objects that aren't visible to profiler
+      if (fld_o != NULL && ServiceUtil::visible_oop(fld_o)) {
         // reflection code may have a reference to a klassOop.
         // - see sun.reflect.UnsafeStaticFieldAccessorImpl and sun.misc.Unsafe
         if (fld_o->is_klass()) {
