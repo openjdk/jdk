@@ -77,7 +77,7 @@ AC_DEFUN([BOOTJDK_DO_CHECK],
           BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
 
           # Extra M4 quote needed to protect [] in grep expression.
-          [FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[89]\.'`]
+          [FOUND_CORRECT_VERSION=`$ECHO $BOOT_JDK_VERSION | $EGREP '\"9([\.+-].*)?\"|(1\.[89]\.)'`]
           if test "x$FOUND_CORRECT_VERSION" = x; then
             AC_MSG_NOTICE([Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring])
             AC_MSG_NOTICE([(Your Boot JDK must be version 8 or 9)])

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -208,13 +208,13 @@ Java_java_lang_System_initProperties(JNIEnv *env, jclass cla, jobject props)
     CHECK_NULL_RETURN(getPropID, NULL);
 
     PUTPROP(props, "java.specification.version",
-            JDK_MAJOR_VERSION "." JDK_MINOR_VERSION);
+            VERSION_SPECIFICATION);
     PUTPROP(props, "java.specification.name",
             "Java Platform API Specification");
     PUTPROP(props, "java.specification.vendor",
             JAVA_SPECIFICATION_VENDOR);
 
-    PUTPROP(props, "java.version", RELEASE);
+    PUTPROP(props, "java.version", VERSION_SHORT);
     PUTPROP(props, "java.vendor", VENDOR);
     PUTPROP(props, "java.vendor.url", VENDOR_URL);
     PUTPROP(props, "java.vendor.url.bug", VENDOR_URL_BUG);

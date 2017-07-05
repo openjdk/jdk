@@ -65,7 +65,7 @@ public final class SunPCSC extends Provider {
     }
 
     public SunPCSC() {
-        super("SunPCSC", 1.9d, "Sun PC/SC provider");
+        super("SunPCSC", 9.0d, "Sun PC/SC provider");
 
         final Provider p = this;
         AccessController.doPrivileged(new PrivilegedAction<Void>() {

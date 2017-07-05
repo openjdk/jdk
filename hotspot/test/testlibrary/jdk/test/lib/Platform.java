@@ -29,7 +29,7 @@ public class Platform {
     private static final String osName      = System.getProperty("os.name");
     private static final String dataModel   = System.getProperty("sun.arch.data.model");
     private static final String vmVersion   = System.getProperty("java.vm.version");
-    private static final String javaVersion = System.getProperty("java.version");
+    private static final String jdkDebug    = System.getProperty("jdk.debug");
     private static final String osArch      = System.getProperty("os.arch");
     private static final String vmName      = System.getProperty("java.vm.name");
     private static final String userName    = System.getProperty("user.name");
@@ -100,8 +100,7 @@ public class Platform {
     }
 
     public static boolean isDebugBuild() {
-        return (vmVersion.toLowerCase().contains("debug") ||
-                javaVersion.toLowerCase().contains("debug"));
+        return (jdkDebug.toLowerCase().contains("debug"));
     }
 
     public static String getVMVersion() {
