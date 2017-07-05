@@ -57,7 +57,7 @@ class OopsInGenClosure : public OopClosure {
   template <class T> void do_barrier(T* p);
 
   // Version for use by closures that may be called in parallel code.
-  void par_do_barrier(oop* p);
+  template <class T> void par_do_barrier(T* p);
 
  public:
   OopsInGenClosure() : OopClosure(NULL),

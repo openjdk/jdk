@@ -47,7 +47,7 @@ dump.cpp                                javaCalls.hpp
 dump.cpp                                javaClasses.hpp
 dump.cpp                                loaderConstraints.hpp
 dump.cpp                                methodDataOop.hpp
-dump.cpp                                oop.hpp
+dump.cpp                                oop.inline.hpp
 dump.cpp                                oopFactory.hpp
 dump.cpp                                resourceArea.hpp
 dump.cpp                                signature.hpp
@@ -237,7 +237,7 @@ serialize.cpp                           compactingPermGenGen.hpp
 serialize.cpp                           compiledICHolderOop.hpp
 serialize.cpp                           methodDataOop.hpp
 serialize.cpp                           objArrayOop.hpp
-serialize.cpp                           oop.hpp
+serialize.cpp                           oop.inline.hpp
 serialize.cpp                           symbolTable.hpp
 serialize.cpp                           systemDictionary.hpp
 
@@ -295,7 +295,7 @@ vmStructs.cpp                           nmethod.hpp
 vmStructs.cpp                           objArrayKlass.hpp
 vmStructs.cpp                           objArrayKlassKlass.hpp
 vmStructs.cpp                           objArrayOop.hpp
-vmStructs.cpp                           oop.hpp
+vmStructs.cpp                           oop.inline.hpp
 vmStructs.cpp                           oopMap.hpp
 vmStructs.cpp                           pcDesc.hpp
 vmStructs.cpp                           perfMemory.hpp
