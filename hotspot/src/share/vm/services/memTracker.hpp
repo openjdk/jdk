@@ -470,7 +470,21 @@ class MemTracker : AllStatic {
   static void check_NMT_load(Thread* thr) {
     assert(thr != NULL, "Sanity check");
     if (_slowdown_calling_thread && thr != _worker_thread) {
+#ifdef _WINDOWS
+      // On Windows, os::NakedYield() does not work as well
+      // as os::yield_all()
       os::yield_all();
+#else
+     // On Solaris, os::yield_all() depends on os::sleep()
+     // which requires JavaTherad in _thread_in_vm state.
+     // Transits thread to _thread_in_vm state can be dangerous
+     // if caller holds lock, as it may deadlock with Threads_lock.
+     // So use NaKedYield instead.
+     //
+     // Linux and BSD, NakedYield() and yield_all() implementations
+     // are the same.
+      os::NakedYield();
+#endif
     }
   }
 
