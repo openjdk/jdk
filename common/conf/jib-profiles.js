@@ -997,7 +997,8 @@ var getJibProfilesDependencies = function (input, common) {
             ext: "tar.gz",
             revision: "2.38.0-1+1.1",
             module: "graphviz-" + input.target_platform,
-            configure_args: "DOT=" + input.get("graphviz", "install_path") + "/dot"
+            configure_args: "DOT=" + input.get("graphviz", "install_path") + "/dot",
+            environment_path: input.get("graphviz", "install_path")
         },
 
         pandoc: {
@@ -1005,7 +1006,8 @@ var getJibProfilesDependencies = function (input, common) {
             ext: "tar.gz",
             revision: "1.17.2+1.0",
             module: "pandoc-" + input.target_platform,
-            configure_args: "PANDOC=" + input.get("pandoc", "install_path") + "/pandoc/pandoc"
+            configure_args: "PANDOC=" + input.get("pandoc", "install_path") + "/pandoc/pandoc",
+            environment_path: input.get("pandoc", "install_path") + "/pandoc"
         },
     };
 
