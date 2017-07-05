@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1188,7 +1188,7 @@ void CppInterpreterGenerator::generate_compute_interpreter_state(const Register 
   __ st_ptr(O2, XXX_STATE(_stack));                // PREPUSH
 
   __ lduh(max_stack, O3);                      // Full size expression stack
-  guarantee(!EnableMethodHandles, "no support yet for java.dyn.MethodHandle"); //6815692
+  guarantee(!EnableMethodHandles, "no support yet for java.lang.invoke.MethodHandle"); //6815692
   //6815692//if (EnableMethodHandles)
   //6815692//  __ inc(O3, methodOopDesc::extra_stack_entries());
   __ sll(O3, LogBytesPerWord, O3);
