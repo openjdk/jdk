@@ -22,16 +22,14 @@
  */
 
 /**
- *  @test
- *  @bug 4728816
- *  @summary JPDA: Add support for enums
+ * @test
+ * @bug 4728816
+ * @summary JPDA: Add support for enums
+ * @author jjh
  *
- *  @author jjh
- *
- *  @modules jdk.jdi
- *  @run build TestScaffold VMConnection TargetListener TargetAdapter
- *  @run compile -g EnumTest.java
- *  @run driver EnumTest
+ * @run build TestScaffold VMConnection TargetListener TargetAdapter
+ * @run compile -g EnumTest.java
+ * @run driver EnumTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;
