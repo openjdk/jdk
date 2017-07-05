@@ -21,7 +21,7 @@ fi
 # set platform-dependent variables
 OS=`uname -s`
 case "$OS" in
-  SunOS | Linux )
+  SunOS | Linux | Darwin)
     NULL=/dev/null
     PS=":"
     FS="/"
@@ -52,30 +52,7 @@ ${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} -fullversion
 
 ${TESTJAVA}${FS}bin${FS}javac -classpath .${PS}$TESTJAVA${FS}lib${FS}tools.jar *.java
 
-${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} -classpath .${PS}$TESTJAVA${FS}lib${FS}tools.jar FieldMonitor > test.out 2>&1 &
-
-P_PID=$!
-
-sleep 60
-STATUS=0
-
-case "$OS" in
-    SunOS | Linux )
-        ps -ef | grep $P_PID | grep -v grep > ${NULL}
-        if [ $? = 0 ]; then
-            kill -9 $P_PID
-            STATUS=1
-        fi
-        ;;
-      * )
-        ps | grep -i "FieldMonitor" | grep -v grep > ${NULL}
-        if [ $? = 0 ]; then
-            C_PID=`ps | grep -i "FieldMonitor" | awk '{print $1}'`
-            kill -s 9 $C_PID
-            STATUS=1
-        fi
-        ;;
-esac
+${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} -classpath .${PS}$TESTJAVA${FS}lib${FS}tools.jar FieldMonitor > test.out
 
 grep "A fatal error has been detected" test.out > ${NULL}
 if [ $? = 0 ]; then
