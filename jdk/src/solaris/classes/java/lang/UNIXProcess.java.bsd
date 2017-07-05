@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ import java.util.Arrays;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 import java.security.AccessController;
 import static java.security.AccessController.doPrivileged;
 import java.security.PrivilegedAction;
@@ -211,6 +212,24 @@ final class UNIXProcess extends Process {
         }
         return exitcode;
     }
+    
+    @Override
+    public synchronized boolean waitFor(long timeout, TimeUnit unit) 
+        throws InterruptedException 
+    {
+        if (hasExited) return true;
+        if (timeout <= 0) return false;	
+
+        long timeoutAsNanos = unit.toNanos(timeout);
+        long startTime = System.nanoTime();
+        long rem = timeoutAsNanos;
+
+        while (!hasExited && (rem > 0)) {
+            wait(Math.max(TimeUnit.NANOSECONDS.toMillis(rem), 1));
+            rem = timeoutAsNanos - (System.nanoTime() - startTime);
+        }
+        return hasExited;
+    }
 
     public synchronized int exitValue() {
         if (!hasExited) {
@@ -219,8 +238,8 @@ final class UNIXProcess extends Process {
         return exitcode;
     }
 
-    private static native void destroyProcess(int pid);
-    public void destroy() {
+    private static native void destroyProcess(int pid, boolean force);
+    private void destroy(boolean force) {
         // There is a risk that pid will be recycled, causing us to
         // kill the wrong process!  So we only terminate processes
         // that appear to still be running.  Even with this check,
@@ -229,11 +248,26 @@ final class UNIXProcess extends Process {
         // soon, so this is quite safe.
         synchronized (this) {
             if (!hasExited)
-                destroyProcess(pid);
+                destroyProcess(pid, force);
         }
         try { stdin.close();  } catch (IOException ignored) {}
         try { stdout.close(); } catch (IOException ignored) {}
         try { stderr.close(); } catch (IOException ignored) {}
+    }
+
+    public void destroy() {
+        destroy(false);
+    }
+
+    @Override
+    public Process destroyForcibly() {
+        destroy(true);
+        return this;
+    }
+
+    @Override
+    public synchronized boolean isAlive() {
+        return !hasExited;
     }
 
     /* This routine initializes JNI field offsets for the class */

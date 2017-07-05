@@ -31,10 +31,16 @@ import java.util.List;
 
 import sun.misc.Unsafe;
 
+import javax.tools.annotation.GenerateNativeHeader;
+
+/* No native methods here, but the constants are needed in the supporting JNI code */
+@GenerateNativeHeader
 public final class JObjCRuntime {
     static { System.loadLibrary("JObjC"); }
 
+    @GenerateNativeHeader
     public static enum Arch{ ppc, i386, x86_64 };
+    @GenerateNativeHeader
     public static enum Width{ W32, W64 };
 
     public static final Arch ARCH = getArch();

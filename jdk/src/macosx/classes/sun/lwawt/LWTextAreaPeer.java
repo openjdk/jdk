@@ -59,8 +59,8 @@ final class LWTextAreaPeer
     }
 
     @Override
-    public void initialize() {
-        super.initialize();
+    void initializeImpl() {
+        super.initializeImpl();
         final int visibility = getTarget().getScrollbarVisibility();
         synchronized (getDelegateLock()) {
             setScrollBarVisibility(visibility);
