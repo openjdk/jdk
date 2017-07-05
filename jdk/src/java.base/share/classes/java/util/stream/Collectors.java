@@ -508,7 +508,7 @@ public final class Collectors {
      * transformation.  For example, one could adapt the {@link #toList()}
      * collector to always produce an immutable list with:
      * <pre>{@code
-     *     List<String> people
+     *     List<String> list
      *         = people.stream().collect(collectingAndThen(toList(), Collections::unmodifiableList));
      * }</pre>
      *

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -347,10 +347,12 @@ public class ObjectReferenceImpl extends ValueImpl
                                          throws InvalidTypeException,
                                          InvocationException {
         /*
-         * Only default methods allowed for nonvirtual invokes
+         * For nonvirtual invokes, method must have a body
          */
-        if (isNonVirtual(options) && !method.isDefault()) {
-            throw new IllegalArgumentException("Not a default method");
+        if (isNonVirtual(options)) {
+            if (method.isAbstract()) {
+                throw new IllegalArgumentException("Abstract method");
+            }
         }
     }
 

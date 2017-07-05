@@ -26,6 +26,7 @@
 package javax.net.ssl;
 
 import java.security.*;
+import java.util.Objects;
 
 import sun.security.jca.GetInstance;
 
@@ -151,17 +152,19 @@ public class SSLContext {
      *          Documentation</a>
      *          for information about standard protocol names.
      *
-     * @return the new {@code SSLContext} object.
+     * @return the new {@code SSLContext} object
      *
-     * @exception NoSuchAlgorithmException if no Provider supports a
-     *          SSLContextSpi implementation for the
-     *          specified protocol.
-     * @exception NullPointerException if protocol is null.
+     * @throws NoSuchAlgorithmException if no {@code Provider} supports a
+     *         {@code SSLContextSpi} implementation for the
+     *         specified protocol
+     *
+     * @throws NullPointerException if {@code protocol} is {@code null}
      *
      * @see java.security.Provider
      */
     public static SSLContext getInstance(String protocol)
             throws NoSuchAlgorithmException {
+        Objects.requireNonNull(protocol, "null protocol name");
         GetInstance.Instance instance = GetInstance.getInstance
                 ("SSLContext", SSLContextSpi.class, protocol);
         return new SSLContext((SSLContextSpi)instance.impl, instance.provider,
@@ -189,22 +192,25 @@ public class SSLContext {
      *
      * @param provider the name of the provider.
      *
-     * @return the new {@code SSLContext} object.
+     * @return the new {@code SSLContext} object
      *
-     * @throws NoSuchAlgorithmException if a SSLContextSpi
-     *          implementation for the specified protocol is not
-     *          available from the specified provider.
+     * @throws IllegalArgumentException if the provider name is
+     *         {@code null} or empty
+     *
+     * @throws NoSuchAlgorithmException if a {@code SSLContextSpi}
+     *         implementation for the specified protocol is not
+     *         available from the specified provider
      *
      * @throws NoSuchProviderException if the specified provider is not
-     *          registered in the security provider list.
+     *         registered in the security provider list
      *
-     * @throws IllegalArgumentException if the provider name is null or empty.
-     * @throws NullPointerException if protocol is null.
+     * @throws NullPointerException if {@code protocol} is {@code null}
      *
      * @see java.security.Provider
      */
     public static SSLContext getInstance(String protocol, String provider)
             throws NoSuchAlgorithmException, NoSuchProviderException {
+        Objects.requireNonNull(protocol, "null protocol name");
         GetInstance.Instance instance = GetInstance.getInstance
                 ("SSLContext", SSLContextSpi.class, protocol, provider);
         return new SSLContext((SSLContextSpi)instance.impl, instance.provider,
@@ -229,19 +235,21 @@ public class SSLContext {
      *
      * @param provider an instance of the provider.
      *
-     * @return the new {@code SSLContext} object.
+     * @return the new {@code SSLContext} object
      *
-     * @throws NoSuchAlgorithmException if a SSLContextSpi
-     *          implementation for the specified protocol is not available
-     *          from the specified Provider object.
+     * @throws IllegalArgumentException if the provider is {@code null}
      *
-     * @throws IllegalArgumentException if the provider is null.
-     * @throws NullPointerException if protocol is null.
+     * @throws NoSuchAlgorithmException if a {@code SSLContextSpi}
+     *         implementation for the specified protocol is not available
+     *         from the specified {@code Provider} object
+     *
+     * @throws NullPointerException if {@code protocol} is {@code null}
      *
      * @see java.security.Provider
      */
     public static SSLContext getInstance(String protocol, Provider provider)
             throws NoSuchAlgorithmException {
+        Objects.requireNonNull(protocol, "null protocol name");
         GetInstance.Instance instance = GetInstance.getInstance
                 ("SSLContext", SSLContextSpi.class, protocol, provider);
         return new SSLContext((SSLContextSpi)instance.impl, instance.provider,

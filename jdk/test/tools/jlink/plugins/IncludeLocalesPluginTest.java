@@ -40,7 +40,7 @@ import tests.Result;
 
 /*
  * @test
- * @bug 8152143 8152704 8155649
+ * @bug 8152143 8152704 8155649 8165804
  * @summary IncludeLocalesPlugin tests
  * @author Naoto Sato
  * @library ../../lib
@@ -236,6 +236,7 @@ public class IncludeLocalesPluginTest {
                 "/jdk.localedata/sun/text/resources/ext/thai_dict",
                 "/jdk.localedata/sun/text/resources/ext/WordBreakIteratorData_th",
                 "/jdk.localedata/sun/text/resources/ext/BreakIteratorInfo_th.class",
+                "/jdk.localedata/sun/text/resources/ext/BreakIteratorResources_th.class",
                 "/jdk.localedata/sun/text/resources/ext/FormatData_en_GB.class",
                 "/jdk.localedata/sun/text/resources/ext/FormatData_ja.class",
                 "/jdk.localedata/sun/text/resources/ext/FormatData_th.class",
@@ -261,6 +262,7 @@ public class IncludeLocalesPluginTest {
                 "/jdk.localedata/sun/text/resources/ext/thai_dict",
                 "/jdk.localedata/sun/text/resources/ext/WordBreakIteratorData_th",
                 "/jdk.localedata/sun/text/resources/ext/BreakIteratorInfo_th.class",
+                "/jdk.localedata/sun/text/resources/ext/BreakIteratorResources_th.class",
                 "/jdk.localedata/sun/text/resources/ext/FormatData_th.class"),
             List.of(
                 "/jdk.localedata/sun/text/resources/ext/FormatData_en_GB.class",
@@ -431,13 +433,23 @@ public class IncludeLocalesPluginTest {
 
         for (Object[] data : testData) {
             // create image for each test data
-            System.out.println("Invoking jlink with \"" + data[INCLUDE_LOCALES_OPTION] + "\"");
-            Result result = JImageGenerator.getJLinkTask()
+            Result result;
+            if (data[INCLUDE_LOCALES_OPTION].toString().isEmpty()) {
+                System.out.println("Invoking jlink with no --include-locales option");
+                result = JImageGenerator.getJLinkTask()
+                    .modulePath(helper.defaultModulePath())
+                    .output(helper.createNewImageDir(moduleName))
+                    .addMods((String) data[ADDMODS_OPTION])
+                    .call();
+            } else {
+                System.out.println("Invoking jlink with \"" + data[INCLUDE_LOCALES_OPTION] + "\"");
+                result = JImageGenerator.getJLinkTask()
                     .modulePath(helper.defaultModulePath())
                     .output(helper.createNewImageDir(moduleName))
                     .addMods((String) data[ADDMODS_OPTION])
                     .option((String) data[INCLUDE_LOCALES_OPTION])
                     .call();
+            }
 
             String errorMsg = (String) data[ERROR_MESSAGE];
             if (errorMsg.isEmpty()) {

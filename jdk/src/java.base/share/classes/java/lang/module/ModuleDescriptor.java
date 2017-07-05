@@ -31,6 +31,7 @@ import java.io.PrintStream;
 import java.io.UncheckedIOException;
 import java.net.URI;
 import java.nio.ByteBuffer;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -1996,6 +1997,13 @@ public class ModuleDescriptor
                 @Override
                 public Optional<ModuleHashes> hashes(ModuleDescriptor descriptor) {
                     return descriptor.hashes();
+                }
+
+                @Override
+                public ModuleFinder newModulePath(Runtime.Version version,
+                                                  boolean isLinkPhase,
+                                                  Path... entries) {
+                    return new ModulePath(version, isLinkPhase, entries);
                 }
             });
     }

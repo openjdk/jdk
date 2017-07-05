@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,7 +103,7 @@ public class IconInfo {
         }
         this.scaledWidth = width;
         this.scaledHeight = height;
-        this.rawLength = getScaledRawLength();
+        this.rawLength = getScaledRawLength(width, height);
     }
 
     /*
@@ -112,14 +112,14 @@ public class IconInfo {
     public void setScaledSize(int width, int height) {
         this.scaledWidth = width;
         this.scaledHeight = height;
-        this.rawLength = getScaledRawLength();
+        this.rawLength = getScaledRawLength(width, height);
     }
 
     /*
     * returns scaled raw length.
      */
-    private int getScaledRawLength() {
-        int scaledWidthAndHeight[] = getScaledWidthAndHeight(width, height);
+    private int getScaledRawLength(int w, int h) {
+        int scaledWidthAndHeight[] = getScaledWidthAndHeight(w, h);
         return scaledWidthAndHeight[0] * scaledWidthAndHeight[1] + 2;
     }
 

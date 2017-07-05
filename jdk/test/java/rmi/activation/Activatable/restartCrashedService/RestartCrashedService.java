@@ -32,7 +32,8 @@
  *          java.rmi/sun.rmi.server
  *          java.rmi/sun.rmi.transport
  *          java.rmi/sun.rmi.transport.tcp
- * @build TestLibrary RMID ActivateMe RestartCrashedService_Stub
+ *          java.base/sun.nio.ch
+ * @build TestLibrary RMID RMIDSelectorProvider ActivateMe RestartCrashedService_Stub
  * @run main/othervm/policy=security.policy/timeout=240 RestartCrashedService
  */
 
@@ -119,7 +120,7 @@ public class RestartCrashedService
 
         try {
             RMID.removeLog();
-            rmid = RMID.createRMID();
+            rmid = RMID.createRMIDOnEphemeralPort();
             rmid.start();
 
             /* Cause activation groups to have a security policy that will

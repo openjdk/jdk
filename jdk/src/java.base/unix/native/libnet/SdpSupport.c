@@ -56,11 +56,7 @@ static int create(JNIEnv* env)
     int s;
 
 #if defined(__solaris__)
-  #ifdef AF_INET6
     int domain = ipv6_available() ? AF_INET6 : AF_INET;
-  #else
-    int domain = AF_INET;
-  #endif
     s = socket(domain, SOCK_STREAM, PROTO_SDP);
 #elif defined(__linux__)
     /**

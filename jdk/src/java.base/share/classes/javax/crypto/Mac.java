@@ -166,16 +166,18 @@ public class Mac implements Cloneable {
      * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
      * for information about standard algorithm names.
      *
-     * @return the new {@code Mac} object.
+     * @return the new {@code Mac} object
      *
-     * @exception NoSuchAlgorithmException if no Provider supports a
-     *          MacSpi implementation for the
-     *          specified algorithm.
+     * @throws NoSuchAlgorithmException if no {@code Provider} supports a
+     *         {@code MacSpi} implementation for the specified algorithm
+     *
+     * @throws NullPointerException if {@code algorithm} is {@code null}
      *
      * @see java.security.Provider
      */
     public static final Mac getInstance(String algorithm)
             throws NoSuchAlgorithmException {
+        Objects.requireNonNull(algorithm, "null algorithm name");
         List<Service> services = GetInstance.getServices("Mac", algorithm);
         // make sure there is at least one service from a signed provider
         Iterator<Service> t = services.iterator();
@@ -210,22 +212,25 @@ public class Mac implements Cloneable {
      *
      * @param provider the name of the provider.
      *
-     * @return the new {@code Mac} object.
+     * @return the new {@code Mac} object
      *
-     * @exception NoSuchAlgorithmException if a MacSpi
-     *          implementation for the specified algorithm is not
-     *          available from the specified provider.
+     * @throws IllegalArgumentException if the {@code provider}
+     *         is {@code null} or empty
      *
-     * @exception NoSuchProviderException if the specified provider is not
-     *          registered in the security provider list.
+     * @throws NoSuchAlgorithmException if a {@code MacSpi}
+     *         implementation for the specified algorithm is not
+     *         available from the specified provider
      *
-     * @exception IllegalArgumentException if the {@code provider}
-     *          is null or empty.
+     * @throws NoSuchProviderException if the specified provider is not
+     *         registered in the security provider list
+     *
+     * @throws NullPointerException if {@code algorithm} is {@code null}
      *
      * @see java.security.Provider
      */
     public static final Mac getInstance(String algorithm, String provider)
             throws NoSuchAlgorithmException, NoSuchProviderException {
+        Objects.requireNonNull(algorithm, "null algorithm name");
         Instance instance = JceSecurity.getInstance
                 ("Mac", MacSpi.class, algorithm, provider);
         return new Mac((MacSpi)instance.impl, instance.provider, algorithm);
@@ -248,19 +253,22 @@ public class Mac implements Cloneable {
      *
      * @param provider the provider.
      *
-     * @return the new {@code Mac} object.
+     * @return the new {@code Mac} object
      *
-     * @exception NoSuchAlgorithmException if a MacSpi
-     *          implementation for the specified algorithm is not available
-     *          from the specified Provider object.
+     * @throws IllegalArgumentException if the {@code provider} is
+     *         {@code null}
      *
-     * @exception IllegalArgumentException if the {@code provider}
-     *          is null.
+     * @throws NoSuchAlgorithmException if a {@code MacSpi}
+     *         implementation for the specified algorithm is not available
+     *         from the specified {@code Provider} object
+     *
+     * @throws NullPointerException if {@code algorithm} is {@code null}
      *
      * @see java.security.Provider
      */
     public static final Mac getInstance(String algorithm, Provider provider)
             throws NoSuchAlgorithmException {
+        Objects.requireNonNull(algorithm, "null algorithm name");
         Instance instance = JceSecurity.getInstance
                 ("Mac", MacSpi.class, algorithm, provider);
         return new Mac((MacSpi)instance.impl, instance.provider, algorithm);

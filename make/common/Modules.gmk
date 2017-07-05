@@ -108,6 +108,7 @@ PLATFORM_MODULES += \
     jdk.charsets \
     jdk.crypto.ec \
     jdk.crypto.pkcs11 \
+    jdk.desktop \
     jdk.dynalink \
     jdk.jsobject \
     jdk.localedata \
@@ -177,6 +178,16 @@ FindAllModuleInfos = \
           $(patsubst %,%/$(strip $1)/$(sub)/module-info.java, $(TOP_SRC_DIRS))) \
         $(patsubst %,%/$(strip $1)/module-info.java, $(IMPORT_MODULES_SRC)))
 
+# Find module-info.java files in the specific source dir
+# Param 1 - Src dir to find module-info.java files in
+FindModuleInfosForSrcDir = \
+    $(wildcard \
+        $(foreach sub, $(SRC_SUBDIRS), \
+          $(patsubst %,%/*/$(sub)/module-info.java, $(strip $1)) \
+        ) \
+        $(patsubst %,%/*/module-info.java, $(strip $1)) \
+    )
+
 # Extract the module names from the paths of module-info.java files. The
 # position of the module directory differs depending on if this is an imported
 # src dir or not.
@@ -191,6 +202,13 @@ GetModuleNameFromModuleInfo = \
 FindAllModules = \
     $(sort $(filter-out $(MODULES_FILTER), \
     $(call GetModuleNameFromModuleInfo, $(MODULE_INFOS))))
+
+# Find all modules in a specific src dir
+# Param 1 - Src dir to find modules in
+FindModulesForSrcDir = \
+    $(sort $(filter-out $(MODULES_FILTER), \
+        $(call GetModuleNameFromModuleInfo, $(call FindModuleInfosForSrcDir, $1)) \
+    ))
 
 FindImportedModules = \
     $(filter-out $(MODULES_FILTER), \

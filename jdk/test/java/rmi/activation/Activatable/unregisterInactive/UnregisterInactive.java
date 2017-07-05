@@ -32,7 +32,8 @@
  *          java.rmi/sun.rmi.server
  *          java.rmi/sun.rmi.transport
  *          java.rmi/sun.rmi.transport.tcp
- * @build TestLibrary RMID ActivationLibrary ActivateMe UnregisterInactive_Stub
+ *          java.base/sun.nio.ch
+ * @build TestLibrary RMID RMIDSelectorProvider ActivationLibrary ActivateMe UnregisterInactive_Stub
  * @run main/othervm/policy=security.policy/timeout=240 UnregisterInactive
  */
 
@@ -89,7 +90,7 @@ public class UnregisterInactive
 
         try {
             RMID.removeLog();
-            rmid = RMID.createRMID();
+            rmid = RMID.createRMIDOnEphemeralPort();
             rmid.start();
             System.err.println("Creating descriptor");
 
