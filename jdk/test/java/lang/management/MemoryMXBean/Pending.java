@@ -24,8 +24,6 @@
 /*
  * @test
  * @bug     4530538
- * @modules java.base/jdk.internal.misc
- *          java.management
  * @summary Basic unit test of
  *          RuntimeMXBean.getObjectPendingFinalizationCount()
  *          1. GC and runFinalization() to get the current pending number
@@ -34,6 +32,9 @@
  *          4. GC and runFinalization() and the finalizable objects should
  *             be garbage collected.
  * @author  Alexei Guibadoulline and Mandy Chung
+ *
+ * @modules java.base/jdk.internal.misc
+ *          java.management
  */
 
 import java.lang.management.*;

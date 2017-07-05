@@ -55,7 +55,7 @@ public class GetCallerClassTest {
     public static void main(String... args) throws Exception {
         if (args.length > 0 && args[0].equals("sm")) {
             PermissionCollection perms = new Permissions();
-            perms.add(new StackFramePermission("retainClassReference"));
+            perms.add(new RuntimePermission("getStackWalkerWithClassReference"));
             Policy.setPolicy(new Policy() {
                 @Override
                 public boolean implies(ProtectionDomain domain, Permission p) {

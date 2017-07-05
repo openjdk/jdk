@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,10 +42,10 @@ import jdk.internal.HotSpotIntrinsicCandidate;
  * @author Andreas Sterbenz
  * @since 1.4.2
  */
-final class CounterMode extends FeedbackCipher {
+class CounterMode extends FeedbackCipher {
 
     // current counter value
-    private final byte[] counter;
+    final byte[] counter;
 
     // encrypted bytes of the previous counter value
     private final byte[] encryptedCounter;

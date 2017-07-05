@@ -27,10 +27,8 @@
  *  @summary Test ClassLoaderReference.visibleClasses() which is
  *  a direct pass-through of the JVMDI function GetClassLoaderClasses
  *  for inclusion of primitive arrays.
- *
  *  @author Robert Field
  *
- *  @modules jdk.jdi
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter
  *  @run compile -g ClassLoaderClassesTest.java
  *  @run driver ClassLoaderClassesTest

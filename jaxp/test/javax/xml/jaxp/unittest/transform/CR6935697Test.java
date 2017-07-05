@@ -23,6 +23,8 @@
 
 package transform;
 
+import static jaxp.library.JAXPTestUtilities.USER_DIR;
+
 import java.io.FileOutputStream;
 
 import javax.xml.transform.Result;
@@ -65,7 +67,7 @@ public class CR6935697Test {
             Transformer xformer = template.newTransformer();
             // Prepare the input and output files
             Source source = new StreamSource(getClass().getResourceAsStream(inFilename));
-            Result result = new StreamResult(new FileOutputStream(outFilename));
+            Result result = new StreamResult(new FileOutputStream(USER_DIR + outFilename));
             // Apply the xsl file to the source file and write the result to the
             // output file
             xformer.transform(source, result);

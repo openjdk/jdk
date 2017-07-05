@@ -95,8 +95,8 @@ public enum StandardOperation implements Operation {
     /**
      * Get the value from a namespace defined on an object. Call sites with this
      * operation should have a signature of
-     * <tt>(receiver,&nbsp;name)&rarr;value</tt> or
-     * <tt>(receiver)&rarr;value</tt> when used with {@link NamedOperation}, with
+     * <code>(receiver,&nbsp;name)&rarr;value</code> or
+     * <code>(receiver)&rarr;value</code> when used with {@link NamedOperation}, with
      * all parameters and return type being of any type (either primitive or
      * reference). This operation must always be used as part of a {@link NamespaceOperation}.
      */
@@ -104,21 +104,21 @@ public enum StandardOperation implements Operation {
     /**
      * Set the value in a namespace defined on an object. Call sites with this
      * operation should have a signature of
-     * <tt>(receiver,&nbsp;name,&nbsp;value)&rarr;void</tt> or
-     * <tt>(receiver,&nbsp;value)&rarr;void</tt> when used with {@link NamedOperation},
+     * <code>(receiver,&nbsp;name,&nbsp;value)&rarr;void</code> or
+     * <code>(receiver,&nbsp;value)&rarr;void</code> when used with {@link NamedOperation},
      * with all parameters and return type being of any type (either primitive
      * or reference). This operation must always be used as part of a {@link NamespaceOperation}.
      */
     SET,
     /**
      * Call a callable object. Call sites with this operation should have a
-     * signature of <tt>(callable,&nbsp;receiver,&nbsp;arguments...)&rarr;value</tt>,
+     * signature of <code>(callable,&nbsp;receiver,&nbsp;arguments...)&rarr;value</code>,
      * with all parameters and return type being of any type (either primitive or
      * reference). Typically, the callables are presumed to be methods of an object, so
      * an explicit receiver value is always passed to the callable before the arguments.
      * If a callable has no concept of a receiver, it is free to ignore the value of the
      * receiver argument.
-     * The <tt>CALL</tt> operation is allowed to be used with a
+     * The {@code CALL} operation is allowed to be used with a
      * {@link NamedOperation} even though it does not take a name. Using it with
      * a named operation won't affect its signature; the name is solely meant to
      * be used as a diagnostic description for error messages.
@@ -126,9 +126,9 @@ public enum StandardOperation implements Operation {
     CALL,
     /**
      * Call a constructor object. Call sites with this operation should have a
-     * signature of <tt>(constructor,&nbsp;arguments...)&rarr;value</tt>, with all
+     * signature of <code>(constructor,&nbsp;arguments...)&rarr;value</code>, with all
      * parameters and return type being of any type (either primitive or
-     * reference). The <tt>NEW</tt> operation is allowed to be used with a
+     * reference). The {@code NEW} operation is allowed to be used with a
      * {@link NamedOperation} even though it does not take a name. Using it with
      * a named operation won't affect its signature; the name is solely meant to
      * be used as a diagnostic description for error messages.
