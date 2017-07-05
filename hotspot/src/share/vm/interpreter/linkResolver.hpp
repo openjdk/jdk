@@ -174,9 +174,11 @@ class LinkResolver: AllStatic {
   static methodHandle lookup_polymorphic_method(const LinkInfo& link_info,
                                                 Handle *appendix_result_or_null,
                                                 Handle *method_type_result, TRAPS);
+ JVMCI_ONLY(public:) // Needed for CompilerToVM.resolveMethod()
   // Not Linktime so doesn't take LinkInfo
   static methodHandle lookup_instance_method_in_klasses (
                                        KlassHandle klass, Symbol* name, Symbol* signature, TRAPS);
+ JVMCI_ONLY(private:)
 
   // Similar loader constraint checking functions that throw
   // LinkageError with descriptive message.

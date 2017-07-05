@@ -1,13 +1,13 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * Copyright 2000-2002,2004,2005 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -20,20 +20,18 @@
 
 package com.sun.org.apache.xerces.internal.jaxp;
 
-import java.util.Hashtable;
-
+import com.sun.org.apache.xerces.internal.impl.Constants;
+import com.sun.org.apache.xerces.internal.util.SAXMessageFormatter;
+import java.util.HashMap;
+import java.util.Map;
 import javax.xml.XMLConstants;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 import javax.xml.validation.Schema;
-
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXNotRecognizedException;
 import org.xml.sax.SAXNotSupportedException;
-
-import com.sun.org.apache.xerces.internal.impl.Constants;
-import com.sun.org.apache.xerces.internal.util.SAXMessageFormatter;
 
 /**
  * This is the implementation specific class for the
@@ -58,7 +56,7 @@ public class SAXParserFactoryImpl extends SAXParserFactory {
     private static final String XINCLUDE_FEATURE =
         Constants.XERCES_FEATURE_PREFIX + Constants.XINCLUDE_FEATURE;
 
-    private Hashtable features;
+    private Map<String, Boolean> features;
     private Schema grammar;
     private boolean isXIncludeAware;
 
@@ -187,7 +185,7 @@ public class SAXParserFactoryImpl extends SAXParserFactory {
 
     private void putInFeatures(String name, boolean value){
          if (features == null) {
-            features = new Hashtable();
+            features = new HashMap<>();
         }
         features.put(name, value ? Boolean.TRUE : Boolean.FALSE);
     }
@@ -197,8 +195,8 @@ public class SAXParserFactoryImpl extends SAXParserFactory {
             return false;
          }
          else {
-             Object value = features.get(name);
-             return (value == null) ? false : Boolean.valueOf(value.toString()).booleanValue();
+             Boolean value = features.get(name);
+             return (value == null) ? false : value;
          }
     }
 

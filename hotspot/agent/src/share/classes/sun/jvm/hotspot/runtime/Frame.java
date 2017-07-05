@@ -536,9 +536,6 @@ public abstract class Frame implements Cloneable {
       }
     }
 
-    public void visitValueLocation(Address valueAddr) {
-    }
-
     public void visitNarrowOopLocation(Address compOopAddr) {
       addressVisitor.visitCompOopAddress(compOopAddr);
     }

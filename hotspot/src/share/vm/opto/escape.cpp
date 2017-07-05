@@ -982,7 +982,7 @@ void ConnectionGraph::process_call_arguments(CallNode *call) {
                   strcmp(call->as_CallLeaf()->_name, "montgomery_square") == 0)
                  ))) {
             call->dump();
-            fatal(err_msg_res("EA unexpected CallLeaf %s", call->as_CallLeaf()->_name));
+            fatal("EA unexpected CallLeaf %s", call->as_CallLeaf()->_name);
           }
 #endif
           // Always process arraycopy's destination object since
@@ -1201,8 +1201,8 @@ bool ConnectionGraph::complete_connection_graph(
       C->log()->text("%s", timeout ? "time" : "iterations");
       C->log()->end_elem(" limit'");
     }
-    assert(ExitEscapeAnalysisOnTimeout, err_msg_res("infinite EA connection graph build (%f sec, %d iterations) with %d nodes and worklist size %d",
-           time.seconds(), iterations, nodes_size(), ptnodes_worklist.length()));
+    assert(ExitEscapeAnalysisOnTimeout, "infinite EA connection graph build (%f sec, %d iterations) with %d nodes and worklist size %d",
+           time.seconds(), iterations, nodes_size(), ptnodes_worklist.length());
     // Possible infinite build_connection_graph loop,
     // bailout (no changes to ideal graph were made).
     return false;

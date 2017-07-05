@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,20 +53,13 @@ public final class LocaleServiceProviderPool {
      * A Map that holds singleton instances of this class.  Each instance holds a
      * set of provider implementations of a particular locale sensitive service.
      */
-    private static ConcurrentMap<Class<? extends LocaleServiceProvider>, LocaleServiceProviderPool> poolOfPools =
-        new ConcurrentHashMap<>();
-
-    /**
-     * A Map containing locale service providers that implement the
-     * specified provider SPI, keyed by a LocaleProviderAdapter.Type
-     */
-    private ConcurrentMap<LocaleProviderAdapter.Type, LocaleServiceProvider> providers =
+    private static final ConcurrentMap<Class<? extends LocaleServiceProvider>, LocaleServiceProviderPool> poolOfPools =
         new ConcurrentHashMap<>();
 
     /**
      * A Map that retains Locale->provider mapping
      */
-    private ConcurrentMap<Locale, List<LocaleProviderAdapter.Type>> providersCache =
+    private final ConcurrentMap<Locale, List<LocaleServiceProvider>> providersCache =
         new ConcurrentHashMap<>();
 
     /**
@@ -78,7 +71,7 @@ public final class LocaleServiceProviderPool {
     /**
      * Provider class
      */
-    private Class<? extends LocaleServiceProvider> providerClass;
+    private final Class<? extends LocaleServiceProvider> providerClass;
 
     /**
      * Array of all Locale Sensitive SPI classes.
@@ -126,16 +119,6 @@ public final class LocaleServiceProviderPool {
      */
     private LocaleServiceProviderPool (final Class<? extends LocaleServiceProvider> c) {
         providerClass = c;
-
-        for (LocaleProviderAdapter.Type type : LocaleProviderAdapter.getAdapterPreference()) {
-            LocaleProviderAdapter lda = LocaleProviderAdapter.forType(type);
-            if (lda != null) {
-                LocaleServiceProvider provider = lda.getLocaleServiceProvider(c);
-                if (provider != null) {
-                    providers.putIfAbsent(type, provider);
-                }
-            }
-        }
     }
 
     static void config(Class<? extends Object> caller, String message) {
@@ -208,27 +191,21 @@ public final class LocaleServiceProviderPool {
     private synchronized Set<Locale> getAvailableLocaleSet() {
         if (availableLocales == null) {
             availableLocales = new HashSet<>();
-            for (LocaleServiceProvider lsp : providers.values()) {
-                Locale[] locales = lsp.getAvailableLocales();
-                for (Locale locale: locales) {
-                    availableLocales.add(getLookupLocale(locale));
+            for (LocaleProviderAdapter.Type type : LocaleProviderAdapter.getAdapterPreference()) {
+                LocaleProviderAdapter lda = LocaleProviderAdapter.forType(type);
+                if (lda != null) {
+                    LocaleServiceProvider lsp = lda.getLocaleServiceProvider(providerClass);
+                    if (lsp != null) {
+                        Locale[] locales = lsp.getAvailableLocales();
+                        for (Locale locale: locales) {
+                            availableLocales.add(getLookupLocale(locale));
+                        }
+                    }
                 }
             }
         }
 
         return availableLocales;
-    }
-
-    /**
-     * Returns whether any provider for this locale sensitive
-     * service is available or not, excluding JRE's one.
-     *
-     * @return true if any provider (other than JRE) is available
-     */
-    boolean hasProviders() {
-        return providers.size() != 1 ||
-               (providers.get(LocaleProviderAdapter.Type.JRE) == null &&
-                providers.get(LocaleProviderAdapter.Type.FALLBACK) == null);
     }
 
     /**
@@ -265,6 +242,26 @@ public final class LocaleServiceProviderPool {
         return getLocalizedObjectImpl(getter, locale, false, key, params);
     }
 
+    /**
+     * Returns the provider's localized name for the specified
+     * locale.
+     *
+     * @param getter an object on which getObject() method
+     *     is called to obtain the provider's instance.
+     * @param locale the given locale that is used as the starting one
+     * @param isObjectProvider flag designating object provder or not
+     * @param key the key string for name providers
+     * @param params provider specific parameters
+     * @return provider's instance, or null.
+     */
+    public <P extends LocaleServiceProvider, S> S getLocalizedObject(LocalizedObjectGetter<P, S> getter,
+                                     Locale locale,
+                                     Boolean isObjectProvider,
+                                     String key,
+                                     Object... params) {
+        return getLocalizedObjectImpl(getter, locale, isObjectProvider, key, params);
+    }
+
     @SuppressWarnings("unchecked")
     private <P extends LocaleServiceProvider, S> S getLocalizedObjectImpl(LocalizedObjectGetter<P, S> getter,
                                      Locale locale,
@@ -275,30 +272,19 @@ public final class LocaleServiceProviderPool {
             throw new NullPointerException();
         }
 
-        // Check whether JRE is the sole locale data provider or not,
-        // and directly call it if it is.
-        if (!hasProviders()) {
-            return getter.getObject((P)providers.get(LocaleProviderAdapter.defaultLocaleProviderAdapter),
-                                    locale, key, params);
-        }
-
         List<Locale> lookupLocales = getLookupLocales(locale);
 
-        Set<Locale> available = getAvailableLocaleSet();
         for (Locale current : lookupLocales) {
-            if (available.contains(current)) {
-                S providersObj;
+            S providersObj;
 
-                for (LocaleProviderAdapter.Type type: findProviders(current)) {
-                    LocaleServiceProvider lsp = providers.get(type);
-                    providersObj = getter.getObject((P)lsp, locale, key, params);
-                    if (providersObj != null) {
-                        return providersObj;
-                    } else if (isObjectProvider) {
-                        config(LocaleServiceProviderPool.class,
-                            "A locale sensitive service provider returned null for a localized objects,  which should not happen.  provider: "
-                                + lsp + " locale: " + locale);
-                    }
+            for (LocaleServiceProvider lsp: findProviders(current, isObjectProvider)) {
+                providersObj = getter.getObject((P)lsp, locale, key, params);
+                if (providersObj != null) {
+                    return providersObj;
+                } else if (isObjectProvider) {
+                    config(LocaleServiceProviderPool.class,
+                        "A locale sensitive service provider returned null for a localized objects,  which should not happen.  provider: "
+                            + lsp + " locale: " + locale);
                 }
             }
         }
@@ -314,31 +300,36 @@ public final class LocaleServiceProviderPool {
      * @param locale the given locale
      * @return the list of locale data adapter types
      */
-    private List<LocaleProviderAdapter.Type> findProviders(Locale locale) {
-        List<LocaleProviderAdapter.Type> providersList = providersCache.get(locale);
+    private List<LocaleServiceProvider> findProviders(Locale locale, boolean isObjectProvider) {
+        List<LocaleServiceProvider> providersList = providersCache.get(locale);
         if (providersList == null) {
             for (LocaleProviderAdapter.Type type : LocaleProviderAdapter.getAdapterPreference()) {
-                LocaleServiceProvider lsp = providers.get(type);
-                if (lsp != null) {
-                    if (lsp.isSupportedLocale(locale)) {
-                        if (providersList == null) {
-                            providersList = new ArrayList<>(2);
+                LocaleProviderAdapter lda = LocaleProviderAdapter.forType(type);
+                if (lda != null) {
+                    LocaleServiceProvider lsp = lda.getLocaleServiceProvider(providerClass);
+                    if (lsp != null) {
+                        if (lsp.isSupportedLocale(locale)) {
+                            if (providersList == null) {
+                                providersList = new ArrayList<>(2);
+                            }
+                            providersList.add(lsp);
+                            if (isObjectProvider) {
+                                break;
+                            }
                         }
-                        providersList.add(type);
-
                     }
                 }
             }
             if (providersList == null) {
                 providersList = NULL_LIST;
             }
-            List<LocaleProviderAdapter.Type> val = providersCache.putIfAbsent(locale, providersList);
+            List<LocaleServiceProvider> val = providersCache.putIfAbsent(locale, providersList);
             if (val != null) {
                 providersList = val;
             }
         }
-            return providersList;
-        }
+        return providersList;
+    }
 
     /**
      * Returns a list of candidate locales for service look up.
@@ -393,7 +384,7 @@ public final class LocaleServiceProviderPool {
      * A dummy locale service provider list that indicates there is no
      * provider available
      */
-    private static List<LocaleProviderAdapter.Type> NULL_LIST =
+    private static final List<LocaleServiceProvider> NULL_LIST =
         Collections.emptyList();
 
     /**

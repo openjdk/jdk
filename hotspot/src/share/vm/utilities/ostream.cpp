@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "compiler/compileLog.hpp"
 #include "gc/shared/gcId.hpp"
+#include "gc/shared/gcId.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/os.hpp"
@@ -238,11 +239,11 @@ void outputStream::date_stamp(bool guard,
   return;
 }
 
-void outputStream::gclog_stamp(const GCId& gc_id) {
+void outputStream::gclog_stamp() {
   date_stamp(PrintGCDateStamps);
   stamp(PrintGCTimeStamps);
   if (PrintGCID) {
-    print("#%u: ", gc_id.id());
+    print("#%u: ", GCId::current());
   }
 }
 
@@ -543,7 +544,7 @@ void test_loggc_filename() {
     memset(longest_name, 'a', sizeof(longest_name));
     longest_name[JVM_MAXPATHLEN - 1] = '\0';
     o_result = make_log_name_internal((const char*)&longest_name, NULL, pid, tms);
-    assert(strcmp(longest_name, o_result) == 0, err_msg("longest name does not match. expected '%s' but got '%s'", longest_name, o_result));
+    assert(strcmp(longest_name, o_result) == 0, "longest name does not match. expected '%s' but got '%s'", longest_name, o_result);
     FREE_C_HEAP_ARRAY(char, o_result);
   }
 
@@ -554,7 +555,7 @@ void test_loggc_filename() {
     memset(too_long_name, 'a', too_long_length);
     too_long_name[too_long_length - 1] = '\0';
     o_result = make_log_name_internal((const char*)&too_long_name, NULL, pid, tms);
-    assert(o_result == NULL, err_msg("Too long file name should return NULL, but got '%s'", o_result));
+    assert(o_result == NULL, "Too long file name should return NULL, but got '%s'", o_result);
   }
 
   {
@@ -565,7 +566,7 @@ void test_loggc_filename() {
     longest_name[JVM_MAXPATHLEN - 2] = 't';
     longest_name[JVM_MAXPATHLEN - 1] = '\0';
     o_result = make_log_name_internal((const char*)&longest_name, NULL, pid, tms);
-    assert(o_result == NULL, err_msg("Too long file name after timestamp expansion should return NULL, but got '%s'", o_result));
+    assert(o_result == NULL, "Too long file name after timestamp expansion should return NULL, but got '%s'", o_result);
   }
 
   {
@@ -576,7 +577,7 @@ void test_loggc_filename() {
     longest_name[JVM_MAXPATHLEN - 2] = 'p';
     longest_name[JVM_MAXPATHLEN - 1] = '\0';
     o_result = make_log_name_internal((const char*)&longest_name, NULL, pid, tms);
-    assert(o_result == NULL, err_msg("Too long file name after pid expansion should return NULL, but got '%s'", o_result));
+    assert(o_result == NULL, "Too long file name after pid expansion should return NULL, but got '%s'", o_result);
   }
 }
 #endif // PRODUCT
@@ -1440,3 +1441,14 @@ bool networkStream::connect(const char *ip, short port) {
 }
 
 #endif
+
+void logStream::write(const char* s, size_t len) {
+  if (len > 0 && s[len - 1] == '\n') {
+    _current_line.write(s, len - 1);
+    _log_func(_current_line.as_string());
+    _current_line.reset();
+  } else {
+    _current_line.write(s, len);
+    update_position(s, len);
+  }
+}

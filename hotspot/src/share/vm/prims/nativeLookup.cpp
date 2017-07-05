@@ -111,6 +111,10 @@ extern "C" {
   void JNICALL JVM_RegisterMethodHandleMethods(JNIEnv *env, jclass unsafecls);
   void JNICALL JVM_RegisterPerfMethods(JNIEnv *env, jclass perfclass);
   void JNICALL JVM_RegisterWhiteBoxMethods(JNIEnv *env, jclass wbclass);
+#if INCLUDE_JVMCI
+  jobject  JNICALL JVM_GetJVMCIRuntime(JNIEnv *env, jclass c);
+  void     JNICALL JVM_RegisterJVMCINatives(JNIEnv *env, jclass compilerToVMClass);
+#endif
 }
 
 #define CC (char*)  /* cast a literal from (const char*) */
@@ -121,6 +125,10 @@ static JNINativeMethod lookup_special_native_methods[] = {
   { CC"Java_java_lang_invoke_MethodHandleNatives_registerNatives", NULL, FN_PTR(JVM_RegisterMethodHandleMethods) },
   { CC"Java_sun_misc_Perf_registerNatives",                        NULL, FN_PTR(JVM_RegisterPerfMethods)         },
   { CC"Java_sun_hotspot_WhiteBox_registerNatives",                 NULL, FN_PTR(JVM_RegisterWhiteBoxMethods)     },
+#if INCLUDE_JVMCI
+  { CC"Java_jdk_vm_ci_runtime_JVMCI_initializeRuntime",            NULL, FN_PTR(JVM_GetJVMCIRuntime)             },
+  { CC"Java_jdk_vm_ci_hotspot_CompilerToVM_registerNatives",       NULL, FN_PTR(JVM_RegisterJVMCINatives)        },
+#endif
 };
 
 static address lookup_special_native(char* jni_name) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,12 @@
 package javax.swing;
 
 import java.awt.*;
-import java.awt.event.ActionEvent;
-
+import java.beans.JavaBean;
+import java.beans.BeanProperty;
 import java.io.ObjectOutputStream;
-import java.io.ObjectInputStream;
 import java.io.IOException;
 
 import javax.swing.text.*;
-import javax.swing.event.*;
-import javax.swing.plaf.*;
 
 /**
  * A text component that can be marked up with attributes that are
@@ -72,14 +69,12 @@ import javax.swing.plaf.*;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *
- * @beaninfo
- *   attribute: isContainer true
- * description: A text component that can be marked up with attributes that are graphically represented.
- *
  * @author  Timothy Prinzing
  * @see javax.swing.text.StyledEditorKit
  * @since 1.2
  */
+@JavaBean(description = "A text component that can be marked up with attributes that are graphically represented.")
+@SwingContainer
 @SuppressWarnings("serial") // Same-version serialization only
 public class JTextPane extends JEditorPane {
 
@@ -120,6 +115,7 @@ public class JTextPane extends JEditorPane {
      * @see JComponent#getUIClassID
      * @see UIDefaults#getUI
      */
+    @BeanProperty(bound = false)
     public String getUIClassID() {
         return uiClassID;
     }
@@ -338,6 +334,7 @@ public class JTextPane extends JEditorPane {
      *
      * @return the attributes, or <code>null</code>
      */
+    @BeanProperty(bound = false)
     public AttributeSet getCharacterAttributes() {
         StyledDocument doc = getStyledDocument();
         Element run = doc.getCharacterElement(getCaretPosition());
@@ -379,6 +376,7 @@ public class JTextPane extends JEditorPane {
      *
      * @return the attributes
      */
+    @BeanProperty(bound = false)
     public AttributeSet getParagraphAttributes() {
         StyledDocument doc = getStyledDocument();
         Element paragraph = doc.getParagraphElement(getCaretPosition());
@@ -410,6 +408,7 @@ public class JTextPane extends JEditorPane {
      *
      * @return the attributes
      */
+    @BeanProperty(bound = false)
     public MutableAttributeSet getInputAttributes() {
         return getStyledEditorKit().getInputAttributes();
     }

@@ -54,7 +54,7 @@ void G1Allocator::reuse_retained_old_region(EvacuationInfo& evacuation_info,
   HeapRegion* retained_region = *retained_old;
   *retained_old = NULL;
   assert(retained_region == NULL || !retained_region->is_archive(),
-         err_msg("Archive region should not be alloc region (index %u)", retained_region->hrm_index()));
+         "Archive region should not be alloc region (index %u)", retained_region->hrm_index());
 
   // We will discard the current GC alloc region if:
   // a) it's in the collection set (it can happen!),
@@ -147,8 +147,8 @@ HeapWord* G1Allocator::par_allocate_during_gc(InCSetState dest,
   size_t temp = 0;
   HeapWord* result = par_allocate_during_gc(dest, word_size, word_size, &temp, context);
   assert(result == NULL || temp == word_size,
-         err_msg("Requested " SIZE_FORMAT " words, but got " SIZE_FORMAT " at " PTR_FORMAT,
-                 word_size, temp, p2i(result)));
+         "Requested " SIZE_FORMAT " words, but got " SIZE_FORMAT " at " PTR_FORMAT,
+         word_size, temp, p2i(result));
   return result;
 }
 
@@ -276,16 +276,16 @@ HeapWord* G1PLABAllocator::allocate_direct_or_new_plab(InCSetState dest,
                                                        context);
 
     assert(buf == NULL || ((actual_plab_size >= required_in_plab) && (actual_plab_size <= plab_word_size)),
-           err_msg("Requested at minimum " SIZE_FORMAT ", desired " SIZE_FORMAT " words, but got " SIZE_FORMAT " at " PTR_FORMAT,
-                   required_in_plab, plab_word_size, actual_plab_size, p2i(buf)));
+           "Requested at minimum " SIZE_FORMAT ", desired " SIZE_FORMAT " words, but got " SIZE_FORMAT " at " PTR_FORMAT,
+           required_in_plab, plab_word_size, actual_plab_size, p2i(buf));
 
     if (buf != NULL) {
       alloc_buf->set_buf(buf, actual_plab_size);
 
       HeapWord* const obj = alloc_buf->allocate(word_sz);
-      assert(obj != NULL, err_msg("PLAB should have been big enough, tried to allocate "
-                                  SIZE_FORMAT " requiring " SIZE_FORMAT " PLAB size " SIZE_FORMAT,
-                                  word_sz, required_in_plab, plab_word_size));
+      assert(obj != NULL, "PLAB should have been big enough, tried to allocate "
+                          SIZE_FORMAT " requiring " SIZE_FORMAT " PLAB size " SIZE_FORMAT,
+                          word_sz, required_in_plab, plab_word_size);
       return obj;
     }
     // Otherwise.
@@ -354,7 +354,7 @@ bool G1ArchiveAllocator::alloc_new_region() {
   if (hr == NULL) {
     return false;
   }
-  assert(hr->is_empty(), err_msg("expected empty region (index %u)", hr->hrm_index()));
+  assert(hr->is_empty(), "expected empty region (index %u)", hr->hrm_index());
   hr->set_archive();
   _g1h->old_set_add(hr);
   _g1h->hr_printer()->alloc(hr, G1HRPrinter::Archive);
@@ -383,15 +383,15 @@ HeapWord* G1ArchiveAllocator::archive_mem_allocate(size_t word_size) {
   }
   HeapWord* old_top = _allocation_region->top();
   assert(_bottom >= _allocation_region->bottom(),
-         err_msg("inconsistent allocation state: " PTR_FORMAT " < " PTR_FORMAT,
-                 p2i(_bottom), p2i(_allocation_region->bottom())));
+         "inconsistent allocation state: " PTR_FORMAT " < " PTR_FORMAT,
+         p2i(_bottom), p2i(_allocation_region->bottom()));
   assert(_max <= _allocation_region->end(),
-         err_msg("inconsistent allocation state: " PTR_FORMAT " > " PTR_FORMAT,
-                 p2i(_max), p2i(_allocation_region->end())));
+         "inconsistent allocation state: " PTR_FORMAT " > " PTR_FORMAT,
+         p2i(_max), p2i(_allocation_region->end()));
   assert(_bottom <= old_top && old_top <= _max,
-         err_msg("inconsistent allocation state: expected "
-                 PTR_FORMAT " <= " PTR_FORMAT " <= " PTR_FORMAT,
-                 p2i(_bottom), p2i(old_top), p2i(_max)));
+         "inconsistent allocation state: expected "
+         PTR_FORMAT " <= " PTR_FORMAT " <= " PTR_FORMAT,
+         p2i(_bottom), p2i(old_top), p2i(_max));
 
   // Allocate the next word_size words in the current allocation chunk.
   // If allocation would cross the _max boundary, insert a filler and begin
@@ -430,9 +430,9 @@ HeapWord* G1ArchiveAllocator::archive_mem_allocate(size_t word_size) {
 void G1ArchiveAllocator::complete_archive(GrowableArray<MemRegion>* ranges,
                                           size_t end_alignment_in_bytes) {
   assert((end_alignment_in_bytes >> LogHeapWordSize) < HeapRegion::min_region_size_in_words(),
-          err_msg("alignment " SIZE_FORMAT " too large", end_alignment_in_bytes));
+         "alignment " SIZE_FORMAT " too large", end_alignment_in_bytes);
   assert(is_size_aligned(end_alignment_in_bytes, HeapWordSize),
-         err_msg("alignment " SIZE_FORMAT " is not HeapWord (%u) aligned", end_alignment_in_bytes, HeapWordSize));
+         "alignment " SIZE_FORMAT " is not HeapWord (%u) aligned", end_alignment_in_bytes, HeapWordSize);
 
   // If we've allocated nothing, simply return.
   if (_allocation_region == NULL) {
@@ -465,8 +465,8 @@ void G1ArchiveAllocator::complete_archive(GrowableArray<MemRegion>* ranges,
   // MemRegions to the GrowableArray provided by the caller.
   int index = _allocated_regions.length() - 1;
   assert(_allocated_regions.at(index) == _allocation_region,
-         err_msg("expected region %u at end of array, found %u",
-                 _allocation_region->hrm_index(), _allocated_regions.at(index)->hrm_index()));
+         "expected region %u at end of array, found %u",
+         _allocation_region->hrm_index(), _allocated_regions.at(index)->hrm_index());
   HeapWord* base_address = _allocation_region->bottom();
   HeapWord* top = base_address;
 
@@ -482,7 +482,7 @@ void G1ArchiveAllocator::complete_archive(GrowableArray<MemRegion>* ranges,
     index = index - 1;
   }
 
-  assert(top != base_address, err_msg("zero-sized range, address " PTR_FORMAT, p2i(base_address)));
+  assert(top != base_address, "zero-sized range, address " PTR_FORMAT, p2i(base_address));
   ranges->append(MemRegion(base_address, pointer_delta(top, base_address)));
   _allocated_regions.clear();
   _allocation_region = NULL;

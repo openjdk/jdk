@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
  */
 package sun.rmi.transport;
 
+import java.net.SocketPermission;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 import java.rmi.dgc.DGC;
@@ -33,8 +34,11 @@ import java.rmi.server.LogStream;
 import java.rmi.server.ObjID;
 import java.rmi.server.RemoteServer;
 import java.rmi.server.ServerNotActiveException;
+import java.security.AccessControlContext;
 import java.security.AccessController;
+import java.security.Permissions;
 import java.security.PrivilegedAction;
+import java.security.ProtectionDomain;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.HashMap;
@@ -294,8 +298,19 @@ final class DGCImpl implements DGC {
                             Util.createProxy(DGCImpl.class,
                                              new UnicastRef(ref), true);
                         disp.setSkeleton(dgc);
-                        Target target =
-                            new Target(dgc, disp, stub, dgcID, true);
+
+                        Permissions perms = new Permissions();
+                        perms.add(new SocketPermission("*", "accept,resolve"));
+                        ProtectionDomain[] pd = { new ProtectionDomain(null, perms) };
+                        AccessControlContext acceptAcc = new AccessControlContext(pd);
+
+                        Target target = AccessController.doPrivileged(
+                            new PrivilegedAction<Target>() {
+                                public Target run() {
+                                    return new Target(dgc, disp, stub, dgcID, true);
+                                }
+                            }, acceptAcc);
+
                         ObjectTable.putTarget(target);
                     } catch (RemoteException e) {
                         throw new Error(

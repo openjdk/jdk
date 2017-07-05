@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,19 +24,13 @@
  */
 package javax.swing;
 
-import java.util.EventListener;
-
-import java.awt.*;
-import java.awt.event.*;
-import java.awt.image.*;
+import java.beans.JavaBean;
+import java.beans.BeanProperty;
 
 import java.io.ObjectOutputStream;
-import java.io.ObjectInputStream;
 import java.io.IOException;
 
-import javax.swing.plaf.*;
 import javax.accessibility.*;
-
 
 /**
  * A menu item that can be selected or deselected. If selected, the menu
@@ -81,14 +75,12 @@ import javax.accessibility.*;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *
- * @beaninfo
- *   attribute: isContainer false
- * description: A menu item which can be selected or deselected.
- *
  * @author Georges Saab
  * @author David Karlton
  * @since 1.2
  */
+@JavaBean(description = "A menu item which can be selected or deselected.")
+@SwingContainer(false)
 @SuppressWarnings("serial") // Same-version serialization only
 public class JCheckBoxMenuItem extends JMenuItem implements SwingConstants,
         Accessible
@@ -178,6 +170,7 @@ public class JCheckBoxMenuItem extends JMenuItem implements SwingConstants,
      * @see JComponent#getUIClassID
      * @see UIDefaults#getUI
      */
+    @BeanProperty(bound = false)
     public String getUIClassID() {
         return uiClassID;
     }
@@ -200,10 +193,9 @@ public class JCheckBoxMenuItem extends JMenuItem implements SwingConstants,
      *
      * @param b  a boolean value indicating the item's
      *           selected-state, where true=selected
-     * @beaninfo
-     * description: The selection state of the check box menu item
-     *      hidden: true
      */
+    @BeanProperty(bound = false, hidden = true, description
+            = "The selection state of the check box menu item")
     public synchronized void setState(boolean b) {
         setSelected(b);
     }
@@ -216,6 +208,7 @@ public class JCheckBoxMenuItem extends JMenuItem implements SwingConstants,
      * @return an array containing one Object -- the text of the menu item
      *         -- if the item is selected; otherwise null
      */
+    @BeanProperty(bound = false)
     public Object[] getSelectedObjects() {
         if (isSelected() == false)
             return null;
@@ -274,6 +267,7 @@ public class JCheckBoxMenuItem extends JMenuItem implements SwingConstants,
      * @return an AccessibleJCheckBoxMenuItem that serves as the
      *         AccessibleContext of this AccessibleJCheckBoxMenuItem
      */
+    @BeanProperty(bound = false)
     public AccessibleContext getAccessibleContext() {
         if (accessibleContext == null) {
             accessibleContext = new AccessibleJCheckBoxMenuItem();

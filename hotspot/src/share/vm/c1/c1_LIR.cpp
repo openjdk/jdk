@@ -732,8 +732,7 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
     case lir_sin:
     case lir_cos:
     case lir_log:
-    case lir_log10:
-    case lir_exp: {
+    case lir_log10: {
       assert(op->as_Op2() != NULL, "must be");
       LIR_Op2* op2 = (LIR_Op2*)op;
 
@@ -743,9 +742,6 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
       // overlap with the input.
       assert(op2->_info == NULL, "not used");
       assert(op2->_tmp5->is_illegal(), "not used");
-      assert(op2->_tmp2->is_valid() == (op->code() == lir_exp), "not used");
-      assert(op2->_tmp3->is_valid() == (op->code() == lir_exp), "not used");
-      assert(op2->_tmp4->is_valid() == (op->code() == lir_exp), "not used");
       assert(op2->_opr1->is_valid(), "used");
       do_input(op2->_opr1); do_temp(op2->_opr1);
 
@@ -1775,7 +1771,6 @@ const char * LIR_Op::name() const {
      case lir_tan:                   s = "tan";           break;
      case lir_log:                   s = "log";           break;
      case lir_log10:                 s = "log10";         break;
-     case lir_exp:                   s = "exp";           break;
      case lir_pow:                   s = "pow";           break;
      case lir_logic_and:             s = "logic_and";     break;
      case lir_logic_or:              s = "logic_or";      break;

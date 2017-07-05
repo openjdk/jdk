@@ -85,7 +85,7 @@ bool Abstract_VM_Version::_parallel_worker_threads_initialized = false;
 #ifdef ASSERT
 static void assert_digits(const char * s, const char * message) {
   for (int i = 0; s[i] != '\0'; i++) {
-    assert(isdigit(s[i]), message);
+    assert(isdigit(s[i]), "%s", message);
   }
 }
 #endif
@@ -153,7 +153,6 @@ const char* Abstract_VM_Version::vm_vendor() {
   return "Oracle Corporation";
 #endif
 }
-
 
 const char* Abstract_VM_Version::vm_info_string() {
   if (CodeCacheExtensions::use_pregenerated_interpreter()) {

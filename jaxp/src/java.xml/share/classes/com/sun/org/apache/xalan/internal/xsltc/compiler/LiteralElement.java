@@ -1,15 +1,15 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * Copyright 2001-2004 The Apache Software Foundation.
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -23,10 +23,6 @@
 
 package com.sun.org.apache.xalan.internal.xsltc.compiler;
 
-import java.util.Enumeration;
-import java.util.Hashtable;
-import java.util.Vector;
-
 import com.sun.org.apache.bcel.internal.generic.ConstantPoolGen;
 import com.sun.org.apache.bcel.internal.generic.InstructionList;
 import com.sun.org.apache.bcel.internal.generic.PUSH;
@@ -36,9 +32,13 @@ import com.sun.org.apache.xalan.internal.xsltc.compiler.util.MethodGenerator;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.Type;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.TypeCheckError;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.Util;
-
 import com.sun.org.apache.xml.internal.serializer.ElemDesc;
 import com.sun.org.apache.xml.internal.serializer.ToHTMLStream;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * @author Jacek Ambroziak
@@ -49,8 +49,8 @@ final class LiteralElement extends Instruction {
 
     private String _name;
     private LiteralElement _literalElemParent = null;
-    private Vector _attributeElements = null;
-    private Hashtable _accessedPrefixes = null;
+    private List<SyntaxTreeNode> _attributeElements = null;
+    private Map<String, String> _accessedPrefixes = null;
 
     // True if all attributes of this LRE are unique, i.e. they all have
     // different names. This flag is set to false if some attribute
@@ -85,14 +85,13 @@ final class LiteralElement extends Instruction {
                 return result;
             }
         }
-        return _accessedPrefixes != null ?
-            (String) _accessedPrefixes.get(prefix) : null;
+        return _accessedPrefixes != null ? _accessedPrefixes.get(prefix) : null;
     }
 
     /**
      * Method used to keep track of what namespaces that are references by
      * this literal element and its attributes. The output must contain a
-     * definition for each namespace, so we stuff them in a hashtable.
+     * definition for each namespace, so we stuff them in a map.
      */
     public void registerNamespace(String prefix, String uri,
                                   SymbolTable stable, boolean declared) {
@@ -107,12 +106,12 @@ final class LiteralElement extends Instruction {
 
         // Check if we have any declared namesaces
         if (_accessedPrefixes == null) {
-            _accessedPrefixes = new Hashtable();
+            _accessedPrefixes = new HashMap<>();
         }
         else {
             if (!declared) {
                 // Check if this node has a declaration for this namespace
-                final String old = (String)_accessedPrefixes.get(prefix);
+                final String old = _accessedPrefixes.get(prefix);
                 if (old != null) {
                     if (old.equals(uri))
                         return;
@@ -169,7 +168,7 @@ final class LiteralElement extends Instruction {
      */
     public void addAttribute(SyntaxTreeNode attribute) {
         if (_attributeElements == null) {
-            _attributeElements = new Vector(2);
+            _attributeElements = new ArrayList<>(2);
         }
         _attributeElements.add(attribute);
     }
@@ -179,9 +178,9 @@ final class LiteralElement extends Instruction {
      */
     public void setFirstAttribute(SyntaxTreeNode attribute) {
         if (_attributeElements == null) {
-            _attributeElements = new Vector(2);
+            _attributeElements = new ArrayList<>(2);
         }
-        _attributeElements.insertElementAt(attribute,0);
+        _attributeElements.add(0, attribute);
     }
 
     /**
@@ -191,10 +190,7 @@ final class LiteralElement extends Instruction {
     public Type typeCheck(SymbolTable stable) throws TypeCheckError {
         // Type-check all attributes
         if (_attributeElements != null) {
-            final int count = _attributeElements.size();
-            for (int i = 0; i < count; i++) {
-                SyntaxTreeNode node =
-                    (SyntaxTreeNode)_attributeElements.elementAt(i);
+            for (SyntaxTreeNode node : _attributeElements) {
                 node.typeCheck(stable);
             }
         }
@@ -207,23 +203,19 @@ final class LiteralElement extends Instruction {
      * and assembles a list of all prefixes that (for the given node) maps
      * to _ANY_ namespace URI. Used by literal result elements to determine
      */
-    public Enumeration getNamespaceScope(SyntaxTreeNode node) {
-        Hashtable all = new Hashtable();
+    public Set<Map.Entry<String, String>> getNamespaceScope(SyntaxTreeNode node) {
+        Map<String, String> all = new HashMap<>();
 
         while (node != null) {
-            Hashtable mapping = node.getPrefixMapping();
+            Map<String, String> mapping = node.getPrefixMapping();
             if (mapping != null) {
-                Enumeration prefixes = mapping.keys();
-                while (prefixes.hasMoreElements()) {
-                    String prefix = (String)prefixes.nextElement();
-                    if (!all.containsKey(prefix)) {
-                        all.put(prefix, mapping.get(prefix));
-                    }
-                }
+                mapping.entrySet().stream().forEach((entry) -> {
+                    all.putIfAbsent(entry.getKey(), entry.getValue());
+                });
             }
             node = node.getParent();
         }
-        return(all.keys());
+        return all.entrySet();
     }
 
     /**
@@ -288,9 +280,9 @@ final class LiteralElement extends Instruction {
 
         // Register all namespaces that are in scope, except for those that
         // are listed in the xsl:stylesheet element's *-prefixes attributes
-        final Enumeration include = getNamespaceScope(this);
-        while (include.hasMoreElements()) {
-            final String prefix = (String)include.nextElement();
+        Set<Map.Entry<String, String>> include = getNamespaceScope(this);
+        for (Map.Entry<String, String> entry : include) {
+            final String prefix = entry.getKey();
             if (!prefix.equals("xml")) {
                 final String uri = lookupNamespace(prefix);
                 if (uri != null && !stable.isExcludedNamespace(uri)) {
@@ -356,11 +348,10 @@ final class LiteralElement extends Instruction {
         // Compile code to emit namespace attributes
         if (_accessedPrefixes != null) {
             boolean declaresDefaultNS = false;
-            Enumeration e = _accessedPrefixes.keys();
 
-            while (e.hasMoreElements()) {
-                final String prefix = (String)e.nextElement();
-                final String uri = (String)_accessedPrefixes.get(prefix);
+            for (Map.Entry<String, String> entry : _accessedPrefixes.entrySet()) {
+                final String prefix = entry.getKey();
+                final String uri = entry.getValue();
 
                 if (uri != Constants.EMPTYSTRING ||
                         prefix != Constants.EMPTYSTRING)
@@ -391,10 +382,7 @@ final class LiteralElement extends Instruction {
 
         // Output all attributes
         if (_attributeElements != null) {
-            final int count = _attributeElements.size();
-            for (int i = 0; i < count; i++) {
-                SyntaxTreeNode node =
-                    (SyntaxTreeNode)_attributeElements.elementAt(i);
+            for (SyntaxTreeNode node : _attributeElements) {
                 if (!(node instanceof XslAttribute)) {
                     node.translate(classGen, methodGen);
                 }
@@ -445,18 +433,18 @@ final class LiteralElement extends Instruction {
 
          if (_attributeElements != null) {
              int numAttrs = _attributeElements.size();
-             Hashtable attrsTable = null;
+             Map<String, SyntaxTreeNode> attrsTable = null;
              for (int i = 0; i < numAttrs; i++) {
-                 SyntaxTreeNode node = (SyntaxTreeNode)_attributeElements.elementAt(i);
+                 SyntaxTreeNode node = _attributeElements.get(i);
 
                  if (node instanceof UseAttributeSets) {
                      return false;
                  }
                  else if (node instanceof XslAttribute) {
                      if (attrsTable == null) {
-                        attrsTable = new Hashtable();
+                        attrsTable = new HashMap<>();
                          for (int k = 0; k < i; k++) {
-                             SyntaxTreeNode n = (SyntaxTreeNode)_attributeElements.elementAt(k);
+                             SyntaxTreeNode n = _attributeElements.get(k);
                              if (n instanceof LiteralAttribute) {
                                  LiteralAttribute literalAttr = (LiteralAttribute)n;
                                  attrsTable.put(literalAttr.getName(), literalAttr);
@@ -491,10 +479,8 @@ final class LiteralElement extends Instruction {
      * <xsl:attribute> children of the current node are not included in the check.
      */
     private boolean canProduceAttributeNodes(SyntaxTreeNode node, boolean ignoreXslAttribute) {
-        Vector contents = node.getContents();
-        int size = contents.size();
-        for (int i = 0; i < size; i++) {
-            SyntaxTreeNode child = (SyntaxTreeNode)contents.elementAt(i);
+        List<SyntaxTreeNode> contents = node.getContents();
+        for (SyntaxTreeNode child : contents) {
             if (child instanceof Text) {
                 Text text = (Text)child;
                 if (text.isIgnore())
@@ -532,10 +518,8 @@ final class LiteralElement extends Instruction {
                 return true;
             }
             else if (child instanceof Choose) {
-                Vector chooseContents = child.getContents();
-                int num = chooseContents.size();
-                for (int k = 0; k < num; k++) {
-                    SyntaxTreeNode chooseChild = (SyntaxTreeNode)chooseContents.elementAt(k);
+                List<SyntaxTreeNode> chooseContents = child.getContents();
+                for (SyntaxTreeNode chooseChild : chooseContents) {
                     if (chooseChild instanceof When || chooseChild instanceof Otherwise) {
                         if (canProduceAttributeNodes(chooseChild, false))
                             return true;

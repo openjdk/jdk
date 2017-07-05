@@ -51,7 +51,11 @@ import javax.tools.ToolProvider;
  */
 final class PackagesHelper {
     // JavaCompiler may be null on certain platforms (eg. JRE)
-    private static final JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+    private static final JavaCompiler compiler;
+    static {
+        // Use javac only if security manager is not around!
+        compiler = System.getSecurityManager() == null? ToolProvider.getSystemJavaCompiler() : null;
+    }
 
     /**
      * Is Java package properties helper available?

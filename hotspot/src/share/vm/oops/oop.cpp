@@ -31,8 +31,6 @@
 #include "runtime/thread.inline.hpp"
 #include "utilities/copy.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 bool always_do_update_barrier = false;
 
 BarrierSet* oopDesc::_bs = NULL;
@@ -47,7 +45,7 @@ void oopDesc::print_on(outputStream* st) const {
 
 void oopDesc::print_address_on(outputStream* st) const {
   if (PrintOopAddress) {
-    st->print("{" INTPTR_FORMAT "}", this);
+    st->print("{" INTPTR_FORMAT "}", p2i(this));
   }
 }
 
@@ -123,7 +121,7 @@ VerifyOopClosure VerifyOopClosure::verify_oop;
 
 template <class T> void VerifyOopClosure::do_oop_work(T* p) {
   oop obj = oopDesc::load_decode_heap_oop(p);
-  guarantee(obj->is_oop_or_null(), err_msg("invalid oop: " INTPTR_FORMAT, p2i((oopDesc*) obj)));
+  guarantee(obj->is_oop_or_null(), "invalid oop: " INTPTR_FORMAT, p2i((oopDesc*) obj));
 }
 
 void VerifyOopClosure::do_oop(oop* p)       { VerifyOopClosure::do_oop_work(p); }

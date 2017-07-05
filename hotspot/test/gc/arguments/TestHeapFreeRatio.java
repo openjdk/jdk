@@ -72,7 +72,7 @@ public class TestHeapFreeRatio {
       output.shouldHaveExitValue(1);
       break;
     case COMBINATION_INVALID:
-      output.shouldContain("must be greater than or equal to MinHeapFreeRatio");
+      output.shouldContain("must be less than or equal to MaxHeapFreeRatio");
       output.shouldContain("Error");
       output.shouldHaveExitValue(1);
       break;

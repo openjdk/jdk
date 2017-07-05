@@ -405,39 +405,6 @@ class frame VALUE_OBJ_CLASS_SPEC {
   // RedefineClasses support for finding live interpreted methods on the stack
   void metadata_do(void f(Metadata*));
 
-# ifdef ENABLE_ZAP_DEAD_LOCALS
- private:
-  class CheckValueClosure: public OopClosure {
-   public:
-    void do_oop(oop* p);
-    void do_oop(narrowOop* p) { ShouldNotReachHere(); }
-  };
-  static CheckValueClosure _check_value;
-
-  class CheckOopClosure: public OopClosure {
-   public:
-    void do_oop(oop* p);
-    void do_oop(narrowOop* p) { ShouldNotReachHere(); }
-  };
-  static CheckOopClosure _check_oop;
-
-  static void check_derived_oop(oop* base, oop* derived);
-
-  class ZapDeadClosure: public OopClosure {
-   public:
-    void do_oop(oop* p);
-    void do_oop(narrowOop* p) { ShouldNotReachHere(); }
-  };
-  static ZapDeadClosure _zap_dead;
-
- public:
-  // Zapping
-  void zap_dead_locals            (JavaThread* thread, const RegisterMap* map);
-  void zap_dead_interpreted_locals(JavaThread* thread, const RegisterMap* map);
-  void zap_dead_compiled_locals   (JavaThread* thread, const RegisterMap* map);
-  void zap_dead_entry_locals      (JavaThread* thread, const RegisterMap* map);
-  void zap_dead_deoptimized_locals(JavaThread* thread, const RegisterMap* map);
-# endif
   // Verification
   void verify(const RegisterMap* map);
   static bool verify_return_pc(address x);

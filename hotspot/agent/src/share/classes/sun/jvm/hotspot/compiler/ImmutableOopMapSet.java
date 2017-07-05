@@ -67,9 +67,6 @@ public class ImmutableOopMapSet extends VMObject {
       }
     }
 
-    public void visitValueLocation(Address valueAddr) {
-    }
-
     public void visitNarrowOopLocation(Address narrowOopAddr) {
       addressVisitor.visitCompOopAddress(narrowOopAddr);
     }
@@ -216,9 +213,9 @@ public class ImmutableOopMapSet extends VMObject {
       }
     }
 
-    // We want narow oop, value and oop oop_types
-    OopMapValue.OopTypes[] values = new OopMapValue.OopTypes[]{
-        OopMapValue.OopTypes.OOP_VALUE, OopMapValue.OopTypes.VALUE_VALUE, OopMapValue.OopTypes.NARROWOOP_VALUE
+    // We want narow oop and oop oop_types
+    OopMapValue.OopTypes[] values = new OopMapValue.OopTypes[] {
+        OopMapValue.OopTypes.OOP_VALUE, OopMapValue.OopTypes.NARROWOOP_VALUE
     };
 
     {
@@ -231,8 +228,6 @@ public class ImmutableOopMapSet extends VMObject {
             // to detect in the debugging system
             // assert(Universe::is_heap_or_null(*loc), "found non oop pointer");
             visitor.visitOopLocation(loc);
-          } else if (omv.getType() == OopMapValue.OopTypes.VALUE_VALUE) {
-            visitor.visitValueLocation(loc);
           } else if (omv.getType() == OopMapValue.OopTypes.NARROWOOP_VALUE) {
             visitor.visitNarrowOopLocation(loc);
           }

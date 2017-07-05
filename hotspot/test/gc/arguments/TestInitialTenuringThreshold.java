@@ -25,6 +25,7 @@
  * @test TestInitialTenuringThreshold
  * @key gc
  * @bug 8014765
+ * @requires vm.gc=="Parallel"
  * @summary Tests argument processing for initial tenuring threshold
  * @library /testlibrary
  * @modules java.base/sun.misc
@@ -39,6 +40,7 @@ public class TestInitialTenuringThreshold {
 
   public static void runWithThresholds(int initial, int max, boolean shouldfail) throws Exception {
     ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+      "-XX:+UseParallelGC",
       "-XX:InitialTenuringThreshold=" + String.valueOf(initial),
       "-XX:MaxTenuringThreshold=" + String.valueOf(max),
       "-version"
