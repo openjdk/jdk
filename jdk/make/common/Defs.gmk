@@ -109,17 +109,26 @@ else
   endif
 endif
 
+# We allow for potential specialization of build files. This has to be
+# done on a file-by-file, case-by-case basis. Here we define the basic control
+# over where custom files are being used. Later we will -include the custom
+# Defs.gmk if present. This works best because all Makefiles include defs.gmk.
+# In other cases we can either have foo.gmk include custom/foo.gmk, or
+# a Makefile can do:
+#  include foo.gmk
+#  -include $CUSTOM_MAKE_DIR/foo.gmk
+#
+# For non-OpenJDK builds the default location is the make/closed repository.
+# For OpenJDK builds a real value has to be supplied externally.
+ifneq ($(OPENJDK),true)
+  CUSTOM_MAKE_DIR = $(BUILDDIR)/closed
+endif
+
 #
 # Get platform definitions
 #
 
 include $(JDK_TOPDIR)/make/common/Defs-$(PLATFORM).gmk
-
-#
-# SE-Embedded support, if enabled
-#
-
-include $(JDK_TOPDIR)/make/common/Defs-embedded.gmk
 
 #
 # Cross-compilation Settings
@@ -610,5 +619,7 @@ endef
 define install-import-file
 $(install-importonly-file)
 endef
+
+-include $(CUSTOM_MAKE_DIR)/Defs.gmk
 
 .PHONY: all build clean clobber
