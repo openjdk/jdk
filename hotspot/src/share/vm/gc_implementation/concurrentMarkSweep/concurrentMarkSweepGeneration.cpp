@@ -555,6 +555,7 @@ CMSCollector::CMSCollector(ConcurrentMarkSweepGeneration* cmsGen,
   _collector_policy(cp),
   _should_unload_classes(false),
   _concurrent_cycles_since_last_unload(0),
+  _roots_scanning_options(0),
   _sweep_estimate(CMS_SweepWeight, CMS_SweepPadding)
 {
   if (ExplicitGCInvokesConcurrentAndUnloadsClasses) {

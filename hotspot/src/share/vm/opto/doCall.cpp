@@ -47,7 +47,7 @@ CallGenerator* Compile::call_generator(ciMethod* call_method, int vtable_index, 
   CallGenerator* cg;
 
   // Dtrace currently doesn't work unless all calls are vanilla
-  if (DTraceMethodProbes) {
+  if (env()->dtrace_method_probes()) {
     allow_inline = false;
   }
 
