@@ -80,7 +80,7 @@ public class MultiReleaseJarAPI {
         }
 
         try (JarFile jf = new JarFile(multirelease)) {
-            Assert.assertFalse(jf.isMultiRelease());
+            Assert.assertTrue(jf.isMultiRelease());
         }
 
         try (JarFile jf = new JarFile(multirelease, true, ZipFile.OPEN_READ, Runtime.version())) {

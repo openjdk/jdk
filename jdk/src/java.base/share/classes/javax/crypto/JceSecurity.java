@@ -29,6 +29,7 @@ import java.util.*;
 import java.util.jar.*;
 import java.io.*;
 import java.net.URL;
+import java.nio.file.*;
 import java.security.*;
 
 import java.security.Provider.Service;
@@ -206,7 +207,7 @@ final class JceSecurity {
 
     static {
         try {
-            NULL_URL = new URL("http://null.sun.com/");
+            NULL_URL = new URL("http://null.oracle.com/");
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -243,83 +244,94 @@ final class JceSecurity {
         }
     }
 
+    // This is called from within an doPrivileged block.
     private static void setupJurisdictionPolicies() throws Exception {
-        String javaHomeDir = System.getProperty("java.home");
-        String sep = File.separator;
-        String pathToPolicyJar = javaHomeDir + sep + "lib" + sep +
-            "security" + sep;
 
-        File exportJar = new File(pathToPolicyJar, "US_export_policy.jar");
-        File importJar = new File(pathToPolicyJar, "local_policy.jar");
+        // Sanity check the crypto.policy Security property.  Single
+        // directory entry, no pseudo-directories (".", "..", leading/trailing
+        // path separators). normalize()/getParent() will help later.
+        String cryptoPolicyProperty = Security.getProperty("crypto.policy");
+        Path cpPath = Paths.get(cryptoPolicyProperty);
 
-        if (!exportJar.exists() || !importJar.exists()) {
-            throw new SecurityException
-                                ("Cannot locate policy or framework files!");
+        if ((cryptoPolicyProperty == null) ||
+                (cpPath.getNameCount() != 1) ||
+                (cpPath.compareTo(cpPath.getFileName()) != 0)) {
+            throw new SecurityException(
+                "Invalid policy directory name format: " +
+                cryptoPolicyProperty);
         }
 
-        // Read jurisdiction policies.
-        CryptoPermissions defaultExport = new CryptoPermissions();
-        CryptoPermissions exemptExport = new CryptoPermissions();
-        loadPolicies(exportJar, defaultExport, exemptExport);
+        // Prepend java.home to get the full path.  normalize() in
+        // case an extra "." or ".." snuck in somehow.
+        String javaHomeProperty = System.getProperty("java.home");
+        Path javaHomePolicyPath = Paths.get(javaHomeProperty, "conf",
+                "security", "policy").normalize();
+        Path cryptoPolicyPath = Paths.get(javaHomeProperty, "conf", "security",
+                "policy", cryptoPolicyProperty).normalize();
 
-        CryptoPermissions defaultImport = new CryptoPermissions();
-        CryptoPermissions exemptImport = new CryptoPermissions();
-        loadPolicies(importJar, defaultImport, exemptImport);
-
-        // Merge the export and import policies for default applications.
-        if (defaultExport.isEmpty() || defaultImport.isEmpty()) {
-            throw new SecurityException("Missing mandatory jurisdiction " +
-                                        "policy files");
+        if (cryptoPolicyPath.getParent().compareTo(javaHomePolicyPath) != 0) {
+            throw new SecurityException(
+                "Invalid cryptographic jurisdiction policy directory path: " +
+                cryptoPolicyProperty);
         }
-        defaultPolicy = defaultExport.getMinimum(defaultImport);
 
-        // Merge the export and import policies for exempt applications.
-        if (exemptExport.isEmpty())  {
-            exemptPolicy = exemptImport.isEmpty() ? null : exemptImport;
-        } else {
-            exemptPolicy = exemptExport.getMinimum(exemptImport);
+        if (!Files.isDirectory(cryptoPolicyPath)
+                || !Files.isReadable(cryptoPolicyPath)) {
+            throw new SecurityException(
+                "Can't read cryptographic policy directory: " +
+                cryptoPolicyProperty);
         }
-    }
 
-    /**
-     * Load the policies from the specified file. Also checks that the
-     * policies are correctly signed.
-     */
-    private static void loadPolicies(File jarPathName,
-                                     CryptoPermissions defaultPolicy,
-                                     CryptoPermissions exemptPolicy)
-        throws Exception {
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(
+                cryptoPolicyPath, "{default,exempt}_*.policy")) {
+            for (Path entry : stream) {
+                try (InputStream is = new BufferedInputStream(
+                        Files.newInputStream(entry))) {
+                    String filename = entry.getFileName().toString();
 
-        JarFile jf = new JarFile(jarPathName);
+                    CryptoPermissions tmpPerms = new CryptoPermissions();
+                    tmpPerms.load(is);
 
-        Enumeration<JarEntry> entries = jf.entries();
-        while (entries.hasMoreElements()) {
-            JarEntry je = entries.nextElement();
-            InputStream is = null;
-            try {
-                if (je.getName().startsWith("default_")) {
-                    is = jf.getInputStream(je);
-                    defaultPolicy.load(is);
-                } else if (je.getName().startsWith("exempt_")) {
-                    is = jf.getInputStream(je);
-                    exemptPolicy.load(is);
-                } else {
-                    continue;
-                }
-            } finally {
-                if (is != null) {
-                    is.close();
+                    if (filename.startsWith("default_")) {
+                        // Did we find a default perms?
+                        defaultPolicy = ((defaultPolicy == null) ? tmpPerms :
+                                defaultPolicy.getMinimum(tmpPerms));
+                    } else if (filename.startsWith("exempt_")) {
+                        // Did we find a exempt perms?
+                        exemptPolicy = ((exemptPolicy == null) ? tmpPerms :
+                                exemptPolicy.getMinimum(tmpPerms));
+                    } else {
+                        // This should never happen.  newDirectoryStream
+                        // should only throw return "{default,exempt}_*.policy"
+                        throw new SecurityException(
+                            "Unexpected jurisdiction policy files in : " +
+                            cryptoPolicyProperty);
+                    }
+                } catch (Exception e) {
+                    throw new SecurityException(
+                        "Couldn't parse jurisdiction policy files in: " +
+                        cryptoPolicyProperty);
                 }
             }
-
-            // Enforce the signer restraint, i.e. signer of JCE framework
-            // jar should also be the signer of the two jurisdiction policy
-            // jar files.
-            ProviderVerifier.verifyPolicySigned(je.getCertificates());
+        } catch (DirectoryIteratorException ex) {
+            // I/O error encountered during the iteration,
+            // the cause is an IOException
+            throw new SecurityException(
+                "Couldn't iterate through the jurisdiction policy files: " +
+                cryptoPolicyProperty);
         }
-        // Close and nullify the JarFile reference to help GC.
-        jf.close();
-        jf = null;
+
+        // Must have a default policy
+        if ((defaultPolicy == null) || defaultPolicy.isEmpty()) {
+            throw new SecurityException(
+                "Missing mandatory jurisdiction policy files: " +
+                cryptoPolicyProperty);
+        }
+
+        // If there was an empty exempt policy file, ignore it.
+        if ((exemptPolicy != null) && exemptPolicy.isEmpty()) {
+            exemptPolicy = null;
+        }
     }
 
     static CryptoPermissions getDefaultPolicy() {

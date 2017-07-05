@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3204,7 +3204,6 @@ public abstract class BaseRowSet implements Serializable, Cloneable {
     * this method is called on a closed <code>CallableStatement</code>
     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
     * this method
-    * @since 1.4
     */
    public void setNull(String parameterName, int sqlType) throws SQLException {
         throw new SQLFeatureNotSupportedException("Feature not supported");
@@ -3240,7 +3239,6 @@ public abstract class BaseRowSet implements Serializable, Cloneable {
     * this method is called on a closed <code>CallableStatement</code>
     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
     * this method
-    * @since 1.4
     */
    public void setNull (String parameterName, int sqlType, String typeName)
        throws SQLException{
@@ -3259,7 +3257,6 @@ public abstract class BaseRowSet implements Serializable, Cloneable {
     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
     * this method
     * @see #getParams
-    * @since 1.4
     */
    public void setBoolean(String parameterName, boolean x) throws SQLException{
         throw new SQLFeatureNotSupportedException("Feature not supported");
@@ -3277,7 +3274,6 @@ public abstract class BaseRowSet implements Serializable, Cloneable {
     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
     * this method
     * @see #getParams
-    * @since 1.4
     */
    public void setByte(String parameterName, byte x) throws SQLException{
         throw new SQLFeatureNotSupportedException("Feature not supported");
@@ -3295,7 +3291,6 @@ public abstract class BaseRowSet implements Serializable, Cloneable {
     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
     * this method
     * @see #getParams
-    * @since 1.4
     */
    public void setShort(String parameterName, short x) throws SQLException{
         throw new SQLFeatureNotSupportedException("Feature not supported");
@@ -3313,7 +3308,6 @@ public abstract class BaseRowSet implements Serializable, Cloneable {
     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
     * this method
     * @see #getParams
-    * @since 1.4
     */
    public void setInt(String parameterName, int x) throws SQLException{
         throw new SQLFeatureNotSupportedException("Feature not supported");
@@ -3332,7 +3326,6 @@ public abstract class BaseRowSet implements Serializable, Cloneable {
     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
     * this method
     * @see #getParams
-    * @since 1.4
     */
    public void setLong(String parameterName, long x) throws SQLException{
         throw new SQLFeatureNotSupportedException("Feature not supported");
@@ -3350,7 +3343,6 @@ public abstract class BaseRowSet implements Serializable, Cloneable {
     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
     * this method
     * @see #getParams
-    * @since 1.4
     */
    public void setFloat(String parameterName, float x) throws SQLException{
         throw new SQLFeatureNotSupportedException("Feature not supported");
@@ -3368,7 +3360,6 @@ public abstract class BaseRowSet implements Serializable, Cloneable {
     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
     * this method
     * @see #getParams
-    * @since 1.4
     */
    public void setDouble(String parameterName, double x) throws SQLException{
         throw new SQLFeatureNotSupportedException("Feature not supported");
@@ -3387,7 +3378,6 @@ public abstract class BaseRowSet implements Serializable, Cloneable {
     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
     * this method
     * @see #getParams
-    * @since 1.4
     */
    public void setBigDecimal(String parameterName, BigDecimal x) throws SQLException{
         throw new SQLFeatureNotSupportedException("Feature not supported");
@@ -3408,7 +3398,6 @@ public abstract class BaseRowSet implements Serializable, Cloneable {
     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
     * this method
     * @see #getParams
-    * @since 1.4
     */
    public void setString(String parameterName, String x) throws SQLException{
         throw new SQLFeatureNotSupportedException("Feature not supported");
@@ -3428,7 +3417,6 @@ public abstract class BaseRowSet implements Serializable, Cloneable {
     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
     * this method
     * @see #getParams
-    * @since 1.4
     */
    public void setBytes(String parameterName, byte x[]) throws SQLException{
         throw new SQLFeatureNotSupportedException("Feature not supported");
@@ -3447,7 +3435,6 @@ public abstract class BaseRowSet implements Serializable, Cloneable {
     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
     * this method
     * @see #getParams
-    * @since 1.4
     */
    public void setTimestamp(String parameterName, java.sql.Timestamp x)
        throws SQLException{
@@ -3474,7 +3461,6 @@ public abstract class BaseRowSet implements Serializable, Cloneable {
     * this method is called on a closed <code>CallableStatement</code>
     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
     * this method
-    * @since 1.4
     */
    public void setAsciiStream(String parameterName, java.io.InputStream x, int length)
        throws SQLException{
@@ -3500,7 +3486,6 @@ public abstract class BaseRowSet implements Serializable, Cloneable {
     * this method is called on a closed <code>CallableStatement</code>
     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
     * this method
-    * @since 1.4
     */
    public void setBinaryStream(String parameterName, java.io.InputStream x,
                         int length) throws SQLException{
@@ -3528,7 +3513,6 @@ public abstract class BaseRowSet implements Serializable, Cloneable {
     * this method is called on a closed <code>CallableStatement</code>
     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
     * this method
-    * @since 1.4
     */
    public void setCharacterStream(String parameterName,
                            java.io.Reader reader,
@@ -3684,7 +3668,6 @@ public abstract class BaseRowSet implements Serializable, Cloneable {
     * this data type
     * @see Types
     * @see #getParams
-    * @since 1.4
     */
    public void setObject(String parameterName, Object x, int targetSqlType, int scale)
        throws SQLException{
@@ -3710,7 +3693,6 @@ public abstract class BaseRowSet implements Serializable, Cloneable {
     * or  <code>STRUCT</code> data type and the JDBC driver does not support
     * this data type
     * @see #getParams
-    * @since 1.4
     */
    public void setObject(String parameterName, Object x, int targetSqlType)
        throws SQLException{
@@ -3751,7 +3733,6 @@ public abstract class BaseRowSet implements Serializable, Cloneable {
    * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
    * this method
    * @see #getParams
-   * @since 1.4
    */
   public void setObject(String parameterName, Object x) throws SQLException{
         throw new SQLFeatureNotSupportedException("Feature not supported");
@@ -4024,7 +4005,6 @@ public abstract class BaseRowSet implements Serializable, Cloneable {
     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
     * this method
     * @see #getParams
-    * @since 1.4
     */
    public void setDate(String parameterName, java.sql.Date x)
            throws SQLException {
@@ -4050,7 +4030,6 @@ public abstract class BaseRowSet implements Serializable, Cloneable {
     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
     * this method
     * @see #getParams
-    * @since 1.4
     */
    public void setDate(String parameterName, java.sql.Date x, Calendar cal)
            throws SQLException {
@@ -4069,7 +4048,6 @@ public abstract class BaseRowSet implements Serializable, Cloneable {
     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
     * this method
     * @see #getParams
-    * @since 1.4
     */
    public void setTime(String parameterName, java.sql.Time x)
            throws SQLException {
@@ -4095,7 +4073,6 @@ public abstract class BaseRowSet implements Serializable, Cloneable {
     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
     * this method
     * @see #getParams
-    * @since 1.4
     */
    public void setTime(String parameterName, java.sql.Time x, Calendar cal)
            throws SQLException {
@@ -4121,7 +4098,6 @@ public abstract class BaseRowSet implements Serializable, Cloneable {
     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
     * this method
     * @see #getParams
-    * @since 1.4
     */
    public void setTimestamp(String parameterName, java.sql.Timestamp x, Calendar cal)
            throws SQLException {
@@ -4459,7 +4435,6 @@ public abstract class BaseRowSet implements Serializable, Cloneable {
     * @exception SQLException if a database access error occurs or
     * this method is called on a closed <code>PreparedStatement</code>
     * @throws SQLFeatureNotSupportedException  if the JDBC driver does not support this method
-    * @since 1.4
     */
    public void setURL(int parameterIndex, java.net.URL x) throws SQLException {
        throw new SQLFeatureNotSupportedException("Feature not supported");
