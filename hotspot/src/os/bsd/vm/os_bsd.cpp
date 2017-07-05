@@ -3589,8 +3589,6 @@ jint os::init_2(void)
 #endif
   }
 
-  os::large_page_init();
-
   // initialize suspend/resume support - must do this before signal_sets_init()
   if (SR_initialize() != 0) {
     perror("SR_initialize failed");
