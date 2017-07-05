@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,17 +39,6 @@ void C1_MacroAssembler::inline_cache_check(Register receiver, Register iCache) {
   delayed()->nop();
   align(CodeEntryAlignment);
   bind(L);
-}
-
-
-void C1_MacroAssembler::method_exit(bool restore_frame) {
-  // this code must be structured this way so that the return
-  // instruction can be a safepoint.
-  if (restore_frame) {
-    restore();
-  }
-  retl();
-  delayed()->nop();
 }
 
 
