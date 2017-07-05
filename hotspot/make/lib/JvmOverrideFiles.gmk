@@ -31,6 +31,7 @@ $(eval $(call IncludeCustomExtension, hotspot, lib/JvmOverrideFiles.gmk))
 
 ifeq ($(TOOLCHAIN_TYPE), gcc)
   BUILD_LIBJVM_vmStructs.cpp_CXXFLAGS := -fno-var-tracking-assignments -O0
+  BUILD_LIBJVM_jvmciCompilerToVM.cpp_CXXFLAGS := -fno-var-tracking-assignments
 endif
 
 ifeq ($(OPENJDK_TARGET_OS), linux)

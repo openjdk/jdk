@@ -95,7 +95,7 @@ java.datatransfer_COPY := flavormap.properties
 ################################################################################
 
 java.desktop_ADD_JAVAC_FLAGS := -Xdoclint:all/protected,-reference \
-    '-Xdoclint/package:java.*,javax.*' -Xlint:-deprecation 
+    '-Xdoclint/package:java.*,javax.*' -Xlint:-deprecation,-exports
 java.desktop_COPY := .gif .png .wav .txt .xml .css .pf
 java.desktop_CLEAN := iio-plugin.properties cursors.properties
 
@@ -316,7 +316,7 @@ java.xml.ws_CLEAN := .properties
 
 ################################################################################
 
-java.naming_ADD_JAVAC_FLAGS := -Xdoclint:all/protected '-Xdoclint/package:java.*,javax.*'
+java.naming_ADD_JAVAC_FLAGS := -Xdoclint:all/protected '-Xdoclint/package:java.*,javax.*' -Xlint:-exports
 java.naming_CLEAN := jndiprovider.properties
 
 ################################################################################
@@ -344,11 +344,19 @@ jdk.charsets_COPY := .dat
 
 ################################################################################
 
+jdk.accessibility_ADD_JAVAC_FLAGS := -Xlint:-exports
+
+################################################################################
+
 jdk.compiler_ADD_JAVAC_FLAGS := -Xdoclint:all/protected '-Xdoclint/package:-com.sun.tools.*' \
     -XDstringConcat=inline
 jdk.compiler_CLEAN_FILES := $(wildcard \
     $(patsubst %, $(JDK_TOPDIR)/src/jdk.compiler/share/classes/%/*.properties, \
         sun/tools/serialver/resources))
+
+################################################################################
+
+jdk.jshell_ADD_JAVAC_FLAGS := -Xlint:-exports
 
 ################################################################################
 
@@ -428,6 +436,10 @@ jdk.jdi_EXCLUDE_FILES += jdi-overview.html
 
 ################################################################################
 
+jdk.jsobject_ADD_JAVAC_FLAGS := -Xlint:-exports
+
+################################################################################
+
 jdk.dev_CLEAN_FILES := $(wildcard \
     $(patsubst %, $(JDK_TOPDIR)/src/jdk.dev/share/classes/%/*.properties, \
         com/sun/tools/script/shell))
@@ -437,6 +449,10 @@ jdk.dev_COPY := .js oqlhelp.html .txt
 ################################################################################
 
 jdk.jvmstat_COPY := aliasmap
+
+################################################################################
+
+jdk.vm.ci_ADD_JAVAC_FLAGS := -Xlint:-exports
 
 ################################################################################
 
