@@ -260,7 +260,7 @@ public final class OptimisticReturnFilters {
             final Class<?> c = arg.getClass();
             if (c == Long.class) {
                 // Must check for Long separately, as Long.doubleValue() isn't precise.
-                return ((Long)arg).longValue();
+                return ((Long)arg);
             } else if (c == Integer.class || c == Double.class || c == Float.class || c == Short.class ||
                     c == Byte.class) {
                 return ensureLong(((Number)arg).doubleValue(), programPoint);

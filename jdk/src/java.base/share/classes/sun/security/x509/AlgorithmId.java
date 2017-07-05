@@ -648,12 +648,12 @@ public class AlgorithmId implements Serializable, DerEncoder {
     /*
      * COMMON PUBLIC KEY TYPES
      */
-    private static final int DH_data[] = { 1, 2, 840, 113549, 1, 3, 1 };
-    private static final int DH_PKIX_data[] = { 1, 2, 840, 10046, 2, 1 };
-    private static final int DSA_OIW_data[] = { 1, 3, 14, 3, 2, 12 };
-    private static final int DSA_PKIX_data[] = { 1, 2, 840, 10040, 4, 1 };
-    private static final int RSA_data[] = { 2, 5, 8, 1, 1 };
-    private static final int RSAEncryption_data[] =
+    private static final int[] DH_data = { 1, 2, 840, 113549, 1, 3, 1 };
+    private static final int[] DH_PKIX_data = { 1, 2, 840, 10046, 2, 1 };
+    private static final int[] DSA_OIW_data = { 1, 3, 14, 3, 2, 12 };
+    private static final int[] DSA_PKIX_data = { 1, 2, 840, 10040, 4, 1 };
+    private static final int[] RSA_data = { 2, 5, 8, 1, 1 };
+    private static final int[] RSAEncryption_data =
                                  { 1, 2, 840, 113549, 1, 1, 1 };
 
     public static final ObjectIdentifier DH_oid;
@@ -674,27 +674,27 @@ public class AlgorithmId implements Serializable, DerEncoder {
     /*
      * COMMON SIGNATURE ALGORITHMS
      */
-    private static final int md2WithRSAEncryption_data[] =
+    private static final int[] md2WithRSAEncryption_data =
                                        { 1, 2, 840, 113549, 1, 1, 2 };
-    private static final int md5WithRSAEncryption_data[] =
+    private static final int[] md5WithRSAEncryption_data =
                                        { 1, 2, 840, 113549, 1, 1, 4 };
-    private static final int sha1WithRSAEncryption_data[] =
+    private static final int[] sha1WithRSAEncryption_data =
                                        { 1, 2, 840, 113549, 1, 1, 5 };
-    private static final int sha1WithRSAEncryption_OIW_data[] =
+    private static final int[] sha1WithRSAEncryption_OIW_data =
                                        { 1, 3, 14, 3, 2, 29 };
-    private static final int sha224WithRSAEncryption_data[] =
+    private static final int[] sha224WithRSAEncryption_data =
                                        { 1, 2, 840, 113549, 1, 1, 14 };
-    private static final int sha256WithRSAEncryption_data[] =
+    private static final int[] sha256WithRSAEncryption_data =
                                        { 1, 2, 840, 113549, 1, 1, 11 };
-    private static final int sha384WithRSAEncryption_data[] =
+    private static final int[] sha384WithRSAEncryption_data =
                                        { 1, 2, 840, 113549, 1, 1, 12 };
-    private static final int sha512WithRSAEncryption_data[] =
+    private static final int[] sha512WithRSAEncryption_data =
                                        { 1, 2, 840, 113549, 1, 1, 13 };
-    private static final int shaWithDSA_OIW_data[] =
+    private static final int[] shaWithDSA_OIW_data =
                                        { 1, 3, 14, 3, 2, 13 };
-    private static final int sha1WithDSA_OIW_data[] =
+    private static final int[] sha1WithDSA_OIW_data =
                                        { 1, 3, 14, 3, 2, 27 };
-    private static final int dsaWithSHA1_PKIX_data[] =
+    private static final int[] dsaWithSHA1_PKIX_data =
                                        { 1, 2, 840, 10040, 4, 3 };
 
     public static final ObjectIdentifier md2WithRSAEncryption_oid;

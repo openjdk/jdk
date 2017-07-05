@@ -174,7 +174,8 @@ public class Vector<E>
     public Vector(Collection<? extends E> c) {
         elementData = c.toArray();
         elementCount = elementData.length;
-        // c.toArray might (incorrectly) not return Object[] (see 6260652)
+        // defend against c.toArray (incorrectly) not returning Object[]
+        // (see e.g. https://bugs.openjdk.java.net/browse/JDK-6260652)
         if (elementData.getClass() != Object[].class)
             elementData = Arrays.copyOf(elementData, elementCount, Object[].class);
     }

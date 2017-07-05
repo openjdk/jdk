@@ -215,11 +215,8 @@ public abstract class ContinuousArrayData extends ArrayData {
                     int.class);
 
     @SuppressWarnings("unused")
-    private static final boolean guard(final Class<? extends ContinuousArrayData> clazz, final ScriptObject sobj) {
-        if (sobj != null && sobj.getArray().getClass() == clazz) {
-            return true;
-        }
-        return false;
+    private static boolean guard(final Class<? extends ContinuousArrayData> clazz, final ScriptObject sobj) {
+        return sobj != null && sobj.getArray().getClass() == clazz;
     }
 
     /**

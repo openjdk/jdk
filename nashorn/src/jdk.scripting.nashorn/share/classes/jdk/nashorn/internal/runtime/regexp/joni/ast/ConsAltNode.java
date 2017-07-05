@@ -148,8 +148,8 @@ public final class ConsAltNode extends Node {
     @Override
     public String toString(final int level) {
         final StringBuilder value = new StringBuilder();
-        value.append("\n  car: " + pad(car, level + 1));
-        value.append("\n  cdr: " + (cdr == null ? "NULL" : cdr.toString()));
+        value.append("\n  car: ").append(pad(car, level + 1));
+        value.append("\n  cdr: ").append(cdr == null ? "NULL" : cdr.toString());
 
         return value.toString();
     }

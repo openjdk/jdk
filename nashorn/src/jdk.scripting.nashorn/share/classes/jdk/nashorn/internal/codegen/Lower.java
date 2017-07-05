@@ -101,7 +101,7 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> implements Lo
 
     // Conservative pattern to test if element names consist of characters valid for identifiers.
     // This matches any non-zero length alphanumeric string including _ and $ and not starting with a digit.
-    private static Pattern SAFE_PROPERTY_NAME = Pattern.compile("[a-zA-Z_$][\\w$]*");
+    private static final Pattern SAFE_PROPERTY_NAME = Pattern.compile("[a-zA-Z_$][\\w$]*");
 
     /**
      * Constructor.

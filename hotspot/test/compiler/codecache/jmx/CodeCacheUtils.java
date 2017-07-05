@@ -21,6 +21,7 @@
  * questions.
  */
 
+import jdk.test.lib.Asserts;
 import jdk.test.lib.Utils;
 import java.lang.management.MemoryPoolMXBean;
 import javax.management.Notification;
@@ -80,19 +81,42 @@ public final class CodeCacheUtils {
     }
 
     /**
-     * A "non-nmethods" code heap is used by interpreter during bytecode
-     * execution, thus, it can't be predicted if this code heap usage will be
-     * increased or not. Same goes for 'All'.
+     * Checks if the usage of the code heap corresponding to 'btype' can be
+     * predicted at runtime if we disable compilation. The usage of the
+     * 'NonNMethod' code heap can not be predicted because we generate adapters
+     * and buffers at runtime. The 'MethodNonProfiled' code heap is also not
+     * predictable because we may generate compiled versions of method handle
+     * intrinsics while resolving methods at runtime. Same applies to 'All'.
      *
      * @param btype BlobType to be checked
      * @return boolean value, true if respective code heap is predictable
      */
     public static boolean isCodeHeapPredictable(BlobType btype) {
-        return btype == BlobType.MethodNonProfiled
-                || btype == BlobType.MethodProfiled;
+        return btype == BlobType.MethodProfiled;
     }
 
-    public static void disableCollectionUsageThresholds(){
+    /**
+     * Verifies that 'newValue' is equal to 'oldValue' if usage of the
+     * corresponding code heap is predictable. Checks the weaker condition
+     * 'newValue >= oldValue' if usage is not predictable because intermediate
+     * allocations may happen.
+     *
+     * @param btype BlobType of the code heap to be checked
+     * @param newValue New value to be verified
+     * @param oldValue Old value to be verified
+     * @param msg Error message if verification fails
+     */
+    public static void assertEQorGTE(BlobType btype, long newValue, long oldValue, String msg) {
+        if (CodeCacheUtils.isCodeHeapPredictable(btype)) {
+            // Usage is predictable, check strong == condition
+            Asserts.assertEQ(newValue, oldValue, msg);
+        } else {
+            // Usage is not predictable, check weaker >= condition
+            Asserts.assertGTE(newValue, oldValue, msg);
+        }
+    }
+
+    public static void disableCollectionUsageThresholds() {
         BlobType.getAvailable().stream()
                 .map(BlobType::getMemoryPool)
                 .filter(MemoryPoolMXBean::isCollectionUsageThresholdSupported)

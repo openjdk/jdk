@@ -49,7 +49,7 @@ public interface XMLEventReader extends Iterator {
    * Get the next XMLEvent
    * @see XMLEvent
    * @throws XMLStreamException if there is an error with the underlying XML.
-   * @throws NoSuchElementException iteration has no more elements.
+   * @throws java.util.NoSuchElementException iteration has no more elements.
    */
   public XMLEvent nextEvent() throws XMLStreamException;
 

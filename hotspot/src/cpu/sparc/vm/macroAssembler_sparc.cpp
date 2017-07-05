@@ -956,6 +956,7 @@ void MacroAssembler::set64(jlong value, Register d, Register tmp) {
 
   int hi = (int)(value >> 32);
   int lo = (int)(value & ~0);
+  int bits_33to2 = (int)((value >> 2) & ~0);
   // (Matcher::isSimpleConstant64 knows about the following optimizations.)
   if (Assembler::is_simm13(lo) && value == lo) {
     or3(G0, lo, d);
@@ -963,6 +964,12 @@ void MacroAssembler::set64(jlong value, Register d, Register tmp) {
     Assembler::sethi(lo, d);   // hardware version zero-extends to upper 32
     if (low10(lo) != 0)
       or3(d, low10(lo), d);
+  }
+  else if ((hi >> 2) == 0) {
+    Assembler::sethi(bits_33to2, d);  // hardware version zero-extends to upper 32
+    sllx(d, 2, d);
+    if (low12(lo) != 0)
+      or3(d, low12(lo), d);
   }
   else if (hi == -1) {
     Assembler::sethi(~lo, d);  // hardware version zero-extends to upper 32
@@ -4350,4 +4357,53 @@ void MacroAssembler::bis_zeroing(Register to, Register count, Register temp, Lab
   add(to, 8, to);
   cmp_and_brx_short(to, end, Assembler::lessUnsigned, Assembler::pt, small_loop);
   nop(); // Separate short branches
+}
+
+/**
+ * Update CRC-32[C] with a byte value according to constants in table
+ *
+ * @param [in,out]crc   Register containing the crc.
+ * @param [in]val       Register containing the byte to fold into the CRC.
+ * @param [in]table     Register containing the table of crc constants.
+ *
+ * uint32_t crc;
+ * val = crc_table[(val ^ crc) & 0xFF];
+ * crc = val ^ (crc >> 8);
+ */
+void MacroAssembler::update_byte_crc32(Register crc, Register val, Register table) {
+  xor3(val, crc, val);
+  and3(val, 0xFF, val);
+  sllx(val, 2, val);
+  lduw(table, val, val);
+  srlx(crc, 8, crc);
+  xor3(val, crc, crc);
+}
+
+// Reverse byte order of lower 32 bits, assuming upper 32 bits all zeros
+void MacroAssembler::reverse_bytes_32(Register src, Register dst, Register tmp) {
+  srlx(src, 24, dst);
+
+  sllx(src, 32+8, tmp);
+  srlx(tmp, 32+24, tmp);
+  sllx(tmp, 8, tmp);
+  or3(dst, tmp, dst);
+
+  sllx(src, 32+16, tmp);
+  srlx(tmp, 32+24, tmp);
+  sllx(tmp, 16, tmp);
+  or3(dst, tmp, dst);
+
+  sllx(src, 32+24, tmp);
+  srlx(tmp, 32, tmp);
+  or3(dst, tmp, dst);
+}
+
+void MacroAssembler::movitof_revbytes(Register src, FloatRegister dst, Register tmp1, Register tmp2) {
+  reverse_bytes_32(src, tmp1, tmp2);
+  movxtod(tmp1, dst);
+}
+
+void MacroAssembler::movftoi_revbytes(FloatRegister src, Register dst, Register tmp1, Register tmp2) {
+  movdtox(src, tmp1);
+  reverse_bytes_32(tmp1, dst, tmp2);
 }
