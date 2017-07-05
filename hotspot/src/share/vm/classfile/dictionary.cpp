@@ -135,8 +135,10 @@ void DictionaryEntry::add_protection_domain(Dictionary* dict, oop protection_dom
     //          via a store to _pd_set.
     OrderAccess::release_store_ptr(&_pd_set, new_head);
   }
-  if (TraceProtectionDomainVerification && WizardMode) {
-    print();
+  if (log_is_enabled(Trace, protectiondomain)) {
+    ResourceMark rm;
+    outputStream* log = LogHandle(protectiondomain)::trace_stream();
+    print_count(log);
   }
 }
 

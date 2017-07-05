@@ -214,21 +214,21 @@ class Exchange {
                 .sendHeadersAsync()
                 .thenCompose((Void v) -> {
                     // send body and get response at same time
-                    exchImpl.sendBodyAsync();
-                    return exchImpl.getResponseAsync(null);
+                    return exchImpl.sendBodyAsync()
+                                   .thenCompose(exchImpl::getResponseAsync);
                 })
-                    .thenCompose((HttpResponseImpl r1) -> {
-                        int rcode = r1.statusCode();
-                        CompletableFuture<HttpResponseImpl> cf =
-                                checkForUpgradeAsync(r1, exchImpl);
-                        if (cf != null) {
-                            return cf;
-                        } else {
-                            Exchange.this.response = r1;
-                            logResponse(r1);
-                            return CompletableFuture.completedFuture(r1);
-                        }
-                    })
+                .thenCompose((HttpResponseImpl r1) -> {
+                    int rcode = r1.statusCode();
+                    CompletableFuture<HttpResponseImpl> cf =
+                            checkForUpgradeAsync(r1, exchImpl);
+                    if (cf != null) {
+                        return cf;
+                    } else {
+                        Exchange.this.response = r1;
+                        logResponse(r1);
+                        return CompletableFuture.completedFuture(r1);
+                    }
+                })
                 .thenApply((HttpResponseImpl response) -> {
                     this.response = response;
                     logResponse(response);

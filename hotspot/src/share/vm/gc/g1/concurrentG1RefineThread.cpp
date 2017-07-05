@@ -67,10 +67,12 @@ ConcurrentG1RefineThread(ConcurrentG1Refine* cg1r, ConcurrentG1RefineThread *nex
 
 void ConcurrentG1RefineThread::initialize() {
   // Current thread activation threshold
-  _threshold = MIN2<int>(cg1r()->thread_threshold_step() * (_worker_id + 1) + cg1r()->green_zone(),
-                         cg1r()->yellow_zone());
+  _threshold = MIN2(cg1r()->thread_threshold_step() * (_worker_id + 1) + cg1r()->green_zone(),
+                    cg1r()->yellow_zone());
   // A thread deactivates once the number of buffer reached a deactivation threshold
-  _deactivation_threshold = MAX2<int>(_threshold - cg1r()->thread_threshold_step(), cg1r()->green_zone());
+   _deactivation_threshold =
+     MAX2(_threshold - MIN2(_threshold, cg1r()->thread_threshold_step()),
+          cg1r()->green_zone());
 }
 
 void ConcurrentG1RefineThread::wait_for_completed_buffers() {
@@ -127,14 +129,14 @@ void ConcurrentG1RefineThread::run_service() {
     }
 
     DirtyCardQueueSet& dcqs = JavaThread::dirty_card_queue_set();
-    log_debug(gc, refine)("Activated %d, on threshold: %d, current: %d",
+    log_debug(gc, refine)("Activated %d, on threshold: " SIZE_FORMAT ", current: " SIZE_FORMAT,
                           _worker_id, _threshold, dcqs.completed_buffers_num());
 
     {
       SuspendibleThreadSetJoiner sts_join;
 
       do {
-        int curr_buffer_num = (int)dcqs.completed_buffers_num();
+        size_t curr_buffer_num = dcqs.completed_buffers_num();
         // If the number of the buffers falls down into the yellow zone,
         // that means that the transition period after the evacuation pause has ended.
         if (dcqs.completed_queue_padding() > 0 && curr_buffer_num <= cg1r()->yellow_zone()) {
@@ -151,7 +153,7 @@ void ConcurrentG1RefineThread::run_service() {
                                                       false /* during_pause */));
 
       deactivate();
-      log_debug(gc, refine)("Deactivated %d, off threshold: %d, current: %d",
+      log_debug(gc, refine)("Deactivated %d, off threshold: " SIZE_FORMAT ", current: " SIZE_FORMAT,
                             _worker_id, _deactivation_threshold,
                             dcqs.completed_buffers_num());
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -700,7 +700,7 @@ static final class CertificateStatus extends HandshakeMessage
      *      OCSP response data is provided.
      */
     CertificateStatus(StatusRequestType type, X509Certificate[] chain,
-            Map<X509Certificate, byte[]> responses) throws SSLException {
+            Map<X509Certificate, byte[]> responses) {
         statusType = type;
         encodedResponsesLen = 0;
         encodedResponses = new ArrayList<>(chain.length);
@@ -715,7 +715,7 @@ static final class CertificateStatus extends HandshakeMessage
                 encodedResponses.add(respDER);
                 encodedResponsesLen = 3 + respDER.length;
             } else {
-                throw new SSLHandshakeException("Zero-length or null " +
+                throw new IllegalArgumentException("Zero-length or null " +
                         "OCSP Response");
             }
         } else if (statusType == StatusRequestType.OCSP_MULTI) {
@@ -732,8 +732,8 @@ static final class CertificateStatus extends HandshakeMessage
                 }
             }
         } else {
-            throw new SSLHandshakeException("Unsupported StatusResponseType: " +
-                    statusType);
+            throw new IllegalArgumentException(
+                    "Unsupported StatusResponseType: " + statusType);
         }
     }
 

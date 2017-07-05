@@ -64,9 +64,6 @@ protected:
   void write(const void* ptr, size_t size);
   bool read(void* ptr, size_t size);
 
-  static void trace_class_path(const char* msg, const char* name = NULL) {
-    ClassLoader::trace_class_path(tty, msg, name);
-  }
 protected:
   static bool fail(const char* msg, const char* name = NULL);
   virtual bool check(jint type, const char* path);
@@ -144,21 +141,7 @@ public:
     }
   }
 
-  virtual void print_path(outputStream* out, int type, const char* path) {
-    switch (type) {
-    case BOOT:
-      out->print("Expecting -Dsun.boot.class.path=%s", path);
-      break;
-    case NON_EXIST:
-      out->print("Expecting that %s does not exist", path);
-      break;
-    case REQUIRED:
-      out->print("Expecting that file %s must exist and is not altered", path);
-      break;
-    default:
-      ShouldNotReachHere();
-    }
-  }
+  virtual void print_path(int type, const char* path);
 
   bool check();
   bool read_jint(jint *ptr) {

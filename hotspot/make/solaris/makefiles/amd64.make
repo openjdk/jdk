@@ -39,7 +39,7 @@ OPT_CFLAGS/c1_LinearScan.o = -xO2
 # of OPT_CFLAGS. Restore it here.
 ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
   OPT_CFLAGS/generateOptoStub.o += -g0 -xs
-  OPT_CFLAGS/LinearScan.o += -g0 -xs
+  OPT_CFLAGS/c1_LinearScan.o += -g0 -xs
 endif
 
 else

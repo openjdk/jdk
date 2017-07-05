@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
- Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -73,12 +73,12 @@ Declares a structure type that can be used in other events.
   <events>
     <event id="ThreadStart" path="java/thread_start" label="Java Thread Start"
            has_thread="true" is_instant="true">
-      <value type="JAVALANGTHREAD" field="javalangthread" label="Java Thread"/>
+      <value type="THREAD" field="thread" label="Java Thread"/>
     </event>
 
     <event id="ThreadEnd" path="java/thread_end" label="Java Thread End"
            has_thread="true" is_instant="true">
-      <value type="JAVALANGTHREAD" field="javalangthread" label="Java Thread"/>
+      <value type="THREAD" field="thread" label="Java Thread"/>
     </event>
 
     <event id="ThreadSleep" path="java/thread_sleep" label="Java Thread Sleep"
@@ -96,14 +96,14 @@ Declares a structure type that can be used in other events.
     <event id="JavaMonitorEnter" path="java/monitor_enter" label="Java Monitor Blocked"
             has_thread="true" has_stacktrace="true" is_instant="false">
       <value type="CLASS" field="klass" label="Monitor Class"/>
-      <value type="JAVALANGTHREAD" field="previousOwner" label="Previous Monitor Owner"/>
+      <value type="THREAD" field="previousOwner" label="Previous Monitor Owner"/>
       <value type="ADDRESS" field="address" label="Monitor Address" relation="JAVA_MONITOR_ADDRESS"/>
     </event>
 
     <event id="JavaMonitorWait" path="java/monitor_wait" label="Java Monitor Wait" description="Waiting on a Java monitor"
             has_thread="true" has_stacktrace="true" is_instant="false">
       <value type="CLASS" field="klass" label="Monitor Class" description="Class of object waited on"/>
-      <value type="OSTHREAD" field="notifier" label="Notifier Thread" description="Notifying Thread"/>
+      <value type="THREAD" field="notifier" label="Notifier Thread" description="Notifying Thread"/>
       <value type="MILLIS" field="timeout" label="Timeout" description="Maximum wait time"/>
       <value type="BOOLEAN" field="timedOut" label="Timed Out" description="Wait has been timed out"/>
       <value type="ADDRESS" field="address" label="Monitor Address" description="Address of object waited on" relation="JAVA_MONITOR_ADDRESS"/>
@@ -434,7 +434,7 @@ Declares a structure type that can be used in other events.
            description="Promotion of an object failed">
       <value type="UINT" field="gcId" label="GC ID" relation="GC_ID"/>
       <structvalue type="CopyFailed" field="data" label="Data"/>
-      <value type="OSTHREAD" field="thread" label="Running thread"/>
+      <value type="THREAD" field="thread" label="Running thread"/>
     </event>
 
     <event id="EvacuationFailed" path="vm/gc/detailed/evacuation_failed" label="Evacuation Failed" is_instant="true"
@@ -494,6 +494,11 @@ Declares a structure type that can be used in other events.
       <value type="ADDRESS" field="start" label="Start" />
       <value type="BYTES64" field="used" label="Used" />
       <value type="UINT" field="allocContext" label="Allocation Context" />
+    </event>
+
+    <event id="VMError" path="vm/runtime/vm_error" label="VM Error"
+           description="VM shutdown due to an error" has_stacktrace="true" has_thread="true">
+      <value type="BOOLEAN" field="out_of_java_memory" label="Java Out Of Memory"/>
     </event>
 
     <!-- Compiler events -->
@@ -569,7 +574,7 @@ Declares a structure type that can be used in other events.
       <value type="VMOPERATIONTYPE" field="operation" label="Operation" />
       <value type="BOOLEAN" field="safepoint" label="At Safepoint" description="If the operation occured at a safepoint."/>
       <value type="BOOLEAN" field="blocking" label="Caller Blocked" description="If the calling thread was blocked until the operation was complete."/>
-      <value type="OSTHREAD" field="caller" label="Caller" transition="FROM" description="Thread requesting operation. If non-blocking, will be set to 0 indicating thread is unknown."/>
+      <value type="THREAD" field="caller" label="Caller" transition="FROM" description="Thread requesting operation. If non-blocking, will be set to 0 indicating thread is unknown."/>
     </event>
 
     <!-- Allocation events -->

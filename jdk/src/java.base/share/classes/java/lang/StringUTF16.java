@@ -270,6 +270,50 @@ final class StringUTF16 {
         return len1 - len2;
     }
 
+    public static int compareToCI(byte[] value, byte[] other) {
+        int len1 = length(value);
+        int len2 = length(other);
+        int lim = Math.min(len1, len2);
+        for (int k = 0; k < lim; k++) {
+            char c1 = getChar(value, k);
+            char c2 = getChar(other, k);
+            if (c1 != c2) {
+                c1 = Character.toUpperCase(c1);
+                c2 = Character.toUpperCase(c2);
+                if (c1 != c2) {
+                    c1 = Character.toLowerCase(c1);
+                    c2 = Character.toLowerCase(c2);
+                    if (c1 != c2) {
+                        return c1 - c2;
+                    }
+                }
+            }
+        }
+        return len1 - len2;
+    }
+
+    public static int compareToCI_Latin1(byte[] value, byte[] other) {
+        int len1 = length(value);
+        int len2 = StringLatin1.length(other);
+        int lim = Math.min(len1, len2);
+        for (int k = 0; k < lim; k++) {
+            char c1 = getChar(value, k);
+            char c2 = StringLatin1.getChar(other, k);
+            if (c1 != c2) {
+                c1 = Character.toUpperCase(c1);
+                c2 = Character.toUpperCase(c2);
+                if (c1 != c2) {
+                    c1 = Character.toLowerCase(c1);
+                    c2 = Character.toLowerCase(c2);
+                    if (c1 != c2) {
+                        return c1 - c2;
+                    }
+                }
+            }
+        }
+        return len1 - len2;
+    }
+
     public static int hashCode(byte[] value) {
         int h = 0;
         int length = value.length >> 1;

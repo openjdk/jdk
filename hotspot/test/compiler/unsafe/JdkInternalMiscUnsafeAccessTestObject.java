@@ -134,6 +134,20 @@ public class JdkInternalMiscUnsafeAccessTestObject {
             assertEquals(x, "foo", "putRelease Object value");
         }
 
+        // Lazy
+        {
+            UNSAFE.putObjectRelease(base, offset, "foo");
+            Object x = UNSAFE.getObjectAcquire(base, offset);
+            assertEquals(x, "foo", "putRelease Object value");
+        }
+
+        // Opaque
+        {
+            UNSAFE.putObjectOpaque(base, offset, "bar");
+            Object x = UNSAFE.getObjectOpaque(base, offset);
+            assertEquals(x, "bar", "putOpaque Object value");
+        }
+
 
         UNSAFE.putObject(base, offset, "foo");
 
@@ -150,6 +164,70 @@ public class JdkInternalMiscUnsafeAccessTestObject {
             assertEquals(r, false, "failing compareAndSwap Object");
             Object x = UNSAFE.getObject(base, offset);
             assertEquals(x, "bar", "failing compareAndSwap Object value");
+        }
+
+        // Advanced compare
+        {
+            Object r = UNSAFE.compareAndExchangeObjectVolatile(base, offset, "bar", "foo");
+            assertEquals(r, "bar", "success compareAndExchangeVolatile Object");
+            Object x = UNSAFE.getObject(base, offset);
+            assertEquals(x, "foo", "success compareAndExchangeVolatile Object value");
+        }
+
+        {
+            Object r = UNSAFE.compareAndExchangeObjectVolatile(base, offset, "bar", "baz");
+            assertEquals(r, "foo", "failing compareAndExchangeVolatile Object");
+            Object x = UNSAFE.getObject(base, offset);
+            assertEquals(x, "foo", "failing compareAndExchangeVolatile Object value");
+        }
+
+        {
+            Object r = UNSAFE.compareAndExchangeObjectAcquire(base, offset, "foo", "bar");
+            assertEquals(r, "foo", "success compareAndExchangeAcquire Object");
+            Object x = UNSAFE.getObject(base, offset);
+            assertEquals(x, "bar", "success compareAndExchangeAcquire Object value");
+        }
+
+        {
+            Object r = UNSAFE.compareAndExchangeObjectAcquire(base, offset, "foo", "baz");
+            assertEquals(r, "bar", "failing compareAndExchangeAcquire Object");
+            Object x = UNSAFE.getObject(base, offset);
+            assertEquals(x, "bar", "failing compareAndExchangeAcquire Object value");
+        }
+
+        {
+            Object r = UNSAFE.compareAndExchangeObjectRelease(base, offset, "bar", "foo");
+            assertEquals(r, "bar", "success compareAndExchangeRelease Object");
+            Object x = UNSAFE.getObject(base, offset);
+            assertEquals(x, "foo", "success compareAndExchangeRelease Object value");
+        }
+
+        {
+            Object r = UNSAFE.compareAndExchangeObjectRelease(base, offset, "bar", "baz");
+            assertEquals(r, "foo", "failing compareAndExchangeRelease Object");
+            Object x = UNSAFE.getObject(base, offset);
+            assertEquals(x, "foo", "failing compareAndExchangeRelease Object value");
+        }
+
+        {
+            boolean r = UNSAFE.weakCompareAndSwapObject(base, offset, "foo", "bar");
+            assertEquals(r, true, "weakCompareAndSwap Object");
+            Object x = UNSAFE.getObject(base, offset);
+            assertEquals(x, "bar", "weakCompareAndSwap Object value");
+        }
+
+        {
+            boolean r = UNSAFE.weakCompareAndSwapObjectAcquire(base, offset, "bar", "foo");
+            assertEquals(r, true, "weakCompareAndSwapAcquire Object");
+            Object x = UNSAFE.getObject(base, offset);
+            assertEquals(x, "foo", "weakCompareAndSwapAcquire Object");
+        }
+
+        {
+            boolean r = UNSAFE.weakCompareAndSwapObjectRelease(base, offset, "foo", "bar");
+            assertEquals(r, true, "weakCompareAndSwapRelease Object");
+            Object x = UNSAFE.getObject(base, offset);
+            assertEquals(x, "bar", "weakCompareAndSwapRelease Object");
         }
 
         // Compare set and get

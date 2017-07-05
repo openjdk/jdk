@@ -413,9 +413,6 @@ else
   # Declare dependencies from all other <module>-lib to java.base-lib
   $(foreach t, $(filter-out java.base-libs, $(LIBS_TARGETS)), \
       $(eval $t: java.base-libs))
-  # Declare the special case dependency for jdk.deploy.osx where libosx
-  # links against libosxapp.
-  jdk.deploy.osx-libs: java.desktop-libs
 
   # jdk.accessibility depends on java.desktop
   jdk.accessibility-libs: java.desktop-libs

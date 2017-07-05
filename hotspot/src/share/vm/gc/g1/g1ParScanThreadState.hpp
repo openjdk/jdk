@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -200,6 +200,7 @@ class G1ParScanThreadStateSet : public StackObj {
   size_t* _surviving_young_words_total;
   size_t* _cards_scanned;
   size_t _total_cards_scanned;
+  size_t _young_cset_length;
   uint _n_workers;
   bool _flushed;
 
@@ -210,10 +211,11 @@ class G1ParScanThreadStateSet : public StackObj {
       _surviving_young_words_total(NEW_C_HEAP_ARRAY(size_t, young_cset_length, mtGC)),
       _cards_scanned(NEW_C_HEAP_ARRAY(size_t, n_workers, mtGC)),
       _total_cards_scanned(0),
+      _young_cset_length(young_cset_length),
       _n_workers(n_workers),
       _flushed(false) {
     for (uint i = 0; i < n_workers; ++i) {
-      _states[i] = new_par_scan_state(i, young_cset_length);
+      _states[i] = NULL;
     }
     memset(_surviving_young_words_total, 0, young_cset_length * sizeof(size_t));
     memset(_cards_scanned, 0, n_workers * sizeof(size_t));

@@ -494,6 +494,29 @@ public class TestStringIntrinsics2 {
         return s.indexOf("1");
     }
 
+    static String text1UTF16 = "A" + "\u05d0" + "\u05d1" + "B";
+
+    @Test(role = Role.TEST_ENTRY)
+    public static void test_indexOf_immUTF16() {
+        assertEquals(      3, indexOf_imm1Latin1_needle(text1UTF16), "test_indexOf_immUTF16");
+        assertEquals(      1, indexOf_imm1UTF16_needle(text1UTF16), "test_indexOf_immUTF16");
+        assertEquals(      1, indexOf_immUTF16_needle(text1UTF16), "test_indexOf_immUTF16");
+    }
+
+    @Test(role = Role.TEST_HELPER, compileAt = 4, warmup = 1, warmupArgs = { "A" + "\u05d0" + "\u05d1" + "B" })
+    static int indexOf_imm1Latin1_needle(String s) {
+        return s.indexOf("B");
+    }
+
+    @Test(role = Role.TEST_HELPER, compileAt = 4, warmup = 1, warmupArgs = { "A" + "\u05d0" + "\u05d1" + "B" })
+    static int indexOf_imm1UTF16_needle(String s) {
+        return s.indexOf("\u05d0");
+    }
+
+    @Test(role = Role.TEST_HELPER, compileAt = 4, warmup = 1, warmupArgs = { "A" + "\u05d0" + "\u05d1" + "B" })
+    static int indexOf_immUTF16_needle(String s) {
+        return s.indexOf("\u05d0" + "\u05d1");
+    }
 
     @Test(role = Role.TEST_HELPER, compileAt = 4, warmup = 1, warmupArgs = { "abc", "abcd" })
     public static int asmStringCompareTo(String a, String b) {
