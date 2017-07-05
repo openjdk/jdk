@@ -195,7 +195,7 @@ class G1ParScanThreadState : public StackObj {
   inline void dispatch_reference(StarTask ref);
  public:
 
-  oop copy_to_survivor_space(oop const obj);
+  oop copy_to_survivor_space(oop const obj, markOop const old_mark);
 
   void trim_queue();
 

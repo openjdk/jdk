@@ -69,18 +69,15 @@ public final class DOMSignatureProperties extends DOMStructure
     {
         if (properties == null) {
             throw new NullPointerException("properties cannot be null");
-        } else if (properties.isEmpty()) {
-            throw new IllegalArgumentException("properties cannot be empty");
-        } else {
-            this.properties = Collections.unmodifiableList(
-                new ArrayList<SignatureProperty>(properties));
-            for (int i = 0, size = this.properties.size(); i < size; i++) {
-                if (!(this.properties.get(i) instanceof SignatureProperty)) {
-                    throw new ClassCastException
-                        ("properties["+i+"] is not a valid type");
-                }
-            }
         }
+        List<SignatureProperty> tempList =
+            Collections.checkedList(new ArrayList<SignatureProperty>(),
+                                    SignatureProperty.class);
+        tempList.addAll(properties);
+        if (tempList.isEmpty()) {
+            throw new IllegalArgumentException("properties cannot be empty");
+        }
+        this.properties = Collections.unmodifiableList(tempList);
         this.id = id;
     }
 

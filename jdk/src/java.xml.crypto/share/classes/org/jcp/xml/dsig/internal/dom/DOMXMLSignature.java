@@ -109,18 +109,13 @@ public final class DOMXMLSignature extends DOMStructure
         this.si = si;
         this.id = id;
         this.sv = new DOMSignatureValue(signatureValueId);
-        if (objs == null) {
-            this.objects = Collections.emptyList();
-        } else {
-            this.objects =
-                Collections.unmodifiableList(new ArrayList<XMLObject>(objs));
-            for (int i = 0, size = this.objects.size(); i < size; i++) {
-                if (!(this.objects.get(i) instanceof XMLObject)) {
-                    throw new ClassCastException
-                        ("objs["+i+"] is not an XMLObject");
-                }
-            }
+        List<XMLObject> tempList =
+            Collections.checkedList(new ArrayList<XMLObject>(),
+                                    XMLObject.class);
+        if (objs != null) {
+            tempList.addAll(objs);
         }
+        this.objects = Collections.unmodifiableList(tempList);
         this.ki = ki;
     }
 
@@ -270,7 +265,6 @@ public final class DOMXMLSignature extends DOMStructure
         }
 
         // validate all References
-        @SuppressWarnings("unchecked")
         List<Reference> refs = this.si.getReferences();
         boolean validateRefs = true;
         for (int i = 0, size = refs.size(); validateRefs && i < size; i++) {
@@ -297,7 +291,6 @@ public final class DOMXMLSignature extends DOMStructure
         {
             for (int i=0, size=objects.size(); validateMans && i < size; i++) {
                 XMLObject xo = objects.get(i);
-                @SuppressWarnings("unchecked")
                 List<XMLStructure> content = xo.getContent();
                 int csize = content.size();
                 for (int j = 0; validateMans && j < csize; j++) {
@@ -307,7 +300,6 @@ public final class DOMXMLSignature extends DOMStructure
                             log.log(java.util.logging.Level.FINE, "validating manifest");
                         }
                         Manifest man = (Manifest)xs;
-                        @SuppressWarnings("unchecked")
                         List<Reference> manRefs = man.getReferences();
                         int rsize = manRefs.size();
                         for (int k = 0; validateMans && k < rsize; k++) {
@@ -348,20 +340,17 @@ public final class DOMXMLSignature extends DOMStructure
         signatureIdMap = new HashMap<String, XMLStructure>();
         signatureIdMap.put(id, this);
         signatureIdMap.put(si.getId(), si);
-        @SuppressWarnings("unchecked")
         List<Reference> refs = si.getReferences();
         for (Reference ref : refs) {
             signatureIdMap.put(ref.getId(), ref);
         }
         for (XMLObject obj : objects) {
             signatureIdMap.put(obj.getId(), obj);
-            @SuppressWarnings("unchecked")
             List<XMLStructure> content = obj.getContent();
             for (XMLStructure xs : content) {
                 if (xs instanceof Manifest) {
                     Manifest man = (Manifest)xs;
                     signatureIdMap.put(man.getId(), man);
-                    @SuppressWarnings("unchecked")
                     List<Reference> manRefs = man.getReferences();
                     for (Reference ref : manRefs) {
                         allReferences.add(ref);
@@ -483,7 +472,6 @@ public final class DOMXMLSignature extends DOMStructure
             // reference dependencies in the XPath Transform - so be on
             // the safe side, and skip and do at end in the final sweep
             if (uri.length() == 0) {
-                @SuppressWarnings("unchecked")
                 List<Transform> transforms = ref.getTransforms();
                 for (Transform transform : transforms) {
                     String transformAlg = transform.getAlgorithm();

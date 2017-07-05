@@ -25,10 +25,10 @@
 
 BUILD_LIBNIO_SRC := \
     $(JDK_TOPDIR)/src/java.base/share/native/libnio/ch \
-    $(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_API_DIR)/native/libnio \
+    $(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/native/libnio \
     $(sort $(wildcard \
-      $(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_API_DIR)/native/libnio/ch \
-      $(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_API_DIR)/native/libnio/fs \
+      $(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/native/libnio/ch \
+      $(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/native/libnio/fs \
       $(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS)/native/libnio/ch \
       $(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS)/native/libnio/fs)) \
     #

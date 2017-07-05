@@ -97,13 +97,6 @@ G1RemSet::~G1RemSet() {
   FREE_C_HEAP_ARRAY(OopsInHeapRegionClosure*, _cset_rs_update_cl, mtGC);
 }
 
-void CountNonCleanMemRegionClosure::do_MemRegion(MemRegion mr) {
-  if (_g1->is_in_g1_reserved(mr.start())) {
-    _n += (int) ((mr.byte_size() / CardTableModRefBS::card_size));
-    if (_start_first == NULL) _start_first = mr.start();
-  }
-}
-
 class ScanRSClosure : public HeapRegionClosure {
   size_t _cards_done, _cards;
   G1CollectedHeap* _g1h;
@@ -302,15 +295,6 @@ void G1RemSet::updateRS(DirtyCardQueue* into_cset_dcq, uint worker_i) {
   RefineRecordRefsIntoCSCardTableEntryClosure into_cset_update_rs_cl(_g1, into_cset_dcq);
 
   _g1->iterate_dirty_card_closure(&into_cset_update_rs_cl, into_cset_dcq, false, worker_i);
-
-  // Now there should be no dirty cards.
-  if (G1RSLogCheckCardTable) {
-    CountNonCleanMemRegionClosure cl(_g1);
-    _ct_bs->mod_card_iterate(&cl);
-    // XXX This isn't true any more: keeping cards of young regions
-    // marked dirty broke it.  Need some reasonable fix.
-    guarantee(cl.n() == 0, "Card table should be clean.");
-  }
 
   _g1p->phase_times()->record_update_rs_time(worker_i, (os::elapsedTime() - start) * 1000.0);
 }

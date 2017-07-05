@@ -30,7 +30,7 @@ include MakeBase.gmk
 
 ################################################################################
 
-# Put the libraries here. Different locations for different target apis.
+# Put the libraries here. Different locations for different target OS types.
 ifneq ($(OPENJDK_TARGET_OS), windows)
   HOTSPOT_LIB_DIR := $(HOTSPOT_DIST)/jre/lib$(OPENJDK_TARGET_CPU_LIBDIR)
   BASE_INSTALL_LIBRARIES_HERE := $(SUPPORT_OUTPUTDIR)/modules_libs/java.base$(OPENJDK_TARGET_CPU_LIBDIR)

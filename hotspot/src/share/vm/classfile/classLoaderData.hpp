@@ -31,8 +31,9 @@
 #include "memory/metaspaceCounters.hpp"
 #include "runtime/mutex.hpp"
 #include "utilities/growableArray.hpp"
+#include "utilities/macros.hpp"
 #if INCLUDE_TRACE
-# include "utilities/ticks.hpp"
+#include "utilities/ticks.hpp"
 #endif
 
 //

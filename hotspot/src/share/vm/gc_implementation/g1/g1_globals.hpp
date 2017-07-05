@@ -108,10 +108,6 @@
   develop(bool, G1RSBarrierRegionFilter, true,                              \
           "If true, generate region filtering code in RS barrier")          \
                                                                             \
-  develop(bool, G1RSLogCheckCardTable, false,                               \
-          "If true, verify that no dirty cards remain after RS log "        \
-          "processing.")                                                    \
-                                                                            \
   diagnostic(bool, G1PrintRegionLivenessInfo, false,                        \
             "Prints the liveness information for all regions in the heap "  \
             "at the end of a marking cycle.")                               \

@@ -31,10 +31,6 @@
 #include "classfile/resolutionErrors.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/systemDictionary.hpp"
-#if INCLUDE_CDS
-#include "classfile/sharedClassUtil.hpp"
-#include "classfile/systemDictionaryShared.hpp"
-#endif
 #include "classfile/vmSymbols.hpp"
 #include "compiler/compileBroker.hpp"
 #include "interpreter/bytecodeStream.hpp"
@@ -65,9 +61,12 @@
 #include "services/threadService.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ticks.hpp"
-
+#if INCLUDE_CDS
+#include "classfile/sharedClassUtil.hpp"
+#include "classfile/systemDictionaryShared.hpp"
+#endif
 #if INCLUDE_TRACE
- #include "trace/tracing.hpp"
+#include "trace/tracing.hpp"
 #endif
 
 Dictionary*            SystemDictionary::_dictionary          = NULL;
@@ -123,7 +122,7 @@ void SystemDictionary::compute_java_system_loader(TRAPS) {
 
 ClassLoaderData* SystemDictionary::register_loader(Handle class_loader, TRAPS) {
   if (class_loader() == NULL) return ClassLoaderData::the_null_class_loader_data();
-  return ClassLoaderDataGraph::find_or_create(class_loader, CHECK_NULL);
+  return ClassLoaderDataGraph::find_or_create(class_loader, THREAD);
 }
 
 // ----------------------------------------------------------------------------
@@ -233,15 +232,15 @@ Klass* SystemDictionary::resolve_or_null(Symbol* class_name, Handle class_loader
                  class_name->as_C_string(),
                  class_loader.is_null() ? "null" : class_loader->klass()->name()->as_C_string()));
   if (FieldType::is_array(class_name)) {
-    return resolve_array_class_or_null(class_name, class_loader, protection_domain, CHECK_NULL);
+    return resolve_array_class_or_null(class_name, class_loader, protection_domain, THREAD);
   } else if (FieldType::is_obj(class_name)) {
     ResourceMark rm(THREAD);
     // Ignore wrapping L and ;.
     TempNewSymbol name = SymbolTable::new_symbol(class_name->as_C_string() + 1,
                                    class_name->utf8_length() - 2, CHECK_NULL);
-    return resolve_instance_class_or_null(name, class_loader, protection_domain, CHECK_NULL);
+    return resolve_instance_class_or_null(name, class_loader, protection_domain, THREAD);
   } else {
-    return resolve_instance_class_or_null(class_name, class_loader, protection_domain, CHECK_NULL);
+    return resolve_instance_class_or_null(class_name, class_loader, protection_domain, THREAD);
   }
 }
 
@@ -2660,7 +2659,7 @@ void SystemDictionary::post_class_load_event(const Ticks& start_time,
                                       class_loader->klass() : (Klass*)NULL);
     event.commit();
   }
-#endif /* INCLUDE_TRACE */
+#endif // INCLUDE_TRACE
 }
 
 #ifndef PRODUCT

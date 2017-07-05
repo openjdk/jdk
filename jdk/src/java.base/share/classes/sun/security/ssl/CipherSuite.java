@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -968,7 +968,7 @@ final class CipherSuite implements Comparable<CipherSuite> {
          * 1. Prefer Suite B compliant cipher suites, see RFC6460 (To be
          *    changed later, see below).
          * 2. Prefer the stronger bulk cipher, in the order of AES_256(GCM),
-         *    AES_128(GCM), AES_256, AES_128, RC-4, 3DES-EDE.
+         *    AES_128(GCM), AES_256, AES_128, 3DES-EDE, RC-4.
          * 3. Prefer the stronger MAC algorithm, in the order of SHA384,
          *    SHA256, SHA, MD5.
          * 4. Prefer the better performance of key exchange and digital
@@ -1087,18 +1087,6 @@ final class CipherSuite implements Comparable<CipherSuite> {
         add("TLS_DHE_DSS_WITH_AES_128_CBC_SHA",
             0x0032, --p, K_DHE_DSS,     B_AES_128, T);
 
-        // RC-4
-        add("TLS_ECDHE_ECDSA_WITH_RC4_128_SHA",
-            0xC007, --p, K_ECDHE_ECDSA, B_RC4_128, N);
-        add("TLS_ECDHE_RSA_WITH_RC4_128_SHA",
-            0xC011, --p, K_ECDHE_RSA,   B_RC4_128, N);
-        add("SSL_RSA_WITH_RC4_128_SHA",
-            0x0005, --p, K_RSA,         B_RC4_128, N);
-        add("TLS_ECDH_ECDSA_WITH_RC4_128_SHA",
-            0xC002, --p, K_ECDH_ECDSA,  B_RC4_128, N);
-        add("TLS_ECDH_RSA_WITH_RC4_128_SHA",
-            0xC00C, --p, K_ECDH_RSA,    B_RC4_128, N);
-
         // 3DES_EDE
         add("TLS_ECDHE_ECDSA_WITH_3DES_EDE_CBC_SHA",
             0xC008, --p, K_ECDHE_ECDSA, B_3DES,    T);
@@ -1115,6 +1103,17 @@ final class CipherSuite implements Comparable<CipherSuite> {
         add("SSL_DHE_DSS_WITH_3DES_EDE_CBC_SHA",
             0x0013, --p, K_DHE_DSS,     B_3DES,    N);
 
+        // RC-4
+        add("TLS_ECDHE_ECDSA_WITH_RC4_128_SHA",
+            0xC007, --p, K_ECDHE_ECDSA, B_RC4_128, N);
+        add("TLS_ECDHE_RSA_WITH_RC4_128_SHA",
+            0xC011, --p, K_ECDHE_RSA,   B_RC4_128, N);
+        add("SSL_RSA_WITH_RC4_128_SHA",
+            0x0005, --p, K_RSA,         B_RC4_128, N);
+        add("TLS_ECDH_ECDSA_WITH_RC4_128_SHA",
+            0xC002, --p, K_ECDH_ECDSA,  B_RC4_128, N);
+        add("TLS_ECDH_RSA_WITH_RC4_128_SHA",
+            0xC00C, --p, K_ECDH_RSA,    B_RC4_128, N);
         add("SSL_RSA_WITH_RC4_128_MD5",
             0x0004, --p, K_RSA,         B_RC4_128, N);
 
@@ -1134,7 +1133,7 @@ final class CipherSuite implements Comparable<CipherSuite> {
          * 2. If a cipher suite has been obsoleted, we put it at the end of
          *    the list.
          * 3. Prefer the stronger bulk cipher, in the order of AES_256,
-         *    AES_128, RC-4, 3DES-EDE, DES, RC4_40, DES40, NULL.
+         *    AES_128, 3DES-EDE, RC-4, DES, DES40, RC4_40, NULL.
          * 4. Prefer the stronger MAC algorithm, in the order of SHA384,
          *    SHA256, SHA, MD5.
          * 5. Prefer the better performance of key exchange and digital
@@ -1162,15 +1161,40 @@ final class CipherSuite implements Comparable<CipherSuite> {
         add("TLS_DH_anon_WITH_AES_128_CBC_SHA",
             0x0034, --p, K_DH_ANON,     B_AES_128, N);
 
+        add("TLS_ECDH_anon_WITH_3DES_EDE_CBC_SHA",
+            0xC017, --p, K_ECDH_ANON,   B_3DES,    N);
+        add("SSL_DH_anon_WITH_3DES_EDE_CBC_SHA",
+            0x001b, --p, K_DH_ANON,     B_3DES,    N);
+
         add("TLS_ECDH_anon_WITH_RC4_128_SHA",
             0xC016, --p, K_ECDH_ANON,   B_RC4_128, N);
         add("SSL_DH_anon_WITH_RC4_128_MD5",
             0x0018, --p, K_DH_ANON,     B_RC4_128, N);
 
-        add("TLS_ECDH_anon_WITH_3DES_EDE_CBC_SHA",
-            0xC017, --p, K_ECDH_ANON,   B_3DES,    N);
-        add("SSL_DH_anon_WITH_3DES_EDE_CBC_SHA",
-            0x001b, --p, K_DH_ANON,     B_3DES,    N);
+        // weak cipher suites obsoleted in TLS 1.2
+        add("SSL_RSA_WITH_DES_CBC_SHA",
+            0x0009, --p, K_RSA,         B_DES,     N, tls12);
+        add("SSL_DHE_RSA_WITH_DES_CBC_SHA",
+            0x0015, --p, K_DHE_RSA,     B_DES,     N, tls12);
+        add("SSL_DHE_DSS_WITH_DES_CBC_SHA",
+            0x0012, --p, K_DHE_DSS,     B_DES,     N, tls12);
+        add("SSL_DH_anon_WITH_DES_CBC_SHA",
+            0x001a, --p, K_DH_ANON,     B_DES,     N, tls12);
+
+        // weak cipher suites obsoleted in TLS 1.1
+        add("SSL_RSA_EXPORT_WITH_DES40_CBC_SHA",
+            0x0008, --p, K_RSA_EXPORT,  B_DES_40,  N, tls11);
+        add("SSL_DHE_RSA_EXPORT_WITH_DES40_CBC_SHA",
+            0x0014, --p, K_DHE_RSA,     B_DES_40,  N, tls11);
+        add("SSL_DHE_DSS_EXPORT_WITH_DES40_CBC_SHA",
+            0x0011, --p, K_DHE_DSS,     B_DES_40,  N, tls11);
+        add("SSL_DH_anon_EXPORT_WITH_DES40_CBC_SHA",
+            0x0019, --p, K_DH_ANON,     B_DES_40,  N, tls11);
+
+        add("SSL_RSA_EXPORT_WITH_RC4_40_MD5",
+            0x0003, --p, K_RSA_EXPORT,  B_RC4_40,  N, tls11);
+        add("SSL_DH_anon_EXPORT_WITH_RC4_40_MD5",
+            0x0017, --p, K_DH_ANON,     B_RC4_40,  N, tls11);
 
         add("TLS_RSA_WITH_NULL_SHA256",
             0x003b, --p, K_RSA,         B_NULL,    N, max, tls12, P_SHA256);
@@ -1189,52 +1213,27 @@ final class CipherSuite implements Comparable<CipherSuite> {
         add("SSL_RSA_WITH_NULL_MD5",
             0x0001, --p, K_RSA,         B_NULL,    N);
 
-        // weak cipher suites obsoleted in TLS 1.2
-        add("SSL_RSA_WITH_DES_CBC_SHA",
-            0x0009, --p, K_RSA,         B_DES,     N, tls12);
-        add("SSL_DHE_RSA_WITH_DES_CBC_SHA",
-            0x0015, --p, K_DHE_RSA,     B_DES,     N, tls12);
-        add("SSL_DHE_DSS_WITH_DES_CBC_SHA",
-            0x0012, --p, K_DHE_DSS,     B_DES,     N, tls12);
-        add("SSL_DH_anon_WITH_DES_CBC_SHA",
-            0x001a, --p, K_DH_ANON,     B_DES,     N, tls12);
-
-        // weak cipher suites obsoleted in TLS 1.1
-        add("SSL_RSA_EXPORT_WITH_RC4_40_MD5",
-            0x0003, --p, K_RSA_EXPORT,  B_RC4_40,  N, tls11);
-        add("SSL_DH_anon_EXPORT_WITH_RC4_40_MD5",
-            0x0017, --p, K_DH_ANON,     B_RC4_40,  N, tls11);
-
-        add("SSL_RSA_EXPORT_WITH_DES40_CBC_SHA",
-            0x0008, --p, K_RSA_EXPORT,  B_DES_40,  N, tls11);
-        add("SSL_DHE_RSA_EXPORT_WITH_DES40_CBC_SHA",
-            0x0014, --p, K_DHE_RSA,     B_DES_40,  N, tls11);
-        add("SSL_DHE_DSS_EXPORT_WITH_DES40_CBC_SHA",
-            0x0011, --p, K_DHE_DSS,     B_DES_40,  N, tls11);
-        add("SSL_DH_anon_EXPORT_WITH_DES40_CBC_SHA",
-            0x0019, --p, K_DH_ANON,     B_DES_40,  N, tls11);
-
         // Supported Kerberos ciphersuites from RFC2712
-        add("TLS_KRB5_WITH_RC4_128_SHA",
-            0x0020, --p, K_KRB5,        B_RC4_128, N);
-        add("TLS_KRB5_WITH_RC4_128_MD5",
-            0x0024, --p, K_KRB5,        B_RC4_128, N);
         add("TLS_KRB5_WITH_3DES_EDE_CBC_SHA",
             0x001f, --p, K_KRB5,        B_3DES,    N);
         add("TLS_KRB5_WITH_3DES_EDE_CBC_MD5",
             0x0023, --p, K_KRB5,        B_3DES,    N);
+        add("TLS_KRB5_WITH_RC4_128_SHA",
+            0x0020, --p, K_KRB5,        B_RC4_128, N);
+        add("TLS_KRB5_WITH_RC4_128_MD5",
+            0x0024, --p, K_KRB5,        B_RC4_128, N);
         add("TLS_KRB5_WITH_DES_CBC_SHA",
             0x001e, --p, K_KRB5,        B_DES,     N, tls12);
         add("TLS_KRB5_WITH_DES_CBC_MD5",
             0x0022, --p, K_KRB5,        B_DES,     N, tls12);
-        add("TLS_KRB5_EXPORT_WITH_RC4_40_SHA",
-            0x0028, --p, K_KRB5_EXPORT, B_RC4_40,  N, tls11);
-        add("TLS_KRB5_EXPORT_WITH_RC4_40_MD5",
-            0x002b, --p, K_KRB5_EXPORT, B_RC4_40,  N, tls11);
         add("TLS_KRB5_EXPORT_WITH_DES_CBC_40_SHA",
             0x0026, --p, K_KRB5_EXPORT, B_DES_40,  N, tls11);
         add("TLS_KRB5_EXPORT_WITH_DES_CBC_40_MD5",
             0x0029, --p, K_KRB5_EXPORT, B_DES_40,  N, tls11);
+        add("TLS_KRB5_EXPORT_WITH_RC4_40_SHA",
+            0x0028, --p, K_KRB5_EXPORT, B_RC4_40,  N, tls11);
+        add("TLS_KRB5_EXPORT_WITH_RC4_40_MD5",
+            0x002b, --p, K_KRB5_EXPORT, B_RC4_40,  N, tls11);
 
         /*
          * Other values from the TLS Cipher Suite Registry, as of August 2010.

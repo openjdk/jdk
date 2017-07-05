@@ -602,6 +602,8 @@ class PhaseIdealLoop : public PhaseTransform {
     return ctrl;
   }
 
+  bool cast_incr_before_loop(Node* incr, Node* ctrl, Node* loop);
+
 public:
   bool has_node( Node* n ) const {
     guarantee(n != NULL, "No Node.");

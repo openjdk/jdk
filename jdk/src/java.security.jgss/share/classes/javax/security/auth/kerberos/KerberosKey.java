@@ -61,10 +61,10 @@ import javax.security.auth.DestroyFailedException;
  *
  * It might be necessary for the application to be granted a
  * {@link javax.security.auth.PrivateCredentialPermission
- * PrivateCredentialPermission} if it needs to access the KerberosKey
+ * PrivateCredentialPermission} if it needs to access the {@code KerberosKey}
  * instance from a Subject. This permission is not needed when the
  * application depends on the default JGSS Kerberos mechanism to access the
- * KerberosKey. In that case, however, the application will need an
+ * {@code KerberosKey}. In that case, however, the application will need an
  * appropriate
  * {@link javax.security.auth.kerberos.ServicePermission ServicePermission}.<p>
  *
@@ -113,9 +113,9 @@ public class KerberosKey implements SecretKey {
     private transient boolean destroyed = false;
 
     /**
-     * Constructs a KerberosKey from the given bytes when the key type and
-     * key version number are known. This can be used when reading the secret
-     * key information from a Kerberos "keytab".
+     * Constructs a {@code KerberosKey} from the given bytes when the key type
+     * and key version number are known. This can be used when reading the
+     * secret key information from a Kerberos "keytab".
      *
      * @param principal the principal that this secret key belongs to
      * @param keyBytes the key material for the secret key
@@ -133,9 +133,9 @@ public class KerberosKey implements SecretKey {
     }
 
     /**
-     * Constructs a KerberosKey from a principal's password using the specified
-     * algorithm name. The algorithm name (case insensitive) should be provided
-     * as the encryption type string defined on the IANA
+     * Constructs a {@code KerberosKey} from a principal's password using the
+     * specified algorithm name. The algorithm name (case insensitive) should
+     * be provided as the encryption type string defined on the IANA
      * <a href="https://www.iana.org/assignments/kerberos-parameters/kerberos-parameters.xhtml#kerberos-parameters-1">Kerberos Encryption Type Numbers</a>
      * page. The version number of the key generated will be 0.
      *
@@ -261,6 +261,11 @@ public class KerberosKey implements SecretKey {
         return destroyed;
     }
 
+    /**
+     * Returns an informative textual representation of this {@code KerberosKey}.
+     *
+     * @return an informative textual representation of this {@code KerberosKey}.
+     */
     public String toString() {
         if (destroyed) {
             return "Destroyed KerberosKey";
@@ -271,9 +276,9 @@ public class KerberosKey implements SecretKey {
     }
 
     /**
-     * Returns a hashcode for this KerberosKey.
+     * Returns a hash code for this {@code KerberosKey}.
      *
-     * @return a hashCode() for the {@code KerberosKey}
+     * @return a hash code for this {@code KerberosKey}.
      * @since 1.6
      */
     public int hashCode() {
@@ -290,15 +295,15 @@ public class KerberosKey implements SecretKey {
     }
 
     /**
-     * Compares the specified Object with this KerberosKey for equality.
-     * Returns true if the given object is also a
+     * Compares the specified object with this {@code KerberosKey} for
+     * equality. Returns true if the given object is also a
      * {@code KerberosKey} and the two
      * {@code KerberosKey} instances are equivalent.
+     * A destroyed {@code KerberosKey} object is only equal to itself.
      *
-     * @param other the Object to compare to
-     * @return true if the specified object is equal to this KerberosKey,
-     * false otherwise. NOTE: Returns false if either of the KerberosKey
-     * objects has been destroyed.
+     * @param other the object to compare to
+     * @return true if the specified object is equal to this {@code KerberosKey},
+     * false otherwise.
      * @since 1.6
      */
     public boolean equals(Object other) {

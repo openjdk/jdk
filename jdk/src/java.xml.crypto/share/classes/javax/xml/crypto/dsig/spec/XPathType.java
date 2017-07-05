@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@
 package javax.xml.crypto.dsig.spec;
 
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -106,7 +105,7 @@ public class XPathType {
 
     private final String expression;
     private final Filter filter;
-    private Map<String,String> nsMap;
+    private final Map<String,String> nsMap;
 
     /**
      * Creates an <code>XPathType</code> instance with the specified XPath
@@ -147,26 +146,24 @@ public class XPathType {
      * @throws ClassCastException if any of the map's keys or entries are
      *    not of type <code>String</code>
      */
-    @SuppressWarnings("rawtypes")
-    public XPathType(String expression, Filter filter, Map namespaceMap) {
-        this(expression, filter);
+    public XPathType(String expression, Filter filter,
+        Map<String,String> namespaceMap) {
+        if (expression == null) {
+            throw new NullPointerException("expression cannot be null");
+        }
+        if (filter == null) {
+            throw new NullPointerException("filter cannot be null");
+        }
         if (namespaceMap == null) {
             throw new NullPointerException("namespaceMap cannot be null");
         }
-        Map<?,?> copy = new HashMap<>((Map<?,?>)namespaceMap);
-        Iterator<? extends Map.Entry<?,?>> entries = copy.entrySet().iterator();
-        while (entries.hasNext()) {
-            Map.Entry<?,?> me = entries.next();
-            if (!(me.getKey() instanceof String) ||
-                !(me.getValue() instanceof String)) {
-                throw new ClassCastException("not a String");
-            }
-        }
-
-        @SuppressWarnings("unchecked")
-        Map<String,String> temp = (Map<String,String>)copy;
-
-        nsMap = Collections.unmodifiableMap(temp);
+        this.expression = expression;
+        this.filter = filter;
+        Map<String,String> tempMap = Collections.checkedMap(new HashMap<>(),
+                                                            String.class,
+                                                            String.class);
+        tempMap.putAll(namespaceMap);
+        this.nsMap = Collections.unmodifiableMap(tempMap);
     }
 
     /**
@@ -198,8 +195,7 @@ public class XPathType {
      * @return a <code>Map</code> of namespace prefixes to namespace URIs
      *    (may be empty, but never <code>null</code>)
      */
-    @SuppressWarnings("rawtypes")
-    public Map getNamespaceMap() {
+    public Map<String,String> getNamespaceMap() {
         return nsMap;
     }
 }

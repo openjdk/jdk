@@ -133,7 +133,6 @@ public final class DOMXPathFilter2Transform extends ApacheTransform {
         String prefix = DOMUtils.getNSPrefix(context, Transform.XPATH2);
         String qname = (prefix == null || prefix.length() == 0)
                        ? "xmlns" : "xmlns:" + prefix;
-        @SuppressWarnings("unchecked")
         List<XPathType> xpathList = xp.getXPathList();
         for (XPathType xpathType : xpathList) {
             Element elem = DOMUtils.createElement(ownerDoc, "XPath",
@@ -146,7 +145,6 @@ public final class DOMXPathFilter2Transform extends ApacheTransform {
                                 Transform.XPATH2);
 
             // add namespace attributes, if necessary
-            @SuppressWarnings("unchecked")
             Set<Map.Entry<String, String>> entries =
                 xpathType.getNamespaceMap().entrySet();
             for (Map.Entry<String, String> entry : entries) {

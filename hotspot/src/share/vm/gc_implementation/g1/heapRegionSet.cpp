@@ -426,11 +426,19 @@ void FreeRegionList_test() {
                                          mtGC);
   G1BlockOffsetSharedArray oa(heap, bot_storage);
   bot_storage->commit_regions(0, num_regions_in_test);
-  HeapRegion hr0(0, &oa, heap);
-  HeapRegion hr1(1, &oa, heap);
-  HeapRegion hr2(2, &oa, heap);
-  HeapRegion hr3(3, &oa, heap);
-  HeapRegion hr4(4, &oa, heap);
+
+  // Set up memory regions for the heap regions.
+  MemRegion mr0(heap.start(), HeapRegion::GrainWords);
+  MemRegion mr1(mr0.end(), HeapRegion::GrainWords);
+  MemRegion mr2(mr1.end(), HeapRegion::GrainWords);
+  MemRegion mr3(mr2.end(), HeapRegion::GrainWords);
+  MemRegion mr4(mr3.end(), HeapRegion::GrainWords);
+
+  HeapRegion hr0(0, &oa, mr0);
+  HeapRegion hr1(1, &oa, mr1);
+  HeapRegion hr2(2, &oa, mr2);
+  HeapRegion hr3(3, &oa, mr3);
+  HeapRegion hr4(4, &oa, mr4);
   l.add_ordered(&hr1);
   l.add_ordered(&hr0);
   l.add_ordered(&hr3);

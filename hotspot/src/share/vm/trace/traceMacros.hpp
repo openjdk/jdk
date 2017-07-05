@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_TRACE_TRACE_MACRO_HPP
-#define SHARE_VM_TRACE_TRACE_MACRO_HPP
+#ifndef SHARE_VM_TRACE_TRACEMACROS_HPP
+#define SHARE_VM_TRACE_TRACEMACROS_HPP
 
 #define EVENT_THREAD_EXIT(thread)
 #define EVENT_THREAD_DESTRUCT(thread)
@@ -41,4 +41,4 @@
 #define TRACE_TEMPLATES(template)
 #define TRACE_INTRINSICS(do_intrinsic, do_class, do_name, do_signature, do_alias)
 
-#endif
+#endif // SHARE_VM_TRACE_TRACEMACROS_HPP
