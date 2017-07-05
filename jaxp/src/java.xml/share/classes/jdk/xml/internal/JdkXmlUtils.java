@@ -25,6 +25,7 @@
 
 package jdk.xml.internal;
 
+import com.sun.org.apache.xalan.internal.utils.XMLSecurityManager;
 import com.sun.org.apache.xerces.internal.util.ParserConfigurationSettings;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLComponentManager;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLConfigurationException;
@@ -39,6 +40,7 @@ import org.xml.sax.XMLReader;
  * Constants for use across JAXP processors.
  */
 public class JdkXmlUtils {
+
     /**
      * Catalog features
      */
@@ -58,11 +60,63 @@ public class JdkXmlUtils {
     /**
      * Default value of USE_CATALOG. This will read the System property
      */
-    public static final boolean USE_CATALOG_DEFAULT =
-            SecuritySupport.getJAXPSystemProperty(SP_USE_CATALOG, true);
+    public static final boolean USE_CATALOG_DEFAULT
+            = SecuritySupport.getJAXPSystemProperty(Boolean.class, SP_USE_CATALOG, "true");
+
+    /**
+     * JDK features (will be consolidated in the next major feature revamp
+     */
+    public final static String CDATA_CHUNK_SIZE = "jdk.xml.cdataChunkSize";
+    public static final int CDATA_CHUNK_SIZE_DEFAULT
+            = SecuritySupport.getJAXPSystemProperty(Integer.class, CDATA_CHUNK_SIZE, "0");
+
+    /**
+     * Returns the value.
+     *
+     * @param value the specified value
+     * @param defValue the default value
+     * @return the value, or the default value if the value is null
+     */
+    public static int getValue(Object value, int defValue) {
+        if (value == null) {
+            return defValue;
+        }
+
+        if (value instanceof Number) {
+            return ((Number) value).intValue();
+        } else if (value instanceof String) {
+            return Integer.parseInt(String.valueOf(value));
+        } else {
+            throw new IllegalArgumentException("Unexpected class: "
+                    + value.getClass());
+        }
+    }
+
+    /**
+     * Sets the XMLReader instance with the specified property if the the
+     * property is supported, ignores error if not, issues a warning if so
+     * requested.
+     *
+     * @param reader an XMLReader instance
+     * @param property the name of the property
+     * @param value the value of the property
+     * @param warn a flag indicating whether a warning should be issued
+     */
+    public static void setXMLReaderPropertyIfSupport(XMLReader reader, String property,
+            Object value, boolean warn) {
+        try {
+            reader.setProperty(property, value);
+        } catch (SAXNotRecognizedException | SAXNotSupportedException e) {
+            if (warn) {
+                XMLSecurityManager.printWarning(reader.getClass().getName(),
+                        property, e);
+            }
+        }
+    }
 
     /**
      * Returns the value of a Catalog feature by the property name.
+     *
      * @param features a CatalogFeatures instance
      * @param name the name of a Catalog feature
      * @return the value of a Catalog feature, null if the name does not match
@@ -106,10 +160,9 @@ public class JdkXmlUtils {
         return builder.build();
     }
 
-
     /**
-     * Passing on the CatalogFeatures settings from one Xerces configuration object
-     * to another.
+     * Passing on the CatalogFeatures settings from one Xerces configuration
+     * object to another.
      *
      * @param config1 a Xerces configuration object
      * @param config2 a Xerces configuration object
@@ -120,14 +173,13 @@ public class JdkXmlUtils {
         boolean useCatalog = config1.getFeature(XMLConstants.USE_CATALOG);
         try {
             config2.setFeature(JdkXmlUtils.USE_CATALOG, useCatalog);
-        }
-        catch (XMLConfigurationException e) {
+        } catch (XMLConfigurationException e) {
             supportCatalog = false;
         }
 
         if (supportCatalog && useCatalog) {
             try {
-                for( CatalogFeatures.Feature f : CatalogFeatures.Feature.values()) {
+                for (CatalogFeatures.Feature f : CatalogFeatures.Feature.values()) {
                     config2.setProperty(f.getPropertyName(), config1.getProperty(f.getPropertyName()));
                 }
             } catch (XMLConfigurationException e) {
@@ -137,8 +189,8 @@ public class JdkXmlUtils {
     }
 
     /**
-     * Passing on the CatalogFeatures settings from a Xerces configuration object
-     * to an XMLReader.
+     * Passing on the CatalogFeatures settings from a Xerces configuration
+     * object to an XMLReader.
      *
      * @param config a Xerces configuration object
      * @param reader an XMLReader
@@ -148,14 +200,13 @@ public class JdkXmlUtils {
         boolean useCatalog = config.getFeature(XMLConstants.USE_CATALOG);
         try {
             reader.setFeature(JdkXmlUtils.USE_CATALOG, useCatalog);
-        }
-        catch (SAXNotRecognizedException | SAXNotSupportedException e) {
+        } catch (SAXNotRecognizedException | SAXNotSupportedException e) {
             supportCatalog = false;
         }
 
         if (supportCatalog && useCatalog) {
             try {
-                for( CatalogFeatures.Feature f : CatalogFeatures.Feature.values()) {
+                for (CatalogFeatures.Feature f : CatalogFeatures.Feature.values()) {
                     reader.setProperty(f.getPropertyName(), config.getProperty(f.getPropertyName()));
                 }
             } catch (SAXNotRecognizedException | SAXNotSupportedException e) {

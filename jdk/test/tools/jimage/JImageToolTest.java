@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,8 @@
 /*
  * @test
  * @library /lib/testlibrary
- * @build jdk.testlibrary.*
- * @summary Test to see if jimage tool extracts and recreates correctly.
+ * @build jdk.testlibrary.ProcessTools
+ * @summary Test to check if jimage tool exists and is working
  * @run main/timeout=360 JImageToolTest
  */
 
@@ -42,7 +42,7 @@ import jdk.testlibrary.ProcessTools;
 public class JImageToolTest {
     private static void jimage(String... jimageArgs) throws Exception {
         ArrayList<String> args = new ArrayList<>();
-        args.add("-ms8m");
+        args.add("-ms64m");
         args.add("jdk.tools.jimage.Main");
         args.addAll(Arrays.asList(jimageArgs));
 
@@ -61,11 +61,7 @@ public class JImageToolTest {
 
         if (Files.exists(jimagePath) && Files.exists(modulesimagePath)) {
             String jimage = jimagePath.toAbsolutePath().toString();
-            String bootimage = modulesimagePath.toAbsolutePath().toString();
-            String extractDir = Paths.get(".", "extract").toAbsolutePath().toString();
-            jimage("list", bootimage);
-            jimage("verify", bootimage);
-            jimage("extract", "--dir", extractDir, bootimage);
+            jimage("--version");
             System.out.println("Test successful");
          } else {
             System.out.println("Test skipped, not an images build");

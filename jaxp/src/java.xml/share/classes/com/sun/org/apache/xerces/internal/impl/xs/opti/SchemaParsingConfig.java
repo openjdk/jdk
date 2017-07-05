@@ -336,7 +336,8 @@ public class SchemaParsingConfig extends BasicParserConfiguration
             JdkXmlUtils.CATALOG_DEFER,
             JdkXmlUtils.CATALOG_FILES,
             JdkXmlUtils.CATALOG_PREFER,
-            JdkXmlUtils.CATALOG_RESOLVE
+            JdkXmlUtils.CATALOG_RESOLVE,
+            JdkXmlUtils.CDATA_CHUNK_SIZE
         };
         addRecognizedProperties(recognizedProperties);
 
@@ -368,6 +369,7 @@ public class SchemaParsingConfig extends BasicParserConfiguration
 
         fValidationManager = new ValidationManager();
         fProperties.put(VALIDATION_MANAGER, fValidationManager);
+        fProperties.put(JdkXmlUtils.CDATA_CHUNK_SIZE, JdkXmlUtils.CDATA_CHUNK_SIZE_DEFAULT);
 
         fVersionDetector = new XMLVersionDetector();
 

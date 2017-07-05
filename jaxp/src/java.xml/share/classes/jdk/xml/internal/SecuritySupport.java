@@ -83,19 +83,26 @@ public class SecuritySupport {
     }
 
     /**
-     * Reads boolean type system property.
+     * Reads a system property.
      *
+     * @param <T> the type of the property value
+     * @param type the type of the property value
      * @param propName the name of the property
      * @param defValue the default value
      * @return the value of the property, or the default value of no system
      * property is found
      */
-    public static boolean getJAXPSystemProperty(String propName, boolean defValue) {
+    public static <T> T getJAXPSystemProperty(Class<T> type, String propName, String defValue) {
         String value = getJAXPSystemProperty(propName);
         if (value == null) {
-            return defValue;
+            value = defValue;
         }
-        return Boolean.parseBoolean(value);
+        if (Integer.class.isAssignableFrom(type)) {
+            return type.cast(Integer.parseInt(value));
+        } else if (Boolean.class.isAssignableFrom(type)) {
+            return type.cast(Boolean.parseBoolean(value));
+        }
+        return type.cast(value);
     }
 
     /**

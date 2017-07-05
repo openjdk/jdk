@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,6 +77,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.Collections;
 
 /**
  * Provider of time-zone rules to the system.
@@ -137,6 +138,11 @@ public abstract class ZoneRulesProvider {
      */
     private static final ConcurrentMap<String, ZoneRulesProvider> ZONES = new ConcurrentHashMap<>(512, 0.75f, 2);
 
+    /**
+     * The zone ID data
+     */
+    private static volatile Set<String> ZONE_IDS;
+
     static {
         // if the property java.time.zone.DefaultZoneRulesProvider is
         // set then its value is the class name of the default provider
@@ -194,10 +200,10 @@ public abstract class ZoneRulesProvider {
      * <p>
      * These IDs are the string form of a {@link ZoneId}.
      *
-     * @return a modifiable copy of the set of zone IDs, not null
+     * @return the unmodifiable set of zone IDs, not null
      */
     public static Set<String> getAvailableZoneIds() {
-        return new HashSet<>(ZONES.keySet());
+        return ZONE_IDS;
     }
 
     /**
@@ -303,7 +309,7 @@ public abstract class ZoneRulesProvider {
      * @param provider  the provider to register, not null
      * @throws ZoneRulesException if unable to complete the registration
      */
-    private static void registerProvider0(ZoneRulesProvider provider) {
+    private static synchronized void registerProvider0(ZoneRulesProvider provider) {
         for (String zoneId : provider.provideZoneIds()) {
             Objects.requireNonNull(zoneId, "zoneId");
             ZoneRulesProvider old = ZONES.putIfAbsent(zoneId, provider);
@@ -313,6 +319,8 @@ public abstract class ZoneRulesProvider {
                     ", currently loading from provider: " + provider);
             }
         }
+        Set<String> combinedSet = new HashSet<String>(ZONES.keySet());
+        ZONE_IDS = Collections.unmodifiableSet(combinedSet);
     }
 
     /**

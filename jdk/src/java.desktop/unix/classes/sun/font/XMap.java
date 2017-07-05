@@ -172,7 +172,8 @@ class XMap {
         if (className != null) {
             try {
                 if (className.startsWith("sun.awt")) {
-                    enc = ((Charset)Class.forName(className).newInstance()).newEncoder();
+                    enc = ((Charset)Class.forName(className).getDeclaredConstructor().
+                                                  newInstance()).newEncoder();
                 } else {
                     enc = Charset.forName(className).newEncoder();
                 }

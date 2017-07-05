@@ -936,6 +936,7 @@ class AccessibleHTML implements Accessible {
              * @return the screen coordinates of the character's the bounding box,
              * if index is invalid returns an empty rectangle.
              */
+            @SuppressWarnings("deprecation")
             public Rectangle getCharacterBounds(int i) {
                 try {
                     return editor.getUI().modelToView(editor, i);

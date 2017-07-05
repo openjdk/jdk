@@ -104,9 +104,9 @@ import sun.security.util.SecurityConstants;
  * class or resource itself.
  *
  * <p> Class loaders that support concurrent loading of classes are known as
- * <em>{@linkplain #isParallelCapable() parallel capable}</em> class loaders and
- * are required to register themselves at their class initialization time by
- * invoking the {@link
+ * <em>{@linkplain #isRegisteredAsParallelCapable() parallel capable}</em> class
+ * loaders and are required to register themselves at their class initialization
+ * time by invoking the {@link
  * #registerAsParallelCapable <tt>ClassLoader.registerAsParallelCapable</tt>}
  * method. Note that the <tt>ClassLoader</tt> class is registered as parallel
  * capable by default. However, its subclasses still need to register themselves
@@ -1335,10 +1335,12 @@ public abstract class ClassLoader {
      * @return  A <tt>URL</tt> object for reading the resource, or
      *          <tt>null</tt> if the resource could not be found or the invoker
      *          doesn't have adequate  privileges to get the resource.
+     * @throws  NullPointerException If {@code name} is {@code null}
      *
      * @since  1.1
      */
     public URL getResource(String name) {
+        Objects.requireNonNull(name);
         URL url;
         if (parent != null) {
             url = parent.getResource(name);
@@ -1382,12 +1384,14 @@ public abstract class ClassLoader {
      *
      * @throws  IOException
      *          If I/O errors occur
+     * @throws  NullPointerException If {@code name} is {@code null}
      *
      * @see  #findResources(String)
      *
      * @since  1.2
      */
     public Enumeration<URL> getResources(String name) throws IOException {
+        Objects.requireNonNull(name);
         @SuppressWarnings("unchecked")
         Enumeration<URL>[] tmp = (Enumeration<URL>[]) new Enumeration<?>[2];
         if (parent != null) {
@@ -1434,11 +1438,14 @@ public abstract class ClassLoader {
      *          that the class loader doesn't have access to will not be in the
      *          stream.
      *
+     * @throws  NullPointerException If {@code name} is {@code null}
+     *
      * @see  #findResources(String)
      *
      * @since  9
      */
     public Stream<URL> resources(String name) {
+        Objects.requireNonNull(name);
         int characteristics = Spliterator.NONNULL | Spliterator.IMMUTABLE;
         Supplier<Spliterator<URL>> si = () -> {
             try {
@@ -1495,7 +1502,8 @@ public abstract class ClassLoader {
     }
 
     /**
-     * Registers the caller as {@linkplain #isParallelCapable() parallel capable}.
+     * Registers the caller as
+     * {@linkplain #isRegisteredAsParallelCapable() parallel capable}.
      * The registration succeeds if and only if all of the following
      * conditions are met:
      * <ol>
@@ -1509,7 +1517,7 @@ public abstract class ClassLoader {
      * @return  {@code true} if the caller is successfully registered as
      *          parallel capable and {@code false} if otherwise.
      *
-     * @see #isParallelCapable()
+     * @see #isRegisteredAsParallelCapable()
      *
      * @since   1.7
      */
@@ -1521,7 +1529,7 @@ public abstract class ClassLoader {
     }
 
     /**
-     * Returns {@code true} if this class loader is
+     * Returns {@code true} if this class loader is registered as
      * {@linkplain #registerAsParallelCapable parallel capable}, otherwise
      * {@code false}.
      *
@@ -1532,7 +1540,7 @@ public abstract class ClassLoader {
      *
      * @since   9
      */
-    public final boolean isParallelCapable() {
+    public final boolean isRegisteredAsParallelCapable() {
         return ParallelLoaders.isRegistered(this.getClass());
     }
 
@@ -1599,10 +1607,12 @@ public abstract class ClassLoader {
      *
      * @return  An input stream for reading the resource, or <tt>null</tt>
      *          if the resource could not be found
+     * @throws  NullPointerException If {@code name} is {@code null}
      *
      * @since  1.1
      */
     public InputStream getResourceAsStream(String name) {
+        Objects.requireNonNull(name);
         URL url = getResource(name);
         try {
             return url != null ? url.openStream() : null;

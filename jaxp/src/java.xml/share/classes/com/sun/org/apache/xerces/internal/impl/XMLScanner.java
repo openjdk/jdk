@@ -760,7 +760,7 @@ public abstract class XMLScanner
         // since scanData appends the parsed data to the buffer passed
         // a while loop would append the whole of parsed data to the buffer(data:XMLStringBuffer)
         //until all of the data is buffered.
-        if (fEntityScanner.scanData("?>", data)) {
+        if (fEntityScanner.scanData("?>", data, 0)) {
             do {
                 int c = fEntityScanner.peekChar();
                 if (c != -1) {
@@ -772,7 +772,7 @@ public abstract class XMLScanner
                                 fEntityScanner.scanChar(null);
                     }
                 }
-            } while (fEntityScanner.scanData("?>", data));
+            } while (fEntityScanner.scanData("?>", data, 0));
         }
 
     } // scanPIData(String,XMLString)
@@ -797,7 +797,7 @@ public abstract class XMLScanner
         // text
         // REVISIT: handle invalid character, eof
         text.clear();
-        while (fEntityScanner.scanData("--", text)) {
+        while (fEntityScanner.scanData("--", text, 0)) {
             int c = fEntityScanner.peekChar();
 
             //System.out.println( "XMLScanner#scanComment#text.toString() == " + text.toString() );

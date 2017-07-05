@@ -318,7 +318,21 @@ public class SwingUtilities2 {
      * @param fm FontMetrics used to measure the String width
      * @param string String to get the width of
      */
-    public static int stringWidth(JComponent c, FontMetrics fm, String string){
+    public static int stringWidth(JComponent c, FontMetrics fm, String string) {
+        return (int) stringWidth(c, fm, string, false);
+    }
+
+    /**
+     * Returns the width of the passed in String.
+     * If the passed String is {@code null}, returns zero.
+     *
+     * @param c JComponent that will display the string, may be null
+     * @param fm FontMetrics used to measure the String width
+     * @param string String to get the width of
+     * @param useFPAPI use floating point API
+     */
+    public static float stringWidth(JComponent c, FontMetrics fm, String string,
+            boolean useFPAPI){
         if (string == null || string.equals("")) {
             return 0;
         }
@@ -333,9 +347,9 @@ public class SwingUtilities2 {
         if (needsTextLayout) {
             TextLayout layout = createTextLayout(c, string,
                                     fm.getFont(), fm.getFontRenderContext());
-            return (int) layout.getAdvance();
+            return layout.getAdvance();
         } else {
-            return fm.stringWidth(string);
+            return getFontStringWidth(string, fm, useFPAPI);
         }
     }
 
@@ -426,6 +440,21 @@ public class SwingUtilities2 {
      */
     public static void drawString(JComponent c, Graphics g, String text,
                                   int x, int y) {
+        drawString(c, g, text, x, y, false);
+    }
+
+    /**
+     * Draws the string at the specified location.
+     *
+     * @param c JComponent that will display the string, may be null
+     * @param g Graphics to draw the text to
+     * @param text String to display
+     * @param x X coordinate to draw the text at
+     * @param y Y coordinate to draw the text at
+     * @param useFPAPI use floating point API
+     */
+    public static void drawString(JComponent c, Graphics g, String text,
+                                  float x, float y, boolean useFPAPI) {
         // c may be null
 
         // All non-editable widgets that draw strings call into this
@@ -509,7 +538,7 @@ public class SwingUtilities2 {
                                                     g2.getFontRenderContext());
                     layout.draw(g2, x, y);
                 } else {
-                    g.drawString(text, x, y);
+                    g2.drawString(text, x, y);
                 }
 
                 if (oldAAValue != null) {
@@ -530,7 +559,7 @@ public class SwingUtilities2 {
             }
         }
 
-        g.drawString(text, x, y);
+        g.drawString(text, (int) x, (int) y);
     }
 
     /**
@@ -544,17 +573,36 @@ public class SwingUtilities2 {
      * @param x X coordinate to draw the text at
      * @param y Y coordinate to draw the text at
      */
+
     public static void drawStringUnderlineCharAt(JComponent c,Graphics g,
-                           String text, int underlinedIndex, int x,int y) {
+                           String text, int underlinedIndex, int x, int y) {
+        drawStringUnderlineCharAt(c, g, text, underlinedIndex, x, y, false);
+    }
+    /**
+     * Draws the string at the specified location underlining the specified
+     * character.
+     *
+     * @param c JComponent that will display the string, may be null
+     * @param g Graphics to draw the text to
+     * @param text String to display
+     * @param underlinedIndex Index of a character in the string to underline
+     * @param x X coordinate to draw the text at
+     * @param y Y coordinate to draw the text at
+     * @param useFPAPI use floating point API
+     */
+    public static void drawStringUnderlineCharAt(JComponent c, Graphics g,
+                                                 String text, int underlinedIndex,
+                                                 float x, float y,
+                                                 boolean useFPAPI) {
         if (text == null || text.length() <= 0) {
             return;
         }
-        SwingUtilities2.drawString(c, g, text, x, y);
+        SwingUtilities2.drawString(c, g, text, x, y, useFPAPI);
         int textLength = text.length();
         if (underlinedIndex >= 0 && underlinedIndex < textLength ) {
-            int underlineRectY = y;
+            float underlineRectY = y;
             int underlineRectHeight = 1;
-            int underlineRectX = 0;
+            float underlineRectX = 0;
             int underlineRectWidth = 0;
             boolean isPrinting = isPrinting(g);
             boolean needsTextLayout = isPrinting;
@@ -594,7 +642,7 @@ public class SwingUtilities2 {
                     underlineRectWidth = rect.width;
                 }
             }
-            g.fillRect(underlineRectX, underlineRectY + 1,
+            g.fillRect((int) underlineRectX, (int) underlineRectY + 1,
                        underlineRectWidth, underlineRectHeight);
         }
     }

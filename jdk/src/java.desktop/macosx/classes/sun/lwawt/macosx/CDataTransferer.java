@@ -38,6 +38,7 @@ import java.text.Normalizer.Form;
 import java.util.*;
 import java.util.regex.*;
 import java.awt.datatransfer.*;
+import java.nio.charset.StandardCharsets;
 import sun.awt.datatransfer.*;
 
 public class CDataTransferer extends DataTransferer {
@@ -132,7 +133,7 @@ public class CDataTransferer extends DataTransferer {
             String charset = Charset.defaultCharset().name();
             if (transferable != null && transferable.isDataFlavorSupported(javaTextEncodingFlavor)) {
                 try {
-                    charset = new String((byte[]) transferable.getTransferData(javaTextEncodingFlavor), "UTF-8");
+                    charset = new String((byte[]) transferable.getTransferData(javaTextEncodingFlavor), StandardCharsets.UTF_8);
                 } catch (UnsupportedFlavorException cannotHappen) {
                 }
             }

@@ -29,9 +29,11 @@
 
 import java.util.GregorianCalendar;
 
+@SuppressWarnings("serial")
 public class Bug4766302 {
 
     static class MyCalendar extends GregorianCalendar {
+
         boolean isTimeStillSet() {
             return isTimeSet;
         }

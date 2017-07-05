@@ -144,6 +144,8 @@ public class PropertyManager {
         for( CatalogFeatures.Feature f : CatalogFeatures.Feature.values()) {
             supportedProps.put(f.getPropertyName(), null);
         }
+
+        supportedProps.put(JdkXmlUtils.CDATA_CHUNK_SIZE, JdkXmlUtils.CDATA_CHUNK_SIZE_DEFAULT);
     }
 
     private void initWriterProps(){
