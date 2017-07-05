@@ -66,6 +66,15 @@ class CompilerToVM {
 
     static int vm_page_size;
 
+    static int sizeof_vtableEntry;
+    static int sizeof_ExceptionTableElement;
+    static int sizeof_LocalVariableTableElement;
+    static int sizeof_ConstantPool;
+    static int sizeof_SymbolPointer;
+    static int sizeof_narrowKlass;
+    static int sizeof_arrayOopDesc;
+    static int sizeof_BasicLock;
+
     static address dsin;
     static address dcos;
     static address dtan;
@@ -74,14 +83,31 @@ class CompilerToVM {
     static address dlog10;
     static address dpow;
 
+    static address symbol_init;
+    static address symbol_clinit;
+
    public:
-    static void initialize();
+    static void initialize(TRAPS);
 
     static int max_oop_map_stack_offset() {
       assert(_max_oop_map_stack_offset > 0, "must be initialized");
       return Data::_max_oop_map_stack_offset;
     }
   };
+
+  static bool cstring_equals(const char* const& s0, const char* const& s1) {
+    return strcmp(s0, s1) == 0;
+  }
+
+  static unsigned cstring_hash(const char* const& s) {
+    int h = 0;
+    const char* p = s;
+    while (*p != '\0') {
+      h = 31 * h + *p;
+      p++;
+    }
+    return h;
+  }
 
   static JNINativeMethod methods[];
 
