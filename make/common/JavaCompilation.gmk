@@ -202,23 +202,28 @@ define SetupJavaCompilationBody
   # CacheFind does not preserve order so need to call it for each root.
   $1_ALL_SRCS += $$(foreach s, $$($1_SRC), $$(call CacheFind, $$(s)))
   # Extract the java files.
-  ifneq ($$($1_EXCLUDE_FILES),)
-    $1_EXCLUDE_FILES_PATTERN:=$$(addprefix %,$$($1_EXCLUDE_FILES))
+  $1_SRCS := $$(filter %.java, $$($1_ALL_SRCS))
+
+  # Translate include/exclude into patterns
+  ifneq ($$($1_EXCLUDE_FILES), )
+    $1_EXCLUDE_PATTERN := $$(addprefix %, $$($1_EXCLUDE_FILES))
   endif
-  $1_SRCS := $$(filter-out $$($1_EXCLUDE_FILES_PATTERN),$$(filter %.java,$$($1_ALL_SRCS)))
-  ifneq ($$($1_INCLUDE_FILES),)
-    $1_INCLUDE_FILES:=$$(foreach i,$$($1_SRC),$$(addprefix $$i/,$$($1_INCLUDE_FILES)))
-    $1_SRCS := $$(filter $$($1_INCLUDE_FILES), $$($1_SRCS))
+  ifneq ($$($1_INCLUDE_FILES), )
+    $1_INCLUDE_PATTERN := $$(foreach i, $$($1_SRC), $$(addprefix $$i/, $$($1_INCLUDE_FILES)))
+  endif
+  ifneq ($$($1_EXCLUDES), )
+    $1_EXCLUDE_PATTERN += $$(foreach i, $$($1_SRC), $$(addprefix $$i/, $$(addsuffix /%, $$($1_EXCLUDES))))
+  endif
+  ifneq ($$($1_INCLUDES), )
+    $1_INCLUDE_PATTERN += $$(foreach i, $$($1_SRC), $$(addprefix $$i/, $$(addsuffix /%, $$($1_INCLUDES))))
   endif
 
-  # Prepend the source/bin path to the filter expressions.
-  ifneq ($$($1_INCLUDES),)
-    $1_SRC_INCLUDES := $$(foreach i,$$($1_SRC),$$(addprefix $$i/,$$(addsuffix /%,$$($1_INCLUDES))))
-    $1_SRCS := $$(filter $$($1_SRC_INCLUDES),$$($1_SRCS))
+  # Apply include/exclude patterns to java sources
+  ifneq ($$($1_EXCLUDE_PATTERN), )
+    $1_SRCS := $$(filter-out $$($1_EXCLUDE_PATTERN), $$($1_SRCS))
   endif
-  ifneq ($$($1_EXCLUDES),)
-    $1_SRC_EXCLUDES := $$(foreach i,$$($1_SRC),$$(addprefix $$i/,$$(addsuffix /%,$$($1_EXCLUDES))))
-    $1_SRCS := $$(filter-out $$($1_SRC_EXCLUDES),$$($1_SRCS))
+  ifneq ($$($1_INCLUDE_PATTERN), )
+    $1_SRCS := $$(filter $$($1_INCLUDE_PATTERN), $$($1_SRCS))
   endif
 
   ifneq ($$($1_KEEP_DUPS), true)
@@ -242,10 +247,10 @@ define SetupJavaCompilationBody
   $1_SAFE_NAME := $$(strip $$(subst /,_, $1))
 
   # Create the corresponding smart javac wrapper command line.
-  $1_SJAVAC_ARGS:=$$(addprefix -x ,$$(addsuffix /*,$$($1_EXCLUDES))) \
-      $$(addprefix -i ,$$(addsuffix /*,$$($1_INCLUDES))) \
-      $$(addprefix -xf *,$$(strip $$($1_EXCLUDE_FILES) $$($1_SJAVAC_EXCLUDE_FILES))) \
-      $$(addprefix -if *,$$(strip $$($1_INCLUDE_FILES))) \
+  $1_SJAVAC_ARGS:=$$(addprefix -x ,$$(addsuffix /**,$$($1_EXCLUDES))) \
+      $$(addprefix -i ,$$(addsuffix /**,$$($1_INCLUDES))) \
+      $$(addprefix -x **,$$(strip $$($1_EXCLUDE_FILES) $$($1_SJAVAC_EXCLUDE_FILES))) \
+      $$(addprefix -i **,$$(strip $$($1_INCLUDE_FILES))) \
       -src $$(call PathList, $$($1_SRC))
 
   # All files below META-INF are always copied.
@@ -258,14 +263,11 @@ define SetupJavaCompilationBody
     $1_ALL_COPIES += $$($1_COPY_FILES)
   endif
   # Copy must also respect filters.
-  ifneq (,$$($1_INCLUDES))
-    $1_ALL_COPIES := $$(filter $$($1_SRC_INCLUDES),$$($1_ALL_COPIES))
+  ifneq (,$$($1_INCLUDE_PATTERN))
+    $1_ALL_COPIES := $$(filter $$($1_INCLUDE_PATTERN),$$($1_ALL_COPIES))
   endif
-  ifneq (,$$($1_EXCLUDES))
-    $1_ALL_COPIES := $$(filter-out $$($1_SRC_EXCLUDES),$$($1_ALL_COPIES))
-  endif
-  ifneq (,$$($1_EXCLUDE_FILES))
-    $1_ALL_COPIES := $$(filter-out $$($1_EXCLUDE_FILES_PATTERN),$$($1_ALL_COPIES))
+  ifneq (,$$($1_EXCLUDE_PATTERN))
+    $1_ALL_COPIES := $$(filter-out $$($1_EXCLUDE_PATTERN),$$($1_ALL_COPIES))
   endif
   ifneq (,$$($1_ALL_COPIES))
     # Yep, there are files to be copied!
@@ -281,14 +283,11 @@ define SetupJavaCompilationBody
     # Clean these explicitly
     $1_ALL_CLEANS += $$($1_CLEAN_FILES)
     # Copy and clean must also respect filters.
-    ifneq (,$$($1_INCLUDES))
-      $1_ALL_CLEANS := $$(filter $$($1_SRC_INCLUDES),$$($1_ALL_CLEANS))
+    ifneq (,$$($1_INCLUDE_PATTERN))
+      $1_ALL_CLEANS := $$(filter $$($1_INCLUDE_PATTERN),$$($1_ALL_CLEANS))
     endif
-    ifneq (,$$($1_EXCLUDES))
-      $1_ALL_CLEANS := $$(filter-out $$($1_SRC_EXCLUDES),$$($1_ALL_CLEANS))
-    endif
-    ifneq (,$$($1_EXCLUDE_FILES))
-      $1_ALL_CLEANS := $$(filter-out $$($1_EXCLUDE_FILES_PATTERN),$$($1_ALL_CLEANS))
+    ifneq (,$$($1_EXCLUDE_PATTERN))
+      $1_ALL_CLEANS := $$(filter-out $$($1_EXCLUDE_PATTERN),$$($1_ALL_CLEANS))
     endif
     ifneq (,$$($1_ALL_CLEANS))
       # Yep, there are files to be copied and cleaned!
