@@ -84,6 +84,10 @@ REGISTER_DECLARATION(Register, G4_scratch    , G4);
 
 REGISTER_DECLARATION(Register, Gtemp  , G5);
 
+// JSR 292 fixed register usages:
+REGISTER_DECLARATION(Register, G5_method_type        , G5);
+REGISTER_DECLARATION(Register, G3_method_handle      , G3);
+
 // The compiler requires that G5_megamorphic_method is G5_inline_cache_klass,
 // because a single patchable "set" instruction (NativeMovConstReg,
 // or NativeMovConstPatching for compiler1) instruction
@@ -91,9 +95,13 @@ REGISTER_DECLARATION(Register, Gtemp  , G5);
 // call site is an inline cache or is megamorphic.  See the function
 // CompiledIC::set_to_megamorphic.
 //
-// On the other hand, G5_inline_cache_klass must differ from G5_method,
-// because both registers are needed for an inline cache that calls
-// an interpreted method.
+// If a inline cache targets an interpreted method, then the
+// G5 register will be used twice during the call.  First,
+// the call site will be patched to load a compiledICHolder
+// into G5. (This is an ordered pair of ic_klass, method.)
+// The c2i adapter will first check the ic_klass, then load
+// G5_method with the method part of the pair just before
+// jumping into the interpreter.
 //
 // Note that G5_method is only the method-self for the interpreter,
 // and is logically unrelated to G5_megamorphic_method.
@@ -1931,6 +1939,7 @@ class MacroAssembler: public Assembler {
   inline void store_ptr_contents( Register s, Address& a, int offset = 0 );
   inline void jumpl_to( Address& a, Register d, int offset = 0 );
   inline void jump_to(  Address& a,             int offset = 0 );
+  inline void jump_indirect_to(  Address& a, Register temp, int ld_offset = 0, int jmp_offset = 0 );
 
   // ring buffer traceable jumps
 
@@ -2365,6 +2374,16 @@ class MacroAssembler: public Assembler {
                            Register temp_reg,
                            Register temp2_reg,
                            Label& L_success);
+
+  // method handles (JSR 292)
+  void check_method_handle_type(Register mtype_reg, Register mh_reg,
+                                Register temp_reg,
+                                Label& wrong_method_type);
+  void jump_to_method_handle_entry(Register mh_reg, Register temp_reg);
+  // offset relative to Gargs of argument at tos[arg_slot].
+  // (arg_slot == 0 means the last argument, not the first).
+  RegisterOrConstant argument_offset(RegisterOrConstant arg_slot,
+                                     int extra_slot_offset = 0);
 
 
   // Stack overflow checking
