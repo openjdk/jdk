@@ -110,10 +110,13 @@ static Node *transform_int_divide( PhaseGVN *phase, Node *dividend, jint divisor
     } else if( dividend->Opcode() == Op_AndI ) {
       // An AND mask of sufficient size clears the low bits and
       // I can avoid rounding.
-      const TypeInt *andconi = phase->type( dividend->in(2) )->isa_int();
-      if( andconi && andconi->is_con(-d) ) {
-        dividend = dividend->in(1);
-        needs_rounding = false;
+      const TypeInt *andconi_t = phase->type( dividend->in(2) )->isa_int();
+      if( andconi_t && andconi_t->is_con() ) {
+        jint andconi = andconi_t->get_con();
+        if( andconi < 0 && is_power_of_2(-andconi) && (-andconi) >= d ) {
+          dividend = dividend->in(1);
+          needs_rounding = false;
+        }
       }
     }
 
@@ -316,10 +319,13 @@ static Node *transform_long_divide( PhaseGVN *phase, Node *dividend, jlong divis
     } else if( dividend->Opcode() == Op_AndL ) {
       // An AND mask of sufficient size clears the low bits and
       // I can avoid rounding.
-      const TypeLong *andconl = phase->type( dividend->in(2) )->isa_long();
-      if( andconl && andconl->is_con(-d)) {
-        dividend = dividend->in(1);
-        needs_rounding = false;
+      const TypeLong *andconl_t = phase->type( dividend->in(2) )->isa_long();
+      if( andconl_t && andconl_t->is_con() ) {
+        jlong andconl = andconl_t->get_con();
+        if( andconl < 0 && is_power_of_2_long(-andconl) && (-andconl) >= d ) {
+          dividend = dividend->in(1);
+          needs_rounding = false;
+        }
       }
     }
 
@@ -704,11 +710,18 @@ const Type *DivDNode::Value( PhaseTransform *phase ) const {
   if( t2 == TypeD::ONE )
     return t1;
 
-  // If divisor is a constant and not zero, divide them numbers
-  if( t1->base() == Type::DoubleCon &&
-      t2->base() == Type::DoubleCon &&
-      t2->getd() != 0.0 ) // could be negative zero
-    return TypeD::make( t1->getd()/t2->getd() );
+#if defined(IA32)
+  if (!phase->C->method()->is_strict())
+    // Can't trust native compilers to properly fold strict double
+    // division with round-to-zero on this platform.
+#endif
+    {
+      // If divisor is a constant and not zero, divide them numbers
+      if( t1->base() == Type::DoubleCon &&
+          t2->base() == Type::DoubleCon &&
+          t2->getd() != 0.0 ) // could be negative zero
+        return TypeD::make( t1->getd()/t2->getd() );
+    }
 
   // If the dividend is a constant zero
   // Note: if t1 and t2 are zero then result is NaN (JVMS page 213)

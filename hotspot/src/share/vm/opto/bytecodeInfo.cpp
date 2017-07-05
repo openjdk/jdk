@@ -25,19 +25,6 @@
 #include "incls/_precompiled.incl"
 #include "incls/_bytecodeInfo.cpp.incl"
 
-// These variables are declared in parse1.cpp
-extern int  explicit_null_checks_inserted;
-extern int  explicit_null_checks_elided;
-extern int  explicit_null_checks_inserted_old;
-extern int  explicit_null_checks_elided_old;
-extern int  nodes_created_old;
-extern int  nodes_created;
-extern int  methods_parsed_old;
-extern int  methods_parsed;
-extern int  methods_seen;
-extern int  methods_seen_old;
-
-
 //=============================================================================
 //------------------------------InlineTree-------------------------------------
 InlineTree::InlineTree( Compile* c, const InlineTree *caller_tree, ciMethod* callee, JVMState* caller_jvms, int caller_bci, float site_invoke_ratio )
@@ -517,27 +504,3 @@ InlineTree* InlineTree::find_subtree_from_root(InlineTree* root, JVMState* jvms,
   }
   return iltp;
 }
-
-// ----------------------------------------------------------------------------
-#ifndef PRODUCT
-
-static void per_method_stats() {
-  // Compute difference between this method's cumulative totals and old totals
-  int explicit_null_checks_cur = explicit_null_checks_inserted - explicit_null_checks_inserted_old;
-  int elided_null_checks_cur = explicit_null_checks_elided - explicit_null_checks_elided_old;
-
-  // Print differences
-  if( explicit_null_checks_cur )
-    tty->print_cr("XXX Explicit NULL checks inserted: %d", explicit_null_checks_cur);
-  if( elided_null_checks_cur )
-    tty->print_cr("XXX Explicit NULL checks removed at parse time: %d", elided_null_checks_cur);
-
-  // Store the current cumulative totals
-  nodes_created_old = nodes_created;
-  methods_parsed_old = methods_parsed;
-  methods_seen_old = methods_seen;
-  explicit_null_checks_inserted_old = explicit_null_checks_inserted;
-  explicit_null_checks_elided_old = explicit_null_checks_elided;
-}
-
-#endif

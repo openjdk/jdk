@@ -26,9 +26,23 @@
 
 class ReferenceProcessor;
 
+// Closure provides abortability.
+
+class Closure : public StackObj {
+ protected:
+  bool _abort;
+  void set_abort() { _abort = true; }
+ public:
+  Closure() : _abort(false) {}
+  // A subtype can use this mechanism to indicate to some iterator mapping
+  // functions that the iteration should cease.
+  bool abort() { return _abort; }
+  void clear_abort() { _abort = false; }
+};
+
 // OopClosure is used for iterating through roots (oop*)
 
-class OopClosure : public StackObj {
+class OopClosure : public Closure {
  public:
   ReferenceProcessor* _ref_processor;
   OopClosure(ReferenceProcessor* rp) : _ref_processor(rp) { }
@@ -55,11 +69,16 @@ class OopClosure : public StackObj {
   Prefetch::style prefetch_style() { // Note that this is non-virtual.
     return Prefetch::do_none;
   }
+
+  // True iff this closure may be safely applied more than once to an oop
+  // location without an intervening "major reset" (like the end of a GC).
+  virtual bool idempotent() { return false; }
+  virtual bool apply_to_weak_ref_discovered_field() { return false; }
 };
 
 // ObjectClosure is used for iterating through an object space
 
-class ObjectClosure : public StackObj {
+class ObjectClosure : public Closure {
  public:
   // Called for each object.
   virtual void do_object(oop obj) = 0;

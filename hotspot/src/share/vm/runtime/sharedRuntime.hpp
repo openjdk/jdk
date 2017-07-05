@@ -99,6 +99,12 @@ class SharedRuntime: AllStatic {
   static address raw_exception_handler_for_return_address(address return_address);
   static address exception_handler_for_return_address(address return_address);
 
+#ifndef SERIALGC
+  // G1 write barriers
+  static void g1_wb_pre(oopDesc* orig, JavaThread *thread);
+  static void g1_wb_post(void* card_addr, JavaThread* thread);
+#endif // !SERIALGC
+
   // exception handling and implicit exceptions
   static address compute_compiled_exc_handler(nmethod* nm, address ret_pc, Handle& exception,
                                               bool force_unwind, bool top_frame_only);

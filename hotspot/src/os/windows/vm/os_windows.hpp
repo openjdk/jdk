@@ -34,6 +34,7 @@ class win32 {
   static julong _physical_memory;
   static size_t _default_stack_size;
   static bool   _is_nt;
+  static bool   _is_windows_2003;
 
  public:
   // Windows-specific interface:
@@ -59,6 +60,9 @@ class win32 {
 
   // Tells whether the platform is NT or Windown95
   static bool is_nt() { return _is_nt; }
+
+  // Tells whether the platform is Windows 2003
+  static bool is_windows_2003() { return _is_windows_2003; }
 
   // Returns the byte size of a virtual memory page
   static int vm_page_size() { return _vm_page_size; }
