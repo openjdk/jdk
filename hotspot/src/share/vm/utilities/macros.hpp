@@ -106,11 +106,13 @@
 #ifdef ASSERT
 #define DEBUG_ONLY(code) code
 #define NOT_DEBUG(code)
+#define NOT_DEBUG_RETURN  /*next token must be ;*/
 // Historical.
 #define debug_only(code) code
 #else // ASSERT
 #define DEBUG_ONLY(code)
 #define NOT_DEBUG(code) code
+#define NOT_DEBUG_RETURN {}
 #define debug_only(code)
 #endif // ASSERT
 

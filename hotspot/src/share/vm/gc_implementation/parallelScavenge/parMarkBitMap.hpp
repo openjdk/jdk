@@ -177,6 +177,7 @@ private:
   // are double-word aligned in 32-bit VMs, but not in 64-bit VMs, so the 32-bit
   // granularity is 2, 64-bit is 1.
   static inline size_t obj_granularity() { return size_t(MinObjAlignment); }
+  static inline int obj_granularity_shift() { return LogMinObjAlignment; }
 
   HeapWord*       _region_start;
   size_t          _region_size;
@@ -299,13 +300,13 @@ inline bool ParMarkBitMap::is_unmarked(oop obj) const
 inline size_t
 ParMarkBitMap::bits_to_words(idx_t bits)
 {
-  return bits * obj_granularity();
+  return bits << obj_granularity_shift();
 }
 
 inline ParMarkBitMap::idx_t
 ParMarkBitMap::words_to_bits(size_t words)
 {
-  return words / obj_granularity();
+  return words >> obj_granularity_shift();
 }
 
 inline size_t ParMarkBitMap::obj_size(idx_t beg_bit, idx_t end_bit) const
