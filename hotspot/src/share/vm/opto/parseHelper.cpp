@@ -128,7 +128,7 @@ void Parse::do_instanceof() {
   }
 
   // Push the bool result back on stack
-  Node* res = gen_instanceof(peek(), makecon(TypeKlassPtr::make(klass)));
+  Node* res = gen_instanceof(peek(), makecon(TypeKlassPtr::make(klass)), true);
 
   // Pop from stack AFTER gen_instanceof because it can uncommon trap.
   pop();

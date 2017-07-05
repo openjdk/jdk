@@ -48,7 +48,7 @@ H_TARGET_FILES = $(INCLUDEDIR)/jdwpTransport.h \
 $(INCLUDEDIR)/%.h: $(JDK_TOPDIR)/src/share/javavm/export/%.h
 	$(call install-file)
 
-$(OPENJDK_TARGET_OS_INCLUDE)/%.h: $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/javavm/export/%.h
+$(OPENJDK_TARGET_OS_INCLUDE)/%.h: $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_EXPORT_DIR)/javavm/export/%.h
 	$(call install-file)
 
 COPY_FILES = $(H_TARGET_FILES)

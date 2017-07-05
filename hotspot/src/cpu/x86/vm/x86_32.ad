@@ -1538,6 +1538,11 @@ const RegMask Matcher::mathExactI_result_proj_mask() {
   return EAX_REG_mask();
 }
 
+const RegMask Matcher::mathExactL_result_proj_mask() {
+  ShouldNotReachHere();
+  return RegMask();
+}
+
 const RegMask Matcher::mathExactI_flags_proj_mask() {
   return INT_FLAGS_mask();
 }
@@ -7519,7 +7524,7 @@ instruct cmovL_regUCF(cmpOpUCF cop, eFlagsRegUCF cr, eRegL dst, eRegL src) %{
 //----------Arithmetic Instructions--------------------------------------------
 //----------Addition Instructions----------------------------------------------
 
-instruct addExactI_rReg(eAXRegI dst, rRegI src, eFlagsReg cr)
+instruct addExactI_eReg(eAXRegI dst, rRegI src, eFlagsReg cr)
 %{
   match(AddExactI dst src);
   effect(DEF cr);
@@ -7531,7 +7536,7 @@ instruct addExactI_rReg(eAXRegI dst, rRegI src, eFlagsReg cr)
   ins_pipe(ialu_reg_reg);
 %}
 
-instruct addExactI_rReg_imm(eAXRegI dst, immI src, eFlagsReg cr)
+instruct addExactI_eReg_imm(eAXRegI dst, immI src, eFlagsReg cr)
 %{
   match(AddExactI dst src);
   effect(DEF cr);
@@ -7542,6 +7547,20 @@ instruct addExactI_rReg_imm(eAXRegI dst, immI src, eFlagsReg cr)
   %}
   ins_pipe(ialu_reg_reg);
 %}
+
+instruct addExactI_eReg_mem(eAXRegI dst, memory src, eFlagsReg cr)
+%{
+  match(AddExactI dst (LoadI src));
+  effect(DEF cr);
+
+  ins_cost(125);
+  format %{ "ADD    $dst,$src\t# addExact int" %}
+  ins_encode %{
+    __ addl($dst$$Register, $src$$Address);
+  %}
+  ins_pipe( ialu_reg_mem );
+%}
+
 
 // Integer Addition Instructions
 instruct addI_eReg(rRegI dst, rRegI src, eFlagsReg cr) %{
@@ -7851,6 +7870,44 @@ instruct xchgP( memory mem, pRegP newval) %{
 %}
 
 //----------Subtraction Instructions-------------------------------------------
+
+instruct subExactI_eReg(eAXRegI dst, rRegI src, eFlagsReg cr)
+%{
+  match(SubExactI dst src);
+  effect(DEF cr);
+
+  format %{ "SUB    $dst, $src\t# subExact int" %}
+  ins_encode %{
+    __ subl($dst$$Register, $src$$Register);
+  %}
+  ins_pipe(ialu_reg_reg);
+%}
+
+instruct subExactI_eReg_imm(eAXRegI dst, immI src, eFlagsReg cr)
+%{
+  match(SubExactI dst src);
+  effect(DEF cr);
+
+  format %{ "SUB    $dst, $src\t# subExact int" %}
+  ins_encode %{
+    __ subl($dst$$Register, $src$$constant);
+  %}
+  ins_pipe(ialu_reg_reg);
+%}
+
+instruct subExactI_eReg_mem(eAXRegI dst, memory src, eFlagsReg cr)
+%{
+  match(SubExactI dst (LoadI src));
+  effect(DEF cr);
+
+  ins_cost(125);
+  format %{ "SUB    $dst,$src\t# subExact int" %}
+  ins_encode %{
+    __ subl($dst$$Register, $src$$Address);
+  %}
+  ins_pipe( ialu_reg_mem );
+%}
+
 // Integer Subtraction Instructions
 instruct subI_eReg(rRegI dst, rRegI src, eFlagsReg cr) %{
   match(Set dst (SubI dst src));
@@ -7919,6 +7976,16 @@ instruct negI_eReg(rRegI dst, immI0 zero, eFlagsReg cr) %{
   ins_pipe( ialu_reg );
 %}
 
+instruct negExactI_eReg(eAXRegI dst, eFlagsReg cr) %{
+  match(NegExactI dst);
+  effect(DEF cr);
+
+  format %{ "NEG    $dst\t# negExact int"%}
+  ins_encode %{
+    __ negl($dst$$Register);
+  %}
+  ins_pipe(ialu_reg);
+%}
 
 //----------Multiplication/Division Instructions-------------------------------
 // Integer Multiplication Instructions
@@ -8130,6 +8197,46 @@ instruct mulL_eReg_con(eADXRegL dst, immL_127 src, rRegI tmp, eFlagsReg cr) %{
   ins_encode( long_multiply_con( dst, src, tmp ) );
   ins_pipe( pipe_slow );
 %}
+
+instruct mulExactI_eReg(eAXRegI dst, rRegI src, eFlagsReg cr)
+%{
+  match(MulExactI dst src);
+  effect(DEF cr);
+
+  ins_cost(300);
+  format %{ "IMUL   $dst, $src\t# mulExact int" %}
+  ins_encode %{
+    __ imull($dst$$Register, $src$$Register);
+  %}
+  ins_pipe(ialu_reg_reg_alu0);
+%}
+
+instruct mulExactI_eReg_imm(eAXRegI dst, rRegI src, immI imm, eFlagsReg cr)
+%{
+  match(MulExactI src imm);
+  effect(DEF cr);
+
+  ins_cost(300);
+  format %{ "IMUL   $dst, $src, $imm\t# mulExact int" %}
+  ins_encode %{
+    __ imull($dst$$Register, $src$$Register, $imm$$constant);
+  %}
+  ins_pipe(ialu_reg_reg_alu0);
+%}
+
+instruct mulExactI_eReg_mem(eAXRegI dst, memory src, eFlagsReg cr)
+%{
+  match(MulExactI dst (LoadI src));
+  effect(DEF cr);
+
+  ins_cost(350);
+  format %{ "IMUL   $dst, $src\t# mulExact int" %}
+  ins_encode %{
+    __ imull($dst$$Register, $src$$Address);
+  %}
+  ins_pipe(ialu_reg_mem_alu0);
+%}
+
 
 // Integer DIV with Register
 instruct divI_eReg(eAXRegI rax, eDXRegI rdx, eCXRegI div, eFlagsReg cr) %{

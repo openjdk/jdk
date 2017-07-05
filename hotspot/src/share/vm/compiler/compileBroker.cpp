@@ -1297,13 +1297,6 @@ nmethod* CompileBroker::compile_method(methodHandle method, int osr_bci,
     method->jmethod_id();
   }
 
-  // If the compiler is shut off due to code cache getting full
-  // fail out now so blocking compiles dont hang the java thread
-  if (!should_compile_new_jobs()) {
-    CompilationPolicy::policy()->delay_compilation(method());
-    return NULL;
-  }
-
   // do the compilation
   if (method->is_native()) {
     if (!PreferInterpreterNativeStubs || method->is_method_handle_intrinsic()) {
@@ -1313,11 +1306,22 @@ nmethod* CompileBroker::compile_method(methodHandle method, int osr_bci,
         MutexLocker locker(MethodCompileQueue_lock, THREAD);
         compile_id = assign_compile_id(method, standard_entry_bci);
       }
+      // To properly handle the appendix argument for out-of-line calls we are using a small trampoline that
+      // pops off the appendix argument and jumps to the target (see gen_special_dispatch in SharedRuntime).
+      //
+      // Since normal compiled-to-compiled calls are not able to handle such a thing we MUST generate an adapter
+      // in this case.  If we can't generate one and use it we can not execute the out-of-line method handle calls.
       (void) AdapterHandlerLibrary::create_native_wrapper(method, compile_id);
     } else {
       return NULL;
     }
   } else {
+    // If the compiler is shut off due to code cache getting full
+    // fail out now so blocking compiles dont hang the java thread
+    if (!should_compile_new_jobs()) {
+      CompilationPolicy::policy()->delay_compilation(method());
+      return NULL;
+    }
     compile_method_base(method, osr_bci, comp_level, hot_method, hot_count, comment, THREAD);
   }
 

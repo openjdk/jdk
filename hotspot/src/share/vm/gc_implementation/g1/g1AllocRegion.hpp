@@ -55,7 +55,7 @@ private:
   // then _alloc_region is NULL and this object should not be used to
   // satisfy allocation requests (it was done this way to force the
   // correct use of init() and release()).
-  HeapRegion* _alloc_region;
+  HeapRegion* volatile _alloc_region;
 
   // It keeps track of the distinct number of regions that are used
   // for allocation in the active interval of this object, i.e.,
@@ -132,8 +132,9 @@ public:
   static void setup(G1CollectedHeap* g1h, HeapRegion* dummy_region);
 
   HeapRegion* get() const {
+    HeapRegion * hr = _alloc_region;
     // Make sure that the dummy region does not escape this class.
-    return (_alloc_region == _dummy_region) ? NULL : _alloc_region;
+    return (hr == _dummy_region) ? NULL : hr;
   }
 
   uint count() { return _count; }
