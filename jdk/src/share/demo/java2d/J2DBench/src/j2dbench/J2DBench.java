@@ -69,6 +69,7 @@ import j2dbench.tests.MiscTests;
 import j2dbench.tests.RenderTests;
 import j2dbench.tests.PixelTests;
 import j2dbench.tests.iio.IIOTests;
+import j2dbench.tests.cmm.CMMTests;
 import j2dbench.tests.text.TextConstructionTests;
 import j2dbench.tests.text.TextMeasureTests;
 import j2dbench.tests.text.TextRenderTests;
@@ -199,6 +200,7 @@ public class J2DBench {
         TextMeasureTests.init();
         TextConstructionTests.init();
         IIOTests.init();
+        CMMTests.init();
 
         boolean gui = true;
         boolean showresults = true;

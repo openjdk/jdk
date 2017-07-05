@@ -115,6 +115,7 @@ public abstract class ClientCommunicatorAdmin {
                     // restarted is failed by another thread
                     throw ioe;
                 }
+                return;
             } else {
                 state = RE_CONNECTING;
                 lock.notifyAll();
@@ -195,7 +196,7 @@ public abstract class ClientCommunicatorAdmin {
                     if (e instanceof IOException &&
                         !(e instanceof InterruptedIOException)) {
                         try {
-                            restart((IOException)e);
+                            gotIOException((IOException)e);
                         } catch (Exception ee) {
                             logger.warning("Checker-run",
                                            "Failed to check connection: "+ e);

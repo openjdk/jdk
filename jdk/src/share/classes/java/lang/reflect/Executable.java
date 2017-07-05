@@ -324,6 +324,7 @@ public abstract class Executable extends AccessibleObject
      * @return true if and only if this executable is a synthetic
      * construct as defined by
      * <cite>The Java&trade; Language Specification</cite>.
+     * @jls 13.1 The Form of a Binary
      */
     public boolean isSynthetic() {
         return Modifier.isSynthetic(getModifiers());

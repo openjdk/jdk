@@ -196,7 +196,8 @@ class LCMSImageLayout {
             case BufferedImage.TYPE_4BYTE_ABGR:
                 byteRaster = (ByteComponentRaster)image.getRaster();
                 nextRowOffset = byteRaster.getScanlineStride();
-                offset = byteRaster.getDataOffset(0);
+                int firstBand = image.getSampleModel().getNumBands() - 1;
+                offset = byteRaster.getDataOffset(firstBand);
                 dataArray = byteRaster.getDataStorage();
                 dataType = DT_BYTE;
                 break;

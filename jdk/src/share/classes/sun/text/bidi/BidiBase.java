@@ -3251,10 +3251,9 @@ public class BidiBase {
     {
         verifyValidParaOrLine();
         BidiLine.getRuns(this);
-        if (runCount == 1) {
+        if (run < 0 || run >= runCount) {
             return getParaLevel();
         }
-        verifyIndex(run, 0, runCount);
         getLogicalToVisualRunsMap();
         return runs[logicalToVisualRunsMap[run]].level;
     }

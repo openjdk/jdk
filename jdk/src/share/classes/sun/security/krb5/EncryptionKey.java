@@ -555,6 +555,12 @@ public class EncryptionKey
 
         int ktype;
         boolean etypeFound = false;
+
+        // When no matched kvno is found, returns tke key of the same
+        // etype with the highest kvno
+        int kvno_found = 0;
+        EncryptionKey key_found = null;
+
         for (int i = 0; i < keys.length; i++) {
             ktype = keys[i].getEType();
             if (EType.isSupported(ktype)) {
@@ -563,6 +569,10 @@ public class EncryptionKey
                     etypeFound = true;
                     if (versionMatches(kvno, kv)) {
                         return keys[i];
+                    } else if (kv > kvno_found) {
+                        // kv is not null
+                        key_found = keys[i];
+                        kvno_found = kv;
                     }
                 }
             }
@@ -580,12 +590,17 @@ public class EncryptionKey
                     etypeFound = true;
                     if (versionMatches(kvno, kv)) {
                         return new EncryptionKey(etype, keys[i].getBytes());
+                    } else if (kv > kvno_found) {
+                        key_found = new EncryptionKey(etype, keys[i].getBytes());
+                        kvno_found = kv;
                     }
                 }
             }
         }
         if (etypeFound) {
-            throw new KrbException(Krb5.KRB_AP_ERR_BADKEYVER);
+            return key_found;
+            // For compatibility, will not fail here.
+            //throw new KrbException(Krb5.KRB_AP_ERR_BADKEYVER);
         }
         return null;
     }

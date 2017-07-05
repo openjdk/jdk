@@ -104,7 +104,7 @@ public abstract class TimeZoneNamesBundle extends OpenListResourceBundle {
         if (contents == null) {
             return null;
         }
-        int clen = Math.min(n, contents.length);
+        int clen = Math.min(n - 1, contents.length);
         String[] tmpobj = new String[clen+1];
         tmpobj[0] = key;
         System.arraycopy(contents, 0, tmpobj, 1, clen);
