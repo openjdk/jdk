@@ -498,13 +498,27 @@ objArrayOop InstanceKlass::signers() const {
 
 oop InstanceKlass::init_lock() const {
   // return the init lock from the mirror
-  return java_lang_Class::init_lock(java_mirror());
+  oop lock = java_lang_Class::init_lock(java_mirror());
+  assert((oop)lock != NULL || !is_not_initialized(), // initialized or in_error state
+         "only fully initialized state can have a null lock");
+  return lock;
+}
+
+// Set the initialization lock to null so the object can be GC'ed.  Any racing
+// threads to get this lock will see a null lock and will not lock.
+// That's okay because they all check for initialized state after getting
+// the lock and return.
+void InstanceKlass::fence_and_clear_init_lock() {
+  // make sure previous stores are all done, notably the init_state.
+  OrderAccess::storestore();
+  java_lang_Class::set_init_lock(java_mirror(), NULL);
+  assert(!is_not_initialized(), "class must be initialized now");
 }
 
 void InstanceKlass::eager_initialize_impl(instanceKlassHandle this_oop) {
   EXCEPTION_MARK;
   oop init_lock = this_oop->init_lock();
-  ObjectLocker ol(init_lock, THREAD);
+  ObjectLocker ol(init_lock, THREAD, init_lock != NULL);
 
   // abort if someone beat us to the initialization
   if (!this_oop->is_not_initialized()) return;  // note: not equivalent to is_initialized()
@@ -523,6 +537,7 @@ void InstanceKlass::eager_initialize_impl(instanceKlassHandle this_oop) {
   } else {
     // linking successfull, mark class as initialized
     this_oop->set_init_state (fully_initialized);
+    this_oop->fence_and_clear_init_lock();
     // trace
     if (TraceClassInitialization) {
       ResourceMark rm(THREAD);
@@ -649,7 +664,7 @@ bool InstanceKlass::link_class_impl(
   // verification & rewriting
   {
     oop init_lock = this_oop->init_lock();
-    ObjectLocker ol(init_lock, THREAD);
+    ObjectLocker ol(init_lock, THREAD, init_lock != NULL);
     // rewritten will have been set if loader constraint error found
     // on an earlier link attempt
     // don't verify or rewrite if already rewritten
@@ -772,7 +787,7 @@ void InstanceKlass::initialize_impl(instanceKlassHandle this_oop, TRAPS) {
   // Step 1
   {
     oop init_lock = this_oop->init_lock();
-    ObjectLocker ol(init_lock, THREAD);
+    ObjectLocker ol(init_lock, THREAD, init_lock != NULL);
 
     Thread *self = THREAD; // it's passed the current thread
 
@@ -920,8 +935,9 @@ void InstanceKlass::set_initialization_state_and_notify(ClassState state, TRAPS)
 
 void InstanceKlass::set_initialization_state_and_notify_impl(instanceKlassHandle this_oop, ClassState state, TRAPS) {
   oop init_lock = this_oop->init_lock();
-  ObjectLocker ol(init_lock, THREAD);
+  ObjectLocker ol(init_lock, THREAD, init_lock != NULL);
   this_oop->set_init_state(state);
+  this_oop->fence_and_clear_init_lock();
   ol.notify_all(CHECK);
 }
 

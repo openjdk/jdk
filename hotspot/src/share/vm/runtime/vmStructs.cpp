@@ -1464,6 +1464,7 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
   declare_toplevel_type(CheckedExceptionElement)                          \
   declare_toplevel_type(LocalVariableTableElement)                        \
   declare_toplevel_type(ExceptionTableElement)                            \
+  declare_toplevel_type(MethodParametersElement)                          \
                                                                           \
   declare_toplevel_type(ClassLoaderData)                                  \
   declare_toplevel_type(ClassLoaderDataGraph)                             \
@@ -1938,7 +1939,13 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
   declare_c2_type(CmpDNode, CmpNode)                                      \
   declare_c2_type(CmpD3Node, CmpDNode)                                    \
   declare_c2_type(MathExactNode, MultiNode)                               \
-  declare_c2_type(AddExactINode, MathExactNode)                           \
+  declare_c2_type(MathExactINode, MathExactNode)                          \
+  declare_c2_type(AddExactINode, MathExactINode)                          \
+  declare_c2_type(AddExactLNode, MathExactLNode)                          \
+  declare_c2_type(SubExactINode, MathExactINode)                          \
+  declare_c2_type(SubExactLNode, MathExactLNode)                          \
+  declare_c2_type(NegExactINode, MathExactINode)                          \
+  declare_c2_type(MulExactINode, MathExactINode)                          \
   declare_c2_type(FlagsProjNode, ProjNode)                                \
   declare_c2_type(BoolNode, Node)                                         \
   declare_c2_type(AbsNode, Node)                                          \
@@ -2336,6 +2343,7 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
   declare_constant(ConstMethod::_has_localvariable_table)                 \
   declare_constant(ConstMethod::_has_exception_table)                     \
   declare_constant(ConstMethod::_has_generic_signature)                   \
+  declare_constant(ConstMethod::_has_method_parameters)                   \
   declare_constant(ConstMethod::_has_method_annotations)                  \
   declare_constant(ConstMethod::_has_parameter_annotations)               \
   declare_constant(ConstMethod::_has_default_annotations)                 \

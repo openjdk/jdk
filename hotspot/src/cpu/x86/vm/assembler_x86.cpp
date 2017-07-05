@@ -1405,6 +1405,15 @@ void Assembler::imull(Register dst, Register src, int value) {
   }
 }
 
+void Assembler::imull(Register dst, Address src) {
+  InstructionMark im(this);
+  prefix(src, dst);
+  emit_int8(0x0F);
+  emit_int8((unsigned char) 0xAF);
+  emit_operand(dst, src);
+}
+
+
 void Assembler::incl(Address dst) {
   // Don't use it directly. Use MacroAssembler::increment() instead.
   InstructionMark im(this);
@@ -5022,6 +5031,14 @@ void Assembler::imulq(Register dst, Register src, int value) {
     emit_int8((unsigned char)(0xC0 | encode));
     emit_int32(value);
   }
+}
+
+void Assembler::imulq(Register dst, Address src) {
+  InstructionMark im(this);
+  prefixq(src, dst);
+  emit_int8(0x0F);
+  emit_int8((unsigned char) 0xAF);
+  emit_operand(dst, src);
 }
 
 void Assembler::incl(Register dst) {

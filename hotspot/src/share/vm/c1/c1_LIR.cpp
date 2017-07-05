@@ -183,10 +183,10 @@ char LIR_OprDesc::type_char(BasicType t) {
     case T_LONG:
     case T_OBJECT:
     case T_ADDRESS:
-    case T_METADATA:
     case T_VOID:
       return ::type2char(t);
-
+    case T_METADATA:
+      return 'M';
     case T_ILLEGAL:
       return '?';
 
