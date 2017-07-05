@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,13 +44,13 @@ import static sun.dyn.MemberName.newIllegalArgumentException;
 import static sun.dyn.MemberName.newNoAccessException;
 
 /**
- * Fundamental operations and utilities for MethodHandle.
- * They fall into several categories:
+ * This class consists exclusively of static methods that operate on or return
+ * method handles. They fall into several categories:
  * <ul>
- * <li>Reifying methods and fields.  This is subject to access checks.
- * <li>Invoking method handles on dynamically typed arguments and/or varargs arrays.
- * <li>Combining or transforming pre-existing method handles into new ones.
- * <li>Miscellaneous emulation of common JVM operations or control flow patterns.
+ * <li>Factory methods which create method handles for methods and fields.
+ * <li>Invoker methods which can invoke method handles on dynamically typed arguments and/or varargs arrays.
+ * <li>Combinator methods, which combine or transforming pre-existing method handles into new ones.
+ * <li>Factory methods which create method handles that emulate other common JVM operations or control flow patterns.
  * </ul>
  * <p>
  * @author John Rose, JSR 292 EG
@@ -66,36 +66,44 @@ public class MethodHandles {
 
     //// Method handle creation from ordinary methods.
 
-    /** Create a {@link Lookup} lookup object on the caller.
-     *
+    /**
+     * Return a {@link Lookup lookup object} on the caller,
+     * which has the capability to access any method handle that the caller has access to,
+     * including direct method handles to private fields and methods.
+     * This lookup object is a <em>capability</em> which may be delegated to trusted agents.
+     * Do not store it in place where untrusted code can access it.
      */
     public static Lookup lookup() {
         return new Lookup();
     }
 
-    /** Version of lookup which is trusted minimally.
-     *  It can only be used to create method handles to
-     *  publicly accessible members.
+    /**
+     * Return a {@link Lookup lookup object} which is trusted minimally.
+     * It can only be used to create method handles to
+     * publicly accessible fields and methods.
      */
     public static Lookup publicLookup() {
         return Lookup.PUBLIC_LOOKUP;
     }
 
     /**
-     * A factory object for creating method handles, when the creation
-     * requires access checking.  Method handles do not perform
+     * A <em>lookup object</em> is a factory for creating method handles,
+     * when the creation requires access checking.
+     * Method handles do not perform
      * access checks when they are called; this is a major difference
      * from reflective {@link Method}, which performs access checking
-     * against every caller, on every call.  Method handle access
-     * restrictions are enforced when a method handle is created.
+     * against every caller, on every call.
+     * Therefore, method handle access
+     * restrictions must be enforced when a method handle is created.
      * The caller class against which those restrictions are enforced
-     * is known as the "lookup class".  {@link Lookup} embodies an
+     * is known as the {@linkplain #lookupClass lookup class}.
+     * A lookup object embodies an
      * authenticated lookup class, and can be used to create any number
      * of access-checked method handles, all checked against a single
      * lookup class.
      * <p>
      * A class which needs to create method handles will call
-     * {@code MethodHandles.lookup()} to create a factory for itself.
+     * {@link MethodHandles#lookup MethodHandles.lookup} to create a factory for itself.
      * It may then use this factory to create method handles on
      * all of its methods, including private ones.
      * It may also delegate the lookup (e.g., to a metaobject protocol)
@@ -104,12 +112,13 @@ public class MethodHandles {
      * checked against the original lookup class, and not with any higher
      * privileges.
      * <p>
-     * Note that access checks only apply to named and reflected methods.
-     * Other method handle creation methods, such as {@link #convertArguments},
+     * Access checks only apply to named and reflected methods.
+     * Other method handle creation methods, such as
+     * {@link #convertArguments MethodHandles.convertArguments},
      * do not require any access checks, and can be done independently
      * of any lookup class.
-     * <p>
-     * <em>A note about error conditions:<em>  A lookup can fail, because
+     * <h3>How access errors are handled</h3>
+     * A lookup can fail, because
      * the containing class is not accessible to the lookup class, or
      * because the desired class member is missing, or because the
      * desired class member is not accessible to the lookup class.
@@ -124,7 +133,24 @@ public class MethodHandles {
      */
     public static final
     class Lookup {
+        /** The class on behalf of whom the lookup is being performed. */
         private final Class<?> lookupClass;
+
+        /** The allowed sorts of members which may be looked up (public, etc.), with STRICT for package. */
+        private final int allowedModes;
+
+        private static final int
+            PUBLIC    = Modifier.PUBLIC,
+            PACKAGE   = Modifier.STRICT,
+            PROTECTED = Modifier.PROTECTED,
+            PRIVATE   = Modifier.PRIVATE,
+            ALL_MODES = (PUBLIC | PACKAGE | PROTECTED | PRIVATE),
+            TRUSTED   = -1;
+
+        private static int fixmods(int mods) {
+            mods &= (ALL_MODES - PACKAGE);
+            return (mods != 0) ? mods : PACKAGE;
+        }
 
         /** Which class is performing the lookup?  It is this class against
          *  which checks are performed for visibility and access permissions.
@@ -136,57 +162,90 @@ public class MethodHandles {
             return lookupClass;
         }
 
+        // This is just for calling out to MethodHandleImpl.
+        private Class<?> lookupClassOrNull() {
+            return (allowedModes == TRUSTED) ? null : lookupClass;
+        }
+
+        /** Which types of members can this lookup object produce?
+         *  The result is a bit-mask of the modifier bits PUBLIC, PROTECTED, PRIVATE, and STRICT.
+         *  The modifier bit STRICT stands in for the (non-existent) package protection mode.
+         */
+        int lookupModes() {
+            return allowedModes & ALL_MODES;
+        }
+
         /** Embody the current class (the lookupClass) as a lookup class
          * for method handle creation.
          * Must be called by from a method in this package,
          * which in turn is called by a method not in this package.
+         * <p>
          * Also, don't make it private, lest javac interpose
          * an access$N method.
          */
         Lookup() {
-            this(IMPL_TOKEN, getCallerClassAtEntryPoint());
+            this(getCallerClassAtEntryPoint(), ALL_MODES);
+            // make sure we haven't accidentally picked up a privileged class:
+            checkUnprivilegedlookupClass(lookupClass);
         }
 
         Lookup(Access token, Class<?> lookupClass) {
-            // make sure we haven't accidentally picked up a privileged class:
-            checkUnprivilegedlookupClass(lookupClass);
+            this(lookupClass, ALL_MODES);
+            Access.check(token);
+        }
+
+        private Lookup(Class<?> lookupClass, int allowedModes) {
             this.lookupClass = lookupClass;
+            this.allowedModes = allowedModes;
         }
 
         /**
-         * Create a lookup on the specified class.
-         * The result is guaranteed to have no more access privileges
-         * than the original.
+         * Create a lookup on the specified new lookup class.
+         * The resulting object will report the specified
+         * class as its own {@link #lookupClass}.
+         * <p>
+         * However, the resulting {@code Lookup} object is guaranteed
+         * to have no more access capabilities than the original.
+         * In particular:<ul>
+         * <li>If the new lookup class differs from the old one,
+         * protected members will not be accessible by virtue of inheritance.
+         * <li>If the new lookup class is in a different package
+         * than the old one, protected and default (package) members will not be accessible.
+         * <li>If the new lookup class is not within the same package member
+         * as the old one, private members will not be accessible.
+         * <li>In all cases, public members will continue to be accessible.
+         * </ul>
          */
-        public Lookup in(Class<?> newLookupClass) {
-            if (this == PUBLIC_LOOKUP)  return PUBLIC_LOOKUP;
-            if (newLookupClass == null)  return PUBLIC_LOOKUP;
-            if (newLookupClass == lookupClass)  return this;
-            if (this != IMPL_LOOKUP) {
-                if (!VerifyAccess.isSamePackage(lookupClass, newLookupClass))
-                    throw newNoAccessException(new MemberName(newLookupClass), this);
-                checkUnprivilegedlookupClass(newLookupClass);
+        public Lookup in(Class<?> requestedLookupClass) {
+            requestedLookupClass.getClass();  // null check
+            if (allowedModes == TRUSTED)  // IMPL_LOOKUP can make any lookup at all
+                return new Lookup(requestedLookupClass, ALL_MODES);
+            if (requestedLookupClass == this.lookupClass)
+                return this;  // keep same capabilities
+            int newModes = (allowedModes & (ALL_MODES & ~PROTECTED));
+            if ((newModes & PACKAGE) != 0
+                && !VerifyAccess.isSamePackage(this.lookupClass, requestedLookupClass)) {
+                newModes &= ~(PACKAGE|PRIVATE);
             }
-            return new Lookup(newLookupClass);
-        }
-
-        private Lookup(Class<?> lookupClass) {
-            this.lookupClass = lookupClass;
+            if ((newModes & PRIVATE) != 0
+                && !VerifyAccess.isSamePackageMember(this.lookupClass, requestedLookupClass)) {
+                newModes &= ~PRIVATE;
+            }
+            checkUnprivilegedlookupClass(requestedLookupClass);
+            return new Lookup(requestedLookupClass, newModes);
         }
 
         // Make sure outer class is initialized first.
         static { IMPL_TOKEN.getClass(); }
 
-        private static final Class<?> PUBLIC_ONLY = sun.dyn.empty.Empty.class;
-
         /** Version of lookup which is trusted minimally.
          *  It can only be used to create method handles to
          *  publicly accessible members.
          */
-        static final Lookup PUBLIC_LOOKUP = new Lookup(PUBLIC_ONLY);
+        static final Lookup PUBLIC_LOOKUP = new Lookup(Object.class, PUBLIC);
 
         /** Package-private version of lookup which is trusted. */
-        static final Lookup IMPL_LOOKUP = new Lookup(null);
+        static final Lookup IMPL_LOOKUP = new Lookup(Object.class, TRUSTED);
         static { MethodHandleImpl.initLookup(IMPL_TOKEN, IMPL_LOOKUP); }
 
         private static void checkUnprivilegedlookupClass(Class<?> lookupClass) {
@@ -195,13 +254,35 @@ public class MethodHandles {
                 throw newIllegalArgumentException("illegal lookupClass: "+lookupClass);
         }
 
+        /** Display the name of the class.
+         *  If there are restrictions on the access permitted to this lookup,
+         *  display those also.
+         */
         @Override
         public String toString() {
-            if (lookupClass == PUBLIC_ONLY)
-                return "public";
-            if (lookupClass == null)
-                return "privileged";
-            return lookupClass.getName();
+            String modestr;
+            String cname = lookupClass.getName();
+            switch (allowedModes) {
+            case TRUSTED:
+                return "/trusted";
+            case PUBLIC:
+                modestr = "/public";
+                if (lookupClass == Object.class)
+                    return modestr;
+                break;
+            case PUBLIC|PACKAGE:
+                return cname + "/package";
+            case 0:  // should not happen
+                return cname + "/empty";
+            case ALL_MODES:
+                return cname;
+            }
+            StringBuilder buf = new StringBuilder(cname);
+            if ((allowedModes & PUBLIC) != 0)     buf.append("/public");
+            if ((allowedModes & PACKAGE) != 0)    buf.append("/package");
+            if ((allowedModes & PROTECTED) != 0)  buf.append("/protected");
+            if ((allowedModes & PRIVATE) != 0)    buf.append("/private");
+            return buf.toString();
         }
 
         // call this from an entry point method in Lookup with extraFrames=0.
@@ -219,11 +300,11 @@ public class MethodHandles {
          * The type of the method handle will be that of the method.
          * (Since static methods do not take receivers, there is no
          * additional receiver argument inserted into the method handle type,
-         * as there would be with {@linkplain #findVirtual} or {@linkplain #findSpecial}.)
+         * as there would be with {@link #findVirtual} or {@link #findSpecial}.)
          * The method and all its argument types must be accessible to the lookup class.
          * If the method's class has not yet been initialized, that is done
          * immediately, before the method handle is returned.
-         * @param defc the class from which the method is accessed
+         * @param refc the class from which the method is accessed
          * @param name the name of the method
          * @param type the type of the method
          * @return the desired method handle
@@ -231,18 +312,16 @@ public class MethodHandles {
          * @exception NoAccessException if the method does not exist or access checking fails
          */
         public
-        MethodHandle findStatic(Class<?> defc, String name, MethodType type) throws NoAccessException {
-            MemberName method = IMPL_NAMES.resolveOrFail(new MemberName(defc, name, type, Modifier.STATIC), true, lookupClass());
-            VerifyAccess.checkName(method, this);
-            checkStatic(true, method, this);
-            //throw NoSuchMethodException
-            return MethodHandleImpl.findMethod(IMPL_TOKEN, method, false, lookupClass());
+        MethodHandle findStatic(Class<?> refc, String name, MethodType type) throws NoAccessException {
+            MemberName method = resolveOrFail(refc, name, type, true);
+            checkMethod(refc, method, true);
+            return MethodHandleImpl.findMethod(IMPL_TOKEN, method, false, lookupClassOrNull());
         }
 
         /**
          * Produce a method handle for a virtual method.
          * The type of the method handle will be that of the method,
-         * with the receiver type ({@code defc}) prepended.
+         * with the receiver type (usually {@code refc}) prepended.
          * The method and all its argument types must be accessible to the lookup class.
          * <p>
          * (<em>BUG NOTE:</em> The type {@code Object} may be prepended instead
@@ -257,18 +336,44 @@ public class MethodHandles {
          * implementation to enter.
          * (The dispatching action is identical with that performed by an
          * {@code invokevirtual} or {@code invokeinterface} instruction.)
-         * @param defc the class or interface from which the method is accessed
+         * @param refc the class or interface from which the method is accessed
          * @param name the name of the method
          * @param type the type of the method, with the receiver argument omitted
          * @return the desired method handle
          * @exception SecurityException <em>TBD</em>
          * @exception NoAccessException if the method does not exist or access checking fails
          */
-        public MethodHandle findVirtual(Class<?> defc, String name, MethodType type) throws NoAccessException {
-            MemberName method = IMPL_NAMES.resolveOrFail(new MemberName(defc, name, type), true, lookupClass());
-            VerifyAccess.checkName(method, this);
-            checkStatic(false, method, this);
-            return MethodHandleImpl.findMethod(IMPL_TOKEN, method, true, lookupClass());
+        public MethodHandle findVirtual(Class<?> refc, String name, MethodType type) throws NoAccessException {
+            MemberName method = resolveOrFail(refc, name, type, false);
+            checkMethod(refc, method, false);
+            MethodHandle mh = MethodHandleImpl.findMethod(IMPL_TOKEN, method, true, lookupClassOrNull());
+            return restrictProtectedReceiver(method, mh);
+        }
+
+        /**
+         * Produce a method handle which creates an object and initializes it, using
+         * the constructor of the specified type.
+         * The parameter types of the method handle will be those of the constructor,
+         * while the return type will be a reference to the constructor's class.
+         * The constructor and all its argument types must be accessible to the lookup class.
+         * If the constructor's class has not yet been initialized, that is done
+         * immediately, before the method handle is returned.
+         * <p>
+         * Note:  The requested type must have a return type of {@code void}.
+         * This is consistent with the JVM's treatment of constructor signatures.
+         * @param refc the class or interface from which the method is accessed
+         * @param type the type of the method, with the receiver argument omitted, and a void return type
+         * @return the desired method handle
+         * @exception SecurityException <em>TBD</em>
+         * @exception NoAccessException if the method does not exist or access checking fails
+         */
+        public MethodHandle findConstructor(Class<?> refc, MethodType type) throws NoAccessException {
+            String name = "<init>";
+            MemberName ctor = resolveOrFail(refc, name, type, false, false, lookupClassOrNull());
+            assert(ctor.isConstructor());
+            checkAccess(refc, ctor);
+            MethodHandle rawMH = MethodHandleImpl.findMethod(IMPL_TOKEN, ctor, false, lookupClassOrNull());
+            return MethodHandleImpl.makeAllocator(IMPL_TOKEN, rawMH);
         }
 
         /**
@@ -287,27 +392,87 @@ public class MethodHandles {
          * <p>
          * If the explicitly specified caller class is not identical with the
          * lookup class, a security check TBD is performed.
-         * @param defc the class or interface from which the method is accessed
-         * @param name the name of the method, or "<init>" for a constructor
+         * @param refc the class or interface from which the method is accessed
+         * @param name the name of the method (which must not be "&lt;init&gt;")
          * @param type the type of the method, with the receiver argument omitted
          * @param specialCaller the proposed calling class to perform the {@code invokespecial}
          * @return the desired method handle
          * @exception SecurityException <em>TBD</em>
          * @exception NoAccessException if the method does not exist or access checking fails
          */
-        public MethodHandle findSpecial(Class<?> defc, String name, MethodType type,
+        public MethodHandle findSpecial(Class<?> refc, String name, MethodType type,
                                         Class<?> specialCaller) throws NoAccessException {
-            checkSpecialCaller(specialCaller, this);
-            Lookup slookup = this.in(specialCaller);
-            MemberName method = IMPL_NAMES.resolveOrFail(new MemberName(defc, name, type), false, slookup.lookupClass());
-            VerifyAccess.checkName(method, this);
-            checkStatic(false, method, this);
-            if (name.equals("<init>")) {
-                throw newNoAccessException("cannot directly invoke a constructor", method, null);
-            } else if (defc.isInterface() || !defc.isAssignableFrom(specialCaller)) {
-                throw newNoAccessException("method must be in a superclass of lookup class", method, slookup.lookupClass());
-            }
-            return MethodHandleImpl.findMethod(IMPL_TOKEN, method, false, slookup.lookupClass());
+            checkSpecialCaller(specialCaller);
+            MemberName method = resolveOrFail(refc, name, type, false, false, specialCaller);
+            checkMethod(refc, method, false);
+            MethodHandle mh = MethodHandleImpl.findMethod(IMPL_TOKEN, method, false, specialCaller);
+            return restrictReceiver(method, mh, specialCaller);
+        }
+
+        /**
+         * <em>PROVISIONAL API, WORK IN PROGRESS:</em>
+         * Produce a method handle giving read access to a non-static field.
+         * The type of the method handle will have a return type of the field's
+         * value type.
+         * The method handle's single argument will be the instance containing
+         * the field.
+         * Access checking is performed immediately on behalf of the lookup class.
+         * @param name the field's name
+         * @param type the field's type
+         * @return a method handle which can load values from the field
+         * @exception NoAccessException if access checking fails
+         */
+        public MethodHandle findGetter(Class<?> refc, String name, Class<?> type) throws NoAccessException {
+            return makeAccessor(refc, name, type, false, false);
+        }
+
+        /**
+         * <em>PROVISIONAL API, WORK IN PROGRESS:</em>
+         * Produce a method handle giving write access to a non-static field.
+         * The type of the method handle will have a void return type.
+         * The method handle will take two arguments, the instance containing
+         * the field, and the value to be stored.
+         * The second argument will be of the field's value type.
+         * Access checking is performed immediately on behalf of the lookup class.
+         * @param name the field's name
+         * @param type the field's type
+         * @return a method handle which can store values into the field
+         * @exception NoAccessException if access checking fails
+         */
+        public MethodHandle findSetter(Class<?> refc, String name, Class<?> type) throws NoAccessException {
+            return makeAccessor(refc, name, type, false, true);
+        }
+
+        /**
+         * <em>PROVISIONAL API, WORK IN PROGRESS:</em>
+         * Produce a method handle giving read access to a static field.
+         * The type of the method handle will have a return type of the field's
+         * value type.
+         * The method handle will take no arguments.
+         * Access checking is performed immediately on behalf of the lookup class.
+         * @param name the field's name
+         * @param type the field's type
+         * @return a method handle which can load values from the field
+         * @exception NoAccessException if access checking fails
+         */
+        public MethodHandle findStaticGetter(Class<?> refc, String name, Class<?> type) throws NoAccessException {
+            return makeAccessor(refc, name, type, true, false);
+        }
+
+        /**
+         * <em>PROVISIONAL API, WORK IN PROGRESS:</em>
+         * Produce a method handle giving write access to a static field.
+         * The type of the method handle will have a void return type.
+         * The method handle will take a single
+         * argument, of the field's value type, the value to be stored.
+         * Access checking is performed immediately on behalf of the lookup class.
+         * @param name the field's name
+         * @param type the field's type
+         * @return a method handle which can store values into the field
+         * @exception NoAccessException if access checking fails
+         */
+        public MethodHandle findStaticSetter(Class<?> refc, String name, Class<?> type) throws NoAccessException {
+            return makeAccessor(refc, name, type, true, true);
         }
 
         /**
@@ -323,7 +488,7 @@ public class MethodHandles {
          * <p>
          * This is equivalent to the following expression:
          * <code>
-         * {@link #insertArguments}({@link #findVirtual}(defc, name, type), receiver)
+         * {@link #insertArguments insertArguments}({@link #findVirtual findVirtual}(defc, name, type), receiver)
          * </code>
          * where {@code defc} is either {@code receiver.getClass()} or a super
          * type of that class, in which the requested method is accessible
@@ -336,15 +501,13 @@ public class MethodHandles {
          * @exception NoAccessException if the method does not exist or access checking fails
          */
         public MethodHandle bind(Object receiver, String name, MethodType type) throws NoAccessException {
-            Class<? extends Object> rcvc = receiver.getClass(); // may get NPE
-            MemberName reference = new MemberName(rcvc, name, type);
-            MemberName method = IMPL_NAMES.resolveOrFail(reference, true, lookupClass());
-            VerifyAccess.checkName(method, this);
-            checkStatic(false, method, this);
-            MethodHandle dmh = MethodHandleImpl.findMethod(IMPL_TOKEN, method, true, lookupClass());
+            Class<? extends Object> refc = receiver.getClass(); // may get NPE
+            MemberName method = resolveOrFail(refc, name, type, false);
+            checkMethod(refc, method, false);
+            MethodHandle dmh = MethodHandleImpl.findMethod(IMPL_TOKEN, method, true, lookupClassOrNull());
             MethodHandle bmh = MethodHandleImpl.bindReceiver(IMPL_TOKEN, dmh, receiver);
             if (bmh == null)
-                throw newNoAccessException(method, this);
+                throw newNoAccessException(method, lookupClass());
             return bmh;
         }
 
@@ -364,29 +527,37 @@ public class MethodHandles {
          * @exception NoAccessException if access checking fails
          */
         public MethodHandle unreflect(Method m) throws NoAccessException {
-            return unreflectImpl(new MemberName(m), m.isAccessible(), true, false, this);
+            MemberName method = new MemberName(m);
+            assert(method.isMethod());
+            if (!m.isAccessible())  checkMethod(method.getDeclaringClass(), method, method.isStatic());
+            MethodHandle mh = MethodHandleImpl.findMethod(IMPL_TOKEN, method, true, lookupClassOrNull());
+            if (!m.isAccessible())  mh = restrictProtectedReceiver(method, mh);
+            return mh;
         }
 
         /**
          * <em>PROVISIONAL API, WORK IN PROGRESS:</em>
          * Produce a method handle for a reflected method.
          * It will bypass checks for overriding methods on the receiver,
-         * as if by the {@code invokespecial} instruction.
+         * as if by a {@code invokespecial} instruction from within the {@code specialCaller}.
          * The type of the method handle will be that of the method,
-         * with the receiver type prepended.
+         * with the special caller type prepended (and <em>not</em> the receiver of the method).
          * If the method's {@code accessible} flag is not set,
          * access checking is performed immediately on behalf of the lookup class,
          * as if {@code invokespecial} instruction were being linked.
          * @param m the reflected method
+         * @param specialCaller the class nominally calling the method
          * @return a method handle which can invoke the reflected method
          * @exception NoAccessException if access checking fails
          */
         public MethodHandle unreflectSpecial(Method m, Class<?> specialCaller) throws NoAccessException {
-            checkSpecialCaller(specialCaller, this);
-            Lookup slookup = this.in(specialCaller);
-            MemberName mname = new MemberName(m);
-            checkStatic(false, mname, this);
-            return unreflectImpl(mname, m.isAccessible(), false, false, slookup);
+            checkSpecialCaller(specialCaller);
+            MemberName method = new MemberName(m);
+            assert(method.isMethod());
+            // ignore m.isAccessible:  this is a new kind of access
+            checkMethod(m.getDeclaringClass(), method, false);
+            MethodHandle mh = MethodHandleImpl.findMethod(IMPL_TOKEN, method, false, lookupClassOrNull());
+            return restrictReceiver(method, mh, specialCaller);
         }
 
         /**
@@ -400,13 +571,16 @@ public class MethodHandles {
          * <p>
          * If the constructor's {@code accessible} flag is not set,
          * access checking is performed immediately on behalf of the lookup class.
-         * @param ctor the reflected constructor
+         * @param c the reflected constructor
          * @return a method handle which can invoke the reflected constructor
          * @exception NoAccessException if access checking fails
          */
-        public MethodHandle unreflectConstructor(Constructor ctor) throws NoAccessException {
-            MemberName m = new MemberName(ctor);
-            return unreflectImpl(m, ctor.isAccessible(), false, false, this);
+        public MethodHandle unreflectConstructor(Constructor c) throws NoAccessException {
+            MemberName ctor = new MemberName(c);
+            assert(ctor.isConstructor());
+            if (!c.isAccessible())  checkAccess(c.getDeclaringClass(), ctor);
+            MethodHandle rawCtor = MethodHandleImpl.findMethod(IMPL_TOKEN, ctor, false, lookupClassOrNull());
+            return MethodHandleImpl.makeAllocator(IMPL_TOKEN, rawCtor);
         }
 
         /**
@@ -424,8 +598,7 @@ public class MethodHandles {
          * @exception NoAccessException if access checking fails
          */
         public MethodHandle unreflectGetter(Field f) throws NoAccessException {
-            MemberName m = new MemberName(f);
-            return unreflectImpl(m, f.isAccessible(), false, false, this);
+            return makeAccessor(f.getDeclaringClass(), new MemberName(f), f.isAccessible(), false);
         }
 
         /**
@@ -443,75 +616,134 @@ public class MethodHandles {
          * @exception NoAccessException if access checking fails
          */
         public MethodHandle unreflectSetter(Field f) throws NoAccessException {
-            MemberName m = new MemberName(f);
-            return unreflectImpl(m, f.isAccessible(), false, true, this);
+            return makeAccessor(f.getDeclaringClass(), new MemberName(f), f.isAccessible(), true);
         }
 
-    }
+        /// Helper methods, all package-private.
 
-    static /*must not be public*/
-    MethodHandle findStaticFrom(Lookup lookup,
-                                Class<?> defc, String name, MethodType type) throws NoAccessException {
-        MemberName method = IMPL_NAMES.resolveOrFail(new MemberName(defc, name, type, Modifier.STATIC), true, lookup.lookupClass());
-        VerifyAccess.checkName(method, lookup);
-        checkStatic(true, method, lookup);
-        return MethodHandleImpl.findMethod(IMPL_TOKEN, method, false, lookup.lookupClass());
-    }
-
-    static void checkStatic(boolean wantStatic, MemberName m, Lookup lookup) {
-        if (wantStatic != m.isStatic()) {
-            String message = wantStatic ? "expected a static method" : "expected a non-static method";
-            throw newNoAccessException(message, m, lookup.lookupClass());
+        MemberName resolveOrFail(Class<?> refc, String name, Class<?> type, boolean isStatic) {
+            checkSymbolicClass(refc);  // do this before attempting to resolve
+            int mods = (isStatic ? Modifier.STATIC : 0);
+            return IMPL_NAMES.resolveOrFail(new MemberName(refc, name, type, mods), true, lookupClassOrNull());
         }
-    }
 
-    static void checkSpecialCaller(Class<?> specialCaller, Lookup lookup) {
-        if (lookup == Lookup.IMPL_LOOKUP)
-            return;  // privileged action
-        assert(lookup.lookupClass() != null);
-        if (!VerifyAccess.isSamePackageMember(specialCaller, lookup.lookupClass()))
-            throw newNoAccessException("no private access", new MemberName(specialCaller), lookup.lookupClass());
-    }
-
-    // Helper for creating handles on reflected methods and constructors.
-    static MethodHandle unreflectImpl(MemberName m, boolean isAccessible,
-                                      boolean doDispatch, boolean isSetter, Lookup lookup) {
-        MethodType narrowMethodType = null;
-        Class<?> defc = m.getDeclaringClass();
-        boolean isSpecialInvoke = m.isInvocable() && !doDispatch;
-        int mods = m.getModifiers();
-        if (m.isStatic()) {
-            if (!isAccessible &&
-                    VerifyAccess.isAccessible(defc, mods, lookup.lookupClass(), false) == null)
-                throw newNoAccessException(m, lookup);
-        } else {
-            Class<?> constraint;
-            if (isAccessible) {
-                // abbreviated access check for "unlocked" method
-                constraint = doDispatch ? defc : lookup.lookupClass();
-            } else {
-                constraint = VerifyAccess.isAccessible(defc, mods, lookup.lookupClass(), isSpecialInvoke);
-            }
-            if (constraint == null) {
-                throw newNoAccessException(m, lookup);
-            }
-            if (constraint != defc && !constraint.isAssignableFrom(defc)) {
-                if (!defc.isAssignableFrom(constraint))
-                    throw newNoAccessException("receiver must be in caller class", m, lookup.lookupClass());
-                if (m.isInvocable())
-                    narrowMethodType = m.getInvocationType().changeParameterType(0, constraint);
-                else if (m.isField())
-                    narrowMethodType = (!isSetter
-                                        ? MethodType.methodType(m.getFieldType(), constraint)
-                                        : MethodType.methodType(void.class, constraint, m.getFieldType()));
-            }
+        MemberName resolveOrFail(Class<?> refc, String name, MethodType type, boolean isStatic) {
+            checkSymbolicClass(refc);  // do this before attempting to resolve
+            int mods = (isStatic ? Modifier.STATIC : 0);
+            return IMPL_NAMES.resolveOrFail(new MemberName(refc, name, type, mods), true, lookupClassOrNull());
         }
-        if (m.isInvocable())
-            return MethodHandleImpl.findMethod(IMPL_TOKEN, m, doDispatch, lookup.lookupClass());
-        else if (m.isField())
-            return MethodHandleImpl.accessField(IMPL_TOKEN, m, isSetter, lookup.lookupClass());
-        else
-            throw new InternalError();
+
+        MemberName resolveOrFail(Class<?> refc, String name, MethodType type, boolean isStatic,
+                                 boolean searchSupers, Class<?> specialCaller) {
+            checkSymbolicClass(refc);  // do this before attempting to resolve
+            int mods = (isStatic ? Modifier.STATIC : 0);
+            return IMPL_NAMES.resolveOrFail(new MemberName(refc, name, type, mods), searchSupers, specialCaller);
+        }
+
+        void checkSymbolicClass(Class<?> refc) {
+            Class<?> caller = lookupClassOrNull();
+            if (caller != null && !VerifyAccess.isClassAccessible(refc, caller))
+                throw newNoAccessException("symbolic reference class is not public", new MemberName(refc), caller);
+        }
+
+        void checkMethod(Class<?> refc, MemberName m, boolean wantStatic) {
+            String message;
+            if (m.isConstructor())
+                message = "expected a method, not a constructor";
+            else if (!m.isMethod())
+                message = "expected a method";
+            else if (wantStatic != m.isStatic())
+                message = wantStatic ? "expected a static method" : "expected a non-static method";
+            else
+                { checkAccess(refc, m); return; }
+            throw newNoAccessException(message, m, lookupClass());
+        }
+
+        void checkAccess(Class<?> refc, MemberName m) {
+            int allowedModes = this.allowedModes;
+            if (allowedModes == TRUSTED)  return;
+            int mods = m.getModifiers();
+            if (Modifier.isPublic(mods) && Modifier.isPublic(refc.getModifiers()))
+                return;  // common case
+            int requestedModes = fixmods(mods);  // adjust 0 => PACKAGE
+            if ((requestedModes & allowedModes) != 0
+                && VerifyAccess.isMemberAccessible(refc, m.getDeclaringClass(),
+                                                   mods, lookupClass()))
+                return;
+            if (((requestedModes & ~allowedModes) & PROTECTED) != 0
+                && VerifyAccess.isSamePackage(m.getDeclaringClass(), lookupClass()))
+                // Protected members can also be checked as if they were package-private.
+                return;
+            throw newNoAccessException(accessFailedMessage(refc, m), m, lookupClass());
+        }
+
+        String accessFailedMessage(Class<?> refc, MemberName m) {
+            Class<?> defc = m.getDeclaringClass();
+            int mods = m.getModifiers();
+            if (!VerifyAccess.isClassAccessible(defc, lookupClass()))
+                return "class is not public";
+            if (refc != defc && !VerifyAccess.isClassAccessible(refc, lookupClass()))
+                return "symbolic reference "+refc.getName()+" is not public";
+            if (Modifier.isPublic(mods))
+                return "access to public member failed";  // (how?)
+            else if (allowedModes == PUBLIC)
+                return "member is not public";
+            if (Modifier.isPrivate(mods))
+                return "member is private";
+            if (Modifier.isProtected(mods))
+                return "member is protected";
+            return "member is private to package";
+        }
+
+        void checkSpecialCaller(Class<?> specialCaller) {
+            if (allowedModes == TRUSTED)  return;
+            if (!VerifyAccess.isSamePackageMember(specialCaller, lookupClass()))
+                throw newNoAccessException("no private access for invokespecial",
+                                           new MemberName(specialCaller), lookupClass());
+        }
+
+        MethodHandle restrictProtectedReceiver(MemberName method, MethodHandle mh) {
+            // The accessing class only has the right to use a protected member
+            // on itself or a subclass.  Enforce that restriction, from JVMS 5.4.4, etc.
+            if (!method.isProtected() || method.isStatic()
+                || allowedModes == TRUSTED
+                || VerifyAccess.isSamePackageMember(method.getDeclaringClass(), lookupClass()))
+                return mh;
+            else
+                return restrictReceiver(method, mh, lookupClass());
+        }
+        MethodHandle restrictReceiver(MemberName method, MethodHandle mh, Class<?> caller) {
+            assert(!method.isStatic());
+            Class<?> defc = method.getDeclaringClass();  // receiver type of mh is too wide
+            if (defc.isInterface() || !defc.isAssignableFrom(caller)) {
+                throw newNoAccessException("caller class must be a subclass below the method", method, caller);
+            }
+            MethodType rawType = mh.type();
+            if (rawType.parameterType(0) == caller)  return mh;
+            MethodType narrowType = rawType.changeParameterType(0, caller);
+            return MethodHandleImpl.convertArguments(IMPL_TOKEN, mh, narrowType, rawType, null);
+        }
+
+        MethodHandle makeAccessor(Class<?> refc, String name, Class<?> type,
+                                  boolean isStatic, boolean isSetter) throws NoAccessException {
+            MemberName field = resolveOrFail(refc, name, type, isStatic);
+            if (isStatic != field.isStatic())
+                throw newNoAccessException(isStatic
+                                           ? "expected a static field"
+                                           : "expected a non-static field",
+                                           field, lookupClass());
+            return makeAccessor(refc, field, false, isSetter);
+        }
+
+        MethodHandle makeAccessor(Class<?> refc, MemberName field,
+                                  boolean trusted, boolean isSetter) throws NoAccessException {
+            assert(field.isField());
+            if (trusted)
+                return MethodHandleImpl.accessField(IMPL_TOKEN, field, isSetter, lookupClassOrNull());
+            checkAccess(refc, field);
+            MethodHandle mh = MethodHandleImpl.accessField(IMPL_TOKEN, field, isSetter, lookupClassOrNull());
+            return restrictProtectedReceiver(field, mh);
+        }
     }
 
     /**
@@ -667,10 +899,15 @@ public class MethodHandles {
      */
     public static
     MethodHandle dynamicInvoker(CallSite site) {
-        MethodHandle getTarget = MethodHandleImpl.bindReceiver(IMPL_TOKEN, CallSite.GET_TARGET, site);
+        MethodHandle getCSTarget = GET_TARGET;
+        if (getCSTarget == null)
+            GET_TARGET = getCSTarget = Lookup.IMPL_LOOKUP.
+                findVirtual(CallSite.class, "getTarget", MethodType.methodType(MethodHandle.class));
+        MethodHandle getTarget = MethodHandleImpl.bindReceiver(IMPL_TOKEN, getCSTarget, site);
         MethodHandle invoker = exactInvoker(site.type());
         return foldArguments(invoker, getTarget);
     }
+    private static MethodHandle GET_TARGET = null;  // link this lazily, not eagerly
 
     static Invokers invokers(MethodType type) {
         return MethodTypeImpl.invokers(IMPL_TOKEN, type);
@@ -1025,15 +1262,15 @@ public class MethodHandles {
      * <p><blockquote><pre>
      *   MethodHandle cat = MethodHandles.lookup().
      *     findVirtual(String.class, "concat", String.class, String.class);
-     *   System.out.println(cat.&lt;String&gt;invoke("x", "y")); // xy
+     *   System.out.println(cat.&lt;String&gt;invokeExact("x", "y")); // xy
      *   MethodHandle d0 = dropArguments(cat, 0, String.class);
-     *   System.out.println(d0.&lt;String&gt;invoke("x", "y", "z")); // xy
+     *   System.out.println(d0.&lt;String&gt;invokeExact("x", "y", "z")); // xy
      *   MethodHandle d1 = dropArguments(cat, 1, String.class);
-     *   System.out.println(d1.&lt;String&gt;invoke("x", "y", "z")); // xz
+     *   System.out.println(d1.&lt;String&gt;invokeExact("x", "y", "z")); // xz
      *   MethodHandle d2 = dropArguments(cat, 2, String.class);
-     *   System.out.println(d2.&lt;String&gt;invoke("x", "y", "z")); // yz
+     *   System.out.println(d2.&lt;String&gt;invokeExact("x", "y", "z")); // yz
      *   MethodHandle d12 = dropArguments(cat, 1, String.class, String.class);
-     *   System.out.println(d12.&lt;String&gt;invoke("w", "x", "y", "z")); // wz
+     *   System.out.println(d12.&lt;String&gt;invokeExact("w", "x", "y", "z")); // wz
      * </pre></blockquote>
      * @param target the method handle to invoke after the argument is dropped
      * @param valueTypes the type(s) of the argument to drop
@@ -1254,7 +1491,7 @@ public class MethodHandles {
             MethodHandle dispatch = compose(choose, test);
             // dispatch = \(a...).(test(a...) ? target : fallback)
             return combineArguments(invoke, dispatch, 0);
-            // return \(a...).((test(a...) ? target : fallback).invoke(a...))
+            // return \(a...).((test(a...) ? target : fallback).invokeExact(a...))
         } */
         return MethodHandleImpl.makeGuardWithTest(IMPL_TOKEN, test, target, fallback);
     }
@@ -1324,23 +1561,5 @@ public class MethodHandles {
     public static
     MethodHandle throwException(Class<?> returnType, Class<? extends Throwable> exType) {
         return MethodHandleImpl.throwException(IMPL_TOKEN, MethodType.methodType(returnType, exType));
-    }
-
-    /** Alias for {@link MethodType#methodType}. */
-    @Deprecated // "use MethodType.methodType instead"
-    public static MethodType methodType(Class<?> rtype) {
-        return MethodType.methodType(rtype);
-    }
-
-    /** Alias for {@link MethodType#methodType}. */
-    @Deprecated // "use MethodType.methodType instead"
-    public static MethodType methodType(Class<?> rtype, Class<?> ptype) {
-        return MethodType.methodType(rtype, ptype);
-    }
-
-    /** Alias for {@link MethodType#methodType}. */
-    @Deprecated // "use MethodType.methodType instead"
-    public static MethodType methodType(Class<?> rtype, Class<?> ptype0, Class<?>... ptypes) {
-        return MethodType.methodType(rtype, ptype0, ptypes);
     }
 }

@@ -47,8 +47,8 @@ public class FilterOneArgument extends JavaMethodHandle {
     }
 
     protected Object invoke(Object argument) throws Throwable {
-        Object filteredArgument = filter.invoke(argument);
-        return target.invoke(filteredArgument);
+        Object filteredArgument = filter.invokeExact(argument);
+        return target.invokeExact(filteredArgument);
     }
 
     private static final MethodHandle INVOKE =

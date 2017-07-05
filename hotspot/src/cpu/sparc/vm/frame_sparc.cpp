@@ -336,9 +336,11 @@ frame::frame(intptr_t* sp, unpatchable_t, address pc, CodeBlob* cb) {
 #endif // ASSERT
 }
 
-frame::frame(intptr_t* sp, intptr_t* younger_sp, bool younger_frame_adjusted_stack) {
-  _sp = sp;
-  _younger_sp = younger_sp;
+frame::frame(intptr_t* sp, intptr_t* younger_sp, bool younger_frame_is_interpreted) :
+  _sp(sp),
+  _younger_sp(younger_sp),
+  _deopt_state(unknown),
+  _sp_adjustment_by_callee(0) {
   if (younger_sp == NULL) {
     // make a deficient frame which doesn't know where its PC is
     _pc = NULL;
@@ -352,20 +354,32 @@ frame::frame(intptr_t* sp, intptr_t* younger_sp, bool younger_frame_adjusted_sta
     // wrong.  (the _last_native_pc will have the right value)
     // So do not put add any asserts on the _pc here.
   }
-  if (younger_frame_adjusted_stack) {
-    // compute adjustment to this frame's SP made by its interpreted callee
-    _sp_adjustment_by_callee = (intptr_t*)((intptr_t)younger_sp[I5_savedSP->sp_offset_in_saved_window()] +
-                                             STACK_BIAS) - sp;
-  } else {
-    _sp_adjustment_by_callee = 0;
+
+  if (_pc != NULL)
+    _cb = CodeCache::find_blob(_pc);
+
+  // Check for MethodHandle call sites.
+  if (_cb != NULL) {
+    nmethod* nm = _cb->as_nmethod_or_null();
+    if (nm != NULL) {
+      if (nm->is_deopt_mh_entry(_pc) || nm->is_method_handle_return(_pc)) {
+        _sp_adjustment_by_callee = (intptr_t*) ((intptr_t) sp[L7_mh_SP_save->sp_offset_in_saved_window()] + STACK_BIAS) - sp;
+        // The SP is already adjusted by this MH call site, don't
+        // overwrite this value with the wrong interpreter value.
+        younger_frame_is_interpreted = false;
+      }
+    }
   }
 
-  _deopt_state = unknown;
+  if (younger_frame_is_interpreted) {
+    // compute adjustment to this frame's SP made by its interpreted callee
+    _sp_adjustment_by_callee = (intptr_t*) ((intptr_t) younger_sp[I5_savedSP->sp_offset_in_saved_window()] + STACK_BIAS) - sp;
+  }
 
-  // It is important that frame be fully construct when we do this lookup
-  // as get_original_pc() needs correct value for unextended_sp()
+  // It is important that the frame is fully constructed when we do
+  // this lookup as get_deopt_original_pc() needs a correct value for
+  // unextended_sp() which uses _sp_adjustment_by_callee.
   if (_pc != NULL) {
-    _cb = CodeCache::find_blob(_pc);
     address original_pc = nmethod::get_deopt_original_pc(this);
     if (original_pc != NULL) {
       _pc = original_pc;
@@ -462,9 +476,8 @@ frame frame::sender(RegisterMap* map) const {
 
   if (is_entry_frame()) return sender_for_entry_frame(map);
 
-  intptr_t* younger_sp     = sp();
-  intptr_t* sp             = sender_sp();
-  bool      adjusted_stack = false;
+  intptr_t* younger_sp = sp();
+  intptr_t* sp         = sender_sp();
 
   // Note:  The version of this operation on any platform with callee-save
   //        registers must update the register map (if not null).
@@ -483,8 +496,8 @@ frame frame::sender(RegisterMap* map) const {
   // interpreted but its pc is in the code cache (for c1 -> osr_frame_return_id stub), so it must be
   // explicitly recognized.
 
-  adjusted_stack = is_interpreted_frame();
-  if (adjusted_stack) {
+  bool frame_is_interpreted = is_interpreted_frame();
+  if (frame_is_interpreted) {
     map->make_integer_regs_unsaved();
     map->shift_window(sp, younger_sp);
   } else if (_cb != NULL) {
@@ -503,7 +516,7 @@ frame frame::sender(RegisterMap* map) const {
       }
     }
   }
-  return frame(sp, younger_sp, adjusted_stack);
+  return frame(sp, younger_sp, frame_is_interpreted);
 }
 
 

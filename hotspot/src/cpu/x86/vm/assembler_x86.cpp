@@ -7643,6 +7643,9 @@ void MacroAssembler::verify_oop(Register reg, const char* s) {
   // Pass register number to verify_oop_subroutine
   char* b = new char[strlen(s) + 50];
   sprintf(b, "verify_oop: %s: %s", reg->name(), s);
+#ifdef _LP64
+  push(rscratch1);                    // save r10, trashed by movptr()
+#endif
   push(rax);                          // save rax,
   push(reg);                          // pass register argument
   ExternalAddress buffer((address) b);
@@ -7653,6 +7656,7 @@ void MacroAssembler::verify_oop(Register reg, const char* s) {
   // call indirectly to solve generation ordering problem
   movptr(rax, ExternalAddress(StubRoutines::verify_oop_subroutine_entry_address()));
   call(rax);
+  // Caller pops the arguments (oop, message) and restores rax, r10
 }
 
 
@@ -7767,6 +7771,9 @@ void MacroAssembler::verify_oop_addr(Address addr, const char* s) {
   char* b = new char[strlen(s) + 50];
   sprintf(b, "verify_oop_addr: %s", s);
 
+#ifdef _LP64
+  push(rscratch1);                    // save r10, trashed by movptr()
+#endif
   push(rax);                          // save rax,
   // addr may contain rsp so we will have to adjust it based on the push
   // we just did
@@ -7789,7 +7796,7 @@ void MacroAssembler::verify_oop_addr(Address addr, const char* s) {
   // call indirectly to solve generation ordering problem
   movptr(rax, ExternalAddress(StubRoutines::verify_oop_subroutine_entry_address()));
   call(rax);
-  // Caller pops the arguments and restores rax, from the stack
+  // Caller pops the arguments (addr, message) and restores rax, r10.
 }
 
 void MacroAssembler::verify_tlab() {
@@ -8185,9 +8192,14 @@ void MacroAssembler::load_prototype_header(Register dst, Register src) {
     assert (Universe::heap() != NULL, "java heap should be initialized");
     movl(dst, Address(src, oopDesc::klass_offset_in_bytes()));
     if (Universe::narrow_oop_shift() != 0) {
-      assert(Address::times_8 == LogMinObjAlignmentInBytes &&
-             Address::times_8 == Universe::narrow_oop_shift(), "decode alg wrong");
-      movq(dst, Address(r12_heapbase, dst, Address::times_8, Klass::prototype_header_offset_in_bytes() + klassOopDesc::klass_part_offset_in_bytes()));
+      assert(LogMinObjAlignmentInBytes == Universe::narrow_oop_shift(), "decode alg wrong");
+      if (LogMinObjAlignmentInBytes == Address::times_8) {
+        movq(dst, Address(r12_heapbase, dst, Address::times_8, Klass::prototype_header_offset_in_bytes() + klassOopDesc::klass_part_offset_in_bytes()));
+      } else {
+        // OK to use shift since we don't need to preserve flags.
+        shlq(dst, LogMinObjAlignmentInBytes);
+        movq(dst, Address(r12_heapbase, dst, Address::times_1, Klass::prototype_header_offset_in_bytes() + klassOopDesc::klass_part_offset_in_bytes()));
+      }
     } else {
       movq(dst, Address(dst, Klass::prototype_header_offset_in_bytes() + klassOopDesc::klass_part_offset_in_bytes()));
     }
@@ -8361,31 +8373,43 @@ void  MacroAssembler::decode_heap_oop(Register r) {
 }
 
 void  MacroAssembler::decode_heap_oop_not_null(Register r) {
+  // Note: it will change flags
   assert (UseCompressedOops, "should only be used for compressed headers");
   assert (Universe::heap() != NULL, "java heap should be initialized");
   // Cannot assert, unverified entry point counts instructions (see .ad file)
   // vtableStubs also counts instructions in pd_code_size_limit.
   // Also do not verify_oop as this is called by verify_oop.
   if (Universe::narrow_oop_shift() != 0) {
-    assert (Address::times_8 == LogMinObjAlignmentInBytes &&
-            Address::times_8 == Universe::narrow_oop_shift(), "decode alg wrong");
-    // Don't use Shift since it modifies flags.
-    leaq(r, Address(r12_heapbase, r, Address::times_8, 0));
+    assert(LogMinObjAlignmentInBytes == Universe::narrow_oop_shift(), "decode alg wrong");
+    shlq(r, LogMinObjAlignmentInBytes);
+    if (Universe::narrow_oop_base() != NULL) {
+      addq(r, r12_heapbase);
+    }
   } else {
     assert (Universe::narrow_oop_base() == NULL, "sanity");
   }
 }
 
 void  MacroAssembler::decode_heap_oop_not_null(Register dst, Register src) {
+  // Note: it will change flags
   assert (UseCompressedOops, "should only be used for compressed headers");
   assert (Universe::heap() != NULL, "java heap should be initialized");
   // Cannot assert, unverified entry point counts instructions (see .ad file)
   // vtableStubs also counts instructions in pd_code_size_limit.
   // Also do not verify_oop as this is called by verify_oop.
   if (Universe::narrow_oop_shift() != 0) {
-    assert (Address::times_8 == LogMinObjAlignmentInBytes &&
-            Address::times_8 == Universe::narrow_oop_shift(), "decode alg wrong");
-    leaq(dst, Address(r12_heapbase, src, Address::times_8, 0));
+    assert(LogMinObjAlignmentInBytes == Universe::narrow_oop_shift(), "decode alg wrong");
+    if (LogMinObjAlignmentInBytes == Address::times_8) {
+      leaq(dst, Address(r12_heapbase, src, Address::times_8, 0));
+    } else {
+      if (dst != src) {
+        movq(dst, src);
+      }
+      shlq(dst, LogMinObjAlignmentInBytes);
+      if (Universe::narrow_oop_base() != NULL) {
+        addq(dst, r12_heapbase);
+      }
+    }
   } else if (dst != src) {
     assert (Universe::narrow_oop_base() == NULL, "sanity");
     movq(dst, src);
