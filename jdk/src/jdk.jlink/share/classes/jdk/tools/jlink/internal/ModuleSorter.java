@@ -25,10 +25,12 @@
 package jdk.tools.jlink.internal;
 
 import jdk.tools.jlink.plugin.PluginException;
+import jdk.tools.jlink.plugin.ResourcePoolEntry;
 import jdk.tools.jlink.plugin.ResourcePoolModule;
 import jdk.tools.jlink.plugin.ResourcePoolModuleView;
 
 import java.lang.module.ModuleDescriptor;
+import java.nio.ByteBuffer;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -53,10 +55,19 @@ public final class ModuleSorter {
         moduleView.modules().forEach(this::addModule);
     }
 
+    private ModuleDescriptor readModuleDescriptor(ResourcePoolModule module) {
+        String p = "/" + module.name() + "/module-info.class";
+        ResourcePoolEntry content = module.findEntry(p).orElseThrow(() ->
+            new PluginException("module-info.class not found for " +
+                module.name() + " module")
+        );
+        ByteBuffer bb = ByteBuffer.wrap(content.contentBytes());
+        return ModuleDescriptor.read(bb);
+    }
+
     private ModuleSorter addModule(ResourcePoolModule module) {
-        ModuleDescriptor descriptor = module.descriptor();
         addNode(module);
-        descriptor.requires().stream()
+        readModuleDescriptor(module).requires().stream()
             .forEach(req -> {
                 String dm = req.name();
                 ResourcePoolModule dep = moduleView.findModule(dm)
