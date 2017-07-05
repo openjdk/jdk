@@ -68,10 +68,9 @@ public class InitialContextTest {
         Path dst = tmp.resolve("Test.java");
         Files.copy(src, dst);
 
-        javac(tmp, dst);
-
         Path build = Files.createDirectory(tmp.resolve("build"));
-        Files.copy(tmp.resolve("Test.class"), build.resolve("Test.class"));
+
+        javac(build, dst);
 
         Map<String, String> props
                 = singletonMap(Context.INITIAL_CONTEXT_FACTORY, factoryClassFqn);
@@ -107,13 +106,13 @@ public class InitialContextTest {
         Path dst1 = createFactoryFrom(templatesHome().resolve("factory.template"),
                 factoryClassFqn, tmp);
 
-        javac(tmp, dst);
+        Path build = Files.createDirectory(tmp.resolve("build"));
+
+        javac(build, dst);
         Path explodedJar = Files.createDirectory(tmp.resolve("exploded-jar"));
         javac(explodedJar, dst1);
         jar(tmp.resolve("test.jar"), explodedJar);
 
-        Path build = Files.createDirectory(tmp.resolve("build"));
-        Files.copy(tmp.resolve("Test.class"), build.resolve("Test.class"));
         Files.copy(tmp.resolve("test.jar"), build.resolve("test.jar"));
 
         Map<String, String> props
@@ -191,7 +190,9 @@ public class InitialContextTest {
         Path dst1 = createFactoryFrom(templatesHome().resolve("broken_factory.template"),
                 factoryClassFqn, tmp);
 
-        javac(tmp, dst);
+        Path build = Files.createDirectory(tmp.resolve("build"));
+
+        javac(build, dst);
 
         Path explodedJar = Files.createDirectory(tmp.resolve("exploded-jar"));
         Path services = Files.createDirectories(explodedJar.resolve("META-INF")
@@ -208,15 +209,12 @@ public class InitialContextTest {
         javac(explodedJar, dst1);
         jar(tmp.resolve("test.jar"), explodedJar);
 
-        Path build = Files.createDirectory(tmp.resolve("build"));
-        Files.copy(tmp.resolve("Test.class"), build.resolve("Test.class"));
         Files.copy(tmp.resolve("test.jar"), build.resolve("test.jar"));
 
-        Map<String, String> props = new HashMap<>();
-        props.put("java.ext.dirs", build.toString());
-        props.put(Context.INITIAL_CONTEXT_FACTORY, factoryClassFqn);
+        Map<String, String> props
+                = singletonMap(Context.INITIAL_CONTEXT_FACTORY, factoryClassFqn);
 
-        Result r = java(props, singleton(build), "Test");
+        Result r = java(props, asList(build.resolve("test.jar"), build), "Test");
 
         if (r.exitValue == 0 || !verifyOutput(r.output, factoryClassFqn))
             throw new RuntimeException(r.output);

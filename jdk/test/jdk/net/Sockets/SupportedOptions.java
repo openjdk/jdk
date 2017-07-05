@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,27 +21,28 @@
  * questions.
  */
 
-#define PACKAGE_NAME "openjdk"
-#define PACKAGE_TARNAME "openjdk"
-#define PACKAGE_VERSION "version-0.1"
-#define PACKAGE_STRING "openjdk version-0.1"
-#define PACKAGE_BUGREPORT "build-infra-dev@openjdk.java.net"
-#define PACKAGE_URL ""
-#define STDC_HEADERS
-#define HAVE_SYS_TYPES_H
-#define HAVE_SYS_STAT_H
-#define HAVE_STDLIB_H
-#define HAVE_STRING_H
-#define HAVE_MEMORY_H
-#define HAVE_STRINGS_H
-#define HAVE_INTTYPES_H
-#define HAVE_STDINT_H
-#define HAVE_UNISTD_H
-#define SIZEOF_INT_P 8
-#define HAVE_CUPS_CUPS_H
-#define HAVE_CUPS_PPD_H
-#define HAVE_LIBJPEG
-#define HAVE_LIBGIF
-#define HAVE_LIBZ
-#define HAVE_LIBM
-#define HAVE_ALTZONE
+/*
+ * @test
+ * @bug 8062744
+ * @run main SupportedOptions
+ */
+
+import java.net.*;
+import java.io.IOException;
+import jdk.net.*;
+
+public class SupportedOptions {
+
+    public static void main(String[] args) throws Exception {
+        if (!Sockets.supportedOptions(ServerSocket.class)
+              .contains(StandardSocketOptions.IP_TOS)) {
+            throw new RuntimeException("Test failed");
+        }
+        // Now set the option
+        ServerSocket ss = new ServerSocket();
+        if (!ss.supportedOptions().contains(StandardSocketOptions.IP_TOS)) {
+            throw new RuntimeException("Test failed");
+        }
+        Sockets.setOption(ss, java.net.StandardSocketOptions.IP_TOS, 128);
+    }
+}
