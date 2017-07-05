@@ -235,6 +235,11 @@ reg_class xdb_reg7( XMM7a,XMM7b );
 //----------SOURCE BLOCK-------------------------------------------------------
 // This is a block of C++ code which provides values, functions, and
 // definitions necessary in the rest of the architecture description
+source_hpp %{
+// Must be visible to the DFA in dfa_x86_32.cpp
+extern bool is_operand_hi32_zero(Node* n);
+%}
+
 source %{
 #define   RELOC_IMM32    Assembler::imm_operand
 #define   RELOC_DISP32   Assembler::disp32_operand
@@ -1483,6 +1488,21 @@ RegMask Matcher::modL_proj_mask() {
 
 const RegMask Matcher::method_handle_invoke_SP_save_mask() {
   return EBP_REG_mask;
+}
+
+// Returns true if the high 32 bits of the value is known to be zero.
+bool is_operand_hi32_zero(Node* n) {
+  int opc = n->Opcode();
+  if (opc == Op_LoadUI2L) {
+    return true;
+  }
+  if (opc == Op_AndL) {
+    Node* o2 = n->in(2);
+    if (o2->is_Con() && (o2->get_long() & 0xFFFFFFFF00000000LL) == 0LL) {
+      return true;
+    }
+  }
+  return false;
 }
 
 %}
@@ -8596,6 +8616,63 @@ instruct mulL_eReg(eADXRegL dst, eRegL src, eRegI tmp, eFlagsReg cr) %{
             "MUL    EDX:EAX,$src.lo\n\t"
             "ADD    EDX,$tmp" %}
   ins_encode( long_multiply( dst, src, tmp ) );
+  ins_pipe( pipe_slow );
+%}
+
+// Multiply Register Long where the left operand's high 32 bits are zero
+instruct mulL_eReg_lhi0(eADXRegL dst, eRegL src, eRegI tmp, eFlagsReg cr) %{
+  predicate(is_operand_hi32_zero(n->in(1)));
+  match(Set dst (MulL dst src));
+  effect(KILL cr, TEMP tmp);
+  ins_cost(2*100+2*400);
+// Basic idea: lo(result) = lo(x_lo * y_lo)
+//             hi(result) = hi(x_lo * y_lo) + lo(x_lo * y_hi) where lo(x_hi * y_lo) = 0 because x_hi = 0
+  format %{ "MOV    $tmp,$src.hi\n\t"
+            "IMUL   $tmp,EAX\n\t"
+            "MUL    EDX:EAX,$src.lo\n\t"
+            "ADD    EDX,$tmp" %}
+  ins_encode %{
+    __ movl($tmp$$Register, HIGH_FROM_LOW($src$$Register));
+    __ imull($tmp$$Register, rax);
+    __ mull($src$$Register);
+    __ addl(rdx, $tmp$$Register);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// Multiply Register Long where the right operand's high 32 bits are zero
+instruct mulL_eReg_rhi0(eADXRegL dst, eRegL src, eRegI tmp, eFlagsReg cr) %{
+  predicate(is_operand_hi32_zero(n->in(2)));
+  match(Set dst (MulL dst src));
+  effect(KILL cr, TEMP tmp);
+  ins_cost(2*100+2*400);
+// Basic idea: lo(result) = lo(x_lo * y_lo)
+//             hi(result) = hi(x_lo * y_lo) + lo(x_hi * y_lo) where lo(x_lo * y_hi) = 0 because y_hi = 0
+  format %{ "MOV    $tmp,$src.lo\n\t"
+            "IMUL   $tmp,EDX\n\t"
+            "MUL    EDX:EAX,$src.lo\n\t"
+            "ADD    EDX,$tmp" %}
+  ins_encode %{
+    __ movl($tmp$$Register, $src$$Register);
+    __ imull($tmp$$Register, rdx);
+    __ mull($src$$Register);
+    __ addl(rdx, $tmp$$Register);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// Multiply Register Long where the left and the right operands' high 32 bits are zero
+instruct mulL_eReg_hi0(eADXRegL dst, eRegL src, eFlagsReg cr) %{
+  predicate(is_operand_hi32_zero(n->in(1)) && is_operand_hi32_zero(n->in(2)));
+  match(Set dst (MulL dst src));
+  effect(KILL cr);
+  ins_cost(1*400);
+// Basic idea: lo(result) = lo(x_lo * y_lo)
+//             hi(result) = hi(x_lo * y_lo) where lo(x_hi * y_lo) = 0 and lo(x_lo * y_hi) = 0 because x_hi = 0 and y_hi = 0
+  format %{ "MUL    EDX:EAX,$src.lo\n\t" %}
+  ins_encode %{
+    __ mull($src$$Register);
+  %}
   ins_pipe( pipe_slow );
 %}
 

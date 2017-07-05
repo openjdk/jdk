@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,7 @@ private:
   bool  _jvmti_can_hotswap_or_post_breakpoint;
   bool  _jvmti_can_examine_or_deopt_anywhere;
   bool  _jvmti_can_access_local_variables;
-  bool  _jvmti_can_post_exceptions;
+  bool  _jvmti_can_post_on_exceptions;
 
   // Cache DTrace flags
   bool  _dtrace_extended_probes;
@@ -259,7 +259,7 @@ public:
   bool  jvmti_can_hotswap_or_post_breakpoint() const { return _jvmti_can_hotswap_or_post_breakpoint; }
   bool  jvmti_can_examine_or_deopt_anywhere()  const { return _jvmti_can_examine_or_deopt_anywhere; }
   bool  jvmti_can_access_local_variables()     const { return _jvmti_can_access_local_variables; }
-  bool  jvmti_can_post_exceptions()            const { return _jvmti_can_post_exceptions; }
+  bool  jvmti_can_post_on_exceptions()         const { return _jvmti_can_post_on_exceptions; }
 
   // Cache DTrace flags
   void  cache_dtrace_flags();

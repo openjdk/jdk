@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,7 +82,7 @@ static const jlong  EARLY_EVENT_BITS = CLASS_FILE_LOAD_HOOK_BIT |
                                THREAD_START_BIT | THREAD_END_BIT |
                                DYNAMIC_CODE_GENERATED_BIT;
 static const jlong  GLOBAL_EVENT_BITS = ~THREAD_FILTERED_EVENT_BITS;
-
+static const jlong  SHOULD_POST_ON_EXCEPTIONS_BITS = EXCEPTION_BITS | METHOD_EXIT_BIT | FRAME_POP_BIT;
 
 ///////////////////////////////////////////////////////////////
 //
@@ -511,7 +511,12 @@ JvmtiEventControllerPrivate::recompute_thread_enabled(JvmtiThreadState *state) {
         leave_interp_only_mode(state);
       }
     }
+
+    // update the JavaThread cached value for thread-specific should_post_on_exceptions value
+    bool should_post_on_exceptions = (any_env_enabled & SHOULD_POST_ON_EXCEPTIONS_BITS) != 0;
+    state->set_should_post_on_exceptions(should_post_on_exceptions);
   }
+
   return any_env_enabled;
 }
 
@@ -615,6 +620,10 @@ JvmtiEventControllerPrivate::recompute_enabled() {
 
     // set global truly enabled, that is, any thread in any environment
     JvmtiEventController::_universal_global_event_enabled.set_bits(any_env_thread_enabled);
+
+    // set global should_post_on_exceptions
+    JvmtiExport::set_should_post_on_exceptions((any_env_thread_enabled & SHOULD_POST_ON_EXCEPTIONS_BITS) != 0);
+
   }
 
   EC_TRACE(("JVMTI [-] # recompute enabled - after %llx", any_env_thread_enabled));

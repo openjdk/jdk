@@ -151,6 +151,10 @@ void VM_ZombieAll::doit() {
 
 #endif // !PRODUCT
 
+void VM_HandleFullCodeCache::doit() {
+  NMethodSweeper::speculative_disconnect_nmethods(_is_full);
+}
+
 void VM_Verify::doit() {
   Universe::verify();
 }

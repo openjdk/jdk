@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -178,7 +178,7 @@ void ciEnv::cache_jvmti_state() {
   _jvmti_can_hotswap_or_post_breakpoint = JvmtiExport::can_hotswap_or_post_breakpoint();
   _jvmti_can_examine_or_deopt_anywhere  = JvmtiExport::can_examine_or_deopt_anywhere();
   _jvmti_can_access_local_variables     = JvmtiExport::can_access_local_variables();
-  _jvmti_can_post_exceptions            = JvmtiExport::can_post_exceptions();
+  _jvmti_can_post_on_exceptions         = JvmtiExport::can_post_on_exceptions();
 }
 
 // ------------------------------------------------------------------
@@ -891,8 +891,8 @@ void ciEnv::register_method(ciMethod* target,
            JvmtiExport::can_examine_or_deopt_anywhere()) ||
           (!jvmti_can_access_local_variables() &&
            JvmtiExport::can_access_local_variables()) ||
-          (!jvmti_can_post_exceptions() &&
-           JvmtiExport::can_post_exceptions()) )) {
+          (!jvmti_can_post_on_exceptions() &&
+           JvmtiExport::can_post_on_exceptions()) )) {
       record_failure("Jvmti state change invalidated dependencies");
     }
 
@@ -962,18 +962,10 @@ void ciEnv::register_method(ciMethod* target,
     if (nm == NULL) {
       // The CodeCache is full.  Print out warning and disable compilation.
       record_failure("code cache is full");
-      UseInterpreter = true;
-      if (UseCompiler || AlwaysCompileLoopMethods ) {
-#ifndef PRODUCT
-        warning("CodeCache is full. Compiler has been disabled");
-        if (CompileTheWorld || ExitOnFullCodeCache) {
-          before_exit(JavaThread::current());
-          exit_globals(); // will delete tty
-          vm_direct_exit(CompileTheWorld ? 0 : 1);
-        }
-#endif
-        UseCompiler               = false;
-        AlwaysCompileLoopMethods  = false;
+      {
+        MutexUnlocker ml(Compile_lock);
+        MutexUnlocker locker(MethodCompileQueue_lock);
+        CompileBroker::handle_full_code_cache();
       }
     } else {
       NOT_PRODUCT(nm->set_has_debug_info(has_debug_info); )
