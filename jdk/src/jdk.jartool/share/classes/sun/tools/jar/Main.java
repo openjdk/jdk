@@ -76,7 +76,7 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 public
 class Main {
     String program;
-    PrintStream out, err;
+    PrintWriter out, err;
     String fname, mname, ename;
     String zname = "";
     String rootjar = null;
@@ -189,9 +189,9 @@ class Main {
         USAGE_SUMMARY(GNUStyleOptions::printUsageSummary),
         VERSION(GNUStyleOptions::printVersion);
 
-        private Consumer<PrintStream> printFunction;
-        Info(Consumer<PrintStream> f) { this.printFunction = f; }
-        void print(PrintStream out) { printFunction.accept(out); }
+        private Consumer<PrintWriter> printFunction;
+        Info(Consumer<PrintWriter> f) { this.printFunction = f; }
+        void print(PrintWriter out) { printFunction.accept(out); }
     };
     Info info;
 
@@ -252,6 +252,12 @@ class Main {
     }
 
     public Main(PrintStream out, PrintStream err, String program) {
+        this.out = new PrintWriter(out, true);
+        this.err = new PrintWriter(err, true);
+        this.program = program;
+    }
+
+    public Main(PrintWriter out, PrintWriter err, String program) {
         this.out = out;
         this.err = err;
         this.program = program;

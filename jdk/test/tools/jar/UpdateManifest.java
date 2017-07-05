@@ -24,7 +24,7 @@
 /**
  * @test
  * @bug 6434207 6442687 6984046
- * @modules jdk.jartool/sun.tools.jar
+ * @modules jdk.jartool
  * @summary Ensure that jar ufm actually updates the
  * existing jar file's manifest with contents of the
  * manifest file.
@@ -32,13 +32,18 @@
 
 import java.io.*;
 import java.util.logging.*;
+import java.util.spi.ToolProvider;
 import java.util.zip.*;
-import sun.tools.jar.Main;
 
 public class UpdateManifest {
     static PrintStream out = System.out;
     static PrintStream err = System.err;
     static boolean debug = true;
+
+    static final ToolProvider JAR_TOOL = ToolProvider.findFirst("jar")
+        .orElseThrow(() ->
+            new RuntimeException("jar tool not found")
+        );
 
     static final Logger JAR_LOGGER = Logger.getLogger("java.util.jar");
 
@@ -64,17 +69,14 @@ public class UpdateManifest {
         // Create a jar file, specifying a Main-Class
         final String jarFileName = "um-existence.jar";
         new File(jarFileName).delete(); // remove pre-existing first!
-        Main jartool = new Main(out, err, "jar");
-        boolean status = jartool.run(
-            new String[] { "cfe", jarFileName, "Hello", existence.getPath() });
-        check(status);
+        int status = JAR_TOOL.run(out, err, "cfe", jarFileName,
+                                  "Hello", existence.getPath());
+        check(status == 0);
         checkManifest(jarFileName, "Hello");
 
         // Update that jar file by changing the Main-Class
-        jartool = new Main(out, err, "jar");
-        status = jartool.run(
-            new String[] { "ufe", jarFileName, "Bye" });
-        check(status);
+        status = JAR_TOOL.run(out, err, "ufe", jarFileName, "Bye");
+        check(status == 0);
         checkManifest(jarFileName, "Bye");
     }
 
@@ -101,11 +103,9 @@ public class UpdateManifest {
         // Create a jar file
         final String jarFileName = "um-test.jar";
         new File(jarFileName).delete(); // remove pre-existing first!
-        Main jartool = new Main(out, err, "jar");
-        boolean status = jartool.run(
-                                new String[] {"cfm", jarFileName,
-                                    manifestOrig.getPath(), hello.getPath() });
-        check(status);
+        int status = JAR_TOOL.run(out, err, "cfm", jarFileName,
+                                  manifestOrig.getPath(), hello.getPath());
+        check(status == 0);
 
         // Create a new manifest, to use in updating the jar file.
         File manifestUpdate = File.createTempFile("manifestUpdate", ".txt");
@@ -122,10 +122,9 @@ public class UpdateManifest {
         pw.close();
 
         // Update jar file with manifest
-        jartool = new Main(out, err, "jar");
-        status = jartool.run(
-            new String[] { "ufm", jarFileName, manifestUpdate.getPath() });
-        check(status);
+        status = JAR_TOOL.run(out, err, "ufm",
+                              jarFileName, manifestUpdate.getPath());
+        check(status == 0);
 
         // Extract jar, and verify contents of manifest file
         File f = new File(jarFileName);

@@ -24,7 +24,7 @@
 /**
  * @test
  * @bug 7175845
- * @modules jdk.jartool/sun.tools.jar
+ * @modules jdk.jartool
  * @summary jar -uf should not change file permission
  */
 
@@ -32,9 +32,13 @@ import java.io.*;
 import java.nio.file.*;
 import java.nio.file.attribute.*;
 import java.util.Set;
-import sun.tools.jar.Main;
+import java.util.spi.ToolProvider;
 
 public class UpdateJar {
+    private static final ToolProvider JAR_TOOL = ToolProvider.findFirst("jar")
+        .orElseThrow(() ->
+            new RuntimeException("jar tool not found")
+        );
 
     private static void cleanup(String... fnames) throws Throwable {
         for (String fname : fnames) {
@@ -55,12 +59,12 @@ public class UpdateJar {
                     fos1.write(0);
                 }
                 String[] jarArgs = new String[] {"cfM0", jar, e0};
-                if (!new Main(System.out, System.err, "jar").run(jarArgs)) {
+                if (JAR_TOOL.run(System.out, System.err, jarArgs) != 0) {
                     fail("Could not create jar file.");
                 }
                 Set<PosixFilePermission> pm = Files.getPosixFilePermissions(Paths.get(jar));
                 jarArgs = new String[] {"uf", jar, e1};
-                if (!new Main(System.out, System.err, "jar").run(jarArgs)) {
+                if (JAR_TOOL.run(System.out, System.err, jarArgs) != 0) {
                     fail("Could not create jar file.");
                 }
                 equal(pm, Files.getPosixFilePermissions(Paths.get(jar)));

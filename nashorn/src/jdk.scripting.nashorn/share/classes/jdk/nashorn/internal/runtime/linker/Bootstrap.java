@@ -78,14 +78,17 @@ public final class Bootstrap {
         prioritizedLinkers = new GuardingDynamicLinker[] {
             new NashornLinker(),
             new NashornPrimitiveLinker(),
-            new NashornStaticClassLinker(beansLinker),
             new BoundCallableLinker(),
             new JavaSuperAdapterLinker(beansLinker),
             new JSObjectLinker(nashornBeansLinker),
             new BrowserJSObjectLinker(nashornBeansLinker),
             new ReflectionCheckLinker()
         };
-        fallbackLinkers = new GuardingDynamicLinker[] {nashornBeansLinker, new NashornBottomLinker() };
+        fallbackLinkers = new GuardingDynamicLinker[] {
+            new NashornStaticClassLinker(beansLinker),
+            nashornBeansLinker,
+            new NashornBottomLinker()
+        };
     }
 
     // do not create me!!

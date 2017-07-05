@@ -30,7 +30,9 @@ import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLEventWriter;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLOutputFactory;
+import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
@@ -38,6 +40,7 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMResult;
 import javax.xml.transform.stax.StAXResult;
 import javax.xml.transform.stax.StAXSource;
+import javax.xml.transform.stream.StreamResult;
 
 import org.testng.Assert;
 import org.testng.annotations.Listeners;
@@ -45,6 +48,7 @@ import org.testng.annotations.Test;
 
 /*
  * @test
+ * @bug 8152530
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
  * @run testng/othervm -DrunSecMngr=true transform.StAXSourceTest
  * @run testng/othervm transform.StAXSourceTest
@@ -52,6 +56,33 @@ import org.testng.annotations.Test;
  */
 @Listeners({jaxp.library.FilePolicy.class})
 public class StAXSourceTest {
+    /**
+     * @bug 8152530
+     * Verifies that StAXSource handles empty namespace properly. NPE was thrown
+     * before the fix.
+     * @throws Exception if the test fails
+     */
+    @Test
+    public final void testStAXSourceWEmptyNS() throws Exception {
+        String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+            + "<EntityList>\n"
+            + "  <Entity xmlns=\"\">\n"
+            + "  </Entity>\n"
+            + "  <Entity xmlns=\"\">\n"
+            + "  </Entity>\n"
+            + "</EntityList> ";
+
+        XMLInputFactory xif = XMLInputFactory.newInstance();
+        XMLStreamReader xsr = xif.createXMLStreamReader(new StringReader(xml));
+        xsr.nextTag();
+        TransformerFactory tf = TransformerFactory.newInstance();
+        Transformer t = tf.newTransformer();
+        while (xsr.nextTag() == XMLStreamConstants.START_ELEMENT && xsr.getLocalName().equals("Entity")) {
+            StringWriter stringResult = new StringWriter();
+            t.transform(new StAXSource(xsr), new StreamResult(stringResult));
+            System.out.println("result: \n" + stringResult.toString());
+        }
+    }
 
     @Test
     public final void testStAXSource() throws XMLStreamException {
