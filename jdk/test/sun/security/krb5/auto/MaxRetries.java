@@ -24,7 +24,6 @@
 /*
  * @test
  * @bug 6844193
- * @key intermittent
  * @compile -XDignore.symbol.file MaxRetries.java
  * @run main/othervm/timeout=300 MaxRetries
  * @summary support max_retries in krb5.conf

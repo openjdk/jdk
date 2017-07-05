@@ -131,23 +131,38 @@ class Bits {                            // package-private
         }
 
         final JavaLangRefAccess jlra = SharedSecrets.getJavaLangRefAccess();
-
-        // retry while helping enqueue pending Reference objects
-        // which includes executing pending Cleaner(s) which includes
-        // Cleaner(s) that free direct buffer memory
-        while (jlra.tryHandlePendingReference()) {
-            if (tryReserveMemory(size, cap)) {
-                return;
-            }
-        }
-
-        // trigger VM's Reference processing
-        System.gc();
-
-        // a retry loop with exponential back-off delays
-        // (this gives VM some time to do it's job)
         boolean interrupted = false;
         try {
+
+            // Retry allocation until success or there are no more
+            // references (including Cleaners that might free direct
+            // buffer memory) to process and allocation still fails.
+            boolean refprocActive;
+            do {
+                try {
+                    refprocActive = jlra.waitForReferenceProcessing();
+                } catch (InterruptedException e) {
+                    // Defer interrupts and keep trying.
+                    interrupted = true;
+                    refprocActive = true;
+                }
+                if (tryReserveMemory(size, cap)) {
+                    return;
+                }
+            } while (refprocActive);
+
+            // trigger VM's Reference processing
+            System.gc();
+
+            // A retry loop with exponential back-off delays.
+            // Sometimes it would suffice to give up once reference
+            // processing is complete.  But if there are many threads
+            // competing for memory, this gives more opportunities for
+            // any given thread to make progress.  In particular, this
+            // seems to be enough for a stress test like
+            // DirectBufferAllocTest to (usually) succeed, while
+            // without it that test likely fails.  Since failure here
+            // ends in OOME, there's no need to hurry.
             long sleepTime = 1;
             int sleeps = 0;
             while (true) {
@@ -157,14 +172,14 @@ class Bits {                            // package-private
                 if (sleeps >= MAX_SLEEPS) {
                     break;
                 }
-                if (!jlra.tryHandlePendingReference()) {
-                    try {
+                try {
+                    if (!jlra.waitForReferenceProcessing()) {
                         Thread.sleep(sleepTime);
                         sleepTime <<= 1;
                         sleeps++;
-                    } catch (InterruptedException e) {
-                        interrupted = true;
                     }
+                } catch (InterruptedException e) {
+                    interrupted = true;
                 }
             }
 

@@ -1164,7 +1164,10 @@ JVMState* UncommonTrapCallGenerator::generate(JVMState* jvms) {
   GraphKit kit(jvms);
   kit.C->print_inlining_update(this);
   // Take the trap with arguments pushed on the stack.  (Cf. null_check_receiver).
-  int nargs = method()->arg_size();
+  // Callsite signature can be different from actual method being called (i.e _linkTo* sites).
+  // Use callsite signature always.
+  ciMethod* declared_method = kit.method()->get_method_at_bci(kit.bci());
+  int nargs = declared_method->arg_size();
   kit.inc_sp(nargs);
   assert(nargs <= kit.sp() && kit.sp() <= jvms->stk_size(), "sane sp w/ args pushed");
   if (_reason == Deoptimization::Reason_class_check &&

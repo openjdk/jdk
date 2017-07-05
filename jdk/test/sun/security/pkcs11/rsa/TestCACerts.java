@@ -21,13 +21,14 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 4856966
  * @summary Test the new RSA provider can verify all the RSA certs in the cacerts file
  * @author Andreas Sterbenz
  * @library ..
  * @library ../../../../java/security/testlibrary
+ * @modules jdk.crypto.pkcs11
  * @run main/othervm TestCACerts
  * @run main/othervm TestCACerts sm TestCACerts.policy
  */

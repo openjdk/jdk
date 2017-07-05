@@ -66,6 +66,7 @@ public class Bug6683975 {
             System.err.println("\tth_TH: " + str_th_TH);
         }
 
+        @SuppressWarnings("deprecation")
         Date date = new Date(2008-1900, Calendar.SEPTEMBER, 30, 8, 0, 0);
         str_th = df_th.format(date);
         if (!expected_th[style].equals(str_th)) {

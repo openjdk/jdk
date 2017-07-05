@@ -21,13 +21,14 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 6316539 6345251
  * @summary Basic known-answer-test for TlsPrf
  * @author Andreas Sterbenz
  * @library ..
  * @modules java.base/sun.security.internal.spec
+ *          jdk.crypto.pkcs11
  * @run main/othervm TestPRF
  * @run main/othervm TestPRF sm policy
  */

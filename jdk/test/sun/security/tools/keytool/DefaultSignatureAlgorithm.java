@@ -26,6 +26,7 @@
  * @bug 8138766
  * @summary New default -sigalg for keytool
  * @modules java.base/sun.security.tools.keytool
+ * @modules jdk.crypto.ec
  * @run main/othervm DefaultSignatureAlgorithm RSA 1024 SHA256withRSA
  * @run main/othervm DefaultSignatureAlgorithm RSA 3072 SHA256withRSA
  * @run main/othervm DefaultSignatureAlgorithm RSA 3073 SHA384withRSA

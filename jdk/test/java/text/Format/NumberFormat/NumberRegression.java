@@ -289,7 +289,7 @@ public class NumberRegression extends IntlTest {
         DecimalFormat df = new DecimalFormat();
         Double d = (Double)df.parse("123.55456", pos=new ParsePosition(0));
         if (!d.toString().equals("123.55456")) {
-            errln("Result -> " + d.doubleValue());
+            errln("Result -> " + d);
         }
         Locale.setDefault(savedLocale);
     }
@@ -395,11 +395,11 @@ public class NumberRegression extends IntlTest {
         Locale.setDefault(Locale.US);
         DecimalFormat df = new DecimalFormat();
         String str = "0.1234";
-        Double d1 = new Double(str);
+        Double d1 = 0.1234;
         Double d2 = (Double) df.parse(str, new ParsePosition(0));
         logln(d1.toString());
         if (d2.doubleValue() != d1.doubleValue())
-            errln("Bug 4095713 test failed, new double value : " + d2.doubleValue());
+            errln("Bug 4095713 test failed, new double value : " + d2);
         Locale.setDefault(savedLocale);
     }
 
@@ -870,7 +870,7 @@ public class NumberRegression extends IntlTest {
         DecimalFormat fmt = new DecimalFormat("#,##0.00");
         StringBuffer formatted = new StringBuffer();
         FieldPosition field = new FieldPosition(0);
-        Double num = new Double(1234.5);
+        Double num = 1234.5;
         fmt.format(num, formatted, field);
         if (field.getBeginIndex() != 0 && field.getEndIndex() != 5)
             errln("Format 1234.5 failed. Begin index: " + field.getBeginIndex() + " End index: " + field.getEndIndex());
@@ -1416,7 +1416,7 @@ public class NumberRegression extends IntlTest {
         DecimalFormat fmt = new DecimalFormat("#",
                 DecimalFormatSymbols.getInstance(Locale.US));
         for (int i=0; i<DATA.length; i+=3) {
-            double in = Double.valueOf(DATA[i]).doubleValue();
+            double in = Double.valueOf(DATA[i]);
             String pat = DATA[i+1];
             String exp = DATA[i+2];
             fmt.applyPattern(pat);
@@ -1622,7 +1622,7 @@ public class NumberRegression extends IntlTest {
             String str = Long.toString(DATA[i]);
             for (int m = 1; m <= 100; m++) {
                 fmt.setMultiplier(m);
-                long n = ((Number) fmt.parse(str)).longValue();
+                long n = fmt.parse(str).longValue();
                 if (n > 0 != DATA[i] > 0) {
                     errln("\"" + str + "\" parse(x " + fmt.getMultiplier() +
                           ") => " + n);
@@ -1637,15 +1637,15 @@ public class NumberRegression extends IntlTest {
      */
     public void Test4217661() {
         Object[] DATA = {
-            new Double(0.001), "0",
-            new Double(1.001), "1",
-            new Double(0.006), "0.01",
-            new Double(1.006), "1.01",
+            0.001, "0",
+            1.001, "1",
+            0.006, "0.01",
+            1.006, "1.01",
         };
         NumberFormat fmt = NumberFormat.getInstance(Locale.US);
         fmt.setMaximumFractionDigits(2);
         for (int i=0; i<DATA.length; i+=2) {
-            String s = fmt.format(((Double) DATA[i]).doubleValue());
+            String s = fmt.format((Double) DATA[i]);
             if (!s.equals(DATA[i+1])) {
                 errln("FAIL: Got " + s + ", exp " + DATA[i+1]);
             }
@@ -1804,6 +1804,7 @@ public class NumberRegression extends IntlTest {
     }
 }
 
+@SuppressWarnings("serial")
 class myformat implements Serializable
 {
     DateFormat _dateFormat = DateFormat.getDateInstance();
@@ -1817,6 +1818,7 @@ class myformat implements Serializable
     }
 }
 
+@SuppressWarnings("serial")
 class MyNumberFormatTest extends NumberFormat {
     public StringBuffer format(double number, StringBuffer toAppendTo, FieldPosition pos) {
         return new StringBuffer("");
@@ -1825,6 +1827,6 @@ class MyNumberFormatTest extends NumberFormat {
         return new StringBuffer("");
     }
     public Number parse(String text, ParsePosition parsePosition) {
-        return new Integer(0);
+        return 0;
     }
 }

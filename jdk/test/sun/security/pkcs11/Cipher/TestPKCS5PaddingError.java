@@ -21,12 +21,13 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 6687725
  * @summary Test internal PKCS5Padding impl with various error conditions.
  * @author Valerie Peng
  * @library ..
+ * @modules jdk.crypto.pkcs11
  * @run main/othervm TestPKCS5PaddingError
  * @run main/othervm TestPKCS5PaddingError sm
  */

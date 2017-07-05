@@ -308,10 +308,6 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
 
     //-- native methods
 
-    static native boolean isLinuxThreads();
-
-    static native int getLinuxThreadsManager(int pid) throws IOException;
-
     static native void sendQuitToChildrenOf(int pid) throws IOException;
 
     static native void sendQuitTo(int pid) throws IOException;

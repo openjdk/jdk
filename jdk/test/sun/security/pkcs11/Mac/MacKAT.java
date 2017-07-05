@@ -21,6 +21,17 @@
  * questions.
  */
 
+/*
+ * @test
+ * @bug 4846410 6313661 4963723
+ * @summary Basic known-answer-test for Hmac algorithms
+ * @author Andreas Sterbenz
+ * @library ..
+ * @modules jdk.crypto.pkcs11
+ * @run main/othervm MacKAT
+ * @run main/othervm MacKAT sm
+ */
+
 import java.io.UnsupportedEncodingException;
 import java.security.Provider;
 import java.util.Arrays;
@@ -30,15 +41,6 @@ import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
-/**
- * @test
- * @bug 4846410 6313661 4963723
- * @summary Basic known-answer-test for Hmac algorithms
- * @author Andreas Sterbenz
- * @library ..
- * @run main/othervm MacKAT
- * @run main/othervm MacKAT sm
- */
 public class MacKAT extends PKCS11Test {
 
     private final static byte[] ALONG, BLONG, BKEY, BKEY_20, DDDATA_50,

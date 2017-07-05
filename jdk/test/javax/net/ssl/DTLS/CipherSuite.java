@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
  * @key intermittent
  * @summary Datagram Transport Layer Security (DTLS)
  * @modules java.base/sun.security.util
+ *          jdk.crypto.ec
  * @build DTLSOverDatagram
  * @run main/othervm CipherSuite TLS_RSA_WITH_AES_128_CBC_SHA
  * @run main/othervm CipherSuite TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256

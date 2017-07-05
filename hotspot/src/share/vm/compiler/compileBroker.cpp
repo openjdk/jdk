@@ -32,7 +32,6 @@
 #include "compiler/compileLog.hpp"
 #include "compiler/compilerOracle.hpp"
 #include "compiler/directivesParser.hpp"
-#include "gc/shared/referencePendingListLocker.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
@@ -890,15 +889,6 @@ void CompileBroker::compile_method_base(const methodHandle& method,
     // ongoing compiles. Note that in this case we'll need a protocol
     // for freeing the associated compile tasks. [Or we could have
     // a single static monitor on which all these waiters sleep.]
-    return;
-  }
-
-  // If the requesting thread is holding the pending list lock
-  // then we just return. We can't risk blocking while holding
-  // the pending list lock or a 3-way deadlock may occur
-  // between the reference handler thread, a GC (instigated
-  // by a compiler thread), and compiled method registration.
-  if (ReferencePendingListLocker::is_locked_by_self()) {
     return;
   }
 

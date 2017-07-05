@@ -254,6 +254,9 @@ class LibraryCallKit : public GraphKit {
   bool inline_native_currentThread();
 
   bool inline_native_time_funcs(address method, const char* funcName);
+#ifdef TRACE_HAVE_INTRINSICS
+  bool inline_native_classID();
+#endif
   bool inline_native_isInterrupted();
   bool inline_native_Class_query(vmIntrinsics::ID id);
   bool inline_native_subtype_check();
@@ -708,6 +711,7 @@ bool LibraryCallKit::try_to_inline(int predicate) {
 
 #ifdef TRACE_HAVE_INTRINSICS
   case vmIntrinsics::_counterTime:              return inline_native_time_funcs(CAST_FROM_FN_PTR(address, TRACE_TIME_METHOD), "counterTime");
+  case vmIntrinsics::_getClassId:               return inline_native_classID();
 #endif
   case vmIntrinsics::_currentTimeMillis:        return inline_native_time_funcs(CAST_FROM_FN_PTR(address, os::javaTimeMillis), "currentTimeMillis");
   case vmIntrinsics::_nanoTime:                 return inline_native_time_funcs(CAST_FROM_FN_PTR(address, os::javaTimeNanos), "nanoTime");
@@ -2242,8 +2246,8 @@ const TypeOopPtr* LibraryCallKit::sharpen_unsafe_type(Compile::AliasType* alias_
 
 #ifndef PRODUCT
     if (C->print_intrinsics() || C->print_inlining()) {
-      tty->print("  from base type: ");  adr_type->dump();
-      tty->print("  sharpened value: ");  tjp->dump();
+      tty->print("  from base type:  ");  adr_type->dump(); tty->cr();
+      tty->print("  sharpened value: ");  tjp->dump();      tty->cr();
     }
 #endif
     // Sharpen the value type.
@@ -2308,26 +2312,30 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
   adr = make_unsafe_address(base, offset);
   if (_gvn.type(base)->isa_ptr() != TypePtr::NULL_PTR) {
     heap_base_oop = base;
+  } else if (type == T_OBJECT) {
+    return false; // off-heap oop accesses are not supported
   }
+
+  // Can base be NULL? Otherwise, always on-heap access.
+  bool can_access_non_heap = TypePtr::NULL_PTR->higher_equal(_gvn.type(heap_base_oop));
+
   val = is_store ? argument(4) : NULL;
 
   const TypePtr *adr_type = _gvn.type(adr)->isa_ptr();
 
-  // Try to categorize the address.  If it comes up as TypeJavaPtr::BOTTOM,
-  // there was not enough information to nail it down.
+  // Try to categorize the address.
   Compile::AliasType* alias_type = C->alias_type(adr_type);
   assert(alias_type->index() != Compile::AliasIdxBot, "no bare pointers here");
 
-  // Only field, array element or unknown locations are supported.
-  if (alias_type->adr_type() != TypeRawPtr::BOTTOM &&
-      alias_type->adr_type() != TypeOopPtr::BOTTOM &&
-      alias_type->basic_type() == T_ILLEGAL) {
-    return false;
+  if (alias_type->adr_type() == TypeInstPtr::KLASS ||
+      alias_type->adr_type() == TypeAryPtr::RANGE) {
+    return false; // not supported
   }
 
   bool mismatched = false;
   BasicType bt = alias_type->basic_type();
   if (bt != T_ILLEGAL) {
+    assert(alias_type->adr_type()->is_oopptr(), "should be on-heap access");
     if (bt == T_BYTE && adr_type->isa_aryptr()) {
       // Alias type doesn't differentiate between byte[] and boolean[]).
       // Use address type to get the element type.
@@ -2342,9 +2350,11 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
       return false;
     }
     mismatched = (bt != type);
-  } else if (alias_type->adr_type() == TypeOopPtr::BOTTOM) {
+  } else if (alias_type->adr_type()->isa_oopptr()) {
     mismatched = true; // conservatively mark all "wide" on-heap accesses as mismatched
   }
+
+  assert(!mismatched || alias_type->adr_type()->is_oopptr(), "off-heap access can't be mismatched");
 
   // First guess at the value type.
   const Type *value_type = Type::get_const_basic_type(type);
@@ -2357,7 +2367,7 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
   bool need_mem_bar;
   switch (kind) {
       case Relaxed:
-          need_mem_bar = (alias_type->adr_type() == TypeOopPtr::BOTTOM);
+          need_mem_bar = mismatched || can_access_non_heap;
           break;
       case Opaque:
           // Opaque uses CPUOrder membars for protection against code movement.
@@ -2508,34 +2518,10 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
       break;
     }
 
-    if (type != T_OBJECT) {
-      (void) store_to_memory(control(), adr, val, type, adr_type, mo, requires_atomic_access, unaligned, mismatched);
+    if (type == T_OBJECT) {
+      store_oop_to_unknown(control(), heap_base_oop, adr, adr_type, val, type, mo, mismatched);
     } else {
-      // Possibly an oop being stored to Java heap or native memory
-      if (!TypePtr::NULL_PTR->higher_equal(_gvn.type(heap_base_oop))) {
-        // oop to Java heap.
-        (void) store_oop_to_unknown(control(), heap_base_oop, adr, adr_type, val, type, mo, mismatched);
-      } else {
-        // We can't tell at compile time if we are storing in the Java heap or outside
-        // of it. So we need to emit code to conditionally do the proper type of
-        // store.
-
-        IdealKit ideal(this);
-#define __ ideal.
-        // QQQ who knows what probability is here??
-        __ if_then(heap_base_oop, BoolTest::ne, null(), PROB_UNLIKELY(0.999)); {
-          // Sync IdealKit and graphKit.
-          sync_kit(ideal);
-          Node* st = store_oop_to_unknown(control(), heap_base_oop, adr, adr_type, val, type, mo, mismatched);
-          // Update IdealKit memory.
-          __ sync_kit(this);
-        } __ else_(); {
-          __ store(__ ctrl(), adr, val, type, alias_type->index(), mo, requires_atomic_access, mismatched);
-        } __ end_if();
-        // Final sync IdealKit and GraphKit.
-        final_sync(ideal);
-#undef __
-      }
+      store_to_memory(control(), adr, val, type, adr_type, mo, requires_atomic_access, unaligned, mismatched);
     }
   }
 
@@ -3149,6 +3135,43 @@ bool LibraryCallKit::inline_native_time_funcs(address funcAddr, const char* func
   set_result(value);
   return true;
 }
+
+#ifdef TRACE_HAVE_INTRINSICS
+
+/*
+* oop -> myklass
+* myklass->trace_id |= USED
+* return myklass->trace_id & ~0x3
+*/
+bool LibraryCallKit::inline_native_classID() {
+  Node* cls = null_check(argument(0), T_OBJECT);
+  Node* kls = load_klass_from_mirror(cls, false, NULL, 0);
+  kls = null_check(kls, T_OBJECT);
+
+  ByteSize offset = TRACE_KLASS_TRACE_ID_OFFSET;
+  Node* insp = basic_plus_adr(kls, in_bytes(offset));
+  Node* tvalue = make_load(NULL, insp, TypeLong::LONG, T_LONG, MemNode::unordered);
+
+  Node* clsused = longcon(0x01l); // set the class bit
+  Node* orl = _gvn.transform(new OrLNode(tvalue, clsused));
+  const TypePtr *adr_type = _gvn.type(insp)->isa_ptr();
+  store_to_memory(control(), insp, orl, T_LONG, adr_type, MemNode::unordered);
+
+#ifdef TRACE_ID_META_BITS
+  Node* mbits = longcon(~TRACE_ID_META_BITS);
+  tvalue = _gvn.transform(new AndLNode(tvalue, mbits));
+#endif
+#ifdef TRACE_ID_CLASS_SHIFT
+  Node* cbits = intcon(TRACE_ID_CLASS_SHIFT);
+  tvalue = _gvn.transform(new URShiftLNode(tvalue, cbits));
+#endif
+
+  set_result(tvalue);
+  return true;
+
+}
+
+#endif
 
 //------------------------inline_native_currentThread------------------
 bool LibraryCallKit::inline_native_currentThread() {
