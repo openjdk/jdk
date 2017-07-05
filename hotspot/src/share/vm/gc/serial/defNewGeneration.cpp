@@ -38,6 +38,7 @@
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/space.inline.hpp"
 #include "gc/shared/spaceDecorator.hpp"
+#include "gc/shared/strongRootsScope.hpp"
 #include "memory/iterator.hpp"
 #include "oops/instanceRefKlass.hpp"
 #include "oops/oop.inline.hpp"
@@ -454,7 +455,7 @@ void DefNewGeneration::compute_new_size() {
   }
 }
 
-void DefNewGeneration::younger_refs_iterate(OopsInGenClosure* cl) {
+void DefNewGeneration::younger_refs_iterate(OopsInGenClosure* cl, uint n_threads) {
   assert(false, "NYI -- are you sure you want to call this?");
 }
 
@@ -625,15 +626,22 @@ void DefNewGeneration::collect(bool   full,
   assert(gch->no_allocs_since_save_marks(0),
          "save marks have not been newly set.");
 
-  gch->gen_process_roots(_level,
-                         true,  // Process younger gens, if any,
-                                // as strong roots.
-                         true,  // activate StrongRootsScope
-                         GenCollectedHeap::SO_ScavengeCodeCache,
-                         GenCollectedHeap::StrongAndWeakRoots,
-                         &fsc_with_no_gc_barrier,
-                         &fsc_with_gc_barrier,
-                         &cld_scan_closure);
+  {
+    // DefNew needs to run with n_threads == 0, to make sure the serial
+    // version of the card table scanning code is used.
+    // See: CardTableModRefBS::non_clean_card_iterate_possibly_parallel.
+    StrongRootsScope srs(0);
+
+    gch->gen_process_roots(&srs,
+                           _level,
+                           true,  // Process younger gens, if any,
+                                  // as strong roots.
+                           GenCollectedHeap::SO_ScavengeCodeCache,
+                           GenCollectedHeap::StrongAndWeakRoots,
+                           &fsc_with_no_gc_barrier,
+                           &fsc_with_gc_barrier,
+                           &cld_scan_closure);
+  }
 
   // "evacuate followers".
   evacuate_followers.do_void();

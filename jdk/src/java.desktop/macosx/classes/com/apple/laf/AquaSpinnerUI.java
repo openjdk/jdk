@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -232,12 +232,12 @@ public class AquaSpinnerUI extends SpinnerUI {
         editor.setInheritsPopupMenu(true);
 
         if (editor.getFont() instanceof UIResource) {
-            editor.setFont(spinner.getFont());
+            editor.setFont(new FontUIResource(spinner.getFont()));
         }
 
         final JFormattedTextField editorTextField = ((DefaultEditor)editor).getTextField();
         if (editorTextField.getFont() instanceof UIResource) {
-            editorTextField.setFont(spinner.getFont());
+            editorTextField.setFont(new FontUIResource(spinner.getFont()));
         }
         final InputMap spinnerInputMap = getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
         final InputMap editorInputMap = editorTextField.getInputMap();
@@ -648,12 +648,12 @@ public class AquaSpinnerUI extends SpinnerUI {
                     ui.updateToolTipTextForChildren(spinner);
                 } else if ("font".equals(propertyName)) {
                     JComponent editor = spinner.getEditor();
-                    if (editor != null && editor instanceof JSpinner.DefaultEditor) {
+                    if (editor instanceof JSpinner.DefaultEditor) {
                         JTextField tf =
                                 ((JSpinner.DefaultEditor) editor).getTextField();
                         if (tf != null) {
                             if (tf.getFont() instanceof UIResource) {
-                                tf.setFont(spinner.getFont());
+                                tf.setFont(new FontUIResource(spinner.getFont()));
                             }
                         }
                     }

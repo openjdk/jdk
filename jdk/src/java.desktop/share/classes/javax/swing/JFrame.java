@@ -486,9 +486,8 @@ public class JFrame  extends Frame implements WindowConstants,
     *      hidden: true
     * description: The menubar for accessing pulldown menus from this frame.
     */
-    @SuppressWarnings("deprecation")
-    public void setJMenuBar(JMenuBar menubar) {
-        getRootPane().setMenuBar(menubar);
+    public void setJMenuBar(final JMenuBar menubar) {
+        getRootPane().setJMenuBar(menubar);
     }
 
    /**
@@ -497,9 +496,8 @@ public class JFrame  extends Frame implements WindowConstants,
     *
     * @see #setJMenuBar
     */
-    @SuppressWarnings("deprecation")
     public JMenuBar getJMenuBar() {
-        return getRootPane().getMenuBar();
+        return getRootPane().getJMenuBar();
     }
 
     /**

@@ -663,7 +663,7 @@ public abstract class WComponentPeer extends WObjectPeer
      * This method is intentionally not synchronized as it is called while
      * holding other locks.
      *
-     * @see sun.java2d.d3d.D3DScreenUpdateManager#validate(D3DWindowSurfaceData)
+     * @see sun.java2d.d3d.D3DScreenUpdateManager#validate
      */
     public Color getBackgroundNoSync() {
         return background;

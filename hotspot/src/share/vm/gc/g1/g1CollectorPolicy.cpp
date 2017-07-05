@@ -1587,14 +1587,17 @@ uint G1CollectorPolicy::calculate_parallel_work_chunk_size(uint n_workers, uint 
 }
 
 void
-G1CollectorPolicy::record_concurrent_mark_cleanup_end(uint n_workers) {
+G1CollectorPolicy::record_concurrent_mark_cleanup_end() {
   _collectionSetChooser->clear();
+
+  FlexibleWorkGang* workers = _g1->workers();
+  uint n_workers = workers->active_workers();
 
   uint n_regions = _g1->num_regions();
   uint chunk_size = calculate_parallel_work_chunk_size(n_workers, n_regions);
-  _collectionSetChooser->prepare_for_par_region_addition(n_regions, chunk_size);
+  _collectionSetChooser->prepare_for_par_region_addition(n_workers, n_regions, chunk_size);
   ParKnownGarbageTask par_known_garbage_task(_collectionSetChooser, chunk_size, n_workers);
-  _g1->workers()->run_task(&par_known_garbage_task);
+  workers->run_task(&par_known_garbage_task);
 
   _collectionSetChooser->sort_regions();
 

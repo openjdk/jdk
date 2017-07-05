@@ -46,6 +46,7 @@
     NSWindow *nsWindow;
     AWTWindow *ownerWindow;
     jint preFullScreenLevel;
+    NSRect standardFrame;
 }
 
 // An instance of either AWTWindow_Normal or AWTWindow_Panel
@@ -59,7 +60,7 @@
 @property (nonatomic) jint styleBits;
 @property (nonatomic) BOOL isEnabled;
 @property (nonatomic) jint preFullScreenLevel;
-
+@property (nonatomic) NSRect standardFrame;
 
 - (id) initWithPlatformWindow:(JNFWeakJObjectWrapper *)javaPlatformWindow
                   ownerWindow:owner

@@ -25,6 +25,7 @@
 
 package java.io;
 
+import java.util.Arrays;
 import java.util.Objects;
 
 /**
@@ -50,7 +51,7 @@ public abstract class InputStream implements Closeable {
     // use when skipping.
     private static final int MAX_SKIP_BUFFER_SIZE = 2048;
 
-    private static final int TRANSFER_BUFFER_SIZE = 8192;
+    private static final int DEFAULT_BUFFER_SIZE = 8192;
 
     /**
      * Reads the next byte of data from the input stream. The value byte is
@@ -189,6 +190,128 @@ public abstract class InputStream implements Closeable {
         } catch (IOException ee) {
         }
         return i;
+    }
+
+    /**
+     * The maximum size of array to allocate.
+     * Some VMs reserve some header words in an array.
+     * Attempts to allocate larger arrays may result in
+     * OutOfMemoryError: Requested array size exceeds VM limit
+     */
+    private static final int MAX_BUFFER_SIZE = Integer.MAX_VALUE - 8;
+
+    /**
+     * Reads all remaining bytes from the input stream. This method blocks until
+     * all remaining bytes have been read and end of stream is detected, or an
+     * exception is thrown. This method does not close the input stream.
+     *
+     * <p> When this stream reaches end of stream, further invocations of this
+     * method will return an empty byte array.
+     *
+     * <p> Note that this method is intended for simple cases where it is
+     * convenient to read all bytes into a byte array. It is not intended for
+     * reading input streams with large amounts of data.
+     *
+     * <p> The behavior for the case where the input stream is <i>asynchronously
+     * closed</i>, or the thread interrupted during the read, is highly input
+     * stream specific, and therefore not specified.
+     *
+     * <p> If an I/O error occurs reading from the input stream, then it may do
+     * so after some, but not all, bytes have been read. Consequently the input
+     * stream may not be at end of stream and may be in an inconsistent state.
+     * It is strongly recommended that the stream be promptly closed if an I/O
+     * error occurs.
+     *
+     * @return a byte array containing the bytes read from this input stream
+     * @throws IOException if an I/O error occurs
+     * @throws OutOfMemoryError if an array of the required size cannot be
+     *         allocated. For example, if an array larger than {@code 2GB} would
+     *         be required to store the bytes.
+     *
+     * @since 1.9
+     */
+    public byte[] readAllBytes() throws IOException {
+        byte[] buf = new byte[DEFAULT_BUFFER_SIZE];
+        int capacity = buf.length;
+        int nread = 0;
+        int n;
+        for (;;) {
+            // read to EOF which may read more or less than initial buffer size
+            while ((n = read(buf, nread, capacity - nread)) > 0)
+                nread += n;
+
+            // if the last call to read returned -1, then we're done
+            if (n < 0)
+                break;
+
+            // need to allocate a larger buffer
+            if (capacity <= MAX_BUFFER_SIZE - capacity) {
+                capacity = capacity << 1;
+            } else {
+                if (capacity == MAX_BUFFER_SIZE)
+                    throw new OutOfMemoryError("Required array size too large");
+                capacity = MAX_BUFFER_SIZE;
+            }
+            buf = Arrays.copyOf(buf, capacity);
+        }
+        return (capacity == nread) ? buf : Arrays.copyOf(buf, nread);
+    }
+
+    /**
+     * Reads the requested number of bytes from the input stream into the given
+     * byte array. This method blocks until {@code len} bytes of input data have
+     * been read, end of stream is detected, or an exception is thrown. The
+     * number of bytes actually read, possibly zero, is returned. This method
+     * does not close the input stream.
+     *
+     * <p> In the case where end of stream is reached before {@code len} bytes
+     * have been read, then the actual number of bytes read will be returned.
+     * When this stream reaches end of stream, further invocations of this
+     * method will return zero.
+     *
+     * <p> If {@code len} is zero, then no bytes are read and {@code 0} is
+     * returned; otherwise, there is an attempt to read up to {@code len} bytes.
+     *
+     * <p> The first byte read is stored into element {@code b[off]}, the next
+     * one in to {@code b[off+1]}, and so on. The number of bytes read is, at
+     * most, equal to {@code len}. Let <i>k</i> be the number of bytes actually
+     * read; these bytes will be stored in elements {@code b[off]} through
+     * {@code b[off+}<i>k</i>{@code -1]}, leaving elements {@code b[off+}<i>k</i>
+     * {@code ]} through {@code b[off+len-1]} unaffected.
+     *
+     * <p> The behavior for the case where the input stream is <i>asynchronously
+     * closed</i>, or the thread interrupted during the read, is highly input
+     * stream specific, and therefore not specified.
+     *
+     * <p> If an I/O error occurs reading from the input stream, then it may do
+     * so after some, but not all, bytes of {@code b} have been updated with
+     * data from the input stream. Consequently the input stream and {@code b}
+     * may be in an inconsistent state. It is strongly recommended that the
+     * stream be promptly closed if an I/O error occurs.
+     *
+     * @param  b the byte array into which the data is read
+     * @param  off the start offset in {@code b} at which the data is written
+     * @param  len the maximum number of bytes to read
+     * @return the actual number of bytes read into the buffer
+     * @throws IOException if an I/O error occurs
+     * @throws NullPointerException if {@code b} is {@code null}
+     * @throws IndexOutOfBoundsException If {@code off} is negative, {@code len}
+     *         is negative, or {@code len} is greater than {@code b.length - off}
+     *
+     * @since 1.9
+     */
+    public int readNBytes(byte[] b, int off, int len) throws IOException {
+        Objects.requireNonNull(b);
+        if (off < 0 || len < 0 || len > b.length - off)
+            throw new IndexOutOfBoundsException();
+        int n = 0;
+        while (n < len) {
+            int count = read(b, off + n, len - n);
+            if (count < 0)
+                break;
+            n += count;
+        }
+        return n;
     }
 
     /**
@@ -396,9 +519,9 @@ public abstract class InputStream implements Closeable {
     public long transferTo(OutputStream out) throws IOException {
         Objects.requireNonNull(out, "out");
         long transferred = 0;
-        byte[] buffer = new byte[TRANSFER_BUFFER_SIZE];
+        byte[] buffer = new byte[DEFAULT_BUFFER_SIZE];
         int read;
-        while ((read = this.read(buffer, 0, TRANSFER_BUFFER_SIZE)) >= 0) {
+        while ((read = this.read(buffer, 0, DEFAULT_BUFFER_SIZE)) >= 0) {
             out.write(buffer, 0, read);
             transferred += read;
         }

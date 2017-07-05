@@ -25,6 +25,8 @@
 #ifndef SHARE_VM_OOPS_TYPEARRAYKLASS_INLINE_HPP
 #define SHARE_VM_OOPS_TYPEARRAYKLASS_INLINE_HPP
 
+#include "oops/arrayKlass.hpp"
+#include "oops/klass.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayKlass.hpp"
 #include "oops/typeArrayOop.hpp"
@@ -39,35 +41,19 @@ inline int TypeArrayKlass::oop_oop_iterate_impl(oop obj, ExtendedOopClosure* clo
   return t->object_size();
 }
 
-#define TypeArrayKlass_OOP_OOP_ITERATE_DEFN(OopClosureType, nv_suffix)  \
-                                                                        \
-int TypeArrayKlass::                                                    \
-oop_oop_iterate##nv_suffix(oop obj, OopClosureType* closure) {          \
-  return oop_oop_iterate_impl(obj, closure);                            \
+template <bool nv, typename OopClosureType>
+int TypeArrayKlass::oop_oop_iterate(oop obj, OopClosureType* closure) {
+  return oop_oop_iterate_impl(obj, closure);
 }
 
-#if INCLUDE_ALL_GCS
-#define TypeArrayKlass_OOP_OOP_ITERATE_BACKWARDS_DEFN(OopClosureType, nv_suffix)  \
-                                                                                  \
-int TypeArrayKlass::                                                              \
-oop_oop_iterate_backwards##nv_suffix(oop obj, OopClosureType* closure) {          \
-  return oop_oop_iterate_impl(obj, closure);                                      \
-}
-#else
-#define TypeArrayKlass_OOP_OOP_ITERATE_BACKWARDS_DEFN(OopClosureType, nv_suffix)
-#endif
-
-
-#define TypeArrayKlass_OOP_OOP_ITERATE_DEFN_m(OopClosureType, nv_suffix)          \
-                                                                                  \
-int TypeArrayKlass::                                                              \
-oop_oop_iterate##nv_suffix##_m(oop obj, OopClosureType* closure, MemRegion mr) {  \
-  return oop_oop_iterate_impl(obj, closure);                                      \
+template <bool nv, typename OopClosureType>
+int TypeArrayKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr) {
+  return oop_oop_iterate_impl(obj, closure);
 }
 
-#define ALL_TYPE_ARRAY_KLASS_OOP_OOP_ITERATE_DEFN(OopClosureType, nv_suffix)  \
-  TypeArrayKlass_OOP_OOP_ITERATE_DEFN(          OopClosureType, nv_suffix)    \
-  TypeArrayKlass_OOP_OOP_ITERATE_DEFN_m(        OopClosureType, nv_suffix)    \
-  TypeArrayKlass_OOP_OOP_ITERATE_BACKWARDS_DEFN(OopClosureType, nv_suffix)
+#define ALL_TYPE_ARRAY_KLASS_OOP_OOP_ITERATE_DEFN(OopClosureType, nv_suffix)    \
+  OOP_OOP_ITERATE_DEFN(             TypeArrayKlass, OopClosureType, nv_suffix)  \
+  OOP_OOP_ITERATE_DEFN_BOUNDED(     TypeArrayKlass, OopClosureType, nv_suffix)  \
+  OOP_OOP_ITERATE_DEFN_NO_BACKWARDS(TypeArrayKlass, OopClosureType, nv_suffix)
 
 #endif // SHARE_VM_OOPS_TYPEARRAYKLASS_INLINE_HPP
