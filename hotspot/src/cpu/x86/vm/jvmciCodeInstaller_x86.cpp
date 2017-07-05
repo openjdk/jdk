@@ -89,14 +89,14 @@ void CodeInstaller::pd_patch_MetaspaceConstant(int pc_offset, Handle constant, T
   if (HotSpotMetaspaceConstantImpl::compressed(constant)) {
 #ifdef _LP64
     address operand = Assembler::locate_operand(pc, Assembler::narrow_oop_operand);
-    *((narrowKlass*) operand) = record_narrow_metadata_reference(constant, CHECK);
+    *((narrowKlass*) operand) = record_narrow_metadata_reference(_instructions, operand, constant, CHECK);
     TRACE_jvmci_3("relocating (narrow metaspace constant) at " PTR_FORMAT "/" PTR_FORMAT, p2i(pc), p2i(operand));
 #else
     JVMCI_ERROR("compressed Klass* on 32bit");
 #endif
   } else {
     address operand = Assembler::locate_operand(pc, Assembler::imm_operand);
-    *((void**) operand) = record_metadata_reference(constant, CHECK);
+    *((void**) operand) = record_metadata_reference(_instructions, operand, constant, CHECK);
     TRACE_jvmci_3("relocating (metaspace constant) at " PTR_FORMAT "/" PTR_FORMAT, p2i(pc), p2i(operand));
   }
 }

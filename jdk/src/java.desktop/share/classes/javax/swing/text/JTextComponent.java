@@ -49,6 +49,8 @@ import java.awt.im.InputContext;
 import java.awt.im.InputMethodRequests;
 import java.awt.font.TextHitInfo;
 import java.awt.font.TextAttribute;
+import java.awt.geom.Point2D;
+import java.awt.geom.Rectangle2D;
 
 import java.awt.print.Printable;
 import java.awt.print.PrinterException;
@@ -1370,9 +1372,35 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      * @exception BadLocationException if the given position does not
      *   represent a valid location in the associated document
      * @see TextUI#modelToView
+     *
+     * @deprecated replaced by
+     *     {@link #modelToView2D(int)}
      */
+    @Deprecated(since = "9")
     public Rectangle modelToView(int pos) throws BadLocationException {
         return getUI().modelToView(this, pos);
+    }
+
+    /**
+     * Converts the given location in the model to a place in
+     * the view coordinate system.
+     * The component must have a positive size for
+     * this translation to be computed (i.e. layout cannot
+     * be computed until the component has been sized).  The
+     * component does not have to be visible or painted.
+     *
+     * @param pos the position {@code >= 0}
+     * @return the coordinates as a rectangle, with (r.x, r.y) as the location
+     *   in the coordinate system, or null if the component does
+     *   not yet have a positive size.
+     * @exception BadLocationException if the given position does not
+     *   represent a valid location in the associated document
+     * @see TextUI#modelToView2D
+     *
+     * @since 9
+     */
+    public Rectangle2D modelToView2D(int pos) throws BadLocationException {
+        return getUI().modelToView2D(this, pos, Position.Bias.Forward);
     }
 
     /**
@@ -1388,9 +1416,33 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      *   or -1 if the component does not yet have a positive
      *   size.
      * @see TextUI#viewToModel
+     *
+     * @deprecated replaced by
+     *     {@link #viewToModel2D(Point2D)}
      */
+    @Deprecated(since = "9")
     public int viewToModel(Point pt) {
         return getUI().viewToModel(this, pt);
+    }
+
+    /**
+     * Converts the given place in the view coordinate system
+     * to the nearest representative location in the model.
+     * The component must have a positive size for
+     * this translation to be computed (i.e. layout cannot
+     * be computed until the component has been sized).  The
+     * component does not have to be visible or painted.
+     *
+     * @param pt the location in the view to translate
+     * @return the offset {@code >= 0} from the start of the document,
+     *   or {@code -1} if the component does not yet have a positive
+     *   size.
+     * @see TextUI#viewToModel2D
+     *
+     * @since 9
+     */
+    public int viewToModel2D(Point2D pt) {
+        return getUI().viewToModel2D(this, pt, new Position.Bias[1]);
     }
 
     /**

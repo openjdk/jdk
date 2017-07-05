@@ -22,10 +22,8 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-#include <windows.h>
-#include <winsock2.h>
-#include "jni.h"
 #include "net_util.h"
+
 #include "java_net_DualStackPlainDatagramSocketImpl.h"
 
 /*

@@ -8,7 +8,7 @@
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.    See the GNU General Public License
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
@@ -47,7 +47,7 @@ public class ItablesTest {
             output.shouldContain(": Initializing itable indices for interface ");
             output.shouldContain("itable index ");
             output.shouldContain("target: ClassB.Method1()V, method_holder: ClassB target_method flags: public");
-            output.shouldContain("invokeinterface resolved method: caller-class");
+            output.shouldContain("invokeinterface resolved interface method: caller-class");
             output.shouldContain("invokespecial resolved method: caller-class:ClassB");
             output.shouldContain("invokespecial selected method: resolved-class:ClassB");
             output.shouldContain("invokeinterface selected method: receiver-class");

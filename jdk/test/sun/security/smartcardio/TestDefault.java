@@ -23,11 +23,12 @@
 
 /*
  * @test
- * @bug 6327047
+ * @bug 6327047 8168851
  * @summary verify that TerminalFactory.getDefault() works
  * @author Andreas Sterbenz
  * @modules java.smartcardio/javax.smartcardio
  * @run main/manual TestDefault
+ * @run main/othervm/manual/java.security.policy==test.policy TestDefault
  */
 
 // This test requires special hardware.

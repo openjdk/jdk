@@ -50,6 +50,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
+import java.util.stream.Stream;
 
 import jdk.internal.loader.Resource;
 import jdk.internal.misc.JavaLangModuleAccess;
@@ -159,21 +160,19 @@ public final class ModulePatcher {
                     // is not supported by the boot class loader
                     try (JarFile jf = new JarFile(file.toFile())) {
                         jf.stream()
-                          .filter(e -> e.getName().endsWith(".class"))
                           .map(e -> toPackageName(file, e))
-                          .filter(pn -> pn.length() > 0)
+                          .filter(Checks::isJavaIdentifier)
                           .forEach(packages::add);
                     }
 
                 } else if (Files.isDirectory(file)) {
 
-                    // exploded directory
+                    // exploded directory without following sym links
                     Path top = file;
                     Files.find(top, Integer.MAX_VALUE,
-                            ((path, attrs) -> attrs.isRegularFile() &&
-                                    path.toString().endsWith(".class")))
+                               ((path, attrs) -> attrs.isRegularFile()))
                             .map(path -> toPackageName(top, path))
-                            .filter(pn -> pn.length() > 0)
+                            .filter(Checks::isJavaIdentifier)
                             .forEach(packages::add);
 
                 }
@@ -381,6 +380,15 @@ public final class ModulePatcher {
         }
 
         @Override
+        public Stream<String> list() throws IOException {
+            Stream<String> s = delegate().list();
+            for (ResourceFinder finder : finders) {
+                s = Stream.concat(s, finder.list());
+            }
+            return s.distinct();
+        }
+
+        @Override
         public void close() throws IOException {
             closeAll(finders);
             delegate().close();
@@ -393,6 +401,7 @@ public final class ModulePatcher {
      */
     private static interface ResourceFinder extends Closeable {
         Resource find(String name) throws IOException;
+        Stream<String> list() throws IOException;
     }
 
 
@@ -452,6 +461,13 @@ public final class ModulePatcher {
                     return (size > Integer.MAX_VALUE) ? -1 : (int) size;
                 }
             };
+        }
+
+        @Override
+        public Stream<String> list() throws IOException {
+            return jf.stream()
+                    .filter(e -> !e.isDirectory())
+                    .map(JarEntry::getName);
         }
     }
 
@@ -527,6 +543,15 @@ public final class ModulePatcher {
                 }
             };
         }
+
+        @Override
+        public Stream<String> list() throws IOException {
+            return Files.find(dir, Integer.MAX_VALUE,
+                              (path, attrs) -> attrs.isRegularFile())
+                    .map(f -> dir.relativize(f)
+                                 .toString()
+                                 .replace(File.separatorChar, '/'));
+        }
     }
 
 
@@ -537,7 +562,7 @@ public final class ModulePatcher {
         Path entry = top.relativize(file);
         Path parent = entry.getParent();
         if (parent == null) {
-            return warnUnnamedPackage(top, entry.toString());
+            return warnIfModuleInfo(top, entry.toString());
         } else {
             return parent.toString().replace(File.separatorChar, '.');
         }
@@ -557,14 +582,15 @@ public final class ModulePatcher {
         String name = entry.getName();
         int index = name.lastIndexOf("/");
         if (index == -1) {
-            return warnUnnamedPackage(file, name);
+            return warnIfModuleInfo(file, name);
         } else {
             return name.substring(0, index).replace('/', '.');
         }
     }
 
-    private static String warnUnnamedPackage(Path file, String e) {
-        System.err.println("WARNING: " + e + " not allowed in patch: " + file);
+    private static String warnIfModuleInfo(Path file, String e) {
+        if (e.equals("module-info.class"))
+            System.err.println("WARNING: " + e + " ignored in patch: " + file);
         return "";
     }
 

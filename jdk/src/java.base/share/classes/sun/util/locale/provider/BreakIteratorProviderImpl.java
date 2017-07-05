@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,8 @@ import java.util.Locale;
 import java.util.MissingResourceException;
 import java.util.Objects;
 import java.util.Set;
+import sun.text.DictionaryBasedBreakIterator;
+import sun.text.RuleBasedBreakIterator;
 
 /**
  * Concrete implementation of the  {@link java.text.spi.BreakIteratorProvider
@@ -153,29 +155,31 @@ public class BreakIteratorProviderImpl extends BreakIteratorProvider
     }
 
     private BreakIterator getBreakInstance(Locale locale,
-                                                  int type,
-                                                  String dataName,
-                                                  String dictionaryName) {
+                                           int type,
+                                           String ruleName,
+                                           String dictionaryName) {
         Objects.requireNonNull(locale);
 
         LocaleResources lr = LocaleProviderAdapter.forJRE().getLocaleResources(locale);
         String[] classNames = (String[]) lr.getBreakIteratorInfo("BreakIteratorClasses");
-        String dataFile = (String) lr.getBreakIteratorInfo(dataName);
+        String ruleFile = (String) lr.getBreakIteratorInfo(ruleName);
+        byte[] ruleData = lr.getBreakIteratorResources(ruleName);
 
         try {
             switch (classNames[type]) {
             case "RuleBasedBreakIterator":
-                return new RuleBasedBreakIterator(
-                    lr.getBreakIteratorDataModule(), dataFile);
+                return new RuleBasedBreakIterator(ruleFile, ruleData);
+
             case "DictionaryBasedBreakIterator":
                 String dictionaryFile = (String) lr.getBreakIteratorInfo(dictionaryName);
-                return new DictionaryBasedBreakIterator(
-                    lr.getBreakIteratorDataModule(), dataFile, dictionaryFile);
+                byte[] dictionaryData = lr.getBreakIteratorResources(dictionaryName);
+                return new DictionaryBasedBreakIterator(ruleFile, ruleData,
+                                                        dictionaryFile, dictionaryData);
             default:
                 throw new IllegalArgumentException("Invalid break iterator class \"" +
                                 classNames[type] + "\"");
             }
-        } catch (IOException | MissingResourceException | IllegalArgumentException e) {
+        } catch (MissingResourceException | IllegalArgumentException e) {
             throw new InternalError(e.toString(), e);
         }
     }

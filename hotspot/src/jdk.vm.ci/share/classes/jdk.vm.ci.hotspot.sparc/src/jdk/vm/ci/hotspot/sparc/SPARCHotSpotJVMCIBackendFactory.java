@@ -96,9 +96,6 @@ public class SPARCHotSpotJVMCIBackendFactory implements HotSpotJVMCIBackendFacto
         if ((config.vmVersionFeatures & config.sparcFmafInstructions) != 0) {
             features.add(CPUFeature.FMAF);
         }
-        if ((config.vmVersionFeatures & config.sparcFmauInstructions) != 0) {
-            features.add(CPUFeature.FMAU);
-        }
         if ((config.vmVersionFeatures & config.sparcSparc64Family) != 0) {
             features.add(CPUFeature.SPARC64_FAMILY);
         }
