@@ -224,6 +224,18 @@ public final class NativeDebug extends ScriptObject {
     }
 
     /**
+     * Returns {@code true} if passed object is a function that is fully debuggable (has all vars in scope).
+     *
+     * @param self self reference
+     * @param obj  object
+     * @return true {@code obj} is a debuggable function
+     */
+    @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
+    public static Object isDebuggableFunction(final Object self, final Object obj) {
+        return  (obj instanceof ScriptFunction && ((ScriptFunction) obj).hasAllVarsInScope());
+    }
+
+    /**
      * Returns the property listener count for a script object
      *
      * @param self self reference

@@ -36,6 +36,7 @@ import java.security.SignatureException;
  *          and passing in different signature offset (0, 33, 66, 99).
  * @library /lib/testlibrary
  * @compile ../../../java/security/Signature/Offsets.java
+ * @requires os.family == "windows"
  * @run main SignatureOffsets SunMSCAPI NONEwithRSA
  * @run main SignatureOffsets SunMSCAPI MD2withRSA
  * @run main SignatureOffsets SunMSCAPI MD5withRSA

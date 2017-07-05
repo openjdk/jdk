@@ -27,7 +27,7 @@
  * @bug 8031320
  * @summary Verify that UseRTMDeopt affects uncommon trap installation in
  *          copmpiled methods with synchronized block.
- * @library /testlibrary /../../test/lib /compiler/testlibrary
+ * @library /testlibrary /test/lib /compiler/testlibrary
  * @modules java.base/sun.misc
  *          java.management
  * @build TestUseRTMDeopt

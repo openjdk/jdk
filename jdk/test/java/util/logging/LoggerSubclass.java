@@ -92,7 +92,7 @@ public class LoggerSubclass {
         else fail(x + " not equal to " + y);}
     public static void main(String[] args) throws Throwable {
         try {new LoggerSubclass().instanceMain(args);}
-        catch (Throwable e) {throw e.getCause();}}
+        catch (Throwable e) {throw e.getCause() == null ? e : e.getCause();}}
     public void instanceMain(String[] args) throws Throwable {
         try {test(args);} catch (Throwable t) {unexpected(t);}
         System.out.printf("%nPassed = %d, failed = %d%n%n", passed, failed);

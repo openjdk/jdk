@@ -29,7 +29,7 @@ import jdk.test.lib.Platform;
 
 /*
  * @test OverloadCompileQueueTest
- * @library /testlibrary /../../test/lib
+ * @library /testlibrary /test/lib
  * @modules java.base/sun.misc
  *          java.management
  * @ignore 8071905

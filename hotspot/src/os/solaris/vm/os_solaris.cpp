@@ -138,11 +138,6 @@
   #define LGRP_RSRC_MEM      1       /* memory resources */
 #endif
 
-// see thr_setprio(3T) for the basis of these numbers
-#define MinimumPriority 0
-#define NormalPriority  64
-#define MaximumPriority 127
-
 // Values for ThreadPriorityPolicy == 1
 int prio_policy1[CriticalPriority+1] = {
   -99999,  0, 16,  32,  48,  64,
@@ -1003,8 +998,9 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
 
 // defined for >= Solaris 10. This allows builds on earlier versions
 // of Solaris to take advantage of the newly reserved Solaris JVM signals
-// With SIGJVM1, SIGJVM2, INTERRUPT_SIGNAL is SIGJVM1, ASYNC_SIGNAL is SIGJVM2
-// and -XX:+UseAltSigs does nothing since these should have no conflict
+// With SIGJVM1, SIGJVM2, ASYNC_SIGNAL is SIGJVM2 and -XX:+UseAltSigs does
+// nothing since these should have no conflict. Previously INTERRUPT_SIGNAL
+// was SIGJVM1.
 //
 #if !defined(SIGJVM1)
   #define SIGJVM1 39
@@ -1013,7 +1009,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
 
 debug_only(static bool signal_sets_initialized = false);
 static sigset_t unblocked_sigs, vm_sigs, allowdebug_blocked_sigs;
-int os::Solaris::_SIGinterrupt = INTERRUPT_SIGNAL;
+
 int os::Solaris::_SIGasync = ASYNC_SIGNAL;
 
 bool os::Solaris::is_sig_ignored(int sig) {
@@ -1058,17 +1054,13 @@ void os::Solaris::signal_sets_init() {
   sigaddset(&unblocked_sigs, SIGFPE);
 
   if (isJVM1available) {
-    os::Solaris::set_SIGinterrupt(SIGJVM1);
     os::Solaris::set_SIGasync(SIGJVM2);
   } else if (UseAltSigs) {
-    os::Solaris::set_SIGinterrupt(ALT_INTERRUPT_SIGNAL);
     os::Solaris::set_SIGasync(ALT_ASYNC_SIGNAL);
   } else {
-    os::Solaris::set_SIGinterrupt(INTERRUPT_SIGNAL);
     os::Solaris::set_SIGasync(ASYNC_SIGNAL);
   }
 
-  sigaddset(&unblocked_sigs, os::Solaris::SIGinterrupt());
   sigaddset(&unblocked_sigs, os::Solaris::SIGasync());
 
   if (!ReduceSignalUsage) {
@@ -1939,8 +1931,6 @@ void os::print_siginfo(outputStream* st, void* siginfo) {
 static int Maxsignum = 0;
 static int *ourSigFlags = NULL;
 
-extern "C" void sigINTRHandler(int, siginfo_t*, void*);
-
 int os::Solaris::get_our_sigflags(int sig) {
   assert(ourSigFlags!=NULL, "signal data structure not initialized");
   assert(sig > 0 && sig < Maxsignum, "vm signal out of expected range");
@@ -2005,8 +1995,7 @@ static void print_signal_handler(outputStream* st, int sig,
   os::Posix::print_sa_flags(st, sa.sa_flags);
 
   // Check: is it our handler?
-  if (handler == CAST_FROM_FN_PTR(address, signalHandler) ||
-      handler == CAST_FROM_FN_PTR(address, sigINTRHandler)) {
+  if (handler == CAST_FROM_FN_PTR(address, signalHandler)) {
     // It is our signal handler
     // check for flags
     if (sa.sa_flags != os::Solaris::get_our_sigflags(sig)) {
@@ -2026,13 +2015,11 @@ void os::print_signal_handlers(outputStream* st, char* buf, size_t buflen) {
   print_signal_handler(st, SIGPIPE, buf, buflen);
   print_signal_handler(st, SIGXFSZ, buf, buflen);
   print_signal_handler(st, SIGILL , buf, buflen);
-  print_signal_handler(st, INTERRUPT_SIGNAL, buf, buflen);
   print_signal_handler(st, ASYNC_SIGNAL, buf, buflen);
   print_signal_handler(st, BREAK_SIGNAL, buf, buflen);
   print_signal_handler(st, SHUTDOWN1_SIGNAL , buf, buflen);
   print_signal_handler(st, SHUTDOWN2_SIGNAL , buf, buflen);
   print_signal_handler(st, SHUTDOWN3_SIGNAL, buf, buflen);
-  print_signal_handler(st, os::Solaris::SIGinterrupt(), buf, buflen);
   print_signal_handler(st, os::Solaris::SIGasync(), buf, buflen);
 }
 
@@ -3146,7 +3133,7 @@ static int  myMax       = 0;
 static int  myCur       = 0;
 static bool priocntl_enable = false;
 
-static const int criticalPrio = 60; // FX/60 is critical thread class/priority on T4
+static const int criticalPrio = FXCriticalPriority;
 static int java_MaxPriority_to_os_priority = 0; // Saved mapping
 
 
@@ -3796,7 +3783,6 @@ void os::os_exception_wrapper(java_call_t f, JavaValue* value,
 // SIGBUS, SIGSEGV, SIGILL, SIGFPE, BREAK_SIGNAL, SIGPIPE, SIGXFSZ,
 // os::Solaris::SIGasync
 // It should be consulted by handlers for any of those signals.
-// It explicitly does not recognize os::Solaris::SIGinterrupt
 //
 // The caller of this routine must pass in the three arguments supplied
 // to the function referred to in the "sa_sigaction" (not the "sa_handler")
@@ -3816,20 +3802,6 @@ void signalHandler(int sig, siginfo_t* info, void* ucVoid) {
   int orig_errno = errno;  // Preserve errno value over signal handler.
   JVM_handle_solaris_signal(sig, info, ucVoid, true);
   errno = orig_errno;
-}
-
-// Do not delete - if guarantee is ever removed,  a signal handler (even empty)
-// is needed to provoke threads blocked on IO to return an EINTR
-// Note: this explicitly does NOT call JVM_handle_solaris_signal and
-// does NOT participate in signal chaining due to requirement for
-// NOT setting SA_RESTART to make EINTR work.
-extern "C" void sigINTRHandler(int sig, siginfo_t* info, void* ucVoid) {
-  if (UseSignalChaining) {
-    struct sigaction *actp = os::Solaris::get_chained_signal_action(sig);
-    if (actp && actp->sa_handler) {
-      vm_exit_during_initialization("Signal chaining detected for VM interrupt signal, try -XX:+UseAltSigs");
-    }
-  }
 }
 
 // This boolean allows users to forward their own non-matching signals
@@ -3969,13 +3941,6 @@ void os::Solaris::set_signal_handler(int sig, bool set_installed,
   // not using stack banging
   if (!UseStackBanging && sig == SIGSEGV) {
     sigAct.sa_flags = SA_SIGINFO | SA_RESTART | SA_ONSTACK;
-  } else if (sig == os::Solaris::SIGinterrupt()) {
-    // Interruptible i/o requires SA_RESTART cleared so EINTR
-    // is returned instead of restarting system calls
-    sigemptyset(&sigAct.sa_mask);
-    sigAct.sa_handler = NULL;
-    sigAct.sa_flags = SA_SIGINFO;
-    sigAct.sa_sigaction = sigINTRHandler;
   } else {
     sigAct.sa_flags = SA_SIGINFO | SA_RESTART;
   }
@@ -4027,7 +3992,6 @@ void os::run_periodic_checks() {
   }
 
   // See comments above for using JVM1/JVM2 and UseAltSigs
-  DO_SIGNAL_CHECK(os::Solaris::SIGinterrupt());
   DO_SIGNAL_CHECK(os::Solaris::SIGasync());
 
 }
@@ -4072,12 +4036,9 @@ void os::Solaris::check_signal_handler(int sig) {
     break;
 
   default:
-    int intrsig = os::Solaris::SIGinterrupt();
     int asynsig = os::Solaris::SIGasync();
 
-    if (sig == intrsig) {
-      jvmHandler = CAST_FROM_FN_PTR(address, sigINTRHandler);
-    } else if (sig == asynsig) {
+    if (sig == asynsig) {
       jvmHandler = CAST_FROM_FN_PTR(address, signalHandler);
     } else {
       return;
@@ -4148,8 +4109,7 @@ void os::Solaris::install_signal_handlers() {
   set_signal_handler(SIGFPE, true, true);
 
 
-  if (os::Solaris::SIGinterrupt() > OLDMAXSIGNUM || os::Solaris::SIGasync() > OLDMAXSIGNUM) {
-
+  if (os::Solaris::SIGasync() > OLDMAXSIGNUM) {
     // Pre-1.4.1 Libjsig limited to signal chaining signals <= 32 so
     // can not register overridable signals which might be > 32
     if (libjsig_is_loaded && libjsigversion <= JSIG_VERSION_1_4_1) {
@@ -4159,8 +4119,6 @@ void os::Solaris::install_signal_handlers() {
     }
   }
 
-  // Never ok to chain our SIGinterrupt
-  set_signal_handler(os::Solaris::SIGinterrupt(), true, false);
   set_signal_handler(os::Solaris::SIGasync(), true, true);
 
   if (libjsig_is_loaded && !libjsigdone) {

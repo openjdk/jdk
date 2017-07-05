@@ -859,7 +859,7 @@ class Token implements java.io.Serializable {
                     buffer.append("Is");
                     if (n.indexOf(' ') >= 0) {
                         for (int ci = 0;  ci < n.length();  ci ++)
-                            if (n.charAt(ci) != ' ')  buffer.append((char)n.charAt(ci));
+                            if (n.charAt(ci) != ' ')  buffer.append(n.charAt(ci));
                     }
                     else {
                         buffer.append(n);
@@ -995,8 +995,8 @@ class Token implements java.io.Serializable {
     }
 
     private static void setAlias(String newName, String name, boolean positive) {
-        Token t1 = (Token)Token.categories.get(name);
-        Token t2 = (Token)Token.categories2.get(name);
+        Token t1 = Token.categories.get(name);
+        Token t2 = Token.categories2.get(name);
         if (positive) {
             Token.categories.put(newName, t1);
             Token.categories2.put(newName, t2);
@@ -1525,7 +1525,7 @@ class Token implements java.io.Serializable {
                     this.children.stream().forEach((children1) -> {
                         sb.append((children1).toString(options));
                     });
-                    ret = new String(sb);
+                    ret = sb.toString();
                 }
                 return ret;
             }
@@ -1538,10 +1538,10 @@ class Token implements java.io.Serializable {
                 StringBuilder sb = new StringBuilder();
                 sb.append((this.children.get(0)).toString(options));
                 for (int i = 1;  i < this.children.size();  i ++) {
-                    sb.append((char)'|');
+                    sb.append('|');
                     sb.append((this.children.get(i)).toString(options));
                 }
-                ret = new String(sb);
+                ret = sb.toString();
             }
             return ret;
         }
@@ -1557,7 +1557,7 @@ class Token implements java.io.Serializable {
             ObjectOutputStream.PutField pf = out.putFields();
             pf.put("children", vChildren);
             out.writeFields();
-        }
+    }
 
         @SuppressWarnings("unchecked")
         private void readObject(ObjectInputStream in)
