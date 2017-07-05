@@ -284,6 +284,10 @@ double G1Analytics::predict_object_copy_time_ms(size_t bytes_to_copy, bool durin
   }
 }
 
+double G1Analytics::predict_cost_per_byte_ms() const {
+  return get_new_prediction(_cost_per_byte_ms_seq);
+}
+
 double G1Analytics::predict_constant_other_time_ms() const {
   return get_new_prediction(_constant_other_time_ms_seq);
 }
@@ -326,4 +330,3 @@ void G1Analytics::update_recent_gc_times(double end_time_sec,
 void G1Analytics::report_concurrent_mark_cleanup_times_ms(double ms) {
   _concurrent_mark_cleanup_times_ms->add(ms);
 }
-

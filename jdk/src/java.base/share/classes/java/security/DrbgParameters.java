@@ -216,10 +216,9 @@ import java.util.Objects;
  * <p>
  * If a DRBG is not instantiated with a {@link DrbgParameters.Instantiation}
  * object explicitly, this implementation instantiates it with a default
- * requested strength of 128 bits (112 bits for CTR_DRBG with 3KeyTDEA),
- * no prediction resistance request, and no personalization string.
- * These default instantiation parameters can also be customized with
- * the {@code securerandom.drbg.config} security property.
+ * requested strength of 128 bits, no prediction resistance request, and
+ * no personalization string. These default instantiation parameters can also
+ * be customized with the {@code securerandom.drbg.config} security property.
  * <p>
  * This implementation reads fresh entropy from the system default entropy
  * source determined by the security property {@code securerandom.source}.

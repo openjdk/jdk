@@ -81,9 +81,6 @@ module java.base {
     exports javax.security.auth.x500;
     exports javax.security.cert;
 
-    // see JDK-8144062
-    exports jdk;
-
 
     // the service types defined by the APIs in this module
 

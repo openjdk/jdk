@@ -48,7 +48,7 @@ public class VirtualAllocCommitUncommitRecommit {
         long reserveSize = 4 * 1024 * 1024; // 4096KB
         long addr;
 
-        String pid = Integer.toString(ProcessTools.getProcessId());
+        String pid = Long.toString(ProcessTools.getProcessId());
         ProcessBuilder pb = new ProcessBuilder();
 
         // reserve

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@ import java.io.*;
 import java.text.*;
 import java.util.*;
 import java.util.regex.*;
+import java.util.stream.Collectors;
 
 public class PropertiesTest {
     public static void main(String[] args) throws Exception {
@@ -32,9 +33,14 @@ public class PropertiesTest {
             dump(args[1]);
         } else if (args.length == 4 && args[0].equals("-c")) {
             compare(args[1], args[2], args[3]);
+        } else if (args.length == 1 && args[0].equals("bug7102969")) {
+            bug7102969();
+        } else if (args.length == 1 && args[0].equals("bug8157138")) {
+            bug8157138();
         } else {
             System.err.println("Usage:  java PropertiesTest -d <dumpfile>");
             System.err.println("        java PropertiesTest -c <beforedump> <afterdump> <propsfile>");
+            System.err.println("        java PropertiesTest bug[JBS bug id number] e.g. bug7102969");
             System.exit(-1);
         }
     }
@@ -172,6 +178,74 @@ public class PropertiesTest {
             }
             throw new RuntimeException(sb.toString());
         }
+    }
+
+    private static void bug7102969() {
+
+        // check the correct overriding of special case entries
+        Currency cur = Currency.getInstance(new Locale("", "JP"));
+        if (!cur.getCurrencyCode().equals("ABC")) {
+            throw new RuntimeException("[Expected: ABC as currency code of JP, found: "
+                    + cur.getCurrencyCode() + "]");
+        }
+
+        /* check if the currency instance is returned by
+         * getAvailableCurrencies() method
+         */
+        if (!Currency.getAvailableCurrencies().contains(cur)) {
+            throw new RuntimeException("[The Currency instance ["
+                    + cur.getCurrencyCode() + ", "
+                    + cur.getNumericCode() + ", "
+                    + cur.getDefaultFractionDigits()
+                    + "] is not available in the currencies list]");
+        }
+
+    }
+
+    private static void bug8157138() {
+
+        /* check the currencies which exist only as a special case are
+         * accessible i.e. it should not throw IllegalArgumentException
+         */
+        try {
+            Currency.getInstance("MAD");
+        } catch (IllegalArgumentException ex) {
+            throw new RuntimeException("Test Failed: "
+                    + "special case currency instance MAD not found"
+                    + " via Currency.getInstance(\"MAD\")");
+        }
+
+        try {
+            Currency.getInstance("ABC");
+        } catch (IllegalArgumentException ex) {
+            throw new RuntimeException("Test Failed: "
+                    + "special case currency instance ABC not found"
+                    + " via Currency.getInstance(\"ABC\")");
+        }
+
+        /* check the currency value is returned by getAvailableCurrencies()
+         * method
+        */
+        List<Currency> list = Currency.getAvailableCurrencies().stream()
+                .filter(cur -> cur.getCurrencyCode().equals("MAD"))
+                .collect(Collectors.toList());
+
+        if (list.isEmpty()) {
+            throw new RuntimeException("Test Failed: "
+                    + "special case currency instance MAD not found"
+                    + " in Currency.getAvailableCurrencies() list");
+        }
+
+        list = Currency.getAvailableCurrencies().stream()
+                .filter(cur -> cur.getCurrencyCode().equals("ABC"))
+                .collect(Collectors.toList());
+
+        if (list.isEmpty()) {
+            throw new RuntimeException("Test Failed: "
+                    + "special case currency instance ABC not found"
+                    + " in Currency.getAvailableCurrencies() list");
+        }
+
     }
 
     private static boolean isPastCutoverDate(String s)

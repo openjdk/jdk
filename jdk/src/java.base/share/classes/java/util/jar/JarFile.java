@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -153,7 +153,7 @@ class JarFile extends ZipFile {
         SharedSecrets.setJavaUtilJarAccess(new JavaUtilJarAccessImpl());
 
         BASE_VERSION = 8;  // one less than lowest version for versioned entries
-        int runtimeVersion = jdk.Version.current().major();
+        int runtimeVersion = Runtime.version().major();
         String jarVersion =
                 GetPropertyAction.privilegedGetProperty("jdk.util.jar.version");
         if (jarVersion != null) {
@@ -357,7 +357,7 @@ class JarFile extends ZipFile {
     }
 
     private boolean runtimeVersionExists() {
-        int version = jdk.Version.current().major();
+        int version = Runtime.version().major();
         try {
             Release.valueOf(version);
             return true;

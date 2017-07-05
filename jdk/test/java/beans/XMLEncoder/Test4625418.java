@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,332 +26,338 @@
  * @bug 4625418
  * @summary Tests XML <a href="http://download.java.net/jdk6/docs/technotes/guides/intl/encoding.doc.html">encoding</a>
  * @author Sergey Malenkov
- *
- * @run main Test4625418 ASCII
- * @run main Test4625418 Big5
- * ?run main Test4625418 Big5-HKSCS
- * ?run main Test4625418 Big5_HKSCS
- * @run main Test4625418 Big5_Solaris
- * ?run main Test4625418 Cp037
- * @run main Test4625418 Cp1006
- * ?run main Test4625418 Cp1025
- * -run main Test4625418 Cp1026
- * @run main Test4625418 Cp1046
- * @run main Test4625418 Cp1047
- * @run main Test4625418 Cp1097
- * @run main Test4625418 Cp1098
- * ?run main Test4625418 Cp1112
- * ?run main Test4625418 Cp1122
- * ?run main Test4625418 Cp1123
- * @run main Test4625418 Cp1124
- * ?run main Test4625418 Cp1140
- * ?run main Test4625418 Cp1141
- * ?run main Test4625418 Cp1142
- * ?run main Test4625418 Cp1143
- * ?run main Test4625418 Cp1144
- * ?run main Test4625418 Cp1145
- * ?run main Test4625418 Cp1146
- * ?run main Test4625418 Cp1147
- * ?run main Test4625418 Cp1148
- * ?run main Test4625418 Cp1149
- * @run main Test4625418 Cp1250
- * @run main Test4625418 Cp1251
- * @run main Test4625418 Cp1252
- * @run main Test4625418 Cp1253
- * @run main Test4625418 Cp1254
- * @run main Test4625418 Cp1255
- * @run main Test4625418 Cp1256
- * @run main Test4625418 Cp1257
- * @run main Test4625418 Cp1258
- * ?run main Test4625418 Cp1381
- * ?run main Test4625418 Cp1383
- * ?run main Test4625418 Cp273
- * ?run main Test4625418 Cp277
- * ?run main Test4625418 Cp278
- * ?run main Test4625418 Cp280
- * ?run main Test4625418 Cp284
- * ?run main Test4625418 Cp285
- * ?run main Test4625418 Cp297
- * ?run main Test4625418 Cp33722
- * ?run main Test4625418 Cp420
- * ?run main Test4625418 Cp424
- * @run main Test4625418 Cp437
- * ?run main Test4625418 Cp500
- * ?run main Test4625418 Cp50220
- * ?run main Test4625418 Cp50221
- * @run main Test4625418 Cp737
- * @run main Test4625418 Cp775
- * -run main Test4625418 Cp834
- * ?run main Test4625418 Cp838
- * @run main Test4625418 Cp850
- * @run main Test4625418 Cp852
- * @run main Test4625418 Cp855
- * @run main Test4625418 Cp856
- * @run main Test4625418 Cp857
- * @run main Test4625418 Cp858
- * @run main Test4625418 Cp860
- * @run main Test4625418 Cp861
- * @run main Test4625418 Cp862
- * @run main Test4625418 Cp863
- * @run main Test4625418 Cp864
- * @run main Test4625418 Cp865
- * @run main Test4625418 Cp866
- * @run main Test4625418 Cp868
- * @run main Test4625418 Cp869
- * ?run main Test4625418 Cp870
- * ?run main Test4625418 Cp871
- * @run main Test4625418 Cp874
- * ?run main Test4625418 Cp875
- * ?run main Test4625418 Cp918
- * @run main Test4625418 Cp921
- * @run main Test4625418 Cp922
- * -run main Test4625418 Cp930
- * @run main Test4625418 Cp933
- * ?run main Test4625418 Cp935
- * ?run main Test4625418 Cp937
- * ?run main Test4625418 Cp939
- * ?run main Test4625418 Cp942
- * ?run main Test4625418 Cp942C
- * @run main Test4625418 Cp943
- * ?run main Test4625418 Cp943C
- * @run main Test4625418 Cp948
- * @run main Test4625418 Cp949
- * ?run main Test4625418 Cp949C
- * @run main Test4625418 Cp950
- * @run main Test4625418 Cp964
- * ?run main Test4625418 Cp970
- * ?run main Test4625418 EUC-JP
- * @run main Test4625418 EUC-KR
- * @run main Test4625418 EUC_CN
- * ?run main Test4625418 EUC_JP
- * ?run main Test4625418 EUC_JP_LINUX
- * ?run main Test4625418 EUC_JP_Solaris
- * @run main Test4625418 EUC_KR
- * ?run main Test4625418 EUC_TW
- * @run main Test4625418 GB18030
- * @run main Test4625418 GB2312
- * @run main Test4625418 GBK
- * ?run main Test4625418 IBM-Thai
- * @run main Test4625418 IBM00858
- * ?run main Test4625418 IBM01140
- * ?run main Test4625418 IBM01141
- * ?run main Test4625418 IBM01142
- * ?run main Test4625418 IBM01143
- * ?run main Test4625418 IBM01144
- * ?run main Test4625418 IBM01145
- * ?run main Test4625418 IBM01146
- * ?run main Test4625418 IBM01147
- * ?run main Test4625418 IBM01148
- * ?run main Test4625418 IBM01149
- * ?run main Test4625418 IBM037
- * -run main Test4625418 IBM1026
- * @run main Test4625418 IBM1047
- * ?run main Test4625418 IBM273
- * ?run main Test4625418 IBM277
- * ?run main Test4625418 IBM278
- * ?run main Test4625418 IBM280
- * ?run main Test4625418 IBM284
- * ?run main Test4625418 IBM285
- * ?run main Test4625418 IBM297
- * ?run main Test4625418 IBM420
- * ?run main Test4625418 IBM424
- * @run main Test4625418 IBM437
- * ?run main Test4625418 IBM500
- * @run main Test4625418 IBM775
- * @run main Test4625418 IBM850
- * @run main Test4625418 IBM852
- * @run main Test4625418 IBM855
- * @run main Test4625418 IBM857
- * @run main Test4625418 IBM860
- * @run main Test4625418 IBM861
- * @run main Test4625418 IBM862
- * @run main Test4625418 IBM863
- * @run main Test4625418 IBM864
- * @run main Test4625418 IBM865
- * @run main Test4625418 IBM866
- * @run main Test4625418 IBM868
- * @run main Test4625418 IBM869
- * ?run main Test4625418 IBM870
- * ?run main Test4625418 IBM871
- * ?run main Test4625418 IBM918
- * ?run main Test4625418 ISCII91
- * -run main Test4625418 ISO-2022-CN
- * @run main Test4625418 ISO-2022-JP
- * @run main Test4625418 ISO-2022-KR
- * @run main Test4625418 ISO-8859-1
- * @run main Test4625418 ISO-8859-13
- * @run main Test4625418 ISO-8859-15
- * @run main Test4625418 ISO-8859-2
- * @run main Test4625418 ISO-8859-3
- * @run main Test4625418 ISO-8859-4
- * @run main Test4625418 ISO-8859-5
- * @run main Test4625418 ISO-8859-6
- * @run main Test4625418 ISO-8859-7
- * @run main Test4625418 ISO-8859-8
- * @run main Test4625418 ISO-8859-9
- * -run main Test4625418 ISO2022CN
- * @run main Test4625418 ISO2022JP
- * @run main Test4625418 ISO2022KR
- * -run main Test4625418 ISO2022_CN_CNS
- * -run main Test4625418 ISO2022_CN_GB
- * @run main Test4625418 ISO8859_1
- * @run main Test4625418 ISO8859_13
- * @run main Test4625418 ISO8859_15
- * @run main Test4625418 ISO8859_2
- * @run main Test4625418 ISO8859_3
- * @run main Test4625418 ISO8859_4
- * @run main Test4625418 ISO8859_5
- * @run main Test4625418 ISO8859_6
- * @run main Test4625418 ISO8859_7
- * @run main Test4625418 ISO8859_8
- * @run main Test4625418 ISO8859_9
- * -run main Test4625418 JISAutoDetect
- * ?run main Test4625418 JIS_X0201
- * -run main Test4625418 JIS_X0212-1990
- * @run main Test4625418 KOI8-R
- * @run main Test4625418 KOI8-U
- * @run main Test4625418 KOI8_R
- * @run main Test4625418 KOI8_U
- * @run main Test4625418 MS874
- * ?run main Test4625418 MS932
- * ?run main Test4625418 MS936
- * @run main Test4625418 MS949
- * @run main Test4625418 MS950
- * ?run main Test4625418 MS950_HKSCS
- * @run main Test4625418 MacArabic
- * @run main Test4625418 MacCentralEurope
- * @run main Test4625418 MacCroatian
- * @run main Test4625418 MacCyrillic
- * -run main Test4625418 MacDingbat
- * @run main Test4625418 MacGreek
- * @run main Test4625418 MacHebrew
- * @run main Test4625418 MacIceland
- * @run main Test4625418 MacRoman
- * @run main Test4625418 MacRomania
- * -run main Test4625418 MacSymbol
- * @run main Test4625418 MacThai
- * @run main Test4625418 MacTurkish
- * @run main Test4625418 MacUkraine
- * ?run main Test4625418 PCK
- * ?run main Test4625418 SJIS
- * ?run main Test4625418 Shift_JIS
- * @run main Test4625418 TIS-620
- * @run main Test4625418 TIS620
- * @run main Test4625418 US-ASCII
- * @run main Test4625418 UTF-16
- * @run main Test4625418 UTF-16BE
- * @run main Test4625418 UTF-16LE
- * @run main Test4625418 UTF-32
- * @run main Test4625418 UTF-32BE
- * @run main Test4625418 UTF-32LE
- * @run main Test4625418 UTF-8
- * @run main Test4625418 UTF8
- * @run main Test4625418 UTF_32
- * @run main Test4625418 UTF_32BE
- * -run main Test4625418 UTF_32BE_BOM
- * @run main Test4625418 UTF_32LE
- * -run main Test4625418 UTF_32LE_BOM
- * @run main Test4625418 UnicodeBig
- * @run main Test4625418 UnicodeBigUnmarked
- * @run main Test4625418 UnicodeLittle
- * @run main Test4625418 UnicodeLittleUnmarked
- * @run main Test4625418 windows-1250
- * @run main Test4625418 windows-1251
- * @run main Test4625418 windows-1252
- * @run main Test4625418 windows-1253
- * @run main Test4625418 windows-1254
- * @run main Test4625418 windows-1255
- * @run main Test4625418 windows-1256
- * @run main Test4625418 windows-1257
- * @run main Test4625418 windows-1258
- * ?run main Test4625418 windows-31j
- * -run main Test4625418 x-Big5_Solaris
- * ?run main Test4625418 x-EUC-TW
- * @run main Test4625418 x-IBM1006
- * ?run main Test4625418 x-IBM1025
- * @run main Test4625418 x-IBM1046
- * @run main Test4625418 x-IBM1097
- * @run main Test4625418 x-IBM1098
- * ?run main Test4625418 x-IBM1112
- * ?run main Test4625418 x-IBM1122
- * ?run main Test4625418 x-IBM1123
- * @run main Test4625418 x-IBM1124
- * ?run main Test4625418 x-IBM1381
- * ?run main Test4625418 x-IBM1383
- * ?run main Test4625418 x-IBM33722
- * @run main Test4625418 x-IBM737
- * -run main Test4625418 x-IBM834
- * @run main Test4625418 x-IBM856
- * @run main Test4625418 x-IBM874
- * ?run main Test4625418 x-IBM875
- * @run main Test4625418 x-IBM921
- * @run main Test4625418 x-IBM922
- * -run main Test4625418 x-IBM930
- * @run main Test4625418 x-IBM933
- * ?run main Test4625418 x-IBM935
- * ?run main Test4625418 x-IBM937
- * ?run main Test4625418 x-IBM939
- * ?run main Test4625418 x-IBM942
- * ?run main Test4625418 x-IBM942C
- * @run main Test4625418 x-IBM943
- * ?run main Test4625418 x-IBM943C
- * @run main Test4625418 x-IBM948
- * @run main Test4625418 x-IBM949
- * ?run main Test4625418 x-IBM949C
- * @run main Test4625418 x-IBM950
- * @run main Test4625418 x-IBM964
- * ?run main Test4625418 x-IBM970
- * ?run main Test4625418 x-ISCII91
- * -run main Test4625418 x-ISO2022-CN-CNS
- * -run main Test4625418 x-ISO2022-CN-GB
- * -run main Test4625418 x-JIS0208
- * -run main Test4625418 x-JISAutoDetect
- * @run main Test4625418 x-Johab
- * ?run main Test4625418 x-MS950-HKSCS
- * @run main Test4625418 x-MacArabic
- * @run main Test4625418 x-MacCentralEurope
- * @run main Test4625418 x-MacCroatian
- * @run main Test4625418 x-MacCyrillic
- * -run main Test4625418 x-MacDingbat
- * @run main Test4625418 x-MacGreek
- * @run main Test4625418 x-MacHebrew
- * @run main Test4625418 x-MacIceland
- * @run main Test4625418 x-MacRoman
- * @run main Test4625418 x-MacRomania
- * -run main Test4625418 x-MacSymbol
- * @run main Test4625418 x-MacThai
- * @run main Test4625418 x-MacTurkish
- * @run main Test4625418 x-MacUkraine
- * ?run main Test4625418 x-PCK
- * @run main Test4625418 x-UTF-16LE-BOM
- * -run main Test4625418 x-UTF-32BE-BOM
- * -run main Test4625418 x-UTF-32LE-BOM
- * ?run main Test4625418 x-euc-jp-linux
- * ?run main Test4625418 x-eucJP-Open
- * @run main Test4625418 x-iso-8859-11
- * @run main Test4625418 x-mswin-936
- * ?run main Test4625418 x-windows-50220
- * ?run main Test4625418 x-windows-50221
- * @run main Test4625418 x-windows-874
- * @run main Test4625418 x-windows-949
- * @run main Test4625418 x-windows-950
- * ?run main Test4625418 x-windows-iso2022jp
+ * @run main/timeout=360 Test4625418
  */
 
 import java.beans.ExceptionListener;
 import java.beans.XMLDecoder;
 import java.beans.XMLEncoder;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.UnsupportedCharsetException;
 
 public final class Test4625418 implements ExceptionListener {
-    public static void main(String[] args) {
-        new Test4625418(args[0]).test(createString(0x10000));
-        System.out.println("Test passed: " + args[0]);
+
+    private static final String[] encodings = {
+        "ASCII",
+        "Big5",
+        //"Big5-HKSCS",
+        //"Big5_HKSCS",
+        "Big5_Solaris",
+        //"Cp037",
+        "Cp1006",
+        //"Cp1025",
+        //"Cp1026",
+        "Cp1046",
+        "Cp1047",
+        "Cp1097",
+        "Cp1098",
+        //"Cp1112",
+        //"Cp1122",
+        //"Cp1123",
+        "Cp1124",
+        //"Cp1140",
+        //"Cp1141",
+        //"Cp1142",
+        //"Cp1143",
+        //"Cp1144",
+        //"Cp1145",
+        //"Cp1146",
+        //"Cp1147",
+        //"Cp1148",
+        //"Cp1149",
+        "Cp1250",
+        "Cp1251",
+        "Cp1252",
+        "Cp1253",
+        "Cp1254",
+        "Cp1255",
+        "Cp1256",
+        "Cp1257",
+        "Cp1258",
+        //"Cp1381",
+        //"Cp1383",
+        //"Cp273",
+        //"Cp277",
+        //"Cp278",
+        //"Cp280",
+        //"Cp284",
+        //"Cp285",
+        //"Cp297",
+        //"Cp33722",
+        //"Cp420",
+        //"Cp424",
+        "Cp437",
+        //"Cp500",
+        //"Cp50220",
+        //"Cp50221",
+        "Cp737",
+        "Cp775",
+        //"Cp834",
+        //"Cp838",
+        "Cp850",
+        "Cp852",
+        "Cp855",
+        "Cp856",
+        "Cp857",
+        "Cp858",
+        "Cp860",
+        "Cp861",
+        "Cp862",
+        "Cp863",
+        "Cp864",
+        "Cp865",
+        "Cp866",
+        "Cp868",
+        "Cp869",
+        //"Cp870",
+        //"Cp871",
+        "Cp874",
+        //"Cp875",
+        //"Cp918",
+        "Cp921",
+        "Cp922",
+        //"Cp930",
+        "Cp933",
+        //"Cp935",
+        //"Cp937",
+        //"Cp939",
+        //"Cp942",
+        //"Cp942C",
+        "Cp943",
+        //"Cp943C",
+        "Cp948",
+        "Cp949",
+        //"Cp949C",
+        "Cp950",
+        "Cp964",
+        //"Cp970",
+        //"EUC-JP",
+        "EUC-KR",
+        "EUC_CN",
+        //"EUC_JP",
+        //"EUC_JP_LINUX",
+        //"EUC_JP_Solaris",
+        "EUC_KR",
+        //"EUC_TW",
+        "GB18030",
+        "GB2312",
+        "GBK",
+        //"IBM-Thai",
+        "IBM00858",
+        //"IBM01140",
+        //"IBM01141",
+        //"IBM01142",
+        //"IBM01143",
+        //"IBM01144",
+        //"IBM01145",
+        //"IBM01146",
+        //"IBM01147",
+        //"IBM01148",
+        //"IBM01149",
+        //"IBM037",
+        //"IBM1026",
+        "IBM1047",
+        //"IBM273",
+        //"IBM277",
+        //"IBM278",
+        //"IBM280",
+        //"IBM284",
+        //"IBM285",
+        //"IBM297",
+        //"IBM420",
+        //"IBM424",
+        "IBM437",
+        //"IBM500",
+        "IBM775",
+        "IBM850",
+        "IBM852",
+        "IBM855",
+        "IBM857",
+        "IBM860",
+        "IBM861",
+        "IBM862",
+        "IBM863",
+        "IBM864",
+        "IBM865",
+        "IBM866",
+        "IBM868",
+        "IBM869",
+        //"IBM870",
+        //"IBM871",
+        //"IBM918",
+        //"ISCII91",
+        //"ISO-2022-CN",
+        "ISO-2022-JP",
+        "ISO-2022-KR",
+        "ISO-8859-1",
+        "ISO-8859-13",
+        "ISO-8859-15",
+        "ISO-8859-2",
+        "ISO-8859-3",
+        "ISO-8859-4",
+        "ISO-8859-5",
+        "ISO-8859-6",
+        "ISO-8859-7",
+        "ISO-8859-8",
+        "ISO-8859-9",
+        //"ISO2022CN",
+        "ISO2022JP",
+        "ISO2022KR",
+        //"ISO2022_CN_CNS",
+        //"ISO2022_CN_GB",
+        "ISO8859_1",
+        "ISO8859_13",
+        "ISO8859_15",
+        "ISO8859_2",
+        "ISO8859_3",
+        "ISO8859_4",
+        "ISO8859_5",
+        "ISO8859_6",
+        "ISO8859_7",
+        "ISO8859_8",
+        "ISO8859_9",
+        //"JISAutoDetect",
+        //"JIS_X0201",
+        //"JIS_X0212-1990",
+        "KOI8-R",
+        "KOI8-U",
+        "KOI8_R",
+        "KOI8_U",
+        "MS874",
+        //"MS932",
+        //"MS936",
+        "MS949",
+        "MS950",
+        //"MS950_HKSCS",
+        "MacArabic",
+        "MacCentralEurope",
+        "MacCroatian",
+        "MacCyrillic",
+        //"MacDingbat",
+        "MacGreek",
+        "MacHebrew",
+        "MacIceland",
+        "MacRoman",
+        "MacRomania",
+        //"MacSymbol",
+        "MacThai",
+        "MacTurkish",
+        "MacUkraine",
+        //"PCK",
+        //"SJIS",
+        //"Shift_JIS",
+        "TIS-620",
+        "TIS620",
+        "US-ASCII",
+        "UTF-16",
+        "UTF-16BE",
+        "UTF-16LE",
+        "UTF-32",
+        "UTF-32BE",
+        "UTF-32LE",
+        "UTF-8",
+        "UTF8",
+        "UTF_32",
+        "UTF_32BE",
+        //"UTF_32BE_BOM",
+        "UTF_32LE",
+        //"UTF_32LE_BOM",
+        "UnicodeBig",
+        "UnicodeBigUnmarked",
+        "UnicodeLittle",
+        "UnicodeLittleUnmarked",
+        "windows-1250",
+        "windows-1251",
+        "windows-1252",
+        "windows-1253",
+        "windows-1254",
+        "windows-1255",
+        "windows-1256",
+        "windows-1257",
+        "windows-1258",
+        //"windows-31j",
+        //"x-Big5_Solaris",
+        //"x-EUC-TW",
+        "x-IBM1006",
+        //"x-IBM1025",
+        "x-IBM1046",
+        "x-IBM1097",
+        "x-IBM1098",
+        //"x-IBM1112",
+        //"x-IBM1122",
+        //"x-IBM1123",
+        "x-IBM1124",
+        //"x-IBM1381",
+        //"x-IBM1383",
+        //"x-IBM33722",
+        "x-IBM737",
+        //"x-IBM834",
+        "x-IBM856",
+        "x-IBM874",
+        //"x-IBM875",
+        "x-IBM921",
+        "x-IBM922",
+        //"x-IBM930",
+        "x-IBM933",
+        //"x-IBM935",
+        //"x-IBM937",
+        //"x-IBM939",
+        //"x-IBM942",
+        //"x-IBM942C",
+        "x-IBM943",
+        //"x-IBM943C",
+        "x-IBM948",
+        "x-IBM949",
+        //"x-IBM949C",
+        "x-IBM950",
+        "x-IBM964",
+        //"x-IBM970",
+        //"x-ISCII91",
+        //"x-ISO2022-CN-CNS",
+        //"x-ISO2022-CN-GB",
+        //"x-JIS0208",
+        //"x-JISAutoDetect",
+        "x-Johab",
+        //"x-MS950-HKSCS",
+        "x-MacArabic",
+        "x-MacCentralEurope",
+        "x-MacCroatian",
+        "x-MacCyrillic",
+        //"x-MacDingbat",
+        "x-MacGreek",
+        "x-MacHebrew",
+        "x-MacIceland",
+        "x-MacRoman",
+        "x-MacRomania",
+        //"x-MacSymbol",
+        "x-MacThai",
+        "x-MacTurkish",
+        "x-MacUkraine",
+        //"x-PCK",
+        "x-UTF-16LE-BOM",
+        //"x-UTF-32BE-BOM",
+        //"x-UTF-32LE-BOM",
+        //"x-euc-jp-linux",
+        //"x-eucJP-Open",
+        "x-iso-8859-11",
+        "x-mswin-936",
+        //"x-windows-50220",
+        //"x-windows-50221",
+        "x-windows-874",
+        "x-windows-949",
+        "x-windows-950",
+        //"x-windows-iso2022jp",
+    };
+
+    public static void main(final String[] args) {
+        final String string = createString(0x10000);
+        for (String encoding : encodings) {
+            System.out.println("Test encoding: " + encoding);
+            new Test4625418(encoding).test(string);
+        }
     }
 
     private static String createString(int length) {
@@ -364,33 +370,27 @@ public final class Test4625418 implements ExceptionListener {
 
     private final String encoding;
 
-    private Test4625418(String encoding) {
+    private Test4625418(final String encoding) {
         this.encoding = encoding;
     }
 
     private void test(String string) {
         try {
-            File file = new File("4625418." + this.encoding + ".xml");
-
-            FileOutputStream output = new FileOutputStream(file);
+            ByteArrayOutputStream output = new ByteArrayOutputStream();
             XMLEncoder encoder = new XMLEncoder(output, this.encoding, true, 0);
             encoder.setExceptionListener(this);
             encoder.writeObject(string);
             encoder.close();
 
-            FileInputStream input = new FileInputStream(file);
+            InputStream input = new ByteArrayInputStream(output.toByteArray());
             XMLDecoder decoder = new XMLDecoder(input);
             decoder.setExceptionListener(this);
             Object object = decoder.readObject();
             decoder.close();
 
-            if (!string.equals(object))
+            if (!string.equals(object)) {
                 throw new Error(this.encoding + " - can't read properly");
-
-            file.delete();
-        }
-        catch (FileNotFoundException exception) {
-            throw new Error(this.encoding + " - file not found", exception);
+            }
         }
         catch (IllegalCharsetNameException exception) {
             throw new Error(this.encoding + " - illegal charset name", exception);

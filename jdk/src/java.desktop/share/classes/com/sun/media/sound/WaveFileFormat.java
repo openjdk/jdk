@@ -33,7 +33,7 @@ import javax.sound.sampled.AudioFormat;
  *
  * @author Jan Borgersen
  */
-final class WaveFileFormat extends AudioFileFormat {
+final class WaveFileFormat extends StandardFileFormat {
 
     /**
      * Wave format type.
@@ -73,9 +73,9 @@ final class WaveFileFormat extends AudioFileFormat {
     static final int WAVE_FORMAT_SX7383    = 0x1C07;
     static final int WAVE_FORMAT_EXTENSIBLE= 0xFFFE;
 
-    WaveFileFormat(AudioFileFormat.Type type, int lengthInBytes, AudioFormat format, int lengthInFrames) {
-
-        super(type,lengthInBytes,format,lengthInFrames);
+    WaveFileFormat(final AudioFileFormat.Type type, final long byteLength,
+                   final AudioFormat format, final long frameLength) {
+        super(type, byteLength, format, frameLength);
 
         AudioFormat.Encoding encoding = format.getEncoding();
 

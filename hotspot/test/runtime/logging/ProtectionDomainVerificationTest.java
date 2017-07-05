@@ -24,6 +24,7 @@
 /*
  * @test ProtectionDomainVerificationTest
  * @bug 8149064
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary
  * @build jdk.test.lib.OutputAnalyzer jdk.test.lib.Platform jdk.test.lib.ProcessTools
  * @run driver ProtectionDomainVerificationTest

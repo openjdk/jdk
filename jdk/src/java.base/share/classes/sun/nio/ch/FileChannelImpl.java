@@ -40,7 +40,6 @@ import java.nio.channels.OverlappingFileLockException;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.WritableByteChannel;
-import java.security.AccessController;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -83,6 +82,9 @@ public class FileChannelImpl
     // Lock for operations involving position and size
     private final Object positionLock = new Object();
 
+    // Positional-read is not interruptible
+    private volatile boolean uninterruptible;
+
     private FileChannelImpl(FileDescriptor fd, String path, boolean readable,
                             boolean writable, Object parent)
     {
@@ -106,6 +108,10 @@ public class FileChannelImpl
     private void ensureOpen() throws IOException {
         if (!isOpen())
             throw new ClosedChannelException();
+    }
+
+    public void setUninterruptible() {
+        uninterruptible = true;
     }
 
     // -- Standard channel operations --
@@ -733,8 +739,10 @@ public class FileChannelImpl
         assert !nd.needsPositionLock() || Thread.holdsLock(positionLock);
         int n = 0;
         int ti = -1;
+
+        boolean interruptible = !uninterruptible;
         try {
-            begin();
+            if (interruptible) begin();
             ti = threads.add();
             if (!isOpen())
                 return -1;
@@ -744,7 +752,7 @@ public class FileChannelImpl
             return IOStatus.normalize(n);
         } finally {
             threads.remove(ti);
-            end(n > 0);
+            if (interruptible) end(n > 0);
             assert IOStatus.check(n);
         }
     }

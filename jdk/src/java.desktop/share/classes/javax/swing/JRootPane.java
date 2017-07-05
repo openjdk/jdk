@@ -194,7 +194,7 @@ import sun.security.action.GetBooleanAction;
  * @see JComponent
  * @see BoxLayout
  *
- * @see <a href="http://java.sun.com/products/jfc/tsc/articles/mixing/">
+ * @see <a href="http://www.oracle.com/technetwork/articles/java/mixing-components-433992.html">
  * Mixing Heavy and Light Components</a>
  *
  * @author David Kloba

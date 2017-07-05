@@ -27,6 +27,7 @@
  * @test
  * @summary class p1.c1 defined in m1 tries to access p2.c2 defined in m2.
  *          Access allowed since m1 can read m2 and package p2 is exported to m1.
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary /test/lib
  * @compile myloaders/MyDiffClassLoader.java
  * @compile p2/c2.java
@@ -90,7 +91,7 @@ public class DiffCL_ExpQualToM1 {
         // Resolves "m1"
         Configuration cf = Layer.boot()
                 .configuration()
-                .resolveRequires(finder, ModuleFinder.empty(), Set.of("m1"));
+                .resolveRequires(finder, ModuleFinder.of(), Set.of("m1"));
 
         // map each module to differing class loaders for this test
         Map<String, ClassLoader> map = new HashMap<>();

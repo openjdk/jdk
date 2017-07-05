@@ -274,14 +274,19 @@ compare_file_types() {
 
     $MKDIR -p $WORK_DIR
 
+    FILE_TYPES_FILTER="$SED \
+        -e 's/BuildID[^,]*//' \
+        -e 's/last modified: .*//' \
+        "
+
     echo -n File types...
     found=""
     for f in `cd $OTHER_DIR && $FIND . ! -type d`
     do
         if [ ! -f ${OTHER_DIR}/$f ]; then continue; fi
         if [ ! -f ${THIS_DIR}/$f ]; then continue; fi
-        OF=`cd ${OTHER_DIR} && $FILE -h $f | $SED 's/BuildID[^,]*//g'`
-        TF=`cd ${THIS_DIR} && $FILE -h $f | $SED 's/BuildID[^,]*//g'`
+        OF=$(cd ${OTHER_DIR} && $FILE -h $f | eval $FILE_TYPES_FILTER)
+        TF=$(cd ${THIS_DIR} && $FILE -h $f | eval $FILE_TYPES_FILTER)
         if [ "$OF" != "$TF" ]
         then
             if [ "`echo $OF | $GREP -c 'Zip archive data'`" -gt 0 ] \
@@ -320,7 +325,7 @@ compare_general_files() {
         ! -name "*.obj" ! -name "*.o" ! -name "JavaControlPanelHelper" \
         ! -name "JavaUpdater" ! -name "JavaWSApplicationStub" \
         ! -name "jspawnhelper" ! -name "JavawsLauncher" ! -name "*.a" \
-        ! -name "finish_installation" ! -name "Sparkle" \
+        ! -name "finish_installation" ! -name "Sparkle" ! -name "*.tar.gz" \
         | $GREP -v "./bin/"  | $SORT | $FILTER)
 
     echo Other files with binary differences...
@@ -423,6 +428,10 @@ compare_zip_file() {
     then
         (cd $THIS_UNZIPDIR && $UNARCHIVE $THIS_ZIP)
         (cd $OTHER_UNZIPDIR && $UNARCHIVE $OTHER_ZIP)
+    elif [ "$TYPE" = "gz" ]
+    then
+        (cd $THIS_UNZIPDIR && $GUNZIP -c $THIS_ZIP | $TAR xf -)
+        (cd $OTHER_UNZIPDIR && $GUNZIP -c $OTHER_ZIP | $TAR xf -)
     else
         (cd $THIS_UNZIPDIR && $JIMAGE extract $THIS_ZIP)
         (cd $OTHER_UNZIPDIR && $JIMAGE extract $OTHER_ZIP)
@@ -526,10 +535,11 @@ compare_all_zip_files() {
     OTHER_DIR=$2
     WORK_DIR=$3
 
-    ZIPS=$(cd $THIS_DIR && $FIND . -type f -name "*.zip" | $SORT | $FILTER )
+    ZIPS=$(cd $THIS_DIR && $FIND . -type f -name "*.zip" -o -name "*.tar.gz" \
+        | $SORT | $FILTER )
 
     if [ -n "$ZIPS" ]; then
-        echo Zip files...
+        echo Zip/tar.gz files...
 
         return_value=0
         for f in $ZIPS; do
@@ -913,7 +923,7 @@ compare_bin_file() {
             FULLDUMP_MSG="          "
             DIFF_FULLDUMP=
             if [[ "$KNOWN_FULLDUMP_DIFF $ACCEPTED_FULLDUMP_DIFF" = *"$BIN_FILE"* ]]; then
-                FULLDUMP_MSG="    !     "
+                FULLDUMP_MSG="    !    "
             fi
         fi
     fi

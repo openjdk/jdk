@@ -30,6 +30,7 @@ import java.util.jar.JarFile;
 import java.io.Console;
 import java.io.FileDescriptor;
 import java.io.ObjectInputStream;
+import java.io.RandomAccessFile;
 import java.security.ProtectionDomain;
 import java.security.AccessController;
 
@@ -64,6 +65,7 @@ public class SharedSecrets {
     private static JavaAWTFontAccess javaAWTFontAccess;
     private static JavaBeansAccess javaBeansAccess;
     private static JavaObjectInputStreamAccess javaObjectInputStreamAccess;
+    private static JavaIORandomAccessFileAccess javaIORandomAccessFileAccess;
 
     public static JavaUtilJarAccess javaUtilJarAccess() {
         if (javaUtilJarAccess == null) {
@@ -273,5 +275,16 @@ public class SharedSecrets {
 
     public static void setJavaObjectInputStreamAccess(JavaObjectInputStreamAccess access) {
         javaObjectInputStreamAccess = access;
+    }
+
+    public static void setJavaIORandomAccessFileAccess(JavaIORandomAccessFileAccess jirafa) {
+        javaIORandomAccessFileAccess = jirafa;
+    }
+
+    public static JavaIORandomAccessFileAccess getJavaIORandomAccessFileAccess() {
+        if (javaIORandomAccessFileAccess == null) {
+            unsafe.ensureClassInitialized(RandomAccessFile.class);
+        }
+        return javaIORandomAccessFileAccess;
     }
 }

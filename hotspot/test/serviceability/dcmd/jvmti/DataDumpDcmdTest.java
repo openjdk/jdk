@@ -31,6 +31,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 8054890
  * @summary Test of JVMTI.data_dump diagnostic command
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary
  * @build jdk.test.lib.*
  * @run testng DataDumpDcmdTest

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@
 #include "memory/resourceArea.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.hpp"
-#include "prims/jvmtiRedefineClassesTrace.hpp"
 #include "runtime/vm_operations.hpp"
 
 // Introduction:
@@ -489,6 +488,10 @@ class VM_RedefineClasses: public VM_Operation {
          constantPoolHandle scratch_cp, int scratch_cp_length, TRAPS);
 
   void flush_dependent_code(instanceKlassHandle k_h, TRAPS);
+
+  // lock classes to redefine since constant pool merging isn't thread safe.
+  void lock_classes();
+  void unlock_classes();
 
   static void dump_methods();
 

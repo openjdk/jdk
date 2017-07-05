@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8144355
+ * @bug 8144355 8144062
  * @summary Test aliasing additions to ZipFileSystem for multi-release jar files
  * @library /lib/testlibrary/java/util/jar
  * @build Compiler JarBuilder CreateMultiReleaseTestJars
@@ -34,17 +34,17 @@ import java.io.IOException;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.lang.Runtime.Version;
 import java.net.URI;
 import java.nio.file.*;
 import java.util.HashMap;
 import java.util.Map;
-import jdk.Version;
 
 import org.testng.Assert;
 import org.testng.annotations.*;
 
 public class MultiReleaseJarTest {
-    final private int MAJOR_VERSION = Version.current().major();
+    final private int MAJOR_VERSION = Runtime.version().major();
 
     final private String userdir = System.getProperty("user.dir",".");
     final private Map<String,String> stringEnv = new HashMap<>();

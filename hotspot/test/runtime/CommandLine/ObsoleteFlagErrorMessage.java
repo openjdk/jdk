@@ -25,6 +25,7 @@
  * @test
  * @bug 8060449 8073989
  * @summary Newly obsolete command line options should still give useful error messages when used improperly.
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary
  */
 

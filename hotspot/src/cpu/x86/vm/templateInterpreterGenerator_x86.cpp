@@ -608,18 +608,13 @@ void TemplateInterpreterGenerator::lock_method() {
 
   // get synchronization object
   {
-    const int mirror_offset = in_bytes(Klass::java_mirror_offset());
     Label done;
     __ movl(rax, access_flags);
     __ testl(rax, JVM_ACC_STATIC);
     // get receiver (assume this is frequent case)
     __ movptr(rax, Address(rlocals, Interpreter::local_offset_in_bytes(0)));
     __ jcc(Assembler::zero, done);
-    __ movptr(rax, Address(rbx, Method::const_offset()));
-    __ movptr(rax, Address(rax, ConstMethod::constants_offset()));
-    __ movptr(rax, Address(rax,
-                           ConstantPool::pool_holder_offset_in_bytes()));
-    __ movptr(rax, Address(rax, mirror_offset));
+    __ load_mirror(rax, rbx);
 
 #ifdef ASSERT
     {
@@ -662,6 +657,9 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   __ movptr(rbcp, Address(rbx, Method::const_offset()));      // get ConstMethod*
   __ lea(rbcp, Address(rbcp, ConstMethod::codes_offset())); // get codebase
   __ push(rbx);        // save Method*
+  // Get mirror and store it in the frame as GC root for this Method*
+  __ load_mirror(rdx, rbx);
+  __ push(rdx);
   if (ProfileInterpreter) {
     Label method_data_continue;
     __ movptr(rdx, Address(rbx, in_bytes(Method::method_data_offset())));
@@ -999,15 +997,11 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // pass mirror handle if static call
   {
     Label L;
-    const int mirror_offset = in_bytes(Klass::java_mirror_offset());
     __ movl(t, Address(method, Method::access_flags_offset()));
     __ testl(t, JVM_ACC_STATIC);
     __ jcc(Assembler::zero, L);
     // get mirror
-    __ movptr(t, Address(method, Method::const_offset()));
-    __ movptr(t, Address(t, ConstMethod::constants_offset()));
-    __ movptr(t, Address(t, ConstantPool::pool_holder_offset_in_bytes()));
-    __ movptr(t, Address(t, mirror_offset));
+    __ load_mirror(t, method);
     // copy mirror into activation frame
     __ movptr(Address(rbp, frame::interpreter_frame_oop_temp_offset * wordSize),
             t);

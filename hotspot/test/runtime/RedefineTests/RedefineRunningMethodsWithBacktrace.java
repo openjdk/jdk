@@ -26,6 +26,7 @@
  * @bug 8087315
  * @summary Get old method's stack trace elements after GC
  * @library /testlibrary
+ * @modules java.base/jdk.internal.misc
  * @modules java.compiler
  *          java.instrument
  *          jdk.jartool/sun.tools.jar

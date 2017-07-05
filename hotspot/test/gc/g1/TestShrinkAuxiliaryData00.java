@@ -25,6 +25,7 @@
  * @test TestShrinkAuxiliaryData00
  * @bug 8038423 8061715
  * @summary Checks that decommitment occurs for JVM with different
+ * @ignore 8155957
  * G1ConcRSLogCacheSize and ObjectAlignmentInBytes options values
  * @requires vm.gc=="G1" | vm.gc=="null"
  * @requires vm.opt.AggressiveOpts=="false" | vm.opt.AggressiveOpts=="null"

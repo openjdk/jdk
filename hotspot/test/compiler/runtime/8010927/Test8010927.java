@@ -35,7 +35,7 @@
 
 import sun.hotspot.WhiteBox;
 import java.lang.reflect.Field;
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 
 /**
  * The test creates uncommitted space between oldgen and young gen

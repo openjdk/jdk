@@ -52,6 +52,7 @@ import java.util.ServiceLoader;
  * </p>
  *
  */
+@SuppressWarnings("deprecation")
 public abstract class JSObject {
     /**
      * Constructs a new JSObject. Users should neither call this method nor

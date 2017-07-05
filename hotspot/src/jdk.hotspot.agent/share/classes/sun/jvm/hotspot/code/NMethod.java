@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,15 +27,13 @@ package sun.jvm.hotspot.code;
 import java.io.*;
 import java.util.*;
 import sun.jvm.hotspot.debugger.*;
-import sun.jvm.hotspot.memory.*;
 import sun.jvm.hotspot.oops.*;
 import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.types.*;
 import sun.jvm.hotspot.utilities.*;
 
-public class NMethod extends CodeBlob {
+public class NMethod extends CompiledMethod {
   private static long          pcDescSize;
-  private static AddressField  methodField;
   /** != InvocationEntryBci if this nmethod is an on-stack replacement method */
   private static CIntegerField entryBCIField;
   /** To support simple linked-list chaining of nmethods */
@@ -45,13 +43,10 @@ public class NMethod extends CodeBlob {
 
   /** Offsets for different nmethod parts */
   private static CIntegerField exceptionOffsetField;
-  private static CIntegerField deoptOffsetField;
-  private static CIntegerField deoptMhOffsetField;
   private static CIntegerField origPCOffsetField;
   private static CIntegerField stubOffsetField;
   private static CIntegerField oopsOffsetField;
   private static CIntegerField metadataOffsetField;
-  private static CIntegerField scopesDataOffsetField;
   private static CIntegerField scopesPCsOffsetField;
   private static CIntegerField dependenciesOffsetField;
   private static CIntegerField handlerTableOffsetField;
@@ -91,20 +86,16 @@ public class NMethod extends CodeBlob {
   private static void initialize(TypeDataBase db) {
     Type type = db.lookupType("nmethod");
 
-    methodField                 = type.getAddressField("_method");
     entryBCIField               = type.getCIntegerField("_entry_bci");
     osrLinkField                = type.getAddressField("_osr_link");
     scavengeRootLinkField       = type.getAddressField("_scavenge_root_link");
     scavengeRootStateField      = type.getJByteField("_scavenge_root_state");
 
     exceptionOffsetField        = type.getCIntegerField("_exception_offset");
-    deoptOffsetField            = type.getCIntegerField("_deoptimize_offset");
-    deoptMhOffsetField          = type.getCIntegerField("_deoptimize_mh_offset");
     origPCOffsetField           = type.getCIntegerField("_orig_pc_offset");
     stubOffsetField             = type.getCIntegerField("_stub_offset");
     oopsOffsetField             = type.getCIntegerField("_oops_offset");
     metadataOffsetField         = type.getCIntegerField("_metadata_offset");
-    scopesDataOffsetField       = type.getCIntegerField("_scopes_data_offset");
     scopesPCsOffsetField        = type.getCIntegerField("_scopes_pcs_offset");
     dependenciesOffsetField     = type.getCIntegerField("_dependencies_offset");
     handlerTableOffsetField     = type.getCIntegerField("_handler_table_offset");
@@ -123,14 +114,9 @@ public class NMethod extends CodeBlob {
     super(addr);
   }
 
-
   // Accessors
   public Address getAddress() {
     return addr;
-  }
-
-  public Method getMethod() {
-    return (Method)Metadata.instantiateWrapperFor(methodField.getValue(addr));
   }
 
   // Type info
@@ -145,15 +131,12 @@ public class NMethod extends CodeBlob {
   public Address instsBegin()           { return codeBegin();                                        }
   public Address instsEnd()             { return headerBegin().addOffsetTo(getStubOffset());         }
   public Address exceptionBegin()       { return headerBegin().addOffsetTo(getExceptionOffset());    }
-  public Address deoptHandlerBegin()    { return headerBegin().addOffsetTo(getDeoptOffset());        }
-  public Address deoptMhHandlerBegin()  { return headerBegin().addOffsetTo(getDeoptMhOffset());      }
   public Address stubBegin()            { return headerBegin().addOffsetTo(getStubOffset());         }
   public Address stubEnd()              { return headerBegin().addOffsetTo(getOopsOffset());         }
   public Address oopsBegin()            { return headerBegin().addOffsetTo(getOopsOffset());         }
   public Address oopsEnd()              { return headerBegin().addOffsetTo(getMetadataOffset());     }
   public Address metadataBegin()        { return headerBegin().addOffsetTo(getMetadataOffset());     }
-  public Address metadataEnd()          { return headerBegin().addOffsetTo(getScopesDataOffset());   }
-  public Address scopesDataBegin()      { return headerBegin().addOffsetTo(getScopesDataOffset());   }
+  public Address metadataEnd()          { return scopesDataBegin();                                  }
   public Address scopesDataEnd()        { return headerBegin().addOffsetTo(getScopesPCsOffset());    }
   public Address scopesPCsBegin()       { return headerBegin().addOffsetTo(getScopesPCsOffset());    }
   public Address scopesPCsEnd()         { return headerBegin().addOffsetTo(getDependenciesOffset()); }
@@ -462,8 +445,6 @@ public class NMethod extends CodeBlob {
   public static int getVerifiedEntryPointOffset()    { return (int) verifiedEntryPointField.getOffset();    }
   public static int getOSREntryPointOffset()         { return (int) osrEntryPointField.getOffset();         }
   public static int getEntryBCIOffset()              { return (int) entryBCIField.getOffset();              }
-  /** NOTE: renamed from "method_offset_in_bytes" */
-  public static int getMethodOffset()                { return (int) methodField.getOffset();                }
 
   public void print() {
     printOn(System.out);
@@ -541,12 +522,9 @@ public class NMethod extends CodeBlob {
 
   private int getEntryBCI()           { return (int) entryBCIField          .getValue(addr); }
   private int getExceptionOffset()    { return (int) exceptionOffsetField   .getValue(addr); }
-  private int getDeoptOffset()        { return (int) deoptOffsetField       .getValue(addr); }
-  private int getDeoptMhOffset()      { return (int) deoptMhOffsetField     .getValue(addr); }
   private int getStubOffset()         { return (int) stubOffsetField        .getValue(addr); }
   private int getOopsOffset()         { return (int) oopsOffsetField        .getValue(addr); }
   private int getMetadataOffset()     { return (int) metadataOffsetField    .getValue(addr); }
-  private int getScopesDataOffset()   { return (int) scopesDataOffsetField  .getValue(addr); }
   private int getScopesPCsOffset()    { return (int) scopesPCsOffsetField   .getValue(addr); }
   private int getDependenciesOffset() { return (int) dependenciesOffsetField.getValue(addr); }
   private int getHandlerTableOffset() { return (int) handlerTableOffsetField.getValue(addr); }

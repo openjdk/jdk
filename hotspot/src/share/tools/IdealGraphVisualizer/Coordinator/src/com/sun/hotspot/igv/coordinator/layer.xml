@@ -18,6 +18,8 @@
     
     <folder name="Menu">
         <folder name="File">
+            <file name="Export_hidden"/>
+            <file name="Import_hidden"/>
             <file name="Separator2.instance_hidden"/>
             <file name="Separator3.instance_hidden"/>
             <file name="SeparatorOpen.instance_hidden"/>
@@ -43,11 +45,11 @@
             </file>
             <file name="com-sun-hotspot-igv-coordinator-actions-RemoveAction.shadow">
                 <attr name="originalFile" stringvalue="Actions/Edit/com-sun-hotspot-igv-coordinator-actions-RemoveAction.instance"/>
-                <attr name="position" intvalue="400" />
+                <attr name="position" intvalue="400"/>
             </file>
             <file name="com-sun-hotspot-igv-coordinator-actions-RemoveAllAction.shadow">
                 <attr name="originalFile" stringvalue="Actions/Edit/com-sun-hotspot-igv-coordinator-actions-RemoveAllAction.instance"/>
-                <attr name="position" intvalue="500" />
+                <attr name="position" intvalue="500"/>
             </file>
             
             <!-- Hidden menu entries from other modules -->

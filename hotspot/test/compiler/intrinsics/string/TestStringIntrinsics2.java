@@ -26,6 +26,7 @@
  * @test
  * @bug 8145336
  * @summary PPC64: fix string intrinsics after CompactStrings change
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary /test/lib
  * @build sun.hotspot.WhiteBox
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

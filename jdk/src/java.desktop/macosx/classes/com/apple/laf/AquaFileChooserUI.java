@@ -112,7 +112,7 @@ public class AquaFileChooserUI extends FileChooserUI {
     private AncestorListener ancestorListener = null;
     private DropTarget dragAndDropTarget = null;
 
-    private final AcceptAllFileFilter acceptAllFileFilter = new AcceptAllFileFilter();
+    private static final AcceptAllFileFilter acceptAllFileFilter = new AcceptAllFileFilter();
 
     private AquaFileSystemModel model;
 
@@ -997,7 +997,7 @@ public class AquaFileChooserUI extends FileChooserUI {
     // *****************************************
     // ***** default AcceptAll file filter *****
     // *****************************************
-    protected class AcceptAllFileFilter extends FileFilter {
+    private static class AcceptAllFileFilter extends FileFilter {
         public AcceptAllFileFilter() {
         }
 
@@ -1305,6 +1305,8 @@ public class AquaFileChooserUI extends FileChooserUI {
     protected class FilterComboBoxModel extends AbstractListModel<FileFilter> implements ComboBoxModel<FileFilter>,
             PropertyChangeListener {
         protected FileFilter[] filters;
+        Object oldFileFilter = getFileChooser().getFileFilter();
+
         protected FilterComboBoxModel() {
             super();
             filters = getFileChooser().getChoosableFileFilters();
@@ -1321,10 +1323,15 @@ public class AquaFileChooserUI extends FileChooserUI {
         }
 
         public void setSelectedItem(Object filter) {
-            if (filter != null && !containsFileFilter(filter)) {
+            if (filter != null && !isSelectedFileFilterInModel(filter)) {
+                oldFileFilter = filter;
                 getFileChooser().setFileFilter((FileFilter) filter);
                 fireContentsChanged(this, -1, -1);
             }
+        }
+
+        private boolean isSelectedFileFilterInModel(Object filter) {
+            return Objects.equals(filter, oldFileFilter);
         }
 
         public Object getSelectedItem() {

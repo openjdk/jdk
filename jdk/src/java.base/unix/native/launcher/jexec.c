@@ -331,6 +331,7 @@ const char * isJar(const char * path) {
                 off_t end   = start  + xlen;
 
                 if (end <= count) {
+                    end -= 4; // make sure there are 4 bytes to read at start
                     while (start < end) {
                         off_t xhid  = SH(buf, start);
                         off_t xdlen = SH(buf, start + 2);

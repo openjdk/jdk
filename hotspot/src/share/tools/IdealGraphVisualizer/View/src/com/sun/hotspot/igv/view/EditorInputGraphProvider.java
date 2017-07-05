@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,5 +49,15 @@ public class EditorInputGraphProvider implements InputGraphProvider {
     @Override
     public void setSelectedNodes(Set<InputNode> nodes) {
         editor.setSelectedNodes(nodes);
+    }
+
+    @Override
+    public Iterable<InputGraph> searchBackward() {
+        return editor.getDiagramModel().getGraphsBackward();
+    }
+
+    @Override
+    public Iterable<InputGraph> searchForward() {
+        return editor.getDiagramModel().getGraphsForward();
     }
 }

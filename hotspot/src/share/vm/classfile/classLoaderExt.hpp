@@ -49,12 +49,14 @@ public:
       return false;
     }
 
-    instanceKlassHandle record_result(const s2 classpath_index,
-                                      const jshort classloader_type,
-                                      const ClassPathEntry* e,
+    instanceKlassHandle record_result(Symbol* class_name,
+                                      ClassPathEntry* e,
+                                      const s2 classpath_index,
                                       instanceKlassHandle result, TRAPS) {
       if (ClassLoader::add_package(_file_name, classpath_index, THREAD)) {
         if (DumpSharedSpaces) {
+          s2 classloader_type = ClassLoader::classloader_type(
+                          class_name, e, classpath_index, CHECK_(result));
           result->set_shared_classpath_index(classpath_index);
           result->set_class_loader_type(classloader_type);
         }

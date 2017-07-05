@@ -31,6 +31,7 @@
  *          jstat should show that after garbage collection
  *          number of GC events and garbage
  *          collection time increase.
+ * @modules java.base/jdk.internal.misc
  * @library /test/lib/share/classes
  * @library ../share
  * @requires vm.opt.ExplicitGCInvokesConcurrent != true

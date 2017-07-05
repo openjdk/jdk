@@ -52,8 +52,5 @@ public class OrderInt extends Order {
         buf = IntBuffer.allocate(LENGTH);
         ck(buf.order(), nord);
         ckIntBuffer(buf, nord);
-
-        ckIntBuffer(ByteBuffer.allocate(LENGTH).asIntBuffer(), be);
-        ckIntBuffer(ByteBuffer.allocateDirect(LENGTH).asIntBuffer(), be);
     }
 }

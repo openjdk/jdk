@@ -188,7 +188,11 @@ public class VerifyJimage {
                         String cn = removeModule(n).replaceAll("\\.class$", "").replace('/', '.');
                         count.incrementAndGet();
                         try {
+                            System.out.println("Loading " + cn);
                             Class.forName(cn, false, loader);
+                        } catch (VerifyError ve) {
+                            System.err.println("VerifyError for " + cn);
+                            failed.add(reader.imageName() + ": " + cn + " not verified: " + ve.getMessage());
                         } catch (ClassNotFoundException e) {
                             failed.add(reader.imageName() + ": " + cn + " not found");
                         }

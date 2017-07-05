@@ -25,6 +25,7 @@
 /*
  * @test RemovedDevelopFlagsTest
  * @bug 8146632
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary
  * @build jdk.test.lib.OutputAnalyzer jdk.test.lib.ProcessTools
  * @run driver RemovedDevelopFlagsTest
@@ -49,8 +50,8 @@ public class RemovedDevelopFlagsTest {
 
     public static void main(String... args) throws Exception {
         if (Platform.isDebugBuild()){
-            exec("TraceClassInitialization", "-Xlog:classinit");
-            exec("TraceClassLoaderData", "-Xlog:classloaderdata");
+            exec("TraceClassInitialization", "-Xlog:class+init");
+            exec("TraceClassLoaderData", "-Xlog:class+loader+data");
             exec("TraceDefaultMethods", "-Xlog:defaultmethods=debug");
             exec("TraceItables", "-Xlog:itables=debug");
             exec("TraceSafepoint", "-Xlog:safepoint=debug");

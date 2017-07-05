@@ -34,7 +34,7 @@
  * 7067045 7014640 7189363 8007395 8013252 8013254 8012646 8023647 6559590
  * 8027645 8035076 8039124 8035975 8074678 6854417 8143854 8147531 7071819
  * 8151481 4867170 7080302 6728861 6995635 6736245 4916384
- * 6328855 6192895 6345469 6988218 6693451 7006761 8140212
+ * 6328855 6192895 6345469 6988218 6693451 7006761 8140212 8143282
  *
  * @library /lib/testlibrary
  * @build jdk.testlibrary.*
@@ -4345,12 +4345,13 @@ public class RegExTest {
         Matcher definedP = Pattern.compile("\\p{IsAssigned}").matcher("");
         Matcher nonCCPP = Pattern.compile("\\p{IsNoncharacterCodePoint}").matcher("");
         Matcher joinCrtl = Pattern.compile("\\p{IsJoinControl}").matcher("");
-
         // javaMethod
         Matcher lowerJ  = Pattern.compile("\\p{javaLowerCase}").matcher("");
         Matcher upperJ  = Pattern.compile("\\p{javaUpperCase}").matcher("");
         Matcher alphaJ  = Pattern.compile("\\p{javaAlphabetic}").matcher("");
         Matcher ideogJ  = Pattern.compile("\\p{javaIdeographic}").matcher("");
+        // GC/C
+        Matcher gcC  = Pattern.compile("\\p{C}").matcher("");
 
         for (int cp = 1; cp < 0x30000; cp++) {
             String str = new String(Character.toChars(cp));
@@ -4416,8 +4417,14 @@ public class RegExTest {
                 Character.isIdeographic(cp) != ideogJ.reset(str).matches() ||
                 (Character.UNASSIGNED == type) == definedP.reset(str).matches() ||
                 POSIX_Unicode.isNoncharacterCodePoint(cp) != nonCCPP.reset(str).matches() ||
-                POSIX_Unicode.isJoinControl(cp) != joinCrtl.reset(str).matches())
+                POSIX_Unicode.isJoinControl(cp) != joinCrtl.reset(str).matches() ||
+                // gc_C
+                (Character.CONTROL == type || Character.FORMAT == type ||
+                 Character.PRIVATE_USE == type || Character.SURROGATE == type ||
+                 Character.UNASSIGNED == type)
+                != gcC.reset(str).matches()) {
                 failCount++;
+            }
         }
 
         // bounds/word align

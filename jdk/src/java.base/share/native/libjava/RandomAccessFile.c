@@ -60,6 +60,10 @@ Java_java_io_RandomAccessFile_open0(JNIEnv *env,
         else if (mode & java_io_RandomAccessFile_O_DSYNC)
             flags |= O_DSYNC;
     }
+#ifdef WIN32
+    if (mode & java_io_RandomAccessFile_O_TEMPORARY)
+        flags |= O_TEMPORARY;
+#endif
     fileOpen(env, this, path, raf_fd, flags);
 }
 
