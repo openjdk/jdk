@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -153,13 +153,11 @@ final class SignatureAndHashAlgorithm {
             getSupportedAlgorithms(AlgorithmConstraints constraints) {
 
         Collection<SignatureAndHashAlgorithm> supported = new ArrayList<>();
-        synchronized (priorityMap) {
-            for (SignatureAndHashAlgorithm sigAlg : priorityMap.values()) {
-                if (sigAlg.priority <= SUPPORTED_ALG_PRIORITY_MAX_NUM &&
-                        constraints.permits(SIGNATURE_PRIMITIVE_SET,
-                                sigAlg.algorithm, null)) {
-                    supported.add(sigAlg);
-                }
+        for (SignatureAndHashAlgorithm sigAlg : priorityMap.values()) {
+            if (sigAlg.priority <= SUPPORTED_ALG_PRIORITY_MAX_NUM &&
+                    constraints.permits(SIGNATURE_PRIMITIVE_SET,
+                            sigAlg.algorithm, null)) {
+                supported.add(sigAlg);
             }
         }
 

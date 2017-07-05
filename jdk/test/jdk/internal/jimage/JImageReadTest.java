@@ -313,7 +313,7 @@ public class JImageReadTest {
     static boolean isMetaName(String name) {
         return name.startsWith("/modules")
                 || name.startsWith("/packages")
-                || name.startsWith("META-INF/services")
+                || name.startsWith("META-INF")
                 || name.equals("bootmodules.jdata");
     }
 
