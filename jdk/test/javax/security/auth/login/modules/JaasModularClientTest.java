@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,14 +32,15 @@ import java.lang.module.ModuleDescriptor;
 import java.util.ArrayList;
 import jdk.testlibrary.ProcessTools;
 import jdk.testlibrary.OutputAnalyzer;
+import jdk.test.lib.compiler.CompilerUtils;
 import org.testng.annotations.BeforeTest;
 
 /**
  * @test
  * @bug 8078813
- * @library /lib/testlibrary
+ * @library /lib/testlibrary /test/lib
  * @library /java/security/modules
- * @build CompilerUtils JarUtils
+ * @build jdk.test.lib.compiler.CompilerUtils JarUtils
  * @summary Test custom JAAS module with all possible modular option. The test
  *          includes different combination of JAAS client/login modules
  *          interaction with or without service description.
