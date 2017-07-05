@@ -93,20 +93,22 @@ public class PatchTestWarningError {
                                                 MODS_DIR.resolve("test"));
         assertTrue(compiled, "classes did not compile");
 
-        // javac -Xmodule:$MODULE -d patches1/$MODULE patches1/$MODULE/**
+        // javac --patch-module $MODULE=patches1/$MODULE -d patches1/$MODULE patches1/$MODULE/**
         Path src = SRC1_DIR.resolve("java.base");
         Path output = PATCHES1_DIR.resolve(src.getFileName());
         Files.createDirectories(output);
         String mn = src.getFileName().toString();
-        compiled  = CompilerUtils.compile(src, output, "-Xmodule:" + mn);
+        compiled  = CompilerUtils.compile(src, output,
+                                          "--patch-module", mn + "=" + src.toString());
         assertTrue(compiled, "classes did not compile");
 
-        // javac -Xmodule:$MODULE -d patches2/$MODULE patches2/$MODULE/**
+        // javac --patch-module $MODULE=patches2/$MODULE -d patches2/$MODULE patches2/$MODULE/**
         src = SRC2_DIR.resolve("java.base");
         output = PATCHES2_DIR.resolve(src.getFileName());
         Files.createDirectories(output);
         mn = src.getFileName().toString();
-        compiled  = CompilerUtils.compile(src, output, "-Xmodule:" + mn);
+        compiled  = CompilerUtils.compile(src, output,
+                                          "--patch-module", mn + "=" + src.toString());
         assertTrue(compiled, "classes did not compile");
 
     }

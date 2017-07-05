@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,7 +95,7 @@ public abstract class MessageImpl
 
     /**
      * True if this part is encoded using Fast Infoset.
-     * MIME -> application/fastinfoset
+     * MIME -&gt; application/fastinfoset
      */
     protected boolean isFastInfoset = false;
 
@@ -202,6 +202,9 @@ public abstract class MessageImpl
     /**
       * Construct a new message. This will be invoked before message
       * sends.
+      *
+      * @param isFastInfoset whether it is fast infoset
+      * @param acceptFastInfoset whether to accept fast infoset
       */
     protected MessageImpl(boolean isFastInfoset, boolean acceptFastInfoset) {
         this.isFastInfoset = isFastInfoset;
@@ -214,6 +217,8 @@ public abstract class MessageImpl
 
     /**
      * Shallow copy.
+     *
+     * @param msg SoapMessage
      */
     protected MessageImpl(SOAPMessage msg) {
         if (!(msg instanceof MessageImpl)) {
@@ -233,14 +238,17 @@ public abstract class MessageImpl
     /**
      * @param stat
      *      the mask value obtained from {@link #identifyContentType(ContentType)}
+     * @return true if SOAP 1.1 Content
      */
     protected static boolean isSoap1_1Content(int stat) {
         return (stat & SOAP1_1_FLAG) != 0;
     }
 
     /**
+     * Check whether it is SOAP 1.2 content.
      * @param stat
      *      the mask value obtained from {@link #identifyContentType(ContentType)}
+     * @return true if it is SOAP 1.2 content
      */
     protected static boolean isSoap1_2Content(int stat) {
         return (stat & SOAP1_2_FLAG) != 0;
@@ -298,6 +306,9 @@ public abstract class MessageImpl
      * Construct a message from an input stream. When messages are
      * received, there's two parts -- the transport headers and the
      * message content in a transport specific stream.
+     * @param headers MimeHeaders
+     * @param in InputStream
+     * @exception SOAPExceptionImpl in case of I/O error
      */
     protected MessageImpl(MimeHeaders headers, final InputStream in)
         throws SOAPExceptionImpl {
@@ -332,6 +343,7 @@ public abstract class MessageImpl
      * received, there's two parts -- the transport headers and the
      * message content in a transport specific stream.
      *
+     * @param headers headers
      * @param contentType
      *      The parsed content type header from the headers variable.
      *      This is redundant parameter, but it avoids reparsing this header again.
@@ -339,6 +351,8 @@ public abstract class MessageImpl
      *      The result of {@link #identifyContentType(ContentType)} over
      *      the contentType parameter. This redundant parameter, but it avoids
      *      recomputing this information again.
+     * @param in input stream
+     * @exception SOAPExceptionImpl in case of an error
      */
     protected MessageImpl(MimeHeaders headers, final ContentType contentType, int stat, final InputStream in) throws SOAPExceptionImpl {
         init(headers, stat, contentType, in);
@@ -425,18 +439,22 @@ public abstract class MessageImpl
             } else if ((stat & MIME_MULTIPART_FLAG) != 0) {
                 final InputStream finalIn = in;
                 DataSource ds = new DataSource() {
+                    @Override
                     public InputStream getInputStream() {
                         return finalIn;
                     }
 
+                    @Override
                     public OutputStream getOutputStream() {
                         return null;
                     }
 
+                    @Override
                     public String getContentType() {
                         return contentType.toString();
                     }
 
+                    @Override
                     public String getName() {
                         return "";
                     }
@@ -591,10 +609,12 @@ public abstract class MessageImpl
             return Boolean.valueOf(lazyParsingProp.toString());
         }
     }
+    @Override
     public Object getProperty(String property) {
-        return (String) properties.get(property);
+        return properties.get(property);
     }
 
+    @Override
     public void setProperty(String property, Object value) {
         verify(property, value);
         properties.put(property, value);
@@ -722,6 +742,7 @@ public abstract class MessageImpl
             return "text/xml";
     }
 
+    @Override
     public MimeHeaders getMimeHeaders() {
         return this.headers;
     }
@@ -805,10 +826,12 @@ public abstract class MessageImpl
         saved = false;
     }
 
+    @Override
     public  boolean saveRequired() {
         return saved != true;
     }
 
+    @Override
     public String getContentDescription() {
         String[] values = headers.getHeader("Content-Description");
         if (values != null && values.length > 0)
@@ -816,13 +839,16 @@ public abstract class MessageImpl
         return null;
     }
 
+    @Override
     public void setContentDescription(String description) {
         headers.setHeader("Content-Description", description);
         needsSave();
     }
 
+    @Override
     public abstract SOAPPart getSOAPPart();
 
+    @Override
     public void removeAllAttachments() {
         try {
             initializeAllAttachments();
@@ -836,6 +862,7 @@ public abstract class MessageImpl
         }
     }
 
+    @Override
     public int countAttachments() {
         try {
             initializeAllAttachments();
@@ -847,6 +874,7 @@ public abstract class MessageImpl
         return 0;
     }
 
+    @Override
     public void addAttachmentPart(AttachmentPart attachment) {
         try {
             initializeAllAttachments();
@@ -864,6 +892,7 @@ public abstract class MessageImpl
 
     static private final Iterator nullIter = Collections.EMPTY_LIST.iterator();
 
+    @Override
     public Iterator getAttachments() {
         try {
             initializeAllAttachments();
@@ -897,12 +926,14 @@ public abstract class MessageImpl
         private MimeHeaders headers;
         private AttachmentPart nextAttachment;
 
+        @Override
         public boolean hasNext() {
             if (nextAttachment == null)
                 nextAttachment = nextMatch();
             return nextAttachment != null;
         }
 
+        @Override
         public AttachmentPart next() {
             if (nextAttachment != null) {
                 AttachmentPart ret = nextAttachment;
@@ -925,11 +956,13 @@ public abstract class MessageImpl
             return null;
         }
 
+        @Override
         public void remove() {
             iter.remove();
         }
     }
 
+    @Override
     public Iterator getAttachments(MimeHeaders headers) {
         try {
             initializeAllAttachments();
@@ -942,6 +975,7 @@ public abstract class MessageImpl
         return new MimeMatchingIterator(headers);
     }
 
+    @Override
     public void removeAttachments(MimeHeaders headers) {
         try {
             initializeAllAttachments();
@@ -966,10 +1000,12 @@ public abstract class MessageImpl
        // needsSave();
     }
 
+    @Override
     public AttachmentPart createAttachmentPart() {
         return new AttachmentPartImpl();
     }
 
+    @Override
     public  AttachmentPart getAttachment(SOAPElement element)
         throws SOAPException {
         try {
@@ -1187,6 +1223,7 @@ public abstract class MessageImpl
         }
     }
 
+    @Override
     public void saveChanges() throws SOAPException {
 
         // suck in all the data from the attachments and have it
@@ -1340,6 +1377,7 @@ public abstract class MessageImpl
 
     }
 
+    @Override
     public void writeTo(OutputStream out) throws SOAPException, IOException {
         if (saveRequired()){
             this.optimizeAttachmentProcessing = true;
@@ -1397,6 +1435,7 @@ public abstract class MessageImpl
         needsSave();
     }
 
+    @Override
     public SOAPBody getSOAPBody() throws SOAPException {
         SOAPBody body = getSOAPPart().getEnvelope().getBody();
         /*if (body == null) {
@@ -1405,6 +1444,7 @@ public abstract class MessageImpl
         return body;
     }
 
+    @Override
     public SOAPHeader getSOAPHeader() throws SOAPException {
         SOAPHeader hdr = getSOAPPart().getEnvelope().getHeader();
         /*if (hdr == null) {

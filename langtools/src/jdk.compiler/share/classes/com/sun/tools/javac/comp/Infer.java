@@ -319,7 +319,8 @@ public class Infer {
                  *  need to use it several times: with several targets.
                  */
                 saved_undet = inferenceContext.save();
-                if (allowGraphInference && !warn.hasNonSilentLint(Lint.LintCategory.UNCHECKED)) {
+                boolean unchecked = warn.hasNonSilentLint(Lint.LintCategory.UNCHECKED);
+                if (allowGraphInference && !unchecked) {
                     boolean shouldPropagate = shouldPropagate(getReturnType(), resultInfo, inferenceContext);
 
                     InferenceContext minContext = shouldPropagate ?
@@ -338,7 +339,10 @@ public class Infer {
                     }
                 }
                 inferenceContext.solve(noWarnings);
-                return inferenceContext.asInstType(this).getReturnType();
+                Type ret = inferenceContext.asInstType(this).getReturnType();
+                //inline logic from Attr.checkMethod - if unchecked conversion was required, erase
+                //return type _after_ resolution
+                return unchecked ? types.erasure(ret) : ret;
             } catch (InferenceException ex) {
                 resultInfo.checkContext.report(null, ex.getDiagnostic());
                 Assert.error(); //cannot get here (the above should throw)
