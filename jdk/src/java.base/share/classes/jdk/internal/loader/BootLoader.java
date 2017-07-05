@@ -96,6 +96,14 @@ public class BootLoader {
     }
 
     /**
+     * Returns {@code true} if there is a class path associated with the
+     * BootLoader.
+     */
+    public static boolean hasClassPath() {
+        return ClassLoaders.bootLoader().hasClassPath();
+    }
+
+    /**
      * Register a module with this class loader so that its classes (and
      * resources) become visible via this class loader.
      */
@@ -185,14 +193,6 @@ public class BootLoader {
     public static Stream<Package> packages() {
         return Arrays.stream(getSystemPackageNames())
                      .map(name -> getDefinedPackage(name.replace('/', '.')));
-    }
-
-    /**
-     * Returns {@code true} if there is a class path associated with the
-     * BootLoader.
-     */
-    public static boolean hasClassPath() {
-        return ClassLoaders.bootLoader().hasClassPath();
     }
 
     /**

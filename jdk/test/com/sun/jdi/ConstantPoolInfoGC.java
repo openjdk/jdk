@@ -22,16 +22,16 @@
  */
 
 /*
- *  @test
- *  @bug 6822627
- *  @summary Test that ReferenceType.constantPool does not produce an NPE
+ * @test
+ * @bug 6822627
+ * @summary Test that ReferenceType.constantPool does not produce an NPE
+ * @author Egor Ushakov
  *
- *  @author Egor Ushakov
+ * @modules jdk.jdi/com.sun.tools.jdi:+open
  *
- *  @modules jdk.jdi/com.sun.tools.jdi:+open
- *  @run build TestScaffold VMConnection
- *  @run compile -g ConstantPoolInfoGC.java
- *  @run main/othervm ConstantPoolInfoGC
+ * @run build TestScaffold VMConnection
+ * @run compile -g ConstantPoolInfoGC.java
+ * @run main/othervm ConstantPoolInfoGC
  */
 
 import com.sun.jdi.ReferenceType;
