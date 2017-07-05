@@ -124,11 +124,11 @@ MemRegion HeapRegionSeq::expand_by(HeapWord* old_end,
       }
       assert(_regions[index] == NULL, "invariant");
       _regions[index] = new_hr;
-      increment_length(&_allocated_length);
+      increment_allocated_length();
     }
     // Have to increment the length first, otherwise we will get an
     // assert failure at(index) below.
-    increment_length(&_length);
+    increment_length();
     HeapRegion* hr = at(index);
     list->add_as_tail(hr);
 
@@ -201,45 +201,29 @@ void HeapRegionSeq::iterate_from(HeapRegion* hr, HeapRegionClosure* blk) const {
   }
 }
 
-MemRegion HeapRegionSeq::shrink_by(size_t shrink_bytes,
-                                   uint* num_regions_deleted) {
+uint HeapRegionSeq::shrink_by(uint num_regions_to_remove) {
   // Reset this in case it's currently pointing into the regions that
   // we just removed.
   _next_search_index = 0;
 
-  assert(shrink_bytes % os::vm_page_size() == 0, "unaligned");
-  assert(shrink_bytes % HeapRegion::GrainBytes == 0, "unaligned");
   assert(length() > 0, "the region sequence should not be empty");
   assert(length() <= _allocated_length, "invariant");
   assert(_allocated_length > 0, "we should have at least one region committed");
+  assert(num_regions_to_remove < length(), "We should never remove all regions");
 
-  // around the loop, i will be the next region to be removed
-  uint i = length() - 1;
-  assert(i > 0, "we should never remove all regions");
-  // [last_start, end) is the MemRegion that covers the regions we will remove.
-  HeapWord* end = at(i)->end();
-  HeapWord* last_start = end;
-  *num_regions_deleted = 0;
-  while (shrink_bytes > 0) {
-    HeapRegion* cur = at(i);
-    // We should leave the humongous regions where they are.
-    if (cur->isHumongous()) break;
-    // We should stop shrinking if we come across a non-empty region.
-    if (!cur->is_empty()) break;
+  uint i = 0;
+  for (; i < num_regions_to_remove; i++) {
+    HeapRegion* cur = at(length() - 1);
 
-    i -= 1;
-    *num_regions_deleted += 1;
-    shrink_bytes -= cur->capacity();
-    last_start = cur->bottom();
-    decrement_length(&_length);
-    // We will reclaim the HeapRegion. _allocated_length should be
-    // covering this index. So, even though we removed the region from
-    // the active set by decreasing _length, we still have it
-    // available in the future if we need to re-use it.
-    assert(i > 0, "we should never remove all regions");
-    assert(length() > 0, "we should never remove all regions");
+    if (!cur->is_empty()) {
+      // We have to give up if the region can not be moved
+      break;
   }
-  return MemRegion(last_start, end);
+    assert(!cur->isHumongous(), "Humongous regions should not be empty");
+
+    decrement_length();
+  }
+  return i;
 }
 
 #ifndef PRODUCT

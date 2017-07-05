@@ -517,13 +517,18 @@
   template(sun_management_ManagementFactory,           "sun/management/ManagementFactory")                        \
   template(sun_management_Sensor,                      "sun/management/Sensor")                                   \
   template(sun_management_Agent,                       "sun/management/Agent")                                    \
+  template(sun_management_DiagnosticCommandImpl,       "sun/management/DiagnosticCommandImpl")                    \
   template(sun_management_GarbageCollectorImpl,        "sun/management/GarbageCollectorImpl")                     \
+  template(sun_management_ManagementFactoryHelper,     "sun/management/ManagementFactoryHelper")                  \
+  template(getDiagnosticCommandMBean_name,             "getDiagnosticCommandMBean")                               \
+  template(getDiagnosticCommandMBean_signature,        "()Lcom/sun/management/DiagnosticCommandMBean;")           \
   template(getGcInfoBuilder_name,                      "getGcInfoBuilder")                                        \
   template(getGcInfoBuilder_signature,                 "()Lsun/management/GcInfoBuilder;")                        \
   template(com_sun_management_GcInfo,                  "com/sun/management/GcInfo")                               \
   template(com_sun_management_GcInfo_constructor_signature, "(Lsun/management/GcInfoBuilder;JJJ[Ljava/lang/management/MemoryUsage;[Ljava/lang/management/MemoryUsage;[Ljava/lang/Object;)V") \
   template(createGCNotification_name,                  "createGCNotification")                                    \
   template(createGCNotification_signature,             "(JLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcom/sun/management/GcInfo;)V") \
+  template(createDiagnosticFrameworkNotification_name, "createDiagnosticFrameworkNotification")                   \
   template(createMemoryPoolMBean_name,                 "createMemoryPoolMBean")                                   \
   template(createMemoryManagerMBean_name,              "createMemoryManagerMBean")                                \
   template(createGarbageCollectorMBean_name,           "createGarbageCollectorMBean")                             \
