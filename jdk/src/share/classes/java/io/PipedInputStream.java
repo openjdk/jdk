@@ -117,7 +117,7 @@ public class PipedInputStream extends InputStream {
      * @param      src   the stream to connect to.
      * @param      pipeSize the size of the pipe's buffer.
      * @exception  IOException  if an I/O error occurs.
-     * @exception  IllegalArgumentException if <code>pipeSize <= 0</code>.
+     * @exception  IllegalArgumentException if {@code pipeSize <= 0}.
      * @since      1.6
      */
     public PipedInputStream(PipedOutputStream src, int pipeSize)
@@ -147,7 +147,7 @@ public class PipedInputStream extends InputStream {
      * connected} to a <code>PipedOutputStream</code> before being used.
      *
      * @param      pipeSize the size of the pipe's buffer.
-     * @exception  IllegalArgumentException if <code>pipeSize <= 0</code>.
+     * @exception  IllegalArgumentException if {@code pipeSize <= 0}.
      * @since      1.6
      */
     public PipedInputStream(int pipeSize) {

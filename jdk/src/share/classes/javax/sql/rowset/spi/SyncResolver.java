@@ -193,7 +193,7 @@ import java.sql.SQLException;
  * code fragment, the value in <i>crs</i> is the one set as the resolved value, which means
  * that it will be used to overwrite the conflict value in the data source.
  *
- * <PRE>
+ * <PRE>{@code
  *     try {
  *
  *         crs.acceptChanges(con);
@@ -202,8 +202,8 @@ import java.sql.SQLException;
  *
  *         SyncResolver resolver = spe.getSyncResolver();
  *
- *         Object crsValue;  // value in the <code>RowSet</code> object
- *         Object resolverValue:  // value in the <code>SyncResolver</code> object
+ *         Object crsValue;  // value in the RowSet object
+ *         Object resolverValue:  // value in the SyncResolver object
  *         Object resolvedValue:  // value to be persisted
  *
  *         while(resolver.nextConflict())  {
@@ -227,7 +227,7 @@ import java.sql.SQLException;
  *              }
  *          }
  *      }
- * </PRE>
+ * }</PRE>
  * @author  Jonathan Bruce
  */
 

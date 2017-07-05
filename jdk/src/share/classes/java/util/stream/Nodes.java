@@ -679,7 +679,7 @@ final class Nodes {
             }
 
             @Override
-            public int[] asIntArray() {
+            public int[] asPrimitiveArray() {
                 return EMPTY_INT_ARRAY;
             }
         }
@@ -696,7 +696,7 @@ final class Nodes {
             }
 
             @Override
-            public long[] asLongArray() {
+            public long[] asPrimitiveArray() {
                 return EMPTY_LONG_ARRAY;
             }
         }
@@ -713,7 +713,7 @@ final class Nodes {
             }
 
             @Override
-            public double[] asDoubleArray() {
+            public double[] asPrimitiveArray() {
                 return EMPTY_DOUBLE_ARRAY;
             }
         }
@@ -1395,7 +1395,7 @@ final class Nodes {
         }
 
         @Override
-        public int[] asIntArray() {
+        public int[] asPrimitiveArray() {
             if (array.length == curSize) {
                 return array;
             } else {
@@ -1449,7 +1449,7 @@ final class Nodes {
         }
 
         @Override
-        public long[] asLongArray() {
+        public long[] asPrimitiveArray() {
             if (array.length == curSize) {
                 return array;
             } else {
@@ -1503,7 +1503,7 @@ final class Nodes {
         }
 
         @Override
-        public double[] asDoubleArray() {
+        public double[] asPrimitiveArray() {
             if (array.length == curSize) {
                 return array;
             } else {
@@ -1561,7 +1561,7 @@ final class Nodes {
         }
 
         @Override
-        public int[] asIntArray() {
+        public int[] asPrimitiveArray() {
             int[] array = new int[(int) count()];
             copyInto(array, 0);
             return array;
@@ -1594,7 +1594,7 @@ final class Nodes {
         }
 
         @Override
-        public long[] asLongArray() {
+        public long[] asPrimitiveArray() {
             long[] array = new long[(int) count()];
             copyInto(array, 0);
             return array;
@@ -1627,7 +1627,7 @@ final class Nodes {
         }
 
         @Override
-        public double[] asDoubleArray() {
+        public double[] asPrimitiveArray() {
             double[] array = new double[(int) count()];
             copyInto(array, 0);
             return array;
@@ -1844,9 +1844,9 @@ final class Nodes {
         }
 
         @Override
-        public int[] asIntArray() {
+        public int[] asPrimitiveArray() {
             assert !building : "during building";
-            return super.asIntArray();
+            return super.asPrimitiveArray();
         }
 
         @Override
@@ -1904,9 +1904,9 @@ final class Nodes {
         }
 
         @Override
-        public long[] asLongArray() {
+        public long[] asPrimitiveArray() {
             assert !building : "during building";
-            return super.asLongArray();
+            return super.asPrimitiveArray();
         }
 
         @Override
@@ -1964,9 +1964,9 @@ final class Nodes {
         }
 
         @Override
-        public double[] asDoubleArray() {
+        public double[] asPrimitiveArray() {
             assert !building : "during building";
-            return super.asDoubleArray();
+            return super.asPrimitiveArray();
         }
 
         @Override

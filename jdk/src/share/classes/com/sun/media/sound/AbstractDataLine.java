@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,12 @@
 
 package com.sun.media.sound;
 
-import java.util.Vector;
-
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Control;
 import javax.sound.sampled.DataLine;
 import javax.sound.sampled.LineEvent;
 import javax.sound.sampled.LineUnavailableException;
-import javax.sound.sampled.Mixer;
 
 
 /**
@@ -46,13 +43,13 @@ abstract class AbstractDataLine extends AbstractLine implements DataLine {
     // DEFAULTS
 
     // default format
-    protected /*final*/ AudioFormat defaultFormat;
+    private final AudioFormat defaultFormat;
 
     // default buffer size in bytes
-    protected /*final*/ int defaultBufferSize;
+    private final int defaultBufferSize;
 
     // the lock for synchronization
-    protected Object lock = new Object();
+    protected final Object lock = new Object();
 
     // STATE
 
@@ -103,7 +100,7 @@ abstract class AbstractDataLine extends AbstractLine implements DataLine {
 
     // DATA LINE METHODS
 
-    public void open(AudioFormat format, int bufferSize) throws LineUnavailableException {
+    public final void open(AudioFormat format, int bufferSize) throws LineUnavailableException {
         //$$fb 2001-10-09: Bug #4517739: avoiding deadlock by synchronizing to mixer !
         synchronized (mixer) {
             if (Printer.trace) Printer.trace("> AbstractDataLine.open(format, bufferSize) (class: "+getClass().getName());
@@ -152,7 +149,7 @@ abstract class AbstractDataLine extends AbstractLine implements DataLine {
     }
 
 
-    public void open(AudioFormat format) throws LineUnavailableException {
+    public final void open(AudioFormat format) throws LineUnavailableException {
         open(format, AudioSystem.NOT_SPECIFIED);
     }
 
@@ -181,7 +178,7 @@ abstract class AbstractDataLine extends AbstractLine implements DataLine {
     }
 
 
-    public void start() {
+    public final void start() {
         //$$fb 2001-10-09: Bug #4517739: avoiding deadlock by synchronizing to mixer !
         synchronized(mixer) {
             if (Printer.trace) Printer.trace("> "+getClass().getName()+".start() - AbstractDataLine");
@@ -205,7 +202,7 @@ abstract class AbstractDataLine extends AbstractLine implements DataLine {
     }
 
 
-    public void stop() {
+    public final void stop() {
 
         //$$fb 2001-10-09: Bug #4517739: avoiding deadlock by synchronizing to mixer !
         synchronized(mixer) {
@@ -249,16 +246,16 @@ abstract class AbstractDataLine extends AbstractLine implements DataLine {
     // in MixerSourceLine and MixerClip, and I want to touch as little
     // code as possible to change isStarted() back to isRunning().
 
-    public boolean isRunning() {
+    public final boolean isRunning() {
         return started;
     }
 
-    public boolean isActive() {
+    public final boolean isActive() {
         return active;
     }
 
 
-    public long getMicrosecondPosition() {
+    public final long getMicrosecondPosition() {
 
         long microseconds = getLongFramePosition();
         if (microseconds != AudioSystem.NOT_SPECIFIED) {
@@ -268,26 +265,26 @@ abstract class AbstractDataLine extends AbstractLine implements DataLine {
     }
 
 
-    public AudioFormat getFormat() {
+    public final AudioFormat getFormat() {
         return format;
     }
 
 
-    public int getBufferSize() {
+    public final int getBufferSize() {
         return bufferSize;
     }
 
     /**
      * This implementation does NOT change the buffer size
      */
-    public int setBufferSize(int newSize) {
+    public final int setBufferSize(int newSize) {
         return getBufferSize();
     }
 
     /**
      * This implementation returns AudioSystem.NOT_SPECIFIED.
      */
-    public float getLevel() {
+    public final float getLevel() {
         return (float)AudioSystem.NOT_SPECIFIED;
     }
 
@@ -304,7 +301,7 @@ abstract class AbstractDataLine extends AbstractLine implements DataLine {
     // it to isStartedRunning().  This is part of backing out the
     // change denied in RFE 4297981.
 
-    protected boolean isStartedRunning() {
+    final boolean isStartedRunning() {
         return running;
     }
 
@@ -312,7 +309,7 @@ abstract class AbstractDataLine extends AbstractLine implements DataLine {
      * This method sets the active state and generates
      * events if it changes.
      */
-    protected void setActive(boolean active) {
+    final void setActive(boolean active) {
 
         if (Printer.trace) Printer.trace("> AbstractDataLine: setActive(" + active + ")");
 
@@ -351,7 +348,7 @@ abstract class AbstractDataLine extends AbstractLine implements DataLine {
      * This method sets the started state and generates
      * events if it changes.
      */
-    protected void setStarted(boolean started) {
+    final void setStarted(boolean started) {
 
         if (Printer.trace) Printer.trace("> AbstractDataLine: setStarted(" + started + ")");
 
@@ -388,7 +385,7 @@ abstract class AbstractDataLine extends AbstractLine implements DataLine {
      * This method generates a STOP event and sets the started state to false.
      * It is here for historic reasons when an EOM event existed.
      */
-    protected void setEOM() {
+    final void setEOM() {
 
         if (Printer.trace) Printer.trace("> AbstractDataLine: setEOM()");
         //$$fb 2002-04-21: sometimes, 2 STOP events are generated.
@@ -408,7 +405,7 @@ abstract class AbstractDataLine extends AbstractLine implements DataLine {
      * line is open, this should return quietly because the values
      * requested will match the current ones.
      */
-    public void open() throws LineUnavailableException {
+    public final void open() throws LineUnavailableException {
 
         if (Printer.trace) Printer.trace("> "+getClass().getName()+".open() - AbstractDataLine");
 
@@ -422,7 +419,7 @@ abstract class AbstractDataLine extends AbstractLine implements DataLine {
      * This should also stop the line.  The closed line should not be running or active.
      * After we close the line, we reset the format and buffer size to the defaults.
      */
-    public void close() {
+    public final void close() {
         //$$fb 2001-10-09: Bug #4517739: avoiding deadlock by synchronizing to mixer !
         synchronized (mixer) {
             if (Printer.trace) Printer.trace("> "+getClass().getName()+".close() - in AbstractDataLine.");

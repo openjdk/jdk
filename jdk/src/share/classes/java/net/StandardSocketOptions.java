@@ -277,8 +277,8 @@ public final class StandardSocketOptions {
      * The <em>time-to-live</em> for Internet Protocol (IP) multicast datagrams.
      *
      * <p> The value of this socket option is an {@code Integer} in the range
-     * <tt>0&nbsp;<=&nbsp;value&nbsp;<=&nbsp;255</tt>. It is used to control
-     * the scope of multicast datagrams sent by the datagram-oriented socket.
+     * {@code 0 <= value <= 255}. It is used to control the scope of multicast
+     * datagrams sent by the datagram-oriented socket.
      * In the case of an {@link StandardProtocolFamily#INET IPv4} socket
      * the option is the time-to-live (TTL) on multicast datagrams sent by the
      * socket. Datagrams with a TTL of zero are not transmitted on the network

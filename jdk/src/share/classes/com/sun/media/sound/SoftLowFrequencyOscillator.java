@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,21 +29,21 @@ package com.sun.media.sound;
  *
  * @author Karl Helgason
  */
-public class SoftLowFrequencyOscillator implements SoftProcess {
+public final class SoftLowFrequencyOscillator implements SoftProcess {
 
-    private int max_count = 10;
+    private final int max_count = 10;
     private int used_count = 0;
-    private double[][] out = new double[max_count][1];
-    private double[][] delay = new double[max_count][1];
-    private double[][] delay2 = new double[max_count][1];
-    private double[][] freq = new double[max_count][1];
-    private int[] delay_counter = new int[max_count];
-    private double[] sin_phase = new double[max_count];
-    private double[] sin_stepfreq = new double[max_count];
-    private double[] sin_step = new double[max_count];
+    private final double[][] out = new double[max_count][1];
+    private final double[][] delay = new double[max_count][1];
+    private final double[][] delay2 = new double[max_count][1];
+    private final double[][] freq = new double[max_count][1];
+    private final int[] delay_counter = new int[max_count];
+    private final double[] sin_phase = new double[max_count];
+    private final double[] sin_stepfreq = new double[max_count];
+    private final double[] sin_step = new double[max_count];
     private double control_time = 0;
     private double sin_factor = 0;
-    private static double PI2 = 2.0 * Math.PI;
+    private static final double PI2 = 2.0 * Math.PI;
 
     public SoftLowFrequencyOscillator() {
         // If sin_step is 0 then sin_stepfreq must be -INF

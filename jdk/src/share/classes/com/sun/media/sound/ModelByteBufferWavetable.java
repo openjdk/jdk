@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,18 +36,18 @@ import javax.sound.sampled.AudioFormat.Encoding;
  *
  * @author Karl Helgason
  */
-public class ModelByteBufferWavetable implements ModelWavetable {
+public final class ModelByteBufferWavetable implements ModelWavetable {
 
     private class Buffer8PlusInputStream extends InputStream {
 
-        private boolean bigendian;
-        private int framesize_pc;
+        private final boolean bigendian;
+        private final int framesize_pc;
         int pos = 0;
         int pos2 = 0;
         int markpos = 0;
         int markpos2 = 0;
 
-        public Buffer8PlusInputStream() {
+        Buffer8PlusInputStream() {
             framesize_pc = format.getFrameSize() / format.getChannels();
             bigendian = format.isBigEndian();
         }
@@ -127,7 +127,7 @@ public class ModelByteBufferWavetable implements ModelWavetable {
 
     private float loopStart = -1;
     private float loopLength = -1;
-    private ModelByteBuffer buffer;
+    private final ModelByteBuffer buffer;
     private ModelByteBuffer buffer8 = null;
     private AudioFormat format = null;
     private float pitchcorrection = 0;

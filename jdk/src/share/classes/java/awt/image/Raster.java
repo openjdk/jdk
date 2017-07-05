@@ -257,15 +257,10 @@ public class Raster {
                                                          int bandOffsets[],
                                                          Point location) {
         DataBuffer d;
-        int bands = bandOffsets.length;
 
-        int maxBandOff = bandOffsets[0];
-        for (int i=1; i < bands; i++) {
-            if (bandOffsets[i] > maxBandOff) {
-                maxBandOff = bandOffsets[i];
-            }
-        }
-        int size = maxBandOff + scanlineStride*(h-1) + pixelStride*(w-1) + 1;
+        int size = scanlineStride * (h - 1) + // fisrt (h - 1) scans
+            pixelStride * w; // last scan
+
         switch(dataType) {
         case DataBuffer.TYPE_BYTE:
             d = new DataBufferByte(size);
@@ -397,7 +392,9 @@ public class Raster {
             }
         }
         int banks = maxBank + 1;
-        int size = maxBandOff + scanlineStride*(h-1) + (w-1) + 1;
+        int size = maxBandOff +
+            scanlineStride * (h - 1) + // fisrt (h - 1) scans
+            w; // last scan
 
         switch(dataType) {
         case DataBuffer.TYPE_BYTE:

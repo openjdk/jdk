@@ -51,7 +51,7 @@ abstract class AsynchronousServerSocketChannelImpl
     protected final FileDescriptor fd;
 
     // the local address to which the channel's socket is bound
-    protected volatile SocketAddress localAddress = null;
+    protected volatile InetSocketAddress localAddress = null;
 
     // need this lock to set local address
     private final Object stateLock = new Object();
@@ -63,6 +63,8 @@ abstract class AsynchronousServerSocketChannelImpl
     // set true when accept operation is cancelled
     private volatile boolean acceptKilled;
 
+    // set true when exclusive binding is on and SO_REUSEADDR is emulated
+    private boolean isReuseAddress;
 
     AsynchronousServerSocketChannelImpl(AsynchronousChannelGroupImpl group) {
         super(group.provider());
@@ -171,7 +173,7 @@ abstract class AsynchronousServerSocketChannelImpl
     public final SocketAddress getLocalAddress() throws IOException {
         if (!isOpen())
             throw new ClosedChannelException();
-        return localAddress;
+        return Net.getRevealedLocalAddress(localAddress);
     }
 
     @Override
@@ -186,7 +188,14 @@ abstract class AsynchronousServerSocketChannelImpl
 
         try {
             begin();
-            Net.setSocketOption(fd, Net.UNSPEC, name, value);
+            if (name == StandardSocketOptions.SO_REUSEADDR &&
+                    Net.useExclusiveBind())
+            {
+                // SO_REUSEADDR emulated when using exclusive bind
+                isReuseAddress = (Boolean)value;
+            } else {
+                Net.setSocketOption(fd, Net.UNSPEC, name, value);
+            }
             return this;
         } finally {
             end();
@@ -203,6 +212,12 @@ abstract class AsynchronousServerSocketChannelImpl
 
         try {
             begin();
+            if (name == StandardSocketOptions.SO_REUSEADDR &&
+                    Net.useExclusiveBind())
+            {
+                // SO_REUSEADDR emulated when using exclusive bind
+                return (T)Boolean.valueOf(isReuseAddress);
+            }
             return (T) Net.getSocketOption(fd, Net.UNSPEC, name);
         } finally {
             end();
@@ -236,7 +251,7 @@ abstract class AsynchronousServerSocketChannelImpl
             if (localAddress == null) {
                 sb.append("unbound");
             } else {
-                sb.append(localAddress.toString());
+                sb.append(Net.getRevealedLocalAddressAsString(localAddress));
             }
         }
         sb.append(']');

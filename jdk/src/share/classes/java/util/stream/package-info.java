@@ -141,7 +141,7 @@
  * parallelism is explicitly requested.  For example, {@code Collection} has methods
  * {@link java.util.Collection#stream} and {@link java.util.Collection#parallelStream},
  * which produce sequential and parallel streams respectively; other stream-bearing methods
- * such as {@link java.util.stream.Streams#intRange(int, int)} produce sequential
+ * such as {@link java.util.stream.IntStream#range(int, int)} produce sequential
  * streams but these can be efficiently parallelized by calling {@code parallel()} on the
  * result. The set of operations on serial and parallel streams is identical. To execute the
  * "sum of weights of blocks" query in parallel, we would do:

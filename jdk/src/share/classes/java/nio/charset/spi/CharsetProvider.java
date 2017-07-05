@@ -72,7 +72,7 @@ import java.util.Iterator;
 public abstract class CharsetProvider {
 
     /**
-     * Initializes a new charset provider. </p>
+     * Initializes a new charset provider.
      *
      * @throws  SecurityException
      *          If a security manager has been installed and it denies
@@ -88,14 +88,14 @@ public abstract class CharsetProvider {
      * Creates an iterator that iterates over the charsets supported by this
      * provider.  This method is used in the implementation of the {@link
      * java.nio.charset.Charset#availableCharsets Charset.availableCharsets}
-     * method. </p>
+     * method.
      *
      * @return  The new iterator
      */
     public abstract Iterator<Charset> charsets();
 
     /**
-     * Retrieves a charset for the given charset name. </p>
+     * Retrieves a charset for the given charset name.
      *
      * @param  charsetName
      *         The name of the requested charset; may be either

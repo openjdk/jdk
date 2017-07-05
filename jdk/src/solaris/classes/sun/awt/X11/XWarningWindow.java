@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,10 @@
 package sun.awt.X11;
 
 import java.awt.*;
-import java.awt.event.*;
 import java.awt.geom.Point2D;
 import java.lang.ref.WeakReference;
-import sun.java2d.SunGraphics2D;
-import sun.java2d.pipe.Region;
+
+import sun.awt.IconInfo;
 import sun.awt.AWTAccessor;
 import sun.awt.SunToolkit;
 
@@ -56,37 +55,37 @@ class XWarningWindow extends XWindow {
      * 3 - 48x48
      */
     private int currentSize = -1;
-    private static XIconInfo[][] icons;
-    private static XIconInfo getSecurityIconInfo(int size, int num) {
+    private static IconInfo[][] icons;
+    private static IconInfo getSecurityIconInfo(int size, int num) {
         synchronized (XWarningWindow.class) {
             if (icons == null) {
-                icons = new XIconInfo[4][3];
+                icons = new IconInfo[4][3];
                 if (XlibWrapper.dataModel == 32) {
-                    icons[0][0] = new XIconInfo(XAWTIcon32_security_icon_bw16_png.security_icon_bw16_png);
-                    icons[0][1] = new XIconInfo(XAWTIcon32_security_icon_interim16_png.security_icon_interim16_png);
-                    icons[0][2] = new XIconInfo(XAWTIcon32_security_icon_yellow16_png.security_icon_yellow16_png);
-                    icons[1][0] = new XIconInfo(XAWTIcon32_security_icon_bw24_png.security_icon_bw24_png);
-                    icons[1][1] = new XIconInfo(XAWTIcon32_security_icon_interim24_png.security_icon_interim24_png);
-                    icons[1][2] = new XIconInfo(XAWTIcon32_security_icon_yellow24_png.security_icon_yellow24_png);
-                    icons[2][0] = new XIconInfo(XAWTIcon32_security_icon_bw32_png.security_icon_bw32_png);
-                    icons[2][1] = new XIconInfo(XAWTIcon32_security_icon_interim32_png.security_icon_interim32_png);
-                    icons[2][2] = new XIconInfo(XAWTIcon32_security_icon_yellow32_png.security_icon_yellow32_png);
-                    icons[3][0] = new XIconInfo(XAWTIcon32_security_icon_bw48_png.security_icon_bw48_png);
-                    icons[3][1] = new XIconInfo(XAWTIcon32_security_icon_interim48_png.security_icon_interim48_png);
-                    icons[3][2] = new XIconInfo(XAWTIcon32_security_icon_yellow48_png.security_icon_yellow48_png);
+                    icons[0][0] = new IconInfo(sun.awt.AWTIcon32_security_icon_bw16_png.security_icon_bw16_png);
+                    icons[0][1] = new IconInfo(sun.awt.AWTIcon32_security_icon_interim16_png.security_icon_interim16_png);
+                    icons[0][2] = new IconInfo(sun.awt.AWTIcon32_security_icon_yellow16_png.security_icon_yellow16_png);
+                    icons[1][0] = new IconInfo(sun.awt.AWTIcon32_security_icon_bw24_png.security_icon_bw24_png);
+                    icons[1][1] = new IconInfo(sun.awt.AWTIcon32_security_icon_interim24_png.security_icon_interim24_png);
+                    icons[1][2] = new IconInfo(sun.awt.AWTIcon32_security_icon_yellow24_png.security_icon_yellow24_png);
+                    icons[2][0] = new IconInfo(sun.awt.AWTIcon32_security_icon_bw32_png.security_icon_bw32_png);
+                    icons[2][1] = new IconInfo(sun.awt.AWTIcon32_security_icon_interim32_png.security_icon_interim32_png);
+                    icons[2][2] = new IconInfo(sun.awt.AWTIcon32_security_icon_yellow32_png.security_icon_yellow32_png);
+                    icons[3][0] = new IconInfo(sun.awt.AWTIcon32_security_icon_bw48_png.security_icon_bw48_png);
+                    icons[3][1] = new IconInfo(sun.awt.AWTIcon32_security_icon_interim48_png.security_icon_interim48_png);
+                    icons[3][2] = new IconInfo(sun.awt.AWTIcon32_security_icon_yellow48_png.security_icon_yellow48_png);
                 } else {
-                    icons[0][0] = new XIconInfo(XAWTIcon64_security_icon_bw16_png.security_icon_bw16_png);
-                    icons[0][1] = new XIconInfo(XAWTIcon64_security_icon_interim16_png.security_icon_interim16_png);
-                    icons[0][2] = new XIconInfo(XAWTIcon64_security_icon_yellow16_png.security_icon_yellow16_png);
-                    icons[1][0] = new XIconInfo(XAWTIcon64_security_icon_bw24_png.security_icon_bw24_png);
-                    icons[1][1] = new XIconInfo(XAWTIcon64_security_icon_interim24_png.security_icon_interim24_png);
-                    icons[1][2] = new XIconInfo(XAWTIcon64_security_icon_yellow24_png.security_icon_yellow24_png);
-                    icons[2][0] = new XIconInfo(XAWTIcon64_security_icon_bw32_png.security_icon_bw32_png);
-                    icons[2][1] = new XIconInfo(XAWTIcon64_security_icon_interim32_png.security_icon_interim32_png);
-                    icons[2][2] = new XIconInfo(XAWTIcon64_security_icon_yellow32_png.security_icon_yellow32_png);
-                    icons[3][0] = new XIconInfo(XAWTIcon64_security_icon_bw48_png.security_icon_bw48_png);
-                    icons[3][1] = new XIconInfo(XAWTIcon64_security_icon_interim48_png.security_icon_interim48_png);
-                    icons[3][2] = new XIconInfo(XAWTIcon64_security_icon_yellow48_png.security_icon_yellow48_png);
+                    icons[0][0] = new IconInfo(sun.awt.AWTIcon64_security_icon_bw16_png.security_icon_bw16_png);
+                    icons[0][1] = new IconInfo(sun.awt.AWTIcon64_security_icon_interim16_png.security_icon_interim16_png);
+                    icons[0][2] = new IconInfo(sun.awt.AWTIcon64_security_icon_yellow16_png.security_icon_yellow16_png);
+                    icons[1][0] = new IconInfo(sun.awt.AWTIcon64_security_icon_bw24_png.security_icon_bw24_png);
+                    icons[1][1] = new IconInfo(sun.awt.AWTIcon64_security_icon_interim24_png.security_icon_interim24_png);
+                    icons[1][2] = new IconInfo(sun.awt.AWTIcon64_security_icon_yellow24_png.security_icon_yellow24_png);
+                    icons[2][0] = new IconInfo(sun.awt.AWTIcon64_security_icon_bw32_png.security_icon_bw32_png);
+                    icons[2][1] = new IconInfo(sun.awt.AWTIcon64_security_icon_interim32_png.security_icon_interim32_png);
+                    icons[2][2] = new IconInfo(sun.awt.AWTIcon64_security_icon_yellow32_png.security_icon_yellow32_png);
+                    icons[3][0] = new IconInfo(sun.awt.AWTIcon64_security_icon_bw48_png.security_icon_bw48_png);
+                    icons[3][1] = new IconInfo(sun.awt.AWTIcon64_security_icon_interim48_png.security_icon_interim48_png);
+                    icons[3][2] = new IconInfo(sun.awt.AWTIcon64_security_icon_yellow48_png.security_icon_yellow48_png);
                 }
             }
         }
@@ -125,7 +124,7 @@ class XWarningWindow extends XWindow {
         try {
             if (newSize != currentSize) {
                 currentSize = newSize;
-                XIconInfo ico = getSecurityIconInfo(currentSize, 0);
+                IconInfo ico = getSecurityIconInfo(currentSize, 0);
                 XlibWrapper.SetBitmapShape(XToolkit.getDisplay(), getWindow(),
                         ico.getWidth(), ico.getHeight(), ico.getIntData());
                 AWTAccessor.getWindowAccessor().setSecurityWarningSize(
@@ -136,7 +135,7 @@ class XWarningWindow extends XWindow {
         }
     }
 
-    private XIconInfo getSecurityIconInfo() {
+    private IconInfo getSecurityIconInfo() {
         updateIconSize();
         return getSecurityIconInfo(currentSize, currentIcon);
     }

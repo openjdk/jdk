@@ -61,7 +61,7 @@ public class PropertyListenerManager implements PropertyListener {
      *
      * @param listener The property listener that is added.
      */
-    public final void addPropertyListener(final PropertyListener listener) {
+    public synchronized final void addPropertyListener(final PropertyListener listener) {
         if (listeners == null) {
             listeners = new WeakHashMap<>();
         }
@@ -77,7 +77,7 @@ public class PropertyListenerManager implements PropertyListener {
      *
      * @param listener The property listener that is removed.
      */
-    public final void removePropertyListener(final PropertyListener listener) {
+    public synchronized final void removePropertyListener(final PropertyListener listener) {
         if (listeners != null) {
             if (Context.DEBUG) {
                 listenersRemoved++;
@@ -92,7 +92,7 @@ public class PropertyListenerManager implements PropertyListener {
      * @param object The ScriptObject to which property was added.
      * @param prop The property being added.
      */
-    protected final void notifyPropertyAdded(final ScriptObject object, final Property prop) {
+    protected synchronized final void notifyPropertyAdded(final ScriptObject object, final Property prop) {
         if (listeners != null) {
             for (PropertyListener listener : listeners.keySet()) {
                 listener.propertyAdded(object, prop);
@@ -106,7 +106,7 @@ public class PropertyListenerManager implements PropertyListener {
      * @param object The ScriptObject from which property was deleted.
      * @param prop The property being deleted.
      */
-    protected final void notifyPropertyDeleted(final ScriptObject object, final Property prop) {
+    protected synchronized final void notifyPropertyDeleted(final ScriptObject object, final Property prop) {
         if (listeners != null) {
             for (PropertyListener listener : listeners.keySet()) {
                 listener.propertyDeleted(object, prop);
@@ -121,7 +121,7 @@ public class PropertyListenerManager implements PropertyListener {
      * @param oldProp The old property being replaced.
      * @param newProp The new property that replaces the old property.
      */
-    protected final void notifyPropertyModified(final ScriptObject object, final Property oldProp, final Property newProp) {
+    protected synchronized final void notifyPropertyModified(final ScriptObject object, final Property oldProp, final Property newProp) {
         if (listeners != null) {
             for (PropertyListener listener : listeners.keySet()) {
                 listener.propertyModified(object, oldProp, newProp);

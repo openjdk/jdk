@@ -1320,7 +1320,7 @@ public class Container extends Component {
         int superListening = super.numListening(mask);
 
         if (mask == AWTEvent.HIERARCHY_EVENT_MASK) {
-            if (eventLog.isLoggable(PlatformLogger.FINE)) {
+            if (eventLog.isLoggable(PlatformLogger.Level.FINE)) {
                 // Verify listeningChildren is correct
                 int sum = 0;
                 for (Component comp : component) {
@@ -1332,7 +1332,7 @@ public class Container extends Component {
             }
             return listeningChildren + superListening;
         } else if (mask == AWTEvent.HIERARCHY_BOUNDS_EVENT_MASK) {
-            if (eventLog.isLoggable(PlatformLogger.FINE)) {
+            if (eventLog.isLoggable(PlatformLogger.Level.FINE)) {
                 // Verify listeningBoundsChildren is correct
                 int sum = 0;
                 for (Component comp : component) {
@@ -1345,7 +1345,7 @@ public class Container extends Component {
             return listeningBoundsChildren + superListening;
         } else {
             // assert false;
-            if (eventLog.isLoggable(PlatformLogger.FINE)) {
+            if (eventLog.isLoggable(PlatformLogger.Level.FINE)) {
                 eventLog.fine("This code must never be reached");
             }
             return superListening;
@@ -1354,7 +1354,7 @@ public class Container extends Component {
 
     // Should only be called while holding tree lock
     void adjustListeningChildren(long mask, int num) {
-        if (eventLog.isLoggable(PlatformLogger.FINE)) {
+        if (eventLog.isLoggable(PlatformLogger.Level.FINE)) {
             boolean toAssert = (mask == AWTEvent.HIERARCHY_EVENT_MASK ||
                                 mask == AWTEvent.HIERARCHY_BOUNDS_EVENT_MASK ||
                                 mask == (AWTEvent.HIERARCHY_EVENT_MASK |
@@ -1395,7 +1395,7 @@ public class Container extends Component {
 
     // Should only be called while holding tree lock
     int countHierarchyMembers() {
-        if (log.isLoggable(PlatformLogger.FINE)) {
+        if (log.isLoggable(PlatformLogger.Level.FINE)) {
             // Verify descendantsCount is correct
             int sum = 0;
             for (Component comp : component) {
@@ -4110,7 +4110,7 @@ public class Container extends Component {
 
     final void recursiveSubtractAndApplyShape(Region shape, int fromZorder, int toZorder) {
         checkTreeLock();
-        if (mixingLog.isLoggable(PlatformLogger.FINE)) {
+        if (mixingLog.isLoggable(PlatformLogger.Level.FINE)) {
             mixingLog.fine("this = " + this +
                 "; shape=" + shape + "; fromZ=" + fromZorder + "; toZ=" + toZorder);
         }
@@ -4147,7 +4147,7 @@ public class Container extends Component {
 
     final void recursiveApplyCurrentShape(int fromZorder, int toZorder) {
         checkTreeLock();
-        if (mixingLog.isLoggable(PlatformLogger.FINE)) {
+        if (mixingLog.isLoggable(PlatformLogger.Level.FINE)) {
             mixingLog.fine("this = " + this +
                 "; fromZ=" + fromZorder + "; toZ=" + toZorder);
         }
@@ -4264,7 +4264,7 @@ public class Container extends Component {
     @Override
     void mixOnShowing() {
         synchronized (getTreeLock()) {
-            if (mixingLog.isLoggable(PlatformLogger.FINE)) {
+            if (mixingLog.isLoggable(PlatformLogger.Level.FINE)) {
                 mixingLog.fine("this = " + this);
             }
 
@@ -4289,7 +4289,7 @@ public class Container extends Component {
     @Override
     void mixOnHiding(boolean isLightweight) {
         synchronized (getTreeLock()) {
-            if (mixingLog.isLoggable(PlatformLogger.FINE)) {
+            if (mixingLog.isLoggable(PlatformLogger.Level.FINE)) {
                 mixingLog.fine("this = " + this +
                         "; isLightweight=" + isLightweight);
             }
@@ -4303,7 +4303,7 @@ public class Container extends Component {
     @Override
     void mixOnReshaping() {
         synchronized (getTreeLock()) {
-            if (mixingLog.isLoggable(PlatformLogger.FINE)) {
+            if (mixingLog.isLoggable(PlatformLogger.Level.FINE)) {
                 mixingLog.fine("this = " + this);
             }
 
@@ -4338,7 +4338,7 @@ public class Container extends Component {
     @Override
     void mixOnZOrderChanging(int oldZorder, int newZorder) {
         synchronized (getTreeLock()) {
-            if (mixingLog.isLoggable(PlatformLogger.FINE)) {
+            if (mixingLog.isLoggable(PlatformLogger.Level.FINE)) {
                 mixingLog.fine("this = " + this +
                     "; oldZ=" + oldZorder + "; newZ=" + newZorder);
             }
@@ -4359,7 +4359,7 @@ public class Container extends Component {
     @Override
     void mixOnValidating() {
         synchronized (getTreeLock()) {
-            if (mixingLog.isLoggable(PlatformLogger.FINE)) {
+            if (mixingLog.isLoggable(PlatformLogger.Level.FINE)) {
                 mixingLog.fine("this = " + this);
             }
 
@@ -4549,7 +4549,7 @@ class LightweightDispatcher implements java.io.Serializable, AWTEventListener {
             // This may send it somewhere that doesn't have MouseWheelEvents
             // enabled.  In this case, Component.dispatchEventImpl() will
             // retarget the event to a parent that DOES have the events enabled.
-            if (eventLog.isLoggable(PlatformLogger.FINEST) && (mouseOver != null)) {
+            if (eventLog.isLoggable(PlatformLogger.Level.FINEST) && (mouseOver != null)) {
                 eventLog.finest("retargeting mouse wheel to " +
                                 mouseOver.getName() + ", " +
                                 mouseOver.getClass());

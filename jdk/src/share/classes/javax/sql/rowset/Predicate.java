@@ -53,8 +53,7 @@ import java.sql.*;
  * and application motivated implementations of <code>Predicate</code> to emerge.
  * <p>
  * A sample implementation would look something like this:
- * <pre>
- * <code>
+ * <pre>{@code
  *    public class Range implements Predicate {
  *
  *       private Object lo[];
@@ -79,19 +78,19 @@ import java.sql.*;
  *              if ((rs.getObject(idx[i]) >= lo[i]) &&
  *                  (rs.getObject(idx[i]) >= hi[i]) {
  *                  bool1 = true; // within filter constraints
+ *              } else {
+ *                  bool2 = true; // outside of filter constraints
+ *              }
+ *          }
+ *
+ *          if (bool2) {
+ *             return false;
  *          } else {
- *            bool2 = true; // outside of filter constraints
+ *             return true;
  *          }
  *      }
- *
- *      if (bool2) {
- *         return false;
- *      } else {
- *         return true;
- *      }
  *  }
- * </code>
- * </pre>
+ * }</pre>
  * <P>
  * The example above implements a simple range predicate. Note, that
  * implementations should but are not required to provider <code>String</code>

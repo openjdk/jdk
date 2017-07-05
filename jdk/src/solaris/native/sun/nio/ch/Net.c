@@ -124,6 +124,11 @@ Java_sun_nio_ch_Net_isIPv6Available0(JNIEnv* env, jclass cl)
     return (ipv6_available()) ? JNI_TRUE : JNI_FALSE;
 }
 
+JNIEXPORT jint JNICALL
+Java_sun_nio_ch_Net_isExclusiveBindAvailable(JNIEnv *env, jclass clazz) {
+    return -1;
+}
+
 JNIEXPORT jboolean JNICALL
 Java_sun_nio_ch_Net_canIPv6SocketJoinIPv4Group0(JNIEnv* env, jclass cl)
 {
@@ -206,8 +211,8 @@ Java_sun_nio_ch_Net_socket0(JNIEnv *env, jclass cl, jboolean preferIPv6,
 }
 
 JNIEXPORT void JNICALL
-Java_sun_nio_ch_Net_bind0(JNIEnv *env, jclass clazz, jboolean preferIPv6,
-                          jobject fdo, jobject iao, int port)
+Java_sun_nio_ch_Net_bind0(JNIEnv *env, jclass clazz, jobject fdo, jboolean preferIPv6,
+                          jboolean useExclBind, jobject iao, int port)
 {
     SOCKADDR sa;
     int sa_len = SOCKADDR_LEN;

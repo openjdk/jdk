@@ -985,6 +985,8 @@ Node *Matcher::xform( Node *n, int max_stack ) {
   mstack.push(n, Visit, NULL, -1);  // set NULL as parent to indicate root
 
   while (mstack.is_nonempty()) {
+    C->check_node_count(NodeLimitFudgeFactor, "too many nodes matching instructions");
+    if (C->failing()) return NULL;
     n = mstack.node();          // Leave node on stack
     Node_State nstate = mstack.state();
     if (nstate == Visit) {

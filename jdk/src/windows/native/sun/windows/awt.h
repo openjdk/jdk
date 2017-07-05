@@ -326,7 +326,7 @@ public:
         m_dwSize = cbTCharCount;
         m_pStr = (0 == m_dwSize)
             ? NULL
-            : (LPWSTR)safe_Malloc( (m_dwSize+1)*sizeof(WCHAR) );
+            : (LPWSTR)SAFE_SIZE_ARRAY_ALLOC(safe_Malloc, (m_dwSize+1), sizeof(WCHAR) );
     }
 
     JavaStringBuffer(JNIEnv *env, jstring text) {
@@ -336,7 +336,7 @@ public:
         if (0 == m_dwSize) {
             m_pStr = NULL;
         } else {
-            m_pStr = (LPWSTR)safe_Malloc( (m_dwSize+1)*sizeof(WCHAR) );
+            m_pStr = (LPWSTR)SAFE_SIZE_ARRAY_ALLOC(safe_Malloc, (m_dwSize+1), sizeof(WCHAR) );
             env->GetStringRegion(text, 0, m_dwSize, reinterpret_cast<jchar *>(m_pStr));
             m_pStr[m_dwSize] = 0;
         }
@@ -353,7 +353,7 @@ public:
         //The function is used only for space reservation in staff buffer for
         //followed data copying process. And that is the reason why we ignore
         //the special case m_dwSize==0 here.
-        m_pStr = (LPWSTR)safe_Realloc(m_pStr, (m_dwSize+1)*sizeof(WCHAR) );
+        m_pStr = (LPWSTR)SAFE_SIZE_ARRAY_REALLOC(safe_Realloc, m_pStr, m_dwSize+1, sizeof(WCHAR) );
     }
     //we are in UNICODE now, so LPWSTR:=:LPTSTR
     operator LPWSTR() { return getNonEmptyString(); }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ package com.sun.media.sound;
  *
  * @author Karl Helgason
  */
-public class SoftPointResampler extends SoftAbstractResampler {
+public final class SoftPointResampler extends SoftAbstractResampler {
 
     public int getPadding() {
         return 100;

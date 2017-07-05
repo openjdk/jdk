@@ -53,8 +53,8 @@ abstract class AsynchronousSocketChannelImpl
     // protects state, localAddress, and remoteAddress
     protected final Object stateLock = new Object();
 
-    protected volatile SocketAddress localAddress = null;
-    protected volatile SocketAddress remoteAddress = null;
+    protected volatile InetSocketAddress localAddress = null;
+    protected volatile InetSocketAddress remoteAddress = null;
 
     // State, increases monotonically
     static final int ST_UNINITIALIZED = -1;
@@ -78,6 +78,9 @@ abstract class AsynchronousSocketChannelImpl
     // close support
     private final ReadWriteLock closeLock = new ReentrantReadWriteLock();
     private volatile boolean open = true;
+
+    // set true when exclusive binding is on and SO_REUSEADDR is emulated
+    private boolean isReuseAddress;
 
     AsynchronousSocketChannelImpl(AsynchronousChannelGroupImpl group)
         throws IOException
@@ -439,7 +442,7 @@ abstract class AsynchronousSocketChannelImpl
     public final SocketAddress getLocalAddress() throws IOException {
         if (!isOpen())
             throw new ClosedChannelException();
-        return localAddress;
+         return Net.getRevealedLocalAddress(localAddress);
     }
 
     @Override
@@ -455,7 +458,14 @@ abstract class AsynchronousSocketChannelImpl
             begin();
             if (writeShutdown)
                 throw new IOException("Connection has been shutdown for writing");
-            Net.setSocketOption(fd, Net.UNSPEC, name, value);
+            if (name == StandardSocketOptions.SO_REUSEADDR &&
+                    Net.useExclusiveBind())
+            {
+                // SO_REUSEADDR emulated when using exclusive bind
+                isReuseAddress = (Boolean)value;
+            } else {
+                Net.setSocketOption(fd, Net.UNSPEC, name, value);
+            }
             return this;
         } finally {
             end();
@@ -472,6 +482,12 @@ abstract class AsynchronousSocketChannelImpl
 
         try {
             begin();
+            if (name == StandardSocketOptions.SO_REUSEADDR &&
+                    Net.useExclusiveBind())
+            {
+                // SO_REUSEADDR emulated when using exclusive bind
+                return (T)Boolean.valueOf(isReuseAddress);
+            }
             return (T) Net.getSocketOption(fd, Net.UNSPEC, name);
         } finally {
             end();
@@ -566,7 +582,8 @@ abstract class AsynchronousSocketChannelImpl
                 }
                 if (localAddress != null) {
                     sb.append(" local=");
-                    sb.append(localAddress.toString());
+                    sb.append(
+                            Net.getRevealedLocalAddressAsString(localAddress));
                 }
                 if (remoteAddress != null) {
                     sb.append(" remote=");

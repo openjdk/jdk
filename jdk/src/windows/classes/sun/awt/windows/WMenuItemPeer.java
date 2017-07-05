@@ -165,7 +165,7 @@ class WMenuItemPeer extends WObjectPeer implements MenuItemPeer {
                         ResourceBundle rb = ResourceBundle.getBundle("sun.awt.windows.awtLocalization");
                         return Font.decode(rb.getString("menuFont"));
                     } catch (MissingResourceException e) {
-                        if (log.isLoggable(PlatformLogger.FINE)) {
+                        if (log.isLoggable(PlatformLogger.Level.FINE)) {
                             log.fine("WMenuItemPeer: " + e.getMessage()+". Using default MenuItem font.", e);
                         }
                         return new Font("SanSerif", Font.PLAIN, 11);

@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,41 +21,41 @@
  * questions.
  */
 
-package sun.misc;
+//package sun.misc;
 
 /*
  * A really, really simple bigint package
  * tailored to the needs of floating base conversion.
  */
-class FDBigInt {
+class OldFDBigIntForTest {
     int nWords; // number of words used
     int data[]; // value: data[0] is least significant
 
 
-    public FDBigInt( int v ){
+    public OldFDBigIntForTest( int v ){
         nWords = 1;
         data = new int[1];
         data[0] = v;
     }
 
-    public FDBigInt( long v ){
+    public OldFDBigIntForTest( long v ){
         data = new int[2];
         data[0] = (int)v;
         data[1] = (int)(v>>>32);
         nWords = (data[1]==0) ? 1 : 2;
     }
 
-    public FDBigInt( FDBigInt other ){
+    public OldFDBigIntForTest( OldFDBigIntForTest other ){
         data = new int[nWords = other.nWords];
         System.arraycopy( other.data, 0, data, 0, nWords );
     }
 
-    private FDBigInt( int [] d, int n ){
+    private OldFDBigIntForTest( int [] d, int n ){
         data = d;
         nWords = n;
     }
 
-    public FDBigInt( long seed, char digit[], int nd0, int nd ){
+    public OldFDBigIntForTest( long seed, char digit[], int nd0, int nd ){
         int n= (nd+8)/9;        // estimate size needed.
         if ( n < 2 ) n = 2;
         data = new int[n];      // allocate enough space
@@ -189,10 +187,10 @@ class FDBigInt {
     }
 
     /*
-     * Multiply a FDBigInt by an int.
-     * Result is a new FDBigInt.
+     * Multiply a OldFDBigIntForTest by an int.
+     * Result is a new OldFDBigIntForTest.
      */
-    public FDBigInt
+    public OldFDBigIntForTest
     mult( int iv ) {
         long v = iv;
         int r[];
@@ -207,15 +205,15 @@ class FDBigInt {
             p >>>= 32;
         }
         if ( p == 0L){
-            return new FDBigInt( r, nWords );
+            return new OldFDBigIntForTest( r, nWords );
         } else {
             r[nWords] = (int)p;
-            return new FDBigInt( r, nWords+1 );
+            return new OldFDBigIntForTest( r, nWords+1 );
         }
     }
 
     /*
-     * Multiply a FDBigInt by an int and add another int.
+     * Multiply a OldFDBigIntForTest by an int and add another int.
      * Result is computed in place.
      * Hope it fits!
      */
@@ -240,11 +238,11 @@ class FDBigInt {
     }
 
     /*
-     * Multiply a FDBigInt by another FDBigInt.
-     * Result is a new FDBigInt.
+     * Multiply a OldFDBigIntForTest by another OldFDBigIntForTest.
+     * Result is a new OldFDBigIntForTest.
      */
-    public FDBigInt
-    mult( FDBigInt other ){
+    public OldFDBigIntForTest
+    mult( OldFDBigIntForTest other ){
         // crudely guess adequate size for r
         int r[] = new int[ nWords + other.nWords ];
         int i;
@@ -265,14 +263,14 @@ class FDBigInt {
         for ( i = r.length-1; i> 0; i--)
             if ( r[i] != 0 )
                 break;
-        return new FDBigInt( r, i+1 );
+        return new OldFDBigIntForTest( r, i+1 );
     }
 
     /*
-     * Add one FDBigInt to another. Return a FDBigInt
+     * Add one OldFDBigIntForTest to another. Return a OldFDBigIntForTest
      */
-    public FDBigInt
-    add( FDBigInt other ){
+    public OldFDBigIntForTest
+    add( OldFDBigIntForTest other ){
         int i;
         int a[], b[];
         int n, m;
@@ -304,17 +302,17 @@ class FDBigInt {
             int s[] = new int[ r.length+1 ];
             System.arraycopy( r, 0, s, 0, r.length );
             s[i++] = (int)c;
-            return new FDBigInt( s, i );
+            return new OldFDBigIntForTest( s, i );
         }
-        return new FDBigInt( r, i );
+        return new OldFDBigIntForTest( r, i );
     }
 
     /*
-     * Subtract one FDBigInt from another. Return a FDBigInt
+     * Subtract one OldFDBigIntForTest from another. Return a OldFDBigIntForTest
      * Assert that the result is positive.
      */
-    public FDBigInt
-    sub( FDBigInt other ){
+    public OldFDBigIntForTest
+    sub( OldFDBigIntForTest other ){
         int r[] = new int[ this.nWords ];
         int i;
         int n = this.nWords;
@@ -334,10 +332,10 @@ class FDBigInt {
         }
         assert c == 0L : c; // borrow out of subtract
         assert dataInRangeIsZero(i, m, other); // negative result of subtract
-        return new FDBigInt( r, n-nzeros );
+        return new OldFDBigIntForTest( r, n-nzeros );
     }
 
-    private static boolean dataInRangeIsZero(int i, int m, FDBigInt other) {
+    private static boolean dataInRangeIsZero(int i, int m, OldFDBigIntForTest other) {
         while ( i < m )
             if (other.data[i++] != 0)
                 return false;
@@ -345,13 +343,13 @@ class FDBigInt {
     }
 
     /*
-     * Compare FDBigInt with another FDBigInt. Return an integer
+     * Compare OldFDBigIntForTest with another OldFDBigIntForTest. Return an integer
      * >0: this > other
      *  0: this == other
      * <0: this < other
      */
     public int
-    cmp( FDBigInt other ){
+    cmp( OldFDBigIntForTest other ){
         int i;
         if ( this.nWords > other.nWords ){
             // if any of my high-order words is non-zero,
@@ -405,7 +403,7 @@ class FDBigInt {
      * as an integer, 0 <= q < 10.
      */
     public int
-    quoRemIteration( FDBigInt S )throws IllegalArgumentException {
+    quoRemIteration( OldFDBigIntForTest S )throws IllegalArgumentException {
         // ensure that this and S have the same number of
         // digits. If S is properly normalized and q < 10 then
         // this must be so.

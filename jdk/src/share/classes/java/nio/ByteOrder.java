@@ -45,7 +45,6 @@ public final class ByteOrder {
     /**
      * Constant denoting big-endian byte order.  In this order, the bytes of a
      * multibyte value are ordered from most significant to least significant.
-     * </p>
      */
     public static final ByteOrder BIG_ENDIAN
         = new ByteOrder("BIG_ENDIAN");
@@ -53,7 +52,7 @@ public final class ByteOrder {
     /**
      * Constant denoting little-endian byte order.  In this order, the bytes of
      * a multibyte value are ordered from least significant to most
-     * significant.  </p>
+     * significant.
      */
     public static final ByteOrder LITTLE_ENDIAN
         = new ByteOrder("LITTLE_ENDIAN");
