@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package sun.misc;
 import java.util.jar.JarFile;
 import java.io.Console;
 import java.io.FileDescriptor;
-import java.security.CodeSigner;
 import java.security.ProtectionDomain;
 
 /** A repository of "shared secrets", which are a mechanism for
@@ -49,7 +48,6 @@ public class SharedSecrets {
     private static JavaNioAccess javaNioAccess;
     private static JavaIOFileDescriptorAccess javaIOFileDescriptorAccess;
     private static JavaSecurityProtectionDomainAccess javaSecurityProtectionDomainAccess;
-    private static JavaSecurityCodeSignerAccess javaSecurityCodeSignerAccess;
 
     public static JavaUtilJarAccess javaUtilJarAccess() {
         if (javaUtilJarAccess == null) {
@@ -126,17 +124,5 @@ public class SharedSecrets {
             if (javaSecurityProtectionDomainAccess == null)
                 unsafe.ensureClassInitialized(ProtectionDomain.class);
             return javaSecurityProtectionDomainAccess;
-    }
-
-    public static void setJavaSecurityCodeSignerAccess
-            (JavaSecurityCodeSignerAccess jscsa) {
-        javaSecurityCodeSignerAccess = jscsa;
-    }
-
-    public static JavaSecurityCodeSignerAccess
-            getJavaSecurityCodeSignerAccess() {
-        if (javaSecurityCodeSignerAccess == null)
-            unsafe.ensureClassInitialized(CodeSigner.class);
-        return javaSecurityCodeSignerAccess;
     }
 }

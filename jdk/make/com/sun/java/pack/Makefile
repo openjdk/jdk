@@ -28,7 +28,6 @@
 #
 
 BUILDDIR = ../../../..
-MODULE  = pack200
 PACKAGE = com.sun.java.util.jar.pack
 LIBRARY = unpack
 PRODUCT = sun
@@ -156,7 +155,6 @@ ifdef MT
 endif
 	$(CP) $(TEMPDIR)/unpack200$(EXE_SUFFIX) $(UNPACK_EXE)
 	@$(call binary_file_verification,$@)
-	$(install-module-file)
 
 ifeq ($(PLATFORM), windows) 
 $(RES):: $(VERSIONINFO_RESOURCE)

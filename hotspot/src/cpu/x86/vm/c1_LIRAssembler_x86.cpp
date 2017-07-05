@@ -456,10 +456,8 @@ int LIR_Assembler::emit_exception_handler() {
   __ verify_not_null_oop(rax);
 
   // search an exception handler (rax: exception oop, rdx: throwing pc)
-  __ call(RuntimeAddress(Runtime1::entry_for(Runtime1::handle_exception_nofpu_id)));
-
-  __ stop("should not reach here");
-
+  __ call(RuntimeAddress(Runtime1::entry_for(Runtime1::handle_exception_from_callee_id)));
+  __ should_not_reach_here();
   assert(code_offset() - offset <= exception_handler_size, "overflow");
   __ end_a_stub();
 

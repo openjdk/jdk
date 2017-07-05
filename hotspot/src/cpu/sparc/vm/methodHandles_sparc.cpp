@@ -417,6 +417,7 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
 
   // Some handy addresses:
   Address G5_method_fie(    G5_method,        in_bytes(methodOopDesc::from_interpreted_offset()));
+  Address G5_method_fce(    G5_method,        in_bytes(methodOopDesc::from_compiled_offset()));
 
   Address G3_mh_vmtarget(   G3_method_handle, java_dyn_MethodHandle::vmtarget_offset_in_bytes());
 
@@ -444,12 +445,10 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
   case _raise_exception:
     {
       // Not a real MH entry, but rather shared code for raising an
-      // exception.  Since we use a C2I adapter to set up the
-      // interpreter state, arguments are expected in compiler
-      // argument registers.
+      // exception.  Since we use the compiled entry, arguments are
+      // expected in compiler argument registers.
       assert(raise_exception_method(), "must be set");
-      address c2i_entry = raise_exception_method()->get_c2i_entry();
-      assert(c2i_entry, "method must be linked");
+      assert(raise_exception_method()->from_compiled_entry(), "method must be linked");
 
       __ mov(O5_savedSP, SP);  // Cut the stack back to where the caller started.
 
@@ -468,10 +467,9 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
       __ delayed()->nop();
 
       __ verify_oop(G5_method);
-      __ jump_to(AddressLiteral(c2i_entry), O3_scratch);
+      __ jump_indirect_to(G5_method_fce, O3_scratch);  // jump to compiled entry
       __ delayed()->nop();
 
-      // If we get here, the Java runtime did not do its job of creating the exception.
       // Do something that is at least causes a valid throw from the interpreter.
       __ bind(L_no_method);
       __ unimplemented("call throw_WrongMethodType_entry");

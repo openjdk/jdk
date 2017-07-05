@@ -200,10 +200,9 @@ void AwtTrayIcon::InitNID(UINT uID)
             m_nid.cbSize = (BYTE *)(&m_nid.guidItem) - (BYTE *)(&m_nid.cbSize);
             break;
         case 6: // WIN_XP
-            // Uncomment these two lines when moving to VS2008
-//            m_nid.cbSize = (BYTE *)(&m_nid.hBalloonIcon) - (BYTE *)(&m_nid.cbSize);
-//            break;
-        default: // WIN_VISTA?
+            m_nid.cbSize = (BYTE *)(&m_nid.hBalloonIcon) - (BYTE *)(&m_nid.cbSize);
+            break;
+        default: // WIN_VISTA
             m_nid.cbSize = sizeof(m_nid);
             break;
     }

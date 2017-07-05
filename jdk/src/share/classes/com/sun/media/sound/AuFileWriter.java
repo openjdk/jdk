@@ -25,12 +25,10 @@
 
 package com.sun.media.sound;
 
-import java.util.Vector;
 import java.io.File;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.IOException;
-import java.lang.IllegalArgumentException;
 
 import java.io.BufferedOutputStream;
 import java.io.DataOutputStream;
@@ -131,10 +129,10 @@ public class AuFileWriter extends SunFileWriter {
             // $$fb: 2001-07-13: done. Fixes Bug 4479981
             RandomAccessFile raf=new RandomAccessFile(out, "rw");
             if (raf.length()<=0x7FFFFFFFl) {
-                                // skip AU magic and data offset field
+                // skip AU magic and data offset field
                 raf.skipBytes(8);
                 raf.writeInt(bytesWritten-AuFileFormat.AU_HEADERSIZE);
-                                // that's all
+                // that's all
             }
             raf.close();
         }
@@ -303,7 +301,8 @@ public class AuFileWriter extends SunFileWriter {
         dos.close();
         header = baos.toByteArray();
         headerStream = new ByteArrayInputStream( header );
-        auStream = new SequenceInputStream(headerStream,codedAudioStream);
+        auStream = new SequenceInputStream(headerStream,
+                        new NoCloseInputStream(codedAudioStream));
 
         return auStream;
     }

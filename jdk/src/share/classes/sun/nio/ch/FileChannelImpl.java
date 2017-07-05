@@ -475,8 +475,8 @@ public class FileChannelImpl
                 assert !target.isOpen();
                 try {
                     close();
-                } catch (IOException ignore) {
-                    // nothing we can do
+                } catch (Throwable suppressed) {
+                    e.addSuppressed(suppressed);
                 }
                 throw e;
             } catch (IOException ioe) {

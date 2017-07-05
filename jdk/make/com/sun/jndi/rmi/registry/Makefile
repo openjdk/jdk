@@ -28,7 +28,6 @@
 #
 
 BUILDDIR = ../../../../..
-MODULE  = jndi-rmiregistry
 PACKAGE = com.sun.jndi.rmi.registry
 PRODUCT = sun
 include $(BUILDDIR)/common/Defs.gmk

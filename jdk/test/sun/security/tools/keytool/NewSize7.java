@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.KeyStore;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPublicKey;
@@ -42,8 +44,10 @@ public class NewSize7 {
                 " -alias a -dname cn=c -storepass changeit" +
                 " -keypass changeit -keyalg rsa").split(" "));
         KeyStore ks = KeyStore.getInstance("JKS");
-        ks.load(new FileInputStream(FILE), null);
-        new File(FILE).delete();
+        try (FileInputStream fin = new FileInputStream(FILE)) {
+            ks.load(fin, null);
+        }
+        Files.delete(Paths.get(FILE));
         RSAPublicKey r = (RSAPublicKey)ks.getCertificate("a").getPublicKey();
         if (r.getModulus().bitLength() != 2048) {
             throw new Exception("Bad keysize");
