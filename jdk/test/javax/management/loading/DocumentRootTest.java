@@ -27,7 +27,7 @@
  * @summary Test parsing error when the mlet file is
  *          located in the web server's document root.
  * @author Luis-Miguel Alventosa
- * @modules java.management
+ *
  * @run clean DocumentRootTest
  * @run build DocumentRootTest
  * @run main DocumentRootTest

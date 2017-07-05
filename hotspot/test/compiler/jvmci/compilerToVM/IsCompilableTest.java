@@ -30,19 +30,21 @@
  * @modules java.base/jdk.internal.misc
  * @modules java.base/jdk.internal.org.objectweb.asm
  *          java.base/jdk.internal.org.objectweb.asm.tree
- *          jdk.vm.ci/jdk.vm.ci.hotspot
- *          jdk.vm.ci/jdk.vm.ci.code
+ *          jdk.internal.vm.ci/jdk.vm.ci.hotspot
+ *          jdk.internal.vm.ci/jdk.vm.ci.code
  *
- * @build jdk.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper sun.hotspot.WhiteBox
+ * @build jdk.internal.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:.
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                   -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -XX:+UseJVMCICompiler
+ *                   -Djvmci.Compiler=null
  *                   compiler.jvmci.compilerToVM.IsCompilableTest
  * @run main/othervm -Xbootclasspath/a:.
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *                   -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
+ *                   -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -XX:-UseJVMCICompiler
+ *                   -Djvmci.Compiler=null
  *                   compiler.jvmci.compilerToVM.IsCompilableTest
  */
 
@@ -69,20 +71,17 @@ public class IsCompilableTest {
     }
 
     private static void runSanityTest(Executable aMethod) {
-        boolean UseJVMCICompiler = (Boolean) WB.getVMFlag("UseJVMCICompiler");
         HotSpotResolvedJavaMethod method = CTVMUtilities
                 .getResolvedMethod(aMethod);
         boolean isCompilable = CompilerToVMHelper.isCompilable(method);
-        boolean expected = UseJVMCICompiler || WB.isMethodCompilable(aMethod);
+        boolean expected = WB.isMethodCompilable(aMethod);
         Asserts.assertEQ(isCompilable, expected, "Unexpected initial " +
                 "value of property 'compilable'");
 
-        if (!UseJVMCICompiler) {
-            WB.makeMethodNotCompilable(aMethod);
-            isCompilable = CompilerToVMHelper.isCompilable(method);
-            Asserts.assertFalse(isCompilable, aMethod + "Unexpected value of " +
-                "property 'isCompilable' after setting 'compilable' to false");
-        }
+        WB.makeMethodNotCompilable(aMethod);
+        isCompilable = CompilerToVMHelper.isCompilable(method);
+        Asserts.assertFalse(isCompilable, aMethod + "Unexpected value of " +
+            "property 'isCompilable' after setting 'compilable' to false");
     }
 
     private static List<Executable> createTestCases() {
