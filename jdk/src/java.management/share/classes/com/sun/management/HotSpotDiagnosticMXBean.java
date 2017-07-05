@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package com.sun.management;
 
-import java.util.List;
 import java.lang.management.PlatformManagedObject;
 
 /**
@@ -109,7 +108,7 @@ public interface HotSpotDiagnosticMXBean extends PlatformManagedObject {
      * @throws IllegalArgumentException if the VM option of the given name
      *                                     does not exist.
      * @throws IllegalArgumentException if the new value is invalid.
-     * @throws IllegalArgumentException if the VM option is not writeable.
+     * @throws IllegalArgumentException if the VM option is not writable.
      * @throws NullPointerException if name or value is <tt>null</tt>.
      *
      * @throws  java.lang.SecurityException

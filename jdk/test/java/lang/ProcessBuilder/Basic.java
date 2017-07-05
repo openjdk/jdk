@@ -2269,9 +2269,10 @@ public class Basic {
                 fail("Test failed: Process exited prematurely");
             }
             long end = System.nanoTime();
-            // give waitFor(timeout) a wide berth (200ms)
-            // Old AIX machines my need a little longer.
-            if ((end - start) > 200000000L * (AIX.is() ? 2 : 1))
+            // give waitFor(timeout) a wide berth (2s)
+            System.out.printf(" waitFor process: delta: %d%n",(end - start) );
+
+            if ((end - start) > TimeUnit.SECONDS.toNanos(2))
                 fail("Test failed: waitFor took too long (" + (end - start) + "ns)");
 
             p.destroy();
@@ -2295,19 +2296,23 @@ public class Basic {
             final Process p = new ProcessBuilder(childArgs).start();
             long start = System.nanoTime();
 
-            p.waitFor(1000, TimeUnit.MILLISECONDS);
+            p.waitFor(10, TimeUnit.MILLISECONDS);
 
             long end = System.nanoTime();
-            if ((end - start) < 500000000)
+            if ((end - start) < TimeUnit.MILLISECONDS.toNanos(10))
                 fail("Test failed: waitFor didn't take long enough (" + (end - start) + "ns)");
 
             p.destroy();
 
             start = System.nanoTime();
-            p.waitFor(1000, TimeUnit.MILLISECONDS);
+            p.waitFor(8, TimeUnit.SECONDS);
             end = System.nanoTime();
-            if ((end - start) > 900000000)
-                fail("Test failed: waitFor took too long on a dead process. (" + (end - start) + "ns)");
+
+            int exitValue = p.exitValue();
+
+            if ((end - start) > TimeUnit.SECONDS.toNanos(7))
+                fail("Test failed: waitFor took too long on a dead process. (" + (end - start) + "ns)"
+                + ", exitValue: " + exitValue);
         } catch (Throwable t) { unexpected(t); }
 
         //----------------------------------------------------------------

@@ -951,8 +951,9 @@ class JNI_ArgumentPusherVaArg : public JNI_ArgumentPusher {
 
   // Optimized path if we have the bitvector form of signature
   void iterate( uint64_t fingerprint ) {
-    if ( fingerprint == UCONST64(-1) ) SignatureIterator::iterate();// Must be too many arguments
-    else {
+    if (fingerprint == (uint64_t)CONST64(-1)) {
+      SignatureIterator::iterate(); // Must be too many arguments
+    } else {
       _return_type = (BasicType)((fingerprint >> static_feature_size) &
                                   result_feature_mask);
 
@@ -1022,8 +1023,9 @@ class JNI_ArgumentPusherArray : public JNI_ArgumentPusher {
 
   // Optimized path if we have the bitvector form of signature
   void iterate( uint64_t fingerprint ) {
-    if ( fingerprint == UCONST64(-1) ) SignatureIterator::iterate(); // Must be too many arguments
-    else {
+    if (fingerprint == (uint64_t)CONST64(-1)) {
+      SignatureIterator::iterate(); // Must be too many arguments
+    } else {
       _return_type = (BasicType)((fingerprint >> static_feature_size) &
                                   result_feature_mask);
       assert(fingerprint, "Fingerprint should not be 0");

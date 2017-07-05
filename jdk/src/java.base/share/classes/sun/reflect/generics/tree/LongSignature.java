@@ -29,7 +29,7 @@ import sun.reflect.generics.visitor.TypeTreeVisitor;
 
 /** AST that represents the type long. */
 public class LongSignature implements BaseType {
-    private static LongSignature singleton = new LongSignature();
+    private static final LongSignature singleton = new LongSignature();
 
     private LongSignature(){}
 
