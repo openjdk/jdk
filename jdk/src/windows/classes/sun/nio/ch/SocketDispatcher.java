@@ -36,7 +36,7 @@ class SocketDispatcher extends NativeDispatcher
 {
 
     static {
-        Util.load();
+        IOUtil.load();
     }
 
     int read(FileDescriptor fd, long address, int len) throws IOException {

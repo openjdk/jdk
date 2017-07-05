@@ -3338,8 +3338,16 @@ public final class Class<T> implements java.io.Serializable,
      * @since 1.8
      */
     public AnnotatedType getAnnotatedSuperclass() {
-         return TypeAnnotationParser.buildAnnotatedSuperclass(getRawTypeAnnotations(), getConstantPool(), this);
-}
+        if (this == Object.class ||
+                isInterface() ||
+                isArray() ||
+                isPrimitive() ||
+                this == Void.TYPE) {
+            return null;
+        }
+
+        return TypeAnnotationParser.buildAnnotatedSuperclass(getRawTypeAnnotations(), getConstantPool(), this);
+    }
 
     /**
      * Returns an array of AnnotatedType objects that represent the use of types to

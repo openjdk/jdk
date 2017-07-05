@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -30,10 +30,5 @@ OPT_CFLAGS/sharedRuntimeTrans.o = $(OPT_CFLAGS/NOOPT)
 CFLAGS += -DVM_LITTLE_ENDIAN
 
 CFLAGS += -D_LP64=1
-
-# The serviceability agent relies on frame pointer (%rbp) to walk thread stack
-ifndef USE_SUNCC
-  CFLAGS += -fno-omit-frame-pointer
-endif
 
 OPT_CFLAGS/compactingPermGenGen.o = -O1

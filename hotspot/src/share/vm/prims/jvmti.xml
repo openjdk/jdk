@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <?xml-stylesheet type="text/xsl" href="jvmti.xsl"?>
 <!--
- Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -358,7 +358,7 @@
 <specification label="JVM(TM) Tool Interface"
         majorversion="1"
         minorversion="2"
-        microversion="2">
+        microversion="3">
   <title subtitle="Version">
     <tm>JVM</tm> Tool Interface
   </title>
@@ -431,12 +431,46 @@
     On the <tm>Solaris</tm> Operating Environment, an agent library is a shared
     object (<code>.so</code> file).
     <p/>
+
     An agent may be started at VM startup by specifying the agent library
     name using a <internallink id="starting">command line option</internallink>.
     Some implementations may support a mechanism to <internallink id="onattach"> 
     start agents</internallink> in the live <functionlink id="GetPhase">phase</functionlink>.
     The details of how this is initiated are implementation specific.
   </intro>
+
+    <intro id="entry point" label="Statically Linked Agents (since version 1.2.3)">
+
+      A native JVMTI Agent may be <i>statically linked</i> with the VM.
+      The manner in which the library and VM image are combined is
+      implementation-dependent.
+      An agent L whose image has been combined with the VM is defined as
+      <i>statically linked</i> if and only if the agent exports a function
+      called Agent_OnLoad_L.
+<p/>
+      If a <i>statically linked</i> agent L exports a function called
+      Agent_OnLoad_L and a function called Agent_OnLoad, the Agent_OnLoad
+      function will be ignored.
+      If an agent L is <i>statically linked</i>, an Agent_OnLoad_L
+      function will be invoked with the same arguments and expected return
+      value as specified for the Agent_OnLoad function.
+      An agent L that is <i>statically linked</i> will prohibit an agent of
+      the same name from being loaded dynamically.
+<p/>
+      The VM will invoke the Agent_OnUnload_L function of the agent, if such
+      a function is exported, at the same point during startup as it would
+      have called the dynamic entry point Agent_OnUnLoad.
+      If a <i>statically linked</i> agent L exports a function called
+      Agent_OnUnLoad_L and a function called Agent_OnUnLoad, the Agent_OnUnLoad
+      function will be ignored.
+<p/>
+      If an agent L is <i>statically linked</i>, an Agent_OnAttach_L function
+      will be invoked with the same arguments and expected return value as
+      specified for the Agent_OnAttach function.
+      If a <i>statically linked</i> agent L exports a function called
+      Agent_OnAttach_L and a function called Agent_OnAttach, the Agent_OnAttach
+      function will be ignored.
+</intro>
   
   <intro id="starting" label="Agent Command Line Options">
     The term "command-line option" is used below to
@@ -455,7 +489,7 @@
       <dd>
 	The name following <code>-agentlib:</code> is the name of the
 	library to load.  Lookup of the library, both its full name and location,
-	proceeds in a platform-specific manner. 
+	proceeds in a platform-specific manner.
 	Typically, the <i>&lt;agent-lib-name&gt;</i> is expanded to an
 	operating system specific file name.
 	The <i>&lt;options&gt;</i> will be passed to the agent on start-up.
@@ -463,7 +497,11 @@
 	<code>-agentlib:foo=opt1,opt2</code> is specified, the VM will attempt to 
 	load the shared library <code>foo.dll</code> from the system <code>PATH</code>
         under <tm>Windows</tm> or <code>libfoo.so</code> from the 
-	<code>LD_LIBRARY_PATH</code> under the <tm>Solaris</tm> operating environment.
+	<code>LD_LIBRARY_PATH</code> under the <tm>Solaris</tm> operating
+        environment.
+        If the agent library is statically linked into the executable
+        then no actual loading takes place.
+    <p/>
       </dd>
       <dt><code>-agentpath:</code><i>&lt;path-to-agent&gt;</i><code>=</code><i>&lt;options&gt;</i></dt>
       <dd>
@@ -473,11 +511,20 @@
 	The <i>&lt;options&gt;</i> will be passed to the agent on start-up.
 	For example, if the option 
 	<code>-agentpath:c:\myLibs\foo.dll=opt1,opt2</code> is specified, the VM will attempt to 
-	load the shared library <code>c:\myLibs\foo.dll</code>.
+	load the shared library <code>c:\myLibs\foo.dll</code>. If the agent
+        library is statically linked into the executable
+        then no actual loading takes place.
+    <p/>
       </dd>
     </dl>
-    The start-up routine <internallink id="onload"><code>Agent_OnLoad</code></internallink>
-    in the library will be invoked.
+    For a dynamic shared library agent, the start-up routine
+    <internallink id="onload"><code>Agent_OnLoad</code></internallink>
+    in the library will be invoked. If the agent library is statically linked
+    into the executable then the system will attempt to invoke the
+    <code>Agent_OnLoad_&lt;agent-lib-name&gt;</code> entry point where
+    &lt;agent-lib-name&gt; is the basename of the 
+    agent. In the above example <code>-agentpath:c:\myLibs\foo.dll=opt1,opt2</code>,
+    the system will attempt to find and call the <code>Agent_OnLoad_foo</code> start-up routine.
     <p/>
     Libraries loaded with <code>-agentlib:</code> or <code>-agentpath:</code>
     will be searched for JNI native method implementations to facilitate the
@@ -502,11 +549,13 @@
     If the agent is started in the <code>OnLoad</code>
     <functionlink id="GetPhase">phase</functionlink> the function
     <internallink id="onload"><code>Agent_OnLoad</code></internallink>
-    will be invoked.
+    or <internallink id="onload"><code>Agent_OnLoad_L</code></internallink>
+    for statically linked agents will be invoked.
     If the agent is started in the live
     <functionlink id="GetPhase">phase</functionlink> the function
     <internallink id="onattach"><code>Agent_OnAttach</code></internallink>
-    will be invoked.
+    or <internallink id="onattach"><code>Agent_OnAttach_L</code></internallink>
+    for statically linked agents will be invoked.
     Exactly one call to a start-up function is made per agent.  
   </intro>
 
@@ -516,6 +565,11 @@
     <example>
 JNIEXPORT jint JNICALL 
 Agent_OnLoad(JavaVM *vm, char *options, void *reserved)</example>
+    Or for a statically linked agent named 'L':
+    <example>
+JNIEXPORT jint JNICALL 
+Agent_OnLoad_L(JavaVM *vm, char *options, void *reserved)</example>
+
     The VM will start the agent by calling this function.  
     It will be called early enough in VM initialization that:
     <ul>
@@ -531,7 +585,8 @@ Agent_OnLoad(JavaVM *vm, char *options, void *reserved)</example>
       <li>no objects have been created</li>
     </ul>
     <p/>
-    The VM will call the <code>Agent_OnLoad</code> function with
+    The VM will call the <code>Agent_OnLoad</code> or
+    <code>Agent_OnLoad_&lt;agent-lib-name&gt;</code> function with
     <i>&lt;options&gt;</i> as the second argument - 
     that is, using the command-line option examples,
     <code>"opt1,opt2"</code> will be passed to the <code>char *options</code> 
@@ -540,7 +595,8 @@ Agent_OnLoad(JavaVM *vm, char *options, void *reserved)</example>
     <internallink id="mUTF">modified UTF-8</internallink> string.
     If <i>=&lt;options&gt;</i> is not specified, 
     a zero length string is passed to <code>options</code>.
-    The lifespan of the <code>options</code> string is the <code>Agent_OnLoad</code>
+    The lifespan of the <code>options</code> string is the
+    <code>Agent_OnLoad</code> or <code>Agent_OnLoad_&lt;agent-lib-name&gt;</code>
     call.  If needed beyond this time the string or parts of the string must
     be copied.
     The period between when <code>Agent_OnLoad</code> is called and when it
@@ -570,7 +626,8 @@ Agent_OnLoad(JavaVM *vm, char *options, void *reserved)</example>
       their functionality.
     </rationale>
     <p/>
-    The return value from <code>Agent_OnLoad</code> is used to indicate an error.
+    The return value from <code>Agent_OnLoad</code> or
+    <code>Agent_OnLoad_&lt;agent-lib-name&gt;</code> is used to indicate an error.
     Any value other than zero indicates an error and causes termination of the VM.
   </intro>
   
@@ -587,6 +644,11 @@ Agent_OnLoad(JavaVM *vm, char *options, void *reserved)</example>
     <example>
 JNIEXPORT jint JNICALL 
 Agent_OnAttach(JavaVM* vm, char *options, void *reserved)</example>
+Or for a statically linked agent named 'L':
+    <example>
+JNIEXPORT jint JNICALL 
+Agent_OnAttach_L(JavaVM* vm, char *options, void *reserved)</example>
+
     <p/>         
     The VM will start the agent by calling this function.  
     It will be called in the context of a thread
@@ -596,13 +658,14 @@ Agent_OnAttach(JavaVM* vm, char *options, void *reserved)</example>
     </internallink> string.
     If startup options were not provided, a zero length string is passed to 
     <code>options</code>. The lifespan of the <code>options</code> string is the 
-    <code>Agent_OnAttach</code> call.  If needed beyond this time the string or parts of 
-    the string must be copied.
+    <code>Agent_OnAttach</code> or <code>Agent_OnAttach_&lt;agent-lib-name&gt;</code> call.
+    If needed beyond this time the string or parts of the string must be copied.
     <p/>
     Note that some <internallink id="capability">capabilities</internallink> 
     may not be available in the live phase.
     <p/>
-    The <code>Agent_OnAttach</code> function initializes the agent and returns a value
+    The <code>Agent_OnAttach</code> or <code>Agent_OnAttach_&lt;agent-lib-name
+    &gt;</code> function initializes the agent and returns a value
     to the VM to indicate if an error occurred. Any value other than zero indicates an error. 
     An error does not cause the VM to terminate. Instead the VM ignores the error, or takes 
     some implementation specific action -- for example it might print an error to standard error, 
@@ -615,8 +678,14 @@ Agent_OnAttach(JavaVM* vm, char *options, void *reserved)</example>
     <example>
 JNIEXPORT void JNICALL 
 Agent_OnUnload(JavaVM *vm)</example>
+    Or for a statically linked agent named 'L':
+    <example>
+JNIEXPORT void JNICALL 
+Agent_OnUnload_L(JavaVM *vm)</example>
+
     This function will be called by the VM when the library is about to be unloaded.
-    The library will be unloaded and this function will be called if some platform specific 
+    The library will be unloaded (unless it is statically linked into the
+    executable) and this function will be called if some platform specific 
     mechanism causes the unload (an unload mechanism is not specified in this document)
     or the library is (in effect) unloaded by the termination of the VM whether through 
     normal termination or VM failure, including start-up failure.
@@ -625,8 +694,9 @@ Agent_OnUnload(JavaVM *vm)</example>
     <eventlink id="VMDeath">VM Death event</eventlink>: for the VM Death event
     to be sent, the VM must have run at least to the point of initialization and a valid 
     <jvmti/> environment must exist which has set a callback for VMDeath
-    and enabled the event
-    None of these are required for <code>Agent_OnUnload</code> and this function
+    and enabled the event.
+    None of these are required for <code>Agent_OnUnload</code> or
+    <code>Agent_OnUnload_&lt;agent-lib-name&gt;</code> and this function
     is also called if the library is unloaded for other reasons.
     In the case that a VM Death event is sent, it will be sent before this 
     function is called (assuming this function is called due to VM termination).
@@ -10701,10 +10771,14 @@ myInit() {
           <constants id="jvmtiPhase" label="Phases of execution" kind="enum">
             <constant id="JVMTI_PHASE_ONLOAD" num="1">
               <code>OnLoad</code> phase: while in the
-              <internallink id="onload"><code>Agent_OnLoad</code></internallink> function.
+              <internallink id="onload"><code>Agent_OnLoad</code></internallink>
+              or, for statically linked agents, the <internallink id="onload">
+              <code>Agent_OnLoad_&lt;agent-lib-name&gt;
+              </code></internallink> function.
             </constant>
             <constant id="JVMTI_PHASE_PRIMORDIAL" num="2">
-              Primordial phase: between return from <code>Agent_OnLoad</code> and the
+              Primordial phase: between return from <code>Agent_OnLoad</code>
+              or <code>Agent_OnLoad_&lt;agent-lib-name&gt;</code> and the
               <code>VMStart</code> event.
             </constant>
             <constant id="JVMTI_PHASE_START" num="6">
@@ -14260,6 +14334,9 @@ typedef void (JNICALL *jvmtiEventVMInit)
   </change>
   <change date="11 October 2012" version="1.2.2">
       Fixed the "HTTP" and "Missing Anchor" errors reported by the LinkCheck tool.
+  </change>
+  <change date="19 June 2013" version="1.2.3">
+      Added support for statically linked agents.
   </change>
 </changehistory>
 

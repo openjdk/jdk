@@ -30,11 +30,10 @@ import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 
 import java.lang.invoke.MethodHandles;
 import java.util.Locale;
-import jdk.internal.dynalink.beans.BeansLinker;
 import jdk.internal.dynalink.beans.StaticClass;
-import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import jdk.nashorn.internal.codegen.CompilerConstants.Call;
 import jdk.nashorn.internal.parser.Lexer;
+import jdk.nashorn.internal.runtime.linker.Bootstrap;
 
 /**
  * Representation for ECMAScript types - this maps directly to the ECMA script standard
@@ -148,20 +147,8 @@ public enum JSType {
             return JSType.STRING;
         }
 
-        if (obj instanceof ScriptObject) {
-            return (obj instanceof ScriptFunction) ? JSType.FUNCTION : JSType.OBJECT;
-        }
-
-        if (obj instanceof StaticClass) {
+        if (Bootstrap.isCallable(obj)) {
             return JSType.FUNCTION;
-        }
-
-        if (BeansLinker.isDynamicMethod(obj)) {
-            return JSType.FUNCTION;
-        }
-
-        if (obj instanceof ScriptObjectMirror) {
-            return ((ScriptObjectMirror)obj).isFunction()? JSType.FUNCTION : JSType.OBJECT;
         }
 
         return JSType.OBJECT;

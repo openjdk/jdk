@@ -666,7 +666,7 @@ class ResourceObj ALLOCATION_SUPER_CLASS_SPEC {
   NEW_RESOURCE_ARRAY_RETURN_NULL(type, 1)
 
 #define NEW_C_HEAP_ARRAY3(type, size, memflags, pc, allocfail)\
-  (type*) AllocateHeap(size * sizeof(type), memflags, pc, allocfail)
+  (type*) AllocateHeap((size) * sizeof(type), memflags, pc, allocfail)
 
 #define NEW_C_HEAP_ARRAY2(type, size, memflags, pc)\
   (type*) (AllocateHeap((size) * sizeof(type), memflags, pc))
@@ -675,16 +675,16 @@ class ResourceObj ALLOCATION_SUPER_CLASS_SPEC {
   (type*) (AllocateHeap((size) * sizeof(type), memflags))
 
 #define NEW_C_HEAP_ARRAY2_RETURN_NULL(type, size, memflags, pc)\
-  NEW_C_HEAP_ARRAY3(type, size, memflags, pc, AllocFailStrategy::RETURN_NULL)
+  NEW_C_HEAP_ARRAY3(type, (size), memflags, pc, AllocFailStrategy::RETURN_NULL)
 
 #define NEW_C_HEAP_ARRAY_RETURN_NULL(type, size, memflags)\
-  NEW_C_HEAP_ARRAY3(type, size, memflags, (address)0, AllocFailStrategy::RETURN_NULL)
+  NEW_C_HEAP_ARRAY3(type, (size), memflags, (address)0, AllocFailStrategy::RETURN_NULL)
 
 #define REALLOC_C_HEAP_ARRAY(type, old, size, memflags)\
-  (type*) (ReallocateHeap((char*)old, (size) * sizeof(type), memflags))
+  (type*) (ReallocateHeap((char*)(old), (size) * sizeof(type), memflags))
 
 #define REALLOC_C_HEAP_ARRAY_RETURN_NULL(type, old, size, memflags)\
-   (type*) (ReallocateHeap((char*)old, (size) * sizeof(type), memflags, AllocFailStrategy::RETURN_NULL))
+  (type*) (ReallocateHeap((char*)(old), (size) * sizeof(type), memflags, AllocFailStrategy::RETURN_NULL))
 
 #define FREE_C_HEAP_ARRAY(type, old, memflags) \
   FreeHeap((char*)(old), memflags)

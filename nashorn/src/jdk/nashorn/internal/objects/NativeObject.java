@@ -125,6 +125,28 @@ public final class NativeObject {
     }
 
     /**
+     * Nashorn extension: Object.setPrototypeOf ( O, proto )
+     * Also found in ES6 draft specification.
+     *
+     * @param  self self reference
+     * @param  obj object to set prototype for
+     * @param  proto prototype object to be used
+     * @return object whose prototype is set
+     */
+    @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
+    public static Object setPrototypeOf(final Object self, final Object obj, final Object proto) {
+        if (obj instanceof ScriptObject) {
+            ((ScriptObject)obj).setProtoCheck(proto);
+            return obj;
+        } else if (obj instanceof ScriptObjectMirror) {
+            ((ScriptObjectMirror)obj).setProto(proto);
+            return obj;
+        }
+
+        throw notAnObject(obj);
+    }
+
+    /**
      * ECMA 15.2.3.3 Object.getOwnPropertyDescriptor ( O, P )
      *
      * @param self  self reference
@@ -184,7 +206,7 @@ public final class NativeObject {
         // FIXME: should we create a proper object with correct number of
         // properties?
         final ScriptObject newObj = Global.newEmptyInstance();
-        newObj.setProtoCheck(proto);
+        newObj.setProto((ScriptObject)proto);
         if (props != UNDEFINED) {
             NativeObject.defineProperties(self, newObj, props);
         }
@@ -647,15 +669,43 @@ public final class NativeObject {
 
         final List<AccessorProperty> properties = new ArrayList<>(propertyNames.size() + methodNames.size());
         for(final String methodName: methodNames) {
-            properties.add(AccessorProperty.create(methodName, Property.NOT_WRITABLE,
-                    getBoundBeanMethodGetter(source, getBeanOperation(linker, "dyn:getMethod:" + methodName, getterType, source)),
-                    null));
+            final MethodHandle method;
+            try {
+                method = getBeanOperation(linker, "dyn:getMethod:" + methodName, getterType, source);
+            } catch(final IllegalAccessError e) {
+                // Presumably, this was a caller sensitive method. Ignore it and carry on.
+                continue;
+            }
+            properties.add(AccessorProperty.create(methodName, Property.NOT_WRITABLE, getBoundBeanMethodGetter(source,
+                    method), null));
         }
         for(final String propertyName: propertyNames) {
+            MethodHandle getter;
+            if(readablePropertyNames.contains(propertyName)) {
+                try {
+                    getter = getBeanOperation(linker, "dyn:getProp:" + propertyName, getterType, source);
+                } catch(final IllegalAccessError e) {
+                    // Presumably, this was a caller sensitive method. Ignore it and carry on.
+                    getter = Lookup.EMPTY_GETTER;
+                }
+            } else {
+                getter = Lookup.EMPTY_GETTER;
+            }
             final boolean isWritable = writablePropertyNames.contains(propertyName);
-            properties.add(AccessorProperty.create(propertyName, isWritable ? 0 : Property.NOT_WRITABLE,
-                    readablePropertyNames.contains(propertyName) ? getBeanOperation(linker, "dyn:getProp:" + propertyName, getterType, source) : Lookup.EMPTY_GETTER,
-                    isWritable ? getBeanOperation(linker, "dyn:setProp:" + propertyName, setterType, source) : Lookup.EMPTY_SETTER));
+            MethodHandle setter;
+            if(isWritable) {
+                try {
+                    setter = getBeanOperation(linker, "dyn:setProp:" + propertyName, setterType, source);
+                } catch(final IllegalAccessError e) {
+                    // Presumably, this was a caller sensitive method. Ignore it and carry on.
+                    setter = Lookup.EMPTY_SETTER;
+                }
+            } else {
+                setter = Lookup.EMPTY_SETTER;
+            }
+            if(getter != Lookup.EMPTY_GETTER || setter != Lookup.EMPTY_SETTER) {
+                properties.add(AccessorProperty.create(propertyName, isWritable ? 0 : Property.NOT_WRITABLE, getter, setter));
+            }
         }
 
         targetObj.addBoundProperties(source, properties.toArray(new AccessorProperty[properties.size()]));

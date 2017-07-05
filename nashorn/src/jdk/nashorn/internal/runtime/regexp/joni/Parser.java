@@ -297,8 +297,6 @@ class Parser extends Lexer {
                 throw new SyntaxException(ERR_END_PATTERN_IN_GROUP);
             }
 
-            boolean listCapture = false;
-
             fetch();
             switch(c) {
             case ':':  /* (?:...) grouping only */

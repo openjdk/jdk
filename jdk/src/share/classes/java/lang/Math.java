@@ -698,11 +698,8 @@ public final class Math {
             return 0;
     }
 
-    private static Random randomNumberGenerator;
-
-    private static synchronized Random initRNG() {
-        Random rnd = randomNumberGenerator;
-        return (rnd == null) ? (randomNumberGenerator = new Random()) : rnd;
+    private static final class RandomNumberGeneratorHolder {
+        static final Random randomNumberGenerator = new Random();
     }
 
     /**
@@ -729,9 +726,7 @@ public final class Math {
      * @see Random#nextDouble()
      */
     public static double random() {
-        Random rnd = randomNumberGenerator;
-        if (rnd == null) rnd = initRNG();
-        return rnd.nextDouble();
+        return RandomNumberGeneratorHolder.randomNumberGenerator.nextDouble();
     }
 
     /**

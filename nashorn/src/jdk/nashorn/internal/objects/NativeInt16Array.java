@@ -109,6 +109,11 @@ public final class NativeInt16Array extends ArrayBufferView {
     }
 
     @Override
+    public String getClassName() {
+        return "Int16Array";
+    }
+
+    @Override
     protected Factory factory() {
         return FACTORY;
     }
