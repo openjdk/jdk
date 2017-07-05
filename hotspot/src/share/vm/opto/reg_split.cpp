@@ -271,6 +271,32 @@ uint PhaseChaitin::split_USE( Node *def, Block *b, Node *use, uint useidx, uint 
   return maxlrg;
 }
 
+//------------------------------clone_node----------------------------
+// Clone node with anti dependence check.
+Node* clone_node(Node* def, Block *b, Compile* C) {
+  if (def->needs_anti_dependence_check()) {
+#ifdef ASSERT
+    if (Verbose) {
+      tty->print_cr("RA attempts to clone node with anti_dependence:");
+      def->dump(-1); tty->cr();
+      tty->print_cr("into block:");
+      b->dump();
+    }
+#endif
+    if (C->subsume_loads() == true && !C->failing()) {
+      // Retry with subsume_loads == false
+      // If this is the first failure, the sentinel string will "stick"
+      // to the Compile object, and the C2Compiler will see it and retry.
+      C->record_failure(C2Compiler::retry_no_subsuming_loads());
+    } else {
+      // Bailout without retry
+      C->record_method_not_compilable("RA Split failed: attempt to clone node with anti_dependence");
+    }
+    return 0;
+  }
+  return def->clone();
+}
+
 //------------------------------split_Rematerialize----------------------------
 // Clone a local copy of the def.
 Node *PhaseChaitin::split_Rematerialize( Node *def, Block *b, uint insidx, uint &maxlrg, GrowableArray<uint> splits, int slidx, uint *lrg2reach, Node **Reachblock, bool walkThru ) {
@@ -298,8 +324,8 @@ Node *PhaseChaitin::split_Rematerialize( Node *def, Block *b, uint insidx, uint 
     }
   }
 
-  Node *spill = def->clone();
-  if (C->check_node_count(NodeLimitFudgeFactor, out_of_nodes)) {
+  Node *spill = clone_node(def, b, C);
+  if (spill == NULL || C->check_node_count(NodeLimitFudgeFactor, out_of_nodes)) {
     // Check when generating nodes
     return 0;
   }
@@ -834,13 +860,13 @@ uint PhaseChaitin::Split( uint maxlrg ) {
               // The effect of this clone is to drop the node out of the block,
               // so that the allocator does not see it anymore, and therefore
               // does not attempt to assign it a register.
-              def = def->clone();
+              def = clone_node(def, b, C);
+              if (def == NULL || C->check_node_count(NodeLimitFudgeFactor, out_of_nodes)) {
+                return 0;
+              }
               _names.extend(def->_idx,0);
               _cfg._bbs.map(def->_idx,b);
               n->set_req(inpidx, def);
-              if (C->check_node_count(NodeLimitFudgeFactor, out_of_nodes)) {
-                return 0;
-              }
               continue;
             }
 

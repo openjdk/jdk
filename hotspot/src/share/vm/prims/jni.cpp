@@ -3414,6 +3414,8 @@ static jint attach_current_thread(JavaVM *vm, void **penv, void *_args, bool dae
 
   thread->initialize_tlab();
 
+  thread->cache_global_variables();
+
   // Crucial that we do not have a safepoint check for this thread, since it has
   // not been added to the Thread list yet.
   { Threads_lock->lock_without_safepoint_check();

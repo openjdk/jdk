@@ -143,8 +143,8 @@ class Exceptions {
   static void throw_stack_overflow_exception(Thread* thread, const char* file, int line);
 
   // for AbortVMOnException flag
-  NOT_PRODUCT(static void debug_check_abort(Handle exception);)
-  NOT_PRODUCT(static void debug_check_abort(const char *value_string);)
+  NOT_PRODUCT(static void debug_check_abort(Handle exception, const char* message = NULL);)
+  NOT_PRODUCT(static void debug_check_abort(const char *value_string, const char* message = NULL);)
 };
 
 

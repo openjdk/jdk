@@ -105,3 +105,6 @@ bool JavaThread::pd_get_top_frame_for_signal_handler(frame* fr_addr,
   // nothing else to try
   return false;
 }
+
+void JavaThread::cache_global_variables() { }
+

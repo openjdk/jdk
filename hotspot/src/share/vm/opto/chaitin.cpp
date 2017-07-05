@@ -569,7 +569,7 @@ void PhaseChaitin::gather_lrg_masks( bool after_aggressive ) {
         if (trace_spilling() && lrg._def != NULL) {
           // collect defs for MultiDef printing
           if (lrg._defs == NULL) {
-            lrg._defs = new (_ifg->_arena) GrowableArray<Node*>();
+            lrg._defs = new (_ifg->_arena) GrowableArray<Node*>(_ifg->_arena, 2, 0, NULL);
             lrg._defs->append(lrg._def);
           }
           lrg._defs->append(n);

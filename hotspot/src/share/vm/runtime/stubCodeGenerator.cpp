@@ -53,14 +53,12 @@ const char* StubCodeDesc::name_for(address pc) {
 }
 
 
-void StubCodeDesc::print() {
-  tty->print(group());
-  tty->print("::");
-  tty->print(name());
-  tty->print(" [" INTPTR_FORMAT ", " INTPTR_FORMAT "[ (%d bytes)", begin(), end(), size_in_bytes());
+void StubCodeDesc::print_on(outputStream* st) const {
+  st->print(group());
+  st->print("::");
+  st->print(name());
+  st->print(" [" INTPTR_FORMAT ", " INTPTR_FORMAT "[ (%d bytes)", begin(), end(), size_in_bytes());
 }
-
-
 
 // Implementation of StubCodeGenerator
 
