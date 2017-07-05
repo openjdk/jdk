@@ -186,7 +186,7 @@ void CodeBlob::flush() {
     FREE_C_HEAP_ARRAY(unsigned char, _oop_maps, mtCode);
     _oop_maps = NULL;
   }
-  _comments.free();
+  _strings.free();
 }
 
 
