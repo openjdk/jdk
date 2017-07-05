@@ -30,6 +30,7 @@ import java.awt.Toolkit;
 
 /**
  * @test
+ * @key headful
  * @bug 8065739
  * @summary [macosx] Frame warps to lower left of screen when displayed
  * @author Alexandr Scherbatiy

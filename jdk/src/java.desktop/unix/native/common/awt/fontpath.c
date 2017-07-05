@@ -1012,17 +1012,20 @@ Java_sun_font_FontConfigManager_getFontConfig
     jfieldID familyNameID, styleNameID, fullNameID, fontFileID;
     jmethodID fcFontCons;
     char* debugMinGlyphsStr = getenv("J2D_DEBUG_MIN_GLYPHS");
+    jclass fcInfoClass;
+    jclass fcCompFontClass;
+    jclass fcFontClass;
 
     CHECK_NULL(fcInfoObj);
     CHECK_NULL(fcCompFontArray);
 
-    jclass fcInfoClass =
+    fcInfoClass =
         (*env)->FindClass(env, "sun/font/FontConfigManager$FontConfigInfo");
     CHECK_NULL(fcInfoClass);
-    jclass fcCompFontClass =
+    fcCompFontClass =
         (*env)->FindClass(env, "sun/font/FontConfigManager$FcCompFont");
     CHECK_NULL(fcCompFontClass);
-    jclass fcFontClass =
+    fcFontClass =
          (*env)->FindClass(env, "sun/font/FontConfigManager$FontConfigFont");
     CHECK_NULL(fcFontClass);
 
@@ -1146,7 +1149,8 @@ Java_sun_font_FontConfigManager_getFontConfig
         int fn, j, fontCount, nfonts;
         unsigned int minGlyphs;
         FcChar8 **family, **styleStr, **fullname, **file;
-        jarray fcFontArr;
+        jarray fcFontArr = NULL;
+        FcCharSet *unionCharset = NULL;
 
         fcCompFontObj = (*env)->GetObjectArrayElement(env, fcCompFontArray, i);
         fcNameStr =
@@ -1218,7 +1222,7 @@ Java_sun_font_FontConfigManager_getFontConfig
                 minGlyphs = val;
             }
         }
-        FcCharSet *unionCharset = NULL;
+
         for (j=0; j<nfonts; j++) {
             FcPattern *fontPattern = fontset->fonts[j];
             FcChar8 *fontformat;

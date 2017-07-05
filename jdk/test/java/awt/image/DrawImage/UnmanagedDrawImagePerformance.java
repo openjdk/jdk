@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ import static java.awt.image.BufferedImage.*;
 
 /*
  * @test
+ * @key headful
  * @bug 8029253 8059941
  * @summary Unmanaged images should be drawn fast.
  * @author Sergey Bylokhov

@@ -1050,17 +1050,6 @@ public class BasicFileChooserUI extends FileChooserUI {
             FileSystemView fs = chooser.getFileSystemView();
             File dir = chooser.getCurrentDirectory();
 
-            if (filename != null) {
-                // Remove whitespaces from end of filename
-                int i = filename.length() - 1;
-
-                while (i >=0 && filename.charAt(i) <= ' ') {
-                    i--;
-                }
-
-                filename = filename.substring(0, i + 1);
-            }
-
             if (filename == null || filename.length() == 0) {
                 // no file selected, multiple selection off, therefore cancel the approve action
                 resetGlobFilter();

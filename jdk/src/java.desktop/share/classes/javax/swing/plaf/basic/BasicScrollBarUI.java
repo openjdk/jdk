@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1212,7 +1212,7 @@ public class BasicScrollBarUI
             scrollbar.repaint(r.x, r.y, r.width, r.height);
 
             trackHighlight = NO_HIGHLIGHT;
-            isDragging = false;
+            setDragging(false);
             offset = 0;
             scrollTimer.stop();
             useCachedValue = true;
@@ -1256,7 +1256,7 @@ public class BasicScrollBarUI
                     offset = currentMouseX - getThumbBounds().x;
                     break;
                 }
-                isDragging = true;
+                setDragging(true);
                 return;
             }
             else if (getSupportsAbsolutePositioning() &&
@@ -1269,11 +1269,11 @@ public class BasicScrollBarUI
                     offset = getThumbBounds().width / 2;
                     break;
                 }
-                isDragging = true;
+                setDragging(true);
                 setValueFrom(e);
                 return;
             }
-            isDragging = false;
+            setDragging(false);
 
             Dimension sbSize = scrollbar.getSize();
             direction = +1;
@@ -1635,6 +1635,12 @@ public class BasicScrollBarUI
             }
         }
     }
+
+    private void setDragging(boolean dragging) {
+        this.isDragging = dragging;
+        scrollbar.repaint(getThumbBounds());
+    }
+
 
     /** Property change handler */
     public class PropertyChangeHandler implements PropertyChangeListener

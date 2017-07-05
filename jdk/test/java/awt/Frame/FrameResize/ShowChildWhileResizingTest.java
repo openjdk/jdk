@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2015 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -21,11 +22,13 @@
  * questions.
  */
 
-/* @test
-   @bug 8079595
-   @summary Resizing dialog which is JWindow parent makes JVM crash
-   @author Semyon Sadetsky
-  */
+/*
+ * @test
+ * @key headful
+ * @bug 8079595
+ * @summary Resizing dialog which is JWindow parent makes JVM crash
+ * @author Semyon Sadetsky
+ */
 
 import javax.swing.*;
 import java.awt.*;

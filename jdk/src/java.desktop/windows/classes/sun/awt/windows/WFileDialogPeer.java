@@ -328,4 +328,7 @@ final class WFileDialogPeer extends WWindowPeer implements FileDialogPeer {
         FileDialog fileDialog = (FileDialog)target;
         return AWTAccessor.getFileDialogAccessor().isMultipleMode(fileDialog);
     }
+
+    @Override
+    public native Point getLocationOnScreen();
 }

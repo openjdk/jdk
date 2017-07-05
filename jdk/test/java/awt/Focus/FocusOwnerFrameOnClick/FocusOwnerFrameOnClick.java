@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 /*
   @test      FocusOwnerFrameOnClick.java %W% %E%
+  @key headful
   @bug       6886678
   @summary   Tests that clicking an owner frame switches focus from its owned window.
   @author    Anton Tarasov: area=awt.focus

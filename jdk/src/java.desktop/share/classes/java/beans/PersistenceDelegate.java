@@ -89,7 +89,7 @@ public abstract class PersistenceDelegate {
 
     /**
      * The {@code writeObject} is a single entry point to the persistence
-     * and is used by a {@code Encoder} in the traditional
+     * and is used by an {@code Encoder} in the traditional
      * mode of delegation. Although this method is not final,
      * it should not need to be subclassed under normal circumstances.
      * <p>
