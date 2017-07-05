@@ -22,6 +22,8 @@
  */
 
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 
@@ -35,11 +37,11 @@ import jdk.test.lib.*;
  * @modules java.base/sun.misc
  *          java.management
  *          java.base/jdk.internal
+ * @ignore 8132924
  * @compile -XDignore.symbol.file java/lang/Object.java TestMonomorphicObjectCall.java
  * @run main TestMonomorphicObjectCall
  */
 public class TestMonomorphicObjectCall {
-    final static String testClasses = System.getProperty("test.classes") + File.separator;
 
     private static void callFinalize(Object object) throws Throwable {
         // Call modified version of java.lang.Object::finalize() that is
@@ -50,6 +52,9 @@ public class TestMonomorphicObjectCall {
 
     public static void main(String[] args) throws Throwable {
         if (args.length == 0) {
+            byte[] bytecode = Files.readAllBytes(Paths.get(System.getProperty("test.classes") + File.separator +
+                "java" + File.separator + "lang" + File.separator + "Object.class"));
+            ClassFileInstaller.writeClassToDisk("java.lang.Object", bytecode, "mods/java.base");
             // Execute new instance with modified java.lang.Object
             executeTestJvm();
         } else {
@@ -62,7 +67,7 @@ public class TestMonomorphicObjectCall {
         // Execute test with modified version of java.lang.Object
         // in -Xbootclasspath.
         String[] vmOpts = new String[] {
-                "-Xbootclasspath/p:" + testClasses,
+                "-Xpatch:mods",
                 "-Xcomp",
                 "-XX:+IgnoreUnrecognizedVMOptions",
                 "-XX:-VerifyDependencies",

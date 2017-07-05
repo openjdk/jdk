@@ -24,6 +24,11 @@
 # @test
 # @bug 6543842 6543440 6939248 8009636 8024302
 # @summary checking response of timestamp
+# @modules java.base/sun.misc
+#          java.base/sun.security.pkcs
+#          java.base/sun.security.timestamp
+#          java.base/sun.security.x509
+#          java.base/sun.security.util
 #
 # @run shell/timeout=600 ts.sh
 
@@ -90,6 +95,7 @@ $KT -alias tsbad3 -certreq | \
         $KT -alias ca -gencert -ext eku:critical=cs | \
         $KT -alias tsbad3 -importcert
 
-$JAVAC -d . ${TESTSRC}/TimestampCheck.java
-$JAVA ${TESTVMOPTS} "-Dtest.tool.vm.opts=${TESTTOOLVMOPTS}" TimestampCheck
+EXTRAOPTS="-XaddExports:java.base/sun.misc=ALL-UNNAMED,java.base/sun.security.pkcs=ALL-UNNAMED,java.base/sun.security.timestamp=ALL-UNNAMED,java.base/sun.security.x509=ALL-UNNAMED,java.base/sun.security.util=ALL-UNNAMED"
+$JAVAC ${EXTRAOPTS} -d . ${TESTSRC}/TimestampCheck.java
+$JAVA ${TESTVMOPTS} ${EXTRAOPTS} "-Dtest.tool.vm.opts=${TESTTOOLVMOPTS}" TimestampCheck
 

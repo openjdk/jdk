@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -425,26 +425,36 @@ public class Bug4168625Test extends RBTestFmwk {
                 throws ClassNotFoundException {
             Class result;
             synchronized (this) {
-                logln(">>"+threadName()+">load "+className);
-                loadedClasses.addElement(className);
+                try {
+                    logln(">>"+threadName()+">load "+className);
+                    loadedClasses.addElement(className);
 
-                result = findLoadedClass(className);
-                if (result == null) {
-                    final byte[] classData = getClassData(className);
-                    if (classData == null) {
-                        //we don't have a local copy of this one
-                        logln("Loading system class: "+className);
-                        result = loadFromSystem(className);
-                    } else {
-                        result = defineClass(classData, 0, classData.length);
-                        if (result == null) {
-                            //there was an error defining the class
+                    result = findLoadedClass(className);
+                    if (result == null) {
+                        final byte[] classData = getClassData(className);
+                        if (classData == null) {
+                            //we don't have a local copy of this one
+                            logln("Loading system class: "+className);
                             result = loadFromSystem(className);
+                        } else {
+                            result = defineClass(classData, 0, classData.length);
+                            if (result == null) {
+                                //there was an error defining the class
+                                result = loadFromSystem(className);
+                            }
+                        }
+                        if ((result != null) && resolveIt) {
+                            resolveClass(result);
                         }
                     }
-                    if ((result != null) && resolveIt) {
-                        resolveClass(result);
+                } catch (ClassNotFoundException e) {
+                    // Ignore loading of Bug4168625ResourceProvider
+                    if (className.equals("Bug4168625ResourceProvider")) {
+                        logln("Ignoring " + className);
+                        loadedClasses.remove(className);
+                        return null;
                     }
+                    throw e;
                 }
             }
             for (int i = classesToWaitFor.length-1; i >= 0; --i) {

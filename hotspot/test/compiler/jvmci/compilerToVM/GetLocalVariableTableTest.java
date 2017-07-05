@@ -27,15 +27,19 @@
  * @bug 8136421
  * @requires (os.simpleArch == "x64" | os.simpleArch == "sparcv9" | os.simpleArch == "aarch64")
  * @library /testlibrary /test/lib /
+ * @library ../common/patches
+ * @modules java.base/jdk.internal.org.objectweb.asm
+ *          java.base/jdk.internal.org.objectweb.asm.tree
+ *          jdk.vm.ci/jdk.vm.ci.hotspot
+ *          jdk.vm.ci/jdk.vm.ci.code
  * @clean compiler.jvmci.compilerToVM.*
  * @compile -g DummyInterface.java
  * @compile -g DummyAbstractClass.java
  * @compile -g DummyClass.java
- * @compile ../common/CompilerToVMHelper.java
- * @run main ClassFileInstaller jdk.vm.ci.hotspot.CompilerToVMHelper
+ * @build jdk.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper
+ * @build compiler.jvmci.compilerToVM.GetLocalVariableTableTest
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
- *      -Xbootclasspath/a:.
- *      compiler.jvmci.compilerToVM.GetLocalVariableTableTest
+ *                   compiler.jvmci.compilerToVM.GetLocalVariableTableTest
  * @clean compiler.jvmci.compilerToVM.*
  */
 

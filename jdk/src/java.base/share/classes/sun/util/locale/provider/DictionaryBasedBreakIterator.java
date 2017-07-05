@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@
 package sun.util.locale.provider;
 
 import java.io.IOException;
+import java.lang.reflect.Module;
 import java.text.CharacterIterator;
 import java.util.ArrayList;
 import java.util.List;
@@ -108,20 +109,18 @@ class DictionaryBasedBreakIterator extends RuleBasedBreakIterator {
 
     /**
      * Constructs a DictionaryBasedBreakIterator.
-     * @param description Same as the description parameter on RuleBasedBreakIterator,
-     * except for the special meaning of "<dictionary>".  This parameter is just
-     * passed through to RuleBasedBreakIterator's constructor.
+     * @param module The module where the dictionary file resides
      * @param dictionaryFilename The filename of the dictionary file to use
      */
-    DictionaryBasedBreakIterator(String dataFile, String dictionaryFile)
+    DictionaryBasedBreakIterator(Module module, String dataFile, String dictionaryFile)
                                         throws IOException {
-        super(dataFile);
+        super(module, dataFile);
         byte[] tmp = super.getAdditionalData();
         if (tmp != null) {
             prepareCategoryFlags(tmp);
             super.setAdditionalData(null);
         }
-        dictionary = new BreakDictionary(dictionaryFile);
+        dictionary = new BreakDictionary(module, dictionaryFile);
     }
 
     private void prepareCategoryFlags(byte[] data) {

@@ -26,6 +26,9 @@
 ifndef _MODULES_GMK
 _MODULES_GMK := 1
 
+# Hook to include the corresponding custom file, if present.
+$(eval $(call IncludeCustomExtension, , common/Modules.gmk))
+
 ################################################################################
 # Some platforms don't have the serviceability agent
 ifeq ($(INCLUDE_SA), false)
@@ -35,7 +38,9 @@ endif
 ################################################################################
 # Module list macros
 
-ALL_TOP_SRC_DIRS := \
+# Use append so that the custom extension may add to this variable
+
+ALL_TOP_SRC_DIRS += \
     $(HOTSPOT_TOPDIR)/src \
     $(JDK_TOPDIR)/src \
     $(LANGTOOLS_TOPDIR)/src \
@@ -45,37 +50,74 @@ ALL_TOP_SRC_DIRS := \
     $(NASHORN_TOPDIR)/src \
     #
 
-# Find all modules with java sources by looking in the source dirs
-define FindJavaModules
-  $(filter-out $(MODULES_FILTER), $(sort $(notdir \
-      $(patsubst %/,%, $(dir $(patsubst %/,%, $(dir $(patsubst %/,%, $(dir \
-      $(wildcard $(patsubst %,%/*/share/classes/*, $(ALL_TOP_SRC_DIRS)) \
-          $(patsubst %,%/*/$(OPENJDK_TARGET_OS)/classes/*, $(ALL_TOP_SRC_DIRS)) \
-          $(patsubst %,%/*/$(OPENJDK_TARGET_OS_TYPE)/classes/*, $(ALL_TOP_SRC_DIRS))))))))))))
-endef
+# Find all module-info.java files for the current build target platform and
+# configuration.
+# Param 1 - Module to find for, set to * for finding all
+FindAllModuleInfos = \
+    $(wildcard \
+        $(patsubst %,%/$(strip $1)/$(OPENJDK_TARGET_OS)/classes/module-info.java, $(ALL_TOP_SRC_DIRS)) \
+        $(patsubst %,%/$(strip $1)/$(OPENJDK_TARGET_OS_TYPE)/classes/module-info.java, $(ALL_TOP_SRC_DIRS)) \
+        $(patsubst %,%/$(strip $1)/share/classes/module-info.java, $(ALL_TOP_SRC_DIRS)) \
+        $(patsubst %,%/$(strip $1)/module-info.java, $(IMPORT_MODULES_SRC)))
 
-# Find all modules with source for the target platform.
-define FindAllModules
-  $(sort $(filter-out $(MODULES_FILTER) closed demo sample, \
-      $(notdir $(patsubst %/,%, $(dir \
-      $(wildcard $(patsubst %, %/*/share, $(ALL_TOP_SRC_DIRS)) \
-      $(patsubst %, %/*/$(OPENJDK_TARGET_OS), $(ALL_TOP_SRC_DIRS)) \
-      $(patsubst %, %/*/$(OPENJDK_TARGET_OS_TYPE), $(ALL_TOP_SRC_DIRS))))))))
-endef
+# Extract the module names from the paths of module-info.java files. The
+# position of the module directory differs depending on if this is an imported
+# src dir or not.
+GetModuleNameFromModuleInfo = \
+    $(strip $(foreach mi, $1, \
+      $(if $(filter $(addsuffix %, $(IMPORT_MODULES_SRC)), $(mi)), \
+        $(notdir $(patsubst %/,%, $(dir $(mi)))), \
+        $(notdir $(patsubst %/,%, $(dir $(patsubst %/,%, $(dir $(patsubst %/,%, $(dir $(mi)))))))))))
+
+# Find all modules by looking for module-info.java files and looking at parent
+# directories.
+FindAllModules = \
+    $(sort $(filter-out $(MODULES_FILTER), \
+    $(call GetModuleNameFromModuleInfo, $(MODULE_INFOS))))
+
+FindImportedModules = \
+    $(if $(IMPORT_MODULES_CLASSES), $(notdir $(wildcard $(IMPORT_MODULES_CLASSES)/*)))
 
 ################################################################################
-# The module deps makefile is generated in make/GenerateModuleDeps.gmk
+# Extract module dependencies from module-info.java files.
+
 MODULE_DEPS_MAKEFILE := $(MAKESUPPORT_OUTPUTDIR)/module-deps.gmk
+
+MODULE_INFOS := $(call FindAllModuleInfos, *)
+
+$(MODULE_DEPS_MAKEFILE): $(MODULE_INFOS) \
+    $(call DependOnVariable, MODULE_INFOS, $(MAKESUPPORT_OUTPUTDIR)/MODULE_INFOS.vardeps)
+	$(MKDIR) -p $(@D)
+	$(RM) $@
+	$(foreach m, $(MODULE_INFOS), \
+	    ( $(PRINTF) "DEPS_$(call GetModuleNameFromModuleInfo, $m) :=" && \
+	      $(NAWK) -v MODULE=$(call GetModuleNameFromModuleInfo, $m) '\
+	          BEGIN      { if (MODULE != "java.base") printf(" java.base"); } \
+	          /requires/ { sub(/;/, ""); \
+	                       sub(/requires/, ""); \
+	                       sub(/public/, ""); \
+	                       sub(/\/\/.*/, ""); \
+	                       sub(/\/\*.*\*\//, ""); \
+	                       gsub(/ /, ""); \
+	                       printf(" %s", $$0) } \
+	          END        { printf("\n") }' $m \
+	    ) >> $@ $(NEWLINE))
+
 -include $(MODULE_DEPS_MAKEFILE)
 
 # Param 1: Module to find deps for
-define FindDepsForModule
+FindDepsForModule = \
   $(DEPS_$(strip $1))
-endef
+
+# Finds transitive dependencies in 3 levels.
+# Param 1: Module to find transitive deps for
+FindTransitiveDepsForModule = \
+    $(sort $(call FindDepsForModule, $1) \
+        $(foreach m, $(call FindDepsForModule, $1), \
+            $(call FindDepsForModule, $m) \
+            $(foreach n, $(call FindDepsForModule, $m), \
+                 $(call FindDepsForModule, $n))))
 
 ################################################################################
-
-# Hook to include the corresponding custom file, if present.
-$(eval $(call IncludeCustomExtension, , common/Modules.gmk))
 
 endif # _MODULES_GMK

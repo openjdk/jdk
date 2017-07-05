@@ -37,8 +37,13 @@ import java.io.*;
 import java.lang.management.*;
 import java.lang.reflect.*;
 import java.net.*;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
-import java.util.jar.*;
+import java.util.stream.Collectors;
 import javax.management.*;
 import javax.management.relation.*;
 import javax.management.remote.*;
@@ -83,9 +88,13 @@ public class NotificationInfoTest {
         System.out.println("Checking platform MBeans...");
         checkPlatformMBeans();
 
-        URL codeBase = ClassLoader.getSystemResource("javax/management/MBeanServer.class");
-        if (codeBase == null) {
-            throw new Exception("Could not determine codeBase for " + MBeanServer.class);
+        URL codeBase;
+        String home = System.getProperty("java.home");
+        Path classFile = Paths.get(home, "modules", "java.management");
+        if (Files.isDirectory(classFile)) {
+            codeBase = classFile.toUri().toURL();
+        } else {
+            codeBase = URI.create("jrt:/java.management").toURL();
         }
 
         System.out.println();
@@ -214,14 +223,13 @@ public class NotificationInfoTest {
         System.out.println();
     }
 
-    private static String[] findStandardMBeans(URL codeBase)
-            throws Exception {
+    private static String[] findStandardMBeans(URL codeBase) throws Exception {
         Set<String> names;
-        if (codeBase.getProtocol().equalsIgnoreCase("file")
-            && codeBase.toString().endsWith("/"))
+        if (codeBase.getProtocol().equalsIgnoreCase("jrt")) {
+            names = findStandardMBeansFromRuntime();
+        } else {
             names = findStandardMBeansFromDir(codeBase);
-        else
-            names = findStandardMBeansFromJar(codeBase);
+        }
 
         Set<String> standardMBeanNames = new TreeSet<String>();
         for (String name : names) {
@@ -234,21 +242,17 @@ public class NotificationInfoTest {
         return standardMBeanNames.toArray(new String[0]);
     }
 
-    private static Set<String> findStandardMBeansFromJar(URL codeBase)
-            throws Exception {
-        InputStream is = codeBase.openStream();
-        JarInputStream jis = new JarInputStream(is);
-        Set<String> names = new TreeSet<String>();
-        JarEntry entry;
-        while ((entry = jis.getNextJarEntry()) != null) {
-            String name = entry.getName();
-            if (!name.endsWith(".class"))
-                continue;
-            name = name.substring(0, name.length() - 6);
-            name = name.replace('/', '.');
-            names.add(name);
-        }
-        return names;
+    private static Set<String> findStandardMBeansFromRuntime() throws Exception {
+        FileSystem fs = FileSystems.getFileSystem(URI.create("jrt:/"));
+        Path modules = fs.getPath("/modules");
+        return Files.walk(modules)
+                .filter(path -> path.toString().endsWith(".class"))
+                .map(path -> path.subpath(2, path.getNameCount()))
+                .map(Path::toString)
+                .map(s -> s.substring(0, s.length() - 6))  // drop .class
+                .filter(s -> !s.equals("module-info"))
+                .map(s -> s.replace('/', '.'))
+                .collect(Collectors.toSet());
     }
 
     private static Set<String> findStandardMBeansFromDir(URL codeBase)

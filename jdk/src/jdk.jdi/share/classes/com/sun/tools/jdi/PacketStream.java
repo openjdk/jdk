@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -152,6 +152,10 @@ class PacketStream {
 
     void writeMethodRef(long data) {
         writeID(vm.sizeofMethodRef, data);
+    }
+
+    void writeModuleRef(long data) {
+        writeID(vm.sizeofModuleRef, data);
     }
 
     void writeFieldRef(long data) {
@@ -467,11 +471,23 @@ class PacketStream {
         return vm.referenceType(ref, tag);
     }
 
+    ModuleReferenceImpl readModule() {
+        long ref = readModuleRef();
+        return vm.moduleMirror(ref);
+    }
+
     /**
      * Read method reference represented as vm specific byte sequence.
      */
     long readMethodRef() {
         return readID(vm.sizeofMethodRef);
+    }
+
+    /**
+     * Read module reference represented as vm specific byte sequence.
+     */
+    long readModuleRef() {
+        return readID(vm.sizeofModuleRef);
     }
 
     /**

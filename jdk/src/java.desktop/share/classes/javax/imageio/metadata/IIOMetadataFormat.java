@@ -43,6 +43,12 @@ import javax.imageio.ImageTypeSpecifier;
  * returns an instance of the class.  Commonly, an implementation will
  * construct only a single instance and cache it for future
  * invocations of {@code getInstance}.
+ * <p> In the event that the plugin is provided as part of a named module,
+ * that module must export the package containing the implementation class
+ * to the <pre>java.desktop</pre> module via a qualified export.
+ * An unqualified export is not recommended unless also needed for
+ * some other reason. Failing to export the package will result in
+ * access failure at runtime.
  *
  * <p> The structures that may be described by this class are a subset
  * of those expressible using XML document type definitions (DTDs),

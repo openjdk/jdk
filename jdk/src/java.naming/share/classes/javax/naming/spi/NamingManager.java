@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,9 @@
 
 package javax.naming.spi;
 
-import java.util.*;
 import java.net.MalformedURLException;
+import java.util.*;
+
 
 import javax.naming.*;
 import com.sun.naming.internal.VersionHelper;
@@ -243,6 +244,9 @@ public class NamingManager {
      * Note that an object factory (an object that implements the ObjectFactory
      * interface) must be public and must have a public constructor that
      * accepts no arguments.
+     * In cases where the factory is in a named module then it must be in a
+     * package which is exported by that module to the {@code java.naming}
+     * module.
      * <p>
      * The {@code name} and {@code nameCtx} parameters may
      * optionally be used to specify the name of the object being created.
@@ -525,6 +529,9 @@ public class NamingManager {
      * Note that an object factory (an object that implements the ObjectFactory
      * interface) must be public and must have a public constructor that
      * accepts no arguments.
+     * In cases where the factory is in a named module then it must be in a
+     * package which is exported by that module to the {@code java.naming}
+     * module.
      *
      * @param scheme    The non-null scheme-id of the URLs supported by the context.
      * @param environment The possibly null environment properties to be
@@ -641,7 +648,10 @@ public class NamingManager {
      *         <br>
      *         (Note that an initial context factory (an object that implements
      *         the InitialContextFactory interface) must be public and must have
-     *         a public constructor that accepts no arguments)</li>
+     *         a public constructor that accepts no arguments.
+     *         In cases where the factory is in a named module then it must
+     *         be in a package which is exported by that module to the
+     *         {@code java.naming} module.)</li>
      *     </ul>
      * </li>
      * </ul>
@@ -847,6 +857,9 @@ public class NamingManager {
      * (an object that implements the StateFactory
      * interface) must be public and must have a public constructor that
      * accepts no arguments.
+     * In cases where the factory is in a named module then it must be in a
+     * package which is exported by that module to the {@code java.naming}
+     * module.
      * <p>
      * The {@code name} and {@code nameCtx} parameters may
      * optionally be used to specify the name of the object being created.

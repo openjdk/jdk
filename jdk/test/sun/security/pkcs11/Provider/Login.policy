@@ -1,6 +1,7 @@
 grant {
     permission java.util.PropertyPermission "*", "read, write";
     permission java.lang.RuntimePermission "loadLibrary.*";
+    permission java.lang.RuntimePermission "accessClassInPackage.apple.*";
     permission java.lang.RuntimePermission "accessClassInPackage.sun.*";
     permission java.lang.RuntimePermission "getProtectionDomain";
     permission java.security.SecurityPermission "putProviderProperty.*";

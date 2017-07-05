@@ -25,7 +25,9 @@
 
 package jdk.nashorn.internal.runtime.linker;
 
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Modifier;
+import jdk.internal.module.Modules;
 import jdk.dynalink.CallSiteDescriptor;
 import jdk.dynalink.NamedOperation;
 import jdk.dynalink.StandardOperation;
@@ -87,8 +89,11 @@ final class NashornStaticClassLinker implements TypeBasedGuardingDynamicLinker {
             if (NashornLinker.isAbstractClass(receiverClass)) {
                 // Change this link request into a link request on the adapter class.
                 final Object[] args = request.getArguments();
-                args[0] = JavaAdapterFactory.getAdapterClassFor(new Class<?>[] { receiverClass }, null,
-                        NashornCallSiteDescriptor.getLookupInternal(request.getCallSiteDescriptor()));
+                final MethodHandles.Lookup lookup =
+                        NashornCallSiteDescriptor.getLookupInternal(request.getCallSiteDescriptor());
+
+                args[0] = JavaAdapterFactory.getAdapterClassFor(new Class<?>[] { receiverClass }, null, lookup);
+                Modules.addReads(lookup.lookupClass().getModule(), ((StaticClass)args[0]).getRepresentedClass().getModule());
                 final LinkRequest adapterRequest = request.replaceArguments(request.getCallSiteDescriptor(), args);
                 final GuardedInvocation gi = checkNullConstructor(delegate(linkerServices, adapterRequest), receiverClass);
                 // Finally, modify the guard to test for the original abstract class.

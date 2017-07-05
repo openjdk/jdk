@@ -25,8 +25,8 @@
  * @test
  * @bug 6589532
  * @summary Tests PrintColorUIResource value encoding
- * @author Sergey Malenkov
  * @modules java.desktop/sun.swing
+ * @author Sergey Malenkov
  */
 
 import java.awt.Color;

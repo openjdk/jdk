@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -565,9 +565,7 @@ public class EarlyReturnTest extends TestScaffold {
         String methodName = origMethodName.substring(2);
         ThreadReference tr = event.thread();
 
-        if (vmm.majorInterfaceVersion() >= 1 &&
-            vmm.minorInterfaceVersion() >= 6 &&
-            vm().canForceEarlyReturn()) {
+        if (vm().canForceEarlyReturn()) {
 
             try {
 
@@ -664,9 +662,7 @@ public class EarlyReturnTest extends TestScaffold {
     // This is the MethodExitEvent handler.
     public void methodExited(MethodExitEvent event) {
         String origMethodName = event.method().name();
-        if (vmm.majorInterfaceVersion() >= 1 &&
-            vmm.minorInterfaceVersion() >= 6 &&
-            vm().canGetMethodReturnValues()) {
+        if (vm().canGetMethodReturnValues()) {
             Value retValue = event.returnValue();
 
             if (!origMethodName.startsWith("s_") &&

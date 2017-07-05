@@ -101,6 +101,7 @@ class Utils {
 
         compiler("-d",
                 XCLASSES.getName(),
+                "-XaddExports:jdk.jdeps/com.sun.tools.classfile=ALL-UNNAMED",
                 "@" + tmpFile.getAbsolutePath());
 
         jar("cvfe",
@@ -137,6 +138,7 @@ class Utils {
         init();
         List<String> cmds = new ArrayList<String>();
         cmds.add(getJavaCmd());
+        cmds.add("-XaddExports:jdk.jdeps/com.sun.tools.classfile=ALL-UNNAMED");
         cmds.add("-cp");
         cmds.add(VerifierJar.getName());
         cmds.add("sun.tools.pack.verify.Main");
@@ -561,13 +563,12 @@ class Utils {
     }
 
     static File createRtJar() throws IOException {
-        File LibDir = new File(JavaHome, "lib");
-        File ModuleDir = new File(LibDir, "modules");
-        File BootModules = new File(ModuleDir, "bootmodules.jimage");
+        File libDir = new File(JavaHome, "lib");
+        File modules = new File(libDir, "modules");
         List<String> cmdList = new ArrayList<>();
         cmdList.add(getJimageCmd());
         cmdList.add("extract");
-        cmdList.add(BootModules.getAbsolutePath());
+        cmdList.add(modules.getAbsolutePath());
         cmdList.add("--dir");
         cmdList.add("out");
         runExec(cmdList);

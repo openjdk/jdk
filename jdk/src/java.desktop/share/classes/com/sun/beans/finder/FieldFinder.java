@@ -54,6 +54,9 @@ public final class FieldFinder {
         if (name == null) {
             throw new IllegalArgumentException("Field name is not set");
         }
+        if (!FinderUtils.isExported(type)) {
+            throw new NoSuchFieldException("Field '" + name + "' is not accessible");
+        }
         Field field = type.getField(name);
         if (!Modifier.isPublic(field.getModifiers())) {
             throw new NoSuchFieldException("Field '" + name + "' is not public");

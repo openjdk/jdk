@@ -28,8 +28,10 @@
  */
 
 import java.io.InputStream;
+import java.io.IOException;
 import java.io.DataInputStream;
 import java.nio.file.DirectoryStream;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Files;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
@@ -38,16 +40,20 @@ import java.nio.file.PathMatcher;
 import java.nio.file.Paths;
 import java.net.URI;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.stream.Stream;
 
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotEquals;
+import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.assertFalse;
 
@@ -56,6 +62,34 @@ import static org.testng.Assert.assertFalse;
  */
 
 public class Basic {
+
+    private FileSystem theFileSystem;
+    private FileSystem fs;
+
+    @BeforeClass
+    public void setup() {
+        try {
+            theFileSystem = FileSystems.getFileSystem(URI.create("jrt:/"));
+            Map<String, String> env = new HashMap<>();
+            // set java.home property to be underlying java.home
+            // so that jrt-fs.jar loading is exercised.
+            env.put("java.home", System.getProperty("java.home"));
+            fs = FileSystems.newFileSystem(URI.create("jrt:/"), env);
+        } catch (IOException ioExp) {
+            throw new RuntimeException(ioExp);
+        }
+    }
+
+    @AfterClass
+    public void tearDown() {
+        try {
+            fs.close();
+        } catch (Exception ignored) {}
+    }
+
+    private FileSystem selectFileSystem(boolean theDefault) {
+        return theDefault? theFileSystem : fs;
+    }
 
     // Checks that the given FileSystem is a jrt file system.
     private void checkFileSystem(FileSystem fs) {
@@ -95,17 +129,32 @@ public class Basic {
         }
     }
 
+    @Test
+    public void testNewFileSystemWithJavaHome() throws Exception {
+        Map<String, String> env = new HashMap<>();
+        // set java.home property to be underlying java.home
+        // so that jrt-fs.jar loading is exercised.
+        env.put("java.home", System.getProperty("java.home"));
+        try (FileSystem fs = FileSystems.newFileSystem(URI.create("jrt:/"), env)) {
+            checkFileSystem(fs);
+            // jrt-fs.jar classes are loaded by another (non-boot) loader in this case
+            assertNotNull(fs.provider().getClass().getClassLoader());
+        }
+    }
+
     @DataProvider(name = "knownClassFiles")
     private Object[][] knownClassFiles() {
         return new Object[][] {
-            { "/modules/java.base/java/lang/Object.class" },
-            { "modules/java.base/java/lang/Object.class" },
+            { "/modules/java.base/java/lang/Object.class", true },
+            { "modules/java.base/java/lang/Object.class", true },
+            { "/modules/java.base/java/lang/Object.class", false },
+            { "modules/java.base/java/lang/Object.class", false },
         };
     }
 
     @Test(dataProvider = "knownClassFiles")
-    public void testKnownClassFiles(String path) throws Exception {
-        FileSystem fs = FileSystems.getFileSystem(URI.create("jrt:/"));
+    public void testKnownClassFiles(String path, boolean theDefault) throws Exception {
+        FileSystem fs = selectFileSystem(theDefault);
         Path classFile = fs.getPath(path);
 
         assertTrue(Files.isRegularFile(classFile));
@@ -121,25 +170,38 @@ public class Basic {
     @DataProvider(name = "knownDirectories")
     private Object[][] knownDirectories() {
         return new Object[][] {
-            { "/"                     },
-            { "."                     },
-            { "./"                    },
-            { "/."                    },
-            { "/./"                   },
-            { "/modules/java.base/.."         },
-            { "/modules/java.base/../"        },
-            { "/modules/java.base/../."       },
-            { "/modules/java.base"            },
-            { "/modules/java.base/java/lang"  },
-            { "modules/java.base/java/lang"   },
-            { "/modules/java.base/java/lang/" },
-            { "modules/java.base/java/lang/"  }
+            { "/", true                     },
+            { "." , true                    },
+            { "./", true                    },
+            { "/.", true                    },
+            { "/./", true                   },
+            { "/modules/java.base/..", true         },
+            { "/modules/java.base/../", true        },
+            { "/modules/java.base/../.", true       },
+            { "/modules/java.base", true            },
+            { "/modules/java.base/java/lang", true  },
+            { "modules/java.base/java/lang", true   },
+            { "/modules/java.base/java/lang/", true },
+            { "modules/java.base/java/lang/", true  },
+            { "/", false                     },
+            { "." , false                    },
+            { "./", false                    },
+            { "/.", false                    },
+            { "/./", false                   },
+            { "/modules/java.base/..", false         },
+            { "/modules/java.base/../", false        },
+            { "/modules/java.base/../.", false       },
+            { "/modules/java.base", false            },
+            { "/modules/java.base/java/lang", false  },
+            { "modules/java.base/java/lang", false   },
+            { "/modules/java.base/java/lang/", false },
+            { "modules/java.base/java/lang/", false  },
         };
     }
 
     @Test(dataProvider = "knownDirectories")
-    public void testKnownDirectories(String path) throws Exception {
-        FileSystem fs = FileSystems.getFileSystem(URI.create("jrt:/"));
+    public void testKnownDirectories(String path, boolean theDefault) throws Exception {
+        FileSystem fs = selectFileSystem(theDefault);
         Path dir = fs.getPath(path);
 
         assertTrue(Files.isDirectory(dir));
@@ -383,6 +445,8 @@ public class Basic {
             { "/modules/java.base/packages.offsets" },
             { "/modules/java.instrument/packages.offsets" },
             { "/modules/jdk.zipfs/packages.offsets" },
+            { "/modules/java.base/_the.java.base.vardeps" },
+            { "/modules/java.base/_the.java.base_batch" },
             { "/java/lang" },
             { "/java/util" },
         };
@@ -568,48 +632,55 @@ public class Basic {
     }
 
     @Test
-    public void testPackagesSubDirList() throws Exception {
+    public void invalidPathTest() {
         FileSystem fs = FileSystems.getFileSystem(URI.create("jrt:/"));
-        String pathName = "/packages/javax.annotation";
-        Path path = fs.getPath(pathName);
-        boolean seenJavaCompiler = false, seenAnnotationsCommon = false;
-        try (DirectoryStream<Path> stream = Files.newDirectoryStream(path)) {
-            for (Path p : stream) {
-               String str = p.toString();
-               if (str.equals(pathName + "/java.compiler")) {
-                   seenJavaCompiler = true;
-               } else if (str.equals(pathName + "/java.annotations.common")) {
-                   seenAnnotationsCommon = true;
-               }
-            }
+        InvalidPathException ipe = null;
+        try {
+            boolean res = Files.exists(fs.getPath("/packages/\ud834\udd7b"));
+            assertFalse(res);
+            return;
+        } catch (InvalidPathException e) {
+            ipe = e;
         }
-        assertTrue(seenJavaCompiler);
-        assertTrue(seenAnnotationsCommon);
+        assertTrue(ipe != null);
     }
 
-    @Test
-    public void testRootDirList() throws Exception {
+    @DataProvider(name="packagesLinkedDirs")
+    private Object[][] packagesLinkedDirs() {
+        return new Object[][] {
+            { "/packages/java.lang/java.base/java/lang/ref"             },
+            { "/./packages/java.lang/java.base/java/lang/ref"           },
+            { "packages/java.lang/java.base/java/lang/ref"              },
+            { "/packages/../packages/java.lang/java.base/java/lang/ref" },
+            { "/packages/java.lang/java.base/java/util/zip"             },
+            { "/./packages/java.lang/java.base/java/util/zip"           },
+            { "packages/java.lang/java.base/java/util/zip"              },
+            { "/packages/../packages/java.lang/java.base/java/util/zip" },
+            { "/packages/com.oracle/java.xml.ws/com"                    },
+            { "/./packages/com.oracle/java.xml.ws/com"                  },
+            { "packages/com.oracle/java.xml.ws/com"                     },
+            { "/packages/../packages/com.oracle/java.xml.ws/com"        }
+        };
+    }
+
+    // @bug 8141521: jrt file system's DirectoryStream reports child paths
+    // with wrong paths for directories under /packages
+    @Test(dataProvider = "packagesLinkedDirs")
+    public void dirStreamPackagesDirTest(String dirName) throws IOException {
         FileSystem fs = FileSystems.getFileSystem(URI.create("jrt:/"));
-        Path path = fs.getPath("/");
-        // check /packages and /modules are not repeated
-        // and seen once.
-        boolean packages = false, modules = false;
-        try (DirectoryStream<Path> stream = Files.newDirectoryStream(path)) {
-            for (Path p : stream) {
-                String str = p.toString();
-                switch (str) {
-                    case "/packages":
-                        assertFalse(packages, "/packages repeated");
-                        packages = true;
-                        break;
-                    case "/modules":
-                        assertFalse(modules, "/modules repeated");
-                        modules = true;
-                        break;
+        Path path = fs.getPath(dirName);
+
+        int childCount = 0, dirPrefixOkayCount = 0;
+        try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(path)) {
+            for (Path child : dirStream) {
+                childCount++;
+                if (child.toString().startsWith(dirName)) {
+                    dirPrefixOkayCount++;
                 }
             }
         }
-        assertTrue(packages, "/packages missing in / list!");
-        assertTrue(modules, "/modules missing in / list!");
+
+        assertTrue(childCount != 0);
+        assertEquals(dirPrefixOkayCount, childCount);
     }
 }

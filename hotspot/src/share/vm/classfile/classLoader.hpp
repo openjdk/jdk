@@ -33,8 +33,17 @@
 // The VM class loader.
 #include <sys/stat.h>
 
-// Name of boot module image
-#define  BOOT_IMAGE_NAME "bootmodules.jimage"
+// Name of boot "modules" image
+#define  MODULES_IMAGE_NAME "modules"
+
+// Name of the resource containing mapping from module names to defining class loader type
+#define MODULE_LOADER_MAP "jdk/internal/vm/cds/resources/ModuleLoaderMap.dat"
+
+// Initial sizes of the following arrays are based on the generated ModuleLoaderMap.dat
+#define INITIAL_BOOT_MODULES_ARRAY_SIZE 30
+#define INITIAL_PLATFORM_MODULES_ARRAY_SIZE  15
+
+// Class path entry (directory or zip file)
 
 class JImageFile;
 class ClassFileStream;
@@ -49,6 +58,7 @@ public:
     // may have unlocked readers, so write atomically.
     OrderAccess::release_store_ptr(&_next, next);
   }
+  virtual bool is_jrt() = 0;
   virtual bool is_jar_file() const = 0;
   virtual const char* name() const = 0;
   virtual JImageFile* jimage() const = 0;
@@ -59,13 +69,13 @@ public:
   virtual ClassFileStream* open_stream(const char* name, TRAPS) = 0;
   // Debugging
   NOT_PRODUCT(virtual void compile_the_world(Handle loader, TRAPS) = 0;)
-    NOT_PRODUCT(virtual bool is_jrt() = 0;)
 };
 
 class ClassPathDirEntry: public ClassPathEntry {
  private:
   const char* _dir;           // Name of directory
  public:
+  bool is_jrt()            { return false; }
   bool is_jar_file() const { return false;  }
   const char* name() const { return _dir; }
   JImageFile* jimage() const { return NULL; }
@@ -73,7 +83,6 @@ class ClassPathDirEntry: public ClassPathEntry {
   ClassFileStream* open_stream(const char* name, TRAPS);
   // Debugging
   NOT_PRODUCT(void compile_the_world(Handle loader, TRAPS);)
-  NOT_PRODUCT(bool is_jrt();)
 };
 
 
@@ -96,6 +105,7 @@ class ClassPathZipEntry: public ClassPathEntry {
   jzfile* _zip;              // The zip archive
   const char*   _zip_name;   // Name of zip archive
  public:
+  bool is_jrt()            { return false; }
   bool is_jar_file() const { return true;  }
   const char* name() const { return _zip_name; }
   JImageFile* jimage() const { return NULL; }
@@ -106,7 +116,6 @@ class ClassPathZipEntry: public ClassPathEntry {
   void contents_do(void f(const char* name, void* context), void* context);
   // Debugging
   NOT_PRODUCT(void compile_the_world(Handle loader, TRAPS);)
-  NOT_PRODUCT(bool is_jrt();)
 };
 
 
@@ -116,29 +125,28 @@ private:
   JImageFile* _jimage;
   const char* _name;
 public:
+  bool is_jrt();
   bool is_jar_file() const { return false; }
   bool is_open() const { return _jimage != NULL; }
   const char* name() const { return _name == NULL ? "" : _name; }
   JImageFile* jimage() const { return _jimage; }
   ClassPathImageEntry(JImageFile* jimage, const char* name);
   ~ClassPathImageEntry();
-  static void name_to_package(const char* name, char* buffer, int length);
+  void name_to_package(const char* name, char* package, int length);
   ClassFileStream* open_stream(const char* name, TRAPS);
 
   // Debugging
   NOT_PRODUCT(void compile_the_world(Handle loader, TRAPS);)
-  NOT_PRODUCT(bool is_jrt();)
 };
 
-class PackageHashtable;
-class PackageInfo;
 class SharedPathsMiscInfo;
-template <MEMFLAGS F> class HashtableBucket;
 
 class ClassLoader: AllStatic {
  public:
-  enum SomeConstants {
-    package_hash_table_size = 31  // Number of buckets
+  enum ClassLoaderType {
+    BOOT_LOADER = 1,      /* boot loader */
+    PLATFORM_LOADER  = 2, /* PlatformClassLoader */
+    APP_LOADER  = 3       /* AppClassLoader */
   };
  protected:
 
@@ -177,41 +185,60 @@ class ClassLoader: AllStatic {
   static PerfCounter* _isUnsyncloadClass;
   static PerfCounter* _load_instance_class_failCounter;
 
-  // First entry in linked list of ClassPathEntry instances
+  // First entry in linked list of ClassPathEntry instances.
+  // This consists of entries made up by:
+  //   - boot loader modules
+  //     [-Xpatch]; exploded build | modules;
+  //   - boot loader append path
+  //     [-Xbootclasspath/a]; [jvmti appended entries]
   static ClassPathEntry* _first_entry;
   // Last entry in linked list of ClassPathEntry instances
   static ClassPathEntry* _last_entry;
   static int _num_entries;
 
-  // Hash table used to keep track of loaded packages
-  static PackageHashtable* _package_hash_table;
+  // Pointer into the linked list of ClassPathEntry instances.
+  // Marks the start of:
+  //   - the boot loader's append path
+  //     [-Xbootclasspath/a]; [jvmti appended entries]
+  static ClassPathEntry* _first_append_entry;
+
   static const char* _shared_archive;
+
+  // True if the boot path has a "modules" jimage
+  static bool _has_jimage;
+
+  // Array of module names associated with the boot class loader
+  CDS_ONLY(static GrowableArray<char*>* _boot_modules_array;)
+
+  // Array of module names associated with the platform class loader
+  CDS_ONLY(static GrowableArray<char*>* _platform_modules_array;)
 
   // Info used by CDS
   CDS_ONLY(static SharedPathsMiscInfo * _shared_paths_misc_info;)
 
-  // Hash function
-  static unsigned int hash(const char *s, int n);
-  // Returns the package file name corresponding to the specified package
-  // or class name, or null if not found.
-  static PackageInfo* lookup_package(const char *pkgname);
-  // Adds a new package entry for the specified class or package name and
-  // corresponding directory or jar file name.
-  static bool add_package(const char *pkgname, int classpath_index, TRAPS);
-
   // Initialization
   static void setup_bootstrap_search_path();
-  static void setup_search_path(const char *class_path);
+  static void setup_search_path(const char *class_path, bool setting_bootstrap);
 
   static void load_zip_library();
   static void load_jimage_library();
   static ClassPathEntry* create_class_path_entry(const char *path, const struct stat* st,
                                                  bool throw_exception, TRAPS);
 
+ public:
+
+  // If the package for the fully qualified class name is in the boot
+  // loader's package entry table then add_package() sets the classpath_index
+  // field so that get_system_package() will know to return a non-null value
+  // for the package's location.  And, so that the package will be added to
+  // the list of packages returned by get_system_packages().
+  // For packages whose classes are loaded from the boot loader class path, the
+  // classpath_index indicates which entry on the boot loader class path.
+  static bool add_package(const char *fullq_class_name, s2 classpath_index, TRAPS);
+
   // Canonicalizes path names, so strcmp will work properly. This is mainly
   // to avoid confusing the zip library
   static bool get_canonical_path(const char* orig, char* out, int len);
-
   static const char* file_name_for_class_name(const char* class_name,
                                               int class_name_len);
 
@@ -220,6 +247,8 @@ class ClassLoader: AllStatic {
   static int crc32(int crc, const char* buf, int len);
   static bool update_class_path_entry_list(const char *path,
                                            bool check_for_duplicates,
+                                           bool mark_append_entry,
+                                           bool prepend_entry,
                                            bool throw_exception=true);
   static void print_bootclasspath();
 
@@ -284,8 +313,18 @@ class ClassLoader: AllStatic {
     return _load_instance_class_failCounter;
   }
 
+  // Sets _has_jimage to TRUE if "modules" jimage file exists
+  static void set_has_jimage(bool val) {
+    _has_jimage = val;
+  }
+
+  static bool has_jimage() { return _has_jimage; }
+
+  // Create the ModuleEntry for java.base
+  static void create_javabase();
+
   // Load individual .class file
-  static instanceKlassHandle load_class(Symbol* class_name, TRAPS);
+  static instanceKlassHandle load_class(Symbol* class_name, bool search_append_only, TRAPS);
 
   // If the specified package has been loaded by the system, then returns
   // the name of the directory or ZIP file that the package was loaded from.
@@ -304,9 +343,7 @@ class ClassLoader: AllStatic {
   // Initialization
   static void initialize();
   CDS_ONLY(static void initialize_shared_path();)
-  static void create_package_info_table();
-  static void create_package_info_table(HashtableBucket<mtClass> *t, int length,
-                                        int number_of_entries);
+
   static int compute_Object_vtable();
 
   static ClassPathEntry* classpath_entry(int n) {
@@ -320,8 +357,6 @@ class ClassLoader: AllStatic {
 
 #if INCLUDE_CDS
   // Sharing dump and restore
-  static void copy_package_info_buckets(char** top, char* end);
-  static void copy_package_info_table(char** top, char* end);
 
   static void  check_shared_classpath(const char *path);
   static void  finalize_shared_paths_misc_info();
@@ -329,7 +364,12 @@ class ClassLoader: AllStatic {
   static void* get_shared_paths_misc_info();
   static bool  check_shared_paths_misc_info(void* info, int size);
   static void  exit_with_path_failure(const char* error, const char* message);
+
+  static s2 module_to_classloader(const char* module_name);
+  static void initialize_module_loader_map(JImageFile* jimage);
 #endif
+  static s2 classloader_type(Symbol* class_name, ClassPathEntry* e,
+                                 int classpath_index, TRAPS);
 
   static void  trace_class_path(const char* msg, const char* name = NULL);
 
@@ -342,14 +382,29 @@ class ClassLoader: AllStatic {
   static jlong class_link_count();
   static jlong class_link_time_ms();
 
+  static void set_first_append_entry(ClassPathEntry* entry);
+
   // indicates if class path already contains a entry (exact match by name)
   static bool contains_entry(ClassPathEntry* entry);
 
   // adds a class path list
   static void add_to_list(ClassPathEntry* new_entry);
 
+  // prepends a class path list
+  static void prepend_to_list(ClassPathEntry* new_entry);
+
   // creates a class path zip entry (returns NULL if JAR file cannot be opened)
   static ClassPathZipEntry* create_class_path_zip_entry(const char *apath);
+
+  // add a path to class path list
+  static void add_to_list(const char* apath);
+
+  // prepend a path to class path list
+  static void prepend_to_list(const char* apath);
+
+  static bool string_ends_with(const char* str, const char* str_to_find);
+
+  static bool is_jrt(const char* name) { return string_ends_with(name, MODULES_IMAGE_NAME); }
 
   // Debugging
   static void verify()              PRODUCT_RETURN;

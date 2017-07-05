@@ -54,8 +54,6 @@ public class LambdaAccessControlDoPrivilegedTest extends LUtils {
         scratch.clear();
         scratch.add("public class Bar {");
         scratch.add("public static void main(String... args) {");
-        scratch.add("System.out.println(\"sun.boot.class.path\" + \"=\" +");
-        scratch.add("    System.getProperty(\"sun.boot.class.path\", \"\"));");
         scratch.add("System.setSecurityManager(new SecurityManager());");
         scratch.add("DoPriv.main();");
         scratch.add("}");
