@@ -25,7 +25,6 @@
  * @test
  * @bug 8157105
  * @library /lib/testlibrary server
- * @key intermittent
  * @build jdk.testlibrary.SimpleSSLContext
  * @modules jdk.incubator.httpclient/jdk.incubator.http.internal.common
  *          jdk.incubator.httpclient/jdk.incubator.http.internal.frame
