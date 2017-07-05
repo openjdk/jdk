@@ -240,6 +240,7 @@ MemoryPool* MemoryService::add_cms_space(CompactibleFreeListSpace* space,
 void MemoryService::add_generation_memory_pool(Generation* gen,
                                                MemoryManager* major_mgr,
                                                MemoryManager* minor_mgr) {
+  guarantee(gen != NULL, "No generation for memory pool");
   Generation::Name kind = gen->kind();
   int index = _pools_list->length();
 

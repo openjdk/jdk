@@ -703,8 +703,8 @@ void CodeBuffer::copy_code_to(CodeBlob* dest_blob) {
   this->compute_final_layout(&dest);
   relocate_code_to(&dest);
 
-  // transfer comments from buffer to blob
-  dest_blob->set_comments(_comments);
+  // transfer strings and comments from buffer to blob
+  dest_blob->set_strings(_strings);
 
   // Done moving code bytes; were they the right size?
   assert(round_to(dest.total_content_size(), oopSize) == dest_blob->content_size(), "sanity");
@@ -1003,58 +1003,78 @@ void CodeSection::decode() {
 
 
 void CodeBuffer::block_comment(intptr_t offset, const char * comment) {
-  _comments.add_comment(offset, comment);
+  _strings.add_comment(offset, comment);
 }
 
-class CodeComment: public CHeapObj<mtCode> {
- private:
-  friend class CodeComments;
-  intptr_t     _offset;
-  const char * _comment;
-  CodeComment* _next;
+const char* CodeBuffer::code_string(const char* str) {
+  return _strings.add_string(str);
+}
 
-  ~CodeComment() {
+class CodeString: public CHeapObj<mtCode> {
+ private:
+  friend class CodeStrings;
+  const char * _string;
+  CodeString*  _next;
+  intptr_t     _offset;
+
+  ~CodeString() {
     assert(_next == NULL, "wrong interface for freeing list");
-    os::free((void*)_comment, mtCode);
+    os::free((void*)_string, mtCode);
   }
+
+  bool is_comment() const { return _offset >= 0; }
 
  public:
-  CodeComment(intptr_t offset, const char * comment) {
-    _offset = offset;
-    _comment = os::strdup(comment, mtCode);
-    _next = NULL;
+  CodeString(const char * string, intptr_t offset = -1)
+    : _next(NULL), _offset(offset) {
+    _string = os::strdup(string, mtCode);
   }
 
-  intptr_t     offset()  const { return _offset;  }
-  const char * comment() const { return _comment; }
-  CodeComment* next()          { return _next; }
+  const char * string() const { return _string; }
+  intptr_t     offset() const { assert(_offset >= 0, "offset for non comment?"); return _offset;  }
+  CodeString* next()    const { return _next; }
 
-  void set_next(CodeComment* next) { _next = next; }
+  void set_next(CodeString* next) { _next = next; }
 
-  CodeComment* find(intptr_t offset) {
-    CodeComment* a = this;
-    while (a != NULL && a->_offset != offset) {
-      a = a->_next;
+  CodeString* first_comment() {
+    if (is_comment()) {
+      return this;
+    } else {
+      return next_comment();
     }
-    return a;
   }
-
-  // Convenience for add_comment.
-  CodeComment* find_last(intptr_t offset) {
-    CodeComment* a = find(offset);
-    if (a != NULL) {
-      while ((a->_next != NULL) && (a->_next->_offset == offset)) {
-        a = a->_next;
-      }
+  CodeString* next_comment() const {
+    CodeString* s = _next;
+    while (s != NULL && !s->is_comment()) {
+      s = s->_next;
     }
-    return a;
+    return s;
   }
 };
 
+CodeString* CodeStrings::find(intptr_t offset) const {
+  CodeString* a = _strings->first_comment();
+  while (a != NULL && a->offset() != offset) {
+    a = a->next_comment();
+  }
+  return a;
+}
 
-void CodeComments::add_comment(intptr_t offset, const char * comment) {
-  CodeComment* c      = new CodeComment(offset, comment);
-  CodeComment* inspos = (_comments == NULL) ? NULL : _comments->find_last(offset);
+// Convenience for add_comment.
+CodeString* CodeStrings::find_last(intptr_t offset) const {
+  CodeString* a = find(offset);
+  if (a != NULL) {
+    CodeString* c = NULL;
+    while (((c = a->next_comment()) != NULL) && (c->offset() == offset)) {
+      a = c;
+    }
+  }
+  return a;
+}
+
+void CodeStrings::add_comment(intptr_t offset, const char * comment) {
+  CodeString* c      = new CodeString(comment, offset);
+  CodeString* inspos = (_strings == NULL) ? NULL : find_last(offset);
 
   if (inspos) {
     // insert after already existing comments with same offset
@@ -1062,43 +1082,47 @@ void CodeComments::add_comment(intptr_t offset, const char * comment) {
     inspos->set_next(c);
   } else {
     // no comments with such offset, yet. Insert before anything else.
-    c->set_next(_comments);
-    _comments = c;
+    c->set_next(_strings);
+    _strings = c;
   }
 }
 
-
-void CodeComments::assign(CodeComments& other) {
-  _comments = other._comments;
+void CodeStrings::assign(CodeStrings& other) {
+  _strings = other._strings;
 }
 
-
-void CodeComments::print_block_comment(outputStream* stream, intptr_t offset) const {
-  if (_comments != NULL) {
-    CodeComment* c = _comments->find(offset);
+void CodeStrings::print_block_comment(outputStream* stream, intptr_t offset) const {
+  if (_strings != NULL) {
+    CodeString* c = find(offset);
     while (c && c->offset() == offset) {
       stream->bol();
       stream->print("  ;; ");
-      stream->print_cr(c->comment());
-      c = c->next();
+      stream->print_cr(c->string());
+      c = c->next_comment();
     }
   }
 }
 
 
-void CodeComments::free() {
-  CodeComment* n = _comments;
+void CodeStrings::free() {
+  CodeString* n = _strings;
   while (n) {
     // unlink the node from the list saving a pointer to the next
-    CodeComment* p = n->_next;
-    n->_next = NULL;
+    CodeString* p = n->next();
+    n->set_next(NULL);
     delete n;
     n = p;
   }
-  _comments = NULL;
+  _strings = NULL;
 }
 
-
+const char* CodeStrings::add_string(const char * string) {
+  CodeString* s = new CodeString(string);
+  s->set_next(_strings);
+  _strings = s;
+  assert(s->string() != NULL, "should have a string");
+  return s->string();
+}
 
 void CodeBuffer::decode() {
   ttyLocker ttyl;

@@ -248,10 +248,6 @@ void report_should_not_reach_here(const char* file, int line) {
   report_vm_error(file, line, "ShouldNotReachHere()");
 }
 
-void report_should_not_reach_here2(const char* file, int line, const char* message) {
-  report_vm_error(file, line, "ShouldNotReachHere()", message);
-}
-
 void report_unimplemented(const char* file, int line) {
   report_vm_error(file, line, "Unimplemented()");
 }
