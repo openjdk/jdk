@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "gc_interface/collectedHeap.inline.hpp"
+#include "memory/allocation.inline.hpp"
 #include "memory/filemap.hpp"
 #include "memory/gcLocker.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -37,34 +38,35 @@
 // --------------------------------------------------------------------------
 
 SymbolTable* SymbolTable::_the_table = NULL;
+// Static arena for symbols that are not deallocated
+Arena* SymbolTable::_arena = NULL;
 
-Symbol* SymbolTable::allocate_symbol(const u1* name, int len, TRAPS) {
+Symbol* SymbolTable::allocate_symbol(const u1* name, int len, bool c_heap, TRAPS) {
   // Don't allow symbols to be created which cannot fit in a Symbol*.
   if (len > Symbol::max_length()) {
     THROW_MSG_0(vmSymbols::java_lang_InternalError(),
                 "name is too long to represent");
   }
-  Symbol* sym = new (len) Symbol(name, len);
+  Symbol* sym;
+  // Allocate symbols in the C heap when dumping shared spaces in case there
+  // are temporary symbols we can remove.
+  if (c_heap || DumpSharedSpaces) {
+    // refcount starts as 1
+    sym = new (len, THREAD) Symbol(name, len, 1);
+  } else {
+    sym = new (len, arena(), THREAD) Symbol(name, len, -1);
+  }
   assert(sym != NULL, "new should call vm_exit_out_of_memory if C_HEAP is exhausted");
   return sym;
 }
 
-bool SymbolTable::allocate_symbols(int names_count, const u1** names,
-                                   int* lengths, Symbol** syms, TRAPS) {
-  for (int i = 0; i< names_count; i++) {
-    if (lengths[i] > Symbol::max_length()) {
-      THROW_MSG_0(vmSymbols::java_lang_InternalError(),
-                  "name is too long to represent");
-    }
+void SymbolTable::initialize_symbols(int arena_alloc_size) {
+  // Initialize the arena for global symbols, size passed in depends on CDS.
+  if (arena_alloc_size == 0) {
+    _arena = new Arena();
+  } else {
+    _arena = new Arena(arena_alloc_size);
   }
-
-  for (int i = 0; i< names_count; i++) {
-    int len = lengths[i];
-    syms[i] = new (len) Symbol(names[i], len);
-    assert(syms[i] != NULL, "new should call vm_exit_out_of_memory if "
-                            "C_HEAP is exhausted");
-  }
-  return true;
 }
 
 // Call function for all symbols in the symbol table.
@@ -83,8 +85,7 @@ int SymbolTable::symbols_removed = 0;
 int SymbolTable::symbols_counted = 0;
 
 // Remove unreferenced symbols from the symbol table
-// This is done late during GC.  This doesn't use the hash table unlink because
-// it assumes that the literals are oops.
+// This is done late during GC.
 void SymbolTable::unlink() {
   int removed = 0;
   int total = 0;
@@ -156,7 +157,7 @@ Symbol* SymbolTable::lookup(const char* name, int len, TRAPS) {
   if (s != NULL) return s;
 
   // Otherwise, add to symbol to table
-  return the_table()->basic_add(index, (u1*)name, len, hashValue, CHECK_NULL);
+  return the_table()->basic_add(index, (u1*)name, len, hashValue, true, CHECK_NULL);
 }
 
 Symbol* SymbolTable::lookup(const Symbol* sym, int begin, int end, TRAPS) {
@@ -192,7 +193,7 @@ Symbol* SymbolTable::lookup(const Symbol* sym, int begin, int end, TRAPS) {
   // We can't include the code in No_Safepoint_Verifier because of the
   // ResourceMark.
 
-  return the_table()->basic_add(index, (u1*)buffer, len, hashValue, CHECK_NULL);
+  return the_table()->basic_add(index, (u1*)buffer, len, hashValue, true, CHECK_NULL);
 }
 
 Symbol* SymbolTable::lookup_only(const char* name, int len,
@@ -256,71 +257,81 @@ Symbol* SymbolTable::lookup_only_unicode(const jchar* name, int utf16_length,
   }
 }
 
-void SymbolTable::add(constantPoolHandle cp, int names_count,
+void SymbolTable::add(Handle class_loader, constantPoolHandle cp,
+                      int names_count,
                       const char** names, int* lengths, int* cp_indices,
                       unsigned int* hashValues, TRAPS) {
   SymbolTable* table = the_table();
-  bool added = table->basic_add(cp, names_count, names, lengths,
+  bool added = table->basic_add(class_loader, cp, names_count, names, lengths,
                                 cp_indices, hashValues, CHECK);
   if (!added) {
     // do it the hard way
     for (int i=0; i<names_count; i++) {
       int index = table->hash_to_index(hashValues[i]);
-      Symbol* sym = table->basic_add(index, (u1*)names[i], lengths[i],
-                                       hashValues[i], CHECK);
+      bool c_heap = class_loader() != NULL;
+      Symbol* sym = table->basic_add(index, (u1*)names[i], lengths[i], hashValues[i], c_heap, CHECK);
       cp->symbol_at_put(cp_indices[i], sym);
     }
   }
 }
 
+Symbol* SymbolTable::new_permanent_symbol(const char* name, TRAPS) {
+  unsigned int hash;
+  Symbol* result = SymbolTable::lookup_only((char*)name, (int)strlen(name), hash);
+  if (result != NULL) {
+    return result;
+  }
+  SymbolTable* table = the_table();
+  int index = table->hash_to_index(hash);
+  return table->basic_add(index, (u1*)name, (int)strlen(name), hash, false, THREAD);
+}
+
 Symbol* SymbolTable::basic_add(int index, u1 *name, int len,
-                                 unsigned int hashValue, TRAPS) {
+                               unsigned int hashValue, bool c_heap, TRAPS) {
   assert(!Universe::heap()->is_in_reserved(name) || GC_locker::is_active(),
          "proposed name of symbol must be stable");
 
-  // We assume that lookup() has been called already, that it failed,
-  // and symbol was not found.  We create the symbol here.
-  Symbol* sym = allocate_symbol(name, len, CHECK_NULL);
-
-  // Allocation must be done before grabbing the SymbolTable_lock lock
+  // Grab SymbolTable_lock first.
   MutexLocker ml(SymbolTable_lock, THREAD);
-
-  assert(sym->equals((char*)name, len), "symbol must be properly initialized");
 
   // Since look-up was done lock-free, we need to check if another
   // thread beat us in the race to insert the symbol.
-
   Symbol* test = lookup(index, (char*)name, len, hashValue);
   if (test != NULL) {
-    // A race occurred and another thread introduced the symbol, this one
-    // will be dropped and collected.
-    delete sym;
+    // A race occurred and another thread introduced the symbol.
     assert(test->refcount() != 0, "lookup should have incremented the count");
     return test;
   }
 
+  // Create a new symbol.
+  Symbol* sym = allocate_symbol(name, len, c_heap, CHECK_NULL);
+  assert(sym->equals((char*)name, len), "symbol must be properly initialized");
+
   HashtableEntry<Symbol*>* entry = new_entry(hashValue, sym);
-  sym->increment_refcount();
   add_entry(index, entry);
   return sym;
 }
 
-bool SymbolTable::basic_add(constantPoolHandle cp, int names_count,
+// This version of basic_add adds symbols in batch from the constant pool
+// parsing.
+bool SymbolTable::basic_add(Handle class_loader, constantPoolHandle cp,
+                            int names_count,
                             const char** names, int* lengths,
                             int* cp_indices, unsigned int* hashValues,
                             TRAPS) {
-  Symbol* syms[symbol_alloc_batch_size];
-  bool allocated = allocate_symbols(names_count, (const u1**)names, lengths,
-                                    syms, CHECK_false);
-  if (!allocated) {
-    return false;
+
+  // Check symbol names are not too long.  If any are too long, don't add any.
+  for (int i = 0; i< names_count; i++) {
+    if (lengths[i] > Symbol::max_length()) {
+      THROW_MSG_0(vmSymbols::java_lang_InternalError(),
+                  "name is too long to represent");
+    }
   }
 
-  // Allocation must be done before grabbing the SymbolTable_lock lock
+  // Hold SymbolTable_lock through the symbol creation
   MutexLocker ml(SymbolTable_lock, THREAD);
 
   for (int i=0; i<names_count; i++) {
-    assert(syms[i]->equals(names[i], lengths[i]), "symbol must be properly initialized");
     // Since look-up was done lock-free, we need to check if another
     // thread beat us in the race to insert the symbol.
     int index = hash_to_index(hashValues[i]);
@@ -330,16 +341,17 @@ bool SymbolTable::basic_add(constantPoolHandle cp, int names_count,
       // will be dropped and collected. Use test instead.
       cp->symbol_at_put(cp_indices[i], test);
       assert(test->refcount() != 0, "lookup should have incremented the count");
-      delete syms[i];
     } else {
-      Symbol* sym = syms[i];
+      // Create a new symbol.  The null class loader is never unloaded so these
+      // are allocated specially in a permanent arena.
+      bool c_heap = class_loader() != NULL;
+      Symbol* sym = allocate_symbol((const u1*)names[i], lengths[i], c_heap, CHECK_(false));
+      assert(sym->equals(names[i], lengths[i]), "symbol must be properly initialized");  // why wouldn't it be???
       HashtableEntry<Symbol*>* entry = new_entry(hashValues[i], sym);
-      sym->increment_refcount();  // increment refcount in external hashtable
       add_entry(index, entry);
       cp->symbol_at_put(cp_indices[i], sym);
     }
   }
-
   return true;
 }
 
@@ -406,6 +418,8 @@ void SymbolTable::print_histogram() {
           ((float)symbols_removed/(float)symbols_counted)* 100);
   }
   tty->print_cr("Reference counts         %5d", Symbol::_total_count);
+  tty->print_cr("Symbol arena size        %5d used %5d",
+                 arena()->size_in_bytes(), arena()->used());
   tty->print_cr("Histogram of symbol length:");
   tty->print_cr("%8s %5d", "Total  ", total);
   tty->print_cr("%8s %5d", "Maximum", max_symbols);

@@ -21,6 +21,7 @@
 # or visit www.oracle.com if you need additional information or have any
 # questions.
 #
+# <pre>
 # This file is in the public domain, so clarified as of
 # 2009-05-17 by Arthur David Olson.
 
@@ -99,10 +100,6 @@ Rule RussiaAsia	1993	max	-	Mar	lastSun	 2:00s	1:00	S
 Rule RussiaAsia	1993	1995	-	Sep	lastSun	 2:00s	0	-
 Rule RussiaAsia	1996	max	-	Oct	lastSun	 2:00s	0	-
 
-# From Arthur David Olson (2011-06-15):
-# While Russia abandoned DST in 2011, Armenia may choose to
-# follow Russia's "old" rules.
-
 # Afghanistan
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Kabul	4:36:48 -	LMT	1890
@@ -119,6 +116,21 @@ Zone	Asia/Kabul	4:36:48 -	LMT	1890
 # in 1996, though it did use DST in 1995.  IATA SSIM (1991/1998) reports that
 # Armenia switched from 3:00 to 4:00 in 1998 and observed DST after 1991,
 # but started switching at 3:00s in 1998.
+
+# From Arthur David Olson (2011-06-15):
+# While Russia abandoned DST in 2011, Armenia may choose to
+# follow Russia's "old" rules.
+
+# From Alexander Krivenyshev (2012-02-10):
+# According to News Armenia, on Feb 9, 2012,
+# http://newsarmenia.ru/society/20120209/42609695.html
+# 
+# The Armenia National Assembly adopted final reading of Amendments to the
+# Law "On procedure of calculation time on the territory of the Republic of
+# Armenia" according to which Armenia [is] abolishing Daylight Saving Time.
+# or
+# (brief)
+# http://www.worldtimezone.com/dst_news/dst_news_armenia03.html
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Yerevan	2:58:00 -	LMT	1924 May  2
 			3:00	-	YERT	1957 Mar    # Yerevan Time
@@ -126,7 +138,8 @@ Zone	Asia/Yerevan	2:58:00 -	LMT	1924 May  2
 			3:00	1:00	YERST	1991 Sep 23 # independence
 			3:00 RussiaAsia	AM%sT	1995 Sep 24 2:00s
 			4:00	-	AMT	1997
-			4:00 RussiaAsia	AM%sT
+			4:00 RussiaAsia	AM%sT	2012 Mar 25 2:00s
+			4:00	-	AMT
 
 # Azerbaijan
 # From Rustam Aliyev of the Azerbaijan Internet Forum (2005-10-23):
@@ -2257,6 +2270,29 @@ Zone	Asia/Karachi	4:28:12 -	LMT	1907
 # http://www.maannews.net/eng/ViewDetails.aspx?ID=424808
 # </a>
 
+# From Steffen Thorsen (2012-03-26):
+# Palestinian news sources tell that both Gaza and West Bank will start DST
+# on Friday (Thursday midnight, 2012-03-29 24:00).
+# Some of many sources in Arabic:
+# <a href="http://www.samanews.com/index.php?act=Show&id=122638">
+# http://www.samanews.com/index.php?act=Show&id=122638
+# </a>
+#
+# <a href="http://safa.ps/details/news/74352/%D8%A8%D8%AF%D8%A1-%D8%A7%D9%84%D8%AA%D9%88%D9%82%D9%8A%D8%AA-%D8%A7%D9%84%D8%B5%D9%8A%D9%81%D9%8A-%D8%A8%D8%A7%D9%84%D8%B6%D9%81%D8%A9-%D9%88%D8%BA%D8%B2%D8%A9-%D9%84%D9%8A%D9%84%D8%A9-%D8%A7%D9%84%D8%AC%D9%85%D8%B9%D8%A9.html">
+# http://safa.ps/details/news/74352/%D8%A8%D8%AF%D8%A1-%D8%A7%D9%84%D8%AA%D9%88%D9%82%D9%8A%D8%AA-%D8%A7%D9%84%D8%B5%D9%8A%D9%81%D9%8A-%D8%A8%D8%A7%D9%84%D8%B6%D9%81%D8%A9-%D9%88%D8%BA%D8%B2%D8%A9-%D9%84%D9%8A%D9%84%D8%A9-%D8%A7%D9%84%D8%AC%D9%85%D8%B9%D8%A9.html
+# </a>
+#
+# Our brief summary:
+# <a href="http://www.timeanddate.com/news/time/gaza-west-bank-dst-2012.html">
+# http://www.timeanddate.com/news/time/gaza-west-bank-dst-2012.html
+# </a>
+
+# From Arthur David Olson (2012-03-27):
+# The timeanddate article for 2012 says that "the end date has not yet been
+# announced" and that "Last year, both...paused daylight saving time during...
+# Ramadan. It is not yet known [for] 2012."
+# For now, assume both switch back on the last Friday in September. XXX
+
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule EgyptAsia	1957	only	-	May	10	0:00	1:00	S
 Rule EgyptAsia	1957	1958	-	Oct	 1	0:00	0	-
@@ -2289,6 +2325,8 @@ Zone	Asia/Gaza	2:17:52	-	LMT	1900 Oct
 			2:00	Jordan	EE%sT	1999
 			2:00 Palestine	EE%sT	2011 Apr  2 12:01
 			2:00	1:00	EEST	2011 Aug  1
+			2:00	-	EET	2012 Mar 30
+			2:00	1:00	EEST	2012 Sep 28
 			2:00	-	EET
 
 Zone	Asia/Hebron	2:20:23	-	LMT	1900 Oct
@@ -2302,6 +2340,8 @@ Zone	Asia/Hebron	2:20:23	-	LMT	1900 Oct
 			2:00	1:00	EEST	2011 Aug  1
 			2:00	-	EET	2011 Aug 30
 			2:00	1:00	EEST	2011 Sep 30 3:00
+			2:00	-	EET	2012 Mar 30
+			2:00	1:00	EEST	2012 Sep 28 3:00
 			2:00	-	EET
 
 # Paracel Is
@@ -2593,10 +2633,28 @@ Rule	Syria	2007	only	-	Nov	 Fri>=1	0:00	0	-
 # http://sns.sy/sns/?path=news/read/11421 (Arabic)
 # </a>
 
+# From Steffen Thorsen (2012-03-26):
+# Today, Syria's government announced that they will start DST early on Friday
+# (00:00). This is a bit earlier than the past two years.
+#
+# From Syrian Arab News Agency, in Arabic:
+# <a href="http://www.sana.sy/ara/2/2012/03/26/408215.htm">
+# http://www.sana.sy/ara/2/2012/03/26/408215.htm
+# </a>
+#
+# Our brief summary:
+# <a href="http://www.timeanddate.com/news/time/syria-dst-2012.html">
+# http://www.timeanddate.com/news/time/syria-dst-2012.html
+# </a>
+
+# From Arthur David Olson (2012-03-27):
+# Assume last Friday in March going forward XXX.
+
 Rule	Syria	2008	only	-	Apr	Fri>=1	0:00	1:00	S
 Rule	Syria	2008	only	-	Nov	1	0:00	0	-
 Rule	Syria	2009	only	-	Mar	lastFri	0:00	1:00	S
-Rule	Syria	2010	max	-	Apr	Fri>=1	0:00	1:00	S
+Rule	Syria	2010	2011	-	Apr	Fri>=1	0:00	1:00	S
+Rule	Syria	2012	max	-	Mar	lastFri	0:00	1:00	S
 Rule	Syria	2009	max	-	Oct	lastFri	0:00	0	-
 
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]

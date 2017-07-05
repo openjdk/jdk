@@ -1,0 +1,178 @@
+#
+# Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+#
+# These are the names of JAVA classes for which we will make .h files.
+#
+ifneq ($(PLATFORM), windows)
+FILES_export = \
+    java/lang/Object.java \
+    java/lang/Class.java \
+    java/lang/Compiler.java \
+    java/lang/String.java \
+    java/lang/Thread.java \
+    java/lang/ThreadGroup.java \
+    java/lang/StrictMath.java \
+    java/lang/Number.java \
+    java/lang/Byte.java \
+    java/lang/Short.java \
+    java/lang/Integer.java \
+    java/lang/Long.java \
+    java/lang/Float.java \
+    java/lang/Double.java \
+    java/lang/Boolean.java \
+    java/lang/Character.java \
+    java/lang/System.java \
+    java/lang/ClassLoader.java \
+    java/lang/Runtime.java \
+    java/lang/SecurityManager.java \
+    java/lang/Shutdown.java \
+    java/lang/Package.java \
+    java/lang/ref/Finalizer.java \
+    java/lang/reflect/AccessibleObject.java \
+    java/lang/reflect/Field.java \
+    java/lang/reflect/Method.java \
+    java/lang/reflect/Constructor.java \
+    java/lang/reflect/InvocationTargetException.java \
+    java/lang/reflect/Array.java \
+    java/lang/reflect/Proxy.java \
+    java/security/AccessController.java \
+    java/util/Date.java \
+    java/util/TimeZone.java \
+    java/util/ResourceBundle.java \
+    java/util/concurrent/atomic/AtomicLong.java \
+    java/util/prefs/FileSystemPreferences.java \
+    java/io/Console.java \
+    java/io/FileDescriptor.java \
+    java/io/InputStream.java \
+    java/io/FileInputStream.java \
+    java/io/FileOutputStream.java \
+    java/io/PrintStream.java \
+    java/io/RandomAccessFile.java \
+    java/io/DataInputStream.java \
+    java/io/DataOutputStream.java \
+    java/io/File.java \
+    java/io/FileSystem.java \
+    java/io/UnixFileSystem.java \
+    java/io/ObjectInputStream.java \
+    java/io/ObjectOutputStream.java \
+    java/io/ObjectStreamClass.java \
+    java/lang/Throwable.java \
+    java/lang/NoClassDefFoundError.java \
+    java/lang/StringIndexOutOfBoundsException.java \
+    java/lang/OutOfMemoryError.java \
+    sun/misc/Version.java \
+    sun/misc/VM.java \
+    sun/misc/VMSupport.java \
+    sun/misc/Signal.java \
+    sun/misc/MessageUtils.java \
+    sun/misc/NativeSignalHandler.java \
+    sun/misc/GC.java \
+    sun/reflect/ConstantPool.java \
+    sun/reflect/NativeConstructorAccessorImpl.java \
+    sun/reflect/NativeMethodAccessorImpl.java \
+    sun/reflect/Reflection.java
+
+EXPORTED_inner = \
+    java.lang.ClassLoader$$NativeLibrary
+
+else # PLATFORM
+FILES_export = \
+    java/lang/Object.java \
+    java/lang/Class.java \
+    java/lang/Compiler.java \
+    java/lang/String.java \
+    java/lang/Thread.java \
+    java/lang/ThreadGroup.java \
+    java/lang/StrictMath.java \
+    java/lang/Number.java \
+    java/lang/Byte.java \
+    java/lang/Short.java \
+    java/lang/Integer.java \
+    java/lang/Long.java \
+    java/lang/Float.java \
+    java/lang/Double.java \
+    java/lang/Boolean.java \
+    java/lang/System.java \
+    java/lang/Package.java \
+    java/lang/ClassLoader.java \
+    java/lang/Runtime.java \
+    java/lang/SecurityManager.java \
+    java/lang/Shutdown.java \
+    java/lang/reflect/AccessibleObject.java \
+    java/lang/reflect/Field.java \
+    java/lang/reflect/Method.java \
+    java/lang/reflect/Constructor.java \
+    java/lang/reflect/InvocationTargetException.java \
+    java/lang/reflect/Array.java \
+    java/lang/reflect/Proxy.java \
+    java/lang/ref/Reference.java \
+    java/lang/ref/Finalizer.java \
+    java/util/Date.java \
+    java/util/Properties.java \
+    java/util/ResourceBundle.java \
+    java/util/TimeZone.java \
+    java/util/concurrent/atomic/AtomicLong.java \
+    java/util/prefs/WindowsPreferences.java \
+    java/util/prefs/WindowsPreferencesFactory.java \
+    java/util/logging/FileHandler.java \
+    java/io/Console.java \
+    java/io/FileSystem.java \
+    java/io/FileDescriptor.java \
+    java/io/InputStream.java \
+    java/io/FileInputStream.java \
+    java/io/FileOutputStream.java \
+    java/io/PrintStream.java \
+    java/io/RandomAccessFile.java \
+    java/io/DataInputStream.java \
+    java/io/DataOutputStream.java \
+    java/io/File.java \
+    java/io/ObjectOutputStream.java \
+    java/io/ObjectInputStream.java \
+    java/io/ObjectStreamClass.java \
+    java/lang/Throwable.java \
+    java/lang/NoClassDefFoundError.java \
+    java/lang/StringIndexOutOfBoundsException.java \
+    java/lang/OutOfMemoryError.java \
+    java/lang/ProcessImpl.java \
+    sun/misc/Version.java \
+    sun/misc/VM.java \
+    sun/misc/VMSupport.java \
+    sun/misc/GC.java \
+    sun/misc/Signal.java \
+    sun/misc/NativeSignalHandler.java \
+    sun/misc/MessageUtils.java \
+    java/security/AccessController.java \
+    sun/reflect/ConstantPool.java \
+    sun/reflect/NativeConstructorAccessorImpl.java \
+    sun/reflect/NativeMethodAccessorImpl.java \
+    sun/reflect/Reflection.java \
+    sun/security/provider/NativeSeedGenerator.java \
+    sun/io/Win32ErrorMode.java
+
+EXPORTED_inner = \
+    java.lang.ClassLoader$$NativeLibrary
+
+endif # PLATFORM

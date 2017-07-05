@@ -330,6 +330,20 @@ Zone	Indian/Cocos	6:27:40	-	LMT	1900
 # advance at 2am to 3am on October 23, 2011 and one hour back at 3am to 
 # 2am on February 26 next year.
 
+# From Ken Rylander (2011-10-24)
+# Another change to the Fiji DST end date. In the TZ database the end date for
+# Fiji DST 2012, is currently Feb 26. This has been changed to Jan 22.
+#
+# <a href="http://www.fiji.gov.fj/index.php?option=com_content&view=article&id=5017:amendments-to-daylight-savings&catid=71:press-releases&Itemid=155">
+# http://www.fiji.gov.fj/index.php?option=com_content&view=article&id=5017:amendments-to-daylight-savings&catid=71:press-releases&Itemid=155
+# </a>
+# states:
+#
+# The end of daylight saving scheduled initially for the 26th of February 2012
+# has been brought forward to the 22nd of January 2012.
+# The commencement of daylight saving will remain unchanged and start
+# on the  23rd of October, 2011.
+
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	Fiji	1998	1999	-	Nov	Sun>=1	2:00	1:00	S
 Rule	Fiji	1999	2000	-	Feb	lastSun	3:00	0	-
@@ -338,7 +352,7 @@ Rule	Fiji	2010	only	-	Mar	lastSun	3:00	0	-
 Rule	Fiji	2010	only	-	Oct	24	2:00	1:00	S
 Rule	Fiji	2011	only	-	Mar	Sun>=1	3:00	0	-
 Rule	Fiji	2011	only	-	Oct	23	2:00	1:00	S
-Rule	Fiji	2012	only	-	Feb	26	3:00	0	-
+Rule	Fiji	2012	only	-	Jan	22	3:00	0	-
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Pacific/Fiji	11:53:40 -	LMT	1915 Oct 26	# Suva
 			12:00	Fiji	FJ%sT	# Fiji Time
@@ -624,6 +638,11 @@ Zone Pacific/Pago_Pago	 12:37:12 -	LMT	1879 Jul  5
 # Dateline Change skip Friday 30th Dec 2011
 # Thursday 29th December 2011	23:59:59 Hours
 # Saturday 31st December 2011	00:00:00 Hours
+#
+# Clarification by Tim Parenti (2012-01-03):
+# Although Samoa has used Daylight Saving Time in the 2010-2011 and 2011-2012
+# seasons, there is not yet any indication that this trend will continue on
+# a regular basis. For now, we have explicitly listed the transitions below.
 Zone Pacific/Apia	 12:33:04 -	LMT	1879 Jul  5
 			-11:26:56 -	LMT	1911
 			-11:30	-	SAMT	1950		# Samoa Time
@@ -641,9 +660,28 @@ Zone Pacific/Guadalcanal 10:39:48 -	LMT	1912 Oct	# Honiara
 			11:00	-	SBT	# Solomon Is Time
 
 # Tokelau Is
+#
+# From Gwillim Law (2011-12-29)
+# A correspondent informed me that Tokelau, like Samoa, will be skipping
+# December 31 this year, thereby changing its time zone from UTC-10 to
+# UTC+14. When I tried to verify this statement, I found a confirming
+# article in Time magazine online
+# <a href="http://www.time.com/time/world/article/0,8599,2103243,00.html">
+# (http://www.time.com/time/world/article/0,8599,2103243,00.html).
+# </a>
+#
+# From Jonathan Leffler (2011-12-29)
+# Information from the BBC to the same effect:
+# <a href="http://www.bbc.co.uk/news/world-asia-16351377">
+# http://www.bbc.co.uk/news/world-asia-16351377
+# </a>
+#
+# Patch supplied by Tim Parenti (2011-12-29)
+
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Pacific/Fakaofo	-11:24:56 -	LMT	1901
-			-10:00	-	TKT	# Tokelau Time
+			-10:00	-	TKT 2011 Dec 30	# Tokelau Time
+			14:00	-	TKT
 
 # Tonga
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S

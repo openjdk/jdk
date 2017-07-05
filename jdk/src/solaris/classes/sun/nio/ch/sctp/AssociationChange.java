@@ -26,10 +26,13 @@ package sun.nio.ch.sctp;
 
 import com.sun.nio.sctp.Association;
 import com.sun.nio.sctp.AssociationChangeNotification;
+import javax.tools.annotation.GenerateNativeHeader;
 
 /**
  * An implementation of AssociationChangeNotification
  */
+/* No native methods here, but the constants are needed in the supporting JNI code */
+@GenerateNativeHeader
 public class AssociationChange extends AssociationChangeNotification
     implements SctpNotification
 {

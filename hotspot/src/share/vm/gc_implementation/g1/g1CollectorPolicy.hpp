@@ -64,7 +64,6 @@ public:
 };
 
 class MainBodySummary: public CHeapObj {
-  define_num_seq(satb_drain) // optional
   define_num_seq(root_region_scan_wait)
   define_num_seq(parallel) // parallel only
     define_num_seq(ext_root_scan)
@@ -74,7 +73,6 @@ class MainBodySummary: public CHeapObj {
     define_num_seq(obj_copy)
     define_num_seq(termination) // parallel only
     define_num_seq(parallel_other) // parallel only
-  define_num_seq(mark_closure)
   define_num_seq(clear_ct)
 };
 
@@ -179,7 +177,9 @@ private:
   size_t _cur_collection_pause_used_at_start_bytes;
   size_t _cur_collection_pause_used_regions_at_start;
   double _cur_collection_par_time_ms;
-  double _cur_satb_drain_time_ms;
+
+  double _cur_collection_code_root_fixup_time_ms;
+
   double _cur_clear_ct_time_ms;
   double _cur_ref_proc_time_ms;
   double _cur_ref_enq_time_ms;
@@ -226,8 +226,8 @@ private:
   double* _par_last_gc_worker_times_ms;
 
   // Each workers 'other' time i.e. the elapsed time of the parallel
-  // phase of the pause minus the sum of the individual sub-phase
-  // times for a given worker thread.
+  // code executed by a worker minus the sum of the individual sub-phase
+  // times for that worker thread.
   double* _par_last_gc_worker_other_times_ms;
 
   // indicates whether we are in young or mixed GC mode
@@ -488,7 +488,6 @@ public:
            get_new_prediction(_non_young_other_cost_per_region_ms_seq);
   }
 
-  double predict_young_collection_elapsed_time_ms(size_t adjustment);
   double predict_base_elapsed_time_ms(size_t pending_cards);
   double predict_base_elapsed_time_ms(size_t pending_cards,
                                       size_t scanned_cards);
@@ -709,7 +708,6 @@ private:
   double _cur_mark_stop_world_time_ms;
   double _mark_remark_start_sec;
   double _mark_cleanup_start_sec;
-  double _mark_closure_time_ms;
   double _root_region_scan_wait_time_ms;
 
   // Update the young list target length either by setting it to the
@@ -809,10 +807,6 @@ public:
   void record_concurrent_mark_init_end(double
                                            mark_init_elapsed_time_ms);
 
-  void record_mark_closure_time(double mark_closure_time_ms) {
-    _mark_closure_time_ms = mark_closure_time_ms;
-  }
-
   void record_root_region_scan_wait_time(double time_ms) {
     _root_region_scan_wait_time_ms = time_ms;
   }
@@ -844,11 +838,6 @@ public:
 
   void record_satb_filtering_time(int worker_i, double ms) {
     _par_last_satb_filtering_times_ms[worker_i] = ms;
-  }
-
-  void record_satb_drain_time(double ms) {
-    assert(_g1->mark_in_progress(), "shouldn't be here otherwise");
-    _cur_satb_drain_time_ms = ms;
   }
 
   void record_update_rs_time(int thread, double ms) {
@@ -895,6 +884,10 @@ public:
 
   void record_par_time(double ms) {
     _cur_collection_par_time_ms = ms;
+  }
+
+  void record_code_root_fixup_time(double ms) {
+    _cur_collection_code_root_fixup_time_ms = ms;
   }
 
   void record_aux_start_time(int i) {

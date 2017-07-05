@@ -1,0 +1,93 @@
+#
+# Copyright (c) 1997, 2007, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+# Define public interface.
+
+SUNWprivate_1.1 {
+	global:
+		Java_sun_dc_pr_PathDasher_beginPath;
+		Java_sun_dc_pr_PathFiller_getTileState;
+		Java_sun_dc_pr_PathStroker_setCaps;
+		Java_sun_dc_pr_PathStroker_setCorners;
+		Java_sun_dc_pr_PathFiller_writeAlpha16;
+		Java_sun_dc_pr_PathFiller_closedSubpath;
+		Java_sun_dc_pr_PathStroker_beginPath;
+		Java_sun_dc_pr_PathDasher_setDashT4;
+		Java_sun_dc_pr_PathFiller_dispose;
+		Java_sun_dc_pr_PathStroker_closedSubpath;
+		Java_sun_dc_pr_PathDasher_appendLine;
+		Java_sun_dc_pr_PathStroker_dispose;
+		Java_sun_dc_pr_PathDasher_setOutputConsumer;
+		Java_sun_dc_pr_PathStroker_reset;
+		Java_sun_dc_pr_PathFiller_beginSubpath;
+		Java_sun_dc_pr_PathFiller_writeAlpha8;
+		Java_sun_dc_pr_PathDasher_closedSubpath;
+		Java_sun_dc_pr_PathFiller_appendQuadratic;
+		Java_sun_dc_pr_PathDasher_setOutputT6;
+		Java_sun_dc_pr_PathStroker_setPenFitting;
+		Java_sun_dc_pr_PathStroker_endPath;
+		Java_sun_dc_pr_PathDasher_setDash;
+		Java_sun_dc_pr_PathFiller_nextTile;
+		Java_sun_dc_pr_PathStroker_setOutputConsumer;
+		Java_sun_dc_pr_PathFiller_setFillMode;
+		Java_sun_dc_pr_PathFiller_appendLine;
+		Java_sun_dc_pr_PathStroker_appendQuadratic;
+		Java_sun_dc_pr_PathFiller_endPath;
+		Java_sun_dc_pr_PathStroker_appendCubic;
+		Java_sun_dc_pr_PathDasher_appendCubic;
+		Java_sun_dc_pr_PathStroker_setPenDiameter;
+		Java_sun_dc_pr_PathFiller_setOutputArea;
+		Java_sun_dc_pr_PathFiller_getAlphaBox;
+		Java_sun_dc_pr_PathStroker_appendLine;
+		Java_sun_dc_pr_PathStroker_setOutputT6;
+		Java_sun_dc_pr_PathFiller_beginPath;
+		Java_sun_dc_pr_PathDasher_dispose;
+		Java_sun_dc_pr_PathDasher_reset;
+		Java_sun_dc_pr_PathFiller_reset;
+		Java_sun_dc_pr_PathDasher_endPath;
+		Java_sun_dc_pr_PathStroker_beginSubpath;
+		Java_sun_dc_pr_PathStroker_setPenT4;
+		Java_sun_dc_pr_PathDasher_appendQuadratic;
+		Java_sun_dc_pr_PathDasher_beginSubpath;
+		Java_sun_dc_pr_PathFiller_appendCubic;
+
+		Java_sun_dc_pr_PathDasher_cClassFinalize;
+		Java_sun_dc_pr_PathDasher_cClassInitialize;
+		Java_sun_dc_pr_PathDasher_cInitialize;
+		Java_sun_dc_pr_PathFiller_cClassFinalize;
+		Java_sun_dc_pr_PathFiller_cClassInitialize;
+		Java_sun_dc_pr_PathFiller_cInitialize;
+		Java_sun_dc_pr_PathStroker_cClassFinalize;
+		Java_sun_dc_pr_PathStroker_cClassInitialize;
+		Java_sun_dc_pr_PathStroker_cInitialize;
+		Java_sun_dc_pr_PathStroker_cInitialize2D;
+
+		Java_sun_dc_pr_PathDasher_getCPathConsumer;
+		Java_sun_dc_pr_PathFiller_getCPathConsumer;
+		Java_sun_dc_pr_PathStroker_getCPathConsumer;
+
+	local:
+		*;
+};
