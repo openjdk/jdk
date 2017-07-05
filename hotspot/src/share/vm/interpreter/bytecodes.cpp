@@ -541,9 +541,6 @@ void Bytecodes::initialize() {
 
   def(_shouldnotreachhere  , "_shouldnotreachhere" , "b"    , NULL    , T_VOID   ,  0, false);
 
-  // platform specific JVM bytecodes
-  pd_initialize();
-
   // compare can_trap information for each bytecode with the
   // can_trap information for the corresponding base bytecode
   // (if a rewritten bytecode can trap, so must the base bytecode)

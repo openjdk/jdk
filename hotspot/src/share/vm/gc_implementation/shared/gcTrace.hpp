@@ -27,6 +27,7 @@
 
 #include "gc_interface/gcCause.hpp"
 #include "gc_interface/gcName.hpp"
+#include "gc_implementation/shared/gcId.hpp"
 #include "gc_implementation/shared/gcWhen.hpp"
 #include "gc_implementation/shared/copyFailedInfo.hpp"
 #include "memory/allocation.hpp"
@@ -38,7 +39,6 @@
 #include "utilities/macros.hpp"
 #include "utilities/ticks.hpp"
 
-typedef uint GCId;
 
 class EvacuationInfo;
 class GCHeapSummary;
@@ -50,11 +50,8 @@ class TimePartitions;
 class BoolObjectClosure;
 
 class SharedGCInfo VALUE_OBJ_CLASS_SPEC {
- public:
-  static const GCId UNSET_GCID = (GCId)-1;
-
  private:
-  GCId _id;
+  GCId _gc_id;
   GCName _name;
   GCCause::Cause _cause;
   Ticks     _start_timestamp;
@@ -64,7 +61,7 @@ class SharedGCInfo VALUE_OBJ_CLASS_SPEC {
 
  public:
   SharedGCInfo(GCName name) :
-    _id(UNSET_GCID),
+    _gc_id(GCId::undefined()),
     _name(name),
     _cause(GCCause::_last_gc_cause),
     _start_timestamp(),
@@ -73,8 +70,8 @@ class SharedGCInfo VALUE_OBJ_CLASS_SPEC {
     _longest_pause() {
   }
 
-  void set_id(GCId id) { _id = id; }
-  GCId id() const { return _id; }
+  void set_gc_id(GCId gc_id) { _gc_id = gc_id; }
+  const GCId& gc_id() const { return _gc_id; }
 
   void set_start_timestamp(const Ticks& timestamp) { _start_timestamp = timestamp; }
   const Ticks start_timestamp() const { return _start_timestamp; }
@@ -131,10 +128,11 @@ class GCTracer : public ResourceObj {
   void report_gc_reference_stats(const ReferenceProcessorStats& rp) const;
   void report_object_count_after_gc(BoolObjectClosure* object_filter) NOT_SERVICES_RETURN;
   bool has_reported_gc_start() const;
+  const GCId& gc_id() { return _shared_gc_info.gc_id(); }
 
  protected:
   GCTracer(GCName name) : _shared_gc_info(name) {}
-  virtual void report_gc_start_impl(GCCause::Cause cause, const Ticks& timestamp);
+  void report_gc_start_impl(GCCause::Cause cause, const Ticks& timestamp);
   virtual void report_gc_end_impl(const Ticks& timestamp, TimePartitions* time_partitions);
 
  private:

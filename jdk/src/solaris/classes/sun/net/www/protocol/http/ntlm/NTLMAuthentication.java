@@ -77,8 +77,7 @@ public class NTLMAuthentication extends AuthenticationInfo {
 
     static {
         defaultDomain = java.security.AccessController.doPrivileged(
-            new sun.security.action.GetPropertyAction("http.auth.ntlm.domain",
-                                                      "domain"));
+            new sun.security.action.GetPropertyAction("http.auth.ntlm.domain", ""));
     };
 
     public static boolean supportsTransparentAuth () {
@@ -100,17 +99,13 @@ public class NTLMAuthentication extends AuthenticationInfo {
             public String run() {
                 String localhost;
                 try {
-                    localhost = InetAddress.getLocalHost().getHostName().toUpperCase();
+                    localhost = InetAddress.getLocalHost().getHostName();
                 } catch (UnknownHostException e) {
                      localhost = "localhost";
                 }
                 return localhost;
             }
         });
-        int x = hostname.indexOf ('.');
-        if (x != -1) {
-            hostname = hostname.substring (0, x);
-        }
     };
 
     PasswordAuthentication pw;

@@ -57,6 +57,7 @@ public class ReserveMemory {
           "-XX:+UnlockDiagnosticVMOptions",
           "-XX:+WhiteBoxAPI",
           "-XX:-TransmitErrorReport",
+          "-Xmx32m",
           "ReserveMemory",
           "test");
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,21 @@
  *
  */
 
-#ifndef CPU_X86_VM_BYTECODES_X86_HPP
-#define CPU_X86_VM_BYTECODES_X86_HPP
+#include "precompiled.hpp"
+#include "gc_implementation/shared/gcId.hpp"
+#include "runtime/safepoint.hpp"
 
-// No i486 specific bytecodes
+uint GCId::_next_id = 0;
 
-#endif // CPU_X86_VM_BYTECODES_X86_HPP
+const GCId GCId::create() {
+  return GCId(_next_id++);
+}
+const GCId GCId::peek() {
+  return GCId(_next_id);
+}
+const GCId GCId::undefined() {
+  return GCId(UNDEFINED);
+}
+bool GCId::is_undefined() const {
+  return _id == UNDEFINED;
+}

@@ -287,23 +287,6 @@ class Bytecodes: AllStatic {
 
     _shouldnotreachhere,      // For debugging
 
-    // Platform specific JVM bytecodes
-#ifdef TARGET_ARCH_x86
-# include "bytecodes_x86.hpp"
-#endif
-#ifdef TARGET_ARCH_sparc
-# include "bytecodes_sparc.hpp"
-#endif
-#ifdef TARGET_ARCH_zero
-# include "bytecodes_zero.hpp"
-#endif
-#ifdef TARGET_ARCH_arm
-# include "bytecodes_arm.hpp"
-#endif
-#ifdef TARGET_ARCH_ppc
-# include "bytecodes_ppc.hpp"
-#endif
-
 
     number_of_codes
   };
@@ -348,8 +331,6 @@ class Bytecodes: AllStatic {
 
   static void        def(Code code, const char* name, const char* format, const char* wide_format, BasicType result_type, int depth, bool can_trap);
   static void        def(Code code, const char* name, const char* format, const char* wide_format, BasicType result_type, int depth, bool can_trap, Code java_code);
-  static void        pd_initialize();              // platform specific initialization
-  static Code        pd_base_code_for(Code code);  // platform specific base_code_for implementation
 
   // Verify that bcp points into method
 #ifdef ASSERT

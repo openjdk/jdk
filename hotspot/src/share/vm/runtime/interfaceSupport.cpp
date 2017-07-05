@@ -28,6 +28,7 @@
 #include "gc_interface/collectedHeap.inline.hpp"
 #include "memory/genCollectedHeap.hpp"
 #include "memory/resourceArea.hpp"
+#include "runtime/atomic.inline.hpp"
 #include "runtime/init.hpp"
 #include "runtime/interfaceSupport.hpp"
 #include "runtime/orderAccess.inline.hpp"

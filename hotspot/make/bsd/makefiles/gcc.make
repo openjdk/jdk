@@ -280,7 +280,10 @@ endif
 
 # optimization control flags (Used by fastdebug and release variants)
 OPT_CFLAGS/NOOPT=-O0
-ifeq "$(shell expr \( $(CC_VER_MAJOR) \> 4 \) \| \( \( $(CC_VER_MAJOR) = 4 \) \& \( $(CC_VER_MINOR) \>= 8 \) \))" "1"
+ifeq ($(USE_CLANG), true)
+  # Clang does not support -Og
+  OPT_CFLAGS/DEBUG=-O0
+else ifeq "$(shell expr \( $(CC_VER_MAJOR) \> 4 \) \| \( \( $(CC_VER_MAJOR) = 4 \) \& \( $(CC_VER_MINOR) \>= 8 \) \))" "1"
   # Allow basic optimizations which don't distrupt debugging. (Principally dead code elimination)
   OPT_CFLAGS/DEBUG=-Og
 else
@@ -319,9 +322,20 @@ endif
 
 # Work around some compiler bugs.
 ifeq ($(USE_CLANG), true)
+  # Clang 4.2
   ifeq ($(shell expr $(CC_VER_MAJOR) = 4 \& $(CC_VER_MINOR) = 2), 1)
     OPT_CFLAGS/loopTransform.o += $(OPT_CFLAGS/NOOPT)
     OPT_CFLAGS/unsafe.o += -O1
+  # Clang 5.0
+  else ifeq ($(shell expr $(CC_VER_MAJOR) = 5 \& $(CC_VER_MINOR) = 0), 1)
+    OPT_CFLAGS/loopTransform.o += $(OPT_CFLAGS/NOOPT)
+    OPT_CFLAGS/unsafe.o += -O1
+  # Clang 5.1
+  else ifeq ($(shell expr $(CC_VER_MAJOR) = 5 \& $(CC_VER_MINOR) = 1), 1)
+    OPT_CFLAGS/loopTransform.o += $(OPT_CFLAGS/NOOPT)
+    OPT_CFLAGS/unsafe.o += -O1
+  else
+    $(error "Update compiler workarounds for Clang $(CC_VER_MAJOR).$(CC_VER_MINOR)")
   endif
 else
   # 6835796. Problem in GCC 4.3.0 with mulnode.o optimized compilation.
@@ -443,7 +457,10 @@ ifeq ($(USE_CLANG), true)
   CFLAGS += -flimit-debug-info
 endif
 
-ifeq "$(shell expr \( $(CC_VER_MAJOR) \> 4 \) \| \( \( $(CC_VER_MAJOR) = 4 \) \& \( $(CC_VER_MINOR) \>= 8 \) \))" "1"
+ifeq ($(USE_CLANG), true)
+  # Clang does not support -Og
+  DEBUG_CFLAGS=-O0
+else ifeq "$(shell expr \( $(CC_VER_MAJOR) \> 4 \) \| \( \( $(CC_VER_MAJOR) = 4 \) \& \( $(CC_VER_MINOR) \>= 8 \) \))" "1"
   # Allow basic optimizations which don't distrupt debugging. (Principally dead code elimination)
   DEBUG_CFLAGS=-Og
 else

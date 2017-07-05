@@ -29,6 +29,8 @@
  * @run main/othervm SaslBasic bound
  * @run main/othervm SaslBasic unbound
  */
+import com.sun.security.jgss.InquireType;
+
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -82,10 +84,16 @@ public class SaslBasic {
             }
         }
         if (!bound) {
-            String boundName = (String)ss.getNegotiatedProperty(Sasl.BOUND_SERVER_NAME);
+            String boundName = (String)ss.getNegotiatedProperty(
+                    Sasl.BOUND_SERVER_NAME);
             if (!boundName.equals(name)) {
                 throw new Exception("Wrong bound server name");
             }
+        }
+        Object key = ss.getNegotiatedProperty(
+                "com.sun.security.jgss.inquiretype.krb5_get_session_key");
+        if (key == null) {
+            throw new Exception("Extended negotiated property not read");
         }
         byte[] hello = "hello".getBytes();
         token = sc.wrap(hello, 0, hello.length);

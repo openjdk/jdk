@@ -41,6 +41,7 @@
 #include "prims/jvm.h"
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/atomic.inline.hpp"
 #include "runtime/extendedPC.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/interfaceSupport.hpp"
@@ -3185,11 +3186,6 @@ void os::yield() {
 // of other CPUs.
 
 os::YieldResult os::NakedYield() { thr_yield(); return os::YIELD_UNKNOWN; }
-
-void os::yield_all() {
-  // Yields to all threads, including threads with lower priorities
-  os::sleep(Thread::current(), 1, false);
-}
 
 // Interface for setting lwp priorities.  If we are using T2 libthread,
 // which forces the use of BoundThreads or we manually set UseBoundThreads,

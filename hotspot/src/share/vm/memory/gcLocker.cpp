@@ -26,6 +26,7 @@
 #include "memory/gcLocker.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/sharedHeap.hpp"
+#include "runtime/atomic.inline.hpp"
 #include "runtime/thread.inline.hpp"
 
 volatile jint GC_locker::_jni_lock_count = 0;
@@ -58,6 +59,17 @@ void GC_locker::verify_critical_count() {
     }
     assert(_jni_lock_count == count, "must be equal");
   }
+}
+
+// In debug mode track the locking state at all times
+void GC_locker::increment_debug_jni_lock_count() {
+  assert(_debug_jni_lock_count >= 0, "bad value");
+  Atomic::inc(&_debug_jni_lock_count);
+}
+
+void GC_locker::decrement_debug_jni_lock_count() {
+  assert(_debug_jni_lock_count > 0, "bad value");
+  Atomic::dec(&_debug_jni_lock_count);
 }
 #endif
 

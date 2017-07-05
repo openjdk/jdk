@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2009 Red Hat, Inc.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +22,24 @@
  *
  */
 
-#ifndef CPU_ZERO_VM_BYTECODES_ZERO_HPP
-#define CPU_ZERO_VM_BYTECODES_ZERO_HPP
+package sun.jvm.hotspot.gc_interface;
 
-// This file is intentionally empty
+//These definitions should be kept in sync with the definitions in the HotSpot code.
 
-#endif // CPU_ZERO_VM_BYTECODES_ZERO_HPP
+public enum ReferenceType {
+  REF_NONE ("None reference"),       // Regular class
+  REF_OTHER ("Other reference"),     // Subclass of java/lang/ref/Reference, but not subclass of one of the classes below
+  REF_SOFT ("Soft reference"),       // Subclass of java/lang/ref/SoftReference
+  REF_WEAK ("Weak reference"),       // Subclass of java/lang/ref/WeakReference
+  REF_FINAL ("Final reference"),     // Subclass of java/lang/ref/FinalReference
+  REF_PHANTOM ("Phantom reference"); // Subclass of java/lang/ref/PhantomReference
+
+  private final String value;
+
+  ReferenceType(String val) {
+    this.value = val;
+  }
+  public String value() {
+    return value;
+  }
+}
