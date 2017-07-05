@@ -1931,6 +1931,7 @@ run:
               } else {
                 result->set_mark(markOopDesc::prototype());
               }
+              result->set_klass_gap(0);
               result->set_klass(k_entry);
               SET_STACK_OBJECT(result, 0);
               UPDATE_PC_AND_TOS_AND_CONTINUE(3, 1);

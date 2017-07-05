@@ -599,12 +599,28 @@ void MutableNUMASpace::initialize(MemRegion mr, bool clear_space) {
 // Mark the the holes in chunks below the top() as invalid.
 void MutableNUMASpace::set_top(HeapWord* value) {
   bool found_top = false;
-  for (int i = 0; i < lgrp_spaces()->length(); i++) {
+  for (int i = 0; i < lgrp_spaces()->length();) {
     LGRPSpace *ls = lgrp_spaces()->at(i);
     MutableSpace *s = ls->space();
     HeapWord *top = MAX2((HeapWord*)round_down((intptr_t)s->top(), page_size()), s->bottom());
 
     if (s->contains(value)) {
+      // Check if setting the chunk's top to a given value would create a hole less than
+      // a minimal object; assuming that's not the last chunk in which case we don't care.
+      if (i < lgrp_spaces()->length() - 1) {
+        size_t remainder = pointer_delta(s->end(), value);
+        const size_t minimal_object_size = oopDesc::header_size();
+        if (remainder < minimal_object_size && remainder > 0) {
+          // Add a filler object of a minimal size, it will cross the chunk boundary.
+          SharedHeap::fill_region_with_object(MemRegion(value, minimal_object_size));
+          value += minimal_object_size;
+          assert(!s->contains(value), "Should be in the next chunk");
+          // Restart the loop from the same chunk, since the value has moved
+          // to the next one.
+          continue;
+        }
+      }
+
       if (!os::numa_has_static_binding() && top < value && top < s->end()) {
         ls->add_invalid_region(MemRegion(top, value));
       }
@@ -620,6 +636,7 @@ void MutableNUMASpace::set_top(HeapWord* value) {
           s->set_top(s->end());
         }
     }
+    i++;
   }
   MutableSpace::set_top(value);
 }
@@ -700,12 +717,14 @@ HeapWord* MutableNUMASpace::cas_allocate(size_t size) {
   MutableSpace *s = lgrp_spaces()->at(i)->space();
   HeapWord *p = s->cas_allocate(size);
   if (p != NULL) {
-    size_t remainder = pointer_delta(s->end(), p);
+    size_t remainder = pointer_delta(s->end(), p + size);
     if (remainder < (size_t)oopDesc::header_size() && remainder > 0) {
       if (s->cas_deallocate(p, size)) {
         // We were the last to allocate and created a fragment less than
         // a minimal object.
         p = NULL;
+      } else {
+        guarantee(false, "Deallocation should always succeed");
       }
     }
   }
@@ -761,10 +780,12 @@ void MutableNUMASpace::print_on(outputStream* st) const {
   }
 }
 
-void MutableNUMASpace::verify(bool allow_dirty) const {
- for (int i = 0; i < lgrp_spaces()->length(); i++) {
-    lgrp_spaces()->at(i)->space()->verify(allow_dirty);
-  }
+void MutableNUMASpace::verify(bool allow_dirty) {
+  // This can be called after setting an arbitary value to the space's top,
+  // so an object can cross the chunk boundary. We ensure the parsablity
+  // of the space and just walk the objects in linear fashion.
+  ensure_parsability();
+  MutableSpace::verify(allow_dirty);
 }
 
 // Scan pages and gather stats about page placement and size.

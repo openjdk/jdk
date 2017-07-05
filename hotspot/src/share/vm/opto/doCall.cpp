@@ -580,7 +580,7 @@ void Parse::catch_inline_exceptions(SafePointNode* ex_map) {
   Node* ex_klass_node = NULL;
   if (has_ex_handler() && !ex_type->klass_is_exact()) {
     Node* p = basic_plus_adr( ex_node, ex_node, oopDesc::klass_offset_in_bytes());
-    ex_klass_node = _gvn.transform(new (C, 3) LoadKlassNode(NULL, immutable_memory(), p, TypeInstPtr::KLASS, TypeKlassPtr::OBJECT));
+    ex_klass_node = _gvn.transform( LoadKlassNode::make(_gvn, immutable_memory(), p, TypeInstPtr::KLASS, TypeKlassPtr::OBJECT) );
 
     // Compute the exception klass a little more cleverly.
     // Obvious solution is to simple do a LoadKlass from the 'ex_node'.
@@ -592,7 +592,7 @@ void Parse::catch_inline_exceptions(SafePointNode* ex_map) {
       ex_klass_node = new (C, ex_node->req()) PhiNode( ex_node->in(0), TypeKlassPtr::OBJECT );
       for( uint i = 1; i < ex_node->req(); i++ ) {
         Node* p = basic_plus_adr( ex_node->in(i), ex_node->in(i), oopDesc::klass_offset_in_bytes() );
-        Node* k = _gvn.transform(new (C, 3) LoadKlassNode(0, immutable_memory(), p, TypeInstPtr::KLASS, TypeKlassPtr::OBJECT));
+        Node* k = _gvn.transform( LoadKlassNode::make(_gvn, immutable_memory(), p, TypeInstPtr::KLASS, TypeKlassPtr::OBJECT) );
         ex_klass_node->init_req( i, k );
       }
       _gvn.set_type(ex_klass_node, TypeKlassPtr::OBJECT);

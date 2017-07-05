@@ -47,6 +47,6 @@ public class Main {
                                            4.0f/3.0f, 0.85f, Toolkit.getDefaultToolkit().getScreenSize());
     GraphicsUtilities.centerInContainer(frame,
                                         Toolkit.getDefaultToolkit().getScreenSize());
-    frame.show();
+    frame.setVisible(true);
   }
 }

@@ -220,7 +220,7 @@ public class CommandProcessorPanel extends JPanel {
                 }
             });
         frame.setSize(500, 500);
-        frame.show();
+        frame.setVisible(true);
         panel.requestFocus();
     }
 }
