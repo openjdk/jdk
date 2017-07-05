@@ -664,6 +664,8 @@ class DepChange : public StackObj {
   virtual bool is_klass_change()     const { return false; }
   virtual bool is_call_site_change() const { return false; }
 
+  virtual void mark_for_deoptimization(nmethod* nm) = 0;
+
   // Subclass casting with assertions.
   KlassDepChange*    as_klass_change() {
     assert(is_klass_change(), "bad cast");
@@ -753,6 +755,10 @@ class KlassDepChange : public DepChange {
   // What kind of DepChange is this?
   virtual bool is_klass_change() const { return true; }
 
+  virtual void mark_for_deoptimization(nmethod* nm) {
+    nm->mark_for_deoptimization(/*inc_recompile_counts=*/true);
+  }
+
   Klass* new_type() { return _new_type(); }
 
   // involves_context(k) is true if k is new_type or any of the super types
@@ -771,6 +777,10 @@ class CallSiteDepChange : public DepChange {
 
   // What kind of DepChange is this?
   virtual bool is_call_site_change() const { return true; }
+
+  virtual void mark_for_deoptimization(nmethod* nm) {
+    nm->mark_for_deoptimization(/*inc_recompile_counts=*/false);
+  }
 
   oop call_site()     const { return _call_site();     }
   oop method_handle() const { return _method_handle(); }

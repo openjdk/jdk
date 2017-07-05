@@ -22,18 +22,19 @@
  *
  */
 
+#ifndef SHARE_VM_GC_G1_WORKERDATAARRAY_HPP
+#define SHARE_VM_GC_G1_WORKERDATAARRAY_HPP
+
 #include "memory/allocation.hpp"
 #include "utilities/debug.hpp"
 
+class outputStream;
+
 template <class T>
 class WorkerDataArray  : public CHeapObj<mtGC> {
-  friend class G1GCParPhasePrinter;
   T*          _data;
   uint        _length;
   const char* _title;
-  bool        _print_sum;
-  uint        _indent_level;
-  bool        _enabled;
 
   WorkerDataArray<size_t>* _thread_work_items;
 
@@ -42,11 +43,7 @@ class WorkerDataArray  : public CHeapObj<mtGC> {
   void set_all(T value);
 
  public:
-  WorkerDataArray(uint length,
-                  const char* title,
-                  bool print_sum,
-                  uint indent_level);
-
+  WorkerDataArray(uint length, const char* title);
   ~WorkerDataArray();
 
   void link_thread_work_items(WorkerDataArray<size_t>* thread_work_items);
@@ -62,27 +59,30 @@ class WorkerDataArray  : public CHeapObj<mtGC> {
 
   double average(uint active_threads) const;
   T sum(uint active_threads) const;
-  T minimum(uint active_threads) const;
-  T maximum(uint active_threads) const;
-  T diff(uint active_threads) const;
-
-  uint indentation() const {
-    return _indent_level;
-  }
 
   const char* title() const {
     return _title;
   }
 
-  bool should_print_sum() const {
-    return _print_sum;
-  }
-
   void clear();
-  void set_enabled(bool enabled) {
-    _enabled = enabled;
-  }
 
   void reset() PRODUCT_RETURN;
   void verify(uint active_threads) const PRODUCT_RETURN;
+
+
+ private:
+  class WDAPrinter {
+  public:
+    static void summary(outputStream* out, const char* title, double min, double avg, double max, double diff, double sum, bool print_sum);
+    static void summary(outputStream* out, const char* title, size_t min, double avg, size_t max, size_t diff, size_t sum, bool print_sum);
+
+    static void details(const WorkerDataArray<double>* phase, outputStream* out, uint active_threads);
+    static void details(const WorkerDataArray<size_t>* phase, outputStream* out, uint active_threads);
+  };
+
+ public:
+  void print_summary_on(outputStream* out, uint active_threads, bool print_sum = true) const;
+  void print_details_on(outputStream* out, uint active_threads) const;
 };
+
+#endif // SHARE_VM_GC_G1_WORKERDATAARRAY_HPP

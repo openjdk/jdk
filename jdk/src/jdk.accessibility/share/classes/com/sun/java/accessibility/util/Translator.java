@@ -32,6 +32,7 @@ import java.util.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.*;
+import java.security.AccessControlException;
 // Do not import Swing classes.  This module is intended to work
 // with both Swing and AWT.
 // import javax.swing.*;
@@ -77,7 +78,7 @@ public class Translator extends AccessibleContext
             return null;
         }
         try {
-            t = Class.forName("com.sun.java.accessibility.util.internal"
+            t = Class.forName("com.sun.java.accessibility.util.internal."
                               + c.getSimpleName()
                               + "Translator");
             return t;
@@ -105,6 +106,10 @@ public class Translator extends AccessibleContext
         if (o instanceof Accessible) {
             a = (Accessible)o;
         } else {
+            // About to "newInstance" an object of a class of a restricted package
+            // so ensure the caller is allowed access to that package.
+            String pkg = "com.sun.java.accessibility.util.internal";
+            System.getSecurityManager().checkPackageAccess(pkg);
             Class<?> translatorClass = getTranslatorClass(o.getClass());
             if (translatorClass != null) {
                 try {

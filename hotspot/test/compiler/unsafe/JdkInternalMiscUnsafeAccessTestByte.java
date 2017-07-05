@@ -157,6 +157,20 @@ public class JdkInternalMiscUnsafeAccessTestByte {
         }
 
 
+        // Lazy
+        {
+            UNSAFE.putByteRelease(base, offset, (byte)1);
+            byte x = UNSAFE.getByteAcquire(base, offset);
+            assertEquals(x, (byte)1, "putRelease byte value");
+        }
+
+        // Opaque
+        {
+            UNSAFE.putByteOpaque(base, offset, (byte)2);
+            byte x = UNSAFE.getByteOpaque(base, offset);
+            assertEquals(x, (byte)2, "putOpaque byte value");
+        }
+
 
 
     }

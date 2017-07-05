@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -469,7 +469,9 @@ GetJavaProperties(JNIEnv* env)
          * Windows Server 2008 R2       6               1  (!VER_NT_WORKSTATION)
          * Windows 8                    6               2  (VER_NT_WORKSTATION)
          * Windows Server 2012          6               2  (!VER_NT_WORKSTATION)
+         * Windows Server 2012 R2       6               3  (!VER_NT_WORKSTATION)
          * Windows 10                   10              0  (VER_NT_WORKSTATION)
+         * Windows Server 2016          10              0  (!VER_NT_WORKSTATION)
          *
          * This mapping will presumably be augmented as new Windows
          * versions are released.
@@ -543,6 +545,7 @@ GetJavaProperties(JNIEnv* env)
                     }
                 } else {
                     switch (minorVersion) {
+                    case  0: sprops.os_name = "Windows Server 2016";           break;
                     default: sprops.os_name = "Windows NT (unknown)";
                     }
                 }

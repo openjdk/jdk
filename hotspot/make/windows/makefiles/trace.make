@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -43,8 +43,7 @@ TraceGeneratedNames =     \
 !if EXISTS($(TraceAltSrcDir))
 TraceGeneratedNames = $(TraceGeneratedNames) \
     traceRequestables.hpp \
-    traceEventControl.hpp \
-    traceProducer.cpp
+    traceEventControl.hpp
 !endif
 
 
@@ -58,8 +57,7 @@ TraceGeneratedFiles = \
 !if EXISTS($(TraceAltSrcDir))
 TraceGeneratedFiles = $(TraceGeneratedFiles) \
 	$(TraceOutDir)/traceRequestables.hpp \
-    $(TraceOutDir)/traceEventControl.hpp \
-	$(TraceOutDir)/traceProducer.cpp
+    $(TraceOutDir)/traceEventControl.hpp
 !endif
 
 XSLT = $(QUIETLY) $(REMOTE) $(RUN_JAVA) -classpath $(JvmtiOutDir) jvmtiGen
@@ -97,10 +95,6 @@ $(TraceOutDir)/traceEventClasses.hpp: $(TraceSrcDir)/trace.xml $(TraceSrcDir)/tr
 $(TraceOutDir)/traceEventClasses.hpp: $(TraceSrcDir)/trace.xml $(TraceAltSrcDir)/traceEventClasses.xsl $(XML_DEPS)
 	@echo Generating AltSrc $@
 	@$(XSLT) -IN $(TraceSrcDir)/trace.xml -XSL $(TraceAltSrcDir)/traceEventClasses.xsl -OUT $(TraceOutDir)/traceEventClasses.hpp
-
-$(TraceOutDir)/traceProducer.cpp: $(TraceSrcDir)/trace.xml $(TraceAltSrcDir)/traceProducer.xsl $(XML_DEPS)
-	@echo Generating AltSrc $@
-	@$(XSLT) -IN $(TraceSrcDir)/trace.xml -XSL $(TraceAltSrcDir)/traceProducer.xsl -OUT $(TraceOutDir)/traceProducer.cpp
 
 $(TraceOutDir)/traceRequestables.hpp: $(TraceSrcDir)/trace.xml $(TraceAltSrcDir)/traceRequestables.xsl $(XML_DEPS)
 	@echo Generating AltSrc $@

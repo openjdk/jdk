@@ -38,7 +38,7 @@ private:
   GrowableArray<int>*   _keys;
   GrowableArray<void*>* _elements;
 
-  int find(int index);
+  static int key_compare(const int& key, const int& elt);
 
 public:
   ciConstantPoolCache(Arena* arena, int expected_size);

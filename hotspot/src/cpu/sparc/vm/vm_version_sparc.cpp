@@ -463,3 +463,37 @@ unsigned int VM_Version::calc_parallel_worker_threads() {
   }
   return result;
 }
+
+
+int VM_Version::parse_features(const char* implementation) {
+  int features = unknown_m;
+  // Convert to UPPER case before compare.
+  char* impl = os::strdup_check_oom(implementation);
+
+  for (int i = 0; impl[i] != 0; i++)
+    impl[i] = (char)toupper((uint)impl[i]);
+
+  if (strstr(impl, "SPARC64") != NULL) {
+    features |= sparc64_family_m;
+  } else if (strstr(impl, "SPARC-M") != NULL) {
+    // M-series SPARC is based on T-series.
+    features |= (M_family_m | T_family_m);
+  } else if (strstr(impl, "SPARC-T") != NULL) {
+    features |= T_family_m;
+    if (strstr(impl, "SPARC-T1") != NULL) {
+      features |= T1_model_m;
+    }
+  } else {
+    if (strstr(impl, "SPARC") == NULL) {
+#ifndef PRODUCT
+      // kstat on Solaris 8 virtual machines (branded zones)
+      // returns "(unsupported)" implementation. Solaris 8 is not
+      // supported anymore, but include this check to be on the
+      // safe side.
+      warning("Can't parse CPU implementation = '%s', assume generic SPARC", impl);
+#endif
+    }
+  }
+  os::free((void*)impl);
+  return features;
+}
