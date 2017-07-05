@@ -42,10 +42,10 @@ class PSPromotionManager;
 // _indices   [ b2 | b1 |  index  ]  index = constant_pool_index
 // _f1        [  entry specific   ]  metadata ptr (method or klass)
 // _f2        [  entry specific   ]  vtable or res_ref index, or vfinal method ptr
-// _flags     [tos|0|F=1|0|0|f|v|0 |00000|field_index] (for field entries)
-// bit length [ 4 |1| 1 |1|1|1|1|1 |--5--|----16-----]
-// _flags     [tos|0|F=0|A|I|f|0|vf|00000|00000|psize] (for method entries)
-// bit length [ 4 |1| 1 |1|1|1|1|1 |--5--|--8--|--8--]
+// _flags     [tos|0|F=1|0|0|0|f|v|0 |0000|field_index] (for field entries)
+// bit length [ 4 |1| 1 |1|1|1|1|1|1 |-4--|----16-----]
+// _flags     [tos|0|F=0|M|A|I|f|0|vf|0000|00000|psize] (for method entries)
+// bit length [ 4 |1| 1 |1|1|1|1|1|1 |-4--|--8--|--8--]
 
 // --------------------------------
 //
@@ -166,11 +166,12 @@ class ConstantPoolCacheEntry VALUE_OBJ_CLASS_SPEC {
     tos_state_shift            = BitsPerInt - tos_state_bits,  // see verify_tos_state_shift below
     // misc. option bits; can be any bit position in [16..27]
     is_field_entry_shift       = 26,  // (F) is it a field or a method?
-    has_appendix_shift         = 25,  // (A) does the call site have an appendix argument?
-    is_forced_virtual_shift    = 24,  // (I) is the interface reference forced to virtual mode?
-    is_final_shift             = 23,  // (f) is the field or method final?
-    is_volatile_shift          = 22,  // (v) is the field volatile?
-    is_vfinal_shift            = 21,  // (vf) did the call resolve to a final method?
+    has_method_type_shift      = 25,  // (M) does the call site have a MethodType?
+    has_appendix_shift         = 24,  // (A) does the call site have an appendix argument?
+    is_forced_virtual_shift    = 23,  // (I) is the interface reference forced to virtual mode?
+    is_final_shift             = 22,  // (f) is the field or method final?
+    is_volatile_shift          = 21,  // (v) is the field volatile?
+    is_vfinal_shift            = 20,  // (vf) did the call resolve to a final method?
     // low order bits give field index (for FieldInfo) or method parameter size:
     field_index_bits           = 16,
     field_index_mask           = right_n_bits(field_index_bits),
@@ -223,14 +224,16 @@ class ConstantPoolCacheEntry VALUE_OBJ_CLASS_SPEC {
   void set_method_handle(
     constantPoolHandle cpool,                    // holding constant pool (required for locking)
     methodHandle method,                         // adapter for invokeExact, etc.
-    Handle appendix,                             // stored in refs[f2]; could be a java.lang.invoke.MethodType
+    Handle appendix,                             // stored in refs[f2+0]; could be a java.lang.invoke.MethodType
+    Handle method_type,                          // stored in refs[f2+1]; is a java.lang.invoke.MethodType
     objArrayHandle resolved_references
   );
 
   void set_dynamic_call(
     constantPoolHandle cpool,                    // holding constant pool (required for locking)
     methodHandle method,                         // adapter for this call site
-    Handle appendix,                             // stored in refs[f2]; could be a java.lang.invoke.CallSite
+    Handle appendix,                             // stored in refs[f2+0]; could be a java.lang.invoke.CallSite
+    Handle method_type,                          // stored in refs[f2+1]; is a java.lang.invoke.MethodType
     objArrayHandle resolved_references
   );
 
@@ -253,12 +256,24 @@ class ConstantPoolCacheEntry VALUE_OBJ_CLASS_SPEC {
     constantPoolHandle cpool,                    // holding constant pool (required for locking)
     Bytecodes::Code invoke_code,                 // _invokehandle or _invokedynamic
     methodHandle adapter,                        // invoker method (f1)
-    Handle appendix,                             // appendix such as CallSite, MethodType, etc. (refs[f2])
+    Handle appendix,                             // appendix such as CallSite, MethodType, etc. (refs[f2+0])
+    Handle method_type,                          // MethodType (refs[f2+1])
     objArrayHandle resolved_references
   );
 
-  Method* method_if_resolved(constantPoolHandle cpool);
-  oop appendix_if_resolved(constantPoolHandle cpool);
+  // invokedynamic and invokehandle call sites have two entries in the
+  // resolved references array:
+  //   appendix   (at index+0)
+  //   MethodType (at index+1)
+  enum {
+    _indy_resolved_references_appendix_offset    = 0,
+    _indy_resolved_references_method_type_offset = 1,
+    _indy_resolved_references_entries
+  };
+
+  Method*      method_if_resolved(constantPoolHandle cpool);
+  oop        appendix_if_resolved(constantPoolHandle cpool);
+  oop     method_type_if_resolved(constantPoolHandle cpool);
 
   void set_parameter_size(int value);
 
@@ -270,11 +285,11 @@ class ConstantPoolCacheEntry VALUE_OBJ_CLASS_SPEC {
       case Bytecodes::_getfield        :    // fall through
       case Bytecodes::_invokespecial   :    // fall through
       case Bytecodes::_invokestatic    :    // fall through
+      case Bytecodes::_invokehandle    :    // fall through
+      case Bytecodes::_invokedynamic   :    // fall through
       case Bytecodes::_invokeinterface : return 1;
       case Bytecodes::_putstatic       :    // fall through
       case Bytecodes::_putfield        :    // fall through
-      case Bytecodes::_invokehandle    :    // fall through
-      case Bytecodes::_invokedynamic   :    // fall through
       case Bytecodes::_invokevirtual   : return 2;
       default                          : break;
     }
@@ -307,6 +322,7 @@ class ConstantPoolCacheEntry VALUE_OBJ_CLASS_SPEC {
   bool is_forced_virtual() const                 { return (_flags & (1 << is_forced_virtual_shift)) != 0; }
   bool is_vfinal() const                         { return (_flags & (1 << is_vfinal_shift))         != 0; }
   bool has_appendix() const                      { return (_flags & (1 << has_appendix_shift))      != 0; }
+  bool has_method_type() const                   { return (_flags & (1 << has_method_type_shift))   != 0; }
   bool is_method_entry() const                   { return (_flags & (1 << is_field_entry_shift))    == 0; }
   bool is_field_entry() const                    { return (_flags & (1 << is_field_entry_shift))    != 0; }
   bool is_byte() const                           { return flag_state() == btos; }
