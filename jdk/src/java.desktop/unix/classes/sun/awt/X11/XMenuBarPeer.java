@@ -222,7 +222,7 @@ public class XMenuBarPeer extends XBaseMenuWindow implements MenuBarPeer {
     }
 
     /**
-     * @see XBaseMenuWindow.map
+     * @see XBaseMenuWindow#map
      */
     protected MappingData map() {
         XMenuItemPeer[] itemVector = copyItems();
@@ -292,7 +292,7 @@ public class XMenuBarPeer extends XBaseMenuWindow implements MenuBarPeer {
     }
 
     /**
-     * @see XBaseMenuWindow.getSubmenuBounds
+     * @see XBaseMenuWindow#getSubmenuBounds
      */
     protected Rectangle getSubmenuBounds(Rectangle itemBounds, Dimension windowSize) {
         Rectangle globalBounds = toGlobal(itemBounds);
@@ -362,7 +362,7 @@ public class XMenuBarPeer extends XBaseMenuWindow implements MenuBarPeer {
      ************************************************/
 
     /**
-     * @see XBaseMenuWindow.doDispose()
+     * @see XBaseMenuWindow#doDispose()
      */
     protected void doDispose() {
         super.doDispose();
@@ -388,7 +388,7 @@ public class XMenuBarPeer extends XBaseMenuWindow implements MenuBarPeer {
 
     /**
      * Performs ungrabbing of input
-     * @see XBaseWindow.ungrabInputImpl()
+     * @see XBaseWindow#ungrabInputImpl()
      */
     void ungrabInputImpl() {
         selectItem(null, false);

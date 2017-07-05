@@ -77,10 +77,11 @@ public:
   //  1) that are in objects allocated in "g" at the time of the last call
   //     to "save_Marks", and
   //  2) that point to objects in younger generations.
-  virtual void younger_refs_iterate(Generation* g, OopsInGenClosure* blk) = 0;
+  virtual void younger_refs_iterate(Generation* g, OopsInGenClosure* blk, uint n_threads) = 0;
 
   virtual void younger_refs_in_space_iterate(Space* sp,
-                                             OopsInGenClosure* cl) = 0;
+                                             OopsInGenClosure* cl,
+                                             uint n_threads) = 0;
 
   // This method is used to notify the remembered set that "new_val" has
   // been written into "field" by the garbage collector.

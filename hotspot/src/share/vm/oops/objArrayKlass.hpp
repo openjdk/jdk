@@ -163,22 +163,14 @@ class ObjArrayKlass : public ArrayKlass {
 
  public:
 
-#define ObjArrayKlass_OOP_OOP_ITERATE_DECL(OopClosureType, nv_suffix)   \
-  int oop_oop_iterate##nv_suffix(oop obj, OopClosureType* blk);         \
-  int oop_oop_iterate##nv_suffix##_m(oop obj, OopClosureType* blk,      \
-                                     MemRegion mr);                     \
-  int oop_oop_iterate_range##nv_suffix(oop obj, OopClosureType* blk,    \
-                                     int start, int end);
-
-  ALL_OOP_OOP_ITERATE_CLOSURES_1(ObjArrayKlass_OOP_OOP_ITERATE_DECL)
-  ALL_OOP_OOP_ITERATE_CLOSURES_2(ObjArrayKlass_OOP_OOP_ITERATE_DECL)
+  ALL_OOP_OOP_ITERATE_CLOSURES_1(OOP_OOP_ITERATE_DECL)
+  ALL_OOP_OOP_ITERATE_CLOSURES_2(OOP_OOP_ITERATE_DECL)
+  ALL_OOP_OOP_ITERATE_CLOSURES_1(OOP_OOP_ITERATE_DECL_RANGE)
+  ALL_OOP_OOP_ITERATE_CLOSURES_2(OOP_OOP_ITERATE_DECL_RANGE)
 
 #if INCLUDE_ALL_GCS
-#define ObjArrayKlass_OOP_OOP_ITERATE_BACKWARDS_DECL(OopClosureType, nv_suffix) \
-  int  oop_oop_iterate_backwards##nv_suffix(oop obj, OopClosureType* blk);
-
-  ALL_OOP_OOP_ITERATE_CLOSURES_1(ObjArrayKlass_OOP_OOP_ITERATE_BACKWARDS_DECL)
-  ALL_OOP_OOP_ITERATE_CLOSURES_2(ObjArrayKlass_OOP_OOP_ITERATE_BACKWARDS_DECL)
+  ALL_OOP_OOP_ITERATE_CLOSURES_1(OOP_OOP_ITERATE_DECL_NO_BACKWARDS)
+  ALL_OOP_OOP_ITERATE_CLOSURES_2(OOP_OOP_ITERATE_DECL_NO_BACKWARDS)
 #endif // INCLUDE_ALL_GCS
 
   // JVM support

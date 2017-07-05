@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -849,9 +849,8 @@ public class JDialog extends Dialog implements WindowConstants,
     *      hidden: true
     * description: The menubar for accessing pulldown menus from this dialog.
     */
-    @SuppressWarnings("deprecation")
-    public void setJMenuBar(JMenuBar menu) {
-        getRootPane().setMenuBar(menu);
+    public void setJMenuBar(final JMenuBar menu) {
+        getRootPane().setJMenuBar(menu);
     }
 
    /**
@@ -860,11 +859,9 @@ public class JDialog extends Dialog implements WindowConstants,
     * @return the menubar set on this dialog
     * @see #setJMenuBar
     */
-    @SuppressWarnings("deprecation")
     public JMenuBar getJMenuBar() {
-        return getRootPane().getMenuBar();
+        return getRootPane().getJMenuBar();
     }
-
 
     /**
      * Returns whether calls to {@code add} and

@@ -27,7 +27,6 @@
  *  @summary Test launcher command line construction
  *  @author Gordon Hirsch
  *
- *  @library scaffold
  *  @modules jdk.jdi
  *  @run build JDIScaffold VMConnection
  *  @run compile -g HelloWorld.java

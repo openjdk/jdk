@@ -929,4 +929,9 @@ public final class LWCToolkit extends LWToolkit {
                 !path.endsWith("/") &&
                 !path.endsWith(".");
     }
+
+    @Override
+    protected PlatformWindow getPlatformWindowUnderMouse() {
+        return CPlatformWindow.nativeGetTopmostPlatformWindowUnderMouse();
+    }
 }

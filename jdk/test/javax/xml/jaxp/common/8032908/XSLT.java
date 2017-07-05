@@ -23,9 +23,10 @@
 
 /**
  * @test
- * @bug 8032908
+ * @bug 8032908 8081392
  * @summary Test if Node.getTextContent() function correctly returns children
- * content
+ * content and also check that Node.getNodeValue() returns null value for
+ * Element nodes
  * @compile TestFunc.java XSLT.java
  * @run main/othervm XSLT
  */
@@ -40,7 +41,7 @@ public class XSLT {
 
     static final String XMLTOTRANSFORM = "/in.xml";
     static final String XSLTRANSFORMER = "/test.xsl";
-    static final String EXPECTEDRESULT = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>ABCDEFG";
+    static final String EXPECTEDRESULT = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>ABCDEFG:null";
 
     public static void main(String[] args) throws TransformerException {
         ByteArrayOutputStream resStream = new ByteArrayOutputStream();
