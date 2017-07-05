@@ -52,7 +52,7 @@ public abstract class URISyntax implements Serializable, Cloneable {
      * @param  uri  URI.
      *
      * @exception  NullPointerException
-     *     (unchecked exception) Thrown if <CODE>uri</CODE> is null.
+     *     (unchecked exception) Thrown if {@code uri} is null.
      */
     protected URISyntax(URI uri) {
         this.uri = verify (uri);
@@ -88,17 +88,17 @@ public abstract class URISyntax implements Serializable, Cloneable {
      * To be equivalent, all of the following conditions must be true:
      * <OL TYPE=1>
      * <LI>
-     * <CODE>object</CODE> is not null.
+     * {@code object} is not null.
      * <LI>
-     * <CODE>object</CODE> is an instance of class URISyntax.
+     * {@code object} is an instance of class URISyntax.
      * <LI>
-     * This URI attribute's underlying URI and <CODE>object</CODE>'s
+     * This URI attribute's underlying URI and {@code object}'s
      * underlying URI are equal.
      * </OL>
      *
      * @param  object  Object to compare to.
      *
-     * @return  True if <CODE>object</CODE> is equivalent to this URI
+     * @return  True if {@code object} is equivalent to this URI
      *          attribute, false otherwise.
      */
     public boolean equals(Object object) {

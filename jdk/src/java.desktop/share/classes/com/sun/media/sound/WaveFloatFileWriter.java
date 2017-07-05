@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,18 +22,20 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package com.sun.media.sound;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.Objects;
 
 import javax.sound.sampled.AudioFileFormat;
+import javax.sound.sampled.AudioFileFormat.Type;
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioFormat.Encoding;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
-import javax.sound.sampled.AudioFileFormat.Type;
 import javax.sound.sampled.spi.AudioFileWriter;
 
 /**
@@ -43,10 +45,12 @@ import javax.sound.sampled.spi.AudioFileWriter;
  */
 public final class WaveFloatFileWriter extends AudioFileWriter {
 
+    @Override
     public Type[] getAudioFileTypes() {
-        return new Type[] { Type.WAVE };
+        return new Type[]{Type.WAVE};
     }
 
+    @Override
     public Type[] getAudioFileTypes(AudioInputStream stream) {
 
         if (!stream.getFormat().getEncoding().equals(Encoding.PCM_FLOAT))
@@ -92,18 +96,22 @@ public final class WaveFloatFileWriter extends AudioFileWriter {
             this.out = out;
         }
 
+        @Override
         public void write(int b) throws IOException {
             out.write(b);
         }
 
+        @Override
         public void flush() throws IOException {
             out.flush();
         }
 
+        @Override
         public void write(byte[] b, int off, int len) throws IOException {
             out.write(b, off, len);
         }
 
+        @Override
         public void write(byte[] b) throws IOException {
             out.write(b);
         }
@@ -118,8 +126,12 @@ public final class WaveFloatFileWriter extends AudioFileWriter {
         return AudioSystem.getAudioInputStream(targetFormat, ais);
     }
 
+    @Override
     public int write(AudioInputStream stream, Type fileType, OutputStream out)
             throws IOException {
+        Objects.requireNonNull(stream);
+        Objects.requireNonNull(fileType);
+        Objects.requireNonNull(out);
 
         checkFormat(fileType, stream);
         if (stream.getFormat().isBigEndian())
@@ -131,8 +143,13 @@ public final class WaveFloatFileWriter extends AudioFileWriter {
         return fpointer;
     }
 
+    @Override
     public int write(AudioInputStream stream, Type fileType, File out)
             throws IOException {
+        Objects.requireNonNull(stream);
+        Objects.requireNonNull(fileType);
+        Objects.requireNonNull(out);
+
         checkFormat(fileType, stream);
         if (stream.getFormat().isBigEndian())
             stream = toLittleEndian(stream);
@@ -142,5 +159,4 @@ public final class WaveFloatFileWriter extends AudioFileWriter {
         writer.close();
         return fpointer;
     }
-
 }

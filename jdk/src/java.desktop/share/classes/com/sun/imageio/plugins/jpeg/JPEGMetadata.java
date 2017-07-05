@@ -66,17 +66,17 @@ public class JPEGMetadata extends IIOMetadata implements Cloneable {
     private static final boolean debug = false;
 
     /**
-     * A copy of <code>markerSequence</code>, created the first time the
-     * <code>markerSequence</code> is modified.  This is used by reset
+     * A copy of {@code markerSequence}, created the first time the
+     * {@code markerSequence} is modified.  This is used by reset
      * to restore the original state.
      */
     private List<MarkerSegment> resetSequence = null;
 
     /**
-     * Set to <code>true</code> when reading a thumbnail stored as
+     * Set to {@code true} when reading a thumbnail stored as
      * JPEG.  This is used to enforce the prohibition of JFIF thumbnails
      * containing any JFIF marker segments, and to ensure generation of
-     * a correct native subtree during <code>getAsTree</code>.
+     * a correct native subtree during {@code getAsTree}.
      */
     private boolean inThumb = false;
 
@@ -93,7 +93,7 @@ public class JPEGMetadata extends IIOMetadata implements Cloneable {
     /////// Package-access variables
 
     /**
-     * All data is a list of <code>MarkerSegment</code> objects.
+     * All data is a list of {@code MarkerSegment} objects.
      * When accessing the list, use the tag to identify the particular
      * subclass.  Any JFIF marker segment must be the first element
      * of the list if it is present, and any JFXX or APP2ICC marker
@@ -132,17 +132,17 @@ public class JPEGMetadata extends IIOMetadata implements Cloneable {
     }
 
     /*
-     * Constructs a <code>JPEGMetadata</code> object by reading the
-     * contents of an <code>ImageInputStream</code>.  Has package-only
+     * Constructs a {@code JPEGMetadata} object by reading the
+     * contents of an {@code ImageInputStream}.  Has package-only
      * access.
      *
      * @param isStream A boolean indicating whether this object will be
      * stream or image metadata.
      * @param isThumb A boolean indicating whether this metadata object
      * is for an image or for a thumbnail stored as JPEG.
-     * @param iis An <code>ImageInputStream</code> from which to read
+     * @param iis An {@code ImageInputStream} from which to read
      * the metadata.
-     * @param reader The <code>JPEGImageReader</code> calling this
+     * @param reader The {@code JPEGImageReader} calling this
      * constructor, to which warnings should be sent.
      */
     JPEGMetadata(boolean isStream,
@@ -365,7 +365,7 @@ public class JPEGMetadata extends IIOMetadata implements Cloneable {
     }
 
     /**
-     * Constructs a default stream <code>JPEGMetadata</code> object appropriate
+     * Constructs a default stream {@code JPEGMetadata} object appropriate
      * for the given write parameters.
      */
     JPEGMetadata(ImageWriteParam param, JPEGImageWriter writer) {
@@ -398,7 +398,7 @@ public class JPEGMetadata extends IIOMetadata implements Cloneable {
     }
 
     /**
-     * Constructs a default image <code>JPEGMetadata</code> object appropriate
+     * Constructs a default image {@code JPEGMetadata} object appropriate
      * for the given image type and write parameters.
      */
     JPEGMetadata(ImageTypeSpecifier imageType,
@@ -2248,7 +2248,7 @@ public class JPEGMetadata extends IIOMetadata implements Cloneable {
 
     /**
      * Check that this metadata object is in a consistent state and
-     * return <code>true</code> if it is or <code>false</code>
+     * return {@code true} if it is or {@code false}
      * otherwise.  All the constructors and modifiers should call
      * this method at the end to guarantee that the data is always
      * consistent, as the writer relies on this.

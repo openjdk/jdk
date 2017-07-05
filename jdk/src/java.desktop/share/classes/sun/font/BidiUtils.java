@@ -48,8 +48,8 @@ public final class BidiUtils {
      *
      * @param levels the array to receive the character levels
      * @param start the starting offset into the array
-     * @throws IndexOutOfBoundsException if <code>start</code> is less than 0 or
-     * <code>start + getLength()</code> is greater than <code>levels.length</code>.
+     * @throws IndexOutOfBoundsException if {@code start} is less than 0 or
+     * {@code start + getLength()} is greater than {@code levels.length}.
      */
     public static void getLevels(Bidi bidi, byte[] levels, int start) {
         int limit = start + bidi.getLength();
@@ -87,7 +87,7 @@ public final class BidiUtils {
      * Given level data, compute a a visual to logical mapping.
      * The leftmost (or topmost) character is at visual index zero.  The
      * logical index of the character is derived from the visual index
-     * by the expression <code>li = map[vi];</code>.
+     * by the expression {@code li = map[vi];}.
      * @param levels the levels array
      * @return the mapping array from visual to logical
      */
@@ -148,7 +148,7 @@ public final class BidiUtils {
     /**
      * Return the inverse position map.  The source array must map one-to-one (each value
      * is distinct and the values run from zero to the length of the array minus one).
-     * For example, if <code>values[i] = j</code>, then <code>inverse[j] = i</code>.
+     * For example, if {@code values[i] = j}, then {@code inverse[j] = i}.
      * @param values the source ordering array
      * @return the inverse array
      */

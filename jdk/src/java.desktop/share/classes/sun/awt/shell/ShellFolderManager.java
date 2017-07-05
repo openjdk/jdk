@@ -44,21 +44,21 @@ class ShellFolderManager {
     }
 
     /**
-     * @param key a <code>String</code>
+     * @param key a {@code String}
      *  "fileChooserDefaultFolder":
-     *    Returns a <code>File</code> - the default shellfolder for a new filechooser
+     *    Returns a {@code File} - the default shellfolder for a new filechooser
      *  "roots":
-     *    Returns a <code>File[]</code> - containing the root(s) of the displayable hierarchy
+     *    Returns a {@code File[]} - containing the root(s) of the displayable hierarchy
      *  "fileChooserComboBoxFolders":
-     *    Returns a <code>File[]</code> - an array of shellfolders representing the list to
+     *    Returns a {@code File[]} - an array of shellfolders representing the list to
      *    show by default in the file chooser's combobox
      *   "fileChooserShortcutPanelFolders":
-     *    Returns a <code>File[]</code> - an array of shellfolders representing well-known
+     *    Returns a {@code File[]} - an array of shellfolders representing well-known
      *    folders, such as Desktop, Documents, History, Network, Home, etc.
      *    This is used in the shortcut panel of the filechooser on Windows 2000
      *    and Windows Me.
      *  "fileChooserIcon <icon>":
-     *    Returns an <code>Image</code> - icon can be ListView, DetailsView, UpFolder, NewFolder or
+     *    Returns an {@code Image} - icon can be ListView, DetailsView, UpFolder, NewFolder or
      *    ViewMenu (Windows only).
      *
      * @return An Object matching the key string.
@@ -90,7 +90,7 @@ class ShellFolderManager {
     }
 
     /**
-     * Does <code>dir</code> represent a "computer" such as a node on the network, or
+     * Does {@code dir} represent a "computer" such as a node on the network, or
      * "My Computer" on the desktop.
      */
     public boolean isComputerNode(File dir) {

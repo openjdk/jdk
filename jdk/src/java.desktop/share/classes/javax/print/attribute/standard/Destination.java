@@ -40,7 +40,7 @@ import javax.print.attribute.PrintJobAttribute;
  * A common use for this attribute will be applications which want
  * to redirect output to a local disk file : eg."file:out.prn".
  * Note that proper construction of "file:" scheme URI instances should
- * be performed using the <code>toURI()</code> method of class
+ * be performed using the {@code toURI()} method of class
  * {@link java.io.File File}.
  * See the documentation on that class for more information.
  * <p>
@@ -64,7 +64,7 @@ public final class Destination extends URISyntax
      * @param  uri  URI.
      *
      * @exception  NullPointerException
-     *     (unchecked exception) Thrown if <CODE>uri</CODE> is null.
+     *     (unchecked exception) Thrown if {@code uri} is null.
      */
     public Destination(URI uri) {
         super (uri);
@@ -76,17 +76,17 @@ public final class Destination extends URISyntax
      * must be true:
      * <OL TYPE=1>
      * <LI>
-     * <CODE>object</CODE> is not null.
+     * {@code object} is not null.
      * <LI>
-     * <CODE>object</CODE> is an instance of class Destination.
+     * {@code object} is an instance of class Destination.
      * <LI>
-     * This destination attribute's URI and <CODE>object</CODE>'s URI
+     * This destination attribute's URI and {@code object}'s URI
      * are equal.
      * </OL>
      *
      * @param  object  Object to compare to.
      *
-     * @return  True if <CODE>object</CODE> is equivalent to this destination
+     * @return  True if {@code object} is equivalent to this destination
      *         attribute, false otherwise.
      */
     public boolean equals(Object object) {
@@ -111,7 +111,7 @@ public final class Destination extends URISyntax
      * Get the name of the category of which this attribute value is an
      * instance.
      * <P>
-     * For class Destination, the category name is <CODE>"spool-data-destination"</CODE>.
+     * For class Destination, the category name is {@code "spool-data-destination"}.
      *
      * @return  Attribute category name.
      */

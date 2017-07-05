@@ -40,8 +40,8 @@ import javax.print.attribute.PrintServiceAttribute;
  * <P>
  * <B>IPP Compatibility:</B> The IPP boolean value is "true" for ACCEPTING_JOBS
  * and "false" for NOT_ACCEPTING_JOBS. The category name returned by
- * <CODE>getName()</CODE> is the IPP attribute name.  The enumeration's
- * integer value is the IPP enum value.  The <code>toString()</code> method
+ * {@code getName()} is the IPP attribute name.  The enumeration's
+ * integer value is the IPP enum value.  The {@code toString()} method
  * returns the IPP string representation of the attribute value.
  *
  * @author  Alan Kaminsky
@@ -116,7 +116,7 @@ public final class PrinterIsAcceptingJobs extends EnumSyntax
      * instance.
      * <P>
      * For class PrinterIsAcceptingJobs, the
-     * category name is <CODE>"printer-is-accepting-jobs"</CODE>.
+     * category name is {@code "printer-is-accepting-jobs"}.
      *
      * @return  Attribute category name.
      */

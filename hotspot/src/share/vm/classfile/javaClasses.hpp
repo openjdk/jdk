@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,12 +60,7 @@ class java_lang_String : AllStatic {
 
   static Handle basic_create(int length, bool byte_arr, TRAPS);
 
-  static void set_coder(oop string, jbyte coder) {
-    assert(initialized, "Must be initialized");
-    if (coder_offset > 0) {
-      string->byte_field_put(coder_offset, coder);
-    }
-  }
+  static inline void set_coder(oop string, jbyte coder);
 
  public:
 
@@ -110,55 +105,15 @@ class java_lang_String : AllStatic {
     return coder_offset;
   }
 
-  static void set_value_raw(oop string, typeArrayOop buffer) {
-    assert(initialized, "Must be initialized");
-    string->obj_field_put_raw(value_offset, buffer);
-  }
-  static void set_value(oop string, typeArrayOop buffer) {
-    assert(initialized && (value_offset > 0), "Must be initialized");
-    string->obj_field_put(value_offset, (oop)buffer);
-  }
-  static void set_hash(oop string, unsigned int hash) {
-    assert(initialized && (hash_offset > 0), "Must be initialized");
-    string->int_field_put(hash_offset, hash);
-  }
+  static inline void set_value_raw(oop string, typeArrayOop buffer);
+  static inline void set_value(oop string, typeArrayOop buffer);
+  static inline void set_hash(oop string, unsigned int hash);
 
   // Accessors
-  static typeArrayOop value(oop java_string) {
-    assert(initialized && (value_offset > 0), "Must be initialized");
-    assert(is_instance(java_string), "must be java_string");
-    return (typeArrayOop) java_string->obj_field(value_offset);
-  }
-  static unsigned int hash(oop java_string) {
-    assert(initialized && (hash_offset > 0), "Must be initialized");
-    assert(is_instance(java_string), "must be java_string");
-    return java_string->int_field(hash_offset);
-  }
-  static bool is_latin1(oop java_string) {
-    assert(initialized, "Must be initialized");
-    assert(is_instance(java_string), "must be java_string");
-    if (coder_offset > 0) {
-      jbyte coder = java_string->byte_field(coder_offset);
-      assert(CompactStrings || coder == CODER_UTF16, "Must be UTF16 without CompactStrings");
-      return coder == CODER_LATIN1;
-    } else {
-      return false;
-    }
-  }
-  static int length(oop java_string) {
-    assert(initialized, "Must be initialized");
-    assert(is_instance(java_string), "must be java_string");
-    typeArrayOop value_array = ((typeArrayOop)java_string->obj_field(value_offset));
-    if (value_array == NULL) {
-     return 0;
-    }
-    int arr_length = value_array->length();
-    if (!is_latin1(java_string)) {
-      assert((arr_length & 1) == 0, "should be even for UTF16 string");
-      arr_length >>= 1; // convert number of bytes to number of elements
-    }
-    return arr_length;
-  }
+  static inline typeArrayOop value(oop java_string);
+  static inline unsigned int hash(oop java_string);
+  static inline bool is_latin1(oop java_string);
+  static inline int length(oop java_string);
   static int utf8_length(oop java_string);
 
   // String converters
@@ -219,7 +174,7 @@ class java_lang_String : AllStatic {
 
   // Testers
   static bool is_instance(oop obj);
-  static bool is_instance_inlined(oop obj);
+  static inline bool is_instance_inlined(oop obj);
 
   // Debugging
   static void print(oop java_string, outputStream* st);
@@ -554,6 +509,7 @@ class java_lang_Throwable: AllStatic {
   // Printing
   static void print(Handle throwable, outputStream* st);
   static void print_stack_trace(Handle throwable, outputStream* st);
+  static void java_printStackTrace(Handle throwable, TRAPS);
   // Debugging
   friend class JavaClasses;
 };
@@ -910,42 +866,19 @@ class java_lang_ref_Reference: AllStatic {
   static int number_of_fake_oop_fields;
 
   // Accessors
-  static oop referent(oop ref) {
-    return ref->obj_field(referent_offset);
-  }
-  static void set_referent(oop ref, oop value) {
-    ref->obj_field_put(referent_offset, value);
-  }
-  static void set_referent_raw(oop ref, oop value) {
-    ref->obj_field_put_raw(referent_offset, value);
-  }
-  static HeapWord* referent_addr(oop ref) {
-    return ref->obj_field_addr<HeapWord>(referent_offset);
-  }
-  static oop next(oop ref) {
-    return ref->obj_field(next_offset);
-  }
-  static void set_next(oop ref, oop value) {
-    ref->obj_field_put(next_offset, value);
-  }
-  static void set_next_raw(oop ref, oop value) {
-    ref->obj_field_put_raw(next_offset, value);
-  }
-  static HeapWord* next_addr(oop ref) {
-    return ref->obj_field_addr<HeapWord>(next_offset);
-  }
-  static oop discovered(oop ref) {
-    return ref->obj_field(discovered_offset);
-  }
-  static void set_discovered(oop ref, oop value) {
-    ref->obj_field_put(discovered_offset, value);
-  }
-  static void set_discovered_raw(oop ref, oop value) {
-    ref->obj_field_put_raw(discovered_offset, value);
-  }
-  static HeapWord* discovered_addr(oop ref) {
-    return ref->obj_field_addr<HeapWord>(discovered_offset);
-  }
+  static inline oop referent(oop ref);
+  static inline void set_referent(oop ref, oop value);
+  static inline void set_referent_raw(oop ref, oop value);
+  static inline HeapWord* referent_addr(oop ref);
+  static inline oop next(oop ref);
+  static inline void set_next(oop ref, oop value);
+  static inline void set_next_raw(oop ref, oop value);
+  static inline HeapWord* next_addr(oop ref);
+  static inline oop discovered(oop ref);
+  static inline void set_discovered(oop ref, oop value);
+  static inline void set_discovered_raw(oop ref, oop value);
+  static inline HeapWord* discovered_addr(oop ref);
+
   // Accessors for statics
   static oop  pending_list_lock();
   static oop  pending_list();

@@ -1043,7 +1043,8 @@ assertEquals(""+l, (String) MH_this.invokeExact(subl)); // Listie method
          * @param specialCaller the proposed calling class to perform the {@code invokespecial}
          * @return the desired method handle
          * @throws NoSuchMethodException if the method does not exist
-         * @throws IllegalAccessException if access checking fails
+         * @throws IllegalAccessException if access checking fails,
+         *                                or if the method is {@code static},
          *                                or if the method's variable arity modifier bit
          *                                is set and {@code asVarargsCollector} fails
          * @exception SecurityException if a security manager is present and it
@@ -1275,7 +1276,8 @@ return mh1;
          * @param m the reflected method
          * @param specialCaller the class nominally calling the method
          * @return a method handle which can invoke the reflected method
-         * @throws IllegalAccessException if access checking fails
+         * @throws IllegalAccessException if access checking fails,
+         *                                or if the method is {@code static},
          *                                or if the method's variable arity modifier bit
          *                                is set and {@code asVarargsCollector} fails
          * @throws NullPointerException if any argument is null

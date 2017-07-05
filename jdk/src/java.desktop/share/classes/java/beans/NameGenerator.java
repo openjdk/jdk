@@ -36,7 +36,7 @@ import static java.util.Locale.ENGLISH;
  * and an instance number.
  * <p>
  * For example, if the first object instance javax.swing.JButton
- * is passed into <code>instanceName</code> then the returned
+ * is passed into {@code instanceName} then the returned
  * string identifier will be &quot;JButton0&quot;.
  *
  * @author Philip Milne

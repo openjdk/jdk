@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 #include "memory/allocation.hpp"
 #include "oops/oopsHierarchy.hpp"
+#include "utilities/ostream.hpp"
 #include "utilities/sizes.hpp"
 
 // This file provides the basic support for exception handling in the VM.
@@ -178,6 +179,9 @@ class Exceptions {
   static void debug_check_abort(Handle exception, const char* message = NULL);
   static void debug_check_abort_helper(Handle exception, const char* message = NULL);
   static void debug_check_abort(const char *value_string, const char* message = NULL);
+
+  // for logging exceptions
+  static void log_exception(Handle exception, stringStream tempst);
 };
 
 

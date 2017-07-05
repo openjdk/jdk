@@ -50,7 +50,7 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
 
   G1PLABAllocator*  _plab_allocator;
 
-  ageTable          _age_table;
+  AgeTable          _age_table;
   InCSetState       _dest[InCSetState::Num];
   // Local tenuring threshold.
   uint              _tenuring_threshold;

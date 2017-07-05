@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,6 +129,7 @@ oop Universe::_delayed_stack_overflow_error_message   = NULL;
 objArrayOop Universe::_preallocated_out_of_memory_error_array = NULL;
 volatile jint Universe::_preallocated_out_of_memory_error_avail_count = 0;
 bool Universe::_verify_in_progress                    = false;
+long Universe::verify_flags                           = Universe::Verify_All;
 oop Universe::_null_ptr_exception_instance            = NULL;
 oop Universe::_arithmetic_exception_instance          = NULL;
 oop Universe::_virtual_machine_error_instance         = NULL;
@@ -669,6 +670,9 @@ jint universe_init() {
       MetaspaceShared::prepare_for_dumping();
     }
   }
+  if (strlen(VerifySubSet) > 0) {
+    Universe::initialize_verify_flags();
+  }
 
   return JNI_OK;
 }
@@ -1103,6 +1107,53 @@ void Universe::print_heap_after_gc() {
   }
 }
 
+void Universe::initialize_verify_flags() {
+  verify_flags = 0;
+  const char delimiter[] = " ,";
+
+  size_t length = strlen(VerifySubSet);
+  char* subset_list = NEW_C_HEAP_ARRAY(char, length + 1, mtInternal);
+  strncpy(subset_list, VerifySubSet, length + 1);
+
+  char* token = strtok(subset_list, delimiter);
+  while (token != NULL) {
+    if (strcmp(token, "threads") == 0) {
+      verify_flags |= Verify_Threads;
+    } else if (strcmp(token, "heap") == 0) {
+      verify_flags |= Verify_Heap;
+    } else if (strcmp(token, "symbol_table") == 0) {
+      verify_flags |= Verify_SymbolTable;
+    } else if (strcmp(token, "string_table") == 0) {
+      verify_flags |= Verify_StringTable;
+    } else if (strcmp(token, "codecache") == 0) {
+      verify_flags |= Verify_CodeCache;
+    } else if (strcmp(token, "dictionary") == 0) {
+      verify_flags |= Verify_SystemDictionary;
+    } else if (strcmp(token, "classloader_data_graph") == 0) {
+      verify_flags |= Verify_ClassLoaderDataGraph;
+    } else if (strcmp(token, "metaspace") == 0) {
+      verify_flags |= Verify_MetaspaceAux;
+    } else if (strcmp(token, "jni_handles") == 0) {
+      verify_flags |= Verify_JNIHandles;
+    } else if (strcmp(token, "c-heap") == 0) {
+      verify_flags |= Verify_CHeap;
+    } else if (strcmp(token, "codecache_oops") == 0) {
+      verify_flags |= Verify_CodeCacheOops;
+    } else {
+      vm_exit_during_initialization(err_msg("VerifySubSet: \'%s\' memory sub-system is unknown, please correct it", token));
+    }
+    token = strtok(NULL, delimiter);
+  }
+  FREE_C_HEAP_ARRAY(char, subset_list);
+}
+
+bool Universe::should_verify_subset(uint subset) {
+  if (verify_flags & subset) {
+    return true;
+  }
+  return false;
+}
+
 void Universe::verify(VerifyOption option, const char* prefix) {
   // The use of _verify_in_progress is a temporary work around for
   // 6320749.  Don't bother with a creating a class to set and clear
@@ -1122,33 +1173,55 @@ void Universe::verify(VerifyOption option, const char* prefix) {
 
   FormatBuffer<> title("Verifying %s", prefix);
   GCTraceTime(Info, gc, verify) tm(title.buffer());
-  log_debug(gc, verify)("Threads");
-  Threads::verify();
-  log_debug(gc, verify)("Heap");
-  heap()->verify(option);
-  log_debug(gc, verify)("SymbolTable");
-  SymbolTable::verify();
-  log_debug(gc, verify)("StringTable");
-  StringTable::verify();
+  if (should_verify_subset(Verify_Threads)) {
+    log_debug(gc, verify)("Threads");
+    Threads::verify();
+  }
+  if (should_verify_subset(Verify_Heap)) {
+    log_debug(gc, verify)("Heap");
+    heap()->verify(option);
+  }
+  if (should_verify_subset(Verify_SymbolTable)) {
+    log_debug(gc, verify)("SymbolTable");
+    SymbolTable::verify();
+  }
+  if (should_verify_subset(Verify_StringTable)) {
+    log_debug(gc, verify)("StringTable");
+    StringTable::verify();
+  }
+  if (should_verify_subset(Verify_CodeCache)) {
   {
     MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     log_debug(gc, verify)("CodeCache");
     CodeCache::verify();
   }
-  log_debug(gc, verify)("SystemDictionary");
-  SystemDictionary::verify();
+  }
+  if (should_verify_subset(Verify_SystemDictionary)) {
+    log_debug(gc, verify)("SystemDictionary");
+    SystemDictionary::verify();
+  }
 #ifndef PRODUCT
-  log_debug(gc, verify)("ClassLoaderDataGraph");
-  ClassLoaderDataGraph::verify();
+  if (should_verify_subset(Verify_ClassLoaderDataGraph)) {
+    log_debug(gc, verify)("ClassLoaderDataGraph");
+    ClassLoaderDataGraph::verify();
+  }
 #endif
-  log_debug(gc, verify)("MetaspaceAux");
-  MetaspaceAux::verify_free_chunks();
-  log_debug(gc, verify)("JNIHandles");
-  JNIHandles::verify();
-  log_debug(gc, verify)("C-heap");
-  os::check_heap();
-  log_debug(gc, verify)("CodeCache Oops");
-  CodeCache::verify_oops();
+  if (should_verify_subset(Verify_MetaspaceAux)) {
+    log_debug(gc, verify)("MetaspaceAux");
+    MetaspaceAux::verify_free_chunks();
+  }
+  if (should_verify_subset(Verify_JNIHandles)) {
+    log_debug(gc, verify)("JNIHandles");
+    JNIHandles::verify();
+  }
+  if (should_verify_subset(Verify_CHeap)) {
+    log_debug(gc, verify)("C-heap");
+    os::check_heap();
+  }
+  if (should_verify_subset(Verify_CodeCacheOops)) {
+    log_debug(gc, verify)("CodeCache Oops");
+    CodeCache::verify_oops();
+  }
 
   _verify_in_progress = false;
 }

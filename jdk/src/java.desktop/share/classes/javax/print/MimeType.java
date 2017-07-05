@@ -195,9 +195,9 @@ class MimeType implements Serializable, Cloneable {
      * @param  s  MIME media type string.
      *
      * @exception  NullPointerException
-     *     (unchecked exception) Thrown if <CODE>s</CODE> is null.
+     *     (unchecked exception) Thrown if {@code s} is null.
      * @exception  IllegalArgumentException
-     *     (unchecked exception) Thrown if <CODE>s</CODE> does not obey the
+     *     (unchecked exception) Thrown if {@code s} does not obey the
      *     syntax for a MIME media type string.
      */
     public MimeType(String s) {
@@ -271,7 +271,7 @@ class MimeType implements Serializable, Cloneable {
      *
      * @param  obj  Object to test.
      *
-     * @return  True if this MIME type object equals <CODE>obj</CODE>, false
+     * @return  True if this MIME type object equals {@code obj}, false
      *          otherwise.
      */
     public boolean equals (Object obj) {
@@ -525,7 +525,7 @@ class MimeType implements Serializable, Cloneable {
 
     /**
      * Parses the given string into canonical pieces and stores the pieces in
-     * {@link #myPieces <CODE>myPieces</CODE>}.
+     * {@link #myPieces myPieces}.
      * <P>
      * Special rules applied:
      * <UL>
@@ -536,9 +536,9 @@ class MimeType implements Serializable, Cloneable {
      * @param  s  MIME media type string.
      *
      * @exception  NullPointerException
-     *     (unchecked exception) Thrown if <CODE>s</CODE> is null.
+     *     (unchecked exception) Thrown if {@code s} is null.
      * @exception  IllegalArgumentException
-     *     (unchecked exception) Thrown if <CODE>s</CODE> does not obey the
+     *     (unchecked exception) Thrown if {@code s} does not obey the
      *     syntax for a MIME media type string.
      */
     private void parse(String s) {

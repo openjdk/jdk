@@ -61,7 +61,7 @@ enum {
   JVM_ACC_HAS_MIRANDA_METHODS     = 0x10000000,     // True if this class has miranda methods in it's vtable
   JVM_ACC_HAS_VANILLA_CONSTRUCTOR = 0x20000000,     // True if klass has a vanilla default constructor
   JVM_ACC_HAS_FINALIZER           = 0x40000000,     // True if klass has a non-empty finalize() method
-  JVM_ACC_IS_CLONEABLE            = (int)0x80000000,// True if klass supports the Clonable interface
+  JVM_ACC_IS_CLONEABLE_FAST       = (int)0x80000000,// True if klass implements the Cloneable interface and can be optimized in generated code
   JVM_ACC_HAS_FINAL_METHOD        = 0x01000000,     // True if klass has final method
 
   // Klass* and Method* flags
@@ -143,7 +143,7 @@ class AccessFlags VALUE_OBJ_CLASS_SPEC {
   bool has_vanilla_constructor () const { return (_flags & JVM_ACC_HAS_VANILLA_CONSTRUCTOR) != 0; }
   bool has_finalizer           () const { return (_flags & JVM_ACC_HAS_FINALIZER          ) != 0; }
   bool has_final_method        () const { return (_flags & JVM_ACC_HAS_FINAL_METHOD       ) != 0; }
-  bool is_cloneable            () const { return (_flags & JVM_ACC_IS_CLONEABLE           ) != 0; }
+  bool is_cloneable_fast       () const { return (_flags & JVM_ACC_IS_CLONEABLE_FAST      ) != 0; }
   // Klass* and Method* flags
   bool has_localvariable_table () const { return (_flags & JVM_ACC_HAS_LOCAL_VARIABLE_TABLE) != 0; }
   void set_has_localvariable_table()    { atomic_set_bits(JVM_ACC_HAS_LOCAL_VARIABLE_TABLE); }
@@ -210,7 +210,7 @@ class AccessFlags VALUE_OBJ_CLASS_SPEC {
   void set_has_vanilla_constructor()   { atomic_set_bits(JVM_ACC_HAS_VANILLA_CONSTRUCTOR); }
   void set_has_finalizer()             { atomic_set_bits(JVM_ACC_HAS_FINALIZER);           }
   void set_has_final_method()          { atomic_set_bits(JVM_ACC_HAS_FINAL_METHOD);        }
-  void set_is_cloneable()              { atomic_set_bits(JVM_ACC_IS_CLONEABLE);            }
+  void set_is_cloneable_fast()         { atomic_set_bits(JVM_ACC_IS_CLONEABLE_FAST);       }
   void set_has_miranda_methods()       { atomic_set_bits(JVM_ACC_HAS_MIRANDA_METHODS);     }
 
  public:

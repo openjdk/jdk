@@ -35,7 +35,7 @@ import javax.accessibility.AccessibleState;
 import javax.accessibility.AccessibleStateSet;
 
 /**
- * A <code>TextArea</code> object is a multi-line region
+ * A {@code TextArea} object is a multi-line region
  * that displays text. It can be set to allow editing or
  * to be read-only.
  * <p>
@@ -56,7 +56,7 @@ import javax.accessibility.AccessibleStateSet;
 public class TextArea extends TextComponent {
 
     /**
-     * The number of rows in the <code>TextArea</code>.
+     * The number of rows in the {@code TextArea}.
      * This parameter will determine the text area's height.
      * Guaranteed to be non-negative.
      *
@@ -67,7 +67,7 @@ public class TextArea extends TextComponent {
     int rows;
 
     /**
-     * The number of columns in the <code>TextArea</code>.
+     * The number of columns in the {@code TextArea}.
      * A column is an approximate average character
      * width that is platform-dependent.
      * This parameter will determine the text area's width.
@@ -109,10 +109,10 @@ public class TextArea extends TextComponent {
     /**
      * Determines which scrollbars are created for the
      * text area. It can be one of four values :
-     * <code>SCROLLBARS_BOTH</code> = both scrollbars.<BR>
-     * <code>SCROLLBARS_HORIZONTAL_ONLY</code> = Horizontal bar only.<BR>
-     * <code>SCROLLBARS_VERTICAL_ONLY</code> = Vertical bar only.<BR>
-     * <code>SCROLLBARS_NONE</code> = No scrollbars.<BR>
+     * {@code SCROLLBARS_BOTH} = both scrollbars.<BR>
+     * {@code SCROLLBARS_HORIZONTAL_ONLY} = Horizontal bar only.<BR>
+     * {@code SCROLLBARS_VERTICAL_ONLY} = Vertical bar only.<BR>
+     * {@code SCROLLBARS_NONE} = No scrollbars.<BR>
      *
      * @serial
      * @see #getScrollbarVisibility()
@@ -155,7 +155,7 @@ public class TextArea extends TextComponent {
      * {@link #SCROLLBARS_BOTH}, so both vertical and horizontal
      * scrollbars will be visible for this text area.
      * @exception HeadlessException if
-     *    <code>GraphicsEnvironment.isHeadless</code> returns true
+     *    {@code GraphicsEnvironment.isHeadless} returns true
      * @see java.awt.GraphicsEnvironment#isHeadless()
      */
     public TextArea() throws HeadlessException {
@@ -168,10 +168,10 @@ public class TextArea extends TextComponent {
      * {@link #SCROLLBARS_BOTH}, so both vertical and horizontal
      * scrollbars will be visible for this text area.
      * @param      text       the text to be displayed; if
-     *             <code>text</code> is <code>null</code>, the empty
-     *             string <code>""</code> will be displayed
+     *             {@code text} is {@code null}, the empty
+     *             string {@code ""} will be displayed
      * @exception HeadlessException if
-     *        <code>GraphicsEnvironment.isHeadless</code> returns true
+     *        {@code GraphicsEnvironment.isHeadless} returns true
      * @see java.awt.GraphicsEnvironment#isHeadless()
      */
     public TextArea(String text) throws HeadlessException {
@@ -189,7 +189,7 @@ public class TextArea extends TextComponent {
      * @param rows the number of rows
      * @param columns the number of columns
      * @exception HeadlessException if
-     *     <code>GraphicsEnvironment.isHeadless</code> returns true
+     *     {@code GraphicsEnvironment.isHeadless} returns true
      * @see java.awt.GraphicsEnvironment#isHeadless()
      */
     public TextArea(int rows, int columns) throws HeadlessException {
@@ -205,12 +205,12 @@ public class TextArea extends TextComponent {
      * vertical and horizontal scrollbars will be visible for this
      * text area.
      * @param      text       the text to be displayed; if
-     *             <code>text</code> is <code>null</code>, the empty
-     *             string <code>""</code> will be displayed
+     *             {@code text} is {@code null}, the empty
+     *             string {@code ""} will be displayed
      * @param     rows      the number of rows
      * @param     columns   the number of columns
      * @exception HeadlessException if
-     *   <code>GraphicsEnvironment.isHeadless</code> returns true
+     *   {@code GraphicsEnvironment.isHeadless} returns true
      * @see java.awt.GraphicsEnvironment#isHeadless()
      */
     public TextArea(String text, int rows, int columns)
@@ -221,36 +221,36 @@ public class TextArea extends TextComponent {
     /**
      * Constructs a new text area with the specified text,
      * and with the rows, columns, and scroll bar visibility
-     * as specified.  All <code>TextArea</code> constructors defer to
+     * as specified.  All {@code TextArea} constructors defer to
      * this one.
      * <p>
-     * The <code>TextArea</code> class defines several constants
+     * The {@code TextArea} class defines several constants
      * that can be supplied as values for the
-     * <code>scrollbars</code> argument:
+     * {@code scrollbars} argument:
      * <ul>
-     * <li><code>SCROLLBARS_BOTH</code>,
-     * <li><code>SCROLLBARS_VERTICAL_ONLY</code>,
-     * <li><code>SCROLLBARS_HORIZONTAL_ONLY</code>,
-     * <li><code>SCROLLBARS_NONE</code>.
+     * <li>{@code SCROLLBARS_BOTH},
+     * <li>{@code SCROLLBARS_VERTICAL_ONLY},
+     * <li>{@code SCROLLBARS_HORIZONTAL_ONLY},
+     * <li>{@code SCROLLBARS_NONE}.
      * </ul>
      * Any other value for the
-     * <code>scrollbars</code> argument is invalid and will result in
+     * {@code scrollbars} argument is invalid and will result in
      * this text area being created with scrollbar visibility equal to
      * the default value of {@link #SCROLLBARS_BOTH}.
      * @param      text       the text to be displayed; if
-     *             <code>text</code> is <code>null</code>, the empty
-     *             string <code>""</code> will be displayed
+     *             {@code text} is {@code null}, the empty
+     *             string {@code ""} will be displayed
      * @param      rows       the number of rows; if
-     *             <code>rows</code> is less than <code>0</code>,
-     *             <code>rows</code> is set to <code>0</code>
+     *             {@code rows} is less than {@code 0},
+     *             {@code rows} is set to {@code 0}
      * @param      columns    the number of columns; if
-     *             <code>columns</code> is less than <code>0</code>,
-     *             <code>columns</code> is set to <code>0</code>
+     *             {@code columns} is less than {@code 0},
+     *             {@code columns} is set to {@code 0}
      * @param      scrollbars  a constant that determines what
      *             scrollbars are created to view the text area
      * @since      1.1
      * @exception HeadlessException if
-     *    <code>GraphicsEnvironment.isHeadless</code> returns true
+     *    {@code GraphicsEnvironment.isHeadless} returns true
      * @see java.awt.GraphicsEnvironment#isHeadless()
      */
     public TextArea(String text, int rows, int columns, int scrollbars)
@@ -273,8 +273,8 @@ public class TextArea extends TextComponent {
     }
 
     /**
-     * Construct a name for this component.  Called by <code>getName</code>
-     * when the name is <code>null</code>.
+     * Construct a name for this component.  Called by {@code getName}
+     * when the name is {@code null}.
      */
     String constructComponentName() {
         synchronized (TextArea.class) {
@@ -283,8 +283,8 @@ public class TextArea extends TextComponent {
     }
 
     /**
-     * Creates the <code>TextArea</code>'s peer.  The peer allows us to modify
-     * the appearance of the <code>TextArea</code> without changing any of its
+     * Creates the {@code TextArea}'s peer.  The peer allows us to modify
+     * the appearance of the {@code TextArea} without changing any of its
      * functionality.
      */
     public void addNotify() {
@@ -298,11 +298,11 @@ public class TextArea extends TextComponent {
     /**
      * Inserts the specified text at the specified position
      * in this text area.
-     * <p>Note that passing <code>null</code> or inconsistent
+     * <p>Note that passing {@code null} or inconsistent
      * parameters is invalid and will result in unspecified
      * behavior.
      *
-     * @param      str the non-<code>null</code> text to insert
+     * @param      str the non-{@code null} text to insert
      * @param      pos the position at which to insert
      * @see        java.awt.TextComponent#setText
      * @see        java.awt.TextArea#replaceRange
@@ -320,7 +320,7 @@ public class TextArea extends TextComponent {
      * @param  str the non-{@code null} text to insert
      * @param  pos the position at which to insert
      * @deprecated As of JDK version 1.1,
-     * replaced by <code>insert(String, int)</code>.
+     * replaced by {@code insert(String, int)}.
      */
     @Deprecated
     public synchronized void insertText(String str, int pos) {
@@ -333,11 +333,11 @@ public class TextArea extends TextComponent {
 
     /**
      * Appends the given text to the text area's current text.
-     * <p>Note that passing <code>null</code> or inconsistent
+     * <p>Note that passing {@code null} or inconsistent
      * parameters is invalid and will result in unspecified
      * behavior.
      *
-     * @param     str the non-<code>null</code> text to append
+     * @param     str the non-{@code null} text to append
      * @see       java.awt.TextArea#insert
      * @since     1.1
      */
@@ -350,7 +350,7 @@ public class TextArea extends TextComponent {
      *
      * @param  str the text to append
      * @deprecated As of JDK version 1.1,
-     * replaced by <code>append(String)</code>.
+     * replaced by {@code append(String)}.
      */
     @Deprecated
     public synchronized void appendText(String str) {
@@ -365,11 +365,11 @@ public class TextArea extends TextComponent {
      * same as the end position).
      * The text position is zero-based.  The inserted substring may be
      * of a different length than the text it replaces.
-     * <p>Note that passing <code>null</code> or inconsistent
+     * <p>Note that passing {@code null} or inconsistent
      * parameters is invalid and will result in unspecified
      * behavior.
      *
-     * @param     str      the non-<code>null</code> text to use as
+     * @param     str      the non-{@code null} text to use as
      *                     the replacement
      * @param     start    the start position
      * @param     end      the end position
@@ -391,7 +391,7 @@ public class TextArea extends TextComponent {
      * @param  start the start position
      * @param  end the end position
      * @deprecated As of JDK version 1.1,
-     * replaced by <code>replaceRange(String, int, int)</code>.
+     * replaced by {@code replaceRange(String, int, int)}.
      */
     @Deprecated
     public synchronized void replaceText(String str, int start, int end) {
@@ -419,8 +419,8 @@ public class TextArea extends TextComponent {
      * @see         #getRows()
      * @see         #setColumns(int)
      * @exception   IllegalArgumentException   if the value
-     *                 supplied for <code>rows</code>
-     *                 is less than <code>0</code>
+     *                 supplied for {@code rows}
+     *                 is less than {@code 0}
      * @since       1.1
      */
     public void setRows(int rows) {
@@ -450,8 +450,8 @@ public class TextArea extends TextComponent {
      * @see         #getColumns()
      * @see         #setRows(int)
      * @exception   IllegalArgumentException   if the value
-     *                 supplied for <code>columns</code>
-     *                 is less than <code>0</code>
+     *                 supplied for {@code columns}
+     *                 is less than {@code 0}
      * @since       1.1
      */
     public void setColumns(int columns) {
@@ -469,9 +469,9 @@ public class TextArea extends TextComponent {
      * Returns an enumerated value that indicates which scroll bars
      * the text area uses.
      * <p>
-     * The <code>TextArea</code> class defines four integer constants
+     * The {@code TextArea} class defines four integer constants
      * that are used to specify which scroll bars are available.
-     * <code>TextArea</code> has one constructor that gives the
+     * {@code TextArea} has one constructor that gives the
      * application discretion over scroll bars.
      *
      * @return     an integer that indicates which scroll bars are used
@@ -510,7 +510,7 @@ public class TextArea extends TextComponent {
      * @param  columns the number of columns
      * @return the preferred dimensions needed for the text area
      * @deprecated As of JDK version 1.1,
-     * replaced by <code>getPreferredSize(int, int)</code>.
+     * replaced by {@code getPreferredSize(int, int)}.
      */
     @Deprecated
     public Dimension preferredSize(int rows, int columns) {
@@ -534,7 +534,7 @@ public class TextArea extends TextComponent {
 
     /**
      * @deprecated As of JDK version 1.1,
-     * replaced by <code>getPreferredSize()</code>.
+     * replaced by {@code getPreferredSize()}.
      */
     @Deprecated
     public Dimension preferredSize() {
@@ -568,7 +568,7 @@ public class TextArea extends TextComponent {
      * @param  columns the number of columns
      * @return the minimum size for the text area
      * @deprecated As of JDK version 1.1,
-     * replaced by <code>getMinimumSize(int, int)</code>.
+     * replaced by {@code getMinimumSize(int, int)}.
      */
     @Deprecated
     public Dimension minimumSize(int rows, int columns) {
@@ -592,7 +592,7 @@ public class TextArea extends TextComponent {
 
     /**
      * @deprecated As of JDK version 1.1,
-     * replaced by <code>getMinimumSize()</code>.
+     * replaced by {@code getMinimumSize()}.
      */
     @Deprecated
     public Dimension minimumSize() {
@@ -604,11 +604,11 @@ public class TextArea extends TextComponent {
     }
 
     /**
-     * Returns a string representing the state of this <code>TextArea</code>.
+     * Returns a string representing the state of this {@code TextArea}.
      * This method is intended to be used only for debugging purposes, and the
      * content and format of the returned string may vary between
      * implementations. The returned string may be empty but may not be
-     * <code>null</code>.
+     * {@code null}.
      *
      * @return      the parameter string of this text area
      */
@@ -650,8 +650,8 @@ public class TextArea extends TextComponent {
     /**
      * Read the ObjectInputStream.
      * @exception HeadlessException if
-     * <code>GraphicsEnvironment.isHeadless()</code> returns
-     * <code>true</code>
+     * {@code GraphicsEnvironment.isHeadless()} returns
+     * {@code true}
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
     private void readObject(ObjectInputStream s)
@@ -689,14 +689,14 @@ public class TextArea extends TextComponent {
 
 
     /**
-     * Returns the <code>AccessibleContext</code> associated with
-     * this <code>TextArea</code>. For text areas, the
-     * <code>AccessibleContext</code> takes the form of an
-     * <code>AccessibleAWTTextArea</code>.
-     * A new <code>AccessibleAWTTextArea</code> instance is created if necessary.
+     * Returns the {@code AccessibleContext} associated with
+     * this {@code TextArea}. For text areas, the
+     * {@code AccessibleContext} takes the form of an
+     * {@code AccessibleAWTTextArea}.
+     * A new {@code AccessibleAWTTextArea} instance is created if necessary.
      *
-     * @return an <code>AccessibleAWTTextArea</code> that serves as the
-     *         <code>AccessibleContext</code> of this <code>TextArea</code>
+     * @return an {@code AccessibleAWTTextArea} that serves as the
+     *         {@code AccessibleContext} of this {@code TextArea}
      * @since 1.3
      */
     public AccessibleContext getAccessibleContext() {
@@ -708,7 +708,7 @@ public class TextArea extends TextComponent {
 
     /**
      * This class implements accessibility support for the
-     * <code>TextArea</code> class.  It provides an implementation of the
+     * {@code TextArea} class.  It provides an implementation of the
      * Java Accessibility API appropriate to text area user-interface elements.
      * @since 1.3
      */

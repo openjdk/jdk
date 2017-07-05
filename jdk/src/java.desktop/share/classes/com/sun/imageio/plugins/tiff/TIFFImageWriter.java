@@ -266,6 +266,8 @@ public class TIFFImageWriter extends ImageWriter {
         super.setOutput(output);
 
         if (output != null) {
+            reset();
+
             if (!(output instanceof ImageOutputStream)) {
                 throw new IllegalArgumentException
                     ("output not an ImageOutputStream!");

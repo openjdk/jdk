@@ -39,20 +39,20 @@ import javax.imageio.metadata.IIOMetadata;
  * format-specific metadata objects can be created to encapsulate as
  * much information about the image and its associated metadata as
  * possible, in terms that are understood by the specific
- * <code>ImageWriter</code> used to perform the encoding.
+ * {@code ImageWriter} used to perform the encoding.
  *
- * <p> An <code>ImageTranscoder</code> may be used to convert the
- * <code>IIOMetadata</code> objects supplied by the
- * <code>ImageReader</code> (representing per-stream and per-image
+ * <p> An {@code ImageTranscoder} may be used to convert the
+ * {@code IIOMetadata} objects supplied by the
+ * {@code ImageReader} (representing per-stream and per-image
  * metadata) into corresponding objects suitable for encoding by a
- * particular <code>ImageWriter</code>.  In the case where the methods
+ * particular {@code ImageWriter}.  In the case where the methods
  * of this interface are being called directly on an
- * <code>ImageWriter</code>, the output will be suitable for that
+ * {@code ImageWriter}, the output will be suitable for that
  * writer.
  *
- * <p> The internal details of converting an <code>IIOMetadata</code>
+ * <p> The internal details of converting an {@code IIOMetadata}
  * object into a writer-specific format will vary according to the
- * context of the operation.  Typically, an <code>ImageWriter</code>
+ * context of the operation.  Typically, an {@code ImageWriter}
  * will inspect the incoming object to see if it implements additional
  * interfaces with which the writer is familiar.  This might be the
  * case, for example, if the object was obtained by means of a read
@@ -65,19 +65,19 @@ import javax.imageio.metadata.IIOMetadata;
  *
  * <p> If the incoming object does not implement any additional
  * interfaces known to the writer, the writer has no choice but to
- * access it via the standard <code>IIOMetadata</code> interfaces such
- * as the tree view provided by <code>IIOMetadata.getAsTree</code>.
+ * access it via the standard {@code IIOMetadata} interfaces such
+ * as the tree view provided by {@code IIOMetadata.getAsTree}.
  * In this case, there is likely to be significant loss of
  * information.
  *
- * <p> An independent <code>ImageTranscoder</code> essentially takes
+ * <p> An independent {@code ImageTranscoder} essentially takes
  * on the same role as the writer plug-in in the above examples.  It
  * must be familiar with the private interfaces used by both the
  * reader and writer plug-ins, and manually instantiate an object that
  * will be usable by the writer.  The resulting metadata objects may
  * be used by the writer directly.
  *
- * <p> No independent implementations of <code>ImageTranscoder</code>
+ * <p> No independent implementations of {@code ImageTranscoder}
  * are provided as part of the standard API.  Instead, the intention
  * of this interface is to provide a way for implementations to be
  * created and discovered by applications as the need arises.
@@ -86,65 +86,65 @@ import javax.imageio.metadata.IIOMetadata;
 public interface ImageTranscoder {
 
     /**
-     * Returns an <code>IIOMetadata</code> object that may be used for
+     * Returns an {@code IIOMetadata} object that may be used for
      * encoding and optionally modified using its document interfaces
      * or other interfaces specific to the writer plug-in that will be
      * used for encoding.
      *
-     * <p> An optional <code>ImageWriteParam</code> may be supplied
+     * <p> An optional {@code ImageWriteParam} may be supplied
      * for cases where it may affect the structure of the stream
      * metadata.
      *
-     * <p> If the supplied <code>ImageWriteParam</code> contains
+     * <p> If the supplied {@code ImageWriteParam} contains
      * optional setting values not understood by this writer or
      * transcoder, they will be ignored.
      *
-     * @param inData an <code>IIOMetadata</code> object representing
+     * @param inData an {@code IIOMetadata} object representing
      * stream metadata, used to initialize the state of the returned
      * object.
-     * @param param an <code>ImageWriteParam</code> that will be used to
-     * encode the image, or <code>null</code>.
+     * @param param an {@code ImageWriteParam} that will be used to
+     * encode the image, or {@code null}.
      *
-     * @return an <code>IIOMetadata</code> object, or
-     * <code>null</code> if the plug-in does not provide metadata
+     * @return an {@code IIOMetadata} object, or
+     * {@code null} if the plug-in does not provide metadata
      * encoding capabilities.
      *
-     * @exception IllegalArgumentException if <code>inData</code> is
-     * <code>null</code>.
+     * @exception IllegalArgumentException if {@code inData} is
+     * {@code null}.
      */
     IIOMetadata convertStreamMetadata(IIOMetadata inData,
                                       ImageWriteParam param);
 
     /**
-     * Returns an <code>IIOMetadata</code> object that may be used for
+     * Returns an {@code IIOMetadata} object that may be used for
      * encoding and optionally modified using its document interfaces
      * or other interfaces specific to the writer plug-in that will be
      * used for encoding.
      *
-     * <p> An optional <code>ImageWriteParam</code> may be supplied
+     * <p> An optional {@code ImageWriteParam} may be supplied
      * for cases where it may affect the structure of the image
      * metadata.
      *
-     * <p> If the supplied <code>ImageWriteParam</code> contains
+     * <p> If the supplied {@code ImageWriteParam} contains
      * optional setting values not understood by this writer or
      * transcoder, they will be ignored.
      *
-     * @param inData an <code>IIOMetadata</code> object representing
+     * @param inData an {@code IIOMetadata} object representing
      * image metadata, used to initialize the state of the returned
      * object.
-     * @param imageType an <code>ImageTypeSpecifier</code> indicating
+     * @param imageType an {@code ImageTypeSpecifier} indicating
      * the layout and color information of the image with which the
      * metadata will be associated.
-     * @param param an <code>ImageWriteParam</code> that will be used to
-     * encode the image, or <code>null</code>.
+     * @param param an {@code ImageWriteParam} that will be used to
+     * encode the image, or {@code null}.
      *
-     * @return an <code>IIOMetadata</code> object,
-     * or <code>null</code> if the plug-in does not provide
+     * @return an {@code IIOMetadata} object,
+     * or {@code null} if the plug-in does not provide
      * metadata encoding capabilities.
      *
      * @exception IllegalArgumentException if either of
-     * <code>inData</code> or <code>imageType</code> is
-     * <code>null</code>.
+     * {@code inData} or {@code imageType} is
+     * {@code null}.
      */
     IIOMetadata convertImageMetadata(IIOMetadata inData,
                                      ImageTypeSpecifier imageType,

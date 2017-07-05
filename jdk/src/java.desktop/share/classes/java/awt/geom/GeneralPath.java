@@ -60,7 +60,7 @@ public final class GeneralPath extends Path2D.Float {
     }
 
     /**
-     * Constructs a new <code>GeneralPath</code> object with the specified
+     * Constructs a new {@code GeneralPath} object with the specified
      * winding rule to control operations that require the interior of the
      * path to be defined.
      *
@@ -74,7 +74,7 @@ public final class GeneralPath extends Path2D.Float {
     }
 
     /**
-     * Constructs a new <code>GeneralPath</code> object with the specified
+     * Constructs a new {@code GeneralPath} object with the specified
      * winding rule and the specified initial capacity to store path
      * coordinates.
      * This number is an initial guess as to how many path segments
@@ -93,12 +93,12 @@ public final class GeneralPath extends Path2D.Float {
     }
 
     /**
-     * Constructs a new <code>GeneralPath</code> object from an arbitrary
+     * Constructs a new {@code GeneralPath} object from an arbitrary
      * {@link Shape} object.
      * All of the initial geometry and the winding rule for this path are
-     * taken from the specified <code>Shape</code> object.
+     * taken from the specified {@code Shape} object.
      *
-     * @param s the specified <code>Shape</code> object
+     * @param s the specified {@code Shape} object
      * @since 1.2
      */
     public GeneralPath(Shape s) {

@@ -148,14 +148,6 @@ public class CompilerToVMHelper {
         return CTVM.getMetadata(target, compiledCode, metaData);
     }
 
-    public static void notifyCompilationStatistics(int id,
-            HotSpotResolvedJavaMethod method, boolean osr,
-            int processedBytecodes, long time, long timeUnitsPerSecond,
-            InstalledCode installedCode) {
-        CTVM.notifyCompilationStatistics(id, (HotSpotResolvedJavaMethodImpl) method, osr, processedBytecodes,
-                time, timeUnitsPerSecond, installedCode);
-    }
-
     public static void resetCompilationStatistics() {
         CTVM.resetCompilationStatistics();
     }

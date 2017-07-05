@@ -32,13 +32,13 @@ import javax.print.attribute.Attribute;
  * an enumeration, that indicates a "URI scheme," such as "http:" or "ftp:",
  * that a printer can use to retrieve print data stored at a URI location.
  * If a printer supports doc flavors with a print data representation class of
- * <CODE>"java.net.URL"</CODE>, the printer uses instances of class
+ * {@code "java.net.URL"}, the printer uses instances of class
  * ReferenceUriSchemesSupported to advertise the URI schemes it can accept.
  * The acceptable URI schemes are included as service attributes in the
  * lookup service; this lets clients search the
  * for printers that can get print data using a certain URI scheme. The
  * acceptable URI schemes can also be queried using the capability methods in
- * interface <code>PrintService</code>. However,
+ * interface {@code PrintService}. However,
  * ReferenceUriSchemesSupported attributes are used solely for determining
  * acceptable URI schemes, they are never included in a doc's,
  * print request's, print job's, or print service's attribute set.
@@ -52,8 +52,8 @@ import javax.print.attribute.Attribute;
  * can define them in a subclass of class ReferenceUriSchemesSupported.
  * <P>
  * <B>IPP Compatibility:</B>  The category name returned by
- * <CODE>getName()</CODE> is the IPP attribute name.  The enumeration's
- * integer value is the IPP enum value.  The <code>toString()</code> method
+ * {@code getName()} is the IPP attribute name.  The enumeration's
+ * integer value is the IPP enum value.  The {@code toString()} method
  * returns the IPP string representation of the attribute value.
  *
  * @author  Alan Kaminsky
@@ -171,7 +171,7 @@ public class ReferenceUriSchemesSupported
      * <P>
      * For class ReferenceUriSchemesSupported and any vendor-defined
      * subclasses, the category name is
-     * <CODE>"reference-uri-schemes-supported"</CODE>.
+     * {@code "reference-uri-schemes-supported"}.
      *
      * @return  Attribute category name.
      */

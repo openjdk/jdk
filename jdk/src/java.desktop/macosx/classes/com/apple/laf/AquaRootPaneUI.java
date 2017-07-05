@@ -164,7 +164,7 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener,
 
     /**
      * Invoked when a property changes on the root pane. If the event
-     * indicates the <code>defaultButton</code> has changed, this will
+     * indicates the {@code defaultButton} has changed, this will
      * update the animation.
      * If the enabled state changed, it will start or stop the animation
      */

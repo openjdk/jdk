@@ -92,8 +92,8 @@ public class ColorConvertOp implements BufferedImageOp, RasterOp {
      * directly from the ColorSpace of the source image to that of the
      * destination.  The destination argument of the filter method
      * cannot be specified as null.
-     * @param hints the <code>RenderingHints</code> object used to control
-     *        the color conversion, or <code>null</code>
+     * @param hints the {@code RenderingHints} object used to control
+     *        the color conversion, or {@code null}
      */
     public ColorConvertOp (RenderingHints hints)
     {
@@ -111,10 +111,10 @@ public class ColorConvertOp implements BufferedImageOp, RasterOp {
      * for the destination created by the filter method.  Otherwise, the
      * ColorSpace defines an intermediate space to which the source is
      * converted before being converted to the destination space.
-     * @param cspace defines the destination <code>ColorSpace</code> or an
-     *        intermediate <code>ColorSpace</code>
-     * @param hints the <code>RenderingHints</code> object used to control
-     *        the color conversion, or <code>null</code>
+     * @param cspace defines the destination {@code ColorSpace} or an
+     *        intermediate {@code ColorSpace}
+     * @param hints the {@code RenderingHints} object used to control
+     *        the color conversion, or {@code null}
      * @throws NullPointerException if cspace is null
      */
     public ColorConvertOp (ColorSpace cspace, RenderingHints hints)
@@ -146,10 +146,10 @@ public class ColorConvertOp implements BufferedImageOp, RasterOp {
      * must match the number of components in dstCspace.  For BufferedImages,
      * the two ColorSpaces define intermediate spaces through which the
      * source is converted before being converted to the destination space.
-     * @param srcCspace the source <code>ColorSpace</code>
-     * @param dstCspace the destination <code>ColorSpace</code>
-     * @param hints the <code>RenderingHints</code> object used to control
-     *        the color conversion, or <code>null</code>
+     * @param srcCspace the source {@code ColorSpace}
+     * @param dstCspace the destination {@code ColorSpace}
+     * @param hints the {@code RenderingHints} object used to control
+     *        the color conversion, or {@code null}
      * @throws NullPointerException if either srcCspace or dstCspace is null
      */
     public ColorConvertOp(ColorSpace srcCspace, ColorSpace dstCspace,
@@ -196,9 +196,9 @@ public class ColorConvertOp implements BufferedImageOp, RasterOp {
      * of the last profile in the array.  The array must have at least two
      * elements or calling the filter method for Rasters will throw an
      * IllegalArgumentException.
-     * @param profiles the array of <code>ICC_Profile</code> objects
-     * @param hints the <code>RenderingHints</code> object used to control
-     *        the color conversion, or <code>null</code>
+     * @param profiles the array of {@code ICC_Profile} objects
+     * @param hints the {@code RenderingHints} object used to control
+     *        the color conversion, or {@code null}
      * @exception IllegalArgumentException when the profile sequence does not
      *             specify a well-defined color conversion
      * @exception NullPointerException if profiles is null
@@ -221,10 +221,10 @@ public class ColorConvertOp implements BufferedImageOp, RasterOp {
      * Returns the array of ICC_Profiles used to construct this ColorConvertOp.
      * Returns null if the ColorConvertOp was not constructed from such an
      * array.
-     * @return the array of <code>ICC_Profile</code> objects of this
-     *         <code>ColorConvertOp</code>, or <code>null</code> if this
-     *         <code>ColorConvertOp</code> was not constructed with an
-     *         array of <code>ICC_Profile</code> objects.
+     * @return the array of {@code ICC_Profile} objects of this
+     *         {@code ColorConvertOp}, or {@code null} if this
+     *         {@code ColorConvertOp} was not constructed with an
+     *         array of {@code ICC_Profile} objects.
      */
     public final ICC_Profile[] getICC_Profiles() {
         if (gotProfiles) {
@@ -241,12 +241,12 @@ public class ColorConvertOp implements BufferedImageOp, RasterOp {
      * ColorConverts the source BufferedImage.
      * If the destination image is null,
      * a BufferedImage will be created with an appropriate ColorModel.
-     * @param src the source <code>BufferedImage</code> to be converted
-     * @param dest the destination <code>BufferedImage</code>,
-     *        or <code>null</code>
-     * @return <code>dest</code> color converted from <code>src</code>
-     *         or a new, converted <code>BufferedImage</code>
-     *         if <code>dest</code> is <code>null</code>
+     * @param src the source {@code BufferedImage} to be converted
+     * @param dest the destination {@code BufferedImage},
+     *        or {@code null}
+     * @return {@code dest} color converted from {@code src}
+     *         or a new, converted {@code BufferedImage}
+     *         if {@code dest} is {@code null}
      * @exception IllegalArgumentException if dest is null and this op was
      *             constructed using the constructor which takes only a
      *             RenderingHints argument, since the operation is ill defined.
@@ -455,12 +455,12 @@ public class ColorConvertOp implements BufferedImageOp, RasterOp {
      * create this ColorConvertOp must have provided enough information
      * to define both source and destination color spaces.  See above.
      * Otherwise, an exception is thrown.
-     * @param src the source <code>Raster</code> to be converted
-     * @param dest the destination <code>WritableRaster</code>,
-     *        or <code>null</code>
-     * @return <code>dest</code> color converted from <code>src</code>
-     *         or a new, converted <code>WritableRaster</code>
-     *         if <code>dest</code> is <code>null</code>
+     * @param src the source {@code Raster} to be converted
+     * @param dest the destination {@code WritableRaster},
+     *        or {@code null}
+     * @return {@code dest} color converted from {@code src}
+     *         or a new, converted {@code WritableRaster}
+     *         if {@code dest} is {@code null}
      * @exception IllegalArgumentException if the number of source or
      *             destination bands is incorrect, the source or destination
      *             color spaces are undefined, or this op was constructed
@@ -579,9 +579,9 @@ public class ColorConvertOp implements BufferedImageOp, RasterOp {
      * Returns the bounding box of the destination, given this source.
      * Note that this will be the same as the bounding box of the
      * source.
-     * @param src the source <code>BufferedImage</code>
-     * @return a <code>Rectangle2D</code> that is the bounding box
-     *         of the destination, given the specified <code>src</code>
+     * @param src the source {@code BufferedImage}
+     * @return a {@code Rectangle2D} that is the bounding box
+     *         of the destination, given the specified {@code src}
      */
     public final Rectangle2D getBounds2D (BufferedImage src) {
         return getBounds2D(src.getRaster());
@@ -591,9 +591,9 @@ public class ColorConvertOp implements BufferedImageOp, RasterOp {
      * Returns the bounding box of the destination, given this source.
      * Note that this will be the same as the bounding box of the
      * source.
-     * @param src the source <code>Raster</code>
-     * @return a <code>Rectangle2D</code> that is the bounding box
-     *         of the destination, given the specified <code>src</code>
+     * @param src the source {@code Raster}
+     * @return a {@code Rectangle2D} that is the bounding box
+     *         of the destination, given the specified {@code src}
      */
     public final Rectangle2D getBounds2D (Raster src) {
         /*        return new Rectangle (src.getXOffset(),
@@ -608,12 +608,12 @@ public class ColorConvertOp implements BufferedImageOp, RasterOp {
      * @param src       Source image for the filter operation.
      * @param destCM    ColorModel of the destination.  If null, an
      *                  appropriate ColorModel will be used.
-     * @return a <code>BufferedImage</code> with the correct size and
-     * number of bands from the specified <code>src</code>.
-     * @throws IllegalArgumentException if <code>destCM</code> is
-     *         <code>null</code> and this <code>ColorConvertOp</code> was
-     *         created without any <code>ICC_Profile</code> or
-     *         <code>ColorSpace</code> defined for the destination
+     * @return a {@code BufferedImage} with the correct size and
+     * number of bands from the specified {@code src}.
+     * @throws IllegalArgumentException if {@code destCM} is
+     *         {@code null} and this {@code ColorConvertOp} was
+     *         created without any {@code ICC_Profile} or
+     *         {@code ColorSpace} defined for the destination
      */
     public BufferedImage createCompatibleDestImage (BufferedImage src,
                                                     ColorModel destCM) {
@@ -669,12 +669,12 @@ public class ColorConvertOp implements BufferedImageOp, RasterOp {
     /**
      * Creates a zeroed destination Raster with the correct size and number of
      * bands, given this source.
-     * @param src the specified <code>Raster</code>
-     * @return a <code>WritableRaster</code> with the correct size and number
-     *         of bands from the specified <code>src</code>
-     * @throws IllegalArgumentException if this <code>ColorConvertOp</code>
+     * @param src the specified {@code Raster}
+     * @return a {@code WritableRaster} with the correct size and number
+     *         of bands from the specified {@code src}
+     * @throws IllegalArgumentException if this {@code ColorConvertOp}
      *         was created without sufficient information to define the
-     *         <code>dst</code> and <code>src</code> color spaces
+     *         {@code dst} and {@code src} color spaces
      */
     public WritableRaster createCompatibleDestRaster (Raster src) {
         int ncomponents;
@@ -707,14 +707,14 @@ public class ColorConvertOp implements BufferedImageOp, RasterOp {
 
     /**
      * Returns the location of the destination point given a
-     * point in the source.  If <code>dstPt</code> is non-null,
+     * point in the source.  If {@code dstPt} is non-null,
      * it will be used to hold the return value.  Note that
      * for this class, the destination point will be the same
      * as the source point.
-     * @param srcPt the specified source <code>Point2D</code>
-     * @param dstPt the destination <code>Point2D</code>
-     * @return <code>dstPt</code> after setting its location to be
-     *         the same as <code>srcPt</code>
+     * @param srcPt the specified source {@code Point2D}
+     * @param dstPt the destination {@code Point2D}
+     * @return {@code dstPt} after setting its location to be
+     *         the same as {@code srcPt}
      */
     public final Point2D getPoint2D (Point2D srcPt, Point2D dstPt) {
         if (dstPt == null) {
@@ -746,8 +746,8 @@ public class ColorConvertOp implements BufferedImageOp, RasterOp {
 
     /**
      * Returns the rendering hints used by this op.
-     * @return the <code>RenderingHints</code> object of this
-     *         <code>ColorConvertOp</code>
+     * @return the {@code RenderingHints} object of this
+     *         {@code ColorConvertOp}
      */
     public final RenderingHints getRenderingHints() {
         return hints;

@@ -27,6 +27,7 @@
 
 #include "utilities/macros.hpp"
 #if INCLUDE_TRACE
+#include "memory/resourceArea.hpp"
 #include "oops/klass.hpp"
 #include "oops/method.hpp"
 #include "oops/symbol.hpp"
@@ -79,11 +80,8 @@ class TraceStream : public StackObj {
     _st.print("%s = %f", label, val);
   }
 
-  // Caller is machine generated code located in traceEventClasses.hpp
-  // Event<TraceId>::writeEvent() (pseudocode) contains the
-  // necessary ResourceMark for the resource allocations below.
-  // See traceEventClasses.xsl for details.
   void print_val(const char* label, const Klass* const val) {
+    ResourceMark rm;
     const char* description = "NULL";
     if (val != NULL) {
       Symbol* name = val->name();
@@ -94,11 +92,8 @@ class TraceStream : public StackObj {
     _st.print("%s = %s", label, description);
   }
 
-  // Caller is machine generated code located in traceEventClasses.hpp
-  // Event<TraceId>::writeEvent() (pseudocode) contains the
-  // necessary ResourceMark for the resource allocations below.
-  // See traceEventClasses.xsl for details.
   void print_val(const char* label, const Method* const val) {
+    ResourceMark rm;
     const char* description = "NULL";
     if (val != NULL) {
       description = val->name_and_sig_as_C_string();

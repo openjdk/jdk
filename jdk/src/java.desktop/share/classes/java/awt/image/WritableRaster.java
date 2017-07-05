@@ -56,8 +56,8 @@ public class WritableRaster extends Raster {
      *  @param sampleModel     The SampleModel that specifies the layout.
      *  @param origin          The Point that specifies the origin.
      *  @throws RasterFormatException if computing either
-     *          <code>origin.x + sampleModel.getWidth()</code> or
-     *          <code>origin.y + sampleModel.getHeight()</code> results
+     *          {@code origin.x + sampleModel.getWidth()} or
+     *          {@code origin.y + sampleModel.getHeight()} results
      *          in integer overflow
      */
     protected WritableRaster(SampleModel sampleModel,
@@ -81,8 +81,8 @@ public class WritableRaster extends Raster {
      *  @param dataBuffer      The DataBuffer that contains the image data.
      *  @param origin          The Point that specifies the origin.
      *  @throws RasterFormatException if computing either
-     *          <code>origin.x + sampleModel.getWidth()</code> or
-     *          <code>origin.y + sampleModel.getHeight()</code> results
+     *          {@code origin.x + sampleModel.getWidth()} or
+     *          {@code origin.y + sampleModel.getHeight()} results
      *          in integer overflow
      */
     protected WritableRaster(SampleModel sampleModel,
@@ -115,10 +115,10 @@ public class WritableRaster extends Raster {
      * @param sampleModelTranslate  The Point that specifies the translation
      *                        from SampleModel to Raster coordinates.
      * @param parent          The parent (if any) of this raster.
-     * @throws RasterFormatException if <code>aRegion</code> has width
+     * @throws RasterFormatException if {@code aRegion} has width
      *         or height less than or equal to zero, or computing either
-     *         <code>aRegion.x + aRegion.width</code> or
-     *         <code>aRegion.y + aRegion.height</code> results in integer
+     *         {@code aRegion.x + aRegion.width} or
+     *         {@code aRegion.y + aRegion.height} results in integer
      *         overflow
      */
     protected WritableRaster(SampleModel sampleModel,
@@ -131,8 +131,8 @@ public class WritableRaster extends Raster {
 
     /** Returns the parent WritableRaster (if any) of this WritableRaster,
      *  or else null.
-     *  @return the parent of this <code>WritableRaster</code>, or
-     *          <code>null</code>.
+     *  @return the parent of this {@code WritableRaster}, or
+     *          {@code null}.
      */
     public WritableRaster getWritableParent() {
         return (WritableRaster)parent;
@@ -146,11 +146,11 @@ public class WritableRaster extends Raster {
      *
      * @param childMinX X coord of the upper left corner of the new Raster.
      * @param childMinY Y coord of the upper left corner of the new Raster.
-     * @return a <code>WritableRaster</code> the same as this one except
+     * @return a {@code WritableRaster} the same as this one except
      *         for the specified location.
      * @throws RasterFormatException if  computing either
-     *         <code>childMinX + this.getWidth()</code> or
-     *         <code>childMinY + this.getHeight()</code> results in integer
+     *         {@code childMinX + this.getWidth()} or
+     *         {@code childMinY + this.getHeight()} results in integer
      *         overflow
      */
     public WritableRaster createWritableTranslatedChild(int childMinX,
@@ -202,16 +202,16 @@ public class WritableRaster extends Raster {
      * @param childMinY  Y coordinate of the upper left corner of
      *                   the returned WritableRaster.
      * @param bandList   Array of band indices, or null to use all bands.
-     * @return a <code>WritableRaster</code> sharing all or part of the
-     *         <code>DataBuffer</code> of this <code>WritableRaster</code>.
+     * @return a {@code WritableRaster} sharing all or part of the
+     *         {@code DataBuffer} of this {@code WritableRaster}.
      * @exception RasterFormatException if the subregion is outside of the
      *                               raster bounds.
-     * @throws RasterFormatException if <code>w</code> or
-     *         <code>h</code>
+     * @throws RasterFormatException if {@code w} or
+     *         {@code h}
      *         is less than or equal to zero, or computing any of
-     *         <code>parentX + w</code>, <code>parentY + h</code>,
-     *         <code>childMinX + w</code>, or
-     *         <code>childMinY + h</code> results in integer
+     *         {@code parentX + w}, {@code parentY + h},
+     *         {@code childMinX + w}, or
+     *         {@code childMinY + h} results in integer
      *         overflow
      */
     public WritableRaster createWritableChild(int parentX, int parentY,
@@ -371,7 +371,7 @@ public class WritableRaster extends Raster {
      * If all samples of both source and destination Rasters are of
      * integral type and less than or equal to 32 bits in size, then calling
      * this method is equivalent to executing the following code for all
-     * <code>x,y</code> addresses valid in both Rasters.
+     * {@code x,y} addresses valid in both Rasters.
      * <pre>{@code
      *       Raster srcRaster;
      *       WritableRaster dstRaster;

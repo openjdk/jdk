@@ -56,6 +56,7 @@ import jdk.vm.ci.code.RegisterConfig;
 import jdk.vm.ci.code.StackSlot;
 import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.common.JVMCIError;
+import jdk.vm.ci.hotspot.HotSpotCallingConventionType;
 import jdk.vm.ci.hotspot.HotSpotVMConfig;
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.JavaKind;
@@ -90,6 +91,7 @@ public class AMD64HotSpotRegisterConfig implements RegisterConfig {
         return allocatable.clone();
     }
 
+    @Override
     public Register[] filterAllocatableRegisters(PlatformKind kind, Register[] registers) {
         ArrayList<Register> list = new ArrayList<>();
         for (Register reg : registers) {
@@ -175,6 +177,7 @@ public class AMD64HotSpotRegisterConfig implements RegisterConfig {
         return callerSaved;
     }
 
+    @Override
     public Register[] getCalleeSaveRegisters() {
         return null;
     }
@@ -190,16 +193,19 @@ public class AMD64HotSpotRegisterConfig implements RegisterConfig {
     }
 
     @Override
-    public CallingConvention getCallingConvention(Type type, JavaType returnType, JavaType[] parameterTypes, TargetDescription target, boolean stackOnly) {
-        if (type == Type.NativeCall) {
-            return callingConvention(nativeGeneralParameterRegisters, returnType, parameterTypes, type, target, stackOnly);
+    public CallingConvention getCallingConvention(Type type, JavaType returnType, JavaType[] parameterTypes, TargetDescription target) {
+        HotSpotCallingConventionType hotspotType = (HotSpotCallingConventionType) type;
+        if (type == HotSpotCallingConventionType.NativeCall) {
+            return callingConvention(nativeGeneralParameterRegisters, returnType, parameterTypes, hotspotType, target);
         }
         // On x64, parameter locations are the same whether viewed
         // from the caller or callee perspective
-        return callingConvention(javaGeneralParameterRegisters, returnType, parameterTypes, type, target, stackOnly);
+        return callingConvention(javaGeneralParameterRegisters, returnType, parameterTypes, hotspotType, target);
     }
 
+    @Override
     public Register[] getCallingConventionRegisters(Type type, JavaKind kind) {
+        HotSpotCallingConventionType hotspotType = (HotSpotCallingConventionType) type;
         switch (kind) {
             case Boolean:
             case Byte:
@@ -208,7 +214,7 @@ public class AMD64HotSpotRegisterConfig implements RegisterConfig {
             case Int:
             case Long:
             case Object:
-                return type == Type.NativeCall ? nativeGeneralParameterRegisters : javaGeneralParameterRegisters;
+                return hotspotType == HotSpotCallingConventionType.NativeCall ? nativeGeneralParameterRegisters : javaGeneralParameterRegisters;
             case Float:
             case Double:
                 return xmmParameterRegisters;
@@ -217,12 +223,12 @@ public class AMD64HotSpotRegisterConfig implements RegisterConfig {
         }
     }
 
-    private CallingConvention callingConvention(Register[] generalParameterRegisters, JavaType returnType, JavaType[] parameterTypes, Type type, TargetDescription target, boolean stackOnly) {
+    private CallingConvention callingConvention(Register[] generalParameterRegisters, JavaType returnType, JavaType[] parameterTypes, HotSpotCallingConventionType type, TargetDescription target) {
         AllocatableValue[] locations = new AllocatableValue[parameterTypes.length];
 
         int currentGeneral = 0;
         int currentXMM = 0;
-        int currentStackOffset = type == Type.NativeCall && needsNativeStackHomeSpace ? generalParameterRegisters.length * target.wordSize : 0;
+        int currentStackOffset = type == HotSpotCallingConventionType.NativeCall && needsNativeStackHomeSpace ? generalParameterRegisters.length * target.wordSize : 0;
 
         for (int i = 0; i < parameterTypes.length; i++) {
             final JavaKind kind = parameterTypes[i].getJavaKind().getStackKind();
@@ -235,14 +241,14 @@ public class AMD64HotSpotRegisterConfig implements RegisterConfig {
                 case Int:
                 case Long:
                 case Object:
-                    if (!stackOnly && currentGeneral < generalParameterRegisters.length) {
+                    if (currentGeneral < generalParameterRegisters.length) {
                         Register register = generalParameterRegisters[currentGeneral++];
                         locations[i] = register.asValue(target.getLIRKind(kind));
                     }
                     break;
                 case Float:
                 case Double:
-                    if (!stackOnly && currentXMM < xmmParameterRegisters.length) {
+                    if (currentXMM < xmmParameterRegisters.length) {
                         Register register = xmmParameterRegisters[currentXMM++];
                         locations[i] = register.asValue(target.getLIRKind(kind));
                     }

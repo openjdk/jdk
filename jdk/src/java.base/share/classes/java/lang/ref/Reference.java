@@ -26,10 +26,10 @@
 package java.lang.ref;
 
 import jdk.internal.vm.annotation.DontInline;
-import sun.misc.Cleaner;
 import jdk.internal.HotSpotIntrinsicCandidate;
 import jdk.internal.misc.JavaLangRefAccess;
 import jdk.internal.misc.SharedSecrets;
+import jdk.internal.ref.Cleaner;
 
 /**
  * Abstract base class for reference objects.  This class defines the

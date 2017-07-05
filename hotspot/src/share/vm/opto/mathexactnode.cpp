@@ -247,11 +247,11 @@ Node* OverflowLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   return IdealHelper<OverflowLNode>::Ideal(this, phase, can_reshape);
 }
 
-const Type* OverflowINode::Value(PhaseTransform* phase) const {
+const Type* OverflowINode::Value(PhaseGVN* phase) const {
   return IdealHelper<OverflowINode>::Value(this, phase);
 }
 
-const Type* OverflowLNode::Value(PhaseTransform* phase) const {
+const Type* OverflowLNode::Value(PhaseGVN* phase) const {
   return IdealHelper<OverflowLNode>::Value(this, phase);
 }
 

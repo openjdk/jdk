@@ -72,8 +72,8 @@ import java.util.ResourceBundle;
   * <li>TL - Mongolian
   * </ul>
   * Components whose view and controller code depends on orientation
-  * should use the <code>isLeftToRight()</code> and
-  * <code>isHorizontal()</code> methods to
+  * should use the {@code isLeftToRight()} and
+  * {@code isHorizontal()} methods to
   * determine their behavior. They should not include switch-like
   * code that keys off of the constants, such as:
   * <pre>

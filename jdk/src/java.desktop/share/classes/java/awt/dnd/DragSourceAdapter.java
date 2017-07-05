@@ -30,22 +30,22 @@ package java.awt.dnd;
  * this class are empty. This class exists only as a convenience for creating
  * listener objects.
  * <p>
- * Extend this class to create a <code>DragSourceEvent</code> listener
+ * Extend this class to create a {@code DragSourceEvent} listener
  * and override the methods for the events of interest. (If you implement the
- * <code>DragSourceListener</code> interface, you have to define all of
+ * {@code DragSourceListener} interface, you have to define all of
  * the methods in it. This abstract class defines null methods for them
  * all, so you only have to define methods for events you care about.)
  * <p>
  * Create a listener object using the extended class and then register it with
- * a <code>DragSource</code>. When the drag enters, moves over, or exits
+ * a {@code DragSource}. When the drag enters, moves over, or exits
  * a drop site, when the drop action changes, and when the drag ends, the
  * relevant method in the listener object is invoked, and the
- * <code>DragSourceEvent</code> is passed to it.
+ * {@code DragSourceEvent} is passed to it.
  * <p>
- * The drop site is <i>associated with the previous <code>dragEnter()</code>
- * invocation</i> if the latest invocation of <code>dragEnter()</code> on this
+ * The drop site is <i>associated with the previous {@code dragEnter()}
+ * invocation</i> if the latest invocation of {@code dragEnter()} on this
  * adapter corresponds to that drop site and is not followed by a
- * <code>dragExit()</code> invocation on this adapter.
+ * {@code dragExit()} invocation on this adapter.
  *
  * @see DragSourceEvent
  * @see DragSourceListener
@@ -67,7 +67,7 @@ public abstract class DragSourceAdapter
      * <LI>The drop site accepts the drag.
      * </UL>
      *
-     * @param dsde the <code>DragSourceDragEvent</code>
+     * @param dsde the {@code DragSourceDragEvent}
      */
     public void dragEnter(DragSourceDragEvent dsde) {}
 
@@ -82,14 +82,14 @@ public abstract class DragSourceAdapter
      * <LI>The drop site accepts the drag.
      * </UL>
      *
-     * @param dsde the <code>DragSourceDragEvent</code>
+     * @param dsde the {@code DragSourceDragEvent}
      */
     public void dragOver(DragSourceDragEvent dsde) {}
 
     /**
      * Called whenever the mouse is moved during a drag operation.
      *
-     * @param dsde the <code>DragSourceDragEvent</code>
+     * @param dsde the {@code DragSourceDragEvent}
      */
     public void dragMouseMoved(DragSourceDragEvent dsde) {}
 
@@ -100,7 +100,7 @@ public abstract class DragSourceAdapter
      * Such devices are typically the mouse buttons or keyboard
      * modifiers that the user is interacting with.
      *
-     * @param dsde the <code>DragSourceDragEvent</code>
+     * @param dsde the {@code DragSourceDragEvent}
      */
     public void dropActionChanged(DragSourceDragEvent dsde) {}
 
@@ -122,21 +122,21 @@ public abstract class DragSourceAdapter
      * has rejected the drag.
      * </UL>
      *
-     * @param dse the <code>DragSourceEvent</code>
+     * @param dse the {@code DragSourceEvent}
      */
     public void dragExit(DragSourceEvent dse) {}
 
     /**
      * This method is invoked to signify that the Drag and Drop
      * operation is complete. The getDropSuccess() method of
-     * the <code>DragSourceDropEvent</code> can be used to
+     * the {@code DragSourceDropEvent} can be used to
      * determine the termination state. The getDropAction() method
      * returns the operation that the drop site selected
      * to apply to the Drop operation. Once this method is complete, the
-     * current <code>DragSourceContext</code> and
+     * current {@code DragSourceContext} and
      * associated resources become invalid.
      *
-     * @param dsde the <code>DragSourceDropEvent</code>
+     * @param dsde the {@code DragSourceDropEvent}
      */
     public void dragDropEnd(DragSourceDropEvent dsde) {}
 }

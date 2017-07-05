@@ -250,7 +250,7 @@ public final class MidiUtils {
     /**
      * Binary search for the event indexes of the track
      *
-     * @param tick - tick number of index to be found in array
+     * @param tick  tick number of index to be found in array
      * @return index in track which is on or after "tick".
      *   if no entries are found that follow after tick, track.size() is returned
      */

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -1709,6 +1709,14 @@ const bool Matcher::match_rule_supported(int opcode) {
       break;
     case Op_CMoveVD:
       if (UseAVX < 1 || UseAVX > 2)
+        ret_value = false;
+      break;
+    case Op_StrIndexOf:
+      if (!UseSSE42Intrinsics)
+        ret_value = false;
+      break;
+    case Op_StrIndexOfChar:
+      if (!(UseSSE > 4))
         ret_value = false;
       break;
   }

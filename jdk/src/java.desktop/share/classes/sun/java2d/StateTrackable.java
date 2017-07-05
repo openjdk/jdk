@@ -129,9 +129,9 @@ package sun.java2d;
  * time period of the modifications would be small in most cases
  * and the 2 changes of state would each require synchronization.
  * <p>
- * In comparison the act of setting the <code>curTracker</code>
+ * In comparison the act of setting the {@code curTracker}
  * reference to null in the usage pattern above effectively invalidates
- * all outstanding <code>Tracker</code> objects as soon as possible
+ * all outstanding {@code Tracker} objects as soon as possible
  * after the change to the data and requires very little code and no
  * synchronization to implement.
  * <p>

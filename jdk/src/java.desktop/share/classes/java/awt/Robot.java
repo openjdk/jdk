@@ -49,12 +49,12 @@ import sun.awt.image.SunWritableRaster;
  * Using the class to generate input events differs from posting
  * events to the AWT event queue or AWT components in that the
  * events are generated in the platform's native input
- * queue. For example, <code>Robot.mouseMove</code> will actually move
+ * queue. For example, {@code Robot.mouseMove} will actually move
  * the mouse cursor instead of just generating mouse move events.
  * <p>
  * Note that some platforms require special privileges or extensions
  * to access low-level input control. If the current platform configuration
- * does not allow input control, an <code>AWTException</code> will be thrown
+ * does not allow input control, an {@code AWTException} will be thrown
  * when trying to construct Robot objects. For example, X-Window systems
  * will throw the exception if the XTEST 2.2 standard extension is not supported
  * (or not enabled) by the X server.
@@ -80,7 +80,7 @@ public class Robot {
      * @throws  AWTException if the platform configuration does not allow
      * low-level input control.  This exception is always thrown when
      * GraphicsEnvironment.isHeadless() returns true
-     * @throws  SecurityException if <code>createRobot</code> permission is not granted
+     * @throws  SecurityException if {@code createRobot} permission is not granted
      * @see     java.awt.GraphicsEnvironment#isHeadless
      * @see     SecurityManager#checkPermission
      * @see     AWTPermission
@@ -113,9 +113,9 @@ public class Robot {
      * @throws  AWTException if the platform configuration does not allow
      * low-level input control.  This exception is always thrown when
      * GraphicsEnvironment.isHeadless() returns true.
-     * @throws  IllegalArgumentException if <code>screen</code> is not a screen
+     * @throws  IllegalArgumentException if {@code screen} is not a screen
      *          GraphicsDevice.
-     * @throws  SecurityException if <code>createRobot</code> permission is not granted
+     * @throws  SecurityException if {@code createRobot} permission is not granted
      * @see     java.awt.GraphicsEnvironment#isHeadless
      * @see     GraphicsDevice
      * @see     SecurityManager#checkPermission
@@ -336,14 +336,14 @@ public class Robot {
 
     /**
      * Presses a given key.  The key should be released using the
-     * <code>keyRelease</code> method.
+     * {@code keyRelease} method.
      * <p>
      * Key codes that have more than one physical key associated with them
-     * (e.g. <code>KeyEvent.VK_SHIFT</code> could mean either the
+     * (e.g. {@code KeyEvent.VK_SHIFT} could mean either the
      * left or right shift key) will map to the left key.
      *
-     * @param   keycode Key to press (e.g. <code>KeyEvent.VK_A</code>)
-     * @throws  IllegalArgumentException if <code>keycode</code> is not
+     * @param   keycode Key to press (e.g. {@code KeyEvent.VK_A})
+     * @throws  IllegalArgumentException if {@code keycode} is not
      *          a valid key
      * @see     #keyRelease(int)
      * @see     java.awt.event.KeyEvent
@@ -358,11 +358,11 @@ public class Robot {
      * Releases a given key.
      * <p>
      * Key codes that have more than one physical key associated with them
-     * (e.g. <code>KeyEvent.VK_SHIFT</code> could mean either the
+     * (e.g. {@code KeyEvent.VK_SHIFT} could mean either the
      * left or right shift key) will map to the left key.
      *
-     * @param   keycode Key to release (e.g. <code>KeyEvent.VK_A</code>)
-     * @throws  IllegalArgumentException if <code>keycode</code> is not a
+     * @param   keycode Key to release (e.g. {@code KeyEvent.VK_A})
+     * @throws  IllegalArgumentException if {@code keycode} is not a
      *          valid key
      * @see  #keyPress(int)
      * @see     java.awt.event.KeyEvent
@@ -399,8 +399,8 @@ public class Robot {
      * not include the mouse cursor.
      * @param   screenRect      Rect to capture in screen coordinates
      * @return  The captured image
-     * @throws  IllegalArgumentException if <code>screenRect</code> width and height are not greater than zero
-     * @throws  SecurityException if <code>readDisplayPixels</code> permission is not granted
+     * @throws  IllegalArgumentException if {@code screenRect} width and height are not greater than zero
+     * @throws  SecurityException if {@code readDisplayPixels} permission is not granted
      * @see     SecurityManager#checkPermission
      * @see     AWTPermission
      */
@@ -470,18 +470,18 @@ public class Robot {
     }
 
     /**
-     * Returns whether this Robot automatically invokes <code>waitForIdle</code>
+     * Returns whether this Robot automatically invokes {@code waitForIdle}
      * after generating an event.
-     * @return Whether <code>waitForIdle</code> is automatically called
+     * @return Whether {@code waitForIdle} is automatically called
      */
     public synchronized boolean isAutoWaitForIdle() {
         return isAutoWaitForIdle;
     }
 
     /**
-     * Sets whether this Robot automatically invokes <code>waitForIdle</code>
+     * Sets whether this Robot automatically invokes {@code waitForIdle}
      * after generating an event.
-     * @param   isOn    Whether <code>waitForIdle</code> is automatically invoked
+     * @param   isOn    Whether {@code waitForIdle} is automatically invoked
      */
     public synchronized void setAutoWaitForIdle(boolean isOn) {
         isAutoWaitForIdle = isOn;
@@ -526,8 +526,8 @@ public class Robot {
 
     /**
      * Sleeps for the specified time.
-     * To catch any <code>InterruptedException</code>s that occur,
-     * <code>Thread.sleep()</code> may be used instead.
+     * To catch any {@code InterruptedException}s that occur,
+     * {@code Thread.sleep()} may be used instead.
      *
      * @param  ms time to sleep in milliseconds
      * @throws IllegalArgumentException if {@code ms}
