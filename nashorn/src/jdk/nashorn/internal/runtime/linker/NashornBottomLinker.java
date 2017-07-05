@@ -33,14 +33,18 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.Map;
+import java.util.HashMap;
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.beans.BeansLinker;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.GuardingDynamicLinker;
+import jdk.internal.dynalink.linker.GuardingTypeConverterFactory;
 import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.internal.dynalink.linker.LinkerServices;
 import jdk.internal.dynalink.support.Guards;
 import jdk.nashorn.internal.runtime.Context;
+import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 
 /**
@@ -50,7 +54,7 @@ import jdk.nashorn.internal.runtime.ScriptRuntime;
  * setters for Java objects that couldn't be linked by any other linker, and throw appropriate ECMAScript errors for
  * attempts to invoke arbitrary Java objects as functions or constructors.
  */
-final class NashornBottomLinker implements GuardingDynamicLinker {
+final class NashornBottomLinker implements GuardingDynamicLinker, GuardingTypeConverterFactory {
 
     @Override
     public GuardedInvocation getGuardedInvocation(final LinkRequest linkRequest, final LinkerServices linkerServices)
@@ -129,6 +133,29 @@ final class NashornBottomLinker implements GuardingDynamicLinker {
         throw new AssertionError("unknown call type " + desc);
     }
 
+    @Override
+    public GuardedInvocation convertToType(final Class<?> sourceType, final Class<?> targetType) throws Exception {
+        final GuardedInvocation gi = convertToTypeNoCast(sourceType, targetType);
+        return gi == null ? null : gi.asType(MH.type(targetType, sourceType));
+    }
+
+    /**
+     * Main part of the implementation of {@link GuardingTypeConverterFactory#convertToType(Class, Class)} that doesn't
+     * care about adapting the method signature; that's done by the invoking method. Returns conversion from Object to String/number/boolean (JS primitive types).
+     * @param sourceType the source type
+     * @param targetType the target type
+     * @return a guarded invocation that converts from the source type to the target type.
+     * @throws Exception if something goes wrong
+     */
+    private static GuardedInvocation convertToTypeNoCast(final Class<?> sourceType, final Class<?> targetType) throws Exception {
+        final MethodHandle mh = CONVERTERS.get(targetType);
+        if (mh != null) {
+            return new GuardedInvocation(mh, null);
+        }
+
+        return null;
+    }
+
     private static GuardedInvocation getInvocation(final MethodHandle handle, final Object self, final LinkerServices linkerServices, final CallSiteDescriptor desc) {
         return Bootstrap.asType(new GuardedInvocation(handle, Guards.getClassGuard(self.getClass())), linkerServices, desc);
     }
@@ -159,6 +186,15 @@ final class NashornBottomLinker implements GuardingDynamicLinker {
             break;
         }
         throw new AssertionError("unknown call type " + desc);
+    }
+
+    private static final Map<Class<?>, MethodHandle> CONVERTERS = new HashMap<>();
+    static {
+        CONVERTERS.put(boolean.class, JSType.TO_BOOLEAN.methodHandle());
+        CONVERTERS.put(double.class, JSType.TO_NUMBER.methodHandle());
+        CONVERTERS.put(int.class, JSType.TO_INTEGER.methodHandle());
+        CONVERTERS.put(long.class, JSType.TO_LONG.methodHandle());
+        CONVERTERS.put(String.class, JSType.TO_STRING.methodHandle());
     }
 
     private static String getArgument(final LinkRequest linkRequest) {

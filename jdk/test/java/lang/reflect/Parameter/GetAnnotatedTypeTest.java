@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8021398
  * @compile -parameters GetAnnotatedTypeTest.java
  * @run main GetAnnotatedTypeTest
  * @summary javac should generate method parameters correctly.

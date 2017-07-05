@@ -1263,6 +1263,9 @@ public final class System {
             public Thread newThreadWithAcc(Runnable target, AccessControlContext acc) {
                 return new Thread(target, acc);
             }
+            public void invokeFinalize(Object o) throws Throwable {
+                o.finalize();
+            }
         });
     }
 }

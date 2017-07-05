@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2013 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,20 +29,19 @@
 
 import com.sun.net.httpserver.*;
 
-import java.util.*;
 import java.util.concurrent.*;
 import java.io.*;
 import java.net.*;
 
 public class B6433018 {
 
-    static String CRLF = "\r\n";
+    static final String CRLF = "\r\n";
 
     /* invalid HTTP POST with extra CRLF at end */
     /* This checks that the server is able to handle it
      * and recognise the second request */
 
-    static String cmd =
+    static final String cmd =
         "POST /test/item HTTP/1.1"+CRLF+
         "Keep-Alive: 300"+CRLF+
         "Proxy-Connection: keep-alive"+CRLF+
@@ -61,45 +60,47 @@ public class B6433018 {
         "Pragma: no-cache"+CRLF+
         "Cache-Control: no-cache"+CRLF+CRLF;
 
-    public static void main (String[] args) throws Exception {
-        Handler handler = new Handler();
-        InetSocketAddress addr = new InetSocketAddress (0);
-        HttpServer server = HttpServer.create (addr, 0);
-        HttpContext ctx = server.createContext ("/test", handler);
+    public static void main(String[] args) throws Exception {
+        CountDownLatch finished = new CountDownLatch(2);
+        Handler handler = new Handler(finished);
+        InetSocketAddress addr = new InetSocketAddress(0);
+        HttpServer server = HttpServer.create(addr, 0);
+        HttpContext ctx = server.createContext("/test", handler);
 
-        server.start ();
-
-        Socket s = new Socket ("localhost", server.getAddress().getPort());
-
-        try {
-            OutputStream os = s.getOutputStream();
-            os.write (cmd.getBytes());
-            Thread.sleep (3000);
-            s.close();
-        } catch (IOException e) { }
-        server.stop(2);
-        if (requests != 2) {
-            throw new RuntimeException ("did not receive the 2 requests");
+        server.start();
+        int port = server.getAddress().getPort();
+        try (Socket s = new Socket("localhost", port);
+             OutputStream os = s.getOutputStream()) {
+            os.write(cmd.getBytes());
+            finished.await(30, TimeUnit.SECONDS);
+        } finally {
+            server.stop(2);
         }
-        System.out.println ("OK");
+
+        if (finished.getCount() != 0)
+            throw new RuntimeException("did not receive the 2 requests");
+
+        System.out.println("OK");
     }
 
-    public static boolean error = false;
-    static int requests = 0;
-
     static class Handler implements HttpHandler {
-        int invocation = 1;
-        public void handle (HttpExchange t)
-            throws IOException
-        {
-            InputStream is = t.getRequestBody();
-            Headers map = t.getRequestHeaders();
-            Headers rmap = t.getResponseHeaders();
-            while (is.read () != -1) ;
-            is.close();
-            t.sendResponseHeaders (200, -1);
+        private final CountDownLatch finished;
+
+        Handler(CountDownLatch finished) {
+            this.finished = finished;
+        }
+
+        @Override
+        public void handle(HttpExchange t) throws IOException {
+            try (InputStream is = t.getRequestBody()) {
+                Headers map = t.getRequestHeaders();
+                Headers rmap = t.getResponseHeaders();
+                while (is.read() != -1);
+            }
+            t.sendResponseHeaders(200, -1);
             t.close();
-            requests ++;
+            finished.countDown();
         }
     }
 }
+

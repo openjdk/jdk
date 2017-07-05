@@ -208,7 +208,7 @@ class KeyboardManager {
     public boolean fireKeyboardAction(KeyEvent e, boolean pressed, Container topAncestor) {
 
          if (e.isConsumed()) {
-              System.out.println("Aquired pre-used event!");
+              System.out.println("Acquired pre-used event!");
               Thread.dumpStack();
          }
 

@@ -247,6 +247,7 @@ void SharedHeap::set_barrier_set(BarrierSet* bs) {
 }
 
 void SharedHeap::post_initialize() {
+  CollectedHeap::post_initialize();
   ref_processing_init();
 }
 

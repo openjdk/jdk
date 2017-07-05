@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,7 +81,7 @@ class TempFileHelper {
                                String prefix,
                                String suffix,
                                boolean createDirectory,
-                               FileAttribute[] attrs)
+                               FileAttribute<?>[] attrs)
         throws IOException
     {
         if (prefix == null)
@@ -155,7 +155,7 @@ class TempFileHelper {
     static Path createTempFile(Path dir,
                                String prefix,
                                String suffix,
-                               FileAttribute[] attrs)
+                               FileAttribute<?>[] attrs)
         throws IOException
     {
         return create(dir, prefix, suffix, false, attrs);
@@ -167,7 +167,7 @@ class TempFileHelper {
      */
     static Path createTempDirectory(Path dir,
                                     String prefix,
-                                    FileAttribute[] attrs)
+                                    FileAttribute<?>[] attrs)
         throws IOException
     {
         return create(dir, prefix, null, true, attrs);

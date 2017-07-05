@@ -33,7 +33,7 @@ _compile=yes
 
 # temporary disable jcmd related tests
 # _testsuite="01,02,03,04,05"
-_testsuite="01,02,04"
+_testsuite="01"
 
 _pwd=`pwd`
 

@@ -58,7 +58,7 @@ class ClientReader {
     }
 
     /**
-     * Runs a cycle of doing a beforeRead action and then inquiring a new
+     * Runs a cycle of doing a beforeRead action and then enqueuing a new
      * read on the client. Handles closed channels and errors while reading.
      * If the client is still connected a new round of actions are called.
      */

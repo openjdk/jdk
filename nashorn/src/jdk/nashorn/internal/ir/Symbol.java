@@ -75,6 +75,8 @@ public final class Symbol implements Comparable<Symbol> {
     public static final int IS_SPECIALIZED_PARAM = 1 << 13;
     /** Is this symbol a shared temporary? */
     public static final int IS_SHARED            = 1 << 14;
+    /** Is this a function declaration? */
+    public static final int IS_FUNCTION_DECLARATION = 1 << 15;
 
     /** Null or name identifying symbol. */
     private final String name;
@@ -360,6 +362,14 @@ public final class Symbol implements Comparable<Symbol> {
     }
 
     /**
+     * Check if this symbol is a function declaration
+     * @return true if a function declaration
+     */
+    public boolean isFunctionDeclaration() {
+        return (flags & IS_FUNCTION_DECLARATION) == IS_FUNCTION_DECLARATION;
+    }
+
+    /**
      * Creates an unshared copy of a symbol. The symbol must be currently shared.
      * @param newName the name for the new symbol.
      * @return a new, unshared symbol.
@@ -394,6 +404,16 @@ public final class Symbol implements Comparable<Symbol> {
          }
      }
 
+
+    /**
+     * Mark this symbol as a function declaration.
+     */
+    public void setIsFunctionDeclaration() {
+        if (!isFunctionDeclaration()) {
+            trace("SET IS FUNCTION DECLARATION");
+            flags |= IS_FUNCTION_DECLARATION;
+        }
+    }
 
     /**
      * Check if this symbol is a variable

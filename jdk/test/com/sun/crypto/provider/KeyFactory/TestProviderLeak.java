@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6578538
+ * @bug 6578538 8027624
  * @summary com.sun.crypto.provider.SunJCE instance leak using KRB5 and
  *     LoginContext
  * @author Brad Wetmore
@@ -89,10 +89,6 @@ public class TestProviderLeak {
     }
 
     public static void main(String [] args) throws Exception {
-        // Eat up memory
-        Deque<byte []> dummyData = eatupMemory();
-        assert (dummyData != null);
-
         // Prepare the test
         final SecretKeyFactory skf =
             SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1", "SunJCE");
@@ -106,6 +102,10 @@ public class TestProviderLeak {
                 return skf.generateSecret(pbeKS);
             }
         };
+
+        // Eat up memory
+        Deque<byte []> dummyData = eatupMemory();
+        assert (dummyData != null);
 
         // Start testing iteration
         try {
