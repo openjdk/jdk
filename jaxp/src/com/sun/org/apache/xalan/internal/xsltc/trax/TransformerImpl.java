@@ -3,9 +3,11 @@
  * DO NOT REMOVE OR ALTER!
  */
 /*
- * Copyright 2001-2004 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership. The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the  "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -40,7 +42,7 @@ import java.net.UnknownServiceException;
 import java.util.Enumeration;
 import java.util.Properties;
 import java.util.StringTokenizer;
-import java.util.Vector;
+import java.util.ArrayList;
 import java.lang.reflect.Constructor;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -1084,7 +1086,7 @@ public final class TransformerImpl extends Transformer
             else if (name.equals(OutputKeys.CDATA_SECTION_ELEMENTS)) {
                 if (value != null) {
                     StringTokenizer e = new StringTokenizer(value);
-                    Vector uriAndLocalNames = null;
+                    ArrayList<String> uriAndLocalNames = null;
                     while (e.hasMoreTokens()) {
                         final String token = e.nextToken();
 
@@ -1104,11 +1106,11 @@ public final class TransformerImpl extends Transformer
                         }
 
                         if (uriAndLocalNames == null) {
-                            uriAndLocalNames = new Vector();
+                            uriAndLocalNames = new ArrayList<>();
                         }
                         // add the uri/localName as a pair, in that order
-                        uriAndLocalNames.addElement(uri);
-                        uriAndLocalNames.addElement(localName);
+                        uriAndLocalNames.add(uri);
+                        uriAndLocalNames.add(localName);
                     }
                     handler.setCdataSectionElements(uriAndLocalNames);
                 }

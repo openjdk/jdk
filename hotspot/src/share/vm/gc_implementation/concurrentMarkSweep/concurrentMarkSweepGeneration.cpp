@@ -311,8 +311,7 @@ void CMSCollector::ref_processor_init() {
                              _cmsGen->refs_discovery_is_mt(),     // mt discovery
                              (int) MAX2(ConcGCThreads, ParallelGCThreads), // mt discovery degree
                              _cmsGen->refs_discovery_is_atomic(), // discovery is not atomic
-                             &_is_alive_closure,                  // closure for liveness info
-                             false);                              // next field updates do not need write barrier
+                             &_is_alive_closure);                 // closure for liveness info
     // Initialize the _ref_processor field of CMSGen
     _cmsGen->set_ref_processor(_ref_processor);
 

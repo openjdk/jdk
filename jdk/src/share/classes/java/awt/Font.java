@@ -364,7 +364,7 @@ public class Font implements java.io.Serializable
     /**
      * The logical name of this <code>Font</code>, as passed to the
      * constructor.
-     * @since JDK1.0
+     * @since 1.0
      *
      * @serial
      * @see #getName
@@ -374,7 +374,7 @@ public class Font implements java.io.Serializable
     /**
      * The style of this <code>Font</code>, as passed to the constructor.
      * This style can be PLAIN, BOLD, ITALIC, or BOLD+ITALIC.
-     * @since JDK1.0
+     * @since 1.0
      *
      * @serial
      * @see #getStyle()
@@ -383,7 +383,7 @@ public class Font implements java.io.Serializable
 
     /**
      * The point size of this <code>Font</code>, rounded to integer.
-     * @since JDK1.0
+     * @since 1.0
      *
      * @serial
      * @see #getSize()
@@ -436,7 +436,7 @@ public class Font implements java.io.Serializable
     /**
      * Gets the peer of this <code>Font</code>.
      * @return  the peer of the <code>Font</code>.
-     * @since JDK1.1
+     * @since 1.1
      * @deprecated Font rendering is now platform independent.
      */
     @Deprecated
@@ -562,7 +562,7 @@ public class Font implements java.io.Serializable
      * @param size the point size of the {@code Font}
      * @see GraphicsEnvironment#getAllFonts
      * @see GraphicsEnvironment#getAvailableFontFamilyNames
-     * @since JDK1.0
+     * @since 1.0
      */
     public Font(String name, int style, int size) {
         this.name = (name != null) ? name : "Default";
@@ -1180,7 +1180,7 @@ public class Font implements java.io.Serializable
      *
      * @see #getName
      * @see #getFontName
-     * @since JDK1.1
+     * @since 1.1
      */
     public String getFamily() {
         return getFamily_NoClientCode();
@@ -1240,7 +1240,7 @@ public class Font implements java.io.Serializable
      *          this <code>Font</code>.
      * @see #getFamily
      * @see #getFontName
-     * @since JDK1.0
+     * @since 1.0
      */
     public String getName() {
         return name;
@@ -1286,7 +1286,7 @@ public class Font implements java.io.Serializable
      * @see #isPlain
      * @see #isBold
      * @see #isItalic
-     * @since JDK1.0
+     * @since 1.0
      */
     public int getStyle() {
         return style;
@@ -1312,7 +1312,7 @@ public class Font implements java.io.Serializable
      * @see #getSize2D
      * @see GraphicsConfiguration#getDefaultTransform
      * @see GraphicsConfiguration#getNormalizingTransform
-     * @since JDK1.0
+     * @since 1.0
      */
     public int getSize() {
         return size;
@@ -1337,7 +1337,7 @@ public class Font implements java.io.Serializable
      *            PLAIN style;
      *            <code>false</code> otherwise.
      * @see       java.awt.Font#getStyle
-     * @since     JDK1.0
+     * @since     1.0
      */
     public boolean isPlain() {
         return style == 0;
@@ -1350,7 +1350,7 @@ public class Font implements java.io.Serializable
      *            style is BOLD;
      *            <code>false</code> otherwise.
      * @see       java.awt.Font#getStyle
-     * @since     JDK1.0
+     * @since     1.0
      */
     public boolean isBold() {
         return (style & BOLD) != 0;
@@ -1363,7 +1363,7 @@ public class Font implements java.io.Serializable
      *            style is ITALIC;
      *            <code>false</code> otherwise.
      * @see       java.awt.Font#getStyle
-     * @since     JDK1.0
+     * @since     1.0
      */
     public boolean isItalic() {
         return (style & ITALIC) != 0;
@@ -1484,7 +1484,7 @@ public class Font implements java.io.Serializable
      *          describes, or a new default <code>Font</code> if
      *          <code>str</code> is <code>null</code>.
      * @see #getFamily
-     * @since JDK1.1
+     * @since 1.1
      */
     public static Font decode(String str) {
         String fontName = str;
@@ -1595,7 +1595,7 @@ public class Font implements java.io.Serializable
     /**
      * Returns a hashcode for this <code>Font</code>.
      * @return     a hashcode value for this <code>Font</code>.
-     * @since      JDK1.0
+     * @since      1.0
      */
     public int hashCode() {
         if (hash == 0) {
@@ -1622,7 +1622,7 @@ public class Font implements java.io.Serializable
      *          or if the argument is a <code>Font</code> object
      *          describing the same font as this object;
      *          <code>false</code> otherwise.
-     * @since JDK1.0
+     * @since 1.0
      */
     public boolean equals(Object obj) {
         if (obj == this) {
@@ -1667,7 +1667,7 @@ public class Font implements java.io.Serializable
      * representation.
      * @return     a <code>String</code> representation of this
      *          <code>Font</code> object.
-     * @since      JDK1.0
+     * @since      1.0
      */
     // NOTE: This method may be called by privileged threads.
     //       DO NOT INVOKE CLIENT CODE ON THIS THREAD!

@@ -34,7 +34,7 @@ import java.net.URL;
  * by application code.
  *
  * @author  Ann Wollrath
- * @since   JDK1.1
+ * @since   1.1
  *
  * @deprecated no replacement
  */
@@ -56,7 +56,7 @@ public interface LoaderHandler {
      * @exception ClassNotFoundException
      *            if a definition for the class could not
      *            be found at the codebase location.
-     * @since JDK1.1
+     * @since 1.1
      * @deprecated no replacement
      */
     @Deprecated
@@ -75,7 +75,7 @@ public interface LoaderHandler {
      * @exception ClassNotFoundException
      *            if a definition for the class could not
      *            be found at the specified URL
-     * @since JDK1.1
+     * @since 1.1
      * @deprecated no replacement
      */
     @Deprecated
@@ -87,7 +87,7 @@ public interface LoaderHandler {
      *
      * @param loader  a class loader from which to get the security context
      * @return the security context
-     * @since JDK1.1
+     * @since 1.1
      * @deprecated no replacement
      */
     @Deprecated

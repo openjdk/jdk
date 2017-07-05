@@ -43,7 +43,7 @@ package sun.management;
  * argumentA's position is 0, argumentB's position is 1 and argumentC's
  * position is 2.
  *
- * @since 8
+ * @since 1.8
  */
 
 class DiagnosticCommandArgumentInfo {

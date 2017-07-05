@@ -41,7 +41,7 @@ package java.rmi.server;
  * IllegalStateException}.
  *
  * @author  Ann Wollrath
- * @since   JDK1.1
+ * @since   1.1
  * @see     java.rmi.server.UnicastRemoteObject#clone()
  */
 public class ServerCloneException extends CloneNotSupportedException {

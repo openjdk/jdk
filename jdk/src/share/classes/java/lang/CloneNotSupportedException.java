@@ -38,7 +38,7 @@ package java.lang;
  * @author  unascribed
  * @see     java.lang.Cloneable
  * @see     java.lang.Object#clone()
- * @since   JDK1.0
+ * @since   1.0
  */
 
 public

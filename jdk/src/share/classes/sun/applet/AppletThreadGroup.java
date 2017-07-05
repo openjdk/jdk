@@ -55,7 +55,7 @@ public class AppletThreadGroup extends ThreadGroup {
      * @exception  SecurityException  if the current thread cannot create a
      *               thread in the specified thread group.
      * @see     java.lang.SecurityException
-     * @since   JDK1.1.1
+     * @since   1.1.1
      */
     public AppletThreadGroup(ThreadGroup parent, String name) {
         super(parent, name);

@@ -32,7 +32,7 @@ public class TransformerConfigurationException extends TransformerException {
 
     /**
      * Create a new <code>TransformerConfigurationException</code> with no
-     * detail mesage.
+     * detail message.
      */
     public TransformerConfigurationException() {
         super("Configuration Error");

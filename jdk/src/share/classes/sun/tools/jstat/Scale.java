@@ -175,7 +175,7 @@ public class Scale {
      * @param   s  an string to match against Scale objects.
      * @return     The Scale object matching the given string.
      */
-    protected static Set keySet() {
+    protected static Set<String> keySet() {
         return map.keySet();
     }
 

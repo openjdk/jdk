@@ -62,14 +62,14 @@ public class SyntaxException extends ParserException {
                   + ", Found " + found.toMessage();
     }
 
-    public SyntaxException(int lineno, Set expected, Token found) {
+    public SyntaxException(int lineno, Set<String> expected, Token found) {
         StringBuilder msg = new StringBuilder();
 
         msg.append("Syntax error at line " + lineno + ": Expected one of \'");
 
         boolean first = true;
-        for (Iterator i = expected.iterator(); i.hasNext(); /* empty */) {
-            String keyWord = (String)i.next();
+        for (Iterator<String> i = expected.iterator(); i.hasNext(); /* empty */) {
+            String keyWord = i.next();
             if (first) {
                 msg.append(keyWord);
                 first = false;

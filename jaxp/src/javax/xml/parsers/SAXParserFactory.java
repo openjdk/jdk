@@ -359,7 +359,7 @@ public abstract class SAXParserFactory {
      * is responsible to make sure that the application will receive
      * those modified event stream.</p>
      *
-     * <p>Initialy, <code>null</code> is set as the {@link Schema}.</p>
+     * <p>Initially, <code>null</code> is set as the {@link Schema}.</p>
      *
      * <p>This processing will take effect even if
      * the {@link #isValidating()} method returns <code>false</code>.

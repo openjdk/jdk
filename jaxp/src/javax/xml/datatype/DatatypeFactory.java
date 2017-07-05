@@ -119,7 +119,7 @@ public abstract class DatatypeFactory {
         Pattern.compile("[^YM]*[DT].*");
 
     /**
-     * <p>Protected constructor to prevent instaniation outside of package.</p>
+     * <p>Protected constructor to prevent instantiation outside of package.</p>
      *
      * <p>Use {@link #newInstance()} to create a <code>DatatypeFactory</code>.</p>
      */

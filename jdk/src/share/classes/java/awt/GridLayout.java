@@ -88,7 +88,7 @@ package java.awt;
  * number of rows is set to zero.
  *
  * @author  Arthur van Hoff
- * @since   JDK1.0
+ * @since   1.0
  */
 public class GridLayout implements LayoutManager, java.io.Serializable {
     /*
@@ -144,7 +144,7 @@ public class GridLayout implements LayoutManager, java.io.Serializable {
     /**
      * Creates a grid layout with a default of one column per component,
      * in a single row.
-     * @since JDK1.1
+     * @since 1.1
      */
     public GridLayout() {
         this(1, 0, 0, 0);
@@ -203,7 +203,7 @@ public class GridLayout implements LayoutManager, java.io.Serializable {
     /**
      * Gets the number of rows in this layout.
      * @return    the number of rows in this layout
-     * @since     JDK1.1
+     * @since     1.1
      */
     public int getRows() {
         return rows;
@@ -214,7 +214,7 @@ public class GridLayout implements LayoutManager, java.io.Serializable {
      * @param        rows   the number of rows in this layout
      * @exception    IllegalArgumentException  if the value of both
      *               <code>rows</code> and <code>cols</code> is set to zero
-     * @since        JDK1.1
+     * @since        1.1
      */
     public void setRows(int rows) {
         if ((rows == 0) && (this.cols == 0)) {
@@ -226,7 +226,7 @@ public class GridLayout implements LayoutManager, java.io.Serializable {
     /**
      * Gets the number of columns in this layout.
      * @return     the number of columns in this layout
-     * @since      JDK1.1
+     * @since      1.1
      */
     public int getColumns() {
         return cols;
@@ -242,7 +242,7 @@ public class GridLayout implements LayoutManager, java.io.Serializable {
      * @param        cols   the number of columns in this layout
      * @exception    IllegalArgumentException  if the value of both
      *               <code>rows</code> and <code>cols</code> is set to zero
-     * @since        JDK1.1
+     * @since        1.1
      */
     public void setColumns(int cols) {
         if ((cols == 0) && (this.rows == 0)) {
@@ -254,7 +254,7 @@ public class GridLayout implements LayoutManager, java.io.Serializable {
     /**
      * Gets the horizontal gap between components.
      * @return       the horizontal gap between components
-     * @since        JDK1.1
+     * @since        1.1
      */
     public int getHgap() {
         return hgap;
@@ -263,7 +263,7 @@ public class GridLayout implements LayoutManager, java.io.Serializable {
     /**
      * Sets the horizontal gap between components to the specified value.
      * @param        hgap   the horizontal gap between components
-     * @since        JDK1.1
+     * @since        1.1
      */
     public void setHgap(int hgap) {
         this.hgap = hgap;
@@ -272,7 +272,7 @@ public class GridLayout implements LayoutManager, java.io.Serializable {
     /**
      * Gets the vertical gap between components.
      * @return       the vertical gap between components
-     * @since        JDK1.1
+     * @since        1.1
      */
     public int getVgap() {
         return vgap;
@@ -281,7 +281,7 @@ public class GridLayout implements LayoutManager, java.io.Serializable {
     /**
      * Sets the vertical gap between components to the specified value.
      * @param         vgap  the vertical gap between components
-     * @since        JDK1.1
+     * @since        1.1
      */
     public void setVgap(int vgap) {
         this.vgap = vgap;

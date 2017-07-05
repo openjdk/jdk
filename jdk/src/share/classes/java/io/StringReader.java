@@ -30,7 +30,7 @@ package java.io;
  * A character stream whose source is a string.
  *
  * @author      Mark Reinhold
- * @since       JDK1.1
+ * @since       1.1
  */
 
 public class StringReader extends Reader {

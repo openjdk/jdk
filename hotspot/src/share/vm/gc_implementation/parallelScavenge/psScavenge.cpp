@@ -864,8 +864,7 @@ void PSScavenge::initialize() {
                            true,                       // mt discovery
                            (int) ParallelGCThreads,    // mt discovery degree
                            true,                       // atomic_discovery
-                           NULL,                       // header provides liveness info
-                           false);                     // next field updates do not need write barrier
+                           NULL);                      // header provides liveness info
 
   // Cache the cardtable
   BarrierSet* bs = Universe::heap()->barrier_set();
