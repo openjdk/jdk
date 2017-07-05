@@ -79,9 +79,11 @@
 
 #include <errno.h>
 
+#ifndef USDT2
 HS_DTRACE_PROBE_DECL1(hotspot, thread__sleep__begin, long long);
 HS_DTRACE_PROBE_DECL1(hotspot, thread__sleep__end, int);
 HS_DTRACE_PROBE_DECL0(hotspot, thread__yield);
+#endif /* !USDT2 */
 
 /*
   NOTE about use of any ctor or function call that can trigger a safepoint/GC:
@@ -2816,7 +2818,11 @@ JVM_END
 JVM_ENTRY(void, JVM_Yield(JNIEnv *env, jclass threadClass))
   JVMWrapper("JVM_Yield");
   if (os::dont_yield()) return;
+#ifndef USDT2
   HS_DTRACE_PROBE0(hotspot, thread__yield);
+#else /* USDT2 */
+  HOTSPOT_THREAD_YIELD();
+#endif /* USDT2 */
   // When ConvertYieldToSleep is off (default), this matches the classic VM use of yield.
   // Critical for similar threading behaviour
   if (ConvertYieldToSleep) {
@@ -2842,7 +2848,12 @@ JVM_ENTRY(void, JVM_Sleep(JNIEnv* env, jclass threadClass, jlong millis))
   // And set new thread state to SLEEPING.
   JavaThreadSleepState jtss(thread);
 
+#ifndef USDT2
   HS_DTRACE_PROBE1(hotspot, thread__sleep__begin, millis);
+#else /* USDT2 */
+  HOTSPOT_THREAD_SLEEP_BEGIN(
+                             millis);
+#endif /* USDT2 */
 
   if (millis == 0) {
     // When ConvertSleepToYield is on, this matches the classic VM implementation of
@@ -2864,7 +2875,12 @@ JVM_ENTRY(void, JVM_Sleep(JNIEnv* env, jclass threadClass, jlong millis))
       // An asynchronous exception (e.g., ThreadDeathException) could have been thrown on
       // us while we were sleeping. We do not overwrite those.
       if (!HAS_PENDING_EXCEPTION) {
+#ifndef USDT2
         HS_DTRACE_PROBE1(hotspot, thread__sleep__end,1);
+#else /* USDT2 */
+        HOTSPOT_THREAD_SLEEP_END(
+                                 1);
+#endif /* USDT2 */
         // TODO-FIXME: THROW_MSG returns which means we will not call set_state()
         // to properly restore the thread state.  That's likely wrong.
         THROW_MSG(vmSymbols::java_lang_InterruptedException(), "sleep interrupted");
@@ -2872,7 +2888,12 @@ JVM_ENTRY(void, JVM_Sleep(JNIEnv* env, jclass threadClass, jlong millis))
     }
     thread->osthread()->set_state(old_state);
   }
+#ifndef USDT2
   HS_DTRACE_PROBE1(hotspot, thread__sleep__end,0);
+#else /* USDT2 */
+  HOTSPOT_THREAD_SLEEP_END(
+                           0);
+#endif /* USDT2 */
 JVM_END
 
 JVM_ENTRY(jobject, JVM_CurrentThread(JNIEnv* env, jclass threadClass))
@@ -2990,6 +3011,20 @@ JVM_ENTRY(void, JVM_DumpAllStacks(JNIEnv* env, jclass))
   }
 JVM_END
 
+JVM_ENTRY(void, JVM_SetNativeThreadName(JNIEnv* env, jobject jthread, jstring name))
+  JVMWrapper("JVM_SetNativeThreadName");
+  ResourceMark rm(THREAD);
+  oop java_thread = JNIHandles::resolve_non_null(jthread);
+  JavaThread* thr = java_lang_Thread::thread(java_thread);
+  // Thread naming only supported for the current thread, doesn't work for
+  // target threads.
+  if (Thread::current() == thr && !thr->has_attached_via_jni()) {
+    // we don't set the name of an attached thread to avoid stepping
+    // on other programs
+    const char *thread_name = java_lang_String::as_utf8_string(JNIHandles::resolve_non_null(name));
+    os::set_native_thread_name(thread_name);
+  }
+JVM_END
 
 // java.lang.SecurityManager ///////////////////////////////////////////////////////////////////////
 
