@@ -56,20 +56,14 @@ import sun.security.action.GetPropertyAction;
  * At startup the LogManager class is located using the
  * java.util.logging.manager system property.
  * <p>
- * By default, the LogManager reads its initial configuration from
- * a properties file "lib/logging.properties" in the JRE directory.
- * If you edit that property file you can change the default logging
- * configuration for all uses of that JRE.
- * <p>
- * In addition, the LogManager uses two optional system properties that
- * allow more control over reading the initial configuration:
+ * The LogManager defines two optional system properties that allow control over
+ * the initial configuration:
  * <ul>
  * <li>"java.util.logging.config.class"
  * <li>"java.util.logging.config.file"
  * </ul>
- * These two properties may be set via the Preferences API, or as
- * command line property definitions to the "java" command, or as
- * system property definitions passed to JNI_CreateJavaVM.
+ * These two properties may be specified on the command line to the "java"
+ * command, or as system property definitions passed to JNI_CreateJavaVM.
  * <p>
  * If the "java.util.logging.config.class" property is set, then the
  * property value is treated as a class name.  The given class will be
@@ -84,9 +78,10 @@ import sun.security.action.GetPropertyAction;
  * to specify a properties file (in java.util.Properties format). The
  * initial logging configuration will be read from this file.
  * <p>
- * If neither of these properties is defined then, as described
- * above, the LogManager will read its initial configuration from
- * a properties file "lib/logging.properties" in the JRE directory.
+ * If neither of these properties is defined then the LogManager uses its
+ * default configuration. The default configuration is typically loaded from the
+ * properties file "{@code lib/logging.properties}" in the Java installation
+ * directory.
  * <p>
  * The properties for loggers and Handlers will have names starting
  * with the dot-separated name for the handler or logger.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,6 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.concurrent.CountDownLatch;
 import java.util.logging.Logger;
-import java.util.logging.Logger;
 
 public class ClassLoaderLeakTest {
 
@@ -59,11 +58,11 @@ public class ClassLoaderLeakTest {
                 try {
                     ClassLoader cl =
                         Thread.currentThread().getContextClassLoader();
-                    Class appMain = cl.loadClass("AppTest");
+                    Class<?> appMain = cl.loadClass("AppTest");
                     Method launch =
                         appMain.getDeclaredMethod("launch", doneSignal.getClass());
 
-                    Constructor c = appMain.getConstructor();
+                    Constructor<?> c = appMain.getConstructor();
 
                     Object o = c.newInstance();
 
@@ -80,8 +79,7 @@ public class ClassLoaderLeakTest {
         /* prepare test  class loader */
         URL pwd = null;
         try {
-
-            pwd = new File(System.getProperty("test.classes",".")).toURL();
+            pwd = new File(System.getProperty("test.classes",".")).toURI().toURL();
         } catch (MalformedURLException e) {
             throw new RuntimeException("Test failed.", e);
         }
@@ -139,7 +137,7 @@ public class ClassLoaderLeakTest {
             uniqClassName = uniq;
         }
 
-        public Class loadClass(String name) throws ClassNotFoundException {
+        public Class<?> loadClass(String name) throws ClassNotFoundException {
             if (verbose) {
                 System.out.printf("%s: load class %s\n", uniqClassName, name);
             }

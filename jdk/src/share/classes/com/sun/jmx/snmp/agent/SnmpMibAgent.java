@@ -33,14 +33,12 @@ package com.sun.jmx.snmp.agent;
 import java.io.Serializable;
 import java.util.Vector;
 import java.util.Enumeration;
-import java.util.Set;
 
 // jmx imports
 //
 import javax.management.MBeanServer;
 import javax.management.MBeanRegistration;
 import javax.management.ObjectName;
-import javax.management.MalformedObjectNameException;
 import javax.management.InstanceNotFoundException;
 import javax.management.ServiceNotFoundException;
 import javax.management.ReflectionException;
@@ -94,6 +92,7 @@ public abstract class SnmpMibAgent
      *
      * @exception java.lang.Exception
      */
+    @Override
     public abstract ObjectName preRegister(MBeanServer server,
                                            ObjectName name)
         throws java.lang.Exception;
@@ -101,18 +100,21 @@ public abstract class SnmpMibAgent
     /**
      * Not used in this context.
      */
+    @Override
     public void postRegister (Boolean registrationDone) {
     }
 
     /**
      * Not used in this context.
      */
+    @Override
     public void preDeregister() throws java.lang.Exception {
     }
 
     /**
      * Not used in this context.
      */
+    @Override
     public void postDeregister() {
     }
 
@@ -127,6 +129,7 @@ public abstract class SnmpMibAgent
      *
      * @exception SnmpStatusException An error occured during the operation.
      */
+    @Override
     public abstract void get(SnmpMibRequest req)
         throws SnmpStatusException;
 
@@ -141,6 +144,7 @@ public abstract class SnmpMibAgent
      *
      * @exception SnmpStatusException An error occured during the operation.
      */
+    @Override
     public abstract void getNext(SnmpMibRequest req)
         throws SnmpStatusException;
 
@@ -164,6 +168,7 @@ public abstract class SnmpMibAgent
      *
      * @exception SnmpStatusException An error occured during the operation.
      */
+    @Override
     public abstract void getBulk(SnmpMibRequest req, int nonRepeat,
                                  int maxRepeat)
         throws SnmpStatusException;
@@ -185,6 +190,7 @@ public abstract class SnmpMibAgent
      *            the exception is thrown in the {@link #check(SnmpMibRequest)}
      *            method instead.
      */
+    @Override
     public abstract void set(SnmpMibRequest req)
         throws SnmpStatusException;
 
@@ -203,6 +209,7 @@ public abstract class SnmpMibAgent
      * @exception SnmpStatusException The <CODE>set</CODE> operation
      *    cannot be performed.
      */
+    @Override
     public abstract void check(SnmpMibRequest req)
         throws SnmpStatusException;
 
@@ -226,6 +233,7 @@ public abstract class SnmpMibAgent
      * @return The MBean server or null if the MIB is not registered in any
      *     MBean server.
      */
+    @Override
     public MBeanServer getMBeanServer() {
         return server;
     }
@@ -236,6 +244,7 @@ public abstract class SnmpMibAgent
      *
      * @return The SNMP MIB handler.
      */
+    @Override
     public SnmpMibHandler getSnmpAdaptor() {
         return adaptor;
     }
@@ -246,6 +255,7 @@ public abstract class SnmpMibAgent
      *
      * @param stack The SNMP MIB handler.
      */
+    @Override
     public void setSnmpAdaptor(SnmpMibHandler stack) {
         if (adaptor != null) {
             adaptor.removeMib(this);
@@ -266,6 +276,7 @@ public abstract class SnmpMibAgent
      *
      * @since 1.5
      */
+    @Override
     public void setSnmpAdaptor(SnmpMibHandler stack, SnmpOid[] oids) {
         if (adaptor != null) {
             adaptor.removeMib(this);
@@ -288,6 +299,7 @@ public abstract class SnmpMibAgent
      *
      * @since 1.5
      */
+    @Override
     public void setSnmpAdaptor(SnmpMibHandler stack, String contextName) {
         if (adaptor != null) {
             adaptor.removeMib(this, contextName);
@@ -309,6 +321,7 @@ public abstract class SnmpMibAgent
      *
      * @since 1.5
      */
+    @Override
     public void setSnmpAdaptor(SnmpMibHandler stack,
                                String contextName,
                                SnmpOid[] oids) {
@@ -327,6 +340,7 @@ public abstract class SnmpMibAgent
      *
      * @return The name of the SNMP protocol adaptor.
      */
+    @Override
     public ObjectName getSnmpAdaptorName() {
         return adaptorName;
     }
@@ -344,6 +358,7 @@ public abstract class SnmpMibAgent
      * @exception ServiceNotFoundException This SNMP MIB is not registered
      *     in the MBean server or the requested service is not supported.
      */
+    @Override
     public void setSnmpAdaptorName(ObjectName name)
         throws InstanceNotFoundException, ServiceNotFoundException {
 
@@ -389,6 +404,7 @@ public abstract class SnmpMibAgent
      *
      * @since 1.5
      */
+    @Override
     public void setSnmpAdaptorName(ObjectName name, SnmpOid[] oids)
         throws InstanceNotFoundException, ServiceNotFoundException {
 
@@ -434,6 +450,7 @@ public abstract class SnmpMibAgent
      *
      * @since 1.5
      */
+    @Override
     public void setSnmpAdaptorName(ObjectName name, String contextName)
         throws InstanceNotFoundException, ServiceNotFoundException {
 
@@ -481,6 +498,7 @@ public abstract class SnmpMibAgent
      *
      * @since 1.5
      */
+    @Override
     public void setSnmpAdaptorName(ObjectName name,
                                    String contextName, SnmpOid[] oids)
         throws InstanceNotFoundException, ServiceNotFoundException {
@@ -522,6 +540,7 @@ public abstract class SnmpMibAgent
      * @return <CODE>true</CODE> if the MIB module is bound,
      *         <CODE>false</CODE> otherwise.
      */
+    @Override
     public boolean getBindingState() {
         if (adaptor == null)
             return false;
@@ -534,6 +553,7 @@ public abstract class SnmpMibAgent
      *
      * @return The MIB name.
      */
+    @Override
     public String getMibName() {
         return mibName;
     }
@@ -681,7 +701,7 @@ public abstract class SnmpMibAgent
     private Vector<SnmpVarBind> splitFrom(Vector<SnmpVarBind> original, int limit) {
 
         int max= original.size();
-        Vector<SnmpVarBind> result= new Vector<SnmpVarBind>(max - limit);
+        Vector<SnmpVarBind> result= new Vector<>(max - limit);
         int i= limit;
 
         // Ok the loop looks a bit strange. But in order to improve the
@@ -697,21 +717,12 @@ public abstract class SnmpMibAgent
         return result;
     }
 
-    private void concatVector(SnmpMibRequest req, Vector source) {
-        for(Enumeration e= source.elements(); e.hasMoreElements(); ) {
-            SnmpVarBind var= (SnmpVarBind) e.nextElement();
-            // We need to duplicate the SnmpVarBind otherwise it is going
-            // to be overloaded by the next get Next ...
-            req.addVarBind(new SnmpVarBind(var.oid, var.value));
-        }
-    }
-
-    private void concatVector(Vector<SnmpVarBind> target, Vector<SnmpVarBind> source) {
+    private void concatVector(SnmpMibRequest req, Vector<SnmpVarBind> source) {
         for(Enumeration<SnmpVarBind> e= source.elements(); e.hasMoreElements(); ) {
             SnmpVarBind var= e.nextElement();
             // We need to duplicate the SnmpVarBind otherwise it is going
             // to be overloaded by the next get Next ...
-            target.addElement(new SnmpVarBind(var.oid, var.value));
+            req.addVarBind(new SnmpVarBind(var.oid, var.value));
         }
     }
 

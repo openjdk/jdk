@@ -1015,11 +1015,7 @@ int AbstractInterpreter::size_top_interpreter_activation(Method* method) {
 // Helper for figuring out if frames are interpreter frames
 
 bool CppInterpreter::contains(address pc) {
-#ifdef PRODUCT
-  ShouldNotCallThis();
-#else
   return false; // make frame::print_value_on work
-#endif // !PRODUCT
 }
 
 // Result handlers and convertors

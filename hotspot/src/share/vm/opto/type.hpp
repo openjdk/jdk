@@ -242,8 +242,10 @@ public:
   const TypeInt    *isa_int() const;             // Returns NULL if not an Int
   const TypeLong   *is_long() const;
   const TypeLong   *isa_long() const;            // Returns NULL if not a Long
+  const TypeD      *isa_double() const;          // Returns NULL if not a Double{Top,Con,Bot}
   const TypeD      *is_double_constant() const;  // Asserts it is a DoubleCon
   const TypeD      *isa_double_constant() const; // Returns NULL if not a DoubleCon
+  const TypeF      *isa_float() const;           // Returns NULL if not a Float{Top,Con,Bot}
   const TypeF      *is_float_constant() const;   // Asserts it is a FloatCon
   const TypeF      *isa_float_constant() const;  // Returns NULL if not a FloatCon
   const TypeTuple  *is_tuple() const;            // Collection of fields, NOT a pointer
@@ -1320,24 +1322,6 @@ inline double Type::getd() const {
   return ((TypeD*)this)->_d;
 }
 
-inline const TypeF *Type::is_float_constant() const {
-  assert( _base == FloatCon, "Not a Float" );
-  return (TypeF*)this;
-}
-
-inline const TypeF *Type::isa_float_constant() const {
-  return ( _base == FloatCon ? (TypeF*)this : NULL);
-}
-
-inline const TypeD *Type::is_double_constant() const {
-  assert( _base == DoubleCon, "Not a Double" );
-  return (TypeD*)this;
-}
-
-inline const TypeD *Type::isa_double_constant() const {
-  return ( _base == DoubleCon ? (TypeD*)this : NULL);
-}
-
 inline const TypeInt *Type::is_int() const {
   assert( _base == Int, "Not an Int" );
   return (TypeInt*)this;
@@ -1354,6 +1338,36 @@ inline const TypeLong *Type::is_long() const {
 
 inline const TypeLong *Type::isa_long() const {
   return ( _base == Long ? (TypeLong*)this : NULL);
+}
+
+inline const TypeF *Type::isa_float() const {
+  return ((_base == FloatTop ||
+           _base == FloatCon ||
+           _base == FloatBot) ? (TypeF*)this : NULL);
+}
+
+inline const TypeF *Type::is_float_constant() const {
+  assert( _base == FloatCon, "Not a Float" );
+  return (TypeF*)this;
+}
+
+inline const TypeF *Type::isa_float_constant() const {
+  return ( _base == FloatCon ? (TypeF*)this : NULL);
+}
+
+inline const TypeD *Type::isa_double() const {
+  return ((_base == DoubleTop ||
+           _base == DoubleCon ||
+           _base == DoubleBot) ? (TypeD*)this : NULL);
+}
+
+inline const TypeD *Type::is_double_constant() const {
+  assert( _base == DoubleCon, "Not a Double" );
+  return (TypeD*)this;
+}
+
+inline const TypeD *Type::isa_double_constant() const {
+  return ( _base == DoubleCon ? (TypeD*)this : NULL);
 }
 
 inline const TypeTuple *Type::is_tuple() const {

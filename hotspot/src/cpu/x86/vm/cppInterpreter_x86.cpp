@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "asm/assembler.hpp"
+#include "asm/macroAssembler.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/cppInterpreter.hpp"
 #include "interpreter/interpreter.hpp"

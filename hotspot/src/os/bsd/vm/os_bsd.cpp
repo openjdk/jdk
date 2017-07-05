@@ -29,6 +29,7 @@
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "compiler/compileBroker.hpp"
+#include "compiler/disassembler.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jvm_bsd.h"
 #include "memory/allocation.inline.hpp"
@@ -62,26 +63,6 @@
 #include "utilities/events.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/vmError.hpp"
-#ifdef TARGET_ARCH_x86
-# include "assembler_x86.inline.hpp"
-# include "nativeInst_x86.hpp"
-#endif
-#ifdef TARGET_ARCH_sparc
-# include "assembler_sparc.inline.hpp"
-# include "nativeInst_sparc.hpp"
-#endif
-#ifdef TARGET_ARCH_zero
-# include "assembler_zero.inline.hpp"
-# include "nativeInst_zero.hpp"
-#endif
-#ifdef TARGET_ARCH_arm
-# include "assembler_arm.inline.hpp"
-# include "nativeInst_arm.hpp"
-#endif
-#ifdef TARGET_ARCH_ppc
-# include "assembler_ppc.inline.hpp"
-# include "nativeInst_ppc.hpp"
-#endif
 
 // put OS-includes here
 # include <sys/types.h>

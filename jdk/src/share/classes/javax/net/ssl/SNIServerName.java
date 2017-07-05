@@ -40,7 +40,7 @@ import java.util.Arrays;
  * methods that can change the state of an instance once it has been created.
  *
  * @see SSLParameters#getServerNames()
- * @see SSLParameters#setServerNames(List<SNIServerName>)
+ * @see SSLParameters#setServerNames(List)
  *
  * @since 1.8
  */

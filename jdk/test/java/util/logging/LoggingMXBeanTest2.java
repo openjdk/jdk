@@ -37,7 +37,6 @@ import java.util.ListIterator;
 
 public class LoggingMXBeanTest2
 {
-
     static LoggingMXBean mbean = LogManager.getLoggingMXBean();
     static String LOGGER_NAME_1 = "com.sun.management.Logger";
     static String LOGGER_NAME_2 = "com.sun.management.Logger.Logger2";
@@ -57,14 +56,14 @@ public class LoggingMXBeanTest2
          */
         System.out.println("Test Logger Name retrieval (getLoggerNames)");
         boolean log1 = false, log2 = false;
-        List loggers = mbean.getLoggerNames();
+        List<String> loggers = mbean.getLoggerNames();
         if (loggers == null || loggers.size() < 2) {
             throw new RuntimeException(
                 "Could not Detect the presense of the new Loggers");
         }
 
-        for (ListIterator iter = loggers.listIterator(); iter.hasNext(); ) {
-            String logger = (String) iter.next();
+        for (ListIterator<String> iter = loggers.listIterator(); iter.hasNext(); ) {
+            String logger = iter.next();
             if (logger.equals(LOGGER_NAME_1)) {
                 log1 = true;
                 System.out.println("  : Found new Logger : " + logger);
@@ -187,6 +186,6 @@ public class LoggingMXBeanTest2
     }
 
     public static void main(String[] argv) throws Exception {
-        LoggingMXBeanTest2 p = new LoggingMXBeanTest2();
+        new LoggingMXBeanTest2();
     }
 }

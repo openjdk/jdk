@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6796710
+ * @bug 6796710 7124242
  * @summary Html content in JEditorPane is overlapping on swing components while resizing the application.
  * @library ../../../regtesthelpers
  * @build Util
@@ -31,11 +31,10 @@
    @run main bug6796710
  */
 
-import sun.awt.SunToolkit;
-
-import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import javax.swing.*;
+import sun.awt.SunToolkit;
 
 public class bug6796710 {
     // The page is inlined because we want to be sure that the JEditorPane filled synchronously
@@ -68,8 +67,11 @@ public class bug6796710 {
         robot = new Robot();
 
         SwingUtilities.invokeAndWait(new Runnable() {
+            @Override
             public void run() {
                 frame = new JFrame();
+
+                frame.setUndecorated(true);
 
                 pnBottom = new JPanel();
                 pnBottom.add(new JLabel("Some label"));
@@ -95,9 +97,13 @@ public class bug6796710 {
 
         ((SunToolkit) SunToolkit.getDefaultToolkit()).realSync();
 
+        // This delay should be added for MacOSX, realSync is not enough
+        Thread.sleep(1000);
+
         BufferedImage bufferedImage = getPnBottomImage();
 
         SwingUtilities.invokeAndWait(new Runnable() {
+            @Override
             public void run() {
                 frame.setSize(400, 150);
             }

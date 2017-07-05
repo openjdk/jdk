@@ -1332,6 +1332,15 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
         return new XInputMethodDescriptor();
     }
 
+    /**
+     * Returns whether enableInputMethods should be set to true for peered
+     * TextComponent instances on this platform. True by default.
+     */
+    @Override
+    public boolean enableInputMethodsForTextComponent() {
+        return true;
+    }
+
     static int getMultiClickTime() {
         if (awt_multiclick_time == 0) {
             initializeMultiClickTime();

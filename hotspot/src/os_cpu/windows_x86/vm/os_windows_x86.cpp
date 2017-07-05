@@ -23,7 +23,7 @@
  */
 
 // no precompiled headers
-#include "assembler_x86.inline.hpp"
+#include "asm/macroAssembler.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"

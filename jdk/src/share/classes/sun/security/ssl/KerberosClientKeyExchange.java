@@ -44,6 +44,7 @@ public class KerberosClientKeyExchange extends HandshakeMessage {
 
     private static final Class<?> implClass = AccessController.doPrivileged(
             new PrivilegedAction<Class<?>>() {
+                @Override
                 public Class<?> run() {
                     try {
                         return Class.forName(IMPL_CLASS, true, null);

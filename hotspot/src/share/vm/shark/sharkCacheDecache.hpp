@@ -192,7 +192,7 @@ class SharkDecacher : public SharkCacherDecacher {
 
   // Writer helper
  protected:
-  void write_value_to_frame(const llvm::Type* type,
+  void write_value_to_frame(llvm::Type* type,
                             llvm::Value*      value,
                             int               offset);
 };
@@ -321,7 +321,7 @@ class SharkCacher : public SharkCacherDecacher {
 
   // Writer helper
  protected:
-  llvm::Value* read_value_from_frame(const llvm::Type* type, int offset);
+  llvm::Value* read_value_from_frame(llvm::Type* type, int offset);
 };
 
 class SharkJavaCallCacher : public SharkCacher {
@@ -422,7 +422,7 @@ class SharkOSREntryCacher : public SharkFunctionEntryCacher {
 
   // Helper
  private:
-  llvm::Value* CreateAddressOfOSRBufEntry(int offset, const llvm::Type* type);
+  llvm::Value* CreateAddressOfOSRBufEntry(int offset, llvm::Type* type);
 };
 
 #endif // SHARE_VM_SHARK_SHARKCACHEDECACHE_HPP

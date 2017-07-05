@@ -25,7 +25,6 @@
 
 package sun.security.ssl;
 
-import javax.net.ssl.*;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.LinkedList;

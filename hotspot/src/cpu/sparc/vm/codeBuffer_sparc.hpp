@@ -31,9 +31,4 @@ private:
 public:
   void flush_bundle(bool start_new_bundle) {}
 
-  // Heuristic for pre-packing the pt/pn bit of a predicted branch.
-  bool is_backward_branch(Label& L) {
-    return L.is_bound() && insts_end() <= locator_address(L.loc());
-  }
-
 #endif // CPU_SPARC_VM_CODEBUFFER_SPARC_HPP

@@ -54,8 +54,6 @@ import static sun.security.ssl.SunJSSE.cryptoProvider;
  */
 final class JsseJce {
 
-    private final static Debug debug = Debug.getInstance("ssl");
-
     private final static ProviderList fipsProviderList;
 
     // Flag indicating whether EC crypto is available.
@@ -71,6 +69,7 @@ final class JsseJce {
         try {
             AccessController.doPrivileged(
                 new PrivilegedExceptionAction<Void>() {
+                    @Override
                     public Void run() throws Exception {
                         // Test for Kerberos using the bootstrap class loader
                         Class.forName("sun.security.krb5.PrincipalName", true,
@@ -114,6 +113,7 @@ final class JsseJce {
         SunCertificates(final Provider p) {
             super("SunCertificates", 1.0d, "SunJSSE internal");
             AccessController.doPrivileged(new PrivilegedAction<Object>() {
+                @Override
                 public Object run() {
                     // copy certificate related services from the Sun provider
                     for (Map.Entry<Object,Object> entry : p.entrySet()) {

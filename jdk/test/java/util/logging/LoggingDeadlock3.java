@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2012 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,7 @@ public class LoggingDeadlock3 {
   public static class GetLogger implements Runnable {
     public void run() {
       for (int cnt = 0; cnt < ITER_CNT * 8; cnt++) {
-        Logger logger = Logger.getLogger("com.sun.Hello"+cnt/10);
+        Logger.getLogger("com.sun.Hello"+cnt/10);
         if (cnt % 1000  == 0) out.print("1");
         if (cnt % 10000 == 0) out.println();
       }

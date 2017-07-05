@@ -41,6 +41,7 @@ import java.security.spec.*;
  */
 final class ECDHClientKeyExchange extends HandshakeMessage {
 
+    @Override
     int messageType() {
         return ht_client_key_exchange;
     }
@@ -63,14 +64,17 @@ final class ECDHClientKeyExchange extends HandshakeMessage {
         encodedPoint = input.getBytes8();
     }
 
+    @Override
     int messageLength() {
         return encodedPoint.length + 1;
     }
 
+    @Override
     void send(HandshakeOutStream s) throws IOException {
         s.putBytes8(encodedPoint);
     }
 
+    @Override
     void print(PrintStream s) throws IOException {
         s.println("*** ECDHClientKeyExchange");
 
