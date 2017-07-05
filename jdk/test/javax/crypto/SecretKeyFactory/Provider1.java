@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * test
- * @bug 6370923
+ * @bug 6370923 8130181
  * @summary SecretKeyFactory failover does not work
  * @author Brad R. Wetmore
  */
@@ -35,7 +35,7 @@ import java.security.*;
 public class Provider1 extends Provider {
 
     public Provider1() {
-        super("Provider1", 1.0, "SecretKeyFactory");
+        super("Provider1", "1.0", "SecretKeyFactory");
         System.out.println("Creating Provider1");
         put("SecretKeyFactory.DUMMY", "com.p1.P1SecretKeyFactory");
     }

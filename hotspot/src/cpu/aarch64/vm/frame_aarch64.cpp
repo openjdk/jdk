@@ -110,17 +110,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
     // Entry frame checks
     if (is_entry_frame()) {
       // an entry frame must have a valid fp.
-
-      if (!fp_safe) return false;
-
-      // Validate the JavaCallWrapper an entry frame must have
-
-      address jcw = (address)entry_frame_call_wrapper();
-
-      bool jcw_safe = (jcw < thread->stack_base()) && ( jcw > fp);
-
-      return jcw_safe;
-
+      return fp_safe && is_entry_frame_valid(thread);
     }
 
     intptr_t* sender_sp = NULL;
@@ -210,15 +200,8 @@ bool frame::safe_for_sender(JavaThread *thread) {
       }
 
       // construct the potential sender
-
       frame sender(sender_sp, sender_unextended_sp, saved_fp, sender_pc);
-
-      // Validate the JavaCallWrapper an entry frame must have
-      address jcw = (address)sender.entry_frame_call_wrapper();
-
-      bool jcw_safe = (jcw < thread->stack_base()) && ( jcw > (address)sender.fp());
-
-      return jcw_safe;
+      return sender.is_entry_frame_valid(thread);
     }
 
     CompiledMethod* nm = sender_blob->as_compiled_method_or_null();

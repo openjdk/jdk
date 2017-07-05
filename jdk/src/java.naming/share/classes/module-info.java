@@ -23,6 +23,9 @@
  * questions.
  */
 
+/**
+ * Defines the Java Naming and Directory Interface (JNDI) API.
+ */
 module java.naming {
     requires java.security.sasl;
 

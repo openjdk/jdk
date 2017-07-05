@@ -22,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package com.sun.media.sound;
 
 import java.util.ArrayList;
@@ -40,7 +41,7 @@ public final class DLSSampleOptions {
     short finetune;
     int attenuation;
     long options;
-    List<DLSSampleLoop> loops = new ArrayList<DLSSampleLoop>();
+    List<DLSSampleLoop> loops = new ArrayList<>();
 
     public int getAttenuation() {
         return attenuation;

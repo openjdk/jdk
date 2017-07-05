@@ -22,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package com.sun.media.sound;
 
 /**
@@ -32,13 +33,13 @@ package com.sun.media.sound;
  */
 public interface ModelOscillator {
 
-    public int getChannels();
+    int getChannels();
 
     /**
      * Attenuation is in cB.
      * @return
      */
-    public float getAttenuation();
+    float getAttenuation();
 
-    public ModelOscillatorStream open(float samplerate);
+    ModelOscillatorStream open(float samplerate);
 }

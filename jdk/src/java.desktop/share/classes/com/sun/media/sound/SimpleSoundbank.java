@@ -22,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package com.sun.media.sound;
 
 import java.util.ArrayList;
@@ -44,21 +45,25 @@ public class SimpleSoundbank implements Soundbank {
     String version = "";
     String vendor = "";
     String description = "";
-    List<SoundbankResource> resources = new ArrayList<SoundbankResource>();
-    List<Instrument> instruments = new ArrayList<Instrument>();
+    List<SoundbankResource> resources = new ArrayList<>();
+    List<Instrument> instruments = new ArrayList<>();
 
+    @Override
     public String getName() {
         return name;
     }
 
+    @Override
     public String getVersion() {
         return version;
     }
 
+    @Override
     public String getVendor() {
         return vendor;
     }
 
+    @Override
     public String getDescription() {
         return description;
     }
@@ -79,10 +84,12 @@ public class SimpleSoundbank implements Soundbank {
         this.version = version;
     }
 
+    @Override
     public SoundbankResource[] getResources() {
         return resources.toArray(new SoundbankResource[resources.size()]);
     }
 
+    @Override
     public Instrument[] getInstruments() {
         Instrument[] inslist_array
                 = instruments.toArray(new Instrument[resources.size()]);
@@ -90,6 +97,7 @@ public class SimpleSoundbank implements Soundbank {
         return inslist_array;
     }
 
+    @Override
     public Instrument getInstrument(Patch patch) {
         int program = patch.getProgram();
         int bank = patch.getBank();
@@ -120,7 +128,7 @@ public class SimpleSoundbank implements Soundbank {
 
     public void removeResource(SoundbankResource resource) {
         if (resource instanceof Instrument)
-            instruments.remove((Instrument) resource);
+            instruments.remove(resource);
         else
             resources.remove(resource);
     }

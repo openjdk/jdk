@@ -59,9 +59,9 @@ public class IntrinsicDisabledTest {
     private static final int COMP_LEVEL_FULL_OPTIMIZATION = 4;
 
     /* Determine if tiered compilation is enabled. */
-    private static boolean isTieredCompilationEnabled() {
-        return Boolean.valueOf(Objects.toString(wb.getVMFlag("TieredCompilation")));
-    }
+    private static final boolean TIERED_COMPILATION = wb.getBooleanVMFlag("TieredCompilation");
+
+    private static final int TIERED_STOP_AT_LEVEL = wb.getIntxVMFlag("TieredStopAtLevel").intValue();
 
     /* This test uses several methods from jdk.internal.misc.Unsafe. The method
      * getMethod() returns a different Executable for each different
@@ -202,8 +202,8 @@ public class IntrinsicDisabledTest {
     }
 
     public static void main(String args[]) {
-        if (Platform.isServer()) {
-            if (isTieredCompilationEnabled()) {
+        if (Platform.isServer() && (TIERED_STOP_AT_LEVEL == COMP_LEVEL_FULL_OPTIMIZATION)) {
+            if (TIERED_COMPILATION) {
                 test(COMP_LEVEL_SIMPLE);
             }
             test(COMP_LEVEL_FULL_OPTIMIZATION);

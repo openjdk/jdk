@@ -74,7 +74,7 @@ struct hb_closure_context_t :
 
   hb_closure_context_t (hb_face_t *face_,
                         hb_set_t *glyphs_,
-                        unsigned int nesting_level_left_ = MAX_NESTING_LEVEL) :
+                        unsigned int nesting_level_left_ = HB_MAX_NESTING_LEVEL) :
                           face (face_),
                           glyphs (glyphs_),
                           recurse_func (NULL),
@@ -196,7 +196,7 @@ struct hb_collect_glyphs_context_t :
                                hb_set_t  *glyphs_input,  /* OUT. May be NULL */
                                hb_set_t  *glyphs_after,  /* OUT. May be NULL */
                                hb_set_t  *glyphs_output, /* OUT. May be NULL */
-                               unsigned int nesting_level_left_ = MAX_NESTING_LEVEL) :
+                               unsigned int nesting_level_left_ = HB_MAX_NESTING_LEVEL) :
                               face (face_),
                               before (glyphs_before ? glyphs_before : hb_set_get_empty ()),
                               input  (glyphs_input  ? glyphs_input  : hb_set_get_empty ()),
@@ -319,7 +319,7 @@ struct hb_apply_context_t :
       if (!c->check_glyph_property (&info, lookup_props))
         return SKIP_YES;
 
-      if (unlikely (_hb_glyph_info_is_default_ignorable (&info) &&
+      if (unlikely (_hb_glyph_info_is_default_ignorable_and_not_fvs (&info) &&
                     (ignore_zwnj || !_hb_glyph_info_is_zwnj (&info)) &&
                     (ignore_zwj || !_hb_glyph_info_is_zwj (&info))))
         return SKIP_MAYBE;
@@ -355,11 +355,11 @@ struct hb_apply_context_t :
     {
       matcher.set_lookup_props (lookup_props);
     }
-    inline void set_match_func (matcher_t::match_func_t match_func,
-                                const void *match_data,
+    inline void set_match_func (matcher_t::match_func_t match_func_,
+                                const void *match_data_,
                                 const USHORT glyph_data[])
     {
-      matcher.set_match_func (match_func, match_data);
+      matcher.set_match_func (match_func_, match_data_);
       match_glyph_data = glyph_data;
     }
 
@@ -483,7 +483,7 @@ struct hb_apply_context_t :
                         lookup_mask (1),
                         auto_zwj (true),
                         recurse_func (NULL),
-                        nesting_level_left (MAX_NESTING_LEVEL),
+                        nesting_level_left (HB_MAX_NESTING_LEVEL),
                         lookup_props (0),
                         gdef (*hb_ot_layout_from_face (face)->gdef),
                         has_glyph_classes (gdef.has_glyph_classes ()),
@@ -704,13 +704,13 @@ static inline bool match_input (hb_apply_context_t *c,
                                 match_func_t match_func,
                                 const void *match_data,
                                 unsigned int *end_offset,
-                                unsigned int match_positions[MAX_CONTEXT_LENGTH],
+                                unsigned int match_positions[HB_MAX_CONTEXT_LENGTH],
                                 bool *p_is_mark_ligature = NULL,
                                 unsigned int *p_total_component_count = NULL)
 {
   TRACE_APPLY (NULL);
 
-  if (unlikely (count > MAX_CONTEXT_LENGTH)) return_trace (false);
+  if (unlikely (count > HB_MAX_CONTEXT_LENGTH)) return_trace (false);
 
   hb_buffer_t *buffer = c->buffer;
 
@@ -784,7 +784,7 @@ static inline bool match_input (hb_apply_context_t *c,
 }
 static inline bool ligate_input (hb_apply_context_t *c,
                                  unsigned int count, /* Including the first glyph */
-                                 unsigned int match_positions[MAX_CONTEXT_LENGTH], /* Including the first glyph */
+                                 unsigned int match_positions[HB_MAX_CONTEXT_LENGTH], /* Including the first glyph */
                                  unsigned int match_length,
                                  hb_codepoint_t lig_glyph,
                                  bool is_mark_ligature,
@@ -836,19 +836,21 @@ static inline bool ligate_input (hb_apply_context_t *c,
     if (_hb_glyph_info_get_general_category (&buffer->cur()) == HB_UNICODE_GENERAL_CATEGORY_NON_SPACING_MARK)
     {
       _hb_glyph_info_set_general_category (&buffer->cur(), HB_UNICODE_GENERAL_CATEGORY_OTHER_LETTER);
-      _hb_glyph_info_set_modified_combining_class (&buffer->cur(), 0);
     }
   }
   c->replace_glyph_with_ligature (lig_glyph, klass);
 
   for (unsigned int i = 1; i < count; i++)
   {
-    while (buffer->idx < match_positions[i])
+    while (buffer->idx < match_positions[i] && !buffer->in_error)
     {
       if (!is_mark_ligature) {
+        unsigned int this_comp = _hb_glyph_info_get_lig_comp (&buffer->cur());
+        if (this_comp == 0)
+          this_comp = last_num_components;
         unsigned int new_lig_comp = components_so_far - last_num_components +
-                                    MIN (MAX (_hb_glyph_info_get_lig_comp (&buffer->cur()), 1u), last_num_components);
-        _hb_glyph_info_set_lig_props_for_mark (&buffer->cur(), lig_id, new_lig_comp);
+                                    MIN (this_comp, last_num_components);
+          _hb_glyph_info_set_lig_props_for_mark (&buffer->cur(), lig_id, new_lig_comp);
       }
       buffer->next_glyph ();
     }
@@ -865,8 +867,11 @@ static inline bool ligate_input (hb_apply_context_t *c,
     /* Re-adjust components for any marks following. */
     for (unsigned int i = buffer->idx; i < buffer->len; i++) {
       if (last_lig_id == _hb_glyph_info_get_lig_id (&buffer->info[i])) {
+        unsigned int this_comp = _hb_glyph_info_get_lig_comp (&buffer->info[i]);
+        if (!this_comp)
+          break;
         unsigned int new_lig_comp = components_so_far - last_num_components +
-                                    MIN (MAX (_hb_glyph_info_get_lig_comp (&buffer->info[i]), 1u), last_num_components);
+                                    MIN (this_comp, last_num_components);
         _hb_glyph_info_set_lig_props_for_mark (&buffer->info[i], lig_id, new_lig_comp);
       } else
         break;
@@ -944,7 +949,7 @@ static inline void recurse_lookups (context_t *c,
 
 static inline bool apply_lookup (hb_apply_context_t *c,
                                  unsigned int count, /* Including the first glyph */
-                                 unsigned int match_positions[MAX_CONTEXT_LENGTH], /* Including the first glyph */
+                                 unsigned int match_positions[HB_MAX_CONTEXT_LENGTH], /* Including the first glyph */
                                  unsigned int lookupCount,
                                  const LookupRecord lookupRecord[], /* Array of LookupRecords--in design order */
                                  unsigned int match_length)
@@ -966,10 +971,15 @@ static inline bool apply_lookup (hb_apply_context_t *c,
       match_positions[j] += delta;
   }
 
-  for (unsigned int i = 0; i < lookupCount; i++)
+  for (unsigned int i = 0; i < lookupCount && !buffer->in_error; i++)
   {
     unsigned int idx = lookupRecord[i].sequenceIndex;
     if (idx >= count)
+      continue;
+
+    /* Don't recurse to ourself at same position.
+     * Note that this test is too naive, it doesn't catch longer loops. */
+    if (idx == 0 && lookupRecord[i].lookupListIndex == c->lookup_index)
       continue;
 
     buffer->move_to (match_positions[idx]);
@@ -986,16 +996,19 @@ static inline bool apply_lookup (hb_apply_context_t *c,
 
     /* Recursed lookup changed buffer len.  Adjust. */
 
-    /* end can't go back past the current match position.
-     * Note: this is only true because we do NOT allow MultipleSubst
-     * with zero sequence len. */
-    end = MAX ((int) match_positions[idx] + 1, int (end) + delta);
+    end = int (end) + delta;
+    if (end <= match_positions[idx])
+    {
+      /* There can't be any further changes. */
+      assert (end == match_positions[idx]);
+      break;
+    }
 
     unsigned int next = idx + 1; /* next now is the position after the recursed lookup. */
 
     if (delta > 0)
     {
-      if (unlikely (delta + count > MAX_CONTEXT_LENGTH))
+      if (unlikely (delta + count > HB_MAX_CONTEXT_LENGTH))
         break;
     }
     else
@@ -1094,7 +1107,7 @@ static inline bool context_apply_lookup (hb_apply_context_t *c,
                                          ContextApplyLookupContext &lookup_context)
 {
   unsigned int match_length = 0;
-  unsigned int match_positions[MAX_CONTEXT_LENGTH];
+  unsigned int match_positions[HB_MAX_CONTEXT_LENGTH];
   return match_input (c,
                       inputCount, input,
                       lookup_context.funcs.match, lookup_context.match_data,
@@ -1621,7 +1634,7 @@ static inline bool chain_context_apply_lookup (hb_apply_context_t *c,
                                                ChainContextApplyLookupContext &lookup_context)
 {
   unsigned int match_length = 0;
-  unsigned int match_positions[MAX_CONTEXT_LENGTH];
+  unsigned int match_positions[HB_MAX_CONTEXT_LENGTH];
   return match_input (c,
                       inputCount, input,
                       lookup_context.funcs.match, lookup_context.match_data[1],
@@ -2267,7 +2280,7 @@ struct GSUBGPOS
   }
 
   protected:
-  FixedVersion  version;        /* Version of the GSUB/GPOS table--initially set
+  FixedVersion<>version;        /* Version of the GSUB/GPOS table--initially set
                                  * to 0x00010000u */
   OffsetTo<ScriptList>
                 scriptList;     /* ScriptList table */

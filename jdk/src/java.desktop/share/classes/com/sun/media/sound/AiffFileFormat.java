@@ -87,5 +87,4 @@ final class AiffFileFormat extends StandardFileFormat {
     int getSsndChunkOffset() {
         return getHeaderSize()-16;
     }
-
 }

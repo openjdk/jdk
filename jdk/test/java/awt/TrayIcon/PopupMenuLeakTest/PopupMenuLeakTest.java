@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,17 +22,25 @@
  */
 
 /*
- @test
- @key headful
-  @bug 8007220
-  @summary Reference to the popup leaks after the TrayIcon is removed
-  @author Petr Pchelko
+  @test
+  @key headful
+  @bug 8007220 8039081
+  @summary Reference to the popup leaks after the TrayIcon is removed.
+  @requires os.family != "windows"
   @library ../../../../lib/testlibrary/
   @build ExtendedRobot
   @run main/othervm -Xmx50m PopupMenuLeakTest
  */
 
-import java.awt.*;
+import java.awt.AWTException;
+import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.Image;
+import java.awt.MenuItem;
+import java.awt.PopupMenu;
+import java.awt.RenderingHints;
+import java.awt.SystemTray;
+import java.awt.TrayIcon;
 import javax.swing.SwingUtilities;
 
 import java.awt.image.BufferedImage;
@@ -45,7 +53,6 @@ public class PopupMenuLeakTest {
     static final AtomicReference<WeakReference<TrayIcon>> iconWeakReference = new AtomicReference<>();
     static final AtomicReference<WeakReference<PopupMenu>> popupWeakReference = new AtomicReference<>();
     static ExtendedRobot robot;
-
     public static void main(String[] args) throws Exception {
         robot = new ExtendedRobot();
         SwingUtilities.invokeAndWait(PopupMenuLeakTest::createSystemTrayIcon);
@@ -55,8 +62,8 @@ public class PopupMenuLeakTest {
         sleep();
         SwingUtilities.invokeAndWait(PopupMenuLeakTest::removeIcon);
         sleep();
-        assertCollected(popupWeakReference.get(), "Failed, reference to popup not collected");
         assertCollected(iconWeakReference.get(), "Failed, reference to tray icon not collected");
+        assertCollected(popupWeakReference.get(), "Failed, reference to popup not collected");
     }
 
     private static void addNotifyPopup() {
@@ -78,18 +85,30 @@ public class PopupMenuLeakTest {
     private static void assertCollected(WeakReference<?> reference, String message) {
         java.util.List<byte[]> bytes = new ArrayList<>();
         for (int i = 0; i < 5; i ++) {
+            if (reference.get() == null) {
+                // reference is collected, avoid OOMs.
+                break;
+            }
             try {
                 while (true) {
-                    bytes.add(new byte[1024]);
+                    bytes.add(new byte[4096]);
                 }
             } catch (OutOfMemoryError err) {
-                bytes = new ArrayList<>();
+                bytes.clear();
+                causeGC();
             }
         }
         if (reference.get() != null) {
             throw new RuntimeException(message);
         }
     }
+
+    private static void causeGC() {
+        System.gc();
+        System.runFinalization();
+        robot.delay(1000);
+    }
+
 
     private static void createSystemTrayIcon() {
         final TrayIcon trayIcon = new TrayIcon(createTrayIconImage());

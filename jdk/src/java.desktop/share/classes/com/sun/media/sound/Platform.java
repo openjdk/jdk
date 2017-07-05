@@ -29,8 +29,6 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.StringTokenizer;
 
-
-
 /**
  * Audio configuration class for exposing attributes specific to the platform or system.
  *
@@ -38,9 +36,6 @@ import java.util.StringTokenizer;
  * @author Florian Bomers
  */
 final class Platform {
-
-
-    // STATIC FINAL CHARACTERISTICS
 
     // native library we need to load
     private static final String libNameMain     = "jsound";
@@ -74,36 +69,25 @@ final class Platform {
         readProperties();
     }
 
-
     /**
      * Private constructor.
      */
     private Platform() {
     }
 
-
-    // METHODS FOR INTERNAL IMPLEMENTATION USE
-
-
     /**
      * Dummy method for forcing initialization.
      */
     static void initialize() {
-
         if(Printer.trace)Printer.trace("Platform: initialize()");
     }
-
 
     /**
      * Determine whether the system is big-endian.
      */
     static boolean isBigEndian() {
-
         return bigEndian;
     }
-
-
-    // PRIVATE METHODS
 
     /**
      * Load the native library or libraries.
@@ -146,7 +130,6 @@ final class Platform {
             }
         }
     }
-
 
     static boolean isMidiIOEnabled() {
         return isFeatureLibLoaded(FEATURE_MIDIIO);

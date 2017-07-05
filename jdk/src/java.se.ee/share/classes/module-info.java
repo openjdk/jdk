@@ -23,6 +23,12 @@
  * questions.
  */
 
+/**
+ * Defines the full API of the Java SE Platform.
+ * <P>
+ * This module requires {@code java.se} and supplements it with modules
+ * that define CORBA and Java EE APIs. These modules are upgradeable.
+ */
 module java.se.ee {
 
     requires public java.se;

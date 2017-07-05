@@ -461,31 +461,26 @@ C2V_VMENTRY(jobject, getResolvedJavaMethod, (JNIEnv *, jobject, jobject base, jl
   return JNIHandles::make_local(THREAD, result);
 }
 
-C2V_VMENTRY(jobject, getConstantPool, (JNIEnv *, jobject, jobject base, jlong offset))
+C2V_VMENTRY(jobject, getConstantPool, (JNIEnv *, jobject, jobject object_handle))
   constantPoolHandle cp;
-  oop base_object = JNIHandles::resolve(base);
-  jlong base_address = 0;
-  if (base_object != NULL) {
-    if (base_object->is_a(SystemDictionary::HotSpotResolvedJavaMethodImpl_klass())) {
-      base_address = HotSpotResolvedJavaMethodImpl::metaspaceMethod(base_object);
-    } else if (base_object->is_a(SystemDictionary::HotSpotConstantPool_klass())) {
-      base_address = HotSpotConstantPool::metaspaceConstantPool(base_object);
-    } else if (base_object->is_a(SystemDictionary::HotSpotResolvedObjectTypeImpl_klass())) {
-      base_address = (jlong) CompilerToVM::asKlass(base_object);
-    } else {
-      THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(),
-                  err_msg("Unexpected type: %s", base_object->klass()->external_name()));
-    }
+  oop object = JNIHandles::resolve(object_handle);
+  if (object == NULL) {
+    THROW_0(vmSymbols::java_lang_NullPointerException());
   }
-  cp = *((ConstantPool**) (intptr_t) (base_address + offset));
-  if (!cp.is_null()) {
-    JavaValue method_result(T_OBJECT);
-    JavaCallArguments args;
-    args.push_long((jlong) (address) cp());
-    JavaCalls::call_static(&method_result, SystemDictionary::HotSpotConstantPool_klass(), vmSymbols::fromMetaspace_name(), vmSymbols::constantPool_fromMetaspace_signature(), &args, CHECK_NULL);
-    return JNIHandles::make_local(THREAD, (oop)method_result.get_jobject());
+  if (object->is_a(SystemDictionary::HotSpotResolvedJavaMethodImpl_klass())) {
+    cp = CompilerToVM::asMethod(object)->constMethod()->constants();
+  } else if (object->is_a(SystemDictionary::HotSpotResolvedObjectTypeImpl_klass())) {
+    cp = InstanceKlass::cast(CompilerToVM::asKlass(object))->constants();
+  } else {
+    THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(),
+                err_msg("Unexpected type: %s", object->klass()->external_name()));
   }
-  return NULL;
+  assert(!cp.is_null(), "npe");
+  JavaValue method_result(T_OBJECT);
+  JavaCallArguments args;
+  args.push_long((jlong) (address) cp());
+  JavaCalls::call_static(&method_result, SystemDictionary::HotSpotConstantPool_klass(), vmSymbols::fromMetaspace_name(), vmSymbols::constantPool_fromMetaspace_signature(), &args, CHECK_NULL);
+  return JNIHandles::make_local(THREAD, (oop)method_result.get_jobject());
 }
 
 C2V_VMENTRY(jobject, getResolvedJavaType, (JNIEnv *, jobject, jobject base, jlong offset, jboolean compressed))
@@ -1522,7 +1517,7 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "getMaxCallTargetOffset",                       CC "(J)J",                                                                            FN_PTR(getMaxCallTargetOffset)},
   {CC "getResolvedJavaMethodAtSlot",                  CC "(" CLASS "I)" HS_RESOLVED_METHOD,                                                 FN_PTR(getResolvedJavaMethodAtSlot)},
   {CC "getResolvedJavaMethod",                        CC "(Ljava/lang/Object;J)" HS_RESOLVED_METHOD,                                        FN_PTR(getResolvedJavaMethod)},
-  {CC "getConstantPool",                              CC "(Ljava/lang/Object;J)" HS_CONSTANT_POOL,                                          FN_PTR(getConstantPool)},
+  {CC "getConstantPool",                              CC "(Ljava/lang/Object;)" HS_CONSTANT_POOL,                                           FN_PTR(getConstantPool)},
   {CC "getResolvedJavaType",                          CC "(Ljava/lang/Object;JZ)" HS_RESOLVED_KLASS,                                        FN_PTR(getResolvedJavaType)},
   {CC "readConfiguration",                            CC "()[" OBJECT,                                                                      FN_PTR(readConfiguration)},
   {CC "installCode",                                  CC "(" TARGET_DESCRIPTION HS_COMPILED_CODE INSTALLED_CODE HS_SPECULATION_LOG ")I",    FN_PTR(installCode)},

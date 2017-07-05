@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4856968 7054918
+ * @bug 4856968 7054918 8130181
  * @library ../testlibrary
  * @summary make sure getInstance() works correctly, including failover
  *   and delayed provider selection for Signatures
@@ -137,7 +137,7 @@ public class GetInstance {
 
     public static class FooProvider extends Provider {
         FooProvider() {
-            super("foo", 1.0d, "none");
+            super("foo", "1.0", "none");
             put("MessageDigest.foo", "GetInstance$FooDigest");
             put("CertStore.foo",     "GetInstance$FooStore");
             put("Signature.foo",     "GetInstance$FooSignatureSpi");
@@ -151,7 +151,7 @@ public class GetInstance {
 
     public static class BarProvider extends Provider {
         BarProvider() {
-            super("bar", 1.0d, "none");
+            super("bar", "1.0", "none");
             // all entries invalid for failover
             put("MessageDigest.bar", "GetInstance$FooKey");
             put("Signature.bar",     "GetInstance$FooKey");
@@ -164,7 +164,7 @@ public class GetInstance {
 
     public static class BazProvider extends Provider {
         BazProvider() {
-            super("baz", 1.0d, "none");
+            super("baz", "1.0", "none");
             put("MessageDigest.bar", "GetInstance$FooDigest");
             put("CertStore.bar",     "GetInstance$FooStore");
             put("Signature.bar",     "GetInstance$FooSignatureSpi");

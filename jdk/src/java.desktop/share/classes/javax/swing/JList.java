@@ -3058,7 +3058,7 @@ public class JList<E> extends JComponent implements Scrollable, Accessible
         public Accessible getAccessibleAt(Point p) {
             int i = locationToIndex(p);
             if (i >= 0) {
-                return new ActionableAccessibleJListChild(JList.this, i);
+                return new AccessibleJListChild(JList.this, i);
             } else {
                 return null;
             }
@@ -3085,7 +3085,7 @@ public class JList<E> extends JComponent implements Scrollable, Accessible
             if (i >= getModel().getSize()) {
                 return null;
             } else {
-                return new ActionableAccessibleJListChild(JList.this, i);
+                return new AccessibleJListChild(JList.this, i);
             }
         }
 
@@ -3188,7 +3188,7 @@ public class JList<E> extends JComponent implements Scrollable, Accessible
            * for list children.
            */
         protected class AccessibleJListChild extends AccessibleContext
-                implements Accessible, AccessibleComponent {
+                implements Accessible, AccessibleComponent, AccessibleAction {
             private JList<E>     parent = null;
             int indexInParent;
             private Component component = null;
@@ -3743,16 +3743,17 @@ public class JList<E> extends JComponent implements Scrollable, Accessible
                 }
             }
 
-        } // inner class AccessibleJListChild
-
-        private class ActionableAccessibleJListChild
-            extends AccessibleJListChild
-            implements AccessibleAction {
-
-            ActionableAccessibleJListChild(JList<E> parent, int indexInParent) {
-                super(parent, indexInParent);
-            }
-
+            /**
+             * {@inheritDoc}
+             * @implSpec Returns the AccessibleAction for this AccessibleJListChild
+             * as follows:  First getListCellRendererComponent of the ListCellRenderer
+             * for the component at the "index in parent" of this child is called.
+             * Then its AccessibleContext is fetched and that AccessibleContext's
+             * AccessibleAction is returned.  Note that if an AccessibleAction
+             * is not found using this process then this object with its implementation
+             * of the AccessibleAction interface is returned.
+             * @since 9
+             */
             @Override
             public AccessibleAction getAccessibleAction() {
                 AccessibleContext ac = getCurrentAccessibleContext();
@@ -3768,6 +3769,13 @@ public class JList<E> extends JComponent implements Scrollable, Accessible
                 }
             }
 
+            /**
+             * {@inheritDoc}
+             * @implSpec If i == 0 selects this AccessibleJListChild by calling
+             * JList.this.setSelectedIndex(indexInParent) and then returns true;
+             * otherwise returns false.
+             * @since 9
+             */
             @Override
             public boolean doAccessibleAction(int i) {
                 if (i == 0) {
@@ -3778,6 +3786,13 @@ public class JList<E> extends JComponent implements Scrollable, Accessible
                 }
             }
 
+            /**
+             * {@inheritDoc}
+             * @implSpec If i == 0 returns the action description fetched from
+             * UIManager.getString("AbstractButton.clickText");
+             * otherwise returns null.
+             * @since 9
+             */
             @Override
             public String getAccessibleActionDescription(int i) {
                 if (i == 0) {
@@ -3787,12 +3802,17 @@ public class JList<E> extends JComponent implements Scrollable, Accessible
                 }
             }
 
+            /**
+             * {@inheritDoc}
+             * @implSpec Returns 1, i.e. there is only one action.
+             * @since 9
+             */
             @Override
             public int getAccessibleActionCount() {
                 return 1;
             }
 
-        } // inner class ActionableAccessibleJListChild
+        } // inner class AccessibleJListChild
 
     } // inner class AccessibleJList
 }

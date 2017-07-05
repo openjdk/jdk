@@ -22,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package com.sun.media.sound;
 
 import java.util.ArrayList;
@@ -35,9 +36,9 @@ import java.util.List;
  */
 public final class ModelPerformer {
 
-    private final List<ModelOscillator> oscillators = new ArrayList<ModelOscillator>();
-    private List<ModelConnectionBlock> connectionBlocks
-            = new ArrayList<ModelConnectionBlock>();
+    private final List<ModelOscillator> oscillators = new ArrayList<>();
+    private List<ModelConnectionBlock> connectionBlocks = new ArrayList<>();
+
     private int keyFrom = 0;
     private int keyTo = 127;
     private int velFrom = 0;

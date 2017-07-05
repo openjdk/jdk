@@ -26,6 +26,7 @@
  * @bug 4407042
  * @summary Make sure that cloned SimpleDateFormat objects work
  * independently in multiple threads.
+ * @library /java/text/testlib
  * @run main Bug4407042 10
  */
 
@@ -44,8 +45,9 @@ public class Bug4407042 {
 
     void test() {
         Locale locale = Locale.getDefault();
-        if (locale.equals(new Locale("th", "TH")) ||
-            locale.equals(new Locale("hi", "IN"))) {
+        if (!TestUtils.usesAsciiDigits(locale)
+                || !TestUtils.usesGregorianCalendar(locale)) {
+            System.out.println("Skipping this test because locale is " + locale);
             return;
         }
 

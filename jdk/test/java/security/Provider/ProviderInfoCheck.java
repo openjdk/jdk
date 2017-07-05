@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6455351
+ * @bug 6455351 8130181
  * @summary Make sure the Provider.info entries have the correct values
  * after going through serialization/deserialization.
  * @author Valerie Peng
@@ -68,18 +68,17 @@ public class ProviderInfoCheck {
         if (!p.getClass().getName().equalsIgnoreCase(value)) {
             throw new Exception("Test Failed: incorrect className!");
         }
-        double dvalue =
-            Double.parseDouble((String) p.get("Provider.id version"));
-        if ((SampleProvider.VERSION != dvalue) ||
-            p.getVersion() != dvalue) {
-            throw new Exception("Test Failed: incorrect version!");
+        value = (String) p.get("Provider.id version");
+        if (!SampleProvider.VERSION.equalsIgnoreCase(value) ||
+            p.getVersionStr() != value) {
+            throw new Exception("Test Failed: incorrect versionStr!");
         }
         System.out.println("Test Passed");
     }
 
     private static class SampleProvider extends Provider {
         static String NAME = "Sample";
-        static double VERSION = 1.1d;
+        static String VERSION = "1.1";
         static String INFO = "Good for nothing";
         SampleProvider() {
             super(NAME, VERSION, INFO);

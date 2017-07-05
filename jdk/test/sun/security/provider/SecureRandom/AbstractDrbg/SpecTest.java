@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 8051408 8157308
+ * @bug 8051408 8157308 8130181
  * @modules java.base/sun.security.provider
  * @build java.base/sun.security.provider.S
  * @run main SpecTest
@@ -46,7 +46,7 @@ public class SpecTest {
 
         // getInstance from a provider.
 
-        Provider p = new All("A", 0, "");
+        Provider p = new All("A", "0", "");
         byte[] bytes = new byte[100];
 
         // A non-DRBG
@@ -123,9 +123,9 @@ public class SpecTest {
 
         // getInstance from competitive providers.
 
-        Provider l = new Legacy("L", 0, "");
-        Provider w = new Weak("W", 0, "");
-        Provider s = new Strong("S", 0, "");
+        Provider l = new Legacy("L", "0", "");
+        Provider w = new Weak("W", "0", "");
+        Provider s = new Strong("S", "0", "");
 
         Security.addProvider(l);
         Security.addProvider(w);
@@ -173,7 +173,7 @@ public class SpecTest {
     }
 
     public static class All extends Provider {
-        protected All(String name, double version, String info) {
+        protected All(String name, String version, String info) {
             super(name, version, info);
             put("SecureRandom.S1", S.S1.class.getName());
             put("SecureRandom.S2", S.S2.class.getName());
@@ -183,21 +183,21 @@ public class SpecTest {
 
     // Providing S with no params support
     public static class Legacy extends Provider {
-        protected Legacy(String name, double version, String info) {
+        protected Legacy(String name, String version, String info) {
             super(name, version, info);
             put("SecureRandom.S", S.S1.class.getName());
         }
     }
 
     public static class Weak extends Provider {
-        protected Weak(String name, double version, String info) {
+        protected Weak(String name, String version, String info) {
             super(name, version, info);
             put("SecureRandom.S", S.S2.class.getName());
         }
     }
 
     public static class Strong extends Provider {
-        protected Strong(String name, double version, String info) {
+        protected Strong(String name, String version, String info) {
             super(name, version, info);
             put("SecureRandom.S", S.S3.class.getName());
         }

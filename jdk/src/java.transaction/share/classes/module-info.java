@@ -23,6 +23,12 @@
  * questions.
  */
 
+/**
+ * Defines a subset of the Java Transaction API (JTA) to support CORBA interop.
+ * <P>
+ * The subset consists of RMI exception types which are mapped to CORBA system
+ * exceptions by the 'Java Language to IDL Mapping Specification'.
+ */
 module java.transaction {
     requires public java.rmi;
     exports javax.transaction;

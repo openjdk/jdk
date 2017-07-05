@@ -36,7 +36,6 @@ import javax.sound.sampled.LineEvent;
 import javax.sound.sampled.LineListener;
 import javax.sound.sampled.LineUnavailableException;
 
-
 /**
  * AbstractLine
  *
@@ -72,19 +71,19 @@ abstract class AbstractLine implements Line {
         this.controls = controls;
     }
 
-
     // LINE METHODS
 
+    @Override
     public final Line.Info getLineInfo() {
         return info;
     }
 
-
+    @Override
     public final boolean isOpen() {
         return open;
     }
 
-
+    @Override
     public final void addLineListener(LineListener listener) {
         synchronized(listeners) {
             if ( ! (listeners.contains(listener)) ) {
@@ -93,15 +92,14 @@ abstract class AbstractLine implements Line {
         }
     }
 
-
     /**
      * Removes an audio listener.
      * @param listener listener to remove
      */
+    @Override
     public final void removeLineListener(LineListener listener) {
         listeners.removeElement(listener);
     }
-
 
     /**
      * Obtains the set of controls supported by the
@@ -109,6 +107,7 @@ abstract class AbstractLine implements Line {
      * array of length 0.
      * @return control set
      */
+    @Override
     public final Control[] getControls() {
         Control[] returnedArray = new Control[controls.length];
 
@@ -119,7 +118,7 @@ abstract class AbstractLine implements Line {
         return returnedArray;
     }
 
-
+    @Override
     public final boolean isControlSupported(Control.Type controlType) {
         // protect against a NullPointerException
         if (controlType == null) {
@@ -135,7 +134,7 @@ abstract class AbstractLine implements Line {
         return false;
     }
 
-
+    @Override
     public final Control getControl(Control.Type controlType) {
         // protect against a NullPointerException
         if (controlType != null) {
@@ -150,9 +149,7 @@ abstract class AbstractLine implements Line {
         throw new IllegalArgumentException("Unsupported control type: " + controlType);
     }
 
-
     // HELPER METHODS
-
 
     /**
      * This method sets the open state and generates
@@ -182,14 +179,12 @@ abstract class AbstractLine implements Line {
         if (Printer.trace) Printer.trace("< "+getClass().getName()+" (AbstractLine): setOpen(" + open + ")  this.open: " + this.open);
     }
 
-
     /**
      * Send line events.
      */
     final void sendEvents(LineEvent event) {
         getEventDispatcher().sendAudioEvents(event, listeners);
     }
-
 
     /**
      * This is an error in the API: getFramePosition
@@ -200,7 +195,6 @@ abstract class AbstractLine implements Line {
         return (int) getLongFramePosition();
     }
 
-
     /**
      * Return the frame position in a long value
      * This implementation returns AudioSystem.NOT_SPECIFIED.
@@ -208,7 +202,6 @@ abstract class AbstractLine implements Line {
     public long getLongFramePosition() {
         return AudioSystem.NOT_SPECIFIED;
     }
-
 
     // $$kk: 06.03.99: returns the mixer used in construction.
     // this is a hold-over from when there was a public method like
@@ -232,8 +225,8 @@ abstract class AbstractLine implements Line {
         }
     }
 
-    // ABSTRACT METHODS
-
+    @Override
     public abstract void open() throws LineUnavailableException;
+    @Override
     public abstract void close();
 }
