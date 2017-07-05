@@ -66,7 +66,7 @@ class DeflaterOutputStream extends FilterOutputStream {
      * @param def the compressor ("deflater")
      * @param size the output buffer size
      * @param syncFlush
-     *        if {@code true} the {@link flush()} method of this
+     *        if {@code true} the {@link #flush()} method of this
      *        instance flushes the compressor with flush mode
      *        {@link Deflater#SYNC_FLUSH} before flushing the output
      *        stream, otherwise only flushes the output stream
@@ -114,7 +114,7 @@ class DeflaterOutputStream extends FilterOutputStream {
      * @param out the output stream
      * @param def the compressor ("deflater")
      * @param syncFlush
-     *        if {@code true} the {@link flush()} method of this
+     *        if {@code true} the {@link #flush()} method of this
      *        instance flushes the compressor with flush mode
      *        {@link Deflater#SYNC_FLUSH} before flushing the output
      *        stream, otherwise only flushes the output stream
@@ -151,7 +151,7 @@ class DeflaterOutputStream extends FilterOutputStream {
      *
      * @param out the output stream
      * @param syncFlush
-     *        if {@code true} the {@link flush()} method of this
+     *        if {@code true} the {@link #flush()} method of this
      *        instance flushes the compressor with flush mode
      *        {@link Deflater#SYNC_FLUSH} before flushing the output
      *        stream, otherwise only flushes the output stream
@@ -262,10 +262,10 @@ class DeflaterOutputStream extends FilterOutputStream {
     /**
      * Flushes the compressed output stream.
      *
-     * If {@link DeflaterOutputStream(OutputStream, Deflater, int, boolean)
+     * If {@link #DeflaterOutputStream(OutputStream, Deflater, int, boolean)
      * syncFlush} is {@code true} when this compressed output stream is
-     * constructed this method flushes the underlying {@code compressor}
-     * first with the flush mode {@link Deflater#SYNC_FLUSH} to force
+     * constructed, this method first flushes the underlying {@code compressor}
+     * with the flush mode {@link Deflater#SYNC_FLUSH} to force
      * all pending data to be flushed out to the output stream and then
      * flushes the output stream. Otherwise this method only flushes the
      * output stream without flushing the {@code compressor}.

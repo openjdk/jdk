@@ -54,15 +54,15 @@ import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 
-import sun.swing.plaf.synth.SynthUI;
-
 /**
- * SynthTableUI implementation
+ * Provides the Synth L&F UI delegate for
+ * {@link javax.swing.JTable}.
  *
  * @author Philip Milne
+ * @since 1.7
  */
-class SynthTableUI extends BasicTableUI implements SynthUI,
-        PropertyChangeListener {
+public class SynthTableUI extends BasicTableUI
+                          implements SynthUI, PropertyChangeListener {
 //
 // Instance Variables
 //
@@ -88,18 +88,25 @@ class SynthTableUI extends BasicTableUI implements SynthUI,
 //  The installation/uninstall procedures and support
 //
 
+    /**
+     * Creates a new UI object for the given component.
+     *
+     * @param c component to create UI object for
+     * @return the UI object
+     */
     public static ComponentUI createUI(JComponent c) {
         return new SynthTableUI();
     }
 
     /**
-     * Initialize JTable properties, e.g. font, foreground, and background.
+     * Initializes JTable properties, such as font, foreground, and background.
      * The font, foreground, and background properties are only set if their
      * current value is either null or a UIResource, other properties are set
      * if the current value is null.
      *
      * @see #installUI
      */
+    @Override
     protected void installDefaults() {
         dateRenderer = installRendererIfPossible(Date.class, null);
         numberRenderer = installRendererIfPossible(Number.class, null);
@@ -189,11 +196,16 @@ class SynthTableUI extends BasicTableUI implements SynthUI,
     /**
      * Attaches listeners to the JTable.
      */
+    @Override
     protected void installListeners() {
         super.installListeners();
         table.addPropertyChangeListener(this);
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     protected void uninstallDefaults() {
         table.setDefaultRenderer(Date.class, dateRenderer);
         table.setDefaultRenderer(Number.class, numberRenderer);
@@ -213,6 +225,10 @@ class SynthTableUI extends BasicTableUI implements SynthUI,
         style = null;
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     protected void uninstallListeners() {
         table.removePropertyChangeListener(this);
         super.uninstallListeners();
@@ -221,8 +237,13 @@ class SynthTableUI extends BasicTableUI implements SynthUI,
     //
     // SynthUI
     //
+
+    /**
+     * @inheritDoc
+     */
+    @Override
     public SynthContext getContext(JComponent c) {
-        return getContext(c, getComponentState(c));
+        return getContext(c, SynthLookAndFeel.getComponentState(c));
     }
 
     private SynthContext getContext(JComponent c, int state) {
@@ -230,18 +251,14 @@ class SynthTableUI extends BasicTableUI implements SynthUI,
                     SynthLookAndFeel.getRegion(c), style, state);
     }
 
-    private Region getRegion(JComponent c) {
-        return SynthLookAndFeel.getRegion(c);
-    }
-
-    private int getComponentState(JComponent c) {
-        return SynthLookAndFeel.getComponentState(c);
-    }
-
 //
 //  Paint methods and support
 //
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     public void update(Graphics g, JComponent c) {
         SynthContext context = getContext(c);
 
@@ -252,11 +269,19 @@ class SynthTableUI extends BasicTableUI implements SynthUI,
         context.dispose();
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     public void paintBorder(SynthContext context, Graphics g, int x,
                             int y, int w, int h) {
         context.getPainter().paintTableBorder(context, g, x, y, w, h);
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     public void paint(Graphics g, JComponent c) {
         SynthContext context = getContext(c);
 
@@ -264,6 +289,12 @@ class SynthTableUI extends BasicTableUI implements SynthUI,
         context.dispose();
     }
 
+    /**
+     * Paints the specified component.
+     *
+     * @param context context for the component being painted
+     * @param g {@code Graphics} object used for painting
+     */
     protected void paint(SynthContext context, Graphics g) {
         Rectangle clip = g.getClipBounds();
 
@@ -647,6 +678,10 @@ class SynthTableUI extends BasicTableUI implements SynthUI,
         }
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     public void propertyChange(PropertyChangeEvent event) {
         if (SynthLookAndFeel.shouldUpdateStyle(event)) {
             updateStyle((JTable)event.getSource());

@@ -26,7 +26,7 @@
  * @summary Needs per connection proxy support for URLs
  * @library ../../../sun/net/www/httptest/
  * @build ClosedChannelList HttpServer HttpTransaction HttpCallback
- * @compile -source 1.5 PerConnectionProxy.java
+ * @compile PerConnectionProxy.java
  * @run main/othervm -Dhttp.proxyHost=inexistant -Dhttp.proxyPort=8080 PerConnectionProxy
  */
 

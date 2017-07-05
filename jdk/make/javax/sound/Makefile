@@ -108,22 +108,14 @@ ifeq ($(PLATFORM), linux)
 endif # PLATFORM linux
 
 ifeq ($(PLATFORM), solaris)
-  ifneq ($(ARCH), amd64)
-    # build with ports and direct audio
-    CPPFLAGS += -DUSE_PORTS=TRUE 	\
-                -DUSE_DAUDIO=TRUE
+  # build with ports and direct audio
+  CPPFLAGS += -DUSE_PORTS=TRUE 	\
+              -DUSE_DAUDIO=TRUE
 
-    INCLUDE_PORTS = TRUE
-    INCLUDE_DAUDIO = TRUE
-    INCLUDE_MIDI = TRUE
-  else
-    # build with empty MIDI i/o
-    INCLUDE_MIDI = TRUE
-    # build with empty ports
-    INCLUDE_PORTS = TRUE
-    # build with empty direct audio
-    INCLUDE_DAUDIO = TRUE
-  endif
+  INCLUDE_PORTS = TRUE
+  INCLUDE_DAUDIO = TRUE
+  # build with empty MIDI i/o
+  INCLUDE_MIDI = TRUE
 endif # PLATFORM solaris
 
 # for dynamic inclusion of extra sound libs: these

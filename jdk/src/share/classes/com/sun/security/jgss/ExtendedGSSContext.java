@@ -99,4 +99,58 @@ public interface ExtendedGSSContext extends GSSContext {
      */
     public Object inquireSecContext(InquireType type)
             throws GSSException;
+
+    /**
+     * Requests that the delegation policy be respected. When a true value is
+     * requested, the underlying context would use the delegation policy
+     * defined by the environment as a hint to determine whether credentials
+     * delegation should be performed. This request can only be made on the
+     * context initiator's side and it has to be done prior to the first
+     * call to <code>initSecContext</code>.
+     * <p>
+     * When this flag is false, delegation will only be tried when the
+     * {@link GSSContext#requestCredDeleg(boolean) credentials delegation flag}
+     * is true.
+     * <p>
+     * When this flag is true but the
+     * {@link GSSContext#requestCredDeleg(boolean) credentials delegation flag}
+     * is false, delegation will be only tried if the delegation policy permits
+     * delegation.
+     * <p>
+     * When both this flag and the
+     * {@link GSSContext#requestCredDeleg(boolean) credentials delegation flag}
+     * are true, delegation will be always tried. However, if the delegation
+     * policy does not permit delegation, the value of
+     * {@link #getDelegPolicyState} will be false, even
+     * if delegation is performed successfully.
+     * <p>
+     * In any case, if the delegation is not successful, the value returned
+     * by {@link GSSContext#getCredDelegState()} is false, and the value
+     * returned by {@link #getDelegPolicyState()} is also false.
+     * <p>
+     * Not all mechanisms support delegation policy. Therefore, the
+     * application should check to see if the request was honored with the
+     * {@link #getDelegPolicyState() getDelegPolicyState} method. When
+     * delegation policy is not supported, <code>requestDelegPolicy</code>
+     * should return silently without throwing an exception.
+     * <p>
+     * Note: for the Kerberos 5 mechanism, the delegation policy is expressed
+     * through the OK-AS-DELEGATE flag in the service ticket. When it's true,
+     * the KDC permits delegation to the target server. In a cross-realm
+     * environment, in order for delegation be permitted, all cross-realm TGTs
+     * on the authentication path must also have the OK-AS-DELAGATE flags set.
+     * @param state true if the policy should be respected
+     * @throws GSSException containing the following
+     * major error codes:
+     *   {@link GSSException#FAILURE GSSException.FAILURE}
+     */
+    public void requestDelegPolicy(boolean state) throws GSSException;
+
+    /**
+     * Returns the delegation policy response. Called after a security context
+     * is established. This method can be only called on the initiator's side.
+     * See {@link ExtendedGSSContext#requestDelegPolicy}.
+     * @return the delegation policy response
+     */
+    public boolean getDelegPolicyState();
 }

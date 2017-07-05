@@ -32,7 +32,7 @@ import java.awt.event.ComponentEvent;
 
 import sun.util.logging.PlatformLogger;
 
-import sun.awt.ComponentAccessor;
+import sun.awt.AWTAccessor;
 
 /**
  * This class implements window which serves as content window for decorated frames.
@@ -135,8 +135,7 @@ public final class XContentWindow extends XWindow {
     // NOTE: This method may be called by privileged threads.
     //       DO NOT INVOKE CLIENT CODE ON THIS THREAD!
     public void handleResize(Rectangle bounds) {
-        ComponentAccessor.setWidth((Component)target, bounds.width);
-        ComponentAccessor.setHeight((Component)target, bounds.height);
+        AWTAccessor.getComponentAccessor().setSize((Component)target, bounds.width, bounds.height);
         postEvent(new ComponentEvent(target, ComponentEvent.COMPONENT_RESIZED));
     }
 

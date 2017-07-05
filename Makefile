@@ -51,7 +51,7 @@ endif
 
 # For start and finish echo lines
 TITLE_TEXT = Control $(PLATFORM) $(ARCH) $(RELEASE)
-DAYE_STAMP = `$(DATE) '+%y-%m-%d %H:%M'`
+DATE_STAMP = `$(DATE) '+%y-%m-%d %H:%M'`
 START_ECHO  = echo "$(TITLE_TEXT) $@ build started: $(DATE_STAMP)"
 FINISH_ECHO = echo "$(TITLE_TEXT) $@ build finished: $(DATE_STAMP)"
 
@@ -188,7 +188,7 @@ FRESH_DEBUG_BOOTDIR=$(ABS_BOOTDIR_OUTPUTDIR)-$(DEBUG_NAME)/j2sdk-image
 create_fresh_product_bootdir: FRC
 	@$(START_ECHO)
 	$(MAKE) ALT_OUTPUTDIR=$(ABS_BOOTDIR_OUTPUTDIR) \
-		NO_DOCS=true \
+		GENERATE_DOCS=false \
 		BOOT_CYCLE_SETTINGS= \
 		build_product_image
 	@$(FINISH_ECHO)
@@ -196,7 +196,7 @@ create_fresh_product_bootdir: FRC
 create_fresh_debug_bootdir: FRC
 	@$(START_ECHO)
 	$(MAKE) ALT_OUTPUTDIR=$(ABS_BOOTDIR_OUTPUTDIR) \
-		NO_DOCS=true \
+		GENERATE_DOCS=false \
 		BOOT_CYCLE_DEBUG_SETTINGS= \
 		build_debug_image
 	@$(FINISH_ECHO)
@@ -204,7 +204,7 @@ create_fresh_debug_bootdir: FRC
 create_fresh_fastdebug_bootdir: FRC
 	@$(START_ECHO)
 	$(MAKE) ALT_OUTPUTDIR=$(ABS_BOOTDIR_OUTPUTDIR) \
-		NO_DOCS=true \
+		GENERATE_DOCS=false \
 		BOOT_CYCLE_DEBUG_SETTINGS= \
 		build_fastdebug_image
 	@$(FINISH_ECHO)
@@ -253,7 +253,7 @@ generic_debug_build:
 	$(MAKE) \
 		ALT_OUTPUTDIR=$(ABS_OUTPUTDIR)-$(DEBUG_NAME) \
 	        DEBUG_NAME=$(DEBUG_NAME) \
-		NO_DOCS=true \
+		GENERATE_DOCS=false \
 	        $(BOOT_CYCLE_DEBUG_SETTINGS) \
 		generic_build_repo_series
 	@$(FINISH_ECHO)
@@ -323,7 +323,7 @@ openjdk_build:
 	$(MKDIR) -p $(OPENJDK_OUTPUTDIR)
 	($(CD) $(OPENJDK_BUILDDIR) && $(MAKE) \
 	  OPENJDK=true \
-	  NO_DOCS=true \
+	  GENERATE_DOCS=false \
 	  ALT_JDK_DEVTOOLS_DIR=$(JDK_DEVTOOLS_DIR) \
 	  ALT_OUTPUTDIR=$(OPENJDK_OUTPUTDIR) \
 	  ALT_BINARY_PLUGS_PATH=$(OPENJDK_PLUGS) \

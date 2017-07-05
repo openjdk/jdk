@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Collections;
 import java.util.Comparator;
 import java.io.IOException;
+import sun.util.logging.PlatformLogger;
 
 /**
  * CookieManager provides a concrete implementation of {@link CookieHandler},
@@ -263,6 +264,7 @@ public class CookieManager extends CookieHandler
         if (cookieJar == null)
             return;
 
+    PlatformLogger logger = PlatformLogger.getLogger("java.net.CookieManager");
         for (String headerKey : responseHeaders.keySet()) {
             // RFC 2965 3.2.2, key must be 'Set-Cookie2'
             // we also accept 'Set-Cookie' here for backward compatibility
@@ -277,7 +279,16 @@ public class CookieManager extends CookieHandler
 
             for (String headerValue : responseHeaders.get(headerKey)) {
                 try {
-                    List<HttpCookie> cookies = HttpCookie.parse(headerValue);
+                    List<HttpCookie> cookies;
+                    try {
+                        cookies = HttpCookie.parse(headerValue);
+                    } catch (IllegalArgumentException e) {
+                        // Bogus header, make an empty list and log the error
+                        cookies = java.util.Collections.EMPTY_LIST;
+                        if (logger.isLoggable(PlatformLogger.SEVERE)) {
+                            logger.severe("Invalid cookie for " + uri + ": " + headerValue);
+                        }
+                    }
                     for (HttpCookie cookie : cookies) {
                         if (cookie.getPath() == null) {
                             // If no path is specified, then by default

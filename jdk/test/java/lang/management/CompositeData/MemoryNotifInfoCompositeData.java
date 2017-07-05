@@ -29,7 +29,7 @@
  *          the input CompositeData is invalid.
  * @author  Mandy Chung
  *
- * @compile -source 1.5 OpenTypeConverter.java
+ * @compile OpenTypeConverter.java
  * @build MemoryNotifInfoCompositeData
  * @run main MemoryNotifInfoCompositeData
  */

@@ -57,6 +57,12 @@ public final class SpNegoMechFactory implements MechanismFactory {
                         GSSName.NT_HOSTBASED_SERVICE,
                         GSSName.NT_EXPORT_NAME};
 
+    // The default underlying mech of SPNEGO, must not be SPNEGO itself.
+    private static final Oid DEFAULT_SPNEGO_MECH_OID =
+            ProviderList.DEFAULT_MECH_OID.equals(GSS_SPNEGO_MECH_OID)?
+                GSSUtil.GSS_KRB5_MECH_OID:
+                ProviderList.DEFAULT_MECH_OID;
+
     // Use an instance of a GSSManager whose provider list
     // does not include native provider
     final GSSManagerImpl manager;
@@ -100,18 +106,27 @@ public final class SpNegoMechFactory implements MechanismFactory {
                 availableMechs[j++] = mechs[i];
             }
         }
+        // Move the preferred mech to first place
+        for (int i=0; i<availableMechs.length; i++) {
+            if (availableMechs[i].equals(DEFAULT_SPNEGO_MECH_OID)) {
+                if (i != 0) {
+                    availableMechs[i] = availableMechs[0];
+                    availableMechs[0] = DEFAULT_SPNEGO_MECH_OID;
+                }
+                break;
+            }
+        }
     }
 
     public GSSNameSpi getNameElement(String nameStr, Oid nameType)
-        throws GSSException {
-        // get NameElement for the default Mechanism
-        return manager.getNameElement(nameStr, nameType, null);
+            throws GSSException {
+        return manager.getNameElement(
+                nameStr, nameType, DEFAULT_SPNEGO_MECH_OID);
     }
 
     public GSSNameSpi getNameElement(byte[] name, Oid nameType)
-        throws GSSException {
-        // get NameElement for the default Mechanism
-        return manager.getNameElement(name, nameType, null);
+            throws GSSException {
+        return manager.getNameElement(name, nameType, DEFAULT_SPNEGO_MECH_OID);
     }
 
     public GSSCredentialSpi getCredentialElement(GSSNameSpi name,

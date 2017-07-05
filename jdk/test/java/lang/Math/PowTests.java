@@ -25,8 +25,6 @@
  * @test
  * @bug 4984407 5033578
  * @summary Tests for {Math, StrictMath}.pow
- * @compile -source 1.5 PowTests.java
- * @run main PowTests
  * @author Joseph D. Darcy
  */
 

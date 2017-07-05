@@ -26,9 +26,6 @@
  * @bug     4990512
  * @summary Basic Test for RuntimeMXBean.getSystemProperties().
  * @author  Mandy Chung
- *
- * @compile -source 1.5 GetSystemProperties.java
- * @run main GetSystemProperties
  */
 
 import java.lang.management.ManagementFactory;

@@ -26,7 +26,7 @@
  * @bug 5083441 6299047
  * @summary Test jvmti hprof
  *
- * @compile -source 1.5 -g:lines HelloWorld.java ../DemoRun.java
+ * @compile -g:lines HelloWorld.java ../DemoRun.java
  * @build OptionsTest
  * @run main OptionsTest HelloWorld
  */

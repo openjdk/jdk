@@ -227,12 +227,8 @@ public class Popup {
         HeavyWeightWindow(Window parent) {
             super(parent);
             setFocusableWindowState(false);
-            Toolkit tk = Toolkit.getDefaultToolkit();
-            if (tk instanceof SunToolkit) {
-                // all the short-lived windows like Popups should be
-                // OverrideRedirect on X11 platforms
-                ((SunToolkit)tk).setOverrideRedirect(this);
-            }
+            setType(Window.Type.POPUP);
+
             // Popups are typically transient and most likely won't benefit
             // from true double buffering.  Turn it off here.
             getRootPane().setUseTrueDoubleBuffering(false);

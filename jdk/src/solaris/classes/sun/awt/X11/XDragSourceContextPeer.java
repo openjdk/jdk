@@ -39,11 +39,10 @@ import java.util.*;
 
 import sun.util.logging.PlatformLogger;
 
-import sun.awt.ComponentAccessor;
-
 import sun.awt.dnd.SunDragSourceContextPeer;
 import sun.awt.dnd.SunDropTargetContextPeer;
 import sun.awt.SunToolkit;
+import sun.awt.AWTAccessor;
 
 /**
  * The XDragSourceContextPeer class is the class responsible for handling
@@ -117,7 +116,7 @@ public final class XDragSourceContextPeer
         XWindowPeer wpeer = null;
 
         for (c = component; c != null && !(c instanceof Window);
-             c = ComponentAccessor.getParent_NoClientCode(c));
+             c = AWTAccessor.getComponentAccessor().getParent(c));
 
         if (c instanceof Window) {
             wpeer = (XWindowPeer)c.getPeer();
