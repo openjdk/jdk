@@ -207,11 +207,11 @@ public:
   virtual BasicType memory_type() const { return T_BYTE; }
 };
 
-//------------------------------LoadCNode--------------------------------------
-// Load a char (16bits unsigned) from memory
-class LoadCNode : public LoadNode {
+//------------------------------LoadUSNode-------------------------------------
+// Load an unsigned short/char (16bits unsigned) from memory
+class LoadUSNode : public LoadNode {
 public:
-  LoadCNode( Node *c, Node *mem, Node *adr, const TypePtr* at, const TypeInt *ti = TypeInt::CHAR )
+  LoadUSNode( Node *c, Node *mem, Node *adr, const TypePtr* at, const TypeInt *ti = TypeInt::CHAR )
     : LoadNode(c,mem,adr,at,ti) {}
   virtual int Opcode() const;
   virtual uint ideal_reg() const { return Op_RegI; }

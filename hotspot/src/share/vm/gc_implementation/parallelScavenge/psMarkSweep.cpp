@@ -362,6 +362,10 @@ void PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
   if (PrintHeapAtGC) {
     Universe::print_heap_after_gc();
   }
+
+#ifdef TRACESPINNING
+  ParallelTaskTerminator::print_termination_counts();
+#endif
 }
 
 bool PSMarkSweep::absorb_live_data_from_eden(PSAdaptiveSizePolicy* size_policy,
