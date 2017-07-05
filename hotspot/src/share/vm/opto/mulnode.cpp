@@ -610,7 +610,7 @@ Node *AndLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // convert masks which would cause a sign extension of the integer
   // value.  This check includes UI2L masks (0x00000000FFFFFFFF) which
   // would be optimized away later in Identity.
-  if (op == Op_ConvI2L && (mask & CONST64(0xFFFFFFFF80000000)) == 0) {
+  if (op == Op_ConvI2L && (mask & UCONST64(0xFFFFFFFF80000000)) == 0) {
     Node* andi = new AndINode(in1->in(1), phase->intcon(mask));
     andi = phase->transform(andi);
     return new ConvI2LNode(andi);

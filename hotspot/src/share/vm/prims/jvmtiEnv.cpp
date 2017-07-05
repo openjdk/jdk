@@ -2263,6 +2263,8 @@ JvmtiEnv::GetClassMethods(oop k_mirror, jint* method_count_ptr, jmethodID** meth
   int result_length = instanceK_h->methods()->length();
   jmethodID* result_list = (jmethodID*)jvmtiMalloc(result_length * sizeof(jmethodID));
   int index;
+  bool jmethodids_found = true;
+
   if (JvmtiExport::can_maintain_original_method_order()) {
     // Use the original method ordering indices stored in the class, so we can emit
     // jmethodIDs in the order they appeared in the class file
@@ -2270,14 +2272,40 @@ JvmtiEnv::GetClassMethods(oop k_mirror, jint* method_count_ptr, jmethodID** meth
       Method* m = instanceK_h->methods()->at(index);
       int original_index = instanceK_h->method_ordering()->at(index);
       assert(original_index >= 0 && original_index < result_length, "invalid original method index");
-      jmethodID id = m->jmethod_id();
+      jmethodID id;
+      if (jmethodids_found) {
+        id = m->find_jmethod_id_or_null();
+        if (id == NULL) {
+          // If we find an uninitialized value, make sure there is
+          // enough space for all the uninitialized values we might
+          // find.
+          instanceK_h->ensure_space_for_methodids(index);
+          jmethodids_found = false;
+          id = m->jmethod_id();
+        }
+      } else {
+        id = m->jmethod_id();
+      }
       result_list[original_index] = id;
     }
   } else {
     // otherwise just copy in any order
     for (index = 0; index < result_length; index++) {
       Method* m = instanceK_h->methods()->at(index);
-      jmethodID id = m->jmethod_id();
+      jmethodID id;
+      if (jmethodids_found) {
+        id = m->find_jmethod_id_or_null();
+        if (id == NULL) {
+          // If we find an uninitialized value, make sure there is
+          // enough space for all the uninitialized values we might
+          // find.
+          instanceK_h->ensure_space_for_methodids(index);
+          jmethodids_found = false;
+          id = m->jmethod_id();
+        }
+      } else {
+        id = m->jmethod_id();
+      }
       result_list[index] = id;
     }
   }

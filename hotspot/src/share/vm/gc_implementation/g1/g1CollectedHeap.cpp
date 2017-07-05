@@ -127,41 +127,6 @@ public:
 };
 
 
-class ClearLoggedCardTableEntryClosure: public CardTableEntryClosure {
-  size_t _num_processed;
-  CardTableModRefBS* _ctbs;
-  int _histo[256];
-
- public:
-  ClearLoggedCardTableEntryClosure() :
-    _num_processed(0), _ctbs(G1CollectedHeap::heap()->g1_barrier_set())
-  {
-    for (int i = 0; i < 256; i++) _histo[i] = 0;
-  }
-
-  bool do_card_ptr(jbyte* card_ptr, uint worker_i) {
-    unsigned char* ujb = (unsigned char*)card_ptr;
-    int ind = (int)(*ujb);
-    _histo[ind]++;
-
-    *card_ptr = (jbyte)CardTableModRefBS::clean_card_val();
-    _num_processed++;
-
-    return true;
-  }
-
-  size_t num_processed() { return _num_processed; }
-
-  void print_histo() {
-    gclog_or_tty->print_cr("Card table value histogram:");
-    for (int i = 0; i < 256; i++) {
-      if (_histo[i] != 0) {
-        gclog_or_tty->print_cr("  %d: %d", i, _histo[i]);
-      }
-    }
-  }
-};
-
 class RedirtyLoggedCardTableEntryClosure : public CardTableEntryClosure {
  private:
   size_t _num_processed;
@@ -473,48 +438,6 @@ bool G1CollectedHeap::is_in_partial_collection(const void* p) {
 bool G1CollectedHeap::is_scavengable(const void* p) {
   HeapRegion* hr = heap_region_containing(p);
   return !hr->is_humongous();
-}
-
-void G1CollectedHeap::check_ct_logs_at_safepoint() {
-  DirtyCardQueueSet& dcqs = JavaThread::dirty_card_queue_set();
-  CardTableModRefBS* ct_bs = g1_barrier_set();
-
-  // Count the dirty cards at the start.
-  CountNonCleanMemRegionClosure count1(this);
-  ct_bs->mod_card_iterate(&count1);
-  int orig_count = count1.n();
-
-  // First clear the logged cards.
-  ClearLoggedCardTableEntryClosure clear;
-  dcqs.apply_closure_to_all_completed_buffers(&clear);
-  dcqs.iterate_closure_all_threads(&clear, false);
-  clear.print_histo();
-
-  // Now ensure that there's no dirty cards.
-  CountNonCleanMemRegionClosure count2(this);
-  ct_bs->mod_card_iterate(&count2);
-  if (count2.n() != 0) {
-    gclog_or_tty->print_cr("Card table has %d entries; %d originally",
-                           count2.n(), orig_count);
-  }
-  guarantee(count2.n() == 0, "Card table should be clean.");
-
-  RedirtyLoggedCardTableEntryClosure redirty;
-  dcqs.apply_closure_to_all_completed_buffers(&redirty);
-  dcqs.iterate_closure_all_threads(&redirty, false);
-  gclog_or_tty->print_cr("Log entries = %d, dirty cards = %d.",
-                         clear.num_processed(), orig_count);
-  guarantee(redirty.num_processed() == clear.num_processed(),
-            err_msg("Redirtied "SIZE_FORMAT" cards, bug cleared "SIZE_FORMAT,
-                    redirty.num_processed(), clear.num_processed()));
-
-  CountNonCleanMemRegionClosure count3(this);
-  ct_bs->mod_card_iterate(&count3);
-  if (count3.n() != orig_count) {
-    gclog_or_tty->print_cr("Should have restored them all: orig = %d, final = %d.",
-                           orig_count, count3.n());
-    guarantee(count3.n() >= orig_count, "Should have restored them all.");
-  }
 }
 
 // Private class members.
@@ -5760,14 +5683,10 @@ void G1CollectedHeap::evacuate_collection_set(EvacuationInfo& evacuation_info) {
   // not copied during the pause.
   process_discovered_references(n_workers);
 
-  // Weak root processing.
-  {
+  if (G1StringDedup::is_enabled()) {
     G1STWIsAliveClosure is_alive(this);
     G1KeepAliveClosure keep_alive(this);
-    JNIHandles::weak_oops_do(&is_alive, &keep_alive);
-    if (G1StringDedup::is_enabled()) {
-      G1StringDedup::unlink_or_oops_do(&is_alive, &keep_alive);
-    }
+    G1StringDedup::unlink_or_oops_do(&is_alive, &keep_alive);
   }
 
   _allocator->release_gc_alloc_regions(n_workers, evacuation_info);

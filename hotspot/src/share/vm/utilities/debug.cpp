@@ -256,16 +256,18 @@ void report_out_of_shared_space(SharedSpaceType shared_space) {
   static const char* name[] = {
     "shared read only space",
     "shared read write space",
-    "shared miscellaneous data space"
+    "shared miscellaneous data space",
+    "shared miscellaneous code space"
   };
   static const char* flag[] = {
     "SharedReadOnlySize",
     "SharedReadWriteSize",
-    "SharedMiscDataSize"
+    "SharedMiscDataSize",
+    "SharedMiscCodeSize"
   };
 
    warning("\nThe %s is not large enough\n"
-           "to preload requested classes. Use -XX:%s=\n"
+           "to preload requested classes. Use -XX:%s=<size>\n"
            "to increase the initial size of %s.\n",
            name[shared_space], flag[shared_space], name[shared_space]);
    exit(2);

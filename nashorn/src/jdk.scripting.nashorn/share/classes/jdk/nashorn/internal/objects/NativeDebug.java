@@ -39,6 +39,7 @@ import jdk.nashorn.internal.runtime.PropertyListeners;
 import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
+import jdk.nashorn.internal.runtime.ScriptRuntime;
 import jdk.nashorn.internal.runtime.events.RuntimeEvent;
 import jdk.nashorn.internal.runtime.linker.LinkerCallSite;
 import jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor;
@@ -63,6 +64,36 @@ public final class NativeDebug extends ScriptObject {
     @Override
     public String getClassName() {
         return "Debug";
+    }
+
+    /**
+     * Return the ArrayData class for this ScriptObject
+     * @param self self
+     * @param obj script object to check
+     * @return ArrayData class, or undefined if no ArrayData is present
+     */
+    @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
+    public static Object getArrayDataClass(final Object self, final Object obj) {
+        try {
+            return ((ScriptObject)obj).getArray().getClass();
+        } catch (final ClassCastException e) {
+            return ScriptRuntime.UNDEFINED;
+        }
+    }
+
+    /**
+     * Return the ArrayData for this ScriptObject
+     * @param self self
+     * @param obj script object to check
+     * @return ArrayData, ArrayDatas have toString methods, return Undefined if data missing
+     */
+    @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
+    public static Object getArrayData(final Object self, final Object obj) {
+        try {
+            return ((ScriptObject)obj).getArray();
+        } catch (final ClassCastException e) {
+            return ScriptRuntime.UNDEFINED;
+        }
     }
 
     /**

@@ -76,9 +76,9 @@ class Trampoline {
  * Create a trampoline class.
  */
 public final class MethodUtil extends SecureClassLoader {
-    private static String MISC_PKG = "sun.reflect.misc.";
-    private static String TRAMPOLINE = MISC_PKG + "Trampoline";
-    private static Method bounce = getTrampoline();
+    private static final String MISC_PKG = "sun.reflect.misc.";
+    private static final String TRAMPOLINE = MISC_PKG + "Trampoline";
+    private static final Method bounce = getTrampoline();
 
     private MethodUtil() {
         super();

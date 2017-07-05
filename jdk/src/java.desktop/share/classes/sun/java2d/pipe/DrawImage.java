@@ -278,18 +278,34 @@ public class DrawImage implements DrawImagePipe
                                      Color bgColor, int interpType,
                                      double coords[])
     {
-        double dx = coords[0];
-        double dy = coords[1];
-        double dw = coords[2] - dx;
-        double dh = coords[3] - dy;
+        double dx1 = coords[0];
+        double dy1 = coords[1];
+        double dx2 = coords[2];
+        double dy2 = coords[3];
+        double dw = dx2 - dx1;
+        double dh = dy2 - dy1;
+
+        /* If any of the destination coordinates exceed the integer range,
+         * then the calculations performed in calls made here cannot be
+         * guaranteed to be correct, or to converge (terminate).
+         * So return out of here, deferring to code that can handle this.
+         */
+        if (dx1 < Integer.MIN_VALUE || dx1 > Integer.MAX_VALUE ||
+            dy1 < Integer.MIN_VALUE || dy1 > Integer.MAX_VALUE ||
+            dx2 < Integer.MIN_VALUE || dx2 > Integer.MAX_VALUE ||
+            dy2 < Integer.MIN_VALUE || dy2 > Integer.MAX_VALUE)
+        {
+            return false;
+        }
+
         // First check if width and height are very close to img w&h.
         if (closeToInteger(sx2-sx1, dw) && closeToInteger(sy2-sy1, dh)) {
             // Round location to nearest pixel and then test
             // if it will cause interpolation anomalies.
-            int idx = (int) Math.floor(dx + 0.5);
-            int idy = (int) Math.floor(dy + 0.5);
+            int idx = (int) Math.floor(dx1 + 0.5);
+            int idy = (int) Math.floor(dy1 + 0.5);
             if (interpType == AffineTransformOp.TYPE_NEAREST_NEIGHBOR ||
-                (closeToInteger(idx, dx) && closeToInteger(idy, dy)))
+                (closeToInteger(idx, dx1) && closeToInteger(idy, dy1)))
             {
                 renderImageCopy(sg, img, bgColor,
                                 idx, idy,
@@ -302,7 +318,7 @@ public class DrawImage implements DrawImagePipe
         if (dw > 0 && dh > 0) {
             if (renderImageScale(sg, img, bgColor, interpType,
                                  sx1, sy1, sx2, sy2,
-                                 coords[0], coords[1], coords[2], coords[3]))
+                                 dx1, dy1, dx2, dy2))
             {
                 return true;
             }
@@ -494,7 +510,7 @@ public class DrawImage implements DrawImagePipe
         // We need to transform to a temp image and then copy
         // just the pieces that are valid data to the dest.
         BufferedImage tmpimg = new BufferedImage(dx2-dx1, dy2-dy1,
-                                                 BufferedImage.TYPE_INT_ARGB);
+                                                 BufferedImage.TYPE_INT_ARGB_PRE);
         SurfaceData tmpData = SurfaceData.getPrimarySurfaceData(tmpimg);
         SurfaceType tmpType = tmpData.getSurfaceType();
         MaskBlit tmpmaskblit =

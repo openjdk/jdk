@@ -247,7 +247,7 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
   Array<Method*>* parse_methods(bool is_interface,
                                 AccessFlags* promoted_flags,
                                 bool* has_final_method,
-                                bool* has_default_method,
+                                bool* declares_default_methods,
                                 TRAPS);
   intArray* sort_methods(Array<Method*>* methods);
 

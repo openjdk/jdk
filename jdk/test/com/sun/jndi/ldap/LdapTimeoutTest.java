@@ -46,8 +46,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 public class LdapTimeoutTest {
-    private static final ScheduledExecutorService pool =
-        Executors.newScheduledThreadPool(1);
+
     static volatile int passed = 0, failed = 0;
     static void pass() {passed++;}
     static void fail() {failed++; Thread.dumpStack();}
@@ -80,7 +79,6 @@ public class LdapTimeoutTest {
             new LdapTimeoutTest().simpleAuthConnectTest(env);
         } finally {
             s.interrupt();
-            LdapTimeoutTest.pool.shutdown();
         }
 
         System.out.printf("%nPassed = %d, failed = %d%n%n", passed, failed);
@@ -90,7 +88,6 @@ public class LdapTimeoutTest {
     void ldapReadTimeoutTest(Hashtable env, boolean ssl) {
         InitialContext ctx = null;
         if (ssl) env.put(Context.SECURITY_PROTOCOL, "ssl");
-        ScheduledFuture killer = killSwitch(5_000);
         long start = System.nanoTime();
         try {
             ctx = new InitialDirContext(env);
@@ -112,13 +109,12 @@ public class LdapTimeoutTest {
                 pass();
             }
         } finally {
-            if (!shutItDown(killer, ctx)) fail();
+            if (!shutItDown(ctx)) fail();
         }
     }
 
     void simpleAuthConnectTest(Hashtable env) {
         InitialContext ctx = null;
-        ScheduledFuture killer = killSwitch(5_000);
         long start = System.nanoTime();
         try {
             ctx = new InitialDirContext(env);
@@ -141,13 +137,12 @@ public class LdapTimeoutTest {
                 fail();
             }
         } finally {
-            if (!shutItDown(killer, ctx)) fail();
+            if (!shutItDown(ctx)) fail();
         }
     }
 
     void deadServerNoTimeout(Hashtable env) {
         InitialContext ctx = null;
-        ScheduledFuture killer = killSwitch(30_000);
         long start = System.currentTimeMillis();
         try {
             ctx = new InitialDirContext(env);
@@ -169,29 +164,17 @@ public class LdapTimeoutTest {
                 pass();
             }
         } finally {
-            if (!shutItDown(killer, ctx)) fail();
+            if (!shutItDown(ctx)) fail();
         }
     }
 
-    boolean shutItDown(ScheduledFuture killer, InitialContext ctx) {
-        killer.cancel(true);
+    boolean shutItDown(InitialContext ctx) {
         try {
             if (ctx != null) ctx.close();
             return true;
         } catch (NamingException ex) {
             return false;
         }
-    }
-
-    ScheduledFuture killSwitch(int ms) {
-        final Thread current = Thread.currentThread();
-        return LdapTimeoutTest.pool.schedule(new Callable<Void>() {
-            public Void call() throws Exception {
-                System.err.println("Fail: killSwitch()");
-                System.exit(0);
-                return null;
-            }
-        }, ms, MILLISECONDS);
     }
 
     static class Server extends Thread {

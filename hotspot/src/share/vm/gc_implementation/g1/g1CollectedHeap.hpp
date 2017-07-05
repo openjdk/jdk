@@ -797,9 +797,6 @@ protected:
   // The closure used to refine a single card.
   RefineCardTableEntryClosure* _refine_cte_cl;
 
-  // A function to check the consistency of dirty card logs.
-  void check_ct_logs_at_safepoint();
-
   // A DirtyCardQueueSet that is used to hold cards that contain
   // references into the current collection set. This is used to
   // update the remembered sets of the regions in the collection

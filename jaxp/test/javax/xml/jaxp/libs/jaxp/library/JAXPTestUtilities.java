@@ -22,11 +22,23 @@
  */
 package jaxp.library;
 
-
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.charset.UnsupportedCharsetException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.stream.Collectors;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import static org.testng.Assert.fail;
+import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
 
 /**
  * This is an interface provide basic support for JAXP functional test.
@@ -59,6 +71,22 @@ public class JAXPTestUtilities {
     public static final String TEMP_DIR = System.getProperty("java.io.tmpdir", ".");
 
     /**
+     * BOM table for storing BOM header.
+     */
+    private final static Map<String, byte[]> bom = new HashMap();
+
+    /**
+     * Initialize all BOM headers.
+     */
+    static {
+        bom.put("UTF-8", new byte[]{(byte)0xEF, (byte) 0xBB, (byte) 0xBF});
+        bom.put("UTF-16BE", new byte[]{(byte)0xFE, (byte)0xFF});
+        bom.put("UTF-16LE", new byte[]{(byte)0xFF, (byte)0xFE});
+        bom.put("UTF-32BE", new byte[]{(byte)0x00, (byte)0x00, (byte)0xFE, (byte)0xFF});
+        bom.put("UTF-32LE", new byte[]{(byte)0xFF, (byte)0xFE, (byte)0x00, (byte)0x00});
+    }
+
+    /**
      * Compare contents of golden file with test output file line by line.
      * return true if they're identical.
      * @param goldfile Golden output file name
@@ -72,6 +100,63 @@ public class JAXPTestUtilities {
             throws IOException {
         return Files.readAllLines(Paths.get(goldfile)).
                 equals(Files.readAllLines(Paths.get(outputfile)));
+    }
+
+    /**
+     * Compare contents of golden file with test output file by their document
+     * representation.
+     * Here we ignore the white space and comments. return true if they're
+     * lexical identical.
+     * @param goldfile Golden output file name.
+     * @param resultFile Test output file name.
+     * @return true if two file's document representation are identical.
+     *         false if two file's document representation are not identical.
+     * @throws javax.xml.parsers.ParserConfigurationException if the
+     *         implementation is not available or cannot be instantiated.
+     * @throws SAXException If any parse errors occur.
+     * @throws IOException if an I/O error occurs reading from the file or a
+     *         malformed or unmappable byte sequence is read .
+     */
+    public static boolean compareDocumentWithGold(String goldfile, String resultFile)
+            throws ParserConfigurationException, SAXException, IOException {
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        factory.setNamespaceAware(true);
+        factory.setCoalescing(true);
+        factory.setIgnoringElementContentWhitespace(true);
+        factory.setIgnoringComments(true);
+        DocumentBuilder db = factory.newDocumentBuilder();
+
+        Document goldD = db.parse(Paths.get(goldfile).toFile());
+        goldD.normalizeDocument();
+        Document resultD = db.parse(Paths.get(resultFile).toFile());
+        resultD.normalizeDocument();
+        return goldD.isEqualNode(resultD);
+    }
+    /**
+     * Convert stream to ByteArrayInputStream by given character set.
+     * @param charset target character set.
+     * @param file a file that contains no BOM head content.
+     * @return a ByteArrayInputStream contains BOM heads and bytes in original
+     *         stream
+     * @throws IOException I/O operation failed or unsupported character set.
+     */
+    public static InputStream bomStream(String charset, String file)
+            throws IOException {
+        String localCharset = charset;
+        if (charset.equals("UTF-16") || charset.equals("UTF-32")) {
+            localCharset
+                += ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN ? "BE" : "LE";
+        }
+        if (!bom.containsKey(localCharset))
+            throw new UnsupportedCharsetException("Charset:" + localCharset);
+
+        byte[] content = Files.readAllLines(Paths.get(file)).stream().
+                collect(Collectors.joining()).getBytes(localCharset);
+        byte[] head = bom.get(localCharset);
+        ByteBuffer bb = ByteBuffer.allocate(content.length + head.length);
+        bb.put(head);
+        bb.put(content);
+        return new ByteArrayInputStream(bb.array());
     }
 
     /**
