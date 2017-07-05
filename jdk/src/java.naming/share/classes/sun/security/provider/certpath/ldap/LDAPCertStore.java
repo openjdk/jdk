@@ -25,18 +25,12 @@
 
 package sun.security.provider.certpath.ldap;
 
-import java.math.BigInteger;
 import java.net.URI;
-import java.util.*;
-
 import java.security.*;
-import java.security.cert.Certificate;
 import java.security.cert.*;
-import javax.security.auth.x500.X500Principal;
-
+import java.util.*;
 import sun.security.util.Cache;
 import sun.security.util.Debug;
-import sun.security.x509.X500Name;
 
 /**
  * A <code>CertStore</code> that retrieves <code>Certificates</code> and
@@ -93,8 +87,6 @@ public final class LDAPCertStore extends CertStoreSpi {
 
     private static final Debug debug = Debug.getInstance("certpath");
 
-    private final static boolean DEBUG = false;
-
     private String ldapDN;
 
     private LDAPCertStoreImpl impl;
@@ -108,7 +100,7 @@ public final class LDAPCertStore extends CertStoreSpi {
         String dn = null;
         if (params == null) {
             throw new InvalidAlgorithmParameterException(
-                "parameters required for LDAP Certore");
+                    "Parameters required for LDAP certstore");
         }
         if (params instanceof LDAPCertStoreParameters) {
             LDAPCertStoreParameters p = (LDAPCertStoreParameters) params;
@@ -119,7 +111,9 @@ public final class LDAPCertStore extends CertStoreSpi {
             URI u = p.getURI();
             if (!u.getScheme().equalsIgnoreCase("ldap")) {
                 throw new InvalidAlgorithmParameterException(
-                "Only LDAP URIs are supported for LDAP Certore");
+                        "Unsupported scheme '" + u.getScheme()
+                                + "', only LDAP URIs are supported "
+                                + "for LDAP certstore");
             }
             // Use the same default values as in LDAPCertStoreParameters
             // if unspecified in URI
@@ -137,8 +131,9 @@ public final class LDAPCertStore extends CertStoreSpi {
             }
         } else {
             throw new InvalidAlgorithmParameterException(
-                "parameters must be either LDAPCertStoreParameters or " +
-                "URICertStoreParameters");
+                "Parameters must be either LDAPCertStoreParameters or "
+                        + "URICertStoreParameters, but instance of "
+                        + params.getClass().getName() + " passed");
         }
 
         Key k = new Key(serverName, port);
@@ -236,6 +231,7 @@ public final class LDAPCertStore extends CertStoreSpi {
      *         match the specified selector
      * @throws CertStoreException if an exception occurs
      */
+    @Override
     public synchronized Collection<X509Certificate> engineGetCertificates
             (CertSelector selector) throws CertStoreException {
         if (debug != null) {
@@ -245,7 +241,9 @@ public final class LDAPCertStore extends CertStoreSpi {
         if (selector == null) {
             selector = new X509CertSelector();
         } else if (!(selector instanceof X509CertSelector)) {
-            throw new CertStoreException("need X509CertSelector to find certs");
+            throw new CertStoreException("Need X509CertSelector to find certs, "
+                    + "but instance of " + selector.getClass().getName()
+                    + " passed");
         }
         return impl.getCertificates((X509CertSelector) selector, ldapDN);
     }
@@ -271,6 +269,7 @@ public final class LDAPCertStore extends CertStoreSpi {
      *         match the specified selector
      * @throws CertStoreException if an exception occurs
      */
+    @Override
     public synchronized Collection<X509CRL> engineGetCRLs(CRLSelector selector)
             throws CertStoreException {
         if (debug != null) {
@@ -281,7 +280,9 @@ public final class LDAPCertStore extends CertStoreSpi {
         if (selector == null) {
             selector = new X509CRLSelector();
         } else if (!(selector instanceof X509CRLSelector)) {
-            throw new CertStoreException("need X509CRLSelector to find CRLs");
+            throw new CertStoreException("Need X509CRLSelector to find CRLs, "
+                    + "but instance of " + selector.getClass().getName()
+                    + " passed");
         }
         return impl.getCRLs((X509CRLSelector) selector, ldapDN);
     }

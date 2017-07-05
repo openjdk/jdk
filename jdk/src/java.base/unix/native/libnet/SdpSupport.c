@@ -118,6 +118,8 @@ Java_sun_net_sdp_SdpSupport_convert0(JNIEnv *env, jclass cls, int fd)
         RESTARTABLE(dup2(s, fd), res);
         if (res < 0)
             JNU_ThrowIOExceptionWithLastError(env, "dup2");
-        RESTARTABLE(close(s), res);
+        res = close(s);
+        if (res < 0 && !(*env)->ExceptionOccurred(env))
+            JNU_ThrowIOExceptionWithLastError(env, "close");
     }
 }

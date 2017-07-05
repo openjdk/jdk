@@ -97,7 +97,10 @@ public final class JpsHelper {
      * VM arguments to start test application with.
      * -XX:+UsePerfData is required for running the tests on embedded platforms.
      */
-    public static final String[] VM_ARGS = {"-XX:+UsePerfData", "-Xmx512m", "-XX:+PrintGCDetails"};
+    public static final String[] VM_ARGS = {
+        "-XX:+UsePerfData", "-Xmx512m", "-XX:+PrintGCDetails",
+        "-Dmultiline.prop=value1\nvalue2\r\nvalue3"
+    };
     /**
      * VM flag to start test application with
      */
