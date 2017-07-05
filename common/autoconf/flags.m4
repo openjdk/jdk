@@ -668,12 +668,9 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK],
 
   # Setup some hard coded includes
   COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK \
-      -I${JDK_OUTPUTDIR}/include \
-      -I${JDK_OUTPUTDIR}/include/$OPENJDK_TARGET_OS \
-      -I${JDK_TOPDIR}/src/share/javavm/export \
-      -I${JDK_TOPDIR}/src/$OPENJDK_TARGET_OS_EXPORT_DIR/javavm/export \
-      -I${JDK_TOPDIR}/src/share/native/common \
-      -I${JDK_TOPDIR}/src/$OPENJDK_TARGET_OS_API_DIR/native/common"
+      -I${JDK_TOPDIR}/src/java.base/share/native/include \
+      -I${JDK_TOPDIR}/src/java.base/$OPENJDK_TARGET_OS/native/include \
+      -I${JDK_TOPDIR}/src/java.base/$OPENJDK_TARGET_OS_API_DIR/native/include"
 
   # The shared libraries are compiled using the picflag.
   CFLAGS_JDKLIB="$COMMON_CCXXFLAGS_JDK $CFLAGS_JDK $PICFLAG $CFLAGS_JDKLIB_EXTRA"
