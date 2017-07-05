@@ -2203,6 +2203,10 @@ void PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
                            collection_exit.ticks());
     gc_task_manager()->print_task_time_stamps();
   }
+
+#ifdef TRACESPINNING
+  ParallelTaskTerminator::print_termination_counts();
+#endif
 }
 
 bool PSParallelCompact::absorb_live_data_from_eden(PSAdaptiveSizePolicy* size_policy,

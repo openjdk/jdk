@@ -3314,7 +3314,7 @@ int MatchNode::needs_ideal_memory_edge(FormDict &globals) const {
     "StoreI","StoreL","StoreP","StoreN","StoreD","StoreF" ,
     "StoreB","StoreC","Store" ,"StoreFP",
     "LoadI" ,"LoadL", "LoadP" ,"LoadN", "LoadD" ,"LoadF"  ,
-    "LoadB" ,"LoadC" ,"LoadS" ,"Load"   ,
+    "LoadB" ,"LoadUS" ,"LoadS" ,"Load"   ,
     "Store4I","Store2I","Store2L","Store2D","Store4F","Store2F","Store16B",
     "Store8B","Store4B","Store8C","Store4C","Store2C",
     "Load4I" ,"Load2I" ,"Load2L" ,"Load2D" ,"Load4F" ,"Load2F" ,"Load16B" ,

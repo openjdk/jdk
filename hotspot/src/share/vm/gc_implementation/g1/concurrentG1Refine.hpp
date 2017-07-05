@@ -33,7 +33,7 @@ enum PostYieldAction {
   PYA_cancel     // It's been completed by somebody else: cancel.
 };
 
-class ConcurrentG1Refine {
+class ConcurrentG1Refine: public CHeapObj {
   ConcurrentG1RefineThread* _cg1rThread;
 
   volatile jint _pya;
