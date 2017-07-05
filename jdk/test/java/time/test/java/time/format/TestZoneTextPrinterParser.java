@@ -121,6 +121,7 @@ public class TestZoneTextPrinterParser extends AbstractTestPrinterParser {
     private static Set<ZoneId> preferred = new HashSet<>(Arrays.asList(new ZoneId[] {
         ZoneId.of("EST", ZoneId.SHORT_IDS),
         ZoneId.of("Asia/Taipei"),
+        ZoneId.of("Asia/Macau"),
         ZoneId.of("CET"),
     }));
 
@@ -140,11 +141,12 @@ public class TestZoneTextPrinterParser extends AbstractTestPrinterParser {
             {"America/New_York", "Eastern Standard Time", none,      Locale.ENGLISH, TextStyle.FULL},
 //          {"EST",              "Eastern Standard Time", preferred, Locale.ENGLISH, TextStyle.FULL},
             {"Europe/Paris",     "Central European Time", none,      Locale.ENGLISH, TextStyle.FULL},
-            {"CET",              "Central European Time", preferred, Locale.ENGLISH, TextStyle.FULL},
+//          {"CET",              "Central European Time", preferred, Locale.ENGLISH, TextStyle.FULL}, no three-letter ID in CLDR
             {"Asia/Shanghai",    "China Standard Time",   none,      Locale.ENGLISH, TextStyle.FULL},
-            {"Asia/Taipei",      "China Standard Time",   preferred, Locale.ENGLISH, TextStyle.FULL},
+            {"Asia/Macau",       "China Standard Time",   preferred, Locale.ENGLISH, TextStyle.FULL},
+            {"Asia/Taipei",      "Taipei Standard Time",  preferred, Locale.ENGLISH, TextStyle.FULL},
             {"America/Chicago",  "CST",                   none,      Locale.ENGLISH, TextStyle.SHORT},
-            {"Asia/Taipei",      "CST",                   preferred, Locale.ENGLISH, TextStyle.SHORT},
+            {"Asia/Taipei",      "TST",                   preferred, Locale.ENGLISH, TextStyle.SHORT},
             {"Australia/South",  "ACST",                  preferred_s, Locale.ENGLISH, TextStyle.SHORT},
             {"America/Chicago",  "CDT",                   none,        Locale.ENGLISH, TextStyle.SHORT},
             {"Asia/Shanghai",    "CDT",                   preferred_s, Locale.ENGLISH, TextStyle.SHORT},

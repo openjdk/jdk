@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,9 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.ResourceBundle.Control;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 import org.xml.sax.SAXNotRecognizedException;
@@ -64,11 +67,21 @@ public class CLDRConverter {
     static final String TIMEZONE_ID_PREFIX = "timezone.id.";
     static final String ZONE_NAME_PREFIX = "timezone.displayname.";
     static final String METAZONE_ID_PREFIX = "metazone.id.";
+    static final String PARENT_LOCALE_PREFIX = "parentLocale.";
 
     private static SupplementDataParseHandler handlerSuppl;
     static NumberingSystemsParseHandler handlerNumbering;
     static MetaZonesParseHandler handlerMetaZones;
     private static BundleGenerator bundleGenerator;
+
+    // java.base module related
+    static boolean isBaseModule = false;
+    static final Set<Locale> BASE_LOCALES = new HashSet<>();
+
+    // "parentLocales" map
+    private static final Map<String, SortedSet<String>> parentLocalesMap = new HashMap<>();
+    private static final ResourceBundle.Control defCon =
+        ResourceBundle.Control.getControl(ResourceBundle.Control.FORMAT_DEFAULT);
 
     static enum DraftType {
         UNCONFIRMED,
@@ -142,6 +155,16 @@ public class CLDRConverter {
                         }
                         break;
 
+                    case "-baselocales":
+                        // base locales
+                        setupBaseLocales(args[++i]);
+                        break;
+
+                    case "-basemodule":
+                        // indicates java.base module resource generation
+                        isBaseModule = true;
+                        break;
+
                     case "-o":
                         // output directory
                         DESTINATION_DIR = args[++i];
@@ -179,7 +202,14 @@ public class CLDRConverter {
         NUMBERING_SOURCE_FILE = CLDR_BASE + "common/supplemental/numberingSystems.xml";
         METAZONES_SOURCE_FILE = CLDR_BASE + "common/supplemental/metaZones.xml";
 
+        if (BASE_LOCALES.isEmpty()) {
+            setupBaseLocales("en-US");
+        }
+
         bundleGenerator = new ResourceBundleGenerator();
+
+        // Parse data independent of locales
+        parseSupplemental();
 
         List<Bundle> bundles = readBundleList();
         convertBundles(bundles);
@@ -192,6 +222,9 @@ public class CLDRConverter {
                 + "\t-draft [approved | provisional | unconfirmed]%n"
                 + "\t\t       draft level for using data (default: approved)%n"
                 + "\t-base dir      base directory for CLDR input files%n"
+                + "\t-basemodule    generates bundles that go into java.base module%n"
+                + "\t-baselocales loc(,loc)*      locales that go into the base module%n"
+                + "\t-o dir         output directory (default: ./build/gensrc)%n"
                 + "\t-o dir         output directory (defaut: ./build/gensrc)%n"
                 + "\t-utf8          use UTF-8 rather than \\uxxxx (for debug)%n");
     }
@@ -248,7 +281,6 @@ public class CLDRConverter {
     }
 
     private static List<Bundle> readBundleList() throws Exception {
-        ResourceBundle.Control defCon = ResourceBundle.Control.getControl(ResourceBundle.Control.FORMAT_DEFAULT);
         List<Bundle> retList = new ArrayList<>();
         Path path = FileSystems.getDefault().getPath(SOURCE_FILE_DIR);
         try (DirectoryStream<Path> dirStr = Files.newDirectoryStream(path)) {
@@ -257,7 +289,7 @@ public class CLDRConverter {
                 if (fileName.endsWith(".xml")) {
                     String id = fileName.substring(0, fileName.indexOf('.'));
                     Locale cldrLoc = Locale.forLanguageTag(toLanguageTag(id));
-                    List<Locale> candList = defCon.getCandidateLocales("", cldrLoc);
+                    List<Locale> candList = applyParentLocales("", defCon.getCandidateLocales("", cldrLoc));
                     StringBuilder sb = new StringBuilder();
                     for (Locale loc : candList) {
                         if (!loc.equals(Locale.ROOT)) {
@@ -269,9 +301,9 @@ public class CLDRConverter {
                         sb.append("root");
                     }
                     Bundle b = new Bundle(id, sb.toString(), null, null);
-                    // Insert the bundle for en at the top so that it will get
+                    // Insert the bundle for root at the top so that it will get
                     // processed first.
-                    if ("en".equals(id)) {
+                    if ("root".equals(id)) {
                         retList.add(0, b);
                     } else {
                         retList.add(b);
@@ -282,7 +314,7 @@ public class CLDRConverter {
         return retList;
     }
 
-    private static Map<String, Map<String, Object>> cldrBundles = new HashMap<>();
+    private static final Map<String, Map<String, Object>> cldrBundles = new HashMap<>();
 
     static Map<String, Object> getCLDRBundle(String id) throws Exception {
         Map<String, Object> bundle = cldrBundles.get(id);
@@ -319,12 +351,19 @@ public class CLDRConverter {
         return bundle;
     }
 
-    private static void convertBundles(List<Bundle> bundles) throws Exception {
+    // Parsers for data in "supplemental" directory
+    //
+    private static void parseSupplemental() throws Exception {
         // Parse SupplementalData file and store the information in the HashMap
         // Calendar information such as firstDay and minDay are stored in
         // supplementalData.xml as of CLDR1.4. Individual territory is listed
         // with its ISO 3166 country code while default is listed using UNM49
         // region and composition numerical code (001 for World.)
+        //
+        // SupplementalData file also provides the "parent" locales which
+        // are othrwise not to be fallen back. Process them here as well.
+        //
+        info("..... Parsing supplementalData.xml .....");
         SAXParserFactory factorySuppl = SAXParserFactory.newInstance();
         factorySuppl.setValidating(true);
         SAXParser parserSuppl = factorySuppl.newSAXParser();
@@ -332,8 +371,14 @@ public class CLDRConverter {
         handlerSuppl = new SupplementDataParseHandler();
         File fileSupply = new File(SPPL_SOURCE_FILE);
         parserSuppl.parse(fileSupply, handlerSuppl);
+        Map<String, Object> parentData = handlerSuppl.getData("root");
+        parentData.keySet().forEach(key -> {
+                parentLocalesMap.put(key, new TreeSet(
+                    Arrays.asList(((String)parentData.get(key)).split(" "))));
+            });
 
         // Parse numberingSystems to get digit zero character information.
+        info("..... Parsing numberingSystem.xml .....");
         SAXParserFactory numberingParser = SAXParserFactory.newInstance();
         numberingParser.setValidating(true);
         SAXParser parserNumbering = numberingParser.newSAXParser();
@@ -343,6 +388,7 @@ public class CLDRConverter {
         parserNumbering.parse(fileNumbering, handlerNumbering);
 
         // Parse metaZones to create mappings between Olson tzids and CLDR meta zone names
+        info("..... Parsing metaZones.xml .....");
         SAXParserFactory metazonesParser = SAXParserFactory.newInstance();
         metazonesParser.setValidating(true);
         SAXParser parserMetaZones = metazonesParser.newSAXParser();
@@ -350,14 +396,23 @@ public class CLDRConverter {
         handlerMetaZones = new MetaZonesParseHandler();
         File fileMetaZones = new File(METAZONES_SOURCE_FILE);
         parserNumbering.parse(fileMetaZones, handlerMetaZones);
+    }
 
+    private static void convertBundles(List<Bundle> bundles) throws Exception {
         // For generating information on supported locales.
         Map<String, SortedSet<String>> metaInfo = new HashMap<>();
-        metaInfo.put("LocaleNames", new TreeSet<String>());
-        metaInfo.put("CurrencyNames", new TreeSet<String>());
-        metaInfo.put("TimeZoneNames", new TreeSet<String>());
-        metaInfo.put("CalendarData", new TreeSet<String>());
-        metaInfo.put("FormatData", new TreeSet<String>());
+        metaInfo.put("LocaleNames", new TreeSet<>());
+        metaInfo.put("CurrencyNames", new TreeSet<>());
+        metaInfo.put("TimeZoneNames", new TreeSet<>());
+        metaInfo.put("CalendarData", new TreeSet<>());
+        metaInfo.put("FormatData", new TreeSet<>());
+        metaInfo.put("AvailableLocales", new TreeSet<>());
+
+        // parent locales map. The mappings are put in base metaInfo file
+        // for now.
+        if (isBaseModule) {
+            metaInfo.putAll(parentLocalesMap);
+        }
 
         for (Bundle bundle : bundles) {
             // Get the target map, which contains all the data that should be
@@ -367,21 +422,7 @@ public class CLDRConverter {
 
             EnumSet<Bundle.Type> bundleTypes = bundle.getBundleTypes();
 
-            // Fill in any missing resources in the base bundle from en and en-US data.
-            // This is because CLDR root.xml is supposed to be language neutral and doesn't
-            // provide some resource data. Currently, the runtime assumes that there are all
-            // resources though the parent resource bundle chain.
             if (bundle.isRoot()) {
-                Map<String, Object> enData = new HashMap<>();
-                // Create a superset of en-US and en bundles data in order to
-                // fill in any missing resources in the base bundle.
-                enData.putAll(Bundle.getBundle("en").getTargetMap());
-                enData.putAll(Bundle.getBundle("en_US").getTargetMap());
-                for (String key : enData.keySet()) {
-                    if (!targetMap.containsKey(key)) {
-                        targetMap.put(key, enData.get(key));
-                    }
-                }
                 // Add DateTimePatternChars because CLDR no longer supports localized patterns.
                 targetMap.put("DateTimePatternChars", "GyMdkHmsSEDFwWahKzZ");
             }
@@ -418,23 +459,36 @@ public class CLDRConverter {
             }
             if (bundleTypes.contains(Bundle.Type.FORMATDATA)) {
                 Map<String, Object> formatDataMap = extractFormatData(targetMap, bundle.getID());
-                // LocaleData.getAvailableLocales depends on having FormatData bundles around
                 if (!formatDataMap.isEmpty() || bundle.isRoot()) {
                     metaInfo.get("FormatData").add(toLanguageTag(bundle.getID()));
                     bundleGenerator.generateBundle("text", "FormatData", bundle.getID(), true, formatDataMap, BundleType.PLAIN);
                 }
             }
 
-            // For testing
-            SortedSet<String> allLocales = new TreeSet<>();
-            allLocales.addAll(metaInfo.get("CurrencyNames"));
-            allLocales.addAll(metaInfo.get("LocaleNames"));
-            allLocales.addAll(metaInfo.get("CalendarData"));
-            allLocales.addAll(metaInfo.get("FormatData"));
-            metaInfo.put("AvailableLocales", allLocales);
+            // For AvailableLocales
+            metaInfo.get("AvailableLocales").add(toLanguageTag(bundle.getID()));
         }
 
         bundleGenerator.generateMetaInfo(metaInfo);
+    }
+
+    static final Map<String, String> aliases = new HashMap<>();
+
+    /**
+     * Translate the aliases into the real entries in the bundle map.
+     */
+    static void handleAliases(Map<String, Object> bundleMap) {
+        Set bundleKeys = bundleMap.keySet();
+        try {
+            for (String key : aliases.keySet()) {
+                String targetKey = aliases.get(key);
+                if (bundleKeys.contains(targetKey)) {
+                    bundleMap.putIfAbsent(key, bundleMap.get(targetKey));
+                }
+            }
+        } catch (Exception ex) {
+            Logger.getLogger(CLDRConverter.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 
     /*
@@ -442,36 +496,19 @@ public class CLDRConverter {
      * If id is "root", "" is returned.
      */
     static String getLanguageCode(String id) {
-        int index = id.indexOf('_');
-        String lang = null;
-        if (index != -1) {
-            lang = id.substring(0, index);
-        } else {
-            lang = "root".equals(id) ? "" : id;
-        }
-        return lang;
+        return "root".equals(id) ? "" : Locale.forLanguageTag(id.replaceAll("_", "-")).getLanguage();
     }
 
     /**
      * Examine if the id includes the country (territory) code. If it does, it returns
      * the country code.
      * Otherwise, it returns null. eg. when the id is "zh_Hans_SG", it return "SG".
+     * For now, it does not return US M.49 code, e.g., '001', as those three digit numbers cannot
+     * be translated into package names.
      */
-    private static String getCountryCode(String id) {
-        //Truncate a variant code with '@' if there is any
-        //(eg. de_DE@collation=phonebook,currency=DOM)
-        if (id.indexOf('@') != -1) {
-            id = id.substring(0, id.indexOf('@'));
-        }
-        String[] tokens = id.split("_");
-        for (int index = 1; index < tokens.length; ++index) {
-            if (tokens[index].length() == 2
-                    && Character.isLetter(tokens[index].charAt(0))
-                    && Character.isLetter(tokens[index].charAt(1))) {
-                return tokens[index];
-            }
-        }
-        return null;
+    static String getCountryCode(String id) {
+        String ctry = Locale.forLanguageTag(id.replaceAll("_", "-")).getCountry();
+        return ctry.length() == 2 ? ctry : null;
     }
 
     private static class KeyComparator implements Comparator<String> {
@@ -598,6 +635,9 @@ public class CLDRConverter {
     private static Map<String, Object> extractFormatData(Map<String, Object> map, String id) {
         Map<String, Object> formatData = new LinkedHashMap<>();
         for (CalendarType calendarType : CalendarType.values()) {
+            if (calendarType == CalendarType.GENERIC) {
+                continue;
+            }
             String prefix = calendarType.keyElementName();
             for (String element : FORMAT_DATA_ELEMENTS) {
                 String key = prefix + element;
@@ -605,28 +645,15 @@ public class CLDRConverter {
                 copyIfPresent(map, key, formatData);
             }
         }
-        // Workaround for islamic-umalqura name support (JDK-8015986)
-        switch (id) {
-        case "ar":
-            map.put(CLDRConverter.CALENDAR_NAME_PREFIX
-                    + CalendarType.ISLAMIC_UMALQURA.lname(),
-                    // derived from CLDR 24 draft
-                    "\u0627\u0644\u062a\u0642\u0648\u064a\u0645 "
-                    +"\u0627\u0644\u0625\u0633\u0644\u0627\u0645\u064a "
-                    +"[\u0623\u0645 \u0627\u0644\u0642\u0631\u0649]");
-            break;
-        case "en":
-            map.put(CLDRConverter.CALENDAR_NAME_PREFIX
-                    + CalendarType.ISLAMIC_UMALQURA.lname(),
-                    // derived from CLDR 24 draft
-                    "Islamic Calendar [Umm al-Qura]");
-            break;
-        }
-        // Copy available calendar names
+
         for (String key : map.keySet()) {
+        // Copy available calendar names
             if (key.startsWith(CLDRConverter.CALENDAR_NAME_PREFIX)) {
                 String type = key.substring(CLDRConverter.CALENDAR_NAME_PREFIX.length());
                 for (CalendarType calendarType : CalendarType.values()) {
+                    if (calendarType == CalendarType.GENERIC) {
+                        continue;
+                    }
                     if (type.equals(calendarType.lname())) {
                         Object value = map.get(key);
                         formatData.put(key, value);
@@ -744,5 +771,44 @@ public class CLDRConverter {
             return tag;
         }
         return tag.replaceAll("-", "_");
+    }
+
+    private static void setupBaseLocales(String localeList) {
+        Arrays.stream(localeList.split(","))
+            .map(Locale::forLanguageTag)
+            .map(l -> Control.getControl(Control.FORMAT_DEFAULT)
+                             .getCandidateLocales("", l))
+            .forEach(BASE_LOCALES::addAll);
+}
+
+    // applying parent locale rules to the passed candidates list
+    // This has to match with the one in sun.util.cldr.CLDRLocaleProviderAdapter
+    private static Map<Locale, Locale> childToParentLocaleMap = null;
+    private static List<Locale> applyParentLocales(String baseName, List<Locale> candidates) {
+        if (Objects.isNull(childToParentLocaleMap)) {
+            childToParentLocaleMap = new HashMap<>();
+            parentLocalesMap.keySet().forEach(key -> {
+                String parent = key.substring(PARENT_LOCALE_PREFIX.length()).replaceAll("_", "-");
+                parentLocalesMap.get(key).stream().forEach(child -> {
+                    childToParentLocaleMap.put(Locale.forLanguageTag(child),
+                        "root".equals(parent) ? Locale.ROOT : Locale.forLanguageTag(parent));
+                });
+            });
+        }
+
+        // check irregular parents
+        for (int i = 0; i < candidates.size(); i++) {
+            Locale l = candidates.get(i);
+            Locale p = childToParentLocaleMap.get(l);
+            if (!l.equals(Locale.ROOT) &&
+                Objects.nonNull(p) &&
+                !candidates.get(i+1).equals(p)) {
+                List<Locale> applied = candidates.subList(0, i+1);
+                applied.addAll(applyParentLocales(baseName, defCon.getCandidateLocales(baseName, p)));
+                return applied;
+            }
+        }
+
+        return candidates;
     }
 }

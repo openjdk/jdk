@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ import java.util.*;
 import java.security.*;
 import javax.net.*;
 import javax.net.ssl.*;
-import java.lang.reflect.*;
 
 public class ClientAuth extends PKCS11Test {
 
@@ -223,7 +222,7 @@ public class ClientAuth extends PKCS11Test {
         System.setProperty("javax.net.ssl.trustStorePassword", JKS_PWD);
 
         // perform Security.addProvider of P11 provider
-        ProviderLoader.go(System.getProperty("CUSTOM_P11_CONFIG"));
+        Security.addProvider(getSunPKCS11(System.getProperty("CUSTOM_P11_CONFIG")));
 
         if (debug) {
             System.setProperty("javax.net.debug", "all");

@@ -279,6 +279,14 @@ struct Flag {
   bool get_bool() const;
   void set_bool(bool value);
 
+  bool is_int() const;
+  int get_int() const;
+  void set_int(int value);
+
+  bool is_uint() const;
+  uint get_uint() const;
+  void set_uint(uint value);
+
   bool is_intx() const;
   intx get_intx() const;
   void set_intx(intx value);
@@ -363,13 +371,28 @@ class CounterSetting {
   ~CounterSetting()         { (*counter)--; }
 };
 
+class IntFlagSetting {
+  int val;
+  int* flag;
+ public:
+  IntFlagSetting(int& fl, int newValue) { flag = &fl; val = fl; fl = newValue; }
+  ~IntFlagSetting()                     { *flag = val; }
+};
 
 class UIntFlagSetting {
+  uint val;
+  uint* flag;
+ public:
+  UIntFlagSetting(uint& fl, uint newValue) { flag = &fl; val = fl; fl = newValue; }
+  ~UIntFlagSetting()                       { *flag = val; }
+};
+
+class UIntXFlagSetting {
   uintx val;
   uintx* flag;
  public:
-  UIntFlagSetting(uintx& fl, uintx newValue) { flag = &fl; val = fl; fl = newValue; }
-  ~UIntFlagSetting()                         { *flag = val; }
+  UIntXFlagSetting(uintx& fl, uintx newValue) { flag = &fl; val = fl; fl = newValue; }
+  ~UIntXFlagSetting()                         { *flag = val; }
 };
 
 class DoubleFlagSetting {
@@ -395,6 +418,16 @@ class CommandLineFlags {
   static bool boolAt(const char* name, bool* value, bool allow_locked = false, bool return_flag = false)      { return boolAt(name, strlen(name), value, allow_locked, return_flag); }
   static bool boolAtPut(const char* name, size_t len, bool* value, Flag::Flags origin);
   static bool boolAtPut(const char* name, bool* value, Flag::Flags origin)   { return boolAtPut(name, strlen(name), value, origin); }
+
+  static bool intAt(const char* name, size_t len, int* value, bool allow_locked = false, bool return_flag = false);
+  static bool intAt(const char* name, int* value, bool allow_locked = false, bool return_flag = false)      { return intAt(name, strlen(name), value, allow_locked, return_flag); }
+  static bool intAtPut(const char* name, size_t len, int* value, Flag::Flags origin);
+  static bool intAtPut(const char* name, int* value, Flag::Flags origin)   { return intAtPut(name, strlen(name), value, origin); }
+
+  static bool uintAt(const char* name, size_t len, uint* value, bool allow_locked = false, bool return_flag = false);
+  static bool uintAt(const char* name, uint* value, bool allow_locked = false, bool return_flag = false)      { return uintAt(name, strlen(name), value, allow_locked, return_flag); }
+  static bool uintAtPut(const char* name, size_t len, uint* value, Flag::Flags origin);
+  static bool uintAtPut(const char* name, uint* value, Flag::Flags origin)   { return uintAtPut(name, strlen(name), value, origin); }
 
   static bool intxAt(const char* name, size_t len, intx* value, bool allow_locked = false, bool return_flag = false);
   static bool intxAt(const char* name, intx* value, bool allow_locked = false, bool return_flag = false)      { return intxAt(name, strlen(name), value, allow_locked, return_flag); }

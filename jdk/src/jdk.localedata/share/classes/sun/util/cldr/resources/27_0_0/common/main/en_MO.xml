@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2014 Unicode, Inc.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+For terms of use, see http://www.unicode.org/copyright.html
+-->
+<ldml>
+	<identity>
+		<version number="$Revision: 11150 $"/>
+		<generation date="$Date: 2015-01-23 16:43:31 -0600 (Fri, 23 Jan 2015) $"/>
+		<language type="en"/>
+		<territory type="MO"/>
+	</identity>
+	<dates>
+		<timeZoneNames>
+			<metazone type="Hong_Kong">
+				<short>
+					<generic>HKT</generic>
+					<standard>HKT</standard>
+					<daylight>HKST</daylight>
+				</short>
+			</metazone>
+			<metazone type="Macau">
+				<short>
+					<generic>MST</generic>
+					<standard>MST</standard>
+					<daylight>MDT</daylight>
+				</short>
+			</metazone>
+		</timeZoneNames>
+	</dates>
+	<numbers>
+		<currencies>
+			<currency type="MOP">
+				<symbol>MOP$</symbol>
+			</currency>
+		</currencies>
+	</numbers>
+</ldml>
+

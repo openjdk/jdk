@@ -59,16 +59,19 @@ public class IntrinsicPredicates {
     };
 
     public static final BooleanSupplier SHA1_INSTRUCTION_AVAILABLE
-            = new CPUSpecificPredicate("sparc.*", new String[] { "sha1" },
-                    null);
+            = new OrPredicate(
+                    new CPUSpecificPredicate("sparc.*", new String[] { "sha1" },null),
+                    new CPUSpecificPredicate("aarch64.*", new String[] { "sha1" },null));
 
     public static final BooleanSupplier SHA256_INSTRUCTION_AVAILABLE
-            = new CPUSpecificPredicate("sparc.*", new String[] { "sha256" },
-                    null);
+            = new OrPredicate(
+                    new CPUSpecificPredicate("sparc.*", new String[] { "sha256" },null),
+                    new CPUSpecificPredicate("aarch64.*", new String[] { "sha256" },null));
 
     public static final BooleanSupplier SHA512_INSTRUCTION_AVAILABLE
-            = new CPUSpecificPredicate("sparc.*", new String[] { "sha512" },
-                    null);
+            = new OrPredicate(
+                    new CPUSpecificPredicate("sparc.*", new String[] { "sha512" },null),
+                    new CPUSpecificPredicate("aarch64.*", new String[] { "sha512" },null));
 
     public static final BooleanSupplier ANY_SHA_INSTRUCTION_AVAILABLE
             = new OrPredicate(IntrinsicPredicates.SHA1_INSTRUCTION_AVAILABLE,

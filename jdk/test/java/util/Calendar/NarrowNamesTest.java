@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,8 +33,12 @@ public class NarrowNamesTest {
 
     private static int errors = 0;
 
+    private static String providers;
+
     // This test is locale data-dependent.
     public static void main(String[] args) {
+        providers = args[0];
+
         test(US, ERA, "B",
              ERA, BC, YEAR, 1);
         test(US, ERA, "A",
@@ -76,7 +80,15 @@ public class NarrowNamesTest {
                 "AM", "PM",
                 RESET_INDEX,
                 "a", "p");
-        testMap(JAJPJP, DAY_OF_WEEK, NARROW_STANDALONE); // expect null
+        testMap(JAJPJP, DAY_OF_WEEK, NARROW_STANDALONE,
+                "", // 1-based indexing for DAY_OF_WEEK
+                "\u65e5",
+                "\u6708",
+                "\u706b",
+                "\u6c34",
+                "\u6728",
+                "\u91d1",
+                "\u571f");
         testMap(JAJPJP, DAY_OF_WEEK, NARROW_FORMAT,
                 "", // 1-based indexing for DAY_OF_WEEK
                 "\u65e5",
@@ -92,7 +104,9 @@ public class NarrowNamesTest {
                 "\u0e21\u0e35.\u0e04.",
                 "\u0e40\u0e21.\u0e22.",
                 "\u0e1e.\u0e04.",
-                "\u0e21\u0e34.\u0e22",  // no last dot
+                (providers.startsWith("CLDR") ?
+                    "\u0e21\u0e34.\u0e22." :
+                    "\u0e21\u0e34.\u0e22"),  // no last dot in JRE
                 "\u0e01.\u0e04.",
                 "\u0e2a.\u0e04.",
                 "\u0e01.\u0e22.",
