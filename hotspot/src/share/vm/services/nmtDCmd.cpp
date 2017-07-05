@@ -22,7 +22,7 @@
  *
  */
 #include "precompiled.hpp"
-
+#include "memory/resourceArea.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "services/nmtDCmd.hpp"
 #include "services/memReporter.hpp"

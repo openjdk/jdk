@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@
 //#define USE_VERBOSE_TRACE
 
 #include <AudioUnit/AudioUnit.h>
-#include <CoreServices/CoreServices.h>
 #include <AudioToolbox/AudioConverter.h>
 #include <pthread.h>
 #include <math.h>
@@ -617,7 +616,7 @@ struct OSX_DirectAudioDevice {
 
     ~OSX_DirectAudioDevice() {
         if (audioUnit) {
-            CloseComponent(audioUnit);
+            AudioComponentInstanceDispose(audioUnit);
         }
         if (resampler) {
             delete resampler;
@@ -629,17 +628,16 @@ static AudioUnit CreateOutputUnit(AudioDeviceID deviceID, int isSource)
 {
     OSStatus err;
     AudioUnit unit;
-    UInt32 size;
 
-    ComponentDescription desc;
+    AudioComponentDescription desc;
     desc.componentType         = kAudioUnitType_Output;
     desc.componentSubType      = (deviceID == 0 && isSource) ? kAudioUnitSubType_DefaultOutput : kAudioUnitSubType_HALOutput;
     desc.componentManufacturer = kAudioUnitManufacturer_Apple;
     desc.componentFlags        = 0;
     desc.componentFlagsMask    = 0;
 
-    Component comp = FindNextComponent(NULL, &desc);
-    err = OpenAComponent(comp, &unit);
+    AudioComponent comp = AudioComponentFindNext(NULL, &desc);
+    err = AudioComponentInstanceNew(comp, &unit);
 
     if (err) {
         OS_ERROR0(err, "CreateOutputUnit:OpenAComponent");
@@ -664,7 +662,7 @@ static AudioUnit CreateOutputUnit(AudioDeviceID deviceID, int isSource)
             // get real AudioDeviceID for default input device (macosx current input device)
             deviceID = GetDefaultDevice(isSource);
             if (!deviceID) {
-                CloseComponent(unit);
+                AudioComponentInstanceDispose(unit);
                 return NULL;
             }
         }
@@ -675,7 +673,7 @@ static AudioUnit CreateOutputUnit(AudioDeviceID deviceID, int isSource)
                                     0, &deviceID, sizeof(deviceID));
         if (err) {
             OS_ERROR0(err, "SetProperty (CurrentDevice)");
-            CloseComponent(unit);
+            AudioComponentInstanceDispose(unit);
             return NULL;
         }
     }

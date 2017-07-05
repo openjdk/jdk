@@ -40,6 +40,7 @@ import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import static java.io.ObjectStreamClass.processQueue;
+import sun.misc.Unsafe;
 import sun.reflect.misc.ReflectUtil;
 
 /**
@@ -375,6 +376,7 @@ public class ObjectInputStream
             }
             if (depth == 0) {
                 vlist.doCallbacks();
+                freeze();
             }
             return obj;
         } finally {
@@ -465,6 +467,7 @@ public class ObjectInputStream
             }
             if (depth == 0) {
                 vlist.doCallbacks();
+                freeze();
             }
             return obj;
         } finally {
@@ -2355,6 +2358,26 @@ public class ObjectInputStream
         public void close() throws IOException {
             in.close();
         }
+    }
+
+    private static final Unsafe UNSAFE = Unsafe.getUnsafe();
+
+    /**
+     * Performs a "freeze" action, required to adhere to final field semantics.
+     *
+     * <p> This method can be called unconditionally before returning the graph,
+     * from the topmost readObject call, since it is expected that the
+     * additional cost of the freeze action is negligible compared to
+     * reconstituting even the most simple graph.
+     *
+     * <p> Nested calls to readObject do not issue freeze actions because the
+     * sub-graph returned from a nested call is not guaranteed to be fully
+     * initialized yet (possible cycles).
+     */
+    private void freeze() {
+        // Issue a StoreStore|StoreLoad fence, which is at least sufficient
+        // to provide final-freeze semantics.
+        UNSAFE.storeFence();
     }
 
     /**

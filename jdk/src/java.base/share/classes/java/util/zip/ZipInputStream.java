@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -303,7 +303,7 @@ class ZipInputStream extends InflaterInputStream implements ZipConstants {
             throw new ZipException("encrypted ZIP entry not supported");
         }
         e.method = get16(tmpbuf, LOCHOW);
-        e.time = dosToJavaTime(get32(tmpbuf, LOCTIM));
+        e.xdostime = get32(tmpbuf, LOCTIM);
         if ((flag & 8) == 8) {
             /* "Data Descriptor" present */
             if (e.method != DEFLATED) {

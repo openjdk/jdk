@@ -27,6 +27,7 @@ package jdk.nashorn.internal.runtime.linker;
 
 import static jdk.nashorn.internal.lookup.Lookup.MH;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
+import static jdk.nashorn.internal.runtime.JSType.isString;
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
 
 import java.lang.invoke.MethodHandle;
@@ -78,7 +79,7 @@ final class JavaArgumentConverters {
         }
 
         if (obj == UNDEFINED) {
-            // NOTE: same reasoning for FindBugs NP_BOOLEAN_RETURN_NUL warning as in the preceding comment.
+            // NOTE: same reasoning for FindBugs NP_BOOLEAN_RETURN_NULL warning as in the preceding comment.
             return null;
         }
 
@@ -87,7 +88,7 @@ final class JavaArgumentConverters {
             return num != 0 && !Double.isNaN(num);
         }
 
-        if (obj instanceof String || obj instanceof ConsString) {
+        if (isString(obj)) {
             return ((CharSequence) obj).length() > 0;
         }
 
@@ -207,7 +208,7 @@ final class JavaArgumentConverters {
                 return f.longValue();
             } else if (obj instanceof Number) {
                 return ((Number)obj).longValue();
-            } else if (obj instanceof String || obj instanceof ConsString) {
+            } else if (isString(obj)) {
                 return JSType.toLong(obj);
             } else if (obj instanceof Boolean) {
                 return (Boolean)obj ? 1L : 0L;

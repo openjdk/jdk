@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -359,6 +359,15 @@ public abstract class EmbeddedFrame extends Frame
      * otherwise, deactivates the window
      */
     public void synthesizeWindowActivation(boolean doActivate) {}
+
+    /**
+     * Requests the focus to the embedder.
+     *
+     * @return {@code true} if focus request was successful, and {@code false} otherwise.
+     */
+    public boolean requestFocusToEmbedder() {
+        return false;
+    }
 
     /**
      * Moves this embedded frame to a new location. The top-left corner of

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -282,6 +282,7 @@ public class ObjectReferenceImpl extends ValueImpl
          * implemented interface
          */
         ReferenceTypeImpl declType = (ReferenceTypeImpl)method.declaringType();
+
         if (!declType.isAssignableFrom(this)) {
             throw new IllegalArgumentException("Invalid method");
         }
@@ -311,7 +312,7 @@ public class ObjectReferenceImpl extends ValueImpl
         /*
          * For nonvirtual invokes, method must have a body
          */
-        if ((options & INVOKE_NONVIRTUAL) != 0) {
+        if (isNonVirtual(options)) {
             if (method.isAbstract()) {
                 throw new IllegalArgumentException("Abstract method");
             }
@@ -323,7 +324,7 @@ public class ObjectReferenceImpl extends ValueImpl
          * method argument types.
          */
         ClassTypeImpl invokedClass;
-        if ((options & INVOKE_NONVIRTUAL) != 0) {
+        if (isNonVirtual(options)) {
             // No overrides in non-virtual invokes
             invokedClass = clazz;
         } else {
@@ -348,7 +349,7 @@ public class ObjectReferenceImpl extends ValueImpl
         /*
          * Only default methods allowed for nonvirtual invokes
          */
-        if (!method.isDefault()) {
+        if (isNonVirtual(options) && !method.isDefault()) {
             throw new IllegalArgumentException("Not a default method");
         }
     }
@@ -383,6 +384,7 @@ public class ObjectReferenceImpl extends ValueImpl
                                      IncompatibleThreadStateException,
                                      InvocationException,
                                      ClassNotLoadedException {
+
         validateMirror(threadIntf);
         validateMirror(methodIntf);
         validateMirrorsOrNulls(origArguments);
@@ -623,5 +625,9 @@ public class ObjectReferenceImpl extends ValueImpl
 
     byte typeValueKey() {
         return JDWP.Tag.OBJECT;
+    }
+
+    private static boolean isNonVirtual(int options) {
+        return (options & INVOKE_NONVIRTUAL) != 0;
     }
 }

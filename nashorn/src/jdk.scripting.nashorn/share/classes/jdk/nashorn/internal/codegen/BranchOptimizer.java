@@ -105,33 +105,33 @@ final class BranchOptimizer {
 
         case EQ:
         case EQ_STRICT:
-            codegen.loadBinaryOperands(binaryNode);
+            codegen.loadComparisonOperands(binaryNode);
             method.conditionalJump(state ? EQ : NE, true, label);
             return;
 
         case NE:
         case NE_STRICT:
-            codegen.loadBinaryOperands(binaryNode);
+            codegen.loadComparisonOperands(binaryNode);
             method.conditionalJump(state ? NE : EQ, true, label);
             return;
 
         case GE:
-            codegen.loadBinaryOperands(binaryNode);
+            codegen.loadComparisonOperands(binaryNode);
             method.conditionalJump(state ? GE : LT, false, label);
             return;
 
         case GT:
-            codegen.loadBinaryOperands(binaryNode);
+            codegen.loadComparisonOperands(binaryNode);
             method.conditionalJump(state ? GT : LE, false, label);
             return;
 
         case LE:
-            codegen.loadBinaryOperands(binaryNode);
+            codegen.loadComparisonOperands(binaryNode);
             method.conditionalJump(state ? LE : GT, true, label);
             return;
 
         case LT:
-            codegen.loadBinaryOperands(binaryNode);
+            codegen.loadComparisonOperands(binaryNode);
             method.conditionalJump(state ? LT : GE, true, label);
             return;
 

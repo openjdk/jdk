@@ -30,37 +30,48 @@
 import java.io.*;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 public class ClearHandleTable {
+    private static final int TIMES = 1000;
+
     public static void main(String[] args) throws Exception {
         final int nreps = 100;
         ObjectOutputStream oout =
             new ObjectOutputStream(new ByteArrayOutputStream());
-        WeakReference[] refs = new WeakReference[nreps];
+        List<WeakReference<?>> refs = new ArrayList<>(nreps);
 
         for (int i = 0; i < nreps; i++) {
             String str = new String("blargh");
             oout.writeObject(str);
-            refs[i] = new WeakReference(str);
+            refs.add(new WeakReference<Object>(str));
         }
 
         oout.reset();
-        exhaustMemory();
 
-        for (int i = 0; i < nreps; i++) {
-            if (refs[i].get() != null) {
-                throw new Error("failed to garbage collect object " + i);
+        int count = 0;
+        for (int i=0; i<TIMES; i++) {
+            // relying on, possibly multiple, System.gc calls to clear weak references
+            System.gc();
+
+            Iterator<WeakReference<?>> itr = refs.iterator();
+            while(itr.hasNext()) {
+                WeakReference<?> ref = itr.next();
+                if (ref.get() == null) {
+                    itr.remove();
+                }
             }
+            if (refs.isEmpty())
+                break;
+            Thread.sleep(20);
+            count++;
+            if (count % 10 == 0)
+                System.out.println("Looping " + count + " times");
         }
-    }
 
-    static void exhaustMemory() {
-        ArrayList blob = new ArrayList();
-        try {
-            for (;;) {
-                blob.add(new int[0xFFFF]);
-            }
-        } catch (OutOfMemoryError e) {
+        if (!refs.isEmpty()) {
+            throw new Error("failed to garbage collect object");
         }
     }
 }

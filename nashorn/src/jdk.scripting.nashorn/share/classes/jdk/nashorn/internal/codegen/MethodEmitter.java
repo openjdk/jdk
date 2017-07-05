@@ -94,7 +94,6 @@ import jdk.nashorn.internal.ir.IdentNode;
 import jdk.nashorn.internal.ir.JoinPredecessor;
 import jdk.nashorn.internal.ir.LiteralNode;
 import jdk.nashorn.internal.ir.LocalVariableConversion;
-import jdk.nashorn.internal.ir.RuntimeNode;
 import jdk.nashorn.internal.ir.Symbol;
 import jdk.nashorn.internal.ir.TryNode;
 import jdk.nashorn.internal.objects.NativeArray;
@@ -173,9 +172,6 @@ public class MethodEmitter implements Emitter {
 
     /** Bootstrap for normal indy:s */
     private static final Handle LINKERBOOTSTRAP  = new Handle(H_INVOKESTATIC, Bootstrap.BOOTSTRAP.className(), Bootstrap.BOOTSTRAP.name(), Bootstrap.BOOTSTRAP.descriptor());
-
-    /** Bootstrap for runtime node indy:s */
-    private static final Handle RUNTIMEBOOTSTRAP = new Handle(H_INVOKESTATIC, RuntimeCallSite.BOOTSTRAP.className(), RuntimeCallSite.BOOTSTRAP.name(), RuntimeCallSite.BOOTSTRAP.descriptor());
 
     /** Bootstrap for array populators */
     private static final Handle POPULATE_ARRAY_BOOTSTRAP = new Handle(H_INVOKESTATIC, RewriteException.BOOTSTRAP.className(), RewriteException.BOOTSTRAP.name(), RewriteException.BOOTSTRAP.descriptor());
@@ -2184,25 +2180,6 @@ public class MethodEmitter implements Emitter {
         final String signature = getDynamicSignature(Type.OBJECT_ARRAY, argCount);
         method.visitInvokeDynamicInsn("populateArray", signature, POPULATE_ARRAY_BOOTSTRAP, startIndex);
         pushType(Type.OBJECT_ARRAY);
-        return this;
-    }
-
-    /**
-     * Generate a dynamic call for a runtime node
-     *
-     * @param name       tag for the invoke dynamic for this runtime node
-     * @param returnType return type
-     * @param request    RuntimeNode request
-     *
-     * @return the method emitter
-     */
-    MethodEmitter dynamicRuntimeCall(final String name, final Type returnType, final RuntimeNode.Request request) {
-        debug("dynamic_runtime_call", name, "args=", request.getArity(), "returnType=", returnType);
-        final String signature = getDynamicSignature(returnType, request.getArity());
-        debug("   signature", signature);
-        method.visitInvokeDynamicInsn(name, signature, RUNTIMEBOOTSTRAP);
-        pushType(returnType);
-
         return this;
     }
 
