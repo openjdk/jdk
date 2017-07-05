@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4313887
+ * @bug 4313887 6838333
  * @summary Unit test for java.nio.file.DirectoryStream
  * @library ..
  */
@@ -38,20 +38,23 @@ public class Basic {
         DirectoryStream<Path> stream;
 
         // test that directory is empty
-        Files.withDirectory(dir, new FileAction<FileRef>() {
-            public void invoke(FileRef entry) {
+        stream = dir.newDirectoryStream();
+        try {
+            if (stream.iterator().hasNext())
                 throw new RuntimeException("directory not empty");
-            }
-        });
+        } finally {
+            stream.close();
+        }
 
         // create file in directory
         final Path foo = Paths.get("foo");
         dir.resolve(foo).createFile();
 
         // iterate over directory and check there is one entry
+        stream = dir.newDirectoryStream();
         found = false;
-        Files.withDirectory(dir, new FileAction<Path>() {
-            public void invoke(Path entry) {
+        try {
+            for (Path entry: stream) {
                 if (entry.getName().equals(foo)) {
                     if (found)
                         throw new RuntimeException("entry already found");
@@ -61,7 +64,9 @@ public class Basic {
                         " not expected");
                 }
             }
-        });
+        } finally {
+            stream.close();
+        }
         if (!found)
             throw new RuntimeException("entry not found");
 
@@ -73,12 +78,15 @@ public class Basic {
                 return matcher.matches(file);
             }
         };
-        Files.withDirectory(dir, filter, new FileAction<Path>() {
-            public void invoke(Path entry) {
+        stream = dir.newDirectoryStream(filter);
+        try {
+            for (Path entry: stream) {
                 if (!entry.getName().equals(foo))
                     throw new RuntimeException("entry not expected");
             }
-        });
+        } finally {
+            stream.close();
+        }
 
         // check filtering: z* should not match any files
         filter = new DirectoryStream.Filter<Path>() {
@@ -88,11 +96,31 @@ public class Basic {
                 return matcher.matches(file);
             }
         };
-        Files.withDirectory(dir, filter, new FileAction<FileRef>() {
-            public void invoke(FileRef entry) {
+        stream = dir.newDirectoryStream(filter);
+        try {
+            if (stream.iterator().hasNext())
                 throw new RuntimeException("no matching entries expected");
+        } finally {
+            stream.close();
+        }
+
+        // check that IOExceptions throws by filters are propagated
+        filter = new DirectoryStream.Filter<Path>() {
+            public boolean accept(Path file) throws IOException {
+                throw new IOException();
             }
-        });
+        };
+        stream = dir.newDirectoryStream(filter);
+        try {
+            stream.iterator().hasNext();
+            throw new RuntimeException("ConcurrentModificationException expected");
+        } catch (ConcurrentModificationException x) {
+            Throwable t = x.getCause();
+            if (!(t instanceof IOException))
+                throw new RuntimeException("Cause is not IOException as expected");
+        } finally {
+            stream.close();
+        }
 
         // check that exception or error thrown by filter is not thrown
         // by newDirectoryStream or iterator method.

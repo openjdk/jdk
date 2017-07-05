@@ -76,6 +76,7 @@ import sun.awt.AppContext;
 import sun.swing.PrintingStatus;
 import sun.swing.SwingUtilities2;
 import sun.swing.text.TextComponentPrintable;
+import sun.swing.SwingAccessor;
 
 /**
  * <code>JTextComponent</code> is the base class for swing text
@@ -759,6 +760,23 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      */
     public final DropMode getDropMode() {
         return dropMode;
+    }
+
+    static {
+        SwingAccessor.setJTextComponentAccessor(
+            new SwingAccessor.JTextComponentAccessor() {
+                public TransferHandler.DropLocation dropLocationForPoint(JTextComponent textComp,
+                                                                         Point p)
+                {
+                    return textComp.dropLocationForPoint(p);
+                }
+                public Object setDropLocation(JTextComponent textComp,
+                                              TransferHandler.DropLocation location,
+                                              Object state, boolean forDrop)
+                {
+                    return textComp.setDropLocation(location, state, forDrop);
+                }
+            });
     }
 
 

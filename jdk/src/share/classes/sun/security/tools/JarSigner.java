@@ -1402,9 +1402,14 @@ public class JarSigner {
     }
 
     /**
-     * Find the position of \r\n\r\n inside bs
+     * Find the position of an empty line inside bs
      */
     private int findHeaderEnd(byte[] bs) {
+        // An empty line can be at the beginning...
+        if (bs.length > 1 && bs[0] == '\r' && bs[1] == '\n') {
+            return 0;
+        }
+        // ... or after another line
         for (int i=0; i<bs.length-3; i++) {
             if (bs[i] == '\r' && bs[i+1] == '\n' &&
                     bs[i+2] == '\r' && bs[i+3] == '\n') {

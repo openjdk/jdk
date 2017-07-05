@@ -54,9 +54,9 @@ Link America/Los_Angeles PST
 Link Pacific/Guadalcanal SST
 Link Asia/Saigon VST
 
-# The follwong link is required to generate J2SE 1.2.x and 1.3.x
+# The follwong link is required to generate JDK 1.2.x and 1.3.x
 # compatible zones. In the Olson public source, MET is defined as
-# GMT+1:00 with the C-Eur rules. In J2SE, MET is defined as an alias
+# GMT+1:00 with the C-Eur rules. In JDK, MET is defined as an alias
 # of Asia/Tehran. This line must be removed if a full set of Olson
 # zones is generated. Otherwise, MET appears twice in the
 # ZoneInfoMappings.IDs table.

@@ -86,8 +86,6 @@ FILES_src = \
 	java/nio/file/CopyOption.java \
 	java/nio/file/DirectoryNotEmptyException.java \
 	java/nio/file/DirectoryStream.java \
-	java/nio/file/DirectoryStreamFilters.java \
-	java/nio/file/FileAction.java \
 	java/nio/file/FileAlreadyExistsException.java \
 	java/nio/file/FileRef.java \
 	java/nio/file/FileStore.java \
@@ -141,6 +139,7 @@ FILES_src = \
 	java/nio/file/attribute/FileStoreAttributeView.java \
 	java/nio/file/attribute/FileStoreSpaceAttributeView.java \
 	java/nio/file/attribute/FileStoreSpaceAttributes.java \
+	java/nio/file/attribute/FileTime.java \
 	java/nio/file/attribute/GroupPrincipal.java \
 	java/nio/file/attribute/UserDefinedFileAttributeView.java \
 	java/nio/file/attribute/PosixFileAttributeView.java \
@@ -151,7 +150,6 @@ FILES_src = \
 	java/nio/file/attribute/UserPrincipalLookupService.java \
 	java/nio/file/attribute/UserPrincipalNotFoundException.java \
 	\
-	java/nio/file/spi/AbstractPath.java \
 	java/nio/file/spi/FileSystemProvider.java \
 	java/nio/file/spi/FileTypeDetector.java \
 	\
@@ -248,8 +246,8 @@ FILES_src = \
 	\
 	sun/nio/fs/AbstractAclFileAttributeView.java \
 	sun/nio/fs/AbstractBasicFileAttributeView.java \
-	sun/nio/fs/AbstractFileStoreSpaceAttributeView.java \
 	sun/nio/fs/AbstractFileTypeDetector.java \
+	sun/nio/fs/AbstractPath.java \
 	sun/nio/fs/AbstractPoller.java \
 	sun/nio/fs/AbstractUserDefinedFileAttributeView.java \
 	sun/nio/fs/AbstractWatchKey.java \
@@ -258,12 +256,13 @@ FILES_src = \
 	sun/nio/fs/Cancellable.java \
 	sun/nio/fs/DefaultFileSystemProvider.java \
 	sun/nio/fs/DefaultFileTypeDetector.java \
+	sun/nio/fs/DynamicFileAttributeView.java \
 	sun/nio/fs/FileOwnerAttributeViewImpl.java \
 	sun/nio/fs/Globs.java \
-	sun/nio/fs/MimeType.java \
 	sun/nio/fs/NativeBuffer.java \
 	sun/nio/fs/NativeBuffers.java \
 	sun/nio/fs/Reflect.java \
+	sun/nio/fs/Util.java \
 	\
 	java/net/DatagramSocket.java \
 	java/net/DatagramSocketImpl.java \

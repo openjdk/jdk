@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4313887
+ * @bug 4313887 6838333
  * @summary Unit test for java.nio.file.Path for miscellenous methods not
  *   covered by other tests
  * @library ..
@@ -212,12 +212,7 @@ public class Misc {
             instanceof BasicFileAttributeView);
         assertTrue(dir.getFileAttributeView(BasicFileAttributeView.class, NOFOLLOW_LINKS)
             instanceof BasicFileAttributeView);
-        assertTrue(dir.getFileAttributeView("basic")
-            instanceof BasicFileAttributeView);
-        assertTrue(dir.getFileAttributeView("basic", NOFOLLOW_LINKS)
-            instanceof BasicFileAttributeView);
         assertTrue(dir.getFileAttributeView(BogusFileAttributeView.class) == null);
-        assertTrue(dir.getFileAttributeView("bogus") == null);
         try {
             dir.getFileAttributeView((Class<FileAttributeView>)null);
         } catch (NullPointerException ignore) { }
@@ -226,15 +221,6 @@ public class Misc {
         } catch (NullPointerException ignore) { }
         try {
             dir.getFileAttributeView(BasicFileAttributeView.class, (LinkOption)null);
-        } catch (NullPointerException ignore) { }
-        try {
-            dir.getFileAttributeView((String)null);
-        } catch (NullPointerException ignore) { }
-        try {
-            dir.getFileAttributeView("basic", (LinkOption[])null);
-        } catch (NullPointerException ignore) { }
-        try {
-            dir.getFileAttributeView("basic", (LinkOption)null);
         } catch (NullPointerException ignore) { }
 
     }
@@ -267,6 +253,16 @@ public class Misc {
          */
         if (supportsLinks) {
             link.createSymbolicLink(file.toAbsolutePath());
+            assertTrue(link.toRealPath(false).getName().equals(link.getName()));
+            link.delete();
+        }
+
+        /**
+         * Test: toRealPath(false) with broken link
+         */
+        if (supportsLinks) {
+            Path broken = dir.resolve("doesNotExist");
+            link.createSymbolicLink(broken);
             assertTrue(link.toRealPath(false).getName().equals(link.getName()));
             link.delete();
         }
@@ -358,7 +354,7 @@ public class Misc {
                 }
             }
         } finally {
-            thisFile.delete(false);
+            thisFile.delete();
         }
     }
 
@@ -372,7 +368,7 @@ public class Misc {
         if (isWindows) {
             file.createFile();
             try {
-                Attributes.setAttribute(file, "dos:hidden", true);
+                file.setAttribute("dos:hidden", true);
                 assertTrue(file.isHidden());
             } finally {
                 file.delete();

@@ -25,10 +25,9 @@
 
 package sun.awt.motif;
 
-import java.nio.charset.Charset;
-import java.nio.charset.CharsetEncoder;
-import java.nio.charset.CharsetDecoder;
-import sun.nio.cs.ext.GBK;
+import java.nio.charset.*;
+import sun.nio.cs.ext.*;
+import static sun.nio.cs.CharsetMapping.*;
 
 public class X11GBK extends Charset {
     public X11GBK () {
@@ -38,20 +37,30 @@ public class X11GBK extends Charset {
         return new Encoder(this);
     }
     public CharsetDecoder newDecoder() {
-        return new GBK.Decoder(this);
+        return new GBK().newDecoder();
     }
 
     public boolean contains(Charset cs) {
         return cs instanceof X11GBK;
     }
 
-    private class Encoder extends GBK.Encoder {
-        public Encoder(Charset cs) {
-            super(cs);
+    private class Encoder extends DoubleByte.Encoder {
+
+        private DoubleByte.Encoder enc = (DoubleByte.Encoder)new GBK().newEncoder();
+
+        Encoder(Charset cs) {
+            super(cs, (char[])null, (char[])null);
         }
+
         public boolean canEncode(char ch){
             if (ch < 0x80) return false;
-            return super.canEncode(ch);
+            return enc.canEncode(ch);
+        }
+
+        public int encodeChar(char ch) {
+            if (ch < 0x80)
+                return UNMAPPABLE_ENCODING;
+            return enc.encodeChar(ch);
         }
     }
 }

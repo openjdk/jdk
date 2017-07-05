@@ -105,4 +105,3 @@ class TestFailedException extends RuntimeException {
         super("Test failed: " + msg);
     }
 }
-

@@ -91,10 +91,10 @@ ifeq ($(PLATFORM), windows)
   CXXFLAGS_COMMON += $(MS_RUNTIME_OPTION)
   LDOUTPUT = -Fe
 
-  # J2SE name required here
-  RC_FLAGS += /D "J2SE_FNAME=$(PGRM).exe" \
-	/D "J2SE_INTERNAL_NAME=$(PGRM)" \
-	/D "J2SE_FTYPE=0x1L"
+  # JDK name required here
+  RC_FLAGS += /D "JDK_FNAME=$(PGRM).exe" \
+	/D "JDK_INTERNAL_NAME=$(PGRM)" \
+	/D "JDK_FTYPE=0x1L"
 
   RES = $(OBJDIR)/$(PGRM).res
 else
@@ -133,13 +133,19 @@ unpacker:
 	$(MAKE) $(UNPACK_EXE) STANDALONE=true LDMAPFLAGS_OPT= LDMAPFLAGS_DBG=
 
 ifeq ($(PLATFORM), windows)
+IMVERSIONVALUE=$(JDK_MINOR_VERSION).$(JDK_MICRO_VERSION).$(JDK_UPDATE_VER).$(COOKED_BUILD_NUMBER)
+SED_ALL_MANIFEST=$(SED) -e 's%IMVERSION%$(IMVERSIONVALUE)%g'
+updatefiles:: 
+	$(CAT) $(TOPDIR)/src/windows/resource/unpack200_proto.exe.manifest | $(SED_ALL_MANIFEST) > $(OBJDIR)/unpack200.exe.manifest
 winres::  $(RES)
 else
+updatefiles::
+	$(ECHO) "Manifest not required for Unix"
 winres::
 	$(ECHO) "Resource files not required for Unix"
 endif
 
-$(UNPACK_EXE): $(UNPACK_EXE_FILES_o) winres 
+$(UNPACK_EXE): $(UNPACK_EXE_FILES_o) updatefiles winres
 	$(prep-target)
 	$(LINKER)  $(LDDFLAGS) $(UNPACK_EXE_FILES_o) $(RES) $(LIBCXX) $(LDOUTPUT)$(TEMPDIR)/unpack200$(EXE_SUFFIX)
 ifdef MT

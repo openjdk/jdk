@@ -26,22 +26,15 @@
 package sun.management;
 
 import java.lang.management.*;
-import java.util.logging.LogManager;
 
-import javax.management.DynamicMBean;
 import javax.management.MBeanServer;
-import javax.management.MBeanServerFactory;
-import javax.management.MBeanInfo;
-import javax.management.NotificationEmitter;
 import javax.management.ObjectName;
-import javax.management.ObjectInstance;
 import javax.management.InstanceAlreadyExistsException;
 import javax.management.InstanceNotFoundException;
 import javax.management.MBeanRegistrationException;
 import javax.management.NotCompliantMBeanException;
 import javax.management.RuntimeOperationsException;
-import javax.management.StandardEmitterMBean;
-import javax.management.StandardMBean;
+import java.nio.BufferPoolMXBean;
 import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
@@ -49,11 +42,6 @@ import sun.security.action.LoadLibraryAction;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-import java.util.Iterator;
-import java.util.ListIterator;
 import com.sun.management.OSMBeanFactory;
 import com.sun.management.HotSpotDiagnosticMXBean;
 
@@ -68,7 +56,6 @@ public class ManagementFactoryHelper {
 
     private static VMManagement jvm;
 
-    private static boolean mbeansCreated = false;
     private static ClassLoadingImpl    classMBean = null;
     private static MemoryImpl          memoryMBean = null;
     private static ThreadImpl          threadMBean = null;
@@ -148,6 +135,58 @@ public class ManagementFactoryHelper {
         return result;
     }
 
+    public static List<BufferPoolMXBean> getBufferPoolMXBeans() {
+        List<BufferPoolMXBean> pools = new ArrayList<BufferPoolMXBean>(2);
+        pools.add(createBufferPoolMXBean(sun.misc.SharedSecrets.getJavaNioAccess()
+            .getDirectBufferPool()));
+        pools.add(createBufferPoolMXBean(sun.nio.ch.FileChannelImpl
+            .getMappedBufferPool()));
+        return pools;
+    }
+
+    private final static String BUFFER_POOL_MXBEAN_NAME = "java.nio:type=BufferPool";
+
+    /**
+     * Creates management interface for the given buffer pool.
+     */
+    private static BufferPoolMXBean
+        createBufferPoolMXBean(final sun.misc.JavaNioAccess.BufferPool pool)
+    {
+        return new BufferPoolMXBean() {
+            private volatile ObjectName objname;  // created lazily
+            @Override
+            public ObjectName getObjectName() {
+                ObjectName result = objname;
+                if (result == null) {
+                    synchronized (this) {
+                        if (objname == null) {
+                            result = ObjectName.valueOf(BUFFER_POOL_MXBEAN_NAME +
+                                ",name=" + pool.getName());
+                            objname = result;
+                        }
+                    }
+                }
+                return result;
+            }
+            @Override
+            public String getName() {
+                return pool.getName();
+            }
+            @Override
+            public long getCount() {
+                return pool.getCount();
+            }
+            @Override
+            public long getTotalCapacity() {
+                return pool.getTotalCapacity();
+            }
+            @Override
+            public long getMemoryUsed() {
+                return pool.getMemoryUsed();
+            }
+        };
+    }
+
     private static HotSpotDiagnostic hsDiagMBean = null;
     private static HotspotRuntime hsRuntimeMBean = null;
     private static HotspotClassLoading hsClassMBean = null;
@@ -161,8 +200,6 @@ public class ManagementFactoryHelper {
         }
         return hsDiagMBean;
     }
-
-    /**
 
     /**
      * This method is for testing only.

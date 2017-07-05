@@ -34,7 +34,6 @@ import java.util.logging.LoggingMXBean;
 import java.util.logging.LogManager;
 import java.nio.BufferPoolMXBean;
 import javax.management.MBeanServerConnection;
-import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
 
 import com.sun.management.HotSpotDiagnosticMXBean;
@@ -198,10 +197,7 @@ enum PlatformComponent {
         "java.nio", "BufferPool", keyProperties("name"),
         new MXBeanFetcher<BufferPoolMXBean>() {
             public List<BufferPoolMXBean> getMXBeans() {
-                List<BufferPoolMXBean> pools = new ArrayList<BufferPoolMXBean>(2);
-                pools.add( sun.misc.SharedSecrets.getJavaNioAccess().getDirectBufferPoolMXBean() );
-                pools.add( sun.nio.ch.FileChannelImpl.getMappedBufferPoolMXBean() );
-                return pools;
+                return ManagementFactoryHelper.getBufferPoolMXBeans();
             }
         }),
 

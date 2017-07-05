@@ -40,6 +40,7 @@ import sun.reflect.misc.MethodUtil;
 import sun.swing.SwingUtilities2;
 import sun.awt.AppContext;
 import sun.swing.*;
+import sun.awt.SunToolkit;
 
 /**
  * This class is used to handle the transfer of a <code>Transferable</code>
@@ -283,19 +284,9 @@ public class TransferHandler implements Serializable {
                           ? ((DropTargetDragEvent)source).getLocation()
                           : ((DropTargetDropEvent)source).getLocation();
 
-            if (component instanceof JTextComponent) {
-                try {
-                    AccessibleMethod method
-                        = new AccessibleMethod(JTextComponent.class,
-                                               "dropLocationForPoint",
-                                               Point.class);
-
-                    dropLocation =
-                        (DropLocation)method.invokeNoChecked(component, p);
-                } catch (NoSuchMethodException e) {
-                    throw new AssertionError(
-                        "Couldn't locate method JTextComponent.dropLocationForPoint");
-                }
+            if (SunToolkit.isInstanceOf(component, "javax.swing.text.JTextComponent")) {
+                dropLocation = SwingAccessor.getJTextComponentAccessor().
+                                   dropLocationForPoint((JTextComponent)component, p);
             } else if (component instanceof JComponent) {
                 dropLocation = ((JComponent)component).dropLocationForPoint(p);
             }
@@ -1373,22 +1364,9 @@ public class TransferHandler implements Serializable {
                                         ? null
                                         : support.getDropLocation();
 
-            if (component instanceof JTextComponent) {
-                try {
-                    AccessibleMethod method =
-                        new AccessibleMethod(JTextComponent.class,
-                                             "setDropLocation",
-                                             DropLocation.class,
-                                             Object.class,
-                                             Boolean.TYPE);
-
-                    state =
-                        method.invokeNoChecked(component, dropLocation,
-                                               state, forDrop);
-                } catch (NoSuchMethodException e) {
-                    throw new AssertionError(
-                        "Couldn't locate method JTextComponet.setDropLocation");
-                }
+            if (SunToolkit.isInstanceOf(component, "javax.swing.text.JTextComponent")) {
+                state = SwingAccessor.getJTextComponentAccessor().
+                            setDropLocation((JTextComponent)component, dropLocation, state, forDrop);
             } else if (component instanceof JComponent) {
                 state = ((JComponent)component).setDropLocation(dropLocation, state, forDrop);
             }

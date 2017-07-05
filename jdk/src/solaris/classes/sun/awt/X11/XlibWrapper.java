@@ -352,6 +352,7 @@ static native String XSetLocaleModifiers(String modifier_list);
     static native int XIconifyWindow(long display, long window, long screenNumber);
     static native String ServerVendor(long display);
     static native int VendorRelease(long display);
+    static native boolean IsXsunKPBehavior(long display);
 
     static native void XBell(long display, int percent);
 

@@ -147,8 +147,14 @@ class UnixUserPrincipals {
         } catch (UnixException x) {
             throw new IOException(name + ": " + x.errorString());
         }
-        if (id == -1)
-            throw new UserPrincipalNotFoundException(name);
+        if (id == -1) {
+            // lookup failed, allow input to be uid or gid
+            try {
+                id = Integer.parseInt(name);
+            } catch (NumberFormatException ignore) {
+                throw new UserPrincipalNotFoundException(name);
+            }
+        }
         return id;
 
     }
