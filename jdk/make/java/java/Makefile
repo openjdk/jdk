@@ -29,6 +29,7 @@
 #
 
 BUILDDIR = ../..
+MODULE  = base
 PACKAGE = java.lang
 LIBRARY = java
 PRODUCT = java
@@ -241,7 +242,7 @@ ifneq ($(PLATFORM),windows)
 
 $(GENSRCDIR)/java/lang/UNIXProcess.java: \
     $(PLATFORM_SRC)/classes/java/lang/UNIXProcess.java.$(PLATFORM)
-	$(install-file)
+	$(install-non-module-file)
 
 clean:: 
 	$(RM) $(GENSRCDIR)/java/lang/UNIXProcess.java
@@ -285,7 +286,7 @@ TZMAPFILE = $(PLATFORM_SRC)/lib/tzmappings
 
 $(TZMAP): $(TZMAPFILE)
 	$(install-file)
-	$(CHMOD) 444 $@
+	$(call chmod-file, 444)
 endif
 
 build: $(LIBDIR)/$(PROPS) $(LIBDIR)/$(CAL_PROPS) $(TZMAP)
@@ -315,7 +316,8 @@ $(CURDATA): \
 	$(BOOT_JAVA_CMD) -jar $(GENERATECURRENCYDATA_JARFILE) -o $@.temp \
 		< $(SHARE_SRC)/classes/java/util/CurrencyData.properties
 	$(MV) $@.temp $@
-	$(CHMOD) 444 $@
+	$(install-module-file)
+	$(call chmod-file, 444)
 
 clean:: 
 	$(RM) $(CURDATA)
@@ -369,7 +371,7 @@ $(GENSRCDIR)/java/lang/CharacterDataLatin1.java \
 		-usecharforbyte 11 4 1
 
 $(GENSRCDIR)/java/lang/%.java : $(CHARACTERDATA)/%.java.template
-	$(install-file)
+	$(install-non-module-file)
 
 clean::
 	$(RM) $(GENSRCDIR)/java/lang/CharacterDataLatin1.java 

@@ -444,8 +444,8 @@ public class Module implements Comparable<Module> {
     }
 
     void printClassListTo(String output) throws IOException {
-        // no file created if the module doesn't have any class
-        if (classes.isEmpty()) {
+        // no file created if the module doesn't have any class nor resource
+        if (isEmpty()) {
             return;
         }
 
@@ -482,7 +482,7 @@ public class Module implements Comparable<Module> {
 
     void printDependenciesTo(String output, boolean showDynamic) throws IOException {
         // no file created if the module doesn't have any class
-        if (classes.isEmpty()) {
+        if (isEmpty()) {
             return;
         }
 

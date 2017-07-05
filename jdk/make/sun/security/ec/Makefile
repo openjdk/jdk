@@ -89,6 +89,7 @@
 #
 
 BUILDDIR = ../../..
+MODULE  = security-sunec
 PACKAGE = sun.security.ec
 PRODUCT = sun
 
@@ -308,7 +309,7 @@ $(JAR_DESTFILE): $(UNSIGNED_DIR)/sunec.jar
 else
 $(JAR_DESTFILE): $(SIGNED_DIR)/sunec.jar
 endif
-	$(install-file)
+	$(install-non-module-file)
 
 ifndef OPENJDK
 install-prebuilt:

@@ -24,6 +24,8 @@
 #
 
 BUILDDIR = ../..
+
+MODULE  = demos
 LIBRARY = java_crw_demo
 PRODUCT = sun
 LIBRARY_OUTPUT = java_crw_demo

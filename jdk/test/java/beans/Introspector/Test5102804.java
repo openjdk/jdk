@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 5102804
+ * @ignore This test is not predictable with regards to GC
  * @summary Tests memory leak
  * @author Sergey Malenkov
  */

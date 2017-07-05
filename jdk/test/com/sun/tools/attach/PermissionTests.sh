@@ -48,7 +48,7 @@ startApplication
 
 echo "Deny test"
 # deny 
-$JAVA -classpath ${TESTCLASSES}${PS}${TESTJAVA}/lib/tools.jar \
+$JAVA -classpath "${TESTCLASSES}${PS}${TESTJAVA}/lib/tools.jar" \
     -Djava.security.manager \
     -Djava.security.policy=${TESTSRC}/java.policy.deny \
     PermissionTest $pid true 2>&1
@@ -56,7 +56,7 @@ if [ $? != 0 ]; then failures=`expr $failures + 1`; fi
 
 # allow
 echo "Allow test"
-$JAVA -classpath ${TESTCLASSES}${PS}${TESTJAVA}/lib/tools.jar \
+$JAVA -classpath "${TESTCLASSES}${PS}${TESTJAVA}/lib/tools.jar" \
     -Djava.security.manager \
     -Djava.security.policy=${TESTSRC}/java.policy.allow \
     PermissionTest $pid false 2>&1 

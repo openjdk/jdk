@@ -37,7 +37,7 @@ JSTATD_2_OUT="jstatd_$$_2.out"
 
 ${JSTATD} -? > ${JSTATD_1_OUT} 2>&1
 
-diff ${JSTATD_1_OUT} ${TESTSRC}/usage.out
+diff -w ${JSTATD_1_OUT} ${TESTSRC}/usage.out
 if [ $? != 0 ]
 then
   echo "Output of jstatd -? differs from expected output. Failed."
@@ -46,7 +46,7 @@ fi
 
 ${JSTATD} -help > ${JSTATD_2_OUT} 2>&1
 
-diff ${JSTATD_2_OUT} ${TESTSRC}/usage.out
+diff -w ${JSTATD_2_OUT} ${TESTSRC}/usage.out
 if [ $? != 0 ]
 then
   echo "Output of jstatd -help differs from expected output. Failed."

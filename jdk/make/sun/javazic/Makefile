@@ -27,6 +27,7 @@
 
 
 BUILDDIR = ../..
+MODULE  = base
 PACKAGE = sun.javazic
 PRODUCT = sun
 include $(BUILDDIR)/common/Defs.gmk
@@ -69,6 +70,7 @@ $(INSTALLDIR)/$(MAPFILE): $(WORKDIR)/$(MAPFILE)
 	$(RM) -r $(@D)
 	$(prep-target)
 	$(CP) -r $(WORKDIR)/* $(@D)
+	$(install-module-dir)
 
 clean clobber::
 	$(RM) -r $(TEMPDIR) $(INSTALLDIR)
