@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,6 +86,7 @@ public class SOAPExceptionImpl extends SOAPException {
     /**
      * Constructs a <code>SOAPExceptionImpl</code> object initialized
      * with the given <code>Throwable</code> object.
+     * @param cause cause
      */
     public SOAPExceptionImpl(Throwable cause) {
         super (cause.toString());
@@ -106,6 +107,7 @@ public class SOAPExceptionImpl extends SOAPException {
      *         message of the embedded <code>Throwable</code> object,
      *         if there is one
      */
+    @Override
     public String getMessage() {
         String message = super.getMessage ();
         if (message == null && cause != null) {
@@ -124,6 +126,7 @@ public class SOAPExceptionImpl extends SOAPException {
      *         if there is none
      */
 
+    @Override
     public Throwable getCause() {
         return cause;
     }
@@ -157,6 +160,7 @@ public class SOAPExceptionImpl extends SOAPException {
      *         method has already been called on this <code>SOAPExceptionImpl</code>
      *         object
      */
+    @Override
     public synchronized Throwable initCause(Throwable cause)
     {
         if(this.cause != null) {
@@ -170,6 +174,7 @@ public class SOAPExceptionImpl extends SOAPException {
         return this;
     }
 
+    @Override
     public void printStackTrace() {
         super.printStackTrace();
         if (cause != null) {
@@ -178,6 +183,7 @@ public class SOAPExceptionImpl extends SOAPException {
         }
     }
 
+    @Override
     public void printStackTrace(PrintStream s) {
         super.printStackTrace(s);
         if (cause != null) {
@@ -186,6 +192,7 @@ public class SOAPExceptionImpl extends SOAPException {
         }
     }
 
+    @Override
     public void printStackTrace(PrintWriter s) {
         super.printStackTrace(s);
         if (cause != null) {
