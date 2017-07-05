@@ -1001,7 +1001,8 @@ JvmtiEnv::GetThreadInfo(jthread thread, jvmtiThreadInfo* info_ptr) {
     if (name() != NULL) {
       n = java_lang_String::as_utf8_string(name());
     } else {
-      n = UNICODE::as_utf8((jchar*) NULL, 0);
+      int utf8_length = 0;
+      n = UNICODE::as_utf8((jchar*) NULL, utf8_length);
     }
 
     info_ptr->name = (char *) jvmtiMalloc(strlen(n)+1);

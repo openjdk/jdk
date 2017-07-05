@@ -57,6 +57,8 @@ extern "C" void JNICALL trace_register_natives(JNIEnv*, jclass);
 #define TRACE_DEFINE_THREAD_TRACE_ID_OFFSET typedef int ___IGNORED_hs_trace_type5
 #define TRACE_THREAD_TRACE_ID_OFFSET in_ByteSize(0); ShouldNotReachHere()
 #define TRACE_DEFINE_THREAD_ID_SIZE typedef int ___IGNORED_hs_trace_type6
+#define TRACE_DEFINE_THREAD_DATA_WRITER_OFFSET typedef int ___IGNORED_hs_trace_type7
+#define TRACE_THREAD_DATA_WRITER_OFFSET in_ByteSize(0); ShouldNotReachHere()
 #define TRACE_TEMPLATES(template)
 #define TRACE_INTRINSICS(do_intrinsic, do_class, do_name, do_signature, do_alias)
 

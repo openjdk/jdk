@@ -279,7 +279,13 @@ bool frame::safe_for_sender(JavaThread *thread) {
     }
 
     if (sender.is_entry_frame()) {
-      return sender.is_entry_frame_valid(thread);
+      // Validate the JavaCallWrapper an entry frame must have
+
+      address jcw = (address)sender.entry_frame_call_wrapper();
+
+      bool jcw_safe = (jcw <= thread->stack_base()) && (jcw > sender_fp);
+
+      return jcw_safe;
     }
 
     // If the frame size is 0 something (or less) is bad because every nmethod has a non-zero frame size

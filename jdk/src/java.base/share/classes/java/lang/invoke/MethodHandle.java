@@ -957,7 +957,7 @@ assertEquals("[A, B, C]", (String) caToString2.invokeExact('A', "BC".toCharArray
         if (!fail)  return needType;
         // elicit an error:
         this.asType(needType);
-        throw newInternalError("should not return", null);
+        throw newInternalError("should not return");
     }
 
     private void spreadArrayChecks(Class<?> arrayType, int arrayLength) {
