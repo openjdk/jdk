@@ -26,7 +26,7 @@
  * @bug 8047290
  * @summary Ensure that Monitor::lock does not assert when it correctly acquires a lock which must always have safepoint checks.
  * @library /testlibrary /test/lib
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @build AssertSafepointCheckConsistency4
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

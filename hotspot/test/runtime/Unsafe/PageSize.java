@@ -25,7 +25,7 @@
  * @test
  * @summary Make sure pageSize() returns a value that is a power of two
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @run main PageSize
  */

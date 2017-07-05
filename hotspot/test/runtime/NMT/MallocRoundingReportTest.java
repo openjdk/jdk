@@ -26,7 +26,7 @@
  * @summary Test consistency of NMT by creating allocations of the Test type with various sizes and verifying visibility with jcmd
  * @key nmt jcmd
  * @library /testlibrary /test/lib
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @build MallocRoundingReportTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

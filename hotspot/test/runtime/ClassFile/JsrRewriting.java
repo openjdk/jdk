@@ -34,7 +34,7 @@
  * @bug 7149464
  * @key cte_test
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.desktop
  *          java.management
  * @run main JsrRewriting

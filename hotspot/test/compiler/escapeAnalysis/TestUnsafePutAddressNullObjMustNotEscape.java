@@ -25,7 +25,7 @@
  * @test
  * @bug 8038048
  * @summary assert(null_obj->escape_state() == PointsToNode::NoEscape,etc)
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+DoEscapeAnalysis -XX:-TieredCompilation -Xbatch TestUnsafePutAddressNullObjMustNotEscape
  * @author Richard Reingruber richard DOT reingruber AT sap DOT com
  */

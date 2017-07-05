@@ -148,9 +148,8 @@ public:
 class LoadNode : public MemNode {
 public:
   // Some loads (from unsafe) should be pinned: they don't depend only
-  // on the dominating test.  The boolean field _depends_only_on_test
-  // below records whether that node depends only on the dominating
-  // test.
+  // on the dominating test.  The field _control_dependency below records
+  // whether that node depends only on the dominating test.
   // Methods used to build LoadNodes pass an argument of type enum
   // ControlDependency instead of a boolean because those methods
   // typically have multiple boolean parameters with default values:
@@ -162,7 +161,7 @@ public:
     DependsOnlyOnTest
   };
 private:
-  // LoadNode::hash() doesn't take the _depends_only_on_test field
+  // LoadNode::hash() doesn't take the _control_dependency field
   // into account: If the graph already has a non-pinned LoadNode and
   // we add a pinned LoadNode with the same inputs, it's safe for GVN
   // to replace the pinned LoadNode with the non-pinned LoadNode,
@@ -171,7 +170,7 @@ private:
   // pinned LoadNode and we add a non pinned LoadNode with the same
   // inputs, it's safe (but suboptimal) for GVN to replace the
   // non-pinned LoadNode by the pinned LoadNode.
-  bool _depends_only_on_test;
+  ControlDependency _control_dependency;
 
   // On platforms with weak memory ordering (e.g., PPC, Ia64) we distinguish
   // loads that can be reordered, and such requiring acquire semantics to
@@ -190,13 +189,17 @@ protected:
 public:
 
   LoadNode(Node *c, Node *mem, Node *adr, const TypePtr* at, const Type *rt, MemOrd mo, ControlDependency control_dependency)
-    : MemNode(c,mem,adr,at), _type(rt), _mo(mo), _depends_only_on_test(control_dependency == DependsOnlyOnTest) {
+    : MemNode(c,mem,adr,at), _type(rt), _mo(mo), _control_dependency(control_dependency) {
     init_class_id(Class_Load);
   }
   inline bool is_unordered() const { return !is_acquire(); }
   inline bool is_acquire() const {
     assert(_mo == unordered || _mo == acquire, "unexpected");
     return _mo == acquire;
+  }
+  inline bool is_unsigned() const {
+    int lop = Opcode();
+    return (lop == Op_LoadUB) || (lop == Op_LoadUS);
   }
 
   // Polymorphic factory method:
@@ -252,6 +255,9 @@ public:
   // Check if the load's memory input is a Phi node with the same control.
   bool is_instance_field_load_with_local_phi(Node* ctrl);
 
+  Node* convert_to_unsigned_load(PhaseGVN& gvn);
+  Node* convert_to_signed_load(PhaseGVN& gvn);
+
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
 #endif
@@ -274,7 +280,9 @@ protected:
   // which produce results (new raw memory state) inside of loops preventing all
   // manner of other optimizations).  Basically, it's ugly but so is the alternative.
   // See comment in macro.cpp, around line 125 expand_allocate_common().
-  virtual bool depends_only_on_test() const { return adr_type() != TypeRawPtr::BOTTOM && _depends_only_on_test; }
+  virtual bool depends_only_on_test() const {
+    return adr_type() != TypeRawPtr::BOTTOM && _control_dependency == DependsOnlyOnTest;
+  }
 };
 
 //------------------------------LoadBNode--------------------------------------

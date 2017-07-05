@@ -26,7 +26,7 @@
  * @bug 8026844
  * @summary Test incrementExact
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @compile IncExactLTest.java Verify.java
  * @run main IncExactLTest

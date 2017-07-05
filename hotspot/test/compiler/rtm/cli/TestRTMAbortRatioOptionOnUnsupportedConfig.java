@@ -28,7 +28,7 @@
  * @summary Verify RTMAbortRatio option processing on CPU without rtm
  *          support or on VM that does not support rtm locking.
  * @library /testlibrary /test/lib /compiler/testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @build TestRTMAbortRatioOptionOnUnsupportedConfig
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

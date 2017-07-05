@@ -27,7 +27,7 @@
  * @bug 6968348
  * @summary Byteswapped memory access can point to wrong location after JIT
  *
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  * @run main Test6968348
  */
 

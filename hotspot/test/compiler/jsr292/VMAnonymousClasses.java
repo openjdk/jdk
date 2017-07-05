@@ -25,7 +25,7 @@
  * @test
  * @bug 8058828
  * @modules java.base/jdk.internal.org.objectweb.asm
- *          java.base/sun.misc
+ *          java.base/jdk.internal.misc
  * @run main/bootclasspath -Xbatch VMAnonymousClasses
  */
 

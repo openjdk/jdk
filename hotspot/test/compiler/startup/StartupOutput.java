@@ -26,7 +26,7 @@
  * @bug 8026949
  * @summary Test ensures correct VM output during startup
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  */
 import jdk.test.lib.*;
