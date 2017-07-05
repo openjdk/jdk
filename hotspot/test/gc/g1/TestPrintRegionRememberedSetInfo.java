@@ -27,7 +27,7 @@
  * @bug 8014240
  * @summary Test output of G1PrintRegionRememberedSetInfo
  * @library /testlibrary
- * @build TestPrintRegionRememberedSetInfo
+ * @run main TestPrintRegionRememberedSetInfo
  * @author thomas.schatzl@oracle.com
  */
 

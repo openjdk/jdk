@@ -62,6 +62,9 @@
 package java.time.temporal;
 
 import java.time.DateTimeException;
+import java.time.ZoneId;
+import java.time.chrono.ChronoLocalDate;
+import java.time.chrono.Chronology;
 import java.time.format.ResolverStyle;
 import java.util.Locale;
 import java.util.Map;
@@ -93,29 +96,19 @@ import java.util.Objects;
 public interface TemporalField {
 
     /**
-     * Gets a descriptive name for the field.
-     * <p>
-     * The should be of the format 'BaseOfRange', such as 'MonthOfYear',
-     * unless the field has a range of {@code FOREVER}, when only
-     * the base unit is mentioned, such as 'Year' or 'Era'.
-     *
-     * @return the name, not null
-     */
-    String getName();
-
-    /**
      * Gets the display name for the field in the requested locale.
      * <p>
-     * If there is no display name for the locale the value of {@code getName}
-     * is returned.
+     * If there is no display name for the locale then a suitable default must be returned.
+     * <p>
+     * The default implementation must check the locale is not null
+     * and return {@code toString()}.
      *
      * @param locale  the locale to use, not null
-     * @return the display name for the locale or the value of {@code getName},
-     *     not null
+     * @return the display name for the locale or a suitable default, not null
      */
     default String getDisplayName(Locale locale) {
-        Objects.requireNonNull(locale, "local");
-        return getName();
+        Objects.requireNonNull(locale, "locale");
+        return toString();
     }
 
     /**
@@ -164,28 +157,24 @@ public interface TemporalField {
      * <p>
      * A field is date-based if it can be derived from
      * {@link ChronoField#EPOCH_DAY EPOCH_DAY}.
-     * <p>
-     * The default implementation must return false.
+     * Note that it is valid for both {@code isDateBased()} and {@code isTimeBased()}
+     * to return false, such as when representing a field like minute-of-week.
      *
      * @return true if this field is a component of a date
      */
-    default boolean isDateBased() {
-        return false;
-    }
+    boolean isDateBased();
 
     /**
      * Checks if this field represents a component of a time.
      * <p>
      * A field is time-based if it can be derived from
      * {@link ChronoField#NANO_OF_DAY NANO_OF_DAY}.
-     * <p>
-     * The default implementation must return false.
+     * Note that it is valid for both {@code isDateBased()} and {@code isTimeBased()}
+     * to return false, such as when representing a field like minute-of-week.
      *
      * @return true if this field is a component of a time
      */
-    default boolean isTimeBased() {
-        return false;
-    }
+    boolean isTimeBased();
 
     //-----------------------------------------------------------------------
     /**
@@ -319,45 +308,79 @@ public interface TemporalField {
     <R extends Temporal> R adjustInto(R temporal, long newValue);
 
     /**
-     * Resolves this field to provide a simpler alternative.
+     * Resolves this field to provide a simpler alternative or a date.
      * <p>
      * This method is invoked during the resolve phase of parsing.
      * It is designed to allow application defined fields to be simplified into
-     * more standard fields, such as those on {@code ChronoField}.
+     * more standard fields, such as those on {@code ChronoField}, or into a date.
      * <p>
-     * The method will only be invoked if the specified temporal supports this field.
-     * The value of this field is provided.
+     * Applications should not normally invoke this method directly.
+     *
+     * @implSpec
+     * If an implementation represents a field that can be simplified, or
+     * combined with others, then this method must be implemented.
      * <p>
-     * The temporal must be queried using the methods of {@code TemporalAccessor},
-     * not using {@code getFrom}, {@code isSupportedBy} or {@code rangeRefinedBy}.
-     * Before querying any field, implementations must ensure it is supported, as
-     * exceptions of this type would negatively affect the calculation of a parsed result.
+     * The specified map contains the current state of the parse.
+     * The map is mutable and must be mutated to resolve the field and
+     * any related fields. This method will only be invoked during parsing
+     * if the map contains this field, and implementations should therefore
+     * assume this field is present.
      * <p>
-     * If this field can resolve, it must return a map, if not it must return null.
-     * The returned map contains the changes to be made to the temporal, expressed
-     * as field-value pairs. If the value for a field is null, the field is to be
-     * removed from the temporal. A null key must not be added to the result map.
+     * Resolving a field will consist of looking at the value of this field,
+     * and potentially other fields, and either updating the map with a
+     * simpler value, such as a {@code ChronoField}, or returning a
+     * complete {@code ChronoLocalDate}. If a resolve is successful,
+     * the code must remove all the fields that were resolved from the map,
+     * including this field.
      * <p>
-     * If the result is non-null, this field will be removed from the temporal.
-     * This field should not be added to the result map.
+     * For example, the {@code IsoFields} class contains the quarter-of-year
+     * and day-of-quarter fields. The implementation of this method in that class
+     * resolves the two fields plus the {@link ChronoField#YEAR YEAR} into a
+     * complete {@code LocalDate}. The resolve method will remove all three
+     * fields from the map before returning the {@code LocalDate}.
      * <p>
-     * The {@link ResolverStyle} should be used by implementations to determine
-     * how to perform the resolve.
+     * If resolution should be possible, but the data is invalid, the resolver
+     * style should be used to determine an appropriate level of leniency, which
+     * may require throwing a {@code DateTimeException} or {@code ArithmeticException}.
+     * If no resolution is possible, the resolve method must return null.
+     * <p>
+     * When resolving time fields, the map will be altered and null returned.
+     * When resolving date fields, the date is normally returned from the method,
+     * with the map altered to remove the resolved fields. However, it would also
+     * be acceptable for the date fields to be resolved into other {@code ChronoField}
+     * instances that can produce a date, such as {@code EPOCH_DAY}.
+     * <p>
+     * The zone is not normally required for resolution, but is provided for completeness.
      * <p>
      * The default implementation must return null.
      *
-     * @param temporal  the temporal to resolve, not null
-     * @param value  the value of this field
+     * @param fieldValues  the map of fields to values, which can be updated, not null
+     * @param chronology  the effective chronology, not null
+     * @param zone  the effective zone, not null
      * @param resolverStyle  the requested type of resolve, not null
-     * @return a map of fields to update in the temporal, with a mapping to null
-     *  indicating a deletion. The whole map must be null if no resolving occurred
+     * @return the resolved date; null if resolving only changed the map,
+     *  or no resolve occurred
+     * @throws ArithmeticException if numeric overflow occurs
      * @throws DateTimeException if resolving results in an error. This must not be thrown
      *  by querying a field on the temporal without first checking if it is supported
-     * @throws ArithmeticException if numeric overflow occurs
      */
-    default Map<TemporalField, Long> resolve(
-            TemporalAccessor temporal, long value, ResolverStyle resolverStyle) {
+    default ChronoLocalDate resolve(
+            Map<TemporalField, Long> fieldValues, Chronology chronology,
+            ZoneId zone, ResolverStyle resolverStyle) {
         return null;
     }
+
+    /**
+     * Gets a descriptive name for the field.
+     * <p>
+     * The should be of the format 'BaseOfRange', such as 'MonthOfYear',
+     * unless the field has a range of {@code FOREVER}, when only
+     * the base unit is mentioned, such as 'Year' or 'Era'.
+     *
+     * @return the name of the field, not null
+     */
+    @Override
+    String toString();
+
 
 }

@@ -65,6 +65,7 @@ import static java.time.temporal.ChronoField.EPOCH_DAY;
 import static java.time.temporal.ChronoField.INSTANT_SECONDS;
 import static java.time.temporal.ChronoField.NANO_OF_DAY;
 import static java.time.temporal.ChronoField.OFFSET_SECONDS;
+import static java.time.temporal.ChronoUnit.FOREVER;
 import static java.time.temporal.ChronoUnit.NANOS;
 
 import java.io.IOException;
@@ -137,25 +138,40 @@ public final class OffsetDateTime
     public static final OffsetDateTime MAX = LocalDateTime.MAX.atOffset(ZoneOffset.MIN);
 
     /**
-     * Comparator for two {@code OffsetDateTime} instances based solely on the instant.
+     * Gets a comparator that compares two {@code OffsetDateTime} instances
+     * based solely on the instant.
      * <p>
      * This method differs from the comparison in {@link #compareTo} in that it
      * only compares the underlying instant.
+     *
+     * @return a comparator that compares in time-line order
      *
      * @see #isAfter
      * @see #isBefore
      * @see #isEqual
      */
-    public static final Comparator<OffsetDateTime> INSTANT_COMPARATOR = new Comparator<OffsetDateTime>() {
-        @Override
-        public int compare(OffsetDateTime datetime1, OffsetDateTime datetime2) {
-            int cmp = Long.compare(datetime1.toEpochSecond(), datetime2.toEpochSecond());
-            if (cmp == 0) {
-                cmp = Long.compare(datetime1.toLocalTime().toNanoOfDay(), datetime2.toLocalTime().toNanoOfDay());
-            }
-            return cmp;
+    public static Comparator<OffsetDateTime> timeLineOrder() {
+        return OffsetDateTime::compareInstant;
+    }
+
+    /**
+     * Compares this {@code OffsetDateTime} to another date-time.
+     * The comparison is based on the instant.
+     *
+     * @param datetime1  the first date-time to compare, not null
+     * @param datetime2  the other date-time to compare to, not null
+     * @return the comparator value, negative if less, positive if greater
+     */
+    private static int compareInstant(OffsetDateTime datetime1, OffsetDateTime datetime2) {
+        if (datetime1.getOffset().equals(datetime2.getOffset())) {
+            return datetime1.toLocalDateTime().compareTo(datetime2.toLocalDateTime());
         }
-    };
+        int cmp = Long.compare(datetime1.toEpochSecond(), datetime2.toEpochSecond());
+        if (cmp == 0) {
+            cmp = datetime1.toLocalTime().getNano() - datetime2.toLocalTime().getNano();
+        }
+        return cmp;
+    }
 
     /**
      * Serialization version.
@@ -406,8 +422,9 @@ public final class OffsetDateTime
      * Checks if the specified field is supported.
      * <p>
      * This checks if this date-time can be queried for the specified field.
-     * If false, then calling the {@link #range(TemporalField) range} and
-     * {@link #get(TemporalField) get} methods will throw an exception.
+     * If false, then calling the {@link #range(TemporalField) range},
+     * {@link #get(TemporalField) get} and {@link #with(TemporalField, long)}
+     * methods will throw an exception.
      * <p>
      * If the field is a {@link ChronoField} then the query is implemented here.
      * The supported fields are:
@@ -458,6 +475,51 @@ public final class OffsetDateTime
         return field instanceof ChronoField || (field != null && field.isSupportedBy(this));
     }
 
+    /**
+     * Checks if the specified unit is supported.
+     * <p>
+     * This checks if the specified unit can be added to, or subtracted from, this date-time.
+     * If false, then calling the {@link #plus(long, TemporalUnit)} and
+     * {@link #minus(long, TemporalUnit) minus} methods will throw an exception.
+     * <p>
+     * If the unit is a {@link ChronoUnit} then the query is implemented here.
+     * The supported units are:
+     * <ul>
+     * <li>{@code NANOS}
+     * <li>{@code MICROS}
+     * <li>{@code MILLIS}
+     * <li>{@code SECONDS}
+     * <li>{@code MINUTES}
+     * <li>{@code HOURS}
+     * <li>{@code HALF_DAYS}
+     * <li>{@code DAYS}
+     * <li>{@code WEEKS}
+     * <li>{@code MONTHS}
+     * <li>{@code YEARS}
+     * <li>{@code DECADES}
+     * <li>{@code CENTURIES}
+     * <li>{@code MILLENNIA}
+     * <li>{@code ERAS}
+     * </ul>
+     * All other {@code ChronoUnit} instances will return false.
+     * <p>
+     * If the unit is not a {@code ChronoUnit}, then the result of this method
+     * is obtained by invoking {@code TemporalUnit.isSupportedBy(Temporal)}
+     * passing {@code this} as the argument.
+     * Whether the unit is supported is determined by the unit.
+     *
+     * @param unit  the unit to check, null returns false
+     * @return true if the unit can be added/subtracted, false if not
+     */
+    @Override  // override for Javadoc
+    public boolean isSupported(TemporalUnit unit) {
+        if (unit instanceof ChronoUnit) {
+            return unit != FOREVER;
+        }
+        return unit != null && unit.isSupportedBy(this);
+    }
+
+    //-----------------------------------------------------------------------
     /**
      * Gets the range of valid values for the specified field.
      * <p>
@@ -1528,7 +1590,7 @@ public final class OffsetDateTime
      * The start and end points are {@code this} and the specified date-time.
      * The result will be negative if the end is before the start.
      * For example, the period in days between two date-times can be calculated
-     * using {@code startDateTime.periodUntil(endDateTime, DAYS)}.
+     * using {@code startDateTime.until(endDateTime, DAYS)}.
      * <p>
      * The {@code Temporal} passed to this method must be an {@code OffsetDateTime}.
      * If the offset differs between the two date-times, the specified
@@ -1544,7 +1606,7 @@ public final class OffsetDateTime
      * The second is to use {@link TemporalUnit#between(Temporal, Temporal)}:
      * <pre>
      *   // these two lines are equivalent
-     *   amount = start.periodUntil(end, MONTHS);
+     *   amount = start.until(end, MONTHS);
      *   amount = MONTHS.between(start, end);
      * </pre>
      * The choice should be made based on which makes the code more readable.
@@ -1571,7 +1633,7 @@ public final class OffsetDateTime
      * @throws ArithmeticException if numeric overflow occurs
      */
     @Override
-    public long periodUntil(Temporal endDateTime, TemporalUnit unit) {
+    public long until(Temporal endDateTime, TemporalUnit unit) {
         if (endDateTime instanceof OffsetDateTime == false) {
             Objects.requireNonNull(endDateTime, "endDateTime");
             throw new DateTimeException("Unable to calculate amount as objects are of two different types");
@@ -1579,7 +1641,7 @@ public final class OffsetDateTime
         if (unit instanceof ChronoUnit) {
             OffsetDateTime end = (OffsetDateTime) endDateTime;
             end = end.withOffsetSameInstant(offset);
-            return dateTime.periodUntil(end.dateTime, unit);
+            return dateTime.until(end.dateTime, unit);
         }
         return unit.between(this, endDateTime);
     }
@@ -1724,15 +1786,9 @@ public final class OffsetDateTime
      */
     @Override
     public int compareTo(OffsetDateTime other) {
-        if (getOffset().equals(other.getOffset())) {
-            return toLocalDateTime().compareTo(other.toLocalDateTime());
-        }
-        int cmp = Long.compare(toEpochSecond(), other.toEpochSecond());
+        int cmp = compareInstant(this, other);
         if (cmp == 0) {
-            cmp = toLocalTime().getNano() - other.toLocalTime().getNano();
-            if (cmp == 0) {
-                cmp = toLocalDateTime().compareTo(other.toLocalDateTime());
-            }
+            cmp = toLocalDateTime().compareTo(other.toLocalDateTime());
         }
         return cmp;
     }

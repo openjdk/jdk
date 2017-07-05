@@ -62,7 +62,6 @@
 package java.time.temporal;
 
 import java.time.DateTimeException;
-import java.time.ZoneId;
 import java.util.Objects;
 
 /**
@@ -80,7 +79,8 @@ import java.util.Objects;
  * See {@link ChronoField} for the standard set of fields.
  * <p>
  * Two pieces of date/time information cannot be represented by numbers,
- * the {@linkplain java.time.chrono.Chronology chronology} and the {@linkplain ZoneId time-zone}.
+ * the {@linkplain java.time.chrono.Chronology chronology} and the
+ * {@linkplain java.time.ZoneId time-zone}.
  * These can be accessed via {@linkplain #query(TemporalQuery) queries} using
  * the static methods defined on {@link TemporalQuery}.
  * <p>
@@ -111,13 +111,14 @@ public interface TemporalAccessor {
      *
      * @implSpec
      * Implementations must check and handle all fields defined in {@link ChronoField}.
-     * If the field is supported, then true is returned, otherwise false
+     * If the field is supported, then true must be returned, otherwise false must be returned.
      * <p>
      * If the field is not a {@code ChronoField}, then the result of this method
      * is obtained by invoking {@code TemporalField.isSupportedBy(TemporalAccessor)}
      * passing {@code this} as the argument.
      * <p>
-     * Implementations must not alter either this object.
+     * Implementations must ensure that no observable state is altered when this
+     * read-only method is invoked.
      *
      * @param field  the field to check, null returns false
      * @return true if this date-time can be queried for the field, false if not
@@ -146,7 +147,8 @@ public interface TemporalAccessor {
      * is obtained by invoking {@code TemporalField.rangeRefinedBy(TemporalAccessorl)}
      * passing {@code this} as the argument.
      * <p>
-     * Implementations must not alter either this object.
+     * Implementations must ensure that no observable state is altered when this
+     * read-only method is invoked.
      * <p>
      * The default implementation must behave equivalent to this code:
      * <pre>
@@ -154,7 +156,7 @@ public interface TemporalAccessor {
      *    if (isSupported(field)) {
      *      return field.range();
      *    }
-     *    throw new UnsupportedTemporalTypeException("Unsupported field: " + field.getName());
+     *    throw new UnsupportedTemporalTypeException("Unsupported field: " + field);
      *  }
      *  return field.rangeRefinedBy(this);
      * </pre>
@@ -169,7 +171,7 @@ public interface TemporalAccessor {
             if (isSupported(field)) {
                 return field.range();
             }
-            throw new UnsupportedTemporalTypeException("Unsupported field: " + field.getName());
+            throw new UnsupportedTemporalTypeException("Unsupported field: " + field);
         }
         Objects.requireNonNull(field, "field");
         return field.rangeRefinedBy(this);
@@ -193,7 +195,8 @@ public interface TemporalAccessor {
      * is obtained by invoking {@code TemporalField.getFrom(TemporalAccessor)}
      * passing {@code this} as the argument.
      * <p>
-     * Implementations must not alter this object.
+     * Implementations must ensure that no observable state is altered when this
+     * read-only method is invoked.
      * <p>
      * The default implementation must behave equivalent to this code:
      * <pre>
@@ -240,7 +243,8 @@ public interface TemporalAccessor {
      * is obtained by invoking {@code TemporalField.getFrom(TemporalAccessor)}
      * passing {@code this} as the argument.
      * <p>
-     * Implementations must not alter either this object.
+     * Implementations must ensure that no observable state is altered when this
+     * read-only method is invoked.
      *
      * @param field  the field to get, not null
      * @return the value for the field
@@ -291,6 +295,9 @@ public interface TemporalAccessor {
      *  }
      *  return TemporalAccessor.super.query(query);
      * </pre>
+     * <p>
+     * Implementations must ensure that no observable state is altered when this
+     * read-only method is invoked.
      *
      * @param <R> the type of the result
      * @param query  the query to invoke, not null

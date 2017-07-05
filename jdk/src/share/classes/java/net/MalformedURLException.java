@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,13 +39,13 @@ public class MalformedURLException extends IOException {
     private static final long serialVersionUID = -182787522200415866L;
 
     /**
-     * Constructs a <code>MalformedURLException</code> with no detail message.
+     * Constructs a {@code MalformedURLException} with no detail message.
      */
     public MalformedURLException() {
     }
 
     /**
-     * Constructs a <code>MalformedURLException</code> with the
+     * Constructs a {@code MalformedURLException} with the
      * specified detail message.
      *
      * @param   msg   the detail message.

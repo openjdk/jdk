@@ -445,7 +445,7 @@ public class Win32PrintService implements PrintService, AttributeUpdater,
 
         initMedia();
 
-        if ((mediaSizeNames == null) && (mediaSizeNames.length == 0)) {
+        if ((mediaSizeNames == null) || (mediaSizeNames.length == 0)) {
             return null;
         }
 

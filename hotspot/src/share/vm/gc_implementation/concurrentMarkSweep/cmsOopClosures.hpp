@@ -122,6 +122,22 @@ class MarkRefsIntoClosure: public CMSOopsInGenClosure {
   }
 };
 
+class Par_MarkRefsIntoClosure: public CMSOopsInGenClosure {
+ private:
+  const MemRegion _span;
+  CMSBitMap*      _bitMap;
+ protected:
+  DO_OOP_WORK_DEFN
+ public:
+  Par_MarkRefsIntoClosure(MemRegion span, CMSBitMap* bitMap);
+  virtual void do_oop(oop* p);
+  virtual void do_oop(narrowOop* p);
+
+  Prefetch::style prefetch_style() {
+    return Prefetch::do_read;
+  }
+};
+
 // A variant of the above used in certain kinds of CMS
 // marking verification.
 class MarkRefsIntoVerifyClosure: public CMSOopsInGenClosure {

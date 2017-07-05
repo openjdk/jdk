@@ -64,18 +64,27 @@ import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertTrue;
 
+import java.util.Locale;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.time.ZoneId;
+import java.time.Clock;
 import java.time.DateTimeException;
 import java.time.chrono.ChronoLocalDate;
 import java.time.chrono.Chronology;
 import java.time.chrono.HijrahChronology;
+import java.time.chrono.HijrahEra;
 import java.time.chrono.IsoChronology;
+import java.time.chrono.IsoEra;
 import java.time.chrono.JapaneseChronology;
+import java.time.chrono.JapaneseEra;
 import java.time.chrono.MinguoChronology;
+import java.time.chrono.MinguoEra;
 import java.time.chrono.ThaiBuddhistChronology;
+import java.time.chrono.ThaiBuddhistEra;
+import java.time.format.TextStyle;
 import java.time.temporal.ChronoField;
 import java.util.Locale;
 import java.util.Set;
@@ -133,15 +142,35 @@ public class TCKChronology {
                 + ", expected >= " + data_of_calendars().length);
     }
 
+    //-----------------------------------------------------------------------
+    // getDisplayName()
+    //-----------------------------------------------------------------------
+    @DataProvider(name = "calendarDisplayName")
+    Object[][] data_of_calendarDisplayNames() {
+        return new Object[][] {
+                    {"Hijrah", "Hijrah-umalqura"},
+                    {"ISO", "ISO"},
+                    {"Japanese", "Japanese Calendar"},
+                    {"Minguo", "Minguo Calendar"},
+                    {"ThaiBuddhist", "Buddhist Calendar"},
+                };
+    }
+
+    @Test(dataProvider = "calendarDisplayName")
+    public void test_getDisplayName(String chronoId, String calendarDisplayName) {
+        Chronology chrono = Chronology.of(chronoId);
+        assertEquals(chrono.getDisplayName(TextStyle.FULL, Locale.ENGLISH), calendarDisplayName);
+    }
+
     /**
      * Compute the number of days from the Epoch and compute the date from the number of days.
      */
     @Test(dataProvider = "calendarNameAndType")
     public void test_epoch(String name, String alias) {
         Chronology chrono = Chronology.of(name); // a chronology. In practice this is rarely hardcoded
-        ChronoLocalDate<?> date1 = chrono.dateNow();
+        ChronoLocalDate date1 = chrono.dateNow();
         long epoch1 = date1.getLong(ChronoField.EPOCH_DAY);
-        ChronoLocalDate<?> date2 = date1.with(ChronoField.EPOCH_DAY, epoch1);
+        ChronoLocalDate date2 = date1.with(ChronoField.EPOCH_DAY, epoch1);
         assertEquals(date1, date2, "Date from epoch day is not same date: " + date1 + " != " + date2);
         long epoch2 = date1.getLong(ChronoField.EPOCH_DAY);
         assertEquals(epoch1, epoch2, "Epoch day not the same: " + epoch1 + " != " + epoch2);
@@ -150,9 +179,9 @@ public class TCKChronology {
     @Test(dataProvider = "calendarNameAndType")
     public void test_dateEpochDay(String name, String alias) {
         Chronology chrono = Chronology.of(name);
-        ChronoLocalDate<?> date = chrono.dateNow();
+        ChronoLocalDate date = chrono.dateNow();
         long epochDay = date.getLong(ChronoField.EPOCH_DAY);
-        ChronoLocalDate<?> test = chrono.dateEpochDay(epochDay);
+        ChronoLocalDate test = chrono.dateEpochDay(epochDay);
         assertEquals(test, date);
     }
 
@@ -182,6 +211,101 @@ public class TCKChronology {
         builder.setUnicodeLocaleKeyword("ca", calendarType);
         Locale locale = builder.build();
         assertEquals(Chronology.ofLocale(locale), chrono);
+    }
+
+    //-----------------------------------------------------------------------
+    // dateNow()
+    //-----------------------------------------------------------------------
+    @Test
+    public void test_MinguoChronology_dateNow() {
+        ZoneId zoneId_paris = ZoneId.of("Europe/Paris");
+        Clock clock = Clock.system(zoneId_paris);
+
+        Chronology chrono = Chronology.of("Minguo");
+        assertEquals(chrono.dateNow(), MinguoChronology.INSTANCE.dateNow());
+        assertEquals(chrono.dateNow(zoneId_paris), MinguoChronology.INSTANCE.dateNow(zoneId_paris));
+        assertEquals(chrono.dateNow(clock), MinguoChronology.INSTANCE.dateNow(clock));
+    }
+
+    @Test
+    public void test_IsoChronology_dateNow() {
+        ZoneId zoneId_paris = ZoneId.of("Europe/Paris");
+        Clock clock = Clock.system(zoneId_paris);
+
+        Chronology chrono = Chronology.of("ISO");
+        assertEquals(chrono.dateNow(), IsoChronology.INSTANCE.dateNow());
+        assertEquals(chrono.dateNow(zoneId_paris), IsoChronology.INSTANCE.dateNow(zoneId_paris));
+        assertEquals(chrono.dateNow(clock), IsoChronology.INSTANCE.dateNow(clock));
+    }
+
+    @Test
+    public void test_JapaneseChronology_dateNow() {
+        ZoneId zoneId_paris = ZoneId.of("Europe/Paris");
+        Clock clock = Clock.system(zoneId_paris);
+
+        Chronology chrono = Chronology.of("Japanese");
+        assertEquals(chrono.dateNow(), JapaneseChronology.INSTANCE.dateNow());
+        assertEquals(chrono.dateNow(zoneId_paris), JapaneseChronology.INSTANCE.dateNow(zoneId_paris));
+        assertEquals(chrono.dateNow(clock), JapaneseChronology.INSTANCE.dateNow(clock));
+    }
+
+    @Test
+    public void test_ThaiBuddhistChronology_dateNow() {
+        ZoneId zoneId_paris = ZoneId.of("Europe/Paris");
+        Clock clock = Clock.system(zoneId_paris);
+
+        Chronology chrono = Chronology.of("ThaiBuddhist");
+        assertEquals(chrono.dateNow(), ThaiBuddhistChronology.INSTANCE.dateNow());
+        assertEquals(chrono.dateNow(zoneId_paris), ThaiBuddhistChronology.INSTANCE.dateNow(zoneId_paris));
+        assertEquals(chrono.dateNow(clock), ThaiBuddhistChronology.INSTANCE.dateNow(clock));
+    }
+
+    //-----------------------------------------------------------------------
+    // dateYearDay() and date()
+    //-----------------------------------------------------------------------
+    @Test
+    public void test_HijrahChronology_dateYearDay() {
+        Chronology chrono = Chronology.of("Hijrah");
+        ChronoLocalDate date1 = chrono.dateYearDay(HijrahEra.AH, 1434, 178);
+        ChronoLocalDate date2 = chrono.date(HijrahEra.AH, 1434, 7, 1);
+        assertEquals(date1, HijrahChronology.INSTANCE.dateYearDay(HijrahEra.AH, 1434, 178));
+        assertEquals(date2, HijrahChronology.INSTANCE.dateYearDay(HijrahEra.AH, 1434, 178));
+    }
+
+    @Test
+    public void test_MinguoChronology_dateYearDay() {
+        Chronology chrono = Chronology.of("Minguo");
+        ChronoLocalDate date1 = chrono.dateYearDay(MinguoEra.ROC, 5, 60);
+        ChronoLocalDate date2 = chrono.date(MinguoEra.ROC, 5, 2, 29);
+        assertEquals(date1, MinguoChronology.INSTANCE.dateYearDay(MinguoEra.ROC, 5, 60));
+        assertEquals(date2, MinguoChronology.INSTANCE.dateYearDay(MinguoEra.ROC, 5, 60));
+    }
+
+    @Test
+    public void test_IsoChronology_dateYearDay() {
+        Chronology chrono = Chronology.of("ISO");
+        ChronoLocalDate date1 = chrono.dateYearDay(IsoEra.CE, 5, 60);
+        ChronoLocalDate date2 = chrono.date(IsoEra.CE, 5, 3, 1);
+        assertEquals(date1, IsoChronology.INSTANCE.dateYearDay(IsoEra.CE, 5, 60));
+        assertEquals(date2, IsoChronology.INSTANCE.dateYearDay(IsoEra.CE, 5, 60));
+    }
+
+    @Test
+    public void test_JapaneseChronology_dateYearDay() {
+        Chronology chrono = Chronology.of("Japanese");
+        ChronoLocalDate date1 = chrono.dateYearDay(JapaneseEra.HEISEI, 8, 60);
+        ChronoLocalDate date2 = chrono.date(JapaneseEra.HEISEI, 8, 2, 29);
+        assertEquals(date1, JapaneseChronology.INSTANCE.dateYearDay(JapaneseEra.HEISEI, 8, 60));
+        assertEquals(date2, JapaneseChronology.INSTANCE.dateYearDay(JapaneseEra.HEISEI, 8, 60));
+    }
+
+    @Test
+    public void test_ThaiBuddhistChronology_dateYearDay() {
+        Chronology chrono = Chronology.of("ThaiBuddhist");
+        ChronoLocalDate date1 = chrono.dateYearDay(ThaiBuddhistEra.BE, 2459, 60);
+        ChronoLocalDate date2 = chrono.date(ThaiBuddhistEra.BE, 2459, 2, 29);
+        assertEquals(date1, ThaiBuddhistChronology.INSTANCE.dateYearDay(ThaiBuddhistEra.BE, 2459, 60));
+        assertEquals(date2, ThaiBuddhistChronology.INSTANCE.dateYearDay(ThaiBuddhistEra.BE, 2459, 60));
     }
 
     /**

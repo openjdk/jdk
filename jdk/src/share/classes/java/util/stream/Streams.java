@@ -681,11 +681,9 @@ final class Streams {
             this.aSpliterator = aSpliterator;
             this.bSpliterator = bSpliterator;
             beforeSplit = true;
-            // The spliterator is unsized before splitting if a and b are
-            // sized and the sum of the estimates overflows
-            unsized = aSpliterator.hasCharacteristics(SIZED)
-                      && aSpliterator.hasCharacteristics(SIZED)
-                      && aSpliterator.estimateSize() + bSpliterator.estimateSize() < 0;
+            // The spliterator is known to be unsized before splitting if the
+            // sum of the estimates overflows.
+            unsized = aSpliterator.estimateSize() + bSpliterator.estimateSize() < 0;
         }
 
         @Override
