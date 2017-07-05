@@ -26,7 +26,9 @@ package java.net.http;
 import java.util.Locale;
 
 /**
- * -Djava.net.HttpClient.log=errors,requests,headers,frames[:type:type2:..],content
+ * -Djava.net.HttpClient.log=
+ *          errors,requests,headers,
+ *          frames[:type:type2:..],content,ssl,trace
  *
  * Any of errors, requests, headers or content are optional.
  *
@@ -47,6 +49,7 @@ abstract class Log implements System.Logger {
     public static final int CONTENT = 0x8;
     public static final int FRAMES = 0x10;
     public static final int SSL = 0x20;
+    public static final int TRACE = 0x40;
     static int logging;
 
     // Frame types: "control", "data", "window", "all"
@@ -81,8 +84,11 @@ abstract class Log implements System.Logger {
                     case "ssl":
                         logging |= SSL;
                         break;
+                    case "trace":
+                        logging |= TRACE;
+                        break;
                     case "all":
-                        logging |= CONTENT|HEADERS|REQUESTS|FRAMES|ERRORS;
+                        logging |= CONTENT|HEADERS|REQUESTS|FRAMES|ERRORS|TRACE;
                         break;
                 }
                 if (val.startsWith("frames")) {
@@ -130,6 +136,10 @@ abstract class Log implements System.Logger {
         return (logging & HEADERS) != 0;
     }
 
+    static boolean trace() {
+        return (logging & TRACE) != 0;
+    }
+
     static boolean ssl() {
         return (logging & SSL) != 0;
     }
@@ -138,9 +148,9 @@ abstract class Log implements System.Logger {
         return (logging & FRAMES) != 0;
     }
 
-    static void logError(String s) {
+    static void logError(String s, Object... s1) {
         if (errors())
-            logger.log(Level.INFO, "ERROR: " + s);
+            logger.log(Level.INFO, "ERROR: " + s, s1);
     }
 
     static void logError(Throwable t) {
@@ -150,24 +160,50 @@ abstract class Log implements System.Logger {
         }
     }
 
-    static void logSSL(String s) {
+    static void logSSL(String s, Object... s1) {
         if (ssl())
-            logger.log(Level.INFO, "SSL: " + s);
+            logger.log(Level.INFO, "SSL: " + s, s1);
     }
 
-    static void logRequest(String s) {
+    static void logTrace(String s, Object... s1) {
+        if (trace()) {
+            String format = "TRACE: " + s;
+            logger.log(Level.INFO, format, s1);
+        }
+    }
+
+    static void logRequest(String s, Object... s1) {
         if (requests())
-            logger.log(Level.INFO, "REQUEST: " + s);
+            logger.log(Level.INFO, "REQUEST: " + s, s1);
     }
 
-    static void logResponse(String s) {
+    static void logResponse(String s, Object... s1) {
         if (requests())
-            logger.log(Level.INFO, "RESPONSE: " + s);
+            logger.log(Level.INFO, "RESPONSE: " + s, s1);
     }
 
-    static void logHeaders(String s) {
+    static void logHeaders(String s, Object... s1) {
         if (headers())
-            logger.log(Level.INFO, "HEADERS: " + s);
+            logger.log(Level.INFO, "HEADERS: " + s, s1);
+    }
+// START HTTP2
+    static boolean loggingFrame(Class<? extends Http2Frame> clazz) {
+        if (frametypes == ALL) {
+            return true;
+        }
+        if (clazz == DataFrame.class) {
+            return (frametypes & DATA) != 0;
+        } else if (clazz == WindowUpdateFrame.class) {
+            return (frametypes & WINDOW_UPDATES) != 0;
+        } else {
+            return (frametypes & CONTROL) != 0;
+        }
+    }
+
+    static void logFrames(Http2Frame f, String direction) {
+        if (frames() && loggingFrame(f.getClass())) {
+            logger.log(Level.INFO, "FRAME: " + direction + ": " + f.toString());
+        }
     }
 
     // not instantiable

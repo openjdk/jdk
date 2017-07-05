@@ -357,7 +357,7 @@ class RTFAttributes
         public static NumericAttribute NewTwips(int d, Object s, String r,
                                                 float ds, int dr)
         {
-            return new NumericAttribute(d, s, r, new Float(ds), dr, 20f);
+            return new NumericAttribute(d, s, r, Float.valueOf(ds), dr, 20f);
         }
 
         public static NumericAttribute NewTwips(int d, Object s, String r,
@@ -378,7 +378,7 @@ class RTFAttributes
             if (scale == 1f)
                 swingValue = Integer.valueOf(parameter);
             else
-                swingValue = new Float(parameter / scale);
+                swingValue = Float.valueOf(parameter / scale);
             target.addAttribute(swingName, swingValue);
             return true;
         }

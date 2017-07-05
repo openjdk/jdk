@@ -121,7 +121,6 @@ public class SynthDesktopIconUI extends BasicDesktopIconUI
     private void updateStyle(JComponent c) {
         SynthContext context = getContext(c, ENABLED);
         style = SynthLookAndFeel.updateStyle(context, this);
-        context.dispose();
     }
 
     /**
@@ -131,7 +130,6 @@ public class SynthDesktopIconUI extends BasicDesktopIconUI
     protected void uninstallDefaults() {
         SynthContext context = getContext(desktopIcon, ENABLED);
         style.uninstallDefaults(context);
-        context.dispose();
         style = null;
     }
 
@@ -171,7 +169,6 @@ public class SynthDesktopIconUI extends BasicDesktopIconUI
         context.getPainter().paintDesktopIconBackground(context, g, 0, 0,
                                                   c.getWidth(), c.getHeight());
         paint(context, g);
-        context.dispose();
     }
 
     /**
@@ -188,7 +185,6 @@ public class SynthDesktopIconUI extends BasicDesktopIconUI
         SynthContext context = getContext(c);
 
         paint(context, g);
-        context.dispose();
     }
 
     /**

@@ -29,13 +29,9 @@ import java.nio.channels.SocketChannel;
 import java.util.Arrays;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLEngine;
-import javax.net.ssl.SSLEngineResult;
 import javax.net.ssl.SSLEngineResult.HandshakeStatus;
 import javax.net.ssl.SSLEngineResult.Status;
-import javax.net.ssl.SSLParameters;
-import javax.net.ssl.SSLSession;
+import javax.net.ssl.*;
 import static javax.net.ssl.SSLEngineResult.HandshakeStatus.*;
 
 /**
@@ -60,16 +56,18 @@ class SSLDelegate {
         engine.setUseClientMode(true);
         SSLParameters sslp = client.sslParameters().orElse(null);
         if (sslp == null) {
-            sslp = context.getDefaultSSLParameters();
+            sslp = context.getSupportedSSLParameters();
         }
         sslParameters = Utils.copySSLParameters(sslp);
         if (alpn != null) {
             sslParameters.setApplicationProtocols(alpn);
             Log.logSSL("Setting application protocols: " + Arrays.toString(alpn));
         } else {
-            Log.logSSL("Warning no application protocols proposed!");
+            Log.logSSL("No application protocols proposed");
         }
         engine.setSSLParameters(sslParameters);
+        engine.setEnabledCipherSuites(sslp.getCipherSuites());
+        engine.setEnabledProtocols(sslp.getProtocols());
         wrapper = new EngineWrapper(chan, engine);
         this.chan = chan;
         this.client = client;
@@ -268,7 +266,7 @@ class SSLDelegate {
                 do {
                     if (needData) {
                         do {
-                        x = chan.read (unwrap_src);
+                            x = chan.read (unwrap_src);
                         } while (x == 0);
                         if (x == -1) {
                             throw new IOException ("connection closed for reading");
@@ -437,6 +435,27 @@ class SSLDelegate {
             }
         } finally {
             handshaking.unlock();
+        }
+    }
+
+    static void printParams(SSLParameters p) {
+        System.out.println("SSLParameters:");
+        if (p == null) {
+            System.out.println("Null params");
+            return;
+        }
+        for (String cipher : p.getCipherSuites()) {
+                System.out.printf("cipher: %s\n", cipher);
+        }
+        for (String approto : p.getApplicationProtocols()) {
+                System.out.printf("application protocol: %s\n", approto);
+        }
+        for (String protocol : p.getProtocols()) {
+                System.out.printf("protocol: %s\n", protocol);
+        }
+        if (p.getServerNames() != null)
+        for (SNIServerName sname : p.getServerNames()) {
+                System.out.printf("server name: %s\n", sname.toString());
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,8 +72,8 @@ typedef struct _XRadialGradient {
 
 #include <dlfcn.h>
 
-#if defined(__solaris__) || defined(_AIX)
-/* Solaris 10 and AIX will not have these symbols at runtime */
+#if defined(__solaris__)
+/* Solaris 10 will not have these symbols at compile time */
 
 typedef Picture (*XRenderCreateLinearGradientFuncType)
                                      (Display *dpy,
@@ -147,7 +147,22 @@ static jboolean IsXRenderAvailable(jboolean verbose, jboolean ignoreLinuxVersion
         return JNI_FALSE;
     }
 
-#if defined(__solaris__) || defined(_AIX)
+#if defined(_AIX)
+    // On AIX we have to use a special syntax because the shared libraries are packed in
+    // multi-architecture archives. We first try to load the system default libXrender
+    // which is contained in the 'X11.base.lib' fileset starting with AIX 6.1
+    xrenderlib = dlopen("libXrender.a(shr_64.o)", RTLD_GLOBAL | RTLD_LAZY | RTLD_MEMBER);
+    if (xrenderlib == NULL) {
+      // If the latter wasn't successful, we also try to load the version under /opt/freeware
+      // This may be downloaded from the "AIX Toolbox for Linux Applications" even for AIX 5.3
+      xrenderlib = dlopen("libXrender.a(libXrender.so.0)", RTLD_GLOBAL | RTLD_LAZY | RTLD_MEMBER);
+    }
+    if (xrenderlib != NULL) {
+      dlclose(xrenderlib);
+    } else {
+      available = JNI_FALSE;
+    }
+#elif defined(__solaris__)
     xrenderlib = dlopen("libXrender.so",RTLD_GLOBAL|RTLD_LAZY);
     if (xrenderlib != NULL) {
 

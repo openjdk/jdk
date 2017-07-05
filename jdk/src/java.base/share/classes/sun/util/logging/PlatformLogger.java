@@ -286,12 +286,15 @@ public class PlatformLogger {
         }
         if (log == null) {
             log = new PlatformLogger(PlatformLogger.Bridge.convert(
-                    // We pass PlatformLogger.class rather than the actual caller
+                    // We pass PlatformLogger.class.getModule() (java.base)
+                    // rather than the actual module of the caller
                     // because we want PlatformLoggers to be system loggers: we
                     // won't need to resolve any resource bundles anyway.
                     // Note: Many unit tests depend on the fact that
-                    //       PlatformLogger.getLoggerFromFinder is not caller sensitive.
-                    LazyLoggers.getLazyLogger(name, PlatformLogger.class)));
+                    //       PlatformLogger.getLoggerFromFinder is not caller
+                    //       sensitive, and this strategy ensure that the tests
+                    //       still pass.
+                    LazyLoggers.getLazyLogger(name, PlatformLogger.class.getModule())));
             loggers.put(name, new WeakReference<>(log));
         }
         return log;

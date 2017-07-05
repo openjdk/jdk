@@ -28,6 +28,7 @@ module jdk.policytool {
     requires java.logging;
     requires java.management;
     requires java.sql;
+    requires jdk.net;
     requires java.security.jgss;
     requires jdk.security.jgss;
 }

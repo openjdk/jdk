@@ -24,14 +24,12 @@
 /**
  * @test
  * @bug 8087112
- * @library /lib/testlibrary/
- * @build jdk.testlibrary.SimpleSSLContext ProxyServer
+ * @library /lib/testlibrary/ /
+ * @build jdk.testlibrary.SimpleSSLContext ProxyServer EchoHandler
  * @compile ../../../com/sun/net/httpserver/LogFilter.java
  * @compile ../../../com/sun/net/httpserver/FileServerHandler.java
  * @run main/othervm SmokeTest
  */
-
-//package javaapplication16;
 
 import com.sun.net.httpserver.*;
 import java.net.*;
@@ -69,6 +67,7 @@ import java.util.logging.Logger;
  */
 public class SmokeTest {
     static SSLContext ctx;
+    static SSLParameters sslparams;
     static HttpServer s1 ;
     static HttpsServer s2;
     static ExecutorService executor;
@@ -107,6 +106,7 @@ public class SmokeTest {
 
         client = HttpClient.create()
                            .sslContext(ctx)
+                           .sslParameters(sslparams)
                            .followRedirects(HttpClient.Redirect.ALWAYS)
                            .executorService(Executors.newCachedThreadPool())
                            .build();
@@ -285,6 +285,7 @@ public class SmokeTest {
         HttpClient cl = HttpClient.create()
                                   .proxy(ProxySelector.of(proxyAddr))
                                   .sslContext(ctx)
+                                  .sslParameters(sslparams)
                                   .build();
 
         CompletableFuture<String> fut = cl.request(uri)
@@ -672,7 +673,8 @@ public class SmokeTest {
         s1.setExecutor(executor);
         s2.setExecutor(executor);
         ctx = new SimpleSSLContext().get();
-        s2.setHttpsConfigurator(new HttpsConfigurator(ctx));
+        sslparams = ctx.getSupportedSSLParameters();
+        s2.setHttpsConfigurator(new Configurator(ctx));
         s1.start();
         s2.start();
 
@@ -686,6 +688,16 @@ public class SmokeTest {
         proxy = new ProxyServer(0, false);
         proxyPort = proxy.getPort();
         System.out.println("Proxy port = " + proxyPort);
+    }
+}
+
+class Configurator extends HttpsConfigurator {
+    public Configurator(SSLContext ctx) {
+        super(ctx);
+    }
+
+    public void configure (HttpsParameters params) {
+        params.setSSLParameters (getSSLContext().getSupportedSSLParameters());
     }
 }
 

@@ -61,7 +61,6 @@ class SynthBorder extends AbstractBorder implements UIResource {
             return;
         }
         ui.paintBorder(context, g, x, y, width, height);
-        context.dispose();
     }
 
     /**
