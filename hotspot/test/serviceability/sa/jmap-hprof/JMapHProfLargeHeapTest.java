@@ -44,7 +44,7 @@ import jdk.test.lib.ProcessTools;
  * @key regression
  * @summary Regression test for hprof export issue due to large heaps (>2G)
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.compiler
  *          java.management/sun.management
  *          jdk.jvmstat/sun.jvmstat.monitor

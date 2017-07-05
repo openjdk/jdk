@@ -26,7 +26,7 @@
  * @bug 8010927
  * @summary Kitchensink crashed with SIGSEGV, Problematic frame: v ~StubRoutines::checkcast_arraycopy
  * @library /test/lib /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  * @build Test8010927
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission

@@ -27,7 +27,7 @@
  * @requires vm.gc=="null" | vm.gc=="G1"
  * @summary Tests argument processing for double type flag, G1ConcMarkStepDurationMillis
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  */
 

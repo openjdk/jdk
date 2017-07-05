@@ -28,7 +28,7 @@
  * @summary Verify that RTMLockingCalculationDelay affect when
  *          abort ratio calculation is started.
  * @library /testlibrary /test/lib /compiler/testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @build TestRTMLockingCalculationDelay
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

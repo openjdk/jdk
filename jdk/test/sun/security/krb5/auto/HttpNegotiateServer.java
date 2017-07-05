@@ -24,8 +24,7 @@
 /*
  * @test
  * @bug 6578647 6829283
- * @modules java.base/sun.net.spi.nameservice
- *          java.base/sun.security.util
+ * @modules java.base/sun.security.util
  *          java.security.jgss/sun.security.jgss
  *          java.security.jgss/sun.security.krb5
  *          java.security.jgss/sun.security.krb5.internal

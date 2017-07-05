@@ -32,7 +32,7 @@ import jdk.test.lib.process.ProcessTools;
  * @summary Test of diagnostic command GC.run_finalization
  * @library /testlibrary
  * @library /test/lib/share/classes
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.compiler
  *          java.management
  *          jdk.jvmstat/sun.jvmstat.monitor

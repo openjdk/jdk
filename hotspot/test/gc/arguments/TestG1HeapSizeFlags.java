@@ -28,7 +28,7 @@
  * @requires vm.gc=="G1" | vm.gc=="null"
  * @summary Tests argument processing for initial and maximum heap size for the G1 collector
  * @library /testlibrary /test/lib
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @build TestG1HeapSizeFlags TestMaxHeapSizeTools
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

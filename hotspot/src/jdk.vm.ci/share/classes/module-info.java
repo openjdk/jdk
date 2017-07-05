@@ -24,6 +24,9 @@
  */
 
 module jdk.vm.ci {
+    // 8153756
+    requires jdk.unsupported;
+
     uses jdk.vm.ci.hotspot.HotSpotVMEventListener;
     uses jdk.vm.ci.hotspot.HotSpotJVMCIBackendFactory;
     uses jdk.vm.ci.runtime.JVMCICompilerFactory;

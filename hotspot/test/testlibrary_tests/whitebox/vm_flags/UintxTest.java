@@ -25,7 +25,7 @@
  * @test UintxTest
  * @bug 8028756
  * @library /testlibrary /test/lib
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management/sun.management
  * @build UintxTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

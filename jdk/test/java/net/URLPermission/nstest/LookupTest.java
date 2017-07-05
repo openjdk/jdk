@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,14 +63,18 @@ public class LookupTest {
     static ServerSocket serverSocket;
 
     public static void main(String args[]) throws Exception {
+
+
         String cmd = args[0];
         if (cmd.equals("-getport")) {
             port = Utils.getFreePort();
             System.out.print(port);
         } else if (cmd.equals("-runtest")) {
             port = Integer.parseInt(args[1]);
-            SimpleNameService.put("allowedAndFound.com", "127.0.0.1");
-            SimpleNameService.put("notAllowedButFound.com", "99.99.99.99");
+            String hostsFileName = System.getProperty("test.src", ".") + "/LookupTestHosts";
+            System.setProperty("jdk.net.hosts.file", hostsFileName);
+            addMappingToHostsFile("allowedAndFound.com", "127.0.0.1", hostsFileName, false);
+            addMappingToHostsFile("notAllowedButFound.com", "99.99.99.99", hostsFileName, true);
             // name "notAllowedAndNotFound.com" is not in map
             // name "allowedButNotfound.com" is not in map
             try {
@@ -124,4 +128,17 @@ public class LookupTest {
             throw new RuntimeException ("Test failed to initialize", e);
         }
     }
+
+    private static void addMappingToHostsFile (String host,
+                                               String addr,
+                                               String hostsFileName,
+                                               boolean append)
+                                             throws Exception {
+        String mapping = addr + " " + host;
+        try (PrintWriter hfPWriter = new PrintWriter(new BufferedWriter(
+                new FileWriter(hostsFileName, append)))) {
+            hfPWriter.println(mapping);
+}
+    }
+
 }

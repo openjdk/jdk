@@ -28,7 +28,7 @@
  * @requires vm.gc=="G1" | vm.gc=="null"
  * @summary Test argument processing of various percentage options
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @run driver TestG1PercentageOptions
  */

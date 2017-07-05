@@ -25,7 +25,7 @@
  * @test
  * @bug 8031321
  * @library /testlibrary /test/lib /compiler/whitebox / ..
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @build LZcntTestL
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

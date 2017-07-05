@@ -31,7 +31,7 @@ import compiler.whitebox.SimpleTestCase;
 /**
  * @test LevelTransitionTest
  * @library /testlibrary /test/lib /compiler/whitebox /
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @ignore 8067651
  * @build TransitionsTestExecutor LevelTransitionTest

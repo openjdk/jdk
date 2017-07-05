@@ -26,7 +26,7 @@
  * @key gc
  * @summary Verify that actual survivor ratio is equal to specified SurvivorRatio value
  * @library /testlibrary /test/lib
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @build TestSurvivorRatioFlag
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

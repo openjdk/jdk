@@ -34,6 +34,7 @@ export LEGACY_BUILD_DIR=@OPENJDK_TARGET_OS@-@OPENJDK_TARGET_CPU_LEGACY@
 export OPENJDK_TARGET_OS="@OPENJDK_TARGET_OS@"
 export OPENJDK_TARGET_CPU="@OPENJDK_TARGET_CPU@"
 export OPENJDK_TARGET_CPU_LIBDIR="@OPENJDK_TARGET_CPU_LIBDIR@"
+export DEBUG_LEVEL="@DEBUG_LEVEL@"
 
 export AWK="@AWK@"
 export BASH="@BASH@"
@@ -47,8 +48,6 @@ export EXPR="@EXPR@"
 export FILE="@FILE@"
 export FIND="@FIND@"
 export GREP="@GREP@"
-export JAVAP="@FIXPATH@ @BOOT_JDK@/bin/javap @JAVA_TOOL_FLAGS_SMALL@"
-export JIMAGE="@FIXPATH@ @BUILD_OUTPUT@/jdk/bin/jimage"
 export LDD="@LDD@"
 export LN="@LN@"
 export MKDIR="@MKDIR@"
@@ -71,6 +70,17 @@ export UNARCHIVE="@UNZIP@ -q"
 
 export SRC_ROOT="@TOPDIR@"
 export OUTPUT_ROOT="@OUTPUT_ROOT@"
+
+if [ "@COMPILE_TYPE@" != "cross" ]; then
+    export JAVAP="@FIXPATH@ $OUTPUT_ROOT/jdk/bin/javap @JAVA_TOOL_FLAGS_SMALL@"
+    export JIMAGE="@FIXPATH@ $OUTPUT_ROOT/jdk/bin/jimage"
+elif [ "@CREATE_BUILDJDK@" = "true" ]; then
+    export JAVAP="@FIXPATH@ $OUTPUT_ROOT/buildjdk/jdk/bin/javap @JAVA_TOOL_FLAGS_SMALL@"
+    export JIMAGE="@FIXPATH@ $OUTPUT_ROOT/buildjdk/jdk/bin/jimage"
+else
+    export JAVAP="@FIXPATH@ @BUILD_JDK@/bin/javap @JAVA_TOOL_FLAGS_SMALL@"
+    export JIMAGE="@FIXPATH@ @BUILD_JDK@/bin/jimage"
+fi
 
 if [ "$OPENJDK_TARGET_OS" = "windows" ]; then
   export PATH="@VS_PATH@"

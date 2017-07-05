@@ -28,7 +28,7 @@
  * @summary Verify that UseRTMDeopt affects uncommon trap installation in
  *          copmpiled methods with synchronized block.
  * @library /testlibrary /test/lib /compiler/testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @build TestUseRTMDeopt
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

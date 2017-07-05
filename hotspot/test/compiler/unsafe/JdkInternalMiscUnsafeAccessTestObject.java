@@ -127,12 +127,6 @@ public class JdkInternalMiscUnsafeAccessTestObject {
             assertEquals(x, "bar", "putVolatile Object value");
         }
 
-        // Lazy
-        {
-            UNSAFE.putOrderedObject(base, offset, "foo");
-            Object x = UNSAFE.getObjectVolatile(base, offset);
-            assertEquals(x, "foo", "putRelease Object value");
-        }
 
         // Lazy
         {
@@ -241,3 +235,5 @@ public class JdkInternalMiscUnsafeAccessTestObject {
     }
 
 }
+
+

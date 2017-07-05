@@ -24,7 +24,7 @@
 /* @test LimitSharedSizes
  * @summary Test handling of limits on shared space size
  * @library /testlibrary /runtime/CommandLine/OptionsValidation/common
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  *          jdk.attach/sun.tools.attach
  * @run main LimitSharedSizes

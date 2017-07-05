@@ -26,7 +26,7 @@
  * @summary Stress test for malloc tracking
  * @key nmt jcmd stress
  * @library /testlibrary /test/lib
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @build MallocStressTest
  * @ignore - This test is disabled since it will stress NMT and timeout during normal testing

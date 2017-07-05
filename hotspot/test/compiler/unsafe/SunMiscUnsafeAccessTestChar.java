@@ -25,7 +25,7 @@
  * @test
  * @bug 8143628
  * @summary Test unsafe access for char
- * @modules java.base/sun.misc
+ * @modules jdk.unsupported/sun.misc
  * @run testng/othervm -Diters=100   -Xint                   SunMiscUnsafeAccessTestChar
  * @run testng/othervm -Diters=20000 -XX:TieredStopAtLevel=1 SunMiscUnsafeAccessTestChar
  * @run testng/othervm -Diters=20000 -XX:-TieredCompilation  SunMiscUnsafeAccessTestChar
@@ -159,6 +159,8 @@ public class SunMiscUnsafeAccessTestChar {
 
 
 
+
+
     }
 
     static void testAccess(long address) {
@@ -170,3 +172,5 @@ public class SunMiscUnsafeAccessTestChar {
         }
     }
 }
+
+

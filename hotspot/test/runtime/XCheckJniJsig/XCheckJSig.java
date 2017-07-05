@@ -26,7 +26,7 @@
  * @bug 7051189 8023393
  * @summary Need to suppress info message if -Xcheck:jni is used with libjsig.so
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @run main XCheckJSig
  */

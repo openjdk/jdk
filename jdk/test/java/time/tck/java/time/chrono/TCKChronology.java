@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,11 +68,16 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.time.ZoneId;
 import java.time.Clock;
 import java.time.DateTimeException;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.chrono.ChronoLocalDate;
 import java.time.chrono.Chronology;
+import java.time.chrono.Era;
 import java.time.chrono.HijrahChronology;
 import java.time.chrono.HijrahEra;
 import java.time.chrono.IsoChronology;
@@ -97,6 +102,14 @@ import org.testng.annotations.Test;
 @Test
 public class TCKChronology {
 
+    private static final ZoneOffset OFFSET_P0100 = ZoneOffset.ofHours(1);
+    private static final ZoneOffset OFFSET_M0100 = ZoneOffset.ofHours(-1);
+
+    private static final int YDIFF_MEIJI = 1867;
+    private static final int YDIFF_SHOWA = 1925;
+    private static final int YDIFF_HEISEI = 1988;
+    private static final int YDIFF_MINGUO = 1911;
+    private static final int YDIFF_THAIBUDDHIST = 543;
     //-----------------------------------------------------------------------
     // regular data factory for ID and calendarType of available calendars
     //-----------------------------------------------------------------------
@@ -323,7 +336,7 @@ public class TCKChronology {
         }
     }
 
-    @Test(expectedExceptions=DateTimeException.class)
+    @Test(expectedExceptions = DateTimeException.class)
     public void test_lookupLocale() {
         Locale.Builder builder = new Locale.Builder().setLanguage("en").setRegion("CA");
         builder.setUnicodeLocaleKeyword("ca", "xxx");
@@ -335,6 +348,80 @@ public class TCKChronology {
     @Test(expectedExceptions = DateTimeException.class)
     public void test_noChrono() {
         Chronology chrono = Chronology.of("FooFoo");
+    }
+
+    @DataProvider(name = "epochSecond_dataProvider")
+    Object[][]  data_epochSecond() {
+        return new Object[][] {
+                {JapaneseChronology.INSTANCE, 1873, 9, 7, 1, 2, 2, OFFSET_P0100},
+                {JapaneseChronology.INSTANCE, 1928, 2, 28, 1, 2, 2, OFFSET_M0100},
+                {JapaneseChronology.INSTANCE, 1989, 1, 8, 1, 2, 2, OFFSET_P0100},
+                {HijrahChronology.INSTANCE, 1434, 9, 7, 1, 2, 2, OFFSET_P0100},
+                {MinguoChronology.INSTANCE, 1873, 9, 7, 1, 2, 2, OFFSET_P0100},
+                {MinguoChronology.INSTANCE, 1928, 2, 28, 1, 2, 2, OFFSET_M0100},
+                {MinguoChronology.INSTANCE, 1989, 1, 8, 1, 2, 2, OFFSET_P0100},
+                {ThaiBuddhistChronology.INSTANCE, 1873, 9, 7, 1, 2, 2, OFFSET_P0100},
+                {ThaiBuddhistChronology.INSTANCE, 1928, 2, 28, 1, 2, 2, OFFSET_M0100},
+                {ThaiBuddhistChronology.INSTANCE, 1989, 1, 8, 1, 2, 2, OFFSET_P0100},
+                {IsoChronology.INSTANCE, 1873, 9, 7, 1, 2, 2, OFFSET_P0100},
+                {IsoChronology.INSTANCE, 1928, 2, 28, 1, 2, 2, OFFSET_M0100},
+                {IsoChronology.INSTANCE, 1989, 1, 8, 1, 2, 2, OFFSET_P0100},
+
+        };
+    }
+
+    @Test(dataProvider = "epochSecond_dataProvider")
+    public void test_epochSecond(Chronology chrono, int y, int m, int d, int h, int min, int s, ZoneOffset offset) {
+        ChronoLocalDate chronoLd = chrono.date(y, m, d);
+        assertEquals(chrono.epochSecond(y, m, d, h, min, s, offset),
+                     OffsetDateTime.of(LocalDate.from(chronoLd), LocalTime.of(h, min, s), offset)
+                                   .toEpochSecond());
+    }
+
+    @DataProvider(name = "era_epochSecond_dataProvider")
+    Object[][]  data_era_epochSecond() {
+        return new Object[][] {
+                {JapaneseChronology.INSTANCE, JapaneseEra.MEIJI, 1873 - YDIFF_MEIJI, 9, 7, 1, 2, 2, OFFSET_P0100},
+                {JapaneseChronology.INSTANCE, JapaneseEra.SHOWA, 1928 - YDIFF_SHOWA, 2, 28, 1, 2, 2, OFFSET_M0100},
+                {JapaneseChronology.INSTANCE, JapaneseEra.HEISEI, 1989 - YDIFF_HEISEI, 1, 8, 1, 2, 2, OFFSET_P0100},
+                {HijrahChronology.INSTANCE, HijrahEra.AH, 1434, 9, 7, 1, 2, 2, OFFSET_P0100},
+                {MinguoChronology.INSTANCE, MinguoEra.BEFORE_ROC, 1873 - YDIFF_MINGUO, 9, 7, 1, 2, 2, OFFSET_P0100},
+                {MinguoChronology.INSTANCE, MinguoEra.ROC, 1928 - YDIFF_MINGUO, 2, 28, 1, 2, 2, OFFSET_M0100},
+                {MinguoChronology.INSTANCE, MinguoEra.ROC, 1989 - YDIFF_MINGUO, 1, 8, 1, 2, 2, OFFSET_P0100},
+                {ThaiBuddhistChronology.INSTANCE, ThaiBuddhistEra.BE, 1873 + YDIFF_THAIBUDDHIST, 9, 7, 1, 2, 2, OFFSET_P0100},
+                {ThaiBuddhistChronology.INSTANCE, ThaiBuddhistEra.BE, 1928 + YDIFF_THAIBUDDHIST, 2, 28, 1, 2, 2, OFFSET_M0100},
+                {ThaiBuddhistChronology.INSTANCE, ThaiBuddhistEra.BE, 1989 + YDIFF_THAIBUDDHIST, 1, 8, 1, 2, 2, OFFSET_P0100},
+                {IsoChronology.INSTANCE, IsoEra.CE, 1873, 9, 7, 1, 2, 2, OFFSET_P0100},
+                {IsoChronology.INSTANCE, IsoEra.CE, 1928, 2, 28, 1, 2, 2, OFFSET_M0100},
+                {IsoChronology.INSTANCE, IsoEra.CE, 1989, 1, 8, 1, 2, 2, OFFSET_P0100},
+
+        };
+    }
+
+    @Test(dataProvider = "era_epochSecond_dataProvider")
+    public void test_epochSecond(Chronology chrono, Era era, int y, int m, int d, int h, int min, int s, ZoneOffset offset) {
+        ChronoLocalDate chronoLd = chrono.date(era, y, m, d);
+        assertEquals(chrono.epochSecond(era, y, m, d, h, min, s, offset),
+                     OffsetDateTime.of(LocalDate.from(chronoLd), LocalTime.of(h, min, s), offset)
+                                   .toEpochSecond());
+    }
+
+    @DataProvider(name = "bad_epochSecond_dataProvider")
+    Object[][]  bad_data_epochSecond() {
+        return new Object[][] {
+                {JapaneseChronology.INSTANCE, 1873, 13, 7, 1, 2, 2, OFFSET_P0100},
+                {HijrahChronology.INSTANCE, 1434, 9, 32, 1, 2, 2, OFFSET_P0100},
+                {MinguoChronology.INSTANCE, 1873, 9, 7, 31, 2, 2, OFFSET_P0100},
+                {ThaiBuddhistChronology.INSTANCE, 1928, 2, 28, -1, 2, 2, OFFSET_M0100},
+                {IsoChronology.INSTANCE, 1928, 2, 28, 1, 60, 2, OFFSET_M0100},
+                {IsoChronology.INSTANCE, 1989, 1, 8, 1, 2, -2, OFFSET_P0100},
+
+        };
+    }
+
+    @Test(dataProvider = "bad_epochSecond_dataProvider", expectedExceptions = DateTimeException.class)
+    public void test_bad_epochSecond(Chronology chrono, int y, int m, int d, int h, int min, int s, ZoneOffset offset) {
+        chrono.epochSecond(y, m, d, h, min, s, offset);
     }
 
 }

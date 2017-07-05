@@ -103,9 +103,10 @@ public class LimitModsTest {
     public void testWithAddMods() throws Exception {
         int exitValue;
 
-        // java -limitmods java.base -addmods java.logging -listmods
+        // java -limitmods java.base -addmods java.logging,jdk.unsupported -listmods
         exitValue = executeTestJava("-limitmods", "java.base",
-                                    "-addmods", "java.logging",
+                                    "-addmods",
+                                    "java.logging,jdk.unsupported",  // TODO: add bug No.
                                     "-listmods")
             .outputTo(System.out)
             .errorTo(System.out)

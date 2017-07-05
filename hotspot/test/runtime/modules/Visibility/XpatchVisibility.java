@@ -27,7 +27,7 @@
  *          is considered part of the boot loader's visibility boundary
  * @requires !(os.family == "windows")
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @run main/othervm XpatchVisibility
  */

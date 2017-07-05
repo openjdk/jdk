@@ -30,7 +30,7 @@
  *          method's RTM state. And if we don't use RTMDeopt, then
  *          RTM state remain the same after such deoptimization.
  * @library /testlibrary /test/lib /compiler/testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @build TestRTMAfterNonRTMDeopt
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

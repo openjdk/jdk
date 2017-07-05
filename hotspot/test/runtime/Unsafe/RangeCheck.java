@@ -26,7 +26,7 @@
  * @bug 8001071
  * @summary Add simple range check into VM implemenation of Unsafe access methods
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  */
 

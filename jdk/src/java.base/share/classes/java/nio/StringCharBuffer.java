@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@ class StringCharBuffer                                  // package-private
         if ((start < 0) || (start > n) || (end < start) || (end > n))
             throw new IndexOutOfBoundsException();
         str = s;
+        this.isReadOnly = true;
     }
 
     public CharBuffer slice() {
@@ -58,6 +59,7 @@ class StringCharBuffer                                  // package-private
                              int offset) {
         super(mark, pos, limit, cap, null, offset);
         str = s;
+        this.isReadOnly = true;
     }
 
     public CharBuffer duplicate() {
