@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,37 +19,20 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-package jdk.tools.jaotc;
-
-import org.graalvm.compiler.code.CompilationResult;
-import org.graalvm.compiler.core.target.Backend;
-import org.graalvm.compiler.hotspot.HotSpotCompiledCodeBuilder;
-import org.graalvm.compiler.hotspot.stubs.Stub;
-
-import jdk.vm.ci.hotspot.HotSpotCompiledCode;
-
-public class AOTStub implements JavaMethodInfo {
-
-    private final Stub stub;
-    private final Backend backend;
-
-    public AOTStub(Stub stub, Backend backend) {
-        this.stub = stub;
-        this.backend = backend;
+public class compiler/c1/TestUnresolvedField version 52:0 {
+    public static Method testGetField:"()V" stack 1 locals 1 {
+        aconst_null;
+        getfield Field T.f:I; // T does not exist
+        return;
     }
 
-    public String getSymbolName() {
-        return stub.toString();
+    public static Method testPutField:"()V" stack 2 locals 1 {
+        aconst_null;
+        iconst_0;
+        putfield Field T.f:I; // T does not exist
+        return;
     }
-
-    public String getNameAndSignature() {
-        return stub.toString();
-    }
-
-    public HotSpotCompiledCode compiledCode(CompilationResult result) {
-        return HotSpotCompiledCodeBuilder.createCompiledCode(null, null, result);
-    }
-
 }
