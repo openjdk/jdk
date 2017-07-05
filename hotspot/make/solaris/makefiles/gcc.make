@@ -23,9 +23,9 @@
 #
 
 #------------------------------------------------------------------------
-# CC, CPP & AS
+# CC, CXX & AS
 
-CPP = g++
+CXX = g++
 CC  = gcc
 AS  = $(CC) -c
 
@@ -36,12 +36,12 @@ Compiler = gcc
 CC_VER_MAJOR := $(shell $(CC) -dumpversion | sed 's/egcs-//' | cut -d'.' -f1)
 CC_VER_MINOR := $(shell $(CC) -dumpversion | sed 's/egcs-//' | cut -d'.' -f2)
 
-# Check for the versions of C++ and C compilers ($CPP and $CC) used. 
+# Check for the versions of C++ and C compilers ($CXX and $CC) used. 
 
 # Get the last thing on the line that looks like x.x+ (x is a digit).
 COMPILER_REV := \
-$(shell $(CPP) -dumpversion | sed 's/egcs-//' | cut -d'.' -f1)
-C_COMPILER_REV := \
+$(shell $(CXX) -dumpversion | sed 's/egcs-//' | cut -d'.' -f1)
+CC_COMPILER_REV := \
 $(shell $(CC) -dumpversion | sed 's/egcs-//' | cut -d'.' -f2)
 
 

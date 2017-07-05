@@ -23,19 +23,19 @@
 #
 
 #------------------------------------------------------------------------
-# CC, CPP & AS
+# CC, CXX & AS
 
 # When cross-compiling the ALT_COMPILER_PATH points
 # to the cross-compilation toolset
 ifdef CROSS_COMPILE_ARCH
-CPP = $(ALT_COMPILER_PATH)/g++
+CXX = $(ALT_COMPILER_PATH)/g++
 CC  = $(ALT_COMPILER_PATH)/gcc
-HOSTCPP = g++
+HOSTCXX = g++
 HOSTCC  = gcc
 else
-CPP = g++
+CXX = g++
 CC  = gcc
-HOSTCPP = $(CPP)
+HOSTCXX = $(CXX)
 HOSTCC  = $(CC)
 endif
 

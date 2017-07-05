@@ -192,8 +192,11 @@ void xmlStream::pop_tag(const char* tag) {
     _element_close_stack_ptr = cur_tag + strlen(cur_tag) + 1;
     _element_depth -= 1;
   }
-  if (bad_tag && !VMThread::should_terminate() && !is_error_reported())
+  if (bad_tag && !VMThread::should_terminate() && !VM_Exit::vm_exited() &&
+      !is_error_reported())
+  {
     assert(false, "bad tag in log");
+  }
 }
 #endif
 
