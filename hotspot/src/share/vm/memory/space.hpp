@@ -655,15 +655,9 @@ protected:
       assert(block_is_obj(q),                                                   \
              "should be at block boundaries, and should be looking at objs");   \
                                                                                 \
-      VALIDATE_MARK_SWEEP_ONLY(MarkSweep::track_interior_pointers(oop(q)));     \
-                                                                                \
       /* point all the oops to the new location */                              \
       size_t size = oop(q)->adjust_pointers();                                  \
       size = adjust_obj_size(size);                                             \
-                                                                                \
-      VALIDATE_MARK_SWEEP_ONLY(MarkSweep::check_interior_pointers());           \
-                                                                                \
-      VALIDATE_MARK_SWEEP_ONLY(MarkSweep::validate_live_oop(oop(q), size));     \
                                                                                 \
       q += size;                                                                \
     }                                                                           \
@@ -685,12 +679,9 @@ protected:
     Prefetch::write(q, interval);                                               \
     if (oop(q)->is_gc_marked()) {                                               \
       /* q is alive */                                                          \
-      VALIDATE_MARK_SWEEP_ONLY(MarkSweep::track_interior_pointers(oop(q)));     \
       /* point all the oops to the new location */                              \
       size_t size = oop(q)->adjust_pointers();                                  \
       size = adjust_obj_size(size);                                             \
-      VALIDATE_MARK_SWEEP_ONLY(MarkSweep::check_interior_pointers());           \
-      VALIDATE_MARK_SWEEP_ONLY(MarkSweep::validate_live_oop(oop(q), size));     \
       debug_only(prev_q = q);                                                   \
       q += size;                                                                \
     } else {                                                                    \
@@ -725,7 +716,6 @@ protected:
       size_t size = obj_size(q);                                                \
       assert(!oop(q)->is_gc_marked(),                                           \
              "should be unmarked (special dense prefix handling)");             \
-      VALIDATE_MARK_SWEEP_ONLY(MarkSweep::live_oop_moved_to(q, size, q));       \
       debug_only(prev_q = q);                                                   \
       q += size;                                                                \
     }                                                                           \
@@ -759,8 +749,6 @@ protected:
       Prefetch::write(compaction_top, copy_interval);                           \
                                                                                 \
       /* copy object and reinit its mark */                                     \
-      VALIDATE_MARK_SWEEP_ONLY(MarkSweep::live_oop_moved_to(q, size,            \
-                                                            compaction_top));   \
       assert(q != compaction_top, "everything in this pass should be moving");  \
       Copy::aligned_conjoint_words(q, compaction_top, size);                    \
       oop(compaction_top)->init_mark();                                         \

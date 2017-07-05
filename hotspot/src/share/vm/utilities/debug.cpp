@@ -612,21 +612,6 @@ extern "C" void events() {
   Events::print();
 }
 
-// Given a heap address that was valid before the most recent GC, if
-// the oop that used to contain it is still live, prints the new
-// location of the oop and the address. Useful for tracking down
-// certain kinds of naked oop and oop map bugs.
-extern "C" void pnl(intptr_t old_heap_addr) {
-  // Print New Location of old heap address
-  Command c("pnl");
-#ifndef VALIDATE_MARK_SWEEP
-  tty->print_cr("Requires build with VALIDATE_MARK_SWEEP defined (debug build) and RecordMarkSweepCompaction enabled");
-#else
-  MarkSweep::print_new_location_of_heap_address((HeapWord*) old_heap_addr);
-#endif
-}
-
-
 extern "C" Method* findm(intptr_t pc) {
   Command c("findm");
   nmethod* nm = CodeCache::find_nmethod((address)pc);

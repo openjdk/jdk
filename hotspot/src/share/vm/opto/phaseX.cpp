@@ -75,6 +75,13 @@ NodeHash::NodeHash(NodeHash *nh) {
   // nh->_sentinel must be in the current node space
 }
 
+void NodeHash::replace_with(NodeHash *nh) {
+  debug_only(_table = (Node**)badAddress);   // interact correctly w/ operator=
+  // just copy in all the fields
+  *this = *nh;
+  // nh->_sentinel must be in the current node space
+}
+
 //------------------------------hash_find--------------------------------------
 // Find in hash table
 Node *NodeHash::hash_find( const Node *n ) {
