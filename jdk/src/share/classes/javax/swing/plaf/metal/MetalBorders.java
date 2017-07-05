@@ -43,7 +43,7 @@ import sun.swing.StringUIClientPropertyKey;
 
 
 /**
- * Factory object that can vend Borders appropriate for the metal L & F.
+ * Factory object that can vend Borders appropriate for the metal L &amp; F.
  * @author Steve Wilson
  */
 

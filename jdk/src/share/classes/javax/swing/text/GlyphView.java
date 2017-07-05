@@ -121,8 +121,8 @@ public class GlyphView extends View implements TabableView, Cloneable {
      * the GlyphPainter to determine what characters
      * it should render glyphs for.
      *
-     * @param p0  the starting document offset >= 0
-     * @param p1  the ending document offset >= p0
+     * @param p0  the starting document offset &gt;= 0
+     * @param p1  the ending document offset &gt;= p0
      * @return    the <code>Segment</code> containing the text
      */
      public Segment getText(int p0, int p1) {
@@ -282,9 +282,9 @@ public class GlyphView extends View implements TabableView, Cloneable {
      * tab expansion implementation.
      *
      * @param x the position the view would be located
-     *  at for the purpose of tab expansion >= 0.
+     *  at for the purpose of tab expansion &gt;= 0.
      * @param e how to expand the tabs when encountered.
-     * @return the desired span >= 0
+     * @return the desired span &gt;= 0
      * @see TabableView#getTabbedSpan
      */
     public float getTabbedSpan(float x, TabExpander e) {
@@ -321,9 +321,9 @@ public class GlyphView extends View implements TabableView, Cloneable {
      * arrange for its own text buffer to make the
      * measurements.
      *
-     * @param p0 the starting document offset >= 0
-     * @param p1 the ending document offset >= p0
-     * @return the span >= 0
+     * @param p0 the starting document offset &gt;= 0
+     * @param p1 the ending document offset &gt;= p0
+     * @return the span &gt;= 0
      */
     public float getPartialSpan(int p0, int p1) {
         checkPainter();
@@ -572,7 +572,7 @@ public class GlyphView extends View implements TabableView, Cloneable {
      * axis.
      *
      * @param axis may be either View.X_AXIS or View.Y_AXIS
-     * @return   the span the view would like to be rendered into >= 0.
+     * @return   the span the view would like to be rendered into &gt;= 0.
      *           Typically the view is told to render into the span
      *           that is returned, although there is no guarantee.
      *           The parent may choose to resize or break the view.
@@ -639,7 +639,7 @@ public class GlyphView extends View implements TabableView, Cloneable {
      * Provides a mapping from the document model coordinate space
      * to the coordinate space of the view mapped to it.
      *
-     * @param pos the position to convert >= 0
+     * @param pos the position to convert &gt;= 0
      * @param a   the allocated region to render into
      * @param b   either <code>Position.Bias.Forward</code>
      *                or <code>Position.Bias.Backward</code>
@@ -657,14 +657,14 @@ public class GlyphView extends View implements TabableView, Cloneable {
      * Provides a mapping from the view coordinate space to the logical
      * coordinate space of the model.
      *
-     * @param x the X coordinate >= 0
-     * @param y the Y coordinate >= 0
+     * @param x the X coordinate &gt;= 0
+     * @param y the Y coordinate &gt;= 0
      * @param a the allocated region to render into
      * @param biasReturn either <code>Position.Bias.Forward</code>
      *  or <code>Position.Bias.Backward</code> is returned as the
      *  zero-th element of this array
      * @return the location within the model that best represents the
-     *  given point of view >= 0
+     *  given point of view &gt;= 0
      * @see View#viewToModel
      */
     public int viewToModel(float x, float y, Shape a, Position.Bias[] biasReturn) {
@@ -702,10 +702,10 @@ public class GlyphView extends View implements TabableView, Cloneable {
      *
      * @param axis may be either View.X_AXIS or View.Y_AXIS
      * @param pos the potential location of the start of the
-     *   broken view >= 0.  This may be useful for calculating tab
+     *   broken view &gt;= 0.  This may be useful for calculating tab
      *   positions.
      * @param len specifies the relative length from <em>pos</em>
-     *   where a potential break is desired >= 0.
+     *   where a potential break is desired &gt;= 0.
      * @return the weight, which should be a value between
      *   View.ForcedBreakWeight and View.BadBreakWeight.
      * @see LabelView
@@ -736,12 +736,12 @@ public class GlyphView extends View implements TabableView, Cloneable {
      *
      * @param axis may be either View.X_AXIS or View.Y_AXIS
      * @param p0 the location in the model where the
-     *  fragment should start it's representation >= 0.
+     *  fragment should start it's representation &gt;= 0.
      * @param pos the position along the axis that the
-     *  broken view would occupy >= 0.  This may be useful for
+     *  broken view would occupy &gt;= 0.  This may be useful for
      *  things like tab calculations.
      * @param len specifies the distance along the axis
-     *  where a potential break is desired >= 0.
+     *  where a potential break is desired &gt;= 0.
      * @return the fragment of the view that represents the
      *  given span, if the view can be broken.  If the view
      *  doesn't support breaking behavior, the view itself is
@@ -852,10 +852,10 @@ public class GlyphView extends View implements TabableView, Cloneable {
      * to return a nested class that shares state in this view
      * representing only a portion of the view.
      *
-     * @param p0 the starting offset >= 0.  This should be a value
+     * @param p0 the starting offset &gt;= 0.  This should be a value
      *   greater or equal to the element starting offset and
      *   less than the element ending offset.
-     * @param p1 the ending offset > p0.  This should be a value
+     * @param p1 the ending offset &gt; p0.  This should be a value
      *   less than or equal to the elements end offset and
      *   greater than the elements starting offset.
      * @return the view fragment, or itself if the view doesn't
@@ -880,7 +880,7 @@ public class GlyphView extends View implements TabableView, Cloneable {
      * they just might not allow access to some of the locations in the
      * model.
      *
-     * @param pos the position to convert >= 0
+     * @param pos the position to convert &gt;= 0
      * @param a the allocated region to render into
      * @param direction the direction from the current position that can
      *  be thought of as the arrow keys typically found on a keyboard.
@@ -1196,12 +1196,12 @@ public class GlyphView extends View implements TabableView, Cloneable {
          *
          * @param v the view to find the model location to break at.
          * @param p0 the location in the model where the
-         *  fragment should start it's representation >= 0.
+         *  fragment should start it's representation &gt;= 0.
          * @param x  the graphic location along the axis that the
-         *  broken view would occupy >= 0.  This may be useful for
+         *  broken view would occupy &gt;= 0.  This may be useful for
          *  things like tab calculations.
          * @param len specifies the distance into the view
-         *  where a potential break is desired >= 0.
+         *  where a potential break is desired &gt;= 0.
          * @return the maximum model location possible for a break.
          * @see View#breakView
          */
@@ -1214,8 +1214,8 @@ public class GlyphView extends View implements TabableView, Cloneable {
          * the painter doesn't hold any significant state, it can
          * return itself.  The default behavior is to return itself.
          * @param v  the <code>GlyphView</code> to provide a painter for
-         * @param p0 the starting document offset >= 0
-         * @param p1 the ending document offset >= p0
+         * @param p0 the starting document offset &gt;= 0
+         * @param p1 the ending document offset &gt;= p0
          */
         public GlyphPainter getPainter(GlyphView v, int p0, int p1) {
             return this;
@@ -1229,7 +1229,7 @@ public class GlyphView extends View implements TabableView, Cloneable {
          * model.
          *
          * @param v the view to use
-         * @param pos the position to convert >= 0
+         * @param pos the position to convert &gt;= 0
          * @param b   either <code>Position.Bias.Forward</code>
          *                or <code>Position.Bias.Backward</code>
          * @param a the allocated region to render into

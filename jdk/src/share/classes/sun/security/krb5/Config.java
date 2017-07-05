@@ -225,19 +225,19 @@ public class Config {
      * and has no sub-key at all (given "forwardable" is defined, otherwise,
      * this method has no knowledge if it's a value name or a section name),
      */
-    @SuppressWarnings("unchecked")
     public String get(String... keys) {
-        Vector<String> v = get0(keys);
+        Vector<String> v = getString0(keys);
         if (v == null) return null;
         return v.lastElement();
     }
 
     /**
      * Gets all values for the specified keys.
-     * @see #get(java.lang.String[])
+     * @throws IllegalArgumentException if any of the keys is illegal
+     *         (See {@link #get})
      */
     public String getAll(String... keys) {
-        Vector<String> v = get0(keys);
+        Vector<String> v = getString0(keys);
         if (v == null) return null;
         StringBuilder sb = new StringBuilder();
         boolean first = true;
@@ -252,17 +252,37 @@ public class Config {
         return sb.toString();
     }
 
-    // Internal method. Returns the vector of strings for keys.
+    /**
+     * Returns true if keys exists, can be either final string(s) or sub-stanza
+     * @throws IllegalArgumentException if any of the keys is illegal
+     *         (See {@link #get})
+     */
+    public boolean exists(String... keys) {
+        return get0(keys) != null;
+    }
+
+    // Returns final string value(s) for given keys.
+    @SuppressWarnings("unchecked")
+    private Vector<String> getString0(String... keys) {
+        try {
+            return (Vector<String>)get0(keys);
+        } catch (ClassCastException cce) {
+            throw new IllegalArgumentException(cce);
+        }
+    }
+
+    // Internal method. Returns the value for keys, which can be a sub-stanza
+    // or final string value(s).
     // The only method (except for toString) that reads stanzaTable directly.
     @SuppressWarnings("unchecked")
-    private Vector<String> get0(String... keys) {
+    private Object get0(String... keys) {
         Object current = stanzaTable;
         try {
             for (String key: keys) {
                 current = ((Hashtable<String,Object>)current).get(key);
                 if (current == null) return null;
             }
-            return (Vector<String>)current;
+            return current;
         } catch (ClassCastException cce) {
             throw new IllegalArgumentException(cce);
         }

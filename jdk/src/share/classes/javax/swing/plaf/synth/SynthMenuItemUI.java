@@ -34,7 +34,7 @@ import sun.swing.MenuItemLayoutHelper;
 
 
 /**
- * Provides the Synth L&F UI delegate for
+ * Provides the Synth L&amp;F UI delegate for
  * {@link javax.swing.JMenuItem}.
  *
  * @author Georges Saab
@@ -59,7 +59,7 @@ public class SynthMenuItemUI extends BasicMenuItemUI implements
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     public void uninstallUI(JComponent c) {
@@ -73,7 +73,7 @@ public class SynthMenuItemUI extends BasicMenuItemUI implements
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     protected void installDefaults() {
@@ -81,7 +81,7 @@ public class SynthMenuItemUI extends BasicMenuItemUI implements
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     protected void installListeners() {
@@ -134,7 +134,7 @@ public class SynthMenuItemUI extends BasicMenuItemUI implements
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     protected void uninstallDefaults() {
@@ -153,7 +153,7 @@ public class SynthMenuItemUI extends BasicMenuItemUI implements
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     protected void uninstallListeners() {
@@ -162,7 +162,7 @@ public class SynthMenuItemUI extends BasicMenuItemUI implements
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     public SynthContext getContext(JComponent c) {
@@ -206,7 +206,7 @@ public class SynthMenuItemUI extends BasicMenuItemUI implements
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     protected Dimension getPreferredMenuItemSize(JComponent c,
@@ -290,7 +290,7 @@ public class SynthMenuItemUI extends BasicMenuItemUI implements
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     public void paintBorder(SynthContext context, Graphics g, int x,
@@ -299,7 +299,7 @@ public class SynthMenuItemUI extends BasicMenuItemUI implements
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     public void propertyChange(PropertyChangeEvent e) {

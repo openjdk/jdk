@@ -130,7 +130,7 @@ public class ZoneView extends BoxView {
      *
      * @param mzl the desired maximum number of zones
      *  to be actively loaded, must be greater than 0
-     * @exception IllegalArgumentException if <code>mzl</code> is < 1
+     * @exception IllegalArgumentException if <code>mzl</code> is &lt; 1
      */
     public void setMaxZonesLoaded(int mzl) {
         if (mzl < 1) {
@@ -198,11 +198,11 @@ public class ZoneView extends BoxView {
      * implementation for a zone by changing this method.
      *
      * @param p0 the start of the desired zone.  This should
-     *  be >= getStartOffset() and < getEndOffset().  This
-     *  value should also be < p1.
+     *  be &gt;= getStartOffset() and &lt; getEndOffset().  This
+     *  value should also be &lt; p1.
      * @param p1 the end of the desired zone.  This should
-     *  be > getStartOffset() and <= getEndOffset().  This
-     *  value should also be > p0.
+     *  be &gt; getStartOffset() and &lt;= getEndOffset().  This
+     *  value should also be &gt; p0.
      */
     protected View createZone(int p0, int p1) {
         Document doc = getDocument();
@@ -242,7 +242,7 @@ public class ZoneView extends BoxView {
      * Returns the child view index representing the given position in
      * the model.
      *
-     * @param pos the position >= 0
+     * @param pos the position &gt;= 0
      * @return  index of the view representing the given position, or
      *   -1 if no view represents that position
      */

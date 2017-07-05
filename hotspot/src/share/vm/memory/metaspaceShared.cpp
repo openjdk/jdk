@@ -103,9 +103,10 @@ static void calculate_fingerprints() {
     if (k->oop_is_instance()) {
       InstanceKlass* ik = InstanceKlass::cast(k);
       for (int i = 0; i < ik->methods()->length(); i++) {
-        ResourceMark rm;
         Method* m = ik->methods()->at(i);
-        (new Fingerprinter(m))->fingerprint();
+        Fingerprinter fp(m);
+        // The side effect of this call sets method's fingerprint field.
+        fp.fingerprint();
       }
     }
   }

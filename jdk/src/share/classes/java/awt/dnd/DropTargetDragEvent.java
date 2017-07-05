@@ -49,9 +49,9 @@ import java.util.List;
  * source and the drop action selected by the user. The user can select a drop
  * action by pressing modifier keys during the drag operation:
  * <pre>
- *   Ctrl + Shift -> ACTION_LINK
- *   Ctrl         -> ACTION_COPY
- *   Shift        -> ACTION_MOVE
+ *   Ctrl + Shift -&gt; ACTION_LINK
+ *   Ctrl         -&gt; ACTION_COPY
+ *   Shift        -&gt; ACTION_MOVE
  * </pre>
  * If the user selects a drop action, the <i>user drop action</i> is one of
  * <code>DnDConstants</code> that represents the selected drop action if this
@@ -88,11 +88,11 @@ public class DropTargetDragEvent extends DropTargetEvent {
      * @param srcActions The source drop actions
      *
      * @throws NullPointerException if cursorLocn is null
-     * @throws <code>IllegalArgumentException</code> if dropAction is not one of
+     * @throws IllegalArgumentException if dropAction is not one of
      *         <code>DnDConstants</code>.
-     * @throws <code>IllegalArgumentException</code> if srcActions is not
+     * @throws IllegalArgumentException if srcActions is not
      *         a bitwise mask of <code>DnDConstants</code>.
-     * @throws <code>IllegalArgumentException</code> if dtc is <code>null</code>.
+     * @throws IllegalArgumentException if dtc is <code>null</code>.
      */
 
     public DropTargetDragEvent(DropTargetContext dtc, Point cursorLocn, int dropAction, int srcActions)  {

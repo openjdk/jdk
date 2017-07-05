@@ -57,7 +57,7 @@ public class NavigationFilter {
      * on the <code>FilterBypass</code>
      *
      * @param fb FilterBypass that can be used to mutate caret position
-     * @param dot the position >= 0
+     * @param dot the position &gt;= 0
      * @param bias Bias to place the dot at
      */
     public void setDot(FilterBypass fb, int dot, Position.Bias bias) {
@@ -72,7 +72,7 @@ public class NavigationFilter {
      * methods on the <code>FilterBypass</code>.
      *
      * @param fb FilterBypass that can be used to mutate caret position
-     * @param dot the position >= 0
+     * @param dot the position &gt;= 0
      * @param bias Bias for new location
      */
     public void moveDot(FilterBypass fb, int dot, Position.Bias bias) {
@@ -131,7 +131,7 @@ public class NavigationFilter {
         /**
          * Sets the caret location, bypassing the NavigationFilter.
          *
-         * @param dot the position >= 0
+         * @param dot the position &gt;= 0
          * @param bias Bias to place the dot at
          */
         public abstract void setDot(int dot, Position.Bias bias);
@@ -139,7 +139,7 @@ public class NavigationFilter {
         /**
          * Moves the caret location, bypassing the NavigationFilter.
          *
-         * @param dot the position >= 0
+         * @param dot the position &gt;= 0
          * @param bias Bias for new location
          */
         public abstract void moveDot(int dot, Position.Bias bias);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -143,16 +143,7 @@ public class SimpleLaunchingConnector implements LaunchingConnector {
         TransportService.ListenKey key = ts.startListening();
 
         String exe = System.getProperty("java.home") + File.separator + "bin" +
-            File.separator;
-        String arch = System.getProperty("os.arch");
-        String osname = System.getProperty("os.name");
-        if (osname.equals("SunOS") && arch.equals("sparcv9")) {
-            exe += "sparcv9/java";
-        } else if (osname.equals("SunOS") && arch.equals("amd64")) {
-            exe += "amd64/java";
-        } else {
-            exe += "java";
-        }
+            File.separator + "java";
         String cmd = exe + " -Xdebug -Xrunjdwp:transport=dt_socket,timeout=15000,address=" +
             key.address() +
             " -classpath " + System.getProperty("test.classes") +
