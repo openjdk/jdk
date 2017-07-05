@@ -103,8 +103,8 @@ abstract class CramMD5Base {
     /**
      * Retrieves the negotiated property.
      * This method can be called only after the authentication exchange has
-     * completed (i.e., when <tt>isComplete()</tt> returns true); otherwise, a
-     * <tt>SaslException</tt> is thrown.
+     * completed (i.e., when {@code isComplete()} returns true); otherwise, a
+     * {@code SaslException} is thrown.
      *
      * @return value of property; only QOP is applicable to CRAM-MD5.
      * @exception IllegalStateException if this authentication exchange has not completed

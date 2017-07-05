@@ -65,8 +65,9 @@ public class ZipFileSystemProvider extends FileSystemProvider {
             // only support legacy JAR URL syntax  jar:{uri}!/{entry} for now
             String spec = uri.getRawSchemeSpecificPart();
             int sep = spec.indexOf("!/");
-            if (sep != -1)
+            if (sep != -1) {
                 spec = spec.substring(0, sep);
+            }
             return Paths.get(new URI(spec)).toAbsolutePath();
         } catch (URISyntaxException e) {
             throw new IllegalArgumentException(e.getMessage(), e);
@@ -107,6 +108,9 @@ public class ZipFileSystemProvider extends FileSystemProvider {
                 // assume NOT a zip/jar file
                 throw new UnsupportedOperationException();
             }
+            if (realPath == null) {  // newly created
+                realPath = path.toRealPath();
+            }
             filesystems.put(realPath, zipfs);
             return zipfs;
         }
@@ -132,7 +136,6 @@ public class ZipFileSystemProvider extends FileSystemProvider {
 
     @Override
     public Path getPath(URI uri) {
-
         String spec = uri.getSchemeSpecificPart();
         int sep = spec.indexOf("!/");
         if (sep == -1)
