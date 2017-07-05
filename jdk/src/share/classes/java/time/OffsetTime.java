@@ -153,14 +153,14 @@ public final class OffsetTime
     /**
      * Obtains the current time from the system clock in the default time-zone.
      * <p>
-     * This will query the {@link java.time.Clock#systemDefaultZone() system clock} in the default
+     * This will query the {@link Clock#systemDefaultZone() system clock} in the default
      * time-zone to obtain the current time.
      * The offset will be calculated from the time-zone in the clock.
      * <p>
      * Using this method will prevent the ability to use an alternate clock for testing
      * because the clock is hard-coded.
      *
-     * @return the current time using the system clock, not null
+     * @return the current time using the system clock and default time-zone, not null
      */
     public static OffsetTime now() {
         return now(Clock.systemDefaultZone());
@@ -169,7 +169,7 @@ public final class OffsetTime
     /**
      * Obtains the current time from the system clock in the specified time-zone.
      * <p>
-     * This will query the {@link Clock#system(java.time.ZoneId) system clock} to obtain the current time.
+     * This will query the {@link Clock#system(ZoneId) system clock} to obtain the current time.
      * Specifying the time-zone avoids dependence on the default time-zone.
      * The offset will be calculated from the specified time-zone.
      * <p>
@@ -277,7 +277,7 @@ public final class OffsetTime
      * those fields that are equivalent to the relevant objects.
      * <p>
      * This method matches the signature of the functional interface {@link TemporalQuery}
-     * allowing it to be used in queries via method reference, {@code OffsetTime::from}.
+     * allowing it to be used as a query via method reference, {@code OffsetTime::from}.
      *
      * @param temporal  the temporal object to convert, not null
      * @return the offset time, not null
@@ -402,7 +402,7 @@ public final class OffsetTime
     /**
      * Checks if the specified unit is supported.
      * <p>
-     * This checks if the specified unit can be added to, or subtracted from, this date-time.
+     * This checks if the specified unit can be added to, or subtracted from, this offset-time.
      * If false, then calling the {@link #plus(long, TemporalUnit)} and
      * {@link #minus(long, TemporalUnit) minus} methods will throw an exception.
      * <p>
@@ -473,7 +473,7 @@ public final class OffsetTime
     /**
      * Gets the value of the specified field from this time as an {@code int}.
      * <p>
-     * This queries this time for the value for the specified field.
+     * This queries this time for the value of the specified field.
      * The returned value will always be within the valid range of values for the field.
      * If it is not possible to return the value, because the field is not supported
      * or for some other reason, an exception is thrown.
@@ -481,7 +481,7 @@ public final class OffsetTime
      * If the field is a {@link ChronoField} then the query is implemented here.
      * The {@link #isSupported(TemporalField) supported fields} will return valid
      * values based on this time, except {@code NANO_OF_DAY} and {@code MICRO_OF_DAY}
-     * which are too large to fit in an {@code int} and throw a {@code DateTimeException}.
+     * which are too large to fit in an {@code int} and throw a {@code UnsupportedTemporalTypeException}.
      * All other {@code ChronoField} instances will throw an {@code UnsupportedTemporalTypeException}.
      * <p>
      * If the field is not a {@code ChronoField}, then the result of this method
@@ -505,7 +505,7 @@ public final class OffsetTime
     /**
      * Gets the value of the specified field from this time as a {@code long}.
      * <p>
-     * This queries this time for the value for the specified field.
+     * This queries this time for the value of the specified field.
      * If it is not possible to return the value, because the field is not supported
      * or for some other reason, an exception is thrown.
      * <p>
@@ -575,7 +575,7 @@ public final class OffsetTime
      * <p>
      * This method returns an object with the specified {@code ZoneOffset} and a {@code LocalTime}
      * adjusted by the difference between the two offsets.
-     * This will result in the old and new objects representing the same instant an an implied day.
+     * This will result in the old and new objects representing the same instant on an implied day.
      * This is useful for finding the local time in a different offset.
      * For example, if this time represents {@code 10:30+02:00} and the offset specified is
      * {@code +03:00}, then this method will return {@code 11:30+03:00}.
@@ -737,7 +737,7 @@ public final class OffsetTime
 
     //-----------------------------------------------------------------------
     /**
-     * Returns a copy of this {@code OffsetTime} with the hour-of-day value altered.
+     * Returns a copy of this {@code OffsetTime} with the hour-of-day altered.
      * <p>
      * The offset does not affect the calculation and will be the same in the result.
      * <p>
@@ -752,7 +752,7 @@ public final class OffsetTime
     }
 
     /**
-     * Returns a copy of this {@code OffsetTime} with the minute-of-hour value altered.
+     * Returns a copy of this {@code OffsetTime} with the minute-of-hour altered.
      * <p>
      * The offset does not affect the calculation and will be the same in the result.
      * <p>
@@ -767,7 +767,7 @@ public final class OffsetTime
     }
 
     /**
-     * Returns a copy of this {@code OffsetTime} with the second-of-minute value altered.
+     * Returns a copy of this {@code OffsetTime} with the second-of-minute altered.
      * <p>
      * The offset does not affect the calculation and will be the same in the result.
      * <p>
@@ -782,7 +782,7 @@ public final class OffsetTime
     }
 
     /**
-     * Returns a copy of this {@code OffsetTime} with the nano-of-second value altered.
+     * Returns a copy of this {@code OffsetTime} with the nano-of-second altered.
      * <p>
      * The offset does not affect the calculation and will be the same in the result.
      * <p>
@@ -884,7 +884,7 @@ public final class OffsetTime
 
     //-----------------------------------------------------------------------
     /**
-     * Returns a copy of this {@code OffsetTime} with the specified period in hours added.
+     * Returns a copy of this {@code OffsetTime} with the specified number of hours added.
      * <p>
      * This adds the specified number of hours to this time, returning a new time.
      * The calculation wraps around midnight.
@@ -899,7 +899,7 @@ public final class OffsetTime
     }
 
     /**
-     * Returns a copy of this {@code OffsetTime} with the specified period in minutes added.
+     * Returns a copy of this {@code OffsetTime} with the specified number of minutes added.
      * <p>
      * This adds the specified number of minutes to this time, returning a new time.
      * The calculation wraps around midnight.
@@ -914,7 +914,7 @@ public final class OffsetTime
     }
 
     /**
-     * Returns a copy of this {@code OffsetTime} with the specified period in seconds added.
+     * Returns a copy of this {@code OffsetTime} with the specified number of seconds added.
      * <p>
      * This adds the specified number of seconds to this time, returning a new time.
      * The calculation wraps around midnight.
@@ -929,7 +929,7 @@ public final class OffsetTime
     }
 
     /**
-     * Returns a copy of this {@code OffsetTime} with the specified period in nanoseconds added.
+     * Returns a copy of this {@code OffsetTime} with the specified number of nanoseconds added.
      * <p>
      * This adds the specified number of nanoseconds to this time, returning a new time.
      * The calculation wraps around midnight.
@@ -995,7 +995,7 @@ public final class OffsetTime
 
     //-----------------------------------------------------------------------
     /**
-     * Returns a copy of this {@code OffsetTime} with the specified period in hours subtracted.
+     * Returns a copy of this {@code OffsetTime} with the specified number of hours subtracted.
      * <p>
      * This subtracts the specified number of hours from this time, returning a new time.
      * The calculation wraps around midnight.
@@ -1010,7 +1010,7 @@ public final class OffsetTime
     }
 
     /**
-     * Returns a copy of this {@code OffsetTime} with the specified period in minutes subtracted.
+     * Returns a copy of this {@code OffsetTime} with the specified number of minutes subtracted.
      * <p>
      * This subtracts the specified number of minutes from this time, returning a new time.
      * The calculation wraps around midnight.
@@ -1025,7 +1025,7 @@ public final class OffsetTime
     }
 
     /**
-     * Returns a copy of this {@code OffsetTime} with the specified period in seconds subtracted.
+     * Returns a copy of this {@code OffsetTime} with the specified number of seconds subtracted.
      * <p>
      * This subtracts the specified number of seconds from this time, returning a new time.
      * The calculation wraps around midnight.
@@ -1040,7 +1040,7 @@ public final class OffsetTime
     }
 
     /**
-     * Returns a copy of this {@code OffsetTime} with the specified period in nanoseconds subtracted.
+     * Returns a copy of this {@code OffsetTime} with the specified number of nanoseconds subtracted.
      * <p>
      * This subtracts the specified number of nanoseconds from this time, returning a new time.
      * The calculation wraps around midnight.
@@ -1130,7 +1130,7 @@ public final class OffsetTime
      * objects in terms of a single {@code TemporalUnit}.
      * The start and end points are {@code this} and the specified time.
      * The result will be negative if the end is before the start.
-     * For example, the period in hours between two times can be calculated
+     * For example, the amount in hours between two times can be calculated
      * using {@code startTime.until(endTime, HOURS)}.
      * <p>
      * The {@code Temporal} passed to this method is converted to a
@@ -1140,7 +1140,7 @@ public final class OffsetTime
      * <p>
      * The calculation returns a whole number, representing the number of
      * complete units between the two times.
-     * For example, the period in hours between 11:30Z and 13:29Z will only
+     * For example, the amount in hours between 11:30Z and 13:29Z will only
      * be one hour as it is one minute short of two hours.
      * <p>
      * There are two equivalent ways of using this method.
@@ -1165,7 +1165,7 @@ public final class OffsetTime
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
-     * @param endExclusive  the end date, exclusive, which is converted to an {@code OffsetTime}, not null
+     * @param endExclusive  the end time, exclusive, which is converted to an {@code OffsetTime}, not null
      * @param unit  the unit to measure the amount in, not null
      * @return the amount of time between this time and the end time
      * @throws DateTimeException if the amount cannot be calculated, or the end
@@ -1258,7 +1258,6 @@ public final class OffsetTime
      *
      * @param other  the other time to compare to, not null
      * @return the comparator value, negative if less, positive if greater
-     * @throws NullPointerException if {@code other} is null
      */
     @Override
     public int compareTo(OffsetTime other) {

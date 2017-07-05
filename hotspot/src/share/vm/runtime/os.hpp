@@ -48,6 +48,9 @@
 #ifdef TARGET_OS_FAMILY_bsd
 # include "jvm_bsd.h"
 # include <setjmp.h>
+# ifdef __APPLE__
+#  include <mach/mach_time.h>
+# endif
 #endif
 
 class AgentLibrary;

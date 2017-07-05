@@ -83,7 +83,7 @@ import java.util.Objects;
  * The discontinuity is normally a gap in spring and an overlap in autumn.
  * {@code ZoneOffsetTransition} models the transition between the two offsets.
  * <p>
- * Gaps occur where there are local date-times that simply do not not exist.
+ * Gaps occur where there are local date-times that simply do not exist.
  * An example would be when the offset changes from {@code +03:00} to {@code +04:00}.
  * This might be described as 'the clocks will move forward one hour tonight at 1am'.
  * <p>
@@ -334,7 +334,7 @@ public final class ZoneOffsetTransition
     /**
      * Does this transition represent a gap in the local time-line.
      * <p>
-     * Gaps occur where there are local date-times that simply do not not exist.
+     * Gaps occur where there are local date-times that simply do not exist.
      * An example would be when the offset changes from {@code +01:00} to {@code +02:00}.
      * This might be described as 'the clocks will move forward one hour tonight at 1am'.
      *

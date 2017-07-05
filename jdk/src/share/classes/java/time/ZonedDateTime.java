@@ -418,7 +418,7 @@ public final class ZonedDateTime
      * <p>
      * Converting an instant to a zoned date-time is simple as there is only one valid
      * offset for each instant. If the valid offset is different to the offset specified,
-     * the the date-time and offset of the zoned date-time will differ from those specified.
+     * then the date-time and offset of the zoned date-time will differ from those specified.
      * <p>
      * If the {@code ZoneId} to be used is a {@code ZoneOffset}, this method is equivalent
      * to {@link #of(LocalDateTime, ZoneId)}.
@@ -469,6 +469,7 @@ public final class ZonedDateTime
      * @param offset  the zone offset, not null
      * @param zone  the time-zone, not null
      * @return the zoned date-time, not null
+     * @throws DateTimeException if the combination of arguments is invalid
      */
     public static ZonedDateTime ofStrict(LocalDateTime localDateTime, ZoneOffset offset, ZoneId zone) {
         Objects.requireNonNull(localDateTime, "localDateTime");
@@ -538,7 +539,7 @@ public final class ZonedDateTime
      * those fields that are equivalent to the relevant objects.
      * <p>
      * This method matches the signature of the functional interface {@link TemporalQuery}
-     * allowing it to be used in queries via method reference, {@code ZonedDateTime::from}.
+     * allowing it to be used as a query via method reference, {@code ZonedDateTime::from}.
      *
      * @param temporal  the temporal object to convert, not null
      * @return the zoned date-time, not null
@@ -782,7 +783,7 @@ public final class ZonedDateTime
     /**
      * Gets the value of the specified field from this date-time as an {@code int}.
      * <p>
-     * This queries this date-time for the value for the specified field.
+     * This queries this date-time for the value of the specified field.
      * The returned value will always be within the valid range of values for the field.
      * If it is not possible to return the value, because the field is not supported
      * or for some other reason, an exception is thrown.
@@ -791,7 +792,7 @@ public final class ZonedDateTime
      * The {@link #isSupported(TemporalField) supported fields} will return valid
      * values based on this date-time, except {@code NANO_OF_DAY}, {@code MICRO_OF_DAY},
      * {@code EPOCH_DAY}, {@code PROLEPTIC_MONTH} and {@code INSTANT_SECONDS} which are too
-     * large to fit in an {@code int} and throw a {@code DateTimeException}.
+     * large to fit in an {@code int} and throw a {@code UnsupportedTemporalTypeException}.
      * All other {@code ChronoField} instances will throw an {@code UnsupportedTemporalTypeException}.
      * <p>
      * If the field is not a {@code ChronoField}, then the result of this method
@@ -824,7 +825,7 @@ public final class ZonedDateTime
     /**
      * Gets the value of the specified field from this date-time as a {@code long}.
      * <p>
-     * This queries this date-time for the value for the specified field.
+     * This queries this date-time for the value of the specified field.
      * If it is not possible to return the value, because the field is not supported
      * or for some other reason, an exception is thrown.
      * <p>
@@ -1182,7 +1183,8 @@ public final class ZonedDateTime
      * <p>
      * A simple adjuster might simply set the one of the fields, such as the year field.
      * A more complex adjuster might set the date to the last day of the month.
-     * A selection of common adjustments is provided in {@link TemporalAdjuster}.
+     * A selection of common adjustments is provided in
+     * {@link java.time.temporal.TemporalAdjusters TemporalAdjusters}.
      * These include finding the "last day of the month" and "next Wednesday".
      * Key date-time classes also implement the {@code TemporalAdjuster} interface,
      * such as {@link Month} and {@link java.time.MonthDay MonthDay}.
@@ -1192,7 +1194,7 @@ public final class ZonedDateTime
      * For example this code returns a date on the last day of July:
      * <pre>
      *  import static java.time.Month.*;
-     *  import static java.time.temporal.Adjusters.*;
+     *  import static java.time.temporal.TemporalAdjusters.*;
      *
      *  result = zonedDateTime.with(JULY).with(lastDayOfMonth());
      * </pre>
@@ -1313,7 +1315,7 @@ public final class ZonedDateTime
 
     //-----------------------------------------------------------------------
     /**
-     * Returns a copy of this {@code ZonedDateTime} with the year value altered.
+     * Returns a copy of this {@code ZonedDateTime} with the year altered.
      * <p>
      * This operates on the local time-line,
      * {@link LocalDateTime#withYear(int) changing the year} of the local date-time.
@@ -1335,7 +1337,7 @@ public final class ZonedDateTime
     }
 
     /**
-     * Returns a copy of this {@code ZonedDateTime} with the month-of-year value altered.
+     * Returns a copy of this {@code ZonedDateTime} with the month-of-year altered.
      * <p>
      * This operates on the local time-line,
      * {@link LocalDateTime#withMonth(int) changing the month} of the local date-time.
@@ -1357,7 +1359,7 @@ public final class ZonedDateTime
     }
 
     /**
-     * Returns a copy of this {@code ZonedDateTime} with the day-of-month value altered.
+     * Returns a copy of this {@code ZonedDateTime} with the day-of-month altered.
      * <p>
      * This operates on the local time-line,
      * {@link LocalDateTime#withDayOfMonth(int) changing the day-of-month} of the local date-time.
@@ -1404,7 +1406,7 @@ public final class ZonedDateTime
 
     //-----------------------------------------------------------------------
     /**
-     * Returns a copy of this {@code ZonedDateTime} with the hour-of-day value altered.
+     * Returns a copy of this {@code ZonedDateTime} with the hour-of-day altered.
      * <p>
      * This operates on the local time-line,
      * {@linkplain LocalDateTime#withHour(int) changing the time} of the local date-time.
@@ -1426,7 +1428,7 @@ public final class ZonedDateTime
     }
 
     /**
-     * Returns a copy of this {@code ZonedDateTime} with the minute-of-hour value altered.
+     * Returns a copy of this {@code ZonedDateTime} with the minute-of-hour altered.
      * <p>
      * This operates on the local time-line,
      * {@linkplain LocalDateTime#withMinute(int) changing the time} of the local date-time.
@@ -1448,7 +1450,7 @@ public final class ZonedDateTime
     }
 
     /**
-     * Returns a copy of this {@code ZonedDateTime} with the second-of-minute value altered.
+     * Returns a copy of this {@code ZonedDateTime} with the second-of-minute altered.
      * <p>
      * This operates on the local time-line,
      * {@linkplain LocalDateTime#withSecond(int) changing the time} of the local date-time.
@@ -1470,7 +1472,7 @@ public final class ZonedDateTime
     }
 
     /**
-     * Returns a copy of this {@code ZonedDateTime} with the nano-of-second value altered.
+     * Returns a copy of this {@code ZonedDateTime} with the nano-of-second altered.
      * <p>
      * This operates on the local time-line,
      * {@linkplain LocalDateTime#withNano(int) changing the time} of the local date-time.
@@ -1506,7 +1508,7 @@ public final class ZonedDateTime
      * {@link ChronoUnit#DAYS DAYS}. Other units throw an exception.
      * <p>
      * This operates on the local time-line,
-     * {@link LocalDateTime#truncatedTo(java.time.temporal.TemporalUnit) truncating}
+     * {@link LocalDateTime#truncatedTo(TemporalUnit) truncating}
      * the underlying local date-time. This is then converted back to a
      * {@code ZonedDateTime}, using the zone ID to obtain the offset.
      * <p>
@@ -1607,7 +1609,7 @@ public final class ZonedDateTime
 
     //-----------------------------------------------------------------------
     /**
-     * Returns a copy of this {@code ZonedDateTime} with the specified period in years added.
+     * Returns a copy of this {@code ZonedDateTime} with the specified number of years added.
      * <p>
      * This operates on the local time-line,
      * {@link LocalDateTime#plusYears(long) adding years} to the local date-time.
@@ -1629,7 +1631,7 @@ public final class ZonedDateTime
     }
 
     /**
-     * Returns a copy of this {@code ZonedDateTime} with the specified period in months added.
+     * Returns a copy of this {@code ZonedDateTime} with the specified number of months added.
      * <p>
      * This operates on the local time-line,
      * {@link LocalDateTime#plusMonths(long) adding months} to the local date-time.
@@ -1651,7 +1653,7 @@ public final class ZonedDateTime
     }
 
     /**
-     * Returns a copy of this {@code ZonedDateTime} with the specified period in weeks added.
+     * Returns a copy of this {@code ZonedDateTime} with the specified number of weeks added.
      * <p>
      * This operates on the local time-line,
      * {@link LocalDateTime#plusWeeks(long) adding weeks} to the local date-time.
@@ -1673,7 +1675,7 @@ public final class ZonedDateTime
     }
 
     /**
-     * Returns a copy of this {@code ZonedDateTime} with the specified period in days added.
+     * Returns a copy of this {@code ZonedDateTime} with the specified number of days added.
      * <p>
      * This operates on the local time-line,
      * {@link LocalDateTime#plusDays(long) adding days} to the local date-time.
@@ -1696,7 +1698,7 @@ public final class ZonedDateTime
 
     //-----------------------------------------------------------------------
     /**
-     * Returns a copy of this {@code ZonedDateTime} with the specified period in hours added.
+     * Returns a copy of this {@code ZonedDateTime} with the specified number of hours added.
      * <p>
      * This operates on the instant time-line, such that adding one hour will
      * always be a duration of one hour later.
@@ -1724,7 +1726,7 @@ public final class ZonedDateTime
     }
 
     /**
-     * Returns a copy of this {@code ZonedDateTime} with the specified period in minutes added.
+     * Returns a copy of this {@code ZonedDateTime} with the specified number of minutes added.
      * <p>
      * This operates on the instant time-line, such that adding one minute will
      * always be a duration of one minute later.
@@ -1742,7 +1744,7 @@ public final class ZonedDateTime
     }
 
     /**
-     * Returns a copy of this {@code ZonedDateTime} with the specified period in seconds added.
+     * Returns a copy of this {@code ZonedDateTime} with the specified number of seconds added.
      * <p>
      * This operates on the instant time-line, such that adding one second will
      * always be a duration of one second later.
@@ -1760,7 +1762,7 @@ public final class ZonedDateTime
     }
 
     /**
-     * Returns a copy of this {@code ZonedDateTime} with the specified period in nanoseconds added.
+     * Returns a copy of this {@code ZonedDateTime} with the specified number of nanoseconds added.
      * <p>
      * This operates on the instant time-line, such that adding one nano will
      * always be a duration of one nano later.
@@ -1848,7 +1850,7 @@ public final class ZonedDateTime
 
     //-----------------------------------------------------------------------
     /**
-     * Returns a copy of this {@code ZonedDateTime} with the specified period in years subtracted.
+     * Returns a copy of this {@code ZonedDateTime} with the specified number of years subtracted.
      * <p>
      * This operates on the local time-line,
      * {@link LocalDateTime#minusYears(long) subtracting years} to the local date-time.
@@ -1870,7 +1872,7 @@ public final class ZonedDateTime
     }
 
     /**
-     * Returns a copy of this {@code ZonedDateTime} with the specified period in months subtracted.
+     * Returns a copy of this {@code ZonedDateTime} with the specified number of months subtracted.
      * <p>
      * This operates on the local time-line,
      * {@link LocalDateTime#minusMonths(long) subtracting months} to the local date-time.
@@ -1892,7 +1894,7 @@ public final class ZonedDateTime
     }
 
     /**
-     * Returns a copy of this {@code ZonedDateTime} with the specified period in weeks subtracted.
+     * Returns a copy of this {@code ZonedDateTime} with the specified number of weeks subtracted.
      * <p>
      * This operates on the local time-line,
      * {@link LocalDateTime#minusWeeks(long) subtracting weeks} to the local date-time.
@@ -1914,7 +1916,7 @@ public final class ZonedDateTime
     }
 
     /**
-     * Returns a copy of this {@code ZonedDateTime} with the specified period in days subtracted.
+     * Returns a copy of this {@code ZonedDateTime} with the specified number of days subtracted.
      * <p>
      * This operates on the local time-line,
      * {@link LocalDateTime#minusDays(long) subtracting days} to the local date-time.
@@ -1937,7 +1939,7 @@ public final class ZonedDateTime
 
     //-----------------------------------------------------------------------
     /**
-     * Returns a copy of this {@code ZonedDateTime} with the specified period in hours subtracted.
+     * Returns a copy of this {@code ZonedDateTime} with the specified number of hours subtracted.
      * <p>
      * This operates on the instant time-line, such that subtracting one hour will
      * always be a duration of one hour earlier.
@@ -1965,7 +1967,7 @@ public final class ZonedDateTime
     }
 
     /**
-     * Returns a copy of this {@code ZonedDateTime} with the specified period in minutes subtracted.
+     * Returns a copy of this {@code ZonedDateTime} with the specified number of minutes subtracted.
      * <p>
      * This operates on the instant time-line, such that subtracting one minute will
      * always be a duration of one minute earlier.
@@ -1983,7 +1985,7 @@ public final class ZonedDateTime
     }
 
     /**
-     * Returns a copy of this {@code ZonedDateTime} with the specified period in seconds subtracted.
+     * Returns a copy of this {@code ZonedDateTime} with the specified number of seconds subtracted.
      * <p>
      * This operates on the instant time-line, such that subtracting one second will
      * always be a duration of one second earlier.
@@ -2001,7 +2003,7 @@ public final class ZonedDateTime
     }
 
     /**
-     * Returns a copy of this {@code ZonedDateTime} with the specified period in nanoseconds subtracted.
+     * Returns a copy of this {@code ZonedDateTime} with the specified number of nanoseconds subtracted.
      * <p>
      * This operates on the instant time-line, such that subtracting one nano will
      * always be a duration of one nano earlier.
@@ -2028,7 +2030,7 @@ public final class ZonedDateTime
      * what the result of this method will be.
      * <p>
      * The result of this method is obtained by invoking the
-     * {@link java.time.temporal.TemporalQuery#queryFrom(TemporalAccessor)} method on the
+     * {@link TemporalQuery#queryFrom(TemporalAccessor)} method on the
      * specified query passing {@code this} as the argument.
      *
      * @param <R> the type of the result
@@ -2049,7 +2051,7 @@ public final class ZonedDateTime
      * objects in terms of a single {@code TemporalUnit}.
      * The start and end points are {@code this} and the specified date-time.
      * The result will be negative if the end is before the start.
-     * For example, the period in days between two date-times can be calculated
+     * For example, the amount in days between two date-times can be calculated
      * using {@code startDateTime.until(endDateTime, DAYS)}.
      * <p>
      * The {@code Temporal} passed to this method is converted to a
@@ -2059,7 +2061,7 @@ public final class ZonedDateTime
      * <p>
      * The calculation returns a whole number, representing the number of
      * complete units between the two date-times.
-     * For example, the period in months between 2012-06-15T00:00Z and 2012-08-14T23:59Z
+     * For example, the amount in months between 2012-06-15T00:00Z and 2012-08-14T23:59Z
      * will only be one month as it is one minute short of two months.
      * <p>
      * There are two equivalent ways of using this method.

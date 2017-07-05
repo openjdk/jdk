@@ -1282,6 +1282,7 @@ void ConcurrentMark::checkpointRootsFinal(bool clear_all_soft_refs) {
     Universe::verify(VerifyOption_G1UsePrevMarking,
                      " VerifyDuringGC:(before)");
   }
+  g1h->check_bitmaps("Remark Start");
 
   G1CollectorPolicy* g1p = g1h->g1_policy();
   g1p->record_concurrent_mark_remark_start();
@@ -1330,6 +1331,7 @@ void ConcurrentMark::checkpointRootsFinal(bool clear_all_soft_refs) {
       Universe::verify(VerifyOption_G1UseNextMarking,
                        " VerifyDuringGC:(after)");
     }
+    g1h->check_bitmaps("Remark End");
     assert(!restart_for_overflow(), "sanity");
     // Completely reset the marking state since marking completed
     set_non_marking_state();
@@ -1979,6 +1981,7 @@ void ConcurrentMark::cleanup() {
     Universe::verify(VerifyOption_G1UsePrevMarking,
                      " VerifyDuringGC:(before)");
   }
+  g1h->check_bitmaps("Cleanup Start");
 
   G1CollectorPolicy* g1p = G1CollectedHeap::heap()->g1_policy();
   g1p->record_concurrent_mark_cleanup_start();
@@ -2133,6 +2136,7 @@ void ConcurrentMark::cleanup() {
     Universe::verify(VerifyOption_G1UsePrevMarking,
                      " VerifyDuringGC:(after)");
   }
+  g1h->check_bitmaps("Cleanup End");
 
   g1h->verify_region_sets_optional();
   g1h->trace_heap_after_concurrent_cycle();
@@ -3224,6 +3228,11 @@ void ConcurrentMark::print_stats() {
 void ConcurrentMark::abort() {
   // Clear all marks to force marking thread to do nothing
   _nextMarkBitMap->clearAll();
+
+  // Note we cannot clear the previous marking bitmap here
+  // since VerifyDuringGC verifies the objects marked during
+  // a full GC against the previous bitmap.
+
   // Clear the liveness counting data
   clear_all_count_data();
   // Empty mark stack
