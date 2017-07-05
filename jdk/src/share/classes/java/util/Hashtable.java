@@ -26,7 +26,6 @@
 package java.util;
 
 import java.io.*;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.BiFunction;
@@ -92,8 +91,10 @@ import java.util.function.BiFunction;
  * ConcurrentModificationException}.  Thus, in the face of concurrent
  * modification, the iterator fails quickly and cleanly, rather than risking
  * arbitrary, non-deterministic behavior at an undetermined time in the future.
- * The Enumerations returned by Hashtable's keys and elements methods are
- * <em>not</em> fail-fast.
+ * The Enumerations returned by Hashtable's {@link #keys keys} and
+ * {@link #elements elements} methods are <em>not</em> fail-fast; if the
+ * Hashtable is structurally modified at any time after the enumeration is
+ * created then the results of enumerating are undefined.
  *
  * <p>Note that the fail-fast behavior of an iterator cannot be guaranteed
  * as it is, generally speaking, impossible to make any hard guarantees in the
@@ -114,6 +115,9 @@ import java.util.function.BiFunction;
  * highly-concurrent implementation is desired, then it is recommended
  * to use {@link java.util.concurrent.ConcurrentHashMap} in place of
  * {@code Hashtable}.
+ *
+ * @param <K> the type of keys maintained by this map
+ * @param <V> the type of mapped values
  *
  * @author  Arthur van Hoff
  * @author  Josh Bloch
@@ -246,6 +250,9 @@ public class Hashtable<K,V>
 
     /**
      * Returns an enumeration of the keys in this hashtable.
+     * Use the Enumeration methods on the returned object to fetch the keys
+     * sequentially. If the hashtable is structurally modified while enumerating
+     * over the keys then the results of enumerating are undefined.
      *
      * @return  an enumeration of the keys in this hashtable.
      * @see     Enumeration
@@ -260,7 +267,8 @@ public class Hashtable<K,V>
     /**
      * Returns an enumeration of the values in this hashtable.
      * Use the Enumeration methods on the returned object to fetch the elements
-     * sequentially.
+     * sequentially. If the hashtable is structurally modified while enumerating
+     * over the values then the results of enumerating are undefined.
      *
      * @return  an enumeration of the values in this hashtable.
      * @see     java.util.Enumeration
@@ -417,8 +425,6 @@ public class Hashtable<K,V>
     }
 
     private void addEntry(int hash, K key, V value, int index) {
-        modCount++;
-
         Entry<?,?> tab[] = table;
         if (count >= threshold) {
             // Rehash the table if the threshold is exceeded
@@ -434,6 +440,7 @@ public class Hashtable<K,V>
         Entry<K,V> e = (Entry<K,V>) tab[index];
         tab[index] = new Entry<>(hash, key, value, e);
         count++;
+        modCount++;
     }
 
     /**
@@ -494,12 +501,12 @@ public class Hashtable<K,V>
         Entry<K,V> e = (Entry<K,V>)tab[index];
         for(Entry<K,V> prev = null ; e != null ; prev = e, e = e.next) {
             if ((e.hash == hash) && e.key.equals(key)) {
-                modCount++;
                 if (prev != null) {
                     prev.next = e.next;
                 } else {
                     tab[index] = e.next;
                 }
+                modCount++;
                 count--;
                 V oldValue = e.value;
                 e.value = null;
@@ -528,9 +535,9 @@ public class Hashtable<K,V>
      */
     public synchronized void clear() {
         Entry<?,?> tab[] = table;
-        modCount++;
         for (int index = tab.length; --index >= 0; )
             tab[index] = null;
+        modCount++;
         count = 0;
     }
 
@@ -719,14 +726,14 @@ public class Hashtable<K,V>
             Entry<K,V> e = (Entry<K,V>)tab[index];
             for(Entry<K,V> prev = null; e != null; prev = e, e = e.next) {
                 if (e.hash==hash && e.equals(entry)) {
-                    modCount++;
                     if (prev != null)
                         prev.next = e.next;
                     else
                         tab[index] = e.next;
 
+                    e.value = null; // clear for gc.
+                    modCount++;
                     count--;
-                    e.value = null;
                     return true;
                 }
             }
@@ -939,14 +946,14 @@ public class Hashtable<K,V>
         Entry<K,V> e = (Entry<K,V>)tab[index];
         for (Entry<K,V> prev = null; e != null; prev = e, e = e.next) {
             if ((e.hash == hash) && e.key.equals(key) && e.value.equals(value)) {
-                modCount++;
                 if (prev != null) {
                     prev.next = e.next;
                 } else {
                     tab[index] = e.next;
                 }
+                e.value = null; // clear for gc
+                modCount++;
                 count--;
-                e.value = null;
                 return true;
             }
         }
@@ -1030,12 +1037,12 @@ public class Hashtable<K,V>
             if (e.hash == hash && e.key.equals(key)) {
                 V newValue = remappingFunction.apply(key, e.value);
                 if (newValue == null) {
-                    modCount++;
                     if (prev != null) {
                         prev.next = e.next;
                     } else {
                         tab[index] = e.next;
                     }
+                    modCount++;
                     count--;
                 } else {
                     e.value = newValue;
@@ -1059,12 +1066,12 @@ public class Hashtable<K,V>
             if (e.hash == hash && Objects.equals(e.key, key)) {
                 V newValue = remappingFunction.apply(key, e.value);
                 if (newValue == null) {
-                    modCount++;
                     if (prev != null) {
                         prev.next = e.next;
                     } else {
                         tab[index] = e.next;
                     }
+                    modCount++;
                     count--;
                 } else {
                     e.value = newValue;
@@ -1094,12 +1101,12 @@ public class Hashtable<K,V>
             if (e.hash == hash && e.key.equals(key)) {
                 V newValue = remappingFunction.apply(e.value, value);
                 if (newValue == null) {
-                    modCount++;
                     if (prev != null) {
                         prev.next = e.next;
                     } else {
                         tab[index] = e.next;
                     }
+                    modCount++;
                     count--;
                 } else {
                     e.value = newValue;
@@ -1298,24 +1305,24 @@ public class Hashtable<K,V>
      * by passing an Enumeration.
      */
     private class Enumerator<T> implements Enumeration<T>, Iterator<T> {
-        Entry<?,?>[] table = Hashtable.this.table;
+        final Entry<?,?>[] table = Hashtable.this.table;
         int index = table.length;
         Entry<?,?> entry;
         Entry<?,?> lastReturned;
-        int type;
+        final int type;
 
         /**
          * Indicates whether this Enumerator is serving as an Iterator
          * or an Enumeration.  (true -> Iterator).
          */
-        boolean iterator;
+        final boolean iterator;
 
         /**
          * The modCount value that the iterator believes that the backing
          * Hashtable should have.  If this expectation is violated, the iterator
          * has detected concurrent modification.
          */
-        protected int expectedModCount = modCount;
+        protected int expectedModCount = Hashtable.this.modCount;
 
         Enumerator(int type, boolean iterator) {
             this.type = type;
@@ -1360,7 +1367,7 @@ public class Hashtable<K,V>
         }
 
         public T next() {
-            if (modCount != expectedModCount)
+            if (Hashtable.this.modCount != expectedModCount)
                 throw new ConcurrentModificationException();
             return nextElement();
         }
@@ -1381,14 +1388,14 @@ public class Hashtable<K,V>
                 Entry<K,V> e = (Entry<K,V>)tab[index];
                 for(Entry<K,V> prev = null; e != null; prev = e, e = e.next) {
                     if (e == lastReturned) {
-                        modCount++;
-                        expectedModCount++;
                         if (prev == null)
                             tab[index] = e.next;
                         else
                             prev.next = e.next;
-                        count--;
+                        expectedModCount++;
                         lastReturned = null;
+                        Hashtable.this.modCount++;
+                        Hashtable.this.count--;
                         return;
                     }
                 }

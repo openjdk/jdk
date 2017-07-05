@@ -98,13 +98,13 @@ public class CounterMonitorDeadlockTest {
             monitorProxy.start();
 
             final int initGetCount = observedProxy.getGetCount();
-            int getCount = initGetCount;
-            for (int i = 0; i < 500; i++) { // 500 * 10 = 5 seconds
-                getCount = observedProxy.getGetCount();
-                if (getCount != initGetCount)
-                    break;
-                Thread.sleep(10);
-            }
+            int getCount;
+            System.out.println("Checking GetCount, possible deadlock if timeout.");
+            do { // 8038322. Until timeout of testing harness
+                Thread.sleep(200);
+            } while ((getCount=observedProxy.getGetCount()) == initGetCount);
+            System.out.println("Done!");
+
             if (getCount <= initGetCount)
                 throw new Exception("Test failed: presumable deadlock");
             // This won't show up as a deadlock in CTRL-\ or in
@@ -131,10 +131,11 @@ public class CounterMonitorDeadlockTest {
                 };
                 mbs.addNotificationListener(monitorName, listener, null, null);
                 observedProxy.setThing(1000);
-                for (int i = 0; i < 500 && notifCount.get() == 0; i++)
-                    Thread.sleep(10);
-                if (notifCount.get() == 0)
-                    throw new Exception("Test failed: presumable deadlock");
+                System.out.println("Waiting notifCount.get() != 0, possible deadlock if timeout.");
+                do {
+                    Thread.sleep(200);
+                } while(notifCount.get() == 0); // 8038322. Until timeout of testing harness
+                System.out.println("Done");
             }
 
         }

@@ -157,7 +157,8 @@ public interface Temporal extends TemporalAccessor {
      * This adjusts this date-time according to the rules of the specified adjuster.
      * A simple adjuster might simply set the one of the fields, such as the year field.
      * A more complex adjuster might set the date to the last day of the month.
-     * A selection of common adjustments is provided in {@link TemporalAdjuster}.
+     * A selection of common adjustments is provided in
+     * {@link java.time.temporal.TemporalAdjusters TemporalAdjusters}.
      * These include finding the "last day of the month" and "next Wednesday".
      * The adjuster is responsible for handling special cases, such as the varying
      * lengths of month and leap years.
@@ -287,7 +288,7 @@ public interface Temporal extends TemporalAccessor {
      * This provides equivalent, safe behavior for immutable and mutable implementations.
      *
      * @param amountToAdd  the amount of the specified unit to add, may be negative
-     * @param unit  the unit of the period to add, not null
+     * @param unit  the unit of the amount to add, not null
      * @return an object of the same type with the specified period added, not null
      * @throws DateTimeException if the unit cannot be added
      * @throws UnsupportedTemporalTypeException if the unit is not supported
@@ -359,7 +360,7 @@ public interface Temporal extends TemporalAccessor {
      * </pre>
      *
      * @param amountToSubtract  the amount of the specified unit to subtract, may be negative
-     * @param unit  the unit of the period to subtract, not null
+     * @param unit  the unit of the amount to subtract, not null
      * @return an object of the same type with the specified period subtracted, not null
      * @throws DateTimeException if the unit cannot be subtracted
      * @throws UnsupportedTemporalTypeException if the unit is not supported
@@ -378,12 +379,12 @@ public interface Temporal extends TemporalAccessor {
      * The start and end points are {@code this} and the specified temporal.
      * The end point is converted to be of the same type as the start point if different.
      * The result will be negative if the end is before the start.
-     * For example, the period in hours between two temporal objects can be
+     * For example, the amount in hours between two temporal objects can be
      * calculated using {@code startTime.until(endTime, HOURS)}.
      * <p>
      * The calculation returns a whole number, representing the number of
      * complete units between the two temporals.
-     * For example, the period in hours between the times 11:30 and 13:29
+     * For example, the amount in hours between the times 11:30 and 13:29
      * will only be one hour as it is one minute short of two hours.
      * <p>
      * There are two equivalent ways of using this method.
