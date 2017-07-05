@@ -65,7 +65,6 @@ class StubAssembler;
   stub(monitorexit_nofpu)              /* optimized version that does not preserve fpu registers */ \
   stub(access_field_patching)        \
   stub(load_klass_patching)          \
-  stub(jvmti_exception_throw)        \
   stub(g1_pre_barrier_slow)          \
   stub(g1_post_barrier_slow)         \
   stub(fpu2long_stub)                \
@@ -141,7 +140,6 @@ class Runtime1: public AllStatic {
   static void unimplemented_entry   (JavaThread* thread, StubID id);
 
   static address exception_handler_for_pc(JavaThread* thread);
-  static void post_jvmti_exception_throw(JavaThread* thread);
 
   static void throw_range_check_exception(JavaThread* thread, int index);
   static void throw_index_exception(JavaThread* thread, int index);

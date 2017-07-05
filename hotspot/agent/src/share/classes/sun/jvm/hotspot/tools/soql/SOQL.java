@@ -150,16 +150,13 @@ public class SOQL extends Tool {
             }
 
             // list immediate fields only
-            TypeArray fields = klass.getFields();
-            int numFields = (int) fields.getLength();
+            int numFields = klass.getJavaFieldsCount();
             ConstantPool cp = klass.getConstants();
             out.println("fields");
             if (numFields != 0) {
-               for (int f = 0; f < numFields; f += InstanceKlass.NEXT_OFFSET) {
-                 int nameIndex = fields.getShortAt(f + InstanceKlass.NAME_INDEX_OFFSET);
-                 int sigIndex  = fields.getShortAt(f + InstanceKlass.SIGNATURE_INDEX_OFFSET);
-                 Symbol f_name = cp.getSymbolAt(nameIndex);
-                 Symbol f_sig  = cp.getSymbolAt(sigIndex);
+              for (int f = 0; f < numFields; f++){
+                 Symbol f_name = klass.getFieldName(f);
+                 Symbol f_sig  = klass.getFieldSignature(f);
                  StringBuffer sigBuf = new StringBuffer();
                  new SignatureConverter(f_sig, sigBuf).dispatchField();
                  out.print('\t');

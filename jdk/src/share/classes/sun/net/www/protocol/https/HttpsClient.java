@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -529,7 +529,7 @@ final class HttpsClient extends HttpClient
                     new BufferedOutputStream(serverSocket.getOutputStream()),
                     false, encoding);
             } catch (UnsupportedEncodingException e) {
-                throw new InternalError(encoding+" encoding not found", e);
+                throw new InternalError(encoding+" encoding not found");
             }
 
             // check URL spoofing if it has not been checked under handshaking
@@ -623,7 +623,7 @@ final class HttpsClient extends HttpClient
      */
     @Override
     public void closeIdleConnection() {
-        HttpClient http = (HttpClient) kac.get(url, sslSocketFactory);
+        HttpClient http = kac.get(url, sslSocketFactory);
         if (http != null) {
             http.closeServer();
         }
@@ -681,8 +681,7 @@ final class HttpsClient extends HttpClient
             // return the X500Principal of the end-entity cert.
             java.security.cert.Certificate[] certs =
                         session.getPeerCertificates();
-            principal = (X500Principal)
-                ((X509Certificate)certs[0]).getSubjectX500Principal();
+            principal = ((X509Certificate)certs[0]).getSubjectX500Principal();
         }
         return principal;
     }
@@ -703,8 +702,7 @@ final class HttpsClient extends HttpClient
             java.security.cert.Certificate[] certs =
                         session.getLocalCertificates();
             if (certs != null) {
-                principal = (X500Principal)
-                    ((X509Certificate)certs[0]).getSubjectX500Principal();
+                principal = ((X509Certificate)certs[0]).getSubjectX500Principal();
             }
         }
         return principal;

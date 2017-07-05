@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007,2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,8 +54,10 @@ class PlainDatagramSocketImpl extends AbstractPlainDatagramSocketImpl
 
     protected native int getTimeToLive() throws IOException;
 
+    @Deprecated
     protected native void setTTL(byte ttl) throws IOException;
 
+    @Deprecated
     protected native byte getTTL() throws IOException;
 
     protected native void join(InetAddress inetaddr, NetworkInterface netIf)

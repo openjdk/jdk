@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,7 +96,7 @@ abstract public class ContentHandler {
      * @exception  IOException  if an I/O error occurs while reading the object.
      * @since 1.3
      */
-    public Object getContent(URLConnection urlc, Class[] classes) throws IOException {
+    public Object getContent(URLConnection urlc, Class<?>[] classes) throws IOException {
         Object obj = getContent(urlc);
 
         for (int i = 0; i < classes.length; i++) {

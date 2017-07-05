@@ -206,7 +206,6 @@
 # include "runtime/perfMemory.hpp"
 # include "runtime/prefetch.hpp"
 # include "runtime/reflection.hpp"
-# include "runtime/reflectionCompat.hpp"
 # include "runtime/reflectionUtils.hpp"
 # include "runtime/registerMap.hpp"
 # include "runtime/safepoint.hpp"

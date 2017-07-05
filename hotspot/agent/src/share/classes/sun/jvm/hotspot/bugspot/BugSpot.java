@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ import javax.swing.filechooser.*;
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.debugger.cdbg.*;
 import sun.jvm.hotspot.debugger.posix.*;
-import sun.jvm.hotspot.debugger.win32.*;
+import sun.jvm.hotspot.debugger.windbg.*;
 import sun.jvm.hotspot.livejvm.*;
 import sun.jvm.hotspot.memory.*;
 import sun.jvm.hotspot.oops.*;
@@ -604,7 +604,7 @@ public class BugSpot extends JPanel {
           throw new DebuggerException("Unsupported CPU \"" + cpu + "\" for Windows");
         }
 
-        localDebugger = new Win32DebuggerLocal(new MachineDescriptionIntelX86(), true);
+        localDebugger = new WindbgDebuggerLocal(new MachineDescriptionIntelX86(), true);
       } else if (os.equals("linux")) {
         if (!cpu.equals("x86")) {
           throw new DebuggerException("Unsupported CPU \"" + cpu + "\" for Linux");

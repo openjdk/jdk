@@ -25,9 +25,13 @@
 #ifndef __ELF_FILE_HPP
 #define __ELF_FILE_HPP
 
-#ifndef _WINDOWS
+#if !defined(_WINDOWS) && !defined(__APPLE__)
 
+#if defined(__OpenBSD__)
+#include <sys/exec_elf.h>
+#else
 #include <elf.h>
+#endif
 #include <stdio.h>
 
 #ifdef _LP64
@@ -41,7 +45,9 @@ typedef Elf64_Ehdr      Elf_Ehdr;
 typedef Elf64_Shdr      Elf_Shdr;
 typedef Elf64_Sym       Elf_Sym;
 
+#if !defined(_ALLBSD_SOURCE) || defined(__APPLE__)
 #define ELF_ST_TYPE ELF64_ST_TYPE
+#endif
 
 #else
 
@@ -55,7 +61,9 @@ typedef Elf32_Ehdr      Elf_Ehdr;
 typedef Elf32_Shdr      Elf_Shdr;
 typedef Elf32_Sym       Elf_Sym;
 
+#if !defined(_ALLBSD_SOURCE) || defined(__APPLE__)
 #define ELF_ST_TYPE ELF32_ST_TYPE
+#endif
 #endif
 
 #include "globalDefinitions.hpp"
@@ -137,4 +145,3 @@ class ElfFile: public CHeapObj {
 #endif // _WINDOWS
 
 #endif // __ELF_FILE_HPP
-

@@ -375,9 +375,9 @@ intptr_t IdealGraphPrinter::get_node_id(Node *n) {
   return (intptr_t)(n);
 }
 
-void IdealGraphPrinter::visit_node(Node *n, void *param) {
+void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set) {
 
-  if(param) {
+  if (edges) {
 
     // Output edge
     intptr_t dest_id = get_node_id(n);
@@ -599,16 +599,11 @@ void IdealGraphPrinter::visit_node(Node *n, void *param) {
 
 #ifdef ASSERT
     if (node->debug_orig() != NULL) {
+      temp_set->Clear();
       stringStream dorigStream;
       Node* dorig = node->debug_orig();
-      if (dorig) {
+      while (dorig && temp_set->test_set(dorig->_idx)) {
         dorigStream.print("%d ", dorig->_idx);
-        Node* first = dorig;
-        dorig = first->debug_orig();
-        while (dorig && dorig != first) {
-          dorigStream.print("%d ", dorig->_idx);
-          dorig = dorig->debug_orig();
-        }
       }
       print_prop("debug_orig", dorigStream.as_string());
     }
@@ -629,7 +624,7 @@ void IdealGraphPrinter::visit_node(Node *n, void *param) {
   }
 }
 
-void IdealGraphPrinter::walk_nodes(Node *start, void *param) {
+void IdealGraphPrinter::walk_nodes(Node *start, bool edges, VectorSet* temp_set) {
 
 
   VectorSet visited(Thread::current()->resource_area());
@@ -650,7 +645,7 @@ void IdealGraphPrinter::walk_nodes(Node *start, void *param) {
   while(nodeStack.length() > 0) {
 
     Node *n = nodeStack.pop();
-    visit_node(n, param);
+    visit_node(n, edges, temp_set);
 
     if (_traverse_outs) {
       for (DUIterator i = n->outs(); n->has_out(i); i++) {
@@ -689,12 +684,14 @@ void IdealGraphPrinter::print(Compile* compile, const char *name, Node *node, in
   print_attr(GRAPH_NAME_PROPERTY, (const char *)name);
   end_head();
 
+  VectorSet temp_set(Thread::current()->resource_area());
+
   head(NODES_ELEMENT);
-  walk_nodes(node, NULL);
+  walk_nodes(node, false, &temp_set);
   tail(NODES_ELEMENT);
 
   head(EDGES_ELEMENT);
-  walk_nodes(node, (void *)1);
+  walk_nodes(node, true, &temp_set);
   tail(EDGES_ELEMENT);
   if (C->cfg() != NULL) {
     head(CONTROL_FLOW_ELEMENT);

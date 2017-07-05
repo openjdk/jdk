@@ -125,13 +125,13 @@ bool SystemDictionary::is_internal_format(Symbol* class_name) {
 bool SystemDictionary::is_parallelCapable(Handle class_loader) {
   if (UnsyncloadClass || class_loader.is_null()) return true;
   if (AlwaysLockClassLoader) return false;
-  return java_lang_Class::parallelCapable(class_loader());
+  return java_lang_ClassLoader::parallelCapable(class_loader());
 }
 // ----------------------------------------------------------------------------
 // ParallelDefineClass flag does not apply to bootclass loader
 bool SystemDictionary::is_parallelDefine(Handle class_loader) {
    if (class_loader.is_null()) return false;
-   if (AllowParallelDefineClass && java_lang_Class::parallelCapable(class_loader())) {
+   if (AllowParallelDefineClass && java_lang_ClassLoader::parallelCapable(class_loader())) {
      return true;
    }
    return false;
@@ -1290,7 +1290,7 @@ static instanceKlassHandle download_and_retry_class_load(
                                                     Symbol* class_name,
                                                     TRAPS) {
 
-  klassOop dlm = SystemDictionary::sun_jkernel_DownloadManager_klass();
+  klassOop dlm = SystemDictionary::DownloadManager_klass();
   instanceKlassHandle nk;
 
   // If download manager class isn't loaded just return.
@@ -1953,7 +1953,7 @@ void SystemDictionary::initialize_preloaded_classes(TRAPS) {
   // first do Object, String, Class
   initialize_wk_klasses_through(WK_KLASS_ENUM_NAME(Class_klass), scan, CHECK);
 
-  debug_only(instanceKlass::verify_class_klass_nonstatic_oop_maps(WK_KLASS(Class_klass)));
+  java_lang_Class::compute_offsets();
 
   // Fixup mirrors for classes loaded before java.lang.Class.
   // These calls iterate over the objects currently in the perm gen
@@ -2001,7 +2001,7 @@ void SystemDictionary::initialize_preloaded_classes(TRAPS) {
   //_box_klasses[T_ARRAY]   = WK_KLASS(object_klass);
 
 #ifdef KERNEL
-  if (sun_jkernel_DownloadManager_klass() == NULL) {
+  if (DownloadManager_klass() == NULL) {
     warning("Cannot find sun/jkernel/DownloadManager");
   }
 #endif // KERNEL
@@ -2736,7 +2736,7 @@ class ClassStatistics: AllStatic {
       class_size += ik->local_interfaces()->size();
       class_size += ik->transitive_interfaces()->size();
       // We do not have to count implementors, since we only store one!
-      class_size += ik->fields()->size();
+      class_size += ik->all_fields_count() * FieldInfo::field_slots;
     }
   }
 
