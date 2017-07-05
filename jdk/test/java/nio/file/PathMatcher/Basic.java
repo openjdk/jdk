@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4313887
+ * @bug 4313887 6866397
  * @summary Unit test for java.nio.file.PathMatcher
  */
 
@@ -67,6 +67,20 @@ public class Basic {
             System.out.println("Failed to compile ==> OKAY");
         }
     }
+
+    static void assertRegExMatch(String path, String pattern) {
+        System.out.format("Test regex pattern: %s", pattern);
+        Path file = Paths.get(path);
+        boolean matched =  file.getFileSystem()
+                               .getPathMatcher("regex:" + pattern).matches(file);
+        if (matched) {
+            System.out.println(" OKAY");
+        } else {
+            System.out.println(" ==> UNEXPECTED RESULT!");
+            failures++;
+        }
+    }
+
 
     public static void main(String[] args) {
         // basic
@@ -140,21 +154,13 @@ public class Basic {
             assertMatch("one*two", "one\\*two");
         }
 
-
-
         // regex syntax
-        {
-            String pattern = ".*\\.html";
-            System.out.format("Test regex pattern: %s", pattern);
-            Path file = Paths.get("foo.html");
-            boolean matched =  file.getFileSystem()
-                .getPathMatcher("regex:" + pattern).matches(file);
-            if (matched) {
-                System.out.println(" OKAY");
-            } else {
-                System.out.println(" ==> UNEXPECTED RESULT!");
-                failures++;
-            }
+        assertRegExMatch("foo.html", ".*\\.html");
+
+        if (System.getProperty("os.name").startsWith("Windows")) {
+            assertRegExMatch("foo012", "foo\\d+");
+            assertRegExMatch("fo o", "fo\\so");
+            assertRegExMatch("foo", "\\w+");
         }
 
         // unknown syntax

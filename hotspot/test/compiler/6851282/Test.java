@@ -27,7 +27,7 @@
  * @bug 6851282
  * @summary JIT miscompilation results in null entry in array when using CompressedOops
  *
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UseCompressedOops Test
+ * @run main/othervm/timeout=600 -Xmx256m -XX:+IgnoreUnrecognizedVMOptions -XX:+UseCompressedOops Test
  */
 
 import java.util.ArrayList;

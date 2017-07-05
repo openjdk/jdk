@@ -1054,7 +1054,15 @@ void Arguments::set_cms_and_parnew_gc_flags() {
 
   // Unless explicitly requested otherwise, size young gen
   // for "short" pauses ~ 4M*ParallelGCThreads
-  if (FLAG_IS_DEFAULT(MaxNewSize)) {  // MaxNewSize not set at command-line
+
+  // If either MaxNewSize or NewRatio is set on the command line,
+  // assume the user is trying to set the size of the young gen.
+
+  if (FLAG_IS_DEFAULT(MaxNewSize) && FLAG_IS_DEFAULT(NewRatio)) {
+
+    // Set MaxNewSize to our calculated preferred_max_new_size unless
+    // NewSize was set on the command line and it is larger than
+    // preferred_max_new_size.
     if (!FLAG_IS_DEFAULT(NewSize)) {   // NewSize explicitly set at command-line
       FLAG_SET_ERGO(uintx, MaxNewSize, MAX2(NewSize, preferred_max_new_size));
     } else {
@@ -1063,15 +1071,32 @@ void Arguments::set_cms_and_parnew_gc_flags() {
     if(PrintGCDetails && Verbose) {
       // Too early to use gclog_or_tty
       tty->print_cr("Ergo set MaxNewSize: " SIZE_FORMAT, MaxNewSize);
-  }
-  }
-  // Unless explicitly requested otherwise, prefer a large
-  // Old to Young gen size so as to shift the collection load
-  // to the old generation concurrent collector
-  if (FLAG_IS_DEFAULT(NewRatio)) {
+    }
+
+    // Unless explicitly requested otherwise, prefer a large
+    // Old to Young gen size so as to shift the collection load
+    // to the old generation concurrent collector
+
+    // If this is only guarded by FLAG_IS_DEFAULT(NewRatio)
+    // then NewSize and OldSize may be calculated.  That would
+    // generally lead to some differences with ParNewGC for which
+    // there was no obvious reason.  Also limit to the case where
+    // MaxNewSize has not been set.
+
     FLAG_SET_ERGO(intx, NewRatio, MAX2(NewRatio, new_ratio));
 
-    size_t min_new  = align_size_up(ScaleForWordSize(min_new_default), os::vm_page_size());
+    // Code along this path potentially sets NewSize and OldSize
+
+    // Calculate the desired minimum size of the young gen but if
+    // NewSize has been set on the command line, use it here since
+    // it should be the final value.
+    size_t min_new;
+    if (FLAG_IS_DEFAULT(NewSize)) {
+      min_new = align_size_up(ScaleForWordSize(min_new_default),
+                              os::vm_page_size());
+    } else {
+      min_new = NewSize;
+    }
     size_t prev_initial_size = initial_heap_size();
     if (prev_initial_size != 0 && prev_initial_size < min_new+OldSize) {
       set_initial_heap_size(min_new+OldSize);
@@ -1083,9 +1108,11 @@ void Arguments::set_cms_and_parnew_gc_flags() {
                 initial_heap_size()/M, prev_initial_size/M);
       }
     }
+
     // MaxHeapSize is aligned down in collectorPolicy
-    size_t max_heap = align_size_down(MaxHeapSize,
-                                      CardTableRS::ct_max_alignment_constraint());
+    size_t max_heap =
+      align_size_down(MaxHeapSize,
+                      CardTableRS::ct_max_alignment_constraint());
 
     if(PrintGCDetails && Verbose) {
       // Too early to use gclog_or_tty
@@ -1150,8 +1177,9 @@ void Arguments::set_cms_and_parnew_gc_flags() {
       // CMSParPromoteBlocksToClaim is a collector-specific flag, so
       // we'll let it to take precedence.
       jio_fprintf(defaultStream::error_stream(),
-                  "Both OldPLABSize and CMSParPromoteBlocksToClaim options are specified "
-                  "for the CMS collector. CMSParPromoteBlocksToClaim will take precedence.\n");
+                  "Both OldPLABSize and CMSParPromoteBlocksToClaim"
+                  " options are specified for the CMS collector."
+                  " CMSParPromoteBlocksToClaim will take precedence.\n");
     }
   }
 }

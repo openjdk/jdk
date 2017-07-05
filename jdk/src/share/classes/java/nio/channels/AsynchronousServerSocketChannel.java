@@ -85,9 +85,6 @@ import java.io.IOException;
  *      public void failed(Throwable exc, Void att) {
  *          ...
  *      }
- *      public void cancelled(Void att) {
- *          ...
- *      }
  *  });
  * </pre>
  *
@@ -240,11 +237,11 @@ public abstract class AsynchronousServerSocketChannel
     /**
      * Accepts a connection.
      *
-     * <p> This method initiates accepting a connection made to this channel's
-     * socket, returning a {@link Future} representing the pending result
-     * of the operation. The {@code Future}'s {@link Future#get() get}
-     * method will return the {@link AsynchronousSocketChannel} for the new
-     * connection on successful completion.
+     * <p> This method initiates an asynchronous operation to accept a
+     * connection made to this channel's socket. The {@code handler} parameter is
+     * a completion handler that is invoked when a connection is accepted (or
+     * the operation fails). The result passed to the completion handler is
+     * the {@link AsynchronousSocketChannel} to the new connection.
      *
      * <p> When a new connection is accepted then the resulting {@code
      * AsynchronousSocketChannel} will be bound to the same {@link
@@ -269,35 +266,35 @@ public abstract class AsynchronousServerSocketChannel
      * @param   attachment
      *          The object to attach to the I/O operation; can be {@code null}
      * @param   handler
-     *          The handler for consuming the result; can be {@code null}
-     *
-     * @return  an <tt>Future</tt> object representing the pending result
+     *          The handler for consuming the result
      *
      * @throws  AcceptPendingException
      *          If an accept operation is already in progress on this channel
      * @throws  NotYetBoundException
      *          If this channel's socket has not yet been bound
      * @throws  ShutdownChannelGroupException
-     *          If a handler is specified, and the channel group is shutdown
+     *          If the channel group has terminated
      */
-    public abstract <A> Future<AsynchronousSocketChannel>
-        accept(A attachment, CompletionHandler<AsynchronousSocketChannel,? super A> handler);
+    public abstract <A> void accept(A attachment,
+                                    CompletionHandler<AsynchronousSocketChannel,? super A> handler);
 
     /**
      * Accepts a connection.
      *
-     * <p> This method is equivalent to invoking {@link
-     * #accept(Object,CompletionHandler)} with the {@code attachment}
-     * and {@code handler} parameters set to {@code null}.
+     * <p> This method initiates an asynchronous operation to accept a
+     * connection made to this channel's socket. The method behaves in exactly
+     * the same manner as the {@link #accept(Object, CompletionHandler)} method
+     * except that instead of specifying a completion handler, this method
+     * returns a {@code Future} representing the pending result. The {@code
+     * Future}'s {@link Future#get() get} method returns the {@link
+     * AsynchronousSocketChannel} to the new connection on successful completion.
      *
-     * @return  an <tt>Future</tt> object representing the pending result
+     * @return  a {@code Future} object representing the pending result
      *
      * @throws  AcceptPendingException
      *          If an accept operation is already in progress on this channel
      * @throws  NotYetBoundException
      *          If this channel's socket has not yet been bound
      */
-    public final Future<AsynchronousSocketChannel> accept() {
-        return accept(null, null);
-    }
+    public abstract Future<AsynchronousSocketChannel> accept();
 }
