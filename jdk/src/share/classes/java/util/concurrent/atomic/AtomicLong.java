@@ -129,11 +129,7 @@ public class AtomicLong extends Number implements java.io.Serializable {
      * @return the previous value
      */
     public final long getAndSet(long newValue) {
-        while (true) {
-            long current = get();
-            if (compareAndSet(current, newValue))
-                return current;
-        }
+        return unsafe.getAndSetLong(this, valueOffset, newValue);
     }
 
     /**
@@ -159,7 +155,7 @@ public class AtomicLong extends Number implements java.io.Serializable {
      *
      * @param expect the expected value
      * @param update the new value
-     * @return true if successful.
+     * @return true if successful
      */
     public final boolean weakCompareAndSet(long expect, long update) {
         return unsafe.compareAndSwapLong(this, valueOffset, expect, update);
@@ -171,12 +167,7 @@ public class AtomicLong extends Number implements java.io.Serializable {
      * @return the previous value
      */
     public final long getAndIncrement() {
-        while (true) {
-            long current = get();
-            long next = current + 1;
-            if (compareAndSet(current, next))
-                return current;
-        }
+        return getAndAdd(1);
     }
 
     /**
@@ -185,12 +176,7 @@ public class AtomicLong extends Number implements java.io.Serializable {
      * @return the previous value
      */
     public final long getAndDecrement() {
-        while (true) {
-            long current = get();
-            long next = current - 1;
-            if (compareAndSet(current, next))
-                return current;
-        }
+        return getAndAdd(-1);
     }
 
     /**
@@ -200,12 +186,7 @@ public class AtomicLong extends Number implements java.io.Serializable {
      * @return the previous value
      */
     public final long getAndAdd(long delta) {
-        while (true) {
-            long current = get();
-            long next = current + delta;
-            if (compareAndSet(current, next))
-                return current;
-        }
+        return unsafe.getAndAddLong(this, valueOffset, delta);
     }
 
     /**
@@ -214,12 +195,7 @@ public class AtomicLong extends Number implements java.io.Serializable {
      * @return the updated value
      */
     public final long incrementAndGet() {
-        for (;;) {
-            long current = get();
-            long next = current + 1;
-            if (compareAndSet(current, next))
-                return next;
-        }
+        return getAndAdd(1) + 1;
     }
 
     /**
@@ -228,12 +204,7 @@ public class AtomicLong extends Number implements java.io.Serializable {
      * @return the updated value
      */
     public final long decrementAndGet() {
-        for (;;) {
-            long current = get();
-            long next = current - 1;
-            if (compareAndSet(current, next))
-                return next;
-        }
+        return getAndAdd(-1) - 1;
     }
 
     /**
@@ -243,17 +214,12 @@ public class AtomicLong extends Number implements java.io.Serializable {
      * @return the updated value
      */
     public final long addAndGet(long delta) {
-        for (;;) {
-            long current = get();
-            long next = current + delta;
-            if (compareAndSet(current, next))
-                return next;
-        }
+        return getAndAdd(delta) + delta;
     }
 
     /**
      * Returns the String representation of the current value.
-     * @return the String representation of the current value.
+     * @return the String representation of the current value
      */
     public String toString() {
         return Long.toString(get());
