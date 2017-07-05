@@ -109,7 +109,7 @@ protected:
     return new PerRegionTable(hr);
   }
 
-  void add_card_work(short from_card, bool par) {
+  void add_card_work(CardIdx_t from_card, bool par) {
     if (!_bm.at(from_card)) {
       if (par) {
         if (_bm.par_at_put(from_card, 1)) {
@@ -141,11 +141,11 @@ protected:
     // and adding a bit to the new table is never incorrect.
     if (loc_hr->is_in_reserved(from)) {
       size_t hw_offset = pointer_delta((HeapWord*)from, loc_hr->bottom());
-      size_t from_card =
-        hw_offset >>
-        (CardTableModRefBS::card_shift - LogHeapWordSize);
+      CardIdx_t from_card = (CardIdx_t)
+          hw_offset >> (CardTableModRefBS::card_shift - LogHeapWordSize);
 
-      add_card_work((short) from_card, par);
+      assert(0 <= from_card && from_card < CardsPerRegion, "Must be in range.");
+      add_card_work(from_card, par);
     }
   }
 
@@ -190,11 +190,11 @@ public:
 #endif
   }
 
-  void add_card(short from_card_index) {
+  void add_card(CardIdx_t from_card_index) {
     add_card_work(from_card_index, /*parallel*/ true);
   }
 
-  void seq_add_card(short from_card_index) {
+  void seq_add_card(CardIdx_t from_card_index) {
     add_card_work(from_card_index, /*parallel*/ false);
   }
 
@@ -604,7 +604,7 @@ void OtherRegionsTable::add_reference(oop* from, int tid) {
 
   // Note that this may be a continued H region.
   HeapRegion* from_hr = _g1h->heap_region_containing_raw(from);
-  size_t from_hrs_ind = (size_t)from_hr->hrs_index();
+  RegionIdx_t from_hrs_ind = (RegionIdx_t) from_hr->hrs_index();
 
   // If the region is already coarsened, return.
   if (_coarse_map.at(from_hrs_ind)) {
@@ -627,11 +627,11 @@ void OtherRegionsTable::add_reference(oop* from, int tid) {
       uintptr_t from_hr_bot_card_index =
         uintptr_t(from_hr->bottom())
           >> CardTableModRefBS::card_shift;
-      int card_index = from_card - from_hr_bot_card_index;
+      CardIdx_t card_index = from_card - from_hr_bot_card_index;
       assert(0 <= card_index && card_index < PosParPRT::CardsPerRegion,
              "Must be in range.");
       if (G1HRRSUseSparseTable &&
-          _sparse_table.add_card((short) from_hrs_ind, card_index)) {
+          _sparse_table.add_card(from_hrs_ind, card_index)) {
         if (G1RecordHRRSOops) {
           HeapRegionRemSet::record(hr(), from);
 #if HRRS_VERBOSE
@@ -656,9 +656,9 @@ void OtherRegionsTable::add_reference(oop* from, int tid) {
       }
 
       // Otherwise, transfer from sparse to fine-grain.
-      short cards[SparsePRTEntry::CardsPerEntry];
+      CardIdx_t cards[SparsePRTEntry::CardsPerEntry];
       if (G1HRRSUseSparseTable) {
-        bool res = _sparse_table.get_cards((short) from_hrs_ind, &cards[0]);
+        bool res = _sparse_table.get_cards(from_hrs_ind, &cards[0]);
         assert(res, "There should have been an entry");
       }
 
@@ -679,13 +679,13 @@ void OtherRegionsTable::add_reference(oop* from, int tid) {
       // Add in the cards from the sparse table.
       if (G1HRRSUseSparseTable) {
         for (int i = 0; i < SparsePRTEntry::CardsPerEntry; i++) {
-          short c = cards[i];
+          CardIdx_t c = cards[i];
           if (c != SparsePRTEntry::NullEntry) {
             prt->add_card(c);
           }
         }
         // Now we can delete the sparse entry.
-        bool res = _sparse_table.delete_entry((short) from_hrs_ind);
+        bool res = _sparse_table.delete_entry(from_hrs_ind);
         assert(res, "It should have been there.");
       }
     }
@@ -1030,7 +1030,7 @@ bool OtherRegionsTable::contains_reference(oop* from) const {
 bool OtherRegionsTable::contains_reference_locked(oop* from) const {
   HeapRegion* hr = _g1h->heap_region_containing_raw(from);
   if (hr == NULL) return false;
-  size_t hr_ind = hr->hrs_index();
+  RegionIdx_t hr_ind = (RegionIdx_t) hr->hrs_index();
   // Is this region in the coarse map?
   if (_coarse_map.at(hr_ind)) return true;
 
@@ -1045,8 +1045,9 @@ bool OtherRegionsTable::contains_reference_locked(oop* from) const {
     uintptr_t hr_bot_card_index =
       uintptr_t(hr->bottom()) >> CardTableModRefBS::card_shift;
     assert(from_card >= hr_bot_card_index, "Inv");
-    int card_index = from_card - hr_bot_card_index;
-    return _sparse_table.contains_card((short)hr_ind, card_index);
+    CardIdx_t card_index = from_card - hr_bot_card_index;
+    assert(0 <= card_index && card_index < PosParPRT::CardsPerRegion, "Must be in range.");
+    return _sparse_table.contains_card(hr_ind, card_index);
   }
 
 

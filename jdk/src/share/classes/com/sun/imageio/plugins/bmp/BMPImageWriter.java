@@ -506,6 +506,19 @@ public class BMPImageWriter extends ImageWriter implements BMPConstants {
 
         writeFileHeader(fileSize, offset);
 
+        /* According to MSDN description, the top-down image layout
+         * is allowed only if compression type is BI_RGB or BI_BITFIELDS.
+         * Images with any other compression type must be wrote in the
+         * bottom-up layout.
+         */
+        if (compressionType == BMPConstants.BI_RGB ||
+            compressionType == BMPConstants.BI_BITFIELDS)
+        {
+            isTopDown = bmpParam.isTopDown();
+        } else {
+            isTopDown = false;
+        }
+
         writeInfoHeader(headerSize, bitsPerPixel);
 
         // compression
@@ -587,8 +600,6 @@ public class BMPImageWriter extends ImageWriter implements BMPConstants {
 
             return;
         }
-
-        isTopDown = bmpParam.isTopDown();
 
         int maxBandOffset = bandOffsets[0];
         for (int i = 1; i < bandOffsets.length; i++)
@@ -1299,7 +1310,7 @@ public class BMPImageWriter extends ImageWriter implements BMPConstants {
         stream.writeInt(w);
 
         // height
-        stream.writeInt(h);
+        stream.writeInt(isTopDown ? -h : h);
 
         // number of planes
         stream.writeShort(1);

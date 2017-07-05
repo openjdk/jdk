@@ -1157,6 +1157,13 @@ void ConcurrentMark::checkpointRootsFinal(bool clear_all_soft_refs) {
   } else {
     // We're done with marking.
     JavaThread::satb_mark_queue_set().set_active_all_threads(false);
+
+    if (VerifyDuringGC) {
+      g1h->prepare_for_verify();
+      g1h->verify(/* allow_dirty */      true,
+                  /* silent */           false,
+                  /* use_prev_marking */ false);
+    }
   }
 
 #if VERIFY_OBJS_PROCESSED
@@ -1747,12 +1754,12 @@ void ConcurrentMark::cleanup() {
   // races with it goes around and waits for completeCleanup to finish.
   g1h->increment_total_collections();
 
-#ifndef PRODUCT
   if (VerifyDuringGC) {
-    G1CollectedHeap::heap()->prepare_for_verify();
-    G1CollectedHeap::heap()->verify(true,false);
+    g1h->prepare_for_verify();
+    g1h->verify(/* allow_dirty */      true,
+                /* silent */           false,
+                /* use_prev_marking */ true);
   }
-#endif
 }
 
 void ConcurrentMark::completeCleanup() {
