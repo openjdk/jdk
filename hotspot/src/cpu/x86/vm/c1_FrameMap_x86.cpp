@@ -343,13 +343,12 @@ LIR_Opr FrameMap::stack_pointer() {
   return FrameMap::rsp_opr;
 }
 
-
 // JSR 292
+// On x86, there is no need to save the SP, because neither
+// method handle intrinsics, nor compiled lambda forms modify it.
 LIR_Opr FrameMap::method_handle_invoke_SP_save_opr() {
-  assert(rbp == rbp_mh_SP_save, "must be same register");
-  return rbp_opr;
+  return LIR_OprFact::illegalOpr;
 }
-
 
 bool FrameMap::validate_frame() {
   return true;

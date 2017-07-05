@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  * @summary Check behaviour of MBeanServer when postRegister and postDeregister
  *          throw exceptions.
  * @author Daniel Fuchs
+ * @modules java.management
  * @compile PostExceptionTest.java
  * @run main PostExceptionTest
  */

@@ -1,5 +1,5 @@
 /*
- * Copyright 2012, 2013 SAP AG. All rights reserved.
+ * Copyright 2012, 2015 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,17 @@
  *
  */
 
+#ifndef OS_AIX_VM_PORTING_AIX_HPP
+#define OS_AIX_VM_PORTING_AIX_HPP
+
 #include <stddef.h>
+
+// PPC port only:
+#define assert0(b) assert( (b), "" )
+#define guarantee0(b) assert( (b), "" )
+template <class T1, class T2> bool is_aligned_to(T1 what, T2 alignment) {
+  return  ( ((uintx)(what)) & (((uintx)(alignment)) - 1) ) == 0 ? true : false;
+}
 
 // Header file to contain porting-relevant code which does not have a
 // home anywhere else and which can not go into os_<platform>.h because
@@ -79,3 +89,62 @@ int getFuncName(
       const struct tbtable** p_tb,     // [out] optional: ptr to traceback table to get further information
       char* p_errmsg, size_t errmsglen // [out] optional: user provided buffer for error messages
     );
+
+// -------------------------------------------------------------------------
+
+// A simple critical section which shall be based upon OS critical
+// sections (CRITICAL_SECTION resp. Posix Mutex) and nothing else.
+
+#include <pthread.h>
+
+namespace MiscUtils {
+  typedef pthread_mutex_t critsect_t;
+
+  inline void init_critsect(MiscUtils::critsect_t* cs) {
+    pthread_mutex_init(cs, NULL);
+  }
+  inline void free_critsect(MiscUtils::critsect_t* cs) {
+    pthread_mutex_destroy(cs);
+  }
+  inline void enter_critsect(MiscUtils::critsect_t* cs) {
+    pthread_mutex_lock(cs);
+  }
+  inline void leave_critsect(MiscUtils::critsect_t* cs) {
+    pthread_mutex_unlock(cs);
+  }
+
+  // Need to wrap this in an object because we need to dynamically initialize
+  // critical section (because of windows, where there is no way to initialize
+  // a CRITICAL_SECTION statically. On Unix, we could use
+  // PTHREAD_MUTEX_INITIALIZER)
+
+  // Note: The critical section does NOT get cleaned up in the destructor. That is
+  // by design: the CritSect class is only ever used as global objects whose
+  // lifetime spans the whole VM life; in that context we don't want the lock to
+  // be cleaned up when global C++ objects are destroyed, but to continue to work
+  // correctly right to the very end of the process life.
+  class CritSect {
+    critsect_t _cs;
+  public:
+    CritSect()        { init_critsect(&_cs); }
+    //~CritSect()       { free_critsect(&_cs); }
+    void enter()      { enter_critsect(&_cs); }
+    void leave()      { leave_critsect(&_cs); }
+  };
+
+  class AutoCritSect {
+    CritSect* const _pcsobj;
+  public:
+    AutoCritSect(CritSect* pcsobj)
+      : _pcsobj(pcsobj)
+    {
+      _pcsobj->enter();
+    }
+    ~AutoCritSect() {
+      _pcsobj->leave();
+    }
+  };
+
+}
+
+#endif // OS_AIX_VM_PORTING_AIX_HPP

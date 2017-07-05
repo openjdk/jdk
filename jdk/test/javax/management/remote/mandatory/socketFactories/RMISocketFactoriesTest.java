@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug 7654321
  * @summary Tests the use of the custom RMI socket factories.
  * @author Luis-Miguel Alventosa
+ * @modules java.management
  * @run clean RMISocketFactoriesTest
  * @run build RMISocketFactoriesTest RMIClientFactory RMIServerFactory
  * @run main RMISocketFactoriesTest test_server_factory

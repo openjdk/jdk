@@ -117,17 +117,17 @@ implements CertAttrSet<String> {
      * The default constructor for this extension.  Null parameters make
      * the element optional (not present).
      *
-     * @param id the KeyIdentifier associated with this extension.
+     * @param kid the KeyIdentifier associated with this extension.
      * @param names the GeneralNames associated with this extension
-     * @param serialNum the CertificateSerialNumber associated with
-     *         this extension.
+     * @param sn the CertificateSerialNumber associated with
+     *        this extension.
      * @exception IOException on error.
      */
-    public AuthorityKeyIdentifierExtension(KeyIdentifier kid, GeneralNames name,
+    public AuthorityKeyIdentifierExtension(KeyIdentifier kid, GeneralNames names,
                                            SerialNumber sn)
     throws IOException {
         this.id = kid;
-        this.names = name;
+        this.names = names;
         this.serialNum = sn;
 
         this.extensionId = PKIXExtensions.AuthorityKey_Id;

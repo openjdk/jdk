@@ -130,13 +130,13 @@ public abstract class CorbaConnectionCacheBase
      * This method must be synchronized since one WorkerThread could
      * be reclaming connections inside the synchronized backingStore
      * block and a second WorkerThread (or a SelectorThread) could have
-     * already executed the if (numberOfConnections <= .... ). As a
+     * already executed the if (numberOfConnections {@literal <=} .... ). As a
      * result the second thread would also attempt to reclaim connections.
      *
      * If connection reclamation becomes a performance issue, the connection
      * reclamation could make its own task and consequently executed in
      * a separate thread.
-     * Currently, the accept & reclaim are done in the same thread, WorkerThread
+     * Currently, the accept {@literal &} reclaim are done in the same thread, WorkerThread
      * by default. It could be changed such that the SelectorThread would do
      * it for SocketChannels and WorkerThreads for Sockets by updating the
      * ParserTable.

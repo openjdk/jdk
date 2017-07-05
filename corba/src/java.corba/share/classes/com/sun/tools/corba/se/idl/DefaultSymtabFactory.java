@@ -202,7 +202,7 @@ public class DefaultSymtabFactory implements SymtabFactory
       'char', 'octet', 'short', 'long', etc.  The reason it is not limited
       to these is that, as an extender, you may wish to override these names.
       For instance, when generating Java code, octet translates to byte, so
-      there is an entry in Compile.overrideNames:  <"octet", "byte"> and a
+      there is an entry in Compile.overrideNames: {@code <"octet", "byte">} and a
       PrimitiveEntry in the symbol table for "byte". */
   public PrimitiveEntry primitiveEntry (String name)
   {

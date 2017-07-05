@@ -28,7 +28,7 @@ import org.omg.CORBA.portable.*;
 
 
 /**
- * <P>Used as a base class for implementation of a local IDL interface in the
+ * Used as a base class for implementation of a local IDL interface in the
  * Java language mapping.  It is a class which implements all the operations
  * in the <tt>org.omg.CORBA.Object</tt> interface.
  * <P>Local interfaces are implemented by using CORBA::LocalObject
@@ -49,9 +49,10 @@ import org.omg.CORBA.portable.*;
  *  <P><code>LocalObject</code> is to be used as the base class of locally
  *  constrained objects, such as those in the PortableServer module.
  *  The specification here is based on the CORBA Components
- *  Volume I - orbos/99-07-01<P>
+ *  Volume I - orbos/99-07-01
+ *
  * @see <a href="package-summary.html#unimpl"><code>CORBA</code> package
-     *      comments for unimplemented features</a>
+ *      comments for unimplemented features</a>
  */
 
 public class LocalObject implements org.omg.CORBA.Object
@@ -64,7 +65,7 @@ public class LocalObject implements org.omg.CORBA.Object
     public LocalObject() {}
 
     /**
-     * <P>Determines whether the two object references are equivalent,
+     * Determines whether the two object references are equivalent,
      * so far as the ORB can easily determine. Two object references are equivalent
      * if they are identical. Two distinct object references which in fact refer to
      * the same object are also equivalent. However, ORBs are not required

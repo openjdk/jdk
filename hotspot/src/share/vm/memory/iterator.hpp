@@ -44,9 +44,7 @@ class Closure : public StackObj { };
 class OopClosure : public Closure {
  public:
   virtual void do_oop(oop* o) = 0;
-  virtual void do_oop_v(oop* o) { do_oop(o); }
   virtual void do_oop(narrowOop* o) = 0;
-  virtual void do_oop_v(narrowOop* o) { do_oop(o); }
 };
 
 // ExtendedOopClosure adds extra code to be run during oop iterations.
@@ -74,11 +72,9 @@ class ExtendedOopClosure : public OopClosure {
   // Currently, only CMS and G1 need these.
 
   virtual bool do_metadata() { return do_metadata_nv(); }
-  bool do_metadata_v()       { return do_metadata(); }
   bool do_metadata_nv()      { return false; }
 
   virtual void do_klass(Klass* k)   { do_klass_nv(k); }
-  void do_klass_v(Klass* k)         { do_klass(k); }
   void do_klass_nv(Klass* k)        { ShouldNotReachHere(); }
 
   virtual void do_class_loader_data(ClassLoaderData* cld) { ShouldNotReachHere(); }
@@ -87,6 +83,14 @@ class ExtendedOopClosure : public OopClosure {
   // location without an intervening "major reset" (like the end of a GC).
   virtual bool idempotent() { return false; }
   virtual bool apply_to_weak_ref_discovered_field() { return false; }
+
+#ifdef ASSERT
+  // Default verification of each visited oop field.
+  template <typename T> void verify(T* p);
+
+  // Can be used by subclasses to turn off the default verification of oop fields.
+  virtual bool should_verify_oops() { return true; }
+#endif
 };
 
 // Wrapper closure only used to implement oop_iterate_no_header().
@@ -147,7 +151,6 @@ class CLDToOopClosure : public CLDClosure {
 };
 
 class CLDToKlassAndOopClosure : public CLDClosure {
-  friend class SharedHeap;
   friend class G1CollectedHeap;
  protected:
   OopClosure*   _oop_closure;
@@ -284,16 +287,6 @@ class MarkingCodeBlobClosure : public CodeBlobToOopClosure {
   // Called for each code blob, but at most once per unique blob.
 
   virtual void do_code_blob(CodeBlob* cb);
-
-  class MarkScope : public StackObj {
-  protected:
-    bool _active;
-  public:
-    MarkScope(bool activate = true);
-      // = { if (active) nmethod::oops_do_marking_prologue(); }
-    ~MarkScope();
-      // = { if (active) nmethod::oops_do_marking_epilogue(); }
-  };
 };
 
 // MonitorClosure is used for iterating over monitors in the monitors cache
@@ -364,16 +357,33 @@ class SymbolClosure : public StackObj {
   }
 };
 
+// The two class template specializations are used to dispatch calls
+// to the ExtendedOopClosure functions. If use_non_virtual_call is true,
+// the non-virtual versions are called (E.g. do_oop_nv), otherwise the
+// virtual versions are called (E.g. do_oop).
 
-// Helper defines for ExtendOopClosure
+template <bool use_non_virtual_call>
+class Devirtualizer {};
 
-#define if_do_metadata_checked(closure, nv_suffix)       \
-  /* Make sure the non-virtual and the virtual versions match. */     \
-  assert(closure->do_metadata##nv_suffix() == closure->do_metadata(), \
-      "Inconsistency in do_metadata");                                \
-  if (closure->do_metadata##nv_suffix())
+// Dispatches to the non-virtual functions.
+template <> class Devirtualizer<true> {
+ public:
+  template <class OopClosureType, typename T> static void do_oop(OopClosureType* closure, T* p);
+  template <class OopClosureType>             static void do_klass(OopClosureType* closure, Klass* k);
+  template <class OopClosureType>             static bool do_metadata(OopClosureType* closure);
+};
 
-#define assert_should_ignore_metadata(closure, nv_suffix)                                  \
-  assert(!closure->do_metadata##nv_suffix(), "Code to handle metadata is not implemented")
+// Dispatches to the virtual functions.
+template <> class Devirtualizer<false> {
+ public:
+  template <class OopClosureType, typename T> static void do_oop(OopClosureType* closure, T* p);
+  template <class OopClosureType>             static void do_klass(OopClosureType* closure, Klass* k);
+  template <class OopClosureType>             static bool do_metadata(OopClosureType* closure);
+};
+
+// Helper to convert the oop iterate macro suffixes into bool values that can be used by template functions.
+#define nvs_nv_to_bool true
+#define nvs_v_to_bool  false
+#define nvs_to_bool(nv_suffix) nvs##nv_suffix##_to_bool
 
 #endif // SHARE_VM_MEMORY_ITERATOR_HPP

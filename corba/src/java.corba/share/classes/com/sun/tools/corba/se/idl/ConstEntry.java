@@ -90,7 +90,7 @@ public class ConstEntry extends SymtabEntry
   } // generate
 
   /** Access the constant generator.
-      @returns an object which implements the ConstGen interface.
+      @return an object which implements the ConstGen interface.
       @see ConstGen */
   public Generator generator ()
   {

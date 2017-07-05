@@ -407,14 +407,6 @@ const  uint64_t KlassEncodingMetaspaceMax = (uint64_t(max_juint) + 1) << LogKlas
 
 // Machine dependent stuff
 
-#if defined(X86) && defined(COMPILER2) && !defined(JAVASE_EMBEDDED)
-// Include Restricted Transactional Memory lock eliding optimization
-#define INCLUDE_RTM_OPT 1
-#define RTM_OPT_ONLY(code) code
-#else
-#define INCLUDE_RTM_OPT 0
-#define RTM_OPT_ONLY(code)
-#endif
 // States of Restricted Transactional Memory usage.
 enum RTMState {
   NoRTM      = 0x2, // Don't use RTM
@@ -444,6 +436,15 @@ enum RTMState {
 #endif
 #ifdef TARGET_ARCH_aarch64
 # include "globalDefinitions_aarch64.hpp"
+#endif
+
+#ifndef INCLUDE_RTM_OPT
+#define INCLUDE_RTM_OPT 0
+#endif
+#if INCLUDE_RTM_OPT
+#define RTM_OPT_ONLY(code) code
+#else
+#define RTM_OPT_ONLY(code)
 #endif
 
 // To assure the IRIW property on processors that are not multiple copy
@@ -1343,6 +1344,13 @@ inline int build_int_from_shorts( jushort low, jushort high ) {
 // Convert pointer to intptr_t, for use in printing pointers.
 inline intptr_t p2i(const void * p) {
   return (intptr_t) p;
+}
+
+// swap a & b
+template<class T> static void swap(T& a, T& b) {
+  T tmp = a;
+  a = b;
+  b = tmp;
 }
 
 // Printf-style formatters for fixed- and variable-width types as pointers and

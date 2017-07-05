@@ -47,12 +47,18 @@ void RegisterForm::addRegDef(char *name, char *callingConv, char *c_conv,
 }
 
 // record a new register class
-RegClass *RegisterForm::addRegClass(const char *className) {
-  RegClass *regClass = new RegClass(className);
+template <typename T>
+T* RegisterForm::addRegClass(const char* className) {
+  T* regClass = new T(className);
   _rclasses.addName(className);
-  _regClass.Insert(className,regClass);
+  _regClass.Insert(className, regClass);
   return regClass;
 }
+
+// Explicit instantiation for all supported register classes.
+template RegClass* RegisterForm::addRegClass<RegClass>(const char* className);
+template CodeSnippetRegClass* RegisterForm::addRegClass<CodeSnippetRegClass>(const char* className);
+template ConditionalRegClass* RegisterForm::addRegClass<ConditionalRegClass>(const char* className);
 
 // record a new register class
 AllocClass *RegisterForm::addAllocClass(char *className) {
@@ -67,9 +73,9 @@ AllocClass *RegisterForm::addAllocClass(char *className) {
 void RegisterForm::addSpillRegClass() {
   // Stack slots start at the next available even register number.
   _reg_ctr = (_reg_ctr+7) & ~7;
-  const char *rc_name   = "stack_slots";
-  RegClass   *reg_class = new RegClass(rc_name);
-  reg_class->_stack_or_reg = true;
+  const char *rc_name = "stack_slots";
+  RegClass* reg_class = new RegClass(rc_name);
+  reg_class->set_stack_version(true);
   _rclasses.addName(rc_name);
   _regClass.Insert(rc_name,reg_class);
 }
@@ -224,9 +230,11 @@ void RegDef::output(FILE *fp) {         // Write info to output files
 
 //------------------------------RegClass---------------------------------------
 // Construct a register class into which registers will be inserted
-RegClass::RegClass(const char *classid) : _stack_or_reg(false), _classid(classid), _regDef(cmpstr,hashstr, Form::arena),
-                                          _user_defined(NULL)
-{
+RegClass::RegClass(const char* classid) : _stack_or_reg(false), _classid(classid), _regDef(cmpstr, hashstr, Form::arena) {
+}
+
+RegClass::~RegClass() {
+  delete _classid;
 }
 
 // record a register in this class
@@ -305,6 +313,91 @@ void RegClass::output(FILE *fp) {           // Write info to output files
   fprintf(fp,"--- done with entries for reg_class %s\n\n",_classid);
 }
 
+void RegClass::declare_register_masks(FILE* fp) {
+  const char* prefix = "";
+  const char* rc_name_to_upper = toUpper(_classid);
+  fprintf(fp, "extern const RegMask _%s%s_mask;\n", prefix,  rc_name_to_upper);
+  fprintf(fp, "inline const RegMask &%s%s_mask() { return _%s%s_mask; }\n", prefix, rc_name_to_upper, prefix, rc_name_to_upper);
+  if (_stack_or_reg) {
+    fprintf(fp, "extern const RegMask _%sSTACK_OR_%s_mask;\n", prefix, rc_name_to_upper);
+    fprintf(fp, "inline const RegMask &%sSTACK_OR_%s_mask() { return _%sSTACK_OR_%s_mask; }\n", prefix, rc_name_to_upper, prefix, rc_name_to_upper);
+  }
+  delete[] rc_name_to_upper;
+}
+
+void RegClass::build_register_masks(FILE* fp) {
+  int len = RegisterForm::RegMask_Size();
+  const char *prefix = "";
+  const char* rc_name_to_upper = toUpper(_classid);
+  fprintf(fp, "const RegMask _%s%s_mask(", prefix, rc_name_to_upper);
+
+  int i;
+  for(i = 0; i < len - 1; i++) {
+    fprintf(fp," 0x%x,", regs_in_word(i, false));
+  }
+  fprintf(fp," 0x%x );\n", regs_in_word(i, false));
+
+  if (_stack_or_reg) {
+    fprintf(fp, "const RegMask _%sSTACK_OR_%s_mask(", prefix, rc_name_to_upper);
+    for(i = 0; i < len - 1; i++) {
+      fprintf(fp," 0x%x,", regs_in_word(i, true));
+    }
+    fprintf(fp," 0x%x );\n", regs_in_word(i, true));
+  }
+  delete[] rc_name_to_upper;
+}
+
+//------------------------------CodeSnippetRegClass---------------------------
+CodeSnippetRegClass::CodeSnippetRegClass(const char* classid) : RegClass(classid), _code_snippet(NULL) {
+}
+
+CodeSnippetRegClass::~CodeSnippetRegClass() {
+  delete _code_snippet;
+}
+
+void CodeSnippetRegClass::declare_register_masks(FILE* fp) {
+  const char* prefix = "";
+  const char* rc_name_to_upper = toUpper(_classid);
+  fprintf(fp, "inline const RegMask &%s%s_mask() { %s }\n", prefix, rc_name_to_upper, _code_snippet);
+  delete[] rc_name_to_upper;
+}
+
+//------------------------------ConditionalRegClass---------------------------
+ConditionalRegClass::ConditionalRegClass(const char *classid) : RegClass(classid), _condition_code(NULL) {
+}
+
+ConditionalRegClass::~ConditionalRegClass() {
+  delete _condition_code;
+}
+
+void ConditionalRegClass::declare_register_masks(FILE* fp) {
+  const char* prefix = "";
+  const char* rc_name_to_upper = toUpper(_classid);
+  const char* rclass_0_to_upper = toUpper(_rclasses[0]->_classid);
+  const char* rclass_1_to_upper = toUpper(_rclasses[1]->_classid);
+  fprintf(fp, "inline const RegMask &%s%s_mask() {"
+              " return (%s) ?"
+              " %s%s_mask() :"
+              " %s%s_mask(); }\n",
+              prefix, rc_name_to_upper,
+              _condition_code,
+              prefix, rclass_0_to_upper,
+              prefix, rclass_1_to_upper);
+  if (_stack_or_reg) {
+    fprintf(fp, "inline const RegMask &%sSTACK_OR_%s_mask() {"
+                  " return (%s) ?"
+                  " %sSTACK_OR_%s_mask() :"
+                  " %sSTACK_OR_%s_mask(); }\n",
+                  prefix, rc_name_to_upper,
+                  _condition_code,
+                  prefix, rclass_0_to_upper,
+                  prefix, rclass_1_to_upper);
+  }
+  delete[] rc_name_to_upper;
+  delete[] rclass_0_to_upper;
+  delete[] rclass_1_to_upper;
+  return;
+}
 
 //------------------------------AllocClass-------------------------------------
 AllocClass::AllocClass(char *classid) : _classid(classid), _regDef(cmpstr,hashstr, Form::arena) {

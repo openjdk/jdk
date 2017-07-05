@@ -187,7 +187,7 @@ oop Generation::promote(oop obj, size_t obj_size) {
   assert(obj_size == (size_t)obj->size(), "bad obj_size passed in");
 
 #ifndef PRODUCT
-  if (Universe::heap()->promotion_should_fail()) {
+  if (GenCollectedHeap::heap()->promotion_should_fail()) {
     return NULL;
   }
 #endif  // #ifndef PRODUCT

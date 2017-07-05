@@ -25,14 +25,9 @@
 package com.sun.corba.se.spi.monitoring;
 
 /**
- * <p>
- *
  * @author Hemanth Puttaswamy
- * </p>
- * <p>
  *
  * MonitoredObject Factory to create Monitored Object.
- * </p>
  */
 public interface MonitoredObjectFactory {
     /**

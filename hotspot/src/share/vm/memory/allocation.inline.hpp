@@ -62,11 +62,18 @@ inline char* AllocateHeap(size_t size, MEMFLAGS flags,
   }
   return p;
 }
+
+#ifdef __GNUC__
+__attribute__((always_inline))
+#endif
 inline char* AllocateHeap(size_t size, MEMFLAGS flags,
     AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM) {
   return AllocateHeap(size, flags, CURRENT_PC, alloc_failmode);
 }
 
+#ifdef __GNUC__
+__attribute__((always_inline))
+#endif
 inline char* ReallocateHeap(char *old, size_t size, MEMFLAGS flag,
     AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM) {
   char* p = (char*) os::realloc(old, size, flag, CURRENT_PC);

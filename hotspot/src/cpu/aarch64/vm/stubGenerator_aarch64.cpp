@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2014, 2015, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2356,8 +2356,45 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-#undef __
-#define __ masm->
+  /**
+   *  Arguments:
+   *
+   *  Input:
+   *    c_rarg0   - x address
+   *    c_rarg1   - x length
+   *    c_rarg2   - y address
+   *    c_rarg3   - y lenth
+   *    c_rarg4   - z address
+   *    c_rarg5   - z length
+   */
+  address generate_multiplyToLen() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "multiplyToLen");
+
+    address start = __ pc();
+    const Register x     = r0;
+    const Register xlen  = r1;
+    const Register y     = r2;
+    const Register ylen  = r3;
+    const Register z     = r4;
+    const Register zlen  = r5;
+
+    const Register tmp1  = r10;
+    const Register tmp2  = r11;
+    const Register tmp3  = r12;
+    const Register tmp4  = r13;
+    const Register tmp5  = r14;
+    const Register tmp6  = r15;
+    const Register tmp7  = r16;
+
+    BLOCK_COMMENT("Entry:");
+    __ enter(); // required for proper stackwalking of RuntimeStub frame
+    __ multiply_to_len(x, xlen, y, ylen, z, zlen, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7);
+    __ leave(); // required for proper stackwalking of RuntimeStub frame
+    __ ret(lr);
+
+    return start;
+  }
 
   // Continuation point for throwing of implicit exceptions that are
   // not handled in the current activation. Fabricates an exception
@@ -2374,6 +2411,9 @@ class StubGenerator: public StubCodeGenerator {
   // AbstractMethodError on entry) are either at call sites or
   // otherwise assume that stack unwinding will be initiated, so
   // caller saved registers were assumed volatile in the compiler.
+
+#undef __
+#define __ masm->
 
   address generate_throw_exception(const char* name,
                                    address runtime_entry,
@@ -2517,6 +2557,10 @@ class StubGenerator: public StubCodeGenerator {
 
     // arraycopy stubs used by compilers
     generate_arraycopy_stubs();
+
+    if (UseMultiplyToLenIntrinsic) {
+      StubRoutines::_multiplyToLen = generate_multiplyToLen();
+    }
 
 #ifndef BUILTIN_SIM
     if (UseAESIntrinsics) {

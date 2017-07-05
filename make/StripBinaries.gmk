@@ -42,7 +42,6 @@ ifneq ($(POST_STRIP_CMD), )
 	$(CP) $< $@.tmp
 	$(CHMOD) u+w $@.tmp
 	$(POST_STRIP_CMD) $@.tmp
-	$(if $(POST_MCS_CMD), $(POST_MCS_CMD) $@.tmp)
 	$(CHMOD) go-w $@.tmp
 	$(MV) $@.tmp $@
   endef

@@ -36,7 +36,7 @@ package sun.security.action;
  * property named <code>"prop"</code> as a privileged action. Since it does
  * not pass a default value to be used in case the property
  * <code>"prop"</code> is not defined, it has to check the result for
- * <code>null</code>: <p>
+ * <code>null</code>:
  *
  * <pre>
  * Long tmp = java.security.AccessController.doPrivileged
@@ -50,7 +50,7 @@ package sun.security.action;
  * <p>The following code retrieves the <code>Long</code> value of the system
  * property named <code>"prop"</code> as a privileged action, and also passes
  * a default value to be used in case the property <code>"prop"</code> is not
- * defined: <p>
+ * defined:
  *
  * <pre>
  * long l = java.security.AccessController.doPrivileged
@@ -83,7 +83,7 @@ public class GetLongAction implements java.security.PrivilegedAction<Long> {
      * value of that property.
      *
      * @param theProp the name of the system property.
-     * @param defaulVal the default value.
+     * @param defaultVal the default value.
      */
     public GetLongAction(String theProp, long defaultVal) {
         this.theProp = theProp;

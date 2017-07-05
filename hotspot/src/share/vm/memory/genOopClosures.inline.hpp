@@ -31,7 +31,6 @@
 #include "memory/genOopClosures.hpp"
 #include "memory/genRemSet.hpp"
 #include "memory/generation.hpp"
-#include "memory/sharedHeap.hpp"
 #include "memory/space.hpp"
 
 inline OopsInGenClosure::OopsInGenClosure(Generation* gen) :

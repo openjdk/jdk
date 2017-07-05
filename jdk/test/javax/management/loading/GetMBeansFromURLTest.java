@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
  *          given MLet instance throws a ServiceNotFoundException exception
  *          with a non null cause.
  * @author Luis-Miguel Alventosa
+ * @modules java.management
  * @run clean GetMBeansFromURLTest
  * @run build GetMBeansFromURLTest
  * @run main GetMBeansFromURLTest

@@ -29,7 +29,7 @@ package com.sun.corba.se.impl.naming.namingutil;
  * INS URL is a generic interface for two different types of URL's specified
  * in INS spec.
  *
- * @Author Hemanth
+ * @author Hemanth
  */
 public interface INSURL {
     public boolean getRIRFlag( );

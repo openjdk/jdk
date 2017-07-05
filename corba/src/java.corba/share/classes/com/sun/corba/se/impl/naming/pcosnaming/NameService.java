@@ -186,7 +186,7 @@ public class NameService
     /**
      * getObjectReferenceFromKey returns the Object reference from the objectkey using POA.create_reference_with_id method
      * @param Object Key as String
-     * @returns reference an CORBA.Object.
+     * @return a CORBA.Object reference.
      */
     org.omg.CORBA.Object getObjectReferenceFromKey( String key )
     {
@@ -205,7 +205,7 @@ public class NameService
     /**
      * getObjectKey gets the Object Key from the reference using POA.reference_to_id method
      * @param reference an CORBA.Object.
-     * @returns Object Key as String
+     * @return Object Key as String
      */
     String getObjectKey( org.omg.CORBA.Object reference )
     {

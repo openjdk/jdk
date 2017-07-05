@@ -64,7 +64,7 @@ public class AttributeGen24 extends MethodGenClone24
   } // ctor
 
   /**
-   * <d62023-klr> Added for 2.4 RTF
+   * (d62023-klr) Added for 2.4 RTF
    **/
   protected void abstractMethod (Hashtable symbolTable, MethodEntry m, PrintWriter stream)
   {
@@ -83,7 +83,7 @@ public class AttributeGen24 extends MethodGenClone24
   } // abstractMethod
 
   /**
-   * <d62023-klr> Added for 2.4 RTF
+   * (d62023-klr) Added for 2.4 RTF
    **/
   protected void interfaceMethod (Hashtable symbolTable, MethodEntry m, PrintWriter stream)
   {

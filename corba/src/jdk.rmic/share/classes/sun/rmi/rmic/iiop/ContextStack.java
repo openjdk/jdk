@@ -95,7 +95,7 @@ public class ContextStack {
     }
 
     /**
-     * Return true if env.nerrors > 0.
+     * Return true if {@code env.nerrors > 0}.
      */
     public boolean anyErrors () {
         return env.nerrors > 0;
